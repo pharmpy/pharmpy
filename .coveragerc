@@ -1,0 +1,16 @@
+[paths]
+source =
+   src/pysn
+   */site-packages/pysn
+
+[run]
+branch = true
+source =
+    pysn
+    tests
+parallel = true
+
+[report]
+show_missing = true
+precision = 2
+omit = *migrations*

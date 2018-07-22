@@ -5,7 +5,7 @@ sys.path.append(path)
 pysn = importlib.import_module('pysn')
 sys.path.pop()
 
-x = pysn.Model(os.path.join('tests', 'test_files', 'pheno_real.mod'))
+x = pysn.Model(os.path.join('tests', 'test_data', 'pheno_real.mod'))
 names = x.input.column_names()
 print(names)
 dataset = x.input.dataset_filename()

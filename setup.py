@@ -25,12 +25,12 @@ def read(*names, **kwargs):
 setup(
     name='pysn',
     version='0.1.0',
-    license='Unknown',
+    license='Proprietary',
     description='Pharmacometric model parsing (PsN reimagining)',
-    # long_description='%s\n%s' % (
-    #     re.compile('^.. start-badges.*^.. end-badges', re.M | re.S).sub('', read('README.rst')),
-    #     re.sub(':[a-z]+:`~?(.*?)`', r'``\1``', read('CHANGELOG.rst'))
-    # ),
+    long_description='%s\n%s' % (
+        re.compile('^.. start-summary.*^.. end-summary', re.M | re.S).sub('', read('README.rst')),
+        re.sub(':[a-z]+:`~?(.*?)`', r'``\1``', read('CHANGELOG.rst'))
+    ),
     author='Rikard Nordgren',
     author_email='rikard.nordgren@farmbio.uu.se',
     # url='https://github.com/rikardn/pysn',
@@ -50,8 +50,15 @@ setup(
         'Operating System :: Microsoft :: Windows',
         'Programming Language :: Python',
         'Programming Language :: Python :: 3 :: Only',
+        'Programming Language :: Python :: 3.4',
+        'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: Implementation :: CPython',
+        # uncomment if you test on these interpreters:
+        # 'Programming Language :: Python :: Implementation :: PyPy',
+        # 'Programming Language :: Python :: Implementation :: IronPython',
+        # 'Programming Language :: Python :: Implementation :: Jython',
+        # 'Programming Language :: Python :: Implementation :: Stackless',
         'Topic :: Utilities',
     ],
     keywords=[

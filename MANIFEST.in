@@ -1,0 +1,19 @@
+graft docs
+graft src
+graft ci
+graft tests
+
+include .bumpversion.cfg
+include .coveragerc
+include .editorconfig
+
+include AUTHORS.rst
+include CHANGELOG.rst
+include LICENSE
+include README.rst
+
+include tox.ini
+
+exclude demo.py
+
+global-exclude *.py[cod] __pycache__
