@@ -1,4 +1,4 @@
-import psn.models.nonmem.records.record as record
+from . import record
 
 class RawRecord(record.Record):
     """ A record that just keeps it contents unparsed. I.e. $PROBLEM or unknown records

@@ -1,4 +1,4 @@
-import psn.models.nonmem.records.records_list as records_list
+from . import records_list
 
 class Record:
     """ Top level class for records

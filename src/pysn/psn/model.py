@@ -1,7 +1,7 @@
 import pkgutil
 import importlib
 
-import psn.models
+from . import models
 
 class ModelException(Exception):
     pass
@@ -25,15 +25,16 @@ class Model:
             content = f.read()
         content_array = content.split("\n")
 
-        for importer, modname, ispkg in pkgutil.iter_modules(psn.models.__path__):
+        for importer, modname, ispkg in pkgutil.iter_modules(models.__path__):
             if ispkg:
-                detect_module = importlib.import_module("psn.models." + modname + ".detect")
+                modpath = models.__name__ + '.' + modname
+                detect_module = importlib.import_module(modpath + '.detect')
                 if detect_module.detect(content_array):
-                    model_module = importlib.import_module("psn.models." + modname + ".model")
+                    model_module = importlib.import_module(modpath + '.model')
                     self.type = modname
                     break
 
-        self.model = model_module.Model(filename) 
+        self.model = model_module.Model(filename)
         self.input = self.model.input
 
         if self.type == None:

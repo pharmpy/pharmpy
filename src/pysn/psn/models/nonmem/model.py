@@ -1,5 +1,5 @@
 from .records.factory import create_record
-from psn.model import ModelParsingError
+from ...model import ModelParsingError
 
 
 def create_unique_symbol(symbols, prefix):
@@ -12,8 +12,8 @@ def create_unique_symbol(symbols, prefix):
             i += 1
         else:
             return candidate
-            
-        
+
+
 
 class Input:
     def __init__(self, model):

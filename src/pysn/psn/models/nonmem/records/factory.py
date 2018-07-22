@@ -1,8 +1,8 @@
 import re
-import psn.models.nonmem.records.records_list as records_list
-import psn.models.nonmem.records.raw_record as raw_record
-import psn.models.nonmem.records.option_record as option_record
-import psn.models.nonmem.records.theta_record as theta_record
+from . import records_list as records_list
+from . import raw_record as raw_record
+from . import option_record as option_record
+from . import theta_record as theta_record
 
 def get_raw_record_name(line):
     """ Get raw record name. It might be of short or alternative form and contain & breaks
