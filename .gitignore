@@ -1,2 +1,7 @@
+# caches
 __pycache__
 *.pyc
+
+# builds
+build
+*.egg-info
