@@ -14,4 +14,4 @@ print(dataset)
 
 a = x.model.get_records('THETA')
 for tok in a[0].tokens:
-    print(tok.type, tok.content)
+    print(tok.type, repr(str(tok.content)))

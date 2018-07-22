@@ -4,26 +4,29 @@ Overview
 
 .. start-summary
 
-PysN is an experiment in substituting (some of) the PsN functionality in python
+PysN is an experiment in substituting (some of) the PsN functionality in Python
 
 .. end-summary
+
+For PsN (implemented in Perl), see `UUPharmacometrics/PsN <https://github.com/UUPharmacometrics/PsN/releases>`_.
 
 Installation
 ============
 
-::
-
-    pip install -e build/lib/pysn
+See :ref:`installation-section`.
 
 Documentation
 =============
 
-See `docs/index.html`
+See local documentation in ``dist/docs/``
 
 Development
 ===========
 
-To run the all tests install `tox <https://tox.readthedocs.io>`_::
+Testing
+-------
+
+To run the all tests via Pytest_ install Tox_::
 
     pip3 install tox
 
@@ -31,7 +34,7 @@ Then run::
 
     python3 -m tox
 
-Note, to combine the coverage data from all the `tox` environments run:
+Note, to combine the coverage data from all the Tox_ environments run:
 
 .. list-table::
     :widths: 10 90
@@ -47,3 +50,35 @@ Note, to combine the coverage data from all the `tox` environments run:
       - ::
 
             PYTEST_ADDOPTS=--cov-append tox
+
+Building
+--------
+
+This project uses `Semantic Versioning 2.0.0 <https://semver.org/>`_, and
+has a bumpversion_ config in ``.bumpversion.cfg``. Thus, remember to run:
+
+* ``bumpversion patch`` to increase version from `0.1.0` to `0.1.1`.
+* ``bumpversion minor`` to increase version from `0.1.0` to `0.2.0`.
+* ``bumpversion major`` to increase version from `0.1.0` to `1.0.0`.
+
+Before building, you should clean the building area::
+
+    rm -rf build
+    rm -rf src/*.egg-info
+
+Then, make sure that everything is in order::
+
+    python3 -m tox -e check
+
+Build the ``sdist`` (and ``bdist_wheel``)::
+
+    python3 setup.py clean --all sdist bdist_wheel
+
+You should now have a new release in ``dist/``!
+
+.. _Tox: https://tox.readthedocs.io/en/latest/
+.. _Sphinx: http://sphinx-doc.org/
+.. _Setuptools: https://pypi.python.org/pypi/setuptools
+.. _Pytest: http://pytest.org/
+.. _isort: https://pypi.python.org/pypi/isort
+.. _bumpversion: https://pypi.org/project/bumpversion
