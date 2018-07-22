@@ -2,8 +2,8 @@ import sys
 sys.path.append("..")
 import unittest
 
-from records.raw_record import RawRecord
-from records.record import create_record
+from pysn.records.raw_record import RawRecord
+from pysn.records.record import create_record
 
 class TestFunctions(unittest.TestCase):
     def test_get_raw_record_name(self):

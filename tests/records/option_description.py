@@ -2,7 +2,7 @@ import sys
 sys.path.append("..")
 import unittest
 
-from records.option_description import OptionDescription, OptionDescriptionList, OptionType  
+from pysn.records.option_description import OptionDescription, OptionDescriptionList, OptionType
 
 class TestFunctions(unittest.TestCase):
     def test_get_raw_record_name(self):

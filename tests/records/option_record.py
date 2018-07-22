@@ -2,8 +2,8 @@ import sys
 sys.path.append("..")
 import unittest
 
-from records.record import create_record
-from records.option_record import SizesRecord
+from pysn.records.record import create_record
+from pysn.records.option_record import SizesRecord
 
 class TestFunctions(unittest.TestCase):
     def test_lexical_tokens(self):
