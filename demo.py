@@ -1,6 +1,11 @@
-from psn.model import Model as Model
+import sys, os, importlib
 
-x = Model("pheno_real.mod")
+path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'src')
+sys.path.append(path)
+pysn = importlib.import_module('pysn')
+sys.path.pop()
+
+x = pysn.Model(os.path.join('tests', 'test_files', 'pheno_real.mod'))
 names = x.input.column_names()
 print(names)
 dataset = x.input.dataset_filename()
