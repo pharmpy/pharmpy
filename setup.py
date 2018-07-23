@@ -10,16 +10,29 @@ from os.path import basename
 from os.path import dirname
 from os.path import join
 from os.path import splitext
+from textwrap import dedent
 
 from setuptools import find_packages
 from setuptools import setup
 
 
 def read(*names, **kwargs):
+    """Read file path relative to setup.py (in encoding; default: utf8)"""
     return io.open(
         join(dirname(__file__), *names),
         encoding=kwargs.get('encoding', 'utf8')
     ).read()
+
+def strip_refs(text_str):
+    """Strip ref text roles (not valid long_description markup)"""
+    return re.sub(':[a-z]+:`~?(.*?)`', r'``\1``', text_str)
+
+def longdesc(text_str):
+    """Extract blocks between start-longdesc and end-longdesc directives"""
+    pat = '(?<=^\.\. start-longdesc).*?(?=^\.\. end-longdesc)'
+    txt = re.compile(pat, re.MULTILINE | re.DOTALL).findall(text_str)
+    txt = [dedent(block).strip() for block in txt]
+    return '\n\n'.join(txt)
 
 
 setup(
@@ -28,8 +41,8 @@ setup(
     license='Proprietary',
     description='Pharmacometric model parsing (PsN reimagining)',
     long_description='%s\n%s' % (
-        re.compile('^.. start-summary.*^.. end-summary', re.M | re.S).sub('', read('README.rst')),
-        re.sub(':[a-z]+:`~?(.*?)`', r'``\1``', read('CHANGELOG.rst'))
+        strip_refs(longdesc(read('README.rst'))),
+        strip_refs(read('CHANGELOG.rst'))
     ),
     author='Rikard Nordgren',
     author_email='rikard.nordgren@farmbio.uu.se',
