@@ -15,5 +15,7 @@ include README.rst
 include tox.ini
 
 exclude demo.py
+exclude local
+recursive-exclude local *
 
 global-exclude *.py[cod] __pycache__
