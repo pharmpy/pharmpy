@@ -10,7 +10,7 @@ read the NONMEM model ``pheno_real.mod`` the following is sufficient:
 
     from pysn import Model
 
-    path = 'tests/test_data/pheno_real.mod'
+    path = 'tests/testdata/nonmem/pheno_real.mod'
     pheno = Model(path)
 
 The format is automatically detected:
