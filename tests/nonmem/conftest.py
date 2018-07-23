@@ -1,11 +1,11 @@
 import pytest
-from pysn import get_api
+from pysn import api_list
 from testhelper_paths import *
 
 
 @pytest.fixture(scope='module')
 def api():
-    return get_api('nonmem')
+    return api_list.get('nonmem')
 
 @pytest.fixture(scope='module')
 def path_testdata(path_testdata):

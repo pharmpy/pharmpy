@@ -1,66 +1,39 @@
-import pkgutil
-import importlib
-
-from . import models
-
-class ModelException(Exception):
-    pass
-
-class ModelParsingError(Exception):
-    pass
+"""Generic model API"""
+from .model_apis import api_list
 
 class Model:
     """A generic model of any type
-       will keep track of the native model class and the different apis
+
+    Will keep track of the filename, native model class and the current api.
     """
     def __init__(self, filename=None):
+        """Detects API and loads model if filename given"""
         self.filename = filename
-        if filename:
-            self.detect_type()
-        else:
-            self.type = None
+        self._api = None
+        if self.filename:
+            self.init_model()
 
     @property
     def type(self):
-        """Filetype (non-agnostic API) property"""
-        return self._type
+        """Filetype (API name)"""
+        return self._api.module.name if self._api else None
 
     @type.setter
-    def type(self, value):
-        if value:
-            _ = get_api(value)
-            self._type = value
-        else:
-            self._type = None
+    def type(self, name):
+        self._api = None
+        if name:
+            self._api = api_list.get(name)
 
-    def detect_type(self):
-        with open(self.filename, 'r') as f:
-            content = f.read()
-        content_array = content.split('\n')
-
-        for importer, modname, ispkg in pkgutil.iter_modules(models.__path__):
-            if ispkg:
-                api = get_api(modname)
-                if api.detect(content_array):
-                    self.type = modname
-                    break
-
-        if not self.type:
-            raise ModelException("Unknown model type of file '%s'" % filename)
-        else:
-            self.init_model()
+    @property
+    def api(self):
+        """API (tuple) supporting current filetype"""
+        return self._api
 
     def init_model(self):
-        api = get_api(self.type)
-        self.model = api.Model(self.filename)
+        """Detect filetype, and read model with API"""
+        self._api = api_list.filedetect(self.filename)
+        self.model = self._api.module.Model(self.filename)
         self.input = self.model.input
 
     def __str__(self):
         return str(self.model)
-
-def get_api(name):
-    modpath = models.__name__ + '.' + name
-    api = importlib.import_module(modpath)
-    if not api:
-        raise ModelException("Unknown model type (no '%s' api module)" % name)
-    return api

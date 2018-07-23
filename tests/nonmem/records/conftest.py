@@ -5,4 +5,4 @@ import pytest
 
 @pytest.fixture(scope='module')
 def records(api):
-    return api.records
+    return api.module.records

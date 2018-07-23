@@ -1,10 +1,10 @@
+"""(Specific) NONMEM 7.x model API"""
 from .records.factory import create_record
-from ...model import ModelParsingError
+from ...exceptions import *
 
 
 def create_unique_symbol(symbols, prefix):
-    """ Create a unique symbol with prefix given a list of used symbols
-    """
+    """Create a unique symbol with prefix given a list of used symbols"""
     count = 1
     while True:
         candidate = prefix + str(count)
@@ -14,14 +14,16 @@ def create_unique_symbol(symbols, prefix):
             return candidate
 
 
-
 class Input:
+    """A NONMEM 7.x model $INPUT class"""
     def __init__(self, model):
         self.model = model
 
     def column_names(self, problem=0):
-        """ Get a list of the column names of the input dataset
-            Limitation: Tries to create unique symbol for anonymous columns, but only use the INPUT names
+        """Gets a list of the column names of the input dataset
+
+        Limitation: Tries to create unique symbol for anonymous columns, but
+        only uses the INPUT names.
         """
         records = self.model.get_records("INPUT", problem=problem)
         all_symbols = []
@@ -42,8 +44,7 @@ class Input:
         return names
 
     def dataset_filename(self, problem=0):
-        """ Get the filename of the dataset
-        """
+        """Get the filename of the dataset"""
         data_records = self.model.get_records("DATA", problem=problem)
         pairs = data_records[0].ordered_pairs()
         first_pair = next(iter(pairs.items()))
@@ -51,7 +52,9 @@ class Input:
 
 
 class Model:
+    """A NONMEM 7.x model"""
     def __init__(self, filename):
+        """Loads model from file"""
         with open(filename, 'r') as model_file:
             content = model_file.read()
 
@@ -77,6 +80,7 @@ class Model:
         return string
 
     def _validate(self):
+        """Validates model syntactically"""
         # SIZES can only be first
         passed_sizes = False
         for record in self.records:
@@ -87,8 +91,7 @@ class Model:
                 passed_sizes = True
 
     def get_records(self, name, problem=0):
-        """ Get all records with a certain name for a certain problem.
-        """
+        """ Get all records with a certain name for a certain problem"""
         result = []
         curprob = -1
         for record in self.records:

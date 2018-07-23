@@ -1,5 +1,7 @@
 __version__ = '0.1.0'
 
-from .psn.model import Model, get_api
+from .psn.model_apis import api_list
+from .psn.model import Model
 
-__all__ = ['Model', 'get_api']
+
+__all__ = ['api_list', 'Model']
