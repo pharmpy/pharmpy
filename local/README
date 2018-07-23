@@ -1,0 +1,4 @@
+Local file storage. Not checked into repo.
+
+E.g. to clone first commit repo tree:
+mkdir -p local/old/ && git archive 0db96cd | tar -x -C local/old/
