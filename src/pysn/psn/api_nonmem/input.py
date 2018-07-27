@@ -1,10 +1,10 @@
-from .records.factory import create_record
+from pathlib import Path
+
+from . import generic
 
 
-class Input:
+class ModelInput(generic.ModelInput):
     """A NONMEM 7.x model $INPUT class"""
-    def __init__(self, model):
-        self.model = model
 
     def column_names(self, problem=0):
         """Gets a list of the column names of the input dataset
@@ -30,9 +30,10 @@ class Input:
                     names.append(key)
         return names
 
-    def dataset_filename(self, problem=0):
-        """Get the filename of the dataset"""
+    @property
+    def path(self, problem=0):
         data_records = self.model.get_records("DATA", problem=problem)
         pairs = data_records[0].ordered_pairs()
         first_pair = next(iter(pairs.items()))
-        return first_pair[0]
+        path = Path(first_pair[0]).resolve()
+        return path

@@ -27,19 +27,16 @@ for path_model in [join(path, file) for file in listdir(path)]:
     print('str(model) =')
     iprint(str(model))
 
+    print('\nmodel.input.path = %s' % (model.input.path,))
     names = model.input.column_names()
     print('\nmodel.input.columns_names() =')
     iprint(names)
 
-    dataset = model.input.dataset_filename()
-    print('\nmodel.input.dataset_filename() =')
-    iprint(dataset)
-
-    thetas = model.model.get_records('THETA')
-    print("\nmodel.model.get_records('THETA') =")
+    thetas = model.get_records('THETA')
+    print("\nmodel.get_records('THETA') =")
     iprint(thetas)
 
-    print("\nmodel.model.get_records('THETA')[0].tokens =")
+    print("\nmodel.get_records('THETA')[0].tokens =")
     for tok in thetas[0].tokens:
         s = '%-30s %-30s' % (tok.type, repr(str(tok.content)))
         iprint(s)

@@ -1,7 +1,7 @@
 """(Specific) NONMEM 7.x model API"""
+from . import generic
 from .records.factory import create_record
-from ...exceptions import *
-from .input import Input
+from .input import ModelInput
 
 
 def create_unique_symbol(symbols, prefix):
@@ -15,14 +15,11 @@ def create_unique_symbol(symbols, prefix):
             return candidate
 
 
-class Model:
+class Model(generic.Model):
     """A NONMEM 7.x model"""
-    def __init__(self, filename):
-        """Loads model from file"""
-        with open(filename, 'r') as model_file:
-            content = model_file.read()
 
-        record_strings = content.split('$')
+    def load(self):
+        record_strings = self.content.split('$')
         # The first comment does not belong to any record
         if not record_strings[0].startswith('$'):
             self.first_comment = record_strings[0]
@@ -33,17 +30,10 @@ class Model:
             new_record = create_record(string)
             self.records.append(new_record)
 
-        self._validate()
+        self.input = ModelInput(self)
+        self.validate()
 
-        self.input = Input(self)
-
-    def __str__(self):
-        string = self.first_comment
-        for record in self.records:
-            string += str(record)
-        return string
-
-    def _validate(self):
+    def validate(self):
         """Validates model syntactically"""
         # SIZES can only be first
         passed_sizes = False
@@ -64,3 +54,9 @@ class Model:
             elif curprob == problem and record.name == name:
                 result.append(record)
         return result
+
+    def __str__(self):
+        string = self.first_comment
+        for record in self.records:
+            string += str(record)
+        return string

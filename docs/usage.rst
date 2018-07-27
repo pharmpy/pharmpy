@@ -18,19 +18,19 @@ The format is automatically detected:
 .. doctest::
     :pyversion: > 3.6
 
-    >>> pheno.type
-    'nonmem'
+    >>> type(pheno)
+    <class 'pysn.psn.api_nonmem.model.Model'>
 
 Parsing is only performed when necessary, e.g.
 
 .. doctest::
     :pyversion: > 3.6
 
-    >>> pheno.input.dataset_filename()
+    >>> pheno.input.path.name
     'pheno.dta'
     >>> print(pheno.input.column_names())
     ['ID', 'TIME', 'AMT', 'WGT', 'APGR', 'DV', 'FA1', 'FA2']
-    >>> thetas = pheno.model.get_records('THETA')
+    >>> thetas = pheno.get_records('THETA')
     >>> for token in thetas[0].tokens:
     ...     print(token.type, repr(str(token.content)))
     ThetaTokenType.WHITESPACE '  '
