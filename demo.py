@@ -4,11 +4,10 @@ import sys
 import importlib
 
 def iprint(text, width=4):
-    lines = text
     if isinstance(text, str):
         lines = text.splitlines()
-    elif not all(isinstance(x, str) for x in lines):
-        lines = ['%d : %s' % (i, str(x)) for i, x in enumerate(lines)]
+    else:
+        lines = ['%d : %s' % (i, str(x)) for i, x in enumerate(text)]
     lines = [' '*width + line for line in lines]
     print('\n'.join(lines))
 
@@ -16,6 +15,7 @@ def iprint(text, width=4):
 root = dirname(realpath(__file__))
 sys.path.append(join(root, 'src'))
 pysn = importlib.import_module('pysn')
+# lexer = importlib.import_module('pysn.psn.lexer')
 sys.path.pop()
 
 path = join(root, 'tests', 'testdata', 'nonmem')
@@ -36,7 +36,7 @@ for path_model in [join(path, file) for file in listdir(path)]:
     print("\nmodel.get_records('THETA') =")
     iprint(thetas)
 
-    print("\nmodel.get_records('THETA')[0].tokens =")
-    for tok in thetas[0].tokens:
-        s = '%-30s %-30s' % (tok.type, repr(str(tok.content)))
-        iprint(s)
+    print("\nmodel.get_records('THETA')[0].lexer =")
+    print(thetas[0].lexer)
+
+# lexer.test()

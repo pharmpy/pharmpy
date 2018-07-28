@@ -3,7 +3,7 @@ Usage
 =====
 
 The :class:`pysn.Model` class is a model agnostic entry point. For example, to
-read the NONMEM model ``pheno_real.mod`` the following is sufficient:
+read the NONMEM model ``pheno_real.mod``, the following is sufficient:
 
 .. testcode::
     :pyversion: > 3.6
@@ -13,7 +13,7 @@ read the NONMEM model ``pheno_real.mod`` the following is sufficient:
     path = 'tests/testdata/nonmem/pheno_real.mod'
     pheno = Model(path)
 
-The format is automatically detected:
+The API is automatically detected and used:
 
 .. doctest::
     :pyversion: > 3.6
@@ -31,14 +31,17 @@ Parsing is only performed when necessary, e.g.
     >>> print(pheno.input.column_names())
     ['ID', 'TIME', 'AMT', 'WGT', 'APGR', 'DV', 'FA1', 'FA2']
     >>> thetas = pheno.get_records('THETA')
-    >>> for token in thetas[0].tokens:
+    >>> tokens = thetas[0].lexer.tokens
+    >>> print(tokens)
+    <generator object tokens at ...
+    >>> for token in tokens:
     ...     print(token.type, repr(str(token.content)))
-    ThetaTokenType.WHITESPACE '  '
-    ThetaTokenType.OPENPAREN '('
-    ThetaTokenType.TOKEN '0'
-    ThetaTokenType.COMMA ','
-    ThetaTokenType.TOKEN '0.00469307'
-    ThetaTokenType.CLOSEPAREN ')'
-    ThetaTokenType.WHITESPACE ' '
-    ThetaTokenType.COMMENT '; CL'
-    ThetaTokenType.WHITESPACE '\n'
+    ThetaRecordToken.WHITESPACE '  '
+    ThetaRecordToken.OPENPAREN '('
+    ThetaRecordToken.TOKEN '0'
+    ThetaRecordToken.COMMA ','
+    ThetaRecordToken.TOKEN '0.00469307'
+    ThetaRecordToken.CLOSEPAREN ')'
+    ThetaRecordToken.WHITESPACE ' '
+    ThetaRecordToken.COMMENT '; CL'
+    ThetaRecordToken.WHITESPACE '\n'

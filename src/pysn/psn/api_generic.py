@@ -11,7 +11,8 @@ class ModelException(Exception):
 
 
 class ModelParsingError(ModelException):
-    pass
+    def __init__(self, msg='model parse error'):
+        super().__init__(msg)
 
 
 class Model(object):
@@ -56,4 +57,11 @@ class ModelInput(object):
     @property
     def path(self):
         """Gets the path of the dataset"""
+        raise NotImplementedError
+
+class ParameterModel:
+    def __init__(self, model):
+        self.model = model
+
+    def initial_estimates(self):
         raise NotImplementedError
