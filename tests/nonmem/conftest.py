@@ -1,6 +1,7 @@
+
 import pytest
+from pathlib import Path
 from pysn import getAPI
-from testhelper_paths import *
 
 
 @pytest.fixture(scope='module')
@@ -8,9 +9,9 @@ def nonmemAPI():
     return getAPI('nonmem')
 
 @pytest.fixture(scope='module')
-def path_testdata(path_testdata):
-    return dir_check(path_testdata, 'nonmem')
+def nm_testdata(testdata):
+    return testdata / 'nonmem'
 
 @pytest.fixture(scope='module')
-def pheno_real(path_testdata):
-    return file_check(path_testdata, 'pheno_real.mod')
+def pheno_real(nm_testdata):
+    return nm_testdata / 'pheno_real.mod'

@@ -1,7 +1,7 @@
 import re
 
 from .record import Record
-from ...lexer import Lexer
+from pysn.parse_utils.oldlexer import Lexer
 
 
 class ThetaRecordLexer(Lexer):

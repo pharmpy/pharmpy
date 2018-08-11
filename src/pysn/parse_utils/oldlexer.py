@@ -3,13 +3,15 @@
 Inspiration from:
     * http://pygments.org/docs/lexerdevelopment/
     * https://gist.github.com/eliben/5797351/
+
+NOW DEPRECATED... but I can't delete it just yet.
 """
 from collections import namedtuple
 from textwrap import dedent
 import re
 import sys
 
-from .api_generic import ModelParsingError
+from ..psn.api_generic import ModelParsingError
 
 
 TokenRule = namedtuple('TokenRule', 'regex type action')
