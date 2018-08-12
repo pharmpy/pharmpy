@@ -21,7 +21,8 @@ The API is automatically detected and used:
     >>> type(pheno)
     <class 'pysn.psn.api_nonmem.model.Model'>
 
-Parsing is only performed when necessary, e.g.
+Parsing uses lark-parser_ in the backend, with derived classes for some
+automated tasks.
 
 .. doctest::
     :pyversion: > 3.6
@@ -31,17 +32,50 @@ Parsing is only performed when necessary, e.g.
     >>> print(pheno.input.column_names())
     ['ID', 'TIME', 'AMT', 'WGT', 'APGR', 'DV', 'FA1', 'FA2']
     >>> thetas = pheno.get_records('THETA')
-    >>> tokens = thetas[0].lexer.tokens
-    >>> print(tokens)
-    <generator object tokens at ...
-    >>> for token in tokens:
-    ...     print(token.type, repr(str(token.content)))
-    ThetaRecordToken.WHITESPACE '  '
-    ThetaRecordToken.OPENPAREN '('
-    ThetaRecordToken.TOKEN '0'
-    ThetaRecordToken.COMMA ','
-    ThetaRecordToken.TOKEN '0.00469307'
-    ThetaRecordToken.CLOSEPAREN ')'
-    ThetaRecordToken.WHITESPACE ' '
-    ThetaRecordToken.COMMENT '; CL'
-    ThetaRecordToken.WHITESPACE '\n'
+    >>> thetas[0].root
+    AttrTree(root) '  (0,0.00469307) ; CL\n'
+    >>> str(thetas[0].root)
+    '  (0,0.00469307) ; CL\n'
+    >>> print(thetas[0].parser)
+    '  (0,0.00469307) ; CL\n'
+    root '  (0,0.00469307) ; CL\n'
+     ├─ whitespace '  '
+     │  └─ WS_MULTILINE '  '
+     └─ theta '(0,0.00469307) ; CL\n'
+        ├─ LP '('
+        ├─ lower_bound '0'
+        │  └─ NUMERIC '0'
+        ├─ sep ','
+        │  └─ COMMA ','
+        ├─ init '0.00469307'
+        │  └─ NUMERIC '0.00469307'
+        ├─ RP ')'
+        ├─ whitespace ' '
+        │  └─ WS ' '
+        └─ comment '; CL\n'
+           ├─ SEMICOLON ';'
+           ├─ text ' CL'
+           │  └─ NOT_NL ' CL'
+           └─ NL '\n'
+    >>> for node in thetas[0].root.tree_walk():
+    ...     print(node.__class__.__name__, node.rule, repr(str(node)))
+    AttrTree whitespace '  '
+    AttrToken WS_MULTILINE '  '
+    AttrTree theta '(0,0.00469307) ; CL\n'
+    AttrToken LP '('
+    AttrTree lower_bound '0'
+    AttrToken NUMERIC '0'
+    AttrTree sep ','
+    AttrToken COMMA ','
+    AttrTree init '0.00469307'
+    AttrToken NUMERIC '0.00469307'
+    AttrToken RP ')'
+    AttrTree whitespace ' '
+    AttrToken WS ' '
+    AttrTree comment '; CL\n'
+    AttrToken SEMICOLON ';'
+    AttrTree text ' CL'
+    AttrToken NOT_NL ' CL'
+    AttrToken NL '\n'
+
+.. _lark-parser: https://pypi.org/project/lark-parser/

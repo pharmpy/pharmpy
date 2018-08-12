@@ -40,7 +40,6 @@ class AttrToken(Token):
     Attributes:
         rule (str): Rule name (in common with :class:`AttrTree`).
         eval: Transformed data type (in common with :class:`AttrTree`).
-        header (str): Some pretty str (in common with :class:`AttrTree`).
     """
 
     __slots__ = ('rule', 'eval')
@@ -59,14 +58,11 @@ class AttrToken(Token):
             self.eval = str(self.value)
         return self
 
-    @property
-    def header(self):
-        clsname = self.__class__.__name__
-        return '%s(%s)' % (clsname, self.rule)
+    def str_repr(self):
+        return repr(str(self))[1:-1]
 
     def __repr__(self):
-        s = '%s: %s %s' % (self.header, repr(self.eval), type(self.eval))
-        return s
+        return '%s(%s) %s' % (self.__class__.__name__, self.rule, repr(str(self)))
 
 
 class NoSuchRuleException(AttributeError):
@@ -92,7 +88,6 @@ class AttrTree(Tree):
         rule: Rule name (in common with :class:`.AttrToken`).
         rules: All rule names (for :attr:`.children`).
         eval: Transformed data type (in common with :class:`.AttrToken`).
-        header: Some pretty str (in common with :class:`.AttrToken`).
         _attrtoken: :class:`AttrToken` implementation.
     """
 
@@ -151,20 +146,24 @@ class AttrTree(Tree):
         """Sets first child matching rule (raises if none)"""
         self._setchild_(rule, value)
 
+    def tree_walk(self):
+        """Generator for (depth-first, i.e. parse order) iter over children"""
+        for child in self.children:
+            yield child
+            try:
+                yield from child.tree_walk()
+            except AttributeError:
+                continue
+
+    def str_repr(self):
+        return repr(str(self))[1:-1]
+
     def treeprint(self, content=True, indent=''):
         """Formats tree structure (for grammar debugging purposes)"""
         lines = str(prettyprint.transform(self, content)).splitlines()
         print('\n'.join(indent + line for line in lines))
 
-    @property
-    def header(self):
-        clsname = self.__class__.__name__
-        return '%s(%s)' % (clsname, self.rule)
-
     # -- private methods -----------------------------------------------
-    def __repr__(self):
-        return '%s: %s' % (self.header, repr(str(self)))
-
     def __len__(self):
         return len(self.children)
 
@@ -207,15 +206,6 @@ class AttrTree(Tree):
         children[item] = value
         type(self)._attrset(self, 'children', children)
 
-    def __str__(self):
-        children = type(self)._attrget(self, 'children')
-        if not children:
-            return ''
-        out = ''
-        for i, child in enumerate(children):
-            out += str(child)
-        return out
-
     @classmethod
     def _attrget(cls, obj, attr):
         return object.__getattribute__(obj, attr)
@@ -223,6 +213,13 @@ class AttrTree(Tree):
     @classmethod
     def _attrset(cls, obj, attr, value):
         return object.__setattr__(obj, attr, value)
+
+    def __str__(self):
+        children = type(self)._attrget(self, 'children')
+        return ''.join(str(x) for x in children)
+
+    def __repr__(self):
+        return '%s(%s) %s' % (self.__class__.__name__, self.rule, repr(str(self)))
 
 
 class PreParser(Transformer):
@@ -371,6 +368,9 @@ class GenericParser:
         ).update(lark_options)
         if buf:
             self.parse(buf)
+        else:
+            self.buffer = None
+            self.root = None
 
     def parse(self, buf):
         """Parses a buffer, transforms and constructs :class:`AttrTree` object.
@@ -388,3 +388,10 @@ class GenericParser:
         self.root = self.lark_parser.parse(self.buffer)
         self.root = self.PreParser().transform(self.root)
         self.root = self._attrtree.transform(tree=self.root)
+
+    def __str__(self):
+        if not self.root:
+            return repr(self)
+        lines = [repr(x) for x in self.buffer.splitlines(True)]
+        lines += str(prettyprint.transform(self.root, True)).splitlines()
+        return '\n'.join(lines)

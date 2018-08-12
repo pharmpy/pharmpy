@@ -4,12 +4,11 @@
 from pathlib import Path
 
 # TODO: remove debug sys.path... when done debugging, of course
-if True:
-    from os import curdir
-    from pathlib import Path
+if __name__ == '__main__':
     import sys
     src = Path(__file__).resolve().parent.parent.parent.parent.parent
     sys.path.insert(0, str(src))
+
 from pysn.psn import GenericParser
 
 
