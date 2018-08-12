@@ -22,6 +22,21 @@ class RecordParser(GenericParser):
         super(RecordParser, self).__init__(buf)
 
 
+class ProblemRecordParser(RecordParser):
+    grammar_filename = 'problem_record.g'
+    class PreParser(GenericParser.PreParser):
+        def root(self, items):
+            if self.first('text', items) is None:
+                text = self.Tree('text', [self.Token('TEXT', '')])
+                items = [text] + items
+            return self.Tree('root', items)
+        def comment(self, items):
+            if self.first('COMMENT', items) is None:
+                COMMENT = self.Token('COMMENT', '')
+                items = [items[0]] + [COMMENT] + items[1:]
+            return self.Tree('comment', items)
+
+
 class ThetaRecordParser(RecordParser):
     grammar_filename = 'theta_records.g'
     class PreParser(GenericParser.PreParser):
@@ -40,42 +55,3 @@ class ThetaRecordParser(RecordParser):
 
         def root(self, items):
             return self.Tree('root', self.flatten(items))
-
-
-if __name__ == '__main__':
-    from textwrap import dedent
-    testdata = ['''
-        123 FIX ; TEST
-        (456)x3 ; TEST
-    ''', '''
-      (,.1)
-      (3)x 2
-      (0,0.00469307) ; CL
-      (0,1.00916) ; V
-      (-.99,.1)
-    ''', '''
-
-      (0, 0.00469307) ; CL
-
-      12.3 ; V
-      ; comment
-        ; comment
-      (3) x 5
-
-    ''']
-    # for data in testdata:
-    data = testdata[1]
-    buf = dedent(data)
-    parser = ThetaRecordParser(buf)
-    root = parser.root
-
-    # import pdb; pdb.set_trace()
-    print(root)
-    print('\n')
-    root.treeprint('full')
-
-    thetas = root.all('theta')
-    print('thetas[1]:', repr(thetas[1]))
-    print('thetas[0].init:', repr(str(thetas[0].init)))
-    print('thetas[0].init.NUMERIC:', repr(thetas[0].init.NUMERIC))
-    # print(root.parameter.init.NUMERIC)

@@ -10,10 +10,10 @@ def _preview(content):
     """Represents str and cut into shorts if too long"""
     cut = len(content) - MAXLEN
     if cut > 0:
-        preview = repr(content[0:MAXLEN])
-        preview = '%s.. +%d' % (preview, cut)
+        preview = '"' + repr(content[0:MAXLEN])[1:-1] + '"'
+        preview = '%s+%d' % (preview, cut)
     else:
-        preview = repr(content)
+        preview = '"' + repr(content)[1:-1] + '"'
     return preview
 
 

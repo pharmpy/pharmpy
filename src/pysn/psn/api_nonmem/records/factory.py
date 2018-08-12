@@ -1,7 +1,12 @@
+#!/usr/bin/env python3
+# -*- encoding: utf-8 -*-
+
 import re
-from . import records_list as records_list
-from . import raw_record as raw_record
+
 from . import option_record as option_record
+from . import problem_record as problem_record
+from . import raw_record as raw_record
+from . import records_list as records_list
 from . import theta_record as theta_record
 
 def get_raw_record_name(line):
@@ -40,13 +45,15 @@ def create_record(line):
     if name:
         record_class_name = records_list.known_records[name]
     else:
-        record_class_name = "RawRecord"
-    if record_class_name == "RawRecord":
+        record_class_name = 'RawRecord'
+    if record_class_name == 'RawRecord':
         record = raw_record.RawRecord(content)
-    elif record_class_name == "OptionRecord":
+    elif record_class_name == 'OptionRecord':
         record = option_record.OptionRecord(content)
-    elif record_class_name == "ThetaRecord":
+    elif record_class_name == 'ThetaRecord':
         record = theta_record.ThetaRecord(content)
+    elif record_class_name == 'ProblemRecord':
+        record = problem_record.ProblemRecord(content)
     record.raw_name = raw_name
     record.name = name
     return record

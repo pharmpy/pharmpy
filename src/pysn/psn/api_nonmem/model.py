@@ -1,7 +1,8 @@
 """(Specific) NONMEM 7.x model API"""
 from . import generic
-from .records.factory import create_record
 from .input import ModelInput
+from .parameters import ParameterModel
+from .records.factory import create_record
 
 
 def create_unique_symbol(symbols, prefix):
@@ -18,6 +19,30 @@ def create_unique_symbol(symbols, prefix):
 class Model(generic.Model):
     """A NONMEM 7.x model"""
 
+    @property
+    def index(self):
+        return self._index
+
+    @index.setter
+    def index(self, new):
+        pos = None
+        prob_i = -1
+        for i, record in enumerate(self.records):
+            if record.name != 'PROBLEM':
+                continue
+            prob_i += 1
+            if pos:
+                pos = (pos[0], i)
+                break
+            elif prob_i == new or record.string == new:
+                pos = (i, None)
+        if not pos:
+            raise generic.ModelLookupError(new)
+        elif not pos[1]:
+            pos = (pos[0], i)
+        self._index = prob_i
+        self._index_records = pos
+
     def load(self):
         record_strings = self.content.split('$')
         # The first comment does not belong to any record
@@ -30,28 +55,27 @@ class Model(generic.Model):
             new_record = create_record(string)
             self.records.append(new_record)
 
+        self.index = 0
         self.input = ModelInput(self)
+        self.parameters = ParameterModel(self)
         self.validate()
 
     def validate(self):
         """Validates model syntactically"""
         # SIZES can only be first
-        passed_sizes = False
-        for record in self.records:
-            if record.name == "SIZES":
-                if passed_sizes:
-                    raise ModelParsingError("The SIZES record must come before the first PROBLEM record")
-            else:
-                passed_sizes = True
+        assert self._index == 0
+        for i, record in enumerate(self.records):
+            if i < self._index_records[0]:
+                continue
+            if record.name == 'SIZES':
+                raise ModelParsingError('The SIZES record must come before the first PROBLEM record')
 
-    def get_records(self, name, problem=0):
-        """ Get all records with a certain name for a certain problem"""
+    def get_records(self, name):
+        """Get all records with a certain name"""
         result = []
-        curprob = -1
-        for record in self.records:
-            if record.name == "PROBLEM":
-                curprob += 1
-            elif curprob == problem and record.name == name:
+        pos = self._index_records
+        for record in self.records[pos[0]:pos[1]]:
+            if record.name == name:
                 result.append(record)
         return result
 

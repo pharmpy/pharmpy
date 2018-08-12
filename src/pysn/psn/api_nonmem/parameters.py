@@ -11,4 +11,4 @@ class ParameterModel(generic.ParameterModel):
         params = self.thetas()
 
     def thetas(self, problem=0):
-        records = self.model.get_records("THETA", problem=problem)
+        records = self.model.get_records('THETA', problem=problem)

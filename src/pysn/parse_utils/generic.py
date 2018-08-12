@@ -58,6 +58,13 @@ class AttrToken(Token):
             self.eval = str(self.value)
         return self
 
+    def replace(self, value):
+        """Returns new Token (of same rule) with value replaced.
+
+        OBS! Positions (column, pos_in_stream, etc.) will be lost.
+        """
+        return type(self)(self.rule, value)
+
     def str_repr(self):
         return repr(str(self))[1:-1]
 
@@ -155,6 +162,21 @@ class AttrTree(Tree):
             except AttributeError:
                 continue
 
+    def set(self, value, rule=None):
+        """Sets value for first token matching rule (or leaf if None)"""
+        if rule:
+            token = self.find(rule)
+        else:
+            if not len(self.children) == 1:
+                raise AssertionError('no rule but node not leaf (ambigiuous)')
+            token = self.children[0]
+            rule = token.rule
+        try:
+            new = token.replace_value(value)
+        except AttributeError as e:
+            raise TypeError('child not a token: %s' % (token,)) from e
+        self.set_child(rule, new)
+
     def str_repr(self):
         return repr(str(self))[1:-1]
 
@@ -196,10 +218,9 @@ class AttrTree(Tree):
         if attr in dir(self):
             return type(self)._attrget(self, attr)
         child = self._getchild_(attr)
-        if child:
-            return child.eval
-        else:
+        if child is None:
             raise NoSuchRuleException(attr, self)
+        return child.eval
 
     def _safeset_child_item(self, item, value):
         children = type(self)._attrget(self, 'children')
@@ -366,7 +387,7 @@ class GenericParser:
             start='root',
             transformer=self.PreParser,
         ).update(lark_options)
-        if buf:
+        if buf is not None:
             self.parse(buf)
         else:
             self.buffer = None
@@ -389,9 +410,8 @@ class GenericParser:
         self.root = self.PreParser().transform(self.root)
         self.root = self._attrtree.transform(tree=self.root)
 
-    def __str__(self):
+    def __str__(self, content=True):
         if not self.root:
             return repr(self)
-        lines = [repr(x) for x in self.buffer.splitlines(True)]
-        lines += str(prettyprint.transform(self.root, True)).splitlines()
+        lines = str(prettyprint.transform(self.root, content)).splitlines()
         return '\n'.join(lines)

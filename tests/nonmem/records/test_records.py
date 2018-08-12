@@ -1,21 +1,25 @@
+
+from textwrap import dedent
+
 import pytest
+
 
 def test_create_record(records):
     create_record = records.create_record
 
     obj = create_record("PROBLEM ID TIME")
-    assert obj.__class__.__name__ == "RawRecord"
+    assert obj.__class__.__name__ == "ProblemRecord"
     assert obj.name == "PROBLEM"
 
     obj = create_record("PROB ID TIME")
-    assert obj.__class__.__name__ == "RawRecord"
+    assert obj.__class__.__name__ == "ProblemRecord"
     assert obj.name == "PROBLEM"
 
     obj = create_record("PROB  MYPROB")
-    assert obj.__class__.__name__, "RawRecord"
+    assert obj.__class__.__name__, "ProblemRecord"
     assert obj.name, "PROBLEM"
     assert obj.raw_name, "PROB"
-    assert obj.content, "  MYPROB"
+    assert obj.string, "MYPROB"
 
 def test_lexical_tokens(records):
     create_record = records.create_record

@@ -1,1 +1,7 @@
-known_records = { 'PROBLEM' : "RawRecord", 'SIZES' : "OptionRecord", 'INPUT' : "OptionRecord", 'DATA' : "OptionRecord", 'THETA' : "ThetaRecord" }
+known_records = {
+    'DATA'    : 'OptionRecord',
+    'INPUT'   : 'OptionRecord',
+    'PROBLEM' : 'ProblemRecord',
+    'SIZES'   : 'OptionRecord',
+    'THETA'   : 'ThetaRecord',
+}
