@@ -1,7 +1,13 @@
-from os import listdir
-from os.path import join, dirname, realpath
-import sys
+#!/usr/bin/env python3
+# -*- encoding: utf-8 -*-
+
 import importlib
+import sys
+from os import listdir
+from os.path import dirname
+from os.path import join
+from os.path import realpath
+
 
 def iprint(text, width=4):
     if isinstance(text, str):
@@ -10,6 +16,7 @@ def iprint(text, width=4):
         lines = ['%d : %s' % (i, str(x)) for i, x in enumerate(text)]
     lines = [' '*width + line for line in lines]
     print('\n'.join(lines))
+
 
 # load ./src/pysn as library 'pysn'
 root = dirname(realpath(__file__))
