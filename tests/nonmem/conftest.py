@@ -1,13 +1,11 @@
 
-from functools import partial
-
 import pytest
 
 from pysn import getAPI
 
 
 @pytest.fixture(scope='module')
-def nonmemAPI():
+def nm_api():
     return getAPI('nonmem')
 
 
@@ -19,8 +17,3 @@ def nm_testdata(testdata):
 @pytest.fixture(scope='module')
 def pheno_real(nm_testdata):
     return nm_testdata / 'pheno_real.mod'
-
-
-@pytest.fixture(scope='module')
-def nm_csv_read(nm_testdata, csv_read):
-    return partial(csv_read, nm_testdata)

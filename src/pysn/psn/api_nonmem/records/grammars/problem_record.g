@@ -1,13 +1,9 @@
-root : other* text? other*
+root : [WS] text? (comment | WS_ALL)*
 
 text     : TEXT
-other    : WS_ALL          -> whitespace
-         | [WS] comment NL -> line
-
-comment  : ";" [WS] [COMMENT] [WS]
+comment  : ";" [WS] [TEXT] [WS]
 
 TEXT     : /\S.*(?<!\s)/
-COMMENT  : /\S[^;]*(?<!\s)/
 
 WS       : (" "|/\t/)+
 NL       : /\r?\n/

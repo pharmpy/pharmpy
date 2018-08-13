@@ -27,13 +27,11 @@ class ProblemRecordParser(RecordParser):
     class PreParser(GenericParser.PreParser):
         def root(self, items):
             if self.first('text', items) is None:
-                text = self.Tree('text', [self.Token('TEXT', '')])
-                items = [text] + items
+                items.insert(0, self.Tree('text', [self.Token('TEXT', '')]))
             return self.Tree('root', items)
         def comment(self, items):
-            if self.first('COMMENT', items) is None:
-                COMMENT = self.Token('COMMENT', '')
-                items = [items[0]] + [COMMENT] + items[1:]
+            if self.first('TEXT', items) is None:
+                items.insert(1, self.Token('TEXT', ''))
             return self.Tree('comment', items)
 
 

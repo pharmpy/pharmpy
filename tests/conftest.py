@@ -15,9 +15,9 @@ def testdata():
     return Path(__file__).resolve().parent / 'testdata'
 
 
-@pytest.fixture(scope='session')
-def SOURCE():
-    return Path(__file__).resolve().parent.parent / 'src'
+# @pytest.fixture(scope='session')
+# def SOURCE():
+#     return Path(__file__).resolve().parent.parent / 'src'
 
 
 @pytest.fixture(scope='session')
@@ -44,4 +44,13 @@ def csv_read():
             reader = csv.reader(f, dialect)
             return tuple(TestData(*tuple(map(tupleize, row))) for row in reader)
 
+    return func
+
+
+@pytest.fixture(scope='session')
+def str_repr():
+    def func(string):
+        if not string:
+            return '-- EMPTY --'
+        return '"' + repr(string)[1:-1] + '"'
     return func
