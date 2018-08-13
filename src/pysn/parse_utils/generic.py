@@ -44,10 +44,11 @@ class AttrToken(Token):
 
     __slots__ = ('rule', 'eval')
 
-    def __new__(cls, token):
+    def __new__(cls, token, **replace):
         kwargs = dict(type_=token.type, value=token.value,
                       pos_in_stream=token.pos_in_stream, line=token.line,
                       column=token.column)
+        kwargs.update(replace)
         self = super(AttrToken, cls).__new__(cls, **kwargs)
         self.rule = self.type
         if token.type == 'INT':
@@ -59,11 +60,8 @@ class AttrToken(Token):
         return self
 
     def replace(self, value):
-        """Returns new Token (of same rule) with value replaced.
-
-        OBS! Positions (column, pos_in_stream, etc.) will be lost.
-        """
-        return type(self)(self.rule, value)
+        """Returns new Token (of same rule) with value replaced."""
+        return type(self)(self, value=value)
 
     def str_repr(self):
         return repr(str(self))[1:-1]
@@ -172,9 +170,9 @@ class AttrTree(Tree):
             token = self.children[0]
             rule = token.rule
         try:
-            new = token.replace_value(value)
+            new = token.replace(value)
         except AttributeError as e:
-            raise TypeError('child not a token: %s' % (token,)) from e
+            raise TypeError('child not a token: %s' % (repr(token),)) from e
         self.set_child(rule, new)
 
     def str_repr(self):
@@ -203,7 +201,7 @@ class AttrTree(Tree):
     def _setchild_(self, rule, value):
         for i, child in enumerate(self.children):
             if type(self)._attrget(child, 'rule') == rule:
-                return type(self)._safeset_item(child, i, value)
+                return self._safeset_child_item(i, value)
         raise NoSuchRuleException(rule, self)
 
     def __getitem__(self, item):

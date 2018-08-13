@@ -2,8 +2,8 @@
 import pytest
 
 
-def test_create_record(nm_api):
-    create_record = nm_api.records.create_record
+def test_create_record(api):
+    create_record = api.records.create_record
 
     obj = create_record("PROBLEM ID TIME")
     assert obj.__class__.__name__ == "ProblemRecord"
@@ -20,15 +20,15 @@ def test_create_record(nm_api):
     assert obj.string, "MYPROB"
 
 
-def test_lexical_tokens(nm_api):
-    create_record = nm_api.records.create_record
+def test_lexical_tokens(api):
+    create_record = api.records.create_record
 
     obj = create_record("SIZES LTH=28")
     assert list(obj._lexical_tokens()) == ["LTH=28"]
 
 
-def test_get_raw_record_name(nm_api):
-    get_raw_record_name = nm_api.records.get_raw_record_name
+def test_get_raw_record_name(api):
+    get_raw_record_name = api.records.get_raw_record_name
 
     assert get_raw_record_name("INPUT ID TIME DV") == "INPUT"
     assert get_raw_record_name("INPUT") == "INPUT"
@@ -38,8 +38,8 @@ def test_get_raw_record_name(nm_api):
     assert get_raw_record_name("DATA\ntest.csv") == "DATA"
 
 
-def test_get_canonical_record_name(nm_api):
-    get_canonical_record_name = nm_api.records.get_canonical_record_name
+def test_get_canonical_record_name(api):
+    get_canonical_record_name = api.records.get_canonical_record_name
 
     assert get_canonical_record_name("INPUT") == "INPUT"
     assert get_canonical_record_name("INP") == "INPUT"
@@ -48,8 +48,8 @@ def test_get_canonical_record_name(nm_api):
     assert get_canonical_record_name("DA&\nT&\nA") == "DATA"
 
 
-def test_get_record_content(nm_api):
-    get_record_content = nm_api.records.get_record_content
+def test_get_record_content(api):
+    get_record_content = api.records.get_record_content
 
     assert get_record_content("INP ID TIME") == " ID TIME"
     assert get_record_content("INP ID TIME\n") == " ID TIME\n"
@@ -58,8 +58,8 @@ def test_get_record_content(nm_api):
     assert get_record_content("EST\nMETH=1\nMAX=23") == "\nMETH=1\nMAX=23"
 
 
-# def test_OptionDescription(nm_api):
-#     OptionDescription = nm_api.records.option_description.OptionDescription
+# def test_OptionDescription(api):
+#     OptionDescription = api.records.option_description.OptionDescription
 #
 #     od = OptionDescription(
 #         {'name': 'MAXEVALS', 'type': OptionType.VALUE, 'abbreviate': True}
