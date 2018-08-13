@@ -1,9 +1,12 @@
-from .apiutils import init, getAPI, detectAPI
-from .model import Model
+# -*- encoding: utf-8 -*-
+
 from pysn.parse_utils import GenericParser
 
+from .apiutils import detectAPI
+from .apiutils import getAPI
+from .apiutils import init
+from .model import Model
 
 init(__path__, __name__)
-# for name, mod in init(__path__, __name__).items():
 
 __all__ = ['Model', 'detectAPI', 'getAPI', 'GenericParser']

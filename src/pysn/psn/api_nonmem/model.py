@@ -1,4 +1,7 @@
-"""(Specific) NONMEM 7.x model API"""
+# -*- encoding: utf-8 -*-
+
+"""(Specific) NONMEM 7.x model API."""
+
 from . import generic
 from .input import ModelInput
 from .parameters import ParameterModel
@@ -6,12 +9,12 @@ from .records.factory import create_record
 
 
 def create_unique_symbol(symbols, prefix):
-    """Create a unique symbol with prefix given a list of used symbols"""
+    """Creates a unique symbol with prefix given a list of used symbols"""
     count = 1
     while True:
         candidate = prefix + str(count)
         if candidate in symbols:
-            i += 1
+            count += 1
         else:
             return candidate
 
@@ -68,7 +71,9 @@ class Model(generic.Model):
             if i < self._index_records[0]:
                 continue
             if record.name == 'SIZES':
-                raise ModelParsingError('The SIZES record must come before the first PROBLEM record')
+                raise generic.ModelParsingError(
+                    'The SIZES record must come before the first PROBLEM record'
+                )
 
     def get_records(self, name):
         """Get all records with a certain name"""

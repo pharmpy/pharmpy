@@ -1,8 +1,10 @@
+# -*- encoding: utf-8 -*-
+
 from . import record
 
+
 class RawRecord(record.Record):
-    """ A record that just keeps it contents unparsed. I.e. $PROBLEM or unknown records
-    """
+    """A record that just keeps contents unparsed."""
     def __init__(self, content):
         self.content = content
 

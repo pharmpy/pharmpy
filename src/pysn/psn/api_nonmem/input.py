@@ -1,3 +1,5 @@
+# -*- encoding: utf-8 -*-
+
 from pathlib import Path
 
 from . import generic

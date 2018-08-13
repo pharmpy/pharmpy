@@ -1,12 +1,17 @@
+# -*- encoding: utf-8 -*-
+
 from pathlib import Path
 
-from . import detectAPI, getAPI
+from . import detectAPI
+from . import getAPI
 
 
 def Model(path=None, **kwargs):
-    """Creates Model object from path
+    """
+    Creates Model object from path.
 
-    Generic API if path is None, otherwise appropriate API will be used."""
+    Generic API if path is None, otherwise appropriate API will be used.
+    """
     _Model = getAPI('generic')
     if path:
         path = Path(path).resolve()

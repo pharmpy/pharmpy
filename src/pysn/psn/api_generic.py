@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 # -*- encoding: utf-8 -*-
 
 from pathlib import Path
@@ -77,6 +76,7 @@ class Model(object):
         if self.exists:
             return self.read
 
+
 class ModelInput(object):
     """Implements API for :attr:`Model.input`, the model dataset"""
     def __init__(self, model):
@@ -86,6 +86,7 @@ class ModelInput(object):
     def path(self):
         """Gets the path of the dataset"""
         raise NotImplementedError
+
 
 class ParameterModel:
     """Implements API for :attr:`Model.parameters`, the model parameters"""

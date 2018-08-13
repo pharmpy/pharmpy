@@ -1,14 +1,13 @@
-from pathlib import Path
+# -*- encoding: utf-8 -*-
 
 from . import generic
-from .records.factory import create_record
 
 
 class ParameterModel(generic.ParameterModel):
     """A NONMEM 7.x ParameterModel implementation"""
 
     def initial_estimates(self, problem=0):
-        params = self.thetas()
+        pass
 
     def thetas(self, problem=0):
-        records = self.model.get_records('THETA', problem=problem)
+        pass

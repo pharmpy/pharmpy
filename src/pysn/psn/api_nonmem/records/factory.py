@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 # -*- encoding: utf-8 -*-
 
 import re
@@ -9,8 +8,12 @@ from . import raw_record as raw_record
 from . import records_list as records_list
 from . import theta_record as theta_record
 
+
 def get_raw_record_name(line):
-    """ Get raw record name. It might be of short or alternative form and contain & breaks
+    """
+    Gets raw record name.
+
+    It might be of short or alternative form and contain & breaks.
     """
     m = re.match(r'(([A-Za-z]|&\n)+)', line)
     if m:
@@ -19,9 +22,9 @@ def get_raw_record_name(line):
     else:
         return None
 
+
 def get_canonical_record_name(raw_name):
-    """ Get the canonical (standardized) record name from a raw_name
-    """
+    """Gets the canonical (standardized) record name from a raw_name"""
     if not raw_name:
         return None
     short_form = raw_name.replace("&\n", "").upper()
@@ -31,9 +34,9 @@ def get_canonical_record_name(raw_name):
                 return name
     return None
 
+
 def get_record_content(line):
-    """ Strip the raw name from a record string
-    """
+    """Strips the raw name from a record string"""
     m = re.match(r'([A-Za-z]|&\n)+(.*)', line, re.DOTALL)
     return m.group(2)
 

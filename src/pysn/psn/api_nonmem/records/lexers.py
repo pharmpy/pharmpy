@@ -1,6 +1,5 @@
-import re
+# -*- encoding: utf-8 -*-
 
-from .record import Record
 from pysn.parse_utils.oldlexer import Lexer
 
 

@@ -1,9 +1,14 @@
-"""List util for managing supported APIs"""
-import sys
+# -*- encoding: utf-8 -*-
+
+"""Util for managing supported APIs."""
+
 import importlib
 import logging
-from pathlib import Path
 import pkgutil
+import sys
+
+
+_MODULES = []
 
 
 class ModelAPIException(Exception):
@@ -27,7 +32,7 @@ def init(path, pkg_name):
                 module = importlib.util.module_from_spec(spec)
                 spec.loader.exec_module(module)
             modules[last[4:]] = module
-    if not 'generic' in modules:
+    if 'generic' not in modules:
         modnames = list(modules.keys())
         raise ModelAPIException(
             "generic API not found: %s" %

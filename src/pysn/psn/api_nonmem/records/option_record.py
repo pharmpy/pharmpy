@@ -1,10 +1,17 @@
-import re
-from enum import Enum
-from collections import OrderedDict
+# -*- encoding: utf-8 -*-
 
-# Assume KEY=VALUE and do not support KEY VALUE
+"""
+Generic NONMEM option record class.
+
+Assumes 'KEY=VALUE' and doeos not support 'KEY VALUE'.
+"""
+
+import re
+from collections import OrderedDict
+from enum import Enum
 
 from .record import Record
+
 
 class OptionTokenType(Enum):
     TOKEN = 1
@@ -12,10 +19,12 @@ class OptionTokenType(Enum):
     CONTINUATION = 3        # &\n
     COMMENT = 4
 
+
 class OptionToken:
     def __init__(self, t, content):
         self.type = t
         self.content = content
+
 
 class OptionRecord(Record):
     def __init__(self, string):
@@ -51,21 +60,34 @@ class OptionRecord(Record):
         return super().__str__() + result
 
     def _lexical_tokens(self):
-        """ Returns the lexical tokens. Ordered dictionary from lexical token to list of actual tokens. Will also merge continuation lines
-            Example: MAX&\nEVALS=0 gives { 'MAXEVALS=0' : [ OptionToken(TOKEN, "MAX"), OptionToken(CONTINUATION, "&\n"), OptionToken(TOKEN, "EVALS=0) ] }
+        """
+        Returns the lexical tokens.
+
+        Ordered dictionary from lexical token to list of actual tokens. Will
+            also merge continuation lines
+
+        Example:
+            'MAX&\nEVALS=0' gives {
+                'MAXEVALS=0' : [
+                    OptionToken(TOKEN, "MAX"),
+                    OptionToken(CONTINUATION, "&\n"),
+                    OptionToken(TOKEN, "EVALS=0)
+                ]
+            }
         """
         numtokens = len(self.tokens)
         i = 0
         current_token = ""
         lexical = OrderedDict()
-        #lexical = []
+        # lexical = []
         current_actual = []
         while i < numtokens:
             if self.tokens[i].type == OptionTokenType.TOKEN:
                 current_token += self.tokens[i].content
                 current_actual.append(self.tokens[i])
-                if i + 2 < numtokens and self.tokens[i + 1].type == OptionTokenType.CONTINUATION and \
-                    self.tokens[i + 2].type == OptionTokenType.TOKEN:
+                if (i + 2 < numtokens and self.tokens[i + 1].type ==
+                        OptionTokenType.CONTINUATION and self.tokens[i + 2].type
+                        == OptionTokenType.TOKEN):
                     i += 2
                     continue
                 lexical[current_token] = current_actual
@@ -75,8 +97,7 @@ class OptionRecord(Record):
         return lexical
 
     def ordered_pairs(self):
-        """ Retrurn all key value pairs as an ordered dictionary
-        """
+        """Returns all key value pairs as an ordered dictionary"""
         d = OrderedDict()
         for token in self._lexical_tokens():
             s = token.split('=')
@@ -99,8 +120,7 @@ class OptionRecord(Record):
                     self.tokens.remove(tok)
 
     def delete(self, name):
-        """ Delete the first option with name 'name'
-        """
+        """Deletes the first option with name 'name'"""
         for tokstr, tokens in self._lexical_tokens().iteritems():
             a = tokstr.split('=')   # More elegant?
             if a[0] == name:        # Need abbrev match here

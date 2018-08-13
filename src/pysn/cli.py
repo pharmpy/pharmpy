@@ -3,12 +3,14 @@
 
 import argparse
 import logging
-from pathlib import Path
 import sys
+from pathlib import Path
 from textwrap import dedent
 
-from . import __author__, __pkgname__, __version__
-from .psn import detectAPI, getAPI, Model
+from . import __authors__
+from . import __pkgname__
+from . import __version__
+from . import psn
 
 
 def cli_args(args):
@@ -25,8 +27,7 @@ def cli_args(args):
                   %s
     ''' % (__version__, __authors__[0], __authors__[1])
     ).strip()
-    path = os.path.abspath(__file__)
-    prog = os.path.splitext(os.path.basename(path))[0]
+    prog = Path(__file__).resolve().basename
     parser = argparse.ArgumentParser(
         prog=prog,
         description=pre,
@@ -87,9 +88,9 @@ def cli_logging(stream_level):
 
 def main(args=None):
     args = cli_args(args=args)
-    logger = cli_logging(args.loglevel)
+    cli_logging(args.loglevel)
 
     path = Path(args.path).resolve()
-    print('Trying pysn.Model(%s)...' % (path,))
-    model = pysn.Model(path)
+    print('Trying psn.Model(%s)...' % (path,))
+    model = psn.Model(path)
     print(model)

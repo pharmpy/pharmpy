@@ -1,16 +1,8 @@
-#!/usr/bin/env python3
 # -*- encoding: utf-8 -*-
 
 from pathlib import Path
 
-# TODO: remove debug sys.path... when done debugging, of course
-if __name__ == '__main__':
-    import sys
-    src = Path(__file__).resolve().parent.parent.parent.parent.parent
-    sys.path.insert(0, str(src))
-
 from pysn.psn import GenericParser
-
 
 grammar_root = Path(__file__).parent.resolve() / 'grammars'
 assert grammar_root.is_dir()
@@ -24,11 +16,13 @@ class RecordParser(GenericParser):
 
 class ProblemRecordParser(RecordParser):
     grammar_filename = 'problem_record.g'
+
     class PreParser(GenericParser.PreParser):
         def root(self, items):
             if self.first('text', items) is None:
                 items.insert(0, self.Tree('text', [self.Token('TEXT', '')]))
             return self.Tree('root', items)
+
         def comment(self, items):
             if self.first('TEXT', items) is None:
                 items.insert(1, self.Token('TEXT', ''))
@@ -37,6 +31,7 @@ class ProblemRecordParser(RecordParser):
 
 class ThetaRecordParser(RecordParser):
     grammar_filename = 'theta_records.g'
+
     class PreParser(GenericParser.PreParser):
         def parameter_def(self, items):
             pre, single, post = self.split('single', items)

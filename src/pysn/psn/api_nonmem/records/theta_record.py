@@ -1,10 +1,8 @@
-import re
-from enum import Enum
-from collections import deque
+# -*- encoding: utf-8 -*-
 
-from .record import Record
-from .lexers import ThetaRecordLexer
+
 from .parser import ThetaRecordParser
+from .record import Record
 
 
 # class ThetaRecord(Record):
