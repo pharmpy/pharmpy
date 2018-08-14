@@ -51,6 +51,15 @@ Note, to combine the coverage data from all the Tox_ environments run:
 
             PYTEST_ADDOPTS=--cov-append tox
 
+Missing a Python interpreter? Ubuntu 18.04 and no more `python3.5`? No worries! Do this::
+
+    sudo add-apt-repository ppa:deadsnakes/ppa
+    sudo apt-get update
+    sudo apt-get install python3.5-dev
+
+Don't worry. Everything will be prefixed `python3.5` so there won't be any collision with e.g.
+`python3` (it'll still use the system standard).
+
 Building
 --------
 
