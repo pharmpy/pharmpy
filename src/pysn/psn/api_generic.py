@@ -46,7 +46,7 @@ class Model(object):
     def content(self):
         if not self.exists:
             return None
-        with open(self.path, 'r') as f:
+        with open(str(self.path), 'r') as f:
             content = f.read()
         return content
 

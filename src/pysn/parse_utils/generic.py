@@ -15,10 +15,10 @@ to point to your grammar file) to define a powerful parser.
 """
 
 import logging
-import os.path
 from copy import copy
 from copy import deepcopy
 from inspect import signature
+from pathlib import Path
 
 from lark import Lark
 from lark import Transformer
@@ -30,7 +30,6 @@ from . import prettyprint
 
 class AttrToken(Token):
     """Token with attribute access.
-
     Created by :method:`AttrTree.transform`, from :class:`lark.lexer.Token`
     (see 'token' argument of :method:`__new__`).
 
@@ -398,8 +397,8 @@ class GenericParser:
             buf (str): Buffer to parse.
         """
         self.buffer = buf
-        assert os.path.isfile(self.grammar)
-        with open(self.grammar, 'r') as grammar_file:
+        assert Path(self.grammar).is_file()
+        with open(str(self.grammar), 'r') as grammar_file:
             self.lark_parser = Lark(
                 grammar_file, start='root',
                 propagate_positions=True, keep_all_tokens=True

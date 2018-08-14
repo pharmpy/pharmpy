@@ -44,7 +44,7 @@ def init(path, pkg_name):
 
 def detectAPI(path):
     """Detects appropriate implementation from file Path"""
-    with open(path, 'r') as f:
+    with open(str(path), 'r') as f:
         lines = f.read().splitlines()
     support = {k: mod for k, mod in _MODULES.items() if mod.detect(lines)}
     if len(support) == 0:
