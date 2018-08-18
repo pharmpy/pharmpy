@@ -60,6 +60,9 @@ def str_repr():
 class Random:
     _history = []
     values = []
+    comment_char = ';'
+    comment_charset = (' '*25 + string.ascii_letters*5 + string.digits*3 + '\t'*3 +
+                       string.punctuation).replace(comment_char, '')
 
     def __new__(cls, *a, **kw):
         if cls.values:
@@ -69,27 +72,34 @@ class Random:
         obj.__init__(*a, **kw)
         return obj
 
-    def __init__(self, length=None):
+    def __init__(self, length=None, comment_char=';'):
+        if comment_char != self.comment_char:
+            self.comment_charset = self.comment_charset.replace(self.comment_char, comment_char)
+            self.comment_char = comment_char
         self.length = length
 
-    def pos_int(self, size=1E6):
+    def pos_int(self, size=1E4):
         return self._gen(random.randint, 0, size)
 
-    def int(self, size=1E6):
+    def int(self, size=1E4):
         return self._gen(random.randint, -size, size)
 
     def float(self, size=1E9):
         return self._gen(random.normalvariate, 0, size)
 
-    def str(self, charlen=30, chars=string.printable):
-        def f(ch, l):
-            return ''.join(random.choice(ch) for _ in range(l))
-        return self._gen(f, chars, charlen)
+    def comment(self, maxlen=30, exclude=';'):
+        def f(st, ch, _max):
+            comment = st + random.choice(['', ' '])
+            if not bool(random.getrandbits(2)):
+                return comment
+            return comment + ''.join(random.choice(ch) for _ in range(1, random.randrange(_max)))
+        return self._gen(f, self.comment_char, self.comment_charset, maxlen)
 
     def pad(self, maxlen=5, nl=False):
-        chars = ' '
         if nl:
-            chars += '\n'
+            chars = ' \n '
+        else:
+            chars = ' '
 
         def f(l):
             return random.choice(chars)*random.choice([0]*l + list(range(1, l)))

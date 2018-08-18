@@ -1,5 +1,7 @@
 # -*- encoding: utf-8 -*-
 
+import random
+
 import pytest
 
 
@@ -58,13 +60,16 @@ class TestParser:
             self.parse_assert(str(val), [])
 
     def test_comments(self):
-        self.parse_assert(';', [])
-        self.parse_assert(';A', [], ['A'])
-        self.parse_assert('; ABC ', [], ['ABC'])
-        self.parse_assert(' ; B ; C ', [], ['B ; C'])
-        self.parse_assert(' ; B\n; C', [], ['B', 'C'])
-        self.parse_assert(' ; B \n\n  ;   A B C\n', [], ['B', 'A B C'])
-        self.parse_assert(' \n ; A B C\n ;', [], ['A B C', ''])
+        data = self.data(20)
+        bufs = []
+        vals = []
+        comments = []
+        for pad1, init, pad2, comment, pad3 in zip(data.pad(), data.float(), data.pad(nl=True),
+                                                   data.comment(), data.pad(nl=True)):
+            bufs += [pad1 + str(init) + pad2 + comment + pad3]
+            vals += [init]
+            comments += [comment.strip().lstrip(';').strip()]
+        self.parse_assert('\n'.join(bufs), vals, comments)
 
 
 @pytest.mark.usefixtures('create_record')
