@@ -1,55 +1,49 @@
-// Legal forms:
-//     1. init [FIXED]
-//     2. ([low,] init [,up] [FIXED])
-//     3. ([low,] init [,up]) [FIXED]
-//     4. (low,,up) # have a hard time believing this one!
-//     5. (value)xn
-?root : unit*
+// legal forms:
+//   * init [FIXED]
+//   * ([low,] init [,up] [FIXED])
+//   * ([low,] init [,up]) [FIXED]
+//   * (low,,up)
+//   * (value)xn
 
-?unit : _param [whitespace] comment -> parameter_def
-      | _param                      -> parameter_def
-      | [WS] comment NL             -> commentline
-      | WS_MULTILINE                -> whitespace
+root : [ws] (param | ws | comment)*
 
-_param : single | multiple
+param : (single | multi) [WS] comment
+      | (single | multi)
+
 single : init [fix]
        | LP [lower_bound] sep init ([fix] RP | RP [fix])
        | LP [lower_bound] sep [init] sep [upper_bound] ([fix] RP | RP [fix])
-multiple : LP init RP [whitespace] n_thetas
+multi  : LP init RP [WS] n_thetas
 
-init        : NUMERIC [whitespace]
-lower_bound : NUMERIC [whitespace]
-upper_bound : NUMERIC [whitespace]
-sep         : COMMA [whitespace]
-fix         : ("FIX" | "FIXED") [whitespace]
-n_thetas    : "x" [whitespace] INT [whitespace]
+init        : NUMERIC [WS]
+lower_bound : NUMERIC [WS]
+upper_bound : NUMERIC [WS]
+sep         : COMMA [WS]
+fix         : ("FIX" | "FIXED") [WS]
+n_thetas    : "x" [WS] INT [WS]
 
-whitespace : WS (CONTINUATION NL [WS])?
-comment    : ";" [whitespace] text NL
-           | ";" [whitespace] NL
-           | ";" NL
-           | /;[^\r\n]*/
-text       : NOT_NL
+COMMA: ","
+LP: "("
+RP: ")"
 
-COMMA        : ","
-LP           : "("
-RP           : ")"
-CONTINUATION : /&\n/
+// common rules
+ws      : WS_ALL
+comment : ";" [WS] [TEXT] [WS]
+
+// common terminals
+TEXT: /\S.*(?<!\s)/
+WS: (" " | /\t/)+
+WS_ALL: /\s+/
 
 DIGIT: "0".."9"
 INT: DIGIT+
-DECIMAL: INT "." [INT] | "." INT
-SIGNED_INT: ["+"|"-"] INT
+DECIMAL: (INT "." [INT] | "." INT)
+SIGNED_INT: ["+" | "-"] INT
 
 EXP: "E" SIGNED_INT
-FLOAT: INT EXP | DECIMAL [EXP]
-SIGNED_FLOAT: ["+"|"-"] FLOAT
+FLOAT: (INT EXP | DECIMAL [EXP])
+SIGNED_FLOAT: ["+" | "-"] FLOAT
 
-NUMBER: FLOAT | INT
-SIGNED_NUMBER: ["+"|"-"] NUMBER
-NUMERIC      : NUMBER | SIGNED_NUMBER
-
-WS           : (" "|/\t/)+
-NL           : /\r?\n/
-NOT_NL       : /[^\r\n]/+
-WS_MULTILINE : /[ \t\f\r\n]/+
+NUMBER: (FLOAT | INT)
+SIGNED_NUMBER: ["+" | "-"] NUMBER
+NUMERIC: (NUMBER | SIGNED_NUMBER)

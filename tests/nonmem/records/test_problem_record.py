@@ -1,7 +1,5 @@
 # -*- encoding: utf-8 -*-
 
-from functools import partial
-
 import pytest
 
 
@@ -14,12 +12,14 @@ def canonical_name(request):
 @pytest.fixture(scope='class')
 def content_parse(api, request):
     """Inject content parsing and logging method (without record class)"""
-    def func(cls, buf):
+    def parse(cls, buf):
+        for i, line in enumerate(buf.splitlines()):
+            print('%d: %s' % (i, repr(line)))
         tree = api.records.parser.ProblemRecordParser(buf)
-        assert tree.root
+        assert tree.root is not None
         print(str(tree) + '\n')
         return tree.root
-    request.cls.parse = func
+    request.cls.parse = parse
     yield
 
 
@@ -68,4 +68,3 @@ class TestRecordMutability:
         assert rec.string == ''
         rec.string = 'PHENO  MODEL'
         assert rec.string == 'PHENO  MODEL'
-

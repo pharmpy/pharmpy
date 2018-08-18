@@ -16,35 +16,15 @@ class RecordParser(GenericParser):
 
 class ProblemRecordParser(RecordParser):
     grammar_filename = 'problem_record.g'
-
-    class PreParser(GenericParser.PreParser):
-        def root(self, items):
-            if self.first('text', items) is None:
-                items.insert(0, self.Tree('text', [self.Token('TEXT', '')]))
-            return self.Tree('root', items)
-
-        def comment(self, items):
-            if self.first('TEXT', items) is None:
-                items.insert(1, self.Token('TEXT', ''))
-            return self.Tree('comment', items)
+    non_empty = {
+        'root': (0, 'text'),
+        'text': (0, 'TEXT'),
+        'comment': (1, 'TEXT'),
+    }
 
 
 class ThetaRecordParser(RecordParser):
     grammar_filename = 'theta_records.g'
-
-    class PreParser(GenericParser.PreParser):
-        def parameter_def(self, items):
-            pre, single, post = self.split('single', items)
-            if single:
-                return self.Tree('theta', pre + single.children + post)
-
-            trees = []
-            pre, multi, post = self.split('multiple', items)
-            assert multi
-            n_thetas = self.first('n_thetas', multi)
-            for i in range(int(self.first('INT', n_thetas))):
-                trees.append(self.Tree('theta', pre + multi.children + post))
-            return trees
-
-        def root(self, items):
-            return self.Tree('root', self.flatten(items))
+    non_empty = {
+        'comment': (1, 'TEXT')
+    }

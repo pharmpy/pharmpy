@@ -38,29 +38,32 @@ automated tasks.
     '  (0,0.00469307) ; CL\n'
     >>> print(thetas[0].parser)
     root "  (0,0.00469307) ; CL\n"
-     ├─ whitespace "  "
-     │  └─ WS_MULTILINE "  "
-     └─ theta "(0,0.00469307) ; CL\n"
-        ├─ LP "("
-        ├─ lower_bound "0"
-        │  └─ NUMERIC "0"
-        ├─ sep ","
-        │  └─ COMMA ","
-        ├─ init "0.00469307"
-        │  └─ NUMERIC "0.00469307"
-        ├─ RP ")"
-        ├─ whitespace " "
-        │  └─ WS " "
-        └─ comment "; CL\n"
-           ├─ SEMICOLON ";"
-           ├─ text " CL"
-           │  └─ NOT_NL " CL"
-           └─ NL "\n"
+     ├─ ws "  "
+     │  └─ WS_ALL "  "
+     ├─ param "(0,0.00469307)"
+     │  └─ single "(0,0.00469307)"
+     │     ├─ LP "("
+     │     ├─ lower_bound "0"
+     │     │  └─ NUMERIC "0"
+     │     ├─ sep ","
+     │     │  └─ COMMA ","
+     │     ├─ init "0.00469307"
+     │     │  └─ NUMERIC "0.00469307"
+     │     └─ RP ")"
+     ├─ ws " "
+     │  └─ WS_ALL " "
+     ├─ comment "; CL"
+     │  ├─ SEMICOLON ";"
+     │  ├─ WS " "
+     │  └─ TEXT "CL"
+     └─ ws "\n"
+        └─ WS_ALL "\n"
     >>> for node in thetas[0].root.tree_walk():
     ...     print(node.__class__.__name__, node.rule, repr(str(node)))
-    AttrTree whitespace '  '
-    AttrToken WS_MULTILINE '  '
-    AttrTree theta '(0,0.00469307) ; CL\n'
+    AttrTree ws '  '
+    AttrToken WS_ALL '  '
+    AttrTree param '(0,0.00469307)'
+    AttrTree single '(0,0.00469307)'
     AttrToken LP '('
     AttrTree lower_bound '0'
     AttrToken NUMERIC '0'
@@ -69,12 +72,13 @@ automated tasks.
     AttrTree init '0.00469307'
     AttrToken NUMERIC '0.00469307'
     AttrToken RP ')'
-    AttrTree whitespace ' '
-    AttrToken WS ' '
-    AttrTree comment '; CL\n'
+    AttrTree ws ' '
+    AttrToken WS_ALL ' '
+    AttrTree comment '; CL'
     AttrToken SEMICOLON ';'
-    AttrTree text ' CL'
-    AttrToken NOT_NL ' CL'
-    AttrToken NL '\n'
+    AttrToken WS ' '
+    AttrToken TEXT 'CL'
+    AttrTree ws '\n'
+    AttrToken WS_ALL '\n'
 
 .. _lark-parser: https://pypi.org/project/lark-parser/

@@ -1,10 +1,13 @@
-root : [WS] text? (comment | WS_ALL)*
 
-text     : TEXT
-comment  : ";" [WS] [TEXT] [WS]
+root : [WS] text? (comment | ws)*
 
-TEXT     : /\S.*(?<!\s)/
+text    : TEXT
 
-WS       : (" "|/\t/)+
-NL       : /\r?\n/
-WS_ALL   : /\s+/
+// common rules
+ws      : WS_ALL
+comment : ";" [WS] [TEXT] [WS]
+
+// common terminals
+TEXT: /\S.*(?<!\s)/
+WS: (" "|/\t/)+
+WS_ALL: /\s+/

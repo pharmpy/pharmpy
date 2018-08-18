@@ -15,8 +15,6 @@ to point to your grammar file) to define a powerful parser.
 """
 
 import logging
-from copy import copy
-from copy import deepcopy
 from inspect import signature
 from pathlib import Path
 
@@ -28,8 +26,28 @@ from lark.lexer import Token
 from . import prettyprint
 
 
+def item_rule(item):
+    """Rule of a tree or token"""
+    try:
+        return item.data
+    except AttributeError:
+        try:
+            return item.type
+        except AttributeError:
+            return ''
+
+
+def new_item(rule):
+    """Create empty Tree or Token (if rule is upper case only)"""
+    if rule == rule.upper():
+        return Token(rule, '')
+    return Tree(rule, [])
+
+
 class AttrToken(Token):
-    """Token with attribute access.
+    """
+    Token with attribute access.
+
     Created by :method:`AttrTree.transform`, from :class:`lark.lexer.Token`
     (see 'token' argument of :method:`__new__`).
 
@@ -80,7 +98,8 @@ class NoSuchRuleException(AttributeError):
 
 
 class AttrTree(Tree):
-    """Tree with attribute access.
+    """
+    Tree with attribute access.
 
     Created in :method:`GenericParser.parse` by :method:`transform`, from
     :class:`lark.Tree`.
@@ -109,10 +128,12 @@ class AttrTree(Tree):
         type(self)._attrset(self, 'data', opt['data'])
         children = []
         for i, child in enumerate(opt['children'].copy()):
-            if issubclass(type(child), Tree):
+            if isinstance(child, Tree):
                 node = cls.transform(tree=child)
-            else:
+            elif isinstance(child, Token):
                 node = cls._attrtoken(token=child)
+            else:
+                node = cls._attrtoken(token=Token('STR', str(child)))
             children += [node]
         type(self)._attrset(self, 'children', children)
         type(self)._attrset(self, '_meta', opt['meta'])
@@ -242,67 +263,42 @@ class AttrTree(Tree):
 
 class PreParser(Transformer):
     """
-    Transformer (pre-parser) to shape tree (after initial AST).
+    Pre-parsing transformer to shape tree (after initial AST).
 
-    Override in your subclass, and define methods, if you desire shaping.
-
-    Method example:
-        def parameter_def(self, items):
-            pre, single, post = self.split('single', items)
-            if single:
-                return self.Tree('theta', pre + single.children + post)
-
-            trees = []
-            pre, multi, post = self.split('multiple', items)
-            assert multi
-            n_thetas = self.first('n_thetas', multi)
-            for i in range(int(self.first('INT', n_thetas))):
-                trees.append(self.Tree('theta', pre + multi.children + post))
-            return trees
+    Methods after rule's (Tree's or Token's) will be visited by the Lark parser visitor, with
+    children as argument, and the return value replaces).
     """
 
     # -- public interface ----------------------------------------------
-    def Tree(self, rule, children=[]):
-        """Creates new Tree of 'rule' from 'children'"""
-        _data, _children = copy(rule), deepcopy(children)
-        return Tree(_data, _children)
+    @classmethod
+    def first(cls, rule, tree_or_items):
+        """Returns first item in tree or list, matching rule"""
+        return cls._find(rule, tree_or_items, 'single')
 
-    def Token(self, rule, value):
-        """Creates new Token of 'rule' from 'value'"""
-        _rule, _value = copy(rule), copy(value)
-        return Token(_rule, _value)
+    @classmethod
+    def split(cls, rule, tree_or_items):
+        """Splits tree or list on rule, into tuple (pre, match, post)"""
+        return cls._find(rule, tree_or_items, 'split')
 
-    def first(self, rule, tree_or_items):
-        """Gets first match to 'rule' in tree/items"""
-        return self._find(rule, tree_or_items, 'single')
+    @classmethod
+    def all(cls, rule, tree_or_items):
+        """Returns all items in tree or list, matching rule"""
+        return cls._find(rule, tree_or_items, 'all')
 
-    def split(self, rule, tree_or_items):
-        """Splits on rule into tuple (pre, match, post)"""
-        return self._find(rule, tree_or_items, 'split')
-
-    def all(self, rule, tree_or_items):
-        """Gets all matches to 'rule'"""
-        return self._find(rule, tree_or_items, 'all')
-
-    def flatten(self, tree_or_items):
-        """Flattens tree/items into list"""
+    @classmethod
+    def flatten(cls, tree_or_items):
+        """Flattens tree or list into list"""
         items = []
-        for item in self._as_items(tree_or_items):
+        for item in cls._as_items(tree_or_items):
             try:
                 items += item
             except TypeError:
                 items += [item]
         return items
 
-    def rule(self, item):
-        """Rule of tree/token"""
-        try:
-            return item.data
-        except AttributeError:
-            return item.type
-
     # -- private methods -----------------------------------------------
-    def _as_items(self, tree_or_items):
+    @classmethod
+    def _as_items(cls, tree_or_items):
         try:
             return list(tree_or_items)
         except TypeError:
@@ -311,15 +307,16 @@ class PreParser(Transformer):
             except AttributeError:
                 return [tree_or_items]
 
-    def _find(self, rule, tree_or_items, mode):
+    @classmethod
+    def _find(cls, rule, tree_or_items, mode):
         split = (mode == 'split')
         first, found = None, []
         if split:
             pre, post = [], []
         elif mode != 'all':
             first = True
-        for item in self._as_items(tree_or_items):
-            m = (self.rule(item) == rule)
+        for item in cls._as_items(tree_or_items):
+            m = (item_rule(item) == rule)
             if m and first:
                 return item
             elif split:
@@ -338,17 +335,21 @@ class PreParser(Transformer):
 
 
 class GenericParser:
-    """Generic parser using lark-parser.
+    """
+    Generic parser using lark-parser.
 
-    Meant to be inherited for defining specific parsers (say, ThetaRecordParser
-    for NONMEM API). Will do the following:
+    Meant to be inherited for defining specific parsers (say, ThetaRecordParser for NONMEM API).
+    Will do the following:
 
-    1. Lex and parse a 'buffer' (str, not bytes!) using Lark (see Lark_) and
-        (from file in ``grammar`` attribute), to build AST.
+    1. Lex and parse a 'buffer' (str, not bytes!) using Lark (see Lark_) and (from file in
+        ``grammar`` attribute), to build AST.
     2. Transform tree with transformer (see :class:`PreParser`).
     3. Convert to :class:`AttrTree` for tree traversal (attribute access magic)
 
     Attributes:
+        non_empty (list): Insert empty placeholders if missing. Dict map of rule -> (pos, name),
+            where a Tree or Token (if uppercase) will be inserted at 'pos' of the children of
+            'rule', if none exists.
         buffer (str): Buffer parsed (see :method:`parse`).
         grammar (str): Path to grammar file. Set in subclass.
         root (str): Root of final tree (instance of :class:`AttrTree`)
@@ -358,57 +359,80 @@ class GenericParser:
         https://github.com/lark-parser/lark
     """
 
+    """Children (of rules) to create placeholder for if missing"""
+    non_empty = []
+
     """Pre-parsing transformer"""
-    PreParser = PreParser
+    _transformer = None
 
     """:class:`AttrTree` implementation."""
     _attrtree = AttrTree
+
+    lark_options = dict(
+        keep_all_tokens=True,
+        parser='earley',
+        start='root',
+    )
 
     def __init__(self, buf=None, **lark_options):
         """
         Args:
             buf (str): Buffer (to parse immediately; see :method:`parse`)
-            **lark_options: Options to `:class:Lark`. Defaults are specified,
-            but can be overriden:
+            **lark_options: Options to `:class:Lark`. These defaults can be overriden:
 
                 * ``keep_all_tokens=True``
                 * ``parser='earley'``
                 * ``propagate_positions=True``
-                * ``start='root'`` (don't override)
-                * ``transformer=self.PreParser`` (don't override)
         """
-        self.lark_options = dict(
-            keep_all_tokens=True,
-            parser='earley',
-            propagate_positions=True,
-            start='root',
-            transformer=self.PreParser,
-        ).update(lark_options)
-        if buf is not None:
-            self.parse(buf)
-        else:
-            self.buffer = None
-            self.root = None
+        self.lark_options.update(lark_options)
+        if self._transformer:
+            self.lark_options['transformer'] = self._transformer
+        self.root = self.parse(buf)
 
     def parse(self, buf):
-        """Parses a buffer, transforms and constructs :class:`AttrTree` object.
+        """
+        Parses a buffer, transforms and constructs :class:`AttrTree` object.
 
         Args:
             buf (str): Buffer to parse.
         """
         self.buffer = buf
-        assert Path(self.grammar).is_file()
-        with open(str(self.grammar), 'r') as grammar_file:
-            self.lark_parser = Lark(
-                grammar_file, start='root',
-                propagate_positions=True, keep_all_tokens=True
-            )
-        self.root = self.lark_parser.parse(self.buffer)
-        self.root = self.PreParser().transform(self.root)
-        self.root = self._attrtree.transform(tree=self.root)
+        if self.buffer is None:
+            return None
+
+        grammar = Path(self.grammar).resolve()
+        with open(str(grammar), 'r') as fh:
+            self.lark = Lark(fh, **self.lark_options)
+            root = self.lark.parse(self.buffer)
+
+        if self.non_empty:
+            root = self.insert(root, self.non_empty)
+        return self._attrtree.transform(tree=root)
 
     def __str__(self, content=True):
         if not self.root:
             return repr(self)
         lines = str(prettyprint.transform(self.root, content)).splitlines()
         return '\n'.join(lines)
+
+    @classmethod
+    def insert(cls, item, non_empty):
+        """
+        Inserts missing Tree/Token amongst children (see :attr:`non_empty`).
+
+        Args:
+            item: Tree to recurse.
+            non_empty: Dict of rule -> (pos, name) tuple.
+        """
+        if not non_empty or isinstance(item, Token):
+            return item
+        try:
+            pos, name = non_empty[item_rule(item)]
+        except KeyError:
+            pass
+        else:
+            if not any(item_rule(child) == name for child in item.children):
+                item.children.insert(pos, new_item(name))
+        for i, child in enumerate(item.children):
+            item.children[i] = cls.insert(child, non_empty)
+        return item
