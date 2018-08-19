@@ -49,6 +49,9 @@ output/*/index.html
 # Sphinx
 docs/_build
 
+# vim-pymode autocompletion
+.ropeproject
+
 .DS_Store
 *~
 .*.sw[po]

@@ -3,13 +3,13 @@
 import pytest
 
 
-@pytest.fixture(scope='class', autouse=True)
+@pytest.fixture(autouse=True)
 def canonical_name(request):
     """Inject canonical name into all classes"""
     request.cls.canonical_name = 'PROBLEM'
 
 
-@pytest.fixture(scope='class')
+@pytest.fixture
 def content_parse(api, request):
     """Inject content parsing and logging method (without record class)"""
     def parse(cls, buf):

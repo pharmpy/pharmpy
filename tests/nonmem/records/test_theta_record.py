@@ -1,17 +1,15 @@
 # -*- encoding: utf-8 -*-
 
-import random
-
 import pytest
 
 
-@pytest.fixture(scope='class', autouse=True)
+@pytest.fixture(autouse=True)
 def canonical_name(request):
     """Inject canonical name into all classes"""
     request.cls.canonical_name = 'THETA'
 
 
-@pytest.fixture(scope='class')
+@pytest.fixture
 def content_parse(api, request):
     """Inject content parsing and logging method (without record class)"""
     def parse(cls, buf):
@@ -25,8 +23,9 @@ def content_parse(api, request):
     yield
 
 
-@pytest.mark.usefixtures('content_parse', 'random_data')
+@pytest.mark.usefixtures('content_parse')
 class TestParser:
+
     def parse_assert(self, buf, inits=[], comments=[]):
         """Parses buf and assert inits"""
         root = self.parse(buf)
@@ -39,37 +38,38 @@ class TestParser:
             assert list(map(lambda x: str(getattr(x, 'TEXT')), nodes)) == comments
         return root
 
-    def test_single_inits(self):
-        for val in self.data(5).int():
+    def test_single_inits(self, RandomData, GeneratedTheta):
+        for val in RandomData(5).int():
             self.parse_assert(str(val), [val])
 
-        for val in self.data(5).float():
+        for val in RandomData(5).float():
             self.parse_assert(str(val), [val])
 
-    def test_padded_inits(self):
-        data = self.data(5)
+    def test_padded_inits(self, RandomData):
+        data = RandomData(5)
         for lpad, val, rpad in zip(data.pad(), data.float(), data.pad()):
             self.parse_assert(str(lpad) + str(val) + str(rpad), [val])
 
-        data = self.data(5)
+        data = RandomData(5)
         for lpad, val, rpad in zip(data.pad(nl=True), data.float(), data.pad(nl=True)):
             self.parse_assert(str(lpad) + str(val) + str(rpad), [val])
 
-        data = self.data(5)
+        data = RandomData(5)
         for val in data.pad(nl=True):
             self.parse_assert(str(val), [])
 
-    def test_comments(self):
-        data = self.data(20)
+    def test_comments(self, RandomData):
+        data = RandomData(10)
         bufs = []
-        vals = []
         comments = []
-        for pad1, init, pad2, comment, pad3 in zip(data.pad(), data.float(), data.pad(nl=True),
-                                                   data.comment(), data.pad(nl=True)):
-            bufs += [pad1 + str(init) + pad2 + comment + pad3]
-            vals += [init]
+        for lpad, comment in zip(data.pad(nl=True), data.comment()):
+            bufs += [lpad + comment]
             comments += [comment.strip().lstrip(';').strip()]
-        self.parse_assert('\n'.join(bufs), vals, comments)
+        self.parse_assert('\n'.join(bufs), [], comments)
+
+    def test_messy_randoms(self, RandomThetas):
+        for i, theta in enumerate(RandomThetas(5).theta()):
+            print(i, str(theta))
 
 
 @pytest.mark.usefixtures('create_record')

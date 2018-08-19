@@ -8,21 +8,19 @@ from pathlib import Path
 
 import pytest
 
-tuple_matcher = re.compile(r'^\((.*)\)$')
-
 
 @pytest.fixture(scope='session')
 def testdata():
+    """Test data (root) folder."""
     return Path(__file__).resolve().parent / 'testdata'
-
-
-# @pytest.fixture(scope='session')
-# def SOURCE():
-#     return Path(__file__).resolve().parent.parent / 'src'
 
 
 @pytest.fixture(scope='session')
 def csv_read():
+    """Load test data from CSV. Supports tuples."""
+
+    _tuple_matcher = re.compile(r'^\((.*)\)$')
+
     def func(root, file, names=None):
         TestData = tuple
         if names:
@@ -32,7 +30,7 @@ def csv_read():
             return item.replace('\\n', '\n')
 
         def tupleize(item):
-            m = tuple_matcher.match(item)
+            m = _tuple_matcher.match(item)
             if not m:
                 return descape(item)
             if not m.group(1):
@@ -50,6 +48,8 @@ def csv_read():
 
 @pytest.fixture(scope='session')
 def str_repr():
+    """Debug print (string representations)."""
+
     def func(string):
         if not string:
             return '-- EMPTY --'
@@ -57,37 +57,103 @@ def str_repr():
     return func
 
 
-class Random:
-    _history = []
-    values = []
+class _RandomData:
+    """
+    A collection of random data generators.
+
+    Use to procedurally generate data for testing.
+
+    Args:
+        N (int): Number of values to cap generators on. Infinite if None.
+        comment_char (str): Char to begin comments (and exclude from comment content).
+    """
+
     comment_char = ';'
     comment_charset = (' '*25 + string.ascii_letters*5 + string.digits*3 + '\t'*3 +
                        string.punctuation).replace(comment_char, '')
 
-    def __new__(cls, *a, **kw):
-        if cls.values:
-            cls._history += [cls.values]
-            cls.values = []
-        obj = super(Random, cls).__new__(cls)
-        obj.__init__(*a, **kw)
-        return obj
-
-    def __init__(self, length=None, comment_char=';'):
+    def __init__(self, N=None, comment_char=';'):
+        self.history = []
         if comment_char != self.comment_char:
             self.comment_charset = self.comment_charset.replace(self.comment_char, comment_char)
             self.comment_char = comment_char
-        self.length = length
+        self.N = N
 
+    # -- methods producing random generators ---------------------------
     def pos_int(self, size=1E4):
+        """Returns (generator for) non-negative integer x, where x <= size."""
         return self._gen(random.randint, 0, size)
 
     def int(self, size=1E4):
+        """Returns (generator for) integer x, where -size < x < size."""
         return self._gen(random.randint, -size, size)
 
     def float(self, size=1E9):
+        """Returns (generator for) floating point num x, where x ~ normal_dist(0, sd=size)."""
         return self._gen(random.normalvariate, 0, size)
 
-    def comment(self, maxlen=30, exclude=';'):
+    def str_num(self, N=0, sci_fmt=('%s', '%E', '%.0E')):
+        """Returns (generator for) tuple (str, num) from mixed int/float (convenience function).
+
+        Args:
+            N (int): Generate 1 tuple (str, num) if 0. Else, sorted (nested) tuple of 'N' tuples.
+            sci_fmt (tuple): Format to randomly apply when formatting floats.
+        """
+
+        def f(formats, scalar, n):
+            def g():
+                if random.getrandbits(1):
+                    fmt = '%s'
+                    if random.getrandbits(1):
+                        val = random.randint(0, 9)
+                    else:
+                        val = random.randint(-1E5, 1E5)
+                else:
+                    fmt = random.choice(formats)
+                    if random.getrandbits(1):
+                        val = random.normalvariate(0, 1)
+                    else:
+                        val = random.normalvariate(0, 10**(random.randint(-50, 50)))
+                return fmt % (val,), val
+
+            if scalar:
+                return g()
+            else:
+                sort = sorted((g() for _ in range(n)), key=lambda x: x[1])
+                return tuple(sort)
+
+        return self._gen(f, sci_fmt, not N, N)
+
+    def bool(self):
+        """Returns (generator for) bool."""
+        return self._gen(lambda: bool(random.getrandbits(1)))
+
+    def choice(self, *choices):
+        """Returns (generator for) choice (in set from args)."""
+        return self._gen(lambda x: random.choice(x), choices)
+
+    def biased_choice(self, *bias_choice):
+        """
+        Returns (generator for) biased choice (in set from args).
+
+        Each arg is a tuple (bias, choice) where bias is the relative frequency (float).
+        """
+
+        biases, choices = zip(*bias_choice)
+        base = min(biases)*100
+        rep = tuple(round((b*100)/base) for b in biases)
+        choices = [[ch]*rep for ch, rep in zip(choices, rep)]
+        choices = [x for lst in choices for x in lst]
+        return self._gen(lambda x: random.choice(x), choices)
+
+    def comment(self, maxlen=30):
+        """
+        Returns (generator for) comment (uses :attr:`comment_char` and :attr:`comment_charset`).
+
+        Args:
+            maxlen (int): Maximum length of comment.
+        """
+
         def f(st, ch, _max):
             comment = st + random.choice(['', ' '])
             if not bool(random.getrandbits(2)):
@@ -96,33 +162,39 @@ class Random:
         return self._gen(f, self.comment_char, self.comment_charset, maxlen)
 
     def pad(self, maxlen=5, nl=False):
+        """
+        Returns (generator for) whitespace padding/empty str 50/50.
+
+        Args:
+            maxlen (int): Maximum length of str.
+            nl (bool): Allow line endings (half as likely as ' ').
+        """
+
+        def f(l):
+            return random.choice(chars)*random.choice([0]*l + list(range(1, l)))
         if nl:
             chars = ' \n '
         else:
             chars = ' '
-
-        def f(l):
-            return random.choice(chars)*random.choice([0]*l + list(range(1, l)))
         return self._gen(f, maxlen)
 
+    # -- private methods -----------------------------------------------
     def _gen(self, f, *args, **kwargs):
-        while len(self.values) != self.length:
-            self.values += [f(*args, **kwargs)]
-            yield self.values[-1]
+        """Make generator from function and args."""
+
+        n_gen = 0
+        while (self.N is None) or (n_gen < self.N):
+            obj = f(*args, **kwargs)
+            self.history += [obj]
+            n_gen += 1
+            yield obj
 
     def __str__(self):
-        rval = ', '.join(repr(x) for x in self.values)
-        return '%s(%d): %s' % (self.__class__.__name__, self.length, rval)
-
-    @classmethod
-    def history(cls):
-        out = []
-        for i, hist in enumerate(cls._history):
-            out += ['[%d] %s' % (i, ', '.join(repr(x) for x in hist))]
-        return '\n'.join(out)
+        rval = ', '.join(repr(x) for x in self.history)
+        return '%s(N=%s): %s' % (self.__class__.__name__, self.N, rval)
 
 
-@pytest.fixture(scope='class')
-def random_data(request):
-    request.cls.data = Random
-    yield
+@pytest.fixture(scope='session')
+def RandomData():
+    """Provide RandomData (helper) class to tests."""
+    return _RandomData
