@@ -11,15 +11,15 @@ param : (single | multi) [WS] comment
       | (single | multi)
 
 single : init [fix]
-       | LP [lower_bound] sep init ([fix] RP | RP [fix])
-       | LP [lower_bound] sep [init] sep [upper_bound] ([fix] RP | RP [fix])
-multi  : LP init RP [WS] n_thetas
+       | LP [WS] [lower_bound] sep init ([fix] RP | RP [fix])
+       | LP [WS] [lower_bound] sep [init] sep [upper_bound] ([fix] RP | RP [fix])
+multi  : LP [WS] init RP [WS] n_thetas
 
 init        : NUMERIC [WS]
 lower_bound : NUMERIC [WS]
 upper_bound : NUMERIC [WS]
 sep         : COMMA [WS]
-fix         : ("FIX" | "FIXED") [WS]
+fix         : [WS] ("FIX" | "FIXED") [WS]
 n_thetas    : "x" [WS] INT [WS]
 
 COMMA: ","

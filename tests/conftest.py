@@ -92,7 +92,7 @@ class _RandomData:
         """Returns (generator for) floating point num x, where x ~ normal_dist(0, sd=size)."""
         return self._gen(random.normalvariate, 0, size)
 
-    def str_num(self, N=0, sci_fmt=('%s', '%E', '%.0E')):
+    def str_num(self, N=0, sci_fmt=('%E', '%.0E')):
         """Returns (generator for) tuple (str, num) from mixed int/float (convenience function).
 
         Args:
@@ -100,26 +100,28 @@ class _RandomData:
             sci_fmt (tuple): Format to randomly apply when formatting floats.
         """
 
-        def f(formats, scalar, n):
+        def f(sci_fmt, scalar, n):
             def g():
                 if random.getrandbits(1):
-                    fmt = '%s'
                     if random.getrandbits(1):
                         val = random.randint(0, 9)
                     else:
                         val = random.randint(-1E5, 1E5)
+                    s = str(val)
                 else:
-                    fmt = random.choice(formats)
+                    fmt = random.choice(sci_fmt)
                     if random.getrandbits(1):
                         val = random.normalvariate(0, 1)
                     else:
                         val = random.normalvariate(0, 10**(random.randint(-50, 50)))
-                return fmt % (val,), val
+                    s = fmt % (val,)
+                    val = float(s)
+                return val, s
 
             if scalar:
                 return g()
             else:
-                sort = sorted((g() for _ in range(n)), key=lambda x: x[1])
+                sort = sorted((g() for _ in range(n)), key=lambda x: x[0])
                 return tuple(sort)
 
         return self._gen(f, sci_fmt, not N, N)
