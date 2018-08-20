@@ -17,3 +17,7 @@ def datadir(testdata):
 @pytest.fixture
 def pheno_real(datadir):
     return datadir / 'pheno_real.mod'
+
+@pytest.fixture
+def pheno_data(datadir):
+    return datadir / 'pheno.dta'
