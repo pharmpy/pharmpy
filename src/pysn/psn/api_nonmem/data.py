@@ -1,6 +1,6 @@
 import re
 
-# This class is an IO class that is a prefilter for pandas.read_table. 
+# This class is an IO class that is a prefilter for pandas.read_table.
 # Only things that cannot be handled by pandas will be taken care of here and the rest will be taken care of by pandas.
 
 class NMTRANDataIO:
@@ -10,7 +10,7 @@ class NMTRANDataIO:
         else:
             comment_regexp = re.compile('^[' + ignore_character + '].*\n', re.MULTILINE)
 
-        with open(filename, "r") as datafile:
+        with open(str(filename), 'r') as datafile:
             self.contents = datafile.read()      # All variations of newlines are converted into \n
 
         self.contents = re.sub(comment_regexp, '', self.contents)
