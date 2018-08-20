@@ -3,12 +3,6 @@
 import pytest
 
 
-@pytest.fixture(autouse=True)
-def canonical_name(request):
-    """Inject canonical name into all classes"""
-    request.cls.canonical_name = 'THETA'
-
-
 @pytest.fixture
 def parse_assert(api, GeneratedTheta):
     """Provide parse_assert (helper) function to tests."""
@@ -35,68 +29,68 @@ def parse_assert(api, GeneratedTheta):
     return func
 
 
-class TestParser:
-    """
-    Logical (non-semantical) grouping of pure parser tests (no API post-processing).
+# -- ONLY PARSER -----------------------------------------------------------------------------------
 
-    Motivation: Experiment with sandboxing testing where grammar changes can flag before unit tests
-    on API needs to step in. Might be unnecessary? Not removing, but next record won't get this
-    luxury, I'm sure...
-
-    Lookup :func:`parse_assert`, :class:`GeneratedTheta` and :class:`RandomThetas` for how it fits
-    together.
-    """
-    def test_single_inits(self, RandomData, GeneratedTheta, parse_assert):
-        for val in RandomData(5).int():
-            parse_assert(str(val), [GeneratedTheta.new(init=val)])
-
-        for val in RandomData(5).float():
-            parse_assert(str(val), [GeneratedTheta.new(init=val)])
-
-    def test_padded_inits(self, RandomData, GeneratedTheta, parse_assert):
-        data = RandomData(5)
-        for lpad, val, rpad in zip(data.pad(), data.float(), data.pad()):
-            parse_assert(str(lpad) + str(val) + str(rpad), [GeneratedTheta.new(init=val)])
-
-        data = RandomData(5)
-        for lpad, val, rpad in zip(data.pad(nl=True), data.float(), data.pad(nl=True)):
-            parse_assert(str(lpad) + str(val) + str(rpad), [GeneratedTheta.new(init=val)])
-
-        data = RandomData(5)
-        for val in data.pad(nl=True):
-            parse_assert(str(val), [])
-
-    def test_comments(self, RandomData, parse_assert):
-        bufs, comments = [], []
-        data = RandomData(10)
-        for lpad, comment in zip(data.pad(nl=True), data.comment()):
-            bufs += [lpad + comment]
-            comments += [comment.strip().lstrip(';').strip()]
-        buf = '\n'.join(bufs)
-        root = parse_assert(buf, [])
-        nodes = filter(lambda x: x.rule == 'comment', root.tree_walk())
-        assert comments == list(map(lambda x: getattr(x, 'TEXT'), nodes))
-
-    def test_messy_randoms(self, RandomThetas, parse_assert):
-        bufs, thetas = [], []
-        for i, theta in enumerate(RandomThetas(20).theta()):
-            thetas += [theta]
-            bufs += [str(theta)]
-            print(bufs[-1])
-        buf = '\n'.join(bufs)
-        parse_assert(buf, thetas)
+# Experiment with sandboxing testing where grammar changes can flag before unit tests on API needs
+# to step in. Might be unnecessary? Not removing, but next record won't get this luxury, I'm sure...
+# See :func:`parse_assert`, :class:`GeneratedTheta` and :class:`RandomThetas` for how it works.
 
 
-@pytest.mark.usefixtures('create_record')
-class TestRecordCreate:
-    def test_init(self):
-        self.create_record('THET')
-        self.create_record('THETA 0')
-        self.create_record('THETA   12.3 \n\n')
-        self.create_record('THETAA 123', fail=True)
-        self.create_record('THEETA', fail=True)
+def test_single_inits(parse_assert, RandomData, GeneratedTheta):
+    for val in RandomData(5).int():
+        parse_assert(str(val), [GeneratedTheta.new(init=val)])
+
+    for val in RandomData(5).float():
+        parse_assert(str(val), [GeneratedTheta.new(init=val)])
+
+
+def test_padded_inits(parse_assert, RandomData, GeneratedTheta):
+    data = RandomData(5)
+    for lpad, val, rpad in zip(data.pad(), data.float(), data.pad()):
+        parse_assert(str(lpad) + str(val) + str(rpad), [GeneratedTheta.new(init=val)])
+
+    data = RandomData(5)
+    for lpad, val, rpad in zip(data.pad(nl=True), data.float(), data.pad(nl=True)):
+        parse_assert(str(lpad) + str(val) + str(rpad), [GeneratedTheta.new(init=val)])
+
+    data = RandomData(5)
+    for val in data.pad(nl=True):
+        parse_assert(str(val), [])
+
+
+def test_comments(parse_assert, RandomData):
+    bufs, comments = [], []
+    data = RandomData(10)
+    for lpad, comment in zip(data.pad(nl=True), data.comment()):
+        bufs += [lpad + comment]
+        comments += [comment.strip().lstrip(';').strip()]
+    buf = '\n'.join(bufs)
+    root = parse_assert(buf, [])
+    nodes = filter(lambda x: x.rule == 'comment', root.tree_walk())
+    assert comments == list(map(lambda x: getattr(x, 'TEXT'), nodes))
+
+
+def test_messy_random(parse_assert, RandomThetas):
+    bufs, thetas = [], []
+    for i, theta in enumerate(RandomThetas(20).theta()):
+        thetas += [theta]
+        bufs += [str(theta)]
+        print(bufs[-1])
+    buf = '\n'.join(bufs)
+    parse_assert(buf, thetas)
+
+
+# -- RECORD CLASS ----------------------------------------------------------------------------------
 
 
 @pytest.mark.usefixtures('create_record')
-class TestRecordMutability:
-    pass
+@pytest.mark.parametrize('buf,theta', [
+    ('THET', None),
+    ('THETA 0', None),
+    ('THETA   12.3 \n\n', None),
+    ('THETA  (0,0.00469307) ; CL', None),
+    ('THETA  (0,1.00916) ; V', None),
+])
+def test_create(create_record, buf, theta):
+    rec = create_record(buf)
+    assert rec.name == 'THETA'

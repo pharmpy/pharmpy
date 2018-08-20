@@ -6,29 +6,29 @@ from collections import namedtuple
 import pytest
 
 
-# -- general test helpers --------------------------------------------------------------------------
 @pytest.fixture
-def create_record(api, request):
-    """(Inject) record creating method, with some (general) logging/asserts"""
+def create_record(api):
+    """Record creating method with some (general) logging/asserts"""
 
-    def func(cls, buf, fail=False):
+    def func(buf, fail=False):
         record = api.records.factory.create_record(buf)
         print(str(record))
         if fail:
             assert record.name is None
         else:
             assert record.name.startswith(record.raw_name)
-            assert record.name == cls.canonical_name
         if buf.startswith('$'):
             assert str(record) == buf
         else:
             assert str(record) == '$' + buf
         return record
 
-    request.cls.create_record = func
+    return func
 
 
-# -- ThetaRecord test helpers ----------------------------------------------------------------------
+# -- ONLY ThetaRecord ------------------------------------------------------------------------------
+
+
 class _GeneratedTheta:
     """
     A generated theta (see :class:`RandomThetas` for random generation).

@@ -3,68 +3,77 @@
 import pytest
 
 
-@pytest.fixture(autouse=True)
-def canonical_name(request):
-    """Inject canonical name into all classes"""
-    request.cls.canonical_name = 'PROBLEM'
-
-
 @pytest.fixture
-def content_parse(api, request):
-    """Inject content parsing and logging method (without record class)"""
-    def parse(cls, buf):
+def parse_assert(api):
+    """Returns function for parsing with ProblemRecordParser. Basic logging/asserts."""
+
+    def func(buf, text=None, comments=[]):
         for i, line in enumerate(buf.splitlines()):
             print('%d: %s' % (i, repr(line)))
         tree = api.records.parser.ProblemRecordParser(buf)
         assert tree.root is not None
         print(str(tree) + '\n')
-        return tree.root
-    request.cls.parse = parse
-    yield
+        root = tree.root
 
-
-@pytest.mark.usefixtures('content_parse')
-class TestParser:
-    def parse_assert(self, buf, text, comments=[]):
-        """Parses buf and assert text 'text' and comments 'comments'"""
-        root = self.parse(buf)
         assert str(root) == buf
-        assert str(root.text) == text
-        nodes = filter(lambda x: x.rule == 'comment', root.tree_walk())
-        assert list(map(lambda x: str(getattr(x, 'TEXT')), nodes)) == comments
+        if text:
+            assert str(root.text) == text
+        if comments:
+            nodes = filter(lambda x: x.rule == 'comment', root.tree_walk())
+            assert list(map(lambda x: str(getattr(x, 'TEXT')), nodes)) == comments
+        return root
 
-    def test_empties(self):
-        self.parse_assert('', '')
-        self.parse_assert(' ', '')
-        self.parse_assert('\n', '')
-        self.parse_assert(' \n ', '')
-        self.parse_assert(' \n \n', '')
+    return func
 
-    def test_names(self):
-        self.parse_assert('A', 'A')
-        self.parse_assert(' ABC ', 'ABC')
-        self.parse_assert(' A ; B ; C ', 'A ; B ; C')
-        self.parse_assert(' A ; B \n', 'A ; B')
-        self.parse_assert(' A ; B \n\n  ; some comment\n', 'A ; B', ['some comment'])
-        self.parse_assert(' A \n ; A B ; D \n ; ', 'A', ['A B ; D', ''])
+
+# -- ONLY PARSER -----------------------------------------------------------------------------------
+
+
+@pytest.mark.usefixtures('parse_assert')
+@pytest.mark.parametrize('buf,text', [
+    ('', ''),
+    (' ', ''),
+    ('\n', ''),
+    (' \n ', ''),
+    (' \n \n', ''),
+])
+def test_empty(parse_assert, buf, text):
+    parse_assert(buf, text)
+
+
+@pytest.mark.usefixtures('parse_assert')
+@pytest.mark.parametrize('buf,text,comments', [
+    ('A', 'A', []),
+    (' ABC ', 'ABC', []),
+    (' A ; B ; C ', 'A ; B ; C', []),
+    (' A ; B \n', 'A ; B', []),
+    (' A ; B \n\n  ; some comment\n', 'A ; B', ['some comment']),
+    (' A \n ; A B ; D \n ; ', 'A', ['A B ; D', '']),
+])
+def test_text_comments(parse_assert, buf, text, comments):
+    parse_assert(buf, text, comments)
+
+
+# -- RECORD CLASS ----------------------------------------------------------------------------------
 
 
 @pytest.mark.usefixtures('create_record')
-class TestRecordCreate:
-    def test_init(self):
-        rec = self.create_record('PROB')
-        rec = self.create_record('PROBLEM ABC')
-        assert rec.string == 'ABC'
-        rec = self.create_record('PROBLEM   A;BC \n\n')
-        assert rec.string == 'A;BC'
-        rec = self.create_record('PROBLEMA ABC', fail=True)
-        rec = self.create_record('PROBLEE', fail=True)
+@pytest.mark.parametrize('buf,string', [
+    ('PROB', ''),
+    ('PROBLEM ABC', 'ABC'),
+    ('PROBLEM   A;BC \n\n', 'A;BC'),
+])
+def test_create(create_record, buf, string):
+    rec = create_record(buf)
+    assert rec.string == string
 
 
 @pytest.mark.usefixtures('create_record')
-class TestRecordMutability:
-    def test_string(self):
-        rec = self.create_record('PROB')
-        assert rec.string == ''
-        rec.string = 'PHENO  MODEL'
-        assert rec.string == 'PHENO  MODEL'
+@pytest.mark.parametrize('buf,string,new_string', [
+    ('PROB', '', 'PHENO  MODEL'),
+])
+def test_modify_string(create_record, buf, string, new_string):
+    rec = create_record(buf)
+    assert rec.string == ''
+    rec.string = new_string
+    assert rec.string == new_string
