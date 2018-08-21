@@ -28,3 +28,6 @@ class ThetaRecordParser(RecordParser):
     non_empty = {
         'comment': (1, 'TEXT')
     }
+
+class OptionRecordParser(RecordParser):
+    grammar_filename = 'option_record.g'

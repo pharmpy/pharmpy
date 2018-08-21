@@ -20,11 +20,11 @@ def test_create_record(api):
     assert obj.string, "MYPROB"
 
 
-def test_lexical_tokens(api):
-    create_record = api.records.create_record
-
-    obj = create_record("SIZES LTH=28")
-    assert list(obj._lexical_tokens()) == ["LTH=28"]
+#def test_lexical_tokens(api):
+#    create_record = api.records.create_record
+#
+#    obj = create_record("SIZES LTH=28")
+#    assert list(obj._lexical_tokens()) == ["LTH=28"]
 
 
 def test_get_raw_record_name(api):

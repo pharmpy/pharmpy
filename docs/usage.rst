@@ -27,10 +27,6 @@ automated tasks.
 .. doctest::
     :pyversion: > 3.6
 
-    >>> pheno.input.path.name
-    'pheno.dta'
-    >>> print(pheno.input.column_names())
-    ['ID', 'TIME', 'AMT', 'WGT', 'APGR', 'DV', 'FA1', 'FA2']
     >>> thetas = pheno.get_records('THETA')
     >>> thetas[0].root
     AttrTree(root) '  (0,0.00469307) ; CL\n'
