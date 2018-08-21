@@ -18,4 +18,5 @@ exclude local
 recursive-exclude local *
 
 global-exclude *.py[cod] __pycache__
+global-exclude *.swp
 global-exclude .ropeproject/*
