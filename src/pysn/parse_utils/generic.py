@@ -61,12 +61,15 @@ class AttrToken(Token):
 
     __slots__ = ('rule', 'eval')
 
-    def __new__(cls, token, **replace):
-        kwargs = dict(type_=token.type, value=token.value,
-                      pos_in_stream=token.pos_in_stream, line=token.line,
-                      column=token.column)
-        kwargs.update(replace)
-        self = super(AttrToken, cls).__new__(cls, **kwargs)
+    @classmethod
+    def transform(cls, token, *args, **kwargs):
+
+        sig = signature(super().__init__)
+        opt = dict(type_=token.type, value=token.value, pos_in_stream=token.pos_in_stream,
+                   line=token.line, column=token.column)
+        opt.update(sig.bind_partial(*args, **kwargs).arguments)
+
+        self = super(AttrToken, cls).__new__(cls, **opt)
         self.rule = self.type
         if token.type == 'INT':
             self.eval = int(self.value)
@@ -114,9 +117,6 @@ class AttrTree(Tree):
         _attrtoken: :class:`AttrToken` implementation.
     """
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
     @classmethod
     def transform(cls, tree, *args, **kwargs):
         self = cls.__new__(cls)
@@ -131,14 +131,36 @@ class AttrTree(Tree):
             if isinstance(child, Tree):
                 node = cls.transform(tree=child)
             elif isinstance(child, Token):
-                node = cls._attrtoken(token=child)
+                node = cls._attrtoken.transform(token=child)
             else:
-                node = cls._attrtoken(token=Token('STR', str(child)))
+                node = cls._attrtoken('STR', str(child))
             children += [node]
         type(self)._attrset(self, 'children', children)
         type(self)._attrset(self, '_meta', opt['meta'])
 
         return self
+
+    @classmethod
+    def from_dict(cls, key_val):
+        try:
+            keys, values = zip(*key_val.items())
+        except AttributeError:
+            try:
+                keys, values = zip(*key_val)
+            except TypeError:
+                raise TypeError("arg 'key_val' (%s) not dict (or iterable of key-value pairs)" %
+                                (key_val.__class__.__name__,)) from None
+        items = []
+        for key, val in zip(keys, values):
+            if key == key.upper():
+                item = [cls._attrtoken(key, val)]
+            else:
+                item = [cls(key, cls.from_dict(val))]
+            items += item
+        if len(items) == 1:
+            return items[0]
+        else:
+            return items
 
     """AttrToken implementation."""
     _attrtoken = AttrToken

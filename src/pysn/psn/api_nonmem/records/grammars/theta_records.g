@@ -7,8 +7,7 @@
 
 root : [ws] (param | ws | comment)*
 
-param : (single | multi) [WS] comment
-      | (single | multi)
+param : (single | multi)
 
 single : init [fix]
        | LP [WS] [lower_bound] sep init (fix RP [WS] | RP [WS] [fix])

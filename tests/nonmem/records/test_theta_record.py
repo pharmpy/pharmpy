@@ -96,3 +96,15 @@ def test_create(create_record, buf, theta_dicts):
     for i, ref in enumerate(theta_dicts):
         dict_rec = {k: getattr(rec.thetas[i], k) for k in ref.keys()}
         assert dict_rec == ref
+
+
+@pytest.mark.usefixtures('create_record')
+@pytest.mark.parametrize('buf,replace_dicts', [
+    ('THETA 0', [dict(init=1)]),
+])
+def test_modify(create_record, buf, replace_dicts):
+    rec = create_record(buf)
+    thetas = rec.thetas
+    for i, repl in enumerate(replace_dicts):
+        thetas[i]._replace(**repl)
+    # rec.thetas = thetas

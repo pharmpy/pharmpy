@@ -1,10 +1,12 @@
 # -*- encoding: utf-8 -*-
 
+from collections import OrderedDict as OD
 from collections import namedtuple
+
+from pysn.parse_utils import AttrTree
 
 from .parser import ThetaRecordParser
 from .record import Record
-
 
 ThetaInit = namedtuple('ThetaInit', ('lower_bound', 'init', 'upper_bound', 'fixed', 'n_thetas',
                                      'back_node'))
@@ -48,3 +50,12 @@ class ThetaRecord(Record):
             thetas += [ThetaInit(**init)]
 
         return thetas
+
+    @thetas.setter
+    def thetas(self, thetas):
+        new = []
+        for theta in thetas:
+            init = OD(NUMERIC=theta.init)
+            single = OD(init=init)
+            param = OD(single=single)
+            new += [AttrTree.from_dict(OD(param=param))]
