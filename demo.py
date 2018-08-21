@@ -4,7 +4,6 @@
 import importlib
 import sys
 from pprint import pprint
-from os import listdir
 from os.path import dirname
 from os.path import join
 from os.path import realpath
@@ -30,18 +29,13 @@ pysn = importlib.import_module('pysn')
 sys.path.pop()
 
 path = join(root, 'tests', 'testdata', 'nonmem')
-for path_model in [join(path, file) for file in listdir(path)]:
+for path_model in [join(path, file) for file in ('pheno_real.mod',)]:
     model = pysn.Model(path_model)
     print("pysn.Model('%s')" % path_model)
     print('='*80)
 
     print('str(model) =')
     pprint_str(str(model))
-
-    print('\nmodel.input.path = %s' % (model.input.path,))
-    names = model.input.column_names()
-    print('\nmodel.input.columns_names() =')
-    pprint_str(names)
 
     print("recs = model.get_records('THETA')")
     recs = model.get_records('THETA')
