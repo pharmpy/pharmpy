@@ -23,7 +23,9 @@ class NMTRANDataIO(StringIO):
                 comment_regexp = re.compile('^[' + ignore_character + '].*\n', re.MULTILINE)
             contents = re.sub(comment_regexp, '', contents)
 
-        contents = re.sub(r'\s\.\s', '0', contents)        # Replace dot surrounded by space with 0 as explained in the NM-TRAN manual
+        # Replace dot surrounded by space with 0 as explained in the NM-TRAN manual
+        contents = re.sub(r'\s\.\s', '0', contents)
+
         super().__init__(contents)
 
 
@@ -50,7 +52,7 @@ class ModelInput(generic.ModelInput):
     def data_frame(self):
         try:
             return self._data_frame
-        except:
-            file_io = NMTRANDataIO(self.path, self.ignore_character) 
+        except AttributeError:
+            file_io = NMTRANDataIO(self.path, self.ignore_character)
             self._data_frame = pd.read_table(file_io, sep='\s+|,', header=None, engine='python')
         return self._data_frame

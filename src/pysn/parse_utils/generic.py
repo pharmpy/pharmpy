@@ -14,7 +14,6 @@ to point to your grammar file) to define a powerful parser.
    http://google.github.io/styleguide/pyguide.html
 """
 
-import logging
 from inspect import signature
 from pathlib import Path
 

@@ -11,7 +11,6 @@ from os.path import dirname
 from os.path import join
 from os.path import splitext
 from textwrap import dedent
-
 from setuptools import find_packages
 from setuptools import setup
 
@@ -23,9 +22,11 @@ def read(*names, **kwargs):
         encoding=kwargs.get('encoding', 'utf8')
     ).read()
 
+
 def strip_refs(text_str):
     """Strip ref text roles (not valid long_description markup)"""
     return re.sub(':[a-z]+:`~?(.*?)`', r'``\1``', text_str)
+
 
 def longdesc(text_str):
     """Extract blocks between start-longdesc and end-longdesc directives"""
