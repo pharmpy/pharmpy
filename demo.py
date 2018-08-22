@@ -45,5 +45,6 @@ for path_model in [join(path, file) for file in ('pheno_real.mod',)]:
 
     print("\nmodel.get_records('THETA')[0].parser =")
     print(recs[0].parser)
+    print(model.input.data_frame)
 
 # lexer.test()

@@ -15,3 +15,4 @@ def test_data_read(pheno_real):
     model = pysn.psn.model.Model(pheno_real)
     df = model.input.data_frame
     assert list(df.iloc[1]) == [1.0, 2.0, 0.0, 1.4, 7.0, 17.3, 0.0, 0.0]
+    assert list(df.columns) == ['ID', 'TIME', 'AMT', 'WGT', 'APGR', 'DV', 'FA1', 'FA2']

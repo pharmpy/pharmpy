@@ -53,6 +53,22 @@ class ModelInput(generic.ModelInput):
         try:
             return self._data_frame
         except AttributeError:
-            file_io = NMTRANDataIO(self.path, self.ignore_character)
-            self._data_frame = pd.read_table(file_io, sep='\s+|,', header=None, engine='python')
+            self._read_data_frame()
         return self._data_frame
+
+    def _column_names(self):
+        input_records = self.model.get_records("INPUT")
+        for record in input_records:
+            for key, value in record.option_pairs.items():
+                if value:
+                    if key == 'DROP' or key == 'SKIP':
+                        yield value
+                    else:
+                        yield key
+                else:
+                    yield key
+
+    def _read_data_frame(self):
+        file_io = NMTRANDataIO(self.path, self.ignore_character)
+        self._data_frame = pd.read_table(file_io, sep='\s+|,', header=None, engine='python')
+        self._data_frame.columns = list(self._column_names())
