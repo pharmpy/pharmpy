@@ -87,6 +87,11 @@ class ModelInput(object):
         """Gets the path of the dataset"""
         raise NotImplementedError
 
+    @property
+    def data_frame(self):
+        """Gets the pandas DataFrame object representing the dataset"""
+        raise NotImplementedError
+
 
 class ParameterModel:
     """Implements API for :attr:`Model.parameters`, the model parameters"""
