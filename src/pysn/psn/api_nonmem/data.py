@@ -27,10 +27,11 @@ class Data:
         self.filename = filename
         self.ignore_character = '@'
 
-    #@property
-    #def data_frame(self):
-    #    return self._data_frame
-
-    def read(self):
-        file_io = NMTRANDataIO(self.filename, self.ignore_character) 
-        self.data_frame = pd.read_table(file_io, sep='\s+|,', header=None, engine='python')
+    @property
+    def data_frame(self):
+        try:
+            return self._data_frame
+        except:
+            file_io = NMTRANDataIO(self.filename, self.ignore_character) 
+            self._data_frame = pd.read_table(file_io, sep='\s+|,', header=None, engine='python')
+        return self._data_frame

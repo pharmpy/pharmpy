@@ -10,6 +10,5 @@ def test_data_io(pheno_data):
 
 def test_data_read(pheno_data):
     data = pysn.psn.api_nonmem.data.Data(pheno_data)
-    data.read()
     df = data.data_frame
     assert list(df.iloc[1]) == [1.0, 2.0, 0.0, 1.4, 7.0, 17.3, 0.0, 0.0]
