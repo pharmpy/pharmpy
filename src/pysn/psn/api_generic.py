@@ -87,8 +87,13 @@ class ModelInput(object):
         """Gets the path of the dataset"""
         raise NotImplementedError
 
+    @path.setter
+    def path(self):
+        """Sets the path of the dataset"""
+        raise NotImplementedError
+
     @property
-    def data_frame(self):
+    def data_frame(self, p):
         """Gets the pandas DataFrame object representing the dataset"""
         raise NotImplementedError
 

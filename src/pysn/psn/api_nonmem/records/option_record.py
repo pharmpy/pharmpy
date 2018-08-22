@@ -30,5 +30,12 @@ class OptionRecord(Record):
 
         return pairs
 
+    @property
+    def first_key(self):
+        """ Extract the first key
+        """
+        pairs = self.option_pairs
+        return next(iter(pairs))
+
     def __str__(self):
         return super().__str__() + str(self.root)

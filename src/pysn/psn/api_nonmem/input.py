@@ -1,42 +1,56 @@
 # -*- encoding: utf-8 -*-
 
-from pathlib import Path
+import re
+from io import StringIO
+import pandas as pd
 
 from . import generic
 
 
+class NMTRANDataIO(StringIO):
+    """ An IO class that is a prefilter for pandas.read_table.
+        Things that cannot be handled directly by pandas will be taken care of here and the
+        rest will be taken care of by pandas.
+    """
+    def __init__(self, filename, ignore_character):
+        with open(str(filename), 'r') as datafile:
+            contents = datafile.read()      # All variations of newlines are converted into \n
+
+        if ignore_character:
+            if ignore_character == '@':
+                comment_regexp = re.compile(r'^[A-Za-z].*\n', re.MULTILINE)
+            else:
+                comment_regexp = re.compile('^[' + ignore_character + '].*\n', re.MULTILINE)
+            contents = re.sub(comment_regexp, '', contents)
+
+        contents = re.sub(r'\s\.\s', '0', contents)        # Replace dot surrounded by space with 0 as explained in the NM-TRAN manual
+        super().__init__(contents)
+
+
 class ModelInput(generic.ModelInput):
-    """A NONMEM 7.x model $INPUT class"""
+    """A NONMEM 7.x model input class. Covers at least $INPUT and $DATA."""
 
-    pass
-    #def column_names(self):
-        #"""Gets a list of the column names of the input dataset
+    def __init__(self, model):
+        self.model = model
+        data_records = model.get_records("DATA")
+        filename = data_records[0].first_key
+        self._path = model.path.parent / filename
+        print(self.path)
+        self.ignore_character = '@'     # FIXME: Read from model!
 
-        #Limitation: Tries to create unique symbol for anonymous columns, but
-        #only uses the INPUT names.
-        #"""
-     #   records = self.model.get_records('INPUT')
-     #   all_symbols = []
-     #   for record in records:
-     #       pairs = record.ordered_pairs()
-     #       for key in pairs:
-     #           all_symbols.append(key)
-     #           if pairs[key]:
-     #               all_symbols.append(key)
-     #   names = []
-     #   for record in records:
-     #       pairs = record.ordered_pairs()
-     #       for key, value in pairs.items():
-     #           if key == 'DROP' or key == 'SKIP':
-     #               names.append(all_symbols, 'DROP')
-     #           else:
-     #               names.append(key)
-     #   return names
+    @property
+    def path(self):
+        return self._path
 
-    #@property
-    #def path(self):
-     #   data_records = self.model.get_records('DATA')
-     #   pairs = data_records[0].ordered_pairs()
-     #   first_pair = next(iter(pairs.items()))
-     #   path = Path(first_pair[0]).resolve()
-     #   return path
+    @path.setter
+    def path(self, p):
+        self._path = p
+
+    @property
+    def data_frame(self):
+        try:
+            return self._data_frame
+        except:
+            file_io = NMTRANDataIO(self.path, self.ignore_character) 
+            self._data_frame = pd.read_table(file_io, sep='\s+|,', header=None, engine='python')
+        return self._data_frame
