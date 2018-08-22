@@ -29,5 +29,6 @@ class ThetaRecordParser(RecordParser):
         'comment': (1, 'TEXT')
     }
 
+
 class OptionRecordParser(RecordParser):
     grammar_filename = 'option_record.g'

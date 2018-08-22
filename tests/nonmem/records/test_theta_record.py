@@ -84,13 +84,27 @@ def test_messy_random(parse_assert, RandomThetas):
 
 
 @pytest.mark.usefixtures('create_record')
-@pytest.mark.parametrize('buf,theta', [
-    ('THET', None),
-    ('THETA 0', None),
-    ('THETA   12.3 \n\n', None),
-    ('THETA  (0,0.00469307) ; CL', None),
-    ('THETA  (0,1.00916) ; V', None),
+@pytest.mark.parametrize('buf,theta_dicts', [
+    ('THET', []),
+    ('THETA 0', [dict(init=0)]),
+    ('THETA   12.3 \n\n', [dict(init=12.3)]),
+    ('THETA  (0,0.00469) ; CL', [dict(lower_bound=0, init=0.00469)]),
 ])
-def test_create(create_record, buf, theta):
+def test_create(create_record, buf, theta_dicts):
     rec = create_record(buf)
     assert rec.name == 'THETA'
+    for i, ref in enumerate(theta_dicts):
+        dict_rec = {k: getattr(rec.thetas[i], k) for k in ref.keys()}
+        assert dict_rec == ref
+
+
+@pytest.mark.usefixtures('create_record')
+@pytest.mark.parametrize('buf,replace_dicts', [
+    ('THETA 0', [dict(init=1)]),
+])
+def test_modify(create_record, buf, replace_dicts):
+    rec = create_record(buf)
+    thetas = rec.thetas
+    for i, repl in enumerate(replace_dicts):
+        thetas[i]._replace(**repl)
+    # rec.thetas = thetas

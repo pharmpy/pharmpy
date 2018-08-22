@@ -1,10 +1,12 @@
 # -*- encoding: utf-8 -*-
 
+from collections import OrderedDict as OD
 from collections import namedtuple
+
+from pysn.parse_utils import AttrTree
 
 from .parser import ThetaRecordParser
 from .record import Record
-
 
 ThetaInit = namedtuple('ThetaInit', ('lower_bound', 'init', 'upper_bound', 'fixed', 'n_thetas',
                                      'back_node'))
@@ -14,7 +16,6 @@ class ThetaRecord(Record):
     def __init__(self, buf):
         self.parser = ThetaRecordParser(buf)
         self.root = self.parser.root
-        self.thetas = self.parse_thetas(self.root)
 
     def _lexical_tokens(self):
         pass
@@ -25,12 +26,12 @@ class ThetaRecord(Record):
     def __str__(self):
         return super().__str__() + str(self.parser.root)
 
-    @classmethod
-    def parse_thetas(cls, root):
+    @property
+    def thetas(self):
         """Extracts from tree root and returns list of :class:`ThetaInit`."""
 
         thetas = []
-        params = [x for par in root.all('param') for x in par.all('single') + par.all('multi')]
+        params = [x for par in self.root.all('param') for x in par.all('single') + par.all('multi')]
 
         for param in params:
             init = {k: None for k in ThetaInit._fields}
@@ -49,3 +50,12 @@ class ThetaRecord(Record):
             thetas += [ThetaInit(**init)]
 
         return thetas
+
+    @thetas.setter
+    def thetas(self, thetas):
+        new = []
+        for theta in thetas:
+            init = OD(NUMERIC=theta.init)
+            single = OD(init=init)
+            param = OD(single=single)
+            new += [AttrTree.from_dict(OD(param=param))]
