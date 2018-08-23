@@ -64,11 +64,16 @@ class AttrToken(Token):
     def transform(cls, token, *args, **kwargs):
 
         sig = signature(super().__init__)
-        opt = dict(type_=token.type, value=token.value, pos_in_stream=token.pos_in_stream,
-                   line=token.line, column=token.column)
-        opt.update(sig.bind_partial(*args, **kwargs).arguments)
+        opt = dict(
+            type_=token.type,
+            value=token.value,
+            pos_in_stream=token.pos_in_stream,
+            line=token.line,
+            column=token.column)
+        opt.update(**kwargs)
+        opt = sig.bind_partial(*args, **opt)
 
-        self = super(AttrToken, cls).__new__(cls, **opt)
+        self = super(AttrToken, cls).__new__(cls, *opt.args, **opt.kwargs)
         self.rule = self.type
         if token.type == 'INT':
             self.eval = int(self.value)
@@ -80,17 +85,15 @@ class AttrToken(Token):
 
     def replace(self, value):
         """Returns new Token (of same rule) with value replaced."""
-        return type(self)(self, value=value)
-
-    def str_repr(self):
-        return repr(str(self))[1:-1]
+        return self.transform(token=self, value=value)
 
     def __repr__(self):
-        return '%s(%s) %s' % (self.__class__.__name__, self.rule, repr(str(self)))
+        return '%s(%s, %s)' % (self.__class__.__name__, self.rule, self.value)
 
 
 class NoSuchRuleException(AttributeError):
     """Rule not found exceptions"""
+
     def __init__(self, rule, tree=None):
         try:
             post = ' (%s)' % (repr(tree.rule),)
@@ -122,11 +125,12 @@ class AttrTree(Tree):
 
         sig = signature(super().__init__)
         opt = dict(data=tree.data, children=tree.children, meta=tree._meta)
-        opt.update(sig.bind_partial(*args, **kwargs).arguments)
+        opt.update(**kwargs)
+        opt = sig.bind_partial(*args, **opt)
 
-        type(self)._attrset(self, 'data', opt['data'])
+        type(self)._attrset(self, 'data', opt.kwargs['data'])
         children = []
-        for i, child in enumerate(opt['children'].copy()):
+        for i, child in enumerate(opt.kwargs['children'].copy()):
             if isinstance(child, Tree):
                 node = cls.transform(tree=child)
             elif isinstance(child, Token):
@@ -135,7 +139,7 @@ class AttrTree(Tree):
                 node = cls._attrtoken('STR', str(child))
             children += [node]
         type(self)._attrset(self, 'children', children)
-        type(self)._attrset(self, '_meta', opt['meta'])
+        type(self)._attrset(self, '_meta', opt.kwargs['meta'])
 
         return self
 
@@ -167,12 +171,12 @@ class AttrTree(Tree):
     # -- public interface ----------------------------------------------
     @property
     def rule(self):
-        """Returns this rule (tree)"""
+        """Returns rule (this tree)"""
         return self.data
 
     @property
     def rules(self):
-        """Returns all rules (children)"""
+        """Returns all rules (immediate children)"""
         return [node.rule for node in self.children]
 
     @property
@@ -279,7 +283,7 @@ class AttrTree(Tree):
         return ''.join(str(x) for x in children)
 
     def __repr__(self):
-        return '%s(%s) %s' % (self.__class__.__name__, self.rule, repr(str(self)))
+        return '%s(%s, %s)' % (self.__class__.__name__, self.rule, repr(self.children))
 
 
 class PreParser(Transformer):
