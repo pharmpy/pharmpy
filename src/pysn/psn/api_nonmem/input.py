@@ -37,7 +37,7 @@ class ModelInput(generic.ModelInput):
     def __init__(self, model):
         self.model = model
         data_records = model.get_records("DATA")
-        data_path = Path(data_records[0].first_key)       # FIXME: Check if quoted string is allowed in NMTRAN
+        data_path = Path(data_records[0].path)
         if data_path.is_absolute():
             self._path = data_path
         else:
@@ -79,6 +79,7 @@ class ModelInput(generic.ModelInput):
 
     @property
     def filters(self):
+        # Work in progress
         self.model.get_records("INPUT")
         for record in input_records:
             for key, value in record.option_pairs.items():
