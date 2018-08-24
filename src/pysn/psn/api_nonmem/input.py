@@ -76,3 +76,11 @@ class ModelInput(generic.ModelInput):
         file_io = NMTRANDataIO(self.path, self.ignore_character)
         self._data_frame = pd.read_table(file_io, sep='\s+|,', header=None, engine='python')
         self._data_frame.columns = list(self._column_names())
+
+    @property
+    def filters(self):
+        self.model.get_records("INPUT")
+        for record in input_records:
+            for key, value in record.option_pairs.items():
+                if key == 'IGNORE' and value.startswith('('):        # FIXME: Do this more generally later
+                    pass
