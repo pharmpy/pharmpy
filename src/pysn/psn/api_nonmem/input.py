@@ -41,7 +41,7 @@ class ModelInput(generic.ModelInput):
         if data_path.is_absolute():
             self._path = data_path
         else:
-            self._path = model.path.parent.joinpath(data_path)
+            self._path = model.path.parent / data_path
         self.ignore_character = '@'     # FIXME: Read from model!
 
     @property
