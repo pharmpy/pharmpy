@@ -1,7 +1,7 @@
 # -*- encoding: utf-8 -*-
 
 known_records = {
-    'DATA': 'OptionRecord',
+    'DATA': 'DataRecord',
     'ESTIMATION': 'OptionRecord',
     'INPUT': 'OptionRecord',
     'PROBLEM': 'ProblemRecord',
