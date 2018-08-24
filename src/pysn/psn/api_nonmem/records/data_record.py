@@ -19,7 +19,7 @@ class DataRecord(OptionRecord):
         ''' Get the path to the dataset. Will remove quoting if applicable.
         '''
         if hasattr(self.root, 'non_quoted_path'):
-            path = self.root.non_quoted_path.STRING
+            path = self.root.non_quoted_path.NON_QUOTED_STRING
         elif hasattr(self.root, 'single_quoted_path'):
             path = str(self.root.single_quoted_path.SINGLE_QUOTED_STRING)[1:-1]
         else:
