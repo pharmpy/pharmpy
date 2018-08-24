@@ -2,6 +2,8 @@
 
 import re
 from io import StringIO
+from pathlib import Path
+
 import pandas as pd
 
 from . import generic
@@ -35,9 +37,11 @@ class ModelInput(generic.ModelInput):
     def __init__(self, model):
         self.model = model
         data_records = model.get_records("DATA")
-        filename = data_records[0].first_key
-        self._path = model.path.parent / filename
-        print(self.path)
+        data_path = Path(data_records[0].first_key)       # FIXME: Check if quoted string is allowed in NMTRAN
+        if data_path.is_absolute():
+            self._path = data_path
+        else:
+            self._path = model.path.parent.joinpath(data_path)
         self.ignore_character = '@'     # FIXME: Read from model!
 
     @property
