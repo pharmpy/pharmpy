@@ -1,7 +1,7 @@
 # -*- encoding: utf-8 -*-
 
-from collections import OrderedDict as OD
 from collections import namedtuple
+from collections import deque
 
 from pysn.parse_utils import AttrTree
 
@@ -52,10 +52,18 @@ class ThetaRecord(Record):
         return thetas
 
     @thetas.setter
-    def thetas(self, thetas):
-        new = []
-        for theta in thetas:
-            init = OD(NUMERIC=theta.init)
-            single = OD(init=init)
-            param = OD(single=single)
-            new += [AttrTree.from_dict(OD(param=param))]
+    def thetas(self, values):
+        new_root = list()
+        values = deque(values)
+
+        for child in self.root.children:
+            if child.rule == 'param':
+                value = values.popleft()
+                init = dict(NUMERIC=value.init)
+                single = dict(init=init)
+                node = AttrTree.from_dict(dict(single=single), 'param')
+            else:
+                node = child
+            new_root += [node]
+
+        self.root = AttrTree.from_dict(new_root, 'root')

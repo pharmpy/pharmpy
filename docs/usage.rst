@@ -29,7 +29,7 @@ automated tasks.
 
     >>> thetas = pheno.get_records('THETA')
     >>> thetas[0].root
-    AttrTree(root) '  (0,0.00469307) ; CL\n'
+    AttrTree('root', [AttrTree('ws', [AttrToken('WS_ALL', '  ')]), AttrTree('param', [AttrTree('single', [AttrToken('LP', '('), AttrTree('lower_bound', [AttrToken('NUMERIC', '0')]), AttrTree('sep', [AttrToken('COMMA', ',')]), AttrTree('init', [AttrToken('NUMERIC', '0.00469307')]), AttrToken('RP', ')')])]), AttrTree('ws', [AttrToken('WS_ALL', ' ')]), AttrTree('comment', [AttrToken('SEMICOLON', ';'), AttrToken('WS', ' '), AttrToken('TEXT', 'CL')]), AttrTree('ws', [AttrToken('WS_ALL', '\n')])])
     >>> str(thetas[0].root)
     '  (0,0.00469307) ; CL\n'
     >>> print(thetas[0].parser)

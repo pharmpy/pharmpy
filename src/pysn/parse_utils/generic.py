@@ -14,7 +14,6 @@ to point to your grammar file) to define a powerful parser.
    http://google.github.io/styleguide/pyguide.html
 """
 
-from inspect import signature
 from pathlib import Path
 
 from lark import Lark
@@ -58,37 +57,39 @@ class AttrToken(Token):
         eval: Transformed data type (in common with :class:`AttrTree`).
     """
 
-    __slots__ = ('rule', 'eval')
+    __slots__ = ()
 
     @classmethod
-    def transform(cls, token, *args, **kwargs):
-
-        sig = signature(super().__init__)
-        opt = dict(
-            type_=token.type,
-            value=token.value,
-            pos_in_stream=token.pos_in_stream,
-            line=token.line,
-            column=token.column)
-        opt.update(**kwargs)
-        opt = sig.bind_partial(*args, **opt)
-
-        self = super(AttrToken, cls).__new__(cls, *opt.args, **opt.kwargs)
-        self.rule = self.type
-        if token.type == 'INT':
-            self.eval = int(self.value)
-        elif token.type == 'NUMERIC':
-            self.eval = float(self.value)
-        else:
-            self.eval = str(self.value)
-        return self
+    def transform(cls, token, **kwargs):
+        """Alternative constructor: from Token (with optional overrides)."""
+        kwargs = {'type_': token.type, 'value': token.value, 'pos_in_stream': token.pos_in_stream,
+                  'line': token.line, 'column': token.column, **kwargs}
+        return cls(**kwargs)
 
     def replace(self, value):
-        """Returns new Token (of same rule) with value replaced."""
+        """Returns new Token (of same rule) with its content replaced."""
         return self.transform(token=self, value=value)
 
+    @property
+    def rule(self):
+        """Rule name (synonymous with 'type')"""
+        return self.type
+
+    @rule.setter
+    def rule(self, value):
+        self.type = value
+
+    @property
+    def eval(self):
+        if self.type == 'INT':
+            return int(self.value)
+        elif self.type == 'NUMERIC':
+            return float(self.value)
+        else:
+            return str(self.value)
+
     def __repr__(self):
-        return '%s(%s, %s)' % (self.__class__.__name__, self.rule, self.value)
+        return '%s(%s, %s)' % (self.__class__.__name__, repr(self.rule), repr(self.value))
 
 
 class NoSuchRuleException(AttributeError):
@@ -116,88 +117,78 @@ class AttrTree(Tree):
         rule: Rule name (in common with :class:`.AttrToken`).
         rules: All rule names (for :attr:`.children`).
         eval: Transformed data type (in common with :class:`.AttrToken`).
-        _attrtoken: :class:`AttrToken` implementation.
     """
 
+    __dict__ = {'data': None, 'children': None, '_meta': None}
+
+    AttrToken = AttrToken
+
     @classmethod
-    def transform(cls, tree, *args, **kwargs):
-        self = cls.__new__(cls)
-
-        sig = signature(super().__init__)
-        opt = dict(data=tree.data, children=tree.children, meta=tree._meta)
-        opt.update(**kwargs)
-        opt = sig.bind_partial(*args, **opt)
-
-        type(self)._attrset(self, 'data', opt.kwargs['data'])
-        children = []
-        for i, child in enumerate(opt.kwargs['children'].copy()):
+    def transform(cls, tree, **kwargs):
+        """Alternative constructor: From Tree (with optional overrides)."""
+        kwargs = {'data': tree.data, 'children': tree.children, 'meta': tree._meta, **kwargs}
+        children = kwargs['children'].copy()
+        for i, child in enumerate(children):
             if isinstance(child, Tree):
-                node = cls.transform(tree=child)
+                children[i] = cls.transform(tree=child)
             elif isinstance(child, Token):
-                node = cls._attrtoken.transform(token=child)
+                children[i] = cls.AttrToken.transform(token=child)
             else:
-                node = cls._attrtoken('STR', str(child))
-            children += [node]
-        type(self)._attrset(self, 'children', children)
-        type(self)._attrset(self, '_meta', opt.kwargs['meta'])
-
-        return self
+                children[i] = cls.AttrToken('STRING', str(child))
+        kwargs['children'] = children
+        return cls(**kwargs)
 
     @classmethod
-    def from_dict(cls, key_val):
-        try:
-            keys, values = zip(*key_val.items())
-        except AttributeError:
-            try:
-                keys, values = zip(*key_val)
-            except TypeError:
-                raise TypeError("arg 'key_val' (%s) not dict (or iterable of key-value pairs)" %
-                                (key_val.__class__.__name__,)) from None
-        items = []
-        for key, val in zip(keys, values):
-            if key == key.upper():
-                item = [cls._attrtoken(key, val)]
-            else:
-                item = [cls(key, cls.from_dict(val))]
-            items += item
-        if len(items) == 1:
-            return items[0]
-        else:
-            return items
+    def from_dict(cls, items, root='root'):
+        """Alternative constructor: From nested rule-value(s) dict.
 
-    """AttrToken implementation."""
-    _attrtoken = AttrToken
+        Args:
+            items: Ordered dict where values are children (tree nodes) or content (token nodes).
+                Lower cased keys for trees and upper case for tokens.
+            root: Rule of root tree.
+        """
+        nodes = []
+        for key, val in items.items():
+            if key == key.upper():
+                nodes += [cls.AttrToken(key, val)]
+            else:
+                nodes += [cls(key, cls.from_dict(val))]
+        return cls(root, nodes)
 
     # -- public interface ----------------------------------------------
     @property
     def rule(self):
-        """Returns rule (this tree)"""
+        """Rule name (synonymous with 'data')."""
         return self.data
+
+    @rule.setter
+    def rule(self, value):
+        self.data = value
 
     @property
     def rules(self):
-        """Returns all rules (immediate children)"""
+        """All rule names of (immediate) children."""
         return [node.rule for node in self.children]
 
     @property
     def eval(self):
-        """Returns self (the tree)"""
+        """Evaluated value (self)."""
         return self
 
     def find(self, rule):
-        """Gets first child matching rule, or None if none"""
+        """Gets first child matching rule, or None if none."""
         return self._getchild_(rule, multi=False)
 
     def all(self, rule):
-        """Gets all children matching rule, or [] if none"""
+        """Gets all children matching rule, or [] if none."""
         return self._getchild_(rule, multi=True)
 
     def set_child(self, rule, value):
-        """Sets first child matching rule (raises if none)"""
+        """Sets first child matching rule (raises if none)."""
         self._setchild_(rule, value)
 
     def tree_walk(self):
-        """Generator for (depth-first, i.e. parse order) iter over children"""
+        """Generator for (depth-first, i.e. parse order) iter over children."""
         for child in self.children:
             yield child
             try:
@@ -206,7 +197,7 @@ class AttrTree(Tree):
                 continue
 
     def set(self, value, rule=None):
-        """Sets value for first token matching rule (or leaf if None)"""
+        """Sets value for first token matching rule (or leaf if None)."""
         if rule:
             token = self.find(rule)
         else:
@@ -220,11 +211,8 @@ class AttrTree(Tree):
             raise TypeError('child not a token: %s' % (repr(token),)) from e
         self.set_child(rule, new)
 
-    def str_repr(self):
-        return repr(str(self))[1:-1]
-
     def treeprint(self, content=True, indent=''):
-        """Formats tree structure (for grammar debugging purposes)"""
+        """Formats tree structure (for grammar debugging purposes)."""
         lines = str(prettyprint.transform(self, content)).splitlines()
         print('\n'.join(indent + line for line in lines))
 
@@ -283,7 +271,7 @@ class AttrTree(Tree):
         return ''.join(str(x) for x in children)
 
     def __repr__(self):
-        return '%s(%s, %s)' % (self.__class__.__name__, self.rule, repr(self.children))
+        return '%s(%s, %s)' % (self.__class__.__name__, repr(self.rule), repr(self.children))
 
 
 class PreParser(Transformer):
@@ -378,7 +366,6 @@ class GenericParser:
         buffer (str): Buffer parsed (see :method:`parse`).
         grammar (str): Path to grammar file. Set in subclass.
         root (str): Root of final tree (instance of :class:`AttrTree`)
-        _attrtree: AttrTree implementation used in :method:`parse` (step 3)
 
     .. _Lark:
         https://github.com/lark-parser/lark
@@ -391,7 +378,7 @@ class GenericParser:
     _transformer = None
 
     """:class:`AttrTree` implementation."""
-    _attrtree = AttrTree
+    AttrTree = AttrTree
 
     lark_options = dict(
         keep_all_tokens=True,
@@ -432,13 +419,7 @@ class GenericParser:
 
         if self.non_empty:
             root = self.insert(root, self.non_empty)
-        return self._attrtree.transform(tree=root)
-
-    def __str__(self, content=True):
-        if not self.root:
-            return repr(self)
-        lines = str(prettyprint.transform(self.root, content)).splitlines()
-        return '\n'.join(lines)
+        return self.AttrTree.transform(tree=root)
 
     @classmethod
     def insert(cls, item, non_empty):
@@ -461,3 +442,9 @@ class GenericParser:
         for i, child in enumerate(item.children):
             item.children[i] = cls.insert(child, non_empty)
         return item
+
+    def __str__(self, content=True):
+        if not self.root:
+            return repr(self)
+        lines = str(prettyprint.transform(self.root, content)).splitlines()
+        return '\n'.join(lines)

@@ -1,5 +1,7 @@
 # -*- encoding: utf-8 -*-
 
+# from collections import OrderedDict
+
 import pytest
 
 
@@ -94,17 +96,21 @@ def test_create(create_record, buf, theta_dicts):
     rec = create_record(buf)
     assert rec.name == 'THETA'
     for i, ref in enumerate(theta_dicts):
-        dict_rec = {k: getattr(rec.thetas[i], k) for k in ref.keys()}
-        assert dict_rec == ref
+        rec_dict = {k: getattr(rec.thetas[i], k) for k in ref.keys()}
+        assert rec_dict == ref
 
 
-@pytest.mark.usefixtures('create_record')
-@pytest.mark.parametrize('buf,replace_dicts', [
-    ('THETA 0', [dict(init=1)]),
-])
-def test_modify(create_record, buf, replace_dicts):
-    rec = create_record(buf)
-    thetas = rec.thetas
-    for i, repl in enumerate(replace_dicts):
-        thetas[i]._replace(**repl)
-    # rec.thetas = thetas
+# @pytest.mark.usefixtures('create_record')
+# @pytest.mark.parametrize('buf,theta_dicts', [
+#     ('THETA 0', [dict(init=1)]),
+# ])
+# def test_modify(create_record, buf, theta_dicts):
+#     rec = create_record(buf)
+#     thetas = rec.thetas
+#     for i, key_val in enumerate(theta_dicts):
+#         thetas[i] = thetas[i]._replace(**key_val)
+#     rec.thetas = thetas
+#
+#     for theta, ref in zip(rec.thetas, theta_dicts):
+#         rec_dict = {k: getattr(theta, k) for k in ref.keys()}
+#         assert rec_dict == ref
