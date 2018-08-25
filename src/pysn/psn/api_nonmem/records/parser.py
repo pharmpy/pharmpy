@@ -32,3 +32,7 @@ class ThetaRecordParser(RecordParser):
 
 class OptionRecordParser(RecordParser):
     grammar_filename = 'option_record.g'
+
+
+class DataRecordParser(RecordParser):
+    grammar_filename = 'data_record.g'

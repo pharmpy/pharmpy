@@ -2,6 +2,8 @@
 
 import re
 from io import StringIO
+from pathlib import Path
+
 import pandas as pd
 
 from . import generic
@@ -35,9 +37,11 @@ class ModelInput(generic.ModelInput):
     def __init__(self, model):
         self.model = model
         data_records = model.get_records("DATA")
-        filename = data_records[0].first_key
-        self._path = model.path.parent / filename
-        print(self.path)
+        data_path = Path(data_records[0].path)
+        if data_path.is_absolute():
+            self._path = data_path
+        else:
+            self._path = model.path.parent / data_path
         self.ignore_character = '@'     # FIXME: Read from model!
 
     @property
@@ -72,3 +76,12 @@ class ModelInput(generic.ModelInput):
         file_io = NMTRANDataIO(self.path, self.ignore_character)
         self._data_frame = pd.read_table(file_io, sep='\s+|,', header=None, engine='python')
         self._data_frame.columns = list(self._column_names())
+
+    @property
+    def filters(self):
+        # Work in progress
+        self.model.get_records("INPUT")
+        for record in input_records:
+            for key, value in record.option_pairs.items():
+                if key == 'IGNORE' and value.startswith('('):        # FIXME: Do this more generally later
+                    pass

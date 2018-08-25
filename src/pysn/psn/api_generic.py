@@ -1,6 +1,7 @@
 # -*- encoding: utf-8 -*-
 
 from pathlib import Path
+from enum import Enum
 
 
 def detect(lines):
@@ -96,6 +97,40 @@ class ModelInput(object):
     def data_frame(self, p):
         """Gets the pandas DataFrame object representing the dataset"""
         raise NotImplementedError
+
+    @property
+    def filters(self):
+        """Gets an InputFilters object representing
+        all data filters of the model
+        """
+        raise NotImplementedError
+
+    @filters.setter
+    def filters(self, new):
+        """Sets all data filters
+        """
+        raise NotImplementedError
+
+
+# FIXME: Put the different apis and helpers in separate files
+class Operator(Enum):
+    EQUAL = 1
+    NOT_EQUAL = 2
+    LESS_THAN = 3
+    LESS_THAN_OR_EQUAL = 4
+    GREATER_THAN = 5
+    GREATER_THAN_OR_EQUAL = 6
+
+
+class InputFilter:
+    def __init__(self, symbol, operator, value):
+        self.symbol = symbol
+        self.operator = operator
+        self.value = value
+
+
+class InputFilters(list):
+    pass
 
 
 class ParameterModel:

@@ -7,6 +7,7 @@ from . import problem_record as problem_record
 from . import raw_record as raw_record
 from . import records_list as records_list
 from . import theta_record as theta_record
+from . import data_record as data_record
 
 
 def get_raw_record_name(line):
@@ -57,6 +58,8 @@ def create_record(line):
         record = theta_record.ThetaRecord(content)
     elif record_class_name == 'ProblemRecord':
         record = problem_record.ProblemRecord(content)
+    elif record_class_name == 'DataRecord':
+        record = data_record.DataRecord(content)
     record.raw_name = raw_name
     record.name = name
     return record
