@@ -3,7 +3,7 @@ from functools import partial
 
 from . import treeprint
 
-MAXLEN = 40
+MAXLEN = 60
 
 
 def _preview(content):
@@ -36,7 +36,7 @@ def _format_token(content, ast_token):
     return _formatter(content, ast_token)
 
 
-def transform(ast_tree, content):
+def transform(ast_tree, content=True):
     """
     Traverses tree and generates :class:`treeprint.Node`, which can format a
     multiline (command) tree-styled string.

@@ -91,6 +91,12 @@ class AttrToken(Token):
     def __repr__(self):
         return '%s(%s, %s)' % (self.__class__.__name__, repr(self.rule), repr(self.value))
 
+    def __hash__(self):
+        return hash(repr(self))
+
+    def __eq__(self, other):
+        return hash(self) == hash(other)
+
 
 class NoSuchRuleException(AttributeError):
     """Rule not found exceptions"""
@@ -273,6 +279,12 @@ class AttrTree(Tree):
     def __repr__(self):
         return '%s(%s, %s)' % (self.__class__.__name__, repr(self.rule), repr(self.children))
 
+    def __hash__(self):
+        return hash(repr(self))
+
+    def __eq__(self, other):
+        return hash(self) == hash(other)
+
 
 class PreParser(Transformer):
     """
@@ -381,21 +393,15 @@ class GenericParser:
     AttrTree = AttrTree
 
     lark_options = dict(
+        ambiguity='resolve',
+        debug=False,
         keep_all_tokens=True,
+        lexer='dynamic',
         parser='earley',
         start='root',
     )
 
     def __init__(self, buf=None, **lark_options):
-        """
-        Args:
-            buf (str): Buffer (to parse immediately; see :method:`parse`)
-            **lark_options: Options to `:class:Lark`. These defaults can be overriden:
-
-                * ``keep_all_tokens=True``
-                * ``parser='earley'``
-                * ``propagate_positions=True``
-        """
         self.lark_options.update(lark_options)
         if self._transformer:
             self.lark_options['transformer'] = self._transformer
@@ -443,8 +449,8 @@ class GenericParser:
             item.children[i] = cls.insert(child, non_empty)
         return item
 
-    def __str__(self, content=True):
+    def __str__(self):
         if not self.root:
             return repr(self)
-        lines = str(prettyprint.transform(self.root, content)).splitlines()
+        lines = str(prettyprint.transform(self.root)).splitlines()
         return '\n'.join(lines)
