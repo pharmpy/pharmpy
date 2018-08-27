@@ -145,21 +145,40 @@ class AttrTree(Tree):
         return cls(**kwargs)
 
     @classmethod
-    def from_dict(cls, items, root='root'):
-        """Alternative constructor: From nested rule-value(s) dict.
+    def create(cls, name, items):
+        """Alternative constructor: Creates new tree from iterables.
+
+        Nested structure encouraged! Deterministic iterators (such as lists) necessary (naturally)
+        for non-unique names, where key of PARENT will denote name.  Where no name can be created,
+        the __ANON_%d native naming scheme of Lark is used.
+
+        OrderedDict will guarantee identical ordering (otherwise it's up to chance). Only
+        non-iterable items will become leaves (content of a TOKEN node). ALL others are TREEs.
 
         Args:
-            items: Ordered dict where values are children (tree nodes) or content (token nodes).
-                Lower cased keys for trees and upper case for tokens.
-            root: Rule of root tree.
+            items: Dict/list where items will become children (TREE nodes) or content (TOKEN nodes).
+            name: Rule name of root (TREE to contain the nodes).
+
+        NOTE: Please follow convention of all lower case for trees (but all upper for tokens)!
         """
-        nodes = []
-        for key, val in items.items():
-            if key == key.upper():
-                nodes += [cls.AttrToken(key, val)]
-            else:
-                nodes += [cls(key, cls.from_dict(val))]
-        return cls(root, nodes)
+        try:
+            rules, content = zip(*items.items())
+        except AttributeError:  # not a Dicty thing? Then you must be Listy.
+            content = list(items)
+            rules = [name]*len(content)
+        new = []
+        for rule, thing in zip(rules, content):
+            try:  # can you nest? Then we shall need another frame!
+                tree = cls.create(rule, cls.create(thing))
+                new += [tree]
+            except TypeError:
+                try:   # can you "rule"? Then you must be a node already!
+                    rule = thing.rule
+                    new += [thing]
+                except AttributeError:  # no? Sorry, end of the line. You shall be remembered.
+                    new += [cls.AttrToken(rule, str(thing))]
+                    continue
+        return cls(rule, new)
 
     # -- public interface ----------------------------------------------
     @property

@@ -100,17 +100,17 @@ def test_create(create_record, buf, theta_dicts):
         assert rec_dict == ref
 
 
-# @pytest.mark.usefixtures('create_record')
-# @pytest.mark.parametrize('buf,theta_dicts', [
-#     ('THETA 0', [dict(init=1)]),
-# ])
-# def test_modify(create_record, buf, theta_dicts):
-#     rec = create_record(buf)
-#     thetas = rec.thetas
-#     for i, key_val in enumerate(theta_dicts):
-#         thetas[i] = thetas[i]._replace(**key_val)
-#     rec.thetas = thetas
-#
-#     for theta, ref in zip(rec.thetas, theta_dicts):
-#         rec_dict = {k: getattr(theta, k) for k in ref.keys()}
-#         assert rec_dict == ref
+@pytest.mark.usefixtures('create_record')
+@pytest.mark.parametrize('buf,theta_dicts', [
+    ('THETA 0', [dict(init=1)]),
+])
+def test_replace(create_record, buf, theta_dicts):
+    rec = create_record(buf)
+    thetas = rec.thetas
+    for i, replace in enumerate(theta_dicts):
+        thetas[i] = thetas[i]._replace(**replace)
+    rec.thetas = thetas
+
+    for theta, ref in zip(rec.thetas, theta_dicts):
+        rec_dict = {k: getattr(theta, k) for k in ref.keys()}
+        assert rec_dict == ref

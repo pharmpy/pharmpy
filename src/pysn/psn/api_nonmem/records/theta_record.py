@@ -52,18 +52,17 @@ class ThetaRecord(Record):
         return thetas
 
     @thetas.setter
-    def thetas(self, values):
-        new_root = list()
-        values = deque(values)
+    def thetas(self, tuples):
+        tuple_queue = deque(tuples)
+        root = list()
 
         for child in self.root.children:
-            if child.rule == 'param':
-                value = values.popleft()
-                init = dict(NUMERIC=value.init)
-                single = dict(init=init)
-                node = AttrTree.from_dict(dict(single=single), 'param')
-            else:
-                node = child
-            new_root += [node]
+            if child.rule != 'param':
+                root += [child]
+                continue
+            node = tuple_queue.popleft()
+            init = dict(NUMERIC=node.init)
+            param = dict(init=init)
+            root += [AttrTree.create('param', dict(single=param))]
 
-        self.root = AttrTree.from_dict(new_root, 'root')
+        self.root = AttrTree.create('root', root)
