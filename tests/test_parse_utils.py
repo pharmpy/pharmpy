@@ -1,11 +1,12 @@
 
 import textwrap
+from collections import OrderedDict
 
 import pytest
 
+from pysn.parse_utils import prettyprint
 from pysn.parse_utils.generic import AttrToken
 from pysn.parse_utils.generic import AttrTree
-from pysn.parse_utils import prettyprint
 
 
 def assert_create(expect, *args, **kwargs):
@@ -75,6 +76,11 @@ def test_tree_create_shallow():
 def test_tree_create_deep():
     """Test creating trees with deep, actually usable, structures."""
 
+    inp = OrderedDict(firstLEAF='(leaf #1) ')
+    inp['LEAF_copy'] = ['TEXT123 ', "'some string maybe' "]
+    inp['tree'] = dict(nested_tree=dict(end_LEAF_node='!?#@'))
+    inp['top_tree_again'] = dict(INTLEAF=123.456)
+    inp['LEAF'] = 'THE_END'
     out = """
     root "(leaf #1) TEXT123 'some string maybe' !?#@123.456THE_END"
      ├─ firstLEAF "(leaf #1) "
@@ -87,10 +93,7 @@ def test_tree_create_deep():
      │  └─ INTLEAF "123.456"
      └─ LEAF "THE_END"
     """
-    assert_create(out, 'root',
-                  dict(firstLEAF='(leaf #1) ', LEAF_copy=['TEXT123 ', "'some string maybe' "],
-                       tree=dict(nested_tree=dict(end_LEAF_node='!?#@')),
-                       top_tree_again=dict(INTLEAF=123.456), LEAF='THE_END'))
+    assert_create(out, 'root', inp)
 
 
 def test_tree_create_abuse():
@@ -112,6 +115,12 @@ def test_tree_create_abuse():
     assert_create(out, '', [[['1'], ['2']], ['3'], '4'])
 
     # just throwing stuff at the wall.. but it seems to stick!
+    od = OrderedDict()
+    od['good_tree'] = dict(LEAF_A=' (^._.^)~ hello! ')
+    od['bad_tree'] = dict(LEAF_B=None)
+    inp = OrderedDict(item=[od,
+                            dict(dict(Btree=[dict(END_LEAF='...THE END')])),
+                            dict(_LEAF_=' (nope, here!)')])
     out = """
     __ANON_1 " (^._.^)~ hello! None...THE END (nope, here!)"
      ├─ item " (^._.^)~ hello! None"
@@ -125,8 +134,4 @@ def test_tree_create_abuse():
      └─ item " (nope, here!)"
         └─ _LEAF_ " (nope, here!)"
     """
-    assert_create(out, '',
-                  dict(item=[dict(good_tree=dict(LEAF_A=' (^._.^)~ hello! '),
-                                  bad_tree=dict(LEAF_B=None)),
-                             dict(dict(Btree=[dict(END_LEAF='...THE END')])),
-                             dict(_LEAF_=' (nope, here!)')]))
+    assert_create(out, '', inp)
