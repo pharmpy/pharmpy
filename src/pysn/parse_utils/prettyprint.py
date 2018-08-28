@@ -1,6 +1,7 @@
 """Pretty printing of :class:`generic.AttrTree` via :class:`treeprint.Node`."""
 from functools import partial
 
+import lark
 from . import treeprint
 
 MAXLEN = 60
@@ -48,6 +49,9 @@ def transform(ast_tree, content=True):
         Multiline string, ready for the printing press.
     """
 
+    if not any(isinstance(ast_tree, x) for x in [lark.Tree, lark.lexer.Token]):
+        raise TypeError("can't transform %s object (is not a Lark Tree or Token')"
+                        % repr(ast_tree.__class__.__name__))
     tree = treeprint.Node(ast_tree)
     try:
         ast_nodes = list(ast_tree.children)

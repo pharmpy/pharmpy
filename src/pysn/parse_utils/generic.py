@@ -145,40 +145,85 @@ class AttrTree(Tree):
         return cls(**kwargs)
 
     @classmethod
-    def create(cls, name, items):
-        """Alternative constructor: Creates new tree from iterables.
+    def create(cls, rule, items, anon_count=0, _list=False):
+        """Alternative constructor: Creates new tree from (possibly nested) iterables.
 
-        Nested structure encouraged! Deterministic iterators (such as lists) necessary (naturally)
-        for non-unique names, where key of PARENT will denote name.  Where no name can be created,
-        the __ANON_%d native naming scheme of Lark is used.
-
-        OrderedDict will guarantee identical ordering (otherwise it's up to chance). Only
+        Where no name can be created, the __ANON_%d native naming scheme of Lark is used. Only
         non-iterable items will become leaves (content of a TOKEN node). ALL others are TREEs.
 
         Args:
-            items: Dict/list where items will become children (TREE nodes) or content (TOKEN nodes).
-            name: Rule name of root (TREE to contain the nodes).
+            items: Will become children (TREE nodes) or content (TOKEN nodes).  Two modes of
+                operation: (1) 'items' is dict-like, and (2) 'items' is iterable.
+            rule: If mode (1), name of root (TREE to contain 'items'). If mode (2), name of (all)
+                'items' (returned as list).
+            anon_count: Anonymous numbering offset.
+            _list: Internal recursion state. Drop 'rule' & return list of children, iff not dict.
+
+        Raises:
+            TypeError: 'items' not iterable or instance of 'str'
+            ValueError: 'items' empty (trees can't be empty)
 
         NOTE: Please follow convention of all lower case for trees (but all upper for tokens)!
         """
+
+        def rule_or_anon(rule, count):
+            """Returns (rule, count). Rule is numbered anonymous if False (and count increased)."""
+            if rule:
+                return rule, count
+            else:
+                return '__ANON_%d' % (count+1), count+1
+
+        def non_iterable(rule, items):
+            raise TypeError('%s object is not iterable (of children for tree %s)' %
+                            repr(items.__class__.__name__), repr(rule))
+
+        # ensure root gets __ANON_1 if non-existing
+        root, anon_count = rule_or_anon(rule, anon_count)
+
+        # determine mode of operation; 'items' dict-like OR just iterable?
         try:
-            rules, content = zip(*items.items())
-        except AttributeError:  # not a Dicty thing? Then you must be Listy.
-            content = list(items)
-            rules = [name]*len(content)
-        new = []
-        for rule, thing in zip(rules, content):
-            try:  # can you nest? Then we shall need another frame!
-                tree = cls.create(rule, cls.create(thing))
-                new += [tree]
+            names, items = zip(*items.items())
+        except AttributeError:
+            if isinstance(items, str):
+                non_iterable(rule, items)
+            try:
+                length = len(items)
             except TypeError:
-                try:   # can you "rule"? Then you must be a node already!
-                    rule = thing.rule
-                    new += [thing]
-                except AttributeError:  # no? Sorry, end of the line. You shall be remembered.
-                    new += [cls.AttrToken(rule, str(thing))]
-                    continue
-        return cls(rule, new)
+                non_iterable(rule, items)
+            names = []
+            if _list:
+                names = [rule]*length
+            else:
+                for _ in range(length):
+                    name, anon_count = rule_or_anon(None, anon_count)
+                    names += [name]
+        else:
+            _list = False
+        if not items:
+            raise ValueError('refusing empty tree %s (only tokens are childless)' % repr(root))
+
+        # create the nodes
+        new_nodes = []
+        for name, thing in zip(names, items):
+            try:  # try to recurse down
+                depth = cls.create(name, thing, anon_count=anon_count, _list=True)
+            except TypeError:  # looks like a leaf
+                try:  # don't convert existing nodes (to leaves)
+                    name = thing.rule
+                except AttributeError:
+                    name, anon_count = rule_or_anon(name, anon_count)
+                    new_nodes += [cls.AttrToken(name, str(thing))]
+                else:  # node already, won't recreate
+                    new_nodes += [thing]
+            else:  # recursion yielded children, extend with a containing tree
+                try:  # recursed on list, insert orphans
+                    new_nodes += depth
+                except TypeError:  # recursed on dict, depth contained by tree
+                    new_nodes += [depth]
+
+        if _list:  # recursion can yield list
+            return new_nodes
+        return cls(root, new_nodes)  # topmost (external) call can't
 
     # -- public interface ----------------------------------------------
     @property
@@ -202,15 +247,19 @@ class AttrTree(Tree):
 
     def find(self, rule):
         """Gets first child matching rule, or None if none."""
-        return self._getchild_(rule, multi=False)
+        return next((child for child in self.children if child.rule == rule), None)
 
     def all(self, rule):
         """Gets all children matching rule, or [] if none."""
-        return self._getchild_(rule, multi=True)
+        return list(filter(lambda child: child.rule == rule, self.children))
 
     def set_child(self, rule, value):
         """Sets first child matching rule (raises if none)."""
-        self._setchild_(rule, value)
+        for i, child in enumerate(self.children):
+            if child.rule == rule:
+                self.children[i] = value
+                return
+        raise NoSuchRuleException(rule, self)
 
     def tree_walk(self):
         """Generator for (depth-first, i.e. parse order) iter over children."""
@@ -245,55 +294,21 @@ class AttrTree(Tree):
     def __len__(self):
         return len(self.children)
 
-    def _getchild_(self, rule, multi=False):
-        found = []
-        for child in type(self)._attrget(self, 'children'):
-            if type(self)._attrget(child, 'rule') == rule:
-                if not multi:
-                    return child
-                found += [child]
-        if not multi:
-            return None
-        return found
-
-    def _setchild_(self, rule, value):
-        for i, child in enumerate(self.children):
-            if type(self)._attrget(child, 'rule') == rule:
-                return self._safeset_child_item(i, value)
-        raise NoSuchRuleException(rule, self)
-
-    def __getitem__(self, item):
-        return self.children[item].eval
-
     def __setattr__(self, attr, value):
         if attr in dir(self):
-            return type(self)._attrset(self, attr, value)
-        self._setchild_(attr, value)
+            return object.__setattr__(self, attr, value)
+        self.set_child(attr, value)
 
     def __getattr__(self, attr):
         if attr in dir(self):
-            return type(self)._attrget(self, attr)
-        child = self._getchild_(attr)
+            return object.__getattribute__(self, attr)
+        child = self.find(attr)
         if child is None:
             raise NoSuchRuleException(attr, self)
         return child.eval
 
-    def _safeset_child_item(self, item, value):
-        children = type(self)._attrget(self, 'children')
-        children[item] = value
-        type(self)._attrset(self, 'children', children)
-
-    @classmethod
-    def _attrget(cls, obj, attr):
-        return object.__getattribute__(obj, attr)
-
-    @classmethod
-    def _attrset(cls, obj, attr, value):
-        return object.__setattr__(obj, attr, value)
-
     def __str__(self):
-        children = type(self)._attrget(self, 'children')
-        return ''.join(str(x) for x in children)
+        return ''.join(str(x) for x in self.children)
 
     def __repr__(self):
         return '%s(%s, %s)' % (self.__class__.__name__, repr(self.rule), repr(self.children))
