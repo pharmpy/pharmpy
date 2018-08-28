@@ -1,3 +1,5 @@
+from collections import OrderedDict
+
 def test_data_path(api):
     record = api.records.create_record('DATA "pheno.dta"')
     assert record.path == 'pheno.dta'
@@ -38,3 +40,8 @@ def test_filter(api):
     print(record.parser)
     assert str(record.root.filename) == 'pheno.dta'
     assert str(record.root.ignore.char) == '@'
+
+def test_option_record(api):
+    record = api.records.create_record('DATA pheno.dta NOWIDE')
+    assert record.option_pairs == OrderedDict([('NOWIDE', None)])
+
