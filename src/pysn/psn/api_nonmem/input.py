@@ -42,7 +42,6 @@ class ModelInput(generic.ModelInput):
             self._path = data_path
         else:
             self._path = model.path.parent / data_path
-        self.ignore_character = '@'     # FIXME: Read from model!
 
     @property
     def path(self):
@@ -73,7 +72,9 @@ class ModelInput(generic.ModelInput):
                     yield key
 
     def _read_data_frame(self):
-        file_io = NMTRANDataIO(self.path, self.ignore_character)
+        data_records = self.model.get_records("DATA")
+        ignore_character = data_records[0].ignore_character
+        file_io = NMTRANDataIO(self.path, ignore_character)
         self._data_frame = pd.read_table(file_io, sep='\s+|,', header=None, engine='python')
         self._data_frame.columns = list(self._column_names())
 

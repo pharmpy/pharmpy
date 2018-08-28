@@ -22,5 +22,14 @@ class DataRecord(OptionRecord):
         elif filename.find('QUOTE'):
             return str(filename)[1:-1]
 
+    @property
+    def ignore_character(self):
+        """The comment character from ex IGNORE=C or None if not available
+        """
+        if hasattr(self.root, 'ignore') and self.root.ignore.find('char'):
+            return str(self.root.ignore.char)
+        else:
+            return None
+
     def __str__(self):
         return super().__str__()

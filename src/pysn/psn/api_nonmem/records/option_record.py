@@ -22,7 +22,7 @@ class OptionRecord(Record):
             If no value exists set it to None
         """
         pairs = OrderedDict()
-        for keyval in self.root.all('pair'):
+        for keyval in self.root.all('option'):
             if hasattr(keyval, 'KEY'):
                 pairs[keyval.KEY] = keyval.VALUE
             else:

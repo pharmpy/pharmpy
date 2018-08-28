@@ -1,6 +1,6 @@
-root: (pair | ws | comment)*
+root: (option | ws | comment)*
 
-pair: KEY [WS] EQUALS [WS] VALUE
+option: KEY [WS] EQUALS [WS] VALUE
       | VALUE
 
 VALUE: /[^\s=]+/
