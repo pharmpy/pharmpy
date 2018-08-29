@@ -13,6 +13,7 @@ def assert_create(expect, *args, **kwargs):
     """Help asserter for AttrTree.create tests."""
 
     obj = AttrTree.create(*args, **kwargs)
+    print(obj.treeprint())
     assert isinstance(obj, AttrTree)
     for item in obj.children:
         if 'tree' in item.rule:
@@ -49,15 +50,15 @@ def test_tree_create_shallow():
     """
     assert_create(out, 'tree', ['content'])
     out = """
-    __ANON_1 ""
-     └─ __ANON_2 ""
+    __ANON_0 ""
+     └─ __ANON_1 ""
     """
     assert_create(out, '', [''])
     out = """
-    __ANON_1 "LEAF"
-     ├─ __ANON_2 ""
-     ├─ __ANON_3 "LEAF"
-     └─ __ANON_4 ""
+    __ANON_0 "LEAF"
+     ├─ __ANON_1 ""
+     ├─ __ANON_2 "LEAF"
+     └─ __ANON_3 ""
     """
     assert_create(out, '', ['', 'LEAF', ''])
 
@@ -67,7 +68,7 @@ def test_tree_create_shallow():
     """
     assert_create(out, 'root', dict(A_TOKEN='LEAF'))
     out = """
-    __ANON_1 ""
+    __ANON_0 ""
      └─ LEAF ""
     """
     assert_create(out, '', dict(LEAF=''))
@@ -77,15 +78,16 @@ def test_tree_create_deep():
     """Test creating trees with deep, actually usable, structures."""
 
     inp = OrderedDict(firstLEAF='(leaf #1) ')
-    inp['LEAF_copy'] = ['TEXT123 ', "'some string maybe' "]
+    inp['tree_anons'] = ['TEXT123 ', "'some string maybe' "]
     inp['tree'] = dict(nested_tree=dict(end_LEAF_node='!?#@'))
     inp['top_tree_again'] = dict(INTLEAF=123.456)
     inp['LEAF'] = 'THE_END'
     out = """
     root "(leaf #1) TEXT123 'some string maybe' !?#@123.456THE_END"
      ├─ firstLEAF "(leaf #1) "
-     ├─ LEAF_copy "TEXT123 "
-     ├─ LEAF_copy "'some string maybe' "
+     ├─ tree_anons "TEXT123 'some string maybe' "
+     │  ├─ __ANON_1 "TEXT123 "
+     │  └─ __ANON_2 "'some string maybe' "
      ├─ tree "!?#@"
      │  └─ nested_tree "!?#@"
      │     └─ end_LEAF_node "!?#@"
@@ -101,18 +103,18 @@ def test_tree_create_abuse():
 
     # It flattens to anonymous leaves? That.. is neat!
     out = """
-    __ANON_1 "LEAF"
-     └─ __ANON_2 "LEAF"
+    __ANON_0 "LEAF"
+     └─ __ANON_1 "LEAF"
     """
-    assert_create(out, '', [['LEAF']])
+    assert_create(out, None, [['LEAF']])
     out = """
-    __ANON_1 "1234"
-     ├─ __ANON_2 "1"
+    __ANON_0 "1234"
+     ├─ __ANON_1 "1"
      ├─ __ANON_2 "2"
      ├─ __ANON_3 "3"
      └─ __ANON_4 "4"
     """
-    assert_create(out, '', [[['1'], ['2']], ['3'], '4'])
+    assert_create(out, False, [[['1'], ['2']], ['3'], '4'])
 
     # just throwing stuff at the wall.. but it seems to stick!
     od = OrderedDict()
@@ -122,16 +124,14 @@ def test_tree_create_abuse():
                             dict(dict(Btree=[dict(END_LEAF='...THE END')])),
                             dict(_LEAF_=' (nope, here!)')])
     out = """
-    __ANON_1 " (^._.^)~ hello! None...THE END (nope, here!)"
-     ├─ item " (^._.^)~ hello! None"
-     │  ├─ good_tree " (^._.^)~ hello! "
-     │  │  └─ LEAF_A " (^._.^)~ hello! "
-     │  └─ bad_tree "None"
-     │     └─ LEAF_B "None"
-     ├─ item "...THE END"
-     │  └─ Btree "...THE END"
-     │     └─ END_LEAF "...THE END"
-     └─ item " (nope, here!)"
+    root " (^._.^)~ hello! None...THE END (nope, here!)"
+     └─ item " (^._.^)~ hello! None...THE END (nope, here!)"
+        ├─ good_tree " (^._.^)~ hello! "
+        │  └─ LEAF_A " (^._.^)~ hello! "
+        ├─ bad_tree "None"
+        │  └─ LEAF_B "None"
+        ├─ Btree "...THE END"
+        │  └─ END_LEAF "...THE END"
         └─ _LEAF_ " (nope, here!)"
     """
-    assert_create(out, '', inp)
+    assert_create(out, 'root', inp)

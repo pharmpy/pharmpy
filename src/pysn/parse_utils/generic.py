@@ -145,25 +145,27 @@ class AttrTree(Tree):
         return cls(**kwargs)
 
     @classmethod
-    def create(cls, rule, items, anon_count=0, _list=False):
+    def create(cls, rule, items, _anon_count=0, _list=False):
         """Alternative constructor: Creates new tree from (possibly nested) iterables.
 
-        Where no name can be created, the __ANON_%d native naming scheme of Lark is used. Only
-        non-iterable items will become leaves (content of a TOKEN node). ALL others are TREEs.
+        Only non-iterable items become leaves (i.e. content of token nodes). All others are trees.
+
+        Missing (False-evaluating) names:
+            1. Tree: Children are moved up.
+            2. Token: The __ANON_%d native naming scheme of Lark is used.
 
         Args:
-            items: Will become children (TREE nodes) or content (TOKEN nodes).  Two modes of
-                operation: (1) 'items' is dict-like, and (2) 'items' is iterable.
-            rule: If mode (1), name of root (TREE to contain 'items'). If mode (2), name of (all)
-                'items' (returned as list).
-            anon_count: Anonymous numbering offset.
-            _list: Internal recursion state. Drop 'rule' & return list of children, iff not dict.
+            items: Children (tree nodes) or content (token nodes).
+            rule: Name of root tree. __ANON_0 if False.
+            _anon_count: Internal. Anonymous numbering offset.
+            _list: Internal. Recursion state. Drop 'rule' & return list of children, which are
+                orphaned if name is False.
 
         Raises:
-            TypeError: 'items' not iterable or instance of 'str'
-            ValueError: 'items' empty (trees can't be empty)
+            TypeError: 'items' not iterable or instance of 'str' (only tokens contain 'str').
+            ValueError: 'items' empty (trees can't be empty).
 
-        NOTE: Please follow convention of all lower case for trees (but all upper for tokens)!
+        NOTE: Please follow convention of all lower case for trees and all upper for tokens.
         """
 
         def rule_or_anon(rule, count):
@@ -177,9 +179,6 @@ class AttrTree(Tree):
             raise TypeError('%s object is not iterable (of children for tree %s)' %
                             repr(items.__class__.__name__), repr(rule))
 
-        # ensure root gets __ANON_1 if non-existing
-        root, anon_count = rule_or_anon(rule, anon_count)
-
         # determine mode of operation; 'items' dict-like OR just iterable?
         try:
             names, items = zip(*items.items())
@@ -190,40 +189,33 @@ class AttrTree(Tree):
                 length = len(items)
             except TypeError:
                 non_iterable(rule, items)
-            names = []
-            if _list:
-                names = [rule]*length
-            else:
-                for _ in range(length):
-                    name, anon_count = rule_or_anon(None, anon_count)
-                    names += [name]
-        else:
-            _list = False
+            names = [None]*length
         if not items:
-            raise ValueError('refusing empty tree %s (only tokens are childless)' % repr(root))
+            raise ValueError('refusing empty tree %s (only tokens are childless)' % repr(rule))
 
         # create the nodes
         new_nodes = []
         for name, thing in zip(names, items):
             try:  # try to recurse down
-                depth = cls.create(name, thing, anon_count=anon_count, _list=True)
+                nodes, _anon_count = cls.create(name, thing, _anon_count=_anon_count, _list=True)
             except TypeError:  # looks like a leaf
                 try:  # don't convert existing nodes (to leaves)
                     name = thing.rule
                 except AttributeError:
-                    name, anon_count = rule_or_anon(name, anon_count)
+                    name, _anon_count = rule_or_anon(name, _anon_count)
                     new_nodes += [cls.AttrToken(name, str(thing))]
                 else:  # node already, won't recreate
                     new_nodes += [thing]
-            else:  # recursion yielded children, extend with a containing tree
-                try:  # recursed on list, insert orphans
-                    new_nodes += depth
-                except TypeError:  # recursed on dict, depth contained by tree
-                    new_nodes += [depth]
+            else:
+                new_nodes += nodes
+        # list (and counter) for recursion
+        if _list:
+            return [cls(rule, new_nodes)] if rule else new_nodes, _anon_count
 
-        if _list:  # recursion can yield list
-            return new_nodes
-        return cls(root, new_nodes)  # topmost (external) call can't
+        # tree to external caller
+        if rule:
+            return cls(rule, new_nodes)
+        return cls('__ANON_0', new_nodes)
 
     # -- public interface ----------------------------------------------
     @property
