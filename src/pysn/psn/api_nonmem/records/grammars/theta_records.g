@@ -10,13 +10,13 @@ root : [ws] (param | ws | comment)*
 param : (single | multi)
 
 single : init [fix]
-       | LP [WS] [lower_bound] sep init (fix RP [WS] | RP [WS] [fix])
-       | LP [WS] [lower_bound] sep [init] sep [upper_bound] (fix RP [WS] | RP [WS] [fix])
+       | LP [WS] [low] sep init (fix RP [WS] | RP [WS] [fix])
+       | LP [WS] [low] sep [init] sep [up] (fix RP [WS] | RP [WS] [fix])
 multi  : LP [WS] init RP [WS] n_thetas
 
 init        : NUMERIC [WS]
-lower_bound : NUMERIC [WS]
-upper_bound : NUMERIC [WS]
+low : NUMERIC [WS]
+up : NUMERIC [WS]
 sep         : COMMA [WS]
 fix         : ("FIX" | "FIXED") [WS]
 n_thetas    : "x" [WS] INT [WS]

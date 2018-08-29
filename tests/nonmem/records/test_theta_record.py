@@ -90,7 +90,7 @@ def test_messy_random(parse_assert, RandomThetas):
     ('THET', []),
     ('THETA 0', [dict(init=0)]),
     ('THETA   12.3 \n\n', [dict(init=12.3)]),
-    ('THETA  (0,0.00469) ; CL', [dict(lower_bound=0, init=0.00469)]),
+    ('THETA  (0,0.00469) ; CL', [dict(low=0, init=0.00469)]),
 ])
 def test_create(create_record, buf, theta_dicts):
     rec = create_record(buf)

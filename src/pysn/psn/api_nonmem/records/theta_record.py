@@ -8,7 +8,7 @@ from pysn.parse_utils import AttrTree
 from .parser import ThetaRecordParser
 from .record import Record
 
-ThetaInit = namedtuple('ThetaInit', ('lower_bound', 'init', 'upper_bound', 'fixed', 'n_thetas',
+ThetaInit = namedtuple('ThetaInit', ('low', 'init', 'up', 'fixed', 'n_thetas',
                                      'back_node'))
 
 
@@ -35,7 +35,7 @@ class ThetaRecord(Record):
 
         for param in params:
             init = {k: None for k in ThetaInit._fields}
-            for rule in ['lower_bound', 'init', 'upper_bound']:
+            for rule in ['low', 'init', 'up']:
                 node = param.find(rule)
                 if node:
                     init[rule] = float(node.find('NUMERIC'))

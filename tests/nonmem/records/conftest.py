@@ -37,7 +37,7 @@ class _GeneratedTheta:
     """
 
     _WS = '\t' + (' '*9)
-    Values = namedtuple('Values', ['lower_bound', 'init', 'upper_bound'])
+    Values = namedtuple('Values', ['low', 'init', 'up'])
 
     __slots__ = ('num', 'num_str', 'fixed', 'n_thetas')
 
@@ -79,7 +79,7 @@ class _GeneratedTheta:
         thetas = []
         for param in params:
             kw = dict(num=[], fixed=None, n_thetas=None)
-            for rule in ['lower_bound', 'init', 'upper_bound']:
+            for rule in ['low', 'init', 'up']:
                 tok = find_tokens(param, rule, 'NUMERIC')
                 assert len(tok) <= 1
                 kw['num'] += tok if tok else [None]
@@ -114,9 +114,9 @@ class _GeneratedTheta:
         return True
 
     def __str__(self):
-        low = self._lr_pad(self.num_str.lower_bound)
+        low = self._lr_pad(self.num_str.low)
         init = self._lr_pad(self.num_str.init)
-        high = self._lr_pad(self.num_str.upper_bound)
+        high = self._lr_pad(self.num_str.up)
         fix = ''
         if self.fixed:
             fix = self._lr_pad(random.choice(['FIX', 'FIXED']))
@@ -140,7 +140,7 @@ class _GeneratedTheta:
     def __repr__(self):
         """Pretty format on some 'standard form' (mostly for good pytest diffs)."""
         fix = ' FIX' if self.fixed else ''
-        vals = [getattr(self.num, a) or '' for a in ['lower_bound', 'init', 'upper_bound']]
+        vals = [getattr(self.num, a) or '' for a in ['low', 'init', 'up']]
         out = '(%s, %s, %s%s)' % (*vals, fix)
         if self.n_thetas is not None:
             out += ('x%s' % (self.n_thetas,))
