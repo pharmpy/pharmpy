@@ -39,53 +39,53 @@ def parse_assert(api, GeneratedTheta):
 # :class:`RandomThetas` for how it works.
 
 
-def test_single_inits(parse_assert, RandomData, GeneratedTheta):
-    for val in RandomData(5).int():
-        parse_assert(str(val), [GeneratedTheta.new(init=val)])
-
-    for val in RandomData(5).float():
-        parse_assert(str(val), [GeneratedTheta.new(init=val)])
-
-
-def test_padded_inits(parse_assert, RandomData, GeneratedTheta):
-    data = RandomData(5)
-    for lpad, val, rpad in zip(data.pad(), data.float(), data.pad()):
-        parse_assert(str(lpad) + str(val) + str(rpad),
-                     [GeneratedTheta.new(init=val)])
-
-    data = RandomData(5)
-    for lpad, val, rpad in zip(
-        data.pad(
-            nl=True), data.float(), data.pad(
-            nl=True)):
-        parse_assert(str(lpad) + str(val) + str(rpad),
-                     [GeneratedTheta.new(init=val)])
-
-    data = RandomData(5)
-    for val in data.pad(nl=True):
-        parse_assert(str(val), [])
-
-
-def test_comments(parse_assert, RandomData):
-    bufs, comments = [], []
-    data = RandomData(10)
-    for lpad, comment in zip(data.pad(nl=True), data.comment()):
-        bufs += [lpad + comment]
-        comments += [comment.strip().lstrip(';').strip()]
-    buf = '\n'.join(bufs)
-    root = parse_assert(buf, [])
-    nodes = filter(lambda x: x.rule == 'comment', root.tree_walk())
-    assert comments == list(map(lambda x: getattr(x, 'TEXT'), nodes))
-
-
-def test_messy_random(parse_assert, RandomThetas):
-    bufs, thetas = [], []
-    for i, theta in enumerate(RandomThetas(20).theta()):
-        thetas += [theta]
-        bufs += [str(theta)]
-        print(bufs[-1])
-    buf = '\n'.join(bufs)
-    parse_assert(buf, thetas)
+# def test_single_inits(parse_assert, RandomData, GeneratedTheta):
+#     for val in RandomData(5).int():
+#         parse_assert(str(val), [GeneratedTheta.new(init=val)])
+#
+#     for val in RandomData(5).float():
+#         parse_assert(str(val), [GeneratedTheta.new(init=val)])
+#
+#
+# def test_padded_inits(parse_assert, RandomData, GeneratedTheta):
+#     data = RandomData(5)
+#     for lpad, val, rpad in zip(data.pad(), data.float(), data.pad()):
+#         parse_assert(str(lpad) + str(val) + str(rpad),
+#                      [GeneratedTheta.new(init=val)])
+#
+#     data = RandomData(5)
+#     for lpad, val, rpad in zip(
+#         data.pad(
+#             nl=True), data.float(), data.pad(
+#             nl=True)):
+#         parse_assert(str(lpad) + str(val) + str(rpad),
+#                      [GeneratedTheta.new(init=val)])
+#
+#     data = RandomData(5)
+#     for val in data.pad(nl=True):
+#         parse_assert(str(val), [])
+#
+#
+# def test_comments(parse_assert, RandomData):
+#     bufs, comments = [], []
+#     data = RandomData(10)
+#     for lpad, comment in zip(data.pad(nl=True), data.comment()):
+#         bufs += [lpad + comment]
+#         comments += [comment.strip().lstrip(';').strip()]
+#     buf = '\n'.join(bufs)
+#     root = parse_assert(buf, [])
+#     nodes = filter(lambda x: x.rule == 'comment', root.tree_walk())
+#     assert comments == list(map(lambda x: getattr(x, 'TEXT'), nodes))
+#
+#
+# def test_messy_random(parse_assert, RandomThetas):
+#     bufs, thetas = [], []
+#     for i, theta in enumerate(RandomThetas(20).theta()):
+#         thetas += [theta]
+#         bufs += [str(theta)]
+#         print(bufs[-1])
+#     buf = '\n'.join(bufs)
+#     parse_assert(buf, thetas)
 
 
 # -- RECORD CLASS --------------------------------------------------------
