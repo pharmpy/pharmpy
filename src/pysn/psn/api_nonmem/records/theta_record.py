@@ -1,15 +1,13 @@
 # -*- encoding: utf-8 -*-
 
 from collections import namedtuple
-from collections import deque
 
 from pysn.parse_utils import AttrTree
 
 from .parser import ThetaRecordParser
 from .record import Record
 
-ThetaInit = namedtuple('ThetaInit', ('low', 'init', 'up', 'fixed', 'n_thetas',
-                                     'back_node'))
+ThetaInit = namedtuple('ThetaInit', ('low', 'init', 'up', 'fix', 'node'))
 
 
 class ThetaRecord(Record):
@@ -31,38 +29,52 @@ class ThetaRecord(Record):
         """Extracts from tree root and returns list of :class:`ThetaInit`."""
 
         thetas = []
-        params = [x for par in self.root.all('param') for x in par.all('single') + par.all('multi')]
-
-        for param in params:
+        for theta in [theta for theta in self.root.all('theta')]:
             init = {k: None for k in ThetaInit._fields}
+            init['node'] = theta
+
             for rule in ['low', 'init', 'up']:
-                node = param.find(rule)
+                node = theta.find(rule)
                 if node:
-                    init[rule] = float(node.find('NUMERIC'))
+                    init[rule] = float(str(node))
+            init['fix'] = bool(theta.find('FIX'))
 
-            init['fixed'] = bool(param.find('fix'))
-
-            node = param.find('n_thetas')
+            node = theta.find('n')
             if node:
-                init['n_thetas'] = int(node.find('INT'))
-
-            init['back_node'] = param
-            thetas += [ThetaInit(**init)]
+                n_replicate = int(node.find('INT'))
+                thetas += [ThetaInit(**init) for _ in range(n_replicate)]
+            else:
+                thetas += [ThetaInit(**init)]
 
         return thetas
 
     @thetas.setter
     def thetas(self, tuples):
-        tuple_queue = deque(tuples)
-        root = list()
+        nodes = self._nodes_from_tuples(tuples)
 
         for child in self.root.children:
-            if child.rule != 'param':
-                root += [child]
-                continue
-            node = tuple_queue.popleft()
-            init = dict(NUMERIC=node.init)
-            param = dict(init=init)
-            root += [AttrTree.create('param', dict(single=param))]
+            if child.rule != 'theta':
+                nodes += [child]
 
-        self.root = AttrTree.create('root', root)
+        self.root = AttrTree.create('root', nodes)
+
+    def _nodes_from_tuples(self, vals):
+        nodes = []
+        for val in vals:
+            if nodes:
+                nodes += [dict(WS='\n  ')]
+            theta = [{'LPAR': '('}]
+            if val.low is not None:
+                theta += [{'low': {'NUMERIC': val.low}}]
+                theta += [{'WS': ' '}]
+            if val.init is not None:
+                theta += [{'init': {'NUMERIC': val.init}}]
+                theta += [{'WS': ' '}]
+            if val.up is not None:
+                theta += [{'up': {'NUMERIC': val.up}}]
+            if val.fix:
+                theta += [{'WS': ' '}]
+                theta += [{'FIX': 'FIXED'}]
+            theta += [{'RPAR': ')'}]
+            nodes += [AttrTree.create('theta', theta)]
+        return nodes

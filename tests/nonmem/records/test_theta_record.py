@@ -31,11 +31,12 @@ def parse_assert(api, GeneratedTheta):
     return func
 
 
-# -- ONLY PARSER -----------------------------------------------------------------------------------
+# -- ONLY PARSER ---------------------------------------------------------
 
 # Experiment with sandboxing testing where grammar changes can flag before unit tests on API needs
 # to step in. Might be unnecessary? Not removing, but next record won't get this luxury, I'm sure...
-# See :func:`parse_assert`, :class:`GeneratedTheta` and :class:`RandomThetas` for how it works.
+# See :func:`parse_assert`, :class:`GeneratedTheta` and
+# :class:`RandomThetas` for how it works.
 
 
 def test_single_inits(parse_assert, RandomData, GeneratedTheta):
@@ -49,11 +50,16 @@ def test_single_inits(parse_assert, RandomData, GeneratedTheta):
 def test_padded_inits(parse_assert, RandomData, GeneratedTheta):
     data = RandomData(5)
     for lpad, val, rpad in zip(data.pad(), data.float(), data.pad()):
-        parse_assert(str(lpad) + str(val) + str(rpad), [GeneratedTheta.new(init=val)])
+        parse_assert(str(lpad) + str(val) + str(rpad),
+                     [GeneratedTheta.new(init=val)])
 
     data = RandomData(5)
-    for lpad, val, rpad in zip(data.pad(nl=True), data.float(), data.pad(nl=True)):
-        parse_assert(str(lpad) + str(val) + str(rpad), [GeneratedTheta.new(init=val)])
+    for lpad, val, rpad in zip(
+        data.pad(
+            nl=True), data.float(), data.pad(
+            nl=True)):
+        parse_assert(str(lpad) + str(val) + str(rpad),
+                     [GeneratedTheta.new(init=val)])
 
     data = RandomData(5)
     for val in data.pad(nl=True):
@@ -82,22 +88,37 @@ def test_messy_random(parse_assert, RandomThetas):
     parse_assert(buf, thetas)
 
 
-# -- RECORD CLASS ----------------------------------------------------------------------------------
+# -- RECORD CLASS --------------------------------------------------------
 
 
 @pytest.mark.usefixtures('create_record')
 @pytest.mark.parametrize('buf,theta_dicts', [
-    ('THET', []),
     ('THETA 0', [dict(init=0)]),
     ('THETA   12.3 \n\n', [dict(init=12.3)]),
     ('THETA  (0,0.00469) ; CL', [dict(low=0, init=0.00469)]),
+    ('THETA  (0,3) 2 FIXED (0,.6,1) 10 (-INF,-2.7,0) (37 FIXED)', [
+        dict(low=0, init=3), dict(init=2, fix=True), dict(low=0, init=0.6, up=1), dict(init=10),
+        dict(low=float('-INF'), init=-2.7, up=0), dict(init=37, fix=True)]
+     )
 ])
 def test_create(create_record, buf, theta_dicts):
+    print('buf =', repr(buf))
     rec = create_record(buf)
     assert rec.name == 'THETA'
     for i, ref in enumerate(theta_dicts):
         rec_dict = {k: getattr(rec.thetas[i], k) for k in ref.keys()}
         assert rec_dict == ref
+
+
+def test_create_replicate(create_record):
+    single = create_record('THETA 2 2 2 2 (0.001,0.1,1000) (0.001,0.1,1000) (0.001,0.1,1000)'
+                           '       (0.5 FIXED) (0.5 FIXED)')
+    multi = create_record('THETA (2)x4 (0.001,0.1,1000)x3 (0.5 FIXED)x2')
+    for theta_1, theta_2 in zip(single.thetas, multi.thetas):
+        assert theta_1.low == theta_2.low
+        assert theta_1.init == theta_2.init
+        assert theta_1.up == theta_2.up
+        assert theta_1.fix == theta_2.fix
 
 
 @pytest.mark.usefixtures('create_record')
