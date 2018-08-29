@@ -29,51 +29,51 @@ automated tasks.
 
     >>> thetas = pheno.get_records('THETA')
     >>> thetas[0].root
-    AttrTree('root', [AttrTree('ws', [AttrToken('WS_ALL', '  ')]), AttrTree('param', [AttrTree('single', [AttrToken('LP', '('), AttrTree('low', [AttrToken('NUMERIC', '0')]), AttrTree('sep', [AttrToken('COMMA', ',')]), AttrTree('init', [AttrToken('NUMERIC', '0.00469307')]), AttrToken('RP', ')')])]), AttrTree('ws', [AttrToken('WS_ALL', ' ')]), AttrTree('comment', [AttrToken('SEMICOLON', ';'), AttrToken('WS', ' '), AttrToken('TEXT', 'CL')]), AttrTree('ws', [AttrToken('WS_ALL', '\n')])])
+    AttrTree('root', [AttrTree('ws', [AttrToken('WS_ALL', '  ')]), AttrTree('theta', [AttrToken('LPAR', '('), AttrTree('low', [AttrToken('NUMERIC', '0')]), AttrTree('sep', [AttrToken('COMMA', ',')]), AttrTree('init', [AttrToken('NUMERIC', '0.00469307')]), AttrToken('RPAR', ')')]), AttrTree('ws', [AttrToken('WS_ALL', ' ')]), AttrTree('comment', [AttrToken('SEMICOLON', ';'), AttrToken('TEXT', ''), AttrToken('WS', ' '), AttrToken('COMMENT', 'CL')]), AttrTree('ws', [AttrToken('WS_ALL', '\n')])])
     >>> str(thetas[0].root)
     '  (0,0.00469307) ; CL\n'
     >>> print(thetas[0].parser)
     root "  (0,0.00469307) ; CL\n"
      ├─ ws "  "
      │  └─ WS_ALL "  "
-     ├─ param "(0,0.00469307)"
-     │  └─ single "(0,0.00469307)"
-     │     ├─ LP "("
-     │     ├─ low "0"
-     │     │  └─ NUMERIC "0"
-     │     ├─ sep ","
-     │     │  └─ COMMA ","
-     │     ├─ init "0.00469307"
-     │     │  └─ NUMERIC "0.00469307"
-     │     └─ RP ")"
+     ├─ theta "(0,0.00469307)"
+     │  ├─ LPAR "("
+     │  ├─ low "0"
+     │  │  └─ NUMERIC "0"
+     │  ├─ sep ","
+     │  │  └─ COMMA ","
+     │  ├─ init "0.00469307"
+     │  │  └─ NUMERIC "0.00469307"
+     │  └─ RPAR ")"
      ├─ ws " "
      │  └─ WS_ALL " "
      ├─ comment "; CL"
      │  ├─ SEMICOLON ";"
+     │  ├─ TEXT ""
      │  ├─ WS " "
-     │  └─ TEXT "CL"
+     │  └─ COMMENT "CL"
      └─ ws "\n"
         └─ WS_ALL "\n"
     >>> for node in thetas[0].root.tree_walk():
     ...     print(node.__class__.__name__, node.rule, repr(str(node)))
     AttrTree ws '  '
     AttrToken WS_ALL '  '
-    AttrTree param '(0,0.00469307)'
-    AttrTree single '(0,0.00469307)'
-    AttrToken LP '('
+    AttrTree theta '(0,0.00469307)'
+    AttrToken LPAR '('
     AttrTree low '0'
     AttrToken NUMERIC '0'
     AttrTree sep ','
     AttrToken COMMA ','
     AttrTree init '0.00469307'
     AttrToken NUMERIC '0.00469307'
-    AttrToken RP ')'
+    AttrToken RPAR ')'
     AttrTree ws ' '
     AttrToken WS_ALL ' '
     AttrTree comment '; CL'
     AttrToken SEMICOLON ';'
+    AttrToken TEXT ''
     AttrToken WS ' '
-    AttrToken TEXT 'CL'
+    AttrToken COMMENT 'CL'
     AttrTree ws '\n'
     AttrToken WS_ALL '\n'
 
