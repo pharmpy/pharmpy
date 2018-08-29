@@ -54,12 +54,15 @@ def transform(ast_tree, content=True):
                         % repr(ast_tree.__class__.__name__))
     tree = treeprint.Node(ast_tree)
     try:
-        ast_nodes = list(ast_tree.children)
+        nodes = ast_tree.children
     except AttributeError:
         tree.set_formatter(partial(_format_token, content))
     else:
+        if isinstance(nodes, str):
+            raise TypeError("'children' of tree appears to be 'str' (expects list/iterable): %s" %
+                            repr(ast_tree))
         tree.set_formatter(partial(_format_tree, content))
-        for ast_node in ast_nodes:
+        for ast_node in list(nodes):
             node = transform(ast_node, content)
             tree.add(node)
     return tree
