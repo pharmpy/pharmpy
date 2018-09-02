@@ -7,6 +7,7 @@ from . import problem_record as problem_record
 from . import raw_record as raw_record
 from . import records_list as records_list
 from . import theta_record as theta_record
+from . import omega_record as omega_record
 from . import data_record as data_record
 
 
@@ -56,6 +57,8 @@ def create_record(line):
         record = option_record.OptionRecord(content)
     elif record_class_name == 'ThetaRecord':
         record = theta_record.ThetaRecord(content)
+    elif record_class_name == 'OmegaRecord':
+        record = omega_record.OmegaRecord(content)
     elif record_class_name == 'ProblemRecord':
         record = problem_record.ProblemRecord(content)
     elif record_class_name == 'DataRecord':

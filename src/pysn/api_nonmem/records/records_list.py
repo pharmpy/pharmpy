@@ -7,4 +7,5 @@ known_records = {
     'PROBLEM': 'ProblemRecord',
     'SIZES': 'OptionRecord',
     'THETA': 'ThetaRecord',
+    'OMEGA': 'OmegaRecord',
 }

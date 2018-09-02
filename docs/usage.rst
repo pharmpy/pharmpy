@@ -29,7 +29,7 @@ automated tasks.
 
     >>> thetas = pheno.get_records('THETA')
     >>> thetas[0].root
-    AttrTree('root', [AttrTree('ws', [AttrToken('WS_ALL', '  ')]), AttrTree('theta', [AttrToken('LPAR', '('), AttrTree('low', [AttrToken('NUMERIC', '0')]), AttrTree('sep', [AttrToken('COMMA', ',')]), AttrTree('init', [AttrToken('NUMERIC', '0.00469307')]), AttrToken('RPAR', ')')]), AttrTree('ws', [AttrToken('WS_ALL', ' ')]), AttrTree('comment', [AttrToken('SEMICOLON', ';'), AttrToken('TEXT', ''), AttrToken('WS', ' '), AttrToken('COMMENT', 'CL')]), AttrTree('ws', [AttrToken('WS_ALL', '\n')])])
+    AttrTree('root', [AttrTree('ws', [AttrToken('WS_ALL', '  ')]), AttrTree('theta', [AttrToken('LPAR', '('), AttrTree('low', [AttrToken('NUMERIC', '0')]), AttrTree('sep', [AttrToken('COMMA', ',')]), AttrTree('init', [AttrToken('NUMERIC', '0.00469307')]), AttrToken('RPAR', ')')]), AttrTree('ws', [AttrToken('WS_ALL', ' ')]), AttrTree('comment', [AttrToken('SEMICOLON', ';'), AttrToken('WS', ' '), AttrToken('COMMENT', 'CL')]), AttrTree('ws', [AttrToken('WS_ALL', '\n')])])
     >>> str(thetas[0].root)
     '  (0,0.00469307) ; CL\n'
     >>> print(thetas[0].parser)
@@ -49,7 +49,6 @@ automated tasks.
      │  └─ WS_ALL " "
      ├─ comment "; CL"
      │  ├─ SEMICOLON ";"
-     │  ├─ TEXT ""
      │  ├─ WS " "
      │  └─ COMMENT "CL"
      └─ ws "\n"
@@ -71,7 +70,6 @@ automated tasks.
     AttrToken WS_ALL ' '
     AttrTree comment '; CL'
     AttrToken SEMICOLON ';'
-    AttrToken TEXT ''
     AttrToken WS ' '
     AttrToken COMMENT 'CL'
     AttrTree ws '\n'

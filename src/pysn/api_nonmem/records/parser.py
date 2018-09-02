@@ -19,14 +19,21 @@ class ProblemRecordParser(RecordParser):
     non_empty = {
         'root': (0, 'text'),
         'text': (0, 'TEXT'),
-        'comment': (1, 'TEXT'),
+        'comment': (1, 'COMMENT'),
     }
 
 
 class ThetaRecordParser(RecordParser):
-    grammar_filename = 'theta_records.g'
+    grammar_filename = 'theta_record.g'
     non_empty = {
-        'comment': (1, 'TEXT')
+        'comment': (1, 'COMMENT')
+    }
+
+
+class OmegaRecordParser(RecordParser):
+    grammar_filename = 'omega_record.g'
+    non_empty = {
+        'comment': (1, 'COMMENT')
     }
 
 
