@@ -50,13 +50,17 @@ class ThetaRecord(Record):
 
     @thetas.setter
     def thetas(self, tuples):
-        nodes = self._nodes_from_tuples(tuples)
-
+        nodes = []
+        nodes_new = self._nodes_from_tuples(tuples)
         for child in self.root.children:
             if child.rule != 'theta':
                 nodes += [child]
-
-        self.root = AttrTree.create('root', nodes)
+                continue
+            try:
+                nodes += [nodes_new.pop(0)]
+            except IndexError:
+                pass
+        self.root = AttrTree.create('root', nodes + nodes_new)
 
     def _nodes_from_tuples(self, vals):
         nodes = []

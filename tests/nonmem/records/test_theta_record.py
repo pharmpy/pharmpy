@@ -1,6 +1,6 @@
 # -*- encoding: utf-8 -*-
 
-# from collections import OrderedDict
+from collections import namedtuple
 
 import pytest
 
@@ -122,14 +122,22 @@ def test_create_replicate(create_record):
 
 
 @pytest.mark.usefixtures('create_record')
-@pytest.mark.parametrize('buf,theta_dicts', [
-    ('THETA 0', [dict(init=1)]),
+@pytest.mark.parametrize('buf,n,theta_dicts', [
+    ('THETA 0', 1, [dict(init=1)]),
+    ('THETA 0', 1, [dict(low=float('-inf'), init=1.23, up=100, fix=True)]),
+    ('THETA 1 2', 2, [dict(init=1)]),
+    ('THETA 1 2', 2, [dict(init=1), dict(init=0, fix=True),
+                      dict(low=9, init=1.2383289E2, fix=True)]),
 ])
-def test_replace(create_record, buf, theta_dicts):
+def test_replace(create_record, buf, n, theta_dicts):
     rec = create_record(buf)
     thetas = rec.thetas
-    for i, replace in enumerate(theta_dicts):
-        thetas[i] = thetas[i]._replace(**replace)
+    assert len(thetas) == n
+
+    args = ('low', 'init', 'up', 'fix', 'node')
+    theta = namedtuple('ThetaInit', args)._make([None]*len(args))
+
+    thetas = [theta._replace(**dict_) for dict_ in theta_dicts]
     rec.thetas = thetas
 
     for theta, ref in zip(rec.thetas, theta_dicts):
