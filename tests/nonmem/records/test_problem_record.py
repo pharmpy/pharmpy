@@ -20,7 +20,7 @@ def parse_assert(nonmem):
             assert str(root.text) == text
         if comments:
             nodes = filter(lambda x: x.rule == 'comment', root.tree_walk())
-            assert list(map(lambda x: str(getattr(x, 'TEXT')), nodes)) == comments
+            assert list(map(lambda x: str(getattr(x, 'COMMENT')), nodes)) == comments
         return root
 
     return func
