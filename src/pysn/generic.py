@@ -1,9 +1,10 @@
 # -*- encoding: utf-8 -*-
 
-from pathlib import Path
 from enum import Enum
+from pathlib import Path
 
 from pysn.parameter_model import ParameterModel
+from pysn.parameter_model import PopulationParameter
 
 
 def detect(lines):

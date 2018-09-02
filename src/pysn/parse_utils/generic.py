@@ -88,6 +88,10 @@ class AttrToken(Token):
         elif self.type in {'DECIMAL', 'EXP', 'FLOAT', 'NUMBER', 'NUMERIC', 'SIGNED_FLOAT',
                            'SIGNED_NUMBER'}:
             return float(self.value)
+        elif self.type == 'NEG_INF':
+            return float('-INF')
+        elif self.type == 'POS_INF':
+            return float('INF')
         else:
             return str(self.value)
 

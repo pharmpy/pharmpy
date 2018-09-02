@@ -36,7 +36,11 @@ class ThetaRecord(Record):
             for rule in ['low', 'init', 'up']:
                 node = theta.find(rule)
                 if node:
-                    init[rule] = float(str(node))
+                    init[rule] = node.tokens[0].eval
+                elif rule == 'low':
+                    init[rule] = float('-INF')
+                elif rule == 'up':
+                    init[rule] = float('INF')
             init['fix'] = bool(theta.find('FIX'))
 
             node = theta.find('n')

@@ -3,10 +3,12 @@
 
 import importlib
 import sys
-from pprint import pprint
 from os.path import dirname
 from os.path import join
 from os.path import realpath
+from pprint import pprint
+
+import pandas as pd
 
 
 def pprint_str(obj, *args, **kwargs):
@@ -45,6 +47,13 @@ for path_model in [join(path, file) for file in ('pheno_real.mod',)]:
 
     print("\nmodel.get_records('THETA')[0].parser =")
     print(recs[0].parser)
+
+    print("\nmodel.input.data_frame =")
+    pd.set_option('display.max_rows', 10)
     print(model.input.data_frame)
+
+    print("\nmodel.parameters.population:")
+    for i, pop in enumerate(model.parameters.population):
+        print('  %d %s' % (i, pop))
 
 # lexer.test()

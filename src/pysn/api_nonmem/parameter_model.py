@@ -4,10 +4,13 @@ from pysn import generic
 
 
 class ParameterModel(generic.ParameterModel):
-    """A NONMEM 7.x ParameterModel implementation"""
+    """NONMEM 7.x implementation of :attr:`Model.parameters`, the parameters of the model."""
 
-    def initial_estimates(self, problem=0):
-        pass
-
-    def thetas(self, problem=0):
-        pass
+    @property
+    def population(self):
+        params = []
+        theta_records = [rec for rec in self.model.get_records('THETA')]
+        thetas = [theta for rec in theta_records for theta in rec.thetas]
+        for theta in thetas:
+            params += [generic.PopulationParameter(theta.low, theta.init, theta.up, theta.fix)]
+        return params
