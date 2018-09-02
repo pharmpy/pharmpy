@@ -4,7 +4,7 @@
 
 from pysn import generic
 from .input import ModelInput
-from .parameters import ParameterModel
+from .parameter_model import ParameterModel
 from .records.factory import create_record
 
 

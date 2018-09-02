@@ -3,6 +3,8 @@
 from pathlib import Path
 from enum import Enum
 
+from pysn.parameter_model import ParameterModel
+
 
 def detect(lines):
     return False
@@ -131,14 +133,3 @@ class InputFilter:
 
 class InputFilters(list):
     pass
-
-
-class ParameterModel:
-    """Implements API for :attr:`Model.parameters`, the model parameters"""
-    def __init__(self, model):
-        self.model = model
-
-    @property
-    def initial_estimates(self):
-        """Returns all initial estimates for model"""
-        raise NotImplementedError
