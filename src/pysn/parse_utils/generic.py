@@ -83,7 +83,7 @@ class AttrToken(Token):
     @property
     def eval(self):
         """Evaluated value (str, int, float)."""
-        if self.type == {'DIGIT', 'INT', 'SIGNED_INT'}:
+        if self.type in {'DIGIT', 'INT', 'SIGNED_INT'}:
             return int(self.value)
         elif self.type in {'DECIMAL', 'EXP', 'FLOAT', 'NUMBER', 'NUMERIC', 'SIGNED_FLOAT',
                            'SIGNED_NUMBER'}:
