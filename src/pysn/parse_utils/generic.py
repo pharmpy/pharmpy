@@ -245,7 +245,7 @@ class AttrTree(Tree):
         """Gets all children matching rule, or [] if none."""
         return list(filter(lambda child: child.rule == rule, self.children))
 
-    def set_child(self, rule, value):
+    def set(self, rule, value):
         """Sets first child matching rule (raises if none)."""
         for i, child in enumerate(self.children):
             if child.rule == rule:
@@ -261,21 +261,6 @@ class AttrTree(Tree):
                 yield from child.tree_walk()
             except AttributeError:
                 continue
-
-    def set(self, value, rule=None):
-        """Sets value for first token matching rule (or leaf if None)."""
-        if rule:
-            token = self.find(rule)
-        else:
-            if not len(self.children) == 1:
-                raise AssertionError('no rule but node not leaf (ambigiuous)')
-            token = self.children[0]
-            rule = token.rule
-        try:
-            new = token.replace(value)
-        except AttributeError as e:
-            raise TypeError('child not a token: %s' % (repr(token),)) from e
-        self.set_child(rule, new)
 
     def treeprint(self, content=True, indent=''):
         """Formats tree structure (for grammar debugging purposes)."""

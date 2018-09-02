@@ -1,5 +1,6 @@
 # -*- encoding: utf-8 -*-
 
+from pysn.parse_utils import AttrTree
 from .record import Record
 from .parser import ProblemRecordParser
 
@@ -16,7 +17,8 @@ class ProblemRecord(Record):
     @string.setter
     def string(self, new_str):
         assert new_str == new_str.strip()
-        self.root.text.set(new_str)
+        node = AttrTree.create('text', dict(TEXT=new_str))
+        self.root.set('text', node)
 
     def __str__(self):
         return super().__str__() + str(self.parser.root)
