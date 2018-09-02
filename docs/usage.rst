@@ -19,7 +19,7 @@ The API is automatically detected and used:
     :pyversion: > 3.6
 
     >>> type(pheno)
-    <class 'pysn.psn.api_nonmem.model.Model'>
+    <class 'pysn.api_nonmem.model.Model'>
 
 Parsing uses lark-parser_ in the backend, with derived classes for some
 automated tasks.

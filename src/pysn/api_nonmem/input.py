@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from . import generic
+from pysn import generic
 
 
 class NMTRANDataIO(StringIO):

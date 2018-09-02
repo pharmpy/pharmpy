@@ -7,10 +7,9 @@ import sys
 from pathlib import Path
 from textwrap import dedent
 
-from . import __authors__
-from . import __pkgname__
-from . import __version__
-from . import psn
+from pysn import __authors__
+from pysn import __version__
+from pysn import Model
 
 
 def cli_args(args):
@@ -66,9 +65,7 @@ def cli_logging(stream_level):
         '(%(levelname)s from %(name)s:%(lineno)d) %(funcName)s: %(message)s'
     )
 
-    # __pkgname__ is "hack" (imported from __init__.py):
-    #     guarantees CLI logger gets top name in logger path
-    logger = logging.getLogger(__pkgname__)
+    logger = logging.getLogger('pysn')
     logger.setLevel(stream_level)
 
     # msg >= logging.WARNING --> STDERR
@@ -91,6 +88,6 @@ def main(args=None):
     cli_logging(args.loglevel)
 
     path = Path(args.path).resolve()
-    print('Trying psn.Model(%s)...' % (path,))
-    model = psn.Model(path)
+    print('Trying Model(%s)...' % (path,))
+    model = Model(path)
     print(model)

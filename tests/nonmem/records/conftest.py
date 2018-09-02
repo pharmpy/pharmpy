@@ -7,11 +7,11 @@ import pytest
 
 
 @pytest.fixture
-def create_record(api):
+def create_record(nonmem):
     """Record creating method with some (general) logging/asserts"""
 
     def func(buf, fail=False):
-        record = api.records.factory.create_record(buf)
+        record = nonmem.records.factory.create_record(buf)
         print(str(record))
         if fail:
             assert record.name is None

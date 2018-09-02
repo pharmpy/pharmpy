@@ -6,7 +6,7 @@ import pytest
 
 
 @pytest.fixture
-def parse_assert(api, GeneratedTheta):
+def parse_assert(nonmem, GeneratedTheta):
     """Provide parse_assert (helper) function to tests."""
 
     def func(buf: str, reference: list):
@@ -20,7 +20,7 @@ def parse_assert(api, GeneratedTheta):
 
         for i, line in enumerate(buf.splitlines()):
             print('%d: %s' % (i, repr(line)))
-        tree = api.records.parser.ThetaRecordParser(buf)
+        tree = nonmem.records.parser.ThetaRecordParser(buf)
         print(str(tree) + '\n')
         root = tree.root
 

@@ -2,8 +2,8 @@
 
 from pathlib import Path
 
-from . import detectAPI
-from . import getAPI
+from .api_utils import detectAPI
+from .api_utils import getAPI
 
 
 def Model(path=None, **kwargs):

@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from pysn.psn import GenericParser
+from pysn.parse_utils import GenericParser
 
 grammar_root = Path(__file__).parent.resolve() / 'grammars'
 assert grammar_root.is_dir()

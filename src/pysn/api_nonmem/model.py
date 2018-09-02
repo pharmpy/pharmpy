@@ -2,7 +2,7 @@
 
 """(Specific) NONMEM 7.x model API."""
 
-from . import generic
+from pysn import generic
 from .input import ModelInput
 from .parameters import ParameterModel
 from .records.factory import create_record

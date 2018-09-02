@@ -4,13 +4,13 @@ import pytest
 
 
 @pytest.fixture
-def parse_assert(api):
+def parse_assert(nonmem):
     """Returns function for parsing with ProblemRecordParser. Basic logging/asserts."""
 
     def func(buf, text=None, comments=[]):
         for i, line in enumerate(buf.splitlines()):
             print('%d: %s' % (i, repr(line)))
-        tree = api.records.parser.ProblemRecordParser(buf)
+        tree = nonmem.records.parser.ProblemRecordParser(buf)
         assert tree.root is not None
         print(str(tree) + '\n')
         root = tree.root

@@ -1,10 +1,10 @@
 import pytest
 
-from pysn import getAPI
+from pysn.api_utils import getAPI
 
 
 @pytest.fixture
-def api():
+def nonmem():
     return getAPI('nonmem')
 
 
