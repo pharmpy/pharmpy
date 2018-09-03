@@ -1,8 +1,10 @@
 # -*- encoding: utf-8 -*-
 
-from collections import namedtuple
-
+import numpy as np
 import pytest
+from numpy.testing import assert_array_equal
+
+from pysn.parameter_model import PopulationParameter as Param
 
 
 @pytest.fixture
@@ -92,54 +94,54 @@ def parse_assert(nonmem, GeneratedTheta):
 
 
 @pytest.mark.usefixtures('create_record')
-@pytest.mark.parametrize('buf,theta_dicts', [
-    ('THETA 0', [dict(init=0)]),
-    ('THETA   12.3 \n\n', [dict(init=12.3)]),
-    ('THETA  (0,0.00469) ; CL', [dict(low=0, init=0.00469)]),
-    ('THETA  (0,3) 2 FIXED (0,.6,1) 10 (-INF,-2.7,0) (37 FIXED)', [
-        dict(low=0, init=3), dict(init=2, fix=True), dict(low=0, init=0.6, up=1), dict(init=10),
-        dict(low=float('-INF'), init=-2.7, up=0), dict(init=37, fix=True)]
-     )
+@pytest.mark.parametrize('buf,thetas', [
+    ('THETA 0', np.array((
+        Param(0),
+    ))),
+    ('THETA   12.3 \n\n', np.array((
+        Param(12.3)
+    ))),
+    ('THETA  (0,0.00469) ; CL', np.array((
+        Param(0.00469, lower=0),
+    ))),
+    ('THETA  (0,3) 2 FIXED (0,.6,1) 10 (-INF,-2.7,0) (37 FIXED)', np.array((
+        Param(3, lower=0), Param(2, fix=True), Param(0.6, lower=0, upper=1),
+        Param(10), Param(-2.7, upper=0), Param(37, fix=True),
+    ))),
 ])
-def test_create(create_record, buf, theta_dicts):
-    print('buf =', repr(buf))
+def test_create(create_record, buf, thetas):
     rec = create_record(buf)
     assert rec.name == 'THETA'
-    for i, ref in enumerate(theta_dicts):
-        rec_dict = {k: getattr(rec.thetas[i], k) for k in ref.keys()}
-        assert rec_dict == ref
+    assert_array_equal(rec.thetas, thetas)
 
 
 def test_create_replicate(create_record):
     single = create_record('THETA 2 2 2 2 (0.001,0.1,1000) (0.001,0.1,1000) (0.001,0.1,1000)'
                            '       (0.5 FIXED) (0.5 FIXED)')
     multi = create_record('THETA (2)x4 (0.001,0.1,1000)x3 (0.5 FIXED)x2')
-    for theta_1, theta_2 in zip(single.thetas, multi.thetas):
-        assert theta_1.low == theta_2.low
-        assert theta_1.init == theta_2.init
-        assert theta_1.up == theta_2.up
-        assert theta_1.fix == theta_2.fix
+    assert_array_equal(single.thetas, multi.thetas)
 
 
 @pytest.mark.usefixtures('create_record')
-@pytest.mark.parametrize('buf,n,theta_dicts', [
-    ('THETA 0', 1, [dict(init=1)]),
-    ('THETA 0', 1, [dict(low=float('-inf'), init=1.23, up=100, fix=True)]),
-    ('THETA 1 2', 2, [dict(init=1)]),
-    ('THETA 1 2', 2, [dict(init=1), dict(init=0, fix=True),
-                      dict(low=9, init=1.2383289E2, fix=True)]),
+@pytest.mark.parametrize('buf,n,new_thetas', [
+    ('THETA 0', 1, np.array((
+        Param(1),
+    ))),
+    ('THETA 0', 1, np.array((
+        Param(1.23, fix=True, upper=100),
+    ))),
+    ('THETA 1 2', 2, np.array((
+        Param(1),
+    ))),
+    ('THETA 1 2', 2, np.array((
+        Param(1), Param(0, fix=True),
+        Param(1.2383289E2, lower=9, fix=True),
+    ))),
 ])
-def test_replace(create_record, buf, n, theta_dicts):
+def test_replace(create_record, buf, n, new_thetas):
     rec = create_record(buf)
     thetas = rec.thetas
     assert len(thetas) == n
 
-    args = ('low', 'init', 'up', 'fix', 'node')
-    theta = namedtuple('ThetaInit', args)._make([None]*len(args))
-
-    thetas = [theta._replace(**dict_) for dict_ in theta_dicts]
-    rec.thetas = thetas
-
-    for theta, ref in zip(rec.thetas, theta_dicts):
-        rec_dict = {k: getattr(theta, k) for k in ref.keys()}
-        assert rec_dict == ref
+    rec.thetas = new_thetas
+    assert_array_equal(rec.thetas, new_thetas)

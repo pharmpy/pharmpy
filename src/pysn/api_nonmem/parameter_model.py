@@ -8,10 +8,7 @@ class ParameterModel(generic.ParameterModel):
 
     @property
     def population(self):
-        params = []
-        theta_records = [rec for rec in self.model.get_records('THETA')]
-        thetas = [theta for rec in theta_records for theta in rec.thetas]
-        for theta in thetas:
-            params += [generic.PopulationParameter(theta.init, theta.fix, theta.low, theta.up)]
-        params += [omega.block for omega in self.model.get_records('OMEGA')]
+        params = list()
+        params += [theta_rec.thetas for theta_rec in self.model.get_records('THETA')]
+        params += [omega_rec.block for omega_rec in self.model.get_records('OMEGA')]
         return params

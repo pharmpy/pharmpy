@@ -1,13 +1,11 @@
 # -*- encoding: utf-8 -*-
 
-from collections import namedtuple
-
-from pysn.parse_utils import AttrTree
+import numpy as np
 
 from pysn.api_nonmem.records.parser import ThetaRecordParser
 from pysn.api_nonmem.records.record import Record
-
-ThetaInit = namedtuple('ThetaInit', ('low', 'init', 'up', 'fix', 'node'))
+from pysn.parameter_model import PopulationParameter as Param
+from pysn.parse_utils import AttrTree
 
 
 class ThetaRecord(Record):
@@ -23,31 +21,23 @@ class ThetaRecord(Record):
         """Extracts from tree root and returns list of :class:`ThetaInit`."""
 
         thetas = []
-        for theta in [theta for theta in self.root.all('theta')]:
-            init = {k: None for k in ThetaInit._fields}
-            init['node'] = theta
-
-            for rule in ['low', 'init', 'up']:
-                node = theta.find(rule)
-                if node:
-                    init[rule] = node.tokens[0].eval
-                elif rule == 'low':
-                    init[rule] = float('-INF')
-                elif rule == 'up':
-                    init[rule] = float('INF')
-            init['fix'] = bool(theta.find('FIX'))
-
+        for theta in self.root.all('theta'):
+            init = {'init': theta.init.tokens[0].eval, 'fix': bool(theta.find('FIX'))}
+            if theta.find('low'):
+                init['lower'] = theta.low.tokens[0].eval
+            if theta.find('up'):
+                init['upper'] = theta.up.tokens[0].eval
             if theta.find('n'):
-                thetas += [ThetaInit(**init) for _ in range(theta.n.INT)]
+                thetas += [Param(**init) for _ in range(theta.n.INT)]
             else:
-                thetas += [ThetaInit(**init)]
+                thetas += [Param(**init)]
 
-        return thetas
+        return np.array(thetas)
 
     @thetas.setter
-    def thetas(self, tuples):
+    def thetas(self, thetas):
         nodes = []
-        nodes_new = self._nodes_from_tuples(tuples)
+        nodes_new = self._new_theta_nodes(thetas)
         for child in self.root.children:
             if child.rule != 'theta':
                 nodes += [child]
@@ -58,23 +48,23 @@ class ThetaRecord(Record):
                 pass
         self.root = AttrTree.create('root', nodes + nodes_new)
 
-    def _nodes_from_tuples(self, vals):
+    def _new_theta_nodes(self, thetas):
         nodes = []
-        for val in vals:
+        for theta in thetas:
             if nodes:
                 nodes += [dict(WS='\n  ')]
-            theta = [{'LPAR': '('}]
-            if val.low is not None:
-                theta += [{'low': {'NUMERIC': val.low}}]
-                theta += [{'WS': ' '}]
-            if val.init is not None:
-                theta += [{'init': {'NUMERIC': val.init}}]
-                theta += [{'WS': ' '}]
-            if val.up is not None:
-                theta += [{'up': {'NUMERIC': val.up}}]
-            if val.fix:
-                theta += [{'WS': ' '}]
-                theta += [{'FIX': 'FIXED'}]
-            theta += [{'RPAR': ')'}]
-            nodes += [AttrTree.create('theta', theta)]
+            new = [{'LPAR': '('}]
+            if theta.lower is not None:
+                new += [{'low': {'NUMERIC': theta.lower}}]
+                new += [{'WS': ' '}]
+            if theta.init is not None:
+                new += [{'init': {'NUMERIC': theta.init}}]
+                new += [{'WS': ' '}]
+            if theta.upper is not None:
+                new += [{'up': {'NUMERIC': theta.upper}}]
+            if theta.fix:
+                new += [{'WS': ' '}]
+                new += [{'FIX': 'FIXED'}]
+            new += [{'RPAR': ')'}]
+            nodes += [AttrTree.create('theta', new)]
         return nodes
