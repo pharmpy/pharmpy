@@ -54,10 +54,6 @@ for path_model in [join(path, file) for file in ('pheno_real.mod',)]:
 
     print("\nmodel.parameters.population:")
     for i, pop in enumerate(model.parameters.population):
-        print('  %d %s' % (i, pop))
-
-    print("\nmodel.get_records('OMEGA')[0].block = ")
-    mat = model.get_records('OMEGA')[0].block
-    print(mat)
+        print('  %d %s' % (i, repr(pop)))
 
 # lexer.test()

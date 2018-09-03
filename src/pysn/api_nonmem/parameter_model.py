@@ -13,4 +13,5 @@ class ParameterModel(generic.ParameterModel):
         thetas = [theta for rec in theta_records for theta in rec.thetas]
         for theta in thetas:
             params += [generic.PopulationParameter(theta.init, theta.fix, theta.low, theta.up)]
+        params += [omega.block for omega in self.model.get_records('OMEGA')]
         return params
