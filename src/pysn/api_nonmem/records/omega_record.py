@@ -18,10 +18,21 @@ class OmegaRecord(Record):
         return super().__str__() + str(self.parser.root)
 
     @property
-    def block(self):
-        nodes = self.root.all('omega')
+    def omegas(self):
+        omegas = []
+        for node in self.root.all('omega'):
+            init = node.init.NUMERIC
+            if node.find('n'):
+                omegas += [(init, node) for _ in range(node.n.INT)]
+            else:
+                omegas += [(init, node)]
+        return omegas
 
-        values = [node.init.NUMERIC for node in nodes]
+    @property
+    def block(self):
+        values, nodes = zip(*self.omegas)
+        values = list(values)
+
         if self.root.find('FIX'):
             fixed = [True]*len(nodes)
         else:

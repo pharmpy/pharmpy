@@ -37,10 +37,8 @@ class ThetaRecord(Record):
                     init[rule] = float('INF')
             init['fix'] = bool(theta.find('FIX'))
 
-            node = theta.find('n')
-            if node:
-                n_replicate = int(node.find('INT'))
-                thetas += [ThetaInit(**init) for _ in range(n_replicate)]
+            if theta.find('n'):
+                thetas += [ThetaInit(**init) for _ in range(theta.n.INT)]
             else:
                 thetas += [ThetaInit(**init)]
 

@@ -31,3 +31,10 @@ def test_create(create_record, buf, matrix):
     rec = create_record(buf)
     assert rec.name == 'OMEGA'
     assert_array_equal(rec.block, matrix)
+
+
+def test_create_replicate(create_record):
+    single = create_record('OMEGA 2 2 2 2 (0.1) (0.1) (0.1)'
+                           '       (0.5 FIXED) (0.5 FIXED)')
+    multi = create_record('OMEGA (2)x4 (0.1)x3 (0.5 FIXED)x2')
+    assert_array_equal(single.block, multi.block)
