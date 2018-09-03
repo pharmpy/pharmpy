@@ -36,7 +36,7 @@ def cli_args(args):
 
     # CLI arguments
     parser.add_argument(
-        'path', metavar='PATH', nargs='1', action='store',
+        'path', metavar='PATH', nargs=1, action='store',
         help='try to load model with PysN',
     )
     verbosity_group = parser.add_mutually_exclusive_group()
