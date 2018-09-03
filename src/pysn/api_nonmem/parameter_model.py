@@ -12,5 +12,5 @@ class ParameterModel(generic.ParameterModel):
         theta_records = [rec for rec in self.model.get_records('THETA')]
         thetas = [theta for rec in theta_records for theta in rec.thetas]
         for theta in thetas:
-            params += [generic.PopulationParameter(theta.low, theta.init, theta.up, theta.fix)]
+            params += [generic.PopulationParameter(theta.init, theta.fix, theta.low, theta.up)]
         return params

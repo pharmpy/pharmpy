@@ -7,30 +7,29 @@
 class PopulationParameter:
     __slots__ = ('init', 'fix', 'lower', 'upper')
 
-    def __init__(self, init=None, fix=None, lower=None, upper=None):
+    def __init__(self, init=0, fix=False, lower=float('-INF'), upper=float('INF')):
         self.init = init
         self.fix = fix
         self.lower = lower
         self.upper = upper
 
-    def __repr__(self):
-        defined = list()
-        for key in self.__slots__:
-            val = getattr(self, key)
-            if val is not None:
-                defined += [(key, val)]
-        values = ', '.join('%s=%s' % (key, repr(val)) for key, val in defined)
-        return '%s(%s)' % (self.__class__.__name__, values)
+    def __eq__(self, other):
+        return tuple(getattr(self, key) for key in self.__slots__) == other
 
     def __str__(self):
+        values = tuple(getattr(self, key) for key in self.__slots__)
+        values = ', '.join('%s=%s' % (key, repr(val)) for key, val in zip(self.__slots__, values))
+        return '%s(%s)' % (self.__class__.__name__, values)
+
+    def __repr__(self):
         if self.fix:
-            return 'fix(%s)' % (self.init,)
-        if self.lower is None and self.upper is None:
-            values = str(self.init)
-        else:
-            values = (self.lower, self.init, self.upper)
-            values = ','.join('' if x is None else str(x) for x in values)
-        return 'est(%s)' % (values,)
+            return '<fix %s>' % (self.init,)
+        values = [self.lower, self.init, self.upper]
+        if self.lower == float('-INF'):
+            values = values[1:]
+        if self.upper == float('INF'):
+            values = values[0:-1]
+        return '<est %s>' % ', '.join(str(x) for x in values)
 
 
 # IndividualParameter = namedtuple('IndividualParameter', ()):

@@ -7,9 +7,9 @@ from pysn.generic import PopulationParameter
 @pytest.fixture
 def pheno_params():
     return {
-        'CL': PopulationParameter(lower=0, init=0.00469307, upper=float('INF'), fixed=False),
-        'V': PopulationParameter(lower=0, init=1.00916, upper=float('INF'), fixed=False),
-        'APGR_V': PopulationParameter(lower=-0.99, init=.1, upper=float('INF'), fixed=False),
+        'CL': PopulationParameter(0.00469307, fix=False, lower=0),
+        'V': PopulationParameter(1.00916, fix=False, lower=0),
+        'APGR_V': PopulationParameter(.1, fix=False, lower=-0.99),
     }
 
 
