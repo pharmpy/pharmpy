@@ -20,7 +20,7 @@ class ThetaRecord(Record):
     def params(self):
         inits = []
         for theta in self.root.all('theta'):
-            init = {'init': theta.init.tokens[0].eval, 'fix': bool(theta.find('FIX'))}
+            init = {'value': theta.init.tokens[0].eval, 'fix': bool(theta.find('FIX'))}
             if theta.find('low'):
                 init['lower'] = theta.low.tokens[0].eval
             if theta.find('up'):
@@ -35,7 +35,7 @@ class ThetaRecord(Record):
     def thetas(self):
         thetas = []
         for theta in self.root.all('theta'):
-            init = {'init': theta.init.tokens[0].eval, 'fix': bool(theta.find('FIX'))}
+            init = {'value': theta.init.tokens[0].eval, 'fix': bool(theta.find('FIX'))}
             if theta.find('low'):
                 init['lower'] = theta.low.tokens[0].eval
             if theta.find('up'):

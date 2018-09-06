@@ -53,7 +53,10 @@ for path_model in [join(path, file) for file in ('pheno_real.mod',)]:
     print(model.input.data_frame)
 
     print("\nmodel.parameters.population:")
+    print(model.parameters.population)
     for i, pop in enumerate(model.parameters.population):
-        print('  %d %s' % (i, repr(pop)))
+        lines = str(pop).splitlines()
+        lines = ['  %d %s' % (i, line) for line in lines]
+        print('\n'.join(lines))
 
 # lexer.test()
