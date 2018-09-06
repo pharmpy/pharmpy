@@ -6,7 +6,7 @@ import numpy as np
 
 from pysn.api_nonmem.records.parser import OmegaRecordParser
 from pysn.api_nonmem.records.record import Record
-from pysn.parameter_model import PopulationParameter as Param
+from pysn.parameter_model import Scalar, CovarianceMatrix
 
 
 class OmegaRecord(Record):
@@ -18,41 +18,76 @@ class OmegaRecord(Record):
         return super().__str__() + str(self.parser.root)
 
     @property
-    def omegas(self):
-        omegas = []
-        for node in self.root.all('omega'):
-            init = node.init.NUMERIC
-            if node.find('n'):
-                omegas += [(init, node) for _ in range(node.n.INT)]
+    def inits(self):
+        inits = []
+        nreps = []
+        stdevs = []
+        row, col = 0, 0
+        corr_coords = []
+        sd_matrix = bool(self.root.find('SD'))
+        corr_matrix = bool(self.root.find('CORR'))
+        for i, node in enumerate(self.root.all('omega')):
+            if sd_matrix or node.find('SD'):
+                inits += [pow(node.init.NUMERIC, 2)]
             else:
-                omegas += [(init, node)]
-        return omegas
+                inits += [node.init.NUMERIC]
+            if corr_matrix or node.find('CORR'):
+                corr_coords += [(i, row, col)]
+            nreps += [node.n.INT if node.find('n') else 1]
+            if row == col:
+                stdevs += inits[-1:]
+                row, col = (row + 1), 0
+            else:
+                col += 1
+        for i, row, col in corr_coords:
+            inits[i] = inits[i] * stdevs[row] * stdevs[col]
+        return [x for nrep, init in zip(nreps, inits) for x in [init]*nrep]
 
     @property
-    def block(self):
-        values, nodes = zip(*self.omegas)
-        values = list(values)
+    def matrix(self):
+        values = self.inits
 
+        fix = False
         if self.root.find('FIX'):
-            fixed = [True]*len(nodes)
-        else:
-            fixed = [bool(node.find('FIX')) for node in nodes]
-        if self.root.find('SD'):
-            sd = [not node.find('VAR') for node in nodes]
-        else:
-            sd = [node.find('SD') for node in nodes]
+            # TODO: FIX can be exist for individual values
+            fix = True
 
         block = self.root.find('block')
         if block:
             size = block.find('size').tokens[0].eval
-            mat = np.full((size, size), Param(0, fix=False))
-            diag_idx = []
-            for idx in range(size):
-                diag_idx += [idx + sum(diag_idx)]
-            for idx in range(len(values)):
-                if idx in diag_idx and nodes[idx].find('SD'):
-                    values[idx] = pow(values[idx], 2)
-            mat[np.tril_indices(size)] = tuple(Param(val, fix) for val, fix in zip(values, fixed))
+            mat = CovarianceMatrix(size)
+            mat.tri = values
+            if fix:
+                mat.estim(var=False, covar=False)
+            else:
+                mat.estim(var=True, covar=True)
+        else:
+            if self.root.find('diagonal'):
+                size = self.root.diagonal.size.INT
+            else:
+                size = len(values)
+            mat = CovarianceMatrix(size)
+            mat.diag = values
+            if fix:
+                mat.estim(var=False)
+            else:
+                mat.estim(var=True)
+        return mat
+
+    @property
+    def block(self):
+        values = self.inits
+
+        fixed = False
+        if self.root.find('FIX'):
+            fixed = True
+        # TODO: FIX can be exist for individual values
+
+        block = self.root.find('block')
+        if block:
+            size = block.find('size').tokens[0].eval
+            mat = np.full((size, size), Scalar(0, fix=False))
+            mat[np.tril_indices(size)] = tuple(Scalar(val, fix=fixed) for val in values)
             mat[np.triu_indices(size)] = mat[np.tril_indices(size)]
         else:
             diag = self.root.find('diagonal')
@@ -60,12 +95,6 @@ class OmegaRecord(Record):
                 size = diag.find('size').tokens[0].eval
             else:
                 size = len(values)
-            for idx, sd in enumerate(node.find('SD') for node in nodes):
-                values[idx] = pow(values[idx], 2) if sd else values[idx]
-            mat = np.full((size, size), Param(0, fix=True))
-            np.fill_diagonal(mat, tuple(Param(val, fix) for val, fix in zip(values, fixed)))
+            mat = np.full((size, size), Scalar(0, fix=True))
+            np.fill_diagonal(mat, tuple(Scalar(val, fix=fixed) for val in values))
         return mat
-
-    @block.setter
-    def block(self, mat):
-        pass

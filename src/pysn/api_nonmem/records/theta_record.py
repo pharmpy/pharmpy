@@ -4,7 +4,7 @@ import numpy as np
 
 from pysn.api_nonmem.records.parser import ThetaRecordParser
 from pysn.api_nonmem.records.record import Record
-from pysn.parameter_model import PopulationParameter as Param
+from pysn.parameter_model import Scalar
 from pysn.parse_utils import AttrTree
 
 
@@ -28,9 +28,9 @@ class ThetaRecord(Record):
             if theta.find('up'):
                 init['upper'] = theta.up.tokens[0].eval
             if theta.find('n'):
-                thetas += [Param(**init) for _ in range(theta.n.INT)]
+                thetas += [Scalar(**init) for _ in range(theta.n.INT)]
             else:
-                thetas += [Param(**init)]
+                thetas += [Scalar(**init)]
 
         return np.array(thetas)
 

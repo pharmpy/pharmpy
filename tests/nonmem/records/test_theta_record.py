@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 from numpy.testing import assert_array_equal
 
-from pysn.parameter_model import PopulationParameter as Param
+from pysn.parameter_model import Scalar
 
 
 @pytest.fixture
@@ -96,17 +96,17 @@ def parse_assert(nonmem, GeneratedTheta):
 @pytest.mark.usefixtures('create_record')
 @pytest.mark.parametrize('buf,thetas', [
     ('THETA 0', np.array((
-        Param(0),
+        Scalar(0),
     ))),
     ('THETA   12.3 \n\n', np.array((
-        Param(12.3)
+        Scalar(12.3)
     ))),
     ('THETA  (0,0.00469) ; CL', np.array((
-        Param(0.00469, lower=0),
+        Scalar(0.00469, lower=0),
     ))),
     ('THETA  (0,3) 2 FIXED (0,.6,1) 10 (-INF,-2.7,0) (37 FIXED)', np.array((
-        Param(3, lower=0), Param(2, fix=True), Param(0.6, lower=0, upper=1),
-        Param(10), Param(-2.7, upper=0), Param(37, fix=True),
+        Scalar(3, lower=0), Scalar(2, fix=True), Scalar(0.6, lower=0, upper=1),
+        Scalar(10), Scalar(-2.7, upper=0), Scalar(37, fix=True),
     ))),
 ])
 def test_create(create_record, buf, thetas):
@@ -125,17 +125,17 @@ def test_create_replicate(create_record):
 @pytest.mark.usefixtures('create_record')
 @pytest.mark.parametrize('buf,n,new_thetas', [
     ('THETA 0', 1, np.array((
-        Param(1),
+        Scalar(1),
     ))),
     ('THETA 0', 1, np.array((
-        Param(1.23, fix=True, upper=100),
+        Scalar(1.23, fix=True, upper=100),
     ))),
     ('THETA 1 2', 2, np.array((
-        Param(1),
+        Scalar(1),
     ))),
     ('THETA 1 2', 2, np.array((
-        Param(1), Param(0, fix=True),
-        Param(1.2383289E2, lower=9, fix=True),
+        Scalar(1), Scalar(0, fix=True),
+        Scalar(1.2383289E2, lower=9, fix=True),
     ))),
 ])
 def test_replace(create_record, buf, n, new_thetas):

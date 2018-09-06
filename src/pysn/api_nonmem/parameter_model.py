@@ -10,5 +10,5 @@ class ParameterModel(generic.ParameterModel):
     def population(self):
         params = list()
         params += [theta_rec.thetas for theta_rec in self.model.get_records('THETA')]
-        params += [omega_rec.block for omega_rec in self.model.get_records('OMEGA')]
+        params += [omega_rec.matrix for omega_rec in self.model.get_records('OMEGA')]
         return params

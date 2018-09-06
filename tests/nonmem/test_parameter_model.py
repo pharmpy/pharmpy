@@ -3,18 +3,18 @@ import numpy as np
 import pytest
 from numpy.testing import assert_array_equal
 
-from pysn.generic import PopulationParameter as Param
+from pysn.generic import Scalar
 
 
 @pytest.fixture
 def pheno_params():
     return {
-        'CL': Param(0.00469307, fix=False, lower=0),
-        'V': Param(1.00916, fix=False, lower=0),
-        'APGR_V': Param(.1, fix=False, lower=-0.99),
+        'CL': Scalar(0.00469307, fix=False, lower=0),
+        'V': Scalar(1.00916, fix=False, lower=0),
+        'APGR_V': Scalar(.1, fix=False, lower=-0.99),
         'OMEGA_1': np.array((
-            (Param(0.0309626), Param(0, True)),
-            (Param(0, True), Param(0.031128)),
+            (Scalar(0.0309626), Scalar(0, True)),
+            (Scalar(0, True), Scalar(0.031128)),
         ))
     }
 
