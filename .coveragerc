@@ -1,7 +1,7 @@
 [paths]
 source =
-   src/pysn
-   */site-packages/pysn
+   src
+   */site-packages
 
 [run]
 branch = true
