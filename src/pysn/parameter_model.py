@@ -23,21 +23,25 @@ class Scalar(PopulationParameter):
         return tuple(getattr(self, key) for key in self.__slots__) == other
 
     def __str__(self):
-        values = tuple(getattr(self, key) for key in self.__slots__)
-        values = ', '.join('%s=%s' % (key, repr(val)) for key, val in zip(self.__slots__, values))
-        return '%s(%s)' % (self.__class__.__name__, values)
-
-    def __repr__(self):
         if self.fix is None:
             return '<val %s>' % (self.init,)
         elif self.fix:
             return '<fix %s>' % (self.init,)
-        values = [self.lower, self.init, self.upper]
+        value = self.init
         if self.lower == float('-INF'):
-            values = values[1:]
+            value = '(%f<)%s' % (self.lower, value)
         if self.upper == float('INF'):
-            values = values[0:-1]
-        return '<est %s>' % ', '.join(str(x) for x in values)
+            value = '%s(<%f)' % (value, self.upper)
+        return '<est %s>' % (value,)
+
+    def __repr__(self):
+        if self.fix is None:
+            type_ = 'object'
+        elif self.fix:
+            type_ = 'constant'
+        else:
+            type_ = 'estimator'
+        return '<%s %s>' % (self.__class__.__name__, type_)
 
     def __float__(self):
         return float(self.init)
@@ -96,14 +100,18 @@ class CovarianceMatrix(PopulationParameter):
         if dim == 0:
             return '<0×0 %s>' % (self.__class__.__name__,)
         if dim == 1:
-            cov = [repr(self.cov[0][0])]
+            cov = [str(self.cov[0][0])]
         else:
-            cov = tuple(tuple(repr(x) for x in row) for row in self.cov)
+            cov = tuple(tuple(str(x) for x in row) for row in self.cov)
             width = tuple(max(len(x) for x in col) for col in zip(*cov))
             fmt = ' '.join('%%-%ds' % (w,) for w in width)
         lines = [fmt % row for row in cov]
         lines = self.bracket_matrix(lines)
         return '\n'.join(lines)
+
+    def __repr__(self):
+        dim = self.size
+        return '<%s %d×%d>' % (self.__class__.__name__, dim, dim)
 
     @classmethod
     def bracket_matrix(cls, matrix):

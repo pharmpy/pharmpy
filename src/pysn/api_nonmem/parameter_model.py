@@ -9,6 +9,8 @@ class ParameterModel(generic.ParameterModel):
     @property
     def population(self):
         params = list()
-        params += [theta_rec.thetas for theta_rec in self.model.get_records('THETA')]
-        params += [omega_rec.matrix for omega_rec in self.model.get_records('OMEGA')]
+        for theta_record in self.model.get_records('THETA'):
+            params += theta_record.params
+        for omega_record in self.model.get_records('OMEGA'):
+            params += [omega_record.matrix]
         return params
