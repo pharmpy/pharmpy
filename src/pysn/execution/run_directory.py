@@ -1,4 +1,4 @@
-class Directory:
+class RunDirectory:
     """ Base class for the execution directory.
         This directory will contain files from a job.
         Cleaning will be handled here. 
