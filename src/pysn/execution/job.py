@@ -1,3 +1,6 @@
+# -*- encoding: utf-8 -*-
+
+
 class Job:
     """ Base class for an Engine job that is running on an Environment
     """

@@ -55,4 +55,9 @@ for path_model in [join(path, file) for file in ('pheno_real.mod',)]:
     print("\nmodel.parameters.inits:")
     print(model.parameters.inits)
 
-# lexer.test()
+print("\nnm_exe = nonmem.execute.NONMEM7()")
+nm_exe = pysn.api_utils.getAPI('nonmem').execute.NONMEM7()
+print("bool(nm_exe) = %s" % (bool(nm_exe),))
+if nm_exe:
+    print('nm_exe.bin = %r (nm_exe.version=%r)' % (nm_exe.bin, nm_exe.version))
+print("nm_exe.installed = %r" % (nm_exe.installed,))

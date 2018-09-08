@@ -30,7 +30,7 @@ def getAPI(name='generic'):
 
     if name not in _MODULES():
         raise ModelAPIException(
-            "Module name '%s' is not defined (%s)" %
+            "Module name '%s' is not defined; Defined: %s" %
             (name, ', '.join(list(_MODULES().keys())))
         )
     return _MODULES()[name]
@@ -55,5 +55,5 @@ def _MODULES():
                 spec.loader.exec_module(module)
             modules[last[4:] if last.startswith('api_') else last] = module
     if 'generic' not in modules:
-        raise ModelAPIException("generic API not found: %s" % (modules,))
+        raise ModelAPIException("Generic API not found; Modules: %s" % (modules,))
     return modules

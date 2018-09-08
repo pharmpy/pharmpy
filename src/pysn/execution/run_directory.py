@@ -1,7 +1,10 @@
+# -*- encoding: utf-8 -*-
+
+
 class RunDirectory:
     """ Base class for the execution directory.
         This directory will contain files from a job.
-        Cleaning will be handled here. 
+        Cleaning will be handled here.
         Subclasses can be used by different tools
         Generation can be done by the engine class to get specific directories
     """

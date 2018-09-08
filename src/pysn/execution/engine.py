@@ -1,13 +1,26 @@
+# -*- encoding: utf-8 -*-
+
+
 class Engine:
-    """ Base class for an execution engine
-        An example of an engine would be NONMEM
-    """
-    def __init__(self, options):
-        """ Setup of the engine. Perhaps through input from configuration file.
-        """
+    """An execution engine (e.g. NONMEM or similar)."""
+    def __init__(self, *args, **kwargs):
+        """Setups the engine. Perhaps through input from configuration file."""
         raise NotImplementedError
 
-    def create_command(self, options_goes_here):
-        """ Create the command line to start execution
-        """
+    def create_command(self, *args, **kwargs):
+        """Creates the command line to start execution."""
         raise NotImplementedError
+
+    @property
+    def bin(self):
+        """Path to main binary."""
+        raise NotImplementedError
+
+    @property
+    def version(self):
+        """Version (of main binary)."""
+        raise NotImplementedError
+
+    def __bool__(self):
+        """Should only eval True if engine is capable of estimation at any time."""
+        return False
