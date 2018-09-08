@@ -52,11 +52,7 @@ for path_model in [join(path, file) for file in ('pheno_real.mod',)]:
     pd.set_option('display.max_rows', 10)
     print(model.input.data_frame)
 
-    print("\nmodel.parameters.population:")
-    print(model.parameters.population)
-    for i, pop in enumerate(model.parameters.population):
-        lines = str(pop).splitlines()
-        lines = ['  %d %s' % (i, line) for line in lines]
-        print('\n'.join(lines))
+    print("\nmodel.parameters.inits:")
+    print(model.parameters.inits)
 
 # lexer.test()

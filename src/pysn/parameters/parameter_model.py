@@ -8,6 +8,6 @@ class ParameterModel:
         self.model = model
 
     @property
-    def population(self):
-        """All population parameters."""
+    def inits(self):
+        """All initial estimates for the parameters."""
         raise NotImplementedError
