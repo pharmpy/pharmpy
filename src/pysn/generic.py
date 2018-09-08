@@ -77,6 +77,16 @@ class Model(object):
             raise ModelLookupError(new)
         self._index = new
 
+    @property
+    def executed(self):
+        """True iff model has been previously executed (i.e. has results).
+
+        Is callback for :class:`ModelOutput`."""
+        # SHOULD contain a call to execution class. An implementation of THAT should then know how
+        # to check on current platform/cluster system (also WITHOUT initializing a run directory).
+        # SHOULDN'T need to overload this by implementation.
+        return True  # TODO: implement me
+
     def __str__(self):
         if self.exists:
             return self.read
