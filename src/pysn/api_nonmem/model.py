@@ -4,6 +4,7 @@
 
 from pysn import generic
 from .input import ModelInput
+from .output import ModelOutput
 from .parameter_model import ParameterModel
 from .records.factory import create_record
 
@@ -60,6 +61,7 @@ class Model(generic.Model):
 
         self.index = 0
         self.input = ModelInput(self)
+        self.output = ModelOutput(self)
         self.parameters = ParameterModel(self)
         self.validate()
 

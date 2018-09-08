@@ -4,6 +4,7 @@ from enum import Enum
 from pathlib import Path
 
 from pysn.parameter_model import ParameterModel
+from pysn.output import ModelOutput
 
 
 def detect(lines):
@@ -62,6 +63,7 @@ class Model(object):
     def load(self):
         self.index = 0
         self.input = ModelInput(self)
+        self.output = ModelOutput(self)
         self.parameters = ParameterModel(self)
 
     @property
