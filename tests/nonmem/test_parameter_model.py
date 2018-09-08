@@ -1,7 +1,9 @@
+# -*- encoding: utf-8 -*-
 
 import pytest
 
-from pysn.parameter_model import Scalar, CovarianceMatrix
+from pysn.parameters import CovarianceMatrix
+from pysn.parameters import Scalar
 
 
 @pytest.fixture

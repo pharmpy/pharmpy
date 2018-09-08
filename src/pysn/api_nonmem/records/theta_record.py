@@ -4,7 +4,7 @@ import numpy as np
 
 from pysn.api_nonmem.records.parser import ThetaRecordParser
 from pysn.api_nonmem.records.record import Record
-from pysn.parameter_model import Scalar
+from pysn.parameters import Scalar
 from pysn.parse_utils import AttrTree
 
 

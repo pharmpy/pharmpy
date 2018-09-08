@@ -2,7 +2,8 @@
 
 import pytest
 
-from pysn.parameter_model import Var, Covar
+from pysn.parameters import Covar
+from pysn.parameters import Var
 
 
 @pytest.mark.usefixtures('create_record')

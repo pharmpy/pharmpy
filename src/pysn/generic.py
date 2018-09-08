@@ -3,7 +3,7 @@
 from enum import Enum
 from pathlib import Path
 
-from pysn.parameter_model import ParameterModel
+from pysn.parameters import ParameterModel
 from pysn.output import ModelOutput
 
 

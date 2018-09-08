@@ -4,8 +4,8 @@ from math import pow
 
 from pysn.api_nonmem.records.parser import OmegaRecordParser
 from pysn.api_nonmem.records.record import Record
-from pysn.parameter_model import CovarianceMatrix
-from pysn.parameter_model import Scalar
+from pysn.parameters import CovarianceMatrix
+from pysn.parameters import Scalar
 
 
 class OmegaRecord(Record):
