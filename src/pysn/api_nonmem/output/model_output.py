@@ -1,17 +1,17 @@
 # -*- encoding: utf-8 -*-
 
-# from pathlib import Path
+from pathlib import Path
 
 from pysn import generic
+
+from .model_estimation import ModelEstimation
 
 
 class ModelOutput(generic.ModelOutput):
     """A NONMEM 7.x model output class."""
 
-    def __init__(self, model):
-        # table_records = model.get_records("TABLE")
-        # table_paths = [Path(record.path) for record in table_records]
-        super().__init__(model)
-
-    def load(self):
-        raise NotImplementedError
+    @property
+    def estimation(self):
+        table_records = self.model.get_records("TABLE")
+        table_paths = [Path(record.path).resolve() for record in table_records]
+        return ModelEstimation(tables=table_paths)

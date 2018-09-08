@@ -1,9 +1,6 @@
 # -*- encoding: utf-8 -*-
 
 
-# from generic import ParameterModel
-
-
 def _noexec_exception(model, details):
     return AttributeError("Tried to access output (%s) on model with no prior execution: %s" %
                           (details, model))

@@ -3,8 +3,9 @@
 from enum import Enum
 from pathlib import Path
 
-from pysn.parameters import ParameterModel
+from pysn import output
 from pysn.output import ModelOutput
+from pysn.parameters import ParameterModel
 
 
 def detect(lines):
