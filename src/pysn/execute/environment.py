@@ -1,6 +1,8 @@
 # -*- encoding: utf-8 -*-
 
-import os.name
+import os
+
+from .job import Job
 
 
 class Environment:
@@ -18,13 +20,15 @@ class Environment:
         self._init()
         return self
 
-    def submit_job(self, command):
-        """Starts a job in the environment (returns Job object)."""
-        raise NotImplementedError
+    def submit(self, *commands):
+        """Starts job, possibly composed of several processes, and returns Job object.
 
-    def argparse_options(self):
-        """Returns CLI options for argparse for this environment."""
-        raise NotImplementedError
+        Each argument is (iterable of) arguments for separate process."""
+        return Job(*commands)
+
+    # def argparse_options(self):
+    #     """Returns CLI options for argparse for this environment."""
+    #     raise NotImplementedError
 
     @classmethod
     def _create(cls, args, init=True):
@@ -36,6 +40,7 @@ class Environment:
 
 class SystemEnvironment(Environment):
     """Manages the system execution (not using SLURM or similar) of the engine on a platform."""
+    pass
 
 
 class PosixSystemEnvironment(SystemEnvironment):

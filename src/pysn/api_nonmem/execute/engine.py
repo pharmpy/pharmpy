@@ -1,11 +1,12 @@
 # -*- encoding: utf-8 -*-
 
 import logging
+import re
 import os
 from glob import glob
 from pathlib import Path
 
-from pysn.execution import Engine
+from pysn.execute import Engine
 
 
 class NONMEM7(Engine):
@@ -25,6 +26,15 @@ class NONMEM7(Engine):
             self.info = None
         else:
             self.info = (version, *self.installed[version])
+
+        super().__init__(envir=None)
+
+    def create_command(self, model):
+        mod = str(model.path)
+        lst = re.sub(r'\.(mod|ctl)$', '.lst', mod)
+        if mod == lst:
+            lst += '.lst'
+        return (self.bin, mod, lst)
 
     @property
     def bin(self):
@@ -73,7 +83,7 @@ class NONMEM7(Engine):
                 nm_bin = [path/subdir/(script % suffix) for subdir in subdirs]
                 nm_bin = list(filter(lambda x: x.is_file(), nm_bin))
                 if nm_bin:
-                    nm_info[version] = (nm_dir, nm_bin[0])
+                    nm_info[version] = (nm_dir, str(nm_bin[0]))
                     break
 
         return nm_info

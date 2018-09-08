@@ -7,6 +7,7 @@ from .input import ModelInput
 from .output import ModelOutput
 from .parameters import ParameterModel
 from .records.factory import create_record
+from .execute import NONMEM7
 
 
 def create_unique_symbol(symbols, prefix):
@@ -22,6 +23,8 @@ def create_unique_symbol(symbols, prefix):
 
 class Model(generic.Model):
     """A NONMEM 7.x model"""
+
+    engine = NONMEM7()
 
     @property
     def index(self):

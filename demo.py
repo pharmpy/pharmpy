@@ -3,9 +3,7 @@
 
 import importlib
 import sys
-from os.path import dirname
-from os.path import join
-from os.path import realpath
+from pathlib import Path
 from pprint import pprint
 
 import pandas as pd
@@ -24,16 +22,16 @@ def pprint_str(obj, *args, **kwargs):
 
 
 # load ./src/pysn as library 'pysn'
-root = dirname(realpath(__file__))
-sys.path.append(join(root, 'src'))
+root = Path(__file__).resolve().parent
+sys.path.append(str(root / 'src'))
 pysn = importlib.import_module('pysn')
 # lexer = importlib.import_module('pysn.psn.lexer')
 sys.path.pop()
 
-path = join(root, 'tests', 'testdata', 'nonmem')
-for path_model in [join(path, file) for file in ('pheno_real.mod',)]:
-    model = pysn.Model(path_model)
-    print("pysn.Model('%s')" % path_model)
+path = root / 'tests' / 'testdata' / 'nonmem'
+for mpath in [path / file for file in ('pheno_real.mod',)]:
+    model = pysn.Model(mpath)
+    print("pysn.Model(%s)" % mpath)
     print('='*80)
 
     print('str(model) =')
@@ -61,3 +59,6 @@ print("bool(nm_exe) = %s" % (bool(nm_exe),))
 if nm_exe:
     print('nm_exe.bin = %r (nm_exe.version=%r)' % (nm_exe.bin, nm_exe.version))
 print("nm_exe.installed = %r" % (nm_exe.installed,))
+
+# model = pysn.Model(mpath.parent / 'TEST' / 'test.mod')
+# model.estimate()

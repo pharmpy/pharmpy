@@ -3,9 +3,10 @@
 from enum import Enum
 from pathlib import Path
 
-from pysn import output
+from pysn import output  # TODO: ModelEstimation uses 'import generic; generic.output.XXX'
 from pysn.output import ModelOutput
 from pysn.parameters import ParameterModel
+from pysn.execute import Engine
 
 
 def detect(lines):
@@ -37,6 +38,8 @@ class Model(object):
 
     Agnostic of model type. Subclass me to implement non-agnostic API."""
 
+    engine = Engine()
+
     def __init__(self, path, **kwargs):
         self.path = Path(path).resolve() if path else None
         if self.exists:
@@ -66,6 +69,13 @@ class Model(object):
         self.input = ModelInput(self)
         self.output = ModelOutput(self)
         self.parameters = ParameterModel(self)
+
+    def estimate(self, **options):
+        """Estimate this model using the (single) implementation Engine.
+
+        Uses Engine (with set Environment). Optional 'options' sent to Engine."""
+
+        return self.engine.estimate(models=[self], **options)
 
     @property
     def index(self):
