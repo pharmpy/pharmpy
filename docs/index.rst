@@ -3,12 +3,13 @@ Contents
 ========
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 4
 
    readme
    installation
    usage
-   reference/index
+   Documentation <reference/modules>
+   design
    authors
    changelog
 

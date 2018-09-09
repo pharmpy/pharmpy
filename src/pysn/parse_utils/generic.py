@@ -51,14 +51,14 @@ def empty_rule(rule):
 class AttrToken(Token):
     """Token with attribute access.
 
-    Created by :method:`AttrTree.transform` from :class:`lark.lexer.Token`.
+    Created by :meth:`AttrTree.transform` from :class:`lark.lexer.Token`.
 
     Attributes:
-        rule: Name, in common with :class:`AttrTree`.
-        eval: Transformed data type, in common with :class:`AttrTree`.
+        self.rule: Name, in common with :class:`AttrTree`.
+        self.eval: Transformed data type, in common with :class:`AttrTree`.
 
-    Can be instantiated with :method:`.__init__`(rule, content), via :class:`lark.lexer.Token`, or
-    alternative constructor :method:`.transform` (transform object of class
+    Can be instantiated with :meth:`.__init__`(rule, content), via :class:`lark.lexer.Token`, or
+    alternative constructor :meth:`.transform` (transform object of class
     :class:`lark.lexer.Token`).
     """
 
@@ -112,19 +112,18 @@ class AttrToken(Token):
 class AttrTree(Tree):
     """Tree with attribute access.
 
-    Created in :method:`GenericParser.parse` by :method:`transform`, from :class:`lark.Tree`.
+    Created in :meth:`GenericParser.parse` by :meth:`transform`, from :class:`lark.Tree`.
 
     Attributes:
-        rule: Name, in common with :class:`.AttrToken`.
-        rules: Names of children.
-        eval: Transformed data type, in common with :class:`.AttrToken`.
-        tokens: Recursive tokens as (flattened) list.
-        debug: Treeview str, formatted for debugging.
+        self.rule: Name, in common with :class:`.AttrToken`.
+        self.rules: Names of children.
+        self.eval: Transformed data type, in common with :class:`.AttrToken`.
+        self.tokens: Recursive tokens as (flattened) list.
+        self.debug: Treeview str, formatted for debugging.
 
-    Can be instantiated with :method:`.__init__`(rule, children), via :class:`lark.Tree`, or
-    alternative constructors:
-        1. :method:`.transform` (transform recursively object of class :class:`lark.Tree`).
-        2. :method:`.create` (create from nested iterators).
+    Can be instantiated with :meth:`.__init__`, via :class:`lark.Tree`, or alternative constructors:
+        1. :meth:`.transform` (transform recursively object of class :class:`lark.Tree`).
+        2. :meth:`.create` (create from nested iterators).
     """
 
     __dict__ = {'data': None, 'children': None, '_meta': None}
@@ -335,12 +334,12 @@ class GenericParser:
     3. Convert to :class:`AttrTree` for convenient traversal (attribute access).
 
     Attributes:
-        non_empty: Insert empty placeholders if missing. Dict of rule -> (pos, name),
-            where a Tree or Token (if uppercase) will be inserted at 'pos' of the children of
-            'rule', if none exists.
-        buffer: Buffer parsed by :method:`parse`.
-        grammar: Path to grammar file.
-        roo: Root of final tree. Instance of :class:`AttrTree`.
+        self.non_empty: Insert empty placeholders if missing. Dict of rule -> (pos, name), where a
+            Tree or Token (if uppercase) will be inserted at 'pos' of the children of 'rule', if
+            none exists.
+        self.buffer: Buffer parsed by :meth:`parse`.
+        self.grammar: Path to grammar file.
+        self.root: Root of final tree. Instance of :class:`AttrTree`.
 
     .. _Lark:
         https://github.com/lark-parser/lark

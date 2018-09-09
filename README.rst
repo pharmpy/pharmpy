@@ -20,6 +20,14 @@ Documentation
 
 See local documentation in ``dist/docs/``
 
+.. warning:: Building the docs requires `graphviz`, in addition to what Tox_ can manage. Run::
+
+      sudo apt install graphviz
+
+   If you see::
+
+      WARNING: dot command 'dot' cannot be run (needed for graphviz output), check the graphviz_dot setting
+
 Development
 ===========
 

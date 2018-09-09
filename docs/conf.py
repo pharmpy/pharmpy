@@ -10,7 +10,9 @@ extensions = [
     'sphinx.ext.coverage',
     'sphinx.ext.doctest',
     'sphinx.ext.extlinks',
+    'sphinx.ext.graphviz',
     'sphinx.ext.ifconfig',
+    'sphinx.ext.inheritance_diagram',
     'sphinx.ext.napoleon',
     'sphinx.ext.todo',
     'sphinx.ext.viewcode',
@@ -24,8 +26,8 @@ source_suffix = '.rst'
 master_doc = 'index'
 project = 'PysN'
 year = '2018'
-author = 'Rikard Nordgren'
-copyright = '{0}, {1}'.format(year, author)
+authors = ['Rikard Nordgren', 'Gunnar Yngman']
+copyright = '{0}; {1}'.format(year, ', '.join(authors))
 version = release = '0.1.0'
 
 pygments_style = 'trac'
