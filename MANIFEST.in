@@ -11,6 +11,7 @@ include CHANGELOG.rst
 include LICENSE
 include README.rst
 
+include requirements.txt
 include tox.ini
 
 exclude demo.py
