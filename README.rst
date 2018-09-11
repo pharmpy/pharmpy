@@ -28,7 +28,7 @@ See local documentation in ``dist/docs/``
 
       WARNING: dot command 'dot' cannot be run (needed for graphviz output), check the graphviz_dot setting
 
-   Then execute:
+   Then execute::
 
       sudo apt install graphviz
 
