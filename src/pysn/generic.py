@@ -138,13 +138,15 @@ class ModelInput(object):
 
 
 # FIXME: Put the different apis and helpers in separate files
-class Operator(Enum):
+class InputFilterOperator(Enum):
     EQUAL = 1
     NOT_EQUAL = 2
     LESS_THAN = 3
     LESS_THAN_OR_EQUAL = 4
     GREATER_THAN = 5
     GREATER_THAN_OR_EQUAL = 6
+    STRING_EQUAL = 7
+    STRING_NOT_EQUAL = 8
 
 
 class InputFilter:

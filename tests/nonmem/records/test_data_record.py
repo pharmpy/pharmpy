@@ -1,5 +1,7 @@
 from collections import OrderedDict
 
+from pysn.generic import InputFilterOperator
+
 
 def test_data_path(nonmem):
     record = nonmem.records.create_record('DATA "pheno.dta"')
@@ -32,6 +34,13 @@ def test_filter(nonmem):
     assert str(record.root.filename) == "'pheno.dta'"
     assert str(record.root.ignore) == 'IGNORE=(ID.EQ.1,MDV.NEN.0)'
     assert record.ignore_character is None
+    filters = record.filters
+    assert filters[0].symbol == "ID"
+    assert filters[0].value == "1"
+    assert filters[0].operator == InputFilterOperator.STRING_EQUAL
+    assert filters[1].symbol == "MDV"
+    assert filters[1].value == "0"
+    assert filters[1].operator == InputFilterOperator.NOT_EQUAL
 
     record = nonmem.records.create_record('DATA "pheno.dta" NOWIDE IGNORE=(ID==1)')
     print(record.parser)
@@ -44,7 +53,6 @@ def test_filter(nonmem):
     print(record.parser)
     assert str(record.root.filename) == 'pheno.dta'
     assert record.ignore_character == '@'
-
 
 def test_option_record(nonmem):
     record = nonmem.records.create_record('DATA pheno.dta NOWIDE')
