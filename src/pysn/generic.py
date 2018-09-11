@@ -1,4 +1,17 @@
 # -*- encoding: utf-8 -*-
+"""
+===================
+Generic Model class
+===================
+
+**Parent to all implementations.**
+
+Inherit to *implement*, i.e. to define support for a specific model type. Duck typing is utilized,
+but an implementation is expected to implement **all** methods/attributes.
+
+Definitions
+-----------
+"""
 
 from enum import Enum
 from pathlib import Path
@@ -34,52 +47,32 @@ class ModelLookupError(LookupError):
 
 
 class Model(object):
-    """Generic model of any type
+    """(Generic) Model class.
 
-    Agnostic of model type. Subclass me to implement non-agnostic API."""
+    Represents a model file object, that may or may not exist on disk too.
+
+    Attributes:
+        self.input: Instance of (model API) :class:`~pysn.input.ModelInput`.
+        self.output: Instance of (model API) :class:`~pysn.output.ModelOutput`
+        self.parameters: Instance of (model API) :class:`~pysn.parameters.ParameterModel`
+    """
+
+    index = 0
 
     engine = Engine()
+    """(Default) :class:`~pysn.execute.engine.Engine` to use."""
 
     def __init__(self, path, **kwargs):
         self.path = Path(path).resolve() if path else None
         if self.exists:
-            self.load()
-
-    @property
-    def exists(self):
-        if self.path and self.path.is_file():
-            return True
-
-    @property
-    def content(self):
-        if not self.exists:
-            return None
-        with open(str(self.path), 'r') as f:
-            content = f.read()
-        return content
-
-    def write(self, *args, **kwargs):
-        pass
-
-    def validate(self):
-        raise NotImplementedError
-
-    def load(self):
-        self.index = 0
-        self.input = ModelInput(self)
-        self.output = ModelOutput(self)
-        self.parameters = ParameterModel(self)
-
-    def estimate(self, **options):
-        """Estimate this model using the (single) implementation Engine.
-
-        Uses Engine (with set Environment). Optional 'options' sent to Engine."""
-
-        return self.engine.estimate(models=[self], **options)
+            self.read()
 
     @property
     def index(self):
-        """Submodel unique index (setter might accept name lookup)"""
+        """Current model (subproblem) index.
+
+        The context for everything else changes if changed. Implementation might accept name lookup.
+        """
         return self._index
 
     @index.setter
@@ -89,18 +82,83 @@ class Model(object):
         self._index = new
 
     @property
-    def executed(self):
-        """True iff model has been previously executed (i.e. has results).
+    def exists(self):
+        """True *if and only if* model exists on disk."""
+        if self.path and self.path.is_file():
+            return True
 
-        Is callback for :class:`ModelOutput`."""
-        # SHOULD contain a call to execution class. An implementation of THAT should then know how
-        # to check on current platform/cluster system (also WITHOUT initializing a run directory).
-        # SHOULDN'T need to overload this by implementation.
-        return True  # TODO: implement me
+    @property
+    def content(self):
+        """Raw content stream of model."""
+        if not self.exists:
+            return None
+        with open(str(self.path), 'r') as f:
+            content = f.read()
+        return content
+
+    def validate(self):
+        """Test if model is syntactically valid (raises if not)."""
+        raise NotImplementedError
+
+    def read(self):
+        """Read model from disk.
+
+        Initiates all the API:s of the Model, e.g. :class:`~pysn.input.ModelInput`,
+        :class:`~pysn.input.ModelOutput` and :class:`~pysn.parameters.ParameterModel`.
+        """
+
+        self.input = ModelInput(self)
+        self.output = ModelOutput(self)
+        self.parameters = ParameterModel(self)
+
+    def write(self, path):
+        """Write model to disk.
+
+        .. todo:: Start implementing Model write. Will require thoughts on how to "bootstrap" up a
+            rendering of the low-level objects (e.g. every ThetaRecord, etc.).
+        """
+        raise NotImplementedError
+
+    def evaluate(self, **options):
+        """Evaluate this model using implemented :class:`~pysn.engine.Engine`.
+
+        Will use :class:`~pysn.environment.Environment` of `Engine`.
+
+        Arguments:
+            **options: Optional options to pass :class:`~pysn.engine.Engine`.
+        """
+
+        return self.engine.evaluate(models=[self], **options)
+
+    def estimate(self, **options):
+        """Estimate this model using implemented :class:`~pysn.engine.Engine`.
+
+        Will use :class:`~pysn.environment.Environment` of `Engine`.
+
+        Arguments:
+            **options: Optional options to pass :class:`~pysn.engine.Engine`.
+        """
+
+        return self.engine.estimate(models=[self], **options)
+
+    @property
+    def is_executed(self):
+        """True *if and only if* model has been executed (i.e. has results).
+
+        Is callback for :class:`~pysn.output.ModelOutput`.
+
+        .. todo::
+            Implement model execution status checker.
+            **Should** contain a call to :class:`.engine` class. An implementation of *that* should
+            then know how to check on current platform/cluster system (also *without* initializing a
+            run directory).
+            **Shouldn't** need to override this (by implementation).
+        """
+        return True
 
     def __str__(self):
         if self.exists:
-            return self.read
+            return self.content
 
 
 class ModelInput(object):

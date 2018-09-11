@@ -50,7 +50,7 @@ class Model(generic.Model):
         self._index = prob_i
         self._index_records = pos
 
-    def load(self):
+    def read(self):
         record_strings = self.content.split('$')
         # The first comment does not belong to any record
         if not record_strings[0].startswith('$'):
