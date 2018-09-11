@@ -80,9 +80,5 @@ class ModelInput(generic.ModelInput):
 
     @property
     def filters(self):
-        # Work in progress
-        self.model.get_records("INPUT")
-        for record in input_records:
-            for key, value in record.option_pairs.items():
-                if key == 'IGNORE' and value.startswith('('):        # FIXME: Do this more generally later
-                    pass
+        data_records = self.model.get_records("DATA")
+        return data_records[0].filters
