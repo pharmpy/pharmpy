@@ -45,9 +45,9 @@ comment : ";" [WS] [COMMENT]
 
 // common operators
 OP_EQ    : ".EQN."
-OP_STR_EQ: ".EQ." | "=" | "=="
+OP_STR_EQ: ".EQ." | "==" | "="
 OP_NE    : ".NEN."
-OP_STR_NE: ".NE." | "="
+OP_STR_NE: ".NE." | "/="
 OP_LT    : ".LT." | "<"
 OP_GT    : ".GT." | ">"
 OP_LT_EQ : ".LE." | "<="
