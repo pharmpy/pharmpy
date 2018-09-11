@@ -11,6 +11,7 @@ Contents
    Documentation <reference/modules>
    design
    authors
+   todo
    changelog
 
 Indices and tables

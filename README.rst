@@ -1,3 +1,5 @@
+.. highlight:: console
+
 ========
 Overview
 ========
@@ -20,13 +22,15 @@ Documentation
 
 See local documentation in ``dist/docs/``
 
-.. warning:: Building the docs requires `graphviz`, in addition to what Tox_ can manage. Run::
-
-      sudo apt install graphviz
+.. warning:: Building the docs requires `graphviz`, in addition to what Tox_ can manage.
 
    If you see::
 
       WARNING: dot command 'dot' cannot be run (needed for graphviz output), check the graphviz_dot setting
+
+   Then execute:
+
+      sudo apt install graphviz
 
 Development
 ===========

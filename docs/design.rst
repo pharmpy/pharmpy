@@ -96,7 +96,7 @@ One central dataset storage implementation. Different interpretations of differe
 needed like ``EVID``, ``AMT`` etc.
 
 API module: :mod:`~pysn.output`
-------------------------------
+-------------------------------
 
 .. note:: This needs some more thought.
 
