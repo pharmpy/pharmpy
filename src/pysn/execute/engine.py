@@ -1,4 +1,18 @@
 # -*- encoding: utf-8 -*-
+"""
+================
+Execution Engine
+================
+
+Job *creator* for a :class:`~pysn.model.Model` implementation.
+
+The critical, non-agnostic and central unit to inherit (e.g.
+:class:`~pysn.api_nonmem.execute.NONMEM7`). *That implementation* can be multiclassed dynamically
+for :class:`~pysn.tool.Tool` implementations, if mere duck typing doesn't cut it.
+
+Definitions
+-----------
+"""
 
 from .environment import SystemEnvironment
 

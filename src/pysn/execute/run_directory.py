@@ -1,7 +1,12 @@
 # -*- encoding: utf-8 -*-
-"""Run directory module.
+"""
+=======================
+Execution Run Directory
+=======================
 
-This module defines the :class:`RunDirectory` class, which initialization creates a filesystem
+.. todo:: Create a derived class at :class:`pysn.api_nonmem.execute.run_directory`.
+
+This module defines the :class:`.RunDirectory` class, which initialization creates a filesystem
 directory that :class:`~pysn.tool.Tool` instances and :class:`~pysn.model.Model` methods can utilize
 for input->output during evaluation, estimation & simulation tasks.
 
@@ -55,11 +60,6 @@ Destroying object (triggering cleanup):
         >>> (path / 'keep_this').unlink()
         >>> (path / 'file.py').unlink()
         >>> path.rmdir()
-
-TODO
-----
-
-    Create a derived class at :class:`pysn.api_nonmem.execute.run_directory`.
 
 Definitions
 -----------

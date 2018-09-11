@@ -54,3 +54,6 @@ html_short_title = '%s-%s' % (project, version)
 napoleon_use_ivar = True
 napoleon_use_rtype = False
 napoleon_use_param = False
+
+# if this is True, todo and todolist produce output, else they produce nothing
+todo_include_todos = True

@@ -39,48 +39,73 @@ models, of which these exist thus far:
 +---------------------------+-------------------------------------+--------------------------------------------+
 | Template (generic)        | NONMEM7 (implementation)            | Notes                                      |
 +===========================+=====================================+============================================+
-| :class:`~pysn.generic`    | :class:`~pysn.api_nonmem`           | Top-level module                           |
+| :mod:`~pysn.generic`      | :mod:`~pysn.api_nonmem`             | Top-level module                           |
 +---------------------------+-------------------------------------+--------------------------------------------+
-| :class:`~pysn.model`      | :class:`~pysn.api_nonmem.model`     | Binds everything else together             |
+| :mod:`~pysn.model`        | :mod:`~pysn.api_nonmem.model`       | Binds everything else together             |
 +---------------------------+-------------------------------------+--------------------------------------------+
-| **WIP**                   | :class:`~pysn.api_nonmem.input`     | Model input (the data)                     |
+| **WIP**                   | :mod:`~pysn.api_nonmem.input`       | Model input (the data)                     |
 +---------------------------+-------------------------------------+--------------------------------------------+
-| :class:`~pysn.output`     | :class:`~pysn.api_nonmem.output`    | Model output (estimates, etc.)             |
+| :mod:`~pysn.output`       | :mod:`~pysn.api_nonmem.output`      | Model output (estimates, etc.)             |
 +---------------------------+-------------------------------------+--------------------------------------------+
-| :class:`~pysn.parameters` | :class:`~pysn.api_nonmem.parameters`| Parameter model abstraction                |
+| :mod:`~pysn.parameters`   | :mod:`~pysn.api_nonmem.parameters`  | Parameter model abstraction                |
 +---------------------------+-------------------------------------+--------------------------------------------+
-| :class:`~pysn.execute`    | :class:`~pysn.api_nonmem.execute`   | Execution of model                         |
+| :mod:`~pysn.execute`      | :mod:`~pysn.api_nonmem.execute`     | Execution of model                         |
 +---------------------------+-------------------------------------+--------------------------------------------+
-|                           | :class:`~pysn.api_nonmem.detect`    | Detection of model support                 |
+|                           | :mod:`~pysn.api_nonmem.detect`      | Detection of model support                 |
 +---------------------------+-------------------------------------+--------------------------------------------+
-|                           | :class:`~pysn.api_nonmem.records`   | Non-agnostic implementation detail example |
+|                           | :mod:`~pysn.api_nonmem.records`     | Non-agnostic implementation detail example |
 +---------------------------+-------------------------------------+--------------------------------------------+
 
-**API module: :mod:`~pysn.execute`**
+API module: :mod:`~pysn.execute`
+--------------------------------
 
 .. note:: This needs some more thought.
 
 Is comprised of
 
-- :class:`~pysn.execute.job.Job` A job. Can contain several non-blocking executions (e.g. bootstrap, SIR, etc.).
-- :class:`~pysn.execute.engine.Engine` Creates run command and stuff. E.g. to start a job with ``nmfe``.
-- :class:`~pysn.execute.environment.Environment` Is the cluster or local or OS etc to start jobs on.
-- :class:`~pysn.execute.run_directory.RunDirectory` Run directory, invoking directory, where are the models? Which files to copy where? Organization of files.
+    .. list-table::
+        :widths: 20 80
+        :stub-columns: 1
 
-**API module: :mod:`~pysn.input`**
+        - - :class:`~pysn.execute.job.Job`
+          - A job unit. Can contain multiple processes for non-blocking executions (e.g. bootstrap,
+            SIR, etc.).
+
+        - - :class:`~pysn.execute.run_directory.RunDirectory`
+          - Run directory with cleaning and safe unlink operations. Invoking directory, where are
+            the models? Which files to copy where? Organization of files.
+
+        - - :class:`~pysn.execute.environment.Environment`
+          - Platform (e.g. Linux) & system (e.g. SLURM) implementation. The cluster/local or OS
+            etc. to start jobs on.
+
+        - - :class:`~pysn.execute.engine.Engine`
+          - Job creator for some purpose. Contains Environment object. The focal point for
+            implementation inheritance.
+
+:class:`~pysn.execute.engine.Engine` The critical, non-agnostic and central unit to inherit (e.g.
+:class:`~pysn.api_nonmem.execute.NONMEM7`). *That implementation* can be multiclassed dynamically
+for :class:`~pysn.tool.Tool` implementations, if mere duck typing doesn't cut it.
+
+API module: :mod:`~pysn.input`
+------------------------------
 
 .. warning:: This is outdated. Fix this!
 
 One central dataset storage implementation. Different interpretations of different columns are
 needed like ``EVID``, ``AMT`` etc.
 
-**API module: :mod:`~pysn.output`**
+API module: :mod:`~pysn.output`
+------------------------------
 
 .. note:: This needs some more thought.
 
 Read in one type of output and convert to SO or other standardised output storage.
 
-**API module: :mod:`~pysn.transform`**
+API module: :mod:`~pysn.transform`
+----------------------------------
+
+.. warning:: Planned but not yet started.
 
 Transforms models. Should comprise collection of functions that generally take model as input, apply
 changes (no copy) and returns it. E.g. adding covariances to expand covariance matrices, changing
@@ -88,7 +113,10 @@ distributions (e.g. Box-Cox), etc. Even updating initials is likely to end up he
 
 .. note:: No implicit disk writes. Thank you.
 
-**API module: :mod:`~pysn.tool`**
+API module: :mod:`~pysn.tool`
+-----------------------------
+
+.. warning:: Planned but not yet started.
 
 A bundle of operations. Organizes a run with standard files generated (like `meta.yaml`?).
 

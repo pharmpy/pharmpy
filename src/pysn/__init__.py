@@ -1,5 +1,15 @@
 #!/usr/bin/env python3
 # -*- encoding: utf-8 -*-
+"""
+==============================
+PysN -- Python Pharmacometrics
+==============================
+
+PysN is an experiment in substituting (some of) the PsN functionality in Python.
+
+Definitions
+===========
+"""
 
 __version__ = '0.1.0'
 

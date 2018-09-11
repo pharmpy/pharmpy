@@ -1,4 +1,9 @@
 # -*- encoding: utf-8 -*-
+"""Contains the exported API definitions.
+
+Definitions
+===========
+"""
 
 from pathlib import Path
 
@@ -7,10 +12,15 @@ from .api_utils import getAPI
 
 
 def Model(path=None, **kwargs):
-    """
-    Creates Model object from path.
+    """Factory for creating a Model object from a path.
 
-    Generic API if path is None, otherwise appropriate API will be used.
+    Arguments:
+        path: A `path-like object`_ pointing to the model file.
+
+    Generic :class:`~pysn.generic.Model` if path is None, otherwise appropriate implementation is
+    invoked (e.g. NONMEM7 :class:`~pysn.api_nonmem.model.Model`).
+
+    .. _path-like object: https://docs.python.org/3/glossary.html#term-path-like-object
     """
     _Model = getAPI('generic')
     if path:

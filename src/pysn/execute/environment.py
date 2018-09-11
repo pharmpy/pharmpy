@@ -1,4 +1,15 @@
 # -*- encoding: utf-8 -*-
+"""
+Execution Environment
+=====================
+
+Platform (e.g. Linux) & system (e.g. SLURM) implementation.
+
+The cluster/local or OS etc. to start jobs on.
+
+Definitions
+-----------
+"""
 
 import os
 
