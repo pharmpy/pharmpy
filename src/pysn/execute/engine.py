@@ -4,10 +4,10 @@
 Execution Engine
 ================
 
-Job *creator* for a :class:`~pysn.generic.Model` implementation.
+Job creator for a :class:`~pysn.generic.Model` implementation.
 
 The critical, non-agnostic and central unit to inherit (e.g.
-:class:`~pysn.api_nonmem.execute.NONMEM7`). *That implementation* can be multiclassed dynamically
+:class:`~pysn.api_nonmem.execute.NONMEM7`). That implementation can be multiclassed dynamically
 for :class:`~pysn.tool.Tool` implementations, if mere duck typing doesn't cut it.
 
 .. note:: An :class:`.Engine` implementation is expected to implement all methods/attributes.
@@ -36,13 +36,23 @@ class Engine:
         else:
             self.environment = SystemEnvironment()
 
+    def evaluate(self, models, **options):
+        """Starts evaluation of one/many models and returns :class:`~.job.Job` object.
+
+        Arguments:
+            models: List of :class:`~pysn.generic.Model` objects to evaluate.
+            **options: Estimation options to pass on to :class:`~.engine.Engine`."""
+        commands = [self.get_commandline('evaluate', model) for model in models]
+        job = self.environment.submit(*commands)
+        return job
+
     def estimate(self, models, **options):
         """Starts estimation of one/many models and returns :class:`~.job.Job` object.
 
         Arguments:
             models: List of :class:`~pysn.generic.Model` objects to estimate.
             **options: Estimation options to pass on to :class:`~.engine.Engine`."""
-        commands = [self._estimate_command(model) for model in models]
+        commands = [self.get_commandline('estimate', model) for model in models]
         job = self.environment.submit(*commands)
         return job
 
@@ -56,8 +66,13 @@ class Engine:
         """Version (of main binary)."""
         raise NotImplementedError
 
-    def _estimate_command(self, model):
-        """Creates the command line to estimate 'model'."""
+    def get_commandline(self, task, model):
+        """Returns a command line for performing a task on a model.
+
+        Arguments:
+            task: Any of ['evaluate', 'estimate'].
+            model: A :class:`pysn.generic.Model` object to perform 'task' on.
+        """
         raise NotImplementedError
 
     def __bool__(self):

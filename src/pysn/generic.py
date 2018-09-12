@@ -122,8 +122,6 @@ class Model(object):
     def evaluate(self, **options):
         """Evaluate this model using implemented :class:`~pysn.engine.Engine`.
 
-        Will use :class:`~pysn.environment.Environment` of `Engine`.
-
         Arguments:
             **options: Optional options to pass :class:`~pysn.engine.Engine`.
         """
@@ -132,8 +130,6 @@ class Model(object):
 
     def estimate(self, **options):
         """Estimate this model using implemented :class:`~pysn.engine.Engine`.
-
-        Will use :class:`~pysn.environment.Environment` of `Engine`.
 
         Arguments:
             **options: Optional options to pass :class:`~pysn.engine.Engine`.
@@ -145,7 +141,7 @@ class Model(object):
     def is_executed(self):
         """True *if and only if* model has been executed (i.e. has results).
 
-        Is callback for :class:`~pysn.output.ModelOutput`.
+        Must be True for :class:`~pysn.output.ModelOutput`.
 
         .. todo::
             Implement model execution status checker.
