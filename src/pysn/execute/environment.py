@@ -17,7 +17,7 @@ from .job import Job
 
 
 class Environment:
-    """Manages the execution of the engine on a platform/system.
+    """Manages execution of an engine on a platform/system.
 
     Subclasses may support e.g. Windows, Linux, SLURM or SGE.
     """
@@ -31,11 +31,9 @@ class Environment:
         self._init()
         return self
 
-    def submit(self, *commands):
-        """Starts job, possibly composed of several processes, and returns Job object.
-
-        Each argument is (iterable of) arguments for separate process."""
-        return Job(*commands)
+    def submit(self, command, cwd):
+        """Starts job and returns Job object."""
+        return Job(command, cwd)
 
     # def argparse_options(self):
     #     """Returns CLI options for argparse for this environment."""
@@ -50,12 +48,12 @@ class Environment:
 
 
 class SystemEnvironment(Environment):
-    """Manages the system execution (not using SLURM or similar) of the engine on a platform."""
+    """Manages system execution (not using SLURM or similar) of an engine on a platform."""
     pass
 
 
 class PosixSystemEnvironment(SystemEnvironment):
-    """Manages the system execution of the engine on a Posix-like platform."""
+    """Manages system execution of an engine on a Posix-like platform."""
     is_supported = (os.name != 'nt')
 
     @classmethod
@@ -67,5 +65,5 @@ class PosixSystemEnvironment(SystemEnvironment):
 
 
 class WindowsSystemEnvironment(SystemEnvironment):
-    """Manages the system execution of the engine on a Windows platform."""
+    """Manages system execution of an engine on a Windows platform."""
     is_supported = (os.name == 'nt')

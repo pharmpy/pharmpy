@@ -17,6 +17,7 @@ Definitions
 """
 
 from .environment import SystemEnvironment
+from .run_directory import RunDirectory
 
 
 class Engine:
@@ -36,29 +37,41 @@ class Engine:
         else:
             self.environment = SystemEnvironment()
 
-    def evaluate(self, models, **options):
-        """Starts evaluation of one/many models and returns :class:`~.job.Job` object.
+    def evaluate(self, model, cwd=None, **kwds):
+        """Starts evaluation of a model and returns :class:`~.job.Job` object.
 
         Arguments:
-            models: List of :class:`~pysn.generic.Model` objects to evaluate.
-            **options: Estimation options to pass on to :class:`~.engine.Engine`."""
-        commands = [self.get_commandline('evaluate', model) for model in models]
-        job = self.environment.submit(*commands)
-        return job
+            model: The :class:`~pysn.generic.Model` object to evaluate.
+            cwd: Directory to create run directory in (temporary if None).
+            **kwds: Extra evaluation options.
 
-    def estimate(self, models, **options):
-        """Starts estimation of one/many models and returns :class:`~.job.Job` object.
+        .. todo:: Make either this level, or one up (:class:`pysn.generic.Model` and
+            :class:`pysn.tool.Tool`), emulate -model_subdir command of PsN. Estimating
+            pheno_real.mod with no dir info but the *parent* (otherwise it must be a temp dir),
+            should create 'pheno_real/' dir only if it doesn't already exist, and *then* create
+            pheno_real/estimate_dir1/, pheno_real/evaluate_dir74/, etc. (be clear but not collide).
+        """
+
+        rundir = RunDirectory(cwd, model.path.stem)
+        command = self.get_commandline('evaluate', model)
+        return self.environment.submit(command, rundir)
+
+    def estimate(self, model, cwd=None, **kwds):
+        """Starts estimation of a model and returns :class:`~.job.Job` object.
 
         Arguments:
-            models: List of :class:`~pysn.generic.Model` objects to estimate.
-            **options: Estimation options to pass on to :class:`~.engine.Engine`."""
-        commands = [self.get_commandline('estimate', model) for model in models]
-        job = self.environment.submit(*commands)
-        return job
+            model: The :class:`~pysn.generic.Model` object to estimate.
+            cwd: Directory to create run directory in (temporary if None).
+            **kwds: Extra estimation options.
+        """
+
+        rundir = RunDirectory(cwd, model.path.stem)
+        command = self.get_commandline('estimate', model)
+        return self.environment.submit(command, rundir)
 
     @property
     def bin(self):
-        """Path to main binary."""
+        """Path (to main binary)."""
         raise NotImplementedError
 
     @property
@@ -70,11 +83,11 @@ class Engine:
         """Returns a command line for performing a task on a model.
 
         Arguments:
-            task: Any of ['evaluate', 'estimate'].
+            task: Any task of {'evaluate', 'estimate'}.
             model: A :class:`pysn.generic.Model` object to perform 'task' on.
         """
         raise NotImplementedError
 
     def __bool__(self):
-        """Should only eval True if engine is ready for immediate execution, in the present."""
+        """True if this engine is ready for executing (at any time)."""
         return False

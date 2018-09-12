@@ -10,9 +10,13 @@ from pysn.execute import Engine
 
 
 class NONMEM7(Engine):
-    """NONMEM7 implementation of generic engine.
+    """NONMEM7 execution engine.
 
-    Scans for installed NM version on initialization."""
+    An implementation of the generic :class:`~pysn.execute.engine.Engine` (see for more
+    information).
+
+    Will automatically scan for installed NONMEM versions (see :func:`~self.scan_installed`).
+    """
 
     def __init__(self, version=None):
         log = logging.getLogger(__name__)
@@ -29,25 +33,26 @@ class NONMEM7(Engine):
 
         super().__init__(envir=None)
 
-    def create_command(self, model):
-        mod = str(model.path)
-        lst = re.sub(r'\.(mod|ctl)$', '.lst', mod)
-        if mod == lst:
-            lst += '.lst'
-        return (self.bin, mod, lst)
+    def get_commandline(self, task, model):
+        if task in {'evaluate', 'estimate'}:
+            mod = str(model.path)
+            lst = re.sub(r'\.(mod|ctl)$', '.lst', mod)
+            if mod == lst:
+                lst += '.lst'
+            return (self.bin, mod, lst)
+        else:
+            raise ValueError('Engine (%s) does not support task %r.' % (self.__class__.__name__,
+                                                                        task))
 
     @property
     def bin(self):
-        """Path to main binary."""
         return self.info[2] if self.info else None
 
     @property
     def version(self):
-        """Version (of main binary)."""
         return self.info[0] if self.info else None
 
     def __bool__(self):
-        """Should only eval True if NONMEM7 is capable of estimation at any time."""
         return bool(self.installed)
 
     @classmethod

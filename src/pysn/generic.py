@@ -106,7 +106,6 @@ class Model(object):
         Initiates all the API:s of the Model, e.g. :class:`~pysn.input.ModelInput`,
         :class:`~pysn.input.ModelOutput` and :class:`~pysn.parameters.ParameterModel`.
         """
-
         self.input = ModelInput(self)
         self.output = ModelOutput(self)
         self.parameters = ParameterModel(self)
@@ -119,32 +118,22 @@ class Model(object):
         """
         raise NotImplementedError
 
-    def evaluate(self, **options):
-        """Evaluate this model using implemented :class:`~pysn.engine.Engine`.
+    def evaluate(self):
+        """Evaluate this model using (the default) :class:`~self.engine`."""
+        return self.engine.evaluate(self)
 
-        Arguments:
-            **options: Optional options to pass :class:`~pysn.engine.Engine`.
-        """
-
-        return self.engine.evaluate(models=[self], **options)
-
-    def estimate(self, **options):
-        """Estimate this model using implemented :class:`~pysn.engine.Engine`.
-
-        Arguments:
-            **options: Optional options to pass :class:`~pysn.engine.Engine`.
-        """
-
-        return self.engine.estimate(models=[self], **options)
+    def estimate(self):
+        """Estimate this model using (the default) :class:`~self.engine`."""
+        return self.engine.estimate(self)
 
     @property
-    def is_executed(self):
-        """True *if and only if* model has been executed (i.e. has results).
+    def has_results(self):
+        """True *if and only if* model has results.
 
-        Must be True for :class:`~pysn.output.ModelOutput`.
+        Must be True for accessing :class:`~pysn.output.ModelOutput`.
 
         .. todo::
-            Implement model execution status checker.
+            Implement model execution/results status checker.
             **Should** contain a call to :class:`.engine` class. An implementation of *that* should
             then know how to check on current platform/cluster system (also *without* initializing a
             run directory).
