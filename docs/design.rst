@@ -36,56 +36,103 @@ The Model APIs
 A pharmacometric model and workflow has many facets. APIs are abstract concepts like operations on
 models, of which these exist thus far:
 
-+---------------------------+-------------------------------------+--------------------------------------------+
-| Template (generic)        | NONMEM7 (implementation)            | Notes                                      |
-+===========================+=====================================+============================================+
-| :mod:`~pysn.generic`      | :mod:`~pysn.api_nonmem`             | Top-level module                           |
-+---------------------------+-------------------------------------+--------------------------------------------+
-| :mod:`~pysn.model`        | :mod:`~pysn.api_nonmem.model`       | Binds everything else together             |
-+---------------------------+-------------------------------------+--------------------------------------------+
-| **WIP**                   | :mod:`~pysn.api_nonmem.input`       | Model input (the data)                     |
-+---------------------------+-------------------------------------+--------------------------------------------+
-| :mod:`~pysn.output`       | :mod:`~pysn.api_nonmem.output`      | Model output (estimates, etc.)             |
-+---------------------------+-------------------------------------+--------------------------------------------+
-| :mod:`~pysn.parameters`   | :mod:`~pysn.api_nonmem.parameters`  | Parameter model abstraction                |
-+---------------------------+-------------------------------------+--------------------------------------------+
-| :mod:`~pysn.execute`      | :mod:`~pysn.api_nonmem.execute`     | Execution of model                         |
-+---------------------------+-------------------------------------+--------------------------------------------+
-|                           | :mod:`~pysn.api_nonmem.detect`      | Detection of model support                 |
-+---------------------------+-------------------------------------+--------------------------------------------+
-|                           | :mod:`~pysn.api_nonmem.records`     | Non-agnostic implementation detail example |
-+---------------------------+-------------------------------------+--------------------------------------------+
+   .. list-table::
+       :widths: 25 25 30
+       :header-rows: 1
+
+       - - Template (generic)
+         - NONMEM7 (implementation)
+         - Notes
+
+       - - :mod:`~pysn.generic`
+         - :mod:`~pysn.api_nonmem`
+         - Top-level module
+
+       - - :mod:`~pysn.model`
+         - :mod:`~pysn.api_nonmem.model`
+         - Binds everything else together
+
+       - - **WIP**
+         - :mod:`~pysn.api_nonmem.input`
+         - Model input (the data)
+
+       - - :mod:`~pysn.output`
+         - :mod:`~pysn.api_nonmem.output`
+         - Model output (estimates, etc.)
+
+       - - :mod:`~pysn.parameters`
+         - :mod:`~pysn.api_nonmem.parameters`
+         - Parameter model abstraction
+
+       - - :mod:`~pysn.execute`
+         - :mod:`~pysn.api_nonmem.execute`
+         - Execution of model
+
+       - -
+         - :mod:`~pysn.api_nonmem.detect`
+         - Detection of model support
+
+       - -
+         - :mod:`~pysn.api_nonmem.records`
+         - Non-agnostic implementation detail example
 
 API module: :mod:`~pysn.execute`
 --------------------------------
 
-.. note:: This needs some more thought.
+.. note:: This needs some more thought (from someone who isn't me).
 
-Is comprised of
+See :mod:`the package <pysn.execute>` and its modules (and their classes) for technical information.
 
-    .. list-table::
-        :widths: 20 80
-        :stub-columns: 1
+This package defines four classes. These are my (module documentation non-overlapping) thoughts
+about them.
 
-        - - :class:`~pysn.execute.job.Job`
-          - A job unit. Can contain multiple processes for non-blocking executions (e.g. bootstrap,
-            SIR, etc.).
+:class:`~pysn.execute.job.Job` class
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-        - - :class:`~pysn.execute.run_directory.RunDirectory`
-          - Run directory with cleaning and safe unlink operations. Invoking directory, where are
-            the models? Which files to copy where? Organization of files.
+- Will need to inherit where `~pysn.execute.environment.Environment` does.
 
-        - - :class:`~pysn.execute.environment.Environment`
-          - Platform (e.g. Linux) & system (e.g. SLURM) implementation. The cluster/local or OS
-            etc. to start jobs on.
+:class:`~pysn.execute.run_directory.RunDirectory` class
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-        - - :class:`~pysn.execute.engine.Engine`
-          - Job creator for some purpose. Contains Environment object. The focal point for
-            implementation inheritance.
+Will not need non-generic extensions (as I see it).
 
-:class:`~pysn.execute.engine.Engine` The critical, non-agnostic and central unit to inherit (e.g.
-:class:`~pysn.api_nonmem.execute.NONMEM7`). *That implementation* can be multiclassed dynamically
-for :class:`~pysn.tool.Tool` implementations, if mere duck typing doesn't cut it.
+If no parent directory given, temporary directory shall be created (and destroyed). There shall not
+be any implicit usages of working directories or special meaning attributed to :attr:`Model.path
+<pysn.generic.Model.path>`.
+
+Purpose is to contain input/output files and the execution process of a "execution-like task" of
+a model. Thus, it has an attribute, :attr:`RunDirectory.model
+<pysn.execute.run_directory.RunDirectory.model>` which "takes" a model via performing a deepcopy if
+not in directory already, and changing :attr:`Model.path <pysn.generic.Model.path>`. That `path`
+change should then trigger a re-pathing of the intra-model (relative) paths (e.g. to data).
+
+   .. todo::
+      Changing :attr:`Model.path <pysn.generic.Model.path>` should trigger changes to all contained
+      relative paths.
+
+:class:`~pysn.execute.run_directory.RunDirectory` is a **sandbox** for execution, even if trivially
+escapable. Thus, it should also provide methods for file operations that ensure the operation is
+contained.
+
+   .. todo::
+      Develop "safe" file operation methods for :class:`~pysn.execute.run_directory.RunDirectory`.
+
+Class shall expose an API that can be used to copy back the resulting (output) files, just as PsN
+does, but it *must* be requested explicitly. If not used when run directory is temp directory, this
+*must* guarantee loss of files. The copy will occur whenever requested or in
+:func:`pysn.execute.run_directory.RunDirectory.__del__`, just as file deletion works already.
+
+:class:`~pysn.execute.environment.Environment` class
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+- Needs an implementation per OS (Posix/Windows) and per system (system, SLURM, etc.).
+- Execution without SLURM etc. is called "system execution".
+
+:class:`~pysn.execute.engine.Engine` class
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+- Creates Job objects, executing some task, for a *specific* implementation.
+- Contains Environment object. The focal point for implementation inheritance.
 
 API module: :mod:`~pysn.input`
 ------------------------------
