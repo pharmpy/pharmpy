@@ -52,16 +52,17 @@ class Model(object):
     Represents a model file object, that may or may not exist on disk too.
 
     Attributes:
-        self.input: Instance of (model API) :class:`~pysn.input.ModelInput`.
-        self.output: Instance of (model API) :class:`~pysn.output.ModelOutput`
-        self.parameters: Instance of (model API) :class:`~pysn.parameters.ParameterModel`
+        self.input: Instance of (model API) :class:`~pysn.input.ModelInput` (e.g. data).
+        self.output: Instance of (model API) :class:`~pysn.output.ModelOutput` (results of
+            evaluation, estimation or simulations).
+        self.parameters: Instance of (model API) :class:`~pysn.parameters.ParameterModel` (e.g.
+            parameter estimates or initial values).
+        self.execute: Instance of (model API) :class:`~pysn.execute.Engine` (executing evaluation,
+            estimation or simulation).
     """
 
     _path = None
     _index = 0
-
-    engine = Engine()
-    """(Default) :class:`~pysn.execute.engine.Engine` to use."""
 
     def __init__(self, path, **kwargs):
         self._path = Path(path).resolve() if path else None
@@ -110,6 +111,7 @@ class Model(object):
         self.input = ModelInput(self)
         self.output = ModelOutput(self)
         self.parameters = ParameterModel(self)
+        self.execute = Engine(self)
 
     def write(self, path):
         """Write model to disk.
@@ -127,14 +129,6 @@ class Model(object):
     @path.setter
     def path(self, path):
         self._path = path
-
-    def evaluate(self):
-        """Evaluate this model using (the default) :class:`~self.engine`."""
-        return self.engine.evaluate(self)
-
-    def estimate(self):
-        """Estimate this model using (the default) :class:`~self.engine`."""
-        return self.engine.estimate(self)
 
     @property
     def has_results(self):

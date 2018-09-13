@@ -48,12 +48,11 @@ print("\nmodel.parameters.inits:")
 print(pheno.parameters.inits)
 
 # print NONMEM installations
-print("\nnm_exe = nonmem.execute.NONMEM7()")
-nm_exe = pysn.api_utils.getAPI('nonmem').execute.NONMEM7()
-print("bool(nm_exe) = %s" % (bool(nm_exe),))
-if nm_exe:
-    print('nm_exe.bin = %r (nm_exe.version=%r)' % (nm_exe.bin, nm_exe.version))
-print("nm_exe.installed = %r" % (nm_exe.installed,))
+print("bool(pheno.execute) = %s" % (bool(pheno.execute),))
+if pheno.execute:
+    print('pheno.execute.bin = %r (pheno.execute.version=%r)' % (pheno.execute.bin,
+                                                                 pheno.execute.version))
+print("pheno.execute.installed = %r" % (pheno.execute.installed,))
 
 # estimate pheno
 # import pdb; pdb.set_trace()  # noqa

@@ -18,7 +18,7 @@ class NONMEM7(Engine):
     Will automatically scan for installed NONMEM versions (see :func:`~self.scan_installed`).
     """
 
-    def __init__(self, version=None):
+    def __init__(self, model, version=None):
         log = logging.getLogger(__name__)
 
         self.installed = self.scan_installed()
@@ -31,11 +31,11 @@ class NONMEM7(Engine):
         else:
             self.info = (version, *self.installed[version])
 
-        super().__init__(envir=None)
+        super().__init__(model)
 
-    def get_commandline(self, task, model):
+    def get_commandline(self, task):
         if task in {'evaluate', 'estimate'}:
-            mod = str(model.path)
+            mod = str(self.model.path)
             lst = re.sub(r'\.(mod|ctl)$', '.lst', mod)
             if mod == lst:
                 lst += '.lst'

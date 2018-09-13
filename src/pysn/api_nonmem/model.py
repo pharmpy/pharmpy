@@ -24,8 +24,6 @@ def create_unique_symbol(symbols, prefix):
 class Model(generic.Model):
     """A NONMEM 7.x model"""
 
-    engine = NONMEM7()
-
     @property
     def index(self):
         return self._index
@@ -66,6 +64,7 @@ class Model(generic.Model):
         self.input = ModelInput(self)
         self.output = ModelOutput(self)
         self.parameters = ParameterModel(self)
+        self.execute = NONMEM7(self)
         self.validate()
 
     def validate(self):

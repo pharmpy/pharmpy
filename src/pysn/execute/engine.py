@@ -21,27 +21,28 @@ from .run_directory import RunDirectory
 
 
 class Engine:
-    """An execution engine (e.g. for NONMEM7).
+    """An execution engine (e.g. for NONMEM7) of a :class:`~pysn.generic.Model`.
+
+    Is a model API attached to attribute :attr:`Model.execute <pysn.generic.Model.execute>`.
 
     Arguments:
         envir: Type of :class:`~.environment.Environment` to use.
 
-    Default `envir` is a subclass (depending on the current OS) of
-    :class:`~.environment.SystemEnvironment` (direct execution). An :class:`~.self` object evaluates
-    True *if and only if* an estimation task can be initiated *now*.
+    Default `envir` inherits (depending on the current OS) :class:`~.environment.SystemEnvironment`
+    (direct execution).
     """
 
-    def __init__(self, envir=None):
+    def __init__(self, model, envir=None):
+        self.model = model
         if envir:
             self.environment = envir
         else:
             self.environment = SystemEnvironment()
 
-    def evaluate(self, model, cwd=None, **kwds):
-        """Starts evaluation of a model and returns :class:`~.job.Job` object.
+    def evaluate(self, cwd=None, **kwds):
+        """Starts model evaluation and returns :class:`~.job.Job` object.
 
         Arguments:
-            model: The :class:`~pysn.generic.Model` object to evaluate.
             cwd: Directory to create run directory in (temporary if None).
             **kwds: Extra evaluation options.
 
@@ -52,21 +53,20 @@ class Engine:
             pheno_real/estimate_dir1/, pheno_real/evaluate_dir74/, etc. (be clear but not collide).
         """
 
-        rundir = RunDirectory(cwd, model.path.stem)
-        command = self.get_commandline('evaluate', model)
+        rundir = RunDirectory(cwd, self.model.path.stem)
+        command = self.get_commandline('evaluate', self.model)
         return self.environment.submit(command, rundir)
 
-    def estimate(self, model, cwd=None, **kwds):
-        """Starts estimation of a model and returns :class:`~.job.Job` object.
+    def estimate(self, cwd=None, **kwds):
+        """Starts model estimation and returns :class:`~.job.Job` object.
 
         Arguments:
-            model: The :class:`~pysn.generic.Model` object to estimate.
             cwd: Directory to create run directory in (temporary if None).
             **kwds: Extra estimation options.
         """
 
-        rundir = RunDirectory(cwd, model.path.stem)
-        command = self.get_commandline('estimate', model)
+        rundir = RunDirectory(cwd, self.model.path.stem)
+        command = self.get_commandline('estimate', self.model)
         return self.environment.submit(command, rundir)
 
     @property
@@ -79,15 +79,14 @@ class Engine:
         """Version (of main binary)."""
         raise NotImplementedError
 
-    def get_commandline(self, task, model):
-        """Returns a command line for performing a task on a model.
+    def get_commandline(self, task):
+        """Returns a command line for performing a task.
 
         Arguments:
             task: Any task of {'evaluate', 'estimate'}.
-            model: A :class:`pysn.generic.Model` object to perform 'task' on.
         """
         raise NotImplementedError
 
     def __bool__(self):
-        """True if this engine is ready for executing (at any time)."""
+        """True if this engine is ready for executing *now*."""
         return False
