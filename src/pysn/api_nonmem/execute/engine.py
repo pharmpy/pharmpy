@@ -61,17 +61,17 @@ class NONMEM7(Engine):
         log.info("Initiating NM version scan in filesystem")
 
         if os.name == 'nt':
-            globs = ['C:/nm7*', 'C:/nm_7*', 'C:/NONMEM/nm7*', 'C:/NONMEM/nm_7*']
-            globs = [str(Path(globpath).resolve().expanduser()) for globpath in globs]
+            globpaths = ['C:/nm7*', 'C:/nm_7*', 'C:/NONMEM/nm7*', 'C:/NONMEM/nm_7*']
+            globpaths = [str(Path(globpath).resolve().expanduser()) for globpath in globpaths]
             script = 'nmfe7%s.bat'
         else:
-            globs = []
+            globpaths = []
             for root in [Path(x) for x in ('/opt', '~')]:
                 tails = ['nm7*', 'nm_7*', 'nm7*', 'nm_7*', 'nonmem/nm7*', 'nonmem/nm_7*']
-                globs += [root / x for x in tails]
-            globs = [str(Path(globpath).expanduser().resolve()) for globpath in globs]
+                globpaths += [root / x for x in tails]
+            globpaths = [str(Path(globpath).expanduser()) for globpath in globpaths]
             script = 'nmfe7%s'
-        candidates = [path for globpattern in globs for path in glob(globpattern)]
+        candidates = [path for globpath in globpaths for path in glob(globpath)]
 
         nm_info = dict()
         for nm_dir in candidates:
