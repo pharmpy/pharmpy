@@ -57,13 +57,14 @@ class Model(object):
         self.parameters: Instance of (model API) :class:`~pysn.parameters.ParameterModel`
     """
 
-    index = 0
+    _path = None
+    _index = 0
 
     engine = Engine()
     """(Default) :class:`~pysn.execute.engine.Engine` to use."""
 
     def __init__(self, path, **kwargs):
-        self.path = Path(path).resolve() if path else None
+        self._path = Path(path).resolve() if path else None
         if self.exists:
             self.read()
 
@@ -117,6 +118,15 @@ class Model(object):
             rendering of the low-level objects (e.g. every ThetaRecord, etc.).
         """
         raise NotImplementedError
+
+    @property
+    def path(self):
+        """File path of the model."""
+        return self._path
+
+    @path.setter
+    def path(self, path):
+        self._path = path
 
     def evaluate(self):
         """Evaluate this model using (the default) :class:`~self.engine`."""
