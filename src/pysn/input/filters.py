@@ -1,31 +1,33 @@
 from enum import Enum
 
+
 class InputFilterOperator(Enum):
-    EQUAL = 1
-    NOT_EQUAL = 2
-    LESS_THAN = 3
-    LESS_THAN_OR_EQUAL = 4
-    GREATER_THAN = 5
-    GREATER_THAN_OR_EQUAL = 6
-    STRING_EQUAL = 7
-    STRING_NOT_EQUAL = 8
+    EQUAL = 0
+    NOT_EQUAL = 1
+    LESS_THAN = 2
+    LESS_THAN_OR_EQUAL = 3
+    GREATER_THAN = 4
+    GREATER_THAN_OR_EQUAL = 5
+    STRING_EQUAL = 6
+    STRING_NOT_EQUAL = 7
 
     def __str__(self):
-        if self.operator == InputFilterOperator.EQUAL or self.operator == InputFilterOperator.STRING_EQUAL:
-            return "=="
-        elif self.operator == InputFilterOperator.NOT_EQUAL or self.operator == InputFilterOperator.STRING_NOT_EQUAL:
-            return "!="
-        elif self.operator == InputFilterOperator.LESS_THAN:
-            return "<"
-        elif self.operator == InputFilterOperator.LESS_THAN_OR_EQUAL:
-            return "<="
-        elif self.operator == InputFilterOperator.GREATER_THAN:
-            return ">"
-        elif self.operator == InputFilterOperator.GREATER_THAN_OR_EQUAL:
-            return ">="
+        return self._strings[self.value]
+
+    def negate(self):
+        return self._negations[self.value]
+
+# Install class variables. Cannot be done directly in Enum class
+InputFilterOperator._strings = [ '==', '!=', '<', '<=', '>', '>=', '==', '!=' ]
+InputFilterOperator._negations = [ InputFilterOperator.NOT_EQUAL, InputFilterOperator.EQUAL, InputFilterOperator.GREATER_THAN_OR_EQUAL,
+        InputFilterOperator.GREATER_THAN, InputFilterOperator.LESS_THAN_OR_EQUAL,
+        InputFilterOperator.LESS_THAN, InputFilterOperator.STRING_NOT_EQUAL, InputFilterOperator.STRING_EQUAL ]
 
 
 class InputFilter:
+    '''An InputFilter is an expression that can be evaluated for each row
+       of a dataset. If it evaluates to true the row will be either ignored or accepted
+    '''
     def __init__(self, symbol, operator, value):
         self.symbol = symbol
         self.operator = operator
@@ -36,28 +38,31 @@ class InputFilter:
             citation = '"'
         else:
             citation = ''
-        return self.symbol + ' ' + str(self.operator) + citation + self.value + citation
-
-    def apply(self, data_frame, inplace=True):
-        '''Apply this filter to a DataFrame.
-
-        Arguments:
-            data_frame: The data frame.
-        '''
-        df = data_frame.query(str(self), inplace=inplace)
-        return df
+        return self.symbol + ' ' + str(self.operator) + ' ' + citation + str(self.value) + citation
 
 
 class InputFilters(list):
-    def apply(self, data_frame, inplace=True):
-        '''Apply filters to a DataFrame
-        '''
-        if inplace:
-            for filt in self:
-                filt.apply(data_frame, inplace)
-            return None
+    '''A list of input filters
+
+    Attribute: accept - Set to True if this is a list of filters to accept rows
+               the default is to ignore rows
+    '''
+    def __init__(self, *args, accept=False, **kwargs):
+        self.accept = accept
+        super().__init__(*args, **kwargs)
+
+    def __str__(self):
+        expr = ' or '.join(str(e) for e in self)
+        if self.accept:
+            return expr
         else:
+            return 'not(' + expr + ')'
+
+    def apply(self, data_frame, inplace=True):
+        '''Apply all filters to a DataFrame
+        '''
+        df = data_frame.query(str(self), inplace=inplace)
+        if df is None:
             df = data_frame
-            for filt in self:
-                df = filt.apply(df, inplace)
-            return df
+        df.index = range(len(df))   # Renumber index. Don't really know how to handle index.
+        return df
