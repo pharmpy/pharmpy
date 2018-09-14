@@ -37,7 +37,16 @@ class DataRecord(OptionRecord):
         filters = InputFilters()
 
         if hasattr(self.root, 'ignore'):
-            for filt in self.root.ignore.all('filter'):
+            attr = 'ignore'
+            filters.accept = False
+        elif hasattr(self.root, 'accept'):
+            attr = 'accept'
+            filters.accept = True
+        else:
+            return filters
+
+        for option in self.root.all(attr):
+            for filt in option.all('filter'):
                 symbol = filt.COLUMN
                 value = filt.TEXT
                 if hasattr(filt, 'OP_EQ'):
@@ -59,6 +68,9 @@ class DataRecord(OptionRecord):
                 filters += [ InputFilter(symbol, operator, value) ]
         return filters 
 
+    @filters.setter
+    def filters(self, f):
+        pass
 
     def __str__(self):
         return super().__str__()

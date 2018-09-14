@@ -44,14 +44,6 @@ class ModelInput(input.ModelInput):
             self.path = model.path.parent / data_path
 
     @property
-    def path(self):
-        return self._path
-
-    @path.setter
-    def path(self, p):
-        self._path = p
-
-    @property
     def data_frame(self):
         try:
             return self._data_frame
@@ -82,3 +74,8 @@ class ModelInput(input.ModelInput):
     def filters(self):
         data_records = self.model.get_records("DATA")
         return data_records[0].filters
+
+    @filters.setter
+    def filters(self, f):
+        data_records = self.model.get_records("DATA")
+        data_records[0].filters = f
