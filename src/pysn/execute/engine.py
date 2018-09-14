@@ -66,7 +66,7 @@ class Engine:
         """
 
         rundir = RunDirectory(cwd, self.model.path.stem)
-        command = self.get_commandline('estimate', self.model)
+        command = self.get_commandline('estimate')
         return self.environment.submit(command, rundir)
 
     @property
