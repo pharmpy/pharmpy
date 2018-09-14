@@ -1,3 +1,6 @@
+from .filters import InputFilters
+
+
 class ModelInput(object):
     """Implements API for :attr:`Model.input`, the model dataset"""
     def __init__(self, model):
@@ -9,12 +12,12 @@ class ModelInput(object):
         raise NotImplementedError
 
     @path.setter
-    def path(self):
+    def path(self, p):
         """Sets the path of the dataset"""
         raise NotImplementedError
 
     @property
-    def data_frame(self, p):
+    def data_frame(self):
         """Gets the pandas DataFrame object representing the dataset"""
         raise NotImplementedError
 
@@ -30,3 +33,10 @@ class ModelInput(object):
         """Sets all data filters
         """
         raise NotImplementedError
+
+    def apply_and_remove_filters(self):
+        '''A convenience method to apply all filters on the dataset
+        and remove them from the model.
+        '''
+        self.filters.apply(self.data_frame)
+        self.filters = InputFilters([])
