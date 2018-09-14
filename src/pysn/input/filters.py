@@ -52,17 +52,21 @@ class InputFilters(list):
         super().__init__(*args, **kwargs)
 
     def __str__(self):
-        expr = ' or '.join(str(e) for e in self)
-        if self.accept:
-            return expr
+        if self:
+            expr = ' or '.join(str(e) for e in self)
+            if self.accept:
+                return expr
+            else:
+                return 'not(' + expr + ')'
         else:
-            return 'not(' + expr + ')'
+            return ''
 
     def apply(self, data_frame, inplace=True):
         '''Apply all filters to a DataFrame
         '''
-        df = data_frame.query(str(self), inplace=inplace)
-        if df is None:
-            df = data_frame
-        df.index = range(len(df))   # Renumber index. Don't really know how to handle index.
-        return df
+        if self:
+            df = data_frame.query(str(self), inplace=inplace)
+            if df is None:
+                df = data_frame
+            df.index = range(len(df))   # Renumber index. Don't really know how to handle index.
+            return df

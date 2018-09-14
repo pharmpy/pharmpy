@@ -37,7 +37,7 @@ class ModelInput(object):
     def write_dataset(self):
         """Write the dataset at the dataset path
         """
-        self.data_frame.to_csv(str(self.path))
+        self.data_frame.to_csv(str(self.path), index=False)
 
     def apply_and_remove_filters(self):
         """A convenience method to apply all filters on the dataset
