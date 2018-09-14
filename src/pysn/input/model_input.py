@@ -8,13 +8,13 @@ class ModelInput(object):
 
     @property
     def path(self):
-        """Gets the path of the dataset"""
-        raise NotImplementedError
+        """The path to the dataset
+        """
+        return self._path
 
     @path.setter
     def path(self, p):
-        """Sets the path of the dataset"""
-        raise NotImplementedError
+        self._path = p
 
     @property
     def data_frame(self):
@@ -35,8 +35,8 @@ class ModelInput(object):
         raise NotImplementedError
 
     def apply_and_remove_filters(self):
-        '''A convenience method to apply all filters on the dataset
+        """A convenience method to apply all filters on the dataset
         and remove them from the model.
-        '''
+        """
         self.filters.apply(self.data_frame)
         self.filters = InputFilters([])

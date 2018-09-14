@@ -39,9 +39,9 @@ class ModelInput(input.ModelInput):
         data_records = model.get_records("DATA")
         data_path = Path(data_records[0].path)
         if data_path.is_absolute():
-            self._path = data_path
+            self.path = data_path
         else:
-            self._path = model.path.parent / data_path
+            self.path = model.path.parent / data_path
 
     @property
     def path(self):
