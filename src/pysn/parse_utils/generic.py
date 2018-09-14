@@ -273,6 +273,15 @@ class AttrTree(Tree):
             except AttributeError:
                 continue
 
+    def remove(self, rule):
+        """Remove all children with rule. Not recursively
+        """
+        new_children = []
+        for child in self.children:
+            if child.rule != rule:
+                new_children.append(child)
+        self.children = new_children
+
     @property
     def tokens(self):
         """All tokens as flattened list."""

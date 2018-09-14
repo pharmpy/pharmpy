@@ -1,6 +1,6 @@
 from collections import OrderedDict
 
-from pysn.input import InputFilterOperator
+from pysn.input import InputFilterOperator, InputFilter, InputFilters
 
 
 def test_data_path(nonmem):
@@ -53,6 +53,27 @@ def test_filter(nonmem):
     print(record.parser)
     assert str(record.root.filename) == 'pheno.dta'
     assert record.ignore_character == '@'
+
+
+def test_set_filter(nonmem):
+    record = nonmem.records.create_record("DATA  'pheno.dta' IGNORE=@ IGNORE=(ID.EQ.1,MDV.NEN.0) ")
+    filters = InputFilters([InputFilter("WGT", InputFilterOperator.EQUAL, "28")])
+    record.filters = filters 
+    read_filters = record.filters
+    assert len(read_filters) == 1
+    assert read_filters[0].symbol == "WGT"
+    assert read_filters[0].value == "28"
+    assert read_filters[0].operator == InputFilterOperator.EQUAL
+
+    filters = InputFilters([InputFilter("APGR", InputFilterOperator.LESS_THAN, 2), InputFilter("DOSE", InputFilterOperator.NOT_EQUAL, 20)])
+    record.filters = filters 
+    assert str(record.root) == "  'pheno.dta' IGNORE=@  IGNORE=(APGR.LT.2,DOSE.NEN.20)"
+    read_filters = record.filters
+    assert len(read_filters) == 2
+    #assert read_filters[0].symbol == "WGT"
+    #assert read_filters[0].value == "2"
+    #assert read_filters[0].operator == InputFilterOperator.EQUAL
+
 
 def test_option_record(nonmem):
     record = nonmem.records.create_record('DATA pheno.dta NOWIDE')

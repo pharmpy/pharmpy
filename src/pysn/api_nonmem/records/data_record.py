@@ -7,6 +7,7 @@ NONMEM data record class.
 from .parser import DataRecordParser
 from .option_record import OptionRecord
 from pysn.input import InputFilter, InputFilters, InputFilterOperator
+from pysn.parse_utils import AttrTree
 
 
 class DataRecord(OptionRecord):
@@ -69,8 +70,48 @@ class DataRecord(OptionRecord):
         return filters 
 
     @filters.setter
-    def filters(self, f):
-        pass
+    def filters(self, filters):
+        # Remove old filters
+        self.root.remove("accept")
+        keep = []
+        for child in self.root.children:
+            if not (child.rule == 'ignore' and not hasattr(child, 'char')):
+                keep.append(child)
+        self.root.children = keep
+
+        # Install new filters at the end
+        if filters.accept:
+            tp = 'ACCEPT'
+        else:
+            tp = 'IGNORE'
+        nodes = [{tp: tp}, {'EQUAL': '='}, {'LPAR': '('}]
+        first = True
+        for f in filters:
+            if not first:
+                nodes += [{'COMMA': ','}]
+            new = [{'COLUMN': f.symbol}]
+            if f.operator == InputFilterOperator.EQUAL:
+                new.append({'OP_EQ': '.EQN.'})
+            elif f.operator == InputFilterOperator.STRING_EQUAL:
+                new.append({'OP_STR_EQ': '.EQ.'})
+            elif f.operator == InputFilterOperator.NOT_EQUAL:
+                new.append({'OP_NE': '.NEN.'})
+            elif f.operator == InputFilterOperator.STRING_NOT_EQUAL:
+                new.append({'OP_STR_NE': '.NE.'})
+            elif f.operator == InputFilterOperator.LESS_THAN:
+                new.append({'OP_LT': '.LT.'})
+            elif f.operator == InputFilterOperator.GREATER_THAN:
+                new.append({'OP_GT': '.GT.'})
+            elif f.operator == InputFilterOperator.LESS_THAN_OR_EQUAL:
+                new.append({'OP_LT_EQ': '.LE.'})
+            elif f.operator == InputFilterOperator.GREATER_THAN_OR_EQUAL:
+                new.append({'OP_GT_EQ': '.GE.'})
+            new.append({'TEXT': f.value})
+            nodes += [AttrTree.create('filter', new)]
+            first = False
+        nodes += [{'RPAR': ')'}]
+        top = AttrTree.create(tp.lower(), nodes)
+        self.root.children += [top]
 
     def __str__(self):
         return super().__str__()
