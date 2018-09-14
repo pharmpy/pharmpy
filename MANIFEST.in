@@ -15,6 +15,7 @@ include TODO.rst
 include requirements.txt
 include tox.ini
 
+exclude clean_cache.sh
 exclude demo.py
 exclude local
 recursive-exclude local *
