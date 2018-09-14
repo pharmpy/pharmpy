@@ -80,6 +80,9 @@ class DataRecord(OptionRecord):
         self.root.children = keep
 
         # Install new filters at the end
+        if not filters:     # This was easiest kept as a special case
+            return
+
         if filters.accept:
             tp = 'ACCEPT'
         else:
