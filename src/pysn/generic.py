@@ -16,6 +16,7 @@ Definitions
 from pathlib import Path
 
 from pysn import output  # TODO: ModelEstimation uses 'import generic; generic.output.XXX'
+from pysn.input import ModelInput
 from pysn.output import ModelOutput
 from pysn.parameters import ParameterModel
 from pysn.execute import Engine
@@ -64,6 +65,7 @@ class Model(object):
     _index = 0
 
     def __init__(self, path, **kwargs):
+        import pdb; pdb.set_trace()  # noqa
         self._path = Path(path).resolve() if path else None
         if self.exists:
             self.read()
@@ -111,6 +113,7 @@ class Model(object):
         self.output = ModelOutput(self)
         self.parameters = ParameterModel(self)
         self.execute = Engine(self)
+        self.validate()
 
     def write(self, path):
         """Write model to disk.
