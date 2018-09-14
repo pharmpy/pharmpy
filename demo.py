@@ -56,4 +56,4 @@ print("pheno.execute.installed = %r" % (pheno.execute.installed,))
 
 # estimate pheno
 # import pdb; pdb.set_trace()  # noqa
-# pheno.estimate()
+# pheno.execute.estimate()

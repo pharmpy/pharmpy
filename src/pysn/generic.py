@@ -64,8 +64,7 @@ class Model(object):
     _path = None
     _index = 0
 
-    def __init__(self, path, **kwargs):
-        import pdb; pdb.set_trace()  # noqa
+    def __init__(self, path):
         self._path = Path(path).resolve() if path else None
         if self.exists:
             self.read()
@@ -147,6 +146,27 @@ class Model(object):
         """
         return True
 
+    def __repr__(self):
+        path = None if self.path is None else str(self.path)
+        return "%s(%r)" % (self, path)
+
     def __str__(self):
         if self.exists:
             return self.content
+
+    def __deepcopy__(self, memo):
+        """Copy model completely.
+
+        Utilized by e.g. :class:`pysn.execute.run_directory.RunDirectory` to "take" the model in a
+        dissociated state from the original.
+
+        .. note::
+            Lazy solution with re-parsing path for now. Can't deepcopy down without implementing
+            close to Lark tree's, since compiled regexes must be re-compiled.
+
+            .. todo:: Deepcopy Model objects "correctly"."""
+        if self.exists:
+            return type(self)(self.path)
+        elif self.content is not None:
+            raise NotImplementedError("Tried to (deeply) copy %r without path but content; "
+                                      "Not yet supported" % (self,))
