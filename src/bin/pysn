@@ -1,0 +1,22 @@
+#!/usr/bin/python3
+
+# Warning: hic sunt dracones!
+# This is a superdirty start to test a command line interface
+# or rather to see what code using the API would look like
+
+import sys
+sys.path.append("..")
+
+import pysn
+
+
+if len(sys.argv) < 4:
+    sys.exit()
+
+if sys.argv[1] == 'transform':
+    if sys.argv[2] == 'apply_filters':
+        model_filename = sys.argv[3]
+        model = pysn.Model(model_filename)
+        model.input.apply_and_remove_filters()
+        model.input.path = str(model.input.path) + '.new' 
+        model.input.write_dataset()
