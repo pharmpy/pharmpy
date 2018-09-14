@@ -1,6 +1,6 @@
 from collections import OrderedDict
 
-from pysn.generic import InputFilterOperator
+from pysn.input import InputFilterOperator
 
 
 def test_data_path(nonmem):

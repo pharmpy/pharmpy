@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from pysn import generic
+from pysn import input
 
 
 class NMTRANDataIO(StringIO):
@@ -31,7 +31,7 @@ class NMTRANDataIO(StringIO):
         super().__init__(contents)
 
 
-class ModelInput(generic.ModelInput):
+class ModelInput(input.ModelInput):
     """A NONMEM 7.x model input class. Covers at least $INPUT and $DATA."""
 
     def __init__(self, model):

@@ -6,7 +6,7 @@ NONMEM data record class.
 
 from .parser import DataRecordParser
 from .option_record import OptionRecord
-from pysn.generic import InputFilter, InputFilters, InputFilterOperator
+from pysn.input import InputFilter, InputFilters, InputFilterOperator
 
 
 class DataRecord(OptionRecord):
