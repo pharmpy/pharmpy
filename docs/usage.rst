@@ -2,13 +2,13 @@
 Usage
 =====
 
-The :class:`pysn.Model` class is a model agnostic entry point. For example, to
+The :class:`pharmpy.Model` class is a model agnostic entry point. For example, to
 read the NONMEM model ``pheno_real.mod``, the following is sufficient:
 
 .. testcode::
     :pyversion: > 3.6
 
-    from pysn import Model
+    from pharmpy import Model
 
     path = 'tests/testdata/nonmem/pheno_real.mod'
     pheno = Model(path)
@@ -19,7 +19,7 @@ The API is automatically detected and used:
     :pyversion: > 3.6
 
     >>> type(pheno)
-    <class 'pysn.api_nonmem.model.Model'>
+    <class 'pharmpy.api_nonmem.model.Model'>
 
 Parsing uses lark-parser_ in the backend, with derived classes for some
 automated tasks.

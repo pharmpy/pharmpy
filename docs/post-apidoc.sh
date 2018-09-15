@@ -8,7 +8,7 @@ else
 fi
 
 shopt -s nullglob dotglob
-files=( "$DIR"/*pysn*.rst )
+files=( "$DIR"/*pharmpy*.rst )
 
 for file in ${files[@]}; do
     if grep -q ".. inheritance-diagram::" "$file"; then

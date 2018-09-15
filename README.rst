@@ -6,7 +6,7 @@ Overview
 
 .. start-longdesc
 
-PysN is an experiment in substituting (some of) the PsN functionality in Python.
+PharmPy is an experiment in substituting (some of) the PsN functionality in Python.
 
 For PsN (implemented in Perl), see `UUPharmacometrics/PsN <https://github.com/UUPharmacometrics/PsN/releases>`_.
 

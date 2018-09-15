@@ -1,6 +1,6 @@
 import pytest
 
-from pysn.api_utils import getAPI
+from pharmpy.api_utils import getAPI
 
 
 @pytest.fixture

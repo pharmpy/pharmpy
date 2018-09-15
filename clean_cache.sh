@@ -30,7 +30,7 @@ if ! git rev-parse --is-inside-work-tree &>/dev/null; then
     ERR "Refusing! Target not Git repo: $DIR"
     exit 1
 elif [ "$(git cat-file -t 0db96cd4db3aa193715322b61e120087a8b2e922 2>/dev/null)" != "commit" ]; then
-    ERR "Refusing! Target not the PysN repo: $DIR"
+    ERR "Refusing! Target not the PharmPy repo: $DIR"
     exit 1
 fi
 

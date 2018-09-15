@@ -37,7 +37,7 @@ def longdesc(text_str):
 
 
 setup(
-    name='pysn',
+    name='pharmpy',
     version='0.1.0',
     license='GNU General Public License v3 (GPLv3)',
     description='Pharmacometric model parsing (PsN reimagining)',
@@ -47,7 +47,7 @@ setup(
     ),
     author='Rikard Nordgren',
     author_email='rikard.nordgren@farmbio.uu.se',
-    # url='https://github.com/rikardn/pysn',
+    # url='https://github.com/rikardn/pharmpy',
     url='https://example.com',
     packages=find_packages('src'),
     package_dir={'': 'src'},
@@ -88,7 +88,7 @@ setup(
     },
     entry_points={
         'console_scripts': [
-            'pysn = pysn.cli:main',
+            'pharmpy = pharmpy.cli:main',
         ]
     },
 )

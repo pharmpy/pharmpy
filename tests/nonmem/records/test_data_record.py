@@ -1,6 +1,6 @@
 from collections import OrderedDict
 
-from pysn.input import InputFilterOperator, InputFilter, InputFilters
+from pharmpy.input import InputFilterOperator, InputFilter, InputFilters
 
 
 def test_data_path(nonmem):

@@ -2,8 +2,8 @@
 
 import pytest
 
-from pysn.parameters import CovarianceMatrix
-from pysn.parameters import Scalar
+from pharmpy.parameters import CovarianceMatrix
+from pharmpy.parameters import Scalar
 
 
 @pytest.fixture

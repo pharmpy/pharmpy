@@ -4,9 +4,9 @@ from collections import OrderedDict
 
 import pytest
 
-from pysn.parse_utils import prettyprint
-from pysn.parse_utils.generic import AttrToken
-from pysn.parse_utils.generic import AttrTree
+from pharmpy.parse_utils import prettyprint
+from pharmpy.parse_utils.generic import AttrToken
+from pharmpy.parse_utils.generic import AttrTree
 
 
 def assert_create(expect, *args, **kwargs):

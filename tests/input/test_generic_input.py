@@ -1,7 +1,7 @@
 import pandas as pd
 from pandas.util.testing import assert_frame_equal
 
-from pysn.input import InputFilterOperator, InputFilter, InputFilters
+from pharmpy.input import InputFilterOperator, InputFilter, InputFilters
 
 
 def test_input_filter_operator():

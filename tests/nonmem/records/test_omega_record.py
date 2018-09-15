@@ -2,8 +2,8 @@
 
 import pytest
 
-from pysn.parameters import Covar
-from pysn.parameters import Var
+from pharmpy.parameters import Covar
+from pharmpy.parameters import Var
 
 
 @pytest.mark.usefixtures('create_record')

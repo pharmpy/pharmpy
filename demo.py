@@ -8,17 +8,17 @@ from pathlib import Path
 import pandas as pd
 
 
-# load 'src/pysn' path as module 'pysn'
+# load 'src/pharmpy' path as module 'pharmpy'
 root = Path(__file__).resolve().parent
 sys.path.append(str(root / 'src'))
-pysn = importlib.import_module('pysn')
+pharmpy = importlib.import_module('pharmpy')
 sys.path.pop()
 
 # set pheno path and load
 testpath = root / 'tests' / 'testdata' / 'nonmem'
 pheno_path = testpath / 'pheno_real.mod'
-print("pysn.Model(%s)" % pheno_path)
-pheno = pysn.Model(pheno_path)
+print("pharmpy.Model(%s)" % pheno_path)
+pheno = pharmpy.Model(pheno_path)
 print('='*80)
 
 # print pheno content
