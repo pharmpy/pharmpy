@@ -34,6 +34,12 @@ class ModelInput(object):
         """
         raise NotImplementedError
 
+    @property
+    def id_column(self):
+        """The name of the id_column
+        """
+        raise NotImplementedError
+
     def write_dataset(self):
         """Write the dataset at the dataset path
         """
