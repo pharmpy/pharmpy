@@ -2,6 +2,9 @@ graft docs
 graft src
 graft tests
 
+prune docs/.doctrees
+prune docs/reference
+
 include .bumpversion.cfg
 include .coveragerc
 include .editorconfig
@@ -17,9 +20,8 @@ include tox.ini
 
 exclude clean_cache.sh
 exclude demo.py
-exclude local
-recursive-exclude local *
+
+prune local
 
 global-exclude *.py[cod] __pycache__
 global-exclude *.swp
-global-exclude .ropeproject/*
