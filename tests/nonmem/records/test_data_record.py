@@ -3,23 +3,23 @@ from collections import OrderedDict
 from pharmpy.input import InputFilterOperator, InputFilter, InputFilters
 
 
-def test_data_path(nonmem):
+def test_data_filename(nonmem):
     record = nonmem.records.create_record('DATA "pheno.dta"')
-    assert record.path == 'pheno.dta'
+    assert record.filename == 'pheno.dta'
 
     record = nonmem.records.create_record('DATA /home/full/pheno.dta')
-    assert record.path == '/home/full/pheno.dta'
+    assert record.filename == '/home/full/pheno.dta'
 
     record = nonmem.records.create_record("DATA 'pheno.dta'")
     assert str(record.root.filename) == "'pheno.dta'"
-    assert record.path == "pheno.dta"
+    assert record.filename == "pheno.dta"
 
     record = nonmem.records.create_record('DATA "C:\windowspath\with space in.csv"')
-    assert record.path == 'C:\windowspath\with space in.csv'
+    assert record.filename == 'C:\windowspath\with space in.csv'
 
     record = nonmem.records.create_record("DATA \n pheno.dta \n; comment\n")
     print(record.parser)
-    assert record.path == 'pheno.dta'
+    assert record.filename == 'pheno.dta'
 
 
 def test_filter(nonmem):
@@ -58,7 +58,7 @@ def test_filter(nonmem):
 def test_set_filter(nonmem):
     record = nonmem.records.create_record("DATA  'pheno.dta' IGNORE=@ IGNORE=(ID.EQ.1,MDV.NEN.0) ")
     filters = InputFilters([InputFilter("WGT", InputFilterOperator.EQUAL, "28")])
-    record.filters = filters 
+    record.filters = filters
     read_filters = record.filters
     assert len(read_filters) == 1
     assert read_filters[0].symbol == "WGT"
@@ -66,7 +66,7 @@ def test_set_filter(nonmem):
     assert read_filters[0].operator == InputFilterOperator.EQUAL
 
     filters = InputFilters([InputFilter("APGR", InputFilterOperator.LESS_THAN, 2), InputFilter("DOSE", InputFilterOperator.NOT_EQUAL, 20)])
-    record.filters = filters 
+    record.filters = filters
     assert str(record.root) == "  'pheno.dta' IGNORE=@  IGNORE=(APGR.LT.2,DOSE.NEN.20)"
     read_filters = record.filters
     assert len(read_filters) == 2

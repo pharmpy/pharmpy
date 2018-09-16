@@ -34,14 +34,14 @@ class NMTRANDataIO(StringIO):
 class ModelInput(input.ModelInput):
     """A NONMEM 7.x model input class. Covers at least $INPUT and $DATA."""
 
-    def __init__(self, model):
-        self.model = model
-        data_records = model.get_records("DATA")
-        data_path = Path(data_records[0].filename)
-        if data_path.is_absolute():
-            self.path = data_path
+    @property
+    def path(self):
+        records = self.model.get_records('DATA')
+        filename = Path(records[0].filename)
+        if filename.is_absolute():
+            return filename
         else:
-            self.path = model.path.parent / data_path
+            return self.model.path.parent / filename
 
     @property
     def data_frame(self):
