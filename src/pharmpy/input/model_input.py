@@ -8,13 +8,12 @@ class ModelInput(object):
 
     @property
     def path(self):
-        """The path to the dataset
-        """
-        return self._path
+        """Resolved (absolute) path to the dataset."""
+        raise NotImplementedError
 
     @path.setter
-    def path(self, p):
-        self._path = p
+    def path(self, path):
+        raise NotImplementedError
 
     @property
     def data_frame(self):

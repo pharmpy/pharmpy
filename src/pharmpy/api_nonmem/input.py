@@ -39,9 +39,9 @@ class ModelInput(input.ModelInput):
         records = self.model.get_records('DATA')
         filename = Path(records[0].filename)
         if filename.is_absolute():
-            return filename
+            return filename.resolve()
         else:
-            return self.model.path.parent / filename
+            return (self.model.path.parent / filename).resolve()
 
     @property
     def data_frame(self):
