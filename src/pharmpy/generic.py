@@ -120,13 +120,33 @@ class Model(object):
         self.execute = Engine(self)
         self.validate()
 
-    def write(self, path):
-        """Write model to disk.
+    def write(self, path=None, exist_ok=True):
+        """Writes model to disk.
 
-        .. todo:: Start implementing Model write. Will require thoughts on how to "bootstrap" up a
-            rendering of the low-level objects (e.g. every ThetaRecord, etc.).
+        Will also update model to link that file.
+
+        Arguments:
+            path: A `path-like object`_ to write.
+            exist_ok: If False, :exc:`FileExistsError` is raised if the file already exists.
+
+        If no *path* given (default), model :attr:`path` attribute will be used. If not changed and
+        *exist_ok* (default), the model will be overwritten.
+
+        .. todo::
+            Implement true model write (just copies read buffer now). Will require thoughts on how
+            to "bootstrap" up a rendering of the low-level objects (e.g. every ThetaRecord, etc.).
+
+        .. _path-like object: https://docs.python.org/3/glossary.html#term-path-like-object
         """
-        raise NotImplementedError
+        path = path or self.path
+        if not path:
+            raise ValueError("No filesystem path set (can't write model)")
+        path = Path(path)
+        if path.exists and not exist_ok:
+            raise FileExistsError("Expected creating new file but path exists: %r" % str(path))
+        with open(str(path), 'w') as f:
+            f.write(self.content)
+        self.path = path.resolve()
 
     @property
     def path(self):
@@ -155,7 +175,7 @@ class Model(object):
         """
         return True
 
-    def copy(self, path=None):
+    def copy(self, path=None, write=False):
         """Returns a copy of this model.
 
         Arguments:
@@ -165,7 +185,8 @@ class Model(object):
         model = deepcopy(self)
         if path:
             model.path = path
-            # model.write()
+            if write:
+                model.write()
         return model
 
     def __repr__(self):
