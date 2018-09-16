@@ -79,3 +79,12 @@ class ModelInput(input.ModelInput):
     def filters(self, f):
         data_records = self.model.get_records("DATA")
         data_records[0].filters = f
+
+    @property
+    def id_column(self):
+        colnames = self._column_names()
+        if 'ID' in colnames:
+            return 'ID'
+        if 'L1' in colnames:
+            return 'L1'
+        raise KeyError('Dataset does not have an ID column')
