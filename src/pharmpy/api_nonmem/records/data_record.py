@@ -66,7 +66,7 @@ class DataRecord(OptionRecord):
                     operator = InputFilterOperator.LESS_THAN_OR_EQUAL
                 elif hasattr(filt, 'OP_GT_EQ'):
                     operator = InputFilterOperator.GREATER_THAN_OR_EQUAL
-                filters += [ InputFilter(symbol, operator, value) ]
+                filters += [InputFilter(symbol, operator, value)]
         return filters
 
     @filters.setter
