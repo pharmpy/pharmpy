@@ -19,9 +19,8 @@ def pheno_params():
     }
 
 
-def test_pheno_inits(nonmem, pheno_real, pheno_params):
-    model = nonmem.Model(pheno_real)
-    pop = model.parameters.inits
+def test_pheno_inits(nonmem, pheno, pheno_params):
+    pop = pheno.parameters.inits
     assert pop[0] == pheno_params['CL']
     assert pop[1] == pheno_params['V']
     assert pop[2] == pheno_params['APGR_V']
