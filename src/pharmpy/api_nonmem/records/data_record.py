@@ -16,8 +16,8 @@ class DataRecord(OptionRecord):
         self.root = self.parser.root
 
     @property
-    def path(self):
-        """The path of the dataset."""
+    def filename(self):
+        """The (raw, unresolved) path of the dataset."""
         filename = self.root.filename
         if filename.find('TEXT'):
             return str(filename)
@@ -67,7 +67,7 @@ class DataRecord(OptionRecord):
                 elif hasattr(filt, 'OP_GT_EQ'):
                     operator = InputFilterOperator.GREATER_THAN_OR_EQUAL
                 filters += [ InputFilter(symbol, operator, value) ]
-        return filters 
+        return filters
 
     @filters.setter
     def filters(self, filters):

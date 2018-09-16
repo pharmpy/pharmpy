@@ -37,7 +37,7 @@ class ModelInput(input.ModelInput):
     def __init__(self, model):
         self.model = model
         data_records = model.get_records("DATA")
-        data_path = Path(data_records[0].path)
+        data_path = Path(data_records[0].filename)
         if data_path.is_absolute():
             self.path = data_path
         else:
