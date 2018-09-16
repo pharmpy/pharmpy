@@ -42,6 +42,9 @@ print(pheno.input.data_frame)
 print("\nmodel.parameters.inits:")
 print(pheno.parameters.inits)
 
+# print source resource representation
+print('repr(pheno.source) = %r' % pheno.source)
+
 # print NONMEM installations
 print("bool(pheno.execute) = %s" % (bool(pheno.execute),))
 if pheno.execute:

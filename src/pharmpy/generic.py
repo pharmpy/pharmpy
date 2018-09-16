@@ -21,6 +21,7 @@ from pharmpy.input import ModelInput
 from pharmpy.output import ModelEstimation  # noqa (only to bring into generic namespace)
 from pharmpy.output import ModelOutput
 from pharmpy.parameters import ParameterModel
+from pharmpy.source_io import SourceResource
 
 
 def detect(lines):
@@ -80,6 +81,7 @@ class Model(object):
 
     def __init__(self, path):
         self.path = path
+        self.source = SourceResource(self)
         if self.exists:
             self.read()
 
