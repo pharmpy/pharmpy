@@ -13,6 +13,7 @@ Definitions
 -----------
 """
 
+from copy import deepcopy
 from pathlib import Path
 
 from pharmpy import output  # TODO: ModelEstimation uses 'import generic; generic.output.XXX'
@@ -57,15 +58,19 @@ class Model(object):
             evaluation, estimation or simulations).
         self.parameters: Instance of (model API) :class:`~pharmpy.parameters.ParameterModel` (e.g.
             parameter estimates or initial values).
-        self.execute: Instance of (model API) :class:`~pharmpy.execute.Engine` (executing evaluation,
-            estimation or simulation).
+        self.execute: Instance of (model API) :class:`~pharmpy.execute.Engine` (executing
+        evaluation, estimation or simulation).
+
+    .. note:: Attribute :attr:`path` always :class:`~pathlib.Path` object, but only resolved (set to
+        absolute) by :attr:`exists`, which should be checked before any IO (read/write) on disk.
+        Thus, :attr:`path` needn't exist until needed!
     """
 
     _path = None
     _index = 0
 
     def __init__(self, path):
-        self._path = Path(path).resolve() if path else None
+        self.path = path
         if self.exists:
             self.read()
 
@@ -85,8 +90,9 @@ class Model(object):
 
     @property
     def exists(self):
-        """True *if and only if* model exists on disk."""
+        """Resolves path and returns True if model exists on disk."""
         if self.path and self.path.is_file():
+            self.path = self.path.resolve()
             return True
 
     @property
@@ -129,11 +135,10 @@ class Model(object):
 
     @path.setter
     def path(self, path):
-        if self._path:
-            import pdb; pdb.set_trace()  # noqa
-            rel = self._path.relative(path)
-            print(rel)
-        self._path = path
+        if path:
+            self._path = Path(path)
+        else:
+            self._path = None
 
     @property
     def has_results(self):
@@ -150,6 +155,19 @@ class Model(object):
         """
         return True
 
+    def copy(self, path=None):
+        """Returns a copy of this model.
+
+        Arguments:
+            path: If None, only deepcopy :class:`Model` object. Otherwise, set filesystem path on
+                new model and write to disk.
+        """
+        model = deepcopy(self)
+        if path:
+            model.path = path
+            # model.write()
+        return model
+
     def __repr__(self):
         path = None if self.path is None else str(self.path)
         return "%s(%r)" % (self, path)
@@ -161,8 +179,8 @@ class Model(object):
     def __deepcopy__(self, memo):
         """Copy model completely.
 
-        Utilized by e.g. :class:`pharmpy.execute.run_directory.RunDirectory` to "take" the model in a
-        dissociated state from the original.
+        Utilized by e.g. :class:`pharmpy.execute.run_directory.RunDirectory` to "take" the model in
+        a dissociated state from the original.
 
         .. note::
             Lazy solution with re-parsing path for now. Can't deepcopy down without implementing

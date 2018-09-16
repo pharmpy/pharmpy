@@ -7,8 +7,8 @@ Execution Run Directory
 .. todo:: Create a derived class at :class:`pharmpy.api_nonmem.execute.run_directory`.
 
 This module defines the :class:`.RunDirectory` class, which initialization creates a filesystem
-directory that :class:`~pharmpy.tool.Tool` instances and :class:`~pharmpy.model.Model` methods can utilize
-for input->output during evaluation, estimation & simulation tasks.
+directory that :class:`~pharmpy.tool.Tool` instances and :class:`~pharmpy.model.Model` methods can
+utilize for input->output during evaluation, estimation & simulation tasks.
 
 .. testcode::
     :pyversion: > 3.6
@@ -65,7 +65,6 @@ Definitions
 -----------
 """
 
-from copy import deepcopy
 import itertools
 import re
 from pathlib import Path
@@ -140,13 +139,10 @@ class RunDirectory:
 
     @model.setter
     def model(self, model):
-        new_path = self.path / Path(model.path).name
-        if new_path.is_file():
-            self._model = model
-        else:
-            model_copy = deepcopy(model)
-            model_copy.path = new_path
-            self._model = model_copy
+        path = self.path / Path(model.path).name
+        if path.is_file():
+            raise ValueError('Model already exists, at: %r' % str(path))
+        self._model = model.copy(path)
 
     def def_cleanlevel(self, level, patterns, rm_dirs=False):
         """Define a clean level.

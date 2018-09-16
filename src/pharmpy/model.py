@@ -22,7 +22,7 @@ def Model(path=None, **kwargs):
 
     .. _path-like object: https://docs.python.org/3/glossary.html#term-path-like-object
     """
-    _Model = getAPI('generic')
+    _Model = getAPI('generic').Model
     if path:
         path = Path(path).resolve()
         _Model = detectAPI(path)
