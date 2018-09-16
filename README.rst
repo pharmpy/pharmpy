@@ -8,7 +8,8 @@ Overview
 
 PharmPy is an experiment in substituting (some of) the PsN functionality in Python.
 
-For PsN (implemented in Perl), see `UUPharmacometrics/PsN <https://github.com/UUPharmacometrics/PsN/releases>`_.
+For PsN (implemented in Perl), see `UUPharmacometrics/PsN
+<https://github.com/UUPharmacometrics/PsN/releases>`_.
 
 .. end-longdesc
 
@@ -22,7 +23,7 @@ Documentation
 
 See local documentation in ``dist/docs/``
 
-.. warning:: Building the docs requires `graphviz`, in addition to what Tox_ can manage.
+.. warning:: Building the docs requires ``graphviz``, in addition to what Tox_ can manage.
 
    If you see::
 
@@ -31,6 +32,23 @@ See local documentation in ``dist/docs/``
    Then execute::
 
       sudo apt install graphviz
+
+.. warning:: Documentation look like a pre-CSS site?
+
+   If you see::
+
+      copying static files... WARNING: cannot copy static file NotADirectoryError(20, 'Not a directory')
+
+   Then execute::
+
+      rm dist/docs/_static
+
+   And re-build::
+
+      tox -e docs
+
+   ``dist/docs/_static`` is supposed to be a directory but sometimes when building from clean state,
+   it might just be one file of that directory... Why?
 
 Development
 ===========
