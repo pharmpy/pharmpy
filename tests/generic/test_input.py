@@ -1,3 +1,4 @@
+
 import pandas as pd
 from pandas.util.testing import assert_frame_equal
 
@@ -22,17 +23,17 @@ def test_input_filters():
 
     filters.accept = True
     assert str(filters) == "ID == 2 or AMT == 10"
-   
+
     f = InputFilter("a", InputFilterOperator.EQUAL, 28)
     filters = InputFilters([f])
-    d = { 'a': [1, 2, 28], 'b': [2, 4, 8] }
+    d = {'a': [1, 2, 28], 'b': [2, 4, 8]}
     df = pd.DataFrame(d)
     filters.apply(df)
     answer = pd.DataFrame({'a': [1, 2], 'b': [2, 4]})
     assert_frame_equal(df, answer)
 
     filters.accept = True
-    d = { 'a': [1, 2, 28], 'b': [2, 4, 8] }
+    d = {'a': [1, 2, 28], 'b': [2, 4, 8]}
     df = pd.DataFrame(d)
     result = filters.apply(df, inplace=False)
     answer = pd.DataFrame({'a': [28], 'b': [8]})

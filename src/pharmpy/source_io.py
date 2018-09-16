@@ -79,7 +79,8 @@ class SourceResource:
 
     @property
     def path(self):
-        """Source on disk as a `Path-like object`_ (or None).
+        """Source on disk as a `path-like object`_ (or None).
+
         .. _path-like object: https://docs.python.org/3/glossary.html#term-path-like-object"""
         return self.model.path
 
