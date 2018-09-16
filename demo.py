@@ -17,15 +17,10 @@ sys.path.pop()
 # set pheno path and load
 testpath = root / 'tests' / 'testdata' / 'nonmem'
 pheno_path = testpath / 'pheno_real.mod'
-print("pharmpy.Model(%s)" % pheno_path)
 pheno = pharmpy.Model(pheno_path)
-print('='*80)
 
-# print pheno content
-print('str(pheno) =')
-lines = str(pheno).splitlines()
-for i, line in enumerate(lines):
-    print('%3d: %r' % (i, repr(line)))
+# print pheno representation
+print('repr(pheno) = %r' % pheno)
 
 # print THETA records
 print("recs = pheno.get_records('THETA')")

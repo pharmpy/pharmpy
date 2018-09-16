@@ -200,7 +200,7 @@ class Model(object):
 
     def __repr__(self):
         path = None if self.path is None else str(self.path)
-        return "%s(%r)" % (self, path)
+        return "%s(%r)" % (self.__class__.__name__, path)
 
     def __str__(self):
         if self.exists:
