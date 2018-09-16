@@ -129,6 +129,10 @@ class Model(object):
 
     @path.setter
     def path(self, path):
+        if self._path:
+            import pdb; pdb.set_trace()  # noqa
+            rel = self._path.relative(path)
+            print(rel)
         self._path = path
 
     @property

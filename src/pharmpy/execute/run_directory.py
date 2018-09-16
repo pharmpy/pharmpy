@@ -87,6 +87,20 @@ class RunDirectory:
 
     Temporary directories are removed entirely on garbage collection. Default 'template' is
     '%s_dir%d'. First number in range (1, ∞) with a unique filesystem path is used.
+
+    .. note::
+        Expects caller to set :attr:`model` to iniate a data structure + file copy (if file
+        representation is not already in directory), and *then execute*. Example::
+
+            # run dir "takes" copy of model
+            pheno = pysn.Model('pheno_real.mod')
+            run_dir = RunDirectory('some/working/dir/', 'example_tool')
+            run_dir.model = pheno
+
+            # 'pheno' at original location & 'run_dir.model' copy in dir tree (safe to execute)
+            run_dir.model != pheno
+            run_dir.model.path != pheno.path
+            run_dir.model.execute.estimate()
     """
 
     cleanlevel = 0

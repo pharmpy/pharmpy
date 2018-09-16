@@ -54,6 +54,7 @@ class Engine:
         """
 
         rundir = RunDirectory(cwd, self.model.path.stem)
+        rundir.model = self.model
         command = self.get_commandline('evaluate', self.model)
         return self.environment.submit(command, rundir)
 
@@ -66,6 +67,7 @@ class Engine:
         """
 
         rundir = RunDirectory(cwd, self.model.path.stem)
+        rundir.model = self.model
         command = self.get_commandline('estimate')
         return self.environment.submit(command, rundir)
 
