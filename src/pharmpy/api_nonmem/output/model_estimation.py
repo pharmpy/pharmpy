@@ -4,7 +4,7 @@ from pharmpy.parameters import ParameterList
 from pharmpy import generic
 
 
-class ModelEstimation(generic.output.ModelEstimation):
+class ModelEstimation(generic.ModelEstimation):
     """A NONMEM 7.x model estimation class."""
 
     @property

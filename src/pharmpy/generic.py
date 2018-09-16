@@ -16,11 +16,11 @@ Definitions
 from copy import deepcopy
 from pathlib import Path
 
-from pharmpy import output  # TODO: ModelEstimation uses 'import generic; generic.output.XXX'
+from pharmpy.execute import Engine
 from pharmpy.input import ModelInput
+from pharmpy.output import ModelEstimation  # noqa (only to bring into generic namespace)
 from pharmpy.output import ModelOutput
 from pharmpy.parameters import ParameterModel
-from pharmpy.execute import Engine
 
 
 def detect(lines):
@@ -53,18 +53,27 @@ class Model(object):
     Represents a model file object, that may or may not exist on disk too.
 
     Attributes:
-        self.input: Instance of (model API) :class:`~pharmpy.input.ModelInput` (e.g. data).
-        self.output: Instance of (model API) :class:`~pharmpy.output.ModelOutput` (results of
-            evaluation, estimation or simulations).
-        self.parameters: Instance of (model API) :class:`~pharmpy.parameters.ParameterModel` (e.g.
-            parameter estimates or initial values).
-        self.execute: Instance of (model API) :class:`~pharmpy.execute.Engine` (executing
-        evaluation, estimation or simulation).
 
     .. note:: Attribute :attr:`path` always :class:`~pathlib.Path` object, but only resolved (set to
         absolute) by :attr:`exists`, which should be checked before any IO (read/write) on disk.
         Thus, :attr:`path` needn't exist until needed!
     """
+
+    execute = None
+    """:class:`~pharmpy.execute.Engine` API.
+    Evaluation, estimation & simulation tasks."""
+
+    input = None
+    """:class:`~pharmpy.input.ModelInput` API.
+    E.g. data."""
+
+    output = None
+    """:class:`~pharmpy.output.ModelOutput` API.
+    Results of evaluations, estimations & simulations."""
+
+    parameters = None
+    """:class:`~pharmpy.parameters.ParameterModel` API.
+    E.g. parameter estimates & initial values."""
 
     _path = None
     _index = 0
