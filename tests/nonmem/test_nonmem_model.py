@@ -21,12 +21,12 @@ def test_model_path_set(pheno, pheno_path):
 
     # on copy
     copy = pheno.copy(str(new_path), write=False)
-    assert not copy.exists and pheno.exists
+    assert not copy.source.on_disk and pheno.source.on_disk
     assert str(copy.path) == str(new_path)
 
     # manually
     copy.path = str(pheno_path)
-    assert copy.exists
+    assert copy.source.on_disk
     assert str(copy.path) == str(pheno_path)
 
 
@@ -36,12 +36,12 @@ def test_model_write(pheno, pheno_path):
     new_path = Path(tempdir.name) / ('%s_copy%s' % (pheno_path.stem, pheno_path.suffix))
 
     copy = pheno.copy(str(new_path), write=False)
-    assert pheno.exists
-    assert not copy.exists
+    assert pheno.source.on_disk
+    assert not copy.source.on_disk
 
     copy.write()
-    assert pheno.exists
-    assert copy.exists
+    assert pheno.source.on_disk
+    assert copy.source.on_disk
     assert pheno.path.samefile(pheno_path)
     assert copy.path.samefile(new_path)
 
@@ -49,8 +49,8 @@ def test_model_write(pheno, pheno_path):
     assert not new_path.exists()
 
     copy = pheno.copy(str(new_path), write=True)
-    assert pheno.exists
-    assert copy.exists
+    assert pheno.source.on_disk
+    assert copy.source.on_disk
     assert pheno.path.samefile(pheno_path)
     assert copy.path.samefile(new_path)
 
@@ -58,6 +58,6 @@ def test_model_write(pheno, pheno_path):
 def test_model_de_novo():
     """Create model de novo, without existing file."""
     empty = Model()
-    assert not empty.exists
+    assert not empty.source.on_disk
     assert empty.path is None
     assert empty.content is None

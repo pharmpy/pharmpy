@@ -7,5 +7,11 @@ class Record:
 
     Create objects only by using the factory function create_record.
     """
+
+    name = None
+
     def __str__(self):
-        return "$" + self.raw_name
+        try:
+            return "$" + self.raw_name
+        except AttributeError:
+            return ''

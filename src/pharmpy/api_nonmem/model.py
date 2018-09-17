@@ -3,11 +3,13 @@
 """(Specific) NONMEM 7.x model API."""
 
 from pharmpy import generic
+from pharmpy.generic import ModelParsingError
+
+from .execute import NONMEM7
 from .input import ModelInput
 from .output import ModelOutput
 from .parameters import ParameterModel
-from .records.factory import create_record
-from .execute import NONMEM7
+from .source_io import SourceResource
 
 
 def create_unique_symbol(symbols, prefix):
@@ -21,75 +23,34 @@ def create_unique_symbol(symbols, prefix):
             return candidate
 
 
+def validate_records(records):
+    """Validates NONMEM model (records) syntactically."""
+    in_problem = False
+    for record in records:
+        if in_problem and record.name == 'SIZES':
+            raise ModelParsingError('The SIZES record must come before the first PROBLEM record')
+        if record.name == 'PROBLEM':
+            in_problem = True
+
+
 class Model(generic.Model):
     """A NONMEM 7.x model"""
 
+    SourceResource = SourceResource
+    Engine = NONMEM7
+    ModelInput = ModelInput
+    ModelOutput = ModelOutput
+    ParameterModel = ParameterModel
+
     @property
-    def index(self):
-        return self._index
-
-    @index.setter
-    def index(self, new):
-        pos = None
-        prob_i = -1
-        for i, record in enumerate(self.records):
-            if record.name != 'PROBLEM':
-                continue
-            prob_i += 1
-            if pos:
-                pos = (pos[0], i)
-                break
-            elif prob_i == new or record.string == new:
-                pos = (i, None)
-        if not pos:
-            raise generic.ModelLookupError(new)
-        elif not pos[1]:
-            pos = (pos[0], i)
-        self._index = prob_i
-        self._index_records = pos
-
-    def read(self):
-        record_strings = self.content.split('$')
-        # The first comment does not belong to any record
-        if not record_strings[0].startswith('$'):
-            self.first_comment = record_strings[0]
-            del record_strings[0]
-
-        self.records = []
-        for string in record_strings:
-            new_record = create_record(string)
-            self.records.append(new_record)
-
-        self.index = 0
-        self.input = ModelInput(self)
-        self.output = ModelOutput(self)
-        self.parameters = ParameterModel(self)
-        self.execute = NONMEM7(self)
-        self.validate()
-
-    def validate(self):
-        """Validates model syntactically"""
-        # SIZES can only be first
-        assert self._index == 0
-        for i, record in enumerate(self.records):
-            if i < self._index_records[0]:
-                continue
-            if record.name == 'SIZES':
-                raise generic.ModelParsingError(
-                    'The SIZES record must come before the first PROBLEM record'
-                )
+    def records(self):
+        records = list(self.source.input.iter_records(self.index))
+        validate_records(records)
+        return records
 
     def get_records(self, name):
-        """Get all records with a certain name"""
-        result = []
-        pos = self._index_records
-        for record in self.records[pos[0]:pos[1]]:
-            if record.name == name:
-                result.append(record)
-        return result
+        """Returns all records of a certain type."""
+        return list(filter(lambda x: x.name == name, self.records))
 
     def __str__(self):
-        string = self.first_comment
-        for record in self.records:
-            string += str(record)
-        return string
+        return ''.join(str(x) for x in self.records)

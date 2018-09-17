@@ -32,6 +32,7 @@ Definitions
 -----------
 """
 
+from pathlib import Path
 from io import StringIO
 
 
@@ -61,47 +62,51 @@ class SourceResource:
     model = None
     """:class:`~pharmpy.generic.Model` owner of API."""
 
-    def __init__(self, model):
-        self.model = model
+    SourceIO = SourceIO
+    """:class:`~pharmpy.source_io.SourceIO` implementation."""
+
+    def __init__(self, path):
+        self.path = path
 
     @property
     def input(self):
         """Input source code."""
         if self.on_disk:
-            return SourceIO(file=self.path)
+            return self.SourceIO(file=self.path)
         else:
-            return SourceIO(source='')
+            return self.SourceIO(source='')
 
     @property
     def output(self):
         """Output source code."""
-        return SourceIO(source=self.source_generator(self.model))
+        return self.SourceIO(source=self.source_generator(self.model))
 
     @property
     def path(self):
-        """Source on disk as a `path-like object`_ (or None).
+        """Source on disk as a (resolved) `path-like object`_ (or None).
 
         .. _path-like object: https://docs.python.org/3/glossary.html#term-path-like-object"""
-        return self.model.path
+        if self._path:
+            try:
+                return self._path.resolve()
+            except FileNotFoundError:
+                pass
+        return self._path
 
     @path.setter
     def path(self, path):
-        self.model.path = path
+        if path:
+            self._path = Path(path)
+        else:
+            self._path = None
 
     @property
     def on_disk(self):
-        """Resolves path to source and returns True if readable."""
-        if self.path:
-            try:
-                self.path = self.path.resolve()
-                return True
-            except FileNotFoundError:
-                return False
-        else:
-            return False
+        """Returns True if readable."""
+        return self.path and self.path.exists() and self.path.is_file()
 
     def __repr__(self):
-        return "%s(%r)" % (self.__class__.__name__, self.model)
+        return "%s(%r)" % (self.__class__.__name__, self.path)
 
     @classmethod
     def source_generator(cls, model):

@@ -60,19 +60,21 @@ class Model(object):
         Thus, :attr:`path` needn't exist until needed!
     """
 
-    execute = None
+    SourceResource = SourceResource
+
+    Engine = Engine
     """:class:`~pharmpy.execute.Engine` API.
     Evaluation, estimation & simulation tasks."""
 
-    input = None
+    ModelInput = ModelInput
     """:class:`~pharmpy.input.ModelInput` API.
     E.g. data."""
 
-    output = None
+    ModelOutput = ModelOutput
     """:class:`~pharmpy.output.ModelOutput` API.
     Results of evaluations, estimations & simulations."""
 
-    parameters = None
+    ParameterModel = ParameterModel
     """:class:`~pharmpy.parameters.ParameterModel` API.
     E.g. parameter estimates & initial values."""
 
@@ -80,10 +82,12 @@ class Model(object):
     _index = 0
 
     def __init__(self, path):
-        self.path = path
-        self.source = SourceResource(self)
-        if self.exists:
-            self.read()
+        self.source = self.SourceResource(path)
+        self.input = self.ModelInput(self)
+        self.output = self.ModelOutput(self)
+        self.parameters = self.ParameterModel(self)
+        self.execute = self.Engine(self)
+        self.source.model = self
 
     @property
     def index(self):
@@ -100,36 +104,16 @@ class Model(object):
         self._index = new
 
     @property
-    def exists(self):
-        """Resolves path and returns True if model exists on disk."""
-        if self.path and self.path.is_file():
-            self.path = self.path.resolve()
-            return True
-
-    @property
     def content(self):
         """Raw content stream of model."""
-        if not self.exists:
+        if self.source.on_disk:
+            return self.source.input.getvalue()
+        else:
             return None
-        with open(str(self.path), 'r') as f:
-            content = f.read()
-        return content
 
     def validate(self):
         """Test if model is syntactically valid (raises if not)."""
         raise NotImplementedError
-
-    def read(self):
-        """Read model from disk.
-
-        Initiates all the API:s of the Model, e.g. :class:`~pharmpy.input.ModelInput`,
-        :class:`~pharmpy.input.ModelOutput` and :class:`~pharmpy.parameters.ParameterModel`.
-        """
-        self.input = ModelInput(self)
-        self.output = ModelOutput(self)
-        self.parameters = ParameterModel(self)
-        self.execute = Engine(self)
-        self.validate()
 
     def write(self, path=None, exist_ok=True):
         """Writes model to disk.
@@ -161,15 +145,12 @@ class Model(object):
 
     @property
     def path(self):
-        """File path of the model."""
-        return self._path
+        """Source filesystem path (if any)."""
+        return self.source.path
 
     @path.setter
     def path(self, path):
-        if path:
-            self._path = Path(path)
-        else:
-            self._path = None
+        self.source.path = path
 
     @property
     def has_results(self):
@@ -219,8 +200,8 @@ class Model(object):
             close to Lark tree's, since compiled regexes must be re-compiled.
 
             .. todo:: Deepcopy Model objects "correctly"."""
-        if self.exists:
+        if self.source.on_disk:
             return type(self)(self.path)
         elif self.content is not None:
-            raise NotImplementedError("Tried to (deeply) copy %r without path but content; "
+            raise NotImplementedError("Tried to (deeply) copy %r content without source; "
                                       "Not yet supported" % (self,))
