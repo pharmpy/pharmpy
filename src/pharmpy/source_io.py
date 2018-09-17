@@ -72,7 +72,9 @@ class SourceResource:
     def input(self):
         """Input source code."""
         if self.on_disk:
-            return self.SourceIO(file=self.path)
+            if 'input' not in self._cache:
+                self._cache['input'] = self.SourceIO(file=self.path)
+            return self._cache['input']
         else:
             return self.SourceIO(source='')
 
@@ -95,6 +97,7 @@ class SourceResource:
 
     @path.setter
     def path(self, path):
+        self._cache = dict()
         if path:
             self._path = Path(path)
         else:

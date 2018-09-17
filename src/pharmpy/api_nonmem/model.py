@@ -44,7 +44,7 @@ class Model(generic.Model):
 
     @property
     def records(self):
-        records = list(self.source.input.iter_records(self.index))
+        records = list(self.source.input.get_records(self.index))
         validate_records(records)
         return records
 
