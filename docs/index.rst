@@ -12,6 +12,7 @@ Contents
    design
    authors
    todo
+   milestones
    changelog
 
 Indices and tables
