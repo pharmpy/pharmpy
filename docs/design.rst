@@ -149,6 +149,12 @@ API module: :mod:`~pharmpy.output`
 
 Read in one type of output and convert to SO or other standardised output storage.
 
+NONMEM itself can run a small workflow which gives rise to its special output structure.
+One level is the PROBLEM, which is represented with $PROBLEM in the model and another level is the SUBPROBLEM,
+that is represented by multiple $EST or $SIM in the model. The SO only has one level, the SOBlock, that is mostly 
+similar to the PROBLEM of the NONMEM output.
+
+
 API module: :mod:`~pharmpy.transform`
 -------------------------------------
 
