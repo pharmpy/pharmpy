@@ -1,4 +1,3 @@
-
 import pytest
 
 from pharmpy.api_utils import getAPI
@@ -17,6 +16,11 @@ def datadir(testdata):
 @pytest.fixture(scope='session')
 def pheno_path(datadir):
     return datadir / 'pheno_real.mod'
+
+
+@pytest.fixture(scope='session')
+def pheno_ext(datadir):
+    return datadir / 'pheno_real.ext'
 
 
 @pytest.fixture(scope='session')

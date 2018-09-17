@@ -21,13 +21,13 @@ class NONMEMTableIO(StringIO):
         super().__init__(contents)
 
 
-
-
-
-
 class NONMEMTable:
     '''A NONMEM output table.
     '''
     def __init__(self, filename):
         file_io = NONMEMTableIO(filename)
-        df = pd.read_table(file_io, sep='\s+|,', engine='python')
+        self._df = pd.read_table(file_io, sep='\s+|,', engine='python')
+
+    @property
+    def data_frame(self):
+        return self._df
