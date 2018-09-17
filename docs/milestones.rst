@@ -1,7 +1,8 @@
+.. _milestones:
+
 ==========
 Milestones
 ==========
-
 
 MS1
 ===

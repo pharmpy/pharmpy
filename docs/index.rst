@@ -9,11 +9,12 @@ Contents
    installation
    usage
    Documentation <reference/modules>
-   design
-   authors
-   todo
    milestones
-   changelog
+   todo
+   design
+   future
+   version
+   license
 
 Indices and tables
 ==================
