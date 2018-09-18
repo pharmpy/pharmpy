@@ -110,7 +110,7 @@ class SourceResource:
         assert not path.exists() or path.is_file()
         if path:
             try:
-                relmove = relpath(path.parent, self._path.parent)
+                relmove = relpath(str(path.parent), str(self._path.parent))
             except ValueError:
                 relmove = None
             self._path = Path(path)

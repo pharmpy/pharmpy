@@ -3,7 +3,7 @@ from collections import OrderedDict
 from pharmpy.input import InputFilterOperator, InputFilter, InputFilters
 
 
-def test_data_filename(nonmem):
+def test_data_filename_get(nonmem):
     record = nonmem.records.create_record('DATA "pheno.dta"')
     assert record.filename == 'pheno.dta'
 
@@ -20,6 +20,36 @@ def test_data_filename(nonmem):
     record = nonmem.records.create_record("DATA \n pheno.dta \n; comment\n")
     print(record.parser)
     assert record.filename == 'pheno.dta'
+
+
+def test_data_filename_set(nonmem):
+    record = nonmem.records.create_record('DATA DUMMY ; comment')
+    assert record.filename == 'DUMMY'
+    assert str(record) == '$DATA DUMMY ; comment'
+
+    # simple replace
+    record.filename = '/new/path/to_file.txt'
+    assert record.filename == '/new/path/to_file.txt'
+    assert str(record) == '$DATA /new/path/to_file.txt ; comment'
+
+    # force quoting
+    record.filename = 'MUST=QUOTE'
+    assert record.filename == 'MUST=QUOTE'
+    assert str(record) == "$DATA 'MUST=QUOTE' ; comment"
+
+    # FIXME: Code for below SHOULD work, but GRAMMAR prioritizes comment parse before filename!
+    #
+    # # more complex example
+    # text = 'DATA ; comment\n ; some comment line\n pheno.dta\n\n'
+    # record = nonmem.records.create_record(text)
+    # print(record.parser)  # see priority here
+    # assert record.filename == 'pheno.dta'
+    # assert str(record) == ('$%s' % text)
+
+    # # more complex replace
+    # record.filename = "'IGNORE'"
+    # assert record.filename == "'IGNORE'"
+    # assert str(record) == ('$%s' % text).replace('pheno.dta', "'IGNORE'")
 
 
 def test_filter(nonmem):
@@ -65,14 +95,15 @@ def test_set_filter(nonmem):
     assert read_filters[0].value == "28"
     assert read_filters[0].operator == InputFilterOperator.EQUAL
 
-    filters = InputFilters([InputFilter("APGR", InputFilterOperator.LESS_THAN, 2), InputFilter("DOSE", InputFilterOperator.NOT_EQUAL, 20)])
+    filters = InputFilters([InputFilter("APGR", InputFilterOperator.LESS_THAN, 2),
+                            InputFilter("DOSE", InputFilterOperator.NOT_EQUAL, 20)])
     record.filters = filters
     assert str(record.root) == "  'pheno.dta' IGNORE=@  IGNORE=(APGR.LT.2,DOSE.NEN.20)"
     read_filters = record.filters
     assert len(read_filters) == 2
-    #assert read_filters[0].symbol == "WGT"
-    #assert read_filters[0].value == "2"
-    #assert read_filters[0].operator == InputFilterOperator.EQUAL
+    # assert read_filters[0].symbol == "WGT"
+    # assert read_filters[0].value == "2"
+    # assert read_filters[0].operator == InputFilterOperator.EQUAL
 
 
 def test_option_record(nonmem):
