@@ -26,7 +26,7 @@ class NONMEMTable:
     '''
     def __init__(self, filename):
         file_io = NONMEMTableIO(filename)
-        self._df = pd.read_table(file_io, sep='\s+|,', engine='python')
+        self._df = pd.read_table(file_io, sep='\s+', engine='python')
 
     @property
     def data_frame(self):
