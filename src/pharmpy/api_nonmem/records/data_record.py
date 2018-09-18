@@ -24,10 +24,37 @@ class DataRecord(OptionRecord):
         elif filename.find('QUOTE'):
             return str(filename)[1:-1]
 
+    @filename.setter
+    def filename(self, value):
+        if not value:
+            # erase and replace by * (for previous subproblem)
+            new = [AttrTree.create(ASTERIX='*')]
+            nodes = []
+            for child in self.root.children[1:]:
+                if new and child.rule == 'ws':
+                    nodes += [child, new.pop()]
+                elif child.rule in {'ws', 'comment'}:
+                    nodes += [child]
+            self.root = AttrTree.create('root', nodes)
+        else:
+            # replace only 'filename' rule and quote appropriately if, but only if, needed
+            filename = str(value)
+            quoted = [',', ';', '(', ')', '=', ' ', 'IGNORE', 'NULL', 'ACCEPT', 'NOWIDE', 'WIDE',
+                      'CHECKOUT', 'RECORDS', 'RECORDS', 'LRECL', 'NOREWIND', 'REWIND', 'NOOPEN',
+                      'LAST20', 'TRANSLATE', 'BLANKOK', 'MISDAT']
+            if not any(x in filename for x in quoted):
+                node = AttrTree.create('filename', {'TEXT': filename})
+            else:
+                if "'" in filename:
+                    node = AttrTree.create('filename', {'QUOTE': '"%s"' % filename})
+                else:
+                    node = AttrTree.create('filename', {'QUOTE': "'%s'" % filename})
+            (pre, old, post) = self.root.partition('filename')
+            self.root.children = pre + [node] + post
+
     @property
     def ignore_character(self):
-        """The comment character from ex IGNORE=C or None if not available
-        """
+        """The comment character from ex IGNORE=C or None if not available."""
         if hasattr(self.root, 'ignore') and self.root.ignore.find('char'):
             return str(self.root.ignore.char)
         else:

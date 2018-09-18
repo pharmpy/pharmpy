@@ -166,7 +166,7 @@ class AttrTree(Tree):
             TypeError: 'items' not iterable or instance of 'str' (only leaves shall contain 'str').
             ValueError: 'items' empty (trees can't be empty).
 
-        NOTE: Please follow convention of all lower/upper case for trees/tokens.
+        .. note:: Please follow convention of all lower/upper case for trees/tokens.
         """
 
         def non_iterable(rule, items):

@@ -2,6 +2,7 @@
 
 import re
 from io import StringIO
+from os.path import realpath
 from pathlib import Path
 
 import pandas as pd
@@ -36,12 +37,40 @@ class ModelInput(input.ModelInput):
 
     @property
     def path(self):
-        records = self.model.get_records('DATA')
-        filename = Path(records[0].filename)
-        if filename.is_absolute():
-            return filename.resolve()
-        else:
-            return (self.model.path.parent / filename).resolve()
+        record = self.model.get_records('DATA')[0]
+        path = Path(record.filename)
+        if not path.is_absolute():
+            path = self.model.path.parent / path
+        try:
+            return path.resolve()
+        except FileNotFoundError:
+            return path
+
+    @path.setter
+    def path(self, path):
+        path = Path(path)
+        assert not path.exists() or path.is_file()
+        record = self.model.get_records('DATA')[0]
+        record.filename = str(path)
+
+    def repath(self, relpath):
+        """Re-calculate & set path, given a model (source) path change.
+
+        :attr:`~ModelInput.path` is prefixed *relpath* if given. Otherwise, :attr:`~ModelInput.path`
+        is made absolute to ensure it resolves from new path.
+
+        .. note:: No change if :attr:`~ModelInput.path` is already absolute.
+        """
+        record = self.model.get_records('DATA')[0]
+        path = Path(record.filename)
+        if not path.is_absolute():
+            if relpath:
+                self.path = relpath / path
+            else:
+                try:
+                    self.path = path.resolve()
+                except FileNotFoundError:
+                    self.path = Path(realpath(str(path)))
 
     @property
     def data_frame(self):

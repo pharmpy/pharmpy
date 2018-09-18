@@ -32,8 +32,10 @@ Definitions
 -----------
 """
 
-from pathlib import Path
 from io import StringIO
+from os.path import realpath
+from os.path import relpath
+from pathlib import Path
 
 
 class SourceIO(StringIO):
@@ -69,7 +71,11 @@ class SourceResource:
     """:class:`~pharmpy.source_io.SourceIO` implementation."""
 
     def __init__(self, path):
-        self.path = path
+        if path:
+            self._path = Path(path)
+        else:
+            self._path = None
+        self._cache = dict()
 
     @property
     def input(self):
@@ -91,20 +97,28 @@ class SourceResource:
         """Source on disk as a (resolved) `path-like object`_ (or None).
 
         .. _path-like object: https://docs.python.org/3/glossary.html#term-path-like-object"""
-        if self._path:
-            try:
-                return self._path.resolve()
-            except FileNotFoundError:
-                pass
-        return self._path
+        if not self._path:
+            return None
+        try:
+            return self._path.resolve()
+        except FileNotFoundError:
+            return Path(realpath(str(self._path)))
 
     @path.setter
     def path(self, path):
-        self._cache = dict()
+        path = Path(path)
+        assert not path.exists() or path.is_file()
         if path:
+            try:
+                relmove = relpath(path.parent, self._path.parent)
+            except ValueError:
+                relmove = None
             self._path = Path(path)
         else:
+            relmove = None
             self._path = None
+        self.model.input.repath(relmove)
+        self._cache = dict()
 
     @property
     def on_disk(self):
