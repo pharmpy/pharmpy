@@ -127,10 +127,6 @@ class Model(object):
         If no *path* given (default), model :attr:`path` attribute will be used. If not changed and
         *exist_ok* (default), the model will be overwritten.
 
-        .. todo::
-            Implement true model write (just copies read buffer now). Will require thoughts on how
-            to "bootstrap" up a rendering of the low-level objects (e.g. every ThetaRecord, etc.).
-
         .. _path-like object: https://docs.python.org/3/glossary.html#term-path-like-object
         """
         path = path or self.path
@@ -140,7 +136,7 @@ class Model(object):
         if path.exists and not exist_ok:
             raise FileExistsError("Expected creating new file but path exists: %r" % str(path))
         with open(str(path), 'w') as f:
-            f.write(self.content)
+            f.write(str(self.source.output))
         self.path = path.resolve()
 
     @property
@@ -167,18 +163,24 @@ class Model(object):
         """
         return True
 
-    def copy(self, path=None, write=False):
+    def copy(self, dest=None, write=None):
         """Returns a copy of this model.
 
         Arguments:
-            path: If None, only deepcopy :class:`Model` object. Otherwise, set filesystem path on
-                new model and write to disk.
+            dest: New filesystem path. If None, new :class:`Model` object retains previous
+                :attr:`~pharmpy.generic.Model.path`.
+            write: Write copy to disk (*dest* or previous :attr:`~pharmpy.generic.Model.path`).
+
+        By default, *write* is True if *dest* given and False otherwise.
         """
         model = deepcopy(self)
-        if path:
-            model.path = path
-            if write:
-                model.write()
+        if dest:
+            model.path = dest
+            write = True if (write is None) else write
+        else:
+            write = False if (write is None) else write
+        if write:
+            model.write()
         return model
 
     def __repr__(self):
@@ -186,8 +188,7 @@ class Model(object):
         return "%s(%r)" % (self.__class__.__name__, path)
 
     def __str__(self):
-        if self.exists:
-            return self.content
+        return str(self.source.output)
 
     def __deepcopy__(self, memo):
         """Copy model completely.

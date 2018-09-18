@@ -142,7 +142,7 @@ class RunDirectory:
         path = self.path / Path(model.path).name
         if path.is_file():
             raise ValueError('Model already exists, at: %r' % str(path))
-        self._model = model.copy(path)
+        self._model = model.copy(dest=path)
 
     def def_cleanlevel(self, level, patterns, rm_dirs=False):
         """Define a clean level.

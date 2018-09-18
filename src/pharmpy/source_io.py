@@ -50,6 +50,9 @@ class SourceIO(StringIO):
                 source = source_file.read()
         super().__init__(source)
 
+    def __str__(self):
+        return str(self.getvalue())
+
 
 class SourceResource:
     """A manager of (source code) resource input/output of a :class:`~pharmpy.generic.Model`.

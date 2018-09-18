@@ -55,8 +55,9 @@ class Engine:
 
         rundir = RunDirectory(cwd, self.model.path.stem)
         rundir.model = self.model
-        command = self.get_commandline('evaluate', self.model)
-        return self.environment.submit(command, rundir)
+        command = rundir.model.execute.get_commandline('evaluate')
+        job = rundir.model.execute.environment.submit(command, rundir)
+        return job
 
     def estimate(self, cwd=None, **kwds):
         """Starts model estimation and returns :class:`~.job.Job` object.
@@ -68,8 +69,9 @@ class Engine:
 
         rundir = RunDirectory(cwd, self.model.path.stem)
         rundir.model = self.model
-        command = self.get_commandline('estimate')
-        return self.environment.submit(command, rundir)
+        command = rundir.model.execute.get_commandline('estimate')
+        job = rundir.model.execute.environment.submit(command, rundir)
+        return job
 
     @property
     def bin(self):
