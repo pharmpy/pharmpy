@@ -2,6 +2,6 @@
 # -*- encoding: utf-8 -*-
 
 from .model_output import ModelOutput
-from .nonmem_table import NONMEMTable, ExtTable
+from .nonmem_table import NONMEMTableFile, NONMEMTable, ExtTable
 
-__all__ = ['ModelOutput', 'NONMEMTable', 'ExtTable']
+__all__ = ['ModelOutput', 'NONMEMTableFile', 'NONMEMTable', 'ExtTable']

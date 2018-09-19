@@ -5,28 +5,65 @@ import pandas as pd
 
 
 
-class NONMEMTableIO(StringIO):
-    """ An IO class for NONMEM table files that is a prefilter for pandas.read_table.
-        Things that cannot be handled directly by pandas will be taken care of here and the
-        rest will be taken care of by pandas.
-    """
+class NONMEMTableFile:
+    '''A NONMEM table file that can contain multiple tables
+    '''
     def __init__(self, filename):
+        path = Path(filename)
+        suffix = path.suffix
+        self.tables = []
         with open(str(filename), 'r') as tablefile:
-            contents = tablefile.read()      # All variations of newlines are converted into \n
+            current = []
+            for line in tablefile:
+                if line.startswith("TABLE NO."):
+                    if current:
+                        self._add_table(current, suffix)
+                    current = [line]
+                else:
+                    current.append(line)
+            self._add_table(current, suffix)
 
-        # We might want to read out the data from the ext header here
-        # and also add replicate (Table) column if applicable
-        contents = re.sub(r'TABLE NO.\s+\d+.*\n', '', contents, flags=re.MULTILINE)
+    def _add_table(self, content, suffix):
+        table_line = content.pop(0)
+        if suffix == '.ext':
+            table = ExtTable(''.join(content))
+        else:
+            table = NONMEMTable(''.join(content))       # Fallback to non-specific type of NONMEM table
+        m = re.match(r'TABLE NO.\s+(\d+)', table_line)   # This is guaranteed to match
+        table.number = m.group(1)
+        m = re.match(r'TABLE NO.\s+\d+: (.*): Goal Function=(.*): Problem=(\d+) Subproblem=(\d+) Superproblem1=(\d+) Iteration1=(\d+) Superproblem2=(\d+) Iteration2=(\d+)', table_line)
+        if m:
+            table.method = m.group(1)
+            table.goal_function = m.group(2)
+            table.problem = int(m.group(3))
+            table.subproblem = int(m.group(4))
+            table.superproblem1 = int(m.group(5))
+            table.iteration1 = int(m.group(6))
+            table.superproblem2 = int(m.group(7))
+            table.iteration2 = int(m.group(8))
+        self.tables.append(table)
 
-        super().__init__(contents)
+    def number_of_tables(self):
+        return len(tables)
+
+    @property
+    def table(self, problem=1, subproblem=0, superproblem1=0, iteration1=0, superproblem2=0, iteration2=0):
+        for t in self.tables:
+            if t.problem == problem and t.subproblem == subproblem and t.superproblem1 == superproblem1 \
+                    and t.iteration1 == iteration1 and t.superproblem2 == superproblem2 and t.iteration2 == iteration2:
+                return t 
+
+    def table_no(self, table_number=1):
+        for table in self.tables:
+            if table.number == table_number:
+                return table
 
 
 class NONMEMTable:
     '''A NONMEM output table.
     '''
-    def __init__(self, filename):
-        file_io = NONMEMTableIO(filename)
-        self._df = pd.read_table(file_io, sep='\s+', engine='python')
+    def __init__(self, content):
+        self._df = pd.read_table(StringIO(content), sep='\s+', engine='python')
 
     @property
     def data_frame(self):
