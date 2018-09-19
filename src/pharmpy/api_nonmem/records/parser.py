@@ -15,7 +15,7 @@ class RecordParser(GenericParser):
 
 
 class ProblemRecordParser(RecordParser):
-    grammar_filename = 'problem_record.g'
+    grammar_filename = 'problem_record.lark'
     non_empty = {
         'root': (0, 'text'),
         'text': (0, 'TEXT'),
@@ -24,22 +24,22 @@ class ProblemRecordParser(RecordParser):
 
 
 class ThetaRecordParser(RecordParser):
-    grammar_filename = 'theta_record.g'
+    grammar_filename = 'theta_record.lark'
     non_empty = {
         'comment': (1, 'COMMENT')
     }
 
 
 class OmegaRecordParser(RecordParser):
-    grammar_filename = 'omega_record.g'
+    grammar_filename = 'omega_record.lark'
     non_empty = {
         'comment': (1, 'COMMENT')
     }
 
 
 class OptionRecordParser(RecordParser):
-    grammar_filename = 'option_record.g'
+    grammar_filename = 'option_record.lark'
 
 
 class DataRecordParser(RecordParser):
-    grammar_filename = 'data_record.g'
+    grammar_filename = 'data_record.lark'
