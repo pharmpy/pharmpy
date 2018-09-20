@@ -49,7 +49,8 @@ class ModelInput(input.ModelInput):
     @path.setter
     def path(self, path):
         path = Path(path)
-        assert not path.exists() or path.is_file()
+        assert not path.exists() or path.is_file(), ('input path change, but non-file exists at '
+                                                     'target (%s)' % str(path))
         record = self.model.get_records('DATA')[0]
         record.filename = str(path)
 

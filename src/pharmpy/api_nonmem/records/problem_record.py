@@ -16,7 +16,8 @@ class ProblemRecord(Record):
 
     @string.setter
     def string(self, new_str):
-        assert new_str == new_str.strip()
+        if new_str != new_str.strip():
+            raise ValueError("Can't set ProblemRecord.string to whitespace-padded %r" % new_str)
         node = AttrTree.create('text', dict(TEXT=new_str))
         self.root.set('text', node)
 

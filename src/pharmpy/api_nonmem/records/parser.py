@@ -5,7 +5,8 @@ from pathlib import Path
 from pharmpy.parse_utils import GenericParser
 
 grammar_root = Path(__file__).parent.resolve() / 'grammars'
-assert grammar_root.is_dir()
+if not grammar_root.is_dir():
+    raise FileNotFoundError('Root dir of record grammars not found: %r' % str(grammar_root))
 
 
 class RecordParser(GenericParser):

@@ -121,7 +121,8 @@ class SourceResource:
     @path.setter
     def path(self, path):
         path = Path(path)
-        assert not path.exists() or path.is_file()
+        assert not path.exists() or path.is_file(), ('source path change, but non-file exists at '
+                                                     'target (%s)' % str(path))
         if path:
             try:
                 new_to_old = relpath(str(self._path.parent), str(path.parent))
