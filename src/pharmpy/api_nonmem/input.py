@@ -54,7 +54,13 @@ class ModelInput(input.ModelInput):
         record.filename = str(path)
 
     def repath(self, relpath):
-        """Re-calculate & set path, given a model (source) path change.
+        """Re-calculate path with model location update.
+
+        Caller is :class:`~pharmpy.source_io.SourceResource`. Source path change has changed, likely
+        before initiating a filesystem write for a copy.
+
+        Arguments:
+            relpath: Maps new dir -> old (current) dir.
 
         :attr:`~ModelInput.path` is prefixed *relpath* if given. Otherwise, :attr:`~ModelInput.path`
         is made absolute to ensure it resolves from new path.

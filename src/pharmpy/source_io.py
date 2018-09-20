@@ -25,8 +25,22 @@ Module is target for *all* generalizable and non-agnostic code that concerns:
     3. Writing *out* source code to streams/file-like resources.
     4. Detecting changes and managing concurrency/version control of such I/O resources.
 
-.. todo:: Graft over :attr:`generic.Model.path` and related utils.
-.. todo:: Implement input source cache (read `Cached input`_ for why).
+Path changes
+------------
+
+:attr:`SourceResource.path` *getter* returns resolved path of this source, or ``None`` if none.
+
+*Setter* will signal other API:s (see table below) of the move, to give them a chance to update
+their internal (relative) filesystem dependencies. A guiding map, relative path of new dir -> old
+dir, is supplied in the call. If such an update fails (e.g. change of filesystem), it is *strongly
+recommended* to convert all relative paths into absolute paths!
+
+.. list-table::
+    :widths: 20 80
+    :stub-columns: 1
+
+    - - :func:`ModelInput.repath <pharmpy.input.ModelInput.repath>`
+      - Updates :attr:`ModelInput.path <pharmpy.input.ModelInput.path>`, the "dataset" path.
 
 Definitions
 -----------
@@ -110,14 +124,15 @@ class SourceResource:
         assert not path.exists() or path.is_file()
         if path:
             try:
-                relmove = relpath(str(path.parent), str(self._path.parent))
+                new_to_old = relpath(str(self._path.parent), str(path.parent))
             except ValueError:
-                relmove = None
-            self._path = Path(path)
+                new_to_old = None
+            path = Path(path)
         else:
-            relmove = None
-            self._path = None
-        self.model.input.repath(relmove)
+            path = None
+            new_to_old = None
+        self.model.input.repath(new_to_old)
+        self._path = path
         self._cache = dict()
 
     @property
