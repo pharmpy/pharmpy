@@ -10,7 +10,7 @@
 //        [MISDAT=@r@...]
 
 root : ws "*" [ws]
-     | ws filename (ws option | ws comment)* [ws]
+     | ws (comment [ws])* filename (ws option | ws comment)* [ws]
 
 // dataset (always, unless only ASTERIX terminal)
 filename: TEXT | QUOTE
@@ -41,7 +41,7 @@ COLUMN : /\w+/  // TODO: verify correct coverage
 
 // common misc rules
 ws      : WS_ALL
-comment : ";" [WS] [COMMENT]
+comment : ";" [WS] [COMMENT] [WS]
 
 // common operators
 OP_EQ    : ".EQN."
@@ -58,12 +58,13 @@ WS: (" "|/\t/)+  // inline
 WS_ALL: /\s+/    // multiline
 DIGIT: "0".."9"
 INT: DIGIT+
+NL: /\r?\n/
 
 // common naked/enquoted text terminals
-TEXT : /[^"'][^,;()=\s]*/
+TEXT : /[^"',;()=\s]+/
 CHAR : /[^"',;()=\s]/
-QUOTE : /("[^"]*")/
-      | /('[^']*')/
-CHARQUOTE : /("[^"]")/
-          | /('[^']')/
+QUOTE : /"[^"]*"/
+      | /'[^']*'/
+CHARQUOTE : /"[^"]"/
+          | /'[^']'/
 COMMENT : /\S.*(?<!\s)/  // no left/right whitespace padding

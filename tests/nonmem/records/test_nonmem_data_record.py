@@ -18,7 +18,9 @@ def test_data_filename_get(nonmem):
     assert record.filename == 'C:\windowspath\with space in.csv'
 
     record = nonmem.records.create_record("DATA \n pheno.dta \n; comment\n")
-    print(record.parser)
+    assert record.filename == 'pheno.dta'
+
+    record = nonmem.records.create_record('DATA ; comment\n ; some comment line\n pheno.dta\n\n')
     assert record.filename == 'pheno.dta'
 
 
@@ -38,18 +40,17 @@ def test_data_filename_set(nonmem):
     assert str(record) == "$DATA 'MUST=QUOTE' ; comment"
 
     # FIXME: Code for below SHOULD work, but GRAMMAR prioritizes comment parse before filename!
-    #
-    # # more complex example
-    # text = 'DATA ; comment\n ; some comment line\n pheno.dta\n\n'
-    # record = nonmem.records.create_record(text)
-    # print(record.parser)  # see priority here
-    # assert record.filename == 'pheno.dta'
-    # assert str(record) == ('$%s' % text)
 
-    # # more complex replace
-    # record.filename = "'IGNORE'"
-    # assert record.filename == "'IGNORE'"
-    # assert str(record) == ('$%s' % text).replace('pheno.dta', "'IGNORE'")
+    # more complex example
+    text = 'DATA ; comment\n ; some comment line\n pheno.dta\n\n'
+    record = nonmem.records.create_record(text)
+    assert record.filename == 'pheno.dta'
+    assert str(record) == ('$%s' % text)
+
+    # more complex replace
+    record.filename = "'IGNORE'"
+    assert record.filename == "'IGNORE'"
+    assert str(record) == ('$%s' % text).replace('pheno.dta', '"\'IGNORE\'"')
 
 
 def test_filter(nonmem):
