@@ -39,8 +39,6 @@ def test_data_filename_set(nonmem):
     assert record.filename == 'MUST=QUOTE'
     assert str(record) == "$DATA 'MUST=QUOTE' ; comment"
 
-    # FIXME: Code for below SHOULD work, but GRAMMAR prioritizes comment parse before filename!
-
     # more complex example
     text = 'DATA ; comment\n ; some comment line\n pheno.dta\n\n'
     record = nonmem.records.create_record(text)
