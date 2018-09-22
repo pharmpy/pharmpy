@@ -16,19 +16,20 @@ import asyncio
 import functools
 import locale
 import os
+import queue
+import threading
 from asyncio.subprocess import PIPE
 from contextlib import closing
-import queue
-from threading import Thread
 
 
 async def _await_stream_lines(stream, func, loop, *args, **kwargs):
     """Awaits new line in *stream*, calling *func* (on *loop*) threadsafe."""
     while True:
         line = await stream.readline()
-        if not line:
+        if line:
+            loop.call_soon_threadsafe(functools.partial(func, line, *args, **kwargs))
+        else:
             break
-        loop.call_soon_threadsafe(functools.partial(func, line, *args, **kwargs))
 
 
 class Job:
@@ -44,6 +45,7 @@ class Job:
         stdout: Call, for each line of stdout.
         stderr: Call, for each line of stderr.
         done: Call, when task completes.
+        keepends: Keep line breaks for individual lines?
     """
 
     _callback = dict(
@@ -64,56 +66,71 @@ class Job:
         stderr=list(),
     )
 
-    def __init__(self, command, cwd=None, stdout=None, stderr=None, done=None):
+    def __init__(self, command, cwd=None, stdout=None, stderr=None, done=None, keepends=False):
         self.command = tuple(str(x) for x in command)
         self.wd = cwd if cwd else None
         self._callback['stdout'] = stdout
         self._callback['stderr'] = stderr
         self._callback['done'] = done
+        self.keepends = keepends
 
-    def run(self, block=False):
-        """Construct main asyncio loop and run/schedule."""
+    def start(self):
+        """Starts job in a new thread (in other loop). Returns task."""
+
+        self._started = threading.Event()
+        self._ended = threading.Event()
+
+        self.loop = asyncio.new_event_loop()
+        asyncio.get_child_watcher().attach_loop(self.loop)
 
         def start_loop(loop):
             asyncio.set_event_loop(loop)
             loop.run_forever()
 
-        if block:
-            if os.name == 'nt':
-                self.loop = asyncio.ProactorEventLoop()
-                asyncio.set_event_loop(self.loop)
-            else:
-                self.loop = asyncio.get_event_loop()
+        self.thread = threading.Thread(target=start_loop, args=(self.loop,))
+        self.thread.start()
 
-            with closing(self.loop):
-                self.future = asyncio.ensure_future(self._coro())
-                self.loop.run_until_complete(self.future)
-        else:
-            self.loop = asyncio.new_event_loop()
-            asyncio.get_child_watcher().attach_loop(self.loop)
-            self.thread = Thread(target=start_loop, args=(self.loop,))
-            self.thread.start()
-            self.future = asyncio.run_coroutine_threadsafe(self._coro(), self.loop)
+        self.task = asyncio.run_coroutine_threadsafe(self._main(), self.loop)
+        self.task.add_done_callback(self._done_callback)
+        self._started.wait()
 
-        self.future.add_done_callback(self._post_hook)
+        return self.task
+
+    async def start_loop(self, loop):
+        """Starts job async on set event loop. Returns task."""
+
+        self._started = asyncio.Event()
+        self._ended = asyncio.Event()
+
+        if loop:
+            asyncio.set_event_loop(loop)
+        self.loop = asyncio.get_event_loop()
+
+        self.task = asyncio.ensure_future(self._main(), loop=self.loop)
+        self.task.add_done_callback(self._done_callback)
+        await self.task
+
+        return self.task
 
     @property
-    def done(self):
-        """True if job is done."""
+    def started(self):
+        """True if job is started."""
         try:
-            fut = self.future
+            return self._started.is_set()
         except AttributeError:
             return None
-        else:
-            if fut is None:
-                return True
-            return fut.done()
 
     @property
-    def rc(self):
-        """Return code of subprocess."""
-        assert self.done
-        return self.future.result()
+    def ended(self):
+        """True if job is ended."""
+        try:
+            return self._ended.is_set()
+        except AttributeError:
+            return None
+
+    def wait(self):
+        """Waits for job completion."""
+        return self._ended.wait()
 
     @property
     def output(self):
@@ -130,24 +147,35 @@ class Job:
         """Current, non-linesplit stderr history."""
         return ''.join(self._history['stderr'])
 
-    def wait(self, timeout=None):
-        """Waits for job completion and returns return code."""
-        return self.future.result(timeout=None)
+    @property
+    def proc(self):
+        """Started subprocess ``Process`` object."""
+        return self._proc
 
-    def iter_stream(self, stream_type, timeout=None, keepends=False):
+    @property
+    def rc(self):
+        """Return code of subprocess."""
+        return self.proc.returncode
+
+    @property
+    def pid(self):
+        """PID of subprocess."""
+        return self.proc.pid
+
+    def iter_stream(self, stream_type, timeout=0, keepends=None):
         """Line-for-line generator for :attr:`~Job.stdout`, :attr:`~Job.stderr` or
-        :attr:`~Job.output`.
+        :attr:`~Job.output` of only non-processed history.
 
         Arguments:
             stream_type: *stdout*, *stderr* or *output* (mixed stream)
             timeout: Time to wait for new lines/process completion. Non-blocking if 0.
-            keepends: Whether to keep line breaks.
+            keepends: Whether to keep line breaks (default: set at init).
 
         .. todo:: Needs reference counting for multiple instances.
         """
 
+        keepends = self.keepends if keepends is None else keepends
         get_line = functools.partial(self._queue[stream_type].get, timeout != 0, timeout)
-        print(get_line)
         while True:
             try:
                 line = get_line()
@@ -160,7 +188,7 @@ class Job:
             else:
                 yield ''.join(line.splitlines())
 
-    async def _coro(self):
+    async def _main(self):
         """Main coroutine.
 
         Subprocess running/scheduling. Only called by :func:`run`.
@@ -168,17 +196,23 @@ class Job:
         See `reference <https://stackoverflow.com/a/20697159>`_ of implementation.
         """
 
-        proc = await asyncio.create_subprocess_exec(*self.command, stdout=PIPE, stderr=PIPE,
-                                                    cwd=self.wd)
+        self._proc = await asyncio.create_subprocess_exec(*self.command, stdout=PIPE, stderr=PIPE,
+                                                         cwd=self.wd)
+        self.loop.call_soon_threadsafe(self._started.set)
+
         await asyncio.wait([
-            _await_stream_lines(proc.stdout, self._stream_handler, self.loop, 'stdout'),
-            _await_stream_lines(proc.stderr, self._stream_handler, self.loop, 'stderr'),
+            _await_stream_lines(self._proc.stdout, self._stream_handler, self.loop, 'stdout'),
+            _await_stream_lines(self._proc.stderr, self._stream_handler, self.loop, 'stderr'),
         ])
-        return_code = await proc.wait()
+
+        return_code = await self._proc.wait()
 
         callback = self._callback['done']
         if callback is not None:
             self.loop.call_soon_threadsafe(functools.partial(callback, return_code))
+
+        self.loop.call_soon_threadsafe(self._ended.set)
+        return return_code
 
     def _stream_handler(self, line, stream_type):
         """Handler of all stdout/stderr lines.
@@ -187,20 +221,21 @@ class Job:
         """
 
         line = line.decode(locale.getpreferredencoding(False))
-
-        self._queue['output'].put(line)
-        self._queue[stream_type].put(line)
         self._history['output'] += [line]
         self._history[stream_type] += [line]
+
+        if not self.keepends:
+            line = ''.join(line.splitlines())
+        self._queue['output'].put(line)
+        self._queue[stream_type].put(line)
 
         on_newline = self._callback[stream_type]
         if on_newline is not None:
             self.loop.call_soon_threadsafe(functools.partial(on_newline, line))
 
-    def _post_hook(self, future):
+    def _done_callback(self, task):
         """Clean-up (kill loop, end queues)."""
-        loop = self.loop
-        if loop.is_running():
-            loop.stop()
+        if hasattr(self, 'thread') and self.loop.is_running():
+            self.loop.stop()
         for q in self._queue.values():
             q.put(None)
