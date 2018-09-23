@@ -39,12 +39,11 @@ class Engine:
         else:
             self.environment = SystemEnvironment()
 
-    def evaluate(self, cwd=None, **kwds):
+    def evaluate(self, cwd=None, block=True):
         """Starts model evaluation and returns :class:`~.job.Job` object.
 
         Arguments:
             cwd: Directory to create run directory in (temporary if None).
-            **kwds: Extra evaluation options.
 
         .. todo:: Make either this level, or one up (:class:`pharmpy.generic.Model` and
             :class:`pharmpy.tool.Tool`), emulate -model_subdir command of PsN. Estimating
@@ -57,21 +56,26 @@ class Engine:
         rundir.model = self.model
         command = rundir.model.execute.get_commandline('evaluate')
         job = rundir.model.execute.environment.submit(command, rundir)
-        return job
+        rundir.bind_job(job)
+        if block:
+            job.wait()
+        return rundir
 
-    def estimate(self, cwd=None, **kwds):
+    def estimate(self, cwd=None, block=True):
         """Starts model estimation and returns :class:`~.job.Job` object.
 
         Arguments:
             cwd: Directory to create run directory in (temporary if None).
-            **kwds: Extra estimation options.
         """
 
         rundir = RunDirectory(cwd, self.model.path.stem)
         rundir.model = self.model
         command = rundir.model.execute.get_commandline('estimate')
         job = rundir.model.execute.environment.submit(command, rundir)
-        return job
+        rundir.bind_job(job)
+        if block:
+            job.wait()
+        return rundir
 
     @property
     def bin(self):

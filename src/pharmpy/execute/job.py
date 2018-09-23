@@ -15,6 +15,7 @@ Definitions
 import asyncio
 import functools
 import locale
+import os
 # import logging
 import queue
 import threading
@@ -66,6 +67,10 @@ class Job:
     )
 
     def __init__(self, command, cwd=None, stdout=None, stderr=None, callback=None, keepends=False):
+        self._started = threading.Event()
+        self._ended = threading.Event()
+        self.queue = queue.Queue()
+
         self.command = tuple(str(x) for x in command)
         self.wd = cwd if cwd else None
         self._callback['stdout'] = stdout
@@ -73,43 +78,73 @@ class Job:
         self._callback['finish'] = callback
         self.keepends = keepends
 
-    def start(self):
-        """Starts job in a new thread (in other loop). Returns task."""
+    def run(self, block=True):
+        """Runs job & returns result.
 
-        self._started = threading.Event()
-        self._ended = threading.Event()
+        Wraps coroutine :func:`~Job.start` in convenient, synchronously callable, unit. Note that
+        call must be main thread, or else call will block until caller has attached loop in
+        :attr:`~Job.queue` (from the main thread's running event loop). Otherwise, async
+        subprocesses & streams is `impossible
+        <https://docs.python.org/3/library/asyncio-subprocess.html#subprocess-and-threads>`_.
+        Example::
 
-        self.loop = asyncio.new_event_loop()
-        asyncio.get_child_watcher().attach_loop(self.loop)
+            job = Job(command=['find', '.'])
+            pool = concurrent.futures.ThreadPoolExecutor(4)
+            future = pool.submit(job.run, block=True)
+
+            # blocking to let caller attach loop, which MUST happen in main thread
+            loop = job.queue.get()
+            asyncio.get_child_watcher().attach_loop(loop)
+
+            # unblocking now
+            job.queue.task_done()
+
+            print(future.result())
+        """
+
+        try:
+            loop = asyncio.get_event_loop()
+        except RuntimeError:
+            loop = asyncio.new_event_loop()
+
+        if os.name == 'nt':
+            loop_cls = asyncio.ProactorEventLoop
+            if not isinstance(loop, loop_cls):
+                if loop.is_running():
+                    raise RuntimeError("Running event loop (%r) is NOT %s. Required on Windows." %
+                                       (loop, loop_cls.__name__))
+                loop = asyncio.ProactorEventLoop()
+
+        if threading.current_thread() == threading.main_thread():
+            asyncio.get_child_watcher().attach_loop(loop)
+        else:
+            self.queue.put(loop)
+            self.queue.join()
+
+        if block:
+            if loop.is_running():
+                return asyncio.ensure_future(self.start(), loop=loop)
+            asyncio.set_event_loop(loop)
+            return loop.run_until_complete(self.start())
 
         def start_loop(loop):
             asyncio.set_event_loop(loop)
             loop.run_forever()
 
-        self.thread = threading.Thread(target=start_loop, args=(self.loop,))
+        self.thread = threading.Thread(target=start_loop, args=(loop,))
         self.thread.start()
 
-        self.task = asyncio.run_coroutine_threadsafe(self._main(), self.loop)
-        self.task.add_done_callback(self._done_callback)
+        future = asyncio.run_coroutine_threadsafe(self.start(), loop)
         self._started.wait()
+        return future
 
-        return self.task
+    async def start(self):
+        """Starts & returns future, async on current event loop."""
 
-    async def start_loop(self, loop):
-        """Starts job async on set event loop. Returns task."""
-
-        self._started = asyncio.Event()
-        self._ended = asyncio.Event()
-
-        if loop:
-            asyncio.set_event_loop(loop)
         self.loop = asyncio.get_event_loop()
-
         self.task = asyncio.ensure_future(self._main(), loop=self.loop)
-        self.task.add_done_callback(self._done_callback)
-        await self.task
-
-        return self.task
+        self.task.add_done_callback(self._cleanup)
+        return await self.task
 
     @property
     def started(self):
@@ -195,14 +230,21 @@ class Job:
     async def _main(self):
         """Main coroutine.
 
-        Subprocess running/scheduling. Only called by :func:`run`.
+        Subprocess running/scheduling. Only called internally.
 
         See `reference <https://stackoverflow.com/a/20697159>`_ of implementation.
         """
 
-        self._proc = await asyncio.create_subprocess_exec(*self.command, stdout=PIPE, stderr=PIPE,
-                                                          cwd=self.wd)
-        self.loop.call_soon_threadsafe(self._started.set)
+        wd = str(self.wd) if self.wd else None
+        try:
+            self._proc = await asyncio.create_subprocess_exec(*self.command, stdout=PIPE,
+                                                              stderr=PIPE, cwd=wd)
+        except Exception as exc:
+            self.loop.call_soon_threadsafe(self._started.set)
+            self.loop.call_soon_threadsafe(self._ended.set)
+            raise exc
+        else:
+            self.loop.call_soon_threadsafe(self._started.set)
 
         await asyncio.wait([
             _await_stream_lines(self._proc.stdout, self._stream_handler, self.loop, 'stdout'),
@@ -231,8 +273,8 @@ class Job:
 
         self.loop.call_soon_threadsafe(functools.partial(self._callback[stream_type], line))
 
-    def _done_callback(self, task):
-        """Clean-up (kill loop, end queues)."""
+    def _cleanup(self, task):
+        """Clean-up (kill thread loop, end queues)."""
         if hasattr(self, 'thread') and self.loop.is_running():
             self.loop.stop()
         for q in self._queue.values():

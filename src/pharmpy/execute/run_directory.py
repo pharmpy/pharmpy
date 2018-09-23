@@ -66,6 +66,7 @@ Definitions
 """
 
 import itertools
+import logging
 import re
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -126,6 +127,7 @@ class RunDirectory:
         self.path = path
         self.template = template
         self._model = None
+        self._jobs = list()
 
     @property
     def name(self):
@@ -143,6 +145,9 @@ class RunDirectory:
         if path.is_file():
             raise ValueError('Model already exists, at: %r' % str(path))
         self._model = model.copy(dest=path)
+
+    def bind_job(self, job):
+        self._jobs += [job]
 
     def def_cleanlevel(self, level, patterns, rm_dirs=False):
         """Define a clean level.
@@ -172,6 +177,13 @@ class RunDirectory:
         Args:
             level: The clean level to target. If None, (class) default clean level is used.
         """
+
+        log = logging.getLogger(__name__)
+        for job in self._jobs:
+            if not job.ended:
+                log.warning('Job still running (%r): blocking cleanup of %r!', job, self)
+                job.wait()
+
         if level is None:
             level = self.cleanlevel
         levels = self.cleanlevels[:(1+level)]

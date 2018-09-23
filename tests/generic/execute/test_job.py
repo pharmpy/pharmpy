@@ -1,4 +1,6 @@
 
+import asyncio
+import concurrent.futures
 import sys
 import textwrap
 from functools import partial
@@ -24,17 +26,17 @@ def py_command():
 
 
 @pytest.fixture
-@pytest.mark.asyncio
-async def py_output(py_command, event_loop):
-    """Test (and provides output of) py_command (async style via Job.start_loop)."""
+def py_output(py_command):
+    """Provides output of py_command, BLOCKING & not async."""
 
     def callback(job):
         assert job.rc == 0
 
-    job = Job(py_command, stdout=print, stderr=partial(print, file=sys.stderr), callback=callback)
+    job = Job(py_command, stdout=partial(print, file=sys.stdout),
+              stderr=partial(print, file=sys.stderr), callback=callback)
 
-    # same thread, job is always done after await
-    await job.start_loop(event_loop)
+    # run job and assert results
+    job.run(block=True)
     assert job.started
     assert job.ended
     assert job.rc == 0
@@ -49,40 +51,78 @@ async def py_output(py_command, event_loop):
 
 
 @pytest.mark.asyncio
-async def test_job_python(py_command, py_output):
-    """Test py_command fully concurrent (thread via Job.start)."""
+async def test_job_blocking(py_command, py_output, event_loop):
+    """Test py_command execution, BLOCKING & ASYNC."""
 
     def callback(job):
         assert job.rc == 0
 
     def line(stream_type, line):
-        """Assert all output lines."""
         assert line == py_output[stream_type].pop(0)
 
-    job = Job(py_command, stdout=partial(line, 'stdout'), stderr=partial(line, 'stderr'),
-              callback=callback)
+    job = Job(py_command, stdout=partial(line, 'stdout'),
+              stderr=partial(line, 'stderr'), callback=callback)
 
-    # different thread, job is NOT done after start...
-    job.start()
+    # run job and assert results
+    await job.run(block=True)
+    assert job.started
+    assert job.ended
+    assert job.rc == 0
+    assert job.proc.pid > 0
+
+
+def test_job_nonblocking(py_command, py_output):
+    """Test py_command execution, NONBLOCKING thread."""
+
+    def callback(job):
+        assert job.rc == 0
+
+    def line(stream_type, line):
+        assert line == py_output[stream_type].pop(0)
+
+    job = Job(py_command, stdout=partial(line, 'stdout'),
+              stderr=partial(line, 'stderr'), callback=callback)
+
+    # run job and assert results
+    job.run(block=False)
     assert job.started
     assert not job.ended
     assert job.rc is None
     assert job.proc.pid > 0
 
-    # ... but it can be awaited until end, of course
     job.wait()
     assert job.started
     assert job.ended
     assert job.rc == 0
 
 
-@pytest.mark.asyncio
-async def test_job_python_iter(py_command, py_output):
-    job = Job(py_command)
-    job.start()
-    job.wait()
-    lines = list(job.iter_stream('output'))
-    print(py_output['output'])
+def test_job_thread_executor(py_command, py_output):
+    """Test py_command execution, using ThreadPoolExecutor."""
 
-    # FIXME: Why is the reference 3×expected (3×6=18) all of a sudden?
-    assert len(py_output['output']) >= len(lines)
+    def callback(job):
+        assert job.rc == 0
+
+    def line(stream_type, line):
+        assert line == py_output[stream_type].pop(0)
+
+    # run job and assert results
+    job = Job(py_command, stdout=partial(line, 'stdout'),
+              stderr=partial(line, 'stderr'), callback=callback)
+    pool = concurrent.futures.ThreadPoolExecutor(4)
+    future = pool.submit(job.run, block=True)
+    assert not job.started
+    assert not job.ended
+    with pytest.raises(AttributeError):
+        job.proc
+
+    loop = job.queue.get()
+    asyncio.get_child_watcher().attach_loop(loop)
+    job.queue.task_done()
+    assert not job.started
+    assert not job.ended
+
+    future.result()
+    assert job.started
+    assert job.ended
+    assert job.rc == 0
+    assert job.proc.pid > 0
