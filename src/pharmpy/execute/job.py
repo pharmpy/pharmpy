@@ -15,11 +15,10 @@ Definitions
 import asyncio
 import functools
 import locale
-import os
+# import logging
 import queue
 import threading
 from asyncio.subprocess import PIPE
-from contextlib import closing
 
 
 async def _await_stream_lines(stream, func, loop, *args, **kwargs):
@@ -44,14 +43,14 @@ class Job:
         cwd: Optional working directory to change to.
         stdout: Call, for each line of stdout.
         stderr: Call, for each line of stderr.
-        done: Call, when task completes.
+        callback: Call, when task completes.
         keepends: Keep line breaks for individual lines?
     """
 
     _callback = dict(
         stdout=None,
         stderr=None,
-        done=None,
+        finish=None,
     )
 
     _queue = dict(
@@ -66,12 +65,12 @@ class Job:
         stderr=list(),
     )
 
-    def __init__(self, command, cwd=None, stdout=None, stderr=None, done=None, keepends=False):
+    def __init__(self, command, cwd=None, stdout=None, stderr=None, callback=None, keepends=False):
         self.command = tuple(str(x) for x in command)
         self.wd = cwd if cwd else None
         self._callback['stdout'] = stdout
         self._callback['stderr'] = stderr
-        self._callback['done'] = done
+        self._callback['finish'] = callback
         self.keepends = keepends
 
     def start(self):
@@ -118,7 +117,7 @@ class Job:
         try:
             return self._started.is_set()
         except AttributeError:
-            return None
+            raise RuntimeError('Not defined. Start method of %r not called.', self)
 
     @property
     def ended(self):
@@ -126,11 +125,16 @@ class Job:
         try:
             return self._ended.is_set()
         except AttributeError:
-            return None
+            raise RuntimeError('Not defined. %r has not started.', self)
 
-    def wait(self):
+    def wait(self, timeout=None):
         """Waits for job completion."""
-        return self._ended.wait()
+        try:
+            ended = self.thread.join(timeout=timeout)
+        except AttributeError:
+            ended = self._ended.wait(timeout=timeout)
+        if ended:
+            assert self._ended.is_set(), "%r ended but attr '_ended' not set (bad clean-up)"
 
     @property
     def output(self):
@@ -197,7 +201,7 @@ class Job:
         """
 
         self._proc = await asyncio.create_subprocess_exec(*self.command, stdout=PIPE, stderr=PIPE,
-                                                         cwd=self.wd)
+                                                          cwd=self.wd)
         self.loop.call_soon_threadsafe(self._started.set)
 
         await asyncio.wait([
@@ -206,11 +210,7 @@ class Job:
         ])
 
         return_code = await self._proc.wait()
-
-        callback = self._callback['done']
-        if callback is not None:
-            self.loop.call_soon_threadsafe(functools.partial(callback, return_code))
-
+        self.loop.call_soon_threadsafe(functools.partial(self._callback['finish'], self))
         self.loop.call_soon_threadsafe(self._ended.set)
         return return_code
 
@@ -229,9 +229,7 @@ class Job:
         self._queue['output'].put(line)
         self._queue[stream_type].put(line)
 
-        on_newline = self._callback[stream_type]
-        if on_newline is not None:
-            self.loop.call_soon_threadsafe(functools.partial(on_newline, line))
+        self.loop.call_soon_threadsafe(functools.partial(self._callback[stream_type], line))
 
     def _done_callback(self, task):
         """Clean-up (kill loop, end queues)."""

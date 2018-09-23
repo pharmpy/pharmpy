@@ -28,10 +28,10 @@ def py_command():
 async def py_output(py_command, event_loop):
     """Test (and provides output of) py_command (async style via Job.start_loop)."""
 
-    def done(return_code):
-        assert return_code == 0
+    def callback(job):
+        assert job.rc == 0
 
-    job = Job(py_command, stdout=print, stderr=partial(print, file=sys.stderr), done=done)
+    job = Job(py_command, stdout=print, stderr=partial(print, file=sys.stderr), callback=callback)
 
     # same thread, job is always done after await
     await job.start_loop(event_loop)
@@ -42,7 +42,7 @@ async def py_output(py_command, event_loop):
 
     # provide output
     output = job.output.splitlines()
-    reference = dict(output = output)
+    reference = dict(output=output)
     reference['stdout'] = list(filter(lambda x: x.startswith('OUT'), output))
     reference['stderr'] = list(filter(lambda x: x.startswith('ERR'), output))
     return reference
@@ -52,14 +52,15 @@ async def py_output(py_command, event_loop):
 async def test_job_python(py_command, py_output):
     """Test py_command fully concurrent (thread via Job.start)."""
 
-    def done(return_code):
-        assert return_code == 0
+    def callback(job):
+        assert job.rc == 0
 
     def line(stream_type, line):
         """Assert all output lines."""
         assert line == py_output[stream_type].pop(0)
 
-    job = Job(py_command, stdout=partial(line, 'stdout'), stderr=partial(line, 'stderr'), done=done)
+    job = Job(py_command, stdout=partial(line, 'stdout'), stderr=partial(line, 'stderr'),
+              callback=callback)
 
     # different thread, job is NOT done after start...
     job.start()
@@ -79,7 +80,6 @@ async def test_job_python(py_command, py_output):
 async def test_job_python_iter(py_command, py_output):
     job = Job(py_command)
     job.start()
-
     job.wait()
     lines = list(job.iter_stream('output'))
     print(py_output['output'])
