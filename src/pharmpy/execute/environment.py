@@ -93,6 +93,9 @@ class SystemEnvironment(Environment):
         else:
             logging.getLogger(__name__).error('%r error-exited, returned %d.', job, job.rc)
 
+    def __del__(self):
+        self.pool.shutdown()
+
 
 class PosixSystemEnvironment(SystemEnvironment):
     """Manages system execution of an engine on a Posix-like platform."""
