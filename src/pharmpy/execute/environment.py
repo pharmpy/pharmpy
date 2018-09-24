@@ -57,11 +57,14 @@ class SystemEnvironment(Environment):
         self.futures = []
 
     def submit(self, command, cwd):
-        job = Job(command, cwd, stdout=self._stdout_handle, stderr=self._stderr_handle,
+        job = Job(command, cwd,  # stdout=self._stdout_handle, stderr=self._stderr_handle,
                   callback=self._callback, keepends=False)
+
+        logging.getLogger(__name__).info('%r: Submitting job %r', self, job)
         future = self.pool.submit(job.run)
 
         loop = job.queue.get()
+        logging.getLogger(__name__).debug('%r: Got loop %r. Attaching to watcher.', self, loop)
         asyncio.get_child_watcher().attach_loop(loop)
         job.queue.task_done()
 
@@ -78,10 +81,10 @@ class SystemEnvironment(Environment):
 
     def wait(self, timeout=None):
         """Blocks until all jobs are completed."""
+        logging.getLogger(__name__).info('%r: Awaiting futures %r', self, self.futures)
         concurrent.futures.wait(self.futures, timeout=timeout)
 
     def _stdout_handle(self, line):
-        print(line)
         logging.getLogger(__name__).info(line)
 
     def _stderr_handle(self, line):
@@ -89,12 +92,12 @@ class SystemEnvironment(Environment):
 
     def _callback(self, job):
         if job.rc == 0:
-            logging.getLogger(__name__).info('%r finished.', job)
+            logging.getLogger(__name__).info('%r: Finished job %r', self, job)
         else:
-            logging.getLogger(__name__).error('%r error-exited, returned %d.', job, job.rc)
+            logging.getLogger(__name__).error('%r: Failed (rc=%d) job %r', self, job, job.rc)
 
-    def __del__(self):
-        self.pool.shutdown()
+    def __repr__(self):
+        return '%s(%d)' % (self.__class__.__name__, self.pool._max_workers)
 
 
 class PosixSystemEnvironment(SystemEnvironment):
