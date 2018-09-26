@@ -14,6 +14,7 @@ Definitions
 import asyncio
 import logging
 import os
+import threading
 import concurrent.futures
 
 from .job import Job
@@ -52,25 +53,51 @@ class SystemEnvironment(Environment):
     """Manages system execution (not using SLURM or similar) of an engine on a platform."""
 
     def __init__(self, threads=None):
-        self.pool = concurrent.futures.ThreadPoolExecutor(threads)
         self.jobs = []
         self.futures = []
+        self.pool = concurrent.futures.ThreadPoolExecutor(threads)
 
-    def submit(self, command, cwd):
-        job = Job(command, cwd,  # stdout=self._stdout_handle, stderr=self._stderr_handle,
+    @property
+    def log(self):
+        return logging.getLogger('%s.%s' % (__name__, self.__class__.__name__))
+
+    @property
+    def loop(self):
+        on_main_thread = (threading.current_thread() == threading.main_thread())
+        assert on_main_thread, ("%s can only execute in main thread!" % self.__class__.__name__)
+        return asyncio.get_event_loop()
+
+    @property
+    def watcher(self):
+        return asyncio.get_child_watcher()
+
+    async def submit(self, command, cwd):
+        """Submits *command* to run as subprocess with *cwd* working directory."""
+        logger = logging.getLogger(__name__)
+
+        job = Job(command, cwd,  stdout=self._stdout_handle, stderr=self._stderr_handle,
                   callback=self._callback, keepends=False)
 
-        logging.getLogger(__name__).info('%r: Submitting job %r', self, job)
-        future = self.pool.submit(job.run)
-
-        loop = job.queue.get()
-        logging.getLogger(__name__).debug('%r: Got loop %r. Attaching to watcher.', self, loop)
-        asyncio.get_child_watcher().attach_loop(loop)
-        job.queue.task_done()
+        future = asyncio.wrap_future(self.pool.submit(job.run))
+        logger.debug('Submitting job %r, future %r: %r', job, future, self)
 
         self.jobs += [job]
         self.futures += [future]
-        return job
+
+        logger.debug('Awaiting event loop (to watch) from job %r: %r', job, self)
+        loop = await job.queue.get()
+        logger.debug('Received loop %r, from job %r: %r.', loop, job, self)
+
+        self.watcher.attach_loop(loop)
+        job.queue.task_done()
+
+    async def wait(self):
+        """Blocks until all jobs are completed."""
+        logger = logging.getLogger(__name__)
+
+        logger.info('Awaiting futures %r: %r', self.futures, self)
+        for future in self.futures:
+            await future
 
     @classmethod
     def create_new(cls, args, init=True):
@@ -79,22 +106,17 @@ class SystemEnvironment(Environment):
             self.__init__()
         return self
 
-    def wait(self, timeout=None):
-        """Blocks until all jobs are completed."""
-        logging.getLogger(__name__).info('%r: Awaiting futures %r', self, self.futures)
-        concurrent.futures.wait(self.futures, timeout=timeout)
-
     def _stdout_handle(self, line):
-        logging.getLogger(__name__).info(line)
+        self.log.info(line)
 
     def _stderr_handle(self, line):
-        logging.getLogger(__name__).warning(line)
+        self.log.warning(line)
 
     def _callback(self, job):
         if job.rc == 0:
-            logging.getLogger(__name__).info('%r: Finished job %r', self, job)
+            self.log.info('Finished job %r: %r', job, self)
         else:
-            logging.getLogger(__name__).error('%r: Failed (rc=%d) job %r', self, job, job.rc)
+            self.log.error('Failed (rc=%d) job %r: %r', job.rc, job, self)
 
     def __repr__(self):
         return '%s(%d)' % (self.__class__.__name__, self.pool._max_workers)
@@ -114,3 +136,8 @@ class WindowsSystemEnvironment(SystemEnvironment):
     @property
     def supported(self):
         return (os.name == 'nt')
+
+    @property
+    def loop(self):
+        asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
+        return super()._init_loop()

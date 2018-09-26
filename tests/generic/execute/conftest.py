@@ -47,7 +47,7 @@ def py_output_slow(py_command_slow):
     # run job and assert results
     job.run(block=True)
     assert job.started
-    assert job.ended
+    assert job.done
     assert job.rc == 0
     assert job.proc.pid > 0
 

@@ -28,7 +28,7 @@ async def test_job_blocking(py_command_slow, py_output_slow, event_loop):
     # run job and assert results
     await job.run(block=True)
     assert job.started
-    assert job.ended
+    assert job.done
     assert job.rc == 0
     assert job.proc.pid > 0
 
@@ -48,13 +48,13 @@ def test_job_nonblocking(py_command_slow, py_output_slow):
     # run job and assert results
     job.run(block=False)
     assert job.started
-    assert not job.ended
+    assert not job.done
     assert job.rc is None
     assert job.proc.pid > 0
 
     job.wait()
     assert job.started
-    assert job.ended
+    assert job.done
     assert job.rc == 0
 
 
@@ -73,7 +73,7 @@ def test_job_thread_executor(py_command_slow, py_output_slow):
     pool = concurrent.futures.ThreadPoolExecutor(4)
     future = pool.submit(job.run, block=True)
     assert not job.started
-    assert not job.ended
+    assert not job.done
     with pytest.raises(AttributeError):
         job.proc
 
@@ -81,10 +81,10 @@ def test_job_thread_executor(py_command_slow, py_output_slow):
     asyncio.get_child_watcher().attach_loop(loop)
     job.queue.task_done()
     assert not job.started
-    assert not job.ended
+    assert not job.done
 
     future.result()
     assert job.started
-    assert job.ended
+    assert job.done
     assert job.rc == 0
     assert job.proc.pid > 0
