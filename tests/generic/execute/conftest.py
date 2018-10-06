@@ -1,11 +1,8 @@
 
 import sys
 import textwrap
-from functools import partial
 
 import pytest
-
-from pharmpy.execute.job import Job
 
 
 @pytest.fixture(scope='session')
@@ -35,24 +32,18 @@ def py_command_slow():
 
 
 @pytest.fixture(scope='session')
-def py_output_slow(py_command_slow):
-    """Provides output of py_command_slow, BLOCKING & not async."""
+def py_output_slow():
+    """Provides output of py_command_slow."""
 
-    def callback(job):
-        assert job.rc == 0
+    output = textwrap.dedent("""
+    OUT[1]
+    ERR[1]
+    OUT[2]
+    ERR[2]
+    OUT[3]
+    ERR[3]
+    """).strip().splitlines()
 
-    job = Job(py_command_slow, stdout=partial(print, file=sys.stdout),
-              stderr=partial(print, file=sys.stderr), callback=callback)
-
-    # run job and assert results
-    job.run(block=True)
-    assert job.started
-    assert job.done
-    assert job.rc == 0
-    assert job.proc.pid > 0
-
-    # provide output
-    output = job.output.splitlines()
     reference = dict(output=output)
     reference['stdout'] = list(filter(lambda x: x.startswith('OUT'), output))
     reference['stderr'] = list(filter(lambda x: x.startswith('ERR'), output))

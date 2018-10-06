@@ -19,8 +19,8 @@ import logging
 import os
 import queue
 import threading
+# import contextlib
 from asyncio.subprocess import PIPE
-from contextlib import closing
 
 
 class Job:
@@ -70,8 +70,22 @@ class Job:
         self._callback['stderr'] = stderr if stderr else lambda line: None
         self._callback['finish'] = callback if callback else lambda job: None
 
-    def run(self, block=True):
-        """Runs job & returns result.
+    @property
+    def loop(self):
+        """Current event loop. Create new if none."""
+        if os.name == 'nt':
+            asyncio.set_event_loop_policy(asyncio. WindowsProactorEventLoopPolicy())
+        try:
+            loop = asyncio.get_event_loop()
+        except RuntimeError:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+        if os.name == 'nt':
+            assert isinstance(loop, asyncio.ProactorEventLoop), 'bad event loop for Windows'
+        return loop
+
+    async def run(self):
+        """Runs job asynchronously.
 
         Wraps coroutine :func:`~Job.start` in convenient, synchronously callable, unit. Note that
         call will block until caller has attached loop in :attr:`~Job.queue`, from the main thread's
@@ -94,56 +108,46 @@ class Job:
             print(future.result())
         """
 
-        if os.name == 'nt':
-            asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
-        if not block:
-            self._loop = asyncio.new_event_loop()
-            self._thread = threading.Thread(target=self.run, args=(True,))
-            self._thread.start()
-
-            future = asyncio.run_coroutine_threadsafe(self.start(), self._loop)
-            if threading.current_thread() == threading.main_thread():
-                self._debug('On main thread; Attaching loop to watcher')
-                asyncio.get_child_watcher().attach_loop(self.queue.get())
-                self.queue.task_done()
-            self._debug('Blocking until new <Thread %s> running start()', self._thread.getName())
-            self._started.wait()
-
-            self._debug('Returning start() future (running in <Thread %s>)', self._thread.getName())
-            return future
-        try:
-            loop = asyncio.get_event_loop()
-        except RuntimeError:
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-
         if threading.current_thread() == threading.main_thread():
-            self._debug('On main thread; Attaching loop to watcher')
-            asyncio.get_child_watcher().attach_loop(loop)
+            self._debug('Attaching loop to watcher')
+            asyncio.get_child_watcher().attach_loop(self.loop)
         else:
-            self._debug('Waiting on main thread (to attach loop)')
-            self.queue.put(loop)
+            self.queue.put(self.loop)
+            self._debug('Waiting on main thread to attach loop')
             self.queue.join()
 
-        if loop.is_running():
-            self._debug('Loop already running; Returning start() future')
-            return asyncio.ensure_future(self.start(), loop=loop)
-        else:
-            self._debug('Starting new loop, to return result of start()')
-            return loop.run_until_complete(self.start())
-
-    async def start(self):
-        """Starts job async on current event loop."""
-
-        self.task = asyncio.ensure_future(self._main())
+        self.task = asyncio.ensure_future(self._main(), loop=self.loop)
         self.task.add_done_callback(self._cleanup)
-        try:
-            return await self.task
-        except KeyboardInterrupt:
-            pass
-        finally:
-            self._cleanup()
-        return None
+
+        self._debug('Awaiting _main() future')
+        return await self.task
+
+    def thread(self):
+        """Runs job in new thread."""
+
+        if threading.current_thread() != threading.main_thread():
+            self._debug('Thread not main thread. Executing loop here.')
+            loop = self.loop
+            assert not loop.is_running()
+            return loop.run_until_complete(self.run())
+
+        def thread(loop):
+            asyncio.set_event_loop(loop)
+            loop.run_forever()
+
+        self._loop = asyncio.new_event_loop()
+        self._thread = threading.Thread(target=thread, args=(self._loop,))
+        self._thread.start()
+
+        self._debug('Waiting on loop from new <Thread %s>', self._thread.getName())
+        future = asyncio.run_coroutine_threadsafe(self.run(), loop=self._loop)
+        loop = self.queue.get()
+        asyncio.get_child_watcher().attach_loop(loop)
+        self.queue.task_done()
+
+        self._debug('Waiting until new <Thread %s> has started job', self._thread.getName())
+        self._started.wait()
+        return future
 
     @property
     def started(self):
@@ -160,12 +164,12 @@ class Job:
 
     def wait(self, timeout=None):
         """Waits for job to complete."""
-        try:
-            done = self._thread.join(timeout=timeout)
-        except AttributeError:
-            done = self._done.wait(timeout=timeout)
-        if done and not self._done.is_set():
-            self._warn("Thread done but event not set (bad cleanup)!")
+        self._done.wait(timeout=timeout)
+        # try:
+        #     self._thread.join(timeout=timeout)
+        # except AttributeError:
+        #     pass
+        return self.rc
 
     @property
     def output(self):
@@ -239,8 +243,9 @@ class Job:
         self._log(logging.DEBUG, msg, *args, **kwargs)
 
     def _log(self, level, msg, *args, **kwargs):
-        msg = '%s: %r on <Thread %s>' % (msg, self, threading.current_thread().getName())
-        logging.getLogger("asyncio").log(level, msg, *args, **kwargs)
+        with threading.Lock():
+            msg = '%s: %r on <Thread %s>' % (msg, self, threading.current_thread().getName())
+            logging.getLogger(__name__).log(level, msg, *args, **kwargs)
 
     async def _main(self):
         """Main coroutine.
@@ -261,26 +266,24 @@ class Job:
                                                         cwd=working_dir)
         except Exception as exc:
             self._warn('Subprocess raised exception %r', exc)
-            asyncio.get_event_loop().call_soon_threadsafe(self._started.set)
-            asyncio.get_event_loop().call_soon_threadsafe(self._done.set)
+            self._started.set()
+            self._done.set()
             raise exc
         else:
             with threading.Lock():
                 self._proc = proc
             self._info('Started subprocess %r', self._proc)
-            asyncio.get_event_loop().call_soon_threadsafe(self._started.set)
+            self._started.set()
 
-        await asyncio.wait([
-            self._await_stream_lines(self._proc.stdout, 'stdout'),
-            self._await_stream_lines(self._proc.stderr, 'stderr'),
-        ])
+        await asyncio.gather(self._await_stream_lines(self._proc.stdout, 'stdout'),
+                             self._await_stream_lines(self._proc.stderr, 'stderr'))
 
         return_code = await self._proc.wait()
         self._debug('Awaited subprocess %r', self._proc)
 
         callback = functools.partial(self._callback['finish'], self)
         asyncio.get_event_loop().call_soon_threadsafe(callback)
-        asyncio.get_event_loop().call_soon_threadsafe(self._done.set)
+        self._done.set()
         return return_code
 
     def _stream_handler(self, line, stream_type):
@@ -302,22 +305,20 @@ class Job:
         callback = functools.partial(self._callback[stream_type], line)
         asyncio.get_event_loop().call_soon_threadsafe(callback)
 
-    async def _await_stream_lines(self, stream_reader, type):
+    async def _await_stream_lines(self, stream_reader, stream_type):
         """Awaits new line in *stream_reader*, calling handler threadsafely."""
-        self._debug('Reading from (%s) %r', type, stream_reader)
         while True:
-            # line = await stream_reader.readline()
-            line = None
+            line = await stream_reader.readline()
             if line:
-                self._debug('Read line from (%s) %r: %r', type, stream_reader, line)
-                callback = functools.partial(self._stream_handler, line, type)
+                self._debug('Read from %s', stream_type.upper())
+                callback = functools.partial(self._stream_handler, line, stream_type)
                 asyncio.get_event_loop().call_soon_threadsafe(callback)
             else:
-                self._debug('Read end of (%s) %r', type, stream_reader)
-                break
+                self._debug('Read end of %s', stream_type.upper())
+                return stream_reader.close()
 
     def _cleanup(self, task=None):
-        """Clean-up (kill thread loop, end queues)."""
+        """Clean-up (stop loop if started, end queues)."""
         try:
             self._loop.call_soon_threadsafe(self._loop.stop)
         except AttributeError:
@@ -326,14 +327,11 @@ class Job:
             q.put(None)
 
     def __repr__(self):
+        hid = hex(id(self))
         if self._done.is_set():
-            status = 'done'
+            return '<done %s %s>' % (self.__class__.__name__, hid)
         elif self._started.is_set():
-            status = 'busy'
+            task = '<%s %s>' % (self.task._state.lower(), self.task.__class__.__name__)
+            return '<busy %s %s, %s, %s>' % (self.__class__.__name__, hid, task, self.proc)
         else:
-            status = 'new'
-        try:
-            task = ' task %s' % self.task
-        except AttributeError:
-            task = ''
-        return '<%s %s %s%s>' % (status, self.__class__.__name__, hex(id(self)), task)
+            return '<new %s %s, %r>' % (self.__class__.__name__, hid, self.command)
