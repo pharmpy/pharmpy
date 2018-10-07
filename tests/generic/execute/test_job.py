@@ -1,10 +1,11 @@
 # -*- encoding: utf-8 -*-
 """
-.. todo:: Important! Exception handling of threaded processes! Main thread MUST raise again.
+.. todo:: Refactor everything again! That's a joke, haha...
 """
 
 import asyncio
-import concurrent.futures
+import threading
+import logging
 from functools import partial
 
 import pytest
@@ -12,118 +13,108 @@ import pytest
 from pharmpy.execute.job import Job
 
 
-def test_job_run(py_command_slow, py_output_slow, event_loop):
-    """Test running job synchronously."""
+class JobAssertions:
+    def __init__(self, stdout, stderr):
+        logging.getLogger().debug('Initializing: %r', self)
+        self.stdout_reference = stdout
+        self.stderr_reference = stderr
+        self.stdout_captured = []
+        self.stderr_captured = []
 
-    def callback(job):
-        assert job.rc == 0
+    def stdout(self, line):
+        with threading.Lock():
+            self.stdout_captured += [line]
 
-    def line(stream_type, line):
-        assert line == py_output_slow[stream_type].pop(0)
+    def stderr(self, line):
+        with threading.Lock():
+            self.stderr_captured += [line]
 
-    job = Job(py_command_slow, stdout=partial(line, 'stdout'),
-              stderr=partial(line, 'stderr'), callback=callback)
+    def callback(self, job):
+        logging.getLogger().debug('Callback (rc=%r) from job=%r: %r', job.rc, job, self)
+        with threading.Lock():
+            self.job = job
 
-    result = event_loop.run_until_complete(job.run())
-    assert isinstance(result, int)
-    assert job.started
-    assert job.done
-    assert job.rc == result == 0
-    assert job.proc.pid > 0
+    def assert_captures(self):
+        if hasattr(self, 'job'):
+            logging.getLogger().debug('Asserting job (rc=%r) %r: %r', self.job.rc, self.job, self)
+        else:
+            raise RuntimeError('No job has called back: %r' % self)
+        with threading.Lock():
+            assert self.job.rc == 0
+            assert self.stdout_reference == self.stdout_captured
+            assert self.stderr_reference == self.stderr_captured
 
-
-@pytest.mark.asyncio
-async def test_job_async(py_command_slow, py_output_slow):
-    """Test running job asynchronously."""
-
-    def callback(job):
-        assert job.rc == 0
-
-    def line(stream_type, line):
-        assert line == py_output_slow[stream_type].pop(0)
-
-    job = Job(py_command_slow, stdout=partial(line, 'stdout'),
-              stderr=partial(line, 'stderr'), callback=callback)
-
-    coro = job.run()
-    assert asyncio.iscoroutine(coro)
-    assert not job.started
-    assert not job.done
-    with pytest.raises(AttributeError):
-        job.proc
-
-    result = await coro
-    assert isinstance(result, int)
-    assert job.started
-    assert job.done
-    assert job.rc == result == 0
-    assert job.proc.pid > 0
+    def __repr__(self):
+        with threading.Lock():
+            return '<%s %s>' % (self.__class__.__name__, hex(id(self)))
 
 
 @pytest.mark.asyncio
-async def test_job_threaded(py_command_slow, py_output_slow, event_loop):
-    """Test running job completely asynchronously."""
-
-    def callback(job):
-        assert job.rc == 0
-
-    def line(stream_type, line):
-        assert line == py_output_slow[stream_type].pop(0)
-
-    job = Job(py_command_slow, stdout=partial(line, 'stdout'),
-              stderr=partial(line, 'stderr'), callback=callback)
-
-    future = job.thread()
-    assert not asyncio.isfuture(future)
-    assert isinstance(future, concurrent.futures.Future)
-
-    assert job.started
-    assert not job.done
-    assert job.rc is None
-    assert job.proc.pid > 0
-
-    result = future.result()
-    assert job.started
-    assert job.done
-    assert job.rc == result == 0
-
-
-@pytest.mark.asyncio
-async def test_job_executor(py_command_slow, py_output_slow):
-    """Test running job completely asynchronously via concurrent.futures."""
-
-    def callback(job):
-        assert job.rc == 0
-
-    def line(stream_type, line):
-        assert line == py_output_slow[stream_type].pop(0)
-
-    # run job and assert results
-    job = Job(py_command_slow, stdout=partial(line, 'stdout'),
-              stderr=partial(line, 'stderr'), callback=callback)
-
-    pool = concurrent.futures.ThreadPoolExecutor(4)
+async def test_job_start_single(py_command):
+    command = py_command[0]
     watcher = asyncio.get_child_watcher()
 
-    future = pool.submit(job.thread)
-    assert isinstance(future, concurrent.futures.Future)
+    job = Job(command)
+    job.start()
+    job.init.wait()
 
-    assert not job.started
-    assert not job.done
-    with pytest.raises(AttributeError):
-        job.proc
-
-    loop = job.queue.get()
-    watcher.attach_loop(loop)
-    job.queue.task_done()
-
-    assert not job.started
-    assert not job.done
-    with pytest.raises(AttributeError):
-        job.proc
-
-    result = future.result()
-    assert job.started
+    await job.wait(3, 0.1)
+    assert job.init
     assert job.done
-    assert job.rc == result == 0
-    assert job.proc.pid > 0
+    assert job.rc == 0
+
+
+def test_job_start_series(py_command_slow, event_loop):
+    """Test running job completely asynchronously."""
+
+    command, output = py_command_slow
+
+    async def test_one():
+        watcher = asyncio.get_child_watcher()
+        watcher.attach_loop(asyncio.get_event_loop())
+
+        ref = JobAssertions(stdout=output['stdout'], stderr=output['stderr'])
+        job = Job(command, stdout=ref.stdout, stderr=ref.stderr, callback=ref.callback)
+        job.start()
+        assert not job.init
+
+        job.init.wait()
+        assert not job.done
+        assert job.rc is None
+        assert job.proc.pid > 0
+
+        await job.wait(3, 0.1)
+        assert job.init
+        assert job.done
+        ref.assert_captures()
+
+    async def test_series():
+        for i in range(5):
+            await test_one()
+
+    event_loop.run_until_complete(test_series())
+
+
+@pytest.mark.asyncio
+async def test_job_start_parallel(py_command_slow):
+    """Test running job completely asynchronously."""
+
+    command, output = py_command_slow
+    watcher = asyncio.get_child_watcher()
+
+    jobs, refs = [], []
+    for i in range(5):
+        ref = JobAssertions(stdout=output['stdout'], stderr=output['stderr'])
+        job = Job(command, stdout=ref.stdout, stderr=ref.stderr, callback=ref.callback)
+        jobs += [job]
+        refs += [ref]
+        job.start()
+        assert not job.init
+
+    for job in jobs:
+        job.init.wait()
+        assert not job.done
+
+    for ref, job in zip(refs, jobs):
+        await job.wait(3, 0.1)
+        ref.assert_captures()

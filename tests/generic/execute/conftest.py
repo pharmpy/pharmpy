@@ -1,11 +1,13 @@
 
 import sys
 import textwrap
+import logging
 
 import pytest
 
 
-@pytest.fixture(scope='session')
+
+@pytest.fixture(scope='function')
 def py_command():
     code = textwrap.dedent("""
         import sys
@@ -13,10 +15,15 @@ def py_command():
         print('ERR', file=sys.stderr, flush=True)
     """)
     command = [sys.executable, '-c', code]
-    return command
+
+    output = dict(output=['OUT', 'ERR'])
+    output['stdout'] = list(filter(lambda x: x.startswith('OUT'), output))
+    output['stderr'] = list(filter(lambda x: x.startswith('ERR'), output))
+
+    return (command, output)
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope='function')
 def py_command_slow():
     code = textwrap.dedent("""
         import sys
@@ -28,12 +35,6 @@ def py_command_slow():
             time.sleep(0.05)
     """)
     command = [sys.executable, '-c', code]
-    return command
-
-
-@pytest.fixture(scope='session')
-def py_output_slow():
-    """Provides output of py_command_slow."""
 
     output = textwrap.dedent("""
     OUT[1]
@@ -43,8 +44,31 @@ def py_output_slow():
     OUT[3]
     ERR[3]
     """).strip().splitlines()
+    output = dict(output=output)
+    output['stdout'] = list(filter(lambda x: x.startswith('OUT'), output['output']))
+    output['stderr'] = list(filter(lambda x: x.startswith('ERR'), output['output']))
 
-    reference = dict(output=output)
-    reference['stdout'] = list(filter(lambda x: x.startswith('OUT'), output))
-    reference['stderr'] = list(filter(lambda x: x.startswith('ERR'), output))
-    return reference
+    return (command, output)
+
+
+def debuglog_jobs(section_title, jobs, logger=None):
+    """Log debugging information on jobs, current event loop and child watcher."""
+
+    if not logger:
+        logger = logging.getLogger()
+    logger.warning('DEBUG (%s)', section_title.upper())
+
+    event_loop = asyncio.get_event_loop()
+    logger.warning('event_loop=%r (%s)', event_loop, hex(id(event_loop)))
+    for i, job in enumerate(jobs):
+        job.init.wait()
+        logger.warning('jobs[%d]: is_alive=%r job=%r', i, job.is_alive(), job)
+        logger.warning('jobs[%d]: job.loop=%r (%s)', i, job.loop, hex(id(job.loop)))
+
+    watcher = asyncio.get_child_watcher()
+    logger.warning('watcher=%r: loop=%r (%s)', watcher, watcher._loop, hex(id(watcher._loop)))
+    for pid, cb in watcher._callbacks.items():
+        func = cb[0].__func__
+        transport = cb[1][0]
+        logger.warning('watcher._callbacks[%i] %r', pid, func)
+        logger.warning('watcher._callbacks[%i] %r', pid, transport)
