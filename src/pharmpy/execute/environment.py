@@ -62,33 +62,29 @@ class SystemEnvironment(Environment):
         self.jobs = list()
         self.futures = list()
         self.pool = concurrent.futures.ThreadPoolExecutor(threads)
-        self._watcher = asyncio.get_child_watcher()
 
     async def submit(self, command, cwd=None):
         """Submits *command* to run as subprocess with *cwd* working directory."""
         logger = logging.getLogger(__name__)
 
+        watcher = asyncio.get_child_watcher()
         job = Job(command, cwd,  stdout=self._stdout_handle, stderr=self._stderr_handle,
                   callback=self._callback, keepends=False)
-        future = asyncio.wrap_future(self.pool.submit(job.thread))
-        logger.debug('Submitted job %r: future %r on %r', job, future, self)
+
+        future = self.pool.submit(job.start)
+        logger.debug('Submitted job %r (future: %r): %r', job, future, self)
 
         self.jobs += [job]
         self.futures += [future]
 
-        logger.debug('Awaiting event loop (to watch) from job %r: %r', job, self)
-        loop = job.queue.get()
-        self._watcher.attach_loop(loop)
-        job.queue.task_done()
-
-    def close(self):
+    async def wait(self, timeout=None, poll=1):
         """Stop accepting new jobs and wait for all to complete."""
         logger = logging.getLogger(__name__)
-        for job in self.jobs:
-            if not job.done:
-                logger.info('Awaiting job %r: %r', job, self)
-                job.wait(1)
-        self.pool.shutdown(wait=True)
+
+        coros = [job.wait(timeout, poll) for job in self.jobs]
+        await asyncio.gather(*coros)
+
+        self.pool.shutdown()
         self.pool = None
 
     @classmethod
@@ -120,7 +116,7 @@ class SystemEnvironment(Environment):
             self.log.error('Failed (rc=%d) job %r: %r', job.rc, job, self)
 
     def __repr__(self):
-        return '%s(%d)' % (self.__class__.__name__, self.pool._max_workers)
+        return '<%s %s>' % (self.__class__.__name__, hex(id(self)))
 
 
 class PosixSystemEnvironment(SystemEnvironment):
