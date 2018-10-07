@@ -67,7 +67,7 @@ class SystemEnvironment(Environment):
         """Submits *command* to run as subprocess with *cwd* working directory."""
         logger = logging.getLogger(__name__)
 
-        watcher = asyncio.get_child_watcher()
+        asyncio.get_child_watcher()
         job = Job(command, cwd,  stdout=self._stdout_handle, stderr=self._stderr_handle,
                   callback=self._callback, keepends=False)
 
@@ -76,11 +76,10 @@ class SystemEnvironment(Environment):
 
         self.jobs += [job]
         self.futures += [future]
+        return job
 
     async def wait(self, timeout=None, poll=1):
         """Stop accepting new jobs and wait for all to complete."""
-        logger = logging.getLogger(__name__)
-
         coros = [job.wait(timeout, poll) for job in self.jobs]
         await asyncio.gather(*coros)
 

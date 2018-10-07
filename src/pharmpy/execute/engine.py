@@ -39,7 +39,7 @@ class Engine:
         else:
             self.environment = SystemEnvironment()
 
-    def evaluate(self, cwd=None, block=True):
+    async def evaluate(self, cwd=None):
         """Starts model evaluation and returns :class:`~.job.Job` object.
 
         Arguments:
@@ -52,30 +52,16 @@ class Engine:
             pheno_real/estimate_dir1/, pheno_real/evaluate_dir74/, etc. (be clear but not collide).
         """
 
-        rundir = RunDirectory(cwd, self.model.path.stem)
-        rundir.model = self.model
-        command = rundir.model.execute.get_commandline('evaluate')
-        job = rundir.model.execute.environment.submit(command, rundir)
-        rundir.bind_job(job)
-        if block:
-            job.wait()
-        return rundir
+        raise NotImplementedError()
 
-    def estimate(self, cwd=None, block=True):
+    async def estimate(self, cwd=None):
         """Starts model estimation and returns :class:`~.job.Job` object.
 
         Arguments:
             cwd: Directory to create run directory in (temporary if None).
         """
 
-        rundir = RunDirectory(cwd, self.model.path.stem)
-        rundir.model = self.model
-        command = rundir.model.execute.get_commandline('estimate')
-        job = rundir.model.execute.environment.submit(command, rundir)
-        rundir.bind_job(job)
-        if block:
-            job.wait()
-        return rundir
+        return await self._execute_model(cwd)
 
     @property
     def bin(self):
@@ -94,6 +80,16 @@ class Engine:
             task: Any task of {'evaluate', 'estimate'}.
         """
         raise NotImplementedError
+
+    async def _execute_model(self, cwd):
+        rundir = RunDirectory(cwd, self.model.path.stem)
+        rundir.model = self.model
+        command = rundir.model.execute.get_commandline('estimate')
+        envir = rundir.model.execute.environment
+
+        job = await envir.submit(command, rundir)
+        rundir.bind_job(job)
+        return rundir
 
     def __bool__(self):
         """True if this engine is ready for executing *now*."""

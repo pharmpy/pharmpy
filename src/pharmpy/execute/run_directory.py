@@ -180,7 +180,7 @@ class RunDirectory:
 
         log = logging.getLogger(__name__)
         for job in self._jobs:
-            if not job.ended:
+            if not job.done:
                 log.warning('Job still running (%r): blocking cleanup of %r!', job, self)
                 job.wait()
 
