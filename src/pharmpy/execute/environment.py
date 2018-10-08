@@ -47,12 +47,12 @@ class Environment:
 class SystemEnvironment(Environment):
     """Manages system (direct subprocess) execution for an engine on some platform.
 
-    Needs :module:`asyncio` because a running event loop is required to monitor child processes.
-    Execution machinery via :module:`concurrent.futures` interface.
+    Needs :mod:`asyncio` because a running event loop is required to monitor child processes.
+    Execution machinery via :mod:`concurrent.futures` interface.
 
     Attributes:
         jobs: Submitted jobs.
-        futures: Future promises of jobs, instances of :module:`concurrent.futures.Future`.
+        futures: Future promises of jobs, instances of :mod:`concurrent.futures.Future`.
         pool: Threading pool, instance of :class:`~concurrent.Futures.ThreadPoolExecutor`.
     """
 

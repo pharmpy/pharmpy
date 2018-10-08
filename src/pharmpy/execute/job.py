@@ -41,7 +41,7 @@ class Job(threading.Thread):
     :class:`~threading.Thread` to run in separate thread (non-blocking monitoring). Call
     :func:`~Job.start` to execute (:func:`~Job.run` considered low-level API).
 
-    Arguments:
+    Args:
         command: Program and arguments (iterable).
         cwd: Working directory.
         stdout: Callback, for each line of stdout.
@@ -49,18 +49,14 @@ class Job(threading.Thread):
         callback: Callback, for when task completes.
         keepends: Keep line breaks for individual lines?
 
-    Attributes:
-        init: True if job has started. :class:`Status` instance.
-        done: True if job is done. :class:`Status` instance.
-
-    ..note:: Callback functions (arguments *stdout*, *stderr* and *callback*) must be threadsafe.
+    .. note:: Callback functions (arguments *stdout*, *stderr* and *callback*) must be threadsafe.
     """
 
     def __init__(self, command, cwd=None, stdout=None, stderr=None, callback=None, keepends=False):
         threading.Thread.__init__(self)
 
-        self.init = Status()
-        self.done = Status()
+        self.init = Status()  #: True if job has started. :class:`Status` instance.
+        self.done = Status()  #: True if job is done. :class:`Status` instance.
 
         self.command = tuple(str(x) for x in command)
         self.working_dir = cwd if cwd else None
@@ -73,7 +69,7 @@ class Job(threading.Thread):
     def run(self):
         """Starts execution *in current thread*.
 
-        ..note:: You probably want :func:`~Job.start`.
+        .. note:: You probably want :func:`~Job.start`.
         """
 
         if os.name == 'nt':
@@ -127,8 +123,11 @@ class Job(threading.Thread):
         while not self.done:
             seconds = time.time() - start_time
             if (timeout is not None) and (seconds > timeout):
-                raise TimeoutError('Timed out (%s > %s) while waiting on job' % (fmt_sec(seconds),
-                                                                                 fmt_sec(timeout)))
+                msg = 'Timed out (%s > %s) while waiting on job' % (fmt_sec(seconds),
+                                                                    fmt_sec(timeout))
+                self._log(logging.ERROR, '%s, terminating %r' % (msg, self.proc))
+                self.proc.terminate()
+                raise TimeoutError(msg)
             await asyncio.sleep(poll)
 
         self._info('Waited %s on job, now joining thread', fmt_sec(time.time() - start_time))

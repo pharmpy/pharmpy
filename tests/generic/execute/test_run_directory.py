@@ -23,8 +23,8 @@ def test_RunDirectory_persistent():
     rd.clean_config(level=1, patterns=['*.temp'], rm_dirs=False)
     to_remove = path / 'some.temp'
     to_keep = path / 'save.txt'
-    open(to_remove, 'a').close()
-    open(to_keep, 'a').close()
+    open(str(to_remove), 'a').close()
+    open(str(to_keep), 'a').close()
 
     rd.cleanup()
     assert path.exists()
