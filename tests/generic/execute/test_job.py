@@ -1,12 +1,8 @@
 # -*- encoding: utf-8 -*-
-"""
-.. todo:: Refactor everything again! That's a joke, haha...
-"""
 
 import asyncio
 import threading
 import logging
-from functools import partial
 
 import pytest
 
@@ -52,7 +48,7 @@ class JobAssertions:
 @pytest.mark.asyncio
 async def test_job_start_single(py_command):
     command = py_command[0]
-    watcher = asyncio.get_child_watcher()
+    asyncio.get_child_watcher()
 
     job = Job(command)
     job.start()
@@ -100,7 +96,7 @@ async def test_job_start_parallel(py_command_slow):
     """Test running job completely asynchronously."""
 
     command, output = py_command_slow
-    watcher = asyncio.get_child_watcher()
+    asyncio.get_child_watcher()
 
     jobs, refs = [], []
     for i in range(5):

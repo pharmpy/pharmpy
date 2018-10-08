@@ -14,7 +14,6 @@ Definitions
 import asyncio
 import logging
 import os
-import threading
 import concurrent.futures
 
 from .job import Job
@@ -46,7 +45,16 @@ class Environment:
 
 
 class SystemEnvironment(Environment):
-    """Manages system execution (not using SLURM or similar) of an engine on a platform."""
+    """Manages system (direct subprocess) execution for an engine on some platform.
+
+    Needs :module:`asyncio` because a running event loop is required to monitor child processes.
+    Execution machinery via :module:`concurrent.futures` interface.
+
+    Attributes:
+        jobs: Submitted jobs.
+        futures: Future promises of jobs, instances of :module:`concurrent.futures.Future`.
+        pool: Threading pool, instance of :class:`~concurrent.Futures.ThreadPoolExecutor`.
+    """
 
     def __new__(cls, *args, **kwargs):
         if cls is SystemEnvironment:
@@ -64,7 +72,8 @@ class SystemEnvironment(Environment):
         self.pool = concurrent.futures.ThreadPoolExecutor(threads)
 
     async def submit(self, command, cwd=None):
-        """Submits *command* to run as subprocess with *cwd* working directory."""
+        """Submits *command* to run as subprocess in *cwd* working directory."""
+
         logger = logging.getLogger(__name__)
 
         asyncio.get_child_watcher()
@@ -79,28 +88,21 @@ class SystemEnvironment(Environment):
         return job
 
     async def wait(self, timeout=None, poll=1):
-        """Stop accepting new jobs and wait for all to complete."""
+        """Wait (block) for all jobs to complete (and stop accepting new ones).
+
+        Arguments:
+            timeout: Maximum wait time in seconds.
+            poll: Wait between each status check of job.
+        """
+
         coros = [job.wait(timeout, poll) for job in self.jobs]
         await asyncio.gather(*coros)
-
         self.pool.shutdown()
         self.pool = None
-
-    @classmethod
-    def _new(cls, *args, **kwargs):
-        self = object.__new__(cls)
-        return self
 
     @property
     def log(self):
         return logging.getLogger('%s.%s' % (__name__, self.__class__.__name__))
-
-    @property
-    def _loop(self):
-        if threading.current_thread() != threading.main_thread():
-            raise AssertionError("%s must only execute in main thread." % self.__class__.__name__)
-        else:
-            return asyncio.get_event_loop()
 
     def _stdout_handle(self, line):
         self.log.info(line)
@@ -119,7 +121,7 @@ class SystemEnvironment(Environment):
 
 
 class PosixSystemEnvironment(SystemEnvironment):
-    """Manages system execution of an engine on a Posix-like platform."""
+    """:class:`SystemEnvironment` on Linux/MacOS."""
 
     @property
     def supported(self):
@@ -127,13 +129,12 @@ class PosixSystemEnvironment(SystemEnvironment):
 
 
 class WindowsSystemEnvironment(SystemEnvironment):
-    """Manages system execution of an engine on a Windows platform."""
+    """:class:`SystemEnvironment` on Windows."""
+
+    def __init__(self, *args, **kwargs):
+        asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
+        return super().__init__(*args, **kwargs)
 
     @property
     def supported(self):
         return (os.name == 'nt')
-
-    @property
-    def loop(self):
-        asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
-        return super()._init_loop()

@@ -4,9 +4,9 @@
 Executed Job
 ============
 
-A job unit, for non-blocking execution and communication (of subprocesses)
+A job unit, for non-blocking execution and communication (of subprocesses).
 
-.. todo:: Implement support for multiple in paralell, via :func:`asyncio.gather`.
+Can be used raw for running subprocesses asynchronously.
 
 Definitions
 -----------
@@ -14,17 +14,18 @@ Definitions
 
 import asyncio
 import functools
-import time
 import locale
 import logging
 import os
 import queue
 import threading
+import time
 from asyncio.subprocess import PIPE
-from contextlib import closing
 
 
 class Status(threading.Event):
+    """A started/done status of a :class:`~Job` instance."""
+
     def __bool__(self):
         return self.is_set()
 
@@ -34,21 +35,26 @@ class Status(threading.Event):
 
 class Job(threading.Thread):
     """A job of an :class:`~pharmpy.execute.Engine` running in a
-    :class:`~pharmpy.execute.RunDirectory` (on an :class:`~pharmpy.execute.Environment`).
+    :class:`~pharmpy.execute.RunDirectory` (via an :class:`~pharmpy.execute.Environment`).
 
-    Responsible for generating and wrapping a task, and providing interfaces to stdout/stderr
-    streams and result.
+    Responsible for generating and wrapping a subprocess for execution and monitoring. Inherits from
+    :class:`~threading.Thread` to run in separate thread (non-blocking monitoring). Call
+    :func:`~Job.start` to execute (:func:`~Job.run` considered low-level API).
 
     Arguments:
         command: Program and arguments (iterable).
-        cwd: Optional working directory to change to.
-        stdout: Call, for each line of stdout.
-        stderr: Call, for each line of stderr.
-        callback: Call, when task completes.
+        cwd: Working directory.
+        stdout: Callback, for each line of stdout.
+        stderr: Callback, for each line of stderr.
+        callback: Callback, for when task completes.
         keepends: Keep line breaks for individual lines?
+
+    Attributes:
+        init: True if job has started. :class:`Status` instance.
+        done: True if job is done. :class:`Status` instance.
+
+    ..note:: Callback functions (arguments *stdout*, *stderr* and *callback*) must be threadsafe.
     """
-
-
 
     def __init__(self, command, cwd=None, stdout=None, stderr=None, callback=None, keepends=False):
         threading.Thread.__init__(self)
@@ -65,7 +71,10 @@ class Job(threading.Thread):
         self._history = dict(output=[], stdout=[], stderr=[])
 
     def run(self):
-        """Runs job."""
+        """Starts execution *in current thread*.
+
+        ..note:: You probably want :func:`~Job.start`.
+        """
 
         if os.name == 'nt':
             asyncio.set_event_loop_policy(asyncio. WindowsProactorEventLoopPolicy())
@@ -85,6 +94,19 @@ class Job(threading.Thread):
         return returncode
 
     async def wait(self, timeout=None, poll=1):
+        """Awaits job completion.
+
+        Arguments:
+            timeout: Maximum wait time in seconds.
+            poll: Wait between each status check of job.
+
+        Raises:
+            TimeoutError: Job did not complete in *timeout* seconds.
+
+        Use ``None`` for *timeout* to wait forever. Polling impossible to avoid with Python's GIL
+        (don't event try)!
+        """
+
         if (timeout and timeout < 0) or (poll < 0):
             raise ValueError("arguments (timeout, poll) not positive numbers (seconds)")
 
@@ -105,7 +127,7 @@ class Job(threading.Thread):
         while not self.done:
             seconds = time.time() - start_time
             if (timeout is not None) and (seconds > timeout):
-                raise RuntimeError('Timed out (%s > %s) while waiting on job' % (fmt_sec(seconds),
+                raise TimeoutError('Timed out (%s > %s) while waiting on job' % (fmt_sec(seconds),
                                                                                  fmt_sec(timeout)))
             await asyncio.sleep(poll)
 
@@ -116,41 +138,46 @@ class Job(threading.Thread):
     @property
     def output(self):
         """Current, non-linesplit stdout/stderr (mixed) history."""
-        if not self.proc: return None
+        if not self.proc:
+            return None
         with threading.Lock():
             return ''.join(self._history['output'])
 
     @property
     def stdout(self):
         """Current, non-linesplit stdout history."""
-        if not self.proc: return None
+        if not self.proc:
+            return None
         with threading.Lock():
             return ''.join(self._history['stdout'])
 
     @property
     def stderr(self):
         """Current, non-linesplit stderr history."""
-        if not self.proc: return None
+        if not self.proc:
+            return None
         with threading.Lock():
             return ''.join(self._history['stderr'])
 
     @property
     def rc(self):
         """Return code of subprocess."""
-        if not self.proc: return None
+        if not self.proc:
+            return None
         with threading.Lock():
             return self.proc.returncode
 
     @property
     def pid(self):
         """PID of subprocess."""
-        if not self.proc: return None
+        if not self.proc:
+            return None
         with threading.Lock():
             return self.proc.pid
 
     @property
     def proc(self):
-        """Started subprocess :class:`Process` object."""
+        """Started subprocess. :class:`Process` object."""
         with threading.Lock():
             try:
                 return self._proc
@@ -164,12 +191,12 @@ class Job(threading.Thread):
 
     def iter_stream(self, stream_type, timeout=0, keepends=None):
         """Line-for-line generator for :attr:`~Job.stdout`, :attr:`~Job.stderr` or
-        :attr:`~Job.output` of only non-processed history.
+        :attr:`~Job.output` of non-processed lines in queue.
 
         Arguments:
             stream_type: *stdout*, *stderr* or *output* (mixed stream)
             timeout: Time to wait for new lines/process completion. Non-blocking if 0.
-            keepends: Whether to keep line breaks (default: set at init).
+            keepends: Keep line breaks?
 
         .. todo:: Needs reference counting for multiple instances.
         """
