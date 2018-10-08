@@ -110,7 +110,8 @@ class Job(threading.Thread):
             await asyncio.sleep(poll)
 
         self._info('Waited %s on job, now joining thread', fmt_sec(time.time() - start_time))
-        self.join()
+        if self.is_alive():
+            self.join()
 
     @property
     def output(self):

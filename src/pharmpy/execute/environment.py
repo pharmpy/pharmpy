@@ -71,7 +71,7 @@ class SystemEnvironment(Environment):
         job = Job(command, cwd,  stdout=self._stdout_handle, stderr=self._stderr_handle,
                   callback=self._callback, keepends=False)
 
-        future = self.pool.submit(job.start)
+        future = self.pool.submit(job.run)
         logger.debug('Submitted job %r (future: %r): %r', job, future, self)
 
         self.jobs += [job]
