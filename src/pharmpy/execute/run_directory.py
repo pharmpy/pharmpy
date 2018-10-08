@@ -33,7 +33,7 @@ Defining clean options:
         :pyversion: > 3.6
 
         >>> dir.cleanlevel = 1
-        >>> dir.def_cleanlevel(level=1, patterns=['*.txt', 'remove*'], rm_dirs=False)
+        >>> dir.clean_config(level=1, patterns=['*.txt', 'remove*'], rm_dirs=False)
         >>> files = ['remove_this', 'file.txt', 'keep_this', 'file.py']
         >>> for file in files:
         ...     open(dir.path / file, 'a').close()
@@ -149,17 +149,19 @@ class RunDirectory:
     def bind_job(self, job):
         self._jobs += [job]
 
-    def def_cleanlevel(self, level, patterns, rm_dirs=False):
-        """Define a clean level.
+    def clean_config(self, level, patterns, rm_dirs=False):
+        """Configure a cleanlevel.
 
         Args:
-            level: The clean level (positive integer only). 0 ought to be reserved as the "no-op".
-            patterns: List of path-globbing patterns to target for deletion.
-            rm_dirs: If True, will also delete non-empty directories matching 'patterns'.
+            level: The cleanup level.
+            patterns: List of path-globbing patterns (removal targets).
+            rm_dirs: Also delete non-empty directories matching 'patterns'?
+
+        Level 0 should be reserved as the no-op.
         """
-        nglobs = len(self.cleanlevels)
-        if nglobs <= level:
-            self._cleanlevels += [list() for _ in range(1 + nglobs - level)]
+        num_prev = len(self.cleanlevels)
+        if num_prev <= level:
+            self._cleanlevels += [list() for _ in range(1 + num_prev - level)]
         self._cleanlevels[level] = {'glob': list(patterns), 'rm_dirs': bool(rm_dirs)}
 
     @property
@@ -218,4 +220,5 @@ class RunDirectory:
         return str(self.path)
 
     def __del__(self):
-        self.cleanup()
+        if self.path.exists():
+            self.cleanup()
