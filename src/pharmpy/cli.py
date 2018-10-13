@@ -7,6 +7,16 @@ The CLI interface of PharmPy
 
 Yes, CLI is anticipated to remain the main interface! But... maybe with 16 colors?
 
+Example argument lines (only preceeded by ``pharmpy``, ``python3 -m pharmpy`` or whatever):
+
+    .. list-table::
+        :widths: 40 60
+        :stub-columns: 1
+
+        - - ``transform --filter --data output.csv``
+          - Filters data as model prescribes (``IGNORE`` statements in ``$DATA`` in NONMEM) and
+            outputs to new file ``output.csv``.
+
 Old contents of ``../bin/pharmpy`` can be found below. File removed because this file is the
 main entrypointof the CLI (and has been for a long time). Might be useful to define more entrypoints
 later, but it certainly isn't necessary.
@@ -58,12 +68,12 @@ Definitions
 
 import argparse
 import logging
+import pathlib
 import sys
-from pathlib import Path
 from textwrap import dedent
 
+import pharmpy
 from pharmpy import __version__
-from pharmpy import Model
 
 
 class CLI:
@@ -78,128 +88,78 @@ class CLI:
     def __init__(self, args=None):
         """Initialize and parse command line arguments"""
 
-        self._log = logging.getLogger()
-        if args is None:
-            self._log.debug('CLI mode: sys.argv')
-            args = sys.argv
-        else:
-            self._log.debug('CLI mode: args')
-            args = [__file__] + list(args)
-        self._log.debug('CLI args=%r', args)
-
+        # root parser and common arguments
         parser = argparse.ArgumentParser(
-            usage=dedent("""
-            pharmpy <command> [<args>]
-              (or) pharmpy help <command>
-
-            Common PharmPy commands used to operate on model files:
-
-                sumo       Summarize a model/run
-                clone      Clone a model file (e.g. updating inits)
-                execute    Execute default task/workflow
-
-
-            Miscellanelous other commands:
-
-                version    PharmPy version information
-
-            Some/all commands may be symlinked on your install.
-            """).strip(),
+            prog='pharmpy',
             description='PharmPy CLI interface',
-            formatter_class=argparse.RawTextHelpFormatter
+            epilog='Some/all commands may be symlinked on your install.',
+            formatter_class=argparse.RawTextHelpFormatter,
+            allow_abbrev=True,
         )
-        parser.add_argument('command', help='Subcommand of PharmPy to run')
+        self._init_common_args(parser)
 
-        # prevent fail of validation via excluding subcommand args for now
-        args = parser.parse_args(sys.argv[1:2])
+        # subcommand parsers
+        subparsers = parser.add_subparsers(title='PharmPy commands', metavar='COMMAND')
+        self._init_commands_tools(subparsers)
+        self._init_commands_misc(subparsers)
 
-        # dispatch pattern!
-        self._check_command(args.command, parser)
-        getattr(self, args.command)()
+        # use sys.argv, unless function args supplied (for testing/chaining)
+        if args is None:
+            self.logger.debug('Parse target: sys.argv=%r', sys.argv)
+            args = parser.parse_args()
+        else:
+            args = [__file__] + list(args)
+            self.logger.debug('Parse target: args=%r', args)
+            args = parser.parse_args(args)
+        self.set_loglevel(args.loglevel)
+        if args.hide_traceback:
+            self.hide_traceback()
 
-    def help(self, help=False):
-        """Subcommand for built-in help on PharmPy or other subcommand."""
+        # dispatch subcommand
+        if 'func' in args:
+            args.func(args)
+        else:
+            parser.print_usage()
 
-        parser = argparse.ArgumentParser(
-            description=dedent("""
-                PharmPy help central
+    # -- additional initializers ---------------------------------------------------------------
 
-                PharmPy is...
-            """).strip())
-        parser = self._common_args(parser, input_model=False)
-        parser.add_argument('command', help='Subcommand of PharmPy to get helptext for')
+    def _init_common_args(self, parser):
+        """Initializes common arguments on *parser* and ``self``.
 
-        args = self._parse_args(parser)
-        self._log.info("Executing help, with args: %r", args)
-        raise NotImplementedError("Subcommand not available yet. Working on it!")
+        Groups common to all parsers (activated here)
 
-    def sumo(self, help=False):
-        """Subcommand for... good old sumo rebooted! What's not to love?"""
+            .. list-table::
+                :widths: 20 80
+                :stub-columns: 1
 
-        parser = argparse.ArgumentParser(description='Summarize a model or run')
-        parser = self._common_args(parser)
+                - - configuration (*proposal*)
+                  - To override current (project) configuration file.
+                - - logging & verbosity
+                  - Sets loglevel and behaviour (e.g. color, file copy, etc.) for all of PharmPy.
 
-        args = self._parse_args(parser)
-        self._log.info("Executing sumo, with args: %r", args)
-        raise NotImplementedError("Subcommand not available yet. Working on it!")
+        .. note::
+            Logging level is set for this, (if CLI) *root*, logger. All other parts of PharmPy
+            will get their messages filtered through this.
 
-    def clone(self, help=False):
-        """Subcommand to clone a model/update initial estimates."""
+        Superclasses for some commands (*parents* in :func:`argparse.ArgumentParser.add_parser`)
 
-        parser = argparse.ArgumentParser(description='Duplicate a model')
-        parser = self._common_args(parser)
-        parser.add_argument(
-            '--ui', '--update_inits', action='store_true',
-            help='Update initial estimates'
-        )
-        parser.add_argument(
-            'out_file', metavar='OUT', nargs=1, action='store',
-            help='file to output',
-        )
+            .. list-table::
+                :widths: 20 80
+                :stub-columns: 1
 
-        args = self._parse_args(parser)
-        self._log.info("Executing clone, with args: %r", args)
-        raise NotImplementedError("Subcommand not available yet. Working on it!")
-
-    def execute(self, help=False):
-        """Subcommand to execute a model default task/workflow."""
-
-        parser = argparse.ArgumentParser(description='Execute default task/workflow')
-        parser = self._common_args(parser)
-
-        args = self._parse_args(parser)
-        self._log.info("Executing execute, with args: %r", args)
-        raise NotImplementedError("Subcommand not available yet. Working on it!")
-
-    def version(self, help=False):
-        """Subcommand to print PharmPy version (and brag a little bit)."""
-
-        self._log.info("Executing version (no args)")
-        print(dedent("""
-            Version: %s
-            Authors: Gunnar Yngman <gunnar.yngman@farmbio.uu.se>
-                     Rikard Nordgren <rikard.nordgren@farmbio.uu.se>
-        """ % (__version__,)
-        ).strip())
-
-    def _common_args(self, parser, input_model=True):
-        """Adds in commond arguments on *parser*.
-
-        Of special importance is the verbosity arguments, to set logging level for this (root)
-        logger. All other parts of PharmPy will get their messages filtered through this.
-
-        Args:
-            input_model: True if command takes a model file as input (e.g. ``help`  dosen't).
+                - - :attr:`self._args_input`
+                  - Common arguments for commands reading input (model) files.
+                - - :attr:`self._args_output`
+                  - Common arguments for commands writing output files.
         """
 
-        if input_model:
-            input_model = parser.add_argument_group(title='Model Input')
-            input_model.add_argument(
-                'input_model_path', metavar='FILE', action='store',
-                help='(input) model file to operate on',
-            )
-
-        verbosity = parser.add_argument_group(title='Logging & Verbosity')
+        # common to: all
+        verbosity = parser.add_argument_group(title='logging & verbosity')
+        verbosity.add_argument(
+            '--hide_traceback',
+            action='store_true',
+            help="avoid intimidating exception tracebacks",
+        )
         loglevel = verbosity.add_mutually_exclusive_group()
         loglevel.add_argument(
             '-v', '--verbose',
@@ -208,90 +168,213 @@ class CLI:
             help='print additional info',
         )
         loglevel.add_argument(
-            '--debug',
+            '-vv', '--debug',
             action='store_const', dest='loglevel', const=logging.DEBUG,
             help='show debug messages',
         )
 
-        return parser
+        # common to: commands with file input
+        args_input = argparse.ArgumentParser(add_help=False)
+        group_input = args_input.add_argument_group(title='file input')
+        group_input.add_argument(
+            'input_model', metavar='file', type=pharmpy.Model,
+            help='input model file to operate on',
+        )
+        self._args_input = args_input
 
-    def _parse_args(self, parser):
-        """Returns parsed arguments of subcommand + common arguments."""
+        # common to: commands with file output
+        args_output = argparse.ArgumentParser(add_help=False)
+        group_output = args_output.add_argument_group(title='file output')
+        group_output.add_argument('-f', '--force', action='store_true',
+                                  help='remove existing destination files (all)')
+        group_output.add_argument(
+            'output_model', metavar='output', type=pathlib.Path,
+            help='output model file to create',
+        )
+        self._args_output = args_output
 
-        args = parser.parse_args(sys.argv[2:])
-        self._log = getLogger(args.loglevel, show_traceback=True)
-        self._log.debug('args=%r', args)
+    def _init_commands_tools(self, parsers):
+        """Initializes all tool subcommands."""
 
-        if 'input_model_path' in args:
-            input_model_path = Path(args.input_model_path).resolve()
-            self._log.debug('input_model_path=%r' % input_model_path)
-            self._input_model = Model(input_model_path)
-        else:
-            self._input_model = None
+        # -- sumo ------------------------------------------------------------------------------
+        sumo = parsers.add_parser('sumo', parents=[self._args_input],
+                                  help='Summarize model or run')
+        sumo.set_defaults(func=self.sumo)
 
-        return args
+        # -- clone -----------------------------------------------------------------------------
+        clone = parsers.add_parser('clone', parents=[self._args_input, self._args_output],
+                                   help='Duplicate model or run')
+        clone.add_argument('--ui', '--update_inits', action='store_true',
+                           help='set initial estimates (← final estimates)')
+        clone.set_defaults(func=self.clone)
 
-    def _check_command(self, command, parser):
-        """Check if *command* exists, i.e. is a method of this class.
+        # -- execute ---------------------------------------------------------------------------
+        execute = parsers.add_parser('execute', parents=[self._args_input],
+                                     help='Execute model task/workflow')
+        execute.set_defaults(func=self.execute)
 
-        .. note:: Any method beginning with ``_`` is a helper method and thus, *not a command*!
+        # -- transform -------------------------------------------------------------------------
+        transform = parsers.add_parser('transform', parents=[self._args_input, self._args_output],
+                                       help='Common model transformations')
+        transform.add_argument('--filter_data', action='store_true',
+                               help='apply input data filtering')
+        transform.add_argument('--data', dest='output_data', metavar='PATH',
+                               type=pathlib.Path, nargs=1,
+                               help='set model input data (← PATH); also output of new data')
+        transform.set_defaults(func=self.transform)
+
+    def _init_commands_misc(self, parsers):
+        """Initializes miscellanelous (other) subcommands."""
+
+        # -- help ------------------------------------------------------------------------------
+        help = parsers.add_parser('help', help='PharmPy help central')
+        help.set_defaults(func=self.help)
+        help.add_argument('search_terms', metavar='term', nargs='*', help='search terms')
+
+        # -- version ---------------------------------------------------------------------------
+        version = parsers.add_parser('version', help='Show version information')
+        version.set_defaults(func=self.version)
+
+    # -- subcommand launchers ------------------------------------------------------------------
+
+    def help(self, args):
+        """Subcommand for built-in help on PharmPy or other subcommand."""
+
+        self.logger.info("PharmPy tool: help")
+        raise NotImplementedError("Subcommand not available yet. Working on it!")
+
+    def sumo(self, args):
+        """Subcommand for rebooted PsN ``sumo``."""
+
+        self.logger.info("PharmPy tool: sumo")
+        raise NotImplementedError("Subcommand not available yet. Working on it!")
+
+    def clone(self, args):
+        """Subcommand to clone a model/update initial estimates."""
+
+        self.logger.info("PharmPy tool: clone")
+        raise NotImplementedError("Subcommand not available yet. Working on it!")
+
+    def execute(self, args):
+        """Subcommand to execute a model default task/workflow."""
+
+        self.logger.info("PharmPy tool: execute")
+        raise NotImplementedError("Subcommand not available yet. Working on it!")
+
+    def transform(self, args):
+        """Subcommand to transform a model."""
+
+        self.logger.info("PharmPy tool: transform")
+
+        model = args.input_model
+        write_model = False
+        write_data = False
+
+        # -- model input (data) mutability -----------------------------------------------------
+        if args.filter_data:
+            model.input.apply_and_remove_filters()
+            write_model = True
+            write_data = True
+
+        if args.output_data:
+            model.input.path = args.output_data.resolve()
+            write_model = True
+
+        # -- model input (data) file write -----------------------------------------------------
+        if write_data:
+            if model.input.path.exists() and not args.force:
+                self.logger.warning("If really sure, use '--force'.")
+                raise FileExistsError("Would write data but file exists: %r" % str(model.input.path))
+            else:
+                model.input.write_dataset()
+
+        # -- model file mutability -------------------------------------------------------------
+        if args.output_model:
+            model.path = args.output_model.resolve()
+            write_model = True
+
+        # -- model file write ------------------------------------------------------------------
+        if write_model:
+            if model.path.exists() and not args.force:
+                self.logger.warning("Forgot '--data'? If really sure, use '--force'.")
+                raise FileExistsError("Would write model, but file exists: %r" % str(model.path))
+            else:
+                model.write()
+
+    def version(self, args):
+        """Subcommand to print PharmPy version (and brag a little bit)."""
+
+        self.logger.info("PharmPy tool: version")
+        text = dedent("""
+            Version: %s
+            Authors: Gunnar Yngman <gunnar.yngman@farmbio.uu.se>
+                     Rikard Nordgren <rikard.nordgren@farmbio.uu.se>
+        """ % __version__).strip()
+        print(text)
+
+    # -- logging helpers -----------------------------------------------------------------------
+
+    @property
+    def logger(self):
+        """Returns current CLI logger.
+
+        Initializes, too, if not already configured (= no handlers).
+
+        .. note::
+            Logger **mustn't be configurated** if imported as library (e.g. set handlers and such),
+            since that should bubble up into the lap of whomever is at the top.
+
+            As a CLI however, we are the top.
         """
 
-        if command.startswith('_') or not hasattr(self, command):
-            print('Unrecognized PharmPy command! Please consult the built-in help command.')
-            parser.print_help()
-            exit(1)
+        logger = logging.getLogger(__file__)
+        if logger.hasHandlers():
+            return logger
 
+        msg = logging.StreamHandler(sys.stdout)
+        err = logging.StreamHandler(sys.stderr)
 
-def getLogger(level, show_traceback=False):
-    """Initialize CLI logger configuration and return logger.
+        msg.addFilter(lambda record: record.levelno <= logging.INFO)
+        err.setLevel(logging.WARNING)
 
-    *Returns already configurated logger if already configurated.*
+        logger.addHandler(msg)
+        logger.addHandler(err)
+        self.set_loglevel(logging.NOTSET)
 
-    Logger **mustn't be configurated** if imported as library (e.g. set handlers and such), since
-    that should bubble up into the lap of whomever is at the top. As a CLI however, we are the very
-    top!
-
-    Args:
-        level: Level from :mod:`logging`.
-        show_traceback: Default is to hide all traceback.
-
-    Even if hiding traceback, the exception + message is still shown.
-    """
-
-    logger = logging.getLogger(__file__)
-    logger.setLevel(level)
-    if logger.hasHandlers():
         return logger
 
-    if level <= logging.DEBUG:
-        fmt = ('%(message)s\t[from %(name)s:%(lineno)d (%(levelname)s)]')
-    else:
-        fmt = '%(message)s'
+    # -- configuration -------------------------------------------------------------------------
 
-    if not show_traceback:
-        def _no_traceback(exception_type, exception, traceback):
-            logger.critical('%s: %s', exception_type.__name__, exception)
+    def set_loglevel(self, level):
+        """Sets current loglevel (and message formatting)."""
 
-        sys.excepthook = _no_traceback
+        self.logger.setLevel(level)
+        if level <= logging.DEBUG:
+            fmt = "%(asctime)s.%(msecs)03d %(filename)-25s %(lineno)4d %(levelname)-8s %(message)s"
+            datefmt = "%H:%M:%S"
+        else:
+            fmt = '%(message)s'
+            datefmt = "%Y-%m-%d %H:%M:%S"
+        for handler in self.logger.handlers:
+            handler.setFormatter(logging.Formatter(fmt, datefmt))
 
-    msg = logging.StreamHandler(sys.stdout)
-    err = logging.StreamHandler(sys.stderr)
-    err.setLevel(logging.WARNING)
-    msg.addFilter(lambda record: record.levelno <= logging.INFO)
-    msg.setFormatter(logging.Formatter(fmt))
-    err.setFormatter(logging.Formatter(fmt))
+    def hide_traceback(self):
+        """Override default exception hook to hide all tracebacks.
 
-    logger.addHandler(msg)
-    logger.addHandler(err)
+        .. note:: Even without traceback, the exception and message is shown.
+        """
 
-    return logger
+        def no_traceback(exception_type, exception, traceback):
+            self.logger.critical('%s: %s', exception_type.__name__, exception)
+
+        self.logger.debug('Overriding sys.excepthook(=%r) to hide tracebacks (but not exceptions)')
+        sys.excepthook = no_traceback
 
 
 def main(args=None):
     """Invoked by ``__main__.py`` and entry point of binary.
 
-    Use *args* to bypass :attr:`sys.argv` to implement argument parsing from non-standard source.
+    Use *args* to implement argument parsing from non-standard source (bypasses :attr:`sys.argv`).
     """
 
     CLI(args)

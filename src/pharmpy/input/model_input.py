@@ -1,3 +1,18 @@
+#!/usr/bin/env python3
+# -*- encoding: utf-8 -*-
+"""
+===========
+Model Input
+===========
+
+API for model input (e.g. dataset). Bound at :attr:`Model.input`).
+
+Definitions
+===========
+"""
+
+import logging
+
 from .filters import InputFilters
 
 
@@ -13,7 +28,7 @@ class ModelInput(object):
 
     @path.setter
     def path(self, path):
-        raise NotImplementedError
+        self.logger.info('Setting %r.path to %r', repr(self), str(path))
 
     @property
     def data_frame(self):
@@ -48,5 +63,12 @@ class ModelInput(object):
         """A convenience method to apply all filters on the dataset
         and remove them from the model.
         """
-        self.filters.apply(self.data_frame)
-        self.filters = InputFilters([])
+        if self.filters:
+            self.logger.debug('Filtering through %r', self.data_frame, self.filters)
+            self.filters.apply(self.data_frame)
+            self.filters = InputFilters([])
+            self.logger.info('Data %r filtered: %d records (was %d)', self.data_frame, 0, 0)
+
+    @property
+    def logger(self):
+        return logging.getLogger('%s.%s' % (self.model.logger.name, self.__class__.__name__))

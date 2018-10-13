@@ -13,6 +13,7 @@ Definitions
 -----------
 """
 
+import logging
 from copy import deepcopy
 from pathlib import Path
 
@@ -146,6 +147,7 @@ class Model(object):
 
     @path.setter
     def path(self, path):
+        self.logger.info('Setting %r.path to %r', repr(self), str(path))
         self.source.path = path
 
     @property
@@ -182,6 +184,10 @@ class Model(object):
         if write:
             model.write()
         return model
+
+    @property
+    def logger(self):
+        return logging.getLogger(__file__)
 
     def __repr__(self):
         path = None if self.path is None else str(self.path)
