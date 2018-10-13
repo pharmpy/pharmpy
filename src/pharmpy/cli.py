@@ -78,14 +78,14 @@ class CLI:
     def __init__(self, args=None):
         """Initialize and parse command line arguments"""
 
-        self.log = logging.getLogger()
+        self._log = logging.getLogger()
         if args is None:
-            self.log.debug('CLI mode: sys.argv')
+            self._log.debug('CLI mode: sys.argv')
             args = sys.argv
         else:
-            self.log.debug('CLI mode: args')
+            self._log.debug('CLI mode: args')
             args = [__file__] + list(args)
-        self.log.debug('CLI args=%r', args)
+        self._log.debug('CLI args=%r', args)
 
         parser = argparse.ArgumentParser(
             usage=dedent("""
@@ -126,9 +126,12 @@ class CLI:
 
                 PharmPy is...
             """).strip())
+        parser = self._common_args(parser, input_model=False)
         parser.add_argument('command', help='Subcommand of PharmPy to get helptext for')
 
-        self.args = self._parse_args(parser)
+        args = self._parse_args(parser)
+        self._log.info("Executing help, with args: %r", args)
+        raise NotImplementedError("Subcommand not available yet. Working on it!")
 
     def sumo(self, help=False):
         """Subcommand for... good old sumo rebooted! What's not to love?"""
@@ -136,8 +139,9 @@ class CLI:
         parser = argparse.ArgumentParser(description='Summarize a model or run')
         parser = self._common_args(parser)
 
-        self.args = self._parse_args(parser)
-        raise NotImplemented('Not yet!')
+        args = self._parse_args(parser)
+        self._log.info("Executing sumo, with args: %r", args)
+        raise NotImplementedError("Subcommand not available yet. Working on it!")
 
     def clone(self, help=False):
         """Subcommand to clone a model/update initial estimates."""
@@ -153,8 +157,9 @@ class CLI:
             help='file to output',
         )
 
-        self.args = self._parse_args(parser)
-        raise NotImplemented('Not yet!')
+        args = self._parse_args(parser)
+        self._log.info("Executing clone, with args: %r", args)
+        raise NotImplementedError("Subcommand not available yet. Working on it!")
 
     def execute(self, help=False):
         """Subcommand to execute a model default task/workflow."""
@@ -162,12 +167,14 @@ class CLI:
         parser = argparse.ArgumentParser(description='Execute default task/workflow')
         parser = self._common_args(parser)
 
-        self.args = self._parse_args(parser)
-        raise NotImplemented('Not yet!')
+        args = self._parse_args(parser)
+        self._log.info("Executing execute, with args: %r", args)
+        raise NotImplementedError("Subcommand not available yet. Working on it!")
 
     def version(self, help=False):
         """Subcommand to print PharmPy version (and brag a little bit)."""
 
+        self._log.info("Executing version (no args)")
         print(dedent("""
             Version: %s
             Authors: Gunnar Yngman <gunnar.yngman@farmbio.uu.se>
@@ -175,25 +182,32 @@ class CLI:
         """ % (__version__,)
         ).strip())
 
-    def _common_args(self, parser):
+    def _common_args(self, parser, input_model=True):
         """Adds in commond arguments on *parser*.
 
         Of special importance is the verbosity arguments, to set logging level for this (root)
         logger. All other parts of PharmPy will get their messages filtered through this.
+
+        Args:
+            input_model: True if command takes a model file as input (e.g. ``help`  dosen't).
         """
 
-        parser.add_argument(
-            'file', metavar='FILE', nargs=1, action='store',
-            help='model file to operate on',
-        )
-        verbosity_group = parser.add_mutually_exclusive_group()
-        verbosity_group.add_argument(
+        if input_model:
+            input_model = parser.add_argument_group(title='Model Input')
+            input_model.add_argument(
+                'input_model_path', metavar='FILE', action='store',
+                help='(input) model file to operate on',
+            )
+
+        verbosity = parser.add_argument_group(title='Logging & Verbosity')
+        loglevel = verbosity.add_mutually_exclusive_group()
+        loglevel.add_argument(
             '-v', '--verbose',
             action='store_const', dest='loglevel', const=logging.INFO,
             default=logging.WARNING,
             help='print additional info',
         )
-        verbosity_group.add_argument(
+        loglevel.add_argument(
             '--debug',
             action='store_const', dest='loglevel', const=logging.DEBUG,
             help='show debug messages',
@@ -205,15 +219,17 @@ class CLI:
         """Returns parsed arguments of subcommand + common arguments."""
 
         args = parser.parse_args(sys.argv[2:])
-        self.log = getLogger(self.args.level, show_traceback=True)
-        self.debug('args=%r', args)
+        self._log = getLogger(args.loglevel, show_traceback=True)
+        self._log.debug('args=%r', args)
 
-        self.file = Path(args.file).resolve()
-        self.log.debug('file=%r' % self.file)
-        self.model = Model(self.file)
-        self.log.info('%r read' % self.model)
+        if 'input_model_path' in args:
+            input_model_path = Path(args.input_model_path).resolve()
+            self._log.debug('input_model_path=%r' % input_model_path)
+            self._input_model = Model(input_model_path)
+        else:
+            self._input_model = None
 
-        return self.args
+        return args
 
     def _check_command(self, command, parser):
         """Check if *command* exists, i.e. is a method of this class.
