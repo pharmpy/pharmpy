@@ -33,14 +33,14 @@ version = release = '0.1.0'
 pygments_style = 'trac'
 templates_path = ['.']
 # extlinks = {
-#     'issue': ('https://github.com/rikardn/python-psn/issues/%s', '#'),
-#     'pr': ('https://github.com/rikardn/python-psn/pull/%s', 'PR #'),
+#     'issue': ('https://github.com/yngman/pharmpy/issues/%s', '#'),
+#     'pr': ('https://github.com/yngman/pharmpy/pull/%s', 'PR #'),
 # }
 import sphinx_py3doc_enhanced_theme
 html_theme = "sphinx_py3doc_enhanced_theme"
 html_theme_path = [sphinx_py3doc_enhanced_theme.get_html_theme_path()]
 # html_theme_options = {
-#     'githuburl': 'https://github.com/rikardn/python-psn/'
+#     'githuburl': 'https://github.com/yngman/pharmpy/'
 # }
 
 html_use_smartypants = True
