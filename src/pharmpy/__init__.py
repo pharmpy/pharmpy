@@ -11,6 +11,8 @@ Definitions
 ===========
 """
 
+__authors__ = ['Gunnar Yngman <gunnar.yngman@farmbio.uu.se>',
+               'Rikard Nordgren <rikard.nordgren@farmbio.uu.se>']
 __version__ = '0.1.0'
 
 import logging
