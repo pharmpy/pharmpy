@@ -90,6 +90,7 @@ setup(
             'pharmpy-clone     = pharmpy.cli:clone',
             'pharmpy-execute   = pharmpy.cli:execute',
             'pharmpy-help      = pharmpy.cli:help',
+            'pharmpy-print     = pharmpy.cli:print',
             'pharmpy-sumo      = pharmpy.cli:sumo',
             'pharmpy-transform = pharmpy.cli:transform',
             'pharmpy-version   = pharmpy.cli:version',

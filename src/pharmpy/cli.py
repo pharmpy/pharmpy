@@ -27,12 +27,13 @@ Standard practice of packaging is to define "entrypoints" in the setuptools ``se
   entry_points={
       'console_scripts': [
           'pharmpy           = pharmpy.cli:main',
-          'pharmpy-clone     = pharmpy.cli:clone',
-          'pharmpy-execute   = pharmpy.cli:execute',
-          'pharmpy-help      = pharmpy.cli:help',
-          'pharmpy-sumo      = pharmpy.cli:sumo',
-          'pharmpy-transform = pharmpy.cli:transform',
-          'pharmpy-version   = pharmpy.cli:version',
+          'pharmpy-clone     = pharmpy.cli:cmd_clone',
+          'pharmpy-execute   = pharmpy.cli:cmd_execute',
+          'pharmpy-help      = pharmpy.cli:cmd_help',
+          'pharmpy-print     = pharmpy.cli:cmd_print',
+          'pharmpy-sumo      = pharmpy.cli:cmd_sumo',
+          'pharmpy-transform = pharmpy.cli:cmd_transform',
+          'pharmpy-version   = pharmpy.cli:cmd_version',
       ]
   },
 
@@ -75,6 +76,7 @@ Definitions
 import argparse
 import logging
 import pathlib
+import pydoc
 import sys
 from collections import namedtuple, OrderedDict
 from textwrap import dedent
@@ -98,12 +100,29 @@ class CLI:
         # root parser and common arguments
         parser = argparse.ArgumentParser(
             prog='pharmpy',
-            description='CLI interface of PharmPy',
+            description=dedent("""
+            Welcome to the commandline interface of PharmPy!
+                ~~ a snaky re-imagining of PsN ~~
+
+            Functionality is split into various subcommands
+                - try --help after a COMMAND
+                - print, transform and version started
+                - all keyword arguments can be abbreviated if unique
+
+
+            """).strip(),
             epilog=dedent("""
                 Examples:
+                    # apply data filters in model & output to new data file
                     pharmpy -vv transform --filter --data filtered.csv pheno_real.mod
 
-                THIS SOFTWARE IS HIGHLY EXPERIMENTAL AND NOT PRODUCTION READY.
+                    # prettyprint APIs of model in pager
+                    pharmpy print --all pheno_real.mod
+
+                    # version/install information
+                    pharmpy version
+
+                ~~ THIS SOFTWARE IS HIGHLY EXPERIMENTAL AND NOT PRODUCTION READY ~~
             """).strip(),
             formatter_class=argparse.RawTextHelpFormatter,
             allow_abbrev=True,
@@ -161,9 +180,9 @@ class CLI:
                 :stub-columns: 1
 
                 - - :attr:`self._args_input`
-                  - Common arguments for commands reading files as input.
+                  - Common arguments for reading files as input.
                 - - :attr:`self._args_output`
-                  - Common arguments for commands outputting files.
+                  - Common arguments for outputting files.
         """
 
         # common to: all
@@ -182,7 +201,7 @@ class CLI:
 
         # common to: commands with file input
         args_input = argparse.ArgumentParser(add_help=False)
-        group_input = args_input.add_argument_group(title='file input')
+        group_input = args_input.add_argument_group(title='inputs')
         group_input.add_argument('models',
                                  metavar='FILE', type=self.InputModel, nargs='+',
                                  help='input model file')
@@ -190,11 +209,11 @@ class CLI:
 
         # common to: commands with file output
         args_output = argparse.ArgumentParser(add_help=False)
-        group_output = args_output.add_argument_group(title='file output')
+        group_output = args_output.add_argument_group(title='outputs')
         group_output.add_argument('-f', '--force',
                                   action='store_true',
                                   help='remove existing destination files (all)')
-        group_output.add_argument('-o', '--output',
+        group_output.add_argument('-o', '--output_model',
                                   dest='output_model', metavar='file', type=pathlib.Path, nargs=1,
                                   help='output model file')
         self._args_output = args_output
@@ -203,78 +222,135 @@ class CLI:
         """Initializes all "tool-like" subcommands."""
 
         # -- clone -----------------------------------------------------------------------------
-        clone = parsers.add_parser('clone', prog='pharmpy-clone',
-                                   parents=[self._args_input, self._args_output],
-                                   help='Duplicate model or run')
-        clone.add_argument('--ui', '--update_inits', action='store_true',
-                           help='set initial estimates (← final estimates)')
-        clone.set_defaults(func=self.clone)
+        cmd_clone = parsers.add_parser('clone', prog='pharmpy-clone',
+                                       parents=[self._args_input, self._args_output],
+                                       help='Duplicate model or run',
+                                       allow_abbrev=True)
+        cmd_clone.add_argument('--ui', '--update_inits', action='store_true',
+                               help='set initial estimates (← final estimates)')
+        cmd_clone.set_defaults(func=self.cmd_clone)
 
         # -- execute ---------------------------------------------------------------------------
-        execute = parsers.add_parser('execute', prog='pharmpy-execute',
-                                     parents=[self._args_input],
-                                     help='Execute model task/workflow')
-        execute.set_defaults(func=self.execute)
+        cmd_execute = parsers.add_parser('execute', prog='pharmpy-execute',
+                                         parents=[self._args_input],
+                                         help='Execute model task/workflow',
+                                         allow_abbrev=True)
+        cmd_execute.set_defaults(func=self.cmd_execute)
+
+        # -- print -----------------------------------------------------------------------------
+        cmd_print = parsers.add_parser('print', prog='pharmpy-print',
+                                       parents=[self._args_input],
+                                       help='Format & print APIs/aspects of models',
+                                       allow_abbrev=True)
+        group_apis = cmd_print.add_argument_group(title='APIs to print')
+        group_apis.add_argument('--all',
+                                action='store_true', default=True)
+        group_apis.add_argument('--source',
+                                action='store_true',
+                                help='SourceResource (e.g. source code)')
+        group_apis.add_argument('--input',
+                                action='store_true',
+                                help='ModelInput (e.g. dataset)')
+        group_apis.add_argument('--output',
+                                action='store_true',
+                                help='ModelOutput (e.g. estimates)')
+        group_apis.add_argument('--parameters',
+                                action='store_true',
+                                help='ParameterModel (e.g. inits)')
+        cmd_print.set_defaults(func=self.cmd_print)
 
         # -- sumo ------------------------------------------------------------------------------
-        sumo = parsers.add_parser('sumo', prog='pharmpy-sumo',
-                                  parents=[self._args_input],
-                                  help='Summarize model or run')
-        sumo.set_defaults(func=self.sumo)
+        cmd_sumo = parsers.add_parser('sumo', prog='pharmpy-sumo',
+                                      parents=[self._args_input],
+                                      help='Summarize model or run',
+                                      allow_abbrev=True)
+        cmd_sumo.set_defaults(func=self.cmd_sumo)
 
         # -- transform -------------------------------------------------------------------------
-        transform = parsers.add_parser('transform', prog='pharmpy-transform',
-                                       parents=[self._args_input, self._args_output],
-                                       help='Common model transformations')
-        transform.add_argument('--filter_data',
-                               action='store_true',
-                               help='apply input data filtering')
-        transform.add_argument('--data',
-                               dest='output_data', metavar='PATH', type=pathlib.Path, nargs=1,
-                               help='set model input data (← PATH); also output of new data')
-        transform.set_defaults(func=self.transform)
+        cmd_transform = parsers.add_parser('transform', prog='pharmpy-transform',
+                                           parents=[self._args_input, self._args_output],
+                                           help='Common model transformations',
+                                           allow_abbrev=True)
+        cmd_transform.add_argument('--filter_data',
+                                   action='store_true',
+                                   help='apply input data filtering')
+        cmd_transform.add_argument('--data',
+                                   dest='output_data', metavar='PATH', type=pathlib.Path,
+                                   help='set model input data (← PATH); also output of new data')
+        cmd_transform.set_defaults(func=self.cmd_transform)
 
     def _init_commands_misc(self, parsers):
         """Initializes miscellanelous other (non-tool) subcommands."""
 
         # -- help ------------------------------------------------------------------------------
-        help = parsers.add_parser('help', prog='pharmpy-help',
-                                  help='PharmPy help central')
-        help.set_defaults(func=self.help)
-        help.add_argument('search_terms', metavar='term', nargs='*', help='search terms')
+        cmd_help = parsers.add_parser('help', prog='pharmpy-help',
+                                      help='PharmPy help central',
+                                      allow_abbrev=True)
+        cmd_help.set_defaults(func=self.cmd_help)
+        cmd_help.add_argument('search_terms', metavar='term', nargs='*', help='search terms')
 
         # -- version ---------------------------------------------------------------------------
-        version = parsers.add_parser('version', prog='pharmpy-version',
-                                     help='Show version information')
-        version.set_defaults(func=self.version)
+        cmd_version = parsers.add_parser('version', prog='pharmpy-version',
+                                         help='Show version information',
+                                         allow_abbrev=True)
+        cmd_version.set_defaults(func=self.cmd_version)
 
     # -- subcommand launchers ------------------------------------------------------------------
 
-    def clone(self, args):
+    def cmd_clone(self, args):
         """Subcommand to clone a model/update initial estimates."""
 
         self.welcome('clone')
-        raise NotImplementedError("Subcommand not available yet. Working on it!")
+        self.error_exit(exception=NotImplementedError("Command (clone) is not available yet!"))
 
-    def execute(self, args):
+    def cmd_execute(self, args):
         """Subcommand to execute a model default task/workflow."""
 
         self.welcome('execute')
-        raise NotImplementedError("Subcommand not available yet. Working on it!")
+        self.error_exit(exception=NotImplementedError("Command (execute) is not available yet!"))
 
-    def help(self, args):
+    def cmd_help(self, args):
         """Subcommand for built-in help on PharmPy and such."""
 
         self.welcome('help')
-        raise NotImplementedError("Subcommand not available yet. Working on it!")
+        self.error_exit(exception=NotImplementedError("Command (help) is not available yet!"))
 
-    def sumo(self, args):
+    def cmd_print(self, args):
+        """Subcommand for formatting/printing model components."""
+
+        self.welcome('print')
+        lines = []
+        for i, model in enumerate(args.models):
+            lines += ['[%d/%d] %r' % (i+1, len(args.models), model)]
+            dict_ = OrderedDict()
+            if args.source or args.all:
+                dict_['model.source'] = repr(model.source)
+                dict_['model.content'] = model.content.splitlines()
+            if args.input or args.all:
+                dict_['model.input'] = repr(model.input)
+                dict_['model.input.path'] = repr(model.input.path)
+                dict_['model.input.filters'] = repr(model.input.filters)
+                dict_['model.input.id_column'] = repr(model.input.id_column)
+                dict_['model.input.data_frame'] = repr(model.input.data_frame)
+            if args.output or args.all:
+                dict_['model.output'] = repr(model.output)
+            if args.parameters or args.all:
+                dict_['model.parameters'] = repr(model.parameters)
+                dict_['model.parameters.inits'] = str(model.parameters.inits)
+            dict_lines = self.format_keyval_pairs(dict_, sort=False)
+            lines += ['\t%s' % line for line in dict_lines]
+        if len(lines) > 24:
+            pydoc.pager('\n'.join(lines))
+        else:
+            print('\n'.join(lines))
+
+    def cmd_sumo(self, args):
         """Subcommand to continue PsN ``sumo`` (summarize output)."""
 
         self.welcome('sumo')
-        raise NotImplementedError("Subcommand not available yet. Working on it!")
+        self.error_exit(exception=NotImplementedError("Command (sumo) is not available yet!"))
 
-    def transform(self, args):
+    def cmd_transform(self, args):
         """Subcommand to transform a model."""
 
         self.welcome('transform')
@@ -295,7 +371,7 @@ class CLI:
 
             # -- input/data file write ---------------------------------------------------------
             if write_data:
-                self.OutputFile(model.input.path)
+                self.OutputFile(model.input.path, args.force)
                 model.input.write_dataset()
 
             # -- model transforms --------------------------------------------------------------
@@ -305,24 +381,16 @@ class CLI:
 
             # -- model file write --------------------------------------------------------------
             if write_model:
-                self.OutputFile(model.path)
+                self.OutputFile(model.path, args.force)
                 model.write()
             elif not write_data:
                 self.logger.warning('No-Op (no file write) for %r.', model)
 
-    def version(self, args):
+    def cmd_version(self, args):
         """Subcommand to print PharmPy version (and brag a little bit)."""
 
-        install_tuple = self.install
-        field_width = max(len(field) for field in install_tuple._fields)
-        line_format = '  %%%ds\t%%s' % (field_width,)
-        install_dict = OrderedDict(sorted(install_tuple._asdict().items()))
-        for key, values in install_dict.items():
-            if isinstance(values, str):
-                values = [values]
-            keys = [key] + ['']*len(values)
-            for k, v in zip(keys, values):
-                print(line_format % (k, v))
+        lines = self.format_keyval_pairs(self.install._asdict(), right_just=True)
+        print('\n'.join(lines))
 
     # -- helpers -------------------------------------------------------------------------------
 
@@ -358,8 +426,8 @@ class CLI:
                        str(pathlib.Path(pharmpy.__file__).parent))
 
     def welcome(self, subcommand):
-        self.logger.info('Welcome to pharmpy-%s (%s @ %s)' % (subcommand,
-                                                              self.install.ver, self.install.dir))
+        ver, dir = self.install.version, self.install.directory
+        self.logger.info('Welcome to pharmpy-%s (%s @ %s)' % (subcommand, ver, dir))
 
     def InputModel(self, path):
         """Returns :class:`~pharmpy.generic.Model` from *path*.
@@ -423,6 +491,30 @@ class CLI:
         else:
             sys.exit(status)
 
+    def format_keyval_pairs(self, data_dict, sort=True, right_just=False):
+        """Formats lines from *data_dict*."""
+
+        if not data_dict:
+            return []
+
+        key_width = max(len(field) for field in data_dict.keys())
+        if sort:
+            data_dict = OrderedDict(sorted(data_dict.items()))
+        if right_just:
+            line_format = '  %%%ds\t%%s' % key_width
+        else:
+            line_format = '%%-%ds\t%%s' % key_width
+
+        lines = []
+        for key, values in data_dict.items():
+            if isinstance(values, str):
+                values = values.splitlines()
+            keys = [key] + ['']*(len(values) - 1)
+            for k, v in zip(keys, values):
+                lines += [line_format % (k, v)]
+
+        return lines
+
     # -- configuration -------------------------------------------------------------------------
 
     def set_loglevel(self, level):
@@ -468,31 +560,36 @@ def main(*args):
 # -- entry points of command CLIs (pharmpy-COMMAND) --------------------------------------------
 
 
-def clone(*args):
+def cmd_clone(*args):
     """Entry point of ``pharmpy-clone`` CLI util, a separable link to ``pharmpy clone``."""
     CLI(*args, subcommand='clone')
 
 
-def execute(*args):
+def cmd_execute(*args):
     """Entry point of ``pharmpy-execute`` CLI util, a separable link to ``pharmpy execute``."""
     CLI(*args, subcommand='execute')
 
 
-def help(*args):
+def cmd_help(*args):
     """Entry point of ``pharmpy-help`` CLI util, a separable link to ``pharmpy help``."""
     CLI(*args, subcommand='help')
 
 
-def sumo(*args):
+def cmd_print(*args):
+    """Entry point of ``pharmpy-print`` CLI util, a separable link to ``pharmpy print``."""
+    CLI(*args, subcommand='print')
+
+
+def cmd_sumo(*args):
     """Entry point of ``pharmpy-sumo`` CLI util, a separable link to ``pharmpy sumo``."""
     CLI(*args, subcommand='sumo')
 
 
-def transform(*args):
+def cmd_transform(*args):
     """Entry point of ``pharmpy-transform`` CLI util, a separable link to ``pharmpy transform``."""
     CLI(*args, subcommand='transform')
 
 
-def version(*args):
+def cmd_version(*args):
     """Entry point of ``pharmpy-version`` CLI util, a separable link to ``pharmpy version``."""
     CLI(*args, subcommand='version')
