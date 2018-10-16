@@ -147,6 +147,17 @@ API module: :mod:`~pharmpy.output`
 
 .. note:: This needs some more thought.
 
+A proposal:
+
+pharmpy has one base class for output called Output (or Results, which might be better). This only contains some metadata, filepaths etc and is then subclassed for each type of results. For example: EstimationResults, SimulationResults, CovarianceResults, SIRResults, BootstrapResults, FREMResults etc. Each subclass will find an appropriate way of storing its results. These subclasses should be as self contained and general as possible. For example the SIRResults could be populated from either NONMEM SIR or pharmpy SIR etc. But one single NONMEM-run can generate more than one of these and they have a special relation. Estimation runs can be chained and a SIR run can be done after an estimation for example.
+The relation between these objects and what was run will reside in another object of another class. It could be as simple as a list of Result objects for each $PROBLEM with a significant order. Also needed is some class were we can read out or manipulate the flow of operations in a model. This might be a third class. 
+So the classes: Results (each "atomic" result), ResultsStructure (combining all the results of a run) and Operations (manipulating the model).
+
+All the classes mentioned are tool agnostic. We want to support conversion to SO for as many of these as possible, this conversion must be initiated by the ResultsStrcuture object as multiple Results might be combined into one SOBlock. Reading in results to populate the result classes will be tool specific which could be a further subclassing. A tool specific subclassing of ResultsStructure (needs a better name) can read in all results from a specific run. Operations needs to be tools specifically subclassed.
+
+
+Old notes follow:
+
 Read in one type of output and convert to SO or other standardised output storage.
 
 NONMEM itself can run a small workflow which gives rise to its special output structure.
