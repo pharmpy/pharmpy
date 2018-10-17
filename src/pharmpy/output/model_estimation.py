@@ -17,8 +17,8 @@ class ModelEstimation:
 
     @property
     def population(self):
-        return ParameterList()
+        raise NotImplementedError
 
     @property
     def individuals(self):
-        return ParameterList()
+        raise NotImplementedError
