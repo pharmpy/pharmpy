@@ -1,0 +1,50 @@
+import dateutil.parser
+import re
+
+
+class NONMEMResultsFile:
+    '''Representing and parsing a NONMEM results file (aka lst-file) 
+       This is not a generic output object and will be combined by other classes
+       into new structures. For example if ext file exists we would not use the
+       estimates from the lst-file.
+    '''
+    def __init__(self, path):
+        with open(str(path), 'r') as res_file:
+            content = res_file.readlines()
+        parts = self._split_content(content)
+        self._parse_datestamps(parts['start_timestamp'])
+        self.model_code = parts['model_code']
+        self.nmtran_messages = parts['nmtran_messages']     # Raw for now. Need extra parsing. Can be listed and split on PROBLEM
+
+    def _split_content(self, content):
+        '''First coarse parser. Splitting the file in parts that will be parsed separately
+        '''
+        parts = {}
+        parts['start_timestamp'] = content.pop(0)
+
+        (parts['model_code'], content) = self._split_until_regexp(content, ['NM-TRAN MESSAGES', 'License Registered to:'], remove_lines=1)
+
+        if content[0].startswith('NM-TRAN MESSAGES'):
+            (parts['nmtran_messages'], content) = self._split_until_regexp(content, ['License Registered to:'], remove_lines=1)
+
+        return parts
+
+    def _split_until_regexp(self, content, regexps, remove_lines=0):
+        '''Split an array of strings into two parts. One before the match of any of the regexps and one
+        after and including the match.
+        remove_lines is the number of lines to remove at the end of the before part
+        '''
+        match = False
+        for i, line in enumerate(content):
+            for regexp in regexps:
+                if re.match(regexp, line):
+                    match = True
+            if match:
+                break
+        else:
+            raise EOFError
+        return (content[0:(i - remove_lines)], content[i:])
+ 
+    def _parse_datestamps(self, raw_string):
+        pass  # Crap! This dateutil doesn't seem to support Swedish
+        #self.start_timestamp = dateutil.parser.parse(raw_string)

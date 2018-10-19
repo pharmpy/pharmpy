@@ -3,5 +3,6 @@
 
 from .model_output import ModelOutput
 from .nonmem_table import NONMEMTableFile, NONMEMTable, ExtTable
+from .results_file import NONMEMResultsFile
 
-__all__ = ['ModelOutput', 'NONMEMTableFile', 'NONMEMTable', 'ExtTable']
+__all__ = ['ModelOutput', 'NONMEMResultsFile', 'NONMEMTableFile', 'NONMEMTable', 'ExtTable']
