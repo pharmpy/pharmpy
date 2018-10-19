@@ -47,4 +47,5 @@ class NONMEMResultsFile:
  
     def _parse_datestamps(self, raw_string):
         pass  # Crap! This dateutil doesn't seem to support Swedish
+        # Had a look at dateparser that could support Swedish, but it needs patching for that
         #self.start_timestamp = dateutil.parser.parse(raw_string)
