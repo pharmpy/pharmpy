@@ -15,6 +15,7 @@ class NONMEMResultsFile:
         self._parse_datestamps(parts['start_timestamp'])
         self.model_code = parts['model_code']
         self.nmtran_messages = parts['nmtran_messages']     # Raw for now. Need extra parsing. Can be listed and split on PROBLEM
+        self._parse_version(parts['about_text'])
 
     def _split_content(self, content):
         '''First coarse parser. Splitting the file in parts that will be parsed separately
@@ -27,6 +28,8 @@ class NONMEMResultsFile:
         if content[0].startswith('NM-TRAN MESSAGES'):
             (parts['nmtran_messages'], content) = self._split_until_regexp(content, ['License Registered to:'], remove_lines=1)
 
+        (_, content) = self._split_until_regexp(content, ['1NONLINEAR MIXED EFFECTS MODEL PROGRAM'])
+        (parts['about_text'], content) = self._split_until_regexp(content, [' PROBLEM NO.:'])
         return parts
 
     def _split_until_regexp(self, content, regexps, remove_lines=0):
@@ -44,7 +47,12 @@ class NONMEMResultsFile:
         else:
             raise EOFError
         return (content[0:(i - remove_lines)], content[i:])
- 
+
+    def _parse_version(self, about_text):
+        m = re.match("1NONLINEAR MIXED EFFECTS MODEL PROGRAM \(NONMEM\) VERSION (.*)\n", about_text[0])
+        if m:
+            self.nonmem_version = m.group(1)
+
     def _parse_datestamps(self, raw_string):
         pass  # Crap! This dateutil doesn't seem to support Swedish
         # Had a look at dateparser that could support Swedish, but it needs patching for that
