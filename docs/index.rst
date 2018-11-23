@@ -9,6 +9,7 @@ Contents
    installation
    usage
    Documentation <reference/modules>
+   NONMEM
    milestones
    todo
    design
