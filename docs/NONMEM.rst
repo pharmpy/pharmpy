@@ -14,8 +14,9 @@ NM-TRAN allows multiple $PK and $PRED in a model. They simple get merged into on
 Abbreviated and verbatim code
 
 NM-TRAN sets
+
 .. code-block:: fortran
 
     IMPLICIT REAL(KIND=DPSIZE) (A-Z)
 
-for the main functions in FSUBS (checked $PK and $ERROR) so variables starting with letters from A-Z doesn't need to be declared. Not even in abbreviated code.
+for the main functions in FSUBS (checked $PK and $ERROR) so variables starting with letters from A-Z doesn't need to be declared, not even in abbreviated code. However if a variable only used in verbatim code is to be used in $TABLE it must be assigned a value in abbreviated code.
