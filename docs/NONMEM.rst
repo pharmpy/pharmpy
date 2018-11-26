@@ -7,11 +7,20 @@ NONMEM
 .. note:: This section is for NONMEM documentation. The information is intended for non-documented or hard-to-find information that is important for pharmpy developers. 
 
 
-$PK and $PRED
+Code records
+------------
 
-NM-TRAN allows multiple $PK and $PRED in a model. They simple get merged into one big record in the order they have in the control stream. As long as the first $PK/$PRED follows the regular placement rules the others can be placed at any position after that.
+NM-TRAN allows multiple $PK, $PRED and $ERROR in a model. They simple get merged into one big record in the order they have in the control stream. As long as the first $PK/$PRED/$ERROR follows the regular placement rules the others can be placed at any position after that.
+
+
+Derivatives
+-----------
+
+In verbatim code in $ERROR HH(n,j*neps+i) will be the second partial derivative of F(n) with respect to EPS(i) and ETA(j)
+
 
 Abbreviated and verbatim code
+-----------------------------
 
 NM-TRAN sets
 
