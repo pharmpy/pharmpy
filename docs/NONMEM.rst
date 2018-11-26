@@ -16,7 +16,7 @@ NM-TRAN allows multiple $PK, $PRED and $ERROR in a model. They simple get merged
 Derivatives
 -----------
 
-In verbatim code in $ERROR HH(n,j*neps+i) will be the second partial derivative of F(n) with respect to EPS(i) and ETA(j)
+In verbatim code in $ERROR HH(n,j*neps+i) (in $PRED it is called H) will be the second partial derivative of F(n) with respect to EPS(i) and ETA(j)
 
 
 Abbreviated and verbatim code
