@@ -72,3 +72,13 @@ class ModelInput(object):
     @property
     def logger(self):
         return logging.getLogger('%s.%s' % (self.model.logger.name, self.__class__.__name__))
+
+    def varying_with_id(self, column):
+        """Check if a column has varying values for some individual
+           returns a list of IDs that have varying values. Remember that a list is false if empty and true otherwise.
+        """
+        df = self.data_frame
+        idcol = self.id_column
+        col_unique = df.groupby(idcol)[column].unique()     # This will give a Series of lists 
+        varying_ids = [index for index, value in col_unique.iteritems() if len(value) > 1]
+        return varying_ids
