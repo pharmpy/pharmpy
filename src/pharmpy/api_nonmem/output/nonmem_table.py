@@ -1,9 +1,10 @@
-import math
 import re
 from io import StringIO
 from pathlib import Path
 import numpy as np
 import pandas as pd
+
+import pharmpy.math
 
 
 
@@ -74,23 +75,6 @@ class NONMEMTable:
         return self._df
 
 
-def triangular_root(x):
-    '''Calculate the triangular root of x. I.e. if x is a triangular number T_n what is n?
-    '''
-    return math.floor(math.sqrt(2 * x))
-
-
-def flattened_to_symmetric(x):
-    '''Convert a vector containing the elements of a lower triangular matrix into a full symmetric matrix
-    '''
-    n = triangular_root(len(x))
-    new = np.zeros((n, n))
-    inds = np.triu_indices_from(new)
-    new[inds] = x
-    new[(inds[1], inds[0])] = x
-    return new
-
-
 class PhiTable(NONMEMTable):
     @property
     def data_frame(self):
@@ -101,7 +85,7 @@ class PhiTable(NONMEMTable):
         df.drop(columns=eta_col_names, inplace=True)
         etc_col_names = [col for col in df if col.startswith('ETC')]
         vals = df[etc_col_names].values
-        matrix_array = [flattened_to_symmetric(x) for x in vals]
+        matrix_array = [pharmpy.math.flattened_to_symmetric(x) for x in vals]
         df['ETC'] = matrix_array                            # ETC column to be symmetric matrices for each ID
         df.drop(columns=etc_col_names, inplace=True)
         return df
