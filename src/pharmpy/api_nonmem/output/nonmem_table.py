@@ -1,6 +1,8 @@
+import math
 import re
 from io import StringIO
 from pathlib import Path
+import numpy as np
 import pandas as pd
 
 
@@ -27,11 +29,13 @@ class NONMEMTableFile:
         table_line = content.pop(0)
         if suffix == '.ext':
             table = ExtTable(''.join(content))
+        elif suffix == '.phi':
+            table = PhiTable(''.join(content))
         else:
             table = NONMEMTable(''.join(content))       # Fallback to non-specific type of NONMEM table
         m = re.match(r'TABLE NO.\s+(\d+)', table_line)   # This is guaranteed to match
         table.number = m.group(1)
-        m = re.match(r'TABLE NO.\s+\d+: (.*): Goal Function=(.*): Problem=(\d+) Subproblem=(\d+) Superproblem1=(\d+) Iteration1=(\d+) Superproblem2=(\d+) Iteration2=(\d+)', table_line)
+        m = re.match(r'TABLE NO.\s+\d+: (.*?): (?:Goal Function=(.*): )?Problem=(\d+) Subproblem=(\d+) Superproblem1=(\d+) Iteration1=(\d+) Superproblem2=(\d+) Iteration2=(\d+)', table_line)
         if m:
             table.method = m.group(1)
             table.goal_function = m.group(2)
@@ -68,6 +72,39 @@ class NONMEMTable:
     @property
     def data_frame(self):
         return self._df
+
+
+def triangular_root(x):
+    '''Calculate the triangular root of x. I.e. if x is a triangular number T_n what is n?
+    '''
+    return math.floor(math.sqrt(2 * x))
+
+
+def flattened_to_symmetric(x):
+    '''Convert a vector containing the elements of a lower triangular matrix into a full symmetric matrix
+    '''
+    n = triangular_root(len(x))
+    new = np.zeros((n, n))
+    inds = np.triu_indices_from(new)
+    new[inds] = x
+    new[(inds[1], inds[0])] = x
+    return new
+
+
+class PhiTable(NONMEMTable):
+    @property
+    def data_frame(self):
+        df = self._df.copy(deep=True)
+        df.drop(columns=['SUBJECT_NO'], inplace=True)
+        eta_col_names = [col for col in df if col.startswith('ETA')]
+        df['ETA'] = df[eta_col_names].values.tolist()       # ETA column to be list of eta values for each ID
+        df.drop(columns=eta_col_names, inplace=True)
+        etc_col_names = [col for col in df if col.startswith('ETC')]
+        vals = df[etc_col_names].values
+        matrix_array = [flattened_to_symmetric(x) for x in vals]
+        df['ETC'] = matrix_array                            # ETC column to be symmetric matrices for each ID
+        df.drop(columns=etc_col_names, inplace=True)
+        return df
 
 
 class ExtTable(NONMEMTable):
