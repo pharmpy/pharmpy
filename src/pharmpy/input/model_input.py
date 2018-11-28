@@ -13,6 +13,8 @@ Definitions
 
 import logging
 
+import pharmpy.data as data
+
 from .filters import InputFilters
 
 
@@ -82,3 +84,11 @@ class ModelInput(object):
         col_unique = df.groupby(idcol)[column].unique()     # This will give a Series of lists 
         varying_ids = [index for index, value in col_unique.iteritems() if len(value) > 1]
         return varying_ids
+
+    def resample(self, group=None, stratify=None, sample_size=None, replace=False):
+        """A convenience method to call the data.resample for a model dataset
+        """
+        if group is None:
+            group = self.id_column
+
+        return data.resample(self.data_frame, group, stratify=stratify, sample_size=sample_size, replace=replace)
