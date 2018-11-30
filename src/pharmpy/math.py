@@ -36,4 +36,4 @@ def round_and_keep_sum(x, s):
         step = math.copysign(1, diff)
         rounded_sample_sizes[group_index] += step 
 
-    return rounded_sample_sizes
+    return rounded_sample_sizes.astype('int64')

@@ -21,6 +21,6 @@ def test_flattened_to_symmetric():
 
 def test_round_and_keep_sum():
     ser = pd.Series([1.052632, 0.701754, 0.701754, 1.052632, 2.456140, 2.807018, 4.210526, 4.210526, 3.157895, 0.350877])
-    correct_results = pd.Series([1.0, 1.0, 1.0, 1.0, 2.0, 3.0, 4.0, 4.0, 3.0, 0.0])
+    correct_results = pd.Series([1, 1, 1, 1, 2, 3, 4, 4, 3, 0])
     rounded = pharmpy.math.round_and_keep_sum(ser, 20)
     assert_series_equal(rounded, correct_results)
