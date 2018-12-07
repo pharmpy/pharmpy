@@ -5,14 +5,16 @@ import pandas as pd
 import pharmpy.math
 
 
-def resample(df, group, stratify=None, sample_size=None, replace=False):
-    """Resample a dataset.
+def resample(df, group, resamples=1, stratify=None, sample_size=None, replace=False):
+    """Generate resamples of a dataset.
 
        The dataset will be grouped on the group column
        then groups will be selected randomly with or without replacement to
        form a new dataset. Stratification will make sure that 
 
        group is the name of the group column.
+       resamples is the number of resamples to do, i.e. this is the number of datasets that will be generated
+       the groups will be renumbered from 1 and upwards
        stratify is the name of the stratification column
             the values in the stratification column must be equal within a group so that the group
             can be uniquely determined. The method will raise an exception otherwise.
@@ -55,10 +57,12 @@ def resample(df, group, stratify=None, sample_size=None, replace=False):
                     '({numgroups}) which is impossible with replacement.'.format(sample_size=sample_size_dict[strata], numgroups=len(stratas[strata]))) 
         random_groups += list(np.random.choice(stratas[strata], size=sample_size_dict[strata], replace=replace))
 
-    new_df = pd.DataFrame()
-    for grp_id, new_grp in zip(random_groups, range(1, len(random_groups) + 1)):
-        sub = df.loc[df[group] == grp_id].copy()
-        sub[group] = new_grp
-        new_df = new_df.append(sub)
+    for i in range(0, resamples):
+        new_df = pd.DataFrame()
+        # Build the dataset given the random_groups list
+        for grp_id, new_grp in zip(random_groups, range(1, len(random_groups) + 1)):
+            sub = df.loc[df[group] == grp_id].copy()
+            sub[group] = new_grp
+            new_df = new_df.append(sub)
 
-    return (new_df, list(random_groups))
+        yield (new_df, list(random_groups))
