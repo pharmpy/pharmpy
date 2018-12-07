@@ -1,12 +1,13 @@
 import collections
 import numpy as np
 import pandas as pd
+from pathlib import Path
 
 import pharmpy.math
 
-# More object oriented perhaps:
 
 class Resampler:
+    # TODO: Proper documentation
     """Generate resamples of a dataset.
 
        The dataset will be grouped on the group column
@@ -14,7 +15,6 @@ class Resampler:
        form a new dataset. Stratification will make sure that 
 
        group is the name of the group column.
-       resamples is the number of resamples to do, i.e. this is the number of datasets that will be generated
        the groups will be renumbered from 1 and upwards
        stratify is the name of the stratification column
             the values in the stratification column must be equal within a group so that the group
@@ -27,7 +27,7 @@ class Resampler:
        Returns a tuple of a resampled DataFrame and a list of resampled groups in order
     """
 
-    def __init__(self, df, group, stratify=None, sample_size=None, replace=False):
+    def __init__(self, df, group, resamples=1, stratify=None, sample_size=None, replace=False):
         unique_groups = df[group].unique()
         numgroups = len(unique_groups)
 
@@ -64,9 +64,16 @@ class Resampler:
         self._replace = replace
         self._stratas = stratas
         self._sample_size_dict = sample_size_dict
+        self._resamples = resamples
 
-    def data_frames(self, resamples=1):
-        for i in range(0, resamples):
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        """
+            generate resampled DataFrames
+        """
+        for i in range(0, self._resamples):
             random_groups = []
             for strata in self._sample_size_dict:
                 random_groups += list(np.random.choice(self._stratas[strata], size=self._sample_size_dict[strata], replace=self._replace))
@@ -78,4 +85,18 @@ class Resampler:
                 sub[self._group] = new_grp
                 new_df = new_df.append(sub)
 
-            yield (new_df, list(random_groups))
+            return (new_df, list(random_groups))
+
+    def data_files(self, path, filename="resample_{}.dta"):
+        """
+            path is the path to where to create the resampled datasets
+            filename is a filename format where the number of the resample will be inserted starting from 1
+        """
+        path = Path(path) 
+        self.paths = []
+        for df, i in zip(self, range(1, resamples + 1)):
+            next_path = path / filename.format(i)
+            df.to_csv(next_path)
+            self.paths.append(next_path)
+
+    # Attribute paths can be used to get the paths to files stored. Document this
