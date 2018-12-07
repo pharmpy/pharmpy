@@ -86,9 +86,9 @@ class ModelInput(object):
         return varying_ids
 
     def resample(self, group=None, stratify=None, sample_size=None, replace=False):
-        """A convenience method to call the data.resample for a model dataset
+        """A convenience method to get a data.Resample iterator for a model dataset
         """
         if group is None:
             group = self.id_column
 
-        return data.resample(self.data_frame, group, stratify=stratify, sample_size=sample_size, replace=replace)
+        return data.Resample(self.data_frame, group, stratify=stratify, sample_size=sample_size, replace=replace)

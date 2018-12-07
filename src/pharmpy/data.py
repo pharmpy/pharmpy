@@ -5,10 +5,49 @@ from pathlib import Path
 
 import pharmpy.math
 
+#TODO: We could potentially have a mixin for filesaves of iterated dataframes
+class DatasetIterator:
+    """ Base class for iterator classes that generate datasets
+    """
+    def __iter__(self):
+        return self
 
-class Resampler:
+    def data_files(self, path, filename="resample_{}.dta"):
+        """
+            path is the path to where to create the resampled datasets
+            filename is a filename format where the number of the resample will be inserted starting from 1
+        """
+        path = Path(path) 
+        self.paths = []
+        for df, i in enumerate(self, 1):
+            next_path = path / filename.format(i)
+            df.to_csv(next_path)
+            self.paths.append(next_path)
+
+    # Attribute paths can be used to get the paths to files stored. Document this
+
+
+class GroupOmitter(DatasetIterator):
+    """Iterate over omissions of a certain group in a dataset. One group omitted at a time
+    """
+    def __init__(self, df, group):
+        self._unique_groups = df[group].unique()
+        self._df = df
+        self._counter = 0
+
+    def __next__(self):
+        if self._counter == len(self._unique_groups):
+            raise StopIteration
+        df = self._df
+        next_group = self._unique_groups[self._counter]
+        new_df = df[df[group] != next_group]
+        self._counter = self._counter + 1
+        return new_df
+
+
+class Resampler(DatasetIterator):
     # TODO: Proper documentation
-    """Generate resamples of a dataset.
+    """Iterate over resamples of a dataset.
 
        The dataset will be grouped on the group column
        then groups will be selected randomly with or without replacement to
@@ -66,9 +105,6 @@ class Resampler:
         self._sample_size_dict = sample_size_dict
         self._resamples = resamples
 
-    def __iter__(self):
-        return self
-
     def __next__(self):
         """
             generate resampled DataFrames
@@ -86,17 +122,3 @@ class Resampler:
                 new_df = new_df.append(sub)
 
             return (new_df, list(random_groups))
-
-    def data_files(self, path, filename="resample_{}.dta"):
-        """
-            path is the path to where to create the resampled datasets
-            filename is a filename format where the number of the resample will be inserted starting from 1
-        """
-        path = Path(path) 
-        self.paths = []
-        for df, i in zip(self, range(1, resamples + 1)):
-            next_path = path / filename.format(i)
-            df.to_csv(next_path)
-            self.paths.append(next_path)
-
-    # Attribute paths can be used to get the paths to files stored. Document this
