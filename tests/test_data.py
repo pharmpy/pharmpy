@@ -6,20 +6,24 @@ import numpy as np
 import pharmpy.data as data
 
 
-def test_resample():
+def test_resampler():
     np.random.seed(28)
     df = pd.DataFrame({'ID': [1, 1, 2, 2, 4, 4], 'DV': [5, 6, 3, 4, 0, 9], 'STRAT': [1, 1, 2, 2, 2, 2]})
-    (new_df, ids) = next(data.resample(df, 'ID'))
+    resampler = data.Resampler(df, 'ID')
+    (new_df, ids) = next(resampler.data_frames())
     assert list(ids) == [1, 4, 2]
     assert list(new_df['ID']) == [1, 1, 2, 2, 3, 3]
     assert list(new_df['DV']) == [5, 6, 0, 9, 3, 4]
 
     with pytest.raises(ValueError) as e:
-        next(data.resample(df, 'ID', replace=True, sample_size=4))
+        resampler = data.Resampler(df, 'ID', replace=False, sample_size=4)
+        next(resampler.data_frames())
 
-    next(data.resample(df, 'ID', replace=True, sample_size=3))    # Should not raise
+    resampler = data.Resampler(df, 'ID', replace=False, sample_size=3)
+    next(resampler.data_frames())
 
-    (new_df, ids) = next(data.resample(df, 'ID', stratify='STRAT'))
+    resampler = data.Resampler(df, 'ID', stratify='STRAT')
+    (new_df, ids) = next(resampler.data_frames())
     assert list(ids) == [1, 4, 2]
     assert list(new_df['ID']) == [1, 1, 2, 2, 3, 3]
     assert list(new_df['DV']) == [5, 6, 0, 9, 3, 4]
