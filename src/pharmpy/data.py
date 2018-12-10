@@ -12,7 +12,7 @@ class DatasetIterator:
     def __iter__(self):
         return self
 
-    def data_files(self, path, filename="resample_{}.dta"):
+    def data_files(self, path, filename="dataset_{}.dta"):
         """
             path is the path to where to create the resampled datasets
             filename is a filename format where the number of the resample will be inserted starting from 1
@@ -43,6 +43,9 @@ class GroupOmitter(DatasetIterator):
         new_df = df[df[group] != next_group]
         self._counter = self._counter + 1
         return new_df
+
+    def data_files(self, path, filename="omitted_{}.dta"):
+        super().data_files(path, filename)
 
 
 class Resampler(DatasetIterator):
@@ -122,3 +125,6 @@ class Resampler(DatasetIterator):
                 new_df = new_df.append(sub)
 
             return (new_df, list(random_groups))
+
+    def data_files(self, path, filename="resample_{}.dta"):
+        super().data_files(path, filename)
