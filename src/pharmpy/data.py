@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pharmpy.math
 
-#TODO: We could potentially have a mixin for filesaves of iterated dataframes
+
 class DatasetIterator:
     """ Base class for iterator classes that generate datasets
     """
