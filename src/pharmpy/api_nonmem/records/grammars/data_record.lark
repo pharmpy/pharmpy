@@ -18,6 +18,7 @@ filename: TEXT | QUOTE
 // option rules
 ?option : "(" [WS] TEXT [WS] ")"                -> format
         | IGNORE [WS] ["="] [WS] (char | _list) -> ignore  // contains 'char' OR 'filter' children
+        | NULL [WS] ["="] [WS] (char)           -> null
         | ACCEPT [WS] ["="] [WS] _list          -> accept
         | KEY [WS] "=" [WS] VALUE               -> option
         | VALUE                                 -> option
@@ -26,6 +27,7 @@ filename: TEXT | QUOTE
 char: CHAR | CHARQUOTE
 IGNORE : "IGNORE"|"IGNOR"|"IGNO"|"IGN"
 ACCEPT : "ACCEPT"|"ACCEP"|"ACCE"|"ACC"
+NULL : "NULL"|"NUL"
 
 // generic option terminals (key/value)
 KEY   : /(?!(IGN|ACC))\w+/      // TODO: use priority (instead of negative lookahead)

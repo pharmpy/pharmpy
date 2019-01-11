@@ -61,6 +61,20 @@ class DataRecord(OptionRecord):
             return None
 
     @property
+    def null_value(self):
+        """The value to replace for NULL (i.e. .) in the dataset
+           note that only +,-,0 (meaning 0) and 1-9 are allowed 
+        """
+        if hasattr(self.root, 'null') and self.root.null.find('char'):
+            char = str(self.root.null.char)
+            if char == '+' or char == '-':
+                return 0
+            else:
+                return float(char)
+        else:
+            return 0
+
+    @property
     def filters(self):
         filters = InputFilters()
 

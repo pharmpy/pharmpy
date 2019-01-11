@@ -41,6 +41,10 @@ def test_data_read_data_frame(pheno):
     assert list(df.iloc[0]) == [1, 2, 3, 6]
     assert list(df.columns) == ['A', 'B', 'C', None]
 
+    # Test null_value
+    df = inp.read_dataset(StringIO("1,2,"), abc, null_value=9)
+    assert list(df.iloc[0]) == [1, 2, 9]
+
 
 def test_data_read(nonmem, pheno):
     df = pheno.input.data_frame

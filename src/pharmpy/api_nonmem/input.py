@@ -105,18 +105,18 @@ class ModelInput(input.ModelInput):
                     yield key
 
     @staticmethod
-    def _postprocess_data_frame(df, column_names, null_token=0):
+    def _postprocess_data_frame(df, column_names, null_value):
         """ Do the following changes to the data_frame after reading it in
             1. Replace all NaN with the null_token
             2. Pad with null_token columns if $INPUT has more columns than the dataset 
             3. Set column names from $INPUT and pad with None dataset has more columns
         """
-        df.fillna(null_token, inplace=True)
+        df.fillna(null_value, inplace=True)
         colnames = list(column_names)
         coldiff = len(colnames) - len(df.columns)   # Difference between number of columns in $INPUT and in the dataset
         if coldiff > 0:
             for _ in range(coldiff):    # Create empty columns. Pandas does not support df[[None, None]] = [0, 0] or similar hence the loop
-                df[None] = null_token
+                df[None] = null_value
         elif coldiff < 0:
             colnames += [None] * abs(coldiff)
         df.columns = colnames
@@ -124,15 +124,16 @@ class ModelInput(input.ModelInput):
     def _read_data_frame(self):
         data_records = self.model.get_records('DATA')
         ignore_character = data_records[0].ignore_character
-        self._data_frame = ModelInput.read_dataset(self.path, self._column_names(), ignore_character=ignore_character)
+        null_value = data_records[0].null_value
+        self._data_frame = ModelInput.read_dataset(self.path, self._column_names(), ignore_character=ignore_character, null_value=null_value)
 
     @staticmethod
-    def read_dataset(filename_or_io, colnames, ignore_character='@'):
+    def read_dataset(filename_or_io, colnames, ignore_character='@', null_value=0):
         """ A static method to read in a NM-TRAN dataset and return a data frame
         """
         file_io = NMTRANDataIO(filename_or_io, ignore_character)
         df = pd.read_table(file_io, sep=r' *, *| *[\t] *| +', na_values='.', header=None, engine='python')
-        ModelInput._postprocess_data_frame(df, colnames)
+        ModelInput._postprocess_data_frame(df, colnames, null_value)
         return df
 
     @property
