@@ -10,7 +10,7 @@ NONMEM
 NULL items in datasets
 ----------------------
 
-A NULL item is an item in a dataset that is either a ., surrounded by two TABS or two commas. By default NM-TRAN translates a NULL item to a blank field in FDATA which will be interpreted by NONMEM as 0. Using the NULL option to $DATA the default can be changed. However the NULL option is limited to one character and the only legal ones are [0-9-+] since these are numbers. All other values on $DATA will be met with ERROR from NM-TRAN. A double comma or tab at the end of a row will insert a value at the end after giving a big warning.
+A NULL item is an item in a dataset that is either a ., surrounded by two TABS or two commas. By default NM-TRAN translates a NULL item to a blank field in FDATA which will be interpreted by NONMEM as 0. Using the NULL option to $DATA the default can be changed. However the NULL option is limited to one character and the only legal ones are [0-9-+] since these are numbers. All other values on $DATA will be met with ERROR from NM-TRAN. A double comma or tab at the end of a row will insert a value at the end after giving a big warning. If the number of columns in $INPUT is larger than the length of some row, NM-TRAN will warn and pad with NULLs. 
 
 
 Code records

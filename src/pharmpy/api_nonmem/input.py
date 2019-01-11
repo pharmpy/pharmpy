@@ -14,10 +14,16 @@ class NMTRANDataIO(StringIO):
     """ An IO class that is a prefilter for pandas.read_table.
         Things that cannot be handled directly by pandas will be taken care of here and the
         rest will be taken care of by pandas.
+        Currently it takes care of filtering out ignored rows
     """
-    def __init__(self, filename, ignore_character):
-        with open(str(filename), 'r') as datafile:
-            contents = datafile.read()      # All variations of newlines are converted into \n
+    def __init__(self, filename_or_io, ignore_character):
+        """ filename_or_io is a string with a path, a path object or any IO object, i.e. StringIO
+        """
+        if hasattr(filename_or_io, 'read'):
+            contents = filename_or_io.read()
+        else:
+            with open(str(filename_or_io), 'r') as datafile:
+                contents = datafile.read()      # All variations of newlines are converted into \n
 
         if ignore_character:
             if ignore_character == '@':
@@ -25,9 +31,6 @@ class NMTRANDataIO(StringIO):
             else:
                 comment_regexp = re.compile('^[' + ignore_character + '].*\n', re.MULTILINE)
             contents = re.sub(comment_regexp, '', contents)
-
-        # Replace dot surrounded by space with 0 as explained in the NM-TRAN manual
-        contents = re.sub(r'\s\.\s', '0', contents)
 
         super().__init__(contents)
 
@@ -101,12 +104,36 @@ class ModelInput(input.ModelInput):
                 else:
                     yield key
 
+    @staticmethod
+    def _postprocess_data_frame(df, column_names, null_token=0):
+        """ Do the following changes to the data_frame after reading it in
+            1. Replace all NaN with the null_token
+            2. Pad with null_token columns if $INPUT has more columns than the dataset 
+            3. Set column names from $INPUT and pad with None dataset has more columns
+        """
+        df.fillna(null_token, inplace=True)
+        colnames = list(column_names)
+        coldiff = len(colnames) - len(df.columns)   # Difference between number of columns in $INPUT and in the dataset
+        if coldiff > 0:
+            for _ in range(coldiff):    # Create empty columns. Pandas does not support df[[None, None]] = [0, 0] or similar hence the loop
+                df[None] = null_token
+        elif coldiff < 0:
+            colnames += [None] * abs(coldiff)
+        df.columns = colnames
+
     def _read_data_frame(self):
-        data_records = self.model.get_records("DATA")
+        data_records = self.model.get_records('DATA')
         ignore_character = data_records[0].ignore_character
-        file_io = NMTRANDataIO(self.path, ignore_character)
-        self._data_frame = pd.read_table(file_io, sep='\s+|,', header=None, engine='python')
-        self._data_frame.columns = list(self._column_names())
+        self._data_frame = ModelInput.read_dataset(self.path, self._column_names(), ignore_character=ignore_character)
+
+    @staticmethod
+    def read_dataset(filename_or_io, colnames, ignore_character='@'):
+        """ A static method to read in a NM-TRAN dataset and return a data frame
+        """
+        file_io = NMTRANDataIO(filename_or_io, ignore_character)
+        df = pd.read_table(file_io, sep=r' *, *| *[\t] *| +', na_values='.', header=None, engine='python')
+        ModelInput._postprocess_data_frame(df, colnames)
+        return df
 
     @property
     def filters(self):
