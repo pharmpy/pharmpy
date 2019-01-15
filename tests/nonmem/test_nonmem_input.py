@@ -32,6 +32,8 @@ def test_data_read_data_frame(pheno):
     assert list(df.iloc[0]) == [3, 4, 6]
     df = inp.read_dataset(StringIO("3   28   , 341"), abc)
     assert list(df.iloc[0]) == [3, 28, 341]
+    df = inp.read_dataset(StringIO("  1  2  3  "), abc)
+    assert list(df.iloc[0]) == [1, 2, 3]
 
     # Mismatch length of column_names and data frame
     df = inp.read_dataset(StringIO("1,2,3"), abc + ['D'])
