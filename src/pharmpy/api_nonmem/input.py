@@ -5,9 +5,35 @@ from io import StringIO
 from os.path import realpath
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 
 from pharmpy import input
+from pharmpy.input import DatasetError
+
+
+def convert_fortran_exp_format(number_string):
+    """This function will try to convert the number_string from the special fortran exponential format
+       into a regular float. It covers "a+b", "a-b", "+" and "-". All other cases will return None to
+       signal that the number_string is not of the special form.
+    """
+    if number_string == '+' or number_string == '-':
+        return 0.0
+
+    m = re.match(r'((\.)|(\.\d+)|(\d+\.)|(\d+\.\d+))([+-]\d+)', number_string)
+    if m:
+        if m.group(2):
+            mantissa = 0.0
+        elif m.group(3):
+            mantissa = float(m.groups(3))
+        elif m.group(4):
+            mantissa = float(m.groups(4))
+        elif m.group(5):
+            mantissa = float(m.groups(5))
+        exponent = m.group(6)
+        return mantissa * 10**exponent
+    else:
+        return None
 
 
 class NMTRANDataIO(StringIO):
@@ -31,6 +57,12 @@ class NMTRANDataIO(StringIO):
             else:
                 comment_regexp = re.compile('^[' + ignore_character + '].*\n', re.MULTILINE)
             contents = re.sub(comment_regexp, '', contents)
+
+        if re.search(r' \t', contents):     # Space before TAB not allowed (see documentation)
+            raise DatasetError("The dataset contains a TAB preceeded by a space, which is not allowed by NM-TRAN")
+
+        #if re.search(r'^[ \t]*\n', re.MULTILINE):       # Blank lines
+        #    raise DatasetError("The dataset contains one or more blank lines. This is not allowed by NM-TRAN without the BLANKOK option")
 
         super().__init__(contents)
 
@@ -109,7 +141,7 @@ class ModelInput(input.ModelInput):
         """ Do the following changes to the data_frame after reading it in
             1. Replace all NaN with the null_token
             2. Pad with null_token columns if $INPUT has more columns than the dataset 
-            3. Set column names from $INPUT and pad with None dataset has more columns
+            3. Set column names from $INPUT and pad with None if dataset has more columns
         """
         df.fillna(null_value, inplace=True)
         colnames = list(column_names)
@@ -132,7 +164,7 @@ class ModelInput(input.ModelInput):
         """ A static method to read in a NM-TRAN dataset and return a data frame
         """
         file_io = NMTRANDataIO(filename_or_io, ignore_character)
-        df = pd.read_table(file_io, sep=r' *, *| *[\t] *| +', na_values='.', header=None, engine='python')
+        df = pd.read_table(file_io, sep=r' *, *| *[\t] *| +', na_values='.', header=None, engine='python', quoting=3, dtype=np.float64)
         ModelInput._postprocess_data_frame(df, colnames, null_value)
         return df
 

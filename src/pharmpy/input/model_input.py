@@ -18,6 +18,10 @@ import pharmpy.data as data
 from .filters import InputFilters
 
 
+class DatasetError(Exception):
+    pass
+
+
 class ModelInput(object):
     """Implements API for :attr:`Model.input`, the model dataset"""
     def __init__(self, model):
