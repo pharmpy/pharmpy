@@ -26,6 +26,7 @@ Some rules for the parsing of the dataset by NM-TRAN. These were tested with NON
 - An item can be at most 24 characters long
 - Empty lines in a dataset will give an error if not BLANKOK is set in $DATA then NULLs are inserted
 - As empty lines are counted empty lines and lines only containing spaces and TABs.
+- Columns that are DROPed in $INPUT can contain any characters and there is no limit to length of items in such a column
 
 
 NULL items in datasets
