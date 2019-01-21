@@ -23,7 +23,7 @@ Some rules for the parsing of the dataset by NM-TRAN. These were tested with NON
 - The fortran short form for exponential notation is allowed, i.e. 2-1 means 2e-1 and 2+1 means 2e1
 - A lone + or - in an item means 0
 - A . (dot) in an item means NULL
-- An item can be at most 24 characters long
+- An item can be at most 24 characters long, not counting delimiters and spaces that was eaten by other delimiter
 - Empty lines in a dataset will give an error if not BLANKOK is set in $DATA then NULLs are inserted
 - As empty lines are counted empty lines and lines only containing spaces and TABs.
 - Columns that are DROPed in $INPUT can contain any characters and there is no limit to length of items in such a column
