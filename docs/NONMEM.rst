@@ -55,7 +55,7 @@ The column names are
 
 The data is right justified with a field size of 13 characters (padded with spaces). Except for the final OBJ column that is also right justified, but with a field size of 22 characters.
 
-The number format is integer for the first two columns, scientific with 5 decimals and 2 digits exponent for the ETA and ETC columns. The number in the OBJ column is written in regular decimal form and will always take up 19 characters with the first character being "-" for negative numbers, 0 for numbers having an integer part of zero and space for all other positive numbers.
+The number format is integer for the first two columns, scientific with 5 decimals and 2 digits exponent for the ETA and ETC columns. The number in the OBJ column is written in regular decimal format and will always take up 19 characters with first character being space for positive numbers or "-" for negative numbers. For numbers having an integer part of zero will take up 20 characters.
 
 
 
