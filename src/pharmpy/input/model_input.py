@@ -21,6 +21,8 @@ from .filters import InputFilters
 class DatasetError(Exception):
     pass
 
+class DatasetWarning(Warning):
+    pass
 
 class ModelInput(object):
     """Implements API for :attr:`Model.input`, the model dataset"""

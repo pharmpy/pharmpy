@@ -14,7 +14,7 @@ from pharmpy.input import DatasetError
 
 def convert_fortran_exp_format(number_string):
     """This function will try to convert the number_string from the special fortran exponential format
-       into a regular float. It covers "a+b", "a-b", "+" and "-". All other cases will return None to
+       into an np.float64. It covers "a+b", "a-b", "+" and "-". All other cases will return None to
        signal that the number_string is not of the special form.
     """
     if number_string == '+' or number_string == '-':
@@ -31,16 +31,15 @@ def convert_fortran_exp_format(number_string):
         elif m.group(5):
             mantissa = float(m.groups(5))
         exponent = m.group(6)
-        return mantissa * 10**exponent
+        return np.float64(mantissa * 10**exponent)
     else:
         return None
 
 
 class NMTRANDataIO(StringIO):
     """ An IO class that is a prefilter for pandas.read_table.
-        Things that cannot be handled directly by pandas will be taken care of here and the
-        rest will be taken care of by pandas.
-        Currently it takes care of filtering out ignored rows
+        Things that must be done before using pandas will be done here.
+        Currently it takes care of filtering out ignored rows and handles special delimiter cases
     """
     def __init__(self, filename_or_io, ignore_character):
         """ filename_or_io is a string with a path, a path object or any IO object, i.e. StringIO
@@ -137,13 +136,32 @@ class ModelInput(input.ModelInput):
                     yield key
 
     @staticmethod
+    def _convert_data_item(x, null_value):
+        if x is None or x == '.' or x == '':
+            x = null_value
+        if length(x) > 24:
+            raise DatasetError("The dataset contains an item that is longer than 24 characters")
+        try:
+            y = np.float64(x)
+        except:
+            y = convert_fortran_exp_format(x)
+            if y is None:
+                raise DatasetError("The dataset contains an invalid number")
+        return y
+
+    @staticmethod
     def _postprocess_data_frame(df, column_names, null_value):
         """ Do the following changes to the data_frame after reading it in
-            1. Replace all NaN with the null_token
-            2. Pad with null_token columns if $INPUT has more columns than the dataset 
-            3. Set column names from $INPUT and pad with None if dataset has more columns
+            1. Convert ordinary floating point numbers to float64
+            2. Convert numbers of special fortran format to float64
+            3. Convert None, '.', empty string to the NULL value
+            4. Convert Inf/NaN properly
+            5. Pad with null_token columns if $INPUT has more columns than the dataset 
+            6. Set column names from $INPUT and pad with None if dataset has more columns
         """
-        df.fillna(null_value, inplace=True)
+        for column in df:
+            df[column] = df[column].apply(ModelInput._convert_data_item, args=(null_value,))
+
         colnames = list(column_names)
         coldiff = len(colnames) - len(df.columns)   # Difference between number of columns in $INPUT and in the dataset
         if coldiff > 0:
@@ -161,10 +179,10 @@ class ModelInput(input.ModelInput):
 
     @staticmethod
     def read_dataset(filename_or_io, colnames, ignore_character='@', null_value=0):
-        """ A static method to read in a NM-TRAN dataset and return a data frame
+        """ A static method to read in an NM-TRAN dataset and return a data frame
         """
         file_io = NMTRANDataIO(filename_or_io, ignore_character)
-        df = pd.read_table(file_io, sep=r' *, *| *[\t] *| +', na_values='.', header=None, engine='python', quoting=3, dtype=np.float64)
+        df = pd.read_table(file_io, sep=r' *, *| *[\t] *| +', na_filter=False, header=None, engine='python', quoting=3, dtype=np.object)
         ModelInput._postprocess_data_frame(df, colnames, null_value)
         return df
 
