@@ -7,9 +7,11 @@ NONMEM
 .. note:: This section is for NONMEM documentation. The information is intended for non-documented or hard-to-find information that is important for pharmpy developers. 
 
 
+Dataset
+-------
 
 NM-TRAN dataset parsing
------------------------
+~~~~~~~~~~~~~~~~~~~~~~~
 
 Some rules for the parsing of the dataset by NM-TRAN. These were tested with NONMEM 7.4.3
 
@@ -27,12 +29,23 @@ Some rules for the parsing of the dataset by NM-TRAN. These were tested with NON
 - Empty lines in a dataset will give an error if not BLANKOK is set in $DATA then NULLs are inserted
 - As empty lines are counted empty lines and lines only containing spaces and TABs.
 - Columns that are DROPed in $INPUT can contain any characters and there is no limit to length of items in such a column
-
+- If any line has more columns than $INPUT all extra columns are considered to be DROPed
 
 NULL items in datasets
-----------------------
+~~~~~~~~~~~~~~~~~~~~~~
 
-A NULL item is an item in a dataset that is either a ., surrounded by two TABS or two commas. By default NM-TRAN translates a NULL item to a blank field in FDATA which will be interpreted by NONMEM as 0. Using the NULL option to $DATA the default can be changed. However the NULL option is limited to one character and the only legal ones are [0-9-+] since these are numbers. All other values on $DATA will be met with ERROR from NM-TRAN. A double comma or tab at the end of a row will insert a value at the end after giving a big warning. If the number of columns in $INPUT is larger than the length of some row, NM-TRAN will warn and pad with NULLs. NULL items are inserted after the IGNORE filtering so comment characters cannot be inserted using NULL. 
+A NULL item is an item in a dataset that is either a ., surrounded by two TABS or two commas. By default NM-TRAN translates a NULL item to a blank field in FDATA which will be interpreted by NONMEM as 0. Using the NULL option to $DATA the default can be changed. However the NULL option is limited to one character and the only legal ones are [0-9-+] since these are numbers. All other values on $DATA will be met with ERROR from NM-TRAN. A double comma or tab at the end of a row will insert a value at the end after giving a big warning. If the number of columns in $INPUT is larger than the length of some row, NM-TRAN will warn and pad with NULLs. NULL items are inserted after the IGNORE filtering so comment characterscannot be inserted using NULL neither can the IGNORE/ACCEPT filter on NULL.
+
+IGNORE/ACCEPT
+~~~~~~~~~~~~~
+
+Some rules for the IGNORE/ACCEPT option in $DATA:
+
+- Cannot IGNORE on a dropped column
+- IGNORE is done before the error check, i.e. columns with text can be ignored
+- Text IGNORE (i.e. .EQ. and .NE.) can only contain letter + alphanum/underscore or a real number (no special fortran format), + or - (meaning 0)
+- With others .EQN, .GE. etc can only use numbers
+- A value for comparison can maximum have 12 characters (not counting spaces at start or end)
 
 
 Format of phi files
