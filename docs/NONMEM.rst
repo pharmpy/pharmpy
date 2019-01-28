@@ -10,6 +10,16 @@ NONMEM
 Dataset
 -------
 
+Overview of parsing and translation steps
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+- Removing commented rows
+- Splitting a row into data items
+- IGNORE/ACCEPT of rows
+- Dropping of columns
+- Error handling of non valid items
+- Translating TIMEs and DATEs
+
 NM-TRAN dataset parsing
 ~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -41,11 +51,13 @@ IGNORE/ACCEPT
 
 Some rules for the IGNORE/ACCEPT option in $DATA:
 
-- Cannot IGNORE on a dropped column
+- It is possible to IGNORE on a dropped column
 - IGNORE is done before the error check, i.e. columns with text can be ignored
-- Text IGNORE (i.e. .EQ. and .NE.) can only contain letter + alphanum/underscore or a real number (no special fortran format), + or - (meaning 0)
+- Text IGNORE (i.e. .EQ. and .NE.) can contain letter + alphanum/underscore or a real number (no special fortran format), + or - (meaning 0), no digit at start, no ., = has to be enclosed in ' or ". Other special characters are ok with or w/o "'.
 - With others .EQN, .GE. etc can only use numbers
-- A value for comparison can maximum have 12 characters (not counting spaces at start or end)
+- A text/number to IGNORE can be enclosed in ' or ".
+- A value for comparison can maximum have 12 characters (not counting spaces or '," at start or end)
+- IGNORE is performed before translating TIME and DATE
 
 
 Format of phi files
