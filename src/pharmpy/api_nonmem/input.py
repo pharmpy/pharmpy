@@ -17,6 +17,7 @@ def convert_fortran_exp_format(number_string):
        into an np.float64. It covers "a+b", "a-b", "+" and "-". All other cases will return None to
        signal that the number_string is not of the special form.
     """
+    #FIXME: Move this function as it will also be used by the output parser (and is perhaps more important there)
     if number_string == '+' or number_string == '-':
         return 0.0
 
@@ -139,7 +140,7 @@ class ModelInput(input.ModelInput):
     def _convert_data_item(x, null_value):
         if x is None or x == '.' or x == '':
             x = null_value
-        if length(x) > 24:
+        if len(x) > 24:
             raise DatasetError("The dataset contains an item that is longer than 24 characters")
         try:
             y = np.float64(x)
