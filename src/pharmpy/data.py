@@ -115,7 +115,7 @@ class Resampler(DatasetIterator):
         for i in range(0, self._resamples):
             random_groups = []
             for strata in self._sample_size_dict:
-                random_groups += list(np.random.choice(self._stratas[strata], size=self._sample_size_dict[strata], replace=self._replace))
+                random_groups += np.random.choice(self._stratas[strata], size=self._sample_size_dict[strata], replace=self._replace).tolist()
 
             new_df = pd.DataFrame()
             # Build the dataset given the random_groups list
@@ -124,7 +124,7 @@ class Resampler(DatasetIterator):
                 sub[self._group] = new_grp
                 new_df = new_df.append(sub)
 
-            return (new_df, list(random_groups))
+            return (new_df, random_groups)
 
     def data_files(self, path, filename="resample_{}.dta"):
         super().data_files(path, filename)
