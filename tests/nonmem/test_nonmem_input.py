@@ -38,7 +38,6 @@ def test_data_read_data_frame(pheno):
     df = inp.read_dataset(StringIO("  1  2  3  "), abc)
     assert list(df.iloc[0]) == [1, 2, 3]
     df = inp.read_dataset(StringIO("  1  2  3  \n\n"), abc)
-    print(df.dtypes)
     assert list(df.iloc[0]) == [1, 2, 3]
     with pytest.raises(DatasetError):
         df = inp.read_dataset(StringIO("1\t2 \t3"), abc)

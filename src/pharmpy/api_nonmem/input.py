@@ -167,7 +167,7 @@ class ModelInput(input.ModelInput):
         coldiff = len(colnames) - len(df.columns)   # Difference between number of columns in $INPUT and in the dataset
         if coldiff > 0:
             for _ in range(coldiff):    # Create empty columns. Pandas does not support df[[None, None]] = [0, 0] or similar hence the loop
-                df[None] = null_value
+                df[None] = float(null_value)
         elif coldiff < 0:
             colnames += [None] * abs(coldiff)
         df.columns = colnames
@@ -179,12 +179,12 @@ class ModelInput(input.ModelInput):
         self._data_frame = ModelInput.read_dataset(self.path, self._column_names(), ignore_character=ignore_character, null_value=null_value)
 
     @staticmethod
-    def read_dataset(filename_or_io, colnames, ignore_character='@', null_value=0):
+    def read_dataset(filename_or_io, colnames, ignore_character='@', null_value='0'):
         """ A static method to read in an NM-TRAN dataset and return a data frame
         """
         file_io = NMTRANDataIO(filename_or_io, ignore_character)
         df = pd.read_table(file_io, sep=r' *, *| *[\t] *| +', na_filter=False, header=None, engine='python', quoting=3, dtype=np.object)
-        ModelInput._postprocess_data_frame(df, colnames, null_value)
+        ModelInput._postprocess_data_frame(df, colnames, str(null_value))
         return df
 
     @property
