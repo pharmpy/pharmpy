@@ -7,28 +7,35 @@ import pharmpy.math
 
 
 class DatasetIterator:
-    """ Base class for iterator classes that generate datasets
+    """ Base class for iterator classes that generate new datasets from an input dataset
     """
     def __iter__(self):
         return self
 
     def data_files(self, path, filename="dataset_{}.dta"):
+        """ Write all datasets to files
+
+            All datasets of the iterator will be generated and written as csv files.
+
+            :param Path path: Where to create the dataset files
+            :param Format filename: A format string with one slot for the number of the resample starting from 1
+            :return: A list of paths for all generated files
         """
-            path is the path to where to create the resampled datasets
-            filename is a filename format where the number of the resample will be inserted starting from 1
-        """
-        path = Path(path) 
+        path = Path(path)
         self.paths = []
         for df, i in enumerate(self, 1):
             next_path = path / filename.format(i)
             df.to_csv(next_path)
             self.paths.append(next_path)
 
-    # Attribute paths can be used to get the paths to files stored. Document this
+        return self.paths
 
+#FIXME: Perhaps we should return the omitted group for each iteration
+class Omit(DatasetIterator):
+    """ Iterate over omissions of a certain group in a dataset. One group is omitted at a time.
 
-class GroupOmitter(DatasetIterator):
-    """Iterate over omissions of a certain group in a dataset. One group omitted at a time
+        :param DataFrame df: DataFrame to iterate over
+        :param colname group: Name of the column to use for grouping
     """
     def __init__(self, df, group):
         self._unique_groups = df[group].unique()
@@ -41,26 +48,30 @@ class GroupOmitter(DatasetIterator):
         df = self._df
         next_group = self._unique_groups[self._counter]
         new_df = df[df[group] != next_group]
-        self._counter = self._counter + 1
+        self._counter += 1
         return new_df
 
     def data_files(self, path, filename="omitted_{}.dta"):
         super().data_files(path, filename)
 
 
-class Resampler(DatasetIterator):
+class Resample(DatasetIterator):
     # TODO: Proper documentation
-    """Iterate over resamples of a dataset.
+    """ Iterate over resamples of a dataset.
 
-       The dataset will be grouped on the group column
-       then groups will be selected randomly with or without replacement to
-       form a new dataset. Stratification will make sure that 
+        The dataset will be grouped on the group column then groups will be selected
+        randomly with or without replacement to form a new dataset.
+        The groups will be renumbered from 1 and upwards to keep them separated in the new
+        dataset.
 
-       group is the name of the group column.
-       the groups will be renumbered from 1 and upwards
-       stratify is the name of the stratification column
-            the values in the stratification column must be equal within a group so that the group
-            can be uniquely determined. The method will raise an exception otherwise.
+        Stratification will make sure that
+
+        :param DataFrame df: DataFrame to iterate over
+        :param colname group: Name of column to group by
+        :param Int resamples: Number of resamples (iterations) to make
+        :param colname stratify: Name of column to use for stratification.
+            The values in the stratification column must be equal within a group so that the group
+            can be uniquely determined. A ValueError exception will be raised otherwise.
        sample_size is the number of groups that should be sampled. The default is the number of groups
             If using stratification the default is to sample using the proportion of the stratas in the dataset
             A dictionary of specific sample sizes for each strata can also be supplied.
@@ -70,6 +81,11 @@ class Resampler(DatasetIterator):
     """
 
     def __init__(self, df, group, resamples=1, stratify=None, sample_size=None, replace=False):
+        """ Some text
+
+            :param DataFrame df: Test
+
+        """
         unique_groups = df[group].unique()
         numgroups = len(unique_groups)
 
@@ -87,7 +103,7 @@ class Resampler(DatasetIterator):
             stratas = dict(stratas)     # strata: list of groups
         else:
             sample_size_dict = {1: sample_size}
-            stratas = {1: unique_groups} 
+            stratas = {1: unique_groups}
 
         # Check that we will not run out of samples without replacement.
         if not replace:
@@ -99,7 +115,7 @@ class Resampler(DatasetIterator):
                                 sample_size=sample_size_dict[strata], strata=strata, numgroups=len(stratas[strata])))
                     else:
                         raise ValueError('The sample size ({sample_size}) is larger than the number of groups' \
-                            '({numgroups}) which is impossible with replacement.'.format(sample_size=sample_size_dict[strata], numgroups=len(stratas[strata]))) 
+                            '({numgroups}) which is impossible with replacement.'.format(sample_size=sample_size_dict[strata], numgroups=len(stratas[strata])))
 
         self._df = df
         self._group = group
@@ -112,7 +128,7 @@ class Resampler(DatasetIterator):
         """
             generate resampled DataFrames
         """
-        for i in range(0, self._resamples):
+        for i in range(0, self._resamples):         # FIXME: This is not right!
             random_groups = []
             for strata in self._sample_size_dict:
                 random_groups += np.random.choice(self._stratas[strata], size=self._sample_size_dict[strata], replace=self._replace).tolist()
