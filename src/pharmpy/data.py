@@ -18,7 +18,8 @@ class DatasetIterator:
             All datasets of the iterator will be generated and written as csv files.
 
             :param Path path: Where to create the dataset files
-            :param Format filename: A format string with one slot for the number of the resample starting from 1
+            :param Format filename: A format string with one slot for the number of the
+                resample starting from 1
             :return: A list of paths for all generated files
         """
         path = Path(path)
@@ -30,7 +31,8 @@ class DatasetIterator:
 
         return self.paths
 
-#FIXME: Perhaps we should return the omitted group for each iteration
+
+# FIXME: Perhaps we should return the omitted group for each iteration
 class Omit(DatasetIterator):
     """ Iterate over omissions of a certain group in a dataset. One group is omitted at a time.
 
@@ -41,13 +43,14 @@ class Omit(DatasetIterator):
         self._unique_groups = df[group].unique()
         self._df = df
         self._counter = 0
+        self._group = group
 
     def __next__(self):
         if self._counter == len(self._unique_groups):
             raise StopIteration
         df = self._df
         next_group = self._unique_groups[self._counter]
-        new_df = df[df[group] != next_group]
+        new_df = df[df[self._group] != next_group]
         self._counter += 1
         return new_df
 
@@ -72,10 +75,12 @@ class Resample(DatasetIterator):
         :param colname stratify: Name of column to use for stratification.
             The values in the stratification column must be equal within a group so that the group
             can be uniquely determined. A ValueError exception will be raised otherwise.
-       sample_size is the number of groups that should be sampled. The default is the number of groups
-            If using stratification the default is to sample using the proportion of the stratas in the dataset
-            A dictionary of specific sample sizes for each strata can also be supplied.
-       replace is a boolean controlling whether sampling should be done with or without replacement
+        :param Int sample_size: The number of groups that should be sampled. The default is
+            the number of groups. If using stratification the default is to sample using the
+            proportion of the stratas in the dataset. A dictionary of specific sample sizes
+            for each strata can also be supplied.
+        :param bool replace: A boolean controlling whether sampling should be done with or
+            without replacement
 
        Returns a tuple of a resampled DataFrame and a list of resampled groups in order
     """
@@ -110,12 +115,15 @@ class Resample(DatasetIterator):
             for strata in sample_size_dict:
                 if sample_size_dict[strata] > len(stratas[strata]):
                     if stratify:
-                        raise ValueError('The sample size ({sample_size}) for strata {strata} is larger than the number of groups' \
+                        raise ValueError(
+                            'The sample size ({sample_size}) for strata {strata} is larger than the number of groups'
                             ' ({numgroups}) in that strata which is impoosible with replacement.'.format(
                                 sample_size=sample_size_dict[strata], strata=strata, numgroups=len(stratas[strata])))
                     else:
-                        raise ValueError('The sample size ({sample_size}) is larger than the number of groups' \
-                            '({numgroups}) which is impossible with replacement.'.format(sample_size=sample_size_dict[strata], numgroups=len(stratas[strata])))
+                        raise ValueError(
+                            'The sample size ({sample_size}) is larger than the number of groups'
+                            '({numgroups}) which is impossible with replacement.'.format(
+                                sample_size=sample_size_dict[strata], numgroups=len(stratas[strata])))
 
         self._df = df
         self._group = group
