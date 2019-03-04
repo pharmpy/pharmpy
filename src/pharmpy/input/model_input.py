@@ -13,7 +13,7 @@ Definitions
 
 import logging
 
-import pharmpy.data as data
+import pharmpy.data.iterators as iters
 
 from .filters import InputFilters
 
@@ -92,9 +92,10 @@ class ModelInput(object):
         return varying_ids
 
     def resample(self, group=None, stratify=None, sample_size=None, replace=False):
-        """A convenience method to get a data.Resample iterator for a model dataset
+        # FIXME: Remove this method. Adds too little value
+        """A convenience method to get a data.iterators.Resample iterator for a model dataset
         """
         if group is None:
             group = self.id_column
 
-        return data.Resample(self.data_frame, group, stratify=stratify, sample_size=sample_size, replace=replace)
+        return iters.Resample(self.data_frame, group, stratify=stratify, sample_size=sample_size, replace=replace)

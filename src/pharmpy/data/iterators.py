@@ -1,3 +1,14 @@
+"""
+data.iterators
+==============
+
+Iterators generating new datasets from a dataset
+
+Currenly contains:
+
+1. Omit - Can be used for cdd
+2. Resample - Can be used by bootstrap
+"""
 import collections
 import numpy as np
 import pandas as pd
@@ -8,6 +19,9 @@ import pharmpy.math
 
 class DatasetIterator:
     """ Base class for iterator classes that generate new datasets from an input dataset
+
+        The __next__ function could return either a DataFrame or a tuple where the first
+        element is the main DataFrame.
     """
     def __iter__(self):
         return self
@@ -24,20 +38,22 @@ class DatasetIterator:
         """
         path = Path(path)
         self.paths = []
-        for df, i in enumerate(self, 1):
+        for i, df in enumerate(self, 1):
             next_path = path / filename.format(i)
+            if isinstance(df, tuple):
+                df = df[0]
             df.to_csv(next_path)
             self.paths.append(next_path)
 
         return self.paths
 
 
-# FIXME: Perhaps we should return the omitted group for each iteration
 class Omit(DatasetIterator):
     """ Iterate over omissions of a certain group in a dataset. One group is omitted at a time.
 
         :param DataFrame df: DataFrame to iterate over
         :param colname group: Name of the column to use for grouping
+        :returns: Tuple of DataFrame and the omitted group
     """
     def __init__(self, df, group):
         self._unique_groups = df[group].unique()
@@ -52,14 +68,13 @@ class Omit(DatasetIterator):
         next_group = self._unique_groups[self._counter]
         new_df = df[df[self._group] != next_group]
         self._counter += 1
-        return new_df
+        return new_df, next_group
 
     def data_files(self, path, filename="omitted_{}.dta"):
-        super().data_files(path, filename)
+        return super().data_files(path, filename)
 
 
 class Resample(DatasetIterator):
-    # TODO: Proper documentation
     """ Iterate over resamples of a dataset.
 
         The dataset will be grouped on the group column then groups will be selected
@@ -82,15 +97,10 @@ class Resample(DatasetIterator):
         :param bool replace: A boolean controlling whether sampling should be done with or
             without replacement
 
-       Returns a tuple of a resampled DataFrame and a list of resampled groups in order
+        :returns: A tuple of a resampled DataFrame and a list of resampled groups in order
     """
 
     def __init__(self, df, group, resamples=1, stratify=None, sample_size=None, replace=False):
-        """ Some text
-
-            :param DataFrame df: Test
-
-        """
         unique_groups = df[group].unique()
         numgroups = len(unique_groups)
 
@@ -105,6 +115,9 @@ class Resample(DatasetIterator):
                 non_rounded_sample_sizes = stratas.apply(lambda x: (len(x) / numgroups) * sample_size)
                 rounded_sample_sizes = pharmpy.math.round_and_keep_sum(non_rounded_sample_sizes, sample_size)
                 sample_size_dict = dict(rounded_sample_sizes)    # strata: numsamples
+            else:
+                sample_size_dict = sample_size
+
             stratas = dict(stratas)     # strata: list of groups
         else:
             sample_size_dict = {1: sample_size}
@@ -133,22 +146,23 @@ class Resample(DatasetIterator):
         self._resamples = resamples
 
     def __next__(self):
-        """
-            generate resampled DataFrames
-        """
-        for i in range(0, self._resamples):         # FIXME: This is not right!
-            random_groups = []
-            for strata in self._sample_size_dict:
-                random_groups += np.random.choice(self._stratas[strata], size=self._sample_size_dict[strata], replace=self._replace).tolist()
+        if self._resamples == 0:
+            raise StopIteration
 
-            new_df = pd.DataFrame()
-            # Build the dataset given the random_groups list
-            for grp_id, new_grp in zip(random_groups, range(1, len(random_groups) + 1)):
-                sub = self._df.loc[self._df[self._group] == grp_id].copy()
-                sub[self._group] = new_grp
-                new_df = new_df.append(sub)
+        self._resamples -= 1
+        random_groups = []
+        for strata in self._sample_size_dict:
+            random_groups += np.random.choice(self._stratas[strata], size=self._sample_size_dict[strata], replace=self._replace).tolist()
 
-            return (new_df, random_groups)
+        new_df = pd.DataFrame()
+        # Build the dataset given the random_groups list
+        for grp_id, new_grp in zip(random_groups, range(1, len(random_groups) + 1)):
+            sub = self._df.loc[self._df[self._group] == grp_id].copy()
+            sub[self._group] = new_grp
+            new_df = new_df.append(sub)
+        new_df.reset_index(inplace=True, drop=True)
+
+        return new_df, random_groups
 
     def data_files(self, path, filename="resample_{}.dta"):
-        super().data_files(path, filename)
+        return super().data_files(path, filename)
