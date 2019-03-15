@@ -57,6 +57,8 @@ class Omit(DatasetIterator):
     """
     def __init__(self, df, group):
         self._unique_groups = df[group].unique()
+        if len(self._unique_groups == 1):
+            raise ValueError("Cannot create an Omit iterator as the number of unique groups is 1.")
         self._df = df
         self._counter = 0
         self._group = group
