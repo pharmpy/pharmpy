@@ -60,8 +60,11 @@ Some rules for the IGNORE/ACCEPT option in $DATA:
 - IGNORE is performed before translating TIME and DATE
 
 
-Format of phi files
--------------------
+phi files
+---------
+
+File format
+~~~~~~~~~~~
 
 The default format (could this be changed?) of the table part (except the TABLE NO. lines) of a phi-file (probably the same for other types, but for now only phi has been investigated) is as follows:
 First the column header line that is formatted like this:
@@ -82,6 +85,10 @@ The data is right justified with a field size of 13 characters (padded with spac
 
 The number format is integer for the first two columns, scientific with 5 decimals and 2 digits exponent for the ETA and ETC columns. The number in the OBJ column is written in regular decimal format and will always take up 19 characters with first character being space for positive numbers or "-" for negative numbers. For numbers having an integer part of zero will take up 20 characters.
 
+$ETAS
+~~~~~
+
+The path for the FILE option in $ETAS can have a maximum of 54 characters (tested with NONMEM 7.4.3)
 
 
 Code records
