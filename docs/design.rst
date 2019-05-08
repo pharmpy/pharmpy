@@ -155,6 +155,26 @@ So the classes: Results (each "atomic" result), ResultsStructure (combining all 
 
 All the classes mentioned are tool agnostic. We want to support conversion to SO for as many of these as possible, this conversion must be initiated by the ResultsStrcuture object as multiple Results might be combined into one SOBlock. Reading in results to populate the result classes will be tool specific which could be a further subclassing. A tool specific subclassing of ResultsStructure (needs a better name) can read in all results from a specific run. Operations needs to be tools specifically subclassed.
 
+Property: `operations`
+----------------------
+
+A list of ModelOperation objects.
+Class hierarcy:
+
+* ModelOperation
+  * Modelfit
+    * SAEM
+    * FOCE
+  * Simulation and/or Prediction
+
+The number of types of operations (the second level above) should be kept to a minimum.
+
+Property: `dispatcher`
+----------------------
+
+An OperationDispatcher object. This object will be provided by a tool plugin. It shall have a method that take a model as input and tries to carry out the operations of the model. If any operation is not supported it should raise an exception. A model will get a default dispatcher depending on filetype, i.e. a NONMEM model will get the NONMEM plugin dispatcher. It should be possible to replace the dispatcher.
+
+
 
 Old notes follow:
 
@@ -244,3 +264,19 @@ with::
 
    # this pollutes the poor namespace!
    model.column_list()
+
+Methods
+=======
+
+Methods are formalised workflows that implement pharmacometric methods. (These were known as tools in PsN). A method has *main input*, *options*, *global options*, an *implementation* and *results*. Each method is organized in a submodule. Examples of methods include:
+
+1. Bootstrap
+   * Main input: a model and the number of samples
+   * Options: stratification, no replacement etc
+   * Implementation: The pharmpy implementation
+   * Results: A standard BootstrapResults object
+2. FREM
+
+All methods are agnostic to model formats and tools used for the basic operations.
+
+The :mod:`~pharmpy.methods` is the toplevel subpackage for methods internal to pharmpy. Each method will have a subnamespace below that, for example :mod:`~pharmpy.methds.FREM`, :mod:`~pharmpy.methods.bootstrap` etc.
