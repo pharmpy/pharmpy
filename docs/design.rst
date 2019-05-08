@@ -256,6 +256,8 @@ If the 2nd layer is e.g. "list-like", just inherit :class:`list`. It's Python 3 
 Why Multiple APIs?
 ------------------
 
+.. note:: As more and more properties giving agnostic objects are added the need for this diminishes. The column_list() method for example is not needed as the columns will be taken directly from the agnostic pandas DataFrame object. Perhaps the model should have a property at the top level for the data.
+
 Why multiple APIs in a hierarchy and not only one directly on the model class? Compare code::
 
    model.input.column_list()
