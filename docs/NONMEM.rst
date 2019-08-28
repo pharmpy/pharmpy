@@ -88,7 +88,7 @@ The number format is integer for the first two columns, scientific with 5 decima
 $ETAS
 ~~~~~
 
-The filename (not the path) for the FILE option in $ETAS can have a maximum of 54 characters (tested with NONMEM 7.4.3)
+The filename (not the path) for the FILE option in $ETAS can have a maximum of 54 characters (tested with NONMEM 7.4.3). The provided phi-file does not need to have the ETC or OBJ columns.
 
 
 
