@@ -59,6 +59,13 @@ Some rules for the IGNORE/ACCEPT option in $DATA:
 - A value for comparison can maximum have 12 characters (not counting spaces or '," at start or end)
 - IGNORE is performed before translating TIME and DATE
 
+ID checking
+~~~~~~~~~~~
+
+NM-TRAN will give warnings if it thinks there is a risk of an ID being truncated because NONMEM will encode IDs as doubles. Here is a (possibly partial) list of the rules that NM-TRAN use to decide whether to put up a warning:
+
+- If the number is written using scientific notation and has 14 or more digits for the mantissa (in decimal) not counting starting zeroes
+- If the number is written using non-scientific notation and has 14 digits or more not counting starting zeroes or trailing zeroes after the decimal point.
 
 phi files
 ---------
