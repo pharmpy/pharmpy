@@ -33,6 +33,7 @@ Some rules for the parsing of the dataset by NM-TRAN. These were tested with NON
 - Comma in the end or beginning of a row will insert NULL after or before the comma
 - Each item can only be numeric i.e. no other characters than Ee+-0123456789 are allowed except for TIME, II, DATE, DATx columns
 - The fortran short form for exponential notation is allowed, i.e. 2-1 means 2e-1 and 2+1 means 2e1
+- A "D" or "d" instead of "E" or "e" are allowed in exponential notation.
 - A lone + or - in an item means 0
 - A . (dot) in an item means NULL
 - An item can be at most 24 characters long, not counting delimiters and spaces that was eaten by other delimiter

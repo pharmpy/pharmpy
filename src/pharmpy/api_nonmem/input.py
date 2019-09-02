@@ -14,7 +14,7 @@ from pharmpy.input import DatasetError
 
 def convert_fortran_exp_format(number_string):
     """This function will try to convert the number_string from the special fortran exponential format
-       into an np.float64. It covers "a+b", "a-b", "+" and "-". All other cases will return None to
+       into an np.float64. It covers "1d1", "1D1", "a+b", "a-b", "+" and "-". All other cases will return None to
        signal that the number_string is not of the special form.
     """
     #FIXME: Move this function as it will also be used by the output parser (and is perhaps more important there)
@@ -33,8 +33,16 @@ def convert_fortran_exp_format(number_string):
             mantissa = float(m.groups(5))
         exponent = m.group(6)
         return np.float64(mantissa * 10**exponent)
-    else:
-        return None
+
+    if "D" in number_string or "d" in number_string:
+        clean_number = number_string.replace("D", "e").replace("d", "e")
+        try:
+            y = np.float64(clean_number)
+        except:
+            return None
+        return y
+
+    return None
 
 
 class NMTRANDataIO(StringIO):
