@@ -1,4 +1,5 @@
 import pytest
+import pandas as pd
 
 import pharmpy.data as data
 
@@ -13,6 +14,8 @@ def df():
 def test_column_type():
     col_type = data.ColumnType.ID
     assert col_type == data.ColumnType.ID
+    assert 'ID' in repr(col_type)
+    assert col_type.max_one
 
 
 def test_data_frame():
@@ -47,4 +50,4 @@ def test_accessor_get_set_column_type():
 
 def test_time_varying_covariates(df):
     assert df.pharmpy.time_varying_covariates == ['WGT']
-    #print(df.pharmpy.covariate_baselines)
+    pd.testing.assert_frame_equal(df.pharmpy.covariate_baselines, pd.DataFrame({'WGT': [70, 75], 'HGT': [185, 160]}, index=pd.Int64Index([1, 2], name='ID')))
