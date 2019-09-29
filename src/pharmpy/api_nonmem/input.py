@@ -1,6 +1,7 @@
 # -*- encoding: utf-8 -*-
 
 import re
+import warnings
 from io import StringIO
 from os.path import realpath
 from pathlib import Path
@@ -166,7 +167,7 @@ class ModelInput(input.ModelInput):
             3. Convert None, '.', empty string to the NULL value
             4. Convert Inf/NaN properly
             5. Pad with null_token columns if $INPUT has more columns than the dataset 
-            6. Set column names from $INPUT and pad with None if dataset has more columns
+            6. Stip away superfluous columns from the dataset and give a warning
         """
         for column in df:
             df[column] = df[column].apply(ModelInput._convert_data_item, args=(null_value,))
@@ -177,7 +178,7 @@ class ModelInput(input.ModelInput):
             for _ in range(coldiff):    # Create empty columns. Pandas does not support df[[None, None]] = [0, 0] or similar hence the loop
                 df[None] = float(null_value)
         elif coldiff < 0:
-            colnames += [None] * abs(coldiff)
+            warnings.warn(DatasetWarning("There are more columns in the dataset than in $INPUT. The extra columns have not been loaded."))
         df.columns = colnames
 
     def _read_data_frame(self):
