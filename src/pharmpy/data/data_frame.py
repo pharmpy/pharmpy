@@ -118,7 +118,7 @@ class LabelsByTypeIndexer:
         elif len(labels) > 1:
             raise KeyError('Did not expect more than one ' + str(tp))
         else:
-            return labels[0]
+            return labels
 
     def _get_many_labels(self, column_type):
         """ Will raise if no columns of the type exists
@@ -165,7 +165,7 @@ class DataFrameAccessor:
     def id_label(self):
         """ Return the label of the id column
         """
-        return self.labels_by_type[ColumnType.ID]
+        return self.labels_by_type[ColumnType.ID][0]
 
     @property
     def time_varying_covariates(self):
