@@ -17,7 +17,7 @@ __version__ = '0.1.0'
 
 import logging
 
-from .model import Model
+from .model_factory import Model
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 

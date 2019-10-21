@@ -6,6 +6,9 @@ from pathlib import Path
 
 #class Model(pharmpy.Model):
 class Model:
+    def __init__(self, obj, **kwargs):
+        pass
+
     @staticmethod
     def detect(obj, *args, **kwargs):
         """ Check if obj is the path to a NONMEM control stream.
