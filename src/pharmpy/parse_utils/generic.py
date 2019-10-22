@@ -401,13 +401,14 @@ class GenericParser:
         """
         if not non_empty or isinstance(item, Token):
             return item
-        try:
-            pos, name = non_empty[rule_of(item)]
-        except KeyError:
-            pass
-        else:
-            if not any(rule_of(child) == name for child in item.children):
-                item.children.insert(pos, empty_rule(name))
+        for d in non_empty:
+            try:
+                pos, name = d[rule_of(item)]
+            except KeyError:
+                pass
+            else:
+                if not any(rule_of(child) == name for child in item.children):
+                    item.children.insert(pos, empty_rule(name))
         for i, child in enumerate(item.children):
             item.children[i] = cls.insert(child, non_empty)
         return item

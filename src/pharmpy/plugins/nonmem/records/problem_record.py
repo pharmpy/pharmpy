@@ -1,24 +1,16 @@
-#from pharmpy.parse_utils import AttrTree
+from pharmpy.parse_utils import AttrTree, AttrToken
 from .record import Record
-#from .parser import ProblemRecordParser
-
 
 class ProblemRecord(Record):
-    pass
-#    def __init__(self, buf):
-#        self.parser = ProblemRecordParser(buf)
-#        self.root = self.parser.root
+    @property
+    def title(self):
+        max_number_of_characters_in_title = 72
+        return str(self.root.title)[:max_number_of_characters_in_title]
 
-    #@property
-    #def string(self):
-    #    return str(self.root.text)
-
-    #@string.setter
-    #def string(self, new_str):
-    #    if new_str != new_str.strip():
-    #        raise ValueError("Can't set ProblemRecord.string to whitespace-padded %r" % new_str)
-    #    node = AttrTree.create('text', dict(TEXT=new_str))
-    #    self.root.set('text', node)
-
-#    def __str__(self):
-#        return super().__str__() + str(self.parser.root)
+    @title.setter
+    def title(self, new_title):
+        if new_title != new_title.strip():
+            raise ValueError(f"Can't set ProblemRecord.string to whitespace-padded {new_title}")
+        node = AttrTree.create('title', dict(REST_OF_LINE=new_title))
+        self.root.set('title', node)
+        self.root.set('WS_INLINE', AttrToken('WS_INLINE', ' '))

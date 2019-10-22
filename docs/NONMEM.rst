@@ -93,6 +93,11 @@ The data is right justified with a field size of 13 characters (padded with spac
 
 The number format is integer for the first two columns, scientific with 5 decimals and 2 digits exponent for the ETA and ETC columns. The number in the OBJ column is written in regular decimal format and will always take up 19 characters with first character being space for positive numbers or "-" for negative numbers. For numbers having an integer part of zero will take up 20 characters.
 
+$PROBLEM
+~~~~~~~~
+
+Title text is only allowed on the same line as the $PROBLEM. Putting it on other lines will crash NMTRAN. Whitespace before the first text is not part of the title. There can be no comments on the title line, i.e. comments will be part of the title. The title can maximum be 72 characters including space. Characters coming after the 72 will be ignored.
+
 $ETAS
 ~~~~~
 

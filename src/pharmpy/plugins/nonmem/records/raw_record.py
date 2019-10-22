@@ -9,6 +9,7 @@ class RawRecord(record.Record):
     """
     def __init__(self, content):
         self.content = content
+        self.raw_name = ''
 
     def __str__(self):
-        return super().__str__() + self.content
+        return self.raw_name + self.content

@@ -5,11 +5,18 @@ import random
 from collections import namedtuple
 
 import pharmpy.plugins.nonmem.records
+import pharmpy.plugins.nonmem.nmtran_parser
 
 
 @pytest.fixture
 def records():
     return pharmpy.plugins.nonmem.records
+
+
+@pytest.fixture
+def parser():
+    return pharmpy.plugins.nonmem.nmtran_parser.NMTranParser()
+
 
 @pytest.fixture
 def create_record(nonmem):
