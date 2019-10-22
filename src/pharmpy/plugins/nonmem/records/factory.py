@@ -19,9 +19,9 @@ known_records = {
 def split_raw_record_name(line):
     """Splits the raw record name of the first line of a record from the rest of the record
     """
-    m = re.match(r'(\s*\$[A-za-z]+)(.*)', line)
+    m = re.match(r'(\s*\$[A-za-z]+)(.*)', line, flags=re.MULTILINE|re.DOTALL)
     if m:
-        return m.group(0, 1)
+        return m.group(1, 2)
     else:
         raise NMTranParseError(f'Bad record name in: {line}')
 
@@ -40,23 +40,11 @@ def create_record(chunk):
     raw_name, content = split_raw_record_name(chunk)
     name = get_canonical_record_name(raw_name)
     if name:
-        record_class = records_list.known_records[name]
+        record_class = known_records[name]
         record = record_class()
     else:
         record = RawRecord(content)
 
-    #if record_class_name == 'RawRecord':
-    #    record = raw_record.RawRecord(content)
-    #elif record_class_name == 'OptionRecord':
-    #    record = option_record.OptionRecord(content)
-    #elif record_class_name == 'ThetaRecord':
-    #    record = theta_record.ThetaRecord(content)
-    #elif record_class_name == 'OmegaRecord':
-    #    record = omega_record.OmegaRecord(content)
-    #elif record_class_name == 'ProblemRecord':
-    #    record = problem_record.ProblemRecord(content)
-    #elif record_class_name == 'DataRecord':
-    #    record = data_record.DataRecord(content)
     record.raw_name = raw_name
-    #record.name = name
-    return record
+
+    return record, content

@@ -1,10 +1,15 @@
 # -*- encoding: utf-8 -*-
 
+import pytest
 import random
 from collections import namedtuple
 
-import pytest
+import pharmpy.plugins.nonmem.records
 
+
+@pytest.fixture
+def records():
+    return pharmpy.plugins.nonmem.records
 
 @pytest.fixture
 def create_record(nonmem):

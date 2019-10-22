@@ -1,0 +1,18 @@
+root : [WS] text? [WS] [NL (comment | ws)*]
+text : TEXT
+TEXT : /\S.*(?<!\s)/
+
+// common rules
+ws      : WS_ALL
+comment : ";" [WS] [COMMENT] [WS]
+
+// common misc terminals
+WS: (" " | /\t/)+
+WS_ALL: /\s+/
+NL: /\r?\n/
+
+// common naked/enquoted text terminals
+// TEXT : /[^"',;()=\s]+/  // all other records
+COMMENT : /\S.*(?<!\s)/  // no left/right whitespace padding
+
+// %input| A \n ; A B ; D \n ; |

@@ -7,3 +7,5 @@ def test_simple_parse():
     model = parser.parse('$PROBLEM MYPROB')
 
     assert len(model.records) == 1
+    assert type(model.records[0]).__name__ == 'ProblemRecord'
+    assert str(model) == '$PROBLEM MYPROB'
