@@ -32,8 +32,10 @@ sep : WS
     | [WS] "," [WS]
 sepsep : [WS] "," [WS] "," [WS]
 _lpar : "(" [WS]
-_rpar : [WS] [FIX] ")" [n]
-       | [WS] ")" [FIX]
+_rpar : [WS] FIX ")" n
+      | [WS] ")" n
+      | [WS] ")" FIX
+      | [WS] ")"
 
 init : NUMERIC
 low  : NUMERIC | NEG_INF

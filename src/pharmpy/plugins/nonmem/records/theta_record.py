@@ -1,20 +1,21 @@
 # -*- encoding: utf-8 -*-
 
 import numpy as np
+import sympy as sym
 
-from pharmpy.api_nonmem.records.parser import ThetaRecordParser
-from pharmpy.api_nonmem.records.record import Record
+from .record import Record
 from pharmpy.parameters import Scalar
 from pharmpy.parse_utils import AttrTree
 
 
 class ThetaRecord(Record):
-    def __init__(self, buf):
-        self.parser = ThetaRecordParser(buf)
-        self.root = self.parser.root
-
-    def __str__(self):
-        return super().__str__() + str(self.parser.root)
+    @property
+    def constraints(self):
+        """An array of symbolic constraints for each theta in the record
+        """
+        for theta in self.root.all('theta'):
+            init = theta.init.tokens[0].eval
+            print("QQ", init)
 
     @property
     def params(self):

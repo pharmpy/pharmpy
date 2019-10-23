@@ -3,17 +3,19 @@ import re
 from pharmpy.plugins.nonmem.exceptions import NMTranParseError
 from .raw_record import RawRecord
 from .problem_record import ProblemRecord
-from .parsers import ProblemRecordParser
+from .option_record import OptionRecord
+from .theta_record import ThetaRecord
+from .parsers import ProblemRecordParser, OptionRecordParser, ThetaRecordParser
 
 
 # Dictionary from canonical record name to record class and non_empty rules of parser
 known_records = {
     #'DATA': 'DataRecord',
-    #'ESTIMATION': 'OptionRecord',
-    #'INPUT': 'OptionRecord',
-    'PROBLEM': (ProblemRecord, ProblemRecordParser)
-    #'SIZES': 'OptionRecord',
-    #'THETA': 'ThetaRecord',
+    'ESTIMATION': (OptionRecord, OptionRecordParser),
+    'INPUT': (OptionRecord, OptionRecordParser),
+    'PROBLEM': (ProblemRecord, ProblemRecordParser),
+    'SIZES': (OptionRecord, OptionRecordParser),
+    'THETA': (ThetaRecord, ThetaRecordParser),
     #'OMEGA': 'OmegaRecord',
 }
 
@@ -49,6 +51,7 @@ def create_record(chunk):
     else:
         record = RawRecord(content)
 
+    record.name = name
     record.raw_name = raw_name
 
     return record

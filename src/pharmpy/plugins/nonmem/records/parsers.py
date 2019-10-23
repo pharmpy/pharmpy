@@ -25,9 +25,9 @@ class ProblemRecordParser(RecordParser):
 
 class ThetaRecordParser(RecordParser):
     grammar_filename = 'theta_record.lark'
-    non_empty = {
-        'comment': (1, 'COMMENT')
-    }
+    non_empty = [
+        { 'comment': (1, 'COMMENT') },
+    ]
 
 
 class OmegaRecordParser(RecordParser):
