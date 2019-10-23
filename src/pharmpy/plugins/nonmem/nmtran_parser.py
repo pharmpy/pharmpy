@@ -13,7 +13,7 @@ class NMTranParser:
     def parse(self, text):
         stream = NMTranControlStream()
 
-        record_strings = re.split(r'^(?=\s*\$)', text, flags=re.MULTILINE)
+        record_strings = re.split(r'^(?=[ \t]*\$)', text, flags=re.MULTILINE)
         first = record_strings.pop(0)       # Empty if nothing before first record
         if first:
             stream.records.append(RawRecord(first))

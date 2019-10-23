@@ -18,3 +18,11 @@ def test_simple_parse():
     assert type(model2.records[1]).__name__ == 'ProblemRecord'
 
     assert str(model2) == model2_str 
+
+
+def test_round_trip(pheno_path):
+    parser = NMTranParser()
+
+    content = open(pheno_path, 'r').read()
+    model = parser.parse(content)
+    assert str(model) == content

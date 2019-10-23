@@ -1,7 +1,6 @@
-root: [WS_INLINE] [title] NEWLINE [REMAINING]
-title: REST_OF_LINE
+root: [raw_title] NEWLINE [REMAINING]
+raw_title: REST_OF_LINE
 REST_OF_LINE: /.+/
 REMAINING: /(.|\n)+/
 
-%import common.WS_INLINE
 %import common.NEWLINE

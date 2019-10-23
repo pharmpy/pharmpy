@@ -17,9 +17,8 @@ class RecordParser(GenericParser):
 class ProblemRecordParser(RecordParser):
     grammar_filename = 'problem_record.lark'
     non_empty = [
-        {'root': (0, 'title')},
-        {'root': (0, 'WS_INLINE')},
-        {'title': (0, 'REST_OF_LINE') },
+        {'root': (0, 'raw_title')},
+        {'raw_title': (0, 'REST_OF_LINE') },
     ]
     
 

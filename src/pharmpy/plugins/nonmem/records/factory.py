@@ -51,6 +51,4 @@ def create_record(chunk):
 
     record.raw_name = raw_name
 
-
-
     return record
