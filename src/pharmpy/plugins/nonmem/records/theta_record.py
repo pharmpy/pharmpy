@@ -6,9 +6,37 @@ import sympy as sym
 from .record import Record
 from pharmpy.parameters import Scalar
 from pharmpy.parse_utils import AttrTree
+from pharmpy.parameter import Parameter, ParameterSet
 
 
 class ThetaRecord(Record):
+    def parameters(self, first_theta):
+        """Get a parameter set for this theta record.
+        first_theta is the number of the first theta in this record
+        """
+        pset = ParameterSet()
+        for theta in self.root.all('theta'):
+            init = theta.init.tokens[0].eval
+            fix = bool(theta.find('FIX'))
+            if theta.find('low'):
+                lower = theta.low.tokens[0].eval
+            else:
+                lower = None
+            if theta.find('up'):
+                upper = theta.up.tokens[0].eval
+            else:
+                upper = None
+            multiple = theta.find('n')
+            if multiple:
+                n = multiple.INT
+            else:
+                n = 1
+            for i in range(first_theta, first_theta + n):
+                new_par = Parameter(f'THETA({i})', init, lower, upper, fix)
+                pset.add(new_par)
+        return pset
+
+
     @property
     def constraints(self):
         """An array of symbolic constraints for each theta in the record

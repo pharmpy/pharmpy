@@ -1,6 +1,7 @@
 import pytest
 import sympy
-from pharmpy.parameter import Parameter
+from pharmpy.parameter import Parameter, ParameterSet
+
 
 
 @pytest.mark.parametrize('name,init,lower,upper,fix', [
@@ -45,3 +46,16 @@ def test_unconstrain():
     fixed_param.unconstrain()
     assert fixed_param.lower == -sympy.oo
     assert fixed_param.upper == sympy.oo
+
+
+def test_pset_index():
+    p = Parameter('Y', 9)
+    pset = ParameterSet((p,))
+    assert len(pset) == 1
+    assert pset['Y'] is p
+
+    p2 = Parameter('Z', 5)
+    pset.add(p2)
+    print(pset)
+    assert len(pset) == 2
+    assert pset[p2.symbol] is p2

@@ -1,6 +1,14 @@
 import sympy
 
 
+class ParameterSet(set):
+    def __getitem__(self, index):
+        for e in self:
+            if e.symbol == index or e.symbol.name == index:
+                return e
+        raise KeyError(f'Parameter "{index}" does not exist')
+
+
 class Parameter:
     def __init__(self, name, init, lower=None, upper=None, fix=False):
         """A parameter
@@ -90,3 +98,12 @@ class Parameter:
         """Remove all constraints of a parameter
         """
         self._constraints = sympy.And(self.symbol <= sympy.oo, self.symbol >= -sympy.oo)
+
+    def __hash__(self):
+        return hash(self._symbol.name)
+
+    def __str__(self):
+        return self._symbol.name
+
+    def __repr__(self):
+        return f'Parameter({self.symbol.name}, {self.init}, lower={self.lower}, upper={self.upper}, fix={self.fix})'
