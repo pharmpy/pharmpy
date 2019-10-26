@@ -56,6 +56,14 @@ def test_pset_index():
 
     p2 = Parameter('Z', 5)
     pset.add(p2)
-    print(pset)
+
     assert len(pset) == 2
     assert pset[p2.symbol] is p2
+
+    # Check that the parameter set keeps the insertion order upon iteration
+    for i, param in enumerate(pset):
+        if i == 0:
+            assert param is p
+        else:
+            assert param is p2
+

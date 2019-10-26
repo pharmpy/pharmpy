@@ -1,7 +1,9 @@
 import sympy
 
+from pharmpy.data_structures import OrderedSet
 
-class ParameterSet(set):
+
+class ParameterSet(OrderedSet):
     def __getitem__(self, index):
         for e in self:
             if e.symbol == index or e.symbol.name == index:
