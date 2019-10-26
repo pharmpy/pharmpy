@@ -52,6 +52,12 @@ class ThetaRecord(Record):
         return pset
 
     def set(self, parameters, first_theta):
+        """From a ParameterSet update the THETAs in this record
+
+        A new parse tree will be created from scratch. I.e. currently not usable for user facing updates
+        """
+        for p in parameters:
+
     @thetas.setter
     def thetas(self, thetas):
         nodes = []

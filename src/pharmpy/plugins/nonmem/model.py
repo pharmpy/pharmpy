@@ -27,3 +27,15 @@ class Model:
                     return True
 
         return False
+
+    @property
+    def parameters(self):
+        """Get the ParameterSet of all parameters
+        """
+        next_theta = 1
+        params = ParameterSet()
+        for theta_record in self.get_records('THETA'):
+            thetas = theta_record.parameters(next_theta)
+            params.update(thetas)
+            next_theta += len(thetas) 
+        return params
