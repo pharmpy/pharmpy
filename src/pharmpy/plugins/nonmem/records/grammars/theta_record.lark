@@ -35,6 +35,7 @@ _lpar : "(" [WS]
 _rpar : [WS] FIX ")" n
       | [WS] ")" n
       | [WS] ")" FIX
+      | [WS] FIX ")"
       | [WS] ")"
 
 init : NUMERIC

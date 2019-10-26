@@ -1,82 +1,46 @@
-# -*- encoding: utf-8 -*-
+import pytest
+import sympy
 
-@pytest.mark.usefixtures('create_record')
-@pytest.mark.parametrize('buf,thetas', [
-    ('$THETA 0', 'THETA(1)', 0, -sympy.oo, sympy.oo, False),        # FIXME: Should be NONMEM INF here!
-    ('$THETA   12.3 \n\n', 'THETA(1)', 12.3,  np.array((
-        Scalar(12.3)
-    ))),
-    ('THETA  (0,0.00469) ; CL', np.array((
-        Scalar(0.00469, lower=0),
-    ))),
-    ('THETA  (0,3) 2 FIXED (0,.6,1) 10 (-INF,-2.7,0) (37 FIXED)', np.array((
-        Scalar(3, lower=0), Scalar(2, fix=True), Scalar(0.6, lower=0, upper=1),
-        Scalar(10), Scalar(-2.7, upper=0), Scalar(37, fix=True),
-    ))),
+
+@pytest.mark.usefixtures('parser')
+@pytest.mark.parametrize('buf,results', [
+    ('$THETA 0', [('THETA(1)', 0, -1000000, 1000000, False)]),
+    ('$THETA    12.3 \n\n', [('THETA(1)', 12.3, -1000000, 1000000, False)]),
+    ('$THETA  (0,0.00469) ; CL', [('THETA(1)', 0.00469, 0, 1000000, False)]),
+    ('$THETA  (0,3) 2 FIXED (0,.6,1) 10 (-INF,-2.7,0)  (37 FIXED)\n 19 (0,1,2)x3', [
+        ('THETA(1)', 3, 0, 1000000, False),
+        ('THETA(2)', 2, 2, 2, True),
+        ('THETA(3)', .6, 0, 1, False),
+        ('THETA(4)', 10, -1000000, 1000000, False),
+        ('THETA(5)', -2.7, -1000000, 0, False),
+        ('THETA(6)', 37, 37, 37, True),
+        ('THETA(7)', 19, -1000000, 1000000, False),
+        ('THETA(8)', 1, 0, 2, False),
+        ('THETA(9)', 1, 0, 2, False),
+        ('THETA(10)', 1, 0, 2, False),
+        ])
 ])
-def test_create(create_record, buf, thetas):
-    rec = create_record(buf)
-    assert rec.name == 'THETA'
-    assert_array_equal(rec.thetas, thetas)
-
-def test_parameters(parser):
-    rec = parser.parse('$THETA 1').records[0]
+def test_parameters(parser, buf, results):
+    recs = parser.parse(buf)
+    rec = recs.records[0]
     pset = rec.parameters(1)
+    assert len(pset) == len(results) 
+    for res in results:
+        name = res[0]
+        init = res[1]
+        lower = res[2]
+        upper = res[3]
+        fix = res[4]
+        param = pset[name]
+        assert param.symbol.name == name
+        assert param.init == init
+        assert param.lower == lower
+        assert param.upper == upper
+        assert param.fix == fix
+
+
+def test_theta_num(parser):
+    rec = parser.parse('$THETA 1').records[0]
+    pset = rec.parameters(2)
     assert len(pset) == 1
-    assert pset['THETA(1)'].init == 1 
-
-
-"""
-@pytest.mark.usefixtures('create_record')
-@pytest.mark.parametrize('buf,thetas', [
-    ('THETA 0', np.array((
-        Scalar(0),
-    ))),
-    ('THETA   12.3 \n\n', np.array((
-        Scalar(12.3)
-    ))),
-    ('THETA  (0,0.00469) ; CL', np.array((
-        Scalar(0.00469, lower=0),
-    ))),
-    ('THETA  (0,3) 2 FIXED (0,.6,1) 10 (-INF,-2.7,0) (37 FIXED)', np.array((
-        Scalar(3, lower=0), Scalar(2, fix=True), Scalar(0.6, lower=0, upper=1),
-        Scalar(10), Scalar(-2.7, upper=0), Scalar(37, fix=True),
-    ))),
-])
-def test_create(create_record, buf, thetas):
-    rec = create_record(buf)
-    assert rec.name == 'THETA'
-    assert_array_equal(rec.thetas, thetas)
-
-
-def test_create_replicate(create_record):
-    single = create_record('THETA 2 2 2 2 (0.001,0.1,1000) (0.001,0.1,1000) (0.001,0.1,1000)'
-                           '       (0.5 FIXED) (0.5 FIXED)')
-    multi = create_record('THETA (2)x4 (0.001,0.1,1000)x3 (0.5 FIXED)x2')
-    assert_array_equal(single.thetas, multi.thetas)
-
-
-@pytest.mark.usefixtures('create_record')
-@pytest.mark.parametrize('buf,n,new_thetas', [
-    ('THETA 0', 1, np.array((
-        Scalar(1),
-    ))),
-    ('THETA 0', 1, np.array((
-        Scalar(1.23, fix=True, upper=100),
-    ))),
-    ('THETA 1 2', 2, np.array((
-        Scalar(1),
-    ))),
-    ('THETA 1 2', 2, np.array((
-        Scalar(1), Scalar(0, fix=True),
-        Scalar(1.2383289E2, lower=9, fix=True),
-    ))),
-])
-def test_replace(create_record, buf, n, new_thetas):
-    rec = create_record(buf)
-    thetas = rec.thetas
-    assert len(thetas) == n
-
-    rec.thetas = new_thetas
-    assert_array_equal(rec.thetas, new_thetas)
-"""
+    assert pset['THETA(2)'].init == 1 
