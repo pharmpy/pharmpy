@@ -5,7 +5,8 @@ from .raw_record import RawRecord
 from .problem_record import ProblemRecord
 from .option_record import OptionRecord
 from .theta_record import ThetaRecord
-from .parsers import ProblemRecordParser, OptionRecordParser, ThetaRecordParser
+from .omega_record import OmegaRecord
+from .parsers import ProblemRecordParser, OptionRecordParser, ThetaRecordParser, OmegaRecordParser
 
 
 # Dictionary from canonical record name to record class and non_empty rules of parser
@@ -16,7 +17,7 @@ known_records = {
     'PROBLEM': (ProblemRecord, ProblemRecordParser),
     'SIZES': (OptionRecord, OptionRecordParser),
     'THETA': (ThetaRecord, ThetaRecordParser),
-    #'OMEGA': 'OmegaRecord',
+    'OMEGA': (OmegaRecord, OmegaRecordParser),
 }
 
 
