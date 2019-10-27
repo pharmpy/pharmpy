@@ -104,6 +104,11 @@ class Parameter:
     def __hash__(self):
         return hash(self._symbol.name)
 
+    def __eq__(self, other):
+        """Two parameters are equal if they have the same symbol.name, init and domain
+        """
+        return self.symbol.name == other.symbol.name and self.init == other.init and self.constraints.as_set() == other.constraints.as_set()
+
     def __str__(self):
         return self._symbol.name
 

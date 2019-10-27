@@ -56,39 +56,40 @@ class ThetaRecord(Record):
 
         A new parse tree will be created from scratch. I.e. currently not usable for user facing updates
         """
-        for p in parameters:
+        pass
+        #for p in parameters:
 
-    @thetas.setter
-    def thetas(self, thetas):
-        nodes = []
-        nodes_new = self._new_theta_nodes(thetas)
-        for child in self.root.children:
-            if child.rule != 'theta':
-                nodes += [child]
-                continue
-            try:
-                nodes += [nodes_new.pop(0)]
-            except IndexError:
-                pass
-        self.root = AttrTree.create('root', nodes + nodes_new)
+    #@thetas.setter
+    #def thetas(self, thetas):
+    #    nodes = []
+    #    nodes_new = self._new_theta_nodes(thetas)
+    #    for child in self.root.children:
+    #        if child.rule != 'theta':
+    #            nodes += [child]
+    #            continue
+    #        try:
+    #            nodes += [nodes_new.pop(0)]
+    #        except IndexError:
+    #            pass
+    #    self.root = AttrTree.create('root', nodes + nodes_new)
 
-    def _new_theta_nodes(self, thetas):
-        nodes = []
-        for theta in thetas:
-            if nodes:
-                nodes += [dict(WS='\n  ')]
-            new = [{'LPAR': '('}]
-            if theta.lower is not None:
-                new += [{'low': {'NUMERIC': theta.lower}}]
-                new += [{'WS': ' '}]
-            if theta.init is not None:
-                new += [{'init': {'NUMERIC': theta.init}}]
-                new += [{'WS': ' '}]
-            if theta.upper is not None:
-                new += [{'up': {'NUMERIC': theta.upper}}]
-            if theta.fix:
-                new += [{'WS': ' '}]
-                new += [{'FIX': 'FIXED'}]
-            new += [{'RPAR': ')'}]
-            nodes += [AttrTree.create('theta', new)]
-        return nodes
+    #def _new_theta_nodes(self, thetas):
+    #    nodes = []
+    #    for theta in thetas:
+    #        if nodes:
+    #            nodes += [dict(WS='\n  ')]
+    #        new = [{'LPAR': '('}]
+    #        if theta.lower is not None:
+    #            new += [{'low': {'NUMERIC': theta.lower}}]
+    #            new += [{'WS': ' '}]
+    #        if theta.init is not None:
+    #            new += [{'init': {'NUMERIC': theta.init}}]
+    #            new += [{'WS': ' '}]
+    #        if theta.upper is not None:
+    #            new += [{'up': {'NUMERIC': theta.upper}}]
+    #        if theta.fix:
+    #            new += [{'WS': ' '}]
+    #            new += [{'FIX': 'FIXED'}]
+    #        new += [{'RPAR': ')'}]
+    #        nodes += [AttrTree.create('theta', new)]
+    #    return nodes
