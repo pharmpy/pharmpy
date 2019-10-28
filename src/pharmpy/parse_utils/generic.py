@@ -108,6 +108,9 @@ class AttrToken(Token):
     def __eq__(self, other):
         return hash(self) == hash(other)
 
+    def __str__(self):
+        return str(self.value)
+
 
 class AttrTree(Tree):
     """Tree with attribute access.

@@ -113,4 +113,4 @@ class Parameter:
         return self._symbol.name
 
     def __repr__(self):
-        return f'Parameter({self.symbol.name}, {self.init}, lower={self.lower}, upper={self.upper}, fix={self.fix})'
+        return f"Parameter('{self.symbol.name}', {self.init}, lower={self.lower}, upper={self.upper}, fix={self.fix})"

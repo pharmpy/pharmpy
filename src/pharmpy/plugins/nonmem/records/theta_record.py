@@ -51,13 +51,38 @@ class ThetaRecord(Record):
                 pset.add(new_par)
         return pset
 
-    def set(self, parameters, first_theta):
+    def _multiple(self, theta):
+        """Return the multiple (xn) of a theta or 1 if no multiple
+        """
+        multiple = theta.find('n')
+        if multiple:
+            n = multiple.INT
+        else:
+            n = 1
+        return n
+
+    def update(self, parameters):
         """From a ParameterSet update the THETAs in this record
 
-        A new parse tree will be created from scratch. I.e. currently not usable for user facing updates
+        Currently only updating initial estimates
+        splitting of xn is not supported (yet)
         """
-        pass
-        #for p in parameters:
+        i = 0
+        for theta in self.root.all('theta'):
+            print(repr(theta.init.tokens[0]))
+            theta.init.tokens[0].value = str(list(parameters)[i].init)
+            print(repr(theta.init))
+            print(str(theta.init))
+            n = self._multiple(theta)
+            i += n
+
+    def __len__(self):
+        """Number of thetas in this record
+        """
+        tot = 0
+        for theta in self.root.all('theta'):
+            tot += self._multiple(theta)
+        return tot
 
     #@thetas.setter
     #def thetas(self, thetas):
