@@ -13,6 +13,7 @@ class OmegaRecord(Record):
         scalar_args, nreps, stdevs = [], [], []
         row, col = 0, 0
         corr_coords = []
+        block = self.root.find('block')
         fixed = bool(self.root.find('FIX'))
         sd_matrix = bool(self.root.find('SD'))
         corr_matrix = bool(self.root.find('CORR'))
@@ -24,10 +25,15 @@ class OmegaRecord(Record):
             if corr_matrix or node.find('CORR'):
                 corr_coords += [(i, row, col)]
             nreps += [node.n.INT if node.find('n') else 1]
-            scalar_args.append({'name': f'OMEGA({row + 1},{col + 1})', 'init': init, 'fix': fix, 'lower': 0})
+            if row != col or fix:
+                lower = None
+            else:
+                lower = 0
+            scalar_args.append({'name': f'OMEGA({row + 1},{col + 1})', 'init': init, 'fix': fix, 'lower': lower})
             if row == col:
                 stdevs += [init]
-                row, col = (row + 1), 0
+                row += 1
+                col = 0 if block else row
             else:
                 col += 1
 
