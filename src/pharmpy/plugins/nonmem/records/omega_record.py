@@ -1,41 +1,45 @@
 # -*- encoding: utf-8 -*-
 
+import math
+
+from pharmpy.parameter import Parameter, ParameterSet
 from .record import Record
 
 
 class OmegaRecord(Record):
-    pass
-    #@property
-    #def params(self):
-    #    scalar_args, nreps, stdevs = [], [], []
+    def parameters(self, start_omega):
+        """Get a ParameterSet for this omega record
+        """
+        scalar_args, nreps, stdevs = [], [], []
+        row, col = 0, 0
+        corr_coords = []
+        fixed = bool(self.root.find('FIX'))
+        sd_matrix = bool(self.root.find('SD'))
+        corr_matrix = bool(self.root.find('CORR'))
+        for i, node in enumerate(self.root.all('omega')):
+            init = node.init.NUMERIC
+            if sd_matrix or node.find('SD'):
+                init = math.pow(init, 2)
+            fix = fixed or bool(node.find('FIX'))
+            if corr_matrix or node.find('CORR'):
+                corr_coords += [(i, row, col)]
+            nreps += [node.n.INT if node.find('n') else 1]
+            scalar_args.append({'name': f'OMEGA({row + 1},{col + 1})', 'init': init, 'fix': fix, 'lower': 0})
+            if row == col:
+                stdevs += [init]
+                row, col = (row + 1), 0
+            else:
+                col += 1
 
-    #    row, col = 0, 0
-    #    corr_coords = []
-    #    fixed = bool(self.root.find('FIX'))
-    #    sd_matrix = bool(self.root.find('SD'))
-    #    corr_matrix = bool(self.root.find('CORR'))
-    #    for i, node in enumerate(self.root.all('omega')):
-    #        init = node.init.NUMERIC
-    #        if sd_matrix or node.find('SD'):
-    #            init = pow(init, 2)
-    #        if fixed or bool(node.find('FIX')):
-    #            scalar_args += [(init, True)]
-    #        else:
-    #            scalar_args += [(init, False)]
-    #        if corr_matrix or node.find('CORR'):
-    #            corr_coords += [(i, row, col)]
-    #        nreps += [node.n.INT if node.find('n') else 1]
-    #        if row == col:
-    #            stdevs += [init]
-    #            row, col = (row + 1), 0
-    #        else:
-    #            col += 1
+        for i, row, col in corr_coords:
+            scalar_args[i]['init'] = scalar_args[i]['init'] * stdevs[row] * stdevs[col]
 
-    #    for i, row, col in corr_coords:
-    #        scalar_args[i][0] = scalar_args[i][0] * stdevs[row] * stdevs[col]
+        params = [Parameter(**a) for N, args in zip(nreps, scalar_args) for a in [args]*N]
+        return(ParameterSet(params))
 
-    #    params = [Scalar(*a) for N, args in zip(nreps, scalar_args) for a in [args]*N]
-    #    return params
+    def random_variables(self, start_omega):
+        """Get a RandomVariableSet for this omega record
+        """
 
     #@property
     #def matrix(self):

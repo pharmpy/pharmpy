@@ -32,9 +32,9 @@ class ThetaRecordParser(RecordParser):
 
 class OmegaRecordParser(RecordParser):
     grammar_filename = 'omega_record.lark'
-    non_empty = {
-        'comment': (1, 'COMMENT')
-    }
+    non_empty = [
+        { 'comment': (1, 'COMMENT') },
+    ]
 
 
 class OptionRecordParser(RecordParser):

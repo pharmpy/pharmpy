@@ -1,10 +1,12 @@
 # -*- encoding: utf-8 -*-
 
 import pytest
+import sympy
+
 
 @pytest.mark.usefixtures('parser')
 @pytest.mark.parametrize('buf,results', [
-    ('$OMEGA 1', [('OMEGA(1,1)', 1, 0, 1000000, False)]),
+    ('$OMEGA 1', [('OMEGA(1,1)', 1, 0, sympy.oo, False)]),
 #    ('$THETA    12.3 \n\n', [('THETA(1)', 12.3, -1000000, 1000000, False)]),
 #    ('$THETA  (0,0.00469) ; CL', [('THETA(1)', 0.00469, 0, 1000000, False)]),
 #    ('$THETA  (0,3) 2 FIXED (0,.6,1) 10 (-INF,-2.7,0)  (37 FIXED)\n 19 (0,1,2)x3', [

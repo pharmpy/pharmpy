@@ -24,7 +24,8 @@
 //   %input | VARIANCE CORRELATION BLOCK(2)\n0.64\n-0.394 0.58|
 //   %input | CHOLESKY BLOCK(2)\n0.8\n-0.3 0.7|
 
-root : [_opt] [diagonal] [_opt] (_item)+ [ws] // form 1
+root : [_opt] diagonal [_opt] (_item)+ [ws] // form 1
+     | [_opt] (_item)+ [ws] // form 1
      | [_opt] block [_opt] (_item)+ [ws]      // form 2
      | [_opt] block [_opt] same (_opt | [ws] comment)* [ws]    // form 3
      | [_opt] block [_opt] values (_opt | [ws] comment)* [ws]  // form 4
@@ -58,8 +59,8 @@ _rpar : [WS] ")"
 
 // omega init value
 omega : init _opt*
-      | _lpar [WS] init _opt* _rpar [n]
-      | _lpar _opt* init [WS] _rpar [n]
+      | _lpar init _opt* _rpar [n]
+      | _lpar _opt* init _rpar [n]
 
 init  : NUMERIC
 n     : "x" INT
