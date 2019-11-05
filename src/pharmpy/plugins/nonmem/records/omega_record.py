@@ -1,5 +1,3 @@
-# -*- encoding: utf-8 -*-
-
 import math
 
 from pharmpy.parameter import Parameter, ParameterSet
