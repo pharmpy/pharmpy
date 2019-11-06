@@ -2,16 +2,17 @@ import re
 
 from pharmpy.plugins.nonmem.exceptions import NMTranParseError
 from .raw_record import RawRecord
+from .data_record import DataRecord
 from .problem_record import ProblemRecord
 from .option_record import OptionRecord
 from .theta_record import ThetaRecord
 from .omega_record import OmegaRecord
-from .parsers import ProblemRecordParser, OptionRecordParser, ThetaRecordParser, OmegaRecordParser
+from .parsers import DataRecordParser, ProblemRecordParser, OptionRecordParser, ThetaRecordParser, OmegaRecordParser
 
 
 # Dictionary from canonical record name to record class and non_empty rules of parser
 known_records = {
-    #'DATA': 'DataRecord',
+    'DATA': (DataRecord, DataRecordParser),
     'ESTIMATION': (OptionRecord, OptionRecordParser),
     'INPUT': (OptionRecord, OptionRecordParser),
     'PROBLEM': (ProblemRecord, ProblemRecordParser),

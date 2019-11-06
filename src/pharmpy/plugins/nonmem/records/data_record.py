@@ -7,65 +7,67 @@ from .option_record import OptionRecord
 
 
 class DataRecord(OptionRecord):
-    pass
-    #@property
-    #def filename(self):
-    #    """The (raw, unresolved) path of the dataset."""
-    #    filename = self.root.filename
-    #    if filename.find('TEXT'):
-    #        return str(filename)
-    #    elif filename.find('QUOTE'):
-    #        return str(filename)[1:-1]
+    @property
+    def filename(self):
+        """The (raw, unresolved) path of the dataset."""
+        filename = self.root.filename
+        if filename.find('TEXT'):
+            return str(filename)
+        elif filename.find('QUOTE'):
+            return str(filename)[1:-1]
 
-    #@filename.setter
-    #def filename(self, value):
-    #    if not value:
-    #        # erase and replace by * (for previous subproblem)
-    #        new = [AttrTree.create(ASTERIX='*')]
-    #        nodes = []
-    #        for child in self.root.children[1:]:
-    #            if new and child.rule == 'ws':
-    #                nodes += [child, new.pop()]
-    #            elif child.rule in {'ws', 'comment'}:
-    #                nodes += [child]
-    #        self.root = AttrTree.create('root', nodes)
-    #    else:
-    #        # replace only 'filename' rule and quote appropriately if, but only if, needed
-    #        filename = str(value)
-    #        quoted = [',', ';', '(', ')', '=', ' ', 'IGNORE', 'NULL', 'ACCEPT', 'NOWIDE', 'WIDE',
-    #                  'CHECKOUT', 'RECORDS', 'RECORDS', 'LRECL', 'NOREWIND', 'REWIND', 'NOOPEN',
-    #                  'LAST20', 'TRANSLATE', 'BLANKOK', 'MISDAT']
-    #        if not any(x in filename for x in quoted):
-    #            node = AttrTree.create('filename', {'TEXT': filename})
-    #        else:
-    #            if "'" in filename:
-    #                node = AttrTree.create('filename', {'QUOTE': '"%s"' % filename})
-    #            else:
-    #                node = AttrTree.create('filename', {'QUOTE': "'%s'" % filename})
-    #        (pre, old, post) = self.root.partition('filename')
-    #        self.root.children = pre + [node] + post
+    @filename.setter
+    def filename(self, value):
+        if not value:
+            # erase and replace by * (for previous subproblem)
+            new = [AttrTree.create(ASTERIX='*')]
+            nodes = []
+            for child in self.root.children[1:]:
+                if new and child.rule == 'ws':
+                    nodes += [child, new.pop()]
+                elif child.rule in {'ws', 'comment'}:
+                    nodes += [child]
+            self.root = AttrTree.create('root', nodes)
+        else:
+            # replace only 'filename' rule and quote appropriately if, but only if, needed
+            filename = str(value)
+            quoted = [',', ';', '(', ')', '=', ' ', 'IGNORE', 'NULL', 'ACCEPT', 'NOWIDE', 'WIDE',
+                      'CHECKOUT', 'RECORDS', 'RECORDS', 'LRECL', 'NOREWIND', 'REWIND', 'NOOPEN',
+                      'LAST20', 'TRANSLATE', 'BLANKOK', 'MISDAT']
+            if not any(x in filename for x in quoted):
+                node = AttrTree.create('filename', {'TEXT': filename})
+            else:
+                if "'" in filename:
+                    node = AttrTree.create('filename', {'QUOTE': '"%s"' % filename})
+                else:
+                    node = AttrTree.create('filename', {'QUOTE': "'%s'" % filename})
+            (pre, old, post) = self.root.partition('filename')
+            self.root.children = pre + [node] + post
 
-    #@property
-    #def ignore_character(self):
-    #    """The comment character from ex IGNORE=C or None if not available."""
-    #    if hasattr(self.root, 'ignore') and self.root.ignore.find('char'):
-    #        return str(self.root.ignore.char)
-    #    else:
-    #        return None
+    @property
+    def ignore_character(self):
+        """The comment character from ex IGNORE=C or None if not available."""
+        if hasattr(self.root, 'ignore') and self.root.ignore.find('char'):
+            char = str(self.root.ignore.char)
+            if len(char) == 3:      # It must be quoted
+                char = char[1:-1]
+            return char
+        else:
+            return None
 
-    #@property
-    #def null_value(self):
-    #    """The value to replace for NULL (i.e. .) in the dataset
-    #       note that only +,-,0 (meaning 0) and 1-9 are allowed 
-    #    """
-    #    if hasattr(self.root, 'null') and self.root.null.find('char'):
-    #        char = str(self.root.null.char)
-    #        if char == '+' or char == '-':
-    #            return 0
-    #        else:
-    #            return float(char)
-    #    else:
-    #        return 0
+    @property
+    def null_value(self):
+        """The value to replace for NULL (i.e. . etc) in the dataset
+           note that only +,-,0 (meaning 0) and 1-9 are allowed 
+        """
+        if hasattr(self.root, 'null') and self.root.null.find('char'):
+            char = str(self.root.null.char)
+            if char == '+' or char == '-':
+                return 0
+            else:
+                return float(char)
+        else:
+            return 0
 
     #@property
     #def filters(self):

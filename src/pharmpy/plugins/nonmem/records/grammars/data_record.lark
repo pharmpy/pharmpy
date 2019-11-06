@@ -17,9 +17,12 @@ filename: TEXT | QUOTE
 
 // option rules
 ?option : "(" [WS] TEXT [WS] ")"                -> format
-        | IGNORE [WS] ["="] [WS] (char | _list) -> ignore  // contains 'char' OR 'filter' children
-        | NULL [WS] ["="] [WS] (char)           -> null
-        | ACCEPT [WS] ["="] [WS] _list          -> accept
+        | IGNORE [WS] "=" [WS] (char | _list)   -> ignore  // contains 'char' OR 'filter' children
+        | IGNORE [WS] (char | _list)            -> ignore
+        | NULL [WS] "=" [WS] (char)             -> null
+        | NULL [WS] (char)                      -> null
+        | ACCEPT [WS] "=" [WS] _list            -> accept
+        | ACCEPT [WS] _list                     -> accept
         | KEY [WS] "=" [WS] VALUE               -> option
         | VALUE                                 -> option
 
@@ -30,8 +33,8 @@ ACCEPT : "ACCEPT"|"ACCEP"|"ACCE"|"ACC"
 NULL : "NULL"|"NUL"
 
 // generic option terminals (key/value)
-KEY   : /(?!(IGN|ACC))\w+/      // TODO: use priority (instead of negative lookahead)
-VALUE : /(?!(IGN|ACC))[^\s=]+/  // TODO: use priority (instead of negative lookahead)
+KEY   : /(?!(IGN|ACC|NULL|NUL))\w+/      // TODO: parse all options or use priority (instead of negative lookahead)
+VALUE : /(?!(IGN|ACC|NULL|NUL))[^\s=]+/  // TODO: parse all options or use priority (instead of negative lookahead)
 
 // _list is only a container (filter thus on accept/ignore)
 _list  : "(" filter ("," filter)* ")"
@@ -43,7 +46,8 @@ COLUMN : /\w+/  // TODO: verify correct coverage
 
 // common misc rules
 ws      : WS_ALL
-comment : ";" [WS] [COMMENT] [WS]
+comment : COMMENT
+COMMENT: /;.*/
 
 // common operators
 OP_EQ    : ".EQN."
@@ -69,4 +73,3 @@ QUOTE : /"[^"]*"/
       | /'[^']*'/
 CHARQUOTE : /"[^"]"/
           | /'[^']'/
-COMMENT : /\S.*(?<!\s)/  // no left/right whitespace padding
