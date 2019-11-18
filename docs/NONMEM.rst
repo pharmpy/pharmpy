@@ -127,3 +127,25 @@ NM-TRAN sets
     IMPLICIT REAL(KIND=DPSIZE) (A-Z)
 
 for the main functions in FSUBS (checked $PK and $ERROR) so variables starting with letters from A-Z doesn't need to be declared, not even in abbreviated code. However if a variable only used in verbatim code is to be used in $TABLE it must be assigned a value in abbreviated code.
+
+
+Results file format
+-------------------
+
+Sparse matrix format
+~~~~~~~~~~~~~~~~~~~~
+
+Lines:
+
+#. Empty line
+
+#. Name line
+
+#. Value line
+
+#. ...
+
+#. Stop line
+
+The name and value lines will have 7 entries each, except for the final lines. The name line will have abbreviated symbols for the parameters separated by ' | '. The abbreviated symbols will be THnn for THETA where nn will be the number or ' n' if only one digit, 'OMaabb' or 'SGaabb' for OMEGA  or SIGMA, where aa and bb are zero padded matrix indices. Fixed parameters will not be added to the sparse matrix. The value line will be space separated values in scientific notation. For NONMEM 7.4.3 only x.xxE-xx are possible, but NONMEM 7.5 $FORMAT can change the number of digits here. The stop line contains only the string '1'.
+
