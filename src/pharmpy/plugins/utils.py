@@ -11,19 +11,18 @@ class PluginError(Exception):
     pass
 
 
-def detect_model(obj):
-    """Detects appropriate implementation from a general object
-    The plugins can support paths to files but also any relevant object
-    that could represent a model. Return a model object
+def detect_model(src):
+    """Detects appropriate implementation from a source object
+    Return a model object
     """
 
     plugins = load_plugins()
-    detected_classes = [module.Model for module in plugins if hasattr(module, 'Model') and module.Model.detect(obj)]
+    detected_classes = [module.Model for module in plugins if hasattr(module, 'Model') and module.Model.detect(src)]
 
     if len(detected_classes) == 0:
-        raise PluginError(f"No support for model {obj}")
+        raise PluginError(f"No support for model {src.obj}")
     if len(detected_classes) > 1:
-        raise PluginError(f"More than one model plugin supports model {obj}")
+        raise PluginError(f"More than one model plugin supports model {src.obj}")
     return detected_classes[0]
 
 

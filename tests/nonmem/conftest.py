@@ -1,12 +1,5 @@
 import pytest
 
-from pharmpy.api_utils import getAPI
-
-
-@pytest.fixture(scope='session')
-def nonmem():
-    return getAPI('nonmem')
-
 
 @pytest.fixture(scope='session')
 def datadir(testdata):

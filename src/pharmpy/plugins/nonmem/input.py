@@ -134,6 +134,13 @@ class ModelInput(input.ModelInput):
         return self._data_frame
 
     def _column_names(self):
+        """List all column names in order.
+           Use the synonym in case of synonyms. Empty string in case of only DROP or SKIP.
+        """
+        _reserved_column_names = ['ID', 'L1', 'L2', 'DV', 'MDV', 'RAW_', 'MRG_', 'RPT_',
+            'TIME', 'DATE', 'DAT1', 'DAT2', 'DAT3', 'EVID', 'AMT', 'RATE', 'SS', 'II', 'ADDL',
+            'CMT', 'PCMT', 'CALL', 'CONT' ]
+
         input_records = self.model.get_records("INPUT")
         for record in input_records:
             for key, value in record.option_pairs.items():
@@ -195,16 +202,6 @@ class ModelInput(input.ModelInput):
         df = pd.read_table(file_io, sep=r' *, *| *[\t] *| +', na_filter=False, header=None, engine='python', quoting=3, dtype=np.object)
         ModelInput._postprocess_data_frame(df, colnames, str(null_value))
         return df
-
-    @property
-    def filters(self):
-        data_records = self.model.get_records("DATA")
-        return data_records[0].filters
-
-    @filters.setter
-    def filters(self, f):
-        data_records = self.model.get_records("DATA")
-        data_records[0].filters = f
 
     @property
     def id_column(self):

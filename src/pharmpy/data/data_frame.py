@@ -34,7 +34,7 @@ class PharmDataFrame(pd.DataFrame):
     IDV           Independent variable. Max one per DataFrame.
     DV            Dependent variable
     COVARIATE     Covariate
-    UNKOWN        Unkown type. This will be the default for columns that hasn't been assigned a type this will be the default.
+    UNKOWN        Unkown type. This will be the default for columns that hasn't been assigned a type
     ============  =============
 
     """

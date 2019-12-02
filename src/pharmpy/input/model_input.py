@@ -13,10 +13,6 @@ Definitions
 
 import logging
 
-import pharmpy.data.iterators as iters
-
-from .filters import InputFilters
-
 
 class DatasetError(Exception):
     pass
@@ -40,25 +36,7 @@ class ModelInput(object):
 
     @property
     def data_frame(self):
-        """Gets the pandas DataFrame object representing the dataset"""
-        raise NotImplementedError
-
-    @property
-    def filters(self):
-        """Gets an InputFilters object representing
-        all data filters of the model
-        """
-        raise NotImplementedError
-
-    @filters.setter
-    def filters(self, new):
-        """Sets all data filters
-        """
-        raise NotImplementedError
-
-    @property
-    def id_column(self):
-        """The name of the id_column
+        """Gets the DataFrame object representing the dataset 
         """
         raise NotImplementedError
 
@@ -67,35 +45,6 @@ class ModelInput(object):
         """
         self.data_frame.to_csv(str(self.path), index=False)
 
-    def apply_and_remove_filters(self):
-        """A convenience method to apply all filters on the dataset
-        and remove them from the model.
-        """
-        if self.filters:
-            self.logger.debug('Filtering through %r', self.data_frame, self.filters)
-            self.filters.apply(self.data_frame)
-            self.filters = InputFilters([])
-            self.logger.info('Data %r filtered: %d records (was %d)', self.data_frame, 0, 0)
-
     @property
     def logger(self):
         return logging.getLogger('%s.%s' % (self.model.logger.name, self.__class__.__name__))
-
-    def varying_with_id(self, column):
-        """Check if a column has varying values for some individual
-           returns a list of IDs that have varying values. Remember that a list is false if empty and true otherwise.
-        """
-        df = self.data_frame
-        idcol = self.id_column
-        col_unique = df.groupby(idcol)[column].unique()     # This will give a Series of lists 
-        varying_ids = [index for index, value in col_unique.iteritems() if len(value) > 1]
-        return varying_ids
-
-    def resample(self, group=None, stratify=None, sample_size=None, replace=False):
-        # FIXME: Remove this method. Adds too little value
-        """A convenience method to get a data.iterators.Resample iterator for a model dataset
-        """
-        if group is None:
-            group = self.id_column
-
-        return iters.Resample(self.data_frame, group, stratify=stratify, sample_size=sample_size, replace=replace)

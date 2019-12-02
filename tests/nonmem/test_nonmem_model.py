@@ -1,5 +1,10 @@
-from pharmpy.plugins.nonmem.model import Model
+from pharmpy import Model
 from pharmpy.parameter import Parameter
+
+
+def test_source(pheno_path):
+    model = Model(pheno_path)
+    assert model.source.code.startswith(';; 1.')
 
 
 def test_parameters(pheno_path):
