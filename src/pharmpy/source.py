@@ -36,9 +36,6 @@ class SourceBase:
     The source format can be a text file, but it could also be any kind of object, i.e. an R object.
     """
 
-    model = None
-    """:class:`~pharmpy.generic.Model` owner of API."""
-
     def __init__(self, obj):
         self.obj = obj
         self.code = self.read(obj)

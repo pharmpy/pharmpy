@@ -10,7 +10,7 @@ def test_simple_parse():
     assert type(model.records[0]).__name__ == 'ProblemRecord'
     assert str(model) == '$PROBLEM MYPROB\n'
 
-    model2_str= ';Comment\n   $PROBLEM     TW2\n'
+    model2_str = ';Comment\n   $PROBLEM     TW2\n'
     model2 = parser.parse(model2_str)
 
     assert len(model2.records) == 2

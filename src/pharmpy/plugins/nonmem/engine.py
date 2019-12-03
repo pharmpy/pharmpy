@@ -1,5 +1,3 @@
-# -*- encoding: utf-8 -*-
-
 import logging
 import re
 import os
@@ -7,6 +5,8 @@ from glob import glob
 from pathlib import Path
 
 from pharmpy.execute import Engine
+
+# Warning: This is experimental and perhaps the architecture needs to change
 
 
 class NONMEM7(Engine):

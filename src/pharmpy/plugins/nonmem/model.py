@@ -2,12 +2,12 @@
 import re
 from pathlib import Path
 
+import pharmpy.model
 from .nmtran_parser import NMTranParser
 from pharmpy.parameter import ParameterSet
 
 
-#class Model(pharmpy.Model):
-class Model:
+class Model(pharmpy.model.Model):
     def __init__(self, src, **kwargs):
         parser = NMTranParser()
         self.source = src
@@ -19,6 +19,10 @@ class Model:
         i.e. check if it is a file that contain $PRO
         """
         return bool(re.search(r'^\$PRO', src.code, re.MULTILINE))
+
+    def validate(self):
+        """Validates NONMEM model (records) syntactically."""
+        self.control_stream.validate()
 
     @property
     def parameters(self):

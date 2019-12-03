@@ -11,8 +11,8 @@ import pharmpy.math
 class NONMEMTableFile:
     '''A NONMEM table file that can contain multiple tables
     '''
-    def __init__(self, filename):
-        path = Path(filename)
+    def __init__(self, path):
+        path = Path(path)
         suffix = path.suffix
         self.tables = []
         with open(str(filename), 'r') as tablefile:

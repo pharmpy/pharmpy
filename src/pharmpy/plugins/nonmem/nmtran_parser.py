@@ -2,6 +2,7 @@ import re
 from pathlib import Path
 from lark import Lark
 
+from pharmpy.model import ModelFormatError
 from .records.raw_record import RawRecord
 from .records.factory import create_record
 from pharmpy.parse_utils.generic import AttrTree
@@ -13,13 +14,13 @@ class NMTranParser:
     def parse(self, text):
         stream = NMTranControlStream()
 
-        record_strings = re.split(r'^(?=[ \t]*)\$', text, flags=re.MULTILINE)
+        record_strings = re.split(r'^([ \t]*\$)', text, flags=re.MULTILINE)
         first = record_strings.pop(0)       # Empty if nothing before first record
         if first:
             stream.records.append(RawRecord(first))
 
-        for s in record_strings:
-            record = create_record('$' + s)
+        for separator, s in zip(record_strings[0::2], record_strings[1::2]):
+            record = create_record(separator + s)
             stream.records.append(record)
 
         return stream
@@ -45,6 +46,13 @@ class NMTranControlStream:
                 found.append(record)
         return found
 
+    def validate(self):
+        in_problem = False
+        for record in self.records:
+            if in_problem and record.name == 'SIZES':
+                raise ModelFormatError('The SIZES record must come before the first PROBLEM record')
+            if record.name == 'PROBLEM':
+                in_problem = True
 
     def __str__(self):
         return ''.join(str(x) for x in self.records)

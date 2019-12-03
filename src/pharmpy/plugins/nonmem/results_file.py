@@ -2,6 +2,8 @@ import dateutil.parser
 import re
 
 
+# Warning! Bad and experimental code below. Could parse section on demand, but finding sections are hard or impossible with state machine parsing.
+
 class NONMEMResultsFile:
     '''Representing and parsing a NONMEM results file (aka lst-file) 
        This is not a generic output object and will be combined by other classes
