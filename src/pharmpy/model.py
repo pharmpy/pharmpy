@@ -45,7 +45,7 @@ class ModelFormatError(ModelException):
 #        super().__init__(msg)
 
 
-class Model(object):
+class Model():
 #    """(Generic) Model class.
 
 #    Represents a model object, that may or may not exist on disk too.

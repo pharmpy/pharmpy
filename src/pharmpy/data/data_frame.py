@@ -3,6 +3,14 @@ import enum
 import pandas as pd
 
 
+class DatasetError(Exception):
+    pass
+
+
+class DatasetWarning(Warning):
+    pass
+
+
 class ColumnType(enum.Enum):
     """The type of the data in a column
     """

@@ -5,6 +5,7 @@ from pathlib import Path
 import pharmpy.model
 from .nmtran_parser import NMTranParser
 from pharmpy.parameter import ParameterSet
+import pharmpy.plugins.nonmem.input
 
 
 class Model(pharmpy.model.Model):
@@ -12,6 +13,7 @@ class Model(pharmpy.model.Model):
         parser = NMTranParser()
         self.source = src
         self.control_stream = parser.parse(src.code)
+        self.input = pharmpy.plugins.nonmem.input.ModelInput(self)
 
     @staticmethod
     def detect(src, *args, **kwargs):

@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-# -*- encoding: utf-8 -*-
 """
 ===========
 Model Input
@@ -14,13 +12,9 @@ Definitions
 import logging
 
 
-class DatasetError(Exception):
-    pass
 
-class DatasetWarning(Warning):
-    pass
 
-class ModelInput(object):
+class ModelInput:
     """Implements API for :attr:`Model.input`, the model dataset"""
     def __init__(self, model):
         self.model = model
@@ -35,8 +29,14 @@ class ModelInput(object):
         self.logger.info('Setting %r.path to %r', repr(self), str(path))
 
     @property
-    def data_frame(self):
-        """Gets the DataFrame object representing the dataset 
+    def dataset(self):
+        """Retrieve the dataset as a PharmDataFrame
+        """
+        raise NotImplementedError
+
+    @dataset.setter
+    def dataset(self):
+        """Replace the dataset
         """
         raise NotImplementedError
 

@@ -98,6 +98,11 @@ $PROBLEM
 
 Title text is only allowed on the same line as the $PROBLEM. Putting it on other lines will crash NMTRAN. Whitespace before the first text is not part of the title. There can be no comments on the title line, i.e. comments will be part of the title. The title can maximum be 72 characters including space. Characters coming after the 72 will be ignored.
 
+$DATA
+~~~~~
+
+If filename represents a relative path it is relative to the working directory when invoking nmfe.
+
 $ETAS
 ~~~~~
 

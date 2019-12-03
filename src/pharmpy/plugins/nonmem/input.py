@@ -1,5 +1,3 @@
-# -*- encoding: utf-8 -*-
-
 import re
 import warnings
 from io import StringIO
@@ -10,7 +8,9 @@ import numpy as np
 import pandas as pd
 
 from pharmpy import input
-from pharmpy.input import DatasetError
+from pharmpy.data import DatasetError
+from pharmpy.data import DatasetWarning
+import pharmpy.data
 
 
 def convert_fortran_exp_format(number_string):
@@ -79,12 +79,17 @@ class NMTRANDataIO(StringIO):
 class ModelInput(input.ModelInput):
     """A NONMEM 7.x model input class. Covers at least $INPUT and $DATA."""
 
+    def __init__(self, model):
+        self._dataset_updated = False
+        super().__init__(model)
+
     @property
     def path(self):
-        record = self.model.get_records('DATA')[0]
+        # FIXME: Should this really be public? Will follow souce model
+        record = self.model.control_stream.get_records('DATA')[0]
         path = Path(record.filename)
         if not path.is_absolute():
-            path = self.model.path.parent / path
+            path = self.model.source.path.parent / path     # Relative model source file.
         try:
             return path.resolve()
         except FileNotFoundError:
@@ -95,43 +100,22 @@ class ModelInput(input.ModelInput):
         path = Path(path)
         assert not path.exists() or path.is_file(), ('input path change, but non-file exists at '
                                                      'target (%s)' % str(path))
-        record = self.model.get_records('DATA')[0]
-        # super().path = path
+        record = self.model.control_stream.get_records('DATA')[0]
         self.logger.info('Setting %r.path to %r', repr(self), str(path))
         record.filename = str(path)
 
-    def repath(self, relpath):
-        """Re-calculate path with model location update.
-
-        Caller is :class:`~pharmpy.source_io.SourceResource`. Source path change has changed, likely
-        before initiating a filesystem write for a copy.
-
-        Arguments:
-            relpath: Maps new dir -> old (current) dir.
-
-        :attr:`~ModelInput.path` is prefixed *relpath* if given. Otherwise, :attr:`~ModelInput.path`
-        is made absolute to ensure it resolves from new path.
-
-        .. note:: No change if :attr:`~ModelInput.path` is already absolute.
-        """
-        record = self.model.get_records('DATA')[0]
-        path = Path(record.filename)
-        if not path.is_absolute():
-            if relpath:
-                self.path = relpath / path
-            else:
-                try:
-                    self.path = path.resolve()
-                except FileNotFoundError:
-                    self.path = Path(realpath(str(path)))
-
     @property
-    def data_frame(self):
+    def dataset(self):
         try:
             return self._data_frame
         except AttributeError:
             self._read_data_frame()
         return self._data_frame
+
+    @dataset.setter
+    def dataset(self, df):
+        self._dataset_updated = True
+        self._data_frame = df
 
     def _column_names(self):
         """List all column names in order.
@@ -141,7 +125,7 @@ class ModelInput(input.ModelInput):
             'TIME', 'DATE', 'DAT1', 'DAT2', 'DAT3', 'EVID', 'AMT', 'RATE', 'SS', 'II', 'ADDL',
             'CMT', 'PCMT', 'CALL', 'CONT' ]
 
-        input_records = self.model.get_records("INPUT")
+        input_records = self.model.control_stream.get_records("INPUT")
         for record in input_records:
             for key, value in record.option_pairs.items():
                 if value:
@@ -186,10 +170,14 @@ class ModelInput(input.ModelInput):
                 df[None] = float(null_value)
         elif coldiff < 0:
             warnings.warn(DatasetWarning("There are more columns in the dataset than in $INPUT. The extra columns have not been loaded."))
+            #FIXME: Should this already have been done on the raw dataset? Does NMTRAN care about errors in these columns?
+            #       First implement raw_dataset and work from there. Test NM-TRAN checking
+            df = df[df.columns[0:coldiff]]
         df.columns = colnames
+        return df
 
     def _read_data_frame(self):
-        data_records = self.model.get_records('DATA')
+        data_records = self.model.control_stream.get_records('DATA')
         ignore_character = data_records[0].ignore_character
         null_value = data_records[0].null_value
         self._data_frame = ModelInput.read_dataset(self.path, self._column_names(), ignore_character=ignore_character, null_value=null_value)
@@ -200,8 +188,8 @@ class ModelInput(input.ModelInput):
         """
         file_io = NMTRANDataIO(filename_or_io, ignore_character)
         df = pd.read_table(file_io, sep=r' *, *| *[\t] *| +', na_filter=False, header=None, engine='python', quoting=3, dtype=np.object)
-        ModelInput._postprocess_data_frame(df, colnames, str(null_value))
-        return df
+        df = ModelInput._postprocess_data_frame(df, colnames, str(null_value))
+        return pharmpy.data.PharmDataFrame(df)
 
     @property
     def id_column(self):

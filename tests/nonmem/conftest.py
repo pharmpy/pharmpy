@@ -1,5 +1,7 @@
 import pytest
 
+import pharmpy
+
 
 @pytest.fixture(scope='session')
 def datadir(testdata):
@@ -32,9 +34,9 @@ def pheno_data(datadir):
 
 
 @pytest.fixture(scope='session')
-def pheno(nonmem, pheno_path):
-    model = nonmem.Model(str(pheno_path))
-    assert model.path.samefile(pheno_path)
-    with open(str(pheno_path), 'r') as f:
-        assert str(model) == model.content == f.read()
+def pheno(pheno_path):
+    model = pharmpy.Model(pheno_path)
+    #assert model.path.samefile(pheno_path)
+    #with open(str(pheno_path), 'r') as f:
+    #    assert str(model) == model.content == f.read()
     return model
