@@ -93,6 +93,25 @@ The data is right justified with a field size of 13 characters (padded with spac
 
 The number format is integer for the first two columns, scientific with 5 decimals and 2 digits exponent for the ETA and ETC columns. The number in the OBJ column is written in regular decimal format and will always take up 19 characters with first character being space for positive numbers or "-" for negative numbers. For numbers having an integer part of zero will take up 20 characters.
 
+control stream
+--------------
+
+options parsing
+~~~~~~~~~~~~~~~
+
+Option values that must be enclosed in parentheses can be split over multiple lines as long as the opening parentheses is on the same line as the keyword and that
+each token is kept on one line. For example
+
+::
+
+   $DATA file.csv IGNORE=(
+      WGT
+      .EQ.23
+      ,
+      WGT.EQ.22
+      )
+
+
 $PROBLEM
 ~~~~~~~~
 
