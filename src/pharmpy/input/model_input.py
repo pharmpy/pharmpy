@@ -40,6 +40,12 @@ class ModelInput:
         """
         raise NotImplementedError
 
+    @property
+    def raw_dataset(self):
+        """Retrieve the dataset as a PharmDataFrame with no processing. Keeping the raw strings
+        """
+        raise NotImplementedError
+
     def write_dataset(self):
         """Write the dataset at the dataset path
         """
