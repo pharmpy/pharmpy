@@ -1,6 +1,22 @@
 from enum import Enum
 
 
+# For .EQ. ... when is filter applied? Has this been investigated previously? Before converting to FDATA sometime. After applying NULL? Before checking for max 24 characters. Can an illegal string be filtered?
+
+# Are fortran numbers fine? Function to read fortran number...
+
+class IgnoreAccept:
+    '''One IGNORE or ACCEPT from $DATA
+    '''
+    def __init__(self, colname, operator, value, accept=False):
+        self.colname = colname
+        self.operator = operator
+        self.value = value
+        self.accept = accept
+
+    def __str__(self):
+        return self.colname
+
 class InputFilterOperator(Enum):
     EQUAL = 0
     NOT_EQUAL = 1
@@ -14,25 +30,11 @@ class InputFilterOperator(Enum):
     def __str__(self):
         return self._strings[self.value]
 
-    def negate(self):
-        return self._negations[self.value]
-
 # Install class variables. Cannot be done directly in Enum class
 InputFilterOperator._strings = [ '==', '!=', '<', '<=', '>', '>=', '==', '!=' ]
-InputFilterOperator._negations = [ InputFilterOperator.NOT_EQUAL, InputFilterOperator.EQUAL, InputFilterOperator.GREATER_THAN_OR_EQUAL,
-        InputFilterOperator.GREATER_THAN, InputFilterOperator.LESS_THAN_OR_EQUAL,
-        InputFilterOperator.LESS_THAN, InputFilterOperator.STRING_NOT_EQUAL, InputFilterOperator.STRING_EQUAL ]
 
 
 class InputFilter:
-    '''An InputFilter is an expression that can be evaluated for each row
-       of a dataset. If it evaluates to true the row will be either ignored or accepted
-    '''
-    def __init__(self, symbol, operator, value):
-        self.symbol = symbol
-        self.operator = operator
-        self.value = value
-
     def __str__(self):
         if self.operator == InputFilterOperator.STRING_EQUAL or self.operator == InputFilterOperator.STRING_NOT_EQUAL:
             citation = '"'
