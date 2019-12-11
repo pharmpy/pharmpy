@@ -60,6 +60,11 @@ Some rules for the IGNORE/ACCEPT option in $DATA:
 - A value for comparison can maximum have 12 characters (not counting spaces or '," at start or end)
 - IGNORE is performed before translating TIME and DATE
 
+DATE
+~~~~
+
+The DATE, DAT1, DAT2 and DAT3 are special in that they will affect the TIME column. Even if DATE is DROP it will still affect TIME, but cannot be tabled. If DATE and TIME cannot both be tabled and reentered as datasets.
+
 ID checking
 ~~~~~~~~~~~
 
