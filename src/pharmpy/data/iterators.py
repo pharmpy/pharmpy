@@ -57,7 +57,7 @@ class Omit(DatasetIterator):
     """
     def __init__(self, df, group):
         self._unique_groups = df[group].unique()
-        if len(self._unique_groups == 1):
+        if len(self._unique_groups) == 1:
             raise ValueError("Cannot create an Omit iterator as the number of unique groups is 1.")
         self._df = df
         self._counter = 0
@@ -112,7 +112,7 @@ class Resample(DatasetIterator):
         if stratify:
             # Default is to use proportions in dataset
             stratas = df.groupby(stratify)[group].unique()
-            have_mult_sample_sizes = isinstance(sample_size, collections.Mapping)
+            have_mult_sample_sizes = isinstance(sample_size, collections.abc.Mapping)
             if not have_mult_sample_sizes:
                 non_rounded_sample_sizes = stratas.apply(lambda x: (len(x) / numgroups) * sample_size)
                 rounded_sample_sizes = pharmpy.math.round_and_keep_sum(non_rounded_sample_sizes, sample_size)

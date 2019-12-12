@@ -11,7 +11,7 @@ def test_data_read(pheno):
 
 
 def test_read_raw_dataset(pheno):
-    df = pheno.input.raw_dataset
+    df = pheno.input.read_raw_dataset()
     assert list(df.iloc[0]) == ['1', '0.', '25.0', '1.4', '7', '0', '1', '1']
     assert list(df.columns) == ['ID', 'TIME', 'AMT', 'WGT', 'APGR', 'DV', 'FA1', 'FA2']
     assert df.pharmpy.column_type['ID'] == ColumnType.ID

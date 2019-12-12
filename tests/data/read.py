@@ -21,6 +21,9 @@ def test_read_nonmem_dataset(testdata):
     assert raw['ID'][0] == '1'
     assert list(df.columns) == colnames
     
+    raw2 = data.read_nonmem_dataset(path, colnames=colnames, raw=True, parse_columns=['ID'])
+    assert raw2['ID'][0] == 1.0
+
     df_drop = data.read_nonmem_dataset(path, colnames=colnames, drop=[False, False, True, False, False, False, True, False])
     assert list(df_drop.columns) == ['ID', 'TIME', 'WGT', 'APGR', 'DV', 'FA2']
     pd.testing.assert_series_equal(df_drop['ID'], df['ID'])

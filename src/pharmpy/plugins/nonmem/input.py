@@ -50,9 +50,8 @@ class ModelInput(input.ModelInput):
         self._dataset_updated = True
         self._data_frame = df
 
-    @property
-    def raw_dataset(self):
-        return self._read_dataset(raw=True)
+    def read_raw_dataset(self, parse_columns=tuple()):
+        return self._read_dataset(raw=True, parse_columns=parse_columns)
 
     @staticmethod
     def _synonym(key, value):
@@ -104,9 +103,9 @@ class ModelInput(input.ModelInput):
         return colnames, coltypes, drop
 
 
-    def _read_dataset(self, raw=False):
+    def _read_dataset(self, raw=False, parse_columns=tuple()):
         data_records = self.model.control_stream.get_records('DATA')
         ignore_character = data_records[0].ignore_character
         null_value = data_records[0].null_value
         (colnames, coltypes, drop) = self._column_info()
-        return pharmpy.data.read_nonmem_dataset(self.path, raw, ignore_character, colnames, coltypes, drop, null_value=null_value)
+        return pharmpy.data.read_nonmem_dataset(self.path, raw, ignore_character, colnames, coltypes, drop, null_value=null_value, parse_columns=parse_columns)

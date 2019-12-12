@@ -96,7 +96,7 @@ def infer_column_type(colname):
         return ColumnType.UNKNOWN
 
 
-def read_nonmem_dataset(path_or_io, raw=False, ignore_character='@', colnames=tuple(), coltypes=None, drop=None, null_value='0'):
+def read_nonmem_dataset(path_or_io, raw=False, ignore_character='@', colnames=tuple(), coltypes=None, drop=None, null_value='0', parse_columns=tuple()):
     """Read a nonmem dataset from file
         column types will be inferred from the column names
 
@@ -105,6 +105,7 @@ def read_nonmem_dataset(path_or_io, raw=False, ignore_character='@', colnames=tu
        colnames - List or tuple of names to give each column given in order. Names need to be unique
        drop - A list or tuple of booleans of which columns to drop
        null_value - Value to use for NULL, i.e. empty records or padding
+       parse_columns - Only applicable when raw=True. A list of columns to parse.
       
         The following postprocessing operations are done to a non-raw dataset
         1. Convert ordinary floating point numbers to float64
@@ -150,7 +151,8 @@ def read_nonmem_dataset(path_or_io, raw=False, ignore_character='@', colnames=tu
         df = df.iloc[:, indices_to_drop].copy()
 
     if not raw:
-        for column in df:
-            df[column] = df[column].apply(_convert_data_item, args=(str(null_value),))
+        parse_columns = list(df.columns)
+    for column in parse_columns:
+        df[column] = df[column].apply(_convert_data_item, args=(str(null_value),))
 
     return df
