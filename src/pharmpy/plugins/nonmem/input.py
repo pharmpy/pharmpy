@@ -3,8 +3,8 @@ from pathlib import Path
 
 
 from pharmpy import input
+import pharmpy.data
 from pharmpy.data import DatasetError
-from pharmpy.plugins.nonmem import data
 
 
 
@@ -42,7 +42,7 @@ class ModelInput(input.ModelInput):
         try:
             return self._data_frame
         except AttributeError:
-            self._read_dataset()
+            self._data_frame = self._read_dataset(raw=False)
         return self._data_frame
 
     @dataset.setter
@@ -52,9 +52,8 @@ class ModelInput(input.ModelInput):
 
     @property
     def raw_dataset(self):
-        return self._read_raw_dataset()
+        return self._read_dataset(raw=True)
 
-    # FIXME: Concider factoring out private methods on $INPUT to own class or the record class
     @staticmethod
     def _synonym(key, value):
         """Return a tuple reserved name and synonym
@@ -101,19 +100,13 @@ class ModelInput(input.ModelInput):
                         drop.append(False)
                     colnames.append(key)
                     reserved_name = key
-                coltypes.append(data.infer_column_type(reserved_name)) 
+                coltypes.append(pharmpy.data.read.infer_column_type(reserved_name)) 
         return colnames, coltypes, drop
 
 
-    def _read_raw_dataset(self):
-        data_records = self.model.control_stream.get_records('DATA')
-        ignore_character = data_records[0].ignore_character
-        (colnames, coltypes, _) = self._column_info()
-        return ModelInput.read_raw_dataset(self.path, colnames, coltypes, ignore_character=ignore_character)
-
-    def _read_dataset(self):
+    def _read_dataset(self, raw=False):
         data_records = self.model.control_stream.get_records('DATA')
         ignore_character = data_records[0].ignore_character
         null_value = data_records[0].null_value
         (colnames, coltypes, drop) = self._column_info()
-        self._data_frame = ModelInput.read_dataset(self.path, colnames, coltypes, drop, ignore_character=ignore_character, null_value=null_value)
+        return pharmpy.data.read_nonmem_dataset(self.path, raw, ignore_character, colnames, coltypes, drop, null_value=null_value)

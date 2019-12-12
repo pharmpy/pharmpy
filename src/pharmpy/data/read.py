@@ -36,8 +36,8 @@ class NMTRANDataIO(StringIO):
         if re.search(r' \t', contents):     # Space before TAB not allowed (see documentation)
             raise DatasetError("The dataset contains a TAB preceeded by a space, which is not allowed by NM-TRAN")
 
-        #if re.search(r'^[ \t]*\n', re.MULTILINE):       # Blank lines
-        #    raise DatasetError("The dataset contains one or more blank lines. This is not allowed by NM-TRAN without the BLANKOK option")
+        if re.search(r'^[ \t]*\n$', contents, re.MULTILINE):       # Blank lines
+            raise DatasetError("The dataset contains one or more blank lines. This is not allowed by NM-TRAN without the BLANKOK option")
 
         super().__init__(contents)
 
@@ -46,6 +46,8 @@ def convert_fortran_number(number_string):
     """This function will try to convert the number_string from the general fortran exponential format
        into an np.float64. It covers "1d1", "1D1", "a+b", "a-b", "+" and "-". All other cases will return None to
        signal that the number_string is not of the special form.
+
+       Move somewhere else. Will be used in output parsing as well
     """
     try:
         y = np.float64(number_string)
@@ -94,14 +96,14 @@ def infer_column_type(colname):
         return ColumnType.UNKNOWN
 
 
-def read_nonmem_dataset(path_or_io, raw=False, ignore_character='@', colnames=tuple(), drop=frozenset(), null_value='0'):
+def read_nonmem_dataset(path_or_io, raw=False, ignore_character='@', colnames=tuple(), coltypes=None, drop=None, null_value='0'):
     """Read a nonmem dataset from file
         column types will be inferred from the column names
 
        raw - minimal processing, data will be kept in string format.
        ignore_character
        colnames - List or tuple of names to give each column given in order. Names need to be unique
-       drop - A set of columns to drop
+       drop - A list or tuple of booleans of which columns to drop
        null_value - Value to use for NULL, i.e. empty records or padding
       
         The following postprocessing operations are done to a non-raw dataset
@@ -118,34 +120,37 @@ def read_nonmem_dataset(path_or_io, raw=False, ignore_character='@', colnames=tu
     file_io = NMTRANDataIO(path_or_io, ignore_character)
     df = pd.read_table(file_io, sep=r' *, *| *[\t] *| +', na_filter=False, header=None, engine='python', quoting=3, dtype=np.object)
     df = pharmpy.data.PharmDataFrame(df)
-    
+
     diff_cols = len(df.columns) - len(colnames)
     if diff_cols > 0:
         df.columns = list(colnames) + [None] * diff_cols
         if not raw:
             # Remove unnamed columns
-            df.drop(df.columns[None], axis=1, inplace=True)
+            df.drop(columns=[None], inplace=True)
     elif diff_cols < 0:
         if raw:
             df.columns = colnames[0:len(df.columns)]
-        else raw:
-            for _ in range(diff_cols):    # Create empty columns. Pandas does not support df[[None, None]] = [0, 0] or similar hence the loop
-                df[None] = float(convert_fortran_number(null_value))
+        else:
+            for i in range(abs(diff_cols)):    # Create empty columns.
+                df[f'__{i}]'] = null_value       # FIXME assure no name collisions here
             df.columns = colnames
     else:
         df.columns = colnames
 
-    for label in df.columns:
-        df.pharmpy.column_type[label] = infer_datatype(label)
+    if coltypes is None:
+        for label in df.columns:
+            df.pharmpy.column_type[label] = infer_column_type(label)
+    else:
+        if len(coltypes) < len(df.columns):
+            coltypes += [data.ColumnType.UNKNOWN] * (len(df.columns) - len(coltypes))
+        df.pharmpy.column_type[list(df.columns)] = coltypes
 
-    df.drop(df.columns[drop], axis=1, inplace=True)
+    if drop:
+        indices_to_drop = [i for i, x in enumerate(drop) if not x]
+        df = df.iloc[:, indices_to_drop].copy()
 
     if not raw:
         for column in df:
             df[column] = df[column].apply(_convert_data_item, args=(str(null_value),))
 
-    #FIXME: Could also check that not two columns of same type is allowed, i.e. ID and L1, or as invariant in PharmDataFrame
-    #FIXME: Handle BLANKOK
-    #FIXME: In order to handle synonyms the types must be provided beforehand
-    #Unittesting
-    #Connection to Model.input.dataset and raw_dataset
+    return df

@@ -56,6 +56,11 @@ class PharmDataFrame(pd.DataFrame):
     def _constructor_sliced(self):
         return pd.Series
 
+    def copy(self, *kwargs):
+        new_df = super().copy(*kwargs)
+        new_df._column_types = self._column_types.copy()
+        return new_df
+
 
 class ColumnTypeIndexer:
     """Indexing a PharmDataFrame to get or set column types
@@ -67,6 +72,8 @@ class ColumnTypeIndexer:
     def _set_one_column_type(self, label, tp):
         if label not in self._obj.columns:
             raise KeyError(str(label))
+        if tp.max_one and hasattr(self._obj, '_column_types') and tp in self._obj._column_types.values():
+            raise KeyError(f'Only one column of type {tp} is allowed in a PharmDataFrame.')
         try:
             self._obj._column_types[label] = tp
         except AttributeError:
@@ -85,6 +92,10 @@ class ColumnTypeIndexer:
                     raise ValueError(f'Cannot set {len(ind)} columns using {len(tp)} column types')
             else:
                 # Broadcasting of tp
+                try:
+                    len(ind)
+                except TypeError:
+                    ind = [ind]
                 for label in ind:
                     self._set_one_column_type(label, tp)
 
