@@ -82,6 +82,7 @@ from collections import namedtuple, OrderedDict
 from textwrap import dedent
 
 import pharmpy
+import pharmpy.data.iterators
 
 
 class CLI:
@@ -266,6 +267,25 @@ class CLI:
                                       allow_abbrev=True)
         cmd_sumo.set_defaults(func=self.cmd_sumo)
 
+        # -- data ------------------------------------------------------------------------------
+        cmd_data = parsers.add_parser('data', prog='pharmpy-data',
+                                      help='Data manipulations',
+                                      allow_abbrev=True)
+
+        cmd_data_subs = cmd_data.add_subparsers(title='PharmPy data commands', metavar='ACTION')
+
+        cmd_data_resample = cmd_data_subs.add_parser('resample', help='Resample dataset', allow_abbrev=True, 
+                                      parents=[self._args_input, self._args_output])
+        cmd_data_resample.add_argument('--group', metavar='COLUMN', type=str, default='ID',
+                                       help='Column to use for grouping (default is ID)')
+        cmd_data_resample.add_argument('--samples', metavar='NUMBER', type=int, default=1,
+                                       help='Number of resampled datasets (default 1)')
+        cmd_data_resample.add_argument('--stratify', metavar='COLUMN', type=str,
+                                       help='Column to use for stratification')
+        cmd_data_resample.add_argument('--replace', type=bool, default=False,
+                                       help='Sample with replacement (default is without)')
+        cmd_data_resample.set_defaults(func=self.data_resample)
+
         # -- transform -------------------------------------------------------------------------
         cmd_transform = parsers.add_parser('transform', prog='pharmpy-transform',
                                            parents=[self._args_input, self._args_output],
@@ -349,6 +369,15 @@ class CLI:
 
         self.welcome('sumo')
         self.error_exit(exception=NotImplementedError("Command (sumo) is not available yet!"))
+
+    def data_resample(self, args):
+        """Subcommand to resample a dataset."""
+        for model in args.models:
+            df = model.input.read_raw_dataset(parse_columns=[args.group])
+            resampler = pharmpy.data.iterators.Resample(df, args.group, resamples=args.samples, stratify=args.stratify, replace=args.replace)
+            for i, (resampled_df, x) in enumerate(resampler):
+                model.dataset = resampled_df
+                #model.write('resample_{i}.mod')
 
     def cmd_transform(self, args):
         """Subcommand to transform a model."""
