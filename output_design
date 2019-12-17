@@ -1,0 +1,92 @@
+Tasks:
+* Add 'name' metadata to PharmDataFrame
+* Consider standard write_csv method in df.pharmpy using name and adding csv (later could have other format that can have meta information)
+* Add 'name' as property of model object. Can be used by source when saving and be taken from source when reading.
+* When writing nonmem model should use proper extension (mod or ctl?). So a NONMEM source is probably a subclass of source file.
+* If no ds name use model name with other extension when writing
+* Algorithm: read model, get ds, resample, set new ds name, set ds, set new model name, write
+
+
+Write model. via source object? Change path and filename. How set the filename of a new dataset? Write dataset separately is possible, but how update the model?
+random seed option where needed
+disallow non-integer IDs? Convert IDs to integer. Global setting for this?
+pipelines à la gstreamer: resample ! fit ! boostrap_results_calc.
+
+How to handle paths of model and dataset? Should model.source have the path? Then dataset relative is relative that path. Do we need property path?
+In some cases it cannot be used if the dataset is not on disk and not needed on disk. This is an internal NONMEM thing. Should know when to save dataset to disk (when changed). Otherwise saving a dataset is done through the PharmDataSet class and api, i.e. for using in transform. (hmmm.... or when saving new model if dataset has been replaced)
+
+Use cases for dataset:
+    * Load, change and set changes to dataset. When model written also write dataset if changed. Write model to new path need to repath $DATA
+
+Make all tests pass and fix broken things
+
+
+read modelfit output. Use path in source object to find output. Create fit results
+
+
+
+Workflow for bootstrap:
+model = Model("run1.mod")
+mods = []
+for i, ds in resample(model.dataset):
+    bs_mod = model.copy()
+    bs_mod.dataset = ds
+    bs_mod.name = "bs_{i}"
+    bs_mod.fit()    # Some asynch magic going on here
+    # The NONMEM implementation need to use some file handling to write file to disk etc
+    mods.append(bs_mod)
+
+wait_for_all_fits_barrier
+fit_results = [model.fit_results for model in mods]
+bootstrap_result = BootstrapResults(fit_results)        # Do post processing, i.e. calculations here
+bootstrap_results.plot_stuff()                          # Plotting specific to bootstrap
+bootstrap_results.save_as_json()        # Could be in base class
+
+
+Another use case is transform where user wants to generate a new model file:
+model = Model("run1.mod")
+model.remove_iov()
+model.source.write("run2.mod")
+# Usage would be specific to transform tool etc
+# Otherwise the transformed model could be used directly
+
+
+
+
+ParameterSet - Set of parameters. Order is not important for pharmpy hence a set.
+    But parameter cannot be added twice. What does parameter hash to? To the symbol hash!
+    Need lookup on symbol making a dict better. Symbolname is in the parameter object. Should it be? 
+
+
+
+TODO:
+* Figure out the NONMEM workflow:
+    * order of $SIM and $EST: First SIM and then one EST per NSUB (so if want first EST and then SIM need two $PROBLEM)
+        * Here each EST is NOT a modelfit of the original model/data, but a fit to a simulated dataset (which we don't get out)
+    * $PROBLEM how standalone are they?
+    * What is $SUPER
+
+Design:
+ModelfitResults - The results of one Modelfit, i.e. one estimation using one method. Chained $EST could be a list of ModelfitResults. Thus each ModelfitResults can be for one estimation method, allowing subclassing if needed. The final one contains the final estimates so it should be retrievable via a method on model.
+
+
+Sympy gör substitution via en dict Symbol to subst-val.
+
+Connection back to NONMEM? {'TVCL': 0.23} which are variances in random effects, which are covariances and which are structural parameters? Same problem as SO.
+There only the model could tell. 
+Update inits on agnostic: easy from hash.
+Set inits to NONMEM model: Omega blocks from rvs could be created from scratch. Loop one by one and check if size is same. Comments? How to connect back to old code?
+NONMEM model need to remember (or to extract on the fly) names of all parameters in order. Can be used to set inits.
+
+hierarchical model and variability levels.
+
+serialization to json via method to_json in objects. Will return a json-serializable object. (DataFrame?)
+
+
+ModelfitResults:
+    attributes:
+
+    parameter_estimates = { par: val, ... }   (Only estimated population parameters)
+    ofv     (the final ofv)
+    covariance_matrix = DataFrame with parameter names as col and row indices
+    list of iterations (or samples for EM-algorithms) - separate class with parameter_estimates, ofv, gradients etc. First in list is initial estimates
