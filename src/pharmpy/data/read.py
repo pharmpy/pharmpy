@@ -17,7 +17,7 @@ class NMTRANDataIO(StringIO):
         Things that must be done before using pandas will be done here.
         Currently it takes care of filtering out ignored rows and handles special delimiter cases
     """
-    def __init__(self, filename_or_io, ignore_character):
+    def __init__(self, filename_or_io, ignore_character='#'):
         """ filename_or_io is a string with a path, a path object or any IO object, i.e. StringIO
         """
         if hasattr(filename_or_io, 'read'):
@@ -26,12 +26,11 @@ class NMTRANDataIO(StringIO):
             with open(str(filename_or_io), 'r') as datafile:
                 contents = datafile.read()      # All variations of newlines are converted into \n
 
-        if ignore_character:
-            if ignore_character == '@':
-                comment_regexp = re.compile(r'^[A-Za-z].*\n', re.MULTILINE)
-            else:
-                comment_regexp = re.compile('^[' + ignore_character + '].*\n', re.MULTILINE)
-            contents = re.sub(comment_regexp, '', contents)
+        if ignore_character == '@':
+            comment_regexp = re.compile(r'^[ \t]*[A-Za-z#].*\n', re.MULTILINE)      # FIXME: Does this really handle the final line with no new line?
+        else:
+            comment_regexp = re.compile('^[' + ignore_character + '].*\n', re.MULTILINE)
+        contents = re.sub(comment_regexp, '', contents)
 
         if re.search(r' \t', contents):     # Space before TAB not allowed (see documentation)
             raise DatasetError("The dataset contains a TAB preceeded by a space, which is not allowed by NM-TRAN")
@@ -96,7 +95,7 @@ def infer_column_type(colname):
         return ColumnType.UNKNOWN
 
 
-def read_nonmem_dataset(path_or_io, raw=False, ignore_character='@', colnames=tuple(), coltypes=None, drop=None, null_value='0', parse_columns=tuple()):
+def read_nonmem_dataset(path_or_io, raw=False, ignore_character='#', colnames=tuple(), coltypes=None, drop=None, null_value='0', parse_columns=tuple()):
     """Read a nonmem dataset from file
         column types will be inferred from the column names
 
