@@ -119,6 +119,12 @@ The data is right justified with a field size of 13 characters (padded with spac
 
 The number format is integer for the first two columns, scientific with 5 decimals and 2 digits exponent for the ETA and ETC columns. The number in the OBJ column is written in regular decimal format and will always take up 19 characters with first character being space for positive numbers or "-" for negative numbers. For numbers having an integer part of zero will take up 20 characters.
 
+All zero individuals
+~~~~~~~~~~~~~~~~~~~~
+
+Individuals with no observations will have zeroes in all columns except the SUBJECT_ID and the ID columns
+
+
 control stream
 --------------
 
