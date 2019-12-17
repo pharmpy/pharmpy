@@ -42,6 +42,16 @@ Some rules for the parsing of the dataset by NM-TRAN. These were tested with NON
 - Columns that are DROPed in $INPUT can contain any characters and there is no limit to length of items in such a column
 - If any line has more columns than $INPUT all extra columns are considered to be DROPed
 
+Comment lines (IGNORE=c)
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+Lines starting with the comment regex will be removed from the dataset.
+
+- If no IGNORE=c has been provided the default regex is `^#`
+- If IGNORE=c where c is not @ the rexex is `^c`
+- If IGNORE=@ the regex is `^\\s*[a-zA-Z#]`
+
+
 NULL items in datasets
 ~~~~~~~~~~~~~~~~~~~~~~
 
