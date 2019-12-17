@@ -1,15 +1,18 @@
 Tasks:
-* Add 'name' metadata to PharmDataFrame
-* Consider standard write_csv method in df.pharmpy using name and adding csv (later could have other format that can have meta information)
+v Add 'name' metadata to PharmDataFrame
+v Consider standard write_csv method in df.pharmpy using name and adding csv (later could have other format that can have meta information)
+* model.source.write to write to fullpath or create path using name similar to data write. Check if data needs to be written. If dataset property has ever been set should update. Should also remove path attribute of model.
+* NONMEM to set name when reading dataset?
 * Add 'name' as property of model object. Can be used by source when saving and be taken from source when reading.
 * When writing nonmem model should use proper extension (mod or ctl?). So a NONMEM source is probably a subclass of source file.
 * If no ds name use model name with other extension when writing
-* Algorithm: read model, get ds, resample, set new ds name, set ds, set new model name, write
+* Algorithm: read model, get ds, resample, set ds, set new model name, write_model (and data gets set automatically)
 
 
 Write model. via source object? Change path and filename. How set the filename of a new dataset? Write dataset separately is possible, but how update the model?
 random seed option where needed
 disallow non-integer IDs? Convert IDs to integer. Global setting for this?
+disallow duplicate IDs. Do renumbering automatically.
 pipelines à la gstreamer: resample ! fit ! boostrap_results_calc.
 
 How to handle paths of model and dataset? Should model.source have the path? Then dataset relative is relative that path. Do we need property path?
