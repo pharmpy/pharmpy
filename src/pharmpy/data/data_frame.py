@@ -46,7 +46,7 @@ class PharmDataFrame(pd.DataFrame):
     ============  =============
 
     """
-    _metadata = [ '_column_types' ]
+    _metadata = [ '_column_types', 'name' ]
 
     @property
     def _constructor(self):
@@ -58,7 +58,10 @@ class PharmDataFrame(pd.DataFrame):
 
     def copy(self, *kwargs):
         new_df = super().copy(*kwargs)
-        new_df._column_types = self._column_types.copy()
+        try:
+            new_df._column_types = self._column_types.copy()
+        except AttributeError:
+            pass
         return new_df
 
 
@@ -206,3 +209,19 @@ class DataFrameAccessor:
         idlab = self.id_label
         df = self._obj[covariates + [idlab]]
         return df.groupby(idlab).nth(0)
+
+    def write_csv(self, path=''):
+        """Write PharmDataFrame to a csv file
+           If no path is supplied or does not contain a filename a name is created
+           from the name property of the PharmDataFrame
+           Will not overwrite in case the filename was created.
+        """
+        if not path or path.is_dir():
+            try:
+                filename = f'{self._obj.name}.csv'
+            except AttributeError:
+                raise ValueError('Cannot name csv as no path argument was supplied and the DataFrame has no name property')
+            path /= filename
+            if path.exists():
+                raise FileExistsError(f'Will overwrite file using generated path {path}')
+        self.to_csv(path, index=False)

@@ -1,53 +1,14 @@
 import pytest
-import unittest.mock as mock
 import pandas as pd
 import numpy as np
 
+import pharmpy.data
 import pharmpy.data.iterators as iters
 
 
 @pytest.fixture
 def df():
-    return pd.DataFrame({'ID': [1, 1, 2, 2, 4, 4], 'DV': [5, 6, 3, 4, 0, 9], 'STRAT': [1, 1, 2, 2, 2, 2]})
-
-
-class MyDefaultIterator(iters.DatasetIterator):
-    def __next__(self):
-        try:
-            self.i
-        except:
-            self.i = 0
-        if self.i == 2:
-            raise StopIteration
-        else:
-            self.i += 1
-            return mock.Mock()
-
-
-class MyTupleIterator(iters.DatasetIterator):
-    def __next__(self):
-        try:
-            self.i
-        except:
-            self.i = 0
-        if self.i == 2:
-            raise StopIteration
-        else:
-            self.i += 1
-            return mock.Mock(), "DUMMY"
-
-    def data_files(self, path, filename="my_{}.csv"):
-        return super().data_files(path, filename)
-
-
-def test_base_class(df):
-    it = MyDefaultIterator()
-    files = it.data_files(path='/anywhere')
-    assert [str(x) for x in files] == ['/anywhere/dataset_1.dta', '/anywhere/dataset_2.dta']
-
-    it = MyTupleIterator()
-    files = it.data_files(path='/nowhere')
-    assert [str(x) for x in files] == ['/nowhere/my_1.csv', '/nowhere/my_2.csv']
+    return pharmpy.data.PharmDataFrame({'ID': [1, 1, 2, 2, 4, 4], 'DV': [5, 6, 3, 4, 0, 9], 'STRAT': [1, 1, 2, 2, 2, 2]})
 
 
 def test_omit(df):
@@ -56,14 +17,18 @@ def test_omit(df):
     assert group == 1
     assert list(new_df['ID']) == [2, 2, 4, 4]
     assert list(new_df['DV']) == [3, 4, 0, 9]
+    assert new_df.name == 'omitted_1'
+    assert not hasattr(df, 'name')      # Check that original did not get name
     (new_df, group) = next(omitter)
     assert group == 2
     assert list(new_df['ID']) == [1, 1, 4, 4]
     assert list(new_df['DV']) == [5, 6, 0, 9]
+    assert new_df.name == 'omitted_2'
     (new_df, group) = next(omitter)
     assert group == 4
     assert list(new_df['ID']) == [1, 1, 2, 2]
     assert list(new_df['DV']) == [5, 6, 3, 4]
+    assert new_df.name == 'omitted_3'
     with pytest.raises(StopIteration):
         next(omitter)
 
@@ -76,6 +41,7 @@ def test_resampler_default(df):
     assert list(new_df['ID']) == [1, 1, 2, 2, 3, 3]
     assert list(new_df['DV']) == [5, 6, 0, 9, 3, 4]
     assert list(new_df['STRAT']) == [1, 1, 2, 2, 2, 2]
+    assert new_df.name == 'resample_1'
     with pytest.raises(StopIteration):      # Test the default one iteration
         next(resampler)
 
