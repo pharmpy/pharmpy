@@ -1,4 +1,5 @@
 import enum
+from pathlib import Path
 
 import pandas as pd
 
@@ -215,13 +216,16 @@ class DataFrameAccessor:
            If no path is supplied or does not contain a filename a name is created
            from the name property of the PharmDataFrame
            Will not overwrite in case the filename was created.
+           return path for the written file
         """
+        path = Path(path)
         if not path or path.is_dir():
             try:
                 filename = f'{self._obj.name}.csv'
             except AttributeError:
-                raise ValueError('Cannot name csv as no path argument was supplied and the DataFrame has no name property')
+                raise ValueError('Cannot name csv as no path argument was supplied and the DataFrame has no name property.')
             path /= filename
             if path.exists():
-                raise FileExistsError(f'Will overwrite file using generated path {path}')
-        self.to_csv(path, index=False)
+                raise FileExistsError(f'File at generated path {path} already exists.')
+        self._obj.to_csv(path, index=False)
+        return path

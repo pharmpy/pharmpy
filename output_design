@@ -1,8 +1,12 @@
 Tasks:
 v Add 'name' metadata to PharmDataFrame
 v Consider standard write_csv method in df.pharmpy using name and adding csv (later could have other format that can have meta information)
-* model.source.write to write to fullpath or create path using name similar to data write. Check if data needs to be written. If dataset property has ever been set should update. Should also remove path attribute of model.
-* NONMEM to set name when reading dataset?
+v Currenly source object is created before the model. Should perhaps be kept separated. Then update and write needs to move to model class. Could separation be complete! Yes now completely separated.
+
+v model.source.write to write to fullpath or create path using name similar to data write. Check if data needs to be written. If dataset property has ever been set should update. Should also remove path attribute of model.
+
+* update for new dataset need some ignore of header line or removal of header
+* NONMEM to set name when reading dataset
 * Add 'name' as property of model object. Can be used by source when saving and be taken from source when reading.
 * When writing nonmem model should use proper extension (mod or ctl?). So a NONMEM source is probably a subclass of source file.
 * If no ds name use model name with other extension when writing

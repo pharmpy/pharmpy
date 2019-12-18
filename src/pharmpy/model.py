@@ -46,7 +46,32 @@ class ModelFormatError(ModelException):
 
 
 class Model():
-#    """(Generic) Model class.
+    def update_source(self):
+        """Update the source"""
+        self.source.code = str(self)
+
+    def write(self, path=''):
+        """Write model to file using its source format
+           If no path is supplied or does not contain a filename a name is created
+           from the name property of the model
+           Will not overwrite in case the filename was created.
+        """
+        self.update_source()
+        path = Path(path)
+        if not path or path.is_dir():
+            try:
+                filename = f'{self.name}{self.source.filename_extension}'
+            except AttributeError:
+                raise ValueError('Cannot name model file as no path argument was supplied and the model has no name.')
+            path /= filename
+            if path.exists():
+                raise FileExistsError(f'File at generated path {path} already exists.')
+        self.source.write(path)
+
+
+    #    """(Generic) Model class.
+
+# Property: name
 
 #    Represents a model object, that may or may not exist on disk too.
 
@@ -86,28 +111,6 @@ class Model():
 #        self.execute = self.Engine(self)
 #        self.source.model = self
 
-#    @property
-#    def index(self):
-#        """Current model (subproblem) index.
-
-#        The context for everything else changes if changed. Implementation might accept name lookup.
-#        """
-#        return self._index
-
-#    @index.setter
-#    def index(self, new):
-#        if new != 0:
-#           raise ModelLookupError(new)
-#        self._index = new
-
-#    @property
-#    def content(self):
-#        """Raw content stream of model."""
-#        if self.source.on_disk:
-#            return self.source.input.getvalue()
-#        else:
-#            return None
-
 #    def validate(self):
 #        """Test if model is syntactically valid (raises if not)."""
 #        raise NotImplementedError
@@ -135,16 +138,6 @@ class Model():
 #        with open(str(path), 'w') as f:
 #            f.write(str(self.source.output))
 #        self.path = path.resolve()
-
-#    @property
-#    def path(self):
-#        """Source filesystem path (if any)."""
-#        return self.source.path
-
-#    @path.setter
-#    def path(self, path):
-#        self.logger.info('Setting %r.path to %r', repr(self), str(path))
-#        self.source.path = path
 
 #    @property
 #    def has_results(self):

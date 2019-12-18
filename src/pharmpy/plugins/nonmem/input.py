@@ -18,7 +18,7 @@ class ModelInput(input.ModelInput):
 
     @property
     def path(self):
-        # FIXME: Should this really be public? Will follow souce model
+        # FIXME: Should this really be public? Will follow source model
         record = self.model.control_stream.get_records('DATA')[0]
         path = Path(record.filename)
         if not path.is_absolute():
@@ -34,7 +34,7 @@ class ModelInput(input.ModelInput):
         assert not path.exists() or path.is_file(), ('input path change, but non-file exists at '
                                                      'target (%s)' % str(path))
         record = self.model.control_stream.get_records('DATA')[0]
-        self.logger.info('Setting %r.path to %r', repr(self), str(path))
+        #self.logger.info('Setting %r.path to %r', repr(self), str(path))
         record.filename = str(path)
 
     @property

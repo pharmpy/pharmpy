@@ -375,9 +375,10 @@ class CLI:
         for model in args.models:
             df = model.input.read_raw_dataset(parse_columns=[args.group])
             resampler = pharmpy.data.iterators.Resample(df, args.group, resamples=args.samples, stratify=args.stratify, replace=args.replace)
-            for i, (resampled_df, x) in enumerate(resampler):
-                model.dataset = resampled_df
-                #model.write('resample_{i}.mod')
+            for resampled_df, _ in resampler:
+                model.input.dataset = resampled_df
+                model.name = model.input.dataset.name
+                model.write()
 
     def cmd_transform(self, args):
         """Subcommand to transform a model."""

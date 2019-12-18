@@ -40,25 +40,25 @@ class SourceBase:
         self.obj = obj
         self.code = self.read(obj)
 
-    def update(self):
-        """Update the source string from the model
-
-        This needs to be overridden to handle model specific updates (i.e. relative $DATA)
-        """
-        self.code = str(self.model)
-
     def write(self, path):
-        """Write source to file. Do automatic update
+        """Write source to file.
         """
-        self.update()
         with open(path, 'w') as fp:
             fp.write(self.code)
 
 
-
 class FileSource(SourceBase):
     """Source formats for files
+        property: filename_extension    (includes the dot)
     """
+    def __init__(self, obj):
+        if isinstance(obj, str) or isinstance(obj, Path):
+            path = Path(obj)
+            self.filename_extension = path.suffix
+        else:
+            self.filename_extension = ''
+        super().__init__(obj)
+
     def read(self, path_or_io):
         """Read source from io object or from str path or path object
         """
