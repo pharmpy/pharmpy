@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-# -*- encoding: utf-8 -*-
 """
 .. highlight:: console
 
@@ -83,6 +81,7 @@ from textwrap import dedent
 
 import pharmpy
 import pharmpy.data.iterators
+import pharmpy.plugins.utils
 
 
 class CLI:
@@ -200,13 +199,22 @@ class CLI:
                               action='store_const', dest='loglevel', const=logging.DEBUG,
                               help='show debug messages')
 
-        # common to: commands with file input
+        # common to: commands with model file input
         args_input = argparse.ArgumentParser(add_help=False)
         group_input = args_input.add_argument_group(title='inputs')
         group_input.add_argument('models',
-                                 metavar='FILE', type=self.InputModel, nargs='+',
+                                 metavar='FILE', type=self.input_model, nargs='+',
                                  help='input model file')
         self._args_input = args_input
+
+
+        # common to: command with model file or dataset input
+        args_model_or_data_input = argparse.ArgumentParser(add_help=False)
+        group_model_or_data_input = args_model_or_data_input.add_argument_group(title='data_inputs')
+        group_model_or_data_input.add_argument('models_or_datasets',
+                metavar='FILE', type=self.input_model_or_dataset, nargs='+',
+                help='input model or dataset file')
+        self._args_model_or_data_input = args_model_or_data_input
 
         # common to: commands with file output
         args_output = argparse.ArgumentParser(add_help=False)
@@ -275,7 +283,7 @@ class CLI:
         cmd_data_subs = cmd_data.add_subparsers(title='PharmPy data commands', metavar='ACTION')
 
         cmd_data_resample = cmd_data_subs.add_parser('resample', help='Resample dataset', allow_abbrev=True, 
-                                      parents=[self._args_input, self._args_output])
+                                      parents=[self._args_model_or_data_input])
         cmd_data_resample.add_argument('--group', metavar='COLUMN', type=str, default='ID',
                                        help='Column to use for grouping (default is ID)')
         cmd_data_resample.add_argument('--samples', metavar='NUMBER', type=int, default=1,
@@ -372,13 +380,17 @@ class CLI:
 
     def data_resample(self, args):
         """Subcommand to resample a dataset."""
-        for model in args.models:
-            df = model.input.read_raw_dataset(parse_columns=[args.group])
-            resampler = pharmpy.data.iterators.Resample(df, args.group, resamples=args.samples, stratify=args.stratify, replace=args.replace)
-            for resampled_df, _ in resampler:
-                model.input.dataset = resampled_df
-                model.name = model.input.dataset.name
-                model.write()
+        for obj in args.models_or_datasets:
+            #df = model.input.read_raw_dataset(parse_columns=[args.group])
+            resampler = pharmpy.data.iterators.Resample(obj, args.group, resamples=args.samples, stratify=args.stratify, replace=args.replace)
+            for resampled_obj, _ in resampler:
+                #model.input.dataset = resampled_df
+                #model.name = model.input.dataset.name
+                # FIXME: Could suffix name here to reflect multiple inputs
+                try:
+                    resampled_obj.write()
+                except AttributeError:
+                    resampled_obj.write_csv()
 
     def cmd_transform(self, args):
         """Subcommand to transform a model."""
@@ -459,16 +471,26 @@ class CLI:
         ver, dir = self.install.version, self.install.directory
         self.logger.info('Welcome to pharmpy-%s (%s @ %s)' % (subcommand, ver, dir))
 
-    def InputModel(self, path):
-        """Returns :class:`~pharmpy.generic.Model` from *path*.
+    def input_model(self, path):
+        """Returns :class:`~pharmpy.model.Model` from *path*.
 
         Raises if not found or is dir, without tracebacks (see :func:`error_exit`).
         """
 
-        path = self.InputFile(path)
+        path = self.check_input_path(path)
         return pharmpy.Model(path)
 
-    def InputFile(self, path):
+    def input_model_or_dataset(self, path):
+        """Returns :class:`~pharmpy.model.Model` or :class:`~pharmpy.data.PharmDataFrame` from *path*
+        """
+        path = self.check_input_path(path)
+        try:
+            obj = pharmpy.Model(path)
+        except pharmpy.plugins.utils.PluginError:
+            obj = pharmpy.data.read_csv(path)
+        return obj
+
+    def check_input_path(self, path):
         """Resolves path to input file and checks existence.
 
         Raises if not found or is dir, without tracebacks (see :func:`error_exit`).

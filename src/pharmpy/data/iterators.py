@@ -60,7 +60,8 @@ class DatasetIterator:
             else simply pass the dataset through
         """
         try:
-            self.model.dataset = df
+            self._model.dataset = df
+            self._model.name = df.name
             return self._model
         except AttributeError:
             return df
