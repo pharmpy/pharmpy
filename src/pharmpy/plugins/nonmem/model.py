@@ -30,7 +30,8 @@ class Model(pharmpy.model.Model):
             datapath = self.input.dataset.pharmpy.write_csv()      # FIXME: If no name set use the model name. Set that when setting dataset to input!
             self.input.path = datapath
             # FIXME: ignore_character et al should be set when setting the dataset. Check if A-Za-z and use @, # remove else use first character
-            # FIXME: Must update IGN=@ since have csv. But then could not handle _NAME for first column
+            # FIXME: how to handle IGNORE, ACCEPT? Must be performed when resampling as entire groups might disappear collapsing individuals.
+            #           so resampling should be done on parsed dataset. Anonymizing 
         super().update_source()
 
     def validate(self):

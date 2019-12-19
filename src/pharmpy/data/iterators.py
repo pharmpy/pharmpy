@@ -2,7 +2,8 @@
 data.iterators
 ==============
 
-Iterators generating new datasets from a dataset
+Iterators generating new datasets from a dataset. The dataset could either be stand alone or connected to a model.
+If a model is used the same model will be updated with different datasets for each iteration.
 
 Currenly contains:
 
@@ -42,6 +43,28 @@ class DatasetIterator:
         df.name = self._name_pattern.format(self._next)
         self._next += 1
 
+    def _retrieve_dataset(self, df_or_model):
+        """ Extract dataset from model and remember the model.
+            If input is dataset simply pass through and set model to None
+        """
+        try:
+            dataset = df_or_model.input.dataset
+            self._model = df_or_model
+            return dataset
+        except AttributeError:
+            self._model = None
+            return df_or_model
+
+    def _combine_dataset(self, df):
+        """ If we are working with a model set the dataset and return model
+            else simply pass the dataset through
+        """
+        try:
+            self.model.dataset = df
+            return self._model
+        except AttributeError:
+            return df
+
     def __iter__(self):
         return self
 
@@ -49,12 +72,13 @@ class DatasetIterator:
 class Omit(DatasetIterator):
     """ Iterate over omissions of a certain group in a dataset. One group is omitted at a time.
 
-        :param DataFrame df: DataFrame to iterate over
+        :param dataset_or_model: DataFrame to iterate over or a model from which to use the dataset
         :param colname group: Name of the column to use for grouping
         :param name_pattern: Name to use for generated datasets. A number starting from 1 will be put in the placeholder.
         :returns: Tuple of DataFrame and the omitted group
     """
-    def __init__(self, df, group, name_pattern='omitted_{}'):
+    def __init__(self, dataset_or_model, group, name_pattern='omitted_{}'):
+        df = self._retrieve_dataset(dataset_or_model)
         self._unique_groups = df[group].unique()
         if len(self._unique_groups) == 1:
             raise ValueError("Cannot create an Omit iterator as the number of unique groups is 1.")
@@ -68,7 +92,7 @@ class Omit(DatasetIterator):
         next_group = self._unique_groups[self._next - 1]
         new_df = df[df[self._group] != next_group]
         self._prepare_next(new_df)
-        return new_df, next_group
+        return self._combine_dataset(new_df), next_group
 
 
 class Resample(DatasetIterator):
@@ -98,7 +122,8 @@ class Resample(DatasetIterator):
         :returns: A tuple of a resampled DataFrame and a list of resampled groups in order
     """
 
-    def __init__(self, df, group, resamples=1, stratify=None, sample_size=None, replace=False, name_pattern='resample_{}'):
+    def __init__(self, dataset_or_model, group, resamples=1, stratify=None, sample_size=None, replace=False, name_pattern='resample_{}'):
+        df = self._retrieve_dataset(dataset_or_model)
         unique_groups = df[group].unique()
         numgroups = len(unique_groups)
 
@@ -159,4 +184,4 @@ class Resample(DatasetIterator):
         new_df.reset_index(inplace=True, drop=True)
         self._prepare_next(new_df)
 
-        return new_df, random_groups
+        return self._combine_dataset(new_df), random_groups
