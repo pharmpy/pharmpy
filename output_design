@@ -1,5 +1,5 @@
-Hmmm... IGNORE/ACCEPT when resampling. Needs to be done so the pharmpy data resample must read and parse the dataset properly and then do the resample.
-BUT: For the anonymization we would need to keep the raw dataset since it will be used for future work, i.e. might need all columns and keep DROPped columns etc. Could anonymization and/or resample also take a csv as input? When csv there would be no IGN/ACC
+v Hmmm... IGNORE/ACCEPT when resampling. Needs to be done so the pharmpy data resample must read and parse the dataset properly and then do the resample.
+v BUT: For the anonymization we would need to keep the raw dataset since it will be used for future work, i.e. might need all columns and keep DROPped columns etc. Could anonymization and/or resample also take a csv as input? When csv there would be no IGN/ACC
 
 Workflow for dataset: v pharmpy data resample mydata.csv
 v read dataset
@@ -7,30 +7,27 @@ v do resample
 v save all generated csvs separately
 v Can now iterate over dataset connected to models
 v Need cli to handle models/or plain datasets for pharmpy.data
-NEXT: Test cli + fix numbering if resample multiple in one operation, alt disallow, YES DISALLOW!
-Do we have renumbering of IDs from NONMEM 1,2,1,2 thing?
-Also need applying all IGN/ACC
+* A dataframe must have more than one column, to avoid mistakes.
+* Do we have renumbering of IDs from NONMEM 1,2,1,2 thing? Invariant on PharmDataFrame hard since raw datasets could then not be PharmDataFrame.
+    * disallow duplicate IDs. Do renumbering automatically, by PharmDataFrame?
+* Also need applying all IGN/ACC
+* Document resample: difference between csv and model
+* Document models paths and names of datasets
+* CLI documentation
+* Clean CLI to only have what works now (keep in code if close to implementation)
 
 GAH: Will all datasets have to be kept in memory for a bootstrap? If a model is written the dataset should be unloaded!
 
-Tasks:
-v Add 'name' metadata to PharmDataFrame
-v Consider standard write_csv method in df.pharmpy using name and adding csv (later could have other format that can have meta information)
-
-v model.source.write to write to fullpath or create path using name similar to data write. Check if data needs to be written. If dataset property has ever been set should update. Should also remove path attribute of model.
-
-* update for new dataset need some ignore of header line or removal of header
+* update of new dataset need some ignore of header line or removal of header
 * NONMEM to set name when reading dataset
-* Add 'name' as property of model object. Can be used by source when saving and be taken from source when reading.
-* When writing nonmem model should use proper extension (mod or ctl?). So a NONMEM source is probably a subclass of source file.
+v Add 'name' as property of model object. Can be used by source when saving and be taken from source when reading.
+v When writing nonmem model should use proper extension (mod or ctl?).
 * If no ds name use model name with other extension when writing
 * Algorithm: read model, get ds, resample, set ds, set new model name, write_model (and data gets set automatically)
 
 
-Write model. via source object? Change path and filename. How set the filename of a new dataset? Write dataset separately is possible, but how update the model?
 random seed option where needed
 disallow non-integer IDs? Convert IDs to integer. Global setting for this?
-disallow duplicate IDs. Do renumbering automatically.
 pipelines à la gstreamer: resample ! fit ! boostrap_results_calc.
 
 How to handle paths of model and dataset? Should model.source have the path? Then dataset relative is relative that path. Do we need property path?

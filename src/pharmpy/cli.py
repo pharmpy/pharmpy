@@ -25,13 +25,13 @@ Standard practice of packaging is to define "entrypoints" in the setuptools ``se
   entry_points={
       'console_scripts': [
           'pharmpy           = pharmpy.cli:main',
-          'pharmpy-clone     = pharmpy.cli:cmd_clone',
-          'pharmpy-execute   = pharmpy.cli:cmd_execute',
-          'pharmpy-help      = pharmpy.cli:cmd_help',
-          'pharmpy-print     = pharmpy.cli:cmd_print',
-          'pharmpy-sumo      = pharmpy.cli:cmd_sumo',
-          'pharmpy-transform = pharmpy.cli:cmd_transform',
-          'pharmpy-version   = pharmpy.cli:cmd_version',
+          'pharmpy clone     = pharmpy.cli:cmd_clone',
+          'pharmpy execute   = pharmpy.cli:cmd_execute',
+          'pharmpy help      = pharmpy.cli:cmd_help',
+          'pharmpy print     = pharmpy.cli:cmd_print',
+          'pharmpy sumo      = pharmpy.cli:cmd_sumo',
+          'pharmpy transform = pharmpy.cli:cmd_transform',
+          'pharmpy version   = pharmpy.cli:cmd_version',
       ]
   },
 
@@ -45,14 +45,14 @@ entrypoint (e.g. :func:`sumo`). This is accomplished via invoking:
 to skip straight to subcommand parser, enabling linking as if subcommands were different scripts::
 
     pharmpy --help                 ->  pharmpy --help
-    pharmpy-version                ->  pharmpy version
-    pharmpy-transform FILE arg..   ->  pharmpy transform FILE arg..
+    pharmpy version                ->  pharmpy version
+    pharmpy transform FILE arg..   ->  pharmpy transform FILE arg..
 
 Installing PharmPy Wheel-build should install all of these to PATH. Then, these are clean targets
 for post-install hooks to symlink. Etheir to pollute the PATH namespace with traditional PsN-styled
 "binscripts", as::
 
-    /usr/bin/execute               ->  /usr/bin/pharmpy-execute
+    /usr/bin/execute               ->  /usr/bin/pharmpy execute
 
 Or, to keep multiple versions when upgrading PharmPy.
 
@@ -210,9 +210,9 @@ class CLI:
 
         # common to: command with model file or dataset input
         args_model_or_data_input = argparse.ArgumentParser(add_help=False)
-        group_model_or_data_input = args_model_or_data_input.add_argument_group(title='data_inputs')
-        group_model_or_data_input.add_argument('models_or_datasets',
-                metavar='FILE', type=self.input_model_or_dataset, nargs='+',
+        group_model_or_data_input = args_model_or_data_input.add_argument_group(title='data_input')
+        group_model_or_data_input.add_argument('model_or_dataset',
+                metavar='FILE', type=self.input_model_or_dataset,
                 help='input model or dataset file')
         self._args_model_or_data_input = args_model_or_data_input
 
@@ -231,7 +231,7 @@ class CLI:
         """Initializes all "tool-like" subcommands."""
 
         # -- clone -----------------------------------------------------------------------------
-        cmd_clone = parsers.add_parser('clone', prog='pharmpy-clone',
+        cmd_clone = parsers.add_parser('clone', prog='pharmpy clone',
                                        parents=[self._args_input, self._args_output],
                                        help='Duplicate model or run',
                                        allow_abbrev=True)
@@ -240,14 +240,14 @@ class CLI:
         cmd_clone.set_defaults(func=self.cmd_clone)
 
         # -- execute ---------------------------------------------------------------------------
-        cmd_execute = parsers.add_parser('execute', prog='pharmpy-execute',
+        cmd_execute = parsers.add_parser('execute', prog='pharmpy execute',
                                          parents=[self._args_input],
                                          help='Execute model task/workflow',
                                          allow_abbrev=True)
         cmd_execute.set_defaults(func=self.cmd_execute)
 
         # -- print -----------------------------------------------------------------------------
-        cmd_print = parsers.add_parser('print', prog='pharmpy-print',
+        cmd_print = parsers.add_parser('print', prog='pharmpy print',
                                        parents=[self._args_input],
                                        help='Format & print APIs/aspects of models',
                                        allow_abbrev=True)
@@ -269,14 +269,14 @@ class CLI:
         cmd_print.set_defaults(func=self.cmd_print)
 
         # -- sumo ------------------------------------------------------------------------------
-        cmd_sumo = parsers.add_parser('sumo', prog='pharmpy-sumo',
+        cmd_sumo = parsers.add_parser('sumo', prog='pharmpy sumo',
                                       parents=[self._args_input],
                                       help='Summarize model or run',
                                       allow_abbrev=True)
         cmd_sumo.set_defaults(func=self.cmd_sumo)
 
         # -- data ------------------------------------------------------------------------------
-        cmd_data = parsers.add_parser('data', prog='pharmpy-data',
+        cmd_data = parsers.add_parser('data',# prog='pharmpy data',
                                       help='Data manipulations',
                                       allow_abbrev=True)
 
@@ -286,16 +286,19 @@ class CLI:
                                       parents=[self._args_model_or_data_input])
         cmd_data_resample.add_argument('--group', metavar='COLUMN', type=str, default='ID',
                                        help='Column to use for grouping (default is ID)')
-        cmd_data_resample.add_argument('--samples', metavar='NUMBER', type=int, default=1,
+        cmd_data_resample.add_argument('--resamples', metavar='NUMBER', type=int, default=1,
                                        help='Number of resampled datasets (default 1)')
         cmd_data_resample.add_argument('--stratify', metavar='COLUMN', type=str,
                                        help='Column to use for stratification')
         cmd_data_resample.add_argument('--replace', type=bool, default=False,
                                        help='Sample with replacement (default is without)')
+        cmd_data_resample.add_argument('--sample_size', metavar='NUMBER', type=int, default=None,
+                                       help='Number of groups to sample for each resample')
+                
         cmd_data_resample.set_defaults(func=self.data_resample)
 
         # -- transform -------------------------------------------------------------------------
-        cmd_transform = parsers.add_parser('transform', prog='pharmpy-transform',
+        cmd_transform = parsers.add_parser('transform', prog='pharmpy transform',
                                            parents=[self._args_input, self._args_output],
                                            help='Common model transformations',
                                            allow_abbrev=True)
@@ -311,14 +314,14 @@ class CLI:
         """Initializes miscellanelous other (non-tool) subcommands."""
 
         # -- help ------------------------------------------------------------------------------
-        cmd_help = parsers.add_parser('help', prog='pharmpy-help',
+        cmd_help = parsers.add_parser('help', prog='pharmpy help',
                                       help='PharmPy help central',
                                       allow_abbrev=True)
         cmd_help.set_defaults(func=self.cmd_help)
         cmd_help.add_argument('search_terms', metavar='term', nargs='*', help='search terms')
 
         # -- version ---------------------------------------------------------------------------
-        cmd_version = parsers.add_parser('version', prog='pharmpy-version',
+        cmd_version = parsers.add_parser('version', prog='pharmpy version',
                                          help='Show version information',
                                          allow_abbrev=True)
         cmd_version.set_defaults(func=self.cmd_version)
@@ -380,17 +383,14 @@ class CLI:
 
     def data_resample(self, args):
         """Subcommand to resample a dataset."""
-        for obj in args.models_or_datasets:
-            #df = model.input.read_raw_dataset(parse_columns=[args.group])
-            resampler = pharmpy.data.iterators.Resample(obj, args.group, resamples=args.samples, stratify=args.stratify, replace=args.replace)
-            for resampled_obj, _ in resampler:
-                #model.input.dataset = resampled_df
-                #model.name = model.input.dataset.name
-                # FIXME: Could suffix name here to reflect multiple inputs
-                try:
-                    resampled_obj.write()
-                except AttributeError:
-                    resampled_obj.write_csv()
+        resampler = pharmpy.data.iterators.Resample(args.model_or_dataset, args.group,
+                resamples=args.resamples, stratify=args.stratify, replace=args.replace,
+                sample_size=args.sample_size)
+        for resampled_obj, _ in resampler:
+            try:
+                resampled_obj.write()
+            except AttributeError:
+                resampled_obj.pharmpy.write_csv()
 
     def cmd_transform(self, args):
         """Subcommand to transform a model."""
@@ -469,7 +469,7 @@ class CLI:
 
     def welcome(self, subcommand):
         ver, dir = self.install.version, self.install.directory
-        self.logger.info('Welcome to pharmpy-%s (%s @ %s)' % (subcommand, ver, dir))
+        self.logger.info('Welcome to pharmpy %s (%s @ %s)' % (subcommand, ver, dir))
 
     def input_model(self, path):
         """Returns :class:`~pharmpy.model.Model` from *path*.
@@ -609,7 +609,7 @@ def main(*args):
     CLI(*args)
 
 
-# -- entry points of command CLIs (pharmpy-COMMAND) --------------------------------------------
+# -- entry points of command CLIs (pharmpy COMMAND) --------------------------------------------
 
 
 def cmd_clone(*args):
