@@ -70,6 +70,11 @@ Some rules for the IGNORE/ACCEPT option in $DATA:
 - A value for comparison can maximum have 12 characters (not counting spaces or '," at start or end)
 - IGNORE is performed before translating TIME and DATE
 
+TIME
+~~~~
+
+Time must be non-decreasing for all data records within an individual.
+
 DATE
 ~~~~
 
