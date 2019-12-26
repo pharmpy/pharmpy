@@ -62,8 +62,9 @@ IGNORE/ACCEPT
 
 Some rules for the IGNORE/ACCEPT option in $DATA:
 
+- IGNOREs are performed one at a time in the order given. Order is critical in cases where an illegal item gets ignored before it needs to be parsed (i.e. because of a later numeric comparison)
 - It is possible to IGNORE on a dropped column
-- IGNORE is done before the error check, i.e. columns with text can be ignored
+- IGNORE is done before the error check for .EQ. and .NE., i.e. rows with text can be ignored, otherwise the column will be parsed before ignore and give errors appropriately
 - Text IGNORE (i.e. .EQ. and .NE.) can contain letter + alphanum/underscore or a real number (no special fortran format), + or - (meaning 0), no digit at start, no ., = has to be enclosed in ' or ". Other special characters are ok with or w/o "'.
 - With others .EQN, .GE. etc can only use numbers
 - A text/number to IGNORE can be enclosed in ' or ".

@@ -5,6 +5,7 @@ from io import StringIO
 
 import numpy as np
 import pandas as pd
+from lark import Lark
 
 import pharmpy.data
 from pharmpy.data import DatasetError
@@ -61,7 +62,7 @@ def convert_fortran_number(number_string):
     if m:
         mantissa_sign = '-' if m.group(1) == '-' else ''
         mantissa = m.group(2)
-        exponent_sign = m.group(3) 
+        exponent_sign = m.group(3)
         exponent = m.group(4)
         return np.float64(mantissa_sign + mantissa + "E" + exponent_sign + exponent)
 
@@ -81,8 +82,11 @@ def _convert_data_item(x, null_value):
         x = null_value
     if len(x) > 24:
         raise DatasetError("The dataset contains an item that is longer than 24 characters")
-    return convert_fortran_number(x)
-
+    try:
+        converted = convert_fortran_number(x)
+    except ValueError as e:
+        raise DatasetError(str(e)) from e
+    return converted
 
 def _make_ids_unique(df, columns):
     """ Check if id numbers are reused and make renumber. If not simply pass through the dataset.
@@ -100,6 +104,94 @@ def _make_ids_unique(df, columns):
     return df
 
 
+def _filter_ignore_accept(df, ignore, accept, null_value):
+    if ignore and accept:
+        raise ArgumentError("Cannot have both IGNORE and ACCEPT")
+    if not ignore and not accept:
+        return df
+
+    if ignore:
+        l = ignore
+    else:
+        l = accept
+    grammar = '''
+        start: column [space] operator [space] value | column [space] value
+        column: COLNAME
+        operator: OP_EQ | OP_STR_EQ | OP_NE | OP_STR_NE | OP_LT | OP_GT | OP_LT_EQ | OP_GT_EQ
+        value: TEXT | QUOTE
+        space: WS
+        COLNAME: /\w+/
+        WS: /\s+/
+        OP_EQ    : ".EQN."
+        OP_STR_EQ: ".EQ." | "==" | "="
+        OP_NE    : ".NEN."
+        OP_STR_NE: ".NE." | "/="
+        OP_LT    : ".LT." | "<"
+        OP_GT    : ".GT." | ">"
+        OP_LT_EQ : ".LE." | "<="
+        OP_GT_EQ : ".GE." | ">="
+        TEXT: /[^"',;()=\s]+/
+        QUOTE: /"[^"]*"/
+             | /'[^']*'/
+    '''
+    parser = Lark(grammar)
+    for s in l:
+        tree = parser.parse(s)
+        operator = '=='
+        operator_type = str
+        for st in tree.iter_subtrees():
+            if st.data == 'column':
+                column = str(st.children[0])
+            elif st.data == 'value':
+                value = str(st.children[0])
+            elif st.data == 'operator':
+                operator_token = st.children[0]
+                tp = operator_token.type
+                if tp == 'OP_EQ':
+                    operator = '=='
+                    operator_type = float
+                elif tp == 'OP_NE':
+                    operator = '!='
+                    operator_type = float
+                elif tp == 'OP_LT':
+                    operator = '<'
+                    operator_type = float
+                elif tp == 'OP_GT':
+                    operator = '>'
+                    operator_type = float
+                elif tp == 'OP_LT_EQ':
+                    operator = '<='
+                    operator_type = float
+                elif tp == 'OP_GT_EQ':
+                    operator = '>='
+                    operator_type = float
+                elif tp == 'OP_STR_EQ':
+                    operator = '=='
+                    operator_type = str
+                elif tp == 'OP_STR_NE':
+                    operator = '!='
+                    operator_type = str
+        if len(value) >= 3 and ((value.startswith("'") and value.endswith("'")) or (value.startswith('"') and value.endswith('"'))):
+            value = value[1:-1]
+
+        if operator_type == str:
+            expression = f'{column} {operator} "{value}"'
+            if ignore:
+                expression = 'not(' + expression + ')'
+            df.query(expression, inplace=True) 
+        else:
+            # Need to temporary convert column. Refer to NONMEM fileformat documentation for further information
+            magic_colname = 'a a'
+            df[magic_colname] = df[column].apply(_convert_data_item, args=(str(null_value),))
+            expression = f'`{magic_colname}` {operator} {value}'         # Using a name with spaces since this cannot collide with other NONMEM names
+            if ignore:
+                expression = 'not(' + expression + ')'
+            df.query(expression, inplace=True)
+            df.drop(labels=magic_colname, axis=1, inplace=True)
+    df.reset_index(drop=True, inplace=True)
+    return df
+
+
 def infer_column_type(colname):
     """If possible infer the column type from the column name else use unknown
     """
@@ -111,7 +203,7 @@ def infer_column_type(colname):
         return ColumnType.UNKNOWN
 
 
-def read_nonmem_dataset(path_or_io, raw=False, ignore_character='#', colnames=tuple(), coltypes=None, drop=None, null_value='0', parse_columns=tuple()):
+def read_nonmem_dataset(path_or_io, raw=False, ignore_character='#', colnames=tuple(), coltypes=None, drop=None, null_value='0', parse_columns=tuple(), ignore=None, accept=None):
     """Read a nonmem dataset from file
         column types will be inferred from the column names
 
@@ -121,6 +213,7 @@ def read_nonmem_dataset(path_or_io, raw=False, ignore_character='#', colnames=tu
        drop - A list or tuple of booleans of which columns to drop
        null_value - Value to use for NULL, i.e. empty records or padding
        parse_columns - Only applicable when raw=True. A list of columns to parse.
+       ignore/accept - List of ignore/accept expressions
       
         The following postprocessing operations are done to a non-raw dataset
         1. Convert ordinary floating point numbers to float64
@@ -160,6 +253,8 @@ def read_nonmem_dataset(path_or_io, raw=False, ignore_character='#', colnames=tu
         if len(coltypes) < len(df.columns):
             coltypes += [data.ColumnType.UNKNOWN] * (len(df.columns) - len(coltypes))
         df.pharmpy.column_type[list(df.columns)] = coltypes
+
+    df = _filter_ignore_accept(df, ignore, accept, null_value)
 
     if drop:
         indices_to_drop = [i for i, x in enumerate(drop) if not x]

@@ -101,3 +101,30 @@ def test_nonmem_dataset_with_nonunique_ids():
         df = data.read_nonmem_dataset(StringIO("1,2\n2,3\n1,4\n2,5"), colnames=colnames)
     assert list(df[df.pharmpy.id_label]) == [1, 2, 3, 4]
     assert list(df['DV']) == [2, 3, 4, 5]
+
+
+def test_nonmem_dataset_with_ignore_accept():
+    colnames = ['ID', 'DV']
+    df = data.read_nonmem_dataset(StringIO("1,2\n1,3\n2,4\n2,5"), colnames=colnames, ignore=['DV.EQN.2'])
+    assert len(df) == 3
+    assert list(df.columns) == colnames
+    assert list(df.iloc[0]) == [1, 3]
+    assert list(df.iloc[1]) == [2, 4]
+    assert list(df.iloc[2]) == [2, 5]
+    df = data.read_nonmem_dataset(StringIO("1,2\n1,3\n2,4\n2,a"), colnames=colnames, ignore=['DV.EQ.a', 'DV.EQN.2'])
+    assert len(df) == 2
+    assert list(df.columns) == colnames
+    assert list(df.iloc[0]) == [1, 3]
+    assert list(df.iloc[1]) == [2, 4]
+    with pytest.raises(DatasetError):
+        df = data.read_nonmem_dataset(StringIO("1,2\n1,3\n2,4\n2,a"), colnames=colnames, ignore=['DV.EQN.2', 'DV.EQ.a'])
+    df = data.read_nonmem_dataset(StringIO("1,2\n1,3\n2,4\n2,a"), colnames=colnames, ignore=['DV.EQ."a"'])
+    assert len(df) == 3
+    assert list(df.columns) == colnames
+    assert list(df.iloc[0]) == [1, 2]
+    assert list(df.iloc[1]) == [1, 3]
+    assert list(df.iloc[2]) == [2, 4]
+    df = data.read_nonmem_dataset(StringIO("1,2\n1,3\n2,4\n2,5"), colnames=colnames, accept=['DV.EQN.2'])
+    assert len(df) == 1
+    assert list(df.columns) == colnames
+    assert list(df.iloc[0]) == [1, 2]
