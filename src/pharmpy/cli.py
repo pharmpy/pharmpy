@@ -356,18 +356,15 @@ class CLI:
             dict_ = OrderedDict()
             if args.source or args.all:
                 dict_['model.source'] = repr(model.source)
-                dict_['model.content'] = model.content.splitlines()
             if args.input or args.all:
-                dict_['model.input'] = repr(model.input)
-                dict_['model.input.path'] = repr(model.input.path)
-                dict_['model.input.filters'] = repr(model.input.filters)
-                dict_['model.input.id_column'] = repr(model.input.id_column)
-                dict_['model.input.data_frame'] = repr(model.input.data_frame)
+                dict_['model.input.dataset'] = repr(model.input.dataset)
             if args.output or args.all:
-                dict_['model.output'] = repr(model.output)
+                pass
             if args.parameters or args.all:
-                dict_['model.parameters'] = repr(model.parameters)
-                dict_['model.parameters.inits'] = str(model.parameters.inits)
+                s = ''
+                for param in model.parameters:
+                    s += repr(param) + '\n'
+                dict_['model.parameters'] = s
             dict_lines = self.format_keyval_pairs(dict_, sort=False)
             lines += ['\t%s' % line for line in dict_lines]
         if len(lines) > 24:
@@ -388,9 +385,12 @@ class CLI:
                 sample_size=args.sample_size)
         for resampled_obj, _ in resampler:
             try:
-                resampled_obj.write()
-            except AttributeError:
-                resampled_obj.pharmpy.write_csv()
+                try:
+                    resampled_obj.write()
+                except AttributeError:
+                    resampled_obj.pharmpy.write_csv()
+            except FileExistsError as e:
+                self.error_exit(exception=e)
 
     def cmd_transform(self, args):
         """Subcommand to transform a model."""

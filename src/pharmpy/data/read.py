@@ -84,6 +84,22 @@ def _convert_data_item(x, null_value):
     return convert_fortran_number(x)
 
 
+def _make_ids_unique(df, columns):
+    """ Check if id numbers are reused and make renumber. If not simply pass through the dataset.
+    """
+    try:
+        id_label = df.pharmpy.id_label
+    except KeyError:
+        return df
+    if id_label in columns:
+        id_series = df[id_label]
+        id_change = id_series.diff(1) != 0
+        if len(id_series[id_change]) != df.pharmpy.number_of_ids:
+            warnings.warn("Dataset contains non-unique id numbers. Renumbering starting from 1", DatasetWarning)
+            df[df.pharmpy.id_label] = id_change.cumsum()
+    return df
+
+
 def infer_column_type(colname):
     """If possible infer the column type from the column name else use unknown
     """
@@ -153,6 +169,7 @@ def read_nonmem_dataset(path_or_io, raw=False, ignore_character='#', colnames=tu
         parse_columns = list(df.columns)
     for column in parse_columns:
         df[column] = df[column].apply(_convert_data_item, args=(str(null_value),))
+    df = _make_ids_unique(df, parse_columns)
 
     return df
 

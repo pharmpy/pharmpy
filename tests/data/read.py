@@ -11,20 +11,20 @@ from pharmpy.data import ColumnType
 def test_read_nonmem_dataset(testdata):
     path = testdata / 'nonmem' / 'pheno.dta'
     colnames = ['ID', 'TIME', 'AMT', 'WGT', 'APGR', 'DV', 'FA1', 'FA2']
-    df = data.read_nonmem_dataset(path, colnames=colnames)
+    df = data.read_nonmem_dataset(path, colnames=colnames, ignore_character='@')
     assert list(df.columns) == colnames
     assert df.pharmpy.column_type['ID'] == data.ColumnType.ID
     assert df['ID'][0] == 1
     assert df['TIME'][2] == 12.5
 
-    raw = data.read_nonmem_dataset(path, colnames=colnames, raw=True)
+    raw = data.read_nonmem_dataset(path, colnames=colnames, ignore_character='@', raw=True)
     assert raw['ID'][0] == '1'
     assert list(df.columns) == colnames
     
-    raw2 = data.read_nonmem_dataset(path, colnames=colnames, raw=True, parse_columns=['ID'])
+    raw2 = data.read_nonmem_dataset(path, colnames=colnames, ignore_character='@', raw=True, parse_columns=['ID'])
     assert raw2['ID'][0] == 1.0
 
-    df_drop = data.read_nonmem_dataset(path, colnames=colnames, drop=[False, False, True, False, False, False, True, False])
+    df_drop = data.read_nonmem_dataset(path, colnames=colnames, ignore_character='@', drop=[False, False, True, False, False, False, True, False])
     assert list(df_drop.columns) == ['ID', 'TIME', 'WGT', 'APGR', 'DV', 'FA2']
     pd.testing.assert_series_equal(df_drop['ID'], df['ID'])
     pd.testing.assert_series_equal(df_drop['FA2'], df['FA2'])
@@ -93,3 +93,11 @@ def test_read_small_nonmem_datasets():
     # Test null_value
     df = data.read_nonmem_dataset(StringIO("1,2,"), colnames=abc, null_value=9)
     assert list(df.iloc[0]) == [1, 2, 9]
+
+
+def test_nonmem_dataset_with_nonunique_ids():
+    colnames = ['ID', 'DV']
+    with pytest.warns(DatasetWarning):
+        df = data.read_nonmem_dataset(StringIO("1,2\n2,3\n1,4\n2,5"), colnames=colnames)
+    assert list(df[df.pharmpy.id_label]) == [1, 2, 3, 4]
+    assert list(df['DV']) == [2, 3, 4, 5]
