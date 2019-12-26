@@ -159,6 +159,7 @@ $DATA
 ~~~~~
 
 If filename represents a relative path it is relative to the working directory when invoking nmfe.
+Multiple $DATA records are allowed in one $PROBLEM. All contents are simply seen as part of one and the same $DATA record.
 
 $ETAS
 ~~~~~
