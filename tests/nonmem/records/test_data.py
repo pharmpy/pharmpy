@@ -68,54 +68,14 @@ def test_ignore_character(parser):
 def test_null_value(parser):
     record = parser.parse('$DATA pheno.dta NULL=1').records[0]
     assert record.null_value == 1
-"""
-
-def test_filter(nonmem):
-    record = nonmem.records.create_record('DATA pheno.dta NOWIDE')
-    print(record.parser)
-    assert str(record.root.filename) == 'pheno.dta'
-    assert str(record.root.find('option')) == 'NOWIDE'
-    assert record.ignore_character is None
-
-    record = nonmem.records.create_record("DATA  'pheno.dta'  IGNORE=(ID.EQ.1,MDV.NEN.0) ")
-    print(record.parser)
-    assert str(record.root.filename) == "'pheno.dta'"
-    assert str(record.root.ignore) == 'IGNORE=(ID.EQ.1,MDV.NEN.0)'
-    assert record.ignore_character is None
-    filters = record.filters
-    assert filters[0].symbol == "ID"
-    assert filters[0].value == "1"
-    assert filters[0].operator == InputFilterOperator.STRING_EQUAL
-    assert filters[1].symbol == "MDV"
-    assert filters[1].value == "0"
-    assert filters[1].operator == InputFilterOperator.NOT_EQUAL
-
-    record = nonmem.records.create_record('DATA "pheno.dta" NOWIDE IGNORE=(ID==1)')
-    print(record.parser)
-    assert str(record.root.filename) == '"pheno.dta"'
-    assert str(record.root.find('option')) == 'NOWIDE'
-    assert str(record.root.ignore) == 'IGNORE=(ID==1)'
-    assert record.ignore_character is None
-
-    record = nonmem.records.create_record("DATA      pheno.dta IGNORE=@\n")
-    assert str(record.root.filename) == 'pheno.dta'
-    assert record.ignore_character == '@'
 
 
-def test_set_filter(nonmem):
-    record = nonmem.records.create_record("DATA  'pheno.dta' IGNORE=@ IGNORE=(ID.EQ.1,MDV.NEN.0) ")
-    filters = InputFilters([InputFilter("WGT", InputFilterOperator.EQUAL, "28")])
-    record.filters = filters
-    read_filters = record.filters
-    assert len(read_filters) == 1
-    assert read_filters[0].symbol == "WGT"
-    assert read_filters[0].value == "28"
-    assert read_filters[0].operator == InputFilterOperator.EQUAL
-
-    filters = InputFilters([InputFilter("APGR", InputFilterOperator.LESS_THAN, 2),
-                            InputFilter("DOSE", InputFilterOperator.NOT_EQUAL, 20)])
-    record.filters = filters
-    assert str(record.root) == "  'pheno.dta' IGNORE=@  IGNORE=(APGR.LT.2,DOSE.NEN.20)"
-    read_filters = record.filters
-    assert len(read_filters) == 2
-"""
+def test_ignore_accept(parser):
+    record = parser.parse('$DATA pheno.dta IGNORE=(DV.EQ.1)').records[0]
+    assert record.ignore == ['DV.EQ.1']
+    assert record.accept == []
+    record = parser.parse('$DATA pheno.dta ACCEPT=(DV.EQ.1,    MDV.NEN.23)').records[0]
+    assert record.accept == ['DV.EQ.1', 'MDV.NEN.23']
+    assert record.ignore == []
+    record = parser.parse('$DATA pheno.dta IGNORE=(WGT  < 1  ,\n  ID\n.EQ."lk")').records[0]
+    assert record.ignore == ['WGT  < 1', 'ID\n.EQ."lk"']

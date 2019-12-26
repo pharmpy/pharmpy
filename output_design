@@ -10,6 +10,7 @@ v Need cli to handle models/or plain datasets for pharmpy.data
 v Do we have renumbering of IDs from NONMEM 1,2,1,2 thing? Invariant on PharmDataFrame hard since raw datasets could then not be PharmDataFrame.
     v disallow duplicate IDs. Do renumbering automatically
 v No resample dataset written when using modelfile for resample
+* Add synonyms to _column_info. A dict from old to what will be used in header. Use to replace in filters.
 * Also need applying all IGN/ACC: Next step is to give ignore or accept as arguments from model.input. Remember synonyms
     * If raw parsing should not apply ign/acc? But if renumbering as in resample could then... wait... if from model must do all stuff!
 * Document resample: difference between csv and model

@@ -108,4 +108,11 @@ class ModelInput(input.ModelInput):
         ignore_character = data_records[0].ignore_character
         null_value = data_records[0].null_value
         (colnames, coltypes, drop) = self._column_info()
-        return pharmpy.data.read_nonmem_dataset(self.path, raw, ignore_character, colnames, coltypes, drop, null_value=null_value, parse_columns=parse_columns)
+        if raw:
+            ignore = None
+            accept = None
+        else:
+            ignore = data_records[0].ignore
+            accept = data_records[0].accept
+        return pharmpy.data.read_nonmem_dataset(self.path, raw, ignore_character, colnames, coltypes, drop,
+                null_value=null_value, parse_columns=parse_columns, ignore=ignore, accept=accept)

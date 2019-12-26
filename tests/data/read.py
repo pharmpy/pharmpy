@@ -128,3 +128,7 @@ def test_nonmem_dataset_with_ignore_accept():
     assert len(df) == 1
     assert list(df.columns) == colnames
     assert list(df.iloc[0]) == [1, 2]
+    df = data.read_nonmem_dataset(StringIO("1,2\n1,3\n2,4\n2,5"), colnames=colnames, ignore=['ID 2'])
+    assert len(df) == 2
+    assert list(df.iloc[0]) == [1, 2]
+    assert list(df.iloc[1]) == [1, 3]

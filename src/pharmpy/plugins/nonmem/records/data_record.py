@@ -69,41 +69,21 @@ class DataRecord(OptionRecord):
         else:
             return 0
 
-    #@property
-    #def filters(self):
-    #    filters = InputFilters()
+    @property
+    def ignore(self):
+        filters = []
+        for option in self.root.all('ignore'):
+            for filt in option.all('filter'):
+                filters.append(str(filt))
+        return filters
 
-    #    if hasattr(self.root, 'ignore'):
-    #        attr = 'ignore'
-    #        filters.accept = False
-    #    elif hasattr(self.root, 'accept'):
-    #        attr = 'accept'
-    #        filters.accept = True
-    #    else:
-    #        return filters
-
-    #    for option in self.root.all(attr):
-    #        for filt in option.all('filter'):
-    #            symbol = filt.COLUMN
-    #            value = filt.TEXT
-    #            if hasattr(filt, 'OP_EQ'):
-    #                operator = InputFilterOperator.EQUAL
-    #            elif hasattr(filt, 'OP_STR_EQ'):
-    #                operator = InputFilterOperator.STRING_EQUAL
-    #            elif hasattr(filt, 'OP_NE'):
-    #                operator = InputFilterOperator.NOT_EQUAL
-    #            elif hasattr(filt, 'OP_STR_NE'):
-    #                operator = InputFilterOperator.STRING_NOT_EQUAL
-    #            elif hasattr(filt, 'OP_LT'):
-    #                operator = InputFilterOperator.LESS_THAN
-    #            elif hasattr(filt, 'OP_GT'):
-    #                operator = InputFilterOperator.GREATER_THAN
-    #            elif hasattr(filt, 'OP_LT_EQ'):
-    #                operator = InputFilterOperator.LESS_THAN_OR_EQUAL
-    #            elif hasattr(filt, 'OP_GT_EQ'):
-    #                operator = InputFilterOperator.GREATER_THAN_OR_EQUAL
-    #            filters += [InputFilter(symbol, operator, value)]
-    #    return filters
+    @property
+    def accept(self):
+        filters = []
+        for option in self.root.all('accept'):
+            for filt in option.all('filter'):
+                filters.append(str(filt))
+        return filters
 
     #@filters.setter
     #def filters(self, filters):
