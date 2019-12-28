@@ -67,4 +67,5 @@ class FileSource(SourceBase):
             with open(path_or_io, 'r') as fp:
                 return fp.read()
         else:
+            self.path = Path('.')
             return path_or_io.read()

@@ -74,7 +74,7 @@ class DataRecord(OptionRecord):
         filters = []
         for option in self.root.all('ignore'):
             for filt in option.all('filter'):
-                filters.append(str(filt))
+                filters.append(filt)
         return filters
 
     @property
@@ -82,7 +82,7 @@ class DataRecord(OptionRecord):
         filters = []
         for option in self.root.all('accept'):
             for filt in option.all('filter'):
-                filters.append(str(filt))
+                filters.append(filt)
         return filters
 
     #@filters.setter

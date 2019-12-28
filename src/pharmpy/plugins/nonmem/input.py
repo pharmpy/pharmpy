@@ -69,14 +69,14 @@ class ModelInput(input.ModelInput):
 
     def _column_info(self):
         """List all column names in order.
-           return tuple of three lists, colnames, coltypes and drop
-           FIXME: Use the synonym in case of synonyms. Empty string in case of only DROP or SKIP.
+            Use the synonym when synonym exists.
+            return tuple of three lists, colnames, coltypes and drop together with a dictionary of replacements for reserved names (aka synonyms).
         """
-
         input_records = self.model.control_stream.get_records("INPUT")
         colnames = []
         coltypes = []
         drop = []
+        synonym_replacement = {}
         for record in input_records:
             for key, value in record.option_pairs.items():
                 if value:
@@ -90,7 +90,8 @@ class ModelInput(input.ModelInput):
                         reserved_name = key
                     else:
                         drop.append(False)
-                        (reserved_name, synonym) = ModelInput._synonym()
+                        (reserved_name, synonym) = ModelInput._synonym(key, value)
+                        synonym_replacement[reserved_name] = synonym
                         colnames.append(synonym)
                 else:
                     if key == 'DROP' or key == 'SKIP':
@@ -100,20 +101,41 @@ class ModelInput(input.ModelInput):
                     colnames.append(key)
                     reserved_name = key
                 coltypes.append(pharmpy.data.read.infer_column_type(reserved_name)) 
-        return colnames, coltypes, drop
+        return colnames, coltypes, drop, synonym_replacement
 
+    def _replace_synonym_in_filters(filters, replacements):
+        result = []
+        for f in filters:
+            if f.COLUMN in replacements:
+                s = ''
+                for child in f.children:
+                    if child.rule == 'COLUMN':
+                        value = replacements[f.COLUMN]
+                    else:
+                        value = str(child)
+                    s += value
+            else:
+                s = str(f)
+            result.append(s)
+        return result
 
     def _read_dataset(self, raw=False, parse_columns=tuple()):
         data_records = self.model.control_stream.get_records('DATA')
         ignore_character = data_records[0].ignore_character
         null_value = data_records[0].null_value
-        (colnames, coltypes, drop) = self._column_info()
+        (colnames, coltypes, drop, replacements) = self._column_info()
+
         if raw:
             ignore = None
             accept = None
         else:
-            ignore = data_records[0].ignore
+            ignore = data_records[0].ignore         # FIXME: All direct handling of control stream spanning over one or more records should move
             accept = data_records[0].accept
+            if ignore:
+                ignore = ModelInput._replace_synonym_in_filters(ignore, replacements)
+            else:
+                accept = ModelInput._replace_synonym_in_filters(accept, replacements)
+
         df = pharmpy.data.read_nonmem_dataset(self.path, raw, ignore_character, colnames, coltypes, drop,
                  null_value=null_value, parse_columns=parse_columns, ignore=ignore, accept=accept)
         df.name = self.path.stem

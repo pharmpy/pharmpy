@@ -1,28 +1,19 @@
-v Hmmm... IGNORE/ACCEPT when resampling. Needs to be done so the pharmpy data resample must read and parse the dataset properly and then do the resample.
-v BUT: For the anonymization we would need to keep the raw dataset since it will be used for future work, i.e. might need all columns and keep DROPped columns etc. Could anonymization and/or resample also take a csv as input? When csv there would be no IGN/ACC
+* Are modelfiles/datasets from NONMEM ASCII, 8-bit? or UTF-8?
+* Accept $INFILE for $DATA (abbreviations?)
+* See $DATA: Allow smaller ascii than 0x20 treated as comma (even 0x00?)
+* Multiple $DATA in one $PROBLEM will simply be concatenated together by NM-TRAN.
+    * This can be fixed if moving functions to control stream class from input. Could then also directly unit test
 
-Workflow for dataset: v pharmpy data resample mydata.csv
-v read dataset
-v do resample
-v save all generated csvs separately
-v Can now iterate over dataset connected to models
-v Need cli to handle models/or plain datasets for pharmpy.data
-v Do we have renumbering of IDs from NONMEM 1,2,1,2 thing? Invariant on PharmDataFrame hard since raw datasets could then not be PharmDataFrame.
-    v disallow duplicate IDs. Do renumbering automatically
-v No resample dataset written when using modelfile for resample
-* Add synonyms to _column_info. A dict from old to what will be used in header. Use to replace in filters.
-* Also need applying all IGN/ACC: Next step is to give ignore or accept as arguments from model.input. Remember synonyms
-    * If raw parsing should not apply ign/acc? But if renumbering as in resample could then... wait... if from model must do all stuff!
 * Document resample: difference between csv and model
-* Document models paths and names of datasets
+* Document models paths and names of dataset
+    * Where can this documentation be found by users of cli? General handling of datasets documentation
+    * Renumbering of IDs
 * CLI documentation
 * Clean CLI to only have what works now (keep in code if close to implementation)
 * A dataframe must have more than one column, to avoid mistakes.
-v Catch known errors from CLI and avoid stack trace
 
-* Handle IGN ACC: 
-    * If renumbering IDs, must handle IGN/ACC. Handle when column parsed.
-    * Default operator =. Can parser handle?
+* Idea: parse FDATA via FCON. Can be used to verify datasets: run model, load FDATA, write dataset as csv via FCON and run1.mod, compare
+        * Can be made part of conformance testing. Script to go through batch of models.
 
 GAH: Will all datasets have to be kept in memory for a bootstrap? If a model is written the dataset should be unloaded!
 

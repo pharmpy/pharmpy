@@ -21,6 +21,8 @@ class NMTRANDataIO(StringIO):
     def __init__(self, filename_or_io, ignore_character='#'):
         """ filename_or_io is a string with a path, a path object or any IO object, i.e. StringIO
         """
+        if not ignore_character:
+            ignore_character = '#'
         if hasattr(filename_or_io, 'read'):
             contents = filename_or_io.read()
         else:
