@@ -207,7 +207,6 @@ class CLI:
                                  help='input model file')
         self._args_input = args_input
 
-
         # common to: command with model file or dataset input
         args_model_or_data_input = argparse.ArgumentParser(add_help=False)
         group_model_or_data_input = args_model_or_data_input.add_argument_group(title='data_input')
@@ -222,9 +221,9 @@ class CLI:
         group_output.add_argument('-f', '--force',
                                   action='store_true',
                                   help='remove existing destination files (all)')
-        group_output.add_argument('-o', '--output_model',
-                                  dest='output_model', metavar='file', type=pathlib.Path, nargs=1,
-                                  help='output model file')
+        group_output.add_argument('-o', '--output_file',
+                                  dest='output_file', metavar='file', type=pathlib.Path,
+                                  help='output file')
         self._args_output = args_output
 
     def _init_commands_tools(self, parsers):
@@ -282,6 +281,10 @@ class CLI:
 
         cmd_data_subs = cmd_data.add_subparsers(title='PharmPy data commands', metavar='ACTION')
 
+        cmd_data_write = cmd_data_subs.add_parser('write', help='Write dataset', allow_abbrev=True,
+                                      parents=[self._args_model_or_data_input, self._args_output])
+        cmd_data_write.set_defaults(func=self.data_write)
+
         cmd_data_resample = cmd_data_subs.add_parser('resample', help='Resample dataset', allow_abbrev=True, 
                                       parents=[self._args_model_or_data_input])
         cmd_data_resample.add_argument('--group', metavar='COLUMN', type=str, default='ID',
@@ -294,7 +297,6 @@ class CLI:
                                        help='Sample with replacement (default is without)')
         cmd_data_resample.add_argument('--sample_size', metavar='NUMBER', type=int, default=None,
                                        help='Number of groups to sample for each resample')
-                
         cmd_data_resample.set_defaults(func=self.data_resample)
 
         # -- transform -------------------------------------------------------------------------
@@ -378,6 +380,18 @@ class CLI:
         self.welcome('sumo')
         self.error_exit(exception=NotImplementedError("Command (sumo) is not available yet!"))
 
+    def data_write(self, args):
+        """Subcommand to write a dataset."""
+        try:
+            df = args.model_or_dataset.input.dataset
+        except pharmpy.plugins.utils.PluginError:
+            df = args.model_or_dataset
+        path = args.output_file
+        try:
+            df.pharmpy.write_csv(path=path, force=args.force)      # If no output_file supplied will use name of df
+        except FileExistsError as e:
+            self.error_exit(exception=e)
+
     def data_resample(self, args):
         """Subcommand to resample a dataset."""
         resampler = pharmpy.data.iterators.Resample(args.model_or_dataset, args.group,
@@ -413,7 +427,7 @@ class CLI:
 
             # -- input/data file write ---------------------------------------------------------
             if write_data:
-                self.OutputFile(model.input.path, args.force)
+                self.check_output_path(model.input.path, args.force)
                 model.input.write_dataset()
 
             # -- model transforms --------------------------------------------------------------
@@ -423,7 +437,7 @@ class CLI:
 
             # -- model file write --------------------------------------------------------------
             if write_model:
-                self.OutputFile(model.path, args.force)
+                self.check_output_path(model.path, args.force)
                 model.write()
             elif not write_data:
                 self.logger.warning('No-Op (no file write) for %r.', model)
@@ -511,7 +525,7 @@ class CLI:
         else:
             return path
 
-    def OutputFile(self, path, force):
+    def check_output_path(self, path, force):
         """Resolves *path* to output file and checks existence.
 
         Raises if *path* exists (and not *force*), without tracebacks (see :func:`error_exit`).

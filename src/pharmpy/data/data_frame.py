@@ -217,21 +217,30 @@ class DataFrameAccessor:
         df = self._obj[covariates + [idlab]]
         return df.groupby(idlab).nth(0)
 
-    def write_csv(self, path=''):
-        """Write PharmDataFrame to a csv file
+    def generate_path(self, path=None, force=False):
+        """Generate the path of dataframe if written.
            If no path is supplied or does not contain a filename a name is created
-           from the name property of the PharmDataFrame
-           Will not overwrite in case the filename was created.
-           return path for the written file
+           from the name property of the PharmDataFrame.
+           Will not overwrite unless forced.
         """
-        path = Path(path)
+        if path is None:
+            path = Path("")
+        else:
+            path = Path(path)
         if not path or path.is_dir():
             try:
                 filename = f'{self._obj.name}.csv'
             except AttributeError:
-                raise ValueError('Cannot name csv as no path argument was supplied and the DataFrame has no name property.')
+                raise ValueError('Cannot name data file as no path argument was supplied and the DataFrame has no name property.')
             path /= filename
-            if path.exists():
-                raise FileExistsError(f'File at generated path {path} already exists.')
+        if not force and path.exists():
+            raise FileExistsError(f'File at generated path {path} already exists.')
+        return path
+
+    def write_csv(self, path=None, force=False):
+        """Write PharmDataFrame to a csv file
+           return path for the written file
+        """
+        path = self.generate_path(path, force)
         self._obj.to_csv(path, index=False)
         return path

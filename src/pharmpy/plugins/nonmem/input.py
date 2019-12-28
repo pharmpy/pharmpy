@@ -114,5 +114,7 @@ class ModelInput(input.ModelInput):
         else:
             ignore = data_records[0].ignore
             accept = data_records[0].accept
-        return pharmpy.data.read_nonmem_dataset(self.path, raw, ignore_character, colnames, coltypes, drop,
-                null_value=null_value, parse_columns=parse_columns, ignore=ignore, accept=accept)
+        df = pharmpy.data.read_nonmem_dataset(self.path, raw, ignore_character, colnames, coltypes, drop,
+                 null_value=null_value, parse_columns=parse_columns, ignore=ignore, accept=accept)
+        df.name = self.path.stem
+        return df
