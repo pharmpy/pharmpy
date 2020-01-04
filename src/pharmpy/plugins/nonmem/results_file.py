@@ -2,7 +2,8 @@ import dateutil.parser
 import re
 
 
-# Warning! Bad and experimental code below. Could parse section on demand, but finding sections are hard or impossible with state machine parsing.
+# Warning! Bad and experimental code below.
+# Should ideally be able to parse on demand or at least be able to skip sections
 
 class NONMEMResultsFile:
     '''Representing and parsing a NONMEM results file (aka lst-file) 

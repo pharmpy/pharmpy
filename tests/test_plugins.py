@@ -4,7 +4,7 @@ import pharmpy.plugins.utils as utils
 
 def test_detect_model():
     with pytest.raises(utils.PluginError):
-        utils.detect_model(None) 
+        utils.detect_model(None)
 
 
 def test_load_plugins():

@@ -1,5 +1,3 @@
-# -*- encoding: utf-8 -*-
-
 """Utils for managing plugins."""
 
 import importlib
@@ -15,6 +13,9 @@ def detect_model(src):
     """Detects appropriate implementation from a source object
     Return a model object
     """
+
+    if not hasattr(src, 'obj'):
+        raise PluginError("Input to detect_model doesn't seem to be a source object")
 
     plugins = load_plugins()
     detected_classes = [module.Model for module in plugins if hasattr(module, 'Model') and module.Model.detect(src)]
