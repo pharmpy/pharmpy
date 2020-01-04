@@ -2,14 +2,17 @@ import pandas as pd
 import pytest
 import numpy as np
 
-def test_nonmem_table(nonmem, pheno_ext):
-    ext_table_file = nonmem.output.NONMEMTableFile(pheno_ext)
+import pharmpy.plugins.nonmem.table as table
+
+
+def test_nonmem_table(pheno_ext):
+    ext_table_file = table.NONMEMTableFile(pheno_ext)
     assert list(ext_table_file.table.data_frame.columns) == ['ITERATION', 'THETA1', 'THETA2', 'THETA3', 'SIGMA(1,1)', 'OMEGA(1,1)',
          'OMEGA(2,1)', 'OMEGA(2,2)', 'OBJ']
 
 
-def test_ext_table(nonmem, pheno_ext):
-    ext_table_file = nonmem.output.NONMEMTableFile(pheno_ext)
+def test_ext_table(pheno_ext):
+    ext_table_file = table.NONMEMTableFile(pheno_ext)
     ext_table = ext_table_file.table
     assert ext_table.problem == 1
     assert ext_table.subproblem == 0
@@ -22,8 +25,8 @@ def test_ext_table(nonmem, pheno_ext):
     assert ext_table.initial_OFV == 587.36644134661617
 
 
-def test_phi_table(nonmem, pheno_phi):
-    phi_table_file = nonmem.output.NONMEMTableFile(pheno_phi)
+def test_phi_table(pheno_phi):
+    phi_table_file = table.NONMEMTableFile(pheno_phi)
     phi_table = phi_table_file.table
     assert phi_table.problem == 1
     assert phi_table.subproblem == 0

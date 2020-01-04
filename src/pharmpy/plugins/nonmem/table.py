@@ -15,7 +15,7 @@ class NONMEMTableFile:
         path = Path(path)
         suffix = path.suffix
         self.tables = []
-        with open(str(filename), 'r') as tablefile:
+        with open(str(path), 'r') as tablefile:
             current = []
             for line in tablefile:
                 if line.startswith("TABLE NO."):
