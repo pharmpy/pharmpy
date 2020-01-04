@@ -27,7 +27,6 @@ Standard practice of packaging is to define "entrypoints" in the setuptools ``se
           'pharmpy           = pharmpy.cli:main',
           'pharmpy clone     = pharmpy.cli:cmd_clone',
           'pharmpy execute   = pharmpy.cli:cmd_execute',
-          'pharmpy help      = pharmpy.cli:cmd_help',
           'pharmpy print     = pharmpy.cli:cmd_print',
           'pharmpy sumo      = pharmpy.cli:cmd_sumo',
           'pharmpy transform = pharmpy.cli:cmd_transform',
@@ -121,8 +120,6 @@ class CLI:
 
                     # version/install information
                     pharmpy version
-
-                ~~ THIS SOFTWARE IS HIGHLY EXPERIMENTAL AND NOT PRODUCTION READY ~~
             """).strip(),
             formatter_class=argparse.RawTextHelpFormatter,
             allow_abbrev=True,
@@ -315,13 +312,6 @@ class CLI:
     def _init_commands_misc(self, parsers):
         """Initializes miscellanelous other (non-tool) subcommands."""
 
-        # -- help ------------------------------------------------------------------------------
-        cmd_help = parsers.add_parser('help', prog='pharmpy help',
-                                      help='PharmPy help central',
-                                      allow_abbrev=True)
-        cmd_help.set_defaults(func=self.cmd_help)
-        cmd_help.add_argument('search_terms', metavar='term', nargs='*', help='search terms')
-
         # -- version ---------------------------------------------------------------------------
         cmd_version = parsers.add_parser('version', prog='pharmpy version',
                                          help='Show version information',
@@ -341,12 +331,6 @@ class CLI:
 
         self.welcome('execute')
         self.error_exit(exception=NotImplementedError("Command (execute) is not available yet!"))
-
-    def cmd_help(self, args):
-        """Subcommand for built-in help on PharmPy and such."""
-
-        self.welcome('help')
-        self.error_exit(exception=NotImplementedError("Command (help) is not available yet!"))
 
     def cmd_print(self, args):
         """Subcommand for formatting/printing model components."""
