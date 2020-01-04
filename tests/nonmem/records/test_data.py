@@ -72,10 +72,18 @@ def test_null_value(parser):
 
 def test_ignore_accept(parser):
     record = parser.parse('$DATA pheno.dta IGNORE=(DV.EQ.1)').records[0]
-    assert record.ignore == ['DV.EQ.1']
+    assert str(record.ignore[0]) == 'DV.EQ.1'
     assert record.accept == []
     record = parser.parse('$DATA pheno.dta ACCEPT=(DV.EQ.1,    MDV.NEN.23)').records[0]
-    assert record.accept == ['DV.EQ.1', 'MDV.NEN.23']
+    assert str(record.accept[0]) == 'DV.EQ.1'
+    assert str(record.accept[1]) == 'MDV.NEN.23'
     assert record.ignore == []
     record = parser.parse('$DATA pheno.dta IGNORE=(WGT  < 1  ,\n  ID\n.EQ."lk")').records[0]
-    assert record.ignore == ['WGT  < 1', 'ID\n.EQ."lk"']
+    assert str(record.ignore[0]) == 'WGT  < 1', 'ID\n.EQ."lk"'
+
+
+def test_data_infile(parser):
+    record = parser.parse('$INFILE pheno.dta').records[0]
+    assert record.name == 'DATA'
+    assert record.filename == 'pheno.dta'
+    assert record.raw_name == '$INFILE'

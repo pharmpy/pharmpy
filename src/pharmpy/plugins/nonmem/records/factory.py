@@ -39,6 +39,9 @@ def get_canonical_record_name(raw_name):
         for name in known_records:
             if name.startswith(bare):
                 return name
+        # Synonyms
+        if 'INFILE'.startswith(bare):
+            return 'DATA'
     return None
 
 
