@@ -620,11 +620,6 @@ def cmd_execute(*args):
     CLI(*args, subcommand='execute')
 
 
-def cmd_help(*args):
-    """Entry point of ``pharmpy-help`` CLI util, a separable link to ``pharmpy help``."""
-    CLI(*args, subcommand='help')
-
-
 def cmd_print(*args):
     """Entry point of ``pharmpy-print`` CLI util, a separable link to ``pharmpy print``."""
     CLI(*args, subcommand='print')
