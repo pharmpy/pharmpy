@@ -1,12 +1,6 @@
-# -*- encoding: utf-8 -*-
-
-import numpy as np
-import sympy as sym
+from pharmpy.parameter import Parameter, ParameterSet
 
 from .record import Record
-from pharmpy.parameters import Scalar
-from pharmpy.parse_utils import AttrTree
-from pharmpy.parameter import Parameter, ParameterSet
 
 max_upper_bound = 1000000
 min_lower_bound = -1000000
@@ -84,8 +78,8 @@ class ThetaRecord(Record):
             tot += self._multiple(theta)
         return tot
 
-    #@thetas.setter
-    #def thetas(self, thetas):
+    # @thetas.setter
+    # def thetas(self, thetas):
     #    nodes = []
     #    nodes_new = self._new_theta_nodes(thetas)
     #    for child in self.root.children:
@@ -98,7 +92,7 @@ class ThetaRecord(Record):
     #            pass
     #    self.root = AttrTree.create('root', nodes + nodes_new)
 
-    #def _new_theta_nodes(self, thetas):
+    # def _new_theta_nodes(self, thetas):
     #    nodes = []
     #    for theta in thetas:
     #        if nodes:

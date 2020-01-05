@@ -1,11 +1,11 @@
 # The NONMEM Model class
 import re
-from pathlib import Path
 
 import pharmpy.model
-from .nmtran_parser import NMTranParser
-from pharmpy.parameter import ParameterSet
 import pharmpy.plugins.nonmem.input
+from pharmpy.parameter import ParameterSet
+
+from .nmtran_parser import NMTranParser
 
 
 class Model(pharmpy.model.Model):
@@ -27,11 +27,14 @@ class Model(pharmpy.model.Model):
     def update_source(self):
         """Update the source"""
         if self.input._dataset_updated:
-            datapath = self.input.dataset.pharmpy.write_csv()      # FIXME: If no name set use the model name. Set that when setting dataset to input!
+            # FIXME: If no name set use the model name. Set that when setting dataset to input!
+            datapath = self.input.dataset.pharmpy.write_csv()
             self.input.path = datapath
-            # FIXME: ignore_character et al should be set when setting the dataset. Check if A-Za-z and use @, # remove else use first character
-            # FIXME: how to handle IGNORE, ACCEPT? Must be performed when resampling as entire groups might disappear collapsing individuals.
-            #           so resampling should be done on parsed dataset. Anonymizing 
+            # FIXME: ignore_character et al should be set when setting the dataset. Check if A-Za-z
+            #        and use @, # remove else use first character
+            # FIXME: how to handle IGNORE, ACCEPT? Must be performed when resampling as entire
+            #        groups might disappear collapsing individuals.
+            #        so resampling should be done on parsed dataset. Anonymizing
         super().update_source()
 
     def validate(self):

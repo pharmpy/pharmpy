@@ -1,15 +1,15 @@
 import pytest
 import sympy
+
 from pharmpy.parameter import Parameter, ParameterSet
 
 
-
 @pytest.mark.parametrize('name,init,lower,upper,fix', [
-    ( 'THETA(1)', 23, None, None, None ),
-    ( 'X', 12, None, None, None ),
-    ( '_NAME', 0, None, None, None ),
-    ( 'OMEGA(2,1)', 0.1, 0, None, None ),
-    ( 'TCVL', 0.23, -2, 2, None ),
+    ('THETA(1)', 23, None, None, None),
+    ('X', 12, None, None, None),
+    ('_NAME', 0, None, None, None),
+    ('OMEGA(2,1)', 0.1, 0, None, None),
+    ('TCVL', 0.23, -2, 2, None),
     ])
 def test_initialization(name, init, lower, upper, fix):
     param = Parameter(name, init, lower, upper, fix)
@@ -27,9 +27,9 @@ def test_initialization(name, init, lower, upper, fix):
 
 
 @pytest.mark.parametrize('name,init,lower,upper,fix', [
-    ( 'OMEGA(2,1)', 0.1, 2, None, None ),
-    ( 'X', 1, 0, -1, None ),
-    ( 'X', 1, 0, 1, True ),
+    ('OMEGA(2,1)', 0.1, 2, None, None),
+    ('X', 1, 0, -1, None),
+    ('X', 1, 0, 1, True),
     ])
 def test_illegal_initialization(name, init, lower, upper, fix):
     with pytest.raises(ValueError):
@@ -66,4 +66,3 @@ def test_pset_index():
             assert param is p
         else:
             assert param is p2
-

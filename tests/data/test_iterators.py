@@ -1,6 +1,5 @@
-import pytest
-import pandas as pd
 import numpy as np
+import pytest
 
 import pharmpy.data
 import pharmpy.data.iterators as iters
@@ -8,7 +7,8 @@ import pharmpy.data.iterators as iters
 
 @pytest.fixture
 def df():
-    return pharmpy.data.PharmDataFrame({'ID': [1, 1, 2, 2, 4, 4], 'DV': [5, 6, 3, 4, 0, 9], 'STRAT': [1, 1, 2, 2, 2, 2]})
+    return pharmpy.data.PharmDataFrame({'ID': [1, 1, 2, 2, 4, 4], 'DV': [5, 6, 3, 4, 0, 9],
+                                        'STRAT': [1, 1, 2, 2, 2, 2]})
 
 
 def test_omit(df):
@@ -47,9 +47,9 @@ def test_resampler_default(df):
 
 
 def test_resampler_too_big_sample_size(df):
-    with pytest.raises(ValueError) as e:
+    with pytest.raises(ValueError):
         resampler = iters.Resample(df, 'ID', replace=False, sample_size=4)
-        next(resample)
+        next(resampler)
 
 
 def test_resampler_noreplace(df):
@@ -69,13 +69,15 @@ def test_resampler_noreplace(df):
 
 
 def test_stratification(df):
-    resampler = iters.Resample(df, 'ID', resamples=1, stratify='STRAT', sample_size={1: 2, 2: 3}, replace=True)
+    resampler = iters.Resample(df, 'ID', resamples=1, stratify='STRAT',
+                               sample_size={1: 2, 2: 3}, replace=True)
     (new_df, ids) = next(resampler)
     assert ids == [1, 1, 4, 2, 2]
     assert list(new_df['ID']) == [1, 1, 2, 2, 3, 3, 4, 4, 5, 5]
     assert list(new_df['DV']) == [5, 6, 5, 6, 0, 9, 3, 4, 3, 4]
-    
-    resampler = iters.Resample(df, 'ID', resamples=1, stratify='STRAT', sample_size={1: 2}, replace=True)
+
+    resampler = iters.Resample(df, 'ID', resamples=1, stratify='STRAT',
+                               sample_size={1: 2}, replace=True)
     (new_df, ids) = next(resampler)
     assert ids == [1, 1]
 

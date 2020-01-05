@@ -1,7 +1,5 @@
 from collections import OrderedDict
 
-#from pharmpy.input import InputFilterOperator, InputFilter, InputFilters
-
 
 def test_data_filename_get(parser):
     record = parser.parse('$DATA "pheno.dta"').records[0]
@@ -60,7 +58,7 @@ def test_ignore_character(parser):
     record = parser.parse('$DATA pheno.dta IGNORE=@').records[0]
     assert record.filename == 'pheno.dta'
     assert record.ignore_character == '@'
-    
+
     record = parser.parse('$DATA pheno.dta IGNORE="I"').records[0]
     assert record.ignore_character == 'I'
 

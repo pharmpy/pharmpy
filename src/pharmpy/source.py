@@ -27,7 +27,6 @@ def Source(obj):
         return src
 
 
-
 class SourceBase:
     """API to manage the original source object of a model.
 

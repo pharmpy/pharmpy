@@ -1,6 +1,6 @@
 # Read dataset from file
-import warnings
 import re
+import warnings
 from io import StringIO
 
 import numpy as np
@@ -8,9 +8,7 @@ import pandas as pd
 from lark import Lark
 
 import pharmpy.data
-from pharmpy.data import DatasetError
-from pharmpy.data import DatasetWarning
-from pharmpy.data import ColumnType
+from pharmpy.data import ColumnType, DatasetError, DatasetWarning
 
 
 class NMTRANDataIO(StringIO):
@@ -30,24 +28,27 @@ class NMTRANDataIO(StringIO):
                 contents = datafile.read()      # All variations of newlines are converted into \n
 
         if ignore_character == '@':
-            comment_regexp = re.compile(r'^[ \t]*[A-Za-z#].*\n', re.MULTILINE)      # FIXME: Does this really handle the final line with no new line?
+            # FIXME: Does this really handle the final line with no new line?
+            comment_regexp = re.compile(r'^[ \t]*[A-Za-z#].*\n', re.MULTILINE)
         else:
             comment_regexp = re.compile('^[' + ignore_character + '].*\n', re.MULTILINE)
         contents = re.sub(comment_regexp, '', contents)
 
         if re.search(r' \t', contents):     # Space before TAB not allowed (see documentation)
-            raise DatasetError("The dataset contains a TAB preceeded by a space, which is not allowed by NM-TRAN")
+            raise DatasetError("The dataset contains a TAB preceeded by a space, "
+                               "which is not allowed by NM-TRAN")
 
         if re.search(r'^[ \t]*\n$', contents, re.MULTILINE):       # Blank lines
-            raise DatasetError("The dataset contains one or more blank lines. This is not allowed by NM-TRAN without the BLANKOK option")
+            raise DatasetError("The dataset contains one or more blank lines. This is not "
+                               "allowed by NM-TRAN without the BLANKOK option")
 
         super().__init__(contents)
 
 
 def convert_fortran_number(number_string):
     """This function will try to convert the number_string from the general fortran exponential format
-       into an np.float64. It covers "1d1", "1D1", "a+b", "a-b", "+" and "-". All other cases will return None to
-       signal that the number_string is not of the special form.
+       into an np.float64. It covers "1d1", "1D1", "a+b", "a-b", "+" and "-". All other cases will
+       return None to signal that the number_string is not of the special form.
 
        Move somewhere else. Will be used in output parsing as well
     """
@@ -90,6 +91,7 @@ def _convert_data_item(x, null_value):
         raise DatasetError(str(e)) from e
     return converted
 
+
 def _make_ids_unique(df, columns):
     """ Check if id numbers are reused and make renumber. If not simply pass through the dataset.
     """
@@ -101,22 +103,23 @@ def _make_ids_unique(df, columns):
         id_series = df[id_label]
         id_change = id_series.diff(1) != 0
         if len(id_series[id_change]) != df.pharmpy.number_of_ids:
-            warnings.warn("Dataset contains non-unique id numbers. Renumbering starting from 1", DatasetWarning)
+            warnings.warn("Dataset contains non-unique id numbers. Renumbering starting from 1",
+                          DatasetWarning)
             df[df.pharmpy.id_label] = id_change.cumsum()
     return df
 
 
 def _filter_ignore_accept(df, ignore, accept, null_value):
     if ignore and accept:
-        raise ArgumentError("Cannot have both IGNORE and ACCEPT")
+        raise ValueError("Cannot have both IGNORE and ACCEPT")
     if not ignore and not accept:
         return df
 
     if ignore:
-        l = ignore
+        statements = ignore
     else:
-        l = accept
-    grammar = '''
+        statements = accept
+    grammar = r'''
         start: column [space] operator [space] value | column [space] value
         column: COLNAME
         operator: OP_EQ | OP_STR_EQ | OP_NE | OP_STR_NE | OP_LT | OP_GT | OP_LT_EQ | OP_GT_EQ
@@ -137,7 +140,7 @@ def _filter_ignore_accept(df, ignore, accept, null_value):
              | /'[^']*'/
     '''
     parser = Lark(grammar)
-    for s in l:
+    for s in statements:
         tree = parser.parse(s)
         operator = '=='
         operator_type = str
@@ -173,19 +176,22 @@ def _filter_ignore_accept(df, ignore, accept, null_value):
                 elif tp == 'OP_STR_NE':
                     operator = '!='
                     operator_type = str
-        if len(value) >= 3 and ((value.startswith("'") and value.endswith("'")) or (value.startswith('"') and value.endswith('"'))):
+        if len(value) >= 3 and ((value.startswith("'") and value.endswith("'")) or
+                                (value.startswith('"') and value.endswith('"'))):
             value = value[1:-1]
 
         if operator_type == str:
             expression = f'{column} {operator} "{value}"'
             if ignore:
                 expression = 'not(' + expression + ')'
-            df.query(expression, inplace=True) 
+            df.query(expression, inplace=True)
         else:
-            # Need to temporary convert column. Refer to NONMEM fileformat documentation for further information
+            # Need to temporary convert column. Refer to NONMEM fileformat documentation
+            # for further information.
+            # Using a name with spaces since this cannot collide with other NONMEM names
             magic_colname = 'a a'
             df[magic_colname] = df[column].apply(_convert_data_item, args=(str(null_value),))
-            expression = f'`{magic_colname}` {operator} {value}'         # Using a name with spaces since this cannot collide with other NONMEM names
+            expression = f'`{magic_colname}` {operator} {value}'
             if ignore:
                 expression = 'not(' + expression + ')'
             df.query(expression, inplace=True)
@@ -205,7 +211,9 @@ def infer_column_type(colname):
         return ColumnType.UNKNOWN
 
 
-def read_nonmem_dataset(path_or_io, raw=False, ignore_character='#', colnames=tuple(), coltypes=None, drop=None, null_value='0', parse_columns=tuple(), ignore=None, accept=None):
+def read_nonmem_dataset(path_or_io, raw=False, ignore_character='#', colnames=tuple(),
+                        coltypes=None, drop=None, null_value='0', parse_columns=tuple(),
+                        ignore=None, accept=None):
     """Read a nonmem dataset from file
         column types will be inferred from the column names
 
@@ -216,7 +224,7 @@ def read_nonmem_dataset(path_or_io, raw=False, ignore_character='#', colnames=tu
        null_value - Value to use for NULL, i.e. empty records or padding
        parse_columns - Only applicable when raw=True. A list of columns to parse.
        ignore/accept - List of ignore/accept expressions
-      
+
         The following postprocessing operations are done to a non-raw dataset
         1. Convert ordinary floating point numbers to float64
         2. Convert numbers of special fortran format to float64
@@ -229,7 +237,8 @@ def read_nonmem_dataset(path_or_io, raw=False, ignore_character='#', colnames=tu
         raise KeyError('Column names are not unique')
 
     file_io = NMTRANDataIO(path_or_io, ignore_character)
-    df = pd.read_table(file_io, sep=r' *, *| *[\t] *| +', na_filter=False, header=None, engine='python', quoting=3, dtype=np.object)
+    df = pd.read_table(file_io, sep=r' *, *| *[\t] *| +', na_filter=False, header=None,
+                       engine='python', quoting=3, dtype=np.object)
     df = pharmpy.data.PharmDataFrame(df)
 
     diff_cols = len(df.columns) - len(colnames)
@@ -253,7 +262,7 @@ def read_nonmem_dataset(path_or_io, raw=False, ignore_character='#', colnames=tu
             df.pharmpy.column_type[label] = infer_column_type(label)
     else:
         if len(coltypes) < len(df.columns):
-            coltypes += [data.ColumnType.UNKNOWN] * (len(df.columns) - len(coltypes))
+            coltypes += [pharmpy.data.ColumnType.UNKNOWN] * (len(df.columns) - len(coltypes))
         df.pharmpy.column_type[list(df.columns)] = coltypes
 
     df = _filter_ignore_accept(df, ignore, accept, null_value)

@@ -1,6 +1,7 @@
 import math
 
 from pharmpy.parameter import Parameter, ParameterSet
+
 from .record import Record
 
 
@@ -27,7 +28,8 @@ class OmegaRecord(Record):
                 lower = None
             else:
                 lower = 0
-            scalar_args.append({'name': f'OMEGA({row + 1},{col + 1})', 'init': init, 'fix': fix, 'lower': lower})
+            scalar_args.append({'name': f'OMEGA({row + 1},{col + 1})',
+                                'init': init, 'fix': fix, 'lower': lower})
             if row == col:
                 stdevs += [init]
                 row += 1
@@ -44,21 +46,3 @@ class OmegaRecord(Record):
     def random_variables(self, start_omega):
         """Get a RandomVariableSet for this omega record
         """
-
-    #@property
-    #def matrix(self):
-    #    params = self.params
-    #    block = self.root.find('block')
-    #    if block:
-    #        size = block.find('size').tokens[0].eval
-    #        mat = CovarianceMatrix(size)
-    #        mat.params = params
-    #    else:
-    #        if self.root.find('diagonal'):
-    #            size = self.root.diagonal.size.INT
-    #        else:
-    #            size = len(params)
-    #        mat = CovarianceMatrix(size)
-    #        mat.var = params
-    #        mat.covar = Scalar(0, fix=None)
-    #    return mat

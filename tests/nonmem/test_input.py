@@ -1,5 +1,4 @@
 from io import StringIO
-import pytest
 
 import pharmpy
 from pharmpy.data import ColumnType
@@ -19,9 +18,11 @@ def test_read_raw_dataset(pheno):
 
 
 def test_ignore_with_synonym(pheno_data):
-    model = pharmpy.Model(StringIO(f"$PROBLEM dfs\n$INPUT ID TIME AMT WT APGR DV=CONC FA1 FA2\n$DATA {pheno_data} IGNORE=@ IGNORE=(CONC.EQN.0)"))
+    model = pharmpy.Model(StringIO(f"$PROBLEM dfs\n$INPUT ID TIME AMT WT APGR DV=CONC FA1 FA2\n"
+                                   f"$DATA {pheno_data} IGNORE=@ IGNORE=(CONC.EQN.0)"))
     df = model.input.dataset
     assert len(df) == 155
-    model = pharmpy.Model(StringIO(f"$PROBLEM dfs\n$INPUT ID TIME AMT WT APGR DV=CONC FA1 FA2\n$DATA {pheno_data} IGNORE=@ IGNORE=(DV.EQN.0)"))
+    model = pharmpy.Model(StringIO(f"$PROBLEM dfs\n$INPUT ID TIME AMT WT APGR DV=CONC FA1 FA2\n"
+                                   f"$DATA {pheno_data} IGNORE=@ IGNORE=(DV.EQN.0)"))
     df = model.input.dataset
     assert len(df) == 155

@@ -19,7 +19,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 #
-## {{{ http://code.activestate.com/recipes/576694/ (r7)
+# {{{ http://code.activestate.com/recipes/576694/ (r7)
 
 
 import collections.abc
@@ -28,7 +28,7 @@ import collections.abc
 class OrderedSet(collections.abc.MutableSet):
 
     def __init__(self, iterable=None):
-        self.end = end = [] 
+        self.end = end = []
         end += [None, end, end]         # sentinel node for doubly linked list
         self.map = {}                   # key --> [key, prev, next]
         if iterable is not None:
@@ -51,7 +51,7 @@ class OrderedSet(collections.abc.MutableSet):
             self.add(key)
 
     def discard(self, key):
-        if key in self.map:        
+        if key in self.map:
             key, prev, next = self.map.pop(key)
             prev[2] = next
             next[1] = prev

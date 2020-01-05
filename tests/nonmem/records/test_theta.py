@@ -1,5 +1,4 @@
 import pytest
-import sympy
 
 
 @pytest.mark.usefixtures('parser')
@@ -24,7 +23,7 @@ def test_parameters(parser, buf, results):
     recs = parser.parse(buf)
     rec = recs.records[0]
     pset = rec.parameters(1)
-    assert len(pset) == len(results) 
+    assert len(pset) == len(results)
     assert len(pset) == len(rec)
     for res in results:
         name = res[0]
@@ -44,11 +43,11 @@ def test_theta_num(parser):
     rec = parser.parse('$THETA 1').records[0]
     pset = rec.parameters(2)
     assert len(pset) == 1
-    assert pset['THETA(2)'].init == 1 
+    assert pset['THETA(2)'].init == 1
 
 
 def test_update(parser):
-    rec = parser.parse('$THETA 1').records[0] 
+    rec = parser.parse('$THETA 1').records[0]
     pset = rec.parameters(1)
     pset['THETA(1)'].init = 41
     rec.update(pset)

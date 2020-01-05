@@ -1,11 +1,10 @@
 import re
 from io import StringIO
 from pathlib import Path
-import numpy as np
+
 import pandas as pd
 
 import pharmpy.math
-
 
 
 class NONMEMTableFile:
@@ -33,10 +32,12 @@ class NONMEMTableFile:
         elif suffix == '.phi':
             table = PhiTable(''.join(content))
         else:
-            table = NONMEMTable(''.join(content))       # Fallback to non-specific type of NONMEM table
+            table = NONMEMTable(''.join(content))       # Fallback to non-specific table type
         m = re.match(r'TABLE NO.\s+(\d+)', table_line)   # This is guaranteed to match
         table.number = m.group(1)
-        m = re.match(r'TABLE NO.\s+\d+: (.*?): (?:Goal Function=(.*): )?Problem=(\d+) Subproblem=(\d+) Superproblem1=(\d+) Iteration1=(\d+) Superproblem2=(\d+) Iteration2=(\d+)', table_line)
+        m = re.match(r'TABLE NO.\s+\d+: (.*?): (?:Goal Function=(.*): )?Problem=(\d+) '
+                     r'Subproblem=(\d+) Superproblem1=(\d+) Iteration1=(\d+) Superproblem2=(\d+) '
+                     r'Iteration2=(\d+)', table_line)
         if m:
             table.method = m.group(1)
             table.goal_function = m.group(2)
@@ -49,14 +50,16 @@ class NONMEMTableFile:
         self.tables.append(table)
 
     def number_of_tables(self):
-        return len(tables)
+        return len(self.tables)
 
     @property
-    def table(self, problem=1, subproblem=0, superproblem1=0, iteration1=0, superproblem2=0, iteration2=0):
+    def table(self, problem=1, subproblem=0, superproblem1=0, iteration1=0, superproblem2=0,
+              iteration2=0):
         for t in self.tables:
-            if t.problem == problem and t.subproblem == subproblem and t.superproblem1 == superproblem1 \
-                    and t.iteration1 == iteration1 and t.superproblem2 == superproblem2 and t.iteration2 == iteration2:
-                return t 
+            if t.problem == problem and t.subproblem == subproblem and \
+                    t.superproblem1 == superproblem1 and t.iteration1 == iteration1 and \
+                    t.superproblem2 == superproblem2 and t.iteration2 == iteration2:
+                return t
 
     def table_no(self, table_number=1):
         for table in self.tables:
@@ -68,7 +71,7 @@ class NONMEMTable:
     '''A NONMEM output table.
     '''
     def __init__(self, content):
-        self._df = pd.read_table(StringIO(content), sep='\s+', engine='python')
+        self._df = pd.read_table(StringIO(content), sep=r'\s+', engine='python')
 
     @property
     def data_frame(self):
@@ -81,12 +84,14 @@ class PhiTable(NONMEMTable):
         df = self._df.copy(deep=True)
         df.drop(columns=['SUBJECT_NO'], inplace=True)
         eta_col_names = [col for col in df if col.startswith('ETA')]
-        df['ETA'] = df[eta_col_names].values.tolist()       # ETA column to be list of eta values for each ID
+        # ETA column to be list of eta values for each ID
+        df['ETA'] = df[eta_col_names].values.tolist()
         df.drop(columns=eta_col_names, inplace=True)
         etc_col_names = [col for col in df if col.startswith('ETC')]
         vals = df[etc_col_names].values
         matrix_array = [pharmpy.math.flattened_to_symmetric(x) for x in vals]
-        df['ETC'] = matrix_array                            # ETC column to be symmetric matrices for each ID
+        # ETC column to be symmetric matrices for each ID
+        df['ETC'] = matrix_array
         df.drop(columns=etc_col_names, inplace=True)
         return df
 

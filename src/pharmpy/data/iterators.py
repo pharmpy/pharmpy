@@ -2,18 +2,20 @@
 data.iterators
 ==============
 
-Iterators generating new datasets from a dataset. The dataset could either be stand alone or connected to a model.
-If a model is used the same model will be updated with different datasets for each iteration.
+Iterators generating new datasets from a dataset. The dataset could either be stand alone
+or connected to a model. If a model is used the same model will be updated with different
+datasets for each iteration.
 
 Currenly contains:
 
 1. Omit - Can be used for cdd
 2. Resample - Can be used by bootstrap
 """
+
 import collections
+
 import numpy as np
 import pandas as pd
-from pathlib import Path
 
 import pharmpy.math
 
@@ -27,7 +29,8 @@ class DatasetIterator:
     def __init__(self, iterations, name_pattern='dataset_{}'):
         """Initialization of the base class
            :param iterations: is the number of iterations
-           :param name_pattern: Name too use for generated datasets. A number starting from 1 will be put in the placeholder.
+           :param name_pattern: Name too use for generated datasets.
+                A number starting from 1 will be put in the placeholder.
         """
         self._next = 1
         self._iterations = iterations
@@ -75,7 +78,8 @@ class Omit(DatasetIterator):
 
         :param dataset_or_model: DataFrame to iterate over or a model from which to use the dataset
         :param colname group: Name of the column to use for grouping
-        :param name_pattern: Name to use for generated datasets. A number starting from 1 will be put in the placeholder.
+        :param name_pattern: Name to use for generated datasets. A number starting from 1 will
+            be put in the placeholder.
         :returns: Tuple of DataFrame and the omitted group
     """
     def __init__(self, dataset_or_model, group, name_pattern='omitted_{}'):
@@ -118,12 +122,14 @@ class Resample(DatasetIterator):
             for each strata can also be supplied.
         :param bool replace: A boolean controlling whether sampling should be done with or
             without replacement
-        :param name_pattern: Name to use for generated datasets. A number starting from 1 will be put in the placeholder.
+        :param name_pattern: Name to use for generated datasets. A number starting from 1 will
+            be put in the placeholder.
 
         :returns: A tuple of a resampled DataFrame and a list of resampled groups in order
     """
 
-    def __init__(self, dataset_or_model, group, resamples=1, stratify=None, sample_size=None, replace=False, name_pattern='resample_{}'):
+    def __init__(self, dataset_or_model, group, resamples=1, stratify=None, sample_size=None,
+                 replace=False, name_pattern='resample_{}'):
         df = self._retrieve_dataset(dataset_or_model)
         unique_groups = df[group].unique()
         numgroups = len(unique_groups)
@@ -136,8 +142,10 @@ class Resample(DatasetIterator):
             stratas = df.groupby(stratify)[group].unique()
             have_mult_sample_sizes = isinstance(sample_size, collections.abc.Mapping)
             if not have_mult_sample_sizes:
-                non_rounded_sample_sizes = stratas.apply(lambda x: (len(x) / numgroups) * sample_size)
-                rounded_sample_sizes = pharmpy.math.round_and_keep_sum(non_rounded_sample_sizes, sample_size)
+                non_rounded_sample_sizes = stratas.apply(
+                        lambda x: (len(x) / numgroups) * sample_size)
+                rounded_sample_sizes = pharmpy.math.round_and_keep_sum(non_rounded_sample_sizes,
+                                                                       sample_size)
                 sample_size_dict = dict(rounded_sample_sizes)    # strata: numsamples
             else:
                 sample_size_dict = sample_size
@@ -153,14 +161,14 @@ class Resample(DatasetIterator):
                 if sample_size_dict[strata] > len(stratas[strata]):
                     if stratify:
                         raise ValueError(
-                            'The sample size ({sample_size}) for strata {strata} is larger than the number of groups'
-                            ' ({numgroups}) in that strata which is impossible with replacement.'.format(
-                                sample_size=sample_size_dict[strata], strata=strata, numgroups=len(stratas[strata])))
+                            f'The sample size ({sample_size_dict[strata]}) for strata {strata} is '
+                            f'larger than the number of groups ({len(stratas[strata])}) in that '
+                            f'strata which is impossible with replacement.')
                     else:
                         raise ValueError(
-                            'The sample size ({sample_size}) is larger than the number of groups'
-                            '({numgroups}) which is impossible with replacement.'.format(
-                                sample_size=sample_size_dict[strata], numgroups=len(stratas[strata])))
+                            f'The sample size ({sample_size_dict[strata]}) is larger than the '
+                            f'number of groups ({len(stratas[strata])}) which is impossible with '
+                            f'replacement.')
 
         self._df = df
         self._group = group
@@ -174,7 +182,9 @@ class Resample(DatasetIterator):
 
         random_groups = []
         for strata in self._sample_size_dict:
-            random_groups += np.random.choice(self._stratas[strata], size=self._sample_size_dict[strata], replace=self._replace).tolist()
+            random_groups += np.random.choice(self._stratas[strata],
+                                              size=self._sample_size_dict[strata],
+                                              replace=self._replace).tolist()
 
         new_df = pd.DataFrame()
         # Build the dataset given the random_groups list

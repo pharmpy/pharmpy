@@ -10,8 +10,7 @@ to point to your grammar file) to define a powerful parser.
 
 from pathlib import Path
 
-from lark import Lark
-from lark import Tree
+from lark import Lark, Tree
 from lark.lexer import Token
 
 from . import prettyprint

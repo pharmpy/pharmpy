@@ -3,6 +3,7 @@ NONMEM data record class.
 """
 
 from pharmpy.parse_utils import AttrTree
+
 from .option_record import OptionRecord
 
 
@@ -58,7 +59,7 @@ class DataRecord(OptionRecord):
     @property
     def null_value(self):
         """The value to replace for NULL (i.e. . etc) in the dataset
-           note that only +,-,0 (meaning 0) and 1-9 are allowed 
+           note that only +,-,0 (meaning 0) and 1-9 are allowed
         """
         if hasattr(self.root, 'null') and self.root.null.find('char'):
             char = str(self.root.null.char)
@@ -85,8 +86,8 @@ class DataRecord(OptionRecord):
                 filters.append(filt)
         return filters
 
-    #@filters.setter
-    #def filters(self, filters):
+    # @filters.setter
+    # def filters(self, filters):
     #    # Remove old filters
     #    self.root.remove("accept")
     #    keep = []

@@ -17,7 +17,7 @@ def test_simple_parse():
     assert type(model2.records[0]).__name__ == 'RawRecord'
     assert type(model2.records[1]).__name__ == 'ProblemRecord'
 
-    assert str(model2) == model2_str 
+    assert str(model2) == model2_str
 
 
 def test_round_trip(pheno_path):

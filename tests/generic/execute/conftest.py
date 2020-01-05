@@ -1,10 +1,9 @@
-
+import asyncio
+import logging
 import sys
 import textwrap
-import logging
 
 import pytest
-
 
 
 @pytest.fixture(scope='function')

@@ -12,17 +12,7 @@ Definitions
 -----------
 """
 
-import logging
-from copy import deepcopy
 from pathlib import Path
-
-#from pharmpy.execute import Engine
-#from pharmpy.input import ModelInput
-#from pharmpy.output import ModelEstimation  # noqa (only to bring into generic namespace)
-#from pharmpy.output import ModelOutput
-#from pharmpy.parameters import ParameterModel
-#from pharmpy.source_io import SourceResource
-
 
 
 class ModelException(Exception):
@@ -32,17 +22,6 @@ class ModelException(Exception):
 class ModelFormatError(ModelException):
     def __init__(self, msg='model format error'):
         super().__init__(msg)
-
-
-#class ModelLookupError(LookupError):
-#    def __init__(self, lookup):
-#        self.lookup = lookup
-#        try:
-#            reason = 'index %d out of range' % (self.lookup,)
-#        except TypeError:
-#            reason = 'name %s not found' % (repr(str(self.lookup)),)
-#        msg = 'submodel does not exist (%s)' % (reason,)
-#        super().__init__(msg)
 
 
 class Model():
@@ -62,14 +41,15 @@ class Model():
             try:
                 filename = f'{self.name}{self.source.filename_extension}'
             except AttributeError:
-                raise ValueError('Cannot name model file as no path argument was supplied and the model has no name.')
+                raise ValueError('Cannot name model file as no path argument was supplied and the'
+                                 'model has no name.')
             path /= filename
             if path.exists():
                 raise FileExistsError(f'File at generated path {path} already exists.')
         self.source.write(path)
 
 
-    #    """(Generic) Model class.
+#    """(Generic) Model class.
 
 # Property: name
 
@@ -77,7 +57,8 @@ class Model():
 
 #    Attributes:
 
-#    .. note:: Attribute :attr:`path` always :class:`~pathlib.Path` object, but only resolved (set to
+#    .. note:: Attribute :attr:`path` always :class:`~pathlib.Path` object, but only resolved
+#            (set to
 #        absolute) by :attr:`exists`, which should be checked before any IO (read/write) on disk.
 #        Thus, :attr:`path` needn't exist until needed!
 #    """
@@ -148,7 +129,8 @@ class Model():
 #        .. todo::
 #            Implement model execution/results status checker.
 #            **Should** contain a call to :class:`.engine` class. An implementation of *that* should
-#            then know how to check on current platform/cluster system (also *without* initializing a
+#            then know how to check on current platform/cluster system (also *without*
+#            initializing a
 #            run directory).
 #            **Shouldn't** need to override this (by implementation).
 #        """

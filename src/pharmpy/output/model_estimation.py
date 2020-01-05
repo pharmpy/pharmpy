@@ -1,6 +1,4 @@
-# -*- encoding: utf-8 -*-
-
-from pharmpy.parameters import ParameterList
+# FIXME: This is experiental. Names should propably change etc
 
 
 class ModelEstimation:

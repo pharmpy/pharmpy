@@ -1,11 +1,9 @@
 import re
-from pathlib import Path
-from lark import Lark
 
 from pharmpy.model import ModelFormatError
-from .records.raw_record import RawRecord
+
 from .records.factory import create_record
-from pharmpy.parse_utils.generic import AttrTree
+from .records.raw_record import RawRecord
 
 
 class NMTranParser:
@@ -25,14 +23,13 @@ class NMTranParser:
 
         return stream
 
- 
 
 class NMTranControlStream:
     """Representation of a parsed control stream (model file)
     """
     def __init__(self):
-       self.records = []
-       self._active_problem = 0
+        self.records = []
+        self._active_problem = 0
 
     def get_records(self, name):
         """Return a list of all records of a certain type in the current $PROBLEM

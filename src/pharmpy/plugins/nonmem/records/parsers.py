@@ -2,7 +2,6 @@ from pathlib import Path
 
 from pharmpy.parse_utils import GenericParser
 
-
 grammar_root = Path(__file__).parent.resolve() / 'grammars'
 if not grammar_root.is_dir():
     raise FileNotFoundError('Root dir of record grammars not found: %r' % str(grammar_root))
@@ -18,22 +17,21 @@ class ProblemRecordParser(RecordParser):
     grammar_filename = 'problem_record.lark'
     non_empty = [
         {'root': (0, 'raw_title')},
-        {'raw_title': (0, 'REST_OF_LINE') },
+        {'raw_title': (0, 'REST_OF_LINE')},
     ]
-    
 
 
 class ThetaRecordParser(RecordParser):
     grammar_filename = 'theta_record.lark'
     non_empty = [
-        { 'comment': (1, 'COMMENT') },
+        {'comment': (1, 'COMMENT')},
     ]
 
 
 class OmegaRecordParser(RecordParser):
     grammar_filename = 'omega_record.lark'
     non_empty = [
-        { 'comment': (1, 'COMMENT') },
+        {'comment': (1, 'COMMENT')},
     ]
 
 

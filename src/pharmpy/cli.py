@@ -75,7 +75,7 @@ import logging
 import pathlib
 import pydoc
 import sys
-from collections import namedtuple, OrderedDict
+from collections import OrderedDict, namedtuple
 from textwrap import dedent
 
 import pharmpy
@@ -208,8 +208,8 @@ class CLI:
         args_model_or_data_input = argparse.ArgumentParser(add_help=False)
         group_model_or_data_input = args_model_or_data_input.add_argument_group(title='data_input')
         group_model_or_data_input.add_argument('model_or_dataset',
-                metavar='FILE', type=self.input_model_or_dataset,
-                help='input model or dataset file')
+                                               metavar='FILE', type=self.input_model_or_dataset,
+                                               help='input model or dataset file')
         self._args_model_or_data_input = args_model_or_data_input
 
         # common to: commands with file output
@@ -272,18 +272,20 @@ class CLI:
         cmd_sumo.set_defaults(func=self.cmd_sumo)
 
         # -- data ------------------------------------------------------------------------------
-        cmd_data = parsers.add_parser('data',# prog='pharmpy data',
+        cmd_data = parsers.add_parser('data',
                                       help='Data manipulations',
                                       allow_abbrev=True)
 
         cmd_data_subs = cmd_data.add_subparsers(title='PharmPy data commands', metavar='ACTION')
 
         cmd_data_write = cmd_data_subs.add_parser('write', help='Write dataset', allow_abbrev=True,
-                                      parents=[self._args_model_or_data_input, self._args_output])
+                                                  parents=[self._args_model_or_data_input,
+                                                           self._args_output])
         cmd_data_write.set_defaults(func=self.data_write)
 
-        cmd_data_resample = cmd_data_subs.add_parser('resample', help='Resample dataset', allow_abbrev=True, 
-                                      parents=[self._args_model_or_data_input])
+        cmd_data_resample = cmd_data_subs.add_parser('resample', help='Resample dataset',
+                                                     allow_abbrev=True,
+                                                     parents=[self._args_model_or_data_input])
         cmd_data_resample.add_argument('--group', metavar='COLUMN', type=str, default='ID',
                                        help='Column to use for grouping (default is ID)')
         cmd_data_resample.add_argument('--resamples', metavar='NUMBER', type=int, default=1,
@@ -372,13 +374,15 @@ class CLI:
             df = args.model_or_dataset
         path = args.output_file
         try:
-            df.pharmpy.write_csv(path=path, force=args.force)      # If no output_file supplied will use name of df
+            # If no output_file supplied will use name of df
+            df.pharmpy.write_csv(path=path, force=args.force)
         except FileExistsError as e:
             self.error_exit(exception=e)
 
     def data_resample(self, args):
         """Subcommand to resample a dataset."""
-        resampler = pharmpy.data.iterators.Resample(args.model_or_dataset, args.group,
+        resampler = pharmpy.data.iterators.Resample(
+                args.model_or_dataset, args.group,
                 resamples=args.resamples, stratify=args.stratify, replace=args.replace,
                 sample_size=args.sample_size)
         for resampled_obj, _ in resampler:

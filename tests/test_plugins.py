@@ -1,4 +1,5 @@
 import pytest
+
 import pharmpy.plugins.utils as utils
 
 
@@ -8,6 +9,6 @@ def test_detect_model():
 
 
 def test_load_plugins():
-    l = utils.load_plugins()
-    names = [x.__name__ for x in l]
+    plugins = utils.load_plugins()
+    names = [x.__name__ for x in plugins]
     assert names == ['pharmpy.plugins.nonmem']

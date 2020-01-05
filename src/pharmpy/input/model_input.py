@@ -12,8 +12,6 @@ Definitions
 import logging
 
 
-
-
 class ModelInput:
     """Implements API for :attr:`Model.input`, the model dataset"""
     def __init__(self, model):

@@ -1,10 +1,6 @@
-# -*- encoding: utf-8 -*-
-
 import numpy as np
 
-from .scalars import Covar
-from .scalars import Scalar
-from .scalars import Var
+from .scalars import Covar, Scalar, Var
 
 
 class CovarianceMatrix:

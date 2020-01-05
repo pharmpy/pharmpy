@@ -1,6 +1,6 @@
-import pytest
 import sympy
 import sympy.stats as stats
+
 from pharmpy.random_variables import RandomVariables
 
 

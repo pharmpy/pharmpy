@@ -24,7 +24,7 @@ def test_parameters(parser, buf, results):
     recs = parser.parse(buf)
     rec = recs.records[0]
     pset = rec.parameters(1)
-    assert len(pset) == len(results) 
+    assert len(pset) == len(results)
     for res in results:
         name = res[0]
         init = res[1]

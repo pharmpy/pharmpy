@@ -1,12 +1,8 @@
-from os.path import realpath
 from pathlib import Path
 
-
-from pharmpy import input
 import pharmpy.data
+from pharmpy import input
 from pharmpy.data import DatasetError
-
-
 
 
 class ModelInput(input.ModelInput):
@@ -34,7 +30,6 @@ class ModelInput(input.ModelInput):
         assert not path.exists() or path.is_file(), ('input path change, but non-file exists at '
                                                      'target (%s)' % str(path))
         record = self.model.control_stream.get_records('DATA')[0]
-        #self.logger.info('Setting %r.path to %r', repr(self), str(path))
         record.filename = str(path)
 
     @property
@@ -57,20 +52,24 @@ class ModelInput(input.ModelInput):
     def _synonym(key, value):
         """Return a tuple reserved name and synonym
         """
-        _reserved_column_names = ['ID', 'L1', 'L2', 'DV', 'MDV', 'RAW_', 'MRG_', 'RPT_',
+        _reserved_column_names = [
+            'ID', 'L1', 'L2', 'DV', 'MDV', 'RAW_', 'MRG_', 'RPT_',
             'TIME', 'DATE', 'DAT1', 'DAT2', 'DAT3', 'EVID', 'AMT', 'RATE', 'SS', 'II', 'ADDL',
-            'CMT', 'PCMT', 'CALL', 'CONT' ]
+            'CMT', 'PCMT', 'CALL', 'CONT'
+        ]
         if key in _reserved_column_names:
             return (key, value)
         elif value in _reserved_column_names:
             return (value, key)
         else:
-            raise DatasetError(f'A column name "{key}" in $INPUT has a synonym to a non-reserved column name "{value}"')
+            raise DatasetError(f'A column name "{key}" in $INPUT has a synonym to a non-reserved '
+                               f'column name "{value}"')
 
     def _column_info(self):
         """List all column names in order.
             Use the synonym when synonym exists.
-            return tuple of three lists, colnames, coltypes and drop together with a dictionary of replacements for reserved names (aka synonyms).
+            return tuple of three lists, colnames, coltypes and drop together with a dictionary
+            of replacements for reserved names (aka synonyms).
         """
         input_records = self.model.control_stream.get_records("INPUT")
         colnames = []
@@ -100,7 +99,7 @@ class ModelInput(input.ModelInput):
                         drop.append(False)
                     colnames.append(key)
                     reserved_name = key
-                coltypes.append(pharmpy.data.read.infer_column_type(reserved_name)) 
+                coltypes.append(pharmpy.data.read.infer_column_type(reserved_name))
         return colnames, coltypes, drop, synonym_replacement
 
     def _replace_synonym_in_filters(filters, replacements):
@@ -129,14 +128,18 @@ class ModelInput(input.ModelInput):
             ignore = None
             accept = None
         else:
-            ignore = data_records[0].ignore         # FIXME: All direct handling of control stream spanning over one or more records should move
+            # FIXME: All direct handling of control stream spanning
+            # over one or more records should move
+            ignore = data_records[0].ignore
             accept = data_records[0].accept
             if ignore:
                 ignore = ModelInput._replace_synonym_in_filters(ignore, replacements)
             else:
                 accept = ModelInput._replace_synonym_in_filters(accept, replacements)
 
-        df = pharmpy.data.read_nonmem_dataset(self.path, raw, ignore_character, colnames, coltypes, drop,
-                 null_value=null_value, parse_columns=parse_columns, ignore=ignore, accept=accept)
+        df = pharmpy.data.read_nonmem_dataset(self.path, raw, ignore_character, colnames, coltypes,
+                                              drop, null_value=null_value,
+                                              parse_columns=parse_columns, ignore=ignore,
+                                              accept=accept)
         df.name = self.path.stem
         return df

@@ -1,12 +1,12 @@
-import dateutil.parser
+# import dateutil.parser
 import re
-
 
 # Warning! Bad and experimental code below.
 # Should ideally be able to parse on demand or at least be able to skip sections
 
+
 class NONMEMResultsFile:
-    '''Representing and parsing a NONMEM results file (aka lst-file) 
+    '''Representing and parsing a NONMEM results file (aka lst-file)
        This is not a generic output object and will be combined by other classes
        into new structures. For example if ext file exists we would not use the
        estimates from the lst-file.
@@ -17,7 +17,7 @@ class NONMEMResultsFile:
         parts = self._split_content(content)
         self._parse_datestamps(parts['start_timestamp'])
         self.model_code = parts['model_code']
-        self.nmtran_messages = parts['nmtran_messages']     # Raw for now. Need extra parsing. Can be listed and split on PROBLEM
+        self.nmtran_messages = parts['nmtran_messages']
         self._parse_version(parts['about_text'])
 
     def _split_content(self, content):
@@ -26,10 +26,12 @@ class NONMEMResultsFile:
         parts = {}
         parts['start_timestamp'] = content.pop(0)
 
-        (parts['model_code'], content) = self._split_until_regexp(content, ['NM-TRAN MESSAGES', 'License Registered to:'], remove_lines=1)
+        (parts['model_code'], content) = self._split_until_regexp(
+                content, ['NM-TRAN MESSAGES', 'License Registered to:'], remove_lines=1)
 
         if content[0].startswith('NM-TRAN MESSAGES'):
-            (parts['nmtran_messages'], content) = self._split_until_regexp(content, ['License Registered to:'], remove_lines=1)
+            (parts['nmtran_messages'], content) = \
+                    self._split_until_regexp(content, ['License Registered to:'], remove_lines=1)
 
         (_, content) = self._split_until_regexp(content, ['1NONLINEAR MIXED EFFECTS MODEL PROGRAM'])
         (parts['about_text'], content) = self._split_until_regexp(content, [' PROBLEM NO.:'])
@@ -52,11 +54,12 @@ class NONMEMResultsFile:
         return (content[0:(i - remove_lines)], content[i:])
 
     def _parse_version(self, about_text):
-        m = re.match("1NONLINEAR MIXED EFFECTS MODEL PROGRAM \(NONMEM\) VERSION (.*)\n", about_text[0])
+        m = re.match(r'1NONLINEAR MIXED EFFECTS MODEL PROGRAM \(NONMEM\) VERSION (.*)\n',
+                     about_text[0])
         if m:
             self.nonmem_version = m.group(1)
 
     def _parse_datestamps(self, raw_string):
         pass  # Crap! This dateutil doesn't seem to support Swedish
         # Had a look at dateparser that could support Swedish, but it needs patching for that
-        #self.start_timestamp = dateutil.parser.parse(raw_string)
+        # self.start_timestamp = dateutil.parser.parse(raw_string)

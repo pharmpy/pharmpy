@@ -1,8 +1,6 @@
-# -*- encoding: utf-8 -*-
-
 import asyncio
-import threading
 import logging
+import threading
 
 import pytest
 

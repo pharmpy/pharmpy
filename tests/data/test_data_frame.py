@@ -1,13 +1,16 @@
-import pytest
 import pandas as pd
+import pytest
 
 import pharmpy.data as data
 
 
 @pytest.fixture
 def df():
-    df = data.PharmDataFrame({'ID': [1, 1, 2, 2], 'DV': [0.1, 0.2, 0.5, 0.6], 'WGT': [70, 72, 75, 75], 'HGT': [185, 185, 160, 160]})
-    df.pharmpy.column_type[('ID', 'DV', 'WGT', 'HGT')] = [data.ColumnType.ID, data.ColumnType.DV, data.ColumnType.COVARIATE, data.ColumnType.COVARIATE]
+    df = data.PharmDataFrame({'ID': [1, 1, 2, 2], 'DV': [0.1, 0.2, 0.5, 0.6],
+                              'WGT': [70, 72, 75, 75], 'HGT': [185, 185, 160, 160]})
+    df.pharmpy.column_type[('ID', 'DV', 'WGT', 'HGT')] = [
+        data.ColumnType.ID, data.ColumnType.DV, data.ColumnType.COVARIATE,
+        data.ColumnType.COVARIATE]
     return df
 
 
@@ -28,9 +31,11 @@ def test_data_frame():
 
 
 def test_accessor_get_set_column_type():
-    df = data.PharmDataFrame({'ID': [1, 1, 2, 2], 'DV': [0.1, 0.2, 0.5, 0.6], 'WGT': [70, 70, 75, 75], 'HGT': [185, 185, 160, 160]})
+    df = data.PharmDataFrame({'ID': [1, 1, 2, 2], 'DV': [0.1, 0.2, 0.5, 0.6],
+                              'WGT': [70, 70, 75, 75], 'HGT': [185, 185, 160, 160]})
     assert df.pharmpy.column_type['ID'] == data.ColumnType.UNKNOWN
-    assert df.pharmpy.column_type[('ID', 'DV')] == [data.ColumnType.UNKNOWN, data.ColumnType.UNKNOWN]
+    assert df.pharmpy.column_type[('ID', 'DV')] == \
+        [data.ColumnType.UNKNOWN, data.ColumnType.UNKNOWN]
     df.pharmpy.column_type['ID'] = data.ColumnType.ID
     df.pharmpy.column_type['DV'] = data.ColumnType.DV
     assert df.pharmpy.column_type['ID'] == data.ColumnType.ID
@@ -56,4 +61,8 @@ def test_accessor_get_set_column_type():
 
 def test_time_varying_covariates(df):
     assert df.pharmpy.time_varying_covariates == ['WGT']
-    pd.testing.assert_frame_equal(df.pharmpy.covariate_baselines, pd.DataFrame({'WGT': [70, 75], 'HGT': [185, 160]}, index=pd.Int64Index([1, 2], name='ID')))
+    correct_baselines = pd.DataFrame(
+        {'WGT': [70, 75], 'HGT': [185, 160]},
+        index=pd.Int64Index([1, 2], name='ID')
+    )
+    pd.testing.assert_frame_equal(df.pharmpy.covariate_baselines, correct_baselines)

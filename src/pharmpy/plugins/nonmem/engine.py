@@ -1,6 +1,6 @@
 import logging
-import re
 import os
+import re
 from glob import glob
 from pathlib import Path
 

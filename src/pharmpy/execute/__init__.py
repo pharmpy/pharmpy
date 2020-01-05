@@ -1,4 +1,3 @@
-# -*- encoding: utf-8 -*-
 """
 ===============
 Model Execution
@@ -28,13 +27,13 @@ This package defines four classes:
           - Creates Job objects, executing some task, for a *specific* implementation.
             Contains Environment object. The focal point for implementation inheritance.
 
-Where :class:`~pharmpy.execute.engine.Engine` is the **critical unit** for a implementation to inherit,
-e.g. :class:`~pharmpy.api_nonmem.execute.NONMEM7`.
+Where :class:`~pharmpy.execute.engine.Engine` is the **critical unit** for a implementation to
+inherit, e.g. :class:`~pharmpy.api_nonmem.execute.NONMEM7`.
 
 :class:`~pharmpy.execute.environment.Environment` require inheritance for a specific purpose (e.g.
 Linux, SLURM, dummy directory, etc.), but not an implementation.
-:class:`~pharmpy.execute.run_directory.RunDirectory` and :class:`~pharmpy.execute.job.Job` will likely
-remain model (type) agnostic.
+:class:`~pharmpy.execute.run_directory.RunDirectory` and :class:`~pharmpy.execute.job.Job` will
+likely remain model (type) agnostic.
 
 Definitions
 -----------

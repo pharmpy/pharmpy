@@ -1,12 +1,10 @@
-
 import textwrap
 from collections import OrderedDict
 
 import pytest
 
 from pharmpy.parse_utils import prettyprint
-from pharmpy.parse_utils.generic import AttrToken
-from pharmpy.parse_utils.generic import AttrTree
+from pharmpy.parse_utils.generic import AttrToken, AttrTree
 
 
 def assert_create(expect, *args, **kwargs):

@@ -69,7 +69,7 @@ class Parameter:
     @property
     def fix(self):
         """Is the parameter fixed?
-        Actually checking if the domain of the parameter is finite with length 1. 
+        Actually checking if the domain of the parameter is finite with length 1.
         """
         domain = self._constraints.as_set()
         return domain.is_FiniteSet and len(domain) == 1
@@ -91,7 +91,9 @@ class Parameter:
     @init.setter
     def init(self, new_init):
         if new_init not in self._constraints.as_set():
-            raise ValueError(f'Initial estimate must be within the constraints of the parameter: {new_init} ∉ {sympy.pretty(self._constraints.as_set())}\nUnconstrain the parameter before setting an initial estimate.')
+            raise ValueError(f'Initial estimate must be within the constraints of the parameter: '
+                             f'{new_init} ∉ {sympy.pretty(self._constraints.as_set())}\nUnconstrain'
+                             f'the parameter before setting an initial estimate.')
         self._init = new_init
         if self.fix:
             self._constraints = sympy.And(self.symbol <= new_init, self.symbol >= new_init)
@@ -107,10 +109,12 @@ class Parameter:
     def __eq__(self, other):
         """Two parameters are equal if they have the same symbol.name, init and domain
         """
-        return self.symbol.name == other.symbol.name and self.init == other.init and self.constraints.as_set() == other.constraints.as_set()
+        return self.symbol.name == other.symbol.name and self.init == other.init and \
+            self.constraints.as_set() == other.constraints.as_set()
 
     def __str__(self):
         return self._symbol.name
 
     def __repr__(self):
-        return f"Parameter('{self.symbol.name}', {self.init}, lower={self.lower}, upper={self.upper}, fix={self.fix})"
+        return f"Parameter('{self.symbol.name}', {self.init}, lower={self.lower}, " \
+               f"upper={self.upper}, fix={self.fix})"

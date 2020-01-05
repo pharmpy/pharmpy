@@ -47,7 +47,7 @@ class PharmDataFrame(pd.DataFrame):
     ============  =============
 
     """
-    _metadata = [ '_column_types', 'name' ]
+    _metadata = ['_column_types', 'name']
 
     @property
     def _constructor(self):
@@ -76,7 +76,8 @@ class ColumnTypeIndexer:
     def _set_one_column_type(self, label, tp):
         if label not in self._obj.columns:
             raise KeyError(str(label))
-        if tp.max_one and hasattr(self._obj, '_column_types') and tp in self._obj._column_types.values():
+        if tp.max_one and hasattr(self._obj, '_column_types') and \
+                tp in self._obj._column_types.values():
             raise KeyError(f'Only one column of type {tp} is allowed in a PharmDataFrame.')
         try:
             self._obj._column_types[label] = tp
@@ -147,7 +148,8 @@ class LabelsByTypeIndexer:
         """ Will raise if no columns of the type exists
             Always returns a list of labels
         """
-        return [label for label in self._acc._obj.columns if self._acc.column_type[label] == column_type]
+        return [label for label in self._acc._obj.columns
+                if self._acc.column_type[label] == column_type]
 
     def __getitem__(self, tp):
         try:
@@ -231,7 +233,8 @@ class DataFrameAccessor:
             try:
                 filename = f'{self._obj.name}.csv'
             except AttributeError:
-                raise ValueError('Cannot name data file as no path argument was supplied and the DataFrame has no name property.')
+                raise ValueError('Cannot name data file as no path argument was supplied and '
+                                 'the DataFrame has no name property.')
             path /= filename
         if not force and path.exists():
             raise FileExistsError(f'File at generated path {path} already exists.')

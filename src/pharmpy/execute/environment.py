@@ -12,9 +12,9 @@ Definitions
 """
 
 import asyncio
+import concurrent.futures
 import logging
 import os
-import concurrent.futures
 
 from .job import Job
 

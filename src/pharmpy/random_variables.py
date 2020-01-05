@@ -39,7 +39,8 @@ class RandomVariables(OrderedSet):
             symbol_padding = ' ' * len(f'{sympy.pretty(rv)} ~ ')
             for i, (mu_line, sigma_line) in enumerate(zip(mu_strings, sigma_strings)):
                 if i == central_index:
-                    res.append(f'{sympy.pretty(rv)} ~ 𝓝\N{SIX-PER-EM SPACE}(' + mu_line + ', ' + sigma_line + ')')
+                    res.append(f'{sympy.pretty(rv)} ~ 𝓝\N{SIX-PER-EM SPACE}(' +
+                               mu_line + ', ' + sigma_line + ')')
                 else:
                     res.append(symbol_padding + '    ' + mu_line + '  ' + sigma_line + ' ')
 
@@ -55,7 +56,7 @@ class RandomVariables(OrderedSet):
         """ Give a nicely formatted view of the definitions of all
             random variables.
         """
-        res = '';
+        res = ''
         for rv in self:
             lines = RandomVariables._rv_definition_string(rv)
             res += '\n'.join(lines) + '\n'

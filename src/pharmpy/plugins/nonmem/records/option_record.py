@@ -5,8 +5,8 @@ Assumes 'KEY=VALUE' and does not support 'KEY VALUE'.
 """
 
 from collections import OrderedDict
+
 from .record import Record
-from .parsers import OptionRecordParser
 
 
 class OptionRecord(Record):

@@ -1,11 +1,10 @@
-# -*- encoding: utf-8 -*-
-
-import pytest
 import random
 from collections import namedtuple
 
-import pharmpy.plugins.nonmem.records
+import pytest
+
 import pharmpy.plugins.nonmem.nmtran_parser
+import pharmpy.plugins.nonmem.records
 
 
 @pytest.fixture

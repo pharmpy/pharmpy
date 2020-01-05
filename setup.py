@@ -1,18 +1,13 @@
 #!/usr/bin/env python
-# -*- encoding: utf-8 -*-
-from __future__ import absolute_import
-from __future__ import print_function
+from __future__ import absolute_import, print_function
 
 import io
 import re
 from glob import glob
-from os.path import basename
-from os.path import dirname
-from os.path import join
-from os.path import splitext
+from os.path import basename, dirname, join, splitext
 from textwrap import dedent
-from setuptools import find_packages
-from setuptools import setup
+
+from setuptools import find_packages, setup
 
 
 def read(*names, **kwargs):
@@ -30,7 +25,7 @@ def strip_refs(text_str):
 
 def longdesc(text_str):
     """Extract blocks between start-longdesc and end-longdesc directives"""
-    pat = '(?<=^\.\. start-longdesc).*?(?=^\.\. end-longdesc)'
+    pat = r'(?<=^\.\. start-longdesc).*?(?=^\.\. end-longdesc)'
     txt = re.compile(pat, re.MULTILINE | re.DOTALL).findall(text_str)
     txt = [dedent(block).strip() for block in txt]
     return '\n\n'.join(txt)

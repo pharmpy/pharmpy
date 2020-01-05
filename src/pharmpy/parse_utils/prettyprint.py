@@ -2,6 +2,7 @@
 from functools import partial
 
 import lark
+
 from . import treeprint
 
 MAXLEN = 60
