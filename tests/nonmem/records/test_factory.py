@@ -22,14 +22,14 @@ def test_get_canonical_record_name(records):
 def test_create_record(records):
     create_record = records.factory.create_record
 
-    obj, _ = create_record("$PROBLEM ID TIME")
+    obj = create_record("$PROBLEM ID TIME")
     assert obj.__class__.__name__ == "ProblemRecord"
     assert obj.raw_name == '$PROBLEM'
 
-    obj, _ = create_record(" $PROBL ID TIME")
+    obj = create_record(" $PROBL ID TIME")
     assert obj.__class__.__name__ == "ProblemRecord"
     assert obj.raw_name == ' $PROBL'
 
-    obj, _ = create_record("$PROB  MYPROB")
+    obj = create_record("$PROB  MYPROB")
     assert obj.__class__.__name__, "ProblemRecord"
     assert obj.raw_name == '$PROB'

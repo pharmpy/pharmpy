@@ -1,6 +1,3 @@
-root: [raw_title] NEWLINE [REMAINING]
-raw_title: REST_OF_LINE
-REST_OF_LINE: /.+/
-REMAINING: /(.|\n)+/
-
-%import common.NEWLINE
+root: raw_title
+raw_title: ANYTHING
+ANYTHING: /(.|\n)+/

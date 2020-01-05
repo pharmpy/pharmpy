@@ -5,8 +5,9 @@ from .record import Record
 class ProblemRecord(Record):
     @property
     def title(self):
+        first_line = str(self.root.raw_title).split('\n')[0].strip()
         max_number_of_characters_in_title = 72
-        return str(self.root.raw_title).strip()[:max_number_of_characters_in_title]
+        return first_line[:max_number_of_characters_in_title]
 
     @title.setter
     def title(self, new_title):
@@ -16,5 +17,8 @@ class ProblemRecord(Record):
             raise ValueError(f"The provided title is {len(new_title.strip())} characters long but can be maximum 72 characters long (not counting initial and trailing whitespace)")
         if new_title == new_title.lstrip():
             new_title = ' ' + new_title
-        node = AttrTree.create('raw_title', dict(REST_OF_LINE=new_title))
+        lines = str(self.root.raw_title).split('\n')
+        lines[0] = new_title
+        s = '\n'.join(lines)
+        node = AttrTree.create('raw_title', dict(ANYTHING=s))
         self.root.set('raw_title', node)
