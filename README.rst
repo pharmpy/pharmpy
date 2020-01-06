@@ -104,5 +104,3 @@ You should now have a new release in ``dist/``!
 .. _Setuptools: https://pypi.python.org/pypi/setuptools
 .. _Pytest: http://pytest.org/
 .. _isort: https://pypi.python.org/pypi/isort
-
-.. include:: version

@@ -1,4 +1,3 @@
-# -*- encoding: utf-8 -*-
 """
 =======================
 Execution Run Directory
@@ -45,14 +44,14 @@ Destroying object (triggering cleanup):
 
         >>> path = dir.path
         >>> print([x.name for x in path.iterdir()])
-        ['remove_this', 'file.txt', 'keep_this', 'file.py']
+        ['file.txt', 'file.py', 'remove_this', 'keep_this']
 
     .. doctest::
         :pyversion: > 3.6
 
         >>> del dir
         >>> print([x.name for x in path.iterdir()])
-        ['keep_this', 'file.py']
+        ['file.py', 'keep_this']
 
     .. doctest::
         :pyversion: > 3.6

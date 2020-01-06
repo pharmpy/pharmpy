@@ -58,6 +58,10 @@ class PharmDataFrame(pd.DataFrame):
         return pd.Series
 
     def copy(self, *kwargs):
+        """
+        """
+        # FIXME: Set empty docstring to avoid getting documentation from base class
+        #        would like sphinx to do this so that in object docstring is kept.
         new_df = super().copy(*kwargs)
         try:
             new_df._column_types = self._column_types.copy()

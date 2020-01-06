@@ -162,10 +162,13 @@ A list of ModelOperation objects.
 Class hierarcy:
 
 * ModelOperation
-  * Modelfit
-    * SAEM
-    * FOCE
-  * Simulation and/or Prediction
+
+    * Modelfit
+
+        * SAEM
+        * FOCE
+
+    * Simulation and/or Prediction
 
 The number of types of operations (the second level above) should be kept to a minimum.
 
