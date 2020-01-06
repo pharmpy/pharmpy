@@ -102,7 +102,7 @@ class CLI:
                     pharmpy data resample pheno_real.mod --resamples=100 --replace
 
                     # prettyprint model
-                    pharmpy print pheno_real.mod
+                    pharmpy model print pheno_real.mod
 
                     # version/install information
                     pharmpy info
@@ -213,32 +213,28 @@ class CLI:
     def _init_commands_tools(self, parsers):
         """Initializes all "tool-like" subcommands."""
 
-        # -- print -----------------------------------------------------------------------------
-        cmd_print = parsers.add_parser('print', prog='pharmpy print',
-                                       parents=[self._args_input],
-                                       help='Format & print APIs/aspects of models',
-                                       allow_abbrev=True)
-        group_apis = cmd_print.add_argument_group(title='APIs to print')
+        # -- model -----------------------------------------------------------------------------
+        cmd_model = parsers.add_parser('model', help='Model manipulations', allow_abbrev=True)
+
+        cmd_model_subs = cmd_model.add_subparsers(title='PharmPy model commands', metavar='ACTION')
+
+        cmd_model_print = cmd_model_subs.add_parser('print', prog='print model',
+                                                    parents=[self._args_input],
+                                                    help='Format and print model overview',
+                                                    allow_abbrev=True)
+        group_apis = cmd_model_print.add_argument_group(title='APIs to print')
         group_apis.add_argument('--all',
-                                action='store_true', default=True)
-        group_apis.add_argument('--source',
+                                action='store_true', default=True, help='This is the default')
+        group_apis.add_argument('--data',
                                 action='store_true',
-                                help='SourceResource (e.g. source code)')
-        group_apis.add_argument('--input',
-                                action='store_true',
-                                help='ModelInput (e.g. dataset)')
-        group_apis.add_argument('--output',
-                                action='store_true',
-                                help='ModelOutput (e.g. estimates)')
+                                help='A shortened version of the dataset')
         group_apis.add_argument('--parameters',
                                 action='store_true',
                                 help='ParameterModel (e.g. inits)')
-        cmd_print.set_defaults(func=self.cmd_print)
+        cmd_model_print.set_defaults(func=self.cmd_print)
 
         # -- data ------------------------------------------------------------------------------
-        cmd_data = parsers.add_parser('data',
-                                      help='Data manipulations',
-                                      allow_abbrev=True)
+        cmd_data = parsers.add_parser('data', help='Data manipulations', allow_abbrev=True)
 
         cmd_data_subs = cmd_data.add_subparsers(title='PharmPy data commands', metavar='ACTION')
 
@@ -279,19 +275,15 @@ class CLI:
         self.welcome('print')
         lines = []
         for i, model in enumerate(args.models):
-            lines += ['[%d/%d] %r' % (i+1, len(args.models), model)]
+            lines += ['[%d/%d] %r' % (i+1, len(args.models), model.name)]
             dict_ = OrderedDict()
-            if args.source or args.all:
-                dict_['model.source'] = repr(model.source)
-            if args.input or args.all:
-                dict_['model.input.dataset'] = repr(model.input.dataset)
-            if args.output or args.all:
-                pass
+            if args.data or args.all:
+                dict_['dataset'] = repr(model.input.dataset)
             if args.parameters or args.all:
                 s = ''
                 for param in model.parameters:
                     s += repr(param) + '\n'
-                dict_['model.parameters'] = s
+                dict_['parameters'] = s
             dict_lines = self.format_keyval_pairs(dict_, sort=False)
             lines += ['\t%s' % line for line in dict_lines]
         if len(lines) > 24:
