@@ -62,7 +62,7 @@ class FileSource(SourceBase):
         """Read source from io object or from str path or path object
         """
         if isinstance(path_or_io, str) or isinstance(path_or_io, Path):
-            self.path = path_or_io
+            self.path = Path(path_or_io)
             with open(path_or_io, 'r') as fp:
                 return fp.read()
         else:

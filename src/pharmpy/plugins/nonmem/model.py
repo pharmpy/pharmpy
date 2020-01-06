@@ -14,6 +14,7 @@ class Model(pharmpy.model.Model):
         self.source = src
         if not self.source.filename_extension:
             self.source.filename_extension = '.ctl'
+        self.name = self.source.path.stem
         self.control_stream = parser.parse(src.code)
         self.input = pharmpy.plugins.nonmem.input.ModelInput(self)
 
