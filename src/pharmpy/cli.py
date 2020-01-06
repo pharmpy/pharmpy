@@ -224,7 +224,7 @@ class CLI:
                                                     allow_abbrev=True)
         group_apis = cmd_model_print.add_argument_group(title='APIs to print')
         group_apis.add_argument('--all',
-                                action='store_true', default=True, help='This is the default')
+                                action='store_true', default=None, help='This is the default')
         group_apis.add_argument('--data',
                                 action='store_true',
                                 help='A shortened version of the dataset')
@@ -271,6 +271,8 @@ class CLI:
 
     def cmd_print(self, args):
         """Subcommand for formatting/printing model components."""
+        if not (args.data or args.parameters) and args.all is None:
+            args.all = True
 
         self.welcome('print')
         lines = []
