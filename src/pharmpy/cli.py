@@ -8,10 +8,10 @@ The CLI interface of PharmPy
 Examples
 --------
 
-Example argument lines (only preceeded by ``pharmpy`` or ``python3 -m pharmpy`` or whatever)::
+Example argument lines (only preceeded by ``pharmpy`` or ``python3 -m pharmpy``)::
 
     # filter data (as model prescribes) and output to file 'output.csv'
-    transform --filter --data output.csv
+    pharmpy data write run1.mod -o output.csv
 
 Entrypoints and Subcommands
 ---------------------------
@@ -26,21 +26,17 @@ Standard practice of packaging is to define "entrypoints" in the setuptools ``se
       ]
   },
 
-Main entrypoint is ``pharmpy`` (which maps :func:`main`), but each subcommand has a shortcutting
-entrypoint (e.g. :func:`sumo`). This is accomplished via invoking:
+Main entrypoint is ``pharmpy`` (which maps :func:`main`), but each subcommand could be given a
+shortcutting entrypoint (e.g. :func:`sumo`). This would be accomplished via invoking:
 
 .. code-block:: python
 
     CLI(*args_of_sumo, subcommand='sumo')
 
-to skip straight to subcommand parser, enabling linking as if subcommands were different scripts::
-
-    pharmpy --help                 ->  pharmpy --help
-    pharmpy version                ->  pharmpy version
-    pharmpy transform FILE arg..   ->  pharmpy transform FILE arg..
+to skip straight to subcommand parser.
 
 Installing PharmPy Wheel-build should install all of these to PATH. Then, these are clean targets
-for post-install hooks to symlink. Etheir to pollute the PATH namespace with traditional PsN-styled
+for post-install hooks to symlink. Either to pollute the PATH namespace with traditional PsN-styled
 "binscripts", as::
 
     /usr/bin/execute               ->  /usr/bin/pharmpy execute
@@ -76,7 +72,7 @@ import pharmpy.plugins.utils
 
 
 class CLI:
-    """Main CLI interface, based on subcommands (like Git).
+    """Main CLI interface, based on subcommands (like git).
 
     Parses and arguments executes all tasks.
 
@@ -92,31 +88,30 @@ class CLI:
         parser = argparse.ArgumentParser(
             prog='pharmpy',
             description=dedent("""
-            Welcome to the commandline interface of PharmPy!
-                ~~ a snaky re-imagining of PsN ~~
+            Welcome to the command line interface of PharmPy!
 
             Functionality is split into various subcommands
                 - try --help after a COMMAND
-                - print, transform and version started
                 - all keyword arguments can be abbreviated if unique
 
 
             """).strip(),
             epilog=dedent("""
                 Examples:
-                    # apply data filters in model & output to new data file
-                    pharmpy -vv transform --filter --data filtered.csv pheno_real.mod
+                    # Create 100 bootstrap datasets
+                    pharmpy data resample pheno_real.mod --resamples=100 --replace
 
-                    # prettyprint APIs of model in pager
-                    pharmpy print --all pheno_real.mod
+                    # prettyprint model
+                    pharmpy print pheno_real.mod
 
                     # version/install information
-                    pharmpy version
+                    pharmpy info
             """).strip(),
             formatter_class=argparse.RawTextHelpFormatter,
             allow_abbrev=True,
         )
         self._init_common_args(parser)
+        parser.add_argument('--version', action='version', version=pharmpy.__version__)
 
         # subcommand parsers
         subparsers = parser.add_subparsers(title='PharmPy commands', metavar='COMMAND')
@@ -306,11 +301,11 @@ class CLI:
     def _init_commands_misc(self, parsers):
         """Initializes miscellanelous other (non-tool) subcommands."""
 
-        # -- version ---------------------------------------------------------------------------
-        cmd_version = parsers.add_parser('version', prog='pharmpy version',
-                                         help='Show version information',
-                                         allow_abbrev=True)
-        cmd_version.set_defaults(func=self.cmd_version)
+        # -- info ---------------------------------------------------------------------------
+        cmd_info = parsers.add_parser('info', prog='pharmpy info',
+                                      help='Show pharmpy information',
+                                      allow_abbrev=True)
+        cmd_info.set_defaults(func=self.cmd_info)
 
     # -- subcommand launchers ------------------------------------------------------------------
 
@@ -422,8 +417,8 @@ class CLI:
             elif not write_data:
                 self.logger.warning('No-Op (no file write) for %r.', model)
 
-    def cmd_version(self, args):
-        """Subcommand to print PharmPy version (and brag a little bit)."""
+    def cmd_info(self, args):
+        """Subcommand to print PharmPy info (and brag a little bit)."""
 
         lines = self.format_keyval_pairs(self.install._asdict(), right_just=True)
         print('\n'.join(lines))
