@@ -213,22 +213,6 @@ class CLI:
     def _init_commands_tools(self, parsers):
         """Initializes all "tool-like" subcommands."""
 
-        # -- clone -----------------------------------------------------------------------------
-        cmd_clone = parsers.add_parser('clone', prog='pharmpy clone',
-                                       parents=[self._args_input, self._args_output],
-                                       help='Duplicate model or run',
-                                       allow_abbrev=True)
-        cmd_clone.add_argument('--ui', '--update_inits', action='store_true',
-                               help='set initial estimates (← final estimates)')
-        cmd_clone.set_defaults(func=self.cmd_clone)
-
-        # -- execute ---------------------------------------------------------------------------
-        cmd_execute = parsers.add_parser('execute', prog='pharmpy execute',
-                                         parents=[self._args_input],
-                                         help='Execute model task/workflow',
-                                         allow_abbrev=True)
-        cmd_execute.set_defaults(func=self.cmd_execute)
-
         # -- print -----------------------------------------------------------------------------
         cmd_print = parsers.add_parser('print', prog='pharmpy print',
                                        parents=[self._args_input],
@@ -250,13 +234,6 @@ class CLI:
                                 action='store_true',
                                 help='ParameterModel (e.g. inits)')
         cmd_print.set_defaults(func=self.cmd_print)
-
-        # -- sumo ------------------------------------------------------------------------------
-        cmd_sumo = parsers.add_parser('sumo', prog='pharmpy sumo',
-                                      parents=[self._args_input],
-                                      help='Summarize model or run',
-                                      allow_abbrev=True)
-        cmd_sumo.set_defaults(func=self.cmd_sumo)
 
         # -- data ------------------------------------------------------------------------------
         cmd_data = parsers.add_parser('data',
@@ -285,19 +262,6 @@ class CLI:
                                        help='Number of groups to sample for each resample')
         cmd_data_resample.set_defaults(func=self.data_resample)
 
-        # -- transform -------------------------------------------------------------------------
-        cmd_transform = parsers.add_parser('transform', prog='pharmpy transform',
-                                           parents=[self._args_input, self._args_output],
-                                           help='Common model transformations',
-                                           allow_abbrev=True)
-        cmd_transform.add_argument('--filter_data',
-                                   action='store_true',
-                                   help='apply input data filtering')
-        cmd_transform.add_argument('--data',
-                                   dest='output_data', metavar='PATH', type=pathlib.Path,
-                                   help='set model input data (← PATH); also output of new data')
-        cmd_transform.set_defaults(func=self.cmd_transform)
-
     def _init_commands_misc(self, parsers):
         """Initializes miscellanelous other (non-tool) subcommands."""
 
@@ -308,18 +272,6 @@ class CLI:
         cmd_info.set_defaults(func=self.cmd_info)
 
     # -- subcommand launchers ------------------------------------------------------------------
-
-    def cmd_clone(self, args):
-        """Subcommand to clone a model/update initial estimates."""
-
-        self.welcome('clone')
-        self.error_exit(exception=NotImplementedError("Command (clone) is not available yet!"))
-
-    def cmd_execute(self, args):
-        """Subcommand to execute a model default task/workflow."""
-
-        self.welcome('execute')
-        self.error_exit(exception=NotImplementedError("Command (execute) is not available yet!"))
 
     def cmd_print(self, args):
         """Subcommand for formatting/printing model components."""
@@ -346,12 +298,6 @@ class CLI:
             pydoc.pager('\n'.join(lines))
         else:
             print('\n'.join(lines))
-
-    def cmd_sumo(self, args):
-        """Subcommand to continue PsN ``sumo`` (summarize output)."""
-
-        self.welcome('sumo')
-        self.error_exit(exception=NotImplementedError("Command (sumo) is not available yet!"))
 
     def data_write(self, args):
         """Subcommand to write a dataset."""
@@ -380,42 +326,6 @@ class CLI:
                     resampled_obj.pharmpy.write_csv()
             except FileExistsError as e:
                 self.error_exit(exception=e)
-
-    def cmd_transform(self, args):
-        """Subcommand to transform a model."""
-
-        self.welcome('transform')
-        for i, model in enumerate(args.models):
-            self.logger.info('[%d/%d] Processing %r', i+1, len(args.models), model)
-            write_model = False
-            write_data = False
-
-            # -- input/data transforms ---------------------------------------------------------
-            if args.filter_data:
-                model.input.apply_and_remove_filters()
-                write_model = True
-                write_data = True
-
-            if args.output_data:
-                model.input.path = args.output_data.resolve()
-                write_model = True
-
-            # -- input/data file write ---------------------------------------------------------
-            if write_data:
-                self.check_output_path(model.input.path, args.force)
-                model.input.write_dataset()
-
-            # -- model transforms --------------------------------------------------------------
-            if args.output_model:
-                model.path = args.output_model.resolve()
-                write_model = True
-
-            # -- model file write --------------------------------------------------------------
-            if write_model:
-                self.check_output_path(model.path, args.force)
-                model.write()
-            elif not write_data:
-                self.logger.warning('No-Op (no file write) for %r.', model)
 
     def cmd_info(self, args):
         """Subcommand to print PharmPy info (and brag a little bit)."""

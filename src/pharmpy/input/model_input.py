@@ -44,11 +44,6 @@ class ModelInput:
         """
         raise NotImplementedError
 
-    def write_dataset(self):
-        """Write the dataset at the dataset path
-        """
-        self.data_frame.to_csv(str(self.path), index=False)
-
     @property
     def logger(self):
         return logging.getLogger('%s.%s' % (self.model.logger.name, self.__class__.__name__))
