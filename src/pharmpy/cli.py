@@ -302,7 +302,8 @@ class CLI:
         path = args.output_file
         try:
             # If no output_file supplied will use name of df
-            df.pharmpy.write_csv(path=path, force=args.force)
+            path = df.pharmpy.write_csv(path=path, force=args.force)
+            print(f'Dataset written to {path}')
         except FileExistsError as e:
             self.error_exit(exception=e)
 
