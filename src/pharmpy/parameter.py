@@ -57,14 +57,22 @@ class Parameter:
         """The lower bound of the parameter
         Actually the infimum of the domain of the parameter.
         """
-        return self._constraints.as_set().inf
+        domain = self._constraints.as_set()
+        if domain.is_UniversalSet:
+            return -sympy.oo
+        else:
+            return domain.inf
 
     @property
     def upper(self):
         """The upper bound of the parameter
         Actually the supremum of the domain of the parameter.
         """
-        return self._constraints.as_set().sup
+        domain = self._constraints.as_set()
+        if domain.is_UniversalSet:
+            return sympy.oo
+        else:
+            return domain.sup
 
     @property
     def fix(self):
