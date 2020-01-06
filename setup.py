@@ -82,13 +82,6 @@ setup(
     entry_points={
         'console_scripts': [
             'pharmpy           = pharmpy.cli:main',
-            'pharmpy-clone     = pharmpy.cli:cmd_clone',
-            'pharmpy-execute   = pharmpy.cli:cmd_execute',
-            'pharmpy-help      = pharmpy.cli:cmd_help',
-            'pharmpy-print     = pharmpy.cli:cmd_print',
-            'pharmpy-sumo      = pharmpy.cli:cmd_sumo',
-            'pharmpy-transform = pharmpy.cli:cmd_transform',
-            'pharmpy-version   = pharmpy.cli:cmd_version',
         ]
     },
 )

@@ -5,8 +5,6 @@
 The CLI interface of PharmPy
 ============================
 
-Yes, CLI is anticipated to remain the main interface! But... maybe with 16 colors?
-
 Examples
 --------
 
@@ -25,12 +23,6 @@ Standard practice of packaging is to define "entrypoints" in the setuptools ``se
   entry_points={
       'console_scripts': [
           'pharmpy           = pharmpy.cli:main',
-          'pharmpy clone     = pharmpy.cli:cmd_clone',
-          'pharmpy execute   = pharmpy.cli:cmd_execute',
-          'pharmpy print     = pharmpy.cli:cmd_print',
-          'pharmpy sumo      = pharmpy.cli:cmd_sumo',
-          'pharmpy transform = pharmpy.cli:cmd_transform',
-          'pharmpy version   = pharmpy.cli:cmd_version',
       ]
   },
 
@@ -609,36 +601,3 @@ class CLI:
 def main(*args):
     """Entry point of ``pharmpy`` CLI util and ``python3 -m pharmpy`` (via ``__main__.py``)."""
     CLI(*args)
-
-
-# -- entry points of command CLIs (pharmpy COMMAND) --------------------------------------------
-
-
-def cmd_clone(*args):
-    """Entry point of ``pharmpy-clone`` CLI util, a separable link to ``pharmpy clone``."""
-    CLI(*args, subcommand='clone')
-
-
-def cmd_execute(*args):
-    """Entry point of ``pharmpy-execute`` CLI util, a separable link to ``pharmpy execute``."""
-    CLI(*args, subcommand='execute')
-
-
-def cmd_print(*args):
-    """Entry point of ``pharmpy-print`` CLI util, a separable link to ``pharmpy print``."""
-    CLI(*args, subcommand='print')
-
-
-def cmd_sumo(*args):
-    """Entry point of ``pharmpy-sumo`` CLI util, a separable link to ``pharmpy sumo``."""
-    CLI(*args, subcommand='sumo')
-
-
-def cmd_transform(*args):
-    """Entry point of ``pharmpy-transform`` CLI util, a separable link to ``pharmpy transform``."""
-    CLI(*args, subcommand='transform')
-
-
-def cmd_version(*args):
-    """Entry point of ``pharmpy-version`` CLI util, a separable link to ``pharmpy version``."""
-    CLI(*args, subcommand='version')
