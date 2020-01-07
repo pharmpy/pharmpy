@@ -243,6 +243,13 @@ class CLI:
                                                            self._args_output])
         cmd_data_write.set_defaults(func=self.data_write)
 
+        cmd_data_filter = cmd_data_subs.add_parser('filter', help='Filter rows of dataset',
+                                                   allow_abbrev=True,
+                                                   parents=[self._args_model_or_data_input,
+                                                            self._args_output])
+        cmd_data_filter.add_argument('expressions', nargs=argparse.REMAINDER)
+        cmd_data_filter.set_defaults(func=self.data_filter)
+
         cmd_data_resample = cmd_data_subs.add_parser('resample', help='Resample dataset',
                                                      allow_abbrev=True,
                                                      parents=[self._args_model_or_data_input])
@@ -304,6 +311,25 @@ class CLI:
             # If no output_file supplied will use name of df
             path = df.pharmpy.write_csv(path=path, force=args.force)
             print(f'Dataset written to {path}')
+        except FileExistsError as e:
+            self.error_exit(exception=e)
+
+    def data_filter(self, args):
+        """Subcommand to filter a dataset"""
+        try:
+            df = args.model_or_dataset.input.dataset
+        except pharmpy.plugins.utils.PluginError:
+            df = args.model_or_dataset
+        expression = ' '.join(args.expressions)
+        try:
+            df.query(expression, inplace=True)
+        except BaseException as e:
+            self.error_exit(exception=e)
+        path = args.output_file
+        try:
+            # If no output_file supplied will use name of df
+            path = df.pharmpy.write_csv(path=path, force=args.force)
+            print(f'Filtered dataset written to {path}')
         except FileExistsError as e:
             self.error_exit(exception=e)
 
