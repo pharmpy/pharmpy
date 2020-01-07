@@ -63,6 +63,17 @@ class DataRecord(OptionRecord):
         node = AttrTree.create('ignchar', [char_node])
         self.root.children.append(node)
 
+    def ignore_character_from_header(self, label):
+        """ Set ignore character from a header label
+            If s[0] is a-zA-Z set @
+            else set s[0]
+        """
+        c = label[0]
+        if c.isalpha():
+            self.ignore_character = '@'
+        else:
+            self.ignore_character = c
+
     @property
     def null_value(self):
         """The value to replace for NULL (i.e. . etc) in the dataset

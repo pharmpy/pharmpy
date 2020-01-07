@@ -31,11 +31,16 @@ class Model(pharmpy.model.Model):
             # FIXME: If no name set use the model name. Set that when setting dataset to input!
             datapath = self.input.dataset.pharmpy.write_csv()
             self.input.path = datapath
-            # FIXME: ignore_character et al should be set when setting the dataset. Check if A-Za-z
-            #        and use @, # remove else use first character
-            # FIXME: how to handle IGNORE, ACCEPT? Must be performed when resampling as entire
-            #        groups might disappear collapsing individuals.
-            #        so resampling should be done on parsed dataset. Anonymizing
+
+            data_record = self.model.control_stream.get_records('DATA')[0]
+
+            label = self.input.dataset.columns[0]
+            data_record.ignore_character_from_header(label)
+
+            # Remove IGNORE/ACCEPT. Could do diff between old dataset and find simple
+            # IGNOREs to add i.e. for filter out certain ID.
+            del(data_record.ignore)
+            del(data_record.accept)
         super().update_source()
 
     def validate(self):
