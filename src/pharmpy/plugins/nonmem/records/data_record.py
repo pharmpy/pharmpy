@@ -85,6 +85,10 @@ class DataRecord(OptionRecord):
                 filters.append(filt)
         return filters
 
+    @ignore.deleter
+    def ignore(self):
+        self.root.remove('ignore')
+
     @property
     def accept(self):
         filters = []
@@ -93,20 +97,12 @@ class DataRecord(OptionRecord):
                 filters.append(filt)
         return filters
 
-    def remove_ignore_accept(self):
-        """ Remove all IGNORE and ACCEPT options
-        """
-        # FIXME: Could be changed to setters for ignore/accept. Set with None
-        self.root.remove("accept")
-        keep = []
-        for child in self.root.children:
-            if not (child.rule == 'ignore' and not hasattr(child, 'char')):
-                keep.append(child)
-        self.root.children = keep
+    @accept.deleter
+    def accept(self):
+        self.root.remove('accept')
 
     # @filters.setter
     # def filters(self, filters):
-    #    self.remove_ignore_accept()
     #    # Install new filters at the end
     #    if not filters:     # This was easiest kept as a special case
     #        return

@@ -89,10 +89,17 @@ def test_ignore_accept(parser):
     record = parser.parse('$DATA pheno.dta IGNORE=(DV.EQ.1)').records[0]
     assert str(record.ignore[0]) == 'DV.EQ.1'
     assert record.accept == []
+    del(record.ignore)
+    assert record.ignore == []
+    assert record.accept == []
+
     record = parser.parse('$DATA pheno.dta ACCEPT=(DV.EQ.1,    MDV.NEN.23)').records[0]
     assert str(record.accept[0]) == 'DV.EQ.1'
     assert str(record.accept[1]) == 'MDV.NEN.23'
     assert record.ignore == []
+    del(record.accept)
+    assert record.ignore == []
+    assert record.accept == []
     record = parser.parse('$DATA pheno.dta IGNORE=(WGT  < 1  ,\n  ID\n.EQ."lk")').records[0]
     assert str(record.ignore[0]) == 'WGT  < 1', 'ID\n.EQ."lk"'
 
