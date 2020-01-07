@@ -17,8 +17,10 @@ filename: TEXT | QUOTE
 
 // option rules
 ?option : "(" [WS] TEXT [WS] ")"                -> format
-        | IGNORE [WS] "=" [WS] (char | _list)   -> ignore  // contains 'char' OR 'filter' children
-        | IGNORE [WS] (char | _list)            -> ignore
+        | IGNORE [WS] "=" [WS] char             -> ignchar
+        | IGNORE [WS] char                      -> ignchar
+        | IGNORE [WS] "=" [WS] _list            -> ignore
+        | IGNORE [WS] _list                     -> ignore
         | NULL [WS] "=" [WS] (char)             -> null
         | NULL [WS] (char)                      -> null
         | ACCEPT [WS] "=" [WS] _list            -> accept

@@ -55,12 +55,29 @@ def test_option_record(parser):
 
 
 def test_ignore_character(parser):
+    record = parser.parse('$DATA pheno.dta').records[0]
+    assert record.ignore_character is None
+    record.ignore_character = 'I'
+    assert record.ignore_character == 'I'
+
     record = parser.parse('$DATA pheno.dta IGNORE=@').records[0]
     assert record.filename == 'pheno.dta'
     assert record.ignore_character == '@'
+    record.ignore_character = 'K'
+    assert record.ignore_character == 'K'
 
     record = parser.parse('$DATA pheno.dta IGNORE="I"').records[0]
     assert record.ignore_character == 'I'
+
+    record = parser.parse('$DATA pheno.dta IGNORE=K IGNORE=(ID.EQ.2)').records[0]
+    assert record.ignore_character == 'K'
+
+    record = parser.parse('$DATA pheno.dta IGNORE=(DV==3) IGNORE=C').records[0]
+    record.root.treeprint()
+    assert record.ignore_character == 'C'
+    record.ignore_character = '@'
+    assert record.ignore_character == '@'
+    assert str(record.ignore[0]) == 'DV==3'
 
 
 def test_null_value(parser):

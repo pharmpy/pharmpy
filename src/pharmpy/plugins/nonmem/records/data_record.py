@@ -48,13 +48,20 @@ class DataRecord(OptionRecord):
     @property
     def ignore_character(self):
         """The comment character from ex IGNORE=C or None if not available."""
-        if hasattr(self.root, 'ignore') and self.root.ignore.find('char'):
-            char = str(self.root.ignore.char)
+        if hasattr(self.root, 'ignchar') and self.root.ignchar.find('char'):
+            char = str(self.root.ignchar.char)
             if len(char) == 3:      # It must be quoted
                 char = char[1:-1]
             return char
         else:
             return None
+
+    @ignore_character.setter
+    def ignore_character(self, c):
+        self.root.remove('ignchar')
+        char_node = AttrTree.create('char', [{'CHAR': c}])
+        node = AttrTree.create('ignchar', [char_node])
+        self.root.children.append(node)
 
     @property
     def null_value(self):
@@ -86,20 +93,23 @@ class DataRecord(OptionRecord):
                 filters.append(filt)
         return filters
 
+    def remove_ignore_accept(self):
+        """ Remove all IGNORE and ACCEPT options
+        """
+        # FIXME: Could be changed to setters for ignore/accept. Set with None
+        self.root.remove("accept")
+        keep = []
+        for child in self.root.children:
+            if not (child.rule == 'ignore' and not hasattr(child, 'char')):
+                keep.append(child)
+        self.root.children = keep
+
     # @filters.setter
     # def filters(self, filters):
-    #    # Remove old filters
-    #    self.root.remove("accept")
-    #    keep = []
-    #    for child in self.root.children:
-    #        if not (child.rule == 'ignore' and not hasattr(child, 'char')):
-    #            keep.append(child)
-    #    self.root.children = keep
-
+    #    self.remove_ignore_accept()
     #    # Install new filters at the end
     #    if not filters:     # This was easiest kept as a special case
     #        return
-
     #    if filters.accept:
     #        tp = 'ACCEPT'
     #    else:
