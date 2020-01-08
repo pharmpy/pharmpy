@@ -157,19 +157,14 @@ class LabelsByTypeIndexer:
 
     def __getitem__(self, tp):
         try:
-            if len(tp) > 1:
-                labels = []
-                for t in tp:
-                    if t.max_one:
-                        labels.extend(self._get_one_label(t))
-                    else:
-                        labels.extend(self._get_many_labels(t))
-                return labels
-            else:
-                if tp[0].max_one:
-                    return self._get_one_label(tp[0])
+            len(tp)
+            labels = []
+            for t in tp:
+                if t.max_one:
+                    labels.extend(self._get_one_label(t))
                 else:
-                    return self._get_many_labels(tp[0])
+                    labels.extend(self._get_many_labels(t))
+            return labels
         except TypeError:
             if tp.max_one:
                 return self._get_one_label(tp)

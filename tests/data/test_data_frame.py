@@ -36,8 +36,18 @@ def test_accessor_get_set_column_type():
     assert df.pharmpy.column_type['ID'] == data.ColumnType.UNKNOWN
     assert df.pharmpy.column_type[('ID', 'DV')] == \
         [data.ColumnType.UNKNOWN, data.ColumnType.UNKNOWN]
+
     df.pharmpy.column_type['ID'] = data.ColumnType.ID
     df.pharmpy.column_type['DV'] = data.ColumnType.DV
+    with pytest.raises(KeyError):       # Max one id column
+        df.pharmpy.column_type['DV'] = data.ColumnType.ID
+    with pytest.raises(KeyError):
+        df.pharmpy.column_type['NOEXISTS'] = data.ColumnType.COVARIATE
+    with pytest.raises(ValueError):
+        df.pharmpy.column_type[('ID', 'DV')] = \
+            [data.ColumnType.COVARIATE, data.ColumnType.COVARIATE, data.ColumnType.COVARIATE]
+    with pytest.raises(KeyError):
+        df.pharmpy.column_type['NOAVAIL']
     assert df.pharmpy.column_type['ID'] == data.ColumnType.ID
     assert df.pharmpy.column_type['DV'] == data.ColumnType.DV
     assert df.pharmpy.column_type[['ID', 'DV']] == [data.ColumnType.ID, data.ColumnType.DV]
@@ -48,19 +58,34 @@ def test_accessor_get_set_column_type():
     assert df2.pharmpy.column_type['DV'] == data.ColumnType.DV
 
     assert df2.pharmpy.labels_by_type[data.ColumnType.ID] == ['ID']
+    assert df2.pharmpy.labels_by_type[[data.ColumnType.ID]] == ['ID']
+    assert df2.pharmpy.labels_by_type[[]] == []
     assert df2.pharmpy.labels_by_type[data.ColumnType.DV] == ['DV']
+    assert df2.pharmpy.labels_by_type[[data.ColumnType.ID, data.ColumnType.DV]] == ['ID', 'DV']
 
     assert df2.pharmpy.id_label == 'ID'
 
     df2.pharmpy.column_type[['ID', 'DV']] = (data.ColumnType.COVARIATE, data.ColumnType.IDV)
     assert df2.pharmpy.column_type[['ID', 'DV']] == [data.ColumnType.COVARIATE, data.ColumnType.IDV]
     assert df.pharmpy.column_type['ID'] == data.ColumnType.ID
-    with pytest.raises(KeyError):
-        df.pharmpy.column_type['DV'] = data.ColumnType.ID
+
+    df3 = data.PharmDataFrame({1: [1, 1, 2, 2], 2: [0.1, 0.2, 0.5, 0.6],
+                               3: [70, 70, 75, 75], 4: [185, 185, 160, 160]})
+    assert df3.pharmpy.column_type[1] == data.ColumnType.UNKNOWN
+    df3.pharmpy.column_type[[3, 4]] = data.ColumnType.COVARIATE
+    df3.pharmpy.column_type[1] = data.ColumnType.ID
+    assert df3.pharmpy.column_type[[1, 2, 3, 4]] == \
+        [data.ColumnType.ID, data.ColumnType.UNKNOWN,
+         data.ColumnType.COVARIATE, data.ColumnType.COVARIATE]
 
 
 def test_time_varying_covariates(df):
     assert df.pharmpy.time_varying_covariates == ['WGT']
+    df_untyped = data.PharmDataFrame({'ID': [1, 1, 2, 2], 'DV': [0.1, 0.2, 0.5, 0.6]})
+    assert df_untyped.pharmpy.time_varying_covariates == []
+
+
+def test_covariate_baselines(df):
     correct_baselines = pd.DataFrame(
         {'WGT': [70, 75], 'HGT': [185, 160]},
         index=pd.Int64Index([1, 2], name='ID')
