@@ -25,14 +25,14 @@ class Model(pharmpy.model.Model):
         """
         return bool(re.search(r'^\$PRO', src.code, re.MULTILINE))
 
-    def update_source(self):
+    def update_source(self, force=False):
         """Update the source"""
         if self.input._dataset_updated:
             # FIXME: If no name set use the model name. Set that when setting dataset to input!
-            datapath = self.input.dataset.pharmpy.write_csv()
+            datapath = self.input.dataset.pharmpy.write_csv(force=force)
             self.input.path = datapath
 
-            data_record = self.model.control_stream.get_records('DATA')[0]
+            data_record = self.control_stream.get_records('DATA')[0]
 
             label = self.input.dataset.columns[0]
             data_record.ignore_character_from_header(label)

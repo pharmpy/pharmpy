@@ -6,6 +6,8 @@ Assumes 'KEY=VALUE' and does not support 'KEY VALUE'.
 
 from collections import OrderedDict
 
+from pharmpy.parse_utils.generic import AttrTree
+
 from .record import Record
 
 
@@ -23,3 +25,16 @@ class OptionRecord(Record):
                 pairs[node.VALUE] = None
 
         return pairs
+
+    def append_option(self, node):
+        """ Add a new option as last option
+        """
+        last_child = self.root.children[-1]
+        if '\n' in str(last_child):
+            if len(self.root.children) > 1 and self.root.children[-2].rule == 'ws':
+                self.root.children[-1:0] = [node]
+            else:
+                ws_node = AttrTree.create('ws', [{'WS_ALL': 'ws'}])
+                self.root.children[-1:0] = [ws_node, node]
+        else:
+            self.root.children.append(node)

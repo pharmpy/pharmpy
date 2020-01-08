@@ -80,6 +80,15 @@ def test_ignore_character(parser):
     assert str(record.ignore[0]) == 'DV==3'
 
 
+def test_ignore_character_from_header(parser):
+    record = parser.parse('$DATA pheno.dta').records[0]
+    assert record.ignore_character is None
+    record.ignore_character_from_header("ID")
+    assert record.ignore_character == '@'
+    record.ignore_character_from_header("_ID")
+    assert record.ignore_character == '_'
+
+
 def test_null_value(parser):
     record = parser.parse('$DATA pheno.dta NULL=1').records[0]
     assert record.null_value == 1

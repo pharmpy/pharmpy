@@ -62,6 +62,7 @@ import argparse
 import logging
 import pathlib
 import pydoc
+import re
 import sys
 from collections import OrderedDict, namedtuple
 from textwrap import dedent
@@ -325,13 +326,52 @@ class CLI:
             df.query(expression, inplace=True)
         except BaseException as e:
             self.error_exit(exception=e)
-        path = args.output_file
-        try:
-            # If no output_file supplied will use name of df
-            path = df.pharmpy.write_csv(path=path, force=args.force)
-            print(f'Filtered dataset written to {path}')
-        except FileExistsError as e:
-            self.error_exit(exception=e)
+        self.write_model_or_dataset(args.model_or_dataset, df, args.output_file, args.force)
+
+    def write_model_or_dataset(self, model_or_dataset, new_df, path, force):
+        """Write model or dataset to output_path or using default names
+        """
+        if hasattr(model_or_dataset, 'pharmpy'):
+            # Is a dataset
+            try:
+                # If no output_file supplied will use name of df
+                path = new_df.pharmpy.write_csv(path=path, force=force)
+                print(f'Filtered dataset written to {path}')
+            except FileExistsError as e:
+                self.error_exit(exception=e)
+        else:
+            # Is a model
+            model = model_or_dataset
+            model.input.dataset = new_df
+            try:
+                if path:
+                    if not path.is_dir():
+                        self.bump_model_number(model, path)
+                    model.write(path=path, force=force)
+                else:
+                    self.bump_model_number(model)
+                    model.write(force=force)
+            except FileExistsError as e:
+                self.error_exit(exception=e)
+
+    def bump_model_number(self, model, path='.'):
+        """ If model name ends in a number increase to next available file
+            else do nothing.
+            FIXME: Could be moved to model class. Need the name of the model and the source object
+        """
+        path = pathlib.Path(path)
+        name = model.name
+        m = re.search(r'(.*?)(\d+)$', name)
+        if m:
+            stem = m.group(1)
+            n = m.group(2)
+            while True:
+                n += 1
+                new_name = stem + n
+                new_path = path / new_name
+                if not new_path.exists():
+                    break
+            model.name = new_name
 
     def data_resample(self, args):
         """Subcommand to resample a dataset."""

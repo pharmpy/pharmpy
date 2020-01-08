@@ -17,7 +17,7 @@ filename: TEXT | QUOTE
 
 // option rules
 ?option : "(" [WS] TEXT [WS] ")"                -> format
-        | IGNORE [WS] "=" [WS] char             -> ignchar
+        | IGNORE [WS] EQUALS [WS] char          -> ignchar
         | IGNORE [WS] char                      -> ignchar
         | IGNORE [WS] "=" [WS] _list            -> ignore
         | IGNORE [WS] _list                     -> ignore
@@ -32,6 +32,7 @@ filename: TEXT | QUOTE
 char: CHAR | CHARQUOTE
 IGNORE : "IGNORE"|"IGNOR"|"IGNO"|"IGN"
 ACCEPT : "ACCEPT"|"ACCEP"|"ACCE"|"ACC"
+EQUALS : "="
 NULL : "NULL"|"NUL"
 
 // generic option terminals (key/value)

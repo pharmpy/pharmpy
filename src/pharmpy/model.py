@@ -29,13 +29,13 @@ class Model():
         """Update the source"""
         self.source.code = str(self)
 
-    def write(self, path=''):
+    def write(self, path='', force=False):
         """Write model to file using its source format
            If no path is supplied or does not contain a filename a name is created
            from the name property of the model
-           Will not overwrite in case the filename was created.
+           Will not overwrite in case force is True.
         """
-        self.update_source()
+        self.update_source(force=force)
         path = Path(path)
         if not path or path.is_dir():
             try:
@@ -44,9 +44,9 @@ class Model():
                 raise ValueError('Cannot name model file as no path argument was supplied and the'
                                  'model has no name.')
             path /= filename
-            if path.exists():
-                raise FileExistsError(f'File at generated path {path} already exists.')
-        self.source.write(path)
+        if not force and path.exists():
+            raise FileExistsError(f'File {path} already exists.')
+        self.source.write(path, force=force)
 
 
 #    """(Generic) Model class.

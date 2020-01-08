@@ -39,9 +39,11 @@ class SourceBase:
         self.obj = obj
         self.code = self.read(obj)
 
-    def write(self, path):
+    def write(self, path, force=False):
         """Write source to file.
         """
+        if not force and path.exists():
+            raise FileExistsError(f'Cannot overwrite model at {path} with "force" not set')
         with open(path, 'w') as fp:
             fp.write(self.code)
 
