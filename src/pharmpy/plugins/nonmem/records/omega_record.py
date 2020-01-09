@@ -28,7 +28,7 @@ class OmegaRecord(Record):
                 lower = None
             else:
                 lower = 0
-            scalar_args.append({'name': f'OMEGA({row + 1},{col + 1})',
+            scalar_args.append({'name': f'OMEGA({row + start_omega},{col + start_omega})',
                                 'init': init, 'fix': fix, 'lower': lower})
             if row == col:
                 stdevs += [init]
@@ -46,3 +46,4 @@ class OmegaRecord(Record):
     def random_variables(self, start_omega):
         """Get a RandomVariableSet for this omega record
         """
+        pass

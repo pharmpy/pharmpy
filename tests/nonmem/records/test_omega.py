@@ -1,5 +1,3 @@
-# -*- encoding: utf-8 -*-
-
 import pytest
 import sympy
 
@@ -37,3 +35,9 @@ def test_parameters(parser, buf, results):
         assert param.lower == lower
         assert param.upper == upper
         assert param.fix == fix
+
+
+def test_parameters_offseted(parser):
+    rec = parser.parse("$OMEGA 1").records[0]
+    pset = rec.parameters(3)
+    assert pset['OMEGA(3,3)'].init == 1

@@ -57,6 +57,11 @@ class Model(pharmpy.model.Model):
             thetas = theta_record.parameters(next_theta)
             params.update(thetas)
             next_theta += len(thetas)
+        next_omega = 1
+        for omega_record in self.control_stream.get_records('OMEGA'):
+            omegas = omega_record.parameters(next_omega) 
+            params.update(omegas)
+            next_omega += len(omegas)
         return params
 
     def __str__(self):
