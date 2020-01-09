@@ -28,7 +28,7 @@ class OmegaRecord(Record):
                 lower = None
             else:
                 lower = 0
-            scalar_args.append({'name': f'OMEGA({row + start_omega},{col + start_omega})',
+            scalar_args.append({'name': f'{self.name}({row + start_omega},{col + start_omega})',
                                 'init': init, 'fix': fix, 'lower': lower})
             if row == col:
                 stdevs += [init]

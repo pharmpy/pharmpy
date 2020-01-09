@@ -20,6 +20,7 @@ known_records = {
     'SIZES': (OptionRecord, OptionRecordParser),
     'THETA': (ThetaRecord, ThetaRecordParser),
     'OMEGA': (OmegaRecord, OmegaRecordParser),
+    'SIGMA': (OmegaRecord, OmegaRecordParser),
 }
 
 
