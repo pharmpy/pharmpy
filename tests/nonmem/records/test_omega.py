@@ -11,12 +11,31 @@ import sympy
         ('OMEGA(1,1)', 1, 0, sympy.oo, False),
         ('OMEGA(2,2)', 2, 2, 2, True),
         ]),
+    ('$OMEGA 1 2 3', [
+        ('OMEGA(1,1)', 1, 0, sympy.oo, False),
+        ('OMEGA(2,2)', 2, 0, sympy.oo, False),
+        ('OMEGA(3,3)', 3, 0, sympy.oo, False),
+        ]),
+    ('$OMEGA 0.15 ;CL', [('OMEGA(1,1)', 0.15, 0, sympy.oo, False)]),
+    ('$OMEGA 1 \n2 ; S   \n  3 ', [
+        ('OMEGA(1,1)', 1, 0, sympy.oo, False),
+        ('OMEGA(2,2)', 2, 0, sympy.oo, False),
+        ('OMEGA(3,3)', 3, 0, sympy.oo, False),
+        ]),
+    ('$OMEGA 2 SD', [('OMEGA(1,1)', 4, 0, sympy.oo, False)]),
+    ('$OMEGA ;CO\n (VAR 3)', [('OMEGA(1,1)', 3, 0, sympy.oo, False)]),
+    ('$OMEGA (1)x2', [
+        ('OMEGA(1,1)', 1, 0, sympy.oo, False),
+        ('OMEGA(2,2)', 1, 0, sympy.oo, False),
+        ]),
     ('$OMEGA BLOCK(2) 1 0.5 2', [
         ('OMEGA(1,1)', 1, 0, sympy.oo, False),
         ('OMEGA(2,1)', 0.5, -sympy.oo, sympy.oo, False),
         ('OMEGA(2,2)', 2, 0, sympy.oo, False),
         ]),
-    ('$OMEGA 0', [('OMEGA(1,1)', 0, 0, sympy.oo, False)]),
+#    ('$OMEGA 0 ', [('OMEGA(1,1)', 0, 0, sympy.oo, False)]),
+#    ('$OMEGA BLOCK(2) SAME', []),
+#    ('$OMEGA BLOCK SAME(3)', []),
 ])
 def test_parameters(parser, buf, results):
     recs = parser.parse(buf)

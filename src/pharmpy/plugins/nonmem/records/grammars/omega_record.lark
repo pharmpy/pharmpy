@@ -24,29 +24,43 @@
 //   %input | VARIANCE CORRELATION BLOCK(2)\n0.64\n-0.394 0.58|
 //   %input | CHOLESKY BLOCK(2)\n0.8\n-0.3 0.7|
 
-root : [_opt] diagonal [_opt] (_item)+ [ws] // form 1
-     | [_opt] (_item)+ [ws] // form 1
+// FIXME:
+// Grammar is problematic:
+// non-grammar: Wrong count for $OMEGA BLOCK(2) starting point for next omega
+// Loop through all items and get vector that can be used to construct matrix (xn can be for off-diags)
+// Remove input API. Unnecessary extra level for only two methods?
+// Option placements not correct below and also newline/comment placement
+
+root : [ws] [diagonal] (diag_item [ws])+ [ws]           // form 1
      | [_opt] block [_opt] (_item)+ [ws]      // form 2
-     | [_opt] block [_opt] same (_opt | [ws] comment)* [ws]    // form 3
-     | [_opt] block [_opt] values (_opt | [ws] comment)* [ws]  // form 4
+//     | [_opt] block [_opt] same ([ws] comment)* [ws]    // form 3
+//     | [_opt] bare_block [_opt] same ([ws] comment)* [ws]    // form 3 w/o n
+//     | [_opt] block [_opt] values (_opt | [ws] comment)* [ws]  // form 4
+
+diag_item: init [_diag_options]
+         | "(" [WS] _diag_options [WS] init [WS] ")" [n]
+         | "(" [WS] init [WS] _diag_options [WS] ")" [n]
+         | "(" [WS] _diag_options [WS] init [WS] _diag_options [WS] ")" [n]
+_diag_options: (ws (FIX | SD | VAR))*
 
 // repeat of init or comment (form 1 & 2)
 _item : [ws] omega | [ws] comment
 
 // can be tied to WHOLE record or ONE INIT
 _opt     : (ws (FIX | VAR | SD | CORR | COV | CHOLESKY))* [ws]  // note ws injection as 1st child
-FIX      : "FIXED" | "FIX"
-VAR      : "VARIANCE"
-SD       : "STANDARD" | "SD"
-CORR     : "CORRELATION"
-COV      : "COVARIANCE"
-CHOLESKY : "CHOLESKY"
+FIX      : "FIXED" | "FIXE" | "FIX"
+VAR      : "VARIANCE" | "VARIANC" | "VARIAN" | "VARIA" | "VARI" | "VAR" | "VA" | "V"
+SD       : "STANDARD" | "STANDAR" | "STANDA" | "STAND" | "STAN" | "STA" | "ST" | "SD" | "S"
+CORR     : "CORRELATION" | "CORRELATIO" | "CORRELATI" | "CORRELAT" | "CORRELA" | "CORREL" | "CORRE" | "CORR" | "COR"
+COV      : "COVARIANCE" | "COVARIANC" | "COVARIAN" | "COVARIA" | "COVARI" | "COVAR" | "COVA" | "COV"
+CHOLESKY : "CHOLESKY" | "CHOLESK" | "CHOLES" | "CHOLE" | "CHOL" | "CHO"
 
 // parentheses sizes (optional for SAME and BLOCK with SAME)
-block    : "BLOCK" _lpar size _rpar
-same     : "SAME" _lpar size _rpar
-diagonal : ("DIAGONAL" | "DIAG") _lpar size _rpar
-values   : "VALUES" _lpar diag sep odiag _rpar
+block       : ("BLOCK" | "BLOC" | "BLO") [ws] _lpar size _rpar
+bare_block  : ("BLOCK" | "BLOC" | "BLO")
+same        : "SAME" [_lpar size _rpar]
+diagonal    : ("DIAGONAL" | "DIAGONA" | "DIAGON" | "DIAGO" | "DIAG" | "DIA") [ws] _lpar [WS] size [WS] _rpar [ws]
+values      : "VALUES" _lpar diag sep odiag _rpar
 
 size  : INT
 diag  : NUMERIC
@@ -66,15 +80,14 @@ init  : NUMERIC
 n     : "x" INT
 
 // common misc rules
-ws      : WS_ALL
-comment : ";" [WS] [COMMENT]
+ws: [WS] [comment] [WS_ALL]
+comment: COMMENT
 
 // common misc terminals
 WS: (" " | /\t/)+
 WS_ALL: /\s+/
 
-// common naked/enquoted text terminals
-COMMENT : /\S.*(?<!\s)/  // no left/right whitespace padding
+COMMENT : /;[^\n]*/
 
 // common numeric terminals
 DIGIT: "0".."9"

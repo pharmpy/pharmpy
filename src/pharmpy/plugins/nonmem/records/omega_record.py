@@ -1,5 +1,7 @@
 import math
 
+import pharmpy.math
+from pharmpy.model import ModelFormatError
 from pharmpy.parameter import Parameter, ParameterSet
 
 from .record import Record
@@ -9,39 +11,103 @@ class OmegaRecord(Record):
     def parameters(self, start_omega):
         """Get a ParameterSet for this omega record
         """
-        scalar_args, nreps, stdevs = [], [], []
-        row, col = 0, 0
-        corr_coords = []
+        row = start_omega
+        col = start_omega
         block = self.root.find('block')
-        fixed = bool(self.root.find('FIX'))
-        sd_matrix = bool(self.root.find('SD'))
-        corr_matrix = bool(self.root.find('CORR'))
-        for i, node in enumerate(self.root.all('omega')):
-            init = node.init.NUMERIC
-            if sd_matrix or node.find('SD'):
-                init = math.pow(init, 2)
-            fix = fixed or bool(node.find('FIX'))
-            if corr_matrix or node.find('CORR'):
-                corr_coords += [(i, row, col)]
-            nreps += [node.n.INT if node.find('n') else 1]
-            if row != col or fix:
-                lower = None
+        parameters = ParameterSet()
+        if not block:
+            for node in self.root.all('diag_item'):
+                init = node.init.NUMERIC
+                fixed = bool(node.find('FIX'))
+                sd = bool(node.find('SD'))
+                var = bool(node.find('VAR'))
+                n = node.n.INT if node.find('n') else 1
+                if sd and var:
+                    raise ModelFormatError('Initial estimate for {self.name.upper} cannot be both on SD and VAR scale\n{self.root}')
+                if init == 0 and not fixed:
+                    raise ModelFormatError('If initial estimate for {self.name.upper} is 0 it must be set to FIX')
+                if sd:
+                    init = init ** 2
+                if fixed:
+                    lower = None
+                else:
+                    lower = 0
+                for _ in range(n):
+                    name = f'{self.name}({row},{row})'
+                    param = Parameter(name, init, lower=lower, fix=fixed)
+                    parameters.add(param)
+                    row += 1
+        else:
+            inits = []
+            size = self.root.block.size.INT
+            fix = bool(self.root.find('FIX'))
+            var = bool(self.root.find('VAR'))
+            sd = bool(self.root.find('SD'))
+            cov = bool(self.root.find('COV'))
+            corr = bool(self.root.find('CORR'))
+            cholesky = bool(self.root.find('CHOLESKY'))
+            for node in self.root.all('omega'):
+                if node.find('FIX'):
+                    if fix:
+                        raise ModelFormatError('Cannot specify option FIX more than once')
+                    else:
+                        fix = True
+                if node.find('VAR'):
+                    if var or sd or cholesky:
+                        raise ModelFormatError('Cannot specify either option VARIANCE, SD or CHOLESKY more than once')
+                    else:
+                        var = True
+                if node.find('SD'):
+                    if sd or var or cholesky:
+                        raise ModelFormatError('Cannot specify either option VARIANCE, SD or CHOLESKY more than once')
+                    else:
+                        sd = True
+                if node.find('COV'):
+                    if cov or corr:
+                        raise ModelFormatError('Cannot specify either option COVARIANCE or CORRELATION more than once')
+                    else:
+                        cov = True
+                if node.find('CORR'):
+                    if corr or cov:
+                        raise ModelFormatError('Cannot specify either option COVARIANCE or CORRELATION more than once')
+                    else:
+                        corr = True
+                if node.find('CHOLESKY'):
+                    if cholesky or var or sd:
+                        raise ModelFormatError('Cannot specify either option VARIANCE, SD or CHOLESKY more than once')
+                    else:
+                        cholesky = True
+                init = node.init.NUMERIC
+                n = node.n.INT if node.find('n') else 1
+                inits += [init] * n
+            if size != pharmpy.math.triangular_root(len(inits)):
+                raise ModelFormatError('Wrong number of inits in BLOCK')
+            if not cholesky:
+                A = pharmpy.math.flattened_to_symmetric(inits)
+                if corr:
+                    for i in range(size):
+                        for j in range(size):
+                            if i != j:
+                                if sd:
+                                    A[i, j] = A[i, i] * A[j, j] * A[i, j]
+                                elif var:
+                                    A[i, j] = math.sqrt(A[i, i]) * math.sqrt(A[j, j]) * A[i, j]
+                if sd:
+                    np.fill_diagonal(A, A.diagonal()**2)
             else:
-                lower = 0
-            scalar_args.append({'name': f'{self.name}({row + start_omega},{col + start_omega})',
-                                'init': init, 'fix': fix, 'lower': lower})
-            if row == col:
-                stdevs += [init]
-                row += 1
-                col = 0 if block else row
-            else:
-                col += 1
-
-        for i, row, col in corr_coords:
-            scalar_args[i]['init'] = scalar_args[i]['init'] * stdevs[row] * stdevs[col]
-
-        params = [Parameter(**a) for N, args in zip(nreps, scalar_args) for a in [args]*N]
-        return(ParameterSet(params))
+                L = np.zeros((size, size))
+                inds = np.tril_indices_from(L)
+                L[inds] = inits
+                A = L @ L.T
+            for i in range(size):
+                for j in range(i, size):
+                    name = f'{self.name}({j + start_omega},{i + start_omega})'
+                    init = A[j, i]
+                    lower = None if i != j or fix else 0
+                    param = Parameter(name, init, lower=lower, fix=fix)
+                    parameters.add(param)
+        print(parameters)
+        return parameters
 
     def random_variables(self, start_omega):
         """Get a RandomVariableSet for this omega record
