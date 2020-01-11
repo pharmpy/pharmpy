@@ -1,6 +1,8 @@
 import pytest
 import sympy
 
+from pharmpy.model import ModelFormatError
+
 
 @pytest.mark.usefixtures('parser')
 @pytest.mark.parametrize('buf,results', [
@@ -33,9 +35,8 @@ import sympy
         ('OMEGA(2,1)', 0.5, -sympy.oo, sympy.oo, False),
         ('OMEGA(2,2)', 2, 0, sympy.oo, False),
         ]),
-#    ('$OMEGA 0 ', [('OMEGA(1,1)', 0, 0, sympy.oo, False)]),
-#    ('$OMEGA BLOCK(2) SAME', []),
-#    ('$OMEGA BLOCK SAME(3)', []),
+    ('$OMEGA BLOCK(2) SAME', []),
+    ('$OMEGA BLOCK SAME(3)', []),
 ])
 def test_parameters(parser, buf, results):
     recs = parser.parse(buf)
@@ -55,6 +56,18 @@ def test_parameters(parser, buf, results):
         assert param.upper == upper
         assert param.fix == fix
 
+@pytest.mark.usefixtures('parser')
+@pytest.mark.parametrize('buf', [
+    ('$OMEGA 0 '),
+    ('$OMEGA DIAG(1) 1 SD VARIANCE'),
+    ('$OMEGA SD BLOCK(2) 0.1 0.001 0.1 STANDARD'),
+    ('$OMEGA CHOLESKY BLOCK(2) 0.1 VAR 0.001 \n  0.1 '),
+])
+def test_errors(parser, buf):
+    recs = parser.parse(buf)
+    rec = recs.records[0]
+    with pytest.raises(ModelFormatError):
+        pset = rec.parameters(1)
 
 def test_parameters_offseted(parser):
     rec = parser.parse("$OMEGA 1").records[0]

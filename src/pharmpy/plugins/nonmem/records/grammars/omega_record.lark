@@ -33,9 +33,9 @@
 
 root : [ws] [diagonal] (diag_item [ws])+ [ws]           // form 1
      | [_opt] block [_opt] (_item)+ [ws]      // form 2
-//     | [_opt] block [_opt] same ([ws] comment)* [ws]    // form 3
-//     | [_opt] bare_block [_opt] same ([ws] comment)* [ws]    // form 3 w/o n
-//     | [_opt] block [_opt] values (_opt | [ws] comment)* [ws]  // form 4
+     | [_opt] block [_opt] same ([ws] comment)* [ws]    // form 3
+     | [_opt] bare_block [_opt] same ([ws] comment)* [ws]    // form 3 w/o n
+     | [_opt] block [_opt] values (_opt | [ws] comment)* [ws]  // form 4
 
 diag_item: init [_diag_options]
          | "(" [WS] _diag_options [WS] init [WS] ")" [n]

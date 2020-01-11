@@ -14,6 +14,7 @@ class OmegaRecord(Record):
         row = start_omega
         col = start_omega
         block = self.root.find('block')
+        same = bool(self.root.find('same'))
         parameters = ParameterSet()
         if not block:
             for node in self.root.all('diag_item'):
@@ -80,32 +81,33 @@ class OmegaRecord(Record):
                 init = node.init.NUMERIC
                 n = node.n.INT if node.find('n') else 1
                 inits += [init] * n
-            if size != pharmpy.math.triangular_root(len(inits)):
-                raise ModelFormatError('Wrong number of inits in BLOCK')
-            if not cholesky:
-                A = pharmpy.math.flattened_to_symmetric(inits)
-                if corr:
-                    for i in range(size):
-                        for j in range(size):
-                            if i != j:
-                                if sd:
-                                    A[i, j] = A[i, i] * A[j, j] * A[i, j]
-                                elif var:
-                                    A[i, j] = math.sqrt(A[i, i]) * math.sqrt(A[j, j]) * A[i, j]
-                if sd:
-                    np.fill_diagonal(A, A.diagonal()**2)
-            else:
-                L = np.zeros((size, size))
-                inds = np.tril_indices_from(L)
-                L[inds] = inits
-                A = L @ L.T
-            for i in range(size):
-                for j in range(i, size):
-                    name = f'{self.name}({j + start_omega},{i + start_omega})'
-                    init = A[j, i]
-                    lower = None if i != j or fix else 0
-                    param = Parameter(name, init, lower=lower, fix=fix)
-                    parameters.add(param)
+            if not same:
+                if size != pharmpy.math.triangular_root(len(inits)):
+                    raise ModelFormatError('Wrong number of inits in BLOCK')
+                if not cholesky:
+                    A = pharmpy.math.flattened_to_symmetric(inits)
+                    if corr:
+                        for i in range(size):
+                            for j in range(size):
+                                if i != j:
+                                    if sd:
+                                        A[i, j] = A[i, i] * A[j, j] * A[i, j]
+                                    elif var:
+                                        A[i, j] = math.sqrt(A[i, i]) * math.sqrt(A[j, j]) * A[i, j]
+                    if sd:
+                        np.fill_diagonal(A, A.diagonal()**2)
+                else:
+                    L = np.zeros((size, size))
+                    inds = np.tril_indices_from(L)
+                    L[inds] = inits
+                    A = L @ L.T
+                for i in range(size):
+                    for j in range(i, size):
+                        name = f'{self.name}({j + start_omega},{i + start_omega})'
+                        init = A[j, i]
+                        lower = None if i != j or fix else 0
+                        param = Parameter(name, init, lower=lower, fix=fix)
+                        parameters.add(param)
         print(parameters)
         return parameters
 
