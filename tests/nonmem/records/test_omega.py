@@ -37,11 +37,26 @@ from pharmpy.model import ModelFormatError
         ]),
     ('$OMEGA BLOCK(2) SAME', []),
     ('$OMEGA BLOCK SAME(3)', []),
+    ('$OMEGA BLOCK(2) 1 (0.1)x2', [
+        ('OMEGA(1,1)', 1, 0, sympy.oo, False),
+        ('OMEGA(2,1)', 0.1, -sympy.oo, sympy.oo, False),
+        ('OMEGA(2,2)', 0.1, 0, sympy.oo, False),
+        ]),
+    ('$OMEGA BLOCK(2) CHOLESKY 0.8 -0.3 0.7', [
+        ('OMEGA(1,1)', 0.64, 0, sympy.oo, False),
+        ('OMEGA(2,1)', -0.24, -sympy.oo, sympy.oo, False),
+        ('OMEGA(2,2)', 0.58, 0, sympy.oo, False),
+        ]),
+    ('$OMEGA BLOCK(2) SD 0.8 -0.394 0.762 CORR', [
+        ('OMEGA(1,1)', 0.64, 0, sympy.oo, False),
+        ('OMEGA(2,1)', -0.2401824, -sympy.oo, sympy.oo, False),
+        ('OMEGA(2,2)', 0.580644, 0, sympy.oo, False),
+        ]),
 ])
 def test_parameters(parser, buf, results):
     recs = parser.parse(buf)
     rec = recs.records[0]
-    pset = rec.parameters(1)
+    pset, _ = rec.parameters(1)
     assert len(pset) == len(results)
     for res in results:
         name = res[0]
@@ -51,10 +66,11 @@ def test_parameters(parser, buf, results):
         fix = res[4]
         param = pset[name]
         assert param.symbol.name == name
-        assert param.init == init
+        assert pytest.approx(param.init, 0.00000000000001) == init
         assert param.lower == lower
         assert param.upper == upper
         assert param.fix == fix
+
 
 @pytest.mark.usefixtures('parser')
 @pytest.mark.parametrize('buf', [
@@ -67,9 +83,10 @@ def test_errors(parser, buf):
     recs = parser.parse(buf)
     rec = recs.records[0]
     with pytest.raises(ModelFormatError):
-        pset = rec.parameters(1)
+        pset, _ = rec.parameters(1)
+
 
 def test_parameters_offseted(parser):
     rec = parser.parse("$OMEGA 1").records[0]
-    pset = rec.parameters(3)
+    pset, _ = rec.parameters(3)
     assert pset['OMEGA(3,3)'].init == 1

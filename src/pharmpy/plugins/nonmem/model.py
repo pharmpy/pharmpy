@@ -59,14 +59,12 @@ class Model(pharmpy.model.Model):
             next_theta += len(thetas)
         next_omega = 1
         for omega_record in self.control_stream.get_records('OMEGA'):
-            omegas = omega_record.parameters(next_omega) 
+            omegas, next_omega = omega_record.parameters(next_omega)
             params.update(omegas)
-            next_omega += len(omegas)
         next_sigma = 1
         for sigma_record in self.control_stream.get_records('SIGMA'):
-            sigmas = sigma_record.parameters(next_sigma)
+            sigmas, next_sigma = sigma_record.parameters(next_sigma)
             params.update(sigmas)
-            next_sigma += len(sigmas)
         return params
 
     def __str__(self):

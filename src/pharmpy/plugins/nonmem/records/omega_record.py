@@ -1,5 +1,7 @@
 import math
 
+import numpy as np
+
 import pharmpy.math
 from pharmpy.model import ModelFormatError
 from pharmpy.parameter import Parameter, ParameterSet
@@ -12,7 +14,6 @@ class OmegaRecord(Record):
         """Get a ParameterSet for this omega record
         """
         row = start_omega
-        col = start_omega
         block = self.root.find('block')
         same = bool(self.root.find('same'))
         parameters = ParameterSet()
@@ -24,9 +25,11 @@ class OmegaRecord(Record):
                 var = bool(node.find('VAR'))
                 n = node.n.INT if node.find('n') else 1
                 if sd and var:
-                    raise ModelFormatError('Initial estimate for {self.name.upper} cannot be both on SD and VAR scale\n{self.root}')
+                    raise ModelFormatError(f'Initial estimate for {self.name.upper} cannot be both'
+                                           f' on SD and VAR scale\n{self.root}')
                 if init == 0 and not fixed:
-                    raise ModelFormatError('If initial estimate for {self.name.upper} is 0 it must be set to FIX')
+                    raise ModelFormatError(f'If initial estimate for {self.name.upper} is 0 it'
+                                           f' must be set to FIX')
                 if sd:
                     init = init ** 2
                 if fixed:
@@ -38,6 +41,7 @@ class OmegaRecord(Record):
                     param = Parameter(name, init, lower=lower, fix=fixed)
                     parameters.add(param)
                     row += 1
+            next_omega = row
         else:
             inits = []
             size = self.root.block.size.INT
@@ -55,27 +59,32 @@ class OmegaRecord(Record):
                         fix = True
                 if node.find('VAR'):
                     if var or sd or cholesky:
-                        raise ModelFormatError('Cannot specify either option VARIANCE, SD or CHOLESKY more than once')
+                        raise ModelFormatError('Cannot specify either option VARIANCE, SD or '
+                                               'CHOLESKY more than once')
                     else:
                         var = True
                 if node.find('SD'):
                     if sd or var or cholesky:
-                        raise ModelFormatError('Cannot specify either option VARIANCE, SD or CHOLESKY more than once')
+                        raise ModelFormatError('Cannot specify either option VARIANCE, SD or '
+                                               'CHOLESKY more than once')
                     else:
                         sd = True
                 if node.find('COV'):
                     if cov or corr:
-                        raise ModelFormatError('Cannot specify either option COVARIANCE or CORRELATION more than once')
+                        raise ModelFormatError('Cannot specify either option COVARIANCE or '
+                                               'CORRELATION more than once')
                     else:
                         cov = True
                 if node.find('CORR'):
                     if corr or cov:
-                        raise ModelFormatError('Cannot specify either option COVARIANCE or CORRELATION more than once')
+                        raise ModelFormatError('Cannot specify either option COVARIANCE or '
+                                               'CORRELATION more than once')
                     else:
                         corr = True
                 if node.find('CHOLESKY'):
                     if cholesky or var or sd:
-                        raise ModelFormatError('Cannot specify either option VARIANCE, SD or CHOLESKY more than once')
+                        raise ModelFormatError('Cannot specify either option VARIANCE, SD or '
+                                               'CHOLESKY more than once')
                     else:
                         cholesky = True
                 init = node.init.NUMERIC
@@ -108,8 +117,9 @@ class OmegaRecord(Record):
                         lower = None if i != j or fix else 0
                         param = Parameter(name, init, lower=lower, fix=fix)
                         parameters.add(param)
+            next_omega = start_omega + size
         print(parameters)
-        return parameters
+        return parameters, next_omega
 
     def random_variables(self, start_omega):
         """Get a RandomVariableSet for this omega record
