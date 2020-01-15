@@ -24,6 +24,10 @@ class NONMEMTableFile:
                 else:
                     current.append(line)
             self._add_table(current, suffix)
+        self._count = 0
+
+    def __iter__(self):
+        return self
 
     def _add_table(self, content, suffix):
         table_line = content.pop(0)
@@ -49,7 +53,7 @@ class NONMEMTableFile:
             table.iteration2 = int(m.group(8))
         self.tables.append(table)
 
-    def number_of_tables(self):
+    def __len__(self):
         return len(self.tables)
 
     @property
@@ -65,6 +69,13 @@ class NONMEMTableFile:
         for table in self.tables:
             if table.number == table_number:
                 return table
+
+    def __next__(self):
+        if self._count >= len(self):
+            raise StopIteration
+        else:
+            self._count += 1
+            return self.tables[self._count - 1]
 
 
 class NONMEMTable:
