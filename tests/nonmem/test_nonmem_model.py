@@ -22,3 +22,8 @@ def test_parameters(pheno_path):
                                                        lower=0, upper=sympy.oo)
     assert model.parameters['SIGMA(1,1)'] == Parameter('SIGMA(1,1)', 0.0130865,
                                                        lower=0, upper=sympy.oo)
+
+
+def test_results(pheno_path):
+    model = Model(pheno_path)
+    assert len(model.modelfit_results) == 1     # A chain of one estimation

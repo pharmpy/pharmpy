@@ -4,6 +4,7 @@ import re
 import pharmpy.model
 import pharmpy.plugins.nonmem.input
 from pharmpy.parameter import ParameterSet
+from pharmpy.plugins.nonmem.results import NONMEMChainedModelfitResults
 
 from .nmtran_parser import NMTranParser
 
@@ -16,6 +17,10 @@ class Model(pharmpy.model.Model):
             self.source.filename_extension = '.ctl'
         self.name = self.source.path.stem
         self.control_stream = parser.parse(src.code)
+        lst_path = self.source.path.with_suffix('.lst')
+        if lst_path.exists():
+            num_est = len(self.control_stream.get_records('ESTIMATION'))
+            self.modelfit_results = NONMEMChainedModelfitResults(lst_path, num_est)
         self.input = pharmpy.plugins.nonmem.input.ModelInput(self)
 
     @staticmethod
