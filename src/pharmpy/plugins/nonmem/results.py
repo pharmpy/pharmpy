@@ -25,7 +25,9 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
         self._path = Path(path)
         self._read_phi = False
         for _ in range(n):
-            self.append(NONMEMModelfitResults(self))
+            res = NONMEMModelfitResults(self)
+            res.model_name = self._path.stem
+            self.append(res)
 
     def _read_phi_table(self):
         phi_tables = NONMEMTableFile(self._path.with_suffix('.phi'))

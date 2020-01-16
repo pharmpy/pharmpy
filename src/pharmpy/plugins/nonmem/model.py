@@ -17,10 +17,11 @@ class Model(pharmpy.model.Model):
             self.source.filename_extension = '.ctl'
         self.name = self.source.path.stem
         self.control_stream = parser.parse(src.code)
-        lst_path = self.source.path.with_suffix('.lst')
-        if lst_path.exists():
-            num_est = len(self.control_stream.get_records('ESTIMATION'))
-            self.modelfit_results = NONMEMChainedModelfitResults(lst_path, num_est)
+        if self.source.path.is_file():
+            lst_path = self.source.path.with_suffix('.lst')
+            if lst_path.exists():
+                num_est = len(self.control_stream.get_records('ESTIMATION'))
+                self.modelfit_results = NONMEMChainedModelfitResults(lst_path, num_est)
         self.input = pharmpy.plugins.nonmem.input.ModelInput(self)
 
     @staticmethod

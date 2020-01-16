@@ -1,3 +1,4 @@
 lark-parser
 pandas
 sympy
+altair

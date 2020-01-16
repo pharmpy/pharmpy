@@ -43,8 +43,8 @@ Destroying object (triggering cleanup):
         :pyversion: > 3.6
 
         >>> path = dir.path
-        >>> print([x.name for x in path.iterdir()])
-        ['file.txt', 'file.py', 'remove_this', 'keep_this']
+        >>> print(sorted([x.name for x in path.iterdir()]))
+        ['file.py', 'file.txt', 'keep_this', 'remove_this']
 
     .. doctest::
         :pyversion: > 3.6
