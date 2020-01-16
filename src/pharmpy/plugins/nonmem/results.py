@@ -10,12 +10,12 @@ class NONMEMModelfitResults(ModelfitResults):
         self._chain = chain
 
     @property
-    def individual_estimates(self):
-        """A DataFrame with individual estimates indexed over ID
+    def individual_OFV(self):
+        """A Series with individual estimates indexed over ID
         """
         if not self._chain._read_phi:
             self._chain._read_phi_table()
-        return self._individual_estimates
+        return self._individual_OFV
 
 
 class NONMEMChainedModelfitResults(ChainedModelfitResults):
@@ -33,5 +33,5 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
             df = table.data_frame[['ID', 'OBJ']]
             df.columns = ['ID', 'iOFV']
             df.set_index('ID', inplace=True)
-            result_obj._individual_estimates = df
+            result_obj._individual_OFV = df['iOFV']
             self._read_phi = True

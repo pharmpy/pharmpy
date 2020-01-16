@@ -6,7 +6,11 @@ class ModelfitResults:
 
     properties: individual_estimates is a df with currently ID and iOFV columns
     """
-    pass
+    @property
+    def individual_OFV(self):
+        """A Series with individual estimates indexed over ID
+        """
+        raise NotImplementedError("Not implemented")
 
 
 class ChainedModelfitResults(list, ModelfitResults):
@@ -15,5 +19,5 @@ class ChainedModelfitResults(list, ModelfitResults):
        will be performed on the final modelfit object
     """
     @property
-    def individual_estimates(self):
-        return self[-1].individual_estimates
+    def individual_OFV(self):
+        return self[-1].individual_OFV
