@@ -3,6 +3,12 @@ import pytest
 from pharmpy.plugins.nonmem.results import NONMEMChainedModelfitResults
 
 
+def test_covariance(pheno_lst):
+    res = NONMEMChainedModelfitResults(pheno_lst, 1)
+    cov = res.covariance_matrix
+    assert len(cov) == 6
+
+
 def test_individual_OFV(pheno_lst):
     res = NONMEMChainedModelfitResults(pheno_lst, 1)
     iofv = res.individual_OFV

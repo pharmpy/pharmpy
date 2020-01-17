@@ -35,6 +35,8 @@ class NONMEMTableFile:
             table = ExtTable(''.join(content))
         elif suffix == '.phi':
             table = PhiTable(''.join(content))
+        elif suffix == '.cov':
+            table = CovTable(''.join(content))
         else:
             table = NONMEMTable(''.join(content))       # Fallback to non-specific table type
         m = re.match(r'TABLE NO.\s+(\d+)', table_line)   # This is guaranteed to match
@@ -87,6 +89,24 @@ class NONMEMTable:
     @property
     def data_frame(self):
         return self._df
+
+
+class CovTable(NONMEMTable):
+    @property
+    def data_frame(self):
+        df = self._df.copy(deep=True)
+        df['NAME'] = df['NAME'].str.replace(r'THETA(\d+)', r'THETA(\1)')
+        df.columns = df.columns.str.replace(r'THETA(\d+)', r'THETA(\1)')
+        theta_labels = [x for x in df['NAME'] if x.startswith('THETA')]
+        omega_labels = [x for x in df['NAME'] if x.startswith('OMEGA')]
+        sigma_labels = [x for x in df['NAME'] if x.startswith('SIGMA')]
+        labels = theta_labels + omega_labels + sigma_labels
+        df.set_index('NAME', inplace=True)
+        df.index.name = None
+        df = (df.reindex(labels)
+                .reindex(labels, axis=1)
+                .loc[(df != 0).any(axis=1), (df != 0).any(axis=0)])     # Remove FIX
+        return df
 
 
 class PhiTable(NONMEMTable):

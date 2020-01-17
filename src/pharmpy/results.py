@@ -11,6 +11,12 @@ class ModelfitResults:
         model_name - name of model that generated the results
     """
     @property
+    def covariance_matrix(self):
+        """The covariance matrix of the population parameter estimates
+        """
+        raise NotImplementedError("Not implemented")
+
+    @property
     def individual_OFV(self):
         """A Series with individual estimates indexed over ID
         """
@@ -30,6 +36,10 @@ class ChainedModelfitResults(list, ModelfitResults):
        inherits from both list and ModelfitResults. Each method from ModelfitResults
        will be performed on the final modelfit object
     """
+    @property
+    def covariance_matrix(self):
+        return self[-1].covariance_matrix
+
     @property
     def individual_OFV(self):
         return self[-1].individual_OFV

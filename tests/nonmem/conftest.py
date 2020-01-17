@@ -24,6 +24,11 @@ def pheno_phi(datadir):
 
 
 @pytest.fixture(scope='session')
+def pheno_cov(datadir):
+    return datadir / 'pheno_real.cov'
+
+
+@pytest.fixture(scope='session')
 def pheno_lst(datadir):
     return datadir / 'pheno_real.lst'
 

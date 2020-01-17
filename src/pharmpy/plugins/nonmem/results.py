@@ -10,6 +10,14 @@ class NONMEMModelfitResults(ModelfitResults):
         self._chain = chain
 
     @property
+    def covariance_matrix(self):
+        """The covariance matrix of the population parameter estimates
+        """
+        if not self._chain._read_cov:
+            self._chain._read_cov_table()
+        return self._covariance_matrix
+
+    @property
     def individual_OFV(self):
         """A Series with individual estimates indexed over ID
         """
@@ -24,10 +32,16 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
         # FIXME: n (number of $EST) could be removed as it could be inferred
         self._path = Path(path)
         self._read_phi = False
+        self._read_cov = False
         for _ in range(n):
             res = NONMEMModelfitResults(self)
             res.model_name = self._path.stem
             self.append(res)
+
+    def _read_cov_table(self):
+        cov_table = NONMEMTableFile(self._path.with_suffix('.cov'))
+        self[-1]._covariance_matrix = next(cov_table).data_frame
+        self._read_cov = True
 
     def _read_phi_table(self):
         phi_tables = NONMEMTableFile(self._path.with_suffix('.phi'))

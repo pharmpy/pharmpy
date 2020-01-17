@@ -44,3 +44,14 @@ def test_phi_table(pheno_phi):
                                                [-2.99920E-03, 7.15713E-03]]))
     assert np.allclose(df['ETC'][10], np.array([[2.85322E-02, -3.63402E-03],
                                                 [-3.63402E-03, 1.17722E-02]]))
+
+
+def test_cov_table(pheno_cov):
+    cov_table_file = table.NONMEMTableFile(pheno_cov)
+    cov_table = cov_table_file.table
+    df = cov_table.data_frame
+    paramnames = ['THETA(1)', 'THETA(2)', 'THETA(3)', 'OMEGA(1,1)', 'OMEGA(2,2)', 'SIGMA(1,1)']
+    assert list(df.columns) == paramnames
+    assert list(df.index) == paramnames
+    assert df.values[0][0] == 4.41151e-8 
+    assert df.values[0][3] == -1.09343e-6
