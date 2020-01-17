@@ -100,6 +100,11 @@ Header
 The header of a table generated with $TABLE will always use the synonyms of the column names if available. Synonyms will carry over between $TABLE records and can only be set once for each column name.
 
 
+cov, cor and coi files
+----------------------
+
+These are the output of the NONMEM covariance step and will only contain one table for the final estimation (as opposed to phi and ext that will have one table per $EST). The first column called NAME will have contain the parameter names starting in the order THETA, SIGMA, OMEGA. FIX parameters will have all values 0. All offdiagonals for omegas and sigmas will be in the table. The ones that was not used will have all values 0.
+
 phi files
 ---------
 
