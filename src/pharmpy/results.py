@@ -17,6 +17,12 @@ class ModelfitResults:
         raise NotImplementedError("Not implemented")
 
     @property
+    def information_matrix(self):
+        """The Fischer information matrix of the population parameter estimates
+        """
+        raise NotImplementedError("Not implemented")
+
+    @property
     def individual_OFV(self):
         """A Series with individual estimates indexed over ID
         """
@@ -39,6 +45,10 @@ class ChainedModelfitResults(list, ModelfitResults):
     @property
     def covariance_matrix(self):
         return self[-1].covariance_matrix
+
+    @property
+    def information_matrix(self):
+        return self[-1].information_matrix
 
     @property
     def individual_OFV(self):

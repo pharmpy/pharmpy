@@ -18,6 +18,14 @@ class NONMEMModelfitResults(ModelfitResults):
         return self._covariance_matrix
 
     @property
+    def information_matrix(self):
+        """The Fischer information matrix of the population parameter estimates
+        """
+        if not self._chain._read_coi:
+            self._chain_read_coi_table()
+        return self._information_table
+
+    @property
     def individual_OFV(self):
         """A Series with individual estimates indexed over ID
         """
@@ -33,6 +41,7 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
         self._path = Path(path)
         self._read_phi = False
         self._read_cov = False
+        self._read_coi = False
         for _ in range(n):
             res = NONMEMModelfitResults(self)
             res.model_name = self._path.stem
@@ -42,6 +51,11 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
         cov_table = NONMEMTableFile(self._path.with_suffix('.cov'))
         self[-1]._covariance_matrix = next(cov_table).data_frame
         self._read_cov = True
+
+    def _read_coi_table(self):
+        coi_table = NONMEMTableFile(self._path.with_suffix('.coi'))
+        self[-1]._information_matrix = next(coi_table).data_frame
+        self._read_coi = True
 
     def _read_phi_table(self):
         phi_tables = NONMEMTableFile(self._path.with_suffix('.phi'))
