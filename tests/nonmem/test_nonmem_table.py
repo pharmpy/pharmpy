@@ -6,9 +6,9 @@ import pharmpy.plugins.nonmem.table as table
 
 def test_nonmem_table(pheno_ext):
     ext_table_file = table.NONMEMTableFile(pheno_ext)
-    assert list(ext_table_file.table.data_frame.columns) == ['ITERATION', 'THETA1', 'THETA2',
-                                                             'THETA3', 'SIGMA(1,1)', 'OMEGA(1,1)',
-                                                             'OMEGA(2,1)', 'OMEGA(2,2)', 'OBJ']
+    assert list(ext_table_file.table.data_frame.columns) == ['ITERATION', 'THETA(1)', 'THETA(2)',
+                                                             'THETA(3)', 'OMEGA(1,1)',
+                                                             'OMEGA(2,1)', 'OMEGA(2,2)', 'SIGMA(1,1)', 'OBJ']
 
 
 def test_ext_table(pheno_ext):
@@ -19,10 +19,10 @@ def test_ext_table(pheno_ext):
     assert ext_table.iteration2 == 0
     assert ext_table.method == "First Order Conditional Estimation with Interaction"
     assert ext_table.goal_function == "MINIMUM VALUE OF OBJECTIVE FUNCTION"
-    assert ext_table.final_parameter_estimates['THETA1'] == 0.00469555
-    assert list(ext_table.fixed) == [False, False, False, False, False, True, False]
-    assert ext_table.final_OFV == 586.27605628188053
-    assert ext_table.initial_OFV == 587.36644134661617
+    assert ext_table.final_parameter_estimates['THETA(1)'] == 0.00469555
+    assert list(ext_table.fixed) == [False, False, False, False, True, False, False]
+    assert ext_table.final_ofv == 586.27605628188053
+    assert ext_table.initial_ofv == 587.36644134661617
 
 
 def test_phi_table(pheno_phi):
@@ -53,5 +53,5 @@ def test_cov_table(pheno_cov):
     paramnames = ['THETA(1)', 'THETA(2)', 'THETA(3)', 'OMEGA(1,1)', 'OMEGA(2,2)', 'SIGMA(1,1)']
     assert list(df.columns) == paramnames
     assert list(df.index) == paramnames
-    assert df.values[0][0] == 4.41151e-8 
+    assert df.values[0][0] == 4.41151e-8
     assert df.values[0][3] == -1.09343e-6

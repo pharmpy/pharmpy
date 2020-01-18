@@ -10,6 +10,18 @@ class NONMEMModelfitResults(ModelfitResults):
         self._chain = chain
 
     @property
+    def ofv(self):
+        if not self._chain._read_ext:
+            self._chain._read_ext_table()
+        return self._ofv
+
+    @property
+    def parameter_estimates(self):
+        if not self._chain._read_ext:
+            self._chain._read_ext_table()
+        return self._parameter_estimates
+
+    @property
     def covariance_matrix(self):
         """The covariance matrix of the population parameter estimates
         """
@@ -42,10 +54,21 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
         self._read_phi = False
         self._read_cov = False
         self._read_coi = False
+        self._read_ext = False
         for _ in range(n):
             res = NONMEMModelfitResults(self)
             res.model_name = self._path.stem
             self.append(res)
+
+    def _read_ext_table(self):
+        ext_tables = NONMEMTableFile(self._path.with_suffix('.ext'))
+        for table, result_obj in zip(ext_tables, self):
+            ests = table.final_parameter_estimates
+            fix = table.fixed
+            ests = ests[~fix]
+            result_obj._parameter_estimates = ests
+            result_obj._ofv = table.final_ofv
+        self._read_ext = True
 
     def _read_cov_table(self):
         cov_table = NONMEMTableFile(self._path.with_suffix('.cov'))

@@ -35,7 +35,7 @@ class NONMEMTableFile:
             table = ExtTable(''.join(content))
         elif suffix == '.phi':
             table = PhiTable(''.join(content))
-        elif suffix == '.cov':
+        elif suffix == '.cov' or suffix == '.cor' or suffix == '.coi':
             table = CovTable(''.join(content))
         else:
             table = NONMEMTable(''.join(content))       # Fallback to non-specific table type
@@ -90,22 +90,33 @@ class NONMEMTable:
     def data_frame(self):
         return self._df
 
+    @staticmethod
+    def rename_index(df, ext=True):
+        """ If columns rename also the row index
+        """
+        theta_labels = [x for x in df.columns if x.startswith('THETA')]
+        omega_labels = [x for x in df.columns if x.startswith('OMEGA')]
+        sigma_labels = [x for x in df.columns if x.startswith('SIGMA')]
+        labels = theta_labels + omega_labels + sigma_labels
+        if ext:
+            labels = ['ITERATION'] + labels + ['OBJ']
+        else:
+            df = df.reindex(labels)
+        df = df.reindex(labels, axis=1)
+        df.columns = df.columns.str.replace(r'THETA(\d+)', r'THETA(\1)')
+        if not ext:
+            df.index = df.index.str.replace(r'THETA(\d+)', r'THETA(\1)')
+        return df
+
 
 class CovTable(NONMEMTable):
     @property
     def data_frame(self):
         df = self._df.copy(deep=True)
-        df['NAME'] = df['NAME'].str.replace(r'THETA(\d+)', r'THETA(\1)')
-        df.columns = df.columns.str.replace(r'THETA(\d+)', r'THETA(\1)')
-        theta_labels = [x for x in df['NAME'] if x.startswith('THETA')]
-        omega_labels = [x for x in df['NAME'] if x.startswith('OMEGA')]
-        sigma_labels = [x for x in df['NAME'] if x.startswith('SIGMA')]
-        labels = theta_labels + omega_labels + sigma_labels
         df.set_index('NAME', inplace=True)
         df.index.name = None
-        df = (df.reindex(labels)
-                .reindex(labels, axis=1)
-                .loc[(df != 0).any(axis=1), (df != 0).any(axis=0)])     # Remove FIX
+        df = NONMEMTable.rename_index(df, ext=False)
+        df = df.loc[(df != 0).any(axis=1), (df != 0).any(axis=0)]     # Remove FIX
         return df
 
 
@@ -128,6 +139,12 @@ class PhiTable(NONMEMTable):
 
 
 class ExtTable(NONMEMTable):
+    @property
+    def data_frame(self):
+        df = self._df.copy(deep=True)
+        df = NONMEMTable.rename_index(df)
+        return df
+
     def _get_parameters(self, iteration, include_thetas=True):
         df = self.data_frame
         row = df.loc[df['ITERATION'] == iteration]
@@ -177,9 +194,9 @@ class ExtTable(NONMEMTable):
         return fix.apply(bool)
 
     @property
-    def final_OFV(self):
+    def final_ofv(self):
         return self._get_ofv(-1000000000)
 
     @property
-    def initial_OFV(self):
+    def initial_ofv(self):
         return self._get_ofv(0)
