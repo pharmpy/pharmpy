@@ -1,5 +1,7 @@
 from pathlib import Path
 
+from lark import Lark
+
 from pharmpy.parse_utils import GenericParser
 
 grammar_root = Path(__file__).parent.resolve() / 'grammars'
@@ -7,12 +9,18 @@ if not grammar_root.is_dir():
     raise FileNotFoundError('Root dir of record grammars not found: %r' % str(grammar_root))
 
 
+def install_grammar(cls):
+    grammar = Path(grammar_root / cls.grammar_filename).resolve()
+    with open(str(grammar), 'r') as fh:
+        cls.lark = Lark(fh, **GenericParser.lark_options)
+    return cls
+
+
 class RecordParser(GenericParser):
-    def __init__(self, buf):
-        self.grammar = grammar_root / self.grammar_filename
-        super(RecordParser, self).__init__(buf)
+    pass
 
 
+@install_grammar
 class ProblemRecordParser(RecordParser):
     grammar_filename = 'problem_record.lark'
     non_empty = [
@@ -21,6 +29,7 @@ class ProblemRecordParser(RecordParser):
     ]
 
 
+@install_grammar
 class ThetaRecordParser(RecordParser):
     grammar_filename = 'theta_record.lark'
     non_empty = [
@@ -28,6 +37,7 @@ class ThetaRecordParser(RecordParser):
     ]
 
 
+@install_grammar
 class OmegaRecordParser(RecordParser):
     grammar_filename = 'omega_record.lark'
     non_empty = [
@@ -35,9 +45,11 @@ class OmegaRecordParser(RecordParser):
     ]
 
 
+@install_grammar
 class OptionRecordParser(RecordParser):
     grammar_filename = 'option_record.lark'
 
 
+@install_grammar
 class DataRecordParser(RecordParser):
     grammar_filename = 'data_record.lark'

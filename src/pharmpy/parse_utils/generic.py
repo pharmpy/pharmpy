@@ -8,9 +8,7 @@ Subclass :class:`GenericParser` (remember to set :attr:`GenericParser.grammar`
 to point to your grammar file) to define a powerful parser.
 """
 
-from pathlib import Path
-
-from lark import Lark, Tree
+from lark import Tree
 from lark.lexer import Token
 
 from . import prettyprint
@@ -385,10 +383,7 @@ class GenericParser:
         if self.buffer is None:
             return None
 
-        grammar = Path(self.grammar).resolve()
-        with open(str(grammar), 'r') as fh:
-            self.lark = Lark(fh, **self.lark_options)
-            root = self.lark.parse(self.buffer)
+        root = self.lark.parse(self.buffer)
         if self.non_empty:
             root = self.insert(root, self.non_empty)
         return self.AttrTree.transform(tree=root)

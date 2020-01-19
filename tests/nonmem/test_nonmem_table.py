@@ -8,7 +8,8 @@ def test_nonmem_table(pheno_ext):
     ext_table_file = table.NONMEMTableFile(pheno_ext)
     assert list(ext_table_file.table.data_frame.columns) == ['ITERATION', 'THETA(1)', 'THETA(2)',
                                                              'THETA(3)', 'OMEGA(1,1)',
-                                                             'OMEGA(2,1)', 'OMEGA(2,2)', 'SIGMA(1,1)', 'OBJ']
+                                                             'OMEGA(2,1)', 'OMEGA(2,2)',
+                                                             'SIGMA(1,1)', 'OBJ']
 
 
 def test_ext_table(pheno_ext):
