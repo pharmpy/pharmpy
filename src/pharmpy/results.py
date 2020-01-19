@@ -1,6 +1,5 @@
 # Classes for method results
 
-import altair as alt
 import pandas as pd
 
 import pharmpy.visualization
@@ -106,30 +105,6 @@ class BootstrapResults:
 
     def plot_ofv(self):
         boot_ofvs = [x.ofv for x in self._bootstrap_results]
-        df = pd.DataFrame({'ofv': boot_ofvs, 'num': list(range(1, len(boot_ofvs) + 1))})
-
-        slider = alt.binding_range(min=1, max=len(boot_ofvs), step=1, name='Number of samples: ')
-        selection = alt.selection_single(bind=slider, fields=['num'], name="num",
-                                         init={'num': len(boot_ofvs)})
-
-        base = alt.Chart(df).transform_filter('datum.num <= num_num')
-
-        plot = base.transform_joinaggregate(
-            total='count(*)'
-        ).transform_calculate(
-            pct='1 / datum.total'
-        ).mark_bar().encode(
-            alt.X("ofv:Q", bin=True),
-            alt.Y('sum(pct):Q', axis=alt.Axis(format='%'))
-        ).add_selection(
-            selection
-        ).properties(
-            title="Bootstrap OFV"
-        )
-
-        rule = base.mark_rule(color='red').encode(
-            x='mean(ofv):Q',
-            size=alt.value(5)
-        )
-
-        return plot + rule
+        plot = pharmpy.visualization.histogram(pd.Series(boot_ofvs, name='ofv'),
+                                               title='Bootstrap OFV')
+        return plot

@@ -46,3 +46,36 @@ def scatter_plot_correlation(df, x, y, title=""):
     plot = plot.configure_title(fontSize=16)
     plot = plot.configure_axis(labelFontSize=12, titleFontSize=14)
     return plot
+
+
+def histogram(values, title=""):
+    """Histogram with percentage on y and a rule at mean
+       slider for reducing the number of values used.
+    """
+    df = pd.DataFrame({values.name: values, 'num': list(range(1, len(values) + 1))})
+
+    slider = alt.binding_range(min=1, max=len(values), step=1, name='Number of samples: ')
+    selection = alt.selection_single(bind=slider, fields=['num'], name="num",
+                                     init={'num': len(values)})
+
+    base = alt.Chart(df).transform_filter('datum.num <= num_num')
+
+    plot = base.transform_joinaggregate(
+        total='count(*)'
+    ).transform_calculate(
+        pct='1 / datum.total'
+    ).mark_bar().encode(
+        alt.X(f'{values.name}:Q', bin=True),
+        alt.Y('sum(pct):Q', axis=alt.Axis(format='%'))
+    ).add_selection(
+        selection
+    ).properties(
+        title=title
+    )
+
+    rule = base.mark_rule(color='red').encode(
+        x=f'mean({values.name}):Q',
+        size=alt.value(5)
+    )
+
+    return plot + rule
