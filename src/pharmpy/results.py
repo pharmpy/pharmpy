@@ -99,12 +99,36 @@ class CaseDeletionResults:
 
 
 class BootstrapResults:
+    # FIXME: Could inherit from results that take multiple runs like bootstrap, cdd etc.
     def __init__(self, original_result, bootstrap_results):
         self._original_result = original_result
         self._bootstrap_results = bootstrap_results
 
-    def plot_ofv(self):
+    @property
+    def ofv(self):
         boot_ofvs = [x.ofv for x in self._bootstrap_results]
-        plot = pharmpy.visualization.histogram(pd.Series(boot_ofvs, name='ofv'),
-                                               title='Bootstrap OFV')
+        return pd.Series(boot_ofvs, name='ofv')
+
+    @property
+    def parameter_estimates(self):
+        df = pd.DataFrame()
+        for res in self._bootstrap_results:
+            df = df.append(res.parameter_estimates, sort=False)
+        df = df.reindex(self._bootstrap_results[0].parameter_estimates.index, axis=1)
+        df = df.reset_index(drop=True)
+        return df
+
+    @property
+    def standard_errors(self):
+        pass
+        # FIXME: Continue here
+
+    @property
+    def statistics(self):
+        ofvs = self.ofv
+        index = pd.Index(['mean', 'median', 'stderr'])
+        return pd.DataFrame({'ofv': [ofvs.mean(), ofvs.median(), ofvs.std()]}, index=index)
+
+    def plot_ofv(self):
+        plot = pharmpy.visualization.histogram(self.ofv, title='Bootstrap OFV')
         return plot

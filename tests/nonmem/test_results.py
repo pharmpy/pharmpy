@@ -26,7 +26,7 @@ def test_individual_OFV(pheno_lst):
 def test_parameter_estimates(pheno_lst):
     res = NONMEMChainedModelfitResults(pheno_lst, 1)
     pe = res.parameter_estimates
-    print(pe)
     assert len(pe) == 6
     assert pe['THETA(1)'] == 4.69555e-3
     assert pe['OMEGA(2,2)'] == 2.7906e-2
+    assert False
