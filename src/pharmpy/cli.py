@@ -266,6 +266,18 @@ class CLI:
                                        help='Number of groups to sample for each resample')
         cmd_data_resample.set_defaults(func=self.data_resample)
 
+        cmd_data_anon = cmd_data_subs.add_parser('anonymize', help='Anonymize dataset by reorder'
+                                                 'and renumber a specific data column',
+                                                 description='Anonymize dataset by resampling '
+                                                             'of the group column',
+                                                 allow_abbrev=True,
+                                                 parents=[self._args_output])
+        cmd_data_anon.add_argument('dataset', metavar='FILE', type=str,
+                                   help='A csv file dataset')
+        cmd_data_anon.add_argument('--group', metavar='COLUMN', type=str, default='ID',
+                                   help='column to anonymize (default ID)')
+        cmd_data_anon.set_defaults(func=self.data_anonymize)
+
     def _init_commands_misc(self, parsers):
         """Initializes miscellanelous other (non-tool) subcommands."""
 
@@ -338,7 +350,7 @@ class CLI:
                 path = new_df.pharmpy.write_csv(path=path, force=force)
                 print(f'Filtered dataset written to {path}')
             except FileExistsError as e:
-                self.error_exit(exception=e)
+                self.error_exit(exception=FileExistsError(f'{e.args[0]} Use -f  or --force to force an overwrite'))
         else:
             # Is a model
             model = model_or_dataset
@@ -352,7 +364,7 @@ class CLI:
                     self.bump_model_number(model)
                     model.write(force=force)
             except FileExistsError as e:
-                self.error_exit(exception=e)
+                self.error_exit(exception=FileExistsError(f'{e.args[0]} Use -f or --force to force an overwrite'))
 
     def bump_model_number(self, model, path='.'):
         """ If model name ends in a number increase to next available file
@@ -387,6 +399,22 @@ class CLI:
                     resampled_obj.pharmpy.write_csv()
             except FileExistsError as e:
                 self.error_exit(exception=e)
+
+    def data_anonymize(self, args):
+        """Subcommand to anonymize a dataset
+           anonymization is really a special resample case where the specified group
+           (usually the ID) is given new random unique values and reordering.
+           Will be default try to overwrite original file (but won't unless force)
+        """
+        path = self.check_input_path(args.dataset)
+        dataset = pharmpy.data.read_csv(path)
+        resampler = pharmpy.data.iterators.Resample(dataset, args.group)
+        df, _ = next(resampler)
+        if args.output_file:
+            output_file = args.output_file
+        else:
+            output_file = path
+        self.write_model_or_dataset(df, df, output_file, args.force)
 
     def cmd_info(self, args):
         """Subcommand to print PharmPy info (and brag a little bit)."""

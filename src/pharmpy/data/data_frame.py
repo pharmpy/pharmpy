@@ -236,7 +236,7 @@ class DataFrameAccessor:
                                  'the DataFrame has no name property.')
             path /= filename
         if not force and path.exists():
-            raise FileExistsError(f'File at generated path {path} already exists.')
+            raise FileExistsError(f'File at {path} already exists.')
         return path
 
     def write_csv(self, path=None, force=False):
