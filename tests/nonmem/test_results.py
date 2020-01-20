@@ -29,4 +29,3 @@ def test_parameter_estimates(pheno_lst):
     assert len(pe) == 6
     assert pe['THETA(1)'] == 4.69555e-3
     assert pe['OMEGA(2,2)'] == 2.7906e-2
-    assert False

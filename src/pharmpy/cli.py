@@ -350,7 +350,8 @@ class CLI:
                 path = new_df.pharmpy.write_csv(path=path, force=force)
                 print(f'Filtered dataset written to {path}')
             except FileExistsError as e:
-                self.error_exit(exception=FileExistsError(f'{e.args[0]} Use -f  or --force to force an overwrite'))
+                self.error_exit(exception=FileExistsError(f'{e.args[0]} Use -f  or --force to '
+                                                          'force an overwrite'))
         else:
             # Is a model
             model = model_or_dataset
@@ -364,7 +365,8 @@ class CLI:
                     self.bump_model_number(model)
                     model.write(force=force)
             except FileExistsError as e:
-                self.error_exit(exception=FileExistsError(f'{e.args[0]} Use -f or --force to force an overwrite'))
+                self.error_exit(exception=FileExistsError(f'{e.args[0]} Use -f or --force to '
+                                                          'force an overwrite'))
 
     def bump_model_number(self, model, path='.'):
         """ If model name ends in a number increase to next available file

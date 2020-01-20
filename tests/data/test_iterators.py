@@ -1,4 +1,5 @@
 import numpy as np
+import pandas.testing
 import pytest
 
 import pharmpy.data
@@ -88,3 +89,18 @@ def test_stratification(df):
     assert ids == [1, 2, 2]
     (new_df, ids) = next(resampler)
     assert ids == [1, 4, 2]
+
+
+def test_resampler_anonymization(testdata):
+    df = pharmpy.data.read_csv(testdata / 'pheno_data.csv')
+    resampler = iters.Resample(df, group='ID')
+    (new_df, ids) = next(resampler)
+    assert all(e in ids for e in range(1, 60))
+    assert len(ids) == 59
+    for new_id, old_id in enumerate(ids, start=1):
+        df_newid = new_df.query(f'ID == {new_id}')
+        df_oldid = df.query(f'ID == {old_id}')
+        df_newid = df_newid.reset_index(drop=True)
+        df_oldid.reset_index(inplace=True, drop=True)
+        df_newid['ID'] = old_id
+        pandas.testing.assert_frame_equal(df_newid, df_oldid)
