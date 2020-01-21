@@ -23,6 +23,7 @@ class Model(pharmpy.model.Model):
                 num_est = len(self.control_stream.get_records('ESTIMATION'))
                 self.modelfit_results = NONMEMChainedModelfitResults(lst_path, num_est)
         self.input = pharmpy.plugins.nonmem.input.ModelInput(self)
+        self._parameters_updated = False
 
     @staticmethod
     def detect(src, *args, **kwargs):
@@ -47,7 +48,23 @@ class Model(pharmpy.model.Model):
             # IGNOREs to add i.e. for filter out certain ID.
             del(data_record.ignore)
             del(data_record.accept)
+            self._dataset_updated = False
+
+        self._update_parameters()
+
         super().update_source()
+
+    def _update_parameters(self):
+        """ Update parameters
+        """
+        if not self._parameters_updated:
+            return
+
+        # FIXME: Do update here.
+        # Loop through parameter records:
+        # Record knows its symbol and can update if it finds itself in set
+        # Only init to update for now.
+        self._parameters_updated = False
 
     def validate(self):
         """Validates NONMEM model (records) syntactically."""
@@ -57,6 +74,11 @@ class Model(pharmpy.model.Model):
     def parameters(self):
         """Get the ParameterSet of all parameters
         """
+        try:
+            return self._parameters
+        except AttributeError:
+            pass
+
         next_theta = 1
         params = ParameterSet()
         for theta_record in self.control_stream.get_records('THETA'):
@@ -71,7 +93,39 @@ class Model(pharmpy.model.Model):
         for sigma_record in self.control_stream.get_records('SIGMA'):
             sigmas, next_sigma = sigma_record.parameters(next_sigma)
             params.update(sigmas)
+        self._parameters = params
         return params
+
+    @parameter.setter
+    def parameters(self, params):
+        """params can be a ParameterSet or a dict-like with name: value
+
+           Current restricions:
+            * ParameterSet not supported
+            * Only set the exact same parameters. No additions and no removing of parameters
+        """
+        if isinstance(params, ParameterSet):
+            raise NotImplementedError("Can not yet update parameters from ParameterSet")
+        else:
+            if len(self._parameters) != len(params):
+                raise NotImplementedError("Current number of parameters in model and parameters to "
+                                          "set are not the same. Not yet supported")
+            for p in self._parameters:
+                name = p.symbol.name
+                if name not in params:
+                    raise ValueError(f"Parameter '{name}' not found in input. Currently "
+                                     f"not supported")
+                if p.lower >= params[name]:
+                    raise ValueError(f"Cannot set a lower parameter initial estimate "
+                                     f"{params[name]} for parameter '{name}' than the "
+                                     f"current lower bound {p.lower}")
+                if p.upper <= params[name]:
+                    raise ValueError(f"Cannot set a higher parameter initial estimate "
+                                     f"{params[name]} for parameter '{name}' than the "
+                                     f"current upper bound {p.upper}")
+                p.init = params[name]
+        self._parameters_updated = True
+
 
     def __str__(self):
         return str(self.control_stream)

@@ -11,8 +11,8 @@ class ParameterSet(OrderedSet):
                 return e
         raise KeyError(f'Parameter "{index}" does not exist')
 
-    def _dataframe_for_repr(self):
-        """Construct a dataframe that can be used for different reprs
+    def summary(self):
+        """Construct a dataframe to summarize the Parameters
         """
         symbols = [param.symbol for param in self]
         values = [param.init for param in self]
@@ -27,7 +27,7 @@ class ParameterSet(OrderedSet):
         """
         if len(self) == 0:
             return "ParameterSet()"
-        return repr(self._dataframe_for_repr())
+        return repr(self.summary())
 
     def _repr_html_(self):
         """For viewing in html capable environments
@@ -35,7 +35,7 @@ class ParameterSet(OrderedSet):
         if len(self) == 0:
             return "ParameterSet()"
         else:
-            return self._dataframe_for_repr().to_html(index=False)
+            return self.summary().to_html(index=False)
 
 
 class Parameter:
