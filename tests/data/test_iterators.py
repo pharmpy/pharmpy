@@ -54,28 +54,30 @@ def test_resampler_too_big_sample_size(df):
 
 
 def test_resampler_noreplace(df):
+    np.random.seed(28)
     resampler = iters.Resample(df, 'ID', replace=False, sample_size=3)
     next(resampler)
 
     resampler = iters.Resample(df, 'ID', stratify='STRAT')
     (new_df, ids) = next(resampler)
-    assert ids == [1, 4, 2]
+    assert ids == [1, 2, 4]
     assert list(new_df['ID']) == [1, 1, 2, 2, 3, 3]
-    assert list(new_df['DV']) == [5, 6, 0, 9, 3, 4]
+    assert list(new_df['DV']) == [5, 6, 3, 4, 0, 9]
 
     resampler = iters.Resample(df, 'ID', replace=False, sample_size=2)
     (new_df, ids) = next(resampler)
-    assert list(ids) == [4, 2]
+    assert list(ids) == [2, 1]
     assert list(new_df['ID']) == [1, 1, 2, 2]
 
 
 def test_stratification(df):
+    np.random.seed(28)
     resampler = iters.Resample(df, 'ID', resamples=1, stratify='STRAT',
                                sample_size={1: 2, 2: 3}, replace=True)
     (new_df, ids) = next(resampler)
-    assert ids == [1, 1, 4, 2, 2]
+    assert ids == [1, 1, 4, 4, 4]
     assert list(new_df['ID']) == [1, 1, 2, 2, 3, 3, 4, 4, 5, 5]
-    assert list(new_df['DV']) == [5, 6, 5, 6, 0, 9, 3, 4, 3, 4]
+    assert list(new_df['DV']) == [5, 6, 5, 6, 0, 9, 0, 9, 0, 9]
 
     resampler = iters.Resample(df, 'ID', resamples=1, stratify='STRAT',
                                sample_size={1: 2}, replace=True)
@@ -84,14 +86,15 @@ def test_stratification(df):
 
     resampler = iters.Resample(df, 'ID', resamples=3, stratify='STRAT', replace=True)
     (new_df, ids) = next(resampler)
-    assert ids == [1, 4, 4]
-    (new_df, ids) = next(resampler)
     assert ids == [1, 2, 2]
+    (new_df, ids) = next(resampler)
+    assert ids == [1, 2, 4]
     (new_df, ids) = next(resampler)
     assert ids == [1, 4, 2]
 
 
 def test_resampler_anonymization(testdata):
+    np.random.seed(28)
     df = pharmpy.data.read_csv(testdata / 'pheno_data.csv')
     resampler = iters.Resample(df, group='ID')
     (new_df, ids) = next(resampler)
