@@ -1,3 +1,4 @@
+import pandas as pd
 import sympy
 
 from pharmpy.data_structures import OrderedSet
@@ -9,6 +10,32 @@ class ParameterSet(OrderedSet):
             if e.symbol == index or e.symbol.name == index:
                 return e
         raise KeyError(f'Parameter "{index}" does not exist')
+
+    def _dataframe_for_repr(self):
+        """Construct a dataframe that can be used for different reprs
+        """
+        symbols = [param.symbol for param in self]
+        values = [param.init for param in self]
+        lower = [param.lower for param in self]
+        upper = [param.upper for param in self]
+        fix = [param.fix for param in self]
+        return pd.DataFrame({'name': symbols, 'value': values,
+                             'lower': lower, 'upper': upper, 'fix': fix})
+
+    def __repr__(self):
+        """View the parameters as a table.
+        """
+        if len(self) == 0:
+            return "ParameterSet()"
+        return repr(self._dataframe_for_repr())
+
+    def _repr_html_(self):
+        """For viewing in html capable environments
+        """
+        if len(self) == 0:
+            return "ParameterSet()"
+        else:
+            return self._dataframe_for_repr().to_html(index=False)
 
 
 class Parameter:

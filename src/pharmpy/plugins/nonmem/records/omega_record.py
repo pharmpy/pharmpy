@@ -118,7 +118,6 @@ class OmegaRecord(Record):
                         param = Parameter(name, init, lower=lower, fix=fix)
                         parameters.add(param)
             next_omega = start_omega + size
-        print(parameters)
         return parameters, next_omega
 
     def random_variables(self, start_omega):
