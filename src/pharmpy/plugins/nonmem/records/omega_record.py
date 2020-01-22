@@ -146,11 +146,36 @@ class OmegaRecord(Record):
                 i += n
         else:
             fix, sd, corr, cholesky = self._block_flags()
-            # FIXME: here!
-            # for node in self.root.all('omega'):
-            #    node.init.tokens[0].value
-            #    n = node.n.INT if node.find('n') else 1
-            #    inits += [init] * n
+            size = self.root.block.size.INT
+            row = first_omega
+            col = first_omega
+            inits = []
+            for row in range(first_omega, first_omega + size):
+                for col in range(first_omega, row - 1):
+                    name = f'{self.name}({row},{col})'
+                    inits.append(parameters[name].init)
+
+            A = pharmpy.math.flattened_to_symmetric(inits)
+            try:
+                L = np.linalg.cholesky(A)
+            except np.LinAlgError:
+                raise ValueError("Cannot set initial estimates as covariance matrix would not be positive definite.")
+            # FIXME: Write initial covariance matrix of (EPS(1), EPS(2)) here...
+            if corr:
+                for i in range(size):
+                    for j in range(size):
+                        if i != j:
+                            A[i, j] = A[i, j] / (math.sqrt(A[i, i]) * math.sqrt(A[j, j]))
+            if sd:
+                np.fill_diagonal(A, A.diagonal()**0.5)
+
+            if cholesky:
+                A = L
+
+            for node in self.root.all('omega'):
+                #node.init.tokens[0].value
+                n = node.n.INT if node.find('n') else 1
+                inits += [init] * n
 
         return i
 
