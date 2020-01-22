@@ -90,3 +90,18 @@ def test_parameters_offseted(parser):
     rec = parser.parse("$OMEGA 1").records[0]
     pset, _ = rec.parameters(3)
     assert pset['OMEGA(3,3)'].init == 1
+
+
+def test_update(parser):
+    rec = parser.parse('$OMEGA 1 SD').records[0]
+    pset, _ = rec.parameters(1)
+    pset['OMEGA(1,1)'].init = 4
+    rec.update(pset, 1)
+    assert str(rec) == '$OMEGA 2.0 SD'
+
+    rec = parser.parse("$OMEGA DIAG(2) (1 VAR) (SD 2)").records[0]
+    pset, _ = rec.parameters(1)
+    pset['OMEGA(1,1)'].init = 1.5
+    pset['OMEGA(2,2)'].init = 16
+    rec.update(pset, 1)
+    assert str(rec) == '$OMEGA DIAG(2) (1.5 VAR) (SD 4.0)'

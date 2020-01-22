@@ -24,7 +24,13 @@ class ModelFormatError(ModelException):
         super().__init__(msg)
 
 
-class Model():
+class Model:
+    """
+     Property: modelfit_results, name
+    """
+    def __init__(self):
+        self.modelfit_results = None
+
     def update_source(self):
         """Update the source"""
         self.source.code = str(self)
@@ -48,10 +54,15 @@ class Model():
             raise FileExistsError(f'File {path} already exists.')
         self.source.write(path, force=force)
 
-
-#    """(Generic) Model class.
-
-# Property: name
+    def update_inits(self):
+        """Update inital estimates of model from its own ModelfitResults
+        """
+        if self.modelfit_results:
+            self.parameters = self.modelfit_results.parameter_estimates
+        else:
+            # FIXME: Other exception here. ModelfitError?
+            raise ModelException("Cannot update initial parameter estimates "
+                                 "since parameters were not estimated")
 
 #    Represents a model object, that may or may not exist on disk too.
 

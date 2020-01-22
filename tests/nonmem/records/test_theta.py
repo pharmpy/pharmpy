@@ -50,5 +50,5 @@ def test_update(parser):
     rec = parser.parse('$THETA 1').records[0]
     pset = rec.parameters(1)
     pset['THETA(1)'].init = 41
-    rec.update(pset)
+    rec.update(pset, 1)
     assert str(rec) == '$THETA 41'

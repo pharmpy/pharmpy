@@ -45,48 +45,8 @@ class OmegaRecord(Record):
         else:
             inits = []
             size = self.root.block.size.INT
-            fix = bool(self.root.find('FIX'))
-            var = bool(self.root.find('VAR'))
-            sd = bool(self.root.find('SD'))
-            cov = bool(self.root.find('COV'))
-            corr = bool(self.root.find('CORR'))
-            cholesky = bool(self.root.find('CHOLESKY'))
+            fix, sd, corr, cholesky = self._block_flags()
             for node in self.root.all('omega'):
-                if node.find('FIX'):
-                    if fix:
-                        raise ModelFormatError('Cannot specify option FIX more than once')
-                    else:
-                        fix = True
-                if node.find('VAR'):
-                    if var or sd or cholesky:
-                        raise ModelFormatError('Cannot specify either option VARIANCE, SD or '
-                                               'CHOLESKY more than once')
-                    else:
-                        var = True
-                if node.find('SD'):
-                    if sd or var or cholesky:
-                        raise ModelFormatError('Cannot specify either option VARIANCE, SD or '
-                                               'CHOLESKY more than once')
-                    else:
-                        sd = True
-                if node.find('COV'):
-                    if cov or corr:
-                        raise ModelFormatError('Cannot specify either option COVARIANCE or '
-                                               'CORRELATION more than once')
-                    else:
-                        cov = True
-                if node.find('CORR'):
-                    if corr or cov:
-                        raise ModelFormatError('Cannot specify either option COVARIANCE or '
-                                               'CORRELATION more than once')
-                    else:
-                        corr = True
-                if node.find('CHOLESKY'):
-                    if cholesky or var or sd:
-                        raise ModelFormatError('Cannot specify either option VARIANCE, SD or '
-                                               'CHOLESKY more than once')
-                    else:
-                        cholesky = True
                 init = node.init.NUMERIC
                 n = node.n.INT if node.find('n') else 1
                 inits += [init] * n
@@ -101,7 +61,7 @@ class OmegaRecord(Record):
                                 if i != j:
                                     if sd:
                                         A[i, j] = A[i, i] * A[j, j] * A[i, j]
-                                    elif var:
+                                    else:
                                         A[i, j] = math.sqrt(A[i, i]) * math.sqrt(A[j, j]) * A[i, j]
                     if sd:
                         np.fill_diagonal(A, A.diagonal()**2)
@@ -119,6 +79,80 @@ class OmegaRecord(Record):
                         parameters.add(param)
             next_omega = start_omega + size
         return parameters, next_omega
+
+    def _block_flags(self):
+        """Get a tuple of all interesting flags for block
+        """
+        fix = bool(self.root.find('FIX'))
+        var = bool(self.root.find('VAR'))
+        sd = bool(self.root.find('SD'))
+        cov = bool(self.root.find('COV'))
+        corr = bool(self.root.find('CORR'))
+        cholesky = bool(self.root.find('CHOLESKY'))
+        for node in self.root.all('omega'):
+            if node.find('FIX'):
+                if fix:
+                    raise ModelFormatError('Cannot specify option FIX more than once')
+                else:
+                    fix = True
+            if node.find('VAR'):
+                if var or sd or cholesky:
+                    raise ModelFormatError('Cannot specify either option VARIANCE, SD or '
+                                           'CHOLESKY more than once')
+                else:
+                    var = True
+            if node.find('SD'):
+                if sd or var or cholesky:
+                    raise ModelFormatError('Cannot specify either option VARIANCE, SD or '
+                                           'CHOLESKY more than once')
+                else:
+                    sd = True
+            if node.find('COV'):
+                if cov or corr:
+                    raise ModelFormatError('Cannot specify either option COVARIANCE or '
+                                           'CORRELATION more than once')
+                else:
+                    cov = True
+            if node.find('CORR'):
+                if corr or cov:
+                    raise ModelFormatError('Cannot specify either option COVARIANCE or '
+                                           'CORRELATION more than once')
+                else:
+                    corr = True
+            if node.find('CHOLESKY'):
+                if cholesky or var or sd:
+                    raise ModelFormatError('Cannot specify either option VARIANCE, SD or '
+                                           'CHOLESKY more than once')
+                else:
+                    cholesky = True
+        return fix, sd, corr, cholesky
+
+    def update(self, parameters, first_omega):
+        """From a ParameterSet update the OMEGAs in this record
+            returns the next omega number
+        """
+        i = first_omega
+        block = self.root.find('block')
+        if not block:
+            for node in self.root.all('diag_item'):
+                sd = bool(node.find('SD'))
+                name = f'{self.name}({i},{i})'
+                if not sd:
+                    value = parameters[name].init
+                else:
+                    value = parameters[name].init ** 0.5
+                node.init.tokens[0].value = str(value)
+                n = node.n.INT if node.find('n') else 1
+                i += n
+        else:
+            fix, sd, corr, cholesky = self._block_flags()
+            # FIXME: here!
+            # for node in self.root.all('omega'):
+            #    node.init.tokens[0].value
+            #    n = node.n.INT if node.find('n') else 1
+            #    inits += [init] * n
+
+        return i
 
     def random_variables(self, start_omega):
         """Get a RandomVariableSet for this omega record

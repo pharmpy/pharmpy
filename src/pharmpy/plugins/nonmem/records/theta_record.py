@@ -55,18 +55,15 @@ class ThetaRecord(Record):
             n = 1
         return n
 
-    def update(self, parameters):
+    def update(self, parameters, first_theta):
         """From a ParameterSet update the THETAs in this record
 
         Currently only updating initial estimates
-        splitting of xn is not supported (yet)
         """
-        i = 0
+        i = first_theta
         for theta in self.root.all('theta'):
-            print(repr(theta.init.tokens[0]))
-            theta.init.tokens[0].value = str(list(parameters)[i].init)
-            print(repr(theta.init))
-            print(str(theta.init))
+            name = f'THETA({i})'
+            theta.init.tokens[0].value = str(parameters[name].init)
             n = self._multiple(theta)
             i += n
 

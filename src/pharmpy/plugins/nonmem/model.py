@@ -11,6 +11,7 @@ from .nmtran_parser import NMTranParser
 
 class Model(pharmpy.model.Model):
     def __init__(self, src, **kwargs):
+        super().__init__()
         parser = NMTranParser()
         self.source = src
         if not self.source.filename_extension:
@@ -60,10 +61,18 @@ class Model(pharmpy.model.Model):
         if not self._parameters_updated:
             return
 
-        # FIXME: Do update here.
-        # Loop through parameter records:
-        # Record knows its symbol and can update if it finds itself in set
-        # Only init to update for now.
+        params = self.parameters
+        next_theta = 1
+        for theta_record in self.control_stream.get_records('THETA'):
+            theta_record.update(params, next_theta)
+            next_theta += len(theta_record)
+        next_omega = 1
+        for omega_record in self.control_stream.get_records('OMEGA'):
+            next_omega = omega_record.update(params, next_omega)
+        next_sigma = 1
+        for sigma_record in self.control_stream.get_records('SIGMA'):
+            next_sigma = sigma_record.update(params, next_sigma)
+
         self._parameters_updated = False
 
     def validate(self):
@@ -96,7 +105,7 @@ class Model(pharmpy.model.Model):
         self._parameters = params
         return params
 
-    @parameter.setter
+    @parameters.setter
     def parameters(self, params):
         """params can be a ParameterSet or a dict-like with name: value
 
@@ -107,10 +116,10 @@ class Model(pharmpy.model.Model):
         if isinstance(params, ParameterSet):
             raise NotImplementedError("Can not yet update parameters from ParameterSet")
         else:
-            if len(self._parameters) != len(params):
+            if len(self.parameters) != len(params):
                 raise NotImplementedError("Current number of parameters in model and parameters to "
                                           "set are not the same. Not yet supported")
-            for p in self._parameters:
+            for p in self.parameters:
                 name = p.symbol.name
                 if name not in params:
                     raise ValueError(f"Parameter '{name}' not found in input. Currently "
@@ -125,7 +134,6 @@ class Model(pharmpy.model.Model):
                                      f"current upper bound {p.upper}")
                 p.init = params[name]
         self._parameters_updated = True
-
 
     def __str__(self):
         return str(self.control_stream)
