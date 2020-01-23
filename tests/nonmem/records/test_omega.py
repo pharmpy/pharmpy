@@ -93,11 +93,33 @@ def test_parameters_offseted(parser):
 
 
 def test_update(parser):
+    rec = parser.parse('$OMEGA 1').records[0]
+    pset, _ = rec.parameters(1)
+    pset['OMEGA(1,1)'].init = 2
+    rec.update(pset, 1)
+    assert str(rec) == '$OMEGA 2.0'
+
     rec = parser.parse('$OMEGA 1 SD').records[0]
     pset, _ = rec.parameters(1)
     pset['OMEGA(1,1)'].init = 4
     rec.update(pset, 1)
     assert str(rec) == '$OMEGA 2.0 SD'
+
+    rec = parser.parse('$OMEGA (1)x3\n;FTOL').records[0]
+    pset, _ = rec.parameters(1)
+    pset['OMEGA(1,1)'].init = 4
+    pset['OMEGA(2,2)'].init = 4
+    pset['OMEGA(3,3)'].init = 4
+    rec.update(pset, 1)
+    assert str(rec) == '$OMEGA (4.0)x3\n;FTOL'
+
+    rec = parser.parse('$OMEGA (1)x2 2').records[0]
+    pset, _ = rec.parameters(1)
+    pset['OMEGA(1,1)'].init = 1
+    pset['OMEGA(2,2)'].init = 2
+    pset['OMEGA(3,3)'].init = 0.5
+    rec.update(pset, 1)
+    assert str(rec) == '$OMEGA (1.0) (2.0) 0.5'
 
     rec = parser.parse("$OMEGA DIAG(2) (1 VAR) (SD 2)").records[0]
     pset, _ = rec.parameters(1)
@@ -105,3 +127,62 @@ def test_update(parser):
     pset['OMEGA(2,2)'].init = 16
     rec.update(pset, 1)
     assert str(rec) == '$OMEGA DIAG(2) (1.5 VAR) (SD 4.0)'
+
+    rec = parser.parse("$OMEGA BLOCK(2) 1 2 4").records[0]
+    pset, _ = rec.parameters(1)
+    pset['OMEGA(1,1)'].init = 7
+    pset['OMEGA(2,1)'].init = 0.5
+    pset['OMEGA(2,2)'].init = 8
+    rec.update(pset, 1)
+    assert str(rec) == '$OMEGA BLOCK(2) 7.0 0.5 8.0'
+
+    rec = parser.parse("$OMEGA BLOCK(2)\n SD 1 0.5 ;COM \n 1\n").records[0]
+    pset, _ = rec.parameters(1)
+    pset['OMEGA(1,1)'].init = 4
+    pset['OMEGA(2,1)'].init = 0.25
+    pset['OMEGA(2,2)'].init = 9
+    rec.update(pset, 1)
+    assert str(rec) == '$OMEGA BLOCK(2)\n SD 2.0 0.25 ;COM \n 3.0\n'
+
+    rec = parser.parse("$OMEGA CORR BLOCK(2)  1 0.5 1\n").records[0]
+    pset, _ = rec.parameters(1)
+    pset['OMEGA(1,1)'].init = 4
+    pset['OMEGA(2,1)'].init = 1
+    pset['OMEGA(2,2)'].init = 4
+    rec.update(pset, 1)
+    assert str(rec) == '$OMEGA CORR BLOCK(2)  4.0 0.25 4.0\n'
+
+    rec = parser.parse("$OMEGA CORR BLOCK(2)  1 0.5 SD 1\n").records[0]
+    pset, _ = rec.parameters(1)
+    pset['OMEGA(1,1)'].init = 4
+    pset['OMEGA(2,1)'].init = 1
+    pset['OMEGA(2,2)'].init = 4
+    rec.update(pset, 1)
+    assert str(rec) == '$OMEGA CORR BLOCK(2)  2.0 0.25 SD 2.0\n'
+
+    rec = parser.parse("$OMEGA CORR BLOCK(2)  1 0.5 SD 1\n").records[0]
+    pset, _ = rec.parameters(1)
+    pset['OMEGA(1,1)'].init = 1
+    pset['OMEGA(2,1)'].init = 4
+    pset['OMEGA(2,2)'].init = 1
+    with pytest.raises(ValueError):
+        rec.update(pset, 1)
+
+    rec = parser.parse("$OMEGA BLOCK(2) 1 0.1 1\n CHOLESKY").records[0]
+    pset, _ = rec.parameters(1)
+    pset['OMEGA(1,1)'].init = 0.64
+    pset['OMEGA(2,1)'].init = -0.24
+    pset['OMEGA(2,2)'].init = 0.58
+    rec.update(pset, 1)
+    assert str(rec) == '$OMEGA BLOCK(2) 0.8 -0.3 0.7\n CHOLESKY'
+
+    rec = parser.parse("$OMEGA BLOCK(3) 1 ;CL\n0.1 1; V\n0.1 0.1 1; KA").records[0]
+    pset, _ = rec.parameters(1)
+    pset['OMEGA(1,1)'].init = 1
+    pset['OMEGA(2,1)'].init = 0.2
+    pset['OMEGA(2,2)'].init = 3
+    pset['OMEGA(3,1)'].init = 0.4
+    pset['OMEGA(3,2)'].init = 0.5
+    pset['OMEGA(3,3)'].init = 6
+    rec.update(pset, 1)
+    assert str(rec) == '$OMEGA BLOCK(3) 1.0 ;CL\n0.2 3.0; V\n0.4 0.5 6.0; KA'

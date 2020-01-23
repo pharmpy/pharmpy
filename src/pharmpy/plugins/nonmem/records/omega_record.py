@@ -5,6 +5,7 @@ import numpy as np
 import pharmpy.math
 from pharmpy.model import ModelFormatError
 from pharmpy.parameter import Parameter, ParameterSet
+from pharmpy.parse_utils.generic import AttrTree
 
 from .record import Record
 
@@ -127,23 +128,56 @@ class OmegaRecord(Record):
                     cholesky = True
         return fix, sd, corr, cholesky
 
+    def _rv_vector_name(self, omega_numbers):
+        rv_strs = []
+        for om in omega_numbers:
+            if self.name == 'OMEGA':
+                rv_name = 'ETA'
+            else:
+                rv_name = 'EPS'
+            rv_strs.append(f'{rv_name}({om})')
+        return '(' + ', '.join(rv_strs) + ')'
+
     def update(self, parameters, first_omega):
         """From a ParameterSet update the OMEGAs in this record
-            returns the next omega number
+           returns the next omega number
         """
         i = first_omega
         block = self.root.find('block')
         if not block:
-            for node in self.root.all('diag_item'):
-                sd = bool(node.find('SD'))
-                name = f'{self.name}({i},{i})'
-                if not sd:
-                    value = parameters[name].init
+            new_nodes = []
+            for node in self.root.children:
+                if node.rule != 'diag_item':
+                    new_nodes.append(node)
                 else:
-                    value = parameters[name].init ** 0.5
-                node.init.tokens[0].value = str(value)
-                n = node.n.INT if node.find('n') else 1
-                i += n
+                    sd = bool(node.find('SD'))
+                    n = node.n.INT if node.find('n') else 1
+                    new_inits = []
+                    for j in range(i, i + n):
+                        name = f'{self.name}({j},{j})'
+                        if not sd:
+                            value = float(parameters[name].init)
+                        else:
+                            value = parameters[name].init ** 0.5
+                        new_inits.append(value)
+                    if new_inits.count(new_inits[0]) == len(new_inits):  # All equal?
+                        node.init.tokens[0].value = str(new_inits[0])
+                        new_nodes.append(node)
+                    else:
+                        # Need to split xn
+                        new_children = []
+                        for child in node.children:
+                            if child.rule != 'n':
+                                new_children.append(child)
+                        node.children = new_children
+                        for j, init in enumerate(new_inits):
+                            new_node = AttrTree.transform(node)
+                            new_node.init.tokens[0].value = str(init)
+                            new_nodes.append(new_node)
+                            if j != len(new_inits) - 1:     # Not the last
+                                new_nodes.append(AttrTree.create('ws', {'WS': ' '}))
+                    i += n
+            self.root.children = new_nodes
         else:
             fix, sd, corr, cholesky = self._block_flags()
             size = self.root.block.size.INT
@@ -151,16 +185,17 @@ class OmegaRecord(Record):
             col = first_omega
             inits = []
             for row in range(first_omega, first_omega + size):
-                for col in range(first_omega, row - 1):
+                for col in range(first_omega, row + 1):
                     name = f'{self.name}({row},{col})'
                     inits.append(parameters[name].init)
 
             A = pharmpy.math.flattened_to_symmetric(inits)
             try:
                 L = np.linalg.cholesky(A)
-            except np.LinAlgError:
-                raise ValueError("Cannot set initial estimates as covariance matrix would not be positive definite.")
-            # FIXME: Write initial covariance matrix of (EPS(1), EPS(2)) here...
+            except np.linalg.LinAlgError:
+                rv_vector_name = self._rv_vector_name(range(first_omega, first_omega + size))
+                raise ValueError(f"Cannot set initial estimates as covariance matrix of "
+                                 f"{rv_vector_name} would not be positive definite.")
             if corr:
                 for i in range(size):
                     for j in range(size):
@@ -172,10 +207,13 @@ class OmegaRecord(Record):
             if cholesky:
                 A = L
 
+            inds = np.tril_indices_from(A)
+            array = A[inds]
+            i = 0
             for node in self.root.all('omega'):
-                #node.init.tokens[0].value
-                n = node.n.INT if node.find('n') else 1
-                inits += [init] * n
+                node.init.tokens[0].value = str(array[i])
+                n = node.n.INT if node.find('n') else 1   # Assuming same values here
+                i += n
 
         return i
 
