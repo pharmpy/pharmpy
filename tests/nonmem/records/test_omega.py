@@ -176,6 +176,14 @@ def test_update(parser):
     rec.update(pset, 1)
     assert str(rec) == '$OMEGA BLOCK(2) 0.8 -0.3 0.7\n CHOLESKY'
 
+    rec = parser.parse("$OMEGA BLOCK(2) (1)x3\n").records[0]
+    pset, _ = rec.parameters(1)
+    pset['OMEGA(1,1)'].init = 0.64
+    pset['OMEGA(2,1)'].init = -0.24
+    pset['OMEGA(2,2)'].init = 0.58
+    rec.update(pset, 1)
+    assert str(rec) == '$OMEGA BLOCK(2) 0.64 -0.24 0.58\n'
+
     rec = parser.parse("$OMEGA BLOCK(3) 1 ;CL\n0.1 1; V\n0.1 0.1 1; KA").records[0]
     pset, _ = rec.parameters(1)
     pset['OMEGA(1,1)'].init = 1

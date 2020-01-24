@@ -208,12 +208,32 @@ class OmegaRecord(Record):
                 A = L
 
             inds = np.tril_indices_from(A)
-            array = A[inds]
+            array = list(A[inds])
             i = 0
-            for node in self.root.all('omega'):
-                node.init.tokens[0].value = str(array[i])
-                n = node.n.INT if node.find('n') else 1   # Assuming same values here
-                i += n
+            new_nodes = []
+            for node in self.root.children:
+                if node.rule != 'omega':
+                    new_nodes.append(node)
+                else:
+                    n = node.n.INT if node.find('n') else 1
+                    if array[i:i+n].count(array[i]) == n:  # All equal?
+                        node.init.tokens[0].value = str(array[i])
+                        new_nodes.append(node)
+                    else:
+                        # Need to split xn
+                        new_children = []
+                        for child in node.children:
+                            if child.rule not in ['n', 'LPAR', 'RPAR']:
+                                new_children.append(child)
+                        node.children = new_children
+                        for j, init in enumerate(array[i:i+n]):
+                            new_node = AttrTree.transform(node)
+                            new_node.init.tokens[0].value = str(init)
+                            new_nodes.append(new_node)
+                            if j != n - 1:     # Not the last
+                                new_nodes.append(AttrTree.create('ws', {'WS': ' '}))
+                    i += n
+            self.root.children = new_nodes
 
         return i
 
