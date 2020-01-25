@@ -135,5 +135,10 @@ class Model(pharmpy.model.Model):
                 p.init = params[name]
         self._parameters_updated = True
 
+    @property
+    def statements(self):
+        pred = self.control_stream.get_records('PRED')[0]
+        return pred.statements
+
     def __str__(self):
         return str(self.control_stream)

@@ -2,11 +2,12 @@ import re
 
 from pharmpy.plugins.nonmem.exceptions import NMTranParseError
 
+from .code_record import CodeRecord
 from .data_record import DataRecord
 from .omega_record import OmegaRecord
 from .option_record import OptionRecord
-from .parsers import (DataRecordParser, OmegaRecordParser, OptionRecordParser, ProblemRecordParser,
-                      ThetaRecordParser)
+from .parsers import (CodeRecordParser, DataRecordParser, OmegaRecordParser, OptionRecordParser,
+                      ProblemRecordParser, ThetaRecordParser)
 from .problem_record import ProblemRecord
 from .raw_record import RawRecord
 from .theta_record import ThetaRecord
@@ -21,6 +22,7 @@ known_records = {
     'THETA': (ThetaRecord, ThetaRecordParser),
     'OMEGA': (OmegaRecord, OmegaRecordParser),
     'SIGMA': (OmegaRecord, OmegaRecordParser),
+    'PRED': (CodeRecord, CodeRecordParser),
 }
 
 
@@ -52,9 +54,7 @@ def create_record(chunk):
     name = get_canonical_record_name(raw_name)
     if name:
         record_class, record_parser_class = known_records[name]
-        record = record_class()
-        parser = record_parser_class(content)
-        record.root = parser.root
+        record = record_class(content, record_parser_class)
     else:
         record = RawRecord(content)
 

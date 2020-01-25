@@ -53,3 +53,8 @@ class OptionRecordParser(RecordParser):
 @install_grammar
 class DataRecordParser(RecordParser):
     grammar_filename = 'data_record.lark'
+
+
+@install_grammar
+class CodeRecordParser(RecordParser):
+    grammar_filename = 'code_record.lark'

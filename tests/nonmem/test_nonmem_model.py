@@ -1,4 +1,5 @@
 import sympy
+from sympy import Symbol
 
 from pharmpy import Model
 from pharmpy.parameter import Parameter
@@ -57,3 +58,12 @@ def test_set_parameters(pheno_path):
 def test_results(pheno_path):
     model = Model(pheno_path)
     assert len(model.modelfit_results) == 1     # A chain of one estimation
+
+
+def test_minimal(datadir):
+    path = datadir / 'minimal.mod'
+    model = Model(path)
+    assert len(model.statements) == 1
+    model.control_stream.get_records('PRED')[0].root.treeprint()
+    assert model.statements[0].expression == \
+        Symbol('THETA(1)') + Symbol('ETA(1)') + Symbol('ERR(1)')
