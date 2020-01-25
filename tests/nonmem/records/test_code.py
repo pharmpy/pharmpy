@@ -26,6 +26,14 @@ def S(x):
     ('$PRED CL = LOG(V + 1)', S('CL'), sympy.log(S('V') + 1)),
     ('$PRED CL = LOG10(3.5 + THETA(1))', S('CL'), sympy.log(3.5 + S('THETA(1)'), 10)),
     ('$PRED CL = (SIN(X) + COS(X))', S('CL'), sympy.sin(S('X')) + sympy.cos(S('X'))),
+    ('$PRED S22 = ABS(1 + 2 + SIN(X))', S('S22'), sympy.Abs(3 + sympy.sin(S('X')))),
+    ('$PRED CL = TAN(X) * EXP(Y)', S('CL'), sympy.tan(S('X')) * sympy.exp(S('Y'))),
+    ('$PRED K_ = ATAN(1) - ASIN(X)/ACOS(X)', S('K_'), sympy.atan(1) - sympy.asin(S('X')) /
+        sympy.acos(S('X'))),
+    ('$PRED CL = INT(-2.2)', S('CL'), -2),
+    ('$PRED CL = INT(0.2)', S('CL'), 0),
+    ('$PRED CL = MOD(1, 2)', S('CL'), sympy.Mod(1, 2)),
+    ('$PRED CL = GAMLN(2 + X)', S('CL'), sympy.loggamma(S('X') + 2)),
 ])
 def test_single_assignments(parser, buf, symbol, expression):
     rec = parser.parse(buf).records[0]

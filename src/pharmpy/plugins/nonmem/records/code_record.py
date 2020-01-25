@@ -42,6 +42,10 @@ class ExpressionInterpreter(lark.visitors.Interpreter):
         func, expr = self.visit_children(node)
         return func(expr)
 
+    def func2(self, node):
+        a, p = self.visit_children(node)
+        return sympy.Mod(a, p)
+
     def intrinsic_func(self, node):
         name = str(node)
         if name == "EXP":
@@ -56,6 +60,20 @@ class ExpressionInterpreter(lark.visitors.Interpreter):
             return sympy.sin
         elif name == "COS":
             return sympy.cos
+        elif name == "ABS":
+            return sympy.Abs
+        elif name == "TAN":
+            return sympy.tan
+        elif name == "ASIN":
+            return sympy.asin
+        elif name == "ACOS":
+            return sympy.acos
+        elif name == "ATAN":
+            return sympy.atan
+        elif name == "INT":
+            return lambda x: sympy.sign(x) * sympy.floor(sympy.Abs(x))
+        elif name == "GAMLN":
+            return sympy.loggamma
 
     def power(self, node):
         b, e = self.visit_children(node)
