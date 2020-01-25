@@ -1,11 +1,11 @@
 root : WS_ALL assignment
 
-?expression: atom
-           | expression [WS] operator [WS] symbol
+expression: atom
+           | expression [WS] operator [WS] expression
  
 assignment: variable [WS] "=" [WS] expression [WS_ALL]
 
-?atom: symbol
+?atom: symbol | number
 variable: NAME
 
 operator: PLUS | MINUS | MUL | DIV
@@ -21,6 +21,8 @@ parameter: (THETA | ETA | EPS | OMEGA | SIGMA) subscript
 
 subscript: [WS] "(" [WS] INTEGER [WS] ")"
 double_subscript: [WS] "(" [WS] INTEGER [WS] "," [WS] INTEGER [WS] ")"
+
+number: INTEGER
 
 NAME: /[A-Za-z_]\w*/
 

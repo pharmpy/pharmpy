@@ -18,13 +18,22 @@ class ExpressionInterpreter(lark.visitors.Interpreter):
         return [self.visit(child) for child in tree.children if isinstance(child, lark.Tree)]
 
     def expression(self, node):
-        left, op, right = self.visit_children(node)
-        expr = op(left, right)
+        t = self.visit_children(node)
+        if len(t) == 3:
+            left, op, right = t
+            if op == '+':
+                expr = left + right
+            elif op == '-':
+                expr = left - right
+        else:
+            expr = t[0]
         return expr
 
     def operator(self, node):
-        if str(node) == '+':
-            return sympy.Add
+        return str(node)
+
+    def number(self, node):
+        return sympy.Float(str(node))
 
     def symbol(self, node):
         return sympy.Symbol(str(node))
