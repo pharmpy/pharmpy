@@ -19,15 +19,28 @@ class ExpressionInterpreter(lark.visitors.Interpreter):
 
     def expression(self, node):
         t = self.visit_children(node)
-        if len(t) == 3:
-            left, op, right = t
+        if len(t) > 2:
+            op = t[1]
+            terms = t[0::2]
             if op == '+':
-                expr = left + right
+                expr = sympy.Add(*terms)
             elif op == '-':
-                expr = left - right
+                expr = terms[0]
+                for term in terms[1:]:
+                    expr -= term
+            elif op == '*':
+                expr = sympy.Mul(*terms)
+            elif op == '/':
+                expr = terms[0]
+                for term in terms[1:]:
+                    expr /= term
+
         else:
             expr = t[0]
         return expr
+
+    factor = expression
+    term = expression
 
     def operator(self, node):
         return str(node)

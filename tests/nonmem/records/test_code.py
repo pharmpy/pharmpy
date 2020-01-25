@@ -10,6 +10,9 @@ S = Symbol
     ('$PRED\nCL = 2', S('CL'), 2),
     ('$PRED\nCL = KA', S('CL'), S('KA')),
     ('$PRED\nG = BASE - LESS', S('G'), S('BASE') - S('LESS')),
+    ('$PRED CL = THETA(1) * LEFT', S('CL'), S('THETA(1)') * S('LEFT')),
+    ('$PRED D2 = WGT / SRC', S('D2'), S('WGT') / S('SRC')),
+    ('$PRED D = W * B + C', S('D'), S('W') * S('B') + S('C')),
 ])
 def test_single_assignments(parser, buf, symbol, expression):
     rec = parser.parse(buf).records[0]

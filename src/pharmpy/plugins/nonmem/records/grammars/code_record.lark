@@ -1,18 +1,27 @@
 root : WS_ALL assignment
 
-expression: atom
-           | expression [WS] operator [WS] expression
- 
 assignment: variable [WS] "=" [WS] expression [WS_ALL]
 
-?atom: symbol | number
+// A precedence climbing grammar
+
+expression: term (add_op [WS] term)*
+?term: factor (mul_op factor)* -> expression
+?factor: _atom -> expression
+
+add_op: "+" -> operator
+      | "-" -> operator
+mul_op: "*" -> operator
+      | "/" -> operator
+ 
+
+_atom: [WS] (symbol | number | "(" expression ")") [WS]
 variable: NAME
 
-operator: PLUS | MINUS | MUL | DIV
-PLUS: "+"
-MINUS: "-"
-MUL: "*"
-DIV: "/"
+//operator: PLUS | MINUS | MUL | DIV
+//PLUS: "+"
+//MINUS: "-"
+//MUL: "*"
+//DIV: "/"
 
 symbol: parameter | NAME
 
