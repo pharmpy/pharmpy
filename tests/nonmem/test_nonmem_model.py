@@ -66,4 +66,4 @@ def test_minimal(datadir):
     assert len(model.statements) == 1
     model.control_stream.get_records('PRED')[0].root.treeprint()
     assert model.statements[0].expression == \
-        Symbol('THETA(1)') + Symbol('ETA(1)') + Symbol('ERR(1)')
+        Symbol('THETA(1)', real=True) + Symbol('ETA(1)', real=True) + Symbol('ERR(1)', real=True)

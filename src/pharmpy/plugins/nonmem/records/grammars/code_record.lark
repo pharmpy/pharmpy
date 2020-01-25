@@ -7,6 +7,8 @@ assignment: variable [WS] "=" [WS] expression [WS_ALL]
 expression: term (add_op [WS] term)*
 ?term: factor (mul_op factor)* -> expression
 ?factor: _atom -> expression
+       | power
+?power: _atom ("**" factor)?
 
 add_op: "+" -> operator
       | "-" -> operator
@@ -14,14 +16,13 @@ mul_op: "*" -> operator
       | "/" -> operator
  
 
-_atom: [WS] (symbol | number | "(" expression ")") [WS]
-variable: NAME
+_atom: [WS] (func | symbol | number | "(" expression ")") [WS]
 
-//operator: PLUS | MINUS | MUL | DIV
-//PLUS: "+"
-//MINUS: "-"
-//MUL: "*"
-//DIV: "/"
+func: intrinsic_func "(" expression ")"
+
+intrinsic_func: "LOG" | "LOG10" | "EXP" | "SQRT" | "SIN" | "COS"
+
+variable: NAME
 
 symbol: parameter | NAME
 
@@ -31,11 +32,12 @@ parameter: (THETA | ETA | EPS | OMEGA | SIGMA) subscript
 subscript: [WS] "(" [WS] INTEGER [WS] ")"
 double_subscript: [WS] "(" [WS] INTEGER [WS] "," [WS] INTEGER [WS] ")"
 
-number: INTEGER
+number: INTEGER | FLOAT
 
 NAME: /[A-Za-z_]\w*/
 
-INTEGER: /\d+/
+INTEGER: /[-+]?\d+/
+FLOAT: /[-+]?((\d+\.\d*|\.\d+)([ed][-+]?\d+)?|\d+([ed][-+]?\d+))/i
 THETA: "THETA"
 ETA: "ETA"
 EPS: "EPS" | "ERR"

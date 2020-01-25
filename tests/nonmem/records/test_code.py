@@ -1,7 +1,10 @@
 import pytest
+import sympy
 from sympy import Symbol
 
-S = Symbol
+
+def S(x):
+    return Symbol(x, real=True)
 
 
 @pytest.mark.usefixtures('parser')
@@ -13,6 +16,16 @@ S = Symbol
     ('$PRED CL = THETA(1) * LEFT', S('CL'), S('THETA(1)') * S('LEFT')),
     ('$PRED D2 = WGT / SRC', S('D2'), S('WGT') / S('SRC')),
     ('$PRED D = W * B + C', S('D'), S('W') * S('B') + S('C')),
+    ('$PRED D = W * (B + C)', S('D'), S('W') * (S('B') + S('C'))),
+    ('$PRED D = A+B*C+D', S('D'), S('A') + (S('B') * S('C')) + S('D')),
+    ('$PRED D = A**2', S('D'), S('A') ** 2),
+    ('$PRED D = A - (-2)', S('D'), S('A') + 2),
+    ('$PRED D = A - (+2)', S('D'), S('A') - 2),
+    ('$PRED D = 2.5', S('D'), 2.5),
+    ('$PRED CL = EXP(2)', S('CL'), sympy.exp(2)),
+    ('$PRED CL = LOG(V + 1)', S('CL'), sympy.log(S('V') + 1)),
+    ('$PRED CL = LOG10(3.5 + THETA(1))', S('CL'), sympy.log(3.5 + S('THETA(1)'), 10)),
+    ('$PRED CL = (SIN(X) + COS(X))', S('CL'), sympy.sin(S('X')) + sympy.cos(S('X'))),
 ])
 def test_single_assignments(parser, buf, symbol, expression):
     rec = parser.parse(buf).records[0]

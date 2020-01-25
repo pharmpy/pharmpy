@@ -34,22 +34,44 @@ class ExpressionInterpreter(lark.visitors.Interpreter):
                 expr = terms[0]
                 for term in terms[1:]:
                     expr /= term
-
         else:
             expr = t[0]
         return expr
 
-    factor = expression
-    term = expression
+    def func(self, node):
+        func, expr = self.visit_children(node)
+        return func(expr)
+
+    def intrinsic_func(self, node):
+        name = str(node)
+        if name == "EXP":
+            return sympy.exp
+        elif name == "LOG":
+            return sympy.log
+        elif name == "LOG10":
+            return lambda x: sympy.log(x, 10)
+        elif name == "SQRT":
+            return sympy.sqrt
+        elif name == "SIN":
+            return sympy.sin
+        elif name == "COS":
+            return sympy.cos
+
+    def power(self, node):
+        b, e = self.visit_children(node)
+        return b**e
 
     def operator(self, node):
         return str(node)
 
     def number(self, node):
-        return sympy.Float(str(node))
+        try:
+            return sympy.Integer(str(node))
+        except ValueError:
+            return sympy.Float(str(node))
 
     def symbol(self, node):
-        return sympy.Symbol(str(node))
+        return sympy.Symbol(str(node), real=True)
 
 
 class CodeRecord(Record):
