@@ -1,8 +1,20 @@
-root : WS_ALL assignment
+// A precedence climbing grammar is used for expressions
 
-assignment: variable [WS] "=" [WS] expression [WS_ALL]
+root : WS_ALL statement [WS] [COMMENT] [WS_ALL]
 
-// A precedence climbing grammar
+statement: assignment
+         | logical_if
+
+assignment: variable [WS] "=" [WS] expression
+
+logical_if: "IF" [WS] "(" logical_expression ")" [WS] assignment
+logical_expression: eq_term (eq_op eq_term)?
+eq_term: rel_term (rel_op rel_term)? -> logical_expression
+rel_term: expression -> expression
+
+eq_op: ("==" | ".EQ.") -> logical_operator
+      | ("/=" | ".NE.") -> logical_operator
+rel_op: (".LT." | "<" | ".LE." | "<=" | ".GT." | ">" | ".GE." | ">=") -> logical_operator
 
 expression: term (add_op [WS] term)*
 ?term: factor (mul_op factor)* -> expression
@@ -35,6 +47,7 @@ double_subscript: [WS] "(" [WS] INTEGER [WS] "," [WS] INTEGER [WS] ")"
 
 number: INTEGER | FLOAT
 
+COMMENT: /;[^\n]*/
 NAME: /[A-Za-z_]\w*/
 
 INTEGER: /[-+]?\d+/

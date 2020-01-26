@@ -33,7 +33,12 @@ def S(x):
     ('$PRED CL = INT(-2.2)', S('CL'), -2),
     ('$PRED CL = INT(0.2)', S('CL'), 0),
     ('$PRED CL = MOD(1, 2)', S('CL'), sympy.Mod(1, 2)),
-    ('$PRED CL = GAMLN(2 + X)', S('CL'), sympy.loggamma(S('X') + 2)),
+    ('$PRED CL = GAMLN(2 + X)   ;COMMENT', S('CL'), sympy.loggamma(S('X') + 2)),
+    ('$PRED IF (X.EQ.2) CL=23', S('CL'), sympy.Piecewise((23, sympy.Eq(S('X'), 2)))),
+    ('$PRED IF (X.NE.1.5) CL=THETA(1)', S('CL'),
+        sympy.Piecewise((S('THETA(1)'), sympy.Ne(S('X'), 1.5)))),
+    ('$PRED IF (X.EQ.2+1) CL=23', S('CL'), sympy.Piecewise((23, sympy.Eq(S('X'), 3)))),
+    ('$PRED IF (X < ETA(1)) CL=23', S('CL'), sympy.Piecewise((23, sympy.Lt(S('X'), S('ETA(1)'))))),
 ])
 def test_single_assignments(parser, buf, symbol, expression):
     rec = parser.parse(buf).records[0]

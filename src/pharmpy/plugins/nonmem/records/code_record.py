@@ -38,6 +38,23 @@ class ExpressionInterpreter(lark.visitors.Interpreter):
             expr = t[0]
         return expr
 
+    def logical_expression(self, node):
+        t = self.visit_cildren(node)
+        if len(t) > 2:
+            left, op, right = self.visit_children(node)
+            return op(left, right)
+        else:
+            return t[0]
+
+    def logical_operator(self, node):
+        name = str(node)
+        if name == '==' or name == '.EQ.':
+            return sympy.Eq
+        elif name == '/=' or name == '.NE.':
+            return sympy.Ne
+        elif name == '<' or name == '.LT.':
+            return sympy.Lt
+
     def func(self, node):
         func, expr = self.visit_children(node)
         return func(expr)
@@ -96,9 +113,18 @@ class CodeRecord(Record):
     @property
     def statements(self):
         s = []
-        for node in self.root.all('assignment'):
-            name = str(node.variable)
-            expr = ExpressionInterpreter().visit(node.expression)
-            ass = Assignment(name, expr)
-            s.append(ass)
+        for statement in self.root.all('statement'):
+            node = statement.children[0]
+            if node.rule == 'assignment':
+                name = str(node.variable)
+                expr = ExpressionInterpreter().visit(node.expression)
+                ass = Assignment(name, expr)
+                s.append(ass)
+            elif node.rule == 'logical_if':
+                logic_expr = ExpressionInterpreter().visit(node.logical_expression)
+                name = str(node.assignment.variable)
+                expr = ExpressionInterpreter().visit(node.assignment.expression)
+                pw = sympy.Piecewise((expr, logic_expr))
+                ass = Assignment(name, pw)
+                s.append(ass)
         return ModelStatements(s)
