@@ -348,7 +348,7 @@ class CLI:
             try:
                 # If no output_file supplied will use name of df
                 path = new_df.pharmpy.write_csv(path=path, force=force)
-                print(f'Filtered dataset written to {path}')
+                print(f'Dataset written to {path}')
             except FileExistsError as e:
                 self.error_exit(exception=FileExistsError(f'{e.args[0]} Use -f  or --force to '
                                                           'force an overwrite'))
@@ -409,7 +409,7 @@ class CLI:
            Will be default try to overwrite original file (but won't unless force)
         """
         path = self.check_input_path(args.dataset)
-        dataset = pharmpy.data.read_csv(path)
+        dataset = pharmpy.data.read_csv(path, raw=True, parse_columns=[args.group])
         resampler = pharmpy.data.iterators.Resample(dataset, args.group)
         df, _ = next(resampler)
         if args.output_file:

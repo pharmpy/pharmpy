@@ -280,8 +280,13 @@ def read_nonmem_dataset(path_or_io, raw=False, ignore_character='#', colnames=tu
     return df
 
 
-def read_csv(path_or_io):
+def read_csv(path_or_io, raw=False, parse_columns=tuple()):
     """Read a csv with header into a PharmDataFrame
     """
-    df = pd.read_csv(path_or_io)
+    if not raw:
+        df = pd.read_csv(path_or_io)
+    else:
+        df = pd.read_csv(path_or_io, dtype=str)
+        for col in parse_columns:
+            df[col] = pd.to_numeric(df[col])
     return pharmpy.data.PharmDataFrame(df)
