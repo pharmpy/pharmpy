@@ -12,6 +12,7 @@ include .editorconfig
 include AUTHORS.rst
 include CHANGELOG.rst
 include LICENSE
+include LICENSE.LESSER
 include README.rst
 include TODO.rst
 
