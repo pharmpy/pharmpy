@@ -339,9 +339,7 @@ class CLI:
             if args.data or args.all:
                 dict_['dataset'] = repr(model.input.dataset)
             if args.parameters or args.all:
-                s = ''
-                for param in model.parameters:
-                    s += repr(param) + '\n'
+                s = repr(model.parameters) + '\n'
                 dict_['parameters'] = s
             dict_lines = self.format_keyval_pairs(dict_, sort=False)
             lines += ['\t%s' % line for line in dict_lines]

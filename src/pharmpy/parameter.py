@@ -27,7 +27,7 @@ class ParameterSet(OrderedSet):
         """
         if len(self) == 0:
             return "ParameterSet()"
-        return repr(self.summary())
+        return self.summary().to_string(index=False)
 
     def _repr_html_(self):
         """For viewing in html capable environments
