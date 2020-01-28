@@ -454,7 +454,7 @@ class CLI:
         """:class:`namedtuple` with information about install."""
         Install = namedtuple('VersionInfo', ['version', 'authors', 'directory'])
         return Install(pharmpy.__version__,
-                       pharmpy.__authors__,
+                       'A list of authors can be found in the AUTHORS.rst',
                        str(pathlib.Path(pharmpy.__file__).parent))
 
     def welcome(self, subcommand):
