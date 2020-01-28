@@ -331,7 +331,6 @@ class CLI:
         if not (args.data or args.parameters) and args.all is None:
             args.all = True
 
-        self.welcome('print')
         lines = []
         for i, model in enumerate(args.models):
             lines += ['[%d/%d] %r' % (i+1, len(args.models), model.name)]
@@ -491,10 +490,6 @@ class CLI:
         return Install(pharmpy.__version__,
                        'A list of authors can be found in the AUTHORS.rst',
                        str(pathlib.Path(pharmpy.__file__).parent))
-
-    def welcome(self, subcommand):
-        ver, dir = self.install.version, self.install.directory
-        self.logger.info('Welcome to pharmpy %s (%s @ %s)' % (subcommand, ver, dir))
 
     def input_model(self, path):
         """Returns :class:`~pharmpy.model.Model` from *path*.
