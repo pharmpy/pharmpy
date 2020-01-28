@@ -34,7 +34,7 @@ def longdesc(text_str):
 setup(
     name='pharmpy',
     version='0.1.0',
-    license='GNU General Public License v3 (GPLv3)',
+    license='GNU Lesser General Public License v3 (LGPLv3)',
     description='Pharmacometric model parsing (PsN reimagining)',
     long_description='%s\n%s' % (
         strip_refs(longdesc(read('README.rst'))),
@@ -52,14 +52,15 @@ setup(
         # complete classifier list: http://pypi.python.org/pypi?%3Aaction=list_classifiers
         'Development Status :: 1 - Planning',
         'Intended Audience :: Developers',
-        'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
+        'License :: OSI Approved :: GNU Lesser General Public License v3 (LGPLv3)',
         # 'Operating System :: Unix',
         'Operating System :: POSIX',
         # 'Operating System :: Microsoft :: Windows',
         'Programming Language :: Python',
         'Programming Language :: Python :: 3 :: Only',
-        'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: Implementation :: CPython',
         # uncomment if you test on these interpreters:
         # 'Programming Language :: Python :: Implementation :: PyPy',
