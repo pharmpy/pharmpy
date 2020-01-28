@@ -59,17 +59,54 @@ Definitions
 """
 
 import argparse
+import importlib
 import logging
 import pathlib
 import pydoc
 import re
 import sys
+import types
 from collections import OrderedDict, namedtuple
 from textwrap import dedent
 
-import pharmpy
-import pharmpy.data.iterators
-import pharmpy.plugins.utils
+
+class LazyLoader(types.ModuleType):
+    """Class that masquerades as a module and lazily loads it when accessed the first time
+
+       The code for the class is taken from TensorFlow and is under the Apache 2.0 license
+
+       This is needed for the cli to be able to do things as version and help quicker than
+       if all modules were imported.
+    """
+    def __init__(self, local_name, parent_module_globals, name):
+        self._local_name = local_name
+        self._parent_module_globals = parent_module_globals
+
+        super(LazyLoader, self).__init__(name)
+
+    def _load(self):
+        # Import the target module and insert it into the parent's namespace
+        module = importlib.import_module(self.__name__)
+        self._parent_module_globals[self._local_name] = module
+
+        # Update this object's dict so that if someone keeps a reference to the
+        #   LazyLoader, lookups are efficient (__getattr__ is only called on lookups
+        #   that fail).
+        self.__dict__.update(module.__dict__)
+        return module
+
+    def __getattr__(self, item):
+        module = self._load()
+        return getattr(module, item)
+
+    def __dir__(self):
+        module = self._load()
+        return dir(module)
+
+
+pharmpy = LazyLoader('pharmpy', globals(), 'pharmpy')
+iterators = LazyLoader('iterators', globals(), 'pharmpy.data.iterators')
+plugin_utils = LazyLoader('plugin_utils', globals(), 'pharmpy.plugins.utils')
 
 
 class CLI:
@@ -112,7 +149,7 @@ class CLI:
             allow_abbrev=True,
         )
         self._init_common_args(parser)
-        parser.add_argument('--version', action='version', version=pharmpy.__version__)
+        parser.add_argument('--version', action='version', version='0.1')
 
         # subcommand parsers
         subparsers = parser.add_subparsers(title='PharmPy commands', metavar='COMMAND')
@@ -317,7 +354,7 @@ class CLI:
         """Subcommand to write a dataset."""
         try:
             df = args.model_or_dataset.input.dataset
-        except pharmpy.plugins.utils.PluginError:
+        except plugin_utils.PluginError:
             df = args.model_or_dataset
         path = args.output_file
         try:
@@ -331,7 +368,7 @@ class CLI:
         """Subcommand to filter a dataset"""
         try:
             df = args.model_or_dataset.input.dataset
-        except pharmpy.plugins.utils.PluginError:
+        except plugin_utils.PluginError:
             df = args.model_or_dataset
         expression = ' '.join(args.expressions)
         try:
@@ -389,7 +426,7 @@ class CLI:
 
     def data_resample(self, args):
         """Subcommand to resample a dataset."""
-        resampler = pharmpy.data.iterators.Resample(
+        resampler = iterators.Resample(
                 args.model_or_dataset, args.group,
                 resamples=args.resamples, stratify=args.stratify, replace=args.replace,
                 sample_size=args.sample_size)
@@ -466,7 +503,6 @@ class CLI:
 
         Raises if not found or is dir, without tracebacks (see :func:`error_exit`).
         """
-
         path = self.check_input_path(path)
         return pharmpy.Model(path)
 
