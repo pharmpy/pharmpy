@@ -5,9 +5,16 @@ from pharmpy.data_structures import OrderedSet
 
 
 class ParameterSet(OrderedSet):
+    """ ParameterSet
+
+    Representing a group of parameters usually all parameters in a model.
+    Even though parameters can directly be a part of the definitions of a
+    model this class give a ways of displaying, summarizing and manipulating
+    more than one parameter at a time.
+    """
     def __getitem__(self, index):
         for e in self:
-            if e.symbol == index or e.symbol.name == index:
+            if e == index or e.name == index:
                 return e
         raise KeyError(f'Parameter "{index}" does not exist')
 
@@ -38,81 +45,60 @@ class ParameterSet(OrderedSet):
             return self.summary().to_html(index=False)
 
 
-class Parameter:
+class Parameter(sympy.Symbol):
+    def __new__(cls, name, init, lower=None, upper=None, fix=False, **assumptions):
+        """Sympy use new for caching of symbols so a __new__ is needed
+        """
+        self = super(Parameter, cls).__new__(cls, name, **assumptions)
+        return self
+
     def __init__(self, name, init, lower=None, upper=None, fix=False):
         """A parameter
+
+        A parameter is a symbol with certain additional properties such as
+        initial value and constraints.
 
         constraints are currently supported as lower and upper bounds and fix.
         Fix is regarded as constraining the parameter to one single value
         i.e. the domain is a finite set with one member
 
-        General constraints could easily be added whenever needed.
+        General constraints could be added whenever needed.
         Properties: symbol, constraints (appart from those with setters and getters).
-            FIXME: These should be read only.
         """
-        self._symbol = sympy.Symbol(name, real=True)
+        super().__init__()
         self._init = init
+        self.lower = -sympy.oo
+        self.upper = sympy.oo
         if fix:
             if lower is not None or upper is not None:
                 raise ValueError('Cannot fix a parameter that has lower and upper bounds')
-            lower = init
-            upper = init
+            self.lower = init
+            self.upper = init
         if lower is not None:
             if lower > init:
                 raise ValueError(f'Lower bound {lower} is greater than init {init}')
-            lower_expr = self._symbol >= lower
-        else:
-            lower_expr = self._symbol >= -sympy.oo
+            self.lower = lower
         if upper is not None:
             if upper < init:
                 raise ValueError(f'Upper bound {upper} is greater than init {init}')
-            upper_expr = self._symbol <= upper
-        else:
-            upper_expr = self._symbol <= sympy.oo
-        self._constraints = sympy.And(lower_expr, upper_expr)
-
-    @property
-    def symbol(self):
-        return self._symbol
+            self.upper = upper
 
     @property
     def constraints(self):
+        # FIXME: Replace with domain?
         return self._constraints
-
-    @property
-    def lower(self):
-        """The lower bound of the parameter
-        Actually the infimum of the domain of the parameter.
-        """
-        domain = self._constraints.as_set()
-        if domain.is_UniversalSet:
-            return -sympy.oo
-        else:
-            return domain.inf
-
-    @property
-    def upper(self):
-        """The upper bound of the parameter
-        Actually the supremum of the domain of the parameter.
-        """
-        domain = self._constraints.as_set()
-        if domain.is_UniversalSet:
-            return sympy.oo
-        else:
-            return domain.sup
 
     @property
     def fix(self):
         """Is the parameter fixed?
-        Actually checking if the domain of the parameter is finite with length 1.
         """
-        domain = self._constraints.as_set()
-        return domain.is_FiniteSet and len(domain) == 1
+        return self.lower == self.upper
 
     @fix.setter
     def fix(self, value):
         if value:
-            self._constraints = sympy.And(self.symbol <= self._init, self.symbol >= self._init)
+            self.lower = self.init
+            self.upper = self.init
         else:
             if self.fix:
                 self.unconstrain()
@@ -125,31 +111,31 @@ class Parameter:
 
     @init.setter
     def init(self, new_init):
-        if new_init not in self._constraints.as_set():
+        if new_init < self.lower or new_init > self.upper:
             raise ValueError(f'Initial estimate must be within the constraints of the parameter: '
-                             f'{new_init} ∉ {sympy.pretty(self._constraints.as_set())}\nUnconstrain'
-                             f'the parameter before setting an initial estimate.')
+                             f'{new_init} ∉ {sympy.pretty(sympy.Interval(self.lower, self.upper))}'
+                             f'\nUnconstrain the parameter before setting an initial estimate.')
         self._init = new_init
         if self.fix:
-            self._constraints = sympy.And(self.symbol <= new_init, self.symbol >= new_init)
+            self.lower = new_init
+            self.upper = new_init
 
     def unconstrain(self):
         """Remove all constraints of a parameter
         """
-        self._constraints = sympy.And(self.symbol <= sympy.oo, self.symbol >= -sympy.oo)
+        self.lower = -sympy.oo
+        self.upper = sympy.oo
 
-    def __hash__(self):
-        return hash(self._symbol.name)
+    __hash__ = sympy.Symbol.__hash__
 
     def __eq__(self, other):
-        """Two parameters are equal if they have the same symbol.name, init and domain
+        """Two parameters are equal if they have the same symbol, init and domain
         """
-        return self.symbol.name == other.symbol.name and self.init == other.init and \
-            self.constraints.as_set() == other.constraints.as_set()
+        if self is other:
+            return True
 
-    def __str__(self):
-        return self._symbol.name
-
-    def __repr__(self):
-        return f"Parameter('{self.symbol.name}', {self.init}, lower={self.lower}, " \
-               f"upper={self.upper}, fix={self.fix})"
+        if isinstance(other, Parameter):
+            return self.init == other.init and self.lower == other.lower and \
+                   self.upper == other.upper and super().__eq__(self, other)
+        else:
+            return False

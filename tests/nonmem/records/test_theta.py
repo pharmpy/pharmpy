@@ -32,7 +32,7 @@ def test_parameters(parser, buf, results):
         upper = res[3]
         fix = res[4]
         param = pset[name]
-        assert param.symbol.name == name
+        assert param.name == name
         assert param.init == init
         assert param.lower == lower
         assert param.upper == upper

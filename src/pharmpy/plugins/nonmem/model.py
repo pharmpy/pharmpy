@@ -121,7 +121,7 @@ class Model(pharmpy.model.Model):
                 raise NotImplementedError("Current number of parameters in model and parameters to "
                                           "set are not the same. Not yet supported")
             for p in self.parameters:
-                name = p.symbol.name
+                name = p.name
                 if name not in params:
                     raise ValueError(f"Parameter '{name}' not found in input. Currently "
                                      f"not supported")
