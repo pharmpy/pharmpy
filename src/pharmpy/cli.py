@@ -268,7 +268,10 @@ class CLI:
                                 help='A shortened version of the dataset')
         group_apis.add_argument('--parameters',
                                 action='store_true',
-                                help='ParameterModel (e.g. inits)')
+                                help='Parameters (e.g. inits)')
+        group_apis.add_argument('--random_variables',
+                                action='store_true',
+                                help='Random variables')
         cmd_model_print.set_defaults(func=self.cmd_print)
 
         # -- data ------------------------------------------------------------------------------
@@ -338,8 +341,11 @@ class CLI:
             if args.data or args.all:
                 dict_['dataset'] = repr(model.input.dataset)
             if args.parameters or args.all:
-                s = repr(model.parameters) + '\n'
+                s = repr(model.parameters) + '\n\n'
                 dict_['parameters'] = s
+            if args.random_variables or args.all:
+                s = repr(model.random_variables) + '\n\n'
+                dict_['random_variables'] = s
             dict_lines = self.format_keyval_pairs(dict_, sort=False)
             lines += ['\t%s' % line for line in dict_lines]
         if len(lines) > 24:

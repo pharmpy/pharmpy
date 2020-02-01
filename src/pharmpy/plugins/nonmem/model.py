@@ -5,6 +5,7 @@ import pharmpy.model
 import pharmpy.plugins.nonmem.input
 from pharmpy.parameter import ParameterSet
 from pharmpy.plugins.nonmem.results import NONMEMChainedModelfitResults
+from pharmpy.random_variables import RandomVariables
 
 from .nmtran_parser import NMTranParser
 
@@ -139,6 +140,19 @@ class Model(pharmpy.model.Model):
     def statements(self):
         pred = self.control_stream.get_records('PRED')[0]
         return pred.statements
+
+    @property
+    def random_variables(self):
+        rvs = RandomVariables()
+        next_omega = 1
+        for omega_record in self.control_stream.get_records('OMEGA'):
+            etas, next_omega = omega_record.random_variables(next_omega)
+            rvs.update(etas)
+        next_sigma = 1
+        for sigma_record in self.control_stream.get_records('SIGMA'):
+            epsilons, next_sigma = sigma_record.random_variables(next_sigma)
+            rvs.update(epsilons)
+        return rvs
 
     def __str__(self):
         return str(self.control_stream)

@@ -6,6 +6,13 @@ from .data_structures import OrderedSet
 
 class RandomVariables(OrderedSet):
     """A set of random variables
+
+       currently separately named jointrvs are not supported in sympy
+       (i.e. it is not possible to do [eta1, eta2] = Normal(...))
+       Current workaround for this is to put the same vectorized rv in
+       multiple assignments so that the RandomVariables list would contain
+       Assignment('ETA(1)', X[0])
+       Assignment('ETA(2)', X[1])
     """
     @staticmethod
     def _rv_definition_string(rv):
@@ -15,7 +22,8 @@ class RandomVariables(OrderedSet):
         """
         dist = rv.pspace.distribution
         if isinstance(dist, stats.crv_types.NormalDistribution):
-            return [f'{sympy.pretty(rv)} ~ 𝓝({sympy.pretty(dist.mean)}, {sympy.pretty(dist.std)})']
+            return [f'{sympy.pretty(rv)} ~ 𝓝({sympy.pretty(dist.mean)}, '
+                    f'{sympy.pretty(dist.std**2)})']
         elif isinstance(dist, stats.joint_rv_types.MultivariateNormalDistribution):
             mu_strings = sympy.pretty(dist.mu).split('\n')
             sigma_strings = sympy.pretty(dist.sigma).split('\n')
@@ -52,7 +60,7 @@ class RandomVariables(OrderedSet):
                 return e
         raise KeyError(f'Random variable "{index}" does not exist')
 
-    def __str__(self):
+    def __repr__(self):
         """ Give a nicely formatted view of the definitions of all
             random variables.
         """

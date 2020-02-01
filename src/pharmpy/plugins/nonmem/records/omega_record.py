@@ -1,11 +1,13 @@
 import math
 
 import numpy as np
+import sympy.stats
 
 import pharmpy.math
 from pharmpy.model import ModelFormatError
 from pharmpy.parameter import Parameter, ParameterSet
 from pharmpy.parse_utils.generic import AttrTree
+from pharmpy.random_variables import RandomVariables
 
 from .record import Record
 
@@ -128,14 +130,18 @@ class OmegaRecord(Record):
                     cholesky = True
         return fix, sd, corr, cholesky
 
+    def _rv_name(self, num):
+        if self.name == 'OMEGA':
+            rv_name = 'ETA'
+        else:
+            rv_name = 'EPS'
+        return f'{rv_name}({num})'
+
     def _rv_vector_name(self, omega_numbers):
         rv_strs = []
         for om in omega_numbers:
-            if self.name == 'OMEGA':
-                rv_name = 'ETA'
-            else:
-                rv_name = 'EPS'
-            rv_strs.append(f'{rv_name}({om})')
+            name = self._rv_name(om)
+            rv_strs.append(name)
         return '(' + ', '.join(rv_strs) + ')'
 
     def update(self, parameters, first_omega):
@@ -240,4 +246,27 @@ class OmegaRecord(Record):
     def random_variables(self, start_omega):
         """Get a RandomVariableSet for this omega record
         """
-        pass
+        rvs = RandomVariables()
+        block = self.root.find('block')
+        if not block:
+            numetas = len(self.root.all('diag_item'))
+            for etanum in range(start_omega, start_omega + numetas):
+                name = self._rv_name(etanum)
+                eta = sympy.stats.Normal(name, 0, sympy.sqrt(
+                    sympy.Symbol(f'{self.name}({etanum},{etanum})')))
+                rvs.add(eta)
+        else:
+            numetas = self.root.block.size.INT
+            # means = [0] * numetas
+            cov = np.zeros((numetas, numetas))
+            for row in range(start_omega, start_omega + numetas):
+                for col in range(start_omega, row + 1):
+                    cov[row, col] = sympy.Symbol(f'{self.name}({row},{col}))')
+                    if row != col:
+                        cov[col, row] = col[row, col]
+            # joint_rv = sympy.stats.Normal(
+            # f'ETA({start_omega}-{start_omega + numetas})', means, cov)
+            for etanum in range(start_omega, start_omega + numetas):
+                pass
+
+        return rvs, start_omega + numetas
