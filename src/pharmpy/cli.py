@@ -432,7 +432,8 @@ class CLI:
         resampler = iterators.Resample(
                 args.model_or_dataset, args.group,
                 resamples=args.resamples, stratify=args.stratify, replace=args.replace,
-                sample_size=args.sample_size)
+                sample_size=args.sample_size,
+                name_pattern=f'{args.model_or_dataset.name}_resample_{{}}')
         for resampled_obj, _ in resampler:
             try:
                 try:
