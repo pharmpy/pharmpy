@@ -58,7 +58,6 @@ def test_pset_index():
     pset.add(p2)
 
     assert len(pset) == 2
-    assert pset[p2] is p2
 
     # Check that the parameter set keeps the insertion order upon iteration
     for i, param in enumerate(pset):

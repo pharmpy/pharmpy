@@ -14,7 +14,7 @@ class ParameterSet(OrderedSet):
     """
     def __getitem__(self, index):
         for e in self:
-            if e == index or e.name == index:
+            if e.name == index:
                 return e
         raise KeyError(f'Parameter "{index}" does not exist')
 
@@ -45,28 +45,17 @@ class ParameterSet(OrderedSet):
             return self.summary().to_html(index=False)
 
 
-class Parameter(sympy.Symbol):
-    def __new__(cls, name, init, lower=None, upper=None, fix=False, **assumptions):
-        """Sympy use new for caching of symbols so a __new__ is needed
-        """
-        self = super(Parameter, cls).__new__(cls, name, **assumptions)
-        return self
-
+class Parameter:
     def __init__(self, name, init, lower=None, upper=None, fix=False):
         """A parameter
 
-        A parameter is a symbol with certain additional properties such as
-        initial value and constraints.
-
-        constraints are currently supported as lower and upper bounds and fix.
+        Constraints are currently supported as lower and upper bounds and fix.
         Fix is regarded as constraining the parameter to one single value
-        i.e. the domain is a finite set with one member
 
-        General constraints could be added whenever needed.
-        Properties: symbol, constraints (appart from those with setters and getters).
+        Properties: name, init, lower, upper and fix
         """
-        super().__init__()
         self._init = init
+        self.name = name
         self.lower = -sympy.oo
         self.upper = sympy.oo
         if fix:
@@ -82,11 +71,6 @@ class Parameter(sympy.Symbol):
             if upper < init:
                 raise ValueError(f'Upper bound {upper} is greater than init {init}')
             self.upper = upper
-
-    @property
-    def constraints(self):
-        # FIXME: Replace with domain?
-        return self._constraints
 
     @property
     def fix(self):
@@ -126,16 +110,11 @@ class Parameter(sympy.Symbol):
         self.lower = -sympy.oo
         self.upper = sympy.oo
 
-    __hash__ = sympy.Symbol.__hash__
+    def __hash__(self):
+        return hash(self.name)
 
     def __eq__(self, other):
-        """Two parameters are equal if they have the same symbol, init and domain
+        """Two parameters are equal if they have the same symbol, init and constraints
         """
-        if self is other:
-            return True
-
-        if isinstance(other, Parameter):
-            return self.init == other.init and self.lower == other.lower and \
-                   self.upper == other.upper and super().__eq__(self, other)
-        else:
-            return False
+        return self.init == other.init and self.lower == other.lower and \
+            self.upper == other.upper and self.name == other.name
