@@ -300,7 +300,7 @@ class CLI:
                                        help='Number of resampled datasets (default 1)')
         cmd_data_resample.add_argument('--stratify', metavar='COLUMN', type=str,
                                        help='Column to use for stratification')
-        cmd_data_resample.add_argument('--replace', type=bool, default=False,
+        cmd_data_resample.add_argument('--replace', action='store_true',
                                        help='Sample with replacement (default is without)')
         cmd_data_resample.add_argument('--sample_size', metavar='NUMBER', type=int, default=None,
                                        help='Number of groups to sample for each resample')
