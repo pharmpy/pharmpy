@@ -105,6 +105,7 @@ class LazyLoader(types.ModuleType):
 
 
 pharmpy = LazyLoader('pharmpy', globals(), 'pharmpy')
+np = LazyLoader('numpy', globals(), 'numpy')
 iterators = LazyLoader('iterators', globals(), 'pharmpy.data.iterators')
 plugin_utils = LazyLoader('plugin_utils', globals(), 'pharmpy.plugins.utils')
 
@@ -248,6 +249,14 @@ class CLI:
                                   help='output file')
         self._args_output = args_output
 
+        # common to: commands involving randomization
+        args_random = argparse.ArgumentParser(add_help=False)
+        group_random = args_random.add_argument_group(title='random seed')
+        group_random.add_argument('--seed', type=self.random_seed, metavar='INTEGER',
+                                  help='Provide a random seed. The seed must be an integer '
+                                  'between 0 and 2^32 - 1')
+        self._args_random = args_random
+
     def _init_commands_tools(self, parsers):
         """Initializes all "tool-like" subcommands."""
 
@@ -293,7 +302,8 @@ class CLI:
 
         cmd_data_resample = cmd_data_subs.add_parser('resample', help='Resample dataset',
                                                      allow_abbrev=True,
-                                                     parents=[self._args_model_or_data_input])
+                                                     parents=[self._args_model_or_data_input,
+                                                              self._args_random])
         cmd_data_resample.add_argument('--group', metavar='COLUMN', type=str, default='ID',
                                        help='Column to use for grouping (default is ID)')
         cmd_data_resample.add_argument('--resamples', metavar='NUMBER', type=int, default=1,
@@ -497,6 +507,15 @@ class CLI:
         return Install(pharmpy.__version__,
                        'A list of authors can be found in the AUTHORS.rst',
                        str(pathlib.Path(pharmpy.__file__).parent))
+
+    def random_seed(self, seed):
+        try:
+            seed = int(seed)
+            np.random.seed(seed)
+        except ValueError as e:
+            # Cannot reraise the ValueError as it is caught by argparse
+            self.error_exit(exception=argparse.ArgumentTypeError(str(e)))
+        return seed
 
     def input_model(self, path):
         """Returns :class:`~pharmpy.model.Model` from *path*.
