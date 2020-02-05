@@ -5,8 +5,6 @@ from lark import Lark
 from pharmpy.parse_utils import GenericParser
 
 grammar_root = Path(__file__).parent.resolve() / 'grammars'
-if not grammar_root.is_dir():
-    raise FileNotFoundError('Root dir of record grammars not found: %r' % str(grammar_root))
 
 
 def install_grammar(cls):

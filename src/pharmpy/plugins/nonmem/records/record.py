@@ -25,7 +25,4 @@ class Record:
         return self._root
 
     def __str__(self):
-        try:
-            return self.raw_name + str(self.root)
-        except AttributeError:
-            return ''
+        return self.raw_name + str(self.root)
