@@ -283,6 +283,16 @@ class CLI:
                                 help='Random variables')
         cmd_model_print.set_defaults(func=self.cmd_print)
 
+        # -- results ---------------------------------------------------------------------------
+        cmd_results = parsers.add_parser('results', help='Result generation', allow_abbrev=True)
+        cmd_results_subs = cmd_results.add_subparsers(title='PharmPy result generation commands',
+                                                      metavar='ACTION')
+
+        cmd_results_bootstrap = cmd_results_subs.add_parser('bootstrap',
+                                                            help='Generate bootstrap results',
+                                                            parents=[self._args_input])
+        cmd_results_bootstrap.set_defaults(func=self.results_bootstrap)
+
         # -- data ------------------------------------------------------------------------------
         cmd_data = parsers.add_parser('data', help='Data manipulations', allow_abbrev=True)
 
@@ -362,6 +372,15 @@ class CLI:
             pydoc.pager('\n'.join(lines))
         else:
             print('\n'.join(lines))
+
+    def results_bootstrap(self, args):
+        """Subcommand to generate bootstrap results"""
+        if len(args.models) < 3:
+            self.error_exit(exception=ValueError('Need at least the original model and 2'
+                                                 'other models'))
+        res = pharmpy.results.BootstrapResults(original_model=args.models[0],
+                                               bootstrap_models=args.models[1:])
+        print(res)
 
     def data_write(self, args):
         """Subcommand to write a dataset."""

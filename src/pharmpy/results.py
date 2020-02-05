@@ -100,9 +100,9 @@ class CaseDeletionResults:
 
 class BootstrapResults:
     # FIXME: Could inherit from results that take multiple runs like bootstrap, cdd etc.
-    def __init__(self, original_result, bootstrap_results):
-        self._original_result = original_result
-        self._bootstrap_results = bootstrap_results
+    def __init__(self, original_model, bootstrap_models):
+        self._original_results = original_model.modelfit_results
+        self._bootstrap_results = [m.modelfit_results for m in bootstrap_models]
 
     @property
     def ofv(self):
@@ -125,9 +125,34 @@ class BootstrapResults:
 
     @property
     def statistics(self):
+        df = self.parameter_estimates
         ofvs = self.ofv
-        index = pd.Index(['mean', 'median', 'stderr'])
-        return pd.DataFrame({'ofv': [ofvs.mean(), ofvs.median(), ofvs.std()]}, index=index)
+        df.insert(0, 'OFV', ofvs)
+        orig = self._original_results.parameter_estimates
+        ofv_ser = pd.Series({'OFV': self._original_results.ofv})
+        orig = pd.concat([ofv_ser, orig])
+        mean = df.mean()
+        bias = mean - orig
+        summary = pd.DataFrame({'mean': mean, 'bias': bias, 'stderr': df.std()})
+        return summary
+
+    @property
+    def distribution(self):
+        df = self.parameter_estimates
+        ofvs = self.ofv
+        df.insert(0, 'OFV', ofvs)
+        summary = pd.DataFrame({'min': df.min(), '0.05%': df.quantile(0.0005),
+                                '0.5%': df.quantile(0.005), '2.5%': df.quantile(0.025),
+                                '5%': df.quantile(0.05), 'median': df.median(),
+                                '95%': df.quantile(0.95), '97.5%': df.quantile(0.975),
+                                '99.5%': df.quantile(0.995), '99.95%': df.quantile(0.9995),
+                                'max': df.max()})
+        return summary
+
+    def __repr__(self):
+        statistics = f'Statistics\n{repr(self.statistics)}'
+        distribution = f'Distribution\n{repr(self.distribution)}'
+        return f'{statistics}\n\n{distribution}'
 
     def plot_ofv(self):
         plot = pharmpy.visualization.histogram(self.ofv, title='Bootstrap OFV')
