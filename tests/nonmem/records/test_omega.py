@@ -194,3 +194,13 @@ def test_update(parser):
     pset['OMEGA(3,3)'].init = 6
     rec.update(pset, 1)
     assert str(rec) == '$OMEGA BLOCK(3) 1.0 ;CL\n0.2 3.0; V\n0.4 0.5 6.0; KA'
+
+
+def test_random_variables(parser):
+    rec = parser.parse("$OMEGA BLOCK(3) 1 ;CL\n0.1 1; V\n0.1 0.1 1; KA").records[0]
+    rvs, nxt = rec.random_variables(1)
+    assert nxt == 4
+    assert len(rvs) == 3
+    assert rvs[0].name == 'ETA(1)'
+    assert rvs[1].name == 'ETA(2)'
+    assert rvs[2].name == 'ETA(3)'

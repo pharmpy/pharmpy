@@ -7,7 +7,7 @@ import pharmpy.math
 from pharmpy.model import ModelFormatError
 from pharmpy.parameter import Parameter, ParameterSet
 from pharmpy.parse_utils.generic import AttrTree
-from pharmpy.random_variables import RandomVariables
+from pharmpy.random_variables import JointNormalSeparate, RandomVariables
 
 from .record import Record
 
@@ -246,9 +246,9 @@ class OmegaRecord(Record):
     def random_variables(self, start_omega):
         """Get a RandomVariableSet for this omega record
         """
-        rvs = RandomVariables()
         block = self.root.find('block')
         if not block:
+            rvs = RandomVariables()
             numetas = len(self.root.all('diag_item'))
             for etanum in range(start_omega, start_omega + numetas):
                 name = self._rv_name(etanum)
@@ -257,16 +257,14 @@ class OmegaRecord(Record):
                 rvs.add(eta)
         else:
             numetas = self.root.block.size.INT
-            # means = [0] * numetas
-            cov = np.zeros((numetas, numetas))
+            means = [0] * numetas
+            cov = sympy.zeros(numetas)
             for row in range(start_omega, start_omega + numetas):
                 for col in range(start_omega, row + 1):
-                    cov[row, col] = sympy.Symbol(f'{self.name}({row},{col}))')
+                    cov[row - 1, col - 1] = sympy.Symbol(f'{self.name}({row},{col})')
                     if row != col:
-                        cov[col, row] = col[row, col]
-            # joint_rv = sympy.stats.Normal(
-            # f'ETA({start_omega}-{start_omega + numetas})', means, cov)
-            for etanum in range(start_omega, start_omega + numetas):
-                pass
+                        cov[col - 1, row - 1] = cov[row - 1, col - 1]
+            names = [self._rv_name(i) for i in range(1, start_omega + numetas)]
+            rvs = JointNormalSeparate(names, means, cov)
 
         return rvs, start_omega + numetas
