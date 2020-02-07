@@ -1,7 +1,31 @@
 import sympy
 import sympy.stats as stats
+from sympy.stats.rv import RandomSymbol
 
 from .data_structures import OrderedSet
+
+
+class JointDistributionSeparate(RandomSymbol):
+    """One random variable in a joint distribution
+
+       sympy can currently only represent the random variables in a joint distribution
+       as one single indexed variable that cannot be separately named. This class
+       makes separation possible.
+
+       This class can probably not solve all issues with joint rvs, but it can at least
+       handle seprate symbols, pass as a random variable for random_variables and lead back
+       to its pspace.
+    """
+    def __new__(cls, name, joint_symbol):
+        return super().__new__(cls, sympy.Symbol(name), joint_symbol.pspace)
+
+
+def JointNormalSeparate(names, mean, cov):
+    """Conveniently create a joint normal distribution and create separate random variables
+    """
+    x = stats.Normal('__DUMMY__', mean, cov)
+    rvs = [JointDistributionSeparate(name, x) for name in names]
+    return rvs
 
 
 class RandomVariables(OrderedSet):
