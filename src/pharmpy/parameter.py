@@ -21,7 +21,7 @@ class ParameterSet(OrderedSet):
     def summary(self):
         """Construct a dataframe to summarize the Parameters
         """
-        symbols = [param.symbol for param in self]
+        symbols = [param.name for param in self]
         values = [param.init for param in self]
         lower = [param.lower for param in self]
         upper = [param.upper for param in self]
