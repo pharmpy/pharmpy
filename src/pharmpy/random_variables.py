@@ -29,14 +29,12 @@ def JointNormalSeparate(names, mean, cov):
 
 
 class RandomVariables(OrderedSet):
-    """A set of random variables
+    """An ordered set of random variables
 
        currently separately named jointrvs are not supported in sympy
        (i.e. it is not possible to do [eta1, eta2] = Normal(...))
-       Current workaround for this is to put the same vectorized rv in
-       multiple assignments so that the RandomVariables list would contain
-       Assignment('ETA(1)', X[0])
-       Assignment('ETA(2)', X[1])
+       Use JointDistributionSeparate as a workaround
+       Joints must come in the correct order
     """
     @staticmethod
     def _rv_definition_string(rv):
@@ -79,9 +77,14 @@ class RandomVariables(OrderedSet):
             return res
 
     def __getitem__(self, index):
-        for e in self:
-            if e == index or e.name == index:
-                return e
+        if isinstance(index, int):
+            for i, e in enumerate(self):
+                if i == index:
+                    return e
+        else:
+            for e in self:
+                if e == index or e.name == index:
+                    return e
         raise KeyError(f'Random variable "{index}" does not exist')
 
     def __repr__(self):
@@ -92,4 +95,32 @@ class RandomVariables(OrderedSet):
         for rv in self:
             lines = RandomVariables._rv_definition_string(rv)
             res += '\n'.join(lines) + '\n'
-        return res
+
+    def merge_normal_distributions(self, correlation=0):
+        """Merge all normal distributed rvs together into one joint normal
+
+           Set new covariances to 'correlation'
+        """
+        non_altered = []
+        means = []
+        blocks = []
+        names = []
+        prev_cov = None
+        for rv in self:
+            dist = rv.pspace.distribution
+            names.append(rv.name)
+            if isinstance(dist, stats.crv_types.NormalDistribution):
+                means.append(dist.mean)
+                blocks.append(sympy.Matrix([dist.std**2]))
+            elif isinstance(dist, stats.joint_rv_types.MultivariateNormalDistribution):
+                if dist.sigma != prev_cov:
+                    means.extend(dist.mu)
+                    blocks.append(dist.sigma)
+                    prev_cov = dist.sigma
+            else:
+                non_altered.append(rv)
+        if names:
+            M = sympy.BlockDiagMatrix(*blocks)
+            M = sympy.Matrix(M)
+            new_rvs = JointNormalSeparate(names, means, M)
+            self.__init__(new_rvs + non_altered)

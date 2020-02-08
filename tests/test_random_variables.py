@@ -32,3 +32,19 @@ def test_rv():
     retrieved = rvs['ETA(1)']
     assert retrieved.name == 'ETA(1)'
     assert retrieved.pspace.distribution.mean == 0
+
+
+def test_merge_normal_distributions():
+    rvs = JointNormalSeparate(['ETA(1)', 'ETA(2)'], [0, 0], [[3, 0.25], [0.25, 1]])
+    rvs = RandomVariables(rvs)
+    rvs.add(stats.Normal('ETA(3)', 0.5, 2))
+    rvs.merge_normal_distributions()
+    assert len(rvs) == 3
+    assert rvs['ETA(1)'].name == 'ETA(1)'
+    assert rvs[1].name == 'ETA(2)'
+    assert rvs[2].name == 'ETA(3)'
+    assert rvs[0].pspace is rvs[1].pspace
+    assert rvs[0].pspace is rvs[2].pspace
+    dist = rvs[0].pspace.distribution
+    assert dist.mu == sympy.Matrix([0, 0, 0.5])
+    assert dist.sigma == sympy.Matrix([[3, 0.25, 0], [0.25, 1, 0], [0, 0, 4]])
