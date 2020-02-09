@@ -48,3 +48,6 @@ def test_merge_normal_distributions():
     dist = rvs[0].pspace.distribution
     assert dist.mu == sympy.Matrix([0, 0, 0.5])
     assert dist.sigma == sympy.Matrix([[3, 0.25, 0], [0.25, 1, 0], [0, 0, 4]])
+    rvs.merge_normal_distributions(fill=1)
+    dist = rvs[0].pspace.distribution
+    assert dist.sigma == sympy.Matrix([[3, 0.25, 1], [0.25, 1, 1], [1, 1, 4]])

@@ -1,3 +1,5 @@
+import itertools
+
 import sympy
 import sympy.stats as stats
 from sympy.stats.rv import RandomSymbol
@@ -96,10 +98,10 @@ class RandomVariables(OrderedSet):
             lines = RandomVariables._rv_definition_string(rv)
             res += '\n'.join(lines) + '\n'
 
-    def merge_normal_distributions(self, correlation=0):
+    def merge_normal_distributions(self, fill=0):
         """Merge all normal distributed rvs together into one joint normal
 
-           Set new covariances to 'correlation'
+           Set new covariances (and previous 0 covs) to 'fill'
         """
         non_altered = []
         means = []
@@ -120,7 +122,15 @@ class RandomVariables(OrderedSet):
             else:
                 non_altered.append(rv)
         if names:
-            M = sympy.BlockDiagMatrix(*blocks)
-            M = sympy.Matrix(M)
+            if len(blocks) > 1:
+                # Need special case for len(blocks) == 1 because of sympy 1.5.1 bug #18618
+                M = sympy.BlockDiagMatrix(*blocks)
+                M = sympy.Matrix(M)
+            else:
+                M = sympy.Matrix(blocks[0])
+            if fill != 0:
+                for row, col in itertools.product(range(M.rows), range(M.cols)):
+                    if M[row, col] == 0:
+                        M[row, col] = fill
             new_rvs = JointNormalSeparate(names, means, M)
             self.__init__(new_rvs + non_altered)
