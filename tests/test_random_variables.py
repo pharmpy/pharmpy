@@ -1,3 +1,4 @@
+import pytest
 import sympy
 import sympy.stats as stats
 
@@ -32,6 +33,24 @@ def test_rv():
     retrieved = rvs['ETA(1)']
     assert retrieved.name == 'ETA(1)'
     assert retrieved.pspace.distribution.mean == 0
+
+
+def test_distributions():
+    rvs = JointNormalSeparate(['ETA(1)', 'ETA(2)'], [0, 0], [[3, 0.25], [0.25, 1]])
+    rvs = RandomVariables(rvs)
+    rvs.add(stats.Normal('ETA(3)', 0.5, 2))
+    gen = rvs.distributions()
+    symbols, dist = next(gen)
+    assert symbols[0].name == 'ETA(1)'
+    assert symbols[1].name == 'ETA(2)'
+    assert len(symbols) == 2
+    assert dist == rvs[0].pspace.distribution
+    symbols, dist = next(gen)
+    assert symbols[0].name == 'ETA(3)'
+    assert len(symbols) == 1
+    assert dist == rvs[2].pspace.distribution
+    with pytest.raises(StopIteration):
+        symbols, dist = next(gen)
 
 
 def test_merge_normal_distributions():

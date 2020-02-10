@@ -39,44 +39,76 @@ class RandomVariables(OrderedSet):
        Joints must come in the correct order
     """
     @staticmethod
-    def _rv_definition_string(rv):
-        """ Return a pretty string of the definition of a random variable
-        This should ideally be available from sympy.
-        Currently supports Normal and JointNormal
+    def _left_parens(height):
+        """Return an array containing each row of a large parenthesis
+           used for pretty printing
+        """
+        a = ['⎧']
+        for _ in range(height - 2):
+            a.append('⎪')
+        a.append('⎩')
+        return a
+
+    @staticmethod
+    def _right_parens(height):
+        """Return an array containing each row of a large parenthesis
+           used for pretty printing
+        """
+        a = ['⎫']
+        for _ in range(height - 2):
+            a.append('⎪')
+        a.append('⎭')
+        return a
+
+    @staticmethod
+    def _normal_definition_string(rv):
+        """Provide a array of pretty strings for the definition of a Normal random variable
+           This should ideally be available from sympy.
         """
         dist = rv.pspace.distribution
-        if isinstance(dist, stats.crv_types.NormalDistribution):
-            return [f'{sympy.pretty(rv)} ~ 𝓝({sympy.pretty(dist.mean)}, '
-                    f'{sympy.pretty(dist.std**2)})']
-        elif isinstance(dist, stats.joint_rv_types.MultivariateNormalDistribution):
-            mu_strings = sympy.pretty(dist.mu).split('\n')
-            sigma_strings = sympy.pretty(dist.sigma).split('\n')
-            mu_height = len(mu_strings)
-            sigma_height = len(sigma_strings)
-            max_height = max(mu_height, sigma_height)
+        return [f'{sympy.pretty(rv)} ~ 𝓝({sympy.pretty(dist.mean)}, '
+                f'{sympy.pretty(dist.std**2)})']
 
-            # Pad the smaller of the matrices
-            if mu_height != sigma_height:
-                to_pad = mu_strings if mu_strings < sigma_strings else sigma_strings
-                num_lines = abs(mu_height - sigma_height)
-                padding = ' ' * len(to_pad[0])
-                for i in range(0, num_lines):
-                    if i // 2 == 0:
-                        to_pad.append(padding)
-                    else:
-                        to_pad.insert(0, padding)
+    @staticmethod
+    def _joint_normal_definition_string(rvs):
+        """Provide an array of pretty strings for the definition of a Joint Normal random variable
+        """
+        dist = rvs[0].pspace.distribution
+        name_vector = sympy.Matrix(rvs)
+        name_strings = sympy.pretty(name_vector).split('\n')
+        mu_strings = sympy.pretty(dist.mu).split('\n')
+        sigma_strings = sympy.pretty(dist.sigma).split('\n')
+        mu_height = len(mu_strings)
+        sigma_height = len(sigma_strings)
+        max_height = max(mu_height, sigma_height)
 
-            central_index = max_height // 2
-            res = []
-            symbol_padding = ' ' * len(f'{sympy.pretty(rv)} ~ ')
-            for i, (mu_line, sigma_line) in enumerate(zip(mu_strings, sigma_strings)):
-                if i == central_index:
-                    res.append(f'{sympy.pretty(rv)} ~ 𝓝\N{SIX-PER-EM SPACE}(' +
-                               mu_line + ', ' + sigma_line + ')')
+        left_parens = RandomVariables._left_parens(len(name_strings))
+        right_parens = RandomVariables._right_parens(len(name_strings))
+
+        # Pad the smaller of the matrices
+        if mu_height != sigma_height:
+            to_pad = mu_strings if mu_strings < sigma_strings else sigma_strings
+            num_lines = abs(mu_height - sigma_height)
+            padding = ' ' * len(to_pad[0])
+            for i in range(0, num_lines):
+                if i // 2 == 0:
+                    to_pad.append(padding)
                 else:
-                    res.append(symbol_padding + '    ' + mu_line + '  ' + sigma_line + ' ')
+                    to_pad.insert(0, padding)
 
-            return res
+        central_index = max_height // 2
+        res = []
+        enumerator = enumerate(zip(name_strings, left_parens, mu_strings, sigma_strings,
+                                   right_parens))
+        for i, (name_line, lpar, mu_line, sigma_line, rpar) in enumerator:
+            if i == central_index:
+                res.append(name_line + f' ~ 𝓝\N{SIX-PER-EM SPACE}' + lpar + '\N{SIX-PER-EM SPACE}' +
+                           mu_line + ', ' + sigma_line + rpar)
+            else:
+                res.append(name_line + '     ' + lpar + '\N{SIX-PER-EM SPACE}' + mu_line +
+                           '  ' + sigma_line + rpar)
+
+        return res
 
     def __getitem__(self, index):
         if isinstance(index, int):
@@ -94,9 +126,28 @@ class RandomVariables(OrderedSet):
             random variables.
         """
         res = ''
-        for rv in self:
-            lines = RandomVariables._rv_definition_string(rv)
+        for rvs, dist in self.distributions():
+            if isinstance(dist, stats.crv_types.NormalDistribution):
+                lines = RandomVariables._normal_definition_string(rvs[0])
+            elif isinstance(dist, stats.joint_rv_types.MultivariateNormalDistribution):
+                lines = RandomVariables._joint_normal_definition_string(rvs)
             res += '\n'.join(lines) + '\n'
+        return res
+
+    def distributions(self):
+        """Iterate with one entry per distribution instead of per random variable.
+        """
+        i = 0
+        while i < len(self):
+            rv = self[i]
+            dist = rv.pspace.distribution
+            if isinstance(dist, stats.crv_types.NormalDistribution):
+                i += 1
+                yield [rv], dist
+            else:       # Joint Normal
+                rvs = [x for x in self if x.pspace.distribution == dist]
+                i += len(rvs)
+                yield rvs, dist
 
     def merge_normal_distributions(self, fill=0):
         """Merge all normal distributed rvs together into one joint normal
@@ -107,20 +158,16 @@ class RandomVariables(OrderedSet):
         means = []
         blocks = []
         names = []
-        prev_cov = None
-        for rv in self:
-            dist = rv.pspace.distribution
-            names.append(rv.name)
+        for rvs, dist in self.distributions():
+            names.extend([rv.name for rv in rvs])
             if isinstance(dist, stats.crv_types.NormalDistribution):
                 means.append(dist.mean)
                 blocks.append(sympy.Matrix([dist.std**2]))
             elif isinstance(dist, stats.joint_rv_types.MultivariateNormalDistribution):
-                if dist.sigma != prev_cov:
-                    means.extend(dist.mu)
-                    blocks.append(dist.sigma)
-                    prev_cov = dist.sigma
+                means.extend(dist.mu)
+                blocks.append(dist.sigma)
             else:
-                non_altered.append(rv)
+                non_altered.extend(rvs)
         if names:
             if len(blocks) > 1:
                 # Need special case for len(blocks) == 1 because of sympy 1.5.1 bug #18618
