@@ -293,6 +293,10 @@ class CLI:
                                                             parents=[self._args_input])
         cmd_results_bootstrap.set_defaults(func=self.results_bootstrap)
 
+        cmd_results_ofv = cmd_results_subs.add_parser('ofv', help='Extract OFVs from model runs',
+                                                      parents=[self._args_input])
+        cmd_results_ofv.set_defaults(func=self.results_ofv)
+
         # -- data ------------------------------------------------------------------------------
         cmd_data = parsers.add_parser('data', help='Data manipulations', allow_abbrev=True)
 
@@ -381,6 +385,11 @@ class CLI:
         res = pharmpy.results.BootstrapResults(original_model=args.models[0],
                                                bootstrap_models=args.models[1:])
         print(res)
+
+    def results_ofv(self, args):
+        """Subcommand to extract final ofv from multiple results"""
+        ofvs = [str(model.modelfit_results.ofv) for model in args.models]
+        print(' '.join(ofvs))
 
     def data_write(self, args):
         """Subcommand to write a dataset."""
