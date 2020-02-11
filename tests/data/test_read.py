@@ -14,7 +14,7 @@ def test_read_nonmem_dataset(testdata):
     assert list(df.columns) == colnames
     assert df.pharmpy.column_type['ID'] == data.ColumnType.ID
     assert df['ID'][0] == 1
-    assert df['TIME'][2] == 12.5
+    assert df['TIME'][2] == '12.5'      # FIXME! Should be number
 
     raw = data.read_nonmem_dataset(path, colnames=colnames, ignore_character='@', raw=True)
     assert raw['ID'][0] == '1'

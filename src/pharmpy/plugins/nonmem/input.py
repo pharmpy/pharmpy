@@ -132,6 +132,7 @@ class ModelInput(input.ModelInput):
             # over one or more records should move
             ignore = data_records[0].ignore
             accept = data_records[0].accept
+            # FIXME: This should really only be done if setting the dataset
             if ignore:
                 ignore = ModelInput._replace_synonym_in_filters(ignore, replacements)
             else:

@@ -212,6 +212,42 @@ def infer_column_type(colname):
         return ColumnType.UNKNOWN
 
 
+# def _translate_nonmem_time_value(time):
+#    if ':' in time:
+#        components = time.split(':')
+#        if len(components) > 3:
+#            raise DatasetError(f'Bad TIME format: {time}')
+#        hours = convert_fortran_number(components[0]) + convert_fortran_number(components[1]) * 60
+#        if len(components) == 3:
+#            hours += convert_fortran_number(components[2])
+#        return hours
+#    else:
+#        return time
+
+
+# def _translate_nonmem_time_and_date(df, timecol='TIME', datecol=None):
+#    relative_time = df[timecol].str.contains(':').any()
+#    if relative_time:
+#        df[timecol] = df[timecol].apply(_translate_nonmem_time_value)
+#        df[timecol] = df[timecol] - df[timecol].first()
+#    return df
+#    """
+#    if date:
+#        m = re.match(r'(?P<first>^[-]?\d+)(\D+(?P<second>\d+))?(\D+(?P<third>\d+))?$', date)
+#        if not m:
+#            raise ValueError('Bad DATE format: {date}')
+
+#        first = m.group('first')
+#        second = m.group('second')
+#        third = m.group('third')
+#        if second is None and third is None:
+#            hours += float(first) * 24      # day
+#        elif third is None:
+#            float(first) * 24 + float(second)       # day and month
+#        elif  date_label == 'DAT2':        # yy-mm-dd
+#    """
+
+
 def read_nonmem_dataset(path_or_io, raw=False, ignore_character='#', colnames=tuple(),
                         coltypes=None, drop=None, null_value='0', parse_columns=tuple(),
                         ignore=None, accept=None):
@@ -268,12 +304,22 @@ def read_nonmem_dataset(path_or_io, raw=False, ignore_character='#', colnames=tu
 
     df = _filter_ignore_accept(df, ignore, accept, null_value)
 
+    # if 'TIME' in df.columns:        # FIXME: Must handle synonyms
+    #    try:
+    #        id_label = df.pharmpy.id_label
+    #        df = df.groupby(id_label).apply(_translate_nonmem_time_and_date)
+    #    except KeyError:
+    #        df.apply(_translate_nonmem_time_and_date)
+
     if drop:
         indices_to_drop = [i for i, x in enumerate(drop) if not x]
         df = df.iloc[:, indices_to_drop].copy()
 
     if not raw:
         parse_columns = list(df.columns)
+        # FIXME: This is instead of proper handling of these columns
+        parse_columns = [x for x in parse_columns if x not in ['TIME', 'DATE', 'DAT1',
+                                                               'DAT2', 'DAT3']]
     for column in parse_columns:
         df[column] = df[column].apply(_convert_data_item, args=(str(null_value),))
     df = _make_ids_unique(df, parse_columns)
