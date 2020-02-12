@@ -388,7 +388,13 @@ class CLI:
 
     def results_ofv(self, args):
         """Subcommand to extract final ofv from multiple results"""
-        ofvs = [str(model.modelfit_results.ofv) for model in args.models]
+        ofvs = []
+        for model in args.models:
+            try:
+                ofv = str(model.modelfit_results.ofv)
+            except AttributeError:
+                ofv = 'NA'
+            ofvs.append(ofv)
         print(' '.join(ofvs))
 
     def data_write(self, args):
