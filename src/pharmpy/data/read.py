@@ -311,9 +311,11 @@ def read_nonmem_dataset(path_or_io, raw=False, ignore_character='#', colnames=tu
     #    except KeyError:
     #        df.apply(_translate_nonmem_time_and_date)
 
-    if drop:
-        indices_to_drop = [i for i, x in enumerate(drop) if not x]
-        df = df.iloc[:, indices_to_drop].copy()
+    # FIXME: Do not remove dropped columns for now.
+    # FIXME: Make sure to not parse these columns if this stays
+    # if drop:
+    #    indices_to_drop = [i for i, x in enumerate(drop) if not x]
+    #    df = df.iloc[:, indices_to_drop].copy()
 
     if not raw:
         parse_columns = list(df.columns)

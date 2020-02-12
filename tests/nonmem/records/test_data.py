@@ -112,6 +112,11 @@ def test_ignore_accept(parser):
     record = parser.parse('$DATA pheno.dta IGNORE=(WGT  < 1  ,\n  ID\n.EQ."lk")').records[0]
     assert str(record.ignore[0]) == 'WGT  < 1', 'ID\n.EQ."lk"'
 
+    record = parser.parse('$DATA      ../pheno.dta IGNORE=@ IGNORE(APGR.GT.23)\n').records[0]
+    del(record.ignore)
+    del(record.accept)
+    assert str(record) == '$DATA      ../pheno.dta IGNORE=@ \n'
+
 
 def test_data_infile(parser):
     record = parser.parse('$INFILE pheno.dta').records[0]

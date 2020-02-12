@@ -34,7 +34,7 @@ class OptionRecord(Record):
             if len(self.root.children) > 1 and self.root.children[-2].rule == 'ws':
                 self.root.children[-1:0] = [node]
             else:
-                ws_node = AttrTree.create('ws', [{'WS_ALL': 'ws'}])
+                ws_node = AttrTree.create('ws', [{'WS_ALL': ' '}])
                 self.root.children[-1:0] = [ws_node, node]
         else:
             self.root.children.append(node)
