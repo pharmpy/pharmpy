@@ -1,7 +1,7 @@
 import pytest
 import sympy
 
-from pharmpy.model import ModelFormatError
+from pharmpy.model import ModelSyntaxError
 
 
 @pytest.mark.usefixtures('parser')
@@ -82,7 +82,7 @@ def test_parameters(parser, buf, results):
 def test_errors(parser, buf):
     recs = parser.parse(buf)
     rec = recs.records[0]
-    with pytest.raises(ModelFormatError):
+    with pytest.raises(ModelSyntaxError):
         pset, _ = rec.parameters(1)
 
 

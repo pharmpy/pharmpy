@@ -19,8 +19,8 @@ class ModelException(Exception):
     pass
 
 
-class ModelFormatError(ModelException):
-    def __init__(self, msg='model format error'):
+class ModelSyntaxError(ModelException):
+    def __init__(self, msg='model syntax error'):
         super().__init__(msg)
 
 

@@ -3,7 +3,7 @@ from collections import OrderedDict
 import pytest
 from lark.exceptions import UnexpectedCharacters
 
-from pharmpy.model import ModelFormatError
+from pharmpy.model import ModelSyntaxError
 
 
 def test_data_filename_get(parser):
@@ -101,7 +101,7 @@ def test_ignore_character(parser):
         record.root
 
     record = parser.parse('$DATA pheno.dta IGNORE=c IGNORE=@').records[0]
-    with pytest.raises(ModelFormatError):
+    with pytest.raises(ModelSyntaxError):
         record.validate()
 
 

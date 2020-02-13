@@ -1,6 +1,6 @@
 import re
 
-from pharmpy.model import ModelFormatError
+from pharmpy.model import ModelSyntaxError
 
 from .records.factory import create_record
 from .records.raw_record import RawRecord
@@ -47,7 +47,7 @@ class NMTranControlStream:
         in_problem = False
         for record in self.records:
             if in_problem and record.name == 'SIZES':
-                raise ModelFormatError('The SIZES record must come before the first PROBLEM record')
+                raise ModelSyntaxError('The SIZES record must come before the first PROBLEM record')
             elif record.name == 'PROBLEM':
                 in_problem = True
             if hasattr(record, 'validate'):

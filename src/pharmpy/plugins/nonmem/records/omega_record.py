@@ -4,7 +4,7 @@ import numpy as np
 import sympy.stats
 
 import pharmpy.math
-from pharmpy.model import ModelFormatError
+from pharmpy.model import ModelSyntaxError
 from pharmpy.parameter import Parameter, ParameterSet
 from pharmpy.parse_utils.generic import AttrTree
 from pharmpy.random_variables import JointNormalSeparate, RandomVariables
@@ -28,10 +28,10 @@ class OmegaRecord(Record):
                 var = bool(node.find('VAR'))
                 n = node.n.INT if node.find('n') else 1
                 if sd and var:
-                    raise ModelFormatError(f'Initial estimate for {self.name.upper} cannot be both'
+                    raise ModelSyntaxError(f'Initial estimate for {self.name.upper} cannot be both'
                                            f' on SD and VAR scale\n{self.root}')
                 if init == 0 and not fixed:
-                    raise ModelFormatError(f'If initial estimate for {self.name.upper} is 0 it'
+                    raise ModelSyntaxError(f'If initial estimate for {self.name.upper} is 0 it'
                                            f' must be set to FIX')
                 if sd:
                     init = init ** 2
@@ -55,7 +55,7 @@ class OmegaRecord(Record):
                 inits += [init] * n
             if not same:
                 if size != pharmpy.math.triangular_root(len(inits)):
-                    raise ModelFormatError('Wrong number of inits in BLOCK')
+                    raise ModelSyntaxError('Wrong number of inits in BLOCK')
                 if not cholesky:
                     A = pharmpy.math.flattened_to_symmetric(inits)
                     if corr:
@@ -95,36 +95,36 @@ class OmegaRecord(Record):
         for node in self.root.all('omega'):
             if node.find('FIX'):
                 if fix:
-                    raise ModelFormatError('Cannot specify option FIX more than once')
+                    raise ModelSyntaxError('Cannot specify option FIX more than once')
                 else:
                     fix = True
             if node.find('VAR'):
                 if var or sd or cholesky:
-                    raise ModelFormatError('Cannot specify either option VARIANCE, SD or '
+                    raise ModelSyntaxError('Cannot specify either option VARIANCE, SD or '
                                            'CHOLESKY more than once')
                 else:
                     var = True
             if node.find('SD'):
                 if sd or var or cholesky:
-                    raise ModelFormatError('Cannot specify either option VARIANCE, SD or '
+                    raise ModelSyntaxError('Cannot specify either option VARIANCE, SD or '
                                            'CHOLESKY more than once')
                 else:
                     sd = True
             if node.find('COV'):
                 if cov or corr:
-                    raise ModelFormatError('Cannot specify either option COVARIANCE or '
+                    raise ModelSyntaxError('Cannot specify either option COVARIANCE or '
                                            'CORRELATION more than once')
                 else:
                     cov = True
             if node.find('CORR'):
                 if corr or cov:
-                    raise ModelFormatError('Cannot specify either option COVARIANCE or '
+                    raise ModelSyntaxError('Cannot specify either option COVARIANCE or '
                                            'CORRELATION more than once')
                 else:
                     corr = True
             if node.find('CHOLESKY'):
                 if cholesky or var or sd:
-                    raise ModelFormatError('Cannot specify either option VARIANCE, SD or '
+                    raise ModelSyntaxError('Cannot specify either option VARIANCE, SD or '
                                            'CHOLESKY more than once')
                 else:
                     cholesky = True

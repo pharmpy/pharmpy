@@ -2,7 +2,7 @@
 NONMEM data record class.
 """
 
-from pharmpy.model import ModelFormatError
+from pharmpy.model import ModelSyntaxError
 from pharmpy.parse_utils import AttrTree
 
 from .option_record import OptionRecord
@@ -118,7 +118,7 @@ class DataRecord(OptionRecord):
             Assumes only on $DATA exists in this $PROBLEM.
         """
         if len(self.root.all('ignchar')) > 1:
-            raise ModelFormatError('More than one IGNORE=c')
+            raise ModelSyntaxError('More than one IGNORE=c')
 
     # @filters.setter
     # def filters(self, filters):
