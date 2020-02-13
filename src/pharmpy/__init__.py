@@ -14,7 +14,8 @@ __version__ = '0.1.0'
 import logging
 
 from .model_factory import Model
+from .parameter import Parameter, ParameterSet
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 
-__all__ = ['Model']
+__all__ = ['Model', 'Parameter', 'ParameterSet']

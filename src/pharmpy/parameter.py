@@ -5,12 +5,17 @@ from pharmpy.data_structures import OrderedSet
 
 
 class ParameterSet(OrderedSet):
-    """ ParameterSet
+    """A set of parameters
 
-    Representing a group of parameters usually all parameters in a model.
-    Even though parameters can directly be a part of the definitions of a
-    model this class give a ways of displaying, summarizing and manipulating
+    Class representing a group of parameters. Usually all parameters in a model.
+    This class give a ways of displaying, summarizing and manipulating
     more than one parameter at a time.
+
+    Specific parameters can be found using indexing on the parameter name
+
+    .. code-block:: python
+
+        params['THETA(1)']
     """
     def __getitem__(self, index):
         for e in self:
@@ -19,7 +24,10 @@ class ParameterSet(OrderedSet):
         raise KeyError(f'Parameter "{index}" does not exist')
 
     def summary(self):
-        """Construct a dataframe to summarize the Parameters
+        """Give a dataframe with a summary of all Parameters
+
+        :returns: A dataframe with one row per parameter.
+                  The columns are name, value, lower, upper and fix
         """
         symbols = [param.name for param in self]
         values = [param.init for param in self]
@@ -30,15 +38,11 @@ class ParameterSet(OrderedSet):
                              'lower': lower, 'upper': upper, 'fix': fix})
 
     def __repr__(self):
-        """View the parameters as a table.
-        """
         if len(self) == 0:
             return "ParameterSet()"
         return self.summary().to_string(index=False)
 
     def _repr_html_(self):
-        """For viewing in html capable environments
-        """
         if len(self) == 0:
             return "ParameterSet()"
         else:
@@ -46,30 +50,32 @@ class ParameterSet(OrderedSet):
 
 
 class Parameter:
+    """A single parameter
+       Constraints are currently supported as lower and upper bounds and fix.
+       Fix is regarded as constraining the parameter to one single value
+
+        .. code-block::
+
+            param = Parameter("TVCL", 0.005, lower=0)
+
+       .. attribute:: name
+
+           Name of the parameter
+
+    """
     def __init__(self, name, init, lower=None, upper=None, fix=False):
-        """A parameter
-
-        Constraints are currently supported as lower and upper bounds and fix.
-        Fix is regarded as constraining the parameter to one single value
-
-        Properties: name, init, lower, upper and fix
-        """
         self._init = init
         self.name = name
-        self.lower = -sympy.oo
-        self.upper = sympy.oo
+        self._lower = -sympy.oo
+        self._upper = sympy.oo
         if fix:
             if lower is not None or upper is not None:
                 raise ValueError('Cannot fix a parameter that has lower and upper bounds')
-            self.lower = init
-            self.upper = init
+            self._lower = init
+            self._upper = init
         if lower is not None:
-            if lower > init:
-                raise ValueError(f'Lower bound {lower} is greater than init {init}')
             self.lower = lower
         if upper is not None:
-            if upper < init:
-                raise ValueError(f'Upper bound {upper} is greater than init {init}')
             self.upper = upper
 
     @property
@@ -86,6 +92,30 @@ class Parameter:
         else:
             if self.fix:
                 self.unconstrain()
+
+    @property
+    def lower(self):
+        """Lower bound of the parameter
+        """
+        return self._lower
+
+    @lower.setter
+    def lower(self, new_lower):
+        if new_lower > self.init:
+            raise ValueError(f'Lower bound {new_lower} cannot be greater than init {self.init}')
+        self._lower = new_lower
+
+    @property
+    def upper(self):
+        """Upper bound of the parameter
+        """
+        return self._upper
+
+    @upper.setter
+    def upper(self, new_upper):
+        if new_upper < self.init:
+            raise ValueError(f'Upper bound {new_upper} cannot be less than init {self.init}')
+        self._upper = new_upper
 
     @property
     def init(self):
@@ -107,14 +137,14 @@ class Parameter:
     def unconstrain(self):
         """Remove all constraints of a parameter
         """
-        self.lower = -sympy.oo
-        self.upper = sympy.oo
+        self._lower = -sympy.oo
+        self._upper = sympy.oo
 
     def __hash__(self):
         return hash(self.name)
 
     def __eq__(self, other):
-        """Two parameters are equal if they have the same symbol, init and constraints
+        """Two parameters are equal if they have the same name, init and constraints
         """
         return self.init == other.init and self.lower == other.lower and \
             self.upper == other.upper and self.name == other.name
