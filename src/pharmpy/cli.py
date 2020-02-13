@@ -408,7 +408,7 @@ class CLI:
             # If no output_file supplied will use name of df
             path = df.pharmpy.write_csv(path=path, force=args.force)
             print(f'Dataset written to {path}')
-        except FileExistsError as e:
+        except OSError as e:
             self.error_exit(exception=e)
 
     def data_filter(self, args):
@@ -484,7 +484,7 @@ class CLI:
                     resampled_obj.write()
                 except AttributeError:
                     resampled_obj.pharmpy.write_csv()
-            except FileExistsError as e:
+            except OSError as e:
                 self.error_exit(exception=e)
 
     def data_anonymize(self, args):
