@@ -1,5 +1,8 @@
 from collections import OrderedDict
 
+import pytest
+from lark.exceptions import UnexpectedCharacters
+
 
 def test_data_filename_get(parser):
     record = parser.parse('$DATA "pheno.dta"').records[0]
@@ -69,15 +72,30 @@ def test_ignore_character(parser):
     record = parser.parse('$DATA pheno.dta IGNORE="I"').records[0]
     assert record.ignore_character == 'I'
 
+    record = parser.parse('$DATA pheno.dta IGNORE=\'"\'').records[0]
+    assert record.ignore_character == '"'
+
     record = parser.parse('$DATA pheno.dta IGNORE=K IGNORE=(ID.EQ.2)').records[0]
     assert record.ignore_character == 'K'
 
     record = parser.parse('$DATA pheno.dta IGNORE=(DV==3) IGNORE=C').records[0]
-    record.root.treeprint()
     assert record.ignore_character == 'C'
     record.ignore_character = '@'
     assert record.ignore_character == '@'
     assert str(record.ignore[0]) == 'DV==3'
+
+    record = parser.parse('$DATA pheno.dta IGNORE=,').records[0]
+    assert record.ignore_character == ','
+
+    record = parser.parse('$DATA pheno.dta IGNORE="').records[0]
+    assert record.ignore_character == '"'
+    record.ignore_character = '"'
+    assert record.ignore_character == '"'
+    assert str(record) == '$DATA pheno.dta IGNORE="'
+
+    record = parser.parse('$DATA pheno.dta IGNORE=""').records[0]
+    with pytest.raises(UnexpectedCharacters):
+        record.root
 
 
 def test_ignore_character_from_header(parser):

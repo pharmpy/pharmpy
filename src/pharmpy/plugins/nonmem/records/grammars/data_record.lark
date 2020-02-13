@@ -71,7 +71,7 @@ NL: /\r?\n/
 
 // common naked/enquoted text terminals
 TEXT : /[^"',;()=\s]+/
-CHAR : /[^"',;()=\s]/
+CHAR : /[^';()=\s]/
 QUOTE : /"[^"]*"/
       | /'[^']*'/
 CHARQUOTE : /"[^"]"/
