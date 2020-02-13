@@ -48,8 +48,10 @@ class NMTranControlStream:
         for record in self.records:
             if in_problem and record.name == 'SIZES':
                 raise ModelFormatError('The SIZES record must come before the first PROBLEM record')
-            if record.name == 'PROBLEM':
+            elif record.name == 'PROBLEM':
                 in_problem = True
+            if hasattr(record, 'validate'):
+                record.validate()
 
     def __str__(self):
         return ''.join(str(x) for x in self.records)

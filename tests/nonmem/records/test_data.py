@@ -3,6 +3,8 @@ from collections import OrderedDict
 import pytest
 from lark.exceptions import UnexpectedCharacters
 
+from pharmpy.model import ModelFormatError
+
 
 def test_data_filename_get(parser):
     record = parser.parse('$DATA "pheno.dta"').records[0]
@@ -92,10 +94,15 @@ def test_ignore_character(parser):
     record.ignore_character = '"'
     assert record.ignore_character == '"'
     assert str(record) == '$DATA pheno.dta IGNORE="'
+    record.validate()
 
     record = parser.parse('$DATA pheno.dta IGNORE=""').records[0]
     with pytest.raises(UnexpectedCharacters):
         record.root
+
+    record = parser.parse('$DATA pheno.dta IGNORE=c IGNORE=@').records[0]
+    with pytest.raises(ModelFormatError):
+        record.validate()
 
 
 def test_ignore_character_from_header(parser):
