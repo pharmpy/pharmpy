@@ -118,6 +118,11 @@ def test_ignore_accept(parser):
     assert str(record) == '$DATA      ../pheno.dta IGNORE=@ \n'
 
 
+def test_comments(parser):
+    record = parser.parse('$DATA pheno.dta IGNORE=@;MYCOMMENT').records[0]
+    assert str(record) == '$DATA pheno.dta IGNORE=@;MYCOMMENT'
+
+
 def test_data_infile(parser):
     record = parser.parse('$INFILE pheno.dta').records[0]
     assert record.name == 'DATA'

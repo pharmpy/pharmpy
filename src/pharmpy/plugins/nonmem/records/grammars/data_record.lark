@@ -10,7 +10,7 @@
 //        [MISDAT=@r@...]
 
 root : ws "*" [ws]
-     | ws (comment [ws])* filename (ws option | ws comment)* [ws]
+     | ws (comment [ws])* filename (ws option | [ws] comment)* [ws]
 
 // dataset (always, unless only ASTERIX terminal)
 filename: TEXT | QUOTE
