@@ -462,10 +462,10 @@ class CLI:
         m = re.search(r'(.*?)(\d+)$', name)
         if m:
             stem = m.group(1)
-            n = m.group(2)
+            n = int(m.group(2))
             while True:
                 n += 1
-                new_name = stem + n
+                new_name = f'{stem}{n}'
                 new_path = path / new_name
                 if not new_path.exists():
                     break
