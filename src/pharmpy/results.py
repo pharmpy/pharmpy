@@ -1,9 +1,11 @@
 # Classes for method results
 
+import numpy as np
 import pandas as pd
 
 import pharmpy.visualization
 from pharmpy.data import PharmDataFrame
+from pharmpy.math import cov2corr
 
 
 class ModelfitResults:
@@ -30,11 +32,73 @@ class ModelfitResults:
         """
         raise NotImplementedError("Not implemented")
 
+    def _cov_from_inf(self):
+        I = self.information_matrix
+        cov = pd.DataFrame(np.linalg.inv(I.values), index=I.index, columns=I.columns)
+        return cov
+
+    def _cov_from_corrse(self):
+        se = self.standard_errors
+        corr = self.correlation_matrix
+        x = se.values @ se.values.T
+        cov = x * corr.values
+        return pd.DataFrame(cov, index=corr.index, columns=corr.columns)
+
     @property
     def information_matrix(self):
         """The Fischer information matrix of the population parameter estimates
         """
-        raise NotImplementedError("Not implemented")
+        raise NotImplementedError()
+
+    def _inf_from_cov(self):
+        C = self.covariance_matrix
+        I = pd.DataFrame(np.linalg.inv(C.values), index=C.index, columns=C.columns) 
+        return I
+
+    def _inf_from_corrse(self):
+        se = self.standard_errors
+        corr = self.correlation_matrix
+        x = se.values @ se.values.T
+        cov = x * corr.values
+        I = pd.DataFrame(np.linalg.inv(cov), index=corr.index, columns=corr.columns)
+        return I
+
+    @property
+    def correlation_matrix(self):
+        """The correlation matrix of the population parameter estimates
+        """
+        raise NotImplementedError()
+
+    def _corr_from_cov(self):
+        C = self.covariance_matrix
+        corr = pd.DataFrame(cov2corr(C.values), index=C.index, columns=C.columns)
+        return corr
+
+    def _corr_from_inf(self):
+        I = self.information_matrix
+        corr = pd.DataFrame(cov2corr(np.linalg.inv(I.values)), index=I.index, columns=I.columns)
+        return corr
+
+    @property
+    def standard_errors(self):
+        """Standard errors of population parameter estimates
+        """
+        raise NotImplementedError()
+
+    def _se_from_cov(self):
+        """Calculate the standard errors from the covariance matrix
+           can be used by subclasses
+        """
+        cov = self.covariance_matrix
+        se = pd.Series(np.sqrt(np.diag(cov.values)), index=C.index)
+        return se
+
+    def _se_from_inf(self):
+        """Calculate the standard errors from the information matrix
+        """
+        I = self.information_matrix
+        se = pd.Series(np.sqrt(np.linalg.inv(I.values)), index=I.index)
+        return se
 
     @property
     def individual_OFV(self):
@@ -73,6 +137,14 @@ class ChainedModelfitResults(list, ModelfitResults):
         return self[-1].information_matrix
 
     @property
+    def correlation_matrix(self):
+        return self[-1].correlation_matrix
+
+    @property
+    def standard_errors(self):
+        return self[-1].standard_errors
+
+    @property
     def individual_OFV(self):
         return self[-1].individual_OFV
 
@@ -83,7 +155,7 @@ class ChainedModelfitResults(list, ModelfitResults):
     def model_name(self):
         return self[-1].model_name
 
-    # FIXME: To not have to manually intercept everything here. Should do it in a general way.
+    # FIXME: To not have to manually intercept everything here. Could do it in a general way.
 
 
 class CaseDeletionResults:

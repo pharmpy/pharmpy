@@ -23,6 +23,16 @@ def flattened_to_symmetric(x):
     return new
 
 
+def cov2corr(cov):
+    """Convert covariance matrix to correlation matrix
+    """
+    v = np.sqrt(np.diag(cov))
+    outer_v = np.outer(v, v)
+    corr = covariance / outer_v
+    corr[cov == 0] = 0
+    return corr
+
+
 def round_and_keep_sum(x, s):
     '''Round values in Series x and their sum must be s
 
