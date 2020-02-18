@@ -178,6 +178,12 @@ Code records
 
 NM-TRAN allows multiple $PK, $PRED and $ERROR in a model. They simple get merged into one big record in the order they have in the control stream. As long as the first $PK/$PRED/$ERROR follows the regular placement rules the others can be placed at any position after that.
 
+Code lines
+~~~~~~~~~~
+
+NONMEM 7.4 does not seem to have a restriction of the line length as NM-TRAN automatically creates continuation lines. Limiting factor is then the number of continuation lines allowed by the compiler. A 11138 characters long line was tested, which generated 445 continuation lines. Even though outside the fortran standards this worked with gfortran 8.3.
+
+
 
 Derivatives
 -----------
