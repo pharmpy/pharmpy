@@ -37,6 +37,12 @@ class ParameterSet(OrderedSet):
         return pd.DataFrame({'name': symbols, 'value': values,
                              'lower': lower, 'upper': upper, 'fix': fix})
 
+    def remove_fixed(self):
+        """Remove all fixed parameters
+        """
+        fixed = [p for p in self if p.fix]
+        self -= fixed
+
     def __repr__(self):
         if len(self) == 0:
             return "ParameterSet()"

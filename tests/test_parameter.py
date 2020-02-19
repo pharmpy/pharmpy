@@ -65,3 +65,14 @@ def test_pset_index():
             assert param is p
         else:
             assert param is p2
+
+
+def test_pset_remove_fixed():
+    p1 = Parameter('Y', 9, fix=False)
+    p2 = Parameter('X', 3, fix=True)
+    p3 = Parameter('Z', 1, fix=False)
+    pset = ParameterSet([p1, p2, p3])
+    pset.remove_fixed()
+    assert len(pset) == 2
+    assert pset['Y'] == Parameter('Y', 9)
+
