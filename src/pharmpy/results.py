@@ -107,6 +107,14 @@ class ModelfitResults:
         """
         raise NotImplementedError("Not implemented")
 
+    def parameter_summary(self):
+        """Summary of parameter estimates and uncertainty
+        """
+        pe = self.parameter_estimates
+        ses = self.standard_errors
+        df = pd.DataFrame({'estimate': pe, 'SE': ses})
+        return df
+
     def plot_iofv_vs_iofv(self, other):
         x_label = f'{self.model_name} iOFV'
         y_label = f'{other.model_name} iOFV'
