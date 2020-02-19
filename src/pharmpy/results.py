@@ -33,8 +33,8 @@ class ModelfitResults:
         raise NotImplementedError("Not implemented")
 
     def _cov_from_inf(self):
-        I = self.information_matrix
-        cov = pd.DataFrame(np.linalg.inv(I.values), index=I.index, columns=I.columns)
+        Im = self.information_matrix
+        cov = pd.DataFrame(np.linalg.inv(Im.values), index=Im.index, columns=Im.columns)
         return cov
 
     def _cov_from_corrse(self):
@@ -42,7 +42,8 @@ class ModelfitResults:
         corr = self.correlation_matrix
         x = se.values @ se.values.T
         cov = x * corr.values
-        return pd.DataFrame(cov, index=corr.index, columns=corr.columns)
+        cov_df = pd.DataFrame(cov, index=corr.index, columns=corr.columns)
+        return cov_df
 
     @property
     def information_matrix(self):
@@ -52,16 +53,16 @@ class ModelfitResults:
 
     def _inf_from_cov(self):
         C = self.covariance_matrix
-        I = pd.DataFrame(np.linalg.inv(C.values), index=C.index, columns=C.columns) 
-        return I
+        Im = pd.DataFrame(np.linalg.inv(C.values), index=C.index, columns=C.columns)
+        return Im
 
     def _inf_from_corrse(self):
         se = self.standard_errors
         corr = self.correlation_matrix
         x = se.values @ se.values.T
         cov = x * corr.values
-        I = pd.DataFrame(np.linalg.inv(cov), index=corr.index, columns=corr.columns)
-        return I
+        Im = pd.DataFrame(np.linalg.inv(cov), index=corr.index, columns=corr.columns)
+        return Im
 
     @property
     def correlation_matrix(self):
@@ -75,8 +76,8 @@ class ModelfitResults:
         return corr
 
     def _corr_from_inf(self):
-        I = self.information_matrix
-        corr = pd.DataFrame(cov2corr(np.linalg.inv(I.values)), index=I.index, columns=I.columns)
+        Im = self.information_matrix
+        corr = pd.DataFrame(cov2corr(np.linalg.inv(Im.values)), index=Im.index, columns=Im.columns)
         return corr
 
     @property
@@ -90,18 +91,18 @@ class ModelfitResults:
            can be used by subclasses
         """
         cov = self.covariance_matrix
-        se = pd.Series(np.sqrt(np.diag(cov.values)), index=C.index)
+        se = pd.Series(np.sqrt(np.diag(cov.values)), index=cov.index)
         return se
 
     def _se_from_inf(self):
         """Calculate the standard errors from the information matrix
         """
-        I = self.information_matrix
-        se = pd.Series(np.sqrt(np.linalg.inv(I.values)), index=I.index)
+        Im = self.information_matrix
+        se = pd.Series(np.sqrt(np.linalg.inv(Im.values)), index=Im.index)
         return se
 
     @property
-    def individual_OFV(self):
+    def individual_ofv(self):
         """A Series with individual estimates indexed over ID
         """
         raise NotImplementedError("Not implemented")
@@ -109,7 +110,7 @@ class ModelfitResults:
     def plot_iofv_vs_iofv(self, other):
         x_label = f'{self.model_name} iOFV'
         y_label = f'{other.model_name} iOFV'
-        df = PharmDataFrame({x_label: self.individual_OFV, y_label: other.individual_OFV})
+        df = PharmDataFrame({x_label: self.individual_ofv, y_label: other.individual_ofv})
         plot = pharmpy.visualization.scatter_plot_correlation(df, x_label, y_label,
                                                               title='iOFV vs iOFV')
         return plot
@@ -145,11 +146,11 @@ class ChainedModelfitResults(list, ModelfitResults):
         return self[-1].standard_errors
 
     @property
-    def individual_OFV(self):
-        return self[-1].individual_OFV
+    def individual_ofv(self):
+        return self[-1].individual_ofv
 
-    def plot_iOFV_vs_iOFV(self, other):
-        return self[-1].plot_iOFV_vs_iOFV(other)
+    def plot_iofv_vs_iofv(self, other):
+        return self[-1].plot_iofv_vs_iofv(other)
 
     @property
     def model_name(self):

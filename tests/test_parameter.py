@@ -75,4 +75,3 @@ def test_pset_remove_fixed():
     pset.remove_fixed()
     assert len(pset) == 2
     assert pset['Y'] == Parameter('Y', 9)
-

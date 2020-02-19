@@ -28,7 +28,7 @@ def cov2corr(cov):
     """
     v = np.sqrt(np.diag(cov))
     outer_v = np.outer(v, v)
-    corr = covariance / outer_v
+    corr = cov / outer_v
     corr[cov == 0] = 0
     return corr
 

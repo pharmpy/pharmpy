@@ -1,5 +1,8 @@
 from pathlib import Path
 
+import numpy as np
+import pandas as pd
+
 from pharmpy.plugins.nonmem.table import NONMEMTableFile
 from pharmpy.results import ChainedModelfitResults, ModelfitResults
 
@@ -11,22 +14,27 @@ class NONMEMModelfitResults(ModelfitResults):
 
     @property
     def ofv(self):
-        if not self._chain._read_ext:
+        try:
+            return self._ofv
+        except AttributeError:
             self._chain._read_ext_table()
-        return self._ofv
+            return self._ofv
 
     @property
     def parameter_estimates(self):
-        if not self._chain._read_ext:
+        try:
+            return self._parameter_estimates
+        except AttributeError:
             self._chain._read_ext_table()
-        return self._parameter_estimates
+            return self._parameter_estimates
 
     @property
     def covariance_matrix(self):
         """The covariance matrix of the population parameter estimates
         """
-        # FIXME: Should only return if last in chain. Raise otherwise? Would standard errors work? If not $COV will ext be different?
-        if self._covariance_matrix is None:     # FIXME: Move the if is None to the read function.
+        try:
+            return self._covariance_matrix
+        except AttributeError:
             try:
                 self._chain._read_cov_table()
             except OSError:
@@ -38,53 +46,114 @@ class NONMEMModelfitResults(ModelfitResults):
             except OSError:
                 pass
             else:
-                return self.cov_from_corrse()
+                self._covariance_matrix = self._cov_from_corrse()
+                return self._covariance_matrix
             try:
                 self._chain._read_coi_table()
             except OSError:
                 pass
             else:
-                return self.cov_from_inf()
-            raise FileNotFoundError("Could not find any of the cov/cor and coi files")
- 
-
-        return self._covariance_matrix
-
-        if not self._chain._read_cov:
-            self._chain._read_cov_table()
-        return self._covariance_matrix
-        # FIXME: New idea here: check if _covariance_matrix is not None. Read from cov or coi or cor/ext
+                self._covariance_matrix = self._cov_from_inf()
+                return self._covariance_matrix
+            raise FileNotFoundError("Could not find any of the cov/cor/coi files")
 
     @property
     def information_matrix(self):
         """The Fischer information matrix of the population parameter estimates
         """
-        if not self._chain._read_coi:
+        try:
+            return self._information_matrix
+        except AttributeError:
             try:
                 self._chain._read_coi_table()
-            except FileNotFoundError:
-                return super().information_matrix       # Fallback to inverting the cov matrix
-        return self._information_matrix
+            except OSError:
+                pass
+            else:
+                return self._information_matrix
+            try:
+                self._chain._read_cor_table()
+            except OSError:
+                pass
+            else:
+                self._information_matrix = self._inf_from_cov()
+                return self._information_matrix
+            try:
+                self._chain._read_cor_table()
+            except OSError:
+                pass
+            else:
+                self._information_matrix = self._inf_from_corrse()
+            raise FileNotFoundError("Could not find any of the cov/cor/coi files")
 
     @property
     def correlation_matrix(self):
-    	# FIXME: HERE: could read cov and set diags to 1
-	# Also have standard errors as method
-        if not self._chain._read_cor:
-            self._chain._read_cor_table()
-        return self._cor_matrix
+        try:
+            return self._correlation_matrix
+        except AttributeError:
+            try:
+                self._chain._read_cor_table()
+            except OSError:
+                pass
+            else:
+                return self._correlation_matrix
+            try:
+                self._chain._read_cov_table()
+            except OSError:
+                pass
+            else:
+                self._correlation_matrix = self._corr_from_cov()
+                return self._correlation_matrix
+            try:
+                self._chain._read_coi_table()
+            except OSError:
+                pass
+            else:
+                self._correlation_matrix = self._corr_from_coi()
+                return self._correlation_matrix
+            raise FileNotFoundError("Could not find any of the cov/cor/coi files")
 
     @property
     def standard_errors(self):
-        # Also for FIX here? should be 0 for these
+        try:
+            return self._standard_errors
+        except AttributeError:
+            try:
+                self._chain._read_ext_table()
+            except OSError:
+                pass
+            else:
+                return self._standard_errors
+            try:
+                self._chain._read_cor_table()
+            except OSError:
+                pass
+            else:
+                return self._standard_errors
+            try:
+                self._chain._read_cov_table()
+            except OSError:
+                pass
+            else:
+                self._standard_errors = self._se_from_cov()
+                return self._standard_errors
+            try:
+                self._chain._read_coi_table()
+            except OSError:
+                pass
+            else:
+                self._standard_errors = self._se_from_inf()
+                return self._standard_errors
+            raise FileNotFoundError("Could not find any of the ext/cov/cor/coi files")
 
     @property
-    def individual_OFV(self):
+    def individual_ofv(self):
         """A Series with individual estimates indexed over ID
         """
-        if not self._chain._read_phi:
+        try:
+            return self._individual_ofv
+        except AttributeError:
             self._chain._read_phi_table()
-        return self._individual_OFV
+            return self._individual_ofv
 
 
 class NONMEMChainedModelfitResults(ChainedModelfitResults):
@@ -94,41 +163,64 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
         self._path = Path(path)
         self._read_phi = False
         self._read_ext = False
-        for _ in range(n):
+        self._read_cov = False
+        self._read_coi = False
+        self._read_cor = False
+        for i in range(n):
             res = NONMEMModelfitResults(self)
             res.model_name = self._path.stem
+            if i != n - 1:    # Only the final estimation step carries covariance information
+                res._covariance_matrix = None
+                res._correlation_matrix = None
+                res._information_matrix = None
             self.append(res)
 
     def _read_ext_table(self):
-        ext_tables = NONMEMTableFile(self._path.with_suffix('.ext'))
-        for table, result_obj in zip(ext_tables, self):
-            ests = table.final_parameter_estimates
-            fix = table.fixed
-            ests = ests[~fix]
-            result_obj._parameter_estimates = ests
-            result_obj._ofv = table.final_ofv
-        self._read_ext = True
+        if not self._read_ext:
+            ext_tables = NONMEMTableFile(self._path.with_suffix('.ext'))
+            for table, result_obj in zip(ext_tables, self):
+                ests = table.final_parameter_estimates
+                fix = table.fixed
+                ests = ests[~fix]
+                result_obj._parameter_estimates = ests
+                try:
+                    ses = table.standard_errors
+                except Exception:
+                    result_obj._standard_errors = None
+                else:
+                    ses = ses[~fix]
+                    result_obj._standard_errors = ses
+                result_obj._ofv = table.final_ofv
+            self._read_ext = True
 
     def _read_cov_table(self):
-        cov_table = NONMEMTableFile(self._path.with_suffix('.cov'))
-        self[-1]._covariance_matrix = next(cov_table).data_frame
+        if not self._read_cov:
+            cov_table = NONMEMTableFile(self._path.with_suffix('.cov'))
+            self[-1]._covariance_matrix = next(cov_table).data_frame
+            self._read_cov = True
 
     def _read_coi_table(self):
-        coi_table = NONMEMTableFile(self._path.with_suffix('.coi'))
-        self[-1]._information_matrix = next(coi_table).data_frame
-    
+        if not self._read_coi:
+            coi_table = NONMEMTableFile(self._path.with_suffix('.coi'))
+            self[-1]._information_matrix = next(coi_table).data_frame
+            self._read_coi = True
+
     def _read_cor_table(self):
-        cor_table = NONMEMTableFile(self._path.with_suffix('.cor'))
-        cor = next(cor_table).data_frame
-        self[-1]._sderr = pd.Series(np.diag(cor), index=cor.index)
-        np.fill_diagonal(cor.values, 1)
-        self[-1]._cor_matrix = cor
+        if not self._read_cor:
+            cor_table = NONMEMTableFile(self._path.with_suffix('.cor'))
+            cor = next(cor_table).data_frame
+            if not hasattr(self[-1], '_standard_errors'):   # In case read from the ext-file
+                self[-1]._standard_errors = pd.Series(np.diag(cor), index=cor.index)
+            np.fill_diagonal(cor.values, 1)
+            self[-1]._correlation_matrix = cor
+            self._read_cor = True
 
     def _read_phi_table(self):
-        phi_tables = NONMEMTableFile(self._path.with_suffix('.phi'))
-        for table, result_obj in zip(phi_tables, self):
-            df = table.data_frame[['ID', 'OBJ']]
-            df.columns = ['ID', 'iOFV']
-            df.set_index('ID', inplace=True)
-            result_obj._individual_OFV = df['iOFV']
+        if not self._read_phi:
+            phi_tables = NONMEMTableFile(self._path.with_suffix('.phi'))
+            for table, result_obj in zip(phi_tables, self):
+                df = table.data_frame[['ID', 'OBJ']]
+                df.columns = ['ID', 'iOFV']
+                df.set_index('ID', inplace=True)
+                result_obj._individual_ofv = df['iOFV']
             self._read_phi = True
