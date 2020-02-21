@@ -1,5 +1,7 @@
 import numpy as np
 import pandas as pd
+import pytest
+import sympy
 from numpy.testing import assert_array_equal
 from pandas.testing import assert_series_equal
 
@@ -27,3 +29,17 @@ def test_round_and_keep_sum():
     correct_results = pd.Series([1, 1, 1, 1, 2, 3, 4, 4, 3, 0])
     rounded = pharmpy.math.round_and_keep_sum(ser, 20)
     assert_series_equal(rounded, correct_results)
+
+
+def test_se_delta_method():
+    vals = {'OMEGA(1,1)': 3.75637E-02, 'OMEGA(2,1)': 1.93936E-02, 'OMEGA(2,2)': 2.19133E-02}
+    om11 = sympy.Symbol('OMEGA(1,1)')
+    om21 = sympy.Symbol('OMEGA(2,1)')
+    om22 = sympy.Symbol('OMEGA(2,2)')
+    expr = om21 / (sympy.sqrt(om11) * sympy.sqrt(om22))
+    names = ['OMEGA(1,1)', 'OMEGA(2,1)', 'OMEGA(2,2)']
+    cov = pd.DataFrame([[4.17213E-04, 1.85060E-04, -3.51477E-05],
+                        [1.85060E-04, 1.10836E-04, 3.61663E-06],
+                        [-3.51477E-05, 3.61663E-06, 4.44030E-05]], columns=names, index=names)
+    se = pharmpy.math.se_delta_method(expr, vals, cov)
+    assert pytest.approx(0.2219739865800438, 1e-15) == se

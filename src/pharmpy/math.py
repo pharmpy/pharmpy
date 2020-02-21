@@ -1,6 +1,7 @@
 import math
 
 import numpy as np
+import sympy
 
 # This module could probably be made private.
 
@@ -50,3 +51,25 @@ def round_and_keep_sum(x, s):
         rounded_sample_sizes[group_index] += step
 
     return rounded_sample_sizes.astype('int64')
+
+
+def se_delta_method(expr, values, cov):
+    """ Use the delta method to estimate the standard error
+        of a function of parameters with covariance matrix
+        available.
+
+        expr - A sympy expression for the function of parameters
+        cov - dataframe with symbol names as indices
+              must include at least all parameters needed for expr
+        values - dict/series parameter estimates. Must include at least
+                 all parameters needed for expr
+    """
+    symbs = expr.free_symbols
+    names_unsorted = [s.name for s in symbs]
+    # Sort names according to order in cov
+    names = [y for x in cov.columns for y in names_unsorted if y == x]
+    cov = cov[names].loc[names]
+    symb_gradient = [sympy.diff(expr, sympy.Symbol(name)) for name in names]
+    num_gradient = np.array([float(x.subs(values)) for x in symb_gradient])
+    se = np.sqrt(num_gradient @ cov.values @ num_gradient.T)
+    return se
