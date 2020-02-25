@@ -307,6 +307,13 @@ class CLI:
                                                            self._args_output])
         cmd_data_write.set_defaults(func=self.data_write)
 
+        cmd_data_print = cmd_data_subs.add_parser('print', help='Print dataset to stdout',
+                                                  allow_abbrev=True,
+                                                  parents=[self._args_model_or_data_input])
+        cmd_data_print.add_argument('--columns', metavar='COLUMNS', type=self.comma_list,
+                                    help='Select specific columns (default is all)')
+        cmd_data_print.set_defaults(func=self.data_print)
+
         cmd_data_filter = cmd_data_subs.add_parser('filter', help='Filter rows of dataset',
                                                    allow_abbrev=True,
                                                    parents=[self._args_model_or_data_input,
@@ -410,6 +417,20 @@ class CLI:
             print(f'Dataset written to {path}')
         except OSError as e:
             self.error_exit(exception=e)
+
+    def data_print(self, args):
+        """Subcommand to print a dataset to stdout via pager
+        """
+        try:
+            df = args.model_or_dataset.input.dataset
+        except AttributeError:
+            df = args.model_or_dataset
+        if args.columns:
+            try:
+                df = df[args.columns]
+            except KeyError as e:
+                self.error_exit(exception=e)
+        pydoc.pager(df.to_string())
 
     def data_filter(self, args):
         """Subcommand to filter a dataset"""
@@ -550,6 +571,11 @@ class CLI:
             # Cannot reraise the ValueError as it is caught by argparse
             self.error_exit(exception=argparse.ArgumentTypeError(str(e)))
         return seed
+
+    def comma_list(self, s):
+        if s == '':
+            return []
+        return s.split(',')
 
     def input_model(self, path):
         """Returns :class:`~pharmpy.model.Model` from *path*.
