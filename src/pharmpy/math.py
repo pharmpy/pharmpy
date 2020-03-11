@@ -54,15 +54,17 @@ def round_and_keep_sum(x, s):
 
 
 def se_delta_method(expr, values, cov):
-    """ Use the delta method to estimate the standard error
-        of a function of parameters with covariance matrix
-        available.
+    """Use the delta method to estimate the standard error
 
-        expr - A sympy expression for the function of parameters
-        cov - dataframe with symbol names as indices
-              must include at least all parameters needed for expr
-        values - dict/series parameter estimates. Must include at least
-                 all parameters needed for expr
+       of a function of parameters with covariance matrix
+       available.
+
+       :param expr: A sympy expression for the function of parameters
+       :param cov: dataframe with symbol names as indices
+                   must include at least all parameters needed for expr
+       :param values: dict/series parameter estimates. Must include at least
+                      all parameters needed for expr
+       :return: Approximation of the standard error
     """
     symbs = expr.free_symbols
     names_unsorted = [s.name for s in symbs]
