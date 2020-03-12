@@ -10,7 +10,15 @@ from pharmpy.results import ChainedModelfitResults, ModelfitResults
 class NONMEMModelfitResults(ModelfitResults):
     # objects here need to know what chain they are in to be able to do lazy reading
     def __init__(self, chain):
+        self._repara = False
         self._chain = chain
+
+    def reparameterize(self, parameterizations):
+        names = {p.name for p in parameterizations}
+        if len(names) == 2 and names == {'sdcorr', 'sd'}:
+            self._repara = True
+        else:
+            raise NotImplementedError("Only support reparametrization to sdcorr and sd")
 
     @property
     def ofv(self):
@@ -23,10 +31,16 @@ class NONMEMModelfitResults(ModelfitResults):
     @property
     def parameter_estimates(self):
         try:
-            return self._parameter_estimates
+            if not self._repara:
+                return self._parameter_estimates
+            else:
+                return self._parameter_estimates_sdcorr
         except AttributeError:
             self._chain._read_ext_table()
-            return self._parameter_estimates
+            if not self._repara:
+                return self._parameter_estimates
+            else:
+                return self._parameter_estimates_sdcorr
 
     @property
     def covariance_matrix(self):
@@ -115,14 +129,24 @@ class NONMEMModelfitResults(ModelfitResults):
     @property
     def standard_errors(self):
         try:
-            return self._standard_errors
+            if not self._repara:
+                return self._standard_errors
+            else:
+                return self._standard_errors_sdcorr
         except AttributeError:
             try:
                 self._chain._read_ext_table()
             except OSError:
                 pass
             else:
-                return self._standard_errors
+                if not self._repara:
+                    return self._standard_errors
+                else:
+                    return self._standard_errors_sdcorr
+            if self._repara:
+                raise NotImplementedError("Cannot find ext-file to get standard errors on sdcorr "
+                                          "form. Not supported to try getting SEs from other "
+                                          "NONMEM output files")
             try:
                 self._chain._read_cor_table()
             except OSError:
@@ -183,6 +207,10 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
                 fix = table.fixed
                 ests = ests[~fix]
                 result_obj._parameter_estimates = ests
+                sdcorr = table.omega_sigma_stdcorr[~fix]
+                sdcorr_ests = ests.copy()
+                sdcorr_ests.update(sdcorr)
+                result_obj._parameter_estimates_sdcorr = sdcorr_ests
                 try:
                     ses = table.standard_errors
                 except Exception:
@@ -190,6 +218,10 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
                 else:
                     ses = ses[~fix]
                     result_obj._standard_errors = ses
+                    sdcorr = table.omega_sigma_se_stdcorr[~fix]
+                    sdcorr_ses = ses.copy()
+                    sdcorr_ses.update(sdcorr)
+                    result_obj._standard_errors_sdcorr = sdcorr_ses
                 result_obj._ofv = table.final_ofv
             self._read_ext = True
 

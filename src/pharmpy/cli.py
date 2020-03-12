@@ -284,7 +284,8 @@ class CLI:
         cmd_model_print.set_defaults(func=self.cmd_print)
 
         # -- results ---------------------------------------------------------------------------
-        cmd_results = parsers.add_parser('results', help='Result generation', allow_abbrev=True)
+        cmd_results = parsers.add_parser('results', help='Result extraction and generation',
+                                         allow_abbrev=True)
         cmd_results_subs = cmd_results.add_subparsers(title='PharmPy result generation commands',
                                                       metavar='ACTION')
 
@@ -296,6 +297,10 @@ class CLI:
         cmd_results_ofv = cmd_results_subs.add_parser('ofv', help='Extract OFVs from model runs',
                                                       parents=[self._args_input])
         cmd_results_ofv.set_defaults(func=self.results_ofv)
+
+        cmd_results_summary = cmd_results_subs.add_parser('summary', help='Modelfit summary',
+                                                          parents=[self._args_input])
+        cmd_results_summary.set_defaults(func=self.results_summary)
 
         # -- data ------------------------------------------------------------------------------
         cmd_data = parsers.add_parser('data', help='Data manipulations', allow_abbrev=True)
@@ -392,6 +397,15 @@ class CLI:
         res = pharmpy.results.BootstrapResults(original_model=args.models[0],
                                                bootstrap_models=args.models[1:])
         print(res)
+
+    def results_summary(self, args):
+        """Subcommand to output summary of modelfit"""
+        for model in args.models:
+            model.modelfit_results.reparameterize([
+                pharmpy.random_variables.NormalParametrizationSd,
+                pharmpy.random_variables.MultivariateNormalParametrizationSdCorr
+            ])
+            print(model.modelfit_results.parameter_summary())
 
     def results_ofv(self, args):
         """Subcommand to extract final ofv from multiple results"""

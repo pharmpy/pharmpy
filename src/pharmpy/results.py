@@ -14,6 +14,13 @@ class ModelfitResults:
     properties: individual_OFV is a df with currently ID and iOFV columns
         model_name - name of model that generated the results
     """
+    def reparameterize(self, parameterizations):
+        """Reparametrize all parameters given a list of parametrization object
+           will change the parameter_estimates and standard_errors to be for
+           the transformed parameter
+        """
+        raise NotImplementedError("Not implemented")
+
     @property
     def ofv(self):
         """Final objective function value
@@ -86,6 +93,12 @@ class ModelfitResults:
         """
         raise NotImplementedError()
 
+    @property
+    def relative_standard_errors(self):
+        """Relative standard errors of popilation parameter estimates
+        """
+        return self.standard_errors / self.parameter_estimates
+
     def _se_from_cov(self):
         """Calculate the standard errors from the covariance matrix
            can be used by subclasses
@@ -112,7 +125,8 @@ class ModelfitResults:
         """
         pe = self.parameter_estimates
         ses = self.standard_errors
-        df = pd.DataFrame({'estimate': pe, 'SE': ses})
+        rses = self.relative_standard_errors
+        df = pd.DataFrame({'estimate': pe, 'SE': ses, 'RSE': rses})
         return df
 
     def plot_iofv_vs_iofv(self, other):
@@ -129,6 +143,9 @@ class ChainedModelfitResults(list, ModelfitResults):
        inherits from both list and ModelfitResults. Each method from ModelfitResults
        will be performed on the final modelfit object
     """
+    def reparameterize(self, parameterizations):
+        return self[-1].reparameterize(parameterizations)
+
     @property
     def ofv(self):
         return self[-1].ofv

@@ -202,3 +202,56 @@ class RandomVariables(OrderedSet):
                         M[row, col] = fill
             new_rvs = JointNormalSeparate(names, means, M)
             self.__init__(new_rvs + non_altered)
+
+    def copy(self):
+        # Special copy because separated joints need special treatment
+        new_rvs = RandomVariables()
+        for rvs, dist in self.distributions():
+            if len(rvs) == 1:
+                new_rvs.add(rvs[0].copy())
+            else:
+                new_rvs.update(JointNormalSeparate([rv.name for rv in rvs], dist.mu, dist.sigma))
+        return rvs
+
+
+# pharmpy sets a parametrization attribute to the sympy distributions
+# It will currently not affect the sympy distribution itself just convey the information
+# The distribution class itself need to change to accomodate pdf etc.
+# Could have different distributions for different parametrization, but would like to be able
+# to convert between them. Ideally also support arbitrary parametrizations.
+# Classes will be used by ModelfitResults to be able to reparametrize results without
+# reparametrizing the whole model.
+
+# For now simply use these for the results object to set proper parametrization of parameter.
+
+
+class NormalParametrizationVariance:
+    name = 'variance'
+    distribution = stats.crv_types.NormalDistribution
+
+    def __init__(self, mean, variance):
+        pass
+
+
+class NormalParametrizationSd:
+    name = 'sd'
+    distribution = stats.crv_types.NormalDistribution
+
+    def __init__(self, mean, sd):
+        pass
+
+
+class MultivariateNormalParametrizationCovariance:
+    name = 'covariance'
+    distribution = stats.joint_rv_types.MultivariateNormalDistribution
+
+    def __init__(self, mean, variance):
+        pass
+
+
+class MultivariateNormalParametrizationSdCorr:
+    name = 'sdcorr'
+    distribution = stats.joint_rv_types.MultivariateNormalDistribution
+
+    def __init__(self, mean, sd, corr):
+        pass
