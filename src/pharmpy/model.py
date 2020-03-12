@@ -40,6 +40,7 @@ class Model:
            If no path is supplied or does not contain a filename a name is created
            from the name property of the model
            Will not overwrite in case force is True.
+           return path written to
         """
         self.update_source(force=force)
         path = Path(path)
@@ -53,6 +54,7 @@ class Model:
         if not force and path.exists():
             raise FileExistsError(f'File {path} already exists.')
         self.source.write(path, force=force)
+        return path
 
     def update_inits(self):
         """Update inital estimates of model from its own ModelfitResults
