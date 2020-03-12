@@ -401,11 +401,13 @@ class CLI:
     def results_summary(self, args):
         """Subcommand to output summary of modelfit"""
         for model in args.models:
+            print(model.name)
             model.modelfit_results.reparameterize([
                 pharmpy.random_variables.NormalParametrizationSd,
                 pharmpy.random_variables.MultivariateNormalParametrizationSdCorr
             ])
             print(model.modelfit_results.parameter_summary())
+            print()
 
     def results_ofv(self, args):
         """Subcommand to extract final ofv from multiple results"""
