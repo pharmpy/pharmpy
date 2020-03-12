@@ -126,8 +126,6 @@ class AttrTree(Tree):
         2. :meth:`.create` (create from nested iterators).
     """
 
-    __dict__ = {'data': None, 'children': None, '_meta': None}
-
     AttrToken = AttrToken
 
     @classmethod
@@ -307,12 +305,13 @@ class AttrTree(Tree):
         return len(self.children)
 
     def __setattr__(self, attr, value):
-        if attr in dir(self):
-            return object.__setattr__(self, attr, value)
-        self.set_child(attr, value)
+        if attr in ['data', 'children', '_meta']:
+            object.__setattr__(self, attr, value)
+        else:
+            self.set_child(attr, value)
 
     def __getattr__(self, attr):
-        if attr in dir(self):
+        if attr in ['data', 'children', '_meta']:
             return object.__getattribute__(self, attr)
         child = self.find(attr)
         if child is None:
