@@ -283,6 +283,16 @@ class CLI:
                                 help='Random variables')
         cmd_model_print.set_defaults(func=self.cmd_print)
 
+        # -- run -------------------------------------------------------------------------------
+        cmd_run = parsers.add_parser('run', help='Run workflows', allow_abbrev=True)
+        cmd_run_subs = cmd_run.add_subparsers(title='PharmPy workflow commands', metavar='ACTION')
+
+        cmd_run_execute = cmd_run_subs.add_parser('execute', prog='execute models',
+                                                  parents=[self._args_input],
+                                                  help='Execute model',
+                                                  allow_abbrev=True)
+        cmd_run_execute.set_defaults(func=self.run_execute)
+
         # -- results ---------------------------------------------------------------------------
         cmd_results = parsers.add_parser('results', help='Result extraction and generation',
                                          allow_abbrev=True)
@@ -388,6 +398,12 @@ class CLI:
             pydoc.pager('\n'.join(lines))
         else:
             print('\n'.join(lines))
+
+    def run_execute(self, args):
+        """A regular execute of one or more models"""
+        from pharmpy.workflows.modelfit import ModelfitWorkflow
+        wf = ModelfitWorkflow(args.models)
+        wf.start()
 
     def results_bootstrap(self, args):
         """Subcommand to generate bootstrap results"""

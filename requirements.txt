@@ -2,3 +2,4 @@ lark-parser
 pandas
 sympy
 altair
+/home/rikard/devel/toil/dist/toil-4.0.0a1.tar.gz
