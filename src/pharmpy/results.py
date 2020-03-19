@@ -1,5 +1,8 @@
 # Classes for method results
 
+import json
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 
@@ -8,12 +11,30 @@ from pharmpy.data import PharmDataFrame
 from pharmpy.math import cov2corr
 
 
+class Results:
+    """ Base class for all result classes
+    """
+    def _json(self, data, path=None):
+        if path:
+            with open(path, 'w') as fh:
+                json.dump(data, fh)
+        else:
+            return json.dumps(data)
+
+
 class ModelfitResults:
-    """ Results from a modelfit operation
+    """ Base class for results from a modelfit operation
 
     properties: individual_OFV is a df with currently ID and iOFV columns
         model_name - name of model that generated the results
     """
+    def __init__(self, ofv=None, parameter_estimates=None, covariance_matrix=None,
+                 standard_errors=None):
+        self._ofv = ofv
+        self._parameter_estimates = parameter_estimates
+        self._covariance_matrix = covariance_matrix
+        self._standard_errors = standard_errors
+
     def reparameterize(self, parameterizations):
         """Reparametrize all parameters given a list of parametrization object
            will change the parameter_estimates and standard_errors to be for
@@ -25,19 +46,19 @@ class ModelfitResults:
     def ofv(self):
         """Final objective function value
         """
-        raise NotImplementedError("Not implemented")
+        return self._ofv
 
     @property
     def parameter_estimates(self):
         """Parameter estimates as series
         """
-        raise NotImplementedError("Not implemented")
+        return self._parameter_estimates
 
     @property
     def covariance_matrix(self):
         """The covariance matrix of the population parameter estimates
         """
-        raise NotImplementedError("Not implemented")
+        return self._covariance_matrix
 
     def _cov_from_inf(self):
         Im = self.information_matrix
@@ -91,7 +112,7 @@ class ModelfitResults:
     def standard_errors(self):
         """Standard errors of population parameter estimates
         """
-        raise NotImplementedError()
+        return self._standard_errors
 
     @property
     def relative_standard_errors(self):
@@ -196,11 +217,42 @@ class CaseDeletionResults:
         pass
 
 
-class BootstrapResults:
+def read_results(path_or_buf):
+    try:
+        path = Path(path_or_buf)
+        path.exists()
+    except (OSError, TypeError, ValueError):
+        struct = json.loads(path_or_buf)
+    else:
+        with open(path, 'r') as json_file:
+            struct = json.load(json_file)
+
+    # could use object hooks here
+    if 'BootstrapResults' in struct:
+        return BootstrapResults.from_json(struct['BootstrapResults'])
+
+
+class BootstrapResults(Results):
     # FIXME: Could inherit from results that take multiple runs like bootstrap, cdd etc.
     def __init__(self, original_model, bootstrap_models):
+        if original_model is None and bootstrap_models is None:
+            # FIXME: this is a special case for now for json handling before we have modelfit json
+            return
         self._original_results = original_model.modelfit_results
         self._bootstrap_results = [m.modelfit_results for m in bootstrap_models]
+
+    @classmethod
+    def from_json(cls, struct):
+        res = cls(None, None)
+        res._statistics = pd.read_json(struct['statistics'])
+        res._distribution = pd.read_json(struct['distribution'])
+        return res
+
+    def to_json(self, path=None):
+        statistics = {'statistics': self.statistics.to_json()}
+        distribution = {'distribution': self.distribution.to_json()}
+        d = {'BootstrapResults': {**statistics, **distribution}}
+        return self._json(d, path)
 
     @property
     def ofv(self):
@@ -211,7 +263,7 @@ class BootstrapResults:
     def parameter_estimates(self):
         df = pd.DataFrame()
         for res in self._bootstrap_results:
-            df = df.append(res.parameter_estimates, sort=False)
+            df = df.append(res.parameter_estimates, ignore_index=True, sort=False)
         df = df.reindex(self._bootstrap_results[0].parameter_estimates.index, axis=1)
         df = df.reset_index(drop=True)
         return df
@@ -223,6 +275,10 @@ class BootstrapResults:
 
     @property
     def statistics(self):
+        try:
+            return self._statistics
+        except AttributeError:
+            pass
         df = self.parameter_estimates
         ofvs = self.ofv
         df.insert(0, 'OFV', ofvs)
@@ -232,10 +288,15 @@ class BootstrapResults:
         mean = df.mean()
         bias = mean - orig
         summary = pd.DataFrame({'mean': mean, 'bias': bias, 'stderr': df.std()})
+        self._statistics = summary
         return summary
 
     @property
     def distribution(self):
+        try:
+            return self._distribution
+        except AttributeError:
+            pass
         df = self.parameter_estimates
         ofvs = self.ofv
         df.insert(0, 'OFV', ofvs)
@@ -245,6 +306,7 @@ class BootstrapResults:
                                 '95%': df.quantile(0.95), '97.5%': df.quantile(0.975),
                                 '99.5%': df.quantile(0.995), '99.95%': df.quantile(0.9995),
                                 'max': df.max()})
+        self._distribution = summary
         return summary
 
     def __repr__(self):
