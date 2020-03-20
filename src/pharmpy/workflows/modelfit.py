@@ -21,5 +21,7 @@ class ModelfitWorkflow:
         with Toil(toil_options) as workflow:
             input_models = [InputModel(workflow, model) for model in self._models]
             job = BatchModelfit(input_models)
-            result_files = workflow.start(job)
-            export_files(workflow, result_files)
+            result_models = workflow.start(job)
+            for model in result_models:
+                export_files(workflow, model.modelfit_results.tool_files)
+            #export_files(workflow, result_files)

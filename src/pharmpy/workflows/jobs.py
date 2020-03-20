@@ -3,6 +3,8 @@ from pathlib import Path
 
 from toil.job import Job
 
+from pharmpy import Model
+
 
 class InputModel:
     """A wrapper for a model that is input to a specific workflow
@@ -32,9 +34,9 @@ class GatherFiles(Job):
         self.rvs = rvs
 
     def run(self, file_store):
-        result_files = [item for sublist in self.rvs for item in sublist]
-        self.result_files = result_files
-        return result_files
+        #result_files = [item for sublist in self.rvs for item in sublist]
+        #self.result_files = result_files
+        return self.rvs
 
 
 class BatchModelfit(Job):
@@ -45,15 +47,11 @@ class BatchModelfit(Job):
     def __init__(self, models):
         super().__init__()
         self.input_models = models
-        #self.files = []
-        #for model in models:
-        #    files = import_files(workflow, [model.input.path])
-        #    self.files.append(files)
 
     def run(self, file_store):
         rvs = []
         for input_model in self.input_models:
-            job = NonmemJob(input_model)
+            job = NonmemJob(input_model.model, input_model.files)
             child = self.addChild(job)
             rvs.append(child.rv())
 
@@ -63,20 +61,20 @@ class BatchModelfit(Job):
 class NonmemJob(CommandLineJob):
     """One nmfe execution
     """
-    def __init__(self, model):
+    def __init__(self, model, additional_files):
         super().__init__()
-        self.input_model = model
+        self.model = model
+        self.additional_files = additional_files
 
     def run(self, file_store):
-        path = self.input_model.model.write()
-        for file_id in self.input_model.files:
+        path = self.model.write()
+        for file_id in self.additional_files:
             self.copy_file(file_store, file_id)
         self.call(['nmfe74', path.name, path.with_suffix('.lst').name], file_store)
-        result_files = [
-            file_store.writeGlobalFile(path.with_suffix('.lst').name),
-            file_store.writeGlobalFile(path.with_suffix('.ext').name)
-        ]
-        return result_files
+        model = Model(path)        # New model for now. Paths need updating...
+        result_files = [file_store.writeGlobalFile(str(path)) for path in model.modelfit_results.tool_files]
+        model.modelfit_results.tool_files = result_files
+        return model
 
 
 def import_file(workflow, path):

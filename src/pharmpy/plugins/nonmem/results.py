@@ -198,6 +198,8 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
                 res._correlation_matrix = None
                 res._information_matrix = None
             self.append(res)
+        extensions = ['.lst', '.ext', '.cov', '.cor', '.coi', '.phi']
+        self.tool_files = [self._path.with_suffix(ext) for ext in extensions]
 
     def _read_ext_table(self):
         if not self._read_ext:

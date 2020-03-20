@@ -28,8 +28,9 @@ class Model:
     """
      Property: modelfit_results, name
     """
-    def __init__(self):
-        self.modelfit_results = None
+    @property
+    def modelfit_results(self):
+        return None
 
     def update_source(self):
         """Update the source"""

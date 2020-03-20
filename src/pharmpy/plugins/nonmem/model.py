@@ -19,13 +19,23 @@ class Model(pharmpy.model.Model):
             self.source.filename_extension = '.ctl'
         self.name = self.source.path.stem
         self.control_stream = parser.parse(src.code)
+        self.input = pharmpy.plugins.nonmem.input.ModelInput(self)
+        self._parameters_updated = False
+
+    @property
+    def modelfit_results(self):
+        try:
+            return self._modelfit_results
+        except AttributeError:
+            None
         if self.source.path.is_file():
             lst_path = self.source.path.with_suffix('.lst')
             if lst_path.exists():
                 num_est = len(self.control_stream.get_records('ESTIMATION'))
-                self.modelfit_results = NONMEMChainedModelfitResults(lst_path, num_est)
-        self.input = pharmpy.plugins.nonmem.input.ModelInput(self)
-        self._parameters_updated = False
+                self._modelfit_results = NONMEMChainedModelfitResults(lst_path, num_est)
+                return self._modelfit_results
+        else:
+            return None
 
     @staticmethod
     def detect(src, *args, **kwargs):
