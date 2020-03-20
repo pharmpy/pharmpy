@@ -34,8 +34,6 @@ class GatherFiles(Job):
         self.rvs = rvs
 
     def run(self, file_store):
-        #result_files = [item for sublist in self.rvs for item in sublist]
-        #self.result_files = result_files
         return self.rvs
 
 

@@ -24,4 +24,3 @@ class ModelfitWorkflow:
             result_models = workflow.start(job)
             for model in result_models:
                 export_files(workflow, model.modelfit_results.tool_files)
-            #export_files(workflow, result_files)
