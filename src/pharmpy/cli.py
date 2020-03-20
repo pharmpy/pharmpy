@@ -222,12 +222,19 @@ class CLI:
                               action='store_const', dest='loglevel', const=logging.DEBUG,
                               help='show debug messages')
 
+        # common to: commands taking one model file as input
+        args_model_input = argparse.ArgumentParser(add_help=False)
+        group_model_input = args_model_input.add_argument_group(title='model')
+        group_model_input.add_argument('model', metavar='FILE', type=self.input_model,
+                                       help='input model file')
+        self._args_model_input = args_model_input
+
         # common to: commands with model file input
         args_input = argparse.ArgumentParser(add_help=False)
         group_input = args_input.add_argument_group(title='inputs')
         group_input.add_argument('models',
                                  metavar='FILE', type=self.input_model, nargs='+',
-                                 help='input model file')
+                                 help='input model files')
         self._args_input = args_input
 
         # common to: command with model file or dataset input
@@ -292,6 +299,12 @@ class CLI:
                                                   help='Execute model',
                                                   allow_abbrev=True)
         cmd_run_execute.set_defaults(func=self.run_execute)
+
+        cmd_run_bootstrap = cmd_run_subs.add_parser('bootstrap', prog='bootstrap',
+                                                    parents=[self._args_model_input],
+                                                    help='Bootstrap',
+                                                    allow_abbrev=True)
+        cmd_run_bootstrap.set_defaults(func=self.run_bootstrap)
 
         # -- results ---------------------------------------------------------------------------
         cmd_results = parsers.add_parser('results', help='Result extraction and generation',
@@ -403,6 +416,11 @@ class CLI:
         """A regular execute of one or more models"""
         from pharmpy.workflows.modelfit import ModelfitWorkflow
         wf = ModelfitWorkflow(args.models)
+        wf.start()
+
+    def run_bootstrap(self, args):
+        from pharmpy.workflows.bootstrap import BootstrapWorkflow
+        wf = BootstrapWorkflow(args.model)
         wf.start()
 
     def results_bootstrap(self, args):

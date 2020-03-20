@@ -12,6 +12,7 @@ Definitions
 -----------
 """
 
+import copy
 from pathlib import Path
 
 
@@ -26,7 +27,7 @@ class ModelSyntaxError(ModelException):
 
 class Model:
     """
-     Property: modelfit_results, name
+     Property: name
     """
     @property
     def modelfit_results(self):
@@ -66,6 +67,10 @@ class Model:
             # FIXME: Other exception here. ModelfitError?
             raise ModelException("Cannot update initial parameter estimates "
                                  "since parameters were not estimated")
+
+    def copy(self):
+        """Create a deepcopy of the model object"""
+        return copy.deepcopy(self)
 
 #    Represents a model object, that may or may not exist on disk too.
 

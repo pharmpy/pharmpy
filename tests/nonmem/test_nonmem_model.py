@@ -67,3 +67,12 @@ def test_minimal(datadir):
     model.control_stream.get_records('PRED')[0].root.treeprint()
     assert model.statements[0].expression == \
         Symbol('THETA(1)', real=True) + Symbol('ETA(1)', real=True) + Symbol('ERR(1)', real=True)
+
+
+def test_copy(datadir):
+    path = datadir / 'minimal.mod'
+    model = Model(path)
+    copy = model.copy()
+    assert id(model) != id(copy)
+    assert model.statements[0].expression == \
+        Symbol('THETA(1)', real=True) + Symbol('ETA(1)', real=True) + Symbol('ERR(1)', real=True)

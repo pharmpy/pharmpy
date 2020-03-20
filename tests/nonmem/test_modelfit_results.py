@@ -11,7 +11,8 @@ def test_ofv(pheno_lst):
 def test_tool_files(pheno_lst):
     res = NONMEMChainedModelfitResults(pheno_lst, 1)
     names = [str(p.name) for p in res.tool_files]
-    assert names == ['pheno_real.lst', 'pheno_real.ext', 'pheno_real.cov', 'pheno_real.cor', 'pheno_real.coi', 'pheno_real.phi']
+    assert names == ['pheno_real.lst', 'pheno_real.ext', 'pheno_real.cov', 'pheno_real.cor',
+                     'pheno_real.coi', 'pheno_real.phi']
 
 
 def test_covariance(pheno_lst):

@@ -63,11 +63,13 @@ class DatasetIterator:
             else simply pass the dataset through
         """
         try:
-            self._model.input.dataset = df
-            self._model.name = df.name
-            return self._model
+            model = self._model.copy()
         except AttributeError:
             return df
+        else:
+            model.input.dataset = df
+            model.name = df.name
+            return model
 
     def __iter__(self):
         return self

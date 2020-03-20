@@ -1,7 +1,7 @@
 from toil.common import Toil
 from toil.job import Job
 
-from .jobs import BatchModelfit, export_files, InputModel
+from .jobs import BatchModelfit, InputModel, export_files
 
 toil_options = Job.Runner.getDefaultOptions("file:jobStore")
 toil_options.clean = "always"

@@ -57,6 +57,9 @@ class PharmDataFrame(pd.DataFrame):
     def _constructor_sliced(self):
         return pd.Series
 
+    def __deepcopy__(self, memo):
+        return self.copy()
+
     def copy(self, *kwargs):
         """
         """

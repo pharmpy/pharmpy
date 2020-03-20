@@ -70,7 +70,9 @@ class NonmemJob(CommandLineJob):
             self.copy_file(file_store, file_id)
         self.call(['nmfe74', path.name, path.with_suffix('.lst').name], file_store)
         model = Model(path)        # New model for now. Paths need updating...
-        result_files = [file_store.writeGlobalFile(str(path)) for path in model.modelfit_results.tool_files]
+        model.modelfit_results.parameter_estimates      # To read it in
+        result_files = \
+            [file_store.writeGlobalFile(str(path)) for path in model.modelfit_results.tool_files]
         model.modelfit_results.tool_files = result_files
         return model
 
