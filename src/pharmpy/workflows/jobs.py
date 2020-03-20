@@ -4,6 +4,16 @@ from pathlib import Path
 from toil.job import Job
 
 
+class InputModel:
+    """A wrapper for a model that is input to a specific workflow
+
+       Handles all files needed for the model and the model object
+    """
+    def __init__(self, workflow, model):
+        self.model = model
+        self.files = import_files(workflow, [model.input.path])
+
+
 class CommandLineJob(Job):
     def copy_file(self, file_store, file_id):
         path = file_store.readGlobalFile(file_id, userPath=Path(file_id).name)
@@ -32,18 +42,18 @@ class BatchModelfit(Job):
 
        root -> [NonmemJob ...] -> GatherFiles
     """
-    def __init__(self, workflow, models):
+    def __init__(self, models):
         super().__init__()
-        self.models = models
-        self.files = []
-        for model in models:
-            files = import_files(workflow, [model.input.path])
-            self.files.append(files)
+        self.input_models = models
+        #self.files = []
+        #for model in models:
+        #    files = import_files(workflow, [model.input.path])
+        #    self.files.append(files)
 
     def run(self, file_store):
         rvs = []
-        for model, files in zip(self.models, self.files):
-            job = NonmemJob(model, files)
+        for input_model in self.input_models:
+            job = NonmemJob(input_model)
             child = self.addChild(job)
             rvs.append(child.rv())
 
@@ -53,14 +63,13 @@ class BatchModelfit(Job):
 class NonmemJob(CommandLineJob):
     """One nmfe execution
     """
-    def __init__(self, model, files):
+    def __init__(self, model):
         super().__init__()
-        self.model = model
-        self.additional_files = files
+        self.input_model = model
 
     def run(self, file_store):
-        path = self.model.write()
-        for file_id in self.additional_files:
+        path = self.input_model.model.write()
+        for file_id in self.input_model.files:
             self.copy_file(file_store, file_id)
         self.call(['nmfe74', path.name, path.with_suffix('.lst').name], file_store)
         result_files = [
