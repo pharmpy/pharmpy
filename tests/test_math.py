@@ -43,3 +43,18 @@ def test_se_delta_method():
                         [-3.51477E-05, 3.61663E-06, 4.44030E-05]], columns=names, index=names)
     se = pharmpy.math.se_delta_method(expr, vals, cov)
     assert pytest.approx(0.2219739865800438, 1e-15) == se
+
+
+def test_is_posdef():
+    A = np.array([[2, -1, 0], [-1, 2, -1], [0, -1, 2]])
+    assert pharmpy.math.is_posdef(A)
+    B = np.array([[1, 2], [2, 1]])
+    assert not pharmpy.math.is_posdef(B)
+
+
+def test_nearest_posdef():
+    for i in range(5):
+        for j in range(2, 20):
+            A = np.random.randn(j, j)
+            B = pharmpy.math.nearest_posdef(A)
+            assert pharmpy.math.is_posdef(B)
