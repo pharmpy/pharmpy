@@ -94,7 +94,7 @@ def nearest_posdef(A):
        credits [2].
        [1] https://www.mathworks.com/matlabcentral/fileexchange/42885-nearestspd
        [2] N.J. Higham, "Computing a nearest symmetric positive semidefinite
-           matrix" (1988): https://doi.org/10.1016/0024-3795(88)90223-6
+       matrix" (1988): https://doi.org/10.1016/0024-3795(88)90223-6
        [3] https://gist.github.com/fasiha/fdb5cec2054e6f1c6ae35476045a0bbd
     """
     if is_posdef(A):
@@ -128,3 +128,21 @@ def nearest_posdef(A):
         k += 1
 
     return A3
+
+
+def sample_truncated_joint_normal(mu, sigma, a, b, n):
+    """Give an array of samples from the truncated joint normal distributon
+
+       using sample rejection
+       mu, sigma - parameters for the normal distribution
+       a, b - vectors of upper and lower limits for each random variable
+       n - number of samples
+    """
+    kept_samples = np.empty((0, len(mu)))
+    remaining = n
+    while remaining > 0:
+        samples = np.random.multivariate_normal(mu, sigma, size=remaining)
+        in_range = np.logical_and(samples > a, samples < b).all(axis=1)
+        kept_samples = np.concatenate((kept_samples, samples[in_range]))
+        remaining = n - len(kept_samples)
+    return kept_samples
