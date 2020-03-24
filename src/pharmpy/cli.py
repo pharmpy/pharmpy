@@ -290,6 +290,16 @@ class CLI:
                                 help='Random variables')
         cmd_model_print.set_defaults(func=self.cmd_print)
 
+        cmd_model_sample = cmd_model_subs.add_parser('sample', prog='Sampling of parameter inits',
+                                                     parents=[self._args_model_input,
+                                                              self._args_random],
+                                                     help='Sampling of parameter inits using'
+                                                          'uncertainty given by covariance matrix',
+                                                     allow_abbrev=True)
+        cmd_model_sample.add_argument('--samples', metavar='NUMBER', type=int, default=1,
+                                      help='Number of sampled models')
+        cmd_model_sample.set_defaults(func=self.model_sample)
+
         # -- run -------------------------------------------------------------------------------
         cmd_run = parsers.add_parser('run', help='Run workflows', allow_abbrev=True)
         cmd_run_subs = cmd_run.add_subparsers(title='PharmPy workflow commands', metavar='ACTION')
@@ -411,6 +421,15 @@ class CLI:
             pydoc.pager('\n'.join(lines))
         else:
             print('\n'.join(lines))
+
+    def model_sample(self, args):
+        model = args.model
+        from pharmpy.parameter_sampling import sample_from_covariance_matrix
+        samples = sample_from_covariance_matrix(model, n=args.samples)
+        for row, params in samples.iterrows():
+            model.parameters = params
+            model.name = f'sample_{row + 1}'
+            model.write()
 
     def run_execute(self, args):
         """A regular execute of one or more models"""
