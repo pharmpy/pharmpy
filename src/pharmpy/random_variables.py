@@ -213,6 +213,18 @@ class RandomVariables(OrderedSet):
                 new_rvs.update(JointNormalSeparate([rv.name for rv in rvs], dist.mu, dist.sigma))
         return rvs
 
+    def validate_parameters(self, parameter_values):
+        """ Validate a dict or Series of parameter values
+
+            Currently checks that all covariance matrices are posdef
+        """
+        for rvs, dist in self.distributions():
+            if len(rvs) > 1:
+                sigma = dist.sigma.subs(parameter_values)
+                if not sigma.is_positive_definite:
+                    return False
+        return True
+
 
 # pharmpy sets a parametrization attribute to the sympy distributions
 # It will currently not affect the sympy distribution itself just convey the information

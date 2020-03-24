@@ -70,3 +70,14 @@ def test_merge_normal_distributions():
     rvs.merge_normal_distributions(fill=1)
     dist = rvs[0].pspace.distribution
     assert dist.sigma == sympy.Matrix([[3, 0.25, 1], [0.25, 1, 1], [1, 1, 4]])
+
+
+def test_validate_parameters():
+    a, b, c, d = sympy.symbols('a b c d')
+    rvs = JointNormalSeparate(['ETA(1)', 'ETA(2)'], [0, 0], [[a, b], [b, c]])
+    rvs = RandomVariables(rvs)
+    rvs.add(stats.Normal('ETA(3)', 0.5, d))
+    params = {'a': 2, 'b': 0.1, 'c': 1, 'd': 23}
+    assert rvs.validate_parameters(params)
+    params2 = {'a': 2, 'b': 2, 'c': 1, 'd': 23}
+    assert not rvs.validate_parameters(params2)
