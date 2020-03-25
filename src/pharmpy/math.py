@@ -146,3 +146,26 @@ def sample_truncated_joint_normal(mu, sigma, a, b, n):
         kept_samples = np.concatenate((kept_samples, samples[in_range]))
         remaining = n - len(kept_samples)
     return kept_samples
+
+
+def conditional_joint_normal(mu, sigma, a):
+    """Give parameters of the conditional joint normal distribution
+
+       The condition is the last len(a) values
+
+       See https://en.wikipedia.org/wiki/Multivariate_normal_distribution#Conditional_distributions
+    """
+
+    # partition mu and sigma
+    nfirst = len(mu) - len(a)
+    S11 = sigma[0:nfirst, 0:nfirst]
+    S12 = sigma[0:nfirst, nfirst:]
+    S21 = sigma[nfirst:, 0:nfirst]
+    S22 = sigma[nfirst:, nfirst:]
+    M1 = mu[0:nfirst]
+    M2 = mu[nfirst:]
+
+    mu_bar = M1 + S12 @ np.linalg.inv(S22) @ (a - M2)
+    sigma_bar = S11 - S12 @ np.linalg.inv(S22) @ S21
+
+    return mu_bar, sigma_bar
