@@ -1,9 +1,12 @@
 import itertools
 
+import numpy as np
 import sympy
 import sympy.stats as stats
 from sympy.matrices import MatrixBase, MatrixExpr
 from sympy.stats.rv import RandomSymbol
+
+import pharmpy.math
 
 from .data_structures import OrderedSet
 
@@ -220,8 +223,11 @@ class RandomVariables(OrderedSet):
         """
         for rvs, dist in self.distributions():
             if len(rvs) > 1:
-                sigma = dist.sigma.subs(parameter_values)
-                if not sigma.is_positive_definite:
+                sigma = dist.sigma.subs(dict(parameter_values))
+                # Switch to numpy here. Sympy posdef check is problematic
+                # see https://github.com/sympy/sympy/issues/18955
+                a = np.array(sigma).astype(np.float64)
+                if not pharmpy.math.is_posdef(a):
                     return False
         return True
 

@@ -74,9 +74,9 @@ class OmegaRecord(Record):
                     L[inds] = inits
                     A = L @ L.T
                 for i in range(size):
-                    for j in range(i, size):
-                        name = f'{self.name}({j + start_omega},{i + start_omega})'
-                        init = A[j, i]
+                    for j in range(0, i + 1):
+                        name = f'{self.name}({i + start_omega},{j + start_omega})'
+                        init = A[i, j]
                         lower = None if i != j or fix else 0
                         param = Parameter(name, init, lower=lower, fix=fix)
                         parameters.add(param)

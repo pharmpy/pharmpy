@@ -16,8 +16,10 @@ def sample_from_covariance_matrix(model, modelfit_results=None, n=1):
     index = modelfit_results.parameter_estimates.index
     mu = modelfit_results.parameter_estimates.to_numpy()
     sigma = modelfit_results.covariance_matrix.to_numpy()
-    a = model.parameters.summary().lower.astype('float64').to_numpy()
-    b = model.parameters.summary().upper.astype('float64').to_numpy()
+    parameter_summary = model.parameters.summary()
+    parameter_summary = parameter_summary[~parameter_summary['fix']]
+    a = parameter_summary.lower.astype('float64').to_numpy()
+    b = parameter_summary.upper.astype('float64').to_numpy()
 
     # reject non-posdef
     kept_samples = pd.DataFrame()
