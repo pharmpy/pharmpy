@@ -1,6 +1,6 @@
 ;; 1. Based on: 5
 $PROBLEM    PHENOBARB SIMPLE MODEL
-$DATA      ../frem_dataset.dta IGNORE=@
+$DATA      frem_dataset.dta IGNORE=@
 $INPUT      ID TIME AMT WGT APGR DV FA1 FA2 MDV FREMTYPE
 $SUBROUTINE ADVAN1 TRANS2
 $PK

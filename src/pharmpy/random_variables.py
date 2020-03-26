@@ -1,3 +1,4 @@
+import enum
 import itertools
 
 import numpy as np
@@ -9,6 +10,18 @@ from sympy.stats.rv import RandomSymbol
 import pharmpy.math
 
 from .data_structures import OrderedSet
+
+
+class VariabilityLevel(enum.Enum):
+    """ Representation of a variability level
+
+       currently supports only IIV and RUV.
+       Can be changed into something not-enum
+       in future keeping the IIV and RUV as
+       class singletons
+    """
+    IIV = enum.auto()
+    RUV = enum.auto()
 
 
 class MultivariateNormalDistribution(stats.joint_rv_types.MultivariateNormalDistribution):
@@ -158,8 +171,10 @@ class RandomVariables(OrderedSet):
             res += '\n'.join(lines) + '\n'
         return res
 
-    def distributions(self):
+    def distributions(self, level=None):
         """Iterate with one entry per distribution instead of per random variable.
+
+           level - only iterate over random variables of this variability level
         """
         i = 0
         while i < len(self):
@@ -167,11 +182,13 @@ class RandomVariables(OrderedSet):
             dist = rv.pspace.distribution
             if isinstance(dist, stats.crv_types.NormalDistribution):
                 i += 1
-                yield [rv], dist
+                if level is None or level == rv.variability_level:
+                    yield [rv], dist
             else:       # Joint Normal
                 rvs = [x for x in self if x.pspace.distribution == dist]
                 i += len(rvs)
-                yield rvs, dist
+                if level is None or level == rv.variability_level:
+                    yield rvs, dist
 
     def merge_normal_distributions(self, fill=0):
         """Merge all normal distributed rvs together into one joint normal

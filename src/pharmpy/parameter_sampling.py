@@ -31,4 +31,4 @@ def sample_from_covariance_matrix(model, modelfit_results=None, n=1):
         kept_samples = pd.concat((kept_samples, selected))
         remaining = n - len(kept_samples)
 
-    return kept_samples
+    return kept_samples.reset_index(drop=True)
