@@ -25,7 +25,7 @@ def sample_from_covariance_matrix(model, modelfit_results=None, n=1):
     kept_samples = pd.DataFrame()
     remaining = n
     while remaining > 0:
-        samples = sample_truncated_joint_normal(mu, sigma, a, b, n=n)
+        samples = sample_truncated_joint_normal(mu, sigma, a, b, n=remaining)
         df = pd.DataFrame(samples, columns=index)
         selected = df[df.apply(model.random_variables.validate_parameters, axis=1)]
         kept_samples = pd.concat((kept_samples, selected))
