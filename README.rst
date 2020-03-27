@@ -13,6 +13,7 @@ PharmPy is a library for pharmacometrics. It can be used as a regular python pac
 PharmPy is architectured to be able to handle different types of model formats and data formats and exposes a model agnostic API.
 
 Current features:
+
 * Parsing of many parts of a NONMEM model file
 * Parsing of NONMEM result files
 * CLI supporting dataset filtering, resampling, anonymization and viewing
