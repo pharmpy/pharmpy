@@ -4,12 +4,12 @@
 Installation
 ============
 
-.. warning:: PharmPy uses python 3 functionality (it likely won't ever support python 2),
-    and is only tested on python 3.6 on Linux (so far).
+.. warning:: PharmPy requires python 3.6 or later,
+    and is currently tested on python 3.6, 3.7 and 3.8 on Linux.
 
 At the command line, install latest build with::
 
-    pip3 install dist/pharmpy-0.1.0.tar.gz
+    pip3 install dist/pharmpy-0.2.0.tar.gz
 
 Or, development code in ``src/``::
 

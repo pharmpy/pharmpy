@@ -5,7 +5,6 @@ Contents
 .. toctree::
    :maxdepth: 4
 
-   readme
    installation
    usage
    Documentation <reference/modules>

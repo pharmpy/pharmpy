@@ -4,9 +4,6 @@
 Version
 =======
 
-.. warning::
-   PharmPy will remain at version ``0.1.0``, until a simple pharmacometric workflow can be performed.
-
 Changelog
 =========
 

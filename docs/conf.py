@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
 import os
@@ -28,7 +27,7 @@ project = 'PharmPy'
 year = '2020'
 authors = ['Rikard Nordgren', 'Gunnar Yngman']
 copyright = '{0}; {1}'.format(year, ', '.join(authors))
-version = release = '0.1.0'
+version = release = '0.2.0'
 
 pygments_style = 'trac'
 templates_path = ['.']

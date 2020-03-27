@@ -8,15 +8,86 @@ PharmPy
 
 .. start-longdesc
 
-PharmPy is an experiment in substituting (some of) the PsN functionality in Python.
+PharmPy is a library for pharmacometrics. It can be used as a regular python package, in R via reticulate or via its built in command line interface.
 
-For PsN (implemented in Perl), see `UUPharmacometrics/PsN
-<https://github.com/UUPharmacometrics/PsN/releases>`_.
+PharmPy is architectured to be able to handle different types of model formats and data formats and exposes a model agnostic API.
+
+Current features:
+* Parsing of many parts of a NONMEM model file
+* Parsing of NONMEM result files
+* CLI supporting dataset filtering, resampling, anonymization and viewing
+
+PharmPy is developed by the Uppsala University Pharmacometrics group.
 
 .. end-longdesc
 
+Python Example
+==============
+
+
+>>> from pharmpy import Model
+>>> model = Model("run1.mod")
+>>> print(model.modelfit_results.parameter_estimates)
+THETA(1)      0.004696
+THETA(2)      0.984258
+THETA(3)      0.158920
+OMEGA(1,1)    0.029351
+OMEGA(2,2)    0.027906
+SIGMA(1,1)    0.013241
+Name: 2, dtype: float64
+>>> model.parameters
+       name     value  lower    upper    fix
+   THETA(1)  0.004693   0.00  1000000  False
+   THETA(2)  1.009160   0.00  1000000  False
+   THETA(3)  0.100000  -0.99  1000000  False
+ OMEGA(1,1)  0.030963   0.00       oo  False
+ OMEGA(2,2)  0.031128   0.00       oo  False
+ SIGMA(1,1)  0.013086   0.00       oo  False
+>>>
+
+R Example
+=========
+
+.. code-block:: r
+   :skipif: False
+
+>>> library(reticulate)
+>>> use_python("python3")
+>>> pharmpy <- import("pharmpy")
+>>> model <- pharmpy$Model("run1.mod")
+>>> model$modelfit_results$parameter_estimates
+  THETA(1)   THETA(2)   THETA(3) OMEGA(1,1) OMEGA(2,2) SIGMA(1,1) 
+0.00469555 0.98425800 0.15892000 0.02935080 0.02790600 0.01324100 
+>>> model$parameters
+       name     value  lower    upper    fix
+   THETA(1)  0.004693   0.00  1000000  False
+   THETA(2)  1.009160   0.00  1000000  False
+   THETA(3)  0.100000  -0.99  1000000  False
+ OMEGA(1,1)  0.030963   0.00       oo  False
+ OMEGA(2,2)  0.031128   0.00       oo  False
+ SIGMA(1,1)  0.013086   0.00       oo  False
+>>>
+
+CLI Example
+===========
+
+.. code-block:: none
+
+    # Get help
+    pharmpy -h
+
+    # Remove first ID from dataset and save new model using new dataset
+    pharmpy data filter run1.mod 'ID!=1'
+
+    # Extract and print ofvs from multiple model runs
+    pharmpy results ofv run*.mod
+
+
+Development
+===========
+
 Testing
-=======
+-------
 
 To run the all tests via Pytest_ install Tox_::
 
@@ -24,7 +95,7 @@ To run the all tests via Pytest_ install Tox_::
 
 Then run::
 
-    python3 -m tox
+    tox
 
 Note, to combine the coverage data from all the Tox_ environments run:
 
@@ -53,7 +124,7 @@ Don't worry. Everything will be prefixed ``python3.5`` so there won't be any col
 ``python3`` (it'll still use the system standard).
 
 Documentation
-=============
+-------------
 
 Local documentation found in ``dist/docs/``. To build, run::
 
