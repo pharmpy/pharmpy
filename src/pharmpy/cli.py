@@ -293,7 +293,7 @@ class CLI:
         cmd_model_sample = cmd_model_subs.add_parser('sample', prog='Sampling of parameter inits',
                                                      parents=[self._args_model_input,
                                                               self._args_random],
-                                                     help='Sampling of parameter inits using'
+                                                     help='Sampling of parameter inits using '
                                                           'uncertainty given by covariance matrix',
                                                      allow_abbrev=True)
         cmd_model_sample.add_argument('--samples', metavar='NUMBER', type=int, default=1,
