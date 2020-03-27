@@ -376,7 +376,7 @@ class CLI:
         cmd_data_resample.set_defaults(func=self.data_resample)
 
         cmd_data_anon = cmd_data_subs.add_parser('anonymize', help='Anonymize dataset by reorder'
-                                                 'and renumber a specific data column',
+                                                 ' and renumber a specific data column',
                                                  description='Anonymize dataset by resampling '
                                                              'of the group column',
                                                  allow_abbrev=True,
