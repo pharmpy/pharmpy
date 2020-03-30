@@ -241,7 +241,8 @@ class BootstrapResults(Results):
             # FIXME: this is a special case for now for json handling before we have modelfit json
             return
         self._original_results = original_model.modelfit_results
-        self._bootstrap_results = [m.modelfit_results for m in bootstrap_models if m.modelfit_results is not None]
+        self._bootstrap_results = [m.modelfit_results for m in bootstrap_models
+                                   if m.modelfit_results is not None]
         self._total_number_of_models = len(bootstrap_models)
 
     @classmethod
