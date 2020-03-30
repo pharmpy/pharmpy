@@ -3,14 +3,14 @@
 .. highlight:: console
 
 =======
-PharmPy
+Pharmpy
 =======
 
 .. start-longdesc
 
-PharmPy is a library for pharmacometrics. It can be used as a regular python package, in R via reticulate or via its built in command line interface.
+Pharmpy is a library for pharmacometrics. It can be used as a regular python package, in R via reticulate or via its built in command line interface.
 
-PharmPy is architectured to be able to handle different types of model formats and data formats and exposes a model agnostic API.
+Pharmpy is architectured to be able to handle different types of model formats and data formats and exposes a model agnostic API.
 
 Current features:
 
@@ -18,7 +18,7 @@ Current features:
 * Parsing of NONMEM result files
 * CLI supporting dataset filtering, resampling, anonymization and viewing
 
-PharmPy is developed by the Uppsala University Pharmacometrics group.
+Pharmpy is developed by the Uppsala University Pharmacometrics group.
 
 .. end-longdesc
 

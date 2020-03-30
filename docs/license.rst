@@ -11,7 +11,7 @@ Copyright
 
 ::
 
-   PharmPy: Pharmacometric models & workflows in Python
+   Pharmpy: Pharmacometric models & workflows in Python
 
    Copyright (C) 2018  Gunnar Yngman
    Copyright (C) 2018  Rikard Nordgren

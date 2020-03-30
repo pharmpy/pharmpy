@@ -4,7 +4,7 @@
 Installation
 ============
 
-.. warning:: PharmPy requires python 3.6 or later,
+.. warning:: Pharmpy requires python 3.6 or later,
     and is currently tested on python 3.6, 3.7 and 3.8 on Linux.
 
 At the command line, install latest build with::

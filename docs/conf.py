@@ -23,7 +23,7 @@ if os.getenv('SPELLCHECK'):
 
 source_suffix = '.rst'
 master_doc = 'index'
-project = 'PharmPy'
+project = 'Pharmpy'
 year = '2020'
 authors = ['Rikard Nordgren', 'Gunnar Yngman']
 copyright = '{0}; {1}'.format(year, ', '.join(authors))

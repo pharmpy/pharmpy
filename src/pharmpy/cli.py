@@ -2,7 +2,7 @@
 .. highlight:: console
 
 ============================
-The CLI interface of PharmPy
+The CLI interface of Pharmpy
 ============================
 
 Examples
@@ -35,18 +35,18 @@ shortcutting entrypoint (e.g. :func:`sumo`). This would be accomplished via invo
 
 to skip straight to subcommand parser.
 
-Installing PharmPy Wheel-build should install all of these to PATH. Then, these are clean targets
+Installing Pharmpy Wheel-build should install all of these to PATH. Then, these are clean targets
 for post-install hooks to symlink. Either to pollute the PATH namespace with traditional PsN-styled
 "binscripts", as::
 
     /usr/bin/execute               ->  /usr/bin/pharmpy execute
 
-Or, to keep multiple versions when upgrading PharmPy.
+Or, to keep multiple versions when upgrading Pharmpy.
 
 On Logging
 ----------
 
-As a CLI we are at the top, interacting with the user. All of PharmPy will get messages
+As a CLI we are at the top, interacting with the user. All of Pharmpy will get messages
 filtered through here (loggers organize themselves in a hiearchy based on their period-split names).
 
 .. warning::
@@ -127,7 +127,7 @@ class CLI:
         parser = argparse.ArgumentParser(
             prog='pharmpy',
             description=dedent("""
-            Welcome to the command line interface of PharmPy!
+            Welcome to the command line interface of Pharmpy!
 
             Functionality is split into various subcommands
                 - try --help after a COMMAND
@@ -153,7 +153,7 @@ class CLI:
         parser.add_argument('--version', action='version', version='0.2.0')
 
         # subcommand parsers
-        subparsers = parser.add_subparsers(title='PharmPy commands', metavar='COMMAND')
+        subparsers = parser.add_subparsers(title='Pharmpy commands', metavar='COMMAND')
         self._init_commands_tools(subparsers)
         self._init_commands_misc(subparsers)
 
@@ -270,7 +270,7 @@ class CLI:
         # -- model -----------------------------------------------------------------------------
         cmd_model = parsers.add_parser('model', help='Model manipulations', allow_abbrev=True)
 
-        cmd_model_subs = cmd_model.add_subparsers(title='PharmPy model commands', metavar='ACTION')
+        cmd_model_subs = cmd_model.add_subparsers(title='Pharmpy model commands', metavar='ACTION')
 
         cmd_model_print = cmd_model_subs.add_parser('print', prog='print model',
                                                     parents=[self._args_input],
@@ -302,7 +302,7 @@ class CLI:
 
         # -- run -------------------------------------------------------------------------------
         cmd_run = parsers.add_parser('run', help='Run workflows', allow_abbrev=True)
-        cmd_run_subs = cmd_run.add_subparsers(title='PharmPy workflow commands', metavar='ACTION')
+        cmd_run_subs = cmd_run.add_subparsers(title='Pharmpy workflow commands', metavar='ACTION')
 
         cmd_run_execute = cmd_run_subs.add_parser('execute', prog='execute models',
                                                   parents=[self._args_input],
@@ -319,7 +319,7 @@ class CLI:
         # -- results ---------------------------------------------------------------------------
         cmd_results = parsers.add_parser('results', help='Result extraction and generation',
                                          allow_abbrev=True)
-        cmd_results_subs = cmd_results.add_subparsers(title='PharmPy result generation commands',
+        cmd_results_subs = cmd_results.add_subparsers(title='Pharmpy result generation commands',
                                                       metavar='ACTION')
 
         cmd_results_bootstrap = cmd_results_subs.add_parser('bootstrap',
@@ -338,7 +338,7 @@ class CLI:
         # -- data ------------------------------------------------------------------------------
         cmd_data = parsers.add_parser('data', help='Data manipulations', allow_abbrev=True)
 
-        cmd_data_subs = cmd_data.add_subparsers(title='PharmPy data commands', metavar='ACTION')
+        cmd_data_subs = cmd_data.add_subparsers(title='Pharmpy data commands', metavar='ACTION')
 
         cmd_data_write = cmd_data_subs.add_parser('write', help='Write dataset', allow_abbrev=True,
                                                   parents=[self._args_model_or_data_input,
@@ -594,7 +594,7 @@ class CLI:
         self.write_model_or_dataset(df, df, output_file, args.force)
 
     def cmd_info(self, args):
-        """Subcommand to print PharmPy info (and brag a little bit)."""
+        """Subcommand to print Pharmpy info (and brag a little bit)."""
 
         lines = self.format_keyval_pairs(self.install._asdict(), right_just=True)
         print('\n'.join(lines))

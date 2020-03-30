@@ -7,7 +7,7 @@ Design
 Introduction
 ============
 
-:mod:`PharmPy <pharmpy>` is structured into a generic *template*, defined in :mod:`pharmpy.generic`, and
+:mod:`Pharmpy <pharmpy>` is structured into a generic *template*, defined in :mod:`pharmpy.generic`, and
 *implementations* of that template. The implementations define the API, but are guided and assisted
 by the generic template.
 

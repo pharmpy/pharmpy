@@ -9,7 +9,7 @@ General plans and thoughts about future development.
 Wishlist
 ========
 
-A wishlist of PharmPy features that would be attractive to implement (difficult/impossible with PsN today).
+A wishlist of Pharmpy features that would be attractive to implement (difficult/impossible with PsN today).
 
 NONMEM ``PRED`` nonzero exit
 ----------------------------
