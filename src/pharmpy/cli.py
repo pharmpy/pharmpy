@@ -510,6 +510,8 @@ class CLI:
         expression = ' '.join(args.expressions)
         try:
             df.query(expression, inplace=True)
+        except SyntaxError:
+            self.error_exit(SyntaxError(f'Invalid syntax of query: "{expression}"'))
         except BaseException as e:
             self.error_exit(exception=e)
         self.write_model_or_dataset(args.model_or_dataset, df, args.output_file, args.force)
