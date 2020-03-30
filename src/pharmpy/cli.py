@@ -150,7 +150,7 @@ class CLI:
             allow_abbrev=True,
         )
         self._init_common_args(parser)
-        parser.add_argument('--version', action='version', version='0.1')
+        parser.add_argument('--version', action='version', version='0.2.0')
 
         # subcommand parsers
         subparsers = parser.add_subparsers(title='PharmPy commands', metavar='COMMAND')
