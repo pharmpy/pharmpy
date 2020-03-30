@@ -118,7 +118,9 @@ class ModelfitResults:
     def relative_standard_errors(self):
         """Relative standard errors of popilation parameter estimates
         """
-        return self.standard_errors / self.parameter_estimates
+        ser = self.standard_errors / self.parameter_estimates
+        ser.name = 'RSE'
+        return ser
 
     def _se_from_cov(self):
         """Calculate the standard errors from the covariance matrix

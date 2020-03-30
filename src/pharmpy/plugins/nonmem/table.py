@@ -166,13 +166,17 @@ class ExtTable(NONMEMTable):
            A specific parameter estimate can be retreived as
            final_parameter_estimates['THETA1']
         '''
-        return self._get_parameters(-1000000000)
+        ser = self._get_parameters(-1000000000)
+        ser.name = 'estimates'
+        return ser
 
     @property
     def standard_errors(self):
         '''Get the standard errors of the parameter estimates as a Series
         '''
-        return self._get_parameters(-1000000001)
+        ser = self._get_parameters(-1000000001)
+        ser.name = 'SE'
+        return ser
 
     @property
     def omega_sigma_stdcorr(self):
