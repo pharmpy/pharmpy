@@ -241,7 +241,8 @@ class BootstrapResults(Results):
             # FIXME: this is a special case for now for json handling before we have modelfit json
             return
         self._original_results = original_model.modelfit_results
-        self._bootstrap_results = [m.modelfit_results for m in bootstrap_models]
+        self._bootstrap_results = [m.modelfit_results for m in bootstrap_models if m.modelfit_results is not None]
+        self._total_number_of_models = len(bootstrap_models)
 
     @classmethod
     def from_json(cls, struct):
@@ -312,9 +313,13 @@ class BootstrapResults(Results):
         return summary
 
     def __repr__(self):
+        inclusions = f'Inclusion\n\nTotal number of models: {self._total_number_of_models}\n' \
+                     f'Models not included because of failure: ' \
+                     f'{self._total_number_of_models - len(self._bootstrap_results)}\n' \
+                     f'Models included in analysis: {len(self._bootstrap_results)}'
         statistics = f'Statistics\n{repr(self.statistics)}'
         distribution = f'Distribution\n{repr(self.distribution)}'
-        return f'{statistics}\n\n{distribution}'
+        return f'{inclusions}\n\n{statistics}\n\n{distribution}'
 
     def plot_ofv(self):
         plot = pharmpy.visualization.histogram(self.ofv, title='Bootstrap OFV')
