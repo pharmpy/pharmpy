@@ -27,15 +27,16 @@ class ParameterSet(OrderedSet):
         """Give a dataframe with a summary of all Parameters
 
         :returns: A dataframe with one row per parameter.
-                  The columns are name, value, lower, upper and fix
+                  The columns are value, lower, upper and fix
+                  Row Index is the names
         """
         symbols = [param.name for param in self]
         values = [param.init for param in self]
         lower = [param.lower for param in self]
         upper = [param.upper for param in self]
         fix = [param.fix for param in self]
-        return pd.DataFrame({'name': symbols, 'value': values,
-                             'lower': lower, 'upper': upper, 'fix': fix})
+        return pd.DataFrame({'value': values, 'lower': lower, 'upper': upper, 'fix': fix},
+                            index=symbols)
 
     def remove_fixed(self):
         """Remove all fixed parameters
@@ -46,13 +47,13 @@ class ParameterSet(OrderedSet):
     def __repr__(self):
         if len(self) == 0:
             return "ParameterSet()"
-        return self.summary().to_string(index=False)
+        return self.summary().to_string()
 
     def _repr_html_(self):
         if len(self) == 0:
             return "ParameterSet()"
         else:
-            return self.summary().to_html(index=False)
+            return self.summary().to_html()
 
 
 class Parameter:
