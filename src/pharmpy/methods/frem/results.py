@@ -11,7 +11,8 @@ from pharmpy.results import Results
 
 
 class FREMResults(Results):
-    def __init__(self, frem_model, covariates, samples=1000):
+    def __init__(self, frem_model, continuous=[], categorical=[], samples=1000):
+        covariates = continuous + categorical
         self.frem_model = frem_model
         n = samples
 
@@ -27,10 +28,20 @@ class FREMResults(Results):
         covariate_baselines = covariate_baselines[covariates]
         cov_stdevs = covariate_baselines.std()
         cov_means = covariate_baselines.mean()
+        cov_modes = covariate_baselines.mode().iloc[0]      # Select first mode if more than one
+        cov_others = pd.Series(index=cov_modes[categorical].index, dtype=np.float64)
+        for _, row in covariate_baselines.iterrows():
+            for cov in categorical:
+                if row[cov] != cov_modes[cov]:
+                    cov_others[cov] = row[cov]
+            if not cov_others.isna().values.any():
+                break
+
+        cov_refs = pd.concat((cov_means[continuous], cov_modes[categorical]))
         cov_5th = covariate_baselines.quantile(0.05, interpolation='lower')
         cov_95th = covariate_baselines.quantile(0.95, interpolation='higher')
 
-        self.covariate_statistics = pd.DataFrame({'5th': cov_5th, 'mean': cov_means,
+        self.covariate_statistics = pd.DataFrame({'5th': cov_5th, 'ref': cov_refs,
                                                   '95th': cov_95th})
 
         ncovs = len(covariates)
@@ -57,9 +68,13 @@ class FREMResults(Results):
             for i, cov in enumerate(covariates):
                 indices = param_indices + [i + npars]
                 cov_sigma = scaled_sigma[indices][:, indices]
-                cov_mu = np.array([0] * npars + [cov_means[cov]])
-                mu_bar_given_5th_cov, sigma_bar = conditional_joint_normal(cov_mu, cov_sigma,
-                                                                           np.array([cov_5th[cov]]))
+                cov_mu = np.array([0] * npars + [cov_refs[cov]])
+                if cov in categorical:
+                    first_reference = cov_others[cov]
+                else:
+                    first_reference = cov_5th[cov]
+                mu_bar_given_5th_cov, sigma_bar = conditional_joint_normal(
+                    cov_mu, cov_sigma, np.array([first_reference]))
                 if sample_no != 'estimates':
                     mu_bar_given_95th_cov, _ = conditional_joint_normal(cov_mu, cov_sigma,
                                                                         np.array([cov_95th[cov]]))
@@ -70,7 +85,7 @@ class FREMResults(Results):
                     original_variability[i + 1, :] = np.diag(sigma_bar)
 
             for i, (_, row) in enumerate(covariate_baselines.iterrows()):
-                id_mu = np.array([0] * npars + list(cov_means))
+                id_mu = np.array([0] * npars + list(cov_refs))
                 mu_id_bar, sigma_id_bar = conditional_joint_normal(id_mu, scaled_sigma, row.values)
                 if sample_no != 'estimates':
                     mu_id_bars[sample_no, i, :] = mu_id_bar
@@ -79,7 +94,7 @@ class FREMResults(Results):
                     original_id_bar[i, :] = mu_id_bar
                     original_variability[ncovs + 1, :] = np.diag(sigma_id_bar)
 
-        # Create covariate effectes table
+        # Create covariate effects table
         mu_bars_given_5th = np.exp(mu_bars_given_5th)
         mu_bars_given_95th = np.exp(mu_bars_given_95th)
 
@@ -92,12 +107,20 @@ class FREMResults(Results):
 
         df = pd.DataFrame(columns=['parameter', 'covariate', 'condition', '5th', 'mean', '95th'])
         for param, cov in itertools.product(range(npars), range(ncovs)):
-            df = df.append({'parameter': param, 'covariate': covariates[cov], 'condition': '5th',
-                            '5th': q5_5th[cov, param], 'mean': means_5th[cov, param],
-                            '95th': q95_5th[cov, param]}, ignore_index=True)
-            df = df.append({'parameter': param, 'covariate': covariates[cov], 'condition': '95th',
-                            '5th': q5_95th[cov, param], 'mean': means_95th[cov, param],
-                            '95th': q95_95th[cov, param]}, ignore_index=True)
+            if covariates[cov] in categorical:
+                df = df.append({'parameter': str(param), 'covariate': covariates[cov],
+                                'condition': 'other', '5th': q5_5th[cov, param],
+                                'mean': means_5th[cov, param], '95th': q95_5th[cov, param]},
+                               ignore_index=True)
+            else:
+                df = df.append({'parameter': str(param), 'covariate': covariates[cov],
+                                'condition': '5th', '5th': q5_5th[cov, param],
+                                'mean': means_5th[cov, param], '95th': q95_5th[cov, param]},
+                               ignore_index=True)
+                df = df.append({'parameter': str(param), 'covariate': covariates[cov],
+                                'condition': '95th', '5th': q5_95th[cov, param],
+                                'mean': means_95th[cov, param], '95th': q95_95th[cov, param]},
+                               ignore_index=True)
         self.covariate_effects = df
 
         # Create id table
@@ -116,7 +139,7 @@ class FREMResults(Results):
                                      name=covariate_baselines.index[curid]))
         self.individual_effects = df
 
-        # Unexplained variability
+        # Create unexplained variability table
         sd_5th = np.sqrt(np.quantile(variability, 0.05, axis=0))
         sd_95th = np.sqrt(np.quantile(variability, 0.95, axis=0))
         original_sd = np.sqrt(original_variability)
@@ -133,4 +156,3 @@ class FREMResults(Results):
                             'sd_observed': original_sd[cond, par], 'sd_5th': sd_5th[cond, par],
                             'sd_95th': sd_95th[cond, par]}, ignore_index=True)
         self.unexplained_variability = df
-        print(df)
