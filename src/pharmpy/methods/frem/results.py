@@ -11,10 +11,12 @@ from pharmpy.results import Results
 
 
 class FREMResults(Results):
-    def __init__(self, frem_model, covariates):
+    def __init__(self, frem_model, covariates, samples=1000):
         self.frem_model = frem_model
-        n = 10
+        n = samples
+
         parvecs = sample_from_covariance_matrix(frem_model, n=n)
+        parvecs = parvecs.append(frem_model.modelfit_results.parameter_estimates)
 
         _, dist = list(frem_model.random_variables.distributions(level=VariabilityLevel.IIV))[-1]
         sigma_symb = dist.sigma
@@ -22,34 +24,51 @@ class FREMResults(Results):
         df = frem_model.input.dataset
         df.pharmpy.column_type[covariates] = ColumnType.COVARIATE
         covariate_baselines = df.pharmpy.covariate_baselines
-        cov_stdevs = covariate_baselines.std()[covariates]
-        cov_means = covariate_baselines.mean()[covariates]
-        cov_5th = covariate_baselines.quantile(0.05)[covariates]
-        cov_95th = covariate_baselines.quantile(0.95)[covariates]
+        covariate_baselines = covariate_baselines[covariates]
+        cov_stdevs = covariate_baselines.std()
+        cov_means = covariate_baselines.mean()
+        cov_5th = covariate_baselines.quantile(0.05, interpolation='lower')
+        cov_95th = covariate_baselines.quantile(0.95, interpolation='higher')
+
+        self.covariate_statistics = pd.DataFrame({'5th': cov_5th, 'mean': cov_means,
+                                                  '95th': cov_95th})
 
         ncovs = len(covariates)
         npars = sigma_symb.rows - ncovs
+        nids = len(covariate_baselines)
         param_indices = list(range(npars))
         scaling = np.diag(np.concatenate((np.ones(npars), cov_stdevs.values)))
 
         mu_bars_given_5th = np.empty((n, ncovs, npars))
         mu_bars_given_95th = np.empty((n, ncovs, npars))
+        mu_id_bars = np.empty((n, nids, npars))
+        original_id_bar = np.empty((nids, npars))
 
         for sample_no, params in parvecs.iterrows():
             sigma = sigma_symb.subs(dict(params))
             sigma = np.array(sigma).astype(np.float64)
             scaled_sigma = scaling @ sigma @ scaling.T
-            for i, cov in enumerate(covariates):
-                indices = param_indices + [i + npars]
-                cov_sigma = scaled_sigma[indices][:, indices]
-                cov_mu = np.array([0] * npars + [cov_means[cov]])
-                mu_bar_given_5th_cov, _ = conditional_joint_normal(cov_mu, cov_sigma,
-                                                                   np.array([cov_5th[cov]]))
-                mu_bar_given_95th_cov, _ = conditional_joint_normal(cov_mu, cov_sigma,
-                                                                    np.array([cov_95th[cov]]))
-                mu_bars_given_5th[sample_no, i, :] = mu_bar_given_5th_cov
-                mu_bars_given_95th[sample_no, i, :] = mu_bar_given_95th_cov
+            if sample_no != 'estimates':      # Don't use the original final parvec
+                for i, cov in enumerate(covariates):
+                    indices = param_indices + [i + npars]
+                    cov_sigma = scaled_sigma[indices][:, indices]
+                    cov_mu = np.array([0] * npars + [cov_means[cov]])
+                    mu_bar_given_5th_cov, _ = conditional_joint_normal(cov_mu, cov_sigma,
+                                                                       np.array([cov_5th[cov]]))
+                    mu_bar_given_95th_cov, _ = conditional_joint_normal(cov_mu, cov_sigma,
+                                                                        np.array([cov_95th[cov]]))
+                    mu_bars_given_5th[sample_no, i, :] = mu_bar_given_5th_cov
+                    mu_bars_given_95th[sample_no, i, :] = mu_bar_given_95th_cov
 
+            for i, (_, row) in enumerate(covariate_baselines.iterrows()):
+                id_mu = np.array([0] * npars + list(cov_means))
+                mu_id_bar, _ = conditional_joint_normal(id_mu, scaled_sigma, row.values)
+                if sample_no != 'estimates':
+                    mu_id_bars[sample_no, i, :] = mu_id_bar
+                else:
+                    original_id_bar[i, :] = mu_id_bar
+
+        # Create covariate effectes table
         mu_bars_given_5th = np.exp(mu_bars_given_5th)
         mu_bars_given_95th = np.exp(mu_bars_given_95th)
 
@@ -69,4 +88,19 @@ class FREMResults(Results):
                             '5th': q5_95th[cov, param], 'mean': means_95th[cov, param],
                             '95th': q95_95th[cov, param]}, ignore_index=True)
         self.covariate_effects = df
-        print(df)
+
+        # Create id table
+        mu_id_bars = np.exp(mu_id_bars)
+        original_id_bar = np.exp(original_id_bar)
+
+        id_5th = np.quantile(mu_id_bars, 0.05, axis=0)
+        id_95th = np.quantile(mu_id_bars, 0.95, axis=0)
+
+        df = pd.DataFrame(columns=['parameter', 'observed', '5th', '95th'])
+        for curid, param in itertools.product(range(nids), range(npars)):
+            df = df.append(pd.Series({'parameter': param,
+                                      'observed': original_id_bar[curid, param],
+                                      '5th': id_5th[curid, param],
+                                      '95th': id_95th[curid, param]},
+                                     name=covariate_baselines.index[curid]))
+        self.individual_effects = df
