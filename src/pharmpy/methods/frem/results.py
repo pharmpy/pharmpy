@@ -43,30 +43,41 @@ class FREMResults(Results):
         mu_bars_given_95th = np.empty((n, ncovs, npars))
         mu_id_bars = np.empty((n, nids, npars))
         original_id_bar = np.empty((nids, npars))
+        variability = np.empty((n, ncovs + 2, npars))      # none, cov1, cov2, ..., all
+        original_variability = np.empty((ncovs + 2, npars))
 
         for sample_no, params in parvecs.iterrows():
             sigma = sigma_symb.subs(dict(params))
             sigma = np.array(sigma).astype(np.float64)
             scaled_sigma = scaling @ sigma @ scaling.T
-            if sample_no != 'estimates':      # Don't use the original final parvec
-                for i, cov in enumerate(covariates):
-                    indices = param_indices + [i + npars]
-                    cov_sigma = scaled_sigma[indices][:, indices]
-                    cov_mu = np.array([0] * npars + [cov_means[cov]])
-                    mu_bar_given_5th_cov, _ = conditional_joint_normal(cov_mu, cov_sigma,
-                                                                       np.array([cov_5th[cov]]))
+            if sample_no != 'estimates':
+                variability[sample_no, 0, :] = np.diag(scaled_sigma)[:npars]
+            else:
+                original_variability[0, :] = np.diag(scaled_sigma)[:npars]
+            for i, cov in enumerate(covariates):
+                indices = param_indices + [i + npars]
+                cov_sigma = scaled_sigma[indices][:, indices]
+                cov_mu = np.array([0] * npars + [cov_means[cov]])
+                mu_bar_given_5th_cov, sigma_bar = conditional_joint_normal(cov_mu, cov_sigma,
+                                                                           np.array([cov_5th[cov]]))
+                if sample_no != 'estimates':
                     mu_bar_given_95th_cov, _ = conditional_joint_normal(cov_mu, cov_sigma,
                                                                         np.array([cov_95th[cov]]))
                     mu_bars_given_5th[sample_no, i, :] = mu_bar_given_5th_cov
                     mu_bars_given_95th[sample_no, i, :] = mu_bar_given_95th_cov
+                    variability[sample_no, i + 1, :] = np.diag(sigma_bar)
+                else:
+                    original_variability[i + 1, :] = np.diag(sigma_bar)
 
             for i, (_, row) in enumerate(covariate_baselines.iterrows()):
                 id_mu = np.array([0] * npars + list(cov_means))
-                mu_id_bar, _ = conditional_joint_normal(id_mu, scaled_sigma, row.values)
+                mu_id_bar, sigma_id_bar = conditional_joint_normal(id_mu, scaled_sigma, row.values)
                 if sample_no != 'estimates':
                     mu_id_bars[sample_no, i, :] = mu_id_bar
+                    variability[sample_no, -1, :] = np.diag(sigma_id_bar)
                 else:
                     original_id_bar[i, :] = mu_id_bar
+                    original_variability[ncovs + 1, :] = np.diag(sigma_id_bar)
 
         # Create covariate effectes table
         mu_bars_given_5th = np.exp(mu_bars_given_5th)
@@ -104,3 +115,22 @@ class FREMResults(Results):
                                       '95th': id_95th[curid, param]},
                                      name=covariate_baselines.index[curid]))
         self.individual_effects = df
+
+        # Unexplained variability
+        sd_5th = np.sqrt(np.quantile(variability, 0.05, axis=0))
+        sd_95th = np.sqrt(np.quantile(variability, 0.95, axis=0))
+        original_sd = np.sqrt(original_variability)
+
+        df = pd.DataFrame(columns=['parameter', 'condition', 'sd_observed', 'sd_5th', 'sd_95th'])
+        for par, cond in itertools.product(range(npars), range(ncovs + 2)):
+            if cond == 0:
+                condition = 'none'
+            elif cond == ncovs + 1:
+                condition = 'all'
+            else:
+                condition = covariates[cond - 1]
+            df = df.append({'parameter': par, 'condition': condition,
+                            'sd_observed': original_sd[cond, par], 'sd_5th': sd_5th[cond, par],
+                            'sd_95th': sd_95th[cond, par]}, ignore_index=True)
+        self.unexplained_variability = df
+        print(df)
