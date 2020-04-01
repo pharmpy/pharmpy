@@ -7,8 +7,8 @@ from pharmpy import Model
 from pharmpy.methods.frem.results import FREMResults
 
 
-def test_frem_results(testdata):
-    model = Model(testdata / 'nonmem' / 'model_4.mod')
+def test_frem_results_pheno(testdata):
+    model = Model(testdata / 'nonmem' / 'frem' / 'pheno' / 'model_4.mod')
     np.random.seed(39)
     res = FREMResults(model, continuous=['APGR', 'WGT'], samples=10)
 
@@ -163,3 +163,10 @@ def test_frem_results(testdata):
     correct = pd.DataFrame({'5th': [1.0, 0.7], 'ref': [6.423729, 1.525424], '95th': [9.0, 3.2]},
                            index=['APGR', 'WGT'])
     pd.testing.assert_frame_equal(res.covariate_statistics, correct)
+
+
+# def test_frem_results_pheno_categorical(testdata):
+#    model = Model(testdata / 'nonmem' / 'frem' / 'pheno_cat' / 'model_4.mod')
+#    np.random.seed(8978)
+#    res = FREMResults(model, cov_model=cov_model, continuous=['WGT'], categorical=['APGRX'],
+#                        samples=10)

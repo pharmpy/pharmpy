@@ -11,12 +11,17 @@ from pharmpy.results import Results
 
 
 class FREMResults(Results):
-    def __init__(self, frem_model, continuous=[], categorical=[], samples=1000):
+    def __init__(self, frem_model, cov_model=None, continuous=[], categorical=[], samples=1000):
         covariates = continuous + categorical
         self.frem_model = frem_model
         n = samples
 
-        parvecs = sample_from_covariance_matrix(frem_model, n=n)
+        if cov_model is not None:
+            cov_results = cov_model.modelfit_results
+        else:
+            cov_results = frem_model.modelfit_results
+
+        parvecs = sample_from_covariance_matrix(frem_model, modelfit_results=cov_results, n=n)
         parvecs = parvecs.append(frem_model.modelfit_results.parameter_estimates)
 
         _, dist = list(frem_model.random_variables.distributions(level=VariabilityLevel.IIV))[-1]
