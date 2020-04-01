@@ -132,7 +132,7 @@ class FREMResults(Results):
 
         df = pd.DataFrame(columns=['parameter', 'observed', '5th', '95th'])
         for curid, param in itertools.product(range(nids), range(npars)):
-            df = df.append(pd.Series({'parameter': param,
+            df = df.append(pd.Series({'parameter': str(param),
                                       'observed': original_id_bar[curid, param],
                                       '5th': id_5th[curid, param],
                                       '95th': id_95th[curid, param]},
@@ -152,7 +152,7 @@ class FREMResults(Results):
                 condition = 'all'
             else:
                 condition = covariates[cond - 1]
-            df = df.append({'parameter': par, 'condition': condition,
+            df = df.append({'parameter': str(par), 'condition': condition,
                             'sd_observed': original_sd[cond, par], 'sd_5th': sd_5th[cond, par],
                             'sd_95th': sd_95th[cond, par]}, ignore_index=True)
         self.unexplained_variability = df
