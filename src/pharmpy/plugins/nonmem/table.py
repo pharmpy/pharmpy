@@ -148,6 +148,8 @@ class ExtTable(NONMEMTable):
     def _get_parameters(self, iteration, include_thetas=True):
         df = self.data_frame
         row = df.loc[df['ITERATION'] == iteration]
+        if row.empty:
+            raise KeyError(f'Row {iteration} not available in ext-file')
         del row['ITERATION']
         del row['OBJ']
         if not include_thetas:
