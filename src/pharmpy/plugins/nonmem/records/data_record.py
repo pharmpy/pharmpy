@@ -62,7 +62,7 @@ class DataRecord(OptionRecord):
         self.root.remove('ignchar')
         char_node = AttrTree.create('char', [{'CHAR': c}])
         node = AttrTree.create('ignchar', [{'IGNORE': 'IGNORE'}, {'EQUALS': '='}, char_node])
-        self.append_option(node)
+        self.append_option_node(node)
 
     def ignore_character_from_header(self, label):
         """ Set ignore character from a header label

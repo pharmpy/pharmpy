@@ -73,8 +73,7 @@ setup(
         # eg: 'keyword1', 'keyword2', 'keyword3',
     ],
     install_requires=[
-        'lark-parser', 'sympy', 'pandas', 'altair', 'toil',
-        # eg: 'aspectlib==1.1.1', 'six>=1.7',
+        'lark-parser', 'sympy', 'pandas', 'numexpr', 'altair', 'toil',
     ],
     extras_require={
         # eg:

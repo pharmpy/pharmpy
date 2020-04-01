@@ -359,6 +359,13 @@ class CLI:
         cmd_data_filter.add_argument('expressions', nargs=argparse.REMAINDER)
         cmd_data_filter.set_defaults(func=self.data_filter)
 
+        cmd_data_append = cmd_data_subs.add_parser('append', help='Append column to dataset',
+                                                   allow_abbrev=True,
+                                                   parents=[self._args_model_or_data_input,
+                                                            self._args_output])
+        cmd_data_append.add_argument('expression')
+        cmd_data_append.set_defaults(func=self.data_append)
+
         cmd_data_resample = cmd_data_subs.add_parser('resample', help='Resample dataset',
                                                      allow_abbrev=True,
                                                      parents=[self._args_model_or_data_input,
@@ -514,6 +521,18 @@ class CLI:
             self.error_exit(SyntaxError(f'Invalid syntax of query: "{expression}"'))
         except BaseException as e:
             self.error_exit(exception=e)
+        self.write_model_or_dataset(args.model_or_dataset, df, args.output_file, args.force)
+
+    def data_append(self, args):
+        """Subcommand to append a column to a dataset"""
+        try:
+            df = args.model_or_dataset.input.dataset
+        except plugin_utils.PluginError:
+            df = args.model_or_dataset
+        try:
+            df.eval(args.expression, inplace=True)
+        except SyntaxError:
+            self.error_exit(SyntaxError(f'Invalid syntax of expression: "{args.expression}"'))
         self.write_model_or_dataset(args.model_or_dataset, df, args.output_file, args.force)
 
     def write_model_or_dataset(self, model_or_dataset, new_df, path, force):

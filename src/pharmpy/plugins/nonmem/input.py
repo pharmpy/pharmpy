@@ -102,6 +102,18 @@ class ModelInput(input.ModelInput):
                 coltypes.append(pharmpy.data.read.infer_column_type(reserved_name))
         return colnames, coltypes, drop, synonym_replacement
 
+    def _update_input(self, new_names):
+        """Update $INPUT with new column names
+
+           currently supporting append columns at end
+        """
+        colnames, _, _, _ = self._column_info()
+        appended_names = new_names[len(colnames):]
+        input_records = self.model.control_stream.get_records("INPUT")
+        last_input_record = input_records[-1]
+        for colname in appended_names:
+            last_input_record.append_option(colname)
+
     def _replace_synonym_in_filters(filters, replacements):
         result = []
         for f in filters:

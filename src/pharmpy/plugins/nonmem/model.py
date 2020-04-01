@@ -55,6 +55,7 @@ class Model(pharmpy.model.Model):
 
             label = self.input.dataset.columns[0]
             data_record.ignore_character_from_header(label)
+            self.input._update_input(self.input.dataset.columns)
 
             # Remove IGNORE/ACCEPT. Could do diff between old dataset and find simple
             # IGNOREs to add i.e. for filter out certain ID.

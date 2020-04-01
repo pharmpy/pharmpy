@@ -26,7 +26,18 @@ class OptionRecord(Record):
 
         return pairs
 
-    def append_option(self, node):
+    def append_option(self, key, value=None):
+        """ Append option as last option
+
+            Method applicable to option records with no special grammar
+        """
+        if value is None:
+            node = AttrTree.create('option', [{'VALUE': key}])
+            self.append_option_node(node)
+        else:
+            raise NotImplementedError("Please implement this!")
+
+    def append_option_node(self, node):
         """ Add a new option as last option
         """
         last_child = self.root.children[-1]
