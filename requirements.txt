@@ -39,8 +39,10 @@ sphinxcontrib-htmlhelp==1.0.3
 sphinxcontrib-jsmath==1.0.1
 sphinxcontrib-qthelp==1.0.3
 sphinxcontrib-serializinghtml==1.1.4
+symengine==0.6.1
 sympy==1.5.1
-toil==4.0.0a1
+#toil==4.0.0a1
+/home/rikard/devel/toil/dist/toil-4.0.0a1.tar.gz
 toolz==0.10.0
 urllib3==1.25.8
 websocket-client==0.57.0

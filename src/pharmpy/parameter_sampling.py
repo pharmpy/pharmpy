@@ -28,7 +28,8 @@ def sample_from_covariance_matrix(model, modelfit_results=None, force_posdef=Fal
         samples = sample_truncated_joint_normal(mu, sigma, a, b, n=remaining)
         df = pd.DataFrame(samples, columns=index)
         if not force_posdef:
-            selected = df[df.apply(model.random_variables.validate_parameters, axis=1)]
+            selected = df[df.apply(model.random_variables.validate_parameters, axis=1,
+                                   use_cache=True)]
         else:
             selected = df.transform(model.random_variables.nearest_valid_parameters, axis=1)
         kept_samples = pd.concat((kept_samples, selected))

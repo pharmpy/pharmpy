@@ -2,6 +2,7 @@ import enum
 import itertools
 
 import numpy as np
+import symengine
 import sympy
 import sympy.stats as stats
 from sympy.matrices import MatrixBase, MatrixExpr
@@ -233,19 +234,41 @@ class RandomVariables(OrderedSet):
                 new_rvs.update(JointNormalSeparate([rv.name for rv in rvs], dist.mu, dist.sigma))
         return rvs
 
-    def validate_parameters(self, parameter_values):
+    def validate_parameters(self, parameter_values, use_cache=False):
         """ Validate a dict or Series of parameter values
 
             Currently checks that all covariance matrices are posdef
+            use_cache for using symengine cached matrices
         """
+        if use_cache and not hasattr(self, '_cached_sigmas'):
+            self._cached_sigmas = {}
+            for rvs, dist in self.distributions():
+                if len(rvs) > 1:
+                    sigma = dist.sigma
+                    a = [[symengine.Symbol(e.name) for e in sigma.row(i)]
+                         for i in range(sigma.rows)]
+                    A = symengine.Matrix(a)
+                    self._cached_sigmas[rvs[0]] = A
+
         for rvs, dist in self.distributions():
             if len(rvs) > 1:
-                sigma = dist.sigma.subs(dict(parameter_values))
-                # Switch to numpy here. Sympy posdef check is problematic
-                # see https://github.com/sympy/sympy/issues/18955
-                a = np.array(sigma).astype(np.float64)
-                if not pharmpy.math.is_posdef(a):
-                    return False
+                if not use_cache:
+                    sigma = dist.sigma.subs(dict(parameter_values))
+                    # Switch to numpy here. Sympy posdef check is problematic
+                    # see https://github.com/sympy/sympy/issues/18955
+                    a = np.array(sigma).astype(np.float64)
+                    if not pharmpy.math.is_posdef(a):
+                        return False
+                else:
+                    sigma = self._cached_sigmas[rvs[0]]
+                    replacement = {}
+                    # Following because https://github.com/symengine/symengine/issues/1660
+                    for param in dict(parameter_values):
+                        replacement[symengine.Symbol(param)] = parameter_values[param]
+                    sigma = sigma.subs(replacement)
+                    a = np.array(sigma).astype(np.float64)
+                    if not pharmpy.math.is_posdef(a):
+                        return False
         return True
 
     def nearest_valid_parameters(self, parameter_values):
