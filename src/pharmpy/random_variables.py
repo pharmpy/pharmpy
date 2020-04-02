@@ -248,6 +248,25 @@ class RandomVariables(OrderedSet):
                     return False
         return True
 
+    def nearest_valid_parameters(self, parameter_values):
+        """ Force parameter values into being valid
+
+            As small changes as possible
+
+            returns an updated parameter_values
+        """
+        nearest = parameter_values.copy()
+        for rvs, dist in self.distributions():
+            if len(rvs) > 1:
+                sigma = dist.sigma.subs(dict(parameter_values))
+                A = np.array(sigma).astype(np.float64)
+                B = pharmpy.math.nearest_posdef(A)
+                if B is not A:
+                    for row in range(len(A)):
+                        for col in range(row + 1):
+                            nearest[dist.sigma[row, col].name] = B[row, col]
+        return nearest
+
 
 # pharmpy sets a parametrization attribute to the sympy distributions
 # It will currently not affect the sympy distribution itself just convey the information
