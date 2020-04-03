@@ -43,9 +43,16 @@ def S(x):
     ('$PRED IF (X < ETA(1)) CL=23', S('CL'), sympy.Piecewise((23, sympy.Lt(S('X'), S('ETA(1)'))))),
     ('$PK IF(AMT.GT.0) BTIME=TIME', S('BTIME'),
         sympy.Piecewise((S('TIME'), sympy.Gt(S('AMT'), 0)))),
-    ('$PRED IF (X.EQ.2.AND.Y.EQ.3) CL=23', S('CL'), sympy.Piecewise((23, sympy.And(sympy.Eq(S('X'), 2), sympy.Eq(S('Y'), 3))))),
-    ('$PRED IF (X.EQ.2.OR.Y.EQ.3) CL=23', S('CL'), sympy.Piecewise((23, sympy.Or(sympy.Eq(S('X'), 2), sympy.Eq(S('Y'), 3))))),
-    ('$PRED IF (.NOT.X.EQ.2) CL=25', S('CL'), sympy.Piecewise((25, sympy.Not(sympy.Eq(S('X'), 2))))),
+    ('$PRED IF (X.EQ.2.AND.Y.EQ.3) CL=23', S('CL'),
+        sympy.Piecewise((23, sympy.And(sympy.Eq(S('X'), 2), sympy.Eq(S('Y'), 3))))),
+    ('$PRED IF (X.EQ.2.OR.Y.EQ.3) CL=23', S('CL'),
+        sympy.Piecewise((23, sympy.Or(sympy.Eq(S('X'), 2), sympy.Eq(S('Y'), 3))))),
+    ('$PRED IF (.NOT.X.EQ.2) CL=25', S('CL'),
+        sympy.Piecewise((25, sympy.Not(sympy.Eq(S('X'), 2))))),
+    ('$PRED IF (Q.EQ.(R+C)/D) L=0', S('L'),
+        sympy.Piecewise((0, sympy.Eq(S('Q'), sympy.Mul(sympy.Add(S('R'), S('C')), 1 / S('D')))))),
+    ('$PRED IF (Q.EQ.R+C/D) L=0', S('L'),
+        sympy.Piecewise((0, sympy.Eq(S('Q'), S('R') + S('C') / S('D'))))),
 ])
 def test_single_assignments(parser, buf, symbol, expression):
     rec = parser.parse(buf).records[0]
