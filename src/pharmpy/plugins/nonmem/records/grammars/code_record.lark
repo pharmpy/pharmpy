@@ -4,8 +4,15 @@ root : (WS_ALL statement [WS] [COMMENT] [WS_ALL])+
 
 statement: assignment
          | logical_if
+         | block_if
 
 assignment: variable [WS] "=" [WS] expression
+
+block_if: block_if_start block_if_elseif* block_if_else? block_if_end
+block_if_start: [WS] "IF" [WS] "(" logical_expression ")" [WS] "THEN" WS_ALL ([WS] assignment WS_ALL)+
+block_if_else: [WS] "ELSE" WS_ALL ([WS] assignment WS_ALL)+
+block_if_elseif: [WS] "ELSE" [WS] "IF" [WS] "(" logical_expression ")" [WS] "THEN" WS_ALL ([WS] assignment WS_ALL)+
+block_if_end: [WS] "END IF" [WS]
 
 logical_if: "IF" [WS] "(" logical_expression ")" [WS] assignment
 logical_expression: or_term (or_op or_term)?

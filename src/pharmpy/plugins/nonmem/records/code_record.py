@@ -6,6 +6,7 @@ Generic NONMEM code record class.
 import lark
 import sympy
 
+from pharmpy.data_structures import OrderedSet
 from pharmpy.statements import Assignment, ModelStatements
 
 from .record import Record
@@ -142,4 +143,48 @@ class CodeRecord(Record):
                 pw = sympy.Piecewise((expr, logic_expr))
                 ass = Assignment(name, pw)
                 s.append(ass)
+            elif node.rule == 'block_if':
+                interpreter = ExpressionInterpreter()
+                blocks = []     # [(logic, [(symb1, expr1), ...]), ...]
+                symbols = OrderedSet()
+
+                first_logic = interpreter.visit(node.block_if_start.logical_expression)
+                first_block = node.block_if_start
+                first_symb_exprs = []
+                for assign_node in first_block.all('assignment'):
+                    name = str(assign_node.variable)
+                    first_symb_exprs.append((name, interpreter.visit(assign_node.expression)))
+                    symbols.add(name)
+                blocks.append((first_logic, first_symb_exprs))
+
+                else_if_blocks = node.all('block_if_elseif')
+                for elseif in else_if_blocks:
+                    logic = interpreter.visit(elseif.logical_expression)
+                    elseif_symb_exprs = []
+                    for assign_node in elseif.all('assignment'):
+                        name = str(assign_node.variable)
+                        elseif_symb_exprs.append((name, interpreter.visit(assign_node.expression)))
+                        symbols.add(name)
+                    blocks.append((logic, elseif_symb_exprs))
+
+                else_block = node.find('block_if_else')
+                if else_block:
+                    else_symb_exprs = []
+                    for assign_node in else_block.all('assignment'):
+                        name = str(assign_node.variable)
+                        else_symb_exprs.append((name, interpreter.visit(assign_node.expression)))
+                        symbols.add(name)
+                    blocks.append((True, else_symb_exprs))
+
+                for symbol in symbols:
+                    pairs = []
+                    for block in blocks:
+                        logic = block[0]
+                        for cursymb, expr in block[1]:
+                            if cursymb == symbol:
+                                pairs.append((expr, logic))
+                    pw = sympy.Piecewise(*pairs)
+                    ass = Assignment(symbol, pw)
+                    s.append(ass)
+
         return ModelStatements(s)
