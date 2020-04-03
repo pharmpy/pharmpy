@@ -43,6 +43,9 @@ class ExpressionInterpreter(lark.visitors.Interpreter):
         if len(t) > 2:
             left, op, right = self.visit_children(node)
             return op(left, right)
+        elif len(t) == 2:
+            op, expr = self.visit_children(node)
+            return op(expr)
         else:
             return t[0]
 
@@ -52,10 +55,20 @@ class ExpressionInterpreter(lark.visitors.Interpreter):
             return sympy.Eq
         elif name == '/=' or name == '.NE.':
             return sympy.Ne
+        elif name == '<=' or name == '.LE.':
+            return sympy.Le
+        elif name == '>=' or name == '.GE.':
+            return sympy.Ge
         elif name == '<' or name == '.LT.':
             return sympy.Lt
         elif name == '>' or name == '.GT.':
             return sympy.Gt
+        elif name == '.AND.':
+            return sympy.And
+        elif name == '.OR.':
+            return sympy.Or
+        elif name == '.NOT.':
+            return sympy.Not
 
     def func(self, node):
         func, expr = self.visit_children(node)

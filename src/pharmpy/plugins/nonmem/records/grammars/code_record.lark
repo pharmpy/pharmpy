@@ -8,13 +8,19 @@ statement: assignment
 assignment: variable [WS] "=" [WS] expression
 
 logical_if: "IF" [WS] "(" logical_expression ")" [WS] assignment
-logical_expression: eq_term (eq_op eq_term)?
+logical_expression: or_term (or_op or_term)?
+or_term: and_term (and_op and_term)? -> logical_expression
+and_term: (not_op)? not_term -> logical_expression
+not_term: eq_term (eq_op eq_term)? -> logical_expression
 eq_term: rel_term (rel_op rel_term)? -> logical_expression
 rel_term: expression -> expression
 
+or_op: (".OR.") -> logical_operator
+and_op: (".AND.") -> logical_operator
 eq_op: ("==" | ".EQ.") -> logical_operator
       | ("/=" | ".NE.") -> logical_operator
 rel_op: (".LT." | "<" | ".LE." | "<=" | ".GT." | ">" | ".GE." | ">=") -> logical_operator
+not_op: ".NOT." -> logical_operator
 
 expression: term (add_op [WS] term)*
 ?term: factor (mul_op factor)* -> expression

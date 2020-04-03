@@ -11,6 +11,8 @@ def S(x):
 @pytest.mark.parametrize('buf,symbol,expression', [
     ('$PRED\nY = THETA(1) + ETA(1) + EPS(1)', S('Y'), S('THETA(1)') + S('ETA(1)') + S('EPS(1)')),
     ('$PRED\nCL = 2', S('CL'), 2),
+    ('$PRED K=-1', S('K'), -1),
+    ('$PRED K=-1.5', S('K'), -1.5),
     ('$PRED\nCL = KA', S('CL'), S('KA')),
     ('$PRED\nG = BASE - LESS', S('G'), S('BASE') - S('LESS')),
     ('$PRED CL = THETA(1) * LEFT', S('CL'), S('THETA(1)') * S('LEFT')),
@@ -41,6 +43,9 @@ def S(x):
     ('$PRED IF (X < ETA(1)) CL=23', S('CL'), sympy.Piecewise((23, sympy.Lt(S('X'), S('ETA(1)'))))),
     ('$PK IF(AMT.GT.0) BTIME=TIME', S('BTIME'),
         sympy.Piecewise((S('TIME'), sympy.Gt(S('AMT'), 0)))),
+    ('$PRED IF (X.EQ.2.AND.Y.EQ.3) CL=23', S('CL'), sympy.Piecewise((23, sympy.And(sympy.Eq(S('X'), 2), sympy.Eq(S('Y'), 3))))),
+    ('$PRED IF (X.EQ.2.OR.Y.EQ.3) CL=23', S('CL'), sympy.Piecewise((23, sympy.Or(sympy.Eq(S('X'), 2), sympy.Eq(S('Y'), 3))))),
+    ('$PRED IF (.NOT.X.EQ.2) CL=25', S('CL'), sympy.Piecewise((25, sympy.Not(sympy.Eq(S('X'), 2))))),
 ])
 def test_single_assignments(parser, buf, symbol, expression):
     rec = parser.parse(buf).records[0]
@@ -49,7 +54,7 @@ def test_single_assignments(parser, buf, symbol, expression):
     assert rec.statements[0].expression == expression
 
 
-def test_peno(parser):
+def test_pheno(parser):
     code = """$PK
 
 IF(AMT.GT.0) BTIME=TIME
