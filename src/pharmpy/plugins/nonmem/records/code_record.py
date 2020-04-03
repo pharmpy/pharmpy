@@ -54,6 +54,8 @@ class ExpressionInterpreter(lark.visitors.Interpreter):
             return sympy.Ne
         elif name == '<' or name == '.LT.':
             return sympy.Lt
+        elif name == '>' or name == '.GT.':
+            return sympy.Gt
 
     def func(self, node):
         func, expr = self.visit_children(node)

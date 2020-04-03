@@ -39,10 +39,44 @@ def S(x):
         sympy.Piecewise((S('THETA(1)'), sympy.Ne(S('X'), 1.5)))),
     ('$PRED IF (X.EQ.2+1) CL=23', S('CL'), sympy.Piecewise((23, sympy.Eq(S('X'), 3)))),
     ('$PRED IF (X < ETA(1)) CL=23', S('CL'), sympy.Piecewise((23, sympy.Lt(S('X'), S('ETA(1)'))))),
+    ('$PK IF(AMT.GT.0) BTIME=TIME', S('BTIME'),
+        sympy.Piecewise((S('TIME'), sympy.Gt(S('AMT'), 0)))),
 ])
 def test_single_assignments(parser, buf, symbol, expression):
     rec = parser.parse(buf).records[0]
-    rec.root.treeprint()
     assert len(rec.statements) == 1
     assert rec.statements[0].symbol == symbol
     assert rec.statements[0].expression == expression
+
+
+def test_peno(parser):
+    code = """$PK
+
+IF(AMT.GT.0) BTIME=TIME
+TAD=TIME-BTIME
+      TVCL=THETA(1)*WGT
+      TVV=THETA(2)*WGT
+IF(APGR.LT.5) TVV=TVV*(1+THETA(3))
+      CL=TVCL*EXP(ETA(1))
+      V=TVV*EXP(ETA(2))
+      S1=V
+"""
+    rec = parser.parse(code).records[0]
+    assert len(rec.statements) == 8
+    assert rec.statements[0].symbol == S('BTIME')
+    assert rec.statements[1].symbol == S('TAD')
+    assert rec.statements[2].symbol == S('TVCL')
+    assert rec.statements[3].symbol == S('TVV')
+    assert rec.statements[4].symbol == S('TVV')
+    assert rec.statements[5].symbol == S('CL')
+    assert rec.statements[6].symbol == S('V')
+    assert rec.statements[7].symbol == S('S1')
+    assert rec.statements[0].expression == sympy.Piecewise((S('TIME'), sympy.Gt(S('AMT'), 0)))
+    assert rec.statements[1].expression == S('TIME') - S('BTIME')
+    assert rec.statements[2].expression == S('THETA(1)') * S('WGT')
+    assert rec.statements[3].expression == S('THETA(2)') * S('WGT')
+    assert rec.statements[4].expression == sympy.Piecewise((S('TVV') * (1 + S('THETA(3)')),
+                                                           sympy.Lt(S('APGR'), 5)))
+    assert rec.statements[5].expression == S('TVCL') * sympy.exp(S('ETA(1)'))
+    assert rec.statements[6].expression == S('TVV') * sympy.exp(S('ETA(2)'))
+    assert rec.statements[7].expression == S('V')

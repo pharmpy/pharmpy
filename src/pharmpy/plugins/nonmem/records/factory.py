@@ -23,6 +23,7 @@ known_records = {
     'OMEGA': (OmegaRecord, OmegaRecordParser),
     'SIGMA': (OmegaRecord, OmegaRecordParser),
     'PRED': (CodeRecord, CodeRecordParser),
+    'PK': (CodeRecord, CodeRecordParser),
 }
 
 
@@ -46,6 +47,9 @@ def get_canonical_record_name(raw_name):
         # Synonyms
         if 'INFILE'.startswith(bare):
             return 'DATA'
+    elif bare == 'PK':
+        return bare
+
     return None
 
 

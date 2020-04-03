@@ -1,6 +1,6 @@
 // A precedence climbing grammar is used for expressions
 
-root : WS_ALL statement [WS] [COMMENT] [WS_ALL]
+root : (WS_ALL statement [WS] [COMMENT] [WS_ALL])+
 
 statement: assignment
          | logical_if
