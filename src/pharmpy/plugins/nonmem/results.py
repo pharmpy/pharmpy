@@ -201,7 +201,7 @@ class NONMEMModelfitResults(ModelfitResults):
 
 
 class NONMEMChainedModelfitResults(ChainedModelfitResults):
-    def __init__(self, path, n):
+    def __init__(self, path, n, model=None):
         # Path is path to any result file. lst-file would make most sense probably
         # FIXME: n (number of $EST) could be removed as it could be inferred
         self._path = Path(path)
@@ -210,9 +210,11 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
         self._read_cov = False
         self._read_coi = False
         self._read_cor = False
+        self.model = model
         for i in range(n):
             res = NONMEMModelfitResults(self)
             res.model_name = self._path.stem
+            res.model = model
             if i != n - 1:    # Only the final estimation step carries covariance information
                 res._covariance_matrix = None
                 res._correlation_matrix = None

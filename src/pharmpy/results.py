@@ -9,6 +9,7 @@ import pandas as pd
 import pharmpy.visualization
 from pharmpy.data import PharmDataFrame
 from pharmpy.math import cov2corr
+from pharmpy.random_variables import VariabilityLevel
 
 
 class Results:
@@ -27,6 +28,7 @@ class ModelfitResults:
 
     properties: individual_OFV is a df with currently ID and iOFV columns
         model_name - name of model that generated the results
+        model
     """
     def __init__(self, ofv=None, parameter_estimates=None, covariance_matrix=None,
                  standard_errors=None):
@@ -157,6 +159,36 @@ class ModelfitResults:
         """
         raise NotImplementedError("Not implemented")
 
+    @property
+    def individual_shrinkage(self):
+        """The individual eta-shrinkage
+
+            Definition: ieta_shr = (var(eta) / omega)
+        """
+        cov = self.individual_estimates_covariance
+        pe = self.parameter_estimates
+        # Want parameter estimates combined with fixed parameter values
+        param_inits = self.model.parameters.summary()['value']
+        pe = pe.combine_first(param_inits)
+
+        # Get all iiv variance parameters
+        parameters = []
+        for rvs, dist in self.model.random_variables.distributions(level=VariabilityLevel.IIV):
+            if len(rvs) == 1:
+                parameters.append(dist.std ** 2)
+            else:
+                parameters += list(dist.sigma.diagonal())
+        param_names = [param.name for param in parameters]
+        diag_ests = pe[param_names]
+
+        def fn(row, ests):
+            names = row[0].index
+            ser = pd.Series(np.diag(row[0].values) / ests, index=names)
+            return ser
+
+        ish = pd.DataFrame(cov).apply(fn, axis=1, ests=diag_ests.values)
+        return ish
+
     def parameter_summary(self):
         """Summary of parameter estimates and uncertainty
         """
@@ -218,6 +250,10 @@ class ChainedModelfitResults(list, ModelfitResults):
     @property
     def individual_estimates_covariance(self):
         return self[-1].individual_estimates_covariance
+
+    @property
+    def individual_shrinkage(self):
+        return self[-1].individual_shrinkage
 
     def plot_iofv_vs_iofv(self, other):
         return self[-1].plot_iofv_vs_iofv(other)

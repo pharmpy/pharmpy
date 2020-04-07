@@ -32,7 +32,7 @@ class Model(pharmpy.model.Model):
             lst_path = self.source.path.with_suffix('.lst')
             if lst_path.exists():
                 num_est = len(self.control_stream.get_records('ESTIMATION'))
-                self._modelfit_results = NONMEMChainedModelfitResults(lst_path, num_est)
+                self._modelfit_results = NONMEMChainedModelfitResults(lst_path, num_est, model=self)
                 return self._modelfit_results
         else:
             return None
