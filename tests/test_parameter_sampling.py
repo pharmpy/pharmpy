@@ -1,8 +1,9 @@
 import numpy as np
 import pandas as pd
+import pytest
 
 from pharmpy import Model
-from pharmpy.parameter_sampling import sample_from_covariance_matrix
+from pharmpy.parameter_sampling import sample_from_covariance_matrix, sample_individual_estimates
 
 
 def test_sample_from_covariance_matrix(testdata):
@@ -16,3 +17,11 @@ def test_sample_from_covariance_matrix(testdata):
                             'OMEGA(2,2)': [0.025248, 0.029088, 0.019749],
                             'SIGMA(1,1)': [0.014700, 0.014347, 0.011470]})
     pd.testing.assert_frame_equal(samples, correct, check_less_precise=True)
+
+
+def test_sample_individual_estimates(testdata):
+    model = Model(testdata / 'nonmem' / 'pheno_real.mod')
+    np.random.seed(86)
+    samples = sample_individual_estimates(model)
+    assert pytest.approx(samples.iloc[0]['ETA(1)'], 1e-5) == 0.0418399
+    assert pytest.approx(samples.iloc[0]['ETA(2)'], 1e-5) == -0.0587623
