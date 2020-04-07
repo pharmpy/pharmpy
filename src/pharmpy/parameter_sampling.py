@@ -39,16 +39,21 @@ def sample_from_covariance_matrix(model, modelfit_results=None, force_posdef=Fal
     return kept_samples.reset_index(drop=True)
 
 
-def sample_individual_estimates(model, samples_per_id=100):
+def sample_individual_estimates(model, parameters=None, samples_per_id=100):
     """Sample individual estimates given their covariance.
 
+       parameters - A list of a subset of parameters to sample
+                    None means all.
        returns a pool of samples as a DataFrame
     """
-
     ests = model.modelfit_results.individual_estimates
     covs = model.modelfit_results.individual_estimates_covariance
+    if parameters is None:
+        parameters = ests.columns
+    ests = ests[parameters]
     samples = pd.DataFrame()
     for (_, mu), sigma in zip(ests.iterrows(), covs):
+        sigma = sigma[parameters].loc[parameters]
         id_samples = np.random.multivariate_normal(mu.values, sigma.values, size=samples_per_id)
         id_df = pd.DataFrame(id_samples, columns=ests.columns)
         samples = pd.concat((samples, id_df))

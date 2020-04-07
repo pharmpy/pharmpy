@@ -23,5 +23,12 @@ def test_sample_individual_estimates(testdata):
     model = Model(testdata / 'nonmem' / 'pheno_real.mod')
     np.random.seed(86)
     samples = sample_individual_estimates(model)
+    assert len(samples) == 59 * 100
+    assert list(samples.columns) == ['ETA(1)', 'ETA(2)']
     assert pytest.approx(samples.iloc[0]['ETA(1)'], 1e-5) == 0.0418399
     assert pytest.approx(samples.iloc[0]['ETA(2)'], 1e-5) == -0.0587623
+
+    restricted = sample_individual_estimates(model, parameters=['ETA(2)'], samples_per_id=1)
+    assert len(restricted) == 59
+    assert restricted.columns == ['ETA(2)']
+    assert pytest.approx(restricted.iloc[0]['ETA(2)'], 1e-5) == -0.0167246
