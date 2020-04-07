@@ -1,3 +1,4 @@
+import pandas as pd
 import pytest
 
 from pharmpy.plugins.nonmem.results import NONMEMChainedModelfitResults
@@ -53,6 +54,29 @@ def test_individual_ofv(pheno_lst):
     assert pytest.approx(iofv[1], 1e-15) == 5.9473520242962552
     assert pytest.approx(iofv[57], 1e-15) == 5.6639479151436394
     assert res.plot_iofv_vs_iofv(res)
+
+
+def test_individual_estimates(pheno_lst):
+    res = NONMEMChainedModelfitResults(pheno_lst, 1)
+    ie = res.individual_estimates
+    assert len(ie) == 59
+    assert pytest.approx(ie['ETA(1)'][1], 1e-15) == -0.0438608
+    assert pytest.approx(ie['ETA(2)'][1], 1e-15) == 0.00543031
+    assert pytest.approx(ie['ETA(1)'][28], 1e-15) == 7.75957e-04
+    assert pytest.approx(ie['ETA(2)'][28], 1e-15) == 8.32311E-02
+
+
+def test_individual_estimates_covariance(pheno_lst):
+    res = NONMEMChainedModelfitResults(pheno_lst, 1)
+    cov = res.individual_estimates_covariance
+    assert len(cov) == 59
+    names = ['ETA(1)', 'ETA(2)']
+    correct = pd.DataFrame([[2.48833E-02, -2.99920E-03], [-2.99920E-03, 7.15713E-03]],
+                           index=names, columns=names)
+    pd.testing.assert_frame_equal(cov[1], correct)
+    correct2 = pd.DataFrame([[2.93487E-02, -1.95747E-04], [-1.95747E-04, 8.94118E-03]],
+                            index=names, columns=names)
+    pd.testing.assert_frame_equal(cov[43], correct2)
 
 
 def test_parameter_estimates(pheno_lst):

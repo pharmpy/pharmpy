@@ -143,6 +143,20 @@ class ModelfitResults:
         """
         raise NotImplementedError("Not implemented")
 
+    @property
+    def individual_estimates(self):
+        """Individual parameter estimates
+
+           A DataFrame with ID as index one column for each individual parameter
+        """
+        raise NotImplementedError("Not implemented")
+
+    @property
+    def individual_estimates_covariance(self):
+        """The covariance matrix of the individual estimates
+        """
+        raise NotImplementedError("Not implemented")
+
     def parameter_summary(self):
         """Summary of parameter estimates and uncertainty
         """
@@ -196,6 +210,14 @@ class ChainedModelfitResults(list, ModelfitResults):
     @property
     def individual_ofv(self):
         return self[-1].individual_ofv
+
+    @property
+    def individual_estimates(self):
+        return self[-1].individual_estimates
+
+    @property
+    def individual_estimates_covariance(self):
+        return self[-1].individual_estimates_covariance
 
     def plot_iofv_vs_iofv(self, other):
         return self[-1].plot_iofv_vs_iofv(other)

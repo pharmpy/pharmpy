@@ -1,6 +1,3 @@
-import numpy as np
-import pytest
-
 import pharmpy.plugins.nonmem.table as table
 
 
@@ -34,17 +31,6 @@ def test_phi_table(pheno_phi):
     assert phi_table.iteration2 == 0
     assert phi_table.method == "First Order Conditional Estimation with Interaction"
     assert phi_table.goal_function is None
-    df = phi_table.data_frame
-    assert df['ID'][0] == 1
-    assert df['ID'][10] == 11
-    assert df['ETA'][0] == [-4.38608E-02, 5.43031E-03]
-    assert df['ETA'][10] == [6.61505E-02, 2.93685E-01]
-    assert df['OBJ'][0] == pytest.approx(5.9473520242962552)
-    assert df['OBJ'][10] == pytest.approx(9.4801638108538970)
-    assert np.allclose(df['ETC'][0], np.array([[2.48833E-02, -2.99920E-03],
-                                               [-2.99920E-03, 7.15713E-03]]))
-    assert np.allclose(df['ETC'][10], np.array([[2.85322E-02, -3.63402E-03],
-                                                [-3.63402E-03, 1.17722E-02]]))
 
 
 def test_cov_table(pheno_cov):

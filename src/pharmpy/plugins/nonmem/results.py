@@ -179,6 +179,26 @@ class NONMEMModelfitResults(ModelfitResults):
             self._chain._read_phi_table()
             return self._individual_ofv
 
+    @property
+    def individual_estimates(self):
+        """ETA values from phi-file
+        """
+        try:
+            return self._individual_estimates
+        except AttributeError:
+            self._chain._read_phi_table()
+            return self._individual_estimates
+
+    @property
+    def individual_estimates_covariance(self):
+        """ETCs from phi-file as Series of DataFrames
+        """
+        try:
+            return self._individual_estimates_covariance
+        except AttributeError:
+            self._chain._read_phi_table()
+            return self._individual_estimates_covariance
+
 
 class NONMEMChainedModelfitResults(ChainedModelfitResults):
     def __init__(self, path, n):
@@ -253,8 +273,8 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
         if not self._read_phi:
             phi_tables = NONMEMTableFile(self._path.with_suffix('.phi'))
             for table, result_obj in zip(phi_tables, self):
-                df = table.data_frame[['ID', 'OBJ']]
-                df.columns = ['ID', 'iOFV']
-                df.set_index('ID', inplace=True)
-                result_obj._individual_ofv = df['iOFV']
+                result_obj._individual_ofv = table.iofv
+                result_obj._individual_estimates = table.etas
+                result_obj._individual_estimates_covariance = table.etcs
+
             self._read_phi = True

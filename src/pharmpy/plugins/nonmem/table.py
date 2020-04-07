@@ -122,20 +122,32 @@ class CovTable(NONMEMTable):
 
 class PhiTable(NONMEMTable):
     @property
-    def data_frame(self):
+    def iofv(self):
         df = self._df.copy(deep=True)
-        df.drop(columns=['SUBJECT_NO'], inplace=True)
+        iofv = df[['ID', 'OBJ']]
+        iofv.set_index('ID', inplace=True)
+        iofv.columns = ['iOFV']
+        return iofv['iOFV']
+
+    @property
+    def etas(self):
+        df = self._df.copy(deep=True)
         eta_col_names = [col for col in df if col.startswith('ETA')]
-        # ETA column to be list of eta values for each ID
-        df['ETA'] = df[eta_col_names].values.tolist()
-        df.drop(columns=eta_col_names, inplace=True)
+        etas = df[eta_col_names]
+        etas.index = df['ID']
+        return etas
+
+    @property
+    def etcs(self):
+        df = self._df.copy(deep=True)
+        eta_col_names = [col for col in df if col.startswith('ETA')]
         etc_col_names = [col for col in df if col.startswith('ETC')]
         vals = df[etc_col_names].values
         matrix_array = [pharmpy.math.flattened_to_symmetric(x) for x in vals]
-        # ETC column to be symmetric matrices for each ID
-        df['ETC'] = matrix_array
-        df.drop(columns=etc_col_names, inplace=True)
-        return df
+        etc_frames = [pd.DataFrame(matrix, columns=eta_col_names, index=eta_col_names)
+                      for matrix in matrix_array]
+        etcs = pd.Series(etc_frames, index=df['ID'])
+        return etcs
 
 
 class ExtTable(NONMEMTable):
