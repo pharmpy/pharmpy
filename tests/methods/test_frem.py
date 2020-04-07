@@ -4,7 +4,13 @@ import numpy as np
 import pandas as pd
 
 from pharmpy import Model
-from pharmpy.methods.frem.results import FREMResults
+from pharmpy.methods.frem.results import FREMResults, ipn_covariance
+
+
+def test_ipn_covariance(testdata):
+    model = Model(testdata / 'nonmem' / 'frem' / 'pheno' / 'model_4.mod')
+    cov = ipn_covariance(model, 2)
+    cov
 
 
 def test_frem_results_pheno(testdata):

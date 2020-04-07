@@ -5,7 +5,7 @@ import pandas as pd
 
 from pharmpy.data import ColumnType
 from pharmpy.math import conditional_joint_normal
-from pharmpy.parameter_sampling import sample_from_covariance_matrix
+from pharmpy.parameter_sampling import sample_from_covariance_matrix, sample_individual_estimates
 from pharmpy.random_variables import VariabilityLevel
 from pharmpy.results import Results
 
@@ -161,3 +161,35 @@ class FREMResults(Results):
                             'sd_observed': original_sd[cond, par], 'sd_5th': sd_5th[cond, par],
                             'sd_95th': sd_95th[cond, par]}, ignore_index=True)
         self.unexplained_variability = df
+
+
+def ipn_covariance(model, ncov):
+    """Estimate a covariance matrix for the frem model using the IPN method
+
+       Only the individual estimates, individual unvertainties and the parameter estimates
+       are needed.
+       ncov - number of covariates
+
+       Returns a covariance matrix for the parameters of the FREM matrix.
+    """
+    rvs, dist = list(model.random_variables.distributions(level=VariabilityLevel.IIV))[-1]
+    etas = [rv.name for rv in rvs]
+    npar = len(etas) - ncov
+    pool = sample_individual_estimates(model, parameters=etas)
+    ninds = len(pool.index.unique())
+    ishr_all = model.modelfit_results.individual_shrinkage
+    ishr = ishr_all[etas[:npar]]
+    lower_indices = np.tril_indices(len(etas))
+    pop_params = np.array(dist.sigma).astype(str)[lower_indices]
+    numbootstraps = 2000
+    parameter_samples = np.empty((numbootstraps, len(pop_params)))
+    for k in range(numbootstraps):
+        bootstrap = pool.sample(n=ninds, replace=True)
+        ishk = ishr.loc[bootstrap.index]
+        cf = (1 / (1 - ishk.mean())) ** (1/2)
+        cf = cf.append(pd.Series([1] * ncov, index=etas[npar:]))
+        corrected_bootstrap = bootstrap * cf
+        bootstrap_cov = corrected_bootstrap.cov()
+        parameter_samples[k, :] = bootstrap_cov.values[lower_indices]
+    frame = pd.DataFrame(parameter_samples, columns=pop_params)
+    return frame.cov()

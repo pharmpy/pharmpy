@@ -52,9 +52,10 @@ def sample_individual_estimates(model, parameters=None, samples_per_id=100):
         parameters = ests.columns
     ests = ests[parameters]
     samples = pd.DataFrame()
-    for (_, mu), sigma in zip(ests.iterrows(), covs):
+    for (idx, mu), sigma in zip(ests.iterrows(), covs):
         sigma = sigma[parameters].loc[parameters]
         id_samples = np.random.multivariate_normal(mu.values, sigma.values, size=samples_per_id)
         id_df = pd.DataFrame(id_samples, columns=ests.columns)
+        id_df.index = [idx] * len(id_df)        # ID as index
         samples = pd.concat((samples, id_df))
     return samples
