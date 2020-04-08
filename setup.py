@@ -42,7 +42,7 @@ setup(
     ),
     author='Rikard Nordgren',
     author_email='rikard.nordgren@farmbio.uu.se',
-    url='https://github.com/yngman/pharmpy',
+    url='https://github.com/pharmpy/pharmpy',
     packages=find_packages('src'),
     package_dir={'': 'src'},
     py_modules=[splitext(basename(path))[0] for path in glob('src/*.py')],
