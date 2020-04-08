@@ -4,6 +4,10 @@ import sympy
 from pharmpy.model import ModelSyntaxError
 
 
+def S(x):
+    return sympy.Symbol(x)
+
+
 @pytest.mark.usefixtures('parser')
 @pytest.mark.parametrize('buf,results', [
     ('$OMEGA 1', [('OMEGA(1,1)', 1, 0, sympy.oo, False)]),
@@ -201,16 +205,37 @@ def test_update(parser):
 
 def test_random_variables(parser):
     rec = parser.parse("$OMEGA BLOCK(3) 1 ;CL\n0.1 1; V\n0.1 0.1 1; KA").records[0]
-    rvs, nxt = rec.random_variables(1)
+    rvs, nxt, cov = rec.random_variables(1)
     assert nxt == 4
     assert len(rvs) == 3
     assert rvs[0].name == 'ETA(1)'
     assert rvs[1].name == 'ETA(2)'
     assert rvs[2].name == 'ETA(3)'
+    assert len(cov) == 9
 
     rec = parser.parse("$OMEGA BLOCK(1) 1.5").records[0]
-    rvs, nxt = rec.random_variables(2)
+    rvs, nxt, cov = rec.random_variables(2)
     assert nxt == 3
     assert len(rvs) == 1
     assert rvs[0].name == 'ETA(2)'
     assert isinstance(rvs[0].pspace.distribution, sympy.stats.crv_types.NormalDistribution)
+    assert cov == S('OMEGA(2,2)')
+
+    p = parser.parse("$OMEGA BLOCK(2) 1 0.01 1\n$OMEGA BLOCK(2) SAME\n")
+    rec0 = p.records[0]
+    rec1 = p.records[1]
+    rvs, nxt, cov = rec0.random_variables(1)
+    assert nxt == 3
+    assert len(rvs) == 2
+    assert rvs[0].name == 'ETA(1)'
+    assert rvs[1].name == 'ETA(2)'
+    assert len(cov) == 4
+    A = sympy.Matrix([[S('OMEGA(1,1)'), S('OMEGA(2,1)')], [S('OMEGA(2,1)'), S('OMEGA(2,2)')]])
+    assert rvs[0].pspace.distribution.sigma == A
+    rvs, nxt, cov = rec1.random_variables(nxt, cov)
+    assert nxt == 5
+    assert len(rvs) == 2
+    assert rvs[0].name == 'ETA(3)'
+    assert rvs[1].name == 'ETA(4)'
+    assert len(cov) == 4
+    assert rvs[0].pspace.distribution.sigma == A

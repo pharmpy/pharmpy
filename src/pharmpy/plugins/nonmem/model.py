@@ -156,12 +156,13 @@ class Model(pharmpy.model.Model):
     def random_variables(self):
         rvs = RandomVariables()
         next_omega = 1
+        prev_cov = None
         for omega_record in self.control_stream.get_records('OMEGA'):
-            etas, next_omega = omega_record.random_variables(next_omega)
+            etas, next_omega, prev_cov = omega_record.random_variables(next_omega, prev_cov)
             rvs.update(etas)
         next_sigma = 1
         for sigma_record in self.control_stream.get_records('SIGMA'):
-            epsilons, next_sigma = sigma_record.random_variables(next_sigma)
+            epsilons, next_sigma, prev_cov = sigma_record.random_variables(next_sigma, prev_cov)
             rvs.update(epsilons)
         return rvs
 

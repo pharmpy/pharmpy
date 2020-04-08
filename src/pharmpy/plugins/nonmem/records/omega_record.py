@@ -243,9 +243,13 @@ class OmegaRecord(Record):
 
         return i
 
-    def random_variables(self, start_omega):
+    def random_variables(self, start_omega, previous_cov=None):
         """Get a RandomVariableSet for this omega record
+
+           start_omega - the first omega in this record
+           previous_sigma - the matrix of the previous omega block
         """
+        next_cov = None        # The cov matrix if a block
         block = self.root.find('block')
         if not block:
             rvs = RandomVariables()
@@ -257,22 +261,32 @@ class OmegaRecord(Record):
                 rvs.add(eta)
         else:
             numetas = self.root.block.size.INT
+            same = bool(self.root.find('same'))
             if numetas > 1:
-                means = [0] * numetas
-                cov = sympy.zeros(numetas)
-                for row in range(numetas):
-                    for col in range(row + 1):
-                        cov[row, col] = sympy.Symbol(
-                                f'{self.name}({start_omega + row},{start_omega + col})')
-                        if row != col:
-                            cov[col, row] = cov[row, col]
                 names = [self._rv_name(i) for i in range(start_omega, start_omega + numetas)]
-                rvs = JointNormalSeparate(names, means, cov)
+                means = [0] * numetas
+                if same:
+                    rvs = JointNormalSeparate(names, means, previous_cov)
+                    next_cov = previous_cov
+                else:
+                    cov = sympy.zeros(numetas)
+                    for row in range(numetas):
+                        for col in range(row + 1):
+                            cov[row, col] = sympy.Symbol(
+                                f'{self.name}({start_omega + row},{start_omega + col})')
+                            if row != col:
+                                cov[col, row] = cov[row, col]
+                    next_cov = cov
+                    rvs = JointNormalSeparate(names, means, cov)
             else:
                 rvs = RandomVariables()
                 name = self._rv_name(start_omega)
-                eta = sympy.stats.Normal(name, 0, sympy.sqrt(sympy.Symbol(
-                    f'{self.name}({start_omega},{start_omega})')))
+                if same:
+                    symbol = previous_cov
+                else:
+                    symbol = sympy.Symbol(f'{self.name}({start_omega},{start_omega})')
+                eta = sympy.stats.Normal(name, 0, sympy.sqrt(symbol))
+                next_cov = symbol
                 rvs.add(eta)
 
         if self.name == 'OMEGA':
@@ -282,4 +296,4 @@ class OmegaRecord(Record):
         for rv in rvs:
             rv.variability_level = level
 
-        return rvs, start_omega + numetas
+        return rvs, start_omega + numetas, next_cov

@@ -63,7 +63,10 @@ class FREMResults(Results):
         original_variability = np.empty((ncovs + 2, npars))
 
         for sample_no, params in parvecs.iterrows():
+            print(sigma_symb)
             sigma = sigma_symb.subs(dict(params))
+            print(params)
+            print(sigma)
             sigma = np.array(sigma).astype(np.float64)
             scaled_sigma = scaling @ sigma @ scaling.T
             if sample_no != 'estimates':
