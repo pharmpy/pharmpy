@@ -19,6 +19,7 @@ jsonschema==3.2.0
 lark-parser==0.8.2
 MarkupSafe==1.1.1
 mpmath==1.1.0
+numexpr==2.7.1
 numpy==1.18.2
 packaging==20.3
 pandas==1.0.3
@@ -41,8 +42,7 @@ sphinxcontrib-qthelp==1.0.3
 sphinxcontrib-serializinghtml==1.1.4
 symengine==0.6.1
 sympy==1.5.1
-#toil==4.0.0a1
-/home/rikard/devel/toil/dist/toil-4.0.0a1.tar.gz
+toil==4.0.0
 toolz==0.10.0
 urllib3==1.25.8
 websocket-client==0.57.0
