@@ -259,12 +259,13 @@ class OmegaRecord(Record):
             numetas = self.root.block.size.INT
             means = [0] * numetas
             cov = sympy.zeros(numetas)
-            for row in range(start_omega, start_omega + numetas):
-                for col in range(start_omega, row + 1):
-                    cov[row - 1, col - 1] = sympy.Symbol(f'{self.name}({row},{col})')
+            for row in range(numetas):
+                for col in range(row + 1):
+                    cov[row, col] = sympy.Symbol(
+                            f'{self.name}({start_omega + row},{start_omega + col})')
                     if row != col:
-                        cov[col - 1, row - 1] = cov[row - 1, col - 1]
-            names = [self._rv_name(i) for i in range(1, start_omega + numetas)]
+                        cov[col, row] = cov[row, col]
+            names = [self._rv_name(i) for i in range(start_omega, start_omega + numetas)]
             rvs = JointNormalSeparate(names, means, cov)
 
         if self.name == 'OMEGA':
