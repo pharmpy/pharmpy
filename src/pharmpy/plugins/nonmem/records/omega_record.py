@@ -257,16 +257,23 @@ class OmegaRecord(Record):
                 rvs.add(eta)
         else:
             numetas = self.root.block.size.INT
-            means = [0] * numetas
-            cov = sympy.zeros(numetas)
-            for row in range(numetas):
-                for col in range(row + 1):
-                    cov[row, col] = sympy.Symbol(
-                            f'{self.name}({start_omega + row},{start_omega + col})')
-                    if row != col:
-                        cov[col, row] = cov[row, col]
-            names = [self._rv_name(i) for i in range(start_omega, start_omega + numetas)]
-            rvs = JointNormalSeparate(names, means, cov)
+            if numetas > 1:
+                means = [0] * numetas
+                cov = sympy.zeros(numetas)
+                for row in range(numetas):
+                    for col in range(row + 1):
+                        cov[row, col] = sympy.Symbol(
+                                f'{self.name}({start_omega + row},{start_omega + col})')
+                        if row != col:
+                            cov[col, row] = cov[row, col]
+                names = [self._rv_name(i) for i in range(start_omega, start_omega + numetas)]
+                rvs = JointNormalSeparate(names, means, cov)
+            else:
+                rvs = RandomVariables()
+                name = self._rv_name(start_omega)
+                eta = sympy.stats.Normal(name, 0, sympy.sqrt(sympy.Symbol(
+                    f'{self.name}({start_omega},{start_omega})')))
+                rvs.add(eta)
 
         if self.name == 'OMEGA':
             level = VariabilityLevel.IIV

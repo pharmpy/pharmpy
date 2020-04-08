@@ -52,6 +52,9 @@ from pharmpy.model import ModelSyntaxError
         ('OMEGA(2,1)', -0.2401824, -sympy.oo, sympy.oo, False),
         ('OMEGA(2,2)', 0.580644, 0, sympy.oo, False),
         ]),
+    ('$OMEGA BLOCK(1)   1.5', [
+        ('OMEGA(1,1)', 1.5, 0, sympy.oo, False),
+        ]),
 ])
 def test_parameters(parser, buf, results):
     recs = parser.parse(buf)
@@ -204,3 +207,10 @@ def test_random_variables(parser):
     assert rvs[0].name == 'ETA(1)'
     assert rvs[1].name == 'ETA(2)'
     assert rvs[2].name == 'ETA(3)'
+
+    rec = parser.parse("$OMEGA BLOCK(1) 1.5").records[0]
+    rvs, nxt = rec.random_variables(2)
+    assert nxt == 3
+    assert len(rvs) == 1
+    assert rvs[0].name == 'ETA(2)'
+    assert isinstance(rvs[0].pspace.distribution, sympy.stats.crv_types.NormalDistribution)
