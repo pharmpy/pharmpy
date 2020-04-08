@@ -44,7 +44,7 @@ class SourceBase:
         """
         if not force and path.exists():
             raise FileExistsError(f'Cannot overwrite model at {path} with "force" not set')
-        with open(path, 'w') as fp:
+        with open(path, 'w', encoding='latin-1') as fp:
             fp.write(self.code)
 
 
@@ -65,7 +65,7 @@ class FileSource(SourceBase):
         """
         if isinstance(path_or_io, str) or isinstance(path_or_io, Path):
             self.path = Path(path_or_io)
-            with open(path_or_io, 'r') as fp:
+            with open(path_or_io, 'r', encoding='latin-1') as fp:
                 return fp.read()
         else:
             self.path = Path('.')
