@@ -143,10 +143,10 @@ class RandomVariables(OrderedSet):
                                    right_parens))
         for i, (name_line, lpar, mu_line, sigma_line, rpar) in enumerator:
             if i == central_index:
-                res.append(name_line + f' ~ {RandomVariables.nletter}' + lpar  +
+                res.append(name_line + f' ~ {RandomVariables.nletter}' + lpar +
                            mu_line + ', ' + sigma_line + rpar)
             else:
-                res.append(name_line + '     ' + lpar +  mu_line +
+                res.append(name_line + '     ' + lpar + mu_line +
                            '  ' + sigma_line + rpar)
 
         return res
