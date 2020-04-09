@@ -76,6 +76,8 @@ class RandomVariables(OrderedSet):
        Use JointDistributionSeparate as a workaround
        Joints must come in the correct order
     """
+    nletter = '𝒩 '
+
     @staticmethod
     def _left_parens(height):
         """Return an array containing each row of a large parenthesis
@@ -105,7 +107,7 @@ class RandomVariables(OrderedSet):
         """
         dist = rv.pspace.distribution
         return [f'{sympy.pretty(rv, wrap_line=False)}'
-                f'~ 𝓝({sympy.pretty(dist.mean, wrap_line=False)}, '
+                f'~ {RandomVariables.nletter}({sympy.pretty(dist.mean, wrap_line=False)}, '
                 f'{sympy.pretty(dist.std**2, wrap_line=False)})']
 
     @staticmethod
@@ -141,10 +143,10 @@ class RandomVariables(OrderedSet):
                                    right_parens))
         for i, (name_line, lpar, mu_line, sigma_line, rpar) in enumerator:
             if i == central_index:
-                res.append(name_line + f' ~ 𝓝\N{SIX-PER-EM SPACE}' + lpar + '\N{SIX-PER-EM SPACE}' +
+                res.append(name_line + f' ~ {RandomVariables.nletter}' + lpar  +
                            mu_line + ', ' + sigma_line + rpar)
             else:
-                res.append(name_line + '     ' + lpar + '\N{SIX-PER-EM SPACE}' + mu_line +
+                res.append(name_line + '     ' + lpar +  mu_line +
                            '  ' + sigma_line + rpar)
 
         return res
