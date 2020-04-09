@@ -104,8 +104,9 @@ class RandomVariables(OrderedSet):
            This should ideally be available from sympy.
         """
         dist = rv.pspace.distribution
-        return [f'{sympy.pretty(rv)} ~ 𝓝({sympy.pretty(dist.mean)}, '
-                f'{sympy.pretty(dist.std**2)})']
+        return [f'{sympy.pretty(rv, wrap_line=False)}'
+                f'~ 𝓝({sympy.pretty(dist.mean, wrap_line=False)}, '
+                f'{sympy.pretty(dist.std**2, wrap_line=False)})']
 
     @staticmethod
     def _joint_normal_definition_string(rvs):
@@ -113,9 +114,9 @@ class RandomVariables(OrderedSet):
         """
         dist = rvs[0].pspace.distribution
         name_vector = sympy.Matrix(rvs)
-        name_strings = sympy.pretty(name_vector).split('\n')
-        mu_strings = sympy.pretty(dist.mu).split('\n')
-        sigma_strings = sympy.pretty(dist.sigma).split('\n')
+        name_strings = sympy.pretty(name_vector, wrap_line=False).split('\n')
+        mu_strings = sympy.pretty(dist.mu, wrap_line=False).split('\n')
+        sigma_strings = sympy.pretty(dist.sigma, wrap_line=False).split('\n')
         mu_height = len(mu_strings)
         sigma_height = len(sigma_strings)
         max_height = max(mu_height, sigma_height)
