@@ -2,7 +2,7 @@
     :target: https://travis-ci.com/pharmpy/pharmpy
 
 .. image:: https://img.shields.io/badge/python-3.6+-blue.svg
-   :target: https://www.python.org/download/releases/3.6.0/
+   :target: https://www.python.org/downloads/
 
 .. _README:
 
