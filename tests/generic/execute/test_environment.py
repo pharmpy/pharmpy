@@ -1,31 +1,31 @@
 # import sys
 
-import pytest
+# import pytest
 
-from pharmpy.execute.environment import SystemEnvironment
+# from pharmpy.execute.environment import SystemEnvironment
 
 
-@pytest.mark.asyncio
-async def test_SystemEnvironment_submit_series(py_command):
-    """Test SystemEnvironment.submit, single job."""
+# @pytest.mark.asyncio
+# async def test_SystemEnvironment_submit_series(py_command):
+#    """Test SystemEnvironment.submit, single job."""
 
-    command, output = py_command
+#    command, output = py_command
 
-    envir = SystemEnvironment(threads=4)
-    assert not envir.jobs
-    assert not envir.futures
+#    envir = SystemEnvironment(threads=4)
+#    assert not envir.jobs
+#    assert not envir.futures
 
-    for i in range(5):
-        await envir.submit(command=command)
-        assert len(envir.jobs) == (i+1)
-        assert len(envir.futures) == (i+1)
+#    for i in range(5):
+#        await envir.submit(command=command)
+#        assert len(envir.jobs) == (i+1)
+#        assert len(envir.futures) == (i+1)
 
-        job = envir.jobs[0]
-        await job.wait(1, 0.1)
-        assert job.init
-        assert job.done
-        assert job.rc == 0
-        assert job.proc.pid > 0
+#        job = envir.jobs[0]
+#        await job.wait(1, 0.1)
+#        assert job.init
+#        assert job.done
+#        assert job.rc == 0
+#        assert job.proc.pid > 0
 
 
 # @pytest.mark.asyncio
