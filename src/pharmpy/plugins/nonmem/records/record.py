@@ -25,4 +25,7 @@ class Record:
         return self._root
 
     def __str__(self):
-        return self.raw_name + str(self.root)
+        if self._root is None:
+            return self.raw_name + self._content
+        else:
+            return self.raw_name + str(self.root)
