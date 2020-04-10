@@ -1,6 +1,9 @@
 .. image:: https://travis-ci.com/pharmpy/pharmpy.svg?branch=master
     :target: https://travis-ci.com/pharmpy/pharmpy
 
+.. image:: https://img.shields.io/badge/python-3.6+-blue.svg
+   :target: https://www.python.org/download/releases/3.6.0/
+
 .. _README:
 
 .. highlight:: console
