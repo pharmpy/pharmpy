@@ -1,3 +1,6 @@
+.. image:: https://travis-ci.com/pharmpy/pharmpy.svg?branch=master
+    :target: https://travis-ci.com/pharmpy/pharmpy
+
 .. _README:
 
 .. highlight:: console
