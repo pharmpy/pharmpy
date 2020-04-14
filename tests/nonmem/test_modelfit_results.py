@@ -47,8 +47,8 @@ def test_standard_errors(pheno_lst):
     assert pytest.approx(ses['THETA(1)'], 1e-13) == 2.10036E-04
 
 
-def test_individual_ofv(pheno_lst):
-    res = NONMEMChainedModelfitResults(pheno_lst, 1)
+def test_individual_ofv(pheno, pheno_lst):
+    res = NONMEMChainedModelfitResults(pheno_lst, 1, model=pheno)
     iofv = res.individual_ofv
     assert len(iofv) == 59
     assert pytest.approx(iofv[1], 1e-15) == 5.9473520242962552
@@ -56,8 +56,8 @@ def test_individual_ofv(pheno_lst):
     assert res.plot_iofv_vs_iofv(res)
 
 
-def test_individual_estimates(pheno_lst):
-    res = NONMEMChainedModelfitResults(pheno_lst, 1)
+def test_individual_estimates(pheno, pheno_lst):
+    res = NONMEMChainedModelfitResults(pheno_lst, 1, model=pheno)
     ie = res.individual_estimates
     assert len(ie) == 59
     assert pytest.approx(ie['ETA(1)'][1], 1e-15) == -0.0438608
@@ -73,8 +73,8 @@ def test_individual_shrinkage(pheno, pheno_lst):
     assert pytest.approx(ishr['ETA(1)'][1], 1e-15) == 0.84778949807160287
 
 
-def test_individual_estimates_covariance(pheno_lst):
-    res = NONMEMChainedModelfitResults(pheno_lst, 1)
+def test_individual_estimates_covariance(pheno, pheno_lst):
+    res = NONMEMChainedModelfitResults(pheno_lst, 1, model=pheno)
     cov = res.individual_estimates_covariance
     assert len(cov) == 59
     names = ['ETA(1)', 'ETA(2)']

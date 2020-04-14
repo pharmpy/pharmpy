@@ -253,15 +253,27 @@ class OmegaRecord(Record):
         block = self.root.find('block')
         if not block:
             rvs = RandomVariables()
+            i = start_omega
             numetas = len(self.root.all('diag_item'))
-            for etanum in range(start_omega, start_omega + numetas):
-                name = self._rv_name(etanum)
-                eta = sympy.stats.Normal(name, 0, sympy.sqrt(
-                    sympy.Symbol(f'{self.name}({etanum},{etanum})')))
-                rvs.add(eta)
+            for node in self.root.all('diag_item'):
+                init = node.init.NUMERIC
+                fixed = bool(node.find('FIX'))
+                if not (init == 0 and fixed):       # 0 FIX are not RVs
+                    name = self._rv_name(i)
+                    eta = sympy.stats.Normal(name, 0, sympy.sqrt(
+                        sympy.Symbol(f'{self.name}({i},{i})')))
+                    rvs.add(eta)
+                i += 1
         else:
             numetas = self.root.block.size.INT
             same = bool(self.root.find('same'))
+            params, _ = self.parameters(start_omega)
+            all_zero_fix = True
+            for param in params:
+                if not (param.init == 0 and param.fix):
+                    all_zero_fix = False
+            if all_zero_fix and len(params) > 0:
+                return RandomVariables(), start_omega + numetas, None
             if numetas > 1:
                 names = [self._rv_name(i) for i in range(start_omega, start_omega + numetas)]
                 means = [0] * numetas

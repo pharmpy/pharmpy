@@ -239,3 +239,11 @@ def test_random_variables(parser):
     assert rvs[1].name == 'ETA(4)'
     assert len(cov) == 4
     assert rvs[0].pspace.distribution.sigma == A
+
+    rec = parser.parse("$OMEGA 0 FIX").records[0]
+    rvs, _, _ = rec.random_variables(1)
+    assert len(rvs) == 0
+
+    rec = parser.parse("$OMEGA  BLOCK(2) FIX 0 0 0").records[0]
+    rvs, _, _ = rec.random_variables(1)
+    assert len(rvs) == 0
