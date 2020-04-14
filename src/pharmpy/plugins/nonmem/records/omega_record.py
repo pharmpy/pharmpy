@@ -272,8 +272,8 @@ class OmegaRecord(Record):
             for param in params:
                 if not (param.init == 0 and param.fix):
                     all_zero_fix = False
-            if all_zero_fix and len(params) > 0:
-                return RandomVariables(), start_omega + numetas, None
+            if all_zero_fix and len(params) > 0 or (previous_cov == 'ZERO' and same):
+                return RandomVariables(), start_omega + numetas, 'ZERO'
             if numetas > 1:
                 names = [self._rv_name(i) for i in range(start_omega, start_omega + numetas)]
                 means = [0] * numetas

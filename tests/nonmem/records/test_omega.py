@@ -247,3 +247,13 @@ def test_random_variables(parser):
     rec = parser.parse("$OMEGA  BLOCK(2) FIX 0 0 0").records[0]
     rvs, _, _ = rec.random_variables(1)
     assert len(rvs) == 0
+
+    p = parser.parse("$OMEGA BLOCK(1) 0 FIX\n$OMEGA BLOCK(1) SAME")
+    rec0 = p.records[0]
+    rec1 = p.records[1]
+    rvs, nxt, _ = rec0.random_variables(1)
+    assert nxt == 2
+    assert len(rvs) == 0
+    rvs, nxt, _ = rec1.random_variables(2, previous_cov='ZERO')
+    assert nxt == 3
+    assert len(rvs) == 0
