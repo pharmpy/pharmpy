@@ -4,12 +4,12 @@ import numpy as np
 import pandas as pd
 
 from pharmpy import Model
-from pharmpy.methods.frem.results import FREMResults, ipn_covariance
+from pharmpy.methods.frem.results import FREMResults, bipp_covariance
 
 
-def test_ipn_covariance(testdata):
+def test_bipp_covariance(testdata):
     model = Model(testdata / 'nonmem' / 'frem' / 'pheno' / 'model_4.mod')
-    cov = ipn_covariance(model, 2)
+    cov = bipp_covariance(model, 2)
     cov
 
 

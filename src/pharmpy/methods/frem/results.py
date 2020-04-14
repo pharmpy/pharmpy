@@ -166,8 +166,8 @@ class FREMResults(Results):
         self.unexplained_variability = df
 
 
-def ipn_covariance(model, ncov):
-    """Estimate a covariance matrix for the frem model using the IPN method
+def bipp_covariance(model, ncov):
+    """Estimate a covariance matrix for the frem model using the BIPP method
 
        Only the individual estimates, individual unvertainties and the parameter estimates
        are needed.
