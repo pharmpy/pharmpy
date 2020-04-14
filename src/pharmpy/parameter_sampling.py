@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 
-from pharmpy.math import sample_truncated_joint_normal
+from pharmpy.math import nearest_posdef, sample_truncated_joint_normal
 
 
 def sample_from_covariance_matrix(model, modelfit_results=None, force_posdef=False, n=1):
@@ -54,6 +54,7 @@ def sample_individual_estimates(model, parameters=None, samples_per_id=100):
     samples = pd.DataFrame()
     for (idx, mu), sigma in zip(ests.iterrows(), covs):
         sigma = sigma[parameters].loc[parameters]
+        sigma = nearest_posdef(sigma)
         id_samples = np.random.multivariate_normal(mu.values, sigma.values, size=samples_per_id)
         id_df = pd.DataFrame(id_samples, columns=ests.columns)
         id_df.index = [idx] * len(id_df)        # ID as index
