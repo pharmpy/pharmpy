@@ -189,8 +189,9 @@ class RandomVariables(OrderedSet):
                 if level is None or level == rv.variability_level:
                     yield [rv], dist
             else:       # Joint Normal
-                rvs = [x for x in self if x.pspace.distribution == dist]
-                i += len(rvs)
+                n = self[i].pspace.distribution.sigma.rows
+                rvs = [self[k] for k in range(i, i + n)]
+                i += n
                 if level is None or level == rv.variability_level:
                     yield rvs, dist
 
