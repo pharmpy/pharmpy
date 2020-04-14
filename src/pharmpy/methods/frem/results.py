@@ -12,37 +12,41 @@ from pharmpy.results import Results
 
 class FREMResults(Results):
     def __init__(self, frem_model, cov_model=None, continuous=[], categorical=[], samples=1000):
-        covariates = continuous + categorical
         self.frem_model = frem_model
         n = samples
 
         if cov_model is not None:
-            cov_results = cov_model.modelfit_results
+            self.modelfit_results = cov_model.modelfit_results
         else:
-            cov_results = frem_model.modelfit_results
+            self.modelfit_results = frem_model.modelfit_results
 
-        parvecs = sample_from_covariance_matrix(frem_model, modelfit_results=cov_results, n=n)
+        self.continuous = continuous
+        self.categorical = categorical
+
+        parvecs = sample_from_covariance_matrix(frem_model,
+                                                modelfit_results=self.modelfit_results, n=n)
         parvecs = parvecs.append(frem_model.modelfit_results.parameter_estimates)
 
         _, dist = list(frem_model.random_variables.distributions(level=VariabilityLevel.IIV))[-1]
         sigma_symb = dist.sigma
 
         df = frem_model.input.dataset
+        covariates = self.continuous + self.categorical
         df.pharmpy.column_type[covariates] = ColumnType.COVARIATE
         covariate_baselines = df.pharmpy.covariate_baselines
         covariate_baselines = covariate_baselines[covariates]
         cov_stdevs = covariate_baselines.std()
         cov_means = covariate_baselines.mean()
         cov_modes = covariate_baselines.mode().iloc[0]      # Select first mode if more than one
-        cov_others = pd.Series(index=cov_modes[categorical].index, dtype=np.float64)
+        cov_others = pd.Series(index=cov_modes[self.categorical].index, dtype=np.float64)
         for _, row in covariate_baselines.iterrows():
-            for cov in categorical:
+            for cov in self.categorical:
                 if row[cov] != cov_modes[cov]:
                     cov_others[cov] = row[cov]
             if not cov_others.isna().values.any():
                 break
 
-        cov_refs = pd.concat((cov_means[continuous], cov_modes[categorical]))
+        cov_refs = pd.concat((cov_means[self.continuous], cov_modes[self.categorical]))
         cov_5th = covariate_baselines.quantile(0.05, interpolation='lower')
         cov_95th = covariate_baselines.quantile(0.95, interpolation='higher')
 
@@ -77,7 +81,7 @@ class FREMResults(Results):
                 indices = param_indices + [i + npars]
                 cov_sigma = scaled_sigma[indices][:, indices]
                 cov_mu = np.array([0] * npars + [cov_refs[cov]])
-                if cov in categorical:
+                if cov in self.categorical:
                     first_reference = cov_others[cov]
                 else:
                     first_reference = cov_5th[cov]
@@ -115,7 +119,7 @@ class FREMResults(Results):
 
         df = pd.DataFrame(columns=['parameter', 'covariate', 'condition', '5th', 'mean', '95th'])
         for param, cov in itertools.product(range(npars), range(ncovs)):
-            if covariates[cov] in categorical:
+            if covariates[cov] in self.categorical:
                 df = df.append({'parameter': str(param), 'covariate': covariates[cov],
                                 'condition': 'other', '5th': q5_5th[cov, param],
                                 'mean': means_5th[cov, param], '95th': q95_5th[cov, param]},
@@ -195,4 +199,5 @@ def bipp_covariance(model, ncov):
         bootstrap_cov = corrected_bootstrap.cov()
         parameter_samples[k, :] = bootstrap_cov.values[lower_indices]
     frame = pd.DataFrame(parameter_samples, columns=pop_params)
-    return frame.cov()
+    return frame
+    # return frame.cov()
