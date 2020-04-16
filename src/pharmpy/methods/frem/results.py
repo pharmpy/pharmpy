@@ -11,7 +11,8 @@ from pharmpy.results import Results
 
 
 class FREMResults(Results):
-    def __init__(self, frem_model, cov_model=None, continuous=[], categorical=[], samples=1000):
+    def __init__(self, frem_model, cov_model=None, continuous=[], categorical=[], rescale=True,
+                 samples=1000):
         self.frem_model = frem_model
         n = samples
 
@@ -35,7 +36,6 @@ class FREMResults(Results):
         df.pharmpy.column_type[covariates] = ColumnType.COVARIATE
         covariate_baselines = df.pharmpy.covariate_baselines
         covariate_baselines = covariate_baselines[covariates]
-        cov_stdevs = covariate_baselines.std()
         cov_means = covariate_baselines.mean()
         cov_modes = covariate_baselines.mode().iloc[0]      # Select first mode if more than one
         cov_others = pd.Series(index=cov_modes[self.categorical].index, dtype=np.float64)
@@ -57,7 +57,9 @@ class FREMResults(Results):
         npars = sigma_symb.rows - ncovs
         nids = len(covariate_baselines)
         param_indices = list(range(npars))
-        scaling = np.diag(np.concatenate((np.ones(npars), cov_stdevs.values)))
+        if rescale:
+            cov_stdevs = covariate_baselines.std()
+            scaling = np.diag(np.concatenate((np.ones(npars), cov_stdevs.values)))
 
         mu_bars_given_5th = np.empty((n, ncovs, npars))
         mu_bars_given_95th = np.empty((n, ncovs, npars))
@@ -67,19 +69,17 @@ class FREMResults(Results):
         original_variability = np.empty((ncovs + 2, npars))
 
         for sample_no, params in parvecs.iterrows():
-            print(sigma_symb)
             sigma = sigma_symb.subs(dict(params))
-            print(params)
-            print(sigma)
             sigma = np.array(sigma).astype(np.float64)
-            scaled_sigma = scaling @ sigma @ scaling.T
+            if rescale:
+                sigma = scaling @ sigma @ scaling
             if sample_no != 'estimates':
-                variability[sample_no, 0, :] = np.diag(scaled_sigma)[:npars]
+                variability[sample_no, 0, :] = np.diag(sigma)[:npars]
             else:
-                original_variability[0, :] = np.diag(scaled_sigma)[:npars]
+                original_variability[0, :] = np.diag(sigma)[:npars]
             for i, cov in enumerate(covariates):
                 indices = param_indices + [i + npars]
-                cov_sigma = scaled_sigma[indices][:, indices]
+                cov_sigma = sigma[indices][:, indices]
                 cov_mu = np.array([0] * npars + [cov_refs[cov]])
                 if cov in self.categorical:
                     first_reference = cov_others[cov]
@@ -98,7 +98,7 @@ class FREMResults(Results):
 
             for i, (_, row) in enumerate(covariate_baselines.iterrows()):
                 id_mu = np.array([0] * npars + list(cov_refs))
-                mu_id_bar, sigma_id_bar = conditional_joint_normal(id_mu, scaled_sigma, row.values)
+                mu_id_bar, sigma_id_bar = conditional_joint_normal(id_mu, sigma, row.values)
                 if sample_no != 'estimates':
                     mu_id_bars[sample_no, i, :] = mu_id_bar
                     variability[sample_no, -1, :] = np.diag(sigma_id_bar)
