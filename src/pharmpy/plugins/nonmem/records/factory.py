@@ -4,6 +4,7 @@ from pharmpy.plugins.nonmem.exceptions import NMTranParseError
 
 from .code_record import CodeRecord
 from .data_record import DataRecord
+from .etas_record import EtasRecord
 from .omega_record import OmegaRecord
 from .option_record import OptionRecord
 from .parsers import (CodeRecordParser, DataRecordParser, OmegaRecordParser, OptionRecordParser,
@@ -16,6 +17,7 @@ from .theta_record import ThetaRecord
 known_records = {
     'DATA': (DataRecord, DataRecordParser),
     'ESTIMATION': (OptionRecord, OptionRecordParser),
+    'ETAS': (EtasRecord, OptionRecordParser),
     'INPUT': (OptionRecord, OptionRecordParser),
     'PROBLEM': (ProblemRecord, ProblemRecordParser),
     'SIZES': (OptionRecord, OptionRecordParser),

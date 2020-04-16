@@ -11,3 +11,10 @@ def test_create_record(parser):
     rec = recs.records[0]
     pairs = rec.option_pairs
     assert pairs == OrderedDict([('MAXEVAL', '9999'), ('INTERACTION', None)])
+
+
+def test_set_option(parser):
+    rec = parser.parse('$ETAS FILE=run1.phi').records[0]
+    rec.set_option("FILE", "new.phi")
+    rec.root.treeprint()
+    assert rec.option_pairs == OrderedDict([('FILE', 'new.phi')])

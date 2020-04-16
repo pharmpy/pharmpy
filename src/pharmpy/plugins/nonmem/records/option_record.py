@@ -26,6 +26,20 @@ class OptionRecord(Record):
 
         return pairs
 
+    def set_option(self, key, new_value):
+        """ Set the value of an option
+
+            If option already exists replaces its value
+            appends option at the end if it does not exist
+            does not handle abbreviations yet
+        """
+        for node in self.root.all('option'):
+            if node.KEY == key:
+                node.VALUE = new_value
+                return
+
+        self.append_option(key, value=new_value)
+
     def append_option(self, key, value=None):
         """ Append option as last option
 

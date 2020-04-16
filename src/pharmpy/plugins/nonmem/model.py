@@ -1,10 +1,12 @@
 # The NONMEM Model class
 import re
+from pathlib import Path
 
 import pharmpy.model
 import pharmpy.plugins.nonmem.input
 from pharmpy.parameter import ParameterSet
 from pharmpy.plugins.nonmem.results import NONMEMChainedModelfitResults
+from pharmpy.plugins.nonmem.table import NONMEMTableFile
 from pharmpy.random_variables import RandomVariables
 
 from .nmtran_parser import NMTranParser
@@ -150,6 +152,22 @@ class Model(pharmpy.model.Model):
                                  f"current upper bound {p.upper}")
             p.init = inits[name]
         self._parameters_updated = True
+
+    @property
+    def initial_individual_estimates(self):
+        etas = self.control_stream.get_records('ETAS')
+        if etas:
+            path = Path(etas[0].path)
+            if not path.is_absolute():
+                source_dir = self.source.path.parent
+                path = source_dir / path
+                path = path.resolve()
+            phi_tables = NONMEMTableFile(path)
+            rv_names = [rv.name for rv in self.random_variables if rv.name.startswith('ETA')]
+            etas = next(phi_tables).etas[rv_names]
+            return etas
+        else:
+            return None
 
     @property
     def statements(self):

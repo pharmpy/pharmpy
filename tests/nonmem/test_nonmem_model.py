@@ -71,7 +71,6 @@ def test_minimal(datadir):
     path = datadir / 'minimal.mod'
     model = Model(path)
     assert len(model.statements) == 1
-    model.control_stream.get_records('PRED')[0].root.treeprint()
     assert model.statements[0].expression == \
         Symbol('THETA(1)', real=True) + Symbol('ETA(1)', real=True) + Symbol('ERR(1)', real=True)
 
@@ -83,3 +82,16 @@ def test_copy(datadir):
     assert id(model) != id(copy)
     assert model.statements[0].expression == \
         Symbol('THETA(1)', real=True) + Symbol('ETA(1)', real=True) + Symbol('ERR(1)', real=True)
+
+
+def test_initial_individual_estimates(datadir):
+    path = datadir / 'minimal.mod'
+    model = Model(path)
+    assert model.initial_individual_estimates is None
+
+    path = datadir / 'pheno_etas.mod'
+    model = Model(path)
+    inits = model.initial_individual_estimates
+    assert len(inits) == 59
+    assert len(inits.columns) == 2
+    assert inits['ETA(1)'][2] == -0.166321

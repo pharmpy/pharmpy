@@ -300,6 +300,9 @@ class AttrTree(Tree):
         """Prints debug formatted tree structure."""
         print(self.debug)
 
+    def set_child(self, attr, value):
+        self.find(attr).value = value
+
     # -- private methods -----------------------------------------------
     def __len__(self):
         return len(self.children)
