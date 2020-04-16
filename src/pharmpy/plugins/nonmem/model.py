@@ -122,29 +122,33 @@ class Model(pharmpy.model.Model):
         """params can be a ParameterSet or a dict-like with name: value
 
            Current restricions:
-            * ParameterSet not supported
+            * ParameterSet only supported for new initial estimates
             * Only set the exact same parameters. No additions and no removing of parameters
         """
         if isinstance(params, ParameterSet):
-            raise NotImplementedError("Can not yet update parameters from ParameterSet")
+            inits = dict()
+            for p in params:
+                inits[p.name] = p.init
         else:
-            if len(self.parameters) != len(params):
-                raise NotImplementedError("Current number of parameters in model and parameters to "
-                                          "set are not the same. Not yet supported")
-            for p in self.parameters:
-                name = p.name
-                if name not in params:
-                    raise ValueError(f"Parameter '{name}' not found in input. Currently "
-                                     f"not supported")
-                if p.lower >= params[name]:
-                    raise ValueError(f"Cannot set a lower parameter initial estimate "
-                                     f"{params[name]} for parameter '{name}' than the "
-                                     f"current lower bound {p.lower}")
-                if p.upper <= params[name]:
-                    raise ValueError(f"Cannot set a higher parameter initial estimate "
-                                     f"{params[name]} for parameter '{name}' than the "
-                                     f"current upper bound {p.upper}")
-                p.init = params[name]
+            inits = params
+
+        if len(self.parameters) != len(params):
+            raise NotImplementedError("Current number of parameters in model and parameters to "
+                                      "set are not the same. Not yet supported")
+        for p in self.parameters:
+            name = p.name
+            if name not in inits:
+                raise NotImplementedError(f"Parameter '{name}' not found in input. Currently "
+                                          f"not supported")
+            if p.lower >= inits[name]:
+                raise ValueError(f"Cannot set a lower parameter initial estimate "
+                                 f"{inits[name]} for parameter '{name}' than the "
+                                 f"current lower bound {p.lower}")
+            if p.upper <= inits[name]:
+                raise ValueError(f"Cannot set a higher parameter initial estimate "
+                                 f"{inits[name]} for parameter '{name}' than the "
+                                 f"current upper bound {p.upper}")
+            p.init = inits[name]
         self._parameters_updated = True
 
     @property

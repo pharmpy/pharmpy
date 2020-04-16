@@ -54,6 +54,13 @@ def test_set_parameters(pheno_path):
     sigmas = model.control_stream.get_records('SIGMA')
     assert str(sigmas[0]) == '$SIGMA  0.3\n'
 
+    model = Model(pheno_path)
+    params = model.parameters
+    params['THETA(1)'].init = 18
+    model.parameters = params
+    assert model.parameters['THETA(1)'] == Parameter('THETA(1)', 18, lower=0, upper=1000000)
+    assert model.parameters['THETA(2)'] == Parameter('THETA(2)', 1.00916, lower=0, upper=1000000)
+
 
 def test_results(pheno_path):
     model = Model(pheno_path)
