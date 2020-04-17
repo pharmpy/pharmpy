@@ -4,6 +4,7 @@ from pathlib import Path
 
 import pharmpy.model
 import pharmpy.plugins.nonmem.input
+import pharmpy.plugins.nonmem.table as table
 from pharmpy.parameter import ParameterSet
 from pharmpy.plugins.nonmem.results import NONMEMChainedModelfitResults
 from pharmpy.plugins.nonmem.table import NONMEMTableFile
@@ -23,6 +24,7 @@ class Model(pharmpy.model.Model):
         self.control_stream = parser.parse(src.code)
         self.input = pharmpy.plugins.nonmem.input.ModelInput(self)
         self._parameters_updated = False
+        self._initial_individual_estimates_updated = False
 
     @property
     def modelfit_results(self):
@@ -46,8 +48,11 @@ class Model(pharmpy.model.Model):
         """
         return bool(re.search(r'^\$PRO', src.code, re.MULTILINE))
 
-    def update_source(self, force=False):
-        """Update the source"""
+    def update_source(self, path=None, force=False):
+        """ Update the source
+
+            path - path to modelfile
+        """
         if self.input._dataset_updated:
             # FIXME: If no name set use the model name. Set that when setting dataset to input!
             datapath = self.input.dataset.pharmpy.write_csv(force=force)
@@ -66,6 +71,7 @@ class Model(pharmpy.model.Model):
             self._dataset_updated = False
 
         self._update_parameters()
+        self._update_initial_individual_etimates(path)
 
         super().update_source()
 
@@ -88,6 +94,36 @@ class Model(pharmpy.model.Model):
             next_sigma = sigma_record.update(params, next_sigma)
 
         self._parameters_updated = False
+
+    def _update_initial_individual_etimates(self, path):
+        """ Update $ETAS
+
+            Could have 0 FIX in model. Need to readd these
+        """
+        if path is None:        # What to do here?
+            return
+
+        if not self._initial_individual_estimates_updated:
+            return
+
+        etas = self.initial_individual_estimates
+        zero_fix = self._zero_fix_rvs(eta=True)
+        if zero_fix:
+            for eta in zero_fix:
+                etas[eta] = 0
+        etas = self._sort_eta_columns(etas)
+        phi = table.PhiTable(df=etas)
+        table_file = table.NONMEMTableFile(tables=[phi])
+        phi_path = path.parent / f'{self.name}_input.phi'
+        table_file.write(phi_path)
+        # FIXME: This is a common operation
+        eta_records = self.control_stream.get_records('ETAS')
+        if eta_records:
+            record = eta_records[0]
+        else:
+            record = self.control_stream.append_record('$ETAS ')
+        record.path = phi_path
+        self._initial_individual_estimates_updated = False
 
     def validate(self):
         """Validates NONMEM model (records) syntactically."""
@@ -155,6 +191,17 @@ class Model(pharmpy.model.Model):
 
     @property
     def initial_individual_estimates(self):
+        '''Initial individual estimates
+
+           These are taken from the $ETAS FILE. 0 FIX ETAs are removed.
+           If no $ETAS is present None will be returned.
+
+           Setter assumes that all IDs are present
+        '''
+        try:
+            return self._initial_individual_estimates
+        except AttributeError:
+            pass
         etas = self.control_stream.get_records('ETAS')
         if etas:
             path = Path(etas[0].path)
@@ -165,14 +212,59 @@ class Model(pharmpy.model.Model):
             phi_tables = NONMEMTableFile(path)
             rv_names = [rv.name for rv in self.random_variables if rv.name.startswith('ETA')]
             etas = next(phi_tables).etas[rv_names]
-            return etas
+            self._initial_individual_estimates = etas
         else:
-            return None
+            self._initial_individual_estimates = None
+        return self._initial_individual_estimates
+
+    @initial_individual_estimates.setter
+    def initial_individual_estimates(self, estimates):
+        rv_names = {rv.name for rv in self.random_variables if rv.name.startswith('ETA')}
+        columns = set(estimates.columns)
+        if columns < rv_names:
+            raise ValueError(f'Cannot set initial estimate for random variable not in the model:'
+                             f' {rv_names - columns}')
+        diff = columns - rv_names
+        # If not setting all etas automatically set remaining to 0 for all individuals
+        if len(diff) > 0:
+            for name in diff:
+                estimates = estimates.copy(deep=True)
+                estimates[name] = 0
+            estimates = self._sort_eta_columns(estimates)
+        self._initial_individual_estimates = estimates
+        self._initial_individual_estimates_updated = True
+
+    def _sort_eta_columns(self, df):
+        colnames = df.columns
+
+        def keyfunc(name):
+            m = re.match(r'ETA\((\d+)\)', name)
+            return int(m.group(1))
+        sorted_colnames = colnames.sort(key=keyfunc)
+        return df.reindex(sorted_colnames, axis=1)
 
     @property
     def statements(self):
         pred = self.control_stream.get_records('PRED')[0]
         return pred.statements
+
+    def _zero_fix_rvs(self, eta=True):
+        zero_fix = []
+        if eta:
+            prev_cov = None
+            next_omega = 1
+            for omega_record in self.control_stream.get_records('OMEGA'):
+                _, next_omega, prev_cov, new_zero_fix = \
+                        omega_record.random_variables(next_omega, prev_cov)
+                zero_fix += new_zero_fix
+        else:
+            prev_cov = None
+            next_sigma = 1
+            for sigma_record in self.control_stream.get_records('SIGMA'):
+                _, next_sigma, prev_cov, new_zero_fix = \
+                        sigma_record.random_variables(next_sigma, prev_cov)
+                zero_fix += new_zero_fix
+        return zero_fix
 
     @property
     def random_variables(self):
@@ -180,11 +272,12 @@ class Model(pharmpy.model.Model):
         next_omega = 1
         prev_cov = None
         for omega_record in self.control_stream.get_records('OMEGA'):
-            etas, next_omega, prev_cov = omega_record.random_variables(next_omega, prev_cov)
+            etas, next_omega, prev_cov, _ = omega_record.random_variables(next_omega, prev_cov)
             rvs.update(etas)
         next_sigma = 1
+        prev_cov = None
         for sigma_record in self.control_stream.get_records('SIGMA'):
-            epsilons, next_sigma, prev_cov = sigma_record.random_variables(next_sigma, prev_cov)
+            epsilons, next_sigma, prev_cov, _ = sigma_record.random_variables(next_sigma, prev_cov)
             rvs.update(epsilons)
         return rvs
 

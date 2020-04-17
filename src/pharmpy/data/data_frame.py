@@ -195,10 +195,10 @@ class DataFrameAccessor:
         return self.labels_by_type[ColumnType.ID][0]
 
     @property
-    def number_of_ids(self):
-        """ Return the number of individuals in the dataset
+    def ids(self):
+        """ Return the ids in the dataset
         """
-        return len(self._obj[self.id_label].unique())
+        return self._obj[self.id_label].unique()
 
     @property
     def time_varying_covariates(self):

@@ -43,6 +43,13 @@ class NMTranControlStream:
                 found.append(record)
         return found
 
+    def append_record(self, content):
+        """ Create and append record at the end
+        """
+        record = create_record(content)
+        self.records.append(record)
+        return record
+
     def validate(self):
         in_problem = False
         for record in self.records:

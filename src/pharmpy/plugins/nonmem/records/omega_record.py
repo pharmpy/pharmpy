@@ -251,6 +251,7 @@ class OmegaRecord(Record):
         """
         next_cov = None        # The cov matrix if a block
         block = self.root.find('block')
+        zero_fix = []
         if not block:
             rvs = RandomVariables()
             i = start_omega
@@ -258,11 +259,13 @@ class OmegaRecord(Record):
             for node in self.root.all('diag_item'):
                 init = node.init.NUMERIC
                 fixed = bool(node.find('FIX'))
+                name = self._rv_name(i)
                 if not (init == 0 and fixed):       # 0 FIX are not RVs
-                    name = self._rv_name(i)
                     eta = sympy.stats.Normal(name, 0, sympy.sqrt(
                         sympy.Symbol(f'{self.name}({i},{i})')))
                     rvs.add(eta)
+                else:
+                    zero_fix.append(name)
                 i += 1
         else:
             numetas = self.root.block.size.INT
@@ -273,7 +276,8 @@ class OmegaRecord(Record):
                 if not (param.init == 0 and param.fix):
                     all_zero_fix = False
             if all_zero_fix and len(params) > 0 or (previous_cov == 'ZERO' and same):
-                return RandomVariables(), start_omega + numetas, 'ZERO'
+                names = [self._rv_name(i) for i in range(start_omega, start_omega + numetas)]
+                return RandomVariables(), start_omega + numetas, 'ZERO', names
             if numetas > 1:
                 names = [self._rv_name(i) for i in range(start_omega, start_omega + numetas)]
                 means = [0] * numetas
@@ -308,4 +312,4 @@ class OmegaRecord(Record):
         for rv in rvs:
             rv.variability_level = level
 
-        return rvs, start_omega + numetas, next_cov
+        return rvs, start_omega + numetas, next_cov, zero_fix

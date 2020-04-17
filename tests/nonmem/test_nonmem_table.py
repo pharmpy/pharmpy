@@ -1,3 +1,5 @@
+import pandas as pd
+
 import pharmpy.plugins.nonmem.table as table
 
 
@@ -42,3 +44,22 @@ def test_cov_table(pheno_cov):
     assert list(df.index) == paramnames
     assert df.values[0][0] == 4.41151e-8
     assert df.values[0][3] == -1.09343e-6
+
+
+def test_create_phi_table(fs):
+    df = pd.DataFrame({'ETA(1)': [1, 2], 'ETA(2)': [5, 6]}, index=[1, 2])
+    df.index.name = 'ID'
+    phi = table.PhiTable(df=df)
+    phi.create_content()
+    correct = ''' SUBJECT_NO   ID           ETA(1)       ETA(2)      
+            1            1  1.00000E+00  5.00000E+00
+            2            2  2.00000E+00  6.00000E+00
+''' # noqa W291
+    assert phi.content == correct
+
+    table_file = table.NONMEMTableFile(tables=[phi])
+    table_file.write('my.phi')
+    with open('my.phi', 'r') as fp:
+        cont = fp.read()
+    correct = 'TABLE NO.     1\n' + correct
+    assert cont == correct

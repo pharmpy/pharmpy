@@ -44,7 +44,6 @@ class Model:
            Will not overwrite in case force is True.
            return path written to
         """
-        self.update_source(force=force)
         path = Path(path)
         if not path or path.is_dir():
             try:
@@ -52,9 +51,10 @@ class Model:
             except AttributeError:
                 raise ValueError('Cannot name model file as no path argument was supplied and the'
                                  'model has no name.')
-            path /= filename
+            path = path / filename
         if not force and path.exists():
             raise FileExistsError(f'File {path} already exists.')
+        self.update_source(path=path, force=force)
         self.source.write(path, force=force)
         return path
 

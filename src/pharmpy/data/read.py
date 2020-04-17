@@ -103,7 +103,7 @@ def _make_ids_unique(df, columns):
     if id_label in columns:
         id_series = df[id_label]
         id_change = id_series.diff(1) != 0
-        if len(id_series[id_change]) != df.pharmpy.number_of_ids:
+        if len(id_series[id_change]) != len(df.pharmpy.ids):
             warnings.warn("Dataset contains non-unique id numbers. Renumbering starting from 1",
                           DatasetWarning)
             df[df.pharmpy.id_label] = id_change.cumsum()

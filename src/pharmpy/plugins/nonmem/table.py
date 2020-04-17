@@ -2,6 +2,7 @@ import re
 from io import StringIO
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 
 import pharmpy.math
@@ -10,21 +11,24 @@ import pharmpy.math
 class NONMEMTableFile:
     '''A NONMEM table file that can contain multiple tables
     '''
-    def __init__(self, path):
-        path = Path(path)
-        suffix = path.suffix
-        self.tables = []
-        with open(str(path), 'r') as tablefile:
-            current = []
-            for line in tablefile:
-                if line.startswith("TABLE NO."):
-                    if current:
-                        self._add_table(current, suffix)
-                    current = [line]
-                else:
-                    current.append(line)
-            self._add_table(current, suffix)
-        self._count = 0
+    def __init__(self, path=None, tables=None):
+        if path is not None:
+            path = Path(path)
+            suffix = path.suffix
+            self.tables = []
+            with open(str(path), 'r') as tablefile:
+                current = []
+                for line in tablefile:
+                    if line.startswith("TABLE NO."):
+                        if current:
+                            self._add_table(current, suffix)
+                        current = [line]
+                    else:
+                        current.append(line)
+                self._add_table(current, suffix)
+            self._count = 0
+        else:
+            self.tables = tables
 
     def __iter__(self):
         return self
@@ -72,6 +76,13 @@ class NONMEMTableFile:
             if table.number == table_number:
                 return table
 
+    def write(self, path):
+        with open(path, 'w') as df:
+            for table in self.tables:
+                print('TABLE NO.     1', file=df)
+                table.create_content()
+                print(table.content, file=df, end='')
+
     def __next__(self):
         if self._count >= len(self):
             raise StopIteration
@@ -83,8 +94,11 @@ class NONMEMTableFile:
 class NONMEMTable:
     '''A NONMEM output table.
     '''
-    def __init__(self, content):
-        self._df = pd.read_table(StringIO(content), sep=r'\s+', engine='python')
+    def __init__(self, content=None, df=None):
+        if content is not None:
+            self._df = pd.read_table(StringIO(content), sep=r'\s+', engine='python')
+        else:
+            self._df = df
 
     @property
     def data_frame(self):
@@ -148,6 +162,19 @@ class PhiTable(NONMEMTable):
                       for matrix in matrix_array]
         etcs = pd.Series(etc_frames, index=df['ID'])
         return etcs
+
+    def create_content(self):
+        df = self._df.copy(deep=True)
+        df.reset_index(inplace=True)
+        df.insert(loc=0, column='SUBJECT_NO', value=np.arange(len(df)) + 1)
+        fmt = '%13d%13d' + '%13.5E' * (len(df.columns) - 2)
+        with StringIO() as s:
+            np.savetxt(s, df.values, fmt=fmt)
+            self.content = s.getvalue()
+        with StringIO() as s:
+            header_fmt = ' %-12s' * len(df.columns) + '\n'
+            header = header_fmt % tuple(df.columns)
+            self.content = header + self.content
 
 
 class ExtTable(NONMEMTable):
