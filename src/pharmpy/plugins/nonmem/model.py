@@ -4,10 +4,9 @@ from pathlib import Path
 
 import pharmpy.model
 import pharmpy.plugins.nonmem.input
-import pharmpy.plugins.nonmem.table as table
 from pharmpy.parameter import ParameterSet
 from pharmpy.plugins.nonmem.results import NONMEMChainedModelfitResults
-from pharmpy.plugins.nonmem.table import NONMEMTableFile
+from pharmpy.plugins.nonmem.table import NONMEMTableFile, PhiTable
 from pharmpy.random_variables import RandomVariables
 
 from .nmtran_parser import NMTranParser
@@ -112,8 +111,8 @@ class Model(pharmpy.model.Model):
             for eta in zero_fix:
                 etas[eta] = 0
         etas = self._sort_eta_columns(etas)
-        phi = table.PhiTable(df=etas)
-        table_file = table.NONMEMTableFile(tables=[phi])
+        phi = PhiTable(df=etas)
+        table_file = NONMEMTableFile(tables=[phi])
         phi_path = path.parent / f'{self.name}_input.phi'
         table_file.write(phi_path)
         # FIXME: This is a common operation
