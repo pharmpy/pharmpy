@@ -90,6 +90,8 @@ def _convert_data_item(x, null_value):
         converted = convert_fortran_number(x)
     except ValueError as e:
         raise DatasetError(str(e)) from e
+    if x in pharmpy.data.conf.na_values:
+        return np.nan
     return converted
 
 

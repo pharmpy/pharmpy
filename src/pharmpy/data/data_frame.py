@@ -3,6 +3,8 @@ from pathlib import Path
 
 import pandas as pd
 
+import pharmpy.data
+
 
 class DatasetError(Exception):
     pass
@@ -247,5 +249,5 @@ class DataFrameAccessor:
            return path for the written file
         """
         path = self.generate_path(path, force)
-        self._obj.to_csv(path, index=False)
+        self._obj.to_csv(path, na_rep=pharmpy.data.conf.na_rep, index=False)
         return path
