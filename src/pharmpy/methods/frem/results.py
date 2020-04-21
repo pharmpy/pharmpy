@@ -173,6 +173,7 @@ class FREMResults(Results):
 def bipp_covariance(model, ncov):
     """Estimate a covariance matrix for the frem model using the BIPP method
 
+        Bootstrap on the individual parameter posteriors
        Only the individual estimates, individual unvertainties and the parameter estimates
        are needed.
        ncov - number of covariates
