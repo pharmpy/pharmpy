@@ -73,6 +73,18 @@ def test_individual_shrinkage(pheno, pheno_lst):
     assert pytest.approx(ishr['ETA(1)'][1], 1e-15) == 0.84778949807160287
 
 
+def test_eta_shrinkage(pheno, pheno_lst):
+    res = NONMEMChainedModelfitResults(pheno_lst, 1, model=pheno)
+    shrinkage = res.eta_shrinkage()
+    assert len(shrinkage) == 2
+    assert pytest.approx(shrinkage['ETA(1)'], 0.0001) == 7.2048E+01 / 100
+    assert pytest.approx(shrinkage['ETA(2)'], 0.0001) == 2.4030E+01 / 100
+    shrinkage = res.eta_shrinkage(sd=True)
+    assert len(shrinkage) == 2
+    assert pytest.approx(shrinkage['ETA(1)'], 0.0001) == 4.7130E+01 / 100
+    assert pytest.approx(shrinkage['ETA(2)'], 0.0001) == 1.2839E+01 / 100
+
+
 def test_individual_estimates_covariance(pheno, pheno_lst):
     res = NONMEMChainedModelfitResults(pheno_lst, 1, model=pheno)
     cov = res.individual_estimates_covariance

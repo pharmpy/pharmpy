@@ -195,6 +195,15 @@ class RandomVariables(OrderedSet):
                 if level is None or level == rv.variability_level:
                     yield rvs, dist
 
+    def iiv_variance_parameters(self):
+        parameters = []
+        for rvs, dist in self.distributions(level=VariabilityLevel.IIV):
+            if len(rvs) == 1:
+                parameters.append(dist.std ** 2)
+            else:
+                parameters += list(dist.sigma.diagonal())
+        return parameters
+
     def merge_normal_distributions(self, fill=0):
         """Merge all normal distributed rvs together into one joint normal
 

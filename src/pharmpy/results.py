@@ -9,7 +9,6 @@ import pandas as pd
 import pharmpy.visualization
 from pharmpy.data import PharmDataFrame
 from pharmpy.math import cov2corr
-from pharmpy.random_variables import VariabilityLevel
 
 
 class Results:
@@ -159,6 +158,27 @@ class ModelfitResults:
         """
         raise NotImplementedError("Not implemented")
 
+    def eta_shrinkage(self, sd=False):
+        """Eta shrinkage for each eta
+
+           Variance = False to get sd scale
+        """
+        pe = self.parameter_estimates
+        # Want parameter estimates combined with fixed parameter values
+        param_inits = self.model.parameters.summary()['value']
+        pe = pe.combine_first(param_inits)
+
+        ie = self.individual_estimates
+        parameters = self.model.random_variables.iiv_variance_parameters()
+        param_names = [param.name for param in parameters]
+        diag_ests = pe[param_names]
+        diag_ests.index = ie.columns
+        if not sd:
+            shrinkage = 1 - (ie.var() / diag_ests)
+        else:
+            shrinkage = 1 - (ie.std() / (diag_ests ** 0.5))
+        return shrinkage
+
     @property
     def individual_shrinkage(self):
         """The individual eta-shrinkage
@@ -172,12 +192,7 @@ class ModelfitResults:
         pe = pe.combine_first(param_inits)
 
         # Get all iiv variance parameters
-        parameters = []
-        for rvs, dist in self.model.random_variables.distributions(level=VariabilityLevel.IIV):
-            if len(rvs) == 1:
-                parameters.append(dist.std ** 2)
-            else:
-                parameters += list(dist.sigma.diagonal())
+        parameters = self.model.random_variables.iiv_variance_parameters()
         param_names = [param.name for param in parameters]
         diag_ests = pe[param_names]
 
