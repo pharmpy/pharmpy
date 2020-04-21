@@ -1,8 +1,31 @@
-"""
+r"""
 Data package
 ============
 
-Collection of modules for relevant manipulation of stand alone datasets
+The PharmPy data package is a standalone package.
+
+The main class is the PharmDataFrame which is a pandas DataFrame with some extras
+relevant to pharmacometrics.
+
+Manipulation of stand alone datasets
+
+.. list-table:: Options for the data module
+   :widths: 25 25 50 150
+   :header-rows: 1
+
+   * - Option name
+     - Default value
+     - Type
+     - Description
+   * - ``na_values``
+     - ``[-99]``
+     - List
+     - Data values to be converted to NA when reading in data
+   * - ``na_rep``
+     - ``'-99'``
+     - str
+     - Data value to convert NA to when writing data
+
 """
 
 import pharmpy.config as config
