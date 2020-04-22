@@ -1,4 +1,19 @@
-# Classes for method results
+"""
+
+.. list-table:: Options for the results module
+   :widths: 25 25 50 150
+   :header-rows: 1
+
+   * - Option name
+     - Default value
+     - Type
+     - Description
+   * - ``native_shrinkage``
+     - ``True``
+     - bool
+     - Should shrinkage calculation of external tool be used.
+       Otherwise pharmpy will calculate shrinkage
+"""
 
 import json
 from pathlib import Path
@@ -6,9 +21,17 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+import pharmpy.config as config
 import pharmpy.visualization
 from pharmpy.data import PharmDataFrame
 from pharmpy.math import cov2corr
+
+
+class ResultsConfiguration(config.Configuration):
+    native_shrinkage = config.ConfigItem(True, 'Use shrinkage results from external tool')
+
+
+conf = ResultsConfiguration()
 
 
 class Results:

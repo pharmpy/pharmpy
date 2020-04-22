@@ -1,6 +1,6 @@
 r"""
-Data package
-============
+Data
+====
 
 The PharmPy data package is a standalone package.
 
