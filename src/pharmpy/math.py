@@ -141,7 +141,7 @@ def sample_truncated_joint_normal(mu, sigma, a, b, n):
     kept_samples = np.empty((0, len(mu)))
     remaining = n
     while remaining > 0:
-        samples = np.random.multivariate_normal(mu, sigma, size=remaining)
+        samples = np.random.multivariate_normal(mu, sigma, size=remaining, check_valid='raise')
         in_range = np.logical_and(samples > a, samples < b).all(axis=1)
         kept_samples = np.concatenate((kept_samples, samples[in_range]))
         remaining = n - len(kept_samples)
