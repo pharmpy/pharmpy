@@ -269,9 +269,10 @@ class RandomVariables(OrderedSet):
                     sigma = dist.sigma.subs(dict(parameter_values))
                     # Switch to numpy here. Sympy posdef check is problematic
                     # see https://github.com/sympy/sympy/issues/18955
-                    a = np.array(sigma).astype(np.float64)
-                    if not pharmpy.math.is_posdef(a):
-                        return False
+                    if not sigma.free_symbols:
+                        a = np.array(sigma).astype(np.float64)
+                        if not pharmpy.math.is_posdef(a):
+                            return False
                 else:
                     sigma = self._cached_sigmas[rvs[0]]
                     replacement = {}
@@ -279,9 +280,10 @@ class RandomVariables(OrderedSet):
                     for param in dict(parameter_values):
                         replacement[symengine.Symbol(param)] = parameter_values[param]
                     sigma = sigma.subs(replacement)
-                    a = np.array(sigma).astype(np.float64)
-                    if not pharmpy.math.is_posdef(a):
-                        return False
+                    if not sigma.free_symbols:      # Cannot validate since missing params
+                        a = np.array(sigma).astype(np.float64)
+                        if not pharmpy.math.is_posdef(a):
+                            return False
         return True
 
     def nearest_valid_parameters(self, parameter_values):

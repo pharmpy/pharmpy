@@ -4,20 +4,27 @@ import pandas as pd
 from pharmpy.math import nearest_posdef, sample_truncated_joint_normal
 
 
-def sample_from_covariance_matrix(model, modelfit_results=None, force_posdef=False, n=1):
+def sample_from_covariance_matrix(model, modelfit_results=None, parameters=None,
+                                  force_posdef=False, n=1):
     """Sample parameter vectors using the covariance matrix
 
        if modelfit_results is not provided the results from the model will be used
+
+       parameters - use to only sample a subset of the parameters. None means all
 
        returns a dataframe with one sample per row
     """
     if modelfit_results is None:
         modelfit_results = model.modelfit_results
 
-    index = modelfit_results.parameter_estimates.index
-    mu = modelfit_results.parameter_estimates.to_numpy()
-    sigma = modelfit_results.covariance_matrix.to_numpy()
-    parameter_summary = model.parameters.summary()
+    if parameters is None:
+        parameters = list(modelfit_results.parameter_estimates.index)
+
+    pe = modelfit_results.parameter_estimates[parameters]
+    index = pe.index
+    mu = pe.to_numpy()
+    sigma = modelfit_results.covariance_matrix[parameters].loc[parameters].to_numpy()
+    parameter_summary = model.parameters.summary().loc[parameters]
     parameter_summary = parameter_summary[~parameter_summary['fix']]
     a = parameter_summary.lower.astype('float64').to_numpy()
     b = parameter_summary.upper.astype('float64').to_numpy()

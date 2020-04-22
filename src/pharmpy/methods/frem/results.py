@@ -2,6 +2,7 @@ import itertools
 
 import numpy as np
 import pandas as pd
+import sympy
 
 from pharmpy.data import ColumnType
 from pharmpy.math import conditional_joint_normal
@@ -24,12 +25,14 @@ class FREMResults(Results):
         self.continuous = continuous
         self.categorical = categorical
 
-        parvecs = sample_from_covariance_matrix(frem_model,
-                                                modelfit_results=self.modelfit_results, n=n)
-        parvecs = parvecs.append(frem_model.modelfit_results.parameter_estimates)
-
         _, dist = list(frem_model.random_variables.distributions(level=VariabilityLevel.IIV))[-1]
         sigma_symb = dist.sigma
+
+        parameters = [s for s in self.modelfit_results.parameter_estimates.index
+                      if sympy.Symbol(s) in sigma_symb.free_symbols]
+        parvecs = sample_from_covariance_matrix(frem_model, modelfit_results=self.modelfit_results,
+                                                parameters=parameters, n=n)
+        parvecs = parvecs.append(frem_model.modelfit_results.parameter_estimates.loc[parameters])
 
         df = frem_model.input.dataset
         covariates = self.continuous + self.categorical
