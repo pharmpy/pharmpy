@@ -142,8 +142,10 @@ class FREMResults(Results):
         mu_id_bars = np.exp(mu_id_bars)
         original_id_bar = np.exp(original_id_bar)
 
-        id_5th = np.quantile(mu_id_bars, 0.05, axis=0)
-        id_95th = np.quantile(mu_id_bars, 0.95, axis=0)
+        with np.testing.suppress_warnings() as sup:     # Would warn in case of missing covariates
+            sup.filter(RuntimeWarning, "All-NaN slice encountered")
+            id_5th = np.nanquantile(mu_id_bars, 0.05, axis=0)
+            id_95th = np.nanquantile(mu_id_bars, 0.95, axis=0)
 
         df = pd.DataFrame(columns=['parameter', 'observed', '5th', '95th'])
         for curid, param in itertools.product(range(nids), range(npars)):
@@ -155,8 +157,8 @@ class FREMResults(Results):
         self.individual_effects = df
 
         # Create unexplained variability table
-        sd_5th = np.sqrt(np.quantile(variability, 0.05, axis=0))
-        sd_95th = np.sqrt(np.quantile(variability, 0.95, axis=0))
+        sd_5th = np.sqrt(np.nanquantile(variability, 0.05, axis=0))
+        sd_95th = np.sqrt(np.nanquantile(variability, 0.95, axis=0))
         original_sd = np.sqrt(original_variability)
 
         df = pd.DataFrame(columns=['parameter', 'condition', 'sd_observed', 'sd_5th', 'sd_95th'])
