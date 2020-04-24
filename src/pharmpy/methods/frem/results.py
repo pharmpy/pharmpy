@@ -16,7 +16,7 @@ from pharmpy.results import Results
 
 class FREMResults(Results):
     def __init__(self, frem_model, cov_model=None, continuous=[], categorical=[], rescale=True,
-                 force_posdef_samples=False, force_posdef_covmatrix=False, samples=1000):
+                 force_posdef_samples=500, force_posdef_covmatrix=False, samples=1000):
         self.frem_model = frem_model
         n = samples
 
