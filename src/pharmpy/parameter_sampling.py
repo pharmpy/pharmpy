@@ -37,7 +37,7 @@ def sample_from_covariance_matrix(model, modelfit_results=None, parameters=None,
     # reject non-posdef
     kept_samples = pd.DataFrame()
     remaining = n
-    i = 0
+    rejected = 0
     while remaining > 0:
         samples = sample_truncated_joint_normal(mu, sigma, a, b, n=remaining)
         df = pd.DataFrame(samples, columns=index)
@@ -48,9 +48,12 @@ def sample_from_covariance_matrix(model, modelfit_results=None, parameters=None,
             selected = df.transform(model.random_variables.nearest_valid_parameters, axis=1)
         kept_samples = pd.concat((kept_samples, selected))
         remaining = n - len(kept_samples)
-        i += 1
-        if i == 5:
-            raise RuntimeError('All samples rejected. Rejection ratio larger than 99.98%')
+        if len(kept_samples) == 0:
+            rejected += n
+            if rejected > 5000:
+                raise RuntimeError('Too many samples rejected. Rejection ratio larger than 99.98%')
+        else:
+            rejected = 0
 
     return kept_samples.reset_index(drop=True)
 
