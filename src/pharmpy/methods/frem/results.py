@@ -16,7 +16,7 @@ from pharmpy.results import Results
 
 class FREMResults(Results):
     def __init__(self, frem_model, cov_model=None, continuous=[], categorical=[], rescale=True,
-                 samples=1000):
+                 force_posdef_samples=False, force_posdef_covmatrix=False, samples=1000):
         self.frem_model = frem_model
         n = samples
 
@@ -34,6 +34,8 @@ class FREMResults(Results):
         parameters = [s for s in self.modelfit_results.parameter_estimates.index
                       if sympy.Symbol(s) in sigma_symb.free_symbols]
         parvecs = sample_from_covariance_matrix(frem_model, modelfit_results=self.modelfit_results,
+                                                force_posdef_samples=force_posdef_samples,
+                                                force_posdef_covmatrix=force_posdef_covmatrix,
                                                 parameters=parameters, n=n)
         parvecs = parvecs.append(frem_model.modelfit_results.parameter_estimates.loc[parameters])
 
@@ -220,7 +222,7 @@ def bipp_covariance(model, ncov):
     # return frame.cov()
 
 
-def psn_frem_results(path):
+def psn_frem_results(path, force_posdef_covmatrix=False):
     """ Create frem results from a PsN FREM run
 
         :param path: Path to PsN frem run directory
@@ -252,6 +254,7 @@ def psn_frem_results(path):
     continuous = list(nunique.index[nunique != 2])
     categorical = list(nunique.index[nunique == 2])
 
-    res = FREMResults(model_4, cov_model=cov_model, continuous=continuous, categorical=categorical)
+    res = FREMResults(model_4, force_posdef_covmatrix=force_posdef_covmatrix, cov_model=cov_model,
+                      continuous=continuous, categorical=categorical)
 
     return res

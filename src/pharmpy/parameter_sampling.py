@@ -5,7 +5,7 @@ from pharmpy.math import is_posdef, nearest_posdef, sample_truncated_joint_norma
 
 
 def sample_from_covariance_matrix(model, modelfit_results=None, parameters=None,
-                                  force_posdef=False, n=1):
+                                  force_posdef_samples=False, force_posdef_covmatrix=False, n=1):
     """Sample parameter vectors using the covariance matrix
 
        if modelfit_results is not provided the results from the model will be used
@@ -25,7 +25,10 @@ def sample_from_covariance_matrix(model, modelfit_results=None, parameters=None,
     mu = pe.to_numpy()
     sigma = modelfit_results.covariance_matrix[parameters].loc[parameters].to_numpy()
     if not is_posdef(sigma):
-        raise ValueError("Uncertainty covariance matrix not positive-definite")
+        if force_posdef_covmatrix:
+            sigma = nearest_posdef(sigma)
+        else:
+            raise ValueError("Uncertainty covariance matrix not positive-definite")
     parameter_summary = model.parameters.summary().loc[parameters]
     parameter_summary = parameter_summary[~parameter_summary['fix']]
     a = parameter_summary.lower.astype('float64').to_numpy()
@@ -34,16 +37,20 @@ def sample_from_covariance_matrix(model, modelfit_results=None, parameters=None,
     # reject non-posdef
     kept_samples = pd.DataFrame()
     remaining = n
+    i = 0
     while remaining > 0:
         samples = sample_truncated_joint_normal(mu, sigma, a, b, n=remaining)
         df = pd.DataFrame(samples, columns=index)
-        if not force_posdef:
+        if not force_posdef_samples:
             selected = df[df.apply(model.random_variables.validate_parameters, axis=1,
                                    use_cache=True)]
         else:
             selected = df.transform(model.random_variables.nearest_valid_parameters, axis=1)
         kept_samples = pd.concat((kept_samples, selected))
         remaining = n - len(kept_samples)
+        i += 1
+        if i == 5:
+            raise RuntimeError('All samples rejected. Rejection ratio larger than 99.98%')
 
     return kept_samples.reset_index(drop=True)
 
