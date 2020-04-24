@@ -2,6 +2,7 @@ import itertools
 
 import numpy as np
 import pandas as pd
+import symengine
 import sympy
 
 from pharmpy.data import ColumnType
@@ -71,6 +72,13 @@ class FREMResults(Results):
         variability = np.empty((n, ncovs + 2, npars))      # none, cov1, cov2, ..., all
         original_variability = np.empty((ncovs + 2, npars))
 
+        # Switch to symengine for speed
+        # Could also assume order of parameters, but not much gain
+        sigma_symb = symengine.sympify(sigma_symb)
+        parvecs.columns = [symengine.Symbol(colname) for colname in parvecs.columns]
+
+        covbase = covariate_baselines.to_numpy()
+
         for sample_no, params in parvecs.iterrows():
             sigma = sigma_symb.subs(dict(params))
             sigma = np.array(sigma).astype(np.float64)
@@ -99,9 +107,10 @@ class FREMResults(Results):
                 else:
                     original_variability[i + 1, :] = np.diag(sigma_bar)
 
-            for i, (_, row) in enumerate(covariate_baselines.iterrows()):
+            for i in range(len(covariate_baselines)):
+                row = covbase[i, :]
                 id_mu = np.array([0] * npars + list(cov_refs))
-                mu_id_bar, sigma_id_bar = conditional_joint_normal(id_mu, sigma, row.values)
+                mu_id_bar, sigma_id_bar = conditional_joint_normal(id_mu, sigma, row)
                 if sample_no != 'estimates':
                     mu_id_bars[sample_no, i, :] = mu_id_bar
                     variability[sample_no, -1, :] = np.diag(sigma_id_bar)
