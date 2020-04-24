@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 
-from pharmpy.math import nearest_posdef, sample_truncated_joint_normal
+from pharmpy.math import is_posdef, nearest_posdef, sample_truncated_joint_normal
 
 
 def sample_from_covariance_matrix(model, modelfit_results=None, parameters=None,
@@ -24,6 +24,8 @@ def sample_from_covariance_matrix(model, modelfit_results=None, parameters=None,
     index = pe.index
     mu = pe.to_numpy()
     sigma = modelfit_results.covariance_matrix[parameters].loc[parameters].to_numpy()
+    if not is_posdef(sigma):
+        raise ValueError("Uncertainty covariance matrix not positive-definite")
     parameter_summary = model.parameters.summary().loc[parameters]
     parameter_summary = parameter_summary[~parameter_summary['fix']]
     a = parameter_summary.lower.astype('float64').to_numpy()
