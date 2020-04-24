@@ -165,7 +165,9 @@ def conditional_joint_normal(mu, sigma, a):
     M1 = mu[0:nfirst]
     M2 = mu[nfirst:]
 
-    mu_bar = M1 + S12 @ np.linalg.inv(S22) @ (a - M2)
-    sigma_bar = S11 - S12 @ np.linalg.inv(S22) @ S21
+    S22_inv = np.linalg.inv(S22)
+
+    mu_bar = M1 + S12 @ S22_inv @ (a - M2)
+    sigma_bar = S11 - S12 @ S22_inv @ S21
 
     return mu_bar, sigma_bar
