@@ -1,10 +1,12 @@
 import itertools
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
 import symengine
 import sympy
 
+from pharmpy import Model
 from pharmpy.data import ColumnType
 from pharmpy.math import conditional_joint_normal
 from pharmpy.parameter_sampling import sample_from_covariance_matrix, sample_individual_estimates
@@ -216,3 +218,40 @@ def bipp_covariance(model, ncov):
     frame = pd.DataFrame(parameter_samples, columns=pop_params)
     return frame
     # return frame.cov()
+
+
+def psn_frem_results(path):
+    """ Create frem results from a PsN FREM run
+
+        :param path: Path to PsN frem run directory
+        :return: A :class:`FREMResults` object
+    """
+    path = Path(path)
+
+    model_4_path = path / 'final_models' / 'model_4.mod'
+    if not model_4_path.is_file():
+        raise IOError(f'Could not find FREM model 4: {str(model_4_path)}')
+    model_4 = Model(model_4_path)
+    if model_4.modelfit_results is None:
+        raise ValueError('Model 4 has no results')
+    try:
+        model_4.modelfit_results.covariance_matrix
+    except Exception:
+        model_4b_path = path / 'final_models' / 'model_4b.mod'
+        model_4b = Model(model_4b_path)
+        cov_model = model_4b
+    else:
+        cov_model = None
+
+    with open(path / 'covariates_summary.csv') as covsum:
+        covsum.readline()
+        raw_cov_list = covsum.readline()
+
+    all_covariates = raw_cov_list[1:].rstrip().split(',')
+    nunique = model_4.input.dataset[all_covariates].nunique()
+    continuous = list(nunique.index[nunique != 2])
+    categorical = list(nunique.index[nunique == 2])
+
+    res = FREMResults(model_4, cov_model=cov_model, continuous=continuous, categorical=categorical)
+
+    return res
