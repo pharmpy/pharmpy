@@ -10,12 +10,11 @@ def sample_from_covariance_matrix(model, modelfit_results=None, parameters=None,
 
        if modelfit_results is not provided the results from the model will be used
 
-       parameters - use to only sample a subset of the parameters. None means all
+       :param parameters: use to only sample a subset of the parameters. None means all
        :param force_posdef_samples: Set to how many iterations to do before forcing all
-            samples to be positive definite. None is default and means never.
-            0 means from the start
-
-       returns a dataframe with one sample per row
+                                    samples to be positive definite. None is default and means never.
+                                    0 means from the start
+       :return: a dataframe with one sample per row
     """
     if modelfit_results is None:
         modelfit_results = model.modelfit_results
@@ -67,9 +66,9 @@ def sample_from_covariance_matrix(model, modelfit_results=None, parameters=None,
 def sample_individual_estimates(model, parameters=None, samples_per_id=100):
     """Sample individual estimates given their covariance.
 
-       parameters - A list of a subset of parameters to sample
-                    None means all.
-       returns a pool of samples as a DataFrame
+       :param parameters: A list of a subset of parameters to sample. Default is None,
+                          which means all.
+       :return: Pool of samples in a DataFrame
     """
     ests = model.modelfit_results.individual_estimates
     covs = model.modelfit_results.individual_estimates_covariance
