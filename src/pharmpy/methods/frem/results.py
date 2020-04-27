@@ -203,8 +203,7 @@ def bipp_covariance(model, ncov):
     npar = len(etas) - ncov
     pool = sample_individual_estimates(model, parameters=etas)
     ninds = len(pool.index.unique())
-    ishr_all = model.modelfit_results.individual_shrinkage
-    ishr = ishr_all[etas[:npar]]
+    ishr = model.modelfit_results.individual_shrinkage
     lower_indices = np.tril_indices(len(etas))
     pop_params = np.array(dist.sigma).astype(str)[lower_indices]
     numbootstraps = 2000
@@ -213,7 +212,6 @@ def bipp_covariance(model, ncov):
         bootstrap = pool.sample(n=ninds, replace=True)
         ishk = ishr.loc[bootstrap.index]
         cf = (1 / (1 - ishk.mean())) ** (1/2)
-        cf = cf.append(pd.Series([1] * ncov, index=etas[npar:]))
         corrected_bootstrap = bootstrap * cf
         bootstrap_cov = corrected_bootstrap.cov()
         parameter_samples[k, :] = bootstrap_cov.values[lower_indices]
