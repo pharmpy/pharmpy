@@ -9,7 +9,7 @@ from pharmpy.methods.frem.results import FREMResults, bipp_covariance
 
 def test_bipp_covariance(testdata):
     model = Model(testdata / 'nonmem' / 'frem' / 'pheno' / 'model_4.mod')
-    cov = bipp_covariance(model, 2)
+    cov = bipp_covariance(model)
     cov
 
 

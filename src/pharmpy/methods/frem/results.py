@@ -8,7 +8,7 @@ import sympy
 
 from pharmpy import Model
 from pharmpy.data import ColumnType
-from pharmpy.math import conditional_joint_normal
+from pharmpy.math import conditional_joint_normal, is_posdef
 from pharmpy.parameter_sampling import sample_from_covariance_matrix, sample_individual_estimates
 from pharmpy.random_variables import VariabilityLevel
 from pharmpy.results import Results
@@ -188,33 +188,35 @@ class FREMResults(Results):
         self.unexplained_variability = df
 
 
-def bipp_covariance(model, ncov):
+def bipp_covariance(model, samples=2000):
     """Estimate a covariance matrix for the frem model using the BIPP method
 
         Bootstrap on the individual parameter posteriors
        Only the individual estimates, individual unvertainties and the parameter estimates
        are needed.
-       ncov - number of covariates
 
        Returns a covariance matrix for the parameters of the FREM matrix.
     """
     rvs, dist = list(model.random_variables.distributions(level=VariabilityLevel.IIV))[-1]
     etas = [rv.name for rv in rvs]
-    npar = len(etas) - ncov
     pool = sample_individual_estimates(model, parameters=etas)
     ninds = len(pool.index.unique())
     ishr = model.modelfit_results.individual_shrinkage
     lower_indices = np.tril_indices(len(etas))
     pop_params = np.array(dist.sigma).astype(str)[lower_indices]
-    numbootstraps = 2000
-    parameter_samples = np.empty((numbootstraps, len(pop_params)))
-    for k in range(numbootstraps):
+    parameter_samples = np.empty((samples, len(pop_params)))
+    remaining_samples = samples
+    k = 0
+    while k < remaining_samples:
         bootstrap = pool.sample(n=ninds, replace=True)
         ishk = ishr.loc[bootstrap.index]
         cf = (1 / (1 - ishk.mean())) ** (1/2)
         corrected_bootstrap = bootstrap * cf
         bootstrap_cov = corrected_bootstrap.cov()
+        if not is_posdef(bootstrap_cov.to_numpy()):
+            continue
         parameter_samples[k, :] = bootstrap_cov.values[lower_indices]
+        k += 1
     frame = pd.DataFrame(parameter_samples, columns=pop_params)
     return frame
     # return frame.cov()
