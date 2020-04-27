@@ -4,29 +4,30 @@ import numpy as np
 import pandas as pd
 
 from pharmpy import Model
-from pharmpy.methods.frem.results import FREMResults, bipp_covariance
+from pharmpy.methods.frem.results import FREMResults
 
 
 def test_bipp_covariance(testdata):
     model = Model(testdata / 'nonmem' / 'frem' / 'pheno' / 'model_4.mod')
-    cov = bipp_covariance(model)
-    cov
+    res = FREMResults(model, continuous=['APGR', 'WGT'])
+    res.calculate_results_using_bipp()
 
 
 def test_frem_results_pheno(testdata):
     model = Model(testdata / 'nonmem' / 'frem' / 'pheno' / 'model_4.mod')
     np.random.seed(39)
-    res = FREMResults(model, continuous=['APGR', 'WGT'], samples=10)
+    res = FREMResults(model, continuous=['APGR', 'WGT'])
+    res.calculate_results(samples=10)
 
     correct = """parameter,covariate,condition,5th,mean,95th
-0,APGR,5th,0.992878,1.170232,1.374516
-0,APGR,95th,0.860692,0.932424,1.003450
-0,WGT,5th,0.884359,0.950191,1.002978
-0,WGT,95th,0.994012,1.117787,1.283830
-1,APGR,5th,0.782424,0.848066,0.947594
-1,APGR,95th,1.025922,1.083065,1.123609
-1,WGT,5th,0.948503,1.009960,1.063028
-1,WGT,95th,0.883742,0.985236,1.114695
+ETA(1),APGR,5th,0.992878,1.170232,1.374516
+ETA(1),APGR,95th,0.860692,0.932424,1.003450
+ETA(1),WGT,5th,0.884359,0.950191,1.002978
+ETA(1),WGT,95th,0.994012,1.117787,1.283830
+ETA(2),APGR,5th,0.782424,0.848066,0.947594
+ETA(2),APGR,95th,1.025922,1.083065,1.123609
+ETA(2),WGT,5th,0.948503,1.009960,1.063028
+ETA(2),WGT,95th,0.883742,0.985236,1.114695
 """
     correct = pd.read_csv(StringIO(correct))
     correct['parameter'] = correct['parameter'].astype(str)
@@ -179,14 +180,15 @@ def test_frem_results_pheno(testdata):
 def test_frem_results_pheno_categorical(testdata):
     model = Model(testdata / 'nonmem' / 'frem' / 'pheno_cat' / 'model_4.mod')
     np.random.seed(8978)
-    res = FREMResults(model, continuous=['WGT'], categorical=['APGRX'], samples=10)
+    res = FREMResults(model, continuous=['WGT'], categorical=['APGRX'])
+    res.calculate_results(samples=10)
     correct = """parameter,covariate,condition,5th,mean,95th
-0,WGT,5th,0.8795189896312912,0.9466445932608492,1.0019433736898327
-0,WGT,95th,0.996753409405885,1.1245702765612209,1.2988798347027322
-0,APGRX,other,0.8940140155148761,1.0564628170434618,1.180632821895565
-1,WGT,5th,0.9597747500913076,1.0044780096197885,1.0388367920062975
-1,WGT,95th,0.9256135592505018,0.9934909758805717,1.0869067285073553
-1,APGRX,other,0.8498363889783136,0.9042760019837373,0.9625854858603431
+ETA(1),WGT,5th,0.8795189896312912,0.9466445932608492,1.0019433736898327
+ETA(1),WGT,95th,0.996753409405885,1.1245702765612209,1.2988798347027322
+ETA(1),APGRX,other,0.8940140155148761,1.0564628170434618,1.180632821895565
+ETA(2),WGT,5th,0.9597747500913076,1.0044780096197885,1.0388367920062975
+ETA(2),WGT,95th,0.9256135592505018,0.9934909758805717,1.0869067285073553
+ETA(2),APGRX,other,0.8498363889783136,0.9042760019837373,0.9625854858603431
 """
     correct = pd.read_csv(StringIO(correct))
     correct['parameter'] = correct['parameter'].astype(str)

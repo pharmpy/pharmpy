@@ -15,31 +15,71 @@ from pharmpy.results import Results
 
 
 class FREMResults(Results):
-    def __init__(self, frem_model, cov_model=None, continuous=[], categorical=[], rescale=True,
-                 force_posdef_samples=500, force_posdef_covmatrix=False, samples=1000):
+    def __init__(self, frem_model, continuous=[], categorical=[], rescale=True):
         self.frem_model = frem_model
-        n = samples
-
-        if cov_model is not None:
-            self.modelfit_results = cov_model.modelfit_results
-        else:
-            self.modelfit_results = frem_model.modelfit_results
-
         self.continuous = continuous
         self.categorical = categorical
+        self.rescale = rescale
 
-        _, dist = list(frem_model.random_variables.distributions(level=VariabilityLevel.IIV))[-1]
+    def calculate_results(self, method="cov_sampling", **kwargs):
+        """Calculate FREM results
+
+           :param method: Either 'cov_sampling' or 'bipp'
+        """
+        if method == 'cov_sampling':
+            self.calculate_results_using_cov_sampling(**kwargs)
+        elif method == 'bipp':
+            self.calculate_results_using_bipp(**kwargs)
+        else:
+            raise ValueError(f'Unknown frem postprocessing method {method}')
+
+    def calculate_results_using_cov_sampling(self, cov_model=None, force_posdef_samples=500,
+                                             force_posdef_covmatrix=False, samples=1000):
+        """Calculate the FREM results using covariance matrix for uncertainty
+
+           :param cov_model: Take the parameter uncertainty covariance matrix from this model
+                             instead of the frem model.
+           :param force_posdef_samples: The number of sampling tries before stopping to use
+                                        rejection sampling and instead starting to shift values so
+                                        that the frem matrix becomes positive definite. Set to 0 to
+                                        always force positive definiteness.
+           :param force_posdef_covmatrix: Set to force the covariance matrix of the frem movdel or
+                                          the cov model to be positive definite. Default is to raise
+                                          in this case.
+           :param samples: The number of parameter vector samples to use.
+        """
+        if cov_model is not None:
+            uncertainty_results = cov_model.modelfit_results
+        else:
+            uncertainty_results = self.frem_model.modelfit_results
+
+        _, dist = list(self.frem_model.random_variables.distributions(
+            level=VariabilityLevel.IIV))[-1]
         sigma_symb = dist.sigma
 
-        parameters = [s for s in self.modelfit_results.parameter_estimates.index
+        parameters = [s for s in self.frem_model.modelfit_results.parameter_estimates.index
                       if sympy.Symbol(s) in sigma_symb.free_symbols]
-        parvecs = sample_from_covariance_matrix(frem_model, modelfit_results=self.modelfit_results,
+        parvecs = sample_from_covariance_matrix(self.frem_model,
+                                                modelfit_results=uncertainty_results,
                                                 force_posdef_samples=force_posdef_samples,
                                                 force_posdef_covmatrix=force_posdef_covmatrix,
-                                                parameters=parameters, n=n)
-        parvecs = parvecs.append(frem_model.modelfit_results.parameter_estimates.loc[parameters])
+                                                parameters=parameters,
+                                                n=samples)
+        self.calculate_results_from_samples(parvecs=parvecs)
 
-        df = frem_model.input.dataset
+    def calculate_results_from_samples(self, parvecs):
+        """Calculate the FREM results given samples of parameter estimates
+        """
+        n = len(parvecs)
+        rvs, dist = list(self.frem_model.random_variables.distributions(
+            level=VariabilityLevel.IIV))[-1]
+        sigma_symb = dist.sigma
+        parameters = [s for s in self.frem_model.modelfit_results.parameter_estimates.index
+                      if sympy.Symbol(s) in sigma_symb.free_symbols]
+        parvecs = parvecs.append(
+                self.frem_model.modelfit_results.parameter_estimates.loc[parameters])
+
+        df = self.frem_model.input.dataset
         covariates = self.continuous + self.categorical
         df.pharmpy.column_type[covariates] = ColumnType.COVARIATE
         covariate_baselines = df.pharmpy.covariate_baselines
@@ -65,7 +105,7 @@ class FREMResults(Results):
         npars = sigma_symb.rows - ncovs
         nids = len(covariate_baselines)
         param_indices = list(range(npars))
-        if rescale:
+        if self.rescale:
             cov_stdevs = covariate_baselines.std()
             scaling = np.diag(np.concatenate((np.ones(npars), cov_stdevs.values)))
 
@@ -86,7 +126,7 @@ class FREMResults(Results):
         for sample_no, params in parvecs.iterrows():
             sigma = sigma_symb.subs(dict(params))
             sigma = np.array(sigma).astype(np.float64)
-            if rescale:
+            if self.rescale:
                 sigma = scaling @ sigma @ scaling
             if sample_no != 'estimates':
                 variability[sample_no, 0, :] = np.diag(sigma)[:npars]
@@ -134,18 +174,19 @@ class FREMResults(Results):
         q95_95th = np.quantile(mu_bars_given_95th, 0.95, axis=0)
 
         df = pd.DataFrame(columns=['parameter', 'covariate', 'condition', '5th', 'mean', '95th'])
+        param_names = [rv.name for rv in rvs][:npars]
         for param, cov in itertools.product(range(npars), range(ncovs)):
             if covariates[cov] in self.categorical:
-                df = df.append({'parameter': str(param), 'covariate': covariates[cov],
+                df = df.append({'parameter': param_names[param], 'covariate': covariates[cov],
                                 'condition': 'other', '5th': q5_5th[cov, param],
                                 'mean': means_5th[cov, param], '95th': q95_5th[cov, param]},
                                ignore_index=True)
             else:
-                df = df.append({'parameter': str(param), 'covariate': covariates[cov],
+                df = df.append({'parameter': param_names[param], 'covariate': covariates[cov],
                                 'condition': '5th', '5th': q5_5th[cov, param],
                                 'mean': means_5th[cov, param], '95th': q95_5th[cov, param]},
                                ignore_index=True)
-                df = df.append({'parameter': str(param), 'covariate': covariates[cov],
+                df = df.append({'parameter': param_names[param], 'covariate': covariates[cov],
                                 'condition': '95th', '5th': q5_95th[cov, param],
                                 'mean': means_95th[cov, param], '95th': q95_95th[cov, param]},
                                ignore_index=True)
@@ -187,39 +228,36 @@ class FREMResults(Results):
                             'sd_95th': sd_95th[cond, par]}, ignore_index=True)
         self.unexplained_variability = df
 
+    def calculate_results_using_bipp(self, samples=2000):
+        """Estimate a covariance matrix for the frem model using the BIPP method
 
-def bipp_covariance(model, samples=2000):
-    """Estimate a covariance matrix for the frem model using the BIPP method
-
-        Bootstrap on the individual parameter posteriors
-       Only the individual estimates, individual unvertainties and the parameter estimates
-       are needed.
-
-       Returns a covariance matrix for the parameters of the FREM matrix.
-    """
-    rvs, dist = list(model.random_variables.distributions(level=VariabilityLevel.IIV))[-1]
-    etas = [rv.name for rv in rvs]
-    pool = sample_individual_estimates(model, parameters=etas)
-    ninds = len(pool.index.unique())
-    ishr = model.modelfit_results.individual_shrinkage
-    lower_indices = np.tril_indices(len(etas))
-    pop_params = np.array(dist.sigma).astype(str)[lower_indices]
-    parameter_samples = np.empty((samples, len(pop_params)))
-    remaining_samples = samples
-    k = 0
-    while k < remaining_samples:
-        bootstrap = pool.sample(n=ninds, replace=True)
-        ishk = ishr.loc[bootstrap.index]
-        cf = (1 / (1 - ishk.mean())) ** (1/2)
-        corrected_bootstrap = bootstrap * cf
-        bootstrap_cov = corrected_bootstrap.cov()
-        if not is_posdef(bootstrap_cov.to_numpy()):
-            continue
-        parameter_samples[k, :] = bootstrap_cov.values[lower_indices]
-        k += 1
-    frame = pd.DataFrame(parameter_samples, columns=pop_params)
-    return frame
-    # return frame.cov()
+            Bootstrap on the individual parameter posteriors
+           Only the individual estimates, individual unvertainties and the parameter estimates
+           are needed.
+        """
+        rvs, dist = list(self.frem_model.random_variables.distributions(
+            level=VariabilityLevel.IIV))[-1]
+        etas = [rv.name for rv in rvs]
+        pool = sample_individual_estimates(self.frem_model, parameters=etas)
+        ninds = len(pool.index.unique())
+        ishr = self.frem_model.modelfit_results.individual_shrinkage
+        lower_indices = np.tril_indices(len(etas))
+        pop_params = np.array(dist.sigma).astype(str)[lower_indices]
+        parameter_samples = np.empty((samples, len(pop_params)))
+        remaining_samples = samples
+        k = 0
+        while k < remaining_samples:
+            bootstrap = pool.sample(n=ninds, replace=True)
+            ishk = ishr.loc[bootstrap.index]
+            cf = (1 / (1 - ishk.mean())) ** (1/2)
+            corrected_bootstrap = bootstrap * cf
+            bootstrap_cov = corrected_bootstrap.cov()
+            if not is_posdef(bootstrap_cov.to_numpy()):
+                continue
+            parameter_samples[k, :] = bootstrap_cov.values[lower_indices]
+            k += 1
+        frame = pd.DataFrame(parameter_samples, columns=pop_params)
+        self.calculate_results_from_samples(frame)
 
 
 def psn_frem_results(path, force_posdef_covmatrix=False):

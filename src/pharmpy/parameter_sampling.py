@@ -12,8 +12,8 @@ def sample_from_covariance_matrix(model, modelfit_results=None, parameters=None,
 
        :param parameters: use to only sample a subset of the parameters. None means all
        :param force_posdef_samples: Set to how many iterations to do before forcing all
-                                    samples to be positive definite. None is default and means never.
-                                    0 means from the start
+                                    samples to be positive definite. None is default and means
+                                    never and 0 means always
        :return: a dataframe with one sample per row
     """
     if modelfit_results is None:
