@@ -292,7 +292,6 @@ def psn_frem_results(path, force_posdef_covmatrix=False):
     continuous = list(nunique.index[nunique != 2])
     categorical = list(nunique.index[nunique == 2])
 
-    res = FREMResults(model_4, force_posdef_covmatrix=force_posdef_covmatrix, cov_model=cov_model,
-                      continuous=continuous, categorical=categorical)
-
+    res = FREMResults(model_4, continuous=continuous, categorical=categorical)
+    res.calculate_results(force_posdef_covmatrix=force_posdef_covmatrix, cov_model=cov_model)
     return res
