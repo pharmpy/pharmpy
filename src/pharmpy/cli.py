@@ -333,6 +333,13 @@ class CLI:
                                       help='Path to PsN frem run directory')
         cmd_results_frem.set_defaults(func=self.results_frem)
 
+        cmd_results_print = cmd_results_subs.add_parser('print',
+                                                        help='Print results')
+        cmd_results_print.add_argument('dir', metavar='file or directory', type=pathlib.Path,
+                                       help='Path to directory containing results.json or'
+                                            'directly to json results file')
+        cmd_results_print.set_defaults(func=self.results_print)
+
         cmd_results_ofv = cmd_results_subs.add_parser('ofv', help='Extract OFVs from model runs',
                                                       parents=[self._args_input])
         cmd_results_ofv.set_defaults(func=self.results_ofv)
@@ -471,6 +478,18 @@ class CLI:
             self.error_exit(exception=FileNotFoundError(str(args.psn_dir)))
         res = psn_frem_results(args.psn_dir)
         res.to_json(path=args.psn_dir / 'results.json')
+
+    def results_print(self, args):
+        """Subcommand to print any results"""
+        if args.dir.is_dir():
+            path = args.dir / 'results.json'
+        elif args.dir.is_file():
+            path = args.dir
+        else:
+            self.error_exit(exception=FileNotFoundError(str(args.dir)))
+        from pharmpy.results import read_results
+        res = read_results(path)
+        print(res)
 
     def results_summary(self, args):
         """Subcommand to output summary of modelfit"""
