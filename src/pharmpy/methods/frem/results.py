@@ -32,6 +32,7 @@ class FREMResults(Results):
             self.calculate_results_using_bipp(**kwargs)
         else:
             raise ValueError(f'Unknown frem postprocessing method {method}')
+        self.method = method
 
     def calculate_results_using_cov_sampling(self, cov_model=None, force_posdef_samples=500,
                                              force_posdef_covmatrix=False, samples=1000):
@@ -258,6 +259,24 @@ class FREMResults(Results):
             k += 1
         frame = pd.DataFrame(parameter_samples, columns=pop_params)
         self.calculate_results_from_samples(frame)
+
+    def __str__(self):
+        if not hasattr(self, 'method'):
+            return 'Empty FREM results object'
+        start = f'Results from FREM calculated with the {self.method} method'
+        covs = f'Continuous covariates: {self.continuous}'
+        cats = f'Categorical covariates: {self.categorical}'
+        if self.rescale:
+            resc = 'Rescaling was used'
+        else:
+            resc = 'Rescaling was not used'
+        ce = self.covariate_effects.to_string(index=False)
+        ie = self.individual_effects.to_string()
+        uv = self.unexplained_variability.to_string(index=False)
+        cs = self.covariate_statistics.to_string()
+        return f'{start}\n\n{resc}\n{covs}\n{cats}\n\nCovariate statistics\n{cs}\n\n' \
+               f'Covariate effects\n{ce}\n\nIndividual effects\n{ie}\n\n' \
+               f'Unexplained variability\n{uv}\n'
 
 
 def psn_frem_results(path, force_posdef_covmatrix=False):
