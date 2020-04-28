@@ -15,9 +15,10 @@
        Otherwise pharmpy will calculate shrinkage
 """
 
-import json
 from pathlib import Path
 
+import jsonpickle
+import jsonpickle.ext.pandas as jsonpickle_pandas
 import numpy as np
 import pandas as pd
 
@@ -25,6 +26,8 @@ import pharmpy.config as config
 import pharmpy.visualization
 from pharmpy.data import PharmDataFrame
 from pharmpy.math import cov2corr
+
+jsonpickle_pandas.register_handlers()
 
 
 class ResultsConfiguration(config.Configuration):
@@ -37,12 +40,12 @@ conf = ResultsConfiguration()
 class Results:
     """ Base class for all result classes
     """
-    def _json(self, data, path=None):
+    def to_json(self, path=None):
         if path:
             with open(path, 'w') as fh:
-                json.dump(data, fh)
+                fh.write(jsonpickle.encode(self))
         else:
-            return json.dumps(data)
+            return jsonpickle.encode(self)
 
 
 class ModelfitResults:
@@ -318,16 +321,15 @@ class CaseDeletionResults:
 def read_results(path_or_buf):
     try:
         path = Path(path_or_buf)
-        path.exists()
-    except (OSError, TypeError, ValueError):
-        struct = json.loads(path_or_buf)
+        if not path.is_file():
+            raise FileNotFoundError
+    except (FileNotFoundError, OSError, TypeError, ValueError):
+        s = path_or_buf
     else:
         with open(path, 'r') as json_file:
-            struct = json.load(json_file)
+            s = json_file.read()
 
-    # could use object hooks here
-    if 'BootstrapResults' in struct:
-        return BootstrapResults.from_json(struct['BootstrapResults'])
+    return jsonpickle.decode(s)
 
 
 class BootstrapResults(Results):
@@ -340,19 +342,6 @@ class BootstrapResults(Results):
         self._bootstrap_results = [m.modelfit_results for m in bootstrap_models
                                    if m.modelfit_results is not None]
         self._total_number_of_models = len(bootstrap_models)
-
-    @classmethod
-    def from_json(cls, struct):
-        res = cls(None, None)
-        res._statistics = pd.read_json(struct['statistics'])
-        res._distribution = pd.read_json(struct['distribution'])
-        return res
-
-    def to_json(self, path=None):
-        statistics = {'statistics': self.statistics.to_json()}
-        distribution = {'distribution': self.distribution.to_json()}
-        d = {'BootstrapResults': {**statistics, **distribution}}
-        return self._json(d, path)
 
     @property
     def ofv(self):
