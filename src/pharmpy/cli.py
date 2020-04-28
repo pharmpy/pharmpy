@@ -327,6 +327,12 @@ class CLI:
                                                             parents=[self._args_input])
         cmd_results_bootstrap.set_defaults(func=self.results_bootstrap)
 
+        cmd_results_frem = cmd_results_subs.add_parser('frem',
+                                                       help='Generate FREM results')
+        cmd_results_frem.add_argument('psn_dir', metavar='PsN directory', type=pathlib.Path,
+                                      help='Path to PsN frem run directory')
+        cmd_results_frem.set_defaults(func=self.results_frem)
+
         cmd_results_ofv = cmd_results_subs.add_parser('ofv', help='Extract OFVs from model runs',
                                                       parents=[self._args_input])
         cmd_results_ofv.set_defaults(func=self.results_ofv)
@@ -457,6 +463,14 @@ class CLI:
         res = pharmpy.results.BootstrapResults(original_model=args.models[0],
                                                bootstrap_models=args.models[1:])
         print(res)
+
+    def results_frem(self, args):
+        """Subcommand to generate frem results"""
+        from pharmpy.methods.frem.results import psn_frem_results
+        if not args.psn_dir.is_dir():
+            self.error_exit(exception=FileNotFoundError(str(args.psn_dir)))
+        res = psn_frem_results(args.psn_dir)
+        res.to_json(path=args.psn_dir / 'results.json')
 
     def results_summary(self, args):
         """Subcommand to output summary of modelfit"""
