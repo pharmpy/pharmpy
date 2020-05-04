@@ -34,8 +34,8 @@ sepsep : [WS] "," [WS] "," [WS]
 _lpar : "(" [WS]
 _rpar : [WS] FIX ")" n
       | [WS] ")" n
-      | [WS] ")" FIX
-      | [WS] FIX ")"
+      | [WS] ")" [WS] FIX
+      | [WS] FIX [WS] ")"
       | [WS] ")"
 
 init : NUMERIC

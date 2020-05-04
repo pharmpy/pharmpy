@@ -17,7 +17,8 @@ import pytest
         ('THETA(8)', 1, 0, 2, False),
         ('THETA(9)', 1, 0, 2, False),
         ('THETA(10)', 1, 0, 2, False),
-        ])
+        ]),
+    ('$THETA (0,0.00469555) FIX ; CL', [('THETA(1)', 0.00469555, 0.00469555, 0.00469555, True)]),
 ])
 def test_parameters(parser, buf, results):
     recs = parser.parse(buf)
