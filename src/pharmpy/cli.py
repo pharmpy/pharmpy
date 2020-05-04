@@ -316,6 +316,14 @@ class CLI:
                                                     allow_abbrev=True)
         cmd_run_bootstrap.set_defaults(func=self.run_bootstrap)
 
+        # -- private ---------------------------------------------------------------------------
+        cmd_private = parsers.add_parser('private')
+        cmd_private_subs = cmd_private.add_subparsers()
+        cmd_private_frem = cmd_private_subs.add_parser('frem')
+        cmd_private_frem.add_argument('rundir', type=pathlib.Path)
+        cmd_private_frem.add_argument('ncovs', type=int)
+        cmd_private_frem.set_defaults(func=self.private_frem)
+
         # -- results ---------------------------------------------------------------------------
         cmd_results = parsers.add_parser('results', help='Result extraction and generation',
                                          allow_abbrev=True)
@@ -461,6 +469,11 @@ class CLI:
         from pharmpy.workflows.bootstrap import BootstrapWorkflow
         wf = BootstrapWorkflow(args.model)
         wf.start()
+
+    def private_frem(self, args):
+        """Update parcov in model3b"""
+        from pharmpy.methods.frem.method import update_model3b_for_psn
+        update_model3b_for_psn(args.rundir, args.ncovs)
 
     def results_bootstrap(self, args):
         """Subcommand to generate bootstrap results"""
