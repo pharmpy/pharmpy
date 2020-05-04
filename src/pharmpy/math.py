@@ -34,6 +34,17 @@ def cov2corr(cov):
     return corr
 
 
+def corr2cov(corr, sd):
+    """Convert correlation matrix to covariance matrix
+
+       :param corr: correlation matrix (ones on diagonal)
+       :param sd: one dimensional array of standard deviations
+    """
+    sd_matrix = np.diag(sd)
+    cov = sd_matrix @ corr @ sd_matrix
+    return cov
+
+
 def round_and_keep_sum(x, s):
     '''Round values in Series x and their sum must be s
 

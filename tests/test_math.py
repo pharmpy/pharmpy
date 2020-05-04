@@ -31,6 +31,13 @@ def test_round_and_keep_sum():
     assert_series_equal(rounded, correct_results)
 
 
+def test_corr2cov():
+    corr = np.array([[1.00, 0.25, 0.90], [0.25, 1.00, 0.50], [0.90, 0.50, 1.00]])
+    sd = np.array([1, 4, 9])
+    cov = pharmpy.math.corr2cov(corr, sd)
+    assert_array_equal(cov, np.array([[1, 1, 8.1], [1, 16, 18], [8.1, 18, 81]]))
+
+
 def test_se_delta_method():
     vals = {'OMEGA(1,1)': 3.75637E-02, 'OMEGA(2,1)': 1.93936E-02, 'OMEGA(2,2)': 2.19133E-02}
     om11 = sympy.Symbol('OMEGA(1,1)')
