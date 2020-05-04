@@ -44,6 +44,16 @@ class ParameterSet(OrderedSet):
         fixed = [p for p in self if p.fix]
         self -= fixed
 
+    def update_inits(self, inits):
+        """Update the initial estimates of some or all parameters
+
+           All parameters of inits must already be in the set
+
+           :param inits: A dict of parameter names to new initial estimates
+        """
+        for name, value in inits.items():
+            self[name].init = value
+
     def __repr__(self):
         if len(self) == 0:
             return "ParameterSet()"
