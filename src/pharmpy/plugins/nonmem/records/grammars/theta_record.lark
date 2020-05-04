@@ -61,12 +61,11 @@ WS_ALL: /\s+/
 COMMENT : /\S.*(?<!\s)/  // no left/right whitespace padding
 
 // common numeric terminals
-DIGIT: "0".."9"
-INT: DIGIT+
+INT: /[0-9]+/
 DECIMAL: (INT "." [INT] | "." INT)
 SIGNED_INT: ["+" | "-"] INT
 
-EXP: "E" SIGNED_INT
+EXP: ("E" | "e") SIGNED_INT
 FLOAT: (INT EXP | DECIMAL [EXP])
 SIGNED_FLOAT: ["+" | "-"] FLOAT
 

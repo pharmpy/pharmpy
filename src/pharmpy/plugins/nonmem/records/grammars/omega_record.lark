@@ -95,7 +95,7 @@ INT: DIGIT+
 DECIMAL: (INT "." [INT] | "." INT)
 SIGNED_INT: ["+" | "-"] INT
 
-EXP: "E" SIGNED_INT
+EXP: ("E" | "e") SIGNED_INT
 FLOAT: (INT EXP | DECIMAL [EXP])
 SIGNED_FLOAT: ["+" | "-"] FLOAT
 
