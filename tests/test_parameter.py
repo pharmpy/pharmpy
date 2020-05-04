@@ -84,15 +84,15 @@ def test_inits():
     pset = ParameterSet([p1, p2, p3])
     pset.inits = {'X': 28}
     assert len(pset) == 3
-    assert pset['X'] == Parameter('X', 28) 
-    assert pset['Y'] == Parameter('Y', 9) 
-    assert pset['Z'] == Parameter('Z', 1) 
+    assert pset['X'] == Parameter('X', 28)
+    assert pset['Y'] == Parameter('Y', 9)
+    assert pset['Z'] == Parameter('Z', 1)
 
     with pytest.raises(KeyError):
-        pset.update_inits({'CL': 0})
+        pset.inits = {'CL': 0}
 
     pset.inits = {'X': 0, 'Y': 2, 'Z': 5}
     assert len(pset) == 3
-    assert pset['X'] == Parameter('X', 0) 
-    assert pset['Y'] == Parameter('Y', 2) 
-    assert pset['Z'] == Parameter('Z', 5) 
+    assert pset['X'] == Parameter('X', 0)
+    assert pset['Y'] == Parameter('Y', 2)
+    assert pset['Z'] == Parameter('Z', 5)

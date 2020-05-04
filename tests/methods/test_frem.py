@@ -2,9 +2,27 @@ from io import StringIO
 
 import numpy as np
 import pandas as pd
+from pytest import approx
 
 from pharmpy import Model
+from pharmpy.methods.frem.models import calculate_parcov_inits, create_model3b
 from pharmpy.methods.frem.results import FREMResults
+
+
+def test_parcov_inits(testdata):
+    model = Model(testdata / 'nonmem' / 'frem' / 'pheno' / 'model_3.mod')
+    params = calculate_parcov_inits(model, 2)
+    assert params == approx({'OMEGA(3,1)': 0.02560327, 'OMEGA(3,2)': -0.001618381,
+                             'OMEGA(4,1)': -0.06764814, 'OMEGA(4,2)': 0.02350935})
+
+
+def test_create_model3b(testdata):
+    model = Model(testdata / 'nonmem' / 'frem' / 'pheno' / 'model_3.mod')
+    model3b = create_model3b(model, 2)
+    pset = model3b.parameters
+    assert pset['OMEGA(3,1)'].init == approx(0.02560327)
+    assert pset['THETA(1)'].init == 0.00469555
+    assert model3b.name == 'model_3b'
 
 
 def test_bipp_covariance(testdata):
@@ -174,6 +192,7 @@ ETA(2),all,0.14572521381314374,0.10000243896199691,0.17321795298354078
 
     correct = pd.DataFrame({'5th': [1.0, 0.7], 'ref': [6.423729, 1.525424], '95th': [9.0, 3.2]},
                            index=['APGR', 'WGT'])
+    correct.index.name = 'covariate'
     pd.testing.assert_frame_equal(res.covariate_statistics, correct)
 
 
@@ -336,4 +355,5 @@ ETA(2),all,0.1441532460182698,0.11380319105403863,0.18470095021420732
 
     correct = pd.DataFrame({'5th': [0.7, 0], 'ref': [1.525424, 1], '95th': [3.2, 1]},
                            index=['WGT', 'APGRX'])
+    correct.index.name = 'covariate'
     pd.testing.assert_frame_equal(res.covariate_statistics, correct)

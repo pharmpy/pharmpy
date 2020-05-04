@@ -1,6 +1,7 @@
 import itertools
 from pathlib import Path
 
+import altair as alt
 import numpy as np
 import pandas as pd
 import symengine
@@ -101,6 +102,7 @@ class FREMResults(Results):
 
         self.covariate_statistics = pd.DataFrame({'5th': cov_5th, 'ref': cov_refs,
                                                   '95th': cov_95th})
+        self.covariate_statistics.index.name = 'covariate'
 
         ncovs = len(covariates)
         npars = sigma_symb.rows - ncovs
@@ -259,6 +261,61 @@ class FREMResults(Results):
             k += 1
         frame = pd.DataFrame(parameter_samples, columns=pop_params)
         self.calculate_results_from_samples(frame)
+
+    def plot_covariate_effects(self):
+        ce = self.covariate_effects.copy(deep=True)
+        ce.loc[:, ['5th', 'mean', '95th']] = ((ce.loc[:, ['5th', 'mean', '95th']] - 1) * 100)
+        cov_stats = pd.melt(self.covariate_statistics.reset_index(), var_name='condition',
+                            id_vars=['covariate'], value_vars=['5th', '95th'])
+        ce = ce.merge(cov_stats)
+        param_names = list(ce.parameter.unique())
+        plots = []
+
+        for parameter in param_names:
+            df = ce[ce['parameter'] == parameter]
+
+            error_bars = alt.Chart(df).mark_errorbar(ticks=True).encode(
+                x=alt.X('5th:Q', title='Effect size in percent', scale=alt.Scale(zero=False)),
+                x2=alt.X2('95th:Q'),
+                y=alt.Y('condition:N', title=None),
+            ).properties(width=400, height=100)
+
+            rule = alt.Chart(df).mark_rule(strokeDash=[10, 4], color='gray').encode(
+                x=alt.X('xzero:Q')
+            ).transform_calculate(xzero="0")
+
+            points = alt.Chart(df).mark_point(filled=True, color='black').encode(
+                x=alt.X('mean:Q'),
+                y=alt.Y('condition:N'),
+            )
+
+            text = alt.Chart(df).mark_text(
+                dy=-15,
+                color="red"
+            ).encode(
+                x=alt.X("mean:Q"),
+                y=alt.Y("condition:N"),
+                text=alt.Text("value:Q")
+            )
+
+            bar_values = alt.Chart(df).mark_text(
+                dy=15,
+            ).encode(
+                x=alt.X("5th:Q"),
+                y=alt.Y("condition:N"),
+                text=alt.Text("5th:Q", format='.1f'),
+            )
+
+            plot = alt.layer(error_bars, bar_values, rule, points, text, data=df).facet(
+                columns=1.0,
+                row=alt.Facet('covariate:N', title=None),
+                title=f'{parameter}'
+            )
+
+            plots.append(plot)
+
+        v = alt.vconcat(*plots).resolve_scale(x='shared')
+        return v
 
     def __str__(self):
         if not hasattr(self, 'method'):
