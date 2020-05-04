@@ -177,11 +177,11 @@ class Model(pharmpy.model.Model):
             if name not in inits:
                 raise NotImplementedError(f"Parameter '{name}' not found in input. Currently "
                                           f"not supported")
-            if p.lower >= inits[name]:
+            if p.lower > inits[name]:
                 raise ValueError(f"Cannot set a lower parameter initial estimate "
                                  f"{inits[name]} for parameter '{name}' than the "
                                  f"current lower bound {p.lower}")
-            if p.upper <= inits[name]:
+            if p.upper < inits[name]:
                 raise ValueError(f"Cannot set a higher parameter initial estimate "
                                  f"{inits[name]} for parameter '{name}' than the "
                                  f"current upper bound {p.upper}")
