@@ -77,12 +77,12 @@ def test_pset_remove_fixed():
     assert pset['Y'] == Parameter('Y', 9)
 
 
-def test_update_inits():
+def test_inits():
     p1 = Parameter('Y', 9)
     p2 = Parameter('X', 3)
     p3 = Parameter('Z', 1)
     pset = ParameterSet([p1, p2, p3])
-    pset.update_inits({'X': 28})
+    pset.inits = {'X': 28}
     assert len(pset) == 3
     assert pset['X'] == Parameter('X', 28) 
     assert pset['Y'] == Parameter('Y', 9) 
@@ -91,7 +91,7 @@ def test_update_inits():
     with pytest.raises(KeyError):
         pset.update_inits({'CL': 0})
 
-    pset.update_inits({'X': 0, 'Y': 2, 'Z': 5})
+    pset.inits = {'X': 0, 'Y': 2, 'Z': 5}
     assert len(pset) == 3
     assert pset['X'] == Parameter('X', 0) 
     assert pset['Y'] == Parameter('Y', 2) 

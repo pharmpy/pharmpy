@@ -38,21 +38,22 @@ class ParameterSet(OrderedSet):
         return pd.DataFrame({'value': values, 'lower': lower, 'upper': upper, 'fix': fix},
                             index=symbols)
 
+    @property
+    def inits(self):
+        """Initial estimates of parameters as dict
+        """
+        return {p.name: p.init for p in self}
+
+    @inits.setter
+    def inits(self, init_dict):
+        for name, value in init_dict.items():
+            self[name].init = value
+
     def remove_fixed(self):
         """Remove all fixed parameters
         """
         fixed = [p for p in self if p.fix]
         self -= fixed
-
-    def update_inits(self, inits):
-        """Update the initial estimates of some or all parameters
-
-           All parameters of inits must already be in the set
-
-           :param inits: A dict of parameter names to new initial estimates
-        """
-        for name, value in inits.items():
-            self[name].init = value
 
     def __repr__(self):
         if len(self) == 0:
