@@ -92,21 +92,12 @@ class Model:
 #    """:class:`~pharmpy.input.ModelInput` API.
 #    E.g. data."""
 
-#    ModelOutput = ModelOutput
-#    """:class:`~pharmpy.output.ModelOutput` API.
-#    Results of evaluations, estimations & simulations."""
-
-#    ParameterModel = ParameterModel
-#    """:class:`~pharmpy.parameters.ParameterModel` API.
-#    E.g. parameter estimates & initial values."""
-
 #    _path = None
 #    _index = 0
 
 #    def __init__(self, path):
 #        self.source = self.SourceResource(path)
 #        self.input = self.ModelInput(self)
-#        self.output = self.ModelOutput(self)
 #        self.parameters = self.ParameterModel(self)
 #        self.execute = self.Engine(self)
 #        self.source.model = self
@@ -143,8 +134,6 @@ class Model:
 #    def has_results(self):
 #        """True *if and only if* model has results.
 
-#        Must be True for accessing :class:`~pharmpy.output.ModelOutput`.
-
 #        .. todo::
 #            Implement model execution/results status checker.
 #            **Should** contain a call to :class:`.engine` class. An implementation of *that* should
@@ -175,30 +164,6 @@ class Model:
 #            model.write()
 #        return model
 
-#    @property
-#    def logger(self):
-#        return logging.getLogger(__file__)
-
 #    def __repr__(self):
 #        path = None if self.path is None else str(self.path)
 #        return "%s(%r)" % (self.__class__.__name__, path)
-
-#    def __str__(self):
-#        return str(self.source.output)
-
-#    def __deepcopy__(self, memo):
-#        """Copy model completely.
-
-#        Utilized by e.g. :class:`pharmpy.execute.run_directory.RunDirectory` to "take" the model in
-#        a dissociated state from the original.
-
-#        .. note::
-#            Lazy solution with re-parsing path for now. Can't deepcopy down without implementing
-#            close to Lark tree's, since compiled regexes must be re-compiled.
-
-#            .. todo:: Deepcopy Model objects "correctly"."""
-#        if self.source.on_disk:
-#            return type(self)(self.path)
-#        elif self.content is not None:
-#            raise NotImplementedError("Tried to (deeply) copy %r content without source; "
-#                                      "Not yet supported" % (self,))
