@@ -1,4 +1,5 @@
 from pharmpy.parameter import Parameter, ParameterSet
+from pharmpy.parse_utils.generic import AttrToken, remove_token_and_space
 
 from .record import Record
 
@@ -64,6 +65,14 @@ class ThetaRecord(Record):
             if float(str(theta.init)) != new_init:
                 theta.init.tokens[0].value = str(new_init)
             fix = bool(theta.find('FIX'))
+            if fix != param.fix:
+                if param.fix:
+                    space = AttrToken('WS', ' ')
+                    fix_token = AttrToken('FIX', 'FIX')
+                    theta.children.extend([space, fix_token])
+                else:
+                    remove_token_and_space(theta, 'FIX')
+
             n = self._multiple(theta)
             i += n
 

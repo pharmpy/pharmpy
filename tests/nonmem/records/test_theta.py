@@ -53,3 +53,34 @@ def test_update(parser):
     pset['THETA(1)'].init = 41
     rec.update(pset, 1)
     assert str(rec) == '$THETA 41'
+
+    rec = parser.parse('$THETA 1 FIX').records[0]
+    pset = rec.parameters(1)
+    pset['THETA(1)'].fix = False
+    rec.update(pset, 1)
+    assert str(rec) == '$THETA 1'
+
+    rec = parser.parse('$THETA (0.1, 2, 3)  FIX').records[0]
+    pset = rec.parameters(1)
+    pset['THETA(1)'].fix = False
+    rec.update(pset, 1)
+    assert str(rec) == '$THETA (0.1, 2, 3)'
+
+    rec = parser.parse('$THETA (0.1, 2, 3 FIX)').records[0]
+    pset = rec.parameters(1)
+    pset['THETA(1)'].fix = False
+    rec.update(pset, 1)
+    assert str(rec) == '$THETA (0.1, 2, 3)'
+
+    rec = parser.parse('$THETA (0.1, 2, 3)').records[0]
+    pset = rec.parameters(1)
+    pset['THETA(1)'].fix = True
+    rec.update(pset, 1)
+    assert str(rec) == '$THETA (0.1, 2, 3) FIX'
+
+    rec = parser.parse('$THETA 1 2 3 ;CMT').records[0]
+    pset = rec.parameters(1)
+    pset['THETA(1)'].fix = True
+    pset['THETA(3)'].fix = True
+    rec.update(pset, 1)
+    assert str(rec) == '$THETA 1 FIX 2 3 FIX ;CMT'

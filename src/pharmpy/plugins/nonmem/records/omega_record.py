@@ -6,7 +6,8 @@ import sympy.stats
 import pharmpy.math
 from pharmpy.model import ModelSyntaxError
 from pharmpy.parameter import Parameter, ParameterSet
-from pharmpy.parse_utils.generic import AttrTree
+from pharmpy.parse_utils.generic import (AttrToken, AttrTree, insert_after, insert_before_or_at_end,
+                                         remove_token_and_space)
 from pharmpy.random_variables import JointNormalSeparate, RandomVariables, VariabilityLevel
 
 from .record import Record
@@ -160,8 +161,10 @@ class OmegaRecord(Record):
                     new_nodes.append(node)
                 else:
                     sd = bool(node.find('SD'))
+                    fix = bool(node.find('FIX'))
                     n = node.n.INT if node.find('n') else 1
                     new_inits = []
+                    new_fix = []
                     for j in range(i, i + n):
                         name = f'{self.name}({j},{j})'
                         if not sd:
@@ -169,8 +172,17 @@ class OmegaRecord(Record):
                         else:
                             value = parameters[name].init ** 0.5
                         new_inits.append(value)
-                    if new_inits.count(new_inits[0]) == len(new_inits):  # All equal?
-                        node.init.tokens[0].value = str(new_inits[0])
+                        new_fix.append(parameters[name].fix)
+                    if n == 1 or (new_inits.count(new_inits[0]) == len(new_inits) and
+                                  new_fix.count(new_fix[0]) == len(new_fix)):  # All equal?
+                        if float(str(node.init)) != new_inits[0]:
+                            node.init.tokens[0].value = str(new_inits[0])
+                        if new_fix[0] != fix:
+                            if new_fix[0]:
+                                insert_before_or_at_end(node, 'RPAR', [AttrToken('WS', ' '),
+                                                                       AttrToken('FIX', 'FIX')])
+                            else:
+                                remove_token_and_space(node, 'FIX')
                         new_nodes.append(node)
                     else:
                         # Need to split xn
@@ -183,6 +195,11 @@ class OmegaRecord(Record):
                             new_node = AttrTree.transform(node)
                             if float(str(new_node.init)) != init:
                                 new_node.init.tokens[0].value = str(init)
+                            if new_fix[j] != fix:
+                                insert_before_or_at_end(node, 'RPAR', [AttrToken('WS', ' '),
+                                                                       AttrToken('FIX', 'FIX')])
+                            else:
+                                remove_token_and_space(node, 'FIX')
                             new_nodes.append(new_node)
                             if j != len(new_inits) - 1:     # Not the last
                                 new_nodes.append(AttrTree.create('ws', {'WS': ' '}))
@@ -198,10 +215,14 @@ class OmegaRecord(Record):
             row = first_omega
             col = first_omega
             inits = []
+            new_fix = []
             for row in range(first_omega, first_omega + size):
                 for col in range(first_omega, row + 1):
                     name = f'{self.name}({row},{col})'
                     inits.append(parameters[name].init)
+                    new_fix.append(parameters[name].fix)
+            if len(set(new_fix)) != 1:      # Not all true or all false
+                raise ValueError('Cannot only fix some parameters in block')
 
             A = pharmpy.math.flattened_to_symmetric(inits)
             try:
@@ -231,7 +252,7 @@ class OmegaRecord(Record):
                 else:
                     n = node.n.INT if node.find('n') else 1
                     if array[i:i+n].count(array[i]) == n:  # All equal?
-                        if float(str(node.init)) != str(array[i]):
+                        if float(str(node.init)) != array[i]:
                             node.init.tokens[0].value = str(array[i])
                         new_nodes.append(node)
                     else:
@@ -250,6 +271,12 @@ class OmegaRecord(Record):
                                 new_nodes.append(AttrTree.create('ws', {'WS': ' '}))
                     i += n
             self.root.children = new_nodes
+            if new_fix[0] != fix:
+                if new_fix[0]:
+                    insert_after(self.root, 'block', [AttrToken('WS', ' '),
+                                                      AttrToken('FIX', 'FIX')])
+                else:
+                    remove_token_and_space(self.root, 'FIX', recursive=True)
             next_omega = first_omega + size
         return next_omega, size
 

@@ -417,3 +417,46 @@ class GenericParser:
             return repr(self)
         lines = str(prettyprint.transform(self.root)).splitlines()
         return '\n'.join(lines)
+
+
+def remove_token_and_space(tree, rule, recursive=False):
+    """Remove all tokens with rule and any WS before it
+    """
+    new_nodes = []
+    for node in tree.children:
+        if node.rule == rule:
+            if len(new_nodes) > 0 and new_nodes[-1].rule == 'WS':
+                new_nodes.pop()
+        else:
+            new_nodes.append(node)
+    tree.children = new_nodes
+    if recursive:
+        for node in tree.children:
+            if hasattr(node, 'children'):
+                remove_token_and_space(node, rule, recursive=True)
+
+
+def insert_before_or_at_end(tree, rule, nodes):
+    """Insert nodes before rule or if rule does not exist at end
+    """
+    kept = []
+    found = False
+    for node in tree.children:
+        if node.rule == rule:
+            kept.extend(nodes)
+            found = True
+        kept.append(node)
+    if not found:
+        kept.extend(nodes)
+    tree.children = kept
+
+
+def insert_after(tree, rule, nodes):
+    """Insert nodes after rule
+    """
+    kept = []
+    for node in tree.children:
+        kept.append(node)
+        if node.rule == rule:
+            kept.extend(nodes)
+    tree.children = kept

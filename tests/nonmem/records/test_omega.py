@@ -204,7 +204,7 @@ def test_update(parser):
     pset['OMEGA(3,2)'].init = 0.5
     pset['OMEGA(3,3)'].init = 6
     rec.update(pset, 1, None)
-    assert str(rec) == '$OMEGA BLOCK(3) 1.0 ;CL\n0.2 3.0; V\n0.4 0.5 6.0; KA'
+    assert str(rec) == '$OMEGA BLOCK(3) 1 ;CL\n0.2 3.0; V\n0.4 0.5 6.0; KA'
 
     rec = parser.parse("$OMEGA BLOCK(2) SAME").records[0]
     pset, _, _ = rec.parameters(3, 2)
@@ -221,6 +221,45 @@ def test_update(parser):
     assert next_eta == 9
     assert prev_size == 4
     assert str(rec) == "$OMEGA BLOCK SAME"
+
+
+def test_update_fix(parser):
+    rec = parser.parse("$OMEGA 2 FIX 4 (FIX 6)").records[0]
+    pset, _, _ = rec.parameters(1, None)
+    pset['OMEGA(1,1)'].fix = False
+    rec.update(pset, 1, None)
+    assert str(rec) == '$OMEGA 2 4 (FIX 6)'
+
+    rec = parser.parse("$OMEGA 2 4 6 ;STRAML").records[0]
+    pset, _, _ = rec.parameters(1, None)
+    pset['OMEGA(1,1)'].fix = True
+    rec.update(pset, 1, None)
+    assert str(rec) == '$OMEGA 2 FIX 4 6 ;STRAML'
+    pset['OMEGA(1,1)'].fix = False
+    pset['OMEGA(2,2)'].fix = True
+    pset['OMEGA(3,3)'].fix = True
+    pset['OMEGA(3,3)'].init = 23
+    rec.update(pset, 1, None)
+    assert str(rec) == '$OMEGA 2 4 FIX 23.0 FIX ;STRAML'
+
+    rec = parser.parse("$OMEGA BLOCK(2) 1 .1 2 ;CLERMT").records[0]
+    pset, _, _ = rec.parameters(1, None)
+    pset['OMEGA(1,1)'].fix = True
+    # Cannot fix parts of block
+    with pytest.raises(ValueError):
+        rec.update(pset, 1, None)
+    pset['OMEGA(2,1)'].fix = True
+    pset['OMEGA(2,2)'].fix = True
+    rec.update(pset, 1, None)
+    assert str(rec) == '$OMEGA BLOCK(2) FIX 1 .1 2 ;CLERMT'
+
+    rec = parser.parse("$OMEGA BLOCK(2) 1 .1 FIX 1").records[0]
+    pset, _, _ = rec.parameters(1, None)
+    pset['OMEGA(1,1)'].fix = False
+    pset['OMEGA(2,1)'].fix = False
+    pset['OMEGA(2,2)'].fix = False
+    rec.update(pset, 1, None)
+    assert str(rec) == '$OMEGA BLOCK(2) 1 .1 1'
 
 
 def test_random_variables(parser):

@@ -31,23 +31,23 @@
 // Remove input API. Unnecessary extra level for only two methods?
 // Option placements not correct below and also newline/comment placement
 
-root : [ws] [diagonal] (diag_item [ws])+ [ws]           // form 1
-     | [_opt] block [_opt] (_item)+ [ws]      // form 2
-     | [_opt] block [_opt] same ([ws] comment)* [ws]    // form 3
-     | [_opt] bare_block [_opt] same ([ws] comment)* [ws]    // form 3 w/o n
-     | [_opt] block [_opt] values (_opt | [ws] comment)* [ws]  // form 4
+root : [_ws] [diagonal] (diag_item [_ws])+ [_ws]           // form 1
+     | [_opt] block [_opt] (_item)+ [_ws]      // form 2
+     | [_opt] block [_opt] same ([_ws] comment)* [_ws]    // form 3
+     | [_opt] bare_block [_opt] same ([_ws] comment)* [_ws]    // form 3 w/o n
+     | [_opt] block [_opt] values (_opt | [_ws] comment)* [_ws]  // form 4
 
 diag_item: init [_diag_options]
          | "(" [WS] _diag_options [WS] init [WS] ")" [n]
          | "(" [WS] init [WS] _diag_options [WS] ")" [n]
          | "(" [WS] _diag_options [WS] init [WS] _diag_options [WS] ")" [n]
-_diag_options: (ws (FIX | SD | VAR))*
+_diag_options: (_ws (FIX | SD | VAR))*
 
 // repeat of init or comment (form 1 & 2)
-_item : [ws] omega | [ws] comment
+_item : [_ws] omega | [_ws] comment
 
 // can be tied to WHOLE record or ONE INIT
-_opt     : (ws (FIX | VAR | SD | CORR | COV | CHOLESKY))* [ws]  // note ws injection as 1st child
+_opt     : (_ws (FIX | VAR | SD | CORR | COV | CHOLESKY))* [_ws]  // note ws injection as 1st child
 FIX      : "FIXED" | "FIXE" | "FIX"
 VAR      : "VARIANCE" | "VARIANC" | "VARIAN" | "VARIA" | "VARI" | "VAR" | "VA" | "V"
 SD       : "STANDARD" | "STANDAR" | "STANDA" | "STAND" | "STAN" | "STA" | "ST" | "SD" | "S"
@@ -56,10 +56,10 @@ COV      : "COVARIANCE" | "COVARIANC" | "COVARIAN" | "COVARIA" | "COVARI" | "COV
 CHOLESKY : "CHOLESKY" | "CHOLESK" | "CHOLES" | "CHOLE" | "CHOL" | "CHO"
 
 // parentheses sizes (optional for SAME and BLOCK with SAME)
-block       : ("BLOCK" | "BLOC" | "BLO") [ws] _lpar size _rpar
+block       : ("BLOCK" | "BLOC" | "BLO") [_ws] _lpar size _rpar
 bare_block  : ("BLOCK" | "BLOC" | "BLO")
 same        : "SAME" [_lpar size _rpar]
-diagonal    : ("DIAGONAL" | "DIAGONA" | "DIAGON" | "DIAGO" | "DIAG" | "DIA") [ws] _lpar [WS] size [WS] _rpar [ws]
+diagonal    : ("DIAGONAL" | "DIAGONA" | "DIAGON" | "DIAGO" | "DIAG" | "DIA") [_ws] _lpar [WS] size [WS] _rpar [_ws]
 values      : "VALUES" _lpar diag sep odiag _rpar
 
 size  : INT
@@ -80,7 +80,7 @@ init  : NUMERIC
 n     : "x" INT
 
 // common misc rules
-ws: [WS] [comment] [WS_ALL]
+_ws: [WS] [comment] [WS_ALL]
 comment: COMMENT
 
 // common misc terminals
