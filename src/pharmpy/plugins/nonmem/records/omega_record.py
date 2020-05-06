@@ -148,9 +148,9 @@ class OmegaRecord(Record):
         """From a ParameterSet update the OMEGAs in this record
            returns the next omega number
         """
-        i = first_omega
         block = self.root.find('block')
         if not block:
+            i = first_omega
             new_nodes = []
             for node in self.root.children:
                 if node.rule != 'diag_item':
@@ -184,6 +184,7 @@ class OmegaRecord(Record):
                                 new_nodes.append(AttrTree.create('ws', {'WS': ' '}))
                     i += n
             self.root.children = new_nodes
+            next_omega = i
         else:
             fix, sd, corr, cholesky = self._block_flags()
             size = self.root.block.size.INT
@@ -240,8 +241,8 @@ class OmegaRecord(Record):
                                 new_nodes.append(AttrTree.create('ws', {'WS': ' '}))
                     i += n
             self.root.children = new_nodes
-
-        return i
+            next_omega = first_omega + size
+        return next_omega
 
     def random_variables(self, start_omega, previous_cov=None):
         """Get a RandomVariableSet for this omega record
