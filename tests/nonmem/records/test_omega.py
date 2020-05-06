@@ -63,7 +63,7 @@ def S(x):
 def test_parameters(parser, buf, results):
     recs = parser.parse(buf)
     rec = recs.records[0]
-    pset, _ = rec.parameters(1)
+    pset, _, _ = rec.parameters(1, 1)
     assert len(pset) == len(results)
     for res in results:
         name = res[0]
@@ -90,117 +90,137 @@ def test_errors(parser, buf):
     recs = parser.parse(buf)
     rec = recs.records[0]
     with pytest.raises(ModelSyntaxError):
-        pset, _ = rec.parameters(1)
+        pset, _, _ = rec.parameters(1, None)
 
 
 def test_parameters_offseted(parser):
     rec = parser.parse("$OMEGA 1").records[0]
-    pset, _ = rec.parameters(3)
+    pset, _, _ = rec.parameters(3, None)
     assert pset['OMEGA(3,3)'].init == 1
+
+    rec = parser.parse('$OMEGA   BLOCK   SAME').records[0]
+    pset, _, _ = rec.parameters(3, 2)
+    assert len(pset) == 0
 
 
 def test_update(parser):
     rec = parser.parse('$OMEGA 1').records[0]
-    pset, _ = rec.parameters(1)
+    pset, _, _ = rec.parameters(1, None)
     pset['OMEGA(1,1)'].init = 2
-    rec.update(pset, 1)
+    rec.update(pset, 1, None)
     assert str(rec) == '$OMEGA 2.0'
 
     rec = parser.parse('$OMEGA 1 SD').records[0]
-    pset, _ = rec.parameters(1)
+    pset, _, _ = rec.parameters(1, None)
     pset['OMEGA(1,1)'].init = 4
-    rec.update(pset, 1)
+    rec.update(pset, 1, None)
     assert str(rec) == '$OMEGA 2.0 SD'
 
     rec = parser.parse('$OMEGA (1)x3\n;FTOL').records[0]
-    pset, _ = rec.parameters(1)
+    pset, _, _ = rec.parameters(1, None)
     pset['OMEGA(1,1)'].init = 4
     pset['OMEGA(2,2)'].init = 4
     pset['OMEGA(3,3)'].init = 4
-    rec.update(pset, 1)
+    rec.update(pset, 1, None)
     assert str(rec) == '$OMEGA (4.0)x3\n;FTOL'
 
     rec = parser.parse('$OMEGA (1)x2 2').records[0]
-    pset, _ = rec.parameters(1)
+    pset, _, _ = rec.parameters(1, None)
     pset['OMEGA(1,1)'].init = 1
     pset['OMEGA(2,2)'].init = 2
     pset['OMEGA(3,3)'].init = 0.5
-    rec.update(pset, 1)
+    rec.update(pset, 1, None)
     assert str(rec) == '$OMEGA (1.0) (2.0) 0.5'
 
     rec = parser.parse("$OMEGA DIAG(2) (1 VAR) (SD 2)").records[0]
-    pset, _ = rec.parameters(1)
+    pset, _, _ = rec.parameters(1, None)
     pset['OMEGA(1,1)'].init = 1.5
     pset['OMEGA(2,2)'].init = 16
-    rec.update(pset, 1)
+    rec.update(pset, 1, None)
     assert str(rec) == '$OMEGA DIAG(2) (1.5 VAR) (SD 4.0)'
 
     rec = parser.parse("$OMEGA BLOCK(2) 1 2 4").records[0]
-    pset, _ = rec.parameters(1)
+    pset, _, _ = rec.parameters(1, None)
     pset['OMEGA(1,1)'].init = 7
     pset['OMEGA(2,1)'].init = 0.5
     pset['OMEGA(2,2)'].init = 8
-    rec.update(pset, 1)
+    rec.update(pset, 1, None)
     assert str(rec) == '$OMEGA BLOCK(2) 7.0 0.5 8.0'
 
     rec = parser.parse("$OMEGA BLOCK(2)\n SD 1 0.5 ;COM \n 1\n").records[0]
-    pset, _ = rec.parameters(1)
+    pset, _, _ = rec.parameters(1, None)
     pset['OMEGA(1,1)'].init = 4
     pset['OMEGA(2,1)'].init = 0.25
     pset['OMEGA(2,2)'].init = 9
-    rec.update(pset, 1)
+    rec.update(pset, 1, None)
     assert str(rec) == '$OMEGA BLOCK(2)\n SD 2.0 0.25 ;COM \n 3.0\n'
 
     rec = parser.parse("$OMEGA CORR BLOCK(2)  1 0.5 1\n").records[0]
-    pset, _ = rec.parameters(1)
+    pset, _, _ = rec.parameters(1, None)
     pset['OMEGA(1,1)'].init = 4
     pset['OMEGA(2,1)'].init = 1
     pset['OMEGA(2,2)'].init = 4
-    rec.update(pset, 1)
+    rec.update(pset, 1, None)
     assert str(rec) == '$OMEGA CORR BLOCK(2)  4.0 0.25 4.0\n'
 
     rec = parser.parse("$OMEGA CORR BLOCK(2)  1 0.5 SD 1\n").records[0]
-    pset, _ = rec.parameters(1)
+    pset, _, _ = rec.parameters(1, None)
     pset['OMEGA(1,1)'].init = 4
     pset['OMEGA(2,1)'].init = 1
     pset['OMEGA(2,2)'].init = 4
-    rec.update(pset, 1)
+    rec.update(pset, 1, None)
     assert str(rec) == '$OMEGA CORR BLOCK(2)  2.0 0.25 SD 2.0\n'
 
     rec = parser.parse("$OMEGA CORR BLOCK(2)  1 0.5 SD 1\n").records[0]
-    pset, _ = rec.parameters(1)
+    pset, _, _ = rec.parameters(1, None)
     pset['OMEGA(1,1)'].init = 1
     pset['OMEGA(2,1)'].init = 4
     pset['OMEGA(2,2)'].init = 1
     with pytest.raises(ValueError):
-        rec.update(pset, 1)
+        rec.update(pset, 1, None)
 
     rec = parser.parse("$OMEGA BLOCK(2) 1 0.1 1\n CHOLESKY").records[0]
-    pset, _ = rec.parameters(1)
+    pset, _, _ = rec.parameters(1, None)
     pset['OMEGA(1,1)'].init = 0.64
     pset['OMEGA(2,1)'].init = -0.24
     pset['OMEGA(2,2)'].init = 0.58
-    rec.update(pset, 1)
+    rec.update(pset, 1, None)
     assert str(rec) == '$OMEGA BLOCK(2) 0.8 -0.3 0.7\n CHOLESKY'
 
     rec = parser.parse("$OMEGA BLOCK(2) (1)x3\n").records[0]
-    pset, _ = rec.parameters(1)
+    pset, _, _ = rec.parameters(1, None)
     pset['OMEGA(1,1)'].init = 0.64
     pset['OMEGA(2,1)'].init = -0.24
     pset['OMEGA(2,2)'].init = 0.58
-    rec.update(pset, 1)
+    rec.update(pset, 1, None)
     assert str(rec) == '$OMEGA BLOCK(2) 0.64 -0.24 0.58\n'
 
     rec = parser.parse("$OMEGA BLOCK(3) 1 ;CL\n0.1 1; V\n0.1 0.1 1; KA").records[0]
-    pset, _ = rec.parameters(1)
+    pset, _, _ = rec.parameters(1, None)
     pset['OMEGA(1,1)'].init = 1
     pset['OMEGA(2,1)'].init = 0.2
     pset['OMEGA(2,2)'].init = 3
     pset['OMEGA(3,1)'].init = 0.4
     pset['OMEGA(3,2)'].init = 0.5
     pset['OMEGA(3,3)'].init = 6
-    rec.update(pset, 1)
+    rec.update(pset, 1, None)
     assert str(rec) == '$OMEGA BLOCK(3) 1.0 ;CL\n0.2 3.0; V\n0.4 0.5 6.0; KA'
+
+    rec = parser.parse("$OMEGA BLOCK(2) SAME").records[0]
+    pset, _, _ = rec.parameters(3, 2)
+    assert len(pset) == 0
+    next_eta, prev_size = rec.update(pset, 3, 2)
+    assert next_eta == 5
+    assert prev_size == 2
+    assert str(rec) == "$OMEGA BLOCK(2) SAME"
+
+    rec = parser.parse("$OMEGA BLOCK SAME").records[0]
+    pset, _, _ = rec.parameters(5, 4)
+    assert len(pset) == 0
+    next_eta, prev_size = rec.update(pset, 5, 4)
+    assert next_eta == 9
+    assert prev_size == 4
+    assert str(rec) == "$OMEGA BLOCK SAME"
 
 
 def test_random_variables(parser):
@@ -265,3 +285,10 @@ def test_random_variables(parser):
     assert nxt == 3
     assert len(rvs) == 0
     assert zero_fix == ['ETA(2)']
+
+    rec = parser.parse("$OMEGA BLOCK SAME").records[0]
+    A = sympy.Matrix([[1, 0.01], [0.01, 1]])
+    rvs, _, _, _ = rec.random_variables(3, A)
+    assert len(rvs) == 2
+    assert list(rvs)[0].name == 'ETA(3)'
+    assert list(rvs)[1].name == 'ETA(4)'

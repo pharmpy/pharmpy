@@ -13,14 +13,15 @@ from .record import Record
 
 
 class OmegaRecord(Record):
-    def parameters(self, start_omega):
+    def parameters(self, start_omega, previous_size):
         """Get a ParameterSet for this omega record
         """
         row = start_omega
         block = self.root.find('block')
+        bare_block = self.root.find('bare_block')
         same = bool(self.root.find('same'))
         parameters = ParameterSet()
-        if not block:
+        if not (block or bare_block):
             for node in self.root.all('diag_item'):
                 init = node.init.NUMERIC
                 fixed = bool(node.find('FIX'))
@@ -44,10 +45,14 @@ class OmegaRecord(Record):
                     param = Parameter(name, init, lower=lower, fix=fixed)
                     parameters.add(param)
                     row += 1
+            size = 1
             next_omega = row
         else:
             inits = []
-            size = self.root.block.size.INT
+            if bare_block:
+                size = previous_size
+            else:
+                size = self.root.block.size.INT
             fix, sd, corr, cholesky = self._block_flags()
             for node in self.root.all('omega'):
                 init = node.init.NUMERIC
@@ -81,7 +86,7 @@ class OmegaRecord(Record):
                         param = Parameter(name, init, lower=lower, fix=fix)
                         parameters.add(param)
             next_omega = start_omega + size
-        return parameters, next_omega
+        return parameters, next_omega, size
 
     def _block_flags(self):
         """Get a tuple of all interesting flags for block
@@ -144,12 +149,14 @@ class OmegaRecord(Record):
             rv_strs.append(name)
         return '(' + ', '.join(rv_strs) + ')'
 
-    def update(self, parameters, first_omega):
+    def update(self, parameters, first_omega, previous_size):
         """From a ParameterSet update the OMEGAs in this record
            returns the next omega number
         """
         block = self.root.find('block')
-        if not block:
+        bare_block = self.root.find('bare_block')
+        if not (block or bare_block):
+            size = 1
             i = first_omega
             new_nodes = []
             for node in self.root.children:
@@ -186,8 +193,11 @@ class OmegaRecord(Record):
             self.root.children = new_nodes
             next_omega = i
         else:
-            fix, sd, corr, cholesky = self._block_flags()
+            same = bool(self.root.find('same'))
+            if same:
+                return first_omega + previous_size, previous_size
             size = self.root.block.size.INT
+            fix, sd, corr, cholesky = self._block_flags()
             row = first_omega
             col = first_omega
             inits = []
@@ -242,7 +252,7 @@ class OmegaRecord(Record):
                     i += n
             self.root.children = new_nodes
             next_omega = first_omega + size
-        return next_omega
+        return next_omega, size
 
     def random_variables(self, start_omega, previous_cov=None):
         """Get a RandomVariableSet for this omega record
@@ -252,8 +262,9 @@ class OmegaRecord(Record):
         """
         next_cov = None        # The cov matrix if a block
         block = self.root.find('block')
+        bare_block = self.root.find('bare_block')
         zero_fix = []
-        if not block:
+        if not (block or bare_block):
             rvs = RandomVariables()
             i = start_omega
             numetas = len(self.root.all('diag_item'))
@@ -269,9 +280,13 @@ class OmegaRecord(Record):
                     zero_fix.append(name)
                 i += 1
         else:
-            numetas = self.root.block.size.INT
+            if bare_block:
+                numetas = previous_cov.rows
+            else:
+                numetas = self.root.block.size.INT
             same = bool(self.root.find('same'))
-            params, _ = self.parameters(start_omega)
+            params, _, _ = self.parameters(start_omega, previous_cov.rows if
+                                           hasattr(previous_cov, 'rows') else None)
             all_zero_fix = True
             for param in params:
                 if not (param.init == 0 and param.fix):

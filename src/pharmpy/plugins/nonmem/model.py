@@ -86,11 +86,13 @@ class Model(pharmpy.model.Model):
             theta_record.update(params, next_theta)
             next_theta += len(theta_record)
         next_omega = 1
+        previous_size = None
         for omega_record in self.control_stream.get_records('OMEGA'):
-            next_omega = omega_record.update(params, next_omega)
+            next_omega, previous_size = omega_record.update(params, next_omega, previous_size)
         next_sigma = 1
+        previous_size = None
         for sigma_record in self.control_stream.get_records('SIGMA'):
-            next_sigma = sigma_record.update(params, next_sigma)
+            next_sigma, previous_size = sigma_record.update(params, next_sigma, previous_size)
 
         self._parameters_updated = False
 
@@ -144,12 +146,14 @@ class Model(pharmpy.model.Model):
             params.update(thetas)
             next_theta += len(thetas)
         next_omega = 1
+        previous_size = None
         for omega_record in self.control_stream.get_records('OMEGA'):
-            omegas, next_omega = omega_record.parameters(next_omega)
+            omegas, next_omega, previous_size = omega_record.parameters(next_omega, previous_size)
             params.update(omegas)
         next_sigma = 1
+        previous_size = None
         for sigma_record in self.control_stream.get_records('SIGMA'):
-            sigmas, next_sigma = sigma_record.parameters(next_sigma)
+            sigmas, next_sigma, previous_size = sigma_record.parameters(next_sigma, previous_size)
             params.update(sigmas)
         self._parameters = params
         return params

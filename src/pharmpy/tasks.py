@@ -14,7 +14,7 @@ class Estimation:
 
 
 class FOCE:
-    pass 
+    pass
 
 
 class Uncertainty:
