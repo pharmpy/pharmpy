@@ -56,10 +56,6 @@ models, of which these exist thus far:
          - :mod:`~pharmpy.api_nonmem.input`
          - Model input (the data)
 
-       - - :mod:`~pharmpy.output`
-         - :mod:`~pharmpy.api_nonmem.output`
-         - Model output (estimates, etc.)
-
        - - :mod:`~pharmpy.parameters`
          - :mod:`~pharmpy.api_nonmem.parameters`
          - Parameter model abstraction

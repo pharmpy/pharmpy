@@ -181,7 +181,8 @@ class OmegaRecord(Record):
                         node.children = new_children
                         for j, init in enumerate(new_inits):
                             new_node = AttrTree.transform(node)
-                            new_node.init.tokens[0].value = str(init)
+                            if float(str(new_node.init)) != init:
+                                new_node.init.tokens[0].value = str(init)
                             new_nodes.append(new_node)
                             if j != len(new_inits) - 1:     # Not the last
                                 new_nodes.append(AttrTree.create('ws', {'WS': ' '}))
@@ -230,7 +231,8 @@ class OmegaRecord(Record):
                 else:
                     n = node.n.INT if node.find('n') else 1
                     if array[i:i+n].count(array[i]) == n:  # All equal?
-                        node.init.tokens[0].value = str(array[i])
+                        if float(str(node.init)) != str(array[i]):
+                            node.init.tokens[0].value = str(array[i])
                         new_nodes.append(node)
                     else:
                         # Need to split xn
@@ -241,7 +243,8 @@ class OmegaRecord(Record):
                         node.children = new_children
                         for j, init in enumerate(array[i:i+n]):
                             new_node = AttrTree.transform(node)
-                            new_node.init.tokens[0].value = str(init)
+                            if float(str(new_node.init)) != init:
+                                new_node.init.tokens[0].value = str(init)
                             new_nodes.append(new_node)
                             if j != n - 1:     # Not the last
                                 new_nodes.append(AttrTree.create('ws', {'WS': ' '}))

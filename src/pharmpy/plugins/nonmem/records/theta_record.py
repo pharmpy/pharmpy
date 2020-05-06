@@ -59,7 +59,11 @@ class ThetaRecord(Record):
         i = first_theta
         for theta in self.root.all('theta'):
             name = f'THETA({i})'
-            theta.init.tokens[0].value = str(parameters[name].init)
+            param = parameters[name]
+            new_init = param.init
+            if float(str(theta.init)) != new_init:
+                theta.init.tokens[0].value = str(new_init)
+            fix = bool(theta.find('FIX'))
             n = self._multiple(theta)
             i += n
 

@@ -130,7 +130,7 @@ def test_update(parser):
     pset['OMEGA(2,2)'].init = 2
     pset['OMEGA(3,3)'].init = 0.5
     rec.update(pset, 1, None)
-    assert str(rec) == '$OMEGA (1.0) (2.0) 0.5'
+    assert str(rec) == '$OMEGA (1) (2.0) 0.5'
 
     rec = parser.parse("$OMEGA DIAG(2) (1 VAR) (SD 2)").records[0]
     pset, _, _ = rec.parameters(1, None)
