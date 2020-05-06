@@ -49,6 +49,17 @@ class ParameterSet(OrderedSet):
         for name, value in init_dict.items():
             self[name].init = value
 
+    @property
+    def fix(self):
+        """Fixedness of parameters as dict
+        """
+        return {p.name: p.fix for p in self}
+
+    @fix.setter
+    def fix(self, fix_dict):
+        for name, value in fix_dict.items():
+            self[name].fix = value
+
     def remove_fixed(self):
         """Remove all fixed parameters
         """
