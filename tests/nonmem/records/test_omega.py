@@ -12,10 +12,10 @@ def S(x):
 @pytest.mark.parametrize('buf,results', [
     ('$OMEGA 1', [('OMEGA(1,1)', 1, 0, sympy.oo, False)]),
     ('$OMEGA   0.123 \n\n', [('OMEGA(1,1)', 0.123, 0, sympy.oo, False)]),
-    ('$OMEGA   (0 FIX) ; CL', [('OMEGA(1,1)', 0, 0, 0, True)]),
+    ('$OMEGA   (0 FIX) ; CL', [('OMEGA(1,1)', 0, 0, sympy.oo, True)]),
     ('$OMEGA DIAG(2) 1 2 FIX', [
         ('OMEGA(1,1)', 1, 0, sympy.oo, False),
-        ('OMEGA(2,2)', 2, 2, 2, True),
+        ('OMEGA(2,2)', 2, 0, sympy.oo, True),
         ]),
     ('$OMEGA 1 2 3', [
         ('OMEGA(1,1)', 1, 0, sympy.oo, False),

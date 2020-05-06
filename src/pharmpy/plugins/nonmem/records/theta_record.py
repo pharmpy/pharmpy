@@ -16,24 +16,20 @@ class ThetaRecord(Record):
         for theta in self.root.all('theta'):
             init = theta.init.tokens[0].eval
             fix = bool(theta.find('FIX'))
-            if fix:
-                lower = None
-                upper = None
-            else:
-                if theta.find('low'):
-                    if theta.low.find('NEG_INF'):
-                        lower = min_lower_bound
-                    else:
-                        lower = theta.low.tokens[0].eval
-                else:
+            if theta.find('low'):
+                if theta.low.find('NEG_INF'):
                     lower = min_lower_bound
-                if theta.find('up'):
-                    if theta.up.find('POS_INF'):
-                        upper = max_upper_bound
-                    else:
-                        upper = theta.up.tokens[0].eval
                 else:
+                    lower = theta.low.tokens[0].eval
+            else:
+                lower = min_lower_bound
+            if theta.find('up'):
+                if theta.up.find('POS_INF'):
                     upper = max_upper_bound
+                else:
+                    upper = theta.up.tokens[0].eval
+            else:
+                upper = max_upper_bound
             multiple = theta.find('n')
             if multiple:
                 n = multiple.INT

@@ -80,47 +80,32 @@ class ParameterSet(OrderedSet):
 
 class Parameter:
     """A single parameter
-       Constraints are currently supported as lower and upper bounds and fix.
-       Fix is regarded as constraining the parameter to one single value
 
         .. code-block::
 
             param = Parameter("TVCL", 0.005, lower=0)
+            param.fix = True
 
        .. attribute:: name
 
            Name of the parameter
 
+       .. attribute:: fix
+
+           A boolean to indicate whether the parameter is fixed or not. Note that fixing a parameter
+           will keep its bounds even if a fixed parameter is actually constriand to one single
+           value. This is so that unfixing will take back the previous bounds.
     """
     def __init__(self, name, init, lower=None, upper=None, fix=False):
         self._init = init
         self.name = name
+        self.fix = bool(fix)
         self._lower = -sympy.oo
         self._upper = sympy.oo
-        if fix:
-            if lower is not None or upper is not None:
-                raise ValueError('Cannot fix a parameter that has lower and upper bounds')
-            self._lower = init
-            self._upper = init
         if lower is not None:
             self.lower = lower
         if upper is not None:
             self.upper = upper
-
-    @property
-    def fix(self):
-        """Is the parameter fixed?
-        """
-        return self.lower == self.upper
-
-    @fix.setter
-    def fix(self, value):
-        if value:
-            self.lower = self.init
-            self.upper = self.init
-        else:
-            if self.fix:
-                self.unconstrain()
 
     @property
     def lower(self):
@@ -159,15 +144,26 @@ class Parameter:
                              f'{new_init} ∉ {sympy.pretty(sympy.Interval(self.lower, self.upper))}'
                              f'\nUnconstrain the parameter before setting an initial estimate.')
         self._init = new_init
-        if self.fix:
-            self.lower = new_init
-            self.upper = new_init
 
     def unconstrain(self):
         """Remove all constraints of a parameter
         """
         self._lower = -sympy.oo
         self._upper = sympy.oo
+        self.fix = False
+
+    @property
+    def parameter_space(self):
+        """The parameter space set
+
+           A fixed parameter will be constrained to one single value
+           and non-fixed parameters will be constrained to an interval
+           possibly open in one or both ends.
+        """
+        if self.fix:
+            return sympy.FiniteSet(self.init)
+        else:
+            return sympy.Interval(self.lower, self.upper)
 
     def __hash__(self):
         return hash(self.name)
@@ -176,4 +172,4 @@ class Parameter:
         """Two parameters are equal if they have the same name, init and constraints
         """
         return self.init == other.init and self.lower == other.lower and \
-            self.upper == other.upper and self.name == other.name
+            self.upper == other.upper and self.name == other.name and self.fix == other.fix

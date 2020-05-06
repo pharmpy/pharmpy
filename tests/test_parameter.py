@@ -29,7 +29,6 @@ def test_initialization(name, init, lower, upper, fix):
 @pytest.mark.parametrize('name,init,lower,upper,fix', [
     ('OMEGA(2,1)', 0.1, 2, None, None),
     ('X', 1, 0, -1, None),
-    ('X', 1, 0, 1, True),
     ])
 def test_illegal_initialization(name, init, lower, upper, fix):
     with pytest.raises(ValueError):
@@ -46,6 +45,20 @@ def test_unconstrain():
     fixed_param.unconstrain()
     assert fixed_param.lower == -sympy.oo
     assert fixed_param.upper == sympy.oo
+
+
+def test_fix():
+    param = Parameter('X', 2, lower=0, upper=23)
+    assert param == Parameter('X', 2, lower=0, upper=23, fix=False)
+    param.fix = True
+    assert param == Parameter('X', 2, lower=0, upper=23, fix=True)
+
+
+def test_init():
+    param = Parameter('X', 2, lower=0, upper=23)
+    with pytest.raises(ValueError):
+        param.init = -1
+    param.init = 22
 
 
 def test_pset_index():
@@ -77,7 +90,7 @@ def test_pset_remove_fixed():
     assert pset['Y'] == Parameter('Y', 9)
 
 
-def test_inits():
+def test_pset_inits():
     p1 = Parameter('Y', 9)
     p2 = Parameter('X', 3)
     p3 = Parameter('Z', 1)
@@ -96,3 +109,31 @@ def test_inits():
     assert pset['X'] == Parameter('X', 0)
     assert pset['Y'] == Parameter('Y', 2)
     assert pset['Z'] == Parameter('Z', 5)
+
+
+def test_pset_fix():
+    p1 = Parameter('Y', 9, fix=False)
+    p2 = Parameter('X', 3, fix=True)
+    p3 = Parameter('Z', 1, fix=False)
+    pset = ParameterSet([p1, p2, p3])
+    assert pset.fix == {'Y': False, 'X': True, 'Z': False}
+    fixedness = {'Y': True, 'X': True, 'Z': True}
+    pset.fix = fixedness
+    assert pset.fix == {'Y': True, 'X': True, 'Z': True}
+
+
+def test_pset_repr():
+    p1 = Parameter('Y', 9, fix=False)
+    pset = ParameterSet([p1])
+    assert type(repr(pset)) == str
+    assert type(pset._repr_html_()) == str
+    pset = ParameterSet()
+    assert type(repr(pset)) == str
+    assert type(pset._repr_html_()) == str
+
+
+def test_parameter_space():
+    p1 = Parameter('Y', 9, fix=True)
+    assert p1.parameter_space == sympy.FiniteSet(9)
+    p2 = Parameter('X', 10, lower=0, upper=15)
+    assert p2.parameter_space == sympy.Interval(0, 15)

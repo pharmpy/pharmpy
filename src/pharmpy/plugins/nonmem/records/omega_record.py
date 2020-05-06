@@ -36,13 +36,9 @@ class OmegaRecord(Record):
                                            f' must be set to FIX')
                 if sd:
                     init = init ** 2
-                if fixed:
-                    lower = None
-                else:
-                    lower = 0
                 for _ in range(n):
                     name = f'{self.name}({row},{row})'
-                    param = Parameter(name, init, lower=lower, fix=fixed)
+                    param = Parameter(name, init, lower=0, fix=fixed)
                     parameters.add(param)
                     row += 1
             size = 1
@@ -82,7 +78,7 @@ class OmegaRecord(Record):
                     for j in range(0, i + 1):
                         name = f'{self.name}({i + start_omega},{j + start_omega})'
                         init = A[i, j]
-                        lower = None if i != j or fix else 0
+                        lower = None if i != j else 0
                         param = Parameter(name, init, lower=lower, fix=fix)
                         parameters.add(param)
             next_omega = start_omega + size

@@ -8,17 +8,17 @@ import pytest
     ('$THETA  (0,0.00469) ; CL', [('THETA(1)', 0.00469, 0, 1000000, False)]),
     ('$THETA  (0,3) 2 FIXED (0,.6,1) 10 (-INF,-2.7,0)  (37 FIXED)\n 19 (0,1,2)x3', [
         ('THETA(1)', 3, 0, 1000000, False),
-        ('THETA(2)', 2, 2, 2, True),
+        ('THETA(2)', 2, -1000000, 1000000, True),
         ('THETA(3)', .6, 0, 1, False),
         ('THETA(4)', 10, -1000000, 1000000, False),
         ('THETA(5)', -2.7, -1000000, 0, False),
-        ('THETA(6)', 37, 37, 37, True),
+        ('THETA(6)', 37, -1000000, 1000000, True),
         ('THETA(7)', 19, -1000000, 1000000, False),
         ('THETA(8)', 1, 0, 2, False),
         ('THETA(9)', 1, 0, 2, False),
         ('THETA(10)', 1, 0, 2, False),
         ]),
-    ('$THETA (0,0.00469555) FIX ; CL', [('THETA(1)', 0.00469555, 0.00469555, 0.00469555, True)]),
+    ('$THETA (0,0.00469555) FIX ; CL', [('THETA(1)', 0.00469555, 0, 1000000, True)]),
 ])
 def test_parameters(parser, buf, results):
     recs = parser.parse(buf)
