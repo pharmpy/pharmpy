@@ -72,6 +72,9 @@ class Model:
         """Create a deepcopy of the model object"""
         return copy.deepcopy(self)
 
+    def update_individual_estimates(self, source):
+        self.initial_individual_estimates = self.modelfit_results.individual_estimates
+
 #    Represents a model object, that may or may not exist on disk too.
 
 #    Attributes:

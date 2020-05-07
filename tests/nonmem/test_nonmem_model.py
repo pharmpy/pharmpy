@@ -1,4 +1,5 @@
 import sympy
+from pyfakefs.fake_filesystem_unittest import Patcher
 from sympy import Symbol
 
 from pharmpy import Model
@@ -95,3 +96,23 @@ def test_initial_individual_estimates(datadir):
     assert len(inits) == 59
     assert len(inits.columns) == 2
     assert inits['ETA(1)'][2] == -0.166321
+
+
+def test_update_individual_estimates(datadir):
+    with Patcher(additional_skip_names=['pkgutil']) as patcher:
+        fs = patcher.fs
+        fs.add_real_file(datadir / 'pheno_real.mod', target_path='run1.mod')
+        fs.add_real_file(datadir / 'pheno_real.phi', target_path='run1.phi')
+        fs.add_real_file(datadir / 'pheno_real.lst', target_path='run1.lst')
+        fs.add_real_file(datadir / 'pheno_real.ext', target_path='run1.ext')
+        model = Model('run1.mod')
+        model.name = 'run2'
+        model.update_individual_estimates(model)
+        model.update_source()
+        with open('run2_input.phi', 'r') as fp, open('run1.phi') as op:
+            assert fp.read() == op.read()
+        assert str(model).endswith("""$ESTIMATION METHOD=1 INTERACTION PRINT=1 MCETA=1
+$COVARIANCE UNCONDITIONAL
+$TABLE      ID TIME AMT WGT APGR IPRED PRED TAD CWRES NPDE NOAPPEND
+            NOPRINT ONEHEADER FILE=pheno_real.tab
+$ETAS FILE=run2_input.phi""")

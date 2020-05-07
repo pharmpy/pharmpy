@@ -1,5 +1,6 @@
 # The NONMEM Model class
 import re
+import shutil
 from pathlib import Path
 
 import pharmpy.model
@@ -24,6 +25,7 @@ class Model(pharmpy.model.Model):
         self.input = pharmpy.plugins.nonmem.input.ModelInput(self)
         self._parameters_updated = False
         self._initial_individual_estimates_updated = False
+        self._updated_etas_file = None
 
     @property
     def modelfit_results(self):
@@ -102,29 +104,45 @@ class Model(pharmpy.model.Model):
             Could have 0 FIX in model. Need to readd these
         """
         if path is None:        # What to do here?
-            return
-
-        if not self._initial_individual_estimates_updated:
-            return
-
-        etas = self.initial_individual_estimates
-        zero_fix = self._zero_fix_rvs(eta=True)
-        if zero_fix:
-            for eta in zero_fix:
-                etas[eta] = 0
-        etas = self._sort_eta_columns(etas)
-        phi = PhiTable(df=etas)
-        table_file = NONMEMTableFile(tables=[phi])
-        phi_path = path.parent / f'{self.name}_input.phi'
-        table_file.write(phi_path)
-        # FIXME: This is a common operation
-        eta_records = self.control_stream.get_records('ETAS')
-        if eta_records:
-            record = eta_records[0]
+            phi_path = Path('.')
         else:
-            record = self.control_stream.append_record('$ETAS ')
-        record.path = phi_path
-        self._initial_individual_estimates_updated = False
+            phi_path = path.parent
+        phi_path /= f'{self.name}_input.phi'
+
+        if self._initial_individual_estimates_updated:
+            etas = self.initial_individual_estimates
+            zero_fix = self._zero_fix_rvs(eta=True)
+            if zero_fix:
+                for eta in zero_fix:
+                    etas[eta] = 0
+            etas = self._sort_eta_columns(etas)
+            phi = PhiTable(df=etas)
+            table_file = NONMEMTableFile(tables=[phi])
+            table_file.write(phi_path)
+            # FIXME: This is a common operation
+            eta_records = self.control_stream.get_records('ETAS')
+            if eta_records:
+                record = eta_records[0]
+            else:
+                record = self.control_stream.append_record('$ETAS ')
+            record.path = phi_path
+        elif self._updated_etas_file:
+            eta_records = self.control_stream.get_records('ETAS')
+            if eta_records:
+                record = eta_records[0]
+            else:
+                record = self.control_stream.append_record('$ETAS')
+            shutil.copy(self._updated_etas_file, phi_path)
+            record.path = phi_path
+
+        if self._initial_individual_estimates_updated or self._updated_etas_file:
+            first_est_record = self.control_stream.get_records('ESTIMATION')[0]
+            try:
+                first_est_record.option_pairs['MCETA']
+            except KeyError:
+                first_est_record.set_option('MCETA', 1)
+            self._updated_etas_file = None
+            self._initial_individual_estimates_updated = False
 
     def validate(self):
         """Validates NONMEM model (records) syntactically."""
@@ -236,6 +254,14 @@ class Model(pharmpy.model.Model):
             estimates = self._sort_eta_columns(estimates)
         self._initial_individual_estimates = estimates
         self._initial_individual_estimates_updated = True
+        self._updated_etas_file = None
+
+    def update_individual_estimates(self, source):
+        """Update initial individual estimates from another model
+        """
+        self.initial_individual_estimates = source.modelfit_results.individual_estimates
+        self._initial_individual_estimates_updated = False
+        self._updated_etas_file = self.source.path.with_suffix('.phi')
 
     def _sort_eta_columns(self, df):
         colnames = df.columns
