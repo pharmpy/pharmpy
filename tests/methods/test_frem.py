@@ -17,8 +17,9 @@ def test_parcov_inits(testdata):
 
 
 def test_create_model3b(testdata):
-    model = Model(testdata / 'nonmem' / 'frem' / 'pheno' / 'model_3.mod')
-    model3b = create_model3b(model, 2)
+    model3 = Model(testdata / 'nonmem' / 'frem' / 'pheno' / 'model_3.mod')
+    model1b = Model(testdata / 'nonmem' / 'pheno_real.mod')
+    model3b = create_model3b(model1b, model3, 2)
     pset = model3b.parameters
     assert pset['OMEGA(3,1)'].init == approx(0.02560327)
     assert pset['THETA(1)'].init == 0.00469555

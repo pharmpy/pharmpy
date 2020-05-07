@@ -36,15 +36,21 @@ def calculate_parcov_inits(model, ncovs):
     return param_inits
 
 
-def create_model3b(model3, ncovs):
+def create_model3b(model1b, model3, ncovs):
     """Create model 3b from model 3
 
-       currently only updates the parcov omega block
+       * Update parcov omega block
+       * Set FIX pattern back from model1b
+       * Use initial etas from model3
     """
-    model3b = model3.copy()
-    parcov_inits = calculate_parcov_inits(model3, ncovs)
     parameters = model3.parameters
+
+    parcov_inits = calculate_parcov_inits(model3, ncovs)
     parameters.inits = parcov_inits
+    parameters.fix = model1b.parameters.fix
+
+    model3b = model3.copy()
     model3b.parameters = parameters
     model3b.name = 'model_3b'
+    model3b.update_individual_estimates(model3)
     return model3b
