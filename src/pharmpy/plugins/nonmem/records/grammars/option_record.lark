@@ -4,13 +4,12 @@ option: KEY [WS] "=" [WS] VALUE
       | VALUE
 
 KEY: /\w+/
-VALUE: /[^\s=]+/
+VALUE: /[^\s=;]+/
 
 // common rules
 ws      : WS_ALL
-comment : ";" [WS] [TEXT]
+comment : /;[^\n]*/
 
 // common terminals
-TEXT: /\S.*(?<!\s)/
-WS: (" " | /\t/)+
 WS_ALL: /\s+/
+WS: (" " | /\t/)+

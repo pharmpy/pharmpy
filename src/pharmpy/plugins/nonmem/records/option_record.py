@@ -23,7 +23,6 @@ class OptionRecord(Record):
                 pairs[node.KEY] = node.VALUE
             else:
                 pairs[node.VALUE] = None
-
         return pairs
 
     def set_option(self, key, new_value):
@@ -33,23 +32,42 @@ class OptionRecord(Record):
             appends option at the end if it does not exist
             does not handle abbreviations yet
         """
+        # If already exists update value
+        last_option = None
         for node in self.root.all('option'):
-            if node.KEY == key:
+            old_key = node.find('KEY')
+            if str(old_key) == key:
                 node.VALUE = new_value
                 return
+            last_option = node
 
-        self.append_option(key, value=new_value)
+        ws_node = AttrTree.create('ws', [{'WS_ALL': ' '}])
+        option_node = self._create_option(key, new_value)
+        # If no other options add first else add just after last option
+        if last_option is None:
+            self.root.children = [ws_node, option_node] + self.root.children
+        else:
+            new_children = []
+            for node in self.root.children:
+                new_children.append(node)
+                if node is last_option:
+                    new_children += [ws_node, option_node]
+            self.root.children = new_children
+
+    def _create_option(self, key, value=None):
+        if value is None:
+            node = AttrTree.create('option', [{'VALUE': key}])
+        else:
+            node = AttrTree.create('option', [{'KEY': key}, {'EQUAL': '='}, {'VALUE': value}])
+        return node
 
     def append_option(self, key, value=None):
         """ Append option as last option
 
             Method applicable to option records with no special grammar
         """
-        if value is None:
-            node = AttrTree.create('option', [{'VALUE': key}])
-            self.append_option_node(node)
-        else:
-            raise NotImplementedError("Please implement this!")
+        node = self._create_option(key, value)
+        self.append_option_node(node)
 
     def append_option_node(self, node):
         """ Add a new option as last option

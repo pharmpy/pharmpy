@@ -16,5 +16,12 @@ def test_create_record(parser):
 def test_set_option(parser):
     rec = parser.parse('$ETAS FILE=run1.phi').records[0]
     rec.set_option("FILE", "new.phi")
-    rec.root.treeprint()
     assert rec.option_pairs == OrderedDict([('FILE', 'new.phi')])
+    assert str(rec) == '$ETAS FILE=new.phi'
+
+    rec = parser.parse('$EST METHOD=1 INTER ; my est\n').records[0]
+    rec.root.treeprint()
+    rec.set_option("METHOD", "0")
+    assert str(rec) == '$EST METHOD=0 INTER ; my est\n'
+    rec.set_option("CTYPE", "4")
+    assert str(rec) == '$EST METHOD=0 INTER CTYPE=4 ; my est\n'
