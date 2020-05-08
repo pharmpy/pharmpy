@@ -109,6 +109,150 @@ np = LazyLoader('numpy', globals(), 'numpy')
 iterators = LazyLoader('iterators', globals(), 'pharmpy.data.iterators')
 plugin_utils = LazyLoader('plugin_utils', globals(), 'pharmpy.plugins.utils')
 
+formatter = argparse.ArgumentDefaultsHelpFormatter
+
+
+def error(exception):
+    """Raise the exception with no traceback printed
+
+    Used for non-recoverables in CLI. Exceptions giving traceback are bugs!
+    """
+    def exc_only_hook(exception_type, exception, traceback):
+        print(f'{exception_type.__name__}: {exception}')
+
+    sys.excepthook = exc_only_hook
+    raise exception
+
+
+def results_bootstrap(args):
+    """Subcommand to generate bootstrap results"""
+    if len(args.models) < 3:
+        error(ValueError('Need at least the original model and 2'
+                         'other models'))
+    res = pharmpy.results.BootstrapResults(original_model=args.models[0],
+                                           bootstrap_models=args.models[1:])
+    print(res)
+
+
+def results_frem(args):
+    """Generate frem results"""
+    from pharmpy.methods.frem.results import psn_frem_results
+    if not args.psn_dir.is_dir():
+        error(FileNotFoundError(str(args.psn_dir)))
+    res = psn_frem_results(args.psn_dir)
+    res.to_json(path=args.psn_dir / 'results.json')
+
+
+def results_ofv(args):
+    """Subcommand to extract final ofv from multiple results"""
+    ofvs = []
+    for model in args.models:
+        try:
+            ofv = str(model.modelfit_results.ofv)
+        except AttributeError:
+            ofv = 'NA'
+        ofvs.append(ofv)
+    print(' '.join(ofvs))
+
+
+def results_print(args):
+    """Subcommand to print any results"""
+    if args.dir.is_dir():
+        path = args.dir / 'results.json'
+    elif args.dir.is_file():
+        path = args.dir
+    else:
+        error(FileNotFoundError(str(args.dir)))
+    from pharmpy.results import read_results
+    res = read_results(path)
+    print(res)
+
+
+def results_summary(args):
+    """Subcommand to output summary of modelfit"""
+    for model in args.models:
+        print(model.name)
+        model.modelfit_results.reparameterize([
+            pharmpy.random_variables.NormalParametrizationSd,
+            pharmpy.random_variables.MultivariateNormalParametrizationSdCorr
+        ])
+        print(model.modelfit_results.parameter_summary())
+        print()
+
+
+def check_input_path(path):
+    """Resolves path to input file and checks existence.
+
+    Raises if not found or is dir, without tracebacks (see :func:`error_exit`).
+    """
+    try:
+        path = pathlib.Path(path)
+        path = path.resolve()
+    except FileNotFoundError:
+        pass
+
+    if not path.exists():
+        exc = FileNotFoundError('No such input file: %r' % str(path))
+        error(exc)
+    elif path.is_dir():
+        exc = IsADirectoryError('Is a directory (not an input file): %r' % str(path))
+        error(exc)
+    else:
+        return path
+
+
+def input_model(path):
+    """Returns :class:`~pharmpy.model.Model` from *path*.
+
+    Raises if not found or is dir, without tracebacks (see :func:`error_exit`).
+    """
+    path = check_input_path(path)
+    return pharmpy.Model(path)
+
+
+args_input = argparse.ArgumentParser(add_help=False)
+group_input = args_input.add_argument_group(title='inputs')
+group_input.add_argument('models', metavar='FILE', type=input_model, nargs='+',
+                         help='input model files')
+
+parser_definition = [
+    {'results': {'subs': [
+        {'bootstrap': {'help': 'Generate bootstrap results', 'func': results_bootstrap,
+                       'parents': [args_input]}},
+        {'frem': {'help': 'Generate FREM results', 'func': results_frem, 'args': [
+            {'name': 'psn_dir', 'metavar': 'PsN directory', 'type': pathlib.Path,
+             'help': 'Path to PsN frem run directory'},
+            {'name': '--method', 'choices': ['cov_sampling', 'bipp'], 'default': 'cov_sampling',
+             'help': 'Method to use for uncertainty of covariate effects'}]}},
+        {'ofv': {'help': 'Extract OFVs from model runs', 'parents': [args_input],
+                 'func': results_ofv}},
+        {'print': {'help': 'Print results', 'func': results_print, 'args': [
+            {'name': 'dir', 'metavar': 'file or directory', 'type': pathlib.Path,
+             'help': 'Path to directory containing results.json '
+                     'or directly to json results file'}]}},
+        {'summary': {'help': 'Modelfit summary', 'parents': [args_input],
+                     'func': results_summary}}],
+        'help': 'Result extraction and generation',
+        'title': 'Pharmpy result generation commands', 'metavar': 'ACTION'}}]
+
+
+def generate_parsers(parsers):
+    for command in parser_definition:
+        (cmd_name, cmd_dict), = command.items()
+        cmd_parser = parsers.add_parser(cmd_name, allow_abbrev=True, help=cmd_dict['help'],
+                                        formatter_class=formatter)
+        subs = cmd_parser.add_subparsers(title=cmd_dict['title'], metavar=cmd_dict['metavar'])
+        for sub_command in cmd_dict['subs']:
+            (sub_name, sub_dict), = sub_command.items()
+            args = sub_dict.pop('args', [])
+            func = sub_dict.pop('func')
+
+            sub_parser = subs.add_parser(sub_name, **sub_dict, formatter_class=formatter)
+            for arg in args:
+                name = arg.pop('name')
+                sub_parser.add_argument(name, **arg)
+            sub_parser.set_defaults(func=func)
+
 
 class CLI:
     """Main CLI interface, based on subcommands (like git).
@@ -146,7 +290,7 @@ class CLI:
                     # version/install information
                     pharmpy info
             """).strip(),
-            formatter_class=argparse.RawTextHelpFormatter,
+            formatter_class=formatter,
             allow_abbrev=True,
         )
         self._init_common_args(parser)
@@ -156,6 +300,7 @@ class CLI:
         subparsers = parser.add_subparsers(title='Pharmpy commands', metavar='COMMAND')
         self._init_commands_tools(subparsers)
         self._init_commands_misc(subparsers)
+        generate_parsers(subparsers)
 
         # parse
         if args and sys.argv:
@@ -324,38 +469,6 @@ class CLI:
         cmd_private_frem.add_argument('ncovs', type=int)
         cmd_private_frem.set_defaults(func=self.private_frem)
 
-        # -- results ---------------------------------------------------------------------------
-        cmd_results = parsers.add_parser('results', help='Result extraction and generation',
-                                         allow_abbrev=True)
-        cmd_results_subs = cmd_results.add_subparsers(title='Pharmpy result generation commands',
-                                                      metavar='ACTION')
-
-        cmd_results_bootstrap = cmd_results_subs.add_parser('bootstrap',
-                                                            help='Generate bootstrap results',
-                                                            parents=[self._args_input])
-        cmd_results_bootstrap.set_defaults(func=self.results_bootstrap)
-
-        cmd_results_frem = cmd_results_subs.add_parser('frem',
-                                                       help='Generate FREM results')
-        cmd_results_frem.add_argument('psn_dir', metavar='PsN directory', type=pathlib.Path,
-                                      help='Path to PsN frem run directory')
-        cmd_results_frem.set_defaults(func=self.results_frem)
-
-        cmd_results_print = cmd_results_subs.add_parser('print',
-                                                        help='Print results')
-        cmd_results_print.add_argument('dir', metavar='file or directory', type=pathlib.Path,
-                                       help='Path to directory containing results.json or'
-                                            'directly to json results file')
-        cmd_results_print.set_defaults(func=self.results_print)
-
-        cmd_results_ofv = cmd_results_subs.add_parser('ofv', help='Extract OFVs from model runs',
-                                                      parents=[self._args_input])
-        cmd_results_ofv.set_defaults(func=self.results_ofv)
-
-        cmd_results_summary = cmd_results_subs.add_parser('summary', help='Modelfit summary',
-                                                          parents=[self._args_input])
-        cmd_results_summary.set_defaults(func=self.results_summary)
-
         # -- data ------------------------------------------------------------------------------
         cmd_data = parsers.add_parser('data', help='Data manipulations', allow_abbrev=True)
 
@@ -474,57 +587,6 @@ class CLI:
         """Update parcov in model3b"""
         from pharmpy.methods.frem.method import update_model3b_for_psn
         update_model3b_for_psn(args.rundir, args.ncovs)
-
-    def results_bootstrap(self, args):
-        """Subcommand to generate bootstrap results"""
-        if len(args.models) < 3:
-            self.error_exit(exception=ValueError('Need at least the original model and 2'
-                                                 'other models'))
-        res = pharmpy.results.BootstrapResults(original_model=args.models[0],
-                                               bootstrap_models=args.models[1:])
-        print(res)
-
-    def results_frem(self, args):
-        """Subcommand to generate frem results"""
-        from pharmpy.methods.frem.results import psn_frem_results
-        if not args.psn_dir.is_dir():
-            self.error_exit(exception=FileNotFoundError(str(args.psn_dir)))
-        res = psn_frem_results(args.psn_dir)
-        res.to_json(path=args.psn_dir / 'results.json')
-
-    def results_print(self, args):
-        """Subcommand to print any results"""
-        if args.dir.is_dir():
-            path = args.dir / 'results.json'
-        elif args.dir.is_file():
-            path = args.dir
-        else:
-            self.error_exit(exception=FileNotFoundError(str(args.dir)))
-        from pharmpy.results import read_results
-        res = read_results(path)
-        print(res)
-
-    def results_summary(self, args):
-        """Subcommand to output summary of modelfit"""
-        for model in args.models:
-            print(model.name)
-            model.modelfit_results.reparameterize([
-                pharmpy.random_variables.NormalParametrizationSd,
-                pharmpy.random_variables.MultivariateNormalParametrizationSdCorr
-            ])
-            print(model.modelfit_results.parameter_summary())
-            print()
-
-    def results_ofv(self, args):
-        """Subcommand to extract final ofv from multiple results"""
-        ofvs = []
-        for model in args.models:
-            try:
-                ofv = str(model.modelfit_results.ofv)
-            except AttributeError:
-                ofv = 'NA'
-            ofvs.append(ofv)
-        print(' '.join(ofvs))
 
     def data_write(self, args):
         """Subcommand to write a dataset."""
