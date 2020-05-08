@@ -22,12 +22,12 @@ class FREMResults(Results):
         self.categorical = categorical
         self.rescale = rescale
 
-    def calculate_results(self, method="cov_sampling", **kwargs):
+    def calculate_results(self, method=None, **kwargs):
         """Calculate FREM results
 
            :param method: Either 'cov_sampling' or 'bipp'
         """
-        if method == 'cov_sampling':
+        if method is None or method == 'cov_sampling':
             self.calculate_results_using_cov_sampling(**kwargs)
         elif method == 'bipp':
             self.calculate_results_using_bipp(**kwargs)
@@ -339,7 +339,7 @@ class FREMResults(Results):
                f'Unexplained variability\n{uv}\n'
 
 
-def psn_frem_results(path, force_posdef_covmatrix=False):
+def psn_frem_results(path, force_posdef_covmatrix=False, method=None):
     """ Create frem results from a PsN FREM run
 
         :param path: Path to PsN frem run directory
@@ -372,5 +372,6 @@ def psn_frem_results(path, force_posdef_covmatrix=False):
     categorical = list(nunique.index[nunique == 2])
 
     res = FREMResults(model_4, continuous=continuous, categorical=categorical)
-    res.calculate_results(force_posdef_covmatrix=force_posdef_covmatrix, cov_model=cov_model)
+    res.calculate_results(method=method, force_posdef_covmatrix=force_posdef_covmatrix,
+                          cov_model=cov_model)
     return res
