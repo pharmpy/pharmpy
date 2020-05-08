@@ -6,7 +6,7 @@ from pytest import approx
 
 from pharmpy import Model
 from pharmpy.methods.frem.models import calculate_parcov_inits, create_model3b
-from pharmpy.methods.frem.results import FREMResults
+from pharmpy.methods.frem.results import calculate_results, calculate_results_using_bipp
 
 
 def test_parcov_inits(testdata):
@@ -28,15 +28,14 @@ def test_create_model3b(testdata):
 
 def test_bipp_covariance(testdata):
     model = Model(testdata / 'nonmem' / 'frem' / 'pheno' / 'model_4.mod')
-    res = FREMResults(model, continuous=['APGR', 'WGT'])
-    res.calculate_results_using_bipp()
+    res = calculate_results_using_bipp(model, continuous=['APGR', 'WGT'], categorical=[])
+    assert res
 
 
 def test_frem_results_pheno(testdata):
     model = Model(testdata / 'nonmem' / 'frem' / 'pheno' / 'model_4.mod')
     np.random.seed(39)
-    res = FREMResults(model, continuous=['APGR', 'WGT'])
-    res.calculate_results(samples=10)
+    res = calculate_results(model, continuous=['APGR', 'WGT'], categorical=[], samples=10)
 
     correct = """parameter,covariate,condition,5th,mean,95th
 ETA(1),APGR,5th,0.992878,1.170232,1.374516
@@ -202,8 +201,7 @@ ETA(2),all,0.14572521381314374,0.10000243896199691,0.17321795298354078
 def test_frem_results_pheno_categorical(testdata):
     model = Model(testdata / 'nonmem' / 'frem' / 'pheno_cat' / 'model_4.mod')
     np.random.seed(8978)
-    res = FREMResults(model, continuous=['WGT'], categorical=['APGRX'])
-    res.calculate_results(samples=10)
+    res = calculate_results(model, continuous=['WGT'], categorical=['APGRX'], samples=10)
     correct = """parameter,covariate,condition,5th,mean,95th
 ETA(1),WGT,5th,0.8795189896312912,0.9466445932608492,1.0019433736898327
 ETA(1),WGT,95th,0.996753409405885,1.1245702765612209,1.2988798347027322

@@ -15,10 +15,9 @@
        Otherwise pharmpy will calculate shrinkage
 """
 
+import json
 from pathlib import Path
 
-import jsonpickle
-import jsonpickle.ext.pandas as jsonpickle_pandas
 import numpy as np
 import pandas as pd
 
@@ -26,8 +25,6 @@ import pharmpy.config as config
 import pharmpy.visualization
 from pharmpy.data import PharmDataFrame
 from pharmpy.math import cov2corr
-
-jsonpickle_pandas.register_handlers()
 
 
 class ResultsConfiguration(config.Configuration):
@@ -37,15 +34,43 @@ class ResultsConfiguration(config.Configuration):
 conf = ResultsConfiguration()
 
 
+class ResultsJSONEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, pd.DataFrame) or isinstance(obj, pd.Series):
+            return json.loads(obj.to_json(orient='split'))
+        else:
+            return json.JSONEncoder.encode(self, obj)
+
+
+class ResultsJSONDecoder(json.JSONDecoder):
+    def __init__(self, *args, **kwargs):
+        json.JSONDecoder.__init__(self, object_hook=self.object_hook, *args, **kwargs)
+
+    def object_hook(self, dct):
+        if 'class' in dct:
+            if dct['class'] == 'FREMResults':
+                from pharmpy.methods.frem.results import FREMResults
+                res = FREMResults.from_json(dct)
+            elif dct['class'] == 'BootstrapResults':
+                res = BootstrapResults(original_model=None, bootstrap_models=None)
+                res._statistics = pd.read_json(json.dumps(dct['statistics']), orient='split')
+            return res
+        else:
+            return dct
+
+
 class Results:
     """ Base class for all result classes
     """
     def to_json(self, path=None):
+        json_dict = self.json()
+        json_dict['class'] = self.__class__.__name__
+        s = json.dumps(json_dict, cls=ResultsJSONEncoder)
         if path:
             with open(path, 'w') as fh:
-                fh.write(jsonpickle.encode(self))
+                fh.write(s)
         else:
-            return jsonpickle.encode(self)
+            return s
 
 
 class ModelfitResults:
@@ -328,8 +353,8 @@ def read_results(path_or_buf):
     else:
         with open(path, 'r') as json_file:
             s = json_file.read()
-
-    return jsonpickle.decode(s)
+    decoder = ResultsJSONDecoder()
+    return decoder.decode(s)
 
 
 class BootstrapResults(Results):
@@ -406,6 +431,9 @@ class BootstrapResults(Results):
         statistics = f'Statistics\n{repr(self.statistics)}'
         distribution = f'Distribution\n{repr(self.distribution)}'
         return f'{inclusions}\n\n{statistics}\n\n{distribution}'
+
+    def json(self):
+        return {'statistics': self.statistics}
 
     def plot_ofv(self):
         plot = pharmpy.visualization.histogram(self.ofv, title='Bootstrap OFV')

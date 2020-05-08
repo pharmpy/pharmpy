@@ -139,7 +139,7 @@ def results_frem(args):
     from pharmpy.methods.frem.results import psn_frem_results
     if not args.psn_dir.is_dir():
         error(FileNotFoundError(str(args.psn_dir)))
-    res = psn_frem_results(args.psn_dir)
+    res = psn_frem_results(args.psn_dir, method=args.method)
     res.to_json(path=args.psn_dir / 'results.json')
 
 

@@ -1,4 +1,5 @@
 import itertools
+import json
 from pathlib import Path
 
 import altair as alt
@@ -14,256 +15,32 @@ from pharmpy.parameter_sampling import sample_from_covariance_matrix, sample_ind
 from pharmpy.random_variables import VariabilityLevel
 from pharmpy.results import Results
 
+# from typing import NamedTuple
+# class FREMOptions(NamedTuple):
+#    rescale: bool = True
+#    uncertainty_method: str = 'cov_sampling'
+
 
 class FREMResults(Results):
-    def __init__(self, frem_model, continuous=[], categorical=[], rescale=True):
-        self.frem_model = frem_model
-        self.continuous = continuous
-        self.categorical = categorical
-        self.rescale = rescale
+    def __init__(self, covariate_effects=None, individual_effects=None,
+                 unexplained_variability=None, covariate_statistics=None):
+        self.covariate_effects = covariate_effects
+        self.individual_effects = individual_effects
+        self.unexplained_variability = unexplained_variability
+        self.covariate_statistics = covariate_statistics
 
-    def calculate_results(self, method=None, **kwargs):
-        """Calculate FREM results
+    def json(self):
+        return {'covariate_effects': self.covariate_effects,
+                'individual_effects': self.individual_effects,
+                'unexplained_variability': self.unexplained_variability,
+                'covariate_statistics': self.covariate_statistics}
 
-           :param method: Either 'cov_sampling' or 'bipp'
-        """
-        if method is None or method == 'cov_sampling':
-            self.calculate_results_using_cov_sampling(**kwargs)
-        elif method == 'bipp':
-            self.calculate_results_using_bipp(**kwargs)
-        else:
-            raise ValueError(f'Unknown frem postprocessing method {method}')
-        self.method = method
-
-    def calculate_results_using_cov_sampling(self, cov_model=None, force_posdef_samples=500,
-                                             force_posdef_covmatrix=False, samples=1000):
-        """Calculate the FREM results using covariance matrix for uncertainty
-
-           :param cov_model: Take the parameter uncertainty covariance matrix from this model
-                             instead of the frem model.
-           :param force_posdef_samples: The number of sampling tries before stopping to use
-                                        rejection sampling and instead starting to shift values so
-                                        that the frem matrix becomes positive definite. Set to 0 to
-                                        always force positive definiteness.
-           :param force_posdef_covmatrix: Set to force the covariance matrix of the frem movdel or
-                                          the cov model to be positive definite. Default is to raise
-                                          in this case.
-           :param samples: The number of parameter vector samples to use.
-        """
-        if cov_model is not None:
-            uncertainty_results = cov_model.modelfit_results
-        else:
-            uncertainty_results = self.frem_model.modelfit_results
-
-        _, dist = list(self.frem_model.random_variables.distributions(
-            level=VariabilityLevel.IIV))[-1]
-        sigma_symb = dist.sigma
-
-        parameters = [s for s in self.frem_model.modelfit_results.parameter_estimates.index
-                      if sympy.Symbol(s) in sigma_symb.free_symbols]
-        parvecs = sample_from_covariance_matrix(self.frem_model,
-                                                modelfit_results=uncertainty_results,
-                                                force_posdef_samples=force_posdef_samples,
-                                                force_posdef_covmatrix=force_posdef_covmatrix,
-                                                parameters=parameters,
-                                                n=samples)
-        self.calculate_results_from_samples(parvecs=parvecs)
-
-    def calculate_results_from_samples(self, parvecs):
-        """Calculate the FREM results given samples of parameter estimates
-        """
-        n = len(parvecs)
-        rvs, dist = list(self.frem_model.random_variables.distributions(
-            level=VariabilityLevel.IIV))[-1]
-        sigma_symb = dist.sigma
-        parameters = [s for s in self.frem_model.modelfit_results.parameter_estimates.index
-                      if sympy.Symbol(s) in sigma_symb.free_symbols]
-        parvecs = parvecs.append(
-                self.frem_model.modelfit_results.parameter_estimates.loc[parameters])
-
-        df = self.frem_model.input.dataset
-        covariates = self.continuous + self.categorical
-        df.pharmpy.column_type[covariates] = ColumnType.COVARIATE
-        covariate_baselines = df.pharmpy.covariate_baselines
-        covariate_baselines = covariate_baselines[covariates]
-        cov_means = covariate_baselines.mean()
-        cov_modes = covariate_baselines.mode().iloc[0]      # Select first mode if more than one
-        cov_others = pd.Series(index=cov_modes[self.categorical].index, dtype=np.float64)
-        cov_stdevs = covariate_baselines.std()
-        for _, row in covariate_baselines.iterrows():
-            for cov in self.categorical:
-                if row[cov] != cov_modes[cov]:
-                    cov_others[cov] = row[cov]
-            if not cov_others.isna().values.any():
-                break
-
-        cov_refs = pd.concat((cov_means[self.continuous], cov_modes[self.categorical]))
-        cov_5th = covariate_baselines.quantile(0.05, interpolation='lower')
-        cov_95th = covariate_baselines.quantile(0.95, interpolation='higher')
-        is_categorical = cov_refs.index.isin(self.categorical)
-
-        self.covariate_statistics = pd.DataFrame({'5th': cov_5th, 'mean': cov_means,
-                                                  '95th': cov_95th, 'stdev': cov_stdevs,
-                                                  'ref': cov_refs, 'categorical': is_categorical,
-                                                  'other': cov_others}, index=covariates)
-        self.covariate_statistics.index.name = 'covariate'
-
-        ncovs = len(covariates)
-        npars = sigma_symb.rows - ncovs
-        nids = len(covariate_baselines)
-        param_indices = list(range(npars))
-        if self.rescale:
-            scaling = np.diag(np.concatenate((np.ones(npars), cov_stdevs.values)))
-
-        mu_bars_given_5th = np.empty((n, ncovs, npars))
-        mu_bars_given_95th = np.empty((n, ncovs, npars))
-        mu_id_bars = np.empty((n, nids, npars))
-        original_id_bar = np.empty((nids, npars))
-        variability = np.empty((n, ncovs + 2, npars))      # none, cov1, cov2, ..., all
-        original_variability = np.empty((ncovs + 2, npars))
-
-        # Switch to symengine for speed
-        # Could also assume order of parameters, but not much gain
-        sigma_symb = symengine.sympify(sigma_symb)
-        parvecs.columns = [symengine.Symbol(colname) for colname in parvecs.columns]
-
-        covbase = covariate_baselines.to_numpy()
-
-        for sample_no, params in parvecs.iterrows():
-            sigma = sigma_symb.subs(dict(params))
-            sigma = np.array(sigma).astype(np.float64)
-            if self.rescale:
-                sigma = scaling @ sigma @ scaling
-            if sample_no != 'estimates':
-                variability[sample_no, 0, :] = np.diag(sigma)[:npars]
-            else:
-                original_variability[0, :] = np.diag(sigma)[:npars]
-            for i, cov in enumerate(covariates):
-                indices = param_indices + [i + npars]
-                cov_sigma = sigma[indices][:, indices]
-                cov_mu = np.array([0] * npars + [cov_refs[cov]])
-                if cov in self.categorical:
-                    first_reference = cov_others[cov]
-                else:
-                    first_reference = cov_5th[cov]
-                mu_bar_given_5th_cov, sigma_bar = conditional_joint_normal(
-                    cov_mu, cov_sigma, np.array([first_reference]))
-                if sample_no != 'estimates':
-                    mu_bar_given_95th_cov, _ = conditional_joint_normal(cov_mu, cov_sigma,
-                                                                        np.array([cov_95th[cov]]))
-                    mu_bars_given_5th[sample_no, i, :] = mu_bar_given_5th_cov
-                    mu_bars_given_95th[sample_no, i, :] = mu_bar_given_95th_cov
-                    variability[sample_no, i + 1, :] = np.diag(sigma_bar)
-                else:
-                    original_variability[i + 1, :] = np.diag(sigma_bar)
-
-            for i in range(len(covariate_baselines)):
-                row = covbase[i, :]
-                id_mu = np.array([0] * npars + list(cov_refs))
-                mu_id_bar, sigma_id_bar = conditional_joint_normal(id_mu, sigma, row)
-                if sample_no != 'estimates':
-                    mu_id_bars[sample_no, i, :] = mu_id_bar
-                    variability[sample_no, -1, :] = np.diag(sigma_id_bar)
-                else:
-                    original_id_bar[i, :] = mu_id_bar
-                    original_variability[ncovs + 1, :] = np.diag(sigma_id_bar)
-
-        # Create covariate effects table
-        mu_bars_given_5th = np.exp(mu_bars_given_5th)
-        mu_bars_given_95th = np.exp(mu_bars_given_95th)
-
-        means_5th = np.mean(mu_bars_given_5th, axis=0)
-        means_95th = np.mean(mu_bars_given_95th, axis=0)
-        q5_5th = np.quantile(mu_bars_given_5th, 0.05, axis=0)
-        q5_95th = np.quantile(mu_bars_given_95th, 0.05, axis=0)
-        q95_5th = np.quantile(mu_bars_given_5th, 0.95, axis=0)
-        q95_95th = np.quantile(mu_bars_given_95th, 0.95, axis=0)
-
-        df = pd.DataFrame(columns=['parameter', 'covariate', 'condition', '5th', 'mean', '95th'])
-        param_names = [rv.name for rv in rvs][:npars]
-        for param, cov in itertools.product(range(npars), range(ncovs)):
-            if covariates[cov] in self.categorical:
-                df = df.append({'parameter': param_names[param], 'covariate': covariates[cov],
-                                'condition': 'other', '5th': q5_5th[cov, param],
-                                'mean': means_5th[cov, param], '95th': q95_5th[cov, param]},
-                               ignore_index=True)
-            else:
-                df = df.append({'parameter': param_names[param], 'covariate': covariates[cov],
-                                'condition': '5th', '5th': q5_5th[cov, param],
-                                'mean': means_5th[cov, param], '95th': q95_5th[cov, param]},
-                               ignore_index=True)
-                df = df.append({'parameter': param_names[param], 'covariate': covariates[cov],
-                                'condition': '95th', '5th': q5_95th[cov, param],
-                                'mean': means_95th[cov, param], '95th': q95_95th[cov, param]},
-                               ignore_index=True)
-        self.covariate_effects = df
-
-        # Create id table
-        mu_id_bars = np.exp(mu_id_bars)
-        original_id_bar = np.exp(original_id_bar)
-
-        with np.testing.suppress_warnings() as sup:     # Would warn in case of missing covariates
-            sup.filter(RuntimeWarning, "All-NaN slice encountered")
-            id_5th = np.nanquantile(mu_id_bars, 0.05, axis=0)
-            id_95th = np.nanquantile(mu_id_bars, 0.95, axis=0)
-
-        df = pd.DataFrame(columns=['parameter', 'observed', '5th', '95th'])
-        for curid, param in itertools.product(range(nids), range(npars)):
-            df = df.append(pd.Series({'parameter': param_names[param],
-                                      'observed': original_id_bar[curid, param],
-                                      '5th': id_5th[curid, param],
-                                      '95th': id_95th[curid, param]},
-                                     name=covariate_baselines.index[curid]))
-        self.individual_effects = df
-
-        # Create unexplained variability table
-        sd_5th = np.sqrt(np.nanquantile(variability, 0.05, axis=0))
-        sd_95th = np.sqrt(np.nanquantile(variability, 0.95, axis=0))
-        original_sd = np.sqrt(original_variability)
-
-        df = pd.DataFrame(columns=['parameter', 'condition', 'sd_observed', 'sd_5th', 'sd_95th'])
-        for par, cond in itertools.product(range(npars), range(ncovs + 2)):
-            if cond == 0:
-                condition = 'none'
-            elif cond == ncovs + 1:
-                condition = 'all'
-            else:
-                condition = covariates[cond - 1]
-            df = df.append({'parameter': param_names[par], 'condition': condition,
-                            'sd_observed': original_sd[cond, par], 'sd_5th': sd_5th[cond, par],
-                            'sd_95th': sd_95th[cond, par]}, ignore_index=True)
-        self.unexplained_variability = df
-
-    def calculate_results_using_bipp(self, samples=2000):
-        """Estimate a covariance matrix for the frem model using the BIPP method
-
-            Bootstrap on the individual parameter posteriors
-           Only the individual estimates, individual unvertainties and the parameter estimates
-           are needed.
-        """
-        rvs, dist = list(self.frem_model.random_variables.distributions(
-            level=VariabilityLevel.IIV))[-1]
-        etas = [rv.name for rv in rvs]
-        pool = sample_individual_estimates(self.frem_model, parameters=etas)
-        ninds = len(pool.index.unique())
-        ishr = self.frem_model.modelfit_results.individual_shrinkage
-        lower_indices = np.tril_indices(len(etas))
-        pop_params = np.array(dist.sigma).astype(str)[lower_indices]
-        parameter_samples = np.empty((samples, len(pop_params)))
-        remaining_samples = samples
-        k = 0
-        while k < remaining_samples:
-            bootstrap = pool.sample(n=ninds, replace=True)
-            ishk = ishr.loc[bootstrap.index]
-            cf = (1 / (1 - ishk.mean())) ** (1/2)
-            corrected_bootstrap = bootstrap * cf
-            bootstrap_cov = corrected_bootstrap.cov()
-            if not is_posdef(bootstrap_cov.to_numpy()):
-                continue
-            parameter_samples[k, :] = bootstrap_cov.values[lower_indices]
-            k += 1
-        frame = pd.DataFrame(parameter_samples, columns=pop_params)
-        self.calculate_results_from_samples(frame)
+    @classmethod
+    def from_json(cls, d):
+        del d['class']
+        for key, val in d.items():
+            d[key] = pd.read_json(json.dumps(d[key]), orient='split')
+        return cls(**d)
 
     def plot_covariate_effects(self):
         ce = self.covariate_effects.copy(deep=True)
@@ -321,22 +98,277 @@ class FREMResults(Results):
         return v
 
     def __str__(self):
-        if not hasattr(self, 'method'):
-            return 'Empty FREM results object'
-        start = f'Results from FREM calculated with the {self.method} method'
-        covs = f'Continuous covariates: {self.continuous}'
-        cats = f'Categorical covariates: {self.categorical}'
-        if self.rescale:
-            resc = 'Rescaling was used'
-        else:
-            resc = 'Rescaling was not used'
+        start = f'Results from FREM'
+        # method...
+        # covs = f'Continuous covariates: {self.continuous}'
+        # cats = f'Categorical covariates: {self.categorical}'
+        # FIXME: General option object for this?
+        # if self.rescale:
+        #    resc = 'Rescaling was used'
+        # else:
+        #    resc = 'Rescaling was not used'
         ce = self.covariate_effects.to_string(index=False)
         ie = self.individual_effects.to_string()
         uv = self.unexplained_variability.to_string(index=False)
         cs = self.covariate_statistics.to_string()
-        return f'{start}\n\n{resc}\n{covs}\n{cats}\n\nCovariate statistics\n{cs}\n\n' \
+        return f'{start}\n\nCovariate statistics\n{cs}\n\n' \
                f'Covariate effects\n{ce}\n\nIndividual effects\n{ie}\n\n' \
                f'Unexplained variability\n{uv}\n'
+
+
+def calculate_results(frem_model, continuous, categorical, method=None, **kwargs):
+    """Calculate FREM results
+
+       :param method: Either 'cov_sampling' or 'bipp'
+    """
+    if method is None or method == 'cov_sampling':
+        res = calculate_results_using_cov_sampling(frem_model, continuous, categorical, **kwargs)
+    elif method == 'bipp':
+        res = calculate_results_using_bipp(frem_model, continuous, categorical)
+    else:
+        raise ValueError(f'Unknown frem postprocessing method {method}')
+    return res
+
+
+def calculate_results_using_cov_sampling(frem_model, continuous, categorical, cov_model=None,
+                                         force_posdef_samples=500, force_posdef_covmatrix=False,
+                                         samples=1000, rescale=True):
+    """Calculate the FREM results using covariance matrix for uncertainty
+
+       :param cov_model: Take the parameter uncertainty covariance matrix from this model
+                         instead of the frem model.
+       :param force_posdef_samples: The number of sampling tries before stopping to use
+                                    rejection sampling and instead starting to shift values so
+                                    that the frem matrix becomes positive definite. Set to 0 to
+                                    always force positive definiteness.
+       :param force_posdef_covmatrix: Set to force the covariance matrix of the frem movdel or
+                                      the cov model to be positive definite. Default is to raise
+                                      in this case.
+       :param samples: The number of parameter vector samples to use.
+    """
+    if cov_model is not None:
+        uncertainty_results = cov_model.modelfit_results
+    else:
+        uncertainty_results = frem_model.modelfit_results
+
+    _, dist = list(frem_model.random_variables.distributions(
+        level=VariabilityLevel.IIV))[-1]
+    sigma_symb = dist.sigma
+
+    parameters = [s for s in frem_model.modelfit_results.parameter_estimates.index
+                  if sympy.Symbol(s) in sigma_symb.free_symbols]
+    parvecs = sample_from_covariance_matrix(frem_model,
+                                            modelfit_results=uncertainty_results,
+                                            force_posdef_samples=force_posdef_samples,
+                                            force_posdef_covmatrix=force_posdef_covmatrix,
+                                            parameters=parameters,
+                                            n=samples)
+    res = calculate_results_from_samples(frem_model, continuous, categorical, parvecs,
+                                         rescale=rescale)
+    return res
+
+
+def calculate_results_from_samples(frem_model, continuous, categorical, parvecs, rescale=True):
+    """Calculate the FREM results given samples of parameter estimates
+    """
+    n = len(parvecs)
+    rvs, dist = list(frem_model.random_variables.distributions(
+        level=VariabilityLevel.IIV))[-1]
+    sigma_symb = dist.sigma
+    parameters = [s for s in frem_model.modelfit_results.parameter_estimates.index
+                  if sympy.Symbol(s) in sigma_symb.free_symbols]
+    parvecs = parvecs.append(
+            frem_model.modelfit_results.parameter_estimates.loc[parameters])
+
+    df = frem_model.input.dataset
+    covariates = continuous + categorical
+    df.pharmpy.column_type[covariates] = ColumnType.COVARIATE
+    covariate_baselines = df.pharmpy.covariate_baselines
+    covariate_baselines = covariate_baselines[covariates]
+    cov_means = covariate_baselines.mean()
+    cov_modes = covariate_baselines.mode().iloc[0]      # Select first mode if more than one
+    cov_others = pd.Series(index=cov_modes[categorical].index, dtype=np.float64)
+    cov_stdevs = covariate_baselines.std()
+    for _, row in covariate_baselines.iterrows():
+        for cov in categorical:
+            if row[cov] != cov_modes[cov]:
+                cov_others[cov] = row[cov]
+        if not cov_others.isna().values.any():
+            break
+
+    cov_refs = pd.concat((cov_means[continuous], cov_modes[categorical]))
+    cov_5th = covariate_baselines.quantile(0.05, interpolation='lower')
+    cov_95th = covariate_baselines.quantile(0.95, interpolation='higher')
+    is_categorical = cov_refs.index.isin(categorical)
+
+    res = FREMResults()
+
+    res.covariate_statistics = pd.DataFrame({'5th': cov_5th, 'mean': cov_means,
+                                             '95th': cov_95th, 'stdev': cov_stdevs,
+                                             'ref': cov_refs, 'categorical': is_categorical,
+                                             'other': cov_others}, index=covariates)
+    res.covariate_statistics.index.name = 'covariate'
+
+    ncovs = len(covariates)
+    npars = sigma_symb.rows - ncovs
+    nids = len(covariate_baselines)
+    param_indices = list(range(npars))
+    if rescale:
+        scaling = np.diag(np.concatenate((np.ones(npars), cov_stdevs.values)))
+
+    mu_bars_given_5th = np.empty((n, ncovs, npars))
+    mu_bars_given_95th = np.empty((n, ncovs, npars))
+    mu_id_bars = np.empty((n, nids, npars))
+    original_id_bar = np.empty((nids, npars))
+    variability = np.empty((n, ncovs + 2, npars))      # none, cov1, cov2, ..., all
+    original_variability = np.empty((ncovs + 2, npars))
+
+    # Switch to symengine for speed
+    # Could also assume order of parameters, but not much gain
+    sigma_symb = symengine.sympify(sigma_symb)
+    parvecs.columns = [symengine.Symbol(colname) for colname in parvecs.columns]
+
+    covbase = covariate_baselines.to_numpy()
+
+    for sample_no, params in parvecs.iterrows():
+        sigma = sigma_symb.subs(dict(params))
+        sigma = np.array(sigma).astype(np.float64)
+        if rescale:
+            sigma = scaling @ sigma @ scaling
+        if sample_no != 'estimates':
+            variability[sample_no, 0, :] = np.diag(sigma)[:npars]
+        else:
+            original_variability[0, :] = np.diag(sigma)[:npars]
+        for i, cov in enumerate(covariates):
+            indices = param_indices + [i + npars]
+            cov_sigma = sigma[indices][:, indices]
+            cov_mu = np.array([0] * npars + [cov_refs[cov]])
+            if cov in categorical:
+                first_reference = cov_others[cov]
+            else:
+                first_reference = cov_5th[cov]
+            mu_bar_given_5th_cov, sigma_bar = conditional_joint_normal(
+                cov_mu, cov_sigma, np.array([first_reference]))
+            if sample_no != 'estimates':
+                mu_bar_given_95th_cov, _ = conditional_joint_normal(cov_mu, cov_sigma,
+                                                                    np.array([cov_95th[cov]]))
+                mu_bars_given_5th[sample_no, i, :] = mu_bar_given_5th_cov
+                mu_bars_given_95th[sample_no, i, :] = mu_bar_given_95th_cov
+                variability[sample_no, i + 1, :] = np.diag(sigma_bar)
+            else:
+                original_variability[i + 1, :] = np.diag(sigma_bar)
+
+        for i in range(len(covariate_baselines)):
+            row = covbase[i, :]
+            id_mu = np.array([0] * npars + list(cov_refs))
+            mu_id_bar, sigma_id_bar = conditional_joint_normal(id_mu, sigma, row)
+            if sample_no != 'estimates':
+                mu_id_bars[sample_no, i, :] = mu_id_bar
+                variability[sample_no, -1, :] = np.diag(sigma_id_bar)
+            else:
+                original_id_bar[i, :] = mu_id_bar
+                original_variability[ncovs + 1, :] = np.diag(sigma_id_bar)
+
+    # Create covariate effects table
+    mu_bars_given_5th = np.exp(mu_bars_given_5th)
+    mu_bars_given_95th = np.exp(mu_bars_given_95th)
+
+    means_5th = np.mean(mu_bars_given_5th, axis=0)
+    means_95th = np.mean(mu_bars_given_95th, axis=0)
+    q5_5th = np.quantile(mu_bars_given_5th, 0.05, axis=0)
+    q5_95th = np.quantile(mu_bars_given_95th, 0.05, axis=0)
+    q95_5th = np.quantile(mu_bars_given_5th, 0.95, axis=0)
+    q95_95th = np.quantile(mu_bars_given_95th, 0.95, axis=0)
+
+    df = pd.DataFrame(columns=['parameter', 'covariate', 'condition', '5th', 'mean', '95th'])
+    param_names = [rv.name for rv in rvs][:npars]
+    for param, cov in itertools.product(range(npars), range(ncovs)):
+        if covariates[cov] in categorical:
+            df = df.append({'parameter': param_names[param], 'covariate': covariates[cov],
+                            'condition': 'other', '5th': q5_5th[cov, param],
+                            'mean': means_5th[cov, param], '95th': q95_5th[cov, param]},
+                           ignore_index=True)
+        else:
+            df = df.append({'parameter': param_names[param], 'covariate': covariates[cov],
+                            'condition': '5th', '5th': q5_5th[cov, param],
+                            'mean': means_5th[cov, param], '95th': q95_5th[cov, param]},
+                           ignore_index=True)
+            df = df.append({'parameter': param_names[param], 'covariate': covariates[cov],
+                            'condition': '95th', '5th': q5_95th[cov, param],
+                            'mean': means_95th[cov, param], '95th': q95_95th[cov, param]},
+                           ignore_index=True)
+    res.covariate_effects = df
+
+    # Create id table
+    mu_id_bars = np.exp(mu_id_bars)
+    original_id_bar = np.exp(original_id_bar)
+
+    with np.testing.suppress_warnings() as sup:     # Would warn in case of missing covariates
+        sup.filter(RuntimeWarning, "All-NaN slice encountered")
+        id_5th = np.nanquantile(mu_id_bars, 0.05, axis=0)
+        id_95th = np.nanquantile(mu_id_bars, 0.95, axis=0)
+
+    df = pd.DataFrame(columns=['parameter', 'observed', '5th', '95th'])
+    for curid, param in itertools.product(range(nids), range(npars)):
+        df = df.append(pd.Series({'parameter': param_names[param],
+                                  'observed': original_id_bar[curid, param],
+                                  '5th': id_5th[curid, param],
+                                  '95th': id_95th[curid, param]},
+                                 name=covariate_baselines.index[curid]))
+    res.individual_effects = df
+
+    # Create unexplained variability table
+    sd_5th = np.sqrt(np.nanquantile(variability, 0.05, axis=0))
+    sd_95th = np.sqrt(np.nanquantile(variability, 0.95, axis=0))
+    original_sd = np.sqrt(original_variability)
+
+    df = pd.DataFrame(columns=['parameter', 'condition', 'sd_observed', 'sd_5th', 'sd_95th'])
+    for par, cond in itertools.product(range(npars), range(ncovs + 2)):
+        if cond == 0:
+            condition = 'none'
+        elif cond == ncovs + 1:
+            condition = 'all'
+        else:
+            condition = covariates[cond - 1]
+        df = df.append({'parameter': param_names[par], 'condition': condition,
+                        'sd_observed': original_sd[cond, par], 'sd_5th': sd_5th[cond, par],
+                        'sd_95th': sd_95th[cond, par]}, ignore_index=True)
+    res.unexplained_variability = df
+    return res
+
+
+def calculate_results_using_bipp(frem_model, continuous, categorical, rescale=True, samples=2000):
+    """Estimate a covariance matrix for the frem model using the BIPP method
+
+        Bootstrap on the individual parameter posteriors
+       Only the individual estimates, individual unvertainties and the parameter estimates
+       are needed.
+    """
+    rvs, dist = list(frem_model.random_variables.distributions(
+        level=VariabilityLevel.IIV))[-1]
+    etas = [rv.name for rv in rvs]
+    pool = sample_individual_estimates(frem_model, parameters=etas)
+    ninds = len(pool.index.unique())
+    ishr = frem_model.modelfit_results.individual_shrinkage
+    lower_indices = np.tril_indices(len(etas))
+    pop_params = np.array(dist.sigma).astype(str)[lower_indices]
+    parameter_samples = np.empty((samples, len(pop_params)))
+    remaining_samples = samples
+    k = 0
+    while k < remaining_samples:
+        bootstrap = pool.sample(n=ninds, replace=True)
+        ishk = ishr.loc[bootstrap.index]
+        cf = (1 / (1 - ishk.mean())) ** (1/2)
+        corrected_bootstrap = bootstrap * cf
+        bootstrap_cov = corrected_bootstrap.cov()
+        if not is_posdef(bootstrap_cov.to_numpy()):
+            continue
+        parameter_samples[k, :] = bootstrap_cov.values[lower_indices]
+        k += 1
+    frame = pd.DataFrame(parameter_samples, columns=pop_params)
+    res = calculate_results_from_samples(frem_model, continuous, categorical, frame,
+                                         rescale=rescale)
+    return res
 
 
 def psn_frem_results(path, force_posdef_covmatrix=False, method=None):
@@ -371,7 +403,6 @@ def psn_frem_results(path, force_posdef_covmatrix=False, method=None):
     continuous = list(nunique.index[nunique != 2])
     categorical = list(nunique.index[nunique == 2])
 
-    res = FREMResults(model_4, continuous=continuous, categorical=categorical)
-    res.calculate_results(method=method, force_posdef_covmatrix=force_posdef_covmatrix,
-                          cov_model=cov_model)
+    res = calculate_results(model_4, continuous, categorical, method=method,
+                            force_posdef_covmatrix=force_posdef_covmatrix, cov_model=cov_model)
     return res

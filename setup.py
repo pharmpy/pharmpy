@@ -73,7 +73,7 @@ setup(
         # eg: 'keyword1', 'keyword2', 'keyword3',
     ],
     install_requires=[
-        'jsonpickle', 'lark-parser', 'sympy', 'symengine', 'pandas', 'numexpr', 'altair', 'toil',
+        'lark-parser', 'sympy', 'symengine', 'pandas', 'numexpr', 'altair', 'toil',
     ],
     extras_require={
         # eg:
