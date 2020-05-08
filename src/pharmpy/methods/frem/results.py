@@ -89,6 +89,7 @@ class FREMResults(Results):
         cov_means = covariate_baselines.mean()
         cov_modes = covariate_baselines.mode().iloc[0]      # Select first mode if more than one
         cov_others = pd.Series(index=cov_modes[self.categorical].index, dtype=np.float64)
+        cov_stdevs = covariate_baselines.std()
         for _, row in covariate_baselines.iterrows():
             for cov in self.categorical:
                 if row[cov] != cov_modes[cov]:
@@ -99,9 +100,12 @@ class FREMResults(Results):
         cov_refs = pd.concat((cov_means[self.continuous], cov_modes[self.categorical]))
         cov_5th = covariate_baselines.quantile(0.05, interpolation='lower')
         cov_95th = covariate_baselines.quantile(0.95, interpolation='higher')
+        is_categorical = cov_refs.index.isin(self.categorical)
 
-        self.covariate_statistics = pd.DataFrame({'5th': cov_5th, 'ref': cov_refs,
-                                                  '95th': cov_95th})
+        self.covariate_statistics = pd.DataFrame({'5th': cov_5th, 'mean': cov_means,
+                                                  '95th': cov_95th, 'stdev': cov_stdevs,
+                                                  'ref': cov_refs, 'categorical': is_categorical,
+                                                  'other': cov_others}, index=covariates)
         self.covariate_statistics.index.name = 'covariate'
 
         ncovs = len(covariates)
@@ -109,7 +113,6 @@ class FREMResults(Results):
         nids = len(covariate_baselines)
         param_indices = list(range(npars))
         if self.rescale:
-            cov_stdevs = covariate_baselines.std()
             scaling = np.diag(np.concatenate((np.ones(npars), cov_stdevs.values)))
 
         mu_bars_given_5th = np.empty((n, ncovs, npars))

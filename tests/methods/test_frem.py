@@ -191,7 +191,9 @@ ETA(2),all,0.14572521381314374,0.10000243896199691,0.17321795298354078
     correct['parameter'] = correct['parameter'].astype(str)
     pd.testing.assert_frame_equal(res.unexplained_variability, correct)
 
-    correct = pd.DataFrame({'5th': [1.0, 0.7], 'ref': [6.423729, 1.525424], '95th': [9.0, 3.2]},
+    correct = pd.DataFrame({'5th': [1.0, 0.7], 'mean': [6.423729, 1.525424], '95th': [9.0, 3.2],
+                            'stdev': [2.237636, 0.704565], 'ref': [6.423729, 1.525424],
+                            'categorical': [False, False], 'other': [np.nan, np.nan]},
                            index=['APGR', 'WGT'])
     correct.index.name = 'covariate'
     pd.testing.assert_frame_equal(res.covariate_statistics, correct)
@@ -354,7 +356,9 @@ ETA(2),all,0.1441532460182698,0.11380319105403863,0.18470095021420732
     correct['parameter'] = correct['parameter'].astype(str)
     pd.testing.assert_frame_equal(res.unexplained_variability, correct)
 
-    correct = pd.DataFrame({'5th': [0.7, 0], 'ref': [1.525424, 1], '95th': [3.2, 1]},
+    correct = pd.DataFrame({'5th': [0.7, 0], 'mean': [1.525424, 0.711864], '95th': [3.2, 1],
+                            'stdev': [0.704565, 0.456782], 'ref': [1.525424, 1.0],
+                            'categorical': [False, True], 'other': [np.nan, 0]},
                            index=['WGT', 'APGRX'])
     correct.index.name = 'covariate'
     pd.testing.assert_frame_equal(res.covariate_statistics, correct)
