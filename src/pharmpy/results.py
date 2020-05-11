@@ -37,7 +37,9 @@ conf = ResultsConfiguration()
 class ResultsJSONEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, pd.DataFrame) or isinstance(obj, pd.Series):
-            return json.loads(obj.to_json(orient='split'))
+            d = json.loads(obj.to_json(orient='split'))
+            d['__class__'] = obj.__class__.__name__
+            return d
         else:
             return json.JSONEncoder.encode(self, obj)
 
@@ -45,32 +47,61 @@ class ResultsJSONEncoder(json.JSONEncoder):
 class ResultsJSONDecoder(json.JSONDecoder):
     def __init__(self, *args, **kwargs):
         json.JSONDecoder.__init__(self, object_hook=self.object_hook, *args, **kwargs)
+        self.cls = None
 
     def object_hook(self, dct):
-        if 'class' in dct:
-            if dct['class'] == 'FREMResults':
-                from pharmpy.methods.frem.results import FREMResults
-                res = FREMResults.from_json(dct)
-            elif dct['class'] == 'BootstrapResults':
-                res = BootstrapResults(original_model=None, bootstrap_models=None)
-                res._statistics = pd.read_json(json.dumps(dct['statistics']), orient='split')
-            return res
-        else:
-            return dct
+        if '__class__' in dct:
+            cls = dct['__class__']
+            del dct['__class__']
+            if cls == 'DataFrame' or cls == 'Series':
+                res = pd.read_json(json.dumps(dct), orient='split')
+                return res
+            else:
+                self.cls = cls
+        return dct
+
+
+def read_results(path_or_buf):
+    try:
+        path = Path(path_or_buf)
+        if not path.is_file():
+            raise FileNotFoundError
+    except (FileNotFoundError, OSError, TypeError, ValueError):
+        s = path_or_buf
+    else:
+        with open(path, 'r') as json_file:
+            s = json_file.read()
+    decoder = ResultsJSONDecoder()
+    d = decoder.decode(s)
+    if decoder.cls == 'FREMResults':
+        from pharmpy.methods.frem.results import FREMResults
+        res = FREMResults.from_dict(d)
+    elif decoder.cls == 'BootstrapResults':
+        res = BootstrapResults(original_model=None, bootstrap_models=None)
+        res._statistics = d['statistics']
+
+    return res
 
 
 class Results:
     """ Base class for all result classes
     """
     def to_json(self, path=None):
-        json_dict = self.json()
-        json_dict['class'] = self.__class__.__name__
+        json_dict = self.to_dict()
+        json_dict['__class__'] = self.__class__.__name__
         s = json.dumps(json_dict, cls=ResultsJSONEncoder)
         if path:
             with open(path, 'w') as fh:
                 fh.write(s)
         else:
             return s
+
+    def to_dict(self):
+        raise NotImplementedError()
+
+    def to_csv(self):
+        """Save results as a human readable csv file
+        """
 
 
 class ModelfitResults:
@@ -343,20 +374,6 @@ class CaseDeletionResults:
         pass
 
 
-def read_results(path_or_buf):
-    try:
-        path = Path(path_or_buf)
-        if not path.is_file():
-            raise FileNotFoundError
-    except (FileNotFoundError, OSError, TypeError, ValueError):
-        s = path_or_buf
-    else:
-        with open(path, 'r') as json_file:
-            s = json_file.read()
-    decoder = ResultsJSONDecoder()
-    return decoder.decode(s)
-
-
 class BootstrapResults(Results):
     # FIXME: Could inherit from results that take multiple runs like bootstrap, cdd etc.
     def __init__(self, original_model, bootstrap_models):
@@ -432,7 +449,7 @@ class BootstrapResults(Results):
         distribution = f'Distribution\n{repr(self.distribution)}'
         return f'{inclusions}\n\n{statistics}\n\n{distribution}'
 
-    def json(self):
+    def to_dict(self):
         return {'statistics': self.statistics}
 
     def plot_ofv(self):

@@ -1,5 +1,4 @@
 import itertools
-import json
 from pathlib import Path
 
 import altair as alt
@@ -29,17 +28,14 @@ class FREMResults(Results):
         self.unexplained_variability = unexplained_variability
         self.covariate_statistics = covariate_statistics
 
-    def json(self):
+    def to_dict(self):
         return {'covariate_effects': self.covariate_effects,
                 'individual_effects': self.individual_effects,
                 'unexplained_variability': self.unexplained_variability,
                 'covariate_statistics': self.covariate_statistics}
 
     @classmethod
-    def from_json(cls, d):
-        del d['class']
-        for key, val in d.items():
-            d[key] = pd.read_json(json.dumps(d[key]), orient='split')
+    def from_dict(cls, d):
         return cls(**d)
 
     def plot_covariate_effects(self):
