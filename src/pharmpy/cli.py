@@ -141,6 +141,7 @@ def results_frem(args):
         error(FileNotFoundError(str(args.psn_dir)))
     res = psn_frem_results(args.psn_dir, method=args.method)
     res.to_json(path=args.psn_dir / 'results.json')
+    res.to_csv(path=args.psn_dir / 'results.csv')
 
 
 def results_ofv(args):

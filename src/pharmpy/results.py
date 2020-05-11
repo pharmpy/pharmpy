@@ -99,9 +99,26 @@ class Results:
     def to_dict(self):
         raise NotImplementedError()
 
-    def to_csv(self):
+    def to_csv(self, path):
         """Save results as a human readable csv file
+
+           Index will not be printed if it is a basic range.
         """
+        d = self.to_dict()
+        s = ""
+        for key, value in d.items():
+            s += f'{key}\n'
+            if isinstance(value, pd.DataFrame):
+                if isinstance(value.index, pd.RangeIndex):
+                    use_index = False
+                else:
+                    use_index = True
+                s += value.to_csv(index=use_index)
+            else:
+                s += str(value)
+            s += '\n'
+        with open(path, 'w') as fh:
+            print(s, file=fh)
 
 
 class ModelfitResults:

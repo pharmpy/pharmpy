@@ -174,6 +174,7 @@ ETA(2),WGT,95th,0.883742,0.985236,1.114695
 
     correct = pd.read_csv(StringIO(correct), index_col=0)
     correct['parameter'] = correct['parameter'].astype(str)
+    correct.index.name = 'ID'
     pd.testing.assert_frame_equal(res.individual_effects, correct)
 
     correct = """parameter,condition,sd_observed,sd_5th,sd_95th
@@ -337,6 +338,7 @@ ETA(2),APGRX,other,0.8498363889783136,0.9042760019837373,0.9625854858603431
 
     correct = pd.read_csv(StringIO(correct), index_col=0)
     correct['parameter'] = correct['parameter'].astype(str)
+    correct.index.name = 'ID'
     pd.testing.assert_frame_equal(res.individual_effects, correct)
 
     correct = """parameter,condition,sd_observed,sd_5th,sd_95th

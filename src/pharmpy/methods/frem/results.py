@@ -311,6 +311,7 @@ def calculate_results_from_samples(frem_model, continuous, categorical, parvecs,
                                   '5th': id_5th[curid, param],
                                   '95th': id_95th[curid, param]},
                                  name=covariate_baselines.index[curid]))
+    df.index.name = 'ID'
     res.individual_effects = df
 
     # Create unexplained variability table
