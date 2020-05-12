@@ -42,8 +42,8 @@ class FREMResults(Results):
                 'unexplained_variability': self.unexplained_variability,
                 'covariate_statistics': self.covariate_statistics,
                 'covariate_effects_plot': self.covariate_effects_plot,
-                'individual_effects_plot': self.individual_effects,
-                'unexplained_variability_plot': self.unexplained_variability,
+                'individual_effects_plot': self.individual_effects_plot,
+                'unexplained_variability_plot': self.unexplained_variability_plot,
                 'covariate_baselines': self.covariate_baselines}
 
     @classmethod
