@@ -399,7 +399,7 @@ def calculate_results_from_samples(frem_model, continuous, categorical, parvecs,
     sd_95th = np.sqrt(np.nanquantile(variability, 0.95, axis=0))
     original_sd = np.sqrt(original_variability)
 
-    df = pd.DataFrame(columns=['parameter', 'condition', 'sd_observed', 'sd_5th', 'sd_95th'])
+    df = pd.DataFrame(columns=['parameter', 'covariate', 'sd_observed', 'sd_5th', 'sd_95th'])
     for par, cond in itertools.product(range(npars), range(ncovs + 2)):
         if cond == 0:
             condition = 'none'
@@ -407,10 +407,10 @@ def calculate_results_from_samples(frem_model, continuous, categorical, parvecs,
             condition = 'all'
         else:
             condition = covariates[cond - 1]
-        df = df.append({'parameter': param_names[par], 'condition': condition,
+        df = df.append({'parameter': param_names[par], 'covariate': condition,
                         'sd_observed': original_sd[cond, par], 'sd_5th': sd_5th[cond, par],
                         'sd_95th': sd_95th[cond, par]}, ignore_index=True)
-    df = df.set_index(['parameter', 'condition'])
+    df = df.set_index(['parameter', 'covariate'])
     res.unexplained_variability = df
 
     res.covariate_baselines = covariate_baselines

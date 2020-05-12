@@ -176,7 +176,7 @@ ETA(2),WGT,95th,0.883742,0.985236,1.114695
     correct.index.set_names(['ID', 'parameter'], inplace=True)
     pd.testing.assert_frame_equal(res.individual_effects, correct)
 
-    correct = """parameter,condition,sd_observed,sd_5th,sd_95th
+    correct = """parameter,covariate,sd_observed,sd_5th,sd_95th
 ETA(1),none,0.19836380718266122,0.12625220807235504,0.24116383177640865
 ETA(1),APGR,0.1932828383897819,0.08707073037413292,0.227264629387154
 ETA(1),WGT,0.19363776172900196,0.12610674817480064,0.23106986571131838
@@ -187,7 +187,7 @@ ETA(2),WGT,0.16104200315990183,0.10348820432741489,0.1848351655169244
 ETA(2),all,0.14572521381314374,0.10000243896199691,0.17321795298354078
 """
     correct = pd.read_csv(StringIO(correct), index_col=[0, 1])
-    correct.index.set_names(['parameter', 'condition'], inplace=True)
+    correct.index.set_names(['parameter', 'covariate'], inplace=True)
     pd.testing.assert_frame_equal(res.unexplained_variability, correct)
 
     correct = pd.DataFrame({'p5': [1.0, 0.7], 'mean': [6.423729, 1.525424], 'p95': [9.0, 3.2],
@@ -341,7 +341,7 @@ ETA(2),APGRX,other,0.8498363889783136,0.9042760019837373,0.9625854858603431
     correct.index.set_names(['ID', 'parameter'], inplace=True)
     pd.testing.assert_frame_equal(res.individual_effects, correct)
 
-    correct = """parameter,condition,sd_observed,sd_5th,sd_95th
+    correct = """parameter,covariate,sd_observed,sd_5th,sd_95th
 ETA(1),none,0.18764141333937986,0.13638146999772185,0.18484526745358448
 ETA(1),WGT,0.18248555852725476,0.12090283361468239,0.17725513485455732
 ETA(1),APGRX,0.17859851761700796,0.12837093642691694,0.1839726626034972
@@ -353,7 +353,7 @@ ETA(2),all,0.1441532460182698,0.11380319105403863,0.18470095021420732
 """
 
     correct = pd.read_csv(StringIO(correct), index_col=[0, 1])
-    correct.index.set_names(['parameter', 'condition'], inplace=True)
+    correct.index.set_names(['parameter', 'covariate'], inplace=True)
     pd.testing.assert_frame_equal(res.unexplained_variability, correct)
 
     correct = pd.DataFrame({'p5': [0.7, 0], 'mean': [1.525424, 0.711864], 'p95': [3.2, 1],
