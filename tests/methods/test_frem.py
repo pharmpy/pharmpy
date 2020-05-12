@@ -37,7 +37,7 @@ def test_frem_results_pheno(testdata):
     np.random.seed(39)
     res = calculate_results(model, continuous=['APGR', 'WGT'], categorical=[], samples=10)
 
-    correct = """parameter,covariate,condition,5th,mean,95th
+    correct = """parameter,covariate,condition,p5,mean,p95
 ETA(1),APGR,5th,0.992878,1.170232,1.374516
 ETA(1),APGR,95th,0.860692,0.932424,1.003450
 ETA(1),WGT,5th,0.884359,0.950191,1.002978
@@ -51,7 +51,7 @@ ETA(2),WGT,95th,0.883742,0.985236,1.114695
     correct['parameter'] = correct['parameter'].astype(str)
     pd.testing.assert_frame_equal(res.covariate_effects, correct)
 
-    correct = """,parameter,observed,5th,95th
+    correct = """,parameter,observed,p5,p95
 1.0,ETA(1),0.974787628525673,0.9593367843894006,0.9854909268072172
 1.0,ETA(2),1.0220100211774878,1.012349218441101,1.0339920096220687
 2.0,ETA(1),0.9322193602958176,0.8599867286923504,0.980084302377274
@@ -190,7 +190,7 @@ ETA(2),all,0.14572521381314374,0.10000243896199691,0.17321795298354078
     correct['parameter'] = correct['parameter'].astype(str)
     pd.testing.assert_frame_equal(res.unexplained_variability, correct)
 
-    correct = pd.DataFrame({'5th': [1.0, 0.7], 'mean': [6.423729, 1.525424], '95th': [9.0, 3.2],
+    correct = pd.DataFrame({'p5': [1.0, 0.7], 'mean': [6.423729, 1.525424], 'p95': [9.0, 3.2],
                             'stdev': [2.237636, 0.704565], 'ref': [6.423729, 1.525424],
                             'categorical': [False, False], 'other': [np.nan, np.nan]},
                            index=['APGR', 'WGT'])
@@ -204,7 +204,7 @@ def test_frem_results_pheno_categorical(testdata):
     model = Model(testdata / 'nonmem' / 'frem' / 'pheno_cat' / 'model_4.mod')
     np.random.seed(8978)
     res = calculate_results(model, continuous=['WGT'], categorical=['APGRX'], samples=10)
-    correct = """parameter,covariate,condition,5th,mean,95th
+    correct = """parameter,covariate,condition,p5,mean,p95
 ETA(1),WGT,5th,0.8795189896312912,0.9466445932608492,1.0019433736898327
 ETA(1),WGT,95th,0.996753409405885,1.1245702765612209,1.2988798347027322
 ETA(1),APGRX,other,0.8940140155148761,1.0564628170434618,1.180632821895565
@@ -216,7 +216,7 @@ ETA(2),APGRX,other,0.8498363889783136,0.9042760019837373,0.9625854858603431
     correct['parameter'] = correct['parameter'].astype(str)
     pd.testing.assert_frame_equal(res.covariate_effects, correct)
 
-    correct = """,parameter,observed,5th,95th
+    correct = """,parameter,observed,p5,p95
 1.0,ETA(1),0.9912884480992122,0.9812757561438034,0.9999462106955487
 1.0,ETA(2),1.0011658066931033,0.9943699656700683,1.0067401275871808
 2.0,ETA(1),0.9982279801353178,0.9961754974129978,0.9999887376528835
@@ -356,7 +356,7 @@ ETA(2),all,0.1441532460182698,0.11380319105403863,0.18470095021420732
     correct['parameter'] = correct['parameter'].astype(str)
     pd.testing.assert_frame_equal(res.unexplained_variability, correct)
 
-    correct = pd.DataFrame({'5th': [0.7, 0], 'mean': [1.525424, 0.711864], '95th': [3.2, 1],
+    correct = pd.DataFrame({'p5': [0.7, 0], 'mean': [1.525424, 0.711864], 'p95': [3.2, 1],
                             'stdev': [0.704565, 0.456782], 'ref': [1.525424, 1.0],
                             'categorical': [False, True], 'other': [np.nan, 0]},
                            index=['WGT', 'APGRX'])

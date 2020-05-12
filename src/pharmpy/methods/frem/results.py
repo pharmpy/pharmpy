@@ -49,9 +49,9 @@ class FREMResults(Results):
 
     def plot_covariate_effects(self):
         ce = self.covariate_effects.copy(deep=True)
-        ce.loc[:, ['5th', 'mean', '95th']] = ((ce.loc[:, ['5th', 'mean', '95th']] - 1) * 100)
+        ce.loc[:, ['p5', 'mean', 'p95']] = ((ce.loc[:, ['p5', 'mean', 'p95']] - 1) * 100)
         cov_stats = pd.melt(self.covariate_statistics.reset_index(), var_name='condition',
-                            id_vars=['covariate'], value_vars=['5th', '95th'])
+                            id_vars=['covariate'], value_vars=['p5', 'p95'])
         ce = ce.merge(cov_stats)
         param_names = list(ce.parameter.unique())
         plots = []
@@ -60,8 +60,8 @@ class FREMResults(Results):
             df = ce[ce['parameter'] == parameter]
 
             error_bars = alt.Chart(df).mark_errorbar(ticks=True).encode(
-                x=alt.X('5th:Q', title='Effect size in percent', scale=alt.Scale(zero=False)),
-                x2=alt.X2('95th:Q'),
+                x=alt.X('p5:Q', title='Effect size in percent', scale=alt.Scale(zero=False)),
+                x2=alt.X2('p95:Q'),
                 y=alt.Y('condition:N', title=None),
             ).properties(width=400, height=100)
 
@@ -86,9 +86,9 @@ class FREMResults(Results):
             bar_values = alt.Chart(df).mark_text(
                 dy=15,
             ).encode(
-                x=alt.X("5th:Q"),
+                x=alt.X("p5:Q"),
                 y=alt.Y("condition:N"),
-                text=alt.Text("5th:Q", format='.1f'),
+                text=alt.Text("p5:Q", format='.1f'),
             )
 
             plot = alt.layer(error_bars, bar_values, rule, points, text, data=df).facet(
@@ -208,8 +208,8 @@ def calculate_results_from_samples(frem_model, continuous, categorical, parvecs,
 
     res = FREMResults()
 
-    res.covariate_statistics = pd.DataFrame({'5th': cov_5th, 'mean': cov_means,
-                                             '95th': cov_95th, 'stdev': cov_stdevs,
+    res.covariate_statistics = pd.DataFrame({'p5': cov_5th, 'mean': cov_means,
+                                             'p95': cov_95th, 'stdev': cov_stdevs,
                                              'ref': cov_refs, 'categorical': is_categorical,
                                              'other': cov_others}, index=covariates)
     res.covariate_statistics.index.name = 'covariate'
@@ -285,22 +285,22 @@ def calculate_results_from_samples(frem_model, continuous, categorical, parvecs,
     q95_5th = np.quantile(mu_bars_given_5th, 0.95, axis=0)
     q95_95th = np.quantile(mu_bars_given_95th, 0.95, axis=0)
 
-    df = pd.DataFrame(columns=['parameter', 'covariate', 'condition', '5th', 'mean', '95th'])
+    df = pd.DataFrame(columns=['parameter', 'covariate', 'condition', 'p5', 'mean', 'p95'])
     param_names = [rv.name for rv in rvs][:npars]
     for param, cov in itertools.product(range(npars), range(ncovs)):
         if covariates[cov] in categorical:
             df = df.append({'parameter': param_names[param], 'covariate': covariates[cov],
-                            'condition': 'other', '5th': q5_5th[cov, param],
-                            'mean': means_5th[cov, param], '95th': q95_5th[cov, param]},
+                            'condition': 'other', 'p5': q5_5th[cov, param],
+                            'mean': means_5th[cov, param], 'p95': q95_5th[cov, param]},
                            ignore_index=True)
         else:
             df = df.append({'parameter': param_names[param], 'covariate': covariates[cov],
-                            'condition': '5th', '5th': q5_5th[cov, param],
-                            'mean': means_5th[cov, param], '95th': q95_5th[cov, param]},
+                            'condition': '5th', 'p5': q5_5th[cov, param],
+                            'mean': means_5th[cov, param], 'p95': q95_5th[cov, param]},
                            ignore_index=True)
             df = df.append({'parameter': param_names[param], 'covariate': covariates[cov],
-                            'condition': '95th', '5th': q5_95th[cov, param],
-                            'mean': means_95th[cov, param], '95th': q95_95th[cov, param]},
+                            'condition': '95th', 'p5': q5_95th[cov, param],
+                            'mean': means_95th[cov, param], 'p95': q95_95th[cov, param]},
                            ignore_index=True)
     res.covariate_effects = df
 
@@ -313,12 +313,12 @@ def calculate_results_from_samples(frem_model, continuous, categorical, parvecs,
         id_5th = np.nanquantile(mu_id_bars, 0.05, axis=0)
         id_95th = np.nanquantile(mu_id_bars, 0.95, axis=0)
 
-    df = pd.DataFrame(columns=['parameter', 'observed', '5th', '95th'])
+    df = pd.DataFrame(columns=['parameter', 'observed', 'p5', 'p95'])
     for curid, param in itertools.product(range(nids), range(npars)):
         df = df.append(pd.Series({'parameter': param_names[param],
                                   'observed': original_id_bar[curid, param],
-                                  '5th': id_5th[curid, param],
-                                  '95th': id_95th[curid, param]},
+                                  'p5': id_5th[curid, param],
+                                  'p95': id_95th[curid, param]},
                                  name=covariate_baselines.index[curid]))
     df.index.name = 'ID'
     df = df.set_index('parameter', append=True)
