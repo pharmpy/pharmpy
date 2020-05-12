@@ -24,14 +24,16 @@ class FREMResults(Results):
     def __init__(self, covariate_effects=None, individual_effects=None,
                  unexplained_variability=None, covariate_statistics=None,
                  covariate_effects_plot=None, individual_effects_plot=None,
-                 covariate_baselines=None):
-        # Lots of boilerplate code ahead. Could be simplified with python 3.7 dataclass
+                 unexplained_variability_plot=None, covariate_baselines=None):
+        # FIXME: Lots of boilerplate code ahead. Could be simplified with python 3.7 dataclass
+        #        or namedtuple
         self.covariate_effects = covariate_effects
         self.individual_effects = individual_effects
         self.unexplained_variability = unexplained_variability
         self.covariate_statistics = covariate_statistics
         self.covariate_effects_plot = covariate_effects_plot
         self.individual_effects_plot = individual_effects_plot
+        self.unexplained_variability_plot = unexplained_variability_plot
         self.covariate_baselines = covariate_baselines
 
     def to_dict(self):
@@ -41,6 +43,7 @@ class FREMResults(Results):
                 'covariate_statistics': self.covariate_statistics,
                 'covariate_effects_plot': self.covariate_effects_plot,
                 'individual_effects_plot': self.individual_effects,
+                'unexplained_variability_plot': self.unexplained_variability,
                 'covariate_baselines': self.covariate_baselines}
 
     @classmethod
@@ -50,6 +53,7 @@ class FREMResults(Results):
     def add_plots(self):
         self.covariate_effects_plot = self.plot_covariate_effects()
         self.individual_effects_plot = self.plot_individual_effects()
+        self.unexplained_variability_plot = self.plot_unexplained_variability()
 
     def plot_covariate_effects(self):
         ce = (self.covariate_effects - 1) * 100
@@ -166,6 +170,40 @@ class FREMResults(Results):
                         p95="datum.nrank == 11 ? '...' : datum.p95",
                         observed="datum.nrank == 11 ? '...' : datum.observed",
                     )
+            plots.append(plot)
+
+        v = alt.vconcat(*plots).resolve_scale(x='shared')
+        return v
+
+    def plot_unexplained_variability(self):
+        uv = self.unexplained_variability
+        param_names = list(uv.index.get_level_values('parameter').unique())
+        cov_order = list(uv.index.get_level_values('covariate').unique())
+        plots = []
+
+        for parameter in param_names:
+            df = uv.xs(parameter, level=0)
+            df = df.reset_index()
+
+            error_bars = alt.Chart(df).mark_errorbar(ticks=True).encode(
+                x=alt.X('sd_5th:Q', title='SD of unexplained variability',
+                        scale=alt.Scale(zero=False)),
+                x2=alt.X2('sd_95th:Q'),
+                y=alt.Y('covariate:N', title='covariate', sort=cov_order),
+            )
+
+            rule = alt.Chart(df).mark_rule(strokeDash=[10, 2], color='gray').encode(
+                x=alt.X('xzero:Q')
+            ).transform_calculate(xzero="0")
+
+            points = alt.Chart(df).mark_point(size=40, filled=True, color='black').encode(
+                x=alt.X('sd_observed:Q'),
+                y=alt.Y('covariate:N'),
+            )
+
+            plot = alt.layer(points, error_bars, rule, data=df,
+                             title=f'Unexplained variability on {parameter}')
+
             plots.append(plot)
 
         v = alt.vconcat(*plots).resolve_scale(x='shared')
