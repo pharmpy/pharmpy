@@ -22,21 +22,30 @@ from pharmpy.results import Results
 
 class FREMResults(Results):
     def __init__(self, covariate_effects=None, individual_effects=None,
-                 unexplained_variability=None, covariate_statistics=None):
+                 unexplained_variability=None, covariate_statistics=None,
+                 covariate_effects_plot=None, covariate_baselines=None):
+        # Lots of boilerplate code ahead. Could be simplified with python 3.7 dataclass
         self.covariate_effects = covariate_effects
         self.individual_effects = individual_effects
         self.unexplained_variability = unexplained_variability
         self.covariate_statistics = covariate_statistics
+        self.covariate_effects_plot = covariate_effects_plot
+        self.covariate_baselines = covariate_baselines
 
     def to_dict(self):
         return {'covariate_effects': self.covariate_effects,
                 'individual_effects': self.individual_effects,
                 'unexplained_variability': self.unexplained_variability,
-                'covariate_statistics': self.covariate_statistics}
+                'covariate_statistics': self.covariate_statistics,
+                'covariate_effects_plot': self.covariate_effects_plot,
+                'covariate_baselines': self.covariate_baselines}
 
     @classmethod
     def from_dict(cls, d):
         return cls(**d)
+
+    def add_plots(self):
+        self.covariate_effects_plot = self.plot_covariate_effects()
 
     def plot_covariate_effects(self):
         ce = self.covariate_effects.copy(deep=True)
@@ -312,6 +321,7 @@ def calculate_results_from_samples(frem_model, continuous, categorical, parvecs,
                                   '95th': id_95th[curid, param]},
                                  name=covariate_baselines.index[curid]))
     df.index.name = 'ID'
+    df = df.set_index('parameter', append=True)
     res.individual_effects = df
 
     # Create unexplained variability table
@@ -331,6 +341,9 @@ def calculate_results_from_samples(frem_model, continuous, categorical, parvecs,
                         'sd_observed': original_sd[cond, par], 'sd_5th': sd_5th[cond, par],
                         'sd_95th': sd_95th[cond, par]}, ignore_index=True)
     res.unexplained_variability = df
+
+    res.covariate_baselines = covariate_baselines
+
     return res
 
 

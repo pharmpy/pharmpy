@@ -140,6 +140,7 @@ def results_frem(args):
     if not args.psn_dir.is_dir():
         error(FileNotFoundError(str(args.psn_dir)))
     res = psn_frem_results(args.psn_dir, method=args.method)
+    res.add_plots()
     res.to_json(path=args.psn_dir / 'results.json')
     res.to_csv(path=args.psn_dir / 'results.csv')
 

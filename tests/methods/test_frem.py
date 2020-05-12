@@ -172,9 +172,8 @@ ETA(2),WGT,95th,0.883742,0.985236,1.114695
 59.0,ETA(2),0.998061493423796,0.9810501731031469,1.0214684496295618
 """
 
-    correct = pd.read_csv(StringIO(correct), index_col=0)
-    correct['parameter'] = correct['parameter'].astype(str)
-    correct.index.name = 'ID'
+    correct = pd.read_csv(StringIO(correct), index_col=[0, 1])
+    correct.index.set_names(['ID', 'parameter'], inplace=True)
     pd.testing.assert_frame_equal(res.individual_effects, correct)
 
     correct = """parameter,condition,sd_observed,sd_5th,sd_95th
@@ -197,6 +196,8 @@ ETA(2),all,0.14572521381314374,0.10000243896199691,0.17321795298354078
                            index=['APGR', 'WGT'])
     correct.index.name = 'covariate'
     pd.testing.assert_frame_equal(res.covariate_statistics, correct)
+
+    res.add_plots()
 
 
 def test_frem_results_pheno_categorical(testdata):
@@ -336,9 +337,8 @@ ETA(2),APGRX,other,0.8498363889783136,0.9042760019837373,0.9625854858603431
 59.0,ETA(2),1.003959806488996,0.9810369326341086,1.0230478675704417
 """
 
-    correct = pd.read_csv(StringIO(correct), index_col=0)
-    correct['parameter'] = correct['parameter'].astype(str)
-    correct.index.name = 'ID'
+    correct = pd.read_csv(StringIO(correct), index_col=[0, 1])
+    correct.index.set_names(['ID', 'parameter'], inplace=True)
     pd.testing.assert_frame_equal(res.individual_effects, correct)
 
     correct = """parameter,condition,sd_observed,sd_5th,sd_95th

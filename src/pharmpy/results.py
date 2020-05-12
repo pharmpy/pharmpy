@@ -18,6 +18,7 @@
 import json
 from pathlib import Path
 
+import altair as alt
 import numpy as np
 import pandas as pd
 
@@ -37,8 +38,15 @@ conf = ResultsConfiguration()
 class ResultsJSONEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, pd.DataFrame) or isinstance(obj, pd.Series):
-            d = json.loads(obj.to_json(orient='split'))
-            d['__class__'] = obj.__class__.__name__
+            d = json.loads(obj.to_json(orient='table'))
+            if isinstance(obj, PharmDataFrame):
+                d['__class__'] = 'DataFrame'
+            else:
+                d['__class__'] = obj.__class__.__name__
+            return d
+        elif obj.__class__.__module__.startswith('altair.'):
+            d = obj.to_dict()
+            d['__class__'] = 'vega-lite'
             return d
         else:
             return json.JSONEncoder.encode(self, obj)
@@ -54,8 +62,10 @@ class ResultsJSONDecoder(json.JSONDecoder):
             cls = dct['__class__']
             del dct['__class__']
             if cls == 'DataFrame' or cls == 'Series':
-                res = pd.read_json(json.dumps(dct), orient='split')
+                res = pd.read_json(json.dumps(dct), orient='table')
                 return res
+            elif cls == 'vega-lite':
+                res = alt.Chart.from_dict(dct)
             else:
                 self.cls = cls
         return dct
@@ -107,6 +117,8 @@ class Results:
         d = self.to_dict()
         s = ""
         for key, value in d.items():
+            if value.__class__.__module__.startswith('altair.'):
+                continue
             s += f'{key}\n'
             if isinstance(value, pd.DataFrame):
                 if isinstance(value.index, pd.RangeIndex):
@@ -119,6 +131,9 @@ class Results:
             s += '\n'
         with open(path, 'w') as fh:
             print(s, file=fh)
+
+    def add_plots(self):
+        raise NotImplementedError()
 
 
 class ModelfitResults:
