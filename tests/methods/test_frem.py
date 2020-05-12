@@ -47,8 +47,8 @@ ETA(2),APGR,95th,1.025922,1.083065,1.123609
 ETA(2),WGT,5th,0.948503,1.009960,1.063028
 ETA(2),WGT,95th,0.883742,0.985236,1.114695
 """
-    correct = pd.read_csv(StringIO(correct))
-    correct['parameter'] = correct['parameter'].astype(str)
+    correct = pd.read_csv(StringIO(correct), index_col=[0, 1, 2])
+    correct.index.set_names(['parameter', 'covariate', 'condition'], inplace=True)
     pd.testing.assert_frame_equal(res.covariate_effects, correct)
 
     correct = """,parameter,observed,p5,p95
@@ -186,8 +186,8 @@ ETA(2),APGR,0.1468832868065463,0.10666448185507846,0.17792077638605008
 ETA(2),WGT,0.16104200315990183,0.10348820432741489,0.1848351655169244
 ETA(2),all,0.14572521381314374,0.10000243896199691,0.17321795298354078
 """
-    correct = pd.read_csv(StringIO(correct))
-    correct['parameter'] = correct['parameter'].astype(str)
+    correct = pd.read_csv(StringIO(correct), index_col=[0, 1])
+    correct.index.set_names(['parameter', 'condition'], inplace=True)
     pd.testing.assert_frame_equal(res.unexplained_variability, correct)
 
     correct = pd.DataFrame({'p5': [1.0, 0.7], 'mean': [6.423729, 1.525424], 'p95': [9.0, 3.2],
@@ -212,8 +212,8 @@ ETA(2),WGT,5th,0.9597747500913076,1.0044780096197885,1.0388367920062975
 ETA(2),WGT,95th,0.9256135592505018,0.9934909758805717,1.0869067285073553
 ETA(2),APGRX,other,0.8498363889783136,0.9042760019837373,0.9625854858603431
 """
-    correct = pd.read_csv(StringIO(correct))
-    correct['parameter'] = correct['parameter'].astype(str)
+    correct = pd.read_csv(StringIO(correct), index_col=[0, 1, 2])
+    correct.index.set_names(['parameter', 'covariate', 'condition'], inplace=True)
     pd.testing.assert_frame_equal(res.covariate_effects, correct)
 
     correct = """,parameter,observed,p5,p95
@@ -352,8 +352,8 @@ ETA(2),APGRX,0.14429826722004974,0.11513030229148667,0.1861126783736316
 ETA(2),all,0.1441532460182698,0.11380319105403863,0.18470095021420732
 """
 
-    correct = pd.read_csv(StringIO(correct))
-    correct['parameter'] = correct['parameter'].astype(str)
+    correct = pd.read_csv(StringIO(correct), index_col=[0, 1])
+    correct.index.set_names(['parameter', 'condition'], inplace=True)
     pd.testing.assert_frame_equal(res.unexplained_variability, correct)
 
     correct = pd.DataFrame({'p5': [0.7, 0], 'mean': [1.525424, 0.711864], 'p95': [3.2, 1],

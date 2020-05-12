@@ -52,16 +52,22 @@ class FREMResults(Results):
         self.individual_effects_plot = self.plot_individual_effects()
 
     def plot_covariate_effects(self):
-        ce = self.covariate_effects.copy(deep=True)
-        ce.loc[:, ['p5', 'mean', 'p95']] = ((ce.loc[:, ['p5', 'mean', 'p95']] - 1) * 100)
+        ce = (self.covariate_effects - 1) * 100
         cov_stats = pd.melt(self.covariate_statistics.reset_index(), var_name='condition',
                             id_vars=['covariate'], value_vars=['p5', 'p95'])
-        ce = ce.merge(cov_stats)
-        param_names = list(ce.parameter.unique())
+
+        cov_stats = cov_stats.replace({'p5': '5th', 'p95': '95th'}).set_index(['covariate',
+                                                                               'condition'])
+        ce = ce.join(cov_stats, how='inner')
+        # The left join reorders the index. Might be pandas bug.
+        ce = ce.reorder_levels(['parameter', 'covariate', 'condition'])
+
+        param_names = list(ce.index.get_level_values('parameter').unique())
         plots = []
 
         for parameter in param_names:
-            df = ce[ce['parameter'] == parameter]
+            df = ce.xs(parameter, level=0)
+            df = df.reset_index()
 
             error_bars = alt.Chart(df).mark_errorbar(ticks=True).encode(
                 x=alt.X('p5:Q', title='Effect size in percent', scale=alt.Scale(zero=False)),
@@ -110,7 +116,7 @@ class FREMResults(Results):
         covs = self.covariate_baselines
         ie = self.individual_effects.join(covs)
         param_names = list(ie.index.get_level_values('parameter').unique())
-        ie.loc[:, ['observed', 'p5', 'p95']] = ((ie.loc[:, ['observed', 'p5', 'p95']] - 1) * 100)
+        ie = (ie - 1) * 100
         ie = ie.sort_values(by=['observed'])
 
         plots = []
@@ -365,6 +371,7 @@ def calculate_results_from_samples(frem_model, continuous, categorical, parvecs,
                             'condition': '95th', 'p5': q5_95th[cov, param],
                             'mean': means_95th[cov, param], 'p95': q95_95th[cov, param]},
                            ignore_index=True)
+    df.set_index(['parameter', 'covariate', 'condition'], inplace=True)
     res.covariate_effects = df
 
     # Create id table
@@ -403,6 +410,7 @@ def calculate_results_from_samples(frem_model, continuous, categorical, parvecs,
         df = df.append({'parameter': param_names[par], 'condition': condition,
                         'sd_observed': original_sd[cond, par], 'sd_5th': sd_5th[cond, par],
                         'sd_95th': sd_95th[cond, par]}, ignore_index=True)
+    df = df.set_index(['parameter', 'condition'])
     res.unexplained_variability = df
 
     res.covariate_baselines = covariate_baselines
