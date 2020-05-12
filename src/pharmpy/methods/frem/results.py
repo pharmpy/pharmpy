@@ -23,13 +23,15 @@ from pharmpy.results import Results
 class FREMResults(Results):
     def __init__(self, covariate_effects=None, individual_effects=None,
                  unexplained_variability=None, covariate_statistics=None,
-                 covariate_effects_plot=None, covariate_baselines=None):
+                 covariate_effects_plot=None, individual_effects_plot=None,
+                 covariate_baselines=None):
         # Lots of boilerplate code ahead. Could be simplified with python 3.7 dataclass
         self.covariate_effects = covariate_effects
         self.individual_effects = individual_effects
         self.unexplained_variability = unexplained_variability
         self.covariate_statistics = covariate_statistics
         self.covariate_effects_plot = covariate_effects_plot
+        self.individual_effects_plot = individual_effects_plot
         self.covariate_baselines = covariate_baselines
 
     def to_dict(self):
@@ -38,6 +40,7 @@ class FREMResults(Results):
                 'unexplained_variability': self.unexplained_variability,
                 'covariate_statistics': self.covariate_statistics,
                 'covariate_effects_plot': self.covariate_effects_plot,
+                'individual_effects_plot': self.individual_effects,
                 'covariate_baselines': self.covariate_baselines}
 
     @classmethod
@@ -46,6 +49,7 @@ class FREMResults(Results):
 
     def add_plots(self):
         self.covariate_effects_plot = self.plot_covariate_effects()
+        self.individual_effects_plot = self.plot_individual_effects()
 
     def plot_covariate_effects(self):
         ce = self.covariate_effects.copy(deep=True)
@@ -97,6 +101,65 @@ class FREMResults(Results):
                 title=f'{parameter}'
             )
 
+            plots.append(plot)
+
+        v = alt.vconcat(*plots).resolve_scale(x='shared')
+        return v
+
+    def plot_individual_effects(self):
+        covs = self.covariate_baselines
+        ie = self.individual_effects.join(covs)
+        param_names = list(ie.index.get_level_values('parameter').unique())
+        ie.loc[:, ['observed', 'p5', 'p95']] = ((ie.loc[:, ['observed', 'p5', 'p95']] - 1) * 100)
+        ie = ie.sort_values(by=['observed'])
+
+        plots = []
+
+        for parameter in param_names:
+            df = ie.xs(parameter, level=1)
+
+            id_order = list(df.index)
+            id_order = [str(int(x)) for x in id_order]
+
+            if len(df) > 20:
+                id_order[10] = '...'
+
+            df = df.reset_index()
+            df['ID'] = df['ID'].astype(int).astype(str)
+
+            error_bars = alt.Chart(df).mark_errorbar(ticks=True).encode(
+                x=alt.X('p5:Q', title='Effect size in percent', scale=alt.Scale(zero=False)),
+                x2=alt.X2('p95:Q'),
+                y=alt.Y('ID:N', title='ID', sort=id_order),
+                tooltip=['ID', 'p5', 'observed', 'p95'] + list(covs.columns),
+            )
+
+            rule = alt.Chart(df).mark_rule(strokeDash=[10, 2], color='gray').encode(
+                x=alt.X('xzero:Q')
+            ).transform_calculate(xzero="0")
+
+            points = alt.Chart(df).mark_point(size=40, filled=True, color='black').encode(
+                x=alt.X('observed:Q'),
+                y=alt.Y('ID:N', sort=id_order),
+            )
+
+            plot = alt.layer(points, error_bars, rule, data=df,
+                             title=f'Individuals for parameter {parameter}')
+            if len(df) > 20:
+                plot = plot.transform_window(
+                        sort=[alt.SortField('observed', order='ascending')],
+                        rank='row_number(observed)',
+                    ).transform_window(
+                         sort=[alt.SortField('observed', order='descending')],
+                         nrank='row_number(observed)'
+                    ).transform_filter(
+                        'datum.rank <= 10 | datum.nrank <= 11'
+                    ).transform_calculate(
+                        ID="datum.nrank == 11 ? '...' : datum.ID",
+                        p5="datum.nrank == 11 ? '...' : datum.p5",
+                        p95="datum.nrank == 11 ? '...' : datum.p95",
+                        observed="datum.nrank == 11 ? '...' : datum.observed",
+                    )
             plots.append(plot)
 
         v = alt.vconcat(*plots).resolve_scale(x='shared')
