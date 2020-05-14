@@ -503,14 +503,18 @@ def psn_frem_results(path, force_posdef_covmatrix=False, force_posdef_samples=50
     model_4 = Model(model_4_path)
     if model_4.modelfit_results is None:
         raise ValueError('Model 4 has no results')
-    try:
-        model_4.modelfit_results.covariance_matrix
-    except Exception:
-        model_4b_path = path / 'final_models' / 'model_4b.mod'
-        model_4b = Model(model_4b_path)
-        cov_model = model_4b
-    else:
-        cov_model = None
+    cov_model = None
+    if method == 'cov_sampling':
+        try:
+            model_4.modelfit_results.covariance_matrix
+        except Exception:
+            model_4b_path = path / 'final_models' / 'model_4b.mod'
+            try:
+                model_4b = Model(model_4b_path)
+            except FileNotFoundError:
+                pass
+            else:
+                cov_model = model_4b
 
     with open(path / 'covariates_summary.csv') as covsum:
         covsum.readline()
