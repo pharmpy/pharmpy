@@ -21,6 +21,8 @@ from pharmpy.results import Results
 
 
 class FREMResults(Results):
+    rst_path = Path(__file__).parent / 'report.rst'
+
     def __init__(self, covariate_effects=None, individual_effects=None,
                  unexplained_variability=None, covariate_statistics=None,
                  covariate_effects_plot=None, individual_effects_plot=None,
@@ -97,15 +99,7 @@ class FREMResults(Results):
                 text=alt.Text("value:Q")
             )
 
-            bar_values = alt.Chart(df).mark_text(
-                dy=15,
-            ).encode(
-                x=alt.X("p5:Q"),
-                y=alt.Y("condition:N"),
-                text=alt.Text("p5:Q", format='.1f'),
-            )
-
-            plot = alt.layer(error_bars, bar_values, rule, points, text, data=df).facet(
+            plot = alt.layer(error_bars, rule, points, text, data=df).facet(
                 columns=1.0,
                 row=alt.Facet('covariate:N', title=None),
                 title=f'{parameter}'
@@ -210,7 +204,7 @@ class FREMResults(Results):
         return v
 
     def __str__(self):
-        start = f'Results from FREM'
+        start = 'Results from FREM'
         # method...
         # covs = f'Continuous covariates: {self.continuous}'
         # cats = f'Categorical covariates: {self.categorical}'

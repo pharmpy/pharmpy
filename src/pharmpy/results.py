@@ -132,6 +132,10 @@ class Results:
         with open(path, 'w') as fh:
             print(s, file=fh)
 
+    def create_report(self, path):
+        import pharmpy.reporting.reporting as reporting
+        reporting.generate_report(self.rst_path, path)
+
     def add_plots(self):
         raise NotImplementedError()
 

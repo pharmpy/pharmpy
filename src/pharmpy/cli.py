@@ -170,6 +170,16 @@ def results_print(args):
     print(res)
 
 
+def results_report(args):
+    """Subcommand to generate reports"""
+    results_path = args.psn_dir / 'results.json'
+    if not results_path.is_file():
+        error(FileNotFoundError(results_path))
+    from pharmpy.results import read_results
+    res = read_results(results_path)
+    res.create_report(args.psn_dir)
+
+
 def results_summary(args):
     """Subcommand to output summary of modelfit"""
     for model in args.models:
@@ -232,6 +242,9 @@ parser_definition = [
             {'name': 'dir', 'metavar': 'file or directory', 'type': pathlib.Path,
              'help': 'Path to directory containing results.json '
                      'or directly to json results file'}]}},
+        {'report': {'help': 'Generate results report', 'func': results_report, 'args': [
+            {'name': 'psn_dir', 'metavar': 'PsN directory', 'type': pathlib.Path,
+             'help': 'Path to PsN run directory'}]}},
         {'summary': {'help': 'Modelfit summary', 'parents': [args_input],
                      'func': results_summary}}],
         'help': 'Result extraction and generation',

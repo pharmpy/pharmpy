@@ -172,8 +172,8 @@ class _RandomData:
             nl (bool): Allow line endings (half as likely as ' ').
         """
 
-        def f(l):
-            return random.choice(chars)*random.choice([0]*l + list(range(1, l)))
+        def f(x):
+            return random.choice(chars)*random.choice([0]*x + list(range(1, x)))
         if nl:
             chars = ' \n '
         else:

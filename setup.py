@@ -73,7 +73,8 @@ setup(
         # eg: 'keyword1', 'keyword2', 'keyword3',
     ],
     install_requires=[
-        'lark-parser', 'sympy', 'symengine', 'pandas', 'numexpr', 'altair', 'toil',
+        'lark-parser', 'sympy', 'symengine', 'pandas', 'numexpr', 'altair', 'toil', 'sphinx',
+        'csscompressor', 'beautifulsoup4', 'lxml'
     ],
     extras_require={
         # eg:
