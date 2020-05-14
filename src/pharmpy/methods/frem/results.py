@@ -228,7 +228,12 @@ def calculate_results(frem_model, continuous, categorical, method=None, **kwargs
        :param method: Either 'cov_sampling' or 'bipp'
     """
     if method is None or method == 'cov_sampling':
-        res = calculate_results_using_cov_sampling(frem_model, continuous, categorical, **kwargs)
+        try:
+            res = calculate_results_using_cov_sampling(frem_model, continuous,
+                                                       categorical, **kwargs)
+        except AttributeError:
+            # Fallback to bipp
+            res = calculate_results_using_bipp(frem_model, continuous, categorical)
     elif method == 'bipp':
         res = calculate_results_using_bipp(frem_model, continuous, categorical)
     else:
@@ -484,7 +489,7 @@ def calculate_results_using_bipp(frem_model, continuous, categorical, rescale=Tr
     return res
 
 
-def psn_frem_results(path, force_posdef_covmatrix=False, method=None):
+def psn_frem_results(path, force_posdef_covmatrix=False, force_posdef_samples=500, method=None):
     """ Create frem results from a PsN FREM run
 
         :param path: Path to PsN frem run directory
@@ -517,5 +522,6 @@ def psn_frem_results(path, force_posdef_covmatrix=False, method=None):
     categorical = list(nunique.index[nunique == 2])
 
     res = calculate_results(model_4, continuous, categorical, method=method,
-                            force_posdef_covmatrix=force_posdef_covmatrix, cov_model=cov_model)
+                            force_posdef_covmatrix=force_posdef_covmatrix,
+                            force_posdef_samples=force_posdef_samples, cov_model=cov_model)
     return res

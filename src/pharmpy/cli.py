@@ -139,7 +139,9 @@ def results_frem(args):
     from pharmpy.methods.frem.results import psn_frem_results
     if not args.psn_dir.is_dir():
         error(FileNotFoundError(str(args.psn_dir)))
-    res = psn_frem_results(args.psn_dir, method=args.method)
+    res = psn_frem_results(args.psn_dir, method=args.method,
+                           force_posdef_covmatrix=args.force_posdef_covmatrix,
+                           force_posdef_samples=args.force_posdef_samples)
     res.add_plots()
     res.to_json(path=args.psn_dir / 'results.json')
     res.to_csv(path=args.psn_dir / 'results.csv')
@@ -235,7 +237,11 @@ parser_definition = [
             {'name': 'psn_dir', 'metavar': 'PsN directory', 'type': pathlib.Path,
              'help': 'Path to PsN frem run directory'},
             {'name': '--method', 'choices': ['cov_sampling', 'bipp'], 'default': 'cov_sampling',
-             'help': 'Method to use for uncertainty of covariate effects'}]}},
+             'help': 'Method to use for uncertainty of covariate effects'},
+            {'name': '--force_posdef_covmatrix', 'action': 'store_true',
+             'help': 'Should covariance matrix be forced to become positive definite'},
+            {'name': '--force_posdef_samples', 'type': int, 'default': 500,
+             'help': 'Number of sampling tries to do before starting to force posdef'}]}},
         {'ofv': {'help': 'Extract OFVs from model runs', 'parents': [args_input],
                  'func': results_ofv}},
         {'print': {'help': 'Print results', 'func': results_print, 'args': [
