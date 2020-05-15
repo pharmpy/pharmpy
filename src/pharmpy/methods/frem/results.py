@@ -192,7 +192,7 @@ class FREMResults(Results):
 
             points = alt.Chart(df).mark_point(size=40, filled=True, color='black').encode(
                 x=alt.X('sd_observed:Q'),
-                y=alt.Y('covariate:N'),
+                y=alt.Y('covariate:N', sort=cov_order),
             )
 
             plot = alt.layer(points, error_bars, rule, data=df,
