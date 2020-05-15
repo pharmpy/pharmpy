@@ -79,7 +79,7 @@ class FREMResults(Results):
                 x=alt.X('p5:Q', title='Effect size in percent', scale=alt.Scale(zero=False)),
                 x2=alt.X2('p95:Q'),
                 y=alt.Y('condition:N', title=None),
-            ).properties(width=400, height=100)
+            )
 
             rule = alt.Chart(df).mark_rule(strokeDash=[10, 4], color='gray').encode(
                 x=alt.X('xzero:Q')
@@ -99,7 +99,7 @@ class FREMResults(Results):
                 text=alt.Text("value:Q")
             )
 
-            plot = alt.layer(error_bars, rule, points, text, data=df).facet(
+            plot = alt.layer(error_bars, rule, points, text, data=df, width=800, height=100).facet(
                 columns=1.0,
                 row=alt.Facet('covariate:N', title=None),
                 title=f'{parameter}'
@@ -147,7 +147,7 @@ class FREMResults(Results):
                 y=alt.Y('ID:N', sort=id_order),
             )
 
-            plot = alt.layer(points, error_bars, rule, data=df,
+            plot = alt.layer(points, error_bars, rule, data=df, width=800,
                              title=f'Individuals for parameter {parameter}')
             if len(df) > 20:
                 plot = plot.transform_window(
@@ -184,6 +184,7 @@ class FREMResults(Results):
                         scale=alt.Scale(zero=False)),
                 x2=alt.X2('sd_95th:Q'),
                 y=alt.Y('covariate:N', title='covariate', sort=cov_order),
+                tooltip=['sd_5th', 'sd_observed', 'sd_95th', 'covariate'],
             )
 
             rule = alt.Chart(df).mark_rule(strokeDash=[10, 2], color='gray').encode(
@@ -195,7 +196,7 @@ class FREMResults(Results):
                 y=alt.Y('covariate:N', sort=cov_order),
             )
 
-            plot = alt.layer(points, error_bars, rule, data=df,
+            plot = alt.layer(points, error_bars, rule, data=df, width=800,
                              title=f'Unexplained variability on {parameter}')
 
             plots.append(plot)
