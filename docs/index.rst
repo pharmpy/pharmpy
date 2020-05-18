@@ -9,7 +9,6 @@ Contents
    usage
    Documentation <reference/modules>
    NONMEM
-   milestones
    todo
    design
    future
