@@ -1,9 +1,9 @@
 """
-=================================
-Pharmpy -- Python Pharmacometrics
-=================================
+=======
+Pharmpy
+=======
 
-Pharmpy is an experiment in substituting (some of) the PsN functionality in Python.
+Pharmpy is a python package for pharmacometrics modelling.
 
 Definitions
 ===========
