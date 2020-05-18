@@ -1,5 +1,6 @@
 import pandas as pd
 
+import pharmpy.visualization
 from pharmpy.results import Results
 
 

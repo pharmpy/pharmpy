@@ -108,6 +108,14 @@ class Results:
             return s
 
     def to_dict(self):
+        """Convert results object to a dictionary
+        """
+        raise NotImplementedError()
+
+    @classmethod
+    def from_dict(cls, d):
+        """Cread a results object from a dictionary
+        """
         raise NotImplementedError()
 
     def to_csv(self, path):
@@ -138,6 +146,8 @@ class Results:
         reporting.generate_report(self.rst_path, path)
 
     def add_plots(self):
+        """Create and add all plots to results object
+        """
         raise NotImplementedError()
 
 
