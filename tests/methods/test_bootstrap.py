@@ -1,6 +1,7 @@
 import pandas as pd
 
-from pharmpy.results import BootstrapResults, ModelfitResults, read_results
+from pharmpy.methods.bootstrap import BootstrapResults
+from pharmpy.results import ModelfitResults, read_results
 
 
 def test_bootstrap():
