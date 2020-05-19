@@ -75,6 +75,17 @@ class Model:
     def update_individual_estimates(self, source):
         self.initial_individual_estimates = self.modelfit_results.individual_estimates
 
+    @property
+    def dataset(self):
+        raise NotImplementedError()
+
+    @property
+    def dataset_path(self):
+        raise NotImplementedError()
+
+    def read_raw_dataset(self, parse_columns=tuple()):
+        raise NotImplementedError()
+
 #    Represents a model object, that may or may not exist on disk too.
 
 #    Attributes:
@@ -91,16 +102,11 @@ class Model:
 #    """:class:`~pharmpy.execute.Engine` API.
 #    Evaluation, estimation & simulation tasks."""
 
-#    ModelInput = ModelInput
-#    """:class:`~pharmpy.input.ModelInput` API.
-#    E.g. data."""
-
 #    _path = None
 #    _index = 0
 
 #    def __init__(self, path):
 #        self.source = self.SourceResource(path)
-#        self.input = self.ModelInput(self)
 #        self.parameters = self.ParameterModel(self)
 #        self.execute = self.Engine(self)
 #        self.source.model = self

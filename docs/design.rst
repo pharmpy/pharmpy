@@ -130,14 +130,6 @@ does, but it *must* be requested explicitly. If not used when run directory is t
 - Creates Job objects, executing some task, for a *specific* implementation.
 - Contains Environment object. The focal point for implementation inheritance.
 
-API module: :mod:`~pharmpy.input`
----------------------------------
-
-.. warning:: This is outdated. Fix this!
-
-One central dataset storage implementation. Different interpretations of different columns are
-needed like ``EVID``, ``AMT`` etc.
-
 API module: :mod:`~pharmpy.output`
 ----------------------------------
 

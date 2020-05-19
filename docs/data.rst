@@ -22,7 +22,7 @@ Retrieving the dataset from a model
    from pharmpy import Model
 
    model = Model(path / "pheno_real.mod")
-   df = model.input.dataset
+   df = model.dataset
    df
 
 This is the dataset after applying any model specific filtering and handling of special values.
@@ -31,7 +31,7 @@ The raw dataset can also be accessed
 
 .. jupyter-execute::
 
-   raw = model.input.read_raw_dataset()
+   raw = model.read_raw_dataset()
    raw
 
 Note that all values here are strings
@@ -47,4 +47,4 @@ A new or updated dataset can be set to a model
    import numpy as np
 
    df['DV'] = np.log(df['DV'], where=(df['DV'] != 0))
-   model.input.dataset = df 
+   model.dataset = df 

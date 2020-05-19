@@ -406,7 +406,7 @@ def calculate_results_from_samples(frem_model, continuous, categorical, parvecs,
     parvecs = parvecs.append(
             frem_model.modelfit_results.parameter_estimates.loc[parameters])
 
-    df = frem_model.input.dataset
+    df = frem_model.dataset
     covariates = continuous + categorical
     df.pharmpy.column_type[covariates] = ColumnType.COVARIATE
     covariate_baselines = df.pharmpy.covariate_baselines
@@ -638,7 +638,7 @@ def psn_frem_results(path, force_posdef_covmatrix=False, force_posdef_samples=50
         raw_cov_list = covsum.readline()
 
     all_covariates = raw_cov_list[1:].rstrip().split(',')
-    nunique = model_4.input.dataset[all_covariates].nunique()
+    nunique = model_4.dataset[all_covariates].nunique()
     continuous = list(nunique.index[nunique != 2])
     categorical = list(nunique.index[nunique == 2])
 
