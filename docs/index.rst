@@ -7,6 +7,7 @@ Contents
 
    installation
    usage
+   userguide
    Documentation <reference/modules>
    NONMEM
    todo

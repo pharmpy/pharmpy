@@ -173,3 +173,7 @@ class Parameter:
         """
         return self.init == other.init and self.lower == other.lower and \
             self.upper == other.upper and self.name == other.name and self.fix == other.fix
+
+    def __repr__(self):
+        return f'Parameter("{self.name}", {self.init}, lower={self.lower}, upper={self.upper}, ' \
+               f'fix={self.fix})'

@@ -1,2 +1,3 @@
 pydata-sphinx-theme
+jupyter-sphinx
 -e .
