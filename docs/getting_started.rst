@@ -1,6 +1,6 @@
-=====
-Usage
-=====
+===============
+Getting started
+===============
 
 Pharmpy can be used in a python program as a module or via its command line interface. It can also
 be used via reticulate from R.

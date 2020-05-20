@@ -1,13 +1,6 @@
-.. _version:
-
 =======
 Version
 =======
-
-Changelog
-=========
-
-.. include:: ../CHANGELOG.rst
 
 Bumping
 =======

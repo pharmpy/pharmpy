@@ -6,14 +6,11 @@ Contents
    :maxdepth: 4
 
    installation
-   usage
-   userguide
+   getting_started
+   user_guide
    Documentation <reference/modules>
-   NONMEM
-   todo
-   design
-   future
-   version
+   development
+   changelog
    license
 
 Indices and tables

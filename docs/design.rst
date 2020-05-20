@@ -4,6 +4,8 @@
 Design
 ======
 
+.. warning:: This document is outdated. It could in the future be transformed into a plugin writer's guide for example
+
 Introduction
 ============
 
