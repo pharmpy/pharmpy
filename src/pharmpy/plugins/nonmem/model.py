@@ -278,8 +278,13 @@ class Model(pharmpy.model.Model):
 
     @property
     def statements(self):
-        pred = self.control_stream.get_records('PRED')[0]
-        return pred.statements
+        pred = self.control_stream.get_records('PRED')
+        if len(pred) == 0:
+            pk = self.control_stream.get_records('PK')
+            rec = pk[0]
+        else:
+            rec = pred[0]
+        return rec.statements
 
     def _zero_fix_rvs(self, eta=True):
         zero_fix = []

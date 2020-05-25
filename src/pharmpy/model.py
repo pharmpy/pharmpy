@@ -15,6 +15,8 @@ Definitions
 import copy
 from pathlib import Path
 
+import sympy
+
 
 class ModelException(Exception):
     pass
@@ -85,3 +87,17 @@ class Model:
 
     def read_raw_dataset(self, parse_columns=tuple()):
         raise NotImplementedError()
+
+    def create_symbol(self, stem):
+        """Create a new unique variable symbol
+
+           stem - First part of the new variable name
+        """
+        # TODO: Also check parameter and rv names
+        symbols = self.statements.symbols
+        i = 1
+        while True:
+            candidate = sympy.Symbol(f'{stem}{i}')
+            if candidate not in symbols:
+                return candidate
+            i += 1

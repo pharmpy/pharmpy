@@ -20,4 +20,11 @@ class Assignment:
 class ModelStatements(list):
     """A list of sympy statements describing the model
     """
-    pass
+    @property
+    def symbols(self):
+        """Get a set of all used symbols"""
+        symbols = set()
+        for assignment in self:
+            symbols |= {assignment.symbol}
+            symbols |= assignment.expression.free_symbols
+        return symbols
