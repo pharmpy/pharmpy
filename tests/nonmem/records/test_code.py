@@ -116,6 +116,6 @@ IF(APGR.LT.5) TVV=TVV*(1+THETA(3))
     assert rec.statements[5].expression == S('TVCL') * sympy.exp(S('ETA(1)'))
     assert rec.statements[6].expression == S('TVV') * sympy.exp(S('ETA(2)'))
     assert rec.statements[7].expression == S('V')
-    symbol_names = {s.name for s in rec.statements.symbols}
+    symbol_names = {s.name for s in rec.statements.free_symbols}
     assert symbol_names == {'AMT', 'BTIME', 'TIME', 'TAD', 'TVCL', 'THETA(1)', 'WGT', 'TVV',
                             'THETA(2)', 'APGR', 'THETA(3)', 'CL', 'ETA(1)', 'V', 'ETA(2)', 'S1'}

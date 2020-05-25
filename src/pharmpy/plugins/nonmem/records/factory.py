@@ -21,6 +21,7 @@ known_records = {
     'INPUT': (OptionRecord, OptionRecordParser),
     'PROBLEM': (ProblemRecord, ProblemRecordParser),
     'SIZES': (OptionRecord, OptionRecordParser),
+    'SUBROUTINE': (OptionRecord, OptionRecordParser),
     'THETA': (ThetaRecord, ThetaRecordParser),
     'OMEGA': (OmegaRecord, OmegaRecordParser),
     'SIGMA': (OmegaRecord, OmegaRecordParser),

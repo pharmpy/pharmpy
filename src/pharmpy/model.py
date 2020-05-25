@@ -94,7 +94,7 @@ class Model:
            stem - First part of the new variable name
         """
         # TODO: Also check parameter and rv names
-        symbols = self.statements.symbols
+        symbols = self.statements.free_symbols
         i = 1
         while True:
             candidate = sympy.Symbol(f'{stem}{i}')
