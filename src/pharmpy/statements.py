@@ -16,6 +16,9 @@ class Assignment:
             self.symbol = sympy.Symbol(symbol, real=True)
         self.expression = expression
 
+    def __str__(self):
+        return f'{self.symbol} := {self.expression}'
+
 
 class ModelStatements(list):
     """A list of sympy statements describing the model
@@ -28,3 +31,12 @@ class ModelStatements(list):
             symbols |= {assignment.symbol}
             symbols |= assignment.expression.free_symbols
         return symbols
+
+    def subs(self, old, new):
+        """Substitute old expression for new in all rhs of assignments"""
+        for assignment in self:
+            assignment.expression = assignment.expression.subs(old, new)
+
+    def __str__(self):
+        s = [str(assignment) for assignment in self]
+        return '\n'.join(s)
