@@ -47,6 +47,7 @@ def create_model3b(model1b, model3, ncovs):
 
     parcov_inits = calculate_parcov_inits(model3, ncovs)
     parameters.inits = parcov_inits
+    parameters.inits = model3.random_variables.nearest_valid_parameters(parameters.inits)
     parameters.fix = model1b.parameters.fix
 
     model3b = model3.copy()
