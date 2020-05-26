@@ -32,17 +32,25 @@ class Assignment:
 
 
 class Compartment:
-    def __init__(self, name, input, output, amount, volume):
+    def __init__(self, name, input, output, amount=sympy.Function('A', real=True),
+                 volume=sympy.Symbol('V'), idv=sympy.Symbol('t', real=True)):
         self.name = name
         self.input = input
         self.output = output
         self.amount = amount
+        self.idv = idv
         self.volume = volume
 
     @property
     def free_symbols(self):
         return self.input.free_symbols | self.output.free_symbols | self.amount.free_symbols | \
                self.volume.free_symbols
+
+    def de(self):
+        """Differential equation"""
+        dAdt = sympy.Derivative(self.amount(self.idv), self.idv)
+        rhs = -self.output.rate * self.amount(self.idv)
+        return sympy.Eq(dAdt, rhs)
 
     def __repr__(self):
         return f'{self.amount} := compartment({self.name}, input={self.input}, ' \
