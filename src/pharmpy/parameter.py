@@ -23,6 +23,12 @@ class ParameterSet(OrderedSet):
                 return e
         raise KeyError(f'Parameter "{index}" does not exist')
 
+    def __contains__(self, item):
+        for e in self:
+            if e.name == item:
+                return True
+        return False
+
     def summary(self):
         """Give a dataframe with a summary of all Parameters
 
