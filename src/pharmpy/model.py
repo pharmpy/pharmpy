@@ -81,10 +81,6 @@ class Model:
     def dataset(self):
         raise NotImplementedError()
 
-    @property
-    def dataset_path(self):
-        raise NotImplementedError()
-
     def read_raw_dataset(self, parse_columns=tuple()):
         raise NotImplementedError()
 

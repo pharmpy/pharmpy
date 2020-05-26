@@ -324,6 +324,8 @@ class Model(pharmpy.model.Model):
 
     @property
     def dataset_path(self):
+        """This property is NONMEM specific
+        """
         record = self.control_stream.get_records('DATA')[0]
         path = Path(record.filename)
         if not path.is_absolute():
