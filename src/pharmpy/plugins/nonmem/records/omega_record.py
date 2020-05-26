@@ -225,12 +225,7 @@ class OmegaRecord(Record):
                 raise ValueError('Cannot only fix some parameters in block')
 
             A = pharmpy.math.flattened_to_symmetric(inits)
-            try:
-                L = np.linalg.cholesky(A)
-            except np.linalg.LinAlgError:
-                rv_vector_name = self._rv_vector_name(range(first_omega, first_omega + size))
-                raise ValueError(f"Cannot set initial estimates as covariance matrix of "
-                                 f"{rv_vector_name} would not be positive definite.")
+
             if corr:
                 for i in range(size):
                     for j in range(size):
@@ -240,7 +235,7 @@ class OmegaRecord(Record):
                 np.fill_diagonal(A, A.diagonal()**0.5)
 
             if cholesky:
-                A = L
+                A = np.linalg.cholesky(A)
 
             inds = np.tril_indices_from(A)
             array = list(A[inds])

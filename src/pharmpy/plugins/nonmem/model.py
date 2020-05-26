@@ -182,33 +182,30 @@ class Model(pharmpy.model.Model):
         """params can be a ParameterSet or a dict-like with name: value
 
            Current restricions:
-            * ParameterSet only supported for new initial estimates
+            * ParameterSet only supported for new initial estimates and fix
             * Only set the exact same parameters. No additions and no removing of parameters
         """
         if isinstance(params, ParameterSet):
-            inits = dict()
-            for p in params:
-                inits[p.name] = p.init
+            inits = params.inits
         else:
             inits = params
+        if not self.random_variables.validate_parameters(inits):
+            raise ValueError("New parameter inits are not valid")
 
-        if len(self.parameters) != len(params):
-            raise NotImplementedError("Current number of parameters in model and parameters to "
-                                      "set are not the same. Not yet supported")
-        for p in self.parameters:
-            name = p.name
-            if name not in inits:
-                raise NotImplementedError(f"Parameter '{name}' not found in input. Currently "
-                                          f"not supported")
-            if p.lower > inits[name]:
-                raise ValueError(f"Cannot set a lower parameter initial estimate "
-                                 f"{inits[name]} for parameter '{name}' than the "
-                                 f"current lower bound {p.lower}")
-            if p.upper < inits[name]:
-                raise ValueError(f"Cannot set a higher parameter initial estimate "
-                                 f"{inits[name]} for parameter '{name}' than the "
-                                 f"current upper bound {p.upper}")
-            p.init = inits[name]
+        parameters = self.parameters
+        if not isinstance(params, ParameterSet):
+            parameters.inits = params
+        else:
+            if len(self.parameters) != len(params):
+                raise NotImplementedError("Current number of parameters in model and parameters to "
+                                          "set are not the same. Not yet supported")
+
+            for p in self.parameters:
+                name = p.name
+                if name not in params:
+                    raise NotImplementedError(f"Parameter '{name}' not found in input. Currently "
+                                              f"not supported")
+            self._parameters = params
         self._parameters_updated = True
 
     @property

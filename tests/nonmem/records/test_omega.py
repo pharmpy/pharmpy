@@ -171,14 +171,6 @@ def test_update(parser):
     rec.update(pset, 1, None)
     assert str(rec) == '$OMEGA CORR BLOCK(2)  2.0 0.25 SD 2.0\n'
 
-    rec = parser.parse("$OMEGA CORR BLOCK(2)  1 0.5 SD 1\n").records[0]
-    pset, _, _ = rec.parameters(1, None)
-    pset['OMEGA(1,1)'].init = 1
-    pset['OMEGA(2,1)'].init = 4
-    pset['OMEGA(2,2)'].init = 1
-    with pytest.raises(ValueError):
-        rec.update(pset, 1, None)
-
     rec = parser.parse("$OMEGA BLOCK(2) 1 0.1 1\n CHOLESKY").records[0]
     pset, _, _ = rec.parameters(1, None)
     pset['OMEGA(1,1)'].init = 0.64
