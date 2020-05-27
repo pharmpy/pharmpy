@@ -6,6 +6,11 @@ License
 
 .. include:: ../AUTHORS.rst
 
+Logo
+====
+
+The Pharmpy logo was adopted from https://commons.wikimedia.org/wiki/File:Bowl_Of_Hygieia_by_David.svg and is under the CC-BY-SA 3.0 license.
+
 Copyright
 =========
 

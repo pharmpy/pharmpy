@@ -1,6 +1,13 @@
-========
+=========================
+Welcome to Pharmpy |logo|
+=========================
+
+.. |logo| image:: Pharmpy_logo.svg
+   :width: 100
+
 Contents
 ========
+
 
 .. toctree::
    :maxdepth: 4
