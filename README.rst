@@ -12,7 +12,7 @@
 Pharmpy |logo|
 ==============
 
-.. |logo| image:: Pharmpy_logo.svg
+.. |logo| image:: docs/Pharmpy_logo.svg
    :width: 100
 
 .. start-longdesc
