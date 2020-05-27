@@ -16,7 +16,7 @@ read the NONMEM model ``pheno_real.mod`` from file into a model object, the foll
     path = 'tests/testdata/nonmem/pheno_real.mod'
     pheno = Model(path)
 
-The model file format is automatically detected and used:
+The model file format is automatically detected:
 
 .. doctest::
     :pyversion: > 3.6
