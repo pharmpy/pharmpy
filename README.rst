@@ -15,6 +15,8 @@ Pharmpy |logo|
 .. |logo| image:: docs/Pharmpy_logo.svg
    :width: 100
 
+https://pharmpy.github.io
+
 .. start-longdesc
 
 Pharmpy is a library for pharmacometrics. It can be used as a regular python package, in R via reticulate or via its built in command line interface.
