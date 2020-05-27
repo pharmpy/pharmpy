@@ -8,9 +8,12 @@
 
 .. highlight:: console
 
-=======
-Pharmpy
-=======
+==============
+Pharmpy |logo|
+==============
+
+.. |logo| image:: Pharmpy_logo.svg
+   :width: 100
 
 .. start-longdesc
 
