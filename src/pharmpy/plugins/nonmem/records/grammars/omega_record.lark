@@ -24,14 +24,8 @@
 //   %input | VARIANCE CORRELATION BLOCK(2)\n0.64\n-0.394 0.58|
 //   %input | CHOLESKY BLOCK(2)\n0.8\n-0.3 0.7|
 
-// FIXME:
-// Grammar is problematic:
-// non-grammar: Wrong count for $OMEGA BLOCK(2) starting point for next omega
-// Loop through all items and get vector that can be used to construct matrix (xn can be for off-diags)
-// Remove input API. Unnecessary extra level for only two methods?
-// Option placements not correct below and also newline/comment placement
-
-root : [_ws] [diagonal] (diag_item [_ws])+ [_ws]           // form 1
+root : NEWLINE
+     | [WS] [diagonal] ([_ws] diag_item)+ [_ws]           // form 1
      | [_opt] block [_opt] (_item)+ [_ws]      // form 2
      | [_opt] block [_opt] same ([_ws] comment)* [_ws]    // form 3
      | [_opt] bare_block [_opt] same ([_ws] comment)* [_ws]    // form 3 w/o n
@@ -80,14 +74,15 @@ init  : NUMERIC
 n     : "x" INT
 
 // common misc rules
-_ws: [WS] [comment] [WS_ALL]
+_ws: [WS] [NEWLINE]
 comment: COMMENT
 
 // common misc terminals
 WS: (" " | /\t/)+
 WS_ALL: /\s+/
 
-COMMENT : /;[^\n]*/
+NEWLINE: (/\r?\n[ \t]*/ | COMMENT)+
+COMMENT: /;[^\n]*/
 
 // common numeric terminals
 DIGIT: "0".."9"

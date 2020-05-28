@@ -50,7 +50,9 @@ class Compartment:
         """Differential equation"""
         dAdt = sympy.Derivative(self.amount(self.idv), self.idv)
         rhs = -self.output.rate * self.amount(self.idv)
-        return sympy.Eq(dAdt, rhs)
+        # Initial condition (second in tuble) depends on dose.
+        # 0 means time relative to this dose. Should perhaps rather be "TIME"
+        return sympy.Eq(dAdt, rhs), {self.amount(0): self.input.data_label}
 
     def __repr__(self):
         return f'{self.amount} := compartment({self.name}, input={self.input}, ' \

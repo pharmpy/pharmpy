@@ -59,6 +59,11 @@ def S(x):
     ('$OMEGA BLOCK(1)   1.5', [
         ('OMEGA(1,1)', 1.5, 0, sympy.oo, False),
         ]),
+    ('$OMEGA  0.0258583  ;      V2\n'
+     ';$OMEGA BLOCK(1) 0.0075 FIX    ;.02 ; IOC\n'
+     ';$OMEGA BLOCK(1) SAME\n', [
+        ('OMEGA(1,1)', 0.0258583, 0, sympy.oo, False),
+        ]),
 ])
 def test_parameters(parser, buf, results):
     recs = parser.parse(buf)
