@@ -5,8 +5,26 @@ import pandas as pd
 from pytest import approx
 
 from pharmpy import Model
+from pharmpy.methods.frem.method import check_covariates
 from pharmpy.methods.frem.models import calculate_parcov_inits, create_model3b
 from pharmpy.methods.frem.results import calculate_results, calculate_results_using_bipp
+
+
+def test_check_covariates(testdata):
+    model = Model(testdata / 'nonmem' / 'pheno_real.mod')
+    newcov = check_covariates(model, ['FA1', 'FA2'])
+    assert newcov == []
+    newcov = check_covariates(model, ['WGT', 'APGR'])
+    assert newcov == ['WGT', 'APGR']
+    newcov = check_covariates(model, ['APGR', 'WGT'])
+    assert newcov == ['APGR', 'WGT']
+    data = model.dataset
+    data['NEW'] = data['WGT']
+    model.dataset = data
+    newcov = check_covariates(model, ['APGR', 'WGT', 'NEW'])
+    assert newcov == ['APGR', 'WGT']
+    newcov = check_covariates(model, ['NEW', 'APGR', 'WGT'])
+    assert newcov == ['NEW', 'APGR']
 
 
 def test_parcov_inits(testdata):
