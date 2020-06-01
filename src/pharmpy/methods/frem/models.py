@@ -16,6 +16,7 @@ def calculate_parcov_inits(model, ncovs):
     rvs = [rv.name for rv in rvs]
     ie = model.modelfit_results.individual_estimates
     eta_corr = ie[rvs].corr()
+    eta_corr.fillna(value=1.0, inplace=True)    # Identical etas will get NaN as both diag and corr
 
     sigma = dist.sigma
     inits = sigma.subs(model.parameters.inits)
