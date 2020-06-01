@@ -20,12 +20,18 @@ def check_covariates(input_model, covariates):
 
        1. A covariate has the same baseline value for all individuals
        2. Two or more covariates have the exact same base line values
+       3. Warn for time varying covariates
 
        Return a new list of covariates with "bad" ones removed
     """
     data = input_model.dataset
     data.pharmpy.column_type[covariates] = ColumnType.COVARIATE
     cov_bls = data.pharmpy.covariate_baselines
+
+    tvar = data.pharmpy.time_varying_covariates
+    if tvar:
+        warnings.warn(f'The covariates {tvar} are time varying, but FREM will only use the '
+                      f'baseline values.')
 
     # Covariates with only one baseline value
     unique = (cov_bls.iloc[0] == cov_bls.iloc[1:]).all()
