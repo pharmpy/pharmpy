@@ -65,7 +65,7 @@ def generate_report(rst_path, results_path):
 def embed_css_and_js(html, target):
     """Embed all external css and javascript into an html
     """
-    with open(html, 'r') as sh:
+    with open(html, 'r', encoding='utf-8') as sh:
         soup = BeautifulSoup(sh, features='lxml')
 
     scripts = soup.findAll("script", attrs={"src": True})
@@ -106,5 +106,5 @@ def embed_css_and_js(html, target):
         tag.append(minified_content)
         stylesheet.replace_with(tag)
 
-    with open(target, 'w') as dh:
+    with open(target, 'w', encoding='utf-8') as dh:
         dh.write(str(soup))
