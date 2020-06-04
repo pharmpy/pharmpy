@@ -30,7 +30,7 @@ def generate_report(rst_path, results_path):
         tmp_path = Path(tmpdirname)
         source_path = tmp_path / 'source'
         source_path.mkdir()
-        shutil.copy(rst_path, source_path / 'index.rst')
+        shutil.copy(rst_path, source_path / 'results.rst')
         shutil.copy(results_path / 'results.json', source_path)
 
         conf_path = Path(__file__).parent
@@ -58,7 +58,7 @@ def generate_report(rst_path, results_path):
 }
 """)
         report_path = tmp_path / 'results.html'
-        embed_css_and_js(tmp_path / 'index.html', report_path)
+        embed_css_and_js(tmp_path / 'results.html', report_path)
         shutil.copy(report_path, results_path)
 
 

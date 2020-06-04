@@ -2,7 +2,7 @@
    :maxdepth: 2
    :caption: Contents:
 
-   index
+   results
 
 
 FREM Results
