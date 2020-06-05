@@ -642,7 +642,18 @@ def psn_frem_results(path, force_posdef_covmatrix=False, force_posdef_samples=50
     continuous = list(nunique.index[nunique != 2])
     categorical = list(nunique.index[nunique == 2])
 
+    # FIXME: Not introducing yaml parser in pharmpy just yet. Options should be collected
+    # differently. Perhaps using json
+    with open(path / 'meta.yaml') as meta:
+        for row in meta:
+            row = row.strip()
+            if row.startswith('rescale: 1'):
+                rescale = True
+            elif row.startswith('rescale: 0'):
+                rescale = False
+
     res = calculate_results(model_4, continuous, categorical, method=method,
                             force_posdef_covmatrix=force_posdef_covmatrix,
-                            force_posdef_samples=force_posdef_samples, cov_model=cov_model)
+                            force_posdef_samples=force_posdef_samples, cov_model=cov_model,
+                            rescale=rescale)
     return res
