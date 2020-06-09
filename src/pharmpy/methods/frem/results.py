@@ -328,9 +328,9 @@ class FREMResults(Results):
         #    resc = 'Rescaling was used'
         # else:
         #    resc = 'Rescaling was not used'
-        ce = self.covariate_effects.to_string(index=False)
+        ce = self.covariate_effects.to_string()
         ie = self.individual_effects.to_string()
-        uv = self.unexplained_variability.to_string(index=False)
+        uv = self.unexplained_variability.to_string()
         cs = self.covariate_statistics.to_string()
         return f'{start}\n\nCovariate statistics\n{cs}\n\n' \
                f'Covariate effects\n{ce}\n\nIndividual effects\n{ie}\n\n' \
