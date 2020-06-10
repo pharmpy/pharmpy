@@ -214,6 +214,14 @@ class DataFrameAccessor:
             return list(time_var.index[time_var])
 
     @property
+    def baselines(self):
+        """ Baselines for each id.
+            Baseline is taken to be the first row even if that has a missing value.
+        """
+        idlab = self.id_label
+        return self._obj.groupby(idlab).nth(0)
+
+    @property
     def covariate_baselines(self):
         """ Return a dataframe with baselines of all covariates for each id.
             Baseline is taken to be the first row even if that has a missing value.

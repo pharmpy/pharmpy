@@ -4,7 +4,7 @@ Generic NONMEM option record class.
 Assumes 'KEY=VALUE' and does not support 'KEY VALUE'.
 """
 
-from collections import OrderedDict
+from collections import OrderedDict, namedtuple
 
 from pharmpy.parse_utils.generic import AttrTree
 
@@ -16,6 +16,7 @@ class OptionRecord(Record):
     def option_pairs(self):
         """ Extract the key-value pairs
             If no value exists set it to None
+            Can only handle cases where options are supposed to be unique
         """
         pairs = OrderedDict()
         for node in self.root.all('option'):
@@ -23,6 +24,20 @@ class OptionRecord(Record):
                 pairs[node.KEY] = node.VALUE
             else:
                 pairs[node.VALUE] = None
+        return pairs
+
+    @property
+    def all_options(self):
+        """ Extract all options even if non-unique.
+            returns a list of named two-tuples with key and value
+        """
+        Option = namedtuple('Option', ['key', 'value'])
+        pairs = []
+        for node in self.root.all('option'):
+            if hasattr(node, 'KEY'):
+                pairs += [Option(node.KEY, node.VALUE)]
+            else:
+                pairs += [Option(node.VALUE, None)]
         return pairs
 
     def set_option(self, key, new_value):

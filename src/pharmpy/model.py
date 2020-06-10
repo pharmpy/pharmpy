@@ -89,7 +89,7 @@ class Model:
 
            stem - First part of the new variable name
         """
-        # TODO: Also check parameter and rv names
+        # TODO: Also check parameter and rv names and dataset columns
         symbols = self.statements.free_symbols
         i = 1
         while True:

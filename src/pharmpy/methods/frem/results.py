@@ -638,7 +638,7 @@ def psn_frem_results(path, force_posdef_covmatrix=False, force_posdef_samples=50
         raw_cov_list = covsum.readline()
 
     all_covariates = raw_cov_list[1:].rstrip().split(',')
-    nunique = model_4.dataset[all_covariates].nunique()
+    nunique = model_4.dataset.pharmpy.baselines[all_covariates].nunique()
     continuous = list(nunique.index[nunique != 2])
     categorical = list(nunique.index[nunique == 2])
 

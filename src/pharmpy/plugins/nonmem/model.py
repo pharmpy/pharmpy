@@ -378,14 +378,16 @@ class Model(pharmpy.model.Model):
             Use the synonym when synonym exists.
             return tuple of three lists, colnames, coltypes and drop together with a dictionary
             of replacements for reserved names (aka synonyms).
+            Anonymous columns, i.e. DROP or SKIP alone, will be given unique names _DROP1, ...
         """
         input_records = self.control_stream.get_records("INPUT")
         colnames = []
         coltypes = []
         drop = []
         synonym_replacement = {}
+        next_anonymous = 1
         for record in input_records:
-            for key, value in record.option_pairs.items():
+            for key, value in record.all_options:
                 if value:
                     if key == 'DROP' or key == 'SKIP':
                         drop.append(True)
@@ -403,10 +405,14 @@ class Model(pharmpy.model.Model):
                 else:
                     if key == 'DROP' or key == 'SKIP':
                         drop.append(True)
+                        name = f'_DROP{next_anonymous}'
+                        colnames.append(name)
+                        reserved_name = name
+                        next_anonymous += 1
                     else:
                         drop.append(False)
-                    colnames.append(key)
-                    reserved_name = key
+                        colnames.append(key)
+                        reserved_name = key
                 coltypes.append(pharmpy.data.read.infer_column_type(reserved_name))
         return colnames, coltypes, drop, synonym_replacement
 
