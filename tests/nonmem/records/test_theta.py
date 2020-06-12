@@ -19,6 +19,11 @@ import pytest
         ('THETA(10)', 1, 0, 2, False),
         ]),
     ('$THETA (0,0.00469555) FIX ; CL', [('THETA(1)', 0.00469555, 0, 1000000, True)]),
+    ('$THETA\n ;; Model characteristics\n (0, 0.15, 0.6) ; Proportional\n',
+        [('THETA(1)', 0.15, 0, 0.6, False)]),
+    ('$THETA\n;\n1;COMMENTING', [('THETA(1)', 1, -1000000, 1000000, False)]),
+    ('$THETA\n   ;CMT1;SAMELINE\n;ONLYCOMMENT\n\t;COMMENT2\n    1    \n',
+        [('THETA(1)', 1, -1000000, 1000000, False)]),
 ])
 def test_parameters(parser, buf, results):
     recs = parser.parse(buf)

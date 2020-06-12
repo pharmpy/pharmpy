@@ -15,7 +15,7 @@
 //   2. "FIXED" requires "low" & "up" to equal "init", insofar they appear.
 //   3. "FIXED" implied if "low"="init"="up".
 
-root : ws mandatory_theta (ws option | ws comment)* [ws]
+root : ws _ws* mandatory_theta _ws* (ws option | ws NEWLINE)* [ws]
 
 ?mandatory_theta : theta
 
@@ -50,15 +50,16 @@ KEY   : /(?!([0-9]|\(|FIX))\w+/      // TODO: use priority (instead of negative 
 VALUE : /(?!([0-9]|\(|FIX))[^\s=]+/  // TODO: use priority (instead of negative lookahead)
 
 // common misc rules
+_ws: [WS] [NEWLINE]
 ws      : WS_ALL
-comment : ";" [WS] [COMMENT]
+comment: COMMENT
 
 // common misc terminals
 WS: (" " | /\t/)+
 WS_ALL: /\s+/
 
-// common naked/enquoted text terminals
-COMMENT : /\S.*(?<!\s)/  // no left/right whitespace padding
+NEWLINE: (/\r?\n[ \t]*/ | COMMENT)+
+COMMENT: /;[^\n]*/
 
 // common numeric terminals
 INT: /[0-9]+/
