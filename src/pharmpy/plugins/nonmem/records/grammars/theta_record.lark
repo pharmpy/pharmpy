@@ -15,15 +15,12 @@
 //   2. "FIXED" requires "low" & "up" to equal "init", insofar they appear.
 //   3. "FIXED" implied if "low"="init"="up".
 
-root : ws _ws* mandatory_theta _ws* (ws option | ws NEWLINE)* [ws]
+root : ws _ws* theta (NEWLINE | WS | theta | option)*
 
-?mandatory_theta : theta
-
-?option : theta
-        | KEY [WS] "=" [WS] VALUE -> option
+?option : KEY [WS] "=" [WS] VALUE -> option
         | VALUE                   -> option
 
-theta : init [WS] [FIX]                  // form 1
+theta : init [WS FIX]                  // form 1
       | _lpar init _rpar                 // form 2+3+5 (init)
       | _lpar low sep init _rpar         // form 2+3+5 (low, init)
       | _lpar low sep init sep up _rpar  // form 2+3+5 (low, init, up)
@@ -32,7 +29,7 @@ sep : WS
     | [WS] "," [WS]
 sepsep : [WS] "," [WS] "," [WS]
 _lpar : "(" [WS]
-_rpar : [WS] FIX ")" n
+_rpar : [WS] FIX [WS] ")" n
       | [WS] ")" n
       | [WS] ")" [WS] FIX
       | [WS] FIX [WS] ")"

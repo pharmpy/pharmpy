@@ -24,6 +24,9 @@ import pytest
     ('$THETA\n;\n1;COMMENTING', [('THETA(1)', 1, -1000000, 1000000, False)]),
     ('$THETA\n   ;CMT1;SAMELINE\n;ONLYCOMMENT\n\t;COMMENT2\n    1    \n',
         [('THETA(1)', 1, -1000000, 1000000, False)]),
+    ('$THETA\n ;; Model characteristics\n  (0, 0.15, 0.6) ; Proportional error (Drug123)\n'
+     '  (0, 1, 10)     ; Additive error (Drug123)\n',
+        [('THETA(1)', 0.15, 0, 0.6, False), ('THETA(2)', 1, 0, 10, False)]),
 ])
 def test_parameters(parser, buf, results):
     recs = parser.parse(buf)
