@@ -1,8 +1,15 @@
-WS: (" " | /\t/)+
-WS_ALL: /\s+/
+// Blanks and ignored characters
 
-NEWLINE: (/\r?\n[ \t]*/ | COMMENT)+
+blank : ( WS | newline )
+
+newline : ( WS* COMMENT? NEWLINE )+
+
+WS_ALL: WS
+WS: /[ \t\f\v]+/
+NEWLINE: (/\r?\n/)+
 COMMENT: /;[^\n]*/
+
+// Numbers
 
 DIGIT: "0".."9"
 INT: DIGIT+
@@ -16,3 +23,8 @@ SIGNED_FLOAT: ["+" | "-"] FLOAT
 NUMBER: (FLOAT | INT)
 SIGNED_NUMBER: ["+" | "-"] NUMBER
 NUMERIC: (NUMBER | SIGNED_NUMBER)
+
+// Fixed values for $THETA and $OMEGA
+
+fix : blank* FIX blank*
+FIX : "FIXED" | "FIXE" | "FIX"

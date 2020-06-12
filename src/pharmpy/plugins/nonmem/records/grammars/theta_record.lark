@@ -15,41 +15,35 @@
 //   2. "FIXED" requires "low" & "up" to equal "init", insofar they appear.
 //   3. "FIXED" implied if "low"="init"="up".
 
-root : _ws* theta (NEWLINE | WS | theta | option)*
+root : blank* theta ( blank+ (theta | option) )* blank*
 
-?option : KEY [WS] "=" [WS] VALUE -> option
-        | VALUE                   -> option
+?option : KEY blank* "=" blank* VALUE -> option
+        | VALUE                       -> option
 
-theta : init [WS FIX]                  // form 1
+theta : init fix?                        // form 1
       | _lpar init _rpar                 // form 2+3+5 (init)
       | _lpar low sep init _rpar         // form 2+3+5 (low, init)
       | _lpar low sep init sep up _rpar  // form 2+3+5 (low, init, up)
       | _lpar low sepsep up _rpar        // form 4+5 (low, up)
-sep : WS
-    | [WS] "," [WS]
-sepsep : [WS] "," [WS] "," [WS]
-_lpar : "(" [WS]
-_rpar : [WS] FIX [WS] ")" n
-      | [WS] ")" n
-      | [WS] ")" [WS] FIX
-      | [WS] FIX [WS] ")"
-      | [WS] ")"
+sep : blank+
+    | blank* "," blank*
+sepsep : blank* "," blank* "," blank*
+_lpar : "(" blank*
+_rpar : blank* fix? ")" n
+      | blank* ")" n fix?
+      | blank* ")" fix?
+      | blank* fix? ")"
 
 init : NUMERIC
 low  : NUMERIC | NEG_INF
 up   : NUMERIC | POS_INF
 n    : "x" INT
 
-FIX : "FIXED" | "FIXE" | "FIX"
-
 // generic option terminals (key/value)
-KEY   : /(?!([0-9]|\(|FIX))\w+/      // TODO: use priority (instead of negative lookahead)
-VALUE : /(?!([0-9]|\(|FIX))[^\s=]+/  // TODO: use priority (instead of negative lookahead)
+KEY   : ( "NUMBERPOINTS" | ( "ABORT" | "NOABORT" | "NOABORTFIRST" ) )
+VALUE : INT
 
-// common misc rules
-_ws: [WS] [NEWLINE]
-
-%import .definitions (COMMENT, INT, NEWLINE, NUMERIC, WS)
+%import .definitions (blank, fix, INT, NUMERIC, WS)
 
 NEG_INF: "-INF" | "-1000000"
 POS_INF: "INF" | "1000000"

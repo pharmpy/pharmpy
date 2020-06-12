@@ -24,25 +24,24 @@
 //   %input | VARIANCE CORRELATION BLOCK(2)\n0.64\n-0.394 0.58|
 //   %input | CHOLESKY BLOCK(2)\n0.8\n-0.3 0.7|
 
-root : NEWLINE
-     | [WS] [diagonal] ([_ws] diag_item)+ [_ws]           // form 1
-     | [_opt] block [_opt] (_item)+ [_ws]      // form 2
-     | [_opt] block [_opt] same ([_ws] comment)* [_ws]    // form 3
-     | [_opt] bare_block [_opt] same ([_ws] comment)* [_ws]    // form 3 w/o n
-     | [_opt] block [_opt] values (_opt | [_ws] comment)* [_ws]  // form 4
+root : blank+
+     | blank* [diagonal] (blank* diag_item)+ blank* // form 1
+     | [_opt] block [_opt] (_item)+ blank*                          // form 2
+     | [_opt] block [_opt] same blank*                              // form 3
+     | [_opt] bare_block [_opt] same blank*                         // form 3 w/o n
+     | [_opt] block [_opt] values (_opt | blank*)* blank*   // form 4
 
 diag_item: init [_diag_options]
-         | "(" [WS] _diag_options [WS] init [WS] ")" [n]
-         | "(" [WS] init [WS] _diag_options [WS] ")" [n]
-         | "(" [WS] _diag_options [WS] init [WS] _diag_options [WS] ")" [n]
-_diag_options: (_ws (FIX | SD | VAR))*
+         | "(" blank* _diag_options blank* init blank* ")" [n]
+         | "(" blank* init blank* _diag_options blank* ")" [n]
+         | "(" blank* _diag_options blank* init blank* _diag_options blank* ")" [n]
+_diag_options: (blank* (fix | SD | VAR))*
 
 // repeat of init or comment (form 1 & 2)
-_item : [_ws] omega | [_ws] comment
+_item : blank* omega | blank*
 
 // can be tied to WHOLE record or ONE INIT
-_opt     : (_ws (FIX | VAR | SD | CORR | COV | CHOLESKY))* [_ws]  // note ws injection as 1st child
-FIX      : "FIXED" | "FIXE" | "FIX"
+_opt     : (blank* (fix | VAR | SD | CORR | COV | CHOLESKY))* blank*  // note ws injection as 1st child
 VAR      : "VARIANCE" | "VARIANC" | "VARIAN" | "VARIA" | "VARI" | "VAR" | "VA" | "V"
 SD       : "STANDARD" | "STANDAR" | "STANDA" | "STAND" | "STAN" | "STA" | "ST" | "SD" | "S"
 CORR     : "CORRELATION" | "CORRELATIO" | "CORRELATI" | "CORRELAT" | "CORRELA" | "CORREL" | "CORRE" | "CORR" | "COR"
@@ -50,10 +49,10 @@ COV      : "COVARIANCE" | "COVARIANC" | "COVARIAN" | "COVARIA" | "COVARI" | "COV
 CHOLESKY : "CHOLESKY" | "CHOLESK" | "CHOLES" | "CHOLE" | "CHOL" | "CHO"
 
 // parentheses sizes (optional for SAME and BLOCK with SAME)
-block       : ("BLOCK" | "BLOC" | "BLO") [_ws] _lpar size _rpar
+block       : bare_block blank* _lpar size _rpar
 bare_block  : ("BLOCK" | "BLOC" | "BLO")
 same        : "SAME" [_lpar size _rpar]
-diagonal    : ("DIAGONAL" | "DIAGONA" | "DIAGON" | "DIAGO" | "DIAG" | "DIA") [_ws] _lpar [WS] size [WS] _rpar [_ws]
+diagonal    : ("DIAGONAL" | "DIAGONA" | "DIAGON" | "DIAGO" | "DIAG" | "DIA") blank* _lpar blank* size blank* _rpar blank*
 values      : "VALUES" _lpar diag sep odiag _rpar
 
 size  : INT
@@ -61,9 +60,9 @@ diag  : NUMERIC
 odiag : NUMERIC
 
 // separator and clustering of init values
-sep : WS | [WS] "," [WS]
-_lpar : "(" [WS]
-_rpar : [WS] ")"
+sep : WS+ | WS* "," WS*
+_lpar : "(" blank*
+_rpar : blank* ")"
 
 // omega init value
 omega : init _opt*
@@ -73,8 +72,4 @@ omega : init _opt*
 init  : NUMERIC
 n     : "x" INT
 
-// common misc rules
-_ws: [WS] [NEWLINE]
-comment: COMMENT
-
-%import .definitions (COMMENT, INT, NEWLINE, NUMERIC, WS, WS_ALL)
+%import .definitions (blank, fix, INT, NUMERIC, WS)
