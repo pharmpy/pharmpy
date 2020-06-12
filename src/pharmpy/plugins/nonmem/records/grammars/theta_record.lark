@@ -15,7 +15,7 @@
 //   2. "FIXED" requires "low" & "up" to equal "init", insofar they appear.
 //   3. "FIXED" implied if "low"="init"="up".
 
-root : ws _ws* theta (NEWLINE | WS | theta | option)*
+root : _ws* theta (NEWLINE | WS | theta | option)*
 
 ?option : KEY [WS] "=" [WS] VALUE -> option
         | VALUE                   -> option
@@ -40,7 +40,7 @@ low  : NUMERIC | NEG_INF
 up   : NUMERIC | POS_INF
 n    : "x" INT
 
-FIX : "FIXED"|"FIXE"|"FIX"
+FIX : "FIXED" | "FIXE" | "FIX"
 
 // generic option terminals (key/value)
 KEY   : /(?!([0-9]|\(|FIX))\w+/      // TODO: use priority (instead of negative lookahead)
@@ -48,28 +48,8 @@ VALUE : /(?!([0-9]|\(|FIX))[^\s=]+/  // TODO: use priority (instead of negative 
 
 // common misc rules
 _ws: [WS] [NEWLINE]
-ws      : WS_ALL
-comment: COMMENT
 
-// common misc terminals
-WS: (" " | /\t/)+
-WS_ALL: /\s+/
-
-NEWLINE: (/\r?\n[ \t]*/ | COMMENT)+
-COMMENT: /;[^\n]*/
-
-// common numeric terminals
-INT: /[0-9]+/
-DECIMAL: (INT "." [INT] | "." INT)
-SIGNED_INT: ["+" | "-"] INT
-
-EXP: ("E" | "e") SIGNED_INT
-FLOAT: (INT EXP | DECIMAL [EXP])
-SIGNED_FLOAT: ["+" | "-"] FLOAT
-
-NUMBER: (FLOAT | INT)
-SIGNED_NUMBER: ["+" | "-"] NUMBER
-NUMERIC: (NUMBER | SIGNED_NUMBER)
+%import .definitions (COMMENT, INT, NEWLINE, NUMERIC, WS)
 
 NEG_INF: "-INF" | "-1000000"
 POS_INF: "INF" | "1000000"

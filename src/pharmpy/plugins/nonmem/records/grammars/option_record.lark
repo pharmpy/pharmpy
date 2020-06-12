@@ -1,4 +1,4 @@
-root: (option | ws | comment)*
+root: (option | ws | COMMENT)*
 
 option: KEY [WS] "=" [WS] VALUE
       | VALUE
@@ -8,8 +8,5 @@ VALUE: /[^\s=;]+/
 
 // common rules
 ws      : WS_ALL
-comment : /;[^\n]*/
 
-// common terminals
-WS_ALL: /\s+/
-WS: (" " | /\t/)+
+%import .definitions (COMMENT, WS, WS_ALL)

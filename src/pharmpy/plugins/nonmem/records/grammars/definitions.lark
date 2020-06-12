@@ -1,0 +1,18 @@
+WS: (" " | /\t/)+
+WS_ALL: /\s+/
+
+NEWLINE: (/\r?\n[ \t]*/ | COMMENT)+
+COMMENT: /;[^\n]*/
+
+DIGIT: "0".."9"
+INT: DIGIT+
+DECIMAL: (INT "." [INT] | "." INT)
+SIGNED_INT: ["+" | "-"] INT
+
+EXP: ("E" | "e") SIGNED_INT
+FLOAT: (INT EXP | DECIMAL [EXP])
+SIGNED_FLOAT: ["+" | "-"] FLOAT
+
+NUMBER: (FLOAT | INT)
+SIGNED_NUMBER: ["+" | "-"] NUMBER
+NUMERIC: (NUMBER | SIGNED_NUMBER)

@@ -60,7 +60,6 @@ double_subscript: [WS] "(" [WS] INTEGER [WS] "," [WS] INTEGER [WS] ")"
 
 number: INTEGER | FLOAT
 
-COMMENT: /;[^\n]*/
 NAME: /[A-Za-z_]\w*/
 
 INTEGER: /[-+]?\d+/
@@ -71,5 +70,4 @@ EPS: "EPS" | "ERR"
 OMEGA: "OMEGA"
 SIGMA: "SIGMA"
 
-WS: (" " | /\t/)+
-WS_ALL: /\s+/
+%import .definitions (COMMENT, WS, WS_ALL)

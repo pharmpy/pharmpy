@@ -62,13 +62,6 @@ OP_GT    : ".GT." | ">"
 OP_LT_EQ : ".LE." | "<="
 OP_GT_EQ : ".GE." | ">="
 
-// common misc terminals
-WS: (" "|/\t/)+  // inline
-WS_ALL: /\s+/    // multiline
-DIGIT: "0".."9"
-INT: DIGIT+
-NL: /\r?\n/
-
 // common naked/enquoted text terminals
 TEXT : /[^"',;()=\s]+/
 CHAR : /[^';()=\s]/
@@ -76,3 +69,5 @@ QUOTE : /"[^"]*"/
       | /'[^']*'/
 CHARQUOTE : /"[^"]"/
           | /'[^']'/
+
+%import .definitions (WS, WS_ALL)
