@@ -32,55 +32,51 @@ def longdesc(text_str):
 
 
 setup(
-    name='pharmpy',
+    name='pharmpy-core',
     version='0.3.0',
     license='GNU Lesser General Public License v3 (LGPLv3)',
-    description='Pharmacometric model parsing (PsN reimagining)',
-    long_description='%s\n%s' % (
+    description='Pharmacometric modelling',
+    long_description='%s\n\n%s' % (
         strip_refs(longdesc(read('README.rst'))),
         strip_refs(read('CHANGELOG.rst'))
     ),
     author='Rikard Nordgren',
     author_email='rikard.nordgren@farmbio.uu.se',
-    url='https://github.com/pharmpy/pharmpy',
+    url='https://pharmpy.github.io',
+    project_urls={
+        "Bug Tracker": 'https://github.com/pharmpy/pharmpy/issues',
+        "Source Code": 'https://github.com/pharmpy/pharmpy',
+    },
     packages=find_packages('src'),
     package_dir={'': 'src'},
     py_modules=[splitext(basename(path))[0] for path in glob('src/*.py')],
     include_package_data=True,
     zip_safe=False,
+    python_requires='>=3.6',
     classifiers=[
-        # complete classifier list: http://pypi.python.org/pypi?%3Aaction=list_classifiers
-        'Development Status :: 1 - Planning',
+        'Development Status :: 4 - Beta',
+        'Intended Audience :: Science/Research',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: GNU Lesser General Public License v3 (LGPLv3)',
-        # 'Operating System :: Unix',
         'Operating System :: POSIX',
-        # 'Operating System :: Microsoft :: Windows',
+        'Operating System :: MacOS',
+        'Operating System :: Unix',
+        'Operating System :: Microsoft :: Windows',
         'Programming Language :: Python',
         'Programming Language :: Python :: 3 :: Only',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: Implementation :: CPython',
-        # uncomment if you test on these interpreters:
-        # 'Programming Language :: Python :: Implementation :: PyPy',
-        # 'Programming Language :: Python :: Implementation :: IronPython',
-        # 'Programming Language :: Python :: Implementation :: Jython',
-        # 'Programming Language :: Python :: Implementation :: Stackless',
-        'Topic :: Utilities',
+        'Topic :: Scientific/Engineering',
     ],
     keywords=[
-        # eg: 'keyword1', 'keyword2', 'keyword3',
+        'pharmacometrics',
     ],
     install_requires=[
         'lark-parser', 'sympy', 'symengine', 'pandas', 'numexpr', 'altair', 'toil', 'sphinx',
         'csscompressor', 'beautifulsoup4', 'lxml'
     ],
-    extras_require={
-        # eg:
-        #   'rst': ['docutils>=0.11'],
-        #   ':python_version=="2.6"': ['argparse'],
-    },
     entry_points={
         'console_scripts': [
             'pharmpy           = pharmpy.cli:main',

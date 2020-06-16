@@ -1,7 +1,5 @@
-.. _CHANGELOG:
-
-0.3.0
------
+0.3.0 (2020-06-16)
+------------------
 
 * New CLI command 'data append'
 * Parameter names is now the index in Parameters.summary()
