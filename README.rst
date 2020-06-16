@@ -36,9 +36,9 @@ Pharmpy is developed by the Uppsala University Pharmacometrics group.
 Installation
 ============
 
-Download the pharmpy-x.y.z.zip from the latest release. This is a python source package and can be installed using pip::
+Install the latest stable version from PyPI::
 
-    pip3 install pharmpy-x.y.z.zip    # or 'pip install' if that is your default python3 pip
+    pip install pharmpy-core    # or 'pip3 install' if that is your default python3 pip
 
 Python Example
 ==============
