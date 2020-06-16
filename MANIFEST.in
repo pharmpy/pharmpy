@@ -20,7 +20,6 @@ include requirements.txt
 include tox.ini
 
 exclude clean_cache.sh
-exclude demo.py
 
 global-exclude *.py[cod] __pycache__
 global-exclude *.swp
