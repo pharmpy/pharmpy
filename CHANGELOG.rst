@@ -3,6 +3,8 @@
 
 * New CLI command 'data append'
 * Parameter names is now the index in Parameters.summary()
+* FREM postprocessing
+* Standardized results.yaml and results.csv
 
 0.2.0 (2020-03-27)
 ------------------
