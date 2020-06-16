@@ -9,7 +9,7 @@ Installation
 
 At the command line, install latest build with::
 
-    pip3 install dist/pharmpy-0.2.0.tar.gz
+    pip3 install dist/pharmpy-0.3.0.tar.gz
 
 Or, development code in ``src/``::
 
