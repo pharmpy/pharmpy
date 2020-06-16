@@ -33,7 +33,7 @@ def longdesc(text_str):
 
 setup(
     name='pharmpy',
-    version='0.2.0',
+    version='0.3.0',
     license='GNU Lesser General Public License v3 (LGPLv3)',
     description='Pharmacometric model parsing (PsN reimagining)',
     long_description='%s\n%s' % (
