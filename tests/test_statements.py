@@ -24,3 +24,25 @@ def test_Compartment():
     elimination = Elimination(CL / V)
     comp = Compartment('central', absorption, elimination)
     assert comp
+
+
+def test_eq_assignment(testdata):
+    model = Model(testdata / 'nonmem' / 'pheno_real.mod')
+    statements = model.statements
+    statement_btime = statements[0]
+    statement_tad = statements[1]
+
+    assert statement_btime == statement_btime
+    assert statement_btime != statement_tad
+
+
+def test_eq_modelstatements(testdata):
+    model_pheno = Model(testdata / 'nonmem' / 'pheno_real.mod')
+    statements_pheno = model_pheno.statements
+
+    model_min = Model(testdata / 'nonmem' / 'minimal.mod')
+    statements_min = model_min.statements
+
+    assert statements_pheno == statements_pheno
+    assert statements_pheno != statements_min
+
