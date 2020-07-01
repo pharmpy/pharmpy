@@ -8,6 +8,7 @@ import sympy
 
 from pharmpy.data_structures import OrderedSet
 from pharmpy.statements import Assignment, ModelStatements
+from pharmpy.plugins.nonmem.records.parsers import CodeRecordParser
 
 from .record import Record
 
@@ -126,10 +127,22 @@ class ExpressionInterpreter(lark.visitors.Interpreter):
 
 
 class CodeRecord(Record):
+    def __init__(self, content, parser_class):
+        super().__init__(content, parser_class)
+        self.nodes = []
+        self._statements = None
+
     @property
     def statements(self):
+        if self._statements is None:
+            s = self.assign_statement(self)
+            self._statements = ModelStatements(s)
+        return self._statements
+
+    @staticmethod
+    def assign_statement(tree):
         s = []
-        for statement in self.root.all('statement'):
+        for statement in tree.root.all('statement'):
             node = statement.children[0]
             if node.rule == 'assignment':
                 name = str(node.variable)
@@ -145,7 +158,7 @@ class CodeRecord(Record):
                 s.append(ass)
             elif node.rule == 'block_if':
                 interpreter = ExpressionInterpreter()
-                blocks = []     # [(logic, [(symb1, expr1), ...]), ...]
+                blocks = []  # [(logic, [(symb1, expr1), ...]), ...]
                 symbols = OrderedSet()
 
                 first_logic = interpreter.visit(node.block_if_start.logical_expression)
@@ -186,5 +199,6 @@ class CodeRecord(Record):
                     pw = sympy.Piecewise(*pairs)
                     ass = Assignment(symbol, pw)
                     s.append(ass)
+        return s
 
-        return ModelStatements(s)
+
