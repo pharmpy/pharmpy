@@ -27,6 +27,12 @@ class Assignment:
         symbols |= self.expression.free_symbols
         return symbols
 
+    def __eq__(self, other):
+        if self.symbol == other.symbol and self.expression == other.expression:
+            return True
+        else:
+            return False
+
     def __str__(self):
         return f'{self.symbol} := {self.expression}'
 
@@ -98,6 +104,15 @@ class ModelStatements(list):
         """Substitute old expression for new in all rhs of assignments"""
         for assignment in self:
             assignment.subs(old, new)
+
+    def __eq__(self, other):
+        if len(self) != len(other):
+            return False
+        else:
+            for i in range(len(self)):
+                if self[i] != other[i]:
+                    return False
+        return True
 
     def __str__(self):
         s = [str(assignment) for assignment in self]
