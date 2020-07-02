@@ -201,4 +201,36 @@ class CodeRecord(Record):
                     s.append(ass)
         return s
 
+    @statements.setter
+    def statements(self, statements_raw):
+        # TODO: write standardization of statements_raw
+        content_original = self._content.strip().split('[\t\n ]')
+        content_input = statements_raw.strip().split('[\t\n ]')
+
+        if content_original == content_input:
+            print("New statements same as current, no changes made.")
+        else:
+            statements_old = self._statements
+
+            tree_new = CodeRecordParser(f'\n{statements_raw}')
+            s_new = self.assign_statement(tree_new)
+            statements_new = ModelStatements(s_new)
+
+            if statements_new == statements_old:  # TODO: write test
+                print("New statements same as current, no changes made.")
+
+            statements_updated = []
+            for statement in statements_new:
+                if statement in statements_old:
+                    statements_updated.append(statement)
+                    print('\t\tStatement exists.')
+                else:
+                    if statement.symbol in statements_old.free_symbols:
+                        print('\t\tAssignment exists.')
+                        statements_updated.append(statement)
+                    else:
+                        print('\t\tAssignment does not exist.')
+                        statements_updated.append(statement)
+
+            self._statements = statements_updated
 
