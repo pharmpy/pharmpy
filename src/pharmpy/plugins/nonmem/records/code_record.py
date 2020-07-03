@@ -130,13 +130,12 @@ class CodeRecord(Record):
     def __init__(self, content, parser_class):
         super().__init__(content, parser_class)
         self.nodes = []
-        self._statements = None
+        s = self.assign_statement(self)
+        self._statements = ModelStatements(s)
+        self._statements_updated = False
 
     @property
     def statements(self):
-        if self._statements is None:
-            s = self.assign_statement(self)
-            self._statements = ModelStatements(s)
         return self._statements
 
     @staticmethod
@@ -225,12 +224,13 @@ class CodeRecord(Record):
                     statements_updated.append(statement)
                     print('\t\tStatement exists.')
                 else:
-                    if statement.symbol in statements_old.free_symbols:
+                    if statement.symbol in statements_old.get_symbols():
                         print('\t\tAssignment exists.')
                         statements_updated.append(statement)
                     else:
                         print('\t\tAssignment does not exist.')
                         statements_updated.append(statement)
 
-            self._statements = statements_updated
+            self._statements = ModelStatements(statements_updated)
+            self._statements_updated = True
 
