@@ -29,17 +29,17 @@ eq_op: ("==" | ".EQ.") -> logical_operator
 rel_op: (".LT." | "<" | ".LE." | "<=" | ".GT." | ">" | ".GE." | ">=") -> logical_operator
 not_op: ".NOT." -> logical_operator
 
-expression: term (add_op [WS] term)*
-?term: factor (mul_op factor)* -> expression
-?factor: _atom -> expression
+?expression: term (add_op [WS] term)*
+?term: _factor (mul_op _factor)* -> expression
+_factor: _atom
        | power
-?power: _atom ("**" factor)?
+?power: _atom ("**" _factor)?
 
 add_op: "+" -> operator
       | "-" -> operator
 mul_op: "*" -> operator
       | "/" -> operator
- 
+
 
 _atom: [WS] (func | func2 | symbol | number | "(" expression ")") [WS]
 
