@@ -20,8 +20,6 @@ class Record:
         if self._root is None:
             parser = self._parser_class(self._content)
             self._root = parser.root
-            del self._parser_class
-            del self._content
         return self._root
 
     def __str__(self):
