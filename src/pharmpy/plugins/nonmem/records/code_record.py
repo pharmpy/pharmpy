@@ -51,7 +51,8 @@ class ExpressionInterpreter(lark.visitors.Interpreter):
         else:
             return t[0]
 
-    def logical_operator(self, node):
+    @staticmethod
+    def logical_operator(node):
         name = str(node)
         if name == '==' or name == '.EQ.':
             return sympy.Eq
@@ -80,7 +81,8 @@ class ExpressionInterpreter(lark.visitors.Interpreter):
         a, p = self.visit_children(node)
         return sympy.Mod(a, p)
 
-    def intrinsic_func(self, node):
+    @staticmethod
+    def intrinsic_func(node):
         name = str(node)
         if name == "EXP":
             return sympy.exp
@@ -113,16 +115,19 @@ class ExpressionInterpreter(lark.visitors.Interpreter):
         b, e = self.visit_children(node)
         return b**e
 
-    def operator(self, node):
+    @staticmethod
+    def operator(node):
         return str(node)
 
-    def number(self, node):
+    @staticmethod
+    def number(node):
         try:
             return sympy.Integer(str(node))
         except ValueError:
             return sympy.Float(str(node))
 
-    def symbol(self, node):
+    @staticmethod
+    def symbol(node):
         return sympy.Symbol(str(node), real=True)
 
 
