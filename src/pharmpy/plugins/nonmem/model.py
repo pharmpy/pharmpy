@@ -283,6 +283,17 @@ class Model(pharmpy.model.Model):
             rec = pred[0]
         return rec.statements
 
+    @statements.setter
+    def statements(self, statements_raw):
+        pred = self.control_stream.get_records('PRED')
+        if len(pred) == 0:
+            pk = self.control_stream.get_records('PK')
+            rec = pk[0]
+        else:
+            rec = pred[0]
+
+        rec.statements = statements_raw
+
     def _zero_fix_rvs(self, eta=True):
         zero_fix = []
         if eta:
