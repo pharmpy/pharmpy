@@ -15,11 +15,11 @@ block_if_elseif: [WS] "ELSE" [WS] "IF" [WS] "(" logical_expression ")" [WS] "THE
 block_if_end: [WS] "END IF" [WS]
 
 logical_if: "IF" [WS] "(" logical_expression ")" [WS] assignment
-?logical_expression: or_term (or_op or_term)?
-or_term: and_term (and_op and_term)? -> logical_expression
-and_term: (not_op)? not_term -> logical_expression
-not_term: eq_term (eq_op eq_term)? -> logical_expression
-eq_term: _rel_term (rel_op _rel_term)? -> logical_expression
+?logical_expression: _or_term (or_op _or_term)?
+_or_term: _and_term (and_op _and_term)?
+_and_term: (not_op)? not_term
+not_term: _eq_term (eq_op _eq_term)? -> logical_expression
+_eq_term: _rel_term (rel_op _rel_term)?
 _rel_term: expression
 
 or_op: (".OR.") -> logical_operator
