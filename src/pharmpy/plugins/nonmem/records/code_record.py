@@ -7,8 +7,8 @@ import lark
 import sympy
 
 from pharmpy.data_structures import OrderedSet
-from pharmpy.statements import Assignment, ModelStatements
 from pharmpy.plugins.nonmem.records.parsers import CodeRecordParser
+from pharmpy.statements import Assignment, ModelStatements
 
 from .record import Record
 
@@ -144,9 +144,9 @@ class CodeRecord(Record):
         return self._statements
 
     @staticmethod
-    def assign_statement(tree):
+    def assign_statement(rec):
         s = []
-        for statement in tree.root.all('statement'):
+        for statement in rec.root.all('statement'):
             node = statement.children[0]
             if node.rule == 'assignment':
                 name = str(node.variable)
@@ -208,7 +208,7 @@ class CodeRecord(Record):
     @statements.setter
     def statements(self, statements_raw):
         # TODO: write standardization of statements_raw
-        content_original = self._content.strip().split('[\t\n ]')
+        content_original = self.content.strip().split('[\t\n ]')
         content_input = statements_raw.strip().split('[\t\n ]')
 
         if content_original == content_input:
@@ -216,8 +216,8 @@ class CodeRecord(Record):
         else:
             statements_old = self._statements
 
-            tree_new = CodeRecordParser(f'\n{statements_raw}')
-            s_new = self.assign_statement(tree_new)
+            rec_new = CodeRecordParser(f'\n{statements_raw}')
+            s_new = self.assign_statement(rec_new)
             statements_new = ModelStatements(s_new)
 
             if statements_new == statements_old:  # TODO: write test
@@ -227,15 +227,14 @@ class CodeRecord(Record):
             for statement in statements_new:
                 if statement in statements_old:
                     statements_updated.append(statement)
-                    print('\t\tStatement exists.')
+                    print('Statement exists.')
                 else:
                     if statement.symbol in statements_old.get_symbols():
-                        print('\t\tAssignment exists.')
+                        print('Assignment exists.')
                         statements_updated.append(statement)
                     else:
-                        print('\t\tAssignment does not exist.')
+                        print('Assignment does not exist.')
                         statements_updated.append(statement)
 
             self._statements = ModelStatements(statements_updated)
             self._statements_updated = True
-
