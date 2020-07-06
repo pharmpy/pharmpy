@@ -61,6 +61,7 @@ def test_single_assignments(parser, buf, symbol, expression):
     assert rec.statements[0].expression == expression
 
 
+
 @pytest.mark.usefixtures('parser')
 @pytest.mark.parametrize('buf,symb_expr_arr', [
     ('$PRED\nIF (X.EQ.0) THEN\nY = 23\nZ = 9\nEND IF', [
@@ -83,6 +84,30 @@ def test_block_if(parser, buf, symb_expr_arr):
     for statement, (symb, expr) in zip(rec.statements, symb_expr_arr):
         assert statement.symbol == symb
         assert statement.expression == expr
+
+
+@pytest.mark.usefixtures('parser')
+@pytest.mark.parametrize('buf', [
+    '$PRED\nY = THETA(1) + ETA(1) + EPS(1)',
+    '$PRED IF (X.EQ.2) CL=23',
+    '$PRED IF (X.NE.1.5) CL=THETA(1)',
+    '$PRED IF (X.EQ.2+1) CL=23',
+    '$PRED IF (X.EQ.2.AND.Y.EQ.3) CL=23',
+    '$PRED IF (X.EQ.2.OR.Y.EQ.3) CL=23',
+    '$PRED IF (.NOT.X.EQ.2) CL=25',
+])
+def test_grammar_repeats(parser, buf):
+    rec = parser.parse(buf).records[0]
+    tree_walk_gen = rec.root.tree_walk()
+    parent = next(tree_walk_gen)
+
+    repeats_present = False
+    for child in tree_walk_gen:
+        if str(parent.eval) == str(child.eval) and parent.rule == child.rule:
+            repeats_present = True
+        parent = child
+
+    assert repeats_present is False
 
 
 def test_pheno(parser):
