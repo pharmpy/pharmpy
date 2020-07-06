@@ -37,12 +37,19 @@ def test_eq_assignment(testdata):
 
 
 def test_eq_modelstatements(testdata):
-    model_pheno = Model(testdata / 'nonmem' / 'pheno_real.mod')
-    statements_pheno = model_pheno.statements
-
     model_min = Model(testdata / 'nonmem' / 'minimal.mod')
-    statements_min = model_min.statements
+    model_pheno = Model(testdata / 'nonmem' / 'pheno_real.mod')
 
-    assert statements_pheno == statements_pheno
-    assert statements_pheno != statements_min
+    assert model_min.statements == model_min.statements
+    assert model_pheno.statements == model_pheno.statements
+    assert model_min.statements != model_pheno.statements
 
+
+def test_get_symbols(testdata):
+    model_min = Model(testdata / 'nonmem' / 'minimal.mod')
+    model_pheno = Model(testdata / 'nonmem' / 'pheno_real.mod')
+
+    assert model_min.statements.get_symbols() == [S('Y')]
+    assert model_pheno.statements.get_symbols() == [S('BTIME'), S('TAD'), S('TVCL'),
+                                                    S('TVV'), S('TVV'), S('CL'), S('V'),
+                                                    S('S1')]
