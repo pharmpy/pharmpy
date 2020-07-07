@@ -1,3 +1,9 @@
+0.4.0
+-----
+
+* Add categorical covariates to covariate effects plot in FREM
+
+
 0.3.0 (2020-06-16)
 ------------------
 

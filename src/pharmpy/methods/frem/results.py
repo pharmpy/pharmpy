@@ -170,12 +170,14 @@ class FREMResults(Results):
         """
         ce = (self.covariate_effects - 1) * 100
         cov_stats = pd.melt(self.covariate_statistics.reset_index(), var_name='condition',
-                            id_vars=['covariate'], value_vars=['p5', 'p95'])
+                            id_vars=['covariate'], value_vars=['p5', 'p95', 'other'])
 
         cov_stats = cov_stats.replace({'p5': '5th', 'p95': '95th'}).set_index(['covariate',
                                                                                'condition'])
+
         ce = ce.join(cov_stats, how='inner')
-        # The left join reorders the index. Might be pandas bug.
+
+        # The left join reorders the index, pandas bug #34133
         ce = ce.reorder_levels(['parameter', 'covariate', 'condition'])
 
         param_names = list(ce.index.get_level_values('parameter').unique())
@@ -213,7 +215,7 @@ class FREMResults(Results):
                 columns=1.0,
                 row=alt.Facet('covariate:N', title=None),
                 title=f'{parameter}'
-            )
+            ).resolve_scale(y='independent')
 
             plots.append(plot)
 
