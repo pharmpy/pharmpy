@@ -134,17 +134,52 @@ class CodeRecord(Record):
     def __init__(self, content, parser_class):
         super().__init__(content, parser_class)
         self.nodes = []
-        s, self._nodes = self.assign_statement(self)
-        self._statements = ModelStatements(s)
+        self._statements = None
         self._statements_updated = False
 
-    @staticmethod
-    def assign_statement(rec):
+    @property
+    def statements(self):
+        if self._statements is None:
+            self._statements = self.assign_statements()
+        return self._statements
+
+    @statements.setter
+    def statements(self, statements_new):
+        statements_original = self._statements
+        statements_updated = self._statements
+        nodes_updated = self.nodes
+
+        if statements_new == statements_original:  # TODO: write test
+            print("New statements same as current, no changes made.")
+
+        for i, statement_new in enumerate(statements_new):
+            if i == len(statements_original):
+                break
+
+            if statement_new != statements_original[i]:
+                if statement_new == statements_original[i+1]:
+                    statement_to_remove = statements_original[i]
+                    statements_updated.remove(statement_to_remove)
+                    node = self.get_node(statement_to_remove)
+                    nodes_updated.remove(node)
+                    print(f'{statement_to_remove} has been removed!')
+
+        self._statements = statements_updated
+        self._statements_updated = True
+
+    def get_node(self, statement):
+        for node in self.nodes:
+            symbol = str(statement.symbol)
+            expression = str(statement.expression).replace(' ', '')
+            if str(node.eval) == f'{symbol}={expression}':
+                return node
+        return None
+
+    def assign_statements(self):
         s = []
-        nodes = []
-        for statement in rec.root.all('statement'):
+        for statement in self.root.all('statement'):
             node = statement.children[0]
-            nodes.append(node)
+            self.nodes.append(node)
             if node.rule == 'assignment':
                 name = str(node.variable)
                 expr = ExpressionInterpreter().visit(node.expression)
@@ -200,31 +235,6 @@ class CodeRecord(Record):
                     pw = sympy.Piecewise(*pairs)
                     ass = Assignment(symbol, pw)
                     s.append(ass)
-        return s, nodes
 
-    @property
-    def statements(self):
-        return self._statements
-
-    @statements.setter
-    def statements(self, statements_new):
-        statements_old = self._statements
-
-        if statements_new == statements_old:  # TODO: write test
-            print("New statements same as current, no changes made.")
-
-        statements_updated = []
-        for statement in statements_new:
-            if statement in statements_old:
-                statements_updated.append(statement)
-                print('Statement exists.')
-            else:
-                if statement.symbol in statements_old.get_symbols():
-                    print('Assignment exists.')
-                    statements_updated.append(statement)
-                else:
-                    print('Assignment does not exist.')
-                    statements_updated.append(statement)
-
-        self._statements = ModelStatements(statements_updated)
-        self._statements_updated = True
+        statements = ModelStatements(s)
+        return statements
