@@ -1,3 +1,5 @@
+import copy
+
 import pytest
 import sympy
 from sympy import Symbol
@@ -162,17 +164,21 @@ def test_statements_setter(parser, buf_original, buf_new, is_identical):
 
 
 @pytest.mark.usefixtures('parser')
-@pytest.mark.parametrize('buf_original,buf_new,index_start,index_end', [
-    ('$PRED\nY=A+B\nX=C-D\nZ=E*F', '$PRED\nY=A+B\nZ=E*F', 1, 2),
-    ('$PRED\nY=A+B\nX=C-D\nL=A*M\nZ=E*F', '$PRED\nY=A+B\nZ=E*F', 1, 3),
+@pytest.mark.parametrize('buf_original,buf_new,index_remove_start,index_remove_end', [
+    ('$PRED\nY=A+B\nX=C-D\nZ=E*F', '$PRED\nY=A+B\nZ=E*F', 1, 1),
+    ('$PRED\nY=A+B\nX=C-D\nL=A*M\nZ=E*F', '$PRED\nY=A+B\nZ=E*F', 1, 2),
+    ('$PRED\nY=A+B\nZ=E*F\nX=C-D', '$PRED\nY=A+B\nZ=E*F', 2, 2),
 ])
-def test_remove_statements(parser, buf_original, buf_new, index_start, index_end):
+def test_remove_statements(parser, buf_original, buf_new, index_remove_start,
+                           index_remove_end):
     rec_original = parser.parse(buf_original).records[0]
     statements_original = rec_original.statements
     statements_new = parser.parse(buf_new).records[0].statements
 
-    statements_updated = statements_original.copy()
-    statements_updated = rec_original.remove_statements(statements_updated, index_start, index_end)
+    statements_updated = copy.deepcopy(statements_original)
+    statements_updated = rec_original.remove_statements(statements_updated,
+                                                        index_remove_start,
+                                                        index_remove_end)
 
     assert len(statements_updated) == 2
     assert statements_updated[1].symbol == S('Z')
