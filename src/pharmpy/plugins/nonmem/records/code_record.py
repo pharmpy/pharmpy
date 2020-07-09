@@ -4,6 +4,7 @@ Generic NONMEM code record class.
 """
 
 import copy
+
 import lark
 import sympy
 
@@ -152,6 +153,7 @@ class CodeRecord(Record):
         if statements_new == statements_original:  # TODO: warn instead of print
             print("New statements same as current, no changes made.")
 
+        # TODO: name index variables to more intuitive names
         index_original = 0
 
         for index_new, statement_new in enumerate(statements_new):
@@ -166,18 +168,18 @@ class CodeRecord(Record):
                         print("removing...")
                         statements_updated = self.remove_statements(statements_updated,
                                                                     index_original,
-                                                                    index_found)
+                                                                    index_found-1)
                         index_original = index_found
-
-                index_original += 1
+                else:
+                    index_original += 1
             except IndexError:
                 pass
 
         self._statements = statements_updated
         self._statements_updated = True
 
-    def remove_statements(self, statements_copy, index_start, index_end):
-        for i in range(index_start, index_end):
+    def remove_statements(self, statements_copy, index_remove_start, index_remove_end):
+        for i in range(index_remove_start, index_remove_end+1):
             statement_to_remove = self._statements[i]
             statements_copy.remove(statement_to_remove)
             print(f'{statement_to_remove} has been removed!')
