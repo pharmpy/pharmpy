@@ -3,6 +3,7 @@ Generic NONMEM code record class.
 
 """
 
+import copy
 import lark
 import sympy
 
@@ -145,27 +146,43 @@ class CodeRecord(Record):
 
     @statements.setter
     def statements(self, statements_new):
-        statements_original = self._statements
-        statements_updated = self._statements
-        nodes_updated = self.nodes
+        statements_original = copy.deepcopy(self._statements)
+        statements_updated = copy.deepcopy(self._statements)
 
-        if statements_new == statements_original:  # TODO: write test
+        if statements_new == statements_original:  # TODO: warn instead of print
             print("New statements same as current, no changes made.")
 
-        for i, statement_new in enumerate(statements_new):
-            if i == len(statements_original):
-                break
+        index_original = 0
 
-            if statement_new != statements_original[i]:
-                if statement_new == statements_original[i+1]:
-                    statement_to_remove = statements_original[i]
-                    statements_updated.remove(statement_to_remove)
-                    node = self.get_node(statement_to_remove)
-                    nodes_updated.remove(node)
-                    print(f'{statement_to_remove} has been removed!')
+        for index_new, statement_new in enumerate(statements_new):
+            try:
+                if statement_new != statements_original[index_original]:
+                    try:
+                        index_found = statements_original.index(statement_new, index_original)
+                    except ValueError:
+                        index_found = None
+
+                    if index_found is not None:
+                        print("removing...")
+                        statements_updated = self.remove_statements(statements_updated,
+                                                                    index_original,
+                                                                    index_found)
+                        index_original = index_found
+
+                index_original += 1
+            except IndexError:
+                pass
 
         self._statements = statements_updated
         self._statements_updated = True
+
+    def remove_statements(self, statements_copy, index_start, index_end):
+        for i in range(index_start, index_end):
+            statement_to_remove = self._statements[i]
+            statements_copy.remove(statement_to_remove)
+            print(f'{statement_to_remove} has been removed!')
+
+        return statements_copy
 
     def get_node(self, statement):
         for node in self.nodes:
