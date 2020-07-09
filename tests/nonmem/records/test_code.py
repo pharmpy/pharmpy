@@ -61,7 +61,6 @@ def test_single_assignments(parser, buf, symbol, expression):
     assert rec.statements[0].expression == expression
 
 
-
 @pytest.mark.usefixtures('parser')
 @pytest.mark.parametrize('buf,symb_expr_arr', [
     ('$PRED\nIF (X.EQ.0) THEN\nY = 23\nZ = 9\nEND IF', [
@@ -144,3 +143,38 @@ IF(APGR.LT.5) TVV=TVV*(1+THETA(3))
     symbol_names = {s.name for s in rec.statements.free_symbols}
     assert symbol_names == {'AMT', 'BTIME', 'TIME', 'TAD', 'TVCL', 'THETA(1)', 'WGT', 'TVV',
                             'THETA(2)', 'APGR', 'THETA(3)', 'CL', 'ETA(1)', 'V', 'ETA(2)', 'S1'}
+
+
+@pytest.mark.usefixtures('parser')
+@pytest.mark.parametrize('buf_original,buf_new,is_identical', [
+    ('$PRED\nY=A+B', '$PRED\nY=A+B', True),
+    ('$PRED\nY=A+B\nX=C-D\nZ=E*F', '$PRED\nY=A+B\nZ=E*F', False),
+])
+def test_statements_setter(parser, buf_original, buf_new, is_identical):
+    rec_original = parser.parse(buf_original).records[0]
+    statements_original = rec_original.statements
+    statements_new = parser.parse(buf_new).records[0].statements
+
+    rec_original.statements = statements_new
+
+    assert rec_original.statements == statements_new
+    assert (rec_original.statements == statements_original) is is_identical
+
+
+@pytest.mark.usefixtures('parser')
+@pytest.mark.parametrize('buf_original,buf_new,index_start,index_end', [
+    ('$PRED\nY=A+B\nX=C-D\nZ=E*F', '$PRED\nY=A+B\nZ=E*F', 1, 2),
+    ('$PRED\nY=A+B\nX=C-D\nL=A*M\nZ=E*F', '$PRED\nY=A+B\nZ=E*F', 1, 3),
+])
+def test_remove_statements(parser, buf_original, buf_new, index_start, index_end):
+    rec_original = parser.parse(buf_original).records[0]
+    statements_original = rec_original.statements
+    statements_new = parser.parse(buf_new).records[0].statements
+
+    statements_updated = statements_original.copy()
+    statements_updated = rec_original.remove_statements(statements_updated, index_start, index_end)
+
+    assert len(statements_updated) == 2
+    assert statements_updated[1].symbol == S('Z')
+    assert statements_updated[1].expression == S('E') * S('F')
+    assert statements_updated == statements_new
