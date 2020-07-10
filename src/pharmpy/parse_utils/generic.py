@@ -7,6 +7,7 @@ Generic parser using lark-parser.
 Subclass :class:`GenericParser` (remember to set :attr:`GenericParser.grammar`
 to point to your grammar file) to define a powerful parser.
 """
+import copy
 
 from lark import Tree
 from lark.lexer import Token
@@ -282,6 +283,40 @@ class AttrTree(Tree):
             if child.rule != rule:
                 new_children.append(child)
         self.children = new_children
+
+    def remove_node(self, node):
+        new_children = []
+        comment_flag = False
+
+        for child in self.children:
+            if child.rule == 'COMMENT':
+                if not comment_flag:
+                    new_children.append(child)
+            elif str(child.eval) != str(node.eval):
+                new_children.append(child)
+                if child.rule == 'statement':
+                    comment_flag = False
+            else:
+                comment_flag = True
+
+        new_children_clean = self.clean_ws(new_children)
+        self.children = new_children_clean
+
+    @staticmethod
+    def clean_ws(new_children):
+        new_children_clean = []
+        prev_rule = None
+
+        for child in new_children:
+            if child.rule == 'WS_ALL' and child.rule == prev_rule:
+                pass
+            else:
+                new_children_clean.append(child)
+            prev_rule = child.rule
+
+        return new_children_clean
+
+
 
     @property
     def tokens(self):
