@@ -136,6 +136,7 @@ class CodeRecord(Record):
     def __init__(self, content, parser_class):
         super().__init__(content, parser_class)
         self.nodes = []
+        self.nodes_updated = []
         self._statements = None
         self._statements_updated = False
 
@@ -148,7 +149,8 @@ class CodeRecord(Record):
     @statements.setter
     def statements(self, statements_new):
         statements_original = copy.deepcopy(self._statements)
-        statements_updated = copy.deepcopy(self._statements)
+        self.nodes_updated = copy.deepcopy(self.nodes)
+        root_updated = copy.deepcopy(self.root)
 
         if statements_new == statements_original:  # TODO: warn instead of print
             print("New statements same as current, no changes made.")
@@ -156,35 +158,40 @@ class CodeRecord(Record):
         # TODO: name index variables to more intuitive names
         index_original = 0
 
+        # TODO: make case if there are nodes not added at end
         for index_new, statement_new in enumerate(statements_new):
             try:
                 if statement_new != statements_original[index_original]:
                     try:
-                        index_found = statements_original.index(statement_new, index_original)
+                        index_statement = statements_original.index(statement_new, index_original)
+                        index_last_removed = index_statement - 1
                     except ValueError:
-                        index_found = None
+                        index_last_removed = None
 
-                    if index_found is not None:
+                    if index_last_removed is None:
+                        print("adding...")
+                    else:
                         print("removing...")
-                        statements_updated = self.remove_statements(statements_updated,
-                                                                    index_original,
-                                                                    index_found-1)
-                        index_original = index_found
-                else:
-                    index_original += 1
+                        self.remove_statements(root_updated, statements_original,
+                                               index_original, index_last_removed)
+
+                        index_original = index_last_removed
+
+                index_original += 1
             except IndexError:
                 pass
 
-        self._statements = statements_updated
+        self.root = root_updated
+        self._statements = statements_new
         self._statements_updated = True
 
-    def remove_statements(self, statements_copy, index_remove_start, index_remove_end):
+    def remove_statements(self, root_updated, statements, index_remove_start, index_remove_end):
         for i in range(index_remove_start, index_remove_end+1):
-            statement_to_remove = self._statements[i]
-            statements_copy.remove(statement_to_remove)
-            print(f'{statement_to_remove} has been removed!')
-
-        return statements_copy
+            statement_to_remove = statements[i]
+            node = self.get_node(statement_to_remove)
+            self.nodes_updated.remove(node)
+            root_updated.remove_node(node)
+            print(f'{node} has been removed!')
 
     def get_node(self, statement):
         for node in self.nodes:
@@ -198,7 +205,7 @@ class CodeRecord(Record):
         s = []
         for statement in self.root.all('statement'):
             node = statement.children[0]
-            self.nodes.append(node)
+            self.nodes.append(statement)
             if node.rule == 'assignment':
                 name = str(node.variable)
                 expr = ExpressionInterpreter().visit(node.expression)
