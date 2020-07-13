@@ -306,9 +306,12 @@ class AttrTree(Tree):
     def clean_ws(new_children):
         new_children_clean = []
         prev_rule = None
+        new_children_last_index = len(new_children) - 1
 
-        for child in new_children:
+        for i, child in enumerate(new_children):
             if child.rule == 'WS_ALL' and child.rule == prev_rule:
+                pass
+            elif i == new_children_last_index and child.rule == 'WS_ALL':  # Remove trailing WS
                 pass
             else:
                 new_children_clean.append(child)
@@ -316,7 +319,20 @@ class AttrTree(Tree):
 
         return new_children_clean
 
+    def add_node(self, node, following_node=None):
+        new_children = copy.deepcopy(self.children)
+        newline_node = AttrToken('WS_ALL', '\n')
 
+        if following_node is None:
+            new_children.append(newline_node)
+            new_children.append(node)
+        else:
+            index = self.children.index(following_node)
+            new_children.insert(index, node)
+
+            new_children.insert(index + 1, newline_node)   # Insert after newly inserted node
+
+        self.children = new_children
 
     @property
     def tokens(self):
