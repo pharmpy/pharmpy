@@ -182,15 +182,32 @@ def test_statements_setter(parser, buf_original, buf_new, is_identical):
 def test_remove_statements(parser, buf_original, buf_new, index_remove_start,
                            index_remove_end):
     rec_original = parser.parse(buf_original).records[0]
-    statements_original = rec_original.statements
     rec_original.nodes_updated = copy.deepcopy(rec_original.nodes)
 
     tree_new = parser.parse(buf_new).records[0].root
 
     rec_original.remove_statements(rec_original.root,
-                                   statements_original,
                                    index_remove_start,
                                    index_remove_end)
 
     assert len(rec_original.nodes_updated) == 2
+    assert rec_original.root == tree_new
+
+
+@pytest.mark.usefixtures('parser')
+@pytest.mark.parametrize('buf_original,buf_new,index_insert', [
+    ('$PRED\nY=A+B\nZ=E*F', '$PRED\nY=A+B\nX=C-D\nZ=E*F', 1),
+])
+def test_add_statements(parser, buf_original, buf_new, index_insert):
+    rec_original = parser.parse(buf_original).records[0]
+    rec_original.statements
+    rec_original.nodes_updated = copy.deepcopy(rec_original.nodes)
+
+    rec_new = parser.parse(buf_new).records[0]
+    statement_insert = rec_new.statements[1]
+    tree_new = rec_new.root
+
+    rec_original.add_statement(rec_original.root, index_insert, statement_insert)
+
+    assert len(rec_original.nodes_updated) == 3
     assert rec_original.root == tree_new
