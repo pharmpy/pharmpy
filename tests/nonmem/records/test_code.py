@@ -149,8 +149,18 @@ IF(APGR.LT.5) TVV=TVV*(1+THETA(3))
 
 @pytest.mark.usefixtures('parser')
 @pytest.mark.parametrize('buf_original,buf_new,is_identical', [
+    ('$PRED\nY = THETA(1) + ETA(1) + EPS(1)',
+     '$PRED\nY = THETA(1) + ETA(1) + EPS(1)', True),
+    ('$PRED\nY = THETA(1) + ETA(1) + EPS(1) ;comment',
+     '$PRED\nY = THETA(1) + ETA(1) + EPS(1)', True),
+    ('$PRED\nY = THETA(1) + ETA(1) + EPS(1)\nCL = 2',
+     '$PRED\nY = THETA(1) + ETA(1) + EPS(1)', False),
+    ('$PRED\nY = THETA(1) + ETA(1) + EPS(1)',
+     '$PRED\nY = THETA(1) + ETA(1) + EPS(1)\nCL = 2', False),
     ('$PRED\nY=A+B', '$PRED\nY=A+B', True),
     ('$PRED\nY=A+B\nX=C-D\nZ=E*F', '$PRED\nY=A+B\nZ=E*F', False),
+    ('$PRED\nY=A+B\nX=C-D\nZ=E*F', '$PRED\nY=A+B\nZ=E*F\nP=O', False),
+    ('$PRED\nY=A+B\nX=C-D\nZ=E*F', '$PRED\nY=A+B\nX=C\nZ=E*F', False),
 ])
 def test_statements_setter(parser, buf_original, buf_new, is_identical):
     rec_original = parser.parse(buf_original).records[0]
@@ -173,14 +183,14 @@ def test_remove_statements(parser, buf_original, buf_new, index_remove_start,
                            index_remove_end):
     rec_original = parser.parse(buf_original).records[0]
     statements_original = rec_original.statements
-    statements_new = parser.parse(buf_new).records[0].statements
+    rec_original.nodes_updated = copy.deepcopy(rec_original.nodes)
 
-    statements_updated = copy.deepcopy(statements_original)
-    statements_updated = rec_original.remove_statements(statements_updated,
-                                                        index_remove_start,
-                                                        index_remove_end)
+    tree_new = parser.parse(buf_new).records[0].root
 
-    assert len(statements_updated) == 2
-    assert statements_updated[1].symbol == S('Z')
-    assert statements_updated[1].expression == S('E') * S('F')
-    assert statements_updated == statements_new
+    rec_original.remove_statements(rec_original.root,
+                                   statements_original,
+                                   index_remove_start,
+                                   index_remove_end)
+
+    assert len(rec_original.nodes_updated) == 2
+    assert rec_original.root == tree_new
