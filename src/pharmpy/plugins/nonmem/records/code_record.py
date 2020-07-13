@@ -9,8 +9,8 @@ import lark
 import sympy
 
 from pharmpy.data_structures import OrderedSet
-from pharmpy.statements import Assignment, ModelStatements
 from pharmpy.plugins.nonmem.records.parsers import CodeRecordParser
+from pharmpy.statements import Assignment, ModelStatements
 
 from .record import Record
 
@@ -138,13 +138,11 @@ class CodeRecord(Record):
         super().__init__(content, parser_class)
         self.nodes = []
         self.nodes_updated = []
-        self._statements = None                 # TODO: make this not None initially
+        self._statements = self.assign_statements()
         self._statements_updated = False
 
     @property
     def statements(self):
-        if self._statements is None:
-            self._statements = self.assign_statements()
         return self._statements
 
     @statements.setter
@@ -161,7 +159,9 @@ class CodeRecord(Record):
 
         # TODO: make case if there are nodes not added at end
         for index_new, statement_new in enumerate(statements_new):
-            try:
+            if index_original == len(statements_original):
+                self.add_statement(root_updated, None, statement_new)
+            else:
                 if statement_new != statements_original[index_original]:
                     try:
                         index_statement = statements_original.index(statement_new, index_original)
@@ -179,8 +179,6 @@ class CodeRecord(Record):
                         index_original = index_last_removed
 
                 index_original += 1
-            except IndexError:
-                pass
 
         self.root = root_updated
         self._statements = statements_new
@@ -197,11 +195,18 @@ class CodeRecord(Record):
     def add_statement(self, root_updated, index_insert, statement):
         node_tree = CodeRecordParser(f'\n{self.get_statement_str(statement)}').root
         node = node_tree.all('statement')[0]
-        node_following = self.nodes_updated[index_insert]
-        self.nodes_updated.insert(index_insert, node)
-        root_updated.add_node(node, node_following)
+
+        if index_insert is None:
+            self.nodes_updated.append(node)
+            root_updated.add_node(node)
+        else:
+            node_following = self.nodes_updated[index_insert]
+            self.nodes_updated.insert(index_insert, node)
+            root_updated.add_node(node, node_following)
+
         print(f'{node} has been added!')
 
+    # TODO: Fix for block-if statements
     @staticmethod
     def get_statement_str(statement):
         symbol = str(statement.symbol)

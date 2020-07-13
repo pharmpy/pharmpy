@@ -159,7 +159,6 @@ IF(APGR.LT.5) TVV=TVV*(1+THETA(3))
      '$PRED\nY = THETA(1) + ETA(1) + EPS(1)\nCL = 2', False),
     ('$PRED\nY=A+B', '$PRED\nY=A+B', True),
     ('$PRED\nY=A+B\nX=C-D\nZ=E*F', '$PRED\nY=A+B\nZ=E*F', False),
-    ('$PRED\nY=A+B\nX=C-D\nZ=E*F', '$PRED\nY=A+B\nZ=E*F\nP=O', False),
     ('$PRED\nY=A+B\nX=C-D\nZ=E*F', '$PRED\nY=A+B\nX=C\nZ=E*F', False),
 ])
 def test_statements_setter(parser, buf_original, buf_new, is_identical):
@@ -195,16 +194,17 @@ def test_remove_statements(parser, buf_original, buf_new, index_remove_start,
 
 
 @pytest.mark.usefixtures('parser')
-@pytest.mark.parametrize('buf_original,buf_new,index_insert', [
-    ('$PRED\nY=A+B\nZ=E*F', '$PRED\nY=A+B\nX=C-D\nZ=E*F', 1),
+@pytest.mark.parametrize('buf_original,buf_new,index_statement,index_insert', [
+    ('$PRED\nY=A+B\nZ=E*F', '$PRED\nY=A+B\nX=C-D\nZ=E*F', 1, 1),
+    ('$PRED\nY=A+B\nZ=E*F', '$PRED\nY=A+B\nZ=E*F\nX=C-D', 2, None),
+
 ])
-def test_add_statements(parser, buf_original, buf_new, index_insert):
+def test_add_statements(parser, buf_original, buf_new, index_statement, index_insert):
     rec_original = parser.parse(buf_original).records[0]
-    rec_original.statements
     rec_original.nodes_updated = copy.deepcopy(rec_original.nodes)
 
     rec_new = parser.parse(buf_new).records[0]
-    statement_insert = rec_new.statements[1]
+    statement_insert = rec_new.statements[index_statement]
     tree_new = rec_new.root
 
     rec_original.add_statement(rec_original.root, index_insert, statement_insert)
