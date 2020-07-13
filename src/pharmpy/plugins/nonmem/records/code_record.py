@@ -10,6 +10,7 @@ import sympy
 
 from pharmpy.data_structures import OrderedSet
 from pharmpy.statements import Assignment, ModelStatements
+from pharmpy.plugins.nonmem.records.parsers import CodeRecordParser
 
 from .record import Record
 
@@ -137,7 +138,7 @@ class CodeRecord(Record):
         super().__init__(content, parser_class)
         self.nodes = []
         self.nodes_updated = []
-        self._statements = None
+        self._statements = None                 # TODO: make this not None initially
         self._statements_updated = False
 
     @property
@@ -170,10 +171,10 @@ class CodeRecord(Record):
 
                     if index_last_removed is None:
                         print("adding...")
+                        self.add_statement(root_updated, index_new, statement_new)
                     else:
                         print("removing...")
-                        self.remove_statements(root_updated, statements_original,
-                                               index_original, index_last_removed)
+                        self.remove_statements(root_updated, index_original, index_last_removed)
 
                         index_original = index_last_removed
 
@@ -185,19 +186,31 @@ class CodeRecord(Record):
         self._statements = statements_new
         self._statements_updated = True
 
-    def remove_statements(self, root_updated, statements, index_remove_start, index_remove_end):
+    def remove_statements(self, root_updated, index_remove_start, index_remove_end):
         for i in range(index_remove_start, index_remove_end+1):
-            statement_to_remove = statements[i]
+            statement_to_remove = self.statements[i]
             node = self.get_node(statement_to_remove)
             self.nodes_updated.remove(node)
             root_updated.remove_node(node)
             print(f'{node} has been removed!')
 
+    def add_statement(self, root_updated, index_insert, statement):
+        node_tree = CodeRecordParser(f'\n{self.get_statement_str(statement)}').root
+        node = node_tree.all('statement')[0]
+        node_following = self.nodes_updated[index_insert]
+        self.nodes_updated.insert(index_insert, node)
+        root_updated.add_node(node, node_following)
+        print(f'{node} has been added!')
+
+    @staticmethod
+    def get_statement_str(statement):
+        symbol = str(statement.symbol)
+        expression = str(statement.expression).replace(' ', '')
+        return f'{symbol}={expression}'
+
     def get_node(self, statement):
         for node in self.nodes:
-            symbol = str(statement.symbol)
-            expression = str(statement.expression).replace(' ', '')
-            if str(node.eval) == f'{symbol}={expression}':
+            if str(node.eval) == self.get_statement_str(statement):
                 return node
         return None
 
