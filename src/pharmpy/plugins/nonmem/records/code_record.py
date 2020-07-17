@@ -4,6 +4,7 @@ Generic NONMEM code record class.
 """
 
 import copy
+import warnings
 
 import lark
 import sympy
@@ -151,32 +152,36 @@ class CodeRecord(Record):
         self.nodes_updated = copy.deepcopy(self.nodes)
         root_updated = copy.deepcopy(self.root)
 
-        if statements_new == statements_original:  # TODO: warn instead of print
-            print("New statements same as current, no changes made.")
+        if statements_new == statements_original:
+            warnings.warn('New statements same as current, no changes made.')
+        else:
+            index_original = 0
 
-        # TODO: name index variables to more intuitive names
-        index_original = 0
+            for index_new, statement_new in enumerate(statements_new):
+                if index_original == len(statements_original):
+                    self.add_statement(root_updated, None, statement_new)
+                elif statement_new != statements_original[index_original]:
+                    if statement_new.symbol == statements_original[index_original].symbol:
+                        self.remove_statements(root_updated, index_original, index_original)
 
-        # TODO: make case if there are nodes not added at end
-        for index_new, statement_new in enumerate(statements_new):
-            if index_original == len(statements_original):
-                self.add_statement(root_updated, None, statement_new)
-            else:
-                if statement_new != statements_original[index_original]:
                     try:
-                        index_statement = statements_original.index(statement_new, index_original)
+                        index_statement = statements_original.index(statement_new,
+                                                                    index_original)
                         index_last_removed = index_statement - 1
                     except ValueError:
                         index_last_removed = None
 
                     if index_last_removed is None:
-                        print("adding...")
                         self.add_statement(root_updated, index_new, statement_new)
                     else:
-                        print("removing...")
-                        self.remove_statements(root_updated, index_original, index_last_removed)
+                        self.remove_statements(root_updated, index_original,
+                                               index_last_removed)
 
                         index_original = index_last_removed
+
+                elif index_new == len(statements_new) - 1:
+                    self.remove_statements(root_updated, index_original+1,
+                                           len(statements_original)-1)
 
                 index_original += 1
 
@@ -190,34 +195,26 @@ class CodeRecord(Record):
             node = self.get_node(statement_to_remove)
             self.nodes_updated.remove(node)
             root_updated.remove_node(node)
-            print(f'{node} has been removed!')
 
     def add_statement(self, root_updated, index_insert, statement):
-        node_tree = CodeRecordParser(f'\n{self.get_statement_str(statement)}').root
+        node_tree = CodeRecordParser(f'\n{str(statement).replace(":", "")}').root
         node = node_tree.all('statement')[0]
 
         if index_insert is None:
             self.nodes_updated.append(node)
             root_updated.add_node(node)
         else:
-            node_following = self.nodes_updated[index_insert]
-            self.nodes_updated.insert(index_insert, node)
-            root_updated.add_node(node, node_following)
-
-        print(f'{node} has been added!')
-
-    # TODO: Fix for block-if statements
-    @staticmethod
-    def get_statement_str(statement):
-        symbol = str(statement.symbol)
-        expression = str(statement.expression).replace(' ', '')
-        return f'{symbol}={expression}'
+            try:
+                node_following = self.nodes_updated[index_insert]
+                self.nodes_updated.insert(index_insert, node)
+                root_updated.add_node(node, node_following)
+            except IndexError:
+                self.nodes_updated.append(node)
+                root_updated.add_node(node)
 
     def get_node(self, statement):
-        for node in self.nodes:
-            if str(node.eval) == self.get_statement_str(statement):
-                return node
-        return None
+        index_statement = self.statements.index(statement)
+        return self.nodes[index_statement]
 
     def assign_statements(self):
         s = []
