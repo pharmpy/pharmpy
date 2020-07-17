@@ -1,9 +1,11 @@
+import pytest
 import sympy
 from pyfakefs.fake_filesystem_unittest import Patcher
 from sympy import Symbol
 
 from pharmpy import Model
 from pharmpy.parameter import Parameter
+from pharmpy.plugins.nonmem.nmtran_parser import NMTranParser
 
 
 def test_source(pheno_path):
@@ -116,3 +118,28 @@ $COVARIANCE UNCONDITIONAL
 $TABLE      ID TIME AMT WGT APGR IPRED PRED TAD CWRES NPDE NOAPPEND
             NOPRINT ONEHEADER FILE=pheno_real.tab
 $ETAS FILE=run2_input.phi""")
+
+
+@pytest.mark.parametrize('buf_new, len_expected', [
+    ('IF(AMT.GT.0) BTIME=TIME\nTAD=TIME-BTIME\n'
+     'TVCL=THETA(1)*WGT\nTVV=THETA(2)*WGT\n'
+     'IF(APGR.LT.5) TVV=TVV*(1+THETA(3))\nCL=TVCL*EXP(ETA(1))'
+     '\nV=TVV*EXP(ETA(2))\nS1=V\nY=A+B', 9),
+    ('IF(AMT.GT.0) BTIME=TIME\nTAD=TIME-BTIME\n'
+     'TVCL=THETA(1)*WGT\nTVV=THETA(2)*WGT\n'
+     'IF(APGR.LT.5) TVV=TVV*(1+THETA(3))\nCL=TVCL*EXP(ETA(1))'
+     '\nV=TVV*EXP(ETA(2))\nS1=2*V', 8),
+])
+def test_statements_setter(pheno_path, buf_new, len_expected):
+    model = Model(pheno_path)
+
+    parser = NMTranParser()
+    statements_new = parser.parse(f'$PRED\n{buf_new}').records[0].statements
+
+    assert len(model.statements) == 8
+    assert len(statements_new) == len_expected
+
+    model.statements = statements_new
+
+    assert len(model.statements) == len_expected
+    assert model.statements == statements_new
