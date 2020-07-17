@@ -1,4 +1,5 @@
 import copy
+import warnings
 
 import pytest
 import sympy
@@ -148,28 +149,49 @@ IF(APGR.LT.5) TVV=TVV*(1+THETA(3))
 
 
 @pytest.mark.usefixtures('parser')
-@pytest.mark.parametrize('buf_original,buf_new,is_identical', [
+@pytest.mark.parametrize('buf_original,buf_new', [
     ('$PRED\nY = THETA(1) + ETA(1) + EPS(1)',
-     '$PRED\nY = THETA(1) + ETA(1) + EPS(1)', True),
+     '$PRED\nY = THETA(1) + ETA(1) + EPS(1)'),
     ('$PRED\nY = THETA(1) + ETA(1) + EPS(1) ;comment',
-     '$PRED\nY = THETA(1) + ETA(1) + EPS(1)', True),
-    ('$PRED\nY = THETA(1) + ETA(1) + EPS(1)\nCL = 2',
-     '$PRED\nY = THETA(1) + ETA(1) + EPS(1)', False),
+     '$PRED\nY = THETA(1) + ETA(1) + EPS(1)'),
     ('$PRED\nY = THETA(1) + ETA(1) + EPS(1)',
-     '$PRED\nY = THETA(1) + ETA(1) + EPS(1)\nCL = 2', False),
-    ('$PRED\nY=A+B', '$PRED\nY=A+B', True),
-    ('$PRED\nY=A+B\nX=C-D\nZ=E*F', '$PRED\nY=A+B\nZ=E*F', False),
-    ('$PRED\nY=A+B\nX=C-D\nZ=E*F', '$PRED\nY=A+B\nX=C\nZ=E*F', False),
+     '$PRED\nY=THETA(1)+ETA(1)+EPS(1)'),
+
 ])
-def test_statements_setter(parser, buf_original, buf_new, is_identical):
+def test_statements_setter_identical(parser, buf_original, buf_new):
     rec_original = parser.parse(buf_original).records[0]
-    statements_original = rec_original.statements
-    statements_new = parser.parse(buf_new).records[0].statements
+    rec_new = parser.parse(buf_new).records[0]
 
-    rec_original.statements = statements_new
+    rec_original.statements = rec_new.statements
 
-    assert rec_original.statements == statements_new
-    assert (rec_original.statements == statements_original) is is_identical
+    assert rec_original.statements == rec_new.statements
+    with pytest.warns(UserWarning):
+        warnings.warn('New statements same as current, no changes made.', UserWarning)
+
+
+@pytest.mark.usefixtures('parser')
+@pytest.mark.parametrize('buf_original,buf_new', [
+    ('$PRED\nY = THETA(1) + ETA(1) + EPS(1)\nCL = 2',
+     '$PRED\nY = THETA(1) + ETA(1) + EPS(1)'),
+    ('$PRED\nY = THETA(1) + ETA(1) + EPS(1) ;comment\nCL = 2',
+     '$PRED\nY = THETA(1) + ETA(1) + EPS(1)'),
+    ('$PRED\nY = THETA(1) + ETA(1) + EPS(1)',
+     '$PRED\nY = THETA(1) + ETA(1) + EPS(1)\nCL = 2'),
+    ('$PRED\nY = THETA(1) + ETA(1) + EPS(1)\nCL = 2',
+     '$PRED\nCL = 2'),
+    ('$PRED\nY = A + B', '$PRED\nY = A + B'),
+    ('$PRED\nY = A + B\nX = C - D\nZ = E * F', '$PRED\nY = A + B\nZ = E * F'),
+    ('$PRED\nY = A + B\nX = C - D\nZ = E * F', '$PRED\nY = A + B\nX = C\nZ = E * F'),
+    ('$PRED\nY = A + B\nX = C - D\nZ = E * F', '$PRED\nY = A + B\nX = C - D\nZ = E'),
+])
+def test_statements_setter(parser, buf_original, buf_new):
+    rec_original = parser.parse(buf_original).records[0]
+    rec_new = parser.parse(buf_new).records[0]
+
+    rec_original.statements = rec_new.statements
+
+    assert rec_original.statements == rec_new.statements
+    assert rec_original.root.all('statement') == rec_new.root.all('statement')
 
 
 @pytest.mark.usefixtures('parser')
@@ -195,8 +217,8 @@ def test_remove_statements(parser, buf_original, buf_new, index_remove_start,
 
 @pytest.mark.usefixtures('parser')
 @pytest.mark.parametrize('buf_original,buf_new,index_statement,index_insert', [
-    ('$PRED\nY=A+B\nZ=E*F', '$PRED\nY=A+B\nX=C-D\nZ=E*F', 1, 1),
-    ('$PRED\nY=A+B\nZ=E*F', '$PRED\nY=A+B\nZ=E*F\nX=C-D', 2, None),
+    ('$PRED\nY = A + B\nZ = E * F', '$PRED\nY = A + B\nX = C - D\nZ = E * F', 1, 1),
+    ('$PRED\nY = A + B\nZ = E * F', '$PRED\nY = A + B\nZ = E * F\nX = C - D', 2, None),
 
 ])
 def test_add_statements(parser, buf_original, buf_new, index_statement, index_insert):
@@ -205,9 +227,8 @@ def test_add_statements(parser, buf_original, buf_new, index_statement, index_in
 
     rec_new = parser.parse(buf_new).records[0]
     statement_insert = rec_new.statements[index_statement]
-    tree_new = rec_new.root
 
     rec_original.add_statement(rec_original.root, index_insert, statement_insert)
 
     assert len(rec_original.nodes_updated) == 3
-    assert rec_original.root == tree_new
+    assert rec_original.root == rec_new.root
