@@ -146,7 +146,7 @@ def sample_truncated_joint_normal(mu, sigma, a, b, n):
 
        using sample rejection
        mu, sigma - parameters for the normal distribution
-       a, b - vectors of upper and lower limits for each random variable
+       a, b - vectors of lower and upper limits for each random variable
        n - number of samples
     """
     kept_samples = np.empty((0, len(mu)))
