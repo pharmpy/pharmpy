@@ -83,7 +83,7 @@ class Model(pharmpy.model.Model):
         if not self._parameters_updated:
             return
 
-        params = self.parameters
+        params = self._parameters
         next_theta = 1
         for theta_record in self.control_stream.get_records('THETA'):
             theta_record.update(params, next_theta)
@@ -154,7 +154,7 @@ class Model(pharmpy.model.Model):
         """Get the ParameterSet of all parameters
         """
         try:
-            return self._parameters
+            return self._parameters.copy()
         except AttributeError:
             pass
 
@@ -175,7 +175,7 @@ class Model(pharmpy.model.Model):
             sigmas, next_sigma, previous_size = sigma_record.parameters(next_sigma, previous_size)
             params.update(sigmas)
         self._parameters = params
-        return params
+        return params.copy()
 
     @parameters.setter
     def parameters(self, params):
@@ -194,18 +194,18 @@ class Model(pharmpy.model.Model):
 
         parameters = self.parameters
         if not isinstance(params, ParameterSet):
-            parameters.inits = params
+            self._parameters.inits = params
         else:
-            if len(self.parameters) != len(params):
+            if len(parameters) != len(params):
                 raise NotImplementedError("Current number of parameters in model and parameters to "
                                           "set are not the same. Not yet supported")
 
-            for p in self.parameters:
+            for p in parameters:
                 name = p.name
                 if name not in params:
                     raise NotImplementedError(f"Parameter '{name}' not found in input. Currently "
                                               f"not supported")
-            self._parameters = params
+            self._parameters = params.copy()
         self._parameters_updated = True
 
     @property

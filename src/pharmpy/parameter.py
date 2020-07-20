@@ -1,3 +1,5 @@
+import copy
+
 import pandas as pd
 import sympy
 
@@ -89,6 +91,11 @@ class ParameterSet(OrderedSet):
         """
         fixed = [p for p in self if p.fix]
         self -= fixed
+
+    def copy(self):
+        """Create a deep copy of this ParameterSet
+        """
+        return copy.deepcopy(self)
 
     def __repr__(self):
         if len(self) == 0:
