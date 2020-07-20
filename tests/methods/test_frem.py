@@ -37,7 +37,6 @@ def test_check_covariates_mult_warns(testdata):
     assert newcov == []
 
 
-
 def test_parcov_inits(testdata):
     model = Model(testdata / 'nonmem' / 'frem' / 'pheno' / 'model_3.mod')
     params = calculate_parcov_inits(model, 2)
