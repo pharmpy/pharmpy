@@ -1,8 +1,7 @@
 import pharmpy.config as config
 
 from .model import Model
-
-
+    
 r"""
 .. list-table:: Options for the nonmem plugin
    :widths: 25 25 50 150
