@@ -28,10 +28,7 @@ class Assignment:
         return symbols
 
     def __eq__(self, other):
-        if self.symbol == other.symbol and self.expression == other.expression:
-            return True
-        else:
-            return False
+        return self.symbol == other.symbol and self.expression == other.expression
 
     def __str__(self):
         return f'{self.symbol} := {self.expression}'
