@@ -1,5 +1,4 @@
 import copy
-import warnings
 
 import pytest
 import sympy
@@ -98,7 +97,7 @@ def test_block_if(parser, buf, symb_expr_arr):
     '$PRED IF (X.EQ.2.OR.Y.EQ.3) CL=23',
     '$PRED IF (.NOT.X.EQ.2) CL=25',
 ])
-def test_grammar_repeats(parser, buf):
+def test_grammar_repeats(parser, buf):  # Tests that there are no repeats due to parsing grammar
     rec = parser.parse(buf).records[0]
     tree_walk_gen = rec.root.tree_walk()
     parent = next(tree_walk_gen)
@@ -162,11 +161,10 @@ def test_statements_setter_identical(parser, buf_original, buf_new):
     rec_original = parser.parse(buf_original).records[0]
     rec_new = parser.parse(buf_new).records[0]
 
-    rec_original.statements = rec_new.statements
-
     assert rec_original.statements == rec_new.statements
+
     with pytest.warns(UserWarning):
-        warnings.warn('New statements same as current, no changes made.', UserWarning)
+        rec_original.statements = rec_new.statements
 
 
 @pytest.mark.usefixtures('parser')
