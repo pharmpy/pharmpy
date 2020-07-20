@@ -1,7 +1,70 @@
+from functools import partial
+
 import numpy as np
 import pandas as pd
 
 from pharmpy.math import is_posdef, nearest_posdef, sample_truncated_joint_normal
+
+
+def sample_from_function(model, samplingfn, parameters=None, force_posdef_samples=None, n=1):
+    """Sample parameter vectors unsing a general function
+
+        The sampling function will be given three arguments:
+            lower - lower bounds of parameters
+            upper - upper bounds of parameters
+            n - number of samples
+    """
+    if parameters is None:
+        parameters = model.parameters.names
+
+    parameter_summary = model.parameters.summary().loc[parameters]
+    parameter_summary = parameter_summary[~parameter_summary['fix']]
+    lower = parameter_summary.lower.astype('float64').to_numpy()
+    upper = parameter_summary.upper.astype('float64').to_numpy()
+
+    # reject non-posdef
+    kept_samples = pd.DataFrame()
+    remaining = n
+
+    if force_posdef_samples == 0:
+        force_posdef = True
+    else:
+        force_posdef = False
+
+    i = 0
+    while remaining > 0:
+        samples = samplingfn(lower, upper, n=remaining)
+        df = pd.DataFrame(samples, columns=parameters)
+        if not force_posdef:
+            selected = df[df.apply(model.random_variables.validate_parameters, axis=1,
+                                   use_cache=True)]
+        else:
+            selected = df.transform(model.random_variables.nearest_valid_parameters, axis=1)
+        kept_samples = pd.concat((kept_samples, selected))
+        remaining = n - len(kept_samples)
+        i += 1
+        if not force_posdef and force_posdef_samples is not None and i >= force_posdef_samples:
+            force_posdef = True
+
+    return kept_samples.reset_index(drop=True)
+
+
+def sample_uniformly(model, fraction=0.1, parameters=None, force_posdef_samples=None, n=1):
+    """Sample parameter vectors using uniform sampling
+
+       Each parameter value will be randomly sampled from a uniform distriution
+       with lower bound estimate - estimate * fraction and upper bound
+       estimate + estimate * fraction
+    """
+    def fn(lower, upper, n):
+        samples = np.empty((n, len(lower)))
+        for i, (a, b) in enumerate(zip(lower, upper)):
+            samples[i, :] = np.random.uniform(a, b, n)
+        return samples
+
+    samples = sample_from_function(model, fn, parameters=parameters,
+                                   force_posdef_samples=force_posdef_samples, n=n)
+    return samples
 
 
 def sample_from_covariance_matrix(model, modelfit_results=None, parameters=None,
@@ -31,36 +94,11 @@ def sample_from_covariance_matrix(model, modelfit_results=None, parameters=None,
             sigma = nearest_posdef(sigma)
         else:
             raise ValueError("Uncertainty covariance matrix not positive-definite")
-    parameter_summary = model.parameters.summary().loc[parameters]
-    parameter_summary = parameter_summary[~parameter_summary['fix']]
-    a = parameter_summary.lower.astype('float64').to_numpy()
-    b = parameter_summary.upper.astype('float64').to_numpy()
 
-    # reject non-posdef
-    kept_samples = pd.DataFrame()
-    remaining = n
-
-    if force_posdef_samples == 0:
-        force_posdef = True
-    else:
-        force_posdef = False
-
-    i = 0
-    while remaining > 0:
-        samples = sample_truncated_joint_normal(mu, sigma, a, b, n=remaining)
-        df = pd.DataFrame(samples, columns=index)
-        if not force_posdef:
-            selected = df[df.apply(model.random_variables.validate_parameters, axis=1,
-                                   use_cache=True)]
-        else:
-            selected = df.transform(model.random_variables.nearest_valid_parameters, axis=1)
-        kept_samples = pd.concat((kept_samples, selected))
-        remaining = n - len(kept_samples)
-        i += 1
-        if not force_posdef and force_posdef_samples is not None and i >= force_posdef_samples:
-            force_posdef = True
-
-    return kept_samples.reset_index(drop=True)
+    fn = partial(sample_truncated_joint_normal, mu, sigma)
+    samples = sample_from_function(model, fn, parameters=index,
+                                   force_posdef_samples=force_posdef_samples, n=n)
+    return samples
 
 
 def sample_individual_estimates(model, parameters=None, samples_per_id=100):
