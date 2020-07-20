@@ -181,6 +181,7 @@ def test_statements_setter_identical(parser, buf_original, buf_new):
      '$PRED\nCL = 2'),
     ('$PRED\nY = A + B', '$PRED\nY = A + B'),
     ('$PRED\nY = A + B\nX = C - D\nZ = E * F', '$PRED\nY = A + B\nZ = E * F'),
+    ('$PRED\nY = A + B', '$PRED\nZ = E*F'),
     ('$PRED\nY = A + B\nX = C - D\nZ = E * F', '$PRED\nY = A + B\nX = C\nZ = E * F'),
     ('$PRED\nY = A + B\nX = C - D\nZ = E * F', '$PRED\nY = A + B\nX = C - D\nZ = E'),
 ])
