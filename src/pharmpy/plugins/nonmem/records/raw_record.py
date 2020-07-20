@@ -8,7 +8,7 @@ class RawRecord(record.Record):
     Used for unknown records and for anything coming before the first record
     """
     def __init__(self, content):
-        self.content = content
+        super().__init__(content, None)
         self.raw_name = ''
 
     def __str__(self):
