@@ -161,7 +161,8 @@ class CodeRecord(Record):
                 if index_original == len(statements_original):
                     self.add_statement(root_updated, None, statement_new)
                 elif statement_new != statements_original[index_original]:
-                    if statement_new.symbol == statements_original[index_original].symbol:
+                    if statement_new.symbol == statements_original[index_original].symbol or \
+                            len(statements_original) == 1 and len(statements_new) == 1:
                         self.remove_statements(root_updated, index_original, index_original)
 
                     try:
@@ -196,21 +197,21 @@ class CodeRecord(Record):
             self.nodes_updated.remove(node)
             root_updated.remove_node(node)
 
+    # Creating node does not work for if-statements
     def add_statement(self, root_updated, index_insert, statement):
         node_tree = CodeRecordParser(f'\n{str(statement).replace(":", "")}').root
         node = node_tree.all('statement')[0]
+
+        if isinstance(index_insert, int) and index_insert >= len(self.nodes_updated):
+            index_insert = None
 
         if index_insert is None:
             self.nodes_updated.append(node)
             root_updated.add_node(node)
         else:
-            try:
-                node_following = self.nodes_updated[index_insert]
-                self.nodes_updated.insert(index_insert, node)
-                root_updated.add_node(node, node_following)
-            except IndexError:
-                self.nodes_updated.append(node)
-                root_updated.add_node(node)
+            node_following = self.nodes_updated[index_insert]
+            self.nodes_updated.insert(index_insert, node)
+            root_updated.add_node(node, node_following)
 
     def get_node(self, statement):
         index_statement = self.statements.index(statement)
