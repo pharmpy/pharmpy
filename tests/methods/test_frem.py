@@ -2,6 +2,7 @@ from io import StringIO
 
 import numpy as np
 import pandas as pd
+import pytest
 from pytest import approx
 
 from pharmpy import Model
@@ -12,8 +13,6 @@ from pharmpy.methods.frem.results import calculate_results, calculate_results_us
 
 def test_check_covariates(testdata):
     model = Model(testdata / 'nonmem' / 'pheno_real.mod')
-    newcov = check_covariates(model, ['FA1', 'FA2'])
-    assert newcov == []
     newcov = check_covariates(model, ['WGT', 'APGR'])
     assert newcov == ['WGT', 'APGR']
     newcov = check_covariates(model, ['APGR', 'WGT'])
@@ -21,10 +20,22 @@ def test_check_covariates(testdata):
     data = model.dataset
     data['NEW'] = data['WGT']
     model.dataset = data
-    newcov = check_covariates(model, ['APGR', 'WGT', 'NEW'])
+    with pytest.warns(UserWarning):
+        newcov = check_covariates(model, ['APGR', 'WGT', 'NEW'])
     assert newcov == ['APGR', 'WGT']
-    newcov = check_covariates(model, ['NEW', 'APGR', 'WGT'])
+    with pytest.warns(UserWarning):
+        newcov = check_covariates(model, ['NEW', 'APGR', 'WGT'])
     assert newcov == ['NEW', 'APGR']
+
+
+@pytest.mark.filterwarnings("ignore::UserWarning")
+def test_check_covariates_mult_warns(testdata):
+    # These are separated because capturing the warnings did not work.
+    # Possibly because more than one warning is issued
+    model = Model(testdata / 'nonmem' / 'pheno_real.mod')
+    newcov = check_covariates(model, ['FA1', 'FA2'])
+    assert newcov == []
+
 
 
 def test_parcov_inits(testdata):
