@@ -90,6 +90,22 @@ def test_pset_remove_fixed():
     assert pset['Y'] == Parameter('Y', 9)
 
 
+def test_pset_names():
+    p1 = Parameter('Y', 9)
+    p2 = Parameter('X', 3)
+    p3 = Parameter('Z', 1)
+    pset = ParameterSet([p1, p2, p3])
+    assert pset.names == ['Y', 'X', 'Z']
+
+
+def test_pset_lower_upper():
+    p1 = Parameter('X', 0, lower=-1, upper=1)
+    p2 = Parameter('Y', 1, lower=0)
+    pset = ParameterSet([p1, p2])
+    assert pset.lower == {'X': -1, 'Y': 0}
+    assert pset.upper == {'X': 1, 'Y': sympy.oo}
+
+
 def test_pset_inits():
     p1 = Parameter('Y', 9)
     p2 = Parameter('X', 3)

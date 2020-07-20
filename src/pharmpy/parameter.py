@@ -45,6 +45,24 @@ class ParameterSet(OrderedSet):
                             index=symbols)
 
     @property
+    def names(self):
+        """Names of all parameters
+        """
+        return [p.name for p in self]
+
+    @property
+    def lower(self):
+        """Lower bounds of all parameters
+        """
+        return {p.name: p.lower for p in self}
+
+    @property
+    def upper(self):
+        """Upper bounds of all parameters
+        """
+        return {p.name: p.upper for p in self}
+
+    @property
     def inits(self):
         """Initial estimates of parameters as dict
         """
