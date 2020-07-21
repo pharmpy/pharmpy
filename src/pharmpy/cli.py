@@ -130,8 +130,8 @@ def results_bootstrap(args):
         error(ValueError('Need at least the original model and 2'
                          'other models'))
     from pharmpy.methods.bootstrap.results import BootstrapResults
-    res = BootstrapResults(original_model=args.models[0],
-                                           bootstrap_models=args.models[1:])
+    res = BootstrapResults(original_model=args.base,
+                           bootstrap_models=args.models)
     print(res)
 
 
@@ -233,7 +233,9 @@ group_input.add_argument('models', metavar='FILE', type=input_model, nargs='+',
 parser_definition = [
     {'results': {'subs': [
         {'bootstrap': {'help': 'Generate bootstrap results', 'func': results_bootstrap,
-                       'parents': [args_input]}},
+                       'parents': [args_input], 'args': [
+                           {'name': '--base', 'metavar': 'FILE', 'type': input_model,
+                            'help': 'Base model'}]}},
         {'frem': {'help': 'Generate FREM results', 'func': results_frem, 'args': [
             {'name': 'psn_dir', 'metavar': 'PsN directory', 'type': pathlib.Path,
              'help': 'Path to PsN frem run directory'},

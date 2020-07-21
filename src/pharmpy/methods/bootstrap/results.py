@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 
 import pharmpy.visualization
@@ -6,11 +7,14 @@ from pharmpy.results import Results
 
 class BootstrapResults(Results):
     # FIXME: Could inherit from results that take multiple runs like bootstrap, cdd etc.
-    def __init__(self, original_model, bootstrap_models):
+    def __init__(self, bootstrap_models, original_model=None):
         if original_model is None and bootstrap_models is None:
             # FIXME: this is a special case for now for json handling before we have modelfit json
             return
-        self._original_results = original_model.modelfit_results
+        if original_model is not None:
+            self._original_results = original_model.modelfit_results
+        else:
+            self._original_results = None
         self._bootstrap_results = [m.modelfit_results for m in bootstrap_models
                                    if m.modelfit_results is not None]
         self._total_number_of_models = len(bootstrap_models)
@@ -43,11 +47,14 @@ class BootstrapResults(Results):
         df = self.parameter_estimates
         ofvs = self.ofv
         df.insert(0, 'OFV', ofvs)
-        orig = self._original_results.parameter_estimates
-        ofv_ser = pd.Series({'OFV': self._original_results.ofv})
-        orig = pd.concat([ofv_ser, orig])
         mean = df.mean()
-        bias = mean - orig
+        if self._original_results is not None:
+            orig = self._original_results.parameter_estimates
+            ofv_ser = pd.Series({'OFV': self._original_results.ofv})
+            orig = pd.concat([ofv_ser, orig])
+            bias = mean - orig
+        else:
+            bias = np.nan
         summary = pd.DataFrame({'mean': mean, 'bias': bias, 'stderr': df.std()})
         self._statistics = summary
         return summary

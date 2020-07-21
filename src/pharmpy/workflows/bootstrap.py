@@ -36,7 +36,7 @@ class BootstrapPostprocess(Job):
         self.rvs = rvs
 
     def run(self, file_store):
-        res = BootstrapResults(self.original_model, self.rvs)
+        res = BootstrapResults(self.rvs, original_model=self.original_model)
         return res
 
 
