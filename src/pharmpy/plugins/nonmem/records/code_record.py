@@ -138,7 +138,6 @@ class CodeRecord(Record):
     def __init__(self, content, parser_class):
         super().__init__(content, parser_class)
         self.nodes = []
-        self.nodes_updated = []
         self._statements = None
         self._statements_updated = False
 
@@ -155,7 +154,7 @@ class CodeRecord(Record):
     @statements.setter
     def statements(self, statements_new):
         statements_original = copy.deepcopy(self.statements)
-        self.nodes_updated = copy.deepcopy(self.nodes)
+        nodes_updated = copy.deepcopy(self.nodes)
         root_updated = copy.deepcopy(self.root)
 
         if statements_new == statements_original:
@@ -165,11 +164,13 @@ class CodeRecord(Record):
 
             for index_new, statement_new in enumerate(statements_new):
                 if index_original == len(statements_original):
-                    self._add_statement(root_updated, None, statement_new)
+                    self._add_statement(nodes_updated, root_updated,
+                                        None, statement_new)
                 elif statement_new != statements_original[index_original]:
                     if statement_new.symbol == statements_original[index_original].symbol or \
                             len(statements_original) == 1 and len(statements_new) == 1:
-                        self._remove_statements(root_updated, index_original, index_original)
+                        self._remove_statements(nodes_updated, root_updated,
+                                                index_original, index_original)
 
                     try:
                         index_statement = statements_original.index(statement_new,
@@ -179,44 +180,47 @@ class CodeRecord(Record):
                         index_last_removed = None
 
                     if index_last_removed is None:
-                        self._add_statement(root_updated, index_new, statement_new)
+                        self._add_statement(nodes_updated, root_updated,
+                                            index_new, statement_new)
                     else:
-                        self._remove_statements(root_updated, index_original,
-                                                index_last_removed)
+                        self._remove_statements(nodes_updated, root_updated,
+                                                index_original, index_last_removed)
 
                         index_original = index_last_removed
 
                 elif index_new == len(statements_new) - 1:
-                    self._remove_statements(root_updated, index_original+1,
-                                            len(statements_original)-1)
+                    self._remove_statements(nodes_updated, root_updated,
+                                            index_original+1, len(statements_original)-1)
 
                 index_original += 1
 
         self.root = root_updated
+        self.nodes = nodes_updated
         self._statements = statements_new
         self._statements_updated = True
 
-    def _remove_statements(self, root_updated, index_remove_start, index_remove_end):
+    def _remove_statements(self, nodes_updated, root_updated, index_remove_start, index_remove_end):
         for i in range(index_remove_start, index_remove_end+1):
             statement_to_remove = self.statements[i]
             node = self._get_node(statement_to_remove)
-            self.nodes_updated.remove(node)
+            nodes_updated.remove(node)
             root_updated.remove_node(node)
 
     # Creating node does not work for if-statements
-    def _add_statement(self, root_updated, index_insert, statement):
+    @staticmethod
+    def _add_statement(nodes_updated, root_updated, index_insert, statement):
         node_tree = CodeRecordParser(f'\n{str(statement).replace(":", "")}').root
         node = node_tree.all('statement')[0]
 
-        if isinstance(index_insert, int) and index_insert >= len(self.nodes_updated):
+        if isinstance(index_insert, int) and index_insert >= len(nodes_updated):
             index_insert = None
 
         if index_insert is None:
-            self.nodes_updated.append(node)
+            nodes_updated.append(node)
             root_updated.add_node(node)
         else:
-            node_following = self.nodes_updated[index_insert]
-            self.nodes_updated.insert(index_insert, node)
+            node_following = nodes_updated[index_insert]
+            nodes_updated.insert(index_insert, node)
             root_updated.add_node(node, node_following)
 
     def _get_node(self, statement):
