@@ -1,5 +1,3 @@
-import copy
-
 import pytest
 import sympy
 from sympy import Symbol
@@ -173,16 +171,11 @@ def test_statements_setter_identical(parser, buf_original, buf_new):
      '$PRED\nY = THETA(1) + ETA(1) + EPS(1)'),
     ('$PRED\nY = THETA(1) + ETA(1) + EPS(1) ;comment\nCL = 2',
      '$PRED\nY = THETA(1) + ETA(1) + EPS(1)'),
-    ('$PRED\nY = THETA(1) + ETA(1) + EPS(1)',
-     '$PRED\nY = THETA(1) + ETA(1) + EPS(1)\nCL = 2'),
     ('$PRED\nY = THETA(1) + ETA(1) + EPS(1)\nCL = 2',
      '$PRED\nCL = 2'),
     ('$PRED\nY = A + B\nX = C - D\nZ = E * F', '$PRED\nY = A + B\nZ = E * F'),
-    ('$PRED\nY = A + B', '$PRED\nZ = E*F'),
-    ('$PRED\nY = A + B\nX = C - D\nZ = E * F', '$PRED\nY = A + B\nX = C\nZ = E * F'),
-    ('$PRED\nY = A + B\nX = C - D\nZ = E * F', '$PRED\nY = A + B\nX = C - D\nZ = E'),
 ])
-def test_statements_setter(parser, buf_original, buf_new):
+def test_statements_setter_remove(parser, buf_original, buf_new):
     rec_original = parser.parse(buf_original).records[0]
     rec_new = parser.parse(buf_new).records[0]
 
@@ -193,40 +186,31 @@ def test_statements_setter(parser, buf_original, buf_new):
 
 
 @pytest.mark.usefixtures('parser')
-@pytest.mark.parametrize('buf_original,buf_new,index_remove_start,index_remove_end', [
-    ('$PRED\nY=A+B\nX=C-D\nZ=E*F', '$PRED\nY=A+B\nZ=E*F', 1, 1),
-    ('$PRED\nY=A+B\nX=C-D\nL=A*M\nZ=E*F', '$PRED\nY=A+B\nZ=E*F', 1, 2),
-    ('$PRED\nY=A+B\nZ=E*F\nX=C-D', '$PRED\nY=A+B\nZ=E*F', 2, 2),
+@pytest.mark.parametrize('buf_original,buf_new', [
+    ('$PRED\nY = THETA(1) + ETA(1) + EPS(1)',
+     '$PRED\nY = THETA(1) + ETA(1) + EPS(1)\nCL = 2'),
 ])
-def test_remove_statements(parser, buf_original, buf_new, index_remove_start,
-                           index_remove_end):
+def test_statements_setter_add(parser, buf_original, buf_new):
     rec_original = parser.parse(buf_original).records[0]
-    rec_original.nodes_updated = copy.deepcopy(rec_original.nodes)
+    rec_new = parser.parse(buf_new).records[0]
 
-    tree_new = parser.parse(buf_new).records[0].root
+    rec_original.statements = rec_new.statements
 
-    rec_original.remove_statements(rec_original.root,
-                                   index_remove_start,
-                                   index_remove_end)
-
-    assert len(rec_original.nodes_updated) == 2
-    assert rec_original.root == tree_new
+    assert rec_original.statements == rec_new.statements
+    assert rec_original.root.all('statement') == rec_new.root.all('statement')
 
 
 @pytest.mark.usefixtures('parser')
-@pytest.mark.parametrize('buf_original,buf_new,index_statement,index_insert', [
-    ('$PRED\nY = A + B\nZ = E * F', '$PRED\nY = A + B\nX = C - D\nZ = E * F', 1, 1),
-    ('$PRED\nY = A + B\nZ = E * F', '$PRED\nY = A + B\nZ = E * F\nX = C - D', 2, None),
-
+@pytest.mark.parametrize('buf_original,buf_new', [
+    ('$PRED\nY = A + B', '$PRED\nZ = E*F'),
+    ('$PRED\nY = A + B\nX = C - D\nZ = E * F', '$PRED\nY = A + B\nX = C\nZ = E * F'),
+    ('$PRED\nY = A + B\nX = C - D\nZ = E * F', '$PRED\nY = A + B\nX = C - D\nZ = E'),
 ])
-def test_add_statements(parser, buf_original, buf_new, index_statement, index_insert):
+def test_statements_setter_change(parser, buf_original, buf_new):
     rec_original = parser.parse(buf_original).records[0]
-    rec_original.nodes_updated = copy.deepcopy(rec_original.nodes)
-
     rec_new = parser.parse(buf_new).records[0]
-    statement_insert = rec_new.statements[index_statement]
 
-    rec_original.add_statement(rec_original.root, index_insert, statement_insert)
+    rec_original.statements = rec_new.statements
 
-    assert len(rec_original.nodes_updated) == 3
-    assert rec_original.root == rec_new.root
+    assert rec_original.statements == rec_new.statements
+    assert rec_original.root.all('statement') == rec_new.root.all('statement')
