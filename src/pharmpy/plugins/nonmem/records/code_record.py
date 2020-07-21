@@ -139,16 +139,20 @@ class CodeRecord(Record):
         super().__init__(content, parser_class)
         self.nodes = []
         self.nodes_updated = []
-        self._statements = self.assign_statements()
+        self._statements = None
         self._statements_updated = False
 
     @property
     def statements(self):
+        if self._statements is not None:
+            return self._statements
+
+        self._statements = self.assign_statements()
         return self._statements
 
     @statements.setter
     def statements(self, statements_new):
-        statements_original = copy.deepcopy(self._statements)
+        statements_original = copy.deepcopy(self.statements)
         self.nodes_updated = copy.deepcopy(self.nodes)
         root_updated = copy.deepcopy(self.root)
 
