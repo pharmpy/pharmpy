@@ -43,13 +43,3 @@ def test_eq_modelstatements(testdata):
     assert model_min.statements == model_min.statements
     assert model_pheno.statements == model_pheno.statements
     assert model_min.statements != model_pheno.statements
-
-
-def test_get_symbols(testdata):
-    model_min = Model(testdata / 'nonmem' / 'minimal.mod')
-    model_pheno = Model(testdata / 'nonmem' / 'pheno_real.mod')
-
-    assert model_min.statements.get_symbols() == [S('Y')]
-    assert model_pheno.statements.get_symbols() == [S('BTIME'), S('TAD'), S('TVCL'),
-                                                    S('TVV'), S('TVV'), S('CL'), S('V'),
-                                                    S('S1')]

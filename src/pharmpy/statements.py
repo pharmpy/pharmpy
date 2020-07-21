@@ -102,12 +102,6 @@ class ModelStatements(list):
         for assignment in self:
             assignment.subs(old, new)
 
-    def get_symbols(self):
-        symbols = []
-        for assignment in self:
-            symbols.append(assignment.symbol)
-        return symbols
-
     def __eq__(self, other):
         if len(self) != len(other):
             return False
