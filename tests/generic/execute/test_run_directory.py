@@ -1,6 +1,4 @@
-# -*- encoding: utf-8 -*-
-
-from pharmpy.execute.run_directory import RunDirectory
+from pharmpy.workflows import RunDirectory
 
 
 def test_RunDirectory_temporary():

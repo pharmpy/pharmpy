@@ -2,7 +2,7 @@ from toil.common import Toil
 from toil.job import Job
 
 from pharmpy.data.iterators import Resample
-from pharmpy.results import BootstrapResults
+from pharmpy.methods.bootstrap.results import BootstrapResults
 
 from .jobs import InputModel, NonmemJob
 

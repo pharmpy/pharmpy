@@ -1,48 +1,35 @@
-import logging
 import os
-import re
 from glob import glob
 from pathlib import Path
 
-from pharmpy.execute import Engine
-
-# Warning: This is experimental and perhaps the architecture needs to change
+from pharmpy.workflows import ModelExecutionEngine
 
 
-class NONMEM7(Engine):
+class NONMEM7(ModelExecutionEngine):
     """NONMEM7 execution engine.
 
-    An implementation of the generic :class:`~pharmpy.execute.engine.Engine` (see for more
+    An implementation of the generic :class:`~pharmpy.workflows.ModelExecutionEngine` (see for more
     information).
 
     Will automatically scan for installed NONMEM versions (see :func:`~self.scan_installed`).
     """
 
     def __init__(self, model, version=None):
-        log = logging.getLogger(__name__)
-
         self.installed = self.scan_installed()
         if not version and self.installed:
             version = max(self.installed.keys())
         if version not in self.installed:
-            log.error('Requested NONMEM7 version %r not available (found: %s)', version,
-                      ', '.join(self.installed.values()))
-            self.info = None
+            raise RuntimeError('Requested NONMEM7 version %r not available (found: %s)', version,
+                               ', '.join(self.installed.values()))
         else:
             self.info = (version, *self.installed[version])
 
-        super().__init__(model)
-
-    def get_commandline(self, task):
-        if task in {'evaluate', 'estimate'}:
-            mod = str(self.model.path)
-            lst = re.sub(r'\.(mod|ctl)$', '.lst', mod)
-            if mod == lst:
-                lst += '.lst'
-            return (self.bin, mod, lst)
-        else:
-            raise ValueError('Engine (%s) does not support task %r.' % (self.__class__.__name__,
-                                                                        task))
+    def commandline(self, model):
+        mod = str(self.model.source.path)
+        lst = mod.with_suffix('.lst')
+        if mod == lst:
+            lst += '.lst'
+        return (self.bin, mod, lst)
 
     @property
     def bin(self):
@@ -52,14 +39,8 @@ class NONMEM7(Engine):
     def version(self):
         return self.info[0] if self.info else None
 
-    def __bool__(self):
-        return bool(self.installed)
-
-    @classmethod
-    def scan_installed(cls):
-        log = logging.getLogger(__name__)
-        log.info("Initiating NM version scan in filesystem")
-
+    @staticmethod
+    def scan_installed():
         if os.name == 'nt':
             globpaths = ['C:/nm7*', 'C:/nm_7*', 'C:/NONMEM/nm7*', 'C:/NONMEM/nm_7*']
             globpaths = [str(Path(globpath).resolve().expanduser()) for globpath in globpaths]

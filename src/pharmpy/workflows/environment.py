@@ -1,4 +1,3 @@
-# -*- encoding: utf-8 -*-
 """
 Execution Environment
 =====================
@@ -16,17 +15,17 @@ import concurrent.futures
 import logging
 import os
 
-from .job import Job
+# from .job import Job
 
 
-class Environment:
+class ExecutionEnvironment:
     """Manages execution of an engine on a platform/system.
 
     Subclasses may support e.g. Windows, Linux, SLURM or SGE.
     """
 
     def __new__(cls, *args, **kwargs):
-        if cls is Environment:
+        if cls is ExecutionEnvironment:
             cls = SystemEnvironment
         self = cls.__new__(*args, **kwargs)
         if self is None or not self.supported:
@@ -44,7 +43,7 @@ class Environment:
         pass
 
 
-class SystemEnvironment(Environment):
+class SystemEnvironment(ExecutionEnvironment):
     """Manages system (direct subprocess) execution for an engine on some platform.
 
     Needs :mod:`asyncio` because a running event loop is required to monitor child processes.
@@ -74,18 +73,18 @@ class SystemEnvironment(Environment):
     async def submit(self, command, cwd=None):
         """Submits *command* to run as subprocess in *cwd* working directory."""
 
-        logger = logging.getLogger(__name__)
+        # logger = logging.getLogger(__name__)
 
-        asyncio.get_child_watcher()
-        job = Job(command, cwd,  stdout=self._stdout_handle, stderr=self._stderr_handle,
-                  callback=self._callback, keepends=False)
+        # asyncio.get_child_watcher()
+        # job = Job(command, cwd,  stdout=self._stdout_handle, stderr=self._stderr_handle,
+        #          callback=self._callback, keepends=False)
 
-        future = self.pool.submit(job.run)
-        logger.debug('Submitted job %r (future: %r): %r', job, future, self)
+        # future = self.pool.submit(job.run)
+        # logger.debug('Submitted job %r (future: %r): %r', job, future, self)
 
-        self.jobs += [job]
-        self.futures += [future]
-        return job
+        # self.jobs += [job]
+        # self.futures += [future]
+        # return job
 
     async def wait(self, timeout=None, poll=1):
         """Wait (block) for all jobs to complete (and stop accepting new ones).

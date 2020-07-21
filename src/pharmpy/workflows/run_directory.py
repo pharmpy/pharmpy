@@ -12,7 +12,7 @@ utilize for input->output during evaluation, estimation & simulation tasks.
 .. testcode::
     :pyversion: > 3.6
 
-    from pharmpy.execute.run_directory import RunDirectory
+    from pharmpy.workflows import RunDirectory
 
 Usage
 -----
