@@ -147,8 +147,10 @@ class CodeRecord(Record):
         if self._statements is not None:
             return self._statements
 
-        self._statements = self.assign_statements()
-        return self._statements
+        statements = self.assign_statements()
+        self._statements = statements
+
+        return copy.deepcopy(statements)
 
     @statements.setter
     def statements(self, statements_new):
