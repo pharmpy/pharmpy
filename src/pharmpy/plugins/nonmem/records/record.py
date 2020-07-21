@@ -13,10 +13,6 @@ class Record:
         self._root = None
 
     @property
-    def content(self):
-        return self._content
-
-    @property
     def root(self):
         """Root of the parse tree
            only parse on demand
@@ -24,6 +20,8 @@ class Record:
         if self._root is None:
             parser = self._parser_class(self._content)
             self._root = parser.root
+            del self._parser_class
+            del self._content
         return self._root
 
     @root.setter
