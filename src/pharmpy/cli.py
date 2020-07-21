@@ -129,7 +129,8 @@ def results_bootstrap(args):
     if len(args.models) < 3:
         error(ValueError('Need at least the original model and 2'
                          'other models'))
-    res = pharmpy.results.BootstrapResults(original_model=args.models[0],
+    from pharmpy.methods.bootstrap.results import BootstrapResults
+    res = BootstrapResults(original_model=args.models[0],
                                            bootstrap_models=args.models[1:])
     print(res)
 
