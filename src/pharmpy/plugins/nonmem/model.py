@@ -1,4 +1,5 @@
 # The NONMEM Model class
+import copy
 import re
 import shutil
 from pathlib import Path
@@ -275,24 +276,32 @@ class Model(pharmpy.model.Model):
 
     @property
     def statements(self):
-        pred = self.control_stream.get_records('PRED')
-        if len(pred) == 0:
-            pk = self.control_stream.get_records('PK')
-            rec = pk[0]
-        else:
-            rec = pred[0]
-        return rec.statements
+        try:
+            return copy.deepcopy(self._statements)
+        except AttributeError:
+            pass
+
+        rec = self.get_pred_pk_record()
+        statements = rec.statements
+        self._statements = statements
+
+        return copy.deepcopy(statements)
 
     @statements.setter
     def statements(self, statements_new):
-        pred = self.control_stream.get_records('PRED')
-        if len(pred) == 0:
-            pk = self.control_stream.get_records('PK')
-            rec = pk[0]
-        else:
-            rec = pred[0]
+        rec = self.get_pred_pk_record()
 
         rec.statements = statements_new
+        self._statements = rec.statements
+
+    def get_pred_pk_record(self):
+        pred = self.control_stream.get_records('PRED')
+
+        if len(pred) == 0:
+            pk = self.control_stream.get_records('PK')
+            return pk[0]
+        else:
+            return pred[0]
 
     def _zero_fix_rvs(self, eta=True):
         zero_fix = []
