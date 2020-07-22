@@ -8,6 +8,7 @@ Subclass :class:`GenericParser` (remember to set :attr:`GenericParser.grammar`
 to point to your grammar file) to define a powerful parser.
 """
 import copy
+import re
 
 from lark import Tree
 from lark.lexer import Token
@@ -311,8 +312,11 @@ class AttrTree(Tree):
         for i, child in enumerate(new_children):
             if child.rule == 'WS_ALL' and child.rule == prev_rule:
                 pass
-            elif i == new_children_last_index and child.rule == 'WS_ALL':  # Remove trailing WS
+            elif child.rule == 'WS_ALL' and i == new_children_last_index:  # Remove trailing WS
                 pass
+            elif re.search('\n{2,}', str(child.eval)):
+                newline_node = AttrToken('WS_ALL', '\n')
+                new_children_clean.append(newline_node)
             else:
                 new_children_clean.append(child)
             prev_rule = child.rule
@@ -332,7 +336,8 @@ class AttrTree(Tree):
 
             new_children.insert(index + 1, newline_node)   # Insert after newly inserted node
 
-        self.children = new_children
+        new_children_clean = self.clean_ws(new_children)
+        self.children = new_children_clean
 
     @property
     def tokens(self):
