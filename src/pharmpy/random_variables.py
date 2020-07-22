@@ -5,7 +5,6 @@ import numpy as np
 import symengine
 import sympy
 import sympy.stats as stats
-from sympy.matrices import MatrixBase, MatrixExpr
 from sympy.stats.rv import RandomSymbol
 
 import pharmpy.math
@@ -23,26 +22,6 @@ class VariabilityLevel(enum.Enum):
     """
     IIV = enum.auto()
     RUV = enum.auto()
-
-
-class MultivariateNormalDistribution(stats.joint_rv_types.MultivariateNormalDistribution):
-    """A joint normal distribution that does not check for posdef.
-       Needed because of sympy issue #18625
-    """
-    @staticmethod
-    def check(mu, sigma):
-        if mu.shape[0] != sigma.shape[0]:
-            raise ValueError("Size of the mean vector and covariance matrix are incorrect.")
-
-
-def Normal(name, mean, std):
-    """sympy function patched to use our MultivariateNormalDistribution
-    """
-    if isinstance(mean, (list, MatrixBase, MatrixExpr)) and isinstance(std, (list, MatrixBase,
-                                                                             MatrixExpr)):
-        return stats.joint_rv_types.multivariate_rv(MultivariateNormalDistribution,
-                                                    name, mean, std)
-    return stats.crv_types.rv(name, stats.crv_types.NormalDistribution, (mean, std))
 
 
 class JointDistributionSeparate(RandomSymbol):
@@ -63,7 +42,7 @@ class JointDistributionSeparate(RandomSymbol):
 def JointNormalSeparate(names, mean, cov):
     """Conveniently create a joint normal distribution and create separate random variables
     """
-    x = Normal('__DUMMY__', mean, cov)
+    x = stats.Normal('__DUMMY__', mean, cov)
     rvs = [JointDistributionSeparate(name, x) for name in names]
     return rvs
 
