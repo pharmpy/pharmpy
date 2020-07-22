@@ -565,7 +565,7 @@ class CLI:
             lines += ['[%d/%d] %r' % (i+1, len(args.models), model.name)]
             dict_ = OrderedDict()
             if args.data or args.all:
-                dict_['dataset'] = repr(model.input.dataset)
+                dict_['dataset'] = repr(model.dataset)
             if args.parameters or args.all:
                 s = repr(model.parameters) + '\n\n'
                 dict_['parameters'] = s
@@ -602,7 +602,7 @@ class CLI:
     def data_write(self, args):
         """Subcommand to write a dataset."""
         try:
-            df = args.model_or_dataset.input.dataset
+            df = args.model_or_dataset.dataset
         except plugin_utils.PluginError:
             df = args.model_or_dataset
         path = args.output_file
@@ -617,7 +617,7 @@ class CLI:
         """Subcommand to print a dataset to stdout via pager
         """
         try:
-            df = args.model_or_dataset.input.dataset
+            df = args.model_or_dataset.dataset
         except AttributeError:
             df = args.model_or_dataset
         if args.columns:
@@ -630,7 +630,7 @@ class CLI:
     def data_filter(self, args):
         """Subcommand to filter a dataset"""
         try:
-            df = args.model_or_dataset.input.dataset
+            df = args.model_or_dataset.dataset
         except plugin_utils.PluginError:
             df = args.model_or_dataset
         expression = ' '.join(args.expressions)
@@ -645,7 +645,7 @@ class CLI:
     def data_append(self, args):
         """Subcommand to append a column to a dataset"""
         try:
-            df = args.model_or_dataset.input.dataset
+            df = args.model_or_dataset.dataset
         except plugin_utils.PluginError:
             df = args.model_or_dataset
         try:
@@ -669,7 +669,7 @@ class CLI:
         else:
             # Is a model
             model = model_or_dataset
-            model.input.dataset = new_df
+            model.dataset = new_df
             try:
                 if path:
                     if not path.is_dir():
