@@ -169,24 +169,26 @@ class CodeRecord(Record):
                 elif statement_new != statements_original[index_original]:
                     if statement_new.symbol == statements_original[index_original].symbol or \
                             len(statements_original) == 1 and len(statements_new) == 1:
-                        self._remove_statements(nodes_updated, root_updated,
-                                                index_original, index_original)
+                        self._replace_statement(nodes_updated, root_updated,
+                                                index_original, statement_new)
 
-                    try:
-                        index_statement = statements_original.index(statement_new,
-                                                                    index_original)
-                        index_last_removed = index_statement - 1
-                    except ValueError:
-                        index_last_removed = None
-
-                    if index_last_removed is None:
-                        self._add_statement(nodes_updated, root_updated,
-                                            index_new, statement_new)
                     else:
-                        self._remove_statements(nodes_updated, root_updated,
-                                                index_original, index_last_removed)
+                        try:
+                            index_statement = statements_original.index(statement_new,
+                                                                        index_original)
+                            index_last_removed = index_statement - 1
+                        except ValueError:
+                            index_last_removed = None
 
-                        index_original = index_last_removed
+                        if index_last_removed is None:
+                            self._add_statement(nodes_updated, root_updated,
+                                                index_new, statement_new)
+                            index_original -= 1
+                        else:
+                            self._remove_statements(nodes_updated, root_updated,
+                                                    index_original, index_last_removed)
+
+                            index_original = index_last_removed
 
                 elif index_new == len(statements_new) - 1:
                     self._remove_statements(nodes_updated, root_updated,
@@ -198,6 +200,10 @@ class CodeRecord(Record):
         self.nodes = nodes_updated
         self._statements = statements_new
         self._statements_updated = True
+
+    def _replace_statement(self, nodes_updated, root_updated, index_replace, statement):
+        self._remove_statements(nodes_updated, root_updated, index_replace, index_replace)
+        self._add_statement(nodes_updated, root_updated, index_replace, statement)
 
     def _remove_statements(self, nodes_updated, root_updated, index_remove_start, index_remove_end):
         for i in range(index_remove_start, index_remove_end+1):
