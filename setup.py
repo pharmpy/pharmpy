@@ -74,7 +74,7 @@ setup(
         'pharmacometrics',
     ],
     install_requires=[
-        'lark-parser', 'sympy', 'symengine', 'pandas', 'numexpr', 'altair', 'toil', 'sphinx',
+        'lark-parser', 'sympy>=1.6.1', 'symengine', 'pandas', 'numexpr', 'altair', 'toil', 'sphinx',
         'csscompressor', 'beautifulsoup4', 'lxml'
     ],
     entry_points={

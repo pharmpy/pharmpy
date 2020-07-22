@@ -45,7 +45,7 @@ sphinxcontrib-jsmath==1.0.1
 sphinxcontrib-qthelp==1.0.3
 sphinxcontrib-serializinghtml==1.1.4
 symengine==0.6.1
-sympy==1.5.1
+sympy==1.6.1
 toil==4.0.0
 toolz==0.10.0
 urllib3==1.25.8
