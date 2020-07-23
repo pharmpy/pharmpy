@@ -155,42 +155,42 @@ class CodeRecord(Record):
 
     @statements.setter
     def statements(self, statements_new):
-        statements_original = copy.deepcopy(self.statements)
+        statements_past = copy.deepcopy(self.statements)
         self._nodes_updated = copy.deepcopy(self.nodes)
         self._root_updated = copy.deepcopy(self.root)
 
-        if statements_new == statements_original:
+        if statements_new == statements_past:
             warnings.warn('New statements same as current, no changes made.')
         else:
-            index_original = 0
-            last_index_original = len(statements_original) - 1
+            index_past = 0
+            last_index_past = len(statements_past) - 1
             last_index_new = len(statements_new) - 1
 
-            for index_new, statement_new in enumerate(statements_new):
-                if index_original == len(statements_original):      # Add rest of new statements
-                    self._add_statement(None, statement_new)
+            for index_new, s_new in enumerate(statements_new):
+                if index_past == len(statements_past):      # Add rest of new statements
+                    self._add_statement(None, s_new)
                     continue
-                elif len(statements_original) == 1 and len(statements_new) == 1:
-                    self._replace_statement(0, statement_new)
+                elif len(statements_past) == 1 and len(statements_new) == 1:
+                    self._replace_statement(0, s_new)
                     break
 
-                statement_original = statements_original[index_original]
-                if statement_new != statement_original:
-                    if statement_new.symbol == statement_original.symbol:
-                        self._replace_statement(index_original, statement_new)
+                s_past = statements_past[index_past]
+                if s_new != s_past:
+                    if s_new.symbol == s_past.symbol:
+                        self._replace_statement(index_past, s_new)
                     else:
-                        index_to_remove = self._get_index_to_remove(statement_new, index_original)
+                        index_to_remove = self._get_index_to_remove(s_new, index_past)
 
                         if index_to_remove is None:
-                            self._add_statement(index_new, statement_new)
+                            self._add_statement(index_new, s_new)
                         else:
                             self._remove_statements(index_new, index_to_remove)
-                            index_original = index_to_remove + 1
+                            index_past = index_to_remove + 1
 
                 elif index_new == last_index_new:          # Remove rest of original
-                    self._remove_statements(index_new + 1, last_index_original)
+                    self._remove_statements(index_new + 1, last_index_past)
 
-                index_original += 1
+                index_past += 1
 
         self.nodes = copy.deepcopy(self._nodes_updated)
         self._nodes_updated = []
