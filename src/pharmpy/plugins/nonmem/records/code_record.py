@@ -87,7 +87,7 @@ class ExpressionInterpreter(lark.visitors.Interpreter):
     @staticmethod
     def intrinsic_func(node):
         name = str(node)
-        if name == "EXP":
+        if name == "EXP" or name == "DEXP":
             return sympy.exp
         elif name == "LOG":
             return sympy.log

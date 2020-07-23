@@ -25,6 +25,7 @@ def S(x):
     ('$PRED D = A - (+2)', S('D'), S('A') - 2),
     ('$PRED D = 2.5', S('D'), 2.5),
     ('$PRED CL = EXP(2)', S('CL'), sympy.exp(2)),
+    ('$PRED CL = DEXP(ETA(1))', S('CL'), sympy.exp(S('ETA(1)'))),
     ('$PRED CL = LOG(V + 1)', S('CL'), sympy.log(S('V') + 1)),
     ('$PRED CL = LOG10(3.5 + THETA(1))', S('CL'), sympy.log(3.5 + S('THETA(1)'), 10)),
     ('$PRED CL = (SIN(X) + COS(X))', S('CL'), sympy.sin(S('X')) + sympy.cos(S('X'))),
