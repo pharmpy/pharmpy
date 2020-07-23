@@ -14,26 +14,28 @@
 //   1. "low" and "up" can be skipped with -INF/INF (default).
 //   2. "FIXED" requires "low" & "up" to equal "init", insofar they appear.
 //   3. "FIXED" implied if "low"="init"="up".
+//   4. There can be multiple "FIXED" for one THETA
+//   5. "FIXED" can appear almost anywhere and multiple times in a row
+//      when parentheses are used
 
 root : _ws* theta (NEWLINE | WS | theta | option)*
 
 ?option : KEY [WS] "=" [WS] VALUE -> option
         | VALUE                   -> option
 
-theta : init [WS FIX]                  // form 1
-      | _lpar init _rpar                 // form 2+3+5 (init)
-      | _lpar low sep init _rpar         // form 2+3+5 (low, init)
-      | _lpar low sep init sep up _rpar  // form 2+3+5 (low, init, up)
-      | _lpar low sepsep up _rpar        // form 4+5 (low, up)
+theta : init [WS FIX]                    // form 1
+      | _lpar [_fixes] init [_fixes] _rpar            // form 2+3+5 (init)
+      | _lpar [_fixes] low [_fixes] sep [_fixes] init [_fixes] _rpar    // form 2+3+5 (low, init)
+      | _lpar [_fixes] low [_fixes] sep [_fixes] init [_fixes]  sep [_fixes] up [_fixes] _rpar  // form 2+3+5 (low, init, up)
+      | _lpar [_fixes] low [_fixes] sepsep [_fixes] up [_fixes] _rpar        // form 4+5 (low, up)
 sep : WS
     | [WS] "," [WS]
 sepsep : [WS] "," [WS] "," [WS]
 _lpar : "(" [WS]
-_rpar : [WS] FIX [WS] ")" n
-      | [WS] ")" n
+_rpar : [WS] ")" n
       | [WS] ")" [WS] FIX
-      | [WS] FIX [WS] ")"
       | [WS] ")"
+_fixes: ([WS] FIX [WS])+
 
 init : NUMERIC
 low  : NUMERIC | NEG_INF

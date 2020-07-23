@@ -18,7 +18,7 @@ import pytest
         ('THETA(9)', 1, 0, 2, False),
         ('THETA(10)', 1, 0, 2, False),
         ]),
-    ('$THETA (0,0.00469555) FIX ; CL', [('THETA(1)', 0.00469555, 0, 1000000, True)]),
+    ('$THETA (0.00469555) FIX ; CL', [('THETA(1)', 0.00469555, -1000000, 1000000, True)]),
     ('$THETA\n ;; Model characteristics\n (0, 0.15, 0.6) ; Proportional\n',
         [('THETA(1)', 0.15, 0, 0.6, False)]),
     ('$THETA\n;\n1;COMMENTING', [('THETA(1)', 1, -1000000, 1000000, False)]),
@@ -27,6 +27,8 @@ import pytest
     ('$THETA\n ;; Model characteristics\n  (0, 0.15, 0.6) ; Proportional error (Drug123)\n'
      '  (0, 1, 10)     ; Additive error (Drug123)\n',
         [('THETA(1)', 0.15, 0, 0.6, False), ('THETA(2)', 1, 0, 10, False)]),
+    ('$THETA  (FIX FIX 0.4) ; CL', [('THETA(1)', 0.4, -1000000, 1000000, True)]),
+    ('$THETA (FIX 1,   FIX FIX    1 FIX, 1  FIX) ; CL', [('THETA(1)', 1, 1, 1, True)]),
 ])
 def test_parameters(parser, buf, results):
     recs = parser.parse(buf)
@@ -68,23 +70,23 @@ def test_update(parser):
     rec.update(pset, 1)
     assert str(rec) == '$THETA 1'
 
-    rec = parser.parse('$THETA (0.1, 2, 3)  FIX').records[0]
+    rec = parser.parse('$THETA (2, 2, 2)  FIX').records[0]
     pset = rec.parameters(1)
     pset['THETA(1)'].fix = False
     rec.update(pset, 1)
-    assert str(rec) == '$THETA (0.1, 2, 3)'
+    assert str(rec) == '$THETA (2, 2, 2)'
 
-    rec = parser.parse('$THETA (0.1, 2, 3 FIX)').records[0]
+    rec = parser.parse('$THETA (2, 2, 2 FIX)').records[0]
     pset = rec.parameters(1)
     pset['THETA(1)'].fix = False
     rec.update(pset, 1)
-    assert str(rec) == '$THETA (0.1, 2, 3)'
+    assert str(rec) == '$THETA (2, 2, 2)'
 
-    rec = parser.parse('$THETA (0.1, 2, 3)').records[0]
+    rec = parser.parse('$THETA (2, 2, 2)').records[0]
     pset = rec.parameters(1)
     pset['THETA(1)'].fix = True
     rec.update(pset, 1)
-    assert str(rec) == '$THETA (0.1, 2, 3) FIX'
+    assert str(rec) == '$THETA (2, 2, 2) FIX'
 
     rec = parser.parse('$THETA 1 2 3 ;CMT').records[0]
     pset = rec.parameters(1)

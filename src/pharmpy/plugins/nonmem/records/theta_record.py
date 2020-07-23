@@ -1,3 +1,4 @@
+# from pharmpy.model import ModelSyntaxError
 from pharmpy.parameter import Parameter, ParameterSet
 from pharmpy.parse_utils.generic import AttrToken, remove_token_and_space
 
@@ -22,6 +23,12 @@ class ThetaRecord(Record):
                     lower = min_lower_bound
                 else:
                     lower = theta.low.tokens[0].eval
+                # FIXME: Ideally the following should be enforced
+                # However PsN allows it and it is used to toggle FIX back
+                # and forth without having to change or remove lower and upper bound
+                # if fix and not init == lower:
+                #    raise ModelSyntaxError(f'Fixed thetas must have equal lower limit and initial '
+                #                           f'estimate: {theta}')
             else:
                 lower = min_lower_bound
             if theta.find('up'):
@@ -29,6 +36,9 @@ class ThetaRecord(Record):
                     upper = max_upper_bound
                 else:
                     upper = theta.up.tokens[0].eval
+                # if fix and not init == upper:
+                #    raise ModelSyntaxError(f'Fixed thetas must have equal upper limit and initial '
+                #                           f'estimate: {theta}')
             else:
                 upper = max_upper_bound
             multiple = theta.find('n')
