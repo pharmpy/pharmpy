@@ -163,27 +163,32 @@ class CodeRecord(Record):
             warnings.warn('New statements same as current, no changes made.')
         else:
             index_original = 0
+            last_index_original = len(statements_original) - 1
+            last_index_new = len(statements_new) - 1
 
             for index_new, statement_new in enumerate(statements_new):
-                if index_original == len(statements_original):
+                if index_original == len(statements_original):      # Add rest of new statements
                     self._add_statement(None, statement_new)
-                elif statement_new != statements_original[index_original]:
-                    if statement_new.symbol == statements_original[index_original].symbol or \
-                            len(statements_original) == 1 and len(statements_new) == 1:
-                        self._replace_statement(index_original, statement_new)
+                    continue
+                elif len(statements_original) == 1 and len(statements_new) == 1:
+                    self._replace_statement(0, statement_new)
+                    break
 
+                statement_original = statements_original[index_original]
+                if statement_new != statement_original:
+                    if statement_new.symbol == statement_original.symbol:
+                        self._replace_statement(index_original, statement_new)
                     else:
                         index_to_remove = self._get_index_to_remove(statement_new, index_original)
 
                         if index_to_remove is None:
                             self._add_statement(index_new, statement_new)
-                            index_original -= 1
                         else:
-                            self._remove_statements(index_original, index_to_remove)
+                            self._remove_statements(index_new, index_to_remove)
                             index_original = index_to_remove + 1
 
-                elif index_new == len(statements_new) - 1:
-                    self._remove_statements(index_original+1, len(statements_original)-1)
+                elif index_new == last_index_new:          # Remove rest of original
+                    self._remove_statements(index_new + 1, last_index_original)
 
                 index_original += 1
 
