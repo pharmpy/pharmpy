@@ -81,3 +81,21 @@ def test_validate_parameters():
     assert rvs.validate_parameters(params)
     params2 = {'a': 2, 'b': 2, 'c': 1, 'd': 23}
     assert not rvs.validate_parameters(params2)
+
+
+def test_all_parameters():
+    omega1 = sympy.Symbol('OMEGA(1,1)')
+    eta1 = stats.Normal('ETA(1)', 0, sympy.sqrt(omega1))
+    omega2 = sympy.Symbol('OMEGA(2,2)')
+    eta2 = stats.Normal('ETA(2)', 0, sympy.sqrt(omega2))
+    sigma = sympy.Symbol('SIGMA(1,1)')
+    eps = stats.Normal('EPS(1)', 0, sympy.sqrt(sigma))
+
+    rvs = RandomVariables([eta1, eta2, eps])
+
+    assert len(rvs) == 3
+
+    params = rvs.all_parameters()
+
+    assert len(params) == 3
+    assert params == ['OMEGA(1,1)', 'OMEGA(2,2)', 'SIGMA(1,1)']
