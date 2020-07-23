@@ -155,11 +155,10 @@ class RandomVariables(OrderedSet):
         return res
 
     def all_parameters(self):
-        params = []
+        params = set()
         for _, dist in self.distributions():
-            p = sympy.pretty(dist.std**2)
-            params.append(p)
-        return params
+            params |= dist.free_symbols
+        return sorted([str(p) for p in params])
 
     def distributions(self, level=None):
         """Iterate with one entry per distribution instead of per random variable.
