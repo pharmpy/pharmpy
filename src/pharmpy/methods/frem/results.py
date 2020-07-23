@@ -638,11 +638,7 @@ def psn_frem_results(path, force_posdef_covmatrix=False, force_posdef_samples=50
     with open(path / 'covariates_summary.csv') as covsum:
         covsum.readline()
         raw_cov_list = covsum.readline()
-
     all_covariates = raw_cov_list[1:].rstrip().split(',')
-    nunique = model_4.dataset.pharmpy.baselines[all_covariates].nunique()
-    continuous = list(nunique.index[nunique != 2])
-    categorical = list(nunique.index[nunique == 2])
 
     # FIXME: Not introducing yaml parser in pharmpy just yet. Options should be collected
     # differently. Perhaps using json
@@ -653,6 +649,21 @@ def psn_frem_results(path, force_posdef_covmatrix=False, force_posdef_samples=50
                 rescale = True
             elif row.startswith('rescale: 0'):
                 rescale = False
+            if row.startswith("log: ''"):
+                logtransformed_covariates = []
+            elif row.startswith('log: '):
+                logtransformed_covariates = row[5:].split(',')
+
+    # add log transformed columns for the -log option. Should be done when creating dataset
+    df = model_4.dataset
+    if logtransformed_covariates:
+        for lncov in logtransformed_covariates:
+            df[f'LN{lncov}'] = np.log(df[lncov])
+        model_4.dataset = df
+
+    nunique = model_4.dataset.pharmpy.baselines[all_covariates].nunique()
+    continuous = list(nunique.index[nunique != 2])
+    categorical = list(nunique.index[nunique == 2])
 
     res = calculate_results(model_4, continuous, categorical, method=method,
                             force_posdef_covmatrix=force_posdef_covmatrix,
