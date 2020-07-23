@@ -14,6 +14,7 @@ def S(x):
     ('$PRED\n;FULL LINE COMMENT\n K=-1', S('K'), -1),
     ('$PRED K=-1.5', S('K'), -1.5),
     ('$PRED\nCL = KA', S('CL'), S('KA')),
+    ('$PRED\nCL=KA', S('CL'), S('KA')),
     ('$PRED\nG = BASE - LESS', S('G'), S('BASE') - S('LESS')),
     ('$PRED CL = THETA(1) * LEFT', S('CL'), S('THETA(1)') * S('LEFT')),
     ('$PRED D2 = WGT / SRC', S('D2'), S('WGT') / S('SRC')),
@@ -81,6 +82,9 @@ def test_single_assignments(parser, buf, symbol, expression):
     ('$PRED\nIF (X.EQ.0) THEN    ;   anything  \n  Y = 23\nZ = 9\nEND IF;AFTER', [
         (S('Y'), sympy.Piecewise((23, sympy.Eq(S('X'), 0)))),
         (S('Z'), sympy.Piecewise((9, sympy.Eq(S('X'), 0))))]),
+    ('$PRED\nIF (NEWIND.NE.2.OR.EVID.GE.3) THEN ; begin\nTNXD=TIME ; TIME\nENDIF', [
+        (S('TNXD'), sympy.Piecewise((S('TIME'), sympy.Or(sympy.Ne(S('NEWIND'), 2),
+                                                         sympy.Ge(S('EVID'), 3)))))]),
 ])
 def test_block_if(parser, buf, symb_expr_arr):
     rec = parser.parse(buf).records[0]
