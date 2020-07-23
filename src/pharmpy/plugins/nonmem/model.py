@@ -49,7 +49,7 @@ class Model(pharmpy.model.Model):
         """ Check if src represents a NONMEM control stream
         i.e. check if it is a file that contain $PRO
         """
-        return bool(re.search(r'^\$PRO', src.code, re.MULTILINE))
+        return bool(re.search(r'^\s*\$PRO', src.code, re.MULTILINE))
 
     def update_source(self, path=None, force=False):
         """ Update the source

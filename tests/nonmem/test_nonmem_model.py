@@ -1,3 +1,5 @@
+from io import StringIO
+
 import pytest
 import sympy
 from pyfakefs.fake_filesystem_unittest import Patcher
@@ -16,6 +18,12 @@ def test_source(pheno_path):
 def test_update_inits(pheno_path):
     model = Model(pheno_path)
     model.update_inits()
+
+
+def test_detection():
+    Model(StringIO("$PROBLEM this"))
+    Model(StringIO("   \t$PROBLEM skld fjl"))
+    Model(StringIO(" $PRO l907"))
 
 
 def test_parameters(pheno_path):
