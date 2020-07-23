@@ -48,10 +48,10 @@ func2: "MOD" "(" expression "," expression ")"
 
 intrinsic_func: "LOG" | "LOG10" | "EXP" | "SQRT" | "SIN" | "COS" | "ABS" | "TAN" | "ASIN" | "ACOS" | "ATAN" | "INT" | "GAMLN"
 
-variable: NAME
+variable: vector | NAME
 
 symbol: parameter | NAME
-
+vector: "A_0" subscript
 parameter: (THETA | ETA | EPS | OMEGA | SIGMA) subscript
          | (OMEGA | SIGMA) double_subscript
 

@@ -53,6 +53,7 @@ def S(x):
         sympy.Piecewise((0, sympy.Eq(S('Q'), sympy.Mul(sympy.Add(S('R'), S('C')), 1 / S('D')))))),
     ('$PRED IF (Q.EQ.R+C/D) L=0', S('L'),
         sympy.Piecewise((0, sympy.Eq(S('Q'), S('R') + S('C') / S('D'))))),
+    ('$PRED\nA_0(1) = 2', S('A_0(1)'), 2),
 ])
 def test_single_assignments(parser, buf, symbol, expression):
     rec = parser.parse(buf).records[0]
