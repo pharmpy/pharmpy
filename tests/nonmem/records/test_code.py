@@ -11,7 +11,7 @@ def S(x):
 @pytest.mark.parametrize('buf,symbol,expression', [
     ('$PRED\nY = THETA(1) + ETA(1) + EPS(1)', S('Y'), S('THETA(1)') + S('ETA(1)') + S('EPS(1)')),
     ('$PRED\nCL = 2', S('CL'), 2),
-    ('$PRED K=-1', S('K'), -1),
+    ('$PRED\n;FULL LINE COMMENT\n K=-1', S('K'), -1),
     ('$PRED K=-1.5', S('K'), -1.5),
     ('$PRED\nCL = KA', S('CL'), S('KA')),
     ('$PRED\nG = BASE - LESS', S('G'), S('BASE') - S('LESS')),

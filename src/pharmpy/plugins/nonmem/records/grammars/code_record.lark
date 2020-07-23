@@ -1,6 +1,6 @@
 // A precedence climbing grammar is used for expressions
 
-root : (WS_ALL statement [WS] [COMMENT] [WS_ALL])+
+root: WS_ALL (NEWLINE | statement [WS] [COMMENT] [WS_ALL])+
 
 statement: assignment
          | logical_if
@@ -70,4 +70,4 @@ EPS: "EPS" | "ERR"
 OMEGA: "OMEGA"
 SIGMA: "SIGMA"
 
-%import .definitions (COMMENT, WS, WS_ALL)
+%import .definitions (COMMENT, NEWLINE, WS, WS_ALL)
