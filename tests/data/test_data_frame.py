@@ -97,5 +97,4 @@ def test_write(fs, df):
     df.pharmpy.write_csv(path="my.csv")
     with open("my.csv", "r") as fh:
         contents = fh.read()
-    print(contents)
     assert contents == "ID,DV,WGT,HGT\n1,0.1,70,185\n1,0.2,72,185\n2,0.5,75,160\n2,0.6,75,160\n"

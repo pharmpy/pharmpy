@@ -1,4 +1,3 @@
-
 import csv
 import random
 import re
@@ -7,6 +6,11 @@ from collections import namedtuple
 from pathlib import Path
 
 import pytest
+from pyfakefs.fake_filesystem_unittest import Patcher
+
+# Do not let pyfakefs patch mpmath since it emits warnings
+# and doesn't do anything with the filesystem anyway
+Patcher.SKIPNAMES.update(['mpmath'])
 
 
 @pytest.fixture(scope='session')
