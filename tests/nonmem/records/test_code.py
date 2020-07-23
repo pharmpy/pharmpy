@@ -68,7 +68,7 @@ def test_single_assignments(parser, buf, symbol, expression):
     ('$PRED\nIF (X.EQ.0) THEN\nY = 23\nZ = 9\nEND IF', [
         (S('Y'), sympy.Piecewise((23, sympy.Eq(S('X'), 0)))),
         (S('Z'), sympy.Piecewise((9, sympy.Eq(S('X'), 0))))]),
-    ('$PRED IF (B0.LT.3) THEN\nCL = THETA(1)\nELSE\nCL = 23\nEND IF', [
+    ('$PRED IF (B0.LT.3) THEN\nCL = THETA(1)\nELSE\nCL = 23\nENDIF', [
         (S('CL'), sympy.Piecewise((S('THETA(1)'), S('B0') < 3), (23, True)))]),
     ('$PRED IF (B0.LT.3) THEN\nCL = THETA(1)\nKA = THETA(2)\n  ELSE  \nCL = 23\nKA=82\nEND IF', [
         (S('CL'), sympy.Piecewise((S('THETA(1)'), S('B0') < 3), (23, True))),
