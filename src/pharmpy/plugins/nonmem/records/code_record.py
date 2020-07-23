@@ -173,22 +173,17 @@ class CodeRecord(Record):
                                                 index_original, statement_new)
 
                     else:
-                        try:
-                            index_statement = statements_original.index(statement_new,
-                                                                        index_original)
-                            index_last_removed = index_statement - 1
-                        except ValueError:
-                            index_last_removed = None
+                        index_to_remove = self._get_index_to_remove(statement_new, index_original)
 
-                        if index_last_removed is None:
+                        if index_to_remove is None:
                             self._add_statement(nodes_updated, root_updated,
                                                 index_new, statement_new)
                             index_original -= 1
                         else:
                             self._remove_statements(nodes_updated, root_updated,
-                                                    index_original, index_last_removed)
+                                                    index_original, index_to_remove)
 
-                            index_original = index_last_removed
+                            index_original = index_to_remove + 1
 
                 elif index_new == len(statements_new) - 1:
                     self._remove_statements(nodes_updated, root_updated,
@@ -232,6 +227,13 @@ class CodeRecord(Record):
     def _get_node(self, statement):
         index_statement = self.statements.index(statement)
         return self.nodes[index_statement]
+
+    def _get_index_to_remove(self, statement, index_start):
+        try:
+            index_statement = self._statements.index(statement, index_start)
+            return index_statement - 1
+        except ValueError:
+            return None
 
     def _assign_statements(self):
         s = []
