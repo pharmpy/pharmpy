@@ -85,6 +85,8 @@ def test_single_assignments(parser, buf, symbol, expression):
     ('$PRED\nIF (NEWIND.NE.2.OR.EVID.GE.3) THEN ; begin\nTNXD=TIME ; TIME\nENDIF', [
         (S('TNXD'), sympy.Piecewise((S('TIME'), sympy.Or(sympy.Ne(S('NEWIND'), 2),
                                                          sympy.Ge(S('EVID'), 3)))))]),
+    ('$PRED IF (B0.LT.3) THEN\nCL = THETA(1)\nELSE;A close comment\nCL = 23\nENDIF', [
+        (S('CL'), sympy.Piecewise((S('THETA(1)'), S('B0') < 3), (23, True)))]),
 ])
 def test_block_if(parser, buf, symb_expr_arr):
     rec = parser.parse(buf).records[0]

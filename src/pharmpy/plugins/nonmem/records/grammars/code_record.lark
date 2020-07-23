@@ -10,7 +10,7 @@ assignment: variable [WS] "=" [WS] expression
 
 block_if: block_if_start block_if_elseif* block_if_else? block_if_end
 block_if_start: [WS] "IF" [WS] "(" logical_expression ")" [WS] "THEN" [WS] NEWLINE ([WS] assignment [WS] NEWLINE)+
-block_if_else: [WS] "ELSE" WS_ALL ([WS] assignment WS_ALL)+
+block_if_else: [WS] "ELSE" [WS] NEWLINE ([WS] assignment WS_ALL)+
 block_if_elseif: [WS] "ELSE" [WS] "IF" [WS] "(" logical_expression ")" [WS] "THEN" [WS] NEWLINE ([WS] assignment [WS] NEWLINE)+
 block_if_end: [WS] ("END IF" | "ENDIF") [WS]
 
