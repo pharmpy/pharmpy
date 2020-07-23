@@ -71,11 +71,14 @@ def test_single_assignments(parser, buf, symbol, expression):
     ('$PRED IF (B0.LT.3) THEN\nCL = THETA(1)\nKA = THETA(2)\n  ELSE  \nCL = 23\nKA=82\nEND IF', [
         (S('CL'), sympy.Piecewise((S('THETA(1)'), S('B0') < 3), (23, True))),
         (S('KA'), sympy.Piecewise((S('THETA(2)'), S('B0') < 3), (82, True)))]),
-    ('$PRED    IF (A>=0.5) THEN    \n  VAR=1+2 \nELSE IF  (B.EQ.23)  THEN \nVAR=9.25\nEND IF  \n', [
+    ('$PRED    IF (A>=0.5) THEN   \n  VAR=1+2 \nELSE IF (B.EQ.23) THEN ; C\nVAR=9.25\nEND IF  \n', [
         (S('VAR'), sympy.Piecewise((3, S('A') >= 0.5), (9.25, sympy.Eq(S('B'), 23))))]),
     ('$PRED   IF (A>=0.5) THEN   \n  VAR1=1+2 \nELSE IF  (B.EQ.23)  THEN \nVAR2=9.25\nEND IF  \n', [
         (S('VAR1'), sympy.Piecewise((3, S('A') >= 0.5))),
         (S('VAR2'), sympy.Piecewise((9.25, sympy.Eq(S('B'), 23))))]),
+    ('$PRED\nIF (X.EQ.0) THEN    ;   anything  \n  Y = 23\nZ = 9\nEND IF;AFTER', [
+        (S('Y'), sympy.Piecewise((23, sympy.Eq(S('X'), 0)))),
+        (S('Z'), sympy.Piecewise((9, sympy.Eq(S('X'), 0))))]),
 ])
 def test_block_if(parser, buf, symb_expr_arr):
     rec = parser.parse(buf).records[0]
