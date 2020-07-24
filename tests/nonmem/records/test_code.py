@@ -66,6 +66,13 @@ def S(x):
     ('$PRED\nCL=-KA+2', S('CL'), -S('KA') + 2),
     ('$PRED\nCL=-2*X*2', S('CL'), -4 * S('X')),
     ('$PRED\nCL=-(-X)', S('CL'), S('X')),
+    ('$PRED IF(ROUT.EQ.0.AND.DAYP.EQ.1.AND.PROT.EQ.1088) STRT=10881', S('STRT'),
+        sympy.Piecewise((10881, sympy.And(sympy.Eq(S('ROUT'), 0), sympy.Eq(S('DAYP'), 1),
+                                          sympy.Eq(S('PROT'), 1088))))),
+    ('$PRED X=A+B+C', S('X'), S('A') + S('B') + S('C')),
+    ('$PRED X=A+B-C', S('X'), S('A') + S('B') - S('C')),
+    ('$PRED X=A+B*C', S('X'), S('A') + S('B') * S('C')),
+    ('$PRED X=A*B+C', S('X'), S('A') * S('B') + S('C')),
 ])
 def test_single_assignments(parser, buf, symbol, expression):
     rec = parser.parse(buf).records[0]

@@ -31,19 +31,17 @@ class ExpressionInterpreter(lark.visitors.Interpreter):
             unary_factor = 1
 
         if len(t) > 2:
-            op = t[1]
-            terms = t[0::2]
-            if op == '+':
-                expr = sympy.Add(unary_factor * terms[0], *terms[1:])
-            elif op == '-':
-                expr = unary_factor * terms[0]
-                for term in terms[1:]:
+            ops = t[1::2]
+            terms = t[2::2]
+            expr = unary_factor * t[0]
+            for op, term in zip(ops, terms):
+                if op == '+':
+                    expr += term
+                elif op == '-':
                     expr -= term
-            elif op == '*':
-                expr = unary_factor * sympy.Mul(*terms)
-            elif op == '/':
-                expr = unary_factor * terms[0]
-                for term in terms[1:]:
+                elif op == '*':
+                    expr *= term
+                elif op == '/':
                     expr /= term
         else:
             expr = unary_factor * t[0]
@@ -52,8 +50,12 @@ class ExpressionInterpreter(lark.visitors.Interpreter):
     def logical_expression(self, node):
         t = self.visit_cildren(node)
         if len(t) > 2:
-            left, op, right = self.visit_children(node)
-            return op(left, right)
+            ops = t[1::2]
+            terms = t[2::2]
+            expr = t[0]
+            for op, term in zip(ops, terms):
+                expr = op(expr, term)
+            return expr
         elif len(t) == 2:
             op, expr = self.visit_children(node)
             return op(expr)
