@@ -31,10 +31,10 @@ not_op: ".NOT." -> logical_operator
 
 ?expression: term (add_op [WS] term)*
 ?term: _factor (mul_op _factor)* -> expression
-_factor: _atom
-       | power
+_factor: [UNARY_OP] (_atom | power)
 ?power: _atom ("**" _factor)?
 
+UNARY_OP: "+" | "-"
 add_op: "+" -> operator
       | "-" -> operator
 mul_op: "*" -> operator

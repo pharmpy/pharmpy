@@ -24,23 +24,29 @@ class ExpressionInterpreter(lark.visitors.Interpreter):
 
     def expression(self, node):
         t = self.visit_children(node)
+
+        if bool(node.find('UNARY_OP')) and str(node.tokens[0]) == '-':
+            unary_factor = -1
+        else:
+            unary_factor = 1
+
         if len(t) > 2:
             op = t[1]
             terms = t[0::2]
             if op == '+':
-                expr = sympy.Add(*terms)
+                expr = sympy.Add(unary_factor * terms[0], *terms[1:])
             elif op == '-':
-                expr = terms[0]
+                expr = unary_factor * terms[0]
                 for term in terms[1:]:
                     expr -= term
             elif op == '*':
-                expr = sympy.Mul(*terms)
+                expr = unary_factor * sympy.Mul(*terms)
             elif op == '/':
-                expr = terms[0]
+                expr = unary_factor * terms[0]
                 for term in terms[1:]:
                     expr /= term
         else:
-            expr = t[0]
+            expr = unary_factor * t[0]
         return expr
 
     def logical_expression(self, node):

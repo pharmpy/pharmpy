@@ -56,6 +56,12 @@ def S(x):
     ('$PRED IF (Q.EQ.R+C/D) L=0', S('L'),
         sympy.Piecewise((0, sympy.Eq(S('Q'), S('R') + S('C') / S('D'))))),
     ('$PRED\nA_0(1) = 2', S('A_0(1)'), 2),
+    ('$PRED\nIF(SPECIES.EQ.4)     IPRG = THETA(49)*EXP(ETA(11))', S('IPRG'),
+        sympy.Piecewise((S('THETA(49)') * sympy.exp(S('ETA(11)')), sympy.Eq(S('SPECIES'), 4)))),
+    ('$PRED\nCL=-KA', S('CL'), -S('KA')),
+    ('$PRED\nCL=-KA+2', S('CL'), -S('KA') + 2),
+    ('$PRED\nCL=-2*X*2', S('CL'), -4 * S('X')),
+    ('$PRED\nCL=-(-X)', S('CL'), S('X')),
 ])
 def test_single_assignments(parser, buf, symbol, expression):
     rec = parser.parse(buf).records[0]
