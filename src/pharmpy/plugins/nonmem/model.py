@@ -74,7 +74,7 @@ class Model(pharmpy.model.Model):
             self._dataset_updated = False
 
         self._update_parameters()
-        self._update_initial_individual_etimates(path)
+        self._update_initial_individual_estimates(path)
 
         super().update_source()
 
@@ -100,10 +100,10 @@ class Model(pharmpy.model.Model):
 
         self._parameters_updated = False
 
-    def _update_initial_individual_etimates(self, path):
+    def _update_initial_individual_estimates(self, path):
         """ Update $ETAS
 
-            Could have 0 FIX in model. Need to readd these
+            Could have 0 FIX in model. Need to read these
         """
         if path is None:        # What to do here?
             phi_path = Path('.')
@@ -182,7 +182,7 @@ class Model(pharmpy.model.Model):
     def parameters(self, params):
         """params can be a ParameterSet or a dict-like with name: value
 
-           Current restricions:
+           Current restrictions:
             * ParameterSet only supported for new initial estimates and fix
             * Only set the exact same parameters. No additions and no removing of parameters
         """
@@ -208,6 +208,14 @@ class Model(pharmpy.model.Model):
                                               f"not supported")
             self._parameters = params.copy()
         self._parameters_updated = True
+
+    def _get_theta_name(self):
+        next_theta = 1
+        for theta_record in self.control_stream.get_records('THETA'):
+            thetas = theta_record.parameters(next_theta)
+            next_theta += len(thetas)
+
+        return f'THETA({next_theta})'
 
     @property
     def initial_individual_estimates(self):
