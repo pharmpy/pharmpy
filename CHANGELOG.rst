@@ -1,7 +1,10 @@
-0.4.0
------
+0.4.0 (2020-07-24)
+------------------
 
 * Add categorical covariates to covariate effects plot in FREM
+* Better support for reading NONMEM code statements (PK and PRED)
+* Support for updating NONMEM code statements (PK and PRED)
+* Bugfixes for CLI
 
 
 0.3.0 (2020-06-16)
