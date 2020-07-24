@@ -26,6 +26,8 @@ def S(x):
     ('$PRED D = A - (+2)', S('D'), S('A') - 2),
     ('$PRED D = 2.5', S('D'), 2.5),
     ('$PRED CL = EXP(2)', S('CL'), sympy.exp(2)),
+    ('$PRED CL = exp(2)', S('CL'), sympy.exp(2)),
+    ('$PRED cL = eXp(2)', S('CL'), sympy.exp(2)),
     ('$PRED CL = DEXP(ETA(1))', S('CL'), sympy.exp(S('ETA(1)'))),
     ('$PRED CL = LOG(V + 1)', S('CL'), sympy.log(S('V') + 1)),
     ('$PRED CL = LOG10(3.5 + THETA(1))', S('CL'), sympy.log(3.5 + S('THETA(1)'), 10)),
@@ -35,10 +37,12 @@ def S(x):
     ('$PRED K_ = ATAN(1) - ASIN(X)/ACOS(X)', S('K_'), sympy.atan(1) - sympy.asin(S('X')) /
         sympy.acos(S('X'))),
     ('$PRED CL = INT(-2.2)', S('CL'), -2),
+    ('$PRED cl = int(-2.2)', S('CL'), -2),
     ('$PRED CL = INT(0.2)', S('CL'), 0),
     ('$PRED CL = MOD(1, 2)', S('CL'), sympy.Mod(1, 2)),
     ('$PRED CL = GAMLN(2 + X)   ;COMMENT', S('CL'), sympy.loggamma(S('X') + 2)),
     ('$PRED IF (X.EQ.2) CL=23', S('CL'), sympy.Piecewise((23, sympy.Eq(S('X'), 2)))),
+    ('$PRED if (x.EQ.2) Cl=23', S('CL'), sympy.Piecewise((23, sympy.Eq(S('X'), 2)))),
     ('$PRED IF (X.NE.1.5) CL=THETA(1)', S('CL'),
         sympy.Piecewise((S('THETA(1)'), sympy.Ne(S('X'), 1.5)))),
     ('$PRED IF (X.EQ.2+1) CL=23', S('CL'), sympy.Piecewise((23, sympy.Eq(S('X'), 3)))),
@@ -82,6 +86,8 @@ def test_single_assignments(parser, buf, symbol, expression):
         (S('KA'), sympy.Piecewise((S('THETA(2)'), S('B0') < 3), (82, True)))]),
     ('$PRED    IF (A>=0.5) THEN   \n  VAR=1+2 \nELSE IF (B.EQ.23) THEN ; C\nVAR=9.25\nEND IF  \n', [
         (S('VAR'), sympy.Piecewise((3, S('A') >= 0.5), (9.25, sympy.Eq(S('B'), 23))))]),
+    ('$PRED    if (a>=0.5) then   \n  var=1+2 \nELSE if (b.eq.23) then ; C\nVAR=9.25\nEND IF  \n', [
+        (S('VAR'), sympy.Piecewise((3, S('A') >= 0.5), (9.25, sympy.Eq(S('B'), 23))))]),
     ('$PRED   IF (A>=0.5) THEN   \n  VAR1=1+2 \nELSE IF  (B.EQ.23)  THEN \nVAR2=9.25\nEND IF  \n', [
         (S('VAR1'), sympy.Piecewise((3, S('A') >= 0.5))),
         (S('VAR2'), sympy.Piecewise((9.25, sympy.Eq(S('B'), 23))))]),
@@ -93,7 +99,8 @@ def test_single_assignments(parser, buf, symbol, expression):
                                                          sympy.Ge(S('EVID'), 3)))))]),
     ('$PRED IF (B0.LT.3) THEN\nCL = THETA(1)\nELSE;A close comment\nCL = 23\nENDIF', [
         (S('CL'), sympy.Piecewise((S('THETA(1)'), S('B0') < 3), (23, True)))]),
-    ('$PRED\nIF(MIXNUM.EQ.3) THEN\n    TVCL=THETA(1)       ; CL in population 1\nELSE\n    TVCL=THETA(2)       ; CL in population 2\nENDIF\n', [
+    ('$PRED\nIF(MIXNUM.EQ.3) THEN\n    TVCL=THETA(1)       ; CL in population 1\nELSE\n    '
+     'TVCL=THETA(2)       ; CL in population 2\nENDIF\n', [
         (S('TVCL'), sympy.Piecewise((S('THETA(1)'), sympy.Eq(S('MIXNUM'), 3)),
                                     (S('THETA(2)'), True)))]),
 ])

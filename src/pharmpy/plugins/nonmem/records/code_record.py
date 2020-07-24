@@ -62,7 +62,7 @@ class ExpressionInterpreter(lark.visitors.Interpreter):
 
     @staticmethod
     def logical_operator(node):
-        name = str(node)
+        name = str(node).upper()
         if name == '==' or name == '.EQ.':
             return sympy.Eq
         elif name == '/=' or name == '.NE.':
@@ -92,7 +92,7 @@ class ExpressionInterpreter(lark.visitors.Interpreter):
 
     @staticmethod
     def intrinsic_func(node):
-        name = str(node)
+        name = str(node).upper()
         if name == "EXP" or name == "DEXP":
             return sympy.exp
         elif name == "LOG":
@@ -137,7 +137,7 @@ class ExpressionInterpreter(lark.visitors.Interpreter):
 
     @staticmethod
     def symbol(node):
-        return sympy.Symbol(str(node), real=True)
+        return sympy.Symbol(str(node).upper(), real=True)
 
 
 class CodeRecord(Record):
@@ -250,13 +250,13 @@ class CodeRecord(Record):
             node = statement.children[0]
             self.nodes.append(statement)
             if node.rule == 'assignment':
-                name = str(node.variable)
+                name = str(node.variable).upper()
                 expr = ExpressionInterpreter().visit(node.expression)
                 ass = Assignment(name, expr)
                 s.append(ass)
             elif node.rule == 'logical_if':
                 logic_expr = ExpressionInterpreter().visit(node.logical_expression)
-                name = str(node.assignment.variable)
+                name = str(node.assignment.variable).upper()
                 expr = ExpressionInterpreter().visit(node.assignment.expression)
                 pw = sympy.Piecewise((expr, logic_expr))
                 ass = Assignment(name, pw)
@@ -270,7 +270,7 @@ class CodeRecord(Record):
                 first_block = node.block_if_start
                 first_symb_exprs = []
                 for assign_node in first_block.all('assignment'):
-                    name = str(assign_node.variable)
+                    name = str(assign_node.variable).upper()
                     first_symb_exprs.append((name, interpreter.visit(assign_node.expression)))
                     symbols.add(name)
                 blocks.append((first_logic, first_symb_exprs))
@@ -280,7 +280,7 @@ class CodeRecord(Record):
                     logic = interpreter.visit(elseif.logical_expression)
                     elseif_symb_exprs = []
                     for assign_node in elseif.all('assignment'):
-                        name = str(assign_node.variable)
+                        name = str(assign_node.variable).upper()
                         elseif_symb_exprs.append((name, interpreter.visit(assign_node.expression)))
                         symbols.add(name)
                     blocks.append((logic, elseif_symb_exprs))
@@ -289,7 +289,7 @@ class CodeRecord(Record):
                 if else_block:
                     else_symb_exprs = []
                     for assign_node in else_block.all('assignment'):
-                        name = str(assign_node.variable)
+                        name = str(assign_node.variable).upper()
                         else_symb_exprs.append((name, interpreter.visit(assign_node.expression)))
                         symbols.add(name)
                     blocks.append((True, else_symb_exprs))
