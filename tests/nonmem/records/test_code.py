@@ -77,6 +77,7 @@ def S(x):
     ('$PRED X=A*B+C', S('X'), S('A') * S('B') + S('C')),
     ('$PRED\n"VERBATIM STUFF\nK=1', S('K'), 1),
     ('$PRED\n"VERBATIM STUFF\n"ON TWO LINES\nK=1', S('K'), 1),
+    ('$PRED\n(CALLFL=0)\n\nK=1', S('K'), 1),
 ])
 def test_single_assignments(parser, buf, symbol, expression):
     rec = parser.parse(buf).records[0]
