@@ -1,6 +1,9 @@
 // A precedence climbing grammar is used for expressions
 
-root: WS_ALL (NEWLINE | statement [WS] [COMMENT] [WS_ALL])+
+root: WS_ALL (NEWLINE | verbatim | statement [WS] [COMMENT] [WS_ALL])+
+
+verbatim: VERBATIM_STATEMENT NEWLINE
+VERBATIM_STATEMENT: /"[^\n]*/
 
 statement: assignment
          | logical_if

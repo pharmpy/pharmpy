@@ -2,6 +2,8 @@ import pytest
 import sympy
 from sympy import Symbol
 
+from pharmpy.statements import Assignment
+
 
 def S(x):
     return Symbol(x, real=True)
@@ -73,6 +75,8 @@ def S(x):
     ('$PRED X=A+B-C', S('X'), S('A') + S('B') - S('C')),
     ('$PRED X=A+B*C', S('X'), S('A') + S('B') * S('C')),
     ('$PRED X=A*B+C', S('X'), S('A') * S('B') + S('C')),
+    ('$PRED\n"VERBATIM STUFF\nK=1', S('K'), 1),
+    ('$PRED\n"VERBATIM STUFF\n"ON TWO LINES\nK=1', S('K'), 1),
 ])
 def test_single_assignments(parser, buf, symbol, expression):
     rec = parser.parse(buf).records[0]
@@ -248,3 +252,21 @@ def test_statements_setter_change(parser, buf_original, buf_new):
 
     assert rec_original.statements == rec_new.statements
     assert rec_original.root.all('statement') == rec_new.root.all('statement')
+
+
+@pytest.mark.usefixtures('parser')
+@pytest.mark.parametrize('buf_original,symbol,expression,buf_new', [
+    ('$PRED\nY = THETA(1) + ETA(1) + EPS(1)', S('CL'), 2,
+     '$PRED\nY = THETA(1) + ETA(1) + EPS(1)\nCL = 2'),
+    ('$PRED\n"FIRST\n"!Fortran code goes here\n', S('V'), -S('CL'),
+     '$PRED\n"FIRST\n"!Fortran code goes here\n\nV = -CL'),
+])
+def test_statements_setter_add_from_sympy(parser, buf_original, symbol, expression, buf_new):
+    rec_original = parser.parse(buf_original).records[0]
+
+    assignment = Assignment(symbol, expression)
+    statements = rec_original.statements
+    statements += [assignment]
+    rec_original.statements = statements
+
+    assert str(rec_original) == buf_new
