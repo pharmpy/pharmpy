@@ -318,7 +318,7 @@ class CLI:
             allow_abbrev=True,
         )
         self._init_common_args(parser)
-        parser.add_argument('--version', action='version', version='0.3.0')
+        parser.add_argument('--version', action='version', version='0.4.0')
 
         # subcommand parsers
         subparsers = parser.add_subparsers(title='Pharmpy commands', metavar='COMMAND')
