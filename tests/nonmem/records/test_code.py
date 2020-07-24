@@ -93,6 +93,9 @@ def test_single_assignments(parser, buf, symbol, expression):
                                                          sympy.Ge(S('EVID'), 3)))))]),
     ('$PRED IF (B0.LT.3) THEN\nCL = THETA(1)\nELSE;A close comment\nCL = 23\nENDIF', [
         (S('CL'), sympy.Piecewise((S('THETA(1)'), S('B0') < 3), (23, True)))]),
+    ('$PRED\nIF(MIXNUM.EQ.3) THEN\n    TVCL=THETA(1)       ; CL in population 1\nELSE\n    TVCL=THETA(2)       ; CL in population 2\nENDIF\n', [
+        (S('TVCL'), sympy.Piecewise((S('THETA(1)'), sympy.Eq(S('MIXNUM'), 3)),
+                                    (S('THETA(2)'), True)))]),
 ])
 def test_block_if(parser, buf, symb_expr_arr):
     rec = parser.parse(buf).records[0]
