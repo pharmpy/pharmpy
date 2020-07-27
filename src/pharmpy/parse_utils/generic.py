@@ -309,10 +309,12 @@ class AttrTree(Tree):
         prev_rule = None
         new_children_last_index = len(new_children) - 1
 
+        new_lines = ['WS_ALL', 'NEWLINE']
+
         for i, child in enumerate(new_children):
-            if child.rule == 'WS_ALL' and child.rule == prev_rule:
+            if child.rule in new_lines and prev_rule in new_lines:
                 pass
-            elif child.rule == 'WS_ALL' and i == new_children_last_index:  # Remove trailing WS
+            elif child.rule in new_lines and i == new_children_last_index:  # Remove trailing WS
                 pass
             elif re.search('\n{2,}', str(child.eval)):
                 newline_node = AttrToken('WS_ALL', '\n')
