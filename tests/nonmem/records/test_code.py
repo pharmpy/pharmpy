@@ -205,16 +205,16 @@ def test_statements_setter_identical(parser, buf_original, buf_new):
 
 
 @pytest.mark.usefixtures('parser')
-@pytest.mark.parametrize('buf_original,buf_new', [
+@pytest.mark.parametrize('buf_original,buf_new,is_comment_present', [
     ('$PRED\nY = THETA(1) + ETA(1) + EPS(1)\nCL = 2',
-     '$PRED\nY = THETA(1) + ETA(1) + EPS(1)'),
+     '$PRED\nY = THETA(1) + ETA(1) + EPS(1)', False),
     ('$PRED\nY = THETA(1) + ETA(1) + EPS(1) ;comment\nCL = 2',
-     '$PRED\nY = THETA(1) + ETA(1) + EPS(1)'),
+     '$PRED\nY = THETA(1) + ETA(1) + EPS(1)', True),
     ('$PRED\nY = THETA(1) + ETA(1) + EPS(1)\nCL = 2',
-     '$PRED\nCL = 2'),
-    ('$PRED\nY = A + B\nX = C - D\nZ = E * F', '$PRED\nY = A + B\nZ = E * F'),
+     '$PRED\nCL = 2', False),
+    ('$PRED\nY = A + B\nX = C - D\nZ = E * F', '$PRED\nY = A + B\nZ = E * F', False),
 ])
-def test_statements_setter_remove(parser, buf_original, buf_new):
+def test_statements_setter_remove(parser, buf_original, buf_new, is_comment_present):
     rec_original = parser.parse(buf_original).records[0]
     rec_new = parser.parse(buf_new).records[0]
 
@@ -222,6 +222,7 @@ def test_statements_setter_remove(parser, buf_original, buf_new):
 
     assert rec_original.statements == rec_new.statements
     assert rec_original.root.all('statement') == rec_new.root.all('statement')
+    assert (len(rec_original.root.all('COMMENT')) > 0) == is_comment_present
 
 
 @pytest.mark.usefixtures('parser')
@@ -244,6 +245,7 @@ def test_statements_setter_add(parser, buf_original, buf_new):
     ('$PRED\nY = A + B', '$PRED\nZ = E*F'),
     ('$PRED\nY = A + B\nX = C - D\nZ = E * F', '$PRED\nY = A + B\nX = C\nZ = E * F'),
     ('$PRED\nY = A + B\nX = C - D\nZ = E * F', '$PRED\nY = A + B\nX = C - D\nZ = E'),
+    ('$PRED\nY = A + B\nX = C - D\nZ = E * F\n', '$PRED\nY = A + B\nX = C\nZ = E * F'),
 ])
 def test_statements_setter_change(parser, buf_original, buf_new):
     rec_original = parser.parse(buf_original).records[0]
@@ -253,6 +255,7 @@ def test_statements_setter_change(parser, buf_original, buf_new):
 
     assert rec_original.statements == rec_new.statements
     assert rec_original.root.all('statement') == rec_new.root.all('statement')
+    assert str(rec_original) == buf_new
 
 
 @pytest.mark.usefixtures('parser')
