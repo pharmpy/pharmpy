@@ -63,6 +63,8 @@ class NMTranControlStream:
         record = create_record(content)
         self.records.insert(index + 1, record)
 
+        return record
+
     def validate(self):
         in_problem = False
         for record in self.records:
