@@ -198,8 +198,13 @@ class Model(pharmpy.model.Model):
             self._parameters.inits = params
         else:
             if len(parameters) != len(params):
-                raise NotImplementedError("Current number of parameters in model and parameters to "
-                                          "set are not the same. Not yet supported")
+                for p in params:
+                    name = p.name
+                    if name not in parameters:
+                        if name not in self.random_variables.all_parameters():
+                            name_new = self._get_theta_name()
+                            p.name = name_new
+                            self._add_theta(p)
 
             for p in parameters:
                 name = p.name
@@ -208,6 +213,10 @@ class Model(pharmpy.model.Model):
                                               f"not supported")
             self._parameters = params.copy()
         self._parameters_updated = True
+
+    def _add_theta(self, param):
+        param_str = f'$THETA  ({param.lower},{param.init})\n'
+        self.control_stream.insert_record(param_str, 'THETA')
 
     def _get_theta_name(self):
         next_theta = 1
