@@ -50,6 +50,19 @@ class NMTranControlStream:
         self.records.append(record)
         return record
 
+    def insert_record(self, content, rec_type):
+        current_problem = -1
+        index = 0
+
+        for record in self.records:
+            if record.name == 'PROBLEM':
+                current_problem += 1
+            if current_problem == self._active_problem and record.name == rec_type:
+                index = self.records.index(record)
+
+        record = create_record(content)
+        self.records.insert(index + 1, record)
+
     def validate(self):
         in_problem = False
         for record in self.records:
