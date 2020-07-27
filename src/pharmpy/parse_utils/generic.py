@@ -307,20 +307,22 @@ class AttrTree(Tree):
     def clean_ws(new_children):
         new_children_clean = []
         prev_rule = None
-        new_children_last_index = len(new_children) - 1
-
-        new_lines = ['WS_ALL', 'NEWLINE']
+        last_index = len(new_children) - 1
+        types_of_newline = ['WS_ALL', 'NEWLINE']
 
         for i, child in enumerate(new_children):
-            if child.rule in new_lines and prev_rule in new_lines:
-                pass
-            elif child.rule in new_lines and i == new_children_last_index:  # Remove trailing WS
-                pass
-            elif re.search('\n{2,}', str(child.eval)):
+            if child.rule in types_of_newline:
+                if prev_rule in types_of_newline or prev_rule == 'verbatim':
+                    continue
+                if i == last_index:
+                    continue
+
+            if re.search('\n{2,}', str(child.eval)):
                 newline_node = AttrToken('WS_ALL', '\n')
                 new_children_clean.append(newline_node)
             else:
                 new_children_clean.append(child)
+
             prev_rule = child.rule
 
         return new_children_clean
