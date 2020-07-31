@@ -139,7 +139,10 @@ class ExpressionInterpreter(lark.visitors.Interpreter):
 
     @staticmethod
     def symbol(node):
-        return sympy.Symbol(str(node).upper(), real=True)
+        name = str(node).upper()
+        if name.startswith('ERR('):
+            name = 'EPS' + name[3:]
+        return sympy.Symbol(name, real=True)
 
 
 class CodeRecord(Record):

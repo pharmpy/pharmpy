@@ -83,7 +83,7 @@ def test_minimal(datadir):
     model = Model(path)
     assert len(model.statements) == 1
     assert model.statements[0].expression == \
-        Symbol('THETA(1)', real=True) + Symbol('ETA(1)', real=True) + Symbol('ERR(1)', real=True)
+        Symbol('THETA(1)', real=True) + Symbol('ETA(1)', real=True) + Symbol('EPS(1)', real=True)
 
 
 def test_copy(datadir):
@@ -92,7 +92,7 @@ def test_copy(datadir):
     copy = model.copy()
     assert id(model) != id(copy)
     assert model.statements[0].expression == \
-        Symbol('THETA(1)', real=True) + Symbol('ETA(1)', real=True) + Symbol('ERR(1)', real=True)
+        Symbol('THETA(1)', real=True) + Symbol('ETA(1)', real=True) + Symbol('EPS(1)', real=True)
 
 
 def test_initial_individual_estimates(datadir):

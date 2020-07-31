@@ -97,3 +97,49 @@ class Model:
             if candidate not in symbols:
                 return candidate
             i += 1
+
+    def symbolic_population_prediction(self):
+        """Symbolic model population prediction
+        """
+        stats = self.statements
+        for i, s in enumerate(stats):
+            if s.symbol.name == 'Y':
+                y = s.expression
+                break
+
+        for j in range(i, -1, -1):
+            y = y.subs({stats[j].symbol: stats[j].expression})
+
+        for eps in self.random_variables.ruv_rvs:
+            # FIXME: The rv symbol and the code symbol are different.
+            y = y.subs({sympy.Symbol(eps.name): 0})
+
+        for eta in self.random_variables.etas:
+            y = y.subs({sympy.Symbol(eta.name): 0})
+
+        return y
+
+    def population_prediction(self, parameters=None, dataset=None):
+        """Numeric population prediction if parameters is not given
+
+            The prediction is evaluated at the current model parameter values
+            or optionally at the given parameter values.
+            The evaluation is done for each data record in the model dataset
+            or optionally using the dataset argument.
+
+            Return population prediction series
+        """
+        y = self.symbolic_population_prediction()
+        if parameters is not None:
+            y = y.subs(parameters)
+        else:
+            y = y.subs(self.parameters.inits)
+
+        if dataset is not None:
+            df = dataset
+        else:
+            df = self.dataset
+
+        pred = df.apply(lambda row: y.subs(row.to_dict()), axis=1)
+
+        return pred

@@ -180,6 +180,26 @@ class RandomVariables(OrderedSet):
                 if level is None or level == rv.variability_level:
                     yield rvs, dist
 
+    @property
+    def ruv_rvs(self):
+        """Get set of all ruv random variables (epsilons)
+        """
+        ruv = set()
+        for rv in self:
+            if rv.variability_level == VariabilityLevel.RUV:
+                ruv.add(rv)
+        return ruv
+
+    @property
+    def etas(self):
+        """Get set of all eta random variables
+        """
+        etas = set()
+        for rv in self:
+            if rv.variability_level != VariabilityLevel.RUV:
+                etas.add(rv)
+        return etas
+
     def iiv_variance_parameters(self):
         parameters = []
         for rvs, dist in self.distributions(level=VariabilityLevel.IIV):
