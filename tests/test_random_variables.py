@@ -112,3 +112,4 @@ def test_all_parameters_models(testdata, model_file, expected_length):
     model = Model(model_path)
 
     assert len(model.random_variables.all_parameters()) == expected_length
+    assert len(model.parameters) != len(model.random_variables.all_parameters())
