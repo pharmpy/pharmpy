@@ -98,9 +98,7 @@ class Model:
                 return candidate
             i += 1
 
-    def symbolic_population_prediction(self):
-        """Symbolic model population prediction
-        """
+    def _observation(self):
         stats = self.statements
         for i, s in enumerate(stats):
             if s.symbol.name == 'Y':
@@ -109,6 +107,13 @@ class Model:
 
         for j in range(i, -1, -1):
             y = y.subs({stats[j].symbol: stats[j].expression})
+
+        return y
+
+    def symbolic_population_prediction(self):
+        """Symbolic model population prediction
+        """
+        y = self._observation()
 
         for eps in self.random_variables.ruv_rvs:
             # FIXME: The rv symbol and the code symbol are different.
@@ -143,3 +148,15 @@ class Model:
         pred = df.apply(lambda row: y.subs(row.to_dict()), axis=1)
 
         return pred
+
+    def symbolic_eta_gradient(self):
+        y = self._observation()
+        for eps in self.random_variables.ruv_rvs:
+            y = y.subs({sympy.Symbol(eps.name): 0})
+        d = [y.diff(sympy.Symbol(x.name)) for x in self.random_variables.etas]
+        return d
+
+    def symbolic_eps_gradient(self):
+        y = self._observation()
+        d = [y.diff(sympy.Symbol(x.name)) for x in self.random_variables.ruv_rvs]
+        return d

@@ -21,6 +21,20 @@ def test_symbolic_population_prediction(testdata):
     assert model.symbolic_population_prediction() == S('THETA(1)')
 
 
+def test_symbolic_eta_gradient(testdata):
+    path = testdata / 'nonmem' / 'minimal.mod'
+    model = Model(path)
+
+    assert model.symbolic_eta_gradient() == [1]
+
+
+def test_symbolic_eps_gradient(testdata):
+    path = testdata / 'nonmem' / 'minimal.mod'
+    model = Model(path)
+
+    assert model.symbolic_eps_gradient() == [1]
+
+
 def test_population_prediction(testdata):
     path = testdata / 'nonmem' / 'minimal.mod'
     model = Model(path)
