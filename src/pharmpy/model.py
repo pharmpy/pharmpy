@@ -15,6 +15,8 @@ Definitions
 import copy
 from pathlib import Path
 
+import numpy as np
+import pandas as pd
 import sympy
 
 
@@ -125,7 +127,7 @@ class Model:
         return y
 
     def population_prediction(self, parameters=None, dataset=None):
-        """Numeric population prediction if parameters is not given
+        """Numeric population prediction
 
             The prediction is evaluated at the current model parameter values
             or optionally at the given parameter values.
@@ -160,3 +162,38 @@ class Model:
         y = self._observation()
         d = [y.diff(sympy.Symbol(x.name)) for x in self.random_variables.ruv_rvs]
         return d
+
+    def eta_gradient(self, etas=None, parameters=None, dataset=None):
+        """Numeric eta gradient
+
+           The gradient is evaluated given initial etas, parameters and the model dataset.
+           The arguments etas, parameters and dataset can optionally override those
+           of the model. Return a DataFrame of gradients.
+        """
+        y = self.symbolic_eta_gradient()
+        if parameters is not None:
+            y = [x.subs(parameters) for x in y]
+        else:
+            y = [x.subs(self.parameters.inits) for x in y]
+
+        if etas is not None:
+            y = [x.subs(etas) for x in y]
+        elif self.initial_individual_estimates is not None:
+            y = [x.subs(self.initial_individual_estimates) for x in y]
+        else:
+            repl = {sympy.Symbol(eta.name): 0 for eta in self.random_variables.etas}
+            y = [x.subs(repl) for x in y]
+
+        if dataset is not None:
+            df = dataset
+        else:
+            df = self.dataset
+
+        def fn(row):
+            row = row.to_dict()
+            a = [np.float64(x.subs(row)) for x in y]
+            return a
+
+        grad = df.apply(fn, axis=1, result_type='expand')
+        grad = pd.DataFrame(grad)   # To always return DataFrame
+        return grad
