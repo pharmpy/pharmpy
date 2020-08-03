@@ -4,6 +4,8 @@ import re
 import shutil
 from pathlib import Path
 
+from sympy.core.numbers import NegativeInfinity
+
 import pharmpy.data
 import pharmpy.model
 from pharmpy.data import DatasetError
@@ -204,19 +206,21 @@ class Model(pharmpy.model.Model):
                         if name not in self.random_variables.all_parameters():
                             name_new = self._get_theta_name()
                             p.name = name_new
-                            self._add_theta(p)
+                            self._add_theta(p, name, name_new)
 
-            for p in parameters:
-                name = p.name
-                if name not in params:
-                    raise NotImplementedError(f"Parameter '{name}' not found in input. Currently "
-                                              f"not supported")
             self._parameters = params.copy()
         self._parameters_updated = True
 
-    def _add_theta(self, param):
-        param_str = f'$THETA  ({param.lower},{param.init})\n'
-        self.control_stream.insert_record(param_str, 'THETA')
+    def _add_theta(self, param, name_original, name_new):
+        if type(param.lower) is NegativeInfinity:
+            param_str = f'$THETA  {param.init}\n'
+        else:
+            param_str = f'$THETA  ({param.lower},{param.init})\n'
+
+        record = self.control_stream.insert_record(param_str, 'THETA')
+
+        if not name_original.startswith('THETA'):
+            record.add_nonmem_name(name_original, name_new)
 
     def _get_theta_name(self):
         next_theta = 1
