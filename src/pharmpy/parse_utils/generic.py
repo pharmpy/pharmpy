@@ -343,6 +343,19 @@ class AttrTree(Tree):
         new_children_clean = self.clean_ws(new_children)
         self.children = new_children_clean
 
+    def add_comment_node(self, comment, adjacent_node=None):
+        new_children = copy.deepcopy(self.children)
+        new_children_clean = self.clean_ws(new_children)
+
+        comment_node = AttrToken('COMMENT', f' ; {comment}')
+        newline_node = AttrToken('WS_ALL', '\n')
+
+        if adjacent_node is None:
+            new_children_clean.append(comment_node)
+            new_children_clean.append(newline_node)
+
+        self.children = new_children_clean
+
     @property
     def tokens(self):
         """All tokens as flattened list."""
