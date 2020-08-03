@@ -9,6 +9,14 @@ min_lower_bound = -1000000
 
 
 class ThetaRecord(Record):
+    def __init__(self, content, parser_class):
+        super().__init__(content, parser_class)
+        self.nonmem_names = {}
+
+    def add_nonmem_name(self, name_original, name_nonmem):
+        self.root.add_comment_node(name_original)
+        self.nonmem_names[name_nonmem] = name_original
+
     def parameters(self, first_theta):
         """Get a parameter set for this theta record.
         first_theta is the number of the first theta in this record
