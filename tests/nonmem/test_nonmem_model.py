@@ -73,6 +73,32 @@ def test_set_parameters(pheno_path):
     assert model.parameters['THETA(2)'] == Parameter('THETA(2)', 1.00916, lower=0, upper=1000000)
 
 
+@pytest.mark.parametrize('param_new,init_expected', [
+    (Parameter('TVCL', 0.2), 0.2),
+    (Parameter('THETA', 0.1), 0.1),
+    (Parameter('THETA', 0.1, 0, fix=True), 0.1),
+])
+def test_add_parameters(pheno_path, param_new, init_expected):
+    model = Model(pheno_path)
+    pset = model.parameters
+
+    assert len(pset) == 6
+
+    pset.add(param_new)
+    model.parameters = pset
+
+    assert len(pset) == 7
+    assert len(model.parameters) == 7
+    assert model.parameters['THETA(4)'].init == init_expected
+
+    model.update_source()
+
+    parser = NMTranParser()
+    stream = parser.parse(str(model))
+
+    assert str(model.control_stream) == str(stream)
+
+
 def test_results(pheno_path):
     model = Model(pheno_path)
     assert len(model.modelfit_results) == 1     # A chain of one estimation
