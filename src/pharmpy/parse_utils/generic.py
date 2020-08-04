@@ -300,14 +300,14 @@ class AttrTree(Tree):
             else:
                 comment_flag = True
 
-        new_children_clean = self.clean_ws(new_children)
+        new_children_clean = self._clean_ws(new_children)
         self.children = new_children_clean
 
     @staticmethod
-    def newline_node():
+    def _newline_node():
         return AttrToken('WS_ALL', '\n')
 
-    def clean_ws(self, new_children):
+    def _clean_ws(self, new_children):
         new_children_clean = []
         types_of_newline = ['WS_ALL', 'NEWLINE']
         last_index = len(new_children) - 1
@@ -322,7 +322,7 @@ class AttrTree(Tree):
                     continue
 
             if re.search('\n{2,}', str(child.eval)):
-                new_children_clean.append(self.newline_node())
+                new_children_clean.append(self._newline_node())
             else:
                 new_children_clean.append(child)
 
@@ -334,18 +334,18 @@ class AttrTree(Tree):
         new_children = copy.deepcopy(self.children)
 
         if comment:
-            new_children = self.clean_ws(new_children)
+            new_children = self._clean_ws(new_children)
 
         if following_node is None:
             if not comment:
-                new_children.append(self.newline_node())
+                new_children.append(self._newline_node())
             new_children.append(node)
         else:
             index = self.children.index(following_node)
             new_children.insert(index, node)
-            new_children.insert(index + 1, self.newline_node())   # Insert after newly inserted node
+            new_children.insert(index + 1, self._newline_node())
 
-        new_children_clean = self.clean_ws(new_children)
+        new_children_clean = self._clean_ws(new_children)
         self.children = new_children_clean
 
     def add_comment_node(self, comment, adjacent_node=None):
@@ -353,7 +353,7 @@ class AttrTree(Tree):
         self.add_node(comment_node, adjacent_node, comment=True)
 
     def add_newline_node(self):
-        self.children.append(self.newline_node())
+        self.children.append(self._newline_node())
 
     @property
     def tokens(self):
