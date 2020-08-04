@@ -4,7 +4,7 @@ import re
 import shutil
 from pathlib import Path
 
-from sympy.core.numbers import NegativeInfinity
+import sympy
 
 import pharmpy.data
 import pharmpy.model
@@ -199,23 +199,28 @@ class Model(pharmpy.model.Model):
         if not isinstance(params, ParameterSet):
             self._parameters.inits = params
         else:
-            if len(parameters) != len(params):
-                for p in params:
-                    name = p.name
-                    if name not in parameters:
-                        if name not in self.random_variables.all_parameters():
-                            name_new = self._get_theta_name()
-                            p.name = name_new
-                            self._add_theta(p, name, name_new)
+            for p in params:
+                name = p.name
+                if name not in parameters:
+                    if name not in self.random_variables.all_parameters():
+                        name_new = self._get_theta_name()
+                        p.name = name_new
+                        self._add_theta(p, name, name_new)
 
             self._parameters = params.copy()
         self._parameters_updated = True
 
     def _add_theta(self, param, name_original, name_new):
-        if type(param.lower) is NegativeInfinity:
-            param_str = f'$THETA  {param.init}\n'
+        param_str = '$THETA  '
+
+        if param.lower == -sympy.oo:
+            param_str += f'{param.init}'
         else:
-            param_str = f'$THETA  ({param.lower},{param.init})\n'
+            param_str += f'({param.lower},{param.init})'
+        if param.fix:
+            param_str += ' FIX'
+
+        param_str += '\n'
 
         record = self.control_stream.insert_record(param_str, 'THETA')
 
