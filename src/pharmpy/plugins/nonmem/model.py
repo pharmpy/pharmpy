@@ -210,6 +210,14 @@ class Model(pharmpy.model.Model):
             self._parameters = params.copy()
         self._parameters_updated = True
 
+    def _get_theta_name(self):
+        next_theta = 1
+        for theta_record in self.control_stream.get_records('THETA'):
+            thetas = theta_record.parameters(next_theta)
+            next_theta += len(thetas)
+
+        return f'THETA({next_theta})'
+
     def _add_theta(self, param, name_original, name_new):
         param_str = '$THETA  '
 
@@ -226,14 +234,6 @@ class Model(pharmpy.model.Model):
 
         if not name_original.startswith('THETA'):
             record.add_nonmem_name(name_original, name_new)
-
-    def _get_theta_name(self):
-        next_theta = 1
-        for theta_record in self.control_stream.get_records('THETA'):
-            thetas = theta_record.parameters(next_theta)
-            next_theta += len(thetas)
-
-        return f'THETA({next_theta})'
 
     @property
     def initial_individual_estimates(self):
