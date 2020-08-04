@@ -304,11 +304,15 @@ class AttrTree(Tree):
         self.children = new_children_clean
 
     @staticmethod
-    def clean_ws(new_children):
+    def newline_node():
+        return AttrToken('WS_ALL', '\n')
+
+    def clean_ws(self, new_children):
         new_children_clean = []
-        prev_rule = None
-        last_index = len(new_children) - 1
         types_of_newline = ['WS_ALL', 'NEWLINE']
+        last_index = len(new_children) - 1
+
+        prev_rule = None
 
         for i, child in enumerate(new_children):
             if child.rule in types_of_newline:
@@ -318,8 +322,7 @@ class AttrTree(Tree):
                     continue
 
             if re.search('\n{2,}', str(child.eval)):
-                newline_node = AttrToken('WS_ALL', '\n')
-                new_children_clean.append(newline_node)
+                new_children_clean.append(self.newline_node())
             else:
                 new_children_clean.append(child)
 
@@ -327,38 +330,30 @@ class AttrTree(Tree):
 
         return new_children_clean
 
-    def add_node(self, node, following_node=None):
+    def add_node(self, node, following_node=None, comment=False):
         new_children = copy.deepcopy(self.children)
-        newline_node = AttrToken('WS_ALL', '\n')
+
+        if comment:
+            new_children = self.clean_ws(new_children)
 
         if following_node is None:
-            new_children.append(newline_node)
+            if not comment:
+                new_children.append(self.newline_node())
             new_children.append(node)
         else:
             index = self.children.index(following_node)
             new_children.insert(index, node)
-
-            new_children.insert(index + 1, newline_node)   # Insert after newly inserted node
+            new_children.insert(index + 1, self.newline_node())   # Insert after newly inserted node
 
         new_children_clean = self.clean_ws(new_children)
         self.children = new_children_clean
 
     def add_comment_node(self, comment, adjacent_node=None):
-        new_children = copy.deepcopy(self.children)
-        new_children_clean = self.clean_ws(new_children)
-
         comment_node = AttrToken('COMMENT', f' ; {comment}')
-        newline_node = AttrToken('WS_ALL', '\n')
-
-        if adjacent_node is None:
-            new_children_clean.append(comment_node)
-            new_children_clean.append(newline_node)
-
-        self.children = new_children_clean
+        self.add_node(comment_node, adjacent_node, comment=True)
 
     def add_newline_node(self):
-        newline_node = AttrToken('WS_ALL', '\n')
-        self.children.append(newline_node)
+        self.children.append(self.newline_node())
 
     @property
     def tokens(self):
