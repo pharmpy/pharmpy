@@ -52,4 +52,5 @@ def test_eta_gradient(testdata):
     dataset = pd.DataFrame({'ID': [1, 2], 'TIME': [0, 0], 'DV': [3, 4]})
     grad = model.eta_gradient(dataset=dataset)
 
-    pd.testing.assert_frame_equal(grad, pd.DataFrame([1.0, 1.0]))
+    pd.testing.assert_frame_equal(grad, pd.DataFrame([1.0, 1.0],
+                                                     columns=['dF/dETA(1)']))

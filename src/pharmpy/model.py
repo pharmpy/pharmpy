@@ -163,6 +163,20 @@ class Model:
         d = [y.diff(sympy.Symbol(x.name)) for x in self.random_variables.ruv_rvs]
         return d
 
+    def _replace_parameters(self, y, etas, parameters):
+        if parameters is not None:
+            y = [x.subs(parameters) for x in y]
+        else:
+            y = [x.subs(self.parameters.inits) for x in y]
+        if etas is not None:
+            y = [x.subs(etas) for x in y]
+        elif self.initial_individual_estimates is not None:
+            y = [x.subs(self.initial_individual_estimates) for x in y]
+        else:
+            repl = {sympy.Symbol(eta.name): 0 for eta in self.random_variables.etas}
+            y = [x.subs(repl) for x in y]
+        return y
+
     def eta_gradient(self, etas=None, parameters=None, dataset=None):
         """Numeric eta gradient
 
@@ -171,18 +185,33 @@ class Model:
            of the model. Return a DataFrame of gradients.
         """
         y = self.symbolic_eta_gradient()
-        if parameters is not None:
-            y = [x.subs(parameters) for x in y]
-        else:
-            y = [x.subs(self.parameters.inits) for x in y]
+        y = self._replace_parameters(y, etas, parameters)
 
-        if etas is not None:
-            y = [x.subs(etas) for x in y]
-        elif self.initial_individual_estimates is not None:
-            y = [x.subs(self.initial_individual_estimates) for x in y]
+        if dataset is not None:
+            df = dataset
         else:
-            repl = {sympy.Symbol(eta.name): 0 for eta in self.random_variables.etas}
-            y = [x.subs(repl) for x in y]
+            df = self.dataset
+
+        def fn(row):
+            row = row.to_dict()
+            a = [np.float64(x.subs(row)) for x in y]
+            return a
+
+        derivative_names = [f'dF/d{eta.name}' for eta in self.random_variables.etas]
+        grad = df.apply(fn, axis=1, result_type='expand')
+        grad = pd.DataFrame(grad)
+        grad.columns = derivative_names
+        return grad
+
+    def eps_gradient(self, etas=None, parameters=None, dataset=None):
+        """Numeric epsilon gradient
+        """
+        y = self.symbolic_eps_gradient()
+        y = self._replace_parameters(y, etas, parameters)
+        eps_names = [eps.name for eps in self.random_variables.ruv_rvs]
+
+        repl = {sympy.Symbol(eps): 0 for eps in eps_names}
+        y = [x.subs(repl) for x in y]
 
         if dataset is not None:
             df = dataset
@@ -195,5 +224,7 @@ class Model:
             return a
 
         grad = df.apply(fn, axis=1, result_type='expand')
-        grad = pd.DataFrame(grad)   # To always return DataFrame
+        derivative_names = [f'dY/d{eps}' for eps in eps_names]
+        grad = pd.DataFrame(grad)
+        grad.columns = derivative_names
         return grad
