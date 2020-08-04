@@ -203,6 +203,8 @@ class CodeRecord(Record):
 
                 index_past += 1
 
+        self._root_updated.add_newline_node()
+
         self.nodes = copy.deepcopy(self._nodes_updated)
         self._nodes_updated = []
         self.root = copy.deepcopy(self._root_updated)

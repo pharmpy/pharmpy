@@ -356,6 +356,10 @@ class AttrTree(Tree):
 
         self.children = new_children_clean
 
+    def add_newline_node(self):
+        newline_node = AttrToken('WS_ALL', '\n')
+        self.children.append(newline_node)
+
     @property
     def tokens(self):
         """All tokens as flattened list."""

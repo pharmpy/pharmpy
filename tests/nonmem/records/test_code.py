@@ -242,10 +242,10 @@ def test_statements_setter_add(parser, buf_original, buf_new):
 
 @pytest.mark.usefixtures('parser')
 @pytest.mark.parametrize('buf_original,buf_new', [
-    ('$PRED\nY = A + B', '$PRED\nZ = E*F'),
-    ('$PRED\nY = A + B\nX = C - D\nZ = E * F', '$PRED\nY = A + B\nX = C\nZ = E * F'),
-    ('$PRED\nY = A + B\nX = C - D\nZ = E * F', '$PRED\nY = A + B\nX = C - D\nZ = E'),
-    ('$PRED\nY = A + B\nX = C - D\nZ = E * F\n', '$PRED\nY = A + B\nX = C\nZ = E * F'),
+    ('$PRED\nY = A + B', '$PRED\nZ = E*F\n'),
+    ('$PRED\nY = A + B\nX = C - D\nZ = E * F', '$PRED\nY = A + B\nX = C\nZ = E * F\n'),
+    ('$PRED\nY = A + B\nX = C - D\nZ = E * F', '$PRED\nY = A + B\nX = C - D\nZ = E\n'),
+    ('$PRED\nY = A + B\nX = C - D\nZ = E * F\n', '$PRED\nY = A + B\nX = C\nZ = E * F\n'),
 ])
 def test_statements_setter_change(parser, buf_original, buf_new):
     rec_original = parser.parse(buf_original).records[0]
@@ -261,9 +261,9 @@ def test_statements_setter_change(parser, buf_original, buf_new):
 @pytest.mark.usefixtures('parser')
 @pytest.mark.parametrize('buf_original,symbol,expression,buf_new', [
     ('$PRED\nY = THETA(1) + ETA(1) + EPS(1)', S('CL'), 2,
-     '$PRED\nY = THETA(1) + ETA(1) + EPS(1)\nCL = 2'),
+     '$PRED\nY = THETA(1) + ETA(1) + EPS(1)\nCL = 2\n'),
     ('$PRED\n"FIRST\n"!Fortran code goes here\n', S('V'), -S('CL'),
-     '$PRED\n"FIRST\n"!Fortran code goes here\nV = -CL'),
+     '$PRED\n"FIRST\n"!Fortran code goes here\nV = -CL\n'),
 ])
 def test_statements_setter_add_from_sympy(parser, buf_original, symbol, expression, buf_new):
     rec_original = parser.parse(buf_original).records[0]
