@@ -209,11 +209,7 @@ class RandomVariables(OrderedSet):
                 parameters += list(dist.sigma.diagonal())
         return parameters
 
-    def merge_normal_distributions(self, fill=0):
-        """Merge all normal distributed rvs together into one joint normal
-
-           Set new covariances (and previous 0 covs) to 'fill'
-        """
+    def _calc_covariance_matrix(self):
         non_altered = []
         means = []
         blocks = []
@@ -231,12 +227,30 @@ class RandomVariables(OrderedSet):
         if names:
             M = sympy.BlockDiagMatrix(*blocks)
             M = sympy.Matrix(M)
-            if fill != 0:
-                for row, col in itertools.product(range(M.rows), range(M.cols)):
-                    if M[row, col] == 0:
-                        M[row, col] = fill
-            new_rvs = JointNormalSeparate(names, means, M)
-            self.__init__(new_rvs + non_altered)
+        return means, M, names, non_altered
+
+    def covariance_matrix(self):
+        """Covariance matrix of all random variables
+
+           currently only supports normal distribution
+        """
+        _, M, _, others = self._calc_covariance_matrix()
+        if others:
+            raise ValueError('Only normal distributions are supported')
+        return M
+
+    def merge_normal_distributions(self, fill=0):
+        """Merge all normal distributed rvs together into one joint normal
+
+           Set new covariances (and previous 0 covs) to 'fill'
+        """
+        means, M, names, others = self._calc_covariance_matrix()
+        if fill != 0:
+            for row, col in itertools.product(range(M.rows), range(M.cols)):
+                if M[row, col] == 0:
+                    M[row, col] = fill
+        new_rvs = JointNormalSeparate(names, means, M)
+        self.__init__(new_rvs + others)
 
     def copy(self):
         # Special copy because separated joints need special treatment
