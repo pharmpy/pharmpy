@@ -49,8 +49,7 @@ def test_resampler_default(df):
 
 def test_resampler_too_big_sample_size(df):
     with pytest.raises(ValueError):
-        resampler = iters.Resample(df, 'ID', replace=False, sample_size=4)
-        next(resampler)
+        iters.Resample(df, 'ID', replace=False, sample_size=4)
 
 
 def test_resampler_noreplace(df):

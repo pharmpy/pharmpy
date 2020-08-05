@@ -35,6 +35,11 @@ def test_illegal_initialization(name, init, lower, upper, fix):
         Parameter(name, init, lower, upper, fix)
 
 
+def test_repr():
+    param = Parameter('X', 2, lower=0, upper=23)
+    assert repr(param) == 'Parameter("X", 2, lower=0, upper=23, fix=False)'
+
+
 def test_unconstrain():
     param = Parameter('X', 2, lower=0, upper=23)
     param.unconstrain()

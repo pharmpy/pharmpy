@@ -26,6 +26,11 @@ def test_detection():
     Model(StringIO(" $PRO l907"))
 
 
+def test_validate(pheno_path):
+    model = Model(pheno_path)
+    model.validate()
+
+
 def test_parameters(pheno_path):
     model = Model(pheno_path)
     params = model.parameters

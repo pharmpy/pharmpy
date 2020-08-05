@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import pytest
 import sympy
-from numpy.testing import assert_array_equal
+from numpy.testing import assert_allclose, assert_array_equal
 from pandas.testing import assert_series_equal
 
 import pharmpy.math
@@ -30,12 +30,25 @@ def test_round_and_keep_sum():
     rounded = pharmpy.math.round_and_keep_sum(ser, 20)
     assert_series_equal(rounded, correct_results)
 
+    ser = pd.Series([1.0])
+    rounded = pharmpy.math.round_and_keep_sum(ser, 1.0)
+    assert_series_equal(rounded, pd.Series([1]))
+
+    rounded = pharmpy.math.round_and_keep_sum(pd.Series([], dtype=np.float64), 1.0)
+    assert_series_equal(rounded, pd.Series([], dtype=np.int64))
+
 
 def test_corr2cov():
     corr = np.array([[1.00, 0.25, 0.90], [0.25, 1.00, 0.50], [0.90, 0.50, 1.00]])
     sd = np.array([1, 4, 9])
     cov = pharmpy.math.corr2cov(corr, sd)
     assert_array_equal(cov, np.array([[1, 1, 8.1], [1, 16, 18], [8.1, 18, 81]]))
+
+
+def test_cov2corr():
+    cov = np.array([[1.0, 1.0, 8.1], [1.0, 16.0, 18.0], [8.1, 18.0, 81.0]])
+    corr = pharmpy.math.cov2corr(cov)
+    assert_allclose(corr, np.array([[1.0, 0.25, 0.9], [0.25, 1, 0.5], [0.9, 0.5, 1]]))
 
 
 def test_se_delta_method():
@@ -94,7 +107,5 @@ def test_conditional_joint_normal():
     mu = [0, 0, WGT_mean]
 
     mu_bar, sigma_bar = pharmpy.math.conditional_joint_normal(mu, WGT_sigma, np.array([WGT_5th]))
-
-    print(mu_bar)
 
     np.testing.assert_array_almost_equal(mu_bar, np.array([-0.12459637, -0.04671127]))

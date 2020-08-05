@@ -1,4 +1,3 @@
-# -*- encoding: utf-8 -*-
 """Factory for creating a pharmpy model from a "native" object representation.
 
 Definitions
@@ -19,8 +18,7 @@ def Model(obj, **kwargs):
 
     .. _path-like object: https://docs.python.org/3/glossary.html#term-path-like-object
     """
-    if obj:
-        src = source.Source(obj)
-        model_class = detect_model(src)
-        model = model_class(src, **kwargs)
-        return model
+    src = source.Source(obj)
+    model_class = detect_model(src)
+    model = model_class(src, **kwargs)
+    return model
