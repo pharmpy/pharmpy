@@ -8,6 +8,11 @@ from sympy import Symbol
 from pharmpy import Model
 from pharmpy.parameter import Parameter
 from pharmpy.plugins.nonmem.nmtran_parser import NMTranParser
+from pharmpy.statements import Assignment
+
+
+def S(x):
+    return Symbol(x, real=True)
 
 
 def test_source(pheno_path):
@@ -91,12 +96,59 @@ def test_add_parameters(pheno_path, param_new, init_expected):
 
     pset.add(param_new)
     model.parameters = pset
+    model.update_source()
 
     assert len(pset) == 7
     assert len(model.parameters) == 7
     assert model.parameters['THETA(4)'].init == init_expected
 
+    parser = NMTranParser()
+    stream = parser.parse(str(model))
+
+    assert str(model.control_stream) == str(stream)
+
+
+@pytest.mark.parametrize('statement_new', [
+    (Assignment(S('CL'), 2)),
+    (Assignment(S('Y'), S('THETA(4)') + S('THETA(5)')))
+])
+def test_add_statements(pheno_path, statement_new):
+    model = Model(pheno_path)
+    sset = model.statements
+
+    assert len(sset) == 8
+
+    sset.append(statement_new)
+    model.statements = sset
     model.update_source()
+
+    assert len(sset) == 9
+    assert len(model.statements) == 9
+
+    parser = NMTranParser()
+    stream = parser.parse(str(model))
+
+    assert str(model.control_stream) == str(stream)
+
+
+@pytest.mark.parametrize('param_new, statement_new', [
+    (Parameter('THETA', 0.1), Assignment(S('Y'), S('THETA(4)') + S('S1'))),
+])
+def test_add_parameters_and_statements(pheno_path, param_new, statement_new):
+    model = Model(pheno_path)
+
+    pset = model.parameters
+    pset.add(param_new)
+    model.parameters = pset
+
+    sset = model.statements
+    sset.append(statement_new)
+    model.statements = sset
+
+    model.update_source()
+
+    assert len(model.parameters) == 7
+    assert len(model.statements) == 9
 
     parser = NMTranParser()
     stream = parser.parse(str(model))
