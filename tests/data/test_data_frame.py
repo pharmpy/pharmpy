@@ -1,3 +1,5 @@
+import copy
+
 import pandas as pd
 import pytest
 
@@ -98,3 +100,8 @@ def test_write(fs, df):
     with open("my.csv", "r") as fh:
         contents = fh.read()
     assert contents == "ID,DV,WGT,HGT\n1,0.1,70,185\n1,0.2,72,185\n2,0.5,75,160\n2,0.6,75,160\n"
+
+
+def test_copy(df):
+    new = copy.deepcopy(df)
+    assert id(new) != id(df)
