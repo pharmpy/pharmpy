@@ -229,12 +229,8 @@ class RandomVariables(OrderedSet):
             else:
                 non_altered.extend(rvs)
         if names:
-            if len(blocks) > 1:
-                # Need special case for len(blocks) == 1 because of sympy 1.5.1 bug #18618
-                M = sympy.BlockDiagMatrix(*blocks)
-                M = sympy.Matrix(M)
-            else:
-                M = sympy.Matrix(blocks[0])
+            M = sympy.BlockDiagMatrix(*blocks)
+            M = sympy.Matrix(M)
             if fill != 0:
                 for row, col in itertools.product(range(M.rows), range(M.cols)):
                     if M[row, col] == 0:
