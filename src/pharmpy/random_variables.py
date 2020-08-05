@@ -182,22 +182,22 @@ class RandomVariables(OrderedSet):
 
     @property
     def ruv_rvs(self):
-        """Get set of all ruv random variables (epsilons)
+        """Get list of all ruv random variables (epsilons)
         """
-        ruv = set()
+        ruv = []
         for rv in self:
             if rv.variability_level == VariabilityLevel.RUV:
-                ruv.add(rv)
+                ruv.append(rv)
         return ruv
 
     @property
     def etas(self):
-        """Get set of all eta random variables
+        """Get list of all eta random variables
         """
-        etas = set()
+        etas = []
         for rv in self:
             if rv.variability_level != VariabilityLevel.RUV:
-                etas.add(rv)
+                etas.append(rv)
         return etas
 
     def iiv_variance_parameters(self):

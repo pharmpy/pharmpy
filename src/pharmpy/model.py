@@ -152,7 +152,7 @@ class Model:
         else:
             df = self.dataset
 
-        pred = df.apply(lambda row: y.subs(row.to_dict()), axis=1)
+        pred = df.apply(lambda row: np.float64(y.subs(row.to_dict())), axis=1)
 
         return pred
 
