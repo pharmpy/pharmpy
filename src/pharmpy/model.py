@@ -115,14 +115,19 @@ class Model:
     def symbolic_population_prediction(self):
         """Symbolic model population prediction
         """
+        y = self.symbolic_individual_prediction()
+        for eta in self.random_variables.etas:
+            y = y.subs({sympy.Symbol(eta.name): 0})
+        return y
+
+    def symbolic_individual_prediction(self):
+        """Symbolic model individual prediction
+        """
         y = self._observation()
 
         for eps in self.random_variables.ruv_rvs:
             # FIXME: The rv symbol and the code symbol are different.
             y = y.subs({sympy.Symbol(eps.name): 0})
-
-        for eta in self.random_variables.etas:
-            y = y.subs({sympy.Symbol(eta.name): 0})
 
         return y
 
@@ -151,6 +156,38 @@ class Model:
 
         return pred
 
+    def individual_prediction(self, etas=None, parameters=None, dataset=None):
+        """Numeric individual prediction
+        """
+        y = self.symbolic_individual_prediction()
+        if parameters is not None:
+            y = y.subs(parameters)
+        else:
+            y = y.subs(self.parameters.inits)
+
+        if dataset is not None:
+            df = dataset
+        else:
+            df = self.dataset
+
+        idcol = df.pharmpy.id_label
+
+        if etas is None:
+            if self.initial_individual_estimates is not None:
+                etas = self.initial_individual_estimates
+            else:
+                etas = pd.DataFrame(0, index=df.pharmpy.ids,
+                                    columns=[eta.name for eta in self.random_variables.etas])
+
+        def fn(row):
+            row = row.to_dict()
+            curetas = etas.loc[row[idcol]].to_dict()
+            a = np.float64(y.subs(row).subs(curetas))
+            return a
+
+        ipred = df.apply(fn, axis=1)
+        return ipred
+
     def symbolic_eta_gradient(self):
         y = self._observation()
         for eps in self.random_variables.ruv_rvs:
@@ -163,18 +200,11 @@ class Model:
         d = [y.diff(sympy.Symbol(x.name)) for x in self.random_variables.ruv_rvs]
         return d
 
-    def _replace_parameters(self, y, etas, parameters):
+    def _replace_parameters(self, y, parameters):
         if parameters is not None:
             y = [x.subs(parameters) for x in y]
         else:
             y = [x.subs(self.parameters.inits) for x in y]
-        if etas is not None:
-            y = [x.subs(etas) for x in y]
-        elif self.initial_individual_estimates is not None:
-            y = [x.subs(self.initial_individual_estimates) for x in y]
-        else:
-            repl = {sympy.Symbol(eta.name): 0 for eta in self.random_variables.etas}
-            y = [x.subs(repl) for x in y]
         return y
 
     def eta_gradient(self, etas=None, parameters=None, dataset=None):
@@ -185,16 +215,25 @@ class Model:
            of the model. Return a DataFrame of gradients.
         """
         y = self.symbolic_eta_gradient()
-        y = self._replace_parameters(y, etas, parameters)
+        y = self._replace_parameters(y, parameters)
 
         if dataset is not None:
             df = dataset
         else:
             df = self.dataset
+        idcol = df.pharmpy.id_label
+
+        if etas is None:
+            if self.initial_individual_estimates is not None:
+                etas = self.initial_individual_estimates
+            else:
+                etas = pd.DataFrame(0, index=df.pharmpy.ids,
+                                    columns=[eta.name for eta in self.random_variables.etas])
 
         def fn(row):
             row = row.to_dict()
-            a = [np.float64(x.subs(row)) for x in y]
+            curetas = etas.loc[row[idcol]].to_dict()
+            a = [np.float64(x.subs(row).subs(curetas)) for x in y]
             return a
 
         derivative_names = [f'dF/d{eta.name}' for eta in self.random_variables.etas]
@@ -207,9 +246,8 @@ class Model:
         """Numeric epsilon gradient
         """
         y = self.symbolic_eps_gradient()
-        y = self._replace_parameters(y, etas, parameters)
+        y = self._replace_parameters(y, parameters)
         eps_names = [eps.name for eps in self.random_variables.ruv_rvs]
-
         repl = {sympy.Symbol(eps): 0 for eps in eps_names}
         y = [x.subs(repl) for x in y]
 
@@ -218,9 +256,19 @@ class Model:
         else:
             df = self.dataset
 
+        idcol = df.pharmpy.id_label
+
+        if etas is None:
+            if self.initial_individual_estimates is not None:
+                etas = self.initial_individual_estimates
+            else:
+                etas = pd.DataFrame(0, index=df.pharmpy.ids,
+                                    columns=[eta.name for eta in self.random_variables.etas])
+
         def fn(row):
             row = row.to_dict()
-            a = [np.float64(x.subs(row)) for x in y]
+            curetas = etas.loc[row[idcol]].to_dict()
+            a = [np.float64(x.subs(row).subs(curetas)) for x in y]
             return a
 
         grad = df.apply(fn, axis=1, result_type='expand')

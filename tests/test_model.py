@@ -1,6 +1,9 @@
+from io import StringIO
+
 import pandas as pd
 from sympy import Symbol
 
+import pharmpy.data
 from pharmpy import Model
 
 
@@ -21,12 +24,30 @@ def test_symbolic_population_prediction(testdata):
     assert model.symbolic_population_prediction() == S('THETA(1)')
 
 
+def test_symbolic_individual_prediction(testdata):
+    path = testdata / 'nonmem' / 'minimal.mod'
+    model = Model(path)
+
+    assert model.symbolic_individual_prediction() == S('THETA(1)') + S('ETA(1)')
+
+
 def test_population_prediction(testdata):
     path = testdata / 'nonmem' / 'minimal.mod'
     model = Model(path)
 
     dataset = pd.DataFrame({'ID': [1, 2], 'TIME': [0, 0], 'DV': [3, 4]})
     pred = model.population_prediction(dataset=dataset)
+
+    assert list(pred) == [0.1, 0.1]
+
+
+def test_individual_prediction(testdata):
+    path = testdata / 'nonmem' / 'minimal.mod'
+    model = Model(path)
+
+    dataset = pharmpy.data.read_nonmem_dataset(StringIO('1 0 3\n2 0 4\n'),
+                                               colnames=['ID', 'TIME', 'DV'])
+    pred = model.individual_prediction(dataset=dataset)
 
     assert list(pred) == [0.1, 0.1]
 
@@ -49,7 +70,8 @@ def test_eta_gradient(testdata):
     path = testdata / 'nonmem' / 'minimal.mod'
     model = Model(path)
 
-    dataset = pd.DataFrame({'ID': [1, 2], 'TIME': [0, 0], 'DV': [3, 4]})
+    dataset = pharmpy.data.read_nonmem_dataset(StringIO('1 0 3\n2 0 4\n'),
+                                               colnames=['ID', 'TIME', 'DV'])
     grad = model.eta_gradient(dataset=dataset)
 
     pd.testing.assert_frame_equal(grad, pd.DataFrame([1.0, 1.0],
