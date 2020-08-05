@@ -94,3 +94,15 @@ def test_update(parser):
     pset['THETA(3)'].fix = True
     rec.update(pset, 1)
     assert str(rec) == '$THETA 1 FIX 2 3 FIX ;CMT'
+
+
+@pytest.mark.usefixtures('parser')
+@pytest.mark.parametrize('buf,name_original,name_nonmem,buf_new', [
+    ('$THETA 0', 'TVCL', 'THETA(1)', '$THETA 0 ; TVCL\n'),
+])
+def test_add_nonmem_name(parser, buf, name_original, name_nonmem, buf_new):
+    rec = parser.parse(buf).records[0]
+    rec.add_nonmem_name(name_original, name_nonmem)
+
+    assert str(rec) == buf_new
+    assert rec.nonmem_names[name_nonmem] == name_original
