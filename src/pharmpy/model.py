@@ -17,7 +17,9 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import scipy.linalg
 import sympy
+
 
 
 class ModelException(Exception):
@@ -145,7 +147,10 @@ class Model:
         if parameters is not None:
             y = y.subs(parameters)
         else:
-            y = y.subs(self.parameters.inits)
+            if self.modelfit_results is not None:
+                y = y.subs(self.modelfit_results.parameter_estimates.to_dict())
+            else:
+                y = y.subs(self.parameters.inits)
 
         if dataset is not None:
             df = dataset
@@ -276,3 +281,40 @@ class Model:
         grad = pd.DataFrame(grad)
         grad.columns = derivative_names
         return grad
+
+    def weighted_residuals(self, parameters=None, dataset=None):
+        omega = self.random_variables.covariance_matrix()
+        sigma = self.random_variables.covariance_matrix(ruv=True)
+        if parameters is None:
+            if self.modelfit_results is not None:
+                parameters = self.modelfit_results.parameter_estimates.to_dict()
+            else:
+                parameters = self.parameters.inits
+        omega = omega.subs(parameters)
+        sigma = sigma.subs(parameters)
+        omega = np.float64(omega)
+        sigma = np.float64(sigma)
+        if dataset is not None:
+            df = dataset
+        else:
+            df = self.dataset
+        # FIXME: Could have option to gradients to set all etas 0
+        etas = pd.DataFrame(0, index=df.pharmpy.ids,
+                            columns=[eta.name for eta in self.random_variables.etas])
+        G = self.eta_gradient(etas=etas, parameters=parameters, dataset=dataset)
+        H = self.eps_gradient(etas=etas, parameters=parameters, dataset=dataset)
+        F = self.population_prediction()
+        index = df[df.pharmpy.id_label]
+        G.index = index
+        H.index = index
+        F.index = index
+        WRES = np.float64([])
+        for i in df.pharmpy.ids:
+            Gi = np.float64(G.loc[[i]])
+            Hi = np.float64(H.loc[[i]])
+            Fi = F[i:i].values
+            DVi = np.float64(df['DV'][df[df.pharmpy.id_label] == i])
+            Ci = Gi @ omega @ Gi.T + np.diag(np.diag(Hi @ sigma @ Hi.T))
+            WRESi = scipy.linalg.sqrtm(scipy.linalg.inv(Ci)) @ (DVi - Fi)
+            WRES = np.concatenate((WRES, WRESi))
+        return pd.Series(WRES)

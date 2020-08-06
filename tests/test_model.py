@@ -9,7 +9,7 @@ from pharmpy import Model
 
 tabpath = Path(__file__).parent / 'testdata' / 'nonmem' / 'pheno_real_linbase.tab'
 lincorrect = pharmpy.data.read_nonmem_dataset(tabpath, ignore_character='@',
-                                              colnames=['G11', 'G21', 'H11', 'CIPREDI', 'DV',
+                                              colnames=['ID', 'G11', 'G21', 'H11', 'CIPREDI', 'DV',
                                                         'PRED', 'RES', 'WRES'])
 
 
@@ -119,4 +119,12 @@ def test_eps_gradient(testdata):
     linmod = Model(linpath)
     grad = linmod.eps_gradient(etas=linmod.modelfit_results.individual_estimates)
     pd.testing.assert_series_equal(lincorrect['H11'], grad.iloc[:, 0], check_less_precise=4,
+                                   check_names=False)
+
+
+def test_weighted_residuals(testdata):
+    linpath = testdata / 'nonmem' / 'pheno_real_linbase.mod'
+    linmod = Model(linpath)
+    wres = linmod.weighted_residuals()
+    pd.testing.assert_series_equal(lincorrect['WRES'], wres, check_less_precise=4,
                                    check_names=False)
