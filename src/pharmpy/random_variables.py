@@ -172,13 +172,15 @@ class RandomVariables(OrderedSet):
             dist = rv.pspace.distribution
             if isinstance(dist, stats.crv_types.NormalDistribution):
                 i += 1
-                if (level is None or level == rv.variability_level) and (exclude_level is None or exclude_level != rv.variability_level):
+                if (level is None or level == rv.variability_level) and \
+                   (exclude_level is None or exclude_level != rv.variability_level):
                     yield [rv], dist
             else:       # Joint Normal
                 n = self[i].pspace.distribution.sigma.rows
                 rvs = [self[k] for k in range(i, i + n)]
                 i += n
-                if (level is None or level == rv.variability_level) and (exclude_level is None or exclude_level != rv.variability_level):
+                if (level is None or level == rv.variability_level) and \
+                   (exclude_level is None or exclude_level != rv.variability_level):
                     yield rvs, dist
 
     @property

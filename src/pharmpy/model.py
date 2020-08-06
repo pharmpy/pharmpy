@@ -21,7 +21,6 @@ import scipy.linalg
 import sympy
 
 
-
 class ModelException(Exception):
     pass
 
