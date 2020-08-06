@@ -160,10 +160,11 @@ class RandomVariables(OrderedSet):
             params |= dist.free_symbols
         return sorted([str(p) for p in params])
 
-    def distributions(self, level=None):
+    def distributions(self, level=None, exclude_level=None):
         """Iterate with one entry per distribution instead of per random variable.
 
            level - only iterate over random variables of this variability level
+           exclude_level - iterate over random variables of all other variability levels
         """
         i = 0
         while i < len(self):
@@ -171,13 +172,13 @@ class RandomVariables(OrderedSet):
             dist = rv.pspace.distribution
             if isinstance(dist, stats.crv_types.NormalDistribution):
                 i += 1
-                if level is None or level == rv.variability_level:
+                if (level is None or level == rv.variability_level) and (exclude_level is None or exclude_level != rv.variability_level):
                     yield [rv], dist
             else:       # Joint Normal
                 n = self[i].pspace.distribution.sigma.rows
                 rvs = [self[k] for k in range(i, i + n)]
                 i += n
-                if level is None or level == rv.variability_level:
+                if (level is None or level == rv.variability_level) and (exclude_level is None or exclude_level != rv.variability_level):
                     yield rvs, dist
 
     @property
@@ -209,12 +210,16 @@ class RandomVariables(OrderedSet):
                 parameters += list(dist.sigma.diagonal())
         return parameters
 
-    def _calc_covariance_matrix(self):
+    def _calc_covariance_matrix(self, ruv=False):
         non_altered = []
         means = []
         blocks = []
         names = []
-        for rvs, dist in self.distributions():
+        if ruv:
+            dists = self.distributions(level=VariabilityLevel.RUV)
+        else:
+            dists = self.distributions(exclude_level=VariabilityLevel.RUV)
+        for rvs, dist in dists:
             names.extend([rv.name for rv in rvs])
             if isinstance(dist, stats.crv_types.NormalDistribution):
                 means.append(dist.mean)
@@ -229,12 +234,12 @@ class RandomVariables(OrderedSet):
             M = sympy.Matrix(M)
         return means, M, names, non_altered
 
-    def covariance_matrix(self):
+    def covariance_matrix(self, ruv=False):
         """Covariance matrix of all random variables
 
            currently only supports normal distribution
         """
-        _, M, _, others = self._calc_covariance_matrix()
+        _, M, _, others = self._calc_covariance_matrix(ruv=ruv)
         if others:
             raise ValueError('Only normal distributions are supported')
         return M
