@@ -83,12 +83,12 @@ def test_set_parameters(pheno_path):
     assert model.parameters['THETA(2)'] == Parameter('THETA(2)', 1.00916, lower=0, upper=1000000)
 
 
-@pytest.mark.parametrize('param_new,init_expected', [
-    (Parameter('TVCL', 0.2), 0.2),
-    (Parameter('THETA', 0.1), 0.1),
-    (Parameter('THETA', 0.1, 0, fix=True), 0.1),
+@pytest.mark.parametrize('param_new,init_expected,buf_new', [
+    (Parameter('TVCL', 0.2), 0.2, '$THETA  0.2 ; TVCL'),
+    (Parameter('THETA', 0.1), 0.1, '$THETA  0.1'),
+    (Parameter('THETA', 0.1, 0, fix=True), 0.1, '$THETA  (0,0.1) FIX'),
 ])
-def test_add_parameters(pheno_path, param_new, init_expected):
+def test_add_parameters(pheno_path, param_new, init_expected, buf_new):
     model = Model(pheno_path)
     pset = model.parameters
 
@@ -99,7 +99,6 @@ def test_add_parameters(pheno_path, param_new, init_expected):
     model.update_source()
 
     assert len(pset) == 7
-    assert len(model.parameters) == 7
     assert model.parameters['THETA(4)'].init == init_expected
 
     parser = NMTranParser()
@@ -107,12 +106,23 @@ def test_add_parameters(pheno_path, param_new, init_expected):
 
     assert str(model.control_stream) == str(stream)
 
+    rec_ref = f'$THETA  (0,0.00469307) ; CL\n' \
+              f'$THETA  (0,1.00916) ; V\n' \
+              f'$THETA  (-.99,.1)\n' \
+              f'{buf_new}\n'
 
-@pytest.mark.parametrize('statement_new', [
-    (Assignment(S('CL'), 2)),
-    (Assignment(S('Y'), S('THETA(4)') + S('THETA(5)')))
+    rec_mod = ''
+    for rec in model.control_stream.get_records('THETA'):
+        rec_mod += str(rec)
+
+    assert rec_ref == rec_mod
+
+
+@pytest.mark.parametrize('statement_new,buf_new', [
+    (Assignment(S('CL'), 2), 'CL = 2'),
+    (Assignment(S('Y'), S('THETA(4)') + S('THETA(5)')), 'Y = THETA(4) + THETA(5)')
 ])
-def test_add_statements(pheno_path, statement_new):
+def test_add_statements(pheno_path, statement_new, buf_new):
     model = Model(pheno_path)
     sset = model.statements
 
@@ -122,13 +132,25 @@ def test_add_statements(pheno_path, statement_new):
     model.statements = sset
     model.update_source()
 
-    assert len(sset) == 9
     assert len(model.statements) == 9
 
     parser = NMTranParser()
     stream = parser.parse(str(model))
 
     assert str(model.control_stream) == str(stream)
+
+    rec_ref = f'$PK\nIF(AMT.GT.0) BTIME=TIME\nTAD=TIME-BTIME\n'\
+              f'      TVCL=THETA(1)*WGT\n' \
+              f'      TVV=THETA(2)*WGT\n' \
+              f'IF(APGR.LT.5) TVV=TVV*(1+THETA(3))\n' \
+              f'      CL=TVCL*EXP(ETA(1))\n' \
+              f'      V=TVV*EXP(ETA(2))\n' \
+              f'      S1=V\n' \
+              f'{buf_new}\n'
+
+    rec_mod = str(model.control_stream.get_records('PK')[0])
+
+    assert rec_ref == rec_mod
 
 
 @pytest.mark.parametrize('param_new, statement_new', [
