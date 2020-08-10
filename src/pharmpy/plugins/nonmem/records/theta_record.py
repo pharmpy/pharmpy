@@ -16,7 +16,7 @@ class ThetaRecord(Record):
     def add_nonmem_name(self, name_original, name_nonmem):
         self.root.add_comment_node(name_original)
         self.root.add_newline_node()
-        self.nonmem_names[name_nonmem] = name_original
+        self.nonmem_names[name_original] = name_nonmem
 
     def parameters(self, first_theta):
         """Get a parameter set for this theta record.

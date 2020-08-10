@@ -105,4 +105,4 @@ def test_add_nonmem_name(parser, buf, name_original, name_nonmem, buf_new):
     rec.add_nonmem_name(name_original, name_nonmem)
 
     assert str(rec) == buf_new
-    assert rec.nonmem_names[name_nonmem] == name_original
+    assert rec.nonmem_names[name_original] == name_nonmem
