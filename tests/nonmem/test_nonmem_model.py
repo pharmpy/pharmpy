@@ -153,10 +153,12 @@ def test_add_statements(pheno_path, statement_new, buf_new):
     assert rec_ref == rec_mod
 
 
-@pytest.mark.parametrize('param_new, statement_new', [
-    (Parameter('THETA', 0.1), Assignment(S('Y'), S('THETA(4)') + S('S1'))),
+@pytest.mark.parametrize('param_new, statement_new, buf_original, buf_new', [
+    (Parameter('X', 0.1), Assignment(S('Y'), S('X') + S('S1')),
+     'Y = S1 + X', 'Y = S1 + THETA(4)'),
 ])
-def test_add_parameters_and_statements(pheno_path, param_new, statement_new):
+def test_add_parameters_and_statements(pheno_path, param_new, statement_new,
+                                       buf_original, buf_new):
     model = Model(pheno_path)
 
     pset = model.parameters
@@ -167,15 +169,20 @@ def test_add_parameters_and_statements(pheno_path, param_new, statement_new):
     sset.append(statement_new)
     model.statements = sset
 
+    rec = '$PK\nIF(AMT.GT.0) BTIME=TIME\nTAD=TIME-BTIME\n' \
+          '      TVCL=THETA(1)*WGT\n' \
+          '      TVV=THETA(2)*WGT\n' \
+          'IF(APGR.LT.5) TVV=TVV*(1+THETA(3))\n' \
+          '      CL=TVCL*EXP(ETA(1))\n' \
+          '      V=TVV*EXP(ETA(2))\n' \
+          '      S1=V\n'
+
+    rec_original = f'{rec}{buf_original}\n'
+    rec_new = f'{rec}{buf_new}\n'
+
+    assert str(model.get_pred_pk_record()) == rec_original
     model.update_source()
-
-    assert len(model.parameters) == 7
-    assert len(model.statements) == 9
-
-    parser = NMTranParser()
-    stream = parser.parse(str(model))
-
-    assert str(model.control_stream) == str(stream)
+    assert str(model.get_pred_pk_record()) == rec_new
 
 
 def test_results(pheno_path):
