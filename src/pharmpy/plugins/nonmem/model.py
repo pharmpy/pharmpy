@@ -86,10 +86,16 @@ class Model(pharmpy.model.Model):
         if not self._parameters_updated:
             return
 
+        code_record = self.get_pred_pk_record()
+
         params = self._parameters
         next_theta = 1
         for theta_record in self.control_stream.get_records('THETA'):
             theta_record.update(params, next_theta)
+
+            if len(theta_record.nonmem_names) > 0:
+                code_record.update(theta_record.nonmem_names)
+
             next_theta += len(theta_record)
         next_omega = 1
         previous_size = None

@@ -314,3 +314,18 @@ class CodeRecord(Record):
 
         statements = ModelStatements(s)
         return statements
+
+    def update(self, nonmem_names):
+        statements_updated = copy.deepcopy(self.statements)
+
+        nonmem_keys = [str(key) for key in nonmem_names.keys()]
+
+        for statement in statements_updated:
+            statement_symbols = [str(symbol) for symbol in statement.free_symbols]
+            for nonmem_key in nonmem_keys:
+                if nonmem_key in statement_symbols:
+                    symbol_old = sympy.Symbol(nonmem_key)
+                    symbol_new = sympy.Symbol(nonmem_names[nonmem_key])
+                    statement.subs(symbol_old, symbol_new)
+
+        self.statements = statements_updated
