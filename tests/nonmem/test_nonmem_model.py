@@ -263,3 +263,13 @@ def test_statements_setter(pheno_path, buf_new, len_expected):
 
     assert len(model.statements) == len_expected
     assert model.statements == statements_new
+
+
+def test_deterministic_theta_comments(pheno_path):
+    model = Model(pheno_path)
+
+    no_option = 0
+    for theta_record in model.control_stream.get_records('THETA'):
+        no_option += len(theta_record.root.all('option'))
+
+    assert no_option == 0
