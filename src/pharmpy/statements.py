@@ -34,6 +34,23 @@ class Assignment:
         return f'{self.symbol} := {self.expression}'
 
 
+class ODE:
+    """A placeholder for one or more ODEs
+    """
+    @property
+    def free_symbols(self):
+        return set()
+
+    def subs(self, old, new):
+        pass
+
+    def __eq__(self, other):
+        return isinstance(other, ODE)
+
+    def __str__(self):
+        return 'ODE-system-placeholder'
+
+
 class Compartment:
     def __init__(self, name, input, output, amount=sympy.Function('A', real=True),
                  volume=sympy.Symbol('V'), idv=sympy.Symbol('t', real=True)):

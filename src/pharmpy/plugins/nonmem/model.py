@@ -13,6 +13,7 @@ from pharmpy.parameter import ParameterSet
 from pharmpy.plugins.nonmem.results import NONMEMChainedModelfitResults
 from pharmpy.plugins.nonmem.table import NONMEMTableFile, PhiTable
 from pharmpy.random_variables import RandomVariables
+from pharmpy.statements import ODE, ModelStatements
 
 from .nmtran_parser import NMTranParser
 
@@ -316,16 +317,34 @@ class Model(pharmpy.model.Model):
 
         rec = self.get_pred_pk_record()
         statements = rec.statements
-        self._statements = statements
 
+        error = self._get_error_record()
+        if error:
+            statements.append(ODE())    # Placeholder for ODE-system
+            statements += error.statements
+
+        self._statements = statements
         return copy.deepcopy(statements)
 
     @statements.setter
     def statements(self, statements_new):
+        main_statements = ModelStatements()
+        error_statements = ModelStatements()
+        found_ode = False
+        for s in statements_new:
+            if isinstance(s, ODE):
+                found_ode = True
+            else:
+                if found_ode:
+                    error_statements.append(s)
+                else:
+                    main_statements.append(s)
         rec = self.get_pred_pk_record()
-
-        rec.statements = statements_new
-        self._statements = rec.statements
+        rec.statements = main_statements
+        error = self._get_error_record()
+        if error:
+            error.statements = error_statements
+        self._statements = statements_new
 
     def get_pred_pk_record(self):
         pred = self.control_stream.get_records('PRED')
@@ -335,6 +354,12 @@ class Model(pharmpy.model.Model):
             return pk[0]
         else:
             return pred[0]
+
+    def _get_error_record(self):
+        error = self.control_stream.get_records('ERROR')
+        if error:
+            error = error[0]
+        return error
 
     def _zero_fix_rvs(self, eta=True):
         zero_fix = []

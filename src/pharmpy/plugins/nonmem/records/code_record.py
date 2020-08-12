@@ -4,7 +4,6 @@ Generic NONMEM code record class.
 """
 
 import copy
-import warnings
 
 import lark
 import sympy
@@ -170,9 +169,7 @@ class CodeRecord(Record):
         self._nodes_updated = copy.deepcopy(self.nodes)
         self._root_updated = copy.deepcopy(self.root)
 
-        if statements_new == statements_past:
-            warnings.warn('New statements same as current, no changes made.')
-        else:
+        if statements_new != statements_past:
             index_past = 0
             last_index_past = len(statements_past) - 1
             last_index_new = len(statements_new) - 1

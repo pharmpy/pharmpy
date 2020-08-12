@@ -16,6 +16,7 @@ from .theta_record import ThetaRecord
 # Dictionary from canonical record name to record class and non_empty rules of parser
 known_records = {
     'DATA': (DataRecord, DataRecordParser),
+    'ERROR': (CodeRecord, CodeRecordParser),
     'ESTIMATION': (OptionRecord, OptionRecordParser),
     'ETAS': (EtasRecord, OptionRecordParser),
     'INPUT': (OptionRecord, OptionRecordParser),

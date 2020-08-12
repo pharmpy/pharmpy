@@ -200,9 +200,6 @@ def test_statements_setter_identical(parser, buf_original, buf_new):
 
     assert rec_original.statements == rec_new.statements
 
-    with pytest.warns(UserWarning):
-        rec_original.statements = rec_new.statements
-
 
 @pytest.mark.usefixtures('parser')
 @pytest.mark.parametrize('buf_original,buf_new,is_comment_present', [

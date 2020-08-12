@@ -8,7 +8,7 @@ from sympy import Symbol
 from pharmpy import Model
 from pharmpy.parameter import Parameter
 from pharmpy.plugins.nonmem.nmtran_parser import NMTranParser
-from pharmpy.statements import Assignment
+from pharmpy.statements import ODE, Assignment, ModelStatements
 
 
 def S(x):
@@ -126,13 +126,19 @@ def test_add_statements(pheno_path, statement_new, buf_new):
     model = Model(pheno_path)
     sset = model.statements
 
-    assert len(sset) == 8
+    assert len(sset) == 14
 
-    sset.append(statement_new)
-    model.statements = sset
+    # Insert new statement before ODE system.
+    new_sset = ModelStatements()
+    for s in sset:
+        if isinstance(s, ODE):
+            new_sset.append(statement_new)
+        new_sset.append(s)
+
+    model.statements = new_sset
     model.update_source()
-
-    assert len(model.statements) == 9
+    print(model.statements)
+    assert len(model.statements) == 15
 
     parser = NMTranParser()
     stream = parser.parse(str(model))
@@ -166,8 +172,15 @@ def test_add_parameters_and_statements(pheno_path, param_new, statement_new,
     model.parameters = pset
 
     sset = model.statements
-    sset.append(statement_new)
-    model.statements = sset
+
+    # Insert new statement before ODE system.
+    new_sset = ModelStatements()
+    for s in sset:
+        if isinstance(s, ODE):
+            new_sset.append(statement_new)
+        new_sset.append(s)
+
+    model.statements = new_sset
 
     rec = '$PK\nIF(AMT.GT.0) BTIME=TIME\nTAD=TIME-BTIME\n' \
           '      TVCL=THETA(1)*WGT\n' \
@@ -256,7 +269,7 @@ def test_statements_setter(pheno_path, buf_new, len_expected):
     parser = NMTranParser()
     statements_new = parser.parse(f'$PRED\n{buf_new}').records[0].statements
 
-    assert len(model.statements) == 8
+    assert len(model.statements) == 14
     assert len(statements_new) == len_expected
 
     model.statements = statements_new
