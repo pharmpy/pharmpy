@@ -79,7 +79,10 @@ class ThetaRecord(Record):
         i = first_theta
         for theta in self.root.all('theta'):
             name = f'THETA({i})'
-            param = parameters[name]
+            try:
+                param = parameters[name]
+            except KeyError:
+                param = parameters[self._find_name(name)]
             new_init = param.init
             if float(str(theta.init)) != new_init:
                 theta.init.tokens[0].value = str(new_init)
@@ -94,6 +97,11 @@ class ThetaRecord(Record):
 
             n = self._multiple(theta)
             i += n
+
+    def _find_name(self, name):
+        for name_original, name_nonmem in self.nonmem_names.items():
+            if name == name_nonmem:
+                return name_original
 
     def __len__(self):
         """Number of thetas in this record

@@ -99,7 +99,7 @@ def test_add_parameters(pheno_path, param_new, init_expected, buf_new):
     model.update_source()
 
     assert len(pset) == 7
-    assert model.parameters['THETA(4)'].init == init_expected
+    assert model.parameters[param_new.name].init == init_expected
 
     parser = NMTranParser()
     stream = parser.parse(str(model))
