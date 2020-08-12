@@ -79,7 +79,7 @@ setup(
     ],
     entry_points={
         'console_scripts': [
-            'pharmpy           = pharmpy.cli:main',
+            'pharmpy           = pharmpy.__main__:run',
         ]
     },
 )

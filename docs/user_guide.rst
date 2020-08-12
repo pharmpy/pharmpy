@@ -8,3 +8,4 @@ User guide
    model
    data
    frem
+   cli

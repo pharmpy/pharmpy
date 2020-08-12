@@ -1,3 +1,4 @@
 pydata-sphinx-theme
+sphinxcontrib-autoprogram
 jupyter-sphinx
 -e .
