@@ -23,9 +23,8 @@ class CovariateEffect:
         else:
             self.template.subs(S('median'), median)
 
-    def applied_effect(self, parameter):            # TODO: rename
-        effect = str(self.template.symbol)
-        return Assignment(parameter, S(parameter) * S(effect))
+        effect = Assignment(parameter, S(parameter) * S(str(self.template.symbol)))
+        return effect
 
     @classmethod
     def exponential(cls):
