@@ -204,3 +204,13 @@ class _RandomData:
 def RandomData():
     """Provide RandomData (helper) class to tests."""
     return _RandomData
+
+
+@pytest.fixture(scope='session')
+def datadir(testdata):
+    return testdata / 'nonmem'
+
+
+@pytest.fixture(scope='session')
+def pheno_path(datadir):
+    return datadir / 'pheno_real.mod'
