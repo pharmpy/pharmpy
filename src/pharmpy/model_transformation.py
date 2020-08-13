@@ -21,7 +21,11 @@ class ModelTransformation:
         covariate_effect.apply(parameter, covariate, p_name, mean, median)
 
         sset = self.model.get_pred_pk_record().statements
+        applied_effect = covariate_effect.applied_effect(parameter)
+
         sset.append(covariate_effect.template)
+        sset.append(applied_effect)
+
         self.model.statements = sset
 
         self.model.update_source()
