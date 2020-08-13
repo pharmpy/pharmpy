@@ -5,16 +5,17 @@ from pharmpy.covariate_effect import CovariateEffect
 from pharmpy.model_transformation import ModelTransformation
 
 
-@pytest.mark.parametrize('added_covariate_effect', [
-    'CLWGT = exp(THETA(4)*(WGT - 1.3))\nCL = CL*CLWGT\n',
+@pytest.mark.parametrize('operation, added_covariate_effect', [
+    ('*', 'CLWGT = exp(THETA(4)*(WGT - 1.3))\nCL = CL*CLWGT\n'),
+    ('+', 'CLWGT = exp(THETA(4)*(WGT - 1.3))\nCL = CL + CLWGT\n'),
 ])
-def test_add_covariate_effect(pheno_path, added_covariate_effect):
+def test_add_covariate_effect(pheno_path, operation, added_covariate_effect):
     model = Model(pheno_path)
     model_t = ModelTransformation(model)
 
     ce = CovariateEffect
 
-    model_t.add_covariate_effect('CL', 'WGT', ce.exponential)
+    model_t.add_covariate_effect('CL', 'WGT', ce.exponential, operation)
 
     rec_ref = f'$PK\n' \
               f'IF(AMT.GT.0) BTIME=TIME\n' \

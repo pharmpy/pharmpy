@@ -1,3 +1,5 @@
+from operator import add, mul
+
 from sympy import Symbol, exp
 
 from pharmpy.statements import Assignment
@@ -11,8 +13,9 @@ class CovariateEffect:
     def __init__(self, template):
         self.template = template
 
-    def apply(self, parameter, covariate, theta_name, mean, median):
-        self.template.symbol = S(f'{parameter}{covariate}')
+    def apply(self, parameter, covariate, theta_name, mean, median, operation_str='*'):
+        effect_name = f'{parameter}{covariate}'
+        self.template.symbol = S(effect_name)
 
         self.template.subs(S('theta'), S(theta_name))
         self.template.subs(S('cov'), S(covariate))
@@ -23,8 +26,16 @@ class CovariateEffect:
         else:
             self.template.subs(S('median'), median)
 
-        effect = Assignment(parameter, S(parameter) * S(str(self.template.symbol)))
+        operation = self._get_operation(operation_str)
+        effect = Assignment(parameter, operation(S(parameter), S(effect_name)))
         return effect
+
+    @staticmethod
+    def _get_operation(operation_str):
+        if operation_str == '*':
+            return mul
+        elif operation_str == '+':
+            return add
 
     @classmethod
     def exponential(cls):

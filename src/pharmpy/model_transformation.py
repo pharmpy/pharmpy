@@ -7,7 +7,7 @@ class ModelTransformation:
     def __init__(self, model):
         self.model = copy.deepcopy(model)
 
-    def add_covariate_effect(self, parameter, covariate, effect):
+    def add_covariate_effect(self, parameter, covariate, effect, operation='*'):
         covariate_effect = effect()
 
         mean = self.get_baselines(str(covariate)).mean()
@@ -18,7 +18,8 @@ class ModelTransformation:
         pset.add(Parameter(p_name, 0.1))
         self.model.parameters = pset
 
-        resulting_statement = covariate_effect.apply(parameter, covariate, p_name, mean, median)
+        resulting_statement = covariate_effect.apply(parameter, covariate, p_name,
+                                                     mean, median, operation)
 
         sset = self.model.get_pred_pk_record().statements
 
