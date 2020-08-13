@@ -12,7 +12,7 @@ class CovariateEffect:
         self.template = template
 
     def apply(self, parameter, covariate, theta_name, mean, median):
-        self.template.symbol = f'{parameter}{covariate}'
+        self.template.symbol = S(f'{parameter}{covariate}')
 
         self.template.subs(S('theta'), S(theta_name))
         self.template.subs(S('cov'), S(covariate))
