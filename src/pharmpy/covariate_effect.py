@@ -1,16 +1,30 @@
-class CovariateEffect:
-    def __init__(self, template, data):
-        self.template = template
-        self.data = data
+from sympy import Symbol, exp
 
-    def apply(self, parameter, covariate, median, mean):
-        pass
+from pharmpy.statements import Assignment
+
+
+def S(x):
+    return Symbol(x, real=True)
+
+
+class CovariateEffect:
+    def __init__(self, template):
+        self.template = template
+
+    def apply(self, parameter, covariate, theta_name, statistic):
+        self.template.symbol = f'{parameter}{covariate}'
+
+        self.template.subs(S('theta'), S(theta_name))
+        self.template.subs(S('cov'), S(covariate))
+        self.template.subs(S('stat'), statistic)
 
     @classmethod
     def exponential(cls):
-        template = None
-        data = None
-        return cls(template, data)
+        symbol = S('symbol')
+        expression = exp(S('theta') * (S('cov') - S('mean')))
+        template = Assignment(symbol, expression)
 
-    def get_statistics(self, statistic_type, column):
-        return statistic_type(self.data[column])
+        return cls(template)
+
+    def __str__(self):
+        return str(self.template)
