@@ -30,6 +30,18 @@ class Assignment:
     def __eq__(self, other):
         return self.symbol == other.symbol and self.expression == other.expression
 
+    def pretty(self):
+        expression = sympy.pretty(self.expression)
+        lines = expression.split('\n')
+        definition = f'{self.symbol} := '
+        s = ''
+        for line in lines:
+            if line == lines[-1]:
+                s += definition + line + '\n'
+            else:
+                s += len(definition) * ' ' + line + '\n'
+        return s
+
     def __str__(self):
         return f'{self.symbol} := {self.expression}'
 
@@ -46,6 +58,9 @@ class ODE:
 
     def __eq__(self, other):
         return isinstance(other, ODE)
+
+    def pretty(self):
+        return str(self) + '\n'
 
     def __str__(self):
         return 'ODE-system-placeholder'
@@ -127,6 +142,12 @@ class ModelStatements(list):
                 if self[i] != other[i]:
                     return False
         return True
+
+    def pretty(self):
+        s = ''
+        for statement in self:
+            s += statement.pretty()
+        return s
 
     def __str__(self):
         s = [str(assignment) for assignment in self]

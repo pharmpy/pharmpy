@@ -307,6 +307,8 @@ def model_print(args):
         dict_['parameters'] = s
         s = repr(model.random_variables) + '\n\n'
         dict_['random_variables'] = s
+        s = model.statements.pretty() + '\n\n'
+        dict_['model_statements'] = s
         dict_lines = format_keyval_pairs(dict_, sort=False)
         lines += ['\t%s' % line for line in dict_lines]
     if len(lines) > 24:
