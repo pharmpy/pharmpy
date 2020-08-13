@@ -222,12 +222,17 @@ class Model(pharmpy.model.Model):
         self._parameters_updated = True
 
     def _get_theta_name(self):
+        next_theta = self.get_next_theta()
+        return f'THETA({next_theta})'
+
+    def get_next_theta(self):
         next_theta = 1
+
         for theta_record in self.control_stream.get_records('THETA'):
             thetas = theta_record.parameters(next_theta)
             next_theta += len(thetas)
 
-        return f'THETA({next_theta})'
+        return next_theta
 
     def _add_theta(self, param):
         param_str = '$THETA  '
