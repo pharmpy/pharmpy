@@ -9,6 +9,7 @@ import lark
 import sympy
 
 from pharmpy.data_structures import OrderedSet
+from pharmpy.parse_utils.generic import NoSuchRuleException
 from pharmpy.plugins.nonmem.records.parsers import CodeRecordParser
 from pharmpy.statements import Assignment, ModelStatements
 
@@ -260,11 +261,16 @@ class CodeRecord(Record):
                 s.append(ass)
             elif node.rule == 'logical_if':
                 logic_expr = ExpressionInterpreter().visit(node.logical_expression)
-                name = str(node.assignment.variable).upper()
-                expr = ExpressionInterpreter().visit(node.assignment.expression)
-                pw = sympy.Piecewise((expr, logic_expr))
-                ass = Assignment(name, pw)
-                s.append(ass)
+                try:
+                    assignment = node.assignment
+                except NoSuchRuleException:
+                    pass
+                else:
+                    name = str(assignment.variable).upper()
+                    expr = ExpressionInterpreter().visit(assignment.expression)
+                    pw = sympy.Piecewise((expr, logic_expr))
+                    ass = Assignment(name, pw)
+                    s.append(ass)
             elif node.rule == 'block_if':
                 interpreter = ExpressionInterpreter()
                 blocks = []  # [(logic, [(symb1, expr1), ...]), ...]

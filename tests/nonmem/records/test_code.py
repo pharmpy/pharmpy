@@ -80,6 +80,10 @@ def S(x):
     ('$PRED\n(CALLFL=0)\n\nK=1', S('K'), 1),
     ('$ERROR\nCL = 2', S('CL'), 2),
     ('$ERROR (ONLY OBSERVATION) \nCL = 2', S('CL'), 2),
+    ('$PRED\nCL = 2\nEXIT\n', S('CL'), 2),
+    ('$PRED\nCL = 2\nEXIT \n', S('CL'), 2),
+    ('$PRED\nCL = 2\nEXIT 1 \n', S('CL'), 2),
+    ('$PRED\nCL = 2\nEXIT 1 23 \n', S('CL'), 2),
 ])
 def test_single_assignments(parser, buf, symbol, expression):
     rec = parser.parse(buf).records[0]
@@ -124,6 +128,12 @@ def test_block_if(parser, buf, symb_expr_arr):
     for statement, (symb, expr) in zip(rec.statements, symb_expr_arr):
         assert statement.symbol == symb
         assert statement.expression == expr
+
+
+def test_exit(parser):
+    rec = parser.parse("$PK IF (CL.EQ.0) EXIT 1").records[0]
+    rec = parser.parse("$PK IF (CL.EQ.0) EXIT 1 24").records[0]
+    assert len(rec.statements) == 0
 
 
 @pytest.mark.usefixtures('parser')
