@@ -13,7 +13,7 @@ class CovariateEffect:
     def __init__(self, template):
         self.template = template
 
-    def apply(self, parameter, covariate, theta_name, mean, median, operation_str='*'):
+    def apply(self, parameter, covariate, theta_name, mean, median):
         effect_name = f'{parameter}{covariate}'
         self.template.symbol = S(effect_name)
 
@@ -26,8 +26,11 @@ class CovariateEffect:
         else:
             self.template.subs(S('median'), median)
 
+    def create_effect_statement(self, operation_str, parameter):
         operation = self._get_operation(operation_str)
-        effect = Assignment(parameter, operation(S(parameter), S(effect_name)))
+
+        effect = Assignment(parameter, operation(S(parameter), self.template.symbol))
+
         return effect
 
     @staticmethod
