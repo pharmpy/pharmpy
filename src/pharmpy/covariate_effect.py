@@ -51,5 +51,13 @@ class CovariateEffect:
 
         return cls(template)
 
+    @classmethod
+    def power(cls):                     # FIXME: WGT/1.3 becomes 0.769230769230769*WGT
+        symbol = S('symbol')
+        expression = (S('cov')/S('median'))**S('theta')
+        template = Assignment(symbol, expression)
+
+        return cls(template)
+
     def __str__(self):
         return str(self.template)

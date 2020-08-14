@@ -14,16 +14,16 @@ class ModelTransformation:
         mean = self.get_baselines(str(covariate)).mean()
         median = self.get_baselines(str(covariate)).median()
 
-        p_name = f'THETA({self.model.get_next_theta()})'
+        theta_name = f'THETA({self.model.get_next_theta()})'
 
         pset = self.model.parameters
-        pset.add(Parameter(p_name, 0.1))
+        pset.add(Parameter(theta_name, 0.1))
         self.model.parameters = pset
 
         sset = self.model.get_pred_pk_record().statements
         p_statement = sset.get_statement(parameter)
 
-        covariate_effect.apply(parameter, covariate, p_name, mean, median)
+        covariate_effect.apply(parameter, covariate, theta_name, mean, median)
         effect_statement = covariate_effect.create_effect_statement(operation, p_statement)
 
         sset.append(covariate_effect.template)
@@ -36,6 +36,8 @@ class ModelTransformation:
     def _create_template(effect):
         if effect == 'exp':
             return CovariateEffect.exponential()
+        elif effect == 'pow':
+            return CovariateEffect.power()
 
     def get_baselines(self, column_name):
         return self.model.dataset.pharmpy.baselines[column_name]
