@@ -78,6 +78,8 @@ def S(x):
     ('$PRED\n"VERBATIM STUFF\nK=1', S('K'), 1),
     ('$PRED\n"VERBATIM STUFF\n"ON TWO LINES\nK=1', S('K'), 1),
     ('$PRED\n(CALLFL=0)\n\nK=1', S('K'), 1),
+    ('$ERROR\nCL = 2', S('CL'), 2),
+    ('$ERROR (ONLY OBSERVATION) \nCL = 2', S('CL'), 2),
 ])
 def test_single_assignments(parser, buf, symbol, expression):
     rec = parser.parse(buf).records[0]

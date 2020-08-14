@@ -1,6 +1,6 @@
 // A precedence climbing grammar is used for expressions
 
-root: WS_ALL [pseudo] (NEWLINE | verbatim | statement [WS] [COMMENT] [WS_ALL])+
+root: WS_ALL [pseudo] [WS] (NEWLINE | verbatim | statement [WS] [COMMENT] [WS_ALL])+
 
 pseudo: PSEUDO_STATEMENT ")"
 PSEUDO_STATEMENT: /[(][^)]*/
