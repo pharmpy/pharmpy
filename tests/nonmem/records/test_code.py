@@ -43,6 +43,7 @@ def S(x):
     ('$PRED CL = INT(0.2)', S('CL'), 0),
     ('$PRED CL = MOD(1, 2)', S('CL'), sympy.Mod(1, 2)),
     ('$PRED CL = GAMLN(2 + X)   ;COMMENT', S('CL'), sympy.loggamma(S('X') + 2)),
+    ('$PRED C02 = PHI(2 + X)', S('C02'), (1 + sympy.erf(2 + S('X')) / sympy.sqrt(2)) / 2),
     ('$PRED IF (X.EQ.2) CL=23', S('CL'), sympy.Piecewise((23, sympy.Eq(S('X'), 2)))),
     ('$PRED if (x.EQ.2) Cl=23', S('CL'), sympy.Piecewise((23, sympy.Eq(S('X'), 2)))),
     ('$PRED IF (X.NE.1.5) CL=THETA(1)', S('CL'),

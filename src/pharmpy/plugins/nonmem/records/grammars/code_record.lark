@@ -54,7 +54,7 @@ _atom: [WS] (func | func2 | symbol | number | "(" expression ")") [WS]
 func: intrinsic_func "(" expression ")"
 func2: "MOD"i "(" expression "," expression ")"
 
-intrinsic_func: "LOG"i | "LOG10"i | "EXP"i | "DEXP"i | "SQRT"i | "SIN"i | "COS"i | "ABS"i | "TAN"i | "ASIN"i | "ACOS"i | "ATAN"i | "INT"i | "GAMLN"i
+intrinsic_func: "LOG"i | "LOG10"i | "EXP"i | "DEXP"i | "SQRT"i | "SIN"i | "COS"i | "ABS"i | "TAN"i | "ASIN"i | "ACOS"i | "ATAN"i | "INT"i | "GAMLN"i | "PHI"i
 
 variable: vector | NAME
 

@@ -121,6 +121,8 @@ class ExpressionInterpreter(lark.visitors.Interpreter):
             return lambda x: sympy.sign(x) * sympy.floor(sympy.Abs(x))
         elif name == "GAMLN":
             return sympy.loggamma
+        elif name == "PHI":
+            return lambda x: (1 + sympy.erf(x) / sympy.sqrt(2)) / 2
 
     def power(self, node):
         b, e = self.visit_children(node)
