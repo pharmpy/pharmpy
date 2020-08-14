@@ -136,6 +136,9 @@ def test_single_assignments(parser, buf, symbol, expression):
     ('$PRED\nIF (X.EQ.0) THEN\nELSE\nY = 23\nZ = 9\nEND IF', [
         (S('Y'), sympy.Piecewise((23, sympy.Ne(S('X'), 0)))),
         (S('Z'), sympy.Piecewise((9, sympy.Ne(S('X'), 0))))]),
+    ('$PRED\nIF (X.EQ.0) THEN\nY = 23\nZ = 9\nELSE\n CALL RANDOM(1,R)\nEND IF', [
+        (S('Y'), sympy.Piecewise((23, sympy.Eq(S('X'), 0)))),
+        (S('Z'), sympy.Piecewise((9, sympy.Eq(S('X'), 0))))]),
 ])
 def test_block_if(parser, buf, symb_expr_arr):
     rec = parser.parse(buf).records[0]

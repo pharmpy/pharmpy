@@ -19,12 +19,12 @@ call: "CALL"i WS NAME [WS] "(" [WS] _atom [WS] ("," [WS] _atom [WS])* ")"
 assignment: variable [WS] "=" [WS] expression
 
 block_if: block_if_start block_if_elseif* block_if_else? block_if_end
-block_if_start: [WS] "IF"i [WS] "(" logical_expression ")" [WS] "THEN"i [WS] NEWLINE ([WS] assignment [WS] NEWLINE)*
-block_if_else: [WS] "ELSE"i [WS] NEWLINE ([WS] assignment NEWLINE)*
-block_if_elseif: [WS] "ELSE"i [WS] "IF"i [WS] "(" logical_expression ")" [WS] "THEN"i [WS] NEWLINE ([WS] assignment [WS] NEWLINE)*
+block_if_start: [WS] "IF"i [WS] "(" logical_expression ")" [WS] "THEN"i [WS] NEWLINE ([WS] statement [WS] NEWLINE)*
+block_if_else: [WS] "ELSE"i [WS] NEWLINE ([WS] statement NEWLINE)*
+block_if_elseif: [WS] "ELSE"i [WS] "IF"i [WS] "(" logical_expression ")" [WS] "THEN"i [WS] NEWLINE ([WS] statement [WS] NEWLINE)*
 block_if_end: [WS] ("END IF"i | "ENDIF"i) [WS]
 
-logical_if: "IF"i [WS] "(" logical_expression ")" [WS] (assignment | exit)
+logical_if: "IF"i [WS] "(" logical_expression ")" [WS] (assignment | exit | call)
 ?logical_expression: _or_term (or_op _or_term)*
 _or_term: _and_term (and_op _and_term)*
 _and_term: (not_op)? not_term

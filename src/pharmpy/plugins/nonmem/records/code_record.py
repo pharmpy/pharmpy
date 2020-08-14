@@ -284,29 +284,34 @@ class CodeRecord(Record):
                 first_logic = interpreter.visit(node.block_if_start.logical_expression)
                 first_block = node.block_if_start
                 first_symb_exprs = []
-                for assign_node in first_block.all('assignment'):
-                    name = str(assign_node.variable).upper()
-                    first_symb_exprs.append((name, interpreter.visit(assign_node.expression)))
-                    symbols.add(name)
+                for ifstat in first_block.all('statement'):
+                    for assign_node in ifstat.all('assignment'):
+                        name = str(assign_node.variable).upper()
+                        first_symb_exprs.append((name, interpreter.visit(assign_node.expression)))
+                        symbols.add(name)
                 blocks.append((first_logic, first_symb_exprs))
 
                 else_if_blocks = node.all('block_if_elseif')
                 for elseif in else_if_blocks:
                     logic = interpreter.visit(elseif.logical_expression)
                     elseif_symb_exprs = []
-                    for assign_node in elseif.all('assignment'):
-                        name = str(assign_node.variable).upper()
-                        elseif_symb_exprs.append((name, interpreter.visit(assign_node.expression)))
-                        symbols.add(name)
+                    for elseifstat in elseif.all('statement'):
+                        for assign_node in elseifstat.all('assignment'):
+                            name = str(assign_node.variable).upper()
+                            elseif_symb_exprs.append((name,
+                                                      interpreter.visit(assign_node.expression)))
+                            symbols.add(name)
                     blocks.append((logic, elseif_symb_exprs))
 
                 else_block = node.find('block_if_else')
                 if else_block:
                     else_symb_exprs = []
-                    for assign_node in else_block.all('assignment'):
-                        name = str(assign_node.variable).upper()
-                        else_symb_exprs.append((name, interpreter.visit(assign_node.expression)))
-                        symbols.add(name)
+                    for elsestat in else_block.all('statement'):
+                        for assign_node in elsestat.all('assignment'):
+                            name = str(assign_node.variable).upper()
+                            else_symb_exprs.append((name,
+                                                    interpreter.visit(assign_node.expression)))
+                            symbols.add(name)
                     piecewise_logic = True
                     if len(blocks[0][1]) == 0 and not else_if_blocks:    # Special case for empty if
                         piecewise_logic = sympy.Not(blocks[0][0])
