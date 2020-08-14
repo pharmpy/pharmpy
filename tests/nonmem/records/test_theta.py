@@ -29,6 +29,9 @@ import pytest
         [('THETA(1)', 0.15, 0, 0.6, False), ('THETA(2)', 1, 0, 10, False)]),
     ('$THETA  (FIX FIX 0.4) ; CL', [('THETA(1)', 0.4, -1000000, 1000000, True)]),
     ('$THETA (FIX 1,   FIX FIX    1 FIX, 1  FIX) ; CL', [('THETA(1)', 1, 1, 1, True)]),
+    ('$THETA\n(0,0.105,)   ; RUV_CVFPG\n', [
+        ('THETA(1)', 0.105, 0, 1000000, False),
+        ]),
 ])
 def test_parameters(parser, buf, results):
     recs = parser.parse(buf)
