@@ -134,6 +134,13 @@ class ModelStatements(list):
         for assignment in self:
             assignment.subs(old, new)
 
+    def get_statement(self, symbol):
+        """Returns full statement given the symbol of an assignment"""
+        for s in self:
+            if str(s.symbol) == symbol:
+                return s
+        raise KeyError(f'Statement "{symbol}" does not exist')
+
     def __eq__(self, other):
         if len(self) != len(other):
             return False

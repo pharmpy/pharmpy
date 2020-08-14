@@ -26,6 +26,14 @@ def test_Compartment():
     assert comp
 
 
+def test_get_statement(testdata):
+    model = Model(testdata / 'nonmem' / 'pheno_real.mod')
+    statements = model.statements
+
+    assert str(statements.get_statement('CL').expression) == 'TVCL*exp(ETA(1))'
+    assert str(statements.get_statement('S1').expression) == 'V'
+
+
 def test_eq_assignment(testdata):
     model = Model(testdata / 'nonmem' / 'pheno_real.mod')
     statements = model.statements
