@@ -87,6 +87,7 @@ def S(x):
     ('$PRED\nCL = 2\nEXIT 1 \n', S('CL'), 2),
     ('$PRED\nCL = 2\nEXIT 1 23 \n', S('CL'), 2),
     ('$PRED\nCL = 2\nCALL RANDOM (2, R)\n', S('CL'), 2),
+    ('$PRED\nCL = 2\n  RETURN  \n', S('CL'), 2),
 ])
 def test_single_assignments(parser, buf, symbol, expression):
     rec = parser.parse(buf).records[0]

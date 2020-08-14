@@ -13,9 +13,11 @@ statement: assignment
          | block_if
          | exit
          | call
+         | return
 
 exit: "EXIT"i ([WS] | WS ("1" | "2") | WS ("1" | "2") WS INTEGER)
 call: "CALL"i WS NAME [WS] "(" [WS] _atom [WS] ("," [WS] _atom [WS])* ")"
+return: "RETURN"i
 assignment: variable [WS] "=" [WS] expression
 
 block_if: block_if_start block_if_elseif* block_if_else? block_if_end
