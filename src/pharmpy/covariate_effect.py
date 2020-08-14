@@ -26,12 +26,15 @@ class CovariateEffect:
         else:
             self.template.subs(S('median'), median)
 
-    def create_effect_statement(self, operation_str, parameter):
+    def create_effect_statement(self, operation_str, statement_original):
         operation = self._get_operation(operation_str)
 
-        effect = Assignment(parameter, operation(S(parameter), self.template.symbol))
+        symbol = statement_original.symbol
+        expression = statement_original.expression
 
-        return effect
+        statement_new = Assignment(symbol, operation(expression, self.template.symbol))
+
+        return statement_new
 
     @staticmethod
     def _get_operation(operation_str):

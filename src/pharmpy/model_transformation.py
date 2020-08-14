@@ -19,10 +19,12 @@ class ModelTransformation:
         pset.add(Parameter(p_name, 0.1))
         self.model.parameters = pset
 
-        covariate_effect.apply(parameter, covariate, p_name, mean, median)
-        effect_statement = covariate_effect.create_effect_statement(operation, parameter)
-
         sset = self.model.get_pred_pk_record().statements
+        p_statement = sset.get_statement(parameter)
+
+        covariate_effect.apply(parameter, covariate, p_name, mean, median)
+        effect_statement = covariate_effect.create_effect_statement(operation, p_statement)
+
         sset.append(covariate_effect.template)
         sset.append(effect_statement)
         self.model.statements = sset
