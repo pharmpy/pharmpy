@@ -1,7 +1,6 @@
 import pytest
 
 from pharmpy import Model
-from pharmpy.covariate_effect import CovariateEffect
 from pharmpy.model_transformation import ModelTransformation
 
 
@@ -13,9 +12,7 @@ def test_add_covariate_effect(pheno_path, operation, added_covariate_effect):
     model = Model(pheno_path)
     model_t = ModelTransformation(model)
 
-    ce = CovariateEffect
-
-    model_t.add_covariate_effect('CL', 'WGT', ce.exponential, operation)
+    model_t.add_covariate_effect('CL', 'WGT', 'exp', operation)
 
     rec_ref = f'$PK\n' \
               f'IF(AMT.GT.0) BTIME=TIME\n' \

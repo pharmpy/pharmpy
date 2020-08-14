@@ -1,5 +1,6 @@
 import copy
 
+from pharmpy.covariate_effect import CovariateEffect
 from pharmpy.parameter import Parameter
 
 
@@ -8,7 +9,7 @@ class ModelTransformation:
         self.model = copy.deepcopy(model)
 
     def add_covariate_effect(self, parameter, covariate, effect, operation='*'):
-        covariate_effect = effect()
+        covariate_effect = self._create_template(effect)
 
         mean = self.get_baselines(str(covariate)).mean()
         median = self.get_baselines(str(covariate)).median()
@@ -30,6 +31,11 @@ class ModelTransformation:
         self.model.statements = sset
 
         self.model.update_source()
+
+    @staticmethod
+    def _create_template(effect):
+        if effect == 'exp':
+            return CovariateEffect.exponential()
 
     def get_baselines(self, column_name):
         return self.model.dataset.pharmpy.baselines[column_name]
