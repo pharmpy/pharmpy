@@ -27,6 +27,7 @@ def S(x):
     ('$PRED D = A - (-2)', S('D'), S('A') + 2),
     ('$PRED D = A - (+2)', S('D'), S('A') - 2),
     ('$PRED D = 2.5', S('D'), 2.5),
+    ('$PRED D = 1D-10', S('D'), 1e-10),
     ('$PRED CL = EXP(2)', S('CL'), sympy.exp(2)),
     ('$PRED CL = exp(2)', S('CL'), sympy.exp(2)),
     ('$PRED cL = eXp(2)', S('CL'), sympy.exp(2)),

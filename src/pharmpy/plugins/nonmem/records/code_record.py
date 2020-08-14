@@ -134,10 +134,13 @@ class ExpressionInterpreter(lark.visitors.Interpreter):
 
     @staticmethod
     def number(node):
+        s = str(node)
         try:
-            return sympy.Integer(str(node))
+            return sympy.Integer(s)
         except ValueError:
-            return sympy.Float(str(node))
+            s = s.replace('d', 'E')     # Fortran special format
+            s = s.replace('D', 'E')
+            return sympy.Float(s)
 
     @staticmethod
     def symbol(node):
