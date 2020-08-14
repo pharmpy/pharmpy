@@ -319,3 +319,15 @@ def test_update(parser, buf_original, assignment, nonmem_names, buf_expected):
     rec_original.update(nonmem_names)
 
     assert str(rec_original) == buf_expected
+
+
+def test_nested_block_if(parser):
+    code = '\nIF (X.EQ.23) THEN\nIF (Y.EQ.0) THEN\nCL=1\nELSE\nCL=2\nENDIF\n' \
+           'CL=5\nELSE\nCL=6\nENDIF'
+    rec = parser.parse('$PRED' + code).records[0]
+    print(rec.root.treeprint())
+
+    s = rec.statements
+    rec.statements = s
+    print(rec.root.treeprint())
+    assert str(rec.root) == code + '\n'
