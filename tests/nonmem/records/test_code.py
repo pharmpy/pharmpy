@@ -123,6 +123,18 @@ def test_single_assignments(parser, buf, symbol, expression):
      'TVCL=THETA(2)       ; CL in population 2\nENDIF\n', [
         (S('TVCL'), sympy.Piecewise((S('THETA(1)'), sympy.Eq(S('MIXNUM'), 3)),
                                     (S('THETA(2)'), True)))]),
+    ('$PRED\nIF (X.EQ.0) THEN\nY = 23\nZ = 9\nELSE\nEND IF', [
+        (S('Y'), sympy.Piecewise((23, sympy.Eq(S('X'), 0)))),
+        (S('Z'), sympy.Piecewise((9, sympy.Eq(S('X'), 0))))]),
+    ('$PRED\nIF (X.EQ.0) THEN\nY = 23\nZ = 9\nELSE IF (X.EQ.23) THEN\nELSE\nEND IF', [
+        (S('Y'), sympy.Piecewise((23, sympy.Eq(S('X'), 0)))),
+        (S('Z'), sympy.Piecewise((9, sympy.Eq(S('X'), 0))))]),
+    ('$PRED\nIF (X.EQ.0) THEN\nY = 23\nZ = 9\nELSE IF (X.EQ.44) THEN\nEND IF', [
+        (S('Y'), sympy.Piecewise((23, sympy.Eq(S('X'), 0)))),
+        (S('Z'), sympy.Piecewise((9, sympy.Eq(S('X'), 0))))]),
+    ('$PRED\nIF (X.EQ.0) THEN\nELSE\nY = 23\nZ = 9\nEND IF', [
+        (S('Y'), sympy.Piecewise((23, sympy.Ne(S('X'), 0)))),
+        (S('Z'), sympy.Piecewise((9, sympy.Ne(S('X'), 0))))]),
 ])
 def test_block_if(parser, buf, symb_expr_arr):
     rec = parser.parse(buf).records[0]

@@ -307,7 +307,10 @@ class CodeRecord(Record):
                         name = str(assign_node.variable).upper()
                         else_symb_exprs.append((name, interpreter.visit(assign_node.expression)))
                         symbols.add(name)
-                    blocks.append((True, else_symb_exprs))
+                    piecewise_logic = True
+                    if len(blocks[0][1]) == 0 and not else_if_blocks:    # Special case for empty if
+                        piecewise_logic = sympy.Not(blocks[0][0])
+                    blocks.append((piecewise_logic, else_symb_exprs))
 
                 for symbol in symbols:
                     pairs = []

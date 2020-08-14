@@ -17,9 +17,9 @@ exit: "EXIT"i ([WS] | WS ("1" | "2") | WS ("1" | "2") WS INTEGER)
 assignment: variable [WS] "=" [WS] expression
 
 block_if: block_if_start block_if_elseif* block_if_else? block_if_end
-block_if_start: [WS] "IF"i [WS] "(" logical_expression ")" [WS] "THEN"i [WS] NEWLINE ([WS] assignment [WS] NEWLINE)+
-block_if_else: [WS] "ELSE"i [WS] NEWLINE ([WS] assignment NEWLINE)+
-block_if_elseif: [WS] "ELSE"i [WS] "IF"i [WS] "(" logical_expression ")" [WS] "THEN"i [WS] NEWLINE ([WS] assignment [WS] NEWLINE)+
+block_if_start: [WS] "IF"i [WS] "(" logical_expression ")" [WS] "THEN"i [WS] NEWLINE ([WS] assignment [WS] NEWLINE)*
+block_if_else: [WS] "ELSE"i [WS] NEWLINE ([WS] assignment NEWLINE)*
+block_if_elseif: [WS] "ELSE"i [WS] "IF"i [WS] "(" logical_expression ")" [WS] "THEN"i [WS] NEWLINE ([WS] assignment [WS] NEWLINE)*
 block_if_end: [WS] ("END IF"i | "ENDIF"i) [WS]
 
 logical_if: "IF"i [WS] "(" logical_expression ")" [WS] (assignment | exit)
