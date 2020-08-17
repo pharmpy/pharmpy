@@ -1,7 +1,7 @@
 import pytest
 
 from pharmpy import Model
-from pharmpy.model_transformation import ModelTransformation
+from pharmpy.model_transformation import add_covariate_effect
 
 
 @pytest.mark.parametrize('effect, operation, buf_new', [
@@ -12,9 +12,8 @@ from pharmpy.model_transformation import ModelTransformation
 ])
 def test_add_covariate_effect(pheno_path, effect, operation, buf_new):
     model = Model(pheno_path)
-    model_t = ModelTransformation(model)
 
-    model_t.add_covariate_effect('CL', 'WGT', effect, operation)
+    add_covariate_effect(model, 'CL', 'WGT', effect, operation)
 
     rec_ref = f'$PK\n' \
               f'IF(AMT.GT.0) BTIME=TIME\n' \
@@ -27,4 +26,4 @@ def test_add_covariate_effect(pheno_path, effect, operation, buf_new):
               f'      S1=V\n' \
               f'{buf_new}'
 
-    assert str(model_t.model.get_pred_pk_record()) == rec_ref
+    assert str(model.get_pred_pk_record()) == rec_ref
