@@ -15,7 +15,7 @@ def add_covariate_effect(model, parameter, covariate, effect, operation='*'):
     model.parameters = pset
 
     sset = model.get_pred_pk_record().statements
-    p_statement = sset.get_statement(parameter)
+    p_statement = sset.find_assignment(parameter)
 
     covariate_effect.apply(parameter, covariate, theta_name, mean, median)
     effect_statement = covariate_effect.create_effect_statement(operation, p_statement)

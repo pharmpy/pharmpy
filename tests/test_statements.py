@@ -1,7 +1,7 @@
 import sympy
 
 from pharmpy import Model
-from pharmpy.statements import Compartment, Elimination, IVAbsorption
+from pharmpy.statements import Assignment, Compartment, Elimination, IVAbsorption
 
 
 def S(x):
@@ -26,12 +26,16 @@ def test_Compartment():
     assert comp
 
 
-def test_get_statement(testdata):
+def test_find_assignment(testdata):
     model = Model(testdata / 'nonmem' / 'pheno_real.mod')
     statements = model.statements
 
-    assert str(statements.get_statement('CL').expression) == 'TVCL*exp(ETA(1))'
-    assert str(statements.get_statement('S1').expression) == 'V'
+    assert str(statements.find_assignment('CL').expression) == 'TVCL*exp(ETA(1))'
+    assert str(statements.find_assignment('S1').expression) == 'V'
+
+    statements.append(Assignment(S('CL'), S('TVCL') + S('V')))
+
+    assert str(statements.find_assignment('CL').expression) == 'TVCL + V'
 
 
 def test_eq_assignment(testdata):
