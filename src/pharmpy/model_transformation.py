@@ -16,14 +16,17 @@ def add_covariate_effect(model, parameter, covariate, effect, operation='*'):
     pset.add(Parameter(theta_name, 0.1))
     model.parameters = pset
 
-    sset = model.get_pred_pk_record().statements
+    sset = model.statements
     p_statement = sset.find_assignment(parameter)
 
     covariate_effect.apply(parameter, covariate, theta_name, mean, median)
     effect_statement = covariate_effect.create_effect_statement(operation, p_statement)
 
-    sset.append(covariate_effect.template)
-    sset.append(effect_statement)
+    p_index = sset.index(p_statement)
+
+    sset.insert(p_index + 1, covariate_effect.template)
+    sset.insert(p_index + 2, effect_statement)
+
     model.statements = sset
 
     return model
