@@ -5,8 +5,10 @@ from pharmpy.parameter import Parameter
 def add_covariate_effect(model, parameter, covariate, effect, operation='*'):
     covariate_effect = create_template(effect)
 
-    mean = get_baselines(model, str(covariate)).mean()
-    median = get_baselines(model, str(covariate)).median()
+    baselines = model.dataset.pharmpy.baselines[str(covariate)]
+
+    mean = baselines.mean()
+    median = baselines.median()
 
     theta_name = f'THETA({model.get_next_theta()})'
 
@@ -32,7 +34,3 @@ def create_template(effect):
         return CovariateEffect.exponential()
     elif effect == 'pow':
         return CovariateEffect.power()
-
-
-def get_baselines(model, column_name):           # TODO: Remove
-    return model.dataset.pharmpy.baselines[column_name]
