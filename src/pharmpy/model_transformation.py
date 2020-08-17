@@ -3,8 +3,6 @@ from pharmpy.parameter import Parameter
 
 
 def add_covariate_effect(model, parameter, covariate, effect, operation='*'):
-    covariate_effect = create_template(effect)
-
     baselines = model.dataset.pharmpy.baselines[str(covariate)]
 
     mean = baselines.mean()
@@ -17,15 +15,15 @@ def add_covariate_effect(model, parameter, covariate, effect, operation='*'):
     model.parameters = pset
 
     sset = model.statements
-    p_statement = sset.find_assignment(parameter)
+    param_statement = sset.find_assignment(parameter)
 
+    covariate_effect = create_template(effect)
     covariate_effect.apply(parameter, covariate, theta_name, mean, median)
-    effect_statement = covariate_effect.create_effect_statement(operation, p_statement)
+    effect_statement = covariate_effect.create_effect_statement(operation, param_statement)
 
-    p_index = sset.index(p_statement)
-
-    sset.insert(p_index + 1, covariate_effect.template)
-    sset.insert(p_index + 2, effect_statement)
+    param_index = sset.index(param_statement)
+    sset.insert(param_index + 1, covariate_effect.template)
+    sset.insert(param_index + 2, effect_statement)
 
     model.statements = sset
 
