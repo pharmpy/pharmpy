@@ -182,7 +182,8 @@ class CodeRecord(Record):
 
             for index_new, s_new in enumerate(statements_new):
                 if index_past == len(statements_past):      # Add rest of new statements
-                    self._add_statement(None, s_new)
+                    if self._get_node(s_new) is None:
+                        self._add_statement(None, s_new)
                     continue
                 elif len(statements_past) == 1 and len(statements_new) == 1:
                     self._replace_statement(0, s_new)
@@ -244,8 +245,11 @@ class CodeRecord(Record):
             self._root_updated.add_node(node, node_following)
 
     def _get_node(self, statement):
-        index_statement = self.statements.index(statement)
-        return self.nodes[index_statement]
+        try:
+            index_statement = self.statements.index(statement)
+            return self.nodes[index_statement]
+        except ValueError:
+            return None
 
     def _get_index_to_remove(self, statement, index_start):
         try:

@@ -257,6 +257,8 @@ def test_statements_setter_remove(parser, buf_original, buf_new, is_comment_pres
 @pytest.mark.parametrize('buf_original,buf_new', [
     ('$PRED\nY = THETA(1) + ETA(1) + EPS(1)',
      '$PRED\nY = THETA(1) + ETA(1) + EPS(1)\nCL = 2'),
+    ('$PRED\nY = THETA(1) + ETA(1) + EPS(1)\nCL = 2',
+     '$PRED\nY = THETA(1) + ETA(1) + EPS(1)\nS1 = V\nCL = 2')
 ])
 def test_statements_setter_add(parser, buf_original, buf_new):
     rec_original = parser.parse(buf_original).records[0]
