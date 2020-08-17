@@ -24,8 +24,6 @@ def add_covariate_effect(model, parameter, covariate, effect, operation='*'):
     sset.append(effect_statement)
     model.statements = sset
 
-    model.update_source()
-
     return model
 
 

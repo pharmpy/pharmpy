@@ -14,6 +14,7 @@ def test_add_covariate_effect(pheno_path, effect, operation, buf_new):
     model = Model(pheno_path)
 
     add_covariate_effect(model, 'CL', 'WGT', effect, operation)
+    model.update_source()
 
     rec_ref = f'$PK\n' \
               f'IF(AMT.GT.0) BTIME=TIME\n' \
