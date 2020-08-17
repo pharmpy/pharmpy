@@ -2,6 +2,7 @@ from io import StringIO
 from pathlib import Path
 
 import pandas as pd
+import pytest
 from sympy import Symbol
 
 import pharmpy.data
@@ -13,10 +14,16 @@ lincorrect = pharmpy.data.read_nonmem_dataset(tabpath, ignore_character='@',
                                                         'PRED', 'RES', 'WRES'])
 
 
-def test_create_symbol(testdata):
+@pytest.mark.parametrize('stem,force_numbering,symbol_name', [
+    ('DV', False, 'DV1'),
+    ('X', False, 'X'),
+    ('X', True, 'X1')
+])
+def test_create_symbol(testdata, stem, force_numbering, symbol_name):
     model = Model(testdata / 'nonmem' / 'pheno_real.mod')
-    symbol = model.create_symbol(stem='ETAT')
-    assert symbol.name == 'ETAT1'
+    symbol = model.create_symbol(stem=stem, force_numbering=force_numbering)
+
+    assert symbol.name == symbol_name
 
 
 def S(x):

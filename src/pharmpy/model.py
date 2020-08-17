@@ -87,18 +87,28 @@ class Model:
     def read_raw_dataset(self, parse_columns=tuple()):
         raise NotImplementedError()
 
-    def create_symbol(self, stem):
+    def create_symbol(self, stem, force_numbering=False):
         """Create a new unique variable symbol
 
            stem - First part of the new variable name
+           force_numbering - Forces addition of number to name even if variable does
+                             not exist, e.g. COVEFF --> COVEFF1
         """
-        # TODO: Also check parameter and rv names and dataset columns
-        symbols = self.statements.free_symbols
+        symbols = [str(symbol) for symbol in self.statements.free_symbols]
+        params = [param.name for param in self.parameters]
+        rvs = [rv.name for rv in self.random_variables]
+        dataset_col = list(self.dataset.columns)
+
+        all_names = symbols + params + rvs + dataset_col
+
+        if str(stem) not in all_names and not force_numbering:
+            return sympy.Symbol(str(stem))
+
         i = 1
         while True:
-            candidate = sympy.Symbol(f'{stem}{i}')
-            if candidate not in symbols:
-                return candidate
+            candidate = f'{stem}{i}'
+            if candidate not in all_names:
+                return sympy.Symbol(candidate)
             i += 1
 
     def _observation(self):

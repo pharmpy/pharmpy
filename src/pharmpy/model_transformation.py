@@ -10,7 +10,7 @@ def add_covariate_effect(model, parameter, covariate, effect, operation='*'):
     mean = baselines.mean()
     median = baselines.median()
 
-    theta_name = f'THETA({model.get_next_theta()})'
+    theta_name = str(model.create_symbol(stem='COVEFF', force_numbering=True))
 
     pset = model.parameters
     pset.add(Parameter(theta_name, 0.1))
