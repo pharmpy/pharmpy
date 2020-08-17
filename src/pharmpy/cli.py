@@ -142,6 +142,11 @@ def format_keyval_pairs(data_dict, sort=True, right_just=False):
     return lines
 
 
+def run_execute(args):
+    import pharmpy.methods.modelfit as modelfit
+    modelfit.run(args.models)
+
+
 def data_write(args):
     """Subcommand to write a dataset."""
     try:
@@ -494,6 +499,13 @@ group_output.add_argument('-o', '--output_file',
                           help='output file')
 
 parser_definition = [
+    {'run': {'subs': [
+        {'execute': {'help': 'Execute one or more model', 'func': run_execute,
+                     'parents': [args_input]}},
+    ], 'help': 'Run a method',
+       'title': 'Pharmpy commands for running methods',
+       'metavar': 'METHOD',
+    }},
     {'data': {'subs': [
         {'write': {'help': 'Write dataset', 'parents': [args_model_or_data_input, args_output],
                    'func': data_write}},

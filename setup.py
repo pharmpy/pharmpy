@@ -75,7 +75,7 @@ setup(
     ],
     install_requires=[
         'lark-parser', 'sympy>=1.6.1', 'symengine', 'pandas', 'numexpr', 'altair', 'toil', 'sphinx',
-        'csscompressor', 'beautifulsoup4', 'lxml', 'numpy', 'scipy'
+        'csscompressor', 'beautifulsoup4', 'lxml', 'numpy', 'scipy', 'dask'
     ],
     entry_points={
         'console_scripts': [

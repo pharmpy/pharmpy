@@ -7,6 +7,7 @@ beautifulsoup4==4.9.0
 certifi==2019.11.28
 chardet==3.0.4
 csscompressor==0.9.5
+dask==2.23.0
 dill==0.2.7.1
 docker==2.5.1
 docker-pycreds==0.4.0
@@ -33,6 +34,7 @@ pyparsing==2.4.6
 pyrsistent==0.16.0
 python-dateutil==2.8.1
 pytz==2019.3
+PyYAML==5.3.1
 requests==2.23.0
 scipy==1.5.2
 six==1.14.0
