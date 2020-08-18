@@ -311,7 +311,9 @@ def test_statements_setter_add_from_sympy(parser, buf_original, symbol, expressi
 @pytest.mark.usefixtures('parser')
 @pytest.mark.parametrize('buf_original,assignment,nonmem_names,buf_expected', [
     ('$PRED\nY = THETA(1) + ETA(1) + EPS(1)', Assignment(S('Z'), S('X')),
-     {'X': 'THETA(2)'}, '$PRED\nY = THETA(1) + ETA(1) + EPS(1)\nZ = THETA(2)\n')
+     {'X': 'THETA(2)'}, '$PRED\nY = THETA(1) + ETA(1) + EPS(1)\nZ = THETA(2)\n'),
+    ('$PRED\nY = THETA(1) + ETA(1) + EPS(1)\nCL = 1.3', Assignment(S('Z'), S('X')),
+     {'X': 'THETA(2)'}, '$PRED\nY = THETA(1) + ETA(1) + EPS(1)\nCL = 1.3\nZ = THETA(2)\n')
 ])
 def test_update(parser, buf_original, assignment, nonmem_names, buf_expected):
     rec_original = parser.parse(buf_original).records[0]

@@ -341,9 +341,12 @@ class CodeRecord(Record):
         nonmem_keys = [str(key) for key in nonmem_names.keys()]
 
         for statement in statements_updated:
-            statement_symbols = [str(symbol) for symbol in statement.free_symbols]
+            try:
+                statement_symbols = [str(symbol) for symbol in statement.free_symbols]
+            except AttributeError:
+                statement_symbols = str(statement.symbol)
             for nonmem_key in nonmem_keys:
-                if nonmem_key in statement_symbols:
+                if nonmem_key in statement_symbols or nonmem_key == statement_symbols:
                     symbol_old = sympy.Symbol(nonmem_key)
                     symbol_new = sympy.Symbol(nonmem_names[nonmem_key])
                     statement.subs(symbol_old, symbol_new)
