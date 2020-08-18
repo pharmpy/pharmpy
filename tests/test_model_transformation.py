@@ -5,10 +5,10 @@ from pharmpy.model_transformation import add_covariate_effect
 
 
 @pytest.mark.parametrize('effect, operation, buf_new', [
-    ('exp', '*',
-     'CLWGT = exp(THETA(4)*(WGT - 1.3))\nCL = CLWGT*TVCL*exp(ETA(1))'),
-    ('exp', '+',
-     'CLWGT = exp(THETA(4)*(WGT - 1.3))\nCL = CLWGT + TVCL*exp(ETA(1))'),
+    ('exp', '*', 'CLWGT = exp(THETA(4)*(-CL_MEDIAN + WGT))\nCL_MEDIAN = 1.3\n'
+                 'CL = CLWGT*TVCL*exp(ETA(1))'),
+    ('exp', '+', 'CLWGT = exp(THETA(4)*(-CL_MEDIAN + WGT))\nCL_MEDIAN = 1.3\n'
+                 'CL = CLWGT + TVCL*exp(ETA(1))'),
 ])
 def test_add_covariate_effect(pheno_path, effect, operation, buf_new):
     model = Model(pheno_path)
