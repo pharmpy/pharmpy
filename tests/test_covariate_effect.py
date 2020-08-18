@@ -1,3 +1,4 @@
+import pytest
 from sympy import Symbol, exp
 
 from pharmpy.covariate_effect import CovariateEffect
@@ -7,10 +8,14 @@ def S(x):
     return Symbol(x, real=True)
 
 
-def test_apply():
-    ce = CovariateEffect.exponential()
+@pytest.mark.parametrize('cov_eff,symbol,expression', [
+    (CovariateEffect.exponential(), S('CLWGT'),
+     exp(S('COVEFF1') * (S('WGT') - S('CL_MEDIAN')))),
+    (CovariateEffect.power(), S('CLWGT'),
+     (S('WGT')/S('CL_MEDIAN'))**S('COVEFF1')),
+])
+def test_apply(cov_eff, symbol, expression):
+    cov_eff.apply(parameter='CL', covariate='WGT', theta_name='COVEFF1')
 
-    ce.apply(parameter='CL', covariate='WGT', theta_name='THETA(x)')
-
-    assert ce.template.symbol == S('CLWGT')
-    assert ce.template.expression == exp(S('THETA(x)') * (S('WGT') - S('CL_MEDIAN')))
+    assert cov_eff.template.symbol == symbol
+    assert cov_eff.template.expression == expression
