@@ -183,7 +183,7 @@ class CodeRecord(Record):
             for index_new, s_new in enumerate(statements_new):
                 if index_past == len(statements_past):      # Add rest of new statements
                     if self._get_node(s_new) is None:
-                        self._add_statement(None, s_new)
+                        self._add_statement(index_past, s_new)
                     continue
                 elif len(statements_past) == 1 and len(statements_new) == 1:
                     self._replace_statement(0, s_new)

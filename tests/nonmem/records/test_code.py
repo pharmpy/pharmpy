@@ -258,7 +258,9 @@ def test_statements_setter_remove(parser, buf_original, buf_new, is_comment_pres
     ('$PRED\nY = THETA(1) + ETA(1) + EPS(1)',
      '$PRED\nY = THETA(1) + ETA(1) + EPS(1)\nCL = 2'),
     ('$PRED\nY = THETA(1) + ETA(1) + EPS(1)\nCL = 2',
-     '$PRED\nY = THETA(1) + ETA(1) + EPS(1)\nS1 = V\nCL = 2')
+     '$PRED\nY = THETA(1) + ETA(1) + EPS(1)\nS1 = V\nCL = 2'),
+    ('$PRED\nY = THETA(1) + ETA(1) + EPS(1)\nCL = 2',
+     '$PRED\nY = THETA(1) + ETA(1) + EPS(1)\nS1 = V\nTVCL = WGT + 2\nCL = 2')
 ])
 def test_statements_setter_add(parser, buf_original, buf_new):
     rec_original = parser.parse(buf_original).records[0]
