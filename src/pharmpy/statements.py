@@ -135,14 +135,12 @@ class ModelStatements(list):
             assignment.subs(old, new)
 
     def find_assignment(self, symbol):
-        """Returns full statement given the symbol of an assignment"""
+        """Returns full last statement given the symbol of an assignment"""
         statement = None
         for s in self:
             if isinstance(s, Assignment) and str(s.symbol) == symbol:
                 statement = s
-        if statement is not None:
-            return statement
-        raise KeyError(f'Assignment "{symbol}" does not exist')
+        return statement
 
     def __eq__(self, other):
         if len(self) != len(other):
