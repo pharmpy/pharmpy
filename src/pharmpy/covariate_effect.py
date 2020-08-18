@@ -12,8 +12,9 @@ def S(x):
 class CovariateEffect:
     def __init__(self, template):
         self.template = template
+        self.statistic_type = None
 
-    def apply(self, parameter, covariate, theta_name, mean, median):
+    def apply(self, parameter, covariate, theta_name):
         effect_name = f'{parameter}{covariate}'
         self.template.symbol = S(effect_name)
 
@@ -22,9 +23,11 @@ class CovariateEffect:
 
         template_str = [str(symbol) for symbol in self.template.free_symbols]
         if 'mean' in template_str:
-            self.template.subs(S('mean'), mean)
+            self.template.subs(S('mean'), S(f'{parameter}_MEAN'))
+            self.statistic_type = 'mean'
         else:
-            self.template.subs(S('median'), median)
+            self.template.subs(S('median'), S(f'{parameter}_MEDIAN'))
+            self.statistic_type = 'median'
 
     def create_effect_statement(self, operation_str, statement_original):
         operation = self._get_operation(operation_str)
@@ -35,6 +38,12 @@ class CovariateEffect:
         statement_new = Assignment(symbol, operation(expression, self.template.symbol))
 
         return statement_new
+
+    def create_statistics_statement(self, parameter, mean, median):
+        if self.statistic_type == 'mean':
+            return Assignment(S(f'{parameter}_MEAN'), mean)
+        else:
+            return Assignment(S(f'{parameter}_MEDIAN'), median)
 
     @staticmethod
     def _get_operation(operation_str):
@@ -52,7 +61,7 @@ class CovariateEffect:
         return cls(template)
 
     @classmethod
-    def power(cls):                     # FIXME: WGT/1.3 becomes 0.769230769230769*WGT
+    def power(cls):
         symbol = S('symbol')
         expression = (S('cov')/S('median'))**S('theta')
         template = Assignment(symbol, expression)
