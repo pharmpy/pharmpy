@@ -40,6 +40,9 @@ class OptionRecord(Record):
                 pairs += [Option(node.VALUE, None)]
         return pairs
 
+    def has_option(self, name):
+        return name in self.option_pairs.keys()
+
     def set_option(self, key, new_value):
         """ Set the value of an option
 
