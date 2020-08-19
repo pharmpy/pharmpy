@@ -2,7 +2,7 @@ import sympy
 from sympy import Symbol
 
 from pharmpy import Model
-from pharmpy.plugins.nonmem.advan import advan_equations
+from pharmpy.plugins.nonmem.advan import compartmental_model
 
 
 def S(x):
@@ -11,11 +11,12 @@ def S(x):
 
 def test_pheno(pheno_path):
     model = Model(pheno_path)
-    ode, ass = advan_equations(model)
+    cm, ass = compartmental_model(model)
 
     assert ass.symbol == S('F')
-    assert ass.expression == S('A_1') / S('S1')
-
-    t = S('t')
-    assert ode.equation == sympy.Eq(sympy.Derivative(sympy.Function('A_1')(t), t),
-                                    -S('CL') * sympy.Function('A_1')(t) / S('V'))
+    assert ass.expression == S('A_CENTRAL') / S('S1')
+    assert cm.compartmental_matrix == sympy.Matrix([[-S('CL') / S('V')]])
+    assert cm.amounts == sympy.Matrix([S('A_CENTRAL')])
+    odes = cm.to_explicit_odes()
+    assert len(odes) == 1
+    assert str(odes[0]) == 'Eq(Derivative(A_CENTRAL(t), t), -CL*A_CENTRAL(t)/V)'

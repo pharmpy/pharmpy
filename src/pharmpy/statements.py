@@ -1,3 +1,4 @@
+import networkx as nx
 import sympy
 
 
@@ -66,32 +67,73 @@ class ODE:
         return 'ODE-system-placeholder'
 
 
-class Compartment:
-    def __init__(self, name, input, output, amount=sympy.Function('A', real=True),
-                 volume=sympy.Symbol('V'), idv=sympy.Symbol('t', real=True)):
-        self.name = name
-        self.input = input
-        self.output = output
-        self.amount = amount
-        self.idv = idv
-        self.volume = volume
+class CompartmentalSystem:
+    def __init__(self):
+        self._g = nx.DiGraph()
+
+    def add_compartment(self, name):
+        comp = Compartment(name)
+        self._g.add_node(comp)
+        return comp
+
+    def add_flow(self, source, destination, rate):
+        self._g.add_edge(source, destination, rate=rate)
+
+    def find_output(self):
+        zeroout = [node for node, out_degree in self._g.out_degree_iter() if out_degree == 0]
+        if len(zeroout) == 1:
+            return zeroout[0]
+        else:
+            raise ValueError('More than one or zero output compartments')
 
     @property
-    def free_symbols(self):
-        return self.input.free_symbols | self.output.free_symbols | self.amount.free_symbols | \
-               self.volume.free_symbols
+    def compartmental_matrix(self):
+        dod = nx.to_dict_of_dicts(self._g)
+        size = len(dod) - 1
+        f = sympy.zeros(size)
+        for i, from_comp in enumerate(dod.keys()):
+            if from_comp is not None:
+                diagsum = 0
+                for j, to_comp in enumerate(dod[from_comp].keys()):
+                    rate = dod[from_comp][to_comp]['rate']
+                    if to_comp is not None:
+                        f[j, i] = rate
+                        diagsum += f[j, i]
+                    else:
+                        f[i, i] = -rate
+                f[i, i] -= diagsum
+        return f
 
-    def de(self):
-        """Differential equation"""
-        dAdt = sympy.Derivative(self.amount(self.idv), self.idv)
-        rhs = -self.output.rate * self.amount(self.idv)
-        # Initial condition (second in tuble) depends on dose.
-        # 0 means time relative to this dose. Should perhaps rather be "TIME"
-        return sympy.Eq(dAdt, rhs), {self.amount(0): self.input.data_label}
+    @property
+    def amounts(self):
+        amts = [node.amount for node in self._g.nodes if node is not None]
+        return sympy.Matrix(amts)
 
-    def __repr__(self):
-        return f'{self.amount} := compartment({self.name}, input={self.input}, ' \
-               f'output={self.output}, amount={self.amount}, volume={self.volume})'
+    def to_explicit_odes(self):
+        t = sympy.Symbol('t')
+        amount_funcs = sympy.Matrix([sympy.Function(amt.name)('t') for amt in self.amounts])
+        derivatives = sympy.Matrix([sympy.Derivative(fn, t) for fn in amount_funcs])
+        a = self.compartmental_matrix @ amount_funcs
+        eqs = [sympy.Eq(lhs, rhs) for lhs, rhs in zip(derivatives, a)]
+        return eqs
+
+
+class Compartment:
+    def __init__(self, name):
+        self.name = name
+        self.dose = None
+
+    def __hash__(self):
+        return hash(self.name)
+
+    @property
+    def amount(self):
+        return sympy.Symbol(f'A_{self.name}', real=True)
+
+
+class IVBolus:
+    def __init__(self, symbol):
+        self.symbol = symbol
 
 
 class IVAbsorption:
