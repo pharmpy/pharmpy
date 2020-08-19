@@ -1,3 +1,5 @@
+import copy
+
 import networkx as nx
 import sympy
 
@@ -47,8 +49,8 @@ class Assignment:
         return f'{self.symbol} := {self.expression}'
 
 
-class ODE:
-    """A placeholder for one or more ODEs
+class ODESystem:
+    """Base class and placeholder for ODE systems of different forms
     """
     @property
     def free_symbols(self):
@@ -58,7 +60,7 @@ class ODE:
         pass
 
     def __eq__(self, other):
-        return isinstance(other, ODE)
+        return isinstance(other, ODESystem)
 
     def pretty(self):
         return str(self) + '\n'
@@ -67,9 +69,25 @@ class ODE:
         return 'ODE-system-placeholder'
 
 
-class CompartmentalSystem:
+class ExplicitODESystem(ODESystem):
+    """System of ODEs described explicitly
+    """
+    pass
+
+
+class CompartmentalSystem(ODESystem):
+    """System of ODEs descibed as a compartmental system
+    """
     def __init__(self):
         self._g = nx.DiGraph()
+
+    def __eq__(self, other):
+        return nx.to_dict_of_dicts(self._g) == nx.to_dict_of_dicts(other._g)
+
+    def __deepcopy__(self, memo):
+        newone = type(self)()
+        newone._g = copy.deepcopy(self._g, memo)
+        return newone
 
     def add_compartment(self, name):
         comp = Compartment(name)
@@ -123,6 +141,10 @@ class Compartment:
         self.name = name
         self.dose = None
 
+    def __eq__(self, other):
+        return isinstance(other, Compartment) and self.name == other.name and \
+            self.dose == other.dose
+
     def __hash__(self):
         return hash(self.name)
 
@@ -135,29 +157,8 @@ class IVBolus:
     def __init__(self, symbol):
         self.symbol = symbol
 
-
-class IVAbsorption:
-    def __init__(self, data_label):
-        self.data_label = data_label
-
-    @property
-    def free_symbols(self):
-        return set()
-
-    def __repr__(self):
-        return f'IVAbsorption({self.data_label})'
-
-
-class Elimination:
-    def __init__(self, rate):
-        self.rate = rate
-
-    @property
-    def free_symbols(self):
-        return self.rate.free_symbols
-
-    def __repr__(self):
-        return f'Elimination({self.rate})'
+    def __eq__(self, other):
+        return isinstance(other, IVBolus) and self.symbol == other.symbol
 
 
 class ModelStatements(list):

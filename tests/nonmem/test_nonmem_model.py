@@ -8,7 +8,7 @@ from sympy import Symbol
 from pharmpy import Model
 from pharmpy.parameter import Parameter
 from pharmpy.plugins.nonmem.nmtran_parser import NMTranParser
-from pharmpy.statements import ODE, Assignment, ModelStatements
+from pharmpy.statements import Assignment, ModelStatements, ODESystem
 
 
 def S(x):
@@ -125,20 +125,19 @@ def test_add_parameters(pheno_path, param_new, init_expected, buf_new):
 def test_add_statements(pheno_path, statement_new, buf_new):
     model = Model(pheno_path)
     sset = model.statements
-
-    assert len(sset) == 14
+    assert len(sset) == 15
 
     # Insert new statement before ODE system.
     new_sset = ModelStatements()
     for s in sset:
-        if isinstance(s, ODE):
+        if isinstance(s, ODESystem):
             new_sset.append(statement_new)
         new_sset.append(s)
 
     model.statements = new_sset
     model.update_source()
-    print(model.statements)
-    assert len(model.statements) == 15
+
+    assert len(model.statements) == 16
 
     parser = NMTranParser()
     stream = parser.parse(str(model))
@@ -176,7 +175,7 @@ def test_add_parameters_and_statements(pheno_path, param_new, statement_new,
     # Insert new statement before ODE system.
     new_sset = ModelStatements()
     for s in sset:
-        if isinstance(s, ODE):
+        if isinstance(s, ODESystem):
             new_sset.append(statement_new)
         new_sset.append(s)
 
@@ -269,7 +268,7 @@ def test_statements_setter(pheno_path, buf_new, len_expected):
     parser = NMTranParser()
     statements_new = parser.parse(f'$PRED\n{buf_new}').records[0].statements
 
-    assert len(model.statements) == 14
+    assert len(model.statements) == 15
     assert len(statements_new) == len_expected
 
     model.statements = statements_new

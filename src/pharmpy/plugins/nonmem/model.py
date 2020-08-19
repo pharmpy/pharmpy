@@ -13,8 +13,9 @@ from pharmpy.parameter import ParameterSet
 from pharmpy.plugins.nonmem.results import NONMEMChainedModelfitResults
 from pharmpy.plugins.nonmem.table import NONMEMTableFile, PhiTable
 from pharmpy.random_variables import RandomVariables
-from pharmpy.statements import ODE, ModelStatements
+from pharmpy.statements import Assignment, ModelStatements, ODESystem
 
+from .advan import compartmental_model
 from .nmtran_parser import NMTranParser
 
 
@@ -325,7 +326,14 @@ class Model(pharmpy.model.Model):
 
         error = self._get_error_record()
         if error:
-            statements.append(ODE())    # Placeholder for ODE-system
+            comp = compartmental_model(self)
+            if comp is not None:
+                cm, link = comp
+                statements += [cm, link]
+            else:
+                # FIXME: Dummy link statement
+                statements.append(Assignment("F", sympy.Symbol("F", real=True)))
+                statements.append(ODESystem())      # FIXME: Placeholder for ODE-system
             statements += error.statements
 
         self._statements = statements
@@ -337,7 +345,7 @@ class Model(pharmpy.model.Model):
         error_statements = ModelStatements()
         found_ode = False
         for s in statements_new:
-            if isinstance(s, ODE):
+            if isinstance(s, ODESystem):
                 found_ode = True
             else:
                 if found_ode:
@@ -348,6 +356,8 @@ class Model(pharmpy.model.Model):
         rec.statements = main_statements
         error = self._get_error_record()
         if error:
+            if len(error_statements) > 0:
+                error_statements.pop(0)        # Remove the link statement
             error.statements = error_statements
         self._statements = statements_new
 
