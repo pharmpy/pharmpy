@@ -357,6 +357,11 @@ class AttrTree(Tree):
     def add_newline_node(self):
         self.children.append(self._newline_node())
 
+    def get_last_node(self):
+        for node in self.children:
+            last_node = node
+        return last_node
+
     @property
     def tokens(self):
         """All tokens as flattened list."""

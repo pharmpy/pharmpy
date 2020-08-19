@@ -207,7 +207,8 @@ class CodeRecord(Record):
 
                 index_past += 1
 
-        self._root_updated.add_newline_node()
+        if self._root_updated.get_last_node().rule not in ['WS_ALL', 'NEWLINE']:
+            self._root_updated.add_newline_node()
 
         self.nodes = copy.deepcopy(self._nodes_updated)
         self._nodes_updated = []
