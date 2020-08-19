@@ -137,7 +137,14 @@ class CompartmentalSystem(ODESystem):
         derivatives = sympy.Matrix([sympy.Derivative(fn, t) for fn in amount_funcs])
         a = self.compartmental_matrix @ amount_funcs
         eqs = [sympy.Eq(lhs, rhs) for lhs, rhs in zip(derivatives, a)]
-        return eqs
+        ics = {}
+        for node in self._g.nodes:
+            if node is not None:
+                if node.dose is None:
+                    ics[sympy.Function(node.amount.name)(0)] = 0
+                else:
+                    ics[sympy.Function(node.amount.name)(0)] = node.dose.symbol
+        return eqs, ics
 
 
 class Compartment:
@@ -159,7 +166,7 @@ class Compartment:
 
 class IVBolus:
     def __init__(self, symbol):
-        self.symbol = symbol
+        self.symbol = sympy.Symbol(symbol)
 
     def __eq__(self, other):
         return isinstance(other, IVBolus) and self.symbol == other.symbol
