@@ -326,7 +326,10 @@ class Model(pharmpy.model.Model):
 
         error = self._get_error_record()
         if error:
-            comp = compartmental_model(self)
+            sub = self.control_stream.get_records('SUBROUTINE')[0]
+            advan = sub.get_option_startswith('ADVAN')
+            trans = sub.get_option_startswith('TRANS')
+            comp = compartmental_model(self, advan, trans)
             if comp is not None:
                 cm, link = comp
                 statements += [cm, link]

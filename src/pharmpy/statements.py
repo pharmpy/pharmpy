@@ -109,17 +109,21 @@ class CompartmentalSystem(ODESystem):
         dod = nx.to_dict_of_dicts(self._g)
         size = len(dod) - 1
         f = sympy.zeros(size)
-        for i, from_comp in enumerate(dod.keys()):
-            if from_comp is not None:
-                diagsum = 0
-                for j, to_comp in enumerate(dod[from_comp].keys()):
+        for i in range(0, size):
+            from_comp = list(self._g.nodes)[i]
+            diagsum = 0
+            for j in range(0, size + 1):
+                to_comp = list(self._g.nodes)[j]
+                try:
                     rate = dod[from_comp][to_comp]['rate']
-                    if to_comp is not None:
-                        f[j, i] = rate
-                        diagsum += f[j, i]
-                    else:
-                        f[i, i] = -rate
-                f[i, i] -= diagsum
+                except KeyError:
+                    rate = 0
+                if to_comp is not None:
+                    f[j, i] = rate
+                    diagsum += f[j, i]
+                else:
+                    f[i, i] = -rate
+            f[i, i] -= diagsum
         return f
 
     @property

@@ -43,6 +43,12 @@ class OptionRecord(Record):
     def has_option(self, name):
         return name in self.option_pairs.keys()
 
+    def get_option_startswith(self, s):
+        for opt in self.option_pairs.keys():
+            if opt.startswith(s):
+                return opt
+        return None
+
     def set_option(self, key, new_value):
         """ Set the value of an option
 
