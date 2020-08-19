@@ -11,8 +11,8 @@ from pharmpy.model_transformation import add_covariate_effect
                  'CL = CLWGT + TVCL*exp(ETA(1))'),
     ('pow', '*', 'CLWGT = (WGT/CL_MEDIAN)**THETA(4)\nCL_MEDIAN = 1.3\n'
                  'CL = CLWGT*TVCL*exp(ETA(1))'),
-    ('pow', '+', 'CLWGT = (WGT/CL_MEDIAN)**THETA(4)\nCL_MEDIAN = 1.3\n'
-                 'CL = CLWGT + TVCL*exp(ETA(1))')
+    ('lin_cont', '*', 'CLWGT = THETA(4)*(-CL_MEDIAN + WGT) + 1\nCL_MEDIAN = 1.3\n'
+                      'CL = CLWGT*TVCL*exp(ETA(1))')
 ])
 def test_add_covariate_effect(pheno_path, effect, operation, buf_new):
     model = Model(pheno_path)

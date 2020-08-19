@@ -68,5 +68,13 @@ class CovariateEffect:
 
         return cls(template)
 
+    @classmethod
+    def linear_continuous(cls):
+        symbol = S('symbol')
+        expression = 1 + S('theta') * (S('cov') - S('median'))
+        template = Assignment(symbol, expression)
+
+        return cls(template)
+
     def __str__(self):
         return str(self.template)
