@@ -107,28 +107,25 @@ class CompartmentalSystem(ODESystem):
     @property
     def compartmental_matrix(self):
         dod = nx.to_dict_of_dicts(self._g)
-        size = len(dod) - 1
+        size = len(self._g.nodes)
         f = sympy.zeros(size)
         for i in range(0, size):
             from_comp = list(self._g.nodes)[i]
             diagsum = 0
-            for j in range(0, size + 1):
+            for j in range(0, size):
                 to_comp = list(self._g.nodes)[j]
                 try:
                     rate = dod[from_comp][to_comp]['rate']
                 except KeyError:
                     rate = 0
-                if to_comp is not None:
-                    f[j, i] = rate
-                    diagsum += f[j, i]
-                else:
-                    f[i, i] = -rate
+                f[j, i] = rate
+                diagsum += f[j, i]
             f[i, i] -= diagsum
         return f
 
     @property
     def amounts(self):
-        amts = [node.amount for node in self._g.nodes if node is not None]
+        amts = [node.amount for node in self._g.nodes]
         return sympy.Matrix(amts)
 
     def to_explicit_odes(self):
@@ -139,11 +136,10 @@ class CompartmentalSystem(ODESystem):
         eqs = [sympy.Eq(lhs, rhs) for lhs, rhs in zip(derivatives, a)]
         ics = {}
         for node in self._g.nodes:
-            if node is not None:
-                if node.dose is None:
-                    ics[sympy.Function(node.amount.name)(0)] = 0
-                else:
-                    ics[sympy.Function(node.amount.name)(0)] = node.dose.symbol
+            if node.dose is None:
+                ics[sympy.Function(node.amount.name)(0)] = 0
+            else:
+                ics[sympy.Function(node.amount.name)(0)] = node.dose.symbol
         return eqs, ics
 
 

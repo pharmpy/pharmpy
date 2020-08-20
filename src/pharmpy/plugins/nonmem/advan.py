@@ -7,7 +7,8 @@ def compartmental_model(model, advan, trans):
     if advan == 'ADVAN1':
         cm = CompartmentalSystem()
         central = cm.add_compartment('CENTRAL')
-        _first_order_elimination(cm, central, trans)
+        output = cm.add_compartment('OUTPUT')
+        _first_order_elimination(cm, central, output, trans)
         dose = IVBolus('AMT')
         central.dose = dose
         ass = _f_link_assignment(model, central)
@@ -15,7 +16,8 @@ def compartmental_model(model, advan, trans):
         cm = CompartmentalSystem()
         depot = cm.add_compartment('DEPOT')
         central = cm.add_compartment('CENTRAL')
-        _first_order_elimination(cm, central, trans)
+        output = cm.add_compartment('OUTPUT')
+        _first_order_elimination(cm, central, output, trans)
         cm.add_flow(depot, central, sympy.Symbol('KA', real=True))
         dose = IVBolus('AMT')
         depot.dose = dose
@@ -35,9 +37,9 @@ def _f_link_assignment(model, compartment):
     return ass
 
 
-def _first_order_elimination(cm, compartment, trans):
+def _first_order_elimination(cm, compartment, output, trans):
     if trans == 'TRANS2':
         out = sympy.Symbol('CL', real=True) / sympy.Symbol('V', real=True)
     else:
         out = sympy.Symbol('K', real=True)
-    cm.add_flow(compartment, None, out)
+    cm.add_flow(compartment, output, out)
