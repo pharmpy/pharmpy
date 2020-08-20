@@ -51,6 +51,8 @@ def get_canonical_record_name(raw_name):
         # Synonyms
         if 'INFILE'.startswith(bare):
             return 'DATA'
+        elif 'SUBS'.startswith(bare):
+            return 'SUBROUTINE'
     elif bare == 'PK':
         return bare
 
