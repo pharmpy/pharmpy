@@ -4,7 +4,6 @@ from pharmpy.statements import Assignment, CompartmentalSystem, IVBolus
 
 
 def compartmental_model(model, advan, trans):
-    cm = None
     if advan == 'ADVAN1':
         cm = CompartmentalSystem()
         central = cm.add_compartment('CENTRAL')
@@ -21,6 +20,8 @@ def compartmental_model(model, advan, trans):
         dose = IVBolus('AMT')
         depot.dose = dose
         ass = _f_link_assignment(model, central)
+    else:
+        return None
     return cm, ass
 
 
