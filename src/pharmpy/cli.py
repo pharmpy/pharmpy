@@ -332,6 +332,16 @@ def model_sample(args):
         model.write()
 
 
+def add_covariate_effect(args):
+    """Subcommand to add covariate effect to model."""
+    from pharmpy.model_transformation import add_covariate_effect
+
+    model = args.model
+    add_covariate_effect(model, args.param, args.covariate, args.effect)
+
+    write_model_or_dataset(model, model.dataset, path=args.output_file, force=False)
+
+
 def results_bootstrap(args):
     """Subcommand to generate bootstrap results"""
     if len(args.models) < 3:
@@ -570,6 +580,19 @@ parser_definition = [
                               'type': int,
                               'default': 1,
                               'help': 'Number of sampled models'}]}},
+        {'add_cov_effect': {'help': 'Adds covariate effect',
+                            'func': add_covariate_effect,
+                            'parents': [args_model_input, args_output],
+                            'args': [{'name': 'param',
+                                      'type': str,
+                                      'help': 'Individual parameter'},
+                                     {'name': 'covariate',
+                                      'type': str,
+                                      'help': 'Covariate'},
+                                     {'name': 'effect',
+                                      'type': str,
+                                      'help': 'Type of covariate effect'},
+                                     ]}},
     ], 'help': 'Model manipulations',
        'title': 'Pharmpy model commands',
        'metavar': 'ACTION',
