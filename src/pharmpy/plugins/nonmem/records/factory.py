@@ -22,7 +22,7 @@ known_records = {
     'INPUT': (OptionRecord, OptionRecordParser),
     'PROBLEM': (ProblemRecord, ProblemRecordParser),
     'SIZES': (OptionRecord, OptionRecordParser),
-    'SUBROUTINE': (OptionRecord, OptionRecordParser),
+    'SUBROUTINES': (OptionRecord, OptionRecordParser),
     'THETA': (ThetaRecord, ThetaRecordParser),
     'OMEGA': (OmegaRecord, OmegaRecordParser),
     'SIGMA': (OmegaRecord, OmegaRecordParser),
@@ -52,7 +52,7 @@ def get_canonical_record_name(raw_name):
         if 'INFILE'.startswith(bare):
             return 'DATA'
         elif 'SUBS'.startswith(bare):
-            return 'SUBROUTINE'
+            return 'SUBROUTINES'
     elif bare == 'PK':
         return bare
 
