@@ -334,9 +334,9 @@ class Model(pharmpy.model.Model):
                 cm, link = comp
                 statements += [cm, link]
             else:
+                statements.append(ODESystem())      # FIXME: Placeholder for ODE-system
                 # FIXME: Dummy link statement
                 statements.append(Assignment("F", sympy.Symbol("F", real=True)))
-                statements.append(ODESystem())      # FIXME: Placeholder for ODE-system
             statements += error.statements
 
         self._statements = statements
