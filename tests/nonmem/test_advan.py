@@ -1,3 +1,4 @@
+import pytest
 import sympy
 from sympy import Symbol
 
@@ -9,35 +10,58 @@ def S(x):
     return Symbol(x, real=True)
 
 
-def test_pheno(pheno_path):
+@pytest.mark.parametrize('advan,trans,compmat,amounts,strodes,corrics', [
+    ('ADVAN1', 'TRANS1',
+        [[-S('K'), 0], [S('K'), 0]],
+        [S('A_CENTRAL'), S('A_OUTPUT')],
+        ['Eq(Derivative(A_CENTRAL(t), t), -K*A_CENTRAL(t))',
+         'Eq(Derivative(A_OUTPUT(t), t), K*A_CENTRAL(t))'],
+        {sympy.Function('A_CENTRAL')(0): S('AMT'),
+         sympy.Function('A_OUTPUT')(0): 0}),
+    ('ADVAN1', 'TRANS2',
+        [[-S('CL') / S('V'), 0], [S('CL') / S('V'), 0]],
+        [S('A_CENTRAL'), S('A_OUTPUT')],
+        ['Eq(Derivative(A_CENTRAL(t), t), -CL*A_CENTRAL(t)/V)',
+         'Eq(Derivative(A_OUTPUT(t), t), CL*A_CENTRAL(t)/V)'],
+        {sympy.Function('A_CENTRAL')(0): S('AMT'),
+         sympy.Function('A_OUTPUT')(0): 0}),
+    ('ADVAN2', 'TRANS1',
+        [[-S('KA'), 0, 0], [S('KA'), -S('K'), 0], [0, S('K'), 0]],
+        [S('A_DEPOT'), S('A_CENTRAL'), S('A_OUTPUT')],
+        ['Eq(Derivative(A_DEPOT(t), t), -KA*A_DEPOT(t))',
+         'Eq(Derivative(A_CENTRAL(t), t), -K*A_CENTRAL(t) + KA*A_DEPOT(t))',
+         'Eq(Derivative(A_OUTPUT(t), t), K*A_CENTRAL(t))'],
+        {sympy.Function('A_DEPOT')(0): S('AMT'),
+         sympy.Function('A_CENTRAL')(0): 0,
+         sympy.Function('A_OUTPUT')(0): 0}),
+    ('ADVAN2', 'TRANS2',
+        [[-S('KA'), 0, 0], [S('KA'), -S('CL') / S('V'), 0], [0, S('CL') / S('V'), 0]],
+        [S('A_DEPOT'), S('A_CENTRAL'), S('A_OUTPUT')],
+        ['Eq(Derivative(A_DEPOT(t), t), -KA*A_DEPOT(t))',
+         'Eq(Derivative(A_CENTRAL(t), t), -CL*A_CENTRAL(t)/V + KA*A_DEPOT(t))',
+         'Eq(Derivative(A_OUTPUT(t), t), CL*A_CENTRAL(t)/V)'],
+        {sympy.Function('A_DEPOT')(0): S('AMT'),
+         sympy.Function('A_CENTRAL')(0): 0,
+         sympy.Function('A_OUTPUT')(0): 0}),
+    ('ADVAN3', 'TRANS1',
+        [[-S('K12') - S('K'), S('K21'), 0], [S('K12'), -S('K21'), 0], [S('K'), 0, 0]],
+        [S('A_CENTRAL'), S('A_PERIPHERAL'), S('A_OUTPUT')],
+        ['Eq(Derivative(A_CENTRAL(t), t), K21*A_PERIPHERAL(t) + (-K - K12)*A_CENTRAL(t))',
+         'Eq(Derivative(A_PERIPHERAL(t), t), K12*A_CENTRAL(t) - K21*A_PERIPHERAL(t))',
+         'Eq(Derivative(A_OUTPUT(t), t), K*A_CENTRAL(t))'],
+        {sympy.Function('A_CENTRAL')(0): S('AMT'),
+         sympy.Function('A_PERIPHERAL')(0): 0,
+         sympy.Function('A_OUTPUT')(0): 0}),
+])
+def test_pheno(pheno_path, advan, trans, compmat, amounts, strodes, corrics):
     model = Model(pheno_path)
-    cm, ass = compartmental_model(model, 'ADVAN1', 'TRANS2')
+    cm, ass = compartmental_model(model, advan, trans)
 
     assert ass.symbol == S('F')
     assert ass.expression == S('A_CENTRAL') / S('S1')
-    assert cm.compartmental_matrix == sympy.Matrix([[-S('CL') / S('V'), 0], [S('CL') / S('V'), 0]])
-    assert cm.amounts == sympy.Matrix([S('A_CENTRAL'), S('A_OUTPUT')])
+    assert cm.compartmental_matrix == sympy.Matrix(compmat)
+    assert cm.amounts == sympy.Matrix(amounts)
     odes, ics = cm.to_explicit_odes()
-    assert len(odes) == 2
-    assert str(odes[0]) == 'Eq(Derivative(A_CENTRAL(t), t), -CL*A_CENTRAL(t)/V)'
-    assert str(odes[1]) == 'Eq(Derivative(A_OUTPUT(t), t), CL*A_CENTRAL(t)/V)'
-    assert len(ics) == 2
-    assert ics[sympy.Function('A_CENTRAL')(0)] == S('AMT')
-    assert ics[sympy.Function('A_OUTPUT')(0)] == 0
-
-    cm, ass = compartmental_model(model, 'ADVAN2', 'TRANS1')
-    assert ass.symbol == S('F')
-    assert ass.expression == S('A_CENTRAL') / S('S1')
-    assert cm.compartmental_matrix == sympy.Matrix([[-S('KA'), 0, 0],
-                                                    [S('KA'), -S('K'), 0],
-                                                    [0, S('K'), 0]])
-    assert cm.amounts == sympy.Matrix([S('A_DEPOT'), S('A_CENTRAL'), S('A_OUTPUT')])
-    odes, ics = cm.to_explicit_odes()
-    assert len(odes) == 3
-    assert str(odes[0]) == 'Eq(Derivative(A_DEPOT(t), t), -KA*A_DEPOT(t))'
-    assert str(odes[1]) == 'Eq(Derivative(A_CENTRAL(t), t), -K*A_CENTRAL(t) + KA*A_DEPOT(t))'
-    assert str(odes[2]) == 'Eq(Derivative(A_OUTPUT(t), t), K*A_CENTRAL(t))'
-    assert len(ics) == 3
-    assert ics[sympy.Function('A_DEPOT')(0)] == S('AMT')
-    assert ics[sympy.Function('A_CENTRAL')(0)] == 0
-    assert ics[sympy.Function('A_OUTPUT')(0)] == 0
+    odes = [str(ode) for ode in odes]
+    assert odes == strodes
+    assert ics == corrics
