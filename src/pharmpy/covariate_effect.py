@@ -1,6 +1,6 @@
 from operator import add, mul
 
-from sympy import Symbol, exp
+from sympy import Eq, Piecewise, Symbol, exp
 
 from pharmpy.statements import Assignment
 
@@ -72,6 +72,15 @@ class CovariateEffect:
     def linear_continuous(cls):
         symbol = S('symbol')
         expression = 1 + S('theta') * (S('cov') - S('median'))
+        template = Assignment(symbol, expression)
+
+        return cls(template)
+
+    @classmethod
+    def linear_categorical(cls):
+        symbol = S('symbol')
+        expression = Piecewise((1, Eq(S('cov'), 1)),
+                               (1 + S('theta'), Eq(S('cov'), 0)), evaluate=False)
         template = Assignment(symbol, expression)
 
         return cls(template)

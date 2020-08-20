@@ -68,6 +68,8 @@ def choose_param_inits(effect, df, covariate):
 def create_template(effect):
     if effect == 'lin_cont':
         return CovariateEffect.linear_continuous()
+    elif effect == 'lin_cat':
+        return CovariateEffect.linear_categorical()
     elif effect == 'exp':
         return CovariateEffect.exponential()
     elif effect == 'pow':
