@@ -63,7 +63,7 @@ intrinsic_func: "LOG"i | "LOG10"i | "EXP"i | "DEXP"i | "SQRT"i | "SIN"i | "COS"i
 variable: vector | NAME
 
 symbol: parameter | vector | NAME
-vector: ("A"i | "A_0"i | "A_INITIAL"i) subscript
+vector: ("A"i | "A_0"i | "A_INITIAL"i | "DADT"i) subscript
 parameter: (THETA | ETA | EPS | OMEGA | SIGMA) subscript
          | (OMEGA | SIGMA) double_subscript
 

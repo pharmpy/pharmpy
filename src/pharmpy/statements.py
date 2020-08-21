@@ -31,7 +31,8 @@ class Assignment:
         return symbols
 
     def __eq__(self, other):
-        return self.symbol == other.symbol and self.expression == other.expression
+        return isinstance(other, Assignment) and self.symbol == other.symbol and \
+            self.expression == other.expression
 
     def pretty(self):
         expression = sympy.pretty(self.expression)
@@ -77,7 +78,8 @@ class ExplicitODESystem(ODESystem):
         self.ics = ics
 
     def __eq__(self, other):
-        return self.odes == other.odes and self.ics == other.ics
+        return isinstance(other, ExplicitODESystem) and self.odes == other.odes and \
+            self.ics == other.ics
 
 
 class CompartmentalSystem(ODESystem):
@@ -87,7 +89,8 @@ class CompartmentalSystem(ODESystem):
         self._g = nx.DiGraph()
 
     def __eq__(self, other):
-        return nx.to_dict_of_dicts(self._g) == nx.to_dict_of_dicts(other._g)
+        return isinstance(other, CompartmentalSystem) and \
+            nx.to_dict_of_dicts(self._g) == nx.to_dict_of_dicts(other._g)
 
     def __deepcopy__(self, memo):
         newone = type(self)()

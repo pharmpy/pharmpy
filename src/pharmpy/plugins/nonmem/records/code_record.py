@@ -353,3 +353,16 @@ class CodeRecord(Record):
                     statement.subs(symbol_old, symbol_new)
 
         self.statements = statements_updated
+
+    def from_odes(self, ode_system):
+        """Set statements of record given an eplicit ode system
+        """
+        odes = ode_system.odes[:-1]    # Skip last ode as it is for the output compartment
+        functions = [ode.lhs.args[0] for ode in odes]
+        function_map = {f: sympy.Symbol(f'A({i + 1})') for i, f in enumerate(functions)}
+        statements = []
+        for i, ode in enumerate(odes):
+            symbol = sympy.Symbol(f'DADT({i + 1})')
+            expression = ode.rhs.subs(function_map)
+            statements.append(Assignment(symbol, expression))
+        self.statements = statements

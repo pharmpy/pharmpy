@@ -374,9 +374,11 @@ class Model(pharmpy.model.Model):
            Handle changes from CompartmentSystem to ExplicitODESystem
         """
         subs = self.control_stream.get_records('SUBROUTINES')[0]
-        subs.remove_startswith('TRANS')
-        subs.remove_startswith('ADVAN')
+        subs.remove_option_startswith('TRANS')
+        subs.remove_option_startswith('ADVAN')
         subs.append_option('ADVAN6')
+        des = self.control_stream.insert_record('$DES\nDUMMY=0', 'PK')
+        des.from_odes(new)
 
     def get_pred_pk_record(self):
         pred = self.control_stream.get_records('PRED')

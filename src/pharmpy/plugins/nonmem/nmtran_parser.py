@@ -51,6 +51,8 @@ class NMTranControlStream:
         return record
 
     def insert_record(self, content, rec_type):
+        """Create and insert a new record before a record with given type
+        """
         current_problem = -1
         index = 0
 
