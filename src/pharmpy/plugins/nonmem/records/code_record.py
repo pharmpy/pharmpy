@@ -7,6 +7,7 @@ import copy
 
 import lark
 import sympy
+from sympy import Piecewise
 
 from pharmpy.data_structures import OrderedSet
 from pharmpy.parse_utils.generic import NoSuchRuleException
@@ -231,7 +232,11 @@ class CodeRecord(Record):
 
     # Creating node does not work for if-statements
     def _add_statement(self, index_insert, statement):
-        node_tree = CodeRecordParser(f'\n{str(statement).replace(":", "")}').root
+        if isinstance(statement.expression, Piecewise):
+            statement_str = self._translate_sympy_piecewise(statement)
+        else:
+            statement_str = f'\n{str(statement).replace(":", "")}'
+        node_tree = CodeRecordParser(statement_str).root
         node = node_tree.all('statement')[0]
 
         if isinstance(index_insert, int) and index_insert >= len(self._nodes_updated):
@@ -244,6 +249,41 @@ class CodeRecord(Record):
             node_following = self._nodes_updated[index_insert]
             self._nodes_updated.insert(index_insert, node)
             self._root_updated.add_node(node, node_following)
+
+    def _translate_sympy_piecewise(self, statement):
+        statement_args = statement.expression.args
+        symbol = statement.symbol
+        statement_translated = '\nIF '
+
+        if len(statement_args) == 1:
+            value = str(statement_args[0][0])
+            condition = str(statement_args[0][1])
+            condition_translated = self._translate_condition(condition)
+
+            return statement_translated + f'({condition_translated}) {symbol}={value}\n'
+
+        for i, if_statement in enumerate(statement_args):
+            value = str(if_statement[0])
+            condition = str(if_statement[1])
+            condition_translated = self._translate_condition(condition)
+
+            statement_translated += f'({condition_translated}) THEN\n{symbol}={value}\n'
+            if i < len(statement_args) - 1:
+                statement_translated += 'ELSE IF '
+            else:
+                statement_translated += 'END IF'
+
+        return statement_translated
+
+    @staticmethod
+    def _translate_condition(condition):
+        sign_dict = {'>': '.GT.',
+                     '<': '.LT.'}
+        condition_split = condition.split(' ')
+
+        condition_translated = ''.join([sign_dict.get(symbol, symbol)
+                                        for symbol in condition_split])
+        return condition_translated
 
     def _get_node(self, statement):
         try:
