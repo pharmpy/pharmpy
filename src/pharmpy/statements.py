@@ -47,7 +47,7 @@ class Assignment:
         return s
 
     def __str__(self):
-        return f'{self.symbol} := {self.expression}'
+        return f'{self.symbol} := {self.expression}'.upper()
 
 
 class ODESystem:
