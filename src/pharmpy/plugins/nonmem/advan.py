@@ -38,6 +38,20 @@ def compartmental_model(model, advan, trans):
         dose = IVBolus('AMT')
         central.dose = dose
         ass = _f_link_assignment(model, central)
+    elif advan == 'ADVAN4':
+        cm = CompartmentalSystem()
+        depot = cm.add_compartment('DEPOT')
+        central = cm.add_compartment('CENTRAL')
+        peripheral = cm.add_compartment('PERIPHERAL')
+        output = cm.add_compartment('OUTPUT')
+        k, k23, k32, ka = _advan4_trans(trans)
+        cm.add_flow(depot, central, ka)
+        cm.add_flow(central, output, k)
+        cm.add_flow(central, peripheral, k23)
+        cm.add_flow(peripheral, central, k32)
+        dose = IVBolus('AMT')
+        depot.dose = dose
+        ass = _f_link_assignment(model, central)
     else:
         return None
     return cm, ass
@@ -81,3 +95,31 @@ def _advan3_trans(trans):
         return (real('K'),
                 real('K12'),
                 real('K21'))
+
+
+def _advan4_trans(trans):
+    if trans == 'TRANS3':
+        return (real('CL') / real('V'),
+                real('Q') / real('V'),
+                real('Q') / (real('VSS') - real('V')),
+                real('KA'))
+    elif trans == 'TRANS4':
+        return (real('CL') / real('V2'),
+                real('Q') / real('V2'),
+                real('Q') / real('V3'),
+                real('KA'))
+    elif trans == 'TRANS5':
+        return (real('ALPHA') * real('BETA') / real('K32'),
+                real('ALPHA') + real('BETA') - real('K32') - real('K'),
+                (real('AOB') * real('BETA') + real('ALPHA')) / (real('AOB') + 1),
+                real('KA'))
+    elif trans == 'TRANS6':
+        return (real('ALPHA') * real('BETA') / real('K32'),
+                real('ALPHA') + real('BETA') - real('K32') - real('K'),
+                real('K32'),
+                real('KA'))
+    else:
+        return (real('K'),
+                real('K23'),
+                real('K32'),
+                real('KA'))

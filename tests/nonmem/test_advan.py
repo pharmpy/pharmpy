@@ -52,6 +52,21 @@ def S(x):
         {sympy.Function('A_CENTRAL')(0): S('AMT'),
          sympy.Function('A_PERIPHERAL')(0): 0,
          sympy.Function('A_OUTPUT')(0): 0}),
+    ('ADVAN4', 'TRANS1',
+        [[-S('KA'), 0, 0, 0],
+         [S('KA'), -S('K23') - S('K'), S('K32'), 0],
+         [0, S('K23'), -S('K32'), 0],
+         [0, S('K'), 0, 0]],
+        [S('A_DEPOT'), S('A_CENTRAL'), S('A_PERIPHERAL'), S('A_OUTPUT')],
+        ['Eq(Derivative(A_DEPOT(t), t), -KA*A_DEPOT(t))',
+         'Eq(Derivative(A_CENTRAL(t), t), K32*A_PERIPHERAL(t) + '
+         'KA*A_DEPOT(t) + (-K - K23)*A_CENTRAL(t))',
+         'Eq(Derivative(A_PERIPHERAL(t), t), K23*A_CENTRAL(t) - K32*A_PERIPHERAL(t))',
+         'Eq(Derivative(A_OUTPUT(t), t), K*A_CENTRAL(t))'],
+        {sympy.Function('A_DEPOT')(0): S('AMT'),
+         sympy.Function('A_CENTRAL')(0): 0,
+         sympy.Function('A_PERIPHERAL')(0): 0,
+         sympy.Function('A_OUTPUT')(0): 0}),
 ])
 def test_pheno(pheno_path, advan, trans, compmat, amounts, strodes, corrics):
     model = Model(pheno_path)
