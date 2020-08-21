@@ -72,7 +72,12 @@ class ODESystem:
 class ExplicitODESystem(ODESystem):
     """System of ODEs described explicitly
     """
-    pass
+    def __init__(self, odes, ics):
+        self.odes = odes
+        self.ics = ics
+
+    def __eq__(self, other):
+        return self.odes == other.odes and self.ics == other.ics
 
 
 class CompartmentalSystem(ODESystem):
@@ -191,6 +196,15 @@ class ModelStatements(list):
             if isinstance(s, Assignment) and str(s.symbol) == symbol:
                 statement = s
         return statement
+
+    @property
+    def ode_system(self):
+        """Returns the ODE system of the model or None if the model doesn't have an ODE system
+        """
+        for s in self:
+            if isinstance(s, ODESystem):
+                return s
+        return None
 
     def __eq__(self, other):
         if len(self) != len(other):
