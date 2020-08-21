@@ -343,10 +343,10 @@ def add_covariate_effect(args):
     write_model_or_dataset(model, model.dataset, path=args.output_file, force=False)
 
 
-def model_to_explicit_odes(args):
-    from pharmpy.model_transformation import to_explicit_odes
+def model_explicit_odes(args):
+    from pharmpy.model_transformation import explicit_odes
     model = args.model
-    to_explicit_odes(model)
+    explicit_odes(model)
     write_model_or_dataset(model, None, path=args.output_file, force=args.force)
 
 
@@ -601,11 +601,11 @@ parser_definition = [
                                       'type': str,
                                       'help': 'Type of covariate effect'},
                                      ]}},
-        {'to_explicit_odes': {'help': 'Convert from compartmental or implicit description of '
-                                      'ODE-system to explicit. I.e. create a $DES',
-                              'func': model_to_explicit_odes,
-                              'parents': [args_model_input, args_output],
-                              }},
+        {'explicit_odes': {'help': 'Convert from compartmental or implicit description of '
+                                   'ODE-system to explicit. I.e. create a $DES',
+                           'func': model_explicit_odes,
+                           'parents': [args_model_input, args_output],
+                           }},
     ], 'help': 'Model manipulations',
        'title': 'Pharmpy model commands',
        'metavar': 'ACTION',

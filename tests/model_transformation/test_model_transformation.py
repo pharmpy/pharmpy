@@ -1,7 +1,7 @@
 import pytest
 
 from pharmpy import Model
-from pharmpy.model_transformation import add_covariate_effect, to_explicit_odes
+from pharmpy.model_transformation import add_covariate_effect, explicit_odes
 
 
 @pytest.mark.parametrize('effect, operation, buf_new', [
@@ -37,7 +37,7 @@ def test_add_covariate_effect(pheno_path, effect, operation, buf_new):
 def test_to_explicit_odes(pheno_path):
     model = Model(pheno_path)
 
-    to_explicit_odes(model)
+    explicit_odes(model)
     model.update_source()
-    assert str(model).split('\n')[17] == '$DES'
-    assert str(model).split('\n')[18] == 'DADT(1) = -A(1)*CL/V'
+    assert str(model).split('\n')[18] == '$DES'
+    assert str(model).split('\n')[19] == 'DADT(1) = -A(1)*CL/V'
