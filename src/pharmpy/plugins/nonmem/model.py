@@ -344,12 +344,16 @@ class Model(pharmpy.model.Model):
 
     @statements.setter
     def statements(self, statements_new):
+        old_statements = self._statements
         main_statements = ModelStatements()
         error_statements = ModelStatements()
         found_ode = False
         for s in statements_new:
             if isinstance(s, ODESystem):
                 found_ode = True
+                old_system = old_statements.ode_system
+                if s != old_system:
+                    self._update_ode_system(old_system, s)
             else:
                 if found_ode:
                     error_statements.append(s)
@@ -363,6 +367,16 @@ class Model(pharmpy.model.Model):
                 error_statements.pop(0)        # Remove the link statement
             error.statements = error_statements
         self._statements = statements_new
+
+    def _update_ode_system(self, old, new):
+        """Update ODE system
+
+           Handle changes from CompartmentSystem to ExplicitODESystem
+        """
+        subs = self.control_stream.get_records('SUBROUTINES')[0]
+        subs.remove_startswith('TRANS')
+        subs.remove_startswith('ADVAN')
+        subs.append_option('ADVAN6')
 
     def get_pred_pk_record(self):
         pred = self.control_stream.get_records('PRED')
