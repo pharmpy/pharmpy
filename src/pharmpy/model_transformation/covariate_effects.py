@@ -1,6 +1,6 @@
 import math
 
-from pharmpy.covariate_effect import CovariateEffect
+from pharmpy.model_transformation.covariate_effect import CovariateEffect
 from pharmpy.parameter import Parameter
 
 

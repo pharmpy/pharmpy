@@ -1,7 +1,7 @@
 import pytest
 from sympy import Symbol, exp
 
-from pharmpy.covariate_effect import CovariateEffect
+from pharmpy.model_transformation.covariate_effect import CovariateEffect
 
 
 def S(x):
