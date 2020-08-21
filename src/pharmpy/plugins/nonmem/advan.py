@@ -1,6 +1,6 @@
 import sympy
 
-from pharmpy.statements import Assignment, CompartmentalSystem, IVBolus
+from pharmpy.statements import Assignment, CompartmentalSystem, Bolus
 
 
 def real(name):
@@ -13,7 +13,7 @@ def compartmental_model(model, advan, trans):
         central = cm.add_compartment('CENTRAL')
         output = cm.add_compartment('OUTPUT')
         cm.add_flow(central, output, _advan12_trans(trans))
-        dose = IVBolus('AMT')
+        dose = Bolus('AMT')
         central.dose = dose
         ass = _f_link_assignment(model, central)
     elif advan == 'ADVAN2':
@@ -23,7 +23,7 @@ def compartmental_model(model, advan, trans):
         output = cm.add_compartment('OUTPUT')
         cm.add_flow(central, output, _advan12_trans(trans))
         cm.add_flow(depot, central, sympy.Symbol('KA', real=True))
-        dose = IVBolus('AMT')
+        dose = Bolus('AMT')
         depot.dose = dose
         ass = _f_link_assignment(model, central)
     elif advan == 'ADVAN3':
@@ -35,7 +35,7 @@ def compartmental_model(model, advan, trans):
         cm.add_flow(central, output, k)
         cm.add_flow(central, peripheral, k12)
         cm.add_flow(peripheral, central, k21)
-        dose = IVBolus('AMT')
+        dose = Bolus('AMT')
         central.dose = dose
         ass = _f_link_assignment(model, central)
     elif advan == 'ADVAN4':
@@ -49,7 +49,7 @@ def compartmental_model(model, advan, trans):
         cm.add_flow(central, output, k)
         cm.add_flow(central, peripheral, k23)
         cm.add_flow(peripheral, central, k32)
-        dose = IVBolus('AMT')
+        dose = Bolus('AMT')
         depot.dose = dose
         ass = _f_link_assignment(model, central)
     else:

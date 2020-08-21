@@ -168,12 +168,12 @@ class Compartment:
         return sympy.Symbol(f'A_{self.name}', real=True)
 
 
-class IVBolus:
+class Bolus:
     def __init__(self, symbol):
         self.symbol = sympy.Symbol(symbol)
 
     def __eq__(self, other):
-        return isinstance(other, IVBolus) and self.symbol == other.symbol
+        return isinstance(other, Bolus) and self.symbol == other.symbol
 
 
 class ModelStatements(list):
