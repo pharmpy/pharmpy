@@ -1,6 +1,6 @@
 import sympy
 
-from pharmpy.statements import Assignment, CompartmentalSystem, Bolus
+from pharmpy.statements import Assignment, Bolus, CompartmentalSystem
 
 
 def real(name):
