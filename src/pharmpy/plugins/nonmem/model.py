@@ -379,6 +379,14 @@ class Model(pharmpy.model.Model):
         subs.append_option('ADVAN6')
         des = self.control_stream.insert_record('$DES\nDUMMY=0', 'PK')
         des.from_odes(new)
+        mod = self.control_stream.insert_record('$MODEL TOL=3\n', 'SUBROUTINES')
+        for eq, ic in zip(new.odes[:-1], list(new.ics.keys())[:-1]):
+            name = eq.lhs.args[0].name[2:]
+            if new.ics[ic] != 0:
+                dose = True
+            else:
+                dose = False
+            mod.add_compartment(name, dosing=dose)
 
     def get_pred_pk_record(self):
         pred = self.control_stream.get_records('PRED')
