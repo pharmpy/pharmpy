@@ -221,7 +221,8 @@ def write_model_or_dataset(model_or_dataset, new_df, path, force):
     else:
         # Is a model
         model = model_or_dataset
-        model.dataset = new_df
+        if new_df is not None:
+            model.dataset = new_df
         try:
             if path:
                 if not path.is_dir():
@@ -340,6 +341,13 @@ def add_covariate_effect(args):
     add_covariate_effect(model, args.param, args.covariate, args.effect)
 
     write_model_or_dataset(model, model.dataset, path=args.output_file, force=False)
+
+
+def model_to_explicit_odes(args):
+    from pharmpy.model_transformation import to_explicit_odes
+    model = args.model
+    to_explicit_odes(model)
+    write_model_or_dataset(model, None, path=args.output_file, force=args.force)
 
 
 def results_bootstrap(args):
@@ -593,6 +601,11 @@ parser_definition = [
                                       'type': str,
                                       'help': 'Type of covariate effect'},
                                      ]}},
+        {'to_explicit_odes': {'help': 'Convert from compartmental or implicit description of '
+                                      'ODE-system to explicit. I.e. create a $DES',
+                              'func': model_to_explicit_odes,
+                              'parents': [args_model_input, args_output],
+                              }},
     ], 'help': 'Model manipulations',
        'title': 'Pharmpy model commands',
        'metavar': 'ACTION',
