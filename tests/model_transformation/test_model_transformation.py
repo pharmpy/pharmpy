@@ -39,5 +39,7 @@ def test_to_explicit_odes(pheno_path):
 
     explicit_odes(model)
     model.update_source()
-    assert str(model).split('\n')[18] == '$DES'
-    assert str(model).split('\n')[19] == 'DADT(1) = -A(1)*CL/V'
+    lines = str(model).split('\n')
+    assert lines[6] == '$MODEL TOL=3 COMPARTMENT=(CENTRAL DEFDOSE)'
+    assert lines[18] == '$DES'
+    assert lines[19] == 'DADT(1) = -A(1)*CL/V'
