@@ -11,6 +11,20 @@ from pharmpy.parse_utils.generic import AttrTree
 from .record import Record
 
 
+def _get_key(node):
+    if hasattr(node, 'KEY'):
+        return node.KEY
+    else:
+        return node.VALUE
+
+
+def _get_value(node):
+    if hasattr(node, 'KEY'):
+        return node.VALUE
+    else:
+        return None
+
+
 class OptionRecord(Record):
     @property
     def option_pairs(self):
@@ -20,10 +34,7 @@ class OptionRecord(Record):
         """
         pairs = OrderedDict()
         for node in self.root.all('option'):
-            if hasattr(node, 'KEY'):
-                pairs[node.KEY] = node.VALUE
-            else:
-                pairs[node.VALUE] = None
+            pairs[_get_key(node)] = _get_value(node)
         return pairs
 
     @property
@@ -34,10 +45,7 @@ class OptionRecord(Record):
         Option = namedtuple('Option', ['key', 'value'])
         pairs = []
         for node in self.root.all('option'):
-            if hasattr(node, 'KEY'):
-                pairs += [Option(node.KEY, node.VALUE)]
-            else:
-                pairs += [Option(node.VALUE, None)]
+            pairs += [Option(_get_key(node), _get_value(node))]
         return pairs
 
     def has_option(self, name):
@@ -105,3 +113,25 @@ class OptionRecord(Record):
                 self.root.children[-1:0] = [ws_node, node]
         else:
             self.root.children.append(node)
+
+    def remove_option(self, key):
+        """ Remove all options key
+        """
+        new_children = []
+        for node in self.root.children:
+            if node.rule == 'option':
+                if key == _get_key(node):
+                    if new_children[-1].rule == 'ws' and '\n' not in str(new_children[-1]):
+                        new_children.pop()
+                else:
+                    new_children.append(node)
+            else:
+                new_children.append(node)
+        self.root.children = new_children
+
+    def remove_option_startswith(self, start):
+        """ Remove all options that startswith
+        """
+        for key in self.option_pairs.keys():
+            if key.startswith(start):
+                self.remove_option(key)
