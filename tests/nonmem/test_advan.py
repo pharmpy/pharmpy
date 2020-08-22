@@ -67,6 +67,14 @@ def S(x):
          sympy.Function('A_CENTRAL')(0): 0,
          sympy.Function('A_PERIPHERAL')(0): 0,
          sympy.Function('A_OUTPUT')(0): 0}),
+    ('ADVAN10', 'TRANS1',
+        [[-S('VM') / (S('KM') + sympy.Function('A_CENTRAL')(S('t'))), 0],
+         [S('VM') / (S('KM') + sympy.Function('A_CENTRAL')(S('t'))), 0]],
+        [S('A_CENTRAL'), S('A_OUTPUT')],
+        ['Eq(Derivative(A_CENTRAL(t), t), -VM*A_CENTRAL(t)/(KM + A_CENTRAL(t)))',
+         'Eq(Derivative(A_OUTPUT(t), t), VM*A_CENTRAL(t)/(KM + A_CENTRAL(t)))'],
+        {sympy.Function('A_CENTRAL')(0): S('AMT'),
+         sympy.Function('A_OUTPUT')(0): 0}),
 ])
 def test_pheno(pheno_path, advan, trans, compmat, amounts, strodes, corrics):
     model = Model(pheno_path)

@@ -52,6 +52,17 @@ def compartmental_model(model, advan, trans):
         dose = Bolus('AMT')
         depot.dose = dose
         ass = _f_link_assignment(model, central)
+    elif advan == 'ADVAN10':
+        cm = CompartmentalSystem()
+        central = cm.add_compartment('CENTRAL')
+        output = cm.add_compartment('OUTPUT')
+        vm = real('VM')
+        km = real('KM')
+        dose = Bolus('AMT')
+        central.dose = dose
+        t = real('t')
+        cm.add_flow(central, output, vm / (km + sympy.Function(central.amount.name)(t)))
+        ass = _f_link_assignment(model, central)
     else:
         return None
     return cm, ass
