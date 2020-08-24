@@ -75,6 +75,22 @@ def S(x):
          'Eq(Derivative(A_OUTPUT(t), t), VM*A_CENTRAL(t)/(KM + A_CENTRAL(t)))'],
         {sympy.Function('A_CENTRAL')(0): S('AMT'),
          sympy.Function('A_OUTPUT')(0): 0}),
+    ('ADVAN11', 'TRANS1',
+        [[-S('K12') - S('K13') - S('K'), S('K21'), S('K31'), 0],
+         [S('K12'), -S('K21'), 0, 0],
+         [S('K13'), 0, -S('K31'), 0],
+         [S('K'), 0, 0, 0]],
+        [S('A_CENTRAL'), S('A_PERIPHERAL1'), S('A_PERIPHERAL2'), S('A_OUTPUT')],
+        ['Eq(Derivative(A_CENTRAL(t), t), K21*A_PERIPHERAL1(t) + K31*A_PERIPHERAL2(t) + '
+         '(-K - K12 - K13)*A_CENTRAL(t))',
+         'Eq(Derivative(A_PERIPHERAL1(t), t), K12*A_CENTRAL(t) - K21*A_PERIPHERAL1(t))',
+         'Eq(Derivative(A_PERIPHERAL2(t), t), K13*A_CENTRAL(t) - K31*A_PERIPHERAL2(t))',
+         'Eq(Derivative(A_OUTPUT(t), t), K*A_CENTRAL(t))'],
+        {sympy.Function('A_CENTRAL')(0): S('AMT'),
+         sympy.Function('A_PERIPHERAL1')(0): 0,
+         sympy.Function('A_PERIPHERAL2')(0): 0,
+         sympy.Function('A_OUTPUT')(0): 0}),
+
 ])
 def test_pheno(pheno_path, advan, trans, compmat, amounts, strodes, corrics):
     model = Model(pheno_path)

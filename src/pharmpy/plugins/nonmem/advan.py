@@ -63,6 +63,21 @@ def compartmental_model(model, advan, trans):
         t = real('t')
         cm.add_flow(central, output, vm / (km + sympy.Function(central.amount.name)(t)))
         ass = _f_link_assignment(model, central)
+    elif advan == 'ADVAN11':
+        cm = CompartmentalSystem()
+        central = cm.add_compartment('CENTRAL')
+        per1 = cm.add_compartment('PERIPHERAL1')
+        per2 = cm.add_compartment('PERIPHERAL2')
+        output = cm.add_compartment('OUTPUT')
+        k, k12, k21, k13, k31 = _advan11_trans(trans)
+        cm.add_flow(central, output, k)
+        cm.add_flow(central, per1, k12)
+        cm.add_flow(per1, central, k21)
+        cm.add_flow(central, per2, k13)
+        cm.add_flow(per2, central, k31)
+        dose = Bolus('AMT')
+        central.dose = dose
+        ass = _f_link_assignment(model, central)
     else:
         return None
     return cm, ass
@@ -134,3 +149,28 @@ def _advan4_trans(trans):
                 real('K23'),
                 real('K32'),
                 real('KA'))
+
+
+def _advan11_trans(trans):
+    if trans == 'TRANS4':
+        return (real('CL') / real('V1'),
+                real('Q2') / real('V1'),
+                real('Q2') / real('V2'),
+                real('Q3') / real('V1'),
+                real('Q3') / real('V3'))
+    elif trans == 'TRANS6':
+        return (real('ALPHA') * real('BETA') * real('GAMMA') / (real('K21') * real('K31')),
+                real('ALPHA') + real('BETA') + real('GAMMA') - real('K') - real('K13') -
+                real('K21') - real('K31'),
+                real('K21'),
+                (real('ALPHA') * real('BETA') + real('ALPHA') * real('GAMMA') +
+                 real('BETA') * real('GAMMA') + real('K31') * real('K31') -
+                 real('K31') * (real('ALPHA') + real('BETA') + real('GAMMA')) -
+                 real('K') * real('K21')) / (real('K21') - real('K31')),
+                real('K31'))
+    else:
+        return (real('K'),
+                real('K12'),
+                real('K21'),
+                real('K13'),
+                real('K31'))
