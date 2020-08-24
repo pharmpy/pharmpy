@@ -308,7 +308,10 @@ def model_print(args):
     for i, model in enumerate(args.models):
         lines += ['[%d/%d] %r' % (i+1, len(args.models), model.name)]
         dict_ = OrderedDict()
-        dict_['dataset'] = repr(model.dataset)
+        try:
+            dict_['dataset'] = repr(model.dataset)
+        except FileNotFoundError as e:
+            dict_['dataset'] = str(e)
         s = repr(model.parameters) + '\n\n'
         dict_['parameters'] = s
         s = repr(model.random_variables) + '\n\n'
