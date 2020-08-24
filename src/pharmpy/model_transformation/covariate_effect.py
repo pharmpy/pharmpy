@@ -12,7 +12,7 @@ def add_covariate_effect(model, parameter, covariate, effect, operation='*'):
     median = calculate_median(model.dataset, covariate)
 
     theta_name = str(model.create_symbol(stem='COVEFF', force_numbering=True))
-    theta_upper, theta_lower = choose_param_inits(effect, model.dataset, covariate)
+    theta_lower, theta_upper = choose_param_inits(effect, model.dataset, covariate)
 
     pset = model.parameters
     pset.add(Parameter(theta_name, theta_upper, theta_lower))
@@ -57,15 +57,16 @@ def choose_param_inits(effect, df, covariate):
         min_diff = df[str(covariate)].min() - calculate_median(df, covariate)
         max_diff = df[str(covariate)].max() - calculate_median(df, covariate)
         if min_diff == 0 or max_diff == 0:
-            return upper_expected, lower_expected
+            return lower_expected, upper_expected
         else:
-            upper = min(math.log(lower_expected)/min_diff,
-                        math.log(upper_expected)/max_diff)
-            lower = max(math.log(lower_expected)/max_diff,
-                        math.log(upper_expected)/min_diff)
-            return upper, lower
+            log_base = 10
+            lower = max(math.log(lower_expected, log_base)/max_diff,
+                        math.log(upper_expected, log_base)/min_diff)
+            upper = min(math.log(lower_expected, log_base)/min_diff,
+                        math.log(upper_expected, log_base)/max_diff)
+            return lower, upper
     else:
-        return upper_expected, lower_expected
+        return lower_expected, upper_expected
 
 
 def create_template(effect):
@@ -99,7 +100,7 @@ class CovariateEffect:
         if 'mean' in template_str:
             self.template.subs(S('mean'), S(f'{parameter}_MEAN'))
             self.statistic_type = 'mean'
-        else:
+        elif 'median' in template_str:
             self.template.subs(S('median'), S(f'{parameter}_MEDIAN'))
             self.statistic_type = 'median'
 
