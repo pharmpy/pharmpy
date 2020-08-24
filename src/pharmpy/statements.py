@@ -137,6 +137,9 @@ class CompartmentalSystem(ODESystem):
     def add_flow(self, source, destination, rate):
         self._g.add_edge(source, destination, rate=rate)
 
+    def get_flow(self, source, destination):
+        return self._g.edges[source, destination]['rate']
+
     def find_output(self):
         zeroout = [node for node, out_degree in self._g.out_degree() if out_degree == 0]
         if len(zeroout) == 1:
@@ -210,7 +213,7 @@ class CompartmentalSystem(ODESystem):
         depot = self.find_depot()
         if depot:
             depot_box = box(depot.name)
-            depot_central_arrow = arrow(str(self._g.edges[depot, central]['rate']))
+            depot_central_arrow = arrow(str(self.get_flow(depot, central)))
         periphs = self.find_peripherals()
         periph_box = []
         for p in periphs:
@@ -219,13 +222,13 @@ class CompartmentalSystem(ODESystem):
         upper = []
         if periphs:
             upper += box(periphs[0].name)
-            up_arrow = vertical_arrow(str(self._g.edges[central, periphs[0]]['rate']), down=False)
-            down_arrow = vertical_arrow(str(self._g.edges[periphs[0], central]['rate']))
+            up_arrow = vertical_arrow(str(self.get_flow(central, periphs[0])), down=False)
+            down_arrow = vertical_arrow(str(self.get_flow(periphs[0], central)))
             for i in range(0, len(up_arrow)):
                 upper.append(up_arrow[i] + '  ' + down_arrow[i])
 
         bottom = []
-        central_output_arrow = arrow(str(self._g.edges[central, output]['rate']))
+        central_output_arrow = arrow(str(self.get_flow(central, output)))
         for i in range(0, len(output_box)):
             if i == 1:
                 flow = central_output_arrow
