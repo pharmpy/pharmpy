@@ -70,12 +70,43 @@ class ODESystem:
         return 'ODE-system-placeholder'
 
 
+def _bracket(a):
+    """Append a left bracket for an array of lines
+    """
+    if len(a) == 1:
+        return '{' + a[0]
+    if len(a) == 2:
+        a.append('')
+    if (len(a) % 2) == 0:
+        upper = len(a) // 2 - 1
+    else:
+        upper = len(a) // 2
+    a[0] = '⎧' + a[0]
+    for i in range(1, upper):
+        a[i] = '⎪' + a[i]
+    a[upper] = '⎨' + a[upper]
+    for i in range(upper + 1, len(a) - 1):
+        a[i] = '⎪' + a[i]
+    a[-1] = '⎩' + a[-1]
+    return '\n'.join(a) + '\n'
+
+
 class ExplicitODESystem(ODESystem):
     """System of ODEs described explicitly
     """
     def __init__(self, odes, ics):
         self.odes = odes
         self.ics = ics
+
+    def pretty(self):
+        a = []
+        for ode in self.odes:
+            ode_str = sympy.pretty(ode)
+            a += ode_str.split('\n')
+        for key, value in self.ics.items():
+            ics_str = sympy.pretty(sympy.Eq(key, value))
+            a += ics_str.split('\n')
+        return _bracket(a)
 
     def __eq__(self, other):
         return isinstance(other, ExplicitODESystem) and self.odes == other.odes and \
