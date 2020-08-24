@@ -12,7 +12,7 @@ def compartmental_model(model, advan, trans):
         cm = CompartmentalSystem()
         central = cm.add_compartment('CENTRAL')
         output = cm.add_compartment('OUTPUT')
-        cm.add_flow(central, output, _advan12_trans(trans))
+        cm.add_flow(central, output, _advan1and2_trans(trans))
         dose = Bolus('AMT')
         central.dose = dose
         ass = _f_link_assignment(model, central)
@@ -21,7 +21,7 @@ def compartmental_model(model, advan, trans):
         depot = cm.add_compartment('DEPOT')
         central = cm.add_compartment('CENTRAL')
         output = cm.add_compartment('OUTPUT')
-        cm.add_flow(central, output, _advan12_trans(trans))
+        cm.add_flow(central, output, _advan1and2_trans(trans))
         cm.add_flow(depot, central, sympy.Symbol('KA', real=True))
         dose = Bolus('AMT')
         depot.dose = dose
@@ -78,6 +78,23 @@ def compartmental_model(model, advan, trans):
         dose = Bolus('AMT')
         central.dose = dose
         ass = _f_link_assignment(model, central)
+    elif advan == 'ADVAN12':
+        cm = CompartmentalSystem()
+        depot = cm.add_compartment('DEPOT')
+        central = cm.add_compartment('CENTRAL')
+        per1 = cm.add_compartment('PERIPHERAL1')
+        per2 = cm.add_compartment('PERIPHERAL2')
+        output = cm.add_compartment('OUTPUT')
+        k, k23, k32, k24, k42, ka = _advan12_trans(trans)
+        cm.add_flow(depot, central, ka)
+        cm.add_flow(central, output, k)
+        cm.add_flow(central, per1, k23)
+        cm.add_flow(per1, central, k32)
+        cm.add_flow(central, per2, k24)
+        cm.add_flow(per2, central, k42)
+        dose = Bolus('AMT')
+        depot.dose = dose
+        ass = _f_link_assignment(model, central)
     else:
         return None
     return cm, ass
@@ -93,7 +110,7 @@ def _f_link_assignment(model, compartment):
     return ass
 
 
-def _advan12_trans(trans):
+def _advan1and2_trans(trans):
     if trans == 'TRANS2':
         return sympy.Symbol('CL', real=True) / sympy.Symbol('V', real=True)
     else:       # TRANS1 which is also the default
@@ -174,3 +191,29 @@ def _advan11_trans(trans):
                 real('K21'),
                 real('K13'),
                 real('K31'))
+
+
+def _advan12_trans(trans):
+    if trans == 'TRANS4':
+        return (real('CL') / real('V2'),
+                real('Q3') / real('V2'),
+                real('Q3') / real('V3'),
+                real('Q4') / real('V2'),
+                real('Q4') / real('V4'))
+    elif trans == 'TRANS6':
+        return (real('ALPHA') * real('BETA') * real('GAMMA') / (real('K32') * real('K42')),
+                real('ALPHA') + real('BETA') + real('GAMMA') - real('K') - real('K24') -
+                real('K32') - real('K42'),
+                real('K32'),
+                (real('ALPHA') * real('BETA') + real('ALPHA') * real('GAMMA') +
+                 real('BETA') * real('GAMMA') + real('K42') * real('K42') -
+                 real('K42') * (real('ALPHA') + real('BETA') + real('GAMMA')) -
+                 real('K') * real('K32')) / (real('K32') - real('K42')),
+                real('K42'))
+    else:
+        return (real('K'),
+                real('K23'),
+                real('K32'),
+                real('K24'),
+                real('K42'),
+                real('KA'))
