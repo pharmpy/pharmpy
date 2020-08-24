@@ -1,4 +1,5 @@
 import copy
+import math
 
 import networkx as nx
 import sympy
@@ -148,6 +149,13 @@ class CompartmentalSystem(ODESystem):
         central = next(self._g.predecessors(output))
         return central
 
+    def find_peripherals(self):
+        central = self.find_central()
+        oneout = {node for node, out_degree in self._g.out_degree() if out_degree == 1}
+        onein = {node for node, in_degree in self._g.in_degree() if in_degree == 1}
+        peripherals = (oneout & onein) - {central}
+        return list(peripherals)
+
     def find_depot(self):
         central = self.find_central()
         zeroin = [node for node, in_degree in self._g.in_degree() if in_degree == 0]
@@ -203,9 +211,21 @@ class CompartmentalSystem(ODESystem):
         if depot:
             depot_box = box(depot.name)
             depot_central_arrow = arrow(str(self._g.edges[depot, central]['rate']))
+        periphs = self.find_peripherals()
+        periph_box = []
+        for p in periphs:
+            periph_box.append(box(p.name))
+
+        upper = []
+        if periphs:
+            upper += box(periphs[0].name)
+            up_arrow = vertical_arrow(str(self._g.edges[central, periphs[0]]['rate']), down=False)
+            down_arrow = vertical_arrow(str(self._g.edges[periphs[0], central]['rate']))
+            for i in range(0, len(up_arrow)):
+                upper.append(up_arrow[i] + '  ' + down_arrow[i])
+
         bottom = []
         central_output_arrow = arrow(str(self._g.edges[central, output]['rate']))
-        print(self._g.edges[central, output])
         for i in range(0, len(output_box)):
             if i == 1:
                 flow = central_output_arrow
@@ -222,7 +242,15 @@ class CompartmentalSystem(ODESystem):
 
             bottom.append(curdepot + central_box[i] + flow + output_box[i])
 
-        return '\n'.join(bottom) + '\n'
+        upper_str = ''
+        if upper:
+            if depot:
+                pad = ' ' * (len(depot_box[0]) + len(depot_central_arrow))
+            else:
+                pad = ''
+            for line in upper:
+                upper_str += pad + line + '\n'
+        return upper_str + '\n'.join(bottom) + '\n'
 
 
 def box(s):
@@ -235,7 +263,20 @@ def box(s):
 
 
 def arrow(flow, right=True):
-    return '─' * 2 + flow + '→'
+    if right:
+        return '─' * 2 + flow + '→'
+    else:
+        return '←' + flow + '─' * 2
+
+
+def vertical_arrow(flow, down=True):
+    n = len(flow) / 2
+    before = ' ' * math.floor(n)
+    after = ' ' * math.ceil(n)
+    if down:
+        return [before + '│' + after, flow, before + '↓' + after]
+    else:
+        return [before + '↑' + after,  flow, before + '│' + after]
 
 
 class Compartment:
