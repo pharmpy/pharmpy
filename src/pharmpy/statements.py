@@ -137,11 +137,24 @@ class CompartmentalSystem(ODESystem):
         self._g.add_edge(source, destination, rate=rate)
 
     def find_output(self):
-        zeroout = [node for node, out_degree in self._g.out_degree_iter() if out_degree == 0]
+        zeroout = [node for node, out_degree in self._g.out_degree() if out_degree == 0]
         if len(zeroout) == 1:
             return zeroout[0]
         else:
             raise ValueError('More than one or zero output compartments')
+
+    def find_central(self):
+        output = self.find_output()
+        central = next(self._g.predecessors(output))
+        return central
+
+    def find_depot(self):
+        central = self.find_central()
+        zeroin = [node for node, in_degree in self._g.in_degree() if in_degree == 0]
+        if len(zeroin) == 1 and zeroin[0] != central:
+            return zeroin[0]
+        else:
+            return None
 
     @property
     def compartmental_matrix(self):
@@ -180,6 +193,49 @@ class CompartmentalSystem(ODESystem):
             else:
                 ics[sympy.Function(node.amount.name)(0)] = node.dose.symbol
         return eqs, ics
+
+    def pretty(self):
+        output = self.find_output()
+        output_box = box(output.name)
+        central = self.find_central()
+        central_box = box(central.name)
+        depot = self.find_depot()
+        if depot:
+            depot_box = box(depot.name)
+            depot_central_arrow = arrow(str(self._g.edges[depot, central]['rate']))
+        bottom = []
+        central_output_arrow = arrow(str(self._g.edges[central, output]['rate']))
+        print(self._g.edges[central, output])
+        for i in range(0, len(output_box)):
+            if i == 1:
+                flow = central_output_arrow
+            else:
+                flow = ' ' * len(central_output_arrow)
+            if depot:
+                if i == 1:
+                    ab = depot_central_arrow
+                else:
+                    ab = ' ' * len(depot_central_arrow)
+                curdepot = depot_box[i] + ab
+            else:
+                curdepot = ''
+
+            bottom.append(curdepot + central_box[i] + flow + output_box[i])
+
+        return '\n'.join(bottom) + '\n'
+
+
+def box(s):
+    """Draw unicode box around string and return new string
+    """
+    upper = '┌' + '─' * len(s) + '┐'
+    mid = '│' + s + '│'
+    lower = '└' + '─' * len(s) + '┘'
+    return [upper, mid, lower]
+
+
+def arrow(flow, right=True):
+    return '─' * 2 + flow + '→'
 
 
 class Compartment:

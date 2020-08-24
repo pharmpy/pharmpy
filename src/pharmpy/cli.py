@@ -306,6 +306,9 @@ def model_print(args):
     """Subcommand for formatting/printing model components."""
     lines = []
     for i, model in enumerate(args.models):
+        if args.explicit_odes:
+            from pharmpy.model_transformation import explicit_odes
+            explicit_odes(model)
         lines += ['[%d/%d] %r' % (i+1, len(args.models), model.name)]
         dict_ = OrderedDict()
         try:
@@ -582,7 +585,12 @@ parser_definition = [
     {'info': {'help': 'Show Pharmpy information', 'title': 'Pharmpy information', 'func': info}},
     {'model': {'subs': [
         {'print': {'help': 'Format and print model overview', 'func': model_print,
-                   'parents': [args_input]}},
+                   'parents': [args_input],
+                   'args': [{'name': '--explicit-odes',
+                             'action': 'store_true',
+                             'help': 'Print the ODE system explicitly instead of as a '
+                                     'compartmental graph'
+                             }]}},
         {'sample': {'help': 'Sampling of parameter inits using uncertainty given by covariance '
                             'matrix',
                     'func': model_sample, 'parents': [args_model_input, args_random],

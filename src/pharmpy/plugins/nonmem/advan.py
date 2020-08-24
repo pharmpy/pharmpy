@@ -80,9 +80,9 @@ def _f_link_assignment(model, compartment):
 
 def _advan12_trans(trans):
     if trans == 'TRANS2':
-        return [sympy.Symbol('CL', real=True) / sympy.Symbol('V', real=True)]
+        return sympy.Symbol('CL', real=True) / sympy.Symbol('V', real=True)
     else:       # TRANS1 which is also the default
-        return [sympy.Symbol('K', real=True)]
+        return sympy.Symbol('K', real=True)
 
 
 def _advan3_trans(trans):
