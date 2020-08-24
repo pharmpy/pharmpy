@@ -1,7 +1,7 @@
 import pytest
 
 from pharmpy import Model
-from pharmpy.model_transformation import add_covariate_effect, explicit_odes
+from pharmpy.modeling import add_covariate_effect, explicit_odes
 
 
 @pytest.mark.parametrize('effect, operation, buf_new', [

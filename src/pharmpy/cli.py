@@ -307,7 +307,7 @@ def model_print(args):
     lines = []
     for i, model in enumerate(args.models):
         if args.explicit_odes:
-            from pharmpy.model_transformation import explicit_odes
+            from pharmpy.modeling import explicit_odes
             explicit_odes(model)
         lines += ['[%d/%d] %r' % (i+1, len(args.models), model.name)]
         dict_ = OrderedDict()
@@ -341,7 +341,7 @@ def model_sample(args):
 
 def add_covariate_effect(args):
     """Subcommand to add covariate effect to model."""
-    from pharmpy.model_transformation import add_covariate_effect
+    from pharmpy.modeling import add_covariate_effect
 
     model = args.model
     add_covariate_effect(model, args.param, args.covariate, args.effect)
@@ -350,7 +350,7 @@ def add_covariate_effect(args):
 
 
 def model_explicit_odes(args):
-    from pharmpy.model_transformation import explicit_odes
+    from pharmpy.modeling import explicit_odes
     model = args.model
     explicit_odes(model)
     write_model_or_dataset(model, None, path=args.output_file, force=args.force)
