@@ -253,33 +253,18 @@ class CodeRecord(Record):
     def _translate_sympy_piecewise(self, statement):
         statement_args = statement.expression.args
         symbol = statement.symbol
-        statement_translated = '\nIF '
 
-        if len(statement_args) == 1:
-            value = str(statement_args[0][0])
-            condition = str(statement_args[0][1])
-            condition_translated = self._translate_condition(condition)
+        value = statement_args[0][0]
+        condition = statement_args[0][1]
+        condition_translated = self._translate_condition(condition)
 
-            return statement_translated + f'({condition_translated}) {symbol}={value}\n'
-
-        for i, if_statement in enumerate(statement_args):
-            value = str(if_statement[0])
-            condition = str(if_statement[1])
-            condition_translated = self._translate_condition(condition)
-
-            statement_translated += f'({condition_translated}) THEN\n{symbol}={value}\n'
-            if i < len(statement_args) - 1:
-                statement_translated += 'ELSE IF '
-            else:
-                statement_translated += 'END IF'
-
-        return statement_translated
+        return f'\nIF ({condition_translated}) {symbol} = {value}\n'
 
     @staticmethod
     def _translate_condition(condition):
         sign_dict = {'>': '.GT.',
                      '<': '.LT.'}
-        condition_split = condition.split(' ')
+        condition_split = str(condition).split(' ')
 
         condition_translated = ''.join([sign_dict.get(symbol, symbol)
                                         for symbol in condition_split])
