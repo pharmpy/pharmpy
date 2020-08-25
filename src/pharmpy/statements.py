@@ -96,6 +96,19 @@ class ExplicitODESystem(ODESystem):
         self.odes = odes
         self.ics = ics
 
+    @property
+    def free_symbols(self):
+        free = set()
+        for ode in self.odes:
+            free |= ode.free_symbols
+        for key, value in self.ics.items():
+            free |= key.free_symbols
+            try:        # To allow for regular python classes as values for ics
+                free |= value.free_symbols
+            except AttributeError:
+                pass
+        return free
+
     def __str__(self):
         a = []
         for ode in self.odes:
@@ -105,6 +118,10 @@ class ExplicitODESystem(ODESystem):
             ics_str = sympy.pretty(sympy.Eq(key, value))
             a += ics_str.split('\n')
         return _bracket(a)
+
+    def __deepcopy__(self, memo):
+        newone = type(self)(copy.copy(self.odes), copy.copy(self.ics))
+        return newone
 
     def __eq__(self, other):
         return isinstance(other, ExplicitODESystem) and self.odes == other.odes and \
@@ -116,6 +133,15 @@ class CompartmentalSystem(ODESystem):
     """
     def __init__(self):
         self._g = nx.DiGraph()
+
+    @property
+    def free_symbols(self):
+        free = {sympy.Symbol('t', real=True)}
+        for (_, _, rate) in self._g.edges.data('rate'):
+            free |= rate.free_symbols
+        for node in self._g.nodes:
+            free |= node.free_symbols
+        return free
 
     def __eq__(self, other):
         return isinstance(other, CompartmentalSystem) and \
@@ -189,8 +215,8 @@ class CompartmentalSystem(ODESystem):
         return sympy.Matrix(amts)
 
     def to_explicit_odes(self):
-        t = sympy.Symbol('t')
-        amount_funcs = sympy.Matrix([sympy.Function(amt.name)('t') for amt in self.amounts])
+        t = sympy.Symbol('t', real=True)
+        amount_funcs = sympy.Matrix([sympy.Function(amt.name)(t) for amt in self.amounts])
         derivatives = sympy.Matrix([sympy.Derivative(fn, t) for fn in amount_funcs])
         a = self.compartmental_matrix @ amount_funcs
         eqs = [sympy.Eq(lhs, rhs) for lhs, rhs in zip(derivatives, a)]
@@ -284,6 +310,13 @@ class Compartment:
         self.name = name
         self.dose = None
 
+    @property
+    def free_symbols(self):
+        if self.dose is not None:
+            return self.dose.free_symbols
+        else:
+            return set()
+
     def __eq__(self, other):
         return isinstance(other, Compartment) and self.name == other.name and \
             self.dose == other.dose
@@ -298,7 +331,17 @@ class Compartment:
 
 class Bolus:
     def __init__(self, symbol):
-        self.symbol = sympy.Symbol(symbol)
+        self.symbol = sympy.Symbol(str(symbol), real=True)
+        print("Y1:", id(self), id(self.symbol))
+
+    @property
+    def free_symbols(self):
+        print("Y2:", id(self), id(self.symbol))
+        return {self.symbol}
+
+    def __deepcopy__(self, memo):
+        newone = type(self)(self.symbol)
+        return newone
 
     def __eq__(self, other):
         return isinstance(other, Bolus) and self.symbol == other.symbol

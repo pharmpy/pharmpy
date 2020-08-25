@@ -1,6 +1,7 @@
 import sympy
 
 from pharmpy import Model
+from pharmpy.modeling import explicit_odes
 from pharmpy.statements import Assignment
 
 
@@ -15,6 +16,16 @@ def test_subs(testdata):
     statements.subs(S('ETA(1)'), S('ETAT1'))
 
     assert statements[5].expression == S('TVCL') * sympy.exp(S('ETAT1'))
+
+
+def test_ode_free_symbols(testdata):
+    model = Model(testdata / 'nonmem' / 'pheno_real.mod')
+
+    assert model.statements.ode_system.free_symbols == {S('V'), S('CL'), S('AMT'), S('t')}
+
+    explicit_odes(model)
+    odes = model.statements.ode_system
+    assert odes.free_symbols == {S('V'), S('CL'), S('AMT'), S('t')}
 
 
 def test_find_assignment(testdata):
