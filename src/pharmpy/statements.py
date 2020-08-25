@@ -268,6 +268,14 @@ class CompartmentalSystem(ODESystem):
 
             bottom.append(curdepot + central_box[i] + flow + output_box[i])
 
+        lower = []
+        if periphs:
+            down_arrow = vertical_arrow(str(self.get_flow(central, periphs[1])))
+            up_arrow = vertical_arrow(str(self.get_flow(periphs[1], central)), down=False)
+            for i in range(0, len(up_arrow)):
+                lower.append(up_arrow[i] + '  ' + down_arrow[i])
+            lower += box(periphs[1].name)
+
         upper_str = ''
         if upper:
             if depot:
@@ -276,7 +284,17 @@ class CompartmentalSystem(ODESystem):
                 pad = ''
             for line in upper:
                 upper_str += pad + line + '\n'
-        return upper_str + '\n'.join(bottom) + '\n'
+
+        lower_str = ''
+        if lower:
+            if depot:
+                pad = ' ' * (len(depot_box[0]) + len(depot_central_arrow))
+            else:
+                pad = ''
+            for line in lower:
+                lower_str += pad + line + '\n'
+
+        return upper_str + '\n'.join(bottom) + '\n' + lower_str
 
 
 def box(s):
@@ -332,11 +350,9 @@ class Compartment:
 class Bolus:
     def __init__(self, symbol):
         self.symbol = sympy.Symbol(str(symbol), real=True)
-        print("Y1:", id(self), id(self.symbol))
 
     @property
     def free_symbols(self):
-        print("Y2:", id(self), id(self.symbol))
         return {self.symbol}
 
     def __deepcopy__(self, memo):
