@@ -199,7 +199,8 @@ def _advan12_trans(trans):
                 real('Q3') / real('V2'),
                 real('Q3') / real('V3'),
                 real('Q4') / real('V2'),
-                real('Q4') / real('V4'))
+                real('Q4') / real('V4'),
+                real('KA'))
     elif trans == 'TRANS6':
         return (real('ALPHA') * real('BETA') * real('GAMMA') / (real('K32') * real('K42')),
                 real('ALPHA') + real('BETA') + real('GAMMA') - real('K') - real('K24') -
@@ -209,7 +210,8 @@ def _advan12_trans(trans):
                  real('BETA') * real('GAMMA') + real('K42') * real('K42') -
                  real('K42') * (real('ALPHA') + real('BETA') + real('GAMMA')) -
                  real('K') * real('K32')) / (real('K32') - real('K42')),
-                real('K42'))
+                real('K42'),
+                real('KA'))
     else:
         return (real('K'),
                 real('K23'),
