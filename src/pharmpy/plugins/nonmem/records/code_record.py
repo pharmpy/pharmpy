@@ -235,7 +235,7 @@ class CodeRecord(Record):
         if isinstance(statement.expression, Piecewise):
             statement_str = self._translate_sympy_piecewise(statement)
         else:
-            statement_str = f'\n{str(statement).replace(":", "")}'
+            statement_str = f'\n{repr(statement).replace(":", "")}'
         node_tree = CodeRecordParser(statement_str).root
         node = node_tree.all('statement')[0]
 

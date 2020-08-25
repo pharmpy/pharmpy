@@ -35,7 +35,7 @@ class Assignment:
         return isinstance(other, Assignment) and self.symbol == other.symbol and \
             self.expression == other.expression
 
-    def pretty(self):
+    def __str__(self):
         expression = sympy.pretty(self.expression)
         lines = expression.split('\n')
         definition = f'{self.symbol} := '
@@ -47,7 +47,7 @@ class Assignment:
                 s += len(definition) * ' ' + line + '\n'
         return s
 
-    def __str__(self):
+    def __repr__(self):
         return f'{self.symbol} := {self.expression}'.upper()
 
 
@@ -63,9 +63,6 @@ class ODESystem:
 
     def __eq__(self, other):
         return isinstance(other, ODESystem)
-
-    def pretty(self):
-        return str(self) + '\n'
 
     def __str__(self):
         return 'ODE-system-placeholder'
@@ -99,7 +96,7 @@ class ExplicitODESystem(ODESystem):
         self.odes = odes
         self.ics = ics
 
-    def pretty(self):
+    def __str__(self):
         a = []
         for ode in self.odes:
             ode_str = sympy.pretty(ode)
@@ -205,7 +202,7 @@ class CompartmentalSystem(ODESystem):
                 ics[sympy.Function(node.amount.name)(0)] = node.dose.symbol
         return eqs, ics
 
-    def pretty(self):
+    def __str__(self):
         output = self.find_output()
         output_box = box(output.name)
         central = self.find_central()
@@ -349,12 +346,14 @@ class ModelStatements(list):
                     return False
         return True
 
-    def pretty(self):
+    def __repr__(self):
         s = ''
         for statement in self:
-            s += statement.pretty()
+            s += repr(statement)
         return s
 
     def __str__(self):
-        s = [str(assignment) for assignment in self]
-        return '\n'.join(s)
+        s = ''
+        for statement in self:
+            s += str(statement)
+        return s
