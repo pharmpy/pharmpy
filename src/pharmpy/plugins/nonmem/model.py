@@ -436,6 +436,10 @@ class Model(pharmpy.model.Model):
             rvs.update(epsilons)
         return rvs
 
+    @random_variables.setter
+    def random_variables(self, new):
+        pass
+
     def __str__(self):
         return str(self.control_stream)
 
