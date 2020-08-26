@@ -20,6 +20,8 @@ import pandas as pd
 import scipy.linalg
 import sympy
 
+from pharmpy import ParameterSet, RandomVariables
+
 
 class ModelException(Exception):
     pass
@@ -110,6 +112,26 @@ class Model:
             if candidate not in all_names:
                 return sympy.Symbol(candidate)
             i += 1
+
+    def remove_unused_parameters_and_rvs(self):
+        """Remove any parameters and rvs that are not used in the model statements
+        """
+        symbols = self.statements.free_symbols
+
+        new_rvs = RandomVariables()
+        for rv in self.random_variables:
+            # FIXME: change if rvs are random symbols in expressions
+            if sympy.Symbol(rv.name, real=True) in symbols or \
+                    not symbols.isdisjoint(rv.pspace.free_symbols):
+                new_rvs.add(rv)
+        self.random_variables = new_rvs
+
+        new_params = ParameterSet()
+        for p in self.parameters:
+            symb = p.symbol
+            if symb in symbols or symb in new_rvs.free_symbols:
+                new_params.add(p)
+        self.parameters = new_params
 
     def _observation(self):
         stats = self.statements
