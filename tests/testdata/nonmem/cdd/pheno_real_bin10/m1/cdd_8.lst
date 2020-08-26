@@ -1,0 +1,601 @@
+ons 26 aug 2020 08:33:44 CEST
+;; 1. Based on: 5
+; $SIZE  MOD=23
+$PROBLEM    PHENOBARB SIMPLE MODEL
+$INPUT      ID TIME AMT WGT APGR DV FA1 FA2
+$DATA      ../../../../pheno.dta IGNORE=@
+            IGNORE=(ID.EQN.43,ID.EQN.44,ID.EQN.45,ID.EQN.46,ID.EQN.47,ID.EQN.48)
+$SUBROUTINE ADVAN1 TRANS2
+$PK
+
+
+IF(AMT.GT.0) BTIME=TIME
+TAD=TIME-BTIME
+      TVCL=THETA(1)*WGT
+      TVV=THETA(2)*WGT
+IF(APGR.LT.5) TVV=TVV*(1+THETA(3))
+      CL=TVCL*EXP(ETA(1))
+      V=TVV*EXP(ETA(2))
+      S1=V
+$ERROR
+
+      W=F
+      Y=F+W*EPS(1)
+
+      IPRED=F         ;  individual-specific prediction
+      IRES=DV-IPRED   ;  individual-specific residual
+      IWRES=IRES/W    ;  individual-specific weighted residual
+
+$THETA  (0,0.00469555) ; CL
+$THETA  (0,0.984258) ; V
+$THETA  (-.99,0.15892)
+$OMEGA  DIAGONAL(2)
+ 0.0293508  ;       IVCL
+ 0.027906  ;        IVV
+$SIGMA  0.013241
+$ESTIMATION METHOD=1 INTERACTION PRINT=1
+$COVARIANCE UNCONDITIONAL
+$TABLE      ID TIME AMT WGT APGR IPRED PRED TAD CWRES NPDE NOAPPEND
+            NOPRINT ONEHEADER FILE=pheno_real.tab
+
+
+NM-TRAN MESSAGES
+  
+ WARNINGS AND ERRORS (IF ANY) FOR PROBLEM    1
+             
+ (WARNING  2) NM-TRAN INFERS THAT THE DATA ARE POPULATION.
+
+License Registered to: Pharmetheus AB
+Expiration Date:    14 DEC 2020
+Current Date:       26 AUG 2020
+Days until program expires : 108
+1NONLINEAR MIXED EFFECTS MODEL PROGRAM (NONMEM) VERSION 7.4.4
+ ORIGINALLY DEVELOPED BY STUART BEAL, LEWIS SHEINER, AND ALISON BOECKMANN
+ CURRENT DEVELOPERS ARE ROBERT BAUER, ICON DEVELOPMENT SOLUTIONS,
+ AND ALISON BOECKMANN. IMPLEMENTATION, EFFICIENCY, AND STANDARDIZATION
+ PERFORMED BY NOUS INFOSYSTEMS.
+ 
+ PROBLEM NO.:         1
+ PHENOBARB SIMPLE MODEL                                                  
+0DATA CHECKOUT RUN:              NO 
+ DATA SET LOCATED ON UNIT NO.:    2
+ THIS UNIT TO BE REWOUND:        NO 
+ NO. OF DATA RECS IN DATA SET:      693
+ NO. OF DATA ITEMS IN DATA SET:  10
+ ID DATA ITEM IS DATA ITEM NO.:   1
+ DEP VARIABLE IS DATA ITEM NO.:   6
+ MDV DATA ITEM IS DATA ITEM NO.: 10
+0INDICES PASSED TO SUBROUTINE PRED:
+   9   2   3   0   0   0   0   0   0   0   0
+0LABELS FOR DATA ITEMS:
+ ID TIME AMT WGT APGR DV FA1 FA2 EVID MDV
+0(NONBLANK) LABELS FOR PRED-DEFINED ITEMS:
+ TAD IPRED
+0FORMAT FOR DATA:
+ (8E6.0,2F2.0)                                                                   
+ 
+ TOT. NO. OF OBS RECS:      141
+ TOT. NO. OF INDIVIDUALS:       53
+0LENGTH OF THETA:   3
+0DEFAULT THETA BOUNDARY TEST OMITTED:    NO 
+0OMEGA HAS SIMPLE DIAGONAL FORM WITH DIMENSION:   2
+0DEFAULT OMEGA BOUNDARY TEST OMITTED:    NO 
+0SIGMA HAS SIMPLE DIAGONAL FORM WITH DIMENSION:   1
+0DEFAULT SIGMA BOUNDARY TEST OMITTED:    NO 
+0INITIAL ESTIMATE OF THETA:
+ LOWER BOUND    INITIAL EST    UPPER BOUND
+  0.0000E+00     0.4696E-02     0.1000E+07
+  0.0000E+00     0.9843E+00     0.1000E+07
+ -0.9900E+00     0.1589E+00     0.1000E+07
+0INITIAL ESTIMATE OF OMEGA:
+ 0.2935E-01
+ 0.0000E+00   0.2791E-01
+0INITIAL ESTIMATE OF SIGMA:
+ 0.1324E-01
+0COVARIANCE STEP OMITTED:        NO 
+ EIGENVLS. PRINTED:              NO 
+ SPECIAL COMPUTATION:            NO 
+ COMPRESSED FORMAT:              NO 
+ GRADIENT METHOD USED:     NOSLOW
+ SIGDIGITS ETAHAT (SIGLO):                  -1          
+ SIGDIGITS GRADIENTS (SIGL):                -1          
+ EXCLUDE COV FOR FOCE (NOFCOV):              NO   
+ TURN OFF Cholesky Transposition of R Matrix (CHOLROFF): NO   
+ KNUTHSUMOFF:                                -1          
+ RESUME COV ANALYSIS (RESUME):               NO   
+ SIR SAMPLE SIZE (SIRSAMPLE):              -1          
+ NON-LINEARLY TRANSFORM THETAS DURING COV (THBND): 1           
+ PRECONDTIONING CYCLES (PRECOND):        0           
+ PRECONDTIONING TYPES (PRECONDS):        TOS       
+ FORCED PRECONDTIONING CYCLES (PFCOND):0           
+ PRECONDTIONING TYPE (PRETYPE):        0           
+ FORCED POS. DEFINITE SETTING: (FPOSDEF):0           
+0TABLES STEP OMITTED:    NO 
+ NO. OF TABLES:           1
+ SEED NUMBER (SEED):    11456       
+ RANMETHOD:             3U                  
+ MC SAMPLES (ESAMPLE):    300         
+ WRES SQUARE ROOT TYPE (WRESCHOL): EIGENVALUE
+0-- TABLE   1 --
+0RECORDS ONLY:    ALL                 
+04 COLUMNS APPENDED:    NO  
+ PRINTED:                NO 
+ HEADER:                YES
+ FILE TO BE FORWARDED:   NO 
+ FORMAT:                S1PE11.4
+ LFORMAT:               
+ RFORMAT:               
+ FIXED_EFFECT_ETAS:     
+0USER-CHOSEN ITEMS:
+ ID TIME AMT WGT APGR IPRED PRED TAD CWRES NPDE
+1DOUBLE PRECISION PREDPP VERSION 7.4.4
+ 
+ ONE COMPARTMENT MODEL (ADVAN1)
+0MAXIMUM NO. OF BASIC PK PARAMETERS:   2
+0BASIC PK PARAMETERS (AFTER TRANSLATION):
+   ELIMINATION RATE (K) IS BASIC PK PARAMETER NO.:  1
+ 
+ TRANSLATOR WILL CONVERT PARAMETERS 
+ CLEARANCE (CL) AND VOLUME (V) TO K (TRANS2)
+0COMPARTMENT ATTRIBUTES 
+ COMPT. NO.   FUNCTION   INITIAL    ON/OFF      DOSE      DEFAULT    DEFAULT
+                         STATUS     ALLOWED    ALLOWED    FOR DOSE   FOR OBS.
+    1         CENTRAL      ON         NO         YES        YES        YES
+    2         OUTPUT       OFF        YES        NO         NO         NO 
+1
+ ADDITIONAL PK PARAMETERS - ASSIGNMENT OF ROWS IN GG
+ COMPT. NO.                             INDICES
+              SCALE      BIOAVAIL.   ZERO-ORDER  ZERO-ORDER  ABSORB
+                         FRACTION    RATE        DURATION    LAG  
+    1            3           *           *           *           *
+    2            *           -           -           -           -
+             - PARAMETER IS NOT ALLOWED FOR THIS MODEL
+             * PARAMETER IS NOT SUPPLIED BY PK SUBROUTINE;
+               WILL DEFAULT TO ONE IF APPLICABLE
+0DATA ITEM INDICES USED BY PRED ARE:
+   EVENT ID DATA ITEM IS DATA ITEM NO.:      9
+   TIME DATA ITEM IS DATA ITEM NO.:          2
+   DOSE AMOUNT DATA ITEM IS DATA ITEM NO.:   3
+ 
+0PK SUBROUTINE CALLED WITH EVERY EVENT RECORD.
+ PK SUBROUTINE NOT CALLED AT NONEVENT (ADDITIONAL OR LAGGED) DOSE TIMES.
+0ERROR SUBROUTINE CALLED WITH EVERY EVENT RECORD.
+1
+
+
+ #TBLN:      1
+ #METH: First Order Conditional Estimation with Interaction
+
+ ESTIMATION STEP OMITTED:                 NO  
+ ANALYSIS TYPE:                           POPULATION
+ NUMBER OF SADDLE POINT RESET ITERATIONS:      0
+ GRADIENT METHOD USED:               NOSLOW
+ CONDITIONAL ESTIMATES USED:              YES 
+ CENTERED ETA:                            NO  
+ EPS-ETA INTERACTION:                     YES 
+ LAPLACIAN OBJ. FUNC.:                    NO  
+ NO. OF FUNCT. EVALS. ALLOWED:            288
+ NO. OF SIG. FIGURES REQUIRED:            3
+ INTERMEDIATE PRINTOUT:                   YES 
+ ESTIMATE OUTPUT TO MSF:                  NO  
+ IND. OBJ. FUNC. VALUES SORTED:           NO  
+ NUMERICAL DERIVATIVE 
+       FILE REQUEST (NUMDER):               NONE
+ MAP (ETAHAT) ESTIMATION METHOD (OPTMAP):   0           
+ ETA HESSIAN EVALUATION METHOD (ETADER):    0           
+ INITIAL ETA FOR MAP ESTIMATION (MCETA):    0           
+ SIGDIGITS FOR MAP ESTIMATION (SIGLO):      100         
+ GRADIENT SIGDIGITS OF 
+       FIXED EFFECTS PARAMETERS (SIGL):     100         
+ NOPRIOR SETTING (NOPRIOR):                 OFF       
+ NOCOV SETTING (NOCOV):                     OFF       
+ DERCONT SETTING (DERCONT):                 OFF       
+ FINAL ETA RE-EVALUATION (FNLETA):          ON        
+ EXCLUDE NON-INFLUENTIAL (NON-INFL.) ETAS   
+       IN SHRINKAGE (ETASTYPE):             NO        
+ NON-INFL. ETA CORRECTION (NONINFETA):      OFF       
+ RAW OUTPUT FILE (FILE): psn.ext                                                                                                                                                                                                                                                         
+ EXCLUDE TITLE (NOTITLE):                   NO        
+ EXCLUDE COLUMN LABELS (NOLABEL):           NO        
+ FORMAT FOR ADDITIONAL FILES (FORMAT):      S1PE12.5
+ PARAMETER ORDER FOR OUTPUTS (ORDER):       TSOL
+ WISHART PRIOR DF INTERPRETATION (WISHTYPE):0           
+ KNUTHSUMOFF:                               0           
+ INCLUDE LNTWOPI:                           NO        
+ INCLUDE CONSTANT TERM TO PRIOR (PRIORC):   NO        
+ INCLUDE CONSTANT TERM TO OMEGA (ETA) (OLNTWOPI):NO        
+ ADDITIONAL CONVERGENCE TEST (CTYPE=4)?:    NO
+ EM OR BAYESIAN METHOD USED:                 NONE
+
+
+ THE FOLLOWING LABELS ARE EQUIVALENT
+ PRED=PREDI
+ RES=RESI
+ WRES=WRESI
+ IWRS=IWRESI
+ IPRD=IPREDI
+ IRS=IRESI
+
+ MONITORING OF SEARCH:
+
+
+0ITERATION NO.:    0    OBJECTIVE VALUE:   532.840718916663        NO. OF FUNC. EVALS.:   6
+ CUMULATIVE NO. OF FUNC. EVALS.:        6
+ NPARAMETR:  4.6955E-03  9.8426E-01  1.5892E-01  2.9351E-02  2.7906E-02  1.3241E-02
+ PARAMETER:  1.0000E-01  1.0000E-01  1.0000E-01  1.0000E-01  1.0000E-01  1.0000E-01
+ GRADIENT:  -1.2911E+01 -4.3303E+00 -9.1240E+00  1.3464E+00 -5.8433E+00  6.6314E+00
+
+0ITERATION NO.:    1    OBJECTIVE VALUE:   532.689584854249        NO. OF FUNC. EVALS.:   8
+ CUMULATIVE NO. OF FUNC. EVALS.:       14
+ NPARAMETR:  4.7737E-03  9.8972E-01  1.7241E-01  2.9250E-02  2.8326E-02  1.3018E-02
+ PARAMETER:  1.1651E-01  1.0554E-01  1.1167E-01  9.8278E-02  1.0747E-01  9.1519E-02
+ GRADIENT:   7.3260E+00  2.2614E+01 -8.6590E-01  1.7458E+00 -5.6161E+00  3.4206E+00
+
+0ITERATION NO.:    2    OBJECTIVE VALUE:   532.666599255342        NO. OF FUNC. EVALS.:   8
+ CUMULATIVE NO. OF FUNC. EVALS.:       22
+ NPARAMETR:  4.7493E-03  9.7418E-01  1.7311E-01  2.9178E-02  2.8550E-02  1.2956E-02
+ PARAMETER:  1.1138E-01  8.9708E-02  1.1228E-01  9.7056E-02  1.1140E-01  8.9124E-02
+ GRADIENT:  -3.9569E+00 -2.3361E+01 -7.4410E+00  1.8780E+00 -4.8459E+00  3.8299E+00
+
+0ITERATION NO.:    3    OBJECTIVE VALUE:   532.530184079572        NO. OF FUNC. EVALS.:   8
+ CUMULATIVE NO. OF FUNC. EVALS.:       30
+ NPARAMETR:  4.7125E-03  9.7382E-01  1.9390E-01  2.8724E-02  2.9876E-02  1.2556E-02
+ PARAMETER:  1.0359E-01  8.9337E-02  1.2999E-01  8.9208E-02  1.3411E-01  7.3428E-02
+ GRADIENT:  -1.0950E+01 -1.9123E+01 -6.3709E-01  1.2956E+00 -2.7121E+00  2.9988E-01
+
+0ITERATION NO.:    4    OBJECTIVE VALUE:   532.488038917852        NO. OF FUNC. EVALS.:   9
+ CUMULATIVE NO. OF FUNC. EVALS.:       39
+ NPARAMETR:  4.7631E-03  9.7112E-01  1.9716E-01  2.8351E-02  3.0951E-02  1.2369E-02
+ PARAMETER:  1.1429E-01  8.6563E-02  1.3274E-01  8.2666E-02  1.5178E-01  6.5955E-02
+ GRADIENT:  -2.0981E-01 -2.1035E+01 -7.4224E-03  1.5254E+00 -9.3652E-01 -1.7390E+00
+
+0ITERATION NO.:    5    OBJECTIVE VALUE:   532.453118444780        NO. OF FUNC. EVALS.:   8
+ CUMULATIVE NO. OF FUNC. EVALS.:       47
+ NPARAMETR:  4.7572E-03  9.7257E-01  1.8938E-01  2.7943E-02  3.1779E-02  1.2389E-02
+ PARAMETER:  1.1304E-01  8.8054E-02  1.2616E-01  7.5432E-02  1.6498E-01  6.6727E-02
+ GRADIENT:  -1.7349E+00 -1.9850E+01 -2.0778E+00  1.2505E+00  6.8745E-01 -1.0520E+00
+
+0ITERATION NO.:    6    OBJECTIVE VALUE:   532.436757937536        NO. OF FUNC. EVALS.:   8
+ CUMULATIVE NO. OF FUNC. EVALS.:       55
+ NPARAMETR:  4.7641E-03  9.7185E-01  1.9371E-01  2.6672E-02  3.1767E-02  1.2566E-02
+ PARAMETER:  1.1449E-01  8.7318E-02  1.2983E-01  5.2141E-02  1.6479E-01  7.3819E-02
+ GRADIENT:  -1.3662E+00 -1.9651E+01 -1.0219E+00  5.3609E-01  7.6416E-01  6.2567E-01
+
+0ITERATION NO.:    7    OBJECTIVE VALUE:   532.430245533478        NO. OF FUNC. EVALS.:   8
+ CUMULATIVE NO. OF FUNC. EVALS.:       63
+ NPARAMETR:  4.7647E-03  9.7208E-01  1.9138E-01  2.6066E-02  3.1586E-02  1.2476E-02
+ PARAMETER:  1.1463E-01  8.7551E-02  1.2786E-01  4.0661E-02  1.6194E-01  7.0235E-02
+ GRADIENT:  -1.4388E+00 -1.9452E+01 -1.6703E+00  3.3380E-02  2.2882E-01 -6.7759E-01
+
+0ITERATION NO.:    8    OBJECTIVE VALUE:   532.353537187342        NO. OF FUNC. EVALS.:   9
+ CUMULATIVE NO. OF FUNC. EVALS.:       72
+ NPARAMETR:  4.7600E-03  9.7814E-01  1.8779E-01  2.6222E-02  3.1397E-02  1.2540E-02
+ PARAMETER:  1.1364E-01  9.3764E-02  1.2482E-01  4.3643E-02  1.5893E-01  7.2803E-02
+ GRADIENT:  -5.1975E-01 -4.9195E+00 -5.1185E-01  4.6541E-03 -2.5998E-02 -1.2523E-01
+
+0ITERATION NO.:    9    OBJECTIVE VALUE:   532.347392164030        NO. OF FUNC. EVALS.:   7
+ CUMULATIVE NO. OF FUNC. EVALS.:       79
+ NPARAMETR:  4.7594E-03  9.8011E-01  1.8700E-01  2.6266E-02  3.1397E-02  1.2555E-02
+ PARAMETER:  1.1350E-01  9.5782E-02  1.2415E-01  4.4484E-02  1.5894E-01  7.3387E-02
+ GRADIENT:   1.3412E-02  1.1915E-02  1.4975E-03 -3.2345E-04 -2.8492E-02 -8.4492E-03
+
+0ITERATION NO.:   10    OBJECTIVE VALUE:   532.347391557845        NO. OF FUNC. EVALS.:   7
+ CUMULATIVE NO. OF FUNC. EVALS.:       86
+ NPARAMETR:  4.7594E-03  9.8011E-01  1.8701E-01  2.6266E-02  3.1407E-02  1.2555E-02
+ PARAMETER:  1.1350E-01  9.5780E-02  1.2415E-01  4.4471E-02  1.5910E-01  7.3387E-02
+ GRADIENT:   4.0605E-03  3.2186E-03  6.6852E-04 -6.8795E-05 -9.0045E-03 -2.5554E-03
+
+0ITERATION NO.:   11    OBJECTIVE VALUE:   532.347391557845        NO. OF FUNC. EVALS.:  11
+ CUMULATIVE NO. OF FUNC. EVALS.:       97
+ NPARAMETR:  4.7594E-03  9.8011E-01  1.8701E-01  2.6266E-02  3.1407E-02  1.2555E-02
+ PARAMETER:  1.1350E-01  9.5780E-02  1.2415E-01  4.4471E-02  1.5910E-01  7.3387E-02
+ GRADIENT:  -2.2806E-01 -7.2750E-01 -1.4508E-01 -6.8795E-05 -9.0045E-03 -3.0758E-02
+
+0ITERATION NO.:   12    OBJECTIVE VALUE:   532.347279949060        NO. OF FUNC. EVALS.:  13
+ CUMULATIVE NO. OF FUNC. EVALS.:      110
+ NPARAMETR:  4.7599E-03  9.8031E-01  1.8712E-01  2.6262E-02  3.1412E-02  1.2558E-02
+ PARAMETER:  1.1361E-01  9.5980E-02  1.2425E-01  4.4411E-02  1.5917E-01  7.3518E-02
+ GRADIENT:  -3.6901E-02 -1.3377E-01 -2.6530E-02  1.8335E-04 -1.5422E-03 -5.7705E-03
+
+0ITERATION NO.:   13    OBJECTIVE VALUE:   532.347279949060        NO. OF FUNC. EVALS.:   8
+ CUMULATIVE NO. OF FUNC. EVALS.:      118
+ NPARAMETR:  4.7599E-03  9.8031E-01  1.8712E-01  2.6262E-02  3.1412E-02  1.2558E-02
+ PARAMETER:  1.1361E-01  9.5980E-02  1.2425E-01  4.4411E-02  1.5917E-01  7.3518E-02
+ GRADIENT:  -3.6901E-02 -1.3377E-01 -2.6530E-02  1.8335E-04 -1.5422E-03 -5.7705E-03
+
+ #TERM:
+0MINIMIZATION SUCCESSFUL
+ NO. OF FUNCTION EVALUATIONS USED:      118
+ NO. OF SIG. DIGITS IN FINAL EST.:  3.3
+
+ ETABAR IS THE ARITHMETIC MEAN OF THE ETA-ESTIMATES,
+ AND THE P-VALUE IS GIVEN FOR THE NULL HYPOTHESIS THAT THE TRUE MEAN IS 0.
+
+ ETABAR:         1.3541E-03 -1.0050E-03
+ SE:             1.1691E-02  2.1500E-02
+ N:                      53          53
+
+ P VAL.:         9.0779E-01  9.6272E-01
+
+ ETASHRINKSD(%)  4.6977E+01  1.0841E+01
+ ETASHRINKVR(%)  7.1885E+01  2.0506E+01
+ EBVSHRINKSD(%)  4.7637E+01  1.1838E+01
+ EBVSHRINKVR(%)  7.2582E+01  2.2274E+01
+ EPSSHRINKSD(%)  2.1724E+01
+ EPSSHRINKVR(%)  3.8729E+01
+
+  
+ TOTAL DATA POINTS NORMALLY DISTRIBUTED (N):          141
+ N*LOG(2PI) CONSTANT TO OBJECTIVE FUNCTION:    259.14066636371768     
+ OBJECTIVE FUNCTION VALUE WITHOUT CONSTANT:    532.34727994905984     
+ OBJECTIVE FUNCTION VALUE WITH CONSTANT:       791.48794631277747     
+ REPORTED OBJECTIVE FUNCTION DOES NOT CONTAIN CONSTANT
+  
+ TOTAL EFFECTIVE ETAS (NIND*NETA):                           106
+  
+ #TERE:
+ Elapsed estimation  time in seconds:     0.35
+ Elapsed covariance  time in seconds:     0.30
+ Elapsed postprocess time in seconds:     0.10
+1
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ ************************************************************************************************************************
+ ********************                                                                                ********************
+ ********************               FIRST ORDER CONDITIONAL ESTIMATION WITH INTERACTION              ********************
+ #OBJT:**************                       MINIMUM VALUE OF OBJECTIVE FUNCTION                      ********************
+ ********************                                                                                ********************
+ ************************************************************************************************************************
+ 
+
+
+
+
+
+ #OBJV:********************************************      532.347       **************************************************
+1
+ ************************************************************************************************************************
+ ********************                                                                                ********************
+ ********************               FIRST ORDER CONDITIONAL ESTIMATION WITH INTERACTION              ********************
+ ********************                             FINAL PARAMETER ESTIMATE                           ********************
+ ********************                                                                                ********************
+ ************************************************************************************************************************
+ 
+
+
+ THETA - VECTOR OF FIXED EFFECTS PARAMETERS   *********
+
+
+         TH 1      TH 2      TH 3     
+ 
+         4.76E-03  9.80E-01  1.87E-01
+ 
+
+
+ OMEGA - COV MATRIX FOR RANDOM EFFECTS - ETAS  ********
+
+
+         ETA1      ETA2     
+ 
+ ETA1
++        2.63E-02
+ 
+ ETA2
++        0.00E+00  3.14E-02
+ 
+
+
+ SIGMA - COV MATRIX FOR RANDOM EFFECTS - EPSILONS  ****
+
+
+         EPS1     
+ 
+ EPS1
++        1.26E-02
+ 
+1
+
+
+ OMEGA - CORR MATRIX FOR RANDOM EFFECTS - ETAS  *******
+
+
+         ETA1      ETA2     
+ 
+ ETA1
++        1.62E-01
+ 
+ ETA2
++        0.00E+00  1.77E-01
+ 
+
+
+ SIGMA - CORR MATRIX FOR RANDOM EFFECTS - EPSILONS  ***
+
+
+         EPS1     
+ 
+ EPS1
++        1.12E-01
+ 
+1
+ ************************************************************************************************************************
+ ********************                                                                                ********************
+ ********************               FIRST ORDER CONDITIONAL ESTIMATION WITH INTERACTION              ********************
+ ********************                            STANDARD ERROR OF ESTIMATE                          ********************
+ ********************                                                                                ********************
+ ************************************************************************************************************************
+ 
+
+
+ THETA - VECTOR OF FIXED EFFECTS PARAMETERS   *********
+
+
+         TH 1      TH 2      TH 3     
+ 
+         2.10E-04  2.86E-02  9.91E-02
+ 
+
+
+ OMEGA - COV MATRIX FOR RANDOM EFFECTS - ETAS  ********
+
+
+         ETA1      ETA2     
+ 
+ ETA1
++        1.19E-02
+ 
+ ETA2
++       .........  8.14E-03
+ 
+
+
+ SIGMA - COV MATRIX FOR RANDOM EFFECTS - EPSILONS  ****
+
+
+         EPS1     
+ 
+ EPS1
++        2.12E-03
+ 
+1
+
+
+ OMEGA - CORR MATRIX FOR RANDOM EFFECTS - ETAS  *******
+
+
+         ETA1      ETA2     
+ 
+ ETA1
++        3.66E-02
+ 
+ ETA2
++       .........  2.30E-02
+ 
+
+
+ SIGMA - CORR MATRIX FOR RANDOM EFFECTS - EPSILONS  ***
+
+
+         EPS1     
+ 
+ EPS1
++        9.47E-03
+ 
+1
+ ************************************************************************************************************************
+ ********************                                                                                ********************
+ ********************               FIRST ORDER CONDITIONAL ESTIMATION WITH INTERACTION              ********************
+ ********************                          COVARIANCE MATRIX OF ESTIMATE                         ********************
+ ********************                                                                                ********************
+ ************************************************************************************************************************
+ 
+
+            TH 1      TH 2      TH 3      OM11      OM12      OM22      SG11  
+ 
+ TH 1
++        4.41E-08
+ 
+ TH 2
++        4.55E-07  8.19E-04
+ 
+ TH 3
++       -2.65E-06 -9.35E-04  9.81E-03
+ 
+ OM11
++       -7.65E-07  2.33E-05 -7.56E-05  1.41E-04
+ 
+ OM12
++       ......... ......... ......... ......... .........
+ 
+ OM22
++        9.04E-08  9.95E-05 -9.42E-05 -1.36E-05 .........  6.63E-05
+ 
+ SG11
++        1.79E-07  1.17E-05  4.56E-05  5.11E-07 .........  1.19E-06  4.51E-06
+ 
+1
+ ************************************************************************************************************************
+ ********************                                                                                ********************
+ ********************               FIRST ORDER CONDITIONAL ESTIMATION WITH INTERACTION              ********************
+ ********************                          CORRELATION MATRIX OF ESTIMATE                        ********************
+ ********************                                                                                ********************
+ ************************************************************************************************************************
+ 
+
+            TH 1      TH 2      TH 3      OM11      OM12      OM22      SG11  
+ 
+ TH 1
++        2.10E-04
+ 
+ TH 2
++        7.57E-02  2.86E-02
+ 
+ TH 3
++       -1.27E-01 -3.30E-01  9.91E-02
+ 
+ OM11
++       -3.07E-01  6.85E-02 -6.42E-02  1.19E-02
+ 
+ OM12
++       ......... ......... ......... ......... .........
+ 
+ OM22
++        5.28E-02  4.27E-01 -1.17E-01 -1.41E-01 .........  8.14E-03
+ 
+ SG11
++        4.02E-01  1.93E-01  2.17E-01  2.03E-02 .........  6.90E-02  2.12E-03
+ 
+1
+ ************************************************************************************************************************
+ ********************                                                                                ********************
+ ********************               FIRST ORDER CONDITIONAL ESTIMATION WITH INTERACTION              ********************
+ ********************                      INVERSE COVARIANCE MATRIX OF ESTIMATE                     ********************
+ ********************                                                                                ********************
+ ************************************************************************************************************************
+ 
+
+            TH 1      TH 2      TH 3      OM11      OM12      OM22      SG11  
+ 
+ TH 1
++        3.37E+07
+ 
+ TH 2
++        1.90E+04  1.82E+03
+ 
+ TH 3
++        2.02E+04  1.84E+02  1.38E+02
+ 
+ OM11
++        1.99E+05 -3.11E+02  1.61E+02  8.57E+03
+ 
+ OM12
++       ......... ......... ......... ......... .........
+ 
+ OM22
++        2.43E+04 -2.44E+03 -2.53E+01  2.37E+03 .........  1.92E+04
+ 
+ SG11
++       -1.62E+06 -6.67E+03 -2.69E+03 -1.03E+04 .........  3.06E+02  3.32E+05
+ 
+ Elapsed finaloutput time in seconds:     0.02
+ #CPUT: Total CPU Time in Seconds,        0.773
+Stop Time:
+ons 26 aug 2020 08:33:45 CEST
