@@ -2,7 +2,7 @@ import sympy
 
 from pharmpy import Model
 from pharmpy.modeling import explicit_odes
-from pharmpy.statements import Assignment
+from pharmpy.statements import Assignment, ModelStatements
 
 
 def S(x):
@@ -57,3 +57,18 @@ def test_eq_modelstatements(testdata):
     assert model_min.statements == model_min.statements
     assert model_pheno.statements == model_pheno.statements
     assert model_min.statements != model_pheno.statements
+
+
+def test_remove_symbol_definition():
+    s1 = Assignment(S('KA'), S('X') + S('Y'))
+    s2 = Assignment(S('Z'), sympy.Integer(23) + S('M'))
+    s3 = Assignment(S('M'), sympy.Integer(2))
+    s4 = Assignment(S('G'), sympy.Integer(3))
+    s = ModelStatements([s4, s3, s2, s1])
+    s.remove_symbol_definition(S('Z'), s1)
+    assert s == ModelStatements([s4, s1])
+
+
+def test_remove_unused_parameters_and_rvs(testdata):
+    model = Model(testdata / 'nonmem' / 'pheno_real.mod')
+    model.remove_unused_parameters_and_rvs()

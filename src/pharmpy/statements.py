@@ -31,6 +31,10 @@ class Assignment:
         symbols |= self.expression.free_symbols
         return symbols
 
+    @property
+    def rhs_symbols(self):
+        return self.expression.free_symbols
+
     def __eq__(self, other):
         return isinstance(other, Assignment) and self.symbol == other.symbol and \
             self.expression == other.expression
@@ -56,6 +60,10 @@ class ODESystem:
     """
     @property
     def free_symbols(self):
+        return set()
+
+    @property
+    def rhs_symbols(self):
         return set()
 
     def subs(self, old, new):
@@ -109,6 +117,10 @@ class ExplicitODESystem(ODESystem):
                 pass
         return free
 
+    @property
+    def rhs_symbols(self):
+        return self.free_symbols        # This works currently
+
     def __str__(self):
         a = []
         for ode in self.odes:
@@ -143,6 +155,10 @@ class CompartmentalSystem(ODESystem):
             free |= node.free_symbols
         return free
 
+    @property
+    def rhs_symbols(self):
+        return self.free_symbols        # This works currently
+
     def __eq__(self, other):
         return isinstance(other, CompartmentalSystem) and \
             nx.to_dict_of_dicts(self._g) == nx.to_dict_of_dicts(other._g)
@@ -156,6 +172,9 @@ class CompartmentalSystem(ODESystem):
         comp = Compartment(name)
         self._g.add_node(comp)
         return comp
+
+    def remove_compartment(self, compartment):
+        self._g.remove_node(compartment)
 
     def add_flow(self, source, destination, rate):
         self._g.add_edge(source, destination, rate=rate)
@@ -386,6 +405,45 @@ class ModelStatements(list):
             if isinstance(s, Assignment) and str(s.symbol) == symbol:
                 statement = s
         return statement
+
+    def remove_symbol_definition(self, symbol, statement):
+        """Remove symbol definition and dependencies not used elsewhere
+
+            statement is the statement from which the symbol was removed
+        """
+        removed_ind = self.index(statement)
+        depinds = self._find_statement_and_deps(symbol, removed_ind)
+        depsymbs = [self[i].symbol for i in depinds]
+        keep = []
+        for ind, symb in zip(depinds, depsymbs):
+            for s in self[ind + 1:]:
+                if ind not in depinds and symb in s.rhs_symbols:
+                    keep.append(ind)
+                    break
+        for i in reversed(depinds):
+            if i not in keep:
+                del self[i]
+
+    def _find_statement_and_deps(self, symbol, ind):
+        """Find all statements and their dependencies before a certain statement
+        """
+        # Find index of final assignment of symbol before before
+        statement = None
+        for i in reversed(range(0, ind)):       # Might want to include the before for generality
+            statement = self[i]
+            if symbol == statement.symbol:
+                break
+        if statement is None:
+            return ModelStatements([])
+        found = [i]
+        remaining = statement.rhs_symbols
+        for j in reversed(range(0, i)):
+            statement = self[j]
+            if statement.symbol in remaining:
+                found = [j] + found
+                remaining.remove(statement.symbol)
+                remaining |= statement.rhs_symbols
+        return found
 
     @property
     def ode_system(self):
