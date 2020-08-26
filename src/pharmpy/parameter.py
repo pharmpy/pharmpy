@@ -53,6 +53,12 @@ class ParameterSet(OrderedSet):
         return [p.name for p in self]
 
     @property
+    def symbols(self):
+        """Symbols of all parameters
+        """
+        return [p.symbol for p in self]
+
+    @property
     def lower(self):
         """Lower bounds of all parameters
         """
@@ -137,6 +143,10 @@ class Parameter:
             self.lower = lower
         if upper is not None:
             self.upper = upper
+
+    @property
+    def symbol(self):
+        return sympy.Symbol(self.name, real=True)
 
     @property
     def lower(self):
