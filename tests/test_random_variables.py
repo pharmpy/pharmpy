@@ -30,10 +30,15 @@ def test_rv():
     omega1 = sympy.Symbol('OMEGA(1,1)')
     x = stats.Normal('ETA(1)', 0, sympy.sqrt(omega1))
     rvs = RandomVariables([x])
+    print("QQ", hash(list(rvs)[0]))
     assert len(rvs) == 1
     retrieved = rvs['ETA(1)']
     assert retrieved.name == 'ETA(1)'
     assert retrieved.pspace.distribution.mean == 0
+    for s in rvs.free_symbols:
+        print(s.name, hash(s))
+    print(hash(x))
+    assert rvs.free_symbols == {sympy.Symbol('ETA(1)', real=True), omega1}
 
 
 def test_distributions():

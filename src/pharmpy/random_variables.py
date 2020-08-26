@@ -154,6 +154,15 @@ class RandomVariables(OrderedSet):
             res += '\n'.join(lines) + '\n'
         return res
 
+    @property
+    def free_symbols(self):
+        symbs = set()
+        for rv in self:
+            free = {s for s in rv.pspace.free_symbols if s.name != rv.name}
+            symbs |= free
+            symbs.add(sympy.Symbol(rv.name, real=True))
+        return symbs
+
     def all_parameters(self):
         params = set()
         for _, dist in self.distributions():
