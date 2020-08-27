@@ -428,7 +428,7 @@ class Model(pharmpy.model.Model):
     @property
     def random_variables(self):
         try:
-            return self._random_variables.copy()
+            return self._random_variables
         except AttributeError:
             pass
         rvs = RandomVariables()
@@ -442,13 +442,13 @@ class Model(pharmpy.model.Model):
         for sigma_record in self.control_stream.get_records('SIGMA'):
             epsilons, next_sigma, prev_cov, _ = sigma_record.random_variables(next_sigma, prev_cov)
             rvs.update(epsilons)
-        self._random_variables = rvs.copy()
+        self._random_variables = rvs
         self._old_random_variables = rvs.copy()
         return rvs
 
     @random_variables.setter
     def random_variables(self, new):
-        self._random_variables = new.copy()
+        self._random_variables = new
 
     def __str__(self):
         return str(self.control_stream)
