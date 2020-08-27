@@ -67,6 +67,10 @@ class NMTranControlStream:
 
         return record
 
+    def remove_records(self, records):
+        for rec in records:
+            self.records.remove(rec)
+
     def validate(self):
         in_problem = False
         for record in self.records:

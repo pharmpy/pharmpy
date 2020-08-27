@@ -1,7 +1,7 @@
 import math
 from operator import add, mul
 
-from sympy import Eq, Piecewise, Symbol, exp
+from sympy import Eq, Piecewise, Symbol, exp, Float
 
 from pharmpy.parameter import Parameter
 from pharmpy.statements import Assignment
@@ -116,9 +116,9 @@ class CovariateEffect:
 
     def create_statistics_statement(self, parameter, mean, median):
         if self.statistic_type == 'mean':
-            return Assignment(S(f'{parameter}_MEAN'), mean)
+            return Assignment(S(f'{parameter}_MEAN'), Float(mean, 6))
         else:
-            return Assignment(S(f'{parameter}_MEDIAN'), median)
+            return Assignment(S(f'{parameter}_MEDIAN'), Float(median, 6))
 
     @staticmethod
     def _get_operation(operation_str):

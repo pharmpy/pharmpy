@@ -340,6 +340,6 @@ def test_random_variables(parser):
 ])
 def test_remove(parser, buf, remove, result):
     rec = parser.parse(buf).records[0]
-    rec.random_variables(1)
+    rvs = rec.random_variables(1)
     rec.remove(remove)
     assert str(rec) == result

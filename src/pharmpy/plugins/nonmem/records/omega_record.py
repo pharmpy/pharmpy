@@ -362,6 +362,8 @@ class OmegaRecord(Record):
     def remove(self, names):
         first_omega = min(self.name_map.values())
         indices = {self.name_map[name] - first_omega for name in names}
+        for name in names:
+            del self.name_map[name]
 
         block = self.root.find('block')
         bare_block = self.root.find('bare_block')

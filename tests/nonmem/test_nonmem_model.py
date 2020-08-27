@@ -285,3 +285,12 @@ def test_deterministic_theta_comments(pheno_path):
         no_option += len(theta_record.root.all('option'))
 
     assert no_option == 0
+
+
+def test_remove_eta(pheno_path):
+    model = Model(pheno_path)
+    rvs = model.random_variables
+    eta1 = rvs['ETA(1)']
+    rvs.discard(eta1)
+    model.update_source()
+    assert str(model).split('\n')[13] == '      V = TVV*EXP(ETA(1))'

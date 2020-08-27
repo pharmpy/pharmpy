@@ -466,7 +466,7 @@ class ModelStatements(list):
     def __repr__(self):
         s = ''
         for statement in self:
-            s += repr(statement)
+            s += repr(statement) + '\n'
         return s
 
     def __str__(self):

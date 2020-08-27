@@ -78,11 +78,11 @@ class Model(pharmpy.model.Model):
             del(data_record.accept)
             self._dataset_updated = False
 
-        self._update_parameters()
         self._update_initial_individual_estimates(path)
         if hasattr(self, '_random_variables'):
             update_random_variables(self, self._old_random_variables, self._random_variables)
             self._old_random_variables = self._random_variables
+        self._update_parameters()
 
         super().update_source()
 
@@ -101,6 +101,9 @@ class Model(pharmpy.model.Model):
 
             if len(theta_record.nonmem_names) > 0:
                 code_record.update(theta_record.nonmem_names)
+                error = self._get_error_record()
+                if error:
+                    error.update(theta_record.nonmem_names)
 
             next_theta += len(theta_record)
         next_omega = 1

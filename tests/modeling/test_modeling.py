@@ -5,13 +5,13 @@ from pharmpy.modeling import add_covariate_effect, explicit_odes
 
 
 @pytest.mark.parametrize('effect, operation, buf_new', [
-    ('exp', '*', 'CLWGT = EXP(THETA(4)*(-CL_MEDIAN + WGT))\n      CL_MEDIAN = 1.3\n'
+    ('exp', '*', 'CLWGT = EXP(THETA(4)*(-CL_MEDIAN + WGT))\n      CL_MEDIAN = 1.30000\n'
                  '      CL = CLWGT*TVCL*EXP(ETA(1))'),
-    ('exp', '+', 'CLWGT = EXP(THETA(4)*(-CL_MEDIAN + WGT))\n      CL_MEDIAN = 1.3\n'
+    ('exp', '+', 'CLWGT = EXP(THETA(4)*(-CL_MEDIAN + WGT))\n      CL_MEDIAN = 1.30000\n'
                  '      CL = CLWGT + TVCL*EXP(ETA(1))'),
-    ('pow', '*', 'CLWGT = (WGT/CL_MEDIAN)**THETA(4)\n      CL_MEDIAN = 1.3\n'
+    ('pow', '*', 'CLWGT = (WGT/CL_MEDIAN)**THETA(4)\n      CL_MEDIAN = 1.30000\n'
                  '      CL = CLWGT*TVCL*EXP(ETA(1))'),
-    ('lin_cont', '*', 'CLWGT = THETA(4)*(-CL_MEDIAN + WGT) + 1\n      CL_MEDIAN = 1.3\n'
+    ('lin_cont', '*', 'CLWGT = THETA(4)*(-CL_MEDIAN + WGT) + 1\n      CL_MEDIAN = 1.30000\n'
                       '      CL = CLWGT*TVCL*EXP(ETA(1))')
 ])
 def test_add_covariate_effect(pheno_path, effect, operation, buf_new):

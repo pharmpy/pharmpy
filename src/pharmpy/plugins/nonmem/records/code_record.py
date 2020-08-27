@@ -363,20 +363,8 @@ class CodeRecord(Record):
 
     def update(self, nonmem_names):
         statements_updated = copy.deepcopy(self.statements)
-
-        nonmem_keys = [str(key) for key in nonmem_names.keys()]
-
-        for statement in statements_updated:
-            try:
-                statement_symbols = [str(symbol) for symbol in statement.free_symbols]
-            except AttributeError:
-                statement_symbols = str(statement.symbol)
-            for nonmem_key in nonmem_keys:
-                if nonmem_key in statement_symbols or nonmem_key == statement_symbols:
-                    symbol_old = sympy.Symbol(nonmem_key)
-                    symbol_new = sympy.Symbol(nonmem_names[nonmem_key])
-                    statement.subs(symbol_old, symbol_new)
-
+        for key, value in nonmem_names.items():
+            statements_updated.subs(sympy.Symbol(key, real=True), sympy.Symbol(value, real=True))
         self.statements = statements_updated
 
     def from_odes(self, ode_system):
