@@ -25,7 +25,7 @@ root : _ws* theta (NEWLINE | WS | theta | option)*
 
 theta : init [WS FIX]                    // form 1
       | _lpar [_fixes] init [_fixes] _rpar            // form 2+3+5 (init)
-      | _lpar [_fixes] low [_fixes] sep [_fixes] init [_fixes] _rpar    // form 2+3+5 (low, init)
+      | _lpar [_fixes] low [_fixes] sep [_fixes] init [_fixes] [sep] _rpar    // form 2+3+5 (low, init)
       | _lpar [_fixes] low [_fixes] sep [_fixes] init [_fixes]  sep [_fixes] up [_fixes] _rpar  // form 2+3+5 (low, init, up)
       | _lpar [_fixes] low [_fixes] sepsep [_fixes] up [_fixes] _rpar        // form 4+5 (low, up)
 sep : WS
@@ -46,7 +46,7 @@ FIX : "FIXED" | "FIXE" | "FIX"
 
 // generic option terminals (key/value)
 KEY   : /(?!([0-9]|\(|FIX))\w+/      // TODO: use priority (instead of negative lookahead)
-VALUE : /(?!([0-9]|\(|FIX))[^\s=]+/  // TODO: use priority (instead of negative lookahead)
+VALUE : /(?!([0-9]|\(|FIX))[^\s=;]+/  // TODO: use priority (instead of negative lookahead)
 
 // common misc rules
 _ws: [WS] [NEWLINE]

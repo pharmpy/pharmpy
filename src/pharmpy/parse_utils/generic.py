@@ -343,7 +343,9 @@ class AttrTree(Tree):
         else:
             index = self.children.index(following_node)
             new_children.insert(index, node)
-            new_children.insert(index + 1, self._newline_node())
+
+            newline_node = copy.deepcopy(new_children[index - 1])
+            new_children.insert(index + 1, newline_node)
 
         new_children_clean = self._clean_ws(new_children)
         self.children = new_children_clean
@@ -354,6 +356,11 @@ class AttrTree(Tree):
 
     def add_newline_node(self):
         self.children.append(self._newline_node())
+
+    def get_last_node(self):
+        for node in self.children:
+            last_node = node
+        return last_node
 
     @property
     def tokens(self):

@@ -1,5 +1,7 @@
 from collections import OrderedDict
 
+import pytest
+
 
 def test_create_record(parser):
     recs = parser.parse('$INPUT ID TIME DV WGT=DROP')
@@ -31,3 +33,25 @@ def test_set_option(parser):
     assert str(rec) == '$EST METHOD=0 INTER ; my est\n'
     rec.set_option("CTYPE", "4")
     assert str(rec) == '$EST METHOD=0 INTER CTYPE=4 ; my est\n'
+
+
+@pytest.mark.parametrize("buf,remove,expected", [
+    ('$SUBS ADVAN1 TRANS2', 'TRANS2', '$SUBS ADVAN1'),
+    ('$SUBS ADVAN1  TRANS2', 'TRANS2', '$SUBS ADVAN1'),
+    ('$SUBS   ADVAN1 TRANS2 ;COMMENT', 'ADVAN1', '$SUBS TRANS2 ;COMMENT'),
+])
+def test_remove_option(parser, buf, remove, expected):
+    rec = parser.parse(buf).records[0]
+    rec.remove_option(remove)
+    assert str(rec) == expected
+
+
+@pytest.mark.parametrize("buf,remove,expected", [
+    ('$SUBS ADVAN1 TRANS2', 'TRANS', '$SUBS ADVAN1'),
+    ('$SUBS ADVAN1  TRANS2', 'TRANS', '$SUBS ADVAN1'),
+    ('$SUBS   ADVAN1 TRANS2 ;COMMENT', 'ADVA', '$SUBS TRANS2 ;COMMENT'),
+])
+def test_remove_option_startswith(parser, buf, remove, expected):
+    rec = parser.parse(buf).records[0]
+    rec.remove_option_startswith(remove)
+    assert str(rec) == expected

@@ -16,7 +16,7 @@ class ThetaRecord(Record):
     def add_nonmem_name(self, name_original, name_nonmem):
         self.root.add_comment_node(name_original)
         self.root.add_newline_node()
-        self.nonmem_names[name_nonmem] = name_original
+        self.nonmem_names[name_original] = name_nonmem
 
     def parameters(self, first_theta):
         """Get a parameter set for this theta record.
@@ -79,7 +79,10 @@ class ThetaRecord(Record):
         i = first_theta
         for theta in self.root.all('theta'):
             name = f'THETA({i})'
-            param = parameters[name]
+            try:
+                param = parameters[name]
+            except KeyError:
+                param = parameters[self._find_name(name)]
             new_init = param.init
             if float(str(theta.init)) != new_init:
                 theta.init.tokens[0].value = str(new_init)
@@ -94,6 +97,11 @@ class ThetaRecord(Record):
 
             n = self._multiple(theta)
             i += n
+
+    def _find_name(self, name):
+        for name_original, name_nonmem in self.nonmem_names.items():
+            if name == name_nonmem:
+                return name_original
 
     def __len__(self):
         """Number of thetas in this record

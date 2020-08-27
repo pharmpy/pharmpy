@@ -8,7 +8,7 @@ from sympy import Symbol
 from pharmpy import Model
 from pharmpy.parameter import Parameter
 from pharmpy.plugins.nonmem.nmtran_parser import NMTranParser
-from pharmpy.statements import Assignment
+from pharmpy.statements import Assignment, ModelStatements, ODESystem
 
 
 def S(x):
@@ -99,7 +99,7 @@ def test_add_parameters(pheno_path, param_new, init_expected, buf_new):
     model.update_source()
 
     assert len(pset) == 7
-    assert model.parameters['THETA(4)'].init == init_expected
+    assert model.parameters[param_new.name].init == init_expected
 
     parser = NMTranParser()
     stream = parser.parse(str(model))
@@ -125,14 +125,19 @@ def test_add_parameters(pheno_path, param_new, init_expected, buf_new):
 def test_add_statements(pheno_path, statement_new, buf_new):
     model = Model(pheno_path)
     sset = model.statements
+    assert len(sset) == 15
 
-    assert len(sset) == 8
+    # Insert new statement before ODE system.
+    new_sset = ModelStatements()
+    for s in sset:
+        if isinstance(s, ODESystem):
+            new_sset.append(statement_new)
+        new_sset.append(s)
 
-    sset.append(statement_new)
-    model.statements = sset
+    model.statements = new_sset
     model.update_source()
 
-    assert len(model.statements) == 9
+    assert len(model.statements) == 16
 
     parser = NMTranParser()
     stream = parser.parse(str(model))
@@ -153,10 +158,12 @@ def test_add_statements(pheno_path, statement_new, buf_new):
     assert rec_ref == rec_mod
 
 
-@pytest.mark.parametrize('param_new, statement_new', [
-    (Parameter('THETA', 0.1), Assignment(S('Y'), S('THETA(4)') + S('S1'))),
+@pytest.mark.parametrize('param_new, statement_new, buf_original, buf_new', [
+    (Parameter('X', 0.1), Assignment(S('Y'), S('X') + S('S1')),
+     'Y = S1 + X', 'Y = S1 + THETA(4)'),
 ])
-def test_add_parameters_and_statements(pheno_path, param_new, statement_new):
+def test_add_parameters_and_statements(pheno_path, param_new, statement_new,
+                                       buf_original, buf_new):
     model = Model(pheno_path)
 
     pset = model.parameters
@@ -164,18 +171,30 @@ def test_add_parameters_and_statements(pheno_path, param_new, statement_new):
     model.parameters = pset
 
     sset = model.statements
-    sset.append(statement_new)
-    model.statements = sset
 
+    # Insert new statement before ODE system.
+    new_sset = ModelStatements()
+    for s in sset:
+        if isinstance(s, ODESystem):
+            new_sset.append(statement_new)
+        new_sset.append(s)
+
+    model.statements = new_sset
+
+    rec = '$PK\nIF(AMT.GT.0) BTIME=TIME\nTAD=TIME-BTIME\n' \
+          '      TVCL=THETA(1)*WGT\n' \
+          '      TVV=THETA(2)*WGT\n' \
+          'IF(APGR.LT.5) TVV=TVV*(1+THETA(3))\n' \
+          '      CL=TVCL*EXP(ETA(1))\n' \
+          '      V=TVV*EXP(ETA(2))\n' \
+          '      S1=V\n'
+
+    rec_original = f'{rec}{buf_original}\n'
+    rec_new = f'{rec}{buf_new}\n'
+
+    assert str(model.get_pred_pk_record()) == rec_original
     model.update_source()
-
-    assert len(model.parameters) == 7
-    assert len(model.statements) == 9
-
-    parser = NMTranParser()
-    stream = parser.parse(str(model))
-
-    assert str(model.control_stream) == str(stream)
+    assert str(model.get_pred_pk_record()) == rec_new
 
 
 def test_results(pheno_path):
@@ -249,10 +268,20 @@ def test_statements_setter(pheno_path, buf_new, len_expected):
     parser = NMTranParser()
     statements_new = parser.parse(f'$PRED\n{buf_new}').records[0].statements
 
-    assert len(model.statements) == 8
+    assert len(model.statements) == 15
     assert len(statements_new) == len_expected
 
     model.statements = statements_new
 
     assert len(model.statements) == len_expected
     assert model.statements == statements_new
+
+
+def test_deterministic_theta_comments(pheno_path):
+    model = Model(pheno_path)
+
+    no_option = 0
+    for theta_record in model.control_stream.get_records('THETA'):
+        no_option += len(theta_record.root.all('option'))
+
+    assert no_option == 0

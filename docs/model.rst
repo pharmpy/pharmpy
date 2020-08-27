@@ -246,3 +246,42 @@ or in a pure numerical setting in NumPy
 .. jupyter-execute::
 
    np.linalg.cholesky(a)   
+
+~~~~~~~~~~~~~~~~~
+Model statmements
+~~~~~~~~~~~~~~~~~
+
+The model statements represent the mathematical description of the model. All statements can be retrieved via the statements property as a :py:class:`pharmpy.ModelStatements` object, which is a list of model statements.
+
+.. jupyter-execute::
+
+   statements = model.statements
+   print(statements)
+
+Changing the statements of a model can be done by setting the statements property. This way of manipulating a model is quite low level and flexible but cumbersome. For higher level model manipulation use the :py:mod:`pharmpy.modeling` module.
+
+If the model has a system of ordinary differential equations this will be part of the statements. It can easily be retrieved from the statement object
+
+.. jupyter-execute::
+
+   print(statements.ode_system)
+
+ODE systems can either be described as a compartmental system via :py:class:`pharmpy.statements.CompartmentalSystem` as in the example above or as a system of explicit differential equations using :py:class:`pharmpy.statements.ExplicitODESystem`. Both representations are mathematically equivalent. The compartmental system offers some convenient methods and properties. Get the explicit odes and initial conditions:
+
+.. jupyter-execute::
+
+   odes, ics = statements.ode_system.to_explicit_odes()
+   import sympy
+   sympy.pprint([odes, ics])
+
+Get the amounts vector:
+
+.. jupyter-execute::
+
+   statements.ode_system.amounts
+
+Get the compartmental matrix:
+
+.. jupyter-execute::
+
+   statements.ode_system.compartmental_matrix

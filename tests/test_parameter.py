@@ -14,6 +14,7 @@ from pharmpy.parameter import Parameter, ParameterSet
 def test_initialization(name, init, lower, upper, fix):
     param = Parameter(name, init, lower, upper, fix)
     assert param.name == name
+    assert param.symbol == sympy.Symbol(name, real=True)
     assert param.init == init
     if lower is not None:
         assert param.lower == lower
@@ -101,6 +102,8 @@ def test_pset_names():
     p3 = Parameter('Z', 1)
     pset = ParameterSet([p1, p2, p3])
     assert pset.names == ['Y', 'X', 'Z']
+    assert pset.symbols == [sympy.Symbol('Y', real=True), sympy.Symbol('X', real=True),
+                            sympy.Symbol('Z', real=True)]
 
 
 def test_pset_lower_upper():

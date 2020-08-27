@@ -20,6 +20,8 @@ import pandas as pd
 import scipy.linalg
 import sympy
 
+from pharmpy import ParameterSet, RandomVariables
+
 
 class ModelException(Exception):
     pass
@@ -87,19 +89,49 @@ class Model:
     def read_raw_dataset(self, parse_columns=tuple()):
         raise NotImplementedError()
 
-    def create_symbol(self, stem):
+    def create_symbol(self, stem, force_numbering=False):
         """Create a new unique variable symbol
 
            stem - First part of the new variable name
+           force_numbering - Forces addition of number to name even if variable does
+                             not exist, e.g. COVEFF --> COVEFF1
         """
-        # TODO: Also check parameter and rv names and dataset columns
-        symbols = self.statements.free_symbols
+        symbols = [str(symbol) for symbol in self.statements.free_symbols]
+        params = [param.name for param in self.parameters]
+        rvs = [rv.name for rv in self.random_variables]
+        dataset_col = list(self.dataset.columns)
+
+        all_names = symbols + params + rvs + dataset_col
+
+        if str(stem) not in all_names and not force_numbering:
+            return sympy.Symbol(str(stem))
+
         i = 1
         while True:
-            candidate = sympy.Symbol(f'{stem}{i}')
-            if candidate not in symbols:
-                return candidate
+            candidate = f'{stem}{i}'
+            if candidate not in all_names:
+                return sympy.Symbol(candidate)
             i += 1
+
+    def remove_unused_parameters_and_rvs(self):
+        """Remove any parameters and rvs that are not used in the model statements
+        """
+        symbols = self.statements.free_symbols
+
+        new_rvs = RandomVariables()
+        for rv in self.random_variables:
+            # FIXME: change if rvs are random symbols in expressions
+            if sympy.Symbol(rv.name, real=True) in symbols or \
+                    not symbols.isdisjoint(rv.pspace.free_symbols):
+                new_rvs.add(rv)
+        self.random_variables = new_rvs
+
+        new_params = ParameterSet()
+        for p in self.parameters:
+            symb = p.symbol
+            if symb in symbols or symb in new_rvs.free_symbols:
+                new_params.add(p)
+        self.parameters = new_params
 
     def _observation(self):
         stats = self.statements

@@ -4,12 +4,13 @@ Generic NONMEM code record class.
 """
 
 import copy
-import warnings
 
 import lark
 import sympy
+from sympy import Piecewise
 
 from pharmpy.data_structures import OrderedSet
+from pharmpy.parse_utils.generic import NoSuchRuleException
 from pharmpy.plugins.nonmem.records.parsers import CodeRecordParser
 from pharmpy.statements import Assignment, ModelStatements
 
@@ -121,6 +122,8 @@ class ExpressionInterpreter(lark.visitors.Interpreter):
             return lambda x: sympy.sign(x) * sympy.floor(sympy.Abs(x))
         elif name == "GAMLN":
             return sympy.loggamma
+        elif name == "PHI":
+            return lambda x: (1 + sympy.erf(x) / sympy.sqrt(2)) / 2
 
     def power(self, node):
         b, e = self.visit_children(node)
@@ -132,10 +135,13 @@ class ExpressionInterpreter(lark.visitors.Interpreter):
 
     @staticmethod
     def number(node):
+        s = str(node)
         try:
-            return sympy.Integer(str(node))
+            return sympy.Integer(s)
         except ValueError:
-            return sympy.Float(str(node))
+            s = s.replace('d', 'E')     # Fortran special format
+            s = s.replace('D', 'E')
+            return sympy.Float(s)
 
     @staticmethod
     def symbol(node):
@@ -170,16 +176,15 @@ class CodeRecord(Record):
         self._nodes_updated = copy.deepcopy(self.nodes)
         self._root_updated = copy.deepcopy(self.root)
 
-        if statements_new == statements_past:
-            warnings.warn('New statements same as current, no changes made.')
-        else:
+        if statements_new != statements_past:
             index_past = 0
             last_index_past = len(statements_past) - 1
             last_index_new = len(statements_new) - 1
 
             for index_new, s_new in enumerate(statements_new):
                 if index_past == len(statements_past):      # Add rest of new statements
-                    self._add_statement(None, s_new)
+                    if self._get_node(s_new) is None:
+                        self._add_statement(index_past, s_new)
                     continue
                 elif len(statements_past) == 1 and len(statements_new) == 1:
                     self._replace_statement(0, s_new)
@@ -203,7 +208,8 @@ class CodeRecord(Record):
 
                 index_past += 1
 
-        self._root_updated.add_newline_node()
+        if self._root_updated.get_last_node().rule not in ['WS_ALL', 'NEWLINE']:
+            self._root_updated.add_newline_node()
 
         self.nodes = copy.deepcopy(self._nodes_updated)
         self._nodes_updated = []
@@ -226,7 +232,11 @@ class CodeRecord(Record):
 
     # Creating node does not work for if-statements
     def _add_statement(self, index_insert, statement):
-        node_tree = CodeRecordParser(f'\n{str(statement).replace(":", "")}').root
+        if isinstance(statement.expression, Piecewise):
+            statement_str = self._translate_sympy_piecewise(statement)
+        else:
+            statement_str = f'\n{repr(statement).replace(":", "")}'
+        node_tree = CodeRecordParser(statement_str).root
         node = node_tree.all('statement')[0]
 
         if isinstance(index_insert, int) and index_insert >= len(self._nodes_updated):
@@ -240,9 +250,32 @@ class CodeRecord(Record):
             self._nodes_updated.insert(index_insert, node)
             self._root_updated.add_node(node, node_following)
 
+    def _translate_sympy_piecewise(self, statement):
+        statement_args = statement.expression.args
+        symbol = statement.symbol
+
+        value = statement_args[0][0]
+        condition = statement_args[0][1]
+        condition_translated = self._translate_condition(condition)
+
+        return f'\nIF ({condition_translated}) {symbol} = {value}\n'
+
+    @staticmethod
+    def _translate_condition(condition):
+        sign_dict = {'>': '.GT.',
+                     '<': '.LT.'}
+        condition_split = str(condition).split(' ')
+
+        condition_translated = ''.join([sign_dict.get(symbol, symbol)
+                                        for symbol in condition_split])
+        return condition_translated
+
     def _get_node(self, statement):
-        index_statement = self.statements.index(statement)
-        return self.nodes[index_statement]
+        try:
+            index_statement = self.statements.index(statement)
+            return self.nodes[index_statement]
+        except ValueError:
+            return None
 
     def _get_index_to_remove(self, statement, index_start):
         try:
@@ -263,11 +296,16 @@ class CodeRecord(Record):
                 s.append(ass)
             elif node.rule == 'logical_if':
                 logic_expr = ExpressionInterpreter().visit(node.logical_expression)
-                name = str(node.assignment.variable).upper()
-                expr = ExpressionInterpreter().visit(node.assignment.expression)
-                pw = sympy.Piecewise((expr, logic_expr))
-                ass = Assignment(name, pw)
-                s.append(ass)
+                try:
+                    assignment = node.assignment
+                except NoSuchRuleException:
+                    pass
+                else:
+                    name = str(assignment.variable).upper()
+                    expr = ExpressionInterpreter().visit(assignment.expression)
+                    pw = sympy.Piecewise((expr, logic_expr))
+                    ass = Assignment(name, pw)
+                    s.append(ass)
             elif node.rule == 'block_if':
                 interpreter = ExpressionInterpreter()
                 blocks = []  # [(logic, [(symb1, expr1), ...]), ...]
@@ -276,30 +314,38 @@ class CodeRecord(Record):
                 first_logic = interpreter.visit(node.block_if_start.logical_expression)
                 first_block = node.block_if_start
                 first_symb_exprs = []
-                for assign_node in first_block.all('assignment'):
-                    name = str(assign_node.variable).upper()
-                    first_symb_exprs.append((name, interpreter.visit(assign_node.expression)))
-                    symbols.add(name)
+                for ifstat in first_block.all('statement'):
+                    for assign_node in ifstat.all('assignment'):
+                        name = str(assign_node.variable).upper()
+                        first_symb_exprs.append((name, interpreter.visit(assign_node.expression)))
+                        symbols.add(name)
                 blocks.append((first_logic, first_symb_exprs))
 
                 else_if_blocks = node.all('block_if_elseif')
                 for elseif in else_if_blocks:
                     logic = interpreter.visit(elseif.logical_expression)
                     elseif_symb_exprs = []
-                    for assign_node in elseif.all('assignment'):
-                        name = str(assign_node.variable).upper()
-                        elseif_symb_exprs.append((name, interpreter.visit(assign_node.expression)))
-                        symbols.add(name)
+                    for elseifstat in elseif.all('statement'):
+                        for assign_node in elseifstat.all('assignment'):
+                            name = str(assign_node.variable).upper()
+                            elseif_symb_exprs.append((name,
+                                                      interpreter.visit(assign_node.expression)))
+                            symbols.add(name)
                     blocks.append((logic, elseif_symb_exprs))
 
                 else_block = node.find('block_if_else')
                 if else_block:
                     else_symb_exprs = []
-                    for assign_node in else_block.all('assignment'):
-                        name = str(assign_node.variable).upper()
-                        else_symb_exprs.append((name, interpreter.visit(assign_node.expression)))
-                        symbols.add(name)
-                    blocks.append((True, else_symb_exprs))
+                    for elsestat in else_block.all('statement'):
+                        for assign_node in elsestat.all('assignment'):
+                            name = str(assign_node.variable).upper()
+                            else_symb_exprs.append((name,
+                                                    interpreter.visit(assign_node.expression)))
+                            symbols.add(name)
+                    piecewise_logic = True
+                    if len(blocks[0][1]) == 0 and not else_if_blocks:    # Special case for empty if
+                        piecewise_logic = sympy.Not(blocks[0][0])
+                    blocks.append((piecewise_logic, else_symb_exprs))
 
                 for symbol in symbols:
                     pairs = []
@@ -314,3 +360,34 @@ class CodeRecord(Record):
 
         statements = ModelStatements(s)
         return statements
+
+    def update(self, nonmem_names):
+        statements_updated = copy.deepcopy(self.statements)
+
+        nonmem_keys = [str(key) for key in nonmem_names.keys()]
+
+        for statement in statements_updated:
+            try:
+                statement_symbols = [str(symbol) for symbol in statement.free_symbols]
+            except AttributeError:
+                statement_symbols = str(statement.symbol)
+            for nonmem_key in nonmem_keys:
+                if nonmem_key in statement_symbols or nonmem_key == statement_symbols:
+                    symbol_old = sympy.Symbol(nonmem_key)
+                    symbol_new = sympy.Symbol(nonmem_names[nonmem_key])
+                    statement.subs(symbol_old, symbol_new)
+
+        self.statements = statements_updated
+
+    def from_odes(self, ode_system):
+        """Set statements of record given an eplicit ode system
+        """
+        odes = ode_system.odes[:-1]    # Skip last ode as it is for the output compartment
+        functions = [ode.lhs.args[0] for ode in odes]
+        function_map = {f: sympy.Symbol(f'A({i + 1})') for i, f in enumerate(functions)}
+        statements = []
+        for i, ode in enumerate(odes):
+            symbol = sympy.Symbol(f'DADT({i + 1})')
+            expression = ode.rhs.subs(function_map)
+            statements.append(Assignment(symbol, expression))
+        self.statements = statements

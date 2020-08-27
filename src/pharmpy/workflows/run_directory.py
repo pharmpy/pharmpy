@@ -14,52 +14,6 @@ utilize for input->output during evaluation, estimation & simulation tasks.
 
     from pharmpy.workflows import RunDirectory
 
-Usage
------
-
-Creating a directory
-
-    .. doctest::
-        :pyversion: > 3.6
-
-        >>> dir = RunDirectory('.')
-        >>> print(list(dir.path.iterdir()))
-        []
-
-Defining clean options:
-
-    .. doctest::
-        :pyversion: > 3.6
-
-        >>> dir.cleanlevel = 1
-        >>> dir.clean_config(level=1, patterns=['*.txt', 'remove*'], rm_dirs=False)
-        >>> files = ['remove_this', 'file.txt', 'keep_this', 'file.py']
-        >>> for file in files:
-        ...     open(dir.path / file, 'a').close()
-
-Destroying object (triggering cleanup):
-
-    .. doctest::
-        :pyversion: > 3.6
-
-        >>> path = dir.path
-        >>> print(sorted([x.name for x in path.iterdir()]))
-        ['file.py', 'file.txt', 'keep_this', 'remove_this']
-
-    .. doctest::
-        :pyversion: > 3.6
-
-        >>> del dir
-        >>> print([x.name for x in path.iterdir()])
-        ['file.py', 'keep_this']
-
-    .. doctest::
-        :pyversion: > 3.6
-
-        >>> (path / 'keep_this').unlink()
-        >>> (path / 'file.py').unlink()
-        >>> path.rmdir()
-
 Definitions
 -----------
 """

@@ -154,6 +154,15 @@ class RandomVariables(OrderedSet):
             res += '\n'.join(lines) + '\n'
         return res
 
+    @property
+    def free_symbols(self):
+        symbs = set()
+        for rv in self:
+            free = {s for s in rv.pspace.free_symbols if s.name != rv.name}
+            symbs |= free
+            symbs.add(sympy.Symbol(rv.name, real=True))
+        return symbs
+
     def all_parameters(self):
         params = set()
         for _, dist in self.distributions():
@@ -259,15 +268,23 @@ class RandomVariables(OrderedSet):
         new_rvs = JointNormalSeparate(names, means, M)
         self.__init__(new_rvs + others)
 
+    def __deepcopy__(self, memo):
+        return self.copy()
+
     def copy(self):
         # Special copy because separated joints need special treatment
         new_rvs = RandomVariables()
         for rvs, dist in self.distributions():
             if len(rvs) == 1:
-                new_rvs.add(rvs[0].copy())
+                rv = rvs[0].copy()
+                rv.variability_level = rvs[0].variability_level
+                new_rvs.add(rv)
             else:
-                new_rvs.update(JointNormalSeparate([rv.name for rv in rvs], dist.mu, dist.sigma))
-        return rvs
+                cp = JointNormalSeparate([rv.name for rv in rvs], dist.mu, dist.sigma)
+                for new, old in zip(cp, rvs):
+                    new.variability_level = old.variability_level
+                new_rvs.update(cp)
+        return new_rvs
 
     def validate_parameters(self, parameter_values, use_cache=False):
         """ Validate a dict or Series of parameter values

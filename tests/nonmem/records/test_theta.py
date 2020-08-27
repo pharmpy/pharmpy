@@ -29,6 +29,9 @@ import pytest
         [('THETA(1)', 0.15, 0, 0.6, False), ('THETA(2)', 1, 0, 10, False)]),
     ('$THETA  (FIX FIX 0.4) ; CL', [('THETA(1)', 0.4, -1000000, 1000000, True)]),
     ('$THETA (FIX 1,   FIX FIX    1 FIX, 1  FIX) ; CL', [('THETA(1)', 1, 1, 1, True)]),
+    ('$THETA\n(0,0.105,)   ; RUV_CVFPG\n', [
+        ('THETA(1)', 0.105, 0, 1000000, False),
+        ]),
 ])
 def test_parameters(parser, buf, results):
     recs = parser.parse(buf)
@@ -105,4 +108,4 @@ def test_add_nonmem_name(parser, buf, name_original, name_nonmem, buf_new):
     rec.add_nonmem_name(name_original, name_nonmem)
 
     assert str(rec) == buf_new
-    assert rec.nonmem_names[name_nonmem] == name_original
+    assert rec.nonmem_names[name_original] == name_nonmem

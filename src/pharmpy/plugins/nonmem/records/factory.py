@@ -5,6 +5,7 @@ from pharmpy.plugins.nonmem.exceptions import NMTranParseError
 from .code_record import CodeRecord
 from .data_record import DataRecord
 from .etas_record import EtasRecord
+from .model_record import ModelRecord
 from .omega_record import OmegaRecord
 from .option_record import OptionRecord
 from .parsers import (CodeRecordParser, DataRecordParser, OmegaRecordParser, OptionRecordParser,
@@ -16,17 +17,20 @@ from .theta_record import ThetaRecord
 # Dictionary from canonical record name to record class and non_empty rules of parser
 known_records = {
     'DATA': (DataRecord, DataRecordParser),
+    'DES': (CodeRecord, CodeRecordParser),
+    'ERROR': (CodeRecord, CodeRecordParser),
     'ESTIMATION': (OptionRecord, OptionRecordParser),
     'ETAS': (EtasRecord, OptionRecordParser),
     'INPUT': (OptionRecord, OptionRecordParser),
-    'PROBLEM': (ProblemRecord, ProblemRecordParser),
-    'SIZES': (OptionRecord, OptionRecordParser),
-    'SUBROUTINE': (OptionRecord, OptionRecordParser),
-    'THETA': (ThetaRecord, ThetaRecordParser),
+    'MODEL': (ModelRecord, OptionRecordParser),
     'OMEGA': (OmegaRecord, OmegaRecordParser),
-    'SIGMA': (OmegaRecord, OmegaRecordParser),
-    'PRED': (CodeRecord, CodeRecordParser),
     'PK': (CodeRecord, CodeRecordParser),
+    'PRED': (CodeRecord, CodeRecordParser),
+    'PROBLEM': (ProblemRecord, ProblemRecordParser),
+    'SIGMA': (OmegaRecord, OmegaRecordParser),
+    'SIZES': (OptionRecord, OptionRecordParser),
+    'SUBROUTINES': (OptionRecord, OptionRecordParser),
+    'THETA': (ThetaRecord, ThetaRecordParser),
 }
 
 
@@ -50,6 +54,8 @@ def get_canonical_record_name(raw_name):
         # Synonyms
         if 'INFILE'.startswith(bare):
             return 'DATA'
+        elif 'SUBS'.startswith(bare):
+            return 'SUBROUTINES'
     elif bare == 'PK':
         return bare
 

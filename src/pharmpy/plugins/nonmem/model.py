@@ -13,8 +13,11 @@ from pharmpy.parameter import ParameterSet
 from pharmpy.plugins.nonmem.results import NONMEMChainedModelfitResults
 from pharmpy.plugins.nonmem.table import NONMEMTableFile, PhiTable
 from pharmpy.random_variables import RandomVariables
+from pharmpy.statements import Assignment, ModelStatements, ODESystem
 
+from .advan import compartmental_model
 from .nmtran_parser import NMTranParser
+from .rvs import update_random_variables
 
 
 class Model(pharmpy.model.Model):
@@ -77,6 +80,9 @@ class Model(pharmpy.model.Model):
 
         self._update_parameters()
         self._update_initial_individual_estimates(path)
+        if hasattr(self, '_random_variables'):
+            update_random_variables(self, self._old_random_variables, self._random_variables)
+            self._old_random_variables = self._random_variables
 
         super().update_source()
 
@@ -86,10 +92,16 @@ class Model(pharmpy.model.Model):
         if not self._parameters_updated:
             return
 
+        code_record = self.get_pred_pk_record()
+
         params = self._parameters
         next_theta = 1
         for theta_record in self.control_stream.get_records('THETA'):
             theta_record.update(params, next_theta)
+
+            if len(theta_record.nonmem_names) > 0:
+                code_record.update(theta_record.nonmem_names)
+
             next_theta += len(theta_record)
         next_omega = 1
         previous_size = None
@@ -204,21 +216,30 @@ class Model(pharmpy.model.Model):
                 if name not in parameters:
                     if name not in self.random_variables.all_parameters():
                         name_new = self._get_theta_name()
-                        p.name = name_new
-                        self._add_theta(p, name, name_new)
+                        record = self._add_theta(p)
+
+                        if name.startswith('THETA'):
+                            p.name = name_new
+                        else:
+                            record.add_nonmem_name(name, name_new)
 
             self._parameters = params.copy()
         self._parameters_updated = True
 
     def _get_theta_name(self):
+        next_theta = self.get_next_theta()
+        return f'THETA({next_theta})'
+
+    def get_next_theta(self):
         next_theta = 1
+
         for theta_record in self.control_stream.get_records('THETA'):
             thetas = theta_record.parameters(next_theta)
             next_theta += len(thetas)
 
-        return f'THETA({next_theta})'
+        return next_theta
 
-    def _add_theta(self, param, name_original, name_new):
+    def _add_theta(self, param):
         param_str = '$THETA  '
 
         if param.lower == -sympy.oo:
@@ -227,13 +248,10 @@ class Model(pharmpy.model.Model):
             param_str += f'({param.lower},{param.init})'
         if param.fix:
             param_str += ' FIX'
-
         param_str += '\n'
 
         record = self.control_stream.insert_record(param_str, 'THETA')
-
-        if not name_original.startswith('THETA'):
-            record.add_nonmem_name(name_original, name_new)
+        return record
 
     @property
     def initial_individual_estimates(self):
@@ -309,16 +327,70 @@ class Model(pharmpy.model.Model):
 
         rec = self.get_pred_pk_record()
         statements = rec.statements
-        self._statements = statements
 
+        error = self._get_error_record()
+        if error:
+            sub = self.control_stream.get_records('SUBROUTINES')[0]
+            advan = sub.get_option_startswith('ADVAN')
+            trans = sub.get_option_startswith('TRANS')
+            comp = compartmental_model(self, advan, trans)
+            if comp is not None:
+                cm, link = comp
+                statements += [cm, link]
+            else:
+                statements.append(ODESystem())      # FIXME: Placeholder for ODE-system
+                # FIXME: Dummy link statement
+                statements.append(Assignment("F", sympy.Symbol("F", real=True)))
+            statements += error.statements
+
+        self._statements = statements
         return copy.deepcopy(statements)
 
     @statements.setter
     def statements(self, statements_new):
+        old_statements = self._statements
+        main_statements = ModelStatements()
+        error_statements = ModelStatements()
+        found_ode = False
+        for s in statements_new:
+            if isinstance(s, ODESystem):
+                found_ode = True
+                old_system = old_statements.ode_system
+                if s != old_system:
+                    self._update_ode_system(old_system, s)
+            else:
+                if found_ode:
+                    error_statements.append(s)
+                else:
+                    main_statements.append(s)
         rec = self.get_pred_pk_record()
+        rec.statements = main_statements
+        error = self._get_error_record()
+        if error:
+            if len(error_statements) > 0:
+                error_statements.pop(0)        # Remove the link statement
+            error.statements = error_statements
+        self._statements = statements_new
 
-        rec.statements = statements_new
-        self._statements = rec.statements
+    def _update_ode_system(self, old, new):
+        """Update ODE system
+
+           Handle changes from CompartmentSystem to ExplicitODESystem
+        """
+        subs = self.control_stream.get_records('SUBROUTINES')[0]
+        subs.remove_option_startswith('TRANS')
+        subs.remove_option_startswith('ADVAN')
+        subs.append_option('ADVAN6')
+        des = self.control_stream.insert_record('$DES\nDUMMY=0', 'PK')
+        des.from_odes(new)
+        mod = self.control_stream.insert_record('$MODEL TOL=3\n', 'SUBROUTINES')
+        for eq, ic in zip(new.odes[:-1], list(new.ics.keys())[:-1]):
+            name = eq.lhs.args[0].name[2:]
+            if new.ics[ic] != 0:
+                dose = True
+            else:
+                dose = False
+            mod.add_compartment(name, dosing=dose)
 
     def get_pred_pk_record(self):
         pred = self.control_stream.get_records('PRED')
@@ -328,6 +400,12 @@ class Model(pharmpy.model.Model):
             return pk[0]
         else:
             return pred[0]
+
+    def _get_error_record(self):
+        error = self.control_stream.get_records('ERROR')
+        if error:
+            error = error[0]
+        return error
 
     def _zero_fix_rvs(self, eta=True):
         zero_fix = []
@@ -349,6 +427,10 @@ class Model(pharmpy.model.Model):
 
     @property
     def random_variables(self):
+        try:
+            return self._random_variables
+        except AttributeError:
+            pass
         rvs = RandomVariables()
         next_omega = 1
         prev_cov = None
@@ -360,7 +442,13 @@ class Model(pharmpy.model.Model):
         for sigma_record in self.control_stream.get_records('SIGMA'):
             epsilons, next_sigma, prev_cov, _ = sigma_record.random_variables(next_sigma, prev_cov)
             rvs.update(epsilons)
+        self._random_variables = rvs
+        self._old_random_variables = rvs.copy()
         return rvs
+
+    @random_variables.setter
+    def random_variables(self, new):
+        self._random_variables = new
 
     def __str__(self):
         return str(self.control_stream)

@@ -18,6 +18,7 @@ extensions = [
     'sphinx.ext.todo',
     'sphinx.ext.viewcode',
     'jupyter_sphinx',
+    'sphinxcontrib.autoprogram',
 ]
 if os.getenv('SPELLCHECK'):
     extensions += 'sphinxcontrib.spelling',

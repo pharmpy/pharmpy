@@ -7,4 +7,6 @@ User guide
 
    model
    data
+   modeling
    frem
+   cli

@@ -27,6 +27,7 @@ def S(x):
     ('$PRED D = A - (-2)', S('D'), S('A') + 2),
     ('$PRED D = A - (+2)', S('D'), S('A') - 2),
     ('$PRED D = 2.5', S('D'), 2.5),
+    ('$PRED D = 1D-10', S('D'), 1e-10),
     ('$PRED CL = EXP(2)', S('CL'), sympy.exp(2)),
     ('$PRED CL = exp(2)', S('CL'), sympy.exp(2)),
     ('$PRED cL = eXp(2)', S('CL'), sympy.exp(2)),
@@ -43,6 +44,7 @@ def S(x):
     ('$PRED CL = INT(0.2)', S('CL'), 0),
     ('$PRED CL = MOD(1, 2)', S('CL'), sympy.Mod(1, 2)),
     ('$PRED CL = GAMLN(2 + X)   ;COMMENT', S('CL'), sympy.loggamma(S('X') + 2)),
+    ('$PRED C02 = PHI(2 + X)', S('C02'), (1 + sympy.erf(2 + S('X')) / sympy.sqrt(2)) / 2),
     ('$PRED IF (X.EQ.2) CL=23', S('CL'), sympy.Piecewise((23, sympy.Eq(S('X'), 2)))),
     ('$PRED if (x.EQ.2) Cl=23', S('CL'), sympy.Piecewise((23, sympy.Eq(S('X'), 2)))),
     ('$PRED IF (X.NE.1.5) CL=THETA(1)', S('CL'),
@@ -78,6 +80,14 @@ def S(x):
     ('$PRED\n"VERBATIM STUFF\nK=1', S('K'), 1),
     ('$PRED\n"VERBATIM STUFF\n"ON TWO LINES\nK=1', S('K'), 1),
     ('$PRED\n(CALLFL=0)\n\nK=1', S('K'), 1),
+    ('$ERROR\nCL = 2', S('CL'), 2),
+    ('$ERROR (ONLY OBSERVATION) \nCL = 2', S('CL'), 2),
+    ('$PRED\nCL = 2\nEXIT\n', S('CL'), 2),
+    ('$PRED\nCL = 2\nEXIT \n', S('CL'), 2),
+    ('$PRED\nCL = 2\nEXIT 1 \n', S('CL'), 2),
+    ('$PRED\nCL = 2\nEXIT 1 23 \n', S('CL'), 2),
+    ('$PRED\nCL = 2\nCALL RANDOM (2, R)\n', S('CL'), 2),
+    ('$PRED\nCL = 2\n  RETURN  \n', S('CL'), 2),
 ])
 def test_single_assignments(parser, buf, symbol, expression):
     rec = parser.parse(buf).records[0]
@@ -115,6 +125,21 @@ def test_single_assignments(parser, buf, symbol, expression):
      'TVCL=THETA(2)       ; CL in population 2\nENDIF\n', [
         (S('TVCL'), sympy.Piecewise((S('THETA(1)'), sympy.Eq(S('MIXNUM'), 3)),
                                     (S('THETA(2)'), True)))]),
+    ('$PRED\nIF (X.EQ.0) THEN\nY = 23\nZ = 9\nELSE\nEND IF', [
+        (S('Y'), sympy.Piecewise((23, sympy.Eq(S('X'), 0)))),
+        (S('Z'), sympy.Piecewise((9, sympy.Eq(S('X'), 0))))]),
+    ('$PRED\nIF (X.EQ.0) THEN\nY = 23\nZ = 9\nELSE IF (X.EQ.23) THEN\nELSE\nEND IF', [
+        (S('Y'), sympy.Piecewise((23, sympy.Eq(S('X'), 0)))),
+        (S('Z'), sympy.Piecewise((9, sympy.Eq(S('X'), 0))))]),
+    ('$PRED\nIF (X.EQ.0) THEN\nY = 23\nZ = 9\nELSE IF (X.EQ.44) THEN\nEND IF', [
+        (S('Y'), sympy.Piecewise((23, sympy.Eq(S('X'), 0)))),
+        (S('Z'), sympy.Piecewise((9, sympy.Eq(S('X'), 0))))]),
+    ('$PRED\nIF (X.EQ.0) THEN\nELSE\nY = 23\nZ = 9\nEND IF', [
+        (S('Y'), sympy.Piecewise((23, sympy.Ne(S('X'), 0)))),
+        (S('Z'), sympy.Piecewise((9, sympy.Ne(S('X'), 0))))]),
+    ('$PRED\nIF (X.EQ.0) THEN\nY = 23\nZ = 9\nELSE\n CALL RANDOM(1,R)\nEND IF', [
+        (S('Y'), sympy.Piecewise((23, sympy.Eq(S('X'), 0)))),
+        (S('Z'), sympy.Piecewise((9, sympy.Eq(S('X'), 0))))]),
 ])
 def test_block_if(parser, buf, symb_expr_arr):
     rec = parser.parse(buf).records[0]
@@ -122,6 +147,12 @@ def test_block_if(parser, buf, symb_expr_arr):
     for statement, (symb, expr) in zip(rec.statements, symb_expr_arr):
         assert statement.symbol == symb
         assert statement.expression == expr
+
+
+def test_exit(parser):
+    rec = parser.parse("$PK IF (CL.EQ.0) EXIT 1").records[0]
+    rec = parser.parse("$PK IF (CL.EQ.0) EXIT 1 24").records[0]
+    assert len(rec.statements) == 0
 
 
 @pytest.mark.usefixtures('parser')
@@ -200,9 +231,6 @@ def test_statements_setter_identical(parser, buf_original, buf_new):
 
     assert rec_original.statements == rec_new.statements
 
-    with pytest.warns(UserWarning):
-        rec_original.statements = rec_new.statements
-
 
 @pytest.mark.usefixtures('parser')
 @pytest.mark.parametrize('buf_original,buf_new,is_comment_present', [
@@ -229,6 +257,12 @@ def test_statements_setter_remove(parser, buf_original, buf_new, is_comment_pres
 @pytest.mark.parametrize('buf_original,buf_new', [
     ('$PRED\nY = THETA(1) + ETA(1) + EPS(1)',
      '$PRED\nY = THETA(1) + ETA(1) + EPS(1)\nCL = 2'),
+    ('$PRED\nY = THETA(1) + ETA(1) + EPS(1)\nCL = 2',
+     '$PRED\nY = THETA(1) + ETA(1) + EPS(1)\nS1 = V\nCL = 2'),
+    ('$PRED\nY = THETA(1) + ETA(1) + EPS(1)\nCL = 2',
+     '$PRED\nY = THETA(1) + ETA(1) + EPS(1)\nS1 = V\nTVCL = WGT + 2\nCL = 2'),
+    ('$PRED\nY = THETA(1) + ETA(1) + EPS(1)',
+     '$PRED\nY = THETA(1) + ETA(1) + EPS(1)\nIF (AMT.GT.0) BTIME = TIME'),
 ])
 def test_statements_setter_add(parser, buf_original, buf_new):
     rec_original = parser.parse(buf_original).records[0]
@@ -274,3 +308,44 @@ def test_statements_setter_add_from_sympy(parser, buf_original, symbol, expressi
     rec_original.statements = statements
 
     assert str(rec_original) == buf_new
+
+
+@pytest.mark.usefixtures('parser')
+@pytest.mark.parametrize('buf_original,assignment,nonmem_names,buf_expected', [
+    ('$PRED\nY = THETA(1) + ETA(1) + EPS(1)', Assignment(S('Z'), S('X')),
+     {'X': 'THETA(2)'}, '$PRED\nY = THETA(1) + ETA(1) + EPS(1)\nZ = THETA(2)\n'),
+    ('$PRED\nY = THETA(1) + ETA(1) + EPS(1)\nCL = 1.3', Assignment(S('Z'), S('X')),
+     {'X': 'THETA(2)'}, '$PRED\nY = THETA(1) + ETA(1) + EPS(1)\nCL = 1.3\nZ = THETA(2)\n')
+])
+def test_update(parser, buf_original, assignment, nonmem_names, buf_expected):
+    rec_original = parser.parse(buf_original).records[0]
+
+    statements = rec_original.statements
+    statements += [assignment]
+    rec_original.statements = statements
+
+    rec_original.update(nonmem_names)
+
+    assert str(rec_original) == buf_expected
+
+
+def test_nested_block_if(parser):
+    code = '\nIF (X.EQ.23) THEN\nIF (Y.EQ.0) THEN\nCL=1\nELSE\nCL=2\nENDIF\n' \
+           'CL=5\nELSE\nCL=6\nENDIF'
+    rec = parser.parse('$PRED' + code).records[0]
+    print(rec.root.treeprint())
+
+    s = rec.statements
+    rec.statements = s
+    print(rec.root.treeprint())
+    assert str(rec.root) == code + '\n'
+
+
+@pytest.mark.usefixtures('parser')
+@pytest.mark.parametrize('buf_original', [
+    '\nIF (AMT.GT.0) BTIME = TIME\n',
+])
+def test_translate_sympy_piecewise(parser, buf_original):
+    rec = parser.parse(f'$PRED{buf_original}').records[0]
+    s = rec.statements[0]
+    assert rec._translate_sympy_piecewise(s) == buf_original
