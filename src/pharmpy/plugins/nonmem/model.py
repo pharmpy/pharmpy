@@ -17,6 +17,7 @@ from pharmpy.statements import Assignment, ModelStatements, ODESystem
 
 from .advan import compartmental_model
 from .nmtran_parser import NMTranParser
+from .rvs import update_random_variables
 
 
 class Model(pharmpy.model.Model):
@@ -79,6 +80,9 @@ class Model(pharmpy.model.Model):
 
         self._update_parameters()
         self._update_initial_individual_estimates(path)
+        if hasattr(self, '_random_variables'):
+            update_random_variables(self, self._old_random_variables, self._random_variables)
+            self._old_random_variables = self._random_variables
 
         super().update_source()
 
@@ -439,6 +443,7 @@ class Model(pharmpy.model.Model):
             epsilons, next_sigma, prev_cov, _ = sigma_record.random_variables(next_sigma, prev_cov)
             rvs.update(epsilons)
         self._random_variables = rvs.copy()
+        self._old_random_variables = rvs.copy()
         return rvs
 
     @random_variables.setter

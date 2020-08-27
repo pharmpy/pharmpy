@@ -349,4 +349,5 @@ class OmegaRecord(Record):
         for rv in rvs:
             rv.variability_level = level
 
+        self.name_map = {rv.name: start_omega + i for i, rv in enumerate(rvs)}
         return rvs, start_omega + numetas, next_cov, zero_fix
