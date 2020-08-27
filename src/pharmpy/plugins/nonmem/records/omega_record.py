@@ -10,6 +10,7 @@ from pharmpy.parse_utils.generic import (AttrToken, AttrTree, insert_after, inse
                                          remove_token_and_space)
 from pharmpy.random_variables import JointNormalSeparate, RandomVariables, VariabilityLevel
 
+from .parsers import OmegaRecordParser
 from .record import Record
 
 
@@ -351,3 +352,57 @@ class OmegaRecord(Record):
 
         self.name_map = {rv.name: start_omega + i for i, rv in enumerate(rvs)}
         return rvs, start_omega + numetas, next_cov, zero_fix
+
+    def renumber(self, new_start):
+        old_start = min(self.name_map.values())
+        if new_start != old_start:
+            for name in self.name_map:
+                self.name_map[name] += new_start - old_start
+
+    def remove(self, names):
+        first_omega = min(self.name_map.values())
+        indices = {self.name_map[name] - first_omega for name in names}
+
+        block = self.root.find('block')
+        bare_block = self.root.find('bare_block')
+        same = bool(self.root.find('same'))
+        if not (block or bare_block):
+            keep = []
+            i = 0
+            for node in self.root.children:
+                if node.rule == 'diag_item':
+                    if i not in indices:
+                        keep.append(node)
+                    i += 1
+                else:
+                    keep.append(node)
+            self.root.children = keep
+        elif same and not bare_block:
+            self.root.block.size.INT = len(self) - len(indices)
+        elif block:
+            fix, sd, corr, cholesky = self._block_flags()
+            inits = []
+            for node in self.root.all('omega'):
+                init = node.init.NUMERIC
+                n = node.n.INT if node.find('n') else 1
+                inits += [init] * n
+            A = pharmpy.math.flattened_to_symmetric(inits)
+            A = np.delete(A, list(indices), axis=0)
+            A = np.delete(A, list(indices), axis=1)
+            s = f' BLOCK({len(A)})'
+            if fix:
+                s += ' FIX'
+            if sd:
+                s += ' SD'
+            if corr:
+                s += ' CORR'
+            if cholesky:
+                s += ' CHOLESKY'
+            s += '\n'
+            for row in range(0, len(A)):
+                s += ' '.join(np.atleast_1d(A[row, 0:(row + 1)]).astype(str)) + '\n'
+            parser = OmegaRecordParser(s)
+            self.root = parser.root
+
+    def __len__(self):
+        return len(self.name_map)

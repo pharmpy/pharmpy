@@ -328,3 +328,18 @@ def test_random_variables(parser):
     assert len(rvs) == 2
     assert list(rvs)[0].name == 'ETA(3)'
     assert list(rvs)[1].name == 'ETA(4)'
+
+
+@pytest.mark.parametrize('buf,remove,result', [
+    ('$OMEGA BLOCK(3) 1 ;CL\n0.1 1; V\n0.1 0.1 1; KA', {'ETA(1)'},
+     '$OMEGA BLOCK(2)\n1.0\n0.1 1.0\n'),
+    ('$OMEGA BLOCK(4) 1 ;CL\n0.2 3; V\n0.4 0.5 6; KA\n7 8 9 10\n', {'ETA(2)', 'ETA(4)'},
+     '$OMEGA BLOCK(2)\n1.0\n0.4 6.0\n'),
+    ('$OMEGA 1 2 3\n', {'ETA(2)'}, '$OMEGA 1  3\n'),
+    ('$OMEGA BLOCK(2) 1 2 3 FIX\n', {'ETA(1)'}, '$OMEGA BLOCK(1) FIX\n3.0\n'),
+])
+def test_remove(parser, buf, remove, result):
+    rec = parser.parse(buf).records[0]
+    rec.random_variables(1)
+    rec.remove(remove)
+    assert str(rec) == result
