@@ -8,6 +8,7 @@ import sympy.stats as stats
 from sympy.stats.rv import RandomSymbol
 
 import pharmpy.math
+from pharmpy.symbols import real, subs
 
 from .data_structures import OrderedSet
 
@@ -36,7 +37,7 @@ class JointDistributionSeparate(RandomSymbol):
        to its pspace.
     """
     def __new__(cls, name, joint_symbol):
-        return super().__new__(cls, sympy.Symbol(name), joint_symbol.pspace)
+        return super().__new__(cls, real(name), joint_symbol.pspace)
 
 
 def JointNormalSeparate(names, mean, cov):
@@ -160,7 +161,7 @@ class RandomVariables(OrderedSet):
         for rv in self:
             free = {s for s in rv.pspace.free_symbols if s.name != rv.name}
             symbs |= free
-            symbs.add(sympy.Symbol(rv.name, real=True))
+            symbs.add(real(rv.name))
         return symbs
 
     def all_parameters(self):
@@ -305,7 +306,7 @@ class RandomVariables(OrderedSet):
         for rvs, dist in self.distributions():
             if len(rvs) > 1:
                 if not use_cache:
-                    sigma = dist.sigma.subs(dict(parameter_values))
+                    sigma = subs(dist.sigma, dict(parameter_values))
                     # Switch to numpy here. Sympy posdef check is problematic
                     # see https://github.com/sympy/sympy/issues/18955
                     if not sigma.free_symbols:
@@ -335,7 +336,7 @@ class RandomVariables(OrderedSet):
         nearest = parameter_values.copy()
         for rvs, dist in self.distributions():
             if len(rvs) > 1:
-                sigma = dist.sigma.subs(dict(parameter_values))
+                sigma = subs(dist.sigma, dict(parameter_values))
                 A = np.array(sigma).astype(np.float64)
                 B = pharmpy.math.nearest_posdef(A)
                 if B is not A:

@@ -15,7 +15,7 @@ def explicit_odes(model):
     return model
 
 
-def absorption(model, order, rate):
+def absorption(model, order, rate=None):
     """Set or change the absorption for a model
 
         order - 0 or 1

@@ -219,13 +219,14 @@ Substitution of numerical values can be done directly from initial values
 
 .. jupyter-execute::
 
-   omega.subs(frem_model.parameters.inits)
+   from pharmpy.symbols import subs
+   subs(omega, frem_model.parameters.inits)
 
 or from estimated values
 
 .. jupyter-execute::
 
-   omega_est = omega.subs(dict(frem_model.modelfit_results.parameter_estimates))
+   omega_est = subs(omega, dict(frem_model.modelfit_results.parameter_estimates))
    omega_est
 
 Operations on this parameter matrix can be done either by using SymPy

@@ -4,6 +4,7 @@ import pandas as pd
 import sympy
 
 from pharmpy.data_structures import OrderedSet
+from pharmpy.symbols import real
 
 
 class ParameterSet(OrderedSet):
@@ -146,7 +147,7 @@ class Parameter:
 
     @property
     def symbol(self):
-        return sympy.Symbol(self.name, real=True)
+        return real(self.name)
 
     @property
     def lower(self):

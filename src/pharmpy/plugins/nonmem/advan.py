@@ -1,10 +1,7 @@
 import sympy
 
 from pharmpy.statements import Assignment, Bolus, CompartmentalSystem
-
-
-def real(name):
-    return sympy.Symbol(name, real=True)
+from pharmpy.symbols import real
 
 
 def compartmental_model(model, advan, trans):
@@ -22,7 +19,7 @@ def compartmental_model(model, advan, trans):
         central = cm.add_compartment('CENTRAL')
         output = cm.add_compartment('OUTPUT')
         cm.add_flow(central, output, _advan1and2_trans(trans))
-        cm.add_flow(depot, central, sympy.Symbol('KA', real=True))
+        cm.add_flow(depot, central, real('KA'))
         dose = Bolus('AMT')
         depot.dose = dose
         ass = _f_link_assignment(model, central)
@@ -101,20 +98,20 @@ def compartmental_model(model, advan, trans):
 
 
 def _f_link_assignment(model, compartment):
-    f = sympy.Symbol('F', real=True)
+    f = real('F')
     fexpr = compartment.amount
     pkrec = model.control_stream.get_records('PK')[0]
     if pkrec.statements.find_assignment('S1'):
-        fexpr = fexpr / sympy.Symbol('S1', real=True)
+        fexpr = fexpr / real('S1')
     ass = Assignment(f, fexpr)
     return ass
 
 
 def _advan1and2_trans(trans):
     if trans == 'TRANS2':
-        return sympy.Symbol('CL', real=True) / sympy.Symbol('V', real=True)
+        return real('CL') / real('V')
     else:       # TRANS1 which is also the default
-        return sympy.Symbol('K', real=True)
+        return real('K')
 
 
 def _advan3_trans(trans):

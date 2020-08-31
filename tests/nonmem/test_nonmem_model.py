@@ -3,16 +3,16 @@ from io import StringIO
 import pytest
 import sympy
 from pyfakefs.fake_filesystem_unittest import Patcher
-from sympy import Symbol
 
 from pharmpy import Model
 from pharmpy.parameter import Parameter
 from pharmpy.plugins.nonmem.nmtran_parser import NMTranParser
 from pharmpy.statements import Assignment, ModelStatements, ODESystem
+from pharmpy.symbols import real
 
 
 def S(x):
-    return Symbol(x, real=True)
+    return real(x)
 
 
 def test_source(pheno_path):
@@ -85,8 +85,8 @@ def test_set_parameters(pheno_path):
 
 @pytest.mark.parametrize('param_new,init_expected,buf_new', [
     (Parameter('TVCL', 0.2), 0.2, '$THETA  0.2 ; TVCL'),
-    (Parameter('THETA', 0.1), 0.1, '$THETA  0.1'),
-    (Parameter('THETA', 0.1, 0, fix=True), 0.1, '$THETA  (0,0.1) FIX'),
+    (Parameter('THETA', 0.1), 0.1, '$THETA  0.1 ; THETA'),
+    (Parameter('THETA', 0.1, 0, fix=True), 0.1, '$THETA  (0,0.1) FIX ; THETA'),
 ])
 def test_add_parameters(pheno_path, param_new, init_expected, buf_new):
     model = Model(pheno_path)
@@ -207,7 +207,7 @@ def test_minimal(datadir):
     model = Model(path)
     assert len(model.statements) == 1
     assert model.statements[0].expression == \
-        Symbol('THETA(1)', real=True) + Symbol('ETA(1)', real=True) + Symbol('EPS(1)', real=True)
+        real('THETA(1)') + real('ETA(1)') + real('EPS(1)')
 
 
 def test_copy(datadir):
@@ -216,7 +216,7 @@ def test_copy(datadir):
     copy = model.copy()
     assert id(model) != id(copy)
     assert model.statements[0].expression == \
-        Symbol('THETA(1)', real=True) + Symbol('ETA(1)', real=True) + Symbol('EPS(1)', real=True)
+        real('THETA(1)') + real('ETA(1)') + real('EPS(1)')
 
 
 def test_initial_individual_estimates(datadir):

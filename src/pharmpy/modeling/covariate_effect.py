@@ -1,10 +1,11 @@
 import math
 from operator import add, mul
 
-from sympy import Eq, Piecewise, Symbol, exp, Float
+from sympy import Eq, Float, Piecewise, exp
 
 from pharmpy.parameter import Parameter
 from pharmpy.statements import Assignment
+from pharmpy.symbols import real
 
 
 def add_covariate_effect(model, parameter, covariate, effect, operation='*'):
@@ -81,7 +82,7 @@ def create_template(effect):
 
 
 def S(x):
-    return Symbol(x, real=True)
+    return real(x)
 
 
 class CovariateEffect:

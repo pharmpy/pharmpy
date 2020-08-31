@@ -4,6 +4,8 @@ import math
 import networkx as nx
 import sympy
 
+import pharmpy.symbols as symbols
+
 
 class Assignment:
     """Representation of variable assignment
@@ -17,7 +19,7 @@ class Assignment:
             symbol.is_Symbol
             self.symbol = symbol
         except AttributeError:
-            self.symbol = sympy.Symbol(symbol, real=True)
+            self.symbol = symbols.real(symbol)
         self.expression = expression
 
     def subs(self, old, new):
@@ -50,6 +52,9 @@ class Assignment:
             else:
                 s += len(definition) * ' ' + line + '\n'
         return s
+
+    def __deepcopy__(self, memo):
+        return type(self)(self.symbol, self.expression)
 
     def __repr__(self):
         return f'{self.symbol} := {self.expression}'.upper()
@@ -148,7 +153,7 @@ class CompartmentalSystem(ODESystem):
 
     @property
     def free_symbols(self):
-        free = {sympy.Symbol('t', real=True)}
+        free = {symbols.real('t')}
         for (_, _, rate) in self._g.edges.data('rate'):
             free |= rate.free_symbols
         for node in self._g.nodes:
@@ -234,7 +239,7 @@ class CompartmentalSystem(ODESystem):
         return sympy.Matrix(amts)
 
     def to_explicit_odes(self):
-        t = sympy.Symbol('t', real=True)
+        t = symbols.real('t')
         amount_funcs = sympy.Matrix([sympy.Function(amt.name)(t) for amt in self.amounts])
         derivatives = sympy.Matrix([sympy.Derivative(fn, t) for fn in amount_funcs])
         a = self.compartmental_matrix @ amount_funcs
@@ -363,12 +368,12 @@ class Compartment:
 
     @property
     def amount(self):
-        return sympy.Symbol(f'A_{self.name}', real=True)
+        return symbols.real(f'A_{self.name}')
 
 
 class Bolus:
     def __init__(self, symbol):
-        self.symbol = sympy.Symbol(str(symbol), real=True)
+        self.symbol = symbols.real(str(symbol))
 
     @property
     def free_symbols(self):

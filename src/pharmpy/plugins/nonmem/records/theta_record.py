@@ -1,4 +1,3 @@
-# from pharmpy.model import ModelSyntaxError
 from pharmpy.parameter import Parameter, ParameterSet
 from pharmpy.parse_utils.generic import AttrToken, remove_token_and_space
 
@@ -11,12 +10,11 @@ min_lower_bound = -1000000
 class ThetaRecord(Record):
     def __init__(self, content, parser_class):
         super().__init__(content, parser_class)
-        self.nonmem_names = {}
 
-    def add_nonmem_name(self, name_original, name_nonmem):
+    def add_nonmem_name(self, name_original, theta_number):
         self.root.add_comment_node(name_original)
         self.root.add_newline_node()
-        self.nonmem_names[name_original] = name_nonmem
+        self.name_map = {name_original: theta_number}
 
     def parameters(self, first_theta):
         """Get a parameter set for this theta record.
@@ -59,6 +57,8 @@ class ThetaRecord(Record):
                 new_par = Parameter(f'THETA({current_theta})', init, lower, upper, fix)
                 current_theta += 1
                 pset.add(new_par)
+
+        self.name_map = {name: first_theta + i for i, name in enumerate(pset.names)}
         return pset
 
     def _multiple(self, theta):
@@ -78,11 +78,8 @@ class ThetaRecord(Record):
         """
         i = first_theta
         for theta in self.root.all('theta'):
-            name = f'THETA({i})'
-            try:
-                param = parameters[name]
-            except KeyError:
-                param = parameters[self._find_name(name)]
+            name = {v: k for k, v in self.name_map.items()}[i]
+            param = parameters[name]
             new_init = param.init
             if float(str(theta.init)) != new_init:
                 theta.init.tokens[0].value = str(new_init)
@@ -98,10 +95,27 @@ class ThetaRecord(Record):
             n = self._multiple(theta)
             i += n
 
-    def _find_name(self, name):
-        for name_original, name_nonmem in self.nonmem_names.items():
-            if name == name_nonmem:
-                return name_original
+    def renumber(self, new_start):
+        old_start = min(self.name_map.values())
+        if new_start != old_start:
+            for name in self.name_map:
+                self.name_map[name] += new_start - old_start
+
+    def remove(self, names):
+        first_theta = min(self.name_map.values())
+        indices = {self.name_map[name] - first_theta for name in names}
+        for name in names:
+            del self.name_map[name]
+        keep = []
+        i = 0
+        for node in self.root.children:
+            if node.rule == 'theta':
+                if i not in indices:
+                    keep.append(node)
+                i += 1
+            else:
+                keep.append(node)
+        self.root.children = keep
 
     def __len__(self):
         """Number of thetas in this record
@@ -110,38 +124,3 @@ class ThetaRecord(Record):
         for theta in self.root.all('theta'):
             tot += self._multiple(theta)
         return tot
-
-    # @thetas.setter
-    # def thetas(self, thetas):
-    #    nodes = []
-    #    nodes_new = self._new_theta_nodes(thetas)
-    #    for child in self.root.children:
-    #        if child.rule != 'theta':
-    #            nodes += [child]
-    #            continue
-    #        try:
-    #            nodes += [nodes_new.pop(0)]
-    #        except IndexError:
-    #            pass
-    #    self.root = AttrTree.create('root', nodes + nodes_new)
-
-    # def _new_theta_nodes(self, thetas):
-    #    nodes = []
-    #    for theta in thetas:
-    #        if nodes:
-    #            nodes += [dict(WS='\n  ')]
-    #        new = [{'LPAR': '('}]
-    #        if theta.lower is not None:
-    #            new += [{'low': {'NUMERIC': theta.lower}}]
-    #            new += [{'WS': ' '}]
-    #        if theta.init is not None:
-    #            new += [{'init': {'NUMERIC': theta.init}}]
-    #            new += [{'WS': ' '}]
-    #        if theta.upper is not None:
-    #            new += [{'up': {'NUMERIC': theta.upper}}]
-    #        if theta.fix:
-    #            new += [{'WS': ' '}]
-    #            new += [{'FIX': 'FIXED'}]
-    #        new += [{'RPAR': ')'}]
-    #        nodes += [AttrTree.create('theta', new)]
-    #    return nodes

@@ -9,6 +9,7 @@ from pharmpy.parameter import Parameter, ParameterSet
 from pharmpy.parse_utils.generic import (AttrToken, AttrTree, insert_after, insert_before_or_at_end,
                                          remove_token_and_space)
 from pharmpy.random_variables import JointNormalSeparate, RandomVariables, VariabilityLevel
+from pharmpy.symbols import real
 
 from .parsers import OmegaRecordParser
 from .record import Record
@@ -296,7 +297,7 @@ class OmegaRecord(Record):
                 name = self._rv_name(i)
                 if not (init == 0 and fixed):       # 0 FIX are not RVs
                     eta = sympy.stats.Normal(name, 0, sympy.sqrt(
-                        sympy.Symbol(f'{self.name}({i},{i})')))
+                        real(f'{self.name}({i},{i})')))
                     rvs.add(eta)
                 else:
                     zero_fix.append(name)
@@ -326,7 +327,7 @@ class OmegaRecord(Record):
                     cov = sympy.zeros(numetas)
                     for row in range(numetas):
                         for col in range(row + 1):
-                            cov[row, col] = sympy.Symbol(
+                            cov[row, col] = real(
                                 f'{self.name}({start_omega + row},{start_omega + col})')
                             if row != col:
                                 cov[col, row] = cov[row, col]
@@ -336,11 +337,11 @@ class OmegaRecord(Record):
                 rvs = RandomVariables()
                 name = self._rv_name(start_omega)
                 if same:
-                    symbol = previous_cov
+                    sym = previous_cov
                 else:
-                    symbol = sympy.Symbol(f'{self.name}({start_omega},{start_omega})')
-                eta = sympy.stats.Normal(name, 0, sympy.sqrt(symbol))
-                next_cov = symbol
+                    sym = real(f'{self.name}({start_omega},{start_omega})')
+                eta = sympy.stats.Normal(name, 0, sympy.sqrt(sym))
+                next_cov = sym
                 rvs.add(eta)
 
         if self.name == 'OMEGA':

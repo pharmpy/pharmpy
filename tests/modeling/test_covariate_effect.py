@@ -1,12 +1,13 @@
 import pytest
-from sympy import Symbol, exp
+from sympy import exp
 
 from pharmpy import Model
 from pharmpy.modeling.covariate_effect import CovariateEffect, choose_param_inits
+from pharmpy.symbols import real
 
 
 def S(x):
-    return Symbol(x, real=True)
+    return real(x)
 
 
 @pytest.mark.parametrize('cov_eff,symbol,expression', [

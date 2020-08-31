@@ -2,10 +2,11 @@ import pytest
 import sympy
 
 from pharmpy.model import ModelSyntaxError
+from pharmpy.symbols import real
 
 
 def S(x):
-    return sympy.Symbol(x)
+    return real(x)
 
 
 @pytest.mark.usefixtures('parser')
@@ -340,6 +341,6 @@ def test_random_variables(parser):
 ])
 def test_remove(parser, buf, remove, result):
     rec = parser.parse(buf).records[0]
-    rvs = rec.random_variables(1)
+    rec.random_variables(1)
     rec.remove(remove)
     assert str(rec) == result

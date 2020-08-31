@@ -4,8 +4,6 @@ import re
 import shutil
 from pathlib import Path
 
-import sympy
-
 import pharmpy.data
 import pharmpy.model
 from pharmpy.data import DatasetError
@@ -13,11 +11,13 @@ from pharmpy.parameter import ParameterSet
 from pharmpy.plugins.nonmem.results import NONMEMChainedModelfitResults
 from pharmpy.plugins.nonmem.table import NONMEMTableFile, PhiTable
 from pharmpy.random_variables import RandomVariables
-from pharmpy.statements import Assignment, ModelStatements, ODESystem
+from pharmpy.statements import (Assignment, CompartmentalSystem, ExplicitODESystem, ModelStatements,
+                                ODESystem)
+from pharmpy.symbols import real
 
 from .advan import compartmental_model
 from .nmtran_parser import NMTranParser
-from .rvs import update_random_variables
+from .update import update_parameters, update_random_variables
 
 
 class Model(pharmpy.model.Model):
@@ -29,7 +29,6 @@ class Model(pharmpy.model.Model):
             self.source.filename_extension = '.ctl'
         self.name = self.source.path.stem
         self.control_stream = parser.parse(src.code)
-        self._parameters_updated = False
         self._initial_individual_estimates_updated = False
         self._updated_etas_file = None
         self._dataset_updated = False
@@ -82,40 +81,11 @@ class Model(pharmpy.model.Model):
         if hasattr(self, '_random_variables'):
             update_random_variables(self, self._old_random_variables, self._random_variables)
             self._old_random_variables = self._random_variables
-        self._update_parameters()
+        if hasattr(self, '_parameters'):
+            update_parameters(self, self._old_parameters, self._parameters)
+            self._old_parameters = self._parameters
 
         super().update_source()
-
-    def _update_parameters(self):
-        """ Update parameters
-        """
-        if not self._parameters_updated:
-            return
-
-        code_record = self.get_pred_pk_record()
-
-        params = self._parameters
-        next_theta = 1
-        for theta_record in self.control_stream.get_records('THETA'):
-            theta_record.update(params, next_theta)
-
-            if len(theta_record.nonmem_names) > 0:
-                code_record.update(theta_record.nonmem_names)
-                error = self._get_error_record()
-                if error:
-                    error.update(theta_record.nonmem_names)
-
-            next_theta += len(theta_record)
-        next_omega = 1
-        previous_size = None
-        for omega_record in self.control_stream.get_records('OMEGA'):
-            next_omega, previous_size = omega_record.update(params, next_omega, previous_size)
-        next_sigma = 1
-        previous_size = None
-        for sigma_record in self.control_stream.get_records('SIGMA'):
-            next_sigma, previous_size = sigma_record.update(params, next_sigma, previous_size)
-
-        self._parameters_updated = False
 
     def _update_initial_individual_estimates(self, path):
         """ Update $ETAS
@@ -172,7 +142,7 @@ class Model(pharmpy.model.Model):
         """Get the ParameterSet of all parameters
         """
         try:
-            return self._parameters.copy()
+            return self._parameters
         except AttributeError:
             pass
 
@@ -193,7 +163,8 @@ class Model(pharmpy.model.Model):
             sigmas, next_sigma, previous_size = sigma_record.parameters(next_sigma, previous_size)
             params.update(sigmas)
         self._parameters = params
-        return params.copy()
+        self._old_parameters = params.copy()
+        return params
 
     @parameters.setter
     def parameters(self, params):
@@ -210,51 +181,11 @@ class Model(pharmpy.model.Model):
         if not self.random_variables.validate_parameters(inits):
             raise ValueError("New parameter inits are not valid")
 
-        parameters = self.parameters
+        self.parameters
         if not isinstance(params, ParameterSet):
             self._parameters.inits = params
         else:
-            for p in params:
-                name = p.name
-                if name not in parameters:
-                    if name not in self.random_variables.all_parameters():
-                        name_new = self._get_theta_name()
-                        record = self._add_theta(p)
-
-                        if name.startswith('THETA'):
-                            p.name = name_new
-                        else:
-                            record.add_nonmem_name(name, name_new)
-
-            self._parameters = params.copy()
-        self._parameters_updated = True
-
-    def _get_theta_name(self):
-        next_theta = self.get_next_theta()
-        return f'THETA({next_theta})'
-
-    def get_next_theta(self):
-        next_theta = 1
-
-        for theta_record in self.control_stream.get_records('THETA'):
-            thetas = theta_record.parameters(next_theta)
-            next_theta += len(thetas)
-
-        return next_theta
-
-    def _add_theta(self, param):
-        param_str = '$THETA  '
-
-        if param.lower == -sympy.oo:
-            param_str += f'{param.init}'
-        else:
-            param_str += f'({param.lower},{param.init})'
-        if param.fix:
-            param_str += ' FIX'
-        param_str += '\n'
-
-        record = self.control_stream.insert_record(param_str, 'THETA')
-        return record
+            self._parameters = params
 
     @property
     def initial_individual_estimates(self):
@@ -343,7 +274,7 @@ class Model(pharmpy.model.Model):
             else:
                 statements.append(ODESystem())      # FIXME: Placeholder for ODE-system
                 # FIXME: Dummy link statement
-                statements.append(Assignment("F", sympy.Symbol("F", real=True)))
+                statements.append(Assignment('F', real('F')))
             statements += error.statements
 
         self._statements = statements
@@ -380,20 +311,21 @@ class Model(pharmpy.model.Model):
 
            Handle changes from CompartmentSystem to ExplicitODESystem
         """
-        subs = self.control_stream.get_records('SUBROUTINES')[0]
-        subs.remove_option_startswith('TRANS')
-        subs.remove_option_startswith('ADVAN')
-        subs.append_option('ADVAN6')
-        des = self.control_stream.insert_record('$DES\nDUMMY=0', 'PK')
-        des.from_odes(new)
-        mod = self.control_stream.insert_record('$MODEL TOL=3\n', 'SUBROUTINES')
-        for eq, ic in zip(new.odes[:-1], list(new.ics.keys())[:-1]):
-            name = eq.lhs.args[0].name[2:]
-            if new.ics[ic] != 0:
-                dose = True
-            else:
-                dose = False
-            mod.add_compartment(name, dosing=dose)
+        if type(old) == CompartmentalSystem and type(new) == ExplicitODESystem:
+            subs = self.control_stream.get_records('SUBROUTINES')[0]
+            subs.remove_option_startswith('TRANS')
+            subs.remove_option_startswith('ADVAN')
+            subs.append_option('ADVAN6')
+            des = self.control_stream.insert_record('$DES\nDUMMY=0', 'PK')
+            des.from_odes(new)
+            mod = self.control_stream.insert_record('$MODEL TOL=3\n', 'SUBROUTINES')
+            for eq, ic in zip(new.odes[:-1], list(new.ics.keys())[:-1]):
+                name = eq.lhs.args[0].name[2:]
+                if new.ics[ic] != 0:
+                    dose = True
+                else:
+                    dose = False
+                mod.add_compartment(name, dosing=dose)
 
     def get_pred_pk_record(self):
         pred = self.control_stream.get_records('PRED')

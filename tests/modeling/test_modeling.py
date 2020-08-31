@@ -1,7 +1,7 @@
 import pytest
 
 from pharmpy import Model
-from pharmpy.modeling import add_covariate_effect, explicit_odes
+from pharmpy.modeling import absorption, add_covariate_effect, explicit_odes
 
 
 @pytest.mark.parametrize('effect, operation, buf_new', [
@@ -43,3 +43,16 @@ def test_to_explicit_odes(pheno_path):
     assert lines[6] == '$MODEL TOL=3 COMPARTMENT=(CENTRAL DEFDOSE)'
     assert lines[18] == '$DES'
     assert lines[19] == 'DADT(1) = -A(1)*CL/V'
+
+
+def test_aborption(testdata):
+    model = Model(testdata / 'nonmem' / 'pheno_real.mod')
+    first = str(model)
+
+    absorption(model, 0)
+    assert first == str(model)
+
+    model = Model(testdata / 'nonmem' / 'ph_abs1.mod')
+    absorption(model, 0)
+    model.update_source()
+    print(str(model))

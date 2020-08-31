@@ -1,16 +1,16 @@
 import pytest
 import sympy
-from sympy import Symbol
 
 from pharmpy.statements import Assignment
+from pharmpy.symbols import real
 
 
 def S(x):
-    return Symbol(x, real=True)
+    return real(x)
 
 
 @pytest.mark.usefixtures('parser')
-@pytest.mark.parametrize('buf,symbol,expression', [
+@pytest.mark.parametrize('buf,sym,expression', [
     ('$PRED\nY = THETA(1) + ETA(1) + EPS(1)', S('Y'), S('THETA(1)') + S('ETA(1)') + S('EPS(1)')),
     ('$PRED\nCL = 2', S('CL'), 2),
     ('$PRED\n;FULL LINE COMMENT\n K=-1', S('K'), -1),
@@ -89,10 +89,10 @@ def S(x):
     ('$PRED\nCL = 2\nCALL RANDOM (2, R)\n', S('CL'), 2),
     ('$PRED\nCL = 2\n  RETURN  \n', S('CL'), 2),
 ])
-def test_single_assignments(parser, buf, symbol, expression):
+def test_single_assignments(parser, buf, sym, expression):
     rec = parser.parse(buf).records[0]
     assert len(rec.statements) == 1
-    assert rec.statements[0].symbol == symbol
+    assert rec.statements[0].symbol == sym
     assert rec.statements[0].expression == expression
 
 
@@ -293,16 +293,16 @@ def test_statements_setter_change(parser, buf_original, buf_new):
 
 
 @pytest.mark.usefixtures('parser')
-@pytest.mark.parametrize('buf_original,symbol,expression,buf_new', [
+@pytest.mark.parametrize('buf_original,sym,expression,buf_new', [
     ('$PRED\nY = THETA(1) + ETA(1) + EPS(1)', S('CL'), 2,
      '$PRED\nY = THETA(1) + ETA(1) + EPS(1)\nCL = 2\n'),
     ('$PRED\n"FIRST\n"!Fortran code goes here\n', S('V'), -S('CL'),
      '$PRED\n"FIRST\n"!Fortran code goes here\nV = -CL\n'),
 ])
-def test_statements_setter_add_from_sympy(parser, buf_original, symbol, expression, buf_new):
+def test_statements_setter_add_from_sympy(parser, buf_original, sym, expression, buf_new):
     rec_original = parser.parse(buf_original).records[0]
 
-    assignment = Assignment(symbol, expression)
+    assignment = Assignment(sym, expression)
     statements = rec_original.statements
     statements += [assignment]
     rec_original.statements = statements
@@ -333,11 +333,9 @@ def test_nested_block_if(parser):
     code = '\nIF (X.EQ.23) THEN\nIF (Y.EQ.0) THEN\nCL=1\nELSE\nCL=2\nENDIF\n' \
            'CL=5\nELSE\nCL=6\nENDIF'
     rec = parser.parse('$PRED' + code).records[0]
-    print(rec.root.treeprint())
 
     s = rec.statements
     rec.statements = s
-    print(rec.root.treeprint())
     assert str(rec.root) == code + '\n'
 
 

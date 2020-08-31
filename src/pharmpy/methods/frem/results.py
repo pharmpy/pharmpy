@@ -5,7 +5,6 @@ import altair as alt
 import numpy as np
 import pandas as pd
 import symengine
-import sympy
 
 from pharmpy import Model
 from pharmpy.data import ColumnType
@@ -13,6 +12,7 @@ from pharmpy.math import conditional_joint_normal, is_posdef
 from pharmpy.parameter_sampling import sample_from_covariance_matrix, sample_individual_estimates
 from pharmpy.random_variables import VariabilityLevel
 from pharmpy.results import Results
+from pharmpy.symbols import real
 
 
 class FREMResults(Results):
@@ -384,7 +384,7 @@ def calculate_results_using_cov_sampling(frem_model, continuous, categorical, co
     sigma_symb = dist.sigma
 
     parameters = [s for s in frem_model.modelfit_results.parameter_estimates.index
-                  if sympy.Symbol(s) in sigma_symb.free_symbols]
+                  if real(s) in sigma_symb.free_symbols]
     parvecs = sample_from_covariance_matrix(frem_model,
                                             modelfit_results=uncertainty_results,
                                             force_posdef_samples=force_posdef_samples,
@@ -404,7 +404,7 @@ def calculate_results_from_samples(frem_model, continuous, categorical, parvecs,
         level=VariabilityLevel.IIV))[-1]
     sigma_symb = dist.sigma
     parameters = [s for s in frem_model.modelfit_results.parameter_estimates.index
-                  if sympy.Symbol(s) in sigma_symb.free_symbols]
+                  if real(s) in sigma_symb.free_symbols]
     parvecs = parvecs.append(
             frem_model.modelfit_results.parameter_estimates.loc[parameters])
 

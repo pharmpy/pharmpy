@@ -13,6 +13,7 @@ from pharmpy.data_structures import OrderedSet
 from pharmpy.parse_utils.generic import NoSuchRuleException
 from pharmpy.plugins.nonmem.records.parsers import CodeRecordParser
 from pharmpy.statements import Assignment, ModelStatements
+from pharmpy.symbols import real
 
 from .record import Record
 
@@ -148,7 +149,8 @@ class ExpressionInterpreter(lark.visitors.Interpreter):
         name = str(node).upper()
         if name.startswith('ERR('):
             name = 'EPS' + name[3:]
-        return sympy.Symbol(name, real=True)
+        symb = real(name)
+        return symb
 
 
 class CodeRecord(Record):
@@ -364,7 +366,7 @@ class CodeRecord(Record):
     def update(self, nonmem_names):
         statements_updated = copy.deepcopy(self.statements)
         for key, value in nonmem_names.items():
-            statements_updated.subs(sympy.Symbol(key, real=True), sympy.Symbol(value, real=True))
+            statements_updated.subs(real(key), real(value))
         self.statements = statements_updated
 
     def from_odes(self, ode_system):
@@ -372,10 +374,10 @@ class CodeRecord(Record):
         """
         odes = ode_system.odes[:-1]    # Skip last ode as it is for the output compartment
         functions = [ode.lhs.args[0] for ode in odes]
-        function_map = {f: sympy.Symbol(f'A({i + 1})') for i, f in enumerate(functions)}
+        function_map = {f: real(f'A({i + 1})') for i, f in enumerate(functions)}
         statements = []
         for i, ode in enumerate(odes):
-            symbol = sympy.Symbol(f'DADT({i + 1})')
+            symbol = real(f'DADT({i + 1})')
             expression = ode.rhs.subs(function_map)
             statements.append(Assignment(symbol, expression))
         self.statements = statements
