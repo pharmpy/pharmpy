@@ -1,7 +1,7 @@
 import math
 from operator import add, mul
 
-from sympy import Eq, Float, Piecewise, exp
+from sympy import Eq, Float, Piecewise, exp, sympify
 
 from pharmpy.parameter import Parameter
 from pharmpy.statements import Assignment
@@ -79,6 +79,25 @@ def create_template(effect):
         return CovariateEffect.exponential()
     elif effect == 'pow':
         return CovariateEffect.power()
+    else:
+        symbol = S('symbol')
+        expression = preprocess_expression(effect)
+        return CovariateEffect(Assignment(symbol, expression))
+
+
+def preprocess_expression(effect):
+    expression_sympy = sympify(effect)
+    expression = 0
+
+    for symbol in expression_sympy.args:
+        symbol_str = str(symbol)
+
+        if symbol_str.startswith('-'):
+            symbol_split = symbol_str.split('-')
+            expression -= S(symbol_split[1])
+        else:
+            expression += S(symbol_str)
+    return expression
 
 
 def S(x):
