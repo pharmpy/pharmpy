@@ -132,11 +132,6 @@ Fix some parameters:
    parset.fix = {'THETA(2)': True, 'THETA(3)': True}
    parset
 
-To update the parameter set of a model simply assign to the model property:
-
-.. jupyter-execute::
-
-   model.parameters = parset
 
 
 ~~~~~~~~~~~~~~~~
