@@ -326,6 +326,23 @@ class Model(pharmpy.model.Model):
                 else:
                     dose = False
                 mod.add_compartment(name, dosing=dose)
+        elif type(old) == CompartmentalSystem and type(new) == CompartmentalSystem:
+            if old.find_depot() and not new.find_depot():
+                subs = self.control_stream.get_records('SUBROUTINES')[0]
+                advan = subs.get_option_startswith('ADVAN')
+                if advan == 'ADVAN2':
+                    subs.replace_option('ADVAN2', 'ADVAN1')
+                elif advan == 'ADVAN4':
+                    subs.replace_option('ADVAN4', 'ADVAN3')
+                    statements = self.statements
+                    statements.subs({real('K23'): real('K12'), real('K32'): real('K32')})
+                    self.statements = statements
+                elif advan == 'ADVAN12':
+                    subs.replace_option('ADVAN12', 'ADVAN11')
+                    statements = self.statements
+                    statements.subs({real('K23'): real('K12'), real('K32'): real('K32'),
+                                     real('K24'): real('K13'), real('K42'): real('K31')})
+                    self.statements = statements
 
     def get_pred_pk_record(self):
         pred = self.control_stream.get_records('PRED')

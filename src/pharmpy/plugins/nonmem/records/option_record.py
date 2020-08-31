@@ -118,6 +118,17 @@ class OptionRecord(Record):
             ws_node = AttrTree.create('ws', [{'WS_ALL': '\n'}])
             self.root.children += [ws_node, node]
 
+    def replace_option(self, old, new):
+        """Replace an option
+        """
+        for node in self.root.all('option'):
+            if hasattr(node, 'KEY'):
+                if str(node.KEY) == old:
+                    node.KEY = new
+            elif hasattr(node, 'VALUE'):
+                if str(node.VALUE) == old:
+                    node.VALUE = new
+
     def remove_option(self, key):
         """ Remove all options key
         """

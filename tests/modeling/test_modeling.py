@@ -55,4 +55,7 @@ def test_aborption(testdata):
     model = Model(testdata / 'nonmem' / 'ph_abs1.mod')
     absorption(model, 0)
     model.update_source()
-    print(str(model))
+    a = str(model).split('\n')
+    assert a[3] == '$SUBROUTINE ADVAN1 TRANS2'
+    assert a[13].strip() == 'S1=V'
+    assert a[25] == '$OMEGA  DIAGONAL(2)'
