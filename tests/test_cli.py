@@ -3,11 +3,11 @@ import re
 import pytest
 
 from pharmpy import cli, source
-from pharmpy.plugins.nonmem.records import record
+from pharmpy.plugins.nonmem.records import etas_record
 
 
 # Skip pkgutil, reload source
-@pytest.mark.parametrize('fs', [[['pkgutil'], [source, record]]], indirect=True)
+@pytest.mark.parametrize('fs', [[['pkgutil'], [source, etas_record]]], indirect=True)
 def test_add_covariate_effect(datadir, fs):
     fs.add_real_file(datadir / 'pheno_real.mod', target_path='run1.mod')
     fs.add_real_file(datadir / 'pheno.dta', target_path='pheno.dta')
