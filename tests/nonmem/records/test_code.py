@@ -343,7 +343,23 @@ def test_nested_block_if(parser):
 @pytest.mark.parametrize('buf_original', [
     '\nIF (AMT.GT.0) BTIME = TIME\n',
 ])
-def test_translate_sympy_piecewise(parser, buf_original):
+def test_translate_sympy_parse(parser, buf_original):
     rec = parser.parse(f'$PRED{buf_original}').records[0]
     s = rec.statements[0]
     assert rec._translate_sympy_piecewise(s) == buf_original
+
+
+@pytest.mark.usefixtures('parser')
+@pytest.mark.parametrize('symbol, expression, buf_expected', [
+    (S('BTIME'), sympy.Piecewise((S('TIME'), sympy.Gt(S('AMT'), 0))),
+     '\nIF (AMT.GT.0) BTIME = TIME\n'),
+    (S('CL'), sympy.Piecewise((23, sympy.Eq(S('X'), 2))),
+     '\nIF (X.EQ.2) CL = 23\n'),
+
+])
+def test_translate_sympy_piecewise(parser, symbol, expression, buf_expected):
+    buf_original = '$PRED\nY = THETA(1) + ETA(1) + EPS(1)'
+    rec = parser.parse(f'$PRED{buf_original}').records[0]
+    s = Assignment(symbol, expression)
+
+    assert rec._translate_sympy_piecewise(s) == buf_expected

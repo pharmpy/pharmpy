@@ -4,6 +4,7 @@ Generic NONMEM code record class.
 """
 
 import copy
+import re
 
 import lark
 import sympy
@@ -263,14 +264,18 @@ class CodeRecord(Record):
         return f'\nIF ({condition_translated}) {symbol} = {value}\n'
 
     @staticmethod
-    def _translate_condition(condition):
+    def _translate_condition(c):
         sign_dict = {'>': '.GT.',
                      '<': '.LT.'}
-        condition_split = str(condition).split(' ')
-
-        condition_translated = ''.join([sign_dict.get(symbol, symbol)
-                                        for symbol in condition_split])
-        return condition_translated
+        if str(c).startswith('Eq'):
+            c_split = re.split('[(,) ]', str(c))
+            c_clean = [item for item in c_split if item != '' and item != 'Eq']
+            c_transl = '.EQ.'.join([c_clean[0], c_clean[1]])
+        else:
+            c_split = str(c).split(' ')
+            c_transl = ''.join([sign_dict.get(symbol, symbol)
+                                for symbol in c_split])
+        return c_transl
 
     def _get_node(self, statement):
         try:
