@@ -355,7 +355,9 @@ def test_translate_sympy_parse(parser, buf_original):
      '\nIF (AMT.GT.0) BTIME = TIME\n'),
     (S('CL'), sympy.Piecewise((23, sympy.Eq(S('X'), 2))),
      '\nIF (X.EQ.2) CL = 23\n'),
-
+    (S('CLWGT'), sympy.Piecewise((23, sympy.Eq(S('X'), 1)),
+                                 (0, sympy.Eq(S('X'), 0))),
+     '\nIF (X.EQ.1) THEN\nCLWGT = 23\nELSE IF (X.EQ.0) THEN\nCLWGT = 0\nEND IF\n'),
 ])
 def test_translate_sympy_piecewise(parser, symbol, expression, buf_expected):
     buf_original = '$PRED\nY = THETA(1) + ETA(1) + EPS(1)'

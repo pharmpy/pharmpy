@@ -254,14 +254,34 @@ class CodeRecord(Record):
             self._root_updated.add_node(node, node_following)
 
     def _translate_sympy_piecewise(self, statement):
-        statement_args = statement.expression.args
+        expression = statement.expression.args
         symbol = statement.symbol
 
-        value = statement_args[0][0]
-        condition = statement_args[0][1]
-        condition_translated = self._translate_condition(condition)
+        if len(expression) == 1:
+            value = expression[0][0]
+            condition = expression[0][1]
+            condition_translated = self._translate_condition(condition)
 
-        return f'\nIF ({condition_translated}) {symbol} = {value}\n'
+            statement_str = f'\nIF ({condition_translated}) {symbol} = {value}\n'
+            return statement_str
+        else:
+            return self._translate_sympy_block(symbol, expression)
+
+    def _translate_sympy_block(self, symbol, expression_block):
+        statement_str = '\nIF '
+        for i, expression in enumerate(expression_block):
+            value = expression[0]
+            condition = expression[1]
+
+            condition_translated = self._translate_condition(condition)
+            statement_str += f'({condition_translated}) THEN\n{symbol} = {value}\n'
+
+            if i < len(expression_block) - 1:
+                statement_str += 'ELSE IF '
+            else:
+                statement_str += 'END IF\n'
+
+        return statement_str
 
     @staticmethod
     def _translate_condition(c):
