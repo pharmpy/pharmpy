@@ -15,5 +15,19 @@ def subs(expr, substitutions):
     for key, value in substitutions.items():
         if isinstance(key, str):
             key = real(key)
+        if isinstance(value, str):
+            value = real(value)
         d[key] = value
     return expr.subs(d)
+
+
+def sympify(expr_str):
+    """Sympifies expression of type string with symbols set to real"""
+    expr_sympy = sympy.sympify(expr_str)
+    expr_symbols_str = [str(elem) for elem in expr_sympy.free_symbols]
+
+    substitutions = dict(zip(expr_sympy.free_symbols, expr_symbols_str))
+
+    expr_subs = subs(expr_sympy, substitutions)
+
+    return expr_subs

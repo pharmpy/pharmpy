@@ -1,11 +1,11 @@
 import math
 from operator import add, mul
 
-from sympy import Eq, Float, Piecewise, exp, sympify
+from sympy import Eq, Float, Piecewise, exp
 
 from pharmpy.parameter import Parameter
 from pharmpy.statements import Assignment
-from pharmpy.symbols import real
+from pharmpy.symbols import real, sympify
 
 
 def add_covariate_effect(model, parameter, covariate, effect, operation='*'):
@@ -81,23 +81,8 @@ def create_template(effect):
         return CovariateEffect.power()
     else:
         symbol = S('symbol')
-        expression = preprocess_expression(effect)
+        expression = sympify(effect)
         return CovariateEffect(Assignment(symbol, expression))
-
-
-def preprocess_expression(effect):
-    expression_sympy = sympify(effect)
-    expression = 0
-
-    for symbol in expression_sympy.args:
-        symbol_str = str(symbol)
-
-        if symbol_str.startswith('-'):
-            symbol_split = symbol_str.split('-')
-            expression -= S(symbol_split[1])
-        else:
-            expression += S(symbol_str)
-    return expression
 
 
 def S(x):
