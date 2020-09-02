@@ -1,5 +1,8 @@
 import re
 
+from pharmpy.statements import CompartmentalSystem, ExplicitODESystem
+from pharmpy.symbols import real
+
 
 def update_parameters(model, old, new):
     new_names = {p.name for p in new}
@@ -128,3 +131,68 @@ def update_code_symbols(model, name_map):
     error = model._get_error_record()
     if error:
         error.update(name_map)
+
+
+def update_ode_system(model, old, new):
+    """Update ODE system
+
+       Handle changes from CompartmentSystem to ExplicitODESystem
+    """
+    if type(old) == CompartmentalSystem and type(new) == ExplicitODESystem:
+        subs = model.control_stream.get_records('SUBROUTINES')[0]
+        subs.remove_option_startswith('TRANS')
+        subs.remove_option_startswith('ADVAN')
+        subs.append_option('ADVAN6')
+        des = model.control_stream.insert_record('$DES\nDUMMY=0', 'PK')
+        des.from_odes(new)
+        mod = model.control_stream.insert_record('$MODEL TOL=3\n', 'SUBROUTINES')
+        for eq, ic in zip(new.odes[:-1], list(new.ics.keys())[:-1]):
+            name = eq.lhs.args[0].name[2:]
+            if new.ics[ic] != 0:
+                dose = True
+            else:
+                dose = False
+            mod.add_compartment(name, dosing=dose)
+    elif type(old) == CompartmentalSystem and type(new) == CompartmentalSystem:
+        if old.find_depot() and not new.find_depot():
+            subs = model.control_stream.get_records('SUBROUTINES')[0]
+            advan = subs.get_option_startswith('ADVAN')
+            statements = model.statements
+            if advan == 'ADVAN2':
+                subs.replace_option('ADVAN2', 'ADVAN1')
+            elif advan == 'ADVAN4':
+                subs.replace_option('ADVAN4', 'ADVAN3')
+                statements.subs({real('K23'): real('K12'), real('K32'): real('K32')})
+            elif advan == 'ADVAN12':
+                subs.replace_option('ADVAN12', 'ADVAN11')
+                statements.subs({real('K23'): real('K12'), real('K32'): real('K32'),
+                                 real('K24'): real('K13'), real('K42'): real('K31')})
+            # FIXME: It could possibly be other than the first below
+            # also assumes that only one compartment has been removed
+            secondary = secondary_pk_param_conversion_map(len(old), 1)
+            for key, val in secondary.items():
+                statements.subs(key, val)
+            model.statements = statements
+
+
+def primary_pk_param_conversion_map(ncomp, trans, removed):
+    """Conversion map for pk parameters for one removed compartment
+    """
+    if trans == 'TRANS1':
+        pass
+
+
+def secondary_pk_param_conversion_map(ncomp, removed):
+    """Conversion map for pk parameters for one removed compartment
+
+        ncomp - total number of compartments before removing (including output)
+        removed - number of removed compartment
+    """
+    d = dict()
+    for i in range(removed + 1, ncomp + 1):
+        d.update({real(f'S{i})'): real(f'S{i - 1}'),
+                  real(f'F{i}'): real(f'F{i - 1}'),
+                  real(f'R{i}'): real(f'R{i - 1}'),
+                  real(f'D{i}'): real(f'D{i - 1}'),
+                  real(f'ALAG{i}'): real(f'ALAG{i - 1}')})
+    return d

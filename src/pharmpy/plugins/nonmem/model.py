@@ -11,13 +11,12 @@ from pharmpy.parameter import ParameterSet
 from pharmpy.plugins.nonmem.results import NONMEMChainedModelfitResults
 from pharmpy.plugins.nonmem.table import NONMEMTableFile, PhiTable
 from pharmpy.random_variables import RandomVariables
-from pharmpy.statements import (Assignment, CompartmentalSystem, ExplicitODESystem, ModelStatements,
-                                ODESystem)
+from pharmpy.statements import Assignment, ModelStatements, ODESystem
 from pharmpy.symbols import real
 
 from .advan import compartmental_model
 from .nmtran_parser import NMTranParser
-from .update import update_parameters, update_random_variables
+from .update import update_ode_system, update_parameters, update_random_variables
 
 
 class Model(pharmpy.model.Model):
@@ -293,7 +292,7 @@ class Model(pharmpy.model.Model):
                 found_ode = True
                 old_system = old_statements.ode_system
                 if s != old_system:
-                    self._update_ode_system(old_system, s)
+                    update_ode_system(self, old_system, s)
             else:
                 if found_ode:
                     error_statements.append(s)
@@ -307,44 +306,6 @@ class Model(pharmpy.model.Model):
                 error_statements.pop(0)        # Remove the link statement
             error.statements = error_statements
         self._statements = statements_new
-
-    def _update_ode_system(self, old, new):
-        """Update ODE system
-
-           Handle changes from CompartmentSystem to ExplicitODESystem
-        """
-        if type(old) == CompartmentalSystem and type(new) == ExplicitODESystem:
-            subs = self.control_stream.get_records('SUBROUTINES')[0]
-            subs.remove_option_startswith('TRANS')
-            subs.remove_option_startswith('ADVAN')
-            subs.append_option('ADVAN6')
-            des = self.control_stream.insert_record('$DES\nDUMMY=0', 'PK')
-            des.from_odes(new)
-            mod = self.control_stream.insert_record('$MODEL TOL=3\n', 'SUBROUTINES')
-            for eq, ic in zip(new.odes[:-1], list(new.ics.keys())[:-1]):
-                name = eq.lhs.args[0].name[2:]
-                if new.ics[ic] != 0:
-                    dose = True
-                else:
-                    dose = False
-                mod.add_compartment(name, dosing=dose)
-        elif type(old) == CompartmentalSystem and type(new) == CompartmentalSystem:
-            if old.find_depot() and not new.find_depot():
-                subs = self.control_stream.get_records('SUBROUTINES')[0]
-                advan = subs.get_option_startswith('ADVAN')
-                if advan == 'ADVAN2':
-                    subs.replace_option('ADVAN2', 'ADVAN1')
-                elif advan == 'ADVAN4':
-                    subs.replace_option('ADVAN4', 'ADVAN3')
-                    statements = self.statements
-                    statements.subs({real('K23'): real('K12'), real('K32'): real('K32')})
-                    self.statements = statements
-                elif advan == 'ADVAN12':
-                    subs.replace_option('ADVAN12', 'ADVAN11')
-                    statements = self.statements
-                    statements.subs({real('K23'): real('K12'), real('K32'): real('K32'),
-                                     real('K24'): real('K13'), real('K42'): real('K31')})
-                    self.statements = statements
 
     def get_pred_pk_record(self):
         pred = self.control_stream.get_records('PRED')

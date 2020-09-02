@@ -252,6 +252,11 @@ class CompartmentalSystem(ODESystem):
                 ics[sympy.Function(node.amount.name)(0)] = node.dose.symbol
         return eqs, ics
 
+    def __len__(self):
+        """Get the number of compartments including output
+        """
+        return len(self._g.nodes)
+
     def __str__(self):
         output = self.find_output()
         output_box = box(output.name)
