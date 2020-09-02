@@ -24,6 +24,13 @@ from pharmpy.modeling import absorption, add_covariate_effect, explicit_odes
                      'END IF\n      '
                      'CL_MEDIAN = 1.30000\n      '
                      'CL = CLWGT*TVCL*EXP(ETA(1))'),
+    ('piece_lin', '*', 'IF (CL_MEDIAN.GE.WGT) THEN\n'
+                       'CLWGT = THETA(4)*(-CL_MEDIAN + WGT) + 1\n'
+                       'ELSE\n'
+                       'CLWGT = THETA(5)*(-CL_MEDIAN + WGT) + 1\n'
+                       'END IF\n      '
+                       'CL_MEDIAN = 1.30000\n      '
+                       'CL = CLWGT*TVCL*EXP(ETA(1))'),
     ('theta - cov + median', '*', 'CLWGT = CL_MEDIAN + THETA(4) - WGT\n      '
                                   'CL_MEDIAN = 1.30000\n      '
                                   'CL = CLWGT*TVCL*EXP(ETA(1))')

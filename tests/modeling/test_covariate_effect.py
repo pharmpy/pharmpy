@@ -19,7 +19,8 @@ def S(x):
      1 + S('COVEFF1') * (S('WGT') - S('CL_MEDIAN')))
 ])
 def test_apply(cov_eff, symbol, expression):
-    cov_eff.apply(parameter='CL', covariate='WGT', theta_name='COVEFF1')
+    cov_eff.apply(parameter='CL', covariate='WGT',
+                  thetas={'theta': 'COVEFF1'})
 
     assert cov_eff.template.symbol == symbol
     assert cov_eff.template.expression == expression

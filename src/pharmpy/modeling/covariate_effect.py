@@ -1,29 +1,25 @@
 import math
+import re
 from operator import add, mul
 
-from sympy import Eq, Float, Piecewise, exp
+from sympy import Eq, Float, Gt, Le, Piecewise, exp
 
 from pharmpy.parameter import Parameter
 from pharmpy.statements import Assignment
-from pharmpy.symbols import real, sympify
+from pharmpy.symbols import real, subs, sympify
 
 
 def add_covariate_effect(model, parameter, covariate, effect, operation='*'):
     mean = calculate_mean(model.dataset, covariate)
     median = calculate_median(model.dataset, covariate)
 
-    theta_name = str(model.create_symbol(stem='COVEFF', force_numbering=True))
-    theta_lower, theta_upper = choose_param_inits(effect, model.dataset, covariate)
+    covariate_effect, no_thetas = create_template(effect)
 
-    pset = model.parameters
-    pset.add(Parameter(theta_name, theta_upper, theta_lower))
-    model.parameters = pset
-
+    thetas = create_thetas(model, effect, covariate, no_thetas)
     sset = model.statements
     param_statement = sset.find_assignment(parameter)
 
-    covariate_effect = create_template(effect)
-    covariate_effect.apply(parameter, covariate, theta_name)
+    covariate_effect.apply(parameter, covariate, thetas)
     statistic_statement = covariate_effect.create_statistics_statement(parameter, mean, median)
     effect_statement = covariate_effect.create_effect_statement(operation, param_statement)
 
@@ -35,6 +31,29 @@ def add_covariate_effect(model, parameter, covariate, effect, operation='*'):
     model.statements = sset
 
     return model
+
+
+def create_thetas(model, effect, covariate, no_of_thetas):
+    pset = model.parameters
+    theta_lower, theta_upper = choose_param_inits(effect, model.dataset, covariate)
+
+    theta_names = dict()
+    theta_name = str(model.create_symbol(stem='COVEFF', force_numbering=True))
+
+    if no_of_thetas == 1:
+        pset.add(Parameter(theta_name, theta_upper, theta_lower))
+        theta_names['theta'] = theta_name
+    else:
+        cov_eff_number = int(re.findall(r'\d', theta_name)[0])
+
+        for i in range(1, no_of_thetas+1):
+            pset.add(Parameter(theta_name, theta_upper, theta_lower))
+            theta_names[f'theta{i}'] = theta_name
+            theta_name = f'COVEFF{cov_eff_number + i}'
+
+    model.parameters = pset
+
+    return theta_names
 
 
 def calculate_mean(df, covariate, baselines=False):
@@ -72,17 +91,19 @@ def choose_param_inits(effect, df, covariate):
 
 def create_template(effect):
     if effect == 'lin_cont':
-        return CovariateEffect.linear_continuous()
+        return CovariateEffect.linear_continuous(), 1
     elif effect == 'lin_cat':
-        return CovariateEffect.linear_categorical()
+        return CovariateEffect.linear_categorical(), 1
     elif effect == 'exp':
-        return CovariateEffect.exponential()
+        return CovariateEffect.exponential(), 1
     elif effect == 'pow':
-        return CovariateEffect.power()
+        return CovariateEffect.power(), 1
+    elif effect == 'piece_lin':
+        return CovariateEffect.piecewise_linear(), 2
     else:
         symbol = S('symbol')
         expression = sympify(effect)
-        return CovariateEffect(Assignment(symbol, expression))
+        return CovariateEffect(Assignment(symbol, expression)), 1
 
 
 def S(x):
@@ -94,11 +115,11 @@ class CovariateEffect:
         self.template = template
         self.statistic_type = None
 
-    def apply(self, parameter, covariate, theta_name):
+    def apply(self, parameter, covariate, thetas):
         effect_name = f'{parameter}{covariate}'
         self.template.symbol = S(effect_name)
 
-        self.template.subs(S('theta'), S(theta_name))
+        self.template.expression = subs(self.template.expression, thetas)
         self.template.subs(S('cov'), S(covariate))
 
         template_str = [str(symbol) for symbol in self.template.free_symbols]
@@ -159,8 +180,25 @@ class CovariateEffect:
     @classmethod
     def linear_categorical(cls):
         symbol = S('symbol')
-        expression = Piecewise((1, Eq(S('cov'), 1)),
-                               (1 + S('theta'), Eq(S('cov'), 0)), evaluate=False)
+        values = [1, 1 + S('theta')]
+        conditions = [Eq(S('cov'), 1), Eq(S('cov'), 0)]
+        expression = Piecewise((values[0], conditions[0]),
+                               (values[1], conditions[1]))
+
+        template = Assignment(symbol, expression)
+
+        return cls(template)
+
+    @classmethod
+    def piecewise_linear(cls):
+        symbol = S('symbol')
+        values = [1 + S('theta1') * (S('cov') - S('median')),
+                  1 + S('theta2') * (S('cov') - S('median'))]
+        conditions = [Le(S('cov'), S('median')),
+                      Gt(S('cov'), S('median'))]
+        expression = Piecewise((values[0], conditions[0]),
+                               (values[1], conditions[1]))
+
         template = Assignment(symbol, expression)
 
         return cls(template)
