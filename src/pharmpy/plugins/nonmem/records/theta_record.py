@@ -10,6 +10,7 @@ min_lower_bound = -1000000
 class ThetaRecord(Record):
     def __init__(self, content, parser_class):
         super().__init__(content, parser_class)
+        self.name_map = None
 
     def add_nonmem_name(self, name_original, theta_number):
         self.root.add_comment_node(name_original)
@@ -58,7 +59,8 @@ class ThetaRecord(Record):
                 current_theta += 1
                 pset.add(new_par)
 
-        self.name_map = {name: first_theta + i for i, name in enumerate(pset.names)}
+        if not self.name_map:
+            self.name_map = {name: first_theta + i for i, name in enumerate(pset.names)}
         return pset
 
     def _multiple(self, theta):

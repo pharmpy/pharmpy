@@ -118,6 +118,24 @@ def test_add_parameters(pheno_path, param_new, init_expected, buf_new):
     assert rec_ref == rec_mod
 
 
+def test_add_two_parameters(pheno_path):
+    model = Model(pheno_path)
+    pset = model.parameters
+
+    assert len(pset) == 6
+
+    param_1 = Parameter('TVCL', 0.2)
+    param_2 = Parameter('CLWGT', 0.1)
+    pset.add(param_1)
+    pset.add(param_2)
+    model.parameters = pset
+    model.update_source()
+
+    assert len(pset) == 8
+    assert model.parameters[param_1.name].init == 0.2
+    assert model.parameters[param_2.name].init == 0.1
+
+
 @pytest.mark.parametrize('statement_new,buf_new', [
     (Assignment(S('CL'), 2), 'CL = 2'),
     (Assignment(S('Y'), S('THETA(4)') + S('THETA(5)')), 'Y = THETA(4) + THETA(5)')
