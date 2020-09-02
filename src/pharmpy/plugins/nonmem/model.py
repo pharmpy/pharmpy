@@ -267,6 +267,8 @@ class Model(pharmpy.model.Model):
             sub = self.control_stream.get_records('SUBROUTINES')[0]
             advan = sub.get_option_startswith('ADVAN')
             trans = sub.get_option_startswith('TRANS')
+            if not trans:
+                trans = 'TRANS1'
             comp = compartmental_model(self, advan, trans)
             if comp is not None:
                 cm, link = comp

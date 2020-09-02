@@ -2,6 +2,8 @@ from collections import OrderedDict
 
 import pytest
 
+from pharmpy.plugins.nonmem.records.option_record import OptionRecord
+
 
 def test_create_record(parser):
     recs = parser.parse('$INPUT ID TIME DV WGT=DROP')
@@ -55,3 +57,29 @@ def test_remove_option_startswith(parser, buf, remove, expected):
     rec = parser.parse(buf).records[0]
     rec.remove_option_startswith(remove)
     assert str(rec) == expected
+
+
+@pytest.mark.parametrize("buf,expected", [
+    ('$MODEL COMP=1 COMP=2', [['1'], ['2']]),
+    ('$MODEL COMP=(CENTRAL) COMP=(PERIPHERAL)', [['CENTRAL'], ['PERIPHERAL']]),
+    ('$MODEL COMP=(CENTRAL DEFDOSE DEFOBS) COMP=(PERIPHERAL)',
+        [['CENTRAL', 'DEFDOSE', 'DEFOBS'], ['PERIPHERAL']]),
+])
+def test_get_option_lists(parser, buf, expected):
+    rec = parser.parse(buf).records[0]
+    it = rec.get_option_lists('COMPARTMENT')
+    assert list(it) == expected
+
+
+@pytest.mark.parametrize("valid,opt,expected", [
+    (['NOOFF', 'DEFDOSE', 'DEFOBS'], 'DEFDOSE', 'DEFDOSE'),
+    (['NOOFF', 'DEFDOSE', 'DEFOBS'], 'DEFDOS', 'DEFDOSE'),
+    (['NOOFF', 'DEFDOSE', 'DEFOBS'], 'DEFD', 'DEFDOSE'),
+    (['NOOFF', 'DEFDOSE', 'DEFOBS'], 'DEF', None),
+    (['NOOFF', 'DEFDOSE', 'DEFOBS'], 'DEFO', 'DEFOBS'),
+    (['NOOFF', 'DEFDOSE', 'DEFOBS'], 'NO', None),
+    (['NOOFF', 'DEFDOSE', 'DEFOBS'], 'NOOF', 'NOOFF'),
+])
+def test_match_option(parser, valid, opt, expected):
+    match = OptionRecord.match_option(valid, opt)
+    assert match == expected
