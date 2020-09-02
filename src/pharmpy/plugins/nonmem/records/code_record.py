@@ -274,7 +274,13 @@ class CodeRecord(Record):
             condition = expression[1]
 
             condition_translated = self._translate_condition(condition)
-            statement_str += f'({condition_translated}) THEN\n{symbol} = {value}\n'
+
+            if condition_translated == 'True':
+                statement_str = re.sub('ELSE IF ', 'ELSE', statement_str)
+            else:
+                statement_str += f'({condition_translated}) THEN'
+
+            statement_str += f'\n{symbol} = {value}\n'
 
             if i < len(expression_block) - 1:
                 statement_str += 'ELSE IF '
@@ -286,7 +292,9 @@ class CodeRecord(Record):
     @staticmethod
     def _translate_condition(c):
         sign_dict = {'>': '.GT.',
-                     '<': '.LT.'}
+                     '<': '.LT.',
+                     '>=': '.GE.',
+                     '<=': '.LE.'}
         if str(c).startswith('Eq'):
             c_split = re.split('[(,) ]', str(c))
             c_clean = [item for item in c_split if item != '' and item != 'Eq']
