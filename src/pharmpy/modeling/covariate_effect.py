@@ -13,9 +13,9 @@ def add_covariate_effect(model, parameter, covariate, effect, operation='*'):
     mean = calculate_mean(model.dataset, covariate)
     median = calculate_median(model.dataset, covariate)
 
-    covariate_effect, no_thetas = create_template(effect)
+    thetas = create_thetas(model, effect, covariate)
+    covariate_effect = create_template(effect, model, covariate)
 
-    thetas = create_thetas(model, effect, covariate, no_thetas)
     sset = model.statements
     param_statement = sset.find_assignment(parameter)
 
@@ -33,12 +33,19 @@ def add_covariate_effect(model, parameter, covariate, effect, operation='*'):
     return model
 
 
-def create_thetas(model, effect, covariate, no_of_thetas):
+def create_thetas(model, effect, covariate):
     pset = model.parameters
     theta_lower, theta_upper = choose_param_inits(effect, model.dataset, covariate)
 
     theta_names = dict()
     theta_name = str(model.create_symbol(stem='COVEFF', force_numbering=True))
+
+    if effect == 'piece_lin':
+        no_of_thetas = 2
+    elif effect == 'lin_cat':
+        no_of_thetas = count_categorical(model, covariate).nunique()
+    else:
+        no_of_thetas = 1
 
     if no_of_thetas == 1:
         pset.add(Parameter(theta_name, theta_upper, theta_lower))
@@ -54,6 +61,13 @@ def create_thetas(model, effect, covariate, no_of_thetas):
     model.parameters = pset
 
     return theta_names
+
+
+def count_categorical(model, covariate):
+    covariate_data = model.dataset.groupby('ID')[covariate]
+    counts = covariate_data.agg(lambda ids: ids.value_counts().index[0])
+
+    return counts
 
 
 def calculate_mean(df, covariate, baselines=False):
@@ -89,21 +103,22 @@ def choose_param_inits(effect, df, covariate):
         return lower_expected, upper_expected
 
 
-def create_template(effect):
+def create_template(effect, model, covariate):
     if effect == 'lin_cont':
-        return CovariateEffect.linear_continuous(), 1
+        return CovariateEffect.linear_continuous()
     elif effect == 'lin_cat':
-        return CovariateEffect.linear_categorical(), 1
+        counts = count_categorical(model, covariate)
+        return CovariateEffect.linear_categorical(counts)
     elif effect == 'exp':
-        return CovariateEffect.exponential(), 1
+        return CovariateEffect.exponential()
     elif effect == 'pow':
-        return CovariateEffect.power(), 1
+        return CovariateEffect.power()
     elif effect == 'piece_lin':
-        return CovariateEffect.piecewise_linear(), 2
+        return CovariateEffect.piecewise_linear()
     else:
         symbol = S('symbol')
         expression = sympify(effect)
-        return CovariateEffect(Assignment(symbol, expression)), 1
+        return CovariateEffect(Assignment(symbol, expression))
 
 
 def S(x):
@@ -178,12 +193,20 @@ class CovariateEffect:
         return cls(template)
 
     @classmethod
-    def linear_categorical(cls):
+    def linear_categorical(cls, counts):
         symbol = S('symbol')
-        values = [1, 1 + S('theta')]
-        conditions = [Eq(S('cov'), 1), Eq(S('cov'), 0)]
-        expression = Piecewise((values[0], conditions[0]),
-                               (values[1], conditions[1]))
+        most_common = counts.idxmax()
+        categories = counts.unique()
+
+        values = [1]
+        conditions = [Eq(S('cov'), most_common)]
+
+        for i, cat in enumerate(categories):
+            if cat != most_common:
+                values += [1 + S(f'theta{i}')]
+                conditions += [Eq(S('cov'), cat)]
+
+        expression = Piecewise(*zip(values, conditions))
 
         template = Assignment(symbol, expression)
 
