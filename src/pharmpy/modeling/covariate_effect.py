@@ -2,6 +2,7 @@ import math
 import re
 from operator import add, mul
 
+import numpy as np
 from sympy import Eq, Float, Gt, Le, Piecewise, exp
 
 from pharmpy.parameter import Parameter
@@ -64,8 +65,8 @@ def create_thetas(model, effect, covariate):
 
 
 def count_categorical(model, covariate):
-    covariate_data = model.dataset.groupby('ID')[covariate]
-    counts = covariate_data.agg(lambda ids: ids.value_counts().index[0])
+    data = model.dataset.groupby('ID')[covariate]
+    counts = data.agg(lambda ids: ids.value_counts(dropna=False).index[0])
 
     return counts
 
@@ -179,16 +180,23 @@ class CovariateEffect:
     @classmethod
     def linear_categorical(cls, counts):
         symbol = S('symbol')
-        most_common = counts.idxmax()
+        most_common = counts[counts.idxmax()]
         categories = counts.unique()
 
         values = [1]
+
+        if np.isnan(most_common):
+            most_common = S('NaN')
+
         conditions = [Eq(S('cov'), most_common)]
 
         for i, cat in enumerate(categories):
             if cat != most_common:
                 values += [1 + S(f'theta{i}')]
-                conditions += [Eq(S('cov'), cat)]
+                if np.isnan(cat):
+                    conditions += [Eq(S('cov'), S('NaN'))]
+                else:
+                    conditions += [Eq(S('cov'), cat)]
 
         expression = Piecewise(*zip(values, conditions))
 

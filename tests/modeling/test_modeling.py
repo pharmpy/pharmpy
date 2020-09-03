@@ -1,3 +1,6 @@
+import re
+
+import numpy as np
 import pytest
 
 from pharmpy import Model
@@ -55,6 +58,23 @@ def test_add_covariate_effect(pheno_path, effect, covariate, operation, buf_new)
               f'      S1=V\n'
 
     assert str(model.get_pred_pk_record()) == rec_ref
+
+
+def test_add_covariate_effect_nan(pheno_path):
+    model = Model(pheno_path)
+    data = model.dataset
+
+    new_col = [np.nan] * 10 + ([1.0] * (len(data.index) - 10))
+
+    data['new_col'] = new_col
+    model.dataset = data
+
+    add_covariate_effect(model, 'CL', 'new_col', 'lin_cat')
+
+    assert re.search('NaN', str(model))
+    model.get_pred_pk_record().update({})
+    assert not re.search('NaN', str(model))
+    assert re.search(r'new_col\.EQ\.-99', str(model))
 
 
 def test_to_explicit_odes(pheno_path):
