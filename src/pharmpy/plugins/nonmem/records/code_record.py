@@ -10,6 +10,7 @@ import lark
 import sympy
 from sympy import Piecewise
 
+from pharmpy import data
 from pharmpy.data_structures import OrderedSet
 from pharmpy.parse_utils.generic import NoSuchRuleException
 from pharmpy.plugins.nonmem.records.parsers import CodeRecordParser
@@ -233,7 +234,6 @@ class CodeRecord(Record):
             self._nodes_updated.remove(node)
             self._root_updated.remove_node(node)
 
-    # Creating node does not work for if-statements
     def _add_statement(self, index_insert, statement):
         if isinstance(statement.expression, Piecewise):
             statement_str = self._translate_sympy_piecewise(statement)
@@ -400,6 +400,7 @@ class CodeRecord(Record):
         statements_updated = copy.deepcopy(self.statements)
         for key, value in nonmem_names.items():
             statements_updated.subs(real(key), real(value))
+        statements_updated.subs(real('NaN'), data.conf.na_rep)
         self.statements = statements_updated
 
     def from_odes(self, ode_system):

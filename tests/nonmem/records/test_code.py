@@ -315,7 +315,11 @@ def test_statements_setter_add_from_sympy(parser, buf_original, sym, expression,
     ('$PRED\nY = THETA(1) + ETA(1) + EPS(1)', Assignment(S('Z'), S('X')),
      {'X': 'THETA(2)'}, '$PRED\nY = THETA(1) + ETA(1) + EPS(1)\nZ = THETA(2)\n'),
     ('$PRED\nY = THETA(1) + ETA(1) + EPS(1)\nCL = 1.3', Assignment(S('Z'), S('X')),
-     {'X': 'THETA(2)'}, '$PRED\nY = THETA(1) + ETA(1) + EPS(1)\nCL = 1.3\nZ = THETA(2)\n')
+     {'X': 'THETA(2)'}, '$PRED\nY = THETA(1) + ETA(1) + EPS(1)\nCL = 1.3\nZ = THETA(2)\n'),
+    ('$PRED\nY = THETA(1) + ETA(1) + EPS(1)',
+     Assignment(S('YWGT'), sympy.Piecewise((1, sympy.Eq(S('WGT'), S('NaN'))))),
+     {'X': 'THETA(2)'}, '$PRED\nY = THETA(1) + ETA(1) + EPS(1)\n'
+                        'IF (WGT.EQ.-99) YWGT = 1\n')
 ])
 def test_update(parser, buf_original, assignment, nonmem_names, buf_expected):
     rec_original = parser.parse(buf_original).records[0]
