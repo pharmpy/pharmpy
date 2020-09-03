@@ -34,18 +34,18 @@ def add_covariate_effect(model, parameter, covariate, effect, operation='*'):
 
 
 def create_thetas(model, effect, covariate):
-    pset = model.parameters
-    theta_lower, theta_upper = choose_param_inits(effect, model.dataset, covariate)
-
-    theta_names = dict()
-    theta_name = str(model.create_symbol(stem='COVEFF', force_numbering=True))
-
     if effect == 'piece_lin':
         no_of_thetas = 2
     elif effect == 'lin_cat':
         no_of_thetas = count_categorical(model, covariate).nunique()
     else:
         no_of_thetas = 1
+
+    pset = model.parameters
+
+    theta_names = dict()
+    theta_name = str(model.create_symbol(stem='COVEFF', force_numbering=True))
+    theta_lower, theta_upper = choose_param_inits(effect, model.dataset, covariate)
 
     if no_of_thetas == 1:
         pset.add(Parameter(theta_name, theta_upper, theta_lower))
@@ -109,12 +109,12 @@ def create_template(effect, model, covariate):
     elif effect == 'lin_cat':
         counts = count_categorical(model, covariate)
         return CovariateEffect.linear_categorical(counts)
+    elif effect == 'piece_lin':
+        return CovariateEffect.piecewise_linear()
     elif effect == 'exp':
         return CovariateEffect.exponential()
     elif effect == 'pow':
         return CovariateEffect.power()
-    elif effect == 'piece_lin':
-        return CovariateEffect.piecewise_linear()
     else:
         symbol = S('symbol')
         expression = sympify(effect)
@@ -169,22 +169,6 @@ class CovariateEffect:
             return add
 
     @classmethod
-    def exponential(cls):
-        symbol = S('symbol')
-        expression = exp(S('theta') * (S('cov') - S('median')))
-        template = Assignment(symbol, expression)
-
-        return cls(template)
-
-    @classmethod
-    def power(cls):
-        symbol = S('symbol')
-        expression = (S('cov')/S('median'))**S('theta')
-        template = Assignment(symbol, expression)
-
-        return cls(template)
-
-    @classmethod
     def linear_continuous(cls):
         symbol = S('symbol')
         expression = 1 + S('theta') * (S('cov') - S('median'))
@@ -222,6 +206,22 @@ class CovariateEffect:
         expression = Piecewise((values[0], conditions[0]),
                                (values[1], conditions[1]))
 
+        template = Assignment(symbol, expression)
+
+        return cls(template)
+
+    @classmethod
+    def exponential(cls):
+        symbol = S('symbol')
+        expression = exp(S('theta') * (S('cov') - S('median')))
+        template = Assignment(symbol, expression)
+
+        return cls(template)
+
+    @classmethod
+    def power(cls):
+        symbol = S('symbol')
+        expression = (S('cov')/S('median'))**S('theta')
         template = Assignment(symbol, expression)
 
         return cls(template)
