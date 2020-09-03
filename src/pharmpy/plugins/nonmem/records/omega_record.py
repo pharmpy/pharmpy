@@ -1,4 +1,5 @@
 import math
+import re
 
 import numpy as np
 import sympy.stats
@@ -24,6 +25,7 @@ class OmegaRecord(Record):
         bare_block = self.root.find('bare_block')
         same = bool(self.root.find('same'))
         parameters = ParameterSet()
+        coords = []
         if not (block or bare_block):
             for node in self.root.all('diag_item'):
                 init = node.init.NUMERIC
@@ -40,7 +42,10 @@ class OmegaRecord(Record):
                 if sd:
                     init = init ** 2
                 for _ in range(n):
-                    name = f'{self.name}({row},{row})'
+                    name = self._find_label(node)
+                    if not name:
+                        name = f'{self.name}({row},{row})'
+                    coords.append((row, row))
                     param = Parameter(name, init, lower=0, fix=fixed)
                     parameters.add(param)
                     row += 1
@@ -53,10 +58,15 @@ class OmegaRecord(Record):
             else:
                 size = self.root.block.size.INT
             fix, sd, corr, cholesky = self._block_flags()
+            labels = []
             for node in self.root.all('omega'):
                 init = node.init.NUMERIC
                 n = node.n.INT if node.find('n') else 1
                 inits += [init] * n
+                name = self._find_label(node)
+                labels.append(name)
+                if n > 1:
+                    labels.extend([None] * (n - 1))
             if not same:
                 if size != pharmpy.math.triangular_root(len(inits)):
                     raise ModelSyntaxError('Wrong number of inits in BLOCK')
@@ -77,15 +87,43 @@ class OmegaRecord(Record):
                     inds = np.tril_indices_from(L)
                     L[inds] = inits
                     A = L @ L.T
+                label_index = 0
                 for i in range(size):
                     for j in range(0, i + 1):
-                        name = f'{self.name}({i + start_omega},{j + start_omega})'
+                        name = labels[label_index]
+                        if name is None:
+                            name = f'{self.name}({i + start_omega},{j + start_omega})'
+                        coords.append((i + start_omega, j + start_omega))
                         init = A[i, j]
                         lower = None if i != j else 0
                         param = Parameter(name, init, lower=lower, fix=fix)
                         parameters.add(param)
+                        label_index += 1
             next_omega = start_omega + size
+        self.name_map = {name: c for i, (name, c) in enumerate(zip(parameters.names, coords))}
         return parameters, next_omega, size
+
+    def _find_label(self, node):
+        """Find label from comment of omega parameter
+        """
+        name = None
+        # needed to avoid circular import with Python 3.6
+        import pharmpy.plugins.nonmem as nonmem
+        if nonmem.conf.parameter_names == 'comment':
+            found = False
+            for subnode in self.root.tree_walk():
+                if id(subnode) == id(node):
+                    if found:
+                        break
+                    else:
+                        found = True
+                        continue
+                if found and (subnode.rule == 'NEWLINE' or subnode.rule == 'COMMENT'):
+                    m = re.search(r';\s*([a-zA-Z_]\w*)', str(subnode))
+                    if m:
+                        name = m.group(1)
+                        break
+        return name
 
     def _block_flags(self):
         """Get a tuple of all interesting flags for block
@@ -281,8 +319,17 @@ class OmegaRecord(Record):
         """Get a RandomVariableSet for this omega record
 
            start_omega - the first omega in this record
-           previous_sigma - the matrix of the previous omega block
+           previous_cov - the matrix of the previous omega block
         """
+        same = bool(self.root.find('same'))
+        if not hasattr(self, 'name_map') and not same:
+            if previous_cov is not None:
+                prev_size = len(previous_cov)
+            else:
+                prev_size = None
+            self.parameters(start_omega, prev_size)
+        if hasattr(self, 'name_map'):
+            rev_map = {value: key for key, value in self.name_map.items()}
         next_cov = None        # The cov matrix if a block
         block = self.root.find('block')
         bare_block = self.root.find('bare_block')
@@ -296,8 +343,7 @@ class OmegaRecord(Record):
                 fixed = bool(node.find('FIX'))
                 name = self._rv_name(i)
                 if not (init == 0 and fixed):       # 0 FIX are not RVs
-                    eta = sympy.stats.Normal(name, 0, sympy.sqrt(
-                        real(f'{self.name}({i},{i})')))
+                    eta = sympy.stats.Normal(name, 0, sympy.sqrt(real(rev_map[(i, i)])))
                     rvs.add(eta)
                 else:
                     zero_fix.append(name)
@@ -307,7 +353,6 @@ class OmegaRecord(Record):
                 numetas = previous_cov.rows
             else:
                 numetas = self.root.block.size.INT
-            same = bool(self.root.find('same'))
             params, _, _ = self.parameters(start_omega, previous_cov.rows if
                                            hasattr(previous_cov, 'rows') else None)
             all_zero_fix = True
@@ -327,8 +372,7 @@ class OmegaRecord(Record):
                     cov = sympy.zeros(numetas)
                     for row in range(numetas):
                         for col in range(row + 1):
-                            cov[row, col] = real(
-                                f'{self.name}({start_omega + row},{start_omega + col})')
+                            cov[row, col] = real(rev_map[(start_omega + row, start_omega + col)])
                             if row != col:
                                 cov[col, row] = cov[row, col]
                     next_cov = cov
@@ -339,7 +383,7 @@ class OmegaRecord(Record):
                 if same:
                     sym = previous_cov
                 else:
-                    sym = real(f'{self.name}({start_omega},{start_omega})')
+                    sym = real(rev_map[(start_omega, start_omega)])
                 eta = sympy.stats.Normal(name, 0, sympy.sqrt(sym))
                 next_cov = sym
                 rvs.add(eta)
@@ -350,21 +394,26 @@ class OmegaRecord(Record):
             level = VariabilityLevel.RUV
         for rv in rvs:
             rv.variability_level = level
-
-        self.name_map = {rv.name: start_omega + i for i, rv in enumerate(rvs)}
+        self.eta_map = {rv.name: i for i, rv in enumerate(rvs)}
         return rvs, start_omega + numetas, next_cov, zero_fix
 
     def renumber(self, new_start):
-        old_start = min(self.name_map.values())
+        old_start = min(self.eta_map.values())
         if new_start != old_start:
+            for name in self.eta_map:
+                self.eta_map[name] += new_start - old_start
             for name in self.name_map:
-                self.name_map[name] += new_start - old_start
+                old_row, old_col = self.name_map[name]
+                self.name_map[name] = (old_row + new_start - old_start,
+                                       old_col + new_start - old_start)
 
     def remove(self, names):
-        first_omega = min(self.name_map.values())
-        indices = {self.name_map[name] - first_omega for name in names}
+        """Remove some etas from block given eta names
+        """
+        first_omega = min(self.eta_map.values())
+        indices = {self.eta_map[name] - first_omega for name in names}
         for name in names:
-            del self.name_map[name]
+            del self.eta_map[name]
 
         block = self.root.find('block')
         bare_block = self.root.find('bare_block')
@@ -408,4 +457,4 @@ class OmegaRecord(Record):
             self.root = parser.root
 
     def __len__(self):
-        return len(self.name_map)
+        return len(self.eta_map)

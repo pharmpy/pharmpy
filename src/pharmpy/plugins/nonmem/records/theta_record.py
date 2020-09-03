@@ -63,13 +63,13 @@ class ThetaRecord(Record):
                     # needed to avoid circular import with Python 3.6
                     found = False
                     for subnode in self.root.tree_walk():
-                        if subnode.rule == 'theta':
+                        if id(subnode) == id(theta):
                             if found:
                                 break
                             else:
                                 found = True
                                 continue
-                        if subnode.rule == 'NEWLINE':
+                        if found and subnode.rule == 'NEWLINE':
                             m = re.search(r';\s*([a-zA-Z_]\w*)', str(subnode))
                             if m:
                                 name = m.group(1)

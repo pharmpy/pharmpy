@@ -70,7 +70,7 @@ def update_random_variables(model, old, new):
         next_eta = 1
         full_map = dict()
         for omega_record in model.control_stream.get_records('OMEGA'):
-            current_names = omega_record.name_map.keys()
+            current_names = omega_record.eta_map.keys()
             if removed >= current_names:
                 remove_records.append(omega_record)
             elif not removed.isdisjoint(current_names):
@@ -79,13 +79,13 @@ def update_random_variables(model, old, new):
                 omega_record.renumber(next_eta)
                 # FIXME: No handling of OMEGA(1,1) etc in code
                 full_map.update({key: f'ETA({value})'
-                                 for key, value in omega_record.name_map.items()})
+                                 for key, value in omega_record.eta_map.items()})
                 next_eta += len(omega_record)
             else:
                 # keep all
                 omega_record.renumber(next_eta)
                 full_map.update({key: f'ETA({value})'
-                                 for key, value in omega_record.name_map.items()})
+                                 for key, value in omega_record.eta_map.items()})
                 next_eta += len(omega_record)
         model.control_stream.remove_records(remove_records)
         update_code_symbols(model, full_map)

@@ -38,6 +38,10 @@ from pharmpy.plugins.nonmem import conf
     ('$THETA\n(0,0.105,)   ; RUV_CVFPG\n', True, [
         ('RUV_CVFPG', 0.105, 0, 1000000, False),
         ]),
+    ('$THETA  (0,3) ; CL\n 2 FIXED ; V\n', True, [
+        ('CL', 3, 0, 1000000, False),
+        ('V', 2, -1000000, 1000000, True),
+        ])
 ])
 def test_parameters(parser, buf, comment, results):
     if comment:
