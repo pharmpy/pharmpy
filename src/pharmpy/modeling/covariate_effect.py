@@ -11,6 +11,14 @@ from pharmpy.symbols import real, subs, sympify
 
 
 def add_covariate_effect(model, parameter, covariate, effect, operation='*'):
+    """Adds covariate effect to pharmpy model.
+
+       effect - Supports linear (continuous and categorical covariates),
+                piecewise linear, exponential, and power function. Custom
+                effect may be used, where thetas are denoted as 'theta'
+                (if multiple: 'theta1', 'theta2' etc), covariate as 'cov',
+                and mean and median are written as they are.
+    """
     mean = calculate_mean(model.dataset, covariate)
     median = calculate_median(model.dataset, covariate)
 
