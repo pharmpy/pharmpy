@@ -67,8 +67,8 @@ def test_set_parameters(pheno_path):
                                                        lower=0, upper=sympy.oo)
     model.update_source()
     thetas = model.control_stream.get_records('THETA')
-    assert str(thetas[0]) == '$THETA  (0,0.75) ; CL\n'
-    assert str(thetas[1]) == '$THETA  (0,0.5) ; V\n'
+    assert str(thetas[0]) == '$THETA  (0,0.75) ; PTVCL\n'
+    assert str(thetas[1]) == '$THETA  (0,0.5) ; PTVV\n'
     assert str(thetas[2]) == '$THETA  (-.99,0.25)\n'
     omegas = model.control_stream.get_records('OMEGA')
     assert str(omegas[0]) == '$OMEGA  DIAGONAL(2)\n 0.1  ;       IVCL\n 0.2  ;        IVV\n'
@@ -106,8 +106,8 @@ def test_add_parameters(pheno_path, param_new, init_expected, buf_new):
 
     assert str(model.control_stream) == str(stream)
 
-    rec_ref = f'$THETA  (0,0.00469307) ; CL\n' \
-              f'$THETA  (0,1.00916) ; V\n' \
+    rec_ref = f'$THETA  (0,0.00469307) ; PTVCL\n' \
+              f'$THETA  (0,1.00916) ; PTVV\n' \
               f'$THETA  (-.99,.1)\n' \
               f'{buf_new}\n'
 
