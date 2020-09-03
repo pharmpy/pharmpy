@@ -522,12 +522,20 @@ class Model(pharmpy.model.Model):
 
     def parameter_translation(self):
         """Get a dict of NONMEM name to Pharmpy parameter name
-           i.e. {'TVCL: 'THETA(1)', 'IVCL': 'OMEGA(1,1)'}
+           i.e. {'THETA(1)': 'TVCL', 'OMEGA(1,1)': 'IVCL'}
         """
         self.parameters
         d = dict()
         for theta_record in self.control_stream.get_records('THETA'):
             for key, value in theta_record.name_map.items():
                 nonmem_name = f'THETA({value})'
+                d[nonmem_name] = key
+        for record in self.control_stream.get_records('OMEGA'):
+            for key, value in record.name_map.items():
+                nonmem_name = f'OMEGA({value[0]},{value[1]})'
+                d[nonmem_name] = key
+        for record in self.control_stream.get_records('SIGMA'):
+            for key, value in record.name_map.items():
+                nonmem_name = f'SIGMA({value[0]},{value[1]})'
                 d[nonmem_name] = key
         return d

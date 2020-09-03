@@ -31,7 +31,7 @@ def test_covariance(pheno_path):
         cov = res.covariance_matrix
         assert len(cov) == 6
         assert pytest.approx(cov.loc['PTVCL', 'PTVCL'], 1e-13) == 4.41151E-08
-        assert pytest.approx(cov.loc['OMEGA(2,2)', 'PTVV'], 1e-13) == 7.17184E-05
+        assert pytest.approx(cov.loc['IVV', 'PTVV'], 1e-13) == 7.17184E-05
 
 
 def test_information(pheno_path):
@@ -46,7 +46,7 @@ def test_information(pheno_path):
         m = res.information_matrix
         assert len(m) == 6
         assert pytest.approx(m.loc['PTVCL', 'PTVCL'], 1e-13) == 2.99556E+07
-        assert pytest.approx(m.loc['OMEGA(2,2)', 'PTVV'], 1e-13) == -2.80082E+03
+        assert pytest.approx(m.loc['IVV', 'PTVV'], 1e-13) == -2.80082E+03
 
 
 def test_correlation(pheno_path):
@@ -61,7 +61,7 @@ def test_correlation(pheno_path):
         corr = res.correlation_matrix
         assert len(corr) == 6
         assert corr.loc['PTVCL', 'PTVV'] == 0.00709865
-        assert pytest.approx(corr.loc['OMEGA(2,2)', 'PTVV'], 1e-13) == 3.56662E-01
+        assert pytest.approx(corr.loc['IVV', 'PTVV'], 1e-13) == 3.56662E-01
 
 
 def test_standard_errors(pheno_path):
@@ -140,4 +140,4 @@ def test_parameter_estimates(pheno_path):
         pe = res.parameter_estimates
         assert len(pe) == 6
         assert pe['PTVCL'] == 4.69555e-3
-        assert pe['OMEGA(2,2)'] == 2.7906e-2
+        assert pe['IVV'] == 2.7906e-2
