@@ -1,12 +1,15 @@
 import pytest
 
+from pharmpy.config import ConfigurationContext
+from pharmpy.plugins.nonmem import conf
+
 
 @pytest.mark.usefixtures('parser')
-@pytest.mark.parametrize('buf,results', [
-    ('$THETA 0', [('THETA(1)', 0, -1000000, 1000000, False)]),
-    ('$THETA    12.3 \n\n', [('THETA(1)', 12.3, -1000000, 1000000, False)]),
-    ('$THETA  (0,0.00469) ; CL', [('THETA(1)', 0.00469, 0, 1000000, False)]),
-    ('$THETA  (0,3) 2 FIXED (0,.6,1) 10 (-INF,-2.7,0)  (37 FIXED)\n 19 (0,1,2)x3', [
+@pytest.mark.parametrize('buf,comment,results', [
+    ('$THETA 0', False, [('THETA(1)', 0, -1000000, 1000000, False)]),
+    ('$THETA    12.3 \n\n', False, [('THETA(1)', 12.3, -1000000, 1000000, False)]),
+    ('$THETA  (0,0.00469) ; CL', False, [('THETA(1)', 0.00469, 0, 1000000, False)]),
+    ('$THETA  (0,3) 2 FIXED (0,.6,1) 10 (-INF,-2.7,0)  (37 FIXED)\n 19 (0,1,2)x3', False, [
         ('THETA(1)', 3, 0, 1000000, False),
         ('THETA(2)', 2, -1000000, 1000000, True),
         ('THETA(3)', .6, 0, 1, False),
@@ -18,39 +21,47 @@ import pytest
         ('THETA(9)', 1, 0, 2, False),
         ('THETA(10)', 1, 0, 2, False),
         ]),
-    ('$THETA (0.00469555) FIX ; CL', [('THETA(1)', 0.00469555, -1000000, 1000000, True)]),
+    ('$THETA (0.00469555) FIX ; CL', False, [('THETA(1)', 0.00469555, -1000000, 1000000, True)]),
     ('$THETA\n ;; Model characteristics\n (0, 0.15, 0.6) ; Proportional\n',
-        [('THETA(1)', 0.15, 0, 0.6, False)]),
-    ('$THETA\n;\n1;COMMENTING', [('THETA(1)', 1, -1000000, 1000000, False)]),
+        False, [('THETA(1)', 0.15, 0, 0.6, False)]),
+    ('$THETA\n;\n1;COMMENTING', False, [('THETA(1)', 1, -1000000, 1000000, False)]),
     ('$THETA\n   ;CMT1;SAMELINE\n;ONLYCOMMENT\n\t;COMMENT2\n    1    \n',
-        [('THETA(1)', 1, -1000000, 1000000, False)]),
+        False, [('THETA(1)', 1, -1000000, 1000000, False)]),
     ('$THETA\n ;; Model characteristics\n  (0, 0.15, 0.6) ; Proportional error (Drug123)\n'
      '  (0, 1, 10)     ; Additive error (Drug123)\n',
-        [('THETA(1)', 0.15, 0, 0.6, False), ('THETA(2)', 1, 0, 10, False)]),
-    ('$THETA  (FIX FIX 0.4) ; CL', [('THETA(1)', 0.4, -1000000, 1000000, True)]),
-    ('$THETA (FIX 1,   FIX FIX    1 FIX, 1  FIX) ; CL', [('THETA(1)', 1, 1, 1, True)]),
-    ('$THETA\n(0,0.105,)   ; RUV_CVFPG\n', [
+        False, [('THETA(1)', 0.15, 0, 0.6, False), ('THETA(2)', 1, 0, 10, False)]),
+    ('$THETA  (FIX FIX 0.4) ; CL', False, [('THETA(1)', 0.4, -1000000, 1000000, True)]),
+    ('$THETA (FIX 1,   FIX FIX    1 FIX, 1  FIX) ; CL', False, [('THETA(1)', 1, 1, 1, True)]),
+    ('$THETA\n(0,0.105,)   ; RUV_CVFPG\n', False, [
         ('THETA(1)', 0.105, 0, 1000000, False),
         ]),
+    ('$THETA\n(0,0.105,)   ; RUV_CVFPG\n', True, [
+        ('RUV_CVFPG', 0.105, 0, 1000000, False),
+        ]),
 ])
-def test_parameters(parser, buf, results):
-    recs = parser.parse(buf)
-    rec = recs.records[0]
-    pset = rec.parameters(1)
-    assert len(pset) == len(results)
-    assert len(pset) == len(rec)
-    for res in results:
-        name = res[0]
-        init = res[1]
-        lower = res[2]
-        upper = res[3]
-        fix = res[4]
-        param = pset[name]
-        assert param.name == name
-        assert param.init == init
-        assert param.lower == lower
-        assert param.upper == upper
-        assert param.fix == fix
+def test_parameters(parser, buf, comment, results):
+    if comment:
+        opt = 'comment'
+    else:
+        opt = 'basic'
+    with ConfigurationContext(conf, parameter_names=opt):
+        recs = parser.parse(buf)
+        rec = recs.records[0]
+        pset = rec.parameters(1)
+        assert len(pset) == len(results)
+        assert len(pset) == len(rec)
+        for res in results:
+            name = res[0]
+            init = res[1]
+            lower = res[2]
+            upper = res[3]
+            fix = res[4]
+            param = pset[name]
+            assert param.name == name
+            assert param.init == init
+            assert param.lower == lower
+            assert param.upper == upper
+            assert param.fix == fix
 
 
 def test_theta_num(parser):

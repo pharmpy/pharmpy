@@ -519,3 +519,15 @@ class Model(pharmpy.model.Model):
                                               accept=accept)
         df.name = self.dataset_path.stem
         return df
+
+    def parameter_translation(self):
+        """Get a dict of NONMEM name to Pharmpy parameter name
+           i.e. {'TVCL: 'THETA(1)', 'IVCL': 'OMEGA(1,1)'}
+        """
+        self.parameters
+        d = dict()
+        for theta_record in self.control_stream.get_records('THETA'):
+            for key, value in theta_record.name_map.items():
+                nonmem_name = f'THETA({value})'
+                d[nonmem_name] = key
+        return d

@@ -1,3 +1,5 @@
+import re
+
 from pharmpy.parameter import Parameter, ParameterSet
 from pharmpy.parse_utils.generic import AttrToken, remove_token_and_space
 
@@ -55,7 +57,26 @@ class ThetaRecord(Record):
             else:
                 n = 1
             for i in range(0, n):
-                new_par = Parameter(f'THETA({current_theta})', init, lower, upper, fix)
+                name = None
+                import pharmpy.plugins.nonmem as nonmem
+                if nonmem.conf.parameter_names == 'comment':
+                    # needed to avoid circular import with Python 3.6
+                    found = False
+                    for subnode in self.root.tree_walk():
+                        if subnode.rule == 'theta':
+                            if found:
+                                break
+                            else:
+                                found = True
+                                continue
+                        if subnode.rule == 'NEWLINE':
+                            m = re.search(r';\s*([a-zA-Z_]\w*)', str(subnode))
+                            if m:
+                                name = m.group(1)
+                                break
+                if not name:
+                    name = f'THETA({current_theta})'
+                new_par = Parameter(name, init, lower, upper, fix)
                 current_theta += 1
                 pset.add(new_par)
 

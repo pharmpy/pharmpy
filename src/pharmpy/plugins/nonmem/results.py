@@ -230,6 +230,8 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
                 ests = table.final_parameter_estimates
                 fix = table.fixed
                 ests = ests[~fix]
+                if self.model:
+                    ests.rename(index=self.model.parameter_translation())
                 result_obj._parameter_estimates = ests
                 sdcorr = table.omega_sigma_stdcorr[~fix]
                 sdcorr_ests = ests.copy()
