@@ -1,0 +1,137 @@
+Model directory /home/kajsa/sandbox/asrscm/asrscm_dir56/rundir/m1
+
+MODEL            TEST     BASE OFV     NEW OFV         TEST OFV (DROP)    GOAL     dDF    SIGNIFICANT PVAL
+CLAPGR-2         PVAL    725.60200   725.59822              0.00378  >  16.91900    9              1.000000 
+CLCV1-2          PVAL    725.60200   723.11595              2.48605  >   3.84150    1              0.114860 
+CLWGT-2          PVAL    725.60200   699.47082             26.13118  >   3.84150    1        YES!  3.19e-07 
+VCV2-2           PVAL    725.60200   724.97720              0.62480  >   3.84150    1              0.429270 
+VCVD1-2          PVAL    725.60200   723.04350              2.55850  >   3.84150    1              0.109700 
+VWGT-2           PVAL    725.60200   685.37770             40.22430  >   3.84150    1        YES!  2.26e-10 
+
+Parameter-covariate relation chosen in this forward step: V-WGT-2
+CRITERION              PVAL < 0.05
+BASE_MODEL_OFV         725.60200
+CHOSEN_MODEL_OFV       685.37770
+Relations included after this step:
+CL      
+V       WGT-2   
+--------------------
+
+
+Taking a step forward in adaptive scope reduction scm after reducing scope with 4 relations : CL-APGR,CL-CV1,V-CV2,V-CVD1
+Model directory /home/kajsa/sandbox/asrscm/asrscm_dir56/rundir/reduced_forward_scm_dir1/m1
+
+MODEL            TEST     BASE OFV     NEW OFV         TEST OFV (DROP)    GOAL     dDF    SIGNIFICANT PVAL
+CLWGT-2          PVAL    685.37770   663.09532             22.28238  >   3.84150    1        YES!  0.000002 
+
+Parameter-covariate relation chosen in this forward step: CL-WGT-2
+CRITERION              PVAL < 0.05
+BASE_MODEL_OFV         685.37770
+CHOSEN_MODEL_OFV       663.09532
+Relations included after this step:
+CL      WGT-2   
+V       WGT-2   
+--------------------
+
+
+Included relations so far:  CL-WGT-2,V-WGT-2
+Re-testing 4 relations after adaptive scope reduction scm reduced forward search : CL-APGR,CL-CV1,V-CV2,V-CVD1
+Model directory /home/kajsa/sandbox/asrscm/asrscm_dir56/rundir/readded_forward_scm_dir1/m1
+
+MODEL            TEST     BASE OFV     NEW OFV         TEST OFV (DROP)    GOAL     dDF    SIGNIFICANT PVAL
+CLAPGR-2         PVAL    663.09532   663.14620             -0.05087  >  16.91900    9                   9999
+CLCV1-2          PVAL    663.09532   653.70237              9.39295  >   3.84150    1        YES!  0.002178 
+VCV2-2           PVAL    663.09532   653.77827              9.31705  >   3.84150    1        YES!  0.002270 
+VCVD1-2          PVAL    663.09532   656.15876              6.93657  >   3.84150    1        YES!  0.008445 
+
+Parameter-covariate relation chosen in this forward step: CL-CV1-2
+CRITERION              PVAL < 0.05
+BASE_MODEL_OFV         663.09532
+CHOSEN_MODEL_OFV       653.70237
+Relations included after this step:
+CL      CV1-2   WGT-2   
+V       WGT-2   
+--------------------
+
+Model directory /home/kajsa/sandbox/asrscm/asrscm_dir56/rundir/readded_forward_scm_dir1/scm_dir1/m1
+
+MODEL            TEST     BASE OFV     NEW OFV         TEST OFV (DROP)    GOAL     dDF    SIGNIFICANT PVAL
+CLAPGR-2         PVAL    653.70237   653.69014              0.01223  >  16.91900    9              1.000000 
+VCV2-2           PVAL    653.70237   647.68823              6.01414  >   3.84150    1        YES!  0.014192 
+VCVD1-2          PVAL    653.70237   647.86671              5.83566  >   3.84150    1        YES!  0.015705 
+
+Parameter-covariate relation chosen in this forward step: V-CV2-2
+CRITERION              PVAL < 0.05
+BASE_MODEL_OFV         653.70237
+CHOSEN_MODEL_OFV       647.68823
+Relations included after this step:
+CL      CV1-2   WGT-2   
+V       CV2-2   WGT-2   
+--------------------
+
+Model directory /home/kajsa/sandbox/asrscm/asrscm_dir56/rundir/readded_forward_scm_dir1/scm_dir1/scm_dir1/m1
+
+MODEL            TEST     BASE OFV     NEW OFV         TEST OFV (DROP)    GOAL     dDF    SIGNIFICANT PVAL
+CLAPGR-2         PVAL    647.68823   647.69389             -0.00566  >  16.91900    9                   9999
+VCVD1-2          PVAL    647.68823   647.78306             -0.09483  >   3.84150    1                   9999
+
+--------------------
+
+
+Starting adaptive scope reduction scm backward search
+Model directory /home/kajsa/sandbox/asrscm/asrscm_dir56/rundir/backward_scm_dir1/m1
+
+MODEL            TEST     BASE OFV     NEW OFV         TEST OFV (DROP)    GOAL     dDF  INSIGNIFICANT PVAL
+CLCV1-1          PVAL    647.68823   648.43373             -0.74550  >  -6.63490   -1        YES!  0.387900 
+CLWGT-1          PVAL    647.68823   652.70932             -5.02109  >  -6.63490   -1        YES!  0.025040 
+VCV2-1           PVAL    647.68823   648.16473             -0.47650  >  -6.63490   -1        YES!  0.490010 
+VWGT-1           PVAL    647.68823   718.71690            -71.02867  >  -6.63490   -1              3.52e-17 
+
+Parameter-covariate relation chosen in this backward step: V-CV2-1
+CRITERION              PVAL > 0.01
+BASE_MODEL_OFV         647.68823
+CHOSEN_MODEL_OFV       648.16473
+Relations included after this step:
+CL      CV1-2   WGT-2   
+V       WGT-2   
+--------------------
+
+Model directory /home/kajsa/sandbox/asrscm/asrscm_dir56/rundir/backward_scm_dir1/scm_dir1/m1
+
+MODEL            TEST     BASE OFV     NEW OFV         TEST OFV (DROP)    GOAL     dDF  INSIGNIFICANT PVAL
+CLCV1-1          PVAL    648.16473   643.42136              4.74337  >  -6.63490   -1        YES!       9999
+CLWGT-1          PVAL    648.16473   648.26042             -0.09568  >  -6.63490   -1        YES!  0.757070 
+VWGT-1           PVAL    648.16473   734.00528            -85.84054  >  -6.63490   -1              1.95e-20 
+
+Parameter-covariate relation chosen in this backward step: CL-CV1-1
+CRITERION              PVAL > 0.01
+BASE_MODEL_OFV         648.16473
+CHOSEN_MODEL_OFV       643.42136
+Relations included after this step:
+CL      WGT-2   
+V       WGT-2   
+--------------------
+
+Model directory /home/kajsa/sandbox/asrscm/asrscm_dir56/rundir/backward_scm_dir1/scm_dir1/scm_dir1/m1
+
+MODEL            TEST     BASE OFV     NEW OFV         TEST OFV (DROP)    GOAL     dDF  INSIGNIFICANT PVAL
+CLWGT-1          PVAL    643.42136   648.26975             -4.84839  >  -6.63490   -1        YES!  0.027672 
+VWGT-1           PVAL    643.42136   717.36147            -73.94011  >  -6.63490   -1              8.05e-18 
+
+Parameter-covariate relation chosen in this backward step: CL-WGT-1
+CRITERION              PVAL > 0.01
+BASE_MODEL_OFV         643.42136
+CHOSEN_MODEL_OFV       648.26975
+Relations included after this step:
+V       WGT-2   
+--------------------
+
+Model directory /home/kajsa/sandbox/asrscm/asrscm_dir56/rundir/backward_scm_dir1/scm_dir1/scm_dir1/scm_dir1/m1
+
+MODEL            TEST     BASE OFV     NEW OFV         TEST OFV (DROP)    GOAL     dDF  INSIGNIFICANT PVAL
+VWGT-1           PVAL    648.26975   749.50873           -101.23898  >  -6.63490   -1              8.15e-24 
+
+--------------------
+
+
+

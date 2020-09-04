@@ -1,0 +1,323 @@
+Model directory /home/shared/Projects/PPSCM-PMX-1/Analysis/Model/Drug/run15asr_2.dir/rundir/m1
+
+MODEL            TEST     BASE OFV     NEW OFV         TEST OFV (DROP)    GOAL     dDF    SIGNIFICANT PVAL
+CLAGE-5          PVAL -10610.81224-10620.89249             10.08026  >   6.63490    1        YES!  0.001499 
+CLCRCL-5         PVAL -10610.81224-10638.97128             28.15904  >   6.63490    1        YES!  1.12e-07 
+CLDOSE-2         PVAL -10610.81224-10629.37133             18.55909  >   9.21030    2        YES!  0.000093 
+CLRACE-2         PVAL -10610.81224-10627.55980             16.74756  >  11.34500    3        YES!  0.000796 
+CLSEX-2          PVAL -10610.81224-10612.29964              1.48740  >   6.63490    1              0.222620 
+CLQUAT-2         PVAL -10610.81224-10612.41561              1.60337  >   6.63490    1              0.205430 
+KMAGE-5          PVAL -10610.81224-10612.20199              1.38976  >   6.63490    1              0.238450 
+KMRACE-2         PVAL -10610.81224-10612.15496              1.34272  >  11.34500    3              0.719010 
+KMSEX-2          PVAL -10610.81224-10611.09673              0.28450  >   6.63490    1              0.593770 
+KMQUAT-2         PVAL -10610.81224-10612.49154              1.67930  >   6.63490    1              0.195020 
+V1AGE-5          PVAL -10610.81224-10614.28489              3.47266  >   6.63490    1              0.062391 
+V1DOSE-2         PVAL -10610.81224-10619.88375              9.07151  >   9.21030    2              0.010719 
+V1RACE-2         PVAL -10610.81224-10626.00043             15.18819  >  11.34500    3        YES!  0.001663 
+V1SEX-2          PVAL -10610.81224-10679.13889             68.32665  >   6.63490    1        YES!  1.39e-16 
+V1QUAT-2         PVAL -10610.81224-10612.05676              1.24453  >   6.63490    1              0.264600 
+V2AGE-5          PVAL -10610.81224-10614.34020              3.52797  >   6.63490    1              0.060342 
+V2DOSE-2         PVAL -10610.81224-10620.47623              9.66399  >   9.21030    2        YES!  0.007971 
+V2RACE-2         PVAL -10610.81224-10613.00347              2.19123  >  11.34500    3              0.533680 
+V2SEX-2          PVAL -10610.81224-10619.37290              8.56067  >   6.63490    1        YES!  0.003435 
+V2QUAT-2         PVAL -10610.81224-10619.87370              9.06146  >   6.63490    1        YES!  0.002610 
+VMAGE-5          PVAL -10610.81224-10617.08526              6.27302  >   6.63490    1              0.012259 
+VMRACE-2         PVAL -10610.81224-10617.04204              6.22981  >  11.34500    3              0.100950 
+VMSEX-2          PVAL -10610.81224-10611.57660              0.76436  >   6.63490    1              0.381970 
+VMQUAT-2         PVAL -10610.81224-10610.90470              0.09246  >   6.63490    1              0.761070 
+
+Parameter-covariate relation chosen in this forward step: V1-SEX-2
+CRITERION              PVAL < 0.01
+BASE_MODEL_OFV      -10610.81224
+CHOSEN_MODEL_OFV    -10679.13889
+Relations included after this step:
+CL      
+KM      
+V1      SEX-2   
+V2      
+VM      
+--------------------
+
+
+Taking a step forward in adaptive scope reduction scm after reducing scope with 15 relations : CL-SEX,CL-QUAT,KM-AGE,KM-RACE,KM-SEX,KM-QUAT,V1-AGE,V1-DOSE,V1-QUAT,V2-AGE,V2-RACE,VM-AGE,VM-RACE,VM-SEX,VM-QUAT
+Model directory /home/shared/Projects/PPSCM-PMX-1/Analysis/Model/Drug/run15asr_2.dir/rundir/reduced_forward_scm_dir2/m1
+
+MODEL            TEST     BASE OFV     NEW OFV         TEST OFV (DROP)    GOAL     dDF    SIGNIFICANT PVAL
+CLAGE-5          PVAL -10679.13889-10686.12418              6.98529  >   6.63490    1        YES!  0.008218 
+CLCRCL-5         PVAL -10679.13889-10702.00697             22.86808  >   6.63490    1        YES!  0.000002 
+CLDOSE-2         PVAL -10679.13889-10697.34579             18.20690  >   9.21030    2        YES!  0.000111 
+CLRACE-2         PVAL -10679.13889-10692.92739             13.78850  >  11.34500    3        YES!  0.003208 
+V1RACE-2         PVAL -10679.13889-10691.03150             11.89261  >  11.34500    3        YES!  0.007760 
+V2DOSE-2         PVAL -10679.13889-10689.22187             10.08299  >   9.21030    2        YES!  0.006464 
+V2SEX-2          PVAL -10679.13889-10680.92379              1.78490  >   6.63490    1              0.181550 
+V2QUAT-2         PVAL -10679.13889-10687.62340              8.48451  >   6.63490    1        YES!  0.003582 
+
+Parameter-covariate relation chosen in this forward step: CL-CRCL-5
+CRITERION              PVAL < 0.01
+BASE_MODEL_OFV      -10679.13889
+CHOSEN_MODEL_OFV    -10702.00697
+Relations included after this step:
+CL      CRCL-5  
+KM      
+V1      SEX-2   
+V2      
+VM      
+--------------------
+
+
+Taking a step forward in adaptive scope reduction scm after reducing scope with 1 relations : V2-SEX
+Model directory /home/shared/Projects/PPSCM-PMX-1/Analysis/Model/Drug/run15asr_2.dir/rundir/reduced_forward_scm_dir3/m1
+
+MODEL            TEST     BASE OFV     NEW OFV         TEST OFV (DROP)    GOAL     dDF    SIGNIFICANT PVAL
+CLAGE-5          PVAL -10702.00697-10702.12889              0.12192  >   6.63490    1              0.726960 
+CLDOSE-2         PVAL -10702.00697-10721.34202             19.33506  >   9.21030    2        YES!  0.000063 
+CLRACE-2         PVAL -10702.00697-10716.74693             14.73997  >  11.34500    3        YES!  0.002053 
+V1RACE-2         PVAL -10702.00697-10714.45677             12.44981  >  11.34500    3        YES!  0.005991 
+V2DOSE-2         PVAL -10702.00697-10712.36741             10.36045  >   9.21030    2        YES!  0.005627 
+V2QUAT-2         PVAL -10702.00697-10710.18989              8.18292  >   6.63490    1        YES!  0.004229 
+
+Parameter-covariate relation chosen in this forward step: CL-DOSE-2
+CRITERION              PVAL < 0.01
+BASE_MODEL_OFV      -10702.00697
+CHOSEN_MODEL_OFV    -10721.34202
+Relations included after this step:
+CL      CRCL-5  DOSE-2  
+KM      
+V1      SEX-2   
+V2      
+VM      
+--------------------
+
+
+Taking a step forward in adaptive scope reduction scm after reducing scope with 1 relations : CL-AGE
+Model directory /home/shared/Projects/PPSCM-PMX-1/Analysis/Model/Drug/run15asr_2.dir/rundir/reduced_forward_scm_dir4/m1
+
+MODEL            TEST     BASE OFV     NEW OFV         TEST OFV (DROP)    GOAL     dDF    SIGNIFICANT PVAL
+CLRACE-2         PVAL -10721.34202-10736.86380             15.52178  >  11.34500    3        YES!  0.001421 
+V1RACE-2         PVAL -10721.34202-10734.29424             12.95221  >  11.34500    3        YES!  0.004741 
+V2DOSE-2         PVAL -10721.34202-10727.57871              6.23668  >   9.21030    2              0.044230 
+V2QUAT-2         PVAL -10721.34202-10728.76785              7.42582  >   6.63490    1        YES!  0.006429 
+
+Parameter-covariate relation chosen in this forward step: CL-RACE-2
+CRITERION              PVAL < 0.01
+BASE_MODEL_OFV      -10721.34202
+CHOSEN_MODEL_OFV    -10736.86380
+Relations included after this step:
+CL      CRCL-5  DOSE-2  RACE-2  
+KM      
+V1      SEX-2   
+V2      
+VM      
+--------------------
+
+
+Taking a step forward in adaptive scope reduction scm after reducing scope with 1 relations : V2-DOSE
+Model directory /home/shared/Projects/PPSCM-PMX-1/Analysis/Model/Drug/run15asr_2.dir/rundir/reduced_forward_scm_dir5/m1
+
+MODEL            TEST     BASE OFV     NEW OFV         TEST OFV (DROP)    GOAL     dDF    SIGNIFICANT PVAL
+V1RACE-2         PVAL -10736.86380-10743.97571              7.11191  >  11.34500    3              0.068415 
+V2QUAT-2         PVAL -10736.86380-10744.14780              7.28400  >   6.63490    1        YES!  0.006957 
+
+Parameter-covariate relation chosen in this forward step: V2-QUAT-2
+CRITERION              PVAL < 0.01
+BASE_MODEL_OFV      -10736.86380
+CHOSEN_MODEL_OFV    -10744.14780
+Relations included after this step:
+CL      CRCL-5  DOSE-2  RACE-2  
+KM      
+V1      SEX-2   
+V2      QUAT-2  
+VM      
+--------------------
+
+
+Taking a step forward in adaptive scope reduction scm after reducing scope with 1 relations : V1-RACE
+
+
+No models to test, there are no relations to add.
+
+
+Model directory /home/shared/Projects/PPSCM-PMX-1/Analysis/Model/Drug/run15asr_2.dir/rundir/reduced_forward_scm_dir6/m1
+
+MODEL            TEST     BASE OFV     NEW OFV         TEST OFV (DROP)    GOAL     dDF    SIGNIFICANT PVAL
+
+--------------------
+
+
+Scope reduction requested in adaptive scope reduction scm after forward step 6 but
+no relation was chosen for inclusion by scm in this step:
+adaptive scope reduction scm forward search with reduced scope is done.
+Included relations so far:  CL-CRCL-5,CL-DOSE-2,CL-RACE-2,V1-SEX-2,V2-QUAT-2
+Re-testing 19 relations after adaptive scope reduction scm reduced forward search : CL-SEX,CL-QUAT,KM-AGE,KM-RACE,KM-SEX,KM-QUAT,V1-AGE,V1-DOSE,V1-QUAT,V2-AGE,V2-RACE,VM-AGE,VM-RACE,VM-SEX,VM-QUAT,V2-SEX,CL-AGE,V2-DOSE,V1-RACE
+Model directory /home/shared/Projects/PPSCM-PMX-1/Analysis/Model/Drug/run15asr_2.dir/rundir/readded_forward_scm_dir7/m1
+
+MODEL            TEST     BASE OFV     NEW OFV         TEST OFV (DROP)    GOAL     dDF    SIGNIFICANT PVAL
+CLAGE-5          PVAL -10744.14780-10744.44736              0.29956  >   6.63490    1              0.584160 
+CLSEX-2          PVAL -10744.14780-10809.78278             65.63498  >   6.63490    1        YES!  5.43e-16 
+CLQUAT-2         PVAL -10744.14780-10750.24673              6.09893  >   6.63490    1              0.013526 
+KMAGE-5          PVAL -10744.14780-10744.39215              0.24435  >   6.63490    1              0.621080 
+KMRACE-2         PVAL -10744.14780-10746.07361              1.92580  >  11.34500    3              0.587950 
+KMSEX-2          PVAL -10744.14780-10746.41405              2.26624  >   6.63490    1              0.132220 
+KMQUAT-2         PVAL -10744.14780-10753.58050              9.43269  >   6.63490    1        YES!  0.002132 
+V1AGE-5          PVAL -10744.14780-10744.71770              0.56990  >   6.63490    1              0.450300 
+V1DOSE-2         PVAL -10744.14780-10746.58817              2.44037  >   9.21030    2              0.295180 
+V1RACE-2         PVAL -10744.14780-10751.59392              7.44612  >  11.34500    3              0.058959 
+V1QUAT-2         PVAL -10744.14780-10749.23218              5.08438  >   6.63490    1              0.024142 
+V2AGE-5          PVAL -10744.14780-10745.56487              1.41706  >   6.63490    1              0.233890 
+V2DOSE-2         PVAL -10744.14780-10751.14216              6.99435  >   9.21030    2              0.030283 
+V2RACE-2         PVAL -10744.14780-10745.21360              1.06580  >  11.34500    3              0.785340 
+V2SEX-2          PVAL -10744.14780-10745.21235              1.06455  >   6.63490    1              0.302180 
+VMAGE-5          PVAL -10744.14780-10744.39293              0.24513  >   6.63490    1              0.620530 
+VMRACE-2         PVAL -10744.14780-10746.43759              2.28979  >  11.34500    3              0.514480 
+VMSEX-2          PVAL -10744.14780-10766.87194             22.72414  >   6.63490    1        YES!  0.000002 
+VMQUAT-2         PVAL -10744.14780-10751.67357              7.52577  >   6.63490    1        YES!  0.006082 
+
+Parameter-covariate relation chosen in this forward step: CL-SEX-2
+CRITERION              PVAL < 0.01
+BASE_MODEL_OFV      -10744.14780
+CHOSEN_MODEL_OFV    -10809.78278
+Relations included after this step:
+CL      CRCL-5  DOSE-2  RACE-2  SEX-2   
+KM      
+V1      SEX-2   
+V2      QUAT-2  
+VM      
+--------------------
+
+Model directory /home/shared/Projects/PPSCM-PMX-1/Analysis/Model/Drug/run15asr_2.dir/rundir/readded_forward_scm_dir7/scm_dir1/m1
+
+MODEL            TEST     BASE OFV     NEW OFV         TEST OFV (DROP)    GOAL     dDF    SIGNIFICANT PVAL
+CLAGE-5          PVAL -10809.78278-10810.71491              0.93213  >   6.63490    1              0.334310 
+CLQUAT-2         PVAL -10809.78278-10814.77215              4.98937  >   6.63490    1              0.025503 
+KMAGE-5          PVAL -10809.78278-10810.62869              0.84591  >   6.63490    1              0.357710 
+KMRACE-2         PVAL -10809.78278-10811.58282              1.80004  >  11.34500    3              0.614930 
+KMSEX-2          PVAL -10809.78278-10810.63390              0.85112  >   6.63490    1              0.356230 
+KMQUAT-2         PVAL -10809.78278-10816.52429              6.74151  >   6.63490    1        YES!  0.009420 
+V1AGE-5          PVAL -10809.78278-10811.20233              1.41955  >   6.63490    1              0.233480 
+V1DOSE-2         PVAL -10809.78278-10812.60608              2.82330  >   9.21030    2              0.243740 
+V1RACE-2         PVAL -10809.78278-10817.39454              7.61176  >  11.34500    3              0.054755 
+V1QUAT-2         PVAL -10809.78278-10815.58022              5.79744  >   6.63490    1              0.016050 
+V2AGE-5          PVAL -10809.78278-10811.79474              2.01196  >   6.63490    1              0.156060 
+V2DOSE-2         PVAL -10809.78278-10817.74242              7.95964  >   9.21030    2              0.018689 
+V2RACE-2         PVAL -10809.78278-10811.38357              1.60079  >  11.34500    3              0.659210 
+V2SEX-2          PVAL -10809.78278-10816.18807              6.40529  >   6.63490    1              0.011378 
+VMAGE-5          PVAL -10809.78278-10810.67298              0.89020  >   6.63490    1              0.345420 
+VMRACE-2         PVAL -10809.78278-10812.09280              2.31002  >  11.34500    3              0.510600 
+VMSEX-2          PVAL -10809.78278-10810.58752              0.80474  >   6.63490    1              0.369680 
+VMQUAT-2         PVAL -10809.78278-10816.90670              7.12392  >   6.63490    1        YES!  0.007606 
+
+Parameter-covariate relation chosen in this forward step: VM-QUAT-2
+CRITERION              PVAL < 0.01
+BASE_MODEL_OFV      -10809.78278
+CHOSEN_MODEL_OFV    -10816.90670
+Relations included after this step:
+CL      CRCL-5  DOSE-2  RACE-2  SEX-2   
+KM      
+V1      SEX-2   
+V2      QUAT-2  
+VM      QUAT-2  
+--------------------
+
+Model directory /home/shared/Projects/PPSCM-PMX-1/Analysis/Model/Drug/run15asr_2.dir/rundir/readded_forward_scm_dir7/scm_dir1/scm_dir1/m1
+
+MODEL            TEST     BASE OFV     NEW OFV         TEST OFV (DROP)    GOAL     dDF    SIGNIFICANT PVAL
+CLAGE-5          PVAL -10816.90670-10817.36039              0.45370  >   6.63490    1              0.500580 
+CLQUAT-2         PVAL -10816.90670-10817.74394              0.83724  >   6.63490    1              0.360190 
+KMAGE-5          PVAL -10816.90670-10817.31766              0.41096  >   6.63490    1              0.521480 
+KMRACE-2         PVAL -10816.90670-10817.85431              0.94761  >  11.34500    3              0.813930 
+KMSEX-2          PVAL -10816.90670-10817.31659              0.40989  >   6.63490    1              0.522020 
+KMQUAT-2         PVAL -10816.90670-10817.94822              1.04153  >   6.63490    1              0.307470 
+V1AGE-5          PVAL -10816.90670-10817.88530              0.97860  >   6.63490    1              0.322540 
+V1DOSE-2         PVAL -10816.90670-10819.54665              2.63995  >   9.21030    2              0.267140 
+V1RACE-2         PVAL -10816.90670-10824.02068              7.11398  >  11.34500    3              0.068352 
+V1QUAT-2         PVAL -10816.90670-10819.20793              2.30124  >   6.63490    1              0.129270 
+V2AGE-5          PVAL -10816.90670-10818.62570              1.71900  >   6.63490    1              0.189820 
+V2DOSE-2         PVAL -10816.90670-10825.18628              8.27958  >   9.21030    2              0.015926 
+V2RACE-2         PVAL -10816.90670-10818.07613              1.16943  >  11.34500    3              0.760350 
+V2SEX-2          PVAL -10816.90670-10822.30228              5.39559  >   6.63490    1              0.020188 
+VMAGE-5          PVAL -10816.90670-10817.36940              0.46271  >   6.63490    1              0.496360 
+VMRACE-2         PVAL -10816.90670-10818.48888              1.58218  >  11.34500    3              0.663440 
+VMSEX-2          PVAL -10816.90670-10817.41651              0.50981  >   6.63490    1              0.475220 
+
+--------------------
+
+
+scmplus forward search is done.
+Starting scmplus backward search
+Model directory /home/shared/Projects/PPSCM-PMX-1/Analysis/Model/Drug/run15asr_2.dir/rundir/backward_scm_dir10/m1
+
+MODEL            TEST     BASE OFV     NEW OFV         TEST OFV (DROP)    GOAL     dDF  INSIGNIFICANT PVAL
+CLCRCL-1         PVAL -10816.90670-10782.26709            -34.63960  > -15.13700   -1              3.97e-09 
+CLDOSE-1         PVAL -10816.90670-10796.77643            -20.13026  > -18.42100   -2              0.000043 
+CLRACE-1         PVAL -10816.90670-10797.36223            -19.54447  > -21.10800   -3        YES!  0.000211 
+CLSEX-1          PVAL -10816.90670-10751.12797            -65.77873  > -15.13700   -1              5.05e-16 
+V1SEX-1          PVAL -10816.90670-10695.77257           -121.13413  > -15.13700   -1              3.57e-28 
+V2QUAT-1         PVAL -10816.90670-10803.01151            -13.89519  > -15.13700   -1        YES!  0.000193 
+VMQUAT-1         PVAL -10816.90670-10810.62442             -6.28228  > -15.13700   -1        YES!  0.012195 
+
+Parameter-covariate relation chosen in this backward step: VM-QUAT-1
+CRITERION              PVAL > 0.0001
+BASE_MODEL_OFV      -10816.90670
+CHOSEN_MODEL_OFV    -10810.62442
+Relations included after this step:
+CL      CRCL-5  DOSE-2  RACE-2  SEX-2   
+KM      
+V1      SEX-2   
+V2      QUAT-2  
+--------------------
+
+Model directory /home/shared/Projects/PPSCM-PMX-1/Analysis/Model/Drug/run15asr_2.dir/rundir/backward_scm_dir10/scm_dir1/m1
+
+MODEL            TEST     BASE OFV     NEW OFV         TEST OFV (DROP)    GOAL     dDF  INSIGNIFICANT PVAL
+CLCRCL-1         PVAL -10810.62442-10777.09858            -33.52584  > -15.13700   -1              7.03e-09 
+CLDOSE-1         PVAL -10810.62442-10791.54621            -19.07821  > -18.42100   -2              0.000072 
+CLRACE-1         PVAL -10810.62442-10789.54850            -21.07592  > -21.10800   -3        YES!  0.000102 
+CLSEX-1          PVAL -10810.62442-10741.64756            -68.97686  > -15.13700   -1              9.96e-17 
+V1SEX-1          PVAL -10810.62442-10689.17295           -121.45147  > -15.13700   -1              3.04e-28 
+V2QUAT-1         PVAL -10810.62442-10802.97823             -7.64619  > -15.13700   -1        YES!  0.005689 
+
+Parameter-covariate relation chosen in this backward step: V2-QUAT-1
+CRITERION              PVAL > 0.0001
+BASE_MODEL_OFV      -10810.62442
+CHOSEN_MODEL_OFV    -10802.97823
+Relations included after this step:
+CL      CRCL-5  DOSE-2  RACE-2  SEX-2   
+KM      
+V1      SEX-2   
+VM      
+--------------------
+
+Model directory /home/shared/Projects/PPSCM-PMX-1/Analysis/Model/Drug/run15asr_2.dir/rundir/backward_scm_dir10/scm_dir1/scm_dir1/m1
+
+MODEL            TEST     BASE OFV     NEW OFV         TEST OFV (DROP)    GOAL     dDF  INSIGNIFICANT PVAL
+CLCRCL-1         PVAL -10802.97823-10767.50150            -35.47673  > -15.13700   -1              2.58e-09 
+CLDOSE-1         PVAL -10802.97823-10783.66540            -19.31284  > -18.42100   -2              0.000064 
+CLRACE-1         PVAL -10802.97823-10782.58130            -20.39694  > -21.10800   -3        YES!  0.000140 
+CLSEX-1          PVAL -10802.97823-10735.11312            -67.86511  > -15.13700   -1              1.75e-16 
+V1SEX-1          PVAL -10802.97823-10681.95480           -121.02343  > -15.13700   -1              3.78e-28 
+
+Parameter-covariate relation chosen in this backward step: CL-RACE-1
+CRITERION              PVAL > 0.0001
+BASE_MODEL_OFV      -10802.97823
+CHOSEN_MODEL_OFV    -10782.58130
+Relations included after this step:
+CL      CRCL-5  DOSE-2  SEX-2   
+KM      
+V1      SEX-2   
+V2      
+VM      
+--------------------
+
+Model directory /home/shared/Projects/PPSCM-PMX-1/Analysis/Model/Drug/run15asr_2.dir/rundir/backward_scm_dir10/scm_dir1/scm_dir1/scm_dir1/m1
+
+MODEL            TEST     BASE OFV     NEW OFV         TEST OFV (DROP)    GOAL     dDF  INSIGNIFICANT PVAL
+CLCRCL-1         PVAL -10782.58130-10751.65668            -30.92462  > -15.13700   -1              2.68e-08 
+CLDOSE-1         PVAL -10782.58130-10763.72255            -18.85875  > -18.42100   -2              0.000080 
+CLSEX-1          PVAL -10782.58130-10721.34158            -61.23971  > -15.13700   -1              5.05e-15 
+V1SEX-1          PVAL -10782.58130-10661.82288           -120.75842  > -15.13700   -1              4.32e-28 
+
+--------------------
+
+
+scmplus backward search is done.
+

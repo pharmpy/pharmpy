@@ -1,0 +1,4 @@
+MODEL            TEST     BASE OFV     NEW OFV         TEST OFV (DROP)    GOAL     dDF  INSIGNIFICANT PVAL
+CLWGT-1          PVAL    653.74502   657.31367             -3.56865  >  -6.63490   -1        YES!  0.058880 
+VCV2-1           PVAL    653.74502   654.03358             -0.28856  >  -6.63490   -1        YES!  0.591150 
+VWGT-1           PVAL    653.74502   729.06993            -75.32491  >  -6.63490   -1              3.99e-18 

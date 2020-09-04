@@ -1,0 +1,154 @@
+Model directory /home/kajsa/sandbox/asrscm/scm_dir7/m1
+
+MODEL            TEST     BASE OFV     NEW OFV         TEST OFV (DROP)    GOAL     dDF    SIGNIFICANT PVAL
+CLAPGR-2         PVAL    725.60200   705.47024             20.13176  >   9.41360    9        YES!  0.017116 
+CLCV1-2          PVAL    725.60200   722.68945              2.91255  >   0.70833    1        YES!  0.087893 
+CLWGT-2          PVAL    725.60200   672.98298             52.61902  >   0.70833    1        YES!  4.05e-13 
+VCV2-2           PVAL    725.60200   724.65062              0.95138  >   0.70833    1        YES!  0.329370 
+VCVD1-2          PVAL    725.60200   717.75649              7.84551  >   0.70833    1        YES!  0.005095 
+VWGT-2           PVAL    725.60200   629.27205             96.32995  >   0.70833    1        YES!  9.72e-23 
+
+Parameter-covariate relation chosen in this forward step: V-WGT-2
+CRITERION              PVAL < 0.4
+BASE_MODEL_OFV         725.60200
+CHOSEN_MODEL_OFV       629.27205
+Relations included after this step:
+CL      
+V       WGT-2   
+--------------------
+
+Model directory /home/kajsa/sandbox/asrscm/scm_dir7/forward_scm_dir1/m1
+
+MODEL            TEST     BASE OFV     NEW OFV         TEST OFV (DROP)    GOAL     dDF    SIGNIFICANT PVAL
+CLAPGR-2         PVAL    629.27205   610.70039             18.57166  >   9.41360    9        YES!  0.029092 
+CLCV1-2          PVAL    629.27205   625.34729              3.92477  >   0.70833    1        YES!  0.047580 
+CLWGT-2          PVAL    629.27205   590.06016             39.21190  >   0.70833    1        YES!  3.80e-10 
+VCV2-2           PVAL    629.27205   626.61183              2.66023  >   0.70833    1        YES!  0.102890 
+VCVD1-2          PVAL    629.27205   625.89605              3.37601  >   0.70833    1        YES!  0.066152 
+
+Parameter-covariate relation chosen in this forward step: CL-WGT-2
+CRITERION              PVAL < 0.4
+BASE_MODEL_OFV         629.27205
+CHOSEN_MODEL_OFV       590.06016
+Relations included after this step:
+CL      WGT-2   
+V       WGT-2   
+--------------------
+
+Model directory /home/kajsa/sandbox/asrscm/scm_dir7/forward_scm_dir1/scm_dir1/m1
+
+MODEL            TEST     BASE OFV     NEW OFV         TEST OFV (DROP)    GOAL     dDF    SIGNIFICANT PVAL
+CLAPGR-2         PVAL    590.06016   580.39890              9.66125  >   9.41360    9        YES!  0.378600 
+CLCV1-2          PVAL    590.06016   587.15896              2.90120  >   0.70833    1        YES!  0.088514 
+VCV2-2           PVAL    590.06016   587.20249              2.85767  >   0.70833    1        YES!  0.090939 
+VCVD1-2          PVAL    590.06016   588.32319              1.73696  >   0.70833    1        YES!  0.187520 
+
+Parameter-covariate relation chosen in this forward step: CL-CV1-2
+CRITERION              PVAL < 0.4
+BASE_MODEL_OFV         590.06016
+CHOSEN_MODEL_OFV       587.15896
+Relations included after this step:
+CL      CV1-2   WGT-2   
+V       WGT-2   
+--------------------
+
+Model directory /home/kajsa/sandbox/asrscm/scm_dir7/forward_scm_dir1/scm_dir1/scm_dir1/m1
+
+MODEL            TEST     BASE OFV     NEW OFV         TEST OFV (DROP)    GOAL     dDF    SIGNIFICANT PVAL
+CLAPGR-2         PVAL    587.15896   577.70035              9.45861  >   9.41360    9        YES!  0.396060 
+VCV2-2           PVAL    587.15896   584.15462              3.00434  >   0.70833    1        YES!  0.083042 
+VCVD1-2          PVAL    587.15896   585.20932              1.94963  >   0.70833    1        YES!  0.162630 
+
+Parameter-covariate relation chosen in this forward step: V-CV2-2
+CRITERION              PVAL < 0.4
+BASE_MODEL_OFV         587.15896
+CHOSEN_MODEL_OFV       584.15462
+Relations included after this step:
+CL      CV1-2   WGT-2   
+V       CV2-2   WGT-2   
+--------------------
+
+Model directory /home/kajsa/sandbox/asrscm/scm_dir7/forward_scm_dir1/scm_dir1/scm_dir1/scm_dir1/m1
+
+MODEL            TEST     BASE OFV     NEW OFV         TEST OFV (DROP)    GOAL     dDF    SIGNIFICANT PVAL
+CLAPGR-2         PVAL    584.15462   574.94565              9.20897  >   9.41360    9              0.418210 
+VCVD1-2          PVAL    584.15462   582.97276              1.18187  >   0.70833    1        YES!  0.276980 
+
+Parameter-covariate relation chosen in this forward step: V-CVD1-2
+CRITERION              PVAL < 0.4
+BASE_MODEL_OFV         584.15462
+CHOSEN_MODEL_OFV       582.97276
+Relations included after this step:
+CL      CV1-2   WGT-2   
+V       CV2-2   CVD1-2  WGT-2   
+--------------------
+
+Model directory /home/kajsa/sandbox/asrscm/scm_dir7/forward_scm_dir1/scm_dir1/scm_dir1/scm_dir1/scm_dir1/m1
+
+MODEL            TEST     BASE OFV     NEW OFV         TEST OFV (DROP)    GOAL     dDF    SIGNIFICANT PVAL
+CLAPGR-2         PVAL    582.97276   573.90571              9.06705  >   9.41360    9              0.431110 
+
+--------------------
+
+
+--------------------
+Forward search done. Starting backward search inside forward top level directory
+Model directory /home/kajsa/sandbox/asrscm/scm_dir7/backward_scm_dir1/m1
+
+MODEL            TEST     BASE OFV     NEW OFV         TEST OFV (DROP)    GOAL     dDF  INSIGNIFICANT PVAL
+CLCV1-1          PVAL    582.97276   586.17609             -3.20334  > -10.82800   -1        YES!  0.073488 
+CLWGT-1          PVAL    582.97276   619.96510            -36.99235  > -10.82800   -1              1.19e-09 
+VCV2-1           PVAL    582.97276   585.20932             -2.23657  > -10.82800   -1        YES!  0.134780 
+VCVD1-1          PVAL    582.97276   584.15462             -1.18187  > -10.82800   -1        YES!  0.276980 
+VWGT-1           PVAL    582.97276   662.76425            -79.79150  > -10.82800   -1              4.16e-19 
+
+Parameter-covariate relation chosen in this backward step: V-CVD1-1
+CRITERION              PVAL > 0.001
+BASE_MODEL_OFV         582.97276
+CHOSEN_MODEL_OFV       584.15462
+Relations included after this step:
+CL      CV1-2   WGT-2   
+V       CV2-2   WGT-2   
+--------------------
+
+Model directory /home/kajsa/sandbox/asrscm/scm_dir7/backward_scm_dir1/scm_dir1/m1
+
+MODEL            TEST     BASE OFV     NEW OFV         TEST OFV (DROP)    GOAL     dDF  INSIGNIFICANT PVAL
+CLCV1-1          PVAL    584.15462   587.20249             -3.04787  > -10.82800   -1        YES!  0.080843 
+CLWGT-1          PVAL    584.15462   622.67113            -38.51651  > -10.82800   -1              5.43e-10 
+VCV2-1           PVAL    584.15462   587.15896             -3.00434  > -10.82800   -1        YES!  0.083042 
+VWGT-1           PVAL    584.15462   669.56839            -85.41377  > -10.82800   -1              2.42e-20 
+
+Parameter-covariate relation chosen in this backward step: V-CV2-1
+CRITERION              PVAL > 0.001
+BASE_MODEL_OFV         584.15462
+CHOSEN_MODEL_OFV       587.15896
+Relations included after this step:
+CL      CV1-2   WGT-2   
+V       WGT-2   
+--------------------
+
+Model directory /home/kajsa/sandbox/asrscm/scm_dir7/backward_scm_dir1/scm_dir1/scm_dir1/m1
+
+MODEL            TEST     BASE OFV     NEW OFV         TEST OFV (DROP)    GOAL     dDF  INSIGNIFICANT PVAL
+CLCV1-1          PVAL    587.15896   590.06016             -2.90120  > -10.82800   -1        YES!  0.088514 
+CLWGT-1          PVAL    587.15896   625.34729            -38.18833  > -10.82800   -1              6.42e-10 
+VWGT-1           PVAL    587.15896   670.64404            -83.48509  > -10.82800   -1              6.42e-20 
+
+Parameter-covariate relation chosen in this backward step: CL-CV1-1
+CRITERION              PVAL > 0.001
+BASE_MODEL_OFV         587.15896
+CHOSEN_MODEL_OFV       590.06016
+Relations included after this step:
+CL      WGT-2   
+V       WGT-2   
+--------------------
+
+Model directory /home/kajsa/sandbox/asrscm/scm_dir7/backward_scm_dir1/scm_dir1/scm_dir1/scm_dir1/m1
+
+MODEL            TEST     BASE OFV     NEW OFV         TEST OFV (DROP)    GOAL     dDF  INSIGNIFICANT PVAL
+CLWGT-1          PVAL    590.06016   629.27205            -39.21190  > -10.82800   -1              3.80e-10 
+VWGT-1           PVAL    590.06016   672.98298            -82.92282  > -10.82800   -1              8.53e-20 
+
+--------------------
+

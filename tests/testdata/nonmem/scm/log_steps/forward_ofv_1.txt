@@ -1,0 +1,7 @@
+MODEL      TEST NAME    BASE VAL     NEW VAL                                   TEST VAL (DROP)      GOAL   SIGNIFICANT
+CLAPGR-2       OFV     725.60200   705.46995                                       20.13205  >  16.92000      YES!  
+CLCV1-2        OFV     725.60200   722.68945                                        2.91255  >   2.84000      YES!  
+CLWGT-2        OFV     725.60200   672.98298                                       52.61902  >   2.84000      YES!  
+VCV2-2         OFV     725.60200   724.65062                                        0.95138  >   2.84000
+VCVD1-2        OFV     725.60200   717.75649                                        7.84551  >   2.84000      YES!  
+VWGT-2         OFV     725.60200   629.27205                                       96.32995  >   2.84000      YES!  

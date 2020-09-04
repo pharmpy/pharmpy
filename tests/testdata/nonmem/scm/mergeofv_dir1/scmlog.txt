@@ -1,0 +1,458 @@
+Model directory /home/shared/Projects/SOAP/SOAP-INTRO-PMX-1/Analysis/Model/SCM/run1080scm_3/m1
+
+MODEL            TEST     BASE OFV     NEW OFV         TEST OFV (DROP)    GOAL     dDF    SIGNIFICANT PVAL
+PHAAGE-5         PVAL 219210.90878219167.36222             43.54656  >   6.63490    1        YES!  4.14e-11 
+PHABMI-5         PVAL 219210.90878219171.47564             39.43314  >   6.63490    1        YES!  3.39e-10 
+PHACYCLL-5       PVAL 219210.90878219203.94536              6.96342  >   6.63490    1        YES!  0.008319 
+PHADIAG-2        PVAL 219210.90878219206.01527              4.89351  >   6.63490    1              0.026958 
+PHADISDUR-5      PVAL 219210.90878219032.86056            178.04822  >   6.63490    1        YES!  1.29e-40 
+PHAGEOREG-2      PVAL 219210.90878219208.47277              2.43601  >   6.63490    1              0.118580 
+PHALBEST-5       PVAL 219210.90878    FAILED                 FAILED  >   6.63490    1                    999
+PHAMENS-2        PVAL 219210.90878217228.28027           1982.62851  >   6.63490    1        YES!  0.00e+00 
+PHAWT-5          PVAL 219210.90878219210.64510              0.26368  >   6.63490    1              0.607600 
+PHIAAGE-5        PVAL 219210.90878219209.64720              1.26158  >   6.63490    1              0.261350 
+PHIABMI-5        PVAL 219210.90878219210.90042              0.00836  >   6.63490    1              0.927160 
+PHIACYCLL-5      PVAL 219210.90878219210.87571              0.03307  >   6.63490    1              0.855690 
+PHIADIAG-2       PVAL 219210.90878219210.39904              0.50974  >   6.63490    1              0.475250 
+PHIADISDUR-5     PVAL 219210.90878219283.89038            -72.98160  >   6.63490    1                   9999
+PHIAGEOREG-2     PVAL 219210.90878219205.80502              5.10376  >   6.63490    1              0.023874 
+PHIALBEST-5      PVAL 219210.90878219209.45353              1.45525  >   6.63490    1              0.227690 
+PHIAMENS-2       PVAL 219210.90878217640.53278           1570.37600  >   6.63490    1        YES!  0.00e+00 
+PHIAWT-5         PVAL 219210.90878219210.89225              0.01653  >   6.63490    1              0.897710 
+PHIBAGE-5        PVAL 219210.90878219210.42345              0.48533  >   6.63490    1              0.486020 
+PHIBBMI-5        PVAL 219210.90878219210.00733              0.90145  >   6.63490    1              0.342390 
+PHIBCYCLL-5      PVAL 219210.90878219210.29158              0.61720  >   6.63490    1              0.432090 
+PHIBDIAG-2       PVAL 219210.90878219207.16132              3.74746  >   6.63490    1              0.052888 
+PHIBDISDUR-5     PVAL 219210.90878219210.87192              0.03686  >   6.63490    1              0.847760 
+PHIBGEOREG-2     PVAL 219210.90878219175.53139             35.37739  >   6.63490    1        YES!  2.72e-09 
+PHIBLBEST-5      PVAL 219210.90878219210.63347              0.27531  >   6.63490    1              0.599790 
+PHIBMENS-2       PVAL 219210.90878215961.46277           3249.44601  >   6.63490    1        YES!  0.00e+00 
+PHIBWT-5         PVAL 219210.90878219208.33763              2.57115  >   6.63490    1              0.108830 
+SLPAGE-5         PVAL 219210.90878219210.86953              0.03925  >   6.63490    1              0.842960 
+SLPBMI-5         PVAL 219210.90878219209.24213              1.66665  >   6.63490    1              0.196710 
+SLPCPL-5         PVAL 219210.90878219210.90597              0.00281  >   6.63490    1              0.957750 
+SLPGEOREG-2      PVAL 219210.90878219206.75208              4.15670  >   6.63490    1              0.041470 
+SLPLBEST-5       PVAL 219210.90878219209.38601              1.52277  >   6.63490    1              0.217200 
+SLPMENS-2        PVAL 219210.90878219109.87763            101.03115  >   6.63490    1        YES!  9.05e-24 
+SLPWT-5          PVAL 219210.90878219202.60969              8.29909  >   6.63490    1        YES!  0.003967 
+
+Parameter-covariate relation chosen in this forward step: PHIB-MENS-2
+CRITERION              PVAL < 0.01
+BASE_MODEL_OFV      219210.90878
+CHOSEN_MODEL_OFV    215961.46277
+Relations included after this step:
+PHA     
+PHIA    
+PHIB    MENS-2  
+SLP     
+--------------------
+
+Model directory /home/shared/Projects/SOAP/SOAP-INTRO-PMX-1/Analysis/Model/SCM/run1080scm_3/forward_scm_dir1/m1
+
+MODEL            TEST     BASE OFV     NEW OFV         TEST OFV (DROP)    GOAL     dDF    SIGNIFICANT PVAL
+PHAAGE-5         PVAL 215961.46277215919.73434             41.72843  >   6.63490    1        YES!  1.05e-10 
+PHABMI-5         PVAL 215961.46277215925.35878             36.10399  >   6.63490    1        YES!  1.87e-09 
+PHACYCLL-5       PVAL 215961.46277215946.60493             14.85784  >   6.63490    1        YES!  0.000116 
+PHADIAG-2        PVAL 215961.46277215957.17470              4.28807  >   6.63490    1              0.038381 
+PHADISDUR-5      PVAL 215961.46277215767.69073            193.77204  >   6.63490    1        YES!  4.78e-44 
+PHAGEOREG-2      PVAL 215961.46277215958.92309              2.53968  >   6.63490    1              0.111020 
+PHALBEST-5       PVAL 215961.46277    FAILED                 FAILED  >   6.63490    1                    999
+PHAMENS-2        PVAL 215961.46277215748.07194            213.39083  >   6.63490    1        YES!  2.50e-48 
+PHAWT-5          PVAL 215961.46277215960.99335              0.46942  >   6.63490    1              0.493250 
+PHIAAGE-5        PVAL 215961.46277215960.58933              0.87344  >   6.63490    1              0.350010 
+PHIABMI-5        PVAL 215961.46277215961.45882              0.00395  >   6.63490    1              0.949860 
+PHIACYCLL-5      PVAL 215961.46277215961.45315              0.00962  >   6.63490    1              0.921870 
+PHIADIAG-2       PVAL 215961.46277215960.85879              0.60398  >   6.63490    1              0.437060 
+PHIADISDUR-5     PVAL 215961.46277216031.45454            -69.99177  >   6.63490    1                   9999
+PHIAGEOREG-2     PVAL 215961.46277215954.27809              7.18468  >   6.63490    1        YES!  0.007353 
+PHIALBEST-5      PVAL 215961.46277215959.13408              2.32869  >   6.63490    1              0.127010 
+PHIAMENS-2       PVAL 215961.46277215938.70508             22.75769  >   6.63490    1        YES!  0.000002 
+PHIAWT-5         PVAL 215961.46277215961.44877              0.01400  >   6.63490    1              0.905820 
+PHIBAGE-5        PVAL 215961.46277215960.80872              0.65405  >   6.63490    1              0.418670 
+PHIBBMI-5        PVAL 215961.46277215959.80194              1.66083  >   6.63490    1              0.197490 
+PHIBCYCLL-5      PVAL 215961.46277215960.54964              0.91313  >   6.63490    1              0.339290 
+PHIBDIAG-2       PVAL 215961.46277215959.04270              2.42006  >   6.63490    1              0.119790 
+PHIBDISDUR-5     PVAL 215961.46277215960.56814              0.89463  >   6.63490    1              0.344230 
+PHIBGEOREG-2     PVAL 215961.46277215896.31417             65.14859  >   6.63490    1        YES!  6.95e-16 
+PHIBLBEST-5      PVAL 215961.46277215961.37156              0.09121  >   6.63490    1              0.762650 
+PHIBWT-5         PVAL 215961.46277215957.11520              4.34756  >   6.63490    1              0.037062 
+SLPAGE-5         PVAL 215961.46277215961.42000              0.04277  >   6.63490    1              0.836160 
+SLPBMI-5         PVAL 215961.46277215958.79503              2.66774  >   6.63490    1              0.102400 
+SLPCPL-5         PVAL 215961.46277215944.76653             16.69624  >   6.63490    1        YES!  0.000044 
+SLPGEOREG-2      PVAL 215961.46277215951.67138              9.79139  >   6.63490    1        YES!  0.001753 
+SLPLBEST-5       PVAL 215961.46277215951.66758              9.79519  >   6.63490    1        YES!  0.001750 
+SLPMENS-2        PVAL 215961.46277215950.18079             11.28198  >   6.63490    1        YES!  0.000783 
+SLPWT-5          PVAL 215961.46277215953.31709              8.14568  >   6.63490    1        YES!  0.004316 
+
+Parameter-covariate relation chosen in this forward step: PHA-MENS-2
+CRITERION              PVAL < 0.01
+BASE_MODEL_OFV      215961.46277
+CHOSEN_MODEL_OFV    215748.07194
+Relations included after this step:
+PHA     MENS-2  
+PHIA    
+PHIB    MENS-2  
+SLP     
+--------------------
+
+Model directory /home/shared/Projects/SOAP/SOAP-INTRO-PMX-1/Analysis/Model/SCM/run1080scm_3/forward_scm_dir1/scm_dir1/m1
+
+MODEL            TEST     BASE OFV     NEW OFV         TEST OFV (DROP)    GOAL     dDF    SIGNIFICANT PVAL
+PHAAGE-5         PVAL 215748.07194215717.41777             30.65417  >   6.63490    1        YES!  3.08e-08 
+PHABMI-5         PVAL 215748.07194215693.09456             54.97738  >   6.63490    1        YES!  1.22e-13 
+PHACYCLL-5       PVAL 215748.07194215747.25079              0.82114  >   6.63490    1              0.364850 
+PHADIAG-2        PVAL 215748.07194215747.90979              0.16215  >   6.63490    1              0.687190 
+PHADISDUR-5      PVAL 215748.07194215570.57352            177.49842  >   6.63490    1        YES!  1.70e-40 
+PHAGEOREG-2      PVAL 215748.07194215713.89236             34.17957  >   6.63490    1        YES!  5.03e-09 
+PHALBEST-5       PVAL 215748.07194    FAILED                 FAILED  >   6.63490    1                    999
+PHAWT-5          PVAL 215748.07194215735.74864             12.32330  >   6.63490    1        YES!  0.000447 
+PHIAAGE-5        PVAL 215748.07194215747.68654              0.38540  >   6.63490    1              0.534730 
+PHIABMI-5        PVAL 215748.07194215747.39970              0.67224  >   6.63490    1              0.412270 
+PHIACYCLL-5      PVAL 215748.07194215747.81072              0.26122  >   6.63490    1              0.609290 
+PHIADIAG-2       PVAL 215748.07194215747.84227              0.22967  >   6.63490    1              0.631770 
+PHIADISDUR-5     PVAL 215748.07194215801.52677            -53.45484  >   6.63490    1                   9999
+PHIAGEOREG-2     PVAL 215748.07194215746.96113              1.11081  >   6.63490    1              0.291910 
+PHIALBEST-5      PVAL 215748.07194215745.66648              2.40545  >   6.63490    1              0.120910 
+PHIAMENS-2       PVAL 215748.07194215637.53343            110.53850  >   6.63490    1        YES!  7.47e-26 
+PHIAWT-5         PVAL 215748.07194215747.37863              0.69331  >   6.63490    1              0.405040 
+PHIBAGE-5        PVAL 215748.07194215747.34575              0.72619  >   6.63490    1              0.394120 
+PHIBBMI-5        PVAL 215748.07194215746.77685              1.29509  >   6.63490    1              0.255110 
+PHIBCYCLL-5      PVAL 215748.07194215747.19915              0.87279  >   6.63490    1              0.350190 
+PHIBDIAG-2       PVAL 215748.07194215745.59932              2.47261  >   6.63490    1              0.115850 
+PHIBDISDUR-5     PVAL 215748.07194215747.83938              0.23256  >   6.63490    1              0.629630 
+PHIBGEOREG-2     PVAL 215748.07194215695.23970             52.83223  >   6.63490    1        YES!  3.63e-13 
+PHIBLBEST-5      PVAL 215748.07194215747.86372              0.20821  >   6.63490    1              0.648170 
+PHIBWT-5         PVAL 215748.07194215744.54745              3.52448  >   6.63490    1              0.060469 
+SLPAGE-5         PVAL 215748.07194215748.03339              0.03854  >   6.63490    1              0.844350 
+SLPBMI-5         PVAL 215748.07194215748.07576             -0.00382  >   6.63490    1                   9999
+SLPCPL-5         PVAL 215748.07194215722.35953             25.71241  >   6.63490    1        YES!  3.96e-07 
+SLPGEOREG-2      PVAL 215748.07194215735.24824             12.82370  >   6.63490    1        YES!  0.000342 
+SLPLBEST-5       PVAL 215748.07194215742.10016              5.97177  >   6.63490    1              0.014537 
+SLPMENS-2        PVAL 215748.07194215748.02857              0.04337  >   6.63490    1              0.835040 
+SLPWT-5          PVAL 215748.07194215739.91173              8.16021  >   6.63490    1        YES!  0.004282 
+
+Parameter-covariate relation chosen in this forward step: PHA-DISDUR-5
+CRITERION              PVAL < 0.01
+BASE_MODEL_OFV      215748.07194
+CHOSEN_MODEL_OFV    215570.57352
+Relations included after this step:
+PHA     DISDUR-5MENS-2  
+PHIA    
+PHIB    MENS-2  
+SLP     
+--------------------
+
+Model directory /home/shared/Projects/SOAP/SOAP-INTRO-PMX-1/Analysis/Model/SCM/run1080scm_3/forward_scm_dir1/scm_dir1/scm_dir1/m1
+
+MODEL            TEST     BASE OFV     NEW OFV         TEST OFV (DROP)    GOAL     dDF    SIGNIFICANT PVAL
+PHAAGE-5         PVAL 215570.57352215569.26930              1.30422  >   6.63490    1              0.253440 
+PHABMI-5         PVAL 215570.57352215497.35071             73.22281  >   6.63490    1        YES!  1.16e-17 
+PHACYCLL-5       PVAL 215570.57352215570.31622              0.25730  >   6.63490    1              0.611980 
+PHADIAG-2        PVAL 215570.57352215564.64422              5.92930  >   6.63490    1              0.014891 
+PHAGEOREG-2      PVAL 215570.57352215558.89963             11.67389  >   6.63490    1        YES!  0.000634 
+PHALBEST-5       PVAL 215570.57352    FAILED                 FAILED  >   6.63490    1                    999
+PHAWT-5          PVAL 215570.57352215534.21301             36.36051  >   6.63490    1        YES!  1.64e-09 
+PHIAAGE-5        PVAL 215570.57352215570.30583              0.26769  >   6.63490    1              0.604890 
+PHIABMI-5        PVAL 215570.57352215570.19559              0.37793  >   6.63490    1              0.538720 
+PHIACYCLL-5      PVAL 215570.57352215570.55234              0.02118  >   6.63490    1              0.884300 
+PHIADIAG-2       PVAL 215570.57352215570.24173              0.33179  >   6.63490    1              0.564610 
+PHIADISDUR-5     PVAL 215570.57352215643.58868            -73.01516  >   6.63490    1                   9999
+PHIAGEOREG-2     PVAL 215570.57352215569.10007              1.47345  >   6.63490    1              0.224800 
+PHIALBEST-5      PVAL 215570.57352215568.46853              2.10499  >   6.63490    1              0.146820 
+PHIAMENS-2       PVAL 215570.57352215486.23440             84.33912  >   6.63490    1        YES!  4.17e-20 
+PHIAWT-5         PVAL 215570.57352215570.11962              0.45390  >   6.63490    1              0.500490 
+PHIBAGE-5        PVAL 215570.57352215569.55748              1.01604  >   6.63490    1              0.313460 
+PHIBBMI-5        PVAL 215570.57352215569.38912              1.18440  >   6.63490    1              0.276460 
+PHIBCYCLL-5      PVAL 215570.57352215569.40730              1.16622  >   6.63490    1              0.280180 
+PHIBDIAG-2       PVAL 215570.57352215568.61153              1.96199  >   6.63490    1              0.161300 
+PHIBDISDUR-5     PVAL 215570.57352215569.90242              0.67110  >   6.63490    1              0.412670 
+PHIBGEOREG-2     PVAL 215570.57352215515.31578             55.25774  >   6.63490    1        YES!  1.06e-13 
+PHIBLBEST-5      PVAL 215570.57352215570.39133              0.18219  >   6.63490    1              0.669500 
+PHIBWT-5         PVAL 215570.57352215567.48550              3.08802  >   6.63490    1              0.078871 
+SLPAGE-5         PVAL 215570.57352215569.13280              1.44072  >   6.63490    1              0.230020 
+SLPBMI-5         PVAL 215570.57352215569.64872              0.92480  >   6.63490    1              0.336220 
+SLPCPL-5         PVAL 215570.57352215570.34880              0.22471  >   6.63490    1              0.635470 
+SLPGEOREG-2      PVAL 215570.57352215549.30401             21.26951  >   6.63490    1        YES!  0.000004 
+SLPLBEST-5       PVAL 215570.57352215565.96965              4.60387  >   6.63490    1              0.031900 
+SLPMENS-2        PVAL 215570.57352215570.57331              0.00021  >   6.63490    1              0.988440 
+SLPWT-5          PVAL 215570.57352215565.13341              5.44011  >   6.63490    1              0.019679 
+
+Parameter-covariate relation chosen in this forward step: PHIA-MENS-2
+CRITERION              PVAL < 0.01
+BASE_MODEL_OFV      215570.57352
+CHOSEN_MODEL_OFV    215486.23440
+Relations included after this step:
+PHA     DISDUR-5MENS-2  
+PHIA    MENS-2  
+PHIB    MENS-2  
+SLP     
+--------------------
+
+Model directory /home/shared/Projects/SOAP/SOAP-INTRO-PMX-1/Analysis/Model/SCM/run1080scm_3/forward_scm_dir1/scm_dir1/scm_dir1/scm_dir1/m1
+
+MODEL            TEST     BASE OFV     NEW OFV         TEST OFV (DROP)    GOAL     dDF    SIGNIFICANT PVAL
+PHAAGE-5         PVAL 215486.23440215484.27496              1.95943  >   6.63490    1              0.161570 
+PHABMI-5         PVAL 215486.23440215418.87007             67.36433  >   6.63490    1        YES!  2.26e-16 
+PHACYCLL-5       PVAL 215486.23440215485.78676              0.44764  >   6.63490    1              0.503460 
+PHADIAG-2        PVAL 215486.23440215469.98129             16.25311  >   6.63490    1        YES!  0.000055 
+PHAGEOREG-2      PVAL 215486.23440215447.11843             39.11597  >   6.63490    1        YES!  3.99e-10 
+PHALBEST-5       PVAL 215486.23440    FAILED                 FAILED  >   6.63490    1                    999
+PHAWT-5          PVAL 215486.23440215447.05581             39.17859  >   6.63490    1        YES!  3.87e-10 
+PHIAAGE-5        PVAL 215486.23440215477.82878              8.40562  >   6.63490    1        YES!  0.003741 
+PHIABMI-5        PVAL 215486.23440215485.60527              0.62913  >   6.63490    1              0.427670 
+PHIACYCLL-5      PVAL 215486.23440215477.93059              8.30381  >   6.63490    1        YES!  0.003956 
+PHIADIAG-2       PVAL 215486.23440215477.81138              8.42302  >   6.63490    1        YES!  0.003705 
+PHIADISDUR-5     PVAL 215486.23440215545.52870            -59.29430  >   6.63490    1                   9999
+PHIAGEOREG-2     PVAL 215486.23440215479.83414              6.40026  >   6.63490    1              0.011410 
+PHIALBEST-5      PVAL 215486.23440215475.84667             10.38773  >   6.63490    1        YES!  0.001269 
+PHIAWT-5         PVAL 215486.23440215477.23607              8.99833  >   6.63490    1        YES!  0.002702 
+PHIBAGE-5        PVAL 215486.23440215485.26510              0.96930  >   6.63490    1              0.324860 
+PHIBBMI-5        PVAL 215486.23440215484.96964              1.26476  >   6.63490    1              0.260750 
+PHIBCYCLL-5      PVAL 215486.23440215476.76142              9.47297  >   6.63490    1        YES!  0.002085 
+PHIBDIAG-2       PVAL 215486.23440215476.10118             10.13321  >   6.63490    1        YES!  0.001456 
+PHIBDISDUR-5     PVAL 215486.23440215477.09854              9.13585  >   6.63490    1        YES!  0.002507 
+PHIBGEOREG-2     PVAL 215486.23440215423.77462             62.45978  >   6.63490    1        YES!  2.72e-15 
+PHIBLBEST-5      PVAL 215486.23440215486.07112              0.16327  >   6.63490    1              0.686160 
+PHIBWT-5         PVAL 215486.23440215474.62085             11.61355  >   6.63490    1        YES!  0.000655 
+SLPAGE-5         PVAL 215486.23440215476.93357              9.30083  >   6.63490    1        YES!  0.002291 
+SLPBMI-5         PVAL 215486.23440215484.98174              1.25266  >   6.63490    1              0.263050 
+SLPCPL-5         PVAL 215486.23440215477.14655              9.08784  >   6.63490    1        YES!  0.002573 
+SLPGEOREG-2      PVAL 215486.23440215464.38862             21.84578  >   6.63490    1        YES!  0.000003 
+SLPLBEST-5       PVAL 215486.23440215473.58164             12.65275  >   6.63490    1        YES!  0.000375 
+SLPMENS-2        PVAL 215486.23440215475.74102             10.49338  >   6.63490    1        YES!  0.001198 
+SLPWT-5          PVAL 215486.23440215479.77263              6.46176  >   6.63490    1              0.011022 
+
+Parameter-covariate relation chosen in this forward step: PHA-BMI-5
+CRITERION              PVAL < 0.01
+BASE_MODEL_OFV      215486.23440
+CHOSEN_MODEL_OFV    215418.87007
+Relations included after this step:
+PHA     BMI-5   DISDUR-5MENS-2  
+PHIA    MENS-2  
+PHIB    MENS-2  
+SLP     
+--------------------
+
+Model directory /home/shared/Projects/SOAP/SOAP-INTRO-PMX-1/Analysis/Model/SCM/run1080scm_3/forward_scm_dir1/scm_dir1/scm_dir1/scm_dir1/scm_dir1/m1
+
+MODEL            TEST     BASE OFV     NEW OFV         TEST OFV (DROP)    GOAL     dDF    SIGNIFICANT PVAL
+PHAAGE-5         PVAL 215418.87007215399.53907             19.33100  >   6.63490    1        YES!  0.000011 
+PHACYCLL-5       PVAL 215418.87007215416.86689              2.00318  >   6.63490    1              0.156970 
+PHADIAG-2        PVAL 215418.87007215417.13109              1.73898  >   6.63490    1              0.187270 
+PHAGEOREG-2      PVAL 215418.87007215418.32964              0.54043  >   6.63490    1              0.462260 
+PHALBEST-5       PVAL 215418.87007    FAILED                 FAILED  >   6.63490    1                    999
+PHAWT-5          PVAL 215418.87007215405.91270             12.95737  >   6.63490    1        YES!  0.000319 
+PHIAAGE-5        PVAL 215418.87007215418.47364              0.39643  >   6.63490    1              0.528940 
+PHIABMI-5        PVAL 215418.87007215415.84032              3.02975  >   6.63490    1              0.081751 
+PHIACYCLL-5      PVAL 215418.87007215418.84403              0.02604  >   6.63490    1              0.871810 
+PHIADIAG-2       PVAL 215418.87007215418.73640              0.13368  >   6.63490    1              0.714650 
+PHIADISDUR-5     PVAL 215418.87007215483.75575            -64.88568  >   6.63490    1                   9999
+PHIAGEOREG-2     PVAL 215418.87007215417.89481              0.97526  >   6.63490    1              0.323370 
+PHIALBEST-5      PVAL 215418.87007215416.59101              2.27906  >   6.63490    1              0.131130 
+PHIAWT-5         PVAL 215418.87007215415.62729              3.24279  >   6.63490    1              0.071739 
+PHIBAGE-5        PVAL 215418.87007215418.10784              0.76223  >   6.63490    1              0.382630 
+PHIBBMI-5        PVAL 215418.87007215416.82914              2.04093  >   6.63490    1              0.153120 
+PHIBCYCLL-5      PVAL 215418.87007215417.55724              1.31283  >   6.63490    1              0.251880 
+PHIBDIAG-2       PVAL 215418.87007215416.68754              2.18254  >   6.63490    1              0.139580 
+PHIBDISDUR-5     PVAL 215418.87007215417.98858              0.88150  >   6.63490    1              0.347790 
+PHIBGEOREG-2     PVAL 215418.87007215357.74693             61.12314  >   6.63490    1        YES!  5.36e-15 
+PHIBLBEST-5      PVAL 215418.87007215418.59417              0.27590  >   6.63490    1              0.599400 
+PHIBWT-5         PVAL 215418.87007215414.32930              4.54077  >   6.63490    1              0.033097 
+SLPAGE-5         PVAL 215418.87007215417.98410              0.88597  >   6.63490    1              0.346570 
+SLPBMI-5         PVAL 215418.87007215418.86974              0.00033  >   6.63490    1              0.985470 
+SLPCPL-5         PVAL 215418.87007215400.06043             18.80964  >   6.63490    1        YES!  0.000014 
+SLPGEOREG-2      PVAL 215418.87007215402.75796             16.11211  >   6.63490    1        YES!  0.000060 
+SLPLBEST-5       PVAL 215418.87007215415.63916              3.23091  >   6.63490    1              0.072261 
+SLPMENS-2        PVAL 215418.87007215415.95282              2.91725  >   6.63490    1              0.087637 
+SLPWT-5          PVAL 215418.87007215416.19720              2.67287  >   6.63490    1              0.102070 
+
+Parameter-covariate relation chosen in this forward step: PHIB-GEOREG-2
+CRITERION              PVAL < 0.01
+BASE_MODEL_OFV      215418.87007
+CHOSEN_MODEL_OFV    215357.74693
+Relations included after this step:
+PHA     BMI-5   DISDUR-5MENS-2  
+PHIA    MENS-2  
+PHIB    GEOREG-2MENS-2  
+SLP     
+--------------------
+
+Model directory /home/shared/Projects/SOAP/SOAP-INTRO-PMX-1/Analysis/Model/SCM/run1080scm_3/forward_scm_dir1/scm_dir1/scm_dir1/scm_dir1/scm_dir1/scm_dir1/m1
+
+MODEL            TEST     BASE OFV     NEW OFV         TEST OFV (DROP)    GOAL     dDF    SIGNIFICANT PVAL
+PHAAGE-5         PVAL 215357.74693215337.95044             19.79649  >   6.63490    1        YES!  0.000009 
+PHACYCLL-5       PVAL 215357.74693215356.12574              1.62119  >   6.63490    1              0.202930 
+PHADIAG-2        PVAL 215357.74693215356.06230              1.68462  >   6.63490    1              0.194310 
+PHAGEOREG-2      PVAL 215357.74693215350.38465              7.36228  >   6.63490    1        YES!  0.006661 
+PHALBEST-5       PVAL 215357.74693    FAILED                 FAILED  >   6.63490    1                    999
+PHAWT-5          PVAL 215357.74693215344.98904             12.75789  >   6.63490    1        YES!  0.000355 
+PHIAAGE-5        PVAL 215357.74693215357.30351              0.44342  >   6.63490    1              0.505470 
+PHIABMI-5        PVAL 215357.74693215354.78810              2.95883  >   6.63490    1              0.085410 
+PHIACYCLL-5      PVAL 215357.74693215357.72397              0.02295  >   6.63490    1              0.879580 
+PHIADIAG-2       PVAL 215357.74693215357.59915              0.14778  >   6.63490    1              0.700670 
+PHIADISDUR-5     PVAL 215357.74693215421.37331            -63.62638  >   6.63490    1                   9999
+PHIAGEOREG-2     PVAL 215357.74693215356.32058              1.42635  >   6.63490    1              0.232360 
+PHIALBEST-5      PVAL 215357.74693215355.43944              2.30749  >   6.63490    1              0.128750 
+PHIAWT-5         PVAL 215357.74693215354.66319              3.08374  >   6.63490    1              0.079078 
+PHIBAGE-5        PVAL 215357.74693215357.57312              0.17381  >   6.63490    1              0.676750 
+PHIBBMI-5        PVAL 215357.74693215357.66791              0.07902  >   6.63490    1              0.778630 
+PHIBCYCLL-5      PVAL 215357.74693215357.73975              0.00717  >   6.63490    1              0.932500 
+PHIBDIAG-2       PVAL 215357.74693215356.69131              1.05562  >   6.63490    1              0.304220 
+PHIBDISDUR-5     PVAL 215357.74693215357.21344              0.53349  >   6.63490    1              0.465140 
+PHIBLBEST-5      PVAL 215357.74693215356.98354              0.76338  >   6.63490    1              0.382270 
+PHIBWT-5         PVAL 215357.74693215357.74574              0.00119  >   6.63490    1              0.972470 
+SLPAGE-5         PVAL 215357.74693215356.86366              0.88327  >   6.63490    1              0.347310 
+SLPBMI-5         PVAL 215357.74693215357.74645              0.00048  >   6.63490    1              0.982590 
+SLPCPL-5         PVAL 215357.74693215355.44260              2.30433  >   6.63490    1              0.129010 
+SLPGEOREG-2      PVAL 215357.74693215341.79572             15.95121  >   6.63490    1        YES!  0.000065 
+SLPLBEST-5       PVAL 215357.74693215354.78665              2.96028  >   6.63490    1              0.085333 
+SLPMENS-2        PVAL 215357.74693215354.85605              2.89088  >   6.63490    1              0.089082 
+SLPWT-5          PVAL 215357.74693215355.14554              2.60139  >   6.63490    1              0.106770 
+
+Parameter-covariate relation chosen in this forward step: PHA-AGE-5
+CRITERION              PVAL < 0.01
+BASE_MODEL_OFV      215357.74693
+CHOSEN_MODEL_OFV    215337.95044
+Relations included after this step:
+PHA     AGE-5   BMI-5   DISDUR-5MENS-2  
+PHIA    MENS-2  
+PHIB    GEOREG-2MENS-2  
+SLP     
+--------------------
+
+Model directory /home/shared/Projects/SOAP/SOAP-INTRO-PMX-1/Analysis/Model/SCM/run1080scm_3/forward_scm_dir1/scm_dir1/scm_dir1/scm_dir1/scm_dir1/scm_dir1/scm_dir1/m1
+
+MODEL            TEST     BASE OFV     NEW OFV         TEST OFV (DROP)    GOAL     dDF    SIGNIFICANT PVAL
+PHACYCLL-5       PVAL 215337.95044215335.43480              2.51565  >   6.63490    1              0.112720 
+PHADIAG-2        PVAL 215337.95044215337.08166              0.86878  >   6.63490    1              0.351290 
+PHAGEOREG-2      PVAL 215337.95044215337.66571              0.28473  >   6.63490    1              0.593610 
+PHALBEST-5       PVAL 215337.95044    FAILED                 FAILED  >   6.63490    1                    999
+PHAWT-5          PVAL 215337.95044215324.78489             13.16555  >   6.63490    1        YES!  0.000285 
+PHIAAGE-5        PVAL 215337.95044215337.85912              0.09132  >   6.63490    1              0.762500 
+PHIABMI-5        PVAL 215337.95044215334.88761              3.06283  >   6.63490    1              0.080102 
+PHIACYCLL-5      PVAL 215337.95044215337.90265              0.04779  >   6.63490    1              0.826950 
+PHIADIAG-2       PVAL 215337.95044215337.77306              0.17738  >   6.63490    1              0.673630 
+PHIADISDUR-5     PVAL 215337.95044215402.69088            -64.74044  >   6.63490    1                   9999
+PHIAGEOREG-2     PVAL 215337.95044215336.45815              1.49230  >   6.63490    1              0.221860 
+PHIALBEST-5      PVAL 215337.95044215335.76452              2.18592  >   6.63490    1              0.139280 
+PHIAWT-5         PVAL 215337.95044215334.91260              3.03784  >   6.63490    1              0.081344 
+PHIBAGE-5        PVAL 215337.95044215337.89137              0.05907  >   6.63490    1              0.807970 
+PHIBBMI-5        PVAL 215337.95044215337.88330              0.06714  >   6.63490    1              0.795540 
+PHIBCYCLL-5      PVAL 215337.95044215337.93681              0.01363  >   6.63490    1              0.907070 
+PHIBDIAG-2       PVAL 215337.95044215336.88700              1.06345  >   6.63490    1              0.302430 
+PHIBDISDUR-5     PVAL 215337.95044215337.44193              0.50851  >   6.63490    1              0.475780 
+PHIBLBEST-5      PVAL 215337.95044215337.15556              0.79488  >   6.63490    1              0.372630 
+PHIBWT-5         PVAL 215337.95044215337.95017              0.00027  >   6.63490    1              0.986970 
+SLPAGE-5         PVAL 215337.95044215337.49350              0.45695  >   6.63490    1              0.499060 
+SLPBMI-5         PVAL 215337.95044215337.89767              0.05277  >   6.63490    1              0.818310 
+SLPCPL-5         PVAL 215337.95044215322.53376             15.41668  >   6.63490    1        YES!  0.000086 
+SLPGEOREG-2      PVAL 215337.95044215321.70954             16.24090  >   6.63490    1        YES!  0.000056 
+SLPLBEST-5       PVAL 215337.95044215336.42488              1.52556  >   6.63490    1              0.216780 
+SLPMENS-2        PVAL 215337.95044215334.66126              3.28918  >   6.63490    1              0.069738 
+SLPWT-5          PVAL 215337.95044215334.46777              3.48267  >   6.63490    1              0.062015 
+
+Parameter-covariate relation chosen in this forward step: SLP-GEOREG-2
+CRITERION              PVAL < 0.01
+BASE_MODEL_OFV      215337.95044
+CHOSEN_MODEL_OFV    215321.70954
+Relations included after this step:
+PHA     AGE-5   BMI-5   DISDUR-5MENS-2  
+PHIA    MENS-2  
+PHIB    GEOREG-2MENS-2  
+SLP     GEOREG-2
+--------------------
+
+Model directory /home/shared/Projects/SOAP/SOAP-INTRO-PMX-1/Analysis/Model/SCM/run1080scm_3/forward_scm_dir1/scm_dir1/scm_dir1/scm_dir1/scm_dir1/scm_dir1/scm_dir1/scm_dir1/m1
+
+MODEL            TEST     BASE OFV     NEW OFV         TEST OFV (DROP)    GOAL     dDF    SIGNIFICANT PVAL
+PHACYCLL-5       PVAL 215321.70954215318.64773              3.06180  >   6.63490    1              0.080153 
+PHADIAG-2        PVAL 215321.70954215320.91643              0.79311  >   6.63490    1              0.373160 
+PHAGEOREG-2      PVAL 215321.70954215321.43874              0.27079  >   6.63490    1              0.602800 
+PHALBEST-5       PVAL 215321.70954    FAILED                 FAILED  >   6.63490    1                    999
+PHAWT-5          PVAL 215321.70954215306.67698             15.03256  >   6.63490    1        YES!  0.000106 
+PHIAAGE-5        PVAL 215321.70954215321.70828              0.00126  >   6.63490    1              0.971700 
+PHIABMI-5        PVAL 215321.70954215317.47344              4.23610  >   6.63490    1              0.039573 
+PHIACYCLL-5      PVAL 215321.70954215321.36987              0.33967  >   6.63490    1              0.560020 
+PHIADIAG-2       PVAL 215321.70954215321.61629              0.09325  >   6.63490    1              0.760090 
+PHIADISDUR-5     PVAL 215321.70954215391.68260            -69.97306  >   6.63490    1                   9999
+PHIAGEOREG-2     PVAL 215321.70954215321.42786              0.28168  >   6.63490    1              0.595600 
+PHIALBEST-5      PVAL 215321.70954215319.64967              2.05987  >   6.63490    1              0.151220 
+PHIAWT-5         PVAL 215321.70954215316.57074              5.13879  >   6.63490    1              0.023397 
+PHIBAGE-5        PVAL 215321.70954215321.65197              0.05757  >   6.63490    1              0.810390 
+PHIBBMI-5        PVAL 215321.70954215321.63145              0.07809  >   6.63490    1              0.779900 
+PHIBCYCLL-5      PVAL 215321.70954215321.69498              0.01456  >   6.63490    1              0.903960 
+PHIBDIAG-2       PVAL 215321.70954215320.63388              1.07566  >   6.63490    1              0.299670 
+PHIBDISDUR-5     PVAL 215321.70954215321.20230              0.50724  >   6.63490    1              0.476340 
+PHIBLBEST-5      PVAL 215321.70954215320.85487              0.85466  >   6.63490    1              0.355240 
+PHIBWT-5         PVAL 215321.70954215321.70868              0.00085  >   6.63490    1              0.976690 
+SLPAGE-5         PVAL 215321.70954215319.09445              2.61508  >   6.63490    1              0.105850 
+SLPBMI-5         PVAL 215321.70954215316.19394              5.51560  >   6.63490    1              0.018848 
+SLPCPL-5         PVAL 215321.70954215321.31740              0.39214  >   6.63490    1              0.531180 
+SLPLBEST-5       PVAL 215321.70954215324.06917             -2.35964  >   6.63490    1                   9999
+SLPMENS-2        PVAL 215321.70954215316.68947              5.02007  >   6.63490    1              0.025055 
+SLPWT-5          PVAL 215321.70954215321.08009              0.62945  >   6.63490    1              0.427560 
+
+Parameter-covariate relation chosen in this forward step: PHA-WT-5
+CRITERION              PVAL < 0.01
+BASE_MODEL_OFV      215321.70954
+CHOSEN_MODEL_OFV    215306.67698
+Relations included after this step:
+PHA     AGE-5   BMI-5   DISDUR-5MENS-2  WT-5    
+PHIA    MENS-2  
+PHIB    GEOREG-2MENS-2  
+SLP     GEOREG-2
+--------------------
+
+Model directory /home/shared/Projects/SOAP/SOAP-INTRO-PMX-1/Analysis/Model/SCM/run1080scm_3/forward_scm_dir1/scm_dir1/scm_dir1/scm_dir1/scm_dir1/scm_dir1/scm_dir1/scm_dir1/scm_dir1/m1
+
+MODEL            TEST     BASE OFV     NEW OFV         TEST OFV (DROP)    GOAL     dDF    SIGNIFICANT PVAL
+PHACYCLL-5       PVAL 215306.67698215304.35483              2.32215  >   6.63490    1              0.127540 
+PHADIAG-2        PVAL 215306.67698215303.58339              3.09359  >   6.63490    1              0.078601 
+PHAGEOREG-2      PVAL 215306.67698215301.51498              5.16200  >   6.63490    1              0.023086 
+PHALBEST-5       PVAL 215306.67698    FAILED                 FAILED  >   6.63490    1                    999
+PHIAAGE-5        PVAL 215306.67698215306.24502              0.43196  >   6.63490    1              0.511030 
+PHIABMI-5        PVAL 215306.67698215301.37804              5.29894  >   6.63490    1              0.021338 
+PHIACYCLL-5      PVAL 215306.67698215305.75188              0.92510  >   6.63490    1              0.336140 
+PHIADIAG-2       PVAL 215306.67698215305.48343              1.19355  >   6.63490    1              0.274610 
+PHIADISDUR-5     PVAL 215306.67698215378.59161            -71.91463  >   6.63490    1                   9999
+PHIAGEOREG-2     PVAL 215306.67698215306.10743              0.56955  >   6.63490    1              0.450440 
+PHIALBEST-5      PVAL 215306.67698215303.80145              2.87553  >   6.63490    1              0.089935 
+PHIAWT-5         PVAL 215306.67698215303.21445              3.46253  >   6.63490    1              0.062775 
+PHIBAGE-5        PVAL 215306.67698215307.33618             -0.65920  >   6.63490    1                   9999
+PHIBBMI-5        PVAL 215306.67698215305.07540              1.60158  >   6.63490    1              0.205680 
+PHIBCYCLL-5      PVAL 215306.67698215305.59691              1.08007  >   6.63490    1              0.298680 
+PHIBDIAG-2       PVAL 215306.67698215304.10432              2.57266  >   6.63490    1              0.108720 
+PHIBDISDUR-5     PVAL 215306.67698215305.94647              0.73051  >   6.63490    1              0.392720 
+PHIBLBEST-5      PVAL 215306.67698215304.31627              2.36071  >   6.63490    1              0.124430 
+PHIBWT-5         PVAL 215306.67698215308.12324             -1.44626  >   6.63490    1                   9999
+SLPAGE-5         PVAL 215306.67698215303.94239              2.73459  >   6.63490    1              0.098197 
+SLPBMI-5         PVAL 215306.67698215303.19765              3.47933  >   6.63490    1              0.062140 
+SLPCPL-5         PVAL 215306.67698215306.68025             -0.00327  >   6.63490    1                   9999
+SLPLBEST-5       PVAL 215306.67698215308.97206             -2.29508  >   6.63490    1                   9999
+SLPMENS-2        PVAL 215306.67698215304.17510              2.50188  >   6.63490    1              0.113710 
+SLPWT-5          PVAL 215306.67698215306.73205             -0.05507  >   6.63490    1                   9999
+
+Parameter-covariate relation chosen in this forward step: --
+CRITERION              PVAL < 0.01
+--------------------
+
+
+--------------------
+Forward search done. Starting backward search inside forward top level directory
+Model directory /home/shared/Projects/SOAP/SOAP-INTRO-PMX-1/Analysis/Model/SCM/run1080scm_3/backward_scm_dir1/m1
+
+MODEL            TEST     BASE OFV     NEW OFV         TEST OFV (DROP)    GOAL     dDF  INSIGNIFICANT PVAL
+PHAAGE-1         PVAL 215306.67698215332.91461            -26.23763  > -10.82800   -1              3.02e-07 
+PHABMI-1         PVAL 215306.67698215364.67861            -58.00163  > -10.82800   -1              2.62e-14 
+PHADISDUR-1      PVAL 215306.67698215450.74783           -144.07085  > -10.82800   -1              3.43e-33 
+PHAMENS-1        PVAL 215306.67698215491.11568           -184.43870  > -10.82800   -1              5.20e-42 
+PHAWT-1          PVAL 215306.67698215321.70954            -15.03256  > -10.82800   -1              0.000106 
+PHIAMENS-1       PVAL 215306.67698215407.40295           -100.72597  > -10.82800   -1              1.06e-23 
+PHIBGEOREG-1     PVAL 215306.67698215373.77800            -67.10102  > -10.82800   -1              2.58e-16 
+PHIBMENS-1       PVAL 215306.67698216968.25989          -1661.58291  > -10.82800   -1              0.00e+00 
+SLPGEOREG-1      PVAL 215306.67698215359.18150            -52.50452  > -10.82800   -1              4.29e-13 
+
+Parameter-covariate relation chosen in this backward step: --
+CRITERION              PVAL > 0.001
+--------------------
+

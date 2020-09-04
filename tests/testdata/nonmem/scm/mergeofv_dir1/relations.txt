@@ -1,0 +1,41 @@
+$VAR1 = {'This is a fake relations file'};
+$VAR1->{'PHA'}{'AGE'}{'ofv_changes'} = $VAR1->{'PHA'}{'BMI'}{'ofv_changes'};
+$VAR1->{'PHA'}{'CYCLL'}{'ofv_changes'} = $VAR1->{'PHA'}{'BMI'}{'ofv_changes'};
+$VAR1->{'PHA'}{'DIAG'}{'ofv_changes'} = $VAR1->{'PHA'}{'BMI'}{'ofv_changes'};
+$VAR1->{'PHA'}{'DISDUR'}{'ofv_changes'} = $VAR1->{'PHA'}{'BMI'}{'ofv_changes'};
+$VAR1->{'PHA'}{'GEOREG'}{'ofv_changes'} = $VAR1->{'PHA'}{'BMI'}{'ofv_changes'};
+$VAR1->{'PHA'}{'LBEST'}{'ofv_changes'} = $VAR1->{'PHA'}{'BMI'}{'ofv_changes'};
+$VAR1->{'PHA'}{'MENS'}{'ofv_changes'} = $VAR1->{'PHA'}{'BMI'}{'ofv_changes'};
+$VAR1->{'PHA'}{'WT'}{'ofv_changes'} = $VAR1->{'PHA'}{'BMI'}{'ofv_changes'};
+
+$VAR1->{'PHIA'}{'AGE'}{'ofv_changes'} = $VAR1->{'PHA'}{'BMI'}{'ofv_changes'};
+$VAR1->{'PHIA'}{'CYCLL'}{'ofv_changes'} = $VAR1->{'PHA'}{'BMI'}{'ofv_changes'};
+$VAR1->{'PHIA'}{'DIAG'}{'ofv_changes'} = $VAR1->{'PHA'}{'BMI'}{'ofv_changes'};
+$VAR1->{'PHIA'}{'DISDUR'}{'ofv_changes'} = $VAR1->{'PHA'}{'BMI'}{'ofv_changes'};
+$VAR1->{'PHIA'}{'GEOREG'}{'ofv_changes'} = $VAR1->{'PHA'}{'BMI'}{'ofv_changes'};
+$VAR1->{'PHIA'}{'LBEST'}{'ofv_changes'} = $VAR1->{'PHA'}{'BMI'}{'ofv_changes'};
+$VAR1->{'PHIA'}{'MENS'}{'ofv_changes'} = $VAR1->{'PHA'}{'BMI'}{'ofv_changes'};
+$VAR1->{'PHIA'}{'WT'}{'ofv_changes'} = $VAR1->{'PHA'}{'BMI'}{'ofv_changes'};
+$VAR1->{'PHIA'}{'BMI'}{'ofv_changes'} = $VAR1->{'PHA'}{'BMI'}{'ofv_changes'};
+
+$VAR1->{'PHIB'}{'AGE'}{'ofv_changes'} = $VAR1->{'PHA'}{'BMI'}{'ofv_changes'};
+$VAR1->{'PHIB'}{'CYCLL'}{'ofv_changes'} = $VAR1->{'PHA'}{'BMI'}{'ofv_changes'};
+$VAR1->{'PHIB'}{'DIAG'}{'ofv_changes'} = $VAR1->{'PHA'}{'BMI'}{'ofv_changes'};
+$VAR1->{'PHIB'}{'DISDUR'}{'ofv_changes'} = $VAR1->{'PHA'}{'BMI'}{'ofv_changes'};
+$VAR1->{'PHIB'}{'GEOREG'}{'ofv_changes'} = $VAR1->{'PHA'}{'BMI'}{'ofv_changes'};
+$VAR1->{'PHIB'}{'LBEST'}{'ofv_changes'} = $VAR1->{'PHA'}{'BMI'}{'ofv_changes'};
+$VAR1->{'PHIB'}{'MENS'}{'ofv_changes'} = $VAR1->{'PHA'}{'BMI'}{'ofv_changes'};
+$VAR1->{'PHIB'}{'WT'}{'ofv_changes'} = $VAR1->{'PHA'}{'BMI'}{'ofv_changes'};
+$VAR1->{'PHIB'}{'BMI'}{'ofv_changes'} = $VAR1->{'PHA'}{'BMI'}{'ofv_changes'};
+
+$VAR1->{'SLP'}{'AGE'}{'ofv_changes'} = $VAR1->{'PHA'}{'BMI'}{'ofv_changes'};
+$VAR1->{'SLP'}{'CYCLL'}{'ofv_changes'} = $VAR1->{'PHA'}{'BMI'}{'ofv_changes'};
+$VAR1->{'SLP'}{'DIAG'}{'ofv_changes'} = $VAR1->{'PHA'}{'BMI'}{'ofv_changes'};
+$VAR1->{'SLP'}{'DISDUR'}{'ofv_changes'} = $VAR1->{'PHA'}{'BMI'}{'ofv_changes'};
+$VAR1->{'SLP'}{'GEOREG'}{'ofv_changes'} = $VAR1->{'PHA'}{'BMI'}{'ofv_changes'};
+$VAR1->{'SLP'}{'LBEST'}{'ofv_changes'} = $VAR1->{'PHA'}{'BMI'}{'ofv_changes'};
+$VAR1->{'SLP'}{'MENS'}{'ofv_changes'} = $VAR1->{'PHA'}{'BMI'}{'ofv_changes'};
+$VAR1->{'SLP'}{'WT'}{'ofv_changes'} = $VAR1->{'PHA'}{'BMI'}{'ofv_changes'};
+$VAR1->{'SLP'}{'BMI'}{'ofv_changes'} = $VAR1->{'PHA'}{'BMI'}{'ofv_changes'};
+$VAR1->{'SLP'}{'CPL'}{'ofv_changes'} = $VAR1->{'PHA'}{'BMI'}{'ofv_changes'};
+

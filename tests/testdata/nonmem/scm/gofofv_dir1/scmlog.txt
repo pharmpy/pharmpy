@@ -1,0 +1,218 @@
+Using user-defined ofv change criteria
+Degree of freedom  |  Required ofv change
+         1         -          2.84
+         2         -          5.99
+         3         -          7.81
+         4         -          9.49
+         5         -          11.07
+         6         -          12.59
+         7         -          14.07
+         8         -          15.51
+         9         -          16.92
+         10         -          18.31
+Model directory /home/kajsa/sandbox/asrscm/scm_dir8/m1
+
+MODEL      TEST NAME    BASE VAL     NEW VAL                                   TEST VAL (DROP)      GOAL   SIGNIFICANT
+CLAPGR-2       OFV     725.60200   705.46995                                       20.13205  >  16.92000      YES!  
+CLCV1-2        OFV     725.60200   722.68945                                        2.91255  >   2.84000      YES!  
+CLWGT-2        OFV     725.60200   672.98298                                       52.61902  >   2.84000      YES!  
+VCV2-2         OFV     725.60200   724.65062                                        0.95138  >   2.84000
+VCVD1-2        OFV     725.60200   717.75649                                        7.84551  >   2.84000      YES!  
+VWGT-2         OFV     725.60200   629.27205                                       96.32995  >   2.84000      YES!  
+
+Parameter-covariate relation chosen in this forward step: V-WGT-2
+CRITERION              OFV
+BASE_MODEL_OFV         725.60200
+CHOSEN_MODEL_OFV       629.27205
+Relations included after this step:
+CL      
+V       WGT-2   
+--------------------
+
+Using user-defined ofv change criteria
+Degree of freedom  |  Required ofv change
+         1         -          2.84
+         2         -          5.99
+         3         -          7.81
+         4         -          9.49
+         5         -          11.07
+         6         -          12.59
+         7         -          14.07
+         8         -          15.51
+         9         -          16.92
+         10         -          18.31
+Model directory /home/kajsa/sandbox/asrscm/scm_dir8/forward_scm_dir1/m1
+
+MODEL      TEST NAME    BASE VAL     NEW VAL                                   TEST VAL (DROP)      GOAL   SIGNIFICANT
+CLAPGR-2       OFV     629.27205   610.69469                                       18.57736  >  16.92000      YES!  
+CLCV1-2        OFV     629.27205   625.34729                                        3.92477  >   2.84000      YES!  
+CLWGT-2        OFV     629.27205   590.06016                                       39.21190  >   2.84000      YES!  
+VCV2-2         OFV     629.27205   626.61183                                        2.66023  >   2.84000
+VCVD1-2        OFV     629.27205   625.89605                                        3.37601  >   2.84000      YES!  
+
+Parameter-covariate relation chosen in this forward step: CL-WGT-2
+CRITERION              OFV
+BASE_MODEL_OFV         629.27205
+CHOSEN_MODEL_OFV       590.06016
+Relations included after this step:
+CL      WGT-2   
+V       WGT-2   
+--------------------
+
+Using user-defined ofv change criteria
+Degree of freedom  |  Required ofv change
+         1         -          2.84
+         2         -          5.99
+         3         -          7.81
+         4         -          9.49
+         5         -          11.07
+         6         -          12.59
+         7         -          14.07
+         8         -          15.51
+         9         -          16.92
+         10         -          18.31
+Model directory /home/kajsa/sandbox/asrscm/scm_dir8/forward_scm_dir1/scm_dir1/m1
+
+MODEL      TEST NAME    BASE VAL     NEW VAL                                   TEST VAL (DROP)      GOAL   SIGNIFICANT
+CLAPGR-2       OFV     590.06016   580.38576                                        9.67440  >  16.92000
+CLCV1-2        OFV     590.06016   587.15896                                        2.90120  >   2.84000      YES!  
+VCV2-2         OFV     590.06016   587.20249                                        2.85767  >   2.84000      YES!  
+VCVD1-2        OFV     590.06016   588.32319                                        1.73696  >   2.84000
+
+Parameter-covariate relation chosen in this forward step: CL-CV1-2
+CRITERION              OFV
+BASE_MODEL_OFV         590.06016
+CHOSEN_MODEL_OFV       587.15896
+Relations included after this step:
+CL      CV1-2   WGT-2   
+V       WGT-2   
+--------------------
+
+Using user-defined ofv change criteria
+Degree of freedom  |  Required ofv change
+         1         -          2.84
+         2         -          5.99
+         3         -          7.81
+         4         -          9.49
+         5         -          11.07
+         6         -          12.59
+         7         -          14.07
+         8         -          15.51
+         9         -          16.92
+         10         -          18.31
+Model directory /home/kajsa/sandbox/asrscm/scm_dir8/forward_scm_dir1/scm_dir1/scm_dir1/m1
+
+MODEL      TEST NAME    BASE VAL     NEW VAL                                   TEST VAL (DROP)      GOAL   SIGNIFICANT
+CLAPGR-2       OFV     587.15896   577.57554                                        9.58341  >  16.92000
+VCV2-2         OFV     587.15896   584.15462                                        3.00434  >   2.84000      YES!  
+VCVD1-2        OFV     587.15896   585.20932                                        1.94963  >   2.84000
+
+Parameter-covariate relation chosen in this forward step: V-CV2-2
+CRITERION              OFV
+BASE_MODEL_OFV         587.15896
+CHOSEN_MODEL_OFV       584.15462
+Relations included after this step:
+CL      CV1-2   WGT-2   
+V       CV2-2   WGT-2   
+--------------------
+
+Using user-defined ofv change criteria
+Degree of freedom  |  Required ofv change
+         1         -          2.84
+         2         -          5.99
+         3         -          7.81
+         4         -          9.49
+         5         -          11.07
+         6         -          12.59
+         7         -          14.07
+         8         -          15.51
+         9         -          16.92
+         10         -          18.31
+Model directory /home/kajsa/sandbox/asrscm/scm_dir8/forward_scm_dir1/scm_dir1/scm_dir1/scm_dir1/m1
+
+MODEL      TEST NAME    BASE VAL     NEW VAL                                   TEST VAL (DROP)      GOAL   SIGNIFICANT
+CLAPGR-2       OFV     584.15462   574.88636                                        9.26826  >  16.92000
+VCVD1-2        OFV     584.15462   582.97276                                        1.18187  >   2.84000
+
+--------------------
+
+
+--------------------
+Forward search done. Starting backward search inside forward top level directory
+Using user-defined ofv change criteria
+Degree of freedom  |  Required ofv change
+         1         -          7.63
+         2         -          10.21
+         3         -          11.34
+         4         -          13.28
+         5         -          15.09
+         6         -          16.81
+         7         -          18.48
+         8         -          20.09
+         9         -          21.67
+         10         -          23.21
+Model directory /home/kajsa/sandbox/asrscm/scm_dir8/backward_scm_dir1/m1
+
+MODEL      TEST NAME    BASE VAL     NEW VAL                                   TEST VAL (DROP)      GOAL (IN)SIGNIFICANT
+CLCV1-1        OFV     584.15462   587.20249                                       -3.04787  >  -7.63000      YES!  
+CLWGT-1        OFV     584.15462   622.67113                                      -38.51651  >  -7.63000
+VCV2-1         OFV     584.15462   587.15896                                       -3.00434  >  -7.63000      YES!  
+VWGT-1         OFV     584.15462   669.56839                                      -85.41377  >  -7.63000
+
+Parameter-covariate relation chosen in this backward step: V-CV2-1
+CRITERION              OFV
+BASE_MODEL_OFV         584.15462
+CHOSEN_MODEL_OFV       587.15896
+Relations included after this step:
+CL      CV1-2   WGT-2   
+V       WGT-2   
+--------------------
+
+Using user-defined ofv change criteria
+Degree of freedom  |  Required ofv change
+         1         -          7.63
+         2         -          10.21
+         3         -          11.34
+         4         -          13.28
+         5         -          15.09
+         6         -          16.81
+         7         -          18.48
+         8         -          20.09
+         9         -          21.67
+         10         -          23.21
+Model directory /home/kajsa/sandbox/asrscm/scm_dir8/backward_scm_dir1/scm_dir1/m1
+
+MODEL      TEST NAME    BASE VAL     NEW VAL                                   TEST VAL (DROP)      GOAL (IN)SIGNIFICANT
+CLCV1-1        OFV     587.15896   590.06016                                       -2.90120  >  -7.63000      YES!  
+CLWGT-1        OFV     587.15896   625.34729                                      -38.18833  >  -7.63000
+VWGT-1         OFV     587.15896   670.64404                                      -83.48509  >  -7.63000
+
+Parameter-covariate relation chosen in this backward step: CL-CV1-1
+CRITERION              OFV
+BASE_MODEL_OFV         587.15896
+CHOSEN_MODEL_OFV       590.06016
+Relations included after this step:
+CL      WGT-2   
+V       WGT-2   
+--------------------
+
+Using user-defined ofv change criteria
+Degree of freedom  |  Required ofv change
+         1         -          7.63
+         2         -          10.21
+         3         -          11.34
+         4         -          13.28
+         5         -          15.09
+         6         -          16.81
+         7         -          18.48
+         8         -          20.09
+         9         -          21.67
+         10         -          23.21
+Model directory /home/kajsa/sandbox/asrscm/scm_dir8/backward_scm_dir1/scm_dir1/scm_dir1/m1
+
+MODEL      TEST NAME    BASE VAL     NEW VAL                                   TEST VAL (DROP)      GOAL (IN)SIGNIFICANT
+CLWGT-1        OFV     590.06016   629.27205                                      -39.21190  >  -7.63000
+VWGT-1         OFV     590.06016   672.98298                                      -82.92282  >  -7.63000
+
+--------------------
+

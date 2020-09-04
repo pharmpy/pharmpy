@@ -1,0 +1,83 @@
+---
+NONMEM_directory: /home/kajsa/NONMEM/nm744
+NONMEM_version: '7.4'
+PsN_version: 4.9.0
+command_line: /opt/psn/bin/scm config_havebaserun.scm
+common_options:
+  abort_on_fail: 0
+  accepted_ofv_difference: 0.5
+  add_retries: 0
+  always_datafile_in_nmrun: 0
+  check_nmtran: 0
+  clean: '2'
+  compress: 0
+  condition_number_limit: 1000
+  correlation_limit: 0.85
+  crash_restarts: 4
+  debug_rmd: 0
+  degree: 0.1
+  directory: /home/shared/Projects/PPSCM-PMX-1/Analysis/Model/Drug/run15asr_2.dir/
+  display_iterations: 0
+  handle_crashes: 1
+  handle_msfo: 0
+  large_omega_cv_limit: 0.8
+  large_sigma_cv_limit: 0.8
+  large_theta_cv_limit: 0.5
+  last_est_complete: 0
+  lsf_sleep: 3
+  min_retries: 0
+  missing_data_token: '-99'
+  model_subdir: 0
+  near_bound_sign_digits: 2
+  near_zero_boundary_limit: 0.01
+  nice: 19
+  nm_output: ext,cov,cor,coi,phi
+  nm_version: default
+  nmfe: '1'
+  nmfe_options: -tprdefault -xmloff
+  nmqual: 0
+  nodes: 0
+  picky: 0
+  prepend_model_file_name: 0
+  quick_summarize: 0
+  retries: 0
+  rmarkdown: 1
+  rplots: 0
+  run_on_lsf: 0
+  run_on_sge: 0
+  run_on_slurm: 0
+  run_on_torque: 0
+  run_on_ud: 0
+  run_on_zink: 0
+  seed: 626109
+  send_email: 0
+  shrinkage: 0
+  sign_digits_off_diagonals: 2
+  significant_digits_accept: 0
+  so: 0
+  template_directory_rplots: /opt/psn/PsN_4_9_0/R-scripts
+  template_file_rplots: scm_default.Rmd
+  threads: '5'
+  tweak_inits: 1
+  verbose: 0
+  zip: 0
+finish_time: 2020-08-11 15:15:29
+model_files:
+- /home/kajsa/kod-psn/sandbox/uu/pheno_for_scm.mod
+start_time: 2020-08-11 15:15:20
+tool_name: scm
+tool_options:
+  epsilon: 1
+  estimate_fo: 0
+  foce: 1
+  global_init: 0.001
+  gof: p_value
+  linearize: 0
+  logfile:  /home/shared/Projects/PPSCM-PMX-1/Analysis/Model/Drug/run15asr_2.dir/scmlog.txt
+  noabort: 0
+  nointer: 0
+  only_successful: 0
+  p_value: '0.05'
+  parallel_states: 0
+  search_direction: forward
+  update_derivatives: 0
