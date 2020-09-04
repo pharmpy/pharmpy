@@ -84,7 +84,7 @@ def test_set_parameters(pheno_path):
 
 
 @pytest.mark.parametrize('param_new,init_expected,buf_new', [
-    (Parameter('TVCL', 0.2), 0.2, '$THETA  0.2 ; TVCL'),
+    (Parameter('COVEFF', 0.2), 0.2, '$THETA  0.2 ; COVEFF'),
     (Parameter('THETA', 0.1), 0.1, '$THETA  0.1 ; THETA'),
     (Parameter('THETA', 0.1, 0, fix=True), 0.1, '$THETA  (0,0.1) FIX ; THETA'),
 ])
@@ -124,8 +124,8 @@ def test_add_two_parameters(pheno_path):
 
     assert len(pset) == 6
 
-    param_1 = Parameter('TVCL', 0.2)
-    param_2 = Parameter('CLWGT', 0.1)
+    param_1 = Parameter('COVEFF1', 0.2)
+    param_2 = Parameter('COVEFF2', 0.1)
     pset.add(param_1)
     pset.add(param_2)
     model.parameters = pset

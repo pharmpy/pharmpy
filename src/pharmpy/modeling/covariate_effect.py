@@ -144,14 +144,14 @@ class CovariateEffect:
         self.template.symbol = S(effect_name)
 
         self.template.expression = subs(self.template.expression, thetas)
-        self.template.subs(S('cov'), S(covariate))
+        self.template.subs({'cov': covariate})
 
         template_str = [str(symbol) for symbol in self.template.free_symbols]
         if 'mean' in template_str:
-            self.template.subs(S('mean'), S(f'{parameter}_MEAN'))
+            self.template.subs({'mean': f'{parameter}_MEAN'})
             self.statistic_type = 'mean'
         elif 'median' in template_str:
-            self.template.subs(S('median'), S(f'{parameter}_MEDIAN'))
+            self.template.subs({'median': f'{parameter}_MEDIAN'})
             self.statistic_type = 'median'
 
     def create_effect_statement(self, operation_str, statement_original):

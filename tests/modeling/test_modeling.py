@@ -88,7 +88,7 @@ def test_to_explicit_odes(pheno_path):
     assert lines[19] == 'DADT(1) = -A(1)*CL/V'
 
 
-def test_aborption(testdata):
+def test_absorption(testdata):
     model = Model(testdata / 'nonmem' / 'pheno_real.mod')
     first = str(model)
 

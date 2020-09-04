@@ -170,8 +170,7 @@ def update_ode_system(model, old, new):
             # FIXME: It could possibly be other than the first below
             # also assumes that only one compartment has been removed
             secondary = secondary_pk_param_conversion_map(len(old), 1)
-            for key, val in secondary.items():
-                statements.subs(key, val)
+            statements.subs(secondary)
             model.statements = statements
 
 

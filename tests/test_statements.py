@@ -14,19 +14,14 @@ def test_subs(testdata):
     model = Model(testdata / 'nonmem' / 'pheno_real.mod')
     statements = model.statements
 
-    statements.subs(S('ETA(1)'), S('ETAT1'))
+    statements.subs({'ETA(1)': 'ETAT1'})
 
     assert statements[5].expression == S('TVCL') * sympy.exp(S('ETAT1'))
 
-
-def test_rename_symbols(testdata):
-    model = Model(testdata / 'nonmem' / 'pheno_real.mod')
-    statements = model.statements
-
-    statements.rename_symbols({'TVCL': 'TVCLI'})
+    statements.subs({'TVCL': 'TVCLI'})
 
     assert statements[2].symbol == S('TVCLI')
-    assert statements[5].expression == S('TVCLI') * sympy.exp(S('ETA(1)'))
+    assert statements[5].expression == S('TVCLI') * sympy.exp(S('ETAT1'))
 
 
 def test_ode_free_symbols(testdata):

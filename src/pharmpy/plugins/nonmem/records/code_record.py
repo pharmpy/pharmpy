@@ -399,8 +399,8 @@ class CodeRecord(Record):
     def update(self, nonmem_names):
         statements_updated = copy.deepcopy(self.statements)
         for key, value in nonmem_names.items():
-            statements_updated.subs(real(key), real(value))
-        statements_updated.subs(real('NaN'), data.conf.na_rep)
+            statements_updated.subs({key: value})
+        statements_updated.subs({'NaN': int(data.conf.na_rep)})
         self.statements = statements_updated
 
     def from_odes(self, ode_system):

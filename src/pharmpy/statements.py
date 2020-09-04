@@ -22,12 +22,9 @@ class Assignment:
             self.symbol = symbols.real(symbol)
         self.expression = expression
 
-    def subs(self, old, new):
+    def subs(self, substitutions):
         """Substitute old into new of rhs. Inplace
         """
-        self.expression = self.expression.subs(old, new)
-
-    def rename_symbol(self, substitutions):
         self.symbol = symbols.subs(self.symbol, substitutions)
         self.expression = symbols.subs(self.expression, substitutions)
 
@@ -75,7 +72,7 @@ class ODESystem:
     def rhs_symbols(self):
         return set()
 
-    def subs(self, old, new):
+    def subs(self, substitutions):
         pass
 
     def __eq__(self, other):
@@ -410,14 +407,10 @@ class ModelStatements(list):
             symbols |= assignment.free_symbols
         return symbols
 
-    def subs(self, old, new):
+    def subs(self, substitutions):
         """Substitute old expression for new in all rhs of assignments"""
         for assignment in self:
-            assignment.subs(old, new)
-
-    def rename_symbols(self, substitutions):
-        for assignment in self:
-            assignment.rename_symbol(substitutions)
+            assignment.subs(substitutions)
 
     def find_assignment(self, symbol):
         """Returns full last statement given the symbol of an assignment"""
