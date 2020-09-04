@@ -16,7 +16,7 @@ def test_sample_from_covariance_matrix(testdata):
                             'OMEGA(1,1)': [0.019811, 0.059127, 0.030619],
                             'OMEGA(2,2)': [0.025248, 0.029088, 0.019749],
                             'SIGMA(1,1)': [0.014700, 0.014347, 0.011470]})
-    pd.testing.assert_frame_equal(samples, correct, check_less_precise=True)
+    pd.testing.assert_frame_equal(samples, correct, atol=1e-6)
 
 
 def test_sample_individual_estimates(testdata):
