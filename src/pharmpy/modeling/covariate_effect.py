@@ -7,7 +7,7 @@ from sympy import Eq, Float, Gt, Le, Piecewise, exp
 
 from pharmpy.parameter import Parameter
 from pharmpy.statements import Assignment
-from pharmpy.symbols import real, subs, sympify
+from pharmpy.symbols import real, sympify
 
 
 def add_covariate_effect(model, parameter, covariate, effect, operation='*'):
@@ -143,7 +143,7 @@ class CovariateEffect:
         effect_name = f'{parameter}{covariate}'
         self.template.symbol = S(effect_name)
 
-        self.template.expression = subs(self.template.expression, thetas)
+        self.template.subs(thetas)
         self.template.subs({'cov': covariate})
 
         template_str = [str(symbol) for symbol in self.template.free_symbols]
