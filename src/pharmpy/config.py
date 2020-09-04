@@ -1,7 +1,28 @@
 """Pharmpy configuration
 """
 
-# import configparser
+import configparser
+import sys
+from pathlib import Path
+
+import appdirs
+
+
+def read_configuration():
+    appname = 'Pharmpy'
+    filename = 'pharmpy.conf'
+    config = configparser.ConfigParser()
+    user_path = Path(appdirs.user_config_dir(appname)) / filename
+    if user_path.is_file():
+        config.read(user_path)
+    else:
+        site_path = Path(appdirs.site_config_dir(appname)) / filename
+        if site_path.is_file():
+            config.read(user_path)
+    return config
+
+
+config = read_configuration()
 
 
 class ConfigItem:
@@ -23,7 +44,11 @@ class ConfigItem:
 
 
 class Configuration:
-    pass
+    def __init__(self):
+        config.sections()
+        for module_name in sys.modules.keys():
+            if module_name.startswith('pharmpy.'):
+                pass
 
 
 class ConfigurationContext:

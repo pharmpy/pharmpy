@@ -17,3 +17,7 @@ def test_config_item():
 
 def test_data_config():
     assert data.conf.na_values == [-99]
+
+
+def test_read_config():
+    config.read_configuration()

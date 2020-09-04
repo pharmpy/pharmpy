@@ -34,6 +34,7 @@ from pharmpy.data.read import read_csv, read_nonmem_dataset
 
 
 class DataConfiguration(config.Configuration):
+    module = 'pharmpy.data'
     na_values = config.ConfigItem([-99],
                                   'List of data values to be converted to NA when reading data')
     na_rep = config.ConfigItem('-99',
