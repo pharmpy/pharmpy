@@ -4,15 +4,18 @@ Generic NONMEM code record class.
 """
 
 import copy
+import re
 
 import lark
 import sympy
 from sympy import Piecewise
 
+from pharmpy import data
 from pharmpy.data_structures import OrderedSet
 from pharmpy.parse_utils.generic import NoSuchRuleException
 from pharmpy.plugins.nonmem.records.parsers import CodeRecordParser
 from pharmpy.statements import Assignment, ModelStatements
+from pharmpy.symbols import real
 
 from .record import Record
 
@@ -148,7 +151,8 @@ class ExpressionInterpreter(lark.visitors.Interpreter):
         name = str(node).upper()
         if name.startswith('ERR('):
             name = 'EPS' + name[3:]
-        return sympy.Symbol(name, real=True)
+        symb = real(name)
+        return symb
 
 
 class CodeRecord(Record):
@@ -230,7 +234,6 @@ class CodeRecord(Record):
             self._nodes_updated.remove(node)
             self._root_updated.remove_node(node)
 
-    # Creating node does not work for if-statements
     def _add_statement(self, index_insert, statement):
         if isinstance(statement.expression, Piecewise):
             statement_str = self._translate_sympy_piecewise(statement)
@@ -251,24 +254,56 @@ class CodeRecord(Record):
             self._root_updated.add_node(node, node_following)
 
     def _translate_sympy_piecewise(self, statement):
-        statement_args = statement.expression.args
+        expression = statement.expression.args
         symbol = statement.symbol
 
-        value = statement_args[0][0]
-        condition = statement_args[0][1]
-        condition_translated = self._translate_condition(condition)
+        if len(expression) == 1:
+            value = expression[0][0]
+            condition = expression[0][1]
+            condition_translated = self._translate_condition(condition)
 
-        return f'\nIF ({condition_translated}) {symbol} = {value}\n'
+            statement_str = f'\nIF ({condition_translated}) {symbol} = {value}\n'
+            return statement_str
+        else:
+            return self._translate_sympy_block(symbol, expression)
+
+    def _translate_sympy_block(self, symbol, expression_block):
+        statement_str = '\nIF '
+        for i, expression in enumerate(expression_block):
+            value = expression[0]
+            condition = expression[1]
+
+            condition_translated = self._translate_condition(condition)
+
+            if condition_translated == 'True':
+                statement_str = re.sub('ELSE IF ', 'ELSE', statement_str)
+            else:
+                statement_str += f'({condition_translated}) THEN'
+
+            statement_str += f'\n{symbol} = {value}\n'
+
+            if i < len(expression_block) - 1:
+                statement_str += 'ELSE IF '
+            else:
+                statement_str += 'END IF\n'
+
+        return statement_str
 
     @staticmethod
-    def _translate_condition(condition):
+    def _translate_condition(c):
         sign_dict = {'>': '.GT.',
-                     '<': '.LT.'}
-        condition_split = str(condition).split(' ')
-
-        condition_translated = ''.join([sign_dict.get(symbol, symbol)
-                                        for symbol in condition_split])
-        return condition_translated
+                     '<': '.LT.',
+                     '>=': '.GE.',
+                     '<=': '.LE.'}
+        if str(c).startswith('Eq'):
+            c_split = re.split('[(,) ]', str(c))
+            c_clean = [item for item in c_split if item != '' and item != 'Eq']
+            c_transl = '.EQ.'.join([c_clean[0], c_clean[1]])
+        else:
+            c_split = str(c).split(' ')
+            c_transl = ''.join([sign_dict.get(symbol, symbol)
+                                for symbol in c_split])
+        return c_transl
 
     def _get_node(self, statement):
         try:
@@ -363,20 +398,9 @@ class CodeRecord(Record):
 
     def update(self, nonmem_names):
         statements_updated = copy.deepcopy(self.statements)
-
-        nonmem_keys = [str(key) for key in nonmem_names.keys()]
-
-        for statement in statements_updated:
-            try:
-                statement_symbols = [str(symbol) for symbol in statement.free_symbols]
-            except AttributeError:
-                statement_symbols = str(statement.symbol)
-            for nonmem_key in nonmem_keys:
-                if nonmem_key in statement_symbols or nonmem_key == statement_symbols:
-                    symbol_old = sympy.Symbol(nonmem_key)
-                    symbol_new = sympy.Symbol(nonmem_names[nonmem_key])
-                    statement.subs(symbol_old, symbol_new)
-
+        for key, value in nonmem_names.items():
+            statements_updated.subs(real(key), real(value))
+        statements_updated.subs(real('NaN'), data.conf.na_rep)
         self.statements = statements_updated
 
     def from_odes(self, ode_system):
@@ -384,10 +408,10 @@ class CodeRecord(Record):
         """
         odes = ode_system.odes[:-1]    # Skip last ode as it is for the output compartment
         functions = [ode.lhs.args[0] for ode in odes]
-        function_map = {f: sympy.Symbol(f'A({i + 1})') for i, f in enumerate(functions)}
+        function_map = {f: real(f'A({i + 1})') for i, f in enumerate(functions)}
         statements = []
         for i, ode in enumerate(odes):
-            symbol = sympy.Symbol(f'DADT({i + 1})')
+            symbol = real(f'DADT({i + 1})')
             expression = ode.rhs.subs(function_map)
             statements.append(Assignment(symbol, expression))
         self.statements = statements

@@ -4,6 +4,7 @@ import numpy as np
 
 import pharmpy.math
 from pharmpy.random_variables import VariabilityLevel
+from pharmpy.symbols import subs
 
 
 def calculate_parcov_inits(model, ncovs):
@@ -19,7 +20,7 @@ def calculate_parcov_inits(model, ncovs):
     eta_corr.fillna(value=1.0, inplace=True)    # Identical etas will get NaN as both diag and corr
 
     sigma = dist.sigma
-    inits = sigma.subs(model.parameters.inits)
+    inits = subs(sigma, model.parameters.inits)
     inits = np.array(inits).astype(np.float64)
     sd = np.sqrt(inits.diagonal())
     npars = len(sd) - ncovs

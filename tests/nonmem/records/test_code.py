@@ -1,16 +1,16 @@
 import pytest
 import sympy
-from sympy import Symbol
 
 from pharmpy.statements import Assignment
+from pharmpy.symbols import real
 
 
 def S(x):
-    return Symbol(x, real=True)
+    return real(x)
 
 
 @pytest.mark.usefixtures('parser')
-@pytest.mark.parametrize('buf,symbol,expression', [
+@pytest.mark.parametrize('buf,sym,expression', [
     ('$PRED\nY = THETA(1) + ETA(1) + EPS(1)', S('Y'), S('THETA(1)') + S('ETA(1)') + S('EPS(1)')),
     ('$PRED\nCL = 2', S('CL'), 2),
     ('$PRED\n;FULL LINE COMMENT\n K=-1', S('K'), -1),
@@ -89,10 +89,10 @@ def S(x):
     ('$PRED\nCL = 2\nCALL RANDOM (2, R)\n', S('CL'), 2),
     ('$PRED\nCL = 2\n  RETURN  \n', S('CL'), 2),
 ])
-def test_single_assignments(parser, buf, symbol, expression):
+def test_single_assignments(parser, buf, sym, expression):
     rec = parser.parse(buf).records[0]
     assert len(rec.statements) == 1
-    assert rec.statements[0].symbol == symbol
+    assert rec.statements[0].symbol == sym
     assert rec.statements[0].expression == expression
 
 
@@ -293,16 +293,16 @@ def test_statements_setter_change(parser, buf_original, buf_new):
 
 
 @pytest.mark.usefixtures('parser')
-@pytest.mark.parametrize('buf_original,symbol,expression,buf_new', [
+@pytest.mark.parametrize('buf_original,sym,expression,buf_new', [
     ('$PRED\nY = THETA(1) + ETA(1) + EPS(1)', S('CL'), 2,
      '$PRED\nY = THETA(1) + ETA(1) + EPS(1)\nCL = 2\n'),
     ('$PRED\n"FIRST\n"!Fortran code goes here\n', S('V'), -S('CL'),
      '$PRED\n"FIRST\n"!Fortran code goes here\nV = -CL\n'),
 ])
-def test_statements_setter_add_from_sympy(parser, buf_original, symbol, expression, buf_new):
+def test_statements_setter_add_from_sympy(parser, buf_original, sym, expression, buf_new):
     rec_original = parser.parse(buf_original).records[0]
 
-    assignment = Assignment(symbol, expression)
+    assignment = Assignment(sym, expression)
     statements = rec_original.statements
     statements += [assignment]
     rec_original.statements = statements
@@ -315,7 +315,11 @@ def test_statements_setter_add_from_sympy(parser, buf_original, symbol, expressi
     ('$PRED\nY = THETA(1) + ETA(1) + EPS(1)', Assignment(S('Z'), S('X')),
      {'X': 'THETA(2)'}, '$PRED\nY = THETA(1) + ETA(1) + EPS(1)\nZ = THETA(2)\n'),
     ('$PRED\nY = THETA(1) + ETA(1) + EPS(1)\nCL = 1.3', Assignment(S('Z'), S('X')),
-     {'X': 'THETA(2)'}, '$PRED\nY = THETA(1) + ETA(1) + EPS(1)\nCL = 1.3\nZ = THETA(2)\n')
+     {'X': 'THETA(2)'}, '$PRED\nY = THETA(1) + ETA(1) + EPS(1)\nCL = 1.3\nZ = THETA(2)\n'),
+    ('$PRED\nY = THETA(1) + ETA(1) + EPS(1)',
+     Assignment(S('YWGT'), sympy.Piecewise((1, sympy.Eq(S('WGT'), S('NaN'))))),
+     {'X': 'THETA(2)'}, '$PRED\nY = THETA(1) + ETA(1) + EPS(1)\n'
+                        'IF (WGT.EQ.-99) YWGT = 1\n')
 ])
 def test_update(parser, buf_original, assignment, nonmem_names, buf_expected):
     rec_original = parser.parse(buf_original).records[0]
@@ -333,11 +337,9 @@ def test_nested_block_if(parser):
     code = '\nIF (X.EQ.23) THEN\nIF (Y.EQ.0) THEN\nCL=1\nELSE\nCL=2\nENDIF\n' \
            'CL=5\nELSE\nCL=6\nENDIF'
     rec = parser.parse('$PRED' + code).records[0]
-    print(rec.root.treeprint())
 
     s = rec.statements
     rec.statements = s
-    print(rec.root.treeprint())
     assert str(rec.root) == code + '\n'
 
 
@@ -345,7 +347,25 @@ def test_nested_block_if(parser):
 @pytest.mark.parametrize('buf_original', [
     '\nIF (AMT.GT.0) BTIME = TIME\n',
 ])
-def test_translate_sympy_piecewise(parser, buf_original):
+def test_translate_sympy_parse(parser, buf_original):
     rec = parser.parse(f'$PRED{buf_original}').records[0]
     s = rec.statements[0]
     assert rec._translate_sympy_piecewise(s) == buf_original
+
+
+@pytest.mark.usefixtures('parser')
+@pytest.mark.parametrize('symbol, expression, buf_expected', [
+    (S('BTIME'), sympy.Piecewise((S('TIME'), sympy.Gt(S('AMT'), 0))),
+     '\nIF (AMT.GT.0) BTIME = TIME\n'),
+    (S('CL'), sympy.Piecewise((23, sympy.Eq(S('X'), 2))),
+     '\nIF (X.EQ.2) CL = 23\n'),
+    (S('CLWGT'), sympy.Piecewise((23, sympy.Eq(S('X'), 1)),
+                                 (0, sympy.Eq(S('X'), 0))),
+     '\nIF (X.EQ.1) THEN\nCLWGT = 23\nELSE IF (X.EQ.0) THEN\nCLWGT = 0\nEND IF\n'),
+])
+def test_translate_sympy_piecewise(parser, symbol, expression, buf_expected):
+    buf_original = '$PRED\nY = THETA(1) + ETA(1) + EPS(1)'
+    rec = parser.parse(f'$PRED{buf_original}').records[0]
+    s = Assignment(symbol, expression)
+
+    assert rec._translate_sympy_piecewise(s) == buf_expected

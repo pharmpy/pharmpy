@@ -356,6 +356,13 @@ def model_explicit_odes(args):
     write_model_or_dataset(model, None, path=args.output_file, force=args.force)
 
 
+def model_absorption(args):
+    from pharmpy.modeling import absorption
+    model = args.model
+    absorption(model, order=args.order, rate=args.rate)
+    write_model_or_dataset(model, None, path=args.output_file, force=args.force)
+
+
 def results_bootstrap(args):
     """Subcommand to generate bootstrap results"""
     if len(args.models) < 3:
@@ -617,6 +624,17 @@ parser_definition = [
                            'func': model_explicit_odes,
                            'parents': [args_model_input, args_output],
                            }},
+        {'absorption': {'help': 'Set absorption rate for a PK model ',
+                        'func': model_absorption,
+                        'parents': [args_model_input, args_output],
+                        'args': [{'name': 'order',
+                                  'choices': [0, 1],
+                                  'type': int,
+                                  'help': 'Order of absorption'},
+                                 {'name': '--rate',
+                                  'type': str,
+                                  'help': 'Symbol for absorption rate'},
+                                 ]}},
     ], 'help': 'Model manipulations',
        'title': 'Pharmpy model commands',
        'metavar': 'ACTION',

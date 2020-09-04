@@ -3,10 +3,11 @@ import sympy
 from pharmpy import Model
 from pharmpy.modeling import explicit_odes
 from pharmpy.statements import Assignment, ModelStatements
+from pharmpy.symbols import real
 
 
 def S(x):
-    return sympy.Symbol(x, real=True)
+    return real(x)
 
 
 def test_subs(testdata):

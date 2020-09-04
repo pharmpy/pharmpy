@@ -1,12 +1,13 @@
 import pytest
-from sympy import Symbol, exp
+from sympy import exp
 
 from pharmpy import Model
 from pharmpy.modeling.covariate_effect import CovariateEffect, choose_param_inits
+from pharmpy.symbols import real
 
 
 def S(x):
-    return Symbol(x, real=True)
+    return real(x)
 
 
 @pytest.mark.parametrize('cov_eff,symbol,expression', [
@@ -18,7 +19,8 @@ def S(x):
      1 + S('COVEFF1') * (S('WGT') - S('CL_MEDIAN')))
 ])
 def test_apply(cov_eff, symbol, expression):
-    cov_eff.apply(parameter='CL', covariate='WGT', theta_name='COVEFF1')
+    cov_eff.apply(parameter='CL', covariate='WGT',
+                  thetas={'theta': 'COVEFF1'})
 
     assert cov_eff.template.symbol == symbol
     assert cov_eff.template.expression == expression

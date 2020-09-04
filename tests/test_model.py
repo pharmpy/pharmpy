@@ -3,10 +3,10 @@ from pathlib import Path
 
 import pandas as pd
 import pytest
-from sympy import Symbol
 
 import pharmpy.data
 from pharmpy import Model
+from pharmpy.symbols import real
 
 tabpath = Path(__file__).parent / 'testdata' / 'nonmem' / 'pheno_real_linbase.tab'
 lincorrect = pharmpy.data.read_nonmem_dataset(tabpath, ignore_character='@',
@@ -27,7 +27,7 @@ def test_create_symbol(testdata, stem, force_numbering, symbol_name):
 
 
 def S(x):
-    return Symbol(x, real=True)
+    return real(x)
 
 
 def test_symbolic_population_prediction(testdata):
@@ -57,7 +57,7 @@ def test_population_prediction(testdata):
     linmod = Model(linpath)
     pred = linmod.population_prediction()
 
-    pd.testing.assert_series_equal(lincorrect['PRED'], pred, check_less_precise=4,
+    pd.testing.assert_series_equal(lincorrect['PRED'], pred, rtol=1e-4,
                                    check_names=False)
 
 
@@ -75,7 +75,7 @@ def test_individual_prediction(testdata):
     linmod = Model(linpath)
     pred = linmod.individual_prediction(etas=linmod.modelfit_results.individual_estimates)
 
-    pd.testing.assert_series_equal(lincorrect['CIPREDI'], pred, check_less_precise=4,
+    pd.testing.assert_series_equal(lincorrect['CIPREDI'], pred, rtol=1e-4,
                                    check_names=False)
 
 
@@ -106,9 +106,9 @@ def test_eta_gradient(testdata):
     linpath = testdata / 'nonmem' / 'pheno_real_linbase.mod'
     linmod = Model(linpath)
     grad = linmod.eta_gradient()
-    pd.testing.assert_series_equal(lincorrect['G11'], grad.iloc[:, 0], check_less_precise=4,
+    pd.testing.assert_series_equal(lincorrect['G11'], grad.iloc[:, 0], rtol=1e-4,
                                    check_names=False)
-    pd.testing.assert_series_equal(lincorrect['G21'], grad.iloc[:, 1], check_less_precise=4,
+    pd.testing.assert_series_equal(lincorrect['G21'], grad.iloc[:, 1], rtol=1e-4,
                                    check_names=False)
 
 
@@ -125,7 +125,7 @@ def test_eps_gradient(testdata):
     linpath = testdata / 'nonmem' / 'pheno_real_linbase.mod'
     linmod = Model(linpath)
     grad = linmod.eps_gradient(etas=linmod.modelfit_results.individual_estimates)
-    pd.testing.assert_series_equal(lincorrect['H11'], grad.iloc[:, 0], check_less_precise=4,
+    pd.testing.assert_series_equal(lincorrect['H11'], grad.iloc[:, 0], rtol=1e-4,
                                    check_names=False)
 
 
@@ -133,5 +133,5 @@ def test_weighted_residuals(testdata):
     linpath = testdata / 'nonmem' / 'pheno_real_linbase.mod'
     linmod = Model(linpath)
     wres = linmod.weighted_residuals()
-    pd.testing.assert_series_equal(lincorrect['WRES'], wres, check_less_precise=4,
+    pd.testing.assert_series_equal(lincorrect['WRES'], wres, rtol=1e-4,
                                    check_names=False)

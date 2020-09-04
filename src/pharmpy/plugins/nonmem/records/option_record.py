@@ -57,6 +57,18 @@ class OptionRecord(Record):
                 return opt
         return None
 
+    def get_option_lists(self, option):
+        """ Generator for lists of one option
+
+            For example COMPARTMENT in $MODEL
+        """
+        for key, value in self.all_options:
+            if key == option[:len(key)]:
+                if value[0] == '(' and value[-1] == ')':
+                    yield value[1:-1].split()
+                else:
+                    yield [value]
+
     def set_option(self, key, new_value):
         """ Set the value of an option
 
@@ -118,6 +130,17 @@ class OptionRecord(Record):
             ws_node = AttrTree.create('ws', [{'WS_ALL': '\n'}])
             self.root.children += [ws_node, node]
 
+    def replace_option(self, old, new):
+        """Replace an option
+        """
+        for node in self.root.all('option'):
+            if hasattr(node, 'KEY'):
+                if str(node.KEY) == old:
+                    node.KEY = new
+            elif hasattr(node, 'VALUE'):
+                if str(node.VALUE) == old:
+                    node.VALUE = new
+
     def remove_option(self, key):
         """ Remove all options key
         """
@@ -139,3 +162,27 @@ class OptionRecord(Record):
         for key in self.option_pairs.keys():
             if key.startswith(start):
                 self.remove_option(key)
+
+    @staticmethod
+    def match_option(valid, option):
+        """Match a given option to any from a set of valid options
+
+           NONMEM allows matching down to three letters as long as
+           there are no ambiguities.
+
+           return the canonical form of the matched option or None for no match
+        """
+        i = 3
+        match = None
+        while i <= len(option) and not match:
+            for opt in valid:
+                if opt[:i] == option[:i]:
+                    if match:
+                        match = None
+                        i += 1
+                        break
+                    else:
+                        match = opt
+            else:
+                return match
+        return match

@@ -230,6 +230,8 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
                 ests = table.final_parameter_estimates
                 fix = table.fixed
                 ests = ests[~fix]
+                if self.model:
+                    ests = ests.rename(index=self.model.parameter_translation())
                 result_obj._parameter_estimates = ests
                 sdcorr = table.omega_sigma_stdcorr[~fix]
                 sdcorr_ests = ests.copy()
@@ -241,10 +243,14 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
                     result_obj._standard_errors = None
                 else:
                     ses = ses[~fix]
+                    if self.model:
+                        ses = ses.rename(index=self.model.parameter_translation())
                     result_obj._standard_errors = ses
                     sdcorr = table.omega_sigma_se_stdcorr[~fix]
                     sdcorr_ses = ses.copy()
                     sdcorr_ses.update(sdcorr)
+                    if self.model:
+                        sdcorr_ses = sdcorr_ses.rename(index=self.model.parameter_translation())
                     result_obj._standard_errors_sdcorr = sdcorr_ses
                 result_obj._ofv = table.final_ofv
             self._read_ext = True
@@ -252,19 +258,30 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
     def _read_cov_table(self):
         if not self._read_cov:
             cov_table = NONMEMTableFile(self._path.with_suffix('.cov'))
-            self[-1]._covariance_matrix = next(cov_table).data_frame
+            df = next(cov_table).data_frame
+            if self.model:
+                df = df.rename(index=self.model.parameter_translation())
+                df.columns = df.index
+            self[-1]._covariance_matrix = df
             self._read_cov = True
 
     def _read_coi_table(self):
         if not self._read_coi:
             coi_table = NONMEMTableFile(self._path.with_suffix('.coi'))
-            self[-1]._information_matrix = next(coi_table).data_frame
+            df = next(coi_table).data_frame
+            if self.model:
+                df = df.rename(index=self.model.parameter_translation())
+                df.columns = df.index
+            self[-1]._information_matrix = df
             self._read_coi = True
 
     def _read_cor_table(self):
         if not self._read_cor:
             cor_table = NONMEMTableFile(self._path.with_suffix('.cor'))
             cor = next(cor_table).data_frame
+            if self.model:
+                cor = cor.rename(index=self.model.parameter_translation())
+                cor.columns = cor.index
             if not hasattr(self[-1], '_standard_errors'):   # In case read from the ext-file
                 self[-1]._standard_errors = pd.Series(np.diag(cor), index=cor.index)
             np.fill_diagonal(cor.values, 1)

@@ -1,10 +1,10 @@
+import re
+
 import sympy
 
+from pharmpy.model import ModelSyntaxError
 from pharmpy.statements import Assignment, Bolus, CompartmentalSystem
-
-
-def real(name):
-    return sympy.Symbol(name, real=True)
+from pharmpy.symbols import real
 
 
 def compartmental_model(model, advan, trans):
@@ -22,7 +22,7 @@ def compartmental_model(model, advan, trans):
         central = cm.add_compartment('CENTRAL')
         output = cm.add_compartment('OUTPUT')
         cm.add_flow(central, output, _advan1and2_trans(trans))
-        cm.add_flow(depot, central, sympy.Symbol('KA', real=True))
+        cm.add_flow(depot, central, real('KA'))
         dose = Bolus('AMT')
         depot.dose = dose
         ass = _f_link_assignment(model, central)
@@ -52,6 +52,48 @@ def compartmental_model(model, advan, trans):
         dose = Bolus('AMT')
         depot.dose = dose
         ass = _f_link_assignment(model, central)
+    elif advan == 'ADVAN5' or advan == 'ADVAN7':
+        cm = CompartmentalSystem()
+        modrec = model.control_stream.get_records('MODEL')[0]
+        defobs = None
+        defdose = None
+        central = None
+        depot = None
+        first_dose = None
+        compartments = []
+        for i, (name, opts) in enumerate(modrec.compartments()):
+            comp = cm.add_compartment(name)
+            if 'DEFOBSERVATION' in opts:
+                defobs = comp
+            if 'DEFDOSE' in opts:
+                defdose = comp
+            if name == 'CENTRAL':
+                central = comp
+            elif name == 'DEPOT':
+                depot = comp
+            if first_dose is None and 'NODOSE' not in opts:
+                first_dose = comp
+            compartments.append(comp)
+        output = cm.add_compartment('OUTPUT')
+        compartments.append(output)
+        ncomp = i + 2
+        if not defobs:
+            if central:
+                defobs = central
+            else:
+                defobs = compartments[0]
+        if not defdose:
+            if depot:
+                defdose = depot
+            elif first_dose is not None:
+                defdose = first_dose
+            else:
+                raise ModelSyntaxError('Dosing compartment is unknown')
+        for from_n, to_n, rate in _find_rates(model, ncomp):
+            cm.add_flow(compartments[from_n - 1], compartments[to_n - 1], rate)
+        dose = Bolus('AMT')
+        defdose.dose = dose
+        ass = _f_link_assignment(model, defobs)
     elif advan == 'ADVAN10':
         cm = CompartmentalSystem()
         central = cm.add_compartment('CENTRAL')
@@ -101,20 +143,63 @@ def compartmental_model(model, advan, trans):
 
 
 def _f_link_assignment(model, compartment):
-    f = sympy.Symbol('F', real=True)
+    f = real('F')
     fexpr = compartment.amount
     pkrec = model.control_stream.get_records('PK')[0]
     if pkrec.statements.find_assignment('S1'):
-        fexpr = fexpr / sympy.Symbol('S1', real=True)
+        fexpr = fexpr / real('S1')
     ass = Assignment(f, fexpr)
     return ass
 
 
+def _find_rates(model, ncomps):
+    pkrec = model.control_stream.get_records('PK')[0]
+    for stat in pkrec.statements:
+        if hasattr(stat, 'symbol'):
+            name = stat.symbol.name
+            m = re.match(r'^K(\d+)(T\d+)?$', name)
+            if m:
+                if m.group(2):
+                    from_n = int(m.group(1))
+                    to_n = int(m.group(2)[1:])
+                else:
+                    n = m.group(1)
+                    if len(n) == 2:
+                        from_n = int(n[0])
+                        to_n = int(n[1])
+                    elif len(n) == 3:
+                        f1 = int(n[0])
+                        t1 = int(n[1:])
+                        f2 = int(n[0:2])
+                        t2 = int(n[2:])
+                        q1 = f1 <= ncomps and t1 <= ncomps
+                        q2 = f2 <= ncomps and t2 <= ncomps
+                        if q1 and q2:
+                            raise ModelSyntaxError(f'Rate parameter {n} is ambiguous. '
+                                                   f'Use the KiTj notation.')
+                        if q1:
+                            from_n = f1
+                            to_n = t1
+                        elif q2:
+                            from_n = f2
+                            to_n = t2
+                        else:
+                            # Too large to or from compartment index. What would NONMEM do?
+                            # Could also be too large later
+                            continue
+                    elif len(n) == 4:
+                        from_n = int(n[0:2])
+                        to_n = int(n[2:])
+                if to_n == 0:
+                    to_n = ncomps
+                yield from_n, to_n, real(name)
+
+
 def _advan1and2_trans(trans):
     if trans == 'TRANS2':
-        return sympy.Symbol('CL', real=True) / sympy.Symbol('V', real=True)
+        return real('CL') / real('V')
     else:       # TRANS1 which is also the default
-        return sympy.Symbol('K', real=True)
+        return real('K')
 
 
 def _advan3_trans(trans):

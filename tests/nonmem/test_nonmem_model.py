@@ -3,16 +3,16 @@ from io import StringIO
 import pytest
 import sympy
 from pyfakefs.fake_filesystem_unittest import Patcher
-from sympy import Symbol
 
 from pharmpy import Model
 from pharmpy.parameter import Parameter
 from pharmpy.plugins.nonmem.nmtran_parser import NMTranParser
 from pharmpy.statements import Assignment, ModelStatements, ODESystem
+from pharmpy.symbols import real
 
 
 def S(x):
-    return Symbol(x, real=True)
+    return real(x)
 
 
 def test_source(pheno_path):
@@ -67,8 +67,8 @@ def test_set_parameters(pheno_path):
                                                        lower=0, upper=sympy.oo)
     model.update_source()
     thetas = model.control_stream.get_records('THETA')
-    assert str(thetas[0]) == '$THETA  (0,0.75) ; CL\n'
-    assert str(thetas[1]) == '$THETA  (0,0.5) ; V\n'
+    assert str(thetas[0]) == '$THETA  (0,0.75) ; PTVCL\n'
+    assert str(thetas[1]) == '$THETA  (0,0.5) ; PTVV\n'
     assert str(thetas[2]) == '$THETA  (-.99,0.25)\n'
     omegas = model.control_stream.get_records('OMEGA')
     assert str(omegas[0]) == '$OMEGA  DIAGONAL(2)\n 0.1  ;       IVCL\n 0.2  ;        IVV\n'
@@ -85,8 +85,8 @@ def test_set_parameters(pheno_path):
 
 @pytest.mark.parametrize('param_new,init_expected,buf_new', [
     (Parameter('TVCL', 0.2), 0.2, '$THETA  0.2 ; TVCL'),
-    (Parameter('THETA', 0.1), 0.1, '$THETA  0.1'),
-    (Parameter('THETA', 0.1, 0, fix=True), 0.1, '$THETA  (0,0.1) FIX'),
+    (Parameter('THETA', 0.1), 0.1, '$THETA  0.1 ; THETA'),
+    (Parameter('THETA', 0.1, 0, fix=True), 0.1, '$THETA  (0,0.1) FIX ; THETA'),
 ])
 def test_add_parameters(pheno_path, param_new, init_expected, buf_new):
     model = Model(pheno_path)
@@ -106,8 +106,8 @@ def test_add_parameters(pheno_path, param_new, init_expected, buf_new):
 
     assert str(model.control_stream) == str(stream)
 
-    rec_ref = f'$THETA  (0,0.00469307) ; CL\n' \
-              f'$THETA  (0,1.00916) ; V\n' \
+    rec_ref = f'$THETA  (0,0.00469307) ; PTVCL\n' \
+              f'$THETA  (0,1.00916) ; PTVV\n' \
               f'$THETA  (-.99,.1)\n' \
               f'{buf_new}\n'
 
@@ -116,6 +116,24 @@ def test_add_parameters(pheno_path, param_new, init_expected, buf_new):
         rec_mod += str(rec)
 
     assert rec_ref == rec_mod
+
+
+def test_add_two_parameters(pheno_path):
+    model = Model(pheno_path)
+    pset = model.parameters
+
+    assert len(pset) == 6
+
+    param_1 = Parameter('TVCL', 0.2)
+    param_2 = Parameter('CLWGT', 0.1)
+    pset.add(param_1)
+    pset.add(param_2)
+    model.parameters = pset
+    model.update_source()
+
+    assert len(pset) == 8
+    assert model.parameters[param_1.name].init == 0.2
+    assert model.parameters[param_2.name].init == 0.1
 
 
 @pytest.mark.parametrize('statement_new,buf_new', [
@@ -207,7 +225,7 @@ def test_minimal(datadir):
     model = Model(path)
     assert len(model.statements) == 1
     assert model.statements[0].expression == \
-        Symbol('THETA(1)', real=True) + Symbol('ETA(1)', real=True) + Symbol('EPS(1)', real=True)
+        real('THETA(1)') + real('ETA(1)') + real('EPS(1)')
 
 
 def test_copy(datadir):
@@ -216,7 +234,7 @@ def test_copy(datadir):
     copy = model.copy()
     assert id(model) != id(copy)
     assert model.statements[0].expression == \
-        Symbol('THETA(1)', real=True) + Symbol('ETA(1)', real=True) + Symbol('EPS(1)', real=True)
+        real('THETA(1)') + real('ETA(1)') + real('EPS(1)')
 
 
 def test_initial_individual_estimates(datadir):
@@ -285,3 +303,12 @@ def test_deterministic_theta_comments(pheno_path):
         no_option += len(theta_record.root.all('option'))
 
     assert no_option == 0
+
+
+def test_remove_eta(pheno_path):
+    model = Model(pheno_path)
+    rvs = model.random_variables
+    eta1 = rvs['ETA(1)']
+    rvs.discard(eta1)
+    model.update_source()
+    assert str(model).split('\n')[13] == '      V = TVV*EXP(ETA(1))'
