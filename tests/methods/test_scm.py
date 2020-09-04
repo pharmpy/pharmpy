@@ -1,9 +1,10 @@
-import pandas as pd
 from io import StringIO
+
+import pandas as pd
+from numpy import isnan, nan
 from pytest import approx
 
 import pharmpy.methods.scm.results as scm
-from numpy import nan, isnan
 
 
 def test_psn_scm_options(testdata):
