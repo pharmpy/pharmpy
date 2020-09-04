@@ -19,6 +19,16 @@ def test_subs(testdata):
     assert statements[5].expression == S('TVCL') * sympy.exp(S('ETAT1'))
 
 
+def test_rename_symbols(testdata):
+    model = Model(testdata / 'nonmem' / 'pheno_real.mod')
+    statements = model.statements
+
+    statements.rename_symbols({'TVCL': 'TVCLI'})
+
+    assert statements[2].symbol == S('TVCLI')
+    assert statements[5].expression == S('TVCLI') * sympy.exp(S('ETA(1)'))
+
+
 def test_ode_free_symbols(testdata):
     model = Model(testdata / 'nonmem' / 'pheno_real.mod')
 

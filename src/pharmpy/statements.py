@@ -27,6 +27,10 @@ class Assignment:
         """
         self.expression = self.expression.subs(old, new)
 
+    def rename_symbol(self, substitutions):
+        self.symbol = symbols.subs(self.symbol, substitutions)
+        self.expression = symbols.subs(self.expression, substitutions)
+
     @property
     def free_symbols(self):
         symbols = {self.symbol}
@@ -150,6 +154,9 @@ class CompartmentalSystem(ODESystem):
     """
     def __init__(self):
         self._g = nx.DiGraph()
+
+    def rename_symbol(self, substitutions):
+        pass
 
     @property
     def free_symbols(self):
@@ -407,6 +414,10 @@ class ModelStatements(list):
         """Substitute old expression for new in all rhs of assignments"""
         for assignment in self:
             assignment.subs(old, new)
+
+    def rename_symbols(self, substitutions):
+        for assignment in self:
+            assignment.rename_symbol(substitutions)
 
     def find_assignment(self, symbol):
         """Returns full last statement given the symbol of an assignment"""
