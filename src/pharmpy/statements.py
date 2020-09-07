@@ -155,6 +155,15 @@ class CompartmentalSystem(ODESystem):
     def __init__(self):
         self._g = nx.DiGraph()
 
+    def subs(self, substitutions):
+        g_copy = copy.deepcopy(self._g)
+        for (u, v, rate) in self._g.edges.data('rate'):
+            rate_sub = symbols.subs(rate, substitutions)
+            g_copy.remove_edge(u, v)
+            g_copy.add_edge(u, v, rate=rate_sub)
+
+        self._g = copy.deepcopy(g_copy)
+
     @property
     def free_symbols(self):
         free = {symbols.real('t')}

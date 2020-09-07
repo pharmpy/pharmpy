@@ -23,6 +23,12 @@ def test_subs(testdata):
     assert statements[2].symbol == S('TVCLI')
     assert statements[5].expression == S('TVCLI') * sympy.exp(S('ETAT1'))
 
+    assert statements.ode_system.free_symbols == {S('V'), S('CL'), S('AMT'), S('t')}
+
+    statements.subs({'V': 'V2'})
+
+    assert statements.ode_system.free_symbols == {S('CL'), S('AMT'), S('t'), S('V2')}
+
 
 def test_ode_free_symbols(testdata):
     model = Model(testdata / 'nonmem' / 'pheno_real.mod')
