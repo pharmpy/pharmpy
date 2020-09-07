@@ -93,6 +93,9 @@ def read_results(path_or_buf):
         from pharmpy.methods.bootstrap import BootstrapResults
         res = BootstrapResults(original_model=None, bootstrap_models=None)
         res._statistics = d['statistics']
+    elif decoder.cls == 'CDDResults':
+        from pharmpy.methods.cdd import CDDResults
+        res = CDDResults.from_dict(d)
 
     return res
 

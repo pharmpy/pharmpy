@@ -374,6 +374,15 @@ def results_bootstrap(args):
     print(res)
 
 
+def results_cdd(args):
+    from pharmpy.methods.cdd.results import psn_cdd_results
+    if not args.psn_dir.is_dir():
+        error(FileNotFoundError(str(args.psn_dir)))
+    res = psn_cdd_results(args.psn_dir)
+    res.to_json(path=args.psn_dir / 'results.json')
+    res.to_csv(path=args.psn_dir / 'results.csv')
+
+
 def results_frem(args):
     """Generate frem results"""
     from pharmpy.methods.frem.results import psn_frem_results
@@ -677,6 +686,12 @@ parser_definition = [
             'parents': [args_input], 'args': [
                    {'name': '--base', 'metavar': 'FILE', 'type': input_model,
                     'help': 'Base model'}]}},
+        {'cdd': {
+            'help': 'Generate cdd results',
+            'description': 'Generate results from a PsN cdd run',
+            'func': results_cdd, 'args': [
+                {'name': 'psn_dir', 'metavar': 'PsN directory', 'type': pathlib.Path,
+                 'help': 'Path to PsN cdd run directory'}]}},
         {'frem': {
             'help': 'Generate FREM results',
             'description': 'Generate results from a PsN frem run',
