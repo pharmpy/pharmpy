@@ -2,6 +2,7 @@
 """
 
 import configparser
+import sys
 from pathlib import Path
 
 import appdirs
@@ -44,6 +45,8 @@ class ConfigItem:
 
 class Configuration:
     def __init__(self):
+        if 'pytest' in sys.modules:
+            return
         if self.module in config_file.keys():
             for key, value in config_file[self.module].items():
                 setattr(self, key, value)
