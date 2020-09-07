@@ -167,6 +167,10 @@ def update_ode_system(model, old, new):
                 subs.replace_option('ADVAN12', 'ADVAN11')
                 statements.subs({real('K23'): real('K12'), real('K32'): real('K32'),
                                  real('K24'): real('K13'), real('K42'): real('K31')})
+            elif advan == 'ADVAN5' or advan == 'ADVAN7':
+                # FIXME: Add this. Here we can check which compartment name was removed
+                pass
+
             # FIXME: It could possibly be other than the first below
             # also assumes that only one compartment has been removed
             secondary = secondary_pk_param_conversion_map(len(old), 1)

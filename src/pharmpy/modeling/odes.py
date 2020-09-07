@@ -1,4 +1,5 @@
-from pharmpy.statements import CompartmentalSystem, ExplicitODESystem
+from pharmpy.parameter import Parameter
+from pharmpy.statements import Assignment, CompartmentalSystem, ExplicitODESystem
 
 
 def explicit_odes(model):
@@ -35,5 +36,18 @@ def absorption(model, order, rate=None):
                 statements.remove_symbol_definition(s, odes)
             model.statements = statements
             model.remove_unused_parameters_and_rvs()
+    elif order == 1:
+        if not depot:
+            dose_comp = odes.find_dosing()
+            depot = odes.add_compartment('DEPOT')
+            depot.dose = dose_comp.dose
+            dose_comp.dose = None
+            mat_param = Parameter('TVMAT', init=0.1, lower=0)
+            model.parameters.add(mat_param)
+            imat = Assignment('MAT', mat_param.symbol)
+            model.statements = model.statements.insert(0, imat)     # FIXME: Don't set again
+            odes.add_flow(depot, dose_comp, 1 / mat_param.symbol)
+    else:
+        raise ValueError(f'Requested order {order} but only orders r0 and 1 are supported')
 
     return model

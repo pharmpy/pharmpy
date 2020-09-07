@@ -198,6 +198,11 @@ class CompartmentalSystem(ODESystem):
         else:
             raise ValueError('More than one or zero output compartments')
 
+    def find_dosing(self):
+        for node in self._g.nodes:
+            if node.dose is not None:
+                return node
+
     def find_central(self):
         output = self.find_output()
         central = next(self._g.predecessors(output))
