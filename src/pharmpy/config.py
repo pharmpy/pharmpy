@@ -2,7 +2,6 @@
 """
 
 import configparser
-import sys
 from pathlib import Path
 
 import appdirs
@@ -22,7 +21,7 @@ def read_configuration():
     return config
 
 
-config = read_configuration()
+config_file = read_configuration()
 
 
 class ConfigItem:
@@ -45,10 +44,9 @@ class ConfigItem:
 
 class Configuration:
     def __init__(self):
-        config.sections()
-        for module_name in sys.modules.keys():
-            if module_name.startswith('pharmpy.'):
-                pass
+        if self.module in config_file.keys():
+            for key, value in config_file[self.module].items():
+                setattr(self, key, value)
 
 
 class ConfigurationContext:

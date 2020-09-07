@@ -29,6 +29,9 @@ from pharmpy.math import cov2corr
 
 
 class ResultsConfiguration(config.Configuration):
+    module = 'pharmpy.results'
+    """ FIXME: This setting should be moved to the NONMEM plugin
+    """
     native_shrinkage = config.ConfigItem(True, 'Use shrinkage results from external tool')
 
 
