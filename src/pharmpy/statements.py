@@ -23,7 +23,10 @@ class Assignment:
         self.expression = expression
 
     def subs(self, substitutions):
-        """Substitute old into new of rhs. Inplace
+        """Substitute symbols in assignment.
+
+        substitutions - dictionary with old-new pair (can be type str or
+                        sympy symbol)
         """
         self.symbol = symbols.subs(self.symbol, substitutions)
         self.expression = symbols.subs(self.expression, substitutions)
@@ -151,9 +154,6 @@ class CompartmentalSystem(ODESystem):
     """
     def __init__(self):
         self._g = nx.DiGraph()
-
-    def rename_symbol(self, substitutions):
-        pass
 
     @property
     def free_symbols(self):
@@ -413,7 +413,11 @@ class ModelStatements(list):
         return symbols
 
     def subs(self, substitutions):
-        """Substitute old expression for new in all rhs of assignments"""
+        """Substitute symbols in all statements.
+
+        substitutions - dictionary with old-new pair (can be type str or
+                        sympy symbol)
+        """
         for assignment in self:
             assignment.subs(substitutions)
 
