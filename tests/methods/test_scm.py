@@ -91,7 +91,7 @@ def test_parse_runtable_block_gof_pval(testdata):
               'VCVD1': ('V', 'CVD1'),
               'VCV2': ('V', 'CV2')}
 
-    columns = ['Model', 'Parameter', 'Covariate', 'Extended_State', 'reduced_ofv', 'extended_ofv',
+    columns = ['model', 'parameter', 'covariate', 'extended_state', 'reduced_ofv', 'extended_ofv',
                'ofv_drop',
                'delta_df', 'pvalue',
                'is_backward', 'extended_significant']
@@ -119,7 +119,7 @@ def test_parse_runtable_block_gof_pval(testdata):
 """
     correct = pd.read_csv(StringIO(correct), index_col=[0], names=columns, header=None)
     table = scm.parse_runtable_block(block, parcov_dictionary=parcov)
-    table = table.astype({'Extended_State': 'int64'})
+    table = table.astype({'extended_state': 'int64'})
     pd.testing.assert_frame_equal(table, correct)
 
     # log files with merged base and new ofv. Small test to ensure correct
@@ -164,7 +164,7 @@ def test_parse_runtable_block_gof_ofv(testdata):
               'VCVD1': ('V', 'CVD1'),
               'VCV2': ('V', 'CV2')}
 
-    columns = ['Model', 'Parameter', 'Covariate', 'Extended_State', 'reduced_ofv', 'extended_ofv',
+    columns = ['model', 'parameter', 'covariate', 'extended_state', 'reduced_ofv', 'extended_ofv',
                'ofv_drop', 'goal_ofv_drop', 'is_backward', 'extended_significant']
 
     with open(step['b_ofv']) as tab:
@@ -191,7 +191,7 @@ def test_parse_runtable_block_gof_ofv(testdata):
 """
     correct = pd.read_csv(StringIO(correct), index_col=[0], names=columns, header=None)
     table = scm.parse_runtable_block(block, parcov_dictionary=parcov)
-    table = table.astype({'Extended_State': 'int64'})
+    table = table.astype({'extended_state': 'int64'})
     pd.testing.assert_frame_equal(table, correct)
 
 

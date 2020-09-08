@@ -123,15 +123,15 @@ def model_name_series_to_dataframe(modelname, parcov_dictionary,
             state = extended_states(modelname, included_relations)
     else:
         state = [int(s) for s in subdf.state.values]
-    result = pd.DataFrame({'Model': modelname,
-                           'Parameter': None,
-                           'Covariate': None,
-                           'Extended_State': state})
+    result = pd.DataFrame({'model': modelname,
+                           'parameter': None,
+                           'covariate': None,
+                           'extended_state': state})
     if parcov_dictionary:
         temp = pd.DataFrame([parcov_dictionary[m] for m in subdf.parcov],
                             columns=('parameter', 'covariate'))
-        result.Parameter = temp.parameter
-        result.Covariate = temp.covariate
+        result.parameter = temp.parameter
+        result.covariate = temp.covariate
     return result
 
 
@@ -155,12 +155,12 @@ def parse_mixed_block(block):
                        for relation in pattern['stashed'].match(row).group('relations').split(',')]
         elif pattern['readded'].match(row):
             if readded:
-                raise NotImplementedError('Two Re-testing lines in the same logfile block')
+                raise NotImplementedError('Two re-testing lines in the same logfile block')
             readded = [tuple(relation.split('-'))
                        for relation in pattern['readded'].match(row).group('relations').split(',')]
         elif pattern['m1'].match(row):
             if m1:
-                raise NotImplementedError('Two Model directory lines in the same logfile block')
+                raise NotImplementedError('Two model directory lines in the same logfile block')
             m1 = pattern['m1'].match(row).group('m1folder')
         elif pattern['included'].match(row):
             for relation in pattern['included'].match(row).group('relations').split(','):
@@ -229,9 +229,9 @@ def step_data_frame(step, included_relations):
     df = step['runtable']
     is_backward = df['is_backward'].iloc[0]
     if is_backward and included_relations:
-        if np.all(np.isnan(df['Extended_State'].values.flatten())):
+        if np.all(np.isnan(df['extended_state'].values.flatten())):
             # This must be a backward step without preceeding steps of any kind
-            df['Extended_State'] = extended_states(df['Model'],
+            df['extended_state'] = extended_states(df['model'],
                                                    included_relations)
     df['step'] = step['number']
     if 'pvalue' in df.columns:
@@ -246,15 +246,15 @@ def step_data_frame(step, included_relations):
     if step['chosen']:
         chosenmodel = step['chosen']['parameter'] + step['chosen']['covariate'] + \
             r'-' + step['chosen']['state']
-    df['selected'] = [name == chosenmodel for name in df['Model'].values]
+    df['selected'] = [name == chosenmodel for name in df['model'].values]
 
-    df['folder'] = step['m1']
-    model = df['Model']  # move to end
-    df.drop(columns=['Model'], inplace=True)
-    df['Model'] = model
+    df['directory'] = str(step['m1'])
+    model = df['model']  # move to end
+    df.drop(columns=['model'], inplace=True)
+    df['model'] = model
 
     if step['stashed'] or step['readded']:
-        model_parcov = names_without_state(df['Model'])
+        model_parcov = names_without_state(df['model'])
         if step['stashed']:
             stashed = {f'{par}{cov}' for par, cov in step['stashed']}
             df['stashed'] = [parcov in stashed for parcov in model_parcov]
@@ -266,7 +266,7 @@ def step_data_frame(step, included_relations):
         else:
             df['readded'] = False
 
-    return df.set_index(['step', 'Parameter', 'Covariate', 'Extended_State'])
+    return df.set_index(['step', 'parameter', 'covariate', 'extended_state'])
 
 
 def empty_step(previous_number, previous_criterion=None):
@@ -416,7 +416,7 @@ def psn_scm_results(path):
     """
     path = Path(path)
     if not path.is_dir():
-        raise IOError(f'Could not find scm folder: {str(path)}')
+        raise IOError(f'Could not find scm directory: {str(path)}')
 
     options = psn_scm_options(path)
     logfile = path / options['logfile']
