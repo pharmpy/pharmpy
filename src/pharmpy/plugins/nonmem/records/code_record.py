@@ -203,6 +203,8 @@ class CodeRecord(Record):
 
                         if index_to_remove is None:
                             self._add_statement(index_new, s_new)
+                            if self._get_node(s_past) is not None:
+                                index_past -= 1
                         else:
                             self._remove_statements(index_new, index_to_remove)
                             index_past = index_to_remove + 1
