@@ -3,6 +3,7 @@ import warnings
 
 from sympy import exp
 
+from pharmpy.parameter import Parameter
 from pharmpy.statements import Assignment
 from pharmpy.symbols import real, subs
 
@@ -23,9 +24,9 @@ def transform_etas(model, transformation, list_of_etas):
     eta_transformation = create_eta_transformation(transformation, len(etas))
 
     etas_assignment, etas_subs = create_etas(etas)
+    thetas = create_thetas(model, len(etas))
 
-    eta_transformation.apply(etas_assignment)
-    print(eta_transformation.assignments)
+    eta_transformation.apply(etas_assignment, thetas)
 
     return model
 
@@ -43,6 +44,27 @@ def create_etas(etas_original):
     return etas_assignment, etas_subs
 
 
+def create_thetas(model, no_of_thetas):
+    pset = model.parameters
+    thetas = dict()
+    theta_name = str(model.create_symbol(stem='COVEFF', force_numbering=True))
+
+    if no_of_thetas == 1:
+        pset.add(Parameter(theta_name, 0.01, -3, 3))
+        thetas['theta1'] = theta_name
+    else:
+        theta_no = int(re.findall(r'\d', theta_name)[0])
+
+        for i in range(1, no_of_thetas+1):
+            pset.add(Parameter(theta_name, 0.01, -3, 3))
+            thetas[f'theta{i}'] = theta_name
+            theta_name = f'COVEFF{theta_no + i}'
+
+    model.parameters = pset
+
+    return thetas
+
+
 def create_eta_transformation(transformation, no_of_etas):
     if transformation == 'boxcox':
         return EtaTransformation.boxcox(no_of_etas)
@@ -52,9 +74,10 @@ class EtaTransformation:
     def __init__(self, assignments):
         self.assignments = assignments
 
-    def apply(self, etas):
+    def apply(self, etas, thetas):
         for assignment in self.assignments:
             subs(assignment, etas)
+            subs(assignment, thetas)
 
     @classmethod
     def boxcox(cls, no_of_etas):
