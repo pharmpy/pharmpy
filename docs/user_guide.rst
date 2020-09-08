@@ -10,3 +10,4 @@ User guide
    modeling
    frem
    cli
+   configuration
