@@ -2,7 +2,7 @@
 """
 
 import configparser
-import sys
+import os
 from pathlib import Path
 
 import appdirs
@@ -45,7 +45,8 @@ class ConfigItem:
 
 class Configuration:
     def __init__(self):
-        if 'pytest' in sys.modules:
+        noconfigfile = bool(os.getenv('PHARMPYNOCONFIGFILE', 0))
+        if noconfigfile:
             return
         if self.module in config_file.keys():
             for key, value in config_file[self.module].items():
