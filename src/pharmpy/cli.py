@@ -396,6 +396,15 @@ def results_frem(args):
     res.to_csv(path=args.psn_dir / 'results.csv')
 
 
+def results_scm(args):
+    from pharmpy.methods.scm.results import psn_scm_results
+    if not args.psn_dir.is_dir():
+        error(FileNotFoundError(str(args.psn_dir)))
+    res = psn_scm_results(args.psn_dir)
+    res.to_json(path=args.psn_dir / 'results.json')
+    res.to_csv(path=args.psn_dir / 'results.csv')
+
+
 def results_ofv(args):
     """Subcommand to extract final ofv from multiple results"""
     ofvs = []
@@ -724,6 +733,12 @@ parser_definition = [
             'args': [
                 {'name': 'psn_dir', 'metavar': 'PsN directory', 'type': pathlib.Path,
                  'help': 'Path to PsN run directory'}]}},
+        {'scm': {
+            'help': 'Generate scm results',
+            'description': 'Generate results from a PsN scm run',
+            'func': results_scm, 'args': [
+                {'name': 'psn_dir', 'metavar': 'PsN directory', 'type': pathlib.Path,
+                 'help': 'Path to PsN scm run directory'}]}},
         {'summary': {
             'help': 'Modelfit summary',
             'description': 'Print a summary of a model estimates to stdout.',

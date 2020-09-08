@@ -96,7 +96,9 @@ def read_results(path_or_buf):
     elif decoder.cls == 'CDDResults':
         from pharmpy.methods.cdd import CDDResults
         res = CDDResults.from_dict(d)
-
+    elif decoder.cls == 'SCMResults':
+        from pharmpy.methods.scm import SCMResults
+        res = SCMResults.from_dict(d)
     return res
 
 
