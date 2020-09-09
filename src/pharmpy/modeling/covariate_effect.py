@@ -12,14 +12,20 @@ from pharmpy.statements import Assignment
 
 
 def add_covariate_effect(model, parameter, covariate, effect, operation='*'):
-    """Adds covariate effect to pharmpy model.
+    """Adds covariate effect to :class:`pharmpy.model`.
 
-    Args:
-        model (Model): Pharmpy model to add covariate effect to
-        parameter (str): Name of parameter to add covariate effect to
-        covariate (str): Name of covariate
-        effect (str): Type of covariate effect
-        operation (str): Whether the covariate effect should be added or multiplied
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model to add covariate effect to
+    parameter : str
+        Name of parameter to add covariate effect to
+    covariate : str
+        Name of covariate
+    effect : str
+        Type of covariate effect
+    operation : str
+        Whether the covariate effect should be added or multiplied
     """
     mean = calculate_mean(model.dataset, covariate)
     median = calculate_median(model.dataset, covariate)
