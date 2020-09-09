@@ -184,11 +184,11 @@ class CodeRecord(Record):
             index_past = 0
             last_index_past = len(statements_past) - 1
             last_index_new = len(statements_new) - 1
-
             for index_new, s_new in enumerate(statements_new):
-                if index_past == len(statements_past):      # Add rest of new statements
+                if index_past >= len(statements_past):      # Add rest of new statements
                     if self._get_node(s_new) is None:
                         self._add_statement(index_past, s_new)
+                        index_past += 1
                     continue
                 elif len(statements_past) == 1 and len(statements_new) == 1:
                     self._replace_statement(0, s_new)
@@ -203,10 +203,10 @@ class CodeRecord(Record):
 
                         if index_to_remove is None:
                             self._add_statement(index_new, s_new)
+                            index_past -= 1
                         else:
                             self._remove_statements(index_new, index_to_remove)
                             index_past = index_to_remove + 1
-
                 elif index_new == last_index_new:          # Remove rest of original
                     self._remove_statements(index_new + 1, last_index_past)
 
