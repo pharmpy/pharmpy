@@ -27,6 +27,13 @@ def transform_etas(model, transformation, list_of_etas):
     thetas = create_thetas(model, len(etas))
 
     eta_transformation.apply(etas_assignment, thetas)
+    statements_new = eta_transformation.assignments
+    sset = model.statements
+    sset.subs(etas_subs)
+
+    statements_new.extend(sset)
+
+    model.statements = statements_new
 
     return model
 
@@ -37,8 +44,8 @@ def create_etas(etas_original):
 
     for i, eta in enumerate(etas_original):
         eta_no = int(re.findall(r'\d', eta.name)[0])
-        etas_subs[eta] = S(f'ETAB({eta_no})')
-        etas_assignment[f'etab{i + 1}'] = f'ETAB({eta_no})'
+        etas_subs[eta.name] = f'ETAB{eta_no}'
+        etas_assignment[f'etab{i + 1}'] = f'ETAB{eta_no}'
         etas_assignment[f'eta{i + 1}'] = f'ETA({eta_no})'
 
     return etas_assignment, etas_subs
