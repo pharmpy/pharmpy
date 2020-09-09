@@ -18,10 +18,9 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import scipy.linalg
-import sympy
 
 from pharmpy import ParameterSet, RandomVariables
-from pharmpy.symbols import real, subs
+from pharmpy.symbols import real
 
 
 class ModelException(Exception):
@@ -142,7 +141,7 @@ class Model:
                 break
 
         for j in range(i, -1, -1):
-            y = subs(y, {stats[j].symbol: stats[j].expression})
+            y = y.subs({stats[j].symbol: stats[j].expression})
 
         return y
 
@@ -151,7 +150,7 @@ class Model:
         """
         y = self.symbolic_individual_prediction()
         for eta in self.random_variables.etas:
-            y = subs(y, {eta.name: 0})
+            y = y.subs({eta.name: 0})
         return y
 
     def symbolic_individual_prediction(self):
@@ -161,7 +160,7 @@ class Model:
 
         for eps in self.random_variables.ruv_rvs:
             # FIXME: The rv symbol and the code symbol are different.
-            y = subs(y, {eps.name: 0})
+            y = y.subs({eps.name: 0})
 
         return y
 
@@ -177,19 +176,19 @@ class Model:
         """
         y = self.symbolic_population_prediction()
         if parameters is not None:
-            y = subs(y, parameters)
+            y = y.subs(parameters)
         else:
             if self.modelfit_results is not None:
-                y = subs(y, self.modelfit_results.parameter_estimates.to_dict())
+                y = y.subs(self.modelfit_results.parameter_estimates.to_dict())
             else:
-                y = subs(y, self.parameters.inits)
+                y = y.subs(self.parameters.inits)
 
         if dataset is not None:
             df = dataset
         else:
             df = self.dataset
 
-        pred = df.apply(lambda row: np.float64(subs(y, row.to_dict())), axis=1)
+        pred = df.apply(lambda row: np.float64(y.subs(row.to_dict())), axis=1)
 
         return pred
 
@@ -198,9 +197,9 @@ class Model:
         """
         y = self.symbolic_individual_prediction()
         if parameters is not None:
-            y = subs(y, parameters)
+            y = y.subs(parameters)
         else:
-            y = subs(y, self.parameters.inits)
+            y = y.subs(self.parameters.inits)
 
         if dataset is not None:
             df = dataset
@@ -219,7 +218,7 @@ class Model:
         def fn(row):
             row = row.to_dict()
             curetas = etas.loc[row[idcol]].to_dict()
-            a = np.float64(subs(subs(y, row), curetas))
+            a = np.float64(y.subs(row).subs(curetas))
             return a
 
         ipred = df.apply(fn, axis=1)
@@ -228,14 +227,7 @@ class Model:
     def symbolic_eta_gradient(self):
         y = self._observation()
         for eps in self.random_variables.ruv_rvs:
-            y = subs(y, {eps.name: 0})
-        print(y)
-        expr = subs(y, {'ETA(2)': sympy.Symbol('OTHER')})
-        print(expr.diff(sympy.Symbol('OTHER')))
-        print(y.diff(sympy.Symbol('ETA(2)', real=True)))
-        print("ETA(2) hash: ", hash(sympy.Symbol('ETA(2)', real=True)))
-        for s in y.free_symbols:
-            print(s.name, s.assumptions0, hash(s))
+            y = y.subs({eps.name: 0})
         d = [y.diff(real(x.name)) for x in self.random_variables.etas]
         return d
 
@@ -246,9 +238,9 @@ class Model:
 
     def _replace_parameters(self, y, parameters):
         if parameters is not None:
-            y = [subs(x, parameters) for x in y]
+            y = [x.subs(parameters) for x in y]
         else:
-            y = [subs(x, self.parameters.inits) for x in y]
+            y = [x.subs(self.parameters.inits) for x in y]
         return y
 
     def eta_gradient(self, etas=None, parameters=None, dataset=None):
@@ -277,7 +269,7 @@ class Model:
         def fn(row):
             row = row.to_dict()
             curetas = etas.loc[row[idcol]].to_dict()
-            a = [np.float64(subs(subs(x, row), curetas)) for x in y]
+            a = [np.float64(x.subs(row).subs(curetas)) for x in y]
             return a
 
         derivative_names = [f'dF/d{eta.name}' for eta in self.random_variables.etas]
@@ -293,7 +285,7 @@ class Model:
         y = self._replace_parameters(y, parameters)
         eps_names = [eps.name for eps in self.random_variables.ruv_rvs]
         repl = {real(eps): 0 for eps in eps_names}
-        y = [subs(x, repl) for x in y]
+        y = [x.subs(repl) for x in y]
 
         if dataset is not None:
             df = dataset
@@ -312,7 +304,7 @@ class Model:
         def fn(row):
             row = row.to_dict()
             curetas = etas.loc[row[idcol]].to_dict()
-            a = [np.float64(subs(subs(x, row), curetas)) for x in y]
+            a = [np.float64(x.subs(row).subs(curetas)) for x in y]
             return a
 
         grad = df.apply(fn, axis=1, result_type='expand')
@@ -329,8 +321,8 @@ class Model:
                 parameters = self.modelfit_results.parameter_estimates.to_dict()
             else:
                 parameters = self.parameters.inits
-        omega = subs(omega, parameters)
-        sigma = subs(sigma, parameters)
+        omega = omega.subs(parameters)
+        sigma = sigma.subs(parameters)
         omega = np.float64(omega)
         sigma = np.float64(sigma)
         if dataset is not None:

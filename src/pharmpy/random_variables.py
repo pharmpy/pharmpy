@@ -8,7 +8,7 @@ import sympy.stats as stats
 from sympy.stats.rv import RandomSymbol
 
 import pharmpy.math
-from pharmpy.symbols import real, subs
+from pharmpy.symbols import real
 
 from .data_structures import OrderedSet
 
@@ -306,7 +306,7 @@ class RandomVariables(OrderedSet):
         for rvs, dist in self.distributions():
             if len(rvs) > 1:
                 if not use_cache:
-                    sigma = subs(dist.sigma, dict(parameter_values))
+                    sigma = dist.sigma.subs(dict(parameter_values))
                     # Switch to numpy here. Sympy posdef check is problematic
                     # see https://github.com/sympy/sympy/issues/18955
                     if not sigma.free_symbols:
@@ -336,7 +336,7 @@ class RandomVariables(OrderedSet):
         nearest = parameter_values.copy()
         for rvs, dist in self.distributions():
             if len(rvs) > 1:
-                sigma = subs(dist.sigma, dict(parameter_values))
+                sigma = dist.sigma.subs(dict(parameter_values))
                 A = np.array(sigma).astype(np.float64)
                 B = pharmpy.math.nearest_posdef(A)
                 if B is not A:

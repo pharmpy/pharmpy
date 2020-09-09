@@ -3,11 +3,12 @@ import re
 from operator import add, mul
 
 import numpy as np
+import sympy
 from sympy import Eq, Float, Gt, Le, Piecewise, exp
 
 from pharmpy.parameter import Parameter
 from pharmpy.statements import Assignment
-from pharmpy.symbols import real, sympify
+from pharmpy.symbols import real
 
 
 def add_covariate_effect(model, parameter, covariate, effect, operation='*'):
@@ -125,7 +126,7 @@ def create_template(effect, model, covariate):
         return CovariateEffect.power()
     else:
         symbol = S('symbol')
-        expression = sympify(effect)
+        expression = sympy.sympify(effect)
         return CovariateEffect(Assignment(symbol, expression))
 
 

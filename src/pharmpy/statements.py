@@ -28,8 +28,8 @@ class Assignment:
         substitutions - dictionary with old-new pair (can be type str or
                         sympy symbol)
         """
-        self.symbol = symbols.subs(self.symbol, substitutions)
-        self.expression = symbols.subs(self.expression, substitutions)
+        self.symbol = self.symbol.subs(substitutions)
+        self.expression = self.expression.subs(substitutions)
 
     @property
     def free_symbols(self):
@@ -158,7 +158,7 @@ class CompartmentalSystem(ODESystem):
     def subs(self, substitutions):
         g_copy = copy.deepcopy(self._g)
         for (u, v, rate) in self._g.edges.data('rate'):
-            rate_sub = symbols.subs(rate, substitutions)
+            rate_sub = rate.subs(substitutions)
             g_copy.remove_edge(u, v)
             g_copy.add_edge(u, v, rate=rate_sub)
 

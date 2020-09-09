@@ -8,16 +8,16 @@ from pharmpy.modeling import absorption, add_covariate_effect, explicit_odes
 
 
 @pytest.mark.parametrize('effect, covariate, operation, buf_new', [
-    ('exp', 'WGT', '*', 'CLWGT = EXP(THETA(4)*(-CL_MEDIAN + WGT))\n      '
+    ('exp', 'WGT', '*', 'CLWGT = EXP((-CL_MEDIAN + WGT)*THETA(4))\n      '
                         'CL_MEDIAN = 1.30000\n      '
                         'CL = CLWGT*TVCL*EXP(ETA(1))'),
-    ('exp', 'WGT', '+', 'CLWGT = EXP(THETA(4)*(-CL_MEDIAN + WGT))\n      '
+    ('exp', 'WGT', '+', 'CLWGT = EXP((-CL_MEDIAN + WGT)*THETA(4))\n      '
                         'CL_MEDIAN = 1.30000\n      '
                         'CL = CLWGT + TVCL*EXP(ETA(1))'),
     ('pow', 'WGT', '*', 'CLWGT = (WGT/CL_MEDIAN)**THETA(4)\n      '
                         'CL_MEDIAN = 1.30000\n      '
                         'CL = CLWGT*TVCL*EXP(ETA(1))'),
-    ('lin_cont', 'WGT', '*', 'CLWGT = THETA(4)*(-CL_MEDIAN + WGT) + 1\n      '
+    ('lin_cont', 'WGT', '*', 'CLWGT = (-CL_MEDIAN + WGT)*THETA(4) + 1\n      '
                              'CL_MEDIAN = 1.30000\n      '
                              'CL = CLWGT*TVCL*EXP(ETA(1))'),
     ('lin_cat', 'FA1', '*', 'IF (FA1.EQ.1.0) THEN\n'
@@ -28,14 +28,14 @@ from pharmpy.modeling import absorption, add_covariate_effect, explicit_odes
                             'CL_MEDIAN = 1.00000\n      '
                             'CL = CLFA1*TVCL*EXP(ETA(1))'),
     ('piece_lin', 'WGT', '*', 'IF (CL_MEDIAN.GE.WGT) THEN\n'
-                              'CLWGT = THETA(4)*(-CL_MEDIAN + WGT) + 1\n'
+                              'CLWGT = (-CL_MEDIAN + WGT)*THETA(4) + 1\n'
                               'ELSE\n'
-                              'CLWGT = THETA(5)*(-CL_MEDIAN + WGT) + 1\n'
+                              'CLWGT = (-CL_MEDIAN + WGT)*THETA(5) + 1\n'
                               'END IF\n      '
                               'CL_MEDIAN = 1.30000\n      '
                               'CL = CLWGT*TVCL*EXP(ETA(1))'),
     ('theta - cov + median', 'WGT', '*',
-     'CLWGT = CL_MEDIAN + THETA(4) - WGT\n      '
+     'CLWGT = CL_MEDIAN - WGT + THETA(4)\n      '
      'CL_MEDIAN = 1.30000\n      '
      'CL = CLWGT*TVCL*EXP(ETA(1))')
 
