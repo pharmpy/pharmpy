@@ -1,6 +1,7 @@
 import re
 
-from pharmpy.statements import CompartmentalSystem, ExplicitODESystem
+from pharmpy import data
+from pharmpy.statements import CompartmentalSystem, ExplicitODESystem, ModelStatements, ODESystem
 from pharmpy.symbols import real
 
 
@@ -8,7 +9,6 @@ def update_parameters(model, old, new):
     new_names = {p.name for p in new}
     old_names = {p.name for p in old}
     removed = old_names - new_names
-    full_map = dict()
     if removed:
         remove_records = []
         next_theta = 1
@@ -20,14 +20,10 @@ def update_parameters(model, old, new):
                 # one or more in the record
                 theta_record.remove(removed & current_names)
                 theta_record.renumber(next_theta)
-                full_map.update({key: f'THETA({value})'
-                                 for key, value in theta_record.name_map.items()})
                 next_theta += len(theta_record)
             else:
                 # keep all
                 theta_record.renumber(next_theta)
-                full_map.update({key: f'THETA({value})'
-                                 for key, value in theta_record.name_map.items()})
                 next_theta += len(theta_record)
         model.control_stream.remove_records(remove_records)
 
@@ -42,10 +38,6 @@ def update_parameters(model, old, new):
                 p.name = f'THETA({theta_number})'
             else:
                 record.add_nonmem_name(name, theta_number)
-            full_map[p.name] = f'THETA({theta_number})'
-
-    if full_map:
-        update_code_symbols(model, full_map)
 
     next_theta = 1
     for theta_record in model.control_stream.get_records('THETA'):
@@ -68,7 +60,6 @@ def update_random_variables(model, old, new):
     if removed:
         remove_records = []
         next_eta = 1
-        full_map = dict()
         for omega_record in model.control_stream.get_records('OMEGA'):
             current_names = omega_record.eta_map.keys()
             if removed >= current_names:
@@ -78,17 +69,12 @@ def update_random_variables(model, old, new):
                 omega_record.remove(removed & current_names)
                 omega_record.renumber(next_eta)
                 # FIXME: No handling of OMEGA(1,1) etc in code
-                full_map.update({key: f'ETA({value})'
-                                 for key, value in omega_record.eta_map.items()})
                 next_eta += len(omega_record)
             else:
                 # keep all
                 omega_record.renumber(next_eta)
-                full_map.update({key: f'ETA({value})'
-                                 for key, value in omega_record.eta_map.items()})
                 next_eta += len(omega_record)
         model.control_stream.remove_records(remove_records)
-        update_code_symbols(model, full_map)
 
 
 def get_next_theta(model):
@@ -119,18 +105,6 @@ def create_theta_record(model, param):
     param_str += '\n'
     record = model.control_stream.insert_record(param_str, 'THETA')
     return record
-
-
-def update_code_symbols(model, name_map):
-    """Update symbol names in code records.
-
-        name_map - dict from old name to new name
-    """
-    code_record = model.get_pred_pk_record()
-    code_record.update(name_map)
-    error = model._get_error_record()
-    if error:
-        error.update(name_map)
 
 
 def update_ode_system(model, old, new):
@@ -199,3 +173,30 @@ def secondary_pk_param_conversion_map(ncomp, removed):
                   real(f'D{i}'): real(f'D{i - 1}'),
                   real(f'ALAG{i}'): real(f'ALAG{i - 1}')})
     return d
+
+
+def update_statements(model, old, new, trans):
+    trans['NaN'] = int(data.conf.na_rep)
+    main_statements = ModelStatements()
+    error_statements = ModelStatements()
+    found_ode = False
+    for s in new:
+        if isinstance(s, ODESystem):
+            found_ode = True
+            old_system = old.ode_system
+            if s != old_system:
+                update_ode_system(model, old_system, s)
+        else:
+            if found_ode:
+                error_statements.append(s)
+            else:
+                main_statements.append(s)
+    main_statements.subs(trans)
+    rec = model.get_pred_pk_record()
+    rec.statements = main_statements
+    error = model._get_error_record()
+    if error:
+        if len(error_statements) > 0:
+            error_statements.pop(0)        # Remove the link statement
+        error_statements.subs(trans)
+        error.statements = error_statements

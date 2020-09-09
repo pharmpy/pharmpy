@@ -70,9 +70,8 @@ def test_add_covariate_effect_nan(pheno_path):
     model.dataset = data
 
     add_covariate_effect(model, 'CL', 'new_col', 'lin_cat')
+    model.update_source(nofiles=True)
 
-    assert re.search('NaN', str(model))
-    model.get_pred_pk_record().update({})
     assert not re.search('NaN', str(model))
     assert re.search(r'new_col\.EQ\.-99', str(model))
 

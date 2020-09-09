@@ -325,16 +325,15 @@ def test_statements_setter_add_from_sympy(parser, buf_original, sym, expression,
     ('$PRED\nY = THETA(1) + ETA(1) + EPS(1)',
      Assignment(S('YWGT'), sympy.Piecewise((1, sympy.Eq(S('WGT'), S('NaN'))))),
      {'X': 'THETA(2)'}, '$PRED\nY = THETA(1) + ETA(1) + EPS(1)\n'
-                        'IF (WGT.EQ.-99) YWGT = 1\n')
+                        'IF (NaN.EQ.WGT) YWGT = 1\n')
 ])
 def test_update(parser, buf_original, assignment, nonmem_names, buf_expected):
     rec_original = parser.parse(buf_original).records[0]
 
     statements = rec_original.statements
     statements += [assignment]
+    statements.subs(nonmem_names)
     rec_original.statements = statements
-
-    rec_original.update(nonmem_names)
 
     assert str(rec_original) == buf_expected
 

@@ -486,6 +486,9 @@ class ModelStatements(list):
                 return s
         return None
 
+    def copy(self):
+        return copy.deepcopy(self)
+
     def __eq__(self, other):
         if len(self) != len(other):
             return False

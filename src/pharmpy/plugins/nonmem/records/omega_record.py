@@ -394,7 +394,7 @@ class OmegaRecord(Record):
             level = VariabilityLevel.RUV
         for rv in rvs:
             rv.variability_level = level
-        self.eta_map = {rv.name: i for i, rv in enumerate(rvs)}
+        self.eta_map = {rv.name: start_omega + i for i, rv in enumerate(rvs)}
         return rvs, start_omega + numetas, next_cov, zero_fix
 
     def renumber(self, new_start):
