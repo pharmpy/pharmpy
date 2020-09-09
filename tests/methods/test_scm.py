@@ -15,18 +15,21 @@ def test_psn_scm_options(testdata):
 
 
 def test_main(testdata):
-    # crash tests
     basedir = testdata / 'nonmem' / 'scm'
     dirs = {'mer1': basedir / 'mergeofv_dir1',
             'mer2': basedir / 'mergeofv_dir2'}
 
-    res1 = scm.psn_scm_results(dirs['mer1']).steps
-    res2 = scm.psn_scm_results(dirs['mer2']).steps
+    res1 = scm.psn_scm_results(dirs['mer1'])
+    res2 = scm.psn_scm_results(dirs['mer2'])
 
-    assert [float(res1['extended_ofv'].iloc[5])] == approx([219208.47277])
-    assert isnan(res1['extended_ofv'].iloc[6])
+    assert [float(res1.steps['extended_ofv'].iloc[5])] == approx([219208.47277])
+    assert isnan(res1.steps['extended_ofv'].iloc[6])
+    assert res1.ofv_summary(final_included=False) is not None
+    assert res1.candidate_summary() is not None
 
-    assert [float(res2['ofv_drop'].iloc[2])] == approx([18.5591])
+    assert [float(res2.steps['ofv_drop'].iloc[2])] == approx([18.5591])
+    assert res2.ofv_summary(iterations=False) is not None
+    assert res2.candidate_summary() is not None
 
     parcovdict = {'CLCV2': ('CL', 'CV2'),
                   'CLWGT': ('CL', 'WGT'),
@@ -41,26 +44,64 @@ def test_main(testdata):
                                     {'directory': '/home/kajsa/sandbox/asrscm/asrscm_dir56'},
                                     parcovdict)
     assert df1 is not None
+    sum1 = scm.ofv_summary_dataframe(df1)
+    assert [float(x) for x in sum1['pvalue'].values] == \
+        approx([2.26e-10, 0.000002, 0.002178, 0.014192, 0.490010, 9999, 0.027672, 8.15e-24])
+
+    cand1 = scm.candidate_summary_dataframe(df1)
+    all_columns = ['parameter', 'covariate', 'extended_state', 'N_test', 'N_ok',
+                   'N_localmin', 'N_failed', 'StepIncluded',
+                   'StepStashed', 'StepReadded', 'BackstepRemoved']
+    correct = """CL,APGR,2,4,2,   2, 0,, 1,3,
+CL,CV1,2, 2,2,   0, 0,3,1,3,7
+CL,WGT,2, 2,2,   0, 0,2,,, 8
+V,CV2,2,  3,3,   0, 0,4,1,3,6
+V,CVD1,2, 4,3,   1, 0,,1,3,
+V,WGT,2,  1,1,   0, 0,1,,,
+"""
+    correct = pd.read_csv(StringIO(correct), index_col=[0, 1, 2], names=all_columns, header=None)
+    pd.testing.assert_frame_equal(cand1,
+                                  correct)
 
     df2 = scm.psn_scm_parse_logfile(basedir / 'scm_dir1' / 'scmlog.txt',
                                     {'directory': '/home/kajsa/sandbox/asrscm/scm_dir7'},
                                     parcovdict)
     assert df2 is not None
+    sum2 = scm.ofv_summary_dataframe(df2)
+    assert [float(x) for x in sum2['ofv_drop'].iloc[2:7].values] == \
+        approx([2.90120, 3.00434, 1.18187, 1.18187, 3.00434])
+    cand2 = scm.candidate_summary_dataframe(df2)
+    assert [int(t) for t in cand2['N_test']] == [6, 3, 2, 4, 5, 1]
 
     df3 = scm.psn_scm_parse_logfile(basedir / 'backward_dir1' / 'scmlog.txt',
                                     {'directory': '/home/kajsa/sandbox/asrscm/scm_dir10'},
                                     parcovdict)
     assert df3 is not None
+    assert scm.ofv_summary_dataframe(df3) is not None
+    cand1 = scm.candidate_summary_dataframe(df3)
+
+    correct = """V,CVD1,-99,1
+V,CV2,2,2
+CL,CV1,2,3
+"""
+    correct = pd.read_csv(StringIO(correct), index_col=[0, 1, 2],
+                          names=['parameter', 'covariate', 'extended_state', 'BackstepRemoved'],
+                          header=None)
+    pd.testing.assert_frame_equal(cand1, correct)
 
     df4 = scm.psn_scm_parse_logfile(basedir / 'localmin.logf',
                                     {'directory': '/home/kajsa/sandbox/asrscm/asrscm_dir5'},
                                     parcovdict)
     assert df4 is not None
+    assert scm.ofv_summary_dataframe(df4) is not None
+    assert scm.candidate_summary_dataframe(df4) is not None
 
     gof1 = scm.psn_scm_parse_logfile(basedir / 'gofofv_dir1' / 'scmlog.txt',
                                      {'directory': '/home/kajsa/sandbox/asrscm/scm_dir8'},
                                      parcovdict)
     assert gof1 is not None
+    assert scm.ofv_summary_dataframe(gof1) is not None
+    assert scm.candidate_summary_dataframe(gof1) is not None
 
 
 def test_parse_scm_relations(testdata):

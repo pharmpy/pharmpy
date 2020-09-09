@@ -29,6 +29,62 @@ class SCMResults(Results):
     def __str__(self):
         return str(self.steps)
 
+    def ofv_summary(self, final_included=True, iterations=True):
+        return ofv_summary_dataframe(self.steps, final_included=final_included,
+                                     iterations=iterations)
+
+    def candidate_summary(self):
+        return candidate_summary_dataframe(self.steps)
+
+
+def candidate_summary_dataframe(steps):
+    if steps is None:
+        return None
+    elif steps['is_backward'].all():
+        selected = steps[steps['selected']].copy()
+        df = pd.DataFrame([{'BackstepRemoved': row.Index[0]} for row in selected.itertuples()],
+                          index=selected.index)
+        return df.droplevel('step')
+    else:
+        scmplus = True if 'stashed' in steps.columns else False
+        backstep_removed = {f'{row.Index[1]}{row.Index[2]}-{row.Index[3]}': row.Index[0]
+                            for row in steps.itertuples() if row.is_backward and row.selected}
+        forward_steps = steps[~steps['is_backward']]
+        df = pd.DataFrame([{'N_test': True,
+                            'N_ok': (not np.isnan(row.ofv_drop) and row.ofv_drop >= 0),
+                            'N_localmin': (not np.isnan(row.ofv_drop) and row.ofv_drop < 0),
+                            'N_failed': np.isnan(row.ofv_drop),
+                            'StepIncluded': row.Index[0] if row.selected else None,
+                            'StepStashed': row.Index[0] if (scmplus and row.stashed) else None,
+                            'StepReadded': row.Index[0] if (scmplus and row.readded) else None,
+                            'BackstepRemoved': backstep_removed.pop(row.model, None)}
+                           for row in forward_steps.itertuples()],
+                          index=forward_steps.index)
+        return df.groupby(level=['parameter', 'covariate', 'extended_state']).sum(min_count=1)
+
+
+def ofv_summary_dataframe(steps, final_included=True, iterations=True):
+    if steps is None or not (final_included or iterations):
+        return None
+    else:
+        # Use .copy() to ensure we do not work on original df
+        df = steps[steps['selected']].copy() if iterations else pd.DataFrame()
+        if iterations:
+            df['is_backward'] = ['Backward' if backward else 'Forward'
+                                 for backward in df['is_backward']]
+        if final_included and steps['is_backward'].iloc[-1]:
+            # all rows from last step where selected is False
+            last_stepnum = steps.index[-1][steps.index.names.index('step')]
+            final = steps[~steps['selected']].loc[last_stepnum, :, :, :].copy()
+            final['is_backward'] = 'Final included'
+            df = df.append(final)
+        df.rename(columns={'is_backward': 'direction'},
+                  inplace=True)
+        columns = ['direction', 'reduced_ofv', 'extended_ofv', 'ofv_drop']
+        if 'pvalue' in steps.columns:
+            columns.extend(['delta_df', 'pvalue', 'goal_pvalue'])
+        return df[columns]
+
 
 def psn_scm_parse_logfile(logfile, options, parcov_dictionary):
     """Read SCM results
