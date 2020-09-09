@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pharmpy.data
 import pharmpy.model
+import pharmpy.plugins.nonmem
 from pharmpy.data import DatasetError
 from pharmpy.parameter import ParameterSet
 from pharmpy.plugins.nonmem.results import NONMEMChainedModelfitResults
@@ -286,6 +287,11 @@ class Model(pharmpy.model.Model):
                 # FIXME: Dummy link statement
                 statements.append(Assignment('F', real('F')))
             statements += error.statements
+
+        if pharmpy.plugins.nonmem.conf.parameter_names == 'comment':
+            self.parameters
+            trans = self.parameter_translation(remove_idempotent=True)
+            statements.subs(trans)
 
         self._statements = statements
         self._old_statements = statements.copy()

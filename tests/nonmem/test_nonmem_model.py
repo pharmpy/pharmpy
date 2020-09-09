@@ -5,7 +5,9 @@ import sympy
 from pyfakefs.fake_filesystem_unittest import Patcher
 
 from pharmpy import Model
+from pharmpy.config import ConfigurationContext
 from pharmpy.parameter import Parameter
+from pharmpy.plugins.nonmem import conf
 from pharmpy.plugins.nonmem.nmtran_parser import NMTranParser
 from pharmpy.statements import Assignment, ModelStatements, ODESystem
 from pharmpy.symbols import real
@@ -309,3 +311,10 @@ def test_remove_eta(pheno_path):
     rvs.discard(eta1)
     model.update_source()
     assert str(model).split('\n')[13] == '      V = TVV*EXP(ETA(1))'
+
+
+def test_symbol_names_in_comment(pheno_path):
+    with ConfigurationContext(conf, parameter_names='comment'):
+        model = Model(pheno_path)
+        assert model.statements[2].expression == S('PTVCL') * S('WGT')
+        print(model.statements)
