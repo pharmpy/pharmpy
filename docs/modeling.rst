@@ -4,9 +4,6 @@ Modeling
 
 While the :py:class:`pharmpy.model.Model` class can be directly manipulated with low level operations the modeling module offers higher level operations and transformations for building a model. These transformations are also available via the Pharmpy command line interface.
 
-
-.. math::
-
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 PK models and ODE systems
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -38,4 +35,46 @@ For NONMEM models this means going from any of the compartmental ADVANS (ADVAN1-
 
 .. jupyter-execute::
 
+   model.update_source()
+   print(model)
+
+~~~~~~~~~~~~~~~~~~~~~~~~~
+Adding covariate effects
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. jupyter-execute::
+
+   model = Model(path / "pheno_real.mod")
+
+Covariate effects may also be applied to a model.
+
+.. jupyter-execute::
+
+   from pharmpy.modeling import add_covariate_effect
+   add_covariate_effect(model, 'CL', 'WGT', 'lin_cont')
+
+Here, *CL* indicates the name of the parameter onto which you want to apply the effect, *WGT* is the covariate, and
+*lin_cont* (linear function on continuous covariates) is the effect you want to apply.
+See :py:class:`pharmpy.modeling.add_covariate_effect` for effects with available templates.
+
+.. jupyter-execute::
+
+   model.update_source()
+   print(model)
+
+Pharmpy also supports user formatted covariate effects.
+
+.. jupyter-execute::
+
+   model = Model(path / "pheno_real.mod")
+   user_effect = 'median - cov + theta'
+   add_covariate_effect(model, 'CL', 'WGT', user_effect)
+
+It is necessary that the names follow the same format as in user_effect, meaning that the covariate is denoted as
+*cov*, the theta as *theta* (or, if multiple thetas: *theta1*, *theta2* etc.), and the mean or median as *mean* and *median*, respectively. This is in order for
+the names to be substituted with the correct values.
+
+.. jupyter-execute::
+
+   model.update_source()
    print(model)
