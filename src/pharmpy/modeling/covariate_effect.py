@@ -6,9 +6,9 @@ import numpy as np
 import sympy
 from sympy import Eq, Float, Gt, Le, Piecewise, exp
 
+import pharmpy.symbols as symbols
 from pharmpy.parameter import Parameter
 from pharmpy.statements import Assignment
-from pharmpy.symbols import real
 
 
 def add_covariate_effect(model, parameter, covariate, effect, operation='*'):
@@ -131,7 +131,7 @@ def create_template(effect, model, covariate):
 
 
 def S(x):
-    return real(x)
+    return symbols.symbol(x)
 
 
 class CovariateEffect:

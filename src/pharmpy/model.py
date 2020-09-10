@@ -19,8 +19,8 @@ import numpy as np
 import pandas as pd
 import scipy.linalg
 
+import pharmpy.symbols
 from pharmpy import ParameterSet, RandomVariables
-from pharmpy.symbols import real
 
 
 class ModelException(Exception):
@@ -104,13 +104,13 @@ class Model:
         all_names = symbols + params + rvs + dataset_col
 
         if str(stem) not in all_names and not force_numbering:
-            return real(str(stem))
+            return pharmpy.symbols.symbol(str(stem))
 
         i = 1
         while True:
             candidate = f'{stem}{i}'
             if candidate not in all_names:
-                return real(candidate)
+                return pharmpy.symbols.symbol(candidate)
             i += 1
 
     def remove_unused_parameters_and_rvs(self):
@@ -121,7 +121,7 @@ class Model:
         new_rvs = RandomVariables()
         for rv in self.random_variables:
             # FIXME: change if rvs are random symbols in expressions
-            if real(rv.name) in symbols or \
+            if pharmpy.symbols.symbol(rv.name) in symbols or \
                     not symbols.isdisjoint(rv.pspace.free_symbols):
                 new_rvs.add(rv)
         self.random_variables = new_rvs
@@ -228,12 +228,12 @@ class Model:
         y = self._observation()
         for eps in self.random_variables.ruv_rvs:
             y = y.subs({eps.name: 0})
-        d = [y.diff(real(x.name)) for x in self.random_variables.etas]
+        d = [y.diff(pharmpy.symbols.symbol(x.name)) for x in self.random_variables.etas]
         return d
 
     def symbolic_eps_gradient(self):
         y = self._observation()
-        d = [y.diff(real(x.name)) for x in self.random_variables.ruv_rvs]
+        d = [y.diff(pharmpy.symbols.symbol(x.name)) for x in self.random_variables.ruv_rvs]
         return d
 
     def _replace_parameters(self, y, parameters):
@@ -284,7 +284,7 @@ class Model:
         y = self.symbolic_eps_gradient()
         y = self._replace_parameters(y, parameters)
         eps_names = [eps.name for eps in self.random_variables.ruv_rvs]
-        repl = {real(eps): 0 for eps in eps_names}
+        repl = {pharmpy.symbols.symbol(eps): 0 for eps in eps_names}
         y = [x.subs(repl) for x in y]
 
         if dataset is not None:

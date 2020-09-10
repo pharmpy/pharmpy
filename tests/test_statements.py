@@ -1,13 +1,13 @@
 import sympy
 
+import pharmpy.symbols
 from pharmpy import Model
 from pharmpy.modeling import explicit_odes
 from pharmpy.statements import Assignment, ModelStatements
-from pharmpy.symbols import real
 
 
 def S(x):
-    return real(x)
+    return pharmpy.symbols.symbol(x)
 
 
 def test_subs(testdata):

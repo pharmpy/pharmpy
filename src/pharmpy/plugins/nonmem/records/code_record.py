@@ -10,11 +10,11 @@ import lark
 import sympy
 from sympy import Piecewise
 
+import pharmpy.symbols as symbols
 from pharmpy.data_structures import OrderedSet
 from pharmpy.parse_utils.generic import NoSuchRuleException
 from pharmpy.plugins.nonmem.records.parsers import CodeRecordParser
 from pharmpy.statements import Assignment, ModelStatements
-from pharmpy.symbols import real
 
 from .record import Record
 
@@ -150,7 +150,7 @@ class ExpressionInterpreter(lark.visitors.Interpreter):
         name = str(node).upper()
         if name.startswith('ERR('):
             name = 'EPS' + name[3:]
-        symb = real(name)
+        symb = symbols.symbol(name)
         return symb
 
 
@@ -398,10 +398,10 @@ class CodeRecord(Record):
         """
         odes = ode_system.odes[:-1]    # Skip last ode as it is for the output compartment
         functions = [ode.lhs.args[0] for ode in odes]
-        function_map = {f: real(f'A({i + 1})') for i, f in enumerate(functions)}
+        function_map = {f: symbols.symbol(f'A({i + 1})') for i, f in enumerate(functions)}
         statements = []
         for i, ode in enumerate(odes):
-            symbol = real(f'DADT({i + 1})')
+            symbol = symbols.symbol(f'DADT({i + 1})')
             expression = ode.rhs.subs(function_map)
             statements.append(Assignment(symbol, expression))
         self.statements = statements

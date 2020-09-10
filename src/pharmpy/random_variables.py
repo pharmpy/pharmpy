@@ -8,7 +8,7 @@ import sympy.stats as stats
 from sympy.stats.rv import RandomSymbol
 
 import pharmpy.math
-from pharmpy.symbols import real
+from pharmpy.symbols import symbol
 
 from .data_structures import OrderedSet
 
@@ -37,7 +37,7 @@ class JointDistributionSeparate(RandomSymbol):
        to its pspace.
     """
     def __new__(cls, name, joint_symbol):
-        return super().__new__(cls, real(name), joint_symbol.pspace)
+        return super().__new__(cls, symbol(name), joint_symbol.pspace)
 
 
 def JointNormalSeparate(names, mean, cov):
@@ -161,7 +161,7 @@ class RandomVariables(OrderedSet):
         for rv in self:
             free = {s for s in rv.pspace.free_symbols if s.name != rv.name}
             symbs |= free
-            symbs.add(real(rv.name))
+            symbs.add(symbol(rv.name))
         return symbs
 
     def all_parameters(self):

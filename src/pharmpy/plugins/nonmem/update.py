@@ -2,7 +2,7 @@ import re
 
 from pharmpy import data
 from pharmpy.statements import CompartmentalSystem, ExplicitODESystem, ModelStatements, ODESystem
-from pharmpy.symbols import real
+from pharmpy.symbols import symbol
 
 
 def update_parameters(model, old, new):
@@ -136,11 +136,11 @@ def update_ode_system(model, old, new):
                 subs.replace_option('ADVAN2', 'ADVAN1')
             elif advan == 'ADVAN4':
                 subs.replace_option('ADVAN4', 'ADVAN3')
-                statements.subs({real('K23'): real('K12'), real('K32'): real('K32')})
+                statements.subs({symbol('K23'): symbol('K12'), symbol('K32'): symbol('K32')})
             elif advan == 'ADVAN12':
                 subs.replace_option('ADVAN12', 'ADVAN11')
-                statements.subs({real('K23'): real('K12'), real('K32'): real('K32'),
-                                 real('K24'): real('K13'), real('K42'): real('K31')})
+                statements.subs({symbol('K23'): symbol('K12'), symbol('K32'): symbol('K32'),
+                                 symbol('K24'): symbol('K13'), symbol('K42'): symbol('K31')})
             elif advan == 'ADVAN5' or advan == 'ADVAN7':
                 # FIXME: Add this. Here we can check which compartment name was removed
                 pass
@@ -167,11 +167,11 @@ def secondary_pk_param_conversion_map(ncomp, removed):
     """
     d = dict()
     for i in range(removed + 1, ncomp + 1):
-        d.update({real(f'S{i})'): real(f'S{i - 1}'),
-                  real(f'F{i}'): real(f'F{i - 1}'),
-                  real(f'R{i}'): real(f'R{i - 1}'),
-                  real(f'D{i}'): real(f'D{i - 1}'),
-                  real(f'ALAG{i}'): real(f'ALAG{i - 1}')})
+        d.update({symbol(f'S{i})'): symbol(f'S{i - 1}'),
+                  symbol(f'F{i}'): symbol(f'F{i - 1}'),
+                  symbol(f'R{i}'): symbol(f'R{i - 1}'),
+                  symbol(f'D{i}'): symbol(f'D{i - 1}'),
+                  symbol(f'ALAG{i}'): symbol(f'ALAG{i - 1}')})
     return d
 
 

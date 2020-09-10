@@ -3,9 +3,9 @@ import warnings
 
 from sympy import exp
 
+import pharmpy.symbols as symbols
 from pharmpy.parameter import Parameter
 from pharmpy.statements import Assignment
-from pharmpy.symbols import real
 
 
 def transform_etas(model, transformation, list_of_etas):
@@ -101,4 +101,4 @@ class EtaTransformation:
 
 
 def S(x):
-    return real(x)
+    return symbols.symbol(x)

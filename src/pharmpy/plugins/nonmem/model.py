@@ -6,13 +6,13 @@ from pathlib import Path
 import pharmpy.data
 import pharmpy.model
 import pharmpy.plugins.nonmem
+import pharmpy.symbols as symbols
 from pharmpy.data import DatasetError
 from pharmpy.parameter import ParameterSet
 from pharmpy.plugins.nonmem.results import NONMEMChainedModelfitResults
 from pharmpy.plugins.nonmem.table import NONMEMTableFile, PhiTable
 from pharmpy.random_variables import RandomVariables
 from pharmpy.statements import Assignment, ODESystem
-from pharmpy.symbols import real
 
 from .advan import compartmental_model
 from .nmtran_parser import NMTranParser
@@ -285,7 +285,7 @@ class Model(pharmpy.model.Model):
             else:
                 statements.append(ODESystem())      # FIXME: Placeholder for ODE-system
                 # FIXME: Dummy link statement
-                statements.append(Assignment('F', real('F')))
+                statements.append(Assignment('F', symbols.symbol('F')))
             statements += error.statements
 
         if pharmpy.plugins.nonmem.conf.parameter_names == 'comment':

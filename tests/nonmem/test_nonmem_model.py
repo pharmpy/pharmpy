@@ -10,11 +10,11 @@ from pharmpy.parameter import Parameter
 from pharmpy.plugins.nonmem import conf
 from pharmpy.plugins.nonmem.nmtran_parser import NMTranParser
 from pharmpy.statements import Assignment, ModelStatements, ODESystem
-from pharmpy.symbols import real
+from pharmpy.symbols import symbol
 
 
 def S(x):
-    return real(x)
+    return symbol(x)
 
 
 def test_source(pheno_path):
@@ -224,7 +224,7 @@ def test_minimal(datadir):
     model = Model(path)
     assert len(model.statements) == 1
     assert model.statements[0].expression == \
-        real('THETA(1)') + real('ETA(1)') + real('EPS(1)')
+        symbol('THETA(1)') + symbol('ETA(1)') + symbol('EPS(1)')
 
 
 def test_copy(datadir):
@@ -233,7 +233,7 @@ def test_copy(datadir):
     copy = model.copy()
     assert id(model) != id(copy)
     assert model.statements[0].expression == \
-        real('THETA(1)') + real('ETA(1)') + real('EPS(1)')
+        symbol('THETA(1)') + symbol('ETA(1)') + symbol('EPS(1)')
 
 
 def test_initial_individual_estimates(datadir):

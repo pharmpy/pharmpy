@@ -1,13 +1,13 @@
 import pytest
 import sympy
 
+import pharmpy.symbols
 from pharmpy import Model
 from pharmpy.plugins.nonmem.advan import compartmental_model
-from pharmpy.symbols import real
 
 
 def S(x):
-    return real(x)
+    return pharmpy.symbols.symbol(x)
 
 
 @pytest.mark.parametrize('advan,trans,compmat,amounts,strodes,corrics', [

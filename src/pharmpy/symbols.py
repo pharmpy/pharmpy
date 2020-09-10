@@ -1,5 +1,5 @@
 import sympy
 
 
-def real(name):
+def symbol(name):
     return sympy.Symbol(name)

@@ -1,12 +1,12 @@
 import pytest
 import sympy
 
+import pharmpy.symbols
 from pharmpy.statements import Assignment
-from pharmpy.symbols import real
 
 
 def S(x):
-    return real(x)
+    return pharmpy.symbols.symbol(x)
 
 
 @pytest.mark.usefixtures('parser')

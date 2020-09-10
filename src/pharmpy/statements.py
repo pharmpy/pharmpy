@@ -19,7 +19,7 @@ class Assignment:
             symbol.is_Symbol
             self.symbol = symbol
         except AttributeError:
-            self.symbol = symbols.real(symbol)
+            self.symbol = symbols.symbol(symbol)
         self.expression = expression
 
     def subs(self, substitutions):
@@ -166,7 +166,7 @@ class CompartmentalSystem(ODESystem):
 
     @property
     def free_symbols(self):
-        free = {symbols.real('t')}
+        free = {symbols.symbol('t')}
         for (_, _, rate) in self._g.edges.data('rate'):
             free |= rate.free_symbols
         for node in self._g.nodes:
@@ -257,7 +257,7 @@ class CompartmentalSystem(ODESystem):
         return sympy.Matrix(amts)
 
     def to_explicit_odes(self):
-        t = symbols.real('t')
+        t = symbols.symbol('t')
         amount_funcs = sympy.Matrix([sympy.Function(amt.name)(t) for amt in self.amounts])
         derivatives = sympy.Matrix([sympy.Derivative(fn, t) for fn in amount_funcs])
         a = self.compartmental_matrix @ amount_funcs
@@ -391,12 +391,12 @@ class Compartment:
 
     @property
     def amount(self):
-        return symbols.real(f'A_{self.name}')
+        return symbols.symbol(f'A_{self.name}')
 
 
 class Bolus:
     def __init__(self, symbol):
-        self.symbol = symbols.real(str(symbol))
+        self.symbol = symbols.symbol(str(symbol))
 
     @property
     def free_symbols(self):
