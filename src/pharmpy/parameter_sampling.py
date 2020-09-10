@@ -7,12 +7,13 @@ from pharmpy.math import is_posdef, nearest_posdef, sample_truncated_joint_norma
 
 
 def sample_from_function(model, samplingfn, parameters=None, force_posdef_samples=None, n=1):
-    """Sample parameter vectors unsing a general function
+    """Sample parameter vectors using a general function
 
-        The sampling function will be given three arguments:
-            lower - lower bounds of parameters
-            upper - upper bounds of parameters
-            n - number of samples
+    The sampling function will be given three arguments:
+
+    - lower - lower bounds of parameters
+    - upper - upper bounds of parameters
+    - n - number of samples
     """
     if parameters is None:
         parameters = model.parameters.names
@@ -71,13 +72,19 @@ def sample_from_covariance_matrix(model, modelfit_results=None, parameters=None,
                                   force_posdef_samples=None, force_posdef_covmatrix=False, n=1):
     """Sample parameter vectors using the covariance matrix
 
-       if modelfit_results is not provided the results from the model will be used
+    If modelfit_results is not provided the results from the model will be used
 
-       :param parameters: use to only sample a subset of the parameters. None means all
-       :param force_posdef_samples: Set to how many iterations to do before forcing all
-                                    samples to be positive definite. None is default and means
-                                    never and 0 means always
-       :return: a dataframe with one sample per row
+    Parameters
+    ----------
+    parameters
+        Use to only sample a subset of the parameters. None means all
+    force_posdef_samples
+        Set to how many iterations to do before forcing all samples to be positive definite. None is
+        default and means never and 0 means always
+
+    Returns
+    -------
+    A dataframe with one sample per row
     """
     if modelfit_results is None:
         modelfit_results = model.modelfit_results
@@ -104,9 +111,14 @@ def sample_from_covariance_matrix(model, modelfit_results=None, parameters=None,
 def sample_individual_estimates(model, parameters=None, samples_per_id=100):
     """Sample individual estimates given their covariance.
 
-       :param parameters: A list of a subset of parameters to sample. Default is None,
-                          which means all.
-       :return: Pool of samples in a DataFrame
+    Parameters
+    ----------
+    parameters
+        A list of a subset of parameters to sample. Default is None, which means all.
+
+    Returns
+    -------
+    Pool of samples in a DataFrame
     """
     ests = model.modelfit_results.individual_estimates
     covs = model.modelfit_results.individual_estimates_covariance

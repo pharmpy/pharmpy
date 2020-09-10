@@ -119,20 +119,19 @@ class ParameterSet(OrderedSet):
 class Parameter:
     """A single parameter
 
-        .. code-block::
+    .. code-block::
 
-            param = Parameter("TVCL", 0.005, lower=0)
-            param.fix = True
+        param = Parameter("TVCL", 0.005, lower=0)
+        param.fix = True
 
-       .. attribute:: name
-
-           Name of the parameter
-
-       .. attribute:: fix
-
-           A boolean to indicate whether the parameter is fixed or not. Note that fixing a parameter
-           will keep its bounds even if a fixed parameter is actually constriand to one single
-           value. This is so that unfixing will take back the previous bounds.
+    Parameters
+    ----------
+    name : str
+        Name of the parameter
+    fix : bool
+        A boolean to indicate whether the parameter is fixed or not. Note that fixing a parameter
+        will keep its bounds even if a fixed parameter is actually constrained to one single
+        value. This is so that unfixing will take back the previous bounds.
     """
     def __init__(self, name, init, lower=None, upper=None, fix=False):
         self._init = init

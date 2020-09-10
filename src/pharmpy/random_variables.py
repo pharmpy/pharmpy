@@ -33,7 +33,7 @@ class JointDistributionSeparate(RandomSymbol):
        makes separation possible.
 
        This class can probably not solve all issues with joint rvs, but it can at least
-       handle seprate symbols, pass as a random variable for random_variables and lead back
+       handle separate symbols, pass as a random variable for random_variables and lead back
        to its pspace.
     """
     def __new__(cls, name, joint_symbol):
@@ -173,8 +173,12 @@ class RandomVariables(OrderedSet):
     def distributions(self, level=None, exclude_level=None):
         """Iterate with one entry per distribution instead of per random variable.
 
-           level - only iterate over random variables of this variability level
-           exclude_level - iterate over random variables of all other variability levels
+        Parameters
+        ----------
+        level
+            Only iterate over random variables of this variability level
+        exclude_level
+            Iterate over random variables of all other variability levels
         """
         i = 0
         while i < len(self):

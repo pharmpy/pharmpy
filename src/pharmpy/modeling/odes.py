@@ -19,7 +19,12 @@ def explicit_odes(model):
 def absorption(model, order, rate=None):
     """Set or change the absorption for a model
 
-        order - 0 or 1
+    Parameters
+    ----------
+    model
+        Model to set or change absorption for
+    order
+        0 or 1
     """
     statements = model.statements
     odes = statements.ode_system

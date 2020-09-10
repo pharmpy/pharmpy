@@ -92,9 +92,13 @@ class Model:
     def create_symbol(self, stem, force_numbering=False):
         """Create a new unique variable symbol
 
-           stem - First part of the new variable name
-           force_numbering - Forces addition of number to name even if variable does
-                             not exist, e.g. COVEFF --> COVEFF1
+        Parameters
+        ----------
+        stem : str
+            First part of the new variable name
+        force_numbering : bool
+            Forces addition of number to name even if variable does not exist, e.g.
+            COVEFF --> COVEFF1
         """
         symbols = [str(symbol) for symbol in self.statements.free_symbols]
         params = [param.name for param in self.parameters]

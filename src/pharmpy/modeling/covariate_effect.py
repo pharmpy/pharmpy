@@ -12,20 +12,27 @@ from pharmpy.statements import Assignment
 
 
 def add_covariate_effect(model, parameter, covariate, effect, operation='*'):
-    """Adds covariate effect to :class:`pharmpy.model`.
+    """
+    Adds covariate effect to :class:`pharmpy.model`. The following effects have templates:
+
+    - Linear function for continuous covariates (*lin_cont*)
+    - Linear function for categorical covariates (*lin_cat*)
+    - Piecewise linear function/"hockey-stick", continuous covariates only (*piece_lin*)
+    - Exponential function, continuous covariates only (*exp*)
+    - Power function, continuous covariates only (*pow*)
 
     Parameters
     ----------
     model : Model
-        Pharmpy model to add covariate effect to
+        Pharmpy model to add covariate effect to.
     parameter : str
-        Name of parameter to add covariate effect to
+        Name of parameter to add covariate effect to.
     covariate : str
-        Name of covariate
+        Name of covariate.
     effect : str
-        Type of covariate effect
-    operation : str
-        Whether the covariate effect should be added or multiplied
+        Type of covariate effect. May be abbreviated covariate effect (see above) or custom.
+    operation : str, optional
+        Whether the covariate effect should be added or multiplied.
     """
     mean = calculate_mean(model.dataset, covariate)
     median = calculate_median(model.dataset, covariate)

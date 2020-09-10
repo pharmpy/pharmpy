@@ -8,8 +8,14 @@ import pharmpy.symbols as symbols
 
 
 class Assignment:
-    """Representation of variable assignment
-       similar to sympy.codegen.Assignment
+    """Representation of variable assignment, similar to :class:`sympy.codegen.Assignment`
+
+    Attributes
+    ----------
+    symbol : sympy.Symbol
+        Symbol of statement
+    expression
+        Expression of statement
     """
     def __init__(self, symbol, expression):
         """ symbol can be either string or sympy symbol
@@ -465,9 +471,8 @@ class ModelStatements(list):
         return statement
 
     def remove_symbol_definition(self, symbol, statement):
-        """Remove symbol definition and dependencies not used elsewhere
-
-            statement is the statement from which the symbol was removed
+        """Remove symbol definition and dependencies not used elsewhere. statement is the statement from
+        which the symbol was removed
         """
         removed_ind = self.index(statement)
         depinds = self._find_statement_and_deps(symbol, removed_ind)
