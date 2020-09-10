@@ -8,16 +8,16 @@ from pharmpy.modeling import absorption, add_covariate_effect, explicit_odes
 
 
 @pytest.mark.parametrize('effect, covariate, operation, buf_new', [
-    ('exp', 'WGT', '*', 'CLWGT = EXP(THETA(4)*(-CL_MEDIAN + WGT))\n      '
+    ('exp', 'WGT', '*', 'CLWGT = EXP((-CL_MEDIAN + WGT)*THETA(4))\n      '
                         'CL_MEDIAN = 1.30000\n      '
                         'CL = CLWGT*TVCL*EXP(ETA(1))'),
-    ('exp', 'WGT', '+', 'CLWGT = EXP(THETA(4)*(-CL_MEDIAN + WGT))\n      '
+    ('exp', 'WGT', '+', 'CLWGT = EXP((-CL_MEDIAN + WGT)*THETA(4))\n      '
                         'CL_MEDIAN = 1.30000\n      '
                         'CL = CLWGT + TVCL*EXP(ETA(1))'),
     ('pow', 'WGT', '*', 'CLWGT = (WGT/CL_MEDIAN)**THETA(4)\n      '
                         'CL_MEDIAN = 1.30000\n      '
                         'CL = CLWGT*TVCL*EXP(ETA(1))'),
-    ('lin_cont', 'WGT', '*', 'CLWGT = THETA(4)*(-CL_MEDIAN + WGT) + 1\n      '
+    ('lin_cont', 'WGT', '*', 'CLWGT = (-CL_MEDIAN + WGT)*THETA(4) + 1\n      '
                              'CL_MEDIAN = 1.30000\n      '
                              'CL = CLWGT*TVCL*EXP(ETA(1))'),
     ('lin_cat', 'FA1', '*', 'IF (FA1.EQ.1.0) THEN\n'
@@ -28,14 +28,14 @@ from pharmpy.modeling import absorption, add_covariate_effect, explicit_odes
                             'CL_MEDIAN = 1.00000\n      '
                             'CL = CLFA1*TVCL*EXP(ETA(1))'),
     ('piece_lin', 'WGT', '*', 'IF (CL_MEDIAN.GE.WGT) THEN\n'
-                              'CLWGT = THETA(4)*(-CL_MEDIAN + WGT) + 1\n'
+                              'CLWGT = (-CL_MEDIAN + WGT)*THETA(4) + 1\n'
                               'ELSE\n'
-                              'CLWGT = THETA(5)*(-CL_MEDIAN + WGT) + 1\n'
+                              'CLWGT = (-CL_MEDIAN + WGT)*THETA(5) + 1\n'
                               'END IF\n      '
                               'CL_MEDIAN = 1.30000\n      '
                               'CL = CLWGT*TVCL*EXP(ETA(1))'),
     ('theta - cov + median', 'WGT', '*',
-     'CLWGT = CL_MEDIAN + THETA(4) - WGT\n      '
+     'CLWGT = CL_MEDIAN - WGT + THETA(4)\n      '
      'CL_MEDIAN = 1.30000\n      '
      'CL = CLWGT*TVCL*EXP(ETA(1))')
 
@@ -70,9 +70,8 @@ def test_add_covariate_effect_nan(pheno_path):
     model.dataset = data
 
     add_covariate_effect(model, 'CL', 'new_col', 'lin_cat')
+    model.update_source(nofiles=True)
 
-    assert re.search('NaN', str(model))
-    model.get_pred_pk_record().update({})
     assert not re.search('NaN', str(model))
     assert re.search(r'new_col\.EQ\.-99', str(model))
 
@@ -101,4 +100,14 @@ def test_absorption(testdata):
     a = str(model).split('\n')
     assert a[3] == '$SUBROUTINE ADVAN1 TRANS2'
     assert a[13].strip() == 'S1=V'
-    assert a[25] == '$OMEGA  DIAGONAL(2)'
+    assert a[26] == '$OMEGA  DIAGONAL(2)'
+
+    model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan1.mod')
+    advan1_before = str(model)
+    absorption(model, 0)
+    assert advan1_before == str(model)
+
+    model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan2.mod')
+    absorption(model, 0)
+    model.update_source()
+    assert str(model) == advan1_before

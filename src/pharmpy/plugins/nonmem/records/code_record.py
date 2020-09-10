@@ -10,12 +10,11 @@ import lark
 import sympy
 from sympy import Piecewise
 
-from pharmpy import data
+import pharmpy.symbols as symbols
 from pharmpy.data_structures import OrderedSet
 from pharmpy.parse_utils.generic import NoSuchRuleException
 from pharmpy.plugins.nonmem.records.parsers import CodeRecordParser
 from pharmpy.statements import Assignment, ModelStatements
-from pharmpy.symbols import real
 
 from .record import Record
 
@@ -151,7 +150,7 @@ class ExpressionInterpreter(lark.visitors.Interpreter):
         name = str(node).upper()
         if name.startswith('ERR('):
             name = 'EPS' + name[3:]
-        symb = real(name)
+        symb = symbols.symbol(name)
         return symb
 
 
@@ -161,40 +160,38 @@ class CodeRecord(Record):
         self.nodes = []
         self._nodes_updated = []
         self._root_updated = None
-        self._statements = None
-        self._statements_updated = False
 
     @property
     def statements(self):
-        if self._statements is not None:
-            return self._statements
-
         statements = self._assign_statements()
+        if statements is None:
+            statements = ModelStatements([])
         self._statements = statements
-
-        return copy.deepcopy(statements)
+        return statements.copy()
 
     @statements.setter
     def statements(self, statements_new):
-        statements_past = copy.deepcopy(self.statements)
+        try:
+            old_statements = self._statements
+        except AttributeError:
+            old_statements = self.statements
         self._nodes_updated = copy.deepcopy(self.nodes)
         self._root_updated = copy.deepcopy(self.root)
-
-        if statements_new != statements_past:
+        if statements_new != old_statements:
             index_past = 0
-            last_index_past = len(statements_past) - 1
+            last_index_past = len(old_statements) - 1
             last_index_new = len(statements_new) - 1
             for index_new, s_new in enumerate(statements_new):
-                if index_past >= len(statements_past):      # Add rest of new statements
+                if index_past >= len(old_statements):      # Add rest of new statements
                     if self._get_node(s_new) is None:
                         self._add_statement(index_past, s_new)
                         index_past += 1
                     continue
-                elif len(statements_past) == 1 and len(statements_new) == 1:
+                elif len(old_statements) == 1 and len(statements_new) == 1:
                     self._replace_statement(0, s_new)
                     break
 
-                s_past = statements_past[index_past]
+                s_past = old_statements[index_past]
                 if s_new != s_past:
                     if s_new.symbol == s_past.symbol:
                         self._replace_statement(index_past, s_new)
@@ -221,7 +218,6 @@ class CodeRecord(Record):
         self._root_updated = None
 
         self._statements = statements_new
-        self._statements_updated = True
 
     def _replace_statement(self, index_replace, statement):
         self._remove_statements(index_replace, index_replace)
@@ -321,6 +317,7 @@ class CodeRecord(Record):
 
     def _assign_statements(self):
         s = []
+        self.nodes = []
         for statement in self.root.all('statement'):
             node = statement.children[0]
             self.nodes.append(statement)
@@ -396,22 +393,15 @@ class CodeRecord(Record):
         statements = ModelStatements(s)
         return statements
 
-    def update(self, nonmem_names):
-        statements_updated = copy.deepcopy(self.statements)
-        for key, value in nonmem_names.items():
-            statements_updated.subs({key: value})
-        statements_updated.subs({'NaN': int(data.conf.na_rep)})
-        self.statements = statements_updated
-
     def from_odes(self, ode_system):
         """Set statements of record given an eplicit ode system
         """
         odes = ode_system.odes[:-1]    # Skip last ode as it is for the output compartment
         functions = [ode.lhs.args[0] for ode in odes]
-        function_map = {f: real(f'A({i + 1})') for i, f in enumerate(functions)}
+        function_map = {f: symbols.symbol(f'A({i + 1})') for i, f in enumerate(functions)}
         statements = []
         for i, ode in enumerate(odes):
-            symbol = real(f'DADT({i + 1})')
+            symbol = symbols.symbol(f'DADT({i + 1})')
             expression = ode.rhs.subs(function_map)
             statements.append(Assignment(symbol, expression))
         self.statements = statements

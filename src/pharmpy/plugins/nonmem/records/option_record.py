@@ -156,6 +156,43 @@ class OptionRecord(Record):
                 new_children.append(node)
         self.root.children = new_children
 
+    def remove_nth_option(self, key, n):
+        """ Remove the nth option key
+        """
+        new_children = []
+        i = 0
+        for node in self.root.children:
+            if node.rule == 'option':
+                curkey = _get_key(node)
+                if key[:len(curkey)] == curkey and i == n:
+                    if new_children[-1].rule == 'ws' and '\n' not in str(new_children[-1]):
+                        new_children.pop()
+                else:
+                    new_children.append(node)
+                if key[:len(curkey)] == curkey:
+                    i += 1
+            else:
+                new_children.append(node)
+        self.root.children = new_children
+
+    def add_suboption_for_nth(self, key, n, suboption):
+        """Adds a suboption to the nth option key
+        """
+        i = 0
+        for node in self.root.children:
+            if node.rule == 'option':
+                curkey = _get_key(node)
+                if key[:len(curkey)] == curkey:
+                    if i == n:
+                        s = node.VALUE
+                        if s.startswith('('):
+                            s = f'{s[:-1]} {suboption})'
+                        else:
+                            s = f'({s} {suboption})'
+                        node.VALUE = s
+                        break
+                    i += 1
+
     def remove_option_startswith(self, start):
         """ Remove all options that startswith
         """

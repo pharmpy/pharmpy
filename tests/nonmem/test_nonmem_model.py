@@ -5,14 +5,16 @@ import sympy
 from pyfakefs.fake_filesystem_unittest import Patcher
 
 from pharmpy import Model
+from pharmpy.config import ConfigurationContext
 from pharmpy.parameter import Parameter
+from pharmpy.plugins.nonmem import conf
 from pharmpy.plugins.nonmem.nmtran_parser import NMTranParser
 from pharmpy.statements import Assignment, ModelStatements, ODESystem
-from pharmpy.symbols import real
+from pharmpy.symbols import symbol
 
 
 def S(x):
-    return real(x)
+    return symbol(x)
 
 
 def test_source(pheno_path):
@@ -137,7 +139,7 @@ def test_add_two_parameters(pheno_path):
 
 
 @pytest.mark.parametrize('statement_new,buf_new', [
-    (Assignment(S('CL'), 2), 'CL = 2'),
+    (Assignment(S('CL'), sympy.Integer(2)), 'CL = 2'),
     (Assignment(S('Y'), S('THETA(4)') + S('THETA(5)')), 'Y = THETA(4) + THETA(5)')
 ])
 def test_add_statements(pheno_path, statement_new, buf_new):
@@ -176,12 +178,11 @@ def test_add_statements(pheno_path, statement_new, buf_new):
     assert rec_ref == rec_mod
 
 
-@pytest.mark.parametrize('param_new, statement_new, buf_original, buf_new', [
+@pytest.mark.parametrize('param_new, statement_new, buf_new', [
     (Parameter('X', 0.1), Assignment(S('Y'), S('X') + S('S1')),
-     'Y = S1 + X', 'Y = S1 + THETA(4)'),
+     'Y = S1 + THETA(4)'),
 ])
-def test_add_parameters_and_statements(pheno_path, param_new, statement_new,
-                                       buf_original, buf_new):
+def test_add_parameters_and_statements(pheno_path, param_new, statement_new, buf_new):
     model = Model(pheno_path)
 
     pset = model.parameters
@@ -198,6 +199,7 @@ def test_add_parameters_and_statements(pheno_path, param_new, statement_new,
         new_sset.append(s)
 
     model.statements = new_sset
+    model.update_source()
 
     rec = '$PK\nIF(AMT.GT.0) BTIME=TIME\nTAD=TIME-BTIME\n' \
           '      TVCL=THETA(1)*WGT\n' \
@@ -207,11 +209,8 @@ def test_add_parameters_and_statements(pheno_path, param_new, statement_new,
           '      V=TVV*EXP(ETA(2))\n' \
           '      S1=V\n'
 
-    rec_original = f'{rec}{buf_original}\n'
     rec_new = f'{rec}{buf_new}\n'
 
-    assert str(model.get_pred_pk_record()) == rec_original
-    model.update_source()
     assert str(model.get_pred_pk_record()) == rec_new
 
 
@@ -225,7 +224,7 @@ def test_minimal(datadir):
     model = Model(path)
     assert len(model.statements) == 1
     assert model.statements[0].expression == \
-        real('THETA(1)') + real('ETA(1)') + real('EPS(1)')
+        symbol('THETA(1)') + symbol('ETA(1)') + symbol('EPS(1)')
 
 
 def test_copy(datadir):
@@ -234,7 +233,7 @@ def test_copy(datadir):
     copy = model.copy()
     assert id(model) != id(copy)
     assert model.statements[0].expression == \
-        real('THETA(1)') + real('ETA(1)') + real('EPS(1)')
+        symbol('THETA(1)') + symbol('ETA(1)') + symbol('EPS(1)')
 
 
 def test_initial_individual_estimates(datadir):
@@ -312,3 +311,10 @@ def test_remove_eta(pheno_path):
     rvs.discard(eta1)
     model.update_source()
     assert str(model).split('\n')[13] == '      V = TVV*EXP(ETA(1))'
+
+
+def test_symbol_names_in_comment(pheno_path):
+    with ConfigurationContext(conf, parameter_names='comment'):
+        model = Model(pheno_path)
+        assert model.statements[2].expression == S('PTVCL') * S('WGT')
+        print(model.statements)

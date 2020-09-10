@@ -19,7 +19,7 @@ class Assignment:
             symbol.is_Symbol
             self.symbol = symbol
         except AttributeError:
-            self.symbol = symbols.real(symbol)
+            self.symbol = symbols.symbol(symbol)
         self.expression = expression
 
     def subs(self, substitutions):
@@ -28,8 +28,8 @@ class Assignment:
         substitutions - dictionary with old-new pair (can be type str or
                         sympy symbol)
         """
-        self.symbol = symbols.subs(self.symbol, substitutions)
-        self.expression = symbols.subs(self.expression, substitutions)
+        self.symbol = self.symbol.subs(substitutions)
+        self.expression = self.expression.subs(substitutions)
 
     @property
     def free_symbols(self):
@@ -158,7 +158,7 @@ class CompartmentalSystem(ODESystem):
     def subs(self, substitutions):
         g_copy = copy.deepcopy(self._g)
         for (u, v, rate) in self._g.edges.data('rate'):
-            rate_sub = symbols.subs(rate, substitutions)
+            rate_sub = rate.subs(substitutions)
             g_copy.remove_edge(u, v)
             g_copy.add_edge(u, v, rate=rate_sub)
 
@@ -166,7 +166,7 @@ class CompartmentalSystem(ODESystem):
 
     @property
     def free_symbols(self):
-        free = {symbols.real('t')}
+        free = {symbols.symbol('t')}
         for (_, _, rate) in self._g.edges.data('rate'):
             free |= rate.free_symbols
         for node in self._g.nodes:
@@ -199,6 +199,26 @@ class CompartmentalSystem(ODESystem):
 
     def get_flow(self, source, destination):
         return self._g.edges[source, destination]['rate']
+
+    def get_compartment_flows(self, compartment, out=True):
+        """Generate all flows going out or in to a compartment
+        """
+        flows = []
+        for node in self._g.neighbors(compartment):
+            if out:
+                flow = self.get_flow(compartment, node)
+            else:
+                flow = self.get_flow(node, compartment)
+            if flow is not None:
+                flows.append((node, flow))
+        return flows
+
+    def find_compartment(self, name):
+        for comp in self._g.nodes:
+            if comp.name == name:
+                return comp
+        else:
+            return None
 
     def find_output(self):
         zeroout = [node for node, out_degree in self._g.out_degree() if out_degree == 0]
@@ -256,8 +276,14 @@ class CompartmentalSystem(ODESystem):
         amts = [node.amount for node in self._g.nodes]
         return sympy.Matrix(amts)
 
+    @property
+    def names(self):
+        """A list of the names of all compartments
+        """
+        return [node.name for node in self._g.nodes]
+
     def to_explicit_odes(self):
-        t = symbols.real('t')
+        t = symbols.symbol('t')
         amount_funcs = sympy.Matrix([sympy.Function(amt.name)(t) for amt in self.amounts])
         derivatives = sympy.Matrix([sympy.Derivative(fn, t) for fn in amount_funcs])
         a = self.compartmental_matrix @ amount_funcs
@@ -391,12 +417,12 @@ class Compartment:
 
     @property
     def amount(self):
-        return symbols.real(f'A_{self.name}')
+        return symbols.symbol(f'A_{self.name}')
 
 
 class Bolus:
     def __init__(self, symbol):
-        self.symbol = symbols.real(str(symbol))
+        self.symbol = symbols.symbol(str(symbol))
 
     @property
     def free_symbols(self):
@@ -485,6 +511,9 @@ class ModelStatements(list):
             if isinstance(s, ODESystem):
                 return s
         return None
+
+    def copy(self):
+        return copy.deepcopy(self)
 
     def __eq__(self, other):
         if len(self) != len(other):

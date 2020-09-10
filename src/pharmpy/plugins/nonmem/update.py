@@ -1,14 +1,14 @@
 import re
 
-from pharmpy.statements import CompartmentalSystem, ExplicitODESystem
-from pharmpy.symbols import real
+from pharmpy import data
+from pharmpy.statements import CompartmentalSystem, ExplicitODESystem, ModelStatements, ODESystem
+from pharmpy.symbols import symbol
 
 
 def update_parameters(model, old, new):
     new_names = {p.name for p in new}
     old_names = {p.name for p in old}
     removed = old_names - new_names
-    full_map = dict()
     if removed:
         remove_records = []
         next_theta = 1
@@ -20,14 +20,10 @@ def update_parameters(model, old, new):
                 # one or more in the record
                 theta_record.remove(removed & current_names)
                 theta_record.renumber(next_theta)
-                full_map.update({key: f'THETA({value})'
-                                 for key, value in theta_record.name_map.items()})
                 next_theta += len(theta_record)
             else:
                 # keep all
                 theta_record.renumber(next_theta)
-                full_map.update({key: f'THETA({value})'
-                                 for key, value in theta_record.name_map.items()})
                 next_theta += len(theta_record)
         model.control_stream.remove_records(remove_records)
 
@@ -42,10 +38,6 @@ def update_parameters(model, old, new):
                 p.name = f'THETA({theta_number})'
             else:
                 record.add_nonmem_name(name, theta_number)
-            full_map[p.name] = f'THETA({theta_number})'
-
-    if full_map:
-        update_code_symbols(model, full_map)
 
     next_theta = 1
     for theta_record in model.control_stream.get_records('THETA'):
@@ -68,7 +60,6 @@ def update_random_variables(model, old, new):
     if removed:
         remove_records = []
         next_eta = 1
-        full_map = dict()
         for omega_record in model.control_stream.get_records('OMEGA'):
             current_names = omega_record.eta_map.keys()
             if removed >= current_names:
@@ -78,17 +69,12 @@ def update_random_variables(model, old, new):
                 omega_record.remove(removed & current_names)
                 omega_record.renumber(next_eta)
                 # FIXME: No handling of OMEGA(1,1) etc in code
-                full_map.update({key: f'ETA({value})'
-                                 for key, value in omega_record.eta_map.items()})
                 next_eta += len(omega_record)
             else:
                 # keep all
                 omega_record.renumber(next_eta)
-                full_map.update({key: f'ETA({value})'
-                                 for key, value in omega_record.eta_map.items()})
                 next_eta += len(omega_record)
         model.control_stream.remove_records(remove_records)
-        update_code_symbols(model, full_map)
 
 
 def get_next_theta(model):
@@ -121,18 +107,6 @@ def create_theta_record(model, param):
     return record
 
 
-def update_code_symbols(model, name_map):
-    """Update symbol names in code records.
-
-        name_map - dict from old name to new name
-    """
-    code_record = model.get_pred_pk_record()
-    code_record.update(name_map)
-    error = model._get_error_record()
-    if error:
-        error.update(name_map)
-
-
 def update_ode_system(model, old, new):
     """Update ODE system
 
@@ -157,32 +131,68 @@ def update_ode_system(model, old, new):
         if old.find_depot() and not new.find_depot():
             subs = model.control_stream.get_records('SUBROUTINES')[0]
             advan = subs.get_option_startswith('ADVAN')
+            trans = subs.get_option_startswith('TRANS')
             statements = model.statements
             if advan == 'ADVAN2':
                 subs.replace_option('ADVAN2', 'ADVAN1')
+                secondary = secondary_pk_param_conversion_map(len(old), 1)
+                statements.subs(secondary)
             elif advan == 'ADVAN4':
                 subs.replace_option('ADVAN4', 'ADVAN3')
-                statements.subs({real('K23'): real('K12'), real('K32'): real('K32')})
+                secondary = secondary_pk_param_conversion_map(len(old), 1)
+                statements.subs(secondary)
+                if trans == 'TRANS1':
+                    statements.subs({symbol('K23'): symbol('K12'), symbol('K32'): symbol('K32')})
+                elif trans == 'TRANS4':
+                    statements.subs({symbol('V2'): symbol('V1'), symbol('V3'): symbol('V2')})
+                elif trans == 'TRANS6':
+                    statements.subs({symbol('K32'): symbol('K21')})
             elif advan == 'ADVAN12':
                 subs.replace_option('ADVAN12', 'ADVAN11')
-                statements.subs({real('K23'): real('K12'), real('K32'): real('K32'),
-                                 real('K24'): real('K13'), real('K42'): real('K31')})
+                secondary = secondary_pk_param_conversion_map(len(old), 1)
+                statements.subs(secondary)
+                if trans == 'TRANS1':
+                    statements.subs({symbol('K23'): symbol('K12'), symbol('K32'): symbol('K32'),
+                                     symbol('K24'): symbol('K13'), symbol('K42'): symbol('K31')})
+                elif trans == 'TRANS4':
+                    statements.subs({symbol('V2'): symbol('V1'), symbol('Q3'): symbol('Q2'),
+                                     symbol('V3'): symbol('V2'), symbol('Q4'): symbol('Q3'),
+                                     symbol('V4'): symbol('V3')})
+                elif trans == 'TRANS6':
+                    statements.subs({symbol('K42'): symbol('K31'), symbol('K32'): symbol('K21')})
             elif advan == 'ADVAN5' or advan == 'ADVAN7':
-                # FIXME: Add this. Here we can check which compartment name was removed
-                pass
+                model_record = model.control_stream.get_records('MODEL')[0]
+                removed_name = set(new.names) - set(old.names)
+                dose_comp = old.find_dosing()
+                model_record.set_dosing(dose_comp.name)
+                model_record.remove_compartment(removed_name)
+                n = model_record.get_compartment_number(removed_name)
+                primary = primary_pk_param_conversion_map(len(old), n)
+                statements.subs(primary)
+                secondary = secondary_pk_param_conversion_map(len(old), n)
+                statements.subs(secondary)
 
-            # FIXME: It could possibly be other than the first below
-            # also assumes that only one compartment has been removed
-            secondary = secondary_pk_param_conversion_map(len(old), 1)
-            statements.subs(secondary)
-            model.statements = statements
 
-
-def primary_pk_param_conversion_map(ncomp, trans, removed):
+def primary_pk_param_conversion_map(ncomp, removed):
     """Conversion map for pk parameters for one removed compartment
     """
-    if trans == 'TRANS1':
-        pass
+    d = dict()
+    for i in range(1, ncomp + 1):
+        for j in range(1, ncomp + 1):
+            if i == j or i == removed or j == removed:
+                continue
+            if i > removed:
+                to_i = i - 1
+            else:
+                to_i = i
+            if j > removed:
+                to_j = j - 1
+            else:
+                to_j = j
+            if not (to_j == j and to_i == i):
+                d.update({symbol(f'K{i}{j}'): symbol(f'K{to_i}{to_j}'),
+                          symbol(f'K{i}T{j}'): symbol(f'K{to_i}T{to_j}')})
+    return d
 
 
 def secondary_pk_param_conversion_map(ncomp, removed):
@@ -193,9 +203,36 @@ def secondary_pk_param_conversion_map(ncomp, removed):
     """
     d = dict()
     for i in range(removed + 1, ncomp + 1):
-        d.update({real(f'S{i})'): real(f'S{i - 1}'),
-                  real(f'F{i}'): real(f'F{i - 1}'),
-                  real(f'R{i}'): real(f'R{i - 1}'),
-                  real(f'D{i}'): real(f'D{i - 1}'),
-                  real(f'ALAG{i}'): real(f'ALAG{i - 1}')})
+        d.update({symbol(f'S{i})'): symbol(f'S{i - 1}'),
+                  symbol(f'F{i}'): symbol(f'F{i - 1}'),
+                  symbol(f'R{i}'): symbol(f'R{i - 1}'),
+                  symbol(f'D{i}'): symbol(f'D{i - 1}'),
+                  symbol(f'ALAG{i}'): symbol(f'ALAG{i - 1}')})
     return d
+
+
+def update_statements(model, old, new, trans):
+    trans['NaN'] = int(data.conf.na_rep)
+    main_statements = ModelStatements()
+    error_statements = ModelStatements()
+    found_ode = False
+    for s in new:
+        if isinstance(s, ODESystem):
+            found_ode = True
+            old_system = old.ode_system
+            if s != old_system:
+                update_ode_system(model, old_system, s)
+        else:
+            if found_ode:
+                error_statements.append(s)
+            else:
+                main_statements.append(s)
+    main_statements.subs(trans)
+    rec = model.get_pred_pk_record()
+    rec.statements = main_statements
+    error = model._get_error_record()
+    if error:
+        if len(error_statements) > 0:
+            error_statements.pop(0)        # Remove the link statement
+        error_statements.subs(trans)
+        error.statements = error_statements

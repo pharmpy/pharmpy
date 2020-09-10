@@ -4,7 +4,7 @@ import sympy
 
 from pharmpy.model import ModelSyntaxError
 from pharmpy.statements import Assignment, Bolus, CompartmentalSystem
-from pharmpy.symbols import real
+from pharmpy.symbols import symbol
 
 
 def compartmental_model(model, advan, trans):
@@ -22,7 +22,7 @@ def compartmental_model(model, advan, trans):
         central = cm.add_compartment('CENTRAL')
         output = cm.add_compartment('OUTPUT')
         cm.add_flow(central, output, _advan1and2_trans(trans))
-        cm.add_flow(depot, central, real('KA'))
+        cm.add_flow(depot, central, symbol('KA'))
         dose = Bolus('AMT')
         depot.dose = dose
         ass = _f_link_assignment(model, central)
@@ -98,11 +98,11 @@ def compartmental_model(model, advan, trans):
         cm = CompartmentalSystem()
         central = cm.add_compartment('CENTRAL')
         output = cm.add_compartment('OUTPUT')
-        vm = real('VM')
-        km = real('KM')
+        vm = symbol('VM')
+        km = symbol('KM')
         dose = Bolus('AMT')
         central.dose = dose
-        t = real('t')
+        t = symbol('t')
         cm.add_flow(central, output, vm / (km + sympy.Function(central.amount.name)(t)))
         ass = _f_link_assignment(model, central)
     elif advan == 'ADVAN11':
@@ -143,11 +143,11 @@ def compartmental_model(model, advan, trans):
 
 
 def _f_link_assignment(model, compartment):
-    f = real('F')
+    f = symbol('F')
     fexpr = compartment.amount
     pkrec = model.control_stream.get_records('PK')[0]
     if pkrec.statements.find_assignment('S1'):
-        fexpr = fexpr / real('S1')
+        fexpr = fexpr / symbol('S1')
     ass = Assignment(f, fexpr)
     return ass
 
@@ -192,115 +192,117 @@ def _find_rates(model, ncomps):
                         to_n = int(n[2:])
                 if to_n == 0:
                     to_n = ncomps
-                yield from_n, to_n, real(name)
+                yield from_n, to_n, symbol(name)
 
 
 def _advan1and2_trans(trans):
     if trans == 'TRANS2':
-        return real('CL') / real('V')
+        return symbol('CL') / symbol('V')
     else:       # TRANS1 which is also the default
-        return real('K')
+        return symbol('K')
 
 
 def _advan3_trans(trans):
     if trans == 'TRANS3':
-        return (real('CL') / real('V'),
-                real('Q') / real('V'),
-                real('Q') / (real('VSS') - real('V')))
+        return (symbol('CL') / symbol('V'),
+                symbol('Q') / symbol('V'),
+                symbol('Q') / (symbol('VSS') - symbol('V')))
     elif trans == 'TRANS4':
-        return (real('CL') / real('V1'),
-                real('Q') / real('V1'),
-                real('Q') / real('V2'))
+        return (symbol('CL') / symbol('V1'),
+                symbol('Q') / symbol('V1'),
+                symbol('Q') / symbol('V2'))
     elif trans == 'TRANS5':
-        return (real('ALPHA') * real('BETA') / real('K21'),
-                real('ALPHA') + real('BETA') - real('K21') - real('K'),
-                (real('AOB') * real('BETA') + real('ALPHA')) / (real('AOB') + 1))
+        return (symbol('ALPHA') * symbol('BETA') / symbol('K21'),
+                symbol('ALPHA') + symbol('BETA') - symbol('K21') - symbol('K'),
+                (symbol('AOB') * symbol('BETA') + symbol('ALPHA')) / (symbol('AOB') + 1))
     elif trans == 'TRANS6':
-        return (real('ALPHA') * real('BETA') / real('K21'),
-                real('ALPHA') + real('BETA') - real('K21') - real('K'),
-                real('K21'))
+        return (symbol('ALPHA') * symbol('BETA') / symbol('K21'),
+                symbol('ALPHA') + symbol('BETA') - symbol('K21') - symbol('K'),
+                symbol('K21'))
     else:
-        return (real('K'),
-                real('K12'),
-                real('K21'))
+        return (symbol('K'),
+                symbol('K12'),
+                symbol('K21'))
 
 
 def _advan4_trans(trans):
     if trans == 'TRANS3':
-        return (real('CL') / real('V'),
-                real('Q') / real('V'),
-                real('Q') / (real('VSS') - real('V')),
-                real('KA'))
+        return (symbol('CL') / symbol('V'),
+                symbol('Q') / symbol('V'),
+                symbol('Q') / (symbol('VSS') - symbol('V')),
+                symbol('KA'))
     elif trans == 'TRANS4':
-        return (real('CL') / real('V2'),
-                real('Q') / real('V2'),
-                real('Q') / real('V3'),
-                real('KA'))
+        return (symbol('CL') / symbol('V2'),
+                symbol('Q') / symbol('V2'),
+                symbol('Q') / symbol('V3'),
+                symbol('KA'))
     elif trans == 'TRANS5':
-        return (real('ALPHA') * real('BETA') / real('K32'),
-                real('ALPHA') + real('BETA') - real('K32') - real('K'),
-                (real('AOB') * real('BETA') + real('ALPHA')) / (real('AOB') + 1),
-                real('KA'))
+        return (symbol('ALPHA') * symbol('BETA') / symbol('K32'),
+                symbol('ALPHA') + symbol('BETA') - symbol('K32') - symbol('K'),
+                (symbol('AOB') * symbol('BETA') + symbol('ALPHA')) / (symbol('AOB') + 1),
+                symbol('KA'))
     elif trans == 'TRANS6':
-        return (real('ALPHA') * real('BETA') / real('K32'),
-                real('ALPHA') + real('BETA') - real('K32') - real('K'),
-                real('K32'),
-                real('KA'))
+        return (symbol('ALPHA') * symbol('BETA') / symbol('K32'),
+                symbol('ALPHA') + symbol('BETA') - symbol('K32') - symbol('K'),
+                symbol('K32'),
+                symbol('KA'))
     else:
-        return (real('K'),
-                real('K23'),
-                real('K32'),
-                real('KA'))
+        return (symbol('K'),
+                symbol('K23'),
+                symbol('K32'),
+                symbol('KA'))
 
 
 def _advan11_trans(trans):
     if trans == 'TRANS4':
-        return (real('CL') / real('V1'),
-                real('Q2') / real('V1'),
-                real('Q2') / real('V2'),
-                real('Q3') / real('V1'),
-                real('Q3') / real('V3'))
+        return (symbol('CL') / symbol('V1'),
+                symbol('Q2') / symbol('V1'),
+                symbol('Q2') / symbol('V2'),
+                symbol('Q3') / symbol('V1'),
+                symbol('Q3') / symbol('V3'))
     elif trans == 'TRANS6':
-        return (real('ALPHA') * real('BETA') * real('GAMMA') / (real('K21') * real('K31')),
-                real('ALPHA') + real('BETA') + real('GAMMA') - real('K') - real('K13') -
-                real('K21') - real('K31'),
-                real('K21'),
-                (real('ALPHA') * real('BETA') + real('ALPHA') * real('GAMMA') +
-                 real('BETA') * real('GAMMA') + real('K31') * real('K31') -
-                 real('K31') * (real('ALPHA') + real('BETA') + real('GAMMA')) -
-                 real('K') * real('K21')) / (real('K21') - real('K31')),
-                real('K31'))
+        return (symbol('ALPHA') * symbol('BETA') * symbol('GAMMA') / (symbol('K21') *
+                                                                      symbol('K31')),
+                symbol('ALPHA') + symbol('BETA') + symbol('GAMMA') - symbol('K') - symbol('K13') -
+                symbol('K21') - symbol('K31'),
+                symbol('K21'),
+                (symbol('ALPHA') * symbol('BETA') + symbol('ALPHA') * symbol('GAMMA') +
+                 symbol('BETA') * symbol('GAMMA') + symbol('K31') * symbol('K31') -
+                 symbol('K31') * (symbol('ALPHA') + symbol('BETA') + symbol('GAMMA')) -
+                 symbol('K') * symbol('K21')) / (symbol('K21') - symbol('K31')),
+                symbol('K31'))
     else:
-        return (real('K'),
-                real('K12'),
-                real('K21'),
-                real('K13'),
-                real('K31'))
+        return (symbol('K'),
+                symbol('K12'),
+                symbol('K21'),
+                symbol('K13'),
+                symbol('K31'))
 
 
 def _advan12_trans(trans):
     if trans == 'TRANS4':
-        return (real('CL') / real('V2'),
-                real('Q3') / real('V2'),
-                real('Q3') / real('V3'),
-                real('Q4') / real('V2'),
-                real('Q4') / real('V4'),
-                real('KA'))
+        return (symbol('CL') / symbol('V2'),
+                symbol('Q3') / symbol('V2'),
+                symbol('Q3') / symbol('V3'),
+                symbol('Q4') / symbol('V2'),
+                symbol('Q4') / symbol('V4'),
+                symbol('KA'))
     elif trans == 'TRANS6':
-        return (real('ALPHA') * real('BETA') * real('GAMMA') / (real('K32') * real('K42')),
-                real('ALPHA') + real('BETA') + real('GAMMA') - real('K') - real('K24') -
-                real('K32') - real('K42'),
-                real('K32'),
-                (real('ALPHA') * real('BETA') + real('ALPHA') * real('GAMMA') +
-                 real('BETA') * real('GAMMA') + real('K42') * real('K42') -
-                 real('K42') * (real('ALPHA') + real('BETA') + real('GAMMA')) -
-                 real('K') * real('K32')) / (real('K32') - real('K42')),
-                real('K42'),
-                real('KA'))
+        return (symbol('ALPHA') * symbol('BETA') * symbol('GAMMA') / (symbol('K32') *
+                                                                      symbol('K42')),
+                symbol('ALPHA') + symbol('BETA') + symbol('GAMMA') - symbol('K') - symbol('K24') -
+                symbol('K32') - symbol('K42'),
+                symbol('K32'),
+                (symbol('ALPHA') * symbol('BETA') + symbol('ALPHA') * symbol('GAMMA') +
+                 symbol('BETA') * symbol('GAMMA') + symbol('K42') * symbol('K42') -
+                 symbol('K42') * (symbol('ALPHA') + symbol('BETA') + symbol('GAMMA')) -
+                 symbol('K') * symbol('K32')) / (symbol('K32') - symbol('K42')),
+                symbol('K42'),
+                symbol('KA'))
     else:
-        return (real('K'),
-                real('K23'),
-                real('K32'),
-                real('K24'),
-                real('K42'),
-                real('KA'))
+        return (symbol('K'),
+                symbol('K23'),
+                symbol('K32'),
+                symbol('K24'),
+                symbol('K42'),
+                symbol('KA'))

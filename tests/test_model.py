@@ -5,8 +5,8 @@ import pandas as pd
 import pytest
 
 import pharmpy.data
+import pharmpy.symbols
 from pharmpy import Model
-from pharmpy.symbols import real
 
 tabpath = Path(__file__).parent / 'testdata' / 'nonmem' / 'pheno_real_linbase.tab'
 lincorrect = pharmpy.data.read_nonmem_dataset(tabpath, ignore_character='@',
@@ -27,7 +27,7 @@ def test_create_symbol(testdata, stem, force_numbering, symbol_name):
 
 
 def S(x):
-    return real(x)
+    return pharmpy.symbols.symbol(x)
 
 
 def test_symbolic_population_prediction(testdata):

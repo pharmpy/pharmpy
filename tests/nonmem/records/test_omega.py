@@ -4,11 +4,11 @@ import sympy
 from pharmpy.config import ConfigurationContext
 from pharmpy.model import ModelSyntaxError
 from pharmpy.plugins.nonmem import conf
-from pharmpy.symbols import real
+from pharmpy.symbols import symbol
 
 
 def S(x):
-    return real(x)
+    return symbol(x)
 
 
 @pytest.mark.usefixtures('parser')

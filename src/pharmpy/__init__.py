@@ -17,9 +17,9 @@ from .model_factory import Model
 from .parameter import Parameter, ParameterSet
 from .random_variables import RandomVariables
 from .statements import ModelStatements
-from .symbols import real
+from .symbols import symbol
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 
 
-__all__ = ['Model', 'ModelStatements', 'Parameter', 'ParameterSet', 'RandomVariables', 'real']
+__all__ = ['Model', 'ModelStatements', 'Parameter', 'ParameterSet', 'RandomVariables', 'symbol']

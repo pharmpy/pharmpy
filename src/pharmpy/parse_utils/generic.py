@@ -288,20 +288,22 @@ class AttrTree(Tree):
     def remove_node(self, node):
         new_children = []
         comment_flag = False
-
         for child in self.children:
-            if child.rule == 'COMMENT':
+            if child.rule == 'COMMENT' or child.rule == 'NEWLINE':
                 if not comment_flag:
                     new_children.append(child)
+                else:
+                    print('>', child, '<', sep='')
+                    if str(child).startswith('\n\n'):
+                        new_children.append(child.replace(str(child)[1:]))
+                    comment_flag = False
             elif str(child.eval) != str(node.eval):
                 new_children.append(child)
                 if child.rule == 'statement':
                     comment_flag = False
             else:
                 comment_flag = True
-
-        new_children_clean = self._clean_ws(new_children)
-        self.children = new_children_clean
+        self.children = new_children
 
     @staticmethod
     def _newline_node():
@@ -320,8 +322,7 @@ class AttrTree(Tree):
                     continue
                 if i == last_index:
                     continue
-
-            if re.search('\n{2,}', str(child.eval)):
+            if re.search('\n{2,}', str(child)):
                 new_children_clean.append(self._newline_node())
             else:
                 new_children_clean.append(child)

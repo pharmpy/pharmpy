@@ -1,22 +1,22 @@
 # The NONMEM Model class
-import copy
 import re
 import shutil
 from pathlib import Path
 
 import pharmpy.data
 import pharmpy.model
+import pharmpy.plugins.nonmem
+import pharmpy.symbols as symbols
 from pharmpy.data import DatasetError
 from pharmpy.parameter import ParameterSet
 from pharmpy.plugins.nonmem.results import NONMEMChainedModelfitResults
 from pharmpy.plugins.nonmem.table import NONMEMTableFile, PhiTable
 from pharmpy.random_variables import RandomVariables
-from pharmpy.statements import Assignment, ModelStatements, ODESystem
-from pharmpy.symbols import real
+from pharmpy.statements import Assignment, ODESystem
 
 from .advan import compartmental_model
 from .nmtran_parser import NMTranParser
-from .update import update_ode_system, update_parameters, update_random_variables
+from .update import update_parameters, update_random_variables, update_statements
 
 
 class Model(pharmpy.model.Model):
@@ -54,15 +54,17 @@ class Model(pharmpy.model.Model):
         """
         return bool(re.search(r'^\s*\$PRO', src.code, re.MULTILINE))
 
-    def update_source(self, path=None, force=False):
+    def update_source(self, path=None, force=False, nofiles=False):
         """ Update the source
 
             path - path to modelfile
+            nofiles - Set to not write any files (i.e. dataset, phi input etc)
         """
         if self._dataset_updated:
             # FIXME: If no name set use the model name. Set that when setting dataset to input!
-            datapath = self.dataset.pharmpy.write_csv(force=force)
-            self.path = datapath
+            if not nofiles:
+                datapath = self.dataset.pharmpy.write_csv(force=force)
+                self.path = datapath
 
             data_record = self.control_stream.get_records('DATA')[0]
 
@@ -79,10 +81,18 @@ class Model(pharmpy.model.Model):
         self._update_initial_individual_estimates(path)
         if hasattr(self, '_random_variables'):
             update_random_variables(self, self._old_random_variables, self._random_variables)
-            self._old_random_variables = self._random_variables
+            self._old_random_variables = self._random_variables.copy()
         if hasattr(self, '_parameters'):
             update_parameters(self, self._old_parameters, self._parameters)
-            self._old_parameters = self._parameters
+            self._old_parameters = self._parameters.copy()
+        trans = self.parameter_translation(reverse=True, remove_idempotent=True)
+        rv_trans = self.rv_translation(reverse=True, remove_idempotent=True)
+        trans.update(rv_trans)
+        if trans:
+            self.statements     # Read statements unless read
+        if hasattr(self, '_statements'):
+            update_statements(self, self._old_statements, self._statements, trans)
+            self._old_statements = self._statements.copy()
 
         super().update_source()
 
@@ -254,7 +264,7 @@ class Model(pharmpy.model.Model):
     @property
     def statements(self):
         try:
-            return copy.deepcopy(self._statements)
+            return self._statements
         except AttributeError:
             pass
 
@@ -275,36 +285,20 @@ class Model(pharmpy.model.Model):
             else:
                 statements.append(ODESystem())      # FIXME: Placeholder for ODE-system
                 # FIXME: Dummy link statement
-                statements.append(Assignment('F', real('F')))
+                statements.append(Assignment('F', symbols.symbol('F')))
             statements += error.statements
 
+        if pharmpy.plugins.nonmem.conf.parameter_names == 'comment':
+            self.parameters
+            trans = self.parameter_translation(remove_idempotent=True)
+            statements.subs(trans)
+
         self._statements = statements
-        return copy.deepcopy(statements)
+        self._old_statements = statements.copy()
+        return statements
 
     @statements.setter
     def statements(self, statements_new):
-        old_statements = self._statements
-        main_statements = ModelStatements()
-        error_statements = ModelStatements()
-        found_ode = False
-        for s in statements_new:
-            if isinstance(s, ODESystem):
-                found_ode = True
-                old_system = old_statements.ode_system
-                if s != old_system:
-                    update_ode_system(self, old_system, s)
-            else:
-                if found_ode:
-                    error_statements.append(s)
-                else:
-                    main_statements.append(s)
-        rec = self.get_pred_pk_record()
-        rec.statements = main_statements
-        error = self._get_error_record()
-        if error:
-            if len(error_statements) > 0:
-                error_statements.pop(0)        # Remove the link statement
-            error.statements = error_statements
         self._statements = statements_new
 
     def get_pred_pk_record(self):
@@ -520,7 +514,24 @@ class Model(pharmpy.model.Model):
         df.name = self.dataset_path.stem
         return df
 
-    def parameter_translation(self):
+    def rv_translation(self, reverse=False, remove_idempotent=False):
+        self.random_variables
+        d = dict()
+        for record in self.control_stream.get_records('OMEGA'):
+            for key, value in record.eta_map.items():
+                nonmem_name = f'ETA({value})'
+                d[nonmem_name] = key
+        for record in self.control_stream.get_records('SIGMA'):
+            for key, value in record.eta_map.items():
+                nonmem_name = f'EPS({value})'
+                d[nonmem_name] = key
+        if remove_idempotent:
+            d = {key: val for key, val in d.items() if key != val}
+        if reverse:
+            d = {val: key for key, val in d.items()}
+        return d
+
+    def parameter_translation(self, reverse=False, remove_idempotent=False):
         """Get a dict of NONMEM name to Pharmpy parameter name
            i.e. {'THETA(1)': 'TVCL', 'OMEGA(1,1)': 'IVCL'}
         """
@@ -538,4 +549,8 @@ class Model(pharmpy.model.Model):
             for key, value in record.name_map.items():
                 nonmem_name = f'SIGMA({value[0]},{value[1]})'
                 d[nonmem_name] = key
+        if remove_idempotent:
+            d = {key: val for key, val in d.items() if key != val}
+        if reverse:
+            d = {val: key for key, val in d.items()}
         return d

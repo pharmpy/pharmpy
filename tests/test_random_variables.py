@@ -4,7 +4,7 @@ import sympy.stats as stats
 
 from pharmpy.model_factory import Model
 from pharmpy.random_variables import JointNormalSeparate, RandomVariables, VariabilityLevel
-from pharmpy.symbols import real
+from pharmpy.symbols import symbol
 
 
 def test_joint_normal_separate():
@@ -28,14 +28,14 @@ def test_joint_normal_separate():
 
 
 def test_rv():
-    omega1 = real('OMEGA(1,1)')
+    omega1 = symbol('OMEGA(1,1)')
     x = stats.Normal('ETA(1)', 0, sympy.sqrt(omega1))
     rvs = RandomVariables([x])
     assert len(rvs) == 1
     retrieved = rvs['ETA(1)']
     assert retrieved.name == 'ETA(1)'
     assert retrieved.pspace.distribution.mean == 0
-    assert rvs.free_symbols == {real('ETA(1)'), omega1}
+    assert rvs.free_symbols == {symbol('ETA(1)'), omega1}
 
 
 def test_distributions():
@@ -80,7 +80,7 @@ def test_merge_normal_distributions():
 
 
 def test_validate_parameters():
-    a, b, c, d = (real('a'), real('b'), real('c'), real('d'))
+    a, b, c, d = (symbol('a'), symbol('b'), symbol('c'), symbol('d'))
     rvs = JointNormalSeparate(['ETA(1)', 'ETA(2)'], [0, 0], [[a, b], [b, c]])
     rvs = RandomVariables(rvs)
     rvs.add(stats.Normal('ETA(3)', 0.5, d))
@@ -91,11 +91,11 @@ def test_validate_parameters():
 
 
 def test_all_parameters():
-    omega1 = real('OMEGA(1,1)')
+    omega1 = symbol('OMEGA(1,1)')
     eta1 = stats.Normal('ETA(1)', 0, sympy.sqrt(omega1))
-    omega2 = real('OMEGA(2,2)')
+    omega2 = symbol('OMEGA(2,2)')
     eta2 = stats.Normal('ETA(2)', 0, sympy.sqrt(omega2))
-    sigma = real('SIGMA(1,1)')
+    sigma = symbol('SIGMA(1,1)')
     eps = stats.Normal('EPS(1)', 0, sympy.sqrt(sigma))
 
     rvs = RandomVariables([eta1, eta2, eps])

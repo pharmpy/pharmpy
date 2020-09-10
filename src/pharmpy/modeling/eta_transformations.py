@@ -3,9 +3,9 @@ import warnings
 
 from sympy import exp
 
+import pharmpy.symbols as symbols
 from pharmpy.parameter import Parameter
 from pharmpy.statements import Assignment
-from pharmpy.symbols import real, subs
 
 
 def transform_etas(model, transformation, list_of_etas):
@@ -83,8 +83,8 @@ class EtaTransformation:
 
     def apply(self, etas, thetas):
         for assignment in self.assignments:
-            subs(assignment, etas)
-            subs(assignment, thetas)
+            assignment.subs(etas)
+            assignment.subs(thetas)
 
     @classmethod
     def boxcox(cls, no_of_etas):
@@ -101,4 +101,4 @@ class EtaTransformation:
 
 
 def S(x):
-    return real(x)
+    return symbols.symbol(x)
