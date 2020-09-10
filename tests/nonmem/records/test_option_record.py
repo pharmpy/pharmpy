@@ -71,6 +71,20 @@ def test_get_option_lists(parser, buf, expected):
     assert list(it) == expected
 
 
+@pytest.mark.parametrize("buf,n,subopt,result", [
+    ('$MODEL COMP=(CENTRAL) COMP=(PERIPHERAL)', 0, 'DEFDOSE',
+        '$MODEL COMP=(CENTRAL DEFDOSE) COMP=(PERIPHERAL)'),
+    ('$MODEL COMP=(CENTRAL) COMP=(PERIPHERAL)', 1, 'DEFOBS',
+        '$MODEL COMP=(CENTRAL) COMP=(PERIPHERAL DEFOBS)'),
+    ('$MODEL COMP=CENTRAL COMP=PERIPHERAL', 1, 'DEFOBS',
+        '$MODEL COMP=CENTRAL COMP=(PERIPHERAL DEFOBS)'),
+])
+def test_add_suboption_for_nth(parser, buf, n, subopt, result):
+    rec = parser.parse(buf).records[0]
+    rec.add_suboption_for_nth('COMPARTMENT', n, subopt)
+    assert str(rec) == result
+
+
 @pytest.mark.parametrize("valid,opt,expected", [
     (['NOOFF', 'DEFDOSE', 'DEFOBS'], 'DEFDOSE', 'DEFDOSE'),
     (['NOOFF', 'DEFDOSE', 'DEFOBS'], 'DEFDOS', 'DEFDOSE'),

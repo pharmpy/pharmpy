@@ -29,6 +29,8 @@ def absorption(model, order, rate=None):
     depot = odes.find_depot()
     if order == 0:
         if depot:
+            to_comp, _ = odes.get_compartment_flows(depot)[0]
+            to_comp.dose = depot.dose
             ka = odes.get_flow(depot, odes.find_central())
             odes.remove_compartment(depot)
             symbols = ka.free_symbols

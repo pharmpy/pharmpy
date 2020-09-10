@@ -131,32 +131,68 @@ def update_ode_system(model, old, new):
         if old.find_depot() and not new.find_depot():
             subs = model.control_stream.get_records('SUBROUTINES')[0]
             advan = subs.get_option_startswith('ADVAN')
+            trans = subs.get_option_startswith('TRANS')
             statements = model.statements
             if advan == 'ADVAN2':
                 subs.replace_option('ADVAN2', 'ADVAN1')
+                secondary = secondary_pk_param_conversion_map(len(old), 1)
+                statements.subs(secondary)
             elif advan == 'ADVAN4':
                 subs.replace_option('ADVAN4', 'ADVAN3')
-                statements.subs({symbol('K23'): symbol('K12'), symbol('K32'): symbol('K32')})
+                secondary = secondary_pk_param_conversion_map(len(old), 1)
+                statements.subs(secondary)
+                if trans == 'TRANS1':
+                    statements.subs({symbol('K23'): symbol('K12'), symbol('K32'): symbol('K32')})
+                elif trans == 'TRANS4':
+                    statements.subs({symbol('V2'): symbol('V1'), symbol('V3'): symbol('V2')})
+                elif trans == 'TRANS6':
+                    statements.subs({symbol('K32'): symbol('K21')})
             elif advan == 'ADVAN12':
                 subs.replace_option('ADVAN12', 'ADVAN11')
-                statements.subs({symbol('K23'): symbol('K12'), symbol('K32'): symbol('K32'),
-                                 symbol('K24'): symbol('K13'), symbol('K42'): symbol('K31')})
+                secondary = secondary_pk_param_conversion_map(len(old), 1)
+                statements.subs(secondary)
+                if trans == 'TRANS1':
+                    statements.subs({symbol('K23'): symbol('K12'), symbol('K32'): symbol('K32'),
+                                     symbol('K24'): symbol('K13'), symbol('K42'): symbol('K31')})
+                elif trans == 'TRANS4':
+                    statements.subs({symbol('V2'): symbol('V1'), symbol('Q3'): symbol('Q2'),
+                                     symbol('V3'): symbol('V2'), symbol('Q4'): symbol('Q3'),
+                                     symbol('V4'): symbol('V3')})
+                elif trans == 'TRANS6':
+                    statements.subs({symbol('K42'): symbol('K31'), symbol('K32'): symbol('K21')})
             elif advan == 'ADVAN5' or advan == 'ADVAN7':
-                # FIXME: Add this. Here we can check which compartment name was removed
-                pass
+                model_record = model.control_stream.get_records('MODEL')[0]
+                removed_name = set(new.names) - set(old.names)
+                dose_comp = old.find_dosing()
+                model_record.set_dosing(dose_comp.name)
+                model_record.remove_compartment(removed_name)
+                n = model_record.get_compartment_number(removed_name)
+                primary = primary_pk_param_conversion_map(len(old), n)
+                statements.subs(primary)
+                secondary = secondary_pk_param_conversion_map(len(old), n)
+                statements.subs(secondary)
 
-            # FIXME: It could possibly be other than the first below
-            # also assumes that only one compartment has been removed
-            secondary = secondary_pk_param_conversion_map(len(old), 1)
-            statements.subs(secondary)
-            model.statements = statements
 
-
-def primary_pk_param_conversion_map(ncomp, trans, removed):
+def primary_pk_param_conversion_map(ncomp, removed):
     """Conversion map for pk parameters for one removed compartment
     """
-    if trans == 'TRANS1':
-        pass
+    d = dict()
+    for i in range(1, ncomp + 1):
+        for j in range(1, ncomp + 1):
+            if i == j or i == removed or j == removed:
+                continue
+            if i > removed:
+                to_i = i - 1
+            else:
+                to_i = i
+            if j > removed:
+                to_j = j - 1
+            else:
+                to_j = j
+            if not (to_j == j and to_i == i):
+                d.update({symbol(f'K{i}{j}'): symbol(f'K{to_i}{to_j}'),
+                          symbol(f'K{i}T{j}'): symbol(f'K{to_i}T{to_j}')})
+    return d
 
 
 def secondary_pk_param_conversion_map(ncomp, removed):

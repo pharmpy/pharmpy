@@ -100,4 +100,14 @@ def test_absorption(testdata):
     a = str(model).split('\n')
     assert a[3] == '$SUBROUTINE ADVAN1 TRANS2'
     assert a[13].strip() == 'S1=V'
-    assert a[25] == '$OMEGA  DIAGONAL(2)'
+    assert a[26] == '$OMEGA  DIAGONAL(2)'
+
+    model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan1.mod')
+    advan1_before = str(model)
+    absorption(model, 0)
+    assert advan1_before == str(model)
+
+    model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan2.mod')
+    absorption(model, 0)
+    model.update_source()
+    assert str(model) == advan1_before

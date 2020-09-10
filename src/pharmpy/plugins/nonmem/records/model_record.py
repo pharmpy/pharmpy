@@ -12,6 +12,21 @@ class ModelRecord(OptionRecord):
             options.append('DEFDOSE')
         self.append_option('COMPARTMENT', f'({" ".join(options)})')
 
+    def get_compartment_number(self, name):
+        for i, (curname, _) in enumerate(self.compartments()):
+            if name == curname:
+                return i + 1
+        else:
+            return None
+
+    def remove_compartment(self, name):
+        n = self.get_compartment_number(name)
+        self.remove_nth_option('COMPARTMENT', n - 1)
+
+    def set_dosing(self, name):
+        n = self.get_compartment_number(name)
+        self.add_suboption_for_nth('COMPARTMENT', n - 1, 'DEFDOSE')
+
     def compartments(self):
         all_options = ['INITIALOFF', 'NOOFF', 'NODOSE', 'EQUILIBRIUM', 'EXCLUDE', 'DEFOBSERVATION',
                        'DEFDOSE']

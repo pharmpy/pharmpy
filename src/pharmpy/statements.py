@@ -200,6 +200,26 @@ class CompartmentalSystem(ODESystem):
     def get_flow(self, source, destination):
         return self._g.edges[source, destination]['rate']
 
+    def get_compartment_flows(self, compartment, out=True):
+        """Generate all flows going out or in to a compartment
+        """
+        flows = []
+        for node in self._g.neighbors(compartment):
+            if out:
+                flow = self.get_flow(compartment, node)
+            else:
+                flow = self.get_flow(node, compartment)
+            if flow is not None:
+                flows.append((node, flow))
+        return flows
+
+    def find_compartment(self, name):
+        for comp in self._g.nodes:
+            if comp.name == name:
+                return comp
+        else:
+            return None
+
     def find_output(self):
         zeroout = [node for node, out_degree in self._g.out_degree() if out_degree == 0]
         if len(zeroout) == 1:
@@ -255,6 +275,12 @@ class CompartmentalSystem(ODESystem):
     def amounts(self):
         amts = [node.amount for node in self._g.nodes]
         return sympy.Matrix(amts)
+
+    @property
+    def names(self):
+        """A list of the names of all compartments
+        """
+        return [node.name for node in self._g.nodes]
 
     def to_explicit_odes(self):
         t = symbols.symbol('t')
