@@ -12,6 +12,7 @@ Contents
 .. toctree::
    :maxdepth: 4
 
+   self
    installation
    getting_started
    user_guide
