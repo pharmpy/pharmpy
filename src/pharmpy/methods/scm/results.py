@@ -49,7 +49,7 @@ def candidate_summary_dataframe(steps):
         scmplus = True if 'stashed' in steps.columns else False
         backstep_removed = {f'{row.Index[1]}{row.Index[2]}-{row.Index[3]}': row.Index[0]
                             for row in steps.itertuples() if row.is_backward and row.selected}
-        forward_steps = steps[~steps['is_backward']]
+        forward_steps = steps.query('step > 0 & ~is_backward')
         df = pd.DataFrame([{'N_test': True,
                             'N_ok': (not np.isnan(row.ofv_drop) and row.ofv_drop >= 0),
                             'N_localmin': (not np.isnan(row.ofv_drop) and row.ofv_drop < 0),
@@ -67,15 +67,23 @@ def ofv_summary_dataframe(steps, final_included=True, iterations=True):
     if steps is None or not (final_included or iterations):
         return None
     else:
+        if (final_included and iterations and not steps['is_backward'].iloc[-1]):
+            # Will not be able to show final_included with additional info
+            final_included = False
         # Use .copy() to ensure we do not work on original df
         df = steps[steps['selected']].copy() if iterations else pd.DataFrame()
         if iterations:
             df['is_backward'] = ['Backward' if backward else 'Forward'
                                  for backward in df['is_backward']]
-        if final_included and steps['is_backward'].iloc[-1]:
-            # all rows from last step where selected is False
-            last_stepnum = steps.index[-1][steps.index.names.index('step')]
-            final = steps[~steps['selected']].loc[last_stepnum, :, :, :].copy()
+        if final_included:
+            if steps['is_backward'].iloc[-1]:
+                # all rows from last step where selected is False
+                last_stepnum = steps.index[-1][steps.index.names.index('step')]
+                final = steps[~steps['selected']].loc[last_stepnum, :, :, :].copy()
+            else:
+                # all selected rows without ofv info
+                final = pd.DataFrame(columns=steps.columns,
+                                     index=steps[steps['selected']].index)
             final['is_backward'] = 'Final included'
             df = df.append(final)
         df.rename(columns={'is_backward': 'direction'},
@@ -287,6 +295,7 @@ def step_data_frame(step, included_relations):
     if is_backward and included_relations:
         if np.all(np.isnan(df['extended_state'].values.flatten())):
             # This must be a backward step without preceeding steps of any kind
+            # and where included_relations was not found from conf file
             df['extended_state'] = extended_states(df['model'],
                                                    included_relations)
     df['step'] = step['number']
@@ -325,6 +334,29 @@ def step_data_frame(step, included_relations):
     return df.set_index(['step', 'parameter', 'covariate', 'extended_state'])
 
 
+def prior_included_step(included_relations, gof_is_pvalue):
+    states = list()
+    extra = None
+    if gof_is_pvalue:
+        extra = {'delta_df': 0, 'pvalue': np.nan, 'goal_pvalue': np.nan}
+    else:
+        extra = {'goal_ofv_drop': np.nan}
+    for par, d in included_relations.items():
+        for cov, state in d.items():
+            states.append({'step': int(0), 'parameter': par,
+                           'covariate': cov, 'extended_state': int(state),
+                           'reduced_ofv': np.nan,
+                           'extended_ofv': np.nan, 'ofv_drop': np.nan,
+                           **extra,
+                           'is_backward': False,
+                           'extended_significant': True,
+                           'selected': True,
+                           'directory': '',
+                           'model': ''})
+    df = pd.DataFrame(states)
+    return df.set_index(['step', 'parameter', 'covariate', 'extended_state'])
+
+
 def empty_step(previous_number, previous_criterion=None):
     return {'runtable': None, 'm1': None, 'chosen': None,
             'stashed': None, 'readded': None,
@@ -337,7 +369,7 @@ def have(something):
 
 
 def log_steps(path, options, parcov_dictionary=None):
-    included_relations = None
+    included_relations = options['included_relations']
     basepath = Path(options['directory'])
 
     pattern = {'runtable': re.compile(r'^MODEL\s+TEST\s+'),
@@ -352,6 +384,10 @@ def log_steps(path, options, parcov_dictionary=None):
             if len(block) > 1:
                 step['runtable'] = parse_runtable_block(block, parcov_dictionary,
                                                         included_relations)
+                is_forward = (not step['runtable']['is_backward'].iloc[-1])
+                if step['number'] == 1 and included_relations is not None and is_forward:
+                    yield prior_included_step(included_relations,
+                                              gof_is_pvalue=('pvalue' in step['runtable'].columns))
         elif pattern['chosen'].match(block[0]):
             step['chosen'], step['criterion'], included = parse_chosen_relation_block(block)
             if included:
@@ -426,22 +462,87 @@ def split_merged_base_and_new_ofv(rawtable):
     return rawtable
 
 
+def psn_options_from_command(command):
+    p = re.compile('^-+([^=]+)=?(.*)')
+    return {p.match(val).group(1): p.match(val).group(2)
+            for val in command.split() if val.startswith('-')}
+
+
+def psn_config_file_argument_from_command(command, path):
+    # everything on command-line which does not start with -
+    # and where 'name' (i.e. last portion when treated as a path object) is found
+    # as file in input folder path
+    # this may include a model file, so we need to parse file(s) to see
+    # if we actually find included_relations
+    path = Path(path)
+    return [str(Path(arg).name) for arg in command.split()
+            if (path / Path(arg).name).is_file() and not arg.startswith('-')]
+
+
+def included_relations_from_config_file(path, files):
+    # Allow multiple candidate files in case ambiguous command-line (unusual)
+    path = Path(path)
+    start_config_section = re.compile(r'\s*\[(?P<section>[a-z_]+)\]\s*$')
+    empty_line = re.compile(r'^[-\s]*$')
+    included_lines = list()
+    included_relations = None
+    found_included = False
+    for file in files:
+        with open(path / file) as fn:
+            for row in fn:
+                m = start_config_section.match(row)
+                if m:
+                    if found_included:
+                        break
+                    if m.group('section') == 'included_relations':
+                        found_included = True
+                elif found_included and not empty_line.match(row):
+                    included_lines.append(row.strip())
+        if found_included:
+            break
+    if found_included and len(included_lines) > 0:
+        included_relations = dict()
+        p = re.compile(r'\s*([^-]+)-(\d+)\s*')
+        for row in included_lines:
+            par, covstates = row.split(r'=')
+            par = re.sub(r'\s+', '', par)
+            included_relations[par] = {p.match(val).group(1): p.match(val).group(2)
+                                       for val in covstates.split(r',')}
+
+    return included_relations
+
+
 def psn_scm_options(path):
     path = Path(path)
     options = {'directory': str(path),
-               'logfile': 'scmlog.txt'}
+               'logfile': 'scmlog.txt',
+               'included_relations': None}
+    config_files = None
     try:
         with open(path / 'meta.yaml') as meta:
             for row in meta:
                 row = row.strip()
                 if row.startswith('logfile: '):
                     options['logfile'] = Path(re.sub(r'\s*logfile:\s*', '', row)).name
-                if row.startswith('directory: '):
+                elif row.startswith('directory: '):
                     options['directory'] = \
                         str(Path(re.sub(r'\s*directory:\s*', '', row)).absolute())
+                elif row.startswith('command_line: '):
+                    row = re.sub(r'\s*command_line:\s*', '', row)
+                    for k, v in psn_options_from_command(row).items():
+                        if 'config_file'.startswith(k):
+                            config_files = [v]
+                            break
+                    if config_files is None:
+                        # not option -config_file, must have been given as argument
+                        config_files = psn_config_file_argument_from_command(row, path)
     except IOError:
         # if meta.yaml not found we return default name
         pass
+
+    if config_files is not None:
+        options['included_relations'] = included_relations_from_config_file(path, config_files)
+
     return options
 
 

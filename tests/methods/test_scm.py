@@ -9,15 +9,31 @@ import pharmpy.methods.scm.results as scm
 
 def test_psn_scm_options(testdata):
     options = scm.psn_scm_options(testdata / 'nonmem' / 'scm')
+    assert options['included_relations'] is None
     assert options['logfile'] == 'scmlog1.txt'
     assert options['directory'] == \
         '/home/kajsa/kod-psn/sandbox/uu/scm_havebaserun_dir'
+
+    options = scm.psn_scm_options(testdata / 'nonmem' / 'scm' / 'onlyforward_dir1')
+    assert options['included_relations'] == {'CL': {'APGR': '2'},
+                                             'V': {'CVD1': '2'}}
+    assert options['logfile'] == 'scmlog.txt'
+    assert options['directory'] == \
+        '/home/kajsa/kod-psn/sandbox/uu/scm_dir1'
+
+    options = scm.psn_scm_options(testdata / 'nonmem' / 'scm' / 'backward_dir1')
+    assert options['included_relations'] == {'CL': {'WGT': '2', 'CV1': '2'},
+                                             'V': {'CV2': '2', 'WGT': '2', 'CVD1': '2'}}
+    assert options['logfile'] == 'scmlog.txt'
+    assert options['directory'] == \
+        '/home/kajsa/sandbox/asrscm/scm_dir10'
 
 
 def test_main(testdata):
     basedir = testdata / 'nonmem' / 'scm'
     dirs = {'mer1': basedir / 'mergeofv_dir1',
-            'mer2': basedir / 'mergeofv_dir2'}
+            'mer2': basedir / 'mergeofv_dir2',
+            'onlyf': basedir / 'onlyforward_dir1'}
 
     res1 = scm.psn_scm_results(dirs['mer1'])
     res2 = scm.psn_scm_results(dirs['mer2'])
@@ -40,8 +56,29 @@ def test_main(testdata):
                   'VCVD1': ('V', 'CVD1'),
                   'VCV2': ('V', 'CV2')}
 
+    res3 = scm.psn_scm_results(dirs['onlyf'])
+    assert res3.steps is not None
+    sum1 = res3.ofv_summary()
+    assert [float(x) for x in sum1['pvalue'].values] == \
+        approx([nan, nan, 2.22e-13], nan_ok=True)
+    assert res3.ofv_summary(iterations=False) is not None
+
+    cand1 = res3.candidate_summary()
+    all_columns = ['parameter', 'covariate', 'extended_state', 'N_test', 'N_ok',
+                   'N_localmin', 'N_failed', 'StepIncluded']
+    correct = """CL,APGR,3, 2,2,   0,0,
+CL,CV1,2, 2,2,   0,0,
+CL,CV2,2, 2,2,   0,0,
+CL,CV3,2, 2,2,   0,0,
+CL,WGT,2, 1,1,   0,0,1
+CL,WGT,3,  1,1,   0, 0,
+"""
+    correct = pd.read_csv(StringIO(correct), index_col=[0, 1, 2], names=all_columns, header=None)
+    pd.testing.assert_frame_equal(cand1, correct)
+
     df1 = scm.psn_scm_parse_logfile(basedir / 'scmplus_dir1' / 'scmlog.txt',
-                                    {'directory': '/home/kajsa/sandbox/asrscm/asrscm_dir56'},
+                                    {'directory': '/home/kajsa/sandbox/asrscm/asrscm_dir56',
+                                     'included_relations': None},
                                     parcovdict)
     assert df1 is not None
     sum1 = scm.ofv_summary_dataframe(df1)
@@ -64,7 +101,8 @@ V,WGT,2,  1,1,   0, 0,1,,,
                                   correct)
 
     df2 = scm.psn_scm_parse_logfile(basedir / 'scm_dir1' / 'scmlog.txt',
-                                    {'directory': '/home/kajsa/sandbox/asrscm/scm_dir7'},
+                                    {'directory': '/home/kajsa/sandbox/asrscm/scm_dir7',
+                                     'included_relations': None},
                                     parcovdict)
     assert df2 is not None
     sum2 = scm.ofv_summary_dataframe(df2)
@@ -74,13 +112,16 @@ V,WGT,2,  1,1,   0, 0,1,,,
     assert [int(t) for t in cand2['N_test']] == [6, 3, 2, 4, 5, 1]
 
     df3 = scm.psn_scm_parse_logfile(basedir / 'backward_dir1' / 'scmlog.txt',
-                                    {'directory': '/home/kajsa/sandbox/asrscm/scm_dir10'},
+                                    {'directory': '/home/kajsa/sandbox/asrscm/scm_dir10',
+                                     'included_relations': {'CL': {'WGT': '2', 'CV1': '2'},
+                                                            'V': {'CV2': '2', 'WGT': '2',
+                                                                  'CVD1': '2'}}},
                                     parcovdict)
     assert df3 is not None
     assert scm.ofv_summary_dataframe(df3) is not None
     cand1 = scm.candidate_summary_dataframe(df3)
 
-    correct = """V,CVD1,-99,1
+    correct = """V,CVD1,2,1
 V,CV2,2,2
 CL,CV1,2,3
 """
@@ -90,14 +131,16 @@ CL,CV1,2,3
     pd.testing.assert_frame_equal(cand1, correct)
 
     df4 = scm.psn_scm_parse_logfile(basedir / 'localmin.logf',
-                                    {'directory': '/home/kajsa/sandbox/asrscm/asrscm_dir5'},
+                                    {'directory': '/home/kajsa/sandbox/asrscm/asrscm_dir5',
+                                     'included_relations': None},
                                     parcovdict)
     assert df4 is not None
     assert scm.ofv_summary_dataframe(df4) is not None
     assert scm.candidate_summary_dataframe(df4) is not None
 
     gof1 = scm.psn_scm_parse_logfile(basedir / 'gofofv_dir1' / 'scmlog.txt',
-                                     {'directory': '/home/kajsa/sandbox/asrscm/scm_dir8'},
+                                     {'directory': '/home/kajsa/sandbox/asrscm/scm_dir8',
+                                      'included_relations': None},
                                      parcovdict)
     assert gof1 is not None
     assert scm.ofv_summary_dataframe(gof1) is not None

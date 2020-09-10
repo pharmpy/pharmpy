@@ -1,0 +1,29 @@
+Model directory /home/kajsa/kod-psn/sandbox/uu/scm_dir1/m1
+
+MODEL            TEST     BASE OFV     NEW OFV         TEST OFV (DROP)    GOAL     dDF    SIGNIFICANT PVAL
+CLAPGR-3         PVAL    717.25501    716.97240              0.28261  >   3.84150    1              0.594990 
+CLCV1-2          PVAL    717.25501    714.14099              3.11402  >   3.84150    1              0.077621 
+CLCV2-2          PVAL    717.25501    717.25343              0.00159  >   3.84150    1              0.968230 
+CLCV3-2          PVAL    717.25501    717.16967              0.08535  >   3.84150    1              0.770180 
+CLWGT-2          PVAL    717.25501    663.45526             53.79975  >   3.84150    1        YES!  2.22e-13 
+
+Parameter-covariate relation chosen in this forward step: CL-WGT-2
+CRITERION              PVAL < 0.05
+BASE_MODEL_OFV         717.25501
+CHOSEN_MODEL_OFV       663.45526
+Relations included after this step:
+CL      APGR-2           WGT-2            
+V       CVD1-2           
+--------------------
+
+Model directory /home/kajsa/kod-psn/sandbox/uu/scm_dir1/scm_dir1/m1
+
+MODEL            TEST     BASE OFV     NEW OFV         TEST OFV (DROP)    GOAL     dDF    SIGNIFICANT PVAL
+CLAPGR-3         PVAL    663.45526    663.42153              0.03374  >   3.84150    1              0.854270 
+CLCV1-2          PVAL    663.45526    661.64913              1.80613  >   3.84150    1              0.178970 
+CLCV2-2          PVAL    663.45526    663.34690              0.10836  >   3.84150    1              0.742020 
+CLCV3-2          PVAL    663.45526    663.42594              0.02933  >   3.84150    1              0.864030 
+CLWGT-3          PVAL    663.45526    663.43248              0.02278  >   3.84150    1              0.880020 
+
+--------------------
+
