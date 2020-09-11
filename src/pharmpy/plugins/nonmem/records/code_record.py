@@ -211,6 +211,8 @@ def diff(old, new):
     for a, b in zip(reversed(rold), reversed(rnew)):
         if a == b:
             saved.append((None, b))
+        else:
+            break
 
     rold = rold[:len(rold) - len(saved)]
     rnew = rnew[:len(rnew) - len(saved)]
@@ -243,7 +245,6 @@ class CodeRecord(Record):
             old = self.statements
         if new == old:
             return
-
         old_index = 0
         node_index = 0
         kept = []

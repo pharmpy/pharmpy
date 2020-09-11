@@ -123,8 +123,8 @@ def test_absorption(testdata):
 
 
 @pytest.mark.parametrize('etas, etab, buf_new', [
-    (['ETA(1)'], 'ETAB1 = (EXP(ETA(1))**THETA(4)-1)/THETA(4)',
-     'CL=TVCL*EXP(ETAB1)'),
+    (['ETA(1)'], 'ETAB1 = (EXP(ETA(1))**THETA(4) - 1)/THETA(4)',
+     'CL = TVCL*EXP(ETAB1)'),
 ])
 def test_boxcox(pheno_path, etas, etab, buf_new):
     model = Model(pheno_path)
@@ -132,16 +132,17 @@ def test_boxcox(pheno_path, etas, etab, buf_new):
     boxcox(model, etas)
     model.update_source()
 
-    rec_ref = f'$PK\n' \
+    rec_ref = f'$PK\n\n\n' \
               f'{etab}\n' \
               f'IF(AMT.GT.0) BTIME=TIME\n' \
               f'TAD=TIME-BTIME\n' \
               f'      TVCL=THETA(1)*WGT\n' \
               f'      TVV=THETA(2)*WGT\n' \
               f'IF(APGR.LT.5) TVV=TVV*(1+THETA(3))\n' \
-              f'      {buf_new}\n' \
+              f'{buf_new}\n' \
               f'      V=TVV*EXP(ETA(2))\n' \
               f'      S1=V\n'
 
-    assert rec_ref == rec_ref
-    # assert str(model.get_pred_pk_record()) == rec_ref
+    print(str(model.get_pred_pk_record()))
+    print(rec_ref)
+    assert str(model.get_pred_pk_record()) == rec_ref
