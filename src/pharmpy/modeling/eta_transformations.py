@@ -8,7 +8,7 @@ from pharmpy.statements import Assignment, ModelStatements
 from pharmpy.symbols import symbol as S
 
 
-def boxcox(model, list_of_etas):
+def boxcox(model, list_of_etas=None):
     """
     Applies a boxcox transformation to specified etas from a :class:`pharmpy.model`.
 
@@ -17,11 +17,12 @@ def boxcox(model, list_of_etas):
     model : Model
         Pharmpy model to apply boxcox transformation to.
     list_of_etas : list
-        List of etas to transform. If None, all etas will be transformed.
+        List of etas to transform. If None, all etas will be transformed (default).
     """
     etas = _get_etas(model, list_of_etas)
     eta_transformation = EtaTransformation.boxcox(len(etas))
     _transform_etas(model, eta_transformation, etas)
+    return model
 
 
 def _get_etas(model, list_of_etas):
@@ -113,7 +114,7 @@ class EtaTransformation:
             assignment = Assignment(symbol, expression)
             assignments.append(assignment)
 
-        return cls('BOXCOX', assignments)
+        return cls('lambda', assignments)
 
     @classmethod
     def tdist(cls, no_of_etas):
