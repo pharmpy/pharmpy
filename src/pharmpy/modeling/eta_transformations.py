@@ -4,7 +4,7 @@ import warnings
 from sympy import exp
 
 from pharmpy.parameter import Parameter
-from pharmpy.statements import Assignment
+from pharmpy.statements import Assignment, ModelStatements
 from pharmpy.symbols import symbol as S
 
 
@@ -99,10 +99,10 @@ class EtaTransformation:
 
     @classmethod
     def boxcox(cls, no_of_etas):
-        assignments = []
+        assignments = ModelStatements()
         for i in range(1, no_of_etas + 1):
             symbol = S(f'etab{i}')
-            expression = ((exp(S(f'eta{i}')**(S(f'theta{i}')-1))) /
+            expression = ((exp(S(f'eta{i}'))**S(f'theta{i}')-1) /
                           (S(f'theta{i}')))
 
             assignment = Assignment(symbol, expression)
@@ -112,7 +112,7 @@ class EtaTransformation:
 
     @classmethod
     def tdist(cls, no_of_etas):
-        assignments = []
+        assignments = ModelStatements()
         for i in range(1, no_of_etas + 1):
             symbol = S(f'etat{i}')
 

@@ -7,7 +7,7 @@ from pharmpy.symbols import symbol as S
 
 @pytest.mark.parametrize('eta_trans,symbol,expression', [
     (EtaTransformation.boxcox(2), S('ETAB(2)'),
-     ((exp(S('ETA(2)') ** (S('BOXCOX2') - 1))) / S('BOXCOX2'))),
+     ((exp(S('ETA(2)')) ** S('BOXCOX2') - 1) / S('BOXCOX2'))),
 ])
 def test_apply(eta_trans, symbol, expression):
     etas = {'eta1': S('ETA(1)'),
