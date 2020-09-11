@@ -54,7 +54,7 @@ class Assignment:
     def __str__(self):
         expression = sympy.pretty(self.expression)
         lines = expression.split('\n')
-        definition = f'{self.symbol} := '
+        definition = f'{sympy.pretty(self.symbol)} := '
         s = ''
         for line in lines:
             if line == lines[-1]:
