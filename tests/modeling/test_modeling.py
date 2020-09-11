@@ -124,7 +124,15 @@ def test_absorption(testdata):
 
 @pytest.mark.parametrize('etas, etab, buf_new', [
     (['ETA(1)'], 'ETAB1 = (EXP(ETA(1))**THETA(4) - 1)/THETA(4)',
-     'CL = TVCL*EXP(ETAB1)'),
+     'CL = TVCL*EXP(ETAB1)\n      V=TVV*EXP(ETA(2))'),
+    (['ETA(1)', 'ETA(2)'], 'ETAB1 = (EXP(ETA(1))**THETA(4) - 1)/THETA(4)\n'
+                           'ETAB2 = (EXP(ETA(2))**THETA(5) - 1)/THETA(5)',
+     'CL = TVCL*EXP(ETAB1)\nV = TVV*EXP(ETAB2)'),
+    (None, 'ETAB1 = (EXP(ETA(1))**THETA(4) - 1)/THETA(4)\n'
+           'ETAB2 = (EXP(ETA(2))**THETA(5) - 1)/THETA(5)',
+     'CL = TVCL*EXP(ETAB1)\nV = TVV*EXP(ETAB2)'),
+    (['eta(1)'], 'ETAB1 = (EXP(ETA(1))**THETA(4) - 1)/THETA(4)',
+     'CL = TVCL*EXP(ETAB1)\n      V=TVV*EXP(ETA(2))')
 ])
 def test_boxcox(pheno_path, etas, etab, buf_new):
     model = Model(pheno_path)
@@ -140,9 +148,6 @@ def test_boxcox(pheno_path, etas, etab, buf_new):
               f'      TVV=THETA(2)*WGT\n' \
               f'IF(APGR.LT.5) TVV=TVV*(1+THETA(3))\n' \
               f'{buf_new}\n' \
-              f'      V=TVV*EXP(ETA(2))\n' \
               f'      S1=V\n'
 
-    print(str(model.get_pred_pk_record()))
-    print(rec_ref)
     assert str(model.get_pred_pk_record()) == rec_ref
