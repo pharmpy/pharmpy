@@ -3,7 +3,6 @@ Generic NONMEM code record class.
 
 """
 
-import copy
 import re
 
 import lark
@@ -12,7 +11,7 @@ from sympy import Piecewise
 
 import pharmpy.symbols as symbols
 from pharmpy.data_structures import OrderedSet
-from pharmpy.parse_utils.generic import NoSuchRuleException
+from pharmpy.parse_utils.generic import AttrToken, NoSuchRuleException
 from pharmpy.plugins.nonmem.records.parsers import CodeRecordParser
 from pharmpy.statements import Assignment, ModelStatements
 
@@ -154,12 +153,79 @@ class ExpressionInterpreter(lark.visitors.Interpreter):
         return symb
 
 
+def lcslen(a, b):
+    # generate matrix of length of longest common subsequence for sublists of both lists
+    lengths = [[0] * (len(b) + 1) for _ in range(len(a) + 1)]
+    for i, x in enumerate(a):
+        for j, y in enumerate(b):
+            if x == y:
+                lengths[i + 1][j + 1] = lengths[i][j] + 1
+            else:
+                lengths[i + 1][j + 1] = max(lengths[i + 1][j], lengths[i][j + 1])
+    return lengths
+
+
+def lcsdiff(c, x, y, i, j):
+    """Print the diff using LCS length matrix using backtracking
+    """
+    if i < 0 and j < 0:
+        return
+    elif i < 0:
+        yield from lcsdiff(c, x, y, i, j - 1)
+        yield '+', y[j]
+    elif j < 0:
+        yield from lcsdiff(c, x, y, i - 1, j)
+        yield '-', x[i]
+    elif x[i] == y[j]:
+        yield from lcsdiff(c, x, y, i - 1, j - 1)
+        yield None, x[i]
+    elif c[i][j - 1] >= c[i - 1][j]:
+        yield from lcsdiff(c, x, y, i, j - 1)
+        yield '+', y[j]
+    elif c[i][j - 1] < c[i - 1][j]:
+        yield from lcsdiff(c, x, y, i - 1, j)
+        yield '-', x[i]
+
+
+def diff(old, new):
+    """Get diff between a and b in order for all elements
+
+       Optimizes by first handling equal elements from the head and tail
+       Each entry is a pair of operation (+, - or None) and the element
+    """
+    for i, (a, b) in enumerate(zip(old, new)):
+        if a == b:
+            yield (None, b)
+        else:
+            break
+    else:
+        if len(old) == 0 or len(new) == 0:
+            i = 0
+        else:
+            i += 1
+
+    rold = old[i:]
+    rnew = new[i:]
+
+    saved = []
+    for a, b in zip(reversed(rold), reversed(rnew)):
+        if a == b:
+            saved.append((None, b))
+
+    rold = rold[:len(rold) - len(saved)]
+    rnew = rnew[:len(rnew) - len(saved)]
+
+    c = lcslen(rold, rnew)
+    for op, val in lcsdiff(c, rold, rnew, len(rold) - 1, len(rnew) - 1):
+        yield op, val
+
+    for pair in reversed(saved):
+        yield pair
+
+
 class CodeRecord(Record):
     def __init__(self, content, parser_class):
         super().__init__(content, parser_class)
-        self.nodes = []
-        self._nodes_updated = []
-        self._root_updated = None
 
     @property
     def statements(self):
@@ -170,84 +236,49 @@ class CodeRecord(Record):
         return statements.copy()
 
     @statements.setter
-    def statements(self, statements_new):
+    def statements(self, new):
         try:
-            old_statements = self._statements
+            old = self._statements
         except AttributeError:
-            old_statements = self.statements
-        self._nodes_updated = copy.deepcopy(self.nodes)
-        self._root_updated = copy.deepcopy(self.root)
-        if statements_new != old_statements:
-            index_past = 0
-            last_index_past = len(old_statements) - 1
-            last_index_new = len(statements_new) - 1
-            for index_new, s_new in enumerate(statements_new):
-                if index_past >= len(old_statements):      # Add rest of new statements
-                    if self._get_node(s_new) is None:
-                        self._add_statement(index_past, s_new)
-                        index_past += 1
-                    continue
-                elif len(old_statements) == 1 and len(statements_new) == 1:
-                    self._replace_statement(0, s_new)
-                    break
+            old = self.statements
+        if new == old:
+            return
 
-                s_past = old_statements[index_past]
-                if s_new != s_past:
-                    if s_new.symbol == s_past.symbol:
-                        self._replace_statement(index_past, s_new)
-                    else:
-                        index_to_remove = self._get_index_to_remove(s_new, index_past)
-
-                        if index_to_remove is None:
-                            self._add_statement(index_new, s_new)
-                            index_past -= 1
-                        else:
-                            self._remove_statements(index_new, index_to_remove)
-                            index_past = index_to_remove + 1
-                elif index_new == last_index_new:          # Remove rest of original
-                    self._remove_statements(index_new + 1, last_index_past)
-
-                index_past += 1
-
-        if self._root_updated.get_last_node().rule not in ['WS_ALL', 'NEWLINE']:
-            self._root_updated.add_newline_node()
-
-        self.nodes = copy.deepcopy(self._nodes_updated)
-        self._nodes_updated = []
-        self.root = copy.deepcopy(self._root_updated)
-        self._root_updated = None
-
-        self._statements = statements_new
-
-    def _replace_statement(self, index_replace, statement):
-        self._remove_statements(index_replace, index_replace)
-        self._add_statement(index_replace, statement)
-
-    def _remove_statements(self, index_remove_start, index_remove_end):
-        for i in range(index_remove_start, index_remove_end+1):
-            statement_to_remove = self.statements[i]
-            node = self._get_node(statement_to_remove)
-            self._nodes_updated.remove(node)
-            self._root_updated.remove_node(node)
-
-    def _add_statement(self, index_insert, statement):
-        if isinstance(statement.expression, Piecewise):
-            statement_str = self._translate_sympy_piecewise(statement)
-        else:
-            statement_str = f'\n{repr(statement).replace(":", "")}'
-        node_tree = CodeRecordParser(statement_str).root
-        node = node_tree.all('statement')[0]
-
-        if isinstance(index_insert, int) and index_insert >= len(self._nodes_updated):
-            index_insert = None
-
-        if index_insert is None:
-            self._nodes_updated.append(node)
-            self._root_updated.add_node(node)
-        else:
-            node_following = self._nodes_updated[index_insert]
-            self._nodes_updated.insert(index_insert, node)
-            self._root_updated.add_node(node, node_following)
+        old_index = 0
+        node_index = 0
+        kept = []
+        new_nodes = []
+        for op, s in diff(old, new):
+            while node_index < len(self.root.children) and old_index < len(self.nodes) and \
+                    self.root.children[node_index] is not self.nodes[old_index]:
+                node = self.root.children[node_index]
+                kept.append(node)
+                node_index += 1
+            if op == '+':
+                if isinstance(s.expression, Piecewise):
+                    statement_str = self._translate_sympy_piecewise(s)
+                else:
+                    statement_str = f'\n{repr(s).replace(":", "")}'
+                node_tree = CodeRecordParser(statement_str).root
+                node = node_tree.all('statement')[0]
+                if node_index == 0:
+                    node.children.insert(0, AttrToken('LF', '\n'))
+                if node_index != 0 or len(self.root.children) > 0 and \
+                        self.root.children[0].rule != 'empty_line':
+                    node.children.append(AttrToken('LF', '\n'))
+                kept.append(node)
+            elif op == '-':
+                node_index += 1
+                old_index += 1
+            else:
+                kept.append(self.root.children[node_index])
+                new_nodes.append(self.root.children[node_index])
+                node_index += 1
+                old_index += 1
+        if node_index < len(self.root.children):    # Remaining non-statements
+            kept.extend(self.root.children[node_index:])
+        self.root.children = kept
+        self.nodes = new_nodes
 
     def _translate_sympy_piecewise(self, statement):
         expression = statement.expression.args
@@ -258,13 +289,13 @@ class CodeRecord(Record):
             condition = expression[0][1]
             condition_translated = self._translate_condition(condition)
 
-            statement_str = f'\nIF ({condition_translated}) {symbol} = {value}\n'
+            statement_str = f'IF ({condition_translated}) {symbol} = {value}'
             return statement_str
         else:
             return self._translate_sympy_block(symbol, expression)
 
     def _translate_sympy_block(self, symbol, expression_block):
-        statement_str = '\nIF '
+        statement_str = 'IF '
         for i, expression in enumerate(expression_block):
             value = expression[0]
             condition = expression[1]
@@ -281,7 +312,7 @@ class CodeRecord(Record):
             if i < len(expression_block) - 1:
                 statement_str += 'ELSE IF '
             else:
-                statement_str += 'END IF\n'
+                statement_str += 'END IF'
 
         return statement_str
 
@@ -301,94 +332,84 @@ class CodeRecord(Record):
                                 for symbol in c_split])
         return c_transl
 
-    def _get_node(self, statement):
-        try:
-            index_statement = self.statements.index(statement)
-            return self.nodes[index_statement]
-        except ValueError:
-            return None
-
-    def _get_index_to_remove(self, statement, index_start):
-        try:
-            index_statement = self._statements.index(statement, index_start)
-            return index_statement - 1
-        except ValueError:
-            return None
-
     def _assign_statements(self):
         s = []
         self.nodes = []
         for statement in self.root.all('statement'):
-            node = statement.children[0]
-            self.nodes.append(statement)
-            if node.rule == 'assignment':
-                name = str(node.variable).upper()
-                expr = ExpressionInterpreter().visit(node.expression)
-                ass = Assignment(name, expr)
-                s.append(ass)
-            elif node.rule == 'logical_if':
-                logic_expr = ExpressionInterpreter().visit(node.logical_expression)
-                try:
-                    assignment = node.assignment
-                except NoSuchRuleException:
-                    pass
-                else:
-                    name = str(assignment.variable).upper()
-                    expr = ExpressionInterpreter().visit(assignment.expression)
-                    pw = sympy.Piecewise((expr, logic_expr))
-                    ass = Assignment(name, pw)
+            for node in statement.children:
+                if node.rule == 'assignment':
+                    name = str(node.variable).upper()
+                    expr = ExpressionInterpreter().visit(node.expression)
+                    ass = Assignment(name, expr)
                     s.append(ass)
-            elif node.rule == 'block_if':
-                interpreter = ExpressionInterpreter()
-                blocks = []  # [(logic, [(symb1, expr1), ...]), ...]
-                symbols = OrderedSet()
+                    self.nodes.append(statement)
+                elif node.rule == 'logical_if':
+                    logic_expr = ExpressionInterpreter().visit(node.logical_expression)
+                    try:
+                        assignment = node.assignment
+                    except NoSuchRuleException:
+                        pass
+                    else:
+                        name = str(assignment.variable).upper()
+                        expr = ExpressionInterpreter().visit(assignment.expression)
+                        pw = sympy.Piecewise((expr, logic_expr))
+                        ass = Assignment(name, pw)
+                        s.append(ass)
+                    self.nodes.append(statement)
+                elif node.rule == 'block_if':
+                    interpreter = ExpressionInterpreter()
+                    blocks = []  # [(logic, [(symb1, expr1), ...]), ...]
+                    symbols = OrderedSet()
 
-                first_logic = interpreter.visit(node.block_if_start.logical_expression)
-                first_block = node.block_if_start
-                first_symb_exprs = []
-                for ifstat in first_block.all('statement'):
-                    for assign_node in ifstat.all('assignment'):
-                        name = str(assign_node.variable).upper()
-                        first_symb_exprs.append((name, interpreter.visit(assign_node.expression)))
-                        symbols.add(name)
-                blocks.append((first_logic, first_symb_exprs))
-
-                else_if_blocks = node.all('block_if_elseif')
-                for elseif in else_if_blocks:
-                    logic = interpreter.visit(elseif.logical_expression)
-                    elseif_symb_exprs = []
-                    for elseifstat in elseif.all('statement'):
-                        for assign_node in elseifstat.all('assignment'):
+                    first_logic = interpreter.visit(node.block_if_start.logical_expression)
+                    first_block = node.block_if_start
+                    first_symb_exprs = []
+                    for ifstat in first_block.all('statement'):
+                        for assign_node in ifstat.all('assignment'):
                             name = str(assign_node.variable).upper()
-                            elseif_symb_exprs.append((name,
-                                                      interpreter.visit(assign_node.expression)))
+                            first_symb_exprs.append(
+                                    (name, interpreter.visit(assign_node.expression)))
                             symbols.add(name)
-                    blocks.append((logic, elseif_symb_exprs))
+                    blocks.append((first_logic, first_symb_exprs))
 
-                else_block = node.find('block_if_else')
-                if else_block:
-                    else_symb_exprs = []
-                    for elsestat in else_block.all('statement'):
-                        for assign_node in elsestat.all('assignment'):
-                            name = str(assign_node.variable).upper()
-                            else_symb_exprs.append((name,
-                                                    interpreter.visit(assign_node.expression)))
-                            symbols.add(name)
-                    piecewise_logic = True
-                    if len(blocks[0][1]) == 0 and not else_if_blocks:    # Special case for empty if
-                        piecewise_logic = sympy.Not(blocks[0][0])
-                    blocks.append((piecewise_logic, else_symb_exprs))
+                    else_if_blocks = node.all('block_if_elseif')
+                    for elseif in else_if_blocks:
+                        logic = interpreter.visit(elseif.logical_expression)
+                        elseif_symb_exprs = []
+                        for elseifstat in elseif.all('statement'):
+                            for assign_node in elseifstat.all('assignment'):
+                                name = str(assign_node.variable).upper()
+                                elseif_symb_exprs.append(
+                                        (name, interpreter.visit(assign_node.expression)))
+                                symbols.add(name)
+                        blocks.append((logic, elseif_symb_exprs))
 
-                for symbol in symbols:
-                    pairs = []
-                    for block in blocks:
-                        logic = block[0]
-                        for cursymb, expr in block[1]:
-                            if cursymb == symbol:
-                                pairs.append((expr, logic))
-                    pw = sympy.Piecewise(*pairs)
-                    ass = Assignment(symbol, pw)
-                    s.append(ass)
+                    else_block = node.find('block_if_else')
+                    if else_block:
+                        else_symb_exprs = []
+                        for elsestat in else_block.all('statement'):
+                            for assign_node in elsestat.all('assignment'):
+                                name = str(assign_node.variable).upper()
+                                else_symb_exprs.append((name,
+                                                        interpreter.visit(assign_node.expression)))
+                                symbols.add(name)
+                        piecewise_logic = True
+                        if len(blocks[0][1]) == 0 and not else_if_blocks:
+                            # Special case for empty if
+                            piecewise_logic = sympy.Not(blocks[0][0])
+                        blocks.append((piecewise_logic, else_symb_exprs))
+
+                    for symbol in symbols:
+                        pairs = []
+                        for block in blocks:
+                            logic = block[0]
+                            for cursymb, expr in block[1]:
+                                if cursymb == symbol:
+                                    pairs.append((expr, logic))
+                        pw = sympy.Piecewise(*pairs)
+                        ass = Assignment(symbol, pw)
+                        s.append(ass)
+                    self.nodes.append(statement)
 
         statements = ModelStatements(s)
         return statements

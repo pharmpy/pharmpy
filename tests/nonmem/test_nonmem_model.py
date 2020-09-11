@@ -164,7 +164,7 @@ def test_add_statements(pheno_path, statement_new, buf_new):
 
     assert str(model.control_stream) == str(stream)
 
-    rec_ref = f'$PK\nIF(AMT.GT.0) BTIME=TIME\nTAD=TIME-BTIME\n'\
+    rec_ref = f'$PK\n\n\nIF(AMT.GT.0) BTIME=TIME\nTAD=TIME-BTIME\n'\
               f'      TVCL=THETA(1)*WGT\n' \
               f'      TVV=THETA(2)*WGT\n' \
               f'IF(APGR.LT.5) TVV=TVV*(1+THETA(3))\n' \
@@ -201,7 +201,7 @@ def test_add_parameters_and_statements(pheno_path, param_new, statement_new, buf
     model.statements = new_sset
     model.update_source()
 
-    rec = '$PK\nIF(AMT.GT.0) BTIME=TIME\nTAD=TIME-BTIME\n' \
+    rec = '$PK\n\n\nIF(AMT.GT.0) BTIME=TIME\nTAD=TIME-BTIME\n' \
           '      TVCL=THETA(1)*WGT\n' \
           '      TVV=THETA(2)*WGT\n' \
           'IF(APGR.LT.5) TVV=TVV*(1+THETA(3))\n' \
@@ -310,7 +310,8 @@ def test_remove_eta(pheno_path):
     eta1 = rvs['ETA(1)']
     rvs.discard(eta1)
     model.update_source()
-    assert str(model).split('\n')[13] == '      V = TVV*EXP(ETA(1))'
+    print(str(model))
+    assert str(model).split('\n')[15] == 'V = TVV*EXP(ETA(1))'
 
 
 def test_symbol_names_in_comment(pheno_path):

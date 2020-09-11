@@ -79,7 +79,7 @@ def S(x):
     ('$PRED X=A*B+C', S('X'), S('A') * S('B') + S('C')),
     ('$PRED\n"VERBATIM STUFF\nK=1', S('K'), 1),
     ('$PRED\n"VERBATIM STUFF\n"ON TWO LINES\nK=1', S('K'), 1),
-    ('$PRED\n(CALLFL=0)\n\nK=1', S('K'), 1),
+    ('$PRED (CALLFL=0)\n\nK=1', S('K'), 1),
     ('$ERROR\nCL = 2', S('CL'), 2),
     ('$ERROR (ONLY OBSERVATION) \nCL = 2', S('CL'), 2),
     ('$PRED\nCL = 2\nEXIT\n', S('CL'), 2),
@@ -233,16 +233,14 @@ def test_statements_setter_identical(parser, buf_original, buf_new):
 
 
 @pytest.mark.usefixtures('parser')
-@pytest.mark.parametrize('buf_original,buf_new,is_comment_present', [
+@pytest.mark.parametrize('buf_original,buf_new', [
     ('$PRED\nY = THETA(1) + ETA(1) + EPS(1)\nCL = 2',
-     '$PRED\nY = THETA(1) + ETA(1) + EPS(1)', False),
-    ('$PRED\nY = THETA(1) + ETA(1) + EPS(1) ;comment\nCL = 2',
-     '$PRED\nY = THETA(1) + ETA(1) + EPS(1)', True),
+     '$PRED\nY = THETA(1) + ETA(1) + EPS(1)\n'),
     ('$PRED\nY = THETA(1) + ETA(1) + EPS(1)\nCL = 2',
-     '$PRED\nCL = 2', False),
-    ('$PRED\nY = A + B\nX = C - D\nZ = E * F', '$PRED\nY = A + B\nZ = E * F', False),
+     '$PRED\nCL = 2'),
+    ('$PRED\nY = A + B\nX = C - D\nZ = E * F', '$PRED\nY = A + B\nZ = E * F'),
 ])
-def test_statements_setter_remove(parser, buf_original, buf_new, is_comment_present):
+def test_statements_setter_remove(parser, buf_original, buf_new):
     rec_original = parser.parse(buf_original).records[0]
     rec_new = parser.parse(buf_new).records[0]
 
@@ -250,47 +248,44 @@ def test_statements_setter_remove(parser, buf_original, buf_new, is_comment_pres
 
     assert rec_original.statements == rec_new.statements
     assert rec_original.root.all('statement') == rec_new.root.all('statement')
-    assert (len(rec_original.root.all('COMMENT')) > 0) == is_comment_present
 
 
 @pytest.mark.usefixtures('parser')
 @pytest.mark.parametrize('buf_original,buf_new', [
-    ('$PRED\nY = THETA(1) + ETA(1) + EPS(1)',
-     '$PRED\nY = THETA(1) + ETA(1) + EPS(1)\nCL = 2'),
-    ('$PRED\nY = THETA(1) + ETA(1) + EPS(1)',
-     '$PRED\nY = THETA(1) + ETA(1) + EPS(1)\nS1 = V\nCL = 2'),
-    ('$PRED\nY = THETA(1) + ETA(1) + EPS(1)\nS1 = V',
-     '$PRED\nCL = 2\nY = THETA(1) + ETA(1) + EPS(1)\nS1 = V'),
-    ('$PRED\nY = THETA(1) + ETA(1) + EPS(1)\nCL = 2',
-     '$PRED\nY = THETA(1) + ETA(1) + EPS(1)\nS1 = V\nCL = 2'),
-    ('$PRED\nY = THETA(1) + ETA(1) + EPS(1)\nCL = 2',
-     '$PRED\nY = THETA(1) + ETA(1) + EPS(1)\nS1 = V\nTVCL = WGT + 2\nCL = 2'),
-    ('$PRED\nY = THETA(1) + ETA(1) + EPS(1)',
-     '$PRED\nY = THETA(1) + ETA(1) + EPS(1)\nIF (AMT.GT.0) BTIME = TIME'),
-    ('$PRED\nBTIME = 2\nIF (AMT.GT.0) BTIME = TIME',
-     '$PRED\nCL = 2\nBTIME = 2\nIF (AMT.GT.0) BTIME = TIME'),
+    ('$PRED\nY = THETA(1) + ETA(1) + EPS(1)\n',
+     '$PRED\nY = THETA(1) + ETA(1) + EPS(1)\nCL = 2\n'),
+    ('$PRED\nY = THETA(1) + ETA(1) + EPS(1)\n',
+     '$PRED\nY = THETA(1) + ETA(1) + EPS(1)\nS1 = V\nCL = 2\n'),
+    ('$PRED\nY = THETA(1) + ETA(1) + EPS(1)\nS1 = V\n',
+     '$PRED\nCL = 2\nY = THETA(1) + ETA(1) + EPS(1)\nS1 = V\n'),
+    ('$PRED\nY = THETA(1) + ETA(1) + EPS(1)\nCL = 2\n',
+     '$PRED\nY = THETA(1) + ETA(1) + EPS(1)\nS1 = V\nCL = 2\n'),
+    ('$PRED\nY = THETA(1) + ETA(1) + EPS(1)\nCL = 2\n',
+     '$PRED\nY = THETA(1) + ETA(1) + EPS(1)\nS1 = V\nTVCL = WGT + 2\nCL = 2\n'),
+    ('$PRED\nY = THETA(1) + ETA(1) + EPS(1)\n',
+     '$PRED\nY = THETA(1) + ETA(1) + EPS(1)\nIF (AMT.GT.0) BTIME = TIME\n'),
+    ('$PRED\nBTIME = 2\nIF (AMT.GT.0) BTIME = TIME\n',
+     '$PRED\nCL = 2\nBTIME = 2\nIF (AMT.GT.0) BTIME = TIME\n'),
 ])
 def test_statements_setter_add(parser, buf_original, buf_new):
     rec_original = parser.parse(buf_original).records[0]
     rec_new = parser.parse(buf_new).records[0]
 
     rec_original.statements = rec_new.statements
-
     assert rec_original.statements == rec_new.statements
     assert rec_original.root.all('statement') == rec_new.root.all('statement')
 
 
 @pytest.mark.usefixtures('parser')
 @pytest.mark.parametrize('buf_original,buf_new', [
-    ('$PRED\nY = A + B', '$PRED\nZ = E*F\n'),
-    ('$PRED\nY = A + B\nX = C - D\nZ = E * F', '$PRED\nY = A + B\nX = C\nZ = E * F\n'),
-    ('$PRED\nY = A + B\nX = C - D\nZ = E * F', '$PRED\nY = A + B\nX = C - D\nZ = E\n'),
+    ('$PRED\nY = A + B\n', '$PRED\nZ = E*F\n'),
+    ('$PRED\nY = A + B\nX = C - D\nZ = E * F\n', '$PRED\nY = A + B\nX = C\nZ = E * F\n'),
+    ('$PRED\nY = A + B\nX = C - D\nZ = E * F\n', '$PRED\nY = A + B\nX = C - D\nZ = E\n'),
     ('$PRED\nY = A + B\nX = C - D\nZ = E * F\n', '$PRED\nY = A + B\nX = C\nZ = E * F\n'),
 ])
 def test_statements_setter_change(parser, buf_original, buf_new):
     rec_original = parser.parse(buf_original).records[0]
     rec_new = parser.parse(buf_new).records[0]
-
     rec_original.statements = rec_new.statements
 
     assert rec_original.statements == rec_new.statements
@@ -300,10 +295,10 @@ def test_statements_setter_change(parser, buf_original, buf_new):
 
 @pytest.mark.usefixtures('parser')
 @pytest.mark.parametrize('buf_original,sym,expression,buf_new', [
-    ('$PRED\nY = THETA(1) + ETA(1) + EPS(1)', S('CL'), 2,
+    ('$PRED\nY = THETA(1) + ETA(1) + EPS(1)\n', S('CL'), 2,
      '$PRED\nY = THETA(1) + ETA(1) + EPS(1)\nCL = 2\n'),
     ('$PRED\n"FIRST\n"!Fortran code goes here\n', S('V'), -S('CL'),
-     '$PRED\n"FIRST\n"!Fortran code goes here\nV = -CL\n'),
+     '$PRED\nV = -CL\n"FIRST\n"!Fortran code goes here\n'),
 ])
 def test_statements_setter_add_from_sympy(parser, buf_original, sym, expression, buf_new):
     rec_original = parser.parse(buf_original).records[0]
@@ -318,11 +313,11 @@ def test_statements_setter_add_from_sympy(parser, buf_original, sym, expression,
 
 @pytest.mark.usefixtures('parser')
 @pytest.mark.parametrize('buf_original,assignment,nonmem_names,buf_expected', [
-    ('$PRED\nY = THETA(1) + ETA(1) + EPS(1)', Assignment(S('Z'), S('X')),
+    ('$PRED\nY = THETA(1) + ETA(1) + EPS(1)\n', Assignment(S('Z'), S('X')),
      {'X': 'THETA(2)'}, '$PRED\nY = THETA(1) + ETA(1) + EPS(1)\nZ = THETA(2)\n'),
-    ('$PRED\nY = THETA(1) + ETA(1) + EPS(1)\nCL = 1.3', Assignment(S('Z'), S('X')),
+    ('$PRED\nY = THETA(1) + ETA(1) + EPS(1)\nCL = 1.3\n', Assignment(S('Z'), S('X')),
      {'X': 'THETA(2)'}, '$PRED\nY = THETA(1) + ETA(1) + EPS(1)\nCL = 1.3\nZ = THETA(2)\n'),
-    ('$PRED\nY = THETA(1) + ETA(1) + EPS(1)',
+    ('$PRED\nY = THETA(1) + ETA(1) + EPS(1)\n',
      Assignment(S('YWGT'), sympy.Piecewise((1, sympy.Eq(S('WGT'), S('NaN'))))),
      {'X': 'THETA(2)'}, '$PRED\nY = THETA(1) + ETA(1) + EPS(1)\n'
                         'IF (NaN.EQ.WGT) YWGT = 1\n')
@@ -345,7 +340,7 @@ def test_nested_block_if(parser):
 
     s = rec.statements
     rec.statements = s
-    assert str(rec.root) == code + '\n'
+    assert str(rec.root) == code
 
 
 @pytest.mark.usefixtures('parser')
@@ -355,7 +350,7 @@ def test_nested_block_if(parser):
 def test_translate_sympy_parse(parser, buf_original):
     rec = parser.parse(f'$PRED{buf_original}').records[0]
     s = rec.statements[0]
-    assert rec._translate_sympy_piecewise(s) == buf_original
+    assert rec._translate_sympy_piecewise(s) == buf_original.strip()
 
 
 @pytest.mark.usefixtures('parser')
@@ -369,8 +364,8 @@ def test_translate_sympy_parse(parser, buf_original):
      '\nIF (X.EQ.1) THEN\nCLWGT = 23\nELSE IF (X.EQ.0) THEN\nCLWGT = 0\nEND IF\n'),
 ])
 def test_translate_sympy_piecewise(parser, symbol, expression, buf_expected):
-    buf_original = '$PRED\nY = THETA(1) + ETA(1) + EPS(1)'
+    buf_original = '$PRED\nY = THETA(1) + ETA(1) + EPS(1)\n'
     rec = parser.parse(f'$PRED{buf_original}').records[0]
     s = Assignment(symbol, expression)
 
-    assert rec._translate_sympy_piecewise(s) == buf_expected
+    assert rec._translate_sympy_piecewise(s) == buf_expected.strip()

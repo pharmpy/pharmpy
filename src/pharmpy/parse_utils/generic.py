@@ -293,7 +293,6 @@ class AttrTree(Tree):
                 if not comment_flag:
                     new_children.append(child)
                 else:
-                    print('>', child, '<', sep='')
                     if str(child).startswith('\n\n'):
                         new_children.append(child.replace(str(child)[1:]))
                     comment_flag = False

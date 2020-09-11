@@ -203,7 +203,7 @@ def secondary_pk_param_conversion_map(ncomp, removed):
     """
     d = dict()
     for i in range(removed + 1, ncomp + 1):
-        d.update({symbol(f'S{i})'): symbol(f'S{i - 1}'),
+        d.update({symbol(f'S{i}'): symbol(f'S{i - 1}'),
                   symbol(f'F{i}'): symbol(f'F{i - 1}'),
                   symbol(f'R{i}'): symbol(f'R{i - 1}'),
                   symbol(f'D{i}'): symbol(f'D{i - 1}'),

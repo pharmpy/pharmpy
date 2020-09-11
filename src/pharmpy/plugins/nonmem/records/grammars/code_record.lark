@@ -1,19 +1,19 @@
 // A precedence climbing grammar is used for expressions
+// The top level has one full line of code per rule
 
-root: WS_ALL [pseudo] [WS] (NEWLINE | verbatim | statement [WS] [COMMENT] [WS_ALL])+
+root: [pseudo] (statement | verbatim | empty_line)+
 
-pseudo: PSEUDO_STATEMENT ")"
+empty_line: [WS] [COMMENT] LF
+LF: /\r?\n/
+
+
+pseudo: WS PSEUDO_STATEMENT ")" [WS] [LF]
 PSEUDO_STATEMENT: /[(][^)]*/
 
-verbatim: VERBATIM_STATEMENT NEWLINE
+verbatim: [WS] VERBATIM_STATEMENT [LF]
 VERBATIM_STATEMENT: /"[^\n]*/
 
-statement: assignment
-         | logical_if
-         | block_if
-         | exit
-         | call
-         | return
+statement: [WS] (assignment | logical_if | block_if | exit | call | return) [WS] [COMMENT] [LF]
 
 exit: "EXIT"i ([WS] | WS ("1" | "2") | WS ("1" | "2") WS INTEGER)
 call: "CALL"i WS NAME [WS] "(" [WS] _atom [WS] ("," [WS] _atom [WS])* ")"
