@@ -42,7 +42,7 @@ def _get_etas(model, list_of_etas):
 def _transform_etas(model, eta_transformation, etas):
     etas_assignment, etas_subs = _create_new_etas(etas)
     thetas = _create_new_thetas(model, eta_transformation.name, len(etas))
-
+    print(eta_transformation.name)
     eta_transformation.apply(etas_assignment, thetas)
     statements_new = eta_transformation.assignments
     sset = model.statements
@@ -71,8 +71,13 @@ def _create_new_thetas(model, transformation, no_of_thetas):
     thetas = dict()
     theta_name = str(model.create_symbol(stem=transformation, force_numbering=True))
 
+    if transformation == 'BOXCOX':
+        param_settings = [0.01, -3, 3]
+    else:
+        param_settings = [80, 3, 100]
+
     if no_of_thetas == 1:
-        pset.add(Parameter(theta_name, 0.01, -3, 3))
+        pset.add(Parameter(theta_name, *param_settings))
         thetas['theta1'] = theta_name
     else:
         theta_no = int(re.findall(r'\d', theta_name)[0])
