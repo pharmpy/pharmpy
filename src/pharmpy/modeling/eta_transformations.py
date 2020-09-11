@@ -3,22 +3,22 @@ import warnings
 
 from sympy import exp
 
-import pharmpy.symbols as symbols
 from pharmpy.parameter import Parameter
 from pharmpy.statements import Assignment
+from pharmpy.symbols import symbol as S
 
 
 def boxcox(model, list_of_etas):
-    etas = get_etas(model, list_of_etas)
+    etas = _get_etas(model, list_of_etas)
     eta_transformation = EtaTransformation.boxcox(len(etas))
-    transform_etas(model, eta_transformation, etas)
+    _transform_etas(model, eta_transformation, etas)
 
 
-def get_etas(model, list_of_etas):
+def _get_etas(model, list_of_etas):
     rvs = model.random_variables
 
     if len(list_of_etas) == 0:
-        etas = rvs.etas
+        return rvs.etas
     else:
         etas = []
         for eta in list_of_etas:
@@ -26,13 +26,12 @@ def get_etas(model, list_of_etas):
                 etas.append(rvs[eta])
             except KeyError:
                 warnings.warn(f'Random variable "{eta}" does not exist')
+        return etas
 
-    return etas
 
-
-def transform_etas(model, eta_transformation, etas):
-    etas_assignment, etas_subs = create_etas(etas)
-    thetas = create_thetas(model, len(etas))
+def _transform_etas(model, eta_transformation, etas):
+    etas_assignment, etas_subs = _create_new_etas(etas)
+    thetas = _create_new_thetas(model, len(etas))
 
     eta_transformation.apply(etas_assignment, thetas)
     statements_new = eta_transformation.assignments
@@ -44,7 +43,7 @@ def transform_etas(model, eta_transformation, etas):
     model.statements = statements_new
 
 
-def create_etas(etas_original):
+def _create_new_etas(etas_original):
     etas_subs = dict()
     etas_assignment = dict()
 
@@ -57,7 +56,7 @@ def create_etas(etas_original):
     return etas_assignment, etas_subs
 
 
-def create_thetas(model, no_of_thetas):
+def _create_new_thetas(model, no_of_thetas):
     pset = model.parameters
     thetas = dict()
     theta_name = str(model.create_symbol(stem='COVEFF', force_numbering=True))
@@ -99,7 +98,3 @@ class EtaTransformation:
             assignments.append(assignment)
 
         return cls(assignments)
-
-
-def S(x):
-    return symbols.symbol(x)
