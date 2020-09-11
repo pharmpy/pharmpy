@@ -8,7 +8,13 @@ from pharmpy.parameter import Parameter
 from pharmpy.statements import Assignment
 
 
-def transform_etas(model, transformation, list_of_etas):
+def boxcox(model, list_of_etas):
+    etas = get_etas(model, list_of_etas)
+    eta_transformation = EtaTransformation.boxcox(len(etas))
+    transform_etas(model, eta_transformation, etas)
+
+
+def get_etas(model, list_of_etas):
     rvs = model.random_variables
 
     if len(list_of_etas) == 0:
@@ -21,8 +27,10 @@ def transform_etas(model, transformation, list_of_etas):
             except KeyError:
                 warnings.warn(f'Random variable "{eta}" does not exist')
 
-    eta_transformation = create_eta_transformation(transformation, len(etas))
+    return etas
 
+
+def transform_etas(model, eta_transformation, etas):
     etas_assignment, etas_subs = create_etas(etas)
     thetas = create_thetas(model, len(etas))
 
@@ -34,8 +42,6 @@ def transform_etas(model, transformation, list_of_etas):
     statements_new.extend(sset)
 
     model.statements = statements_new
-
-    return model
 
 
 def create_etas(etas_original):
@@ -70,11 +76,6 @@ def create_thetas(model, no_of_thetas):
     model.parameters = pset
 
     return thetas
-
-
-def create_eta_transformation(transformation, no_of_etas):
-    if transformation == 'boxcox':
-        return EtaTransformation.boxcox(no_of_etas)
 
 
 class EtaTransformation:
