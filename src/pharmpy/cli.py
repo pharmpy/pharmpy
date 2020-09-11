@@ -363,6 +363,20 @@ def model_absorption(args):
     write_model_or_dataset(model, None, path=args.output_file, force=args.force)
 
 
+def boxcox(args):
+    """Subcommand to apply boxcox transformation to specified etas of model."""
+    from pharmpy.modeling import boxcox
+
+    model = args.model
+    try:
+        etas = args.etas.split(" ")
+    except AttributeError:
+        etas = args.etas
+
+    boxcox(model, etas)
+    write_model_or_dataset(model, None, path=args.output_file, force=False)
+
+
 def results_bootstrap(args):
     """Subcommand to generate bootstrap results"""
     if len(args.models) < 3:
@@ -682,6 +696,17 @@ parser_definition = [
                      {'name': '--rate',
                       'type': str,
                       'help': 'Symbol for absorption rate'},
+                     ]}},
+        {'boxcox': {
+            'help': 'Applies boxcox transformation',
+            'description': 'Apply boxcox transformation on selected/all etas',
+            'func': boxcox,
+            'parents': [args_model_input, args_output],
+            'args': [{'name': '--etas',
+                      'type': str,
+                      'default': None,
+                      'help': 'List of etas, mark group of etas in single quote '
+                              'separated by spaces'},
                      ]}},
     ], 'help': 'Model manipulations',
        'title': 'Pharmpy model commands',
