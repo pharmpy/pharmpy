@@ -31,7 +31,7 @@ def _get_etas(model, list_of_etas):
 
 def _transform_etas(model, eta_transformation, etas):
     etas_assignment, etas_subs = _create_new_etas(etas)
-    thetas = _create_new_thetas(model, len(etas))
+    thetas = _create_new_thetas(model, eta_transformation.name, len(etas))
 
     eta_transformation.apply(etas_assignment, thetas)
     statements_new = eta_transformation.assignments
@@ -56,10 +56,10 @@ def _create_new_etas(etas_original):
     return etas_assignment, etas_subs
 
 
-def _create_new_thetas(model, no_of_thetas):
+def _create_new_thetas(model, transformation, no_of_thetas):
     pset = model.parameters
     thetas = dict()
-    theta_name = str(model.create_symbol(stem='COVEFF', force_numbering=True))
+    theta_name = str(model.create_symbol(stem=transformation, force_numbering=True))
 
     if no_of_thetas == 1:
         pset.add(Parameter(theta_name, 0.01, -3, 3))
@@ -70,7 +70,7 @@ def _create_new_thetas(model, no_of_thetas):
         for i in range(1, no_of_thetas+1):
             pset.add(Parameter(theta_name, 0.01, -3, 3))
             thetas[f'theta{i}'] = theta_name
-            theta_name = f'COVEFF{theta_no + i}'
+            theta_name = f'{transformation}{theta_no + i}'
 
     model.parameters = pset
 
@@ -78,7 +78,8 @@ def _create_new_thetas(model, no_of_thetas):
 
 
 class EtaTransformation:
-    def __init__(self, assignments):
+    def __init__(self, name, assignments):
+        self.name = name
         self.assignments = assignments
 
     def apply(self, etas, thetas):
@@ -97,4 +98,4 @@ class EtaTransformation:
             assignment = Assignment(symbol, expression)
             assignments.append(assignment)
 
-        return cls(assignments)
+        return cls('BOXCOX', assignments)
