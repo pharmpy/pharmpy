@@ -7,15 +7,15 @@ import sympy
 
 
 def triangular_root(x):
-    '''Calculate the triangular root of x. I.e. if x is a triangular number T_n what is n?
-    '''
+    """Calculate the triangular root of x. I.e. if x is a triangular number T_n what is n?
+    """
     return math.floor(math.sqrt(2 * x))
 
 
 def flattened_to_symmetric(x):
-    '''Convert a vector containing the elements of a lower triangular matrix into a full symmetric
+    """Convert a vector containing the elements of a lower triangular matrix into a full symmetric
        matrix
-    '''
+    """
     n = triangular_root(len(x))
     new = np.zeros((n, n))
     inds = np.tril_indices_from(new)
@@ -37,8 +37,12 @@ def cov2corr(cov):
 def corr2cov(corr, sd):
     """Convert correlation matrix to covariance matrix
 
-       :param corr: correlation matrix (ones on diagonal)
-       :param sd: one dimensional array of standard deviations
+    Parameters
+    ----------
+    corr
+        Correlation matrix (ones on diagonal)
+    sd
+        One dimensional array of standard deviations
     """
     sd_matrix = np.diag(sd)
     cov = sd_matrix @ corr @ sd_matrix
@@ -46,11 +50,11 @@ def corr2cov(corr, sd):
 
 
 def round_and_keep_sum(x, s):
-    '''Round values in Series x and their sum must be s
+    """Round values in Series x and their sum must be s
 
        Algorithm: Floor all elements in series. If sum not correct add one to element with
                   highest fractional part until sum is reached.
-    '''
+    """
     sorted_fractions = x.apply(lambda x: math.modf(x)[0]).sort_values(ascending=False)
     rounded_sample_sizes = x.apply(lambda x: math.modf(x)[1])
     for (group_index, _) in sorted_fractions.iteritems():
@@ -65,17 +69,21 @@ def round_and_keep_sum(x, s):
 
 
 def se_delta_method(expr, values, cov):
-    """Use the delta method to estimate the standard error
+    """Use the delta method to estimate the standard error of a function of parameters with covariance
+    matrix available.
 
-       of a function of parameters with covariance matrix
-       available.
+    Parameters
+    ----------
+    expr
+        A sympy expression for the function of parameters
+    cov
+        Dataframe with symbol names as indices must include at least all parameters needed for expr
+    values
+        dict/series parameter estimates. Must include at least all parameters needed for expr
 
-       :param expr: A sympy expression for the function of parameters
-       :param cov: dataframe with symbol names as indices
-                   must include at least all parameters needed for expr
-       :param values: dict/series parameter estimates. Must include at least
-                      all parameters needed for expr
-       :return: Approximation of the standard error
+    Returns
+    -------
+    Approximation of the standard error
     """
     symbs = expr.free_symbols
     names_unsorted = [s.name for s in symbs]
@@ -142,12 +150,10 @@ def nearest_posdef(A):
 
 
 def sample_truncated_joint_normal(mu, sigma, a, b, n):
-    """Give an array of samples from the truncated joint normal distributon
-
-       using sample rejection
-       mu, sigma - parameters for the normal distribution
-       a, b - vectors of lower and upper limits for each random variable
-       n - number of samples
+    """Give an array of samples from the truncated joint normal distributon using sample rejection
+    - mu, sigma - parameters for the normal distribution
+    - a, b - vectors of lower and upper limits for each random variable
+    - n - number of samples
     """
     kept_samples = np.empty((0, len(mu)))
     remaining = n
