@@ -33,7 +33,7 @@ def _get_etas(model, list_of_etas):
         etas = []
         for eta in list_of_etas:
             try:
-                etas.append(rvs[eta])
+                etas.append(rvs[eta.upper()])
             except KeyError:
                 warnings.warn(f'Random variable "{eta}" does not exist')
         return etas
