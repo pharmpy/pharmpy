@@ -109,7 +109,6 @@ def test_absorption(testdata):
     assert str(model) == advan3_before
 
     model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan11.mod')
-    print(str(model))
     advan11_before = str(model)
     absorption(model, 0)
     model.update_source()
@@ -118,8 +117,20 @@ def test_absorption(testdata):
     model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan12.mod')
     absorption(model, 0)
     model.update_source()
-    print(str(model))
     assert str(model) == advan11_before
+
+    model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan5_nodepot.mod')
+    advan5_nodepot_before = str(model)
+    absorption(model, 0)
+    model.update_source()
+    print(str(model))
+    assert str(model) == advan5_nodepot_before
+
+    model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan5_depot.mod')
+    absorption(model, 0)
+    model.update_source()
+    print(str(model))
+    assert str(model) == advan5_nodepot_before
 
 
 @pytest.mark.parametrize('etas, etab, buf_new', [

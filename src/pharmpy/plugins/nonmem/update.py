@@ -162,11 +162,12 @@ def update_ode_system(model, old, new):
                     statements.subs({symbol('K42'): symbol('K31'), symbol('K32'): symbol('K21')})
             elif advan == 'ADVAN5' or advan == 'ADVAN7':
                 model_record = model.control_stream.get_records('MODEL')[0]
-                removed_name = set(new.names) - set(old.names)
-                dose_comp = old.find_dosing()
+                removed = set(old.names) - set(new.names)
+                removed_name = list(removed)[0]     # Assume only one!
+                dose_comp = new.find_dosing()
                 model_record.set_dosing(dose_comp.name)
-                model_record.remove_compartment(removed_name)
                 n = model_record.get_compartment_number(removed_name)
+                model_record.remove_compartment(removed_name)
                 primary = primary_pk_param_conversion_map(len(old), n)
                 statements.subs(primary)
                 secondary = secondary_pk_param_conversion_map(len(old), n)
@@ -177,8 +178,8 @@ def primary_pk_param_conversion_map(ncomp, removed):
     """Conversion map for pk parameters for one removed compartment
     """
     d = dict()
-    for i in range(1, ncomp + 1):
-        for j in range(1, ncomp + 1):
+    for i in range(0, ncomp + 1):
+        for j in range(0, ncomp + 1):
             if i == j or i == removed or j == removed:
                 continue
             if i > removed:
@@ -189,7 +190,8 @@ def primary_pk_param_conversion_map(ncomp, removed):
                 to_j = j - 1
             else:
                 to_j = j
-            if not (to_j == j and to_i == i):
+            if not (to_j == j and to_i == i) and i != 0 and to_i != 0 and \
+                    not (i == ncomp and j == 0) and not (i == 0 and j == ncomp):
                 d.update({symbol(f'K{i}{j}'): symbol(f'K{to_i}{to_j}'),
                           symbol(f'K{i}T{j}'): symbol(f'K{to_i}T{to_j}')})
     return d
