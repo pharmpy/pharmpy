@@ -17,7 +17,7 @@ def boxcox(model, list_of_etas):
 def _get_etas(model, list_of_etas):
     rvs = model.random_variables
 
-    if len(list_of_etas) == 0:
+    if list_of_etas is None:
         return rvs.etas
     else:
         etas = []
