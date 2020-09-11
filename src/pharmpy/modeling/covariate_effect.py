@@ -6,9 +6,9 @@ import numpy as np
 import sympy
 from sympy import Eq, Float, Gt, Le, Piecewise, exp
 
-import pharmpy.symbols as symbols
 from pharmpy.parameter import Parameter
 from pharmpy.statements import Assignment
+from pharmpy.symbols import symbol as S
 
 
 def add_covariate_effect(model, parameter, covariate, effect, operation='*'):
@@ -34,11 +34,11 @@ def add_covariate_effect(model, parameter, covariate, effect, operation='*'):
     operation : str, optional
         Whether the covariate effect should be added or multiplied.
     """
-    mean = calculate_mean(model.dataset, covariate)
-    median = calculate_median(model.dataset, covariate)
+    mean = _calculate_mean(model.dataset, covariate)
+    median = _calculate_median(model.dataset, covariate)
 
-    thetas = create_thetas(model, effect, covariate)
-    covariate_effect = create_template(effect, model, covariate)
+    thetas = _create_thetas(model, effect, covariate)
+    covariate_effect = _create_template(effect, model, covariate)
 
     sset = model.statements
     param_statement = sset.find_assignment(parameter)
@@ -55,11 +55,11 @@ def add_covariate_effect(model, parameter, covariate, effect, operation='*'):
     model.statements = sset
 
 
-def create_thetas(model, effect, covariate):
+def _create_thetas(model, effect, covariate):
     if effect == 'piece_lin':
         no_of_thetas = 2
     elif effect == 'lin_cat':
-        no_of_thetas = count_categorical(model, covariate).nunique()
+        no_of_thetas = _count_categorical(model, covariate).nunique()
     else:
         no_of_thetas = 1
 
@@ -67,7 +67,7 @@ def create_thetas(model, effect, covariate):
 
     theta_names = dict()
     theta_name = str(model.create_symbol(stem='COVEFF', force_numbering=True))
-    theta_lower, theta_upper = choose_param_inits(effect, model.dataset, covariate)
+    theta_lower, theta_upper = _choose_param_inits(effect, model.dataset, covariate)
 
     if no_of_thetas == 1:
         pset.add(Parameter(theta_name, theta_upper, theta_lower))
@@ -85,33 +85,33 @@ def create_thetas(model, effect, covariate):
     return theta_names
 
 
-def count_categorical(model, covariate):
+def _count_categorical(model, covariate):
     data = model.dataset.groupby('ID')[covariate]
     counts = data.agg(lambda ids: ids.value_counts(dropna=False).index[0])
 
     return counts
 
 
-def calculate_mean(df, covariate, baselines=False):
+def _calculate_mean(df, covariate, baselines=False):
     if baselines:
         return df[str(covariate)].mean()
     else:
         return df.groupby('ID')[str(covariate)].mean().mean()
 
 
-def calculate_median(df, covariate, baselines=False):
+def _calculate_median(df, covariate, baselines=False):
     if baselines:
         return df.pharmpy.baselines[str(covariate)].median()
     else:
         return df.groupby('ID')[str(covariate)].median().median()
 
 
-def choose_param_inits(effect, df, covariate):
+def _choose_param_inits(effect, df, covariate):
     lower_expected = 0.1
     upper_expected = 100
     if effect == 'exp':
-        min_diff = df[str(covariate)].min() - calculate_median(df, covariate)
-        max_diff = df[str(covariate)].max() - calculate_median(df, covariate)
+        min_diff = df[str(covariate)].min() - _calculate_median(df, covariate)
+        max_diff = df[str(covariate)].max() - _calculate_median(df, covariate)
         if min_diff == 0 or max_diff == 0:
             return lower_expected, upper_expected
         else:
@@ -125,11 +125,11 @@ def choose_param_inits(effect, df, covariate):
         return lower_expected, upper_expected
 
 
-def create_template(effect, model, covariate):
+def _create_template(effect, model, covariate):
     if effect == 'lin_cont':
         return CovariateEffect.linear_continuous()
     elif effect == 'lin_cat':
-        counts = count_categorical(model, covariate)
+        counts = _count_categorical(model, covariate)
         return CovariateEffect.linear_categorical(counts)
     elif effect == 'piece_lin':
         return CovariateEffect.piecewise_linear()
@@ -143,11 +143,12 @@ def create_template(effect, model, covariate):
         return CovariateEffect(Assignment(symbol, expression))
 
 
-def S(x):
-    return symbols.symbol(x)
-
-
 class CovariateEffect:
+    """
+
+    :meta private:
+
+    """
     def __init__(self, template):
         self.template = template
         self.statistic_type = None

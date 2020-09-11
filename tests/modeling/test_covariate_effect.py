@@ -3,7 +3,7 @@ from sympy import exp
 
 import pharmpy.symbols
 from pharmpy import Model
-from pharmpy.modeling.covariate_effect import CovariateEffect, choose_param_inits
+from pharmpy.modeling.covariate_effect import CovariateEffect, _choose_param_inits
 
 
 def S(x):
@@ -29,7 +29,7 @@ def test_apply(cov_eff, symbol, expression):
 def test_choose_param_inits(pheno_path):
     model = Model(pheno_path)
 
-    lower, upper = choose_param_inits('exp', model.dataset, 'WGT')
+    lower, upper = _choose_param_inits('exp', model.dataset, 'WGT')
 
     assert round(lower, 4) == -0.4348
     assert round(upper, 4) == 0.8696
