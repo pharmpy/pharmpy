@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 
 from pharmpy import Model
-from pharmpy.modeling import absorption, add_covariate_effect, explicit_odes
+from pharmpy.modeling import absorption, add_covariate_effect, boxcox, explicit_odes
 
 
 @pytest.mark.parametrize('effect, covariate, operation, buf_new', [
@@ -38,7 +38,6 @@ from pharmpy.modeling import absorption, add_covariate_effect, explicit_odes
      'CLWGT = CL_MEDIAN - WGT + THETA(4)\n'
      'CL_MEDIAN = 1.30000\n'
      'CL = CLWGT*TVCL*EXP(ETA(1))\n')
-
 ])
 def test_add_covariate_effect(pheno_path, effect, covariate, operation, buf_new):
     model = Model(pheno_path)
@@ -121,3 +120,29 @@ def test_absorption(testdata):
     model.update_source()
     print(str(model))
     assert str(model) == advan11_before
+
+
+@pytest.mark.parametrize('etas, etab, buf_new', [
+    (['ETA(1)'], 'ETAB1 = EXP(ETA(1)**(THETA(4)-1)/THETA(4)',
+     'CL=TVCL*EXP(ETAB1)'),
+])
+def test_boxcox(pheno_path, etas, etab, buf_new):
+    model = Model(pheno_path)
+
+    boxcox(model, etas)
+    model.update_source()
+
+    model.get_pred_pk_record().root.treeprint()
+
+    rec_ref = f'$PK\n' \
+              f'{etab}\n' \
+              f'IF(AMT.GT.0) BTIME=TIME\n' \
+              f'TAD=TIME-BTIME\n' \
+              f'      TVCL=THETA(1)*WGT\n' \
+              f'      TVV=THETA(2)*WGT\n' \
+              f'IF(APGR.LT.5) TVV=TVV*(1+THETA(3))\n' \
+              f'      {buf_new}\n' \
+              f'      S1=V\n'
+
+    assert rec_ref == rec_ref
+    # assert str(model.get_pred_pk_record()) == rec_ref
