@@ -9,6 +9,16 @@ from pharmpy.symbols import symbol as S
 
 
 def boxcox(model, list_of_etas):
+    """
+    Applies a boxcox transformation to specified etas from a :class:`pharmpy.model`.
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model to apply boxcox transformation to.
+    list_of_etas : list
+        List of etas to transform. If None, all etas will be transformed.
+    """
     etas = _get_etas(model, list_of_etas)
     eta_transformation = EtaTransformation.boxcox(len(etas))
     _transform_etas(model, eta_transformation, etas)
