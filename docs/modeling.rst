@@ -78,3 +78,49 @@ the names to be substituted with the correct values.
 
    model.update_source()
    print(model)
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Transformation of etas
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Boxcox
+~~~~~~
+
+.. jupyter-execute::
+
+   model = Model(path / "pheno_real.mod")
+
+To apply a boxcox transformation, input a list of the etas of interest.
+
+.. jupyter-execute::
+
+   from pharmpy.modeling import boxcox
+   boxcox(model, ['ETA(1)'])
+   model.update_source()
+   print(model)
+
+This can be done for one or multiple etas. The new model will have new statements where *ETAB1* is a boxcox
+transformation of *ETA(1)*.
+
+If no list is provided, all etas will be updated.
+
+.. jupyter-execute::
+
+   model = Model(path / "pheno_real.mod")
+   boxcox(model)
+   model.update_source()
+   print(model)
+
+Approximate t-distribution
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Applying an approximate t-distribution transformation of etas is analogous to a boxcox transformation. The input
+is similarly a list of etas, and if no list is provided all etas will be transformed.
+
+.. jupyter-execute::
+
+   model = Model(path / "pheno_real.mod")
+   from pharmpy.modeling import tdist
+   tdist(model, ['ETA(1)'])
+   model.update_source()
+   print(model)

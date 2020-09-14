@@ -32,7 +32,7 @@ def add_covariate_effect(model, parameter, covariate, effect, operation='*'):
     effect : str
         Type of covariate effect. May be abbreviated covariate effect (see above) or custom.
     operation : str, optional
-        Whether the covariate effect should be added or multiplied.
+        Whether the covariate effect should be added or multiplied (default).
     """
     mean = _calculate_mean(model.dataset, covariate)
     median = _calculate_median(model.dataset, covariate)
