@@ -195,7 +195,7 @@ def test_tdist(pheno_path):
               f'      TVCL=THETA(1)*WGT\n' \
               f'      TVV=THETA(2)*WGT\n' \
               f'IF(APGR.LT.5) TVV=TVV*(1+THETA(3))\n' \
-              f'CL = TVCL*EXP(ETAB1)\n' \
+              f'CL = TVCL*EXP(ETAT1)\n' \
               f'      V=TVV*EXP(ETA(2))\n' \
               f'      S1=V\n'
 

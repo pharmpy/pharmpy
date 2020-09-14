@@ -58,7 +58,7 @@ def _get_etas(model, list_of_etas):
 
 
 def _transform_etas(model, eta_transformation, etas):
-    etas_assignment, etas_subs = _create_new_etas(etas)
+    etas_assignment, etas_subs = _create_new_etas(etas, eta_transformation)
     thetas = _create_new_thetas(model, eta_transformation.name, len(etas))
     eta_transformation.apply(etas_assignment, thetas)
     statements_new = eta_transformation.assignments
@@ -70,14 +70,18 @@ def _transform_etas(model, eta_transformation, etas):
     model.statements = statements_new
 
 
-def _create_new_etas(etas_original):
+def _create_new_etas(etas_original, transformation):
     etas_subs = dict()
     etas_assignment = dict()
+    if transformation.name == 'lambda':
+        eta_new = 'etab'
+    else:
+        eta_new = 'etat'
 
     for i, eta in enumerate(etas_original):
         eta_no = int(re.findall(r'\d', eta.name)[0])
-        etas_subs[eta.name] = f'ETAB{eta_no}'
-        etas_assignment[f'etab{i + 1}'] = f'ETAB{eta_no}'
+        etas_subs[eta.name] = f'{eta_new.upper()}{eta_no}'
+        etas_assignment[f'{eta_new}{i + 1}'] = f'eta_new.upper(){eta_no}'
         etas_assignment[f'eta{i + 1}'] = f'ETA({eta_no})'
 
     return etas_assignment, etas_subs
