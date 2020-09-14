@@ -3,7 +3,7 @@ import re
 import sympy
 
 from pharmpy.model import ModelSyntaxError
-from pharmpy.statements import Assignment, Bolus, CompartmentalSystem
+from pharmpy.statements import Assignment, Bolus, CompartmentalSystem, Infusion
 from pharmpy.symbols import symbol
 
 
@@ -13,7 +13,7 @@ def compartmental_model(model, advan, trans):
         central = cm.add_compartment('CENTRAL')
         output = cm.add_compartment('OUTPUT')
         cm.add_flow(central, output, _advan1and2_trans(trans))
-        dose = Bolus('AMT')
+        dose = _dosing(model, 1)
         central.dose = dose
         ass = _f_link_assignment(model, central)
     elif advan == 'ADVAN2':
@@ -23,7 +23,7 @@ def compartmental_model(model, advan, trans):
         output = cm.add_compartment('OUTPUT')
         cm.add_flow(central, output, _advan1and2_trans(trans))
         cm.add_flow(depot, central, symbol('KA'))
-        dose = Bolus('AMT')
+        dose = _dosing(model, 1)
         depot.dose = dose
         ass = _f_link_assignment(model, central)
     elif advan == 'ADVAN3':
@@ -35,7 +35,7 @@ def compartmental_model(model, advan, trans):
         cm.add_flow(central, output, k)
         cm.add_flow(central, peripheral, k12)
         cm.add_flow(peripheral, central, k21)
-        dose = Bolus('AMT')
+        dose = _dosing(model, 1)
         central.dose = dose
         ass = _f_link_assignment(model, central)
     elif advan == 'ADVAN4':
@@ -49,7 +49,7 @@ def compartmental_model(model, advan, trans):
         cm.add_flow(central, output, k)
         cm.add_flow(central, peripheral, k23)
         cm.add_flow(peripheral, central, k32)
-        dose = Bolus('AMT')
+        dose = _dosing(model, 1)
         depot.dose = dose
         ass = _f_link_assignment(model, central)
     elif advan == 'ADVAN5' or advan == 'ADVAN7':
@@ -67,12 +67,15 @@ def compartmental_model(model, advan, trans):
                 defobs = comp
             if 'DEFDOSE' in opts:
                 defdose = comp
+                dose_no = i + 1
             if name == 'CENTRAL':
                 central = comp
             elif name == 'DEPOT':
                 depot = comp
+                depot_no = i + 1
             if first_dose is None and 'NODOSE' not in opts:
                 first_dose = comp
+                first_dose_no = i + 1
             compartments.append(comp)
         output = cm.add_compartment('OUTPUT')
         compartments.append(output)
@@ -85,13 +88,15 @@ def compartmental_model(model, advan, trans):
         if not defdose:
             if depot:
                 defdose = depot
+                dose_no = depot_no
             elif first_dose is not None:
                 defdose = first_dose
+                dose_no = first_dose_no
             else:
                 raise ModelSyntaxError('Dosing compartment is unknown')
         for from_n, to_n, rate in _find_rates(model, ncomp):
             cm.add_flow(compartments[from_n - 1], compartments[to_n - 1], rate)
-        dose = Bolus('AMT')
+        dose = _dosing(model, dose_no)
         defdose.dose = dose
         ass = _f_link_assignment(model, defobs)
     elif advan == 'ADVAN10':
@@ -100,7 +105,7 @@ def compartmental_model(model, advan, trans):
         output = cm.add_compartment('OUTPUT')
         vm = symbol('VM')
         km = symbol('KM')
-        dose = Bolus('AMT')
+        dose = _dosing(model, 1)
         central.dose = dose
         t = symbol('t')
         cm.add_flow(central, output, vm / (km + sympy.Function(central.amount.name)(t)))
@@ -117,7 +122,7 @@ def compartmental_model(model, advan, trans):
         cm.add_flow(per1, central, k21)
         cm.add_flow(central, per2, k13)
         cm.add_flow(per2, central, k31)
-        dose = Bolus('AMT')
+        dose = _dosing(model, 1)
         central.dose = dose
         ass = _f_link_assignment(model, central)
     elif advan == 'ADVAN12':
@@ -134,7 +139,7 @@ def compartmental_model(model, advan, trans):
         cm.add_flow(per1, central, k32)
         cm.add_flow(central, per2, k24)
         cm.add_flow(per2, central, k42)
-        dose = Bolus('AMT')
+        dose = _dosing(model, 1)
         depot.dose = dose
         ass = _f_link_assignment(model, central)
     else:
@@ -306,3 +311,19 @@ def _advan12_trans(trans):
                 symbol('K24'),
                 symbol('K42'),
                 symbol('KA'))
+
+
+def _dosing(model, dose_comp):
+    df = model.dataset
+    colnames = df.columns
+    if 'RATE' in colnames:
+        if (df['RATE'] == 0).all():
+            return Bolus('AMT')
+        elif (df['RATE'] == -1).any():
+            return Infusion('AMT', rate='R{dose_comp}')
+        elif (df['RATE'] == -2).any():
+            return Infusion('AMT', duration='D{dose_comp}')
+        else:
+            return Infusion('AMT', rate='RATE')
+    else:
+        return Bolus('AMT')

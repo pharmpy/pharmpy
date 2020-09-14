@@ -1,5 +1,7 @@
+import sympy
+
 from pharmpy.parameter import Parameter
-from pharmpy.statements import Assignment, CompartmentalSystem, ExplicitODESystem
+from pharmpy.statements import Assignment, CompartmentalSystem, ExplicitODESystem, Infusion
 
 
 def explicit_odes(model):
@@ -14,6 +16,26 @@ def explicit_odes(model):
         statements[model.statements.index(odes)] = new
         model.statements = statements
     return model
+
+
+def _have_zero_order_absorption(model):
+    """Check if ode system describes a zero order absorption
+
+       currently defined as having Infusion dose with rate not in dataset
+    """
+    odes = model.statements.ode_system
+    dosing = odes.find_dosing()
+    dose = dosing.dose
+    if isinstance(dose, Infusion):
+        if dose.rate is None:
+            value = dose.rate
+        else:
+            value = dose.duration
+        if isinstance(value, sympy.Symbol) or isinstance(value, str):
+            name = str(value)
+            if name not in model.dataset.columns:
+                return True
+    return False
 
 
 def absorption(model, order, rate=None):
