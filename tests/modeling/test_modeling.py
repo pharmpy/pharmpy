@@ -162,3 +162,4 @@ def test_boxcox(pheno_path, etas, etab, buf_new):
               f'      S1=V\n'
 
     assert str(model.get_pred_pk_record()) == rec_ref
+    assert model.parameters['lambda1'].init == 0.01
