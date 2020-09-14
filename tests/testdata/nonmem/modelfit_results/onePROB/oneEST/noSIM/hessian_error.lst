@@ -1,0 +1,446 @@
+Fri Dec 12 13:03:45 CET 2014
+;; 1. Based on: 257
+$PROBLEM    Cov Matrix(11),no RIS,not logit BC0,MTT 3
+$INPUT      ID TIME CMT CMTVAR=DROP ODV NDV DV MDV GFED CHOL TRIG NEFA
+            OGTT0=DROP OGTT15=DROP OGTT30=DROP OGTT60=DROP
+            OGTT120=DROP INSU0=DROP INSU15=DROP INSU30=DROP
+            INSU60=DROP INSU120=DROP OCC FLAG FSICOV=DROP BBLWT=DROP
+            RBLWT DDWT=DROP EVID WTCOV=DROP FPGCOV AGE BFAT
+            LOGTT15=DROP LOGTT30=DROP LOGTT60 LOGTT120=DROP BLINS=DROP
+            BLFPG=DROP BLHBA=DROP
+$DATA      Rats_1occ_OGTT_INTER_BL.csv IGNORE=@
+            IGNORE=(ID.EQ.5,CMT.EQ.4,MDV.EQ.1,FLAG.EQ.1,FLAG.EQ.2)
+
+;FLAG.EQ.3)
+$SUBROUTINE ADVAN6 TOL=5 ;
+$MODEL      COMP=(COVAR) ; CMT1 for calculating cov on the fly
+            COMP=(WEIGHT) ; CMT2 for BODY WEIGHT
+            COMP=(INSULIN) ; CMT3 for INSULIN
+            COMP=(FPG) ; CMT4 for FPG
+
+;COMP=(HBA1C) ; CMT5 for HbA1c
+
+;COMP=(HBA2C) ; CMT6 for HbA1c
+
+;COMP=(HBA3C) ; CMT7 for HbA1c
+
+;
+$PK   
+;;=================Covariates=======================
+;IF(NEWIND.NE.2) THEN
+  ;BLOG=LOGTT60 * 0.0555 ; Baseline OGTT.60 with conversion from mg/dL to mmol/L
+  ;OTIM=0
+;ENDIF
+
+OGSLOPE = 0
+IF(TIME.EQ.0) DBFAT = 1
+
+$DES    
+AA2=A(2)
+IF(IND.EQ.0) DWT = 0
+
+$ERROR    
+;;=================Re-defining Time parameters outisde $DES===
+;
+AA1=A(1)
+OTIM = TIME
+;===================================================
+$THETA  (0,44.74340) FIX ; TH1 Kout
+ (0,0.223257) FIX ; TH2 BLWT (kg)
+ (0,3.279350) FIX ; TH3 IMAX
+ (0,142.1160) FIX ; TH4 IC50
+ (0,2.329980) FIX ; TH5 GAM
+ (0,0.024309) FIX ; TH6 RESWT
+ (0,0.606811) ; TH7 RESFSI
+ (0,0.071786) ; TH8 RESFPG
+ (0,12.60430) ; TH9 FSISS (uIU/mL)
+ (0,1) FIX ; TH10 KOUTFSI (/day)
+ (0,7.011970) ; TH11 FPGSS (mmol/L)
+ (0,0.021) FIX ; TH12 KOUTFPG (/day)
+ (0,0.425694) ; TH13 SCALEIS
+ (1,97.54830,500) ; TH14 IP
+ 0.5 FIX ; TH15 STEEP
+ (0,0.08) ; TH16 BCIC50
+ (0,0.01) ; TH17 BCSCALE
+ (0,0.507739) ; TH18 BCGAM
+ (0,2) ; TH19 BCEXP
+ (0,1) ; TH20 BCLIN
+; (0,0.2) FIX ; TH20 RESHBA not used
+; (0,100) FIX  ; TH21 MTT not used
+; (0,0.0130832) FIX ; TH22 KIHB not used
+; (0,0.4) FIX ; TH23 PPGCOV not used
+; (0,0.5,10) FIX ; TH24 SPPG not used
+$OMEGA  0.001242  FIX  ;   ET1 BLWT
+ 0.051647  FIX  ;   ET2 IC50
+ 0.046926  ;     ET3 IP
+ 0.001691  ;  ET4 FSISS
+ 0.000009  ;  ET5 FPGSS
+ 0.09  ; ET6 BCIC50
+;0.09 FIX ; ET6 PPGCOV not used
+$SIGMA  1  FIX
+$ESTIMATION MSFO=msfb263 METHOD=1 MCETA=1000 INTERACTION MAX=5 PRINT=5
+
+;$COVARIANCE MATRIX=S PRINT=E UNCONDITIONAL 
+
+;$TABLE      ID TIME NDV ISS0 EFFW CMT DV PRED IPRED RES WRES IRES
+
+;            IWRES CWRES AA1 OGSLOPE LOGTT60 NOAPP NOPRINT ONEHEAD
+
+;            FILE=sdtab264
+$TABLE      ID TIME CMT DV EFFW BLWT BLI BCLIMIT EFFB BLOG THRES ;PPG
+            EFSI EFPG EDEN EWT DWTE DWTPE EEFS KIOI KIOG BLG IP BNET
+            BLINS BCONE BCTWO PROD IGR ISSE ISSEKG DBFAT BCE0 SNET
+            HFPGFSI ISS0 ; ESPPG TOTPPG
+            NOAPP NOPRINT ONEHEAD FILE=catab264
+;$TABLE      ID ETA1 ETA2 ETA3 ETA4 ETA5 ETA6 
+
+;            NOAPP NOPRINT ONEHEAD FILE=patab264
+
+
+NM-TRAN MESSAGES
+  
+ WARNINGS AND ERRORS (IF ANY) FOR PROBLEM    1
+             
+ (WARNING  2) NM-TRAN INFERS THAT THE DATA ARE POPULATION.
+             
+ (WARNING  97) A RANDOM QUANTITY IS RAISED TO A POWER. IF THE RESULT AFFECTS
+ THE VALUE OF THE OBJECTIVE FUNCTION, THE USER SHOULD ENSURE THAT THE
+ RANDOM QUANTITY IS NEVER 0 WHEN THE POWER IS < 1.
+             
+ (WARNING  48) DES-DEFINED ITEMS ARE COMPUTED ONLY WHEN EVENT TIME
+ INCREASES. E.G., DISPLAYED VALUES ASSOCIATED WITH THE FIRST EVENT RECORD
+ OF AN INDIVIDUAL RECORD ARE COMPUTED WITH (THE LAST ADVANCE TO) AN EVENT
+ TIME OF THE PRIOR INDIVIDUAL RECORD.
+
+License Registered to: Uppsala University
+Expiration Date:    14 MAR 2015
+Current Date:       12 DEC 2014
+Days until program expires :  97
+1NONLINEAR MIXED EFFECTS MODEL PROGRAM (NONMEM) VERSION 7.3.0
+ ORIGINALLY DEVELOPED BY STUART BEAL, LEWIS SHEINER, AND ALISON BOECKMANN
+ CURRENT DEVELOPERS ARE ROBERT BAUER, ICON DEVELOPMENT SOLUTIONS,
+ AND ALISON BOECKMANN. IMPLEMENTATION, EFFICIENCY, AND STANDARDIZATION
+ PERFORMED BY NOUS INFOSYSTEMS.
+ 
+ PROBLEM NO.:         1
+ Cov Matrix(11),no RIS,not logit BC0,MTT 3                               
+0DATA CHECKOUT RUN:              NO 
+ DATA SET LOCATED ON UNIT NO.:    2
+ THIS UNIT TO BE REWOUND:        NO 
+ NO. OF DATA RECS IN DATA SET:      851
+ NO. OF DATA ITEMS IN DATA SET:  19
+ ID DATA ITEM IS DATA ITEM NO.:   1
+ DEP VARIABLE IS DATA ITEM NO.:   6
+ MDV DATA ITEM IS DATA ITEM NO.:  7
+0INDICES PASSED TO SUBROUTINE PRED:
+  15   2   0   0   0   0   3   0   0   0   0
+0LABELS FOR DATA ITEMS:
+ ID TIME CMT ODV NDV DV MDV GFED CHOL TRIG NEFA OCC FLAG RBLWT EVID FPGCOV AGE BFAT LOGTT60
+0(NONBLANK) LABELS FOR PRED-DEFINED ITEMS:
+ BLWT THRES KIOG KIOI BCE0 ISS0 BLI BLINS BLG IP BCONE BCLIMIT BCTWO EFFB BNET DBFAT EFFW EFSI EFPG EWT DWTE DWTPE EEFS
+ ISSE EDEN HFPGFSI SNET PROD IGR ISSEKG BLOG
+0FORMAT FOR DATA:
+ (3(5E13.0/),4E13.0)                                                             
+ 
+ TOT. NO. OF OBS RECS:      851
+ TOT. NO. OF INDIVIDUALS:     23
+0LENGTH OF THETA:  20
+0DEFAULT THETA BOUNDARY TEST OMITTED:    NO 
+0OMEGA HAS BLOCK FORM:
+  1
+  0  2
+  0  0  3
+  0  0  0  4
+  0  0  0  0  5
+  0  0  0  0  0  6
+0DEFAULT OMEGA BOUNDARY TEST OMITTED:    NO 
+0SIGMA HAS SIMPLE DIAGONAL FORM WITH DIMENSION:   1
+0DEFAULT SIGMA BOUNDARY TEST OMITTED:    NO 
+0INITIAL ESTIMATE OF THETA:
+ LOWER BOUND    INITIAL EST    UPPER BOUND
+  0.4474E+02     0.4474E+02     0.4474E+02
+  0.2233E+00     0.2233E+00     0.2233E+00
+  0.3279E+01     0.3279E+01     0.3279E+01
+  0.1421E+03     0.1421E+03     0.1421E+03
+  0.2330E+01     0.2330E+01     0.2330E+01
+  0.2431E-01     0.2431E-01     0.2431E-01
+  0.0000E+00     0.6068E+00     0.1000E+07
+  0.0000E+00     0.7179E-01     0.1000E+07
+  0.0000E+00     0.1260E+02     0.1000E+07
+  0.1000E+01     0.1000E+01     0.1000E+01
+  0.0000E+00     0.7012E+01     0.1000E+07
+  0.2100E-01     0.2100E-01     0.2100E-01
+  0.0000E+00     0.4257E+00     0.1000E+07
+  0.1000E+01     0.9755E+02     0.5000E+03
+  0.5000E+00     0.5000E+00     0.5000E+00
+  0.0000E+00     0.8000E-01     0.1000E+07
+  0.0000E+00     0.1000E-01     0.1000E+07
+  0.0000E+00     0.5077E+00     0.1000E+07
+  0.0000E+00     0.2000E+01     0.1000E+07
+  0.0000E+00     0.1000E+01     0.1000E+07
+0INITIAL ESTIMATE OF OMEGA:
+ BLOCK SET NO.   BLOCK                                                                    FIXED
+        1                                                                                  YES 
+                  0.1242E-02
+        2                                                                                  YES 
+                  0.5165E-01
+        3                                                                                   NO 
+                  0.4693E-01
+        4                                                                                   NO 
+                  0.1691E-02
+        5                                                                                   NO 
+                  0.9000E-05
+        6                                                                                   NO 
+                  0.9000E-01
+0INITIAL ESTIMATE OF SIGMA:
+ 0.1000E+01
+0SIGMA CONSTRAINED TO BE THIS INITIAL ESTIMATE
+0TABLES STEP OMITTED:    NO 
+ NO. OF TABLES:           1
+ SEED NUMBER (SEED):    11456       
+ RANMETHOD:                                 
+ MC SAMPLES (ESEED):    300         
+ WRES SQUARE ROOT TYPE:            EIGENVALUE
+0-- TABLE   1 --
+04 COLUMNS APPENDED:     NO 
+ PRINTED:                NO 
+ HEADER:                YES
+ FILE TO BE FORWARDED:   NO 
+ FORMAT:                S1PE11.4
+ LFORMAT:               
+ RFORMAT:               
+0USER-CHOSEN ITEMS:
+ ID TIME CMT DV EFFW BLWT BLI BCLIMIT EFFB BLOG THRES EFSI EFPG EDEN EWT DWTE DWTPE EEFS KIOI KIOG BLG IP BNET BLINS BCONE
+ BCTWO PROD IGR ISSE ISSEKG DBFAT BCE0 SNET HFPGFSI ISS0
+1DOUBLE PRECISION PREDPP VERSION 7.3.0
+ 
+ GENERAL NONLINEAR KINETICS MODEL (ADVAN6)
+0MODEL SUBROUTINE USER-SUPPLIED - ID NO. 9999
+0MAXIMUM NO. OF BASIC PK PARAMETERS:  16
+0COMPARTMENT ATTRIBUTES 
+ COMPT. NO.   FUNCTION   INITIAL    ON/OFF      DOSE      DEFAULT    DEFAULT
+                         STATUS     ALLOWED    ALLOWED    FOR DOSE   FOR OBS.
+    1         COVAR        ON         YES        YES        YES        YES
+    2         WEIGHT       ON         YES        YES        NO         NO 
+    3         INSULIN      ON         YES        YES        NO         NO 
+    4         FPG          ON         YES        YES        NO         NO 
+    5         OUTPUT       OFF        YES        NO         NO         NO 
+0NRD VALUE FROM SUBROUTINE TOL:   5
+1
+ ADDITIONAL PK PARAMETERS - ASSIGNMENT OF ROWS IN GG
+ COMPT. NO.                             INDICES
+              SCALE      BIOAVAIL.   ZERO-ORDER  ZERO-ORDER  ABSORB
+                         FRACTION    RATE        DURATION    LAG  
+    1            *           *           *           *           *
+    2            *           *           *           *           *
+    3            *           *           *           *           *
+    4            *           *           *           *           *
+    5            *           -           -           -           -
+             - PARAMETER IS NOT ALLOWED FOR THIS MODEL
+             * PARAMETER IS NOT SUPPLIED BY PK SUBROUTINE;
+               WILL DEFAULT TO ONE IF APPLICABLE
+0DATA ITEM INDICES USED BY PRED ARE:
+   EVENT ID DATA ITEM IS DATA ITEM NO.:     15
+   TIME DATA ITEM IS DATA ITEM NO.:          2
+   COMPT. NO. DATA ITEM IS DATA ITEM NO.:    3
+ 
+0PK SUBROUTINE CALLED WITH EVERY EVENT RECORD.
+ PK SUBROUTINE NOT CALLED AT NONEVENT (ADDITIONAL OR LAGGED) DOSE TIMES.
+0PK SUBROUTINE INDICATES THAT COMPARTMENT AMOUNTS ARE INITIALIZED.
+0ERROR SUBROUTINE CALLED WITH EVERY EVENT RECORD.
+0ERROR SUBROUTINE INDICATES THAT DERIVATIVES OF COMPARTMENT AMOUNTS ARE USED.
+0DES SUBROUTINE USES COMPACT STORAGE MODE.
+1
+
+
+ #TBLN:      1
+ #METH: First Order Conditional Estimation with Interaction
+
+ ESTIMATION STEP OMITTED:                 NO  
+ ANALYSIS TYPE:                           POPULATION
+ CONDITIONAL ESTIMATES USED:              YES 
+ CENTERED ETA:                            NO  
+ EPS-ETA INTERACTION:                     YES 
+ LAPLACIAN OBJ. FUNC.:                    NO  
+ NO. OF FUNCT. EVALS. ALLOWED:            5
+ NO. OF SIG. FIGURES REQUIRED:            3
+ INTERMEDIATE PRINTOUT:                   YES 
+ ESTIMATE OUTPUT TO MSF:                  YES 
+ IND. OBJ. FUNC. VALUES SORTED:           NO  
+ NUMERICAL DERIVATIVE 
+       FILE REQUEST (NUMDER):             NONE
+ MAP (ETAHAT) ESTIMATION METHOD (OPTMAP): 0           
+ ETA HESSIAN EVALUATION METHOD (ETADER):  0           
+ INITIAL ETA FOR MAP ESTIMATION (MCETA):  1000        
+ SIGDIGITS FOR MAP ESTIMATION (SIGLO):    100         
+ GRADIENT SIGDIGITS OF 
+       FIXED EFFECTS PARAMETERS (SIGL):   100         
+ EXCLUDE TITLE (NOTITLE):                 NO 
+ EXCLUDE COLUMN LABELS (NOLABEL):         NO 
+ NOPRIOR SETTING (NOPRIOR):               OFF
+ NOCOV SETTING (NOCOV):                   OFF
+ DERCONT SETTING (DERCONT):               OFF
+ ABSOLUTE TOLERANCE-ADVAN 9,13 ONLY(ATOL):-100        
+ FINAL ETA RE-EVALUATION (FNLETA):        ON 
+ EXCLUDE NON-INFLUENTIAL (NON-INFL.) ETAS 
+       IN SHRINKAGE (ETASTYPE):           NO 
+ NON-INFL. ETA CORRECTION (NONINFETA):    OFF
+ FORMAT FOR ADDITIONAL FILES (FORMAT):    S1PE12.5
+ PARAMETER ORDER FOR OUTPUTS (ORDER):     TSOL
+ ADDITIONAL CONVERGENCE TEST (CTYPE=4)?:  NO
+ EM OR BAYESIAN METHOD USED:                NONE
+
+
+ THE FOLLOWING LABELS ARE EQUIVALENT
+ PRED=PREDI
+ RES=RESI
+ WRES=WRESI
+ IWRS=IWRESI
+ IPRD=IPREDI
+ IRS=IRESI
+
+ MONITORING OF SEARCH:
+
+0PROGRAM TERMINATED BY OBJ
+ ERROR IN NCONTR WITH INDIVIDUAL       6   ID= 7.00000000000000E+00
+ NUMERICAL HESSIAN OF OBJ. FUNC. FOR COMPUTING CONDITIONAL ESTIMATE
+ IS NON POSITIVE DEFINITE
+ MESSAGE ISSUED FROM ESTIMATION STEP
+ AT 0TH ITERATION, UPON EVALUATION OF GRADIENT, WITH RESPECT TO OMEGA
+0TRY SUBSTANTIALLY INCREASING "INITIAL ESTIMATE OF SIGMA"
+ OR DECREASING "INITIAL ESTIMATE OF OMEGA"
+
+ #TERM:
+ #TERE:
+ Elapsed estimation time in seconds:    36.23
+1
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ ************************************************************************************************************************
+ ********************                                                                                ********************
+ ********************               FIRST ORDER CONDITIONAL ESTIMATION WITH INTERACTION              ********************
+ #OBJT:**************                       MINIMUM VALUE OF OBJECTIVE FUNCTION                      ********************
+ ********************                                                                                ********************
+ ************************************************************************************************************************
+ 
+
+
+
+
+
+ #OBJV:********************************************        0.000       **************************************************
+1
+ ************************************************************************************************************************
+ ********************                                                                                ********************
+ ********************               FIRST ORDER CONDITIONAL ESTIMATION WITH INTERACTION              ********************
+ ********************                             FINAL PARAMETER ESTIMATE                           ********************
+ ********************                                                                                ********************
+ ************************************************************************************************************************
+ 
+
+
+ THETA - VECTOR OF FIXED EFFECTS PARAMETERS   *********
+
+
+         TH 1      TH 2      TH 3      TH 4      TH 5      TH 6      TH 7      TH 8      TH 9      TH10      TH11      TH12     
+          TH13      TH14      TH15      TH16      TH17      TH18      TH19      TH20     
+ 
+         4.47E+01  2.23E-01  3.28E+00  1.42E+02  2.33E+00  2.43E-02  6.07E-01  7.18E-02  1.26E+01  1.00E+00  7.01E+00  2.10E-02
+          4.26E-01  9.75E+01  5.00E-01  8.00E-02  1.00E-02  5.08E-01  2.00E+00  1.00E+00
+ 
+
+
+ OMEGA - COV MATRIX FOR RANDOM EFFECTS - ETAS  ********
+
+
+            ETA1      ETA2      ETA3      ETA4      ETA5      ETA6   
+ 
+ ETA1
++        1.24E-03
+ 
+ ETA2
++        0.00E+00  5.16E-02
+ 
+ ETA3
++        0.00E+00  0.00E+00  4.69E-02
+ 
+ ETA4
++        0.00E+00  0.00E+00  0.00E+00  1.69E-03
+ 
+ ETA5
++        0.00E+00  0.00E+00  0.00E+00  0.00E+00  9.00E-06
+ 
+ ETA6
++        0.00E+00  0.00E+00  0.00E+00  0.00E+00  0.00E+00  9.00E-02
+ 
+
+
+ SIGMA - COV MATRIX FOR RANDOM EFFECTS - EPSILONS  ****
+
+
+            EPS1   
+ 
+ EPS1
++        1.00E+00
+ 
+1
+
+
+ OMEGA - CORR MATRIX FOR RANDOM EFFECTS - ETAS  *******
+
+
+            ETA1      ETA2      ETA3      ETA4      ETA5      ETA6   
+ 
+ ETA1
++        3.52E-02
+ 
+ ETA2
++        0.00E+00  2.27E-01
+ 
+ ETA3
++        0.00E+00  0.00E+00  2.17E-01
+ 
+ ETA4
++        0.00E+00  0.00E+00  0.00E+00  4.11E-02
+ 
+ ETA5
++        0.00E+00  0.00E+00  0.00E+00  0.00E+00  3.00E-03
+ 
+ ETA6
++        0.00E+00  0.00E+00  0.00E+00  0.00E+00  0.00E+00  3.00E-01
+ 
+
+
+ SIGMA - CORR MATRIX FOR RANDOM EFFECTS - EPSILONS  ***
+
+
+            EPS1   
+ 
+ EPS1
++        1.00E+00
+ 
+1
+
+
+ 
+ #CPUT: Total CPU Time in Seconds,      420.536
+Stop Time:
+Fri Dec 12 13:10:52 CET 2014

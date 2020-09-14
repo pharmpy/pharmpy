@@ -1,0 +1,543 @@
+Fri May 24 16:32:05 CEST 2013
+;Model Desc: Receptor Mediated Clearance model with Dynamic Change in Receptors
+;Project Name: nm7examples
+;Project ID: NO PROJECT DESCRIPTION
+$SIZES      LIM6=600
+$PROBLEM    RUN# example6 (from r2compl)
+$INPUT      C SET ID JID TIME DV=CONC DOSE=AMT RATE EVID MDV CMT
+$DATA       example6b.csv IGNORE=C
+; The new numerical integration solver is used, although ADVAN=9 is also efficient
+
+; for this problem.
+$SUBROUTINE ADVAN13 TRANS1 TOL=4
+$PRIOR      NWPRI NTHETA=8,NETA=8,NTHP=0,NETP=8,NEPS=2,NEPP=2,NPEXP=1
+$MODEL      NCOMPARTMENTS=3
+$PK
+
+MU_1=THETA(1)
+MU_2=THETA(2)
+MU_3=THETA(3)
+MU_4=THETA(4)
+MU_5=THETA(5)
+MU_6=THETA(6)
+MU_7=THETA(7)
+MU_8=THETA(8)
+VC=EXP(MU_1+ETA(1))
+K10=EXP(MU_2+ETA(2))
+K12=EXP(MU_3+ETA(3))
+K21=EXP(MU_4+ETA(4))
+VM=EXP(MU_5+ETA(5))
+KMC=EXP(MU_6+ETA(6))
+K03=EXP(MU_7+ETA(7))
+K30=EXP(MU_8+ETA(8))
+S3=VC
+S1=VC
+KM=KMC*S1
+F3=K03/K30
+
+$DES
+
+DADT(1) = -(K10+K12)*A(1) + K21*A(2) - VM*A(1)*A(3)/(A(1)+KM)
+DADT(2) = K12*A(1) - K21*A(2)
+DADT(3) =  -VM*A(1)*A(3)/(A(1)+KM) - K30*A(3) + K03
+
+$ERROR
+
+CALLFL=0
+ETYPE=1
+IF(CMT.NE.1) ETYPE=0
+IPRED=F
+Y = F + F*ETYPE*EPS(1) + F*(1.0-ETYPE)*EPS(2)
+
+
+$THETA  4.0 ; [MU_1]
+ -2.1 ; [MU_2]
+ 0.7 ; [MU_3]
+ -0.17 ; [MU_4]
+ 2.2 ; [MU_5]
+ 0.14 ; [MU_6]
+ 3.7 ; [MU_7]
+ -0.7 ; [MU_8]
+ 8 FIX ; [dfo]
+;Initial Thetas
+; degrees of freedom for OMEGA prior
+;Initial Omegas
+$THETA  1 FIX
+ 1 FIX
+; Starting with a short iterative two stage analysis brings the results closer
+; so less time needs to be spent during the burn-in of the BAYES analysis
+$OMEGA  BLOCK(8)
+ 0.2  ;        [p]
+ -0.0043  ;        [f]
+ 0.2  ;        [p]
+ 0.0048  ;        [f]
+ -0.0023  ;        [f]
+ 0.2  ;        [p]
+ 0.0032  ;        [f]
+ 0.0059  ;        [f]
+ -0.0014  ;        [f]
+ 0.2  ;        [p]
+ 0.0029  ;        [f]
+ 0.002703  ;        [f]
+ -0.00026  ;        [f]
+ -0.0032  ;        [f]
+ 0.2  ;        [p]
+ -0.0025  ;        [f]
+ 0.00097  ;        [f]
+ 0.0024  ;        [f]
+ 0.00197  ;        [f]
+ -0.0080  ;        [f]
+ 0.2  ;        [p]
+ 0.0031  ;        [f]
+ -0.00571  ;        [f]
+ 0.0030  ;        [f]
+ -0.0074  ;        [f]
+ 0.0025  ;        [f]
+ 0.0034  ;        [f]
+ 0.2  ;        [p]
+ 0.00973  ;        [f]
+ 0.00862  ;        [f]
+ 0.0041  ;        [f]
+ 0.0046  ;        [f]
+ 0.00061  ;        [f]
+ -0.0056  ;        [f]
+ 0.0056  ;        [f]
+ 0.2  ;        [p]
+; Omega prior
+$OMEGA  BLOCK(8) FIX
+ 0.2
+ 0.0 0.2
+ 0.0 0.0 0.2
+ 0.0 0.0 0.0 0.2
+ 0.0 0.0 0.0 0.0 0.2
+ 0.0 0.0 0.0 0.0 0.0 0.2
+ 0.0 0.0 0.0 0.0 0.0 0.0 0.2
+ 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.2
+$SIGMA  0.1
+ 0.1
+$SIGMA  0.01  FIX
+ 0.0224  FIX
+$ESTIMATION METHOD=ITS INTERACTION SIGL=4 NITER=25 PRINT=1
+            FILE=psn.ext NOABORT NOPRIOR=1
+;$EST METHOD=IMP INTERACTION SIGL=4 NITER=15 PRINT=1 FILE=example6.ext NOABORT NOPRIOR=1
+           
+;$EST METHOD=BAYES INTERACTION NBURN=4000 SIGL=4 NITER=500 PRINT=10 CTYPE=3
+           
+;     FILE=example6.txt NOABORT NOPRIOR=0
+           
+; By default, ISAMPLE_M* are 2.  Since there are many data points per subject,
+           
+; setting these to 1 is enough, and it reduces the time of the analysis
+            ISAMPLE_M1=1 ISAMPLE_M2=1 ISAMPLE_M3=1 IACCEPT=0.4
+;$COV MATRIX=R UNCONDITIONAL
+$TABLE      ID TIME CONC IPRED CMT MDV EVID NOAPPEND NOPRINT
+            FILE=example6b.fin FORMAT=,1PE12.5 ONEHEADER
+
+
+NM-TRAN MESSAGES
+  
+ WARNINGS AND ERRORS (IF ANY) FOR PROBLEM    1
+             
+ (WARNING  2) NM-TRAN INFERS THAT THE DATA ARE POPULATION.
+ CREATING MUMODEL ROUTINE...
+
+License Registered to: Uppsala University
+Expiration Date:    14 MAR 2014
+Current Date:       24 MAY 2013
+Days until program expires : 295
+1NONLINEAR MIXED EFFECTS MODEL PROGRAM (NONMEM) VERSION 7.3 (Beta Version a6.5)
+ ORIGINALLY DEVELOPED BY STUART BEAL, LEWIS SHEINER, AND ALISON BOECKMANN
+ CURRENT DEVELOPERS ARE ROBERT BAUER, ICON DEVELOPMENT SOLUTIONS,
+ AND ALISON BOECKMANN. IMPLEMENTATION, EFFICIENCY, AND STANDARDIZATION
+ PERFORMED BY NOUS INFOSYSTEMS.
+ 
+ PROBLEM NO.:         1
+ RUN# example6 (from r2compl)                                            
+0DATA CHECKOUT RUN:              NO 
+ DATA SET LOCATED ON UNIT NO.:    2
+ THIS UNIT TO BE REWOUND:        NO 
+ NO. OF DATA RECS IN DATA SET:    26850
+ NO. OF DATA ITEMS IN DATA SET:  11
+ ID DATA ITEM IS DATA ITEM NO.:   3
+ DEP VARIABLE IS DATA ITEM NO.:   6
+ MDV DATA ITEM IS DATA ITEM NO.: 10
+0INDICES PASSED TO SUBROUTINE PRED:
+   9   5   7   8   0   0  11   0   0   0   0
+0LABELS FOR DATA ITEMS:
+ C SET ID JID TIME CONC DOSE RATE EVID MDV CMT
+0(NONBLANK) LABELS FOR PRED-DEFINED ITEMS:
+ IPRED
+0FORMAT FOR DATA:
+ (2E2.0,2E3.0,E18.0,E10.0,2E5.0,3E2.0)                                           
+ 
+ TOT. NO. OF OBS RECS:     1568
+ TOT. NO. OF INDIVIDUALS:     50
+0LENGTH OF THETA:  11
+0DEFAULT THETA BOUNDARY TEST OMITTED:    NO 
+0OMEGA HAS BLOCK FORM:
+  1
+  1  1
+  1  1  1
+  1  1  1  1
+  1  1  1  1  1
+  1  1  1  1  1  1
+  1  1  1  1  1  1  1
+  1  1  1  1  1  1  1  1
+  0  0  0  0  0  0  0  0  2
+  0  0  0  0  0  0  0  0  2  2
+  0  0  0  0  0  0  0  0  2  2  2
+  0  0  0  0  0  0  0  0  2  2  2  2
+  0  0  0  0  0  0  0  0  2  2  2  2  2
+  0  0  0  0  0  0  0  0  2  2  2  2  2  2
+  0  0  0  0  0  0  0  0  2  2  2  2  2  2  2
+  0  0  0  0  0  0  0  0  2  2  2  2  2  2  2  2
+0DEFAULT OMEGA BOUNDARY TEST OMITTED:    NO 
+0SIGMA HAS BLOCK FORM:
+  1
+  0  2
+  0  0  3
+  0  0  0  4
+0DEFAULT SIGMA BOUNDARY TEST OMITTED:    NO 
+0INITIAL ESTIMATE OF THETA:
+ LOWER BOUND    INITIAL EST    UPPER BOUND
+ -0.1000E+07     0.4000E+01     0.1000E+07
+ -0.1000E+07    -0.2100E+01     0.1000E+07
+ -0.1000E+07     0.7000E+00     0.1000E+07
+ -0.1000E+07    -0.1700E+00     0.1000E+07
+ -0.1000E+07     0.2200E+01     0.1000E+07
+ -0.1000E+07     0.1400E+00     0.1000E+07
+ -0.1000E+07     0.3700E+01     0.1000E+07
+ -0.1000E+07    -0.7000E+00     0.1000E+07
+  0.8000E+01     0.8000E+01     0.8000E+01
+  0.1000E+01     0.1000E+01     0.1000E+01
+  0.1000E+01     0.1000E+01     0.1000E+01
+0INITIAL ESTIMATE OF OMEGA:
+ BLOCK SET NO.   BLOCK                                                                    FIXED
+        1                                                                                   NO 
+                  0.2000E+00
+                 -0.4300E-02   0.2000E+00
+                  0.4800E-02  -0.2300E-02   0.2000E+00
+                  0.3200E-02   0.5900E-02  -0.1400E-02   0.2000E+00
+                  0.2900E-02   0.2703E-02  -0.2600E-03  -0.3200E-02   0.2000E+00
+                 -0.2500E-02   0.9700E-03   0.2400E-02   0.1970E-02  -0.8000E-02   0.2000E+00
+                  0.3100E-02  -0.5710E-02   0.3000E-02  -0.7400E-02   0.2500E-02   0.3400E-02   0.2000E+00
+                  0.9730E-02   0.8620E-02   0.4100E-02   0.4600E-02   0.6100E-03  -0.5600E-02   0.5600E-02   0.2000E+00
+        2                                                                                  YES 
+                  0.2000E+00
+                  0.0000E+00   0.2000E+00
+                  0.0000E+00   0.0000E+00   0.2000E+00
+                  0.0000E+00   0.0000E+00   0.0000E+00   0.2000E+00
+                  0.0000E+00   0.0000E+00   0.0000E+00   0.0000E+00   0.2000E+00
+                  0.0000E+00   0.0000E+00   0.0000E+00   0.0000E+00   0.0000E+00   0.2000E+00
+                  0.0000E+00   0.0000E+00   0.0000E+00   0.0000E+00   0.0000E+00   0.0000E+00   0.2000E+00
+                  0.0000E+00   0.0000E+00   0.0000E+00   0.0000E+00   0.0000E+00   0.0000E+00   0.0000E+00   0.2000E+00
+0INITIAL ESTIMATE OF SIGMA:
+ BLOCK SET NO.   BLOCK                                                                    FIXED
+        1                                                                                   NO 
+                  0.1000E+00
+        2                                                                                   NO 
+                  0.1000E+00
+        3                                                                                  YES 
+                  0.1000E-01
+        4                                                                                  YES 
+                  0.2240E-01
+0TABLES STEP OMITTED:    NO 
+ NO. OF TABLES:           1
+ SEED NUMBER (SEED):    11456       
+ RANMETHOD:                                 
+ MC SAMPLES (ESEED):    300         
+ WRES SQUARE ROOT TYPE:            EIGENVALUE
+0-- TABLE   1 --
+04 COLUMNS APPENDED:     NO 
+ PRINTED:                NO 
+ HEADERS:               ONE
+ FILE TO BE FORWARDED:   NO 
+ FORMAT:                ,1PE12.5
+ LFORMAT:               
+ RFORMAT:               
+0USER-CHOSEN ITEMS:
+ ID TIME CONC IPRED CMT MDV EVID
+
+ THE FOLLOWING LABELS ARE EQUIVALENT
+ PRED=PREDI
+ RES=RESI
+ WRES=WRESI
+ IWRS=IWRESI=
+0
+ PRIOR SUBROUTINE USER-SUPPLIED
+1DOUBLE PRECISION PREDPP VERSION 7.3 (Beta Version a6.5)
+ 
+ GENERAL NONLINEAR KINETICS MODEL USING LSODA (ADVAN13)
+0MODEL SUBROUTINE USER-SUPPLIED - ID NO. 9999
+0MAXIMUM NO. OF BASIC PK PARAMETERS:   7
+0COMPARTMENT ATTRIBUTES 
+ COMPT. NO.   FUNCTION   INITIAL    ON/OFF      DOSE      DEFAULT    DEFAULT
+                         STATUS     ALLOWED    ALLOWED    FOR DOSE   FOR OBS.
+    1         COMP 1       ON         YES        YES        YES        YES
+    2         COMP 2       ON         YES        YES        NO         NO 
+    3         COMP 3       ON         YES        YES        NO         NO 
+    4         OUTPUT       OFF        YES        NO         NO         NO 
+0NRD VALUE(S) FROM SUBROUTINE TOL:   4
+1
+ ADDITIONAL PK PARAMETERS - ASSIGNMENT OF ROWS IN GG
+ COMPT. NO.                             INDICES
+              SCALE      BIOAVAIL.   ZERO-ORDER  ZERO-ORDER  ABSORB
+                         FRACTION    RATE        DURATION    LAG  
+    1           9           *           *           *           *
+    2           *           *           *           *           *
+    3           8          10           *           *           *
+    4           *           -           -           -           -
+             - PARAMETER IS NOT ALLOWED FOR THIS MODEL
+             * PARAMETER IS NOT SUPPLIED BY PK SUBROUTINE;
+               WILL DEFAULT TO ONE IF APPLICABLE
+0DATA ITEM INDICES USED BY PRED ARE:
+   EVENT ID DATA ITEM IS DATA ITEM NO.:      9
+   TIME DATA ITEM IS DATA ITEM NO.:          5
+   DOSE AMOUNT DATA ITEM IS DATA ITEM NO.:   7
+   DOSE RATE DATA ITEM IS DATA ITEM NO.:     8
+   COMPT. NO. DATA ITEM IS DATA ITEM NO.:   11
+ 
+0PK SUBROUTINE CALLED WITH EVERY EVENT RECORD.
+ PK SUBROUTINE NOT CALLED AT NONEVENT (ADDITIONAL OR LAGGED) DOSE TIMES.
+0DURING SIMULATION, ERROR SUBROUTINE CALLED WITH EVERY EVENT RECORD.    
+ OTHERWISE, ERROR SUBROUTINE CALLED ONLY WITH OBSERVATION EVENTS.
+0DES SUBROUTINE USES FULL STORAGE MODE.
+1
+
+
+ #TBLN:      1
+ #METH: Iterative Two Stage (No Prior)
+
+ ESTIMATION STEP OMITTED:                 NO  
+ CONDITIONAL ESTIMATES USED:              YES 
+ CENTERED ETA:                            NO  
+ EPS-ETA INTERACTION:                     YES 
+ LAPLACIAN OBJ. FUNC.:                    NO  
+ NO. OF FUNCT. EVALS. ALLOWED:            4488
+ NO. OF SIG. FIGURES REQUIRED:            3
+ INTERMEDIATE PRINTOUT:                   YES 
+ ESTIMATE OUTPUT TO MSF:                  NO  
+ ABORT WITH PRED EXIT CODE 1:             NO  
+ IND. OBJ. FUNC. VALUES SORTED:           NO  
+ NUMERICAL DERIVATIVE 
+       FILE(.fgh) REQUEST (NUMDER):       NO 
+ MAP (ETAHAT) ESTIMATION METHOD (OPTMAP): 0           
+ ETA HESSIAN EVALUATION METHOD (ETADER):  0           
+ INITIAL ETA FOR MAP ESTIMATION (MCETA):  0           
+ SIGDIGITS FOR MAP ESTIMATION (SIGLO):    4           
+ GRADIENT SIGDIGITS OF 
+       FIXED EFFECTS PARAMETERS (SIGL):   4           
+ EXCLUDE TITLE (NOTITLE):                 NO 
+ EXCLUDE COLUMN LABELS (NOLABEL):         NO 
+ NOPRIOR SETTING (NOPRIOR):               ON 
+ ABSOLUTE TOLERANCE-ADVAN 9,13 ONLY(ATOL):-100        
+ FINAL ETA RE-EVALUATION (FNLETA):        ON 
+ NON-INFL. ETA CORRECTION (NONINFETA):    OFF
+ FORMAT FOR ADDITIONAL FILES (FORMAT):    S1PE12.5
+ PARAMETER ORDER FOR OUTPUTS (ORDER):     TSOL
+ EXLCUDE NON-INFL. ETAS 
+       IN SHRINKAGE (ETASTYPE):           NO 
+ EM OR BAYESIAN METHOD USED:              ITERATIVE TWO STAGE (ITS)
+ MU MODELING PATTERN (MUM):               
+ GRADIENT/GIBBS PATTERN (GRD):            
+ AUTOMATIC SETTING FEATURE (AUTO):        OFF
+ CONVERGENCE TYPE (CTYPE):                0           
+ ITERATIONS (NITER):                      25          
+
+ EM/BAYES SETUP:
+ THETAS THAT ARE MU MODELED:
+   1   2   3   4   5   6   7   8
+ THETAS THAT ARE SIGMA-LIKE:
+ 
+
+ MONITORING OF SEARCH:
+
+ iteration            0  OBJ=  -3444.7979276760220
+ iteration            1  OBJ=  -3598.2504241442671
+ iteration            2  OBJ=  -3712.0293674155128
+ iteration            3  OBJ=  -3819.3784390861015
+ iteration            4  OBJ=  -3923.7896441266894
+ iteration            5  OBJ=  -4026.3550917162333
+ iteration            6  OBJ=  -4127.4027376513204
+ iteration            7  OBJ=  -4226.8778395573481
+ iteration            8  OBJ=  -4324.3750867411318
+ iteration            9  OBJ=  -4419.0383981681334
+ iteration           10  OBJ=  -4509.2019061841465
+ iteration           11  OBJ=  -4591.5781569418750
+ iteration           12  OBJ=  -4659.2563010773183
+ iteration           13  OBJ=  -4699.4186208888250
+ iteration           14  OBJ=  -4708.7563122919310
+ iteration           15  OBJ=  -4709.8533668268683
+ iteration           16  OBJ=  -4710.3103046847955
+ iteration           17  OBJ=  -4710.5786738119468
+ iteration           18  OBJ=  -4710.7708664016282
+ iteration           19  OBJ=  -4710.9193069264420
+ iteration           20  OBJ=  -4711.0414870350905
+ iteration           21  OBJ=  -4711.1405907835115
+ iteration           22  OBJ=  -4711.2228809492444
+ iteration           23  OBJ=  -4711.2939755719744
+ iteration           24  OBJ=  -4711.3535703872531
+ iteration           25  OBJ=  -4711.4060414857186
+
+ #TERM:
+ OPTIMIZATION WAS NOT TESTED FOR CONVERGENCE
+ 
+
+ ETABAR IS THE ARITHMETIC MEAN OF THE ETA-ESTIMATES,
+ AND THE P-VALUE IS GIVEN FOR THE NULL HYPOTHESIS THAT THE TRUE MEAN IS 0.
+
+ ETABAR:         6.1270E-05 -9.4842E-04 -7.2249E-05  7.2577E-06  1.3327E-04  2.7557E-04  1.5470E-04  1.5785E-04
+ SE:             6.9329E-02  5.5212E-02  3.8772E-02  6.5408E-02  5.6824E-02  5.7660E-02  6.4496E-02  6.1447E-02
+
+ P VAL.:         9.9929E-01  9.8629E-01  9.9851E-01  9.9991E-01  9.9813E-01  9.9619E-01  9.9809E-01  9.9795E-01
+
+ ETAshrink(%):   6.3623E-01  4.5490E+00  9.5378E+00  2.1243E+00  1.5371E+00  6.0355E+00  4.0732E-01  1.7659E+00
+ EPSshrink(%):   1.5539E+01  6.8462E+00
+
+ #TERE:
+ Elapsed estimation time in seconds:   811.39
+1
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ ************************************************************************************************************************
+ ********************                                                                                ********************
+ ********************                          ITERATIVE TWO STAGE (NO PRIOR)                        ********************
+ #OBJT:**************                        FINAL VALUE OF OBJECTIVE FUNCTION                       ********************
+ ********************                                                                                ********************
+ ************************************************************************************************************************
+ 
+
+
+
+
+
+ #OBJV:********************************************    -4711.406       **************************************************
+1
+ ************************************************************************************************************************
+ ********************                                                                                ********************
+ ********************                          ITERATIVE TWO STAGE (NO PRIOR)                        ********************
+ ********************                             FINAL PARAMETER ESTIMATE                           ********************
+ ********************                                                                                ********************
+ ************************************************************************************************************************
+ 
+
+
+ THETA - VECTOR OF FIXED EFFECTS PARAMETERS   *********
+
+
+         TH 1      TH 2      TH 3      TH 4      TH 5      TH 6      TH 7      TH 8     
+ 
+         3.91E+00 -2.21E+00  5.62E-01 -1.84E-01  2.27E+00  2.18E-01  3.71E+00 -7.04E-01
+ 
+
+
+ OMEGA - COV MATRIX FOR RANDOM EFFECTS - ETAS  ********
+
+
+            ETA1      ETA2      ETA3      ETA4      ETA5      ETA6      ETA7      ETA8   
+ 
+ ETA1
++        2.48E-01
+ 
+ ETA2
++       -3.87E-02  1.71E-01
+ 
+ ETA3
++        4.74E-02 -1.74E-02  9.37E-02
+ 
+ ETA4
++        3.17E-02  5.30E-02 -1.54E-02  2.28E-01
+ 
+ ETA5
++        2.81E-02  2.64E-02 -1.45E-03 -3.27E-02  1.70E-01
+ 
+ ETA6
++       -2.61E-02  1.09E-02  2.44E-02  1.75E-02 -7.94E-02  1.92E-01
+ 
+ ETA7
++        3.03E-02 -4.30E-02  3.14E-02 -7.30E-02  2.44E-02  3.39E-03  2.14E-01
+ 
+ ETA8
++        9.72E-02  8.43E-02  4.09E-02  4.66E-02  1.50E-03 -5.48E-02  5.54E-02  2.00E-01
+ 
+
+
+ SIGMA - COV MATRIX FOR RANDOM EFFECTS - EPSILONS  ****
+
+
+            EPS1      EPS2   
+ 
+ EPS1
++        9.22E-03
+ 
+ EPS2
++        0.00E+00  2.22E-02
+ 
+1
+
+
+ OMEGA - CORR MATRIX FOR RANDOM EFFECTS - ETAS  *******
+
+
+            ETA1      ETA2      ETA3      ETA4      ETA5      ETA6      ETA7      ETA8   
+ 
+ ETA1
++        4.98E-01
+ 
+ ETA2
++       -1.88E-01  4.13E-01
+ 
+ ETA3
++        3.11E-01 -1.37E-01  3.06E-01
+ 
+ ETA4
++        1.33E-01  2.69E-01 -1.05E-01  4.77E-01
+ 
+ ETA5
++        1.37E-01  1.55E-01 -1.15E-02 -1.66E-01  4.12E-01
+ 
+ ETA6
++       -1.19E-01  6.01E-02  1.82E-01  8.35E-02 -4.39E-01  4.38E-01
+ 
+ ETA7
++        1.31E-01 -2.25E-01  2.21E-01 -3.31E-01  1.28E-01  1.67E-02  4.63E-01
+ 
+ ETA8
++        4.37E-01  4.57E-01  2.99E-01  2.18E-01  8.13E-03 -2.80E-01  2.68E-01  4.47E-01
+ 
+
+
+ SIGMA - CORR MATRIX FOR RANDOM EFFECTS - EPSILONS  ***
+
+
+            EPS1      EPS2   
+ 
+ EPS1
++        9.60E-02
+ 
+ EPS2
++        0.00E+00  1.49E-01
+ 
+Stop Time:
+Fri May 24 16:45:55 CEST 2013
+This file was created using /opt/NONMEM/nm_7.3_beta/run/nmfe73
+Started  Fri May 24 16:32:05 2013
+Finished Fri May 24 16:45:55 2013
