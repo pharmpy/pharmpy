@@ -60,6 +60,22 @@ class Model(pharmpy.model.Model):
             path - path to modelfile
             nofiles - Set to not write any files (i.e. dataset, phi input etc)
         """
+        self._update_initial_individual_estimates(path)
+        if hasattr(self, '_random_variables'):
+            update_random_variables(self, self._old_random_variables, self._random_variables)
+            self._old_random_variables = self._random_variables.copy()
+        if hasattr(self, '_parameters'):
+            update_parameters(self, self._old_parameters, self._parameters)
+            self._old_parameters = self._parameters.copy()
+        trans = self.parameter_translation(reverse=True, remove_idempotent=True)
+        rv_trans = self.rv_translation(reverse=True, remove_idempotent=True)
+        trans.update(rv_trans)
+        if trans:
+            self.statements     # Read statements unless read
+        if hasattr(self, '_statements'):
+            update_statements(self, self._old_statements, self._statements, trans)
+            self._old_statements = self._statements.copy()
+
         if self._dataset_updated:
             # FIXME: If no name set use the model name. Set that when setting dataset to input!
             if not nofiles:
@@ -77,22 +93,6 @@ class Model(pharmpy.model.Model):
             del(data_record.ignore)
             del(data_record.accept)
             self._dataset_updated = False
-
-        self._update_initial_individual_estimates(path)
-        if hasattr(self, '_random_variables'):
-            update_random_variables(self, self._old_random_variables, self._random_variables)
-            self._old_random_variables = self._random_variables.copy()
-        if hasattr(self, '_parameters'):
-            update_parameters(self, self._old_parameters, self._parameters)
-            self._old_parameters = self._parameters.copy()
-        trans = self.parameter_translation(reverse=True, remove_idempotent=True)
-        rv_trans = self.rv_translation(reverse=True, remove_idempotent=True)
-        trans.update(rv_trans)
-        if trans:
-            self.statements     # Read statements unless read
-        if hasattr(self, '_statements'):
-            update_statements(self, self._old_statements, self._statements, trans)
-            self._old_statements = self._statements.copy()
 
         super().update_source()
 
@@ -462,11 +462,14 @@ class Model(pharmpy.model.Model):
     def _update_input(self, new_names):
         """Update $INPUT with new column names
 
-           currently supporting append columns at end
+           currently supporting append columns at end and removing columns
         """
         colnames, _, _, _ = self._column_info()
-        appended_names = new_names[len(colnames):]
+        removed_columns = set(colnames) - set(new_names)
         input_records = self.control_stream.get_records("INPUT")
+        for col in removed_columns:
+            input_records[0].remove_option(col)
+        appended_names = new_names[len(colnames):]
         last_input_record = input_records[-1]
         for colname in appended_names:
             last_input_record.append_option(colname)

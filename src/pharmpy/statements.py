@@ -185,7 +185,8 @@ class CompartmentalSystem(ODESystem):
 
     def __eq__(self, other):
         return isinstance(other, CompartmentalSystem) and \
-            nx.to_dict_of_dicts(self._g) == nx.to_dict_of_dicts(other._g)
+            nx.to_dict_of_dicts(self._g) == nx.to_dict_of_dicts(other._g) and \
+            self.find_dosing().dose == other.find_dosing().dose
 
     def __deepcopy__(self, memo):
         newone = type(self)()
@@ -446,13 +447,17 @@ class Infusion:
     def __init__(self, amount, rate=None, duration=None):
         if rate is None and duration is None:
             raise ValueError('Need rate or duration for Infusion')
-        self.rate = rate
-        self.duration = duration
-        self.amount = amount
+        self.rate = sympy.sympify(rate)
+        self.duration = sympy.sympify(duration)
+        self.amount = sympy.sympify(amount)
 
     @property
     def free_symbols(self):
-        return self.rate.free_symbols | self.duration.free_symbols | self.amount.free_symbols
+        if self.rate is not None:
+            symbs = self.rate.free_symbols
+        else:
+            symbs = self.duration.free_symbols
+        return symbs | self.amount.free_symbols
 
     def __deepcopy__(self, memo):
         new = type(self)(self.amount, rate=self.rate, duration=self.duration)

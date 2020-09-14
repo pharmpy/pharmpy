@@ -1,7 +1,8 @@
 import re
 
 from pharmpy import data
-from pharmpy.statements import CompartmentalSystem, ExplicitODESystem, ModelStatements, ODESystem
+from pharmpy.statements import (Bolus, CompartmentalSystem, ExplicitODESystem, ModelStatements,
+                                ODESystem)
 from pharmpy.symbols import symbol
 
 
@@ -128,6 +129,10 @@ def update_ode_system(model, old, new):
                 dose = False
             mod.add_compartment(name, dosing=dose)
     elif type(old) == CompartmentalSystem and type(new) == CompartmentalSystem:
+        if isinstance(new.find_dosing().dose, Bolus) and 'RATE' in model.dataset.columns:
+            df = model.dataset
+            df.drop(columns=['RATE'], inplace=True)
+            model.dataset = df
         if old.find_depot() and not new.find_depot():
             subs = model.control_stream.get_records('SUBROUTINES')[0]
             advan = subs.get_option_startswith('ADVAN')

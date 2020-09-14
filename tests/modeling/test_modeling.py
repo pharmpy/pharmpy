@@ -123,14 +123,23 @@ def test_absorption(testdata):
     advan5_nodepot_before = str(model)
     absorption(model, 'bolus')
     model.update_source()
-    print(str(model))
     assert str(model) == advan5_nodepot_before
 
     model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan5_depot.mod')
     absorption(model, 'bolus')
     model.update_source()
-    print(str(model))
     assert str(model) == advan5_nodepot_before
+
+    model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan1_zero_order.mod')
+    advan1_zero_order_before = str(model)
+    absorption(model, 0)
+    model.update_source()
+    assert str(model) == advan1_zero_order_before
+
+    model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan1_zero_order.mod')
+    absorption(model, 'bolus')
+    model.update_source(nofiles=True)
+    assert str(model).split('\n')[2:] == advan1_before.split('\n')[2:]
 
 
 @pytest.mark.parametrize('etas, etab, buf_new', [
