@@ -78,7 +78,6 @@ class OptionRecord(Record):
                 else:
                     yield [value]
 
-
     def set_option(self, key, new_value):
         """ Set the value of an option
 

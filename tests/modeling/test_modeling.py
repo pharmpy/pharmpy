@@ -89,45 +89,45 @@ def test_to_explicit_odes(pheno_path):
 def test_absorption(testdata):
     model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan1.mod')
     advan1_before = str(model)
-    absorption(model, 0)
+    absorption(model, 'bolus')
     assert advan1_before == str(model)
 
     model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan2.mod')
-    absorption(model, 0)
+    absorption(model, 'bolus')
     model.update_source()
     assert str(model) == advan1_before
 
     model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan3.mod')
     advan3_before = str(model)
-    absorption(model, 0)
+    absorption(model, 'bolus')
     model.update_source()
     assert str(model) == advan3_before
 
     model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan4.mod')
-    absorption(model, 0)
+    absorption(model, 'bolus')
     model.update_source()
     assert str(model) == advan3_before
 
     model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan11.mod')
     advan11_before = str(model)
-    absorption(model, 0)
+    absorption(model, 'bolus')
     model.update_source()
     assert str(model) == advan11_before
 
     model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan12.mod')
-    absorption(model, 0)
+    absorption(model, 'bolus')
     model.update_source()
     assert str(model) == advan11_before
 
     model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan5_nodepot.mod')
     advan5_nodepot_before = str(model)
-    absorption(model, 0)
+    absorption(model, 'bolus')
     model.update_source()
     print(str(model))
     assert str(model) == advan5_nodepot_before
 
     model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan5_depot.mod')
-    absorption(model, 0)
+    absorption(model, 'bolus')
     model.update_source()
     print(str(model))
     assert str(model) == advan5_nodepot_before

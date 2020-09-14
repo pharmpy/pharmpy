@@ -24,7 +24,7 @@ def absorption(model, order, rate=None):
     model
         Model to set or change absorption for
     order
-        0 or 1
+        'bolus', 0 or 1
     """
     statements = model.statements
     odes = statements.ode_system
@@ -32,7 +32,8 @@ def absorption(model, order, rate=None):
         raise ValueError("Setting absorption is not supported for ExplicitODESystem")
 
     depot = odes.find_depot()
-    if order == 0:
+    order = str(order)
+    if order == 'bolus':
         if depot:
             to_comp, _ = odes.get_compartment_flows(depot)[0]
             to_comp.dose = depot.dose
@@ -43,7 +44,7 @@ def absorption(model, order, rate=None):
                 statements.remove_symbol_definition(s, odes)
             model.statements = statements
             model.remove_unused_parameters_and_rvs()
-    elif order == 1:
+    elif order == '1':
         if not depot:
             dose_comp = odes.find_dosing()
             depot = odes.add_compartment('DEPOT')
@@ -55,6 +56,6 @@ def absorption(model, order, rate=None):
             model.statements = model.statements.insert(0, imat)     # FIXME: Don't set again
             odes.add_flow(depot, dose_comp, 1 / mat_param.symbol)
     else:
-        raise ValueError(f'Requested order {order} but only orders r0 and 1 are supported')
+        raise ValueError(f'Requested order {order} but only orders bolus, 0 and 1 are supported')
 
     return model
