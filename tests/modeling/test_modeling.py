@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 
 from pharmpy import Model
-from pharmpy.modeling import absorption, add_covariate_effect, boxcox, explicit_odes
+from pharmpy.modeling import absorption, add_covariate_effect, boxcox, explicit_odes, tdist
 
 
 @pytest.mark.parametrize('effect, covariate, operation, buf_new', [
@@ -163,3 +163,41 @@ def test_boxcox(pheno_path, etas, etab, buf_new):
 
     assert str(model.get_pred_pk_record()) == rec_ref
     assert model.parameters['lambda1'].init == 0.01
+
+
+def test_tdist(pheno_path):
+    model = Model(pheno_path)
+
+    tdist(model, ['ETA(1)'])
+    model.update_source()
+
+    symbol = 'ETAT1'
+
+    eta = 'ETA(1)'
+    theta = 'THETA(4)'
+
+    num_1 = f'{eta}**2 + 1'
+    denom_1 = f'4*{theta}'
+
+    num_2 = f'5*{eta}**4 + 16*{eta}**2 + 3'
+    denom_2 = f'96*{theta}**2'
+
+    num_3 = f'3*{eta}**6 + 19*{eta}**4 + 17*{eta}**2 - 15'
+    denom_3 = f'384*{theta}**3'
+
+    expression = f'(({num_1})/({denom_1}) + ({num_2})/({denom_2}) + ' \
+                 f'({num_3})/({denom_3}) + 1)*ETA(1)'
+
+    rec_ref = f'$PK\n\n\n' \
+              f'{symbol} = {expression}\n' \
+              f'IF(AMT.GT.0) BTIME=TIME\n' \
+              f'TAD=TIME-BTIME\n' \
+              f'      TVCL=THETA(1)*WGT\n' \
+              f'      TVV=THETA(2)*WGT\n' \
+              f'IF(APGR.LT.5) TVV=TVV*(1+THETA(3))\n' \
+              f'CL = TVCL*EXP(ETAB1)\n' \
+              f'      V=TVV*EXP(ETA(2))\n' \
+              f'      S1=V\n'
+
+    assert str(model.get_pred_pk_record()) == rec_ref
+    assert model.parameters['df1'].init == 80

@@ -25,6 +25,23 @@ def boxcox(model, list_of_etas=None):
     return model
 
 
+def tdist(model, list_of_etas=None):
+    """
+    Applies a t-distribution transformation to specified etas from a :class:`pharmpy.model`.
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model to apply boxcox transformation to.
+    list_of_etas : list
+        List of etas to transform. If None, all etas will be transformed (default).
+    """
+    etas = _get_etas(model, list_of_etas)
+    eta_transformation = EtaTransformation.tdist(len(etas))
+    _transform_etas(model, eta_transformation, etas)
+    return model
+
+
 def _get_etas(model, list_of_etas):
     rvs = model.random_variables
 
