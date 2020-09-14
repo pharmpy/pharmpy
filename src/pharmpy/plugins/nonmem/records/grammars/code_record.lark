@@ -1,7 +1,7 @@
 // A precedence climbing grammar is used for expressions
 // The top level has one full line of code per rule
 
-root: [pseudo] (statement | verbatim | empty_line)+
+root: empty_line* [pseudo] (statement | verbatim | empty_line)+
 
 empty_line: [WS] [COMMENT] LF
 LF: /\r?\n/

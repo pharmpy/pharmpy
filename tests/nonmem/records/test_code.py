@@ -82,6 +82,7 @@ def S(x):
     ('$PRED (CALLFL=0)\n\nK=1', S('K'), 1),
     ('$ERROR\nCL = 2', S('CL'), 2),
     ('$ERROR (ONLY OBSERVATION) \nCL = 2', S('CL'), 2),
+    ('$ERROR\n (ONLY OBSERVATION) \nCL = 2', S('CL'), 2),
     ('$PRED\nCL = 2\nEXIT\n', S('CL'), 2),
     ('$PRED\nCL = 2\nEXIT \n', S('CL'), 2),
     ('$PRED\nCL = 2\nEXIT 1 \n', S('CL'), 2),
