@@ -44,7 +44,7 @@ class NONMEMTableFile:
         else:
             table = NONMEMTable(''.join(content))       # Fallback to non-specific table type
         m = re.match(r'TABLE NO.\s+(\d+)', table_line)   # This is guaranteed to match
-        table.number = m.group(1)
+        table.number = int(m.group(1))
         m = re.match(r'TABLE NO.\s+\d+: (.*?): (?:Goal Function=(.*): )?Problem=(\d+) '
                      r'Subproblem=(\d+) Superproblem1=(\d+) Iteration1=(\d+) Superproblem2=(\d+) '
                      r'Iteration2=(\d+)', table_line)
