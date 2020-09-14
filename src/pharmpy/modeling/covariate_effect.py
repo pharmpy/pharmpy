@@ -56,6 +56,9 @@ def add_covariate_effect(model, parameter, covariate, effect, operation='*'):
 
 
 def _create_thetas(model, effect, covariate):
+    """Creates theta parameters and adds to parameter set of model.
+
+    Number of parameters depends on which covariate effect."""
     if effect == 'piece_lin':
         no_of_thetas = 2
     elif effect == 'lin_cat':
@@ -86,6 +89,7 @@ def _create_thetas(model, effect, covariate):
 
 
 def _count_categorical(model, covariate):
+    """Gets most common level per individual of specified covariate."""
     data = model.dataset.groupby('ID')[covariate]
     counts = data.agg(lambda ids: ids.value_counts(dropna=False).index[0])
 
@@ -93,6 +97,8 @@ def _count_categorical(model, covariate):
 
 
 def _calculate_mean(df, covariate, baselines=False):
+    """Calculate mean. Can be set to use baselines, otherwise it is
+    calculated first per individual, then for the group."""
     if baselines:
         return df[str(covariate)].mean()
     else:
@@ -100,6 +106,8 @@ def _calculate_mean(df, covariate, baselines=False):
 
 
 def _calculate_median(df, covariate, baselines=False):
+    """Calculate median. Can be set to use baselines, otherwise it is
+    calculated first per individual, then for the group."""
     if baselines:
         return df.pharmpy.baselines[str(covariate)].median()
     else:
@@ -107,6 +115,8 @@ def _calculate_median(df, covariate, baselines=False):
 
 
 def _choose_param_inits(effect, df, covariate):
+    """Chooses inits for parameters. If the effect is exponential, the
+    bounds need to be dynamic."""
     lower_expected = 0.1
     upper_expected = 100
     if effect == 'exp':
@@ -126,6 +136,7 @@ def _choose_param_inits(effect, df, covariate):
 
 
 def _create_template(effect, model, covariate):
+    """Creates Covariate class objects with effect template."""
     if effect == 'lin_cont':
         return CovariateEffect.linear_continuous()
     elif effect == 'lin_cat':
@@ -145,6 +156,14 @@ def _create_template(effect, model, covariate):
 
 class CovariateEffect:
     """
+    Covariate effect consisting of new assignments.
+
+    Attributes
+    ----------
+    template
+        Assignment based on covariate effect
+    statistic_type
+        Mean or median, depends on which covariate effect
 
     :meta private:
 
@@ -169,6 +188,10 @@ class CovariateEffect:
             self.statistic_type = 'median'
 
     def create_effect_statement(self, operation_str, statement_original):
+        """Creates statement for addition or multiplication of covariate
+        to parameter, e.g. (if parameter is CL and covariate is WGT):
+
+            CL = CLWGT + TVCL*EXP(ETA(1))"""
         operation = self._get_operation(operation_str)
 
         symbol = statement_original.symbol
@@ -179,6 +202,7 @@ class CovariateEffect:
         return statement_new
 
     def create_statistics_statement(self, parameter, mean, median):
+        """Creates statement where value of mean/median is explicit."""
         if self.statistic_type == 'mean':
             return Assignment(S(f'{parameter}_MEAN'), Float(mean, 6))
         else:
@@ -186,6 +210,7 @@ class CovariateEffect:
 
     @staticmethod
     def _get_operation(operation_str):
+        """Gets sympy operation based on string"""
         if operation_str == '*':
             return mul
         elif operation_str == '+':
@@ -193,6 +218,7 @@ class CovariateEffect:
 
     @classmethod
     def linear_continuous(cls):
+        """Linear continuous template (for continuous covariates)."""
         symbol = S('symbol')
         expression = 1 + S('theta') * (S('cov') - S('median'))
         template = Assignment(symbol, expression)
@@ -201,6 +227,7 @@ class CovariateEffect:
 
     @classmethod
     def linear_categorical(cls, counts):
+        """Linear categorical template (for categorical covariates)."""
         symbol = S('symbol')
         most_common = counts[counts.idxmax()]
         categories = counts.unique()
@@ -228,6 +255,8 @@ class CovariateEffect:
 
     @classmethod
     def piecewise_linear(cls):
+        """Piecewise linear ("hockey-stick") template (for continuous
+        covariates)."""
         symbol = S('symbol')
         values = [1 + S('theta1') * (S('cov') - S('median')),
                   1 + S('theta2') * (S('cov') - S('median'))]
@@ -242,6 +271,7 @@ class CovariateEffect:
 
     @classmethod
     def exponential(cls):
+        """Exponential template (for continuous covariates)."""
         symbol = S('symbol')
         expression = exp(S('theta') * (S('cov') - S('median')))
         template = Assignment(symbol, expression)
@@ -250,6 +280,7 @@ class CovariateEffect:
 
     @classmethod
     def power(cls):
+        """Power template (for continuous covariates)."""
         symbol = S('symbol')
         expression = (S('cov')/S('median'))**S('theta')
         template = Assignment(symbol, expression)
@@ -257,4 +288,5 @@ class CovariateEffect:
         return cls(template)
 
     def __str__(self):
+        """String representation of class."""
         return str(self.template)
