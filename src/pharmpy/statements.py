@@ -299,7 +299,7 @@ class CompartmentalSystem(ODESystem):
             if node.dose is None:
                 ics[sympy.Function(node.amount.name)(0)] = 0
             else:
-                ics[sympy.Function(node.amount.name)(0)] = node.dose.symbol
+                ics[sympy.Function(node.amount.name)(0)] = node.dose.amount
         return eqs, ics
 
     def __len__(self):
@@ -427,19 +427,40 @@ class Compartment:
 
 
 class Bolus:
-    def __init__(self, symbol):
-        self.symbol = symbols.symbol(str(symbol))
+    def __init__(self, amount):
+        self.amount = symbols.symbol(str(amount))
 
     @property
     def free_symbols(self):
-        return {self.symbol}
+        return {self.amount}
 
     def __deepcopy__(self, memo):
-        newone = type(self)(self.symbol)
+        newone = type(self)(self.amount)
         return newone
 
     def __eq__(self, other):
-        return isinstance(other, Bolus) and self.symbol == other.symbol
+        return isinstance(other, Bolus) and self.amount == other.amount
+
+
+class Infusion:
+    def __init__(self, amount, rate=None, duration=None):
+        if rate is None and duration is None:
+            raise ValueError('Need rate or duration for Infusion')
+        self.rate = rate
+        self.duration = duration
+        self.amount = amount
+
+    @property
+    def free_symbols(self):
+        return self.rate.free_symbols | self.duration.free_symbols | self.amount.free_symbols
+
+    def __deepcopy__(self, memo):
+        new = type(self)(self.amount, rate=self.rate, duration=self.duration)
+        return new
+
+    def __eq__(self, other):
+        return isinstance(other, Infusion) and self.rate == other.rate and \
+                self.duration == other.duration and self.amount == other.amount
 
 
 class ModelStatements(list):
