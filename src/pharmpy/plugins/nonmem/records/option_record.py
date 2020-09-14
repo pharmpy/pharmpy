@@ -62,12 +62,22 @@ class OptionRecord(Record):
 
             For example COMPARTMENT in $MODEL
         """
-        for key, value in self.all_options:
-            if key == option[:len(key)]:
+        next_value = False
+        for node in self.root.all('option'):
+            value = None
+            if next_value:
+                value = _get_key(node)
+                next_value = False
+            elif _get_key(node) == option[:len(_get_key(node))]:
+                value = _get_value(node)
+                if value is None:
+                    next_value = True
+            if value is not None:
                 if value[0] == '(' and value[-1] == ')':
                     yield value[1:-1].split()
                 else:
                     yield [value]
+
 
     def set_option(self, key, new_value):
         """ Set the value of an option

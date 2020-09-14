@@ -61,8 +61,11 @@ def test_remove_option_startswith(parser, buf, remove, expected):
 
 @pytest.mark.parametrize("buf,expected", [
     ('$MODEL COMP=1 COMP=2', [['1'], ['2']]),
+    ('$MODEL COMP 1 COMP 2', [['1'], ['2']]),
     ('$MODEL COMP=(CENTRAL) COMP=(PERIPHERAL)', [['CENTRAL'], ['PERIPHERAL']]),
     ('$MODEL COMP=(CENTRAL DEFDOSE DEFOBS) COMP=(PERIPHERAL)',
+        [['CENTRAL', 'DEFDOSE', 'DEFOBS'], ['PERIPHERAL']]),
+    ('$MODEL COMP  (CENTRAL DEFDOSE DEFOBS) COMP=(PERIPHERAL)',
         [['CENTRAL', 'DEFDOSE', 'DEFOBS'], ['PERIPHERAL']]),
 ])
 def test_get_option_lists(parser, buf, expected):
