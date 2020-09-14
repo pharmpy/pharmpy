@@ -41,3 +41,21 @@ def test_boxcox(datadir, fs):
 
     assert not re.search('ETAB1', mod_ori)
     assert re.search('ETAB1', mod_box)
+
+
+@pytest.mark.parametrize('fs', [[['pkgutil'], [source, etas_record]]], indirect=True)
+def test_tdist(datadir, fs):
+    fs.add_real_file(datadir / 'pheno_real.mod', target_path='run1.mod')
+    fs.add_real_file(datadir / 'pheno.dta', target_path='pheno.dta')
+
+    args = ['model', 'tdist', 'run1.mod', '--etas', 'ETA(1)']
+    cli.main(args)
+
+    with open('run1.mod', 'r') as f_ori, open('run2.mod', 'r') as f_tdist:
+        mod_ori = f_ori.read()
+        mod_fdist = f_tdist.read()
+
+    assert mod_ori != mod_fdist
+
+    assert not re.search('ETAT1', mod_ori)
+    assert re.search('ETAT1', mod_fdist)

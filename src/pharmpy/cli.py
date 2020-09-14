@@ -377,6 +377,20 @@ def boxcox(args):
     write_model_or_dataset(model, None, path=args.output_file, force=False)
 
 
+def tdist(args):
+    """Subcommand to apply t-distribution transformation to specified etas of model."""
+    from pharmpy.modeling import tdist
+
+    model = args.model
+    try:
+        etas = args.etas.split(" ")
+    except AttributeError:
+        etas = args.etas
+
+    tdist(model, etas)
+    write_model_or_dataset(model, None, path=args.output_file, force=False)
+
+
 def results_bootstrap(args):
     """Subcommand to generate bootstrap results"""
     if len(args.models) < 3:
@@ -701,6 +715,17 @@ parser_definition = [
             'help': 'Applies boxcox transformation',
             'description': 'Apply boxcox transformation on selected/all etas',
             'func': boxcox,
+            'parents': [args_model_input, args_output],
+            'args': [{'name': '--etas',
+                      'type': str,
+                      'default': None,
+                      'help': 'List of etas, mark group of etas in single quote '
+                              'separated by spaces'},
+                     ]}},
+        {'tdist': {
+            'help': 'Applies t-distribution transformation',
+            'description': 'Apply t-distribution transformation on selected/all etas',
+            'func': tdist,
             'parents': [args_model_input, args_output],
             'args': [{'name': '--etas',
                       'type': str,
