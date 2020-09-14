@@ -83,6 +83,7 @@ def S(x):
     ('$ERROR\nCL = 2', S('CL'), 2),
     ('$ERROR (ONLY OBSERVATION) \nCL = 2', S('CL'), 2),
     ('$ERROR\n (ONLY OBSERVATION) \nCL = 2', S('CL'), 2),
+    ('$ERROR\n(ONLY OBSERVATION)\nCL = 2', S('CL'), 2),
     ('$PRED\nCL = 2\nEXIT\n', S('CL'), 2),
     ('$PRED\nCL = 2\nEXIT \n', S('CL'), 2),
     ('$PRED\nCL = 2\nEXIT 1 \n', S('CL'), 2),

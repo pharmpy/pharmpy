@@ -6,8 +6,7 @@ root: empty_line* [pseudo] (statement | verbatim | empty_line)+
 empty_line: [WS] [COMMENT] LF
 LF: /\r?\n/
 
-
-pseudo: WS PSEUDO_STATEMENT ")" [WS] [LF]
+pseudo: [WS] PSEUDO_STATEMENT ")" [WS] [COMMENT] LF
 PSEUDO_STATEMENT: /[(][^)]*/
 
 verbatim: [WS] VERBATIM_STATEMENT [LF]
