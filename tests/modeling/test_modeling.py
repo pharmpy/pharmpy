@@ -20,8 +20,7 @@ from pharmpy.modeling import absorption, add_covariate_effect, boxcox, explicit_
     ('lin', 'WGT', '*', 'WGT_MEDIAN = 1.30000\n'
                         'CLWGT = (WGT - WGT_MEDIAN)*THETA(4) + 1\n'
                         'CL = CLWGT*TVCL*EXP(ETA(1))\n'),
-    ('cat', 'FA1', '*', 'FA1_MEDIAN = 1.00000\n'
-                        'IF (FA1.EQ.1.0) THEN\n'
+    ('cat', 'FA1', '*', 'IF (FA1.EQ.1.0) THEN\n'
                         'CLFA1 = 1\n'
                         'ELSE IF (FA1.EQ.0.0) THEN\n'
                         'CLFA1 = THETA(4) + 1\n'
@@ -37,6 +36,10 @@ from pharmpy.modeling import absorption, add_covariate_effect, boxcox, explicit_
     ('theta - cov + median', 'WGT', '*',
      'WGT_MEDIAN = 1.30000\n'
      'CLWGT = -WGT + WGT_MEDIAN + THETA(4)\n'
+     'CL = CLWGT*TVCL*EXP(ETA(1))\n'),
+    ('theta - cov + std', 'WGT', '*',
+     'WGT_STD = 0.704565\n'
+     'CLWGT = -WGT + WGT_STD + THETA(4)\n'
      'CL = CLWGT*TVCL*EXP(ETA(1))\n')
 ])
 def test_add_covariate_effect(pheno_path, effect, covariate, operation, buf_new):

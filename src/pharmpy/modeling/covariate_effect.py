@@ -36,6 +36,7 @@ def add_covariate_effect(model, parameter, covariate, effect, operation='*'):
     """
     mean = _calculate_mean(model.dataset, covariate)
     median = _calculate_median(model.dataset, covariate)
+    std = _calculate_std(model.dataset, covariate)
 
     thetas = _create_thetas(model, effect, covariate)
     covariate_effect = _create_template(effect, model, covariate)
@@ -43,14 +44,19 @@ def add_covariate_effect(model, parameter, covariate, effect, operation='*'):
     sset = model.statements
     param_statement = sset.find_assignment(parameter)
 
+    param_index = sset.index(param_statement)
+
     covariate_effect.apply(parameter, covariate, thetas)
-    statistic_statement = covariate_effect.create_statistics_statement(covariate, mean, median)
     effect_statement = covariate_effect.create_effect_statement(operation, param_statement)
 
-    param_index = sset.index(param_statement)
-    sset.insert(param_index + 1, statistic_statement)
-    sset.insert(param_index + 2, covariate_effect.template)
-    sset.insert(param_index + 3, effect_statement)
+    if effect != 'cat':
+        statistic_statement = covariate_effect.create_statistics_statement(covariate, mean,
+                                                                           median, std)
+        sset.insert(param_index + 1, statistic_statement)
+        param_index += 1
+
+    sset.insert(param_index + 1, covariate_effect.template)
+    sset.insert(param_index + 2, effect_statement)
 
     model.statements = sset
 
@@ -114,6 +120,15 @@ def _calculate_median(df, covariate, baselines=False):
         return df.pharmpy.baselines[str(covariate)].median()
     else:
         return df.groupby('ID')[str(covariate)].median().median()
+
+
+def _calculate_std(df, covariate, baselines=False):
+    """Calculate median. Can be set to use baselines, otherwise it is
+    calculated first per individual, then for the group."""
+    if baselines:
+        return df.pharmpy.baselines[str(covariate)].std()
+    else:
+        return df.groupby('ID')[str(covariate)].mean().std()
 
 
 def _choose_param_inits(effect, df, covariate):
@@ -196,8 +211,12 @@ class CovariateEffect:
             self.template.subs({'mean': f'{covariate}_MEAN'})
             self.statistic_type = 'mean'
         elif 'median' in template_str:
+            print(template_str)
             self.template.subs({'median': f'{covariate}_MEDIAN'})
             self.statistic_type = 'median'
+        elif 'std' in template_str:
+            self.template.subs({'std': f'{covariate}_STD'})
+            self.statistic_type = 'std'
 
     def create_effect_statement(self, operation_str, statement_original):
         """Creates statement for addition or multiplication of covariate
@@ -213,12 +232,14 @@ class CovariateEffect:
 
         return statement_new
 
-    def create_statistics_statement(self, covariate, mean, median):
+    def create_statistics_statement(self, covariate, mean, median, std):
         """Creates statement where value of mean/median is explicit."""
         if self.statistic_type == 'mean':
             return Assignment(S(f'{covariate}_MEAN'), Float(mean, 6))
-        else:
+        elif self.statistic_type == 'median':
             return Assignment(S(f'{covariate}_MEDIAN'), Float(median, 6))
+        elif self.statistic_type == 'std':
+            return Assignment(S(f'{covariate}_STD'), Float(std, 6))
 
     @staticmethod
     def _get_operation(operation_str):
