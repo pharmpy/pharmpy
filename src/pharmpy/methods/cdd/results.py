@@ -19,33 +19,13 @@ class CDDResults(Results):
     rst_path = Path(__file__).parent / 'report.rst'
 
     def __init__(self, case_results=None,
-                 skipped_individuals=None,
                  case_column=None):
-        # FIXME: Lots of boilerplate code ahead. Could be simplified with python 3.7 dataclass
-        #        or namedtuple
         self.case_results = case_results
-        self.skipped_individuals = skipped_individuals
         self.case_column = case_column
 
     def to_dict(self):
         return {'case_results': self.case_results,
-                'skipped_individuals': self.skipped_individuals,
                 'case_column': self.case_column}
-
-    def to_dataframe(self):
-        try:
-            ncol = max([len(s) for s in self.skipped_individuals])
-            names = ['skipped_ID' if i < 1 else 'skipped_ID_' + str(i+1)
-                     for i in range(ncol)]
-            skipped = pd.DataFrame(self.skipped_individuals,
-                                   columns=names,
-                                   index=self.case_results.index)
-            df = pd.concat([self.case_results,
-                            skipped],
-                           axis=1, sort=False)
-            return df
-        except Exception:
-            return None
 
     @classmethod
     def from_dict(cls, d):
@@ -124,8 +104,7 @@ def calculate_results(base_model, cdd_models, case_column, skipped_individuals,
 
     cdd_model_names = [m.name for m in cdd_models]
 
-    res = CDDResults(skipped_individuals=skipped_individuals,
-                     case_column=case_column)
+    res = CDDResults(case_column=case_column)
 
     # create Series of NaN values and then replace any computable results
     cook_temp = pd.Series(np.nan, index=cdd_model_names)
@@ -152,7 +131,9 @@ def calculate_results(base_model, cdd_models, case_column, skipped_individuals,
                                                      skipped_individuals),
                       'covariance_ratio':
                           compute_covariance_ratios(cdd_models,
-                                                    base_model.modelfit_results.covariance_matrix)},
+                                                    base_model.modelfit_results.covariance_matrix),
+                      'skipped_individuals': skipped_individuals
+                      },
                      index=cdd_model_names)
     return res
 
