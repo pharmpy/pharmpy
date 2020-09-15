@@ -51,10 +51,10 @@ Covariate effects may also be applied to a model.
 .. jupyter-execute::
 
    from pharmpy.modeling import add_covariate_effect
-   add_covariate_effect(model, 'CL', 'WGT', 'lin_cont')
+   add_covariate_effect(model, 'CL', 'WGT', 'lin')
 
 Here, *CL* indicates the name of the parameter onto which you want to apply the effect, *WGT* is the covariate, and
-*lin_cont* (linear function on continuous covariates) is the effect you want to apply.
+*lin* (linear function on continuous covariates) is the effect you want to apply.
 See :py:class:`pharmpy.modeling.add_covariate_effect` for effects with available templates.
 
 .. jupyter-execute::

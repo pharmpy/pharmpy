@@ -15,7 +15,7 @@ def S(x):
      exp(S('COVEFF1') * (S('WGT') - S('WGT_MEDIAN')))),
     (CovariateEffect.power(), S('CLWGT'),
      (S('WGT')/S('WGT_MEDIAN'))**S('COVEFF1')),
-    (CovariateEffect.linear_continuous(), S('CLWGT'),
+    (CovariateEffect.linear(), S('CLWGT'),
      1 + S('COVEFF1') * (S('WGT') - S('WGT_MEDIAN')))
 ])
 def test_apply(cov_eff, symbol, expression):

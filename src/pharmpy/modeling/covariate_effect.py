@@ -15,8 +15,8 @@ def add_covariate_effect(model, parameter, covariate, effect, operation='*'):
     """
     Adds covariate effect to :class:`pharmpy.model`. The following effects have templates:
 
-    - Linear function for continuous covariates (*lin_cont*)
-    - Linear function for categorical covariates (*lin_cat*)
+    - Linear function for continuous covariates (*lin*)
+    - Linear function for categorical covariates (*cat*)
     - Piecewise linear function/"hockey-stick", continuous covariates only (*piece_lin*)
     - Exponential function, continuous covariates only (*exp*)
     - Power function, continuous covariates only (*pow*)
@@ -61,7 +61,7 @@ def _create_thetas(model, effect, covariate):
     Number of parameters depends on which covariate effect."""
     if effect == 'piece_lin':
         no_of_thetas = 2
-    elif effect == 'lin_cat':
+    elif effect == 'cat':
         no_of_thetas = _count_categorical(model, covariate).nunique()
     else:
         no_of_thetas = 1
@@ -149,11 +149,11 @@ def _choose_param_inits(effect, df, covariate):
 
 def _create_template(effect, model, covariate):
     """Creates Covariate class objects with effect template."""
-    if effect == 'lin_cont':
-        return CovariateEffect.linear_continuous()
-    elif effect == 'lin_cat':
+    if effect == 'lin':
+        return CovariateEffect.linear()
+    elif effect == 'cat':
         counts = _count_categorical(model, covariate)
-        return CovariateEffect.linear_categorical(counts)
+        return CovariateEffect.categorical(counts)
     elif effect == 'piece_lin':
         return CovariateEffect.piecewise_linear()
     elif effect == 'exp':
@@ -229,7 +229,7 @@ class CovariateEffect:
             return add
 
     @classmethod
-    def linear_continuous(cls):
+    def linear(cls):
         """Linear continuous template (for continuous covariates)."""
         symbol = S('symbol')
         expression = 1 + S('theta') * (S('cov') - S('median'))
@@ -238,7 +238,7 @@ class CovariateEffect:
         return cls(template)
 
     @classmethod
-    def linear_categorical(cls, counts):
+    def categorical(cls, counts):
         """Linear categorical template (for categorical covariates)."""
         symbol = S('symbol')
         most_common = counts[counts.idxmax()]

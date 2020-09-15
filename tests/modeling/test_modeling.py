@@ -17,16 +17,16 @@ from pharmpy.modeling import absorption, add_covariate_effect, boxcox, explicit_
     ('pow', 'WGT', '*', 'WGT_MEDIAN = 1.30000\n'
                         'CLWGT = (WGT/WGT_MEDIAN)**THETA(4)\n'
                         'CL = CLWGT*TVCL*EXP(ETA(1))\n'),
-    ('lin_cont', 'WGT', '*', 'WGT_MEDIAN = 1.30000\n'
-                             'CLWGT = (WGT - WGT_MEDIAN)*THETA(4) + 1\n'
-                             'CL = CLWGT*TVCL*EXP(ETA(1))\n'),
-    ('lin_cat', 'FA1', '*', 'FA1_MEDIAN = 1.00000\n'
-                            'IF (FA1.EQ.1.0) THEN\n'
-                            'CLFA1 = 1\n'
-                            'ELSE IF (FA1.EQ.0.0) THEN\n'
-                            'CLFA1 = THETA(4) + 1\n'
-                            'END IF\n'
-                            'CL = CLFA1*TVCL*EXP(ETA(1))\n'),
+    ('lin', 'WGT', '*', 'WGT_MEDIAN = 1.30000\n'
+                        'CLWGT = (WGT - WGT_MEDIAN)*THETA(4) + 1\n'
+                        'CL = CLWGT*TVCL*EXP(ETA(1))\n'),
+    ('cat', 'FA1', '*', 'FA1_MEDIAN = 1.00000\n'
+                        'IF (FA1.EQ.1.0) THEN\n'
+                        'CLFA1 = 1\n'
+                        'ELSE IF (FA1.EQ.0.0) THEN\n'
+                        'CLFA1 = THETA(4) + 1\n'
+                        'END IF\n'
+                        'CL = CLFA1*TVCL*EXP(ETA(1))\n'),
     ('piece_lin', 'WGT', '*', 'WGT_MEDIAN = 1.30000\n'
                               'IF (WGT.LE.WGT_MEDIAN) THEN\n'
                               'CLWGT = (WGT - WGT_MEDIAN)*THETA(4) + 1\n'
@@ -68,7 +68,7 @@ def test_add_covariate_effect_nan(pheno_path):
     data['new_col'] = new_col
     model.dataset = data
 
-    add_covariate_effect(model, 'CL', 'new_col', 'lin_cat')
+    add_covariate_effect(model, 'CL', 'new_col', 'cat')
     model.update_source(nofiles=True)
 
     assert not re.search('NaN', str(model))
