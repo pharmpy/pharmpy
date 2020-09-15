@@ -320,9 +320,9 @@ def _dosing(model, dose_comp):
         if (df['RATE'] == 0).all():
             return Bolus('AMT')
         elif (df['RATE'] == -1).any():
-            return Infusion('AMT', rate='R{dose_comp}')
+            return Infusion('AMT', rate=f'R{dose_comp}')
         elif (df['RATE'] == -2).any():
-            return Infusion('AMT', duration='D{dose_comp}')
+            return Infusion('AMT', duration=f'D{dose_comp}')
         else:
             return Infusion('AMT', rate='RATE')
     else:

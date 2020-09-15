@@ -32,7 +32,7 @@ def add_covariate_effect(model, parameter, covariate, effect, operation='*'):
     effect : str
         Type of covariate effect. May be abbreviated covariate effect (see above) or custom.
     operation : str, optional
-        Whether the covariate effect should be added or multiplied.
+        Whether the covariate effect should be added or multiplied (default).
     """
     mean = _calculate_mean(model.dataset, covariate)
     median = _calculate_median(model.dataset, covariate)
@@ -70,10 +70,12 @@ def _create_thetas(model, effect, covariate):
 
     theta_names = dict()
     theta_name = str(model.create_symbol(stem='COVEFF', force_numbering=True))
-    theta_lower, theta_upper = _choose_param_inits(effect, model.dataset, covariate)
+    init, theta_lower, theta_upper = _choose_param_inits(effect,
+                                                         model.dataset,
+                                                         covariate)
 
     if no_of_thetas == 1:
-        pset.add(Parameter(theta_name, theta_upper, theta_lower))
+        pset.add(Parameter(theta_name, init, theta_lower, theta_upper))
         theta_names['theta'] = theta_name
     else:
         cov_eff_number = int(re.findall(r'\d', theta_name)[0])
@@ -117,22 +119,32 @@ def _calculate_median(df, covariate, baselines=False):
 def _choose_param_inits(effect, df, covariate):
     """Chooses inits for parameters. If the effect is exponential, the
     bounds need to be dynamic."""
-    lower_expected = 0.1
-    upper_expected = 100
+    lower = -100000
+    upper = 100000
+    init = 0.001
+
     if effect == 'exp':
         min_diff = df[str(covariate)].min() - _calculate_median(df, covariate)
         max_diff = df[str(covariate)].max() - _calculate_median(df, covariate)
+
+        lower_expected = 0.01
+        upper_expected = 100
+
         if min_diff == 0 or max_diff == 0:
-            return lower_expected, upper_expected
+            lower = lower_expected
+            upper = upper_expected
         else:
             log_base = 10
             lower = max(math.log(lower_expected, log_base)/max_diff,
                         math.log(upper_expected, log_base)/min_diff)
             upper = min(math.log(lower_expected, log_base)/min_diff,
                         math.log(upper_expected, log_base)/max_diff)
-            return lower, upper
+
+            if lower > init or init > upper:
+                init = (upper + lower)/2
+        return init, lower, upper
     else:
-        return lower_expected, upper_expected
+        return init, lower, upper
 
 
 def _create_template(effect, model, covariate):

@@ -1,7 +1,7 @@
 import sympy
 
 from pharmpy.parameter import Parameter
-from pharmpy.statements import Assignment, CompartmentalSystem, ExplicitODESystem, Infusion
+from pharmpy.statements import Assignment, Bolus, CompartmentalSystem, ExplicitODESystem, Infusion
 
 
 def explicit_odes(model):
@@ -28,9 +28,9 @@ def _have_zero_order_absorption(model):
     dose = dosing.dose
     if isinstance(dose, Infusion):
         if dose.rate is None:
-            value = dose.rate
-        else:
             value = dose.duration
+        else:
+            value = dose.rate
         if isinstance(value, sympy.Symbol) or isinstance(value, str):
             name = str(value)
             if name not in model.dataset.columns:
@@ -66,6 +66,17 @@ def absorption(model, order, rate=None):
                 statements.remove_symbol_definition(s, odes)
             model.statements = statements
             model.remove_unused_parameters_and_rvs()
+        elif _have_zero_order_absorption(model):
+            dose_comp = odes.find_dosing()
+            old_symbols = dose_comp.free_symbols
+            dose_comp.dose = Bolus(dose_comp.dose.amount)
+            unneeded_symbols = old_symbols - dose_comp.dose.free_symbols
+            for symb in unneeded_symbols:
+                statements.remove_symbol_definition(symb, odes)
+            model.remove_unused_parameters_and_rvs()
+    elif order == '0':
+        if not _have_zero_order_absorption(model):
+            pass
     elif order == '1':
         if not depot:
             dose_comp = odes.find_dosing()
@@ -77,6 +88,7 @@ def absorption(model, order, rate=None):
             imat = Assignment('MAT', mat_param.symbol)
             model.statements = model.statements.insert(0, imat)     # FIXME: Don't set again
             odes.add_flow(depot, dose_comp, 1 / mat_param.symbol)
+            model.remove_unused_parameters_and_rvs()
     else:
         raise ValueError(f'Requested order {order} but only orders bolus, 0 and 1 are supported')
 
