@@ -8,35 +8,35 @@ from pharmpy.modeling import absorption, add_covariate_effect, boxcox, explicit_
 
 
 @pytest.mark.parametrize('effect, covariate, operation, buf_new', [
-    ('exp', 'WGT', '*', 'CLWGT = EXP((-CL_MEDIAN + WGT)*THETA(4))\n'
-                        'CL_MEDIAN = 1.30000\n'
+    ('exp', 'WGT', '*', 'CL_MEDIAN = 1.30000\n'
+                        'CLWGT = EXP((-CL_MEDIAN + WGT)*THETA(4))\n'
                         'CL = CLWGT*TVCL*EXP(ETA(1))\n'),
-    ('exp', 'WGT', '+', 'CLWGT = EXP((-CL_MEDIAN + WGT)*THETA(4))\n'
-                        'CL_MEDIAN = 1.30000\n'
+    ('exp', 'WGT', '+', 'CL_MEDIAN = 1.30000\n'
+                        'CLWGT = EXP((-CL_MEDIAN + WGT)*THETA(4))\n'
                         'CL = CLWGT + TVCL*EXP(ETA(1))\n'),
-    ('pow', 'WGT', '*', 'CLWGT = (WGT/CL_MEDIAN)**THETA(4)\n'
-                        'CL_MEDIAN = 1.30000\n'
+    ('pow', 'WGT', '*', 'CL_MEDIAN = 1.30000\n'
+                        'CLWGT = (WGT/CL_MEDIAN)**THETA(4)\n'
                         'CL = CLWGT*TVCL*EXP(ETA(1))\n'),
-    ('lin_cont', 'WGT', '*', 'CLWGT = (-CL_MEDIAN + WGT)*THETA(4) + 1\n'
-                             'CL_MEDIAN = 1.30000\n'
+    ('lin_cont', 'WGT', '*', 'CL_MEDIAN = 1.30000\n'
+                             'CLWGT = (-CL_MEDIAN + WGT)*THETA(4) + 1\n'
                              'CL = CLWGT*TVCL*EXP(ETA(1))\n'),
-    ('lin_cat', 'FA1', '*', 'IF (FA1.EQ.1.0) THEN\n'
+    ('lin_cat', 'FA1', '*', 'CL_MEDIAN = 1.00000\n'
+                            'IF (FA1.EQ.1.0) THEN\n'
                             'CLFA1 = 1\n'
                             'ELSE IF (FA1.EQ.0.0) THEN\n'
                             'CLFA1 = THETA(4) + 1\n'
                             'END IF\n'
-                            'CL_MEDIAN = 1.00000\n'
                             'CL = CLFA1*TVCL*EXP(ETA(1))\n'),
-    ('piece_lin', 'WGT', '*', 'IF (CL_MEDIAN.GE.WGT) THEN\n'
+    ('piece_lin', 'WGT', '*', 'CL_MEDIAN = 1.30000\n'
+                              'IF (CL_MEDIAN.GE.WGT) THEN\n'
                               'CLWGT = (-CL_MEDIAN + WGT)*THETA(4) + 1\n'
                               'ELSE\n'
                               'CLWGT = (-CL_MEDIAN + WGT)*THETA(5) + 1\n'
                               'END IF\n'
-                              'CL_MEDIAN = 1.30000\n'
                               'CL = CLWGT*TVCL*EXP(ETA(1))\n'),
     ('theta - cov + median', 'WGT', '*',
-     'CLWGT = CL_MEDIAN - WGT + THETA(4)\n'
      'CL_MEDIAN = 1.30000\n'
+     'CLWGT = CL_MEDIAN - WGT + THETA(4)\n'
      'CL = CLWGT*TVCL*EXP(ETA(1))\n')
 ])
 def test_add_covariate_effect(pheno_path, effect, covariate, operation, buf_new):

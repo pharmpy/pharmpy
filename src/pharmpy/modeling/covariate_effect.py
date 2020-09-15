@@ -48,8 +48,8 @@ def add_covariate_effect(model, parameter, covariate, effect, operation='*'):
     effect_statement = covariate_effect.create_effect_statement(operation, param_statement)
 
     param_index = sset.index(param_statement)
-    sset.insert(param_index + 1, covariate_effect.template)
-    sset.insert(param_index + 2, statistic_statement)
+    sset.insert(param_index + 1, statistic_statement)
+    sset.insert(param_index + 2, covariate_effect.template)
     sset.insert(param_index + 3, effect_statement)
 
     model.statements = sset
