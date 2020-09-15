@@ -12,11 +12,11 @@ def S(x):
 
 @pytest.mark.parametrize('cov_eff,symbol,expression', [
     (CovariateEffect.exponential(), S('CLWGT'),
-     exp(S('COVEFF1') * (S('WGT') - S('CL_MEDIAN')))),
+     exp(S('COVEFF1') * (S('WGT') - S('WGT_MEDIAN')))),
     (CovariateEffect.power(), S('CLWGT'),
-     (S('WGT')/S('CL_MEDIAN'))**S('COVEFF1')),
+     (S('WGT')/S('WGT_MEDIAN'))**S('COVEFF1')),
     (CovariateEffect.linear_continuous(), S('CLWGT'),
-     1 + S('COVEFF1') * (S('WGT') - S('CL_MEDIAN')))
+     1 + S('COVEFF1') * (S('WGT') - S('WGT_MEDIAN')))
 ])
 def test_apply(cov_eff, symbol, expression):
     cov_eff.apply(parameter='CL', covariate='WGT',

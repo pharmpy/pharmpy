@@ -44,7 +44,7 @@ def add_covariate_effect(model, parameter, covariate, effect, operation='*'):
     param_statement = sset.find_assignment(parameter)
 
     covariate_effect.apply(parameter, covariate, thetas)
-    statistic_statement = covariate_effect.create_statistics_statement(parameter, mean, median)
+    statistic_statement = covariate_effect.create_statistics_statement(covariate, mean, median)
     effect_statement = covariate_effect.create_effect_statement(operation, param_statement)
 
     param_index = sset.index(param_statement)
@@ -193,10 +193,10 @@ class CovariateEffect:
 
         template_str = [str(symbol) for symbol in self.template.free_symbols]
         if 'mean' in template_str:
-            self.template.subs({'mean': f'{parameter}_MEAN'})
+            self.template.subs({'mean': f'{covariate}_MEAN'})
             self.statistic_type = 'mean'
         elif 'median' in template_str:
-            self.template.subs({'median': f'{parameter}_MEDIAN'})
+            self.template.subs({'median': f'{covariate}_MEDIAN'})
             self.statistic_type = 'median'
 
     def create_effect_statement(self, operation_str, statement_original):
@@ -213,12 +213,12 @@ class CovariateEffect:
 
         return statement_new
 
-    def create_statistics_statement(self, parameter, mean, median):
+    def create_statistics_statement(self, covariate, mean, median):
         """Creates statement where value of mean/median is explicit."""
         if self.statistic_type == 'mean':
-            return Assignment(S(f'{parameter}_MEAN'), Float(mean, 6))
+            return Assignment(S(f'{covariate}_MEAN'), Float(mean, 6))
         else:
-            return Assignment(S(f'{parameter}_MEDIAN'), Float(median, 6))
+            return Assignment(S(f'{covariate}_MEDIAN'), Float(median, 6))
 
     @staticmethod
     def _get_operation(operation_str):
