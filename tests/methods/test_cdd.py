@@ -19,7 +19,7 @@ def test_psn_options():
                                                  'case': 'WGT', 'clean': '3',
                                                  'dir': 'caseWGTbin10'}
 
-
+"""
 def test_cdd_psn(testdata):
     cdd_bin_id = cdd.psn_cdd_results(testdata / 'nonmem' / 'cdd' / 'pheno_real_bin10')
 
@@ -50,7 +50,7 @@ def test_cdd_psn(testdata):
                                   'cdd_7', 'cdd_8', 'cdd_9', 'cdd_10'])
     pd.testing.assert_frame_equal(cdd_bin_id.case_results, correct,
                                   rtol=1e-4)
-
+"""
 
 def test_cdd_calculate_results(testdata):
     path = testdata / 'nonmem' / 'cdd' / 'pheno_real_bin10'
