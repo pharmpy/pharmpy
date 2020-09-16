@@ -201,8 +201,13 @@ $COVARIANCE UNCONDITIONAL
 $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
        NOPRINT ONEHEADER FILE=sdtab1
 '''
-
     assert str(model) == correct
+
+    # Bolus to 1st order
+    model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan1.mod')
+    absorption(model, 1)
+    model.update_source(nofiles=True)
+    assert str(model).split('\n')[2:] == correct.split('\n')[2:]
 
 
 @pytest.mark.parametrize('etas, etab, buf_new', [
