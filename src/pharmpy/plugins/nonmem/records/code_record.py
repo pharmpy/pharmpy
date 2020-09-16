@@ -423,6 +423,8 @@ class CodeRecord(Record):
         function_map = {f: symbols.symbol(f'A({i + 1})') for i, f in enumerate(functions)}
         statements = []
         for i, ode in enumerate(odes):
+            # For now Piecewise signals zero-order infusions, which are handled with parameters
+            ode = ode.replace(sympy.Piecewise, lambda a1, a2: 0)
             symbol = symbols.symbol(f'DADT({i + 1})')
             expression = ode.rhs.subs(function_map)
             statements.append(Assignment(symbol, expression))

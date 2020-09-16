@@ -298,7 +298,7 @@ class CompartmentalSystem(ODESystem):
         inputs = []
         for node in self._g.nodes:
             if node.dose is not None and isinstance(node.dose, Infusion):
-                if hasattr(node.dose.rate):
+                if node.dose.rate is not None:
                     expr = node.dose.rate
                     cond = node.dose.amount / node.dose.rate
                 else:
