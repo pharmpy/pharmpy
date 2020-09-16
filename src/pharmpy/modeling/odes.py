@@ -1,5 +1,6 @@
 import sympy
 
+import pharmpy.symbols
 from pharmpy.parameter import Parameter
 from pharmpy.statements import Assignment, Bolus, CompartmentalSystem, ExplicitODESystem, Infusion
 
@@ -82,12 +83,15 @@ def absorption(model, order, rate=None):
             dose_comp = odes.find_dosing()
             depot = odes.add_compartment('DEPOT')
             depot.dose = Bolus(dose_comp.dose.amount)
+            symbols = dose_comp.free_symbols
+            for s in symbols:
+                statements.remove_symbol_definition(s, odes)
             dose_comp.dose = None
             mat_param = Parameter('TVMAT', init=0.1, lower=0)
             model.parameters.add(mat_param)
             imat = Assignment('MAT', mat_param.symbol)
-            model.statements = model.statements.insert(0, imat)     # FIXME: Don't set again
-            odes.add_flow(depot, dose_comp, 1 / mat_param.symbol)
+            model.statements.insert(0, imat)
+            odes.add_flow(depot, dose_comp, 1 / pharmpy.symbols.symbol('MAT'))
             model.remove_unused_parameters_and_rvs()
     else:
         raise ValueError(f'Requested order {order} but only orders bolus, 0 and 1 are supported')

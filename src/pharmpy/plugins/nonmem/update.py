@@ -1,8 +1,8 @@
 import re
 
 from pharmpy import data
-from pharmpy.statements import (Bolus, CompartmentalSystem, ExplicitODESystem, ModelStatements,
-                                ODESystem)
+from pharmpy.statements import (Assignment, Bolus, CompartmentalSystem, ExplicitODESystem,
+                                ModelStatements, ODESystem)
 from pharmpy.symbols import symbol
 
 
@@ -133,7 +133,52 @@ def update_ode_system(model, old, new):
             df = model.dataset
             df.drop(columns=['RATE'], inplace=True)
             model.dataset = df
-        if old.find_depot() and not new.find_depot():
+        if not old.find_depot() and new.find_depot():
+            # Depot was added
+            subs = model.control_stream.get_records('SUBROUTINES')[0]
+            advan = subs.get_option_startswith('ADVAN')
+            trans = subs.get_option_startswith('TRANS')
+            statements = model.statements
+            _, rate = new.get_compartment_flows(new.find_depot(), out=True)[0]
+            statements.add_before_odes(Assignment('KA', rate))
+            if advan == 'ADVAN1':
+                subs.replace_option('ADVAN1', 'ADVAN2')
+                secondary = secondary_pk_param_conversion_map(len(old), 1, removed=False)
+                statements.subs(secondary)
+            elif advan == 'ADVAN3':
+                subs.replace_option('ADVAN3', 'ADVAN4')
+                secondary = secondary_pk_param_conversion_map(len(old), 1, removed=False)
+                statements.subs(secondary)
+                if trans == 'TRANS1':
+                    statements.subs({symbol('K12'): symbol('K23'), symbol('K21'): symbol('K32')})
+                elif trans == 'TRANS4':
+                    statements.subs({symbol('V1'): symbol('V2'), symbol('V2'): symbol('V3')})
+                elif trans == 'TRANS6':
+                    statements.subs({symbol('K21'): symbol('K32')})
+            elif advan == 'ADVAN11':
+                subs.replace_option('ADVAN11', 'ADVAN12')
+                secondary = secondary_pk_param_conversion_map(len(old), 1, removed=False)
+                statements.subs(secondary)
+                if trans == 'TRANS1':
+                    statements.subs({symbol('K12'): symbol('K23'), symbol('K21'): symbol('K32'),
+                                     symbol('K13'): symbol('K24'), symbol('K31'): symbol('K42')})
+                elif trans == 'TRANS4':
+                    statements.subs({symbol('V1'): symbol('V2'), symbol('Q2'): symbol('Q3'),
+                                     symbol('V2'): symbol('V3'), symbol('Q3'): symbol('Q4'),
+                                     symbol('V3'): symbol('V4')})
+                elif trans == 'TRANS6':
+                    statements.subs({symbol('K31'): symbol('K42'), symbol('K21'): symbol('K32')})
+            elif advan == 'ADVAN5' or advan == 'ADVAN7':
+                model_record = model.control_stream.get_records('MODEL')[0]
+                added = set(new.names) - set(old.names)
+                added_name = list(added)[0]     # Assume only one!
+                model_record.add_compartment(added_name, dosing=True)
+                primary = primary_pk_param_conversion_map(len(old), 1, removed=True)
+                statements.subs(primary)
+                secondary = secondary_pk_param_conversion_map(len(old), 1, removed=True)
+                statements.subs(secondary)
+        elif old.find_depot() and not new.find_depot():
+            # Depot was removed
             subs = model.control_stream.get_records('SUBROUTINES')[0]
             advan = subs.get_option_startswith('ADVAN')
             trans = subs.get_option_startswith('TRANS')
@@ -147,7 +192,7 @@ def update_ode_system(model, old, new):
                 secondary = secondary_pk_param_conversion_map(len(old), 1)
                 statements.subs(secondary)
                 if trans == 'TRANS1':
-                    statements.subs({symbol('K23'): symbol('K12'), symbol('K32'): symbol('K32')})
+                    statements.subs({symbol('K23'): symbol('K12'), symbol('K32'): symbol('K21')})
                 elif trans == 'TRANS4':
                     statements.subs({symbol('V2'): symbol('V1'), symbol('V3'): symbol('V2')})
                 elif trans == 'TRANS6':
@@ -157,7 +202,7 @@ def update_ode_system(model, old, new):
                 secondary = secondary_pk_param_conversion_map(len(old), 1)
                 statements.subs(secondary)
                 if trans == 'TRANS1':
-                    statements.subs({symbol('K23'): symbol('K12'), symbol('K32'): symbol('K32'),
+                    statements.subs({symbol('K23'): symbol('K12'), symbol('K32'): symbol('K21'),
                                      symbol('K24'): symbol('K13'), symbol('K42'): symbol('K31')})
                 elif trans == 'TRANS4':
                     statements.subs({symbol('V2'): symbol('V1'), symbol('Q3'): symbol('Q2'),
@@ -202,19 +247,27 @@ def primary_pk_param_conversion_map(ncomp, removed):
     return d
 
 
-def secondary_pk_param_conversion_map(ncomp, removed):
-    """Conversion map for pk parameters for one removed compartment
+def secondary_pk_param_conversion_map(ncomp, compno, removed=True):
+    """Conversion map for pk parameters for one removed or added compartment
 
-        ncomp - total number of compartments before removing (including output)
-        removed - number of removed compartment
+        ncomp - total number of compartments before removing/adding (including output)
+        compno - number of removed/added compartment
     """
     d = dict()
-    for i in range(removed + 1, ncomp + 1):
-        d.update({symbol(f'S{i}'): symbol(f'S{i - 1}'),
-                  symbol(f'F{i}'): symbol(f'F{i - 1}'),
-                  symbol(f'R{i}'): symbol(f'R{i - 1}'),
-                  symbol(f'D{i}'): symbol(f'D{i - 1}'),
-                  symbol(f'ALAG{i}'): symbol(f'ALAG{i - 1}')})
+    if removed:
+        for i in range(compno + 1, ncomp + 1):
+            d.update({symbol(f'S{i}'): symbol(f'S{i - 1}'),
+                      symbol(f'F{i}'): symbol(f'F{i - 1}'),
+                      symbol(f'R{i}'): symbol(f'R{i - 1}'),
+                      symbol(f'D{i}'): symbol(f'D{i - 1}'),
+                      symbol(f'ALAG{i}'): symbol(f'ALAG{i - 1}')})
+    else:
+        for i in range(compno, ncomp + 1):
+            d.update({symbol(f'S{i}'): symbol(f'S{i + 1}'),
+                      symbol(f'F{i}'): symbol(f'F{i + 1}'),
+                      symbol(f'R{i}'): symbol(f'R{i + 1}'),
+                      symbol(f'D{i}'): symbol(f'D{i + 1}'),
+                      symbol(f'ALAG{i}'): symbol(f'ALAG{i + 1}')})
     return d
 
 
@@ -222,18 +275,22 @@ def update_statements(model, old, new, trans):
     trans['NaN'] = int(data.conf.na_rep)
     main_statements = ModelStatements()
     error_statements = ModelStatements()
-    found_ode = False
+
+    new_odes = new.ode_system
+    if new_odes is not None:
+        old_odes = old.ode_system
+        if new_odes != old_odes:
+            update_ode_system(model, old_odes, new_odes)
+
+    after_odes = False
     for s in new:
         if isinstance(s, ODESystem):
-            found_ode = True
-            old_system = old.ode_system
-            if s != old_system:
-                update_ode_system(model, old_system, s)
+            after_odes = True
+        elif after_odes:
+            error_statements.append(s)
         else:
-            if found_ode:
-                error_statements.append(s)
-            else:
-                main_statements.append(s)
+            main_statements.append(s)
+
     main_statements.subs(trans)
     rec = model.get_pred_pk_record()
     rec.statements = main_statements

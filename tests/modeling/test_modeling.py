@@ -157,8 +157,52 @@ def test_absorption(testdata):
     model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan2.mod')
     advan2_before = str(model)
     absorption(model, 1)
-    model.update_source()
+    model.update_source(nofiles=True)
     assert str(model) == advan2_before
+
+    # 0-order to 1st order
+    model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan1_zero_order.mod')
+    absorption(model, 1)
+    model.update_source(nofiles=True)
+    correct = '''$PROBLEM PHENOBARB SIMPLE MODEL
+$DATA pheno_zero_order.csv  IGNORE=@
+$INPUT ID TIME AMT WGT APGR DV FA1 FA2
+$SUBROUTINE ADVAN2 TRANS2
+
+$PK
+MAT = THETA(4)
+TAD=TIME-BTIME
+TVCL=THETA(1)*WGT
+TVV=THETA(2)*WGT
+IF(APGR.LT.5) TVV=TVV*(1+THETA(3))
+CL=TVCL*EXP(ETA(1))
+V=TVV*EXP(ETA(2))
+S2 = V
+KA = 1/MAT
+
+$ERROR
+W=F
+Y=F+W*EPS(1)
+IPRED=F
+IRES=DV-IPRED
+IWRES=IRES/W
+
+$THETA (0,0.00469307) ; CL
+$THETA (0,1.00916) ; V
+$THETA (-.99,.1)
+$THETA  (0,0.1) ; TVMAT
+$OMEGA DIAGONAL(2)
+ 0.0309626  ;       IVCL
+ 0.031128  ;        IVV
+
+$SIGMA 1e-7
+$ESTIMATION METHOD=1 INTERACTION
+$COVARIANCE UNCONDITIONAL
+$TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
+       NOPRINT ONEHEADER FILE=sdtab1
+'''
+
+    assert str(model) == correct
 
 
 @pytest.mark.parametrize('etas, etab, buf_new', [

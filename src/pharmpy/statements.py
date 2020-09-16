@@ -34,8 +34,8 @@ class Assignment:
         substitutions - dictionary with old-new pair (can be type str or
                         sympy symbol)
         """
-        self.symbol = self.symbol.subs(substitutions)
-        self.expression = self.expression.subs(substitutions)
+        self.symbol = self.symbol.subs(substitutions, simultaneous=True)
+        self.expression = self.expression.subs(substitutions, simultaneous=True)
 
     @property
     def free_symbols(self):
@@ -166,7 +166,7 @@ class CompartmentalSystem(ODESystem):
     def subs(self, substitutions):
         g_copy = copy.deepcopy(self._g)
         for (u, v, rate) in self._g.edges.data('rate'):
-            rate_sub = rate.subs(substitutions)
+            rate_sub = rate.subs(substitutions, simultaneous=True)
             g_copy.remove_edge(u, v)
             g_copy.add_edge(u, v, rate=rate_sub)
 
@@ -563,6 +563,16 @@ class ModelStatements(list):
             if isinstance(s, ODESystem):
                 return s
         return None
+
+    def add_before_odes(self, statement):
+        """Add a statement just before the ODE system
+        """
+        for i, s in enumerate(self):
+            if isinstance(s, ODESystem):
+                break
+        else:
+            i += 1
+        self.insert(i, statement)
 
     def copy(self):
         return copy.deepcopy(self)
