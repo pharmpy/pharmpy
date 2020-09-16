@@ -517,40 +517,47 @@ class ModelStatements(list):
                 statement = s
         return statement
 
-    def remove_symbol_definition(self, symbol, statement):
-        """Remove symbol definition and dependencies not used elsewhere. statement is the statement from
-        which the symbol was removed
+    def remove_symbol_definitions(self, symbols, statement):
+        """Remove symbol remove_symbol_definitions and dependencies not used elsewhere. statement
+        is the statement from which the symbol was removed
         """
         removed_ind = self.index(statement)
-        depinds = self._find_statement_and_deps(symbol, removed_ind)
-        depsymbs = [self[i].symbol for i in depinds]
+        depinds = set()
+        for symbol in symbols:
+            depinds |= self._find_statement_and_deps(symbol, removed_ind)
+        depsymbs = {self[i].symbol for i in depinds}
         keep = []
-        for ind, symb in zip(depinds, depsymbs):
-            for s in self[ind + 1:]:
-                if ind not in depinds and symb in s.rhs_symbols:
-                    keep.append(ind)
+        for candidate in depsymbs:
+            for i in depinds:
+                if self[i].symbol == candidate:
+                    final = i
+            for stat_ind in range(final + 1, len(self)):
+                stat = self[stat_ind]
+                if stat_ind not in depinds and candidate in stat.rhs_symbols:
+                    indices = [i for i in depinds if self[i].symbol == candidate]
+                    keep += indices
                     break
-        for i in reversed(depinds):
+        for i in reversed(sorted(depinds)):
             if i not in keep:
                 del self[i]
 
     def _find_statement_and_deps(self, symbol, ind):
-        """Find all statements and their dependencies before a certain statement
+        """Find indices of the last symbol definition and its dependenceis before a
+           certain statement
         """
         # Find index of final assignment of symbol before before
-        statement = None
-        for i in reversed(range(0, ind)):       # Might want to include the before for generality
+        for i in reversed(range(0, ind)):
             statement = self[i]
             if symbol == statement.symbol:
                 break
-        if statement is None:
-            return ModelStatements([])
-        found = [i]
-        remaining = statement.rhs_symbols
+        else:
+            return set()
+        found = {i}
+        remaining = statement.free_symbols
         for j in reversed(range(0, i)):
             statement = self[j]
             if statement.symbol in remaining:
-                found = [j] + found
+                found |= {j}
                 remaining.remove(statement.symbol)
                 remaining |= statement.rhs_symbols
         return found

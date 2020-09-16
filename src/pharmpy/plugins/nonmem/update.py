@@ -1,7 +1,7 @@
 import re
 
 from pharmpy import data
-from pharmpy.statements import (Assignment, Bolus, CompartmentalSystem, ExplicitODESystem,
+from pharmpy.statements import (Assignment, Bolus, CompartmentalSystem, ExplicitODESystem, Infusion,
                                 ModelStatements, ODESystem)
 from pharmpy.symbols import symbol
 
@@ -133,6 +133,15 @@ def update_ode_system(model, old, new):
             df = model.dataset
             df.drop(columns=['RATE'], inplace=True)
             model.dataset = df
+        if isinstance(new.find_dosing().dose, Infusion) and \
+                isinstance(old.find_dosing().dose, Bolus):
+            dose = new.find_dosing().dose
+            if dose.rate is None:
+                ass = Assignment('D1', dose.duration)
+            else:
+                raise NotImplementedError("First order infusion rate is not yet supported")
+            statements = model.statements
+            statements.add_before_odes(ass)
         if not old.find_depot() and new.find_depot():
             # Depot was added
             subs = model.control_stream.get_records('SUBROUTINES')[0]

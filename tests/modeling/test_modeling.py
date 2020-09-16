@@ -171,6 +171,7 @@ $SUBROUTINE ADVAN2 TRANS2
 
 $PK
 MAT = THETA(4)
+IF(AMT.GT.0) BTIME=TIME
 TAD=TIME-BTIME
 TVCL=THETA(1)*WGT
 TVV=THETA(2)*WGT
@@ -208,6 +209,56 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
     absorption(model, 1)
     model.update_source(nofiles=True)
     assert str(model).split('\n')[2:] == correct.split('\n')[2:]
+
+    # Bolus to 0-order
+    model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan1.mod')
+    absorption(model, 0)
+    model.update_source(nofiles=True)
+    correct = '''$PROBLEM PHENOBARB SIMPLE MODEL
+$DATA ../pheno.dta IGNORE=@
+$INPUT ID TIME AMT WGT APGR DV FA1 FA2
+$SUBROUTINE ADVAN1 TRANS2
+
+$PK
+MAT = THETA(4)
+IF(AMT.GT.0) BTIME=TIME
+TAD=TIME-BTIME
+TVCL=THETA(1)*WGT
+TVV=THETA(2)*WGT
+IF(APGR.LT.5) TVV=TVV*(1+THETA(3))
+CL=TVCL*EXP(ETA(1))
+V=TVV*EXP(ETA(2))
+S1=V
+D1 = 2*MAT
+
+$ERROR
+W=F
+Y=F+W*EPS(1)
+IPRED=F
+IRES=DV-IPRED
+IWRES=IRES/W
+
+$THETA (0,0.00469307) ; CL
+$THETA (0,1.00916) ; V
+$THETA (-.99,.1)
+$THETA  (0,0.1) ; TVMAT
+$OMEGA DIAGONAL(2)
+ 0.0309626  ;       IVCL
+ 0.031128  ;        IVV
+
+$SIGMA 1e-7
+$ESTIMATION METHOD=1 INTERACTION
+$COVARIANCE UNCONDITIONAL
+$TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
+       NOPRINT ONEHEADER FILE=sdtab1
+'''
+    assert str(model) == correct
+
+    # 1st to 0-order
+    model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan2.mod')
+    absorption(model, 0)
+    model.update_source(nofiles=True)
+    assert str(model) == correct
 
 
 @pytest.mark.parametrize('etas, etab, buf_new', [

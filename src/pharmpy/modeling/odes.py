@@ -63,8 +63,7 @@ def absorption(model, order, rate=None):
             ka = odes.get_flow(depot, odes.find_central())
             odes.remove_compartment(depot)
             symbols = ka.free_symbols
-            for s in symbols:
-                statements.remove_symbol_definition(s, odes)
+            statements.remove_symbol_definitions(symbols, odes)
             model.statements = statements
             model.remove_unused_parameters_and_rvs()
         elif _have_zero_order_absorption(model):
@@ -72,21 +71,36 @@ def absorption(model, order, rate=None):
             old_symbols = dose_comp.free_symbols
             dose_comp.dose = Bolus(dose_comp.dose.amount)
             unneeded_symbols = old_symbols - dose_comp.dose.free_symbols
-            for symb in unneeded_symbols:
-                statements.remove_symbol_definition(symb, odes)
+            statements.remove_symbol_definitions(unneeded_symbols, odes)
             model.remove_unused_parameters_and_rvs()
     elif order == '0':
         if not _have_zero_order_absorption(model):
-            pass
+            dose_comp = odes.find_dosing()
+            symbols = dose_comp.free_symbols
+            new_dose = Infusion(dose_comp.dose.amount,
+                                duration=pharmpy.symbols.symbol('MAT') * 2)
+            if depot:
+                to_comp, _ = odes.get_compartment_flows(depot)[0]
+                to_comp.dose = new_dose
+                ka = odes.get_flow(depot, odes.find_central())
+                odes.remove_compartment(depot)
+                symbols |= ka.free_symbols
+            else:
+                dose_comp.dose = new_dose
+            statements.remove_symbol_definitions(symbols, odes)
+            mat_param = Parameter('TVMAT', init=0.1, lower=0)
+            model.parameters.add(mat_param)
+            imat = Assignment('MAT', mat_param.symbol)
+            model.statements.insert(0, imat)
+            model.remove_unused_parameters_and_rvs()
     elif order == '1':
         if not depot:
             dose_comp = odes.find_dosing()
             depot = odes.add_compartment('DEPOT')
             depot.dose = Bolus(dose_comp.dose.amount)
             symbols = dose_comp.free_symbols
-            for s in symbols:
-                statements.remove_symbol_definition(s, odes)
             dose_comp.dose = None
+            statements.remove_symbol_definitions(symbols, odes)
             mat_param = Parameter('TVMAT', init=0.1, lower=0)
             model.parameters.add(mat_param)
             imat = Assignment('MAT', mat_param.symbol)
