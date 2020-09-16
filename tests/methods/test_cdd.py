@@ -19,9 +19,17 @@ def test_psn_options():
                                                  'case': 'WGT', 'clean': '3',
                                                  'dir': 'caseWGTbin10'}
 
-"""
+
 def test_cdd_psn(testdata):
-    cdd_bin_id = cdd.psn_cdd_results(testdata / 'nonmem' / 'cdd' / 'pheno_real_bin10')
+    path = testdata / 'nonmem' / 'cdd' / 'pheno_real_bin10'
+    base_model = Model(testdata / 'nonmem' / 'pheno_real.mod')
+    cdd_models = [Model(p) for p in cdd.psn_cdd_model_paths(path)]
+    skipped_individuals = cdd.psn_cdd_skipped_individuals(path)
+
+    cdd_bin_id = cdd.calculate_results(base_model,
+                                       cdd_models,
+                                       'ID',
+                                       skipped_individuals)
 
     correct = pd.DataFrame({'cook_score': [0.6002247, 0.7681936, 1.054763, 0.8994126,
                                            0.9405288, 0.6945769, 0.7631572, 0.7947513,
@@ -50,7 +58,7 @@ def test_cdd_psn(testdata):
                                   'cdd_7', 'cdd_8', 'cdd_9', 'cdd_10'])
     pd.testing.assert_frame_equal(cdd_bin_id.case_results, correct,
                                   rtol=1e-4)
-"""
+
 
 def test_cdd_calculate_results(testdata):
     path = testdata / 'nonmem' / 'cdd' / 'pheno_real_bin10'
