@@ -158,6 +158,8 @@ class ExplicitODESystem(ODESystem):
 class CompartmentalSystem(ODESystem):
     """System of ODEs descibed as a compartmental system
     """
+    t = symbols.symbol('t')
+
     def __init__(self):
         self._g = nx.DiGraph()
 
@@ -289,18 +291,37 @@ class CompartmentalSystem(ODESystem):
         """
         return [node.name for node in self._g.nodes]
 
+    @property
+    def zero_order_inputs(self):
+        """A vector of all zero order inputs to each compartment
+        """
+        inputs = []
+        for node in self._g.nodes:
+            if node.dose is not None and isinstance(node.dose, Infusion):
+                if hasattr(node.dose.rate):
+                    expr = node.dose.rate
+                    cond = node.dose.amount / node.dose.rate
+                else:
+                    expr = node.dose.amount / node.dose.duration
+                    cond = node.dose.duration
+                infusion_func = sympy.Piecewise((expr, self.t < cond), (0, True))
+                inputs.append(infusion_func)
+            else:
+                inputs.append(0)
+        return sympy.Matrix(inputs)
+
     def to_explicit_odes(self):
-        t = symbols.symbol('t')
-        amount_funcs = sympy.Matrix([sympy.Function(amt.name)(t) for amt in self.amounts])
-        derivatives = sympy.Matrix([sympy.Derivative(fn, t) for fn in amount_funcs])
-        a = self.compartmental_matrix @ amount_funcs
+        amount_funcs = sympy.Matrix([sympy.Function(amt.name)(self.t) for amt in self.amounts])
+        derivatives = sympy.Matrix([sympy.Derivative(fn, self.t) for fn in amount_funcs])
+        inputs = self.zero_order_inputs
+        a = self.compartmental_matrix @ amount_funcs + inputs
         eqs = [sympy.Eq(lhs, rhs) for lhs, rhs in zip(derivatives, a)]
         ics = {}
         for node in self._g.nodes:
-            if node.dose is None:
-                ics[sympy.Function(node.amount.name)(0)] = 0
-            else:
+            if node.dose is not None and isinstance(node.dose, Bolus):
                 ics[sympy.Function(node.amount.name)(0)] = node.dose.amount
+            else:
+                ics[sympy.Function(node.amount.name)(0)] = 0
         return eqs, ics
 
     def __len__(self):
