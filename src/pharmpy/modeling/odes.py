@@ -81,7 +81,7 @@ def absorption(model, order, rate=None):
         if not depot:
             dose_comp = odes.find_dosing()
             depot = odes.add_compartment('DEPOT')
-            depot.dose = dose_comp.dose
+            depot.dose = Bolus(dose_comp.dose.amount)
             dose_comp.dose = None
             mat_param = Parameter('TVMAT', init=0.1, lower=0)
             model.parameters.add(mat_param)

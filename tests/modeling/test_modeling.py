@@ -75,7 +75,7 @@ def test_add_covariate_effect_nan(pheno_path):
     assert re.search(r'new_col\.EQ\.-99', str(model))
 
 
-def test_to_explicit_odes(pheno_path):
+def test_to_explicit_odes(pheno_path, testdata):
     model = Model(pheno_path)
 
     explicit_odes(model)
@@ -84,6 +84,12 @@ def test_to_explicit_odes(pheno_path):
     assert lines[6] == '$MODEL TOL=3 COMPARTMENT=(CENTRAL DEFDOSE)'
     assert lines[18] == '$DES'
     assert lines[19] == 'DADT(1) = -A(1)*CL/V'
+
+    model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan1_zero_order.mod')
+    explicit_odes(model)
+    model.update_source()
+    lines = str(model).split('\n')
+    assert lines[15] == 'D1 = THETA(4)'
 
 
 def test_absorption(testdata):
