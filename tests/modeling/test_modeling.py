@@ -4,7 +4,8 @@ import numpy as np
 import pytest
 
 from pharmpy import Model
-from pharmpy.modeling import absorption_rate, add_covariate_effect, boxcox, explicit_odes, tdist
+from pharmpy.modeling import (absorption_rate, add_covariate_effect, boxcox, explicit_odes, john_draper,
+                              tdist)
 
 
 @pytest.mark.parametrize('effect, covariate, operation, buf_new', [
@@ -329,3 +330,26 @@ def test_tdist(pheno_path):
 
     assert str(model.get_pred_pk_record()) == rec_ref
     assert model.parameters['df1'].init == 80
+
+
+@pytest.mark.parametrize('etas, etad, buf_new', [
+    (['ETA(1)'], 'ETAD1 = ((ABS(ETA(1)) + 1)**THETA(4) - 1)*ABS(ETA(1))/(ETA(1)*THETA(4))',
+     'CL = TVCL*EXP(ETAD1)\nV=TVV*EXP(ETA(2))'),
+])
+def test_john_draper(pheno_path, etas, etad, buf_new):
+    model = Model(pheno_path)
+
+    john_draper(model, etas)
+    model.update_source()
+
+    rec_ref = f'$PK\n' \
+              f'{etad}\n' \
+              f'IF(AMT.GT.0) BTIME=TIME\n' \
+              f'TAD=TIME-BTIME\n' \
+              f'TVCL=THETA(1)*WGT\n' \
+              f'TVV=THETA(2)*WGT\n' \
+              f'IF(APGR.LT.5) TVV=TVV*(1+THETA(3))\n' \
+              f'{buf_new}\n' \
+              f'S1=V\n\n'
+
+    assert str(model.get_pred_pk_record()) == rec_ref

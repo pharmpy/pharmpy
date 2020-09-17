@@ -1,7 +1,7 @@
 import re
 import warnings
 
-from sympy import exp
+from sympy import exp, sign
 
 from pharmpy.parameter import Parameter
 from pharmpy.statements import Assignment, ModelStatements
@@ -38,6 +38,13 @@ def tdist(model, list_of_etas=None):
     """
     etas = _get_etas(model, list_of_etas)
     eta_transformation = EtaTransformation.tdist(len(etas))
+    _transform_etas(model, eta_transformation, etas)
+    return model
+
+
+def john_draper(model, list_of_etas=None):
+    etas = _get_etas(model, list_of_etas)
+    eta_transformation = EtaTransformation.john_draper(len(etas))
     _transform_etas(model, eta_transformation, etas)
     return model
 
@@ -167,6 +174,22 @@ class EtaTransformation:
             assignments.append(assignment)
 
         return cls('tdist', assignments, 'df')
+
+    @classmethod
+    def john_draper(cls, no_of_etas):
+        assignments = ModelStatements()
+        for i in range(1, no_of_etas + 1):
+            symbol = S(f'etad{i}')
+
+            eta = S(f'eta{i}')
+            theta = S(f'theta{i}')
+
+            expression = sign(eta) * (((abs(eta) + 1)**theta - 1)/theta)
+
+            assignment = Assignment(symbol, expression)
+            assignments.append(assignment)
+
+        return cls('johndraper', assignments, 'lambda')
 
     def __str__(self):
         return str(self.assignments)
