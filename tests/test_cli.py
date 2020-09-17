@@ -27,7 +27,7 @@ def test_add_covariate_effect(datadir, fs):
 
 @pytest.mark.parametrize('fs', [[['pkgutil'], [source, etas_record]]], indirect=True)
 @pytest.mark.parametrize('transformation, eta', [
-    ('boxcox', 'ETAB1'), ('tdist', 'ETAT1')
+    ('boxcox', 'ETAB1'), ('tdist', 'ETAT1'), ('john_draper', 'ETAD1')
 ])
 def test_eta_transformation(datadir, fs, transformation, eta):
     fs.add_real_file(datadir / 'pheno_real.mod', target_path='run1.mod')

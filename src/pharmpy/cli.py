@@ -391,6 +391,20 @@ def tdist(args):
     write_model_or_dataset(model, None, path=args.output_file, force=False)
 
 
+def john_draper(args):
+    """Subcommand to apply John Draper transformation to specified etas of model."""
+    from pharmpy.modeling import john_draper
+
+    model = args.model
+    try:
+        etas = args.etas.split(" ")
+    except AttributeError:
+        etas = args.etas
+
+    john_draper(model, etas)
+    write_model_or_dataset(model, None, path=args.output_file, force=False)
+
+
 def results_bootstrap(args):
     """Subcommand to generate bootstrap results"""
     if len(args.models) < 3:
@@ -724,6 +738,17 @@ parser_definition = [
             'help': 'Applies t-distribution transformation',
             'description': 'Apply t-distribution transformation on selected/all etas',
             'func': tdist,
+            'parents': [args_model_input, args_output],
+            'args': [{'name': '--etas',
+                      'type': str,
+                      'default': None,
+                      'help': 'List of etas, mark group of etas in single quote '
+                              'separated by spaces'},
+                     ]}},
+        {'john_draper': {
+            'help': 'Applies John Draper transformation',
+            'description': 'Apply John Draper transformation on selected/all etas',
+            'func': john_draper,
             'parents': [args_model_input, args_output],
             'args': [{'name': '--etas',
                       'type': str,
