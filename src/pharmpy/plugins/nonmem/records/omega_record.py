@@ -186,6 +186,13 @@ class OmegaRecord(Record):
             rv_strs.append(name)
         return '(' + ', '.join(rv_strs) + ')'
 
+    def _get_param_name(self, row, col):
+        """Get the name of the current OMEGA/SIGMA at (row, col)
+        """
+        invmap = {value: key for key, value in self.name_map.items()}
+        name = invmap[(row, col)]
+        return name
+
     def update(self, parameters, first_omega, previous_size):
         """From a ParameterSet update the OMEGAs in this record
            returns the next omega number
@@ -206,7 +213,7 @@ class OmegaRecord(Record):
                     new_inits = []
                     new_fix = []
                     for j in range(i, i + n):
-                        name = f'{self.name}({j},{j})'
+                        name = self._get_param_name(j, j)
                         if not sd:
                             value = float(parameters[name].init)
                         else:
@@ -258,7 +265,7 @@ class OmegaRecord(Record):
             new_fix = []
             for row in range(first_omega, first_omega + size):
                 for col in range(first_omega, row + 1):
-                    name = f'{self.name}({row},{col})'
+                    name = self._get_param_name(row, col)
                     inits.append(parameters[name].init)
                     new_fix.append(parameters[name].fix)
             if len(set(new_fix)) != 1:      # Not all true or all false

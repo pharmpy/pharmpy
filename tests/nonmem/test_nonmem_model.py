@@ -26,6 +26,11 @@ def test_update_inits(pheno_path):
     model = Model(pheno_path)
     model.update_inits()
 
+    with ConfigurationContext(conf, parameter_names='comment'):
+        model = Model(pheno_path)
+        model.update_inits()
+        model.update_source()
+
 
 def test_detection():
     Model(StringIO("$PROBLEM this"))
