@@ -124,3 +124,18 @@ is similarly a list of etas, and if no list is provided all etas will be transfo
    tdist(model, ['ETA(1)'])
    model.update_source()
    print(model)
+
+John Draper
+~~~~~~~~~~~
+
+Similarly, a John Draper transformation uses a list of etas as input, if no list is
+provided all etas will be transformed.
+
+.. jupyter-execute::
+
+   model = Model(path / "pheno_real.mod")
+   from pharmpy.modeling import john_draper
+   john_draper(model, ['ETA(1)'])
+   model.update_source()
+   print(model)
+
