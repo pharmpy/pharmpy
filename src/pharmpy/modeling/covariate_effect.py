@@ -211,7 +211,6 @@ class CovariateEffect:
             self.template.subs({'mean': f'{covariate}_MEAN'})
             self.statistic_type = 'mean'
         elif 'median' in template_str:
-            print(template_str)
             self.template.subs({'median': f'{covariate}_MEDIAN'})
             self.statistic_type = 'median'
         elif 'std' in template_str:
