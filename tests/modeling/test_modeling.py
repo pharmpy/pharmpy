@@ -2,6 +2,7 @@ import re
 
 import numpy as np
 import pytest
+from pyfakefs.fake_filesystem_unittest import Patcher
 
 from pharmpy import Model
 from pharmpy.modeling import (absorption_rate, add_covariate_effect, boxcox, explicit_odes,
@@ -166,7 +167,7 @@ def test_absorption_rate(testdata):
     absorption_rate(model, 'FO')
     model.update_source(nofiles=True)
     correct = '''$PROBLEM PHENOBARB SIMPLE MODEL
-$DATA pheno_zero_order.csv  IGNORE=@
+$DATA pheno_zero_order.csv IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
 $SUBROUTINE ADVAN2 TRANS2
 
@@ -212,12 +213,18 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
     assert str(model).split('\n')[2:] == correct.split('\n')[2:]
 
     # Bolus to 0-order
-    model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan1.mod')
-    absorption_rate(model, 'ZO')
-    model.update_source(nofiles=True)
-    correct = '''$PROBLEM PHENOBARB SIMPLE MODEL
-$DATA ../pheno.dta IGNORE=@
-$INPUT ID TIME AMT WGT APGR DV FA1 FA2
+    with Patcher(additional_skip_names=['pkgutil']) as patcher:
+        fs = patcher.fs
+        datadir = testdata / 'nonmem' / 'modeling'
+        fs.add_real_file(datadir / 'pheno_advan1.mod', target_path='dir/pheno_advan1.mod')
+        fs.add_real_file(datadir / 'pheno_advan2.mod', target_path='dir/pheno_advan2.mod')
+        fs.add_real_file(datadir.parent / 'pheno.dta', target_path='pheno.dta')
+        model = Model('dir/pheno_advan1.mod')
+        absorption_rate(model, 'ZO')
+        model.update_source()
+        correct = '''$PROBLEM PHENOBARB SIMPLE MODEL
+$DATA pheno.csv IGNORE=@
+$INPUT ID TIME AMT WGT APGR DV FA1 FA2 RATE
 $SUBROUTINE ADVAN1 TRANS2
 
 $PK
@@ -253,13 +260,13 @@ $COVARIANCE UNCONDITIONAL
 $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
        NOPRINT ONEHEADER FILE=sdtab1
 '''
-    assert str(model) == correct
+        assert str(model) == correct
 
-    # 1st to 0-order
-    model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan2.mod')
-    absorption_rate(model, 'ZO')
-    model.update_source(nofiles=True)
-    assert str(model) == correct
+        # 1st to 0-order
+        model = Model('dir/pheno_advan2.mod')
+        absorption_rate(model, 'ZO')
+        model.update_source(force=True)
+        assert str(model) == correct
 
 
 @pytest.mark.parametrize('etas, etab, buf_new', [

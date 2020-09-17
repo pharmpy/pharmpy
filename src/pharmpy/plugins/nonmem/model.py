@@ -80,7 +80,7 @@ class Model(pharmpy.model.Model):
             # FIXME: If no name set use the model name. Set that when setting dataset to input!
             if not nofiles:
                 datapath = self.dataset.pharmpy.write_csv(force=force)
-                self.path = datapath
+                self.dataset_path = datapath
 
             data_record = self.control_stream.get_records('DATA')[0]
 

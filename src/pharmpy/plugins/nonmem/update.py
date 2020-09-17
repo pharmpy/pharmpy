@@ -1,5 +1,7 @@
 import re
 
+import numpy as np
+
 from pharmpy import data
 from pharmpy.statements import (Assignment, Bolus, CompartmentalSystem, ExplicitODESystem, Infusion,
                                 ModelStatements, ODESystem)
@@ -142,6 +144,12 @@ def update_ode_system(model, old, new):
                 raise NotImplementedError("First order infusion rate is not yet supported")
             statements = model.statements
             statements.add_before_odes(ass)
+            df = model.dataset
+            rate = np.where(df['AMT'] == 0, 0, -2)
+            df['RATE'] = rate
+            # FIXME: Adding at end for now. Update $INPUT cannot yet handle adding in middle
+            # df.insert(list(df.columns).index('AMT') + 1, 'RATE', rate)
+            model.dataset = df
         if not old.find_depot() and new.find_depot():
             # Depot was added
             subs = model.control_stream.get_records('SUBROUTINES')[0]
