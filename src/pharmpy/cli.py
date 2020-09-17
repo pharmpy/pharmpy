@@ -356,10 +356,10 @@ def model_explicit_odes(args):
     write_model_or_dataset(model, None, path=args.output_file, force=args.force)
 
 
-def model_absorption(args):
-    from pharmpy.modeling import absorption
+def model_absorption_rate(args):
+    from pharmpy.modeling import absorption_rate
     model = args.model
-    absorption(model, order=args.order, rate=args.rate)
+    absorption_rate(model, order=args.order)
     write_model_or_dataset(model, None, path=args.output_file, force=args.force)
 
 
@@ -698,18 +698,16 @@ parser_definition = [
             'func': model_explicit_odes,
             'parents': [args_model_input, args_output],
                        }},
-        {'absorption': {
+        {'absorption_rate': {
             'help': 'Set absorption rate for a PK model',
-            'description': 'Change absorption rate of a PK model to either bolus, 0th or 1th order',
-            'func': model_absorption,
+            'description': 'Change absorption rate of a PK model to either instant, 0th order, 1th '
+                           'order or sequential 0-order 1-order.',
+            'func': model_absorption_rate,
             'parents': [args_model_input, args_output],
             'args': [{'name': 'order',
-                      'choices': ['bolus', '0', '1'],
+                      'choices': ['instant', 'ZO', 'FO', 'seq-ZO-FO'],
                       'type': str,
                       'help': 'Order of absorption'},
-                     {'name': '--rate',
-                      'type': str,
-                      'help': 'Symbol for absorption rate'},
                      ]}},
         {'boxcox': {
             'help': 'Applies boxcox transformation',

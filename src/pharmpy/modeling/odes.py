@@ -39,15 +39,15 @@ def _have_zero_order_absorption(model):
     return False
 
 
-def absorption(model, order, rate=None):
-    """Set or change the absorption for a model
+def absorption_rate(model, order):
+    """Set or change the absorption rate of a model
 
     Parameters
     ----------
     model
         Model to set or change absorption for
     order
-        'bolus', 0 or 1
+        'instant', 'ZO', 'FO' or 'seq-ZO-FO'
     """
     statements = model.statements
     odes = statements.ode_system
@@ -55,8 +55,7 @@ def absorption(model, order, rate=None):
         raise ValueError("Setting absorption is not supported for ExplicitODESystem")
 
     depot = odes.find_depot()
-    order = str(order)
-    if order == 'bolus':
+    if order == 'instant':
         if depot:
             to_comp, _ = odes.get_compartment_flows(depot)[0]
             to_comp.dose = depot.dose
@@ -73,7 +72,7 @@ def absorption(model, order, rate=None):
             unneeded_symbols = old_symbols - dose_comp.dose.free_symbols
             statements.remove_symbol_definitions(unneeded_symbols, odes)
             model.remove_unused_parameters_and_rvs()
-    elif order == '0':
+    elif order == 'ZO':
         if not _have_zero_order_absorption(model):
             dose_comp = odes.find_dosing()
             symbols = dose_comp.free_symbols
@@ -93,7 +92,7 @@ def absorption(model, order, rate=None):
             imat = Assignment('MAT', mat_param.symbol)
             model.statements.insert(0, imat)
             model.remove_unused_parameters_and_rvs()
-    elif order == '1':
+    elif order == 'FO':
         if not depot:
             dose_comp = odes.find_dosing()
             depot = odes.add_compartment('DEPOT')
@@ -108,6 +107,7 @@ def absorption(model, order, rate=None):
             odes.add_flow(depot, dose_comp, 1 / pharmpy.symbols.symbol('MAT'))
             model.remove_unused_parameters_and_rvs()
     else:
-        raise ValueError(f'Requested order {order} but only orders bolus, 0 and 1 are supported')
+        raise ValueError(f'Requested order {order} but only orders '
+                         f'instant, FO, ZO and seq-ZO-FO are supported')
 
     return model
