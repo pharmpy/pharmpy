@@ -4,8 +4,8 @@ import numpy as np
 import pytest
 
 from pharmpy import Model
-from pharmpy.modeling import (absorption_rate, add_covariate_effect, boxcox, explicit_odes, john_draper,
-                              tdist)
+from pharmpy.modeling import (absorption_rate, add_covariate_effect, boxcox, explicit_odes,
+                              john_draper, tdist)
 
 
 @pytest.mark.parametrize('effect, covariate, operation, buf_new', [
