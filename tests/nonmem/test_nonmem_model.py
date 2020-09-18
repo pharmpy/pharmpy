@@ -273,7 +273,7 @@ def test_update_individual_estimates(datadir):
         assert str(model).endswith("""$ESTIMATION METHOD=1 INTERACTION MCETA=1
 $COVARIANCE UNCONDITIONAL
 $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
-       NOPRINT ONEHEADER FILE=sdtab1
+       NOPRINT ONEHEADER FILE=sdtab2
 $ETAS FILE=run2_input.phi""")
 
 

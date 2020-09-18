@@ -26,11 +26,30 @@ class Model(pharmpy.model.Model):
         self.source = src
         if not self.source.filename_extension:
             self.source.filename_extension = '.ctl'
-        self.name = self.source.path.stem
+        self._name = self.source.path.stem
         self.control_stream = parser.parse(src.code)
         self._initial_individual_estimates_updated = False
         self._updated_etas_file = None
         self._dataset_updated = False
+
+    @property
+    def name(self):
+        return self._name
+
+    @name.setter
+    def name(self, new_name):
+        m = re.search(r'.*?(\d+)$', new_name)
+        if m:
+            n = int(m.group(1))
+            for table in self.control_stream.get_records('TABLE'):
+                table_path = table.path
+                table_name = table_path.stem
+                m = re.search(r'(.*?)(\d+)$', table_name)
+                if m:
+                    table_stem = m.group(1)
+                    new_table_name = f'{table_stem}{n}'
+                    table.path = table_path.parent / new_table_name
+        self._name = new_name
 
     @property
     def modelfit_results(self):

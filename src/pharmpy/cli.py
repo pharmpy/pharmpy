@@ -56,7 +56,6 @@ import argparse
 import importlib
 import pathlib
 import pydoc
-import re
 import sys
 import types
 from collections import OrderedDict, namedtuple
@@ -226,34 +225,14 @@ def write_model_or_dataset(model_or_dataset, new_df, path, force):
         try:
             if path:
                 if not path.is_dir():
-                    bump_model_number(model, path)
+                    model.bump_model_number(path)
                 model.write(path=path, force=force)
             else:
-                bump_model_number(model)
+                model.bump_model_number()
                 model.write(force=force)
         except FileExistsError as e:
             error(FileExistsError(f'{e.args[0]} Use -f or --force to '
                                   'force an overwrite'))
-
-
-def bump_model_number(model, path='.'):
-    """ If model name ends in a number increase to next available file
-        else do nothing.
-        FIXME: Could be moved to model class. Need the name of the model and the source object
-    """
-    path = pathlib.Path(path)
-    name = model.name
-    m = re.search(r'(.*?)(\d+)$', name)
-    if m:
-        stem = m.group(1)
-        n = int(m.group(2))
-        while True:
-            n += 1
-            new_name = f'{stem}{n}'
-            new_path = path / new_name
-            if not new_path.exists():
-                break
-        model.name = new_name
 
 
 def data_resample(args):

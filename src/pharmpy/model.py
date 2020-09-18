@@ -13,6 +13,7 @@ Definitions
 """
 
 import copy
+import re
 from pathlib import Path
 
 import numpy as np
@@ -59,8 +60,14 @@ class Model:
                 raise ValueError('Cannot name model file as no path argument was supplied and the'
                                  'model has no name.')
             path = path / filename
+            new_name = None
+        else:
+            # Set new name given filename, but after we've checked for existence
+            new_name = path.stem
         if not force and path.exists():
             raise FileExistsError(f'File {path} already exists.')
+        if new_name:
+            self.name = new_name
         self.update_source(path=path, force=force)
         self.source.write(path, force=force)
         return path
@@ -88,6 +95,24 @@ class Model:
 
     def read_raw_dataset(self, parse_columns=tuple()):
         raise NotImplementedError()
+
+    def bump_model_number(self, path='.'):
+        """If the model name ends in a number increase it to next available file
+           else do nothing.
+        """
+        path = Path(path)
+        name = self.name
+        m = re.search(r'(.*?)(\d+)$', name)
+        if m:
+            stem = m.group(1)
+            n = int(m.group(2))
+            while True:
+                n += 1
+                new_name = f'{stem}{n}'
+                new_path = (path / new_name).with_suffix(self.source.filename_extension)
+                if not new_path.exists():
+                    break
+            self.name = new_name
 
     def create_symbol(self, stem, force_numbering=False):
         """Create a new unique variable symbol
