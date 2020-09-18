@@ -105,6 +105,7 @@ def read_results(path_or_buf):
 class Results:
     """ Base class for all result classes
     """
+
     def to_json(self, path=None):
         json_dict = self.to_dict()
         json_dict['__class__'] = self.__class__.__name__
@@ -166,12 +167,14 @@ class ModelfitResults:
         model_name - name of model that generated the results
         model
     """
+
     def __init__(self, ofv=None, parameter_estimates=None, covariance_matrix=None,
-                 standard_errors=None):
+                 standard_errors=None, minimization_successful=None):
         self._ofv = ofv
         self._parameter_estimates = parameter_estimates
         self._covariance_matrix = covariance_matrix
         self._standard_errors = standard_errors
+        self._minimization_successful = minimization_successful
 
     def reparameterize(self, parameterizations):
         """Reparametrize all parameters given a list of parametrization object
@@ -185,6 +188,12 @@ class ModelfitResults:
         """Final objective function value
         """
         return self._ofv
+
+    @property
+    def minimization_successful(self):
+        """ Was the minimization successful
+        """
+        return self._minimization_successful
 
     @property
     def parameter_estimates(self):
@@ -364,54 +373,62 @@ class ChainedModelfitResults(list, ModelfitResults):
        inherits from both list and ModelfitResults. Each method from ModelfitResults
        will be performed on the final modelfit object
     """
+
+    def __init__(self):
+        self._last = -1
+
     def reparameterize(self, parameterizations):
-        return self[-1].reparameterize(parameterizations)
+        return self[self._last].reparameterize(parameterizations)
 
     @property
     def ofv(self):
-        return self[-1].ofv
+        return self[self._last].ofv
+
+    @property
+    def minimization_successful(self):
+        return self[self._last].minimization_successful
 
     @property
     def parameter_estimates(self):
-        return self[-1].parameter_estimates
+        return self[self._last].parameter_estimates
 
     @property
     def covariance_matrix(self):
-        return self[-1].covariance_matrix
+        return self[self._last].covariance_matrix
 
     @property
     def information_matrix(self):
-        return self[-1].information_matrix
+        return self[self._last].information_matrix
 
     @property
     def correlation_matrix(self):
-        return self[-1].correlation_matrix
+        return self[self._last].correlation_matrix
 
     @property
     def standard_errors(self):
-        return self[-1].standard_errors
+        return self[self._last].standard_errors
 
     @property
     def individual_ofv(self):
-        return self[-1].individual_ofv
+        return self[self._last].individual_ofv
 
     @property
     def individual_estimates(self):
-        return self[-1].individual_estimates
+        return self[self._last].individual_estimates
 
     @property
     def individual_estimates_covariance(self):
-        return self[-1].individual_estimates_covariance
+        return self[self._last].individual_estimates_covariance
 
     @property
     def individual_shrinkage(self):
-        return self[-1].individual_shrinkage
+        return self[self._last].individual_shrinkage
 
     def plot_iofv_vs_iofv(self, other):
-        return self[-1].plot_iofv_vs_iofv(other)
+        return self[self._last].plot_iofv_vs_iofv(other)
 
     @property
     def model_name(self):
-        return self[-1].model_name
+        return self[self._last].model_name
 
     # FIXME: To not have to manually intercept everything here. Could do it in a general way.
