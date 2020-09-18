@@ -44,7 +44,12 @@ def tdist(model, list_of_etas=None):
 
 def john_draper(model, list_of_etas=None):
     """
-    Applies a John Draper transformation to specified etas from a :class:`pharmpy.model`.
+    Applies a John Draper transformation [1]_ to specified etas from a
+    :class:`pharmpy.model`.
+
+    .. [1] John, J., Draper, N. (1980). An Alternative Family of Transformations.
+       Journal of the Royal Statistical Society. Series C (Applied Statistics),
+       29(2), 190-197. doi:10.2307/2986305
 
     Parameters
     ----------
