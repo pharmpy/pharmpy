@@ -8,15 +8,41 @@ from pharmpy.plugins.nonmem.results import NONMEMChainedModelfitResults
 
 
 def test_ofv(pheno_lst):
-    res = NONMEMChainedModelfitResults(pheno_lst, 1)
+    res = NONMEMChainedModelfitResults(pheno_lst)
     assert res.ofv == 586.27605628188053
 
 
 def test_tool_files(pheno_lst):
-    res = NONMEMChainedModelfitResults(pheno_lst, 1)
+    res = NONMEMChainedModelfitResults(pheno_lst)
     names = [str(p.name) for p in res.tool_files]
     assert names == ['pheno_real.lst', 'pheno_real.ext', 'pheno_real.cov', 'pheno_real.cor',
                      'pheno_real.coi', 'pheno_real.phi']
+
+
+def test_special_models(testdata):
+    onePROB = testdata / 'nonmem' / 'modelfit_results' / 'onePROB'
+    withBayes = Model(onePROB / 'multEST' / 'noSIM' / 'withBayes.mod')
+    assert pytest.approx(withBayes.modelfit_results.standard_errors['THETA(1)'], 1e-13) \
+        == 2.51942E+00
+    assert pytest.approx(withBayes.modelfit_results[0].standard_errors['THETA(1)'], 1e-13) \
+        == 3.76048E-01
+    assert withBayes.modelfit_results[0].minimization_successful is False
+    assert withBayes.modelfit_results[1].minimization_successful is False
+    assert withBayes.modelfit_results[0].covariance_step == {'requested': True,
+                                                             'completed': True,
+                                                             'warnings': False}
+    assert withBayes.modelfit_results.covariance_step == {'requested': True,
+                                                          'completed': True,
+                                                          'warnings': False}
+
+    maxeval0 = Model(onePROB / 'oneEST' / 'noSIM' / 'maxeval0.mod')
+    assert maxeval0.modelfit_results.minimization_successful is None
+
+    maxeval3 = Model(onePROB / 'oneEST' / 'noSIM' / 'maxeval3.mod')
+    assert maxeval3.modelfit_results.minimization_successful is False
+    assert maxeval3.modelfit_results.covariance_step == {'requested': True,
+                                                         'completed': True,
+                                                         'warnings': True}
 
 
 def test_covariance(pheno_path):
@@ -78,7 +104,7 @@ def test_standard_errors(pheno_path):
 
 
 def test_individual_ofv(pheno, pheno_lst):
-    res = NONMEMChainedModelfitResults(pheno_lst, 1, model=pheno)
+    res = NONMEMChainedModelfitResults(pheno_lst, model=pheno)
     iofv = res.individual_ofv
     assert len(iofv) == 59
     assert pytest.approx(iofv[1], 1e-15) == 5.9473520242962552
@@ -87,7 +113,7 @@ def test_individual_ofv(pheno, pheno_lst):
 
 
 def test_individual_estimates(pheno, pheno_lst):
-    res = NONMEMChainedModelfitResults(pheno_lst, 1, model=pheno)
+    res = NONMEMChainedModelfitResults(pheno_lst, model=pheno)
     ie = res.individual_estimates
     assert len(ie) == 59
     assert pytest.approx(ie['ETA(1)'][1], 1e-15) == -0.0438608
@@ -97,14 +123,14 @@ def test_individual_estimates(pheno, pheno_lst):
 
 
 def test_individual_shrinkage(pheno, pheno_lst):
-    res = NONMEMChainedModelfitResults(pheno_lst, 1, model=pheno)
+    res = NONMEMChainedModelfitResults(pheno_lst, model=pheno)
     ishr = res.individual_shrinkage
     assert len(ishr) == 59
     assert pytest.approx(ishr['ETA(1)'][1], 1e-15) == 0.84778949807160287
 
 
 def test_eta_shrinkage(pheno, pheno_lst):
-    res = NONMEMChainedModelfitResults(pheno_lst, 1, model=pheno)
+    res = NONMEMChainedModelfitResults(pheno_lst, model=pheno)
     shrinkage = res.eta_shrinkage()
     assert len(shrinkage) == 2
     assert pytest.approx(shrinkage['ETA(1)'], 0.0001) == 7.2048E+01 / 100
@@ -116,7 +142,7 @@ def test_eta_shrinkage(pheno, pheno_lst):
 
 
 def test_individual_estimates_covariance(pheno, pheno_lst):
-    res = NONMEMChainedModelfitResults(pheno_lst, 1, model=pheno)
+    res = NONMEMChainedModelfitResults(pheno_lst, model=pheno)
     cov = res.individual_estimates_covariance
     assert len(cov) == 59
     names = ['ETA(1)', 'ETA(2)']

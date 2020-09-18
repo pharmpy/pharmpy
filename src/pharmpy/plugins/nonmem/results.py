@@ -1,8 +1,8 @@
 from pathlib import Path
 
 import numpy as np
-import pandas as pd
 
+from pharmpy.plugins.nonmem.results_file import NONMEMResultsFile
 from pharmpy.plugins.nonmem.table import NONMEMTableFile
 from pharmpy.results import ChainedModelfitResults, ModelfitResults
 
@@ -22,25 +22,47 @@ class NONMEMModelfitResults(ModelfitResults):
 
     @property
     def ofv(self):
-        try:
-            return self._ofv
-        except AttributeError:
-            self._chain._read_ext_table()
-            return self._ofv
+        return self._ofv  # no try here, if object exists then ext has been read
 
     @property
     def parameter_estimates(self):
+        if not self._repara:
+            return self._parameter_estimates
+        else:
+            return self._parameter_estimates_sdcorr
+
+    @property
+    def standard_errors(self):
+        if not self._repara:
+            return self._standard_errors
+        else:
+            return self._standard_errors_sdcorr
+
+    @property
+    def minimization_successful(self):
+        return self.estimation_step['minimization_successful']
+
+    @property
+    def estimation_step(self):
         try:
-            if not self._repara:
-                return self._parameter_estimates
-            else:
-                return self._parameter_estimates_sdcorr
+            return self._estimation_status
         except AttributeError:
-            self._chain._read_ext_table()
-            if not self._repara:
-                return self._parameter_estimates
-            else:
-                return self._parameter_estimates_sdcorr
+            try:
+                self._chain._read_lst_file()
+            except FileNotFoundError:
+                self._set_estimation_status(None)
+            return self._estimation_status
+
+    @property
+    def covariance_step(self):
+        try:
+            return self._covariance_status
+        except AttributeError:
+            try:
+                self._chain._read_lst_file()
+            except FileNotFoundError:
+                self._set_covariance_status(None)
+            return self._covariance_status
 
     @property
     def covariance_matrix(self):
@@ -49,6 +71,8 @@ class NONMEMModelfitResults(ModelfitResults):
         try:
             return self._covariance_matrix
         except AttributeError:
+            # if object exists then ext has been read, and _covariance_matrix
+            # has already been set to None for all table numbers without standard errors
             try:
                 self._chain._read_cov_table()
             except OSError:
@@ -127,49 +151,6 @@ class NONMEMModelfitResults(ModelfitResults):
             raise FileNotFoundError("Could not find any of the cov/cor/coi files")
 
     @property
-    def standard_errors(self):
-        try:
-            if not self._repara:
-                return self._standard_errors
-            else:
-                return self._standard_errors_sdcorr
-        except AttributeError:
-            try:
-                self._chain._read_ext_table()
-            except OSError:
-                pass
-            else:
-                if not self._repara:
-                    return self._standard_errors
-                else:
-                    return self._standard_errors_sdcorr
-            if self._repara:
-                raise NotImplementedError("Cannot find ext-file to get standard errors on sdcorr "
-                                          "form. Not supported to try getting SEs from other "
-                                          "NONMEM output files")
-            try:
-                self._chain._read_cor_table()
-            except OSError:
-                pass
-            else:
-                return self._standard_errors
-            try:
-                self._chain._read_cov_table()
-            except OSError:
-                pass
-            else:
-                self._standard_errors = self._se_from_cov()
-                return self._standard_errors
-            try:
-                self._chain._read_coi_table()
-            except OSError:
-                pass
-            else:
-                self._standard_errors = self._se_from_inf()
-                return self._standard_errors
-            raise FileNotFoundError("Could not find any of the ext/cov/cor/coi files")
-
-    @property
     def individual_ofv(self):
         """A Series with individual estimates indexed over ID
         """
@@ -199,34 +180,71 @@ class NONMEMModelfitResults(ModelfitResults):
             self._chain._read_phi_table()
             return self._individual_estimates_covariance
 
+    def _set_covariance_status(self, results_file, table_with_cov=None):
+        covariance_status = {'requested': True if self._standard_errors is not None
+                             else (table_with_cov == self.table_number),
+                             'completed': (self._standard_errors is not None),
+                             'warnings': None}
+        if self._standard_errors is not None and results_file is not None:
+            status = results_file.covariance_status(self.table_number)
+            if status['covariance_step_ok'] is not None:
+                covariance_status['warnings'] = not status['covariance_step_ok']
+        self._covariance_status = covariance_status
+
+    def _set_estimation_status(self, results_file):
+        status = NONMEMResultsFile.unknown_termination()
+        if results_file is not None:
+            status = results_file.estimation_status(self.table_number)
+        self._estimation_status = status
+
+#    def sumo(self):
+#        df = self.parameter_summary()
+
 
 class NONMEMChainedModelfitResults(ChainedModelfitResults):
-    def __init__(self, path, n, model=None):
-        # Path is path to any result file. lst-file would make most sense probably
-        # FIXME: n (number of $EST) could be removed as it could be inferred
+    def __init__(self, path, model=None):
+        # Path is path to any result file
         self._path = Path(path)
         self._read_phi = False
         self._read_ext = False
         self._read_cov = False
         self._read_coi = False
         self._read_cor = False
+        self._read_lst = False
         self.model = model
-        for i in range(n):
-            res = NONMEMModelfitResults(self)
-            res.model_name = self._path.stem
-            res.model = model
-            if i != n - 1:    # Only the final estimation step carries covariance information
-                res._covariance_matrix = None
-                res._correlation_matrix = None
-                res._information_matrix = None
-            self.append(res)
         extensions = ['.lst', '.ext', '.cov', '.cor', '.coi', '.phi']
         self.tool_files = [self._path.with_suffix(ext) for ext in extensions]
+
+    def __getattr__(self, item):
+        if (item == '_last'):
+            if len(self) < 1:
+                self._load()
+            if len(self) > 0:
+                last = len(self)-1
+                self._last = last
+                return last
+            else:
+                raise ValueError('Empty list of modelfit results')
+        else:
+            raise AttributeError(f'{type(self)} object has no attribute \'{item}\'')
+
+    def _load(self):
+        self._read_ext_table()
+
+    def __bool__(self):
+        # without this, an existing but 'unloaded' object will evaluate to False
+        self._load()
+        return len(self) > 0
 
     def _read_ext_table(self):
         if not self._read_ext:
             ext_tables = NONMEMTableFile(self._path.with_suffix('.ext'))
-            for table, result_obj in zip(ext_tables, self):
+            for table in ext_tables:
+                result_obj = NONMEMModelfitResults(self)
+                result_obj.model_name = self._path.stem
+                result_obj.model = self.model
+                result_obj.table_number = table.number
+                result_obj._ofv = table.final_ofv
                 ests = table.final_parameter_estimates
                 fix = table.fixed
                 ests = ests[~fix]
@@ -240,7 +258,13 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
                 try:
                     ses = table.standard_errors
                 except Exception:
+                    # If there are no standard errors in ext-file it means
+                    # there can be no cov, cor or coi either
                     result_obj._standard_errors = None
+                    result_obj._covariance_matrix = None
+                    result_obj._correlation_matrix = None
+                    result_obj._information_matrix = None
+                    result_obj._set_covariance_status(None)
                 else:
                     ses = ses[~fix]
                     if self.model:
@@ -252,52 +276,90 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
                     if self.model:
                         sdcorr_ses = sdcorr_ses.rename(index=self.model.parameter_translation())
                     result_obj._standard_errors_sdcorr = sdcorr_ses
-                result_obj._ofv = table.final_ofv
+                self.append(result_obj)
+                # FIXME condition number from ext if available
             self._read_ext = True
+
+    def _read_lst_file(self):
+        if not self._read_lst:
+            self._load()
+            rfile = NONMEMResultsFile(self._path.with_suffix('.lst'))
+            table_with_cov = -99
+            if self.model is not None:
+                if len(self.model.control_stream.get_records('COVARIANCE')) > 0:
+                    table_with_cov = self[self._last].table_number  # correct unless interrupted
+            for result_obj in self:
+                result_obj._set_estimation_status(rfile)
+                result_obj._set_covariance_status(rfile, table_with_cov=table_with_cov)
+        self._read_lst = True
+
+    @property
+    def covariance_step(self):
+        return self[self._last].covariance_step
+
+    @property
+    def estimation_step(self):
+        return self[self._last].estimation_step
+
+#    def sumo(self):
+#        return self[self._last].sumo()
 
     def _read_cov_table(self):
         if not self._read_cov:
+            self._load()
             cov_table = NONMEMTableFile(self._path.with_suffix('.cov'))
-            df = next(cov_table).data_frame
-            if self.model:
-                df = df.rename(index=self.model.parameter_translation())
-                df.columns = df.index
-            self[-1]._covariance_matrix = df
+            for result_obj in self:
+                df = cov_table.table_no(result_obj.table_number).data_frame
+                if df is not None:
+                    if self.model:
+                        df = df.rename(index=self.model.parameter_translation())
+                        df.columns = df.index
+                result_obj._covariance_matrix = df
             self._read_cov = True
 
     def _read_coi_table(self):
         if not self._read_coi:
+            self._load()
             coi_table = NONMEMTableFile(self._path.with_suffix('.coi'))
-            df = next(coi_table).data_frame
-            if self.model:
-                df = df.rename(index=self.model.parameter_translation())
-                df.columns = df.index
-            self[-1]._information_matrix = df
+            for result_obj in self:
+                df = coi_table.table_no(result_obj.table_number).data_frame
+                if df is not None:
+                    if self.model:
+                        df = df.rename(index=self.model.parameter_translation())
+                        df.columns = df.index
+                result_obj._information_matrix = df
             self._read_coi = True
 
     def _read_cor_table(self):
         if not self._read_cor:
+            self._load()
             cor_table = NONMEMTableFile(self._path.with_suffix('.cor'))
-            cor = next(cor_table).data_frame
-            if self.model:
-                cor = cor.rename(index=self.model.parameter_translation())
-                cor.columns = cor.index
-            if not hasattr(self[-1], '_standard_errors'):   # In case read from the ext-file
-                self[-1]._standard_errors = pd.Series(np.diag(cor), index=cor.index)
-            np.fill_diagonal(cor.values, 1)
-            self[-1]._correlation_matrix = cor
+            for result_obj in self:
+                cor = cor_table.table_no(result_obj.table_number).data_frame
+                if cor is not None:
+                    if self.model:
+                        cor = cor.rename(index=self.model.parameter_translation())
+                        cor.columns = cor.index
+                    np.fill_diagonal(cor.values, 1)
+                result_obj._correlation_matrix = cor
             self._read_cor = True
 
     def _read_phi_table(self):
         if not self._read_phi:
+            self._load()
             rv_names = [rv.name for rv in self.model.random_variables if rv.name.startswith('ETA')]
             phi_tables = NONMEMTableFile(self._path.with_suffix('.phi'))
-            for table, result_obj in zip(phi_tables, self):
-                result_obj._individual_ofv = table.iofv
-                result_obj._individual_estimates = table.etas[rv_names]
-                covs = table.etcs
-                for index, cov in covs.iteritems():     # Remove ETCs for 0 FIX OMEGAs
-                    covs[index] = cov[rv_names].loc[rv_names]
-                result_obj._individual_estimates_covariance = covs
-
+            for result_obj in self:
+                table = phi_tables.table_no(result_obj.table_number)
+                if table is not None:
+                    result_obj._individual_ofv = table.iofv
+                    result_obj._individual_estimates = table.etas[rv_names]
+                    covs = table.etcs
+                    for index, cov in covs.iteritems():     # Remove ETCs for 0 FIX OMEGAs
+                        covs[index] = cov[rv_names].loc[rv_names]
+                    result_obj._individual_estimates_covariance = covs
+                else:
+                    result_obj._individual_ofv = None
+                    result_obj._individual_estimates = None
+                    result_obj._individual_estimates_covariance = None
             self._read_phi = True
