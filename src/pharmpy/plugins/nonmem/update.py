@@ -139,7 +139,9 @@ def update_ode_system(model, old, new):
                 isinstance(old.find_dosing().dose, Bolus):
             dose = new.find_dosing().dose
             if dose.rate is None:
+                # FIXME: Not always D1 here!
                 ass = Assignment('D1', dose.duration)
+                dose.duration = ass.symbol
             else:
                 raise NotImplementedError("First order infusion rate is not yet supported")
             statements = model.statements
@@ -156,8 +158,10 @@ def update_ode_system(model, old, new):
             advan = subs.get_option_startswith('ADVAN')
             trans = subs.get_option_startswith('TRANS')
             statements = model.statements
-            _, rate = new.get_compartment_flows(new.find_depot(), out=True)[0]
-            statements.add_before_odes(Assignment('KA', rate))
+            comp, rate = new.get_compartment_flows(new.find_depot(), out=True)[0]
+            ass = Assignment('KA', rate)
+            statements.add_before_odes(ass)
+            new.add_flow(new.find_depot(), comp, ass.symbol)
             if advan == 'ADVAN1':
                 subs.replace_option('ADVAN1', 'ADVAN2')
                 secondary = secondary_pk_param_conversion_map(len(old), 1, removed=False)

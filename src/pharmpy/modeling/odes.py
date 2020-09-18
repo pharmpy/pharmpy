@@ -63,7 +63,6 @@ def absorption_rate(model, order):
             odes.remove_compartment(depot)
             symbols = ka.free_symbols
             statements.remove_symbol_definitions(symbols, odes)
-            model.statements = statements
             model.remove_unused_parameters_and_rvs()
         elif _have_zero_order_absorption(model):
             dose_comp = odes.find_dosing()
@@ -80,26 +79,28 @@ def absorption_rate(model, order):
                                 duration=pharmpy.symbols.symbol('MAT') * 2)
             if depot:
                 to_comp, _ = odes.get_compartment_flows(depot)[0]
-                to_comp.dose = new_dose
                 ka = odes.get_flow(depot, odes.find_central())
                 odes.remove_compartment(depot)
                 symbols |= ka.free_symbols
             else:
-                dose_comp.dose = new_dose
+                to_comp = dose_comp
             statements.remove_symbol_definitions(symbols, odes)
+            model.remove_unused_parameters_and_rvs()
+            to_comp.dose = new_dose
             mat_param = Parameter('TVMAT', init=0.1, lower=0)
             model.parameters.add(mat_param)
             imat = Assignment('MAT', mat_param.symbol)
             model.statements.insert(0, imat)
-            model.remove_unused_parameters_and_rvs()
     elif order == 'FO':
         if not depot:
             dose_comp = odes.find_dosing()
             depot = odes.add_compartment('DEPOT')
-            depot.dose = Bolus(dose_comp.dose.amount)
+            new_dose = Bolus(dose_comp.dose.amount)
             symbols = dose_comp.free_symbols
             dose_comp.dose = None
             statements.remove_symbol_definitions(symbols, odes)
+            model.remove_unused_parameters_and_rvs()
+            depot.dose = Bolus(new_dose)
             mat_param = Parameter('TVMAT', init=0.1, lower=0)
             model.parameters.add(mat_param)
             imat = Assignment('MAT', mat_param.symbol)
