@@ -1,6 +1,7 @@
 # The NONMEM Model class
 import re
 import shutil
+from os import stat
 from pathlib import Path
 
 import pharmpy.data
@@ -39,10 +40,9 @@ class Model(pharmpy.model.Model):
         except AttributeError:
             None
         if self.source.path.is_file():
-            lst_path = self.source.path.with_suffix('.lst')
-            if lst_path.exists():
-                num_est = len(self.control_stream.get_records('ESTIMATION'))
-                self._modelfit_results = NONMEMChainedModelfitResults(lst_path, num_est, model=self)
+            ext_path = self.source.path.with_suffix('.ext')
+            if ext_path.exists() and stat(ext_path).st_size > 0:
+                self._modelfit_results = NONMEMChainedModelfitResults(ext_path, model=self)
                 return self._modelfit_results
         else:
             return None

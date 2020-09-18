@@ -27,6 +27,14 @@ def test_update_inits(pheno_path):
     model.update_inits()
 
 
+def test_empty_ext_file(testdata):
+    # assert existing but empty ext-file does not give modelfit_results
+    model = Model(testdata / 'nonmem' / 'modelfit_results' / 'onePROB' /
+                  'noESTwithSIM' / 'onlysim.mod')
+    assert model.source.path.with_suffix('.ext').exists() is True
+    assert model.modelfit_results is None
+
+
 def test_detection():
     Model(StringIO("$PROBLEM this"))
     Model(StringIO("   \t$PROBLEM skld fjl"))
@@ -216,6 +224,8 @@ def test_add_parameters_and_statements(pheno_path, param_new, statement_new, buf
 
 def test_results(pheno_path):
     model = Model(pheno_path)
+    assert len(model.modelfit_results) == 0
+    assert bool(model.modelfit_results) is True  # results loaded on access
     assert len(model.modelfit_results) == 1     # A chain of one estimation
 
 
