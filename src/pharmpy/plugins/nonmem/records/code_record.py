@@ -282,6 +282,7 @@ class CodeRecord(Record):
             kept.extend(self.root.children[node_index:])
         self.root.children = kept
         self.nodes = new_nodes
+        self._statements = new.copy()
 
     def _translate_sympy_piecewise(self, statement):
         expression = statement.expression.args
