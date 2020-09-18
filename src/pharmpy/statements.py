@@ -164,13 +164,11 @@ class CompartmentalSystem(ODESystem):
         self._g = nx.DiGraph()
 
     def subs(self, substitutions):
-        g_copy = copy.deepcopy(self._g)
         for (u, v, rate) in self._g.edges.data('rate'):
             rate_sub = rate.subs(substitutions, simultaneous=True)
-            g_copy.remove_edge(u, v)
-            g_copy.add_edge(u, v, rate=rate_sub)
-
-        self._g = copy.deepcopy(g_copy)
+            self._g.edges[u, v]['rate'] = rate_sub
+        for comp in self._g.nodes:
+            comp.subs(substitutions)
 
     @property
     def free_symbols(self):
@@ -436,6 +434,10 @@ class Compartment:
         else:
             return set()
 
+    def subs(self, substitutions):
+        if self.dose is not None:
+            self.dose.subs(substitutions)
+
     def __eq__(self, other):
         return isinstance(other, Compartment) and self.name == other.name and \
             self.dose == other.dose
@@ -455,6 +457,9 @@ class Bolus:
     @property
     def free_symbols(self):
         return {self.amount}
+
+    def subs(self, substitutions):
+        self.amount = self.amount.subs(substitutions, simultaneous=True)
 
     def __deepcopy__(self, memo):
         newone = type(self)(self.amount)
@@ -479,6 +484,13 @@ class Infusion:
         else:
             symbs = self.duration.free_symbols
         return symbs | self.amount.free_symbols
+
+    def subs(self, substitutions):
+        self.amount = self.amount.subs(substitutions, simultaneous=True)
+        if self.rate is not None:
+            self.rate = self.rate.subs(substitutions, simultaneous=True)
+        else:
+            self.duration = self.duration.subs(substitutions, simultaneous=True)
 
     def __deepcopy__(self, memo):
         new = type(self)(self.amount, rate=self.rate, duration=self.duration)
