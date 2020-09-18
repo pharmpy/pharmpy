@@ -258,6 +258,8 @@ class CodeRecord(Record):
             if op == '+':
                 if isinstance(s.expression, Piecewise):
                     statement_str = self._translate_sympy_piecewise(s)
+                elif re.search('sign', str(s.expression)):
+                    statement_str = self._translate_sympy_sign(s)
                 else:
                     statement_str = f'\n{repr(s).replace(":", "")}'
                 node_tree = CodeRecordParser(statement_str).root
@@ -332,6 +334,20 @@ class CodeRecord(Record):
             c_transl = ''.join([sign_dict.get(symbol, symbol)
                                 for symbol in c_split])
         return c_transl
+
+    @staticmethod
+    def _translate_sympy_sign(s):
+        args = s.expression.args
+
+        subs_dict = dict()
+        for arg in args:
+            if str(arg).startswith('sign'):
+                sign_arg = arg.args[0]
+                subs_dict[arg] = abs(sign_arg)/sign_arg
+
+        s.subs(subs_dict)
+
+        return f'\n{repr(s).replace(":", "")}'
 
     def _assign_statements(self):
         s = []

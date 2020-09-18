@@ -34,8 +34,8 @@ class Assignment:
         substitutions - dictionary with old-new pair (can be type str or
                         sympy symbol)
         """
-        self.symbol = self.symbol.subs(substitutions)
-        self.expression = self.expression.subs(substitutions)
+        self.symbol = self.symbol.subs(substitutions, simultaneous=True)
+        self.expression = self.expression.subs(substitutions, simultaneous=True)
 
     @property
     def free_symbols(self):
@@ -164,13 +164,11 @@ class CompartmentalSystem(ODESystem):
         self._g = nx.DiGraph()
 
     def subs(self, substitutions):
-        g_copy = copy.deepcopy(self._g)
         for (u, v, rate) in self._g.edges.data('rate'):
-            rate_sub = rate.subs(substitutions)
-            g_copy.remove_edge(u, v)
-            g_copy.add_edge(u, v, rate=rate_sub)
-
-        self._g = copy.deepcopy(g_copy)
+            rate_sub = rate.subs(substitutions, simultaneous=True)
+            self._g.edges[u, v]['rate'] = rate_sub
+        for comp in self._g.nodes:
+            comp.subs(substitutions)
 
     @property
     def free_symbols(self):
@@ -436,6 +434,10 @@ class Compartment:
         else:
             return set()
 
+    def subs(self, substitutions):
+        if self.dose is not None:
+            self.dose.subs(substitutions)
+
     def __eq__(self, other):
         return isinstance(other, Compartment) and self.name == other.name and \
             self.dose == other.dose
@@ -455,6 +457,9 @@ class Bolus:
     @property
     def free_symbols(self):
         return {self.amount}
+
+    def subs(self, substitutions):
+        self.amount = self.amount.subs(substitutions, simultaneous=True)
 
     def __deepcopy__(self, memo):
         newone = type(self)(self.amount)
@@ -479,6 +484,13 @@ class Infusion:
         else:
             symbs = self.duration.free_symbols
         return symbs | self.amount.free_symbols
+
+    def subs(self, substitutions):
+        self.amount = self.amount.subs(substitutions, simultaneous=True)
+        if self.rate is not None:
+            self.rate = self.rate.subs(substitutions, simultaneous=True)
+        else:
+            self.duration = self.duration.subs(substitutions, simultaneous=True)
 
     def __deepcopy__(self, memo):
         new = type(self)(self.amount, rate=self.rate, duration=self.duration)
@@ -517,40 +529,47 @@ class ModelStatements(list):
                 statement = s
         return statement
 
-    def remove_symbol_definition(self, symbol, statement):
-        """Remove symbol definition and dependencies not used elsewhere. statement is the statement from
-        which the symbol was removed
+    def remove_symbol_definitions(self, symbols, statement):
+        """Remove symbol remove_symbol_definitions and dependencies not used elsewhere. statement
+        is the statement from which the symbol was removed
         """
         removed_ind = self.index(statement)
-        depinds = self._find_statement_and_deps(symbol, removed_ind)
-        depsymbs = [self[i].symbol for i in depinds]
+        depinds = set()
+        for symbol in symbols:
+            depinds |= self._find_statement_and_deps(symbol, removed_ind)
+        depsymbs = {self[i].symbol for i in depinds}
         keep = []
-        for ind, symb in zip(depinds, depsymbs):
-            for s in self[ind + 1:]:
-                if ind not in depinds and symb in s.rhs_symbols:
-                    keep.append(ind)
+        for candidate in depsymbs:
+            for i in depinds:
+                if self[i].symbol == candidate:
+                    final = i
+            for stat_ind in range(final + 1, len(self)):
+                stat = self[stat_ind]
+                if stat_ind not in depinds and candidate in stat.rhs_symbols:
+                    indices = [i for i in depinds if self[i].symbol == candidate]
+                    keep += indices
                     break
-        for i in reversed(depinds):
+        for i in reversed(sorted(depinds)):
             if i not in keep:
                 del self[i]
 
     def _find_statement_and_deps(self, symbol, ind):
-        """Find all statements and their dependencies before a certain statement
+        """Find indices of the last symbol definition and its dependenceis before a
+           certain statement
         """
         # Find index of final assignment of symbol before before
-        statement = None
-        for i in reversed(range(0, ind)):       # Might want to include the before for generality
+        for i in reversed(range(0, ind)):
             statement = self[i]
             if symbol == statement.symbol:
                 break
-        if statement is None:
-            return ModelStatements([])
-        found = [i]
-        remaining = statement.rhs_symbols
+        else:
+            return set()
+        found = {i}
+        remaining = statement.free_symbols
         for j in reversed(range(0, i)):
             statement = self[j]
             if statement.symbol in remaining:
-                found = [j] + found
+                found |= {j}
                 remaining.remove(statement.symbol)
                 remaining |= statement.rhs_symbols
         return found
@@ -563,6 +582,16 @@ class ModelStatements(list):
             if isinstance(s, ODESystem):
                 return s
         return None
+
+    def add_before_odes(self, statement):
+        """Add a statement just before the ODE system
+        """
+        for i, s in enumerate(self):
+            if isinstance(s, ODESystem):
+                break
+        else:
+            i += 1
+        self.insert(i, statement)
 
     def copy(self):
         return copy.deepcopy(self)

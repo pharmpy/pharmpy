@@ -77,8 +77,33 @@ def test_remove_symbol_definition():
     s3 = Assignment(S('M'), sympy.Integer(2))
     s4 = Assignment(S('G'), sympy.Integer(3))
     s = ModelStatements([s4, s3, s2, s1])
-    s.remove_symbol_definition(S('Z'), s1)
+    s.remove_symbol_definitions([S('Z')], s1)
     assert s == ModelStatements([s4, s1])
+
+    s1 = Assignment(S('K'), sympy.Integer(16))
+    s2 = Assignment(S('CL'), sympy.Integer(23))
+    s3 = Assignment(S('CL'), S('CL') + S('K'))
+    s4 = Assignment(S('G'), S('X') + S('K'))
+    s = ModelStatements([s1, s2, s3, s4])
+    s.remove_symbol_definitions([S('CL')], s4)
+    assert s == ModelStatements([s1, s4])
+
+    s1 = Assignment(S('K'), sympy.Integer(16))
+    s2 = Assignment(S('CL'), sympy.Integer(23))
+    s3 = Assignment(S('CL'), S('CL') + S('K'))
+    s4 = Assignment(S('G'), S('X') + S('K'))
+    s5 = Assignment(S('KR'), S('CL'))
+    s = ModelStatements([s1, s2, s3, s4, s5])
+    s.remove_symbol_definitions([S('CL')], s4)
+    assert s == ModelStatements([s1, s2, s3, s4, s5])
+
+    s1 = Assignment(S('K'), sympy.Integer(16))
+    s2 = Assignment(S('CL'), sympy.Integer(23))
+    s3 = Assignment(S('CL'), S('CL') + S('K'))
+    s4 = Assignment(S('G'), S('X'))
+    s = ModelStatements([s1, s2, s3, s4])
+    s.remove_symbol_definitions([S('CL'), S('K')], s4)
+    assert s == ModelStatements([s4])
 
 
 def test_remove_unused_parameters_and_rvs(testdata):

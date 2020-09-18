@@ -56,7 +56,6 @@ import argparse
 import importlib
 import pathlib
 import pydoc
-import re
 import sys
 import types
 from collections import OrderedDict, namedtuple
@@ -226,34 +225,14 @@ def write_model_or_dataset(model_or_dataset, new_df, path, force):
         try:
             if path:
                 if not path.is_dir():
-                    bump_model_number(model, path)
+                    model.bump_model_number(path)
                 model.write(path=path, force=force)
             else:
-                bump_model_number(model)
+                model.bump_model_number()
                 model.write(force=force)
         except FileExistsError as e:
             error(FileExistsError(f'{e.args[0]} Use -f or --force to '
                                   'force an overwrite'))
-
-
-def bump_model_number(model, path='.'):
-    """ If model name ends in a number increase to next available file
-        else do nothing.
-        FIXME: Could be moved to model class. Need the name of the model and the source object
-    """
-    path = pathlib.Path(path)
-    name = model.name
-    m = re.search(r'(.*?)(\d+)$', name)
-    if m:
-        stem = m.group(1)
-        n = int(m.group(2))
-        while True:
-            n += 1
-            new_name = f'{stem}{n}'
-            new_path = path / new_name
-            if not new_path.exists():
-                break
-        model.name = new_name
 
 
 def data_resample(args):
@@ -356,10 +335,10 @@ def model_explicit_odes(args):
     write_model_or_dataset(model, None, path=args.output_file, force=args.force)
 
 
-def model_absorption(args):
-    from pharmpy.modeling import absorption
+def model_absorption_rate(args):
+    from pharmpy.modeling import absorption_rate
     model = args.model
-    absorption(model, order=args.order, rate=args.rate)
+    absorption_rate(model, order=args.order)
     write_model_or_dataset(model, None, path=args.output_file, force=args.force)
 
 
@@ -388,6 +367,20 @@ def tdist(args):
         etas = args.etas
 
     tdist(model, etas)
+    write_model_or_dataset(model, None, path=args.output_file, force=False)
+
+
+def john_draper(args):
+    """Subcommand to apply John Draper transformation to specified etas of model."""
+    from pharmpy.modeling import john_draper
+
+    model = args.model
+    try:
+        etas = args.etas.split(" ")
+    except AttributeError:
+        etas = args.etas
+
+    john_draper(model, etas)
     write_model_or_dataset(model, None, path=args.output_file, force=False)
 
 
@@ -698,18 +691,16 @@ parser_definition = [
             'func': model_explicit_odes,
             'parents': [args_model_input, args_output],
                        }},
-        {'absorption': {
+        {'absorption_rate': {
             'help': 'Set absorption rate for a PK model',
-            'description': 'Change absorption rate of a PK model to either bolus, 0th or 1th order',
-            'func': model_absorption,
+            'description': 'Change absorption rate of a PK model to either instant, 0th order, 1th '
+                           'order or sequential 0-order 1-order.',
+            'func': model_absorption_rate,
             'parents': [args_model_input, args_output],
             'args': [{'name': 'order',
-                      'choices': ['bolus', '0', '1'],
+                      'choices': ['instant', 'ZO', 'FO', 'seq-ZO-FO'],
                       'type': str,
                       'help': 'Order of absorption'},
-                     {'name': '--rate',
-                      'type': str,
-                      'help': 'Symbol for absorption rate'},
                      ]}},
         {'boxcox': {
             'help': 'Applies boxcox transformation',
@@ -726,6 +717,17 @@ parser_definition = [
             'help': 'Applies t-distribution transformation',
             'description': 'Apply t-distribution transformation on selected/all etas',
             'func': tdist,
+            'parents': [args_model_input, args_output],
+            'args': [{'name': '--etas',
+                      'type': str,
+                      'default': None,
+                      'help': 'List of etas, mark group of etas in single quote '
+                              'separated by spaces'},
+                     ]}},
+        {'john_draper': {
+            'help': 'Applies John Draper transformation',
+            'description': 'Apply John Draper transformation on selected/all etas',
+            'func': john_draper,
             'parents': [args_model_input, args_output],
             'args': [{'name': '--etas',
                       'type': str,
@@ -842,7 +844,7 @@ parser = argparse.ArgumentParser(
     formatter_class=formatter,
     allow_abbrev=True,
 )
-parser.add_argument('--version', action='version', version='0.5.0')
+parser.add_argument('--version', action='version', version='0.6.0')
 
 # subcommand parsers
 subparsers = parser.add_subparsers(title='Pharmpy commands', metavar='COMMAND')

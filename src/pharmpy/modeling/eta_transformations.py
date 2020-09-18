@@ -1,7 +1,7 @@
 import re
 import warnings
 
-from sympy import exp
+from sympy import exp, sign
 
 from pharmpy.parameter import Parameter
 from pharmpy.statements import Assignment, ModelStatements
@@ -42,6 +42,28 @@ def tdist(model, list_of_etas=None):
     return model
 
 
+def john_draper(model, list_of_etas=None):
+    """
+    Applies a John Draper transformation [1]_ to specified etas from a
+    :class:`pharmpy.model`.
+
+    .. [1] John, J., Draper, N. (1980). An Alternative Family of Transformations.
+       Journal of the Royal Statistical Society. Series C (Applied Statistics),
+       29(2), 190-197. doi:10.2307/2986305
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model to apply boxcox transformation to.
+    list_of_etas : list
+        List of etas to transform. If None, all etas will be transformed (default).
+    """
+    etas = _get_etas(model, list_of_etas)
+    eta_transformation = EtaTransformation.john_draper(len(etas))
+    _transform_etas(model, eta_transformation, etas)
+    return model
+
+
 def _get_etas(model, list_of_etas):
     rvs = model.random_variables
 
@@ -57,11 +79,11 @@ def _get_etas(model, list_of_etas):
         return etas
 
 
-def _transform_etas(model, eta_transformation, etas):
-    etas_assignment, etas_subs = _create_new_etas(etas, eta_transformation)
-    thetas = _create_new_thetas(model, eta_transformation.name, len(etas))
-    eta_transformation.apply(etas_assignment, thetas)
-    statements_new = eta_transformation.assignments
+def _transform_etas(model, transformation, etas):
+    etas_assignment, etas_subs = _create_new_etas(etas, transformation.name)
+    thetas = _create_new_thetas(model, transformation.theta_type, len(etas))
+    transformation.apply(etas_assignment, thetas)
+    statements_new = transformation.assignments
     sset = model.statements
     sset.subs(etas_subs)
 
@@ -73,15 +95,19 @@ def _transform_etas(model, eta_transformation, etas):
 def _create_new_etas(etas_original, transformation):
     etas_subs = dict()
     etas_assignment = dict()
-    if transformation.name == 'lambda':
+    if transformation == 'boxcox':
         eta_new = 'etab'
-    else:
+    elif transformation == 'tdist':
         eta_new = 'etat'
+    elif transformation == 'johndraper':
+        eta_new = 'etad'
+    else:
+        eta_new = 'etan'
 
     for i, eta in enumerate(etas_original):
         eta_no = int(re.findall(r'\d', eta.name)[0])
         etas_subs[eta.name] = f'{eta_new.upper()}{eta_no}'
-        etas_assignment[f'{eta_new}{i + 1}'] = f'eta_new.upper(){eta_no}'
+        etas_assignment[f'{eta_new}{i + 1}'] = f'{eta_new.upper()}{eta_no}'
         etas_assignment[f'eta{i + 1}'] = f'ETA({eta_no})'
 
     return etas_assignment, etas_subs
@@ -90,7 +116,8 @@ def _create_new_etas(etas_original, transformation):
 def _create_new_thetas(model, transformation, no_of_thetas):
     pset = model.parameters
     thetas = dict()
-    theta_name = str(model.create_symbol(stem=transformation, force_numbering=True))
+    theta_name = str(model.create_symbol(stem=transformation,
+                                         force_numbering=True))
 
     if transformation == 'lambda':
         param_settings = [0.01, -3, 3]
@@ -114,9 +141,10 @@ def _create_new_thetas(model, transformation, no_of_thetas):
 
 
 class EtaTransformation:
-    def __init__(self, name, assignments):
+    def __init__(self, name, assignments, theta_type):
         self.name = name
         self.assignments = assignments
+        self.theta_type = theta_type
 
     def apply(self, etas, thetas):
         for assignment in self.assignments:
@@ -134,7 +162,7 @@ class EtaTransformation:
             assignment = Assignment(symbol, expression)
             assignments.append(assignment)
 
-        return cls('lambda', assignments)
+        return cls('boxcox', assignments, 'lambda')
 
     @classmethod
     def tdist(cls, no_of_etas):
@@ -160,7 +188,23 @@ class EtaTransformation:
             assignment = Assignment(symbol, expression)
             assignments.append(assignment)
 
-        return cls('df', assignments)
+        return cls('tdist', assignments, 'df')
+
+    @classmethod
+    def john_draper(cls, no_of_etas):
+        assignments = ModelStatements()
+        for i in range(1, no_of_etas + 1):
+            symbol = S(f'etad{i}')
+
+            eta = S(f'eta{i}')
+            theta = S(f'theta{i}')
+
+            expression = sign(eta) * (((abs(eta) + 1)**theta - 1)/theta)
+
+            assignment = Assignment(symbol, expression)
+            assignments.append(assignment)
+
+        return cls('johndraper', assignments, 'lambda')
 
     def __str__(self):
         return str(self.assignments)

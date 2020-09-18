@@ -1,3 +1,14 @@
+0.6.0 (2020-09-18)
+------------------
+
+* Add eta transformations: boxcox, t-dist and John Draper 
+* Add results cdd and scm to CLI
+* Add different views for scm results
+* Add support for taking parameter names from comment in NONMEM model
+* Remove assumptions for symbols
+* Add modeling.absorption_rate to set 0th or first order absorption
+* Add update of $TABLE numbers
+
 0.5.0 (2020-09-04)
 ------------------
 

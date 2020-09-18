@@ -51,10 +51,10 @@ Covariate effects may also be applied to a model.
 .. jupyter-execute::
 
    from pharmpy.modeling import add_covariate_effect
-   add_covariate_effect(model, 'CL', 'WGT', 'lin_cont')
+   add_covariate_effect(model, 'CL', 'WGT', 'lin')
 
 Here, *CL* indicates the name of the parameter onto which you want to apply the effect, *WGT* is the covariate, and
-*lin_cont* (linear function on continuous covariates) is the effect you want to apply.
+*lin* (linear function on continuous covariates) is the effect you want to apply.
 See :py:class:`pharmpy.modeling.add_covariate_effect` for effects with available templates.
 
 .. jupyter-execute::
@@ -124,3 +124,18 @@ is similarly a list of etas, and if no list is provided all etas will be transfo
    tdist(model, ['ETA(1)'])
    model.update_source()
    print(model)
+
+John Draper
+~~~~~~~~~~~
+
+Similarly, a John Draper transformation uses a list of etas as input, if no list is
+provided all etas will be transformed.
+
+.. jupyter-execute::
+
+   model = Model(path / "pheno_real.mod")
+   from pharmpy.modeling import john_draper
+   john_draper(model, ['ETA(1)'])
+   model.update_source()
+   print(model)
+

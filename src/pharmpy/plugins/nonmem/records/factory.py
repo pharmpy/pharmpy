@@ -30,6 +30,7 @@ known_records = {
     'SIGMA': (OmegaRecord, OmegaRecordParser),
     'SIZES': (OptionRecord, OptionRecordParser),
     'SUBROUTINES': (OptionRecord, OptionRecordParser),
+    'TABLE': (EtasRecord, OptionRecordParser),  # Etas for now. Has path property
     'THETA': (ThetaRecord, ThetaRecordParser),
 }
 

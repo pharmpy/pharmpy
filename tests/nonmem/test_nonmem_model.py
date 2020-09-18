@@ -19,12 +19,17 @@ def S(x):
 
 def test_source(pheno_path):
     model = Model(pheno_path)
-    assert model.source.code.startswith(';; 1.')
+    assert model.source.code.startswith('$PROBLEM PHENOBARB')
 
 
 def test_update_inits(pheno_path):
     model = Model(pheno_path)
     model.update_inits()
+
+    with ConfigurationContext(conf, parameter_names='comment'):
+        model = Model(pheno_path)
+        model.update_inits()
+        model.update_source()
 
 
 def test_empty_ext_file(testdata):
@@ -57,7 +62,7 @@ def test_parameters(pheno_path):
                                                        lower=0, upper=sympy.oo)
     assert model.parameters['OMEGA(2,2)'] == Parameter('OMEGA(2,2)', 0.031128,
                                                        lower=0, upper=sympy.oo)
-    assert model.parameters['SIGMA(1,1)'] == Parameter('SIGMA(1,1)', 0.0130865,
+    assert model.parameters['SIGMA(1,1)'] == Parameter('SIGMA(1,1)', 1e-7,
                                                        lower=0, upper=sympy.oo)
 
 
@@ -77,13 +82,13 @@ def test_set_parameters(pheno_path):
                                                        lower=0, upper=sympy.oo)
     model.update_source()
     thetas = model.control_stream.get_records('THETA')
-    assert str(thetas[0]) == '$THETA  (0,0.75) ; PTVCL\n'
-    assert str(thetas[1]) == '$THETA  (0,0.5) ; PTVV\n'
-    assert str(thetas[2]) == '$THETA  (-.99,0.25)\n'
+    assert str(thetas[0]) == '$THETA (0,0.75) ; PTVCL\n'
+    assert str(thetas[1]) == '$THETA (0,0.5) ; PTVV\n'
+    assert str(thetas[2]) == '$THETA (-.99,0.25)\n'
     omegas = model.control_stream.get_records('OMEGA')
-    assert str(omegas[0]) == '$OMEGA  DIAGONAL(2)\n 0.1  ;       IVCL\n 0.2  ;        IVV\n'
+    assert str(omegas[0]) == '$OMEGA DIAGONAL(2)\n 0.1  ;       IVCL\n 0.2  ;        IVV\n\n'
     sigmas = model.control_stream.get_records('SIGMA')
-    assert str(sigmas[0]) == '$SIGMA  0.3\n'
+    assert str(sigmas[0]) == '$SIGMA 0.3\n'
 
     model = Model(pheno_path)
     params = model.parameters
@@ -116,9 +121,9 @@ def test_add_parameters(pheno_path, param_new, init_expected, buf_new):
 
     assert str(model.control_stream) == str(stream)
 
-    rec_ref = f'$THETA  (0,0.00469307) ; PTVCL\n' \
-              f'$THETA  (0,1.00916) ; PTVV\n' \
-              f'$THETA  (-.99,.1)\n' \
+    rec_ref = f'$THETA (0,0.00469307) ; PTVCL\n' \
+              f'$THETA (0,1.00916) ; PTVV\n' \
+              f'$THETA (-.99,.1)\n' \
               f'{buf_new}\n'
 
     rec_mod = ''
@@ -172,14 +177,16 @@ def test_add_statements(pheno_path, statement_new, buf_new):
 
     assert str(model.control_stream) == str(stream)
 
-    rec_ref = f'$PK\n\n\nIF(AMT.GT.0) BTIME=TIME\nTAD=TIME-BTIME\n'\
-              f'      TVCL=THETA(1)*WGT\n' \
-              f'      TVV=THETA(2)*WGT\n' \
+    rec_ref = f'$PK\n' \
+              f'IF(AMT.GT.0) BTIME=TIME\n' \
+              f'TAD=TIME-BTIME\n'\
+              f'TVCL=THETA(1)*WGT\n' \
+              f'TVV=THETA(2)*WGT\n' \
               f'IF(APGR.LT.5) TVV=TVV*(1+THETA(3))\n' \
-              f'      CL=TVCL*EXP(ETA(1))\n' \
-              f'      V=TVV*EXP(ETA(2))\n' \
-              f'      S1=V\n' \
-              f'{buf_new}\n'
+              f'CL=TVCL*EXP(ETA(1))\n' \
+              f'V=TVV*EXP(ETA(2))\n' \
+              f'S1=V\n' \
+              f'{buf_new}\n\n'
 
     rec_mod = str(model.control_stream.get_records('PK')[0])
 
@@ -209,17 +216,18 @@ def test_add_parameters_and_statements(pheno_path, param_new, statement_new, buf
     model.statements = new_sset
     model.update_source()
 
-    rec = '$PK\n\n\nIF(AMT.GT.0) BTIME=TIME\nTAD=TIME-BTIME\n' \
-          '      TVCL=THETA(1)*WGT\n' \
-          '      TVV=THETA(2)*WGT\n' \
-          'IF(APGR.LT.5) TVV=TVV*(1+THETA(3))\n' \
-          '      CL=TVCL*EXP(ETA(1))\n' \
-          '      V=TVV*EXP(ETA(2))\n' \
-          '      S1=V\n'
+    rec = f'$PK\n' \
+          f'IF(AMT.GT.0) BTIME=TIME\n' \
+          f'TAD=TIME-BTIME\n' \
+          f'TVCL=THETA(1)*WGT\n' \
+          f'TVV=THETA(2)*WGT\n' \
+          f'IF(APGR.LT.5) TVV=TVV*(1+THETA(3))\n' \
+          f'CL=TVCL*EXP(ETA(1))\n' \
+          f'V=TVV*EXP(ETA(2))\n' \
+          f'S1=V\n' \
+          f'{buf_new}\n\n'
 
-    rec_new = f'{rec}{buf_new}\n'
-
-    assert str(model.get_pred_pk_record()) == rec_new
+    assert str(model.get_pred_pk_record()) == rec
 
 
 def test_results(pheno_path):
@@ -272,10 +280,10 @@ def test_update_individual_estimates(datadir):
         model.update_source()
         with open('run2_input.phi', 'r') as fp, open('run1.phi') as op:
             assert fp.read() == op.read()
-        assert str(model).endswith("""$ESTIMATION METHOD=1 INTERACTION PRINT=1 MCETA=1
+        assert str(model).endswith("""$ESTIMATION METHOD=1 INTERACTION MCETA=1
 $COVARIANCE UNCONDITIONAL
-$TABLE      ID TIME AMT WGT APGR IPRED PRED TAD CWRES NPDE NOAPPEND
-            NOPRINT ONEHEADER FILE=pheno_real.tab
+$TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
+       NOPRINT ONEHEADER FILE=sdtab2
 $ETAS FILE=run2_input.phi""")
 
 
@@ -320,12 +328,10 @@ def test_remove_eta(pheno_path):
     eta1 = rvs['ETA(1)']
     rvs.discard(eta1)
     model.update_source()
-    print(str(model))
-    assert str(model).split('\n')[15] == 'V = TVV*EXP(ETA(1))'
+    assert str(model).split('\n')[12] == 'V = TVV*EXP(ETA(1))'
 
 
 def test_symbol_names_in_comment(pheno_path):
     with ConfigurationContext(conf, parameter_names='comment'):
         model = Model(pheno_path)
         assert model.statements[2].expression == S('PTVCL') * S('WGT')
-        print(model.statements)
