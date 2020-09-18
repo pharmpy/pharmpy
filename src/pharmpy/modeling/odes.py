@@ -75,8 +75,7 @@ def absorption_rate(model, order):
         if not _have_zero_order_absorption(model):
             dose_comp = odes.find_dosing()
             symbols = dose_comp.free_symbols
-            new_dose = Infusion(dose_comp.dose.amount,
-                                duration=pharmpy.symbols.symbol('MAT') * 2)
+            amount = dose_comp.dose.amount
             if depot:
                 to_comp, _ = odes.get_compartment_flows(depot)[0]
                 ka = odes.get_flow(depot, odes.find_central())
@@ -86,10 +85,13 @@ def absorption_rate(model, order):
                 to_comp = dose_comp
             statements.remove_symbol_definitions(symbols, odes)
             model.remove_unused_parameters_and_rvs()
-            to_comp.dose = new_dose
-            mat_param = Parameter('TVMAT', init=0.1, lower=0)
+            tvmat_symb = model.create_symbol('TVMAT')
+            mat_param = Parameter(tvmat_symb.name, init=0.1, lower=0)
             model.parameters.add(mat_param)
-            imat = Assignment('MAT', mat_param.symbol)
+            mat_symb = model.create_symbol('MAT')
+            imat = Assignment(mat_symb, mat_param.symbol)
+            new_dose = Infusion(amount, duration=mat_symb * 2)
+            to_comp.dose = new_dose
             model.statements.insert(0, imat)
     elif order == 'FO':
         if not depot:
@@ -101,9 +103,11 @@ def absorption_rate(model, order):
             statements.remove_symbol_definitions(symbols, odes)
             model.remove_unused_parameters_and_rvs()
             depot.dose = new_dose
-            mat_param = Parameter('TVMAT', init=0.1, lower=0)
+            tvmat_symb = model.create_symbol('TVMAT')
+            mat_param = Parameter(tvmat_symb.name, init=0.1, lower=0)
             model.parameters.add(mat_param)
-            imat = Assignment('MAT', mat_param.symbol)
+            mat_symb = model.create_symbol('MAT')
+            imat = Assignment(mat_symb, mat_param.symbol)
             model.statements.insert(0, imat)
             odes.add_flow(depot, dose_comp, 1 / pharmpy.symbols.symbol('MAT'))
             model.remove_unused_parameters_and_rvs()
