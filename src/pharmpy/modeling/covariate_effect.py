@@ -79,9 +79,9 @@ def _create_thetas(model, effect, covariate):
     inits = _choose_param_inits(effect, model.dataset, covariate)
 
     if no_of_thetas == 1:
-        init = inits[0]['init']
-        upper = inits[0]['upper']
-        lower = inits[0]['lower']
+        init = inits['init']
+        upper = inits['upper']
+        lower = inits['lower']
 
         pset.add(Parameter(theta_name, init, lower, upper))
         theta_names['theta'] = theta_name
@@ -89,9 +89,9 @@ def _create_thetas(model, effect, covariate):
         cov_eff_number = int(re.findall(r'\d', theta_name)[0])
 
         for i in range(1, no_of_thetas+1):
-            init = inits[0]['init']
-            upper = inits[0]['upper']
-            lower = inits[0]['lower']
+            init = inits['init']
+            upper = inits['upper']
+            lower = inits['lower']
 
             pset.add(Parameter(theta_name, init, lower, upper))
             theta_names[f'theta{i}'] = theta_name
@@ -142,12 +142,34 @@ def _choose_param_inits(effect, df, covariate):
     bounds need to be dynamic."""
     init_default = 0.001
 
-    inits = []
+    inits = dict()
 
     cov_median = _calculate_median(df, covariate)
     cov_min = df[str(covariate)].min()
     cov_max = df[str(covariate)].max()
 
+    lower, upper = _choose_bounds(effect, cov_median, cov_min, cov_max)
+
+    if effect == 'exp':
+        if lower > init_default or init_default > upper:
+            init = (upper + lower)/2
+            if init == 0:
+                init = upper/5
+        else:
+            init = init_default
+    elif effect == 'pow':
+        init = init_default
+    else:
+        init = init_default
+
+    inits['init'] = init
+    inits['lower'] = lower
+    inits['upper'] = upper
+
+    return inits
+
+
+def _choose_bounds(effect, cov_median, cov_min, cov_max):
     if effect == 'exp':
         min_diff = cov_min - cov_median
         max_diff = cov_max - cov_median
@@ -156,8 +178,7 @@ def _choose_param_inits(effect, df, covariate):
         upper_expected = 100
 
         if min_diff == 0 or max_diff == 0:
-            lower = lower_expected
-            upper = upper_expected
+            return lower_expected, upper_expected
         else:
             log_base = 10
             lower = max(math.log(lower_expected, log_base)/max_diff,
@@ -165,29 +186,11 @@ def _choose_param_inits(effect, df, covariate):
             upper = min(math.log(lower_expected, log_base)/min_diff,
                         math.log(upper_expected, log_base)/max_diff)
 
-        if lower > init_default or init_default > upper:
-            init = (upper + lower)/2
-            if init == 0:
-                init = upper/5
-        else:
-            init = init_default
+            return lower, upper
     elif effect == 'pow':
-        lower = -100
-        upper = 100000
-        init = init_default
+        return -100, 100000
     else:
-        lower = -100000
-        upper = 100000
-        init = init_default
-
-    inits_current = dict()
-    inits_current['init'] = init
-    inits_current['lower'] = lower
-    inits_current['upper'] = upper
-
-    inits.append(inits_current)
-
-    return inits
+        return -1000000, 100000
 
 
 def _create_template(effect, model, covariate):
