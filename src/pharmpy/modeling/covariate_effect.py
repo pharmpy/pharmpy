@@ -76,9 +76,10 @@ def _create_thetas(model, effect, covariate):
 
     theta_names = dict()
     theta_name = str(model.create_symbol(stem='COVEFF', force_numbering=True))
-    inits = _choose_param_inits(effect, model.dataset, covariate)
 
     if no_of_thetas == 1:
+        inits = _choose_param_inits(effect, model.dataset, covariate)
+
         init = inits['init']
         upper = inits['upper']
         lower = inits['lower']
@@ -89,6 +90,8 @@ def _create_thetas(model, effect, covariate):
         cov_eff_number = int(re.findall(r'\d', theta_name)[0])
 
         for i in range(1, no_of_thetas+1):
+            inits = _choose_param_inits(effect, model.dataset, covariate, i)
+
             init = inits['init']
             upper = inits['upper']
             lower = inits['lower']
@@ -137,7 +140,7 @@ def _calculate_std(df, covariate, baselines=False):
         return df.groupby('ID')[str(covariate)].mean().std()
 
 
-def _choose_param_inits(effect, df, covariate):
+def _choose_param_inits(effect, df, covariate, index=None):
     """Chooses inits for parameters. If the effect is exponential, the
     bounds need to be dynamic."""
     init_default = 0.001
@@ -148,7 +151,7 @@ def _choose_param_inits(effect, df, covariate):
     cov_min = df[str(covariate)].min()
     cov_max = df[str(covariate)].max()
 
-    lower, upper = _choose_bounds(effect, cov_median, cov_min, cov_max)
+    lower, upper = _choose_bounds(effect, cov_median, cov_min, cov_max, index)
 
     if effect == 'exp':
         if lower > init_default or init_default > upper:
@@ -169,7 +172,7 @@ def _choose_param_inits(effect, df, covariate):
     return inits
 
 
-def _choose_bounds(effect, cov_median, cov_min, cov_max):
+def _choose_bounds(effect, cov_median, cov_min, cov_max, index=None):
     if effect == 'exp':
         min_diff = cov_min - cov_median
         max_diff = cov_max - cov_median
@@ -185,12 +188,30 @@ def _choose_bounds(effect, cov_median, cov_min, cov_max):
                         math.log(upper_expected, log_base)/min_diff)
             upper = min(math.log(lower_expected, log_base)/min_diff,
                         math.log(upper_expected, log_base)/max_diff)
-
-            return lower, upper
+    elif effect == 'lin':
+        if cov_median == cov_min:
+            upper = 100000
+        else:
+            upper = 1 / (cov_median - cov_min)
+        if cov_median == cov_max:
+            lower = -100000
+        else:
+            lower = 1 / (cov_median - cov_max)
+    elif effect == 'piece_lin':
+        if cov_median == cov_min or cov_median == cov_max:
+            raise Exception('Median cannot be same as min or max, cannot use '
+                            'piecewise-linear parameterization.')
+        if index == 0:
+            upper = 1 / (cov_median - cov_min)
+            lower = -100000
+        else:
+            upper = 100000
+            lower = 1 / (cov_median - cov_max)
     elif effect == 'pow':
         return -100, 100000
     else:
         return -1000000, 100000
+    return lower, upper
 
 
 def _create_template(effect, model, covariate):
