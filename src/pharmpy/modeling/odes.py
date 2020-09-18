@@ -100,7 +100,7 @@ def absorption_rate(model, order):
             dose_comp.dose = None
             statements.remove_symbol_definitions(symbols, odes)
             model.remove_unused_parameters_and_rvs()
-            depot.dose = Bolus(new_dose)
+            depot.dose = new_dose
             mat_param = Parameter('TVMAT', init=0.1, lower=0)
             model.parameters.add(mat_param)
             imat = Assignment('MAT', mat_param.symbol)
