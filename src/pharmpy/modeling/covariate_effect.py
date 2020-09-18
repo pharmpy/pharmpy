@@ -80,11 +80,7 @@ def _create_thetas(model, effect, covariate):
     if no_of_thetas == 1:
         inits = _choose_param_inits(effect, model.dataset, covariate)
 
-        init = inits['init']
-        upper = inits['upper']
-        lower = inits['lower']
-
-        pset.add(Parameter(theta_name, init, lower, upper))
+        pset.add(Parameter(theta_name, inits['init'], inits['lower'], inits['upper']))
         theta_names['theta'] = theta_name
     else:
         cov_eff_number = int(re.findall(r'\d', theta_name)[0])
@@ -92,11 +88,7 @@ def _create_thetas(model, effect, covariate):
         for i in range(1, no_of_thetas+1):
             inits = _choose_param_inits(effect, model.dataset, covariate, i)
 
-            init = inits['init']
-            upper = inits['upper']
-            lower = inits['lower']
-
-            pset.add(Parameter(theta_name, init, lower, upper))
+            pset.add(Parameter(theta_name, inits['init'], inits['lower'], inits['upper']))
             theta_names[f'theta{i}'] = theta_name
             theta_name = f'COVEFF{cov_eff_number + i}'
 
@@ -202,15 +194,17 @@ def _choose_bounds(effect, cov_median, cov_min, cov_max, index=None):
             raise Exception('Median cannot be same as min or max, cannot use '
                             'piecewise-linear parameterization.')
         if index == 0:
-            upper = 1 / (cov_median - cov_min)
             lower = -100000
+            upper = 1 / (cov_median - cov_min)
         else:
-            upper = 100000
             lower = 1 / (cov_median - cov_max)
+            upper = 100000
     elif effect == 'pow':
-        return -100, 100000
+        lower = -100
+        upper = 100000
     else:
-        return -1000000, 100000
+        lower = -100000
+        upper = 100000
     return lower, upper
 
 
