@@ -26,11 +26,15 @@ def test_apply(cov_eff, symbol, expression):
     assert cov_eff.template.expression == expression
 
 
-def test_choose_param_inits(pheno_path):
+@pytest.mark.parametrize('cov_eff, init, lower, upper', [
+    ('exp', 0.001, -0.8696, 0.8696),
+    ('pow', 0.001, -100, 100000)
+])
+def test_choose_param_inits(pheno_path, cov_eff, init, lower, upper):
     model = Model(pheno_path)
 
-    init, lower, upper = _choose_param_inits('exp', model.dataset, 'WGT')
+    inits = _choose_param_inits(cov_eff, model.dataset, 'WGT')
 
-    assert init == 0.001
-    assert round(lower, 4) == -0.8696
-    assert round(upper, 4) == 0.8696
+    assert inits[0]['init'] == init
+    assert round(inits[0]['lower'], 4) == lower
+    assert round(inits[0]['upper'], 4) == upper

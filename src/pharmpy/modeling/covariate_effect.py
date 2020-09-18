@@ -76,18 +76,24 @@ def _create_thetas(model, effect, covariate):
 
     theta_names = dict()
     theta_name = str(model.create_symbol(stem='COVEFF', force_numbering=True))
-    init, theta_lower, theta_upper = _choose_param_inits(effect,
-                                                         model.dataset,
-                                                         covariate)
+    inits = _choose_param_inits(effect, model.dataset, covariate)
 
     if no_of_thetas == 1:
-        pset.add(Parameter(theta_name, init, theta_lower, theta_upper))
+        init = inits[0]['init']
+        upper = inits[0]['upper']
+        lower = inits[0]['lower']
+
+        pset.add(Parameter(theta_name, init, lower, upper))
         theta_names['theta'] = theta_name
     else:
         cov_eff_number = int(re.findall(r'\d', theta_name)[0])
 
         for i in range(1, no_of_thetas+1):
-            pset.add(Parameter(theta_name, theta_upper, theta_lower))
+            init = inits[0]['init']
+            upper = inits[0]['upper']
+            lower = inits[0]['lower']
+
+            pset.add(Parameter(theta_name, init, lower, upper))
             theta_names[f'theta{i}'] = theta_name
             theta_name = f'COVEFF{cov_eff_number + i}'
 
@@ -134,13 +140,17 @@ def _calculate_std(df, covariate, baselines=False):
 def _choose_param_inits(effect, df, covariate):
     """Chooses inits for parameters. If the effect is exponential, the
     bounds need to be dynamic."""
-    lower = -100000
-    upper = 100000
-    init = 0.001
+    init_default = 0.001
+
+    inits = []
+
+    cov_median = _calculate_median(df, covariate)
+    cov_min = df[str(covariate)].min()
+    cov_max = df[str(covariate)].max()
 
     if effect == 'exp':
-        min_diff = df[str(covariate)].min() - _calculate_median(df, covariate)
-        max_diff = df[str(covariate)].max() - _calculate_median(df, covariate)
+        min_diff = cov_min - cov_median
+        max_diff = cov_max - cov_median
 
         lower_expected = 0.01
         upper_expected = 100
@@ -155,11 +165,29 @@ def _choose_param_inits(effect, df, covariate):
             upper = min(math.log(lower_expected, log_base)/min_diff,
                         math.log(upper_expected, log_base)/max_diff)
 
-            if lower > init or init > upper:
-                init = (upper + lower)/2
-        return init, lower, upper
+        if lower > init_default or init_default > upper:
+            init = (upper + lower)/2
+            if init == 0:
+                init = upper/5
+        else:
+            init = init_default
+    elif effect == 'pow':
+        lower = -100
+        upper = 100000
+        init = init_default
     else:
-        return init, lower, upper
+        lower = -100000
+        upper = 100000
+        init = init_default
+
+    inits_current = dict()
+    inits_current['init'] = init
+    inits_current['lower'] = lower
+    inits_current['upper'] = upper
+
+    inits.append(inits_current)
+
+    return inits
 
 
 def _create_template(effect, model, covariate):
