@@ -19,26 +19,6 @@ def explicit_odes(model):
     return model
 
 
-def _have_zero_order_absorption(model):
-    """Check if ode system describes a zero order absorption
-
-       currently defined as having Infusion dose with rate not in dataset
-    """
-    odes = model.statements.ode_system
-    dosing = odes.find_dosing()
-    dose = dosing.dose
-    if isinstance(dose, Infusion):
-        if dose.rate is None:
-            value = dose.duration
-        else:
-            value = dose.rate
-        if isinstance(value, sympy.Symbol) or isinstance(value, str):
-            name = str(value)
-            if name not in model.dataset.columns:
-                return True
-    return False
-
-
 def absorption_rate(model, order):
     """Set or change the absorption rate of a model
 
@@ -64,7 +44,7 @@ def absorption_rate(model, order):
             symbols = ka.free_symbols
             statements.remove_symbol_definitions(symbols, odes)
             model.remove_unused_parameters_and_rvs()
-        elif _have_zero_order_absorption(model):
+        elif have_zero_order_absorption(model):
             dose_comp = odes.find_dosing()
             old_symbols = dose_comp.free_symbols
             dose_comp.dose = Bolus(dose_comp.dose.amount)
@@ -72,7 +52,7 @@ def absorption_rate(model, order):
             statements.remove_symbol_definitions(unneeded_symbols, odes)
             model.remove_unused_parameters_and_rvs()
     elif order == 'ZO':
-        if not _have_zero_order_absorption(model):
+        if not have_zero_order_absorption(model):
             dose_comp = odes.find_dosing()
             symbols = dose_comp.free_symbols
             amount = dose_comp.dose.amount
@@ -85,34 +65,71 @@ def absorption_rate(model, order):
                 to_comp = dose_comp
             statements.remove_symbol_definitions(symbols, odes)
             model.remove_unused_parameters_and_rvs()
-            tvmat_symb = model.create_symbol('TVMAT')
-            mat_param = Parameter(tvmat_symb.name, init=0.1, lower=0)
-            model.parameters.add(mat_param)
-            mat_symb = model.create_symbol('MAT')
-            imat = Assignment(mat_symb, mat_param.symbol)
-            new_dose = Infusion(amount, duration=mat_symb * 2)
-            to_comp.dose = new_dose
-            model.statements.insert(0, imat)
+            add_zero_order_absorption(model, amount, to_comp)
     elif order == 'FO':
         if not depot:
             dose_comp = odes.find_dosing()
-            depot = odes.add_compartment('DEPOT')
-            new_dose = Bolus(dose_comp.dose.amount)
+            amount = dose_comp.dose.amount
             symbols = dose_comp.free_symbols
             dose_comp.dose = None
             statements.remove_symbol_definitions(symbols, odes)
             model.remove_unused_parameters_and_rvs()
-            depot.dose = new_dose
-            tvmat_symb = model.create_symbol('TVMAT')
-            mat_param = Parameter(tvmat_symb.name, init=0.1, lower=0)
-            model.parameters.add(mat_param)
-            mat_symb = model.create_symbol('MAT')
-            imat = Assignment(mat_symb, mat_param.symbol)
-            model.statements.insert(0, imat)
-            odes.add_flow(depot, dose_comp, 1 / pharmpy.symbols.symbol('MAT'))
-            model.remove_unused_parameters_and_rvs()
+            add_first_order_absorption(model, amount, dose_comp)
+    elif order == 'seq-ZO-FO':
+        pass
     else:
         raise ValueError(f'Requested order {order} but only orders '
                          f'instant, FO, ZO and seq-ZO-FO are supported')
 
     return model
+
+
+def have_zero_order_absorption(model):
+    """Check if ode system describes a zero order absorption
+
+       currently defined as having Infusion dose with rate not in dataset
+    """
+    odes = model.statements.ode_system
+    dosing = odes.find_dosing()
+    dose = dosing.dose
+    if isinstance(dose, Infusion):
+        if dose.rate is None:
+            value = dose.duration
+        else:
+            value = dose.rate
+        if isinstance(value, sympy.Symbol) or isinstance(value, str):
+            name = str(value)
+            if name not in model.dataset.columns:
+                return True
+    return False
+
+
+def add_zero_order_absorption(model, amount, to_comp):
+    """Add zero order absorption to a compartment.
+       Disregards what is currently in the model.
+    """
+    tvmat_symb = model.create_symbol('TVMAT')
+    mat_param = Parameter(tvmat_symb.name, init=0.1, lower=0)
+    model.parameters.add(mat_param)
+    mat_symb = model.create_symbol('MAT')
+    imat = Assignment(mat_symb, mat_param.symbol)
+    new_dose = Infusion(amount, duration=mat_symb * 2)
+    to_comp.dose = new_dose
+    model.statements.insert(0, imat)
+
+
+def add_first_order_absorption(model, amount, to_comp):
+    """Add first order absorption
+       Disregards what is currently in the model.
+    """
+    odes = model.statements.ode_system
+    depot = odes.add_compartment('DEPOT')
+    new_dose = Bolus(amount)
+    depot.dose = new_dose
+    tvmat_symb = model.create_symbol('TVMAT')
+    mat_param = Parameter(tvmat_symb.name, init=0.1, lower=0)
+    model.parameters.add(mat_param)
+    mat_symb = model.create_symbol('MAT')
+    imat = Assignment(mat_symb, mat_param.symbol)
+    model.statements.insert(0, imat)
+    odes.add_flow(depot, to_comp, 1 / pharmpy.symbols.symbol('MAT'))
