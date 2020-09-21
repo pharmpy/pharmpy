@@ -116,15 +116,17 @@ class Results:
         else:
             return s
 
-    def reset_indices(self):
-        """Reset indices of all multiindexed dataframes
+    def get_and_reset_index(self, attr, **kwargs):
+        """Wrapper to reset index of attribute or result from method.
 
-           Used to facilitate importing into R
+           Used to facilitate importing multiindex dataframes into R
         """
-        for attr_name in dir(self):
-            attr = getattr(self, attr_name)
-            if isinstance(attr, pd.DataFrame):
-                attr.reset_index(inplace=True)
+        val = getattr(self, attr)
+        if callable(val):
+            df = val(**kwargs)
+        else:
+            df = val
+        return df.reset_index()
 
     def to_dict(self):
         """Convert results object to a dictionary
