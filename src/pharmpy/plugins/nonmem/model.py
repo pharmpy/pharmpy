@@ -217,13 +217,13 @@ class Model(pharmpy.model.Model):
 
     @property
     def initial_individual_estimates(self):
-        '''Initial individual estimates
+        """Initial individual estimates
 
            These are taken from the $ETAS FILE. 0 FIX ETAs are removed.
            If no $ETAS is present None will be returned.
 
            Setter assumes that all IDs are present
-        '''
+        """
         try:
             return self._initial_individual_estimates
         except AttributeError:
