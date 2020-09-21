@@ -642,6 +642,7 @@ def psn_frem_results(path, force_posdef_covmatrix=False, force_posdef_samples=50
 
     # FIXME: Not introducing yaml parser in pharmpy just yet. Options should be collected
     # differently. Perhaps using json
+    logtransformed_covariates = []
     with open(path / 'meta.yaml') as meta:
         for row in meta:
             row = row.strip()
@@ -649,9 +650,7 @@ def psn_frem_results(path, force_posdef_covmatrix=False, force_posdef_samples=50
                 rescale = True
             elif row.startswith('rescale: 0'):
                 rescale = False
-            if row.startswith("log: ''"):
-                logtransformed_covariates = []
-            elif row.startswith('log: '):
+            if row.startswith('log: '):
                 logtransformed_covariates = row[5:].split(',')
 
     # add log transformed columns for the -log option. Should be done when creating dataset
