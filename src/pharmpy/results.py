@@ -116,6 +116,16 @@ class Results:
         else:
             return s
 
+    def reset_indices(self):
+        """Reset indices of all multiindexed dataframes
+
+           Used to facilitate importing into R
+        """
+        for attr_name in dir(self):
+            attr = getattr(self, attr_name)
+            if isinstance(attr, pd.DataFrame):
+                attr.reset_index(inplace=True)
+
     def to_dict(self):
         """Convert results object to a dictionary
         """
