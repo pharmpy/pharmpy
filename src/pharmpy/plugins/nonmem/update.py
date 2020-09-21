@@ -120,9 +120,10 @@ def update_ode_system(model, old, new):
         subs.remove_option_startswith('TRANS')
         subs.remove_option_startswith('ADVAN')
         subs.append_option('ADVAN6')
+        subs.append_option('TOL', 3)
         des = model.control_stream.insert_record('$DES\nDUMMY=0', 'PK')
         des.from_odes(new)
-        mod = model.control_stream.insert_record('$MODEL TOL=3\n', 'SUBROUTINES')
+        mod = model.control_stream.insert_record('$MODEL\n', 'SUBROUTINES')
         for eq, ic in zip(new.odes[:-1], list(new.ics.keys())[:-1]):
             name = eq.lhs.args[0].name[2:]
             if new.ics[ic] != 0:
