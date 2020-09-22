@@ -204,7 +204,7 @@ def _choose_bounds(effect, cov_median, cov_min, cov_max, index=None):
     else:
         lower = -100000
         upper = 100000
-    return lower, upper
+    return round(lower, 4), round(upper, 4)
 
 
 def _create_template(effect, model, covariate):

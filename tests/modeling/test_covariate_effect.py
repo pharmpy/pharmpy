@@ -38,5 +38,5 @@ def test_choose_param_inits(pheno_path, cov_eff, init, lower, upper):
     inits = _choose_param_inits(cov_eff, model.dataset, 'WGT')
 
     assert inits['init'] == init
-    assert round(inits['lower'], 4) == lower
-    assert round(inits['upper'], 4) == upper
+    assert inits['lower'] == lower
+    assert inits['upper'] == upper
