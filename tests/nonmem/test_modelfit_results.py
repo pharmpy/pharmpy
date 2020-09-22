@@ -33,6 +33,14 @@ def test_condition_number(testdata, pheno_lst):
     assert maxeval0.modelfit_results.condition_number is None
 
 
+def test_sumo(testdata):
+    onePROB = testdata / 'nonmem' / 'modelfit_results' / 'onePROB'
+    pheno = Model(onePROB / 'oneEST' / 'noSIM' / 'pheno.mod')
+    d = pheno.modelfit_results.sumo(to_string=False)
+    assert 'Messages' in d.keys()
+    assert 'Parameter summary' in d.keys()
+
+
 def test_special_models(testdata):
     onePROB = testdata / 'nonmem' / 'modelfit_results' / 'onePROB'
     withBayes = Model(onePROB / 'multEST' / 'noSIM' / 'withBayes.mod')

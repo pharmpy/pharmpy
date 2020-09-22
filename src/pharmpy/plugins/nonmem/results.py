@@ -233,17 +233,15 @@ class NONMEMModelfitResults(ModelfitResults):
                     result['Covariance step completed with warnings'] = 'WARNING'
                 else:
                     result['Covariance step successful'] = 'OK'
-                if self.condition_number is None:
-                    result['Condition number not available'] = ''
-                else:
+                try:
                     if self.condition_number >= condition_number_limit:
                         result['Large condition number'] = 'WARNING'
                     else:
                         result[f'Condition number < {condition_number_limit}'] = 'OK'
                     result[str.format('Condition number: {:.1f}', self.condition_number)] = ''
-                if self.correlation_matrix is None:
-                    result['Correlation matrix not available'] = ''
-                else:
+                except Exception:
+                    result['Condition number not available'] = ''
+                try:
                     high = self.high_correlations(correlation_limit)
                     if high.empty:
                         result[f'No correlations larger than {correlation_limit}'] = 'OK'
@@ -251,6 +249,9 @@ class NONMEMModelfitResults(ModelfitResults):
                         result['Large correlations found'] = 'WARNING'
                         for line in high.to_string().split('\n'):
                             result[line] = ''
+                except FileNotFoundError:
+                    result['Correlation matrix not available'] = ''
+
         return pd.DataFrame.from_dict(result, orient='index', columns=[''])
 
     def estimation_step_summary(self):
