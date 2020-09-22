@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import numpy as np
+import pandas as pd
 
 from pharmpy.plugins.nonmem.results_file import NONMEMResultsFile
 from pharmpy.plugins.nonmem.table import NONMEMTableFile
@@ -63,6 +64,17 @@ class NONMEMModelfitResults(ModelfitResults):
             except FileNotFoundError:
                 self._set_covariance_status(None)
             return self._covariance_status
+
+    @property
+    def condition_number(self):
+        try:
+            return self._condition_number
+        except AttributeError:
+            try:
+                self._condition_number = np.linalg.cond(self.correlation_matrix)
+            except Exception:
+                self._condition_number = None
+            return self._condition_number
 
     @property
     def covariance_matrix(self):
@@ -191,14 +203,103 @@ class NONMEMModelfitResults(ModelfitResults):
                 covariance_status['warnings'] = not status['covariance_step_ok']
         self._covariance_status = covariance_status
 
-    def _set_estimation_status(self, results_file):
+    def _set_estimation_status(self, results_file, requested):
+        estimation_status = {'requested': requested}
         status = NONMEMResultsFile.unknown_termination()
         if results_file is not None:
             status = results_file.estimation_status(self.table_number)
-        self._estimation_status = status
+        for k, v in status.items():
+            estimation_status[k] = v
+        self._estimation_status = estimation_status
 
-#    def sumo(self):
-#        df = self.parameter_summary()
+    def high_correlations(self, limit=0.9):
+        df = self.correlation_matrix
+        if df is not None:
+            high_and_below_diagonal = df.abs().ge(limit) & \
+                np.triu(np.ones(df.shape), k=1).astype(np.bool)
+            return df.where(high_and_below_diagonal).stack()
+
+    def covariance_step_summary(self, condition_number_limit=1000, correlation_limit=0.9):
+        result = dict()
+        if self.covariance_step['requested'] is False:
+            result['Covariance step not run'] = ''
+        else:
+            if self.covariance_step['completed'] is False:
+                result['Covariance step not completed'] = 'ERROR'
+            else:
+                if self.covariance_step['warnings'] is None:
+                    result['Covariance step completed'] = ''
+                elif self.covariance_step['warnings'] is True:
+                    result['Covariance step completed with warnings'] = 'WARNING'
+                else:
+                    result['Covariance step successful'] = 'OK'
+                if self.condition_number is None:
+                    result['Condition number not available'] = ''
+                else:
+                    if self.condition_number >= condition_number_limit:
+                        result['Large condition number'] = 'WARNING'
+                    else:
+                        result[f'Condition number < {condition_number_limit}'] = 'OK'
+                    result[str.format('Condition number: {:.1f}', self.condition_number)] = ''
+                if self.correlation_matrix is None:
+                    result['Correlation matrix not available'] = ''
+                else:
+                    high = self.high_correlations(correlation_limit)
+                    if high.empty:
+                        result[f'No correlations larger than {correlation_limit}'] = 'OK'
+                    else:
+                        result['Large correlations found'] = 'WARNING'
+                        for line in high.to_string().split('\n'):
+                            result[line] = ''
+        return pd.DataFrame.from_dict(result, orient='index', columns=[''])
+
+    def estimation_step_summary(self):
+        result = dict()
+        step = self.estimation_step
+        if step['requested'] is False:
+            result['Estimation step not run'] = ''
+        else:
+            if step['minimization_successful'] is None:
+                result['Termination status not available'] = ''
+            else:
+                if step['minimization_successful'] is True:
+                    result['Minimization successful'] = 'OK'
+                else:
+                    result['Termination problems'] = 'ERROR'
+                if step['rounding_errors'] is False:
+                    result['No rounding errors'] = 'OK'
+                else:
+                    result['Rounding errors'] = 'ERROR'
+                if step['maxevals_exceeded'] is True:
+                    result['Max number of evaluations exceeded'] = 'ERROR'
+                if np.isnan(step['function_evaluations']) is False:
+                    result[str.format('Number of function evaluations: {:d}',
+                                      step['function_evaluations'])] = ''
+                if step['estimate_near_boundary'] is True:
+                    # message issued from NONMEM independent of ModelfitResults near_bounds method
+                    result['Parameter near boundary'] = 'WARNING'
+                if step['warning'] is True:
+                    result['NONMEM estimation warnings'] = 'WARNING'
+            result[str.format('Objective function value: {:.1f}', self.ofv)] = ''
+            if np.isnan(step['significant_digits']) is False:
+                result[str.format('Significant digits: {:.1f}',
+                                  result['significant_digits'])] = ''
+        return pd.DataFrame.from_dict(result, orient='index', columns=[''])
+
+    def sumo(self, condition_number_limit=1000, correlation_limit=0.9,
+             zero_limit=0.001, significant_digits=2, to_string=True):
+        messages = pd.concat([self.estimation_step_summary(),
+                              pd.DataFrame.from_dict({'': ''}, orient='index', columns=['']),
+                              self.covariance_step_summary(condition_number_limit,
+                                                           correlation_limit)])
+        summary = self.parameter_summary()
+        near_bounds = self.near_bounds(zero_limit, significant_digits)
+        if to_string:
+            summary[''] = near_bounds.transform(lambda x: 'Near boundary' if x else '')
+            return str(messages) + '\n\n' + str(summary)
+        else:
+            summary['Near boundary'] = near_bounds
+            return {'Messages': messages, 'Parameter summary': summary}
 
 
 class NONMEMChainedModelfitResults(ChainedModelfitResults):
@@ -245,8 +346,17 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
                 result_obj.model = self.model
                 result_obj.table_number = table.number
                 result_obj._ofv = table.final_ofv
+                if table.is_evaluation:
+                    result_obj._set_estimation_status(results_file=None, requested=False)
                 ests = table.final_parameter_estimates
-                fix = table.fixed
+                try:
+                    fix = table.fixed
+                except KeyError:
+                    # NM 7.2 does not have row -1000000006 indicating FIXED status
+                    if self.model:
+                        fixed = pd.Series(self.model.parameters.fix)
+                        fix = pd.concat([fixed,
+                                         pd.Series(True, index=ests.index.difference(fixed.index))])
                 ests = ests[~fix]
                 if self.model:
                     ests = ests.rename(index=self.model.parameter_translation())
@@ -264,6 +374,7 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
                     result_obj._covariance_matrix = None
                     result_obj._correlation_matrix = None
                     result_obj._information_matrix = None
+                    result_obj._condition_number = None
                     result_obj._set_covariance_status(None)
                 else:
                     ses = ses[~fix]
@@ -276,8 +387,13 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
                     if self.model:
                         sdcorr_ses = sdcorr_ses.rename(index=self.model.parameter_translation())
                     result_obj._standard_errors_sdcorr = sdcorr_ses
+                    try:
+                        condition_number = table.condition_number
+                    except Exception:
+                        pass  # PRINT=E not set in $COV, but could compute from correlation matrix
+                    else:
+                        result_obj._condition_number = condition_number
                 self.append(result_obj)
-                # FIXME condition number from ext if available
             self._read_ext = True
 
     def _read_lst_file(self):
@@ -289,8 +405,12 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
                 if len(self.model.control_stream.get_records('COVARIANCE')) > 0:
                     table_with_cov = self[self._last].table_number  # correct unless interrupted
             for result_obj in self:
-                result_obj._set_estimation_status(rfile)
-                result_obj._set_covariance_status(rfile, table_with_cov=table_with_cov)
+                # _estimation_status is already set to None if ext table has (Evaluation)
+                if hasattr(result_obj, '_estimation_status') is False:
+                    result_obj._set_estimation_status(rfile, requested=True)
+                # _covariance_status already set to None if ext table did not have standard errors
+                if hasattr(result_obj, '_covariance_status') is False:
+                    result_obj._set_covariance_status(rfile, table_with_cov=table_with_cov)
         self._read_lst = True
 
     @property
@@ -301,8 +421,12 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
     def estimation_step(self):
         return self[self._last].estimation_step
 
-#    def sumo(self):
-#        return self[self._last].sumo()
+    @property
+    def condition_number(self):
+        return self[self._last].condition_number
+
+    def sumo(self, **kwargs):
+        return self[self._last].sumo(**kwargs)
 
     def _read_cov_table(self):
         if not self._read_cov:

@@ -19,6 +19,20 @@ def test_tool_files(pheno_lst):
                      'pheno_real.coi', 'pheno_real.phi']
 
 
+def test_condition_number(testdata, pheno_lst):
+    res = NONMEMChainedModelfitResults(pheno_lst)
+    assert res.condition_number == pytest.approx(4.39152)
+
+    maxeval3 = Model(testdata / 'nonmem' / 'modelfit_results' / 'onePROB' /
+                     'oneEST' / 'noSIM' / 'maxeval3.mod')
+
+    assert maxeval3.modelfit_results.condition_number == 4.77532E+06
+
+    maxeval0 = Model(testdata / 'nonmem' / 'modelfit_results' / 'onePROB' /
+                     'oneEST' / 'noSIM' / 'maxeval0.mod')
+    assert maxeval0.modelfit_results.condition_number is None
+
+
 def test_special_models(testdata):
     onePROB = testdata / 'nonmem' / 'modelfit_results' / 'onePROB'
     withBayes = Model(onePROB / 'multEST' / 'noSIM' / 'withBayes.mod')
@@ -43,6 +57,14 @@ def test_special_models(testdata):
     assert maxeval3.modelfit_results.covariance_step == {'requested': True,
                                                          'completed': True,
                                                          'warnings': True}
+
+    nearbound = Model(onePROB / 'oneEST' / 'noSIM' / 'near_bounds.mod')
+    correct = pd.Series([False,  True, False, False, False, False, False, False,  True,
+                         True, False],
+                        index=['THETA(1)', 'THETA(2)', 'THETA(3)', 'THETA(4)', 'OMEGA(1,1)',
+                               'OMEGA(2,1)', 'OMEGA(2,2)', 'OMEGA(3,3)', 'OMEGA(4,4)', 'OMEGA(6,6)',
+                               'SIGMA(1,1)'])
+    pd.testing.assert_series_equal(nearbound.modelfit_results.near_bounds(), correct)
 
 
 def test_covariance(pheno_path):
