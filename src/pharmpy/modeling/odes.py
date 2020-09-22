@@ -65,15 +65,18 @@ def absorption_rate(model, order):
                 to_comp = dose_comp
             statements.remove_symbol_definitions(symbols, odes)
             model.remove_unused_parameters_and_rvs()
-            add_zero_order_absorption(model, amount, to_comp)
+            add_zero_order_absorption(model, amount, to_comp, 'MAT')
     elif order == 'FO':
-        if not depot:
-            dose_comp = odes.find_dosing()
-            amount = dose_comp.dose.amount
-            symbols = dose_comp.free_symbols
+        dose_comp = odes.find_dosing()
+        amount = dose_comp.dose.amount
+        symbols = dose_comp.free_symbols
+        if depot:
+            dose_comp.dose = Bolus(depot.dose.amount)
+        else:
             dose_comp.dose = None
-            statements.remove_symbol_definitions(symbols, odes)
-            model.remove_unused_parameters_and_rvs()
+        statements.remove_symbol_definitions(symbols, odes)
+        model.remove_unused_parameters_and_rvs()
+        if not depot:
             add_first_order_absorption(model, amount, dose_comp)
     elif order == 'seq-ZO-FO':
         pass
@@ -104,14 +107,14 @@ def have_zero_order_absorption(model):
     return False
 
 
-def add_zero_order_absorption(model, amount, to_comp):
+def add_zero_order_absorption(model, amount, to_comp, parameter_name):
     """Add zero order absorption to a compartment.
        Disregards what is currently in the model.
     """
-    tvmat_symb = model.create_symbol('TVMAT')
+    tvmat_symb = model.create_symbol(f'TV{parameter_name}')
     mat_param = Parameter(tvmat_symb.name, init=0.1, lower=0)
     model.parameters.add(mat_param)
-    mat_symb = model.create_symbol('MAT')
+    mat_symb = model.create_symbol(parameter_name)
     imat = Assignment(mat_symb, mat_param.symbol)
     new_dose = Infusion(amount, duration=mat_symb * 2)
     to_comp.dose = new_dose
@@ -133,3 +136,12 @@ def add_first_order_absorption(model, amount, to_comp):
     imat = Assignment(mat_symb, mat_param.symbol)
     model.statements.insert(0, imat)
     odes.add_flow(depot, to_comp, 1 / pharmpy.symbols.symbol('MAT'))
+    return depot
+
+
+def add_sequantial_zero_first_absorption(model, amount, to_comp):
+    """Add sequential zero then first order absorption
+       Disregards what is currently in the model.
+    """
+    depot = add_first_order_absorption(model, amount, to_comp)
+    add_zero_order_absorption(model, amount, depot, 'MDT')
