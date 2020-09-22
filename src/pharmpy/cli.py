@@ -697,10 +697,10 @@ parser_definition = [
                            'order or sequential 0-order 1-order.',
             'func': model_absorption_rate,
             'parents': [args_model_input, args_output],
-            'args': [{'name': 'order',
+            'args': [{'name': 'rate',
                       'choices': ['bolus', 'ZO', 'FO', 'seq-ZO-FO'],
                       'type': str,
-                      'help': 'Order of absorption'},
+                      'help': 'Absorption rate'},
                      ]}},
         {'boxcox': {
             'help': 'Applies boxcox transformation',

@@ -19,14 +19,14 @@ def explicit_odes(model):
     return model
 
 
-def absorption_rate(model, order):
+def absorption_rate(model, rate):
     """Set or change the absorption rate of a model
 
     Parameters
     ----------
     model
         Model to set or change absorption for
-    order
+    rate
         'bolus', 'ZO', 'FO' or 'seq-ZO-FO'
     """
     statements = model.statements
@@ -35,7 +35,7 @@ def absorption_rate(model, order):
         raise ValueError("Setting absorption is not supported for ExplicitODESystem")
 
     depot = odes.find_depot()
-    if order == 'bolus':
+    if rate == 'bolus':
         if depot:
             to_comp, _ = odes.get_compartment_flows(depot)[0]
             to_comp.dose = depot.dose
@@ -51,7 +51,7 @@ def absorption_rate(model, order):
             unneeded_symbols = old_symbols - dose_comp.dose.free_symbols
             statements.remove_symbol_definitions(unneeded_symbols, odes)
             model.remove_unused_parameters_and_rvs()
-    elif order == 'ZO':
+    elif rate == 'ZO':
         dose_comp = odes.find_dosing()
         symbols = dose_comp.free_symbols
         dose = dose_comp.dose
@@ -67,7 +67,7 @@ def absorption_rate(model, order):
         model.remove_unused_parameters_and_rvs()
         if not have_zero_order_absorption(model):
             add_zero_order_absorption(model, dose.amount, to_comp, 'MAT')
-    elif order == 'FO':
+    elif rate == 'FO':
         dose_comp = odes.find_dosing()
         amount = dose_comp.dose.amount
         symbols = dose_comp.free_symbols
@@ -79,7 +79,7 @@ def absorption_rate(model, order):
         model.remove_unused_parameters_and_rvs()
         if not depot:
             add_first_order_absorption(model, Bolus(amount), dose_comp)
-    elif order == 'seq-ZO-FO':
+    elif rate == 'seq-ZO-FO':
         dose_comp = odes.find_dosing()
         have_ZO = have_zero_order_absorption(model)
         if depot and not have_ZO:
@@ -93,7 +93,7 @@ def absorption_rate(model, order):
             depot = add_first_order_absorption(model, amount, dose_comp)
             add_zero_order_absorption(model, amount, depot, 'MDT')
     else:
-        raise ValueError(f'Requested order {order} but only orders '
+        raise ValueError(f'Requested rate {rate} but only rates  '
                          f'bolus, FO, ZO and seq-ZO-FO are supported')
     return model
 
