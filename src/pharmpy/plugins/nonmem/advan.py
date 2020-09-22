@@ -15,6 +15,7 @@ def compartmental_model(model, advan, trans):
         cm.add_flow(central, output, _advan1and2_trans(trans))
         dose = _dosing(model, 1)
         central.dose = dose
+        central.lag_time = get_alag(model, 1)
         ass = _f_link_assignment(model, central)
     elif advan == 'ADVAN2':
         cm = CompartmentalSystem()
@@ -25,6 +26,8 @@ def compartmental_model(model, advan, trans):
         cm.add_flow(depot, central, symbol('KA'))
         dose = _dosing(model, 1)
         depot.dose = dose
+        depot.lag_time = get_alag(model, 1)
+        central.lag_time = get_alag(model, 2)
         ass = _f_link_assignment(model, central)
     elif advan == 'ADVAN3':
         cm = CompartmentalSystem()
@@ -37,6 +40,8 @@ def compartmental_model(model, advan, trans):
         cm.add_flow(peripheral, central, k21)
         dose = _dosing(model, 1)
         central.dose = dose
+        central.lag_time = get_alag(model, 1)
+        peripheral.lag_time = get_alag(model, 2)
         ass = _f_link_assignment(model, central)
     elif advan == 'ADVAN4':
         cm = CompartmentalSystem()
@@ -51,6 +56,9 @@ def compartmental_model(model, advan, trans):
         cm.add_flow(peripheral, central, k32)
         dose = _dosing(model, 1)
         depot.dose = dose
+        depot.lag_time = get_alag(model, 1)
+        central.lag_time = get_alag(model, 2)
+        peripheral.lag_time = get_alag(model, 3)
         ass = _f_link_assignment(model, central)
     elif advan == 'ADVAN5' or advan == 'ADVAN7':
         cm = CompartmentalSystem()
@@ -98,6 +106,10 @@ def compartmental_model(model, advan, trans):
             cm.add_flow(compartments[from_n - 1], compartments[to_n - 1], rate)
         dose = _dosing(model, dose_no)
         defdose.dose = dose
+        for i, comp in enumerate(compartments):
+            if i == len(compartments) - 1:
+                break
+            comp.lag_time = get_alag(model, i)
         ass = _f_link_assignment(model, defobs)
     elif advan == 'ADVAN10':
         cm = CompartmentalSystem()
@@ -109,6 +121,7 @@ def compartmental_model(model, advan, trans):
         central.dose = dose
         t = symbol('t')
         cm.add_flow(central, output, vm / (km + sympy.Function(central.amount.name)(t)))
+        central.lag_time = get_alag(model, 1)
         ass = _f_link_assignment(model, central)
     elif advan == 'ADVAN11':
         cm = CompartmentalSystem()
@@ -124,6 +137,9 @@ def compartmental_model(model, advan, trans):
         cm.add_flow(per2, central, k31)
         dose = _dosing(model, 1)
         central.dose = dose
+        central.lag_time = get_alag(model, 1)
+        per1.lag_time = get_alag(model, 2)
+        per2.lag_time = get_alag(model, 3)
         ass = _f_link_assignment(model, central)
     elif advan == 'ADVAN12':
         cm = CompartmentalSystem()
@@ -141,6 +157,10 @@ def compartmental_model(model, advan, trans):
         cm.add_flow(per2, central, k42)
         dose = _dosing(model, 1)
         depot.dose = dose
+        depot.lag_time = get_alag(model, 1)
+        central.lag_time = get_alag(model, 2)
+        per1.lag_time = get_alag(model, 3)
+        per2.lag_time = get_alag(model, 4)
         ass = _f_link_assignment(model, central)
     else:
         return None
@@ -327,3 +347,14 @@ def _dosing(model, dose_comp):
             return Infusion('AMT', rate='RATE')
     else:
         return Bolus('AMT')
+
+
+def get_alag(model, n):
+    """Check if ALAGn is defined in model and return it else return 0
+    """
+    alag = f'ALAG{n}'
+    pkrec = model.control_stream.get_records('PK')[0]
+    if pkrec.statements.find_assignment(alag):
+        return alag
+    else:
+        return 0
