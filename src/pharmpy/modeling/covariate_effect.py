@@ -34,9 +34,10 @@ def add_covariate_effect(model, parameter, covariate, effect, operation='*'):
     operation : str, optional
         Whether the covariate effect should be added or multiplied (default).
     """
-    mean = _calculate_mean(model.dataset, covariate)
-    median = _calculate_median(model.dataset, covariate)
-    std = _calculate_std(model.dataset, covariate)
+    statistics = dict()
+    statistics['mean'] = _calculate_mean(model.dataset, covariate)
+    statistics['median'] = _calculate_median(model.dataset, covariate)
+    statistics['std'] = _calculate_std(model.dataset, covariate)
 
     thetas = _create_thetas(model, effect, covariate)
     covariate_effect = _create_template(effect, model, covariate)
@@ -46,13 +47,11 @@ def add_covariate_effect(model, parameter, covariate, effect, operation='*'):
 
     param_index = sset.index(param_statement)
 
-    covariate_effect.apply(parameter, covariate, thetas)
+    covariate_effect.apply(parameter, covariate, thetas, statistics)
     effect_statement = covariate_effect.create_effect_statement(operation, param_statement)
 
-    if effect != 'cat':
-        statistic_statement = covariate_effect.create_statistics_statement(covariate, mean,
-                                                                           median, std)
-        sset.insert(param_index + 1, statistic_statement)
+    for statement in covariate_effect.statistic_statements:
+        sset.insert(param_index + 1, statement)
         param_index += 1
 
     sset.insert(param_index + 1, covariate_effect.template)
@@ -235,17 +234,17 @@ class CovariateEffect:
     ----------
     template
         Assignment based on covariate effect
-    statistic_type
-        Mean or median, depends on which covariate effect
+    statistic_statements
+        Dict with mean, median and standard deviation
 
     :meta private:
 
     """
     def __init__(self, template):
         self.template = template
-        self.statistic_type = None
+        self.statistic_statements = []
 
-    def apply(self, parameter, covariate, thetas):
+    def apply(self, parameter, covariate, thetas, statistics):
         effect_name = f'{parameter}{covariate}'
         self.template.symbol = S(effect_name)
 
@@ -253,15 +252,19 @@ class CovariateEffect:
         self.template.subs({'cov': covariate})
 
         template_str = [str(symbol) for symbol in self.template.free_symbols]
+
         if 'mean' in template_str:
             self.template.subs({'mean': f'{covariate}_MEAN'})
-            self.statistic_type = 'mean'
+            s = Assignment(S(f'{covariate}_MEAN'), Float(statistics['mean'], 6))
+            self.statistic_statements.append(s)
         if 'median' in template_str:
             self.template.subs({'median': f'{covariate}_MEDIAN'})
-            self.statistic_type = 'median'
+            s = Assignment(S(f'{covariate}_MEDIAN'), Float(statistics['median'], 6))
+            self.statistic_statements.append(s)
         if 'std' in template_str:
             self.template.subs({'std': f'{covariate}_STD'})
-            self.statistic_type = 'std'
+            s = Assignment(S(f'{covariate}_STD'), Float(statistics['std'], 6))
+            self.statistic_statements.append(s)
 
     def create_effect_statement(self, operation_str, statement_original):
         """Creates statement for addition or multiplication of covariate
@@ -276,15 +279,6 @@ class CovariateEffect:
         statement_new = Assignment(symbol, operation(expression, self.template.symbol))
 
         return statement_new
-
-    def create_statistics_statement(self, covariate, mean, median, std):
-        """Creates statement where value of mean/median is explicit."""
-        if self.statistic_type == 'mean':
-            return Assignment(S(f'{covariate}_MEAN'), Float(mean, 6))
-        elif self.statistic_type == 'median':
-            return Assignment(S(f'{covariate}_MEDIAN'), Float(median, 6))
-        elif self.statistic_type == 'std':
-            return Assignment(S(f'{covariate}_STD'), Float(std, 6))
 
     @staticmethod
     def _get_operation(operation_str):

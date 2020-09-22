@@ -20,7 +20,9 @@ def S(x):
 ])
 def test_apply(cov_eff, symbol, expression):
     cov_eff.apply(parameter='CL', covariate='WGT',
-                  thetas={'theta': 'COVEFF1'})
+                  thetas={'theta': 'COVEFF1'}, statistics={'mean': 1,
+                                                           'median': 1,
+                                                           'std': 1})
 
     assert cov_eff.template.symbol == symbol
     assert cov_eff.template.expression == expression
