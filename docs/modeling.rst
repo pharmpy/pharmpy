@@ -44,10 +44,10 @@ Absorption rate
 The :py:func:`pharmpy.modeling.absorption_rate` can be used to set the absorption rate.
 
 
-Instant absorption
+Bolus absorption
 ==================
 
-Let us use a model with instant absorption as a starting point.
+Let us use a model with bolus absorption as a starting point.
 
 .. graphviz::
 
@@ -68,7 +68,7 @@ This type of absorption can be created with
 
 .. jupyter-execute::
 
-    absorption_rate(model, 'instant')
+    absorption_rate(model, 'bolus')
     model.update_source()
     print(str(model))
 

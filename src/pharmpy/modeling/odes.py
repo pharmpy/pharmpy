@@ -27,7 +27,7 @@ def absorption_rate(model, order):
     model
         Model to set or change absorption for
     order
-        'instant', 'ZO', 'FO' or 'seq-ZO-FO'
+        'bolus', 'ZO', 'FO' or 'seq-ZO-FO'
     """
     statements = model.statements
     odes = statements.ode_system
@@ -35,7 +35,7 @@ def absorption_rate(model, order):
         raise ValueError("Setting absorption is not supported for ExplicitODESystem")
 
     depot = odes.find_depot()
-    if order == 'instant':
+    if order == 'bolus':
         if depot:
             to_comp, _ = odes.get_compartment_flows(depot)[0]
             to_comp.dose = depot.dose
@@ -94,7 +94,7 @@ def absorption_rate(model, order):
             add_zero_order_absorption(model, amount, depot, 'MDT')
     else:
         raise ValueError(f'Requested order {order} but only orders '
-                         f'instant, FO, ZO and seq-ZO-FO are supported')
+                         f'bolus, FO, ZO and seq-ZO-FO are supported')
     return model
 
 
