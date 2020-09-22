@@ -183,7 +183,7 @@ def update_ode_system(model, old, new):
                 secondary = secondary_pk_param_conversion_map(len(old), 1, removed=True)
                 statements.subs(secondary)
             if isinstance(new.find_depot().dose, Infusion) and not statements.find_assignment('D1'):
-                # Handling direct moving of Infusion to depot compartment
+                # Handle direct moving of Infusion to depot compartment
                 statements.subs({'D2': 'D1'})
         elif old.find_depot() and not new.find_depot():
             # Depot was removed
