@@ -76,10 +76,6 @@ def compute_jackknife_covariance_matrix(cdd_estimates):
 def compute_covariance_ratios(cdd_models, covariance_matrix):
     try:
         orig_det = np.linalg.det(covariance_matrix)
-    # computing determinant from covariance matrix requires parsing of
-    # all covariance matrix files for cdd models. If modelfit_results
-    # includes eigenvalues read from NONMEM ext-file then determinant can
-    # be computed from product of eigenvalues
         return [sqrt(np.linalg.det(m.modelfit_results.covariance_matrix)/orig_det)
                 if m.modelfit_results and
                 m.modelfit_results.covariance_matrix is not None
