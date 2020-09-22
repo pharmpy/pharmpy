@@ -14,6 +14,8 @@ def test_nonmem_table(pheno_ext):
 def test_ext_table(pheno_ext):
     ext_table_file = table.NONMEMTableFile(pheno_ext)
     ext_table = ext_table_file.table
+    assert ext_table.number == 1
+    assert ext_table.is_evaluation is False
     assert ext_table.problem == 1
     assert ext_table.subproblem == 0
     assert ext_table.iteration2 == 0

@@ -45,6 +45,9 @@ class NONMEMTableFile:
             table = NONMEMTable(''.join(content))       # Fallback to non-specific table type
         m = re.match(r'TABLE NO.\s+(\d+)', table_line)   # This is guaranteed to match
         table.number = int(m.group(1))
+        table.is_evaluation = False
+        if re.search(r'(Evaluation)', table_line):
+            table.is_evaluation = True  # No estimation step was run
         m = re.match(r'TABLE NO.\s+\d+: (.*?): (?:Goal Function=(.*): )?Problem=(\d+) '
                      r'Subproblem=(\d+) Superproblem1=(\d+) Iteration1=(\d+) Superproblem2=(\d+) '
                      r'Iteration2=(\d+)', table_line)
@@ -218,6 +221,13 @@ class ExtTable(NONMEMTable):
         ser = self._get_parameters(-1000000001)
         ser.name = 'SE'
         return ser
+
+    @property
+    def condition_number(self):
+        '''Get the condition number of the correlation matrix
+        '''
+        ser = self._get_parameters(-1000000003)
+        return ser.values[0]
 
     @property
     def omega_sigma_stdcorr(self):
