@@ -5,6 +5,7 @@ import sympy
 
 import pharmpy.symbols as symbols
 from pharmpy.data_structures import OrderedSet
+from pharmpy.math import is_near_target
 
 
 class ParameterSet(OrderedSet):
@@ -20,6 +21,7 @@ class ParameterSet(OrderedSet):
 
         params['THETA(1)']
     """
+
     def __getitem__(self, index):
         for e in self:
             if e.name == index:
@@ -46,6 +48,15 @@ class ParameterSet(OrderedSet):
         fix = [param.fix for param in self]
         return pd.DataFrame({'value': values, 'lower': lower, 'upper': upper, 'fix': fix},
                             index=symbols)
+
+    def values_near_bounds(self, values, zero_limit, significant_digits):
+        """ Logical Series of whether values are near the respective boundaries
+            values : Series of floats with index a subset of parameter names
+            :returns: Logical Series with same index as values
+        """
+        return pd.Series(
+            [self[p].any_boundary_near_value(values.loc[p], zero_limit, significant_digits)
+             for p in values.index], index=values.index)
 
     @property
     def names(self):
@@ -133,6 +144,7 @@ class Parameter:
         will keep its bounds even if a fixed parameter is actually constrained to one single
         value. This is so that unfixing will take back the previous bounds.
     """
+
     def __init__(self, name, init, lower=None, upper=None, fix=False):
         self._init = init
         self.name = name
@@ -185,6 +197,14 @@ class Parameter:
                              f'{new_init} ∉ {sympy.pretty(sympy.Interval(self.lower, self.upper))}'
                              f'\nUnconstrain the parameter before setting an initial estimate.')
         self._init = new_init
+
+    def any_boundary_near_value(self, value, zero_limit, significant_digits):
+        """Is any boundary near this value
+        """
+        return (bool(self.lower > -sympy.oo) and
+                is_near_target(value, self.lower, zero_limit, significant_digits)) or \
+            (bool(self.upper < sympy.oo) and
+             is_near_target(value, self.upper, zero_limit, significant_digits))
 
     def unconstrain(self):
         """Remove all constraints of a parameter
