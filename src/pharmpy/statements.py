@@ -427,7 +427,15 @@ class Compartment:
     def __init__(self, name, lag_time=0):
         self.name = name
         self.dose = None
-        self.lag_time = sympy.sympify(lag_time)
+        self.lag_time = lag_time
+
+    @property
+    def lag_time(self):
+        return self._lag_time
+
+    @lag_time.setter
+    def lag_time(self, value):
+        self._lag_time = sympy.sympify(value)
 
     @property
     def free_symbols(self):
