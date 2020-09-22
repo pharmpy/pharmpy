@@ -352,6 +352,53 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
 '''
     assert str(model) == correct
 
+    # 0-order to seq
+    model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan1.mod')
+    absorption_rate(model, 'seq-ZO-FO')
+    model.update_source(nofiles=True)
+    correct = '''$PROBLEM PHENOBARB SIMPLE MODEL
+$DATA ../pheno.dta IGNORE=@
+$INPUT ID TIME AMT WGT APGR DV FA1 FA2 RATE
+$SUBROUTINE ADVAN2 TRANS2
+
+$PK
+MDT = THETA(5)
+MAT = THETA(4)
+IF(AMT.GT.0) BTIME=TIME
+TAD=TIME-BTIME
+TVCL=THETA(1)*WGT
+TVV=THETA(2)*WGT
+IF(APGR.LT.5) TVV=TVV*(1+THETA(3))
+CL=TVCL*EXP(ETA(1))
+V=TVV*EXP(ETA(2))
+S2 = V
+KA = 1/MAT
+D1 = 2*MDT
+
+$ERROR
+W=F
+Y=F+W*EPS(1)
+IPRED=F
+IRES=DV-IPRED
+IWRES=IRES/W
+
+$THETA (0,0.00469307) ; CL
+$THETA (0,1.00916) ; V
+$THETA (-.99,.1)
+$THETA  (0,0.1) ; TVMAT
+$THETA  (0,0.1) ; TVMDT
+$OMEGA DIAGONAL(2)
+ 0.0309626  ;       IVCL
+ 0.031128  ;        IVV
+
+$SIGMA 1e-7
+$ESTIMATION METHOD=1 INTERACTION
+$COVARIANCE UNCONDITIONAL
+$TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
+       NOPRINT ONEHEADER FILE=sdtab1
+'''
+    assert str(model) == correct
+
 
 @pytest.mark.parametrize('etas, etab, buf_new', [
     (['ETA(1)'], 'ETAB1 = (EXP(ETA(1))**THETA(4) - 1)/THETA(4)',

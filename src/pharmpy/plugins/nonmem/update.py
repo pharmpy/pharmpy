@@ -136,23 +136,6 @@ def update_ode_system(model, old, new):
             df = model.dataset
             df.drop(columns=['RATE'], inplace=True)
             model.dataset = df
-        if isinstance(new.find_dosing().dose, Infusion) and \
-                isinstance(old.find_dosing().dose, Bolus):
-            dose = new.find_dosing().dose
-            if dose.rate is None:
-                # FIXME: Not always D1 here!
-                ass = Assignment('D1', dose.duration)
-                dose.duration = ass.symbol
-            else:
-                raise NotImplementedError("First order infusion rate is not yet supported")
-            statements = model.statements
-            statements.add_before_odes(ass)
-            df = model.dataset
-            rate = np.where(df['AMT'] == 0, 0, -2)
-            df['RATE'] = rate
-            # FIXME: Adding at end for now. Update $INPUT cannot yet handle adding in middle
-            # df.insert(list(df.columns).index('AMT') + 1, 'RATE', rate)
-            model.dataset = df
         if not old.find_depot() and new.find_depot():
             # Depot was added
             subs = model.control_stream.get_records('SUBROUTINES')[0]
@@ -244,6 +227,23 @@ def update_ode_system(model, old, new):
                 statements.subs(primary)
                 secondary = secondary_pk_param_conversion_map(len(old), n)
                 statements.subs(secondary)
+        if isinstance(new.find_dosing().dose, Infusion) and \
+                isinstance(old.find_dosing().dose, Bolus):
+            dose = new.find_dosing().dose
+            if dose.rate is None:
+                # FIXME: Not always D1 here!
+                ass = Assignment('D1', dose.duration)
+                dose.duration = ass.symbol
+            else:
+                raise NotImplementedError("First order infusion rate is not yet supported")
+            statements = model.statements
+            statements.add_before_odes(ass)
+            df = model.dataset
+            rate = np.where(df['AMT'] == 0, 0, -2)
+            df['RATE'] = rate
+            # FIXME: Adding at end for now. Update $INPUT cannot yet handle adding in middle
+            # df.insert(list(df.columns).index('AMT') + 1, 'RATE', rate)
+            model.dataset = df
 
 
 def primary_pk_param_conversion_map(ncomp, removed):

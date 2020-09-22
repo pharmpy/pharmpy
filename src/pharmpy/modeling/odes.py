@@ -78,9 +78,20 @@ def absorption_rate(model, order):
         statements.remove_symbol_definitions(symbols, odes)
         model.remove_unused_parameters_and_rvs()
         if not depot:
-            add_first_order_absorption(model, amount, dose_comp)
+            add_first_order_absorption(model, Bolus(amount), dose_comp)
     elif order == 'seq-ZO-FO':
-        pass
+        dose_comp = odes.find_dosing()
+        have_ZO = have_zero_order_absorption(model)
+        if depot and not have_ZO:
+            add_zero_order_absorption(model, dose_comp.amount, depot, 'MDT')
+        elif not depot and have_ZO:
+            add_first_order_absorption(model, dose_comp.dose, dose_comp)
+            dose_comp.dose = None
+        elif not depot and not have_ZO:
+            amount = dose_comp.dose.amount
+            dose_comp.dose = None
+            depot = add_first_order_absorption(model, amount, dose_comp)
+            add_zero_order_absorption(model, amount, depot, 'MDT')
     else:
         raise ValueError(f'Requested order {order} but only orders '
                          f'instant, FO, ZO and seq-ZO-FO are supported')
@@ -121,14 +132,13 @@ def add_zero_order_absorption(model, amount, to_comp, parameter_name):
     model.statements.insert(0, imat)
 
 
-def add_first_order_absorption(model, amount, to_comp):
+def add_first_order_absorption(model, dose, to_comp):
     """Add first order absorption
        Disregards what is currently in the model.
     """
     odes = model.statements.ode_system
     depot = odes.add_compartment('DEPOT')
-    new_dose = Bolus(amount)
-    depot.dose = new_dose
+    depot.dose = dose
     tvmat_symb = model.create_symbol('TVMAT')
     mat_param = Parameter(tvmat_symb.name, init=0.1, lower=0)
     model.parameters.add(mat_param)
@@ -137,11 +147,3 @@ def add_first_order_absorption(model, amount, to_comp):
     model.statements.insert(0, imat)
     odes.add_flow(depot, to_comp, 1 / pharmpy.symbols.symbol('MAT'))
     return depot
-
-
-def add_sequantial_zero_first_absorption(model, amount, to_comp):
-    """Add sequential zero then first order absorption
-       Disregards what is currently in the model.
-    """
-    depot = add_first_order_absorption(model, amount, to_comp)
-    add_zero_order_absorption(model, amount, depot, 'MDT')
