@@ -38,6 +38,111 @@ For NONMEM models this means going from any of the compartmental ADVANS (ADVAN1-
    model.update_source()
    print(model)
 
+Absorption rate
+~~~~~~~~~~~~~~~
+
+The :py:func:`pharmpy.modeling.absorption_rate` can be used to set the absorption rate.
+
+
+Bolus absorption
+==================
+
+Let us use a model with bolus absorption as a starting point.
+
+.. graphviz::
+
+   digraph fo {
+     rankdir = LR
+     node [shape=box]
+     S [label="S", style=invis, width=0, height=0, margin=0];
+     Output [label="O", style=invis, width=0, height=0, margin=0];
+     "Central" -> Output [label=K];
+     S -> "Central" [label="Bolus"];
+   }
+
+.. jupyter-execute::
+
+   from pharmpy.modeling import absorption_rate
+   model = Model(path / "pheno_real.mod")
+
+This type of absorption can be created with
+
+.. jupyter-execute::
+
+    absorption_rate(model, 'bolus')
+    model.update_source()
+    print(model)
+
+
+Zero order
+===========
+
+Let us now change to zero order absorption.
+
+.. graphviz::
+
+   digraph fo {
+     rankdir = LR
+     node [shape=box]
+     S [label="S", style=invis, width=0, height=0, margin=0];
+     Output [label="O", style=invis, width=0, height=0, margin=0];
+     "Central" -> Output [label=K];
+     S -> "Central" [label=Infusion];
+   }
+
+.. jupyter-execute::
+
+   absorption_rate(model, 'ZO')
+   model.update_source(nofiles=True)
+   print(model)
+
+First order
+===========
+
+First order absorption would mean adding an absorption (depot) compartment like this
+
+.. graphviz::
+
+   digraph fo {
+     rankdir = LR
+     node [shape=box]
+     S [label="S", style=invis, width=0, height=0, margin=0];
+     Output [label="O", style=invis, width=0, height=0, margin=0];
+     "Depot" -> "Central" [label=Ka];
+     "Central" -> Output [label=K];
+     S -> "Depot" [label=Bolus];
+   }
+
+.. jupyter-execute::
+
+   absorption_rate(model, 'FO')
+   model.update_source(nofiles=True)
+   print(model)
+
+Sequential zero-order then first-order
+======================================
+
+Sequential zero-order absorption followed by first-order absorption will have an infusion dose into the depot compartment
+
+.. graphviz::
+
+   digraph fo {
+     rankdir = LR
+     node [shape=box]
+     S [label="S", style=invis, width=0, height=0, margin=0];
+     Output [label="O", style=invis, width=0, height=0, margin=0];
+     "Depot" -> "Central" [label=Ka];
+     "Central" -> Output [label=K];
+     S -> "Depot" [label=Infusion];
+   }
+
+.. jupyter-execute::
+
+   absorption_rate(model, 'seq-ZO-FO')
+   model.update_source(nofiles=True)
+   print(model)
+
+
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 Adding covariate effects
 ~~~~~~~~~~~~~~~~~~~~~~~~~

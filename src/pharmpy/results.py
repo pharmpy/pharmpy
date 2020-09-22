@@ -116,6 +116,18 @@ class Results:
         else:
             return s
 
+    def get_and_reset_index(self, attr, **kwargs):
+        """Wrapper to reset index of attribute or result from method.
+
+           Used to facilitate importing multiindex dataframes into R
+        """
+        val = getattr(self, attr)
+        if callable(val):
+            df = val(**kwargs)
+        else:
+            df = val
+        return df.reset_index()
+
     def to_dict(self):
         """Convert results object to a dictionary
         """

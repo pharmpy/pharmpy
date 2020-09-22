@@ -642,6 +642,7 @@ def psn_frem_results(path, force_posdef_covmatrix=False, force_posdef_samples=50
 
     # FIXME: Not introducing yaml parser in pharmpy just yet. Options should be collected
     # differently. Perhaps using json
+    logtransformed_covariates = []
     with open(path / 'meta.yaml') as meta:
         for row in meta:
             row = row.strip()

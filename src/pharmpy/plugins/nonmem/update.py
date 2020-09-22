@@ -120,9 +120,10 @@ def update_ode_system(model, old, new):
         subs.remove_option_startswith('TRANS')
         subs.remove_option_startswith('ADVAN')
         subs.append_option('ADVAN6')
+        subs.append_option('TOL', 3)
         des = model.control_stream.insert_record('$DES\nDUMMY=0', 'PK')
         des.from_odes(new)
-        mod = model.control_stream.insert_record('$MODEL TOL=3\n', 'SUBROUTINES')
+        mod = model.control_stream.insert_record('$MODEL\n', 'SUBROUTINES')
         for eq, ic in zip(new.odes[:-1], list(new.ics.keys())[:-1]):
             name = eq.lhs.args[0].name[2:]
             if new.ics[ic] != 0:
@@ -135,29 +136,16 @@ def update_ode_system(model, old, new):
             df = model.dataset
             df.drop(columns=['RATE'], inplace=True)
             model.dataset = df
-        if isinstance(new.find_dosing().dose, Infusion) and \
-                isinstance(old.find_dosing().dose, Bolus):
-            dose = new.find_dosing().dose
-            if dose.rate is None:
-                ass = Assignment('D1', dose.duration)
-            else:
-                raise NotImplementedError("First order infusion rate is not yet supported")
-            statements = model.statements
-            statements.add_before_odes(ass)
-            df = model.dataset
-            rate = np.where(df['AMT'] == 0, 0, -2)
-            df['RATE'] = rate
-            # FIXME: Adding at end for now. Update $INPUT cannot yet handle adding in middle
-            # df.insert(list(df.columns).index('AMT') + 1, 'RATE', rate)
-            model.dataset = df
         if not old.find_depot() and new.find_depot():
             # Depot was added
             subs = model.control_stream.get_records('SUBROUTINES')[0]
             advan = subs.get_option_startswith('ADVAN')
             trans = subs.get_option_startswith('TRANS')
             statements = model.statements
-            _, rate = new.get_compartment_flows(new.find_depot(), out=True)[0]
-            statements.add_before_odes(Assignment('KA', rate))
+            comp, rate = new.get_compartment_flows(new.find_depot(), out=True)[0]
+            ass = Assignment('KA', rate)
+            statements.add_before_odes(ass)
+            new.add_flow(new.find_depot(), comp, ass.symbol)
             if advan == 'ADVAN1':
                 subs.replace_option('ADVAN1', 'ADVAN2')
                 secondary = secondary_pk_param_conversion_map(len(old), 1, removed=False)
@@ -194,6 +182,9 @@ def update_ode_system(model, old, new):
                 statements.subs(primary)
                 secondary = secondary_pk_param_conversion_map(len(old), 1, removed=True)
                 statements.subs(secondary)
+            if isinstance(new.find_depot().dose, Infusion) and not statements.find_assignment('D1'):
+                # Handle direct moving of Infusion to depot compartment
+                statements.subs({'D2': 'D1'})
         elif old.find_depot() and not new.find_depot():
             # Depot was removed
             subs = model.control_stream.get_records('SUBROUTINES')[0]
@@ -239,6 +230,23 @@ def update_ode_system(model, old, new):
                 statements.subs(primary)
                 secondary = secondary_pk_param_conversion_map(len(old), n)
                 statements.subs(secondary)
+        if isinstance(new.find_dosing().dose, Infusion) and \
+                isinstance(old.find_dosing().dose, Bolus):
+            dose = new.find_dosing().dose
+            if dose.rate is None:
+                # FIXME: Not always D1 here!
+                ass = Assignment('D1', dose.duration)
+                dose.duration = ass.symbol
+            else:
+                raise NotImplementedError("First order infusion rate is not yet supported")
+            statements = model.statements
+            statements.add_before_odes(ass)
+            df = model.dataset
+            rate = np.where(df['AMT'] == 0, 0, -2)
+            df['RATE'] = rate
+            # FIXME: Adding at end for now. Update $INPUT cannot yet handle adding in middle
+            # df.insert(list(df.columns).index('AMT') + 1, 'RATE', rate)
+            model.dataset = df
 
 
 def primary_pk_param_conversion_map(ncomp, removed):

@@ -693,14 +693,14 @@ parser_definition = [
                        }},
         {'absorption_rate': {
             'help': 'Set absorption rate for a PK model',
-            'description': 'Change absorption rate of a PK model to either instant, 0th order, 1th '
+            'description': 'Change absorption rate of a PK model to either bolus, 0th order, 1th '
                            'order or sequential 0-order 1-order.',
             'func': model_absorption_rate,
             'parents': [args_model_input, args_output],
-            'args': [{'name': 'order',
-                      'choices': ['instant', 'ZO', 'FO', 'seq-ZO-FO'],
+            'args': [{'name': 'rate',
+                      'choices': ['bolus', 'ZO', 'FO', 'seq-ZO-FO'],
                       'type': str,
-                      'help': 'Order of absorption'},
+                      'help': 'Absorption rate'},
                      ]}},
         {'boxcox': {
             'help': 'Applies boxcox transformation',

@@ -393,7 +393,8 @@ class CompartmentalSystem(ODESystem):
             for line in lower:
                 lower_str += pad + line + '\n'
 
-        return upper_str + '\n'.join(bottom) + '\n' + lower_str
+        dose = self.find_dosing().dose
+        return str(dose) + '\n' + upper_str + '\n'.join(bottom) + '\n' + lower_str
 
 
 def box(s):
@@ -468,6 +469,9 @@ class Bolus:
     def __eq__(self, other):
         return isinstance(other, Bolus) and self.amount == other.amount
 
+    def __repr__(self):
+        return f'Bolus({self.amount})'
+
 
 class Infusion:
     def __init__(self, amount, rate=None, duration=None):
@@ -499,6 +503,13 @@ class Infusion:
     def __eq__(self, other):
         return isinstance(other, Infusion) and self.rate == other.rate and \
                 self.duration == other.duration and self.amount == other.amount
+
+    def __repr__(self):
+        if self.rate is not None:
+            arg = f'rate={self.rate}'
+        else:
+            arg = f'duration={self.duration}'
+        return f'Infusion({self.amount}, {arg})'
 
 
 class ModelStatements(list):
