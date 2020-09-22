@@ -188,3 +188,18 @@ def conditional_joint_normal(mu, sigma, a):
     sigma_bar = S11 - S12 @ S22_inv @ S21
 
     return mu_bar, sigma_bar
+
+
+def round_to_n_sigdig(x, n):
+    if x == 0:
+        return x
+    else:
+        return(round(x, -int(math.floor(math.log10(abs(x)))) + (n - 1)))
+
+
+def is_near_target(x, target, zero_limit, significant_digits):
+    if target == 0:
+        return abs(x) < abs(zero_limit)
+    else:
+        return round_to_n_sigdig(x, n=significant_digits) == \
+            round_to_n_sigdig(target, n=significant_digits)

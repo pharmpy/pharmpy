@@ -23,6 +23,12 @@ def test_flattened_to_symmetric():
     assert_array_equal(A, np.array([[1.0, 1.5, -1.0], [1.5, 2.0, 3.0], [-1.0, 3.0, 5.5]]))
 
 
+def test_round_to_n_sigdig():
+    assert pharmpy.math.round_to_n_sigdig(12345, 3) == 12300
+    assert pharmpy.math.round_to_n_sigdig(23.45, 1) == 20
+    assert pharmpy.math.round_to_n_sigdig(-0.012645, 2) == -0.013
+
+
 def test_round_and_keep_sum():
     ser = pd.Series([1.052632, 0.701754, 0.701754, 1.052632, 2.456140,
                      2.807018, 4.210526, 4.210526, 3.157895, 0.350877])
