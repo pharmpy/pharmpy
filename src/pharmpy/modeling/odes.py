@@ -44,7 +44,7 @@ def absorption_rate(model, order):
             symbols = ka.free_symbols
             statements.remove_symbol_definitions(symbols, odes)
             model.remove_unused_parameters_and_rvs()
-        elif have_zero_order_absorption(model):
+        if have_zero_order_absorption(model):
             dose_comp = odes.find_dosing()
             old_symbols = dose_comp.free_symbols
             dose_comp.dose = Bolus(dose_comp.dose.amount)
@@ -52,20 +52,21 @@ def absorption_rate(model, order):
             statements.remove_symbol_definitions(unneeded_symbols, odes)
             model.remove_unused_parameters_and_rvs()
     elif order == 'ZO':
+        dose_comp = odes.find_dosing()
+        symbols = dose_comp.free_symbols
+        dose = dose_comp.dose
+        if depot:
+            to_comp, _ = odes.get_compartment_flows(depot)[0]
+            ka = odes.get_flow(depot, odes.find_central())
+            odes.remove_compartment(depot)
+            symbols |= ka.free_symbols
+            to_comp.dose = dose
+        else:
+            to_comp = dose_comp
+        statements.remove_symbol_definitions(symbols, odes)
+        model.remove_unused_parameters_and_rvs()
         if not have_zero_order_absorption(model):
-            dose_comp = odes.find_dosing()
-            symbols = dose_comp.free_symbols
-            amount = dose_comp.dose.amount
-            if depot:
-                to_comp, _ = odes.get_compartment_flows(depot)[0]
-                ka = odes.get_flow(depot, odes.find_central())
-                odes.remove_compartment(depot)
-                symbols |= ka.free_symbols
-            else:
-                to_comp = dose_comp
-            statements.remove_symbol_definitions(symbols, odes)
-            model.remove_unused_parameters_and_rvs()
-            add_zero_order_absorption(model, amount, to_comp, 'MAT')
+            add_zero_order_absorption(model, dose.amount, to_comp, 'MAT')
     elif order == 'FO':
         dose_comp = odes.find_dosing()
         amount = dose_comp.dose.amount
@@ -83,7 +84,6 @@ def absorption_rate(model, order):
     else:
         raise ValueError(f'Requested order {order} but only orders '
                          f'instant, FO, ZO and seq-ZO-FO are supported')
-
     return model
 
 
