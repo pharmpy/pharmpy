@@ -42,6 +42,10 @@ from pharmpy.modeling import (absorption_rate, add_covariate_effect, boxcox, exp
     ('theta - cov + std', 'WGT', '*',
      'WGT_STD = 0.704565\n'
      'CLWGT = -WGT + WGT_STD + THETA(4)\n'
+     'CL = CLWGT*TVCL*EXP(ETA(1))'),
+    ('((cov/std) - median) * theta', 'WGT', '*',
+     'WGT_STD = 0.704565\n'
+     'CLWGT = (WGT/WGT_STD - WGT_MEDIAN)*THETA(4)\n'
      'CL = CLWGT*TVCL*EXP(ETA(1))')
 ])
 def test_add_covariate_effect(pheno_path, effect, covariate, operation, buf_new):
