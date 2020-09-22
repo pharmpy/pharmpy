@@ -317,7 +317,11 @@ class CompartmentalSystem(ODESystem):
         ics = {}
         for node in self._g.nodes:
             if node.dose is not None and isinstance(node.dose, Bolus):
-                ics[sympy.Function(node.amount.name)(0)] = node.dose.amount
+                if node.lag_time:
+                    time = node.lag_time
+                else:
+                    time = 0
+                ics[sympy.Function(node.amount.name)(time)] = node.dose.amount
             else:
                 ics[sympy.Function(node.amount.name)(0)] = 0
         return eqs, ics
