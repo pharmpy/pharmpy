@@ -55,7 +55,8 @@ Let us use a model with bolus absorption as a starting point.
      rankdir = LR
      node [shape=box]
      S [label="S", style=invis, width=0, height=0, margin=0];
-     "Central" -> "Output" [label=K];
+     Output [label="O", style=invis, width=0, height=0, margin=0];
+     "Central" -> Output [label=K];
      S -> "Central" [label="Bolus"];
    }
 
@@ -70,7 +71,7 @@ This type of absorption can be created with
 
     absorption_rate(model, 'bolus')
     model.update_source()
-    print(str(model))
+    print(model)
 
 
 Zero order
@@ -84,7 +85,8 @@ Let us now change to zero order absorption.
      rankdir = LR
      node [shape=box]
      S [label="S", style=invis, width=0, height=0, margin=0];
-     "Central" -> "Output" [label=K];
+     Output [label="O", style=invis, width=0, height=0, margin=0];
+     "Central" -> Output [label=K];
      S -> "Central" [label=Infusion];
    }
 
@@ -92,7 +94,7 @@ Let us now change to zero order absorption.
 
    absorption_rate(model, 'ZO')
    model.update_source(nofiles=True)
-   print(str(model))
+   print(model)
 
 First order
 ===========
@@ -105,8 +107,9 @@ First order absorption would mean adding an absorption (depot) compartment like 
      rankdir = LR
      node [shape=box]
      S [label="S", style=invis, width=0, height=0, margin=0];
+     Output [label="O", style=invis, width=0, height=0, margin=0];
      "Depot" -> "Central" [label=Ka];
-     "Central" -> "Output" [label=K];
+     "Central" -> Output [label=K];
      S -> "Depot" [label=Bolus];
    }
 
@@ -114,7 +117,30 @@ First order absorption would mean adding an absorption (depot) compartment like 
 
    absorption_rate(model, 'FO')
    model.update_source(nofiles=True)
-   print(str(model))
+   print(model)
+
+Sequential zero-order then first-order
+======================================
+
+Sequential zero-order absorption followed by first-order absorption will have an infusion dose into the depot compartment
+
+.. graphviz::
+
+   digraph fo {
+     rankdir = LR
+     node [shape=box]
+     S [label="S", style=invis, width=0, height=0, margin=0];
+     Output [label="O", style=invis, width=0, height=0, margin=0];
+     "Depot" -> "Central" [label=Ka];
+     "Central" -> Output [label=K];
+     S -> "Depot" [label=Infusion];
+   }
+
+.. jupyter-execute::
+
+   absorption_rate(model, 'seq-ZO-FO')
+   model.update_source(nofiles=True)
+   print(model)
 
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~
