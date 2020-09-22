@@ -45,17 +45,17 @@ def add_covariate_effect(model, parameter, covariate, effect, operation='*'):
     sset = model.statements
     param_statement = sset.find_assignment(parameter)
 
-    param_index = sset.index(param_statement)
+    index = sset.index(param_statement)
 
     covariate_effect.apply(parameter, covariate, thetas, statistics)
     effect_statement = covariate_effect.create_effect_statement(operation, param_statement)
 
-    for statement in covariate_effect.statistic_statements:
-        sset.insert(param_index + 1, statement)
-        param_index += 1
+    statements = covariate_effect.statistic_statements
+    statements.append(covariate_effect.template)
+    statements.append(effect_statement)
 
-    sset.insert(param_index + 1, covariate_effect.template)
-    sset.insert(param_index + 2, effect_statement)
+    for i, statement in enumerate(statements, 1):
+        sset.insert(index + i, statement)
 
     model.statements = sset
 
