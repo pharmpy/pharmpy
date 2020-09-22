@@ -62,7 +62,7 @@ def test_parameters(pheno_path):
                                                        lower=0, upper=sympy.oo)
     assert model.parameters['OMEGA(2,2)'] == Parameter('OMEGA(2,2)', 0.031128,
                                                        lower=0, upper=sympy.oo)
-    assert model.parameters['SIGMA(1,1)'] == Parameter('SIGMA(1,1)', 1e-7,
+    assert model.parameters['SIGMA(1,1)'] == Parameter('SIGMA(1,1)', 0.013241,
                                                        lower=0, upper=sympy.oo)
 
 
