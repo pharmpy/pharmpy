@@ -265,9 +265,10 @@ class ModelfitResults:
     def relative_standard_errors(self):
         """Relative standard errors of popilation parameter estimates
         """
-        ser = self.standard_errors / self.parameter_estimates
-        ser.name = 'RSE'
-        return ser
+        if self.standard_errors is not None:
+            ser = self.standard_errors / self.parameter_estimates
+            ser.name = 'RSE'
+            return ser
 
     def _se_from_cov(self):
         """Calculate the standard errors from the covariance matrix
@@ -349,6 +350,11 @@ class ModelfitResults:
 
         ish = pd.DataFrame(cov).apply(fn, axis=1, ests=diag_ests.values)
         return ish
+
+    def near_bounds(self, zero_limit=0.001, significant_digits=2):
+        return self.model.parameters.values_near_bounds(values=self.parameter_estimates,
+                                                        zero_limit=zero_limit,
+                                                        significant_digits=significant_digits)
 
     def parameter_summary(self):
         """Summary of parameter estimates and uncertainty
