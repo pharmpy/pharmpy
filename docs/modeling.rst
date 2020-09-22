@@ -156,10 +156,10 @@ Covariate effects may also be applied to a model.
 .. jupyter-execute::
 
    from pharmpy.modeling import add_covariate_effect
-   add_covariate_effect(model, 'CL', 'WGT', 'lin')
+   add_covariate_effect(model, 'CL', 'WGT', 'pow')
 
 Here, *CL* indicates the name of the parameter onto which you want to apply the effect, *WGT* is the covariate, and
-*lin* (linear function on continuous covariates) is the effect you want to apply.
+*pow* (power function) is the effect you want to apply.
 See :py:class:`pharmpy.modeling.add_covariate_effect` for effects with available templates.
 
 .. jupyter-execute::
@@ -172,7 +172,7 @@ Pharmpy also supports user formatted covariate effects.
 .. jupyter-execute::
 
    model = Model(path / "pheno_real.mod")
-   user_effect = 'median - cov + theta'
+   user_effect = '((cov/std) - median) * theta'
    add_covariate_effect(model, 'CL', 'WGT', user_effect)
 
 It is necessary that the names follow the same format as in user_effect, meaning that the covariate is denoted as
