@@ -335,3 +335,9 @@ def test_symbol_names_in_comment(pheno_path):
     with ConfigurationContext(conf, parameter_names='comment'):
         model = Model(pheno_path)
         assert model.statements[2].expression == S('PTVCL') * S('WGT')
+
+
+def test_prediction_symbol(pheno_path):
+    model = Model(pheno_path)
+    assert model.prediction_symbol.name == 'F'
+    assert model.dependent_variable_symbol.name == 'Y'

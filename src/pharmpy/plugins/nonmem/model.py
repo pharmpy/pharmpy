@@ -32,6 +32,11 @@ class Model(pharmpy.model.Model):
         self._initial_individual_estimates_updated = False
         self._updated_etas_file = None
         self._dataset_updated = False
+        if self._get_pk_record():
+            self.prediction_symbol = symbols.symbol('F')
+        else:
+            self.prediction_symbol = None
+        self.dependent_variable_symbol = symbols.symbol('Y')
 
     @property
     def name(self):
@@ -328,6 +333,12 @@ class Model(pharmpy.model.Model):
             return pk[0]
         else:
             return pred[0]
+
+    def _get_pk_record(self):
+        pk = self.control_stream.get_records('PK')
+        if pk:
+            pk = pk[0]
+        return pk
 
     def _get_error_record(self):
         error = self.control_stream.get_records('ERROR')
