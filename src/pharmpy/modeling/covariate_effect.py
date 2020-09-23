@@ -274,7 +274,7 @@ class CovariateEffect:
         operation = self._get_operation(operation_str)
 
         symbol = statement_original.symbol
-        expression = statement_original.expression
+        expression = statement_original.symbol
 
         statement_new = Assignment(symbol, operation(expression, self.template.symbol))
 

@@ -62,42 +62,42 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
 @pytest.mark.parametrize('effect, covariate, operation, buf_new', [
     ('exp', 'WGT', '*', 'WGT_MEDIAN = 1.30000\n'
                         'CLWGT = EXP((WGT - WGT_MEDIAN)*THETA(4))\n'
-                        'CL = CLWGT*TVCL*EXP(ETA(1))'),
+                        'CL = CL*CLWGT'),
     ('exp', 'WGT', '+', 'WGT_MEDIAN = 1.30000\n'
                         'CLWGT = EXP((WGT - WGT_MEDIAN)*THETA(4))\n'
-                        'CL = CLWGT + TVCL*EXP(ETA(1))'),
+                        'CL = CL + CLWGT'),
     ('pow', 'WGT', '*', 'WGT_MEDIAN = 1.30000\n'
                         'CLWGT = (WGT/WGT_MEDIAN)**THETA(4)\n'
-                        'CL = CLWGT*TVCL*EXP(ETA(1))'),
+                        'CL = CL*CLWGT'),
     ('lin', 'WGT', '*', 'WGT_MEDIAN = 1.30000\n'
                         'CLWGT = (WGT - WGT_MEDIAN)*THETA(4) + 1\n'
-                        'CL = CLWGT*TVCL*EXP(ETA(1))'),
+                        'CL = CL*CLWGT'),
     ('cat', 'FA1', '*', 'IF (FA1.EQ.1.0) THEN\n'
                         'CLFA1 = 1\n'
                         'ELSE IF (FA1.EQ.0.0) THEN\n'
                         'CLFA1 = THETA(4) + 1\n'
                         'END IF\n'
-                        'CL = CLFA1*TVCL*EXP(ETA(1))'),
+                        'CL = CL*CLFA1'),
     ('piece_lin', 'WGT', '*', 'WGT_MEDIAN = 1.30000\n'
                               'IF (WGT.LE.WGT_MEDIAN) THEN\n'
                               'CLWGT = (WGT - WGT_MEDIAN)*THETA(4) + 1\n'
                               'ELSE\n'
                               'CLWGT = (WGT - WGT_MEDIAN)*THETA(5) + 1\n'
                               'END IF\n'
-                              'CL = CLWGT*TVCL*EXP(ETA(1))'),
+                              'CL = CL*CLWGT'),
     ('theta - cov + median', 'WGT', '*',
      'WGT_MEDIAN = 1.30000\n'
      'CLWGT = -WGT + WGT_MEDIAN + THETA(4)\n'
-     'CL = CLWGT*TVCL*EXP(ETA(1))'),
+     'CL = CL*CLWGT'),
     ('theta - cov + std', 'WGT', '*',
      'WGT_STD = 0.704565\n'
      'CLWGT = -WGT + WGT_STD + THETA(4)\n'
-     'CL = CLWGT*TVCL*EXP(ETA(1))'),
+     'CL = CL*CLWGT'),
     ('((cov/std) - median) * theta', 'WGT', '*',
      'WGT_MEDIAN = 1.30000\n'
      'WGT_STD = 0.704565\n'
      'CLWGT = (WGT/WGT_STD - WGT_MEDIAN)*THETA(4)\n'
-     'CL = CLWGT*TVCL*EXP(ETA(1))')
+     'CL = CL*CLWGT')
 ])
 def test_add_covariate_effect(pheno_path, effect, covariate, operation, buf_new):
     model = Model(pheno_path)
