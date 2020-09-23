@@ -20,7 +20,7 @@ def explicit_odes(model):
 
 
 def add_lag_time(model):
-    """Add lag time to the dose compartment of a model
+    """Add lag time to the dose compartment of model
     """
     mdt_symb = model.create_symbol('MDT')
     odes = model.statements.ode_system
@@ -35,6 +35,19 @@ def add_lag_time(model):
     model.parameters.add(mdt_param)
     imdt = Assignment(mdt_symb, mdt_param.symbol)
     model.statements.insert(0, imdt)
+
+
+def remove_lag_time(model):
+    """Remove lag time from the dose compartment of model
+    """
+    odes = model.statements.ode_system
+    dosing_comp = odes.find_dosing()
+    lag_time = dosing_comp.lag_time
+    if lag_time:
+        symbols = lag_time.free_symbols
+        dosing_comp.lag_time = 0
+        model.statements.remove_symbol_definitions(symbols, odes)
+        model.remove_unused_parameters_and_rvs()
 
 
 def absorption_rate(model, rate):

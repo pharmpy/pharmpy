@@ -6,11 +6,12 @@ from pyfakefs.fake_filesystem_unittest import Patcher
 
 from pharmpy import Model
 from pharmpy.modeling import (absorption_rate, add_covariate_effect, add_lag_time, boxcox,
-                              explicit_odes, john_draper, tdist)
+                              explicit_odes, john_draper, remove_lag_time, tdist)
 
 
-def test_add_lag_time(testdata):
+def test_lag_time(testdata):
     model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan1.mod')
+    before = str(model)
     add_lag_time(model)
     model.update_source()
     correct = '''$PROBLEM PHENOBARB SIMPLE MODEL
@@ -52,6 +53,10 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
        NOPRINT ONEHEADER FILE=sdtab1
 '''
     assert str(model) == correct
+
+    remove_lag_time(model)
+    model.update_source()
+    assert str(model) == before
 
 
 @pytest.mark.parametrize('effect, covariate, operation, buf_new', [

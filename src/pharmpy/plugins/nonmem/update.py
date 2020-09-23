@@ -332,7 +332,7 @@ def update_lag_time(model, old, new):
     new_dosing = new.find_dosing()
     new_lag_time = new_dosing.lag_time
     old_lag_time = old.find_dosing().lag_time
-    if new_lag_time != old_lag_time:
+    if new_lag_time != old_lag_time and new_lag_time != 0:
         ass = Assignment('ALAG1', new_lag_time)
         model.statements.add_before_odes(ass)
         new_dosing.lag_time = ass.symbol
