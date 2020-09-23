@@ -39,8 +39,8 @@ def add_covariate_effect(model, parameter, covariate, effect, operation='*'):
     statistics['median'] = _calculate_median(model.dataset, covariate)
     statistics['std'] = _calculate_std(model.dataset, covariate)
 
-    thetas = _create_thetas(model, effect, covariate)
     covariate_effect = _create_template(effect, model, covariate)
+    thetas = _create_thetas(model, effect, covariate, covariate_effect.template)
 
     sset = model.statements
     param_statement = sset.find_assignment(parameter)
@@ -60,7 +60,7 @@ def add_covariate_effect(model, parameter, covariate, effect, operation='*'):
     model.statements = sset
 
 
-def _create_thetas(model, effect, covariate):
+def _create_thetas(model, effect, covariate, template):
     """Creates theta parameters and adds to parameter set of model.
 
     Number of parameters depends on which covariate effect."""
@@ -69,7 +69,7 @@ def _create_thetas(model, effect, covariate):
     elif effect == 'cat':
         no_of_thetas = _count_categorical(model, covariate).nunique()
     else:
-        no_of_thetas = 1
+        no_of_thetas = len(re.findall(r'theta\d*', str(repr(template)), re.IGNORECASE))
 
     pset = model.parameters
 

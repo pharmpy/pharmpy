@@ -93,6 +93,10 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
      'WGT_STD = 0.704565\n'
      'CLWGT = -WGT + WGT_STD + THETA(4)\n'
      'CL = CL*CLWGT'),
+    ('theta1 * (cov/median)**theta2', 'WGT', '*',
+     'WGT_MEDIAN = 1.30000\n'
+     'CLWGT = (WGT/WGT_MEDIAN)**THETA(5)*THETA(4)\n'
+     'CL = CL*CLWGT'),
     ('((cov/std) - median) * theta', 'WGT', '*',
      'WGT_MEDIAN = 1.30000\n'
      'WGT_STD = 0.704565\n'
