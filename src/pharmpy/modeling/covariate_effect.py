@@ -1,5 +1,6 @@
 import math
 import re
+import warnings
 from operator import add, mul
 
 import numpy as np
@@ -34,6 +35,12 @@ def add_covariate_effect(model, parameter, covariate, effect, operation='*'):
     operation : str, optional
         Whether the covariate effect should be added or multiplied (default).
     """
+    sset = model.statements
+
+    if S(f'{parameter}{covariate}') in sset.free_symbols:
+        warnings.warn('Covariate effect already exists')
+        return
+
     statistics = dict()
     statistics['mean'] = _calculate_mean(model.dataset, covariate)
     statistics['median'] = _calculate_median(model.dataset, covariate)
@@ -42,7 +49,6 @@ def add_covariate_effect(model, parameter, covariate, effect, operation='*'):
     covariate_effect = _create_template(effect, model, covariate)
     thetas = _create_thetas(model, effect, covariate, covariate_effect.template)
 
-    sset = model.statements
     param_statement = sset.find_assignment(parameter)
 
     index = sset.index(param_statement)

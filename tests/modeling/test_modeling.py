@@ -139,6 +139,15 @@ def test_add_covariate_effect_nan(pheno_path):
     assert re.search(r'new_col\.EQ\.-99', str(model))
 
 
+def test_add_covariate_effect_duplicates(pheno_path):
+    model = Model(pheno_path)
+
+    add_covariate_effect(model, 'CL',  'WGT', 'exp')
+
+    with pytest.warns(UserWarning):
+        add_covariate_effect(model, 'CL', 'WGT', 'exp')
+
+
 def test_to_explicit_odes(pheno_path, testdata):
     model = Model(pheno_path)
 
