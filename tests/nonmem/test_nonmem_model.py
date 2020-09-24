@@ -62,7 +62,7 @@ def test_parameters(pheno_path):
                                                        lower=0, upper=sympy.oo)
     assert model.parameters['OMEGA(2,2)'] == Parameter('OMEGA(2,2)', 0.031128,
                                                        lower=0, upper=sympy.oo)
-    assert model.parameters['SIGMA(1,1)'] == Parameter('SIGMA(1,1)', 1e-7,
+    assert model.parameters['SIGMA(1,1)'] == Parameter('SIGMA(1,1)', 0.013241,
                                                        lower=0, upper=sympy.oo)
 
 
@@ -335,3 +335,9 @@ def test_symbol_names_in_comment(pheno_path):
     with ConfigurationContext(conf, parameter_names='comment'):
         model = Model(pheno_path)
         assert model.statements[2].expression == S('PTVCL') * S('WGT')
+
+
+def test_prediction_symbol(pheno_path):
+    model = Model(pheno_path)
+    assert model.prediction_symbol.name == 'F'
+    assert model.dependent_variable_symbol.name == 'Y'

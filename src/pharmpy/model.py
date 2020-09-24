@@ -35,7 +35,9 @@ class ModelSyntaxError(ModelException):
 
 class Model:
     """
-     Property: name
+     Attribute: name
+        prediction_symbol
+        dependent_variable_symbol
     """
     @property
     def modelfit_results(self):
@@ -129,8 +131,11 @@ class Model:
         params = [param.name for param in self.parameters]
         rvs = [rv.name for rv in self.random_variables]
         dataset_col = list(self.dataset.columns)
+        misc = [self.dependent_variable_symbol]
+        if self.prediction_symbol:
+            misc.append(self.prediction_symbol.name)
 
-        all_names = symbols + params + rvs + dataset_col
+        all_names = symbols + params + rvs + dataset_col + misc
 
         if str(stem) not in all_names and not force_numbering:
             return pharmpy.symbols.symbol(str(stem))

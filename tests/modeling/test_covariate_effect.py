@@ -20,17 +20,23 @@ def S(x):
 ])
 def test_apply(cov_eff, symbol, expression):
     cov_eff.apply(parameter='CL', covariate='WGT',
-                  thetas={'theta': 'COVEFF1'})
+                  thetas={'theta': 'COVEFF1'}, statistics={'mean': 1,
+                                                           'median': 1,
+                                                           'std': 1})
 
     assert cov_eff.template.symbol == symbol
     assert cov_eff.template.expression == expression
 
 
-def test_choose_param_inits(pheno_path):
+@pytest.mark.parametrize('cov_eff, init, lower, upper', [
+    ('exp', 0.001, -0.8696, 0.8696),
+    ('pow', 0.001, -100, 100000)
+])
+def test_choose_param_inits(pheno_path, cov_eff, init, lower, upper):
     model = Model(pheno_path)
 
-    init, lower, upper = _choose_param_inits('exp', model.dataset, 'WGT')
+    inits = _choose_param_inits(cov_eff, model.dataset, 'WGT')
 
-    assert init == 0.001
-    assert round(lower, 4) == -0.8696
-    assert round(upper, 4) == 0.8696
+    assert inits['init'] == init
+    assert inits['lower'] == lower
+    assert inits['upper'] == upper

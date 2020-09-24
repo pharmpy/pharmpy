@@ -34,60 +34,55 @@ def add_covariate_effect(model, parameter, covariate, effect, operation='*'):
     operation : str, optional
         Whether the covariate effect should be added or multiplied (default).
     """
-    mean = _calculate_mean(model.dataset, covariate)
-    median = _calculate_median(model.dataset, covariate)
-    std = _calculate_std(model.dataset, covariate)
+    statistics = dict()
+    statistics['mean'] = _calculate_mean(model.dataset, covariate)
+    statistics['median'] = _calculate_median(model.dataset, covariate)
+    statistics['std'] = _calculate_std(model.dataset, covariate)
 
-    thetas = _create_thetas(model, effect, covariate)
     covariate_effect = _create_template(effect, model, covariate)
+    thetas = _create_thetas(model, effect, covariate, covariate_effect.template)
 
     sset = model.statements
     param_statement = sset.find_assignment(parameter)
 
-    param_index = sset.index(param_statement)
+    index = sset.index(param_statement)
 
-    covariate_effect.apply(parameter, covariate, thetas)
+    covariate_effect.apply(parameter, covariate, thetas, statistics)
     effect_statement = covariate_effect.create_effect_statement(operation, param_statement)
 
-    if effect != 'cat':
-        statistic_statement = covariate_effect.create_statistics_statement(covariate, mean,
-                                                                           median, std)
-        sset.insert(param_index + 1, statistic_statement)
-        param_index += 1
+    statements = covariate_effect.statistic_statements
+    statements.append(covariate_effect.template)
+    statements.append(effect_statement)
 
-    sset.insert(param_index + 1, covariate_effect.template)
-    sset.insert(param_index + 2, effect_statement)
+    for i, statement in enumerate(statements, 1):
+        sset.insert(index + i, statement)
 
     model.statements = sset
 
 
-def _create_thetas(model, effect, covariate):
+def _create_thetas(model, effect, covariate, template):
     """Creates theta parameters and adds to parameter set of model.
 
-    Number of parameters depends on which covariate effect."""
-    if effect == 'piece_lin':
-        no_of_thetas = 2
-    elif effect == 'cat':
-        no_of_thetas = _count_categorical(model, covariate).nunique()
-    else:
-        no_of_thetas = 1
+    Number of parameters depends on how many thetas have been declared."""
+    no_of_thetas = len(re.findall(r'theta\d*', str(repr(template)), re.IGNORECASE))
 
     pset = model.parameters
 
     theta_names = dict()
     theta_name = str(model.create_symbol(stem='COVEFF', force_numbering=True))
-    init, theta_lower, theta_upper = _choose_param_inits(effect,
-                                                         model.dataset,
-                                                         covariate)
 
     if no_of_thetas == 1:
-        pset.add(Parameter(theta_name, init, theta_lower, theta_upper))
+        inits = _choose_param_inits(effect, model.dataset, covariate)
+
+        pset.add(Parameter(theta_name, inits['init'], inits['lower'], inits['upper']))
         theta_names['theta'] = theta_name
     else:
         cov_eff_number = int(re.findall(r'\d', theta_name)[0])
 
         for i in range(1, no_of_thetas+1):
-            pset.add(Parameter(theta_name, theta_upper, theta_lower))
+            inits = _choose_param_inits(effect, model.dataset, covariate, i)
+
+            pset.add(Parameter(theta_name, inits['init'], inits['lower'], inits['upper']))
             theta_names[f'theta{i}'] = theta_name
             theta_name = f'COVEFF{cov_eff_number + i}'
 
@@ -131,35 +126,80 @@ def _calculate_std(df, covariate, baselines=False):
         return df.groupby('ID')[str(covariate)].mean().std()
 
 
-def _choose_param_inits(effect, df, covariate):
+def _choose_param_inits(effect, df, covariate, index=None):
     """Chooses inits for parameters. If the effect is exponential, the
     bounds need to be dynamic."""
-    lower = -100000
-    upper = 100000
-    init = 0.001
+    init_default = 0.001
+
+    inits = dict()
+
+    cov_median = _calculate_median(df, covariate)
+    cov_min = df[str(covariate)].min()
+    cov_max = df[str(covariate)].max()
+
+    lower, upper = _choose_bounds(effect, cov_median, cov_min, cov_max, index)
 
     if effect == 'exp':
-        min_diff = df[str(covariate)].min() - _calculate_median(df, covariate)
-        max_diff = df[str(covariate)].max() - _calculate_median(df, covariate)
+        if lower > init_default or init_default > upper:
+            init = (upper + lower)/2
+            if init == 0:
+                init = upper/5
+        else:
+            init = init_default
+    elif effect == 'pow':
+        init = init_default
+    else:
+        init = init_default
+
+    inits['init'] = init
+    inits['lower'] = lower
+    inits['upper'] = upper
+
+    return inits
+
+
+def _choose_bounds(effect, cov_median, cov_min, cov_max, index=None):
+    if effect == 'exp':
+        min_diff = cov_min - cov_median
+        max_diff = cov_max - cov_median
 
         lower_expected = 0.01
         upper_expected = 100
 
         if min_diff == 0 or max_diff == 0:
-            lower = lower_expected
-            upper = upper_expected
+            return lower_expected, upper_expected
         else:
             log_base = 10
             lower = max(math.log(lower_expected, log_base)/max_diff,
                         math.log(upper_expected, log_base)/min_diff)
             upper = min(math.log(lower_expected, log_base)/min_diff,
                         math.log(upper_expected, log_base)/max_diff)
-
-            if lower > init or init > upper:
-                init = (upper + lower)/2
-        return init, lower, upper
+    elif effect == 'lin':
+        if cov_median == cov_min:
+            upper = 100000
+        else:
+            upper = 1 / (cov_median - cov_min)
+        if cov_median == cov_max:
+            lower = -100000
+        else:
+            lower = 1 / (cov_median - cov_max)
+    elif effect == 'piece_lin':
+        if cov_median == cov_min or cov_median == cov_max:
+            raise Exception('Median cannot be same as min or max, cannot use '
+                            'piecewise-linear parameterization.')
+        if index == 0:
+            lower = -100000
+            upper = 1 / (cov_median - cov_min)
+        else:
+            lower = 1 / (cov_median - cov_max)
+            upper = 100000
+    elif effect == 'pow':
+        lower = -100
+        upper = 100000
     else:
-        return init, lower, upper
+        lower = -100000
+        upper = 100000
+    return round(lower, 4), round(upper, 4)
 
 
 def _create_template(effect, model, covariate):
@@ -189,17 +229,17 @@ class CovariateEffect:
     ----------
     template
         Assignment based on covariate effect
-    statistic_type
-        Mean or median, depends on which covariate effect
+    statistic_statements
+        Dict with mean, median and standard deviation
 
     :meta private:
 
     """
     def __init__(self, template):
         self.template = template
-        self.statistic_type = None
+        self.statistic_statements = []
 
-    def apply(self, parameter, covariate, thetas):
+    def apply(self, parameter, covariate, thetas, statistics):
         effect_name = f'{parameter}{covariate}'
         self.template.symbol = S(effect_name)
 
@@ -207,15 +247,19 @@ class CovariateEffect:
         self.template.subs({'cov': covariate})
 
         template_str = [str(symbol) for symbol in self.template.free_symbols]
+
         if 'mean' in template_str:
             self.template.subs({'mean': f'{covariate}_MEAN'})
-            self.statistic_type = 'mean'
-        elif 'median' in template_str:
+            s = Assignment(S(f'{covariate}_MEAN'), Float(statistics['mean'], 6))
+            self.statistic_statements.append(s)
+        if 'median' in template_str:
             self.template.subs({'median': f'{covariate}_MEDIAN'})
-            self.statistic_type = 'median'
-        elif 'std' in template_str:
+            s = Assignment(S(f'{covariate}_MEDIAN'), Float(statistics['median'], 6))
+            self.statistic_statements.append(s)
+        if 'std' in template_str:
             self.template.subs({'std': f'{covariate}_STD'})
-            self.statistic_type = 'std'
+            s = Assignment(S(f'{covariate}_STD'), Float(statistics['std'], 6))
+            self.statistic_statements.append(s)
 
     def create_effect_statement(self, operation_str, statement_original):
         """Creates statement for addition or multiplication of covariate
@@ -225,20 +269,11 @@ class CovariateEffect:
         operation = self._get_operation(operation_str)
 
         symbol = statement_original.symbol
-        expression = statement_original.expression
+        expression = statement_original.symbol
 
         statement_new = Assignment(symbol, operation(expression, self.template.symbol))
 
         return statement_new
-
-    def create_statistics_statement(self, covariate, mean, median, std):
-        """Creates statement where value of mean/median is explicit."""
-        if self.statistic_type == 'mean':
-            return Assignment(S(f'{covariate}_MEAN'), Float(mean, 6))
-        elif self.statistic_type == 'median':
-            return Assignment(S(f'{covariate}_MEDIAN'), Float(median, 6))
-        elif self.statistic_type == 'std':
-            return Assignment(S(f'{covariate}_STD'), Float(std, 6))
 
     @staticmethod
     def _get_operation(operation_str):
@@ -273,7 +308,10 @@ class CovariateEffect:
 
         for i, cat in enumerate(categories):
             if cat != most_common:
-                values += [1 + S(f'theta{i}')]
+                if len(categories) == 2:
+                    values += [1 + S('theta')]
+                else:
+                    values += [1 + S(f'theta{i}')]
                 if np.isnan(cat):
                     conditions += [Eq(S('cov'), S('NaN'))]
                 else:

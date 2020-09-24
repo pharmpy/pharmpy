@@ -269,6 +269,7 @@ class CodeRecord(Record):
                 if node_index != 0 or len(self.root.children) > 0 and \
                         self.root.children[0].rule != 'empty_line':
                     node.children.append(AttrToken('LF', '\n'))
+                new_nodes.append(node)
                 kept.append(node)
             elif op == '-':
                 node_index += 1

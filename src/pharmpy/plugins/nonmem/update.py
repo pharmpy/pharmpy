@@ -132,6 +132,7 @@ def update_ode_system(model, old, new):
                 dose = False
             mod.add_compartment(name, dosing=dose)
     elif type(old) == CompartmentalSystem and type(new) == CompartmentalSystem:
+        update_lag_time(model, old, new)
         if isinstance(new.find_dosing().dose, Bolus) and 'RATE' in model.dataset.columns:
             df = model.dataset
             df.drop(columns=['RATE'], inplace=True)
@@ -325,3 +326,13 @@ def update_statements(model, old, new, trans):
             error_statements.pop(0)        # Remove the link statement
         error_statements.subs(trans)
         error.statements = error_statements
+
+
+def update_lag_time(model, old, new):
+    new_dosing = new.find_dosing()
+    new_lag_time = new_dosing.lag_time
+    old_lag_time = old.find_dosing().lag_time
+    if new_lag_time != old_lag_time and new_lag_time != 0:
+        ass = Assignment('ALAG1', new_lag_time)
+        model.statements.add_before_odes(ass)
+        new_dosing.lag_time = ass.symbol

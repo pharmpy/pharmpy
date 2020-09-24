@@ -317,7 +317,11 @@ class CompartmentalSystem(ODESystem):
         ics = {}
         for node in self._g.nodes:
             if node.dose is not None and isinstance(node.dose, Bolus):
-                ics[sympy.Function(node.amount.name)(0)] = node.dose.amount
+                if node.lag_time:
+                    time = node.lag_time
+                else:
+                    time = 0
+                ics[sympy.Function(node.amount.name)(time)] = node.dose.amount
             else:
                 ics[sympy.Function(node.amount.name)(0)] = 0
         return eqs, ics
@@ -424,24 +428,35 @@ def vertical_arrow(flow, down=True):
 
 
 class Compartment:
-    def __init__(self, name):
+    def __init__(self, name, lag_time=0):
         self.name = name
         self.dose = None
+        self.lag_time = lag_time
+
+    @property
+    def lag_time(self):
+        return self._lag_time
+
+    @lag_time.setter
+    def lag_time(self, value):
+        self._lag_time = sympy.sympify(value)
 
     @property
     def free_symbols(self):
+        symbs = set()
         if self.dose is not None:
-            return self.dose.free_symbols
-        else:
-            return set()
+            symbs |= self.dose.free_symbols
+        symbs |= self.lag_time.free_symbols
+        return symbs
 
     def subs(self, substitutions):
         if self.dose is not None:
             self.dose.subs(substitutions)
+        self.lag_time.subs(substitutions)
 
     def __eq__(self, other):
         return isinstance(other, Compartment) and self.name == other.name and \
-            self.dose == other.dose
+            self.dose == other.dose and self.lag_time == other.lag_time
 
     def __hash__(self):
         return hash(self.name)
