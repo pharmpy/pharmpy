@@ -63,13 +63,8 @@ def add_covariate_effect(model, parameter, covariate, effect, operation='*'):
 def _create_thetas(model, effect, covariate, template):
     """Creates theta parameters and adds to parameter set of model.
 
-    Number of parameters depends on which covariate effect."""
-    if effect == 'piece_lin':
-        no_of_thetas = 2
-    elif effect == 'cat':
-        no_of_thetas = _count_categorical(model, covariate).nunique()
-    else:
-        no_of_thetas = len(re.findall(r'theta\d*', str(repr(template)), re.IGNORECASE))
+    Number of parameters depends on how many thetas have been declared."""
+    no_of_thetas = len(re.findall(r'theta\d*', str(repr(template)), re.IGNORECASE))
 
     pset = model.parameters
 
@@ -313,7 +308,10 @@ class CovariateEffect:
 
         for i, cat in enumerate(categories):
             if cat != most_common:
-                values += [1 + S(f'theta{i}')]
+                if len(categories) == 2:
+                    values += [1 + S('theta')]
+                else:
+                    values += [1 + S(f'theta{i}')]
                 if np.isnan(cat):
                     conditions += [Eq(S('cov'), S('NaN'))]
                 else:
