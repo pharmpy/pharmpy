@@ -21,20 +21,46 @@ def update_source(model):
 
 
 def fix_parameters(model, parameter_names):
-    """Fix parameters
+    """ Fix parameters
 
-       Fix all listed parameters
+        Fix all listed parameters
+
+        Parameters
+        ----------
+        model: Model
+        parameter_names: list or str
+            one parameter name or a list of parameter names
+
+        Returns
+        -------
+        model: Model
     """
-    d = {name: True for name in parameter_names}
+    if isinstance(parameter_names, str):
+        d = {parameter_names: True}
+    else:
+        d = {name: True for name in parameter_names}
     model.parameters.fix = d
     return model
 
 
 def unfix_parameters(model, parameter_names):
-    """Unfix parameters
+    """ Unfix parameters
 
-       Unfix all listed parameters
+        Unfix all listed parameters
+
+        Parameters
+        ----------
+        model: Model
+        parameter_names: list or str
+            one parameter name or a list of parameter names
+
+        Returns
+        -------
+        model: Model
     """
-    d = {name: False for name in parameter_names}
+    if isinstance(parameter_names, str):
+        d = {parameter_names: False}
+    else:
+        d = {name: False for name in parameter_names}
     model.parameters.fix = d
     return model

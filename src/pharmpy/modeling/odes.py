@@ -52,6 +52,7 @@ def add_lag_time(model):
     model.parameters.add(mdt_param)
     imdt = Assignment(mdt_symb, mdt_param.symbol)
     model.statements.insert(0, imdt)
+    return model
 
 
 def remove_lag_time(model):
@@ -65,6 +66,7 @@ def remove_lag_time(model):
         dosing_comp.lag_time = 0
         model.statements.remove_symbol_definitions(symbols, odes)
         model.remove_unused_parameters_and_rvs()
+    return model
 
 
 def absorption_rate(model, rate):
