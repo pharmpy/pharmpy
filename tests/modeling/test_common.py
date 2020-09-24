@@ -1,5 +1,12 @@
 from pharmpy import Model
-from pharmpy.modeling import fix_parameters, unfix_parameters, update_source
+from pharmpy.modeling import fix_parameters, read_model, unfix_parameters, update_source
+
+
+def test_read_model(testdata):
+    model = read_model(testdata / 'nonmem' / 'minimal.mod')
+    assert model.parameters['THETA(1)'].init == 0.1
+    model2 = read_model(str(testdata / 'nonmem' / 'minimal.mod'))
+    assert model2.parameters['THETA(1)'].init == 0.1
 
 
 def test_fix_parameters(testdata):

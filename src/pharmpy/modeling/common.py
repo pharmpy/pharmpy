@@ -1,5 +1,14 @@
 # Common modeling pipeline elements
 
+from pharmpy.model_factory import Model
+
+
+def read_model(path):
+    """Read model from file
+    """
+    model = Model(path)
+    return model
+
 
 def update_source(model):
     """Update source
