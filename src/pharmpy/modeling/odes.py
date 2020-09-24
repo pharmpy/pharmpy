@@ -19,6 +19,23 @@ def explicit_odes(model):
     return model
 
 
+def error_model(model, error_model):
+    """Set a predefined error model
+
+    Parameters
+    ----------
+    model
+        Set error model for this model
+    error_model
+        'none'
+    """
+    if error_model == 'none':
+        pass
+    else:
+        raise ValueError(f'Requested error_model {error_model} but only '
+                         f'none are supported')
+
+
 def add_lag_time(model):
     """Add lag time to the dose compartment of model
     """
