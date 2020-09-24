@@ -8,7 +8,7 @@ categorical_covariates=CVD1,CVD2,CVD3
 
 [test_relations]
 CL=WGT,APGR,CV1,CV2,CV3
-V=CVD1
+V=CVD1,WGT
 
 [valid_states]
 continuous = 1,2,3,4,5

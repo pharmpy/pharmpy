@@ -10,23 +10,25 @@ import pharmpy.methods.scm.results as scm
 def test_psn_scm_options(testdata):
     options = scm.psn_scm_options(testdata / 'nonmem' / 'scm')
     assert options['included_relations'] is None
-    assert options['logfile'] == 'scmlog1.txt'
-    assert options['directory'] == \
-        '/home/kajsa/kod-psn/sandbox/uu/scm_havebaserun_dir'
+    assert options['test_relations'] is None
+    assert options['logfile'] == 'scmlog.txt'
+    assert options['directory'] == '/home/shared/Projects/Analysis/Model/SimVal/run5scm.dir'
 
     options = scm.psn_scm_options(testdata / 'nonmem' / 'scm' / 'onlyforward_dir1')
     assert options['included_relations'] == {'CL': {'APGR': '2'},
                                              'V': {'CVD1': '2'}}
+    assert options['test_relations'] == {'CL': ['WGT', 'APGR', 'CV1', 'CV2', 'CV3'],
+                                         'V': ['CVD1', 'WGT']}
     assert options['logfile'] == 'scmlog.txt'
-    assert options['directory'] == \
-        '/home/kajsa/kod-psn/sandbox/uu/scm_dir1'
+    assert options['directory'] == '/home/kajsa/kod-psn/sandbox/uu/scm_dir1'
 
     options = scm.psn_scm_options(testdata / 'nonmem' / 'scm' / 'backward_dir1')
     assert options['included_relations'] == {'CL': {'WGT': '2', 'CV1': '2'},
                                              'V': {'CV2': '2', 'WGT': '2', 'CVD1': '2'}}
+    assert options['test_relations'] == {'CL': ['WGT', 'APGR', 'CV1', 'CV2', 'CV3'],
+                                         'V': ['CVD1', 'CV2', 'WGT']}
     assert options['logfile'] == 'scmlog.txt'
-    assert options['directory'] == \
-        '/home/kajsa/sandbox/asrscm/scm_dir10'
+    assert options['directory'] == '/home/kajsa/sandbox/asrscm/scm_dir10'
 
 
 def test_main(testdata):
@@ -39,6 +41,7 @@ def test_main(testdata):
     res2 = scm.psn_scm_results(dirs['mer2'])
 
     assert [float(res1.steps['extended_ofv'].iloc[5])] == approx([219208.47277])
+    assert res1.steps['directory'].iloc[0] == 'm1'
     assert isnan(res1.steps['extended_ofv'].iloc[6])
     assert res1.ofv_summary(final_included=False) is not None
     assert res1.candidate_summary() is not None
@@ -81,6 +84,7 @@ CL,WGT,3,  1,1,   0, 0,
                                      'included_relations': None},
                                     parcovdict)
     assert df1 is not None
+    assert df1['directory'].iloc[0] == 'rundir/m1'
     sum1 = scm.ofv_summary_dataframe(df1)
     assert [float(x) for x in sum1['pvalue'].values] == \
         approx([2.26e-10, 0.000002, 0.002178, 0.014192, 0.490010, 9999, 0.027672, 8.15e-24])
@@ -145,16 +149,6 @@ CL,CV1,2,3
     assert gof1 is not None
     assert scm.ofv_summary_dataframe(gof1) is not None
     assert scm.candidate_summary_dataframe(gof1) is not None
-
-
-def test_parse_scm_relations(testdata):
-    parcov = scm.parse_scm_relations(testdata / 'nonmem' / 'scm' / 'relations.txt')
-    assert parcov == {'CLCV2': ('CL', 'CV2'),
-                      'CLWGT': ('CL', 'WGT'),
-                      'CLCV3': ('CL', 'CV3'),
-                      'CLCV1': ('CL', 'CV1'),
-                      'VWGT': ('V', 'WGT'),
-                      'VCVD1': ('V', 'CVD1')}
 
 
 def test_parse_runtable_block_gof_pval(testdata):

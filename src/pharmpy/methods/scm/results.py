@@ -479,88 +479,98 @@ def psn_config_file_argument_from_command(command, path):
             if (path / Path(arg).name).is_file() and not arg.startswith('-')]
 
 
-def included_relations_from_config_file(path, files):
+def relations_from_config_file(path, files):
     # Allow multiple candidate files in case ambiguous command-line (unusual)
     path = Path(path)
     start_config_section = re.compile(r'\s*\[(?P<section>[a-z_]+)\]\s*$')
     empty_line = re.compile(r'^[-\s]*$')
-    included_lines = list()
+    included_lines = None
+    test_lines = None
     included_relations = None
-    found_included = False
+    test_relations = None
+    scanning_included = False
+    scanning_test = False
     for file in files:
         with open(path / file) as fn:
             for row in fn:
                 m = start_config_section.match(row)
                 if m:
-                    if found_included:
-                        break
                     if m.group('section') == 'included_relations':
-                        found_included = True
-                elif found_included and not empty_line.match(row):
+                        scanning_included = True
+                        scanning_test = False
+                        included_lines = list()
+                    elif m.group('section') == 'test_relations':
+                        scanning_included = False
+                        scanning_test = True
+                        test_lines = list()
+                    else:
+                        scanning_included = False
+                        scanning_test = False
+                elif scanning_included and not empty_line.match(row):
                     included_lines.append(row.strip())
-        if found_included:
-            break
-    if found_included and len(included_lines) > 0:
+                elif scanning_test and not empty_line.match(row):
+                    test_lines.append(row.strip())
+        if test_lines is not None and len(test_lines) > 0:
+            break  # do not check any other file, if more than one
+    if included_lines is not None and len(included_lines) > 0:
         included_relations = dict()
         p = re.compile(r'\s*([^-]+)-(\d+)\s*')
         for row in included_lines:
             par, covstates = row.split(r'=')
-            par = re.sub(r'\s+', '', par)
+            par = str.strip(par)
             included_relations[par] = {p.match(val).group(1): p.match(val).group(2)
                                        for val in covstates.split(r',')}
+    if test_lines is not None and len(test_lines) > 0:
+        test_relations = dict()
+        for row in test_lines:
+            par, covs = row.split(r'=')
+            par = str.strip(par)
+            test_relations[par] = [str.strip(val) for val in covs.split(r',')]
 
-    return included_relations
+    return included_relations, test_relations
 
 
 def psn_scm_options(path):
     path = Path(path)
     options = {'directory': str(path),
                'logfile': 'scmlog.txt',
-               'included_relations': None}
+               'included_relations': None,
+               'test_relations': None}
+    scmplus = False
     config_files = None
-    try:
-        with open(path / 'meta.yaml') as meta:
-            for row in meta:
-                row = row.strip()
-                if row.startswith('logfile: '):
-                    options['logfile'] = Path(re.sub(r'\s*logfile:\s*', '', row)).name
-                elif row.startswith('directory: '):
-                    options['directory'] = \
-                        str(Path(re.sub(r'\s*directory:\s*', '', row)).absolute())
-                elif row.startswith('command_line: '):
-                    row = re.sub(r'\s*command_line:\s*', '', row)
-                    for k, v in psn_options_from_command(row).items():
-                        if 'config_file'.startswith(k):
-                            config_files = [v]
-                            break
-                    if config_files is None:
-                        # not option -config_file, must have been given as argument
-                        config_files = psn_config_file_argument_from_command(row, path)
-    except IOError:
-        # if meta.yaml not found we return default name
-        pass
-
+    with open(path / 'meta.yaml') as meta:
+        for row in meta:
+            row = row.strip()
+            if row.startswith('logfile: '):
+                options['logfile'] = Path(re.sub(r'\s*logfile:\s*', '', row)).name
+            elif row.startswith('directory: '):
+                options['directory'] = \
+                    str(Path(re.sub(r'\s*directory:\s*', '', row)).absolute())
+            elif row.startswith('command_line: '): # FIXME can be multiline
+                row = re.sub(r'\s*command_line:\s*', '', row)
+                if re.match(r'\S*\bscmplus\s', row):
+                    scmplus = True
+                for k, v in psn_options_from_command(row).items():
+                    if 'config_file'.startswith(k):
+                        config_files = [v]
+                        break
+                if config_files is None:
+                    # not option -config_file, must have been given as argument
+                    config_files = psn_config_file_argument_from_command(row, path)
+    if scmplus and Path(options['directory']).parts[-1] == 'rundir':
+        options['directory'] = str(Path(options['directory']).parents[0])
     if config_files is not None:
-        options['included_relations'] = included_relations_from_config_file(path, config_files)
+        options['included_relations'], options['test_relations'] = \
+            relations_from_config_file(path, config_files)
 
     return options
 
 
-def parse_scm_relations(path):
-    path = Path(path)
+def parcov_dict_from_test_relations(test_relations):
     parcov = dict()
-
-    pattern = re.compile(r'\$VAR1->{\'(?P<par1>\S+)\'}{\'(?P<cov1>\S+)\'}{\'ofv_changes\'} ' +
-                         r'= \$VAR1->{\'(?P<par2>\S+)\'}{\'(?P<cov2>\S+)\'}{\'ofv_changes\'}')
-    with open(path) as relations:
-        for row in relations:
-            if row.startswith(r'$VAR1->{'):
-                m = pattern.match(row)
-                if m:
-                    parcov1 = m.groupdict()['par1'] + m.groupdict()['cov1']
-                    parcov2 = m.groupdict()['par2'] + m.groupdict()['cov2']
-                    parcov[parcov1] = (m.groupdict()['par1'], m.groupdict()['cov1'])
-                    parcov[parcov2] = (m.groupdict()['par2'], m.groupdict()['cov2'])
+    for par, covs in test_relations.items():
+        for cov in covs:
+            parcov[f'{par}{cov}'] = (par, cov)
     return parcov
 
 
@@ -581,6 +591,9 @@ def psn_scm_results(path):
     if not logfile.is_file():
         raise IOError(f'Could not find scm logfile: {str(logfile)}')
 
-    parcov_dictionary = parse_scm_relations(path / 'relations.txt')
+    if options['test_relations'] is not None:
+        parcov_dictionary = parcov_dict_from_test_relations(options['test_relations'])
+    else:
+        raise IOError(r'Could not find test_relations in scm config file')
 
     return SCMResults(steps=psn_scm_parse_logfile(logfile, options, parcov_dictionary))

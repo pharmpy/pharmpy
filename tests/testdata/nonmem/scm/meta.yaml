@@ -1,8 +1,9 @@
 ---
-NONMEM_directory: /home/kajsa/NONMEM/nm744
-NONMEM_version: '7.4'
-PsN_version: 4.9.0
-command_line: /opt/psn/bin/scm config_havebaserun.scm
+NONMEM_directory: /usr/local/arch/nonmem/nonmem-7.3g53om20/run/nmfe73_mpi
+NONMEM_version: '7.3'
+PsN_version: 4.8.1
+command_line: /opt/psnplus/psnplus-1.0.6/bin/scmplus run5.scm -nodes=2 -threads=60
+  -nm_version=73_mpi -directory=run5scm.dir -scope_reduction_steps=all
 common_options:
   abort_on_fail: 0
   accepted_ofv_difference: 0.5
@@ -13,12 +14,11 @@ common_options:
   compress: 0
   condition_number_limit: 1000
   correlation_limit: 0.85
-  crash_restarts: 4
-  debug_rmd: 0
+  crash_restarts: 1
   degree: 0.1
-  directory: /home/kajsa/kod-psn/sandbox/uu/scm_havebaserun_dir/
+  directory: /home/shared/Projects/Analysis/Model/SimVal/run5scm.dir/rundir/
   display_iterations: 0
-  handle_crashes: 1
+  handle_crashes: 0
   handle_msfo: 0
   large_omega_cv_limit: 0.8
   large_sigma_cv_limit: 0.8
@@ -31,12 +31,13 @@ common_options:
   near_bound_sign_digits: 2
   near_zero_boundary_limit: 0.01
   nice: 19
-  nm_output: ext,cov,cor,coi,phi
-  nm_version: default
+  nm_output: ext,cov,coi,cor,phi,shk
+  nm_version: 73_mpi
   nmfe: '1'
-  nmfe_options: -tprdefault -xmloff
+  nmfe_options: -tprdefault
   nmqual: 0
-  nodes: 0
+  nodes: 2
+  parafile: /usr/local/arch/nonmem/nonmem-7.3g53om20/run/mpilinux8.pnm
   picky: 0
   prepend_model_file_name: 0
   quick_summarize: 0
@@ -45,39 +46,38 @@ common_options:
   rplots: 0
   run_on_lsf: 0
   run_on_sge: 0
-  run_on_slurm: 0
+  run_on_slurm: '0'
   run_on_torque: 0
   run_on_ud: 0
   run_on_zink: 0
-  seed: 626109
+  seed: 715579
   send_email: 0
   shrinkage: 0
   sign_digits_off_diagonals: 2
   significant_digits_accept: 0
   so: 0
-  template_directory_rplots: /opt/psn/PsN_4_9_0/R-scripts
-  template_file_rplots: scm_default.Rmd
-  threads: '5'
+  template_directory_rplots: /opt/psn/psn-4.8.1/PsN_4_8_1/R-scripts
+  template_file_rplots: scmplus_default.R
+  threads: 60
   tweak_inits: 1
   verbose: 0
   zip: 0
-finish_time: 2020-08-11 15:15:29
 model_files:
-- /home/kajsa/kod-psn/sandbox/uu/pheno_for_scm.mod
-start_time: 2020-08-11 15:15:20
-tool_name: scm
+- /home/shared/Projects/Pharmetheus/PMX-RRW-PMX-1/Analysis/Model/SimVal/run5.mod
+start_time: 2020-09-10 17:27:28
+tool_name: scmplus
 tool_options:
+  do_not_drop: GENO1,GENO2,GENO3,GENO4
   epsilon: 1
-  estimate_fo: 0
   foce: 1
   global_init: 0.001
   gof: p_value
   linearize: 0
-  logfile: /home/kajsa/kod-psn/sandbox/uu/scm_havebaserun_dir/scmlog1.txt
+  logfile: /home/shared/Projects/Pharmetheus/PMX-RRW-PMX-1/Analysis/Model/SimVal/run5scm.dir/scmlog.txt
   noabort: 0
-  nointer: 0
   only_successful: 0
-  p_value: '0.05'
+  p_backward: '0.001'
+  p_value: '0.01'
   parallel_states: 0
   search_direction: forward
   update_derivatives: 0
