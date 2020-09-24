@@ -555,6 +555,19 @@ class ModelStatements(list):
                 statement = s
         return statement
 
+    def reassign(self, symbol, expression):
+        """Reassign symbol to expression
+        """
+        last = True
+        for i, stat in zip(range(len(self) - 1, -1, -1), reversed(self)):
+            if isinstance(stat, Assignment) and stat.symbol == symbol:
+                if last:
+                    print(stat.expression, expression)
+                    stat.expression = expression
+                    last = False
+                else:
+                    del self[i]
+
     def remove_symbol_definitions(self, symbols, statement):
         """Remove symbol remove_symbol_definitions and dependencies not used elsewhere. statement
         is the statement from which the symbol was removed

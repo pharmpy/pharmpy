@@ -28,6 +28,10 @@ def update_parameters(model, old, new):
                 # keep all
                 theta_record.renumber(next_theta)
                 next_theta += len(theta_record)
+        for sigma_record in model.control_stream.get_records('SIGMA'):
+            current_names = sigma_record.name_map.keys()
+            if removed >= current_names:
+                remove_records.append(sigma_record)
         model.control_stream.remove_records(remove_records)
 
     for p in new:

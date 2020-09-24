@@ -109,3 +109,18 @@ def test_remove_symbol_definition():
 def test_remove_unused_parameters_and_rvs(testdata):
     model = Model(testdata / 'nonmem' / 'pheno_real.mod')
     model.remove_unused_parameters_and_rvs()
+
+
+def test_reassign():
+    s1 = Assignment(S('G'), sympy.Integer(3))
+    s2 = Assignment(S('M'), sympy.Integer(2))
+    s3 = Assignment(S('Z'), sympy.Integer(23) + S('M'))
+    s4 = Assignment(S('KA'), S('X') + S('Y'))
+    s = ModelStatements([s1, s2, s3, s4])
+    s.reassign(S('M'), S('x') + S('y'))
+    assert s == ModelStatements([s1, Assignment('M', S('x') + S('y')), s3, s4])
+
+    s5 = Assignment('KA', S('KA') + S('Q') + 1)
+    s = ModelStatements([s1, s2, s3, s4, s5])
+    s.reassign(S('KA'), S('F'))
+    assert s == ModelStatements([s1, s2, s3, Assignment('KA', S('F'))])
