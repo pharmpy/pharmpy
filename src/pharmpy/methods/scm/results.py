@@ -546,7 +546,7 @@ def psn_scm_options(path):
             elif row.startswith('directory: '):
                 options['directory'] = \
                     str(Path(re.sub(r'\s*directory:\s*', '', row)).absolute())
-            elif row.startswith('command_line: '): # FIXME can be multiline
+            elif row.startswith('command_line: '):  # FIXME can be multiline
                 row = re.sub(r'\s*command_line:\s*', '', row)
                 if re.match(r'\S*\bscmplus\s', row):
                     scmplus = True
