@@ -58,6 +58,7 @@ def add_covariate_effect(model, parameter, covariate, effect, operation='*'):
         sset.insert(index + i, statement)
 
     model.statements = sset
+    return model
 
 
 def _create_thetas(model, effect, covariate, template):
