@@ -1,8 +1,8 @@
-from markdown import markdown
-import IPython
+import difflib
 import re
 
-import difflib
+from markdown import markdown
+import IPython
 
 
 def markdown_html(string):
