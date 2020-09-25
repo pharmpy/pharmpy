@@ -562,7 +562,6 @@ class ModelStatements(list):
         for i, stat in zip(range(len(self) - 1, -1, -1), reversed(self)):
             if isinstance(stat, Assignment) and stat.symbol == symbol:
                 if last:
-                    print(stat.expression, expression)
                     stat.expression = expression
                     last = False
                 else:
