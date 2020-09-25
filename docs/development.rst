@@ -62,3 +62,21 @@ Sources:
 https://realpython.com/intro-to-pyenv/
 https://github.com/pyenv/pyenv
 
+Rendering model compartments
+****************************
+In order to render a visualization of the compartment graphs you need to install Graphviz. This can be done via
+the following commands.
+
+On Ubuntu:
+
+.. code-block:: sh
+
+    sudo apt install graphviz
+
+On Mac:
+
+.. code-block:: sh
+
+    brew install graphviz
+
+For alternative installations or for Windows, please see Graphviz `guide <https://graphviz.org/download/>`_

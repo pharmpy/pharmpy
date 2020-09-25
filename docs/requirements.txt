@@ -1,4 +1,5 @@
 pydata-sphinx-theme
 sphinxcontrib-autoprogram
 jupyter-sphinx
+markdown
 -e .
