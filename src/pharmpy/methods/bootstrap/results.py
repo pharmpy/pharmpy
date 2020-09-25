@@ -1,12 +1,16 @@
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 
 import pharmpy.visualization
+from pharmpy.methods.psn_helpers import model_paths
+from pharmpy.model_factory import Model
 from pharmpy.results import Results
 
 
 class BootstrapResults(Results):
-    # FIXME: Could inherit from results that take multiple runs like bootstrap, cdd etc.
+    # FIXME: Should inherit from results that take multiple runs like bootstrap, cdd etc.
     def __init__(self, bootstrap_models, original_model=None):
         if original_model is None and bootstrap_models is None:
             # FIXME: this is a special case for now for json handling before we have modelfit json
@@ -92,3 +96,15 @@ class BootstrapResults(Results):
     def plot_ofv(self):
         plot = pharmpy.visualization.histogram(self.ofv, title='Bootstrap OFV')
         return plot
+
+
+def psn_bootstrap_results(path):
+    """ Create bootstrapresults from a PsN bootstrap run
+
+        :param path: Path to PsN boostrap run directory
+        :return: A :class:`BootstrapResults` object
+    """
+    path = Path(path)
+
+    models = [Model(p) for p in model_paths(path, 'bs_pr1_*.mod')]
+    models

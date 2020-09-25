@@ -4,6 +4,7 @@ from pytest import approx
 
 import pharmpy.methods.cdd.results as cdd
 from pharmpy import Model
+from pharmpy.methods.psn_helpers import model_paths, options_from_command
 
 
 def test_psn_cdd_options(testdata):
@@ -15,15 +16,15 @@ def test_psn_cdd_options(testdata):
 
 def test_psn_options():
     cmd = 'cmd_line: /opt/bin/cdd pheno.mod -ignore -bins=10 -case=WGT -clean=3 -dir=caseWGTbin10'
-    assert cdd.psn_options_from_command(cmd) == {'ignore': '', 'bins': '10',
-                                                 'case': 'WGT', 'clean': '3',
-                                                 'dir': 'caseWGTbin10'}
+    assert options_from_command(cmd) == {'ignore': '', 'bins': '10',
+                                         'case': 'WGT', 'clean': '3',
+                                         'dir': 'caseWGTbin10'}
 
 
 def test_cdd_psn(testdata):
     path = testdata / 'nonmem' / 'cdd' / 'pheno_real_bin10'
     base_model = Model(testdata / 'nonmem' / 'pheno_real.mod')
-    cdd_models = [Model(p) for p in cdd.psn_cdd_model_paths(path)]
+    cdd_models = [Model(p) for p in model_paths(path, 'cdd_*.mod')]
     skipped_individuals = cdd.psn_cdd_skipped_individuals(path)
 
     cdd_bin_id = cdd.calculate_results(base_model,
@@ -64,9 +65,9 @@ def test_cdd_calculate_results(testdata):
     path = testdata / 'nonmem' / 'cdd' / 'pheno_real_bin10'
     skipped_individuals = cdd.psn_cdd_skipped_individuals(path)
     base_model = Model(testdata / 'nonmem' / 'pheno_real.mod')
-    model_paths = cdd.psn_cdd_model_paths(path)
+    cdd_model_paths = model_paths(path, 'cdd_*.mod')
 
-    cdd_models = [Model(p) for p in model_paths]
+    cdd_models = [Model(p) for p in cdd_model_paths]
 
     # Results for plain PsN run
     delta_ofv = cdd.compute_delta_ofv(base_model, cdd_models,

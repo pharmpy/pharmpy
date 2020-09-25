@@ -7,6 +7,7 @@ import pandas as pd
 from scipy.linalg import cho_factor, solve_triangular
 
 from pharmpy import Model
+from pharmpy.methods.psn_helpers import model_paths, options_from_command
 from pharmpy.results import Results
 
 
@@ -134,19 +135,6 @@ def calculate_results(base_model, cdd_models, case_column, skipped_individuals,
     return res
 
 
-def psn_cdd_model_paths(path):
-    path = Path(path) / 'm1'
-    model_paths = list(path.glob('cdd_*.mod'))  # file names hard-coded in PsN
-    model_paths.sort(key=lambda name: int(re.sub(r'\D', '', str(name))))
-    return model_paths
-
-
-def psn_options_from_command(command):
-    p = re.compile('^-+([^=]+)=?(.*)')
-    return {p.match(val).group(1): p.match(val).group(2)
-            for val in command.split() if val.startswith('-')}
-
-
 def psn_cdd_options(path):
     path = Path(path)
     options = dict(model_path=None,
@@ -161,7 +149,7 @@ def psn_cdd_options(path):
             elif row.startswith('outside_n_sd_check: '):
                 options['outside_n_sd_check'] = int(re.sub(r'\D', '', row))
             elif row.startswith('command_line: '):
-                for k, v in psn_options_from_command(row).items():
+                for k, v in options_from_command(row).items():
                     if 'case_column'.startswith(k):
                         options['case_column'] = v
                         break
@@ -192,7 +180,7 @@ def psn_cdd_results(path):
     model_path = Path(options['model_path'])
     base_model = Model(model_path)
 
-    cdd_models = [Model(p) for p in psn_cdd_model_paths(path)]
+    cdd_models = [Model(p) for p in model_paths(path, 'cdd_*.mod')]
     skipped_individuals = psn_cdd_skipped_individuals(path)
 
     res = calculate_results(base_model,
