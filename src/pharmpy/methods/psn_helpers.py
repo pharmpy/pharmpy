@@ -13,3 +13,13 @@ def model_paths(path, pattern):
     model_paths = list(path.glob(pattern))
     model_paths.sort(key=lambda name: int(re.sub(r'\D', '', str(name))))
     return model_paths
+
+
+def cmd_line_model_path(path):
+    path = Path(path)
+    with open(path / 'meta.yaml') as meta:
+        for row in meta:
+            row = row.strip()
+            if row.startswith('model_files:'):
+                row = next(meta).strip()
+                return Path(re.sub(r'^-\s*', '', row))

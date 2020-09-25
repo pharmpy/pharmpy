@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 
 import pharmpy.visualization
-from pharmpy.methods.psn_helpers import model_paths
+from pharmpy.methods.psn_helpers import cmd_line_model_path, model_paths
 from pharmpy.model_factory import Model
 from pharmpy.results import Results
 
@@ -107,4 +107,7 @@ def psn_bootstrap_results(path):
     path = Path(path)
 
     models = [Model(p) for p in model_paths(path, 'bs_pr1_*.mod')]
-    models
+    base_model = Model(cmd_line_model_path(path))
+    # FIXME: should have a calculate results function
+    res = BootstrapResults(models, original_model=base_model)
+    return res

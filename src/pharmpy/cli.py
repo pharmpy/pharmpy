@@ -386,13 +386,12 @@ def john_draper(args):
 
 def results_bootstrap(args):
     """Subcommand to generate bootstrap results"""
-    if len(args.models) < 3:
-        error(ValueError('Need at least the original model and 2'
-                         'other models'))
-    from pharmpy.methods.bootstrap.results import BootstrapResults
-    res = BootstrapResults(original_model=args.base,
-                           bootstrap_models=args.models)
-    print(res)
+    from pharmpy.methods.bootstrap.results import psn_bootstrap_results
+    if not args.psn_dir.is_dir():
+        error(FileNotFoundError(str(args.psn_dir)))
+    res = psn_bootstrap_results(args.psn_dir)
+    res.to_json(path=args.psn_dir / 'results.json')
+    res.to_csv(path=args.psn_dir / 'results.csv')
 
 
 def results_cdd(args):
@@ -743,10 +742,9 @@ parser_definition = [
         {'bootstrap': {
             'help': 'Generate bootstrap results',
             'description': 'Generate results from a PsN bootstrap run',
-            'func': results_bootstrap,
-            'parents': [args_input], 'args': [
-                   {'name': '--base', 'metavar': 'FILE', 'type': input_model,
-                    'help': 'Base model'}]}},
+            'func': results_bootstrap, 'args': [
+                {'name': 'psn_dir', 'metavar': 'PsN directory', 'type': pathlib.Path,
+                 'help': 'Path to PsN bootstrap run directory'}]}},
         {'cdd': {
             'help': 'Generate cdd results',
             'description': 'Generate results from a PsN cdd run',
