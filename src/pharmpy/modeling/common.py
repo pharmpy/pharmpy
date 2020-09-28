@@ -10,6 +10,13 @@ def read_model(path):
     return model
 
 
+def write_model(model, path='', foce=False):
+    """Write model to file
+    """
+    model.write(self, path='', force=False)
+    return model
+
+
 def update_source(model):
     """Update source
 
