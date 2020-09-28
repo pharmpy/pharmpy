@@ -23,6 +23,56 @@ The following model is the start model for the examples.
    model_ref = Model(path / "pheno.mod")
    print(model_ref)
 
+~~~~~~~~~~~~~~~
+Basic modelling
+~~~~~~~~~~~~~~~
+
+Many basic model manipulation tasks that could also be done using methods on model objects have been included in the modeling module. This
+makes it possible to do most common model manipulations using a functional interface that is easy to chain into a pipeline. Note that all
+manipulations are done in place, i.e. the model referenced by the input argument will be changed.
+
+Reading, writing and updating source models
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Read model from file
+====================
+
+.. jupyter-execute::
+   :hide-output:
+
+   from pharmpy.modeling import *
+   model = read_model(path / 'pheno.mod')
+
+Update model source
+===================
+
+Changes done to a model will not affect the model code of the underlying until performing an update of the source.
+
+.. jupyter-execute::
+   :hide-output:
+
+   update_source(model)
+
+Write model to file
+===================
+
+.. code::
+
+   write_model(model, 'mymodel.mod')
+
+Parameters
+~~~~~~~~~~
+
+Fix and unfix parameters
+========================
+
+The functions for fixing/unfixing parameters take either a list of parameter names or one single parameter name string.
+
+.. jupyter-execute::
+   :hide-output:
+
+   fix_parameters(model, ['THETA(1)', 'THETA(2)'])
+   unfix_parameters(model, 'THETA(1)')
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 PK models and ODE systems
