@@ -1,3 +1,14 @@
+0.7.0 (2020-09-28)
+------------------
+
+* Add method reset_indices in Results to flatten multiindices. Useful from R. 
+* absorption_rate can also set sequential zero first absorption
+* New functionsadd_lag_time and remove_lag_time in modeling
+* Add basic functions fix/unfix_parameter, update_source and read_model to modeling API
+* Updated reading of NONMEM results
+* Bugfixes in add_covariate_effects and absorption_rate
+* Fix crash in FREM results if no log option could be found in meta.yaml
+
 0.6.0 (2020-09-18)
 ------------------
 
