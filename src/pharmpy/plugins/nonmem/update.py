@@ -36,15 +36,25 @@ def update_parameters(model, old, new):
 
     for p in new:
         name = p.name
-        if name not in model._old_parameters and \
-                name not in model.random_variables.all_parameters():
-            # This is a new theta
-            theta_number = get_next_theta(model)
-            record = create_theta_record(model, p)
-            if re.match(r'THETA\(\d+\)', name):
-                p.name = f'THETA({theta_number})'
+        if name not in model._old_parameters:
+            if name in model.random_variables.all_parameters():
+                p.name = p.name.upper()
+
+                eta_number, previous_size = get_next_eta(model)
+                record = create_omega_record(model, p)
+                record.parameters(eta_number, previous_size)
+                record.random_variables(eta_number)
+
+                record.name_map[p.name] = (eta_number, eta_number)
+                record.eta_map[p.name] = eta_number
             else:
-                record.add_nonmem_name(name, theta_number)
+                # This is a new theta
+                theta_number = get_next_theta(model)
+                record = create_theta_record(model, p)
+                if re.match(r'THETA\(\d+\)', name):
+                    p.name = f'THETA({theta_number})'
+                else:
+                    record.add_nonmem_name(name, theta_number)
 
     next_theta = 1
     for theta_record in model.control_stream.get_records('THETA'):
@@ -94,6 +104,18 @@ def get_next_theta(model):
     return next_theta
 
 
+def get_next_eta(model):
+    """ Find the next available theta number
+    """
+    next_omega = 1
+    previous_size = None
+
+    for omega_record in model.control_stream.get_records('OMEGA'):
+        _, next_omega, previous_size = omega_record.parameters(next_omega, previous_size)
+
+    return next_omega, previous_size
+
+
 def create_theta_record(model, param):
     param_str = '$THETA  '
 
@@ -111,6 +133,13 @@ def create_theta_record(model, param):
         param_str += ' FIX'
     param_str += '\n'
     record = model.control_stream.insert_record(param_str, 'THETA')
+    return record
+
+
+def create_omega_record(model, param):
+    param_str = f'$OMEGA  {param.init}\n'
+
+    record = model.control_stream.insert_record(param_str, 'OMEGA')
     return record
 
 
