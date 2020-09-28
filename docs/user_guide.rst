@@ -11,3 +11,4 @@ User guide
    frem
    cli
    configuration
+   using_r
