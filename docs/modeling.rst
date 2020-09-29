@@ -218,7 +218,7 @@ Covariate effects may also be applied to a model.
    :hide-output:
 
    from pharmpy.modeling import add_covariate_effect
-   add_covariate_effect(model, 'CL', 'WGT', 'pow', '*')
+   add_covariate_effect(model, 'CL', 'WGT', 'pow', operation='*')
 
 Here, *CL* indicates the name of the parameter onto which you want to apply the effect, *WGT* is the covariate, and
 *pow* (power function) is the effect you want to apply.
@@ -237,7 +237,7 @@ Pharmpy also supports user formatted covariate effects.
 
    model = Model(path / "pheno.mod")
    user_effect = '((cov/std) - median) * theta'
-   add_covariate_effect(model, 'CL', 'WGT', user_effect, '*')
+   add_covariate_effect(model, 'CL', 'WGT', user_effect, operation='*')
 
 It is necessary that the names follow the same format as in user_effect, meaning that the covariate is denoted as
 *cov*, the theta as *theta* (or, if multiple thetas: *theta1*, *theta2* etc.), and the mean or median as *mean* and *median*, respectively. This is in order for
