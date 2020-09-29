@@ -10,10 +10,10 @@ def read_model(path):
     return model
 
 
-def write_model(model, path='', foce=False):
+def write_model(model, path='', force=False):
     """Write model to file
     """
-    model.write(self, path='', force=False)
+    model.write(path='', force=False)
     return model
 
 
