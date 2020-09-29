@@ -13,9 +13,6 @@ from pharmpy.results import Results
 
 class CDDResults(Results):
     """CDD Results class
-
-
-
     """
     rst_path = Path(__file__).parent / 'report.rst'
 
@@ -23,17 +20,6 @@ class CDDResults(Results):
                  case_column=None):
         self.case_results = case_results
         self.case_column = case_column
-
-    def to_dict(self):
-        return {'case_results': self.case_results,
-                'case_column': self.case_column}
-
-    @classmethod
-    def from_dict(cls, d):
-        return cls(**d)
-
-    def __str__(self):
-        return str(self.to_dataframe())
 
 
 def compute_cook_scores(base_estimate, cdd_estimates, covariance_matrix):

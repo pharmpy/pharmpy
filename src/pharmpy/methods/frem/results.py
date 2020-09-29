@@ -146,20 +146,6 @@ class FREMResults(Results):
         self.unexplained_variability_plot = unexplained_variability_plot
         self.covariate_baselines = covariate_baselines
 
-    def to_dict(self):
-        return {'covariate_effects': self.covariate_effects,
-                'individual_effects': self.individual_effects,
-                'unexplained_variability': self.unexplained_variability,
-                'covariate_statistics': self.covariate_statistics,
-                'covariate_effects_plot': self.covariate_effects_plot,
-                'individual_effects_plot': self.individual_effects_plot,
-                'unexplained_variability_plot': self.unexplained_variability_plot,
-                'covariate_baselines': self.covariate_baselines}
-
-    @classmethod
-    def from_dict(cls, d):
-        return cls(**d)
-
     def add_plots(self):
         self.covariate_effects_plot = self.plot_covariate_effects()
         self.individual_effects_plot = self.plot_individual_effects()
@@ -319,24 +305,6 @@ class FREMResults(Results):
 
         v = alt.vconcat(*plots).resolve_scale(x='shared')
         return v
-
-    def __str__(self):
-        start = 'Results from FREM'
-        # method...
-        # covs = f'Continuous covariates: {self.continuous}'
-        # cats = f'Categorical covariates: {self.categorical}'
-        # FIXME: General option object for this?
-        # if self.rescale:
-        #    resc = 'Rescaling was used'
-        # else:
-        #    resc = 'Rescaling was not used'
-        ce = self.covariate_effects.to_string()
-        ie = self.individual_effects.to_string()
-        uv = self.unexplained_variability.to_string()
-        cs = self.covariate_statistics.to_string()
-        return f'{start}\n\nCovariate statistics\n{cs}\n\n' \
-               f'Covariate effects\n{ce}\n\nIndividual effects\n{ie}\n\n' \
-               f'Unexplained variability\n{uv}\n'
 
 
 def calculate_results(frem_model, continuous, categorical, method=None, **kwargs):

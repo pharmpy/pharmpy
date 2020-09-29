@@ -69,6 +69,7 @@ class ResultsJSONDecoder(json.JSONDecoder):
                 return res
             elif cls == 'vega-lite':
                 res = alt.Chart.from_dict(dct)
+                return res
             else:
                 self.cls = cls
         return dct
@@ -91,8 +92,7 @@ def read_results(path_or_buf):
         res = FREMResults.from_dict(d)
     elif decoder.cls == 'BootstrapResults':
         from pharmpy.methods.bootstrap import BootstrapResults
-        res = BootstrapResults(original_model=None, bootstrap_models=None)
-        res._statistics = d['statistics']
+        res = BootstrapResults.from_dict(d)
     elif decoder.cls == 'CDDResults':
         from pharmpy.methods.cdd import CDDResults
         res = CDDResults.from_dict(d)
@@ -105,6 +105,9 @@ def read_results(path_or_buf):
 class Results:
     """ Base class for all result classes
     """
+    @classmethod
+    def from_dict(cls, d):
+        return cls(**d)
 
     def to_json(self, path=None):
         json_dict = self.to_dict()
@@ -131,13 +134,22 @@ class Results:
     def to_dict(self):
         """Convert results object to a dictionary
         """
-        raise NotImplementedError()
+        return vars(self)
 
-    @classmethod
-    def from_dict(cls, d):
-        """Cread a results object from a dictionary
-        """
-        raise NotImplementedError()
+    def __str__(self):
+        start = self.__class__.__name__
+        s = f'{start}\n\n'
+        d = self.to_dict()
+        for key, value in d.items():
+            if value.__class__.__module__.startswith('altair.'):
+                continue
+            s += f'{key}\n'
+            if isinstance(value, pd.DataFrame):
+                s += value.to_string()
+            else:
+                s += str(value)
+            s += '\n\n'
+        return s
 
     def to_csv(self, path):
         """Save results as a human readable csv file
@@ -275,7 +287,7 @@ class ModelfitResults:
 
     @property
     def relative_standard_errors(self):
-        """Relative standard errors of popilation parameter estimates
+        """Relative standard errors of population parameter estimates
         """
         if self.standard_errors is not None:
             ser = self.standard_errors / self.parameter_estimates

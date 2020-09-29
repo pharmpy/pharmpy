@@ -19,16 +19,6 @@ class SCMResults(Results):
     def __init__(self, steps=None):
         self.steps = steps
 
-    def to_dict(self):
-        return {'steps': self.steps}
-
-    @classmethod
-    def from_dict(cls, d):
-        return cls(**d)
-
-    def __str__(self):
-        return str(self.steps)
-
     def ofv_summary(self, final_included=True, iterations=True):
         return ofv_summary_dataframe(self.steps, final_included=final_included,
                                      iterations=iterations)
