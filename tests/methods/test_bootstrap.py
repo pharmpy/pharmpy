@@ -24,7 +24,7 @@ def test_bootstrap():
                                        'bias': [0.5, 0.25],
                                        'stderr': [0.353553, 0.707107]},
                                       index=['TVCL', 'TVV'])
-    print(boot.parameter_statistics)
+
     pd.testing.assert_frame_equal(boot.parameter_statistics, correct_statistics)
 
     # json round trip
