@@ -10,6 +10,21 @@ from pharmpy.symbols import symbol as S
 
 
 def add_etas(model, parameter, expression, operation='*'):
+    """
+    Adds etas to :class:`pharmpy.model`. Cuurently only exponential effect on eta is
+    available as template, otherwise user specified input is supported.
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model to add new etas to.
+    parameter : str
+        Name of parameter to add new etas to.
+    expression : str
+        Effect on eta. Either abbreviated (see above) or custom.
+    operation : str, optional
+        Whether the new eta should be added or multiplied (default).
+    """
     omega = S(f'IIV_{parameter}')
     eta = stats.Normal(f'ETA_{parameter}', 0, sympy.sqrt(omega))
     eta.variability_level = VariabilityLevel.IIV

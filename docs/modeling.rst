@@ -308,3 +308,28 @@ provided all etas will be transformed.
    model.update_source()
    print_model_diff(model_ref, model)
 
+~~~~~~~~~~~~~~~
+Adding new etas
+~~~~~~~~~~~~~~~
+
+.. jupyter-execute::
+
+   model = Model(path / "pheno.mod")
+
+Etas may be added to a model.
+
+.. jupyter-execute::
+   :hide-output:
+
+   from pharmpy.modeling import add_etas
+   add_etas(model, 'S1', 'exp', operation='*')
+
+In this example, *S1* is the parameter to add the eta to, *exp* is the effect on the new eta.
+See :py:class:`pharmpy.modeling.add_etas` for available templates. The operation denotes whether
+the new eta should be added or multipled.
+
+.. jupyter-execute::
+
+   model.update_source()
+   print_model_diff(model_ref, model)
+
