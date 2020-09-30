@@ -203,10 +203,11 @@ Sequential zero-order absorption followed by first-order absorption will have an
    model.update_source(nofiles=True)
    print_model_diff(model_ref, model)
 
+.. _cov_effects:
 
-~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~
 Adding covariate effects
-~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. jupyter-execute::
 
@@ -248,9 +249,9 @@ the names to be substituted with the correct values.
    model.update_source()
    print_model_diff(model_ref, model)
 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~
 Transformation of etas
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~
 
 Boxcox
 ~~~~~~
@@ -333,3 +334,19 @@ the new eta should be added or multipled.
    model.update_source()
    print_model_diff(model_ref, model)
 
+Similarly to when you :ref:`add a covariate effect<cov_effects>`, you can add user
+specified effects.
+
+.. jupyter-execute::
+   :hide-output:
+
+   model = Model(path / "pheno.mod")
+   user_effect = 'eta_new**2'
+   add_etas(model, 'S1', user_effect, operation='*')
+
+The new etas need to be denoted as *eta_new*.
+
+.. jupyter-execute::
+
+   model.update_source()
+   print_model_diff(model_ref, model)
