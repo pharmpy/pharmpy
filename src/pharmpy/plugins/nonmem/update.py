@@ -93,6 +93,7 @@ def update_random_variables(model, old, new):
 
             record.name_map[omega_name] = (eta_number, eta_number)
             record.eta_map[rv_name] = eta_number
+            record.add_omega_name_comment(omega_name)
 
 
 def get_next_theta(model):

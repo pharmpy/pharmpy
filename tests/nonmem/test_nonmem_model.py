@@ -254,7 +254,7 @@ def test_add_random_variables(pheno_path, rv_new, buf_new):
     rec_ref = f'$OMEGA DIAGONAL(2)\n' \
               f' 0.0309626  ;       IVCL\n' \
               f' 0.031128  ;        IVV\n\n' \
-              f'{buf_new}\n'
+              f'{buf_new} ; rv_new\n'
 
     rec_mod = ''
     for rec in model.control_stream.get_records('OMEGA'):
