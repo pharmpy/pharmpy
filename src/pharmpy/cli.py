@@ -384,6 +384,16 @@ def john_draper(args):
     write_model_or_dataset(model, None, path=args.output_file, force=False)
 
 
+def add_etas(args):
+    """Subcommand to add covariate effect to model."""
+    from pharmpy.modeling import add_etas
+
+    model = args.model
+    add_etas(model, args.param, args.expression, args.operation)
+
+    write_model_or_dataset(model, model.dataset, path=args.output_file, force=False)
+
+
 def results_bootstrap(args):
     """Subcommand to generate bootstrap results"""
     from pharmpy.methods.bootstrap.results import psn_bootstrap_results
@@ -685,7 +695,7 @@ parser_definition = [
                      {'name': '--operation',
                       'type': str,
                       'default': '*',
-                      'help': 'Whether effect should be added or not'},
+                      'help': 'Whether effect should be added or multiplied'},
                      ]}},
         {'explicit_odes': {
             'help': 'Make ODEs explicit',
@@ -737,6 +747,22 @@ parser_definition = [
                       'default': None,
                       'help': 'List of etas, mark group of etas in single quote '
                               'separated by spaces'},
+                     ]}},
+        {'add_etas': {
+            'help': 'Adds etas',
+            'description': 'Add etas to a model parameter',
+            'func': add_etas,
+            'parents': [args_model_input, args_output],
+            'args': [{'name': 'param',
+                      'type': str,
+                      'help': 'Individual parameter'},
+                     {'name': 'expression',
+                      'type': str,
+                      'help': 'Expression for added eta'},
+                     {'name': '--operation',
+                      'type': str,
+                      'default': '*',
+                      'help': 'Whether effect should be added or multiplied'},
                      ]}},
     ], 'help': 'Model manipulations',
        'title': 'Pharmpy model commands',
