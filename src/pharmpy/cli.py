@@ -323,7 +323,7 @@ def add_covariate_effect(args):
     from pharmpy.modeling import add_covariate_effect
 
     model = args.model
-    add_covariate_effect(model, args.param, args.covariate, args.effect)
+    add_covariate_effect(model, args.param, args.covariate, args.effect, args.operation)
 
     write_model_or_dataset(model, model.dataset, path=args.output_file, force=False)
 
@@ -682,6 +682,10 @@ parser_definition = [
                      {'name': 'effect',
                       'type': str,
                       'help': 'Type of covariate effect'},
+                     {'name': '--operation',
+                      'type': str,
+                      'default': '*',
+                      'help': 'Whether effect should be added or not'},
                      ]}},
         {'explicit_odes': {
             'help': 'Make ODEs explicit',

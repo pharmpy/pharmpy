@@ -8,11 +8,15 @@ from pharmpy.plugins.nonmem.records import etas_record
 
 # Skip pkgutil, reload source
 @pytest.mark.parametrize('fs', [[['pkgutil'], [source, etas_record]]], indirect=True)
-def test_add_covariate_effect(datadir, fs):
+@pytest.mark.parametrize('operation', [
+    '*', '+'
+])
+def test_add_covariate_effect(datadir, fs, operation):
     fs.add_real_file(datadir / 'pheno_real.mod', target_path='run1.mod')
     fs.add_real_file(datadir / 'pheno.dta', target_path='pheno.dta')
 
-    args = ['model', 'add_cov_effect', 'run1.mod', 'CL', 'WGT', 'exp']
+    args = ['model', 'add_cov_effect', 'run1.mod', 'CL', 'WGT', 'exp',
+            '--operation', operation]
     cli.main(args)
 
     with open('run1.mod', 'r') as f_ori, open('run2.mod', 'r') as f_cov:
@@ -23,6 +27,7 @@ def test_add_covariate_effect(datadir, fs):
 
     assert not re.search('CLWGT', mod_ori)
     assert re.search('CLWGT', mod_cov)
+    print(mod_cov)
 
 
 @pytest.mark.parametrize('fs', [[['pkgutil'], [source, etas_record]]], indirect=True)
