@@ -660,8 +660,12 @@ def test_john_draper(pheno_path, etas, etad, buf_new):
 
 
 @pytest.mark.parametrize('parameter, expression, operation, buf_new', [
-    ('S1', 'exp', '+', 'S1 = V + EXP(ETA(3))'),
-    ('S1', 'exp', '*', 'S1 = V*EXP(ETA(3))'),
+    ('S1', 'exp', '+', 'V=TVV*EXP(ETA(2))\n'
+                       'S1 = V + EXP(ETA(3))'),
+    ('S1', 'exp', '*', 'V=TVV*EXP(ETA(2))\n'
+                       'S1 = V*EXP(ETA(3))'),
+    ('V', 'exp', '+', 'V = TVV*EXP(ETA(2)) + EXP(ETA(3))\n'
+                      'S1=V'),
 ])
 def test_add_etas(pheno_path, parameter, expression, operation, buf_new):
     model = Model(pheno_path)
@@ -676,7 +680,10 @@ def test_add_etas(pheno_path, parameter, expression, operation, buf_new):
               f'TVV=THETA(2)*WGT\n' \
               f'IF(APGR.LT.5) TVV=TVV*(1+THETA(3))\n' \
               f'CL=TVCL*EXP(ETA(1))\n' \
-              f'V=TVV*EXP(ETA(2))\n' \
               f'{buf_new}\n\n'
 
     assert str(model.get_pred_pk_record()) == rec_ref
+
+    last_rec = model.control_stream.get_records('OMEGA')[-1]
+
+    assert str(last_rec) == f'$OMEGA  0.1 ; IIV_{parameter}\n'
