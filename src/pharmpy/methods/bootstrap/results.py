@@ -10,6 +10,8 @@ from pharmpy.results import Results
 
 
 class BootstrapResults(Results):
+    rst_path = Path(__file__).parent / 'report.rst'
+
     # FIXME: Should inherit from results that take multiple runs like bootstrap, cdd etc.
     def __init__(self, parameter_statistics=None, parameter_distribution=None,
                  covariance_matrix=None, ofv_distribution=None, included_individuals=None,
@@ -31,8 +33,7 @@ class BootstrapResults(Results):
         return plot
 
     def plot_delta_base_ofv(self):
-        df = self.ofvs
-        df = df.reset_index()
+        df = self.ofvs.copy()
         df['dOFV'] = df['base_ofv'] - self.base_ofv
         plot = pharmpy.visualization.histogram(df['dOFV'], title='sum(base iOFV) - base_ofv')
         return plot

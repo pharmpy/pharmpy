@@ -134,7 +134,7 @@ class Results:
     def to_dict(self):
         """Convert results object to a dictionary
         """
-        return vars(self)
+        return vars(self).copy()
 
     def __str__(self):
         start = self.__class__.__name__
@@ -146,6 +146,12 @@ class Results:
             s += f'{key}\n'
             if isinstance(value, pd.DataFrame):
                 s += value.to_string()
+            elif isinstance(value, list):   # Print list of lists as table
+                if len(value) > 0 and isinstance(value[0], list):
+                    df = pd.DataFrame(value)
+                    df_str = df.to_string(index=False)
+                    df_str = df_str.split('\n')[1:]
+                    s += '\n'.join(df_str)
             else:
                 s += str(value)
             s += '\n\n'
@@ -168,6 +174,10 @@ class Results:
                 else:
                     use_index = True
                 s += value.to_csv(index=use_index)
+            elif isinstance(value, list):   # Print list of lists as table
+                if len(value) > 0 and isinstance(value[0], list):
+                    for row in value:
+                        s += f'{",".join(map(str, row))}\n'
             else:
                 s += str(value)
             s += '\n'
