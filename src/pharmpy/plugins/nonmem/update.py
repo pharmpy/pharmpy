@@ -89,11 +89,7 @@ def update_random_variables(model, old, new):
             rv_name = rv.name.upper()
             omega = model.parameters[omega_name]
 
-            eta_number, previous_size = get_next_eta(model)
-            record = create_omega_record(model, omega)
-
-            record.parameters(eta_number, previous_size)
-            record.random_variables(eta_number)
+            record, eta_number = create_omega_record(model, omega)
 
             record.name_map[omega_name] = (eta_number, eta_number)
             record.eta_map[rv_name] = eta_number
@@ -103,14 +99,16 @@ def get_next_theta(model):
     """ Find the next available theta number
     """
     next_theta = 1
+
     for theta_record in model.control_stream.get_records('THETA'):
         thetas = theta_record.parameters(next_theta)
         next_theta += len(thetas)
+
     return next_theta
 
 
 def get_next_eta(model):
-    """ Find the next available theta number
+    """ Find the next available eta number
     """
     next_omega = 1
     previous_size = None
@@ -142,10 +140,16 @@ def create_theta_record(model, param):
 
 
 def create_omega_record(model, param):
+    eta_number, previous_size = get_next_eta(model)
+
     param_str = f'$OMEGA  {param.init}\n'
 
     record = model.control_stream.insert_record(param_str, 'OMEGA')
-    return record
+
+    record.parameters(eta_number, previous_size)
+    record.random_variables(eta_number)
+
+    return record, eta_number
 
 
 def update_ode_system(model, old, new):
