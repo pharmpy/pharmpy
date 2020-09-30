@@ -47,6 +47,8 @@ def add_etas(model, parameter, expression, operation='*'):
 
     model.get_pred_pk_record().statements = sset
 
+    return model
+
 
 def _create_template(expression, operation):
     operation_func = _get_operation_func(operation)
