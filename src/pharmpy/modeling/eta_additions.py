@@ -49,16 +49,16 @@ def add_etas(model, parameter, expression, operation='*'):
 
 
 def _create_template(expression, operation):
-    operation = _get_operation(operation)
+    operation_func = _get_operation_func(operation)
     if expression == 'exp':
-        return EtaAddition.exponential(operation)
+        return EtaAddition.exponential(operation_func)
     else:
         symbol = S('expression_new')
-        expression = sympy.sympify(expression)
+        expression = sympy.sympify(f'original {operation} {expression}')
         return EtaAddition(Assignment(symbol, expression))
 
 
-def _get_operation(operation):
+def _get_operation_func(operation):
     """Gets sympy operation based on string"""
     if operation == '*':
         return mul
