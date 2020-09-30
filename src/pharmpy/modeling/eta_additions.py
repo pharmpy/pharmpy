@@ -9,7 +9,7 @@ from pharmpy.statements import Assignment
 from pharmpy.symbols import symbol as S
 
 
-def add_etas(model, parameter, expression, operation):
+def add_etas(model, parameter, expression, operation='*'):
     omega = S(f'IIV_{parameter}')
     eta = stats.Normal(f'ETA_{parameter}', 0, sympy.sqrt(omega))
     eta.variability_level = VariabilityLevel.IIV
@@ -37,6 +37,10 @@ def _create_template(expression, operation):
     operation = _get_operation(operation)
     if expression == 'exp':
         return EtaAddition.exponential(operation)
+    else:
+        symbol = S('expression_new')
+        expression = sympy.sympify(expression)
+        return EtaAddition(Assignment(symbol, expression))
 
 
 def _get_operation(operation):

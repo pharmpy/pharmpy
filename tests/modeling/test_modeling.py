@@ -666,6 +666,8 @@ def test_john_draper(pheno_path, etas, etad, buf_new):
                        'S1 = V*EXP(ETA(3))'),
     ('V', 'exp', '+', 'V = TVV*EXP(ETA(2)) + EXP(ETA(3))\n'
                       'S1=V'),
+    ('S1', 'original + eta_new', None, 'V=TVV*EXP(ETA(2))\n'
+                                       'S1 = V + ETA(3)'),
 ])
 def test_add_etas(pheno_path, parameter, expression, operation, buf_new):
     model = Model(pheno_path)
