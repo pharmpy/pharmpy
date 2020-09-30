@@ -5,7 +5,7 @@ import pytest
 from pyfakefs.fake_filesystem_unittest import Patcher
 
 from pharmpy import Model
-from pharmpy.modeling import (absorption_rate, add_covariate_effect, add_lag_time, boxcox,
+from pharmpy.modeling import (absorption_rate, add_covariate_effect, add_etas, add_lag_time, boxcox,
                               explicit_odes, john_draper, remove_lag_time, tdist)
 
 
@@ -655,5 +655,28 @@ def test_john_draper(pheno_path, etas, etad, buf_new):
               f'IF(APGR.LT.5) TVV=TVV*(1+THETA(3))\n' \
               f'{buf_new}\n' \
               f'S1=V\n\n'
+
+    assert str(model.get_pred_pk_record()) == rec_ref
+
+
+@pytest.mark.parametrize('parameter, expression, operation, buf_new', [
+    ('S1', 'exp', '+', 'S1 = V + EXP(ETA(3))'),
+    ('S1', 'exp', '*', 'S1 = V*EXP(ETA(3))'),
+])
+def test_add_etas(pheno_path, parameter, expression, operation, buf_new):
+    model = Model(pheno_path)
+
+    add_etas(model, parameter, expression, operation)
+    model.update_source()
+
+    rec_ref = f'$PK\n' \
+              f'IF(AMT.GT.0) BTIME=TIME\n' \
+              f'TAD=TIME-BTIME\n' \
+              f'TVCL=THETA(1)*WGT\n' \
+              f'TVV=THETA(2)*WGT\n' \
+              f'IF(APGR.LT.5) TVV=TVV*(1+THETA(3))\n' \
+              f'CL=TVCL*EXP(ETA(1))\n' \
+              f'V=TVV*EXP(ETA(2))\n' \
+              f'{buf_new}\n\n'
 
     assert str(model.get_pred_pk_record()) == rec_ref
