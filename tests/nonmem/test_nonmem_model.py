@@ -232,7 +232,7 @@ def test_add_parameters_and_statements(pheno_path, param_new, statement_new, buf
 
 
 @pytest.mark.parametrize('rv_new,buf_new', [
-    (Parameter('omega', 0.1), '$OMEGA  0.1'),
+    (Parameter('omega', 0.1), '$OMEGA  0.1')
 ])
 def test_add_random_variables(pheno_path, rv_new, buf_new):
     model = Model(pheno_path)
@@ -260,7 +260,7 @@ def test_add_random_variables(pheno_path, rv_new, buf_new):
     for rec in model.control_stream.get_records('OMEGA'):
         rec_mod += str(rec)
 
-    assert rec_ref == rec_mod
+    assert rec_mod == rec_ref
 
     rv = model.random_variables['eta_new']
     rv_str = str(model.random_variables._normal_definition_string(rv))

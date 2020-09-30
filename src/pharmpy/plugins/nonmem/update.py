@@ -36,25 +36,14 @@ def update_parameters(model, old, new):
 
     for p in new:
         name = p.name
-        if name not in model._old_parameters:
-            if name in model.random_variables.all_parameters():
-                p.name = p.name.upper()
-
-                eta_number, previous_size = get_next_eta(model)
-                record = create_omega_record(model, p)
-                record.parameters(eta_number, previous_size)
-                record.random_variables(eta_number)
-
-                record.name_map[p.name] = (eta_number, eta_number)
-                record.eta_map[p.name] = eta_number
+        if name not in old and name not in model.random_variables.all_parameters():
+            # This is a new theta
+            theta_number = get_next_theta(model)
+            record = create_theta_record(model, p)
+            if re.match(r'THETA\(\d+\)', name):
+                p.name = f'THETA({theta_number})'
             else:
-                # This is a new theta
-                theta_number = get_next_theta(model)
-                record = create_theta_record(model, p)
-                if re.match(r'THETA\(\d+\)', name):
-                    p.name = f'THETA({theta_number})'
-                else:
-                    record.add_nonmem_name(name, theta_number)
+                record.add_nonmem_name(name, theta_number)
 
     next_theta = 1
     for theta_record in model.control_stream.get_records('THETA'):
@@ -92,6 +81,22 @@ def update_random_variables(model, old, new):
                 omega_record.renumber(next_eta)
                 next_eta += len(omega_record)
         model.control_stream.remove_records(remove_records)
+
+    for rv in new:
+        omega_name = (rv.pspace.distribution.std**2).name
+
+        if omega_name not in old.all_parameters():
+            rv_name = rv.name.upper()
+            omega = model.parameters[omega_name]
+
+            eta_number, previous_size = get_next_eta(model)
+            record = create_omega_record(model, omega)
+
+            record.parameters(eta_number, previous_size)
+            record.random_variables(eta_number)
+
+            record.name_map[omega_name] = (eta_number, eta_number)
+            record.eta_map[rv_name] = eta_number
 
 
 def get_next_theta(model):
