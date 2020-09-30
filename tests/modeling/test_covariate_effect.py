@@ -1,13 +1,9 @@
 import pytest
 from sympy import exp
 
-import pharmpy.symbols
 from pharmpy import Model
 from pharmpy.modeling.covariate_effect import CovariateEffect, _choose_param_inits
-
-
-def S(x):
-    return pharmpy.symbols.symbol(x)
+from pharmpy.symbols import symbol as S
 
 
 @pytest.mark.parametrize('cov_eff,symbol,expression', [
