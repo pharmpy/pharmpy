@@ -314,7 +314,7 @@ class Model(pharmpy.model.Model):
 
         if pharmpy.plugins.nonmem.conf.parameter_names == 'comment':
             self.parameters
-            trans = self.parameter_translation(remove_idempotent=True)
+            trans = self.parameter_translation(remove_idempotent=True, as_symbols=True)
             statements.subs(trans)
 
         self._statements = statements
