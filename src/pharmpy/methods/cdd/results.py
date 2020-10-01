@@ -141,7 +141,18 @@ def psn_cdd_options(path):
                    outside_n_sd_check=None,
                    case_column='ID')
     with open(path / 'meta.yaml') as meta:
+        cmd = None
         for row in meta:
+            if cmd is not None:
+                if re.match(r'\s', row):  # continuation is indented
+                    cmd += row  # must not strip
+                    continue
+                else:  # no continuation: parse and remove
+                    for k, v in options_from_command(cmd).items():
+                        if 'case_column'.startswith(k):
+                            options['case_column'] = v
+                            break
+                    cmd = None
             row = row.strip()
             if row.startswith('model_files:'):
                 row = next(meta).strip()
@@ -149,10 +160,7 @@ def psn_cdd_options(path):
             elif row.startswith('outside_n_sd_check: '):
                 options['outside_n_sd_check'] = int(re.sub(r'\D', '', row))
             elif row.startswith('command_line: '):
-                for k, v in options_from_command(row).items():
-                    if 'case_column'.startswith(k):
-                        options['case_column'] = v
-                        break
+                cmd = row
     return options
 
 

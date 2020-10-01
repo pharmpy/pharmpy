@@ -5,6 +5,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from pharmpy.methods.psn_helpers import options_from_command, tool_from_command, \
+    arguments_from_command
 from pharmpy.results import Results
 
 
@@ -462,21 +464,15 @@ def split_merged_base_and_new_ofv(rawtable):
     return rawtable
 
 
-def psn_options_from_command(command):
-    p = re.compile('^-+([^=]+)=?(.*)')
-    return {p.match(val).group(1): p.match(val).group(2)
-            for val in command.split() if val.startswith('-')}
-
-
 def psn_config_file_argument_from_command(command, path):
-    # everything on command-line which does not start with -
+    # arguments: everything on command-line which does not start with -
     # and where 'name' (i.e. last portion when treated as a path object) is found
     # as file in input folder path
     # this may include a model file, so we need to parse file(s) to see
     # if we actually find included_relations
     path = Path(path)
-    return [str(Path(arg).name) for arg in command.split()
-            if (path / Path(arg).name).is_file() and not arg.startswith('-')]
+    return [Path(arg).name for arg in arguments_from_command(command)
+            if (path / Path(arg).name).is_file()]
 
 
 def relations_from_config_file(path, files):
@@ -539,24 +535,31 @@ def psn_scm_options(path):
     scmplus = False
     config_files = None
     with open(path / 'meta.yaml') as meta:
+        cmd = None
         for row in meta:
+            if cmd is not None:
+                if re.match(r'\s', row):  # continuation is indented
+                    cmd += row  # must not strip
+                    continue
+                else:  # no continuation: parse and remove
+                    if tool_from_command(cmd) == 'scmplus':
+                        scmplus = True
+                    for k, v in options_from_command(cmd).items():
+                        if 'config_file'.startswith(k):
+                            config_files = [v]
+                            break
+                    if config_files is None:
+                        # not option -config_file, must have been given as argument
+                        config_files = psn_config_file_argument_from_command(cmd, path)
+                    cmd = None
             row = row.strip()
             if row.startswith('logfile: '):
                 options['logfile'] = Path(re.sub(r'\s*logfile:\s*', '', row)).name
             elif row.startswith('directory: '):
                 options['directory'] = \
                     str(Path(re.sub(r'\s*directory:\s*', '', row)).absolute())
-            elif row.startswith('command_line: '):  # FIXME can be multiline
-                row = re.sub(r'\s*command_line:\s*', '', row)
-                if re.match(r'\S*\bscmplus\s', row):
-                    scmplus = True
-                for k, v in psn_options_from_command(row).items():
-                    if 'config_file'.startswith(k):
-                        config_files = [v]
-                        break
-                if config_files is None:
-                    # not option -config_file, must have been given as argument
-                    config_files = psn_config_file_argument_from_command(row, path)
+            elif row.startswith('command_line: '):
+                cmd = row
     if scmplus and Path(options['directory']).parts[-1] == 'rundir':
         options['directory'] = str(Path(options['directory']).parents[0])
     if config_files is not None:
