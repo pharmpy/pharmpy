@@ -105,6 +105,8 @@ class OmegaRecord(Record):
                         label_index += 1
             next_omega = start_omega + size
         self.name_map = {name: c for i, (name, c) in enumerate(zip(parameters.names, coords))}
+        print(parameters, coords)
+        print(self.name_map)
         return parameters, next_omega, size
 
     def _find_label(self, node):
@@ -117,11 +119,10 @@ class OmegaRecord(Record):
             found = False
             for subnode in self.root.tree_walk():
                 if id(subnode) == id(node):
-                    if found:
-                        break
-                    else:
-                        found = True
-                        continue
+                    found = True
+                    continue
+                if found and (subnode.rule == 'omega' or subnode.rule == 'diag_item'):
+                    break
                 if found and (subnode.rule == 'NEWLINE' or subnode.rule == 'COMMENT'):
                     m = re.search(r';\s*([a-zA-Z_]\w*)', str(subnode))
                     if m:
