@@ -39,7 +39,7 @@ def add_covariate_effect(model, parameter, covariate, effect, operation='*'):
 
     if S(f'{parameter}{covariate}') in sset.free_symbols:
         warnings.warn('Covariate effect already exists')
-        return
+        return model
 
     statistics = dict()
     statistics['mean'] = _calculate_mean(model.dataset, covariate)

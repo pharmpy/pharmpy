@@ -5,7 +5,7 @@ import pytest
 from pyfakefs.fake_filesystem_unittest import Patcher
 
 from pharmpy import Model
-from pharmpy.modeling import (absorption_rate, add_covariate_effect, add_lag_time, boxcox,
+from pharmpy.modeling import (absorption_rate, add_covariate_effect, add_etas, add_lag_time, boxcox,
                               explicit_odes, john_draper, remove_lag_time, tdist)
 
 
@@ -657,3 +657,37 @@ def test_john_draper(pheno_path, etas, etad, buf_new):
               f'S1=V\n\n'
 
     assert str(model.get_pred_pk_record()) == rec_ref
+
+
+@pytest.mark.parametrize('parameter, expression, operation, buf_new', [
+    ('S1', 'exp', '+', 'V=TVV*EXP(ETA(2))\n'
+                       'S1 = V + EXP(ETA(3))'),
+    ('S1', 'exp', '*', 'V=TVV*EXP(ETA(2))\n'
+                       'S1 = V*EXP(ETA(3))'),
+    ('V', 'exp', '+', 'V = TVV*EXP(ETA(2)) + EXP(ETA(3))\n'
+                      'S1=V'),
+    ('S1', 'eta_new', '+', 'V=TVV*EXP(ETA(2))\n'
+                           'S1 = V + ETA(3)'),
+    ('S1', 'eta_new**2', '+', 'V=TVV*EXP(ETA(2))\n'
+                              'S1 = V + ETA(3)**2'),
+])
+def test_add_etas(pheno_path, parameter, expression, operation, buf_new):
+    model = Model(pheno_path)
+
+    add_etas(model, parameter, expression, operation)
+    model.update_source()
+
+    rec_ref = f'$PK\n' \
+              f'IF(AMT.GT.0) BTIME=TIME\n' \
+              f'TAD=TIME-BTIME\n' \
+              f'TVCL=THETA(1)*WGT\n' \
+              f'TVV=THETA(2)*WGT\n' \
+              f'IF(APGR.LT.5) TVV=TVV*(1+THETA(3))\n' \
+              f'CL=TVCL*EXP(ETA(1))\n' \
+              f'{buf_new}\n\n'
+
+    assert str(model.get_pred_pk_record()) == rec_ref
+
+    last_rec = model.control_stream.get_records('OMEGA')[-1]
+
+    assert str(last_rec) == f'$OMEGA  0.1 ; IIV_{parameter}\n'

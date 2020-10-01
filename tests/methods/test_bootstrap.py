@@ -1,6 +1,6 @@
 import pandas as pd
 
-from pharmpy.methods.bootstrap import BootstrapResults
+from pharmpy.methods.bootstrap.results import calculate_results
 from pharmpy.results import ModelfitResults, read_results
 
 
@@ -18,16 +18,16 @@ def test_bootstrap():
     res2_mod = MyModel()
     res2_mod.modelfit_results = res2
 
-    boot = BootstrapResults([res1_mod, res2_mod], original_model=orig_mod)
-    correct_statistics = pd.DataFrame({'mean': [110.0, 1.25, 2.5],
-                                       'bias': [0.0, 0.5, 0.25],
-                                       'stderr': [14.142136, 0.353553, 0.707107]},
-                                      index=['OFV', 'TVCL', 'TVV'])
-    pd.testing.assert_frame_equal(boot.parameter_estimates, pd.DataFrame({'TVCL': [1.0, 1.5],
-                                                                          'TVV': [2.0, 3.0]}))
-    pd.testing.assert_frame_equal(boot.statistics, correct_statistics)
+    boot = calculate_results([res1_mod, res2_mod], original_model=orig_mod)
+    correct_statistics = pd.DataFrame({'mean': [1.25, 2.5],
+                                       'median': [1.25, 2.50],
+                                       'bias': [0.5, 0.25],
+                                       'stderr': [0.353553, 0.707107]},
+                                      index=['TVCL', 'TVV'])
+
+    pd.testing.assert_frame_equal(boot.parameter_statistics, correct_statistics)
 
     # json round trip
     json = boot.to_json()
     obj = read_results(json)
-    pd.testing.assert_frame_equal(obj.statistics, correct_statistics)
+    pd.testing.assert_frame_equal(obj.parameter_statistics, correct_statistics)

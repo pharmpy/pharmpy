@@ -1,9 +1,18 @@
-from pharmpy import Model
-from pharmpy.modeling import add_etas
+from operator import add, mul
+
+import pytest
+import sympy
+
+from pharmpy.modeling.eta_additions import EtaAddition
+from pharmpy.symbols import symbol as S
 
 
-def test_apply(pheno_path):
-    model = Model(pheno_path)
-    add_etas(model, 'S1', 'exp', '+')
-    model.update_source()
-    print(model)
+@pytest.mark.parametrize('addition,expression', [
+    (EtaAddition.exponential(add), S('CL') + sympy.exp(S('eta_new'))),
+    (EtaAddition.exponential(mul), S('CL') * sympy.exp(S('eta_new'))),
+])
+def test_apply(addition, expression):
+    addition.apply(original='CL', eta='eta_new')
+
+    assert addition.template.symbol == S('expression_new')
+    assert addition.template.expression == expression

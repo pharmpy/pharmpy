@@ -36,8 +36,7 @@ def update_parameters(model, old, new):
 
     for p in new:
         name = p.name
-        if name not in model._old_parameters and \
-                name not in model.random_variables.all_parameters():
+        if name not in old and name not in model.random_variables.all_parameters():
             # This is a new theta
             theta_number = get_next_theta(model)
             record = create_theta_record(model, p)
@@ -83,15 +82,42 @@ def update_random_variables(model, old, new):
                 next_eta += len(omega_record)
         model.control_stream.remove_records(remove_records)
 
+    for rv in new:
+        omega_name = (rv.pspace.distribution.std**2).name
+
+        if omega_name not in old.all_parameters():
+            rv_name = rv.name.upper()
+            omega = model.parameters[omega_name]
+
+            record, eta_number = create_omega_record(model, omega)
+
+            record.name_map[omega_name] = (eta_number, eta_number)
+            record.eta_map[rv_name] = eta_number
+            record.add_omega_name_comment(omega_name)
+
 
 def get_next_theta(model):
     """ Find the next available theta number
     """
     next_theta = 1
+
     for theta_record in model.control_stream.get_records('THETA'):
         thetas = theta_record.parameters(next_theta)
         next_theta += len(thetas)
+
     return next_theta
+
+
+def get_next_eta(model):
+    """ Find the next available eta number
+    """
+    next_omega = 1
+    previous_size = None
+
+    for omega_record in model.control_stream.get_records('OMEGA'):
+        _, next_omega, previous_size = omega_record.parameters(next_omega, previous_size)
+
+    return next_omega, previous_size
 
 
 def create_theta_record(model, param):
@@ -112,6 +138,19 @@ def create_theta_record(model, param):
     param_str += '\n'
     record = model.control_stream.insert_record(param_str, 'THETA')
     return record
+
+
+def create_omega_record(model, param):
+    eta_number, previous_size = get_next_eta(model)
+
+    param_str = f'$OMEGA  {param.init}\n'
+
+    record = model.control_stream.insert_record(param_str, 'OMEGA')
+
+    record.parameters(eta_number, previous_size)
+    record.random_variables(eta_number)
+
+    return record, eta_number
 
 
 def update_ode_system(model, old, new):

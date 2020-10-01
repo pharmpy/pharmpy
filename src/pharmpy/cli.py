@@ -323,7 +323,7 @@ def add_covariate_effect(args):
     from pharmpy.modeling import add_covariate_effect
 
     model = args.model
-    add_covariate_effect(model, args.param, args.covariate, args.effect)
+    add_covariate_effect(model, args.param, args.covariate, args.effect, args.operation)
 
     write_model_or_dataset(model, model.dataset, path=args.output_file, force=False)
 
@@ -384,15 +384,24 @@ def john_draper(args):
     write_model_or_dataset(model, None, path=args.output_file, force=False)
 
 
+def add_etas(args):
+    """Subcommand to add covariate effect to model."""
+    from pharmpy.modeling import add_etas
+
+    model = args.model
+    add_etas(model, args.param, args.expression, args.operation)
+
+    write_model_or_dataset(model, model.dataset, path=args.output_file, force=False)
+
+
 def results_bootstrap(args):
     """Subcommand to generate bootstrap results"""
-    if len(args.models) < 3:
-        error(ValueError('Need at least the original model and 2'
-                         'other models'))
-    from pharmpy.methods.bootstrap.results import BootstrapResults
-    res = BootstrapResults(original_model=args.base,
-                           bootstrap_models=args.models)
-    print(res)
+    from pharmpy.methods.bootstrap.results import psn_bootstrap_results
+    if not args.psn_dir.is_dir():
+        error(FileNotFoundError(str(args.psn_dir)))
+    res = psn_bootstrap_results(args.psn_dir)
+    res.to_json(path=args.psn_dir / 'results.json')
+    res.to_csv(path=args.psn_dir / 'results.csv')
 
 
 def results_cdd(args):
@@ -683,6 +692,10 @@ parser_definition = [
                      {'name': 'effect',
                       'type': str,
                       'help': 'Type of covariate effect'},
+                     {'name': '--operation',
+                      'type': str,
+                      'default': '*',
+                      'help': 'Whether effect should be added or multiplied'},
                      ]}},
         {'explicit_odes': {
             'help': 'Make ODEs explicit',
@@ -735,6 +748,22 @@ parser_definition = [
                       'help': 'List of etas, mark group of etas in single quote '
                               'separated by spaces'},
                      ]}},
+        {'add_etas': {
+            'help': 'Adds etas',
+            'description': 'Add etas to a model parameter',
+            'func': add_etas,
+            'parents': [args_model_input, args_output],
+            'args': [{'name': 'param',
+                      'type': str,
+                      'help': 'Individual parameter'},
+                     {'name': 'expression',
+                      'type': str,
+                      'help': 'Expression for added eta'},
+                     {'name': '--operation',
+                      'type': str,
+                      'default': '*',
+                      'help': 'Whether effect should be added or multiplied'},
+                     ]}},
     ], 'help': 'Model manipulations',
        'title': 'Pharmpy model commands',
        'metavar': 'ACTION',
@@ -743,10 +772,9 @@ parser_definition = [
         {'bootstrap': {
             'help': 'Generate bootstrap results',
             'description': 'Generate results from a PsN bootstrap run',
-            'func': results_bootstrap,
-            'parents': [args_input], 'args': [
-                   {'name': '--base', 'metavar': 'FILE', 'type': input_model,
-                    'help': 'Base model'}]}},
+            'func': results_bootstrap, 'args': [
+                {'name': 'psn_dir', 'metavar': 'PsN directory', 'type': pathlib.Path,
+                 'help': 'Path to PsN bootstrap run directory'}]}},
         {'cdd': {
             'help': 'Generate cdd results',
             'description': 'Generate results from a PsN cdd run',
@@ -844,7 +872,7 @@ parser = argparse.ArgumentParser(
     formatter_class=formatter,
     allow_abbrev=True,
 )
-parser.add_argument('--version', action='version', version='0.6.0')
+parser.add_argument('--version', action='version', version='0.7.0')
 
 # subcommand parsers
 subparsers = parser.add_subparsers(title='Pharmpy commands', metavar='COMMAND')

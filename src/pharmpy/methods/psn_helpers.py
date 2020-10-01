@@ -63,3 +63,13 @@ def psn_command(path):
                 return cmd
     except FileNotFoundError:
         pass
+
+
+def cmd_line_model_path(path):
+    path = Path(path)
+    with open(path / 'meta.yaml') as meta:
+        for row in meta:
+            row = row.strip()
+            if row.startswith('model_files:'):
+                row = next(meta).strip()
+                return Path(re.sub(r'^-\s*', '', row))

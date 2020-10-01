@@ -9,6 +9,7 @@ from pharmpy.config import ConfigurationContext
 from pharmpy.parameter import Parameter
 from pharmpy.plugins.nonmem import conf
 from pharmpy.plugins.nonmem.nmtran_parser import NMTranParser
+from pharmpy.random_variables import VariabilityLevel
 from pharmpy.statements import Assignment, ModelStatements, ODESystem
 from pharmpy.symbols import symbol
 
@@ -228,6 +229,43 @@ def test_add_parameters_and_statements(pheno_path, param_new, statement_new, buf
           f'{buf_new}\n\n'
 
     assert str(model.get_pred_pk_record()) == rec
+
+
+@pytest.mark.parametrize('rv_new,buf_new', [
+    (Parameter('omega', 0.1), '$OMEGA  0.1')
+])
+def test_add_random_variables(pheno_path, rv_new, buf_new):
+    model = Model(pheno_path)
+    rvs = model.random_variables
+    pset = model.parameters
+
+    omega = Parameter('rv_new', 0.1)
+    eta = sympy.stats.Normal('eta_new', 0, sympy.sqrt(S(omega.name)))
+    eta.variability_level = VariabilityLevel.IIV
+
+    rvs.add(eta)
+    pset.add(omega)
+
+    model.random_variables = rvs
+    model.parameters = pset
+
+    model.update_source()
+
+    rec_ref = f'$OMEGA DIAGONAL(2)\n' \
+              f' 0.0309626  ;       IVCL\n' \
+              f' 0.031128  ;        IVV\n\n' \
+              f'{buf_new} ; rv_new\n'
+
+    rec_mod = ''
+    for rec in model.control_stream.get_records('OMEGA'):
+        rec_mod += str(rec)
+
+    assert rec_mod == rec_ref
+
+    rv = model.random_variables['eta_new']
+    rv_str = str(model.random_variables._normal_definition_string(rv))
+
+    assert rv_str == "['η_new~ 𝒩 (0, rv_new)']"
 
 
 def test_results(pheno_path):

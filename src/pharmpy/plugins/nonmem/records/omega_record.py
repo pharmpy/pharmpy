@@ -17,6 +17,10 @@ from .record import Record
 
 
 class OmegaRecord(Record):
+    def add_omega_name_comment(self, name_original):
+        self.root.add_comment_node(name_original)
+        self.root.add_newline_node()
+
     def parameters(self, start_omega, previous_size):
         """Get a ParameterSet for this omega record
         """
