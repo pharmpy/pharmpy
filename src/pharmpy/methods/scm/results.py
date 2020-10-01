@@ -5,8 +5,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from pharmpy.methods.psn_helpers import options_from_command, tool_from_command, \
-    arguments_from_command
+from pharmpy.methods.psn_helpers import (arguments_from_command, options_from_command,
+                                         tool_from_command)
 from pharmpy.results import Results
 
 
