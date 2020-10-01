@@ -105,8 +105,6 @@ class OmegaRecord(Record):
                         label_index += 1
             next_omega = start_omega + size
         self.name_map = {name: c for i, (name, c) in enumerate(zip(parameters.names, coords))}
-        print(parameters, coords)
-        print(self.name_map)
         return parameters, next_omega, size
 
     def _find_label(self, node):
