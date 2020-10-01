@@ -91,8 +91,8 @@ class Model(pharmpy.model.Model):
         if hasattr(self, '_parameters'):
             update_parameters(self, self._old_parameters, self._parameters)
             self._old_parameters = self._parameters.copy()
-        trans = self.parameter_translation(reverse=True, remove_idempotent=True)
-        rv_trans = self.rv_translation(reverse=True, remove_idempotent=True)
+        trans = self.parameter_translation(reverse=True, remove_idempotent=True, as_symbols=True)
+        rv_trans = self.rv_translation(reverse=True, remove_idempotent=True, as_symbols=True)
         trans.update(rv_trans)
         if trans:
             self.statements     # Read statements unless read
@@ -547,7 +547,7 @@ class Model(pharmpy.model.Model):
         df.name = self.dataset_path.stem
         return df
 
-    def rv_translation(self, reverse=False, remove_idempotent=False):
+    def rv_translation(self, reverse=False, remove_idempotent=False, as_symbols=False):
         self.random_variables
         d = dict()
         for record in self.control_stream.get_records('OMEGA'):
@@ -562,9 +562,11 @@ class Model(pharmpy.model.Model):
             d = {key: val for key, val in d.items() if key != val}
         if reverse:
             d = {val: key for key, val in d.items()}
+        if as_symbols:
+            d = {symbols.symbol(key): symbols.symbol(val) for key, val in d.items()}
         return d
 
-    def parameter_translation(self, reverse=False, remove_idempotent=False):
+    def parameter_translation(self, reverse=False, remove_idempotent=False, as_symbols=False):
         """Get a dict of NONMEM name to Pharmpy parameter name
            i.e. {'THETA(1)': 'TVCL', 'OMEGA(1,1)': 'IVCL'}
         """
@@ -586,4 +588,6 @@ class Model(pharmpy.model.Model):
             d = {key: val for key, val in d.items() if key != val}
         if reverse:
             d = {val: key for key, val in d.items()}
+        if as_symbols:
+            d = {symbols.symbol(key): symbols.symbol(val) for key, val in d.items()}
         return d
