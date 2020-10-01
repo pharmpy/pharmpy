@@ -14,5 +14,4 @@ from pharmpy.symbols import symbol as S
 def test_apply(addition, expression):
     addition.apply(original='CL', eta='eta_new')
 
-    assert addition.template.symbol == S('expression_new')
-    assert addition.template.expression == expression
+    assert addition.template == expression

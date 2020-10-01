@@ -5,7 +5,6 @@ import sympy.stats as stats
 
 from pharmpy.parameter import Parameter
 from pharmpy.random_variables import VariabilityLevel
-from pharmpy.statements import Assignment
 from pharmpy.symbols import symbol as S
 
 
@@ -43,7 +42,7 @@ def add_etas(model, parameter, expression, operation='*'):
     eta_addition = _create_template(expression, operation)
     eta_addition.apply(statement.expression, eta)
 
-    statement.expression = eta_addition.template.expression
+    statement.expression = eta_addition.template
 
     model.get_pred_pk_record().statements = sset
 
@@ -55,9 +54,8 @@ def _create_template(expression, operation):
     if expression == 'exp':
         return EtaAddition.exponential(operation_func)
     else:
-        symbol = S('expression_new')
         expression = sympy.sympify(f'original {operation} {expression}')
-        return EtaAddition(Assignment(symbol, expression))
+        return EtaAddition(expression)
 
 
 def _get_operation_func(operation):
@@ -69,17 +67,26 @@ def _get_operation_func(operation):
 
 
 class EtaAddition:
+    """
+    Eta addition consisting of expression.
+
+    Attributes
+    ----------
+    template
+        Expression consisting of original statement +/* new eta with effect.
+
+    :meta private:
+
+    """
     def __init__(self, template):
         self.template = template
 
     def apply(self, original, eta):
-        self.template.subs({'original': original})
-        self.template.subs({'eta_new': eta})
+        self.template = self.template.subs({'original': original,
+                                            'eta_new': eta})
 
     @classmethod
     def exponential(cls, operation):
-        expression = operation(S('original'), sympy.exp(S('eta_new')))
-
-        template = Assignment(S('expression_new'), expression)
+        template = operation(S('original'), sympy.exp(S('eta_new')))
 
         return cls(template)
