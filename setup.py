@@ -79,7 +79,8 @@ setup(
     ],
     entry_points={
         'console_scripts': [
-            'pharmpy           = pharmpy.__main__:run',
+            'pharmpy             = pharmpy.__main__:run',
+            'psn-pharmpy-wrapper = pharmpy.methods.psn_helpers:pharmpy_wrapper',
         ]
     },
 )

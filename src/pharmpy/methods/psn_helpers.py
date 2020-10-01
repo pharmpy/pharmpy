@@ -1,4 +1,5 @@
 import re
+import sys
 from pathlib import Path
 
 
@@ -73,3 +74,11 @@ def cmd_line_model_path(path):
             if row.startswith('model_files:'):
                 row = next(meta).strip()
                 return Path(re.sub(r'^-\s*', '', row))
+
+
+def pharmpy_wrapper():
+    """Command line wrapper for PsN to call pharmpy
+    """
+    args = sys.argv[1:]
+    locs = dict()
+    exec(args[0], globals(), locs)
