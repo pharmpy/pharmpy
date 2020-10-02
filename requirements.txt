@@ -51,7 +51,6 @@ sphinxcontrib-qthelp==1.0.3
 sphinxcontrib-serializinghtml==1.1.4
 symengine==0.6.1
 sympy==1.6.2
-toil==4.2.0
 toolz==0.10.0
 urllib3==1.25.10
 websocket-client==0.57.0
