@@ -117,11 +117,10 @@ class OmegaRecord(Record):
             found = False
             for subnode in self.root.tree_walk():
                 if id(subnode) == id(node):
-                    if found:
-                        break
-                    else:
-                        found = True
-                        continue
+                    found = True
+                    continue
+                if found and (subnode.rule == 'omega' or subnode.rule == 'diag_item'):
+                    break
                 if found and (subnode.rule == 'NEWLINE' or subnode.rule == 'COMMENT'):
                     m = re.search(r';\s*([a-zA-Z_]\w*)', str(subnode))
                     if m:

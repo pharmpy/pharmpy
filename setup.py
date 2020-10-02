@@ -74,12 +74,13 @@ setup(
         'pharmacometrics',
     ],
     install_requires=[
-        'lark-parser', 'sympy>=1.6.1', 'symengine', 'pandas', 'numexpr', 'altair', 'toil', 'sphinx',
+        'lark-parser', 'sympy>=1.6.1', 'symengine', 'pandas', 'numexpr', 'altair', 'sphinx',
         'csscompressor', 'beautifulsoup4', 'lxml', 'numpy', 'scipy', 'dask', 'networkx', 'appdirs'
     ],
     entry_points={
         'console_scripts': [
-            'pharmpy           = pharmpy.__main__:run',
+            'pharmpy             = pharmpy.__main__:run',
+            'psn-pharmpy-wrapper = pharmpy.methods.psn_helpers:pharmpy_wrapper',
         ]
     },
 )

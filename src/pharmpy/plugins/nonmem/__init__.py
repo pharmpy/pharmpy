@@ -1,6 +1,6 @@
 import pharmpy.config as config
 
-from .model import Model
+from .model import Model, detect_model
 
 r"""
 .. list-table:: Options for the nonmem plugin
@@ -29,4 +29,4 @@ class NONMEMConfiguration(config.Configuration):
 conf = NONMEMConfiguration()
 
 
-__all__ = ['Model']
+__all__ = ['detect_model', 'Model']

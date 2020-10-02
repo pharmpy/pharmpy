@@ -1,4 +1,5 @@
 import re
+import sys
 from pathlib import Path
 
 
@@ -76,26 +77,32 @@ def cmd_line_model_path(path):
 
 
 def template_model_string():
-    return '''
-$PROBLEM TEMPLATE
-$INPUT
-$DATA data.csv IGNORE=@
-$SUBROUTINE ADVAN1 TRANS2
+    return '\n'.join([
+        '$PROBLEM TEMPLATE',
+        '$INPUT',
+        '$DATA data.csv IGNORE=@',
+        '$SUBROUTINE ADVAN1 TRANS2',
+        '',
+        '$PK',
+        'CL=THETA(1)*EXP(ETA(1))',
+        'V=THETA(2)*EXP(ETA(2))',
+        'S1=V',
+        '',
+        '$ERROR',
+        'Y=F+F*EPS(1)',
+        '',
+        '$THETA (0, 1)       ; TVCL',
+        '$THETA (0, 5)       ; TVV',
+        '$OMEGA 0.1           ; IVCL',
+        '$OMEGA 0.1           ; IVV',
+        '$SIGMA 0.025         ; RUV',
+        '',
+        '$ESTIMATION METHOD=1 INTERACTION'])
 
-$PK
-CL=THETA(1)*EXP(ETA(1))
-V=THETA(2)*EXP(ETA(2))
-S1=V
 
-$ERROR
-Y=F+F*EPS(1)
-
-$THETA (0, 1)       ; TVCL
-$THETA (0, 5)       ; TVV
-$OMEGA 0.1           ; IVCL
-$OMEGA 0.1           ; IVV
-$SIGMA 0.025         ; RUV
-
-$ESTIMATION METHOD=1 INTERACTION
-'''
-
+def pharmpy_wrapper():
+    """Command line wrapper for PsN to call pharmpy
+    """
+    args = sys.argv[1:]
+    locs = dict()
+    exec(args[0], globals(), locs)

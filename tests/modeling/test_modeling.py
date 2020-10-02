@@ -61,16 +61,16 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
 
 @pytest.mark.parametrize('effect, covariate, operation, buf_new', [
     ('exp', 'WGT', '*', 'WGT_MEDIAN = 1.30000\n'
-                        'CLWGT = EXP((WGT - WGT_MEDIAN)*THETA(4))\n'
+                        'CLWGT = EXP(THETA(4)*(WGT - WGT_MEDIAN))\n'
                         'CL = CL*CLWGT'),
     ('exp', 'WGT', '+', 'WGT_MEDIAN = 1.30000\n'
-                        'CLWGT = EXP((WGT - WGT_MEDIAN)*THETA(4))\n'
+                        'CLWGT = EXP(THETA(4)*(WGT - WGT_MEDIAN))\n'
                         'CL = CL + CLWGT'),
     ('pow', 'WGT', '*', 'WGT_MEDIAN = 1.30000\n'
                         'CLWGT = (WGT/WGT_MEDIAN)**THETA(4)\n'
                         'CL = CL*CLWGT'),
     ('lin', 'WGT', '*', 'WGT_MEDIAN = 1.30000\n'
-                        'CLWGT = (WGT - WGT_MEDIAN)*THETA(4) + 1\n'
+                        'CLWGT = THETA(4)*(WGT - WGT_MEDIAN) + 1\n'
                         'CL = CL*CLWGT'),
     ('cat', 'FA1', '*', 'IF (FA1.EQ.1.0) THEN\n'
                         'CLFA1 = 1\n'
@@ -80,27 +80,27 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
                         'CL = CL*CLFA1'),
     ('piece_lin', 'WGT', '*', 'WGT_MEDIAN = 1.30000\n'
                               'IF (WGT.LE.WGT_MEDIAN) THEN\n'
-                              'CLWGT = (WGT - WGT_MEDIAN)*THETA(4) + 1\n'
+                              'CLWGT = THETA(4)*(WGT - WGT_MEDIAN) + 1\n'
                               'ELSE\n'
-                              'CLWGT = (WGT - WGT_MEDIAN)*THETA(5) + 1\n'
+                              'CLWGT = THETA(5)*(WGT - WGT_MEDIAN) + 1\n'
                               'END IF\n'
                               'CL = CL*CLWGT'),
     ('theta - cov + median', 'WGT', '*',
      'WGT_MEDIAN = 1.30000\n'
-     'CLWGT = -WGT + WGT_MEDIAN + THETA(4)\n'
+     'CLWGT = THETA(4) - WGT + WGT_MEDIAN\n'
      'CL = CL*CLWGT'),
     ('theta - cov + std', 'WGT', '*',
      'WGT_STD = 0.704565\n'
-     'CLWGT = -WGT + WGT_STD + THETA(4)\n'
+     'CLWGT = THETA(4) - WGT + WGT_STD\n'
      'CL = CL*CLWGT'),
     ('theta1 * (cov/median)**theta2', 'WGT', '*',
      'WGT_MEDIAN = 1.30000\n'
-     'CLWGT = (WGT/WGT_MEDIAN)**THETA(5)*THETA(4)\n'
+     'CLWGT = THETA(4)*(WGT/WGT_MEDIAN)**THETA(5)\n'
      'CL = CL*CLWGT'),
     ('((cov/std) - median) * theta', 'WGT', '*',
      'WGT_MEDIAN = 1.30000\n'
      'WGT_STD = 0.704565\n'
-     'CLWGT = (WGT/WGT_STD - WGT_MEDIAN)*THETA(4)\n'
+     'CLWGT = THETA(4)*(WGT/WGT_STD - WGT_MEDIAN)\n'
      'CL = CL*CLWGT')
 ])
 def test_add_covariate_effect(pheno_path, effect, covariate, operation, buf_new):
@@ -618,8 +618,8 @@ def test_tdist(pheno_path):
     num_3 = f'3*{eta}**6 + 19*{eta}**4 + 17*{eta}**2 - 15'
     denom_3 = f'384*{theta}**3'
 
-    expression = f'(({num_1})/({denom_1}) + ({num_2})/({denom_2}) + ' \
-                 f'({num_3})/({denom_3}) + 1)*ETA(1)'
+    expression = f'(1 + ({num_1})/({denom_1}) + ({num_2})/({denom_2}) + ' \
+                 f'({num_3})/({denom_3}))*ETA(1)'
 
     rec_ref = f'$PK\n' \
               f'{symbol} = {expression}\n' \
@@ -637,7 +637,7 @@ def test_tdist(pheno_path):
 
 
 @pytest.mark.parametrize('etas, etad, buf_new', [
-    (['ETA(1)'], 'ETAD1 = ((ABS(ETA(1)) + 1)**THETA(4) - 1)*ABS(ETA(1))/(ETA(1)*THETA(4))',
+    (['ETA(1)'], 'ETAD1 = ((ABS(ETA(1)) + 1)**THETA(4) - 1)*ABS(ETA(1))/(THETA(4)*ETA(1))',
      'CL = TVCL*EXP(ETAD1)\nV=TVV*EXP(ETA(2))'),
 ])
 def test_john_draper(pheno_path, etas, etad, buf_new):
@@ -667,9 +667,9 @@ def test_john_draper(pheno_path, etas, etad, buf_new):
     ('V', 'exp', '+', 'V = TVV*EXP(ETA(2)) + EXP(ETA(3))\n'
                       'S1=V'),
     ('S1', 'eta_new', '+', 'V=TVV*EXP(ETA(2))\n'
-                           'S1 = V + ETA(3)'),
+                           'S1 = ETA(3) + V'),
     ('S1', 'eta_new**2', '+', 'V=TVV*EXP(ETA(2))\n'
-                              'S1 = V + ETA(3)**2'),
+                              'S1 = ETA(3)**2 + V'),
 ])
 def test_add_etas(pheno_path, parameter, expression, operation, buf_new):
     model = Model(pheno_path)
