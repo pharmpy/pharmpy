@@ -60,6 +60,7 @@ def calculate_results(bootstrap_models, original_model, included_individuals=Non
         bias = np.nan
     statistics = pd.DataFrame({'mean': mean, 'median': df.median(),
                                'bias': bias, 'stderr': df.std()})
+    statistics['RSE'] = statistics['stderr'] / statistics['mean']
 
     df = parameter_estimates
     distribution = create_distribution(df)
