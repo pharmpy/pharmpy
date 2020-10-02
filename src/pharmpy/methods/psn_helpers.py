@@ -13,8 +13,8 @@ def arguments_from_command(command):
     return [arg for arg in command.split()[1:] if not arg.startswith('-')]
 
 
-def model_paths(path, pattern):
-    path = Path(path) / 'm1'
+def model_paths(path, pattern, subpath='m1'):
+    path = Path(path) / subpath
     model_paths = list(path.glob(pattern))
     model_paths.sort(key=lambda name: int(re.sub(r'\D', '', str(name))))
     return model_paths
@@ -73,3 +73,29 @@ def cmd_line_model_path(path):
             if row.startswith('model_files:'):
                 row = next(meta).strip()
                 return Path(re.sub(r'^-\s*', '', row))
+
+
+def template_model_string():
+    return '''
+$PROBLEM TEMPLATE
+$INPUT
+$DATA data.csv IGNORE=@
+$SUBROUTINE ADVAN1 TRANS2
+
+$PK
+CL=THETA(1)*EXP(ETA(1))
+V=THETA(2)*EXP(ETA(2))
+S1=V
+
+$ERROR
+Y=F+F*EPS(1)
+
+$THETA (0, 1)       ; TVCL
+$THETA (0, 5)       ; TVV
+$OMEGA 0.1           ; IVCL
+$OMEGA 0.1           ; IVV
+$SIGMA 0.025         ; RUV
+
+$ESTIMATION METHOD=1 INTERACTION
+'''
+
