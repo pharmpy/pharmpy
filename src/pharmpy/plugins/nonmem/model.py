@@ -20,6 +20,17 @@ from .nmtran_parser import NMTranParser
 from .update import update_parameters, update_random_variables, update_statements
 
 
+def detect_model(src, *args, **kwargs):
+    """ Check if src represents a NONMEM control stream
+    i.e. check if it is a file that contain $PRO
+    """
+    is_control_stream = re.search(r'^\s*\$PRO', src.code, re.MULTILINE)
+    if is_control_stream:
+        return Model
+    else:
+        return None
+
+
 class Model(pharmpy.model.Model):
     def __init__(self, src, **kwargs):
         super().__init__()
@@ -70,13 +81,6 @@ class Model(pharmpy.model.Model):
                 return self._modelfit_results
         else:
             return None
-
-    @staticmethod
-    def detect(src, *args, **kwargs):
-        """ Check if src represents a NONMEM control stream
-        i.e. check if it is a file that contain $PRO
-        """
-        return bool(re.search(r'^\s*\$PRO', src.code, re.MULTILINE))
 
     def update_source(self, path=None, force=False, nofiles=False):
         """ Update the source
