@@ -1,6 +1,7 @@
 # The NONMEM Model class
 import re
 import shutil
+import warnings
 from os import stat
 from pathlib import Path
 
@@ -319,6 +320,17 @@ class Model(pharmpy.model.Model):
         if pharmpy.plugins.nonmem.conf.parameter_names == 'comment':
             self.parameters
             trans = self.parameter_translation(remove_idempotent=True, as_symbols=True)
+            parameter_symbols = {symb for _, symb in trans.items()}
+            clashing_symbols = parameter_symbols & statements.free_symbols
+            if clashing_symbols:
+                warnings.warn(f'The parameter names {clashing_symbols} are also names of variables '
+                              f'in the model code. Falling back to the NONMEM default parameter '
+                              f'names for these.')
+                rev_trans = {val: key for key, val in trans.items()}
+                trans = {nm_symb: symb for nm_symb, symb in trans.items()
+                         if symb not in clashing_symbols}
+                for symb in clashing_symbols:
+                    self.parameters[symb.name].name = rev_trans[symb].name
             statements.subs(trans)
 
         self._statements = statements
