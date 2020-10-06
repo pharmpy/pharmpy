@@ -76,11 +76,38 @@ def cmd_line_model_path(path):
                 return Path(re.sub(r'^-\s*', '', row))
 
 
-def template_model_string():
+def template_model_string(datafile=None, ignore=list(), drop=list(), label='TEMPLATE'):
+    variables = ''
+    indent = r'      '
+    ignores = indent + 'IGNORE=@'
+    if (len(ignore) > 0):
+        ignores += '\n' + '\n'.join([indent + f'IGNORE=({ign})' for ign in ignore])
+    if datafile is None:
+        datafile = 'dummydata.csv'
+    else:
+        datafile = Path(datafile)
+        try:
+            with open(datafile) as data:
+                row = next(data)
+                row = row.strip()
+                if re.match(r'[A-Z]', row):
+                    names = row.split(r',')
+                    variables = ' '
+                    start = 0
+                    while start < len(names):
+                        stop = min(start+10, len(names))
+                        variables += ' '.join([n if n not in drop else 'DROP'
+                                               for n in names[start:stop]]) + '\n      '
+                        start = stop
+                else:
+                    pass  # unsupported header type
+        except FileNotFoundError:
+            pass
     return '\n'.join([
-        '$PROBLEM TEMPLATE',
-        '$INPUT',
-        '$DATA data.csv IGNORE=@',
+        '$PROBLEM ' + label,
+        '$INPUT' + variables,
+        f'$DATA {str(datafile)}',
+        ignores,
         '$SUBROUTINE ADVAN1 TRANS2',
         '',
         '$PK',
@@ -97,7 +124,8 @@ def template_model_string():
         '$OMEGA 0.1           ; IVV',
         '$SIGMA 0.025         ; RUV',
         '',
-        '$ESTIMATION METHOD=1 INTERACTION'])
+        '$ESTIMATION METHOD=1 INTERACTION',
+        '$COVARIANCE PRINT=E MATRIX=S UNCONDITIONAL'])
 
 
 def pharmpy_wrapper():
