@@ -375,6 +375,14 @@ def test_symbol_names_in_comment(pheno_path):
         assert model.statements[2].expression == S('PTVCL') * S('WGT')
 
 
+def test_clashing_parameter_names(datadir):
+    with ConfigurationContext(conf, parameter_names='comment'):
+        model = Model(datadir / 'pheno_clashing_symbols.mod')
+        with pytest.warns(UserWarning):
+            model.statements
+        assert model.parameters.names == ['THETA(1)', 'TVV', 'IVCL', 'OMEGA(2,2)', 'SIGMA(1,1)']
+
+
 def test_prediction_symbol(pheno_path):
     model = Model(pheno_path)
     assert model.prediction_symbol.name == 'F'
