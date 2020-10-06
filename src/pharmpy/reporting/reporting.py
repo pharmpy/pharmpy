@@ -2,6 +2,7 @@ import os
 import re
 import shutil
 import tempfile
+import warnings
 from pathlib import Path
 from urllib.request import urlopen
 
@@ -38,9 +39,14 @@ def generate_report(rst_path, results_path):
         # Change directory for results.json to be found
         with TemporaryDirectoryChanger(source_path):
             with open(os.devnull, 'w') as devnull:
-                app = Sphinx(str(source_path), str(conf_path), str(tmp_path), str(tmp_path),
-                             "singlehtml", status=devnull, warning=devnull)
-                app.build()
+                with warnings.catch_warnings():
+                    # Don't display deprecation warnings.
+                    # See https://github.com/pharmpy/pharmpy/issues/20
+                    warnings.filterwarnings("ignore", message="The app.add_stylesheet")
+                    warnings.filterwarnings("ignore", message="The app.add_javascript")
+                    app = Sphinx(str(source_path), str(conf_path), str(tmp_path), str(tmp_path),
+                                 "singlehtml", status=devnull, warning=devnull)
+                    app.build()
 
         # Write missing altair css
         with open(tmp_path / '_static' / 'altair-plot.css', 'w') as dh:
