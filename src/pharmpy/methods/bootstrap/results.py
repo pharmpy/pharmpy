@@ -2,6 +2,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import scipy.stats
 
 import pharmpy.visualization
 from pharmpy.methods.psn_helpers import cmd_line_model_path, model_paths
@@ -15,7 +16,7 @@ class BootstrapResults(Results):
     # FIXME: Should inherit from results that take multiple runs like bootstrap, cdd etc.
     def __init__(self, parameter_statistics=None, parameter_distribution=None,
                  covariance_matrix=None, ofv_distribution=None, included_individuals=None,
-                 ofvs=None, base_ofv=None):
+                 ofvs=None, base_ofv=None, parameter_estimates=None):
         self.parameter_statistics = parameter_statistics
         self.parameter_distribution = parameter_distribution
         self.covariance_matrix = covariance_matrix
@@ -23,19 +24,35 @@ class BootstrapResults(Results):
         self.included_individuals = included_individuals
         self.ofvs = ofvs
         self.base_ofv = base_ofv
+        self.parameter_estimates = parameter_estimates
 
     def add_plots(self):
         self.ofv_plot = self.plot_ofv()
-        self.delta_base_ofv_plot = self.plot_delta_base_ofv()
+        self.parameter_estimates_correlation_plot = self.plot_parameter_estimates_correlation()
+        self.base_ofv_plot = self.plot_base_ofv()
 
     def plot_ofv(self):
         plot = pharmpy.visualization.histogram(self.ofvs['ofv'], title='Bootstrap OFV')
         return plot
 
-    def plot_delta_base_ofv(self):
-        df = self.ofvs.copy()
-        df['dOFV'] = df['base_ofv'] - self.base_ofv
-        plot = pharmpy.visualization.histogram(df['dOFV'], title='sum(base iOFV) - base_ofv')
+    def plot_base_ofv(self):
+        ofvs = self.ofvs
+        dofvs = ofvs['base_ofv'] - ofvs['ofv']
+        dofvs.sort_values(inplace=True)
+        quantiles = np.linspace(0.0, 1.0, num=len(dofvs))
+        degrees = len(self.parameter_distribution)
+        chi2_dist = scipy.stats.chi2(df=degrees)
+        chi2 = chi2_dist.ppf(quantiles)
+        df = pd.DataFrame({'Bootstrap': dofvs, 'quantiles': quantiles,
+                           f'Reference χ²({degrees})': chi2})
+        plot = pharmpy.visualization.line_plot(df, 'quantiles', xlabel='Distribution quantiles',
+                                               ylabel='dOFV', legend_title='Distribution',
+                                               title='OFV original model - OFV bootstrap model')
+        return plot
+
+    def plot_parameter_estimates_correlation(self):
+        pe = self.parameter_estimates
+        plot = pharmpy.visualization.scatter_matrix(pe)
         return plot
 
 
@@ -80,7 +97,8 @@ def calculate_results(bootstrap_models, original_model, included_individuals=Non
     res = BootstrapResults(covariance_matrix=covariance_matrix, parameter_statistics=statistics,
                            parameter_distribution=distribution, ofv_distribution=ofv_dist,
                            included_individuals=included_individuals, ofvs=ofvs,
-                           base_ofv=original_model.modelfit_results.ofv)
+                           base_ofv=original_model.modelfit_results.ofv,
+                           parameter_estimates=parameter_estimates)
 
     return res
 
@@ -104,7 +122,12 @@ def psn_bootstrap_results(path):
     path = Path(path)
 
     models = [Model(p) for p in model_paths(path, 'bs_pr1_*.mod')]
+    # Read the results already now to give an appropriate error if no results exists
+    results = [m.modelfit_results for m in models if m.modelfit_results is not None]
+    if not results:
+        raise FileNotFoundError("No model results available in m1")
     base_model = Model(cmd_line_model_path(path))
+
     incinds = pd.read_csv(path / 'included_individuals1.csv', header=None).values.tolist()
     res = calculate_results(models, base_model, included_individuals=incinds)
     return res

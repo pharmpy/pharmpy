@@ -19,11 +19,18 @@ OFV distribution
     res = read_results('results.json')
     res.plot_ofv()
 
-
-Delta Base iOFV
-~~~~~~~~~~~~~~~
+Parameter estimates correlation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. altair-plot::
    :hide-code:
 
-   res.plot_delta_base_ofv()
+   res.plot_parameter_estimates_correlation()
+
+Delta OFV vs original model
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. altair-plot::
+   :hide-code:
+
+   res.plot_base_ofv()
