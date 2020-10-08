@@ -153,7 +153,7 @@ class Results:
                     df_str = df_str.split('\n')[1:]
                     s += '\n'.join(df_str)
             else:
-                s += str(value)
+                s += str(value) + '\n'
             s += '\n\n'
         return s
 
@@ -179,7 +179,7 @@ class Results:
                     for row in value:
                         s += f'{",".join(map(str, row))}\n'
             else:
-                s += str(value)
+                s += str(value) + '\n'
             s += '\n'
         with open(path, 'w') as fh:
             print(s, file=fh)
