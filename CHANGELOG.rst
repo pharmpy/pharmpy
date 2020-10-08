@@ -1,3 +1,11 @@
+0.8.0 (2020-10-08)
+------------------
+
+* Add basic modeling functions to the modeling module
+* modeling.add_etas
+* Improved bootstrap results generation and additional plots
+* Bugfix: Labelled OMEGAS could sometimes get wrong symbol names
+
 0.7.0 (2020-09-28)
 ------------------
 
