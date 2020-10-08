@@ -399,7 +399,10 @@ def results_bootstrap(args):
     from pharmpy.methods.bootstrap.results import psn_bootstrap_results
     if not args.psn_dir.is_dir():
         error(FileNotFoundError(str(args.psn_dir)))
-    res = psn_bootstrap_results(args.psn_dir)
+    try:
+        res = psn_bootstrap_results(args.psn_dir)
+    except FileNotFoundError as e:
+        error(e)
     res.to_json(path=args.psn_dir / 'results.json')
     res.to_csv(path=args.psn_dir / 'results.csv')
 
