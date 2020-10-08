@@ -48,6 +48,55 @@ def scatter_plot_correlation(df, x, y, title=""):
     return plot
 
 
+def scatter_matrix(df):
+    """Scatter matrix plot
+
+       Each column will be scatter plotted against all columns.
+    """
+    plot = alt.Chart(df).mark_circle().encode(
+        alt.X(alt.repeat("column"), type='quantitative', scale=alt.Scale(zero=False)),
+        alt.Y(alt.repeat("row"), type='quantitative', scale=alt.Scale(zero=False)),
+    ).properties(
+        width=150,
+        height=150
+    ).repeat(
+        row=list(df.columns),
+        column=list(reversed(df.columns)),
+    )
+    return plot
+
+
+def line_plot(df, x, title='', xlabel='', ylabel='', legend_title=''):
+    """Line plot for multiple lines
+
+       Parameters
+       ----------
+       df : pd.DataFrame
+            DataFrame with one x column and multiple columns with y values
+       x
+            Name of the x column
+       title : str
+            Plot title
+        xlabel : str
+            Label of the x-axis
+        ylabel : str
+            Label of the y-axis
+        legend_title : str
+            Title of the legend
+    """
+    df = df.melt(id_vars=[x])
+    plot = alt.Chart(df).mark_line().encode(
+        alt.X(f'{x}:Q', title=xlabel),
+        alt.Y('value:Q', title=ylabel),
+        color=alt.Color('variable:N', legend=alt.Legend(title=legend_title))
+    ).properties(
+        title='OFV original model - OFV bootstrap model',
+        width=800,
+        height=300,
+    )
+    return plot
+
+
 def histogram(values, title=""):
     """Histogram with percentage on y and a rule at mean
        slider for reducing the number of values used.
