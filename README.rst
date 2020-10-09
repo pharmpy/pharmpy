@@ -1,7 +1,7 @@
 .. image:: https://travis-ci.com/pharmpy/pharmpy.svg?branch=master
     :target: https://travis-ci.com/pharmpy/pharmpy
 
-.. image:: https://ci.appveyor.com/api/projects/status/0qmnsbtxjbcj33nc/branch/master?svg=true
+.. image:: https://ci.appveyor.com/api/projects/status/vw5vsw8gkifrcl58?svg=true
    :target: https://ci.appveyor.com/project/pharmpy/pharmpy
 
 .. image:: https://img.shields.io/badge/python-3.6+-blue.svg
