@@ -181,7 +181,7 @@ class Results:
             else:
                 s += str(value) + '\n'
             s += '\n'
-        with open(path, 'w') as fh:
+        with open(path, 'w', newline='') as fh:
             print(s, file=fh)
 
     def create_report(self, path):
