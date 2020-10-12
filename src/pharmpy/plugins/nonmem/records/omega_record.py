@@ -262,8 +262,6 @@ class OmegaRecord(Record):
                 return first_omega + previous_size, previous_size
             size = self.root.block.size.INT
             fix, sd, corr, cholesky = self._block_flags()
-            row = first_omega
-            col = first_omega
             inits = []
             new_fix = []
             for row in range(first_omega, first_omega + size):
