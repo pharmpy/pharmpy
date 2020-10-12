@@ -11,8 +11,8 @@ environment:
 build: off
 
 install:
-- pip install nose
-- pip install tornado
+- pip install nose --user
+- pip install tornado --user
 - pip install tox
 
 test_script:
