@@ -81,7 +81,8 @@ CL,WGT,3,  1,1,   0, 0,
                                      'included_relations': None},
                                     parcovdict)
     assert df1 is not None
-    assert df1['directory'].iloc[0] == 'rundir/m1'
+    direct = df1['directory'].iloc[0]
+    assert direct == 'rundir/m1' or direct == 'rundir\\m1'
     sum1 = scm.ofv_summary_dataframe(df1)
     assert [float(x) for x in sum1['pvalue'].values] == \
         approx([2.26e-10, 0.000002, 0.002178, 0.014192, 0.490010, 9999, 0.027672, 8.15e-24])
