@@ -239,12 +239,11 @@ def test_add_random_variables(pheno_path, rv_new, buf_new):
     rvs = model.random_variables
     pset = model.parameters
 
-    omega = Parameter('rv_new', 0.1)
-    eta = sympy.stats.Normal('eta_new', 0, sympy.sqrt(S(omega.name)))
+    eta = sympy.stats.Normal('eta_new', 0, sympy.sqrt(S(rv_new.name)))
     eta.variability_level = VariabilityLevel.IIV
 
     rvs.add(eta)
-    pset.add(omega)
+    pset.add(rv_new)
 
     model.random_variables = rvs
     model.parameters = pset
@@ -254,7 +253,7 @@ def test_add_random_variables(pheno_path, rv_new, buf_new):
     rec_ref = f'$OMEGA DIAGONAL(2)\n' \
               f' 0.0309626  ;       IVCL\n' \
               f' 0.031128  ;        IVV\n\n' \
-              f'{buf_new} ; rv_new\n'
+              f'{buf_new} ; omega\n'
 
     rec_mod = ''
     for rec in model.control_stream.get_records('OMEGA'):
@@ -263,9 +262,9 @@ def test_add_random_variables(pheno_path, rv_new, buf_new):
     assert rec_mod == rec_ref
 
     rv = model.random_variables['eta_new']
-    rv_str = str(model.random_variables._normal_definition_string(rv))
 
-    assert rv_str == "['η_new~ 𝒩 (0, rv_new)']"
+    assert rv.pspace.distribution.mean == 0
+    assert rv.pspace.distribution.std ** 2 == rv_new.symbol
 
 
 def test_results(pheno_path):
