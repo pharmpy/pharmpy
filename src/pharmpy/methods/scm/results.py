@@ -550,7 +550,7 @@ def psn_scm_options(path):
                 options['logfile'] = Path(re.sub(r'\s*logfile:\s*', '', row)).name
             elif row.startswith('directory: '):
                 options['directory'] = \
-                    str(Path(re.sub(r'\s*directory:\s*', '', row)).absolute())
+                    str(Path(re.sub(r'\s*directory:\s*', '', row)))
             elif row.startswith('command_line: '):
                 cmd = row
     if scmplus and Path(options['directory']).parts[-1] == 'rundir':

@@ -12,7 +12,6 @@ def test_psn_scm_options(testdata):
     assert options['included_relations'] is None
     assert options['test_relations'] is None
     assert options['logfile'] == 'scmlog.txt'
-    assert options['directory'] == '/home/shared/Projects/Analysis/Model/SimVal/run5scm.dir'
 
     options = scm.psn_scm_options(testdata / 'nonmem' / 'scm' / 'onlyforward_dir1')
     assert options['included_relations'] == {'CL': {'APGR': '2'},
@@ -20,7 +19,6 @@ def test_psn_scm_options(testdata):
     assert options['test_relations'] == {'CL': ['WGT', 'APGR', 'CV1', 'CV2', 'CV3'],
                                          'V': ['CVD1', 'WGT']}
     assert options['logfile'] == 'scmlog.txt'
-    assert options['directory'] == '/home/kajsa/kod-psn/sandbox/uu/scm_dir1'
 
     options = scm.psn_scm_options(testdata / 'nonmem' / 'scm' / 'backward_dir1')
     assert options['included_relations'] == {'CL': {'WGT': '2', 'CV1': '2'},
@@ -28,7 +26,6 @@ def test_psn_scm_options(testdata):
     assert options['test_relations'] == {'CL': ['WGT', 'APGR', 'CV1', 'CV2', 'CV3'],
                                          'V': ['CVD1', 'CV2', 'WGT']}
     assert options['logfile'] == 'scmlog.txt'
-    assert options['directory'] == '/home/kajsa/sandbox/asrscm/scm_dir10'
 
 
 def test_main(testdata):
@@ -449,6 +446,3 @@ def test_parse_chosen_relation_block(testdata):
     assert included_relations == {'CL': {'CV1': '2',
                                          'WGT': '2'},
                                   'V': {'CV2': '2', 'WGT': '2'}}
-
-
-# tox -e py38 -- pytest -s test_scm.py
