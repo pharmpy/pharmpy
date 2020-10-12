@@ -10,9 +10,26 @@ environment:
 
 build: off
 
-install:
-- pip3 install tornado nose
-- pip3 install tox
+for:
+-
+  matrix:
+    only:
+      - image: macos
 
-test_script:
-- tox
+  install:
+  - pip3 install tornado nose --user
+  - pip3 install tox --user
+
+  test_script:
+  - tox
+
+-
+  matrix:
+    only:
+      - image: Visual Studio 2019
+
+    install:
+    - pip3 install tox
+
+    test_script
+    - tox
