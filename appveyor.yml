@@ -1,6 +1,6 @@
 image:
-- Visual Studio 2019
 - macos
+- Visual Studio 2019
 
 environment:
   matrix:
@@ -11,6 +11,8 @@ environment:
 build: off
 
 install:
+- pip install nose
+- pip install tornado
 - pip install tox
 
 test_script:
