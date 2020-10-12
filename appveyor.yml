@@ -31,5 +31,5 @@ for:
     install:
     - pip3 install tox
 
-    test_script
+    test_script:
     - tox
