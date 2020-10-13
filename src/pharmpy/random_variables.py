@@ -22,6 +22,7 @@ class VariabilityLevel(enum.Enum):
        class singletons
     """
     IIV = enum.auto()
+    IOV = enum.auto()
     RUV = enum.auto()
 
 

@@ -397,7 +397,10 @@ class OmegaRecord(Record):
                 rvs.add(eta)
 
         if self.name == 'OMEGA':
-            level = VariabilityLevel.IIV
+            if same:
+                level = VariabilityLevel.IOV
+            else:
+                level = VariabilityLevel.IIV
         else:
             level = VariabilityLevel.RUV
         for rv in rvs:

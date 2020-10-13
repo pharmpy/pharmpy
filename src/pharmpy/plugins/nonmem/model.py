@@ -13,7 +13,7 @@ from pharmpy.data import DatasetError
 from pharmpy.parameter import ParameterSet
 from pharmpy.plugins.nonmem.results import NONMEMChainedModelfitResults
 from pharmpy.plugins.nonmem.table import NONMEMTableFile, PhiTable
-from pharmpy.random_variables import RandomVariables
+from pharmpy.random_variables import RandomVariables, VariabilityLevel
 from pharmpy.statements import Assignment, ODESystem
 
 from .advan import compartmental_model
@@ -392,6 +392,7 @@ class Model(pharmpy.model.Model):
         for omega_record in self.control_stream.get_records('OMEGA'):
             etas, next_omega, prev_cov, _ = omega_record.random_variables(next_omega, prev_cov)
             rvs.update(etas)
+        self.adjust_iovs(rvs)
         next_sigma = 1
         prev_cov = None
         for sigma_record in self.control_stream.get_records('SIGMA'):
@@ -400,6 +401,18 @@ class Model(pharmpy.model.Model):
         self._random_variables = rvs
         self._old_random_variables = rvs.copy()
         return rvs
+
+    @staticmethod
+    def adjust_iovs(rvs):
+        for i, rv in enumerate(rvs):
+            try:
+                next_rv = rvs[i+1]
+            except KeyError:
+                break
+
+            if (rv.variability_level != VariabilityLevel.IOV and
+                    next_rv.variability_level == VariabilityLevel.IOV):
+                rv.variability_level = VariabilityLevel.IOV
 
     @random_variables.setter
     def random_variables(self, new):

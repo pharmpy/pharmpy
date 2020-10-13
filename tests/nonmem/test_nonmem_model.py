@@ -99,6 +99,18 @@ def test_set_parameters(pheno_path):
     assert model.parameters['THETA(2)'] == Parameter('THETA(2)', 1.00916, lower=0, upper=1000000)
 
 
+def test_adjust_iovs(testdata):
+    model = Model(testdata / 'nonmem' / 'modelfit_results' / 'onePROB' / 'multEST' /
+                  'noSIM' / 'withBayes.mod')
+    model.parameters
+    rvs = model.random_variables
+
+    assert rvs[0].variability_level == VariabilityLevel.IIV
+    assert rvs[3].variability_level == VariabilityLevel.IOV
+    assert rvs[4].variability_level == VariabilityLevel.IOV
+    assert rvs[6].variability_level == VariabilityLevel.IOV
+
+
 @pytest.mark.parametrize('param_new,init_expected,buf_new', [
     (Parameter('COVEFF', 0.2), 0.2, '$THETA  0.2 ; COVEFF'),
     (Parameter('THETA', 0.1), 0.1, '$THETA  0.1 ; THETA'),
