@@ -84,23 +84,33 @@ def update_random_variables(model, old, new):
                 next_eta += len(omega_record)
         model.control_stream.remove_records(remove_records)
 
+    new_maps = []
     for rv in new:
         if rv.name not in old_names:
             omega_name = (rv.pspace.distribution.std**2).name
 
             if omega_name not in old.all_parameters():
+
                 rv_name = rv.name.upper()
                 omega = model.parameters[omega_name]
 
                 if rv.variability_level == VariabilityLevel.RUV:
-                    record = 'SIGMA'
+                    record_name = 'SIGMA'
                 else:
-                    record = 'OMEGA'
-                record, eta_number = create_omega_record(model, omega, record)
+                    record_name = 'OMEGA'
 
-                record.name_map[omega_name] = (eta_number, eta_number)
-                record.eta_map[rv_name] = eta_number
+                record, eta_number = create_omega_record(model, omega, record_name)
                 record.add_omega_name_comment(omega_name)
+
+                new_maps.append((record, {omega_name: (eta_number, eta_number)},
+                                 {rv_name: eta_number}))
+    # FIXME: Setting the maps needs to be done here and not in loop. Automatic renumbering is
+    #        probably the culprit. There should be a difference between added parameters and
+    #        original parameters when it comes to which naming scheme to use
+    if new_maps:
+        for record, name_map, eta_map in new_maps:
+            record.name_map = name_map
+            record.eta_map = eta_map
 
 
 def get_next_theta(model):
