@@ -342,6 +342,13 @@ def model_absorption_rate(args):
     write_model_or_dataset(model, None, path=args.output_file, force=args.force)
 
 
+def model_error(args):
+    from pharmpy.modeling import error_model
+    model = args.model
+    error_model(model, args.error_type)
+    write_model_or_dataset(model, None, path=args.output_file, force=args.force)
+
+
 def boxcox(args):
     """Subcommand to apply boxcox transformation to specified etas of model."""
     from pharmpy.modeling import boxcox
@@ -717,6 +724,16 @@ parser_definition = [
                       'choices': ['bolus', 'ZO', 'FO', 'seq-ZO-FO'],
                       'type': str,
                       'help': 'Absorption rate'},
+                     ]}},
+        {'error': {
+            'help': 'Set error model',
+            'description': 'Set the error model to either additive, proportional or combined',
+            'func': model_error,
+            'parents': [args_model_input, args_output],
+            'args': [{'name': 'error_type',
+                      'choices': ['none', 'additive', 'propotional', 'combined'],
+                      'type': str,
+                      'help': 'Type of error model'},
                      ]}},
         {'boxcox': {
             'help': 'Applies boxcox transformation',
