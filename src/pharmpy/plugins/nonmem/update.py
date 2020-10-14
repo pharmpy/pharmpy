@@ -3,6 +3,7 @@ import re
 import numpy as np
 
 from pharmpy import data
+from pharmpy.random_variables import VariabilityLevel
 from pharmpy.statements import (Assignment, Bolus, CompartmentalSystem, ExplicitODESystem, Infusion,
                                 ModelStatements, ODESystem)
 from pharmpy.symbols import symbol
@@ -66,7 +67,8 @@ def update_random_variables(model, old, new):
     if removed:
         remove_records = []
         next_eta = 1
-        for omega_record in model.control_stream.get_records('OMEGA'):
+        for omega_record in model.control_stream.get_records('OMEGA') + \
+                model.control_stream.get_records('SIGMA'):
             current_names = omega_record.eta_map.keys()
             if removed >= current_names:
                 remove_records.append(omega_record)
@@ -90,7 +92,11 @@ def update_random_variables(model, old, new):
                 rv_name = rv.name.upper()
                 omega = model.parameters[omega_name]
 
-                record, eta_number = create_omega_record(model, omega)
+                if rv.variability_level == VariabilityLevel.RUV:
+                    record = 'SIGMA'
+                else:
+                    record = 'OMEGA'
+                record, eta_number = create_omega_record(model, omega, record)
 
                 record.name_map[omega_name] = (eta_number, eta_number)
                 record.eta_map[rv_name] = eta_number
@@ -109,13 +115,13 @@ def get_next_theta(model):
     return next_theta
 
 
-def get_next_eta(model):
+def get_next_eta(model, record='OMEGA'):
     """ Find the next available eta number
     """
     next_omega = 1
     previous_size = None
 
-    for omega_record in model.control_stream.get_records('OMEGA'):
+    for omega_record in model.control_stream.get_records(record):
         _, next_omega, previous_size = omega_record.parameters(next_omega, previous_size)
 
     return next_omega, previous_size
@@ -137,16 +143,16 @@ def create_theta_record(model, param):
     if param.fix:
         param_str += ' FIX'
     param_str += '\n'
-    record = model.control_stream.insert_record(param_str, 'THETA')
+    record = model.control_stream.insert_record(param_str)
     return record
 
 
-def create_omega_record(model, param):
-    eta_number, previous_size = get_next_eta(model)
+def create_omega_record(model, param, record='OMEGA'):
+    eta_number, previous_size = get_next_eta(model, record)
 
-    param_str = f'$OMEGA  {param.init}\n'
+    param_str = f'${record}  {param.init}\n'
 
-    record = model.control_stream.insert_record(param_str, 'OMEGA')
+    record = model.control_stream.insert_record(param_str)
 
     record.parameters(eta_number, previous_size)
     record.random_variables(eta_number)
@@ -165,9 +171,9 @@ def update_ode_system(model, old, new):
         subs.remove_option_startswith('ADVAN')
         subs.append_option('ADVAN6')
         subs.append_option('TOL', 3)
-        des = model.control_stream.insert_record('$DES\nDUMMY=0', 'PK')
+        des = model.control_stream.insert_record('$DES\nDUMMY=0')
         des.from_odes(new)
-        mod = model.control_stream.insert_record('$MODEL\n', 'SUBROUTINES')
+        mod = model.control_stream.insert_record('$MODEL\n')
         for eq, ic in zip(new.odes[:-1], list(new.ics.keys())[:-1]):
             name = eq.lhs.args[0].name[2:]
             if new.ics[ic] != 0:

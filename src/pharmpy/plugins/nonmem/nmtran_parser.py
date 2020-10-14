@@ -24,6 +24,10 @@ class NMTranParser:
         return stream
 
 
+default_record_order = ['SUBROUTINES', 'MODEL', 'PK', 'PRED', 'DES', 'ERROR', 'THETA', 'OMEGA',
+                        'SIGMA']
+
+
 class NMTranControlStream:
     """Representation of a parsed control stream (model file)
     """
@@ -50,21 +54,40 @@ class NMTranControlStream:
         self.records.append(record)
         return record
 
-    def insert_record(self, content, rec_type):
-        """Create and insert a new record before a record with given type
-        """
-        current_problem = -1
-        index = 0
+    def insert_record(self, content):
+        """Create and insert a new record at the correct position
 
-        for record in self.records:
-            if record.name == 'PROBLEM':
-                current_problem += 1
-            if current_problem == self._active_problem and record.name == rec_type:
-                index = self.records.index(record)
+           If the record type is already present the new record will be put
+           directly after the last record of that type.
+           If no record of the type is present the new record will be put
+           given the default record order.
+        """
 
         record = create_record(content)
-        self.records.insert(index + 1, record)
+        name = record.name
 
+        current_problem = -1
+        index = None
+        for i, currec in enumerate(self.records):
+            if currec.name == 'PROBLEM':
+                current_problem += 1
+            if current_problem == self._active_problem and currec.name == name:
+                index = i
+
+        if index is None:
+            try:
+                default_order_index = default_record_order.index(name)
+                before_records = default_record_order[0:default_order_index]
+            except ValueError:
+                before_records = []
+            current_problem = -1
+            for i, currec in enumerate(self.records):
+                if currec.name == 'PROBLEM':
+                    current_problem += 1
+                if current_problem == self._active_problem and currec.name in before_records:
+                    index = i
+
+        self.records.insert(index + 1, record)
         return record
 
     def remove_records(self, records):
