@@ -350,3 +350,43 @@ The new etas need to be denoted as *eta_new*.
 
    model.update_source()
    print_model_diff(model_ref, model)
+
+
+~~~~~~~~~~~~~~~
+The error model 
+~~~~~~~~~~~~~~~
+
+.. jupyter-execute::
+   :hide-output:
+
+   model = Model(path / "pheno.mod")
+
+Removing the error model
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. warning::
+   Removing all epsilons might lead to a model that isn't runnable.
+
+.. jupyter-execute::
+
+   from pharmpy.modeling import error_model
+   
+   error_model(model, 'none')
+   model.update_source()
+   print_model_diff(model_ref, model)
+
+Setting an additive error model
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. jupyter-execute::
+   :hide-output:
+
+   model = Model(path / "pheno.mod")
+
+.. jupyter-execute::
+
+   from pharmpy.modeling import error_model
+   
+   error_model(model, 'additive')
+   model.update_source()
+   print_model_diff(model_ref, model)
