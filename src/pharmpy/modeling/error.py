@@ -12,7 +12,7 @@ def error_model(model, error_model):
     model
         Set error model for this model
     error_model
-        'none' or 'additive'
+        'none', 'additive' or 'proportional'
     """
     stats = model.statements
     y = model.dependent_variable_symbol
@@ -24,6 +24,20 @@ def error_model(model, error_model):
     elif error_model == 'additive':
         ruv = model.create_symbol('RUV')
         expr = f + ruv
+        stats.reassign(y, expr)
+        model.remove_unused_parameters_and_rvs()
+
+        # FIXME: Refactor to model.add_parameter
+        sigma = model.create_symbol('sigma')
+        sigma_par = Parameter(sigma.name, init=0.1)
+        model.parameters.add(sigma_par)
+
+        eps = sympy.stats.Normal(ruv.name, 0, sympy.sqrt(sigma))
+        eps.variability_level = VariabilityLevel.RUV
+        model.random_variables.add(eps)
+    elif error_model == 'proportional':
+        ruv = model.create_symbol('RUV')
+        expr = f + f * ruv
         stats.reassign(y, expr)
         model.remove_unused_parameters_and_rvs()
 

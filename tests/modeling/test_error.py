@@ -15,3 +15,11 @@ def test_additive_error_model(testdata):
     model.update_source()
     assert(str(model).split('\n')[11] == 'Y = EPS(1) + F')
     assert(str(model).split('\n')[17] == '$SIGMA  0.1 ; sigma')
+
+
+def test_proportional_error_model(testdata):
+    model = Model(testdata / 'nonmem' / 'pheno.mod')
+    error_model(model, 'proportional')
+    model.update_source()
+    assert(str(model).split('\n')[11] == 'Y=F+F*EPS(1)')
+    assert(str(model).split('\n')[17] == '$SIGMA  0.1 ; sigma')
