@@ -391,8 +391,8 @@ Setting an additive error model
    model.update_source()
    print_model_diff(model_ref, model)
 
-Setting a proportinal error model
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Setting a proportional error model
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. jupyter-execute::
    :hide-output:
@@ -404,5 +404,21 @@ Setting a proportinal error model
    from pharmpy.modeling import error_model
    
    error_model(model, 'proportional')
+   model.update_source()
+   print_model_diff(model_ref, model)
+
+Setting a combined additive and proportional error model
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. jupyter-execute::
+   :hide-output:
+
+   model = Model(path / "pheno.mod")
+
+.. jupyter-execute::
+
+   from pharmpy.modeling import error_model
+   
+   error_model(model, 'combined')
    model.update_source()
    print_model_diff(model_ref, model)
