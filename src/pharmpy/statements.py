@@ -205,18 +205,23 @@ class CompartmentalSystem(ODESystem):
         self._g.add_edge(source, destination, rate=rate)
 
     def get_flow(self, source, destination):
-        return self._g.edges[source, destination]['rate']
+        try:
+            rate = self._g.edges[source, destination]['rate']
+        except KeyError:
+            rate = None
+        return rate
 
     def get_compartment_flows(self, compartment, out=True):
-        """Generate all flows going out or in to a compartment
+        """Generate all flows going out of or in to a compartment
         """
         flows = []
-        for node in self._g.neighbors(compartment):
-            if out:
+        if out:
+            for node in self._g.successors(compartment):
                 flow = self.get_flow(compartment, node)
-            else:
+                flows.append((node, flow))
+        else:
+            for node in self._g.predecessors(compartment):
                 flow = self.get_flow(node, compartment)
-            if flow is not None:
                 flows.append((node, flow))
         return flows
 
@@ -228,6 +233,11 @@ class CompartmentalSystem(ODESystem):
             return None
 
     def find_output(self):
+        """ Find the output compartment
+
+            An output compartment is defined to be a compartment that does not have any outward
+            flow. A model has to have one and only one output compartment.
+        """
         zeroout = [node for node, out_degree in self._g.out_degree() if out_degree == 0]
         if len(zeroout) == 1:
             return zeroout[0]
@@ -235,11 +245,21 @@ class CompartmentalSystem(ODESystem):
             raise ValueError('More than one or zero output compartments')
 
     def find_dosing(self):
+        """ Find the dosing compartment
+
+            A dosing compartment is a compartment that receives an input dose. Only one dose
+            compartment is supported.
+        """
         for node in self._g.nodes:
             if node.dose is not None:
                 return node
 
     def find_central(self):
+        """ Find the central compartment
+
+            The central compartment is defined to be the compartment that has an outward flow
+            to the output compartment. Only one central compartment is supported.
+        """
         output = self.find_output()
         central = next(self._g.predecessors(output))
         return central
@@ -252,12 +272,24 @@ class CompartmentalSystem(ODESystem):
         return list(peripherals)
 
     def find_depot(self):
+        """ Find the depot compartment
+
+            The depot compartment is defined to be the compartment that only has out flow to the
+            central compartment, but no flow from the central compartment.
+        """
         central = self.find_central()
-        zeroin = [node for node, in_degree in self._g.in_degree() if in_degree == 0]
-        if len(zeroin) == 1 and zeroin[0] != central:
-            return zeroin[0]
-        else:
-            return None
+        depot = None
+        for to_central, _ in self.get_compartment_flows(central, out=False):
+            outflows = self.get_compartment_flows(to_central, out=True)
+            if len(outflows) == 1:
+                inflows = self.get_compartment_flows(to_central, out=False)
+                for in_comp, _ in inflows:
+                    if in_comp == central:
+                        break
+                else:
+                    depot = to_central
+                    break
+        return depot
 
     @property
     def compartmental_matrix(self):
