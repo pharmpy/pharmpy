@@ -124,3 +124,35 @@ def test_reassign():
     s = ModelStatements([s1, s2, s3, s4, s5])
     s.reassign(S('KA'), S('F'))
     assert s == ModelStatements([s1, s2, s3, Assignment('KA', S('F'))])
+
+
+def test_find_central(testdata):
+    model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan2.mod')
+    assert model.statements.ode_system.find_central().name == 'CENTRAL'
+    model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan5_nodepot.mod')
+    assert model.statements.ode_system.find_central().name == 'CENTRAL'
+
+
+def test_find_depot(testdata):
+    model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan2.mod')
+    assert model.statements.ode_system.find_depot().name == 'DEPOT'
+    model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan1.mod')
+    assert model.statements.ode_system.find_depot() is None
+    model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan5_depot.mod')
+    assert model.statements.ode_system.find_depot().name == 'DEPOT'
+    model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan5_nodepot.mod')
+    assert model.statements.ode_system.find_depot() is None
+
+
+def test_find_transit_compartments(testdata):
+    model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan2.mod')
+    assert model.statements.ode_system.find_transit_compartments(model.statements) == []
+    model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_1transit.mod')
+    transits = model.statements.ode_system.find_transit_compartments(model.statements)
+    assert len(transits) == 1
+    assert transits[0].name == 'TRANS1'
+    model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_2transits.mod')
+    transits = model.statements.ode_system.find_transit_compartments(model.statements)
+    assert len(transits) == 2
+    assert transits[0].name == 'TRANS1'
+    assert transits[1].name == 'TRANS2'

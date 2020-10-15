@@ -203,7 +203,7 @@ def update_ode_system(model, old, new):
             advan = subs.get_option_startswith('ADVAN')
             trans = subs.get_option_startswith('TRANS')
             statements = model.statements
-            comp, rate = new.get_compartment_flows(new.find_depot(), out=True)[0]
+            comp, rate = new.get_compartment_outflows(new.find_depot())[0]
             ass = Assignment('KA', rate)
             statements.add_before_odes(ass)
             new.add_flow(new.find_depot(), comp, ass.symbol)

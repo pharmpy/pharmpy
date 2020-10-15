@@ -211,18 +211,22 @@ class CompartmentalSystem(ODESystem):
             rate = None
         return rate
 
-    def get_compartment_flows(self, compartment, out=True):
-        """Generate all flows going out of or in to a compartment
+    def get_compartment_outflows(self, compartment):
+        """Generate all flows going out of a compartment
         """
         flows = []
-        if out:
-            for node in self._g.successors(compartment):
-                flow = self.get_flow(compartment, node)
-                flows.append((node, flow))
-        else:
-            for node in self._g.predecessors(compartment):
-                flow = self.get_flow(node, compartment)
-                flows.append((node, flow))
+        for node in self._g.successors(compartment):
+            flow = self.get_flow(compartment, node)
+            flows.append((node, flow))
+        return flows
+
+    def get_compartment_inflows(self, compartment):
+        """Generate all flows going in to a compartment
+        """
+        flows = []
+        for node in self._g.predecessors(compartment):
+            flow = self.get_flow(node, compartment)
+            flows.append((node, flow))
         return flows
 
     def find_compartment(self, name):
@@ -271,6 +275,43 @@ class CompartmentalSystem(ODESystem):
         peripherals = (oneout & onein) - {central}
         return list(peripherals)
 
+    def find_transit_compartments(self, statements):
+        """ Find all transit compartments
+
+            Transit compartments are a chain of compartments with the same out rate starting from
+            the dose compartment. Because one single transit compartment cannot be distinguished
+            from one depot compartment such compartment will be defined to be a depot and not
+            a transit compartment.
+        """
+        transits = []
+        comp = self.find_dosing()
+        if len(self.get_compartment_inflows(comp)) != 0:
+            return transits
+        outflows = self.get_compartment_outflows(comp)
+        if len(outflows) != 1:
+            return transits
+        transits.append(comp)
+        comp, rate = outflows[0]
+        rate = statements.full_expression_from_odes(rate)
+        while True:
+            if len(self.get_compartment_inflows(comp)) != 1:
+                break
+            outflows = self.get_compartment_outflows(comp)
+            if len(outflows) != 1:
+                break
+            next_comp, next_rate = outflows[0]
+            next_rate = statements.full_expression_from_odes(next_rate)
+            if rate != next_rate:
+                break
+            transits.append(comp)
+            comp = next_comp
+        # Special case of one transit directly into central is not defined as a transit
+        central = self.find_central()
+        if len(transits) == 1 and self.get_flow(transits[0], central) is not None:
+            return []
+        else:
+            return transits
+
     def find_depot(self):
         """ Find the depot compartment
 
@@ -279,10 +320,10 @@ class CompartmentalSystem(ODESystem):
         """
         central = self.find_central()
         depot = None
-        for to_central, _ in self.get_compartment_flows(central, out=False):
-            outflows = self.get_compartment_flows(to_central, out=True)
+        for to_central, _ in self.get_compartment_inflows(central):
+            outflows = self.get_compartment_outflows(to_central)
             if len(outflows) == 1:
-                inflows = self.get_compartment_flows(to_central, out=False)
+                inflows = self.get_compartment_inflows(to_central)
                 for in_comp, _ in inflows:
                     if in_comp == central:
                         break
@@ -652,6 +693,22 @@ class ModelStatements(list):
             if isinstance(s, ODESystem):
                 return s
         return None
+
+    def _ode_index(self):
+        for i, s in enumerate(self):
+            if isinstance(s, ODESystem):
+                return i
+        return None
+
+    def full_expression_from_odes(self, expression):
+        """ Expand an expression into its full definition
+
+            Before ODE system
+        """
+        i = self._ode_index()
+        for j in range(i - 1, -1, -1):
+            expression = expression.subs({self[j].symbol: self[j].expression})
+        return expression
 
     def add_before_odes(self, statement):
         """Add a statement just before the ODE system

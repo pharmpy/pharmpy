@@ -70,7 +70,7 @@ def absorption_rate(model, rate):
     depot = odes.find_depot()
     if rate == 'bolus':
         if depot:
-            to_comp, _ = odes.get_compartment_flows(depot)[0]
+            to_comp, _ = odes.get_compartment_outflows(depot)[0]
             to_comp.dose = depot.dose
             ka = odes.get_flow(depot, odes.find_central())
             odes.remove_compartment(depot)
@@ -89,7 +89,7 @@ def absorption_rate(model, rate):
         symbols = dose_comp.free_symbols
         dose = dose_comp.dose
         if depot:
-            to_comp, _ = odes.get_compartment_flows(depot)[0]
+            to_comp, _ = odes.get_compartment_outflows(depot)[0]
             ka = odes.get_flow(depot, odes.find_central())
             odes.remove_compartment(depot)
             symbols |= ka.free_symbols
