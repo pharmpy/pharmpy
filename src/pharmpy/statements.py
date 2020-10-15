@@ -306,8 +306,10 @@ class CompartmentalSystem(ODESystem):
             transits.append(comp)
             comp = next_comp
         # Special case of one transit directly into central is not defined as a transit
+        # Also not central itself
         central = self.find_central()
-        if len(transits) == 1 and self.get_flow(transits[0], central) is not None:
+        if len(transits) == 1 and (self.get_flow(transits[0], central) is not None or
+                                   transits[0] == central):
             return []
         else:
             return transits

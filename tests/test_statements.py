@@ -145,6 +145,8 @@ def test_find_depot(testdata):
 
 
 def test_find_transit_compartments(testdata):
+    model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan1.mod')
+    assert model.statements.ode_system.find_transit_compartments(model.statements) == []
     model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan2.mod')
     assert model.statements.ode_system.find_transit_compartments(model.statements) == []
     model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_1transit.mod')

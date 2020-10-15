@@ -6,7 +6,66 @@ from pyfakefs.fake_filesystem_unittest import Patcher
 
 from pharmpy import Model
 from pharmpy.modeling import (absorption_rate, add_covariate_effect, add_etas, add_lag_time, boxcox,
-                              explicit_odes, john_draper, remove_lag_time, tdist)
+                              explicit_odes, john_draper, remove_lag_time, set_transit_compartments,
+                              tdist)
+
+
+def test_transit_compartments(testdata):
+    model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan1.mod')
+    set_transit_compartments(model, 0)
+    transits = model.statements.ode_system.find_transit_compartments(model.statements)
+    assert len(transits) == 0
+    model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_2transits.mod')
+    set_transit_compartments(model, 1)
+    transits = model.statements.ode_system.find_transit_compartments(model.statements)
+    assert len(transits) == 1
+    model.update_source()
+    correct = '''$PROBLEM PHENOBARB SIMPLE MODEL
+$DATA ../pheno.dta IGNORE=@
+$INPUT ID TIME AMT WGT APGR DV FA1 FA2
+$SUBROUTINE ADVAN5 TRANS1
+$MODEL COMP=(TRANS2 DEFDOSE) COMP=(DEPOT) COMP=(CENTRAL) COMP=(PERIPHERAL)
+
+$PK
+IF(AMT.GT.0) BTIME=TIME
+TAD=TIME-BTIME
+TVCL=THETA(1)*WGT
+TVV=THETA(2)*WGT
+IF(APGR.LT.5) TVV=TVV*(1+THETA(3))
+CL=TVCL*EXP(ETA(1))
+V=TVV*EXP(ETA(2))
+K23 = THETA(6)
+K30 = CL/V
+K34 = THETA(4)
+K43 = THETA(5)
+K12 = THETA(7)
+S3 = V
+
+$ERROR
+W=F
+Y=F+W*EPS(1)
+IPRED=F
+IRES=DV-IPRED
+IWRES=IRES/W
+
+$THETA (0,0.00469307) ; CL
+$THETA (0,1.00916) ; V
+$THETA (-.99,.1)
+$THETA (0,10)
+$THETA (0,10)
+$THETA (1,10)
+$THETA (1,10)
+$OMEGA DIAGONAL(2)
+ 0.0309626  ;       IVCL
+ 0.031128  ;        IVV
+
+$SIGMA 1e-7
+$ESTIMATION METHOD=1 INTERACTION
+$COVARIANCE UNCONDITIONAL
+$TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
+       NOPRINT ONEHEADER FILE=sdtab1
+'''
+    assert str(model) == correct
 
 
 def test_lag_time(testdata):

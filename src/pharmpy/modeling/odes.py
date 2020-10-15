@@ -19,6 +19,38 @@ def explicit_odes(model):
     return model
 
 
+def set_transit_compartments(model, n):
+    """Set the number of transit compartments of model
+    """
+    statements = model.statements
+    odes = statements.ode_system
+    transits = odes.find_transit_compartments(statements)
+    if len(transits) == n:
+        pass
+    elif len(transits) == 0:
+        # FIXME
+        pass
+    elif len(transits) > n:
+        nremove = len(transits) - n
+        comp = odes.find_dosing()
+        dose = comp.dose
+        removed_symbols = set()
+        while nremove > 0:
+            to_comp, to_flow = odes.get_compartment_outflows(comp)[0]
+            odes.remove_compartment(comp)
+            removed_symbols |= to_flow.free_symbols
+            comp = to_comp
+            nremove -= 1
+        comp.dose = dose
+        statements.remove_symbol_definitions(removed_symbols, odes)
+        model.remove_unused_parameters_and_rvs()
+    else:
+        # FIXME
+        pass
+
+    return model
+
+
 def add_lag_time(model):
     """Add lag time to the dose compartment of model
     """

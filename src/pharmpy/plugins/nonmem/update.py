@@ -197,11 +197,13 @@ def update_ode_system(model, old, new):
             df = model.dataset
             df.drop(columns=['RATE'], inplace=True)
             model.dataset = df
+        subs = model.control_stream.get_records('SUBROUTINES')[0]
+        advan = subs.get_option_startswith('ADVAN')
+        trans = subs.get_option_startswith('TRANS')
+        if advan == 'ADVAN5' or advan == 'ADVAN7':
+            remove_compartments(model, old, new)
         if not old.find_depot() and new.find_depot():
             # Depot was added
-            subs = model.control_stream.get_records('SUBROUTINES')[0]
-            advan = subs.get_option_startswith('ADVAN')
-            trans = subs.get_option_startswith('TRANS')
             statements = model.statements
             comp, rate = new.get_compartment_outflows(new.find_depot())[0]
             ass = Assignment('KA', rate)
@@ -248,9 +250,6 @@ def update_ode_system(model, old, new):
                 statements.subs({'D2': 'D1'})
         elif old.find_depot() and not new.find_depot():
             # Depot was removed
-            subs = model.control_stream.get_records('SUBROUTINES')[0]
-            advan = subs.get_option_startswith('ADVAN')
-            trans = subs.get_option_startswith('TRANS')
             statements = model.statements
             if advan == 'ADVAN2':
                 subs.replace_option('ADVAN2', 'ADVAN1')
@@ -279,18 +278,6 @@ def update_ode_system(model, old, new):
                                      symbol('V4'): symbol('V3')})
                 elif trans == 'TRANS6':
                     statements.subs({symbol('K42'): symbol('K31'), symbol('K32'): symbol('K21')})
-            elif advan == 'ADVAN5' or advan == 'ADVAN7':
-                model_record = model.control_stream.get_records('MODEL')[0]
-                removed = set(old.names) - set(new.names)
-                removed_name = list(removed)[0]     # Assume only one!
-                dose_comp = new.find_dosing()
-                model_record.set_dosing(dose_comp.name)
-                n = model_record.get_compartment_number(removed_name)
-                model_record.remove_compartment(removed_name)
-                primary = primary_pk_param_conversion_map(len(old), n)
-                statements.subs(primary)
-                secondary = secondary_pk_param_conversion_map(len(old), n)
-                statements.subs(secondary)
         if isinstance(new.find_dosing().dose, Infusion) and \
                 isinstance(old.find_dosing().dose, Bolus):
             dose = new.find_dosing().dose
@@ -396,3 +383,26 @@ def update_lag_time(model, old, new):
         ass = Assignment('ALAG1', new_lag_time)
         model.statements.add_before_odes(ass)
         new_dosing.lag_time = ass.symbol
+
+
+def remove_compartments(model, old, new):
+    """Remove compartments
+
+       Supports ADVAN5 and ADVAN6
+    """
+    model_record = model.control_stream.get_records('MODEL')[0]
+    removed = set(old.names) - set(new.names)
+
+    # Check if dosing was removed
+    dose_comp = old.find_dosing()
+    if dose_comp.name in removed:
+        model_record.set_dosing(new.find_dosing().name)
+
+    statements = model.statements
+    for removed_name in removed:
+        n = model_record.get_compartment_number(removed_name)
+        model_record.remove_compartment(removed_name)
+        primary = primary_pk_param_conversion_map(len(old), n)
+        statements.subs(primary)
+        secondary = secondary_pk_param_conversion_map(len(old), n)
+        statements.subs(secondary)
