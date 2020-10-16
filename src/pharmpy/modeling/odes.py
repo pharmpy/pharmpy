@@ -45,9 +45,17 @@ def set_transit_compartments(model, n):
         statements.remove_symbol_definitions(removed_symbols, odes)
         model.remove_unused_parameters_and_rvs()
     else:
-        # FIXME
-        pass
-
+        nadd = n - len(transits)
+        comp = odes.find_dosing()
+        dose = comp.dose
+        _, rate = odes.get_compartment_outflows(comp)[0]
+        comp.dose = None
+        while nadd > 0:
+            new_comp = odes.add_compartment(f'TRANSIT{len(transits) + nadd}')
+            nadd -= 1
+            odes.add_flow(new_comp, comp, rate)
+            comp = new_comp
+        comp.dose = dose
     return model
 
 

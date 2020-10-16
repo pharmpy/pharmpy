@@ -202,6 +202,7 @@ def update_ode_system(model, old, new):
         trans = subs.get_option_startswith('TRANS')
         if advan == 'ADVAN5' or advan == 'ADVAN7':
             remove_compartments(model, old, new)
+            add_compartments(model, old, new)
         if not old.find_depot() and new.find_depot():
             # Depot was added
             statements = model.statements
@@ -241,7 +242,7 @@ def update_ode_system(model, old, new):
                 added = set(new.names) - set(old.names)
                 added_name = list(added)[0]     # Assume only one!
                 model_record.add_compartment(added_name, dosing=True)
-                primary = primary_pk_param_conversion_map(len(old), 1, removed=True)
+                primary = primary_pk_param_conversion_map(len(old), 1)
                 statements.subs(primary)
                 secondary = secondary_pk_param_conversion_map(len(old), 1, removed=True)
                 statements.subs(secondary)
@@ -386,9 +387,7 @@ def update_lag_time(model, old, new):
 
 
 def remove_compartments(model, old, new):
-    """Remove compartments
-
-       Supports ADVAN5 and ADVAN6
+    """Remove compartments for ADVAN5 and ADVAN7
     """
     model_record = model.control_stream.get_records('MODEL')[0]
     removed = set(old.names) - set(new.names)
@@ -406,3 +405,19 @@ def remove_compartments(model, old, new):
         statements.subs(primary)
         secondary = secondary_pk_param_conversion_map(len(old), n)
         statements.subs(secondary)
+
+
+def add_compartments(model, old, new):
+    """ Add compartments for ADVAN5 and ADVAN7
+    """
+    model_record = model.control_stream.get_records('MODEL')[0]
+    added = set(new.names) - set(old.names)
+    statements = model.statements
+    for added_name in added:
+        model_record.add_compartment(added_name)
+        primary = primary_pk_param_conversion_map(len(old), 1)
+        statements.subs(primary)
+        secondary = secondary_pk_param_conversion_map(len(old), 1, removed=True)
+        statements.subs(secondary)
+    if added:
+        model_record.set_dosing(added_name)

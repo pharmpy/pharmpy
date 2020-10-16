@@ -126,6 +126,7 @@ def psn_bootstrap_results(path):
     results = [m.modelfit_results for m in models if m.modelfit_results is not None]
     if not results:
         raise FileNotFoundError("No model results available in m1")
+    print("QQ: ", cmd_line_model_path(path))
     base_model = Model(cmd_line_model_path(path))
 
     incinds = pd.read_csv(path / 'included_individuals1.csv', header=None).values.tolist()

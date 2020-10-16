@@ -67,6 +67,62 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
 '''
     assert str(model) == correct
 
+    model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_2transits.mod')
+    set_transit_compartments(model, 4)
+    transits = model.statements.ode_system.find_transit_compartments(model.statements)
+    assert len(transits) == 4
+    model.update_source()
+    correct = '''$PROBLEM PHENOBARB SIMPLE MODEL
+$DATA ../pheno.dta IGNORE=@
+$INPUT ID TIME AMT WGT APGR DV FA1 FA2
+$SUBROUTINE ADVAN5 TRANS1
+$MODEL COMP=(TRANS4 DEFDOSE) COMP=(TRANS3)  COMP=(TRANS1) COMP=(TRANS2) COMP=(DEPOT)
+       COMP=(CENTRAL) COMP=(PERIPHERAL)
+
+$PK
+IF(AMT.GT.0) BTIME=TIME
+TAD=TIME-BTIME
+TVCL=THETA(1)*WGT
+TVV=THETA(2)*WGT
+IF(APGR.LT.5) TVV=TVV*(1+THETA(3))
+CL=TVCL*EXP(ETA(1))
+V=TVV*EXP(ETA(2))
+K56 = THETA(6)
+K60 = CL/V
+K66 = THETA(4)
+K65 = THETA(5)
+K34 = THETA(7)
+K45 = THETA(7)
+S6 = V
+K12 = THETA(7)
+K23 = THETA(7)
+
+$ERROR
+W=F
+Y=F+W*EPS(1)
+IPRED=F
+IRES=DV-IPRED
+IWRES=IRES/W
+
+$THETA (0,0.00469307) ; CL
+$THETA (0,1.00916) ; V
+$THETA (-.99,.1)
+$THETA (0,10)
+$THETA (0,10)
+$THETA (1,10)
+$THETA (1,10)
+$OMEGA DIAGONAL(2)
+ 0.0309626  ;       IVCL
+ 0.031128  ;        IVV
+
+$SIGMA 1e-7
+$ESTIMATION METHOD=1 INTERACTION
+$COVARIANCE UNCONDITIONAL
+$TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
+       NOPRINT ONEHEADER FILE=sdtab1
+'''
+    # assert str(model) == correct
+
 
 def test_lag_time(testdata):
     model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan1.mod')
