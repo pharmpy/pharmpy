@@ -58,6 +58,7 @@ import pathlib
 import pydoc
 import sys
 import types
+import warnings
 from collections import OrderedDict, namedtuple
 from textwrap import dedent
 
@@ -102,6 +103,13 @@ iterators = LazyLoader('iterators', globals(), 'pharmpy.data.iterators')
 plugin_utils = LazyLoader('plugin_utils', globals(), 'pharmpy.plugins.utils')
 
 formatter = argparse.ArgumentDefaultsHelpFormatter
+
+
+def warnings_formatter(message, *args, **kwargs):
+    return f'Warning: {message}\n'
+
+
+warnings.formatwarning = warnings_formatter
 
 
 def error(exception):
