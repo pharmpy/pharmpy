@@ -1,3 +1,4 @@
+import warnings
 from pathlib import Path
 
 import numpy as np
@@ -58,7 +59,14 @@ class BootstrapResults(Results):
 
 def calculate_results(bootstrap_models, original_model, included_individuals=None):
     results = [m.modelfit_results for m in bootstrap_models if m.modelfit_results is not None]
-    original_results = original_model.modelfit_results
+    if original_model:
+        original_results = original_model.modelfit_results
+    else:
+        original_results = None
+
+    if original_results is None:
+        warnings.warn('No results for the base model could be read. Cannot calculate bias and '
+                      'base_ofv')
 
     df = pd.DataFrame()
     for res in results:
@@ -85,19 +93,24 @@ def calculate_results(bootstrap_models, original_model, included_individuals=Non
     boot_ofvs = [x.ofv for x in results]
     ofvs = pd.Series(boot_ofvs, name='ofv')
     ofvs = pd.DataFrame(ofvs)
-    if original_model and included_individuals:
+    if original_results and included_individuals:
         ofvs['base_ofv'] = np.nan
-        base_iofv = original_model.modelfit_results.individual_ofv
+        base_iofv = original_results.individual_ofv
         for i, included in enumerate(included_individuals):
             base_ofv = base_iofv[included].sum()
             ofvs.at[i, 'base_ofv'] = base_ofv
 
     ofv_dist = create_distribution(ofvs)
 
+    if original_results is not None:
+        base_ofv = original_results.ofv
+    else:
+        base_ofv = None
+
     res = BootstrapResults(covariance_matrix=covariance_matrix, parameter_statistics=statistics,
                            parameter_distribution=distribution, ofv_distribution=ofv_dist,
                            included_individuals=included_individuals, ofvs=ofvs,
-                           base_ofv=original_model.modelfit_results.ofv,
+                           base_ofv=base_ofv,
                            parameter_estimates=parameter_estimates)
 
     return res
@@ -126,7 +139,6 @@ def psn_bootstrap_results(path):
     results = [m.modelfit_results for m in models if m.modelfit_results is not None]
     if not results:
         raise FileNotFoundError("No model results available in m1")
-    print("QQ: ", cmd_line_model_path(path))
     base_model = Model(cmd_line_model_path(path))
 
     incinds = pd.read_csv(path / 'included_individuals1.csv', header=None).values.tolist()
