@@ -472,8 +472,16 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
     def _read_phi_table(self):
         if not self._read_phi:
             self._load()
+            for result_obj in self:
+                result_obj._individual_ofv = None
+                result_obj._individual_estimates = None
+                result_obj._individual_estimates_covariance = None
+
             rv_names = [rv.name for rv in self.model.random_variables if rv.name.startswith('ETA')]
-            phi_tables = NONMEMTableFile(self._path.with_suffix('.phi'))
+            try:
+                phi_tables = NONMEMTableFile(self._path.with_suffix('.phi'))
+            except FileNotFoundError:
+                return
             for result_obj in self:
                 table = phi_tables.table_no(result_obj.table_number)
                 if table is not None:
@@ -483,8 +491,4 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
                     for index, cov in covs.iteritems():     # Remove ETCs for 0 FIX OMEGAs
                         covs[index] = cov[rv_names].loc[rv_names]
                     result_obj._individual_estimates_covariance = covs
-                else:
-                    result_obj._individual_ofv = None
-                    result_obj._individual_estimates = None
-                    result_obj._individual_estimates_covariance = None
             self._read_phi = True

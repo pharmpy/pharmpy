@@ -27,10 +27,10 @@ Parameter estimates correlation
 
    res.plot_parameter_estimates_correlation()
 
-Delta OFV vs original model
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Estimated degrees of freedom
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. altair-plot::
    :hide-code:
 
-   res.plot_base_ofv()
+   res.plot_dofv_quantiles()

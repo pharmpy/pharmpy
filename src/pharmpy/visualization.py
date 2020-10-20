@@ -25,6 +25,25 @@ _chart_width = 500
 _chart_height = 500
 
 
+def pharmpy_theme():
+    return {
+        'config': {
+            'axis': {
+                'labelFontSize': 11,
+                'titleFontSize': 13,
+                    },
+            'legend': {
+                'labelFontSize': 12,
+                'titleFontSize': 13,
+            },
+            }
+        }
+
+
+alt.themes.register('pharmpy', pharmpy_theme)
+alt.themes.enable('pharmpy')
+
+
 def scatter_plot_correlation(df, x, y, title=""):
     chart = alt.Chart(df, width=_chart_width, height=_chart_height).mark_circle(size=100).encode(
         alt.X(x),
@@ -88,12 +107,14 @@ def line_plot(df, x, title='', xlabel='', ylabel='', legend_title=''):
     plot = alt.Chart(df).mark_line().encode(
         alt.X(f'{x}:Q', title=xlabel),
         alt.Y('value:Q', title=ylabel),
-        color=alt.Color('variable:N', legend=alt.Legend(title=legend_title))
+        color=alt.Color('variable:N', legend=alt.Legend(title=legend_title, orient='top-left',
+                                                        fillColor='#EEEEEE', padding=10,
+                                                        cornerRadius=10))
     ).properties(
-        title='OFV original model - OFV bootstrap model',
+        title=title,
         width=800,
         height=300,
-    )
+    ).configure_legend(labelLimit=0)
     return plot
 
 

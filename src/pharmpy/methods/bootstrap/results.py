@@ -8,7 +8,7 @@ import scipy.stats
 import pharmpy.visualization
 from pharmpy.methods.psn_helpers import cmd_line_model_path, model_paths
 from pharmpy.model_factory import Model
-from pharmpy.results import Results
+from pharmpy.results import ModelfitResults, Results
 
 
 class BootstrapResults(Results):
@@ -16,39 +16,48 @@ class BootstrapResults(Results):
 
     # FIXME: Should inherit from results that take multiple runs like bootstrap, cdd etc.
     def __init__(self, parameter_statistics=None, parameter_distribution=None,
-                 covariance_matrix=None, ofv_distribution=None, included_individuals=None,
-                 ofvs=None, base_ofv=None, parameter_estimates=None):
+                 covariance_matrix=None, ofv_distribution=None, ofv_statistics=None,
+                 included_individuals=None, ofvs=None, parameter_estimates=None):
         self.parameter_statistics = parameter_statistics
         self.parameter_distribution = parameter_distribution
         self.covariance_matrix = covariance_matrix
         self.ofv_distribution = ofv_distribution
+        self.ofv_statistics = ofv_statistics
         self.included_individuals = included_individuals
         self.ofvs = ofvs
-        self.base_ofv = base_ofv
         self.parameter_estimates = parameter_estimates
 
     def add_plots(self):
         self.ofv_plot = self.plot_ofv()
         self.parameter_estimates_correlation_plot = self.plot_parameter_estimates_correlation()
-        self.base_ofv_plot = self.plot_base_ofv()
+        self.dofv_quantiles_plot = self.plot_dofv_quantiles()
 
     def plot_ofv(self):
-        plot = pharmpy.visualization.histogram(self.ofvs['ofv'], title='Bootstrap OFV')
+        plot = pharmpy.visualization.histogram(self.ofvs['bootstrap_bootdata_ofv'],
+                                               title='Bootstrap OFV')
         return plot
 
-    def plot_base_ofv(self):
+    def plot_dofv_quantiles(self):
         ofvs = self.ofvs
-        dofvs = ofvs['base_ofv'] - ofvs['ofv']
-        dofvs.sort_values(inplace=True)
+        dofvs = ofvs['delta_bootdata'].sort_values().reset_index(drop=True)
+        dofvs_boot_base = ofvs['delta_origdata'].sort_values().reset_index(drop=True)
         quantiles = np.linspace(0.0, 1.0, num=len(dofvs))
         degrees = len(self.parameter_distribution)
         chi2_dist = scipy.stats.chi2(df=degrees)
         chi2 = chi2_dist.ppf(quantiles)
-        df = pd.DataFrame({'Bootstrap': dofvs, 'quantiles': quantiles,
-                           f'Reference χ²({degrees})': chi2})
+        degrees_dofvs = self.ofv_statistics['mean']['delta_bootdata']
+        degrees_boot_base = self.ofv_statistics['mean']['delta_origdata']
+        df_dict = {'quantiles': quantiles, f'Reference χ²({degrees})': chi2}
+        if not np.isnan(degrees_dofvs):
+            df_dict[('Original model OFV - Bootstrap model OFV (both using bootstrap datasets)',
+                     f'Estimated df = {degrees_dofvs:.2f}')] = dofvs
+        if not np.isnan(degrees_boot_base):
+            df_dict[('Bootstrap model OFV - Original model OFV (both using original dataset)',
+                     f'Estimated df = {degrees_boot_base:.2f}')] = dofvs_boot_base
+        df = pd.DataFrame(df_dict)
         plot = pharmpy.visualization.line_plot(df, 'quantiles', xlabel='Distribution quantiles',
                                                ylabel='dOFV', legend_title='Distribution',
-                                               title='OFV original model - OFV bootstrap model')
+                                               title='dOFV quantiles')
         return plot
 
     def plot_parameter_estimates_correlation(self):
@@ -57,7 +66,8 @@ class BootstrapResults(Results):
         return plot
 
 
-def calculate_results(bootstrap_models, original_model, included_individuals=None):
+def calculate_results(bootstrap_models, original_model, included_individuals=None,
+                      dofv_results=None):
     results = [m.modelfit_results for m in bootstrap_models if m.modelfit_results is not None]
     if original_model:
         original_results = original_model.modelfit_results
@@ -66,7 +76,7 @@ def calculate_results(bootstrap_models, original_model, included_individuals=Non
 
     if original_results is None:
         warnings.warn('No results for the base model could be read. Cannot calculate bias and '
-                      'base_ofv')
+                      'original_bootdata_ofv')
 
     df = pd.DataFrame()
     for res in results:
@@ -91,27 +101,42 @@ def calculate_results(bootstrap_models, original_model, included_individuals=Non
     distribution = create_distribution(df)
 
     boot_ofvs = [x.ofv for x in results]
-    ofvs = pd.Series(boot_ofvs, name='ofv')
+    ofvs = pd.Series(boot_ofvs, name='bootstrap_bootdata_ofv')
     ofvs = pd.DataFrame(ofvs)
-    if original_results and included_individuals:
-        ofvs['base_ofv'] = np.nan
+    ofvs['original_bootdata_ofv'] = np.nan
+    ofvs['bootstrap_origdata_ofv'] = np.nan
+    if original_results:
         base_iofv = original_results.individual_ofv
-        for i, included in enumerate(included_individuals):
-            base_ofv = base_iofv[included].sum()
-            ofvs.at[i, 'base_ofv'] = base_ofv
+        if included_individuals and base_iofv is not None:
+            for i, included in enumerate(included_individuals):
+                base_ofv = base_iofv[included].sum()
+                ofvs.at[i, 'original_bootdata_ofv'] = base_ofv
 
-    ofv_dist = create_distribution(ofvs)
+    if dofv_results is not None:
+        for i, res in enumerate(dofv_results):
+            if res is not None:
+                ofvs.at[i, 'bootstrap_origdata_ofv'] = res.ofv
 
     if original_results is not None:
         base_ofv = original_results.ofv
-    else:
-        base_ofv = None
+        ofvs['original_origdata_ofv'] = base_ofv
+
+    ofvs['delta_bootdata'] = ofvs['original_bootdata_ofv'] - ofvs['bootstrap_bootdata_ofv']
+
+    if original_results is not None:
+        ofvs['delta_origdata'] = ofvs['bootstrap_origdata_ofv'] - base_ofv
+
+    with warnings.catch_warnings():
+        warnings.filterwarnings('ignore', r'All-NaN slice encountered')
+        warnings.filterwarnings('ignore', 'Mean of empty slice')
+        ofv_dist = create_distribution(ofvs)
+        ofv_stats = pd.DataFrame({'mean': ofvs.mean(), 'median': ofvs.median(),
+                                  'stderr': ofvs.std()})
 
     res = BootstrapResults(covariance_matrix=covariance_matrix, parameter_statistics=statistics,
                            parameter_distribution=distribution, ofv_distribution=ofv_dist,
-                           included_individuals=included_individuals, ofvs=ofvs,
-                           base_ofv=base_ofv,
-                           parameter_estimates=parameter_estimates)
+                           ofv_statistics=ofv_stats, included_individuals=included_individuals,
+                           ofvs=ofvs, parameter_estimates=parameter_estimates)
 
     return res
 
@@ -141,6 +166,24 @@ def psn_bootstrap_results(path):
         raise FileNotFoundError("No model results available in m1")
     base_model = Model(cmd_line_model_path(path))
 
+    # Read dOFV results in NONMEM specific way. Models have multiple $PROBLEM
+    # Create proper result objects to pass to calculate_results
+    dofv_results = None
+    if (path / 'm1' / 'dofv_1.mod').is_file():
+        from pharmpy.plugins.nonmem.table import NONMEMTableFile
+        dofv_results = []
+        for table_path in (path / 'm1').glob('dofv_*.ext'):
+            table_file = NONMEMTableFile(table_path)
+            next_table = 1
+            for table in table_file:
+                while next_table != table.number:
+                    dofv_results.append(None)
+                    next_table += 1
+                res = ModelfitResults(ofv=table.final_ofv)
+                dofv_results.append(res)
+                next_table += 1
+
     incinds = pd.read_csv(path / 'included_individuals1.csv', header=None).values.tolist()
-    res = calculate_results(models, base_model, included_individuals=incinds)
+    res = calculate_results(models, base_model, included_individuals=incinds,
+                            dofv_results=dofv_results)
     return res

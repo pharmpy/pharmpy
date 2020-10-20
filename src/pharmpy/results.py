@@ -203,12 +203,15 @@ class ModelfitResults:
     """
 
     def __init__(self, ofv=None, parameter_estimates=None, covariance_matrix=None,
-                 standard_errors=None, minimization_successful=None):
+                 standard_errors=None, minimization_successful=None, individual_ofv=None,
+                 individual_estimates=None):
         self._ofv = ofv
         self._parameter_estimates = parameter_estimates
         self._covariance_matrix = covariance_matrix
         self._standard_errors = standard_errors
         self._minimization_successful = minimization_successful
+        self._individual_estimates = individual_estimates
+        self._individual_ofv = individual_ofv
 
     def reparameterize(self, parameterizations):
         """Reparametrize all parameters given a list of parametrization object
@@ -323,7 +326,7 @@ class ModelfitResults:
     def individual_ofv(self):
         """A Series with individual estimates indexed over ID
         """
-        raise NotImplementedError("Not implemented")
+        return self._individual_ofv
 
     @property
     def individual_estimates(self):
@@ -331,7 +334,7 @@ class ModelfitResults:
 
            A DataFrame with ID as index one column for each individual parameter
         """
-        raise NotImplementedError("Not implemented")
+        return self._individual_estimates
 
     @property
     def individual_estimates_covariance(self):
