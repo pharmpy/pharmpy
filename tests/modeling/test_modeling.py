@@ -850,16 +850,16 @@ def test_john_draper(pheno_path, etas, etad, buf_new):
     assert str(model.get_pred_pk_record()) == rec_ref
 
 
-@pytest.mark.parametrize(
-    'parameter, expression, operation, buf_new',
-    [
-        ('S1', 'exp', '+', 'V=TVV*EXP(ETA(2))\n' 'S1 = V + EXP(ETA(3))'),
-        ('S1', 'exp', '*', 'V=TVV*EXP(ETA(2))\n' 'S1 = V*EXP(ETA(3))'),
-        ('V', 'exp', '+', 'V = TVV*EXP(ETA(2)) + EXP(ETA(3))\n' 'S1=V'),
-        ('S1', 'eta_new', '+', 'V=TVV*EXP(ETA(2))\n' 'S1 = ETA(3) + V'),
-        ('S1', 'eta_new**2', '+', 'V=TVV*EXP(ETA(2))\n' 'S1 = ETA(3)**2 + V'),
-    ],
-)
+@pytest.mark.parametrize('parameter, expression, operation, buf_new', [
+    ('S1', 'exp', '+', 'V=TVV*EXP(ETA(2))\nS1 = V + EXP(ETA(3))'),
+    ('S1', 'exp', '*', 'V=TVV*EXP(ETA(2))\nS1 = V*EXP(ETA(3))'),
+    ('V', 'exp', '+', 'V = TVV*EXP(ETA(2)) + EXP(ETA(3))\nS1=V'),
+    ('S1', 'add', None, 'V=TVV*EXP(ETA(2))\nS1 = ETA(3) + V'),
+    ('S1', 'prop', None, 'V=TVV*EXP(ETA(2))\nS1 = ETA(3)*V'),
+    ('S1', 'log', None, 'V=TVV*EXP(ETA(2))\nS1 = V*EXP(ETA(3))/(EXP(ETA(3)) + 1)'),
+    ('S1', 'eta_new', '+', 'V=TVV*EXP(ETA(2))\nS1 = ETA(3) + V'),
+    ('S1', 'eta_new**2', '+', 'V=TVV*EXP(ETA(2))\nS1 = ETA(3)**2 + V'),
+])
 def test_add_etas(pheno_path, parameter, expression, operation, buf_new):
     model = Model(pheno_path)
 

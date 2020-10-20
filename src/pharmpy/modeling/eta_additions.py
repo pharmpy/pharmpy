@@ -53,6 +53,12 @@ def _create_template(expression, operation):
     operation_func = _get_operation_func(operation)
     if expression == 'exp':
         return EtaAddition.exponential(operation_func)
+    elif expression == 'add':
+        return EtaAddition.additive()
+    elif expression == 'prop':
+        return EtaAddition.proportional()
+    elif expression == 'log':
+        return EtaAddition.logit()
     else:
         expression = sympy.sympify(f'original {operation} {expression}')
         return EtaAddition(expression)
@@ -86,7 +92,25 @@ class EtaAddition:
         self.template = self.template.subs({'original': original, 'eta_new': eta})
 
     @classmethod
+    def additive(cls):
+        template = S('original') + S('eta_new')
+
+        return cls(template)
+
+    @classmethod
+    def proportional(cls):
+        template = S('original') * S('eta_new')
+
+        return cls(template)
+
+    @classmethod
     def exponential(cls, operation):
         template = operation(S('original'), sympy.exp(S('eta_new')))
+
+        return cls(template)
+
+    @classmethod
+    def logit(cls):
+        template = S('original') * (sympy.exp(S('eta_new'))/(1 + sympy.exp(S('eta_new'))))
 
         return cls(template)
