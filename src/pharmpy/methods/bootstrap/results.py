@@ -127,6 +127,7 @@ def calculate_results(bootstrap_models, original_model, included_individuals=Non
         ofvs['delta_origdata'] = ofvs['bootstrap_origdata_ofv'] - base_ofv
 
     with warnings.catch_warnings():
+        # Catch numpy warnings beause of NaN in ofvs
         warnings.filterwarnings('ignore', r'All-NaN slice encountered')
         warnings.filterwarnings('ignore', 'Mean of empty slice')
         ofv_dist = create_distribution(ofvs)
