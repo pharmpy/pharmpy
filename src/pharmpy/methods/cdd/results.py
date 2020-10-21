@@ -164,7 +164,10 @@ def psn_cdd_skipped_individuals(path):
 
     with open(path) as skipped:
         # rows may have different number of values, cannot use pd.read_csv
-        return [row.rstrip().split(',') for row in skipped]
+        a = [row.rstrip().split(',') for row in skipped]
+    # If scientific notation convert to proper integer. Only supports integer IDs
+    a = [[str(int(float(elt))) for elt in row] for row in a]
+    return a
 
 
 def psn_cdd_results(path):
