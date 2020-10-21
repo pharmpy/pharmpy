@@ -59,6 +59,7 @@ class ThetaRecord(Record):
             for i in range(0, n):
                 name = None
                 import pharmpy.plugins.nonmem as nonmem
+
                 if nonmem.conf.parameter_names == 'comment':
                     # needed to avoid circular import with Python 3.6
                     found = False
@@ -85,8 +86,7 @@ class ThetaRecord(Record):
         return pset
 
     def _multiple(self, theta):
-        """Return the multiple (xn) of a theta or 1 if no multiple
-        """
+        """Return the multiple (xn) of a theta or 1 if no multiple"""
         multiple = theta.find('n')
         if multiple:
             n = multiple.INT
@@ -141,8 +141,7 @@ class ThetaRecord(Record):
         self.root.children = keep
 
     def __len__(self):
-        """Number of thetas in this record
-        """
+        """Number of thetas in this record"""
         tot = 0
         for theta in self.root.all('theta'):
             tot += self._multiple(theta)

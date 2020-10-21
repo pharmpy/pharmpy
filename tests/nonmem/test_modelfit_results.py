@@ -15,21 +15,29 @@ def test_ofv(pheno_lst):
 def test_tool_files(pheno_lst):
     res = NONMEMChainedModelfitResults(pheno_lst)
     names = [str(p.name) for p in res.tool_files]
-    assert names == ['pheno_real.lst', 'pheno_real.ext', 'pheno_real.cov', 'pheno_real.cor',
-                     'pheno_real.coi', 'pheno_real.phi']
+    assert names == [
+        'pheno_real.lst',
+        'pheno_real.ext',
+        'pheno_real.cov',
+        'pheno_real.cor',
+        'pheno_real.coi',
+        'pheno_real.phi',
+    ]
 
 
 def test_condition_number(testdata, pheno_lst):
     res = NONMEMChainedModelfitResults(pheno_lst)
     assert res.condition_number == pytest.approx(4.39152)
 
-    maxeval3 = Model(testdata / 'nonmem' / 'modelfit_results' / 'onePROB' /
-                     'oneEST' / 'noSIM' / 'maxeval3.mod')
+    maxeval3 = Model(
+        testdata / 'nonmem' / 'modelfit_results' / 'onePROB' / 'oneEST' / 'noSIM' / 'maxeval3.mod'
+    )
 
-    assert maxeval3.modelfit_results.condition_number == 4.77532E+06
+    assert maxeval3.modelfit_results.condition_number == 4.77532e06
 
-    maxeval0 = Model(testdata / 'nonmem' / 'modelfit_results' / 'onePROB' /
-                     'oneEST' / 'noSIM' / 'maxeval0.mod')
+    maxeval0 = Model(
+        testdata / 'nonmem' / 'modelfit_results' / 'onePROB' / 'oneEST' / 'noSIM' / 'maxeval0.mod'
+    )
     assert maxeval0.modelfit_results.condition_number is None
 
 
@@ -44,34 +52,54 @@ def test_sumo(testdata):
 def test_special_models(testdata):
     onePROB = testdata / 'nonmem' / 'modelfit_results' / 'onePROB'
     withBayes = Model(onePROB / 'multEST' / 'noSIM' / 'withBayes.mod')
-    assert pytest.approx(withBayes.modelfit_results.standard_errors['THETA(1)'], 1e-13) \
-        == 2.51942E+00
-    assert pytest.approx(withBayes.modelfit_results[0].standard_errors['THETA(1)'], 1e-13) \
-        == 3.76048E-01
+    assert (
+        pytest.approx(withBayes.modelfit_results.standard_errors['THETA(1)'], 1e-13) == 2.51942e00
+    )
+    assert (
+        pytest.approx(withBayes.modelfit_results[0].standard_errors['THETA(1)'], 1e-13)
+        == 3.76048e-01
+    )
     assert withBayes.modelfit_results[0].minimization_successful is False
     assert withBayes.modelfit_results[1].minimization_successful is False
-    assert withBayes.modelfit_results[0].covariance_step == {'requested': True,
-                                                             'completed': True,
-                                                             'warnings': False}
-    assert withBayes.modelfit_results.covariance_step == {'requested': True,
-                                                          'completed': True,
-                                                          'warnings': False}
+    assert withBayes.modelfit_results[0].covariance_step == {
+        'requested': True,
+        'completed': True,
+        'warnings': False,
+    }
+    assert withBayes.modelfit_results.covariance_step == {
+        'requested': True,
+        'completed': True,
+        'warnings': False,
+    }
 
     maxeval0 = Model(onePROB / 'oneEST' / 'noSIM' / 'maxeval0.mod')
     assert maxeval0.modelfit_results.minimization_successful is None
 
     maxeval3 = Model(onePROB / 'oneEST' / 'noSIM' / 'maxeval3.mod')
     assert maxeval3.modelfit_results.minimization_successful is False
-    assert maxeval3.modelfit_results.covariance_step == {'requested': True,
-                                                         'completed': True,
-                                                         'warnings': True}
+    assert maxeval3.modelfit_results.covariance_step == {
+        'requested': True,
+        'completed': True,
+        'warnings': True,
+    }
 
     nearbound = Model(onePROB / 'oneEST' / 'noSIM' / 'near_bounds.mod')
-    correct = pd.Series([False,  True, False, False, False, False, False, False,  True,
-                         True, False],
-                        index=['THETA(1)', 'THETA(2)', 'THETA(3)', 'THETA(4)', 'OMEGA(1,1)',
-                               'OMEGA(2,1)', 'OMEGA(2,2)', 'OMEGA(3,3)', 'OMEGA(4,4)', 'OMEGA(6,6)',
-                               'SIGMA(1,1)'])
+    correct = pd.Series(
+        [False, True, False, False, False, False, False, False, True, True, False],
+        index=[
+            'THETA(1)',
+            'THETA(2)',
+            'THETA(3)',
+            'THETA(4)',
+            'OMEGA(1,1)',
+            'OMEGA(2,1)',
+            'OMEGA(2,2)',
+            'OMEGA(3,3)',
+            'OMEGA(4,4)',
+            'OMEGA(6,6)',
+            'SIGMA(1,1)',
+        ],
+    )
     pd.testing.assert_series_equal(nearbound.modelfit_results.near_bounds(), correct)
 
 
@@ -80,14 +108,14 @@ def test_covariance(pheno_path):
         res = Model(pheno_path).modelfit_results
         cov = res.covariance_matrix
         assert len(cov) == 6
-        assert pytest.approx(cov.loc['THETA(1)', 'THETA(1)'], 1e-13) == 4.41151E-08
-        assert pytest.approx(cov.loc['OMEGA(2,2)', 'THETA(2)'], 1e-13) == 7.17184E-05
+        assert pytest.approx(cov.loc['THETA(1)', 'THETA(1)'], 1e-13) == 4.41151e-08
+        assert pytest.approx(cov.loc['OMEGA(2,2)', 'THETA(2)'], 1e-13) == 7.17184e-05
     with ConfigurationContext(nonmem.conf, parameter_names='comment'):
         res = Model(pheno_path).modelfit_results
         cov = res.covariance_matrix
         assert len(cov) == 6
-        assert pytest.approx(cov.loc['PTVCL', 'PTVCL'], 1e-13) == 4.41151E-08
-        assert pytest.approx(cov.loc['IVV', 'PTVV'], 1e-13) == 7.17184E-05
+        assert pytest.approx(cov.loc['PTVCL', 'PTVCL'], 1e-13) == 4.41151e-08
+        assert pytest.approx(cov.loc['IVV', 'PTVV'], 1e-13) == 7.17184e-05
 
 
 def test_information(pheno_path):
@@ -95,14 +123,14 @@ def test_information(pheno_path):
         res = Model(pheno_path).modelfit_results
         m = res.information_matrix
         assert len(m) == 6
-        assert pytest.approx(m.loc['THETA(1)', 'THETA(1)'], 1e-13) == 2.99556E+07
-        assert pytest.approx(m.loc['OMEGA(2,2)', 'THETA(2)'], 1e-13) == -2.80082E+03
+        assert pytest.approx(m.loc['THETA(1)', 'THETA(1)'], 1e-13) == 2.99556e07
+        assert pytest.approx(m.loc['OMEGA(2,2)', 'THETA(2)'], 1e-13) == -2.80082e03
     with ConfigurationContext(nonmem.conf, parameter_names='comment'):
         res = Model(pheno_path).modelfit_results
         m = res.information_matrix
         assert len(m) == 6
-        assert pytest.approx(m.loc['PTVCL', 'PTVCL'], 1e-13) == 2.99556E+07
-        assert pytest.approx(m.loc['IVV', 'PTVV'], 1e-13) == -2.80082E+03
+        assert pytest.approx(m.loc['PTVCL', 'PTVCL'], 1e-13) == 2.99556e07
+        assert pytest.approx(m.loc['IVV', 'PTVV'], 1e-13) == -2.80082e03
 
 
 def test_correlation(pheno_path):
@@ -111,13 +139,13 @@ def test_correlation(pheno_path):
         corr = res.correlation_matrix
         assert len(corr) == 6
         assert corr.loc['THETA(1)', 'THETA(1)'] == 1.0
-        assert pytest.approx(corr.loc['OMEGA(2,2)', 'THETA(2)'], 1e-13) == 3.56662E-01
+        assert pytest.approx(corr.loc['OMEGA(2,2)', 'THETA(2)'], 1e-13) == 3.56662e-01
     with ConfigurationContext(nonmem.conf, parameter_names='comment'):
         res = Model(pheno_path).modelfit_results
         corr = res.correlation_matrix
         assert len(corr) == 6
         assert corr.loc['PTVCL', 'PTVV'] == 0.00709865
-        assert pytest.approx(corr.loc['IVV', 'PTVV'], 1e-13) == 3.56662E-01
+        assert pytest.approx(corr.loc['IVV', 'PTVV'], 1e-13) == 3.56662e-01
 
 
 def test_standard_errors(pheno_path):
@@ -125,12 +153,12 @@ def test_standard_errors(pheno_path):
         res = Model(pheno_path).modelfit_results
         ses = res.standard_errors
         assert len(ses) == 6
-        assert pytest.approx(ses['THETA(1)'], 1e-13) == 2.10036E-04
+        assert pytest.approx(ses['THETA(1)'], 1e-13) == 2.10036e-04
     with ConfigurationContext(nonmem.conf, parameter_names='comment'):
         res = Model(pheno_path).modelfit_results
         ses = res.standard_errors
         assert len(ses) == 6
-        assert pytest.approx(ses['PTVCL'], 1e-13) == 2.10036E-04
+        assert pytest.approx(ses['PTVCL'], 1e-13) == 2.10036e-04
 
 
 def test_individual_ofv(pheno, pheno_lst):
@@ -149,7 +177,7 @@ def test_individual_estimates(pheno, pheno_lst):
     assert pytest.approx(ie['ETA(1)'][1], 1e-15) == -0.0438608
     assert pytest.approx(ie['ETA(2)'][1], 1e-15) == 0.00543031
     assert pytest.approx(ie['ETA(1)'][28], 1e-15) == 7.75957e-04
-    assert pytest.approx(ie['ETA(2)'][28], 1e-15) == 8.32311E-02
+    assert pytest.approx(ie['ETA(2)'][28], 1e-15) == 8.32311e-02
 
 
 def test_individual_shrinkage(pheno, pheno_lst):
@@ -163,12 +191,12 @@ def test_eta_shrinkage(pheno, pheno_lst):
     res = NONMEMChainedModelfitResults(pheno_lst, model=pheno)
     shrinkage = res.eta_shrinkage()
     assert len(shrinkage) == 2
-    assert pytest.approx(shrinkage['ETA(1)'], 0.0001) == 7.2048E+01 / 100
-    assert pytest.approx(shrinkage['ETA(2)'], 0.0001) == 2.4030E+01 / 100
+    assert pytest.approx(shrinkage['ETA(1)'], 0.0001) == 7.2048e01 / 100
+    assert pytest.approx(shrinkage['ETA(2)'], 0.0001) == 2.4030e01 / 100
     shrinkage = res.eta_shrinkage(sd=True)
     assert len(shrinkage) == 2
-    assert pytest.approx(shrinkage['ETA(1)'], 0.0001) == 4.7130E+01 / 100
-    assert pytest.approx(shrinkage['ETA(2)'], 0.0001) == 1.2839E+01 / 100
+    assert pytest.approx(shrinkage['ETA(1)'], 0.0001) == 4.7130e01 / 100
+    assert pytest.approx(shrinkage['ETA(2)'], 0.0001) == 1.2839e01 / 100
 
 
 def test_individual_estimates_covariance(pheno, pheno_lst):
@@ -176,11 +204,13 @@ def test_individual_estimates_covariance(pheno, pheno_lst):
     cov = res.individual_estimates_covariance
     assert len(cov) == 59
     names = ['ETA(1)', 'ETA(2)']
-    correct = pd.DataFrame([[2.48833E-02, -2.99920E-03], [-2.99920E-03, 7.15713E-03]],
-                           index=names, columns=names)
+    correct = pd.DataFrame(
+        [[2.48833e-02, -2.99920e-03], [-2.99920e-03, 7.15713e-03]], index=names, columns=names
+    )
     pd.testing.assert_frame_equal(cov[1], correct)
-    correct2 = pd.DataFrame([[2.93487E-02, -1.95747E-04], [-1.95747E-04, 8.94118E-03]],
-                            index=names, columns=names)
+    correct2 = pd.DataFrame(
+        [[2.93487e-02, -1.95747e-04], [-1.95747e-04, 8.94118e-03]], index=names, columns=names
+    )
     pd.testing.assert_frame_equal(cov[43], correct2)
 
 

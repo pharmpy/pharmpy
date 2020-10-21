@@ -9,8 +9,8 @@ import pharmpy.math
 
 
 class NONMEMTableFile:
-    '''A NONMEM table file that can contain multiple tables
-    '''
+    """A NONMEM table file that can contain multiple tables"""
+
     def __init__(self, path=None, tables=None):
         if path is not None:
             path = Path(path)
@@ -42,15 +42,18 @@ class NONMEMTableFile:
         elif suffix == '.cov' or suffix == '.cor' or suffix == '.coi':
             table = CovTable(''.join(content))
         else:
-            table = NONMEMTable(''.join(content))       # Fallback to non-specific table type
-        m = re.match(r'TABLE NO.\s+(\d+)', table_line)   # This is guaranteed to match
+            table = NONMEMTable(''.join(content))  # Fallback to non-specific table type
+        m = re.match(r'TABLE NO.\s+(\d+)', table_line)  # This is guaranteed to match
         table.number = int(m.group(1))
         table.is_evaluation = False
         if re.search(r'(Evaluation)', table_line):
             table.is_evaluation = True  # No estimation step was run
-        m = re.match(r'TABLE NO.\s+\d+: (.*?): (?:Goal Function=(.*): )?Problem=(\d+) '
-                     r'Subproblem=(\d+) Superproblem1=(\d+) Iteration1=(\d+) Superproblem2=(\d+) '
-                     r'Iteration2=(\d+)', table_line)
+        m = re.match(
+            r'TABLE NO.\s+\d+: (.*?): (?:Goal Function=(.*): )?Problem=(\d+) '
+            r'Subproblem=(\d+) Superproblem1=(\d+) Iteration1=(\d+) Superproblem2=(\d+) '
+            r'Iteration2=(\d+)',
+            table_line,
+        )
         if m:
             table.method = m.group(1)
             table.goal_function = m.group(2)
@@ -66,12 +69,18 @@ class NONMEMTableFile:
         return len(self.tables)
 
     @property
-    def table(self, problem=1, subproblem=0, superproblem1=0, iteration1=0, superproblem2=0,
-              iteration2=0):
+    def table(
+        self, problem=1, subproblem=0, superproblem1=0, iteration1=0, superproblem2=0, iteration2=0
+    ):
         for t in self.tables:
-            if t.problem == problem and t.subproblem == subproblem and \
-                    t.superproblem1 == superproblem1 and t.iteration1 == iteration1 and \
-                    t.superproblem2 == superproblem2 and t.iteration2 == iteration2:
+            if (
+                t.problem == problem
+                and t.subproblem == subproblem
+                and t.superproblem1 == superproblem1
+                and t.iteration1 == iteration1
+                and t.superproblem2 == superproblem2
+                and t.iteration2 == iteration2
+            ):
                 return t
 
     def table_no(self, table_number=1):
@@ -95,8 +104,8 @@ class NONMEMTableFile:
 
 
 class NONMEMTable:
-    '''A NONMEM output table.
-    '''
+    """A NONMEM output table."""
+
     def __init__(self, content=None, df=None):
         if content is not None:
             self._df = pd.read_table(StringIO(content), sep=r'\s+', engine='python')
@@ -109,8 +118,7 @@ class NONMEMTable:
 
     @staticmethod
     def rename_index(df, ext=True):
-        """ If columns rename also the row index
-        """
+        """If columns rename also the row index"""
         theta_labels = [x for x in df.columns if x.startswith('THETA')]
         omega_labels = [x for x in df.columns if x.startswith('OMEGA')]
         sigma_labels = [x for x in df.columns if x.startswith('SIGMA')]
@@ -133,7 +141,7 @@ class CovTable(NONMEMTable):
         df.set_index('NAME', inplace=True)
         df.index.name = None
         df = NONMEMTable.rename_index(df, ext=False)
-        df = df.loc[(df != 0).any(axis=1), (df != 0).any(axis=0)]     # Remove FIX
+        df = df.loc[(df != 0).any(axis=1), (df != 0).any(axis=0)]  # Remove FIX
         return df
 
 
@@ -161,8 +169,10 @@ class PhiTable(NONMEMTable):
         etc_col_names = [col for col in df if col.startswith('ETC')]
         vals = df[etc_col_names].values
         matrix_array = [pharmpy.math.flattened_to_symmetric(x) for x in vals]
-        etc_frames = [pd.DataFrame(matrix, columns=eta_col_names, index=eta_col_names)
-                      for matrix in matrix_array]
+        etc_frames = [
+            pd.DataFrame(matrix, columns=eta_col_names, index=eta_col_names)
+            for matrix in matrix_array
+        ]
         etcs = pd.Series(etc_frames, index=df['ID'])
         return etcs
 
@@ -206,45 +216,40 @@ class ExtTable(NONMEMTable):
 
     @property
     def final_parameter_estimates(self):
-        '''Get the final parameter estimates as a Series
-           A specific parameter estimate can be retreived as
-           final_parameter_estimates['THETA1']
-        '''
+        """Get the final parameter estimates as a Series
+        A specific parameter estimate can be retreived as
+        final_parameter_estimates['THETA1']
+        """
         ser = self._get_parameters(-1000000000)
         ser.name = 'estimates'
         return ser
 
     @property
     def standard_errors(self):
-        '''Get the standard errors of the parameter estimates as a Series
-        '''
+        """Get the standard errors of the parameter estimates as a Series"""
         ser = self._get_parameters(-1000000001)
         ser.name = 'SE'
         return ser
 
     @property
     def condition_number(self):
-        '''Get the condition number of the correlation matrix
-        '''
+        """Get the condition number of the correlation matrix"""
         ser = self._get_parameters(-1000000003)
         return ser.values[0]
 
     @property
     def omega_sigma_stdcorr(self):
-        '''Get the omegas and sigmas in standard deviation/correlation form
-        '''
+        """Get the omegas and sigmas in standard deviation/correlation form"""
         return self._get_parameters(-1000000004, include_thetas=False)
 
     @property
     def omega_sigma_se_stdcorr(self):
-        '''The standard error of the omegas and sigmas in stdcorr form
-        '''
+        """The standard error of the omegas and sigmas in stdcorr form"""
         return self._get_parameters(-1000000005, include_thetas=False)
 
     @property
     def fixed(self):
-        '''What parameters were fixed?
-        '''
+        """What parameters were fixed?"""
         fix = self._get_parameters(-1000000006)
         return fix.apply(bool)
 

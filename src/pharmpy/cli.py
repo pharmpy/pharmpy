@@ -66,11 +66,12 @@ from textwrap import dedent
 class LazyLoader(types.ModuleType):
     """Class that masquerades as a module and lazily loads it when accessed the first time
 
-       The code for the class is taken from TensorFlow and is under the Apache 2.0 license
+    The code for the class is taken from TensorFlow and is under the Apache 2.0 license
 
-       This is needed for the cli to be able to do things as version and help quicker than
-       if all modules were imported.
+    This is needed for the cli to be able to do things as version and help quicker than
+    if all modules were imported.
     """
+
     def __init__(self, local_name, parent_module_globals, name):
         self._local_name = local_name
         self._parent_module_globals = parent_module_globals
@@ -117,6 +118,7 @@ def error(exception):
 
     Used for non-recoverables in CLI. Exceptions giving traceback are bugs!
     """
+
     def exc_only_hook(exception_type, exception, traceback):
         print(f'{exception_type.__name__}: {exception}')
 
@@ -142,7 +144,7 @@ def format_keyval_pairs(data_dict, sort=True, right_just=False):
     for key, values in data_dict.items():
         if isinstance(values, str):
             values = values.splitlines()
-        keys = [key] + ['']*(len(values) - 1)
+        keys = [key] + [''] * (len(values) - 1)
         for k, v in zip(keys, values):
             lines += [line_format % (k, v)]
 
@@ -151,6 +153,7 @@ def format_keyval_pairs(data_dict, sort=True, right_just=False):
 
 def run_execute(args):
     import pharmpy.methods.modelfit as modelfit
+
     modelfit.run(args.models)
 
 
@@ -170,8 +173,7 @@ def data_write(args):
 
 
 def data_print(args):
-    """Subcommand to print a dataset to stdout via pager
-    """
+    """Subcommand to print a dataset to stdout via pager"""
     try:
         df = args.model_or_dataset.dataset
     except AttributeError:
@@ -214,8 +216,7 @@ def data_append(args):
 
 
 def write_model_or_dataset(model_or_dataset, new_df, path, force):
-    """Write model or dataset to output_path or using default names
-    """
+    """Write model or dataset to output_path or using default names"""
     if hasattr(model_or_dataset, 'pharmpy'):
         # Is a dataset
         try:
@@ -223,8 +224,11 @@ def write_model_or_dataset(model_or_dataset, new_df, path, force):
             path = new_df.pharmpy.write_csv(path=path, force=force)
             print(f'Dataset written to {path}')
         except FileExistsError as e:
-            error(exception=FileExistsError(f'{e.args[0]} Use -f  or --force to '
-                                            'force an overwrite'))
+            error(
+                exception=FileExistsError(
+                    f'{e.args[0]} Use -f  or --force to ' 'force an overwrite'
+                )
+            )
     else:
         # Is a model
         model = model_or_dataset
@@ -239,17 +243,20 @@ def write_model_or_dataset(model_or_dataset, new_df, path, force):
                 model.bump_model_number()
                 model.write(force=force)
         except FileExistsError as e:
-            error(FileExistsError(f'{e.args[0]} Use -f or --force to '
-                                  'force an overwrite'))
+            error(FileExistsError(f'{e.args[0]} Use -f or --force to ' 'force an overwrite'))
 
 
 def data_resample(args):
     """Subcommand to resample a dataset."""
     resampler = iterators.Resample(
-            args.model_or_dataset, args.group,
-            resamples=args.resamples, stratify=args.stratify, replace=args.replace,
-            sample_size=args.sample_size,
-            name_pattern=f'{args.model_or_dataset.name}_resample_{{}}')
+        args.model_or_dataset,
+        args.group,
+        resamples=args.resamples,
+        stratify=args.stratify,
+        replace=args.replace,
+        sample_size=args.sample_size,
+        name_pattern=f'{args.model_or_dataset.name}_resample_{{}}',
+    )
     for resampled_obj, _ in resampler:
         try:
             try:
@@ -262,9 +269,9 @@ def data_resample(args):
 
 def data_anonymize(args):
     """Subcommand to anonymize a dataset
-       anonymization is really a special resample case where the specified group
-       (usually the ID) is given new random unique values and reordering.
-       Will be default try to overwrite original file (but won't unless force)
+    anonymization is really a special resample case where the specified group
+    (usually the ID) is given new random unique values and reordering.
+    Will be default try to overwrite original file (but won't unless force)
     """
     path = check_input_path(args.dataset)
     dataset = pharmpy.data.read_csv(path, raw=True, parse_columns=[args.group])
@@ -281,9 +288,11 @@ def info(args):
     """Subcommand to print Pharmpy info (and brag a little bit)."""
 
     Install = namedtuple('VersionInfo', ['version', 'authors', 'directory'])
-    inst = Install(pharmpy.__version__,
-                   'A list of authors can be found in the AUTHORS.rst',
-                   str(pathlib.Path(pharmpy.__file__).parent))
+    inst = Install(
+        pharmpy.__version__,
+        'A list of authors can be found in the AUTHORS.rst',
+        str(pathlib.Path(pharmpy.__file__).parent),
+    )
 
     lines = format_keyval_pairs(inst._asdict(), right_just=True)
     print('\n'.join(lines))
@@ -295,8 +304,9 @@ def model_print(args):
     for i, model in enumerate(args.models):
         if args.explicit_odes:
             from pharmpy.modeling import explicit_odes
+
             explicit_odes(model)
-        lines += ['[%d/%d] %r' % (i+1, len(args.models), model.name)]
+        lines += ['[%d/%d] %r' % (i + 1, len(args.models), model.name)]
         dict_ = OrderedDict()
         try:
             dict_['dataset'] = repr(model.dataset)
@@ -319,6 +329,7 @@ def model_print(args):
 def model_sample(args):
     model = args.model
     from pharmpy.parameter_sampling import sample_from_covariance_matrix
+
     samples = sample_from_covariance_matrix(model, n=args.samples)
     for row, params in samples.iterrows():
         model.parameters = params
@@ -338,6 +349,7 @@ def add_covariate_effect(args):
 
 def model_explicit_odes(args):
     from pharmpy.modeling import explicit_odes
+
     model = args.model
     explicit_odes(model)
     write_model_or_dataset(model, None, path=args.output_file, force=args.force)
@@ -345,6 +357,7 @@ def model_explicit_odes(args):
 
 def model_absorption_rate(args):
     from pharmpy.modeling import absorption_rate
+
     model = args.model
     absorption_rate(model, order=args.order)
     write_model_or_dataset(model, None, path=args.output_file, force=args.force)
@@ -352,6 +365,7 @@ def model_absorption_rate(args):
 
 def model_error(args):
     from pharmpy.modeling import error_model
+
     model = args.model
     error_model(model, args.error_type)
     write_model_or_dataset(model, None, path=args.output_file, force=args.force)
@@ -412,6 +426,7 @@ def add_etas(args):
 def results_bootstrap(args):
     """Subcommand to generate bootstrap results"""
     from pharmpy.methods.bootstrap.results import psn_bootstrap_results
+
     if not args.psn_dir.is_dir():
         error(FileNotFoundError(str(args.psn_dir)))
     try:
@@ -424,6 +439,7 @@ def results_bootstrap(args):
 
 def results_cdd(args):
     from pharmpy.methods.cdd.results import psn_cdd_results
+
     if not args.psn_dir.is_dir():
         error(FileNotFoundError(str(args.psn_dir)))
     res = psn_cdd_results(args.psn_dir)
@@ -434,11 +450,15 @@ def results_cdd(args):
 def results_frem(args):
     """Generate frem results"""
     from pharmpy.methods.frem.results import psn_frem_results
+
     if not args.psn_dir.is_dir():
         error(FileNotFoundError(str(args.psn_dir)))
-    res = psn_frem_results(args.psn_dir, method=args.method,
-                           force_posdef_covmatrix=args.force_posdef_covmatrix,
-                           force_posdef_samples=args.force_posdef_samples)
+    res = psn_frem_results(
+        args.psn_dir,
+        method=args.method,
+        force_posdef_covmatrix=args.force_posdef_covmatrix,
+        force_posdef_samples=args.force_posdef_samples,
+    )
     res.add_plots()
     res.to_json(path=args.psn_dir / 'results.json')
     res.to_csv(path=args.psn_dir / 'results.csv')
@@ -446,6 +466,7 @@ def results_frem(args):
 
 def results_scm(args):
     from pharmpy.methods.scm.results import psn_scm_results
+
     if not args.psn_dir.is_dir():
         error(FileNotFoundError(str(args.psn_dir)))
     res = psn_scm_results(args.psn_dir)
@@ -474,6 +495,7 @@ def results_print(args):
     else:
         error(FileNotFoundError(str(args.dir)))
     from pharmpy.results import read_results
+
     res = read_results(path)
     print(res)
 
@@ -484,6 +506,7 @@ def results_report(args):
     if not results_path.is_file():
         error(FileNotFoundError(results_path))
     from pharmpy.results import read_results
+
     res = read_results(results_path)
     res.create_report(args.psn_dir)
 
@@ -492,10 +515,12 @@ def results_summary(args):
     """Subcommand to output summary of modelfit"""
     for model in args.models:
         print(model.name)
-        model.modelfit_results.reparameterize([
-            pharmpy.random_variables.NormalParametrizationSd,
-            pharmpy.random_variables.MultivariateNormalParametrizationSdCorr
-        ])
+        model.modelfit_results.reparameterize(
+            [
+                pharmpy.random_variables.NormalParametrizationSd,
+                pharmpy.random_variables.MultivariateNormalParametrizationSdCorr,
+            ]
+        )
         print(model.modelfit_results.parameter_summary())
         print()
 
@@ -520,6 +545,7 @@ def check_input_path(path):
     else:
         return path
 
+
 # ------ Type functions --------------------
 
 
@@ -533,8 +559,7 @@ def input_model(path):
 
 
 def input_model_or_dataset(path):
-    """Returns :class:`~pharmpy.model.Model` or :class:`~pharmpy.data.PharmDataFrame` from *path*
-    """
+    """Returns :class:`~pharmpy.model.Model` or :class:`~pharmpy.data.PharmDataFrame` from *path*"""
     path = check_input_path(path)
     try:
         obj = pharmpy.Model(path)
@@ -562,309 +587,511 @@ def random_seed(seed):
 # for commands taking multiple model files as input
 args_input = argparse.ArgumentParser(add_help=False)
 group_input = args_input.add_argument_group(title='inputs')
-group_input.add_argument('models', metavar='FILE', type=input_model, nargs='+',
-                         help='input model files')
+group_input.add_argument(
+    'models', metavar='FILE', type=input_model, nargs='+', help='input model files'
+)
 
 # for commands taking one model file as input
 args_model_input = argparse.ArgumentParser(add_help=False)
 group_model_input = args_model_input.add_argument_group(title='model')
-group_model_input.add_argument('model', metavar='FILE', type=input_model,
-                               help='input model file')
+group_model_input.add_argument('model', metavar='FILE', type=input_model, help='input model file')
 
 # for commands with model file or dataset input
 args_model_or_data_input = argparse.ArgumentParser(add_help=False)
 group_model_or_data_input = args_model_or_data_input.add_argument_group(title='data_input')
-group_model_or_data_input.add_argument('model_or_dataset',
-                                       metavar='FILE', type=input_model_or_dataset,
-                                       help='input model or dataset file')
+group_model_or_data_input.add_argument(
+    'model_or_dataset',
+    metavar='FILE',
+    type=input_model_or_dataset,
+    help='input model or dataset file',
+)
 
 # for commands involving randomization
 args_random = argparse.ArgumentParser(add_help=False)
 group_random = args_random.add_argument_group(title='random seed')
-group_random.add_argument('--seed', type=random_seed, metavar='INTEGER',
-                          help='Provide a random seed. The seed must be an integer '
-                          'between 0 and 2^32 - 1')
+group_random.add_argument(
+    '--seed',
+    type=random_seed,
+    metavar='INTEGER',
+    help='Provide a random seed. The seed must be an integer ' 'between 0 and 2^32 - 1',
+)
 
 # for commands with file output
 args_output = argparse.ArgumentParser(add_help=False)
 group_output = args_output.add_argument_group(title='outputs')
-group_output.add_argument('-f', '--force',
-                          action='store_true',
-                          help='remove existing destination files (all)')
-group_output.add_argument('-o', '--output_file',
-                          dest='output_file', metavar='file', type=pathlib.Path,
-                          help='output file')
+group_output.add_argument(
+    '-f', '--force', action='store_true', help='remove existing destination files (all)'
+)
+group_output.add_argument(
+    '-o', '--output_file', dest='output_file', metavar='file', type=pathlib.Path, help='output file'
+)
 
 parser_definition = [
-    {'run': {'subs': [
-        {'execute': {'help': 'Execute one or more model', 'func': run_execute,
-                     'parents': [args_input]}},
-    ], 'help': 'Run a method',
-       'title': 'Pharmpy commands for running methods',
-       'metavar': 'METHOD',
-    }},
-    {'data': {'subs': [
-        {'write': {'help': 'Write dataset', 'parents': [args_model_or_data_input, args_output],
-                   'func': data_write,
-                   'description': 'Write a dataset from model or csv file as the model sees it. '
-                                  'For NM-TRAN models this means to filter all IGNORE and '
-                                  'ACCEPT statements in $DATA and to convert the dataset to '
-                                  'csv format.'}},
-        {'print': {'help': 'Print dataset to stdout', 'parents': [args_model_or_data_input],
-                   'func': data_print,
-                   'description': 'Print whole dataset or selected columns from model or csv file '
-                                  'via a pager to stdout. For NM-TRAN models the dataset will '
-                                  'be filtered first.',
-                   'args': [
-                {'name': '--columns', 'metavar': 'COLUMNS', 'type': comma_list,
-                 'help': 'Select specific columns (default is all)'}]}},
-        {'filter': {
-            'help': 'Filter rows of dataset',
-            'description': 'Filter rows of dataset via expressions. '
-                           'All rows matching all expressions will be kept.abs '
-                           'A new model with the filtered dataset connected is created.',
-            'parents': [args_model_or_data_input, args_output],
-            'func': data_filter,
-            'args': [{'name': 'expressions', 'nargs': argparse.REMAINDER}]}},
-        {'append': {
-            'help': 'Append column to dataset',
-            'description': 'Append a column to dataset given an assignment expression.'
-                           'The expression can contain already present columns of the dataset.',
-            'parents': [args_model_or_data_input, args_output],
-            'func': data_append,
-            'args': [{'name': 'expression'}]}},
-        {'resample': {
-            'help': 'Resample dataset',
-            'description': 'Bootstrap resample datasets'
-                           'Multiple new models and datasets will be created',
-            'parents': [args_model_or_data_input, args_random], 'func': data_resample,
-            'args': [{'name': '--group',
-                      'metavar': 'COLUMN',
-                      'type': str,
-                      'default': 'ID',
-                      'help': 'Column to use for grouping (default is ID)'},
-                     {'name': '--resamples',
-                      'metavar': 'NUMBER',
-                      'type': int,
-                      'default': 1,
-                      'help': 'Number of resampled datasets (default 1)'},
-                     {'name': '--stratify',
-                      'metavar': 'COLUMN',
-                      'type': str,
-                      'help': 'Column to use for stratification'},
-                     {'name': '--replace',
-                      'action': 'store_true',
-                      'help': 'Sample with replacement (default is without)'},
-                     {'name': '--sample_size',
-                      'metavar': 'NUMBER',
-                      'type': int,
-                      'default': None,
-                      'help': 'Number of groups to sample for each resample'}]}},
-        {'anonymize': {
-            'help': 'Anonymize dataset by renumbering a specific data column',
-            'description': 'Anonymize dataset by renumbering a specific data column',
-            'parents': [args_output], 'func': data_anonymize,
-            'args': [{'name': 'dataset',
-                      'metavar': 'FILE',
-                      'type': str,
-                      'help': 'A csv file dataset'},
-                     {'name': '--group',
-                      'metavar': 'COLUMN',
-                      'type': str,
-                      'default': 'ID',
-                      'help': 'column to anonymize (default ID)'}]}},
-        ], 'help': 'Data manipulations', 'title': 'Pharmpy data commands', 'metavar': 'ACTION'}},
+    {
+        'run': {
+            'subs': [
+                {
+                    'execute': {
+                        'help': 'Execute one or more model',
+                        'func': run_execute,
+                        'parents': [args_input],
+                    }
+                },
+            ],
+            'help': 'Run a method',
+            'title': 'Pharmpy commands for running methods',
+            'metavar': 'METHOD',
+        }
+    },
+    {
+        'data': {
+            'subs': [
+                {
+                    'write': {
+                        'help': 'Write dataset',
+                        'parents': [args_model_or_data_input, args_output],
+                        'func': data_write,
+                        'description': 'Write a dataset from model or csv file as the model sees '
+                        'it. For NM-TRAN models this means to filter all IGNORE and '
+                        'ACCEPT statements in $DATA and to convert the dataset to '
+                        'csv format.',
+                    }
+                },
+                {
+                    'print': {
+                        'help': 'Print dataset to stdout',
+                        'parents': [args_model_or_data_input],
+                        'func': data_print,
+                        'description': 'Print whole dataset or selected columns from model or csv '
+                        'file via a pager to stdout. For NM-TRAN models the dataset will '
+                        'be filtered first.',
+                        'args': [
+                            {
+                                'name': '--columns',
+                                'metavar': 'COLUMNS',
+                                'type': comma_list,
+                                'help': 'Select specific columns (default is all)',
+                            }
+                        ],
+                    }
+                },
+                {
+                    'filter': {
+                        'help': 'Filter rows of dataset',
+                        'description': 'Filter rows of dataset via expressions. '
+                        'All rows matching all expressions will be kept.abs '
+                        'A new model with the filtered dataset connected is created.',
+                        'parents': [args_model_or_data_input, args_output],
+                        'func': data_filter,
+                        'args': [{'name': 'expressions', 'nargs': argparse.REMAINDER}],
+                    }
+                },
+                {
+                    'append': {
+                        'help': 'Append column to dataset',
+                        'description': 'Append a column to dataset given an assignment expression.'
+                        'The expression can contain already present columns of the dataset.',
+                        'parents': [args_model_or_data_input, args_output],
+                        'func': data_append,
+                        'args': [{'name': 'expression'}],
+                    }
+                },
+                {
+                    'resample': {
+                        'help': 'Resample dataset',
+                        'description': 'Bootstrap resample datasets'
+                        'Multiple new models and datasets will be created',
+                        'parents': [args_model_or_data_input, args_random],
+                        'func': data_resample,
+                        'args': [
+                            {
+                                'name': '--group',
+                                'metavar': 'COLUMN',
+                                'type': str,
+                                'default': 'ID',
+                                'help': 'Column to use for grouping (default is ID)',
+                            },
+                            {
+                                'name': '--resamples',
+                                'metavar': 'NUMBER',
+                                'type': int,
+                                'default': 1,
+                                'help': 'Number of resampled datasets (default 1)',
+                            },
+                            {
+                                'name': '--stratify',
+                                'metavar': 'COLUMN',
+                                'type': str,
+                                'help': 'Column to use for stratification',
+                            },
+                            {
+                                'name': '--replace',
+                                'action': 'store_true',
+                                'help': 'Sample with replacement (default is without)',
+                            },
+                            {
+                                'name': '--sample_size',
+                                'metavar': 'NUMBER',
+                                'type': int,
+                                'default': None,
+                                'help': 'Number of groups to sample for each resample',
+                            },
+                        ],
+                    }
+                },
+                {
+                    'anonymize': {
+                        'help': 'Anonymize dataset by renumbering a specific data column',
+                        'description': 'Anonymize dataset by renumbering a specific data column',
+                        'parents': [args_output],
+                        'func': data_anonymize,
+                        'args': [
+                            {
+                                'name': 'dataset',
+                                'metavar': 'FILE',
+                                'type': str,
+                                'help': 'A csv file dataset',
+                            },
+                            {
+                                'name': '--group',
+                                'metavar': 'COLUMN',
+                                'type': str,
+                                'default': 'ID',
+                                'help': 'column to anonymize (default ID)',
+                            },
+                        ],
+                    }
+                },
+            ],
+            'help': 'Data manipulations',
+            'title': 'Pharmpy data commands',
+            'metavar': 'ACTION',
+        }
+    },
     {'info': {'help': 'Show Pharmpy information', 'title': 'Pharmpy information', 'func': info}},
-    {'model': {'subs': [
-        {'print': {
-            'help': 'Format and print model overview',
-            'description': 'Print an overview of a model.',
-            'func': model_print,
-            'parents': [args_input],
-            'args': [{'name': '--explicit-odes',
-                      'action': 'store_true',
-                      'help': 'Print the ODE system explicitly instead of as a '
-                              'compartmental graph'}]}},
-        {'sample': {
-            'help': 'Sampling of parameter inits using uncertainty given by covariance '
-                    'matrix',
-            'description': 'Sample parameter initial estimates using uncertainty given'
-                           'by covariance matrix.',
-            'func': model_sample, 'parents': [args_model_input, args_random],
-            'args': [{'name': '--samples',
-                      'metavar': 'NUMBER',
-                      'type': int,
-                      'default': 1,
-                      'help': 'Number of sampled models'}]}},
-        {'add_cov_effect': {
-            'help': 'Adds covariate effect',
-            'description': 'Add covariate effect to a model parameter',
-            'func': add_covariate_effect,
-            'parents': [args_model_input, args_output],
-            'args': [{'name': 'param',
-                      'type': str,
-                      'help': 'Individual parameter'},
-                     {'name': 'covariate',
-                      'type': str,
-                      'help': 'Covariate'},
-                     {'name': 'effect',
-                      'type': str,
-                      'help': 'Type of covariate effect'},
-                     {'name': '--operation',
-                      'type': str,
-                      'default': '*',
-                      'help': 'Whether effect should be added or multiplied'},
-                     ]}},
-        {'explicit_odes': {
-            'help': 'Make ODEs explicit',
-            'description': 'Convert from compartmental or implicit description of '
-                           'ODE-system to explicit. I.e. create a $DES',
-            'func': model_explicit_odes,
-            'parents': [args_model_input, args_output],
-                       }},
-        {'absorption_rate': {
-            'help': 'Set absorption rate for a PK model',
-            'description': 'Change absorption rate of a PK model to either bolus, 0th order, 1th '
-                           'order or sequential 0-order 1-order.',
-            'func': model_absorption_rate,
-            'parents': [args_model_input, args_output],
-            'args': [{'name': 'rate',
-                      'choices': ['bolus', 'ZO', 'FO', 'seq-ZO-FO'],
-                      'type': str,
-                      'help': 'Absorption rate'},
-                     ]}},
-        {'error': {
-            'help': 'Set error model',
-            'description': 'Set the error model to either additive, proportional or combined',
-            'func': model_error,
-            'parents': [args_model_input, args_output],
-            'args': [{'name': 'error_type',
-                      'choices': ['none', 'additive', 'propotional', 'combined'],
-                      'type': str,
-                      'help': 'Type of error model'},
-                     ]}},
-        {'boxcox': {
-            'help': 'Applies boxcox transformation',
-            'description': 'Apply boxcox transformation on selected/all etas',
-            'func': boxcox,
-            'parents': [args_model_input, args_output],
-            'args': [{'name': '--etas',
-                      'type': str,
-                      'default': None,
-                      'help': 'List of etas, mark group of etas in single quote '
-                              'separated by spaces'},
-                     ]}},
-        {'tdist': {
-            'help': 'Applies t-distribution transformation',
-            'description': 'Apply t-distribution transformation on selected/all etas',
-            'func': tdist,
-            'parents': [args_model_input, args_output],
-            'args': [{'name': '--etas',
-                      'type': str,
-                      'default': None,
-                      'help': 'List of etas, mark group of etas in single quote '
-                              'separated by spaces'},
-                     ]}},
-        {'john_draper': {
-            'help': 'Applies John Draper transformation',
-            'description': 'Apply John Draper transformation on selected/all etas',
-            'func': john_draper,
-            'parents': [args_model_input, args_output],
-            'args': [{'name': '--etas',
-                      'type': str,
-                      'default': None,
-                      'help': 'List of etas, mark group of etas in single quote '
-                              'separated by spaces'},
-                     ]}},
-        {'add_etas': {
-            'help': 'Adds etas',
-            'description': 'Add etas to a model parameter',
-            'func': add_etas,
-            'parents': [args_model_input, args_output],
-            'args': [{'name': 'param',
-                      'type': str,
-                      'help': 'Individual parameter'},
-                     {'name': 'expression',
-                      'type': str,
-                      'help': 'Expression for added eta'},
-                     {'name': '--operation',
-                      'type': str,
-                      'default': '*',
-                      'help': 'Whether effect should be added or multiplied'},
-                     ]}},
-    ], 'help': 'Model manipulations',
-       'title': 'Pharmpy model commands',
-       'metavar': 'ACTION',
-    }},
-    {'results': {'subs': [
-        {'bootstrap': {
-            'help': 'Generate bootstrap results',
-            'description': 'Generate results from a PsN bootstrap run',
-            'func': results_bootstrap, 'args': [
-                {'name': 'psn_dir', 'metavar': 'PsN directory', 'type': pathlib.Path,
-                 'help': 'Path to PsN bootstrap run directory'}]}},
-        {'cdd': {
-            'help': 'Generate cdd results',
-            'description': 'Generate results from a PsN cdd run',
-            'func': results_cdd, 'args': [
-                {'name': 'psn_dir', 'metavar': 'PsN directory', 'type': pathlib.Path,
-                 'help': 'Path to PsN cdd run directory'}]}},
-        {'frem': {
-            'help': 'Generate FREM results',
-            'description': 'Generate results from a PsN frem run',
-            'func': results_frem, 'args': [
-                {'name': 'psn_dir', 'metavar': 'PsN directory', 'type': pathlib.Path,
-                 'help': 'Path to PsN frem run directory'},
-                {'name': '--method', 'choices': ['cov_sampling', 'bipp'], 'default': 'cov_sampling',
-                 'help': 'Method to use for uncertainty of covariate effects'},
-                {'name': '--force_posdef_covmatrix', 'action': 'store_true',
-                 'help': 'Should covariance matrix be forced to become positive definite'},
-                {'name': '--force_posdef_samples', 'type': int, 'default': 500,
-                 'help': 'Number of sampling tries to do before starting to force posdef'}]}},
-        {'ofv': {
-            'help': 'Extract OFVs from model runs',
-            'description': 'Extract OFVs from one or more model runs',
-            'parents': [args_input],
-            'func': results_ofv}},
-        {'print': {
-            'help': 'Print results',
-            'description': 'Print results from PsN run to stdout',
-            'func': results_print,
-            'args': [
-                {'name': 'dir', 'metavar': 'file or directory', 'type': pathlib.Path,
-                 'help': 'Path to directory containing results.json '
-                         'or directly to json results file'}]}},
-        {'report': {
-            'help': 'Generate results report',
-            'description': 'Generate results report for PsN run (currently only frem)',
-            'func': results_report,
-            'args': [
-                {'name': 'psn_dir', 'metavar': 'PsN directory', 'type': pathlib.Path,
-                 'help': 'Path to PsN run directory'}]}},
-        {'scm': {
-            'help': 'Generate scm results',
-            'description': 'Generate results from a PsN scm run',
-            'func': results_scm, 'args': [
-                {'name': 'psn_dir', 'metavar': 'PsN directory', 'type': pathlib.Path,
-                 'help': 'Path to PsN scm run directory'}]}},
-        {'summary': {
-            'help': 'Modelfit summary',
-            'description': 'Print a summary of a model estimates to stdout.',
-            'parents': [args_input],
-            'func': results_summary}}],
-        'help': 'Result extraction and generation',
-        'title': 'Pharmpy result generation commands', 'metavar': 'ACTION'}}]
+    {
+        'model': {
+            'subs': [
+                {
+                    'print': {
+                        'help': 'Format and print model overview',
+                        'description': 'Print an overview of a model.',
+                        'func': model_print,
+                        'parents': [args_input],
+                        'args': [
+                            {
+                                'name': '--explicit-odes',
+                                'action': 'store_true',
+                                'help': 'Print the ODE system explicitly instead of as a '
+                                'compartmental graph',
+                            }
+                        ],
+                    }
+                },
+                {
+                    'sample': {
+                        'help': 'Sampling of parameter inits using uncertainty given by covariance '
+                        'matrix',
+                        'description': 'Sample parameter initial estimates using uncertainty given'
+                        'by covariance matrix.',
+                        'func': model_sample,
+                        'parents': [args_model_input, args_random],
+                        'args': [
+                            {
+                                'name': '--samples',
+                                'metavar': 'NUMBER',
+                                'type': int,
+                                'default': 1,
+                                'help': 'Number of sampled models',
+                            }
+                        ],
+                    }
+                },
+                {
+                    'add_cov_effect': {
+                        'help': 'Adds covariate effect',
+                        'description': 'Add covariate effect to a model parameter',
+                        'func': add_covariate_effect,
+                        'parents': [args_model_input, args_output],
+                        'args': [
+                            {'name': 'param', 'type': str, 'help': 'Individual parameter'},
+                            {'name': 'covariate', 'type': str, 'help': 'Covariate'},
+                            {'name': 'effect', 'type': str, 'help': 'Type of covariate effect'},
+                            {
+                                'name': '--operation',
+                                'type': str,
+                                'default': '*',
+                                'help': 'Whether effect should be added or multiplied',
+                            },
+                        ],
+                    }
+                },
+                {
+                    'explicit_odes': {
+                        'help': 'Make ODEs explicit',
+                        'description': 'Convert from compartmental or implicit description of '
+                        'ODE-system to explicit. I.e. create a $DES',
+                        'func': model_explicit_odes,
+                        'parents': [args_model_input, args_output],
+                    }
+                },
+                {
+                    'absorption_rate': {
+                        'help': 'Set absorption rate for a PK model',
+                        'description': 'Change absorption rate of a PK model to either bolus, 0th '
+                        'order, 1th order or sequential 0-order 1-order.',
+                        'func': model_absorption_rate,
+                        'parents': [args_model_input, args_output],
+                        'args': [
+                            {
+                                'name': 'rate',
+                                'choices': ['bolus', 'ZO', 'FO', 'seq-ZO-FO'],
+                                'type': str,
+                                'help': 'Absorption rate',
+                            },
+                        ],
+                    }
+                },
+                {
+                    'error': {
+                        'help': 'Set error model',
+                        'description': 'Set the error model to either additive, proportional or '
+                        'combined',
+                        'func': model_error,
+                        'parents': [args_model_input, args_output],
+                        'args': [
+                            {
+                                'name': 'error_type',
+                                'choices': ['none', 'additive', 'propotional', 'combined'],
+                                'type': str,
+                                'help': 'Type of error model',
+                            },
+                        ],
+                    }
+                },
+                {
+                    'boxcox': {
+                        'help': 'Applies boxcox transformation',
+                        'description': 'Apply boxcox transformation on selected/all etas',
+                        'func': boxcox,
+                        'parents': [args_model_input, args_output],
+                        'args': [
+                            {
+                                'name': '--etas',
+                                'type': str,
+                                'default': None,
+                                'help': 'List of etas, mark group of etas in single quote '
+                                'separated by spaces',
+                            },
+                        ],
+                    }
+                },
+                {
+                    'tdist': {
+                        'help': 'Applies t-distribution transformation',
+                        'description': 'Apply t-distribution transformation on selected/all etas',
+                        'func': tdist,
+                        'parents': [args_model_input, args_output],
+                        'args': [
+                            {
+                                'name': '--etas',
+                                'type': str,
+                                'default': None,
+                                'help': 'List of etas, mark group of etas in single quote '
+                                'separated by spaces',
+                            },
+                        ],
+                    }
+                },
+                {
+                    'john_draper': {
+                        'help': 'Applies John Draper transformation',
+                        'description': 'Apply John Draper transformation on selected/all etas',
+                        'func': john_draper,
+                        'parents': [args_model_input, args_output],
+                        'args': [
+                            {
+                                'name': '--etas',
+                                'type': str,
+                                'default': None,
+                                'help': 'List of etas, mark group of etas in single quote '
+                                'separated by spaces',
+                            },
+                        ],
+                    }
+                },
+                {
+                    'add_etas': {
+                        'help': 'Adds etas',
+                        'description': 'Add etas to a model parameter',
+                        'func': add_etas,
+                        'parents': [args_model_input, args_output],
+                        'args': [
+                            {'name': 'param', 'type': str, 'help': 'Individual parameter'},
+                            {'name': 'expression', 'type': str, 'help': 'Expression for added eta'},
+                            {
+                                'name': '--operation',
+                                'type': str,
+                                'default': '*',
+                                'help': 'Whether effect should be added or multiplied',
+                            },
+                        ],
+                    }
+                },
+            ],
+            'help': 'Model manipulations',
+            'title': 'Pharmpy model commands',
+            'metavar': 'ACTION',
+        }
+    },
+    {
+        'results': {
+            'subs': [
+                {
+                    'bootstrap': {
+                        'help': 'Generate bootstrap results',
+                        'description': 'Generate results from a PsN bootstrap run',
+                        'func': results_bootstrap,
+                        'args': [
+                            {
+                                'name': 'psn_dir',
+                                'metavar': 'PsN directory',
+                                'type': pathlib.Path,
+                                'help': 'Path to PsN bootstrap run directory',
+                            }
+                        ],
+                    }
+                },
+                {
+                    'cdd': {
+                        'help': 'Generate cdd results',
+                        'description': 'Generate results from a PsN cdd run',
+                        'func': results_cdd,
+                        'args': [
+                            {
+                                'name': 'psn_dir',
+                                'metavar': 'PsN directory',
+                                'type': pathlib.Path,
+                                'help': 'Path to PsN cdd run directory',
+                            }
+                        ],
+                    }
+                },
+                {
+                    'frem': {
+                        'help': 'Generate FREM results',
+                        'description': 'Generate results from a PsN frem run',
+                        'func': results_frem,
+                        'args': [
+                            {
+                                'name': 'psn_dir',
+                                'metavar': 'PsN directory',
+                                'type': pathlib.Path,
+                                'help': 'Path to PsN frem run directory',
+                            },
+                            {
+                                'name': '--method',
+                                'choices': ['cov_sampling', 'bipp'],
+                                'default': 'cov_sampling',
+                                'help': 'Method to use for uncertainty of covariate effects',
+                            },
+                            {
+                                'name': '--force_posdef_covmatrix',
+                                'action': 'store_true',
+                                'help': 'Should covariance matrix be forced to become positive '
+                                'definite',
+                            },
+                            {
+                                'name': '--force_posdef_samples',
+                                'type': int,
+                                'default': 500,
+                                'help': 'Number of sampling tries to do before starting to force '
+                                'posdef',
+                            },
+                        ],
+                    }
+                },
+                {
+                    'ofv': {
+                        'help': 'Extract OFVs from model runs',
+                        'description': 'Extract OFVs from one or more model runs',
+                        'parents': [args_input],
+                        'func': results_ofv,
+                    }
+                },
+                {
+                    'print': {
+                        'help': 'Print results',
+                        'description': 'Print results from PsN run to stdout',
+                        'func': results_print,
+                        'args': [
+                            {
+                                'name': 'dir',
+                                'metavar': 'file or directory',
+                                'type': pathlib.Path,
+                                'help': 'Path to directory containing results.json '
+                                'or directly to json results file',
+                            }
+                        ],
+                    }
+                },
+                {
+                    'report': {
+                        'help': 'Generate results report',
+                        'description': 'Generate results report for PsN run (currently only frem)',
+                        'func': results_report,
+                        'args': [
+                            {
+                                'name': 'psn_dir',
+                                'metavar': 'PsN directory',
+                                'type': pathlib.Path,
+                                'help': 'Path to PsN run directory',
+                            }
+                        ],
+                    }
+                },
+                {
+                    'scm': {
+                        'help': 'Generate scm results',
+                        'description': 'Generate results from a PsN scm run',
+                        'func': results_scm,
+                        'args': [
+                            {
+                                'name': 'psn_dir',
+                                'metavar': 'PsN directory',
+                                'type': pathlib.Path,
+                                'help': 'Path to PsN scm run directory',
+                            }
+                        ],
+                    }
+                },
+                {
+                    'summary': {
+                        'help': 'Modelfit summary',
+                        'description': 'Print a summary of a model estimates to stdout.',
+                        'parents': [args_input],
+                        'func': results_summary,
+                    }
+                },
+            ],
+            'help': 'Result extraction and generation',
+            'title': 'Pharmpy result generation commands',
+            'metavar': 'ACTION',
+        }
+    },
+]
 
 
 def generate_parsers(parsers):
     for command in parser_definition:
-        (cmd_name, cmd_dict), = command.items()
-        cmd_parser = parsers.add_parser(cmd_name, allow_abbrev=True, help=cmd_dict['help'],
-                                        formatter_class=formatter)
+        ((cmd_name, cmd_dict),) = command.items()
+        cmd_parser = parsers.add_parser(
+            cmd_name, allow_abbrev=True, help=cmd_dict['help'], formatter_class=formatter
+        )
         if 'subs' in cmd_dict:
             subs = cmd_parser.add_subparsers(title=cmd_dict['title'], metavar=cmd_dict['metavar'])
             for sub_command in cmd_dict['subs']:
-                (sub_name, sub_dict), = sub_command.items()
+                ((sub_name, sub_dict),) = sub_command.items()
                 args = sub_dict.pop('args', [])
                 func = sub_dict.pop('func')
 
@@ -877,7 +1104,8 @@ def generate_parsers(parsers):
 
 parser = argparse.ArgumentParser(
     prog='pharmpy',
-    description=dedent("""
+    description=dedent(
+        """
     Welcome to the command line interface of Pharmpy!
 
     Functionality is split into various subcommands
@@ -885,8 +1113,10 @@ parser = argparse.ArgumentParser(
         - all keyword arguments can be abbreviated if unique
 
 
-    """).strip(),
-    epilog=dedent("""
+    """
+    ).strip(),
+    epilog=dedent(
+        """
         Examples:
             # Create 100 bootstrap datasets
             pharmpy data resample pheno_real.mod --resamples=100 --replace
@@ -896,7 +1126,8 @@ parser = argparse.ArgumentParser(
 
             # version/install information
             pharmpy info
-    """).strip(),
+    """
+    ).strip(),
     formatter_class=formatter,
     allow_abbrev=True,
 )
@@ -908,6 +1139,7 @@ generate_parsers(subparsers)
 
 
 # -- entry point of CLI (pharmpy) ---------------------------------------------------------
+
 
 def main(args):
     """Entry point of ``pharmpy`` CLI util and ``python3 -m pharmpy`` (via ``__main__.py``)."""

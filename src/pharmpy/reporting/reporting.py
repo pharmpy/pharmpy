@@ -25,8 +25,7 @@ class TemporaryDirectoryChanger:
 
 
 def generate_report(rst_path, results_path):
-    """Generate report from rst and results json
-    """
+    """Generate report from rst and results json"""
     with tempfile.TemporaryDirectory() as tmpdirname:
         tmp_path = Path(tmpdirname)
         source_path = tmp_path / 'source'
@@ -44,13 +43,21 @@ def generate_report(rst_path, results_path):
                     # See https://github.com/pharmpy/pharmpy/issues/20
                     warnings.filterwarnings("ignore", message="The app.add_stylesheet")
                     warnings.filterwarnings("ignore", message="The app.add_javascript")
-                    app = Sphinx(str(source_path), str(conf_path), str(tmp_path), str(tmp_path),
-                                 "singlehtml", status=devnull, warning=devnull)
+                    app = Sphinx(
+                        str(source_path),
+                        str(conf_path),
+                        str(tmp_path),
+                        str(tmp_path),
+                        "singlehtml",
+                        status=devnull,
+                        warning=devnull,
+                    )
                     app.build()
 
         # Write missing altair css
         with open(tmp_path / '_static' / 'altair-plot.css', 'w') as dh:
-            dh.write(""".vega-actions a {
+            dh.write(
+                """.vega-actions a {
     margin-right: 12px;
     color: #757575;
     font-weight: normal;
@@ -62,15 +69,15 @@ def generate_report(rst_path, results_path):
     margin-top: 20px;
     width: 100%;
 }
-""")
+"""
+            )
         report_path = tmp_path / 'results.html'
         embed_css_and_js(tmp_path / 'results.html', report_path)
         shutil.copy(report_path, results_path)
 
 
 def embed_css_and_js(html, target):
-    """Embed all external css and javascript into an html
-    """
+    """Embed all external css and javascript into an html"""
     with open(html, 'r', encoding='utf-8') as sh:
         soup = BeautifulSoup(sh, features='lxml')
 

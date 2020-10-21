@@ -7,13 +7,13 @@ from .records.raw_record import RawRecord
 
 
 class NMTranParser:
-    """Parser for NMTran control streams
-    """
+    """Parser for NMTran control streams"""
+
     def parse(self, text):
         stream = NMTranControlStream()
 
         record_strings = re.split(r'^([ \t]*\$)', text, flags=re.MULTILINE)
-        first = record_strings.pop(0)       # Empty if nothing before first record
+        first = record_strings.pop(0)  # Empty if nothing before first record
         if first:
             stream.records.append(RawRecord(first))
 
@@ -24,20 +24,28 @@ class NMTranParser:
         return stream
 
 
-default_record_order = ['SUBROUTINES', 'MODEL', 'PK', 'PRED', 'DES', 'ERROR', 'THETA', 'OMEGA',
-                        'SIGMA']
+default_record_order = [
+    'SUBROUTINES',
+    'MODEL',
+    'PK',
+    'PRED',
+    'DES',
+    'ERROR',
+    'THETA',
+    'OMEGA',
+    'SIGMA',
+]
 
 
 class NMTranControlStream:
-    """Representation of a parsed control stream (model file)
-    """
+    """Representation of a parsed control stream (model file)"""
+
     def __init__(self):
         self.records = []
         self._active_problem = 0
 
     def get_records(self, name):
-        """Return a list of all records of a certain type in the current $PROBLEM
-        """
+        """Return a list of all records of a certain type in the current $PROBLEM"""
         current_problem = -1
         found = []
         for record in self.records:
@@ -48,8 +56,7 @@ class NMTranControlStream:
         return found
 
     def append_record(self, content):
-        """ Create and append record at the end
-        """
+        """Create and append record at the end"""
         record = create_record(content)
         self.records.append(record)
         return record
@@ -57,10 +64,10 @@ class NMTranControlStream:
     def insert_record(self, content):
         """Create and insert a new record at the correct position
 
-           If the record type is already present the new record will be put
-           directly after the last record of that type.
-           If no record of the type is present the new record will be put
-           given the default record order.
+        If the record type is already present the new record will be put
+        directly after the last record of that type.
+        If no record of the type is present the new record will be put
+        given the default record order.
         """
 
         record = create_record(content)

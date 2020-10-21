@@ -28,8 +28,15 @@ class ModelRecord(OptionRecord):
         self.add_suboption_for_nth('COMPARTMENT', n - 1, 'DEFDOSE')
 
     def compartments(self):
-        all_options = ['INITIALOFF', 'NOOFF', 'NODOSE', 'EQUILIBRIUM', 'EXCLUDE', 'DEFOBSERVATION',
-                       'DEFDOSE']
+        all_options = [
+            'INITIALOFF',
+            'NOOFF',
+            'NODOSE',
+            'EQUILIBRIUM',
+            'EXCLUDE',
+            'DEFOBSERVATION',
+            'DEFDOSE',
+        ]
         for n, opts in enumerate(self.get_option_lists('COMPARTMENT')):
             name = f'COMP{n + 1}'
             options = []

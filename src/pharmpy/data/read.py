@@ -13,20 +13,20 @@ from pharmpy.data import ColumnType, DatasetError, DatasetWarning
 
 
 class NMTRANDataIO(StringIO):
-    """ An IO class that is a prefilter for pandas.read_table.
-        Things that must be done before using pandas will be done here.
-        Currently it takes care of filtering out ignored rows and handles special delimiter cases
+    """An IO class that is a prefilter for pandas.read_table.
+    Things that must be done before using pandas will be done here.
+    Currently it takes care of filtering out ignored rows and handles special delimiter cases
     """
+
     def __init__(self, filename_or_io, ignore_character='#'):
-        """ filename_or_io is a string with a path, a path object or any IO object, i.e. StringIO
-        """
+        """filename_or_io is a string with a path, a path object or any IO object, i.e. StringIO"""
         if not ignore_character:
             ignore_character = '#'
         if hasattr(filename_or_io, 'read'):
             contents = filename_or_io.read()
         else:
             with open(str(filename_or_io), 'r') as datafile:
-                contents = datafile.read()      # All variations of newlines are converted into \n
+                contents = datafile.read()  # All variations of newlines are converted into \n
 
         if ignore_character == '@':
             # FIXME: Does this really handle the final line with no new line?
@@ -35,23 +35,27 @@ class NMTRANDataIO(StringIO):
             comment_regexp = re.compile('^[' + ignore_character + '].*\n', re.MULTILINE)
         contents = re.sub(comment_regexp, '', contents)
 
-        if re.search(r' \t', contents):     # Space before TAB not allowed (see documentation)
-            raise DatasetError("The dataset contains a TAB preceeded by a space, "
-                               "which is not allowed by NM-TRAN")
+        if re.search(r' \t', contents):  # Space before TAB not allowed (see documentation)
+            raise DatasetError(
+                "The dataset contains a TAB preceeded by a space, "
+                "which is not allowed by NM-TRAN"
+            )
 
-        if re.search(r'^[ \t]*\n$', contents, re.MULTILINE):       # Blank lines
-            raise DatasetError("The dataset contains one or more blank lines. This is not "
-                               "allowed by NM-TRAN without the BLANKOK option")
+        if re.search(r'^[ \t]*\n$', contents, re.MULTILINE):  # Blank lines
+            raise DatasetError(
+                "The dataset contains one or more blank lines. This is not "
+                "allowed by NM-TRAN without the BLANKOK option"
+            )
 
         super().__init__(contents)
 
 
 def convert_fortran_number(number_string):
     """This function will try to convert the number_string from the general fortran exponential format
-       into an np.float64. It covers "1d1", "1D1", "a+b", "a-b", "+" and "-". All other cases will
-       return None to signal that the number_string is not of the special form.
+    into an np.float64. It covers "1d1", "1D1", "a+b", "a-b", "+" and "-". All other cases will
+    return None to signal that the number_string is not of the special form.
 
-       Move somewhere else. Will be used in output parsing as well
+    Move somewhere else. Will be used in output parsing as well
     """
     try:
         y = np.float64(number_string)
@@ -96,8 +100,7 @@ def _convert_data_item(x, null_value):
 
 
 def _make_ids_unique(df, columns):
-    """ Check if id numbers are reused and make renumber. If not simply pass through the dataset.
-    """
+    """Check if id numbers are reused and make renumber. If not simply pass through the dataset."""
     try:
         id_label = df.pharmpy.id_label
     except KeyError:
@@ -106,8 +109,10 @@ def _make_ids_unique(df, columns):
         id_series = df[id_label]
         id_change = id_series.diff(1) != 0
         if len(id_series[id_change]) != len(df.pharmpy.ids):
-            warnings.warn("Dataset contains non-unique id numbers. Renumbering starting from 1",
-                          DatasetWarning)
+            warnings.warn(
+                "Dataset contains non-unique id numbers. Renumbering starting from 1",
+                DatasetWarning,
+            )
             df[df.pharmpy.id_label] = id_change.cumsum()
     return df
 
@@ -179,8 +184,10 @@ def _filter_ignore_accept(df, ignore, accept, null_value):
                 elif tp == 'OP_STR_NE':
                     operator = '!='
                     operator_type = str
-        if len(value) >= 3 and ((value.startswith("'") and value.endswith("'")) or
-                                (value.startswith('"') and value.endswith('"'))):
+        if len(value) >= 3 and (
+            (value.startswith("'") and value.endswith("'"))
+            or (value.startswith('"') and value.endswith('"'))
+        ):
             value = value[1:-1]
 
         if operator_type == str:
@@ -204,8 +211,7 @@ def _filter_ignore_accept(df, ignore, accept, null_value):
 
 
 def infer_column_type(colname):
-    """If possible infer the column type from the column name else use unknown
-    """
+    """If possible infer the column type from the column name else use unknown"""
     if colname == 'ID' or colname == 'L1':
         return ColumnType.ID
     elif colname == 'DV':
@@ -250,34 +256,50 @@ def infer_column_type(colname):
 #    """
 
 
-def read_nonmem_dataset(path_or_io, raw=False, ignore_character='#', colnames=tuple(),
-                        coltypes=None, drop=None, null_value='0', parse_columns=tuple(),
-                        ignore=None, accept=None):
+def read_nonmem_dataset(
+    path_or_io,
+    raw=False,
+    ignore_character='#',
+    colnames=tuple(),
+    coltypes=None,
+    drop=None,
+    null_value='0',
+    parse_columns=tuple(),
+    ignore=None,
+    accept=None,
+):
     """Read a nonmem dataset from file
-        column types will be inferred from the column names
+     column types will be inferred from the column names
 
-       raw - minimal processing, data will be kept in string format.
-       ignore_character
-       colnames - List or tuple of names to give each column given in order. Names need to be unique
-       drop - A list or tuple of booleans of which columns to drop
-       null_value - Value to use for NULL, i.e. empty records or padding
-       parse_columns - Only applicable when raw=True. A list of columns to parse.
-       ignore/accept - List of ignore/accept expressions
+    raw - minimal processing, data will be kept in string format.
+    ignore_character
+    colnames - List or tuple of names to give each column given in order. Names need to be unique
+    drop - A list or tuple of booleans of which columns to drop
+    null_value - Value to use for NULL, i.e. empty records or padding
+    parse_columns - Only applicable when raw=True. A list of columns to parse.
+    ignore/accept - List of ignore/accept expressions
 
-        The following postprocessing operations are done to a non-raw dataset
-        1. Convert ordinary floating point numbers to float64
-        2. Convert numbers of special fortran format to float64
-        3. Convert None, '.', empty string to the NULL value
-        4. Convert Inf/NaN properly
-        5. Pad with null_token columns if $INPUT has more columns than the dataset
-        6. Strip away superfluous columns from the dataset
+     The following postprocessing operations are done to a non-raw dataset
+     1. Convert ordinary floating point numbers to float64
+     2. Convert numbers of special fortran format to float64
+     3. Convert None, '.', empty string to the NULL value
+     4. Convert Inf/NaN properly
+     5. Pad with null_token columns if $INPUT has more columns than the dataset
+     6. Strip away superfluous columns from the dataset
     """
     if len(colnames) > len(set(colnames)):
         raise KeyError('Column names are not unique')
 
     file_io = NMTRANDataIO(path_or_io, ignore_character)
-    df = pd.read_table(file_io, sep=r' *, *| *[\t] *| +', na_filter=False, header=None,
-                       engine='python', quoting=3, dtype=np.object)
+    df = pd.read_table(
+        file_io,
+        sep=r' *, *| *[\t] *| +',
+        na_filter=False,
+        header=None,
+        engine='python',
+        quoting=3,
+        dtype=np.object,
+    )
     df = pharmpy.data.PharmDataFrame(df)
 
     diff_cols = len(df.columns) - len(colnames)
@@ -288,10 +310,10 @@ def read_nonmem_dataset(path_or_io, raw=False, ignore_character='#', colnames=tu
             df.drop(columns=[None], inplace=True)
     elif diff_cols < 0:
         if raw:
-            df.columns = colnames[0:len(df.columns)]
+            df.columns = colnames[0 : len(df.columns)]
         else:
-            for i in range(abs(diff_cols)):    # Create empty columns.
-                df[f'__{i}]'] = null_value       # FIXME assure no name collisions here
+            for i in range(abs(diff_cols)):  # Create empty columns.
+                df[f'__{i}]'] = null_value  # FIXME assure no name collisions here
             df.columns = colnames
     else:
         df.columns = colnames
@@ -322,8 +344,9 @@ def read_nonmem_dataset(path_or_io, raw=False, ignore_character='#', colnames=tu
     if not raw:
         parse_columns = list(df.columns)
         # FIXME: This is instead of proper handling of these columns
-        parse_columns = [x for x in parse_columns if x not in ['TIME', 'DATE', 'DAT1',
-                                                               'DAT2', 'DAT3']]
+        parse_columns = [
+            x for x in parse_columns if x not in ['TIME', 'DATE', 'DAT1', 'DAT2', 'DAT3']
+        ]
     for column in parse_columns:
         df[column] = df[column].apply(_convert_data_item, args=(str(null_value),))
     df = _make_ids_unique(df, parse_columns)
@@ -332,8 +355,7 @@ def read_nonmem_dataset(path_or_io, raw=False, ignore_character='#', colnames=tu
 
 
 def read_csv(path_or_io, raw=False, parse_columns=tuple()):
-    """Read a csv with header into a PharmDataFrame
-    """
+    """Read a csv with header into a PharmDataFrame"""
     if not raw:
         df = pd.read_csv(path_or_io)
     else:

@@ -14,18 +14,23 @@ def test_read_nonmem_dataset(testdata):
     assert list(df.columns) == colnames
     assert df.pharmpy.column_type['ID'] == data.ColumnType.ID
     assert df['ID'][0] == 1
-    assert df['TIME'][2] == '12.5'      # FIXME! Should be number
+    assert df['TIME'][2] == '12.5'  # FIXME! Should be number
 
     raw = data.read_nonmem_dataset(path, colnames=colnames, ignore_character='@', raw=True)
     assert raw['ID'][0] == '1'
     assert list(df.columns) == colnames
 
-    raw2 = data.read_nonmem_dataset(path, colnames=colnames, ignore_character='@', raw=True,
-                                    parse_columns=['ID'])
+    raw2 = data.read_nonmem_dataset(
+        path, colnames=colnames, ignore_character='@', raw=True, parse_columns=['ID']
+    )
     assert raw2['ID'][0] == 1.0
 
-    df_drop = data.read_nonmem_dataset(path, colnames=colnames, ignore_character='@',
-                                       drop=[False, False, True, False, False, False, True, False])
+    df_drop = data.read_nonmem_dataset(
+        path,
+        colnames=colnames,
+        ignore_character='@',
+        drop=[False, False, True, False, False, False, True, False],
+    )
     # FIXME: DROP not decided yet.
     # assert list(df_drop.columns) == ['ID', 'TIME', 'WGT', 'APGR', 'DV', 'FA2']
     pd.testing.assert_series_equal(df_drop['ID'], df['ID'])
@@ -42,16 +47,19 @@ def test_data_io(testdata):
     assert data_io.read(5) == 'ID TI'
 
 
-@pytest.mark.parametrize("s,expected", [
-    ('1.0', 1.0),
-    ('+', 0.0),
-    ('-', 0.0),
-    ('1d1', 10),
-    ('1.25D+2', 125),
-    ('1+2', 100),
-    ('4-1', 0.4),
-    ('0.25+2', 25),
-])
+@pytest.mark.parametrize(
+    "s,expected",
+    [
+        ('1.0', 1.0),
+        ('+', 0.0),
+        ('-', 0.0),
+        ('1d1', 10),
+        ('1.25D+2', 125),
+        ('1+2', 100),
+        ('4-1', 0.4),
+        ('0.25+2', 25),
+    ],
+)
 def test_convert_fortran_number(s, expected):
     assert data.read.convert_fortran_number(s) == expected
 
@@ -107,36 +115,42 @@ def test_nonmem_dataset_with_nonunique_ids():
 
 def test_nonmem_dataset_with_ignore_accept():
     colnames = ['ID', 'DV']
-    df = data.read_nonmem_dataset(StringIO("1,2\n1,3\n2,4\n2,5"), colnames=colnames,
-                                  ignore=['DV.EQN.2'])
+    df = data.read_nonmem_dataset(
+        StringIO("1,2\n1,3\n2,4\n2,5"), colnames=colnames, ignore=['DV.EQN.2']
+    )
     assert len(df) == 3
     assert list(df.columns) == colnames
     assert list(df.iloc[0]) == [1, 3]
     assert list(df.iloc[1]) == [2, 4]
     assert list(df.iloc[2]) == [2, 5]
-    df = data.read_nonmem_dataset(StringIO("1,2\n1,3\n2,4\n2,a"), colnames=colnames,
-                                  ignore=['DV.EQ.a', 'DV.EQN.2'])
+    df = data.read_nonmem_dataset(
+        StringIO("1,2\n1,3\n2,4\n2,a"), colnames=colnames, ignore=['DV.EQ.a', 'DV.EQN.2']
+    )
     assert len(df) == 2
     assert list(df.columns) == colnames
     assert list(df.iloc[0]) == [1, 3]
     assert list(df.iloc[1]) == [2, 4]
     with pytest.raises(DatasetError):
-        df = data.read_nonmem_dataset(StringIO("1,2\n1,3\n2,4\n2,a"), colnames=colnames,
-                                      ignore=['DV.EQN.2', 'DV.EQ.a'])
-    df = data.read_nonmem_dataset(StringIO("1,2\n1,3\n2,4\n2,a"), colnames=colnames,
-                                  ignore=['DV.EQ."a"'])
+        df = data.read_nonmem_dataset(
+            StringIO("1,2\n1,3\n2,4\n2,a"), colnames=colnames, ignore=['DV.EQN.2', 'DV.EQ.a']
+        )
+    df = data.read_nonmem_dataset(
+        StringIO("1,2\n1,3\n2,4\n2,a"), colnames=colnames, ignore=['DV.EQ."a"']
+    )
     assert len(df) == 3
     assert list(df.columns) == colnames
     assert list(df.iloc[0]) == [1, 2]
     assert list(df.iloc[1]) == [1, 3]
     assert list(df.iloc[2]) == [2, 4]
-    df = data.read_nonmem_dataset(StringIO("1,2\n1,3\n2,4\n2,5"), colnames=colnames,
-                                  accept=['DV.EQN.2'])
+    df = data.read_nonmem_dataset(
+        StringIO("1,2\n1,3\n2,4\n2,5"), colnames=colnames, accept=['DV.EQN.2']
+    )
     assert len(df) == 1
     assert list(df.columns) == colnames
     assert list(df.iloc[0]) == [1, 2]
-    df = data.read_nonmem_dataset(StringIO("1,2\n1,3\n2,4\n2,5"), colnames=colnames,
-                                  ignore=['ID 2'])
+    df = data.read_nonmem_dataset(
+        StringIO("1,2\n1,3\n2,4\n2,5"), colnames=colnames, ignore=['ID 2']
+    )
     assert len(df) == 2
     assert list(df.iloc[0]) == [1, 2]
     assert list(df.iloc[1]) == [1, 3]

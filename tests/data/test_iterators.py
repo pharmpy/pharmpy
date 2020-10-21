@@ -8,8 +8,9 @@ import pharmpy.data.iterators as iters
 
 @pytest.fixture
 def df():
-    return pharmpy.data.PharmDataFrame({'ID': [1, 1, 2, 2, 4, 4], 'DV': [5, 6, 3, 4, 0, 9],
-                                        'STRAT': [1, 1, 2, 2, 2, 2]})
+    return pharmpy.data.PharmDataFrame(
+        {'ID': [1, 1, 2, 2, 4, 4], 'DV': [5, 6, 3, 4, 0, 9], 'STRAT': [1, 1, 2, 2, 2, 2]}
+    )
 
 
 def test_omit(df):
@@ -19,7 +20,7 @@ def test_omit(df):
     assert list(new_df['ID']) == [2, 2, 4, 4]
     assert list(new_df['DV']) == [3, 4, 0, 9]
     assert new_df.name == 'omitted_1'
-    assert not hasattr(df, 'name')      # Check that original did not get name
+    assert not hasattr(df, 'name')  # Check that original did not get name
     (new_df, group) = next(omitter)
     assert group == 2
     assert list(new_df['ID']) == [1, 1, 4, 4]
@@ -43,7 +44,7 @@ def test_resampler_default(df):
     assert list(new_df['DV']) == [5, 6, 0, 9, 3, 4]
     assert list(new_df['STRAT']) == [1, 1, 2, 2, 2, 2]
     assert new_df.name == 'resample_1'
-    with pytest.raises(StopIteration):      # Test the default one iteration
+    with pytest.raises(StopIteration):  # Test the default one iteration
         next(resampler)
 
 
@@ -71,15 +72,17 @@ def test_resampler_noreplace(df):
 
 def test_stratification(df):
     np.random.seed(28)
-    resampler = iters.Resample(df, 'ID', resamples=1, stratify='STRAT',
-                               sample_size={1: 2, 2: 3}, replace=True)
+    resampler = iters.Resample(
+        df, 'ID', resamples=1, stratify='STRAT', sample_size={1: 2, 2: 3}, replace=True
+    )
     (new_df, ids) = next(resampler)
     assert ids == [1, 1, 4, 4, 4]
     assert list(new_df['ID']) == [1, 1, 2, 2, 3, 3, 4, 4, 5, 5]
     assert list(new_df['DV']) == [5, 6, 5, 6, 0, 9, 0, 9, 0, 9]
 
-    resampler = iters.Resample(df, 'ID', resamples=1, stratify='STRAT',
-                               sample_size={1: 2}, replace=True)
+    resampler = iters.Resample(
+        df, 'ID', resamples=1, stratify='STRAT', sample_size={1: 2}, replace=True
+    )
     (new_df, ids) = next(resampler)
     assert ids == [1, 1]
 

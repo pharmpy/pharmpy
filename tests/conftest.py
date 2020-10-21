@@ -58,6 +58,7 @@ def str_repr():
         if not string:
             return '-- EMPTY --'
         return '"' + repr(string)[1:-1] + '"'
+
     return func
 
 
@@ -73,8 +74,9 @@ class _RandomData:
     """
 
     comment_char = ';'
-    comment_charset = (' '*25 + string.ascii_letters*5 + string.digits*3 + '\t'*3 +
-                       string.punctuation).replace(comment_char, '')
+    comment_charset = (
+        ' ' * 25 + string.ascii_letters * 5 + string.digits * 3 + '\t' * 3 + string.punctuation
+    ).replace(comment_char, '')
 
     def __init__(self, N=None, comment_char=';'):
         self.history = []
@@ -84,15 +86,15 @@ class _RandomData:
         self.N = N
 
     # -- methods producing random generators ---------------------------
-    def pos_int(self, size=1E4):
+    def pos_int(self, size=1e4):
         """Returns (generator for) non-negative integer x, where x <= size."""
         return self._gen(random.randint, 0, size)
 
-    def int(self, size=1E4):
+    def int(self, size=1e4):
         """Returns (generator for) integer x, where -size < x < size."""
         return self._gen(random.randint, -size, size)
 
-    def float(self, size=1E9):
+    def float(self, size=1e9):
         """Returns (generator for) floating point num x, where x ~ normal_dist(0, sd=size)."""
         return self._gen(random.normalvariate, 0, size)
 
@@ -110,14 +112,14 @@ class _RandomData:
                     if random.getrandbits(1):
                         val = random.randint(0, 9)
                     else:
-                        val = random.randint(-1E5, 1E5)
+                        val = random.randint(-1e5, 1e5)
                     s = str(val)
                 else:
                     fmt = random.choice(sci_fmt)
                     if random.getrandbits(1):
                         val = random.normalvariate(0, 1)
                     else:
-                        val = random.normalvariate(0, 10**(random.randint(-50, 50)))
+                        val = random.normalvariate(0, 10 ** (random.randint(-50, 50)))
                     s = fmt % (val,)
                     val = float(s)
                 return val, s
@@ -146,9 +148,9 @@ class _RandomData:
         """
 
         biases, choices = zip(*bias_choice)
-        base = min(biases)*100
-        rep = tuple(round((b*100)/base) for b in biases)
-        choices = [[ch]*rep for ch, rep in zip(choices, rep)]
+        base = min(biases) * 100
+        rep = tuple(round((b * 100) / base) for b in biases)
+        choices = [[ch] * rep for ch, rep in zip(choices, rep)]
         choices = [x for lst in choices for x in lst]
         return self._gen(lambda x: random.choice(x), choices)
 
@@ -165,6 +167,7 @@ class _RandomData:
             if not bool(random.getrandbits(2)):
                 return comment
             return comment + ''.join(random.choice(ch) for _ in range(1, random.randrange(_max)))
+
         return self._gen(f, self.comment_char, self.comment_charset, maxlen)
 
     def pad(self, maxlen=5, nl=False):
@@ -177,7 +180,8 @@ class _RandomData:
         """
 
         def f(x):
-            return random.choice(chars)*random.choice([0]*x + list(range(1, x)))
+            return random.choice(chars) * random.choice([0] * x + list(range(1, x)))
+
         if nl:
             chars = ' \n '
         else:

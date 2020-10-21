@@ -28,9 +28,9 @@ def _get_value(node):
 class OptionRecord(Record):
     @property
     def option_pairs(self):
-        """ Extract the key-value pairs
-            If no value exists set it to None
-            Can only handle cases where options are supposed to be unique
+        """Extract the key-value pairs
+        If no value exists set it to None
+        Can only handle cases where options are supposed to be unique
         """
         pairs = OrderedDict()
         for node in self.root.all('option'):
@@ -39,8 +39,8 @@ class OptionRecord(Record):
 
     @property
     def all_options(self):
-        """ Extract all options even if non-unique.
-            returns a list of named two-tuples with key and value
+        """Extract all options even if non-unique.
+        returns a list of named two-tuples with key and value
         """
         Option = namedtuple('Option', ['key', 'value'])
         pairs = []
@@ -58,9 +58,9 @@ class OptionRecord(Record):
         return None
 
     def get_option_lists(self, option):
-        """ Generator for lists of one option
+        """Generator for lists of one option
 
-            For example COMPARTMENT in $MODEL
+        For example COMPARTMENT in $MODEL
         """
         next_value = False
         for node in self.root.all('option'):
@@ -68,7 +68,7 @@ class OptionRecord(Record):
             if next_value:
                 value = _get_key(node)
                 next_value = False
-            elif _get_key(node) == option[:len(_get_key(node))]:
+            elif _get_key(node) == option[: len(_get_key(node))]:
                 value = _get_value(node)
                 if value is None:
                     next_value = True
@@ -79,11 +79,11 @@ class OptionRecord(Record):
                     yield [value]
 
     def set_option(self, key, new_value):
-        """ Set the value of an option
+        """Set the value of an option
 
-            If option already exists replaces its value
-            appends option at the end if it does not exist
-            does not handle abbreviations yet
+        If option already exists replaces its value
+        appends option at the end if it does not exist
+        does not handle abbreviations yet
         """
         # If already exists update value
         last_option = None
@@ -115,16 +115,15 @@ class OptionRecord(Record):
         return node
 
     def append_option(self, key, value=None):
-        """ Append option as last option
+        """Append option as last option
 
-            Method applicable to option records with no special grammar
+        Method applicable to option records with no special grammar
         """
         node = self._create_option(key, value)
         self.append_option_node(node)
 
     def append_option_node(self, node):
-        """ Add a new option as last option
-        """
+        """Add a new option as last option"""
         last_child = self.root.children[-1]
         if last_child.rule == 'option':
             ws_node = AttrTree.create('ws', [{'WS_ALL': ' '}])
@@ -140,8 +139,7 @@ class OptionRecord(Record):
             self.root.children += [ws_node, node]
 
     def replace_option(self, old, new):
-        """Replace an option
-        """
+        """Replace an option"""
         for node in self.root.all('option'):
             if hasattr(node, 'KEY'):
                 if str(node.KEY) == old:
@@ -151,8 +149,7 @@ class OptionRecord(Record):
                     node.VALUE = new
 
     def remove_option(self, key):
-        """ Remove all options key
-        """
+        """Remove all options key"""
         new_children = []
         for node in self.root.children:
             if node.rule == 'option':
@@ -166,32 +163,30 @@ class OptionRecord(Record):
         self.root.children = new_children
 
     def remove_nth_option(self, key, n):
-        """ Remove the nth option key
-        """
+        """Remove the nth option key"""
         new_children = []
         i = 0
         for node in self.root.children:
             if node.rule == 'option':
                 curkey = _get_key(node)
-                if key[:len(curkey)] == curkey and i == n:
+                if key[: len(curkey)] == curkey and i == n:
                     if new_children[-1].rule == 'ws' and '\n' not in str(new_children[-1]):
                         new_children.pop()
                 else:
                     new_children.append(node)
-                if key[:len(curkey)] == curkey:
+                if key[: len(curkey)] == curkey:
                     i += 1
             else:
                 new_children.append(node)
         self.root.children = new_children
 
     def add_suboption_for_nth(self, key, n, suboption):
-        """Adds a suboption to the nth option key
-        """
+        """Adds a suboption to the nth option key"""
         i = 0
         for node in self.root.children:
             if node.rule == 'option':
                 curkey = _get_key(node)
-                if key[:len(curkey)] == curkey:
+                if key[: len(curkey)] == curkey:
                     if i == n:
                         s = node.VALUE
                         if s.startswith('('):
@@ -203,8 +198,7 @@ class OptionRecord(Record):
                     i += 1
 
     def remove_option_startswith(self, start):
-        """ Remove all options that startswith
-        """
+        """Remove all options that startswith"""
         for key in self.option_pairs.keys():
             if key.startswith(start):
                 self.remove_option(key)
@@ -213,10 +207,10 @@ class OptionRecord(Record):
     def match_option(valid, option):
         """Match a given option to any from a set of valid options
 
-           NONMEM allows matching down to three letters as long as
-           there are no ambiguities.
+        NONMEM allows matching down to three letters as long as
+        there are no ambiguities.
 
-           return the canonical form of the matched option or None for no match
+        return the canonical form of the matched option or None for no match
         """
         i = 3
         match = None

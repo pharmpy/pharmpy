@@ -5,9 +5,18 @@ import pytest
 from pyfakefs.fake_filesystem_unittest import Patcher
 
 from pharmpy import Model
-from pharmpy.modeling import (absorption_rate, add_covariate_effect, add_etas, add_lag_time, boxcox,
-                              explicit_odes, john_draper, remove_lag_time, set_transit_compartments,
-                              tdist)
+from pharmpy.modeling import (
+    absorption_rate,
+    add_covariate_effect,
+    add_etas,
+    add_lag_time,
+    boxcox,
+    explicit_odes,
+    john_draper,
+    remove_lag_time,
+    set_transit_compartments,
+    tdist,
+)
 
 
 def test_transit_compartments(testdata):
@@ -174,66 +183,105 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
     assert str(model) == before
 
 
-@pytest.mark.parametrize('effect, covariate, operation, buf_new', [
-    ('exp', 'WGT', '*', 'WGT_MEDIAN = 1.30000\n'
-                        'CLWGT = EXP(THETA(4)*(WGT - WGT_MEDIAN))\n'
-                        'CL = CL*CLWGT'),
-    ('exp', 'WGT', '+', 'WGT_MEDIAN = 1.30000\n'
-                        'CLWGT = EXP(THETA(4)*(WGT - WGT_MEDIAN))\n'
-                        'CL = CL + CLWGT'),
-    ('pow', 'WGT', '*', 'WGT_MEDIAN = 1.30000\n'
-                        'CLWGT = (WGT/WGT_MEDIAN)**THETA(4)\n'
-                        'CL = CL*CLWGT'),
-    ('lin', 'WGT', '*', 'WGT_MEDIAN = 1.30000\n'
-                        'CLWGT = THETA(4)*(WGT - WGT_MEDIAN) + 1\n'
-                        'CL = CL*CLWGT'),
-    ('cat', 'FA1', '*', 'IF (FA1.EQ.1.0) THEN\n'
-                        'CLFA1 = 1\n'
-                        'ELSE IF (FA1.EQ.0.0) THEN\n'
-                        'CLFA1 = THETA(4) + 1\n'
-                        'END IF\n'
-                        'CL = CL*CLFA1'),
-    ('piece_lin', 'WGT', '*', 'WGT_MEDIAN = 1.30000\n'
-                              'IF (WGT.LE.WGT_MEDIAN) THEN\n'
-                              'CLWGT = THETA(4)*(WGT - WGT_MEDIAN) + 1\n'
-                              'ELSE\n'
-                              'CLWGT = THETA(5)*(WGT - WGT_MEDIAN) + 1\n'
-                              'END IF\n'
-                              'CL = CL*CLWGT'),
-    ('theta - cov + median', 'WGT', '*',
-     'WGT_MEDIAN = 1.30000\n'
-     'CLWGT = THETA(4) - WGT + WGT_MEDIAN\n'
-     'CL = CL*CLWGT'),
-    ('theta - cov + std', 'WGT', '*',
-     'WGT_STD = 0.704565\n'
-     'CLWGT = THETA(4) - WGT + WGT_STD\n'
-     'CL = CL*CLWGT'),
-    ('theta1 * (cov/median)**theta2', 'WGT', '*',
-     'WGT_MEDIAN = 1.30000\n'
-     'CLWGT = THETA(4)*(WGT/WGT_MEDIAN)**THETA(5)\n'
-     'CL = CL*CLWGT'),
-    ('((cov/std) - median) * theta', 'WGT', '*',
-     'WGT_MEDIAN = 1.30000\n'
-     'WGT_STD = 0.704565\n'
-     'CLWGT = THETA(4)*(WGT/WGT_STD - WGT_MEDIAN)\n'
-     'CL = CL*CLWGT')
-])
+@pytest.mark.parametrize(
+    'effect, covariate, operation, buf_new',
+    [
+        (
+            'exp',
+            'WGT',
+            '*',
+            'WGT_MEDIAN = 1.30000\n' 'CLWGT = EXP(THETA(4)*(WGT - WGT_MEDIAN))\n' 'CL = CL*CLWGT',
+        ),
+        (
+            'exp',
+            'WGT',
+            '+',
+            'WGT_MEDIAN = 1.30000\n' 'CLWGT = EXP(THETA(4)*(WGT - WGT_MEDIAN))\n' 'CL = CL + CLWGT',
+        ),
+        (
+            'pow',
+            'WGT',
+            '*',
+            'WGT_MEDIAN = 1.30000\n' 'CLWGT = (WGT/WGT_MEDIAN)**THETA(4)\n' 'CL = CL*CLWGT',
+        ),
+        (
+            'lin',
+            'WGT',
+            '*',
+            'WGT_MEDIAN = 1.30000\n' 'CLWGT = THETA(4)*(WGT - WGT_MEDIAN) + 1\n' 'CL = CL*CLWGT',
+        ),
+        (
+            'cat',
+            'FA1',
+            '*',
+            'IF (FA1.EQ.1.0) THEN\n'
+            'CLFA1 = 1\n'
+            'ELSE IF (FA1.EQ.0.0) THEN\n'
+            'CLFA1 = THETA(4) + 1\n'
+            'END IF\n'
+            'CL = CL*CLFA1',
+        ),
+        (
+            'piece_lin',
+            'WGT',
+            '*',
+            'WGT_MEDIAN = 1.30000\n'
+            'IF (WGT.LE.WGT_MEDIAN) THEN\n'
+            'CLWGT = THETA(4)*(WGT - WGT_MEDIAN) + 1\n'
+            'ELSE\n'
+            'CLWGT = THETA(5)*(WGT - WGT_MEDIAN) + 1\n'
+            'END IF\n'
+            'CL = CL*CLWGT',
+        ),
+        (
+            'theta - cov + median',
+            'WGT',
+            '*',
+            'WGT_MEDIAN = 1.30000\n' 'CLWGT = THETA(4) - WGT + WGT_MEDIAN\n' 'CL = CL*CLWGT',
+        ),
+        (
+            'theta - cov + std',
+            'WGT',
+            '*',
+            'WGT_STD = 0.704565\n' 'CLWGT = THETA(4) - WGT + WGT_STD\n' 'CL = CL*CLWGT',
+        ),
+        (
+            'theta1 * (cov/median)**theta2',
+            'WGT',
+            '*',
+            'WGT_MEDIAN = 1.30000\n'
+            'CLWGT = THETA(4)*(WGT/WGT_MEDIAN)**THETA(5)\n'
+            'CL = CL*CLWGT',
+        ),
+        (
+            '((cov/std) - median) * theta',
+            'WGT',
+            '*',
+            'WGT_MEDIAN = 1.30000\n'
+            'WGT_STD = 0.704565\n'
+            'CLWGT = THETA(4)*(WGT/WGT_STD - WGT_MEDIAN)\n'
+            'CL = CL*CLWGT',
+        ),
+    ],
+)
 def test_add_covariate_effect(pheno_path, effect, covariate, operation, buf_new):
     model = Model(pheno_path)
 
     add_covariate_effect(model, 'CL', covariate, effect, operation)
     model.update_source()
 
-    rec_ref = f'$PK\n' \
-              f'IF(AMT.GT.0) BTIME=TIME\n' \
-              f'TAD=TIME-BTIME\n' \
-              f'TVCL=THETA(1)*WGT\n' \
-              f'TVV=THETA(2)*WGT\n' \
-              f'IF(APGR.LT.5) TVV=TVV*(1+THETA(3))\n' \
-              f'CL=TVCL*EXP(ETA(1))\n' \
-              f'{buf_new}\n' \
-              f'V=TVV*EXP(ETA(2))\n' \
-              f'S1=V\n\n'
+    rec_ref = (
+        f'$PK\n'
+        f'IF(AMT.GT.0) BTIME=TIME\n'
+        f'TAD=TIME-BTIME\n'
+        f'TVCL=THETA(1)*WGT\n'
+        f'TVV=THETA(2)*WGT\n'
+        f'IF(APGR.LT.5) TVV=TVV*(1+THETA(3))\n'
+        f'CL=TVCL*EXP(ETA(1))\n'
+        f'{buf_new}\n'
+        f'V=TVV*EXP(ETA(2))\n'
+        f'S1=V\n\n'
+    )
 
     assert str(model.get_pred_pk_record()) == rec_ref
 
@@ -257,7 +305,7 @@ def test_add_covariate_effect_nan(pheno_path):
 def test_add_covariate_effect_duplicates(pheno_path):
     model = Model(pheno_path)
 
-    add_covariate_effect(model, 'CL',  'WGT', 'exp')
+    add_covariate_effect(model, 'CL', 'WGT', 'exp')
 
     with pytest.warns(UserWarning):
         add_covariate_effect(model, 'CL', 'WGT', 'exp')
@@ -681,33 +729,50 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
     assert str(model) == correct
 
 
-@pytest.mark.parametrize('etas, etab, buf_new', [
-    (['ETA(1)'], 'ETAB1 = (EXP(ETA(1))**THETA(4) - 1)/THETA(4)',
-     'CL = TVCL*EXP(ETAB1)\nV=TVV*EXP(ETA(2))'),
-    (['ETA(1)', 'ETA(2)'], 'ETAB1 = (EXP(ETA(1))**THETA(4) - 1)/THETA(4)\n'
-                           'ETAB2 = (EXP(ETA(2))**THETA(5) - 1)/THETA(5)',
-     'CL = TVCL*EXP(ETAB1)\nV = TVV*EXP(ETAB2)'),
-    (None, 'ETAB1 = (EXP(ETA(1))**THETA(4) - 1)/THETA(4)\n'
-           'ETAB2 = (EXP(ETA(2))**THETA(5) - 1)/THETA(5)',
-     'CL = TVCL*EXP(ETAB1)\nV = TVV*EXP(ETAB2)'),
-    (['eta(1)'], 'ETAB1 = (EXP(ETA(1))**THETA(4) - 1)/THETA(4)',
-     'CL = TVCL*EXP(ETAB1)\nV=TVV*EXP(ETA(2))')
-])
+@pytest.mark.parametrize(
+    'etas, etab, buf_new',
+    [
+        (
+            ['ETA(1)'],
+            'ETAB1 = (EXP(ETA(1))**THETA(4) - 1)/THETA(4)',
+            'CL = TVCL*EXP(ETAB1)\nV=TVV*EXP(ETA(2))',
+        ),
+        (
+            ['ETA(1)', 'ETA(2)'],
+            'ETAB1 = (EXP(ETA(1))**THETA(4) - 1)/THETA(4)\n'
+            'ETAB2 = (EXP(ETA(2))**THETA(5) - 1)/THETA(5)',
+            'CL = TVCL*EXP(ETAB1)\nV = TVV*EXP(ETAB2)',
+        ),
+        (
+            None,
+            'ETAB1 = (EXP(ETA(1))**THETA(4) - 1)/THETA(4)\n'
+            'ETAB2 = (EXP(ETA(2))**THETA(5) - 1)/THETA(5)',
+            'CL = TVCL*EXP(ETAB1)\nV = TVV*EXP(ETAB2)',
+        ),
+        (
+            ['eta(1)'],
+            'ETAB1 = (EXP(ETA(1))**THETA(4) - 1)/THETA(4)',
+            'CL = TVCL*EXP(ETAB1)\nV=TVV*EXP(ETA(2))',
+        ),
+    ],
+)
 def test_boxcox(pheno_path, etas, etab, buf_new):
     model = Model(pheno_path)
 
     boxcox(model, etas)
     model.update_source()
 
-    rec_ref = f'$PK\n' \
-              f'{etab}\n' \
-              f'IF(AMT.GT.0) BTIME=TIME\n' \
-              f'TAD=TIME-BTIME\n' \
-              f'TVCL=THETA(1)*WGT\n' \
-              f'TVV=THETA(2)*WGT\n' \
-              f'IF(APGR.LT.5) TVV=TVV*(1+THETA(3))\n' \
-              f'{buf_new}\n' \
-              f'S1=V\n\n'
+    rec_ref = (
+        f'$PK\n'
+        f'{etab}\n'
+        f'IF(AMT.GT.0) BTIME=TIME\n'
+        f'TAD=TIME-BTIME\n'
+        f'TVCL=THETA(1)*WGT\n'
+        f'TVV=THETA(2)*WGT\n'
+        f'IF(APGR.LT.5) TVV=TVV*(1+THETA(3))\n'
+        f'{buf_new}\n'
+        f'S1=V\n\n'
+    )
 
     assert str(model.get_pred_pk_record()) == rec_ref
     assert model.parameters['lambda1'].init == 0.01
@@ -733,73 +798,84 @@ def test_tdist(pheno_path):
     num_3 = f'3*{eta}**6 + 19*{eta}**4 + 17*{eta}**2 - 15'
     denom_3 = f'384*{theta}**3'
 
-    expression = f'(1 + ({num_1})/({denom_1}) + ({num_2})/({denom_2}) + ' \
-                 f'({num_3})/({denom_3}))*ETA(1)'
+    expression = (
+        f'(1 + ({num_1})/({denom_1}) + ({num_2})/({denom_2}) + ' f'({num_3})/({denom_3}))*ETA(1)'
+    )
 
-    rec_ref = f'$PK\n' \
-              f'{symbol} = {expression}\n' \
-              f'IF(AMT.GT.0) BTIME=TIME\n' \
-              f'TAD=TIME-BTIME\n' \
-              f'TVCL=THETA(1)*WGT\n' \
-              f'TVV=THETA(2)*WGT\n' \
-              f'IF(APGR.LT.5) TVV=TVV*(1+THETA(3))\n' \
-              f'CL = TVCL*EXP(ETAT1)\n' \
-              f'V=TVV*EXP(ETA(2))\n' \
-              f'S1=V\n\n'
+    rec_ref = (
+        f'$PK\n'
+        f'{symbol} = {expression}\n'
+        f'IF(AMT.GT.0) BTIME=TIME\n'
+        f'TAD=TIME-BTIME\n'
+        f'TVCL=THETA(1)*WGT\n'
+        f'TVV=THETA(2)*WGT\n'
+        f'IF(APGR.LT.5) TVV=TVV*(1+THETA(3))\n'
+        f'CL = TVCL*EXP(ETAT1)\n'
+        f'V=TVV*EXP(ETA(2))\n'
+        f'S1=V\n\n'
+    )
 
     assert str(model.get_pred_pk_record()) == rec_ref
     assert model.parameters['df1'].init == 80
 
 
-@pytest.mark.parametrize('etas, etad, buf_new', [
-    (['ETA(1)'], 'ETAD1 = ((ABS(ETA(1)) + 1)**THETA(4) - 1)*ABS(ETA(1))/(THETA(4)*ETA(1))',
-     'CL = TVCL*EXP(ETAD1)\nV=TVV*EXP(ETA(2))'),
-])
+@pytest.mark.parametrize(
+    'etas, etad, buf_new',
+    [
+        (
+            ['ETA(1)'],
+            'ETAD1 = ((ABS(ETA(1)) + 1)**THETA(4) - 1)*ABS(ETA(1))/(THETA(4)*ETA(1))',
+            'CL = TVCL*EXP(ETAD1)\nV=TVV*EXP(ETA(2))',
+        ),
+    ],
+)
 def test_john_draper(pheno_path, etas, etad, buf_new):
     model = Model(pheno_path)
 
     john_draper(model, etas)
     model.update_source()
 
-    rec_ref = f'$PK\n' \
-              f'{etad}\n' \
-              f'IF(AMT.GT.0) BTIME=TIME\n' \
-              f'TAD=TIME-BTIME\n' \
-              f'TVCL=THETA(1)*WGT\n' \
-              f'TVV=THETA(2)*WGT\n' \
-              f'IF(APGR.LT.5) TVV=TVV*(1+THETA(3))\n' \
-              f'{buf_new}\n' \
-              f'S1=V\n\n'
+    rec_ref = (
+        f'$PK\n'
+        f'{etad}\n'
+        f'IF(AMT.GT.0) BTIME=TIME\n'
+        f'TAD=TIME-BTIME\n'
+        f'TVCL=THETA(1)*WGT\n'
+        f'TVV=THETA(2)*WGT\n'
+        f'IF(APGR.LT.5) TVV=TVV*(1+THETA(3))\n'
+        f'{buf_new}\n'
+        f'S1=V\n\n'
+    )
 
     assert str(model.get_pred_pk_record()) == rec_ref
 
 
-@pytest.mark.parametrize('parameter, expression, operation, buf_new', [
-    ('S1', 'exp', '+', 'V=TVV*EXP(ETA(2))\n'
-                       'S1 = V + EXP(ETA(3))'),
-    ('S1', 'exp', '*', 'V=TVV*EXP(ETA(2))\n'
-                       'S1 = V*EXP(ETA(3))'),
-    ('V', 'exp', '+', 'V = TVV*EXP(ETA(2)) + EXP(ETA(3))\n'
-                      'S1=V'),
-    ('S1', 'eta_new', '+', 'V=TVV*EXP(ETA(2))\n'
-                           'S1 = ETA(3) + V'),
-    ('S1', 'eta_new**2', '+', 'V=TVV*EXP(ETA(2))\n'
-                              'S1 = ETA(3)**2 + V'),
-])
+@pytest.mark.parametrize(
+    'parameter, expression, operation, buf_new',
+    [
+        ('S1', 'exp', '+', 'V=TVV*EXP(ETA(2))\n' 'S1 = V + EXP(ETA(3))'),
+        ('S1', 'exp', '*', 'V=TVV*EXP(ETA(2))\n' 'S1 = V*EXP(ETA(3))'),
+        ('V', 'exp', '+', 'V = TVV*EXP(ETA(2)) + EXP(ETA(3))\n' 'S1=V'),
+        ('S1', 'eta_new', '+', 'V=TVV*EXP(ETA(2))\n' 'S1 = ETA(3) + V'),
+        ('S1', 'eta_new**2', '+', 'V=TVV*EXP(ETA(2))\n' 'S1 = ETA(3)**2 + V'),
+    ],
+)
 def test_add_etas(pheno_path, parameter, expression, operation, buf_new):
     model = Model(pheno_path)
 
     add_etas(model, parameter, expression, operation)
     model.update_source()
 
-    rec_ref = f'$PK\n' \
-              f'IF(AMT.GT.0) BTIME=TIME\n' \
-              f'TAD=TIME-BTIME\n' \
-              f'TVCL=THETA(1)*WGT\n' \
-              f'TVV=THETA(2)*WGT\n' \
-              f'IF(APGR.LT.5) TVV=TVV*(1+THETA(3))\n' \
-              f'CL=TVCL*EXP(ETA(1))\n' \
-              f'{buf_new}\n\n'
+    rec_ref = (
+        f'$PK\n'
+        f'IF(AMT.GT.0) BTIME=TIME\n'
+        f'TAD=TIME-BTIME\n'
+        f'TVCL=THETA(1)*WGT\n'
+        f'TVV=THETA(2)*WGT\n'
+        f'IF(APGR.LT.5) TVV=TVV*(1+THETA(3))\n'
+        f'CL=TVCL*EXP(ETA(1))\n'
+        f'{buf_new}\n\n'
+    )
 
     assert str(model.get_pred_pk_record()) == rec_ref
 

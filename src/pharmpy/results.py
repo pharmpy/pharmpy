@@ -89,22 +89,26 @@ def read_results(path_or_buf):
     d = decoder.decode(s)
     if decoder.cls == 'FREMResults':
         from pharmpy.methods.frem import FREMResults
+
         res = FREMResults.from_dict(d)
     elif decoder.cls == 'BootstrapResults':
         from pharmpy.methods.bootstrap import BootstrapResults
+
         res = BootstrapResults.from_dict(d)
     elif decoder.cls == 'CDDResults':
         from pharmpy.methods.cdd import CDDResults
+
         res = CDDResults.from_dict(d)
     elif decoder.cls == 'SCMResults':
         from pharmpy.methods.scm import SCMResults
+
         res = SCMResults.from_dict(d)
     return res
 
 
 class Results:
-    """ Base class for all result classes
-    """
+    """Base class for all result classes"""
+
     @classmethod
     def from_dict(cls, d):
         return cls(**d)
@@ -122,7 +126,7 @@ class Results:
     def get_and_reset_index(self, attr, **kwargs):
         """Wrapper to reset index of attribute or result from method.
 
-           Used to facilitate importing multiindex dataframes into R
+        Used to facilitate importing multiindex dataframes into R
         """
         val = getattr(self, attr)
         if callable(val):
@@ -132,8 +136,7 @@ class Results:
         return df.reset_index()
 
     def to_dict(self):
-        """Convert results object to a dictionary
-        """
+        """Convert results object to a dictionary"""
         return vars(self).copy()
 
     def __str__(self):
@@ -146,7 +149,7 @@ class Results:
             s += f'{key}\n'
             if isinstance(value, pd.DataFrame):
                 s += value.to_string()
-            elif isinstance(value, list):   # Print list of lists as table
+            elif isinstance(value, list):  # Print list of lists as table
                 if len(value) > 0 and isinstance(value[0], list):
                     df = pd.DataFrame(value)
                     df_str = df.to_string(index=False)
@@ -160,7 +163,7 @@ class Results:
     def to_csv(self, path):
         """Save results as a human readable csv file
 
-           Index will not be printed if it is a basic range.
+        Index will not be printed if it is a basic range.
         """
         d = self.to_dict()
         s = ""
@@ -174,7 +177,7 @@ class Results:
                 else:
                     use_index = True
                 s += value.to_csv(index=use_index)
-            elif isinstance(value, list):   # Print list of lists as table
+            elif isinstance(value, list):  # Print list of lists as table
                 if len(value) > 0 and isinstance(value[0], list):
                     for row in value:
                         s += f'{",".join(map(str, row))}\n'
@@ -186,25 +189,32 @@ class Results:
 
     def create_report(self, path):
         import pharmpy.reporting.reporting as reporting
+
         reporting.generate_report(self.rst_path, path)
 
     def add_plots(self):
-        """Create and add all plots to results object
-        """
+        """Create and add all plots to results object"""
         raise NotImplementedError()
 
 
 class ModelfitResults:
-    """ Base class for results from a modelfit operation
+    """Base class for results from a modelfit operation
 
     properties: individual_OFV is a df with currently ID and iOFV columns
         model_name - name of model that generated the results
         model
     """
 
-    def __init__(self, ofv=None, parameter_estimates=None, covariance_matrix=None,
-                 standard_errors=None, minimization_successful=None, individual_ofv=None,
-                 individual_estimates=None):
+    def __init__(
+        self,
+        ofv=None,
+        parameter_estimates=None,
+        covariance_matrix=None,
+        standard_errors=None,
+        minimization_successful=None,
+        individual_ofv=None,
+        individual_estimates=None,
+    ):
         self._ofv = ofv
         self._parameter_estimates = parameter_estimates
         self._covariance_matrix = covariance_matrix
@@ -215,33 +225,29 @@ class ModelfitResults:
 
     def reparameterize(self, parameterizations):
         """Reparametrize all parameters given a list of parametrization object
-           will change the parameter_estimates and standard_errors to be for
-           the transformed parameter
+        will change the parameter_estimates and standard_errors to be for
+        the transformed parameter
         """
         raise NotImplementedError("Not implemented")
 
     @property
     def ofv(self):
-        """Final objective function value
-        """
+        """Final objective function value"""
         return self._ofv
 
     @property
     def minimization_successful(self):
-        """ Was the minimization successful
-        """
+        """Was the minimization successful"""
         return self._minimization_successful
 
     @property
     def parameter_estimates(self):
-        """Parameter estimates as series
-        """
+        """Parameter estimates as series"""
         return self._parameter_estimates
 
     @property
     def covariance_matrix(self):
-        """The covariance matrix of the population parameter estimates
-        """
+        """The covariance matrix of the population parameter estimates"""
         return self._covariance_matrix
 
     def _cov_from_inf(self):
@@ -259,8 +265,7 @@ class ModelfitResults:
 
     @property
     def information_matrix(self):
-        """The Fischer information matrix of the population parameter estimates
-        """
+        """The Fischer information matrix of the population parameter estimates"""
         raise NotImplementedError()
 
     def _inf_from_cov(self):
@@ -278,8 +283,7 @@ class ModelfitResults:
 
     @property
     def correlation_matrix(self):
-        """The correlation matrix of the population parameter estimates
-        """
+        """The correlation matrix of the population parameter estimates"""
         raise NotImplementedError()
 
     def _corr_from_cov(self):
@@ -294,14 +298,12 @@ class ModelfitResults:
 
     @property
     def standard_errors(self):
-        """Standard errors of population parameter estimates
-        """
+        """Standard errors of population parameter estimates"""
         return self._standard_errors
 
     @property
     def relative_standard_errors(self):
-        """Relative standard errors of population parameter estimates
-        """
+        """Relative standard errors of population parameter estimates"""
         if self.standard_errors is not None:
             ser = self.standard_errors / self.parameter_estimates
             ser.name = 'RSE'
@@ -309,43 +311,40 @@ class ModelfitResults:
 
     def _se_from_cov(self):
         """Calculate the standard errors from the covariance matrix
-           can be used by subclasses
+        can be used by subclasses
         """
         cov = self.covariance_matrix
         se = pd.Series(np.sqrt(np.diag(cov.values)), index=cov.index)
         return se
 
     def _se_from_inf(self):
-        """Calculate the standard errors from the information matrix
-        """
+        """Calculate the standard errors from the information matrix"""
         Im = self.information_matrix
         se = pd.Series(np.sqrt(np.linalg.inv(Im.values)), index=Im.index)
         return se
 
     @property
     def individual_ofv(self):
-        """A Series with individual estimates indexed over ID
-        """
+        """A Series with individual estimates indexed over ID"""
         return self._individual_ofv
 
     @property
     def individual_estimates(self):
         """Individual parameter estimates
 
-           A DataFrame with ID as index one column for each individual parameter
+        A DataFrame with ID as index one column for each individual parameter
         """
         return self._individual_estimates
 
     @property
     def individual_estimates_covariance(self):
-        """The covariance matrix of the individual estimates
-        """
+        """The covariance matrix of the individual estimates"""
         raise NotImplementedError("Not implemented")
 
     def eta_shrinkage(self, sd=False):
         """Eta shrinkage for each eta
 
-           Variance = False to get sd scale
+        Variance = False to get sd scale
         """
         pe = self.parameter_estimates
         # Want parameter estimates combined with fixed parameter values
@@ -367,7 +366,7 @@ class ModelfitResults:
     def individual_shrinkage(self):
         """The individual eta-shrinkage
 
-            Definition: ieta_shr = (var(eta) / omega)
+        Definition: ieta_shr = (var(eta) / omega)
         """
         cov = self.individual_estimates_covariance
         pe = self.parameter_estimates
@@ -389,13 +388,14 @@ class ModelfitResults:
         return ish
 
     def near_bounds(self, zero_limit=0.001, significant_digits=2):
-        return self.model.parameters.values_near_bounds(values=self.parameter_estimates,
-                                                        zero_limit=zero_limit,
-                                                        significant_digits=significant_digits)
+        return self.model.parameters.values_near_bounds(
+            values=self.parameter_estimates,
+            zero_limit=zero_limit,
+            significant_digits=significant_digits,
+        )
 
     def parameter_summary(self):
-        """Summary of parameter estimates and uncertainty
-        """
+        """Summary of parameter estimates and uncertainty"""
         pe = self.parameter_estimates
         ses = self.standard_errors
         rses = self.relative_standard_errors
@@ -406,15 +406,16 @@ class ModelfitResults:
         x_label = f'{self.model_name} iOFV'
         y_label = f'{other.model_name} iOFV'
         df = PharmDataFrame({x_label: self.individual_ofv, y_label: other.individual_ofv})
-        plot = pharmpy.visualization.scatter_plot_correlation(df, x_label, y_label,
-                                                              title='iOFV vs iOFV')
+        plot = pharmpy.visualization.scatter_plot_correlation(
+            df, x_label, y_label, title='iOFV vs iOFV'
+        )
         return plot
 
 
 class ChainedModelfitResults(list, ModelfitResults):
     """A list of modelfit results given in order from first to final
-       inherits from both list and ModelfitResults. Each method from ModelfitResults
-       will be performed on the final modelfit object
+    inherits from both list and ModelfitResults. Each method from ModelfitResults
+    will be performed on the final modelfit object
     """
 
     def __init__(self):

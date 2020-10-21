@@ -10,10 +10,11 @@ toil_options.clean = "always"
 class ModelfitWorkflow:
     """Workflow for a simple modelfit
 
-       NONMEM only for now, but will become the agnostic workflow
-       Can handle multiple models
-       Copies up lst and ext files
+    NONMEM only for now, but will become the agnostic workflow
+    Can handle multiple models
+    Copies up lst and ext files
     """
+
     def __init__(self, models):
         self._models = models
 

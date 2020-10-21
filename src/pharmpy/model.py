@@ -35,10 +35,11 @@ class ModelSyntaxError(ModelException):
 
 class Model:
     """
-     Attribute: name
-        prediction_symbol
-        dependent_variable_symbol
+    Attribute: name
+       prediction_symbol
+       dependent_variable_symbol
     """
+
     @property
     def modelfit_results(self):
         return None
@@ -49,18 +50,20 @@ class Model:
 
     def write(self, path='', force=False):
         """Write model to file using its source format
-           If no path is supplied or does not contain a filename a name is created
-           from the name property of the model
-           Will not overwrite in case force is True.
-           return path written to
+        If no path is supplied or does not contain a filename a name is created
+        from the name property of the model
+        Will not overwrite in case force is True.
+        return path written to
         """
         path = Path(path)
         if not path or path.is_dir():
             try:
                 filename = f'{self.name}{self.source.filename_extension}'
             except AttributeError:
-                raise ValueError('Cannot name model file as no path argument was supplied and the'
-                                 'model has no name.')
+                raise ValueError(
+                    'Cannot name model file as no path argument was supplied and the'
+                    'model has no name.'
+                )
             path = path / filename
             new_name = None
         else:
@@ -75,14 +78,14 @@ class Model:
         return path
 
     def update_inits(self):
-        """Update inital estimates of model from its own ModelfitResults
-        """
+        """Update inital estimates of model from its own ModelfitResults"""
         if self.modelfit_results:
             self.parameters = self.modelfit_results.parameter_estimates
         else:
             # FIXME: Other exception here. ModelfitError?
-            raise ModelException("Cannot update initial parameter estimates "
-                                 "since parameters were not estimated")
+            raise ModelException(
+                "Cannot update initial parameter estimates " "since parameters were not estimated"
+            )
 
     def copy(self):
         """Create a deepcopy of the model object"""
@@ -100,7 +103,7 @@ class Model:
 
     def bump_model_number(self, path='.'):
         """If the model name ends in a number increase it to next available file
-           else do nothing.
+        else do nothing.
         """
         path = Path(path)
         name = self.name
@@ -148,15 +151,15 @@ class Model:
             i += 1
 
     def remove_unused_parameters_and_rvs(self):
-        """Remove any parameters and rvs that are not used in the model statements
-        """
+        """Remove any parameters and rvs that are not used in the model statements"""
         symbols = self.statements.free_symbols
 
         new_rvs = RandomVariables()
         for rv in self.random_variables:
             # FIXME: change if rvs are random symbols in expressions
-            if pharmpy.symbols.symbol(rv.name) in symbols or \
-                    not symbols.isdisjoint(rv.pspace.free_symbols):
+            if pharmpy.symbols.symbol(rv.name) in symbols or not symbols.isdisjoint(
+                rv.pspace.free_symbols
+            ):
                 new_rvs.add(rv)
         self.random_variables = new_rvs
 
@@ -180,16 +183,14 @@ class Model:
         return y
 
     def symbolic_population_prediction(self):
-        """Symbolic model population prediction
-        """
+        """Symbolic model population prediction"""
         y = self.symbolic_individual_prediction()
         for eta in self.random_variables.etas:
             y = y.subs({eta.name: 0})
         return y
 
     def symbolic_individual_prediction(self):
-        """Symbolic model individual prediction
-        """
+        """Symbolic model individual prediction"""
         y = self._observation()
 
         for eps in self.random_variables.ruv_rvs:
@@ -201,12 +202,12 @@ class Model:
     def population_prediction(self, parameters=None, dataset=None):
         """Numeric population prediction
 
-            The prediction is evaluated at the current model parameter values
-            or optionally at the given parameter values.
-            The evaluation is done for each data record in the model dataset
-            or optionally using the dataset argument.
+        The prediction is evaluated at the current model parameter values
+        or optionally at the given parameter values.
+        The evaluation is done for each data record in the model dataset
+        or optionally using the dataset argument.
 
-            Return population prediction series
+        Return population prediction series
         """
         y = self.symbolic_population_prediction()
         if parameters is not None:
@@ -227,8 +228,7 @@ class Model:
         return pred
 
     def individual_prediction(self, etas=None, parameters=None, dataset=None):
-        """Numeric individual prediction
-        """
+        """Numeric individual prediction"""
         y = self.symbolic_individual_prediction()
         if parameters is not None:
             y = y.subs(parameters)
@@ -246,8 +246,11 @@ class Model:
             if self.initial_individual_estimates is not None:
                 etas = self.initial_individual_estimates
             else:
-                etas = pd.DataFrame(0, index=df.pharmpy.ids,
-                                    columns=[eta.name for eta in self.random_variables.etas])
+                etas = pd.DataFrame(
+                    0,
+                    index=df.pharmpy.ids,
+                    columns=[eta.name for eta in self.random_variables.etas],
+                )
 
         def fn(row):
             row = row.to_dict()
@@ -280,9 +283,9 @@ class Model:
     def eta_gradient(self, etas=None, parameters=None, dataset=None):
         """Numeric eta gradient
 
-           The gradient is evaluated given initial etas, parameters and the model dataset.
-           The arguments etas, parameters and dataset can optionally override those
-           of the model. Return a DataFrame of gradients.
+        The gradient is evaluated given initial etas, parameters and the model dataset.
+        The arguments etas, parameters and dataset can optionally override those
+        of the model. Return a DataFrame of gradients.
         """
         y = self.symbolic_eta_gradient()
         y = self._replace_parameters(y, parameters)
@@ -297,8 +300,11 @@ class Model:
             if self.initial_individual_estimates is not None:
                 etas = self.initial_individual_estimates
             else:
-                etas = pd.DataFrame(0, index=df.pharmpy.ids,
-                                    columns=[eta.name for eta in self.random_variables.etas])
+                etas = pd.DataFrame(
+                    0,
+                    index=df.pharmpy.ids,
+                    columns=[eta.name for eta in self.random_variables.etas],
+                )
 
         def fn(row):
             row = row.to_dict()
@@ -313,8 +319,7 @@ class Model:
         return grad
 
     def eps_gradient(self, etas=None, parameters=None, dataset=None):
-        """Numeric epsilon gradient
-        """
+        """Numeric epsilon gradient"""
         y = self.symbolic_eps_gradient()
         y = self._replace_parameters(y, parameters)
         eps_names = [eps.name for eps in self.random_variables.ruv_rvs]
@@ -332,8 +337,11 @@ class Model:
             if self.initial_individual_estimates is not None:
                 etas = self.initial_individual_estimates
             else:
-                etas = pd.DataFrame(0, index=df.pharmpy.ids,
-                                    columns=[eta.name for eta in self.random_variables.etas])
+                etas = pd.DataFrame(
+                    0,
+                    index=df.pharmpy.ids,
+                    columns=[eta.name for eta in self.random_variables.etas],
+                )
 
         def fn(row):
             row = row.to_dict()
@@ -364,8 +372,9 @@ class Model:
         else:
             df = self.dataset
         # FIXME: Could have option to gradients to set all etas 0
-        etas = pd.DataFrame(0, index=df.pharmpy.ids,
-                            columns=[eta.name for eta in self.random_variables.etas])
+        etas = pd.DataFrame(
+            0, index=df.pharmpy.ids, columns=[eta.name for eta in self.random_variables.etas]
+        )
         G = self.eta_gradient(etas=etas, parameters=parameters, dataset=dataset)
         H = self.eps_gradient(etas=etas, parameters=parameters, dataset=dataset)
         F = self.population_prediction()

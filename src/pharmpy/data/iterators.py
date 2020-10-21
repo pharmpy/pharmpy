@@ -21,24 +21,24 @@ import pharmpy.math
 
 
 class DatasetIterator:
-    """ Base class for iterator classes that generate new datasets from an input dataset
+    """Base class for iterator classes that generate new datasets from an input dataset
 
-        The __next__ function could return either a DataFrame or a tuple where the first
-        element is the main DataFrame.
+    The __next__ function could return either a DataFrame or a tuple where the first
+    element is the main DataFrame.
     """
+
     def __init__(self, iterations, name_pattern='dataset_{}'):
         """Initialization of the base class
-           :param iterations: is the number of iterations
-           :param name_pattern: Name too use for generated datasets.
-                A number starting from 1 will be put in the placeholder.
+        :param iterations: is the number of iterations
+        :param name_pattern: Name too use for generated datasets.
+             A number starting from 1 will be put in the placeholder.
         """
         self._next = 1
         self._iterations = iterations
         self._name_pattern = name_pattern
 
     def _check_exhausted(self):
-        """Check if the iterator is exhaused. Raise StopIteration in that case
-        """
+        """Check if the iterator is exhaused. Raise StopIteration in that case"""
         if self._next > self._iterations:
             raise StopIteration
 
@@ -47,8 +47,8 @@ class DatasetIterator:
         self._next += 1
 
     def _retrieve_dataset(self, df_or_model):
-        """ Extract dataset from model and remember the model.
-            If input is dataset simply pass through and set model to None
+        """Extract dataset from model and remember the model.
+        If input is dataset simply pass through and set model to None
         """
         try:
             dataset = df_or_model.input.dataset
@@ -59,8 +59,8 @@ class DatasetIterator:
             return df_or_model
 
     def _combine_dataset(self, df):
-        """ If we are working with a model set the dataset and return model
-            else simply pass the dataset through
+        """If we are working with a model set the dataset and return model
+        else simply pass the dataset through
         """
         try:
             model = self._model.copy()
@@ -76,14 +76,15 @@ class DatasetIterator:
 
 
 class Omit(DatasetIterator):
-    """ Iterate over omissions of a certain group in a dataset. One group is omitted at a time.
+    """Iterate over omissions of a certain group in a dataset. One group is omitted at a time.
 
-        :param dataset_or_model: DataFrame to iterate over or a model from which to use the dataset
-        :param colname group: Name of the column to use for grouping
-        :param name_pattern: Name to use for generated datasets. A number starting from 1 will
-            be put in the placeholder.
-        :returns: Tuple of DataFrame and the omitted group
+    :param dataset_or_model: DataFrame to iterate over or a model from which to use the dataset
+    :param colname group: Name of the column to use for grouping
+    :param name_pattern: Name to use for generated datasets. A number starting from 1 will
+        be put in the placeholder.
+    :returns: Tuple of DataFrame and the omitted group
     """
+
     def __init__(self, dataset_or_model, group, name_pattern='omitted_{}'):
         df = self._retrieve_dataset(dataset_or_model)
         self._unique_groups = df[group].unique()
@@ -103,35 +104,43 @@ class Omit(DatasetIterator):
 
 
 class Resample(DatasetIterator):
-    """ Iterate over resamples of a dataset.
+    """Iterate over resamples of a dataset.
 
-        The dataset will be grouped on the group column then groups will be selected
-        randomly with or without replacement to form a new dataset.
-        The groups will be renumbered from 1 and upwards to keep them separated in the new
-        dataset.
+    The dataset will be grouped on the group column then groups will be selected
+    randomly with or without replacement to form a new dataset.
+    The groups will be renumbered from 1 and upwards to keep them separated in the new
+    dataset.
 
-        Stratification will make sure that
+    Stratification will make sure that
 
-        :param DataFrame df: DataFrame to iterate over
-        :param colname group: Name of column to group by
-        :param Int resamples: Number of resamples (iterations) to make
-        :param colname stratify: Name of column to use for stratification.
-            The values in the stratification column must be equal within a group so that the group
-            can be uniquely determined. A ValueError exception will be raised otherwise.
-        :param Int sample_size: The number of groups that should be sampled. The default is
-            the number of groups. If using stratification the default is to sample using the
-            proportion of the stratas in the dataset. A dictionary of specific sample sizes
-            for each strata can also be supplied.
-        :param bool replace: A boolean controlling whether sampling should be done with or
-            without replacement
-        :param name_pattern: Name to use for generated datasets. A number starting from 1 will
-            be put in the placeholder.
+    :param DataFrame df: DataFrame to iterate over
+    :param colname group: Name of column to group by
+    :param Int resamples: Number of resamples (iterations) to make
+    :param colname stratify: Name of column to use for stratification.
+        The values in the stratification column must be equal within a group so that the group
+        can be uniquely determined. A ValueError exception will be raised otherwise.
+    :param Int sample_size: The number of groups that should be sampled. The default is
+        the number of groups. If using stratification the default is to sample using the
+        proportion of the stratas in the dataset. A dictionary of specific sample sizes
+        for each strata can also be supplied.
+    :param bool replace: A boolean controlling whether sampling should be done with or
+        without replacement
+    :param name_pattern: Name to use for generated datasets. A number starting from 1 will
+        be put in the placeholder.
 
-        :returns: A tuple of a resampled DataFrame and a list of resampled groups in order
+    :returns: A tuple of a resampled DataFrame and a list of resampled groups in order
     """
 
-    def __init__(self, dataset_or_model, group, resamples=1, stratify=None, sample_size=None,
-                 replace=False, name_pattern='resample_{}'):
+    def __init__(
+        self,
+        dataset_or_model,
+        group,
+        resamples=1,
+        stratify=None,
+        sample_size=None,
+        replace=False,
+        name_pattern='resample_{}',
+    ):
         df = self._retrieve_dataset(dataset_or_model)
         unique_groups = df[group].unique()
         numgroups = len(unique_groups)
@@ -145,14 +154,16 @@ class Resample(DatasetIterator):
             have_mult_sample_sizes = isinstance(sample_size, collections.abc.Mapping)
             if not have_mult_sample_sizes:
                 non_rounded_sample_sizes = stratas.apply(
-                        lambda x: (len(x) / numgroups) * sample_size)
-                rounded_sample_sizes = pharmpy.math.round_and_keep_sum(non_rounded_sample_sizes,
-                                                                       sample_size)
-                sample_size_dict = dict(rounded_sample_sizes)    # strata: numsamples
+                    lambda x: (len(x) / numgroups) * sample_size
+                )
+                rounded_sample_sizes = pharmpy.math.round_and_keep_sum(
+                    non_rounded_sample_sizes, sample_size
+                )
+                sample_size_dict = dict(rounded_sample_sizes)  # strata: numsamples
             else:
                 sample_size_dict = sample_size
 
-            stratas = dict(stratas)     # strata: list of groups
+            stratas = dict(stratas)  # strata: list of groups
         else:
             sample_size_dict = {1: sample_size}
             stratas = {1: unique_groups}
@@ -165,12 +176,14 @@ class Resample(DatasetIterator):
                         raise ValueError(
                             f'The sample size ({sample_size_dict[strata]}) for strata {strata} is '
                             f'larger than the number of groups ({len(stratas[strata])}) in that '
-                            f'strata which is impossible with replacement.')
+                            f'strata which is impossible with replacement.'
+                        )
                     else:
                         raise ValueError(
                             f'The sample size ({sample_size_dict[strata]}) is larger than the '
                             f'number of groups ({len(stratas[strata])}) which is impossible with '
-                            f'replacement.')
+                            f'replacement.'
+                        )
 
         self._df = df
         self._group = group
@@ -184,9 +197,9 @@ class Resample(DatasetIterator):
 
         random_groups = []
         for strata in self._sample_size_dict:
-            random_groups += np.random.choice(self._stratas[strata],
-                                              size=self._sample_size_dict[strata],
-                                              replace=self._replace).tolist()
+            random_groups += np.random.choice(
+                self._stratas[strata], size=self._sample_size_dict[strata], replace=self._replace
+            ).tolist()
 
         new_df = pd.DataFrame()
         # Build the dataset given the random_groups list

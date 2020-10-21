@@ -124,7 +124,7 @@ class PosixSystemEnvironment(SystemEnvironment):
 
     @property
     def supported(self):
-        return (os.name != 'nt')
+        return os.name != 'nt'
 
 
 class WindowsSystemEnvironment(SystemEnvironment):
@@ -136,4 +136,4 @@ class WindowsSystemEnvironment(SystemEnvironment):
 
     @property
     def supported(self):
-        return (os.name == 'nt')
+        return os.name == 'nt'

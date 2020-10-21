@@ -12,10 +12,7 @@ from setuptools import find_packages, setup
 
 def read(*names, **kwargs):
     """Read file path relative to setup.py (in encoding; default: utf8)"""
-    return io.open(
-        join(dirname(__file__), *names),
-        encoding=kwargs.get('encoding', 'utf8')
-    ).read()
+    return io.open(join(dirname(__file__), *names), encoding=kwargs.get('encoding', 'utf8')).read()
 
 
 def strip_refs(text_str):
@@ -36,10 +33,8 @@ setup(
     version='0.8.0',
     license='GNU Lesser General Public License v3 (LGPLv3)',
     description='Pharmacometric modelling',
-    long_description='%s\n\n%s' % (
-        strip_refs(longdesc(read('README.rst'))),
-        strip_refs(read('CHANGELOG.rst'))
-    ),
+    long_description='%s\n\n%s'
+    % (strip_refs(longdesc(read('README.rst'))), strip_refs(read('CHANGELOG.rst'))),
     author='Rikard Nordgren',
     author_email='rikard.nordgren@farmbio.uu.se',
     url='https://pharmpy.github.io',
@@ -74,8 +69,21 @@ setup(
         'pharmacometrics',
     ],
     install_requires=[
-        'lark-parser', 'sympy>=1.6.1', 'symengine', 'pandas', 'numexpr', 'altair', 'sphinx',
-        'csscompressor', 'beautifulsoup4', 'lxml', 'numpy', 'scipy', 'dask', 'networkx', 'appdirs'
+        'lark-parser',
+        'sympy>=1.6.1',
+        'symengine',
+        'pandas',
+        'numexpr',
+        'altair',
+        'sphinx',
+        'csscompressor',
+        'beautifulsoup4',
+        'lxml',
+        'numpy',
+        'scipy',
+        'dask',
+        'networkx',
+        'appdirs',
     ],
     entry_points={
         'console_scripts': [

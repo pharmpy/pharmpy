@@ -9,14 +9,14 @@ from pharmpy.random_variables import VariabilityLevel
 def calculate_parcov_inits(model, ncovs):
     """Get dict of new updated inits for parcov block
 
-       model already has a FREM block
-       Initial estimates for the parcov block is calculated given correlations of individual etas
+    model already has a FREM block
+    Initial estimates for the parcov block is calculated given correlations of individual etas
     """
     rvs, dist = list(model.random_variables.distributions(level=VariabilityLevel.IIV))[-1]
     rvs = [rv.name for rv in rvs]
     ie = model.modelfit_results.individual_estimates
     eta_corr = ie[rvs].corr()
-    eta_corr.fillna(value=1.0, inplace=True)    # Identical etas will get NaN as both diag and corr
+    eta_corr.fillna(value=1.0, inplace=True)  # Identical etas will get NaN as both diag and corr
 
     sigma = dist.sigma
     inits = sigma.subs(model.parameters.inits)
@@ -32,17 +32,19 @@ def calculate_parcov_inits(model, ncovs):
     parcov_inits = cov[npars:, :npars]
     parcov_symb = sigma[npars:, :npars]
 
-    param_inits = {parcov_symb[i, j].name: parcov_inits[i, j] for i, j in
-                   itertools.product(range(ncovs), range(npars))}
+    param_inits = {
+        parcov_symb[i, j].name: parcov_inits[i, j]
+        for i, j in itertools.product(range(ncovs), range(npars))
+    }
     return param_inits
 
 
 def create_model3b(model1b, model3, ncovs):
     """Create model 3b from model 3
 
-       * Update parcov omega block
-       * Set FIX pattern back from model1b
-       * Use initial etas from model3
+    * Update parcov omega block
+    * Set FIX pattern back from model1b
+    * Use initial etas from model3
     """
     parameters = model3.parameters
 

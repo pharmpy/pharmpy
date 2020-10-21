@@ -73,7 +73,7 @@ class Job(threading.Thread):
         """
 
         if os.name == 'nt':
-            asyncio.set_event_loop_policy(asyncio. WindowsProactorEventLoopPolicy())
+            asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
         try:
             self.loop = asyncio.get_event_loop()
         except RuntimeError:
@@ -110,7 +110,7 @@ class Job(threading.Thread):
             if not seconds:
                 return 'infinite'
             elif seconds < 1:
-                return '%.3f msec' % round(seconds*1000, 3)
+                return '%.3f msec' % round(seconds * 1000, 3)
             elif seconds < 60:
                 return '%.3f sec' % round(seconds, 3)
             else:
@@ -123,8 +123,10 @@ class Job(threading.Thread):
         while not self.done:
             seconds = time.time() - start_time
             if (timeout is not None) and (seconds > timeout):
-                msg = 'Timed out (%s > %s) while waiting on job' % (fmt_sec(seconds),
-                                                                    fmt_sec(timeout))
+                msg = 'Timed out (%s > %s) while waiting on job' % (
+                    fmt_sec(seconds),
+                    fmt_sec(timeout),
+                )
                 self._log(logging.ERROR, '%s, terminating %r' % (msg, self.proc))
                 self.proc.terminate()
                 raise TimeoutError(msg)
@@ -225,8 +227,9 @@ class Job(threading.Thread):
 
     def _log(self, level, msg):
         with threading.Lock():
-            logging.getLogger(__name__).log(level, '%s: %r on <Thread %s>', msg,
-                                            self, threading.current_thread().getName())
+            logging.getLogger(__name__).log(
+                level, '%s: %r on <Thread %s>', msg, self, threading.current_thread().getName()
+            )
 
     async def _main(self):
         """Main coroutine.
@@ -243,8 +246,9 @@ class Job(threading.Thread):
 
         try:
             self._debug('Starting subprocess %r', self.command)
-            self.proc = await asyncio.create_subprocess_exec(*self.command, stdout=PIPE,
-                                                             stderr=PIPE, cwd=working_dir)
+            self.proc = await asyncio.create_subprocess_exec(
+                *self.command, stdout=PIPE, stderr=PIPE, cwd=working_dir
+            )
         except Exception as exc:
             self._warn('Job failed to start! Process raised <%r>', exc)
             self.init.set()
@@ -254,8 +258,10 @@ class Job(threading.Thread):
             self._info('Job %r started', self.proc)
             self.init.set()
 
-        await asyncio.gather(self._await_stream_lines(self.proc.stdout, 'stdout'),
-                             self._await_stream_lines(self.proc.stderr, 'stderr'))
+        await asyncio.gather(
+            self._await_stream_lines(self.proc.stdout, 'stdout'),
+            self._await_stream_lines(self.proc.stderr, 'stderr'),
+        )
         self._debug('%r pipes closed', self.proc)
 
         return_code = await self.proc.wait()

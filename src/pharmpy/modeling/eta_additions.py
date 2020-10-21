@@ -78,12 +78,12 @@ class EtaAddition:
     :meta private:
 
     """
+
     def __init__(self, template):
         self.template = template
 
     def apply(self, original, eta):
-        self.template = self.template.subs({'original': original,
-                                            'eta_new': eta})
+        self.template = self.template.subs({'original': original, 'eta_new': eta})
 
     @classmethod
     def exponential(cls, operation):

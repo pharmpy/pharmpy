@@ -35,8 +35,9 @@ def test_update_inits(pheno_path):
 
 def test_empty_ext_file(testdata):
     # assert existing but empty ext-file does not give modelfit_results
-    model = Model(testdata / 'nonmem' / 'modelfit_results' / 'onePROB' /
-                  'noESTwithSIM' / 'onlysim.mod')
+    model = Model(
+        testdata / 'nonmem' / 'modelfit_results' / 'onePROB' / 'noESTwithSIM' / 'onlysim.mod'
+    )
     assert model.source.path.with_suffix('.ext').exists() is True
     assert model.modelfit_results is None
 
@@ -59,28 +60,34 @@ def test_parameters(pheno_path):
     assert model.parameters['THETA(1)'] == Parameter('THETA(1)', 0.00469307, lower=0, upper=1000000)
     assert model.parameters['THETA(2)'] == Parameter('THETA(2)', 1.00916, lower=0, upper=1000000)
     assert model.parameters['THETA(3)'] == Parameter('THETA(3)', 0.1, lower=-0.99, upper=1000000)
-    assert model.parameters['OMEGA(1,1)'] == Parameter('OMEGA(1,1)', 0.0309626,
-                                                       lower=0, upper=sympy.oo)
-    assert model.parameters['OMEGA(2,2)'] == Parameter('OMEGA(2,2)', 0.031128,
-                                                       lower=0, upper=sympy.oo)
-    assert model.parameters['SIGMA(1,1)'] == Parameter('SIGMA(1,1)', 0.013241,
-                                                       lower=0, upper=sympy.oo)
+    assert model.parameters['OMEGA(1,1)'] == Parameter(
+        'OMEGA(1,1)', 0.0309626, lower=0, upper=sympy.oo
+    )
+    assert model.parameters['OMEGA(2,2)'] == Parameter(
+        'OMEGA(2,2)', 0.031128, lower=0, upper=sympy.oo
+    )
+    assert model.parameters['SIGMA(1,1)'] == Parameter(
+        'SIGMA(1,1)', 0.013241, lower=0, upper=sympy.oo
+    )
 
 
 def test_set_parameters(pheno_path):
     model = Model(pheno_path)
-    params = {'THETA(1)': 0.75, 'THETA(2)': 0.5, 'THETA(3)': 0.25,
-              'OMEGA(1,1)': 0.1, 'OMEGA(2,2)': 0.2, 'SIGMA(1,1)': 0.3}
+    params = {
+        'THETA(1)': 0.75,
+        'THETA(2)': 0.5,
+        'THETA(3)': 0.25,
+        'OMEGA(1,1)': 0.1,
+        'OMEGA(2,2)': 0.2,
+        'SIGMA(1,1)': 0.3,
+    }
     model.parameters = params
     assert model.parameters['THETA(1)'] == Parameter('THETA(1)', 0.75, lower=0, upper=1000000)
     assert model.parameters['THETA(2)'] == Parameter('THETA(2)', 0.5, lower=0, upper=1000000)
     assert model.parameters['THETA(3)'] == Parameter('THETA(3)', 0.25, lower=-0.99, upper=1000000)
-    assert model.parameters['OMEGA(1,1)'] == Parameter('OMEGA(1,1)', 0.1,
-                                                       lower=0, upper=sympy.oo)
-    assert model.parameters['OMEGA(2,2)'] == Parameter('OMEGA(2,2)', 0.2,
-                                                       lower=0, upper=sympy.oo)
-    assert model.parameters['SIGMA(1,1)'] == Parameter('SIGMA(1,1)', 0.3,
-                                                       lower=0, upper=sympy.oo)
+    assert model.parameters['OMEGA(1,1)'] == Parameter('OMEGA(1,1)', 0.1, lower=0, upper=sympy.oo)
+    assert model.parameters['OMEGA(2,2)'] == Parameter('OMEGA(2,2)', 0.2, lower=0, upper=sympy.oo)
+    assert model.parameters['SIGMA(1,1)'] == Parameter('SIGMA(1,1)', 0.3, lower=0, upper=sympy.oo)
     model.update_source()
     thetas = model.control_stream.get_records('THETA')
     assert str(thetas[0]) == '$THETA (0,0.75) ; PTVCL\n'
@@ -100,8 +107,9 @@ def test_set_parameters(pheno_path):
 
 
 def test_adjust_iovs(testdata):
-    model = Model(testdata / 'nonmem' / 'modelfit_results' / 'onePROB' / 'multEST' /
-                  'noSIM' / 'withBayes.mod')
+    model = Model(
+        testdata / 'nonmem' / 'modelfit_results' / 'onePROB' / 'multEST' / 'noSIM' / 'withBayes.mod'
+    )
     model.parameters
     rvs = model.random_variables
 
@@ -111,11 +119,14 @@ def test_adjust_iovs(testdata):
     assert rvs[6].variability_level == VariabilityLevel.IOV
 
 
-@pytest.mark.parametrize('param_new,init_expected,buf_new', [
-    (Parameter('COVEFF', 0.2), 0.2, '$THETA  0.2 ; COVEFF'),
-    (Parameter('THETA', 0.1), 0.1, '$THETA  0.1 ; THETA'),
-    (Parameter('THETA', 0.1, 0, fix=True), 0.1, '$THETA  (0,0.1) FIX ; THETA'),
-])
+@pytest.mark.parametrize(
+    'param_new,init_expected,buf_new',
+    [
+        (Parameter('COVEFF', 0.2), 0.2, '$THETA  0.2 ; COVEFF'),
+        (Parameter('THETA', 0.1), 0.1, '$THETA  0.1 ; THETA'),
+        (Parameter('THETA', 0.1, 0, fix=True), 0.1, '$THETA  (0,0.1) FIX ; THETA'),
+    ],
+)
 def test_add_parameters(pheno_path, param_new, init_expected, buf_new):
     model = Model(pheno_path)
     pset = model.parameters
@@ -134,10 +145,12 @@ def test_add_parameters(pheno_path, param_new, init_expected, buf_new):
 
     assert str(model.control_stream) == str(stream)
 
-    rec_ref = f'$THETA (0,0.00469307) ; PTVCL\n' \
-              f'$THETA (0,1.00916) ; PTVV\n' \
-              f'$THETA (-.99,.1)\n' \
-              f'{buf_new}\n'
+    rec_ref = (
+        f'$THETA (0,0.00469307) ; PTVCL\n'
+        f'$THETA (0,1.00916) ; PTVV\n'
+        f'$THETA (-.99,.1)\n'
+        f'{buf_new}\n'
+    )
 
     rec_mod = ''
     for rec in model.control_stream.get_records('THETA'):
@@ -164,10 +177,13 @@ def test_add_two_parameters(pheno_path):
     assert model.parameters[param_2.name].init == 0.1
 
 
-@pytest.mark.parametrize('statement_new,buf_new', [
-    (Assignment(S('CL'), sympy.Integer(2)), 'CL = 2'),
-    (Assignment(S('Y'), S('THETA(4)') + S('THETA(5)')), 'Y = THETA(4) + THETA(5)')
-])
+@pytest.mark.parametrize(
+    'statement_new,buf_new',
+    [
+        (Assignment(S('CL'), sympy.Integer(2)), 'CL = 2'),
+        (Assignment(S('Y'), S('THETA(4)') + S('THETA(5)')), 'Y = THETA(4) + THETA(5)'),
+    ],
+)
 def test_add_statements(pheno_path, statement_new, buf_new):
     model = Model(pheno_path)
     sset = model.statements
@@ -190,26 +206,30 @@ def test_add_statements(pheno_path, statement_new, buf_new):
 
     assert str(model.control_stream) == str(stream)
 
-    rec_ref = f'$PK\n' \
-              f'IF(AMT.GT.0) BTIME=TIME\n' \
-              f'TAD=TIME-BTIME\n'\
-              f'TVCL=THETA(1)*WGT\n' \
-              f'TVV=THETA(2)*WGT\n' \
-              f'IF(APGR.LT.5) TVV=TVV*(1+THETA(3))\n' \
-              f'CL=TVCL*EXP(ETA(1))\n' \
-              f'V=TVV*EXP(ETA(2))\n' \
-              f'S1=V\n' \
-              f'{buf_new}\n\n'
+    rec_ref = (
+        f'$PK\n'
+        f'IF(AMT.GT.0) BTIME=TIME\n'
+        f'TAD=TIME-BTIME\n'
+        f'TVCL=THETA(1)*WGT\n'
+        f'TVV=THETA(2)*WGT\n'
+        f'IF(APGR.LT.5) TVV=TVV*(1+THETA(3))\n'
+        f'CL=TVCL*EXP(ETA(1))\n'
+        f'V=TVV*EXP(ETA(2))\n'
+        f'S1=V\n'
+        f'{buf_new}\n\n'
+    )
 
     rec_mod = str(model.control_stream.get_records('PK')[0])
 
     assert rec_ref == rec_mod
 
 
-@pytest.mark.parametrize('param_new, statement_new, buf_new', [
-    (Parameter('X', 0.1), Assignment(S('Y'), S('X') + S('S1')),
-     'Y = S1 + THETA(4)'),
-])
+@pytest.mark.parametrize(
+    'param_new, statement_new, buf_new',
+    [
+        (Parameter('X', 0.1), Assignment(S('Y'), S('X') + S('S1')), 'Y = S1 + THETA(4)'),
+    ],
+)
 def test_add_parameters_and_statements(pheno_path, param_new, statement_new, buf_new):
     model = Model(pheno_path)
 
@@ -229,23 +249,23 @@ def test_add_parameters_and_statements(pheno_path, param_new, statement_new, buf
     model.statements = new_sset
     model.update_source()
 
-    rec = f'$PK\n' \
-          f'IF(AMT.GT.0) BTIME=TIME\n' \
-          f'TAD=TIME-BTIME\n' \
-          f'TVCL=THETA(1)*WGT\n' \
-          f'TVV=THETA(2)*WGT\n' \
-          f'IF(APGR.LT.5) TVV=TVV*(1+THETA(3))\n' \
-          f'CL=TVCL*EXP(ETA(1))\n' \
-          f'V=TVV*EXP(ETA(2))\n' \
-          f'S1=V\n' \
-          f'{buf_new}\n\n'
+    rec = (
+        f'$PK\n'
+        f'IF(AMT.GT.0) BTIME=TIME\n'
+        f'TAD=TIME-BTIME\n'
+        f'TVCL=THETA(1)*WGT\n'
+        f'TVV=THETA(2)*WGT\n'
+        f'IF(APGR.LT.5) TVV=TVV*(1+THETA(3))\n'
+        f'CL=TVCL*EXP(ETA(1))\n'
+        f'V=TVV*EXP(ETA(2))\n'
+        f'S1=V\n'
+        f'{buf_new}\n\n'
+    )
 
     assert str(model.get_pred_pk_record()) == rec
 
 
-@pytest.mark.parametrize('rv_new,buf_new', [
-    (Parameter('omega', 0.1), '$OMEGA  0.1')
-])
+@pytest.mark.parametrize('rv_new,buf_new', [(Parameter('omega', 0.1), '$OMEGA  0.1')])
 def test_add_random_variables(pheno_path, rv_new, buf_new):
     model = Model(pheno_path)
     rvs = model.random_variables
@@ -262,10 +282,12 @@ def test_add_random_variables(pheno_path, rv_new, buf_new):
 
     model.update_source()
 
-    rec_ref = f'$OMEGA DIAGONAL(2)\n' \
-              f' 0.0309626  ;       IVCL\n' \
-              f' 0.031128  ;        IVV\n\n' \
-              f'{buf_new} ; omega\n'
+    rec_ref = (
+        f'$OMEGA DIAGONAL(2)\n'
+        f' 0.0309626  ;       IVCL\n'
+        f' 0.031128  ;        IVV\n\n'
+        f'{buf_new} ; omega\n'
+    )
 
     rec_mod = ''
     for rec in model.control_stream.get_records('OMEGA'):
@@ -283,15 +305,16 @@ def test_results(pheno_path):
     model = Model(pheno_path)
     assert len(model.modelfit_results) == 0
     assert bool(model.modelfit_results) is True  # results loaded on access
-    assert len(model.modelfit_results) == 1     # A chain of one estimation
+    assert len(model.modelfit_results) == 1  # A chain of one estimation
 
 
 def test_minimal(datadir):
     path = datadir / 'minimal.mod'
     model = Model(path)
     assert len(model.statements) == 1
-    assert model.statements[0].expression == \
-        symbol('THETA(1)') + symbol('ETA(1)') + symbol('EPS(1)')
+    assert model.statements[0].expression == symbol('THETA(1)') + symbol('ETA(1)') + symbol(
+        'EPS(1)'
+    )
 
 
 def test_copy(datadir):
@@ -299,8 +322,9 @@ def test_copy(datadir):
     model = Model(path)
     copy = model.copy()
     assert id(model) != id(copy)
-    assert model.statements[0].expression == \
-        symbol('THETA(1)') + symbol('ETA(1)') + symbol('EPS(1)')
+    assert model.statements[0].expression == symbol('THETA(1)') + symbol('ETA(1)') + symbol(
+        'EPS(1)'
+    )
 
 
 def test_initial_individual_estimates(datadir):
@@ -329,23 +353,34 @@ def test_update_individual_estimates(datadir):
         model.update_source()
         with open('run2_input.phi', 'r') as fp, open('run1.phi') as op:
             assert fp.read() == op.read()
-        assert str(model).endswith("""$ESTIMATION METHOD=1 INTERACTION MCETA=1
+        assert str(model).endswith(
+            """$ESTIMATION METHOD=1 INTERACTION MCETA=1
 $COVARIANCE UNCONDITIONAL
 $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
        NOPRINT ONEHEADER FILE=sdtab2
-$ETAS FILE=run2_input.phi""")
+$ETAS FILE=run2_input.phi"""
+        )
 
 
-@pytest.mark.parametrize('buf_new, len_expected', [
-    ('IF(AMT.GT.0) BTIME=TIME\nTAD=TIME-BTIME\n'
-     'TVCL=THETA(1)*WGT\nTVV=THETA(2)*WGT\n'
-     'IF(APGR.LT.5) TVV=TVV*(1+THETA(3))\nCL=TVCL*EXP(ETA(1))'
-     '\nV=TVV*EXP(ETA(2))\nS1=V\nY=A+B', 9),
-    ('IF(AMT.GT.0) BTIME=TIME\nTAD=TIME-BTIME\n'
-     'TVCL=THETA(1)*WGT\nTVV=THETA(2)*WGT\n'
-     'IF(APGR.LT.5) TVV=TVV*(1+THETA(3))\nCL=TVCL*EXP(ETA(1))'
-     '\nV=TVV*EXP(ETA(2))\nS1=2*V', 8),
-])
+@pytest.mark.parametrize(
+    'buf_new, len_expected',
+    [
+        (
+            'IF(AMT.GT.0) BTIME=TIME\nTAD=TIME-BTIME\n'
+            'TVCL=THETA(1)*WGT\nTVV=THETA(2)*WGT\n'
+            'IF(APGR.LT.5) TVV=TVV*(1+THETA(3))\nCL=TVCL*EXP(ETA(1))'
+            '\nV=TVV*EXP(ETA(2))\nS1=V\nY=A+B',
+            9,
+        ),
+        (
+            'IF(AMT.GT.0) BTIME=TIME\nTAD=TIME-BTIME\n'
+            'TVCL=THETA(1)*WGT\nTVV=THETA(2)*WGT\n'
+            'IF(APGR.LT.5) TVV=TVV*(1+THETA(3))\nCL=TVCL*EXP(ETA(1))'
+            '\nV=TVV*EXP(ETA(2))\nS1=2*V',
+            8,
+        ),
+    ],
+)
 def test_statements_setter(pheno_path, buf_new, len_expected):
     model = Model(pheno_path)
 

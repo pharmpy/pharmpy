@@ -33,9 +33,30 @@ class DataRecord(OptionRecord):
         else:
             # replace only 'filename' rule and quote appropriately if, but only if, needed
             filename = str(value)
-            quoted = [',', ';', '(', ')', '=', ' ', 'IGNORE', 'NULL', 'ACCEPT', 'NOWIDE', 'WIDE',
-                      'CHECKOUT', 'RECORDS', 'RECORDS', 'LRECL', 'NOREWIND', 'REWIND', 'NOOPEN',
-                      'LAST20', 'TRANSLATE', 'BLANKOK', 'MISDAT']
+            quoted = [
+                ',',
+                ';',
+                '(',
+                ')',
+                '=',
+                ' ',
+                'IGNORE',
+                'NULL',
+                'ACCEPT',
+                'NOWIDE',
+                'WIDE',
+                'CHECKOUT',
+                'RECORDS',
+                'RECORDS',
+                'LRECL',
+                'NOREWIND',
+                'REWIND',
+                'NOOPEN',
+                'LAST20',
+                'TRANSLATE',
+                'BLANKOK',
+                'MISDAT',
+            ]
             if not any(x in filename for x in quoted):
                 node = AttrTree.create('filename', {'TEXT': filename})
             else:
@@ -51,7 +72,7 @@ class DataRecord(OptionRecord):
         """The comment character from ex IGNORE=C or None if not available."""
         if hasattr(self.root, 'ignchar') and self.root.ignchar.find('char'):
             char = str(self.root.ignchar.char)
-            if len(char) == 3:      # It must be quoted
+            if len(char) == 3:  # It must be quoted
                 char = char[1:-1]
             return char
         else:
@@ -67,9 +88,9 @@ class DataRecord(OptionRecord):
             self.append_option_node(node)
 
     def ignore_character_from_header(self, label):
-        """ Set ignore character from a header label
-            If s[0] is a-zA-Z set @
-            else set s[0]
+        """Set ignore character from a header label
+        If s[0] is a-zA-Z set @
+        else set s[0]
         """
         c = label[0]
         if c.isalpha():
@@ -80,7 +101,7 @@ class DataRecord(OptionRecord):
     @property
     def null_value(self):
         """The value to replace for NULL (i.e. . etc) in the dataset
-           note that only +,-,0 (meaning 0) and 1-9 are allowed
+        note that only +,-,0 (meaning 0) and 1-9 are allowed
         """
         if hasattr(self.root, 'null') and self.root.null.find('char'):
             char = str(self.root.null.char)
@@ -116,8 +137,8 @@ class DataRecord(OptionRecord):
         self.root.remove('accept')
 
     def validate(self):
-        """ Syntax validation of this data record
-            Assumes only on $DATA exists in this $PROBLEM.
+        """Syntax validation of this data record
+        Assumes only on $DATA exists in this $PROBLEM.
         """
         if len(self.root.all('ignchar')) > 1:
             raise ModelSyntaxError('More than one IGNORE=c')

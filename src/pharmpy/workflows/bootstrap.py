@@ -11,16 +11,17 @@ toil_options.clean = "always"
 
 
 class BootstrapPrepare(Job):
-    """Prepare all bootstrap models and datasets
-    """
+    """Prepare all bootstrap models and datasets"""
+
     def __init__(self, input_model, resamples=10):
         super().__init__()
         self.input_model = input_model
         self.resamples = resamples
 
     def run(self, file_store):
-        resampler = Resample(self.input_model.model, group='ID', resamples=self.resamples,
-                             replace=True)
+        resampler = Resample(
+            self.input_model.model, group='ID', resamples=self.resamples, replace=True
+        )
         rvs = []
         for model, _ in resampler:
             job = NonmemJob(model, [])  # No extra files since dataset is recreated
@@ -41,8 +42,8 @@ class BootstrapPostprocess(Job):
 
 
 class BootstrapWorkflow:
-    """Workflow to perform a bootstrap
-    """
+    """Workflow to perform a bootstrap"""
+
     def __init__(self, model):
         self._model = model
 

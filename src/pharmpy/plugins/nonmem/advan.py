@@ -200,8 +200,9 @@ def _find_rates(model, ncomps):
                         q1 = f1 <= ncomps and t1 <= ncomps
                         q2 = f2 <= ncomps and t2 <= ncomps
                         if q1 and q2:
-                            raise ModelSyntaxError(f'Rate parameter {n} is ambiguous. '
-                                                   f'Use the KiTj notation.')
+                            raise ModelSyntaxError(
+                                f'Rate parameter {n} is ambiguous. ' f'Use the KiTj notation.'
+                            )
                         if q1:
                             from_n = f1
                             to_n = t1
@@ -223,114 +224,145 @@ def _find_rates(model, ncomps):
 def _advan1and2_trans(trans):
     if trans == 'TRANS2':
         return symbol('CL') / symbol('V')
-    else:       # TRANS1 which is also the default
+    else:  # TRANS1 which is also the default
         return symbol('K')
 
 
 def _advan3_trans(trans):
     if trans == 'TRANS3':
-        return (symbol('CL') / symbol('V'),
-                symbol('Q') / symbol('V'),
-                symbol('Q') / (symbol('VSS') - symbol('V')))
+        return (
+            symbol('CL') / symbol('V'),
+            symbol('Q') / symbol('V'),
+            symbol('Q') / (symbol('VSS') - symbol('V')),
+        )
     elif trans == 'TRANS4':
-        return (symbol('CL') / symbol('V1'),
-                symbol('Q') / symbol('V1'),
-                symbol('Q') / symbol('V2'))
+        return (symbol('CL') / symbol('V1'), symbol('Q') / symbol('V1'), symbol('Q') / symbol('V2'))
     elif trans == 'TRANS5':
-        return (symbol('ALPHA') * symbol('BETA') / symbol('K21'),
-                symbol('ALPHA') + symbol('BETA') - symbol('K21') - symbol('K'),
-                (symbol('AOB') * symbol('BETA') + symbol('ALPHA')) / (symbol('AOB') + 1))
+        return (
+            symbol('ALPHA') * symbol('BETA') / symbol('K21'),
+            symbol('ALPHA') + symbol('BETA') - symbol('K21') - symbol('K'),
+            (symbol('AOB') * symbol('BETA') + symbol('ALPHA')) / (symbol('AOB') + 1),
+        )
     elif trans == 'TRANS6':
-        return (symbol('ALPHA') * symbol('BETA') / symbol('K21'),
-                symbol('ALPHA') + symbol('BETA') - symbol('K21') - symbol('K'),
-                symbol('K21'))
+        return (
+            symbol('ALPHA') * symbol('BETA') / symbol('K21'),
+            symbol('ALPHA') + symbol('BETA') - symbol('K21') - symbol('K'),
+            symbol('K21'),
+        )
     else:
-        return (symbol('K'),
-                symbol('K12'),
-                symbol('K21'))
+        return (symbol('K'), symbol('K12'), symbol('K21'))
 
 
 def _advan4_trans(trans):
     if trans == 'TRANS3':
-        return (symbol('CL') / symbol('V'),
-                symbol('Q') / symbol('V'),
-                symbol('Q') / (symbol('VSS') - symbol('V')),
-                symbol('KA'))
+        return (
+            symbol('CL') / symbol('V'),
+            symbol('Q') / symbol('V'),
+            symbol('Q') / (symbol('VSS') - symbol('V')),
+            symbol('KA'),
+        )
     elif trans == 'TRANS4':
-        return (symbol('CL') / symbol('V2'),
-                symbol('Q') / symbol('V2'),
-                symbol('Q') / symbol('V3'),
-                symbol('KA'))
+        return (
+            symbol('CL') / symbol('V2'),
+            symbol('Q') / symbol('V2'),
+            symbol('Q') / symbol('V3'),
+            symbol('KA'),
+        )
     elif trans == 'TRANS5':
-        return (symbol('ALPHA') * symbol('BETA') / symbol('K32'),
-                symbol('ALPHA') + symbol('BETA') - symbol('K32') - symbol('K'),
-                (symbol('AOB') * symbol('BETA') + symbol('ALPHA')) / (symbol('AOB') + 1),
-                symbol('KA'))
+        return (
+            symbol('ALPHA') * symbol('BETA') / symbol('K32'),
+            symbol('ALPHA') + symbol('BETA') - symbol('K32') - symbol('K'),
+            (symbol('AOB') * symbol('BETA') + symbol('ALPHA')) / (symbol('AOB') + 1),
+            symbol('KA'),
+        )
     elif trans == 'TRANS6':
-        return (symbol('ALPHA') * symbol('BETA') / symbol('K32'),
-                symbol('ALPHA') + symbol('BETA') - symbol('K32') - symbol('K'),
-                symbol('K32'),
-                symbol('KA'))
+        return (
+            symbol('ALPHA') * symbol('BETA') / symbol('K32'),
+            symbol('ALPHA') + symbol('BETA') - symbol('K32') - symbol('K'),
+            symbol('K32'),
+            symbol('KA'),
+        )
     else:
-        return (symbol('K'),
-                symbol('K23'),
-                symbol('K32'),
-                symbol('KA'))
+        return (symbol('K'), symbol('K23'), symbol('K32'), symbol('KA'))
 
 
 def _advan11_trans(trans):
     if trans == 'TRANS4':
-        return (symbol('CL') / symbol('V1'),
-                symbol('Q2') / symbol('V1'),
-                symbol('Q2') / symbol('V2'),
-                symbol('Q3') / symbol('V1'),
-                symbol('Q3') / symbol('V3'))
+        return (
+            symbol('CL') / symbol('V1'),
+            symbol('Q2') / symbol('V1'),
+            symbol('Q2') / symbol('V2'),
+            symbol('Q3') / symbol('V1'),
+            symbol('Q3') / symbol('V3'),
+        )
     elif trans == 'TRANS6':
-        return (symbol('ALPHA') * symbol('BETA') * symbol('GAMMA') / (symbol('K21') *
-                                                                      symbol('K31')),
-                symbol('ALPHA') + symbol('BETA') + symbol('GAMMA') - symbol('K') - symbol('K13') -
-                symbol('K21') - symbol('K31'),
-                symbol('K21'),
-                (symbol('ALPHA') * symbol('BETA') + symbol('ALPHA') * symbol('GAMMA') +
-                 symbol('BETA') * symbol('GAMMA') + symbol('K31') * symbol('K31') -
-                 symbol('K31') * (symbol('ALPHA') + symbol('BETA') + symbol('GAMMA')) -
-                 symbol('K') * symbol('K21')) / (symbol('K21') - symbol('K31')),
-                symbol('K31'))
+        return (
+            symbol('ALPHA') * symbol('BETA') * symbol('GAMMA') / (symbol('K21') * symbol('K31')),
+            symbol('ALPHA')
+            + symbol('BETA')
+            + symbol('GAMMA')
+            - symbol('K')
+            - symbol('K13')
+            - symbol('K21')
+            - symbol('K31'),
+            symbol('K21'),
+            (
+                symbol('ALPHA') * symbol('BETA')
+                + symbol('ALPHA') * symbol('GAMMA')
+                + symbol('BETA') * symbol('GAMMA')
+                + symbol('K31') * symbol('K31')
+                - symbol('K31') * (symbol('ALPHA') + symbol('BETA') + symbol('GAMMA'))
+                - symbol('K') * symbol('K21')
+            )
+            / (symbol('K21') - symbol('K31')),
+            symbol('K31'),
+        )
     else:
-        return (symbol('K'),
-                symbol('K12'),
-                symbol('K21'),
-                symbol('K13'),
-                symbol('K31'))
+        return (symbol('K'), symbol('K12'), symbol('K21'), symbol('K13'), symbol('K31'))
 
 
 def _advan12_trans(trans):
     if trans == 'TRANS4':
-        return (symbol('CL') / symbol('V2'),
-                symbol('Q3') / symbol('V2'),
-                symbol('Q3') / symbol('V3'),
-                symbol('Q4') / symbol('V2'),
-                symbol('Q4') / symbol('V4'),
-                symbol('KA'))
+        return (
+            symbol('CL') / symbol('V2'),
+            symbol('Q3') / symbol('V2'),
+            symbol('Q3') / symbol('V3'),
+            symbol('Q4') / symbol('V2'),
+            symbol('Q4') / symbol('V4'),
+            symbol('KA'),
+        )
     elif trans == 'TRANS6':
-        return (symbol('ALPHA') * symbol('BETA') * symbol('GAMMA') / (symbol('K32') *
-                                                                      symbol('K42')),
-                symbol('ALPHA') + symbol('BETA') + symbol('GAMMA') - symbol('K') - symbol('K24') -
-                symbol('K32') - symbol('K42'),
-                symbol('K32'),
-                (symbol('ALPHA') * symbol('BETA') + symbol('ALPHA') * symbol('GAMMA') +
-                 symbol('BETA') * symbol('GAMMA') + symbol('K42') * symbol('K42') -
-                 symbol('K42') * (symbol('ALPHA') + symbol('BETA') + symbol('GAMMA')) -
-                 symbol('K') * symbol('K32')) / (symbol('K32') - symbol('K42')),
-                symbol('K42'),
-                symbol('KA'))
+        return (
+            symbol('ALPHA') * symbol('BETA') * symbol('GAMMA') / (symbol('K32') * symbol('K42')),
+            symbol('ALPHA')
+            + symbol('BETA')
+            + symbol('GAMMA')
+            - symbol('K')
+            - symbol('K24')
+            - symbol('K32')
+            - symbol('K42'),
+            symbol('K32'),
+            (
+                symbol('ALPHA') * symbol('BETA')
+                + symbol('ALPHA') * symbol('GAMMA')
+                + symbol('BETA') * symbol('GAMMA')
+                + symbol('K42') * symbol('K42')
+                - symbol('K42') * (symbol('ALPHA') + symbol('BETA') + symbol('GAMMA'))
+                - symbol('K') * symbol('K32')
+            )
+            / (symbol('K32') - symbol('K42')),
+            symbol('K42'),
+            symbol('KA'),
+        )
     else:
-        return (symbol('K'),
-                symbol('K23'),
-                symbol('K32'),
-                symbol('K24'),
-                symbol('K42'),
-                symbol('KA'))
+        return (
+            symbol('K'),
+            symbol('K23'),
+            symbol('K32'),
+            symbol('K24'),
+            symbol('K42'),
+            symbol('KA'),
+        )
 
 
 def _dosing(model, dose_comp):
@@ -350,8 +382,7 @@ def _dosing(model, dose_comp):
 
 
 def get_alag(model, n):
-    """Check if ALAGn is defined in model and return it else return 0
-    """
+    """Check if ALAGn is defined in model and return it else return 0"""
     alag = f'ALAG{n}'
     pkrec = model.control_stream.get_records('PK')[0]
     if pkrec.statements.find_assignment(alag):

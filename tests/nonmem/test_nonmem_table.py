@@ -5,10 +5,17 @@ import pharmpy.plugins.nonmem.table as table
 
 def test_nonmem_table(pheno_ext):
     ext_table_file = table.NONMEMTableFile(pheno_ext)
-    assert list(ext_table_file.table.data_frame.columns) == ['ITERATION', 'THETA(1)', 'THETA(2)',
-                                                             'THETA(3)', 'OMEGA(1,1)',
-                                                             'OMEGA(2,1)', 'OMEGA(2,2)',
-                                                             'SIGMA(1,1)', 'OBJ']
+    assert list(ext_table_file.table.data_frame.columns) == [
+        'ITERATION',
+        'THETA(1)',
+        'THETA(2)',
+        'THETA(3)',
+        'OMEGA(1,1)',
+        'OMEGA(2,1)',
+        'OMEGA(2,2)',
+        'SIGMA(1,1)',
+        'OBJ',
+    ]
 
 
 def test_ext_table(pheno_ext):
@@ -56,7 +63,7 @@ def test_create_phi_table(fs):
     correct = ''' SUBJECT_NO   ID           ETA(1)       ETA(2)      
             1            1  1.00000E+00  5.00000E+00
             2            2  2.00000E+00  6.00000E+00
-''' # noqa W291
+'''  # noqa W291
     assert phi.content == correct
 
     table_file = table.NONMEMTableFile(tables=[phi])

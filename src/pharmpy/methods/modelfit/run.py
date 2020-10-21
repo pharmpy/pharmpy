@@ -8,8 +8,8 @@ from dask.multiprocessing import get
 class NONMEMRunDirectory:
     def __init__(self, model, n, path=None):
         """Create a directory for running NONMEN.
-           If path not specified use the current path
-           n is the index of the run
+        If path not specified use the current path
+        n is the index of the run
         """
         if not path:
             path = Path.cwd()
@@ -20,7 +20,7 @@ class NONMEMRunDirectory:
 
     def write_model(self, model):
         model.write(path=self.path, force=True)
-        shutil.copy(model.dataset_path, self.path)   # FIXME!
+        shutil.copy(model.dataset_path, self.path)  # FIXME!
 
 
 def run(models):
@@ -32,8 +32,14 @@ def run(models):
 
 def execute_model(model, i):
     rundir = NONMEMRunDirectory(model, i)
-    subprocess.call(['nmfe74', model.name + model.source.filename_extension,
-                     Path(model.name).with_suffix('.lst'), f'-rundir={rundir.path}'])
+    subprocess.call(
+        [
+            'nmfe74',
+            model.name + model.source.filename_extension,
+            Path(model.name).with_suffix('.lst'),
+            f'-rundir={rundir.path}',
+        ]
+    )
     return model
 
 

@@ -108,11 +108,14 @@ def test_all_parameters():
     assert params == ['OMEGA(1,1)', 'OMEGA(2,2)', 'SIGMA(1,1)']
 
 
-@pytest.mark.parametrize('model_file,expected_length', [
-    ('nonmem/pheno_real.mod', 3),
-    ('nonmem/frem/pheno/model_3.mod', 12),
-    ('nonmem/frem/pheno/model_4.mod', 12),
-])
+@pytest.mark.parametrize(
+    'model_file,expected_length',
+    [
+        ('nonmem/pheno_real.mod', 3),
+        ('nonmem/frem/pheno/model_3.mod', 12),
+        ('nonmem/frem/pheno/model_4.mod', 12),
+    ],
+)
 def test_all_parameters_models(testdata, model_file, expected_length):
     model_path = testdata / model_file
     model = Model(model_path)

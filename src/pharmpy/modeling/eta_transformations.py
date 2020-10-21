@@ -116,8 +116,7 @@ def _create_new_etas(etas_original, transformation):
 def _create_new_thetas(model, transformation, no_of_thetas):
     pset = model.parameters
     thetas = dict()
-    theta_name = str(model.create_symbol(stem=transformation,
-                                         force_numbering=True))
+    theta_name = str(model.create_symbol(stem=transformation, force_numbering=True))
 
     if transformation == 'lambda':
         param_settings = [0.01, -3, 3]
@@ -130,7 +129,7 @@ def _create_new_thetas(model, transformation, no_of_thetas):
     else:
         theta_no = int(re.findall(r'\d', theta_name)[0])
 
-        for i in range(1, no_of_thetas+1):
+        for i in range(1, no_of_thetas + 1):
             pset.add(Parameter(theta_name, 0.01, -3, 3))
             thetas[f'theta{i}'] = theta_name
             theta_name = f'{transformation}{theta_no + i}'
@@ -156,8 +155,7 @@ class EtaTransformation:
         assignments = ModelStatements()
         for i in range(1, no_of_etas + 1):
             symbol = S(f'etab{i}')
-            expression = ((exp(S(f'eta{i}'))**S(f'theta{i}')-1) /
-                          (S(f'theta{i}')))
+            expression = (exp(S(f'eta{i}')) ** S(f'theta{i}') - 1) / (S(f'theta{i}'))
 
             assignment = Assignment(symbol, expression)
             assignments.append(assignment)
@@ -173,17 +171,16 @@ class EtaTransformation:
             eta = S(f'eta{i}')
             theta = S(f'theta{i}')
 
-            num_1 = eta**2 + 1
+            num_1 = eta ** 2 + 1
             denom_1 = 4 * theta
 
-            num_2 = (5 * eta**4) + (16 * eta**2 + 3)
-            denom_2 = 96 * theta**2
+            num_2 = (5 * eta ** 4) + (16 * eta ** 2 + 3)
+            denom_2 = 96 * theta ** 2
 
-            num_3 = (3 * eta**6) + (19 * eta**4) + (17 * eta**2) - 15
-            denom_3 = 384 * theta**3
+            num_3 = (3 * eta ** 6) + (19 * eta ** 4) + (17 * eta ** 2) - 15
+            denom_3 = 384 * theta ** 3
 
-            expression = eta * (1 + (num_1/denom_1) + (num_2/denom_2) +
-                                (num_3/denom_3))
+            expression = eta * (1 + (num_1 / denom_1) + (num_2 / denom_2) + (num_3 / denom_3))
 
             assignment = Assignment(symbol, expression)
             assignments.append(assignment)
@@ -199,7 +196,7 @@ class EtaTransformation:
             eta = S(f'eta{i}')
             theta = S(f'theta{i}')
 
-            expression = sign(eta) * (((abs(eta) + 1)**theta - 1)/theta)
+            expression = sign(eta) * (((abs(eta) + 1) ** theta - 1) / theta)
 
             assignment = Assignment(symbol, expression)
             assignments.append(assignment)

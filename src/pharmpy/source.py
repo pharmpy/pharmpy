@@ -20,8 +20,7 @@ from pathlib import Path
 
 
 def Source(obj):
-    """Factory to create source object
-    """
+    """Factory to create source object"""
     if isinstance(obj, str) or isinstance(obj, Path) or isinstance(obj, io.IOBase):
         src = FileSource(obj)
         return src
@@ -40,8 +39,7 @@ class SourceBase:
         self.code = self.read(obj)
 
     def write(self, path, force=False):
-        """Write source to file.
-        """
+        """Write source to file."""
         if not force and path.exists():
             raise FileExistsError(f'Cannot overwrite model at {path} with "force" not set')
         with open(path, 'w', encoding='latin-1') as fp:
@@ -50,8 +48,9 @@ class SourceBase:
 
 class FileSource(SourceBase):
     """Source formats for files
-        property: filename_extension    (includes the dot)
+    property: filename_extension    (includes the dot)
     """
+
     def __init__(self, obj):
         if isinstance(obj, str) or isinstance(obj, Path):
             path = Path(obj)
@@ -61,8 +60,7 @@ class FileSource(SourceBase):
         super().__init__(obj)
 
     def read(self, path_or_io):
-        """Read source from io object or from str path or path object
-        """
+        """Read source from io object or from str path or path object"""
         if isinstance(path_or_io, str) or isinstance(path_or_io, Path):
             self.path = Path(path_or_io)
             with open(path_or_io, 'r', encoding='latin-1') as fp:

@@ -19,8 +19,11 @@ class NONMEM7(ModelExecutionEngine):
         if not version and self.installed:
             version = max(self.installed.keys())
         if version not in self.installed:
-            raise RuntimeError('Requested NONMEM7 version %r not available (found: %s)', version,
-                               ', '.join(self.installed.values()))
+            raise RuntimeError(
+                'Requested NONMEM7 version %r not available (found: %s)',
+                version,
+                ', '.join(self.installed.values()),
+            )
         else:
             self.info = (version, *self.installed[version])
 
@@ -61,12 +64,12 @@ class NONMEM7(ModelExecutionEngine):
             if not path.is_dir():
                 continue
             subdirs = ['run', 'util']
-            if not any((path/subdir).is_dir() for subdir in subdirs):
+            if not any((path / subdir).is_dir() for subdir in subdirs):
                 continue
 
             ver_suffix = {7.1: '', 7.2: '2', 7.3: '3', 7.4: '4', 7.5: '5'}
             for version, suffix in ver_suffix.items():
-                nm_bin = [path/subdir/(script % suffix) for subdir in subdirs]
+                nm_bin = [path / subdir / (script % suffix) for subdir in subdirs]
                 nm_bin = list(filter(lambda x: x.is_file(), nm_bin))
                 if nm_bin:
                     nm_info[version] = (nm_dir, str(nm_bin[0]))

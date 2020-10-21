@@ -37,8 +37,9 @@ def sample_from_function(model, samplingfn, parameters=None, force_posdef_sample
         samples = samplingfn(lower, upper, n=remaining)
         df = pd.DataFrame(samples, columns=parameters)
         if not force_posdef:
-            selected = df[df.apply(model.random_variables.validate_parameters, axis=1,
-                                   use_cache=True)]
+            selected = df[
+                df.apply(model.random_variables.validate_parameters, axis=1, use_cache=True)
+            ]
         else:
             selected = df.transform(model.random_variables.nearest_valid_parameters, axis=1)
         kept_samples = pd.concat((kept_samples, selected))
@@ -53,23 +54,31 @@ def sample_from_function(model, samplingfn, parameters=None, force_posdef_sample
 def sample_uniformly(model, fraction=0.1, parameters=None, force_posdef_samples=None, n=1):
     """Sample parameter vectors using uniform sampling
 
-       Each parameter value will be randomly sampled from a uniform distriution
-       with lower bound estimate - estimate * fraction and upper bound
-       estimate + estimate * fraction
+    Each parameter value will be randomly sampled from a uniform distriution
+    with lower bound estimate - estimate * fraction and upper bound
+    estimate + estimate * fraction
     """
+
     def fn(lower, upper, n):
         samples = np.empty((n, len(lower)))
         for i, (a, b) in enumerate(zip(lower, upper)):
             samples[i, :] = np.random.uniform(a, b, n)
         return samples
 
-    samples = sample_from_function(model, fn, parameters=parameters,
-                                   force_posdef_samples=force_posdef_samples, n=n)
+    samples = sample_from_function(
+        model, fn, parameters=parameters, force_posdef_samples=force_posdef_samples, n=n
+    )
     return samples
 
 
-def sample_from_covariance_matrix(model, modelfit_results=None, parameters=None,
-                                  force_posdef_samples=None, force_posdef_covmatrix=False, n=1):
+def sample_from_covariance_matrix(
+    model,
+    modelfit_results=None,
+    parameters=None,
+    force_posdef_samples=None,
+    force_posdef_covmatrix=False,
+    n=1,
+):
     """Sample parameter vectors using the covariance matrix
 
     If modelfit_results is not provided the results from the model will be used
@@ -103,8 +112,9 @@ def sample_from_covariance_matrix(model, modelfit_results=None, parameters=None,
             raise ValueError("Uncertainty covariance matrix not positive-definite")
 
     fn = partial(sample_truncated_joint_normal, mu, sigma)
-    samples = sample_from_function(model, fn, parameters=index,
-                                   force_posdef_samples=force_posdef_samples, n=n)
+    samples = sample_from_function(
+        model, fn, parameters=index, force_posdef_samples=force_posdef_samples, n=n
+    )
     return samples
 
 
@@ -131,6 +141,6 @@ def sample_individual_estimates(model, parameters=None, samples_per_id=100):
         sigma = nearest_posdef(sigma)
         id_samples = np.random.multivariate_normal(mu.values, sigma.values, size=samples_per_id)
         id_df = pd.DataFrame(id_samples, columns=ests.columns)
-        id_df.index = [idx] * len(id_df)        # ID as index
+        id_df.index = [idx] * len(id_df)  # ID as index
         samples = pd.concat((samples, id_df))
     return samples

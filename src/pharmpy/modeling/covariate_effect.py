@@ -86,7 +86,7 @@ def _create_thetas(model, effect, covariate, template):
     else:
         cov_eff_number = int(re.findall(r'\d', theta_name)[0])
 
-        for i in range(1, no_of_thetas+1):
+        for i in range(1, no_of_thetas + 1):
             inits = _choose_param_inits(effect, model.dataset, covariate, i)
 
             pset.add(Parameter(theta_name, inits['init'], inits['lower'], inits['upper']))
@@ -148,9 +148,9 @@ def _choose_param_inits(effect, df, covariate, index=None):
 
     if effect == 'exp':
         if lower > init_default or init_default > upper:
-            init = (upper + lower)/2
+            init = (upper + lower) / 2
             if init == 0:
-                init = upper/5
+                init = upper / 5
         else:
             init = init_default
     elif effect == 'pow':
@@ -177,10 +177,14 @@ def _choose_bounds(effect, cov_median, cov_min, cov_max, index=None):
             return lower_expected, upper_expected
         else:
             log_base = 10
-            lower = max(math.log(lower_expected, log_base)/max_diff,
-                        math.log(upper_expected, log_base)/min_diff)
-            upper = min(math.log(lower_expected, log_base)/min_diff,
-                        math.log(upper_expected, log_base)/max_diff)
+            lower = max(
+                math.log(lower_expected, log_base) / max_diff,
+                math.log(upper_expected, log_base) / min_diff,
+            )
+            upper = min(
+                math.log(lower_expected, log_base) / min_diff,
+                math.log(upper_expected, log_base) / max_diff,
+            )
     elif effect == 'lin':
         if cov_median == cov_min:
             upper = 100000
@@ -192,8 +196,10 @@ def _choose_bounds(effect, cov_median, cov_min, cov_max, index=None):
             lower = 1 / (cov_median - cov_max)
     elif effect == 'piece_lin':
         if cov_median == cov_min or cov_median == cov_max:
-            raise Exception('Median cannot be same as min or max, cannot use '
-                            'piecewise-linear parameterization.')
+            raise Exception(
+                'Median cannot be same as min or max, cannot use '
+                'piecewise-linear parameterization.'
+            )
         if index == 0:
             lower = -100000
             upper = 1 / (cov_median - cov_min)
@@ -242,6 +248,7 @@ class CovariateEffect:
     :meta private:
 
     """
+
     def __init__(self, template):
         self.template = template
         self.statistic_statements = []
@@ -335,12 +342,12 @@ class CovariateEffect:
         """Piecewise linear ("hockey-stick") template (for continuous
         covariates)."""
         symbol = S('symbol')
-        values = [1 + S('theta1') * (S('cov') - S('median')),
-                  1 + S('theta2') * (S('cov') - S('median'))]
-        conditions = [Le(S('cov'), S('median')),
-                      Gt(S('cov'), S('median'))]
-        expression = Piecewise((values[0], conditions[0]),
-                               (values[1], conditions[1]))
+        values = [
+            1 + S('theta1') * (S('cov') - S('median')),
+            1 + S('theta2') * (S('cov') - S('median')),
+        ]
+        conditions = [Le(S('cov'), S('median')), Gt(S('cov'), S('median'))]
+        expression = Piecewise((values[0], conditions[0]), (values[1], conditions[1]))
 
         template = Assignment(symbol, expression)
 
@@ -359,7 +366,7 @@ class CovariateEffect:
     def power(cls):
         """Power template (for continuous covariates)."""
         symbol = S('symbol')
-        expression = (S('cov')/S('median'))**S('theta')
+        expression = (S('cov') / S('median')) ** S('theta')
         template = Assignment(symbol, expression)
 
         return cls(template)

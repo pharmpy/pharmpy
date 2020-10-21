@@ -35,13 +35,19 @@ from pharmpy.data.read import read_csv, read_nonmem_dataset
 
 class DataConfiguration(config.Configuration):
     module = 'pharmpy.data'
-    na_values = config.ConfigItem([-99],
-                                  'List of data values to be converted to NA when reading data')
-    na_rep = config.ConfigItem('-99',
-                               'What to replace NA with in written datasets')
+    na_values = config.ConfigItem(
+        [-99], 'List of data values to be converted to NA when reading data'
+    )
+    na_rep = config.ConfigItem('-99', 'What to replace NA with in written datasets')
 
 
 conf = DataConfiguration()
 
-__all__ = ['DatasetError', 'DatasetWarning', 'ColumnType', 'PharmDataFrame', 'read_nonmem_dataset',
-           'read_csv']
+__all__ = [
+    'DatasetError',
+    'DatasetWarning',
+    'ColumnType',
+    'PharmDataFrame',
+    'read_nonmem_dataset',
+    'read_csv',
+]

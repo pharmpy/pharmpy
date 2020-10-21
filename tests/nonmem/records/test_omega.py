@@ -13,72 +13,123 @@ def S(x):
 
 
 @pytest.mark.usefixtures('parser')
-@pytest.mark.parametrize('buf,comment,results', [
-    ('$OMEGA 1', False, [('OMEGA(1,1)', 1, 0, sympy.oo, False)]),
-    ('$OMEGA   0.123 \n\n', False, [('OMEGA(1,1)', 0.123, 0, sympy.oo, False)]),
-    ('$OMEGA   (0 FIX) ; CL', False, [('OMEGA(1,1)', 0, 0, sympy.oo, True)]),
-    ('$OMEGA DIAG(2) 1 2 FIX', False, [
-        ('OMEGA(1,1)', 1, 0, sympy.oo, False),
-        ('OMEGA(2,2)', 2, 0, sympy.oo, True),
-        ]),
-    ('$OMEGA 1 2 3', False, [
-        ('OMEGA(1,1)', 1, 0, sympy.oo, False),
-        ('OMEGA(2,2)', 2, 0, sympy.oo, False),
-        ('OMEGA(3,3)', 3, 0, sympy.oo, False),
-        ]),
-    ('$OMEGA 0.15 ;CL', False, [('OMEGA(1,1)', 0.15, 0, sympy.oo, False)]),
-    ('$OMEGA 1 \n2 ; S   \n  3 ', False, [
-        ('OMEGA(1,1)', 1, 0, sympy.oo, False),
-        ('OMEGA(2,2)', 2, 0, sympy.oo, False),
-        ('OMEGA(3,3)', 3, 0, sympy.oo, False),
-        ]),
-    ('$OMEGA 2 SD', False, [('OMEGA(1,1)', 4, 0, sympy.oo, False)]),
-    ('$OMEGA ;CO\n (VAR 3)', False, [('OMEGA(1,1)', 3, 0, sympy.oo, False)]),
-    ('$OMEGA (1)x2', False, [
-        ('OMEGA(1,1)', 1, 0, sympy.oo, False),
-        ('OMEGA(2,2)', 1, 0, sympy.oo, False),
-        ]),
-    ('$OMEGA BLOCK(2) 1 0.5 2', False, [
-        ('OMEGA(1,1)', 1, 0, sympy.oo, False),
-        ('OMEGA(2,1)', 0.5, -sympy.oo, sympy.oo, False),
-        ('OMEGA(2,2)', 2, 0, sympy.oo, False),
-        ]),
-    ('$OMEGA BLOCK(2) SAME', False, []),
-    ('$OMEGA BLOCK SAME(3)', False, []),
-    ('$OMEGA BLOCK(2) 1 (0.1)x2', False, [
-        ('OMEGA(1,1)', 1, 0, sympy.oo, False),
-        ('OMEGA(2,1)', 0.1, -sympy.oo, sympy.oo, False),
-        ('OMEGA(2,2)', 0.1, 0, sympy.oo, False),
-        ]),
-    ('$OMEGA BLOCK(2) CHOLESKY 0.8 -0.3 0.7', False, [
-        ('OMEGA(1,1)', 0.64, 0, sympy.oo, False),
-        ('OMEGA(2,1)', -0.24, -sympy.oo, sympy.oo, False),
-        ('OMEGA(2,2)', 0.58, 0, sympy.oo, False),
-        ]),
-    ('$OMEGA BLOCK(2) SD 0.8 -0.394 0.762 CORR', False, [
-        ('OMEGA(1,1)', 0.64, 0, sympy.oo, False),
-        ('OMEGA(2,1)', -0.2401824, -sympy.oo, sympy.oo, False),
-        ('OMEGA(2,2)', 0.580644, 0, sympy.oo, False),
-        ]),
-    ('$OMEGA BLOCK(1)   1.5', False, [
-        ('OMEGA(1,1)', 1.5, 0, sympy.oo, False),
-        ]),
-    ('$OMEGA  0.0258583  ;      V2\n'
-     ';$OMEGA BLOCK(1) 0.0075 FIX    ;.02 ; IOC\n'
-     ';$OMEGA BLOCK(1) SAME\n', False, [
-        ('OMEGA(1,1)', 0.0258583, 0, sympy.oo, False),
-        ]),
-    ('$OMEGA 1 ; IVCL', True, [('IVCL', 1, 0, sympy.oo, False)]),
-    ('$OMEGA DIAG(2) 1 ; V1 df\n 2 FIX ; VA2 __12\n', True, [
-        ('V1', 1, 0, sympy.oo, False),
-        ('VA2', 2, 0, sympy.oo, True),
-        ]),
-    ('$OMEGA BLOCK(2) 1 ;IV1\n 2 ;CORR\n 3 ;IV2', True, [
-        ('IV1', 1, 0, sympy.oo, False),
-        ('CORR', 2, -sympy.oo, sympy.oo, False),
-        ('IV2', 3, 0, sympy.oo, False),
-        ]),
-])
+@pytest.mark.parametrize(
+    'buf,comment,results',
+    [
+        ('$OMEGA 1', False, [('OMEGA(1,1)', 1, 0, sympy.oo, False)]),
+        ('$OMEGA   0.123 \n\n', False, [('OMEGA(1,1)', 0.123, 0, sympy.oo, False)]),
+        ('$OMEGA   (0 FIX) ; CL', False, [('OMEGA(1,1)', 0, 0, sympy.oo, True)]),
+        (
+            '$OMEGA DIAG(2) 1 2 FIX',
+            False,
+            [
+                ('OMEGA(1,1)', 1, 0, sympy.oo, False),
+                ('OMEGA(2,2)', 2, 0, sympy.oo, True),
+            ],
+        ),
+        (
+            '$OMEGA 1 2 3',
+            False,
+            [
+                ('OMEGA(1,1)', 1, 0, sympy.oo, False),
+                ('OMEGA(2,2)', 2, 0, sympy.oo, False),
+                ('OMEGA(3,3)', 3, 0, sympy.oo, False),
+            ],
+        ),
+        ('$OMEGA 0.15 ;CL', False, [('OMEGA(1,1)', 0.15, 0, sympy.oo, False)]),
+        (
+            '$OMEGA 1 \n2 ; S   \n  3 ',
+            False,
+            [
+                ('OMEGA(1,1)', 1, 0, sympy.oo, False),
+                ('OMEGA(2,2)', 2, 0, sympy.oo, False),
+                ('OMEGA(3,3)', 3, 0, sympy.oo, False),
+            ],
+        ),
+        ('$OMEGA 2 SD', False, [('OMEGA(1,1)', 4, 0, sympy.oo, False)]),
+        ('$OMEGA ;CO\n (VAR 3)', False, [('OMEGA(1,1)', 3, 0, sympy.oo, False)]),
+        (
+            '$OMEGA (1)x2',
+            False,
+            [
+                ('OMEGA(1,1)', 1, 0, sympy.oo, False),
+                ('OMEGA(2,2)', 1, 0, sympy.oo, False),
+            ],
+        ),
+        (
+            '$OMEGA BLOCK(2) 1 0.5 2',
+            False,
+            [
+                ('OMEGA(1,1)', 1, 0, sympy.oo, False),
+                ('OMEGA(2,1)', 0.5, -sympy.oo, sympy.oo, False),
+                ('OMEGA(2,2)', 2, 0, sympy.oo, False),
+            ],
+        ),
+        ('$OMEGA BLOCK(2) SAME', False, []),
+        ('$OMEGA BLOCK SAME(3)', False, []),
+        (
+            '$OMEGA BLOCK(2) 1 (0.1)x2',
+            False,
+            [
+                ('OMEGA(1,1)', 1, 0, sympy.oo, False),
+                ('OMEGA(2,1)', 0.1, -sympy.oo, sympy.oo, False),
+                ('OMEGA(2,2)', 0.1, 0, sympy.oo, False),
+            ],
+        ),
+        (
+            '$OMEGA BLOCK(2) CHOLESKY 0.8 -0.3 0.7',
+            False,
+            [
+                ('OMEGA(1,1)', 0.64, 0, sympy.oo, False),
+                ('OMEGA(2,1)', -0.24, -sympy.oo, sympy.oo, False),
+                ('OMEGA(2,2)', 0.58, 0, sympy.oo, False),
+            ],
+        ),
+        (
+            '$OMEGA BLOCK(2) SD 0.8 -0.394 0.762 CORR',
+            False,
+            [
+                ('OMEGA(1,1)', 0.64, 0, sympy.oo, False),
+                ('OMEGA(2,1)', -0.2401824, -sympy.oo, sympy.oo, False),
+                ('OMEGA(2,2)', 0.580644, 0, sympy.oo, False),
+            ],
+        ),
+        (
+            '$OMEGA BLOCK(1)   1.5',
+            False,
+            [
+                ('OMEGA(1,1)', 1.5, 0, sympy.oo, False),
+            ],
+        ),
+        (
+            '$OMEGA  0.0258583  ;      V2\n'
+            ';$OMEGA BLOCK(1) 0.0075 FIX    ;.02 ; IOC\n'
+            ';$OMEGA BLOCK(1) SAME\n',
+            False,
+            [
+                ('OMEGA(1,1)', 0.0258583, 0, sympy.oo, False),
+            ],
+        ),
+        ('$OMEGA 1 ; IVCL', True, [('IVCL', 1, 0, sympy.oo, False)]),
+        (
+            '$OMEGA DIAG(2) 1 ; V1 df\n 2 FIX ; VA2 __12\n',
+            True,
+            [
+                ('V1', 1, 0, sympy.oo, False),
+                ('VA2', 2, 0, sympy.oo, True),
+            ],
+        ),
+        (
+            '$OMEGA BLOCK(2) 1 ;IV1\n 2 ;CORR\n 3 ;IV2',
+            True,
+            [
+                ('IV1', 1, 0, sympy.oo, False),
+                ('CORR', 2, -sympy.oo, sympy.oo, False),
+                ('IV2', 3, 0, sympy.oo, False),
+            ],
+        ),
+    ],
+)
 def test_parameters(parser, buf, comment, results):
     if comment:
         opt = 'comment'
@@ -104,12 +155,15 @@ def test_parameters(parser, buf, comment, results):
 
 
 @pytest.mark.usefixtures('parser')
-@pytest.mark.parametrize('buf', [
-    ('$OMEGA 0 '),
-    ('$OMEGA DIAG(1) 1 SD VARIANCE'),
-    ('$OMEGA SD BLOCK(2) 0.1 0.001 0.1 STANDARD'),
-    ('$OMEGA CHOLESKY BLOCK(2) 0.1 VAR 0.001 \n  0.1 '),
-])
+@pytest.mark.parametrize(
+    'buf',
+    [
+        ('$OMEGA 0 '),
+        ('$OMEGA DIAG(1) 1 SD VARIANCE'),
+        ('$OMEGA SD BLOCK(2) 0.1 0.001 0.1 STANDARD'),
+        ('$OMEGA CHOLESKY BLOCK(2) 0.1 VAR 0.001 \n  0.1 '),
+    ],
+)
 def test_errors(parser, buf):
     recs = parser.parse(buf)
     rec = recs.records[0]
@@ -371,14 +425,23 @@ def test_random_variables(parser):
         assert rvs[0].pspace.distribution.sigma == A
 
 
-@pytest.mark.parametrize('buf,remove,result', [
-    ('$OMEGA BLOCK(3) 1 ;CL\n0.1 1; V\n0.1 0.1 1; KA', {'ETA(1)'},
-     '$OMEGA BLOCK(2)\n1.0\n0.1 1.0\n'),
-    ('$OMEGA BLOCK(4) 1 ;CL\n0.2 3; V\n0.4 0.5 6; KA\n7 8 9 10\n', {'ETA(2)', 'ETA(4)'},
-     '$OMEGA BLOCK(2)\n1.0\n0.4 6.0\n'),
-    ('$OMEGA 1 2 3\n', {'ETA(2)'}, '$OMEGA 1  3\n'),
-    ('$OMEGA BLOCK(2) 1 2 3 FIX\n', {'ETA(1)'}, '$OMEGA BLOCK(1) FIX\n3.0\n'),
-])
+@pytest.mark.parametrize(
+    'buf,remove,result',
+    [
+        (
+            '$OMEGA BLOCK(3) 1 ;CL\n0.1 1; V\n0.1 0.1 1; KA',
+            {'ETA(1)'},
+            '$OMEGA BLOCK(2)\n1.0\n0.1 1.0\n',
+        ),
+        (
+            '$OMEGA BLOCK(4) 1 ;CL\n0.2 3; V\n0.4 0.5 6; KA\n7 8 9 10\n',
+            {'ETA(2)', 'ETA(4)'},
+            '$OMEGA BLOCK(2)\n1.0\n0.4 6.0\n',
+        ),
+        ('$OMEGA 1 2 3\n', {'ETA(2)'}, '$OMEGA 1  3\n'),
+        ('$OMEGA BLOCK(2) 1 2 3 FIX\n', {'ETA(1)'}, '$OMEGA BLOCK(1) FIX\n3.0\n'),
+    ],
+)
 def test_remove(parser, buf, remove, result):
     rec = parser.parse(buf).records[0]
     rec.random_variables(1)

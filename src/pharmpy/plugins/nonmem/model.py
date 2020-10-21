@@ -22,7 +22,7 @@ from .update import update_parameters, update_random_variables, update_statement
 
 
 def detect_model(src, *args, **kwargs):
-    """ Check if src represents a NONMEM control stream
+    """Check if src represents a NONMEM control stream
     i.e. check if it is a file that contain $PRO
     """
     is_control_stream = re.search(r'^\s*\$PRO', src.code, re.MULTILINE)
@@ -84,10 +84,10 @@ class Model(pharmpy.model.Model):
             return None
 
     def update_source(self, path=None, force=False, nofiles=False):
-        """ Update the source
+        """Update the source
 
-            path - path to modelfile
-            nofiles - Set to not write any files (i.e. dataset, phi input etc)
+        path - path to modelfile
+        nofiles - Set to not write any files (i.e. dataset, phi input etc)
         """
         self._update_initial_individual_estimates(path)
         if hasattr(self, '_random_variables'):
@@ -100,7 +100,7 @@ class Model(pharmpy.model.Model):
         rv_trans = self.rv_translation(reverse=True, remove_idempotent=True, as_symbols=True)
         trans.update(rv_trans)
         if trans:
-            self.statements     # Read statements unless read
+            self.statements  # Read statements unless read
         if hasattr(self, '_statements'):
             update_statements(self, self._old_statements, self._statements, trans)
             self._old_statements = self._statements.copy()
@@ -119,18 +119,18 @@ class Model(pharmpy.model.Model):
 
             # Remove IGNORE/ACCEPT. Could do diff between old dataset and find simple
             # IGNOREs to add i.e. for filter out certain ID.
-            del(data_record.ignore)
-            del(data_record.accept)
+            del data_record.ignore
+            del data_record.accept
             self._dataset_updated = False
 
         super().update_source()
 
     def _update_initial_individual_estimates(self, path):
-        """ Update $ETAS
+        """Update $ETAS
 
-            Could have 0 FIX in model. Need to read these
+        Could have 0 FIX in model. Need to read these
         """
-        if path is None:        # What to do here?
+        if path is None:  # What to do here?
             phi_path = Path('.')
         else:
             phi_path = path.parent
@@ -177,8 +177,7 @@ class Model(pharmpy.model.Model):
 
     @property
     def parameters(self):
-        """Get the ParameterSet of all parameters
-        """
+        """Get the ParameterSet of all parameters"""
         try:
             return self._parameters
         except AttributeError:
@@ -208,9 +207,9 @@ class Model(pharmpy.model.Model):
     def parameters(self, params):
         """params can be a ParameterSet or a dict-like with name: value
 
-           Current restrictions:
-            * ParameterSet only supported for new initial estimates and fix
-            * Only set the exact same parameters. No additions and no removing of parameters
+        Current restrictions:
+         * ParameterSet only supported for new initial estimates and fix
+         * Only set the exact same parameters. No additions and no removing of parameters
         """
         if isinstance(params, ParameterSet):
             inits = params.inits
@@ -229,10 +228,10 @@ class Model(pharmpy.model.Model):
     def initial_individual_estimates(self):
         """Initial individual estimates
 
-           These are taken from the $ETAS FILE. 0 FIX ETAs are removed.
-           If no $ETAS is present None will be returned.
+        These are taken from the $ETAS FILE. 0 FIX ETAs are removed.
+        If no $ETAS is present None will be returned.
 
-           Setter assumes that all IDs are present
+        Setter assumes that all IDs are present
         """
         try:
             return self._initial_individual_estimates
@@ -258,8 +257,10 @@ class Model(pharmpy.model.Model):
         rv_names = {rv.name for rv in self.random_variables if rv.name.startswith('ETA')}
         columns = set(estimates.columns)
         if columns < rv_names:
-            raise ValueError(f'Cannot set initial estimate for random variable not in the model:'
-                             f' {rv_names - columns}')
+            raise ValueError(
+                f'Cannot set initial estimate for random variable not in the model:'
+                f' {rv_names - columns}'
+            )
         diff = columns - rv_names
         # If not setting all etas automatically set remaining to 0 for all individuals
         if len(diff) > 0:
@@ -272,8 +273,7 @@ class Model(pharmpy.model.Model):
         self._updated_etas_file = None
 
     def update_individual_estimates(self, source):
-        """Update initial individual estimates from another model
-        """
+        """Update initial individual estimates from another model"""
         self._initial_individual_estimates_updated = False
         try:
             del self._initial_individual_estimates
@@ -287,6 +287,7 @@ class Model(pharmpy.model.Model):
         def keyfunc(name):
             m = re.match(r'ETA\((\d+)\)', name)
             return int(m.group(1))
+
         sorted_colnames = colnames.sort(key=keyfunc)
         return df.reindex(sorted_colnames, axis=1)
 
@@ -312,7 +313,7 @@ class Model(pharmpy.model.Model):
                 cm, link = comp
                 statements += [cm, link]
             else:
-                statements.append(ODESystem())      # FIXME: Placeholder for ODE-system
+                statements.append(ODESystem())  # FIXME: Placeholder for ODE-system
                 # FIXME: Dummy link statement
                 statements.append(Assignment('F', symbols.symbol('F')))
             statements += error.statements
@@ -323,12 +324,15 @@ class Model(pharmpy.model.Model):
             parameter_symbols = {symb for _, symb in trans.items()}
             clashing_symbols = parameter_symbols & statements.free_symbols
             if clashing_symbols:
-                warnings.warn(f'The parameter names {clashing_symbols} are also names of variables '
-                              f'in the model code. Falling back to the NONMEM default parameter '
-                              f'names for these.')
+                warnings.warn(
+                    f'The parameter names {clashing_symbols} are also names of variables '
+                    f'in the model code. Falling back to the NONMEM default parameter '
+                    f'names for these.'
+                )
                 rev_trans = {val: key for key, val in trans.items()}
-                trans = {nm_symb: symb for nm_symb, symb in trans.items()
-                         if symb not in clashing_symbols}
+                trans = {
+                    nm_symb: symb for nm_symb, symb in trans.items() if symb not in clashing_symbols
+                }
                 for symb in clashing_symbols:
                     self.parameters[symb.name].name = rev_trans[symb].name
             statements.subs(trans)
@@ -368,15 +372,17 @@ class Model(pharmpy.model.Model):
             prev_cov = None
             next_omega = 1
             for omega_record in self.control_stream.get_records('OMEGA'):
-                _, next_omega, prev_cov, new_zero_fix = \
-                        omega_record.random_variables(next_omega, prev_cov)
+                _, next_omega, prev_cov, new_zero_fix = omega_record.random_variables(
+                    next_omega, prev_cov
+                )
                 zero_fix += new_zero_fix
         else:
             prev_cov = None
             next_sigma = 1
             for sigma_record in self.control_stream.get_records('SIGMA'):
-                _, next_sigma, prev_cov, new_zero_fix = \
-                        sigma_record.random_variables(next_sigma, prev_cov)
+                _, next_sigma, prev_cov, new_zero_fix = sigma_record.random_variables(
+                    next_sigma, prev_cov
+                )
                 zero_fix += new_zero_fix
         return zero_fix
 
@@ -406,12 +412,14 @@ class Model(pharmpy.model.Model):
     def adjust_iovs(rvs):
         for i, rv in enumerate(rvs):
             try:
-                next_rv = rvs[i+1]
+                next_rv = rvs[i + 1]
             except KeyError:
                 break
 
-            if (rv.variability_level != VariabilityLevel.IOV and
-                    next_rv.variability_level == VariabilityLevel.IOV):
+            if (
+                rv.variability_level != VariabilityLevel.IOV
+                and next_rv.variability_level == VariabilityLevel.IOV
+            ):
                 rv.variability_level = VariabilityLevel.IOV
 
     @random_variables.setter
@@ -423,12 +431,11 @@ class Model(pharmpy.model.Model):
 
     @property
     def dataset_path(self):
-        """This property is NONMEM specific
-        """
+        """This property is NONMEM specific"""
         record = self.control_stream.get_records('DATA')[0]
         path = Path(record.filename)
         if not path.is_absolute():
-            path = self.source.path.parent / path     # Relative model source file.
+            path = self.source.path.parent / path  # Relative model source file.
         try:
             return path.resolve()
         except FileNotFoundError:
@@ -437,8 +444,9 @@ class Model(pharmpy.model.Model):
     @dataset_path.setter
     def dataset_path(self, path):
         path = Path(path)
-        assert not path.exists() or path.is_file(), ('input path change, but non-file exists at '
-                                                     'target (%s)' % str(path))
+        assert (
+            not path.exists() or path.is_file()
+        ), 'input path change, but non-file exists at ' 'target (%s)' % str(path)
         record = self.control_stream.get_records('DATA')[0]
         record.filename = str(path)
 
@@ -460,27 +468,48 @@ class Model(pharmpy.model.Model):
 
     @staticmethod
     def _synonym(key, value):
-        """Return a tuple reserved name and synonym
-        """
+        """Return a tuple reserved name and synonym"""
         _reserved_column_names = [
-            'ID', 'L1', 'L2', 'DV', 'MDV', 'RAW_', 'MRG_', 'RPT_',
-            'TIME', 'DATE', 'DAT1', 'DAT2', 'DAT3', 'EVID', 'AMT', 'RATE', 'SS', 'II', 'ADDL',
-            'CMT', 'PCMT', 'CALL', 'CONT'
+            'ID',
+            'L1',
+            'L2',
+            'DV',
+            'MDV',
+            'RAW_',
+            'MRG_',
+            'RPT_',
+            'TIME',
+            'DATE',
+            'DAT1',
+            'DAT2',
+            'DAT3',
+            'EVID',
+            'AMT',
+            'RATE',
+            'SS',
+            'II',
+            'ADDL',
+            'CMT',
+            'PCMT',
+            'CALL',
+            'CONT',
         ]
         if key in _reserved_column_names:
             return (key, value)
         elif value in _reserved_column_names:
             return (value, key)
         else:
-            raise DatasetError(f'A column name "{key}" in $INPUT has a synonym to a non-reserved '
-                               f'column name "{value}"')
+            raise DatasetError(
+                f'A column name "{key}" in $INPUT has a synonym to a non-reserved '
+                f'column name "{value}"'
+            )
 
     def _column_info(self):
         """List all column names in order.
-            Use the synonym when synonym exists.
-            return tuple of three lists, colnames, coltypes and drop together with a dictionary
-            of replacements for reserved names (aka synonyms).
-            Anonymous columns, i.e. DROP or SKIP alone, will be given unique names _DROP1, ...
+        Use the synonym when synonym exists.
+        return tuple of three lists, colnames, coltypes and drop together with a dictionary
+        of replacements for reserved names (aka synonyms).
+        Anonymous columns, i.e. DROP or SKIP alone, will be given unique names _DROP1, ...
         """
         input_records = self.control_stream.get_records("INPUT")
         colnames = []
@@ -521,14 +550,14 @@ class Model(pharmpy.model.Model):
     def _update_input(self, new_names):
         """Update $INPUT with new column names
 
-           currently supporting append columns at end and removing columns
+        currently supporting append columns at end and removing columns
         """
         colnames, _, _, _ = self._column_info()
         removed_columns = set(colnames) - set(new_names)
         input_records = self.control_stream.get_records("INPUT")
         for col in removed_columns:
             input_records[0].remove_option(col)
-        appended_names = new_names[len(colnames):]
+        appended_names = new_names[len(colnames) :]
         last_input_record = input_records[-1]
         for colname in appended_names:
             last_input_record.append_option(colname)
@@ -569,10 +598,18 @@ class Model(pharmpy.model.Model):
             else:
                 accept = Model._replace_synonym_in_filters(accept, replacements)
 
-        df = pharmpy.data.read_nonmem_dataset(self.dataset_path, raw, ignore_character, colnames,
-                                              coltypes, drop, null_value=null_value,
-                                              parse_columns=parse_columns, ignore=ignore,
-                                              accept=accept)
+        df = pharmpy.data.read_nonmem_dataset(
+            self.dataset_path,
+            raw,
+            ignore_character,
+            colnames,
+            coltypes,
+            drop,
+            null_value=null_value,
+            parse_columns=parse_columns,
+            ignore=ignore,
+            accept=accept,
+        )
         df.name = self.dataset_path.stem
         return df
 
@@ -597,7 +634,7 @@ class Model(pharmpy.model.Model):
 
     def parameter_translation(self, reverse=False, remove_idempotent=False, as_symbols=False):
         """Get a dict of NONMEM name to Pharmpy parameter name
-           i.e. {'THETA(1)': 'TVCL', 'OMEGA(1,1)': 'IVCL'}
+        i.e. {'THETA(1)': 'TVCL', 'OMEGA(1,1)': 'IVCL'}
         """
         self.parameters
         d = dict()

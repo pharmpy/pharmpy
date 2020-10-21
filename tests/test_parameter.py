@@ -5,13 +5,16 @@ from pharmpy.parameter import Parameter, ParameterSet
 from pharmpy.symbols import symbol
 
 
-@pytest.mark.parametrize('name,init,lower,upper,fix', [
-    ('THETA(1)', 23, None, None, None),
-    ('X', 12, None, None, None),
-    ('_NAME', 0, None, None, None),
-    ('OMEGA(2,1)', 0.1, 0, None, None),
-    ('TCVL', 0.23, -2, 2, None),
-    ])
+@pytest.mark.parametrize(
+    'name,init,lower,upper,fix',
+    [
+        ('THETA(1)', 23, None, None, None),
+        ('X', 12, None, None, None),
+        ('_NAME', 0, None, None, None),
+        ('OMEGA(2,1)', 0.1, 0, None, None),
+        ('TCVL', 0.23, -2, 2, None),
+    ],
+)
 def test_initialization(name, init, lower, upper, fix):
     param = Parameter(name, init, lower, upper, fix)
     assert param.name == name
@@ -28,10 +31,13 @@ def test_initialization(name, init, lower, upper, fix):
     assert param.fix == bool(fix)
 
 
-@pytest.mark.parametrize('name,init,lower,upper,fix', [
-    ('OMEGA(2,1)', 0.1, 2, None, None),
-    ('X', 1, 0, -1, None),
-    ])
+@pytest.mark.parametrize(
+    'name,init,lower,upper,fix',
+    [
+        ('OMEGA(2,1)', 0.1, 2, None, None),
+        ('X', 1, 0, -1, None),
+    ],
+)
 def test_illegal_initialization(name, init, lower, upper, fix):
     with pytest.raises(ValueError):
         Parameter(name, init, lower, upper, fix)
@@ -112,8 +118,7 @@ def test_pset_names():
     p3 = Parameter('Z', 1)
     pset = ParameterSet([p1, p2, p3])
     assert pset.names == ['Y', 'X', 'Z']
-    assert pset.symbols == [symbol('Y'), symbol('X'),
-                            symbol('Z')]
+    assert pset.symbols == [symbol('Y'), symbol('X'), symbol('Z')]
 
 
 def test_pset_lower_upper():

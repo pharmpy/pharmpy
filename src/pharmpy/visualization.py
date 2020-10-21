@@ -31,13 +31,13 @@ def pharmpy_theme():
             'axis': {
                 'labelFontSize': 11,
                 'titleFontSize': 13,
-                    },
+            },
             'legend': {
                 'labelFontSize': 12,
                 'titleFontSize': 13,
             },
-            }
         }
+    }
 
 
 alt.themes.register('pharmpy', pharmpy_theme)
@@ -45,20 +45,25 @@ alt.themes.enable('pharmpy')
 
 
 def scatter_plot_correlation(df, x, y, title=""):
-    chart = alt.Chart(df, width=_chart_width, height=_chart_height).mark_circle(size=100).encode(
-        alt.X(x),
-        alt.Y(y),
-        tooltip=[x, y]
-    ).properties(
-        title=title,
-    ).interactive()
+    chart = (
+        alt.Chart(df, width=_chart_width, height=_chart_height)
+        .mark_circle(size=100)
+        .encode(alt.X(x), alt.Y(y), tooltip=[x, y])
+        .properties(
+            title=title,
+        )
+        .interactive()
+    )
 
-    line = alt.Chart(
-        pd.DataFrame({x: [min(df[x]), max(df[x])],
-                      y: [min(df[y]), max(df[y])]})).mark_line().encode(
+    line = (
+        alt.Chart(pd.DataFrame({x: [min(df[x]), max(df[x])], y: [min(df[y]), max(df[y])]}))
+        .mark_line()
+        .encode(
             alt.X(x),
             alt.Y(y),
-    ).interactive()
+        )
+        .interactive()
+    )
 
     plot = chart + line
 
@@ -70,100 +75,106 @@ def scatter_plot_correlation(df, x, y, title=""):
 def scatter_matrix(df):
     """Scatter matrix plot
 
-       Each column will be scatter plotted against all columns.
+    Each column will be scatter plotted against all columns.
     """
 
-    base = alt.Chart(df).transform_fold(
-        list(df.columns),
-        as_=['key_x', 'value_x']
-    ).transform_fold(
-        list(df.columns),
-        as_=['key_y', 'value_y']
-    ).encode(
-        x=alt.X('value_y:Q', title=None, scale=alt.Scale(zero=False)),
-        y=alt.Y('value_x:Q', title=None, scale=alt.Scale(zero=False)),
-    ).properties(
-        width=150,
-        height=150
+    base = (
+        alt.Chart(df)
+        .transform_fold(list(df.columns), as_=['key_x', 'value_x'])
+        .transform_fold(list(df.columns), as_=['key_y', 'value_y'])
+        .encode(
+            x=alt.X('value_y:Q', title=None, scale=alt.Scale(zero=False)),
+            y=alt.Y('value_x:Q', title=None, scale=alt.Scale(zero=False)),
+        )
+        .properties(width=150, height=150)
     )
 
-    plot = alt.layer(
-        base.mark_circle(),
-        base.transform_regression(
-            'value_y', 'value_x', method='poly', order=4
-        ).mark_line(color='red')
-    ).facet(
-        column=alt.Column('key_x:N', sort=list(df.columns), title=None),
-        row=alt.Row('key_y:N', sort=list(reversed(df.columns)), title=None)
-    ).resolve_scale(
-        x='independent',
-        y='independent'
-    ).configure_header(labelFontStyle='bold')
+    plot = (
+        alt.layer(
+            base.mark_circle(),
+            base.transform_regression('value_y', 'value_x', method='poly', order=4).mark_line(
+                color='red'
+            ),
+        )
+        .facet(
+            column=alt.Column('key_x:N', sort=list(df.columns), title=None),
+            row=alt.Row('key_y:N', sort=list(reversed(df.columns)), title=None),
+        )
+        .resolve_scale(x='independent', y='independent')
+        .configure_header(labelFontStyle='bold')
+    )
     return plot
 
 
 def line_plot(df, x, title='', xlabel='', ylabel='', legend_title=''):
     """Line plot for multiple lines
 
-       Parameters
-       ----------
-       df : pd.DataFrame
-            DataFrame with one x column and multiple columns with y values
-       x
-            Name of the x column
-       title : str
-            Plot title
-       xlabel : str
-            Label of the x-axis
-       ylabel : str
-            Label of the y-axis
-       legend_title : str
-            Title of the legend
+    Parameters
+    ----------
+    df : pd.DataFrame
+         DataFrame with one x column and multiple columns with y values
+    x
+         Name of the x column
+    title : str
+         Plot title
+    xlabel : str
+         Label of the x-axis
+    ylabel : str
+         Label of the y-axis
+    legend_title : str
+         Title of the legend
 
     """
     df = df.melt(id_vars=[x])
-    plot = alt.Chart(df).mark_line().encode(
-        alt.X(f'{x}:Q', title=xlabel),
-        alt.Y('value:Q', title=ylabel),
-        color=alt.Color('variable:N', legend=alt.Legend(title=legend_title, orient='top-left',
-                                                        fillColor='#EEEEEE', padding=10,
-                                                        cornerRadius=10))
-    ).properties(
-        title=title,
-        width=800,
-        height=300,
-    ).configure_legend(labelLimit=0)
+    plot = (
+        alt.Chart(df)
+        .mark_line()
+        .encode(
+            alt.X(f'{x}:Q', title=xlabel),
+            alt.Y('value:Q', title=ylabel),
+            color=alt.Color(
+                'variable:N',
+                legend=alt.Legend(
+                    title=legend_title,
+                    orient='top-left',
+                    fillColor='#EEEEEE',
+                    padding=10,
+                    cornerRadius=10,
+                ),
+            ),
+        )
+        .properties(
+            title=title,
+            width=800,
+            height=300,
+        )
+        .configure_legend(labelLimit=0)
+    )
     return plot
 
 
 def histogram(values, title=""):
     """Histogram with percentage on y and a rule at mean
-       slider for reducing the number of values used.
+    slider for reducing the number of values used.
     """
     df = pd.DataFrame({values.name: values, 'num': list(range(1, len(values) + 1))})
 
     slider = alt.binding_range(min=1, max=len(values), step=1, name='Number of samples: ')
-    selection = alt.selection_single(bind=slider, fields=['num'], name="num",
-                                     init={'num': len(values)})
+    selection = alt.selection_single(
+        bind=slider, fields=['num'], name="num", init={'num': len(values)}
+    )
 
     base = alt.Chart(df).transform_filter('datum.num <= num_num')
 
-    plot = base.transform_joinaggregate(
-        total='count(*)'
-    ).transform_calculate(
-        pct='1 / datum.total'
-    ).mark_bar().encode(
-        alt.X(f'{values.name}:Q', bin=True),
-        alt.Y('sum(pct):Q', axis=alt.Axis(format='%'))
-    ).add_selection(
-        selection
-    ).properties(
-        title=title
+    plot = (
+        base.transform_joinaggregate(total='count(*)')
+        .transform_calculate(pct='1 / datum.total')
+        .mark_bar()
+        .encode(alt.X(f'{values.name}:Q', bin=True), alt.Y('sum(pct):Q', axis=alt.Axis(format='%')))
+        .add_selection(selection)
+        .properties(title=title)
     )
 
-    rule = base.mark_rule(color='red').encode(
-        x=f'mean({values.name}):Q',
-        size=alt.value(5)
-    )
+    rule = base.mark_rule(color='red').encode(x=f'mean({values.name}):Q', size=alt.value(5))
 
     return plot + rule

@@ -5,13 +5,12 @@ class ModelExecutionEngine:
     """
 
     def commandline(self, model):
-        """Returns a command line for executing a model.
-        """
+        """Returns a command line for executing a model."""
         raise NotImplementedError
 
     def generate_files(self, model, path):
         """Generate all files needed to execute model in path
 
-           return a list of paths to all files
+        return a list of paths to all files
         """
         raise NotImplementedError

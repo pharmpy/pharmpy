@@ -51,8 +51,10 @@ def transform(ast_tree, content=True):
     """
 
     if not any(isinstance(ast_tree, x) for x in [lark.Tree, lark.lexer.Token]):
-        raise TypeError("can't transform %s object (is not a Lark Tree or Token')"
-                        % repr(ast_tree.__class__.__name__))
+        raise TypeError(
+            "can't transform %s object (is not a Lark Tree or Token')"
+            % repr(ast_tree.__class__.__name__)
+        )
     tree = treeprint.Node(ast_tree)
     try:
         nodes = ast_tree.children
@@ -60,8 +62,10 @@ def transform(ast_tree, content=True):
         tree.set_formatter(partial(_format_token, content))
     else:
         if isinstance(nodes, str):
-            raise TypeError("'children' of tree appears to be 'str' (expects list/iterable): %s" %
-                            repr(ast_tree))
+            raise TypeError(
+                "'children' of tree appears to be 'str' (expects list/iterable): %s"
+                % repr(ast_tree)
+            )
         tree.set_formatter(partial(_format_tree, content))
         for ast_node in list(nodes):
             node = transform(ast_node, content)

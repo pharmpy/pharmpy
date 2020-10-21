@@ -40,8 +40,14 @@ def test_check_covariates_mult_warns(testdata):
 def test_parcov_inits(testdata):
     model = Model(testdata / 'nonmem' / 'frem' / 'pheno' / 'model_3.mod')
     params = calculate_parcov_inits(model, 2)
-    assert params == approx({'OMEGA(3,1)': 0.02560327, 'OMEGA(3,2)': -0.001618381,
-                             'OMEGA(4,1)': -0.06764814, 'OMEGA(4,2)': 0.02350935})
+    assert params == approx(
+        {
+            'OMEGA(3,1)': 0.02560327,
+            'OMEGA(3,2)': -0.001618381,
+            'OMEGA(4,1)': -0.06764814,
+            'OMEGA(4,2)': 0.02350935,
+        }
+    )
 
 
 def test_create_model3b(testdata):
@@ -219,10 +225,18 @@ ETA(2),all,0.14572521381314374,0.10000243896199691,0.17321795298354078
     correct.index.set_names(['parameter', 'covariate'], inplace=True)
     pd.testing.assert_frame_equal(res.unexplained_variability, correct)
 
-    correct = pd.DataFrame({'p5': [1.0, 0.7], 'mean': [6.423729, 1.525424], 'p95': [9.0, 3.2],
-                            'stdev': [2.237636, 0.704565], 'ref': [6.423729, 1.525424],
-                            'categorical': [False, False], 'other': [np.nan, np.nan]},
-                           index=['APGR', 'WGT'])
+    correct = pd.DataFrame(
+        {
+            'p5': [1.0, 0.7],
+            'mean': [6.423729, 1.525424],
+            'p95': [9.0, 3.2],
+            'stdev': [2.237636, 0.704565],
+            'ref': [6.423729, 1.525424],
+            'categorical': [False, False],
+            'other': [np.nan, np.nan],
+        },
+        index=['APGR', 'WGT'],
+    )
     correct.index.name = 'covariate'
     pd.testing.assert_frame_equal(res.covariate_statistics, correct)
 
@@ -385,9 +399,17 @@ ETA(2),all,0.1441532460182698,0.11380319105403863,0.18470095021420732
     correct.index.set_names(['parameter', 'covariate'], inplace=True)
     pd.testing.assert_frame_equal(res.unexplained_variability, correct)
 
-    correct = pd.DataFrame({'p5': [0.7, 0], 'mean': [1.525424, 0.711864], 'p95': [3.2, 1],
-                            'stdev': [0.704565, 0.456782], 'ref': [1.525424, 1.0],
-                            'categorical': [False, True], 'other': [np.nan, 0]},
-                           index=['WGT', 'APGRX'])
+    correct = pd.DataFrame(
+        {
+            'p5': [0.7, 0],
+            'mean': [1.525424, 0.711864],
+            'p95': [3.2, 1],
+            'stdev': [0.704565, 0.456782],
+            'ref': [1.525424, 1.0],
+            'categorical': [False, True],
+            'other': [np.nan, 0],
+        },
+        index=['WGT', 'APGRX'],
+    )
     correct.index.name = 'covariate'
     pd.testing.assert_frame_equal(res.covariate_statistics, correct)

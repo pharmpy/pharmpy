@@ -15,9 +15,17 @@ class BootstrapResults(Results):
     rst_path = Path(__file__).parent / 'report.rst'
 
     # FIXME: Should inherit from results that take multiple runs like bootstrap, cdd etc.
-    def __init__(self, parameter_statistics=None, parameter_distribution=None,
-                 covariance_matrix=None, ofv_distribution=None, ofv_statistics=None,
-                 included_individuals=None, ofvs=None, parameter_estimates=None):
+    def __init__(
+        self,
+        parameter_statistics=None,
+        parameter_distribution=None,
+        covariance_matrix=None,
+        ofv_distribution=None,
+        ofv_statistics=None,
+        included_individuals=None,
+        ofvs=None,
+        parameter_estimates=None,
+    ):
         self.parameter_statistics = parameter_statistics
         self.parameter_distribution = parameter_distribution
         self.covariance_matrix = covariance_matrix
@@ -33,8 +41,9 @@ class BootstrapResults(Results):
         self.dofv_quantiles_plot = self.plot_dofv_quantiles()
 
     def plot_ofv(self):
-        plot = pharmpy.visualization.histogram(self.ofvs['bootstrap_bootdata_ofv'],
-                                               title='Bootstrap OFV')
+        plot = pharmpy.visualization.histogram(
+            self.ofvs['bootstrap_bootdata_ofv'], title='Bootstrap OFV'
+        )
         return plot
 
     def plot_dofv_quantiles(self):
@@ -49,15 +58,28 @@ class BootstrapResults(Results):
         degrees_boot_base = self.ofv_statistics['mean']['delta_origdata']
         df_dict = {'quantiles': quantiles, f'Reference χ²({degrees})': chi2}
         if not np.isnan(degrees_dofvs):
-            df_dict[('Original model OFV - Bootstrap model OFV (both using bootstrap datasets)',
-                     f'Estimated df = {degrees_dofvs:.2f}')] = dofvs
+            df_dict[
+                (
+                    'Original model OFV - Bootstrap model OFV (both using bootstrap datasets)',
+                    f'Estimated df = {degrees_dofvs:.2f}',
+                )
+            ] = dofvs
         if not np.isnan(degrees_boot_base):
-            df_dict[('Bootstrap model OFV - Original model OFV (both using original dataset)',
-                     f'Estimated df = {degrees_boot_base:.2f}')] = dofvs_boot_base
+            df_dict[
+                (
+                    'Bootstrap model OFV - Original model OFV (both using original dataset)',
+                    f'Estimated df = {degrees_boot_base:.2f}',
+                )
+            ] = dofvs_boot_base
         df = pd.DataFrame(df_dict)
-        plot = pharmpy.visualization.line_plot(df, 'quantiles', xlabel='Distribution quantiles',
-                                               ylabel='dOFV', legend_title='Distribution',
-                                               title='dOFV quantiles')
+        plot = pharmpy.visualization.line_plot(
+            df,
+            'quantiles',
+            xlabel='Distribution quantiles',
+            ylabel='dOFV',
+            legend_title='Distribution',
+            title='dOFV quantiles',
+        )
         return plot
 
     def plot_parameter_estimates_correlation(self):
@@ -66,8 +88,9 @@ class BootstrapResults(Results):
         return plot
 
 
-def calculate_results(bootstrap_models, original_model, included_individuals=None,
-                      dofv_results=None):
+def calculate_results(
+    bootstrap_models, original_model, included_individuals=None, dofv_results=None
+):
     results = [m.modelfit_results for m in bootstrap_models if m.modelfit_results is not None]
     if original_model:
         original_results = original_model.modelfit_results
@@ -75,8 +98,10 @@ def calculate_results(bootstrap_models, original_model, included_individuals=Non
         original_results = None
 
     if original_results is None:
-        warnings.warn('No results for the base model could be read. Cannot calculate bias and '
-                      'original_bootdata_ofv')
+        warnings.warn(
+            'No results for the base model could be read. Cannot calculate bias and '
+            'original_bootdata_ofv'
+        )
 
     df = pd.DataFrame()
     for res in results:
@@ -93,8 +118,9 @@ def calculate_results(bootstrap_models, original_model, included_individuals=Non
         bias = mean - orig
     else:
         bias = np.nan
-    statistics = pd.DataFrame({'mean': mean, 'median': df.median(),
-                               'bias': bias, 'stderr': df.std()})
+    statistics = pd.DataFrame(
+        {'mean': mean, 'median': df.median(), 'bias': bias, 'stderr': df.std()}
+    )
     statistics['RSE'] = statistics['stderr'] / statistics['mean']
 
     df = parameter_estimates
@@ -131,32 +157,48 @@ def calculate_results(bootstrap_models, original_model, included_individuals=Non
         warnings.filterwarnings('ignore', r'All-NaN slice encountered')
         warnings.filterwarnings('ignore', 'Mean of empty slice')
         ofv_dist = create_distribution(ofvs)
-        ofv_stats = pd.DataFrame({'mean': ofvs.mean(), 'median': ofvs.median(),
-                                  'stderr': ofvs.std()})
+        ofv_stats = pd.DataFrame(
+            {'mean': ofvs.mean(), 'median': ofvs.median(), 'stderr': ofvs.std()}
+        )
 
-    res = BootstrapResults(covariance_matrix=covariance_matrix, parameter_statistics=statistics,
-                           parameter_distribution=distribution, ofv_distribution=ofv_dist,
-                           ofv_statistics=ofv_stats, included_individuals=included_individuals,
-                           ofvs=ofvs, parameter_estimates=parameter_estimates)
+    res = BootstrapResults(
+        covariance_matrix=covariance_matrix,
+        parameter_statistics=statistics,
+        parameter_distribution=distribution,
+        ofv_distribution=ofv_dist,
+        ofv_statistics=ofv_stats,
+        included_individuals=included_individuals,
+        ofvs=ofvs,
+        parameter_estimates=parameter_estimates,
+    )
 
     return res
 
 
 def create_distribution(df):
-    dist = pd.DataFrame({'min': df.min(), '0.05%': df.quantile(0.0005),
-                         '0.5%': df.quantile(0.005), '2.5%': df.quantile(0.025),
-                         '5%': df.quantile(0.05), 'median': df.median(),
-                         '95%': df.quantile(0.95), '97.5%': df.quantile(0.975),
-                         '99.5%': df.quantile(0.995), '99.95%': df.quantile(0.9995),
-                         'max': df.max()})
+    dist = pd.DataFrame(
+        {
+            'min': df.min(),
+            '0.05%': df.quantile(0.0005),
+            '0.5%': df.quantile(0.005),
+            '2.5%': df.quantile(0.025),
+            '5%': df.quantile(0.05),
+            'median': df.median(),
+            '95%': df.quantile(0.95),
+            '97.5%': df.quantile(0.975),
+            '99.5%': df.quantile(0.995),
+            '99.95%': df.quantile(0.9995),
+            'max': df.max(),
+        }
+    )
     return dist
 
 
 def psn_bootstrap_results(path):
-    """ Create bootstrapresults from a PsN bootstrap run
+    """Create bootstrapresults from a PsN bootstrap run
 
-        :param path: Path to PsN boostrap run directory
-        :return: A :class:`BootstrapResults` object
+    :param path: Path to PsN boostrap run directory
+    :return: A :class:`BootstrapResults` object
     """
     path = Path(path)
 
@@ -172,6 +214,7 @@ def psn_bootstrap_results(path):
     dofv_results = None
     if (path / 'm1' / 'dofv_1.mod').is_file():
         from pharmpy.plugins.nonmem.table import NONMEMTableFile
+
         dofv_results = []
         for table_path in (path / 'm1').glob('dofv_*.ext'):
             table_file = NONMEMTableFile(table_path)
@@ -185,6 +228,7 @@ def psn_bootstrap_results(path):
                 next_table += 1
 
     incinds = pd.read_csv(path / 'included_individuals1.csv', header=None).values.tolist()
-    res = calculate_results(models, base_model, included_individuals=incinds,
-                            dofv_results=dofv_results)
+    res = calculate_results(
+        models, base_model, included_individuals=incinds, dofv_results=dofv_results
+    )
     return res

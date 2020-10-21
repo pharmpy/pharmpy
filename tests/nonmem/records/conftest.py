@@ -47,7 +47,7 @@ class _GeneratedTheta:
     Can "messy" print and validate against tree parse, a.k.a. post-processing feature creep...
     """
 
-    _WS = '\t' + (' '*9)
+    _WS = '\t' + (' ' * 9)
     Values = namedtuple('Values', ['low', 'init', 'up'])
 
     __slots__ = ('num', 'num_str', 'fixed', 'n_thetas')
@@ -76,6 +76,7 @@ class _GeneratedTheta:
         This is a 'basic' non-API implementation of postprocessing, for grammar-close lexer-parser
         testing.
         """
+
         def find_tokens(tree, rule, rule_token):
             nodes = filter(lambda x: x.rule == rule, tree.tree_walk())
             return list(map(lambda x: getattr(x, rule_token), nodes))
@@ -141,7 +142,7 @@ class _GeneratedTheta:
         elif form == 3:
             out = '(%s,%s,%s) %s' % (low, init, high, fix)
         elif form == 4:
-            init_missing = random.choice(self._WS)*random.randrange(3)
+            init_missing = random.choice(self._WS) * random.randrange(3)
             out = '(%s,%s,%s %s)' % (low, init_missing, high, fix)
         else:
             n_thetas = self._l_pad('x') + self._lr_pad(self.n_thetas)
@@ -154,22 +155,22 @@ class _GeneratedTheta:
         vals = [getattr(self.num, a) or '' for a in ['low', 'init', 'up']]
         out = '(%s, %s, %s%s)' % (*vals, fix)
         if self.n_thetas is not None:
-            out += ('x%s' % (self.n_thetas,))
+            out += 'x%s' % (self.n_thetas,)
         return out
 
     def _l_pad(self, obj):
         """Format obj via wrapping with (left) random whitespace padding."""
         if obj is None:
             return ''
-        lpad = random.choice(self._WS)*random.randrange(5)
+        lpad = random.choice(self._WS) * random.randrange(5)
         return lpad + str(obj)
 
     def _lr_pad(self, obj):
         """Format obj via wrapping with (left + right) random whitespace padding."""
         if obj is None:
             return ''
-        lpad = random.choice(self._WS)*random.randrange(5)
-        rpad = random.choice(self._WS)*random.randrange(5)
+        lpad = random.choice(self._WS) * random.randrange(5)
+        rpad = random.choice(self._WS) * random.randrange(5)
         return lpad + str(obj) + rpad
 
 

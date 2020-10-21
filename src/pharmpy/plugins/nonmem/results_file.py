@@ -6,11 +6,11 @@ from packaging import version
 
 
 class NONMEMResultsFile:
-    '''Representing and parsing a NONMEM results file (aka lst-file)
-       This is not a generic output object and will be combined by other classes
-       into new structures.
-       We rely on tags in NONMEM >= 7.2.0
-    '''
+    """Representing and parsing a NONMEM results file (aka lst-file)
+    This is not a generic output object and will be combined by other classes
+    into new structures.
+    We rely on tags in NONMEM >= 7.2.0
+    """
 
     def __init__(self, path=None):
         self.table = dict()
@@ -29,7 +29,7 @@ class NONMEMResultsFile:
     def estimation_status(self, table_number):
         result = NONMEMResultsFile.unknown_termination()
         if self._supported_nonmem_version:
-            if (table_number in self.table.keys()):
+            if table_number in self.table.keys():
                 for key in result.keys():
                     result[key] = self.table[table_number].get(key)
             else:
@@ -39,7 +39,7 @@ class NONMEMResultsFile:
     def covariance_status(self, table_number):
         result = NONMEMResultsFile.unknown_covariance()
         if self._supported_nonmem_version:
-            if (table_number in self.table.keys()):
+            if table_number in self.table.keys():
                 for key in result.keys():
                     result[key] = self.table[table_number].get(key)
             else:
@@ -49,7 +49,7 @@ class NONMEMResultsFile:
     def ofv(self, table_number):
         ofv = None
         if self._supported_nonmem_version:
-            if (table_number in self.table.keys()):
+            if table_number in self.table.keys():
                 ofv = self.table[table_number].get('OBJV')
         if ofv is not None:
             ofv = float(ofv)
@@ -59,8 +59,9 @@ class NONMEMResultsFile:
 
     @staticmethod
     def supported_version(nonmem_version):
-        return nonmem_version is not None and \
-            version.parse(nonmem_version) >= version.parse('7.2.0')
+        return nonmem_version is not None and version.parse(nonmem_version) >= version.parse(
+            '7.2.0'
+        )
 
     @staticmethod
     def unknown_covariance():
@@ -68,13 +69,15 @@ class NONMEMResultsFile:
 
     @staticmethod
     def unknown_termination():
-        return {'minimization_successful': None,
-                'estimate_near_boundary': None,
-                'rounding_errors': None,
-                'maxevals_exceeded': None,
-                'significant_digits': nan,
-                'function_evaluations': nan,
-                'warning': None}
+        return {
+            'minimization_successful': None,
+            'estimate_near_boundary': None,
+            'rounding_errors': None,
+            'maxevals_exceeded': None,
+            'significant_digits': nan,
+            'function_evaluations': nan,
+            'warning': None,
+        }
 
     @staticmethod
     def cleanup_version(v):
@@ -118,24 +121,33 @@ class NONMEMResultsFile:
         result['maxevals_exceeded'] = False
         result['warning'] = False
 
-        success = [re.compile(r'0MINIMIZATION SUCCESSFUL'),
-                   re.compile(r' (REDUCED STOCHASTIC PORTION|OPTIMIZATION|' +
-                              r'BURN-IN|EXPECTATION ONLY PROCESS)' +
-                              r'( STATISTICALLY | WAS | )(COMPLETED|NOT TESTED)'),
-                   re.compile(r'1OBJECTIVE FUNCTION IS TO BE EVALUATED')]
-        failure = [re.compile(r'0MINIMIZATION TERMINATED'),
-                   re.compile(r'0SEARCH WITH ESTIMATION STEP WILL NOT PROCEED')]
-        maybe = re.compile(r' (REDUCED STOCHASTIC PORTION|OPTIMIZATION|' +
-                           r'BURN-IN|EXPECTATION ONLY PROCESS)' +
-                           r'( WAS | )NOT COMPLETED')  # success only if next line USER INTERRUPT
-        misc = {'estimate_near_boundary':
-                re.compile(r'0(ESTIMATE OF THETA IS NEAR THE BOUNDARY AND|' +
-                           r'PARAMETER ESTIMATE IS NEAR ITS BOUNDARY)'),
-                'rounding_errors': re.compile(r' DUE TO ROUNDING ERRORS'),
-                'maxevals_exceeded':
-                    re.compile(r' DUE TO MAX. NO. OF FUNCTION EVALUATIONS EXCEEDED'),
-                'warning':
-                    re.compile(r' HOWEVER, PROBLEMS OCCURRED WITH THE MINIMIZATION.')}
+        success = [
+            re.compile(r'0MINIMIZATION SUCCESSFUL'),
+            re.compile(
+                r' (REDUCED STOCHASTIC PORTION|OPTIMIZATION|'
+                + r'BURN-IN|EXPECTATION ONLY PROCESS)'
+                + r'( STATISTICALLY | WAS | )(COMPLETED|NOT TESTED)'
+            ),
+            re.compile(r'1OBJECTIVE FUNCTION IS TO BE EVALUATED'),
+        ]
+        failure = [
+            re.compile(r'0MINIMIZATION TERMINATED'),
+            re.compile(r'0SEARCH WITH ESTIMATION STEP WILL NOT PROCEED'),
+        ]
+        maybe = re.compile(
+            r' (REDUCED STOCHASTIC PORTION|OPTIMIZATION|'
+            + r'BURN-IN|EXPECTATION ONLY PROCESS)'
+            + r'( WAS | )NOT COMPLETED'
+        )  # success only if next line USER INTERRUPT
+        misc = {
+            'estimate_near_boundary': re.compile(
+                r'0(ESTIMATE OF THETA IS NEAR THE BOUNDARY AND|'
+                + r'PARAMETER ESTIMATE IS NEAR ITS BOUNDARY)'
+            ),
+            'rounding_errors': re.compile(r' DUE TO ROUNDING ERRORS'),
+            'maxevals_exceeded': re.compile(r' DUE TO MAX. NO. OF FUNCTION EVALUATIONS EXCEEDED'),
+            'warning': re.compile(r' HOWEVER, PROBLEMS OCCURRED WITH THE MINIMIZATION.'),
+        }
         sig_digits = re.compile(r' NO. OF SIG. DIGITS IN FINAL EST.:\s*(\S+)')  # only classical est
         feval = re.compile(r' NO. OF FUNCTION EVALUATIONS USED:\s*(\S+)')  # only classical est
 
@@ -172,8 +184,7 @@ class NONMEMResultsFile:
 
     @staticmethod
     def tag_items(path):
-        nmversion = \
-            re.compile(r'1NONLINEAR MIXED EFFECTS MODEL PROGRAM \(NONMEM\) VERSION\s+(\S+)')
+        nmversion = re.compile(r'1NONLINEAR MIXED EFFECTS MODEL PROGRAM \(NONMEM\) VERSION\s+(\S+)')
         tag = re.compile(r'\s*#([A-Z]{4}):\s*(.*)')
         end_TERE = re.compile(r'(0|1)')  # The part we need after #TERE: will preceed next ^1 or ^0
         cleanup = re.compile(r'\*+\s*')
@@ -213,7 +224,7 @@ class NONMEMResultsFile:
                             yield (m.group(1), v.strip())
                     elif found_TERE:
                         if end_TERE.match(row):
-                            yield('TERE', NONMEMResultsFile.parse_covariance(TERE))
+                            yield ('TERE', NONMEMResultsFile.parse_covariance(TERE))
                             found_TERE = False
                             TERE = list()
                         else:

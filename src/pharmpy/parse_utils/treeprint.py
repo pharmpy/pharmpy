@@ -14,16 +14,14 @@ BranchStyle = Enum('BranchStyle', ['SIMPLE', 'INLINE', 'BUSY'])
 
 Indent = namedtuple('Indent', ['header', 'node', 'fork'])
 
-CharSet = namedtuple('CharSet', ['fork', 'horiz', 'vert',
-                                 'inline', 'lfork', 'end'])
+CharSet = namedtuple('CharSet', ['fork', 'horiz', 'vert', 'inline', 'lfork', 'end'])
 
 
 class NodeStyle(object):
     __defaults = dict(
         branch=BranchStyle['SIMPLE'],
         indent=Indent(header=0, node=1, fork=1),
-        char=CharSet(fork='├', horiz='│', vert='─',
-                     inline='┌', lfork='└', end=' '),
+        char=CharSet(fork='├', horiz='│', vert='─', inline='┌', lfork='└', end=' '),
     )
 
     def __init__(self, **styling):
@@ -54,9 +52,11 @@ class Node(object):
         try:
             cls_node = cls._cls_map[cls_obj]
         except KeyError:
+
             def __init__(self, obj):
                 self._obj = obj
                 cls.__init__(self)
+
             cls_name = cls_obj.__name__ + cls.__name__
             cls_node = type(cls_name, (cls,), {'__init__': __init__})
             cls._cls_map[cls_obj] = cls_node
@@ -124,21 +124,20 @@ class Node(object):
         else:
             ch_first, ch_after = (char.lfork, ' ')
 
-        vnew = char.vert*ind.node
-        vext = char.vert*ind_used.header
+        vnew = char.vert * ind.node
+        vext = char.vert * ind_used.header
         for i, line in enumerate(lines):
             if i == 0:
-                lines[i] = (' '*ind.fork + ch_first
-                            + vnew + vext + char.end + line[len(vext):])
+                lines[i] = ' ' * ind.fork + ch_first + vnew + vext + char.end + line[len(vext) :]
                 continue
-            lines[i] = ' '*ind.fork + ch_after + ' '*ind.node + line
+            lines[i] = ' ' * ind.fork + ch_after + ' ' * ind.node + line
 
         return lines
 
     def __str__(self):
         ind = self.style.indent
         lines = self.lines
-        lines[0] = ' '*ind.header + lines[0]
+        lines[0] = ' ' * ind.header + lines[0]
 
         idx_last = len(self._nodes) - 1
         for idx, node in enumerate(self._nodes):
@@ -174,6 +173,7 @@ def from_ast(ast_node):
 
 if __name__ == '__main__':
     import ast
+
     with open(__file__, 'r') as source:
         root = ast.parse(source.read())
     root = from_ast(root)

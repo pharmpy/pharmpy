@@ -7,7 +7,7 @@ from pharmpy.statements import Assignment, Bolus, CompartmentalSystem, ExplicitO
 
 def explicit_odes(model):
     """Convert model from compartmental system to explicit ODE system
-       or do nothing if it already has an explicit ODE system
+    or do nothing if it already has an explicit ODE system
     """
     statements = model.statements
     odes = statements.ode_system
@@ -20,8 +20,7 @@ def explicit_odes(model):
 
 
 def set_transit_compartments(model, n):
-    """Set the number of transit compartments of model
-    """
+    """Set the number of transit compartments of model"""
     statements = model.statements
     odes = statements.ode_system
     transits = odes.find_transit_compartments(statements)
@@ -60,8 +59,7 @@ def set_transit_compartments(model, n):
 
 
 def add_lag_time(model):
-    """Add lag time to the dose compartment of model
-    """
+    """Add lag time to the dose compartment of model"""
     mdt_symb = model.create_symbol('MDT')
     odes = model.statements.ode_system
     dosing_comp = odes.find_dosing()
@@ -79,8 +77,7 @@ def add_lag_time(model):
 
 
 def remove_lag_time(model):
-    """Remove lag time from the dose compartment of model
-    """
+    """Remove lag time from the dose compartment of model"""
     odes = model.statements.ode_system
     dosing_comp = odes.find_dosing()
     lag_time = dosing_comp.lag_time
@@ -166,15 +163,16 @@ def absorption_rate(model, rate):
             depot = add_first_order_absorption(model, amount, dose_comp)
             add_zero_order_absorption(model, amount, depot, 'MDT')
     else:
-        raise ValueError(f'Requested rate {rate} but only rates  '
-                         f'bolus, FO, ZO and seq-ZO-FO are supported')
+        raise ValueError(
+            f'Requested rate {rate} but only rates  ' f'bolus, FO, ZO and seq-ZO-FO are supported'
+        )
     return model
 
 
 def have_zero_order_absorption(model):
     """Check if ode system describes a zero order absorption
 
-       currently defined as having Infusion dose with rate not in dataset
+    currently defined as having Infusion dose with rate not in dataset
     """
     odes = model.statements.ode_system
     dosing = odes.find_dosing()
@@ -193,7 +191,7 @@ def have_zero_order_absorption(model):
 
 def add_zero_order_absorption(model, amount, to_comp, parameter_name):
     """Add zero order absorption to a compartment.
-       Disregards what is currently in the model.
+    Disregards what is currently in the model.
     """
     tvmat_symb = model.create_symbol(f'TV{parameter_name}')
     mat_param = Parameter(tvmat_symb.name, init=0.1, lower=0)
@@ -207,7 +205,7 @@ def add_zero_order_absorption(model, amount, to_comp, parameter_name):
 
 def add_first_order_absorption(model, dose, to_comp):
     """Add first order absorption
-       Disregards what is currently in the model.
+    Disregards what is currently in the model.
     """
     odes = model.statements.ode_system
     depot = odes.add_compartment('DEPOT')

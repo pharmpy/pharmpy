@@ -20,8 +20,7 @@ from .record import Record
 
 class ExpressionInterpreter(lark.visitors.Interpreter):
     def visit_children(self, tree):
-        """Does not visit tokens
-        """
+        """Does not visit tokens"""
         return [self.visit(child) for child in tree.children if isinstance(child, lark.Tree)]
 
     def expression(self, node):
@@ -128,7 +127,7 @@ class ExpressionInterpreter(lark.visitors.Interpreter):
 
     def power(self, node):
         b, e = self.visit_children(node)
-        return b**e
+        return b ** e
 
     @staticmethod
     def operator(node):
@@ -140,7 +139,7 @@ class ExpressionInterpreter(lark.visitors.Interpreter):
         try:
             return sympy.Integer(s)
         except ValueError:
-            s = s.replace('d', 'E')     # Fortran special format
+            s = s.replace('d', 'E')  # Fortran special format
             s = s.replace('D', 'E')
             return sympy.Float(s)
 
@@ -166,8 +165,7 @@ def lcslen(a, b):
 
 
 def lcsdiff(c, x, y, i, j):
-    """Print the diff using LCS length matrix using backtracking
-    """
+    """Print the diff using LCS length matrix using backtracking"""
     if i < 0 and j < 0:
         return
     elif i < 0:
@@ -190,8 +188,8 @@ def lcsdiff(c, x, y, i, j):
 def diff(old, new):
     """Get diff between a and b in order for all elements
 
-       Optimizes by first handling equal elements from the head and tail
-       Each entry is a pair of operation (+, - or None) and the element
+    Optimizes by first handling equal elements from the head and tail
+    Each entry is a pair of operation (+, - or None) and the element
     """
     for i, (a, b) in enumerate(zip(old, new)):
         if a == b:
@@ -214,8 +212,8 @@ def diff(old, new):
         else:
             break
 
-    rold = rold[:len(rold) - len(saved)]
-    rnew = rnew[:len(rnew) - len(saved)]
+    rold = rold[: len(rold) - len(saved)]
+    rnew = rnew[: len(rnew) - len(saved)]
 
     c = lcslen(rold, rnew)
     for op, val in lcsdiff(c, rold, rnew, len(rold) - 1, len(rnew) - 1):
@@ -250,8 +248,11 @@ class CodeRecord(Record):
         kept = []
         new_nodes = []
         for op, s in diff(old, new):
-            while node_index < len(self.root.children) and old_index < len(self.nodes) and \
-                    self.root.children[node_index] is not self.nodes[old_index]:
+            while (
+                node_index < len(self.root.children)
+                and old_index < len(self.nodes)
+                and self.root.children[node_index] is not self.nodes[old_index]
+            ):
                 node = self.root.children[node_index]
                 kept.append(node)
                 node_index += 1
@@ -266,8 +267,11 @@ class CodeRecord(Record):
                 node = node_tree.all('statement')[0]
                 if node_index == 0:
                     node.children.insert(0, AttrToken('LF', '\n'))
-                if node_index != 0 or len(self.root.children) > 0 and \
-                        self.root.children[0].rule != 'empty_line':
+                if (
+                    node_index != 0
+                    or len(self.root.children) > 0
+                    and self.root.children[0].rule != 'empty_line'
+                ):
                     node.children.append(AttrToken('LF', '\n'))
                 new_nodes.append(node)
                 kept.append(node)
@@ -279,7 +283,7 @@ class CodeRecord(Record):
                 new_nodes.append(self.root.children[node_index])
                 node_index += 1
                 old_index += 1
-        if node_index < len(self.root.children):    # Remaining non-statements
+        if node_index < len(self.root.children):  # Remaining non-statements
             kept.extend(self.root.children[node_index:])
         self.root.children = kept
         self.nodes = new_nodes
@@ -323,18 +327,14 @@ class CodeRecord(Record):
 
     @staticmethod
     def _translate_condition(c):
-        sign_dict = {'>': '.GT.',
-                     '<': '.LT.',
-                     '>=': '.GE.',
-                     '<=': '.LE.'}
+        sign_dict = {'>': '.GT.', '<': '.LT.', '>=': '.GE.', '<=': '.LE.'}
         if str(c).startswith('Eq'):
             c_split = re.split('[(,) ]', str(c))
             c_clean = [item for item in c_split if item != '' and item != 'Eq']
             c_transl = '.EQ.'.join([c_clean[0], c_clean[1]])
         else:
             c_split = str(c).split(' ')
-            c_transl = ''.join([sign_dict.get(symbol, symbol)
-                                for symbol in c_split])
+            c_transl = ''.join([sign_dict.get(symbol, symbol) for symbol in c_split])
         return c_transl
 
     @staticmethod
@@ -345,7 +345,7 @@ class CodeRecord(Record):
         for arg in args:
             if str(arg).startswith('sign'):
                 sign_arg = arg.args[0]
-                subs_dict[arg] = abs(sign_arg)/sign_arg
+                subs_dict[arg] = abs(sign_arg) / sign_arg
 
         s.subs(subs_dict)
 
@@ -387,7 +387,8 @@ class CodeRecord(Record):
                         for assign_node in ifstat.all('assignment'):
                             name = str(assign_node.variable).upper()
                             first_symb_exprs.append(
-                                    (name, interpreter.visit(assign_node.expression)))
+                                (name, interpreter.visit(assign_node.expression))
+                            )
                             symbols.add(name)
                     blocks.append((first_logic, first_symb_exprs))
 
@@ -399,7 +400,8 @@ class CodeRecord(Record):
                             for assign_node in elseifstat.all('assignment'):
                                 name = str(assign_node.variable).upper()
                                 elseif_symb_exprs.append(
-                                        (name, interpreter.visit(assign_node.expression)))
+                                    (name, interpreter.visit(assign_node.expression))
+                                )
                                 symbols.add(name)
                         blocks.append((logic, elseif_symb_exprs))
 
@@ -409,8 +411,9 @@ class CodeRecord(Record):
                         for elsestat in else_block.all('statement'):
                             for assign_node in elsestat.all('assignment'):
                                 name = str(assign_node.variable).upper()
-                                else_symb_exprs.append((name,
-                                                        interpreter.visit(assign_node.expression)))
+                                else_symb_exprs.append(
+                                    (name, interpreter.visit(assign_node.expression))
+                                )
                                 symbols.add(name)
                         piecewise_logic = True
                         if len(blocks[0][1]) == 0 and not else_if_blocks:
@@ -434,9 +437,8 @@ class CodeRecord(Record):
         return statements
 
     def from_odes(self, ode_system):
-        """Set statements of record given an eplicit ode system
-        """
-        odes = ode_system.odes[:-1]    # Skip last ode as it is for the output compartment
+        """Set statements of record given an eplicit ode system"""
+        odes = ode_system.odes[:-1]  # Skip last ode as it is for the output compartment
         functions = [ode.lhs.args[0] for ode in odes]
         function_map = {f: symbols.symbol(f'A({i + 1})') for i, f in enumerate(functions)}
         statements = []

@@ -33,8 +33,7 @@ def detect_model(src):
 
 
 def load_plugins():
-    """Find and import all available plugins
-    """
+    """Find and import all available plugins"""
     plugin_path = Path(__file__).resolve().parent
 
     modules = list()

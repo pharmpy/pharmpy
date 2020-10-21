@@ -78,8 +78,7 @@ class NONMEMModelfitResults(ModelfitResults):
 
     @property
     def covariance_matrix(self):
-        """The covariance matrix of the population parameter estimates
-        """
+        """The covariance matrix of the population parameter estimates"""
         try:
             return self._covariance_matrix
         except AttributeError:
@@ -109,8 +108,7 @@ class NONMEMModelfitResults(ModelfitResults):
 
     @property
     def information_matrix(self):
-        """The Fischer information matrix of the population parameter estimates
-        """
+        """The Fischer information matrix of the population parameter estimates"""
         try:
             return self._information_matrix
         except AttributeError:
@@ -164,8 +162,7 @@ class NONMEMModelfitResults(ModelfitResults):
 
     @property
     def individual_ofv(self):
-        """A Series with individual estimates indexed over ID
-        """
+        """A Series with individual estimates indexed over ID"""
         try:
             return self._individual_ofv
         except AttributeError:
@@ -174,8 +171,7 @@ class NONMEMModelfitResults(ModelfitResults):
 
     @property
     def individual_estimates(self):
-        """ETA values from phi-file
-        """
+        """ETA values from phi-file"""
         try:
             return self._individual_estimates
         except AttributeError:
@@ -184,8 +180,7 @@ class NONMEMModelfitResults(ModelfitResults):
 
     @property
     def individual_estimates_covariance(self):
-        """ETCs from phi-file as Series of DataFrames
-        """
+        """ETCs from phi-file as Series of DataFrames"""
         try:
             return self._individual_estimates_covariance
         except AttributeError:
@@ -193,10 +188,13 @@ class NONMEMModelfitResults(ModelfitResults):
             return self._individual_estimates_covariance
 
     def _set_covariance_status(self, results_file, table_with_cov=None):
-        covariance_status = {'requested': True if self._standard_errors is not None
-                             else (table_with_cov == self.table_number),
-                             'completed': (self._standard_errors is not None),
-                             'warnings': None}
+        covariance_status = {
+            'requested': True
+            if self._standard_errors is not None
+            else (table_with_cov == self.table_number),
+            'completed': (self._standard_errors is not None),
+            'warnings': None,
+        }
         if self._standard_errors is not None and results_file is not None:
             status = results_file.covariance_status(self.table_number)
             if status['covariance_step_ok'] is not None:
@@ -215,8 +213,9 @@ class NONMEMModelfitResults(ModelfitResults):
     def high_correlations(self, limit=0.9):
         df = self.correlation_matrix
         if df is not None:
-            high_and_below_diagonal = df.abs().ge(limit) & \
-                np.triu(np.ones(df.shape), k=1).astype(np.bool)
+            high_and_below_diagonal = df.abs().ge(limit) & np.triu(np.ones(df.shape), k=1).astype(
+                np.bool
+            )
             return df.where(high_and_below_diagonal).stack()
 
     def covariance_step_summary(self, condition_number_limit=1000, correlation_limit=0.9):
@@ -274,8 +273,11 @@ class NONMEMModelfitResults(ModelfitResults):
                 if step['maxevals_exceeded'] is True:
                     result['Max number of evaluations exceeded'] = 'ERROR'
                 if np.isnan(step['function_evaluations']) is False:
-                    result[str.format('Number of function evaluations: {:d}',
-                                      step['function_evaluations'])] = ''
+                    result[
+                        str.format(
+                            'Number of function evaluations: {:d}', step['function_evaluations']
+                        )
+                    ] = ''
                 if step['estimate_near_boundary'] is True:
                     # message issued from NONMEM independent of ModelfitResults near_bounds method
                     result['Parameter near boundary'] = 'WARNING'
@@ -283,16 +285,24 @@ class NONMEMModelfitResults(ModelfitResults):
                     result['NONMEM estimation warnings'] = 'WARNING'
             result[str.format('Objective function value: {:.1f}', self.ofv)] = ''
             if np.isnan(step['significant_digits']) is False:
-                result[str.format('Significant digits: {:.1f}',
-                                  result['significant_digits'])] = ''
+                result[str.format('Significant digits: {:.1f}', result['significant_digits'])] = ''
         return pd.DataFrame.from_dict(result, orient='index', columns=[''])
 
-    def sumo(self, condition_number_limit=1000, correlation_limit=0.9,
-             zero_limit=0.001, significant_digits=2, to_string=True):
-        messages = pd.concat([self.estimation_step_summary(),
-                              pd.DataFrame.from_dict({'': ''}, orient='index', columns=['']),
-                              self.covariance_step_summary(condition_number_limit,
-                                                           correlation_limit)])
+    def sumo(
+        self,
+        condition_number_limit=1000,
+        correlation_limit=0.9,
+        zero_limit=0.001,
+        significant_digits=2,
+        to_string=True,
+    ):
+        messages = pd.concat(
+            [
+                self.estimation_step_summary(),
+                pd.DataFrame.from_dict({'': ''}, orient='index', columns=['']),
+                self.covariance_step_summary(condition_number_limit, correlation_limit),
+            ]
+        )
         summary = self.parameter_summary()
         near_bounds = self.near_bounds(zero_limit, significant_digits)
         if to_string:
@@ -318,11 +328,11 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
         self.tool_files = [self._path.with_suffix(ext) for ext in extensions]
 
     def __getattr__(self, item):
-        if (item == '_last'):
+        if item == '_last':
             if len(self) < 1:
                 self._load()
             if len(self) > 0:
-                last = len(self)-1
+                last = len(self) - 1
                 self._last = last
                 return last
             else:
@@ -356,8 +366,9 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
                     # NM 7.2 does not have row -1000000006 indicating FIXED status
                     if self.model:
                         fixed = pd.Series(self.model.parameters.fix)
-                        fix = pd.concat([fixed,
-                                         pd.Series(True, index=ests.index.difference(fixed.index))])
+                        fix = pd.concat(
+                            [fixed, pd.Series(True, index=ests.index.difference(fixed.index))]
+                        )
                 ests = ests[~fix]
                 if self.model:
                     ests = ests.rename(index=self.model.parameter_translation())
@@ -488,7 +499,7 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
                     result_obj._individual_ofv = table.iofv
                     result_obj._individual_estimates = table.etas[rv_names]
                     covs = table.etcs
-                    for index, cov in covs.iteritems():     # Remove ETCs for 0 FIX OMEGAs
+                    for index, cov in covs.iteritems():  # Remove ETCs for 0 FIX OMEGAs
                         covs[index] = cov[rv_names].loc[rv_names]
                     result_obj._individual_estimates_covariance = covs
             self._read_phi = True

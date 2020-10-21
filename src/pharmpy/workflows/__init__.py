@@ -44,5 +44,10 @@ from .run_directory import RunDirectory
 from .workflow import Workflow
 from .workflow_engine import WorkflowEngine
 
-__all__ = ['ModelExecutionEngine', 'ExecutionEnvironment', 'RunDirectory', 'WorkflowEngine',
-           'Workflow']
+__all__ = [
+    'ModelExecutionEngine',
+    'ExecutionEnvironment',
+    'RunDirectory',
+    'WorkflowEngine',
+    'Workflow',
+]

@@ -20,7 +20,7 @@ def create_rv_block(model, list_of_rvs=None):
     pset = model.parameters
 
     for row in range(len(list_of_rvs)):
-        for col in range(row+1):
+        for col in range(row + 1):
             if row == col:
                 cov[row, col] = rv_map[rvs[row]]
             else:

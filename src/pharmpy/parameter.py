@@ -46,46 +46,46 @@ class ParameterSet(OrderedSet):
         lower = [param.lower for param in self]
         upper = [param.upper for param in self]
         fix = [param.fix for param in self]
-        return pd.DataFrame({'value': values, 'lower': lower, 'upper': upper, 'fix': fix},
-                            index=symbols)
+        return pd.DataFrame(
+            {'value': values, 'lower': lower, 'upper': upper, 'fix': fix}, index=symbols
+        )
 
     def values_near_bounds(self, values, zero_limit, significant_digits):
-        """ Logical Series of whether values are near the respective boundaries
-            values : Series of floats with index a subset of parameter names
-            :returns: Logical Series with same index as values
+        """Logical Series of whether values are near the respective boundaries
+        values : Series of floats with index a subset of parameter names
+        :returns: Logical Series with same index as values
         """
         return pd.Series(
-            [self[p].any_boundary_near_value(values.loc[p], zero_limit, significant_digits)
-             for p in values.index], index=values.index)
+            [
+                self[p].any_boundary_near_value(values.loc[p], zero_limit, significant_digits)
+                for p in values.index
+            ],
+            index=values.index,
+        )
 
     @property
     def names(self):
-        """Names of all parameters
-        """
+        """Names of all parameters"""
         return [p.name for p in self]
 
     @property
     def symbols(self):
-        """Symbols of all parameters
-        """
+        """Symbols of all parameters"""
         return [p.symbol for p in self]
 
     @property
     def lower(self):
-        """Lower bounds of all parameters
-        """
+        """Lower bounds of all parameters"""
         return {p.name: p.lower for p in self}
 
     @property
     def upper(self):
-        """Upper bounds of all parameters
-        """
+        """Upper bounds of all parameters"""
         return {p.name: p.upper for p in self}
 
     @property
     def inits(self):
-        """Initial estimates of parameters as dict
-        """
+        """Initial estimates of parameters as dict"""
         return {p.name: p.init for p in self}
 
     @inits.setter
@@ -95,8 +95,7 @@ class ParameterSet(OrderedSet):
 
     @property
     def fix(self):
-        """Fixedness of parameters as dict
-        """
+        """Fixedness of parameters as dict"""
         return {p.name: p.fix for p in self}
 
     @fix.setter
@@ -105,14 +104,12 @@ class ParameterSet(OrderedSet):
             self[name].fix = value
 
     def remove_fixed(self):
-        """Remove all fixed parameters
-        """
+        """Remove all fixed parameters"""
         fixed = [p for p in self if p.fix]
         self -= fixed
 
     def copy(self):
-        """Create a deep copy of this ParameterSet
-        """
+        """Create a deep copy of this ParameterSet"""
         return copy.deepcopy(self)
 
     def __repr__(self):
@@ -162,8 +159,7 @@ class Parameter:
 
     @property
     def lower(self):
-        """Lower bound of the parameter
-        """
+        """Lower bound of the parameter"""
         return self._lower
 
     @lower.setter
@@ -174,8 +170,7 @@ class Parameter:
 
     @property
     def upper(self):
-        """Upper bound of the parameter
-        """
+        """Upper bound of the parameter"""
         return self._upper
 
     @upper.setter
@@ -186,29 +181,31 @@ class Parameter:
 
     @property
     def init(self):
-        """Initial parameter estimate
-        """
+        """Initial parameter estimate"""
         return self._init
 
     @init.setter
     def init(self, new_init):
         if new_init < self.lower or new_init > self.upper:
-            raise ValueError(f'Initial estimate must be within the constraints of the parameter: '
-                             f'{new_init} ∉ {sympy.pretty(sympy.Interval(self.lower, self.upper))}'
-                             f'\nUnconstrain the parameter before setting an initial estimate.')
+            raise ValueError(
+                f'Initial estimate must be within the constraints of the parameter: '
+                f'{new_init} ∉ {sympy.pretty(sympy.Interval(self.lower, self.upper))}'
+                f'\nUnconstrain the parameter before setting an initial estimate.'
+            )
         self._init = new_init
 
     def any_boundary_near_value(self, value, zero_limit, significant_digits):
-        """Is any boundary near this value
-        """
-        return (bool(self.lower > -sympy.oo) and
-                is_near_target(value, self.lower, zero_limit, significant_digits)) or \
-            (bool(self.upper < sympy.oo) and
-             is_near_target(value, self.upper, zero_limit, significant_digits))
+        """Is any boundary near this value"""
+        return (
+            bool(self.lower > -sympy.oo)
+            and is_near_target(value, self.lower, zero_limit, significant_digits)
+        ) or (
+            bool(self.upper < sympy.oo)
+            and is_near_target(value, self.upper, zero_limit, significant_digits)
+        )
 
     def unconstrain(self):
-        """Remove all constraints of a parameter
-        """
+        """Remove all constraints of a parameter"""
         self._lower = -sympy.oo
         self._upper = sympy.oo
         self.fix = False
@@ -217,9 +214,9 @@ class Parameter:
     def parameter_space(self):
         """The parameter space set
 
-           A fixed parameter will be constrained to one single value
-           and non-fixed parameters will be constrained to an interval
-           possibly open in one or both ends.
+        A fixed parameter will be constrained to one single value
+        and non-fixed parameters will be constrained to an interval
+        possibly open in one or both ends.
         """
         if self.fix:
             return sympy.FiniteSet(self.init)
@@ -230,11 +227,17 @@ class Parameter:
         return hash(self.name)
 
     def __eq__(self, other):
-        """Two parameters are equal if they have the same name, init and constraints
-        """
-        return self.init == other.init and self.lower == other.lower and \
-            self.upper == other.upper and self.name == other.name and self.fix == other.fix
+        """Two parameters are equal if they have the same name, init and constraints"""
+        return (
+            self.init == other.init
+            and self.lower == other.lower
+            and self.upper == other.upper
+            and self.name == other.name
+            and self.fix == other.fix
+        )
 
     def __repr__(self):
-        return f'Parameter("{self.name}", {self.init}, lower={self.lower}, upper={self.upper}, ' \
-               f'fix={self.fix})'
+        return (
+            f'Parameter("{self.name}", {self.init}, lower={self.lower}, upper={self.upper}, '
+            f'fix={self.fix})'
+        )

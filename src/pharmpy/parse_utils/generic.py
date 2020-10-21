@@ -66,8 +66,14 @@ class AttrToken(Token):
     @classmethod
     def transform(cls, token, **kwargs):
         """Alternative constructor: From Token (with optional overrides)."""
-        kwargs = {'type_': token.type, 'value': token.value, 'pos_in_stream': token.pos_in_stream,
-                  'line': token.line, 'column': token.column, **kwargs}
+        kwargs = {
+            'type_': token.type,
+            'value': token.value,
+            'pos_in_stream': token.pos_in_stream,
+            'line': token.line,
+            'column': token.column,
+            **kwargs,
+        }
         return cls(**kwargs)
 
     @property
@@ -84,8 +90,15 @@ class AttrToken(Token):
         """Evaluated value (str, int, float)."""
         if self.type in {'DIGIT', 'INT', 'SIGNED_INT'}:
             return int(self.value)
-        elif self.type in {'DECIMAL', 'EXP', 'FLOAT', 'NUMBER', 'NUMERIC', 'SIGNED_FLOAT',
-                           'SIGNED_NUMBER'}:
+        elif self.type in {
+            'DECIMAL',
+            'EXP',
+            'FLOAT',
+            'NUMBER',
+            'NUMERIC',
+            'SIGNED_FLOAT',
+            'SIGNED_NUMBER',
+        }:
             return float(self.value)
         elif self.type == 'NEG_INF':
             return float('-INF')
@@ -173,8 +186,11 @@ class AttrTree(Tree):
         """
 
         def non_iterable(rule, items):
-            raise TypeError('%s object is not iterable (of children for tree %s)' %
-                            repr(items.__class__.__name__), repr(rule))
+            raise TypeError(
+                '%s object is not iterable (of children for tree %s)'
+                % repr(items.__class__.__name__),
+                repr(rule),
+            )
 
         # determine mode of operation; 'items' dict-like OR just iterable?
         try:
@@ -186,7 +202,7 @@ class AttrTree(Tree):
                 length = len(items)
             except TypeError:
                 non_iterable(rule, items)
-            names = [None]*length
+            names = [None] * length
         if not items:
             raise ValueError('refusing empty tree %s (only tokens are childless)' % repr(rule))
 
@@ -277,8 +293,7 @@ class AttrTree(Tree):
                 continue
 
     def remove(self, rule):
-        """Remove all children with rule. Not recursively
-        """
+        """Remove all children with rule. Not recursively"""
         new_children = []
         for child in self.children:
             if child.rule != rule:
@@ -502,8 +517,7 @@ class GenericParser:
 
 
 def remove_token_and_space(tree, rule, recursive=False):
-    """Remove all tokens with rule and any WS before it
-    """
+    """Remove all tokens with rule and any WS before it"""
     new_nodes = []
     for node in tree.children:
         if node.rule == rule:
@@ -519,8 +533,7 @@ def remove_token_and_space(tree, rule, recursive=False):
 
 
 def insert_before_or_at_end(tree, rule, nodes):
-    """Insert nodes before rule or if rule does not exist at end
-    """
+    """Insert nodes before rule or if rule does not exist at end"""
     kept = []
     found = False
     for node in tree.children:
@@ -534,8 +547,7 @@ def insert_before_or_at_end(tree, rule, nodes):
 
 
 def insert_after(tree, rule, nodes):
-    """Insert nodes after rule
-    """
+    """Insert nodes after rule"""
     kept = []
     for node in tree.children:
         kept.append(node)

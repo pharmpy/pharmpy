@@ -7,14 +7,13 @@ import sympy
 
 
 def triangular_root(x):
-    """Calculate the triangular root of x. I.e. if x is a triangular number T_n what is n?
-    """
+    """Calculate the triangular root of x. I.e. if x is a triangular number T_n what is n?"""
     return math.floor(math.sqrt(2 * x))
 
 
 def flattened_to_symmetric(x):
     """Convert a vector containing the elements of a lower triangular matrix into a full symmetric
-       matrix
+    matrix
     """
     n = triangular_root(len(x))
     new = np.zeros((n, n))
@@ -25,8 +24,7 @@ def flattened_to_symmetric(x):
 
 
 def cov2corr(cov):
-    """Convert covariance matrix to correlation matrix
-    """
+    """Convert covariance matrix to correlation matrix"""
     v = np.sqrt(np.diag(cov))
     outer_v = np.outer(v, v)
     corr = cov / outer_v
@@ -52,8 +50,8 @@ def corr2cov(corr, sd):
 def round_and_keep_sum(x, s):
     """Round values in Series x and their sum must be s
 
-       Algorithm: Floor all elements in series. If sum not correct add one to element with
-                  highest fractional part until sum is reached.
+    Algorithm: Floor all elements in series. If sum not correct add one to element with
+               highest fractional part until sum is reached.
     """
     sorted_fractions = x.apply(lambda x: math.modf(x)[0]).sort_values(ascending=False)
     rounded_sample_sizes = x.apply(lambda x: math.modf(x)[1])
@@ -97,8 +95,7 @@ def se_delta_method(expr, values, cov):
 
 
 def is_posdef(A):
-    """Checks whether a matrix is positive definite
-    """
+    """Checks whether a matrix is positive definite"""
     try:
         _ = np.linalg.cholesky(A)
         return True
@@ -109,12 +106,12 @@ def is_posdef(A):
 def nearest_posdef(A):
     """Return the nearest positive definite matrix in the Frobenius norm to a matrix
 
-       A Python/Numpy port of John D'Errico's `nearestSPD` MATLAB code [1], which
-       credits [2].
-       [1] https://www.mathworks.com/matlabcentral/fileexchange/42885-nearestspd
-       [2] N.J. Higham, "Computing a nearest symmetric positive semidefinite
-       matrix" (1988): https://doi.org/10.1016/0024-3795(88)90223-6
-       [3] https://gist.github.com/fasiha/fdb5cec2054e6f1c6ae35476045a0bbd
+    A Python/Numpy port of John D'Errico's `nearestSPD` MATLAB code [1], which
+    credits [2].
+    [1] https://www.mathworks.com/matlabcentral/fileexchange/42885-nearestspd
+    [2] N.J. Higham, "Computing a nearest symmetric positive semidefinite
+    matrix" (1988): https://doi.org/10.1016/0024-3795(88)90223-6
+    [3] https://gist.github.com/fasiha/fdb5cec2054e6f1c6ae35476045a0bbd
     """
     if is_posdef(A):
         return A
@@ -143,7 +140,7 @@ def nearest_posdef(A):
     k = 1
     while not is_posdef(A3):
         mineig = np.min(np.real(np.linalg.eigvals(A3)))
-        A3 += Id * (-mineig * k**2 + spacing)
+        A3 += Id * (-mineig * k ** 2 + spacing)
         k += 1
 
     return A3
@@ -168,9 +165,9 @@ def sample_truncated_joint_normal(mu, sigma, a, b, n):
 def conditional_joint_normal(mu, sigma, a):
     """Give parameters of the conditional joint normal distribution
 
-       The condition is the last len(a) values
+    The condition is the last len(a) values
 
-       See https://en.wikipedia.org/wiki/Multivariate_normal_distribution#Conditional_distributions
+    See https://en.wikipedia.org/wiki/Multivariate_normal_distribution#Conditional_distributions
     """
 
     # partition mu and sigma
@@ -194,12 +191,13 @@ def round_to_n_sigdig(x, n):
     if x == 0:
         return x
     else:
-        return(round(x, -int(math.floor(math.log10(abs(x)))) + (n - 1)))
+        return round(x, -int(math.floor(math.log10(abs(x)))) + (n - 1))
 
 
 def is_near_target(x, target, zero_limit, significant_digits):
     if target == 0:
         return abs(x) < abs(zero_limit)
     else:
-        return round_to_n_sigdig(x, n=significant_digits) == \
-            round_to_n_sigdig(target, n=significant_digits)
+        return round_to_n_sigdig(x, n=significant_digits) == round_to_n_sigdig(
+            target, n=significant_digits
+        )

@@ -7,8 +7,13 @@ import sympy.stats
 import pharmpy.math
 from pharmpy.model import ModelSyntaxError
 from pharmpy.parameter import Parameter, ParameterSet
-from pharmpy.parse_utils.generic import (AttrToken, AttrTree, insert_after, insert_before_or_at_end,
-                                         remove_token_and_space)
+from pharmpy.parse_utils.generic import (
+    AttrToken,
+    AttrTree,
+    insert_after,
+    insert_before_or_at_end,
+    remove_token_and_space,
+)
 from pharmpy.random_variables import JointNormalSeparate, RandomVariables, VariabilityLevel
 from pharmpy.symbols import symbol
 
@@ -22,8 +27,7 @@ class OmegaRecord(Record):
         self.root.add_newline_node()
 
     def parameters(self, start_omega, previous_size):
-        """Get a ParameterSet for this omega record
-        """
+        """Get a ParameterSet for this omega record"""
         row = start_omega
         block = self.root.find('block')
         bare_block = self.root.find('bare_block')
@@ -38,11 +42,14 @@ class OmegaRecord(Record):
                 var = bool(node.find('VAR'))
                 n = node.n.INT if node.find('n') else 1
                 if sd and var:
-                    raise ModelSyntaxError(f'Initial estimate for {self.name.upper} cannot be both'
-                                           f' on SD and VAR scale\n{self.root}')
+                    raise ModelSyntaxError(
+                        f'Initial estimate for {self.name.upper} cannot be both'
+                        f' on SD and VAR scale\n{self.root}'
+                    )
                 if init == 0 and not fixed:
-                    raise ModelSyntaxError(f'If initial estimate for {self.name.upper} is 0 it'
-                                           f' must be set to FIX')
+                    raise ModelSyntaxError(
+                        f'If initial estimate for {self.name.upper} is 0 it' f' must be set to FIX'
+                    )
                 if sd:
                     init = init ** 2
                 for _ in range(n):
@@ -85,7 +92,7 @@ class OmegaRecord(Record):
                                     else:
                                         A[i, j] = math.sqrt(A[i, i]) * math.sqrt(A[j, j]) * A[i, j]
                     if sd:
-                        np.fill_diagonal(A, A.diagonal()**2)
+                        np.fill_diagonal(A, A.diagonal() ** 2)
                 else:
                     L = np.zeros((size, size))
                     inds = np.tril_indices_from(L)
@@ -108,11 +115,11 @@ class OmegaRecord(Record):
         return parameters, next_omega, size
 
     def _find_label(self, node):
-        """Find label from comment of omega parameter
-        """
+        """Find label from comment of omega parameter"""
         name = None
         # needed to avoid circular import with Python 3.6
         import pharmpy.plugins.nonmem as nonmem
+
         if nonmem.conf.parameter_names == 'comment':
             found = False
             for subnode in self.root.tree_walk():
@@ -129,8 +136,7 @@ class OmegaRecord(Record):
         return name
 
     def _block_flags(self):
-        """Get a tuple of all interesting flags for block
-        """
+        """Get a tuple of all interesting flags for block"""
         fix = bool(self.root.find('FIX'))
         var = bool(self.root.find('VAR'))
         sd = bool(self.root.find('SD'))
@@ -145,32 +151,37 @@ class OmegaRecord(Record):
                     fix = True
             if node.find('VAR'):
                 if var or sd or cholesky:
-                    raise ModelSyntaxError('Cannot specify either option VARIANCE, SD or '
-                                           'CHOLESKY more than once')
+                    raise ModelSyntaxError(
+                        'Cannot specify either option VARIANCE, SD or ' 'CHOLESKY more than once'
+                    )
                 else:
                     var = True
             if node.find('SD'):
                 if sd or var or cholesky:
-                    raise ModelSyntaxError('Cannot specify either option VARIANCE, SD or '
-                                           'CHOLESKY more than once')
+                    raise ModelSyntaxError(
+                        'Cannot specify either option VARIANCE, SD or ' 'CHOLESKY more than once'
+                    )
                 else:
                     sd = True
             if node.find('COV'):
                 if cov or corr:
-                    raise ModelSyntaxError('Cannot specify either option COVARIANCE or '
-                                           'CORRELATION more than once')
+                    raise ModelSyntaxError(
+                        'Cannot specify either option COVARIANCE or ' 'CORRELATION more than once'
+                    )
                 else:
                     cov = True
             if node.find('CORR'):
                 if corr or cov:
-                    raise ModelSyntaxError('Cannot specify either option COVARIANCE or '
-                                           'CORRELATION more than once')
+                    raise ModelSyntaxError(
+                        'Cannot specify either option COVARIANCE or ' 'CORRELATION more than once'
+                    )
                 else:
                     corr = True
             if node.find('CHOLESKY'):
                 if cholesky or var or sd:
-                    raise ModelSyntaxError('Cannot specify either option VARIANCE, SD or '
-                                           'CHOLESKY more than once')
+                    raise ModelSyntaxError(
+                        'Cannot specify either option VARIANCE, SD or ' 'CHOLESKY more than once'
+                    )
                 else:
                     cholesky = True
         return fix, sd, corr, cholesky
@@ -190,15 +201,14 @@ class OmegaRecord(Record):
         return '(' + ', '.join(rv_strs) + ')'
 
     def _get_param_name(self, row, col):
-        """Get the name of the current OMEGA/SIGMA at (row, col)
-        """
+        """Get the name of the current OMEGA/SIGMA at (row, col)"""
         invmap = {value: key for key, value in self.name_map.items()}
         name = invmap[(row, col)]
         return name
 
     def update(self, parameters, first_omega, previous_size):
         """From a ParameterSet update the OMEGAs in this record
-           returns the next omega number
+        returns the next omega number
         """
         block = self.root.find('block')
         bare_block = self.root.find('bare_block')
@@ -223,14 +233,17 @@ class OmegaRecord(Record):
                             value = parameters[name].init ** 0.5
                         new_inits.append(value)
                         new_fix.append(parameters[name].fix)
-                    if n == 1 or (new_inits.count(new_inits[0]) == len(new_inits) and
-                                  new_fix.count(new_fix[0]) == len(new_fix)):  # All equal?
+                    if n == 1 or (
+                        new_inits.count(new_inits[0]) == len(new_inits)
+                        and new_fix.count(new_fix[0]) == len(new_fix)
+                    ):  # All equal?
                         if float(str(node.init)) != new_inits[0]:
                             node.init.tokens[0].value = str(new_inits[0])
                         if new_fix[0] != fix:
                             if new_fix[0]:
-                                insert_before_or_at_end(node, 'RPAR', [AttrToken('WS', ' '),
-                                                                       AttrToken('FIX', 'FIX')])
+                                insert_before_or_at_end(
+                                    node, 'RPAR', [AttrToken('WS', ' '), AttrToken('FIX', 'FIX')]
+                                )
                             else:
                                 remove_token_and_space(node, 'FIX')
                         new_nodes.append(node)
@@ -246,12 +259,13 @@ class OmegaRecord(Record):
                             if float(str(new_node.init)) != init:
                                 new_node.init.tokens[0].value = str(init)
                             if new_fix[j] != fix:
-                                insert_before_or_at_end(node, 'RPAR', [AttrToken('WS', ' '),
-                                                                       AttrToken('FIX', 'FIX')])
+                                insert_before_or_at_end(
+                                    node, 'RPAR', [AttrToken('WS', ' '), AttrToken('FIX', 'FIX')]
+                                )
                             else:
                                 remove_token_and_space(node, 'FIX')
                             new_nodes.append(new_node)
-                            if j != len(new_inits) - 1:     # Not the last
+                            if j != len(new_inits) - 1:  # Not the last
                                 new_nodes.append(AttrTree.create('ws', {'WS': ' '}))
                     i += n
             self.root.children = new_nodes
@@ -269,7 +283,7 @@ class OmegaRecord(Record):
                     name = self._get_param_name(row, col)
                     inits.append(parameters[name].init)
                     new_fix.append(parameters[name].fix)
-            if len(set(new_fix)) != 1:      # Not all true or all false
+            if len(set(new_fix)) != 1:  # Not all true or all false
                 raise ValueError('Cannot only fix some parameters in block')
 
             A = pharmpy.math.flattened_to_symmetric(inits)
@@ -280,7 +294,7 @@ class OmegaRecord(Record):
                         if i != j:
                             A[i, j] = A[i, j] / (math.sqrt(A[i, i]) * math.sqrt(A[j, j]))
             if sd:
-                np.fill_diagonal(A, A.diagonal()**0.5)
+                np.fill_diagonal(A, A.diagonal() ** 0.5)
 
             if cholesky:
                 A = np.linalg.cholesky(A)
@@ -294,7 +308,7 @@ class OmegaRecord(Record):
                     new_nodes.append(node)
                 else:
                     n = node.n.INT if node.find('n') else 1
-                    if array[i:i+n].count(array[i]) == n:  # All equal?
+                    if array[i : i + n].count(array[i]) == n:  # All equal?
                         if float(str(node.init)) != array[i]:
                             node.init.tokens[0].value = str(array[i])
                         new_nodes.append(node)
@@ -305,19 +319,20 @@ class OmegaRecord(Record):
                             if child.rule not in ['n', 'LPAR', 'RPAR']:
                                 new_children.append(child)
                         node.children = new_children
-                        for j, init in enumerate(array[i:i+n]):
+                        for j, init in enumerate(array[i : i + n]):
                             new_node = AttrTree.transform(node)
                             if float(str(new_node.init)) != init:
                                 new_node.init.tokens[0].value = str(init)
                             new_nodes.append(new_node)
-                            if j != n - 1:     # Not the last
+                            if j != n - 1:  # Not the last
                                 new_nodes.append(AttrTree.create('ws', {'WS': ' '}))
                     i += n
             self.root.children = new_nodes
             if new_fix[0] != fix:
                 if new_fix[0]:
-                    insert_after(self.root, 'block', [AttrToken('WS', ' '),
-                                                      AttrToken('FIX', 'FIX')])
+                    insert_after(
+                        self.root, 'block', [AttrToken('WS', ' '), AttrToken('FIX', 'FIX')]
+                    )
                 else:
                     remove_token_and_space(self.root, 'FIX', recursive=True)
             next_omega = first_omega + size
@@ -326,8 +341,8 @@ class OmegaRecord(Record):
     def random_variables(self, start_omega, previous_cov=None):
         """Get a RandomVariableSet for this omega record
 
-           start_omega - the first omega in this record
-           previous_cov - the matrix of the previous omega block
+        start_omega - the first omega in this record
+        previous_cov - the matrix of the previous omega block
         """
         same = bool(self.root.find('same'))
         if not hasattr(self, 'name_map') and not same:
@@ -338,7 +353,7 @@ class OmegaRecord(Record):
             self.parameters(start_omega, prev_size)
         if hasattr(self, 'name_map'):
             rev_map = {value: key for key, value in self.name_map.items()}
-        next_cov = None        # The cov matrix if a block
+        next_cov = None  # The cov matrix if a block
         block = self.root.find('block')
         bare_block = self.root.find('bare_block')
         zero_fix = []
@@ -350,7 +365,7 @@ class OmegaRecord(Record):
                 init = node.init.NUMERIC
                 fixed = bool(node.find('FIX'))
                 name = self._rv_name(i)
-                if not (init == 0 and fixed):       # 0 FIX are not RVs
+                if not (init == 0 and fixed):  # 0 FIX are not RVs
                     eta = sympy.stats.Normal(name, 0, sympy.sqrt(symbol(rev_map[(i, i)])))
                     rvs.add(eta)
                 else:
@@ -361,8 +376,9 @@ class OmegaRecord(Record):
                 numetas = previous_cov.rows
             else:
                 numetas = self.root.block.size.INT
-            params, _, _ = self.parameters(start_omega, previous_cov.rows if
-                                           hasattr(previous_cov, 'rows') else None)
+            params, _, _ = self.parameters(
+                start_omega, previous_cov.rows if hasattr(previous_cov, 'rows') else None
+            )
             all_zero_fix = True
             for param in params:
                 if not (param.init == 0 and param.fix):
@@ -415,12 +431,13 @@ class OmegaRecord(Record):
                 self.eta_map[name] += new_start - old_start
             for name in self.name_map:
                 old_row, old_col = self.name_map[name]
-                self.name_map[name] = (old_row + new_start - old_start,
-                                       old_col + new_start - old_start)
+                self.name_map[name] = (
+                    old_row + new_start - old_start,
+                    old_col + new_start - old_start,
+                )
 
     def remove(self, names):
-        """Remove some etas from block given eta names
-        """
+        """Remove some etas from block given eta names"""
         first_omega = min(self.eta_map.values())
         indices = {self.eta_map[name] - first_omega for name in names}
         for name in names:
@@ -463,7 +480,7 @@ class OmegaRecord(Record):
                 s += ' CHOLESKY'
             s += '\n'
             for row in range(0, len(A)):
-                s += ' '.join(np.atleast_1d(A[row, 0:(row + 1)]).astype(str)) + '\n'
+                s += ' '.join(np.atleast_1d(A[row, 0 : (row + 1)]).astype(str)) + '\n'
             parser = OmegaRecordParser(s)
             self.root = parser.root
 

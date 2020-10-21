@@ -5,25 +5,26 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from pharmpy.methods.psn_helpers import (arguments_from_command, options_from_command,
-                                         tool_from_command)
+from pharmpy.methods.psn_helpers import (
+    arguments_from_command,
+    options_from_command,
+    tool_from_command,
+)
 from pharmpy.results import Results
 
 
 class SCMResults(Results):
-    """SCM Results class
+    """SCM Results class"""
 
-
-
-    """
     rst_path = Path(__file__).parent / 'report.rst'
 
     def __init__(self, steps=None):
         self.steps = steps
 
     def ofv_summary(self, final_included=True, iterations=True):
-        return ofv_summary_dataframe(self.steps, final_included=final_included,
-                                     iterations=iterations)
+        return ofv_summary_dataframe(
+            self.steps, final_included=final_included, iterations=iterations
+        )
 
     def candidate_summary(self):
         return candidate_summary_dataframe(self.steps)
@@ -34,24 +35,35 @@ def candidate_summary_dataframe(steps):
         return None
     elif steps['is_backward'].all():
         selected = steps[steps['selected']].copy()
-        df = pd.DataFrame([{'BackstepRemoved': row.Index[0]} for row in selected.itertuples()],
-                          index=selected.index)
+        df = pd.DataFrame(
+            [{'BackstepRemoved': row.Index[0]} for row in selected.itertuples()],
+            index=selected.index,
+        )
         return df.droplevel('step')
     else:
         scmplus = True if 'stashed' in steps.columns else False
-        backstep_removed = {f'{row.Index[1]}{row.Index[2]}-{row.Index[3]}': row.Index[0]
-                            for row in steps.itertuples() if row.is_backward and row.selected}
+        backstep_removed = {
+            f'{row.Index[1]}{row.Index[2]}-{row.Index[3]}': row.Index[0]
+            for row in steps.itertuples()
+            if row.is_backward and row.selected
+        }
         forward_steps = steps.query('step > 0 & ~is_backward')
-        df = pd.DataFrame([{'N_test': True,
-                            'N_ok': (not np.isnan(row.ofv_drop) and row.ofv_drop >= 0),
-                            'N_localmin': (not np.isnan(row.ofv_drop) and row.ofv_drop < 0),
-                            'N_failed': np.isnan(row.ofv_drop),
-                            'StepIncluded': row.Index[0] if row.selected else None,
-                            'StepStashed': row.Index[0] if (scmplus and row.stashed) else None,
-                            'StepReadded': row.Index[0] if (scmplus and row.readded) else None,
-                            'BackstepRemoved': backstep_removed.pop(row.model, None)}
-                           for row in forward_steps.itertuples()],
-                          index=forward_steps.index)
+        df = pd.DataFrame(
+            [
+                {
+                    'N_test': True,
+                    'N_ok': (not np.isnan(row.ofv_drop) and row.ofv_drop >= 0),
+                    'N_localmin': (not np.isnan(row.ofv_drop) and row.ofv_drop < 0),
+                    'N_failed': np.isnan(row.ofv_drop),
+                    'StepIncluded': row.Index[0] if row.selected else None,
+                    'StepStashed': row.Index[0] if (scmplus and row.stashed) else None,
+                    'StepReadded': row.Index[0] if (scmplus and row.readded) else None,
+                    'BackstepRemoved': backstep_removed.pop(row.model, None),
+                }
+                for row in forward_steps.itertuples()
+            ],
+            index=forward_steps.index,
+        )
         return df.groupby(level=['parameter', 'covariate', 'extended_state']).sum(min_count=1)
 
 
@@ -59,14 +71,15 @@ def ofv_summary_dataframe(steps, final_included=True, iterations=True):
     if steps is None or not (final_included or iterations):
         return None
     else:
-        if (final_included and iterations and not steps['is_backward'].iloc[-1]):
+        if final_included and iterations and not steps['is_backward'].iloc[-1]:
             # Will not be able to show final_included with additional info
             final_included = False
         # Use .copy() to ensure we do not work on original df
         df = steps[steps['selected']].copy() if iterations else pd.DataFrame()
         if iterations:
-            df['is_backward'] = ['Backward' if backward else 'Forward'
-                                 for backward in df['is_backward']]
+            df['is_backward'] = [
+                'Backward' if backward else 'Forward' for backward in df['is_backward']
+            ]
         if final_included:
             if steps['is_backward'].iloc[-1]:
                 # all rows from last step where selected is False
@@ -74,12 +87,10 @@ def ofv_summary_dataframe(steps, final_included=True, iterations=True):
                 final = steps[~steps['selected']].loc[last_stepnum, :, :, :].copy()
             else:
                 # all selected rows without ofv info
-                final = pd.DataFrame(columns=steps.columns,
-                                     index=steps[steps['selected']].index)
+                final = pd.DataFrame(columns=steps.columns, index=steps[steps['selected']].index)
             final['is_backward'] = 'Final included'
             df = df.append(final)
-        df.rename(columns={'is_backward': 'direction'},
-                  inplace=True)
+        df.rename(columns={'is_backward': 'direction'}, inplace=True)
         columns = ['direction', 'reduced_ofv', 'extended_ofv', 'ofv_drop']
         if 'pvalue' in steps.columns:
             columns.extend(['delta_df', 'pvalue', 'goal_pvalue'])
@@ -87,9 +98,7 @@ def ofv_summary_dataframe(steps, final_included=True, iterations=True):
 
 
 def psn_scm_parse_logfile(logfile, options, parcov_dictionary):
-    """Read SCM results
-
-    """
+    """Read SCM results"""
 
     logfile = Path(logfile)
     df = pd.concat([step for step in log_steps(logfile, options, parcov_dictionary)])
@@ -114,10 +123,10 @@ def file_blocks(path):
 
 
 def parse_runtable_block(block, parcov_dictionary=None, included_relations=None):
-    header = {'ofv': ['model', 'test', 'base', 'new', 'dofv', 'cmp',
-                      'goal', 'signif'],
-              'pvalue': ['model', 'test', 'base', 'new', 'dofv', 'cmp',
-                         'goal', 'ddf', 'signif', 'pval']}
+    header = {
+        'ofv': ['model', 'test', 'base', 'new', 'dofv', 'cmp', 'goal', 'signif'],
+        'pvalue': ['model', 'test', 'base', 'new', 'dofv', 'cmp', 'goal', 'ddf', 'signif', 'pval'],
+    }
     if not len(block) > 1:
         raise NotImplementedError('function parse_runtable_block called with empty table')
 
@@ -131,9 +140,14 @@ def parse_runtable_block(block, parcov_dictionary=None, included_relations=None)
     else:
         raise NotImplementedError('Unsupported runtable header string')
 
-    rawtable = pd.read_fwf(StringIO(str.join('', block)), skiprows=1, header=None,
-                           names=header[gof], true_values=['YES!'],
-                           na_values=['FAILED'])
+    rawtable = pd.read_fwf(
+        StringIO(str.join('', block)),
+        skiprows=1,
+        header=None,
+        names=header[gof],
+        true_values=['YES!'],
+        na_values=['FAILED'],
+    )
 
     if len(rawtable.base.unique()) > 1:
         rawtable = split_merged_base_and_new_ofv(rawtable)
@@ -147,8 +161,9 @@ def parse_runtable_block(block, parcov_dictionary=None, included_relations=None)
         if np.all([np.isnan(v) or v is None for v in rawtable['signif'].values]):
             rawtable['signif'] = False
 
-    table = model_name_series_to_dataframe(rawtable.model, parcov_dictionary,
-                                           is_backward, included_relations)
+    table = model_name_series_to_dataframe(
+        rawtable.model, parcov_dictionary, is_backward, included_relations
+    )
     if is_backward:
         table['reduced_ofv'] = rawtable.new
         table['extended_ofv'] = rawtable.base
@@ -170,8 +185,7 @@ def parse_runtable_block(block, parcov_dictionary=None, included_relations=None)
     return table
 
 
-def model_name_series_to_dataframe(modelname, parcov_dictionary,
-                                   is_backward, included_relations):
+def model_name_series_to_dataframe(modelname, parcov_dictionary, is_backward, included_relations):
     subdf = modelname.str.extract(r'(?P<parcov>.+)-(?P<state>\d+)$', expand=True)
     state = np.nan
     if is_backward:
@@ -179,13 +193,13 @@ def model_name_series_to_dataframe(modelname, parcov_dictionary,
             state = extended_states(modelname, included_relations)
     else:
         state = [int(s) for s in subdf.state.values]
-    result = pd.DataFrame({'model': modelname,
-                           'parameter': None,
-                           'covariate': None,
-                           'extended_state': state})
+    result = pd.DataFrame(
+        {'model': modelname, 'parameter': None, 'covariate': None, 'extended_state': state}
+    )
     if parcov_dictionary:
-        temp = pd.DataFrame([parcov_dictionary[m] for m in subdf.parcov],
-                            columns=('parameter', 'covariate'))
+        temp = pd.DataFrame(
+            [parcov_dictionary[m] for m in subdf.parcov], columns=('parameter', 'covariate')
+        )
         result.parameter = temp.parameter
         result.covariate = temp.covariate
     return result
@@ -197,23 +211,28 @@ def parse_mixed_block(block):
     stashed = list()
     included_relations = dict()
 
-    pattern = {'m1': re.compile(r'Model\s+directory\s+(?P<m1folder>\S+)'),
-               'stashed':
-                   re.compile(r'Taking a step.* reducing scope with .*:\s*(?P<relations>\S+)'),
-               'readded': re.compile(r'Re-testing .* relations after .* :\s*(?P<relations>\S+)'),
-               'included': re.compile(r'Included relations so far:\s*(?P<relations>\S+)')}
+    pattern = {
+        'm1': re.compile(r'Model\s+directory\s+(?P<m1folder>\S+)'),
+        'stashed': re.compile(r'Taking a step.* reducing scope with .*:\s*(?P<relations>\S+)'),
+        'readded': re.compile(r'Re-testing .* relations after .* :\s*(?P<relations>\S+)'),
+        'included': re.compile(r'Included relations so far:\s*(?P<relations>\S+)'),
+    }
 
     for row in block:
         if pattern['stashed'].match(row):
             if stashed:
                 raise NotImplementedError('Two scope reduction lines in the same logfile block')
-            stashed = [tuple(relation.split('-'))
-                       for relation in pattern['stashed'].match(row).group('relations').split(',')]
+            stashed = [
+                tuple(relation.split('-'))
+                for relation in pattern['stashed'].match(row).group('relations').split(',')
+            ]
         elif pattern['readded'].match(row):
             if readded:
                 raise NotImplementedError('Two re-testing lines in the same logfile block')
-            readded = [tuple(relation.split('-'))
-                       for relation in pattern['readded'].match(row).group('relations').split(',')]
+            readded = [
+                tuple(relation.split('-'))
+                for relation in pattern['readded'].match(row).group('relations').split(',')
+            ]
         elif pattern['m1'].match(row):
             if m1:
                 raise NotImplementedError('Two model directory lines in the same logfile block')
@@ -231,16 +250,19 @@ def parse_mixed_block(block):
 def parse_chosen_relation_block(block):
     chosen = dict()
     criterion = dict()
-    pattern = {'chosen': re.compile(r'Parameter-covariate relation chosen in this ' +
-                                    r'(forward|backward) step: ' +
-                                    r'(?P<parameter>\S+)-(?P<covariate>\S+)-(?P<state>\S+)'),
-               'backward': re.compile(r'Parameter-covariate relation chosen in this backward st'),
-               'gof_ofv': re.compile(r'CRITERION\s+OFV\b'),
-               'gof_pvalue': re.compile(r'CRITERION\s+' +
-                                        r'(?P<gof>PVAL)\s+(>|<)\s+(?P<pvalue>\S+)\s*$'),
-               'included': re.compile(r'Relations included after this step'),
-               'parameter': re.compile(r'(?P<parameter>\S+)'),
-               'covstate': re.compile(r'\s*(?P<covariate>\D[^-\s]*)-(?P<state>\d+)')}
+    pattern = {
+        'chosen': re.compile(
+            r'Parameter-covariate relation chosen in this '
+            + r'(forward|backward) step: '
+            + r'(?P<parameter>\S+)-(?P<covariate>\S+)-(?P<state>\S+)'
+        ),
+        'backward': re.compile(r'Parameter-covariate relation chosen in this backward st'),
+        'gof_ofv': re.compile(r'CRITERION\s+OFV\b'),
+        'gof_pvalue': re.compile(r'CRITERION\s+' + r'(?P<gof>PVAL)\s+(>|<)\s+(?P<pvalue>\S+)\s*$'),
+        'included': re.compile(r'Relations included after this step'),
+        'parameter': re.compile(r'(?P<parameter>\S+)'),
+        'covstate': re.compile(r'\s*(?P<covariate>\D[^-\s]*)-(?P<state>\d+)'),
+    }
 
     chosen_match = pattern['chosen'].match(block[0])
     is_backward = False
@@ -288,8 +310,7 @@ def step_data_frame(step, included_relations):
         if np.all(np.isnan(df['extended_state'].values.flatten())):
             # This must be a backward step without preceeding steps of any kind
             # and where included_relations was not found from conf file
-            df['extended_state'] = extended_states(df['model'],
-                                                   included_relations)
+            df['extended_state'] = extended_states(df['model'], included_relations)
     df['step'] = step['number']
     if 'pvalue' in df.columns:
         if step['criterion']:
@@ -301,8 +322,12 @@ def step_data_frame(step, included_relations):
 
     chosenmodel = 'no model'
     if step['chosen']:
-        chosenmodel = step['chosen']['parameter'] + step['chosen']['covariate'] + \
-            r'-' + step['chosen']['state']
+        chosenmodel = (
+            step['chosen']['parameter']
+            + step['chosen']['covariate']
+            + r'-'
+            + step['chosen']['state']
+        )
     df['selected'] = [name == chosenmodel for name in df['model'].values]
 
     df['directory'] = str(step['m1'])
@@ -335,25 +360,38 @@ def prior_included_step(included_relations, gof_is_pvalue):
         extra = {'goal_ofv_drop': np.nan}
     for par, d in included_relations.items():
         for cov, state in d.items():
-            states.append({'step': int(0), 'parameter': par,
-                           'covariate': cov, 'extended_state': int(state),
-                           'reduced_ofv': np.nan,
-                           'extended_ofv': np.nan, 'ofv_drop': np.nan,
-                           **extra,
-                           'is_backward': False,
-                           'extended_significant': True,
-                           'selected': True,
-                           'directory': '',
-                           'model': ''})
+            states.append(
+                {
+                    'step': int(0),
+                    'parameter': par,
+                    'covariate': cov,
+                    'extended_state': int(state),
+                    'reduced_ofv': np.nan,
+                    'extended_ofv': np.nan,
+                    'ofv_drop': np.nan,
+                    **extra,
+                    'is_backward': False,
+                    'extended_significant': True,
+                    'selected': True,
+                    'directory': '',
+                    'model': '',
+                }
+            )
     df = pd.DataFrame(states)
     return df.set_index(['step', 'parameter', 'covariate', 'extended_state'])
 
 
 def empty_step(previous_number, previous_criterion=None):
-    return {'runtable': None, 'm1': None, 'chosen': None,
-            'stashed': None, 'readded': None,
-            'criterion': None, 'number': previous_number + 1,
-            'previous_criterion': previous_criterion}
+    return {
+        'runtable': None,
+        'm1': None,
+        'chosen': None,
+        'stashed': None,
+        'readded': None,
+        'criterion': None,
+        'number': previous_number + 1,
+        'previous_criterion': previous_criterion,
+    }
 
 
 def have(something):
@@ -364,9 +402,11 @@ def log_steps(path, options, parcov_dictionary=None):
     included_relations = options['included_relations']
     basepath = Path(options['directory'])
 
-    pattern = {'runtable': re.compile(r'^MODEL\s+TEST\s+'),
-               'm1': re.compile(r'Model\s+directory\s+(?P<m1folder>\S+)'),
-               'chosen': re.compile(r'Parameter-covariate relation chosen in this')}
+    pattern = {
+        'runtable': re.compile(r'^MODEL\s+TEST\s+'),
+        'm1': re.compile(r'Model\s+directory\s+(?P<m1folder>\S+)'),
+        'chosen': re.compile(r'Parameter-covariate relation chosen in this'),
+    }
 
     step = empty_step(0)
 
@@ -374,12 +414,14 @@ def log_steps(path, options, parcov_dictionary=None):
         if pattern['runtable'].match(block[0]):
             # can be empty table with header, only set table if have content
             if len(block) > 1:
-                step['runtable'] = parse_runtable_block(block, parcov_dictionary,
-                                                        included_relations)
-                is_forward = (not step['runtable']['is_backward'].iloc[-1])
+                step['runtable'] = parse_runtable_block(
+                    block, parcov_dictionary, included_relations
+                )
+                is_forward = not step['runtable']['is_backward'].iloc[-1]
                 if step['number'] == 1 and included_relations is not None and is_forward:
-                    yield prior_included_step(included_relations,
-                                              gof_is_pvalue=('pvalue' in step['runtable'].columns))
+                    yield prior_included_step(
+                        included_relations, gof_is_pvalue=('pvalue' in step['runtable'].columns)
+                    )
         elif pattern['chosen'].match(block[0]):
             step['chosen'], step['criterion'], included = parse_chosen_relation_block(block)
             if included:
@@ -435,7 +477,7 @@ def split_merged_base_and_new_ofv(rawtable):
         column_names = list(rawtable.columns)
         rawtable.drop(columns=column_names[-1], inplace=True)
 
-        baseofvlength = int(max({len(x) for x in rawtable.base.values})/2)
+        baseofvlength = int(max({len(x) for x in rawtable.base.values}) / 2)
         pattern = f'(?P<base>.{{{baseofvlength}}})' + r'\s*(?P<newfixed>\S*)'
 
         subdf = rawtable.base.str.extract(pattern, expand=True)
@@ -448,8 +490,7 @@ def split_merged_base_and_new_ofv(rawtable):
         rawtable.insert(3, 'newfixed', subdf.newfixed)
         # rename columns to get original labels at correct positions
         old = list(rawtable.columns)
-        rawtable.rename(columns={o: correct for o, correct in zip(old, column_names)},
-                        inplace=True)
+        rawtable.rename(columns={o: correct for o, correct in zip(old, column_names)}, inplace=True)
 
     return rawtable
 
@@ -461,8 +502,11 @@ def psn_config_file_argument_from_command(command, path):
     # this may include a model file, so we need to parse file(s) to see
     # if we actually find included_relations
     path = Path(path)
-    return [Path(arg).name for arg in arguments_from_command(command)
-            if (path / Path(arg).name).is_file()]
+    return [
+        Path(arg).name
+        for arg in arguments_from_command(command)
+        if (path / Path(arg).name).is_file()
+    ]
 
 
 def relations_from_config_file(path, files):
@@ -507,8 +551,9 @@ def relations_from_config_file(path, files):
         for row in included_lines:
             par, covstates = row.split(r'=')
             par = str.strip(par)
-            included_relations[par] = {p.match(val).group(1): p.match(val).group(2)
-                                       for val in covstates.split(r',')}
+            included_relations[par] = {
+                p.match(val).group(1): p.match(val).group(2) for val in covstates.split(r',')
+            }
     if test_lines is not None and len(test_lines) > 0:
         test_relations = dict()
         for row in test_lines:
@@ -521,10 +566,12 @@ def relations_from_config_file(path, files):
 
 def psn_scm_options(path):
     path = Path(path)
-    options = {'directory': str(path),
-               'logfile': 'scmlog.txt',
-               'included_relations': None,
-               'test_relations': None}
+    options = {
+        'directory': str(path),
+        'logfile': 'scmlog.txt',
+        'included_relations': None,
+        'test_relations': None,
+    }
     scmplus = False
     config_files = None
     with open(path / 'meta.yaml') as meta:
@@ -549,15 +596,15 @@ def psn_scm_options(path):
             if row.startswith('logfile: '):
                 options['logfile'] = Path(re.sub(r'\s*logfile:\s*', '', row)).name
             elif row.startswith('directory: '):
-                options['directory'] = \
-                    str(Path(re.sub(r'\s*directory:\s*', '', row)))
+                options['directory'] = str(Path(re.sub(r'\s*directory:\s*', '', row)))
             elif row.startswith('command_line: '):
                 cmd = row
     if scmplus and Path(options['directory']).parts[-1] == 'rundir':
         options['directory'] = str(Path(options['directory']).parents[0])
     if config_files is not None:
-        options['included_relations'], options['test_relations'] = \
-            relations_from_config_file(path, config_files)
+        options['included_relations'], options['test_relations'] = relations_from_config_file(
+            path, config_files
+        )
 
     return options
 
@@ -571,10 +618,10 @@ def parcov_dict_from_test_relations(test_relations):
 
 
 def psn_scm_results(path):
-    """ Create scm results from a PsN SCM run
+    """Create scm results from a PsN SCM run
 
-        :param path: Path to PsN scm run directory
-        :return: A :class:`SCMResults` object
+    :param path: Path to PsN scm run directory
+    :return: A :class:`SCMResults` object
 
     """
     path = Path(path)

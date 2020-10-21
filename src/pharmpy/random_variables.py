@@ -14,13 +14,14 @@ from .data_structures import OrderedSet
 
 
 class VariabilityLevel(enum.Enum):
-    """ Representation of a variability level
+    """Representation of a variability level
 
-       currently supports only IIV and RUV.
-       Can be changed into something not-enum
-       in future keeping the IIV and RUV as
-       class singletons
+    currently supports only IIV and RUV.
+    Can be changed into something not-enum
+    in future keeping the IIV and RUV as
+    class singletons
     """
+
     IIV = enum.auto()
     IOV = enum.auto()
     RUV = enum.auto()
@@ -29,21 +30,21 @@ class VariabilityLevel(enum.Enum):
 class JointDistributionSeparate(RandomSymbol):
     """One random variable in a joint distribution
 
-       sympy can currently only represent the random variables in a joint distribution
-       as one single indexed variable that cannot be separately named. This class
-       makes separation possible.
+    sympy can currently only represent the random variables in a joint distribution
+    as one single indexed variable that cannot be separately named. This class
+    makes separation possible.
 
-       This class can probably not solve all issues with joint rvs, but it can at least
-       handle separate symbols, pass as a random variable for random_variables and lead back
-       to its pspace.
+    This class can probably not solve all issues with joint rvs, but it can at least
+    handle separate symbols, pass as a random variable for random_variables and lead back
+    to its pspace.
     """
+
     def __new__(cls, name, joint_symbol):
         return super().__new__(cls, symbol(name), joint_symbol.pspace)
 
 
 def JointNormalSeparate(names, mean, cov):
-    """Conveniently create a joint normal distribution and create separate random variables
-    """
+    """Conveniently create a joint normal distribution and create separate random variables"""
     x = stats.Normal('__DUMMY__', mean, cov)
     rvs = [JointDistributionSeparate(name, x) for name in names]
     return rvs
@@ -52,17 +53,18 @@ def JointNormalSeparate(names, mean, cov):
 class RandomVariables(OrderedSet):
     """An ordered set of random variables
 
-       currently separately named jointrvs are not supported in sympy
-       (i.e. it is not possible to do [eta1, eta2] = Normal(...))
-       Use JointDistributionSeparate as a workaround
-       Joints must come in the correct order
+    currently separately named jointrvs are not supported in sympy
+    (i.e. it is not possible to do [eta1, eta2] = Normal(...))
+    Use JointDistributionSeparate as a workaround
+    Joints must come in the correct order
     """
+
     nletter = '𝒩 '
 
     @staticmethod
     def _left_parens(height):
         """Return an array containing each row of a large parenthesis
-           used for pretty printing
+        used for pretty printing
         """
         a = ['⎧']
         for _ in range(height - 2):
@@ -73,7 +75,7 @@ class RandomVariables(OrderedSet):
     @staticmethod
     def _right_parens(height):
         """Return an array containing each row of a large parenthesis
-           used for pretty printing
+        used for pretty printing
         """
         a = ['⎫']
         for _ in range(height - 2):
@@ -84,17 +86,18 @@ class RandomVariables(OrderedSet):
     @staticmethod
     def _normal_definition_string(rv):
         """Provide a array of pretty strings for the definition of a Normal random variable
-           This should ideally be available from sympy.
+        This should ideally be available from sympy.
         """
         dist = rv.pspace.distribution
-        return [f'{sympy.pretty(rv, wrap_line=False)}'
-                f'~ {RandomVariables.nletter}({sympy.pretty(dist.mean, wrap_line=False)}, '
-                f'{sympy.pretty(dist.std**2, wrap_line=False)})']
+        return [
+            f'{sympy.pretty(rv, wrap_line=False)}'
+            f'~ {RandomVariables.nletter}({sympy.pretty(dist.mean, wrap_line=False)}, '
+            f'{sympy.pretty(dist.std**2, wrap_line=False)})'
+        ]
 
     @staticmethod
     def _joint_normal_definition_string(rvs):
-        """Provide an array of pretty strings for the definition of a Joint Normal random variable
-        """
+        """Create an array of pretty strings for the definition of a Joint Normal random variable"""
         dist = rvs[0].pspace.distribution
         name_vector = sympy.Matrix(rvs)
         name_strings = sympy.pretty(name_vector, wrap_line=False).split('\n')
@@ -120,15 +123,22 @@ class RandomVariables(OrderedSet):
 
         central_index = max_height // 2
         res = []
-        enumerator = enumerate(zip(name_strings, left_parens, mu_strings, sigma_strings,
-                                   right_parens))
+        enumerator = enumerate(
+            zip(name_strings, left_parens, mu_strings, sigma_strings, right_parens)
+        )
         for i, (name_line, lpar, mu_line, sigma_line, rpar) in enumerator:
             if i == central_index:
-                res.append(name_line + f' ~ {RandomVariables.nletter}' + lpar +
-                           mu_line + ', ' + sigma_line + rpar)
+                res.append(
+                    name_line
+                    + f' ~ {RandomVariables.nletter}'
+                    + lpar
+                    + mu_line
+                    + ', '
+                    + sigma_line
+                    + rpar
+                )
             else:
-                res.append(name_line + '     ' + lpar + mu_line +
-                           '  ' + sigma_line + rpar)
+                res.append(name_line + '     ' + lpar + mu_line + '  ' + sigma_line + rpar)
 
         return res
 
@@ -144,8 +154,8 @@ class RandomVariables(OrderedSet):
         raise KeyError(f'Random variable "{index}" does not exist')
 
     def __repr__(self):
-        """ Give a nicely formatted view of the definitions of all
-            random variables.
+        """Give a nicely formatted view of the definitions of all
+        random variables.
         """
         res = ''
         for rvs, dist in self.distributions():
@@ -187,21 +197,22 @@ class RandomVariables(OrderedSet):
             dist = rv.pspace.distribution
             if isinstance(dist, stats.crv_types.NormalDistribution):
                 i += 1
-                if (level is None or level == rv.variability_level) and \
-                   (exclude_level is None or exclude_level != rv.variability_level):
+                if (level is None or level == rv.variability_level) and (
+                    exclude_level is None or exclude_level != rv.variability_level
+                ):
                     yield [rv], dist
-            else:       # Joint Normal
+            else:  # Joint Normal
                 n = self[i].pspace.distribution.sigma.rows
                 rvs = [self[k] for k in range(i, i + n)]
                 i += n
-                if (level is None or level == rv.variability_level) and \
-                   (exclude_level is None or exclude_level != rv.variability_level):
+                if (level is None or level == rv.variability_level) and (
+                    exclude_level is None or exclude_level != rv.variability_level
+                ):
                     yield rvs, dist
 
     @property
     def ruv_rvs(self):
-        """Get list of all ruv random variables (epsilons)
-        """
+        """Get list of all ruv random variables (epsilons)"""
         ruv = []
         for rv in self:
             if rv.variability_level == VariabilityLevel.RUV:
@@ -210,8 +221,7 @@ class RandomVariables(OrderedSet):
 
     @property
     def etas(self):
-        """Get list of all eta random variables
-        """
+        """Get list of all eta random variables"""
         etas = []
         for rv in self:
             if rv.variability_level != VariabilityLevel.RUV:
@@ -240,7 +250,7 @@ class RandomVariables(OrderedSet):
             names.extend([rv.name for rv in rvs])
             if isinstance(dist, stats.crv_types.NormalDistribution):
                 means.append(dist.mean)
-                blocks.append(sympy.Matrix([dist.std**2]))
+                blocks.append(sympy.Matrix([dist.std ** 2]))
             elif isinstance(dist, stats.joint_rv_types.MultivariateNormalDistribution):
                 means.extend(dist.mu)
                 blocks.append(dist.sigma)
@@ -254,7 +264,7 @@ class RandomVariables(OrderedSet):
     def covariance_matrix(self, ruv=False):
         """Covariance matrix of all random variables
 
-           currently only supports normal distribution
+        currently only supports normal distribution
         """
         _, M, _, others = self._calc_covariance_matrix(ruv=ruv)
         if others:
@@ -264,7 +274,7 @@ class RandomVariables(OrderedSet):
     def merge_normal_distributions(self, fill=0):
         """Merge all normal distributed rvs together into one joint normal
 
-           Set new covariances (and previous 0 covs) to 'fill'
+        Set new covariances (and previous 0 covs) to 'fill'
         """
         means, M, names, others = self._calc_covariance_matrix()
         if fill != 0:
@@ -293,18 +303,19 @@ class RandomVariables(OrderedSet):
         return new_rvs
 
     def validate_parameters(self, parameter_values, use_cache=False):
-        """ Validate a dict or Series of parameter values
+        """Validate a dict or Series of parameter values
 
-            Currently checks that all covariance matrices are posdef
-            use_cache for using symengine cached matrices
+        Currently checks that all covariance matrices are posdef
+        use_cache for using symengine cached matrices
         """
         if use_cache and not hasattr(self, '_cached_sigmas'):
             self._cached_sigmas = {}
             for rvs, dist in self.distributions():
                 if len(rvs) > 1:
                     sigma = dist.sigma
-                    a = [[symengine.Symbol(e.name) for e in sigma.row(i)]
-                         for i in range(sigma.rows)]
+                    a = [
+                        [symengine.Symbol(e.name) for e in sigma.row(i)] for i in range(sigma.rows)
+                    ]
                     A = symengine.Matrix(a)
                     self._cached_sigmas[rvs[0]] = A
 
@@ -325,18 +336,18 @@ class RandomVariables(OrderedSet):
                     for param in dict(parameter_values):
                         replacement[symengine.Symbol(param)] = parameter_values[param]
                     sigma = sigma.subs(replacement)
-                    if not sigma.free_symbols:      # Cannot validate since missing params
+                    if not sigma.free_symbols:  # Cannot validate since missing params
                         a = np.array(sigma).astype(np.float64)
                         if not pharmpy.math.is_posdef(a):
                             return False
         return True
 
     def nearest_valid_parameters(self, parameter_values):
-        """ Force parameter values into being valid
+        """Force parameter values into being valid
 
-            As small changes as possible
+        As small changes as possible
 
-            returns an updated parameter_values
+        returns an updated parameter_values
         """
         nearest = parameter_values.copy()
         for rvs, dist in self.distributions():

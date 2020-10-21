@@ -4,15 +4,13 @@ from pharmpy.model_factory import Model
 
 
 def read_model(path):
-    """Read model from file
-    """
+    """Read model from file"""
     model = Model(path)
     return model
 
 
 def write_model(model, path='', force=False):
-    """Write model to file
-    """
+    """Write model to file"""
     model.write(path='', force=False)
     return model
 
@@ -20,27 +18,27 @@ def write_model(model, path='', force=False):
 def update_source(model):
     """Update source
 
-       Let the code of the underlying source language be updated to reflect
-       changes in the model object.
+    Let the code of the underlying source language be updated to reflect
+    changes in the model object.
     """
     model.update_source()
     return model
 
 
 def fix_parameters(model, parameter_names):
-    """ Fix parameters
+    """Fix parameters
 
-        Fix all listed parameters
+    Fix all listed parameters
 
-        Parameters
-        ----------
-        model: Model
-        parameter_names: list or str
-            one parameter name or a list of parameter names
+    Parameters
+    ----------
+    model: Model
+    parameter_names: list or str
+        one parameter name or a list of parameter names
 
-        Returns
-        -------
-        model: Model
+    Returns
+    -------
+    model: Model
     """
     if isinstance(parameter_names, str):
         d = {parameter_names: True}
@@ -51,19 +49,19 @@ def fix_parameters(model, parameter_names):
 
 
 def unfix_parameters(model, parameter_names):
-    """ Unfix parameters
+    """Unfix parameters
 
-        Unfix all listed parameters
+    Unfix all listed parameters
 
-        Parameters
-        ----------
-        model: Model
-        parameter_names: list or str
-            one parameter name or a list of parameter names
+    Parameters
+    ----------
+    model: Model
+    parameter_names: list or str
+        one parameter name or a list of parameter names
 
-        Returns
-        -------
-        model: Model
+    Returns
+    -------
+    model: Model
     """
     if isinstance(parameter_names, str):
         d = {parameter_names: False}

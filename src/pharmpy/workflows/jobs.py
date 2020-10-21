@@ -9,8 +9,9 @@ from pharmpy import Model
 class InputModel:
     """A wrapper for a model that is input to a specific workflow
 
-       Handles all files needed for the model and the model object
+    Handles all files needed for the model and the model object
     """
+
     def __init__(self, workflow, model):
         self.model = model
         self.files = import_files(workflow, [model.input.path])
@@ -27,8 +28,8 @@ class CommandLineJob(Job):
 
 
 class GatherFiles(Job):
-    """Gather files after a batch job
-    """
+    """Gather files after a batch job"""
+
     def __init__(self, rvs):
         super().__init__()
         self.rvs = rvs
@@ -40,8 +41,9 @@ class GatherFiles(Job):
 class BatchModelfit(Job):
     """Runs a list of models
 
-       root -> [NonmemJob ...] -> GatherFiles
+    root -> [NonmemJob ...] -> GatherFiles
     """
+
     def __init__(self, models):
         super().__init__()
         self.input_models = models
@@ -57,8 +59,8 @@ class BatchModelfit(Job):
 
 
 class NonmemJob(CommandLineJob):
-    """One nmfe execution
-    """
+    """One nmfe execution"""
+
     def __init__(self, model, additional_files):
         super().__init__()
         self.model = model
@@ -69,10 +71,11 @@ class NonmemJob(CommandLineJob):
         for file_id in self.additional_files:
             self.copy_file(file_store, file_id)
         self.call(['nmfe74', path.name, path.with_suffix('.lst').name], file_store)
-        model = Model(path)        # New model for now. Paths need updating...
-        model.modelfit_results.parameter_estimates      # To read it in
-        result_files = \
-            [file_store.writeGlobalFile(str(path)) for path in model.modelfit_results.tool_files]
+        model = Model(path)  # New model for now. Paths need updating...
+        model.modelfit_results.parameter_estimates  # To read it in
+        result_files = [
+            file_store.writeGlobalFile(str(path)) for path in model.modelfit_results.tool_files
+        ]
         model.modelfit_results.tool_files = result_files
         return model
 

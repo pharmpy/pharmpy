@@ -13,9 +13,11 @@ class ProblemRecord(Record):
     @title.setter
     def title(self, new_title):
         if len(new_title.strip()) > 72:
-            raise ValueError(f'The provided title is {len(new_title.strip())} characters long but '
-                             f'can be maximum 72 characters long (not counting initial and trailing'
-                             f'whitespace)')
+            raise ValueError(
+                f'The provided title is {len(new_title.strip())} characters long but '
+                f'can be maximum 72 characters long (not counting initial and trailing'
+                f'whitespace)'
+            )
         if new_title == new_title.lstrip():
             new_title = ' ' + new_title
         lines = str(self.root.raw_title).split('\n')

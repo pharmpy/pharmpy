@@ -16,8 +16,10 @@ def read_configuration():
     if env_path is not None:
         env_path = Path(env_path) / filename
         if not env_path.is_file():
-            raise ValueError('Environment variable PHARMPYCONFIGPATH is set but directory does '
-                             'not contain a configuration file')
+            raise ValueError(
+                'Environment variable PHARMPYCONFIGPATH is set but directory does '
+                'not contain a configuration file'
+            )
         config.read(env_path)
     else:
         user_path = Path(appdirs.user_config_dir(appname)) / filename
@@ -46,8 +48,10 @@ class ConfigItem:
 
     def __set__(self, instance, value):
         if type(self.default) != type(value):
-            raise TypeError(f'Trying to set configuration item {self.name} using object of wrong '
-                            f'type: {type(value)} is not {type(self.default)}')
+            raise TypeError(
+                f'Trying to set configuration item {self.name} using object of wrong '
+                f'type: {type(value)} is not {type(self.default)}'
+            )
         instance.__dict__[self.name] = value
 
 
@@ -62,8 +66,8 @@ class Configuration:
 
 
 class ConfigurationContext:
-    """Context to temporarily set configuration options
-    """
+    """Context to temporarily set configuration options"""
+
     def __init__(self, config, **kwargs):
         self.config = config
         self.options = kwargs

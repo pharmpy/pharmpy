@@ -4,8 +4,15 @@ import numpy as np
 
 from pharmpy import data
 from pharmpy.random_variables import VariabilityLevel
-from pharmpy.statements import (Assignment, Bolus, CompartmentalSystem, ExplicitODESystem, Infusion,
-                                ModelStatements, ODESystem)
+from pharmpy.statements import (
+    Assignment,
+    Bolus,
+    CompartmentalSystem,
+    ExplicitODESystem,
+    Infusion,
+    ModelStatements,
+    ODESystem,
+)
 from pharmpy.symbols import symbol
 
 
@@ -67,8 +74,9 @@ def update_random_variables(model, old, new):
     if removed:
         remove_records = []
         next_eta = 1
-        for omega_record in model.control_stream.get_records('OMEGA') + \
-                model.control_stream.get_records('SIGMA'):
+        for omega_record in model.control_stream.get_records(
+            'OMEGA'
+        ) + model.control_stream.get_records('SIGMA'):
             current_names = omega_record.eta_map.keys()
             if removed >= current_names:
                 remove_records.append(omega_record)
@@ -87,7 +95,7 @@ def update_random_variables(model, old, new):
     new_maps = []
     for rv in new:
         if rv.name not in old_names:
-            omega_name = (rv.pspace.distribution.std**2).name
+            omega_name = (rv.pspace.distribution.std ** 2).name
 
             if omega_name not in old.all_parameters():
 
@@ -102,8 +110,9 @@ def update_random_variables(model, old, new):
                 record, eta_number = create_omega_record(model, omega, record_name)
                 record.add_omega_name_comment(omega_name)
 
-                new_maps.append((record, {omega_name: (eta_number, eta_number)},
-                                 {rv_name: eta_number}))
+                new_maps.append(
+                    (record, {omega_name: (eta_number, eta_number)}, {rv_name: eta_number})
+                )
     # FIXME: Setting the maps needs to be done here and not in loop. Automatic renumbering is
     #        probably the culprit. There should be a difference between added parameters and
     #        original parameters when it comes to which naming scheme to use
@@ -114,8 +123,7 @@ def update_random_variables(model, old, new):
 
 
 def get_next_theta(model):
-    """ Find the next available theta number
-    """
+    """Find the next available theta number"""
     next_theta = 1
 
     for theta_record in model.control_stream.get_records('THETA'):
@@ -126,8 +134,7 @@ def get_next_theta(model):
 
 
 def get_next_eta(model, record='OMEGA'):
-    """ Find the next available eta number
-    """
+    """Find the next available eta number"""
     next_omega = 1
     previous_size = None
 
@@ -173,7 +180,7 @@ def create_omega_record(model, param, record='OMEGA'):
 def update_ode_system(model, old, new):
     """Update ODE system
 
-       Handle changes from CompartmentSystem to ExplicitODESystem
+    Handle changes from CompartmentSystem to ExplicitODESystem
     """
     if type(old) == CompartmentalSystem and type(new) == ExplicitODESystem:
         subs = model.control_stream.get_records('SUBROUTINES')[0]
@@ -229,18 +236,30 @@ def update_ode_system(model, old, new):
                 secondary = secondary_pk_param_conversion_map(len(old), 1, removed=False)
                 statements.subs(secondary)
                 if trans == 'TRANS1':
-                    statements.subs({symbol('K12'): symbol('K23'), symbol('K21'): symbol('K32'),
-                                     symbol('K13'): symbol('K24'), symbol('K31'): symbol('K42')})
+                    statements.subs(
+                        {
+                            symbol('K12'): symbol('K23'),
+                            symbol('K21'): symbol('K32'),
+                            symbol('K13'): symbol('K24'),
+                            symbol('K31'): symbol('K42'),
+                        }
+                    )
                 elif trans == 'TRANS4':
-                    statements.subs({symbol('V1'): symbol('V2'), symbol('Q2'): symbol('Q3'),
-                                     symbol('V2'): symbol('V3'), symbol('Q3'): symbol('Q4'),
-                                     symbol('V3'): symbol('V4')})
+                    statements.subs(
+                        {
+                            symbol('V1'): symbol('V2'),
+                            symbol('Q2'): symbol('Q3'),
+                            symbol('V2'): symbol('V3'),
+                            symbol('Q3'): symbol('Q4'),
+                            symbol('V3'): symbol('V4'),
+                        }
+                    )
                 elif trans == 'TRANS6':
                     statements.subs({symbol('K31'): symbol('K42'), symbol('K21'): symbol('K32')})
             elif advan == 'ADVAN5' or advan == 'ADVAN7':
                 model_record = model.control_stream.get_records('MODEL')[0]
                 added = set(new.names) - set(old.names)
-                added_name = list(added)[0]     # Assume only one!
+                added_name = list(added)[0]  # Assume only one!
                 model_record.add_compartment(added_name, dosing=True)
                 primary = primary_pk_param_conversion_map(len(old), 1)
                 statements.subs(primary)
@@ -271,16 +290,29 @@ def update_ode_system(model, old, new):
                 secondary = secondary_pk_param_conversion_map(len(old), 1)
                 statements.subs(secondary)
                 if trans == 'TRANS1':
-                    statements.subs({symbol('K23'): symbol('K12'), symbol('K32'): symbol('K21'),
-                                     symbol('K24'): symbol('K13'), symbol('K42'): symbol('K31')})
+                    statements.subs(
+                        {
+                            symbol('K23'): symbol('K12'),
+                            symbol('K32'): symbol('K21'),
+                            symbol('K24'): symbol('K13'),
+                            symbol('K42'): symbol('K31'),
+                        }
+                    )
                 elif trans == 'TRANS4':
-                    statements.subs({symbol('V2'): symbol('V1'), symbol('Q3'): symbol('Q2'),
-                                     symbol('V3'): symbol('V2'), symbol('Q4'): symbol('Q3'),
-                                     symbol('V4'): symbol('V3')})
+                    statements.subs(
+                        {
+                            symbol('V2'): symbol('V1'),
+                            symbol('Q3'): symbol('Q2'),
+                            symbol('V3'): symbol('V2'),
+                            symbol('Q4'): symbol('Q3'),
+                            symbol('V4'): symbol('V3'),
+                        }
+                    )
                 elif trans == 'TRANS6':
                     statements.subs({symbol('K42'): symbol('K31'), symbol('K32'): symbol('K21')})
-        if isinstance(new.find_dosing().dose, Infusion) and \
-                isinstance(old.find_dosing().dose, Bolus):
+        if isinstance(new.find_dosing().dose, Infusion) and isinstance(
+            old.find_dosing().dose, Bolus
+        ):
             dose = new.find_dosing().dose
             if dose.rate is None:
                 # FIXME: Not always D1 here!
@@ -299,8 +331,7 @@ def update_ode_system(model, old, new):
 
 
 def primary_pk_param_conversion_map(ncomp, removed):
-    """Conversion map for pk parameters for one removed compartment
-    """
+    """Conversion map for pk parameters for one removed compartment"""
     d = dict()
     for i in range(0, ncomp + 1):
         for j in range(0, ncomp + 1):
@@ -314,34 +345,51 @@ def primary_pk_param_conversion_map(ncomp, removed):
                 to_j = j - 1
             else:
                 to_j = j
-            if not (to_j == j and to_i == i) and i != 0 and to_i != 0 and \
-                    not (i == ncomp and j == 0) and not (i == 0 and j == ncomp):
-                d.update({symbol(f'K{i}{j}'): symbol(f'K{to_i}{to_j}'),
-                          symbol(f'K{i}T{j}'): symbol(f'K{to_i}T{to_j}')})
+            if (
+                not (to_j == j and to_i == i)
+                and i != 0
+                and to_i != 0
+                and not (i == ncomp and j == 0)
+                and not (i == 0 and j == ncomp)
+            ):
+                d.update(
+                    {
+                        symbol(f'K{i}{j}'): symbol(f'K{to_i}{to_j}'),
+                        symbol(f'K{i}T{j}'): symbol(f'K{to_i}T{to_j}'),
+                    }
+                )
     return d
 
 
 def secondary_pk_param_conversion_map(ncomp, compno, removed=True):
     """Conversion map for pk parameters for one removed or added compartment
 
-        ncomp - total number of compartments before removing/adding (including output)
-        compno - number of removed/added compartment
+    ncomp - total number of compartments before removing/adding (including output)
+    compno - number of removed/added compartment
     """
     d = dict()
     if removed:
         for i in range(compno + 1, ncomp + 1):
-            d.update({symbol(f'S{i}'): symbol(f'S{i - 1}'),
-                      symbol(f'F{i}'): symbol(f'F{i - 1}'),
-                      symbol(f'R{i}'): symbol(f'R{i - 1}'),
-                      symbol(f'D{i}'): symbol(f'D{i - 1}'),
-                      symbol(f'ALAG{i}'): symbol(f'ALAG{i - 1}')})
+            d.update(
+                {
+                    symbol(f'S{i}'): symbol(f'S{i - 1}'),
+                    symbol(f'F{i}'): symbol(f'F{i - 1}'),
+                    symbol(f'R{i}'): symbol(f'R{i - 1}'),
+                    symbol(f'D{i}'): symbol(f'D{i - 1}'),
+                    symbol(f'ALAG{i}'): symbol(f'ALAG{i - 1}'),
+                }
+            )
     else:
         for i in range(compno, ncomp + 1):
-            d.update({symbol(f'S{i}'): symbol(f'S{i + 1}'),
-                      symbol(f'F{i}'): symbol(f'F{i + 1}'),
-                      symbol(f'R{i}'): symbol(f'R{i + 1}'),
-                      symbol(f'D{i}'): symbol(f'D{i + 1}'),
-                      symbol(f'ALAG{i}'): symbol(f'ALAG{i + 1}')})
+            d.update(
+                {
+                    symbol(f'S{i}'): symbol(f'S{i + 1}'),
+                    symbol(f'F{i}'): symbol(f'F{i + 1}'),
+                    symbol(f'R{i}'): symbol(f'R{i + 1}'),
+                    symbol(f'D{i}'): symbol(f'D{i + 1}'),
+                    symbol(f'ALAG{i}'): symbol(f'ALAG{i + 1}'),
+                }
+            )
     return d
 
 
@@ -371,7 +419,7 @@ def update_statements(model, old, new, trans):
     error = model._get_error_record()
     if error:
         if len(error_statements) > 0:
-            error_statements.pop(0)        # Remove the link statement
+            error_statements.pop(0)  # Remove the link statement
         error_statements.subs(trans)
         error.statements = error_statements
 
@@ -387,8 +435,7 @@ def update_lag_time(model, old, new):
 
 
 def remove_compartments(model, old, new):
-    """Remove compartments for ADVAN5 and ADVAN7
-    """
+    """Remove compartments for ADVAN5 and ADVAN7"""
     model_record = model.control_stream.get_records('MODEL')[0]
     removed = set(old.names) - set(new.names)
 
@@ -408,8 +455,7 @@ def remove_compartments(model, old, new):
 
 
 def add_compartments(model, old, new):
-    """ Add compartments for ADVAN5 and ADVAN7
-    """
+    """Add compartments for ADVAN5 and ADVAN7"""
     model_record = model.control_stream.get_records('MODEL')[0]
     added = set(new.names) - set(old.names)
     statements = model.statements

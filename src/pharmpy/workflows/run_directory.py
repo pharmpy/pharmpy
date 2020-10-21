@@ -141,7 +141,7 @@ class RunDirectory:
 
         if level is None:
             level = self.cleanlevel
-        levels = self.cleanlevels[:(1+level)]
+        levels = self.cleanlevels[: (1 + level)]
         for child in self.path.iterdir():
             clean = dict()
             for level in levels:

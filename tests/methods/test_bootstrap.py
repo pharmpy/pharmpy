@@ -11,6 +11,7 @@ def test_bootstrap():
 
     class MyModel:
         pass
+
     orig_mod = MyModel()
     orig_mod.modelfit_results = orig
     res1_mod = MyModel()
@@ -19,12 +20,16 @@ def test_bootstrap():
     res2_mod.modelfit_results = res2
 
     boot = calculate_results([res1_mod, res2_mod], original_model=orig_mod)
-    correct_statistics = pd.DataFrame({'mean': [1.25, 2.5],
-                                       'median': [1.25, 2.50],
-                                       'bias': [0.5, 0.25],
-                                       'stderr': [0.353553, 0.707107],
-                                       'RSE': [0.2828424, 0.2828424]},
-                                      index=['TVCL', 'TVV'])
+    correct_statistics = pd.DataFrame(
+        {
+            'mean': [1.25, 2.5],
+            'median': [1.25, 2.50],
+            'bias': [0.5, 0.25],
+            'stderr': [0.353553, 0.707107],
+            'RSE': [0.2828424, 0.2828424],
+        },
+        index=['TVCL', 'TVV'],
+    )
 
     pd.testing.assert_frame_equal(boot.parameter_statistics, correct_statistics)
 

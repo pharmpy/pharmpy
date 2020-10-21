@@ -5,44 +5,76 @@ from pharmpy.plugins.nonmem import conf
 
 
 @pytest.mark.usefixtures('parser')
-@pytest.mark.parametrize('buf,comment,results', [
-    ('$THETA 0', False, [('THETA(1)', 0, -1000000, 1000000, False)]),
-    ('$THETA    12.3 \n\n', False, [('THETA(1)', 12.3, -1000000, 1000000, False)]),
-    ('$THETA  (0,0.00469) ; CL', False, [('THETA(1)', 0.00469, 0, 1000000, False)]),
-    ('$THETA  (0,3) 2 FIXED (0,.6,1) 10 (-INF,-2.7,0)  (37 FIXED)\n 19 (0,1,2)x3', False, [
-        ('THETA(1)', 3, 0, 1000000, False),
-        ('THETA(2)', 2, -1000000, 1000000, True),
-        ('THETA(3)', .6, 0, 1, False),
-        ('THETA(4)', 10, -1000000, 1000000, False),
-        ('THETA(5)', -2.7, -1000000, 0, False),
-        ('THETA(6)', 37, -1000000, 1000000, True),
-        ('THETA(7)', 19, -1000000, 1000000, False),
-        ('THETA(8)', 1, 0, 2, False),
-        ('THETA(9)', 1, 0, 2, False),
-        ('THETA(10)', 1, 0, 2, False),
-        ]),
-    ('$THETA (0.00469555) FIX ; CL', False, [('THETA(1)', 0.00469555, -1000000, 1000000, True)]),
-    ('$THETA\n ;; Model characteristics\n (0, 0.15, 0.6) ; Proportional\n',
-        False, [('THETA(1)', 0.15, 0, 0.6, False)]),
-    ('$THETA\n;\n1;COMMENTING', False, [('THETA(1)', 1, -1000000, 1000000, False)]),
-    ('$THETA\n   ;CMT1;SAMELINE\n;ONLYCOMMENT\n\t;COMMENT2\n    1    \n',
-        False, [('THETA(1)', 1, -1000000, 1000000, False)]),
-    ('$THETA\n ;; Model characteristics\n  (0, 0.15, 0.6) ; Proportional error (Drug123)\n'
-     '  (0, 1, 10)     ; Additive error (Drug123)\n',
-        False, [('THETA(1)', 0.15, 0, 0.6, False), ('THETA(2)', 1, 0, 10, False)]),
-    ('$THETA  (FIX FIX 0.4) ; CL', False, [('THETA(1)', 0.4, -1000000, 1000000, True)]),
-    ('$THETA (FIX 1,   FIX FIX    1 FIX, 1  FIX) ; CL', False, [('THETA(1)', 1, 1, 1, True)]),
-    ('$THETA\n(0,0.105,)   ; RUV_CVFPG\n', False, [
-        ('THETA(1)', 0.105, 0, 1000000, False),
-        ]),
-    ('$THETA\n(0,0.105,)   ; RUV_CVFPG\n', True, [
-        ('RUV_CVFPG', 0.105, 0, 1000000, False),
-        ]),
-    ('$THETA  (0,3) ; CL\n 2 FIXED ; V\n', True, [
-        ('CL', 3, 0, 1000000, False),
-        ('V', 2, -1000000, 1000000, True),
-        ])
-])
+@pytest.mark.parametrize(
+    'buf,comment,results',
+    [
+        ('$THETA 0', False, [('THETA(1)', 0, -1000000, 1000000, False)]),
+        ('$THETA    12.3 \n\n', False, [('THETA(1)', 12.3, -1000000, 1000000, False)]),
+        ('$THETA  (0,0.00469) ; CL', False, [('THETA(1)', 0.00469, 0, 1000000, False)]),
+        (
+            '$THETA  (0,3) 2 FIXED (0,.6,1) 10 (-INF,-2.7,0)  (37 FIXED)\n 19 (0,1,2)x3',
+            False,
+            [
+                ('THETA(1)', 3, 0, 1000000, False),
+                ('THETA(2)', 2, -1000000, 1000000, True),
+                ('THETA(3)', 0.6, 0, 1, False),
+                ('THETA(4)', 10, -1000000, 1000000, False),
+                ('THETA(5)', -2.7, -1000000, 0, False),
+                ('THETA(6)', 37, -1000000, 1000000, True),
+                ('THETA(7)', 19, -1000000, 1000000, False),
+                ('THETA(8)', 1, 0, 2, False),
+                ('THETA(9)', 1, 0, 2, False),
+                ('THETA(10)', 1, 0, 2, False),
+            ],
+        ),
+        (
+            '$THETA (0.00469555) FIX ; CL',
+            False,
+            [('THETA(1)', 0.00469555, -1000000, 1000000, True)],
+        ),
+        (
+            '$THETA\n ;; Model characteristics\n (0, 0.15, 0.6) ; Proportional\n',
+            False,
+            [('THETA(1)', 0.15, 0, 0.6, False)],
+        ),
+        ('$THETA\n;\n1;COMMENTING', False, [('THETA(1)', 1, -1000000, 1000000, False)]),
+        (
+            '$THETA\n   ;CMT1;SAMELINE\n;ONLYCOMMENT\n\t;COMMENT2\n    1    \n',
+            False,
+            [('THETA(1)', 1, -1000000, 1000000, False)],
+        ),
+        (
+            '$THETA\n ;; Model characteristics\n  (0, 0.15, 0.6) ; Proportional error (Drug123)\n'
+            '  (0, 1, 10)     ; Additive error (Drug123)\n',
+            False,
+            [('THETA(1)', 0.15, 0, 0.6, False), ('THETA(2)', 1, 0, 10, False)],
+        ),
+        ('$THETA  (FIX FIX 0.4) ; CL', False, [('THETA(1)', 0.4, -1000000, 1000000, True)]),
+        ('$THETA (FIX 1,   FIX FIX    1 FIX, 1  FIX) ; CL', False, [('THETA(1)', 1, 1, 1, True)]),
+        (
+            '$THETA\n(0,0.105,)   ; RUV_CVFPG\n',
+            False,
+            [
+                ('THETA(1)', 0.105, 0, 1000000, False),
+            ],
+        ),
+        (
+            '$THETA\n(0,0.105,)   ; RUV_CVFPG\n',
+            True,
+            [
+                ('RUV_CVFPG', 0.105, 0, 1000000, False),
+            ],
+        ),
+        (
+            '$THETA  (0,3) ; CL\n 2 FIXED ; V\n',
+            True,
+            [
+                ('CL', 3, 0, 1000000, False),
+                ('V', 2, -1000000, 1000000, True),
+            ],
+        ),
+    ],
+)
 def test_parameters(parser, buf, comment, results):
     if comment:
         opt = 'comment'
@@ -115,9 +147,12 @@ def test_update(parser):
 
 
 @pytest.mark.usefixtures('parser')
-@pytest.mark.parametrize('buf,name_original,theta_number,buf_new', [
-    ('$THETA 0', 'TVCL', 1, '$THETA 0 ; TVCL\n'),
-])
+@pytest.mark.parametrize(
+    'buf,name_original,theta_number,buf_new',
+    [
+        ('$THETA 0', 'TVCL', 1, '$THETA 0 ; TVCL\n'),
+    ],
+)
 def test_add_nonmem_name(parser, buf, name_original, theta_number, buf_new):
     rec = parser.parse(buf).records[0]
     rec.add_nonmem_name(name_original, theta_number)

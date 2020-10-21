@@ -17,9 +17,10 @@ class Assignment:
     expression
         Expression of statement
     """
+
     def __init__(self, symbol, expression):
-        """ symbol can be either string or sympy symbol
-            symbol can be a string and a real symbol will be created
+        """symbol can be either string or sympy symbol
+        symbol can be a string and a real symbol will be created
         """
         try:
             symbol.is_Symbol
@@ -48,8 +49,11 @@ class Assignment:
         return self.expression.free_symbols
 
     def __eq__(self, other):
-        return isinstance(other, Assignment) and self.symbol == other.symbol and \
-            self.expression == other.expression
+        return (
+            isinstance(other, Assignment)
+            and self.symbol == other.symbol
+            and self.expression == other.expression
+        )
 
     def __str__(self):
         expression = sympy.pretty(self.expression)
@@ -71,8 +75,8 @@ class Assignment:
 
 
 class ODESystem:
-    """Base class and placeholder for ODE systems of different forms
-    """
+    """Base class and placeholder for ODE systems of different forms"""
+
     @property
     def free_symbols(self):
         return set()
@@ -92,8 +96,7 @@ class ODESystem:
 
 
 def _bracket(a):
-    """Append a left bracket for an array of lines
-    """
+    """Append a left bracket for an array of lines"""
     if len(a) == 1:
         return '{' + a[0]
     if len(a) == 2:
@@ -113,8 +116,8 @@ def _bracket(a):
 
 
 class ExplicitODESystem(ODESystem):
-    """System of ODEs described explicitly
-    """
+    """System of ODEs described explicitly"""
+
     def __init__(self, odes, ics):
         self.odes = odes
         self.ics = ics
@@ -126,7 +129,7 @@ class ExplicitODESystem(ODESystem):
             free |= ode.free_symbols
         for key, value in self.ics.items():
             free |= key.free_symbols
-            try:        # To allow for regular python classes as values for ics
+            try:  # To allow for regular python classes as values for ics
                 free |= value.free_symbols
             except AttributeError:
                 pass
@@ -134,7 +137,7 @@ class ExplicitODESystem(ODESystem):
 
     @property
     def rhs_symbols(self):
-        return self.free_symbols        # This works currently
+        return self.free_symbols  # This works currently
 
     def __str__(self):
         a = []
@@ -151,13 +154,16 @@ class ExplicitODESystem(ODESystem):
         return newone
 
     def __eq__(self, other):
-        return isinstance(other, ExplicitODESystem) and self.odes == other.odes and \
-            self.ics == other.ics
+        return (
+            isinstance(other, ExplicitODESystem)
+            and self.odes == other.odes
+            and self.ics == other.ics
+        )
 
 
 class CompartmentalSystem(ODESystem):
-    """System of ODEs descibed as a compartmental system
-    """
+    """System of ODEs descibed as a compartmental system"""
+
     t = symbols.symbol('t')
 
     def __init__(self):
@@ -181,12 +187,14 @@ class CompartmentalSystem(ODESystem):
 
     @property
     def rhs_symbols(self):
-        return self.free_symbols        # This works currently
+        return self.free_symbols  # This works currently
 
     def __eq__(self, other):
-        return isinstance(other, CompartmentalSystem) and \
-            nx.to_dict_of_dicts(self._g) == nx.to_dict_of_dicts(other._g) and \
-            self.find_dosing().dose == other.find_dosing().dose
+        return (
+            isinstance(other, CompartmentalSystem)
+            and nx.to_dict_of_dicts(self._g) == nx.to_dict_of_dicts(other._g)
+            and self.find_dosing().dose == other.find_dosing().dose
+        )
 
     def __deepcopy__(self, memo):
         newone = type(self)()
@@ -212,8 +220,7 @@ class CompartmentalSystem(ODESystem):
         return rate
 
     def get_compartment_outflows(self, compartment):
-        """Generate all flows going out of a compartment
-        """
+        """Generate all flows going out of a compartment"""
         flows = []
         for node in self._g.successors(compartment):
             flow = self.get_flow(compartment, node)
@@ -221,8 +228,7 @@ class CompartmentalSystem(ODESystem):
         return flows
 
     def get_compartment_inflows(self, compartment):
-        """Generate all flows going in to a compartment
-        """
+        """Generate all flows going in to a compartment"""
         flows = []
         for node in self._g.predecessors(compartment):
             flow = self.get_flow(node, compartment)
@@ -237,10 +243,10 @@ class CompartmentalSystem(ODESystem):
             return None
 
     def find_output(self):
-        """ Find the output compartment
+        """Find the output compartment
 
-            An output compartment is defined to be a compartment that does not have any outward
-            flow. A model has to have one and only one output compartment.
+        An output compartment is defined to be a compartment that does not have any outward
+        flow. A model has to have one and only one output compartment.
         """
         zeroout = [node for node, out_degree in self._g.out_degree() if out_degree == 0]
         if len(zeroout) == 1:
@@ -249,20 +255,20 @@ class CompartmentalSystem(ODESystem):
             raise ValueError('More than one or zero output compartments')
 
     def find_dosing(self):
-        """ Find the dosing compartment
+        """Find the dosing compartment
 
-            A dosing compartment is a compartment that receives an input dose. Only one dose
-            compartment is supported.
+        A dosing compartment is a compartment that receives an input dose. Only one dose
+        compartment is supported.
         """
         for node in self._g.nodes:
             if node.dose is not None:
                 return node
 
     def find_central(self):
-        """ Find the central compartment
+        """Find the central compartment
 
-            The central compartment is defined to be the compartment that has an outward flow
-            to the output compartment. Only one central compartment is supported.
+        The central compartment is defined to be the compartment that has an outward flow
+        to the output compartment. Only one central compartment is supported.
         """
         output = self.find_output()
         central = next(self._g.predecessors(output))
@@ -276,12 +282,12 @@ class CompartmentalSystem(ODESystem):
         return list(peripherals)
 
     def find_transit_compartments(self, statements):
-        """ Find all transit compartments
+        """Find all transit compartments
 
-            Transit compartments are a chain of compartments with the same out rate starting from
-            the dose compartment. Because one single transit compartment cannot be distinguished
-            from one depot compartment such compartment will be defined to be a depot and not
-            a transit compartment.
+        Transit compartments are a chain of compartments with the same out rate starting from
+        the dose compartment. Because one single transit compartment cannot be distinguished
+        from one depot compartment such compartment will be defined to be a depot and not
+        a transit compartment.
         """
         transits = []
         comp = self.find_dosing()
@@ -308,17 +314,18 @@ class CompartmentalSystem(ODESystem):
         # Special case of one transit directly into central is not defined as a transit
         # Also not central itself
         central = self.find_central()
-        if len(transits) == 1 and (self.get_flow(transits[0], central) is not None or
-                                   transits[0] == central):
+        if len(transits) == 1 and (
+            self.get_flow(transits[0], central) is not None or transits[0] == central
+        ):
             return []
         else:
             return transits
 
     def find_depot(self):
-        """ Find the depot compartment
+        """Find the depot compartment
 
-            The depot compartment is defined to be the compartment that only has out flow to the
-            central compartment, but no flow from the central compartment.
+        The depot compartment is defined to be the compartment that only has out flow to the
+        central compartment, but no flow from the central compartment.
         """
         central = self.find_central()
         depot = None
@@ -360,14 +367,12 @@ class CompartmentalSystem(ODESystem):
 
     @property
     def names(self):
-        """A list of the names of all compartments
-        """
+        """A list of the names of all compartments"""
         return [node.name for node in self._g.nodes]
 
     @property
     def zero_order_inputs(self):
-        """A vector of all zero order inputs to each compartment
-        """
+        """A vector of all zero order inputs to each compartment"""
         inputs = []
         for node in self._g.nodes:
             if node.dose is not None and isinstance(node.dose, Infusion):
@@ -402,8 +407,7 @@ class CompartmentalSystem(ODESystem):
         return eqs, ics
 
     def __len__(self):
-        """Get the number of compartments including output
-        """
+        """Get the number of compartments including output"""
         return len(self._g.nodes)
 
     def __str__(self):
@@ -477,8 +481,7 @@ class CompartmentalSystem(ODESystem):
 
 
 def box(s):
-    """Draw unicode box around string and return new string
-    """
+    """Draw unicode box around string and return new string"""
     upper = '┌' + '─' * len(s) + '┐'
     mid = '│' + s + '│'
     lower = '└' + '─' * len(s) + '┘'
@@ -499,7 +502,7 @@ def vertical_arrow(flow, down=True):
     if down:
         return [before + '│' + after, flow, before + '↓' + after]
     else:
-        return [before + '↑' + after,  flow, before + '│' + after]
+        return [before + '↑' + after, flow, before + '│' + after]
 
 
 class Compartment:
@@ -530,8 +533,12 @@ class Compartment:
         self.lag_time.subs(substitutions)
 
     def __eq__(self, other):
-        return isinstance(other, Compartment) and self.name == other.name and \
-            self.dose == other.dose and self.lag_time == other.lag_time
+        return (
+            isinstance(other, Compartment)
+            and self.name == other.name
+            and self.dose == other.dose
+            and self.lag_time == other.lag_time
+        )
 
     def __hash__(self):
         return hash(self.name)
@@ -591,8 +598,12 @@ class Infusion:
         return new
 
     def __eq__(self, other):
-        return isinstance(other, Infusion) and self.rate == other.rate and \
-                self.duration == other.duration and self.amount == other.amount
+        return (
+            isinstance(other, Infusion)
+            and self.rate == other.rate
+            and self.duration == other.duration
+            and self.amount == other.amount
+        )
 
     def __repr__(self):
         if self.rate is not None:
@@ -603,8 +614,8 @@ class Infusion:
 
 
 class ModelStatements(list):
-    """A list of sympy statements describing the model
-    """
+    """A list of sympy statements describing the model"""
+
     @property
     def free_symbols(self):
         """Get a set of all free symbols"""
@@ -631,8 +642,7 @@ class ModelStatements(list):
         return statement
 
     def reassign(self, symbol, expression):
-        """Reassign symbol to expression
-        """
+        """Reassign symbol to expression"""
         last = True
         for i, stat in zip(range(len(self) - 1, -1, -1), reversed(self)):
             if isinstance(stat, Assignment) and stat.symbol == symbol:
@@ -668,7 +678,7 @@ class ModelStatements(list):
 
     def _find_statement_and_deps(self, symbol, ind):
         """Find indices of the last symbol definition and its dependenceis before a
-           certain statement
+        certain statement
         """
         # Find index of final assignment of symbol before before
         for i in reversed(range(0, ind)):
@@ -689,8 +699,7 @@ class ModelStatements(list):
 
     @property
     def ode_system(self):
-        """Returns the ODE system of the model or None if the model doesn't have an ODE system
-        """
+        """Returns the ODE system of the model or None if the model doesn't have an ODE system"""
         for s in self:
             if isinstance(s, ODESystem):
                 return s
@@ -703,9 +712,9 @@ class ModelStatements(list):
         return None
 
     def full_expression_from_odes(self, expression):
-        """ Expand an expression into its full definition
+        """Expand an expression into its full definition
 
-            Before ODE system
+        Before ODE system
         """
         i = self._ode_index()
         for j in range(i - 1, -1, -1):
@@ -713,8 +722,7 @@ class ModelStatements(list):
         return expression
 
     def add_before_odes(self, statement):
-        """Add a statement just before the ODE system
-        """
+        """Add a statement just before the ODE system"""
         for i, s in enumerate(self):
             if isinstance(s, ODESystem):
                 break

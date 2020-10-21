@@ -118,9 +118,9 @@ def test_tree_create_abuse():
     od = OrderedDict()
     od['good_tree'] = dict(LEAF_A=' (^._.^)~ hello! ')
     od['bad_tree'] = dict(LEAF_B=None)
-    inp = OrderedDict(item=[od,
-                            dict(dict(Btree=[dict(END_LEAF='...THE END')])),
-                            dict(_LEAF_=' (nope, here!)')])
+    inp = OrderedDict(
+        item=[od, dict(dict(Btree=[dict(END_LEAF='...THE END')])), dict(_LEAF_=' (nope, here!)')]
+    )
     out = """
     root " (^._.^)~ hello! None...THE END (nope, here!)"
      └─ item " (^._.^)~ hello! None...THE END (nope, here!)"
