@@ -72,16 +72,33 @@ def scatter_matrix(df):
 
        Each column will be scatter plotted against all columns.
     """
-    plot = alt.Chart(df).mark_circle().encode(
-        alt.X(alt.repeat("column"), type='quantitative', scale=alt.Scale(zero=False)),
-        alt.Y(alt.repeat("row"), type='quantitative', scale=alt.Scale(zero=False)),
+
+    base = alt.Chart(df).transform_fold(
+        list(df.columns),
+        as_=['key_x', 'value_x']
+    ).transform_fold(
+        list(df.columns),
+        as_=['key_y', 'value_y']
+    ).encode(
+        x=alt.X('value_y:Q', title=None, scale=alt.Scale(zero=False)),
+        y=alt.Y('value_x:Q', title=None, scale=alt.Scale(zero=False)),
     ).properties(
         width=150,
         height=150
-    ).repeat(
-        row=list(df.columns),
-        column=list(reversed(df.columns)),
     )
+
+    plot = alt.layer(
+        base.mark_circle(),
+        base.transform_regression(
+            'value_y', 'value_x', method='poly', order=4
+        ).mark_line(color='red')
+    ).facet(
+        column=alt.Column('key_x:N', sort=list(df.columns), title=None),
+        row=alt.Row('key_y:N', sort=list(reversed(df.columns)), title=None)
+    ).resolve_scale(
+        x='independent',
+        y='independent'
+    ).configure_header(labelFontStyle='bold')
     return plot
 
 
