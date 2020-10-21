@@ -113,12 +113,13 @@ def line_plot(df, x, title='', xlabel='', ylabel='', legend_title=''):
             Name of the x column
        title : str
             Plot title
-        xlabel : str
+       xlabel : str
             Label of the x-axis
-        ylabel : str
+       ylabel : str
             Label of the y-axis
-        legend_title : str
+       legend_title : str
             Title of the legend
+
     """
     df = df.melt(id_vars=[x])
     plot = alt.Chart(df).mark_line().encode(
