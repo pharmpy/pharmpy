@@ -1,3 +1,9 @@
+.. image:: https://img.shields.io/pypi/v/pharmpy-core.svg
+   :target: https://pypi.org/project/pharmpy-core
+
+.. image:: https://img.shields.io/pypi/l/pharmpy-core.svg
+   :target: https://github.com/pharmpy/pharmpy/blob/master/LICENSE.LESSER
+
 .. image:: https://travis-ci.com/pharmpy/pharmpy.svg?branch=master
     :target: https://travis-ci.com/pharmpy/pharmpy
 
@@ -6,6 +12,9 @@
 
 .. image:: https://img.shields.io/badge/python-3.6+-blue.svg
    :target: https://www.python.org/downloads/
+
+.. image:: https://img.shields.io/badge/code%20style-black-000000.svg
+   :target: https://github.com/psf/black
 
 .. _README:
 
