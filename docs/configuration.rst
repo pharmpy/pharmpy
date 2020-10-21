@@ -4,7 +4,6 @@ Configuration
 
 Each module in Pharmpy can have its own configuration. Each configuration item is available through a configuration object in the module attribute 'conf'.
 
-While the :py:class:`pharmpy.model.Model` 
 
 
 
@@ -23,8 +22,14 @@ The format of the configuration file is a plain ini file where each section is t
 
 will set the configuration item `parameter_names` to `comment` in the nonmem module.
 
-~~~~~~~~~~~~~~~~~~~~
-Environment variable
-~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~
+Environment variables
+~~~~~~~~~~~~~~~~~~~~~
 
-The environment variable `PHARMPYNOCONFIGFILE` can be set to 1 to tell Pharmpy to not read the configuration file even if it exists.
++------------------------+---------------------------------------------------------------+
+| Environment variable   | Description                                                   |
++========================+===============================================================+
+| PHARMPYCONFIGFILE      | Set to 1 to not read the configuration file even if it exists |
++------------------------+---------------------------------------------------------------+
+| PHARMPYCONFIGPATH      | Set to path to override the default paths                     |
++------------------------+---------------------------------------------------------------+

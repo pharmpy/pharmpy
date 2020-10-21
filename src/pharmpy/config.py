@@ -12,13 +12,21 @@ def read_configuration():
     appname = 'Pharmpy'
     filename = 'pharmpy.conf'
     config = configparser.ConfigParser()
-    user_path = Path(appdirs.user_config_dir(appname)) / filename
-    if user_path.is_file():
-        config.read(user_path)
+    env_path = os.getenv('PHARMPYCONFIGPATH')
+    if env_path is not None:
+        env_path = Path(env_path) / filename
+        if not env_path.is_file():
+            raise ValueError('Environment variable PHARMPYCONFIGPATH is set but directory does '
+                             'not contain a configuration file')
+        config.read(env_path)
     else:
-        site_path = Path(appdirs.site_config_dir(appname)) / filename
-        if site_path.is_file():
+        user_path = Path(appdirs.user_config_dir(appname)) / filename
+        if user_path.is_file():
             config.read(user_path)
+        else:
+            site_path = Path(appdirs.site_config_dir(appname)) / filename
+            if site_path.is_file():
+                config.read(user_path)
     return config
 
 
