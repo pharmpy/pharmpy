@@ -500,6 +500,16 @@ def results_print(args):
     print(res)
 
 
+def results_qa(args):
+    from pharmpy.methods.qa.results import psn_qa_results
+
+    if not args.psn_dir.is_dir():
+        error(FileNotFoundError(str(args.psn_dir)))
+    res = psn_qa_results(args.psn_dir)
+    res.to_json(path=args.psn_dir / 'results.json')
+    res.to_csv(path=args.psn_dir / 'results.csv')
+
+
 def results_report(args):
     """Subcommand to generate reports"""
     results_path = args.psn_dir / 'results.json'
@@ -1031,6 +1041,21 @@ parser_definition = [
                                 'type': pathlib.Path,
                                 'help': 'Path to directory containing results.json '
                                 'or directly to json results file',
+                            }
+                        ],
+                    }
+                },
+                {
+                    'qa': {
+                        'help': 'Generate qa results',
+                        'description': 'Generate results from a PsN qa run',
+                        'func': results_qa,
+                        'args': [
+                            {
+                                'name': 'psn_dir',
+                                'metavar': 'PsN directory',
+                                'type': pathlib.Path,
+                                'help': 'Path to PsN qa run directory',
                             }
                         ],
                     }
