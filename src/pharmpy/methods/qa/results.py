@@ -7,7 +7,7 @@ import pharmpy.random_variables
 import pharmpy.symbols
 from pharmpy import Model
 from pharmpy.random_variables import VariabilityLevel
-from pharmpy.results import Results
+from pharmpy.results import Results, read_results
 
 
 class QAResults(Results):
@@ -20,13 +20,21 @@ class QAResults(Results):
         self.tdist_parameters = tdist_parameters
 
 
-def calculate_results(original_model, fullblock_model=None, boxcox_model=None, tdist_model=None):
+def calculate_results(
+    original_model,
+    base_model,
+    fullblock_model=None,
+    boxcox_model=None,
+    tdist_model=None,
+    frem_results=None,
+):
     fullblock_table, fullblock_dofv = calc_fullblock(original_model, fullblock_model)
     boxcox_table, boxcox_dofv = calc_transformed_etas(
         original_model, boxcox_model, 'boxcox', 'lambda'
     )
     tdist_table, tdist_dofv = calc_transformed_etas(original_model, tdist_model, 'tdist', 'df')
-    dofv_table = pd.concat([fullblock_dofv, boxcox_dofv, tdist_dofv])
+    frem_dofv = calc_frem_dofv(base_model, fullblock_model, frem_results)
+    dofv_table = pd.concat([fullblock_dofv, boxcox_dofv, tdist_dofv, frem_dofv])
     res = QAResults(
         dofv=dofv_table,
         fullblock_parameters=fullblock_table,
@@ -34,6 +42,35 @@ def calculate_results(original_model, fullblock_model=None, boxcox_model=None, t
         tdist_parameters=tdist_table,
     )
     return res
+
+
+def calc_frem_dofv(base_model, fullblock_model, frem_results):
+    """Calculate the dOFV for the frem model"""
+    dofv_tab = pd.DataFrame({'dofv': np.nan, 'df': np.nan}, index=['frem'])
+    if base_model is None or frem_results is None:
+        return dofv_tab
+    baseres = base_model.modelfit_results
+    if baseres is not None:
+        base_ofv = baseres.ofv
+    else:
+        return dofv_tab
+    if fullblock_model is not None:
+        fullres = fullblock_model.modelfit_results
+        if fullres is not None:
+            full_ofv = fullres.ofv
+        else:
+            return dofv_tab
+    else:
+        full_ofv = 0
+
+    model2_ofv = frem_results.ofv['ofv']['model_2']
+    model4_ofv = frem_results.ofv['ofv']['model_4']
+
+    dofv = model2_ofv - model4_ofv - (base_ofv - full_ofv)
+    npar = len(frem_results.covariate_effects.index.get_level_values('parameter').unique())
+    ncov = len(frem_results.covariate_effects.index.get_level_values('covariate').unique())
+    dofv_tab = pd.DataFrame({'dofv': dofv, 'df': npar * ncov}, index=['frem'])
+    return dofv_tab
 
 
 def calc_transformed_etas(original_model, new_model, transform_name, parameter_name):
@@ -119,6 +156,8 @@ def psn_qa_results(path):
     path = Path(path)
 
     original_model = Model(path / 'linearize_run' / 'scm_dir1' / 'derivatives.mod')
+    base_path = list(path.glob('*_linbase.mod'))[0]
+    base_model = Model(base_path)
     fullblock_path = path / 'modelfit_run' / 'fullblock.mod'
     if fullblock_path.is_file():
         fullblock_model = Model(fullblock_path)
@@ -135,10 +174,18 @@ def psn_qa_results(path):
     else:
         tdist_model = None
 
+    frem_path = path / 'frem_run' / 'results.json'
+    if frem_path.is_file():
+        frem_res = read_results(frem_path)
+    else:
+        frem_res = None
+
     res = calculate_results(
         original_model,
+        base_model,
         fullblock_model=fullblock_model,
         boxcox_model=boxcox_model,
         tdist_model=tdist_model,
+        frem_results=frem_res,
     )
     return res

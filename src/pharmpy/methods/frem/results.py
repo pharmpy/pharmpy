@@ -396,7 +396,8 @@ def calculate_results(
                 mod_names.append(intmod.name)
     mod_ofvs.append(frem_model.modelfit_results.ofv)
     mod_names.append(frem_model.name)
-    ofv = pd.DataFrame({'ofv': mod_ofvs}, index=[mod_names])
+    ofv = pd.DataFrame({'ofv': mod_ofvs}, index=mod_names)
+    ofv.index.name = 'model_name'
     res.ofv = ofv
     return res
 
