@@ -354,10 +354,19 @@ Etas may be added to a model.
 
 In this example, *S1* is the parameter to add the eta to, *exp* is the effect on the new eta.
 See :py:class:`pharmpy.modeling.add_etas` for available templates. The operation denotes whether
-the new eta should be added or multipled.
+the new eta should be added or multipled (default).
 
 .. jupyter-execute::
 
+   model.update_source()
+   print_model_diff(model_ref, model)
+
+For some of the templates the operation may be omitted (see :py:class:`pharmpy.modeling.add_etas`).
+
+.. jupyter-execute::
+
+   model = Model(path / "pheno.mod")
+   add_etas(model, 'S1', 'add')
    model.update_source()
    print_model_diff(model_ref, model)
 
@@ -380,7 +389,7 @@ The new etas need to be denoted as *eta_new*.
 
 
 ~~~~~~~~~~~~~~~
-The error model 
+The error model
 ~~~~~~~~~~~~~~~
 
 .. jupyter-execute::
@@ -397,7 +406,7 @@ Removing the error model
 .. jupyter-execute::
 
    from pharmpy.modeling import error_model
-   
+
    error_model(model, 'none')
    model.update_source()
    print_model_diff(model_ref, model)
@@ -413,7 +422,7 @@ Setting an additive error model
 .. jupyter-execute::
 
    from pharmpy.modeling import error_model
-   
+
    error_model(model, 'additive')
    model.update_source()
    print_model_diff(model_ref, model)
@@ -429,7 +438,7 @@ Setting a proportional error model
 .. jupyter-execute::
 
    from pharmpy.modeling import error_model
-   
+
    error_model(model, 'proportional')
    model.update_source()
    print_model_diff(model_ref, model)
@@ -445,7 +454,7 @@ Setting a combined additive and proportional error model
 .. jupyter-execute::
 
    from pharmpy.modeling import error_model
-   
+
    error_model(model, 'combined')
    model.update_source()
    print_model_diff(model_ref, model)

@@ -10,8 +10,15 @@ from pharmpy.symbols import symbol as S
 
 def add_etas(model, parameter, expression, operation='*'):
     """
-    Adds etas to :class:`pharmpy.model`. Cuurently only exponential effect on eta is
-    available as template, otherwise user specified input is supported.
+    Adds etas to :class:`pharmpy.model`. Effects that currently have templates are:
+
+    - Additive (*add*)
+    - Proportional (*prop*)
+    - Exponential (*exp*)
+    - Logit (*logit*)
+
+    For all except exponential the operation input is not needed. Otherwise user specified
+    input is supported.
 
     Parameters
     ----------
@@ -51,12 +58,12 @@ def add_etas(model, parameter, expression, operation='*'):
 
 def _create_template(expression, operation):
     operation_func = _get_operation_func(operation)
-    if expression == 'exp':
-        return EtaAddition.exponential(operation_func)
-    elif expression == 'add':
+    if expression == 'add':
         return EtaAddition.additive()
     elif expression == 'prop':
         return EtaAddition.proportional()
+    elif expression == 'exp':
+        return EtaAddition.exponential(operation_func)
     elif expression == 'log':
         return EtaAddition.logit()
     else:
