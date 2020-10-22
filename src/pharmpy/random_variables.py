@@ -228,9 +228,9 @@ class RandomVariables(OrderedSet):
                 etas.append(rv)
         return etas
 
-    def iiv_variance_parameters(self):
+    def variance_parameters(self, level=None, exclude_level=None):
         parameters = []
-        for rvs, dist in self.distributions(level=VariabilityLevel.IIV):
+        for rvs, dist in self.distributions(level=level, exclude_level=exclude_level):
             if len(rvs) == 1:
                 parameters.append(dist.std ** 2)
             else:

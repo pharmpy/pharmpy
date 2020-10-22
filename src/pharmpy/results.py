@@ -26,6 +26,7 @@ import pharmpy.config as config
 import pharmpy.visualization
 from pharmpy.data import PharmDataFrame
 from pharmpy.math import cov2corr
+from pharmpy.random_variables import VariabilityLevel
 
 
 class ResultsConfiguration(config.Configuration):
@@ -352,7 +353,7 @@ class ModelfitResults:
         pe = pe.combine_first(param_inits)
 
         ie = self.individual_estimates
-        parameters = self.model.random_variables.iiv_variance_parameters()
+        parameters = self.model.random_variables.variance_parameters(level=VariabilityLevel.IIV)
         param_names = [param.name for param in parameters]
         diag_ests = pe[param_names]
         diag_ests.index = ie.columns
@@ -375,7 +376,7 @@ class ModelfitResults:
         pe = pe.combine_first(param_inits)
 
         # Get all iiv variance parameters
-        parameters = self.model.random_variables.iiv_variance_parameters()
+        parameters = self.model.random_variables.variance_parameters(level=VariabilityLevel.IIV)
         param_names = [param.name for param in parameters]
         diag_ests = pe[param_names]
 

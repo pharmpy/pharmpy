@@ -9,17 +9,31 @@ from pharmpy.results import Results
 
 
 class QAResults(Results):
-    def __init__(self, fullblock_parameters=None):
+    def __init__(self, dofv=None, fullblock_parameters=None):
+        self.dofv = dofv
         self.fullblock_parameters = fullblock_parameters
 
 
 def calculate_results(original_model, fullblock_model=None):
-    fullblock_table = calc_full_block(original_model, fullblock_model)
-    res = QAResults(fullblock_parameters=fullblock_table)
+    fullblock_table, fullblock_dofv = calc_fullblock(original_model, fullblock_model)
+    dofv_table = fullblock_dofv
+    res = QAResults(dofv=dofv_table, fullblock_parameters=fullblock_table)
     return res
 
 
-def calc_full_block(original_model, fullblock_model):
+def calc_boxcox(original_model, boxcox_model=None):
+    """Retrieve new and old parameters of boxcox"""
+    if boxcox_model is None:
+        return None
+    origres = original_model.modelfit_results
+    boxcoxres = boxcox_model.modelfit_results
+    if boxcoxres is None:
+        return None
+    boxcoxres.random_variables.etas
+    origres
+
+
+def calc_fullblock(original_model, fullblock_model):
     """Retrieve new and old parameters of full block"""
     if fullblock_model is None:
         return None
@@ -48,7 +62,11 @@ def calc_full_block(original_model, fullblock_model):
     )
     old_params = origres.parameter_estimates
     table = pd.DataFrame({'new': new_params, 'old': old_params}).reindex(index=new_params.index)
-    return table
+
+    degrees = table['old'].isna().sum()
+    dofv = origres.ofv - fullres.ofv
+    dofv_tab = pd.DataFrame({'dofv': dofv, 'df': degrees}, index=['fullblock'])
+    return table, dofv_tab
 
 
 def psn_qa_results(path):
