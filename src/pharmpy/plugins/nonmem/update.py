@@ -96,9 +96,7 @@ def update_random_variables(model, old, new):
     for rv in new:
         if rv.name not in old_names:
             omega_name = (rv.pspace.distribution.std ** 2).name
-
             if omega_name not in old.all_parameters():
-
                 rv_name = rv.name.upper()
                 omega = model.parameters[omega_name]
 
@@ -107,12 +105,51 @@ def update_random_variables(model, old, new):
                 else:
                     record_name = 'OMEGA'
 
-                record, eta_number = create_omega_record(model, omega, record_name)
+                record, eta_number = create_omega_single(model, omega, record_name)
                 record.add_omega_name_comment(omega_name)
 
                 new_maps.append(
                     (record, {omega_name: (eta_number, eta_number)}, {rv_name: eta_number})
                 )
+
+    rvs_new, dist_new = new.distributions_as_list()
+    rvs_old, dist_old = old.distributions_as_list()
+
+    for entry, combined_dist in zip(rvs_new, dist_new):         # TODO: better name
+        if entry not in rvs_old and entry[0].name in old_names:
+            rvs = [rv.name for rv in entry]
+            dist = combined_dist
+
+            records = get_omega_records(model, rvs)
+            model.control_stream.remove_records(records)
+            omega_new = create_omega_block(model, dist)
+
+            next_omega = 1
+            previous_size = None
+            prev_cov = None
+
+            for omega_record in model.control_stream.get_records('OMEGA'):
+                next_omega_cur = next_omega
+
+                omegas, next_omega, previous_size = omega_record.parameters(next_omega_cur,
+                                                                            previous_size)
+                etas, next_eta, prev_cov, _ = omega_record.random_variables(next_omega_cur,
+                                                                            prev_cov)
+                if omega_record == omega_new:
+                    m_1 = dist.args[1]
+                    m_2 = etas[0].pspace.distribution.args[1]
+                    for row in range(m_1.shape[0]):
+                        for col in range(m_1.shape[1]):
+                            if row > col:
+
+                                elem_1 = m_1.row(row).col(col)
+                                name_1 = str(elem_1[0])
+
+                                elem_2 = m_2.row(row).col(col)
+                                name_2 = str(elem_2[0])
+
+                                omega_record.name_map[name_1] = omega_record.name_map.pop(name_2)
+
     # FIXME: Setting the maps needs to be done here and not in loop. Automatic renumbering is
     #        probably the culprit. There should be a difference between added parameters and
     #        original parameters when it comes to which naming scheme to use
@@ -120,6 +157,20 @@ def update_random_variables(model, old, new):
         for record, name_map, eta_map in new_maps:
             record.name_map = name_map
             record.eta_map = eta_map
+
+
+def get_omega_records(model, params):
+    records = []
+    next_omega = 1
+    prev_cov = None
+
+    for omega_record in model.control_stream.get_records('OMEGA'):
+        etas, next_omega, prev_cov, _ = omega_record.random_variables(next_omega, prev_cov)
+        for eta in etas:
+            if str(eta) in params:
+                records.append(omega_record)
+                break
+    return records
 
 
 def get_next_theta(model):
@@ -164,7 +215,7 @@ def create_theta_record(model, param):
     return record
 
 
-def create_omega_record(model, param, record='OMEGA'):
+def create_omega_single(model, param, record='OMEGA'):
     eta_number, previous_size = get_next_eta(model, record)
 
     param_str = f'${record}  {param.init}\n'
@@ -175,6 +226,25 @@ def create_omega_record(model, param, record='OMEGA'):
     record.random_variables(eta_number)
 
     return record, eta_number
+
+
+def create_omega_block(model, dist):
+    m = dist.args[1]
+    param_str = f'$OMEGA BLOCK({m.shape[0]})\n'
+
+    for row in range(m.shape[0]):
+        for col in range(m.shape[1]):
+            if row >= col:
+                elem = m.row(row).col(col)
+                name = str(elem[0])
+                omega = model.parameters[name]
+                param_str += f'{omega.init}\t'
+
+        param_str += '\n'
+
+    record = model.control_stream.insert_record(param_str)
+
+    return record
 
 
 def update_ode_system(model, old, new):

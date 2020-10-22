@@ -210,6 +210,15 @@ class RandomVariables(OrderedSet):
                 ):
                     yield rvs, dist
 
+    def distributions_as_list(self, level=None, exclude_level=None):
+        rvs_list = []
+        dist_list = []
+        for rvs, dist in self.distributions(level, exclude_level):
+            rvs_list.append(rvs)
+            dist_list.append(dist)
+
+        return rvs_list, dist_list
+
     @property
     def ruv_rvs(self):
         """Get list of all ruv random variables (epsilons)"""

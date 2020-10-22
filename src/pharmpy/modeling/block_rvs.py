@@ -25,15 +25,24 @@ def create_rv_block(model, list_of_rvs=None):
                 cov[row, col] = rv_map[rvs[row]]
             else:
                 covariance_init = _choose_param_init(model)
-                param = Parameter(f'block_rv({row+1},{col+1})', covariance_init)
+                param = Parameter(f'block_rv_{row}_{col}', covariance_init)
                 pset.add(param)
-                cov[row, col] = param.name
-                cov[col, row] = param.name
+                cov[row, col] = S(param.name)
+                cov[col, row] = S(param.name)
 
-    rvs_new = _create_distribution(rvs, cov)
+    model.parameters = pset
 
-    print('\n')
-    print(rvs_new)
+    dist_new = _create_distribution(rvs, cov)
+    rvs_new = RandomVariables()
+
+    for rv in model.random_variables:
+        try:
+            rv_new = dist_new[rv.name]
+            rvs_new.add(rv_new)
+        except KeyError:
+            rvs_new.add(rv)
+
+    model.random_variables = rvs_new
 
     return model
 

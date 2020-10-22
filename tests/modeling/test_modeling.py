@@ -11,6 +11,7 @@ from pharmpy.modeling import (
     add_etas,
     add_lag_time,
     boxcox,
+    create_rv_block,
     explicit_odes,
     john_draper,
     remove_lag_time,
@@ -882,3 +883,20 @@ def test_add_etas(pheno_path, parameter, expression, operation, buf_new):
     last_rec = model.control_stream.get_records('OMEGA')[-1]
 
     assert str(last_rec) == f'$OMEGA  0.1 ; IIV_{parameter}\n'
+
+
+def test_block_rvs(testdata):
+    model = Model(testdata / 'nonmem' / 'pheno_block.mod')
+    create_rv_block(model, ['ETA(1)', 'ETA(2)'])
+    model.update_source()
+
+    rec_ref = '$PK\n' \
+              'CL=THETA(1)*EXP(ETA(2))\n' \
+              'V=THETA(2)*EXP(ETA(3))\n' \
+              'S1=V + ETA(1)\n\n'
+
+    assert str(model.get_pred_pk_record()) != rec_ref
+    # assert re.match(r'\$OMEGA 0.1\n'
+    #                 r'\$OMEGA BLOCK\(2\)\n'
+    #                 r'0\.0309626	\n'
+    #                 r'0\.1	0\.031128\n', str(model))
