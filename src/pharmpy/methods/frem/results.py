@@ -142,6 +142,7 @@ class FREMResults(Results):
         individual_effects_plot=None,
         unexplained_variability_plot=None,
         covariate_baselines=None,
+        ofv=None,
     ):
         # FIXME: Lots of boilerplate code ahead. Could be simplified with python 3.7 dataclass
         #        or namedtuple
@@ -153,6 +154,7 @@ class FREMResults(Results):
         self.individual_effects_plot = individual_effects_plot
         self.unexplained_variability_plot = unexplained_variability_plot
         self.covariate_baselines = covariate_baselines
+        self.ofv = ofv
 
     def add_plots(self):
         self.covariate_effects_plot = self.plot_covariate_effects()
@@ -365,7 +367,9 @@ class FREMResults(Results):
         return v
 
 
-def calculate_results(frem_model, continuous, categorical, method=None, **kwargs):
+def calculate_results(
+    frem_model, continuous, categorical, method=None, intermediate_models=None, **kwargs
+):
     """Calculate FREM results
 
     :param method: Either 'cov_sampling' or 'bipp'
@@ -382,6 +386,18 @@ def calculate_results(frem_model, continuous, categorical, method=None, **kwargs
         res = calculate_results_using_bipp(frem_model, continuous, categorical)
     else:
         raise ValueError(f'Unknown frem postprocessing method {method}')
+    mod_names = []
+    mod_ofvs = []
+    if intermediate_models:
+        for intmod in intermediate_models:
+            intmod_res = intmod.modelfit_results
+            if intmod_res is not None:
+                mod_ofvs.append(intmod_res.ofv)
+                mod_names.append(intmod.name)
+    mod_ofvs.append(frem_model.modelfit_results.ofv)
+    mod_names.append(frem_model.name)
+    ofv = pd.DataFrame({'ofv': mod_ofvs}, index=[mod_names])
+    res.ofv = ofv
     return res
 
 
@@ -749,6 +765,14 @@ def psn_frem_results(path, force_posdef_covmatrix=False, force_posdef_samples=50
     continuous = list(nunique.index[nunique != 2])
     categorical = list(nunique.index[nunique == 2])
 
+    intmod_names = ['model_1.lst', 'model_2.lst', 'model_3.lst', 'model_3b.lst']
+    intmods = []
+    for m in intmod_names:
+        intmod_path = path / 'm1' / m
+        if intmod_path.is_file():
+            intmod = Model(intmod_path)
+            intmods.append(intmod)
+
     res = calculate_results(
         model_4,
         continuous,
@@ -758,5 +782,6 @@ def psn_frem_results(path, force_posdef_covmatrix=False, force_posdef_samples=50
         force_posdef_samples=force_posdef_samples,
         cov_model=cov_model,
         rescale=rescale,
+        intermediate_models=intmods,
     )
     return res
