@@ -108,6 +108,10 @@ def read_results(path_or_buf):
         from pharmpy.methods.qa import QAResults
 
         res = QAResults.from_dict(d)
+    elif decoder.cls == 'LinearizeResults':
+        from pharmpy.methods.linearize import LinearizeResults
+
+        res = LinearizeResults.from_dict(d)
     return res
 
 

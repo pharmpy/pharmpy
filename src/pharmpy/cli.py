@@ -464,6 +464,16 @@ def results_frem(args):
     res.to_csv(path=args.psn_dir / 'results.csv')
 
 
+def results_linearize(args):
+    from pharmpy.methods.linearize.results import psn_linearize_results
+
+    if not args.psn_dir.is_dir():
+        error(FileNotFoundError(str(args.psn_dir)))
+    res = psn_linearize_results(args.psn_dir)
+    res.to_json(path=args.psn_dir / 'results.json')
+    res.to_csv(path=args.psn_dir / 'results.csv')
+
+
 def results_scm(args):
     from pharmpy.methods.scm.results import psn_scm_results
 
@@ -1018,6 +1028,21 @@ parser_definition = [
                                 'help': 'Number of sampling tries to do before starting to force '
                                 'posdef',
                             },
+                        ],
+                    }
+                },
+                {
+                    'linearize': {
+                        'help': 'Generate linearize results',
+                        'description': 'Generate results from a PsN linearize run',
+                        'func': results_linearize,
+                        'args': [
+                            {
+                                'name': 'psn_dir',
+                                'metavar': 'PsN directory',
+                                'type': pathlib.Path,
+                                'help': 'Path to PsN linearize run directory',
+                            }
                         ],
                     }
                 },
