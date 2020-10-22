@@ -104,6 +104,10 @@ def read_results(path_or_buf):
         from pharmpy.methods.scm import SCMResults
 
         res = SCMResults.from_dict(d)
+    elif decoder.cls == 'QAResults':
+        from pharmpy.methods.qa import QAResults
+
+        res = QAResults.from_dict(d)
     return res
 
 
