@@ -9,6 +9,7 @@ from pharmpy.plugins.nonmem import conf
     'buf,comment,results',
     [
         ('$THETA 0', False, [('THETA(1)', 0, -1000000, 1000000, False)]),
+        ('$THETA (0,1,INF)', False, [('THETA(1)', 1, 0, 1000000, False)]),
         ('$THETA    12.3 \n\n', False, [('THETA(1)', 12.3, -1000000, 1000000, False)]),
         ('$THETA  (0,0.00469) ; CL', False, [('THETA(1)', 0.00469, 0, 1000000, False)]),
         (
@@ -159,3 +160,10 @@ def test_add_nonmem_name(parser, buf, name_original, theta_number, buf_new):
 
     assert str(rec) == buf_new
     assert rec.name_map[name_original] == theta_number
+
+
+def test_remove_theta(parser):
+    rec = parser.parse('$THETA 1 2 3 ;CMT').records[0]
+    rec.parameters(1)
+    rec.remove(['THETA(1)', 'THETA(3)'])
+    assert str(rec) == '$THETA  2  ;CMT'

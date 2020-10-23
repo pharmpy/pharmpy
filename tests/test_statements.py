@@ -3,11 +3,20 @@ import sympy
 import pharmpy.symbols
 from pharmpy import Model
 from pharmpy.modeling import explicit_odes
-from pharmpy.statements import Assignment, ModelStatements
+from pharmpy.statements import Assignment, CompartmentalSystem, ModelStatements, ODESystem
 
 
 def S(x):
     return pharmpy.symbols.symbol(x)
+
+
+def test_str():
+    s1 = Assignment(S('KA'), S('X') + S('Y'))
+    assert str(s1) == 'KA := X + Y\n'
+    s2 = Assignment(S('X2'), sympy.exp('X'))
+    a = str(s2).split('\n')
+    assert a[0].startswith(' ')
+    assert len(a) == 3
 
 
 def test_subs(testdata):
@@ -28,6 +37,15 @@ def test_subs(testdata):
     statements.subs({'V': 'V2'})
 
     assert statements.ode_system.free_symbols == {S('CL'), S('AMT'), S('t'), S('V2')}
+
+
+def test_ode_system_base_class():
+    odes = ODESystem()
+    assert odes.free_symbols == set()
+    assert odes.rhs_symbols == set()
+    odes.subs({})
+    assert odes == odes
+    assert odes != CompartmentalSystem()
 
 
 def test_ode_free_symbols(testdata):
