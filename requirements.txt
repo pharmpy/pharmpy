@@ -25,10 +25,9 @@ lxml==4.5.2
 MarkupSafe==1.1.1
 mpmath==1.1.0
 networkx==2.5
-numexpr==2.7.1
 numpy==1.19.1
+numexpr==2.7.1
 packaging==20.4
-pandas==1.1.1
 pathlib2==2.3.5
 psutil==5.7.2
 Pygments==2.6.1
@@ -56,3 +55,4 @@ urllib3==1.25.10
 websocket-client==0.57.0
 zipp==3.1.0
 appdirs==1.4.4
+pandas==1.1.3
