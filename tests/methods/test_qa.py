@@ -7,6 +7,24 @@ from pharmpy import Model
 from pharmpy.methods.qa.results import calculate_results
 
 
+def test_add_etas(testdata):
+    orig = Model(testdata / 'nonmem' / 'pheno.mod')
+    base = Model(testdata / 'nonmem' / 'qa' / 'pheno_linbase.mod')
+    add_etas = Model(testdata / 'nonmem' / 'qa' / 'add_etas_linbase.mod')
+    res = calculate_results(orig, base, add_etas_model=add_etas, etas_added_to=['CL', 'V'])
+    correct = """added,new_sd,orig_sd
+ETA(1),True,0.338974,0.333246
+ETA(2),True,0.449430,0.448917
+CL,False,0.010001,NaN
+V,False,0.010000,NaN
+"""
+    correct = pd.read_csv(StringIO(correct), index_col=[0])
+    pd.testing.assert_frame_equal(res.add_etas_parameters, correct, atol=1e-6)
+
+    assert res.dofv['dofv']['add_etas'] == pytest.approx(730.89472681373070 - 730.84697789365532)
+    assert res.dofv['df']['add_etas'] == 2
+
+
 def test_fullblock(testdata):
     orig = Model(testdata / 'nonmem' / 'pheno.mod')
     base = Model(testdata / 'nonmem' / 'qa' / 'pheno_linbase.mod')

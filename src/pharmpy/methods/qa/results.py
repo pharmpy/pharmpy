@@ -3,6 +3,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+import pharmpy.methods.psn_helpers as psn_helpers
 import pharmpy.random_variables
 import pharmpy.symbols
 from pharmpy import Model
@@ -12,12 +13,18 @@ from pharmpy.results import Results, read_results
 
 class QAResults(Results):
     def __init__(
-        self, dofv=None, fullblock_parameters=None, boxcox_parameters=None, tdist_parameters=None
+        self,
+        dofv=None,
+        fullblock_parameters=None,
+        boxcox_parameters=None,
+        tdist_parameters=None,
+        add_etas_parameters=None,
     ):
         self.dofv = dofv
         self.fullblock_parameters = fullblock_parameters
         self.boxcox_parameters = boxcox_parameters
         self.tdist_parameters = tdist_parameters
+        self.add_etas_parameters = add_etas_parameters
 
 
 def calculate_results(
@@ -26,6 +33,8 @@ def calculate_results(
     fullblock_model=None,
     boxcox_model=None,
     tdist_model=None,
+    add_etas_model=None,
+    etas_added_to=None,
     frem_results=None,
 ):
     fullblock_table, fullblock_dofv = calc_fullblock(original_model, fullblock_model)
@@ -33,15 +42,57 @@ def calculate_results(
         original_model, boxcox_model, 'boxcox', 'lambda'
     )
     tdist_table, tdist_dofv = calc_transformed_etas(original_model, tdist_model, 'tdist', 'df')
+    addetas_table, addetas_dofv = calc_add_etas(original_model, add_etas_model, etas_added_to)
     frem_dofv = calc_frem_dofv(base_model, fullblock_model, frem_results)
-    dofv_table = pd.concat([fullblock_dofv, boxcox_dofv, tdist_dofv, frem_dofv])
+    dofv_table = pd.concat([fullblock_dofv, boxcox_dofv, tdist_dofv, addetas_dofv, frem_dofv])
     res = QAResults(
         dofv=dofv_table,
         fullblock_parameters=fullblock_table,
         boxcox_parameters=boxcox_table,
         tdist_parameters=tdist_table,
+        add_etas_parameters=addetas_table,
     )
     return res
+
+
+def calc_add_etas(original_model, add_etas_model, etas_added_to):
+    dofv_tab = pd.DataFrame({'dofv': np.nan, 'df': np.nan}, index=['add_etas'])
+    if add_etas_model is None:
+        return None, dofv_tab
+    add_etas_res = add_etas_model.modelfit_results
+    if add_etas_res is None:
+        return None, dofv_tab
+    origres = original_model.modelfit_results
+    original_etas = [rv.name for rv in original_model.random_variables.etas]
+    all_etas = original_etas + etas_added_to
+    added = [True] * len(original_etas) + [False] * len(etas_added_to)
+    params = add_etas_model.random_variables.variance_parameters(exclude_level=VariabilityLevel.RUV)
+    params = [pharmpy.symbols.symbol(p.name) for p in params]
+    orig_params = original_model.random_variables.variance_parameters(
+        exclude_level=VariabilityLevel.RUV
+    )
+    orig_params = [pharmpy.symbols.symbol(p.name) for p in orig_params]
+    origres.reparameterize(
+        [
+            pharmpy.random_variables.NormalParametrizationSd,
+            pharmpy.random_variables.MultivariateNormalParametrizationSdCorr,
+        ]
+    )
+    add_etas_res.reparameterize(
+        [
+            pharmpy.random_variables.NormalParametrizationSd,
+            pharmpy.random_variables.MultivariateNormalParametrizationSdCorr,
+        ]
+    )
+    add_etas_sds = [add_etas_res.parameter_estimates[p.name] for p in params]
+    orig_sds = [origres.parameter_estimates[p.name] for p in orig_params]
+    orig_sds += [np.nan] * len(etas_added_to)
+    table = pd.DataFrame(
+        {'added': added, 'new_sd': add_etas_sds, 'orig_sd': orig_sds}, index=all_etas
+    )
+    dofv = origres.ofv - add_etas_res.ofv
+    dofv_tab = pd.DataFrame({'dofv': dofv, 'df': len(etas_added_to)}, index=['add_etas'])
+    return table, dofv_tab
 
 
 def calc_frem_dofv(base_model, fullblock_model, frem_results):
@@ -173,6 +224,11 @@ def psn_qa_results(path):
         tdist_model = Model(tdist_path)
     else:
         tdist_model = None
+    addetas_path = path / 'add_etas_run' / 'add_etas_linbase.mod'
+    if addetas_path.is_file():
+        addetas_model = Model(addetas_path)
+    else:
+        addetas_model = None
 
     frem_path = path / 'frem_run' / 'results.json'
     if frem_path.is_file():
@@ -180,12 +236,17 @@ def psn_qa_results(path):
     else:
         frem_res = None
 
+    args = psn_helpers.options_from_command(psn_helpers.psn_command(path))
+    etas_added_to = args['add_etas'].split(',')
+
     res = calculate_results(
         original_model,
         base_model,
         fullblock_model=fullblock_model,
         boxcox_model=boxcox_model,
         tdist_model=tdist_model,
+        add_etas_model=addetas_model,
+        etas_added_to=etas_added_to,
         frem_results=frem_res,
     )
     return res
