@@ -361,12 +361,13 @@ the new eta should be added or multipled (default).
    model.update_source()
    print_model_diff(model_ref, model)
 
-For some of the templates the operation may be omitted (see :py:class:`pharmpy.modeling.add_etas`).
+For some of the templates, such as proportional etas, the operation may be omitted (see documentation:
+:py:class:`pharmpy.modeling.add_etas`).
 
 .. jupyter-execute::
 
    model = Model(path / "pheno.mod")
-   add_etas(model, 'S1', 'add')
+   add_etas(model, 'S1', 'prop')
    model.update_source()
    print_model_diff(model_ref, model)
 
