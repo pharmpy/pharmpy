@@ -26,6 +26,10 @@ class NONMEMModelfitResults(ModelfitResults):
         return self._ofv  # no try here, if object exists then ext has been read
 
     @property
+    def evaluation_ofv(self):
+        return self._evaluation_ofv  # no try here, if object exists then ext has been read
+
+    @property
     def parameter_estimates(self):
         if not self._repara:
             return self._parameter_estimates
@@ -319,6 +323,7 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
         self._path = Path(path)
         self._read_phi = False
         self._read_ext = False
+        print("Setting!")
         self._read_cov = False
         self._read_coi = False
         self._read_cor = False
@@ -328,17 +333,16 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
         self.tool_files = [self._path.with_suffix(ext) for ext in extensions]
 
     def __getattr__(self, item):
-        if item == '_last':
-            if len(self) < 1:
-                self._load()
-            if len(self) > 0:
-                last = len(self) - 1
-                self._last = last
-                return last
-            else:
-                raise ValueError('Empty list of modelfit results')
-        else:
-            raise AttributeError(f'{type(self)} object has no attribute \'{item}\'')
+        # Avoid infinite recursion when deepcopying
+        # See https://stackoverflow.com/questions/47299243/recursionerror-when-python-copy-deepcopy
+        if item.startswith('__'):
+            raise AttributeError('')
+        self._load()
+        return super().__getattribute__(item)
+
+    def __getitem__(self, key):
+        self._load()
+        return super().__getitem__(key)
 
     def _load(self):
         self._read_ext_table()
@@ -357,6 +361,7 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
                 result_obj.model = self.model
                 result_obj.table_number = table.number
                 result_obj._ofv = table.final_ofv
+                result_obj._evaluation_ofv = table.initial_ofv
                 if table.is_evaluation:
                     result_obj._set_estimation_status(results_file=None, requested=False)
                 ests = table.final_parameter_estimates
@@ -415,7 +420,7 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
             table_with_cov = -99
             if self.model is not None:
                 if len(self.model.control_stream.get_records('COVARIANCE')) > 0:
-                    table_with_cov = self[self._last].table_number  # correct unless interrupted
+                    table_with_cov = self[-1].table_number  # correct unless interrupted
             for result_obj in self:
                 # _estimation_status is already set to None if ext table has (Evaluation)
                 if hasattr(result_obj, '_estimation_status') is False:
@@ -427,18 +432,18 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
 
     @property
     def covariance_step(self):
-        return self[self._last].covariance_step
+        return self[-1].covariance_step
 
     @property
     def estimation_step(self):
-        return self[self._last].estimation_step
+        return self[-1].estimation_step
 
     @property
     def condition_number(self):
-        return self[self._last].condition_number
+        return self[-1].condition_number
 
     def sumo(self, **kwargs):
-        return self[self._last].sumo(**kwargs)
+        return self[-1].sumo(**kwargs)
 
     def _read_cov_table(self):
         if not self._read_cov:

@@ -6,6 +6,20 @@ from pharmpy import Model
 from pharmpy.methods.linearize.results import calculate_results
 
 
+def test_ofv(testdata):
+    base = Model(testdata / 'nonmem' / 'pheno.mod')
+    lin = Model(testdata / 'nonmem' / 'qa' / 'pheno_linbase.mod')
+    res = calculate_results(base, lin)
+    print(res.ofv)
+    correct = """,ofv
+base,730.894727
+lin_evaluated,730.894727
+lin_estimated,730.847272
+"""
+    correct = pd.read_csv(StringIO(correct), index_col=[0])
+    pd.testing.assert_frame_equal(res.ofv, correct, atol=1e-6)
+
+
 def test_iofv(testdata):
     base = Model(testdata / 'nonmem' / 'pheno.mod')
     lin = Model(testdata / 'nonmem' / 'qa' / 'pheno_linbase.mod')

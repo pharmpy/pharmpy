@@ -245,6 +245,15 @@ class ModelfitResults:
         return self._ofv
 
     @property
+    def evaluation_ofv(self):
+        """The ofv as if the model was evaulated
+
+        Currently works for classical estimation methods by taking the OFV of the
+        first iteration.
+        """
+        return self._evaluation_ofv
+
+    @property
     def minimization_successful(self):
         """Was the minimization successful"""
         return self._minimization_successful
@@ -427,61 +436,62 @@ class ChainedModelfitResults(list, ModelfitResults):
     will be performed on the final modelfit object
     """
 
-    def __init__(self):
-        self._last = -1
-
     def reparameterize(self, parameterizations):
-        return self[self._last].reparameterize(parameterizations)
+        return self[-1].reparameterize(parameterizations)
 
     @property
     def ofv(self):
-        return self[self._last].ofv
+        return self[-1].ofv
+
+    @property
+    def evaluation_ofv(self):
+        return self[0].evaluation_ofv
 
     @property
     def minimization_successful(self):
-        return self[self._last].minimization_successful
+        return self[-1].minimization_successful
 
     @property
     def parameter_estimates(self):
-        return self[self._last].parameter_estimates
+        return self[-1].parameter_estimates
 
     @property
     def covariance_matrix(self):
-        return self[self._last].covariance_matrix
+        return self[-1].covariance_matrix
 
     @property
     def information_matrix(self):
-        return self[self._last].information_matrix
+        return self[-1].information_matrix
 
     @property
     def correlation_matrix(self):
-        return self[self._last].correlation_matrix
+        return self[-1].correlation_matrix
 
     @property
     def standard_errors(self):
-        return self[self._last].standard_errors
+        return self[-1].standard_errors
 
     @property
     def individual_ofv(self):
-        return self[self._last].individual_ofv
+        return self[-1].individual_ofv
 
     @property
     def individual_estimates(self):
-        return self[self._last].individual_estimates
+        return self[-1].individual_estimates
 
     @property
     def individual_estimates_covariance(self):
-        return self[self._last].individual_estimates_covariance
+        return self[-1].individual_estimates_covariance
 
     @property
     def individual_shrinkage(self):
-        return self[self._last].individual_shrinkage
+        return self[-1].individual_shrinkage
 
     def plot_iofv_vs_iofv(self, other):
-        return self[self._last].plot_iofv_vs_iofv(other)
+        return self[-1].plot_iofv_vs_iofv(other)
 
     @property
     def model_name(self):
-        return self[self._last].model_name
+        return self[-1].model_name
 
     # FIXME: To not have to manually intercept everything here. Could do it in a general way.

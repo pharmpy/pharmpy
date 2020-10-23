@@ -7,13 +7,15 @@ from pharmpy.results import Results
 
 
 class LinearizeResults(Results):
-    def __init__(self, iofv=None):
+    def __init__(self, ofv=None, iofv=None):
+        self.ofv = ofv
         self.iofv = iofv
 
 
 def calculate_results(base_model, linear_model):
     baseres = base_model.modelfit_results
     linearres = linear_model.modelfit_results
+    linearres.evaluation_ofv
     iofv = pd.DataFrame(
         {
             'base': baseres.individual_ofv,
@@ -21,7 +23,11 @@ def calculate_results(base_model, linear_model):
             'delta': linearres.individual_ofv - baseres.individual_ofv,
         }
     )
-    res = LinearizeResults(iofv=iofv)
+    ofv = pd.DataFrame(
+        {'ofv': [baseres.ofv, linearres.evaluation_ofv, linearres.ofv]},
+        index=['base', 'lin_evaluated', 'lin_estimated'],
+    )
+    res = LinearizeResults(ofv=ofv, iofv=iofv)
     return res
 
 
