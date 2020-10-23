@@ -42,7 +42,7 @@ class ExpressionInterpreter(lark.visitors.Interpreter):
                     expr -= term
                 elif op == '*':
                     expr *= term
-                elif op == '/':
+                else:  # op == '/':
                     expr /= term
         else:
             expr = unary_factor * t[0]
@@ -57,11 +57,9 @@ class ExpressionInterpreter(lark.visitors.Interpreter):
             for op, term in zip(ops, terms):
                 expr = op(expr, term)
             return expr
-        elif len(t) == 2:
+        else:
             op, expr = self.visit_children(node)
             return op(expr)
-        else:
-            return t[0]
 
     @staticmethod
     def logical_operator(node):
@@ -82,7 +80,7 @@ class ExpressionInterpreter(lark.visitors.Interpreter):
             return sympy.And
         elif name == '.OR.':
             return sympy.Or
-        elif name == '.NOT.':
+        else:  # name == '.NOT.':
             return sympy.Not
 
     def func(self, node):
@@ -122,7 +120,7 @@ class ExpressionInterpreter(lark.visitors.Interpreter):
             return lambda x: sympy.sign(x) * sympy.floor(sympy.Abs(x))
         elif name == "GAMLN":
             return sympy.loggamma
-        elif name == "PHI":
+        else:  # name == "PHI":
             return lambda x: (1 + sympy.erf(x) / sympy.sqrt(2)) / 2
 
     def power(self, node):
@@ -180,7 +178,7 @@ def lcsdiff(c, x, y, i, j):
     elif c[i][j - 1] >= c[i - 1][j]:
         yield from lcsdiff(c, x, y, i, j - 1)
         yield '+', y[j]
-    elif c[i][j - 1] < c[i - 1][j]:
+    else:
         yield from lcsdiff(c, x, y, i - 1, j)
         yield '-', x[i]
 
@@ -230,8 +228,6 @@ class CodeRecord(Record):
     @property
     def statements(self):
         statements = self._assign_statements()
-        if statements is None:
-            statements = ModelStatements([])
         self._statements = statements
         return statements.copy()
 

@@ -16,8 +16,7 @@ class ModelRecord(OptionRecord):
         for i, (curname, _) in enumerate(self.compartments()):
             if name == curname:
                 return i + 1
-        else:
-            return None
+        return None
 
     def remove_compartment(self, name):
         n = self.get_compartment_number(name)

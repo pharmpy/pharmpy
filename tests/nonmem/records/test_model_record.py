@@ -68,3 +68,17 @@ def test_remove_compartment(parser, buf, remove, expected):
 def test_compartments(parser, buf, results):
     rec = parser.parse(buf).records[0]
     assert list(rec.compartments()) == results
+
+
+@pytest.mark.parametrize(
+    "buf,name,results",
+    [
+        ('$MODEL COMP=CENTRAL', 'CENTRAL', 1),
+        ('$MODEL COMP=DEPOT COMP=CENTRAL', 'CENTRAL', 2),
+        ('$MODEL COMP=DEPOT COMP=CENTRAL', 'DEPOT', 1),
+        ('$MODEL COMP=DEPOT COMP=CENTRAL', 'NOTHING', None),
+    ],
+)
+def test_get_compartment_number(parser, buf, name, results):
+    rec = parser.parse(buf).records[0]
+    assert rec.get_compartment_number(name) == results

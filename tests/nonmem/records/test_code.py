@@ -51,6 +51,7 @@ def S(x):
         ('$PRED CL = INT(-2.2)', S('CL'), -2),
         ('$PRED cl = int(-2.2)', S('CL'), -2),
         ('$PRED CL = INT(0.2)', S('CL'), 0),
+        ('$PRED CL = SQRT(X)', S('CL'), sympy.sqrt(S('X'))),
         ('$PRED CL = MOD(1, 2)', S('CL'), sympy.Mod(1, 2)),
         ('$PRED CL = GAMLN(2 + X)   ;COMMENT', S('CL'), sympy.loggamma(S('X') + 2)),
         ('$PRED C02 = PHI(2 + X)', S('C02'), (1 + sympy.erf(2 + S('X')) / sympy.sqrt(2)) / 2),
@@ -563,3 +564,8 @@ def test_translate_sympy_piecewise(parser, symbol, expression, buf_expected):
     s = Assignment(symbol, expression)
 
     assert rec._translate_sympy_piecewise(s) == buf_expected.strip()
+
+
+def test_empty_record(parser):
+    rec = parser.parse('$PRED\n').records[0]
+    assert len(rec.statements) == 0
