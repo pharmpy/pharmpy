@@ -323,7 +323,6 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
         self._path = Path(path)
         self._read_phi = False
         self._read_ext = False
-        print("Setting!")
         self._read_cov = False
         self._read_coi = False
         self._read_cor = False
