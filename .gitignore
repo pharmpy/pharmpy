@@ -51,3 +51,4 @@ docs/reference
 .env
 .*.sw[po]
 .ve
+Pipfile*
