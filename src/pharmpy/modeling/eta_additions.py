@@ -118,6 +118,6 @@ class EtaAddition:
 
     @classmethod
     def logit(cls):
-        template = S('original') * (sympy.exp(S('eta_new'))/(1 + sympy.exp(S('eta_new'))))
+        template = S('original') * (sympy.exp(S('eta_new')) / (1 + sympy.exp(S('eta_new'))))
 
         return cls(template)

@@ -115,7 +115,7 @@ def update_random_variables(model, old, new):
     rvs_new, dist_new = new.distributions_as_list()
     rvs_old, dist_old = old.distributions_as_list()
 
-    for entry, combined_dist in zip(rvs_new, dist_new):         # TODO: better name
+    for entry, combined_dist in zip(rvs_new, dist_new):  # TODO: better names
         if entry not in rvs_old and entry[0].name in old_names:
             rvs = [rv.name for rv in entry]
             dist = combined_dist
@@ -131,10 +131,12 @@ def update_random_variables(model, old, new):
             for omega_record in model.control_stream.get_records('OMEGA'):
                 next_omega_cur = next_omega
 
-                omegas, next_omega, previous_size = omega_record.parameters(next_omega_cur,
-                                                                            previous_size)
-                etas, next_eta, prev_cov, _ = omega_record.random_variables(next_omega_cur,
-                                                                            prev_cov)
+                omegas, next_omega, previous_size = omega_record.parameters(
+                    next_omega_cur, previous_size
+                )
+                etas, next_eta, prev_cov, _ = omega_record.random_variables(
+                    next_omega_cur, prev_cov
+                )
                 if omega_record == omega_new:
                     m_1 = dist.args[1]
                     m_2 = etas[0].pspace.distribution.args[1]

@@ -851,16 +851,19 @@ def test_john_draper(pheno_path, etas, etad, buf_new):
     assert str(model.get_pred_pk_record()) == rec_ref
 
 
-@pytest.mark.parametrize('parameter, expression, operation, buf_new', [
-    ('S1', 'exp', '+', 'V=TVV*EXP(ETA(2))\nS1 = V + EXP(ETA(3))'),
-    ('S1', 'exp', '*', 'V=TVV*EXP(ETA(2))\nS1 = V*EXP(ETA(3))'),
-    ('V', 'exp', '+', 'V = TVV*EXP(ETA(2)) + EXP(ETA(3))\nS1=V'),
-    ('S1', 'add', None, 'V=TVV*EXP(ETA(2))\nS1 = ETA(3) + V'),
-    ('S1', 'prop', None, 'V=TVV*EXP(ETA(2))\nS1 = ETA(3)*V'),
-    ('S1', 'log', None, 'V=TVV*EXP(ETA(2))\nS1 = V*EXP(ETA(3))/(EXP(ETA(3)) + 1)'),
-    ('S1', 'eta_new', '+', 'V=TVV*EXP(ETA(2))\nS1 = ETA(3) + V'),
-    ('S1', 'eta_new**2', '+', 'V=TVV*EXP(ETA(2))\nS1 = ETA(3)**2 + V'),
-])
+@pytest.mark.parametrize(
+    'parameter, expression, operation, buf_new',
+    [
+        ('S1', 'exp', '+', 'V=TVV*EXP(ETA(2))\nS1 = V + EXP(ETA(3))'),
+        ('S1', 'exp', '*', 'V=TVV*EXP(ETA(2))\nS1 = V*EXP(ETA(3))'),
+        ('V', 'exp', '+', 'V = TVV*EXP(ETA(2)) + EXP(ETA(3))\nS1=V'),
+        ('S1', 'add', None, 'V=TVV*EXP(ETA(2))\nS1 = ETA(3) + V'),
+        ('S1', 'prop', None, 'V=TVV*EXP(ETA(2))\nS1 = ETA(3)*V'),
+        ('S1', 'log', None, 'V=TVV*EXP(ETA(2))\nS1 = V*EXP(ETA(3))/(EXP(ETA(3)) + 1)'),
+        ('S1', 'eta_new', '+', 'V=TVV*EXP(ETA(2))\nS1 = ETA(3) + V'),
+        ('S1', 'eta_new**2', '+', 'V=TVV*EXP(ETA(2))\nS1 = ETA(3)**2 + V'),
+    ],
+)
 def test_add_etas(pheno_path, parameter, expression, operation, buf_new):
     model = Model(pheno_path)
 
@@ -890,10 +893,7 @@ def test_block_rvs(testdata):
     create_rv_block(model, ['ETA(1)', 'ETA(2)'])
     model.update_source()
 
-    rec_ref = '$PK\n' \
-              'CL=THETA(1)*EXP(ETA(2))\n' \
-              'V=THETA(2)*EXP(ETA(3))\n' \
-              'S1=V + ETA(1)\n\n'
+    rec_ref = '$PK\n' 'CL=THETA(1)*EXP(ETA(2))\n' 'V=THETA(2)*EXP(ETA(3))\n' 'S1=V + ETA(1)\n\n'
 
     assert str(model.get_pred_pk_record()) != rec_ref
     # assert re.match(r'\$OMEGA 0.1\n'
