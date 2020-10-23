@@ -35,3 +35,15 @@ def print_model_diff(model_ref, model_new):
     str_full = re.sub('\*', '\\\*', str_full)
 
     display(markdown_html(str_full))
+
+
+def hover(hover_color="#ffff99"):
+    return dict(selector="tr:hover",
+                props=[("background-color", "%s" % hover_color)])
+
+
+def print_df(df):
+    styles = [
+        hover(),
+    ]
+    return df.style.set_table_styles(styles)
