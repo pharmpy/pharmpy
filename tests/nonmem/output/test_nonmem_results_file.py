@@ -281,10 +281,7 @@ def test_estimation_status_multest(testdata, file, table_number, expected, covar
     p = Path(testdata / 'nonmem' / 'modelfit_results' / 'onePROB' / 'multEST' / 'noSIM')
     rfile = rf.NONMEMResultsFile(p / file)
     assert rfile.estimation_status(table_number) == expected
-    if covariance_step_ok is None:
-        assert rfile.covariance_status(table_number)['covariance_step_ok'] is None
-    else:
-        assert rfile.covariance_status(table_number)['covariance_step_ok'] == covariance_step_ok
+    assert rfile.covariance_status(table_number)['covariance_step_ok'] == covariance_step_ok
 
 
 def test_estimation_status_empty():

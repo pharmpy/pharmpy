@@ -291,10 +291,8 @@ def test_grammar_repeats(parser, buf):  # Tests that there are no repeats due to
     tree_walk_gen = rec.root.tree_walk()
     parent = next(tree_walk_gen)
 
-    repeats_present = False
     for child in tree_walk_gen:
-        if str(parent.eval) == str(child.eval) and parent.rule == child.rule:
-            repeats_present = True
+        repeats_present = str(parent.eval) == str(child.eval) and parent.rule == child.rule
         parent = child
 
     assert repeats_present is False
