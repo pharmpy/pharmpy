@@ -1,3 +1,14 @@
+0.9.0 (2020-10-26)
+------------------
+
+* Add error_model function to the modeling module
+* Added more standard models for modeling.add_etas
+* Improve BootstrapResults
+* Add plots to bootstrap
+* Add support for the PHARMPYCONFIGPATH environment variable
+* Add QAResults and LinearizeResults classes
+* Bugfixes for some Windows specific issues
+
 0.8.0 (2020-10-08)
 ------------------
 
