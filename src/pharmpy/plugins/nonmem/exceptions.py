@@ -1,2 +1,0 @@
-class NMTranParseError(Exception):
-    pass

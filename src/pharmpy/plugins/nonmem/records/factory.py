@@ -1,6 +1,6 @@
 import re
 
-from pharmpy.plugins.nonmem.exceptions import NMTranParseError
+from pharmpy.model import ModelSyntaxError
 
 from .code_record import CodeRecord
 from .data_record import DataRecord
@@ -47,7 +47,7 @@ def split_raw_record_name(line):
     if m:
         return m.group(1, 2)
     else:
-        raise NMTranParseError(f'Bad record name in: {line}')
+        raise ModelSyntaxError(f'Bad record name in: {line}')
 
 
 def get_canonical_record_name(raw_name):
@@ -64,7 +64,6 @@ def get_canonical_record_name(raw_name):
             return 'SUBROUTINES'
     elif bare == 'PK':
         return bare
-
     return None
 
 

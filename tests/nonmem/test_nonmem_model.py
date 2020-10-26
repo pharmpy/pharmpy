@@ -444,3 +444,12 @@ def test_insert_unknown_record(pheno_path):
     model = Model(pheno_path)
     model.control_stream.insert_record('$TRIREME one')
     assert str(model).split('\n')[-1] == '$TRIREME one'
+
+    model.control_stream.insert_record('\n$OA two')
+    assert str(model).split('\n')[-1] == '$OA two'
+
+
+def test_parse_illegal_record_name():
+    parser = NMTranParser()
+    with pytest.raises(ModelSyntaxError):
+        parser.parse('$PROBLEM MYPROB\n$1REC\n')
