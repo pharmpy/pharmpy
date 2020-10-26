@@ -6,6 +6,7 @@ from pyfakefs.fake_filesystem_unittest import Patcher
 
 from pharmpy import Model
 from pharmpy.config import ConfigurationContext
+from pharmpy.model import ModelSyntaxError
 from pharmpy.parameter import Parameter
 from pharmpy.plugins.nonmem import conf
 from pharmpy.plugins.nonmem.nmtran_parser import NMTranParser
@@ -51,6 +52,10 @@ def test_detection():
 def test_validate(pheno_path):
     model = Model(pheno_path)
     model.validate()
+
+    model = Model(StringIO("$PROBLEM this\n$SIZES LIM1=3000"))
+    with pytest.raises(ModelSyntaxError):
+        model.validate()
 
 
 def test_parameters(pheno_path):
@@ -433,3 +438,9 @@ def test_prediction_symbol(pheno_path):
     model = Model(pheno_path)
     assert model.prediction_symbol.name == 'F'
     assert model.dependent_variable_symbol.name == 'Y'
+
+
+def test_insert_unknown_record(pheno_path):
+    model = Model(pheno_path)
+    model.control_stream.insert_record('$TRIREME one')
+    assert str(model).split('\n')[-1] == '$TRIREME one'

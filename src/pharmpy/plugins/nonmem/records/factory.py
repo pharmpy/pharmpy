@@ -76,6 +76,7 @@ def create_record(chunk):
         record = record_class(content, record_parser_class)
     else:
         record = RawRecord(content)
+        name = raw_name[1:]
 
     record.name = name
     record.raw_name = raw_name

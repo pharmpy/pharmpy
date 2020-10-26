@@ -68,6 +68,7 @@ class NMTranControlStream:
         directly after the last record of that type.
         If no record of the type is present the new record will be put
         given the default record order.
+        If record type is unknown. Place at the end.
         """
 
         record = create_record(content)
@@ -93,6 +94,9 @@ class NMTranControlStream:
                     current_problem += 1
                 if current_problem == self._active_problem and currec.name in before_records:
                     index = i
+
+        if index is None:
+            index = len(self.records)
 
         self.records.insert(index + 1, record)
         return record
