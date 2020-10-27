@@ -1,3 +1,4 @@
+import os
 import re
 
 import pytest
@@ -64,3 +65,23 @@ def test_add_etas(datadir, fs, operation):
 
     assert not re.search(r'EXP\(ETA\(3\)\)', mod_ori)
     assert re.search(r'EXP\(ETA\(3\)\)', mod_cov)
+
+
+@pytest.mark.parametrize('fs', [[['pkgutil'], [source, cli]]], indirect=True)
+def test_results_linearize(datadir, fs):
+    path = datadir / 'linearize' / 'linearize_dir1'
+    fs.create_dir('linearize_dir1')
+    fs.add_real_file(path / 'pheno_linbase.mod', target_path='linearize_dir1/pheno_linbase.mod')
+    fs.add_real_file(path / 'pheno_linbase.ext', target_path='linearize_dir1/pheno_linbase.ext')
+    fs.add_real_file(path / 'pheno_linbase.lst', target_path='linearize_dir1/pheno_linbase.lst')
+    fs.add_real_file(path / 'pheno_linbase.phi', target_path='linearize_dir1/pheno_linbase.phi')
+    fs.create_dir('linearize_dir1/scm_dir1')
+    fs.add_real_file(path / 'scm_dir1' / 'derivatives.mod', target_path='linearize_dir1/scm_dir1/derivatives.mod')
+    fs.add_real_file(path / 'scm_dir1' / 'derivatives.ext', target_path='linearize_dir1/scm_dir1/derivatives.ext')
+    fs.add_real_file(path / 'scm_dir1' / 'derivatives.lst', target_path='linearize_dir1/scm_dir1/derivatives.lst')
+    fs.add_real_file(path / 'scm_dir1' / 'derivatives.phi', target_path='linearize_dir1/scm_dir1/derivatives.phi')
+
+    args = ['results', 'linearize', 'linearize_dir1']
+    cli.main(args)
+
+    assert os.path.exists('linearize_dir1/results.json')
