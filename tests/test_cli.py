@@ -76,10 +76,18 @@ def test_results_linearize(datadir, fs):
     fs.add_real_file(path / 'pheno_linbase.lst', target_path='linearize_dir1/pheno_linbase.lst')
     fs.add_real_file(path / 'pheno_linbase.phi', target_path='linearize_dir1/pheno_linbase.phi')
     fs.create_dir('linearize_dir1/scm_dir1')
-    fs.add_real_file(path / 'scm_dir1' / 'derivatives.mod', target_path='linearize_dir1/scm_dir1/derivatives.mod')
-    fs.add_real_file(path / 'scm_dir1' / 'derivatives.ext', target_path='linearize_dir1/scm_dir1/derivatives.ext')
-    fs.add_real_file(path / 'scm_dir1' / 'derivatives.lst', target_path='linearize_dir1/scm_dir1/derivatives.lst')
-    fs.add_real_file(path / 'scm_dir1' / 'derivatives.phi', target_path='linearize_dir1/scm_dir1/derivatives.phi')
+    fs.add_real_file(
+        path / 'scm_dir1' / 'derivatives.mod', target_path='linearize_dir1/scm_dir1/derivatives.mod'
+    )
+    fs.add_real_file(
+        path / 'scm_dir1' / 'derivatives.ext', target_path='linearize_dir1/scm_dir1/derivatives.ext'
+    )
+    fs.add_real_file(
+        path / 'scm_dir1' / 'derivatives.lst', target_path='linearize_dir1/scm_dir1/derivatives.lst'
+    )
+    fs.add_real_file(
+        path / 'scm_dir1' / 'derivatives.phi', target_path='linearize_dir1/scm_dir1/derivatives.phi'
+    )
 
     args = ['results', 'linearize', 'linearize_dir1']
     cli.main(args)
