@@ -14,21 +14,7 @@ class RVInputException(Exception):
 def create_rv_block(model, list_of_rvs=None):
     rvs = _get_rvs(model, list_of_rvs)
 
-    rv_map = _create_rv_map(model, rvs)
-
-    cov = sympy.zeros(len(list_of_rvs))
-    pset = model.parameters
-
-    for row in range(len(list_of_rvs)):
-        for col in range(row + 1):
-            if row == col:
-                cov[row, col] = rv_map[rvs[row]]
-            else:
-                covariance_init = _choose_param_init(model)
-                param = Parameter(f'block_rv_{row}_{col}', covariance_init)
-                pset.add(param)
-                cov[row, col] = S(param.name)
-                cov[col, row] = S(param.name)
+    pset, cov = _create_cov_matrix(model, rvs)
 
     model.parameters = pset
 
@@ -67,12 +53,31 @@ def _get_rvs(model, list_of_rvs):
         return RandomVariables(rvs)
 
 
+def _create_cov_matrix(model, rvs):
+    cov = sympy.zeros(len(rvs))
+    pset = model.parameters
+    rv_map = _create_rv_map(model, rvs)
+
+    for row in range(len(rvs)):
+        for col in range(row + 1):
+            if row == col:
+                cov[row, col] = rv_map[rvs[row]]
+            else:
+                covariance_init = _choose_param_init(model)
+                param = Parameter(f'block_rv_{row}_{col}', covariance_init)
+                pset.add(param)
+                cov[row, col] = S(param.name)
+                cov[col, row] = S(param.name)
+
+    return pset, cov
+
+
 def _create_rv_map(model, rvs):
     rv_map = dict()
     for rv, dist in rvs.distributions():
         param = model.parameters[str(list(dist.free_symbols)[0])]
         rv = rv[0]
-        if param.fix:
+        if param.fix:  # TODO: possibly move this check to _get_rvs or separate method
             raise RVInputException(f'Random variable cannot be set to fixed: {rv}')
         if rv.variability_level == VariabilityLevel.IOV:
             raise RVInputException(f'Random variable cannot be IOV: {rv}')

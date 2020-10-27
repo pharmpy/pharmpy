@@ -92,7 +92,7 @@ def update_random_variables(model, old, new):
                 next_eta += len(omega_record)
         model.control_stream.remove_records(remove_records)
 
-    new_maps = []
+    new_maps = []  # TODO: restructure
     for rv in new:
         if rv.name not in old_names:
             omega_name = (rv.pspace.distribution.std ** 2).name
@@ -116,39 +116,13 @@ def update_random_variables(model, old, new):
     rvs_old, dist_old = old.distributions_as_list()
 
     if new_names == old_names and rvs_old != rvs_new:
-        omegas_block = dict()
-        etas_block = dict()
-        renumber = False
-
-        for i, rv in enumerate(new.etas, 1):
-            eta_no = int(re.match(r'ETA\(([0-9])\)', rv.name).group(1))
-            if i != eta_no:
-                etas_block[rv.name] = i
-                omegas_block[f'OMEGA({eta_no},{eta_no})'] = (i, i)
-                renumber = True
-            else:
-                etas_block[rv.name] = eta_no
-                omegas_block[f'OMEGA({eta_no},{eta_no})'] = (eta_no, eta_no)
-
-        for entry, combined_dist in zip(rvs_new, dist_new):  # TODO: better names
-            if entry not in rvs_old and entry[0].name in old_names:
-                rvs = [rv.name for rv in entry]
-                dist = combined_dist
-
-                records = get_omega_records(model, rvs)
+        for rvs, dist in zip(rvs_new, dist_new):
+            if rvs not in rvs_old:
+                records = get_omega_records(model, [rv.name for rv in rvs])
 
                 model.control_stream.remove_records(records)
                 omega_new = create_omega_block(model, dist)
-
-                if renumber:
-                    next_omega = 1
-
-                    for omega_record in model.control_stream.get_records('OMEGA'):
-                        try:
-                            omega_record.renumber(next_omega)
-                            next_omega += len(omega_record)
-                        except AttributeError:
-                            pass
+                omegas_block, etas_block = create_maps(new.etas)
 
                 next_omega = 1
                 previous_size = None
@@ -156,26 +130,27 @@ def update_random_variables(model, old, new):
 
                 for omega_record in model.control_stream.get_records('OMEGA'):
                     next_omega_cur = next_omega
-
                     omegas, next_omega, previous_size = omega_record.parameters(
                         next_omega_cur, previous_size
                     )
                     etas, next_eta, prev_cov, _ = omega_record.random_variables(
                         next_omega_cur, prev_cov
                     )
-                    if omega_record == omega_new:  # Include name of covariance parameters
-                        m_1 = dist.args[1]
-                        m_2 = etas[0].pspace.distribution.args[1]
-                        for row in range(m_1.shape[0]):
-                            for col in range(m_1.shape[1]):
+
+                    if omega_record == omega_new:
+                        m_new = dist.args[1]
+                        m_rec = etas[0].pspace.distribution.args[1]
+
+                        for row in range(m_new.shape[0]):
+                            for col in range(m_new.shape[1]):
                                 if row > col:
+                                    elem_new = m_new.row(row).col(col)[0]
+                                    elem_rec = m_rec.row(row).col(col)[0]
 
-                                    elem_1 = m_1.row(row).col(col)
-                                    name_1 = str(elem_1[0])
+                                    omegas_block[str(elem_new)] = omega_record.name_map[
+                                        str(elem_rec)
+                                    ]
 
-                                    elem_2 = m_2.row(row).col(col)
-                                    name_2 = str(elem_2[0])
-                                    omegas_block[name_1] = omega_record.name_map[name_2]
                     new_maps.append((omega_record, omegas_block, etas_block))
     # FIXME: Setting the maps needs to be done here and not in loop. Automatic renumbering is
     #        probably the culprit. There should be a difference between added parameters and
@@ -272,6 +247,22 @@ def create_omega_block(model, dist):
     record = model.control_stream.insert_record(param_str)
 
     return record
+
+
+def create_maps(etas):
+    omegas_block = dict()
+    etas_block = dict()
+
+    for i, rv in enumerate(etas, 1):
+        eta_no = int(re.match(r'ETA\(([0-9])\)', rv.name).group(1))
+        if i != eta_no:
+            etas_block[rv.name] = i
+            omegas_block[f'OMEGA({eta_no},{eta_no})'] = (i, i)
+        else:
+            etas_block[rv.name] = eta_no
+            omegas_block[f'OMEGA({eta_no},{eta_no})'] = (eta_no, eta_no)
+
+    return omegas_block, etas_block
 
 
 def update_ode_system(model, old, new):
