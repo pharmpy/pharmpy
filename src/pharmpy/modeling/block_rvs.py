@@ -33,14 +33,15 @@ def create_rv_block(model, list_of_rvs=None):
     model.parameters = pset
 
     dist_new = _create_distribution(rvs, cov)
+
     rvs_new = RandomVariables()
 
     for rv in model.random_variables:
-        try:
-            rv_new = dist_new[rv.name]
-            rvs_new.add(rv_new)
-        except KeyError:
+        if rv not in rvs:
             rvs_new.add(rv)
+
+    for rv in dist_new:
+        rvs_new.add(rv)
 
     model.random_variables = rvs_new
 
@@ -80,7 +81,7 @@ def _create_rv_map(model, rvs):
 
 
 def _choose_param_init(model):
-    return 0.1
+    return 0.9
 
 
 def _create_distribution(rvs, cov):
@@ -91,9 +92,9 @@ def _create_distribution(rvs, cov):
         means.append(0)
         names.append(rv.name)
 
-    rvs_new = JointNormalSeparate(names, means, cov)
+    dist_new = JointNormalSeparate(names, means, cov)
 
-    for rv in rvs_new:
+    for rv in dist_new:
         rv.variability_level = VariabilityLevel.IIV
 
-    return RandomVariables(rvs_new)
+    return dist_new

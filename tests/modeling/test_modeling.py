@@ -888,15 +888,36 @@ def test_add_etas(pheno_path, parameter, expression, operation, buf_new):
     assert str(last_rec) == f'$OMEGA  0.1 ; IIV_{parameter}\n'
 
 
-def test_block_rvs(testdata):
+@pytest.mark.parametrize(
+    'etas, pk_ref, omega_ref',
+    [
+        (
+            ['ETA(1)', 'ETA(2)'],
+            '$PK\n'
+            'CL = THETA(1)*EXP(ETA(2))\n'
+            'V = THETA(2)*EXP(ETA(3))\n'
+            'S1 = ETA(1) + V\n\n',
+            '$OMEGA 0.1\n' '$OMEGA BLOCK(2)\n' '0.0309626	\n' '0.9	0.031128\t\n',
+        ),
+        (
+            ['ETA(1)', 'ETA(3)'],
+            '$PK\n' 'CL = THETA(1)*EXP(ETA(2))\n' 'V = THETA(2)*EXP(ETA(1))\n' 'S1=V+ETA(3)\n\n',
+            '$OMEGA 0.031128  ; IVV\n' '$OMEGA BLOCK(2)\n' '0.0309626	\n' '0.9	0.1\t\n',
+        ),
+        (
+            ['ETA(2)', 'ETA(3)'],
+            '$PK\n' 'CL=THETA(1)*EXP(ETA(1))\n' 'V=THETA(2)*EXP(ETA(2))\n' 'S1=V+ETA(3)\n\n',
+            '$OMEGA 0.0309626  ; IVCL\n' '$OMEGA BLOCK(2)\n' '0.031128	\n' '0.9	0.1\t\n',
+        ),
+    ],
+)
+def test_block_rvs(testdata, etas, pk_ref, omega_ref):
     model = Model(testdata / 'nonmem' / 'pheno_block.mod')
-    create_rv_block(model, ['ETA(1)', 'ETA(2)'])
+    create_rv_block(model, etas)
     model.update_source()
 
-    rec_ref = '$PK\n' 'CL=THETA(1)*EXP(ETA(2))\n' 'V=THETA(2)*EXP(ETA(3))\n' 'S1=V + ETA(1)\n\n'
+    assert str(model.get_pred_pk_record()) == pk_ref
 
-    assert str(model.get_pred_pk_record()) != rec_ref
-    # assert re.match(r'\$OMEGA 0.1\n'
-    #                 r'\$OMEGA BLOCK\(2\)\n'
-    #                 r'0\.0309626	\n'
-    #                 r'0\.1	0\.031128\n', str(model))
+    rec_omega = ''.join(str(rec) for rec in model.control_stream.get_records('OMEGA'))
+
+    assert rec_omega == omega_ref
