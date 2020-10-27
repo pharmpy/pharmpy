@@ -53,6 +53,11 @@ def test_data_filename_set(parser):
     assert record.filename == "'IGNORE'"
     assert str(record) == text.replace('pheno.dta', '"\'IGNORE\'"')
 
+    # *
+    record = parser.parse('$DATA DUMMY ; comment').records[0]
+    record.filename = None
+    assert str(record) == '$DATA * ; comment'
+
 
 def test_option_record(parser):
     record = parser.parse('$DATA pheno.dta NOWIDE').records[0]
@@ -117,6 +122,8 @@ def test_ignore_character_from_header(parser):
 def test_null_value(parser):
     record = parser.parse('$DATA pheno.dta NULL=1').records[0]
     assert record.null_value == 1
+    record = parser.parse('$DATA pheno.dta NULL=+').records[0]
+    assert record.null_value == 0
 
 
 def test_ignore_accept(parser):

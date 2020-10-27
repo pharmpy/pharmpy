@@ -3,7 +3,7 @@ NONMEM data record class.
 """
 
 from pharmpy.model import ModelSyntaxError
-from pharmpy.parse_utils import AttrTree
+from pharmpy.parse_utils import AttrToken, AttrTree
 
 from .option_record import OptionRecord
 
@@ -15,16 +15,16 @@ class DataRecord(OptionRecord):
         filename = self.root.filename
         if filename.find('TEXT'):
             return str(filename)
-        elif filename.find('QUOTE'):
+        else:  # 'QUOTE'
             return str(filename)[1:-1]
 
     @filename.setter
     def filename(self, value):
         if not value:
             # erase and replace by * (for previous subproblem)
-            new = [AttrTree.create(ASTERIX='*')]
+            new = [AttrToken('ASTERISK', '*')]
             nodes = []
-            for child in self.root.children[1:]:
+            for child in self.root.children:
                 if new and child.rule == 'ws':
                     nodes += [child, new.pop()]
                 elif child.rule in {'ws', 'comment'}:

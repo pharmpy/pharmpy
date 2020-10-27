@@ -9,10 +9,10 @@
 //        [BLANKOK]
 //        [MISDAT=@r@...]
 
-root : ws "*" [ws]
-     | ws (comment [ws])* filename (ws option | [ws] comment)* [ws]
+root : ws (comment [ws])* (filename | ASTERISK) (ws option | [ws] comment)* [ws]
 
-// dataset (always, unless only ASTERIX terminal)
+ASTERISK: "*"
+// dataset (always, unless only ASTERISK terminal)
 filename: TEXT | QUOTE
 
 // option rules
