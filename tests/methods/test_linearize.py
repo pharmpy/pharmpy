@@ -1,16 +1,16 @@
 from io import StringIO
 
 import pandas as pd
+import pytest
 
 from pharmpy import Model
-from pharmpy.methods.linearize.results import calculate_results
+from pharmpy.methods.linearize.results import calculate_results, psn_linearize_results
 
 
 def test_ofv(testdata):
     base = Model(testdata / 'nonmem' / 'pheno.mod')
     lin = Model(testdata / 'nonmem' / 'qa' / 'pheno_linbase.mod')
     res = calculate_results(base, lin)
-    print(res.ofv)
     correct = """,ofv
 base,730.894727
 lin_evaluated,730.894727
@@ -88,3 +88,10 @@ def test_iofv(testdata):
     correct = pd.read_csv(StringIO(correct), index_col=[0])
     correct.index.name = 'ID'
     pd.testing.assert_frame_equal(res.iofv, correct, atol=1e-6)
+
+
+def test_psn_linearize_results(testdata):
+    path = testdata / 'nonmem' / 'linearize' / 'linearize_dir1'
+    res = psn_linearize_results(path)
+    assert len(res.iofv) == 59
+    assert res.ofv['ofv']['base'] == pytest.approx(730.894727)
