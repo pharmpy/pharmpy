@@ -44,6 +44,7 @@ class Model(pharmpy.model.Model):
         self._initial_individual_estimates_updated = False
         self._updated_etas_file = None
         self._dataset_updated = False
+        self._modelfit_results = None
         if self._get_pk_record():
             self.prediction_symbol = symbols.symbol('F')
         else:
@@ -71,17 +72,20 @@ class Model(pharmpy.model.Model):
 
     @property
     def modelfit_results(self):
-        try:
-            return self._modelfit_results
-        except AttributeError:
-            None
-        if self.source.path.is_file():
-            ext_path = self.source.path.with_suffix('.ext')
-            if ext_path.exists() and stat(ext_path).st_size > 0:
-                self._modelfit_results = NONMEMChainedModelfitResults(ext_path, model=self)
-                return self._modelfit_results
+        if self._modelfit_results is None:
+            if self.source.path.is_file():
+                ext_path = self.source.path.with_suffix('.ext')
+                if ext_path.exists() and stat(ext_path).st_size > 0:
+                    self._modelfit_results = NONMEMChainedModelfitResults(ext_path, model=self)
+                    return self._modelfit_results
+            else:
+                return None
         else:
-            return None
+            return self._modelfit_results
+
+    @modelfit_results.setter
+    def modelfit_results(self, res):
+        self._modelfit_results = res
 
     def update_source(self, path=None, force=False, nofiles=False):
         """Update the source

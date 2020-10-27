@@ -154,7 +154,8 @@ def format_keyval_pairs(data_dict, sort=True, right_just=False):
 def run_execute(args):
     import pharmpy.methods.modelfit as modelfit
 
-    modelfit.run(args.models)
+    method = modelfit.Modelfit(args.models)
+    method.run()
 
 
 def data_write(args):

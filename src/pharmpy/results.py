@@ -45,6 +45,8 @@ class ResultsJSONEncoder(json.JSONEncoder):
             d = json.loads(obj.to_json(orient='table'))
             if isinstance(obj, PharmDataFrame):
                 d['__class__'] = 'DataFrame'
+            elif isinstance(obj, pd.Series):
+                d['__class__'] = 'Series'
             else:
                 d['__class__'] = obj.__class__.__name__
             return d
@@ -186,6 +188,8 @@ class Results:
                 else:
                     use_index = True
                 s += value.to_csv(index=use_index)
+            elif isinstance(value, pd.Series):
+                s += value.to_csv()
             elif isinstance(value, list):  # Print list of lists as table
                 if len(value) > 0 and isinstance(value[0], list):
                     for row in value:
@@ -206,7 +210,7 @@ class Results:
         raise NotImplementedError()
 
 
-class ModelfitResults:
+class ModelfitResults(Results):
     """Base class for results from a modelfit operation
 
     properties: individual_OFV is a df with currently ID and iOFV columns
@@ -231,6 +235,10 @@ class ModelfitResults:
         self._minimization_successful = minimization_successful
         self._individual_estimates = individual_estimates
         self._individual_ofv = individual_ofv
+
+    def to_dict(self):
+        """Convert results object to a dictionary"""
+        return {'parameter_estimates': self.parameter_estimates}
 
     def reparameterize(self, parameterizations):
         """Reparametrize all parameters given a list of parametrization object

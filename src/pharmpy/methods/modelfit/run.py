@@ -7,7 +7,7 @@ from dask.multiprocessing import get
 
 class NONMEMRunDirectory:
     def __init__(self, model, n, path=None):
-        """Create a directory for running NONMEN.
+        """Create a directory for running NONMEM.
         If path not specified use the current path
         n is the index of the run
         """
@@ -19,19 +19,18 @@ class NONMEMRunDirectory:
         self.write_model(model)
 
     def write_model(self, model):
-        model.write(path=self.path, force=True)
+        self.model_path = model.write(path=self.path, force=True)
         shutil.copy(model.dataset_path, self.path)  # FIXME!
 
 
-def run(models):
-    dsk = {f'run-{i}': (execute_model, model, i) for i, model in enumerate(models)}
+def run(models, path):
+    dsk = {f'run-{i}': (execute_model, model, i, path) for i, model in enumerate(models)}
     dsk['results'] = (results, ['run-%d' % i for i, _ in enumerate(models)])
     res = get(dsk, 'results')  # executes in parallel
-    print(res)
 
 
-def execute_model(model, i):
-    rundir = NONMEMRunDirectory(model, i)
+def execute_model(model, i, path):
+    rundir = NONMEMRunDirectory(model, i, path=path)
     subprocess.call(
         [
             'nmfe74',
@@ -40,8 +39,13 @@ def execute_model(model, i):
             f'-rundir={rundir.path}',
         ]
     )
+    model.modelfit_results = None
+    for ext in ['ext', 'lst', 'phi']:
+        source_path = rundir.model_path.with_suffix(f'.{ext}')
+        dest_path = model.source.path.with_suffix(f'.{ext}')
+        shutil.copy(source_path, dest_path)
     return model
 
 
-def results(res):
-    return res
+def results(model):
+    return model
