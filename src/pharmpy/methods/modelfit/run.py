@@ -27,6 +27,7 @@ def run(models, path):
     dsk = {f'run-{i}': (execute_model, model, i, path) for i, model in enumerate(models)}
     dsk['results'] = (results, ['run-%d' % i for i, _ in enumerate(models)])
     res = get(dsk, 'results')  # executes in parallel
+    return res
 
 
 def execute_model(model, i, path):
