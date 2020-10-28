@@ -35,13 +35,13 @@ def create_rv_block(model, list_of_rvs=None):
 
 
 def _get_rvs(model, list_of_rvs):
-    rvs_all = model.random_variables
+    rvs_all = model.random_variables  # TODO: check if it's only omegas
 
     if list_of_rvs is None:
-        return RandomVariables(rvs_all)
+        return RandomVariables(rvs_all.etas)
     elif len(list_of_rvs) == 1:
         warnings.warn('Cannot combine only one random variable, using all.')
-        return RandomVariables(rvs_all)
+        return RandomVariables(rvs_all.etas)
     else:
         rvs = []
         for rv_str in list_of_rvs:
