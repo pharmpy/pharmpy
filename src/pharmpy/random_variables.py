@@ -181,6 +181,13 @@ class RandomVariables(OrderedSet):
             params |= dist.free_symbols
         return sorted([str(p) for p in params])
 
+    def get_eta_params(self, eta_name):
+        params = set()
+        for rvs, dist in self.distributions():
+            if eta_name in [rv.name for rv in rvs]:
+                params |= dist.free_symbols
+        return sorted([str(p) for p in params])
+
     def distributions(self, level=None, exclude_level=None):
         """Iterate with one entry per distribution instead of per random variable.
 

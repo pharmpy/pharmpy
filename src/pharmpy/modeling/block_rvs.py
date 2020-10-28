@@ -1,5 +1,3 @@
-import warnings
-
 import sympy
 
 from pharmpy.parameter import Parameter
@@ -36,21 +34,31 @@ def create_rv_block(model, list_of_rvs=None):
 
 def _get_rvs(model, list_of_rvs):
     rvs_all = model.random_variables  # TODO: check if it's only omegas
+    params_all = model.parameters
 
     if list_of_rvs is None:
-        return RandomVariables(rvs_all.etas)
+        list_of_rvs = [rv for rv in rvs_all.etas]
     elif len(list_of_rvs) == 1:
-        warnings.warn('Cannot combine only one random variable, using all.')
-        return RandomVariables(rvs_all.etas)
-    else:
-        rvs = []
-        for rv_str in list_of_rvs:
-            try:
-                rv = rvs_all[rv_str]
-            except KeyError:
-                raise RVInputException(f'Random variable does not exist: {rv_str}')
-            rvs.append(rv)
-        return RandomVariables(rvs)
+        raise RVInputException('At least two random variables are needed')
+
+    rvs = []
+    for rv_str in list_of_rvs:
+        try:
+            rv = rvs_all[rv_str]
+        except KeyError:
+            raise RVInputException(f'Random variable does not exist: {rv_str}')
+
+        param_names = rvs_all.get_eta_params(rv_str)
+
+        for p in params_all:
+            if p.name in param_names and p.fix:
+                raise RVInputException(f'Random variable cannot be set to fixed: {rv}')
+
+        if rv.variability_level == VariabilityLevel.IOV:
+            raise RVInputException(f'Random variable cannot be IOV: {rv}')
+        rvs.append(rv)
+
+    return RandomVariables(rvs)
 
 
 def _create_cov_matrix(model, rvs):
@@ -77,10 +85,6 @@ def _create_rv_map(model, rvs):
     for rv, dist in rvs.distributions():
         param = model.parameters[str(list(dist.free_symbols)[0])]
         rv = rv[0]
-        if param.fix:  # TODO: possibly move this check to _get_rvs or separate method
-            raise RVInputException(f'Random variable cannot be set to fixed: {rv}')
-        if rv.variability_level == VariabilityLevel.IOV:
-            raise RVInputException(f'Random variable cannot be IOV: {rv}')
         rv_map[rv] = S(param.name)
     return rv_map
 

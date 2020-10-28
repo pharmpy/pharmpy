@@ -141,15 +141,9 @@ def update_random_variables(model, old, new):
                         m_new = dist.args[1]
                         m_rec = etas[0].pspace.distribution.args[1]
 
-                        for row in range(m_new.shape[0]):
-                            for col in range(m_new.shape[1]):
-                                if row > col:
-                                    elem_new = m_new.row(row).col(col)[0]
-                                    elem_rec = m_rec.row(row).col(col)[0]
-
-                                    omegas_block[str(elem_new)] = omega_record.name_map[
-                                        str(elem_rec)
-                                    ]
+                        omegas_block = replace_omega_name(
+                            m_new, m_rec, omegas_block, omega_record.name_map
+                        )
 
                     new_maps.append((omega_record, omegas_block, etas_block))
     # FIXME: Setting the maps needs to be done here and not in loop. Automatic renumbering is
@@ -263,6 +257,17 @@ def create_maps(etas):
             omegas_block[f'OMEGA({eta_no},{eta_no})'] = (eta_no, eta_no)
 
     return omegas_block, etas_block
+
+
+def replace_omega_name(m_new, m_rec, name_map_new, name_map_rec):
+    for row in range(m_new.shape[0]):
+        for col in range(m_new.shape[1]):
+            if row > col:
+                elem_new = m_new.row(row).col(col)[0]
+                elem_rec = m_rec.row(row).col(col)[0]
+
+                name_map_new[str(elem_new)] = name_map_rec[str(elem_rec)]
+    return name_map_new
 
 
 def update_ode_system(model, old, new):
