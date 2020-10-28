@@ -184,7 +184,7 @@ class RandomVariables(OrderedSet):
     def get_eta_params(self, eta_name):
         params = set()
         for rvs, dist in self.distributions():
-            if eta_name in [rv.name for rv in rvs]:
+            if eta_name in [rv for rv in rvs]:
                 params |= dist.free_symbols
         return sorted([str(p) for p in params])
 

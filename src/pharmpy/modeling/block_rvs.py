@@ -33,32 +33,41 @@ def create_rv_block(model, list_of_rvs=None):
 
 
 def _get_rvs(model, list_of_rvs):
-    rvs_all = model.random_variables  # TODO: check if it's only omegas
-    params_all = model.parameters
+    full_block = False
 
     if list_of_rvs is None:
-        list_of_rvs = [rv for rv in rvs_all.etas]
+        list_of_rvs = [rv for rv in model.random_variables.etas]
+        full_block = True
     elif len(list_of_rvs) == 1:
         raise RVInputException('At least two random variables are needed')
 
     rvs = []
     for rv_str in list_of_rvs:
         try:
-            rv = rvs_all[rv_str]
+            rv = model.random_variables[rv_str]
         except KeyError:
             raise RVInputException(f'Random variable does not exist: {rv_str}')
 
-        param_names = rvs_all.get_eta_params(rv_str)
-
-        for p in params_all:
-            if p.name in param_names and p.fix:
+        if _has_fixed_params(model, rv):
+            if not full_block:
                 raise RVInputException(f'Random variable cannot be set to fixed: {rv}')
-
+            continue
         if rv.variability_level == VariabilityLevel.IOV:
-            raise RVInputException(f'Random variable cannot be IOV: {rv}')
+            if not full_block:
+                raise RVInputException(f'Random variable cannot be IOV: {rv}')
+            continue
         rvs.append(rv)
 
     return RandomVariables(rvs)
+
+
+def _has_fixed_params(model, rv):
+    param_names = model.random_variables.get_eta_params(rv)
+
+    for p in model.parameters:
+        if p.name in param_names and p.fix:
+            return True
+    return False
 
 
 def _create_cov_matrix(model, rvs):

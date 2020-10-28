@@ -2,7 +2,8 @@ import pytest
 
 from pharmpy import Model
 from pharmpy.modeling import create_rv_block
-from pharmpy.modeling.block_rvs import RVInputException
+from pharmpy.modeling.block_rvs import RVInputException, _get_rvs
+from pharmpy.random_variables import VariabilityLevel
 
 
 @pytest.mark.parametrize(
@@ -11,6 +12,7 @@ from pharmpy.modeling.block_rvs import RVInputException
         (['ETA(1)', 'ETA(2)'], r'.*fixed: ETA\(1\)'),
         (['ETA(3)', 'NON_EXISTENT_RV'], r'.*does not exist: NON_EXISTENT_RV'),
         (['ETA(3)', 'ETA(6)'], r'.*IOV: ETA\(6\)'),
+        (['ETA(1)'], 'At least two random variables are needed'),
     ],
 )
 def test_incorrect_params(testdata, rvs, exception_msg):
@@ -22,3 +24,18 @@ def test_incorrect_params(testdata, rvs, exception_msg):
 
     with pytest.raises(RVInputException, match=exception_msg):
         create_rv_block(model, rvs)
+
+
+def test_get_rvs(testdata):
+    model = Model(testdata / 'nonmem' / 'pheno_block.mod')
+    rvs = _get_rvs(model, None)
+    assert rvs[0].name == 'ETA(1)'
+
+    model.parameters.fix = {'OMEGA(1,1)': True}
+    rvs = _get_rvs(model, None)
+    assert rvs[0].name == 'ETA(2)'
+
+    model = Model(testdata / 'nonmem' / 'pheno_block.mod')
+    model.random_variables['ETA(1)'].variability_level = VariabilityLevel.IOV
+    rvs = _get_rvs(model, None)
+    assert rvs[0].name == 'ETA(2)'
