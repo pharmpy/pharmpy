@@ -226,6 +226,18 @@ class RandomVariables(OrderedSet):
 
         return rvs_list, dist_list
 
+    def get_joined_rvs(self, rv):
+        assert isinstance(rv, JointDistributionSeparate)
+
+        rvs, dist = self.distributions_as_list()
+        joined_rvs = []
+
+        for r, d in zip(rvs, dist):
+            if d == rv.pspace.distribution:
+                joined_rvs.append(r)
+
+        return joined_rvs
+
     @property
     def ruv_rvs(self):
         """Get list of all ruv random variables (epsilons)"""
