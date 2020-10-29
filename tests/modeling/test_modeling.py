@@ -889,9 +889,10 @@ def test_add_etas(pheno_path, parameter, expression, operation, buf_new):
 
 
 @pytest.mark.parametrize(
-    'etas, pk_ref, omega_ref',
+    'model_path, etas, pk_ref, omega_ref',
     [
         (
+            'nonmem/pheno_block.mod',
             ['ETA(1)', 'ETA(2)'],
             '$PK\n'
             'CL = THETA(1)*EXP(ETA(2))\n'
@@ -900,24 +901,27 @@ def test_add_etas(pheno_path, parameter, expression, operation, buf_new):
             '$OMEGA 0.1\n$OMEGA BLOCK(2)\n0.0309626	\n0.9\t0.031128\t\n',
         ),
         (
+            'nonmem/pheno_block.mod',
             ['ETA(1)', 'ETA(3)'],
             '$PK\nCL = THETA(1)*EXP(ETA(2))\nV = THETA(2)*EXP(ETA(1))\nS1=V+ETA(3)\n\n',
             '$OMEGA 0.031128  ; IVV\n$OMEGA BLOCK(2)\n0.0309626	\n0.9\t0.1\t\n',
         ),
         (
+            'nonmem/pheno_block.mod',
             ['ETA(2)', 'ETA(3)'],
             '$PK\nCL=THETA(1)*EXP(ETA(1))\n' 'V=THETA(2)*EXP(ETA(2))\n' 'S1=V+ETA(3)\n\n',
             '$OMEGA 0.0309626  ; IVCL\n$OMEGA BLOCK(2)\n0.031128\t\n0.9\t0.1\t\n',
         ),
         (
+            'nonmem/pheno_block.mod',
             None,
             '$PK\nCL=THETA(1)*EXP(ETA(1))\nV=THETA(2)*EXP(ETA(2))\nS1=V+ETA(3)\n\n',
             '$OMEGA BLOCK(3)\n' '0.0309626\t\n' '0.9\t0.031128\t\n' '0.9\t0.9\t0.1\t\n',
         ),
     ],
 )
-def test_block_rvs(testdata, etas, pk_ref, omega_ref):
-    model = Model(testdata / 'nonmem' / 'pheno_block.mod')
+def test_block_rvs(testdata, model_path, etas, pk_ref, omega_ref):
+    model = Model(testdata / model_path)
     create_rv_block(model, etas)
     model.update_source()
 
