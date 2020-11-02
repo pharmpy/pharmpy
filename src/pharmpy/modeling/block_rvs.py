@@ -16,7 +16,9 @@ def create_rv_block(model, list_of_rvs=None):
 
     for rv in rvs:
         if isinstance(rv.pspace.distribution, MultivariateNormalDistribution):
-            rvs_full.extract_from_block(rv)
+            rv_extracted = rvs_full.extract_from_block(rv)
+            rvs.discard(rv)
+            rvs.add(rv_extracted)
 
     pset, cov = _create_cov_matrix(model, rvs)
 
@@ -26,7 +28,7 @@ def create_rv_block(model, list_of_rvs=None):
 
     rvs_new = RandomVariables()
 
-    for rv in model.random_variables:
+    for rv in rvs_full:
         if rv not in rvs:
             rvs_new.add(rv)
 

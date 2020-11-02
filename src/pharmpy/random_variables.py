@@ -273,6 +273,8 @@ class RandomVariables(OrderedSet):
         self.add(rv_block)
         self.add(rv_extracted)
 
+        return rv_extracted
+
     @property
     def ruv_rvs(self):
         """Get list of all ruv random variables (epsilons)"""

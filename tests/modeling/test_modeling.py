@@ -918,6 +918,12 @@ def test_add_etas(pheno_path, parameter, expression, operation, buf_new):
             '$PK\nCL=THETA(1)*EXP(ETA(1))\nV=THETA(2)*EXP(ETA(2))\nS1=V+ETA(3)\n\n',
             '$OMEGA BLOCK(3)\n' '0.0309626\t\n' '0.9\t0.031128\t\n' '0.9\t0.9\t0.1\t\n',
         ),
+        (
+            'nonmem/pheno_block_present.mod',
+            ['ETA(1)', 'ETA(3)'],
+            '$PK\n' 'CL = THETA(1)*EXP(ETA(2))\n' 'V = THETA(2)*EXP(ETA(1))\n' 'S1=V+ETA(3)\n\n',
+            '$OMEGA  0.0309626\n$OMEGA BLOCK(2)\n0.1	\n0.9\t0.031128\t\n',
+        ),
     ],
 )
 def test_block_rvs(testdata, model_path, etas, pk_ref, omega_ref):

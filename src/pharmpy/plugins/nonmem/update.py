@@ -121,7 +121,12 @@ def update_random_variables(model, old, new):
                 records = get_omega_records(model, [rv.name for rv in rvs])
 
                 model.control_stream.remove_records(records)
-                omega_new = create_omega_block(model, dist)
+
+                if len(rvs) > 1:
+                    omega_new = create_omega_block(model, dist)
+                else:
+                    omega_new = create_omega_single(model, model.parameters[str(dist.std ** 2)])
+
                 omegas_block, etas_block = create_maps(new.etas)
 
                 next_omega = 1
