@@ -51,7 +51,7 @@ class DatasetIterator:
         If input is dataset simply pass through and set model to None
         """
         try:
-            dataset = df_or_model.input.dataset
+            dataset = df_or_model.dataset
             self._model = df_or_model
             return dataset
         except AttributeError:
@@ -67,7 +67,7 @@ class DatasetIterator:
         except AttributeError:
             return df
         else:
-            model.input.dataset = df
+            model.dataset = df
             model.name = df.name
             return model
 
