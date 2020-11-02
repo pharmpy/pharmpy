@@ -112,8 +112,12 @@ class Model(pharmpy.model.Model):
         if self._dataset_updated:
             # FIXME: If no name set use the model name. Set that when setting dataset to input!
             if not nofiles:
-                datapath = self.dataset.pharmpy.write_csv(force=force)
-                self.dataset_path = datapath
+                if path is not None:
+                    dir_path = path.parent
+                else:
+                    dir_path = None
+                datapath = self.dataset.pharmpy.write_csv(path=dir_path, force=force)
+                self.dataset_path = datapath.name
 
             data_record = self.control_stream.get_records('DATA')[0]
 
