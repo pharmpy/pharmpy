@@ -1,7 +1,4 @@
-import re
-
 import sympy
-from sympy.stats import Normal
 from sympy.stats.joint_rv_types import MultivariateNormalDistribution
 
 from pharmpy.parameter import Parameter
@@ -14,7 +11,12 @@ class RVInputException(Exception):
 
 
 def create_rv_block(model, list_of_rvs=None):
+    rvs_full = model.random_variables
     rvs = _get_rvs(model, list_of_rvs)
+
+    for rv in rvs:
+        if isinstance(rv.pspace.distribution, MultivariateNormalDistribution):
+            rvs_full.extract_from_block(rv)
 
     pset, cov = _create_cov_matrix(model, rvs)
 
@@ -60,50 +62,10 @@ def _get_rvs(model, list_of_rvs):
             if not full_block:
                 raise RVInputException(f'Random variable cannot be IOV: {rv}')
             continue
-        if isinstance(rv.pspace.distribution, MultivariateNormalDistribution):
-            joined_rvs = model.random_variables.get_joined_rvs(rv)
-            _extract_rv_from_block(rv, joined_rvs)
+
         rvs.append(rv)
 
     return RandomVariables(rvs)
-
-
-def _extract_rv_from_block(rv, rest_of_block):
-    dist = rv.pspace.distribution
-    m = dist.args[1]
-    eta_number = re.match(r'ETA\(([0-9])\)', rv.name).group(1)
-    rvs_new = []
-
-    to_remove = None
-
-    for row in range(m.shape[0]):
-        for col in range(m.shape[1]):
-            if row == col:
-                elem = m.row(row).col(col)[0]
-                omega_number = re.match(r'OMEGA\(([0-9]),[0-9]\)', elem.name).group(1)
-                if omega_number == eta_number:
-                    rv_new = Normal(rv.name, 0, sympy.sqrt(elem))
-                    rv_new.variability_level = VariabilityLevel.IIV
-                    rvs_new.append(rv_new)
-                    to_remove = row
-                    break
-
-    cov = m.row_del(to_remove).col_del(to_remove)
-
-    if len(cov) == 1:
-        rv_new = Normal(rv.name, 0, sympy.sqrt(cov[0]))
-        rv_new.variability_level = VariabilityLevel.IIV
-        rvs_new.append(rv_new)
-    else:
-        means = sympy.zeros(m.shape[0] - 1)
-        dist_new = JointNormalSeparate(rest_of_block, means, cov)
-
-        for rv in dist_new:
-            rv.variability_level = VariabilityLevel.IIV
-
-        rvs_new += dist_new
-
-    return rvs_new
 
 
 def _has_fixed_params(model, rv):

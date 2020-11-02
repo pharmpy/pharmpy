@@ -141,3 +141,22 @@ def test_copy(testdata):
     rvs = pickle.loads(ser)
     for rv in rvs:
         assert bool(rv.variability_level)
+
+
+def test_extract_from_block():
+    etas = JointNormalSeparate(['ETA(1)', 'ETA(2)'], [0, 0], [[3, 0.25], [0.25, 1]])
+    for rv in etas:
+        rv.variability_level = VariabilityLevel.IIV
+    rvs = RandomVariables(etas)
+    eta3 = stats.Normal('ETA(3)', 0.5, 2)
+    eta3.variability_level = VariabilityLevel.IIV
+    rvs.add(eta3)
+
+    rvs_dists, _ = rvs.distributions_as_list()
+    assert len(rvs_dists) == 2
+
+    rvs.extract_from_block(etas[0])
+    rvs_dists, _ = rvs.distributions_as_list()
+    assert len(rvs_dists) == 3
+    assert rvs[0].name == 'ETA(3)'
+    assert rvs[2].name == 'ETA(1)'

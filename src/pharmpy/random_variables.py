@@ -234,9 +234,44 @@ class RandomVariables(OrderedSet):
 
         for r, d in zip(rvs, dist):
             if d == rv.pspace.distribution:
-                joined_rvs.append(r)
+                joined_rvs += r
 
-        return joined_rvs
+        return RandomVariables(joined_rvs)
+
+    def extract_from_block(self, rv_to_extract):
+        associated_rvs = self.get_joined_rvs(rv_to_extract)
+
+        cov = associated_rvs.covariance_matrix()
+        rv_extracted = None
+        to_remove = None
+        names = []
+
+        for i, rv in enumerate(associated_rvs):
+            if rv.name == rv_to_extract.name:
+                rv_extracted = stats.Normal(rv.name, 0, sympy.sqrt(cov[i, i]))
+                rv_extracted.variability_level = VariabilityLevel.IIV
+                to_remove = i
+            else:
+                names.append(rv.name)
+
+        cov.row_del(to_remove)
+        cov.col_del(to_remove)
+
+        for rv in associated_rvs:
+            self.discard(rv)
+
+        if len(cov) == 1:
+            rv_block = stats.Normal(names[0], 0, sympy.sqrt(cov[0]))
+            rv_block.variability_level = VariabilityLevel.IIV
+        else:
+            means = sympy.zeros(cov.shape[0] - 1)
+            rv_block = JointNormalSeparate(names, means, cov)
+
+            for rv in rv_block:
+                rv.variability_level = VariabilityLevel.IIV
+
+        self.add(rv_block)
+        self.add(rv_extracted)
 
     @property
     def ruv_rvs(self):
