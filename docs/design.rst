@@ -4,7 +4,19 @@
 Design
 ======
 
-.. warning:: This document is outdated. It could in the future be transformed into a plugin writer's guide for example
+Dependencies
+============
+
+Three of the Pharmpy dependences has a special status. These are sympy, pandas and numpy. These packages are considered
+to be central in the python scientific ecosystem. Thus exposing objects from classes defined in these packages is ok
+and encouraged in the Pharmpy API. This will make it easier for users to build on Pharmpy and removes the need for wrapping
+these object into the Pharmpy API. Since symengine objects share API with sympy exposing symengine objects is also ok.
+
+Classes and APIs for all other dependencies should not be exposed to users to avoid leaking third party APIs. This will
+simplify replacing dependencies without breaking the Pharmpy API.
+
+
+.. warning:: The rest of this document is outdated.
 
 Introduction
 ============
