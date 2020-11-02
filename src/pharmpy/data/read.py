@@ -25,7 +25,7 @@ class NMTRANDataIO(StringIO):
         if hasattr(filename_or_io, 'read'):
             contents = filename_or_io.read()
         else:
-            with open(str(filename_or_io), 'r') as datafile:
+            with open(str(filename_or_io), 'r', encoding='latin-1') as datafile:
                 contents = datafile.read()  # All variations of newlines are converted into \n
 
         if ignore_character == '@':
