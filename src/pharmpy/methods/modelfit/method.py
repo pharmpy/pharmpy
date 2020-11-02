@@ -4,9 +4,9 @@ from .run import run
 
 
 class Modelfit(pharmpy.methods.Method):
-    def __init__(self, models):
+    def __init__(self, models, **kwargs):
         self.models = models
-        super().__init__()
+        super().__init__(**kwargs)
 
     def run(self):
         run(self.models, self.rundir.path)

@@ -19,8 +19,8 @@ class NONMEMRunDirectory:
         self.write_model(model)
 
     def write_model(self, model):
-        self.model_path = model.write(path=self.path, force=True)
         shutil.copy(model.dataset_path, self.path)  # FIXME!
+        self.model_path = model.write(path=self.path, force=True)
 
 
 def run(models, path):
@@ -31,6 +31,7 @@ def run(models, path):
 
 
 def execute_model(model, i, path):
+    original_model_path = model.source.path
     rundir = NONMEMRunDirectory(model, i, path=path)
     subprocess.call(
         [
@@ -43,7 +44,7 @@ def execute_model(model, i, path):
     model.modelfit_results = None
     for ext in ['ext', 'lst', 'phi']:
         source_path = rundir.model_path.with_suffix(f'.{ext}')
-        dest_path = model.source.path.with_suffix(f'.{ext}')
+        dest_path = original_model_path.with_suffix(f'.{ext}')
         shutil.copy(source_path, dest_path)
     return model
 
