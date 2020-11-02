@@ -151,6 +151,13 @@ def format_keyval_pairs(data_dict, sort=True, right_just=False):
     return lines
 
 
+def run_bootstrap(args):
+    import pharmpy.methods.bootstrap as bootstrap
+
+    method = bootstrap.Bootstrap(args.model)
+    method.run()
+
+
 def run_execute(args):
     import pharmpy.methods.modelfit as modelfit
 
@@ -656,6 +663,13 @@ parser_definition = [
                         'help': 'Execute one or more model',
                         'func': run_execute,
                         'parents': [args_input],
+                    }
+                },
+                {
+                    'bootstrap': {
+                        'help': 'Bootstrap',
+                        'func': run_bootstrap,
+                        'parents': [args_model_input],
                     }
                 },
             ],
