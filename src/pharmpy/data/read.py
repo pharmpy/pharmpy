@@ -336,13 +336,14 @@ def read_nonmem_dataset(
     #        df.apply(_translate_nonmem_time_and_date)
 
     # FIXME: Do not remove dropped columns for now.
-    # FIXME: Make sure to not parse these columns if this stays
     # if drop:
     #    indices_to_drop = [i for i, x in enumerate(drop) if not x]
     #    df = df.iloc[:, indices_to_drop].copy()
 
     if not raw:
-        parse_columns = list(df.columns)
+        if drop is None:
+            drop = [False] * len(df.columns)
+        parse_columns = [col for col, dropped in zip(df.columns, drop) if not dropped]
         # FIXME: This is instead of proper handling of these columns
         parse_columns = [
             x for x in parse_columns if x not in ['TIME', 'DATE', 'DAT1', 'DAT2', 'DAT3']
