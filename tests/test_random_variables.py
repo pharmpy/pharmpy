@@ -1,3 +1,6 @@
+import copy
+import pickle
+
 import pytest
 import sympy
 import sympy.stats as stats
@@ -122,3 +125,19 @@ def test_all_parameters_models(testdata, model_file, expected_length):
 
     assert len(model.random_variables.all_parameters()) == expected_length
     assert len(model.parameters) != len(model.random_variables.all_parameters())
+
+
+def test_copy(testdata):
+    model = Model(testdata / 'nonmem' / 'pheno.mod')
+    rvs = model.random_variables.copy()
+    for rv in rvs:
+        assert bool(rv.variability_level)
+
+    rvs = copy.deepcopy(model.random_variables)
+    for rv in rvs:
+        assert bool(rv.variability_level)
+
+    ser = pickle.dumps(model.random_variables)
+    rvs = pickle.loads(ser)
+    for rv in rvs:
+        assert bool(rv.variability_level)

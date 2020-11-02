@@ -293,6 +293,17 @@ class RandomVariables(OrderedSet):
         new_rvs = JointNormalSeparate(names, means, M)
         self.__init__(new_rvs + others)
 
+    def __getstate__(self):
+        """Serialization methods needed to handle variability_level on random variables"""
+        var_levels = [rv.variability_level for rv in self]
+        return {'self': list(self), 'var_levels': var_levels}
+
+    def __setstate__(self, d):
+        OrderedSet.__init__(self)
+        for rv, var_level in zip(d['self'], d['var_levels']):
+            rv.variability_level = var_level
+            self.add(rv)
+
     def __deepcopy__(self, memo):
         return self.copy()
 
