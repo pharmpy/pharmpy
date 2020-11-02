@@ -44,6 +44,7 @@ class SourceBase:
             raise FileExistsError(f'Cannot overwrite model at {path} with "force" not set')
         with open(path, 'w', encoding='latin-1') as fp:
             fp.write(self.code)
+        self.path = path
 
 
 class FileSource(SourceBase):
