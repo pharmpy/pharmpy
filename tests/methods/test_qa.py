@@ -80,4 +80,3 @@ ETA(2),3.77,0.400863,0.448917
     assert res.dofv['df']['tdist'] == 2
 
     res = calculate_results(orig, base, tdist_model=None)
-    assert res.tdist_parameters is None

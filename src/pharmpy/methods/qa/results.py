@@ -19,12 +19,14 @@ class QAResults(Results):
         boxcox_parameters=None,
         tdist_parameters=None,
         add_etas_parameters=None,
+        influential_individuals=None,
     ):
         self.dofv = dofv
         self.fullblock_parameters = fullblock_parameters
         self.boxcox_parameters = boxcox_parameters
         self.tdist_parameters = tdist_parameters
         self.add_etas_parameters = add_etas_parameters
+        self.influential_individuals = influential_individuals
 
 
 def calculate_results(
@@ -36,6 +38,7 @@ def calculate_results(
     add_etas_model=None,
     etas_added_to=None,
     frem_results=None,
+    cdd_results=None,
 ):
     fullblock_table, fullblock_dofv = calc_fullblock(original_model, fullblock_model)
     boxcox_table, boxcox_dofv = calc_transformed_etas(
@@ -44,6 +47,7 @@ def calculate_results(
     tdist_table, tdist_dofv = calc_transformed_etas(original_model, tdist_model, 'tdist', 'df')
     addetas_table, addetas_dofv = calc_add_etas(original_model, add_etas_model, etas_added_to)
     frem_dofv = calc_frem_dofv(base_model, fullblock_model, frem_results)
+    infinds = influential_individuals(cdd_results)
     dofv_table = pd.concat([fullblock_dofv, boxcox_dofv, tdist_dofv, addetas_dofv, frem_dofv])
     res = QAResults(
         dofv=dofv_table,
@@ -51,8 +55,20 @@ def calculate_results(
         boxcox_parameters=boxcox_table,
         tdist_parameters=tdist_table,
         add_etas_parameters=addetas_table,
+        influential_individuals=infinds,
     )
     return res
+
+
+def influential_individuals(cdd_res):
+    if cdd_res is None:
+        return None
+    df = cdd_res.case_results
+    df = df.loc[df['delta_ofv'] > 3.84]
+    skipped = [e[0] for e in df['skipped_individuals']]
+    influentials = pd.DataFrame({'delta_ofv': df['delta_ofv']}, index=skipped)
+    influentials.index.name = 'ID'
+    return influentials
 
 
 def calc_add_etas(original_model, add_etas_model, etas_added_to):
@@ -236,8 +252,17 @@ def psn_qa_results(path):
     else:
         frem_res = None
 
+    cdd_path = path / 'cdd_run' / 'results.json'
+    if cdd_path.is_file():
+        cdd_res = read_results(cdd_path)
+    else:
+        cdd_res = None
+
     args = psn_helpers.options_from_command(psn_helpers.psn_command(path))
-    etas_added_to = args['add_etas'].split(',')
+    if 'add_etas' not in args:
+        etas_added_to = None
+    else:
+        etas_added_to = args['add_etas'].split(',')
 
     res = calculate_results(
         original_model,
@@ -248,5 +273,6 @@ def psn_qa_results(path):
         add_etas_model=addetas_model,
         etas_added_to=etas_added_to,
         frem_results=frem_res,
+        cdd_results=cdd_res,
     )
     return res
