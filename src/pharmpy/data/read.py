@@ -30,7 +30,7 @@ class NMTRANDataIO(StringIO):
 
         if ignore_character == '@':
             # FIXME: Does this really handle the final line with no new line?
-            comment_regexp = re.compile(r'^[ \t]*[A-Za-z#].*\n', re.MULTILINE)
+            comment_regexp = re.compile(r'^[ \t]*[A-Za-z#@].*\n', re.MULTILINE)
         else:
             comment_regexp = re.compile('^[' + ignore_character + '].*\n', re.MULTILINE)
         contents = re.sub(comment_regexp, '', contents)
