@@ -287,7 +287,11 @@ def read_nonmem_dataset(
      5. Pad with null_token columns if $INPUT has more columns than the dataset
      6. Strip away superfluous columns from the dataset
     """
-    if len(colnames) > len(set(colnames)):
+    if drop is None:
+        drop = [False] * len(colnames)
+
+    non_dropped = [name for name, dropped in zip(colnames, drop) if not dropped]
+    if len(non_dropped) > len(set(non_dropped)):
         raise KeyError('Column names are not unique')
 
     file_io = NMTRANDataIO(path_or_io, ignore_character)
@@ -341,8 +345,6 @@ def read_nonmem_dataset(
     #    df = df.iloc[:, indices_to_drop].copy()
 
     if not raw:
-        if drop is None:
-            drop = [False] * len(df.columns)
         parse_columns = [col for col, dropped in zip(df.columns, drop) if not dropped]
         # FIXME: This is instead of proper handling of these columns
         parse_columns = [
