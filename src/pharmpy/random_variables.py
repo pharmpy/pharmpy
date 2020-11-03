@@ -247,6 +247,7 @@ class RandomVariables(OrderedSet):
         names = []
 
         for i, rv in enumerate(associated_rvs):
+            self.discard(rv)
             if rv.name == rv_to_extract.name:
                 rv_extracted = stats.Normal(rv.name, 0, sympy.sqrt(cov[i, i]))
                 rv_extracted.variability_level = VariabilityLevel.IIV
@@ -257,20 +258,17 @@ class RandomVariables(OrderedSet):
         cov.row_del(to_remove)
         cov.col_del(to_remove)
 
-        for rv in associated_rvs:
-            self.discard(rv)
-
         if len(cov) == 1:
-            rv_block = stats.Normal(names[0], 0, sympy.sqrt(cov[0]))
-            rv_block.variability_level = VariabilityLevel.IIV
+            rv_remaining = stats.Normal(names[0], 0, sympy.sqrt(cov[0]))
+            rv_remaining.variability_level = VariabilityLevel.IIV
         else:
             means = sympy.zeros(cov.shape[0] - 1)
-            rv_block = JointNormalSeparate(names, means, cov)
+            rv_remaining = JointNormalSeparate(names, means, cov)
 
-            for rv in rv_block:
+            for rv in rv_remaining:
                 rv.variability_level = VariabilityLevel.IIV
 
-        self.add(rv_block)
+        self.add(rv_remaining)
         self.add(rv_extracted)
 
         return rv_extracted
@@ -336,18 +334,30 @@ class RandomVariables(OrderedSet):
             raise ValueError('Only normal distributions are supported')
         return M
 
-    def merge_normal_distributions(self, fill=0):
+    def merge_normal_distributions(self, fill=0, create_cov_params=False):
         """Merge all normal distributed rvs together into one joint normal
 
         Set new covariances (and previous 0 covs) to 'fill'
         """
+        params = dict()
         means, M, names, others = self._calc_covariance_matrix()
         if fill != 0:
             for row, col in itertools.product(range(M.rows), range(M.cols)):
                 if M[row, col] == 0:
                     M[row, col] = fill
+        elif create_cov_params:
+            for row, col in itertools.product(range(M.rows), range(M.cols)):
+                if M[row, col] == 0:
+                    param_1 = M[row, row]
+                    param_2 = M[col, col]
+                    cov_name = f'COV_{param_1}_{param_2}'
+                    params[cov_name] = (param_1, param_2)
+
+                    M[row, col] = symbol(cov_name)
+
         new_rvs = JointNormalSeparate(names, means, M)
         self.__init__(new_rvs + others)
+        return params
 
     def __getstate__(self):
         """Serialization methods needed to handle variability_level on random variables"""

@@ -1,9 +1,7 @@
-import sympy
 from sympy.stats.joint_rv_types import MultivariateNormalDistribution
 
 from pharmpy.parameter import Parameter
-from pharmpy.random_variables import JointNormalSeparate, RandomVariables, VariabilityLevel
-from pharmpy.symbols import symbol as S
+from pharmpy.random_variables import RandomVariables, VariabilityLevel
 
 
 class RVInputException(Exception):
@@ -20,19 +18,17 @@ def create_rv_block(model, list_of_rvs=None):
             rvs.discard(rv)
             rvs.add(rv_extracted)
 
-    pset, cov = _create_cov_matrix(model, rvs)
+    pset = _merge_rvs(model, rvs)
 
     model.parameters = pset
-
-    dist_new = _create_distribution(rvs, cov)
 
     rvs_new = RandomVariables()
 
     for rv in rvs_full:
-        if rv not in rvs:
+        if rv.name not in [rv.name for rv in rvs.etas]:
             rvs_new.add(rv)
 
-    for rv in dist_new:
+    for rv in rvs:
         rvs_new.add(rv)
 
     model.random_variables = rvs_new
@@ -79,49 +75,21 @@ def _has_fixed_params(model, rv):
     return False
 
 
-def _create_cov_matrix(model, rvs):
-    cov = sympy.zeros(len(rvs))
+def _merge_rvs(model, rvs):
     pset = model.parameters
-    rv_map = _create_rv_map(model, rvs)
 
-    for row in range(len(rvs)):  # TODO: keep old covariances?
-        for col in range(row + 1):
-            if row == col:
-                cov[row, col] = rv_map[rvs[row]]
-            else:
-                covariance_init = _choose_param_init(model)
-                param = Parameter(f'block_rv_{row}_{col}', covariance_init)
-                pset.add(param)
-                cov[row, col] = S(param.name)
-                cov[col, row] = S(param.name)
+    params = rvs.merge_normal_distributions(create_cov_params=True)
 
-    return pset, cov
+    for rv in rvs:
+        rv.variability_level = VariabilityLevel.IIV
 
+    for p_name in params.keys():
+        covariance_init = _choose_param_init(model)
+        param_new = Parameter(p_name, covariance_init)
+        pset.add(param_new)
 
-def _create_rv_map(model, rvs):
-    rv_map = dict()
-    for rv, dist in rvs.distributions():
-        param = model.parameters[str(list(dist.free_symbols)[0])]
-        rv = rv[0]
-        rv_map[rv] = S(param.name)
-    return rv_map
+    return pset
 
 
 def _choose_param_init(model):
     return 0.9
-
-
-def _create_distribution(rvs, cov):
-    means = []
-    names = []
-
-    for rv in rvs:
-        means.append(0)
-        names.append(rv.name)
-
-    dist_new = JointNormalSeparate(names, means, cov)
-
-    for rv in dist_new:
-        rv.variability_level = VariabilityLevel.IIV
-
-    return dist_new
