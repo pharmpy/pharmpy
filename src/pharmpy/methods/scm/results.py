@@ -5,6 +5,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from pharmpy import Model
 from pharmpy.methods.psn_helpers import (
     arguments_from_command,
     options_from_command,
@@ -617,6 +618,32 @@ def parcov_dict_from_test_relations(test_relations):
     return parcov
 
 
+def add_covariate_effects(res, path):
+    steps = res.steps
+
+    def fn(row):
+        if row.is_backward:
+            return np.nan
+        degrees = row.delta_df
+        model_name = row.model.replace(
+            '-', ''
+        )  # FIXME: The dash should not have been in the table!
+        model_path = path / row.directory / f'{model_name}.mod'
+        if not model_path.is_file():
+            return np.nan
+        model = Model(model_path)
+        varpars = model.random_variables.free_symbols
+        all_thetas = [param for param in model.parameters if param.symbol not in varpars]
+        new_thetas = all_thetas[-degrees:]
+        covariate_effects = {
+            param.name: model.modelfit_results.parameter_estimates[param.name]
+            for param in new_thetas
+        }
+        return covariate_effects
+
+    steps['covariate_effects'] = steps.apply(fn, axis=1)
+
+
 def psn_scm_results(path):
     """Create scm results from a PsN SCM run
 
@@ -639,4 +666,6 @@ def psn_scm_results(path):
     else:
         raise IOError(r'Could not find test_relations in scm config file')
 
-    return SCMResults(steps=psn_scm_parse_logfile(logfile, options, parcov_dictionary))
+    res = SCMResults(steps=psn_scm_parse_logfile(logfile, options, parcov_dictionary))
+    add_covariate_effects(res, path)
+    return res
