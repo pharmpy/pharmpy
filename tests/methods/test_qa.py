@@ -21,8 +21,10 @@ V,False,0.010000,NaN
     correct = pd.read_csv(StringIO(correct), index_col=[0])
     pd.testing.assert_frame_equal(res.add_etas_parameters, correct, atol=1e-6)
 
-    assert res.dofv['dofv']['add_etas'] == pytest.approx(730.89472681373070 - 730.84697789365532)
-    assert res.dofv['df']['add_etas'] == 2
+    assert res.dofv['dofv']['parameter_variability', 'add_etas'] == pytest.approx(
+        730.89472681373070 - 730.84697789365532
+    )
+    assert res.dofv['df']['parameter_variability', 'add_etas'] == 2
 
 
 def test_fullblock(testdata):
@@ -38,8 +40,10 @@ def test_fullblock(testdata):
     correct = pd.read_csv(StringIO(correct), index_col=[0])
     pd.testing.assert_frame_equal(res.fullblock_parameters, correct)
 
-    assert res.dofv['dofv']['fullblock'] == pytest.approx(730.89472681373070 - 706.36113798726512)
-    assert res.dofv['df']['fullblock'] == 1
+    assert res.dofv['dofv']['parameter_variability', 'fullblock'] == pytest.approx(
+        730.89472681373070 - 706.36113798726512
+    )
+    assert res.dofv['df']['parameter_variability', 'fullblock'] == 1
 
     res = calculate_results(orig, base, fullblock_model=None)
     assert res.fullblock_parameters is None
@@ -57,8 +61,10 @@ ETA(2),0.645817,0.429369,0.448917
     correct = pd.read_csv(StringIO(correct), index_col=[0])
     pd.testing.assert_frame_equal(res.boxcox_parameters, correct)
 
-    assert res.dofv['dofv']['boxcox'] == pytest.approx(730.89472681373070 - 721.78812733817688)
-    assert res.dofv['df']['boxcox'] == 2
+    assert res.dofv['dofv']['parameter_variability', 'boxcox'] == pytest.approx(
+        730.89472681373070 - 721.78812733817688
+    )
+    assert res.dofv['df']['parameter_variability', 'boxcox'] == 2
 
     res = calculate_results(orig, base, boxcox_model=None)
     assert res.boxcox_parameters is None
@@ -76,7 +82,9 @@ ETA(2),3.77,0.400863,0.448917
     correct = pd.read_csv(StringIO(correct), index_col=[0])
     pd.testing.assert_frame_equal(res.tdist_parameters, correct)
 
-    assert res.dofv['dofv']['tdist'] == pytest.approx(730.89472681373070 - 729.45800311609150)
-    assert res.dofv['df']['tdist'] == 2
+    assert res.dofv['dofv']['parameter_variability', 'tdist'] == pytest.approx(
+        730.89472681373070 - 729.45800311609150
+    )
+    assert res.dofv['df']['parameter_variability', 'tdist'] == 2
 
     res = calculate_results(orig, base, tdist_model=None)

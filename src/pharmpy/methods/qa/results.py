@@ -49,6 +49,7 @@ def calculate_results(
     frem_dofv = calc_frem_dofv(base_model, fullblock_model, frem_results)
     infinds = influential_individuals(cdd_results)
     dofv_table = pd.concat([fullblock_dofv, boxcox_dofv, tdist_dofv, addetas_dofv, frem_dofv])
+    dofv_table.set_index(['section', 'run'], inplace=True)
     res = QAResults(
         dofv=dofv_table,
         fullblock_parameters=fullblock_table,
@@ -72,7 +73,14 @@ def influential_individuals(cdd_res):
 
 
 def calc_add_etas(original_model, add_etas_model, etas_added_to):
-    dofv_tab = pd.DataFrame({'dofv': np.nan, 'df': np.nan}, index=['add_etas'])
+    dofv_tab = pd.DataFrame(
+        {
+            'section': ['parameter_variability'],
+            'run': ['add_etas'],
+            'dofv': [np.nan],
+            'df': [np.nan],
+        }
+    )
     if add_etas_model is None:
         return None, dofv_tab
     add_etas_res = add_etas_model.modelfit_results
@@ -107,13 +115,22 @@ def calc_add_etas(original_model, add_etas_model, etas_added_to):
         {'added': added, 'new_sd': add_etas_sds, 'orig_sd': orig_sds}, index=all_etas
     )
     dofv = origres.ofv - add_etas_res.ofv
-    dofv_tab = pd.DataFrame({'dofv': dofv, 'df': len(etas_added_to)}, index=['add_etas'])
+    dofv_tab = pd.DataFrame(
+        {
+            'section': ['parameter_variability'],
+            'run': ['add_etas'],
+            'dofv': [dofv],
+            'df': [len(etas_added_to)],
+        }
+    )
     return table, dofv_tab
 
 
 def calc_frem_dofv(base_model, fullblock_model, frem_results):
     """Calculate the dOFV for the frem model"""
-    dofv_tab = pd.DataFrame({'dofv': np.nan, 'df': np.nan}, index=['frem'])
+    dofv_tab = pd.DataFrame(
+        {'section': ['covariates'], 'run': ['frem'], 'dofv': [np.nan], 'df': [np.nan]}
+    )
     if base_model is None or frem_results is None:
         return dofv_tab
     baseres = base_model.modelfit_results
@@ -136,13 +153,22 @@ def calc_frem_dofv(base_model, fullblock_model, frem_results):
     dofv = model2_ofv - model4_ofv - (base_ofv - full_ofv)
     npar = len(frem_results.covariate_effects.index.get_level_values('parameter').unique())
     ncov = len(frem_results.covariate_effects.index.get_level_values('covariate').unique())
-    dofv_tab = pd.DataFrame({'dofv': dofv, 'df': npar * ncov}, index=['frem'])
+    dofv_tab = pd.DataFrame(
+        {'section': ['covariates'], 'run': ['frem'], 'dofv': [dofv], 'df': [npar * ncov]}
+    )
     return dofv_tab
 
 
 def calc_transformed_etas(original_model, new_model, transform_name, parameter_name):
     """Retrieve new and old parameters of boxcox"""
-    dofv_tab = pd.DataFrame({'dofv': np.nan, 'df': np.nan}, index=[transform_name])
+    dofv_tab = pd.DataFrame(
+        {
+            'section': ['parameter_variability'],
+            'run': [transform_name],
+            'dofv': [np.nan],
+            'df': [np.nan],
+        }
+    )
     if new_model is None:
         return None, dofv_tab
     origres = original_model.modelfit_results
@@ -173,13 +199,27 @@ def calc_transformed_etas(original_model, new_model, transform_name, parameter_n
     )
 
     dofv = origres.ofv - newres.ofv
-    dofv_tab = pd.DataFrame({'dofv': dofv, 'df': len(eta_names)}, index=[transform_name])
+    dofv_tab = pd.DataFrame(
+        {
+            'section': ['parameter_variability'],
+            'run': [transform_name],
+            'dofv': [dofv],
+            'df': [len(eta_names)],
+        }
+    )
     return table, dofv_tab
 
 
 def calc_fullblock(original_model, fullblock_model):
     """Retrieve new and old parameters of full block"""
-    dofv_tab = pd.DataFrame({'dofv': np.nan, 'df': np.nan}, index=['fullblock'])
+    dofv_tab = pd.DataFrame(
+        {
+            'section': ['parameter_variability'],
+            'run': ['fullblock'],
+            'dofv': [np.nan],
+            'df': [np.nan],
+        }
+    )
     if fullblock_model is None:
         return None, dofv_tab
     origres = original_model.modelfit_results
@@ -210,7 +250,14 @@ def calc_fullblock(original_model, fullblock_model):
 
     degrees = table['old'].isna().sum()
     dofv = origres.ofv - fullres.ofv
-    dofv_tab = pd.DataFrame({'dofv': dofv, 'df': degrees}, index=['fullblock'])
+    dofv_tab = pd.DataFrame(
+        {
+            'section': ['parameter_variability'],
+            'run': ['fullblock'],
+            'dofv': [dofv],
+            'df': [degrees],
+        }
+    )
     return table, dofv_tab
 
 
