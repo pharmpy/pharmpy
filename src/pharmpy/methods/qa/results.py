@@ -21,6 +21,8 @@ class QAResults(Results):
         add_etas_parameters=None,
         iov_parameters=None,
         influential_individuals=None,
+        covariate_effects=None,
+        univariate_sum=None,
     ):
         self.dofv = dofv
         self.fullblock_parameters = fullblock_parameters
@@ -29,6 +31,8 @@ class QAResults(Results):
         self.add_etas_parameters = add_etas_parameters
         self.iov_parameters = iov_parameters
         self.influential_individuals = influential_individuals
+        self.covariate_effects = covariate_effects
+        self.univariate_sum = univariate_sum
 
 
 def calculate_results(
@@ -42,6 +46,7 @@ def calculate_results(
     etas_added_to=None,
     frem_results=None,
     cdd_results=None,
+    scm_results=None,
 ):
     fullblock_table, fullblock_dofv = calc_fullblock(original_model, fullblock_model)
     boxcox_table, boxcox_dofv = calc_transformed_etas(
@@ -51,9 +56,19 @@ def calculate_results(
     addetas_table, addetas_dofv = calc_add_etas(original_model, add_etas_model, etas_added_to)
     iov_table, iov_dofv = calc_iov(original_model, iov_model)
     frem_dofv = calc_frem_dofv(base_model, fullblock_model, frem_results)
+    univariate_sum, scm_table, scm_dofv = calc_scm_dofv(scm_results)
     infinds, cdd_dofv = influential_individuals(cdd_results)
     dofv_table = pd.concat(
-        [fullblock_dofv, boxcox_dofv, tdist_dofv, addetas_dofv, iov_dofv, frem_dofv, cdd_dofv]
+        [
+            fullblock_dofv,
+            boxcox_dofv,
+            tdist_dofv,
+            addetas_dofv,
+            iov_dofv,
+            frem_dofv,
+            scm_dofv,
+            cdd_dofv,
+        ]
     )
     dofv_table.set_index(['section', 'run'], inplace=True)
     res = QAResults(
@@ -64,6 +79,8 @@ def calculate_results(
         add_etas_parameters=addetas_table,
         iov_parameters=iov_table,
         influential_individuals=infinds,
+        covariate_effects=scm_table,
+        univariate_sum=univariate_sum,
     )
     return res
 
@@ -204,6 +221,32 @@ def calc_add_etas(original_model, add_etas_model, etas_added_to):
         }
     )
     return table, dofv_tab
+
+
+def calc_scm_dofv(scm_results):
+    dofv_tab = pd.DataFrame(
+        {'section': ['covariates'], 'run': ['scm'], 'dofv': [np.nan], 'df': [np.nan]}
+    )
+    if scm_results is None:
+        return None, None, dofv_tab
+    table = scm_results.steps.copy()
+    table.index = table.index.droplevel(3)
+    table.index = table.index.droplevel(0)
+    univariate_sum = table['ofv_drop'].sum()
+    top = table.sort_values(by=['ofv_drop']).iloc[-1:]
+    table['coeff'] = [list(coveff.values())[0] for coveff in table['covariate_effects']]
+    table = table[['ofv_drop', 'coeff']]
+    table.columns = ['dofv', 'coeff']
+    table.rename(mapper=lambda name: f'ETA({name[2:]})', level=0, inplace=True)
+    dofv_tab = pd.DataFrame(
+        {
+            'section': ['covariates'],
+            'run': top['model'].values,
+            'dofv': top['ofv_drop'].values,
+            'df': top['delta_df'].values,
+        }
+    )
+    return univariate_sum, table, dofv_tab
 
 
 def calc_frem_dofv(base_model, fullblock_model, frem_results):
@@ -390,6 +433,12 @@ def psn_qa_results(path):
     else:
         cdd_res = None
 
+    scm_path = path / 'scm_run' / 'results.json'
+    if scm_path.is_file():
+        scm_res = read_results(scm_path)
+    else:
+        scm_res = None
+
     args = psn_helpers.options_from_command(psn_helpers.psn_command(path))
     if 'add_etas' not in args:
         etas_added_to = None
@@ -407,5 +456,6 @@ def psn_qa_results(path):
         etas_added_to=etas_added_to,
         frem_results=frem_res,
         cdd_results=cdd_res,
+        scm_results=scm_res,
     )
     return res

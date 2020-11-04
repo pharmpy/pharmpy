@@ -5,6 +5,7 @@ import pytest
 
 from pharmpy import Model
 from pharmpy.methods.qa.results import calculate_results
+from pharmpy.results import read_results
 
 
 def test_add_etas(testdata):
@@ -104,3 +105,21 @@ ETA(2),0.071481,0.448917,0.400451
 
     assert res.dofv['dofv']['parameter_variability', 'iov'] == pytest.approx(42.314986)
     assert res.dofv['df']['parameter_variability', 'iov'] == 2
+
+
+def test_scm(testdata):
+    orig = Model(testdata / 'nonmem' / 'pheno.mod')
+    base = Model(testdata / 'nonmem' / 'qa' / 'pheno_linbase.mod')
+    scm_res = read_results(testdata / 'nonmem' / 'qa' / 'scm_results.json')
+    res = calculate_results(orig, base, scm_results=scm_res)
+    correct = """,,dofv,coeff
+ETA(1),APGR,2.48792,-0.033334
+ETA(1),WGT,0.48218,0.052342
+ETA(2),APGR,0.59036,0.008371
+ETA(2),WGT,0.00887,-0.003273
+"""
+    correct = pd.read_csv(StringIO(correct), index_col=[0, 1])
+    correct.index.set_names(['parameter', 'covariate'], inplace=True)
+    pd.testing.assert_frame_equal(res.covariate_effects, correct, atol=1e-6)
+    assert res.dofv['dofv']['covariates', 'ET1APGR-2'] == pytest.approx(2.48792)
+    assert res.dofv['df']['covariates', 'ET1APGR-2'] == 1
