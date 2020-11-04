@@ -131,9 +131,7 @@ def calc_iov(original_model, iov_model):
     old_iiv_sds = [origres.parameter_estimates[param.name] for param in iiv_params]
 
     etas = []
-    for rvs, dist in zip(
-        *original_model.random_variables.distributions(level=VariabilityLevel.IIV)
-    ):
+    for rvs, dist in original_model.random_variables.distributions(level=VariabilityLevel.IIV):
         if not set(iiv_params).isdisjoint(dist.free_symbols):
             etas.extend(rvs)
     etas = [eta.name for eta in etas]
@@ -308,8 +306,7 @@ def calc_fullblock(original_model, fullblock_model):
     fullres = fullblock_model.modelfit_results
     if fullres is None:
         return None, dofv_tab
-    _, dists = fullblock_model.random_variables.distributions(level=VariabilityLevel.IIV)
-    dist = dists[0]
+    _, dist = fullblock_model.random_variables.distributions(level=VariabilityLevel.IIV)[0]
     fullblock_parameters = [str(symb) for symb in dist.free_symbols]
     origres.reparameterize(
         [

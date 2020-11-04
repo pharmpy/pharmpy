@@ -12,8 +12,7 @@ def calculate_parcov_inits(model, ncovs):
     model already has a FREM block
     Initial estimates for the parcov block is calculated given correlations of individual etas
     """
-    rvss, dists = model.random_variables.distributions(level=VariabilityLevel.IIV)
-    rvs, dist = rvss[-1], dists[-1]
+    rvs, dist = model.random_variables.distributions(level=VariabilityLevel.IIV)[-1]
     rvs = [rv.name for rv in rvs]
     ie = model.modelfit_results.individual_estimates
     eta_corr = ie[rvs].corr()
