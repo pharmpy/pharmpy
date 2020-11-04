@@ -47,8 +47,10 @@ def calculate_results(
     tdist_table, tdist_dofv = calc_transformed_etas(original_model, tdist_model, 'tdist', 'df')
     addetas_table, addetas_dofv = calc_add_etas(original_model, add_etas_model, etas_added_to)
     frem_dofv = calc_frem_dofv(base_model, fullblock_model, frem_results)
-    infinds = influential_individuals(cdd_results)
-    dofv_table = pd.concat([fullblock_dofv, boxcox_dofv, tdist_dofv, addetas_dofv, frem_dofv])
+    infinds, cdd_dofv = influential_individuals(cdd_results)
+    dofv_table = pd.concat(
+        [fullblock_dofv, boxcox_dofv, tdist_dofv, addetas_dofv, frem_dofv, cdd_dofv]
+    )
     dofv_table.set_index(['section', 'run'], inplace=True)
     res = QAResults(
         dofv=dofv_table,
@@ -62,14 +64,31 @@ def calculate_results(
 
 
 def influential_individuals(cdd_res):
+    dofv_tab = pd.DataFrame(
+        {
+            'section': ['influential_individuals'],
+            'run': ['1'],
+            'dofv': [np.nan],
+            'df': [np.nan],
+        }
+    )
     if cdd_res is None:
-        return None
+        return None, dofv_tab
     df = cdd_res.case_results
     df = df.loc[df['delta_ofv'] > 3.84]
     skipped = [e[0] for e in df['skipped_individuals']]
     influentials = pd.DataFrame({'delta_ofv': df['delta_ofv']}, index=skipped)
     influentials.index.name = 'ID'
-    return influentials
+    top_three = influentials.sort_values(by=['delta_ofv']).iloc[:3]
+    dofv_tab = pd.DataFrame(
+        {
+            'section': ['influential_individuals'] * 3,
+            'run': list(top_three.index),
+            'dofv': top_three['delta_ofv'],
+            'df': [np.nan] * 3,
+        }
+    )
+    return influentials, dofv_tab
 
 
 def calc_add_etas(original_model, add_etas_model, etas_added_to):
