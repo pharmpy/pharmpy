@@ -9,18 +9,18 @@ class RVInputException(Exception):
 
 
 def create_rv_block(model, list_of_rvs=None):
+    print('\n')
     rvs_full = model.random_variables
     rvs = _get_rvs(model, list_of_rvs)
 
-    for rv in rvs:
-        if isinstance(rv.pspace.distribution, MultivariateNormalDistribution):
-            rv_extracted = rvs_full.extract_from_block(rv)
-            rvs.discard(rv)
-            rvs.add(rv_extracted)
+    if list_of_rvs is not None:
+        for rv in rvs:
+            if isinstance(rv.pspace.distribution, MultivariateNormalDistribution):
+                rv_extracted = rvs_full.extract_from_block(rv)
+                rvs.discard(rv)
+                rvs.add(rv_extracted)
 
     pset = _merge_rvs(model, rvs)
-
-    model.parameters = pset
 
     rvs_new = RandomVariables()
 
@@ -32,6 +32,7 @@ def create_rv_block(model, list_of_rvs=None):
         rvs_new.add(rv)
 
     model.random_variables = rvs_new
+    model.parameters = pset
 
     return model
 
@@ -92,4 +93,4 @@ def _merge_rvs(model, rvs):
 
 
 def _choose_param_init(model):
-    return 0.9
+    return 0.001

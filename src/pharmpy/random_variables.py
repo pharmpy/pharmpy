@@ -347,13 +347,14 @@ class RandomVariables(OrderedSet):
                     M[row, col] = fill
         elif create_cov_params:
             for row, col in itertools.product(range(M.rows), range(M.cols)):
-                if M[row, col] == 0:
+                if M[row, col] == 0 and row < col:
                     param_1 = M[row, row]
                     param_2 = M[col, col]
                     cov_name = f'COV_{param_1}_{param_2}'
                     params[cov_name] = (param_1, param_2)
 
                     M[row, col] = symbol(cov_name)
+                    M[col, row] = symbol(cov_name)
 
         new_rvs = JointNormalSeparate(names, means, M)
         self.__init__(new_rvs + others)
