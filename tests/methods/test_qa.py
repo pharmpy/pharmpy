@@ -88,3 +88,19 @@ ETA(2),3.77,0.400863,0.448917
     assert res.dofv['df']['parameter_variability', 'tdist'] == 2
 
     res = calculate_results(orig, base, tdist_model=None)
+
+
+def test_iov(testdata):
+    orig = Model(testdata / 'nonmem' / 'pheno.mod')
+    base = Model(testdata / 'nonmem' / 'qa' / 'pheno_linbase.mod')
+    iov = Model(testdata / 'nonmem' / 'qa' / 'iov.mod')
+    res = calculate_results(orig, base, iov_model=iov)
+    correct = """new_iiv_sd,orig_iiv_sd,iov_sd
+ETA(1),0.259560,0.333246,0.555607
+ETA(2),0.071481,0.448917,0.400451
+"""
+    correct = pd.read_csv(StringIO(correct), index_col=[0])
+    pd.testing.assert_frame_equal(res.iov_parameters, correct)
+
+    assert res.dofv['dofv']['parameter_variability', 'iov'] == pytest.approx(42.314986)
+    assert res.dofv['df']['parameter_variability', 'iov'] == 2

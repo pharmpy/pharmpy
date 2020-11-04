@@ -296,6 +296,7 @@ class RandomVariables(OrderedSet):
                 parameters.append(dist.std ** 2)
             else:
                 parameters += list(dist.sigma.diagonal())
+        parameters = list(OrderedSet(parameters))  # Only unique in order
         return parameters
 
     def _calc_covariance_matrix(self, ruv=False):

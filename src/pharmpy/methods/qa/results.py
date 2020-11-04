@@ -19,6 +19,7 @@ class QAResults(Results):
         boxcox_parameters=None,
         tdist_parameters=None,
         add_etas_parameters=None,
+        iov_parameters=None,
         influential_individuals=None,
     ):
         self.dofv = dofv
@@ -26,6 +27,7 @@ class QAResults(Results):
         self.boxcox_parameters = boxcox_parameters
         self.tdist_parameters = tdist_parameters
         self.add_etas_parameters = add_etas_parameters
+        self.iov_parameters = iov_parameters
         self.influential_individuals = influential_individuals
 
 
@@ -36,6 +38,7 @@ def calculate_results(
     boxcox_model=None,
     tdist_model=None,
     add_etas_model=None,
+    iov_model=None,
     etas_added_to=None,
     frem_results=None,
     cdd_results=None,
@@ -46,10 +49,11 @@ def calculate_results(
     )
     tdist_table, tdist_dofv = calc_transformed_etas(original_model, tdist_model, 'tdist', 'df')
     addetas_table, addetas_dofv = calc_add_etas(original_model, add_etas_model, etas_added_to)
+    iov_table, iov_dofv = calc_iov(original_model, iov_model)
     frem_dofv = calc_frem_dofv(base_model, fullblock_model, frem_results)
     infinds, cdd_dofv = influential_individuals(cdd_results)
     dofv_table = pd.concat(
-        [fullblock_dofv, boxcox_dofv, tdist_dofv, addetas_dofv, frem_dofv, cdd_dofv]
+        [fullblock_dofv, boxcox_dofv, tdist_dofv, addetas_dofv, iov_dofv, frem_dofv, cdd_dofv]
     )
     dofv_table.set_index(['section', 'run'], inplace=True)
     res = QAResults(
@@ -58,6 +62,7 @@ def calculate_results(
         boxcox_parameters=boxcox_table,
         tdist_parameters=tdist_table,
         add_etas_parameters=addetas_table,
+        iov_parameters=iov_table,
         influential_individuals=infinds,
     )
     return res
@@ -89,6 +94,64 @@ def influential_individuals(cdd_res):
         }
     )
     return influentials, dofv_tab
+
+
+def calc_iov(original_model, iov_model):
+    dofv_tab = pd.DataFrame(
+        {
+            'section': ['parameter_variability'],
+            'run': ['iov'],
+            'dofv': [np.nan],
+            'df': [np.nan],
+        }
+    )
+    if iov_model is None:
+        return None, dofv_tab
+    iov_res = iov_model.modelfit_results
+    if iov_res is None:
+        return None, dofv_tab
+    origres = original_model.modelfit_results
+    origres.reparameterize(
+        [
+            pharmpy.random_variables.NormalParametrizationSd,
+            pharmpy.random_variables.MultivariateNormalParametrizationSdCorr,
+        ]
+    )
+    iov_res.reparameterize(
+        [
+            pharmpy.random_variables.NormalParametrizationSd,
+            pharmpy.random_variables.MultivariateNormalParametrizationSdCorr,
+        ]
+    )
+    iov_params = iov_model.random_variables.variance_parameters(level=VariabilityLevel.IOV)
+    iov_sds = [iov_res.parameter_estimates[param.name] for param in iov_params]
+    iiv_params = iov_model.random_variables.variance_parameters(level=VariabilityLevel.IIV)
+    iiv_params = [param for param in iiv_params if not original_model.parameters[param.name].fix]
+    new_iiv_sds = [iov_res.parameter_estimates[param.name] for param in iiv_params]
+    old_iiv_sds = [origres.parameter_estimates[param.name] for param in iiv_params]
+
+    etas = []
+    for rvs, dist in zip(
+        *original_model.random_variables.distributions(level=VariabilityLevel.IIV)
+    ):
+        if not set(iiv_params).isdisjoint(dist.free_symbols):
+            etas.extend(rvs)
+    etas = [eta.name for eta in etas]
+
+    table = pd.DataFrame(
+        {'new_iiv_sd': new_iiv_sds, 'orig_iiv_sd': old_iiv_sds, 'iov_sd': iov_sds}, index=etas
+    )
+
+    dofv = origres.ofv - iov_res.ofv
+    dofv_tab = pd.DataFrame(
+        {
+            'section': ['parameter_variability'],
+            'run': ['iov'],
+            'dofv': [dofv],
+            'df': [len(iov_params)],
+        }
+    )
+    return table, dofv_tab
 
 
 def calc_add_etas(original_model, add_etas_model, etas_added_to):
@@ -312,6 +375,11 @@ def psn_qa_results(path):
         addetas_model = Model(addetas_path)
     else:
         addetas_model = None
+    iov_path = path / 'modelfit_run' / 'iov.mod'
+    if iov_path.is_file():
+        iov_model = Model(iov_path)
+    else:
+        iov_model = None
 
     frem_path = path / 'frem_run' / 'results.json'
     if frem_path.is_file():
@@ -338,6 +406,7 @@ def psn_qa_results(path):
         boxcox_model=boxcox_model,
         tdist_model=tdist_model,
         add_etas_model=addetas_model,
+        iov_model=iov_model,
         etas_added_to=etas_added_to,
         frem_results=frem_res,
         cdd_results=cdd_res,
