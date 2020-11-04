@@ -123,6 +123,16 @@ def test_adjust_iovs(testdata):
     assert rvs[4].variability_level == VariabilityLevel.IOV
     assert rvs[6].variability_level == VariabilityLevel.IOV
 
+    model = Model(testdata / 'nonmem' / 'qa' / 'iov.mod')
+    rvs = model.random_variables
+    assert rvs[0].variability_level == VariabilityLevel.IIV
+    assert rvs[1].variability_level == VariabilityLevel.IIV
+    assert rvs[2].variability_level == VariabilityLevel.IOV
+    assert rvs[3].variability_level == VariabilityLevel.IOV
+    assert rvs[4].variability_level == VariabilityLevel.IOV
+    assert rvs[5].variability_level == VariabilityLevel.IOV
+
+
 
 @pytest.mark.parametrize(
     'param_new,init_expected,buf_new',
