@@ -234,14 +234,13 @@ def create_omega_block(model, dist):
     param_str = f'$OMEGA BLOCK({m.shape[0]})\n'
 
     for row in range(m.shape[0]):
-        for col in range(m.shape[1]):
-            if row >= col:
-                elem = m.row(row).col(col)
-                name = str(elem[0])
-                omega = model.parameters[name]
-                param_str += f'{omega.init}\t'
+        for col in range(row + 1):
+            elem = m.row(row).col(col)
+            name = str(elem[0])
+            omega = model.parameters[name]
+            param_str += f'{omega.init}\t'
 
-        param_str += '\n'
+        param_str = f'{param_str.rstrip()}\n'
 
     record = model.control_stream.insert_record(param_str)
 
