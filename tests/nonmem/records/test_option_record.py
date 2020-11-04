@@ -131,3 +131,19 @@ def test_add_suboption_for_nth(parser, buf, n, subopt, result):
 def test_match_option(parser, valid, opt, expected):
     match = OptionRecord.match_option(valid, opt)
     assert match == expected
+
+
+def test_append_node(parser):
+    rec = parser.parse('$ESTIMATION METH=0 MAXEVALS=0').records[0]
+    rec.append_option('INTERACTION')
+    assert str(rec) == '$ESTIMATION METH=0 MAXEVALS=0 INTERACTION'
+    rec.append_option('MCETA', '100')
+    assert str(rec) == '$ESTIMATION METH=0 MAXEVALS=0 INTERACTION MCETA=100'
+
+
+def test_prepend_node(parser):
+    rec = parser.parse('$ESTIMATION METH=0 MAXEVALS=0').records[0]
+    rec.prepend_option('INTERACTION')
+    assert str(rec) == '$ESTIMATION INTERACTION METH=0 MAXEVALS=0'
+    rec.prepend_option('MCETA', '250')
+    assert str(rec) == '$ESTIMATION MCETA=250 INTERACTION METH=0 MAXEVALS=0'

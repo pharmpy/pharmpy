@@ -114,6 +114,17 @@ class OptionRecord(Record):
             node = AttrTree.create('option', [{'KEY': key}, {'EQUAL': '='}, {'VALUE': value}])
         return node
 
+    def prepend_option(self, key, value=None):
+        """Prepend option"""
+        node = self._create_option(key, value)
+        self._prepend_option_node(node)
+
+    def _prepend_option_node(self, node):
+        """Add a new option as firt option"""
+        ws_node = AttrTree.create('ws', [{'WS_ALL': ' '}])
+        new = [node, ws_node]
+        self.root.children = [self.root.children[0]] + new + self.root.children[1:]
+
     def append_option(self, key, value=None):
         """Append option as last option
 
