@@ -158,7 +158,7 @@ class RandomVariables(OrderedSet):
         random variables.
         """
         res = ''
-        for rvs, dist in self.distributions():
+        for rvs, dist in zip(*self.distributions()):
             if isinstance(dist, stats.crv_types.NormalDistribution):
                 lines = RandomVariables._normal_definition_string(rvs[0])
             elif isinstance(dist, stats.joint_rv_types.MultivariateNormalDistribution):
