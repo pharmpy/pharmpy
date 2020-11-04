@@ -13,7 +13,7 @@ from pharmpy.data import DatasetError
 from pharmpy.parameter import ParameterSet
 from pharmpy.plugins.nonmem.results import NONMEMChainedModelfitResults
 from pharmpy.plugins.nonmem.table import NONMEMTableFile, PhiTable
-from pharmpy.random_variables import RandomVariables, VariabilityLevel
+from pharmpy.random_variables import JointDistributionSeparate, RandomVariables, VariabilityLevel
 from pharmpy.statements import Assignment, ODESystem
 
 from .advan import compartmental_model
@@ -428,7 +428,12 @@ class Model(pharmpy.model.Model):
                 rv.variability_level != VariabilityLevel.IOV
                 and next_rv.variability_level == VariabilityLevel.IOV
             ):
-                rv.variability_level = VariabilityLevel.IOV
+                if isinstance(rv, JointDistributionSeparate):
+                    connected_rvs = rvs.get_joined_rvs(rv)
+                    for rv_con in connected_rvs:
+                        rv_con.variability_level = VariabilityLevel.IOV
+                else:
+                    rv.variability_level = VariabilityLevel.IOV
 
     @random_variables.setter
     def random_variables(self, new):

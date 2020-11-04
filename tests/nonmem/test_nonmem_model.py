@@ -133,7 +133,6 @@ def test_adjust_iovs(testdata):
     assert rvs[5].variability_level == VariabilityLevel.IOV
 
 
-
 @pytest.mark.parametrize(
     'param_new,init_expected,buf_new',
     [
