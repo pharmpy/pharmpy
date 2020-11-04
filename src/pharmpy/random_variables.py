@@ -177,19 +177,20 @@ class RandomVariables(OrderedSet):
 
     def all_parameters(self):
         params = set()
-        for _, dist in self.distributions():
+        _, dists = self.distributions()
+        for dist in dists:
             params |= dist.free_symbols
         return sorted([str(p) for p in params])
 
     def get_eta_params(self, eta_name):
         params = set()
-        for rvs, dist in self.distributions():
+        for rvs, dist in zip(*self.distributions()):
             if eta_name in [rv for rv in rvs]:
                 params |= dist.free_symbols
         return sorted([str(p) for p in params])
 
     def distributions(self, level=None, exclude_level=None):
-        """Iterate with one entry per distribution instead of per random variable.
+        """List with one entry per distribution instead of per random variable.
 
         Parameters
         ----------
@@ -198,6 +199,8 @@ class RandomVariables(OrderedSet):
         exclude_level
             Iterate over random variables of all other variability levels
         """
+        rvs_list = []
+        dist_list = []
         i = 0
         while i < len(self):
             rv = self[i]
@@ -207,7 +210,9 @@ class RandomVariables(OrderedSet):
                 if (level is None or level == rv.variability_level) and (
                     exclude_level is None or exclude_level != rv.variability_level
                 ):
-                    yield [rv], dist
+                    rvs_list.append([rv])
+                    dist_list.append(dist)
+
             else:  # Joint Normal
                 n = self[i].pspace.distribution.sigma.rows
                 rvs = [self[k] for k in range(i, i + n)]
@@ -215,21 +220,14 @@ class RandomVariables(OrderedSet):
                 if (level is None or level == rv.variability_level) and (
                     exclude_level is None or exclude_level != rv.variability_level
                 ):
-                    yield rvs, dist
-
-    def distributions_as_list(self, level=None, exclude_level=None):
-        rvs_list = []
-        dist_list = []
-        for rvs, dist in self.distributions(level, exclude_level):
-            rvs_list.append(rvs)
-            dist_list.append(dist)
-
+                    rvs_list.append(rvs)
+                    dist_list.append(dist)
         return rvs_list, dist_list
 
     def get_joined_rvs(self, rv):
         assert isinstance(rv, JointDistributionSeparate)
 
-        rvs, dist = self.distributions_as_list()
+        rvs, dist = self.distributions()
         joined_rvs = []
 
         for r, d in zip(rvs, dist):
@@ -293,7 +291,7 @@ class RandomVariables(OrderedSet):
 
     def variance_parameters(self, level=None, exclude_level=None):
         parameters = []
-        for rvs, dist in self.distributions(level=level, exclude_level=exclude_level):
+        for rvs, dist in zip(*self.distributions(level=level, exclude_level=exclude_level)):
             if len(rvs) == 1:
                 parameters.append(dist.std ** 2)
             else:
@@ -306,10 +304,10 @@ class RandomVariables(OrderedSet):
         blocks = []
         names = []
         if ruv:
-            dists = self.distributions(level=VariabilityLevel.RUV)
+            rvss, dists = self.distributions(level=VariabilityLevel.RUV)
         else:
-            dists = self.distributions(exclude_level=VariabilityLevel.RUV)
-        for rvs, dist in dists:
+            rvss, dists = self.distributions(exclude_level=VariabilityLevel.RUV)
+        for rvs, dist in zip(rvss, dists):
             names.extend([rv.name for rv in rvs])
             if isinstance(dist, stats.crv_types.NormalDistribution):
                 means.append(dist.mean)
@@ -377,7 +375,7 @@ class RandomVariables(OrderedSet):
     def copy(self):
         # Special copy because separated joints need special treatment
         new_rvs = RandomVariables()
-        for rvs, dist in self.distributions():
+        for rvs, dist in zip(*self.distributions()):
             if len(rvs) == 1:
                 rv = rvs[0].copy()
                 rv.variability_level = rvs[0].variability_level
@@ -397,7 +395,7 @@ class RandomVariables(OrderedSet):
         """
         if use_cache and not hasattr(self, '_cached_sigmas'):
             self._cached_sigmas = {}
-            for rvs, dist in self.distributions():
+            for rvs, dist in zip(*self.distributions()):
                 if len(rvs) > 1:
                     sigma = dist.sigma
                     a = [
@@ -406,7 +404,7 @@ class RandomVariables(OrderedSet):
                     A = symengine.Matrix(a)
                     self._cached_sigmas[rvs[0]] = A
 
-        for rvs, dist in self.distributions():
+        for rvs, dist in zip(*self.distributions()):
             if len(rvs) > 1:
                 if not use_cache:
                     sigma = dist.sigma.subs(dict(parameter_values))
@@ -437,7 +435,7 @@ class RandomVariables(OrderedSet):
         returns an updated parameter_values
         """
         nearest = parameter_values.copy()
-        for rvs, dist in self.distributions():
+        for rvs, dist in zip(*self.distributions()):
             if len(rvs) > 1:
                 sigma = dist.sigma.subs(dict(parameter_values))
                 A = np.array(sigma).astype(np.float64)

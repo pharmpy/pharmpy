@@ -430,7 +430,8 @@ def calculate_results_using_cov_sampling(
     else:
         uncertainty_results = frem_model.modelfit_results
 
-    _, dist = list(frem_model.random_variables.distributions(level=VariabilityLevel.IIV))[-1]
+    _, dists = frem_model.random_variables.distributions(level=VariabilityLevel.IIV)
+    dist = dists[-1]
     sigma_symb = dist.sigma
 
     parameters = [
@@ -455,7 +456,8 @@ def calculate_results_using_cov_sampling(
 def calculate_results_from_samples(frem_model, continuous, categorical, parvecs, rescale=True):
     """Calculate the FREM results given samples of parameter estimates"""
     n = len(parvecs)
-    rvs, dist = list(frem_model.random_variables.distributions(level=VariabilityLevel.IIV))[-1]
+    rvss, dists = frem_model.random_variables.distributions(level=VariabilityLevel.IIV)
+    rvs, dist = rvss[-1], dists[-1]
     sigma_symb = dist.sigma
     parameters = [
         s
@@ -680,7 +682,8 @@ def calculate_results_using_bipp(frem_model, continuous, categorical, rescale=Tr
     are needed.
 
     """
-    rvs, dist = list(frem_model.random_variables.distributions(level=VariabilityLevel.IIV))[-1]
+    rvss, dists = frem_model.random_variables.distributions(level=VariabilityLevel.IIV)
+    rvs, dist = rvss[-1], dists[-1]
     etas = [rv.name for rv in rvs]
     pool = sample_individual_estimates(frem_model, parameters=etas)
     ninds = len(pool.index.unique())

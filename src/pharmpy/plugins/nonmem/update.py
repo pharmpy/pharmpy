@@ -112,10 +112,10 @@ def update_random_variables(model, old, new):
                     (record, {omega_name: (eta_number, eta_number)}, {rv_name: eta_number})
                 )
 
-    rvs_new, dist_new = new.distributions_as_list()
-    rvs_old, dist_old = old.distributions_as_list()
+    rvs_new, dist_new = new.distributions()
+    rvs_old, dist_old = old.distributions()
 
-    if new_names == old_names and rvs_old != rvs_new:
+    if new_names == old_names and rvs_old != rvs_new:  # TODO: better condition
         for rvs, dist in zip(rvs_new, dist_new):
             if rvs not in rvs_old:
                 records = get_omega_records(model, [rv.name for rv in rvs])

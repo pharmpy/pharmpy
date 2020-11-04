@@ -45,18 +45,16 @@ def test_distributions():
     rvs = JointNormalSeparate(['ETA(1)', 'ETA(2)'], [0, 0], [[3, 0.25], [0.25, 1]])
     rvs = RandomVariables(rvs)
     rvs.add(stats.Normal('ETA(3)', 0.5, 2))
-    gen = rvs.distributions()
-    symbols, dist = next(gen)
+    rvss, dists = rvs.distributions()
+    symbols, dist = rvss[0], dists[0]
     assert symbols[0].name == 'ETA(1)'
     assert symbols[1].name == 'ETA(2)'
     assert len(symbols) == 2
     assert dist == rvs[0].pspace.distribution
-    symbols, dist = next(gen)
+    symbols, dist = rvss[1], dists[1]
     assert symbols[0].name == 'ETA(3)'
     assert len(symbols) == 1
     assert dist == rvs[2].pspace.distribution
-    with pytest.raises(StopIteration):
-        symbols, dist = next(gen)
 
 
 def test_merge_normal_distributions():
@@ -152,11 +150,11 @@ def test_extract_from_block():
     eta3.variability_level = VariabilityLevel.IIV
     rvs.add(eta3)
 
-    rvs_dists, _ = rvs.distributions_as_list()
+    rvs_dists, _ = rvs.distributions()
     assert len(rvs_dists) == 2
 
     rvs.extract_from_block(etas[0])
-    rvs_dists, _ = rvs.distributions_as_list()
+    rvs_dists, _ = rvs.distributions()
     assert len(rvs_dists) == 3
     assert rvs[0].name == 'ETA(3)'
     assert rvs[2].name == 'ETA(1)'

@@ -9,7 +9,6 @@ class RVInputException(Exception):
 
 
 def create_rv_block(model, list_of_rvs=None):
-    print('\n')
     rvs_full = model.random_variables
     rvs = _get_rvs(model, list_of_rvs)
 

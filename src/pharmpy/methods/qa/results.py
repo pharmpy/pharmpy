@@ -245,7 +245,8 @@ def calc_fullblock(original_model, fullblock_model):
     fullres = fullblock_model.modelfit_results
     if fullres is None:
         return None, dofv_tab
-    _, dist = list(fullblock_model.random_variables.distributions(level=VariabilityLevel.IIV))[0]
+    _, dists = fullblock_model.random_variables.distributions(level=VariabilityLevel.IIV)
+    dist = dists[0]
     fullblock_parameters = [str(symb) for symb in dist.free_symbols]
     origres.reparameterize(
         [
