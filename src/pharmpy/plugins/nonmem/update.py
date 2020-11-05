@@ -552,15 +552,18 @@ def remove_compartments(model, old, new):
 
 
 def add_compartments(model, old, new):
-    """Add compartments for ADVAN5 and ADVAN7"""
+    """Add compartments for ADVAN5 and ADVAN7
+
+    Adds compartments to the beginning
+    """
     model_record = model.control_stream.get_records('MODEL')[0]
     added = set(new.names) - set(old.names)
     statements = model.statements
     for added_name in added:
-        model_record.add_compartment(added_name)
+        model_record.prepend_compartment(added_name)
         primary = primary_pk_param_conversion_map(len(old), 1)
         statements.subs(primary)
         secondary = secondary_pk_param_conversion_map(len(old), 1, removed=True)
         statements.subs(secondary)
     if added:
-        model_record.set_dosing(added_name)
+        model_record.move_dosing_first()

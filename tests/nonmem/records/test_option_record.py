@@ -147,3 +147,9 @@ def test_prepend_node(parser):
     assert str(rec) == '$ESTIMATION INTERACTION METH=0 MAXEVALS=0'
     rec.prepend_option('MCETA', '250')
     assert str(rec) == '$ESTIMATION MCETA=250 INTERACTION METH=0 MAXEVALS=0'
+
+
+def test_remove_subotion_for_all(parser):
+    rec = parser.parse('$MODEL COMP=(COMP1 DEFDOSE) COMP=(COMP2)').records[0]
+    rec.remove_suboption_for_all('COMPARTMENT', 'DEFDOSE')
+    assert str(rec) == '$MODEL COMP=(COMP1) COMP=(COMP2)'

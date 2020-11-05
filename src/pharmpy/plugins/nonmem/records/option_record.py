@@ -208,6 +208,21 @@ class OptionRecord(Record):
                         break
                     i += 1
 
+    def remove_suboption_for_all(self, key, suboption):
+        """Remove subtoption from all options key"""
+        for node in self.root.children:
+            if node.rule == 'option':
+                curkey = _get_key(node)
+                if key[: len(curkey)] == curkey:
+                    s = node.VALUE
+                    if s.startswith('('):
+                        subopts = [
+                            subopt
+                            for subopt in s[1:-1].split()
+                            if suboption[: len(subopt)] != subopt
+                        ]
+                    node.VALUE = '(' + ' '.join(subopts) + ')'
+
     def remove_option_startswith(self, start):
         """Remove all options that startswith"""
         for key in self.option_pairs.keys():
