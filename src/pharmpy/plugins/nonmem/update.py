@@ -305,65 +305,44 @@ def update_ode_system(model, old, new):
         subs = model.control_stream.get_records('SUBROUTINES')[0]
         advan = subs.get_option_startswith('ADVAN')
         trans = subs.get_option_startswith('TRANS')
+        statements = model.statements
+        to_advan = advan        # Default to not change ADVAN
         if advan == 'ADVAN5' or advan == 'ADVAN7':
             remove_compartments(model, old, new)
             add_compartments(model, old, new)
         if not old.find_depot() and new.find_depot():
             # Depot was added
-            statements = model.statements
             comp, rate = new.get_compartment_outflows(new.find_depot())[0]
             ass = Assignment('KA', rate)
             statements.add_before_odes(ass)
             new.add_flow(new.find_depot(), comp, ass.symbol)
             if advan == 'ADVAN1':
-                subs.replace_option('ADVAN1', 'ADVAN2')
-                param_conversion = pk_param_conversion_map(
-                    new, model._compartment_map, from_advan=advan, to_advan='ADVAN2'
-                )
-                statements.subs(param_conversion)
+                to_advan = 'ADVAN2'
             elif advan == 'ADVAN3':
-                subs.replace_option('ADVAN3', 'ADVAN4')
-                param_conversion = pk_param_conversion_map(
-                    new, model._compartment_map, from_advan=advan, to_advan='ADVAN4', trans=trans
-                )
-                statements.subs(param_conversion)
+                to_advan = 'ADVAN4'
             elif advan == 'ADVAN11':
-                subs.replace_option('ADVAN11', 'ADVAN12')
-                param_conversion = pk_param_conversion_map(
-                    new, model._compartment_map, from_advan=advan, to_advan='ADVAN12', trans=trans
-                )
-                statements.subs(param_conversion)
-            elif advan == 'ADVAN5' or advan == 'ADVAN7':
-                model_record = model.control_stream.get_records('MODEL')[0]
-                added = set(new.names) - set(old.names)
-                added_name = list(added)[0]  # Assume only one!
-                model_record.add_compartment(added_name, dosing=True)
-                param_conversion = pk_param_conversion_map(new, model._compartment_map)
-                statements.subs(param_conversion)
-            if isinstance(new.find_depot().dose, Infusion) and not statements.find_assignment('D1'):
-                # Handle direct moving of Infusion to depot compartment
-                statements.subs({'D2': 'D1'})
+                to_advan = 'ADVAN12'
+            if advan not in ['ADVAN5', 'ADVAN7']:
+                subs.replace_option(advan, to_advan)
         elif old.find_depot() and not new.find_depot():
             # Depot was removed
             statements = model.statements
             if advan == 'ADVAN2':
-                subs.replace_option('ADVAN2', 'ADVAN1')
-                param_conversion = pk_param_conversion_map(
-                    new, model._compartment_map, from_advan=advan, to_advan='ADVAN1'
-                )
-                statements.subs(param_conversion)
+                to_advan = 'ADVAN1'
             elif advan == 'ADVAN4':
-                subs.replace_option('ADVAN4', 'ADVAN3')
-                param_conversion = pk_param_conversion_map(
-                    new, model._compartment_map, from_advan=advan, to_advan='ADVAN3', trans=trans
-                )
-                statements.subs(param_conversion)
+                to_advan = 'ADVAN3'
             elif advan == 'ADVAN12':
-                subs.replace_option('ADVAN12', 'ADVAN11')
-                param_conversion = pk_param_conversion_map(
-                    new, model._compartment_map, from_advan=advan, to_advan='ADVAN11', trans=trans
-                )
-                statements.subs(param_conversion)
+                to_advan = 'ADVAN11'
+            subs.replace_option(advan, to_advan)
+
+        param_conversion = pk_param_conversion_map(
+            new, model._compartment_map, from_advan=advan, to_advan=to_advan, trans=trans
+        )
+        statements.subs(param_conversion)
+        if isinstance(new.find_dosing().dose, Infusion) and not statements.find_assignment('D1'):
+            # Handle direct moving of Infusion dose
+            statements.subs({'D2': 'D1'})
+
         if isinstance(new.find_dosing().dose, Infusion) and isinstance(
             old.find_dosing().dose, Bolus
         ):
@@ -382,37 +361,6 @@ def update_ode_system(model, old, new):
             # FIXME: Adding at end for now. Update $INPUT cannot yet handle adding in middle
             # df.insert(list(df.columns).index('AMT') + 1, 'RATE', rate)
             model.dataset = df
-
-
-def primary_pk_param_conversion_map(ncomp, removed):
-    """Conversion map for pk parameters for one removed compartment"""
-    d = dict()
-    for i in range(0, ncomp + 1):
-        for j in range(0, ncomp + 1):
-            if i == j or i == removed or j == removed:
-                continue
-            if i > removed:
-                to_i = i - 1
-            else:
-                to_i = i
-            if j > removed:
-                to_j = j - 1
-            else:
-                to_j = j
-            if (
-                not (to_j == j and to_i == i)
-                and i != 0
-                and to_i != 0
-                and not (i == ncomp and j == 0)
-                and not (i == 0 and j == ncomp)
-            ):
-                d.update(
-                    {
-                        symbol(f'K{i}{j}'): symbol(f'K{to_i}{to_j}'),
-                        symbol(f'K{i}T{j}'): symbol(f'K{to_i}T{to_j}'),
-                    }
-                )
-    return d
 
 
 def update_statements(model, old, new, trans):
@@ -470,10 +418,6 @@ def remove_compartments(model, old, new):
     for removed_name in removed:
         n = model_record.get_compartment_number(removed_name)
         model_record.remove_compartment(removed_name)
-        primary = primary_pk_param_conversion_map(len(old), n)
-        statements.subs(primary)
-        secondary = secondary_pk_param_conversion_map(len(old), n)
-        statements.subs(secondary)
 
 
 def add_compartments(model, old, new):
@@ -486,10 +430,7 @@ def add_compartments(model, old, new):
     statements = model.statements
     for added_name in added:
         model_record.prepend_compartment(added_name)
-        primary = primary_pk_param_conversion_map(len(old), 1)
-        statements.subs(primary)
-        secondary = secondary_pk_param_conversion_map(len(old), 1, removed=True)
-        statements.subs(secondary)
+
     if added:
         model_record.move_dosing_first()
 
@@ -527,7 +468,7 @@ def create_compartment_remap(oldmap, newmap):
     """
     remap = dict()
     for name, number in oldmap.items():
-        if name in newmap and number != newmap[name]:
+        if name in newmap:
             remap[number] = newmap[name]
     return remap
 
@@ -543,9 +484,9 @@ def pk_param_conversion_map(cs, oldmap, from_advan=None, to_advan=None, trans=No
         d[symbol(f'R{old}')] = symbol(f'R{new}')
         d[symbol(f'D{old}')] = symbol(f'D{new}')
         d[symbol(f'ALAG{old}')] = symbol(f'ALAG{new}')
-    if from_advan is None:
+    if from_advan is None or from_advan == 'ADVAN5' or from_advan == 'ADVAN7':
         for i, j in itertools.product(range(1, len(oldmap)), range(0, len(oldmap))):
-            if i != j and (i in remap or j in remap):
+            if i != j and (i in remap and (j in remap or j == 0)):
                 if i in remap:
                     to_i = remap[i]
                 else:
@@ -621,37 +562,4 @@ def pk_param_conversion_map(cs, oldmap, from_advan=None, to_advan=None, trans=No
                     }
                 )
 
-    return d
-
-
-# FIXME: Remove when no longer used
-def secondary_pk_param_conversion_map(ncomp, compno, removed=True):
-    """Conversion map for pk parameters for one removed or added compartment
-
-    ncomp - total number of compartments before removing/adding (including output)
-    compno - number of removed/added compartment
-    """
-    d = dict()
-    if removed:
-        for i in range(compno + 1, ncomp + 1):
-            d.update(
-                {
-                    symbol(f'S{i}'): symbol(f'S{i - 1}'),
-                    symbol(f'F{i}'): symbol(f'F{i - 1}'),
-                    symbol(f'R{i}'): symbol(f'R{i - 1}'),
-                    symbol(f'D{i}'): symbol(f'D{i - 1}'),
-                    symbol(f'ALAG{i}'): symbol(f'ALAG{i - 1}'),
-                }
-            )
-    else:
-        for i in range(compno, ncomp + 1):
-            d.update(
-                {
-                    symbol(f'S{i}'): symbol(f'S{i + 1}'),
-                    symbol(f'F{i}'): symbol(f'F{i + 1}'),
-                    symbol(f'R{i}'): symbol(f'R{i + 1}'),
-                    symbol(f'D{i}'): symbol(f'D{i + 1}'),
-                    symbol(f'ALAG{i}'): symbol(f'ALAG{i + 1}'),
-                }
-            )
     return d
