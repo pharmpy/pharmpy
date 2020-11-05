@@ -1,3 +1,4 @@
+import itertools
 import re
 
 import numpy as np
@@ -316,52 +317,29 @@ def update_ode_system(model, old, new):
             new.add_flow(new.find_depot(), comp, ass.symbol)
             if advan == 'ADVAN1':
                 subs.replace_option('ADVAN1', 'ADVAN2')
-                secondary = secondary_pk_param_conversion_map(len(old), 1, removed=False)
-                statements.subs(secondary)
+                param_conversion = pk_param_conversion_map(
+                    new, model._compartment_map, from_advan=advan, to_advan='ADVAN2'
+                )
+                statements.subs(param_conversion)
             elif advan == 'ADVAN3':
                 subs.replace_option('ADVAN3', 'ADVAN4')
-                secondary = secondary_pk_param_conversion_map(len(old), 1, removed=False)
-                statements.subs(secondary)
-                if trans == 'TRANS1':
-                    statements.subs({symbol('K12'): symbol('K23'), symbol('K21'): symbol('K32')})
-                elif trans == 'TRANS4':
-                    statements.subs({symbol('V1'): symbol('V2'), symbol('V2'): symbol('V3')})
-                elif trans == 'TRANS6':
-                    statements.subs({symbol('K21'): symbol('K32')})
+                param_conversion = pk_param_conversion_map(
+                    new, model._compartment_map, from_advan=advan, to_advan='ADVAN4', trans=trans
+                )
+                statements.subs(param_conversion)
             elif advan == 'ADVAN11':
                 subs.replace_option('ADVAN11', 'ADVAN12')
-                secondary = secondary_pk_param_conversion_map(len(old), 1, removed=False)
-                statements.subs(secondary)
-                if trans == 'TRANS1':
-                    statements.subs(
-                        {
-                            symbol('K12'): symbol('K23'),
-                            symbol('K21'): symbol('K32'),
-                            symbol('K13'): symbol('K24'),
-                            symbol('K31'): symbol('K42'),
-                        }
-                    )
-                elif trans == 'TRANS4':
-                    statements.subs(
-                        {
-                            symbol('V1'): symbol('V2'),
-                            symbol('Q2'): symbol('Q3'),
-                            symbol('V2'): symbol('V3'),
-                            symbol('Q3'): symbol('Q4'),
-                            symbol('V3'): symbol('V4'),
-                        }
-                    )
-                elif trans == 'TRANS6':
-                    statements.subs({symbol('K31'): symbol('K42'), symbol('K21'): symbol('K32')})
+                param_conversion = pk_param_conversion_map(
+                    new, model._compartment_map, from_advan=advan, to_advan='ADVAN12', trans=trans
+                )
+                statements.subs(param_conversion)
             elif advan == 'ADVAN5' or advan == 'ADVAN7':
                 model_record = model.control_stream.get_records('MODEL')[0]
                 added = set(new.names) - set(old.names)
                 added_name = list(added)[0]  # Assume only one!
                 model_record.add_compartment(added_name, dosing=True)
-                primary = primary_pk_param_conversion_map(len(old), 1)
-                statements.subs(primary)
-                secondary = secondary_pk_param_conversion_map(len(old), 1, removed=True)
-                statements.subs(secondary)
+                param_conversion = pk_param_conversion_map(new, model._compartment_map)
+                statements.subs(param_conversion)
             if isinstance(new.find_depot().dose, Infusion) and not statements.find_assignment('D1'):
                 # Handle direct moving of Infusion to depot compartment
                 statements.subs({'D2': 'D1'})
@@ -370,43 +348,22 @@ def update_ode_system(model, old, new):
             statements = model.statements
             if advan == 'ADVAN2':
                 subs.replace_option('ADVAN2', 'ADVAN1')
-                secondary = secondary_pk_param_conversion_map(len(old), 1)
-                statements.subs(secondary)
+                param_conversion = pk_param_conversion_map(
+                    new, model._compartment_map, from_advan=advan, to_advan='ADVAN1'
+                )
+                statements.subs(param_conversion)
             elif advan == 'ADVAN4':
                 subs.replace_option('ADVAN4', 'ADVAN3')
-                secondary = secondary_pk_param_conversion_map(len(old), 1)
-                statements.subs(secondary)
-                if trans == 'TRANS1':
-                    statements.subs({symbol('K23'): symbol('K12'), symbol('K32'): symbol('K21')})
-                elif trans == 'TRANS4':
-                    statements.subs({symbol('V2'): symbol('V1'), symbol('V3'): symbol('V2')})
-                elif trans == 'TRANS6':
-                    statements.subs({symbol('K32'): symbol('K21')})
+                param_conversion = pk_param_conversion_map(
+                    new, model._compartment_map, from_advan=advan, to_advan='ADVAN3', trans=trans
+                )
+                statements.subs(param_conversion)
             elif advan == 'ADVAN12':
                 subs.replace_option('ADVAN12', 'ADVAN11')
-                secondary = secondary_pk_param_conversion_map(len(old), 1)
-                statements.subs(secondary)
-                if trans == 'TRANS1':
-                    statements.subs(
-                        {
-                            symbol('K23'): symbol('K12'),
-                            symbol('K32'): symbol('K21'),
-                            symbol('K24'): symbol('K13'),
-                            symbol('K42'): symbol('K31'),
-                        }
-                    )
-                elif trans == 'TRANS4':
-                    statements.subs(
-                        {
-                            symbol('V2'): symbol('V1'),
-                            symbol('Q3'): symbol('Q2'),
-                            symbol('V3'): symbol('V2'),
-                            symbol('Q4'): symbol('Q3'),
-                            symbol('V4'): symbol('V3'),
-                        }
-                    )
-                elif trans == 'TRANS6':
-                    statements.subs({symbol('K42'): symbol('K31'), symbol('K32'): symbol('K21')})
+                param_conversion = pk_param_conversion_map(
+                    new, model._compartment_map, from_advan=advan, to_advan='ADVAN11', trans=trans
+                )
+                statements.subs(param_conversion)
         if isinstance(new.find_dosing().dose, Infusion) and isinstance(
             old.find_dosing().dose, Bolus
         ):
@@ -455,38 +412,6 @@ def primary_pk_param_conversion_map(ncomp, removed):
                         symbol(f'K{i}T{j}'): symbol(f'K{to_i}T{to_j}'),
                     }
                 )
-    return d
-
-
-def secondary_pk_param_conversion_map(ncomp, compno, removed=True):
-    """Conversion map for pk parameters for one removed or added compartment
-
-    ncomp - total number of compartments before removing/adding (including output)
-    compno - number of removed/added compartment
-    """
-    d = dict()
-    if removed:
-        for i in range(compno + 1, ncomp + 1):
-            d.update(
-                {
-                    symbol(f'S{i}'): symbol(f'S{i - 1}'),
-                    symbol(f'F{i}'): symbol(f'F{i - 1}'),
-                    symbol(f'R{i}'): symbol(f'R{i - 1}'),
-                    symbol(f'D{i}'): symbol(f'D{i - 1}'),
-                    symbol(f'ALAG{i}'): symbol(f'ALAG{i - 1}'),
-                }
-            )
-    else:
-        for i in range(compno, ncomp + 1):
-            d.update(
-                {
-                    symbol(f'S{i}'): symbol(f'S{i + 1}'),
-                    symbol(f'F{i}'): symbol(f'F{i + 1}'),
-                    symbol(f'R{i}'): symbol(f'R{i + 1}'),
-                    symbol(f'D{i}'): symbol(f'D{i + 1}'),
-                    symbol(f'ALAG{i}'): symbol(f'ALAG{i + 1}'),
-                }
-            )
     return d
 
 
@@ -567,3 +492,166 @@ def add_compartments(model, old, new):
         statements.subs(secondary)
     if added:
         model_record.move_dosing_first()
+
+
+def new_compartmental_map(cs, oldmap):
+    """Create compartmental map for updated model
+    cs - new compartmental system
+    old - old compartmental map
+
+    Can handle compartments from dosing to central
+    """
+    comp = cs.find_dosing()
+    central = cs.find_central()
+    i = 1
+    compmap = dict()
+    while True:
+        compmap[comp.name] = i
+        if comp is central:
+            break
+        comp, _ = cs.get_compartment_outflows(comp)[0]
+        i += 1
+
+    diff = len(cs) - len(oldmap)
+    for name in cs.names:
+        if name not in compmap.keys():
+            compmap[name] = oldmap[name] + diff
+    return compmap
+
+
+def create_compartment_remap(oldmap, newmap):
+    """Creates a map from old compartment number to new compartment number
+
+    For all compartments where remapping is needed
+    Assume that compartments with same name in new and old are the same compartments
+    """
+    remap = dict()
+    for name, number in oldmap.items():
+        if name in newmap and number != newmap[name]:
+            remap[number] = newmap[name]
+    return remap
+
+
+def pk_param_conversion_map(cs, oldmap, from_advan=None, to_advan=None, trans=None):
+    """Conversion map for pk parameters for removed or added compartment"""
+    newmap = new_compartmental_map(cs, oldmap)
+    remap = create_compartment_remap(oldmap, newmap)
+    d = dict()
+    for old, new in remap.items():
+        d[symbol(f'S{old}')] = symbol(f'S{new}')
+        d[symbol(f'F{old}')] = symbol(f'F{new}')
+        d[symbol(f'R{old}')] = symbol(f'R{new}')
+        d[symbol(f'D{old}')] = symbol(f'D{new}')
+        d[symbol(f'ALAG{old}')] = symbol(f'ALAG{new}')
+    if from_advan is None:
+        for i, j in itertools.product(range(1, len(oldmap)), range(0, len(oldmap))):
+            if i != j and (i in remap or j in remap):
+                if i in remap:
+                    to_i = remap[i]
+                else:
+                    to_i = i
+                if j in remap:
+                    to_j = remap[j]
+                else:
+                    to_j = j
+                d[symbol(f'K{i}{j}')] = symbol(f'K{to_i}{to_j}')
+                d[symbol(f'K{i}T{j}')] = symbol(f'K{to_i}T{to_j}')
+    elif from_advan == 'ADVAN3':
+        if to_advan == 'ADVAN4':
+            if trans == 'TRANS4':
+                d[symbol('V1')] = symbol('V2')
+                d[symbol('V2')] = symbol('V3')
+            elif trans == 'TRANS6':
+                d[symbol('K21')] = symbol('K32')
+            else:  # TRANS1
+                d[symbol('K12')] = symbol('K23')
+                d[symbol('K21')] = symbol('K32')
+    elif from_advan == 'ADVAN4':
+        if to_advan == 'ADVAN3':
+            if trans == 'TRANS4':
+                d.update({symbol('V2'): symbol('V1'), symbol('V3'): symbol('V2')})
+            elif trans == 'TRANS6':
+                d.update({symbol('K32'): symbol('K21')})
+            else:  # TRANS1
+                d.update({symbol('K23'): symbol('K12'), symbol('K32'): symbol('K21')})
+    elif from_advan == 'ADVAN11':
+        if to_advan == 'ADVAN12':
+            if trans == 'TRANS4':
+                d.update(
+                    {
+                        symbol('V1'): symbol('V2'),
+                        symbol('Q2'): symbol('Q3'),
+                        symbol('V2'): symbol('V3'),
+                        symbol('Q3'): symbol('Q4'),
+                        symbol('V3'): symbol('V4'),
+                    }
+                )
+            elif trans == 'TRANS6':
+                d.update({symbol('K31'): symbol('K42'), symbol('K21'): symbol('K32')})
+            else:  # TRANS1
+                d.update(
+                    {
+                        symbol('K12'): symbol('K23'),
+                        symbol('K21'): symbol('K32'),
+                        symbol('K13'): symbol('K24'),
+                        symbol('K31'): symbol('K42'),
+                    }
+                )
+    elif from_advan == 'ADVAN12':
+        if to_advan == 'ADVAN11':
+            if trans == 'TRANS4':
+                d.update(
+                    {
+                        symbol('V2'): symbol('V1'),
+                        symbol('Q3'): symbol('Q2'),
+                        symbol('V3'): symbol('V2'),
+                        symbol('Q4'): symbol('Q3'),
+                        symbol('V4'): symbol('V3'),
+                    }
+                )
+            elif trans == 'TRANS6':
+                d.update({symbol('K42'): symbol('K31'), symbol('K32'): symbol('K21')})
+            else:  # TRANS1
+                d.update(
+                    {
+                        symbol('K23'): symbol('K12'),
+                        symbol('K32'): symbol('K21'),
+                        symbol('K24'): symbol('K13'),
+                        symbol('K42'): symbol('K31'),
+                    }
+                )
+
+    return d
+
+
+# FIXME: Remove when no longer used
+def secondary_pk_param_conversion_map(ncomp, compno, removed=True):
+    """Conversion map for pk parameters for one removed or added compartment
+
+    ncomp - total number of compartments before removing/adding (including output)
+    compno - number of removed/added compartment
+    """
+    d = dict()
+    if removed:
+        for i in range(compno + 1, ncomp + 1):
+            d.update(
+                {
+                    symbol(f'S{i}'): symbol(f'S{i - 1}'),
+                    symbol(f'F{i}'): symbol(f'F{i - 1}'),
+                    symbol(f'R{i}'): symbol(f'R{i - 1}'),
+                    symbol(f'D{i}'): symbol(f'D{i - 1}'),
+                    symbol(f'ALAG{i}'): symbol(f'ALAG{i - 1}'),
+                }
+            )
+    else:
+        for i in range(compno, ncomp + 1):
+            d.update(
+                {
+                    symbol(f'S{i}'): symbol(f'S{i + 1}'),
+                    symbol(f'F{i}'): symbol(f'F{i + 1}'),
+                    symbol(f'R{i}'): symbol(f'R{i + 1}'),
+                    symbol(f'D{i}'): symbol(f'D{i + 1}'),
+                    symbol(f'ALAG{i}'): symbol(f'ALAG{i + 1}'),
+                }
+            )
+    return d
