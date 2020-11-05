@@ -99,7 +99,7 @@ def update_random_variables(model, old, new):
                 next_eta += len(omega_record)
         model.control_stream.remove_records(remove_records)
 
-    new_maps = []  # TODO: restructure
+    new_maps = []
     for rv in new:
         if rv.name not in old_names:
             omega_name = (rv.pspace.distribution.std ** 2).name
@@ -122,42 +122,43 @@ def update_random_variables(model, old, new):
     dists_new = new.distributions()
     dists_old = old.distributions()
 
-    if new_names == old_names and dists_new != dists_old:  # TODO: better condition
-        for rvs, dist in dists_new:
-            if rvs not in [rvs[0] for rvs in dists_old]:
-                records = get_omega_records(model, [rv.name for rv in rvs])
+    for rvs, dist in dists_new:
+        if rvs not in [rvs[0] for rvs in dists_old] and set([rv.name for rv in rvs]).issubset(
+            old_names
+        ):
+            records = get_omega_records(model, [rv.name for rv in rvs])
 
-                model.control_stream.remove_records(records)
+            model.control_stream.remove_records(records)
 
-                if len(rvs) > 1:
-                    omega_new = create_omega_block(model, dist)
-                else:
-                    omega_new = create_omega_single(model, model.parameters[str(dist.std ** 2)])
+            if len(rvs) > 1:
+                omega_new = create_omega_block(model, dist)
+            else:
+                omega_new = create_omega_single(model, model.parameters[str(dist.std ** 2)])
 
-                omegas_block, etas_block = create_maps(new.etas)
+            omegas_block, etas_block = create_maps(new.etas)
 
-                next_omega = 1
-                previous_size = None
-                prev_cov = None
+            next_omega = 1
+            previous_size = None
+            prev_cov = None
 
-                for omega_record in model.control_stream.get_records('OMEGA'):
-                    next_omega_cur = next_omega
-                    omegas, next_omega, previous_size = omega_record.parameters(
-                        next_omega_cur, previous_size
+            for omega_record in model.control_stream.get_records('OMEGA'):
+                next_omega_cur = next_omega
+                omegas, next_omega, previous_size = omega_record.parameters(
+                    next_omega_cur, previous_size
+                )
+                etas, next_eta, prev_cov, _ = omega_record.random_variables(
+                    next_omega_cur, prev_cov
+                )
+
+                if omega_record == omega_new:
+                    m_new = dist.args[1]
+                    m_rec = etas[0].pspace.distribution.args[1]
+
+                    omegas_block = replace_omega_name(
+                        m_new, m_rec, omegas_block, omega_record.name_map
                     )
-                    etas, next_eta, prev_cov, _ = omega_record.random_variables(
-                        next_omega_cur, prev_cov
-                    )
 
-                    if omega_record == omega_new:
-                        m_new = dist.args[1]
-                        m_rec = etas[0].pspace.distribution.args[1]
-
-                        omegas_block = replace_omega_name(
-                            m_new, m_rec, omegas_block, omega_record.name_map
-                        )
-
-                    new_maps.append((omega_record, omegas_block, etas_block))
+                new_maps.append((omega_record, omegas_block, etas_block))
     # FIXME: Setting the maps needs to be done here and not in loop. Automatic renumbering is
     #        probably the culprit. There should be a difference between added parameters and
     #        original parameters when it comes to which naming scheme to use
