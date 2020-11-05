@@ -503,7 +503,6 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
                     result_obj._individual_ofv = table.iofv
                     result_obj._individual_estimates = table.etas[rv_names]
                     covs = table.etcs
-                    for index, cov in covs.iteritems():  # Remove ETCs for 0 FIX OMEGAs
-                        covs[index] = cov[rv_names].loc[rv_names]
+                    covs = covs.transform(lambda cov: cov[rv_names].loc[rv_names])
                     result_obj._individual_estimates_covariance = covs
             self._read_phi = True
