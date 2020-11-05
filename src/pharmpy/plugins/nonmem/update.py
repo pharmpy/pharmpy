@@ -306,10 +306,7 @@ def update_ode_system(model, old, new):
         advan = subs.get_option_startswith('ADVAN')
         trans = subs.get_option_startswith('TRANS')
         statements = model.statements
-        to_advan = advan        # Default to not change ADVAN
-        if advan == 'ADVAN5' or advan == 'ADVAN7':
-            remove_compartments(model, old, new)
-            add_compartments(model, old, new)
+        to_advan = advan  # Default to not change ADVAN
         if not old.find_depot() and new.find_depot():
             # Depot was added
             comp, rate = new.get_compartment_outflows(new.find_depot())[0]
@@ -339,6 +336,11 @@ def update_ode_system(model, old, new):
             new, model._compartment_map, from_advan=advan, to_advan=to_advan, trans=trans
         )
         statements.subs(param_conversion)
+
+        if advan == 'ADVAN5' or advan == 'ADVAN7':
+            remove_compartments(model, old, new)
+            add_compartments(model, old, new)
+
         if isinstance(new.find_dosing().dose, Infusion) and not statements.find_assignment('D1'):
             # Handle direct moving of Infusion dose
             statements.subs({'D2': 'D1'})
@@ -414,9 +416,7 @@ def remove_compartments(model, old, new):
     if dose_comp.name in removed:
         model_record.set_dosing(new.find_dosing().name)
 
-    statements = model.statements
     for removed_name in removed:
-        n = model_record.get_compartment_number(removed_name)
         model_record.remove_compartment(removed_name)
 
 
@@ -427,9 +427,18 @@ def add_compartments(model, old, new):
     """
     model_record = model.control_stream.get_records('MODEL')[0]
     added = set(new.names) - set(old.names)
+    order = {key: i for i, key in enumerate(new.names)}
+    added = sorted(added, key=lambda d: order[d])
     statements = model.statements
+    compmap = new_compartmental_map(new, model._compartment_map)
     for added_name in added:
         model_record.prepend_compartment(added_name)
+        comp = new.find_compartment(added_name)
+        comp_no = compmap[comp.name]
+        for to_comp, rate in new.get_compartment_outflows(comp):
+            to_comp_no = compmap[to_comp.name]
+            ass = Assignment(f'K{comp_no}{to_comp_no}', rate)
+            statements.add_before_odes(ass)
 
     if added:
         model_record.move_dosing_first()
