@@ -1,5 +1,7 @@
+import numpy as np
 from sympy.stats.joint_rv_types import MultivariateNormalDistribution
 
+from pharmpy import math
 from pharmpy.parameter import Parameter
 from pharmpy.random_variables import RandomVariables, VariabilityLevel
 
@@ -84,12 +86,22 @@ def _merge_rvs(model, rvs):
         rv.variability_level = VariabilityLevel.IIV
 
     for p_name in params.keys():
-        covariance_init = _choose_param_init(model)
+        covariance_init = _choose_param_init(model, rvs, params[p_name])
         param_new = Parameter(p_name, covariance_init)
         pset.add(param_new)
 
     return pset
 
 
-def _choose_param_init(model):
-    return 0.001
+def _choose_param_init(model, rvs, params):
+    res = model.modelfit_results
+    rvs_names = [rv.name for rv in rvs]
+
+    if res is not None:
+        ie = res.individual_estimates
+        eta_corr = ie[rvs_names].corr()
+        sd = np.array([np.sqrt(params[0].init), np.sqrt(params[1].init)])
+        cov = math.corr2cov(eta_corr.to_numpy(), sd)
+        return cov[1][0]
+    else:
+        return 0.001

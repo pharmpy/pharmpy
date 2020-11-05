@@ -2,7 +2,7 @@ import pytest
 
 from pharmpy import Model
 from pharmpy.modeling import create_rv_block
-from pharmpy.modeling.block_rvs import RVInputException, _get_rvs
+from pharmpy.modeling.block_rvs import RVInputException, _choose_param_init, _get_rvs
 from pharmpy.random_variables import VariabilityLevel
 
 
@@ -39,3 +39,18 @@ def test_get_rvs(testdata):
     model.random_variables['ETA(1)'].variability_level = VariabilityLevel.IOV
     rvs = _get_rvs(model, None)
     assert rvs[0].name == 'ETA(2)'
+
+
+def test_choose_param_init(pheno_path, testdata):
+    model = Model(pheno_path)
+    params = (model.parameters['OMEGA(1,1)'], model.parameters['OMEGA(2,2)'])
+    rvs = model.random_variables.etas
+    init = _choose_param_init(model, rvs, params)
+
+    assert round(init, 4) == 0.0118
+
+    model = Model(pheno_path)
+    model.source.path = testdata  # Path where there is no .ext-file
+    init = _choose_param_init(model, rvs, params)
+
+    assert init == 0.001
