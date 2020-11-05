@@ -17,6 +17,7 @@ def compartmental_model(model, advan, trans):
         central.dose = dose
         central.lag_time = get_alag(model, 1)
         ass = _f_link_assignment(model, central)
+        comp_map = {'CENTRAL': 1, 'OUTPUT': 2}
     elif advan == 'ADVAN2':
         cm = CompartmentalSystem()
         depot = cm.add_compartment('DEPOT')
@@ -29,6 +30,7 @@ def compartmental_model(model, advan, trans):
         depot.lag_time = get_alag(model, 1)
         central.lag_time = get_alag(model, 2)
         ass = _f_link_assignment(model, central)
+        comp_map = {'DEPOT': 1, 'CENTRAL': 2, 'OUTPUT': 3}
     elif advan == 'ADVAN3':
         cm = CompartmentalSystem()
         central = cm.add_compartment('CENTRAL')
@@ -43,6 +45,7 @@ def compartmental_model(model, advan, trans):
         central.lag_time = get_alag(model, 1)
         peripheral.lag_time = get_alag(model, 2)
         ass = _f_link_assignment(model, central)
+        comp_map = {'CENTRAL': 1, 'PERIPHERAL': 2, 'OUTPUT': 3}
     elif advan == 'ADVAN4':
         cm = CompartmentalSystem()
         depot = cm.add_compartment('DEPOT')
@@ -60,6 +63,7 @@ def compartmental_model(model, advan, trans):
         central.lag_time = get_alag(model, 2)
         peripheral.lag_time = get_alag(model, 3)
         ass = _f_link_assignment(model, central)
+        comp_map = {'DEPOT': 1, 'CENTRAL': 2, 'PERIPHERAL': 3, 'OUTPUT': 4}
     elif advan == 'ADVAN5' or advan == 'ADVAN7':
         cm = CompartmentalSystem()
         modrec = model.control_stream.get_records('MODEL')[0]
@@ -87,6 +91,7 @@ def compartmental_model(model, advan, trans):
             compartments.append(comp)
         output = cm.add_compartment('OUTPUT')
         compartments.append(output)
+        comp_map = {comp.name: i + 1 for i, comp in enumerate(compartments)}
         ncomp = i + 2
         if not defobs:
             if central:
@@ -123,6 +128,7 @@ def compartmental_model(model, advan, trans):
         cm.add_flow(central, output, vm / (km + sympy.Function(central.amount.name)(t)))
         central.lag_time = get_alag(model, 1)
         ass = _f_link_assignment(model, central)
+        comp_map = {'CENTRAL': 1, 'OUTPUT': 2}
     elif advan == 'ADVAN11':
         cm = CompartmentalSystem()
         central = cm.add_compartment('CENTRAL')
@@ -141,6 +147,7 @@ def compartmental_model(model, advan, trans):
         per1.lag_time = get_alag(model, 2)
         per2.lag_time = get_alag(model, 3)
         ass = _f_link_assignment(model, central)
+        comp_map = {'CENTRAL': 1, 'PERIPHERAL1': 2, 'PERIPHERAL2': 3, 'OUTPUT': 4}
     elif advan == 'ADVAN12':
         cm = CompartmentalSystem()
         depot = cm.add_compartment('DEPOT')
@@ -162,8 +169,10 @@ def compartmental_model(model, advan, trans):
         per1.lag_time = get_alag(model, 3)
         per2.lag_time = get_alag(model, 4)
         ass = _f_link_assignment(model, central)
+        comp_map = {'DEPOT': 1, 'CENTRAL': 2, 'PERIPHERAL1': 3, 'PERIPHERAL2': 4, 'OUTPUT': 5}
     else:
         return None
+    model._compartment_map = comp_map
     return cm, ass
 
 
