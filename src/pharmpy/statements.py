@@ -242,6 +242,13 @@ class CompartmentalSystem(ODESystem):
         else:
             return None
 
+    def n_connected(self, comp):
+        """Get the number of compartments connected to comp
+        """
+        out_comps = {c for c, _ in self.get_compartment_outflows(comp)}
+        in_comps = {c for c, _ in self.get_compartment_inflows(comp)}
+        return len(out_comps | in_comps)
+
     def find_output(self):
         """Find the output compartment
 

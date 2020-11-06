@@ -303,14 +303,17 @@ def update_ode_system(model, old, new):
                 dose = False
             mod.add_compartment(name, dosing=dose)
     elif type(old) == CompartmentalSystem and type(new) == CompartmentalSystem:
+        subs = model.control_stream.get_records('SUBROUTINES')[0]
+        advan = subs.get_option_startswith('ADVAN')
+        trans = subs.get_option_startswith('TRANS')
+        if len(new) > 5 or new.n_connected(new.find_central()) != len(new) - 1:
+            change_advan(model, 'ADVAN5', advan, trans)
+            advan = 'ADVAN5'
         update_lag_time(model, old, new)
         if isinstance(new.find_dosing().dose, Bolus) and 'RATE' in model.dataset.columns:
             df = model.dataset
             df.drop(columns=['RATE'], inplace=True)
             model.dataset = df
-        subs = model.control_stream.get_records('SUBROUTINES')[0]
-        advan = subs.get_option_startswith('ADVAN')
-        trans = subs.get_option_startswith('TRANS')
         statements = model.statements
         to_advan = advan  # Default to not change ADVAN
         if not old.find_depot(model._old_statements) and new.find_depot(statements):
@@ -650,3 +653,4 @@ def change_advan(model, advan, oldadvan, oldtrans):
                 mod.add_compartment(comps[i], dosing=True)
             else:
                 mod.add_compartment(comps[i], dosing=False)
+            i += 1
