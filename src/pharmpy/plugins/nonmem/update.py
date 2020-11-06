@@ -4,6 +4,12 @@ import re
 import numpy as np
 
 from pharmpy import data
+from pharmpy.plugins.nonmem.advan import (
+    _advan3_trans,
+    _advan4_trans,
+    _advan11_trans,
+    _advan12_trans,
+)
 from pharmpy.random_variables import VariabilityLevel
 from pharmpy.statements import (
     Assignment,
@@ -307,12 +313,12 @@ def update_ode_system(model, old, new):
         trans = subs.get_option_startswith('TRANS')
         statements = model.statements
         to_advan = advan  # Default to not change ADVAN
-        if not old.find_depot() and new.find_depot():
+        if not old.find_depot(model._old_statements) and new.find_depot(statements):
             # Depot was added
-            comp, rate = new.get_compartment_outflows(new.find_depot())[0]
+            comp, rate = new.get_compartment_outflows(new.find_depot(statements))[0]
             ass = Assignment('KA', rate)
             statements.add_before_odes(ass)
-            new.add_flow(new.find_depot(), comp, ass.symbol)
+            new.add_flow(new.find_depot(statements), comp, ass.symbol)
             if advan == 'ADVAN1':
                 to_advan = 'ADVAN2'
             elif advan == 'ADVAN3':
@@ -321,7 +327,7 @@ def update_ode_system(model, old, new):
                 to_advan = 'ADVAN12'
             if advan not in ['ADVAN5', 'ADVAN7']:
                 subs.replace_option(advan, to_advan)
-        elif old.find_depot() and not new.find_depot():
+        elif old.find_depot(model._old_statements) and not new.find_depot(statements):
             # Depot was removed
             statements = model.statements
             if advan == 'ADVAN2':
@@ -570,5 +576,77 @@ def pk_param_conversion_map(cs, oldmap, from_advan=None, to_advan=None, trans=No
                         symbol('K42'): symbol('K31'),
                     }
                 )
-
     return d
+
+
+def change_advan(model, advan, oldadvan, oldtrans):
+    """Change from one advan to another"""
+    assignments = []
+    newtrans = None
+    if advan == oldadvan:
+        return
+    subs = model.control_stream.get_records('SUBROUTINES')[0]
+    if advan == 'ADVAN5' or advan == 'ADVAN7':
+        newtrans = 'TRANS1'
+        if oldadvan == 'ADVAN1':
+            if oldtrans == 'TRANS1':
+                ass = Assignment('K10', symbol('K'))
+            else:  # TRANS2
+                ass = Assignment('K10', symbol('CL') / symbol('V'))
+            assignments.append(ass)
+        elif oldadvan == 'ADVAN2':
+            # FIXME: Might create too many new parameters
+            assignments.append(Assignment('K12', symbol('KA')))
+            if oldtrans == 'TRANS1':
+                ass = Assignment('K20', symbol('K'))
+            else:  # TRANS2
+                ass = Assignment('K20', symbol('CL') / symbol('V'))
+            assignments.append(ass)
+        elif oldadvan == 'ADVAN3':
+            k, k12, k21 = _advan3_trans(oldtrans)
+            ass1 = Assignment('K12', k12)
+            ass2 = Assignment('K21', k21)
+            ass3 = Assignment('K20', k)
+            assignments.extend([ass1, ass2, ass3])
+        elif oldadvan == 'ADVAN4':
+            k, k23, k32, ka = _advan4_trans(oldtrans)
+            ass1 = Assignment('K12', ka)
+            ass2 = Assignment('K23', k23)
+            ass3 = Assignment('K32', k32)
+            ass4 = Assignment('K30', k)
+            assignments.extend([ass1, ass2, ass3, ass4])
+        elif oldadvan == 'ADVAN11':
+            k, k12, k21, k13, k31 = _advan11_trans(oldtrans)
+            ass1 = Assignment('K12', k12)
+            ass2 = Assignment('K21', k21)
+            ass3 = Assignment('K13', k13)
+            ass4 = Assignment('K31', k31)
+            ass5 = Assignment('K30', k)
+            assignments.extend([ass1, ass2, ass3, ass4, ass5])
+        elif oldadvan == 'ADVAN12':
+            k, k23, k32, k24, k42, ka = _advan12_trans(oldtrans)
+            ass1 = Assignment('K12', ka)
+            ass2 = Assignment('K23', k23)
+            ass3 = Assignment('K32', k32)
+            ass4 = Assignment('K24', k24)
+            ass5 = Assignment('K42', k42)
+            ass6 = Assignment('K40', k)
+            assignments.extend([ass1, ass2, ass3, ass4, ass5, ass6])
+
+        for ass in assignments:
+            model.statements.add_before_odes(ass)
+
+        subs.replace_option(oldadvan, advan)
+        if newtrans is not None:
+            subs.replace_option(oldtrans, newtrans)
+
+        mod = model.control_stream.insert_record('$MODEL\n')
+        comps = {v: k for k, v in model._compartment_map.items()}
+        i = 1
+        while True:
+            if i not in comps:
+                break
+            if i == 1:
+                mod.add_compartment(comps[i], dosing=True)
+            else:
+                mod.add_compartment(comps[i], dosing=False)

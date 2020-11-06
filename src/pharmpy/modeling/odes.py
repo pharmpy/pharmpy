@@ -27,8 +27,22 @@ def set_transit_compartments(model, n):
     if len(transits) == n:
         pass
     elif len(transits) == 0:
-        # FIXME
-        pass
+        popmdt_symb = model.create_symbol('POP_MDT')
+        mdt_param = Parameter(popmdt_symb.name, init=0.1, lower=0)
+        model.parameters.add(mdt_param)
+        mdt_symb = model.create_symbol('MDT')
+        imdt = Assignment(mdt_symb, mdt_param.symbol)
+        model.statements.insert(0, imdt)
+        rate = n / mdt_symb
+        comp = odes.find_dosing()
+        dose = comp.dose
+        comp.dose = None
+        while n > 0:
+            new_comp = odes.add_compartment(f'TRANSIT{n}')
+            n -= 1
+            odes.add_flow(new_comp, comp, rate)
+            comp = new_comp
+        comp.dose = dose
     elif len(transits) > n:
         nremove = len(transits) - n
         comp = odes.find_dosing()
@@ -104,7 +118,7 @@ def absorption_rate(model, rate):
     if not isinstance(odes, CompartmentalSystem):
         raise ValueError("Setting absorption is not supported for ExplicitODESystem")
 
-    depot = odes.find_depot()
+    depot = odes.find_depot(statements)
     if rate == 'bolus':
         if depot:
             to_comp, _ = odes.get_compartment_outflows(depot)[0]

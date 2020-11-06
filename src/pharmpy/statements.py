@@ -321,12 +321,19 @@ class CompartmentalSystem(ODESystem):
         else:
             return transits
 
-    def find_depot(self):
+    def find_depot(self, statements):
         """Find the depot compartment
 
         The depot compartment is defined to be the compartment that only has out flow to the
         central compartment, but no flow from the central compartment.
         """
+        transits = self.find_transit_compartments(statements)
+        depot = self._find_depot()
+        if depot in transits:
+            depot = None
+        return depot
+
+    def _find_depot(self):
         central = self.find_central()
         depot = None
         for to_central, _ in self.get_compartment_inflows(central):
@@ -415,7 +422,7 @@ class CompartmentalSystem(ODESystem):
         output_box = box(output.name)
         central = self.find_central()
         central_box = box(central.name)
-        depot = self.find_depot()
+        depot = self._find_depot()
         if depot:
             depot_box = box(depot.name)
             depot_central_arrow = arrow(str(self.get_flow(depot, central)))

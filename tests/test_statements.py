@@ -153,13 +153,13 @@ def test_find_central(testdata):
 
 def test_find_depot(testdata):
     model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan2.mod')
-    assert model.statements.ode_system.find_depot().name == 'DEPOT'
+    assert model.statements.ode_system.find_depot(model.statements).name == 'DEPOT'
     model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan1.mod')
-    assert model.statements.ode_system.find_depot() is None
+    assert model.statements.ode_system.find_depot(model.statements) is None
     model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan5_depot.mod')
-    assert model.statements.ode_system.find_depot().name == 'DEPOT'
+    assert model.statements.ode_system.find_depot(model.statements).name == 'DEPOT'
     model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan5_nodepot.mod')
-    assert model.statements.ode_system.find_depot() is None
+    assert model.statements.ode_system.find_depot(model.statements) is None
 
 
 def test_find_transit_compartments(testdata):
