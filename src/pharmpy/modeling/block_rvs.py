@@ -11,6 +11,18 @@ class RVInputException(Exception):
 
 
 def create_rv_block(model, list_of_rvs=None):
+    """
+    Creates a full or partial block structure of etas. The etas must be IIVs and cannot
+    be fixed.
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model to add covariate effect to.
+    list_of_rvs : list
+        List of etas to create a block structure from. If None, all etas that are IIVs and
+        non-fixed will be used (full block). None is default.
+    """
     rvs_full = model.random_variables
     rvs = _get_rvs(model, list_of_rvs)
 

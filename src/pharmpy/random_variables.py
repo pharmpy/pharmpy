@@ -221,6 +221,7 @@ class RandomVariables(OrderedSet):
         return distributions
 
     def get_joined_rvs(self, rv):
+        """Get all RVs from same distribution as input rv."""
         assert isinstance(rv, JointDistributionSeparate)
 
         dists = self.distributions()
@@ -233,6 +234,15 @@ class RandomVariables(OrderedSet):
         return RandomVariables(joined_rvs)
 
     def extract_from_block(self, rv_to_extract):
+        """
+        Extracts single random variable from joint distribution and creates new distribution.
+        A new distribution will be created for remaining RVs, single normal distribution if one
+        remains, joint normal otherwise.
+
+        Parameters
+        ----------
+        rv_to_extract : RandomSymbol
+            Random symbol to create new single distribution for."""
         associated_rvs = self.get_joined_rvs(rv_to_extract)
 
         cov = associated_rvs.covariance_matrix()

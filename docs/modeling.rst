@@ -477,3 +477,32 @@ Setting a combined additive and proportional error model
    error_model(model, 'combined')
    model.update_source()
    print_model_diff(model_ref, model)
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Creating full or partial block structures
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. jupyter-execute::
+   :hide-output:
+
+   model = Model(path / "pheno.mod")
+
+Pharmpy supports the creation of full and partial block structures of etas (IIV).
+
+.. jupyter-execute::
+
+   from pharmpy.modeling import create_rv_block
+
+   create_rv_block(model, ['ETA(1)', 'ETA(2)'])
+   model.update_source()
+   print_model_diff(model_ref, model)
+
+To create a partial block structure, provide the etas as a list. Valid etas must be IIVs and cannot be
+fixed. If no list is provided as input, a full block structure is implemented.
+
+.. jupyter-execute::
+
+   model = Model(path / "pheno.mod")
+   create_rv_block(model)
+   model.update_source()
+   print_model_diff(model_ref, model)
