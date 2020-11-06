@@ -10,7 +10,7 @@ from pharmpy.plugins.nonmem.advan import (
     _advan11_trans,
     _advan12_trans,
 )
-from pharmpy.random_variables import VariabilityLevel
+from pharmpy.random_variables import RandomVariables, VariabilityLevel
 from pharmpy.statements import (
     Assignment,
     Bolus,
@@ -121,44 +121,35 @@ def update_random_variables(model, old, new):
 
     dists_new = new.distributions()
     dists_old = old.distributions()
+    rvs_old = [rvs[0] for rvs in dists_old]  # TODO: clearer variable name
 
     for rvs, dist in dists_new:
-        if rvs not in [rvs[0] for rvs in dists_old] and set([rv.name for rv in rvs]).issubset(
-            old_names
-        ):
-            records = get_omega_records(model, [rv.name for rv in rvs])
-
+        rv_names = [rv.name for rv in rvs]
+        if rvs not in rvs_old and set(rv_names).issubset(old_names):
+            records = get_omega_records(model, rv_names)
             model.control_stream.remove_records(records)
 
             if len(rvs) > 1:
                 omega_new = create_omega_block(model, dist)
             else:
                 omega_new = create_omega_single(model, model.parameters[str(dist.std ** 2)])
+            model.control_stream.go_through_omega_rec()  # Initializes omega name_maps
 
-            omegas_block, etas_block = create_maps(new.etas)
-
-            next_omega = 1
-            previous_size = None
+            next_eta = 1
             prev_cov = None
-
             for omega_record in model.control_stream.get_records('OMEGA'):
-                next_omega_cur = next_omega
-                omegas, next_omega, previous_size = omega_record.parameters(
-                    next_omega_cur, previous_size
-                )
-                etas, next_eta, prev_cov, _ = omega_record.random_variables(
-                    next_omega_cur, prev_cov
-                )
+                etas, next_eta, prev_cov, _ = omega_record.random_variables(next_eta, prev_cov)
 
                 if omega_record == omega_new:
-                    m_new = dist.args[1]
-                    m_rec = etas[0].pspace.distribution.args[1]
+                    cov_new = RandomVariables(rvs).covariance_matrix()
+                    cov_rec = RandomVariables(etas).covariance_matrix()
+                else:
+                    cov_new, cov_rec = None, None
 
-                    omegas_block = replace_omega_name(
-                        m_new, m_rec, omegas_block, omega_record.name_map
-                    )
-
-                new_maps.append((omega_record, omegas_block, etas_block))
+                omega_map, eta_map = create_record_maps(
+                    new.etas, cov_new, cov_rec, omega_record.name_map
+                )
+                new_maps.append((omega_record, omega_map, eta_map))
     # FIXME: Setting the maps needs to be done here and not in loop. Automatic renumbering is
     #        probably the culprit. There should be a difference between added parameters and
     #        original parameters when it comes to which naming scheme to use
@@ -255,7 +246,7 @@ def create_omega_block(model, dist):
     return record
 
 
-def create_maps(etas):
+def create_record_maps(etas, cov_new=None, cov_rec=None, name_map_rec=None):
     omegas_block = dict()
     etas_block = dict()
 
@@ -268,15 +259,22 @@ def create_maps(etas):
             etas_block[rv.name] = eta_no
             omegas_block[f'OMEGA({eta_no},{eta_no})'] = (eta_no, eta_no)
 
+    try:
+        cov_str = [str(eta) for eta in cov_new]
+        if all(eta.startswith('OMEGA') for eta in cov_str) is False:
+            omegas_block = replace_omega_name(cov_new, cov_rec, omegas_block, name_map_rec)
+    except TypeError:
+        pass
+
     return omegas_block, etas_block
 
 
-def replace_omega_name(m_new, m_rec, name_map_new, name_map_rec):
-    for row in range(m_new.shape[0]):
-        for col in range(m_new.shape[1]):
+def replace_omega_name(cov_new, cov_rec, name_map_new, name_map_rec):
+    for row in range(cov_new.shape[0]):
+        for col in range(cov_new.shape[1]):
             if row > col:
-                elem_new = m_new.row(row).col(col)[0]
-                elem_rec = m_rec.row(row).col(col)[0]
+                elem_new = cov_new.row(row).col(col)[0]
+                elem_rec = cov_rec.row(row).col(col)[0]
 
                 name_map_new[str(elem_new)] = name_map_rec[str(elem_rec)]
     return name_map_new
