@@ -80,14 +80,16 @@ def _has_fixed_params(model, rv):
 def _merge_rvs(model, rvs):
     pset = model.parameters
 
-    params = rvs.merge_normal_distributions(create_cov_params=True)
+    cov_to_params = rvs.merge_normal_distributions(create_cov_params=True)
 
     for rv in rvs:
         rv.variability_level = VariabilityLevel.IIV
 
-    for p_name in params.keys():
-        covariance_init = _choose_param_init(model, rvs, params[p_name])
-        param_new = Parameter(p_name, covariance_init)
+    for cov_name in cov_to_params.keys():
+        param_names = cov_to_params[cov_name]
+        parent_params = (pset[param_names[0]], pset[param_names[1]])
+        covariance_init = _choose_param_init(model, rvs, parent_params)
+        param_new = Parameter(cov_name, covariance_init)
         pset.add(param_new)
 
     return pset

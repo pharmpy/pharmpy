@@ -430,11 +430,27 @@ def john_draper(args):
 
 
 def add_etas(args):
-    """Subcommand to add covariate effect to model."""
+    """Subcommand to add new etas to model."""
     from pharmpy.modeling import add_etas
 
     model = args.model
     add_etas(model, args.param, args.expression, args.operation)
+
+    write_model_or_dataset(model, model.dataset, path=args.output_file, force=False)
+
+
+def create_rv_block(args):
+    """Subcommand to create full or partial block structures."""
+    from pharmpy.modeling import create_rv_block
+
+    model = args.model
+
+    try:
+        etas = args.etas.split(" ")
+    except AttributeError:
+        etas = args.etas
+
+    create_rv_block(model, etas)
 
     write_model_or_dataset(model, model.dataset, path=args.output_file, force=False)
 
@@ -992,6 +1008,24 @@ parser_definition = [
                                 'type': str,
                                 'default': '*',
                                 'help': 'Whether effect should be added or multiplied',
+                            },
+                        ],
+                    }
+                },
+                {
+                    'create_rv_block': {
+                        'help': 'Creates block structures',
+                        'description': 'Creates full or partial block structures of etas (IIV)',
+                        'func': create_rv_block,
+                        'parents': [args_model_input, args_output],
+                        'args': [
+                            {
+                                'name': '--etas',
+                                'type': str,
+                                'default': None,
+                                'help': 'List of etas, mark group of etas in single quote '
+                                'separated by spaces. For partial block structures provide list, '
+                                'for full no arguments are needed',
                             },
                         ],
                     }

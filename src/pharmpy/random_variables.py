@@ -334,7 +334,8 @@ class RandomVariables(OrderedSet):
 
         Set new covariances (and previous 0 covs) to 'fill'
         """
-        params = dict()
+        cov_to_params = dict()
+        cov_number = 1
         means, M, names, others = self._calc_covariance_matrix()
         if fill != 0:
             for row, col in itertools.product(range(M.rows), range(M.cols)):
@@ -345,15 +346,16 @@ class RandomVariables(OrderedSet):
                 if M[row, col] == 0 and row < col:
                     param_1 = M[row, row]
                     param_2 = M[col, col]
-                    cov_name = f'COV_{param_1}_{param_2}'
-                    params[cov_name] = (param_1, param_2)
+                    cov_name = f'COV{cov_number}'
+                    cov_number += 1
+                    cov_to_params[cov_name] = (str(param_1), str(param_2))
 
                     M[row, col] = symbol(cov_name)
                     M[col, row] = symbol(cov_name)
 
         new_rvs = JointNormalSeparate(names, means, M)
         self.__init__(new_rvs + others)
-        return params
+        return cov_to_params
 
     def __getstate__(self):
         """Serialization methods needed to handle variability_level on random variables"""

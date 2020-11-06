@@ -93,3 +93,24 @@ def test_results_linearize(datadir, fs):
     cli.main(args)
 
     assert os.path.exists('linearize_dir1/results.json')
+
+
+@pytest.mark.parametrize('fs', [[['pkgutil'], [source, etas_record]]], indirect=True)
+@pytest.mark.parametrize('eta_args', [['--etas', 'ETA(1) ETA(2)'], []])
+def test_create_rv_block(datadir, fs, eta_args):
+    fs.add_real_file(datadir / 'pheno_real.mod', target_path='run1.mod')
+    fs.add_real_file(datadir / 'pheno_real.ext', target_path='run1.ext')
+    fs.add_real_file(datadir / 'pheno_real.phi', target_path='run1.phi')
+    fs.add_real_file(datadir / 'pheno.dta', target_path='pheno.dta')
+
+    args = ['model', 'create_rv_block', 'run1.mod'] + eta_args
+    cli.main(args)
+
+    with open('run1.mod', 'r') as f_ori, open('run2.mod', 'r') as f_cov:
+        mod_ori = f_ori.read()
+        mod_cov = f_cov.read()
+
+    assert mod_ori != mod_cov
+
+    assert not re.search(r'BLOCK\(2\)', mod_ori)
+    assert re.search(r'BLOCK\(2\)', mod_cov)

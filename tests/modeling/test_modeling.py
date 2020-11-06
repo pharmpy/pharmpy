@@ -1010,6 +1010,12 @@ def test_add_etas(pheno_path, parameter, expression, operation, buf_new):
             '$OMEGA 0.1\n$OMEGA BLOCK(2)\n0.0309626\n0.001\t0.031128\n',
         ),
         (
+            'nonmem/pheno.mod',
+            ['ETA(1)', 'ETA(2)'],
+            '$PK\n' 'CL=THETA(1)*EXP(ETA(1))\n' 'V=THETA(2)*EXP(ETA(2))\n' 'S1=V\n\n',
+            '$OMEGA BLOCK(2)\n0.0309626\n0.017604709616647243\t0.031128\n',
+        ),
+        (
             'nonmem/pheno_block.mod',
             ['ETA(1)', 'ETA(3)'],
             '$PK\nCL = THETA(1)*EXP(ETA(2))\nV = THETA(2)*EXP(ETA(1))\nS1=V+ETA(3)\n\n',
