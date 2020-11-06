@@ -371,6 +371,14 @@ def model_absorption_rate(args):
     write_model_or_dataset(model, None, path=args.output_file, force=args.force)
 
 
+def model_transit_compartments(args):
+    from pharmpy.modeling import set_transit_compartments
+
+    model = args.model
+    set_transit_compartments(model, args.n)
+    write_model_or_dataset(model, None, path=args.output_file, force=args.force)
+
+
 def model_error(args):
     from pharmpy.modeling import error_model
 
@@ -883,6 +891,21 @@ parser_definition = [
                                 'choices': ['bolus', 'ZO', 'FO', 'seq-ZO-FO'],
                                 'type': str,
                                 'help': 'Absorption rate',
+                            },
+                        ],
+                    }
+                },
+                {
+                    'transit_compartments': {
+                        'help': 'Set the number of transit compartments for a PK model',
+                        'description': 'Set the number of transit compartments of a PK model',
+                        'func': model_transit_compartments,
+                        'parents': [args_model_input, args_output],
+                        'args': [
+                            {
+                                'name': 'n',
+                                'type': int,
+                                'help': 'Number of compartments',
                             },
                         ],
                     }
