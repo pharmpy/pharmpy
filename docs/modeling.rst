@@ -74,32 +74,6 @@ The functions for fixing/unfixing parameters take either a list of parameter nam
    fix_parameters(model, ['THETA(1)', 'THETA(2)'])
    unfix_parameters(model, 'THETA(1)')
 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Adding and removing lag time
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. jupyter-execute::
-
-   model = Model(path / "pheno.mod")
-
-Lag time may be added to a dose compartment of a model.
-
-.. jupyter-execute::
-
-   from pharmpy.modeling import add_lag_time
-   add_lag_time(model)
-   model.update_source()
-   print_model_diff(model_ref, model)
-
-To remove the lag time you can do the following:
-
-.. jupyter-execute::
-
-   from pharmpy.modeling import remove_lag_time
-   remove_lag_time(model)
-   model.update_source()
-   print_model_diff(model_ref, model)
-
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 PK models and ODE systems
@@ -231,6 +205,50 @@ Sequential zero-order absorption followed by first-order absorption will have an
    print_model_diff(model_ref, model)
 
 .. _cov_effects:
+
+Absorption delay
+~~~~~~~~~~~~~~~~
+
+Transit compartments
+====================
+
+Transit compartments can be added or removed using the same function.
+
+.. jupyter-execute::
+
+   model = Model(path / "pheno.mod")
+   from pharmpy.modeling import set_transit_compartments
+
+   set_transit_compartments(model, 4)
+   model.update_source()
+   print_model_diff(model_ref, model)
+
+
+Lag time
+========
+
+.. jupyter-execute::
+
+   model = Model(path / "pheno.mod")
+
+Lag time may be added to a dose compartment of a model.
+
+.. jupyter-execute::
+
+   from pharmpy.modeling import add_lag_time
+   add_lag_time(model)
+   model.update_source()
+   print_model_diff(model_ref, model)
+
+To remove the lag time you can do the following:
+
+.. jupyter-execute::
+
+   from pharmpy.modeling import remove_lag_time
+   remove_lag_time(model)
+   model.update_source()
+   print_model_diff(model_ref, model)
+
 
 ~~~~~~~~~~~~~~~~~~~~~~~~
 Adding covariate effects
