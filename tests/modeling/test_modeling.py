@@ -195,13 +195,14 @@ def test_transit_compartments_change_advan(testdata):
     transits = model.statements.ode_system.find_transit_compartments(model.statements)
     assert len(transits) == 3
     model.update_source()
-    correct = """$PROBLEM PHENOBARB SIMPLE MODEL
+    correct = (
+        """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA ../pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
 $SUBROUTINE ADVAN5 TRANS1
 
-$MODEL COMPARTMENT=(TRANSIT1 DEFDOSE) COMPARTMENT=(TRANSIT2) COMPARTMENT=(TRANSIT3) """ \
-    + """COMPARTMENT=(CENTRAL) COMPARTMENT=(OUTPUT)
+$MODEL COMPARTMENT=(TRANSIT1 DEFDOSE) COMPARTMENT=(TRANSIT2) COMPARTMENT=(TRANSIT3) """
+        + """COMPARTMENT=(CENTRAL) COMPARTMENT=(OUTPUT)
 $PK
 MDT = THETA(4)
 IF(AMT.GT.0) BTIME=TIME
@@ -238,6 +239,7 @@ $COVARIANCE UNCONDITIONAL
 $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
        NOPRINT ONEHEADER FILE=sdtab1
 """
+    )
     assert str(model) == correct
 
 
