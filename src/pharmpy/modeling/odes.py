@@ -19,6 +19,19 @@ def explicit_odes(model):
     return model
 
 
+def first_order_elimination(model):
+    pass
+
+
+def michaelis_menten_elimination(model):
+    popkm_symb = model.create_symbol('POP_KM')
+    popkm_param = Parameter(popkm_symb.name, init=0.1, lower=0)
+    model.parameters.add(popkm_param)
+    km_symb = model.create_symbol('KM')
+    ikm = Assignment(km_symb, popkm_param.symbol)
+    model.statements.insert(0, ikm)
+
+
 def set_transit_compartments(model, n):
     """Set the number of transit compartments of model"""
     statements = model.statements
