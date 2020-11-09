@@ -119,20 +119,19 @@ def update_random_variables(model, old, new):
                     (record, {omega_name: (eta_number, eta_number)}, {rv_name: eta_number})
                 )
 
-    dists_new = new.distributions()
-    dists_old = old.distributions()
-    rvs_old = [rvs[0] for rvs in dists_old]  # TODO: clearer variable name
+    rvs_old = [rvs[0] for rvs in old.distributions()]
 
-    for rvs, dist in dists_new:
+    for rvs, dist in new.distributions():
         rv_names = [rv.name for rv in rvs]
         if rvs not in rvs_old and set(rv_names).issubset(old_names):
             records = get_omega_records(model, rv_names)
             model.control_stream.remove_records(records)
 
-            if len(rvs) > 1:
-                omega_new = create_omega_block(model, dist)
-            else:
+            if len(rvs) == 1:
                 omega_new = create_omega_single(model, model.parameters[str(dist.std ** 2)])
+            else:
+                omega_new = create_omega_block(model, dist)
+
             model.control_stream.go_through_omega_rec()  # Initializes omega name_maps
 
             next_eta = 1
@@ -141,13 +140,13 @@ def update_random_variables(model, old, new):
                 etas, next_eta, prev_cov, _ = omega_record.random_variables(next_eta, prev_cov)
 
                 if omega_record == omega_new:
-                    cov_new = RandomVariables(rvs).covariance_matrix()
+                    cov_rvs = RandomVariables(rvs).covariance_matrix()
                     cov_rec = RandomVariables(etas).covariance_matrix()
                 else:
-                    cov_new, cov_rec = None, None
+                    cov_rvs, cov_rec = None, None
 
                 omega_map, eta_map = create_record_maps(
-                    new.etas, cov_new, cov_rec, omega_record.name_map
+                    new.etas, cov_rvs, cov_rec, omega_record.name_map
                 )
                 new_maps.append((omega_record, omega_map, eta_map))
     # FIXME: Setting the maps needs to be done here and not in loop. Automatic renumbering is
@@ -240,9 +239,7 @@ def create_omega_block(model, dist):
             param_str += f'{omega.init}\t'
 
         param_str = f'{param_str.rstrip()}\n'
-
     record = model.control_stream.insert_record(param_str)
-
     return record
 
 

@@ -97,8 +97,7 @@ def _merge_rvs(model, rvs):
     for rv in rvs:
         rv.variability_level = VariabilityLevel.IIV
 
-    for cov_name in cov_to_params.keys():
-        param_names = cov_to_params[cov_name]
+    for cov_name, param_names in cov_to_params.items():
         parent_params = (pset[param_names[0]], pset[param_names[1]])
         covariance_init = _choose_param_init(model, rvs, parent_params)
         param_new = Parameter(cov_name, covariance_init)

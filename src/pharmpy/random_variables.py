@@ -247,7 +247,7 @@ class RandomVariables(OrderedSet):
 
         cov = associated_rvs.covariance_matrix()
         rv_extracted = None
-        to_remove = None
+        index_to_remove = None
         names = []
 
         for i, rv in enumerate(associated_rvs):
@@ -255,12 +255,12 @@ class RandomVariables(OrderedSet):
             if rv.name == rv_to_extract.name:
                 rv_extracted = stats.Normal(rv.name, 0, sympy.sqrt(cov[i, i]))
                 rv_extracted.variability_level = VariabilityLevel.IIV
-                to_remove = i
+                index_to_remove = i
             else:
                 names.append(rv.name)
 
-        cov.row_del(to_remove)
-        cov.col_del(to_remove)
+        cov.row_del(index_to_remove)
+        cov.col_del(index_to_remove)
 
         if len(cov) == 1:
             rv_remaining = stats.Normal(names[0], 0, sympy.sqrt(cov[0]))
