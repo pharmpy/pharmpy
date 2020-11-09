@@ -109,12 +109,14 @@ def _merge_rvs(model, rvs):
 def _choose_param_init(model, rvs, params):
     res = model.modelfit_results
     rvs_names = [rv.name for rv in rvs]
+    sd = np.array([np.sqrt(params[0].init), np.sqrt(params[1].init)])
 
     if res is not None:
         ie = res.individual_estimates
         eta_corr = ie[rvs_names].corr()
-        sd = np.array([np.sqrt(params[0].init), np.sqrt(params[1].init)])
         cov = math.corr2cov(eta_corr.to_numpy(), sd)
-        return cov[1][0]
+        cov[cov == 0] = 0.0001
+        cov = math.nearest_posdef(cov)
+        return round(cov[1][0], 7)
     else:
-        return 0.001
+        return round(0.1 * sd[0] * sd[1], 7)

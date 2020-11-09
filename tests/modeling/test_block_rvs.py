@@ -47,10 +47,10 @@ def test_choose_param_init(pheno_path, testdata):
     rvs = model.random_variables.etas
     init = _choose_param_init(model, rvs, params)
 
-    assert round(init, 4) == 0.0118
+    assert init == 0.0118179
 
     model = Model(pheno_path)
     model.source.path = testdata  # Path where there is no .ext-file
     init = _choose_param_init(model, rvs, params)
 
-    assert init == 0.001
+    assert init == 0.0031045
