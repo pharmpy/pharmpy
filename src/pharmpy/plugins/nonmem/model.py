@@ -14,10 +14,11 @@ from pharmpy.parameter import ParameterSet
 from pharmpy.plugins.nonmem.results import NONMEMChainedModelfitResults
 from pharmpy.plugins.nonmem.table import NONMEMTableFile, PhiTable
 from pharmpy.random_variables import JointDistributionSeparate, RandomVariables, VariabilityLevel
-from pharmpy.statements import Assignment, ODESystem
+from pharmpy.statements import Assignment, CompartmentalSystem, ODESystem
 
 from .advan import compartmental_model
 from .nmtran_parser import NMTranParser
+from .records.factory import create_record
 from .update import update_parameters, update_random_variables, update_statements
 
 
@@ -131,7 +132,23 @@ class Model(pharmpy.model.Model):
             del data_record.accept
             self._dataset_updated = False
 
+        self._update_sizes()
+
         super().update_source()
+
+    def _update_sizes(self):
+        """Update $SIZES if needed"""
+        all_sizes = self.control_stream.get_records('SIZES')
+        if len(all_sizes) == 0:
+            sizes = create_record('$SIZES ')
+        else:
+            sizes = all_sizes[0]
+        odes = self.statements.ode_system
+        if odes is not None and isinstance(odes, CompartmentalSystem):
+            n_compartments = len(odes)
+            sizes.PC = n_compartments
+        if len(all_sizes) == 0 and len(str(sizes)) > 7:
+            self.control_stream.insert_record(str(sizes))
 
     def _update_initial_individual_estimates(self, path):
         """Update $ETAS

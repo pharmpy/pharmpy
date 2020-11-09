@@ -361,6 +361,7 @@ def test_update_individual_estimates(datadir):
         fs.add_real_file(datadir / 'pheno_real.phi', target_path='run1.phi')
         fs.add_real_file(datadir / 'pheno_real.lst', target_path='run1.lst')
         fs.add_real_file(datadir / 'pheno_real.ext', target_path='run1.ext')
+        fs.add_real_file(datadir / 'pheno.dta', target_path='pheno.dta')
         model = Model('run1.mod')
         model.name = 'run2'
         model.update_individual_estimates(model)

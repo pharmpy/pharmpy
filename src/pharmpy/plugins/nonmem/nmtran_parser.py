@@ -25,6 +25,7 @@ class NMTranParser:
 
 
 default_record_order = [
+    'SIZES',
     'SUBROUTINES',
     'MODEL',
     'PK',
