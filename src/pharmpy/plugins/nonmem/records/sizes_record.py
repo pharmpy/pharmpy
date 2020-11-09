@@ -13,7 +13,10 @@ class SizesRecord(OptionRecord):
     @PC.setter
     def PC(self, value):
         if value > 99:
-            raise ValueError(f'Model has {value} compartments, but NONMEM only support a maximum of 99 compartments.')
+            raise ValueError(
+                f'Model has {value} compartments, but NONMEM only support a maximum of 99 '
+                f'compartments.'
+            )
         if value > 30:
             self.set_option('PC', value)
         else:

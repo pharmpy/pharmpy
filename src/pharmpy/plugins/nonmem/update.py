@@ -446,7 +446,11 @@ def add_compartments(model, old, new):
         comp_no = compmap[comp.name]
         for to_comp, rate in new.get_compartment_outflows(comp):
             to_comp_no = compmap[to_comp.name]
-            ass = Assignment(f'K{comp_no}{to_comp_no}', rate)
+            if len(str(comp_no)) > 1 or len(str(to_comp_no)) > 1:
+                separator = 'T'
+            else:
+                separator = ''
+            ass = Assignment(f'K{comp_no}{separator}{to_comp_no}', rate)
             statements.add_before_odes(ass)
 
     if added:
