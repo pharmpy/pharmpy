@@ -1,3 +1,4 @@
+import pytest
 import sympy
 
 import pharmpy.symbols
@@ -10,13 +11,17 @@ def S(x):
     return pharmpy.symbols.symbol(x)
 
 
-def test_str():
+def test_str(testdata):
     s1 = Assignment(S('KA'), S('X') + S('Y'))
     assert str(s1) == 'KA := X + Y\n'
     s2 = Assignment(S('X2'), sympy.exp('X'))
     a = str(s2).split('\n')
     assert a[0].startswith(' ')
     assert len(a) == 3
+
+    model = Model(testdata / 'nonmem' / 'pheno.mod')
+    assert 'THETA(2)' in str(model.statements)
+    assert 'THETA(2)' in repr(model.statements)
 
 
 def test_subs(testdata):
@@ -46,6 +51,14 @@ def test_ode_system_base_class():
     odes.subs({})
     assert odes == odes
     assert odes != CompartmentalSystem()
+    assert str(odes) == 'ODESystem()'
+
+
+def test_explicit_ode_system(testdata):
+    model = Model(testdata / 'nonmem' / 'pheno.mod')
+    explicit_odes(model)
+    assert 'A_OUTPUT(0) = 0' in str(model.statements.ode_system)
+    assert model.statements.ode_system.rhs_symbols == {S('t'), S('AMT'), S('CL'), S('V')}
 
 
 def test_ode_free_symbols(testdata):
@@ -144,6 +157,29 @@ def test_reassign():
     assert s == ModelStatements([s1, s2, s3, Assignment('KA', S('F'))])
 
 
+def test_find_compartment(testdata):
+    model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan2.mod')
+    comp = model.statements.ode_system.find_compartment('CENTRAL')
+    assert comp.name == 'CENTRAL'
+    comp = model.statements.ode_system.find_compartment('NOTINMODEL')
+    assert comp is None
+
+
+def test_find_output(testdata):
+    model = Model(testdata / 'nonmem' / 'pheno.mod')
+    model.statements.ode_system.add_compartment("NEW")
+    with pytest.raises(ValueError):
+        model.statements.ode_system.find_output()
+
+
+def test_find_dosing(testdata):
+    model = Model(testdata / 'nonmem' / 'pheno.mod')
+    assert model.statements.ode_system.find_dosing().name == 'CENTRAL'
+    model.statements.ode_system.find_dosing().dose = None
+    with pytest.raises(ValueError):
+        model.statements.ode_system.find_dosing()
+
+
 def test_find_central(testdata):
     model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan2.mod')
     assert model.statements.ode_system.find_central().name == 'CENTRAL'
@@ -162,6 +198,11 @@ def test_find_depot(testdata):
     assert model.statements.ode_system.find_depot(model.statements) is None
 
 
+def test_find_peripherals(testdata):
+    model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan2.mod')
+    assert model.statements.ode_system.find_peripherals() == []
+
+
 def test_find_transit_compartments(testdata):
     model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan1.mod')
     assert model.statements.ode_system.find_transit_compartments(model.statements) == []
@@ -176,3 +217,10 @@ def test_find_transit_compartments(testdata):
     assert len(transits) == 2
     assert transits[0].name == 'TRANS1'
     assert transits[1].name == 'TRANS2'
+
+
+def test_add_before_odes(testdata):
+    model = Model(testdata / 'nonmem' / 'minimal.mod')
+    model.statements.add_before_odes(Assignment('CL', sympy.Integer(1)))
+    model.update_source()
+    assert str(model).split('\n')[6] == 'CL = 1'

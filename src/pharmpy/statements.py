@@ -92,7 +92,7 @@ class ODESystem:
         return isinstance(other, ODESystem)
 
     def __str__(self):
-        return 'ODE-system-placeholder'
+        return 'ODESystem()'
 
 
 def _bracket(a):
@@ -137,7 +137,7 @@ class ExplicitODESystem(ODESystem):
 
     @property
     def rhs_symbols(self):
-        return self.free_symbols  # This works currently
+        return self.free_symbols
 
     def __str__(self):
         a = []
@@ -269,6 +269,7 @@ class CompartmentalSystem(ODESystem):
         for node in self._g.nodes:
             if node.dose is not None:
                 return node
+        raise ValueError('No dosing compartment exists')
 
     def find_central(self):
         """Find the central compartment
@@ -735,7 +736,7 @@ class ModelStatements(list):
         return expression
 
     def add_before_odes(self, statement):
-        """Add a statement just before the ODE system"""
+        """Add a statement just before the ODE system or at the end of the model"""
         for i, s in enumerate(self):
             if isinstance(s, ODESystem):
                 break
