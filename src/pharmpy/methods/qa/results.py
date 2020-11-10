@@ -104,10 +104,10 @@ def influential_individuals(cdd_res):
     top_three = influentials.sort_values(by=['delta_ofv']).iloc[:3]
     dofv_tab = pd.DataFrame(
         {
-            'section': ['influential_individuals'] * 3,
+            'section': ['influential_individuals'] * len(top_three),
             'run': list(top_three.index),
             'dofv': top_three['delta_ofv'],
-            'df': [np.nan] * 3,
+            'df': [np.nan] * len(top_three),
         }
     )
     return influentials, dofv_tab
