@@ -8,8 +8,8 @@
 Bootstrap Results
 =================
 
-OFV distribution
-~~~~~~~~~~~~~~~~
+Distribution of parameter estimates
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. altair-plot::
     :hide-code:
@@ -17,6 +17,14 @@ OFV distribution
     from pharmpy.results import read_results
 
     res = read_results('results.json')
+    res.plot_parameter_estimates_histogram()
+
+OFV distribution
+~~~~~~~~~~~~~~~~
+
+.. altair-plot::
+    :hide-code:
+
     res.plot_ofv()
 
 Parameter estimates correlation

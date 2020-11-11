@@ -178,3 +178,26 @@ def histogram(values, title=""):
     rule = base.mark_rule(color='red').encode(x=f'mean({values.name}):Q', size=alt.value(5))
 
     return plot + rule
+
+
+def facetted_histogram(df):
+    """Facet of one histogram per column with cross filter interaction"""
+    brush = alt.selection(type='interval', encodings=['x'])
+
+    base = (
+        alt.Chart()
+        .mark_bar()
+        .encode(
+            x=alt.X(alt.repeat('column'), type='quantitative', bin=alt.Bin(maxbins=20)),
+            y=alt.Y('count()', axis=alt.Axis(title='')),
+        )
+        .properties(width=200, height=150)
+    )
+
+    background = base.encode(color=alt.value('#ddd')).add_selection(brush)
+
+    highlight = base.transform_filter(brush)
+
+    chart = alt.layer(background, highlight, data=df).repeat(column=list(df.columns))
+
+    return chart

@@ -39,6 +39,7 @@ class BootstrapResults(Results):
         self.ofv_plot = self.plot_ofv()
         self.parameter_estimates_correlation_plot = self.plot_parameter_estimates_correlation()
         self.dofv_quantiles_plot = self.plot_dofv_quantiles()
+        self.parameter_estimates_histogram = self.plot_parameter_estimates_histogram()
 
     def plot_ofv(self):
         plot = pharmpy.visualization.histogram(
@@ -85,6 +86,11 @@ class BootstrapResults(Results):
     def plot_parameter_estimates_correlation(self):
         pe = self.parameter_estimates
         plot = pharmpy.visualization.scatter_matrix(pe)
+        return plot
+
+    def plot_parameter_estimates_histogram(self):
+        pe = self.parameter_estimates
+        plot = pharmpy.visualization.facetted_histogram(pe)
         return plot
 
 
