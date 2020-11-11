@@ -7,6 +7,13 @@ from pharmpy import cli, source
 from pharmpy.plugins.nonmem.records import etas_record
 
 
+def test_model_print(datadir, capsys):
+    args = ['model', 'print', str(datadir / 'pheno.mod')]
+    cli.main(args)
+    captured = capsys.readouterr()
+    assert 'ETA(1)' in captured.out
+
+
 # Skip pkgutil, reload source
 @pytest.mark.parametrize('fs', [[['pkgutil'], [source, etas_record]]], indirect=True)
 @pytest.mark.parametrize('operation', ['*', '+'])
