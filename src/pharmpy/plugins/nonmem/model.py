@@ -446,8 +446,8 @@ class Model(pharmpy.model.Model):
                 and next_rv.variability_level == VariabilityLevel.IOV
             ):
                 if isinstance(rv, JointDistributionSeparate):
-                    connected_rvs = rvs.get_joined_rvs(rv)
-                    for rv_con in connected_rvs:
+                    associated_rvs = rvs.get_rvs_from_same_dist(rv)
+                    for rv_con in associated_rvs:
                         rv_con.variability_level = VariabilityLevel.IOV
                 else:
                     rv.variability_level = VariabilityLevel.IOV

@@ -220,10 +220,13 @@ class RandomVariables(OrderedSet):
                     distributions.append((rvs, dist))
         return distributions
 
-    def get_joined_rvs(self, rv):
-        """Get all RVs from same distribution as input rv."""
-        assert isinstance(rv, JointDistributionSeparate)
+    def get_rvs_from_same_dist(self, rv):
+        """Get all RVs from same distribution as input rv.
 
+        Parameters
+        ----------
+        rv : RandomSymbol
+            Random symbol to find associated rvs for (i.e. rvs with same distribution)."""
         dists = self.distributions()
         joined_rvs = []
 
@@ -243,7 +246,7 @@ class RandomVariables(OrderedSet):
         ----------
         rv_to_extract : RandomSymbol
             Random symbol to create new single distribution for."""
-        associated_rvs = self.get_joined_rvs(rv_to_extract)
+        associated_rvs = self.get_rvs_from_same_dist(rv_to_extract)
 
         cov = associated_rvs.covariance_matrix()
         rv_extracted = None
