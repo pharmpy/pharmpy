@@ -118,6 +118,13 @@ def update_random_variables(model, old, new):
                 new_maps.append(
                     (record, {omega_name: (eta_number, eta_number)}, {rv_name: eta_number})
                 )
+    # FIXME: Setting the maps needs to be done here and not in loop. Automatic renumbering is
+    #        probably the culprit. There should be a difference between added parameters and
+    #        original parameters when it comes to which naming scheme to use
+    if new_maps:
+        for record, name_map, eta_map in new_maps:
+            record.name_map = name_map
+            record.eta_map = eta_map
 
     rvs_old = [rvs[0] for rvs in old.distributions()]
 
@@ -128,44 +135,36 @@ def update_random_variables(model, old, new):
             model.control_stream.remove_records(records)
 
             if len(rvs) == 1:
-                omega_new = create_omega_single(model, model.parameters[str(dist.std ** 2)])
+                omega_new, _ = create_omega_single(model, model.parameters[str(dist.std ** 2)])
             else:
                 omega_new = create_omega_block(model, dist)
 
-            model.control_stream.go_through_omega_rec()  # Initializes omega name_maps
+            omega_start = 1
+            previous_size = None
 
-            next_eta = 1
-            prev_cov = None
             for omega_record in model.control_stream.get_records('OMEGA'):
-                etas, next_eta, prev_cov, _ = omega_record.random_variables(next_eta, prev_cov)
-
-                if omega_record == omega_new:
-                    cov_rvs = RandomVariables(rvs).covariance_matrix()
-                    cov_rec = RandomVariables(etas).covariance_matrix()
+                if omega_record != omega_new:
+                    omega_start += len(omega_record)
+                    previous_size = len(omega_record)
                 else:
-                    cov_rvs, cov_rec = None, None
+                    omega_record.parameters(omega_start, previous_size)
+                    etas, _, _, _ = omega_record.random_variables(omega_start)
 
-                omega_map, eta_map = create_record_maps(
-                    new.etas, cov_rvs, cov_rec, omega_record.name_map
-                )
-                new_maps.append((omega_record, omega_map, eta_map))
-    # FIXME: Setting the maps needs to be done here and not in loop. Automatic renumbering is
-    #        probably the culprit. There should be a difference between added parameters and
-    #        original parameters when it comes to which naming scheme to use
-    if new_maps:
-        for record, name_map, eta_map in new_maps:
-            record.name_map = name_map
-            record.eta_map = eta_map
+                    create_record_maps(etas, rvs, omega_record.name_map, omega_record.eta_map)
+
+    next_eta = 1
+    for omega_record in model.control_stream.get_records('OMEGA'):
+        omega_record.renumber(next_eta)
+        next_eta += len(omega_record)
 
 
 def get_omega_records(model, params):
     records = []
-    next_omega = 1
-    prev_cov = None
 
     for omega_record in model.control_stream.get_records('OMEGA'):
-        etas, next_omega, prev_cov, _ = omega_record.random_variables(next_omega, prev_cov)
-        for eta in etas:
+        _, eta_map = omega_record.name_map, omega_record.eta_map
+
+        for eta in eta_map.keys():
             if str(eta) in params:
                 records.append(omega_record)
                 break
@@ -243,38 +242,18 @@ def create_omega_block(model, dist):
     return record
 
 
-def create_record_maps(etas, cov_new=None, cov_rec=None, name_map_rec=None):
-    omegas_block = dict()
-    etas_block = dict()
+def create_record_maps(etas, rvs, name_map, eta_map):
+    cov_rvs = RandomVariables(rvs).covariance_matrix()
+    cov_rec = RandomVariables(etas).covariance_matrix()
 
-    for i, rv in enumerate(etas, 1):
-        eta_no = int(re.match(r'ETA\(([0-9])\)', rv.name).group(1))
-        if i != eta_no:
-            etas_block[rv.name] = i
-            omegas_block[f'OMEGA({eta_no},{eta_no})'] = (i, i)
-        else:
-            etas_block[rv.name] = eta_no
-            omegas_block[f'OMEGA({eta_no},{eta_no})'] = (eta_no, eta_no)
-
-    try:
-        cov_str = [str(eta) for eta in cov_new]
-        if all(eta.startswith('OMEGA') for eta in cov_str) is False:
-            omegas_block = replace_omega_name(cov_new, cov_rec, omegas_block, name_map_rec)
-    except TypeError:
-        pass
-
-    return omegas_block, etas_block
-
-
-def replace_omega_name(cov_new, cov_rec, name_map_new, name_map_rec):
-    for row in range(cov_new.shape[0]):
-        for col in range(cov_new.shape[1]):
-            if row > col:
-                elem_new = cov_new.row(row).col(col)[0]
+    for row in range(cov_rvs.shape[0]):
+        for col in range(cov_rvs.shape[1]):
+            if row >= col:
+                elem_new = cov_rvs.row(row).col(col)[0]
                 elem_rec = cov_rec.row(row).col(col)[0]
-
-                name_map_new[str(elem_new)] = name_map_rec[str(elem_rec)]
-    return name_map_new
+                name_map[str(elem_new)] = name_map.pop(str(elem_rec))
+    for rv, eta in zip(rvs, etas):
+        eta_map[str(rv)] = eta_map.pop(str(eta))
 
 
 def update_ode_system(model, old, new):
