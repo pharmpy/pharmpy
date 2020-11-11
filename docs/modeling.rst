@@ -482,6 +482,10 @@ Setting a combined additive and proportional error model
 Creating full or partial block structures
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+.. warning::
+   Creating block structures will render any modelfit results associated to the original model to
+   be obsolete (set to None).
+
 .. jupyter-execute::
    :hide-output:
 

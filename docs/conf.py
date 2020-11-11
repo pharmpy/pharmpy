@@ -41,6 +41,9 @@ html_theme = "pydata_sphinx_theme"
 html_use_smartypants = True
 html_last_updated_fmt = '%b %d, %Y'
 html_split_index = False
+html_theme_options = {
+    'globaltoc_maxdepth': 2
+}
 html_sidebars = {
    '**': ['searchbox.html', 'globaltoc.html', 'sourcelink.html'],
 }
