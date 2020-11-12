@@ -455,6 +455,22 @@ def create_rv_block(args):
     write_model_or_dataset(model, model.dataset, path=args.output_file, force=False)
 
 
+def iiv_on_ruv(args):
+    """Subcommand to multiply epsilons with exponential etas."""
+    from pharmpy.modeling import iiv_on_ruv
+
+    model = args.model
+
+    try:
+        eps = args.eps.split(" ")
+    except AttributeError:
+        eps = args.eps
+
+    iiv_on_ruv(model, eps)
+
+    write_model_or_dataset(model, model.dataset, path=args.output_file, force=False)
+
+
 def results_bootstrap(args):
     """Subcommand to generate bootstrap results"""
     from pharmpy.methods.bootstrap.results import psn_bootstrap_results
@@ -1026,6 +1042,25 @@ parser_definition = [
                                 'help': 'List of etas, mark group of etas in single quote '
                                 'separated by spaces. For partial block structures provide list, '
                                 'for full no arguments are needed',
+                            },
+                        ],
+                    }
+                },
+                {
+                    'iiv_on_ruv': {
+                        'help': 'Applies IIV to RUVs',
+                        'description': 'Applies IIV to RUVs by multiplying epsilons with '
+                        'exponential etas',
+                        'func': iiv_on_ruv,
+                        'parents': [args_model_input, args_output],
+                        'args': [
+                            {
+                                'name': '--eps',
+                                'type': str,
+                                'default': None,
+                                'help': 'List of epsilons, mark group of epsilons in single quote '
+                                'separated by spaces. To apply to all epsilons, omit this '
+                                'argument.',
                             },
                         ],
                     }
