@@ -401,7 +401,9 @@ class ModelfitResults(Results):
         pe = pe.combine_first(param_inits)
 
         # Get all iiv variance parameters
-        parameters = self.model.random_variables.variance_parameters(level=VariabilityLevel.IIV)
+        parameters = self.model.random_variables.variance_parameters(
+            unique=False, exclude_level=VariabilityLevel.RUV
+        )
         param_names = [param.name for param in parameters]
         diag_ests = pe[param_names]
 

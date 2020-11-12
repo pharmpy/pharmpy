@@ -298,14 +298,15 @@ class RandomVariables(OrderedSet):
                 etas.append(rv)
         return etas
 
-    def variance_parameters(self, level=None, exclude_level=None):
+    def variance_parameters(self, unique=True, level=None, exclude_level=None):
         parameters = []
         for rvs, dist in self.distributions(level=level, exclude_level=exclude_level):
             if len(rvs) == 1:
                 parameters.append(dist.std ** 2)
             else:
                 parameters += list(dist.sigma.diagonal())
-        parameters = list(OrderedSet(parameters))  # Only unique in order
+        if unique:
+            parameters = list(OrderedSet(parameters))  # Only unique in order
         return parameters
 
     def _calc_covariance_matrix(self, ruv=False):
