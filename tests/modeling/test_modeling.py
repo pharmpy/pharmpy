@@ -1065,30 +1065,28 @@ def test_block_rvs(testdata, etas, pk_ref, omega_ref):
         (
             ['EPS(1)'],
             'Y = EPS(1)*W*EXP(ETA(3)) + F\n' 'IPRED=F+EPS(2)\n' 'IRES=DV-IPRED+EPS(3)\n',
-            '$OMEGA  0.01 ; IIV_RUV_EPS(1)',
+            '$OMEGA  0.01 ; IIV_RUV1',
         ),
         (
             ['EPS(1)', 'EPS(2)'],
             'Y = EPS(1)*W*EXP(ETA(3)) + F\n'
             'IPRED = EPS(2)*EXP(ETA(4)) + F\n'
             'IRES=DV-IPRED+EPS(3)\n',
-            '$OMEGA  0.01 ; IIV_RUV_EPS(1)\n' '$OMEGA  0.01 ; IIV_RUV_EPS(2)',
+            '$OMEGA  0.01 ; IIV_RUV1\n' '$OMEGA  0.01 ; IIV_RUV2',
         ),
         (
             ['EPS(1)', 'EPS(3)'],
             'Y = EPS(1)*W*EXP(ETA(3)) + F\n'
             'IPRED = EPS(2) + F\n'
             'IRES = DV + EPS(3)*EXP(ETA(4)) - IPRED\n',
-            '$OMEGA  0.01 ; IIV_RUV_EPS(1)\n' '$OMEGA  0.01 ; IIV_RUV_EPS(3)',
+            '$OMEGA  0.01 ; IIV_RUV1\n' '$OMEGA  0.01 ; IIV_RUV2',
         ),
         (
             None,
             'Y = EPS(1)*W*EXP(ETA(3)) + F\n'
             'IPRED = EPS(2)*EXP(ETA(4)) + F\n'
             'IRES = DV + EPS(3)*EXP(ETA(5)) - IPRED\n',
-            '$OMEGA  0.01 ; IIV_RUV_EPS(1)\n'
-            '$OMEGA  0.01 ; IIV_RUV_EPS(2)\n'
-            '$OMEGA  0.01 ; IIV_RUV_EPS(3)',
+            '$OMEGA  0.01 ; IIV_RUV1\n' '$OMEGA  0.01 ; IIV_RUV2\n' '$OMEGA  0.01 ; IIV_RUV3',
         ),
     ],
 )

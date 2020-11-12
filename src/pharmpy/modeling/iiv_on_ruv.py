@@ -24,8 +24,8 @@ def iiv_on_ruv(model, list_of_eps=None):
 
     rvs, pset, sset = model.random_variables, model.parameters, model.statements
 
-    for e in eps:
-        omega = S(f'IIV_RUV_{e}')
+    for i, e in enumerate(eps):
+        omega = S(f'IIV_RUV{i + 1}')
         pset.add(Parameter(str(omega), 0.01))
 
         eta = stats.Normal(f'RV_{e}', 0, sympy.sqrt(omega))
