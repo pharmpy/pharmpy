@@ -766,7 +766,7 @@ def psn_frem_results(path, force_posdef_covmatrix=False, force_posdef_samples=50
     continuous = list(nunique.index[nunique != 2])
     categorical = list(nunique.index[nunique == 2])
 
-    intmod_names = ['model_1.lst', 'model_2.lst', 'model_3.lst', 'model_3b.lst']
+    intmod_names = ['model_1.mod', 'model_2.mod', 'model_3.mod', 'model_3b.mod']
     intmods = []
     for m in intmod_names:
         intmod_path = path / 'm1' / m
