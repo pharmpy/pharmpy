@@ -620,6 +620,8 @@ def parcov_dict_from_test_relations(test_relations):
 
 def add_covariate_effects(res, path):
     steps = res.steps
+    if 'delta_df' not in steps:
+        return
 
     def fn(row):
         if row.is_backward:
