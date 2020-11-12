@@ -77,6 +77,7 @@ def test_find_assignment(testdata):
 
     assert str(statements.find_assignment('CL').expression) == 'TVCL*exp(ETA(1))'
     assert str(statements.find_assignment('S1').expression) == 'V'
+    assert str(statements.find_assignment('EPS(1)', is_symbol=False).symbol) == 'Y'
 
     statements.append(Assignment(S('CL'), S('TVCL') + S('V')))
 
