@@ -208,6 +208,12 @@ class Model(pharmpy.model.Model):
         except AttributeError:
             pass
 
+        self._read_parameters()
+        if pharmpy.plugins.nonmem.conf.parameter_names == 'comment':
+            self.statements
+        return self._parameters
+
+    def _read_parameters(self):
         next_theta = 1
         params = ParameterSet()
         for theta_record in self.control_stream.get_records('THETA'):
@@ -226,7 +232,6 @@ class Model(pharmpy.model.Model):
             params.update(sigmas)
         self._parameters = params
         self._old_parameters = params.copy()
-        return params
 
     @parameters.setter
     def parameters(self, params):
@@ -344,7 +349,8 @@ class Model(pharmpy.model.Model):
             statements += error.statements
 
         if pharmpy.plugins.nonmem.conf.parameter_names == 'comment':
-            self.parameters
+            if not hasattr(self, '_parameters'):
+                self._read_parameters()
             trans = self.parameter_translation(remove_idempotent=True, as_symbols=True)
             parameter_symbols = {symb for _, symb in trans.items()}
             clashing_symbols = parameter_symbols & statements.free_symbols

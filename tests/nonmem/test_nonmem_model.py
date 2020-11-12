@@ -435,12 +435,31 @@ def test_symbol_names_in_comment(pheno_path):
         model = Model(pheno_path)
         assert model.statements[2].expression == S('PTVCL') * S('WGT')
 
+        code = """$PROBLEM base model
+$INPUT ID DV TIME
+$DATA file.csv IGNORE=@
+
+$PRED
+TV = THETA(1)
+Y = TV + ETA(1) + ERR(1)
+
+$THETA 0.1  ; TV
+$OMEGA 0.01
+$SIGMA 1
+$ESTIMATION METHOD=1 INTER MAXEVALS=9990 PRINT=2 POSTHOC
+"""
+        model = Model(StringIO(code))
+        with pytest.warns(UserWarning):
+            assert model.parameters.names == ['THETA(1)', 'OMEGA(1,1)', 'SIGMA(1,1)']
+
 
 def test_clashing_parameter_names(datadir):
     with ConfigurationContext(conf, parameter_names='comment'):
         model = Model(datadir / 'pheno_clashing_symbols.mod')
         with pytest.warns(UserWarning):
+            print("START!")
             model.statements
+            print("END!")
         assert model.parameters.names == ['THETA(1)', 'TVV', 'IVCL', 'OMEGA(2,2)', 'SIGMA(1,1)']
 
 
