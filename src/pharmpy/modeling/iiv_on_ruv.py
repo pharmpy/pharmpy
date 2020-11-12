@@ -26,7 +26,7 @@ def iiv_on_ruv(model, list_of_eps=None):
 
     for e in eps:
         omega = S(f'IIV_RUV_{e}')
-        pset.add(Parameter(str(omega), 0.1))
+        pset.add(Parameter(str(omega), 0.01))
 
         eta = stats.Normal(f'RV_{e}', 0, sympy.sqrt(omega))
         eta.variability_level = VariabilityLevel.IIV
