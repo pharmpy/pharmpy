@@ -13,11 +13,13 @@ from pharmpy.modeling import (
     boxcox,
     create_rv_block,
     explicit_odes,
+    iiv_on_ruv,
     john_draper,
     remove_lag_time,
     set_transit_compartments,
     tdist,
 )
+from pharmpy.plugins.nonmem.nmtran_parser import NMTranParser
 
 
 def test_transit_compartments(testdata):
@@ -1055,3 +1057,65 @@ def test_block_rvs(testdata, etas, pk_ref, omega_ref):
     rec_omega = ''.join(str(rec) for rec in model.control_stream.get_records('OMEGA'))
 
     assert rec_omega == omega_ref
+
+
+@pytest.mark.parametrize(
+    'epsilons, err_ref, omega_ref',
+    [
+        (
+            ['EPS(1)'],
+            'Y = EPS(1)*W*EXP(ETA(3)) + F\n' 'IPRED=F+EPS(2)\n' 'IRES=DV-IPRED+EPS(3)\n',
+            '$OMEGA  0.1 ; IIV_RUV_EPS(1)',
+        ),
+        (
+            ['EPS(1)', 'EPS(2)'],
+            'Y = EPS(1)*W*EXP(ETA(3)) + F\n'
+            'IPRED = EPS(2)*EXP(ETA(4)) + F\n'
+            'IRES=DV-IPRED+EPS(3)\n',
+            '$OMEGA  0.1 ; IIV_RUV_EPS(1)\n' '$OMEGA  0.1 ; IIV_RUV_EPS(2)',
+        ),
+        (
+            ['EPS(1)', 'EPS(3)'],
+            'Y = EPS(1)*W*EXP(ETA(3)) + F\n'
+            'IPRED = EPS(2) + F\n'
+            'IRES = DV + EPS(3)*EXP(ETA(4)) - IPRED\n',
+            '$OMEGA  0.1 ; IIV_RUV_EPS(1)\n' '$OMEGA  0.1 ; IIV_RUV_EPS(3)',
+        ),
+        (
+            None,
+            'Y = EPS(1)*W*EXP(ETA(3)) + F\n'
+            'IPRED = EPS(2)*EXP(ETA(4)) + F\n'
+            'IRES = DV + EPS(3)*EXP(ETA(5)) - IPRED\n',
+            '$OMEGA  0.1 ; IIV_RUV_EPS(1)\n'
+            '$OMEGA  0.1 ; IIV_RUV_EPS(2)\n'
+            '$OMEGA  0.1 ; IIV_RUV_EPS(3)',
+        ),
+    ],
+)
+def test_iiv_on_ruv(pheno_path, epsilons, err_ref, omega_ref):
+    model = Model(pheno_path)
+
+    model_str = str(model)
+    model_more_eps = re.sub(
+        'IPRED=F\nIRES=DV-IPRED', 'IPRED=F+EPS(2)\nIRES=DV-IPRED+EPS(3)', model_str
+    )
+    model_sigma = re.sub(
+        r'\$SIGMA 0.013241', '$SIGMA 0.013241\n$SIGMA 0.1\n$SIGMA 0.1', model_more_eps
+    )
+    model.control_stream = NMTranParser().parse(model_sigma)
+
+    iiv_on_ruv(model, epsilons)
+    model.update_source()
+
+    err_rec = model.control_stream.get_records('ERROR')[0]
+
+    assert str(err_rec) == f'$ERROR\n' f'W=F\n' f'{err_ref}' f'IWRES=IRES/W\n\n'
+
+    omega_rec = ''.join(str(rec) for rec in model.control_stream.get_records('OMEGA'))
+
+    assert omega_rec == (
+        f'$OMEGA DIAGONAL(2)\n'
+        f' 0.0309626  ;       IVCL\n'
+        f' 0.031128  ;        IVV\n\n'
+        f'{omega_ref}\n'
+    )
