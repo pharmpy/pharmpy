@@ -32,7 +32,7 @@ def tdist(model, list_of_etas=None):
     Parameters
     ----------
     model : Model
-        Pharmpy model to apply boxcox transformation to.
+        Pharmpy model to apply t distribution transformation to.
     list_of_etas : list
         List of etas to transform. If None, all etas will be transformed (default).
     """
@@ -54,7 +54,7 @@ def john_draper(model, list_of_etas=None):
     Parameters
     ----------
     model : Model
-        Pharmpy model to apply boxcox transformation to.
+        Pharmpy model to apply John Draper transformation to.
     list_of_etas : list
         List of etas to transform. If None, all etas will be transformed (default).
     """

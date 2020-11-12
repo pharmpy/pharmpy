@@ -18,7 +18,7 @@ def create_rv_block(model, list_of_rvs=None):
     Parameters
     ----------
     model : Model
-        Pharmpy model to add covariate effect to.
+        Pharmpy model to create block effect on.
     list_of_rvs : list
         List of etas to create a block structure from. If None, all etas that are IIVs and
         non-fixed will be used (full block). None is default.
@@ -46,6 +46,8 @@ def create_rv_block(model, list_of_rvs=None):
 
     model.random_variables = rvs_new
     model.parameters = pset
+
+    model.modelfit_results = None
 
     return model
 
