@@ -482,3 +482,77 @@ def test_parse_illegal_record_name():
     parser = NMTranParser()
     with pytest.raises(ModelSyntaxError):
         parser.parse('$PROBLEM MYPROB\n$1REC\n')
+
+
+def test_frem_model():
+    code = """$PROBLEM    MOXONIDINE PK,FINAL ESTIMATES,simulated data
+$INPUT      ID VISI DROP DGRP DOSE DROP DROP DROP DROP NEUY SCR AGE
+            SEX DROP WT DROP ACE DIG DIU DROP TAD TIME DROP CRCL AMT
+            SS II DROP DROP DROP DV DROP DROP MDV FREMTYPE
+$DATA      ../frem_dataset.dta IGNORE=@
+$SUBROUTINE ADVAN2 TRANS1
+$OMEGA  BLOCK(1)
+ 1.47E-06  ;     IOV_CL
+$OMEGA  BLOCK(1) SAME
+$OMEGA  BLOCK(1)
+ 5.06E-05  ;     IOV_KA
+$OMEGA  BLOCK(1) SAME
+$OMEGA  BLOCK(5)
+ 0.416046
+ 0.389578 0.578819  ;   IIV_CL_V
+ 0.00327757 0.00386591 0.258203  ;     IIV_KA
+ -0.0809376 -0.130036 0.0777389 1  ;    BSV_AGE
+ 0.0880473 0.0821262 -0.0578989 -0.11524 1  ;    BSV_SEX
+$PK
+   VIS3               = 0
+   IF(VISI.EQ.3) VIS3 = 1
+   VIS8               = 0
+   IF(VISI.EQ.8) VIS8 = 1
+   KPCL  = VIS3*ETA(1)+VIS8*ETA(2)
+   KPKA  = VIS3*ETA(3)+VIS8*ETA(4)
+   TVCL  = THETA(1)
+   TVV   = THETA(2)
+   CL    = TVCL*EXP(ETA(5)+KPCL)
+   V     = TVV*EXP(ETA(6))
+   KA    = THETA(3)*EXP(ETA(7)+KPKA)
+   ALAG1 = THETA(4)
+   K     = CL/V
+   S2    = V
+    SDC8 = 7.82226906804
+    SDC9 = 0.404756978659
+
+$ERROR
+     IPRED = LOG(.025)
+     WA     = 1
+     W      = WA
+     IF(F.GT.0) IPRED = LOG(F)
+     IRES  = IPRED-DV
+     IWRES = IRES/W
+     Y     = IPRED+ERR(1)*W
+
+;;;FREM CODE BEGIN COMPACT
+;;;DO NOT MODIFY
+    IF (FREMTYPE.EQ.100) THEN
+;      AGE  7.82226906804
+       Y = THETA(5) + ETA(8)*SDC8 + EPS(2)
+       IPRED = THETA(5) + ETA(8)*SDC8
+    END IF
+    IF (FREMTYPE.EQ.200) THEN
+;      SEX  0.404756978659
+       Y = THETA(6) + ETA(9)*SDC9 + EPS(2)
+       IPRED = THETA(6) + ETA(9)*SDC9
+    END IF
+;;;FREM CODE END COMPACT
+$THETA  (0,32.901) ; POP_TVCL
+$THETA  (0,115.36) ; POP_TVV
+$THETA  (0,1.45697) ; POP_TVKA
+$THETA  (0,0.0818029) ; POP_LAG
+$THETA  65.1756756757 FIX ; TV_AGE
+ 1.2027027027 FIX ; TV_SEX
+$SIGMA  0.112373
+$SIGMA  0.0000001  FIX  ;     EPSCOV
+$ESTIMATION METHOD=1 MAXEVAL=9999 NONINFETA=1 MCETA=1
+"""
+    model = Model(StringIO(code))
+    rvs = model.random_variables
+    assert len(rvs) == 11

@@ -2,6 +2,7 @@ import math
 import re
 
 import numpy as np
+import sympy
 import sympy.stats
 
 import pharmpy.math
@@ -346,7 +347,9 @@ class OmegaRecord(Record):
         """
         same = bool(self.root.find('same'))
         if not hasattr(self, 'name_map') and not same:
-            if previous_cov is not None:
+            if isinstance(previous_cov, sympy.Symbol):
+                prev_size = 1
+            elif previous_cov is not None:
                 prev_size = len(previous_cov)
             else:
                 prev_size = None
