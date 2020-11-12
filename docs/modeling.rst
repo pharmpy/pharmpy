@@ -510,3 +510,33 @@ fixed. If no list is provided as input, a full block structure is implemented.
    create_rv_block(model)
    model.update_source()
    print_model_diff(model_ref, model)
+
+
+~~~~~~~~~~~~~~~~~~~~
+Applying IIV on RUVs
+~~~~~~~~~~~~~~~~~~~~
+
+.. jupyter-execute::
+   :hide-output:
+
+   model = Model(path / "pheno.mod")
+
+IIVs may also be added to RUVs by multiplying epsilons with an exponential new eta.
+
+.. jupyter-execute::
+
+   from pharmpy.modeling import iiv_on_ruv
+
+   iiv_on_ruv(model, ['EPS(1)'])
+   model.update_source()
+   print_model_diff(model_ref, model)
+
+Input a list of the epsilons you wish to transform, leave argument empty if all epsilons should be
+transformed.
+
+.. jupyter-execute::
+
+   model = Model(path / "pheno.mod")
+   iiv_on_ruv(model)
+   model.update_source()
+   print_model_diff(model_ref, model)
