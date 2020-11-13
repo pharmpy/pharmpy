@@ -36,8 +36,11 @@ version = release = '0.9.0'
 pygments_style = 'trac'
 templates_path = ['.']
 
+html_static_path = ['.']
 html_theme = "pydata_sphinx_theme"
-
+html_css_files = [
+    'custom.css',
+]
 html_use_smartypants = True
 html_last_updated_fmt = '%b %d, %Y'
 html_split_index = False

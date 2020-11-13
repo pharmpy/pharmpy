@@ -46,7 +46,7 @@ Read model from file
 Update model source
 ===================
 
-Changes done to a model will not affect the model code of the underlying until performing an update of the source.
+Changes done to a model will not affect the model code (e.g. the NONMEM code) until performing an update of the source.
 
 .. jupyter-execute::
    :hide-output:
@@ -127,7 +127,7 @@ Let us use a model with bolus absorption as a starting point.
    from pharmpy.modeling import absorption_rate
    model = Model(path / "pheno.mod")
 
-This type of absorption can be created with
+This type of absorption can be created with:
 
 .. jupyter-execute::
 
@@ -161,7 +161,7 @@ Let us now change to zero order absorption.
 First order
 ===========
 
-First order absorption would mean adding an absorption (depot) compartment like this
+First order absorption would mean adding an absorption (depot) compartment like this:
 
 .. graphviz::
 
@@ -184,7 +184,7 @@ First order absorption would mean adding an absorption (depot) compartment like 
 Sequential zero-order then first-order
 ======================================
 
-Sequential zero-order absorption followed by first-order absorption will have an infusion dose into the depot compartment
+Sequential zero-order absorption followed by first-order absorption will have an infusion dose into the depot compartment.
 
 .. graphviz::
 
@@ -212,7 +212,7 @@ Absorption delay
 Transit compartments
 ====================
 
-Transit compartments can be added or removed using the same function.
+Transit compartments can be added or removed using the :py:func:`pharmpy.modeling.set_transit_compartments` function.
 
 .. jupyter-execute::
 
@@ -240,7 +240,7 @@ Lag time may be added to a dose compartment of a model.
    model.update_source()
    print_model_diff(model_ref, model)
 
-To remove the lag time you can do the following:
+Similarly, to remove lag time:
 
 .. jupyter-execute::
 
@@ -258,7 +258,7 @@ Adding covariate effects
 
    model = Model(path / "pheno.mod")
 
-Covariate effects may also be applied to a model.
+Covariate effects may be applied to a model.
 
 .. jupyter-execute::
    :hide-output:
@@ -266,10 +266,10 @@ Covariate effects may also be applied to a model.
    from pharmpy.modeling import add_covariate_effect
    add_covariate_effect(model, 'CL', 'WGT', 'pow', operation='*')
 
-Here, *CL* indicates the name of the parameter onto which you want to apply the effect, *WGT* is the covariate, and
-*pow* (power function) is the effect you want to apply.
-See :py:class:`pharmpy.modeling.add_covariate_effect` for effects with available templates. The effect may be either
-added or multiplied to the parameter, denoted by '*' or '+' (multiplied is default).
+Here, *CL* indicates the name of the parameter onto which you want to apply the effect, *WGT* is the name of thr
+covariate, and *pow* (power function) is the effect you want to apply. The effect can be either
+added or multiplied to the parameter, denoted by '*' or '+' (multiplied is default). See
+:py:class:`pharmpy.modeling.add_covariate_effect` for effects with available templates.
 
 .. jupyter-execute::
 
@@ -285,9 +285,9 @@ Pharmpy also supports user formatted covariate effects.
    user_effect = '((cov/std) - median) * theta'
    add_covariate_effect(model, 'CL', 'WGT', user_effect, operation='*')
 
-It is necessary that the names follow the same format as in user_effect, meaning that the covariate is denoted as
-*cov*, the theta as *theta* (or, if multiple thetas: *theta1*, *theta2* etc.), and the mean or median as *mean* and *median*, respectively. This is in order for
-the names to be substituted with the correct values.
+The covariate is denoted as *cov*, the theta as *theta* (or, if multiple thetas: *theta1*, *theta2* etc.), and the mean,
+median, and standard deviation as *mean*, *median*, and *std* respectively. This is in order for
+the names to be substituted with the correct symbols.
 
 .. jupyter-execute::
 
@@ -330,7 +330,7 @@ Approximate t-distribution
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Applying an approximate t-distribution transformation of etas is analogous to a boxcox transformation. The input
-is similarly a list of etas, and if no list is provided all etas will be transformed.
+is a list of etas, and if no list is provided all etas will be transformed.
 
 .. jupyter-execute::
 
@@ -343,7 +343,7 @@ is similarly a list of etas, and if no list is provided all etas will be transfo
 John Draper
 ~~~~~~~~~~~
 
-Similarly, a John Draper transformation uses a list of etas as input, if no list is
+John Draper transformation is also supported. The function takes a list of etas as input, if no list is
 provided all etas will be transformed.
 
 .. jupyter-execute::
@@ -370,8 +370,8 @@ Etas may be added to a model.
    from pharmpy.modeling import add_etas
    add_etas(model, 'S1', 'exp', operation='*')
 
-In this example, *S1* is the parameter to add the eta to, *exp* is the effect on the new eta.
-See :py:class:`pharmpy.modeling.add_etas` for available templates. The operation denotes whether
+In this example, *S1* is the parameter to add the eta to, *exp* is the effect on the new eta (see
+:py:class:`pharmpy.modeling.add_etas` for available templates). The operation denotes whether
 the new eta should be added or multipled (default).
 
 .. jupyter-execute::
@@ -379,8 +379,8 @@ the new eta should be added or multipled (default).
    model.update_source()
    print_model_diff(model_ref, model)
 
-For some of the templates, such as proportional etas, the operation may be omitted (see documentation:
-:py:class:`pharmpy.modeling.add_etas`).
+For some of the templates, such as proportional etas, the operation can be omitted since it is
+already defined by the effect (see documentation: :py:class:`pharmpy.modeling.add_etas`).
 
 .. jupyter-execute::
 
@@ -478,6 +478,34 @@ Setting a combined additive and proportional error model
    model.update_source()
    print_model_diff(model_ref, model)
 
+Applying IIV on RUVs
+~~~~~~~~~~~~~~~~~~~~
+
+.. jupyter-execute::
+   :hide-output:
+
+   model = Model(path / "pheno.mod")
+
+IIVs can be added to RUVs by multiplying epsilons with an exponential new eta.
+
+.. jupyter-execute::
+
+   from pharmpy.modeling import iiv_on_ruv
+
+   iiv_on_ruv(model, ['EPS(1)'])
+   model.update_source()
+   print_model_diff(model_ref, model)
+
+Input a list of the epsilons you wish to transform, leave argument empty if all epsilons should be
+transformed.
+
+.. jupyter-execute::
+
+   model = Model(path / "pheno.mod")
+   iiv_on_ruv(model)
+   model.update_source()
+   print_model_diff(model_ref, model)
+
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Creating full or partial block structures
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -508,35 +536,5 @@ fixed. If no list is provided as input, a full block structure is implemented.
 
    model = Model(path / "pheno.mod")
    create_rv_block(model)
-   model.update_source()
-   print_model_diff(model_ref, model)
-
-
-~~~~~~~~~~~~~~~~~~~~
-Applying IIV on RUVs
-~~~~~~~~~~~~~~~~~~~~
-
-.. jupyter-execute::
-   :hide-output:
-
-   model = Model(path / "pheno.mod")
-
-IIVs may also be added to RUVs by multiplying epsilons with an exponential new eta.
-
-.. jupyter-execute::
-
-   from pharmpy.modeling import iiv_on_ruv
-
-   iiv_on_ruv(model, ['EPS(1)'])
-   model.update_source()
-   print_model_diff(model_ref, model)
-
-Input a list of the epsilons you wish to transform, leave argument empty if all epsilons should be
-transformed.
-
-.. jupyter-execute::
-
-   model = Model(path / "pheno.mod")
-   iiv_on_ruv(model)
    model.update_source()
    print_model_diff(model_ref, model)

@@ -1,0 +1,25 @@
+/** custom.css **/
+
+table.dataframe {
+    border-collapse: collapse;
+    border: none;
+}
+
+table.dataframe tr {
+    border: none;
+}
+
+table.dataframe tr:nth-child(odd) {
+	background: WhiteSmoke;
+}
+
+table.dataframe td, table.dataframe th {
+    border: none;
+    padding: 0.25em 0.75em 0.25em 0.75em;
+    text-align: right;
+}
+
+table.dataframe thead, table.dataframe thead th {
+	background: white;
+    border-bottom: 1px solid black;
+}
