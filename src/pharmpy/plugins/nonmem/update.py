@@ -2,7 +2,9 @@ import itertools
 import re
 
 import numpy as np
+import sympy
 
+import pharmpy.modeling as modeling
 from pharmpy import data
 from pharmpy.plugins.nonmem.advan import (
     _advan3_trans,
@@ -262,21 +264,7 @@ def update_ode_system(model, old, new):
     Handle changes from CompartmentSystem to ExplicitODESystem
     """
     if type(old) == CompartmentalSystem and type(new) == ExplicitODESystem:
-        subs = model.control_stream.get_records('SUBROUTINES')[0]
-        subs.remove_option_startswith('TRANS')
-        subs.remove_option_startswith('ADVAN')
-        subs.append_option('ADVAN6')
-        subs.append_option('TOL', 3)
-        des = model.control_stream.insert_record('$DES\nDUMMY=0')
-        des.from_odes(new)
-        mod = model.control_stream.insert_record('$MODEL\n')
-        for eq, ic in zip(new.odes[:-1], list(new.ics.keys())[:-1]):
-            name = eq.lhs.args[0].name[2:]
-            if new.ics[ic] != 0:
-                dose = True
-            else:
-                dose = False
-            mod.add_compartment(name, dosing=dose)
+        to_des(model, new)
     elif type(old) == CompartmentalSystem and type(new) == CompartmentalSystem:
         subs = model.control_stream.get_records('SUBROUTINES')[0]
         advan = subs.get_option_startswith('ADVAN')
@@ -347,6 +335,38 @@ def update_ode_system(model, old, new):
             # FIXME: Adding at end for now. Update $INPUT cannot yet handle adding in middle
             # df.insert(list(df.columns).index('AMT') + 1, 'RATE', rate)
             model.dataset = df
+
+    force_des(model, new)
+
+
+def force_des(model, odes):
+    """Switch to $DES if necessary"""
+    if isinstance(odes, ExplicitODESystem):
+        return
+
+    amounts = {sympy.Function(amt.name)(symbol('t')) for amt in odes.amounts}
+    if odes.atoms(sympy.Function) & amounts:
+        modeling.explicit_odes(model)
+        new = model.statements.ode_system
+        to_des(model, new)
+
+
+def to_des(model, new):
+    subs = model.control_stream.get_records('SUBROUTINES')[0]
+    subs.remove_option_startswith('TRANS')
+    subs.remove_option_startswith('ADVAN')
+    subs.append_option('ADVAN6')
+    subs.append_option('TOL', 3)
+    des = model.control_stream.insert_record('$DES\nDUMMY=0')
+    des.from_odes(new)
+    mod = model.control_stream.insert_record('$MODEL\n')
+    for eq, ic in zip(new.odes[:-1], list(new.ics.keys())[:-1]):
+        name = eq.lhs.args[0].name[2:]
+        if new.ics[ic] != 0:
+            dose = True
+        else:
+            dose = False
+        mod.add_compartment(name, dosing=dose)
 
 
 def update_statements(model, old, new, trans):

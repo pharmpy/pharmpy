@@ -30,6 +30,19 @@ def michaelis_menten_elimination(model):
     km_symb = model.create_symbol('KM')
     ikm = Assignment(km_symb, popkm_param.symbol)
     model.statements.insert(0, ikm)
+    popclmm_symb = model.create_symbol('POP_CLMM')
+    popclmm_param = Parameter(popclmm_symb.name, init=0.1, lower=0)
+    model.parameters.add(popclmm_param)
+    clmm_symb = model.create_symbol('CLMM')
+    iclmm = Assignment(clmm_symb, popclmm_param.symbol)
+    model.statements.insert(0, iclmm)
+
+    odes = model.statements.ode_system
+    central = odes.find_central()
+    output = odes.find_output()
+    rate = clmm_symb / (km_symb + sympy.Function(central.amount.name)(pharmpy.symbols.symbol('t')))
+    odes.add_flow(central, output, rate)
+    return model
 
 
 def set_transit_compartments(model, n):

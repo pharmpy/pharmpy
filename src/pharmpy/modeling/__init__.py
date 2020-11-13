@@ -15,6 +15,7 @@ from pharmpy.modeling.odes import (
     absorption_rate,
     add_lag_time,
     explicit_odes,
+    michaelis_menten_elimination,
     remove_lag_time,
     set_transit_compartments,
 )
@@ -38,4 +39,5 @@ __all__ = [
     'error_model',
     'write_model',
     'set_transit_compartments',
+    'michaelis_menten_elimination',
 ]

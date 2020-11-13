@@ -135,6 +135,14 @@ class ExplicitODESystem(ODESystem):
                 pass
         return free
 
+    def subs(self, substitutions):
+        d = {
+            sympy.Function(key.name)(symbols.symbol('t')): value
+            for key, value in substitutions.items()
+        }
+        self.odes = [ode.subs(d) for ode in self.odes]
+        self.ics = {key.subs(d): value.subs(d) for key, value in self.ics.items()}
+
     @property
     def rhs_symbols(self):
         return self.free_symbols
@@ -188,6 +196,12 @@ class CompartmentalSystem(ODESystem):
     @property
     def rhs_symbols(self):
         return self.free_symbols  # This works currently
+
+    def atoms(self, cls):
+        atoms = set()
+        for (_, _, rate) in self._g.edges.data('rate'):
+            atoms |= rate.atoms(cls)
+        return atoms
 
     def __eq__(self, other):
         return (
@@ -417,7 +431,7 @@ class CompartmentalSystem(ODESystem):
                     time = 0
                 ics[sympy.Function(node.amount.name)(time)] = node.dose.amount
             else:
-                ics[sympy.Function(node.amount.name)(0)] = 0
+                ics[sympy.Function(node.amount.name)(0)] = sympy.Integer(0)
         return eqs, ics
 
     def __len__(self):

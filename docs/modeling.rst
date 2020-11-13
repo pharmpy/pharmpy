@@ -249,6 +249,24 @@ Similarly, to remove lag time:
    model.update_source()
    print_model_diff(model_ref, model)
 
+Elimination rate
+~~~~~~~~~~~~~~~~
+
+Michaelis-Menten elimination
+============================
+
+.. jupyter-execute::
+   :hide-output:
+
+   model = Model(path / "pheno.mod")
+
+.. jupyter-execute::
+
+   from pharmpy.modeling import michaelis_menten_elimination
+   michaelis_menten_elimination(model)
+   model.update_source()
+   print_model_diff(model_ref, model)
+
 
 ~~~~~~~~~~~~~~~~~~~~~~~~
 Adding covariate effects
