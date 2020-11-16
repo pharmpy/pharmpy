@@ -216,6 +216,8 @@ def infer_column_type(colname):
         return ColumnType.ID
     elif colname == 'DV':
         return ColumnType.DV
+    elif colname == 'MDV':
+        return ColumnType.EVENT
     else:
         return ColumnType.UNKNOWN
 
