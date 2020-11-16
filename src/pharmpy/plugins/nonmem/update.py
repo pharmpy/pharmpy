@@ -501,6 +501,7 @@ def pk_param_conversion_map(cs, oldmap, from_advan=None, to_advan=None, trans=No
         d[symbol(f'R{old}')] = symbol(f'R{new}')
         d[symbol(f'D{old}')] = symbol(f'D{new}')
         d[symbol(f'ALAG{old}')] = symbol(f'ALAG{new}')
+        d[symbol(f'A({old})')] = symbol(f'A({new})')
     if from_advan is None or from_advan == 'ADVAN5' or from_advan == 'ADVAN7':
         for i, j in itertools.product(range(1, len(oldmap)), range(0, len(oldmap))):
             if i != j and (i in remap and (j in remap or j == 0)):

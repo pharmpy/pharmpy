@@ -5,9 +5,9 @@ import pandas as pd
 import pytest
 
 import pharmpy.data
+import pharmpy.model
 import pharmpy.symbols
 from pharmpy import Model
-import pharmpy.model
 
 tabpath = Path(__file__).parent / 'testdata' / 'nonmem' / 'pheno_real_linbase.tab'
 lincorrect = pharmpy.data.read_nonmem_dataset(
@@ -138,7 +138,7 @@ def test_to_base_model(testdata):
     nm_model = Model(path)
     model = nm_model.to_base_model()
     assert id(model.parameters) != id(nm_model.parameters)
-    assert(model.parameters == nm_model.parameters)
+    assert model.parameters == nm_model.parameters
     assert id(model.random_variables) != id(nm_model.random_variables)
     assert model.random_variables == nm_model.random_variables
     assert model.name == nm_model.name

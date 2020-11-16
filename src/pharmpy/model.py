@@ -45,8 +45,7 @@ class Model:
     """
 
     def to_base_model(self):
-        """Convert a model into the base model class
-        """
+        """Convert a model into the base model class"""
         model = Model()
         model.parameters = self.parameters.copy()
         model.random_variables = self.random_variables.copy()

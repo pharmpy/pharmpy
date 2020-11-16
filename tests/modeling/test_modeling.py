@@ -1,4 +1,5 @@
 import re
+from io import StringIO
 
 import numpy as np
 import pytest
@@ -474,6 +475,59 @@ def test_to_explicit_odes(pheno_path, testdata):
     model.update_source()
     lines = str(model).split('\n')
     assert lines[15] == 'D1 = THETA(4)'
+
+
+def test_add_depot(testdata):
+    code = """$PROBLEM PHENOBARB SIMPLE MODEL
+$DATA pheno.dta IGNORE=@
+$INPUT ID TIME AMT WGT APGR DV
+$SUBROUTINE ADVAN1 TRANS2
+
+$PK
+CL=THETA(1)*EXP(ETA(1))
+V=THETA(2)*EXP(ETA(2))
+
+$ERROR
+CONC = A(1)/V
+Y = CONC + CONC*EPS(1)
+
+$THETA (0,0.00469307) ; TVCL
+$THETA (0,1.00916) ; TVV
+$OMEGA 0.0309626  ; IVCL
+$OMEGA 0.031128  ; IVV
+$SIGMA 0.013241
+
+$ESTIMATION METHOD=1 INTERACTION
+"""
+    model = Model(StringIO(code))
+    model.source.path = testdata / 'nonmem' / 'pheno.mod'  # To be able to find dataset
+    absorption_rate(model, 'FO')
+    model.update_source()
+    correct = """$PROBLEM PHENOBARB SIMPLE MODEL
+$DATA pheno.dta IGNORE=@
+$INPUT ID TIME AMT WGT APGR DV
+$SUBROUTINE ADVAN2 TRANS2
+
+$PK
+MAT = THETA(3)
+CL=THETA(1)*EXP(ETA(1))
+V=THETA(2)*EXP(ETA(2))
+KA = 1/MAT
+
+$ERROR
+CONC = A(2)/V
+Y = CONC + CONC*EPS(1)
+
+$THETA (0,0.00469307) ; TVCL
+$THETA (0,1.00916) ; TVV
+$THETA  (0,0.1) ; TVMAT
+$OMEGA 0.0309626  ; IVCL
+$OMEGA 0.031128  ; IVV
+$SIGMA 0.013241
+
+$ESTIMATION METHOD=1 INTERACTION
+"""
+    assert str(model) == correct
 
 
 def test_absorption_rate(testdata):
