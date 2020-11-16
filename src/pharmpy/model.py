@@ -36,7 +36,6 @@ class ModelSyntaxError(ModelException):
 class Model:
     """
     Attribute: name
-       prediction_symbol
        dependent_variable_symbol
        parameters
        random_variables
@@ -52,7 +51,6 @@ class Model:
         model.statements = self.statements.copy()
         model.dataset = self.dataset.copy()
         model.name = self.name
-        model.prediction_symbol = self.prediction_symbol
         model.dependent_variable_symbol = self.dependent_variable_symbol
         return model
 
@@ -147,8 +145,6 @@ class Model:
         rvs = [rv.name for rv in self.random_variables]
         dataset_col = list(self.dataset.columns)
         misc = [self.dependent_variable_symbol]
-        if self.prediction_symbol:
-            misc.append(self.prediction_symbol.name)
 
         all_names = symbols + params + rvs + dataset_col + misc
 

@@ -46,10 +46,6 @@ class Model(pharmpy.model.Model):
         self._updated_etas_file = None
         self._dataset_updated = False
         self._modelfit_results = None
-        if self._get_pk_record():
-            self.prediction_symbol = symbols.symbol('F')
-        else:
-            self.prediction_symbol = None
         self.dependent_variable_symbol = symbols.symbol('Y')
 
     @property

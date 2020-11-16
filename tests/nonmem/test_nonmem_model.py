@@ -463,9 +463,8 @@ def test_clashing_parameter_names(datadir):
         assert model.parameters.names == ['THETA(1)', 'TVV', 'IVCL', 'OMEGA(2,2)', 'SIGMA(1,1)']
 
 
-def test_prediction_symbol(pheno_path):
+def test_dv_symbol(pheno_path):
     model = Model(pheno_path)
-    assert model.prediction_symbol.name == 'F'
     assert model.dependent_variable_symbol.name == 'Y'
 
 

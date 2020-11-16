@@ -1,5 +1,6 @@
 import sympy
 
+import pharmpy.symbols as symbols
 from pharmpy.parameter import Parameter
 from pharmpy.random_variables import VariabilityLevel
 
@@ -16,7 +17,9 @@ def error_model(model, error_model):
     """
     stats = model.statements
     y = model.dependent_variable_symbol
-    f = model.prediction_symbol
+    f = model.statements.find_assignment(y.name).expression
+    for eps in model.random_variables.ruv_rvs:
+        f = f.subs({symbols.symbol(eps.name): 0})
     if error_model == 'none':
         stats.reassign(y, f)
         # FIXME: Would want a clean function here
