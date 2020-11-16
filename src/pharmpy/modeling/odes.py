@@ -108,7 +108,7 @@ def add_lag_time(model):
     if old_lag_time:
         model.statements.remove_symbol_definitions(old_lag_time.free_symbols, odes)
         model.remove_unused_parameters_and_rvs()
-    tvmdt_symb = model.create_symbol('TVMDT')
+    tvmdt_symb = model.create_symbol('POP_MDT')
     mdt_param = Parameter(tvmdt_symb.name, init=0.1, lower=0)
     model.parameters.add(mdt_param)
     imdt = Assignment(mdt_symb, mdt_param.symbol)
@@ -233,7 +233,7 @@ def add_zero_order_absorption(model, amount, to_comp, parameter_name):
     """Add zero order absorption to a compartment.
     Disregards what is currently in the model.
     """
-    tvmat_symb = model.create_symbol(f'TV{parameter_name}')
+    tvmat_symb = model.create_symbol(f'POP_{parameter_name}')
     mat_param = Parameter(tvmat_symb.name, init=0.1, lower=0)
     model.parameters.add(mat_param)
     mat_symb = model.create_symbol(parameter_name)
@@ -250,7 +250,7 @@ def add_first_order_absorption(model, dose, to_comp):
     odes = model.statements.ode_system
     depot = odes.add_compartment('DEPOT')
     depot.dose = dose
-    tvmat_symb = model.create_symbol('TVMAT')
+    tvmat_symb = model.create_symbol('POP_MAT')
     mat_param = Parameter(tvmat_symb.name, init=0.1, lower=0)
     model.parameters.add(mat_param)
     mat_symb = model.create_symbol('MAT')
