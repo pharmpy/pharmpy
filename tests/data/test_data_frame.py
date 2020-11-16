@@ -118,6 +118,33 @@ def test_covariate_baselines(df):
     pd.testing.assert_frame_equal(df.pharmpy.covariate_baselines, correct_baselines)
 
 
+def test_observations(df):
+    df = data.PharmDataFrame(
+        {
+            'ID': [1, 1, 2, 2],
+            'DV': [0, 0.2, 0, 0.6],
+            'WGT': [70, 72, 75, 75],
+            'HGT': [185, 185, 160, 160],
+            'TIME': [0, 1, 0, 1],
+            'AMT': [1, 0, 1, 0],
+        }
+    )
+    df.pharmpy.column_type[('ID', 'DV', 'WGT', 'HGT', 'TIME', 'AMT')] = [
+        data.ColumnType.ID,
+        data.ColumnType.DV,
+        data.ColumnType.COVARIATE,
+        data.ColumnType.COVARIATE,
+        data.ColumnType.IDV,
+        data.ColumnType.DOSE,
+    ]
+    correct_observations = (
+        pd.DataFrame({'DV': [0.2, 0.6], 'ID': [1, 2], 'TIME': [1, 1]})
+        .set_index(['ID', 'TIME'])
+        .squeeze()
+    )
+    pd.testing.assert_series_equal(df.pharmpy.observations, correct_observations)
+
+
 def test_write(fs, df):
     df.pharmpy.write_csv(path="my.csv")
     with open("my.csv", "r") as fh:

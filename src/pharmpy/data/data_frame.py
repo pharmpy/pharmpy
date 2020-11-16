@@ -22,6 +22,8 @@ class ColumnType(enum.Enum):
     IDV = enum.auto()
     DV = enum.auto()
     COVARIATE = enum.auto()
+    DOSE = enum.auto()
+    EVENT = enum.auto()
 
     def __repr__(self):
         return f'{self.__class__.__name__}.{self.name}'
@@ -29,7 +31,7 @@ class ColumnType(enum.Enum):
     @property
     def max_one(self):
         """Can this ColumnType only be assigned to at most one column?"""
-        return self in (ColumnType.ID, ColumnType.IDV)
+        return self in (ColumnType.ID, ColumnType.IDV, ColumnType.DOSE, ColumnType.EVENT)
 
 
 class PharmDataFrame(pd.DataFrame):
@@ -44,6 +46,8 @@ class PharmDataFrame(pd.DataFrame):
     IDV           Independent variable. Max one per DataFrame.
     DV            Dependent variable
     COVARIATE     Covariate
+    DOSE          Dose amount
+    EVENT         0 = observation
     UNKOWN        Unkown type. This will be the default for columns that hasn't been assigned a type
     ============  =============
 
@@ -199,6 +203,16 @@ class DataFrameAccessor:
         return self.labels_by_type[ColumnType.ID][0]
 
     @property
+    def idv_label(self):
+        """Return the label of the idv column"""
+        return self.labels_by_type[ColumnType.IDV][0]
+
+    @property
+    def dv_label(self):
+        """Return the label of the dv column"""
+        return self.labels_by_type[ColumnType.DV][0]
+
+    @property
     def ids(self):
         """Return the ids in the dataset"""
         return self._obj[self.id_label].unique()
@@ -230,6 +244,24 @@ class DataFrameAccessor:
         idlab = self.id_label
         df = self._obj[covariates + [idlab]]
         return df.groupby(idlab).nth(0)
+
+    @property
+    def observations(self):
+        """Return a series with observations. Indexed with ID and TIME"""
+        try:
+            label = self.labels_by_type[ColumnType.EVENT]
+        except KeyError:
+            try:
+                label = self.labels_by_type[ColumnType.DOSE]
+            except KeyError:
+                raise DatasetError('Could not identify observation rows in dataset')
+        label = label[0]
+        idcol = self.id_label
+        idvcol = self.idv_label
+        df = self._obj.query(f'{label} == 0')
+        df = df[[idcol, idvcol, self.dv_label]]
+        df.set_index([idcol, idvcol], inplace=True)
+        return df.squeeze()
 
     def generate_path(self, path=None, force=False):
         """Generate the path of dataframe if written.
