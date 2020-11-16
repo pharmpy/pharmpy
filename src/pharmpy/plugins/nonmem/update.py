@@ -159,6 +159,11 @@ def update_random_variables(model, old, new):
         omega_record.renumber(next_eta)
         next_eta += len(omega_record)
 
+    next_eps = 1
+    for sigma_record in model.control_stream.get_records('SIGMA'):
+        sigma_record.renumber(next_eps)
+        next_eps += len(sigma_record)
+
 
 def get_omega_records(model, params):
     records = []

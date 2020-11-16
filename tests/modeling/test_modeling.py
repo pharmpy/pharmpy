@@ -17,6 +17,7 @@ from pharmpy.modeling import (
     iiv_on_ruv,
     john_draper,
     michaelis_menten_elimination,
+    remove_iiv,
     remove_lag_time,
     set_transit_compartments,
     tdist,
@@ -1207,3 +1208,32 @@ def test_iiv_on_ruv(pheno_path, epsilons, err_ref, omega_ref):
         f' 0.031128  ;        IVV\n\n'
         f'{omega_ref}\n'
     )
+
+
+@pytest.mark.parametrize(
+    'etas, pk_ref, omega_len',
+    [
+        (
+            ['ETA(1)'],
+            '$PK\n' 'CL = THETA(1)\n' 'V = THETA(2)*EXP(ETA(1))\n' 'S1=V\n\n',
+            1,
+        ),
+        (
+            ['ETA(1)', 'ETA(2)'],
+            '$PK\n' 'CL = THETA(1)\n' 'V = THETA(2)\n' 'S1=V\n\n',
+            0,
+        ),
+        (
+            None,
+            '$PK\n' 'CL = THETA(1)\n' 'V = THETA(2)\n' 'S1=V\n\n',
+            0,
+        ),
+    ],
+)
+def test_remove_iiv(testdata, etas, pk_ref, omega_len):
+    model = Model(testdata / 'nonmem/pheno.mod')
+    remove_iiv(model, etas)
+    model.update_source()
+
+    assert str(model.get_pred_pk_record()) == pk_ref
+    assert len(model.control_stream.get_records('OMEGA')) == omega_len

@@ -19,6 +19,7 @@ from pharmpy.modeling.odes import (
     remove_lag_time,
     set_transit_compartments,
 )
+from pharmpy.modeling.remove_iiv import remove_iiv
 
 __all__ = [
     'absorption_rate',
@@ -38,6 +39,7 @@ __all__ = [
     'read_model',
     'error_model',
     'write_model',
+    'remove_iiv',
     'set_transit_compartments',
     'michaelis_menten_elimination',
 ]
