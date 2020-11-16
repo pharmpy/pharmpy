@@ -8,7 +8,7 @@ from .option_record import OptionRecord
 class SizesRecord(OptionRecord):
     @property
     def PC(self):
-        return self.option_pairs.get('PC', 30)
+        return int(self.option_pairs.get('PC', 30))
 
     @PC.setter
     def PC(self, value):

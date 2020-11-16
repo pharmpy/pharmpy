@@ -176,3 +176,15 @@ def test_parameter_space():
     assert p1.parameter_space == sympy.FiniteSet(9)
     p2 = Parameter('X', 10, lower=0, upper=15)
     assert p2.parameter_space == sympy.Interval(0, 15)
+
+
+def test_pset_eq():
+    p1 = Parameter('Y', 9)
+    p2 = Parameter('X', 3)
+    p3 = Parameter('Z', 1)
+    pset1 = ParameterSet([p1, p2, p3])
+    pset2 = ParameterSet([p1, p2])
+    assert pset1 != pset2
+    pset3 = ParameterSet([p1, p3, p2])
+    assert pset1 != pset3
+    assert pset1 == pset1
