@@ -38,7 +38,24 @@ class Model:
     Attribute: name
        prediction_symbol
        dependent_variable_symbol
+       parameters
+       random_variables
+       statements
+       dataset
     """
+
+    def to_base_model(self):
+        """Convert a model into the base model class
+        """
+        model = Model()
+        model.parameters = self.parameters.copy()
+        model.random_variables = self.random_variables.copy()
+        model.statements = self.statements.copy()
+        model.dataset = self.dataset.copy()
+        model.name = self.name
+        model.prediction_symbol = self.prediction_symbol
+        model.dependent_variable_symbol = self.dependent_variable_symbol
+        return model
 
     @property
     def modelfit_results(self):
@@ -93,10 +110,6 @@ class Model:
 
     def update_individual_estimates(self, source):
         self.initial_individual_estimates = self.modelfit_results.individual_estimates
-
-    @property
-    def dataset(self):
-        raise NotImplementedError()
 
     def read_raw_dataset(self, parse_columns=tuple()):
         raise NotImplementedError()

@@ -7,6 +7,7 @@ import pytest
 import pharmpy.data
 import pharmpy.symbols
 from pharmpy import Model
+import pharmpy.model
 
 tabpath = Path(__file__).parent / 'testdata' / 'nonmem' / 'pheno_real_linbase.tab'
 lincorrect = pharmpy.data.read_nonmem_dataset(
@@ -130,3 +131,17 @@ def test_weighted_residuals(testdata):
     linmod = Model(linpath)
     wres = linmod.weighted_residuals()
     pd.testing.assert_series_equal(lincorrect['WRES'], wres, rtol=1e-4, check_names=False)
+
+
+def test_to_base_model(testdata):
+    path = testdata / 'nonmem' / 'pheno.mod'
+    nm_model = Model(path)
+    model = nm_model.to_base_model()
+    assert id(model.parameters) != id(nm_model.parameters)
+    assert(model.parameters == nm_model.parameters)
+    assert id(model.random_variables) != id(nm_model.random_variables)
+    assert model.random_variables == nm_model.random_variables
+    assert model.name == nm_model.name
+    assert id(model.statements) != id(nm_model.statements)
+    assert model.statements == nm_model.statements
+    assert type(model) == pharmpy.model.Model

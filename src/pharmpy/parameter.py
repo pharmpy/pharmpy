@@ -112,6 +112,14 @@ class ParameterSet(OrderedSet):
         """Create a deep copy of this ParameterSet"""
         return copy.deepcopy(self)
 
+    def __eq__(self, other):
+        if len(self) != len(other):
+            return False
+        for p1, p2 in zip(self, other):
+            if p1 != p2:
+                return False
+        return True
+
     def __repr__(self):
         if len(self) == 0:
             return "ParameterSet()"
