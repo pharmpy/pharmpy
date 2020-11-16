@@ -466,7 +466,7 @@ def iiv_on_ruv(args):
     except AttributeError:
         eps = args.eps
 
-    iiv_on_ruv(model, eps)
+    iiv_on_ruv(model, eps, args.same_eta)
 
     write_model_or_dataset(model, model.dataset, path=args.output_file, force=False)
 
@@ -1061,6 +1061,13 @@ parser_definition = [
                                 'help': 'List of epsilons, mark group of epsilons in single quote '
                                 'separated by spaces. To apply to all epsilons, omit this '
                                 'argument.',
+                            },
+                            {
+                                'name': '--same_eta',
+                                'type': bool,
+                                'default': True,
+                                'help': 'whether all RUVs from input should use the same new ETA '
+                                'or if one ETA should be created for each RUV.',
                             },
                         ],
                     }

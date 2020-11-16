@@ -124,7 +124,7 @@ def test_create_rv_block(datadir, fs, eta_args):
 
 
 @pytest.mark.parametrize('fs', [[['pkgutil'], [source, etas_record]]], indirect=True)
-@pytest.mark.parametrize('epsilons_args', [['--eps', 'EPS(1)'], []])
+@pytest.mark.parametrize('epsilons_args', [['--eps', 'EPS(1)'], [], ['--same_eta', 'False']])
 def test_iiv_on_ruv(datadir, fs, epsilons_args):
     fs.add_real_file(datadir / 'pheno_real.mod', target_path='run1.mod')
     fs.add_real_file(datadir / 'pheno_real.ext', target_path='run1.ext')

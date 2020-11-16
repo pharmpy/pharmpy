@@ -8,7 +8,7 @@ from pharmpy.random_variables import VariabilityLevel
 from pharmpy.symbols import symbol as S
 
 
-def iiv_on_ruv(model, list_of_eps=None):
+def iiv_on_ruv(model, list_of_eps=None, same_eta=True):
     """
     Multiplies epsilons with exponential (new) etas.
 
@@ -19,22 +19,28 @@ def iiv_on_ruv(model, list_of_eps=None):
     list_of_eps : list
         List of epsilons to multiply with exponential etas. If None, all epsilons will
         be chosen. None is default.
+    same_eta : bool
+        Boolean of whether all RUVs from input should use the same new ETA or if one ETA
+        should be created for each RUV. True is default.
     """
     eps = _get_epsilons(model, list_of_eps)
 
     rvs, pset, sset = model.random_variables, model.parameters, model.statements
 
-    for i, e in enumerate(eps):
-        omega = S(f'IIV_RUV{i + 1}')
-        pset.add(Parameter(str(omega), 0.01))
-
-        eta = stats.Normal(f'RV_{e}', 0, sympy.sqrt(omega))
-        eta.variability_level = VariabilityLevel.IIV
+    if same_eta:
+        eta = _create_eta(pset, 1)
         rvs.add(eta)
+        eta_dict = {e: eta for e in eps}
+    else:
+        etas = [_create_eta(pset, i + 1) for i in range(len(eps))]
+        for eta in etas:
+            rvs.add(eta)
+        eta_dict = {e: eta for e, eta in zip(eps, etas)}
 
+    for e in eps:
         statement = sset.find_assignment(e.name, is_symbol=False)
         statement.expression = statement.expression.subs(
-            S(e.name), S(e.name) * sympy.exp(S(eta.name))
+            S(e.name), S(e.name) * sympy.exp(S(eta_dict[e].name))
         )
 
     model.random_variables = rvs
@@ -59,3 +65,13 @@ def _get_epsilons(model, list_of_eps):
             except KeyError:
                 warnings.warn(f'Epsilon "{e}" does not exist')
         return eps
+
+
+def _create_eta(pset, number):
+    omega = S(f'IIV_RUV{number}')
+    pset.add(Parameter(str(omega), 0.01))
+
+    eta = stats.Normal(f'RV{number}', 0, sympy.sqrt(omega))
+    eta.variability_level = VariabilityLevel.IIV
+
+    return eta

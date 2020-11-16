@@ -1151,15 +1151,17 @@ def test_block_rvs(testdata, etas, pk_ref, omega_ref):
 
 
 @pytest.mark.parametrize(
-    'epsilons, err_ref, omega_ref',
+    'epsilons, same_eta, err_ref, omega_ref',
     [
         (
             ['EPS(1)'],
+            False,
             'Y = EPS(1)*W*EXP(ETA(3)) + F\n' 'IPRED=F+EPS(2)\n' 'IRES=DV-IPRED+EPS(3)\n',
             '$OMEGA  0.01 ; IIV_RUV1',
         ),
         (
             ['EPS(1)', 'EPS(2)'],
+            False,
             'Y = EPS(1)*W*EXP(ETA(3)) + F\n'
             'IPRED = EPS(2)*EXP(ETA(4)) + F\n'
             'IRES=DV-IPRED+EPS(3)\n',
@@ -1167,6 +1169,7 @@ def test_block_rvs(testdata, etas, pk_ref, omega_ref):
         ),
         (
             ['EPS(1)', 'EPS(3)'],
+            False,
             'Y = EPS(1)*W*EXP(ETA(3)) + F\n'
             'IPRED = EPS(2) + F\n'
             'IRES = DV + EPS(3)*EXP(ETA(4)) - IPRED\n',
@@ -1174,14 +1177,23 @@ def test_block_rvs(testdata, etas, pk_ref, omega_ref):
         ),
         (
             None,
+            False,
             'Y = EPS(1)*W*EXP(ETA(3)) + F\n'
             'IPRED = EPS(2)*EXP(ETA(4)) + F\n'
             'IRES = DV + EPS(3)*EXP(ETA(5)) - IPRED\n',
             '$OMEGA  0.01 ; IIV_RUV1\n' '$OMEGA  0.01 ; IIV_RUV2\n' '$OMEGA  0.01 ; IIV_RUV3',
         ),
+        (
+            None,
+            True,
+            'Y = EPS(1)*W*EXP(ETA(3)) + F\n'
+            'IPRED = EPS(2)*EXP(ETA(3)) + F\n'
+            'IRES = DV + EPS(3)*EXP(ETA(3)) - IPRED\n',
+            '$OMEGA  0.01 ; IIV_RUV1',
+        ),
     ],
 )
-def test_iiv_on_ruv(pheno_path, epsilons, err_ref, omega_ref):
+def test_iiv_on_ruv(pheno_path, epsilons, same_eta, err_ref, omega_ref):
     model = Model(pheno_path)
 
     model_str = str(model)
@@ -1193,7 +1205,7 @@ def test_iiv_on_ruv(pheno_path, epsilons, err_ref, omega_ref):
     )
     model.control_stream = NMTranParser().parse(model_sigma)
 
-    iiv_on_ruv(model, epsilons)
+    iiv_on_ruv(model, epsilons, same_eta)
     model.update_source()
 
     err_rec = model.control_stream.get_records('ERROR')[0]
