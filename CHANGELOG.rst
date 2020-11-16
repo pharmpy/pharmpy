@@ -1,3 +1,17 @@
+0.10.0 (2020-11-16)
+-------------------
+
+* modeling.create_rv_block 
+* modeling.michaelis_menten_elimination
+* modeling.set_transit_compartments
+* First version of modelfit method
+* Add first version of bootstrap method
+* Add parameter estimates histograms to bootstrap report
+* Add automatic update of $SIZES PD when writing/updating NONMEM model
+* Additions to QAResults
+* NMTRanParseError replaced with ModelSyntaxError
+* Multiple bugfixes to frem and scm result calculations
+
 0.9.0 (2020-10-26)
 ------------------
 
