@@ -103,9 +103,6 @@ For NONMEM models this means going from any of the compartmental ADVANS (ADVAN1-
 Absorption rate
 ~~~~~~~~~~~~~~~
 
-The :py:func:`pharmpy.modeling.absorption_rate` can be used to set the absorption rate.
-
-
 Bolus absorption
 ==================
 
@@ -124,14 +121,14 @@ Let us use a model with bolus absorption as a starting point.
 
 .. jupyter-execute::
 
-   from pharmpy.modeling import absorption_rate
+   from pharmpy.modeling import bolus_absorption
    model = Model(path / "pheno.mod")
 
 This type of absorption can be created with:
 
 .. jupyter-execute::
 
-    absorption_rate(model, 'bolus')
+    bolus_absorption(model)
     model.update_source()
     print_model_diff(model_ref, model)
 
@@ -154,7 +151,8 @@ Let us now change to zero order absorption.
 
 .. jupyter-execute::
 
-   absorption_rate(model, 'ZO')
+   from pharmpy.modeling import zero_order_absorption
+   zero_order_absorption(model)
    model.update_source(nofiles=True)
    print_model_diff(model_ref, model)
 
@@ -177,7 +175,8 @@ First order absorption would mean adding an absorption (depot) compartment like 
 
 .. jupyter-execute::
 
-   absorption_rate(model, 'FO')
+   from pharmpy.modeling import first_order_absorption
+   first_order_absorption(model)
    model.update_source(nofiles=True)
    print_model_diff(model_ref, model)
 
@@ -200,7 +199,8 @@ Sequential zero-order absorption followed by first-order absorption will have an
 
 .. jupyter-execute::
 
-   absorption_rate(model, 'seq-ZO-FO')
+   from pharmpy.modeling import seq_zo_fo_absorption
+   seq_zo_fo_absorption(model)
    model.update_source(nofiles=True)
    print_model_diff(model_ref, model)
 

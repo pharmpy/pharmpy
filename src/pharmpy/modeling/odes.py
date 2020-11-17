@@ -20,7 +20,7 @@ def explicit_odes(model):
 
 
 def first_order_elimination(model):
-    pass
+    return model
 
 
 def zero_order_elimination(model):
@@ -138,83 +138,123 @@ def remove_lag_time(model):
     return model
 
 
-def absorption_rate(model, rate):
-    """Set or change the absorption rate of a model
+def zero_order_absorption(model):
+    """Set or change to zero order absorption rate
 
     Parameters
     ----------
     model
-        Model to set or change absorption for
-    rate
-        'bolus', 'ZO', 'FO' or 'seq-ZO-FO'
+        Model to set or change to first order absorption rate
     """
     statements = model.statements
     odes = statements.ode_system
     if not isinstance(odes, CompartmentalSystem):
         raise ValueError("Setting absorption is not supported for ExplicitODESystem")
-
     depot = odes.find_depot(statements)
-    if rate == 'bolus':
-        if depot:
-            to_comp, _ = odes.get_compartment_outflows(depot)[0]
-            to_comp.dose = depot.dose
-            ka = odes.get_flow(depot, odes.find_central())
-            odes.remove_compartment(depot)
-            symbols = ka.free_symbols
-            statements.remove_symbol_definitions(symbols, odes)
-            model.remove_unused_parameters_and_rvs()
-        if have_zero_order_absorption(model):
-            dose_comp = odes.find_dosing()
-            old_symbols = dose_comp.free_symbols
-            dose_comp.dose = Bolus(dose_comp.dose.amount)
-            unneeded_symbols = old_symbols - dose_comp.dose.free_symbols
-            statements.remove_symbol_definitions(unneeded_symbols, odes)
-            model.remove_unused_parameters_and_rvs()
-    elif rate == 'ZO':
-        dose_comp = odes.find_dosing()
-        symbols = dose_comp.free_symbols
-        dose = dose_comp.dose
-        if depot:
-            to_comp, _ = odes.get_compartment_outflows(depot)[0]
-            ka = odes.get_flow(depot, odes.find_central())
-            odes.remove_compartment(depot)
-            symbols |= ka.free_symbols
-            to_comp.dose = dose
-        else:
-            to_comp = dose_comp
-        statements.remove_symbol_definitions(symbols, odes)
-        model.remove_unused_parameters_and_rvs()
-        if not have_zero_order_absorption(model):
-            add_zero_order_absorption(model, dose.amount, to_comp, 'MAT')
-    elif rate == 'FO':
-        dose_comp = odes.find_dosing()
-        amount = dose_comp.dose.amount
-        symbols = dose_comp.free_symbols
-        if depot:
-            dose_comp.dose = Bolus(depot.dose.amount)
-        else:
-            dose_comp.dose = None
-        statements.remove_symbol_definitions(symbols, odes)
-        model.remove_unused_parameters_and_rvs()
-        if not depot:
-            add_first_order_absorption(model, Bolus(amount), dose_comp)
-    elif rate == 'seq-ZO-FO':
-        dose_comp = odes.find_dosing()
-        have_ZO = have_zero_order_absorption(model)
-        if depot and not have_ZO:
-            add_zero_order_absorption(model, dose_comp.amount, depot, 'MDT')
-        elif not depot and have_ZO:
-            add_first_order_absorption(model, dose_comp.dose, dose_comp)
-            dose_comp.dose = None
-        elif not depot and not have_ZO:
-            amount = dose_comp.dose.amount
-            dose_comp.dose = None
-            depot = add_first_order_absorption(model, amount, dose_comp)
-            add_zero_order_absorption(model, amount, depot, 'MDT')
+
+    dose_comp = odes.find_dosing()
+    symbols = dose_comp.free_symbols
+    dose = dose_comp.dose
+    if depot:
+        to_comp, _ = odes.get_compartment_outflows(depot)[0]
+        ka = odes.get_flow(depot, odes.find_central())
+        odes.remove_compartment(depot)
+        symbols |= ka.free_symbols
+        to_comp.dose = dose
     else:
-        raise ValueError(
-            f'Requested rate {rate} but only rates  ' f'bolus, FO, ZO and seq-ZO-FO are supported'
-        )
+        to_comp = dose_comp
+    statements.remove_symbol_definitions(symbols, odes)
+    model.remove_unused_parameters_and_rvs()
+    if not have_zero_order_absorption(model):
+        add_zero_order_absorption(model, dose.amount, to_comp, 'MAT')
+    return model
+
+
+def first_order_absorption(model):
+    """Set or change to first order absorption rate
+
+    Parameters
+    ----------
+    model
+        Model to set or change to bolus absorption rate
+    """
+    statements = model.statements
+    odes = statements.ode_system
+    if not isinstance(odes, CompartmentalSystem):
+        raise ValueError("Setting absorption is not supported for ExplicitODESystem")
+    depot = odes.find_depot(statements)
+
+    dose_comp = odes.find_dosing()
+    amount = dose_comp.dose.amount
+    symbols = dose_comp.free_symbols
+    if depot:
+        dose_comp.dose = Bolus(depot.dose.amount)
+    else:
+        dose_comp.dose = None
+    statements.remove_symbol_definitions(symbols, odes)
+    model.remove_unused_parameters_and_rvs()
+    if not depot:
+        add_first_order_absorption(model, Bolus(amount), dose_comp)
+    return model
+
+
+def bolus_absorption(model):
+    """Set or change to bolus absorption rate
+
+    Parameters
+    ----------
+    model
+        Model to set or change absorption rate
+    """
+    statements = model.statements
+    odes = statements.ode_system
+    if not isinstance(odes, CompartmentalSystem):
+        raise ValueError("Setting absorption is not supported for ExplicitODESystem")
+    depot = odes.find_depot(statements)
+    if depot:
+        to_comp, _ = odes.get_compartment_outflows(depot)[0]
+        to_comp.dose = depot.dose
+        ka = odes.get_flow(depot, odes.find_central())
+        odes.remove_compartment(depot)
+        symbols = ka.free_symbols
+        statements.remove_symbol_definitions(symbols, odes)
+        model.remove_unused_parameters_and_rvs()
+    if have_zero_order_absorption(model):
+        dose_comp = odes.find_dosing()
+        old_symbols = dose_comp.free_symbols
+        dose_comp.dose = Bolus(dose_comp.dose.amount)
+        unneeded_symbols = old_symbols - dose_comp.dose.free_symbols
+        statements.remove_symbol_definitions(unneeded_symbols, odes)
+        model.remove_unused_parameters_and_rvs()
+    return model
+
+
+def seq_zo_fo_absorption(model):
+    """Set or change to sequential zero order first order absorption rate
+
+    Parameters
+    ----------
+    model
+        Model to set or change absorption rate
+    """
+    statements = model.statements
+    odes = statements.ode_system
+    if not isinstance(odes, CompartmentalSystem):
+        raise ValueError("Setting absorption is not supported for ExplicitODESystem")
+    depot = odes.find_depot(statements)
+
+    dose_comp = odes.find_dosing()
+    have_ZO = have_zero_order_absorption(model)
+    if depot and not have_ZO:
+        add_zero_order_absorption(model, dose_comp.amount, depot, 'MDT')
+    elif not depot and have_ZO:
+        add_first_order_absorption(model, dose_comp.dose, dose_comp)
+        dose_comp.dose = None
+    elif not depot and not have_ZO:
+        amount = dose_comp.dose.amount
+        dose_comp.dose = None
+        depot = add_first_order_absorption(model, amount, dose_comp)
+        add_zero_order_absorption(model, amount, depot, 'MDT')
     return model
 
 

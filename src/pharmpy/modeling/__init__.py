@@ -12,18 +12,24 @@ from pharmpy.modeling.eta_additions import add_etas
 from pharmpy.modeling.eta_transformations import boxcox, john_draper, tdist
 from pharmpy.modeling.iiv_on_ruv import iiv_on_ruv
 from pharmpy.modeling.odes import (
-    absorption_rate,
     add_lag_time,
+    bolus_absorption,
     explicit_odes,
+    first_order_absorption,
     michaelis_menten_elimination,
     remove_lag_time,
+    seq_zo_fo_absorption,
     set_transit_compartments,
+    zero_order_absorption,
     zero_order_elimination,
 )
 from pharmpy.modeling.remove_iiv import remove_iiv
 
 __all__ = [
-    'absorption_rate',
+    'zero_order_absorption',
+    'first_order_absorption',
+    'bolus_absorption',
+    'seq_zo_fo_absorption',
     'add_covariate_effect',
     'add_etas',
     'add_lag_time',

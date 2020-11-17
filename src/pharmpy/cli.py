@@ -364,10 +364,17 @@ def model_explicit_odes(args):
 
 
 def model_absorption_rate(args):
-    from pharmpy.modeling import absorption_rate
+    import pharmpy.modeling as modeling
 
     model = args.model
-    absorption_rate(model, order=args.order)
+    if args.order == 'ZO':
+        modeling.zero_order_absorption(model)
+    elif args.order == 'FO':
+        modeling.first_order_absorption(model)
+    elif args.order == 'bolus':
+        modeling.bolus_absorption(model)
+    elif args.order == 'seq-ZO-FO':
+        modeling.seq_zo_fo_absorption(model)
     write_model_or_dataset(model, None, path=args.output_file, force=args.force)
 
 

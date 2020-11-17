@@ -7,20 +7,23 @@ from pyfakefs.fake_filesystem_unittest import Patcher
 
 from pharmpy import Model
 from pharmpy.modeling import (
-    absorption_rate,
     add_covariate_effect,
     add_etas,
     add_lag_time,
+    bolus_absorption,
     boxcox,
     create_rv_block,
     explicit_odes,
+    first_order_absorption,
     iiv_on_ruv,
     john_draper,
     michaelis_menten_elimination,
     remove_iiv,
     remove_lag_time,
+    seq_zo_fo_absorption,
     set_transit_compartments,
     tdist,
+    zero_order_absorption,
     zero_order_elimination,
 )
 from pharmpy.plugins.nonmem.nmtran_parser import NMTranParser
@@ -538,7 +541,7 @@ $ESTIMATION METHOD=1 INTERACTION
 """
     model = Model(StringIO(code))
     model.source.path = testdata / 'nonmem' / 'pheno.mod'  # To be able to find dataset
-    absorption_rate(model, 'FO')
+    first_order_absorption(model)
     model.update_source()
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
@@ -570,70 +573,70 @@ $ESTIMATION METHOD=1 INTERACTION
 def test_absorption_rate(testdata):
     model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan1.mod')
     advan1_before = str(model)
-    absorption_rate(model, 'bolus')
+    bolus_absorption(model)
     assert advan1_before == str(model)
 
     model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan2.mod')
-    absorption_rate(model, 'bolus')
+    bolus_absorption(model)
     model.update_source()
     assert str(model) == advan1_before
 
     model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan3.mod')
     advan3_before = str(model)
-    absorption_rate(model, 'bolus')
+    bolus_absorption(model)
     model.update_source()
     assert str(model) == advan3_before
 
     model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan4.mod')
-    absorption_rate(model, 'bolus')
+    bolus_absorption(model)
     model.update_source()
     assert str(model) == advan3_before
 
     model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan11.mod')
     advan11_before = str(model)
-    absorption_rate(model, 'bolus')
+    bolus_absorption(model)
     model.update_source()
     assert str(model) == advan11_before
 
     model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan12.mod')
-    absorption_rate(model, 'bolus')
+    bolus_absorption(model)
     model.update_source()
     assert str(model) == advan11_before
 
     model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan5_nodepot.mod')
     advan5_nodepot_before = str(model)
-    absorption_rate(model, 'bolus')
+    bolus_absorption(model)
     model.update_source()
     assert str(model) == advan5_nodepot_before
 
     model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan5_depot.mod')
-    absorption_rate(model, 'bolus')
+    bolus_absorption(model)
     model.update_source()
     assert str(model) == advan5_nodepot_before
 
     # 0-order to 0-order
     model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan1_zero_order.mod')
     advan1_zero_order_before = str(model)
-    absorption_rate(model, 'ZO')
+    zero_order_absorption(model)
     model.update_source()
     assert str(model) == advan1_zero_order_before
 
     # 0-order to Bolus
     model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan1_zero_order.mod')
-    absorption_rate(model, 'bolus')
+    bolus_absorption(model)
     model.update_source(nofiles=True)
     assert str(model).split('\n')[2:] == advan1_before.split('\n')[2:]
 
     # 1st order to 1st order
     model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan2.mod')
     advan2_before = str(model)
-    absorption_rate(model, 'FO')
+    first_order_absorption(model)
     model.update_source(nofiles=True)
     assert str(model) == advan2_before
 
     # 0-order to 1st order
     model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan1_zero_order.mod')
-    absorption_rate(model, 'FO')
+    first_order_absorption(model)
     model.update_source(nofiles=True)
     correct = '''$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno_zero_order.csv IGNORE=@
@@ -677,7 +680,7 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
 
     # Bolus to 1st order
     model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan1.mod')
-    absorption_rate(model, 'FO')
+    first_order_absorption(model)
     model.update_source(nofiles=True)
     assert str(model).split('\n')[2:] == correct.split('\n')[2:]
 
@@ -689,7 +692,7 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
         fs.add_real_file(datadir / 'pheno_advan2.mod', target_path='dir/pheno_advan2.mod')
         fs.add_real_file(datadir.parent / 'pheno.dta', target_path='pheno.dta')
         model = Model('dir/pheno_advan1.mod')
-        absorption_rate(model, 'ZO')
+        zero_order_absorption(model)
         model.update_source()
         correct = '''$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.csv IGNORE=@
@@ -733,14 +736,14 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
 
         # 1st to 0-order
         model = Model('dir/pheno_advan2.mod')
-        absorption_rate(model, 'ZO')
+        zero_order_absorption(model)
         model.update_source(force=True)
         assert str(model) == correct
 
 
 def test_seq_to_FO(testdata):
     model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan2_seq.mod')
-    absorption_rate(model, 'FO')
+    first_order_absorption(model)
     model.update_source(nofiles=True)
     correct = '''$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno_zero_order.csv IGNORE=@
@@ -784,7 +787,7 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
 
 def test_seq_to_ZO(testdata):
     model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan2_seq.mod')
-    absorption_rate(model, 'ZO')
+    zero_order_absorption(model)
     model.update_source(nofiles=True)
     correct = '''$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno_zero_order.csv IGNORE=@
@@ -828,7 +831,7 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
 
 def test_bolus_to_seq(testdata):
     model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan1.mod')
-    absorption_rate(model, 'seq-ZO-FO')
+    seq_zo_fo_absorption(model)
     model.update_source(nofiles=True)
     correct = '''$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA ../pheno.dta IGNORE=@
@@ -876,7 +879,7 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
 
 def test_ZO_to_seq(testdata):
     model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan1_zero_order.mod')
-    absorption_rate(model, 'seq-ZO-FO')
+    seq_zo_fo_absorption(model)
     model.update_source(nofiles=True)
     correct = '''$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno_zero_order.csv IGNORE=@
@@ -923,7 +926,7 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
 
 def test_FO_to_seq(testdata):
     model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan2.mod')
-    absorption_rate(model, 'seq-ZO-FO')
+    seq_zo_fo_absorption(model)
     model.update_source(nofiles=True)
     correct = '''$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA ../pheno.dta IGNORE=@
