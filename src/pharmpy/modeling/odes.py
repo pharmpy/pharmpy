@@ -23,6 +23,15 @@ def first_order_elimination(model):
     pass
 
 
+def zero_order_elimination(model):
+    michaelis_menten_elimination(model)
+    obs = model.dataset.pharmpy.observations
+    init = obs.min() / 100  # 1% of smallest observation
+    model.parameters['POP_KM'].init = init
+    model.parameters['POP_KM'].fix = True
+    return model
+
+
 def michaelis_menten_elimination(model):
     popkm_symb = model.create_symbol('POP_KM')
     popkm_param = Parameter(popkm_symb.name, init=0.1, lower=0)

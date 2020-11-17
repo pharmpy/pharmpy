@@ -645,10 +645,12 @@ class Model(pharmpy.model.Model):
         if self._get_pk_record():
             if 'EVID' in df.columns:
                 if 'MDV' in df.columns:
-                    df.pharmpy.column_type['MDV'] == pharmpy.data.ColumnType.UNKNOWN
-                df.pharmpy.column_type['EVID'] == pharmpy.data.ColumnType.EVENT
+                    df.pharmpy.column_type['MDV'] = pharmpy.data.ColumnType.UNKNOWN
+                df.pharmpy.column_type['EVID'] = pharmpy.data.ColumnType.EVENT
             if 'AMT' in df.columns:
-                df.pharmpy.column_type['AMT'] == pharmpy.data.ColumnType.DOSE
+                df.pharmpy.column_type['AMT'] = pharmpy.data.ColumnType.DOSE
+            if 'TIME' in df.columns:
+                df.pharmpy.column_type['TIME'] = pharmpy.data.ColumnType.IDV
         df.name = self.dataset_path.stem
         return df
 

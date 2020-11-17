@@ -21,8 +21,44 @@ from pharmpy.modeling import (
     remove_lag_time,
     set_transit_compartments,
     tdist,
+    zero_order_elimination,
 )
 from pharmpy.plugins.nonmem.nmtran_parser import NMTranParser
+
+
+def test_zero_order_elimination(testdata):
+    model = Model(testdata / 'nonmem' / 'pheno.mod')
+    zero_order_elimination(model)
+    model.update_source()
+    correct = """$PROBLEM PHENOBARB SIMPLE MODEL
+$DATA pheno.dta IGNORE=@
+$INPUT ID TIME AMT WGT APGR DV
+$SUBROUTINE ADVAN6 TOL=3
+
+$MODEL COMPARTMENT=(CENTRAL DEFDOSE)
+$PK
+CLMM = THETA(4)
+KM = THETA(3)
+CL=THETA(1)*EXP(ETA(1))
+V=THETA(2)*EXP(ETA(2))
+S1=V
+
+$DES
+DADT(1) = -A(1)*CLMM/(A(1) + KM)
+$ERROR
+Y=F+F*EPS(1)
+
+$THETA (0,0.00469307) ; TVCL
+$THETA (0,1.00916) ; TVV
+$THETA  (0,0.067) FIX ; POP_KM
+$THETA  (0,0.1) ; POP_CLMM
+$OMEGA 0.0309626  ; IVCL
+$OMEGA 0.031128  ; IVV
+$SIGMA 0.013241
+
+$ESTIMATION METHOD=1 INTERACTION
+"""
+    assert str(model) == correct
 
 
 def test_michaelis_menten_elimination(testdata):

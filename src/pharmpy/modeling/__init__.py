@@ -18,6 +18,7 @@ from pharmpy.modeling.odes import (
     michaelis_menten_elimination,
     remove_lag_time,
     set_transit_compartments,
+    zero_order_elimination,
 )
 from pharmpy.modeling.remove_iiv import remove_iiv
 
@@ -42,4 +43,5 @@ __all__ = [
     'remove_iiv',
     'set_transit_compartments',
     'michaelis_menten_elimination',
+    'zero_order_elimination',
 ]

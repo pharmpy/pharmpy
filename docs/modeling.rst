@@ -252,6 +252,21 @@ Similarly, to remove lag time:
 Elimination rate
 ~~~~~~~~~~~~~~~~
 
+Zero-Order elimination
+======================
+
+.. jupyter-execute::
+   :hide-output:
+
+   model = Model(path / "pheno.mod")
+
+.. jupyter-execute::
+
+   from pharmpy.modeling import zero_order_elimination
+   zero_order_elimination(model)
+   model.update_source()
+   print_model_diff(model_ref, model)
+
 Michaelis-Menten elimination
 ============================
 
