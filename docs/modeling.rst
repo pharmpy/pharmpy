@@ -74,6 +74,15 @@ The functions for fixing/unfixing parameters take either a list of parameter nam
    fix_parameters(model, ['THETA(1)', 'THETA(2)'])
    unfix_parameters(model, 'THETA(1)')
 
+Add parameter
+=============
+
+.. jupyter-execute::
+
+   model = Model(path / 'pheno.mod')
+   add_parameter(model, 'MAT')
+   update_source(model)
+   print_model_diff(model_ref, model)
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 PK models and ODE systems

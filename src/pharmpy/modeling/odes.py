@@ -5,6 +5,22 @@ from pharmpy.parameter import Parameter
 from pharmpy.statements import Assignment, Bolus, CompartmentalSystem, ExplicitODESystem, Infusion
 
 
+def add_parameter(model, name):
+    """Add an individual or pk parameter to a model"""
+    _add_parameter(model, name)
+    return model
+
+
+def _add_parameter(model, name):
+    pops = model.create_symbol(f'POP_{name}')
+    pop_param = Parameter(pops.name, init=0.1, lower=0)
+    model.parameters.add(pop_param)
+    symb = model.create_symbol(name)
+    ass = Assignment(symb, pop_param.symbol)
+    model.statements.insert(0, ass)
+    return symb
+
+
 def explicit_odes(model):
     """Convert model from compartmental system to explicit ODE system
     or do nothing if it already has an explicit ODE system
@@ -43,19 +59,8 @@ def combined_mm_fo_elimination(model):
 
 
 def _do_michaelis_menten_elimination(model, combined=False):
-    popkm_symb = model.create_symbol('POP_KM')
-    popkm_param = Parameter(popkm_symb.name, init=0.1, lower=0)
-    model.parameters.add(popkm_param)
-    km_symb = model.create_symbol('KM')
-    ikm = Assignment(km_symb, popkm_param.symbol)
-    model.statements.insert(0, ikm)
-    popclmm_symb = model.create_symbol('POP_CLMM')
-    popclmm_param = Parameter(popclmm_symb.name, init=0.1, lower=0)
-    model.parameters.add(popclmm_param)
-    clmm_symb = model.create_symbol('CLMM')
-    iclmm = Assignment(clmm_symb, popclmm_param.symbol)
-    model.statements.insert(0, iclmm)
-
+    km = _add_parameter(model, 'KM')
+    clmm = _add_parameter(model, 'CLMM')
     odes = model.statements.ode_system
     central = odes.find_central()
     output = odes.find_output()
@@ -67,24 +72,13 @@ def _do_michaelis_menten_elimination(model, combined=False):
         vc = denom
     else:
         if combined:
-            popcl_symb = model.create_symbol('POP_CL')
-            popcl_param = Parameter(popcl_symb.name, init=0.1, lower=0)
-            model.parameters.add(popcl_param)
-            cl = model.create_symbol('CL')
-            icl = Assignment(cl, popcl_param.symbol)
-            model.statements.insert(0, icl)
-
-        popvc_symb = model.create_symbol('POP_VC')
-        popvc_param = Parameter(popvc_symb.name, init=0.1, lower=0)
-        model.parameters.add(popvc_param)
-        vc = model.create_symbol('VC')
-        ivc = Assignment(vc, popvc_param.symbol)
-        model.statements.insert(0, ivc)
+            cl = _add_parameter(model, 'CL')
+        vc = _add_parameter(model, 'VC')
     if not combined:
         cl = 0
 
     amount = sympy.Function(central.amount.name)(pharmpy.symbols.symbol('t'))
-    rate = (clmm_symb * km_symb / (km_symb + amount / vc) + cl) / vc
+    rate = (clmm * km / (km + amount / vc) + cl) / vc
     odes.add_flow(central, output, rate)
     model.statements.remove_symbol_definitions(numer.free_symbols, odes)
     model.remove_unused_parameters_and_rvs()
@@ -99,12 +93,7 @@ def set_transit_compartments(model, n):
     if len(transits) == n:
         pass
     elif len(transits) == 0:
-        popmdt_symb = model.create_symbol('POP_MDT')
-        mdt_param = Parameter(popmdt_symb.name, init=0.1, lower=0)
-        model.parameters.add(mdt_param)
-        mdt_symb = model.create_symbol('MDT')
-        imdt = Assignment(mdt_symb, mdt_param.symbol)
-        model.statements.insert(0, imdt)
+        mdt_symb = _add_parameter(model, 'MDT')
         rate = n / mdt_symb
         comp = odes.find_dosing()
         dose = comp.dose
@@ -146,19 +135,14 @@ def set_transit_compartments(model, n):
 
 def add_lag_time(model):
     """Add lag time to the dose compartment of model"""
-    mdt_symb = model.create_symbol('MDT')
     odes = model.statements.ode_system
     dosing_comp = odes.find_dosing()
     old_lag_time = dosing_comp.lag_time
+    mdt_symb = _add_parameter(model, 'MDT')
     dosing_comp.lag_time = mdt_symb
     if old_lag_time:
         model.statements.remove_symbol_definitions(old_lag_time.free_symbols, odes)
         model.remove_unused_parameters_and_rvs()
-    tvmdt_symb = model.create_symbol('POP_MDT')
-    mdt_param = Parameter(tvmdt_symb.name, init=0.1, lower=0)
-    model.parameters.add(mdt_param)
-    imdt = Assignment(mdt_symb, mdt_param.symbol)
-    model.statements.insert(0, imdt)
     return model
 
 
@@ -319,14 +303,9 @@ def add_zero_order_absorption(model, amount, to_comp, parameter_name):
     """Add zero order absorption to a compartment.
     Disregards what is currently in the model.
     """
-    tvmat_symb = model.create_symbol(f'POP_{parameter_name}')
-    mat_param = Parameter(tvmat_symb.name, init=0.1, lower=0)
-    model.parameters.add(mat_param)
-    mat_symb = model.create_symbol(parameter_name)
-    imat = Assignment(mat_symb, mat_param.symbol)
+    mat_symb = _add_parameter(model, parameter_name)
     new_dose = Infusion(amount, duration=mat_symb * 2)
     to_comp.dose = new_dose
-    model.statements.insert(0, imat)
 
 
 def add_first_order_absorption(model, dose, to_comp):
@@ -336,11 +315,6 @@ def add_first_order_absorption(model, dose, to_comp):
     odes = model.statements.ode_system
     depot = odes.add_compartment('DEPOT')
     depot.dose = dose
-    tvmat_symb = model.create_symbol('POP_MAT')
-    mat_param = Parameter(tvmat_symb.name, init=0.1, lower=0)
-    model.parameters.add(mat_param)
-    mat_symb = model.create_symbol('MAT')
-    imat = Assignment(mat_symb, mat_param.symbol)
-    model.statements.insert(0, imat)
-    odes.add_flow(depot, to_comp, 1 / pharmpy.symbols.symbol('MAT'))
+    mat_symb = _add_parameter(model, 'MAT')
+    odes.add_flow(depot, to_comp, 1 / mat_symb)
     return depot
