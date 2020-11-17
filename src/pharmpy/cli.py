@@ -378,6 +378,21 @@ def model_absorption_rate(args):
     write_model_or_dataset(model, None, path=args.output_file, force=args.force)
 
 
+def model_elimination_rate(args):
+    import pharmpy.modeling as modeling
+
+    model = args.model
+    if args.order == 'ZO':
+        modeling.zero_order_elimination(model)
+    elif args.order == 'FO':
+        modeling.first_order_elimination(model)
+    elif args.order == 'MM':
+        modeling.michaelis_menten_elimination(model)
+    elif args.order == 'comb-FO-MM':
+        modeling.combined_mm_fo_elimination(model)
+    write_model_or_dataset(model, None, path=args.output_file, force=args.force)
+
+
 def model_transit_compartments(args):
     from pharmpy.modeling import set_transit_compartments
 
@@ -930,6 +945,23 @@ parser_definition = [
                                 'choices': ['bolus', 'ZO', 'FO', 'seq-ZO-FO'],
                                 'type': str,
                                 'help': 'Absorption rate',
+                            },
+                        ],
+                    }
+                },
+                {
+                    'elimination_rate': {
+                        'help': 'Set elimination rate for a PK model',
+                        'description': 'Change elimination rate of a PK model to either 0th '
+                        'order, 1th order, Michaelis-Menten or combined 1-order-Michaelis-Menten.',
+                        'func': model_elimination_rate,
+                        'parents': [args_model_input, args_output],
+                        'args': [
+                            {
+                                'name': 'rate',
+                                'choices': ['ZO', 'FO', 'MM', 'comb-FO-MM'],
+                                'type': str,
+                                'help': 'Eliminiation rate',
                             },
                         ],
                     }
