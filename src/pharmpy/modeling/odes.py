@@ -49,8 +49,23 @@ def michaelis_menten_elimination(model):
     odes = model.statements.ode_system
     central = odes.find_central()
     output = odes.find_output()
-    rate = clmm_symb / (km_symb + sympy.Function(central.amount.name)(pharmpy.symbols.symbol('t')))
+    old_rate = odes.get_flow(central, output)
+    numer, denom = old_rate.as_numer_denom()
+    if denom != 1:
+        vc = denom
+    else:
+        popvc_symb = model.create_symbol('POP_VC')
+        popvc_param = Parameter(popvc_symb.name, init=0.1, lower=0)
+        model.parameters.add(popvc_param)
+        vc = model.create_symbol('VC')
+        ivc = Assignment(vc, popvc_param.symbol)
+        model.statements.insert(0, ivc)
+
+    amount = sympy.Function(central.amount.name)(pharmpy.symbols.symbol('t'))
+    rate = clmm_symb * km_symb / (km_symb + amount / vc) / vc
     odes.add_flow(central, output, rate)
+    model.statements.remove_symbol_definitions(numer.free_symbols, odes)
+    model.remove_unused_parameters_and_rvs()
     return model
 
 
