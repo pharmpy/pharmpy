@@ -16,6 +16,7 @@
 """
 
 import json
+import math
 from pathlib import Path
 
 import altair as alt
@@ -251,6 +252,18 @@ class ModelfitResults(Results):
     def ofv(self):
         """Final objective function value"""
         return self._ofv
+
+    @property
+    def aic(self):
+        """Final AIC value assuming the OFV to be -2LL"""
+        return self.ofv + 2 * len(self.model.parameters)
+
+    @property
+    def bic(self):
+        """Final BIC value assuming the OFV to be -2LL"""
+        return self.ofv + len(self.model.parameters) * math.log(
+            len(self.model.dataset.pharmpy.observations)
+        )
 
     @property
     def evaluation_ofv(self):

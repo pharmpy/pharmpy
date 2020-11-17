@@ -12,6 +12,12 @@ def test_ofv(pheno_lst):
     assert res.ofv == 586.27605628188053
 
 
+def test_aic_bic(testdata):
+    model = Model(testdata / 'nonmem' / 'pheno.mod')
+    assert model.modelfit_results.aic == 740.8947268137308
+    assert model.modelfit_results.bic == 756.111852398327033103
+
+
 def test_tool_files(pheno_lst):
     res = NONMEMChainedModelfitResults(pheno_lst)
     names = [str(p.name) for p in res.tool_files]
