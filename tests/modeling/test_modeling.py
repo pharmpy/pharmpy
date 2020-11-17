@@ -12,6 +12,7 @@ from pharmpy.modeling import (
     add_lag_time,
     bolus_absorption,
     boxcox,
+    combined_mm_fo_elimination,
     create_rv_block,
     explicit_odes,
     first_order_absorption,
@@ -126,6 +127,97 @@ $ERROR
 Y=F+F*EPS(1)
 $THETA  (0,0.1) ; POP_KM
 $THETA  (0,0.1) ; POP_CLMM
+$THETA  (0,0.1) ; POP_VC
+$SIGMA 0.013241
+$ESTIMATION METHOD=1 INTERACTION
+"""
+    assert str(model) == correct
+
+
+def test_combined_mm_fo_elimination(testdata):
+    code = """$PROBLEM PHENOBARB SIMPLE MODEL
+$DATA pheno.dta IGNORE=@
+$INPUT ID TIME AMT WGT APGR DV
+$SUBROUTINE ADVAN1 TRANS2
+$PK
+CL=THETA(1)*EXP(ETA(1))
+V=THETA(2)*EXP(ETA(2))
+S1=V
+$ERROR
+Y=F+F*EPS(1)
+$THETA (0,0.00469307) ; TVCL
+$THETA (0,1.00916) ; TVV
+$OMEGA 0.0309626  ; IVCL
+$OMEGA 0.031128  ; IVV
+$SIGMA 0.013241
+$ESTIMATION METHOD=1 INTERACTION
+"""
+    model = Model(StringIO(code))
+    model.source.path = testdata / 'nonmem' / 'pheno.mod'  # To be able to find dataset
+    combined_mm_fo_elimination(model)
+    model.update_source()
+    correct = """$PROBLEM PHENOBARB SIMPLE MODEL
+$DATA pheno.dta IGNORE=@
+$INPUT ID TIME AMT WGT APGR DV
+$SUBROUTINE ADVAN6 TOL=3
+$MODEL COMPARTMENT=(CENTRAL DEFDOSE)
+$PK
+CLMM = THETA(4)
+KM = THETA(3)
+CL=THETA(1)*EXP(ETA(1))
+V=THETA(2)*EXP(ETA(2))
+S1=V
+$DES
+DADT(1) = -A(1)*(CL + CLMM*KM/(A(1)/V + KM))/V
+$ERROR
+Y=F+F*EPS(1)
+$THETA (0,0.00469307) ; TVCL
+$THETA (0,1.00916) ; TVV
+$THETA  (0,0.1) ; POP_KM
+$THETA  (0,0.1) ; POP_CLMM
+$OMEGA 0.0309626  ; IVCL
+$OMEGA 0.031128  ; IVV
+$SIGMA 0.013241
+$ESTIMATION METHOD=1 INTERACTION
+"""
+    assert str(model) == correct
+
+
+def test_combined_mm_fo_elimination_from_k(testdata):
+    code = """$PROBLEM PHENOBARB SIMPLE MODEL
+$DATA pheno.dta IGNORE=@
+$INPUT ID TIME AMT WGT APGR DV
+$SUBROUTINE ADVAN1 TRANS1
+$PK
+K=THETA(1)*EXP(ETA(1))
+$ERROR
+Y=F+F*EPS(1)
+$THETA (0,0.00469307) ; TVCL
+$OMEGA 0.0309626  ; IVCL
+$SIGMA 0.013241
+$ESTIMATION METHOD=1 INTERACTION
+"""
+    model = Model(StringIO(code))
+    model.source.path = testdata / 'nonmem' / 'pheno.mod'  # To be able to find dataset
+    combined_mm_fo_elimination(model)
+    model.update_source()
+    correct = """$PROBLEM PHENOBARB SIMPLE MODEL
+$DATA pheno.dta IGNORE=@
+$INPUT ID TIME AMT WGT APGR DV
+$SUBROUTINE ADVAN6 TOL=3
+$MODEL COMPARTMENT=(CENTRAL DEFDOSE)
+$PK
+VC = THETA(4)
+CL = THETA(3)
+CLMM = THETA(2)
+KM = THETA(1)
+$DES
+DADT(1) = -A(1)*(CL + CLMM*KM/(A(1)/VC + KM))/VC
+$ERROR
+Y=F+F*EPS(1)
+$THETA  (0,0.1) ; POP_KM
+$THETA  (0,0.1) ; POP_CLMM
+$THETA  (0,0.1) ; POP_CL
 $THETA  (0,0.1) ; POP_VC
 $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION

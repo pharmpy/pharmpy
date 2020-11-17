@@ -14,6 +14,7 @@ from pharmpy.modeling.iiv_on_ruv import iiv_on_ruv
 from pharmpy.modeling.odes import (
     add_lag_time,
     bolus_absorption,
+    combined_mm_fo_elimination,
     explicit_odes,
     first_order_absorption,
     michaelis_menten_elimination,
@@ -22,6 +23,7 @@ from pharmpy.modeling.odes import (
     set_transit_compartments,
     zero_order_absorption,
     zero_order_elimination,
+    first_order_elimination,
 )
 from pharmpy.modeling.remove_iiv import remove_iiv
 
@@ -50,4 +52,6 @@ __all__ = [
     'set_transit_compartments',
     'michaelis_menten_elimination',
     'zero_order_elimination',
+    'combined_mm_fo_elimination',
+    'first_order_elimination',
 ]

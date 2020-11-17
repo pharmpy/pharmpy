@@ -252,7 +252,23 @@ Similarly, to remove lag time:
 Elimination rate
 ~~~~~~~~~~~~~~~~
 
-Zero-Order elimination
+First-order elimination
+=======================
+
+.. jupyter-execute::
+   :hide-output:
+
+   model = Model(path / "pheno.mod")
+
+.. jupyter-execute::
+
+   from pharmpy.modeling import first_order_elimination
+   first_order_elimination(model)
+   model.update_source()
+   print_model_diff(model_ref, model)
+
+
+Zero-order elimination
 ======================
 
 .. jupyter-execute::
@@ -282,6 +298,20 @@ Michaelis-Menten elimination
    model.update_source()
    print_model_diff(model_ref, model)
 
+Combined Michaelis-Menten + First-Order elimination
+===================================================
+
+.. jupyter-execute::
+   :hide-output:
+
+   model = Model(path / "pheno.mod")
+
+.. jupyter-execute::
+
+   from pharmpy.modeling import combined_mm_fo_elimination
+   combined_mm_fo_elimination(model)
+   model.update_source()
+   print_model_diff(model_ref, model)
 
 ~~~~~~~~~~~~~~~~~~~~~~~~
 Adding covariate effects

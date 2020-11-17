@@ -24,7 +24,7 @@ def first_order_elimination(model):
 
 
 def zero_order_elimination(model):
-    michaelis_menten_elimination(model)
+    _do_michaelis_menten_elimination(model)
     obs = model.dataset.pharmpy.observations
     init = obs.min() / 100  # 1% of smallest observation
     model.parameters['POP_KM'].init = init
@@ -33,6 +33,16 @@ def zero_order_elimination(model):
 
 
 def michaelis_menten_elimination(model):
+    _do_michaelis_menten_elimination(model)
+    return model
+
+
+def combined_mm_fo_elimination(model):
+    _do_michaelis_menten_elimination(model, combined=True)
+    return model
+
+
+def _do_michaelis_menten_elimination(model, combined=False):
     popkm_symb = model.create_symbol('POP_KM')
     popkm_param = Parameter(popkm_symb.name, init=0.1, lower=0)
     model.parameters.add(popkm_param)
@@ -52,17 +62,29 @@ def michaelis_menten_elimination(model):
     old_rate = odes.get_flow(central, output)
     numer, denom = old_rate.as_numer_denom()
     if denom != 1:
+        if combined:
+            cl = numer
         vc = denom
     else:
+        if combined:
+            popcl_symb = model.create_symbol('POP_CL')
+            popcl_param = Parameter(popcl_symb.name, init=0.1, lower=0)
+            model.parameters.add(popcl_param)
+            cl = model.create_symbol('CL')
+            icl = Assignment(cl, popcl_param.symbol)
+            model.statements.insert(0, icl)
+
         popvc_symb = model.create_symbol('POP_VC')
         popvc_param = Parameter(popvc_symb.name, init=0.1, lower=0)
         model.parameters.add(popvc_param)
         vc = model.create_symbol('VC')
         ivc = Assignment(vc, popvc_param.symbol)
         model.statements.insert(0, ivc)
+    if not combined:
+        cl = 0
 
     amount = sympy.Function(central.amount.name)(pharmpy.symbols.symbol('t'))
-    rate = clmm_symb * km_symb / (km_symb + amount / vc) / vc
+    rate = (clmm_symb * km_symb / (km_symb + amount / vc) + cl) / vc
     odes.add_flow(central, output, rate)
     model.statements.remove_symbol_definitions(numer.free_symbols, odes)
     model.remove_unused_parameters_and_rvs()
