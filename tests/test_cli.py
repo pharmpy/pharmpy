@@ -106,8 +106,6 @@ def test_results_linearize(datadir, fs):
 @pytest.mark.parametrize('eta_args', [['--etas', 'ETA(1) ETA(2)'], []])
 def test_create_rv_block(datadir, fs, eta_args):
     fs.add_real_file(datadir / 'pheno_real.mod', target_path='run1.mod')
-    fs.add_real_file(datadir / 'pheno_real.ext', target_path='run1.ext')
-    fs.add_real_file(datadir / 'pheno_real.phi', target_path='run1.phi')
     fs.add_real_file(datadir / 'pheno.dta', target_path='pheno.dta')
 
     args = ['model', 'create_rv_block', 'run1.mod'] + eta_args
@@ -127,8 +125,6 @@ def test_create_rv_block(datadir, fs, eta_args):
 @pytest.mark.parametrize('epsilons_args', [['--eps', 'EPS(1)'], [], ['--same_eta', 'False']])
 def test_iiv_on_ruv(datadir, fs, epsilons_args):
     fs.add_real_file(datadir / 'pheno_real.mod', target_path='run1.mod')
-    fs.add_real_file(datadir / 'pheno_real.ext', target_path='run1.ext')
-    fs.add_real_file(datadir / 'pheno_real.phi', target_path='run1.phi')
     fs.add_real_file(datadir / 'pheno.dta', target_path='pheno.dta')
 
     args = ['model', 'iiv_on_ruv', 'run1.mod'] + epsilons_args
@@ -142,3 +138,22 @@ def test_iiv_on_ruv(datadir, fs, epsilons_args):
 
     assert not re.search(r'EXP\(ETA\(3\)\)', mod_ori)
     assert re.search(r'EXP\(ETA\(3\)\)', mod_cov)
+
+
+@pytest.mark.parametrize('fs', [[['pkgutil'], [source, etas_record]]], indirect=True)
+@pytest.mark.parametrize('to_remove', [['--to_remove', 'ETA(2)'], []])
+def test_remove(datadir, fs, to_remove):
+    fs.add_real_file(datadir / 'pheno.mod', target_path='run1.mod')
+    fs.add_real_file(datadir / 'pheno.dta', target_path='pheno.dta')
+
+    args = ['model', 'remove_iiv', 'run1.mod'] + to_remove
+    cli.main(args)
+
+    with open('run1.mod', 'r') as f_ori, open('run2.mod', 'r') as f_cov:
+        mod_ori = f_ori.read()
+        mod_cov = f_cov.read()
+
+    assert mod_ori != mod_cov
+
+    assert re.search(r'EXP\(ETA\(2\)\)', mod_ori)
+    assert not re.search(r'EXP\(ETA\(2\)\)', mod_cov)

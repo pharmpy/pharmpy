@@ -493,6 +493,22 @@ def iiv_on_ruv(args):
     write_model_or_dataset(model, model.dataset, path=args.output_file, force=False)
 
 
+def remove_iiv(args):
+    """Subcommand to remove IIVs."""
+    from pharmpy.modeling import remove_iiv
+
+    model = args.model
+
+    try:
+        to_remove = args.to_remove.split(" ")
+    except AttributeError:
+        to_remove = args.to_remove
+
+    remove_iiv(model, to_remove)
+
+    write_model_or_dataset(model, model.dataset, path=args.output_file, force=False)
+
+
 def results_bootstrap(args):
     """Subcommand to generate bootstrap results"""
     from pharmpy.methods.bootstrap.results import psn_bootstrap_results
@@ -1107,6 +1123,24 @@ parser_definition = [
                                 'default': True,
                                 'help': 'whether all RUVs from input should use the same new ETA '
                                 'or if one ETA should be created for each RUV.',
+                            },
+                        ],
+                    }
+                },
+                {
+                    'remove_iiv': {
+                        'help': 'Removes IIVs',
+                        'description': 'Removes all IIV omegas given a list with eta names '
+                        'and/or parameter names',
+                        'func': remove_iiv,
+                        'parents': [args_model_input, args_output],
+                        'args': [
+                            {
+                                'name': '--to_remove',
+                                'type': str,
+                                'default': None,
+                                'help': 'List of etas and/or parameter name to remove. To remove '
+                                'all etas, omit this argument.',
                             },
                         ],
                     }

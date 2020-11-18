@@ -478,6 +478,35 @@ The new etas need to be denoted as *eta_new*.
    model.update_source()
    print_model_diff(model_ref, model)
 
+~~~~~~~~~~~~~
+Removing etas
+~~~~~~~~~~~~~
+
+Remove IIVs
+~~~~~~~~~~~
+
+.. jupyter-execute::
+
+   model = Model(path / "pheno.mod")
+
+Etas can also be removed by providing a list of etas and/or name of parameters to remove IIV from.
+
+.. jupyter-execute::
+
+   from pharmpy.modeling import remove_iiv
+   remove_iiv(model, ['ETA(1)', 'V'])
+   model.update_source()
+   print_model_diff(model_ref, model)
+
+If you want to remove all etas, leave argument empty.
+
+.. jupyter-execute::
+
+   model = Model(path / "pheno.mod")
+   from pharmpy.modeling import remove_iiv
+   remove_iiv(model)
+   model.update_source()
+   print_model_diff(model_ref, model)
 
 ~~~~~~~~~~~~~~~
 The error model
