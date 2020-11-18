@@ -1,6 +1,7 @@
+from io import StringIO
+
 from pharmpy import Model
 from pharmpy.modeling import additive_error, combined_error, proportional_error, remove_error
-from io import StringIO
 
 
 def test_remove_error_model(testdata):
