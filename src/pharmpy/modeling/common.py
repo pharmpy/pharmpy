@@ -11,7 +11,7 @@ def read_model(path):
 
 def write_model(model, path='', force=False):
     """Write model to file"""
-    model.write(path='', force=False)
+    model.write(path=path, force=False)
     return model
 
 
