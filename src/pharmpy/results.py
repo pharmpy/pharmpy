@@ -256,14 +256,16 @@ class ModelfitResults(Results):
     @property
     def aic(self):
         """Final AIC value assuming the OFV to be -2LL"""
-        return self.ofv + 2 * len(self.model.parameters)
+        parameters = self.model.parameters.copy()
+        parameters.remove_fixed()
+        return self.ofv + 2 * len(parameters)
 
     @property
     def bic(self):
         """Final BIC value assuming the OFV to be -2LL"""
-        return self.ofv + len(self.model.parameters) * math.log(
-            len(self.model.dataset.pharmpy.observations)
-        )
+        parameters = self.model.parameters.copy()
+        parameters.remove_fixed()
+        return self.ofv + len(parameters) * math.log(len(self.model.dataset.pharmpy.observations))
 
     @property
     def evaluation_ofv(self):
