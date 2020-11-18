@@ -318,3 +318,24 @@ def add_first_order_absorption(model, dose, to_comp):
     mat_symb = _add_parameter(model, 'MAT')
     odes.add_flow(depot, to_comp, 1 / mat_symb)
     return depot
+
+
+def add_peripheral_compartment(model):
+    odes = model.statements.ode_system
+    per = odes.find_peripherals()
+    n = len(per) + 1
+    q = _add_parameter(model, f'Q{n}')
+    vp = _add_parameter(model, f'VP{n}')
+
+    central = odes.find_central()
+    output = odes.find_output()
+    elimination_rate = odes.get_flow(central, output)
+    numer, denom = elimination_rate.as_numer_denom()
+    if denom != 1:
+        vc = denom
+    else:
+        pass
+    peripheral = odes.add_compartment(f'PERIPHERAL{n}')
+    odes.add_flow(central, peripheral, q / vc)
+    odes.add_flow(central, peripheral, q / vp)
+    return model

@@ -14,6 +14,7 @@ from pharmpy.modeling.iiv_on_ruv import iiv_on_ruv
 from pharmpy.modeling.odes import (
     add_lag_time,
     add_parameter,
+    add_peripheral_compartment,
     bolus_absorption,
     combined_mm_fo_elimination,
     explicit_odes,
@@ -59,4 +60,5 @@ __all__ = [
     'proportional_error',
     'combined_error',
     'remove_error',
+    'add_peripheral_compartment',
 ]
