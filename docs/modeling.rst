@@ -496,9 +496,9 @@ Removing the error model
 
 .. jupyter-execute::
 
-   from pharmpy.modeling import error_model
+   from pharmpy.modeling import remove_error
 
-   error_model(model, 'none')
+   remove_error(model)
    model.update_source()
    print_model_diff(model_ref, model)
 
@@ -512,9 +512,9 @@ Setting an additive error model
 
 .. jupyter-execute::
 
-   from pharmpy.modeling import error_model
+   from pharmpy.modeling import additive_error
 
-   error_model(model, 'additive')
+   additive_error(model)
    model.update_source()
    print_model_diff(model_ref, model)
 
@@ -528,9 +528,9 @@ Setting a proportional error model
 
 .. jupyter-execute::
 
-   from pharmpy.modeling import error_model
+   from pharmpy.modeling import proportional_error
 
-   error_model(model, 'proportional')
+   proportional_error(model)
    model.update_source()
    print_model_diff(model_ref, model)
 
@@ -544,9 +544,9 @@ Setting a combined additive and proportional error model
 
 .. jupyter-execute::
 
-   from pharmpy.modeling import error_model
+   from pharmpy.modeling import combined_error
 
-   error_model(model, 'combined')
+   combined_error(model)
    model.update_source()
    print_model_diff(model_ref, model)
 

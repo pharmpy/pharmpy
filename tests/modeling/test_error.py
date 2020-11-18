@@ -1,17 +1,17 @@
 from pharmpy import Model
-from pharmpy.modeling import error_model
+from pharmpy.modeling import additive_error, combined_error, proportional_error, remove_error
 
 
 def test_remove_error_model(testdata):
     model = Model(testdata / 'nonmem' / 'pheno.mod')
-    error_model(model, 'none')
+    remove_error(model)
     model.update_source()
     assert str(model).split('\n')[11] == 'Y = F'
 
 
 def test_additive_error_model(testdata):
     model = Model(testdata / 'nonmem' / 'pheno.mod')
-    error_model(model, 'additive')
+    additive_error(model)
     model.update_source()
     assert str(model).split('\n')[11] == 'Y = EPS(1) + F'
     assert str(model).split('\n')[17] == '$SIGMA  0.1 ; sigma'
@@ -19,7 +19,7 @@ def test_additive_error_model(testdata):
 
 def test_proportional_error_model(testdata):
     model = Model(testdata / 'nonmem' / 'pheno.mod')
-    error_model(model, 'proportional')
+    proportional_error(model)
     model.update_source()
     assert str(model).split('\n')[11] == 'Y=F+F*EPS(1)'
     assert str(model).split('\n')[17] == '$SIGMA  0.1 ; sigma'
@@ -27,7 +27,7 @@ def test_proportional_error_model(testdata):
 
 def test_combined_error_model(testdata):
     model = Model(testdata / 'nonmem' / 'pheno.mod')
-    error_model(model, 'combined')
+    combined_error(model)
     model.update_source()
     assert str(model).split('\n')[11] == 'Y = EPS(1)*F + EPS(2) + F'
     assert str(model).split('\n')[17] == '$SIGMA  0.1 ; sigma_prop'

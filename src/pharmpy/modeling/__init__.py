@@ -7,7 +7,7 @@ from pharmpy.modeling.common import (
     write_model,
 )
 from pharmpy.modeling.covariate_effect import add_covariate_effect
-from pharmpy.modeling.error import error_model
+from pharmpy.modeling.error import additive_error, combined_error, proportional_error, remove_error
 from pharmpy.modeling.eta_additions import add_etas
 from pharmpy.modeling.eta_transformations import boxcox, john_draper, tdist
 from pharmpy.modeling.iiv_on_ruv import iiv_on_ruv
@@ -48,7 +48,6 @@ __all__ = [
     'unfix_parameters',
     'update_source',
     'read_model',
-    'error_model',
     'write_model',
     'remove_iiv',
     'set_transit_compartments',
@@ -56,4 +55,8 @@ __all__ = [
     'zero_order_elimination',
     'combined_mm_fo_elimination',
     'first_order_elimination',
+    'additive_error',
+    'proportional_error',
+    'combined_error',
+    'remove_error',
 ]
