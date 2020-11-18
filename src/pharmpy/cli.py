@@ -509,6 +509,16 @@ def remove_iiv(args):
     write_model_or_dataset(model, model.dataset, path=args.output_file, force=False)
 
 
+def remove_iov(args):
+    """Subcommand to remove IOVs."""
+    from pharmpy.modeling import remove_iov
+
+    model = args.model
+    remove_iov(model)
+
+    write_model_or_dataset(model, model.dataset, path=args.output_file, force=False)
+
+
 def results_bootstrap(args):
     """Subcommand to generate bootstrap results"""
     from pharmpy.methods.bootstrap.results import psn_bootstrap_results
@@ -1143,6 +1153,14 @@ parser_definition = [
                                 'all etas, omit this argument.',
                             },
                         ],
+                    }
+                },
+                {
+                    'remove_iov': {
+                        'help': 'Removes IOVs',
+                        'description': 'Removes all IOV omegas',
+                        'func': remove_iov,
+                        'parents': [args_model_input, args_output],
                     }
                 },
             ],

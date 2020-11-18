@@ -142,7 +142,7 @@ def test_iiv_on_ruv(datadir, fs, epsilons_args):
 
 @pytest.mark.parametrize('fs', [[['pkgutil'], [source, etas_record]]], indirect=True)
 @pytest.mark.parametrize('to_remove', [['--to_remove', 'ETA(2)'], []])
-def test_remove(datadir, fs, to_remove):
+def test_remove_iiv(datadir, fs, to_remove):
     fs.add_real_file(datadir / 'pheno.mod', target_path='run1.mod')
     fs.add_real_file(datadir / 'pheno.dta', target_path='pheno.dta')
 
@@ -157,3 +157,24 @@ def test_remove(datadir, fs, to_remove):
 
     assert re.search(r'EXP\(ETA\(2\)\)', mod_ori)
     assert not re.search(r'EXP\(ETA\(2\)\)', mod_cov)
+
+
+@pytest.mark.parametrize('fs', [[['pkgutil'], [source, etas_record]]], indirect=True)
+def test_remove_iov(datadir, fs):
+    fs.add_real_file(datadir / 'qa/iov.mod', target_path='run1.mod')
+    fs.add_real_file(datadir / 'pheno.dta', target_path='pheno.dta')
+
+    args = ['model', 'remove_iov', 'run1.mod']
+    cli.main(args)
+
+    with open('run1.mod', 'r') as f_ori, open('run2.mod', 'r') as f_cov:
+        mod_ori = f_ori.read()
+        mod_cov = f_cov.read()
+
+    assert mod_ori != mod_cov
+
+    assert re.search('SAME', mod_ori)
+    assert not re.search('SAME', mod_cov)
+
+    assert re.search(r'ETA\(3\)', mod_ori)
+    assert not re.search(r'ETA\(3\)', mod_cov)

@@ -20,6 +20,7 @@ from pharmpy.modeling import (
     john_draper,
     michaelis_menten_elimination,
     remove_iiv,
+    remove_iov,
     remove_lag_time,
     seq_zo_fo_absorption,
     set_transit_compartments,
@@ -1446,3 +1447,40 @@ def test_remove_iiv(testdata, etas, pk_ref, omega_ref):
     rec_omega = ''.join(str(rec) for rec in model.control_stream.get_records('OMEGA'))
 
     assert rec_omega == omega_ref
+
+
+def test_remove_iov(testdata):
+    model = Model(testdata / 'nonmem/pheno_block.mod')
+
+    model_str = str(model)
+    model_with_iov = re.sub(
+        r'\$OMEGA 0.031128  ; IVV\n\$OMEGA 0.1',
+        r'$OMEGA BLOCK(1)\n0.1\n$OMEGA BLOCK(1) SAME\n',
+        model_str,
+    )
+
+    model.control_stream = NMTranParser().parse(model_with_iov)
+
+    remove_iov(model)
+    model.update_source()
+
+    assert (
+        str(model.get_pred_pk_record()) == '$PK\n'
+        'CL=THETA(1)*EXP(ETA(1))\n'
+        'V = THETA(2)\n'
+        'S1 = ETA(2) + ETA(3) + V\n\n'
+    )
+
+    rec_omega = ''.join(str(rec) for rec in model.control_stream.get_records('OMEGA'))
+
+    assert (
+        rec_omega == '$OMEGA 0.0309626  ; IVCL\n'
+        '$OMEGA BLOCK(2)\n'
+        '0.0309626\n'
+        '0.0005 0.031128\n'
+    )
+
+    model = Model(testdata / 'nonmem/pheno_block.mod')
+
+    with pytest.warns(UserWarning):
+        remove_iov(model)

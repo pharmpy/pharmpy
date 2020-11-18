@@ -508,6 +508,19 @@ If you want to remove all etas, leave argument empty.
    model.update_source()
    print_model_diff(model_ref, model)
 
+Remove IOVs
+~~~~~~~~~~~
+
+You can remove IOVs as well, however all IOV omegas will be removed.
+
+.. jupyter-execute::
+   :hide-output:
+
+   model = Model(path / "pheno.mod")
+   from pharmpy.modeling import remove_iov
+   remove_iov(model)
+   model.update_source()
+
 ~~~~~~~~~~~~~~~
 The error model
 ~~~~~~~~~~~~~~~

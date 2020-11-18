@@ -28,6 +28,7 @@ from pharmpy.modeling.odes import (
     zero_order_elimination,
 )
 from pharmpy.modeling.remove_iiv import remove_iiv
+from pharmpy.modeling.remove_iov import remove_iov
 
 __all__ = [
     'add_parameter',
@@ -51,6 +52,7 @@ __all__ = [
     'read_model',
     'write_model',
     'remove_iiv',
+    'remove_iov',
     'set_transit_compartments',
     'michaelis_menten_elimination',
     'zero_order_elimination',
