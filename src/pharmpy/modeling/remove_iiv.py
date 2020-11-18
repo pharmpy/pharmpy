@@ -1,12 +1,15 @@
-import warnings
-
-from pharmpy.random_variables import RandomVariables
+from pharmpy.random_variables import RandomVariables, VariabilityLevel
+from pharmpy.statements import Assignment
 from pharmpy.symbols import symbol as S
 
 
-def remove_iiv(model, list_of_etas=None):
-    rvs, pset, sset = model.random_variables, model.parameters, model.statements
-    etas = _get_etas(model, list_of_etas)
+class RVInputException(Exception):
+    pass
+
+
+def remove_iiv(model, list_to_remove=None):
+    rvs, sset = model.random_variables, model.statements
+    etas = _get_etas(model, list_to_remove)
 
     for eta in etas:
         rvs.discard(eta)
@@ -15,22 +18,41 @@ def remove_iiv(model, list_of_etas=None):
         statement.expression = statement.expression.subs(S(eta.name), 0)
 
     model.random_variables = rvs
-    model.parameters = pset
     model.statements = sset
 
     return model
 
 
-def _get_etas(model, list_of_etas):
+def _get_etas(model, list_to_remove):
     rvs = model.random_variables
+    sset = model.statements
+    symbols_all = [s.symbol.name for s in model.statements if isinstance(s, Assignment)]
 
-    if list_of_etas is None:
-        return RandomVariables(rvs.etas)
-    else:
-        etas = []
-        for eta in list_of_etas:
-            try:
-                etas.append(rvs[eta.upper()])
-            except KeyError:
-                warnings.warn(f'Random variable "{eta}" does not exist')
-        return RandomVariables(etas)
+    if list_to_remove is None:
+        list_to_remove = [rv for rv in rvs.etas]
+
+    etas = []
+    symbols = []
+    for variable in list_to_remove:
+        try:
+            eta = rvs[variable]
+        except KeyError:
+            if variable in symbols_all:
+                symbols.append(variable)
+                continue
+            else:
+                raise RVInputException(f'Random variable does not exist: {variable}')
+
+        if eta.variability_level == VariabilityLevel.IOV:
+            if list_to_remove:
+                raise RVInputException(f'Random variable cannot be IOV: {variable}')
+            continue
+
+        etas.append(eta)
+
+    for symbol in symbols:
+        terms = sset.find_assignment(symbol).free_symbols
+        eta_set = terms.intersection(rvs.free_symbols)
+        etas += [rvs[eta.name] for eta in eta_set]
+
+    return RandomVariables(etas)

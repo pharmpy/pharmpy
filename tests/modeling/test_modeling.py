@@ -1422,6 +1422,18 @@ def test_iiv_on_ruv(pheno_path, epsilons, same_eta, err_ref, omega_ref):
             '$PK\n' 'CL = THETA(1)\n' 'V = THETA(2)\n' 'S1 = V\n\n',
             '',
         ),
+        (
+            ['CL'],
+            '$PK\n'
+            'CL = THETA(1)\n'
+            'V = THETA(2)*EXP(ETA(1))\n'
+            'S1 = ETA(2) + ETA(3) + ETA(4) + V\n\n',
+            '$OMEGA 0.031128  ; IVV\n'
+            '$OMEGA 0.1\n'
+            '$OMEGA BLOCK(2)\n'
+            '0.0309626\n'
+            '0.0005 0.031128\n',
+        ),
     ],
 )
 def test_remove_iiv(testdata, etas, pk_ref, omega_ref):
