@@ -80,9 +80,9 @@ def update_random_variables(model, old, new):
     new_names = {rv.name for rv in new}
     old_names = {rv.name for rv in old}
     removed = old_names - new_names
+    modified_names = []
     if removed:
         remove_records = []
-        next_eta = 1
         for omega_record in model.control_stream.get_records(
             'OMEGA'
         ) + model.control_stream.get_records('SIGMA'):
@@ -92,13 +92,7 @@ def update_random_variables(model, old, new):
             elif not removed.isdisjoint(current_names):
                 # one or more in the record
                 omega_record.remove(removed & current_names)
-                omega_record.renumber(next_eta)
-                # FIXME: No handling of OMEGA(1,1) etc in code
-                next_eta += len(omega_record)
-            else:
-                # keep all
-                omega_record.renumber(next_eta)
-                next_eta += len(omega_record)
+                modified_names += current_names
         model.control_stream.remove_records(remove_records)
 
     new_maps = []
@@ -132,6 +126,10 @@ def update_random_variables(model, old, new):
 
     for rvs, dist in new.distributions():
         rv_names = [rv.name for rv in rvs]
+
+        if set(modified_names).issubset(rv_names) and modified_names:
+            continue
+
         if rvs not in rvs_old and set(rv_names).issubset(old_names):
             records = get_omega_records(model, rv_names)
             model.control_stream.remove_records(records)

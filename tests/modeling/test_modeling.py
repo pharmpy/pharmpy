@@ -1388,29 +1388,49 @@ def test_iiv_on_ruv(pheno_path, epsilons, same_eta, err_ref, omega_ref):
 
 
 @pytest.mark.parametrize(
-    'etas, pk_ref, omega_len',
+    'etas, pk_ref, omega_ref',
     [
         (
             ['ETA(1)'],
-            '$PK\n' 'CL = THETA(1)\n' 'V = THETA(2)*EXP(ETA(1))\n' 'S1=V\n\n',
-            1,
+            '$PK\n'
+            'CL = THETA(1)\n'
+            'V = THETA(2)*EXP(ETA(1))\n'
+            'S1 = ETA(2) + ETA(3) + ETA(4) + V\n\n',
+            '$OMEGA 0.031128  ; IVV\n'
+            '$OMEGA 0.1\n'
+            '$OMEGA BLOCK(2)\n'
+            '0.0309626\n'
+            '0.0005 0.031128\n',
         ),
         (
             ['ETA(1)', 'ETA(2)'],
-            '$PK\n' 'CL = THETA(1)\n' 'V = THETA(2)\n' 'S1=V\n\n',
-            0,
+            '$PK\n' 'CL = THETA(1)\n' 'V = THETA(2)\n' 'S1 = ETA(1) + ETA(2) + ETA(3) + V\n\n',
+            '$OMEGA 0.1\n' '$OMEGA BLOCK(2)\n' '0.0309626\n' '0.0005 0.031128\n',
+        ),
+        (
+            ['ETA(1)', 'ETA(4)'],
+            '$PK\n' 'CL = THETA(1)\n' 'V = THETA(2)*EXP(ETA(1))\n' 'S1 = ETA(2) + ETA(3) + V\n\n',
+            '$OMEGA 0.031128  ; IVV\n' '$OMEGA 0.1\n' '$OMEGA BLOCK(1)\n' '0.031128\n',
+        ),
+        (
+            ['ETA(4)', 'ETA(5)'],
+            '$PK\n' 'CL=THETA(1)*EXP(ETA(1))\n' 'V=THETA(2)*EXP(ETA(2))\n' 'S1 = ETA(3) + V\n\n',
+            '$OMEGA 0.0309626  ; IVCL\n' '$OMEGA 0.031128  ; IVV\n' '$OMEGA 0.1\n',
         ),
         (
             None,
-            '$PK\n' 'CL = THETA(1)\n' 'V = THETA(2)\n' 'S1=V\n\n',
-            0,
+            '$PK\n' 'CL = THETA(1)\n' 'V = THETA(2)\n' 'S1 = V\n\n',
+            '',
         ),
     ],
 )
-def test_remove_iiv(testdata, etas, pk_ref, omega_len):
-    model = Model(testdata / 'nonmem/pheno.mod')
+def test_remove_iiv(testdata, etas, pk_ref, omega_ref):
+    model = Model(testdata / 'nonmem/pheno_block.mod')
     remove_iiv(model, etas)
     model.update_source()
 
     assert str(model.get_pred_pk_record()) == pk_ref
-    assert len(model.control_stream.get_records('OMEGA')) == omega_len
+
+    rec_omega = ''.join(str(rec) for rec in model.control_stream.get_records('OMEGA'))
+
+    assert rec_omega == omega_ref
