@@ -75,3 +75,4 @@ def error_model(model, error_model):
         model.random_variables.add(eps_add)
     else:
         raise ValueError(f'Requested error_model {error_model} but only ' f'none are supported')
+    return model
