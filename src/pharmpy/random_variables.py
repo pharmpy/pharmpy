@@ -166,6 +166,22 @@ class RandomVariables(OrderedSet):
             res += '\n'.join(lines) + '\n'
         return res
 
+    def _repr_latex_(self):
+        lines = []
+        for rvs, dist in self.distributions():
+            if isinstance(dist, stats.joint_rv_types.MultivariateNormalDistribution):
+                rv_vec = sympy.Matrix(rvs)._repr_latex_()[1:-1]
+                mean_vec = dist.mu._repr_latex_()[1:-1]
+                sigma = dist.sigma._repr_latex_()[1:-1]
+                latex = rv_vec + r' & \sim \mathcal{N} \left(' + mean_vec + ',' + sigma + r'\right)'
+            else:
+                rv = rvs[0]._repr_latex_()[1:-1]
+                mean = dist.mean._repr_latex_()[1:-1]
+                sigma = (dist.std ** 2)._repr_latex_()[1:-1]
+                latex = rv + r' & \sim  \mathcal{N} \left(' + mean + ',' + sigma + r'\right)'
+            lines.append(latex)
+        return '\\begin{align}\n' + r' \\ '.join(lines) + '\\end{align}'
+
     @property
     def free_symbols(self):
         symbs = set()
