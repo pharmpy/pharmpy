@@ -23,13 +23,14 @@ def remove_iiv(model, list_to_remove=None):
     etas = _get_etas(model, list_to_remove)
 
     for eta in etas:
-        rvs.discard(eta)
-
         statement = sset.find_assignment(eta.name, is_symbol=False)
         statement.expression = statement.expression.subs(S(eta.name), 0)
+        rvs.discard(eta)
 
     model.random_variables = rvs
     model.statements = sset
+
+    model.modelfit_results = None
 
     return model
 
