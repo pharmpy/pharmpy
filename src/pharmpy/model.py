@@ -54,6 +54,11 @@ class Model:
         model.dependent_variable_symbol = self.dependent_variable_symbol
         return model
 
+    def _repr_html_(self):
+        stat = self.statements._repr_html_()
+        rvs = self.random_variables._repr_latex_()
+        return f'<hr>{stat}<hr>${rvs}$<hr>{self.parameters._repr_html_()}<hr>'
+
     @property
     def modelfit_results(self):
         return None

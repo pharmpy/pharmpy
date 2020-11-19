@@ -73,6 +73,11 @@ class Assignment:
     def __repr__(self):
         return f'{self.symbol} := {self.expression}'.upper()
 
+    def _repr_latex_(self):
+        sym = self.symbol._repr_latex_()[1:-1]
+        expr = self.expression._repr_latex_()[1:-1]
+        return f'${sym} := {expr}$'
+
 
 class ODESystem:
     """Base class and placeholder for ODE systems of different forms"""
@@ -167,6 +172,17 @@ class ExplicitODESystem(ODESystem):
             and self.odes == other.odes
             and self.ics == other.ics
         )
+
+    def _repr_latex_(self):
+        rows = []
+        for ode in self.odes:
+            ode_repr = ode._repr_latex_()[1:-1]
+            rows.append(ode_repr)
+        for k, v in self.ics.items():
+            ics_eq = sympy.Eq(k, v)
+            ics_repr = ics_eq._repr_latex_()[1:-1]
+            rows.append(ics_repr)
+        return r'\begin{cases} ' + r' \\ '.join(rows) + r' \end{cases}'
 
 
 class CompartmentalSystem(ODESystem):
@@ -437,6 +453,11 @@ class CompartmentalSystem(ODESystem):
     def __len__(self):
         """Get the number of compartments including output"""
         return len(self._g.nodes)
+
+    def _repr_html_(self):
+        # Use Unicode art for now. There should be ways of drawing networkx
+        s = str(self)
+        return f'<pre>{s}</pre>'
 
     def __str__(self):
         output = self.find_output()
@@ -785,3 +806,13 @@ class ModelStatements(list):
         for statement in self:
             s += str(statement)
         return s
+
+    def _repr_html_(self):
+        html = ''
+        for statement in self:
+            if hasattr(statement, '_repr_html_'):
+                s = statement._repr_html_()
+            else:
+                s = f'${statement._repr_latex_()}$'
+            html += s
+        return html
