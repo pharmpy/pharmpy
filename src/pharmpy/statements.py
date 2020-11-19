@@ -479,7 +479,7 @@ class CompartmentalSystem(ODESystem):
             bottom.append(curdepot + central_box[i] + flow + output_box[i])
 
         lower = []
-        if periphs:
+        if periphs and len(periphs) > 1:
             down_arrow = vertical_arrow(str(self.get_flow(central, periphs[1])))
             up_arrow = vertical_arrow(str(self.get_flow(periphs[1], central)), down=False)
             for i in range(0, len(up_arrow)):
