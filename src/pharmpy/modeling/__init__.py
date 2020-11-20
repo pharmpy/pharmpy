@@ -29,6 +29,7 @@ from pharmpy.modeling.odes import (
 )
 from pharmpy.modeling.remove_iiv import remove_iiv
 from pharmpy.modeling.remove_iov import remove_iov
+from pharmpy.modeling.update_inits import update_inits
 
 __all__ = [
     'add_parameter',
@@ -63,4 +64,5 @@ __all__ = [
     'combined_error',
     'remove_error',
     'add_peripheral_compartment',
+    'update_inits',
 ]

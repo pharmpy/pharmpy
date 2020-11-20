@@ -312,14 +312,7 @@ class Model(pharmpy.model.Model):
         self._updated_etas_file = self.source.path.with_suffix('.phi')
 
     def _sort_eta_columns(self, df):
-        colnames = df.columns
-
-        def keyfunc(name):
-            m = re.match(r'ETA\((\d+)\)', name)
-            return int(m.group(1))
-
-        sorted_colnames = colnames.sort(key=keyfunc)
-        return df.reindex(sorted_colnames, axis=1)
+        return df.reindex(sorted(df.columns), axis=1)
 
     @property
     def statements(self):

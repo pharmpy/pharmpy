@@ -1,3 +1,4 @@
+import os
 import re
 from io import StringIO
 
@@ -25,6 +26,7 @@ from pharmpy.modeling import (
     seq_zo_fo_absorption,
     set_transit_compartments,
     tdist,
+    update_inits,
     zero_order_absorption,
     zero_order_elimination,
 )
@@ -1484,3 +1486,19 @@ def test_remove_iov(testdata):
 
     with pytest.warns(UserWarning):
         remove_iov(model)
+
+
+def test_update_inits(testdata):
+    with Patcher(additional_skip_names=['pkgutil']) as patcher:
+        fs = patcher.fs
+
+        fs.add_real_file(testdata / 'nonmem/pheno.mod', target_path='run1.mod')
+        fs.add_real_file(testdata / 'nonmem/pheno.phi', target_path='run1.phi')
+        fs.add_real_file(testdata / 'nonmem/pheno.ext', target_path='run1.ext')
+        fs.add_real_file(testdata / 'nonmem/pheno.dta', target_path='pheno.dta')
+        model = Model('run1.mod')
+        update_inits(model)
+        model.update_source()
+
+        assert '$ETAS FILE=run1_input.phi' in str(model)
+        assert os.path.isfile('run1_input.phi')
