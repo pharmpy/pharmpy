@@ -180,7 +180,7 @@ class RandomVariables(OrderedSet):
                 sigma = (dist.std ** 2)._repr_latex_()[1:-1]
                 latex = rv + r' & \sim  \mathcal{N} \left(' + mean + ',' + sigma + r'\right)'
             lines.append(latex)
-        return '\\begin{align}\n' + r' \\ '.join(lines) + '\\end{align}'
+        return '\\begin{align*}\n' + r' \\ '.join(lines) + '\\end{align*}'
 
     @property
     def free_symbols(self):

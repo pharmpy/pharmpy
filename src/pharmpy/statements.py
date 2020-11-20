@@ -808,11 +808,16 @@ class ModelStatements(list):
         return s
 
     def _repr_html_(self):
-        html = ''
+        html = r'\begin{align*}'
         for statement in self:
             if hasattr(statement, '_repr_html_'):
+                html += '\\end{align*}'
                 s = statement._repr_html_()
+                html += s + '\\begin{align*}'
             else:
                 s = f'${statement._repr_latex_()}$'
-            html += s
-        return html
+                s = s.replace(':=', '&:=')
+                s = s.replace('$', '')
+                s = s + r'\\'
+                html += s
+        return html + '\\end{align*}'
