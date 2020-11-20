@@ -1,3 +1,15 @@
+0.11.0 (2020-11-20)
+-------------------
+
+* Method df.pharmpy.observations to extract observations from dataframe
+* Add ColumnTypes EVENT and DOSE
+* Add model.to_base_model to convert model to its raw base model form
+* New functions in modeling: remove_iiv, zero_order_elimination,
+  comined_mm_fo_elimination and add_parameter
+* Split modeling.absorption_rate and error into multiple functions
+* Add calculations of AIC and BIC to ModelfitResults
+* Improved pretty printing
+
 0.10.0 (2020-11-16)
 -------------------
 
