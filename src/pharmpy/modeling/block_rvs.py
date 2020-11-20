@@ -111,11 +111,18 @@ def _merge_rvs(model, rvs):
 def _choose_param_init(model, rvs, params):
     res = model.modelfit_results
     rvs_names = [rv.name for rv in rvs]
+
+    etas = []
+    for i in range(len(rvs)):
+        elem = rvs.covariance_matrix().row(i).col(i)[0]
+        if str(elem) in [p.name for p in params]:
+            etas.append(rvs_names[i])
+
     sd = np.array([np.sqrt(params[0].init), np.sqrt(params[1].init)])
 
     if res is not None:
         ie = res.individual_estimates
-        eta_corr = ie[rvs_names].corr()
+        eta_corr = ie[etas].corr()
         cov = math.corr2cov(eta_corr.to_numpy(), sd)
         cov[cov == 0] = 0.0001
         cov = math.nearest_posdef(cov)
