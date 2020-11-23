@@ -682,17 +682,24 @@ class ModelStatements(list):
         for assignment in self:
             assignment.subs(substitutions)
 
-    def find_assignment(self, variable, is_symbol=True):
-        """Returns full last statement given the symbol or variable of interest of
-        an assignment"""
-        assignment = None
+    def find_assignment(self, variable, is_symbol=True, last=True):
+        """Returns full last statement or all assignments that contains the symbol or
+        variable of interest of an assignment"""
+        assignments = []
         for statement in self:
             if isinstance(statement, Assignment):
                 if is_symbol and str(statement.symbol) == variable:
-                    assignment = statement
+                    assignments.append(statement)
                 elif not is_symbol and variable in [s.name for s in statement.free_symbols]:
-                    assignment = statement
-        return assignment
+                    assignments.append(statement)
+
+        if last:
+            try:
+                return assignments[-1]
+            except IndexError:
+                return None
+        else:
+            return assignments
 
     def reassign(self, symbol, expression):
         """Reassign symbol to expression"""
