@@ -47,6 +47,7 @@ class Model(pharmpy.model.Model):
         self._dataset_updated = False
         self._modelfit_results = None
         self.dependent_variable_symbol = symbols.symbol('Y')
+        self.individual_prediction_symbol = symbols.symbol('CIPREDI')
 
     @property
     def name(self):

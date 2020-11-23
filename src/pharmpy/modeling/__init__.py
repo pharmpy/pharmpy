@@ -27,6 +27,7 @@ from pharmpy.modeling.odes import (
     zero_order_absorption,
     zero_order_elimination,
 )
+from pharmpy.modeling.power_on_ruv import power_on_ruv
 from pharmpy.modeling.remove_iiv import remove_iiv
 from pharmpy.modeling.remove_iov import remove_iov
 from pharmpy.modeling.update_inits import update_inits
@@ -65,4 +66,5 @@ __all__ = [
     'remove_error',
     'add_peripheral_compartment',
     'update_inits',
+    'power_on_ruv',
 ]

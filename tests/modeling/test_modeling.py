@@ -20,6 +20,7 @@ from pharmpy.modeling import (
     iiv_on_ruv,
     john_draper,
     michaelis_menten_elimination,
+    power_on_ruv,
     remove_iiv,
     remove_iov,
     remove_lag_time,
@@ -1502,3 +1503,49 @@ def test_update_inits(testdata):
 
         assert '$ETAS FILE=run1_input.phi' in str(model)
         assert os.path.isfile('run1_input.phi')
+
+
+@pytest.mark.parametrize(
+    'epsilons, err_ref, theta_ref',
+    [
+        (
+            ['EPS(1)'],
+            'EPSP1 = CIPREDI**THETA(4)*EPS(1)\n'
+            'Y = EPSP1*W + F\n'
+            'IPRED=F+EPS(2)\n'
+            'IRES=DV-IPRED+EPS(3)',
+            '$THETA  0.01 ; power1',
+        ),
+    ],
+)
+def test_power_on_ruv(pheno_path, epsilons, err_ref, theta_ref):
+    model = Model(pheno_path)
+
+    model_str = str(model)
+    model_more_eps = re.sub(
+        r'( 0.031128  ;        IVV\n)',
+        r'\1$OMEGA 0.1\n$OMEGA 0.1',
+        model_str,
+    )
+    model_more_eps = re.sub(
+        r'IPRED=F\nIRES=DV-IPRED',
+        r'IPRED=F+EPS(2)\nIRES=DV-IPRED+EPS(3)',
+        model_more_eps,
+    )
+
+    model.control_stream = NMTranParser().parse(model_more_eps)
+
+    power_on_ruv(model, epsilons)
+    model.update_source()
+
+    rec_err = str(model.control_stream.get_records('ERROR')[0])
+    assert rec_err == f'$ERROR\n' f'W=F\n' f'{err_ref}\n' f'IWRES=IRES/W\n\n'
+
+    rec_theta = ''.join(str(rec) for rec in model.control_stream.get_records('THETA'))
+
+    assert (
+        rec_theta == f'$THETA (0,0.00469307) ; PTVCL\n'
+        f'$THETA (0,1.00916) ; PTVV\n'
+        f'$THETA (-.99,.1)\n'
+        f'{theta_ref}\n'
+    )
