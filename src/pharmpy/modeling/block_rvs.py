@@ -1,3 +1,7 @@
+"""
+:meta private:
+"""
+
 import numpy as np
 from sympy.stats.joint_rv_types import MultivariateNormalDistribution
 

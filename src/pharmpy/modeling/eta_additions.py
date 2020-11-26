@@ -1,3 +1,7 @@
+"""
+:meta private:
+"""
+
 from operator import add, mul
 
 import sympy

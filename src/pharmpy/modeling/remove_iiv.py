@@ -1,3 +1,7 @@
+"""
+:meta private:
+"""
+
 from pharmpy.random_variables import RandomVariables, VariabilityLevel
 from pharmpy.statements import Assignment
 from pharmpy.symbols import symbol as S

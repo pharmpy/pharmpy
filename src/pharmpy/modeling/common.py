@@ -1,4 +1,6 @@
-# Common modeling pipeline elements
+"""Common modeling pipeline elements
+:meta private:
+"""
 
 from pharmpy.model_factory import Model
 

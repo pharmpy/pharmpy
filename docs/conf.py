@@ -59,7 +59,7 @@ napoleon_use_param = False
 # if this is True, todo and todolist produce output, else they produce nothing
 todo_include_todos = True
 
-# inheritance_graph_attrs = dict()
-# inheritance_node_attrs = dict(font='Palatino', color='gray50', fontcolor='black')
-# inheritance_edge_attrs = dict(color='maroon')
-# graphviz_output_format = 'svg'
+inheritance_graph_attrs = dict()
+inheritance_node_attrs = dict(font='Palatino', color='gray50', fontcolor='black')
+inheritance_edge_attrs = dict(color='maroon')
+graphviz_output_format = 'svg'

@@ -1,3 +1,7 @@
+"""
+:meta private:
+"""
+
 import sympy
 
 import pharmpy.symbols

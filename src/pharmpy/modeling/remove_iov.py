@@ -1,3 +1,7 @@
+"""
+:meta private:
+"""
+
 import warnings
 
 from pharmpy.random_variables import RandomVariables, VariabilityLevel

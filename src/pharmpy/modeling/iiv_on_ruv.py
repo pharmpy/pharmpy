@@ -1,3 +1,7 @@
+"""
+:meta private:
+"""
+
 import warnings
 
 import sympy

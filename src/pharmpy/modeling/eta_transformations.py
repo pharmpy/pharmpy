@@ -1,3 +1,7 @@
+"""
+:meta private:
+"""
+
 import re
 import warnings
 
