@@ -1510,42 +1510,66 @@ def test_update_inits(testdata):
     [
         (
             ['EPS(1)'],
-            'EPSP1 = CIPREDI**THETA(4)*EPS(1)\n'
-            'Y = EPSP1*W + F\n'
-            'IPRED=F+EPS(2)\n'
-            'IRES=DV-IPRED+EPS(3)',
+            'Y = CIPREDI**THETA(4)*W*EPS(1) + F\n' 'IPRED=F+EPS(2)\n' 'IRES=DV-IPRED+EPS(3)',
             '$THETA  0.01 ; power1',
+        ),
+        (
+            ['EPS(1)', 'EPS(2)'],
+            'Y = CIPREDI**THETA(4)*W*EPS(1) + F\n'
+            'IPRED = CIPREDI**THETA(5)*EPS(2) + F\n'
+            'IRES=DV-IPRED+EPS(3)',
+            '$THETA  0.01 ; power1\n' '$THETA  0.01 ; power2',
+        ),
+        (
+            ['EPS(1)', 'EPS(3)'],
+            'Y = CIPREDI**THETA(4)*W*EPS(1) + F\n'
+            'IPRED = EPS(2) + F\n'
+            'IRES = CIPREDI**THETA(5)*EPS(3) + DV - IPRED',
+            '$THETA  0.01 ; power1\n' '$THETA  0.01 ; power2',
+        ),
+        (
+            None,
+            'Y = CIPREDI**THETA(4)*W*EPS(1) + F\n'
+            'IPRED = CIPREDI**THETA(5)*EPS(2) + F\n'
+            'IRES = CIPREDI**THETA(6)*EPS(3) + DV - IPRED',
+            '$THETA  0.01 ; power1\n' '$THETA  0.01 ; power2\n' '$THETA  0.01 ; power3',
         ),
     ],
 )
-def test_power_on_ruv(pheno_path, epsilons, err_ref, theta_ref):
-    model = Model(pheno_path)
+def test_power_on_ruv(testdata, epsilons, err_ref, theta_ref):
+    with Patcher(additional_skip_names=['pkgutil']) as patcher:
+        fs = patcher.fs
 
-    model_str = str(model)
-    model_more_eps = re.sub(
-        r'( 0.031128  ;        IVV\n)',
-        r'\1$OMEGA 0.1\n$OMEGA 0.1',
-        model_str,
-    )
-    model_more_eps = re.sub(
-        r'IPRED=F\nIRES=DV-IPRED',
-        r'IPRED=F+EPS(2)\nIRES=DV-IPRED+EPS(3)',
-        model_more_eps,
-    )
+        fs.add_real_file(testdata / 'nonmem/pheno_real.mod', target_path='run1.mod')
+        fs.add_real_file(testdata / 'nonmem/pheno_real.phi', target_path='run1.phi')
+        fs.add_real_file(testdata / 'nonmem/pheno_real.ext', target_path='run1.ext')
+        fs.add_real_file(testdata / 'nonmem/pheno.dta', target_path='pheno.dta')
 
-    model.control_stream = NMTranParser().parse(model_more_eps)
+        model_pheno = Model('run1.mod')
+        model_more_eps = re.sub(
+            r'( 0.031128  ;        IVV\n)',
+            '$SIGMA 0.1\n$SIGMA 0.1',
+            str(model_pheno),
+        )
+        model_more_eps = re.sub(
+            r'IPRED=F\nIRES=DV-IPRED',
+            r'IPRED=F+EPS(2)\nIRES=DV-IPRED+EPS(3)',
+            model_more_eps,
+        )
+        model = Model(StringIO(model_more_eps))
+        model.dataset = model_pheno.dataset
 
-    power_on_ruv(model, epsilons)
-    model.update_source()
+        power_on_ruv(model, epsilons)
+        model.update_source()
 
-    rec_err = str(model.control_stream.get_records('ERROR')[0])
-    assert rec_err == f'$ERROR\n' f'W=F\n' f'{err_ref}\n' f'IWRES=IRES/W\n\n'
+        rec_err = str(model.control_stream.get_records('ERROR')[0])
+        assert rec_err == f'$ERROR\n' f'W=F\n' f'{err_ref}\n' f'IWRES=IRES/W\n\n'
 
-    rec_theta = ''.join(str(rec) for rec in model.control_stream.get_records('THETA'))
+        rec_theta = ''.join(str(rec) for rec in model.control_stream.get_records('THETA'))
 
-    assert (
-        rec_theta == f'$THETA (0,0.00469307) ; PTVCL\n'
-        f'$THETA (0,1.00916) ; PTVV\n'
-        f'$THETA (-.99,.1)\n'
-        f'{theta_ref}\n'
-    )
+        assert (
+            rec_theta == f'$THETA (0,0.00469307) ; PTVCL\n'
+            f'$THETA (0,1.00916) ; PTVV\n'
+            f'$THETA (-.99,.1)\n'
+            f'{theta_ref}\n'
+        )
