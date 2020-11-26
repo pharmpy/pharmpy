@@ -35,27 +35,24 @@ def add_etas(model, parameter, expression, operation='*'):
     operation : str, optional
         Whether the new eta should be added or multiplied (default).
     """
+    rvs, pset, sset = model.random_variables, model.parameters, model.statements
+
     omega = S(f'IIV_{parameter}')
     eta = stats.Normal(f'ETA_{parameter}', 0, sympy.sqrt(omega))
     eta.variability_level = VariabilityLevel.IIV
 
-    rvs = model.random_variables
     rvs.add(eta)
-    model.random_variables = rvs
+    pset.add(Parameter(str(omega), 0.1))
 
-    params = model.parameters
-    params.add(Parameter(str(omega), 0.1))
-    model.parameters = params
-
-    sset = model.get_pred_pk_record().statements
     statement = sset.find_assignment(parameter)
-
     eta_addition = _create_template(expression, operation)
-    eta_addition.apply(statement.expression, eta)
+    eta_addition.apply(statement.expression, eta.name)
 
     statement.expression = eta_addition.template
 
-    model.get_pred_pk_record().statements = sset
+    model.random_variables = rvs
+    model.parameters = pset
+    model.statements = sset
 
     return model
 
