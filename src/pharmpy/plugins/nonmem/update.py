@@ -647,7 +647,8 @@ def change_advan(model, advan, oldadvan, oldtrans):
             subs.replace_option(oldtrans, newtrans)
 
         mod = model.control_stream.insert_record('$MODEL\n')
-        comps = {v: k for k, v in model._compartment_map.items()}
+        output_name = model.statements.ode_system.find_output().name
+        comps = {v: k for k, v in model._compartment_map.items() if k != output_name}
         i = 1
         while True:
             if i not in comps:
