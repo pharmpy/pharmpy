@@ -28,25 +28,32 @@ def create_rv_block(model, list_of_rvs=None):
         non-fixed will be used (full block). None is default.
     """
     rvs_full = model.random_variables
-    rvs = _get_rvs(model, list_of_rvs)
+    rvs_block = _get_rvs(model, list_of_rvs)
 
     if list_of_rvs is not None:
-        for rv in rvs:
+        for rv in rvs_block:
             if isinstance(rv.pspace.distribution, MultivariateNormalDistribution):
                 rv_extracted = rvs_full.extract_from_block(rv)
-                rvs.discard(rv)
-                rvs.add(rv_extracted)
+                rvs_block.discard(rv)
+                rvs_block.add(rv_extracted)
 
-    pset = _merge_rvs(model, rvs)
+    pset = _merge_rvs(model, rvs_block)
 
     rvs_new = RandomVariables()
 
-    for rv in rvs_full:
-        if rv.name not in [rv.name for rv in rvs.etas]:
-            rvs_new.add(rv)
+    if rvs_full.same_order(rvs_block):
+        for rv in rvs_full:
+            if rv.name in [rv.name for rv in rvs_block.etas]:
+                rvs_new.add(rvs_block[rv.name])
+            else:
+                rvs_new.add(rv)
+    else:
+        for rv in rvs_full:
+            if rv.name not in [rv.name for rv in rvs_block.etas]:
+                rvs_new.add(rv)
 
-    for rv in rvs:
-        rvs_new.add(rv)
+        for rv in rvs_block:
+            rvs_new.add(rv)
 
     model.random_variables = rvs_new
     model.parameters = pset

@@ -296,6 +296,20 @@ class RandomVariables(OrderedSet):
 
         return rv_extracted
 
+    def same_order(self, other):
+        rvs_self = sum([rvs[0] for rvs in self.distributions()], [])
+        rvs_other = sum([rvs[0] for rvs in other.distributions()], [])
+
+        i = 0
+        for rv in rvs_self:
+            if rv.name == rvs_other[i].name:
+                if i == len(rvs_other) - 1:
+                    return True
+                i += 1
+            elif i > 0:
+                return False
+        return False
+
     @property
     def ruv_rvs(self):
         """Get list of all ruv random variables (epsilons)"""

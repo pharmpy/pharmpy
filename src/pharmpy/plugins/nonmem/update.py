@@ -132,22 +132,32 @@ def update_random_variables(model, old, new):
 
         if rvs not in rvs_old and set(rv_names).issubset(old_names):
             records = get_omega_records(model, rv_names)
+
+            indices = [model.control_stream.records.index(rec) for rec in records]
+            index = indices[0]
+            for i in range(1, len(indices)):
+                if indices[i] - indices[i - 1] != 1:
+                    index = None
+                    break
+
+            if len(indices) != len(rvs):
+                index = None
+
             model.control_stream.remove_records(records)
 
             if len(rvs) == 1:
-                omega_new, _ = create_omega_single(model, model.parameters[str(dist.std ** 2)])
+                omega_new, _ = create_omega_single(
+                    model, model.parameters[str(dist.std ** 2)], index=index
+                )
             else:
-                omega_new = create_omega_block(model, dist)
+                omega_new = create_omega_block(model, dist, index=index)
 
             omega_start = 1
-            previous_size = None
 
             for omega_record in model.control_stream.get_records('OMEGA'):
                 if omega_record != omega_new:
                     omega_start += len(omega_record)
-                    previous_size = len(omega_record)
                 else:
-                    omega_record.parameters(omega_start, previous_size)
                     etas, _, _, _ = omega_record.random_variables(omega_start)
 
                     create_record_maps(etas, rvs, omega_record.name_map, omega_record.eta_map)
@@ -218,12 +228,12 @@ def create_theta_record(model, param):
     return record
 
 
-def create_omega_single(model, param, record='OMEGA'):
+def create_omega_single(model, param, record='OMEGA', index=None):
     eta_number, previous_size = get_next_eta(model, record)
 
     param_str = f'${record}  {param.init}\n'
 
-    record = model.control_stream.insert_record(param_str)
+    record = model.control_stream.insert_record(param_str, index)
 
     record.parameters(eta_number, previous_size)
     record.random_variables(eta_number)
@@ -231,7 +241,7 @@ def create_omega_single(model, param, record='OMEGA'):
     return record, eta_number
 
 
-def create_omega_block(model, dist):
+def create_omega_block(model, dist, index=None):
     m = dist.args[1]
     param_str = f'$OMEGA BLOCK({m.shape[0]})\n'
 
@@ -243,7 +253,7 @@ def create_omega_block(model, dist):
             param_str += f'{omega.init}\t'
 
         param_str = f'{param_str.rstrip()}\n'
-    record = model.control_stream.insert_record(param_str)
+    record = model.control_stream.insert_record(param_str, index)
     return record
 
 

@@ -1265,11 +1265,11 @@ def test_add_etas(pheno_path, parameter, expression, operation, buf_new):
         (
             ['ETA(1)', 'ETA(2)'],
             '$PK\n'
-            'CL = THETA(1)*EXP(ETA(4))\n'
-            'V = THETA(2)*EXP(ETA(5))\n'
-            'S1 = ETA(1) + ETA(2) + ETA(3) + V\n\n',
-            '$OMEGA 0.1\n$OMEGA BLOCK(2)\n0.0309626\n0.0005 0.031128\n'
-            '$OMEGA BLOCK(2)\n0.0309626\n0.0031045\t0.031128\n',
+            'CL=THETA(1)*EXP(ETA(1))\n'
+            'V=THETA(2)*EXP(ETA(2))\n'
+            'S1=V+ETA(3)+ETA(4)+ETA(5)\n\n',
+            '$OMEGA BLOCK(2)\n0.0309626\n0.0031045\t0.031128\n'
+            '$OMEGA 0.1\n$OMEGA BLOCK(2)\n0.0309626\n0.0005 0.031128\n',
         ),
         (
             ['ETA(1)', 'ETA(3)'],
@@ -1281,10 +1281,10 @@ def test_add_etas(pheno_path, parameter, expression, operation, buf_new):
         (
             ['ETA(2)', 'ETA(3)'],
             '$PK\nCL=THETA(1)*EXP(ETA(1))\n'
-            'V = THETA(2)*EXP(ETA(4))\n'
-            'S1 = ETA(2) + ETA(3) + ETA(5) + V\n\n',
-            '$OMEGA 0.0309626  ; IVCL\n$OMEGA BLOCK(2)\n0.0309626\n0.0005 0.031128\n'
-            '$OMEGA BLOCK(2)\n0.031128\n0.0055792\t0.1\n',
+            'V=THETA(2)*EXP(ETA(2))\n'
+            'S1=V+ETA(3)+ETA(4)+ETA(5)\n\n',
+            '$OMEGA 0.0309626  ; IVCL\n$OMEGA BLOCK(2)\n0.031128\n0.0055792\t0.1\n'
+            '$OMEGA BLOCK(2)\n0.0309626\n0.0005 0.031128\n',
         ),
         (
             ['ETA(1)', 'ETA(2)', 'ETA(4)'],

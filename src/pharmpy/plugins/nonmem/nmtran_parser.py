@@ -62,7 +62,7 @@ class NMTranControlStream:
         self.records.append(record)
         return record
 
-    def insert_record(self, content):
+    def insert_record(self, content, at_index=None):
         """Create and insert a new record at the correct position
 
         If the record type is already present the new record will be put
@@ -74,6 +74,10 @@ class NMTranControlStream:
 
         record = create_record(content)
         name = record.name
+
+        if at_index:
+            self.records.insert(at_index, record)
+            return record
 
         current_problem = -1
         index = None
