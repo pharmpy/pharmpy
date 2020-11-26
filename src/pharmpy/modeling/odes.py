@@ -94,6 +94,7 @@ def set_transit_compartments(model, n):
     statements = model.statements
     odes = statements.ode_system
     transits = odes.find_transit_compartments(statements)
+    n = int(n)
     if len(transits) == n:
         pass
     elif len(transits) == 0:
