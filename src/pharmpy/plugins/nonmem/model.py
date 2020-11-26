@@ -213,18 +213,22 @@ class Model(pharmpy.model.Model):
         next_theta = 1
         params = ParameterSet()
         for theta_record in self.control_stream.get_records('THETA'):
-            thetas = theta_record.parameters(next_theta)
+            thetas = theta_record.parameters(next_theta, seen_labels=set(params.names))
             params.update(thetas)
             next_theta += len(thetas)
         next_omega = 1
         previous_size = None
         for omega_record in self.control_stream.get_records('OMEGA'):
-            omegas, next_omega, previous_size = omega_record.parameters(next_omega, previous_size)
+            omegas, next_omega, previous_size = omega_record.parameters(
+                next_omega, previous_size, seen_labels=set(params.names)
+            )
             params.update(omegas)
         next_sigma = 1
         previous_size = None
         for sigma_record in self.control_stream.get_records('SIGMA'):
-            sigmas, next_sigma, previous_size = sigma_record.parameters(next_sigma, previous_size)
+            sigmas, next_sigma, previous_size = sigma_record.parameters(
+                next_sigma, previous_size, seen_labels=set(params.names)
+            )
             params.update(sigmas)
         self._parameters = params
         self._old_parameters = params.copy()

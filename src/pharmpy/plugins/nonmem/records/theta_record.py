@@ -1,4 +1,5 @@
 import re
+import warnings
 
 from pharmpy.parameter import Parameter, ParameterSet
 from pharmpy.parse_utils.generic import AttrToken, remove_token_and_space
@@ -19,10 +20,12 @@ class ThetaRecord(Record):
         self.root.add_newline_node()
         self.name_map = {name_original: theta_number}
 
-    def parameters(self, first_theta):
+    def parameters(self, first_theta, seen_labels=None):
         """Get a parameter set for this theta record.
         first_theta is the number of the first theta in this record
         """
+        if seen_labels is None:
+            seen_labels = set()
         pset = ParameterSet()
         current_theta = first_theta
         for theta in self.root.all('theta'):
@@ -33,12 +36,6 @@ class ThetaRecord(Record):
                     lower = min_lower_bound
                 else:
                     lower = theta.low.tokens[0].eval
-                # FIXME: Ideally the following should be enforced
-                # However PsN allows it and it is used to toggle FIX back
-                # and forth without having to change or remove lower and upper bound
-                # if fix and not init == lower:
-                #    raise ModelSyntaxError(f'Fixed thetas must have equal lower limit and initial '
-                #                           f'estimate: {theta}')
             else:
                 lower = min_lower_bound
             if theta.find('up'):
@@ -46,9 +43,6 @@ class ThetaRecord(Record):
                     upper = max_upper_bound
                 else:
                     upper = theta.up.tokens[0].eval
-                # if fix and not init == upper:
-                #    raise ModelSyntaxError(f'Fixed thetas must have equal upper limit and initial '
-                #                           f'estimate: {theta}')
             else:
                 upper = max_upper_bound
             multiple = theta.find('n')
@@ -75,8 +69,16 @@ class ThetaRecord(Record):
                             if m:
                                 name = m.group(1)
                                 break
+                    if name in seen_labels:
+                        warnings.warn(
+                            f'The parameter name {name} is duplicated. Falling back to basic '
+                            f'NONMEM names.'
+                        )
+                        name = None
+
                 if not name:
                     name = f'THETA({current_theta})'
+                seen_labels.add(name)
                 new_par = Parameter(name, init, lower, upper, fix)
                 current_theta += 1
                 pset.add(new_par)

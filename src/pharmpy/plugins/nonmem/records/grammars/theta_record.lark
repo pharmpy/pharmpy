@@ -45,8 +45,8 @@ n    : "x" INT
 FIX : "FIXED" | "FIXE" | "FIX"
 
 // generic option terminals (key/value)
-KEY   : /(?!([0-9]|\(|FIX))\w+/      // TODO: use priority (instead of negative lookahead)
-VALUE : /(?!([0-9]|\(|FIX))[^\s=;]+/  // TODO: use priority (instead of negative lookahead)
+KEY   : /(?!([0-9]|\(|FIX))\w+/
+VALUE : /(?!([0-9]|\(|FIX))[^\s=;]+/
 
 // common misc rules
 _ws: [WS] [NEWLINE]

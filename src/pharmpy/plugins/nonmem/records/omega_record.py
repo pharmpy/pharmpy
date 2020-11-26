@@ -1,5 +1,6 @@
 import math
 import re
+import warnings
 
 import numpy as np
 import sympy
@@ -27,7 +28,7 @@ class OmegaRecord(Record):
         self.root.add_comment_node(name_original)
         self.root.add_newline_node()
 
-    def parameters(self, start_omega, previous_size):
+    def parameters(self, start_omega, previous_size, seen_labels=None):
         """Get a ParameterSet for this omega record"""
         row = start_omega
         block = self.root.find('block')
@@ -35,6 +36,8 @@ class OmegaRecord(Record):
         same = bool(self.root.find('same'))
         parameters = ParameterSet()
         coords = []
+        if seen_labels is None:
+            seen_labels = set()
         if not (block or bare_block):
             for node in self.root.all('diag_item'):
                 init = node.init.NUMERIC
@@ -54,9 +57,10 @@ class OmegaRecord(Record):
                 if sd:
                     init = init ** 2
                 for _ in range(n):
-                    name = self._find_label(node)
+                    name = self._find_label(node, seen_labels)
                     if not name:
                         name = f'{self.name}({row},{row})'
+                    seen_labels.add(name)
                     coords.append((row, row))
                     param = Parameter(name, init, lower=0, fix=fixed)
                     parameters.add(param)
@@ -75,7 +79,9 @@ class OmegaRecord(Record):
                 init = node.init.NUMERIC
                 n = node.n.INT if node.find('n') else 1
                 inits += [init] * n
-                name = self._find_label(node)
+                name = self._find_label(node, seen_labels)
+                if name is not None:
+                    seen_labels.add(name)
                 labels.append(name)
                 if n > 1:
                     labels.extend([None] * (n - 1))
@@ -115,7 +121,7 @@ class OmegaRecord(Record):
         self.name_map = {name: c for i, (name, c) in enumerate(zip(parameters.names, coords))}
         return parameters, next_omega, size
 
-    def _find_label(self, node):
+    def _find_label(self, node, seen_labels):
         """Find label from comment of omega parameter"""
         name = None
         # needed to avoid circular import with Python 3.6
@@ -134,6 +140,11 @@ class OmegaRecord(Record):
                     if m:
                         name = m.group(1)
                         break
+            if name in seen_labels:
+                warnings.warn(
+                    f'The parameter name {name} is duplicated. Falling back to basic NONMEM names.'
+                )
+                name = None
         return name
 
     def _block_flags(self):
