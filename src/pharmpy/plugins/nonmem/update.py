@@ -250,9 +250,15 @@ def create_omega_block(model, dist, index=None):
             elem = m.row(row).col(col)
             name = str(elem[0])
             omega = model.parameters[name]
-            param_str += f'{omega.init}\t'
+            param_str += f'{omega.init}'
+
+            if not re.match(r'OMEGA\(\d+,\d+\)', omega.name):
+                param_str += f'\t; {omega.name}'
+
+            param_str += '\n'
 
         param_str = f'{param_str.rstrip()}\n'
+
     record = model.control_stream.insert_record(param_str, index)
     return record
 

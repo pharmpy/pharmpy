@@ -387,7 +387,7 @@ class RandomVariables(OrderedSet):
                     M[row, col] = fill
         elif create_cov_params:
             for row, col in itertools.product(range(M.rows), range(M.cols)):
-                if M[row, col] == 0 and row < col:
+                if M[row, col] == 0 and row > col:
                     param_1 = M[row, row]
                     param_2 = M[col, col]
                     cov_name = f'COV{cov_number}'

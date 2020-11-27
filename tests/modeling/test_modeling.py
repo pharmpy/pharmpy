@@ -7,6 +7,7 @@ import pytest
 from pyfakefs.fake_filesystem_unittest import Patcher
 
 from pharmpy import Model
+from pharmpy.config import ConfigurationContext
 from pharmpy.modeling import (
     add_covariate_effect,
     add_etas,
@@ -31,6 +32,7 @@ from pharmpy.modeling import (
     zero_order_absorption,
     zero_order_elimination,
 )
+from pharmpy.plugins.nonmem import conf
 from pharmpy.plugins.nonmem.nmtran_parser import NMTranParser
 
 
@@ -1268,7 +1270,7 @@ def test_add_etas(pheno_path, parameter, expression, operation, buf_new):
             'CL=THETA(1)*EXP(ETA(1))\n'
             'V=THETA(2)*EXP(ETA(2))\n'
             'S1=V+ETA(3)+ETA(4)+ETA(5)\n\n',
-            '$OMEGA BLOCK(2)\n0.0309626\n0.0031045\t0.031128\n'
+            '$OMEGA BLOCK(2)\n0.0309626\t; IVCL\n0.0031045\t; COV1\n0.031128\t; IVV\n'
             '$OMEGA 0.1\n$OMEGA BLOCK(2)\n0.0309626\n0.0005 0.031128\n',
         ),
         (
@@ -1276,14 +1278,14 @@ def test_add_etas(pheno_path, parameter, expression, operation, buf_new):
             '$PK\nCL = THETA(1)*EXP(ETA(4))\nV = THETA(2)*EXP(ETA(1))\n'
             'S1 = ETA(2) + ETA(3) + ETA(5) + V\n\n',
             '$OMEGA 0.031128  ; IVV\n$OMEGA BLOCK(2)\n0.0309626\n0.0005 0.031128\n'
-            '$OMEGA BLOCK(2)\n0.0309626\n0.0055644\t0.1\n',
+            '$OMEGA BLOCK(2)\n0.0309626\t; IVCL\n0.0055644\t; COV1\n0.1\n',
         ),
         (
             ['ETA(2)', 'ETA(3)'],
             '$PK\nCL=THETA(1)*EXP(ETA(1))\n'
             'V=THETA(2)*EXP(ETA(2))\n'
             'S1=V+ETA(3)+ETA(4)+ETA(5)\n\n',
-            '$OMEGA 0.0309626  ; IVCL\n$OMEGA BLOCK(2)\n0.031128\n0.0055792\t0.1\n'
+            '$OMEGA 0.0309626  ; IVCL\n$OMEGA BLOCK(2)\n0.031128\t; IVV\n0.0055792\t; COV1\n0.1\n'
             '$OMEGA BLOCK(2)\n0.0309626\n0.0005 0.031128\n',
         ),
         (
@@ -1292,31 +1294,33 @@ def test_add_etas(pheno_path, parameter, expression, operation, buf_new):
             'CL = THETA(1)*EXP(ETA(3))\n'
             'V = THETA(2)*EXP(ETA(4))\n'
             'S1 = ETA(1) + ETA(2) + ETA(5) + V\n\n',
-            '$OMEGA 0.1\n$OMEGA  0.031128\n$OMEGA BLOCK(3)\n0.0309626\n0.0031045\t0.031128\n'
-            '0.0030963\t0.0031045\t0.0309626\n',
+            '$OMEGA 0.1\n$OMEGA  0.031128\n$OMEGA BLOCK(3)\n0.0309626\t; IVCL\n'
+            '0.0031045\t; COV1\n0.031128\t; IVV\n'
+            '0.0030963\t; COV2\n0.0031045\t; COV3\n0.0309626\n',
         ),
         (
             None,
             '$PK\nCL=THETA(1)*EXP(ETA(1))\nV=THETA(2)*EXP(ETA(2))\nS1=V+ETA(3)+ETA(4)+ETA(5)\n\n',
             '$OMEGA BLOCK(5)\n'
-            '0.0309626\n'
-            '0.0031045\t0.031128\n'
-            '0.0055644\t0.0055792\t0.1\n'
-            '0.0030963\t0.0031045\t0.0055644\t0.0309626\n'
-            '0.0031045\t0.0031128\t0.0055792\t0.0005\t0.031128\n',
+            '0.0309626\t; IVCL\n'
+            '0.0031045\t; COV1\n0.031128\t; IVV\n'
+            '0.0055644\t; COV2\n0.0055792\t; COV3\n0.1\n'
+            '0.0030963\t; COV4\n0.0031045\t; COV5\n0.0055644\t; COV6\n0.0309626\n'
+            '0.0031045\t; COV7\n0.0031128\t; COV8\n0.0055792\t; COV9\n0.0005\n0.031128\n',
         ),
     ],
 )
 def test_block_rvs(testdata, etas, pk_ref, omega_ref):
-    model = Model(testdata / 'nonmem/pheno_block.mod')
-    create_rv_block(model, etas)
-    model.update_source()
+    with ConfigurationContext(conf, parameter_names='comment'):
+        model = Model(testdata / 'nonmem/pheno_block.mod')
+        create_rv_block(model, etas)
+        model.update_source()
 
-    assert str(model.get_pred_pk_record()) == pk_ref
+        assert str(model.get_pred_pk_record()) == pk_ref
 
-    rec_omega = ''.join(str(rec) for rec in model.control_stream.get_records('OMEGA'))
+        rec_omega = ''.join(str(rec) for rec in model.control_stream.get_records('OMEGA'))
 
-    assert rec_omega == omega_ref
+        assert rec_omega == omega_ref
 
 
 @pytest.mark.parametrize(
