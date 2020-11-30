@@ -33,27 +33,24 @@ def create_rv_block(model, list_of_rvs=None):
     if list_of_rvs is not None:
         for rv in rvs_block:
             if isinstance(rv.pspace.distribution, MultivariateNormalDistribution):
-                rv_extracted = rvs_full.extract_from_block(rv)
-                rvs_block.discard(rv)
-                rvs_block.add(rv_extracted)
+                if rvs_full.get_rvs_from_same_dist(rv):
+                    rv_extracted = rvs_full.extract_from_block(rv)
+                    rvs_block.discard(rv)
+                    rvs_block.add(rv_extracted)
 
     pset = _merge_rvs(model, rvs_block)
 
     rvs_new = RandomVariables()
+    are_consecutive = rvs_full.are_consecutive(rvs_block)
 
-    if rvs_full.same_order(rvs_block):
-        for rv in rvs_full:
-            if rv.name in [rv.name for rv in rvs_block.etas]:
-                rvs_new.add(rvs_block[rv.name])
-            else:
-                rvs_new.add(rv)
-    else:
-        for rv in rvs_full:
-            if rv.name not in [rv.name for rv in rvs_block.etas]:
-                rvs_new.add(rv)
-
-        for rv in rvs_block:
+    for rv in rvs_full:
+        if rv.name not in [rv.name for rv in rvs_block.etas]:
             rvs_new.add(rv)
+        elif are_consecutive:
+            rvs_new.add(rvs_block[rv.name])
+
+    if not are_consecutive:
+        {rvs_new.add(rv) for rv in rvs_block}  # Add new block last
 
     model.random_variables = rvs_new
     model.parameters = pset

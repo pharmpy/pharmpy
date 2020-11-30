@@ -1299,6 +1299,38 @@ def test_add_etas(pheno_path, parameter, expression, operation, buf_new):
             '0.0030963\t; COV2\n0.0031045\t; COV3\n0.0309626\n',
         ),
         (
+            ['ETA(2)', 'ETA(3)', 'ETA(4)'],
+            '$PK\n'
+            'CL=THETA(1)*EXP(ETA(1))\n'
+            'V=THETA(2)*EXP(ETA(2))\n'
+            'S1=V+ETA(3)+ETA(4)+ETA(5)\n\n',
+            '$OMEGA 0.0309626  ; IVCL\n'
+            '$OMEGA BLOCK(3)\n'
+            '0.031128\t; IVV\n'
+            '0.0055792\t; COV1\n'
+            '0.1\n'
+            '0.0031045\t; COV2\n'
+            '0.0055644\t; COV3\n'
+            '0.0309626\n'
+            '$OMEGA  0.031128\n',
+        ),
+        (
+            ['ETA(3)', 'ETA(4)', 'ETA(5)'],
+            '$PK\n'
+            'CL=THETA(1)*EXP(ETA(1))\n'
+            'V=THETA(2)*EXP(ETA(2))\n'
+            'S1=V+ETA(3)+ETA(4)+ETA(5)\n\n',
+            '$OMEGA 0.0309626  ; IVCL\n'
+            '$OMEGA 0.031128  ; IVV\n'
+            '$OMEGA BLOCK(3)\n'
+            '0.1\n'
+            '0.0055644\t; COV1\n'
+            '0.0309626\n'
+            '0.0055792\t; COV2\n'
+            '0.0005\n'
+            '0.031128\n',
+        ),
+        (
             None,
             '$PK\nCL=THETA(1)*EXP(ETA(1))\nV=THETA(2)*EXP(ETA(2))\nS1=V+ETA(3)+ETA(4)+ETA(5)\n\n',
             '$OMEGA BLOCK(5)\n'

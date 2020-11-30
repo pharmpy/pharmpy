@@ -243,10 +243,9 @@ class RandomVariables(OrderedSet):
         ----------
         rv : RandomSymbol
             Random symbol to find associated rvs for (i.e. rvs with same distribution)."""
-        dists = self.distributions()
         joined_rvs = []
 
-        for rvs, dist in dists:
+        for rvs, dist in self.distributions():
             if dist == rv.pspace.distribution:
                 joined_rvs += rvs
 
@@ -270,7 +269,6 @@ class RandomVariables(OrderedSet):
         names = []
 
         for i, rv in enumerate(associated_rvs):
-            self.discard(rv)
             if rv.name == rv_to_extract.name:
                 rv_extracted = stats.Normal(rv.name, 0, sympy.sqrt(cov[i, i]))
                 rv_extracted.variability_level = VariabilityLevel.IIV
@@ -291,19 +289,36 @@ class RandomVariables(OrderedSet):
             for rv in rv_remaining:
                 rv.variability_level = VariabilityLevel.IIV
 
-        self.add(rv_remaining)
-        self.add(rv_extracted)
+        split_block = [rv_extracted, rv_remaining]
+        split_block = split_block.reverse() if index_to_remove != 0 else split_block
+
+        rvs_new = RandomVariables()
+
+        has_added_changed_block = False
+
+        for rv in self:
+            if rv in associated_rvs:
+                if not has_added_changed_block:
+                    {rvs_new.add(rv_block) for rv_block in split_block}
+                    has_added_changed_block = True
+            else:
+                rvs_new.add(rv)
+            self.discard(rv)
+
+        self.update(rvs_new)
 
         return rv_extracted
 
-    def same_order(self, other):
+    def are_consecutive(self, subset):
+        """Determines if subset has same order as full set (self). If totally different,
+        False will be returned."""
         rvs_self = sum([rvs[0] for rvs in self.distributions()], [])
-        rvs_other = sum([rvs[0] for rvs in other.distributions()], [])
+        rvs_subset = sum([rvs[0] for rvs in subset.distributions()], [])
 
         i = 0
         for rv in rvs_self:
-            if rv.name == rvs_other[i].name:
-                if i == len(rvs_other) - 1:
+            if rv.name == rvs_subset[i].name:
+                if i == len(rvs_subset) - 1:
                     return True
                 i += 1
             elif i > 0:

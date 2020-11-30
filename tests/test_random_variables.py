@@ -156,5 +156,23 @@ def test_extract_from_block():
     rvs.extract_from_block(etas[0])
     dists = rvs.distributions()
     assert len(dists) == 3
-    assert rvs[0].name == 'ETA(3)'
-    assert rvs[2].name == 'ETA(1)'
+    assert rvs[0].name == 'ETA(1)'
+    assert rvs[2].name == 'ETA(3)'
+
+
+def test_has_same_order():
+    omega1 = symbol('OMEGA(1,1)')
+    eta1 = stats.Normal('ETA(1)', 0, sympy.sqrt(omega1))
+    omega2 = symbol('OMEGA(2,2)')
+    eta2 = stats.Normal('ETA(2)', 0, sympy.sqrt(omega2))
+    omega3 = symbol('OMEGA(1,1)')
+    eta3 = stats.Normal('ETA(3)', 0, sympy.sqrt(omega3))
+
+    rvs_full = RandomVariables([eta1, eta2, eta3])
+    assert rvs_full.are_consecutive(rvs_full)
+
+    rvs_sub = RandomVariables([eta1, eta2])
+    assert rvs_full.are_consecutive(rvs_sub)
+
+    rvs_rev = RandomVariables([eta3, eta2, eta1])
+    assert not rvs_full.are_consecutive(rvs_rev)

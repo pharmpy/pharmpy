@@ -127,30 +127,31 @@ def update_random_variables(model, old, new):
     for rvs, dist in new.distributions():
         rv_names = [rv.name for rv in rvs]
 
-        if set(modified_names).issubset(rv_names) and modified_names:
+        if modified_names and set(modified_names).issubset(rv_names):
             continue
 
         if rvs not in rvs_old and set(rv_names).issubset(old_names):
             records = get_omega_records(model, rv_names)
 
             indices = [model.control_stream.records.index(rec) for rec in records]
-            index = indices[0]
-            for i in range(1, len(indices)):
-                if indices[i] - indices[i - 1] != 1:
-                    index = None
-                    break
+            new_rec_index = None if not indices else indices[0]
 
             if len(indices) != len(rvs):
-                index = None
+                new_rec_index = None
+            elif new_rec_index and len(indices) == len(rvs):
+                for i in range(1, len(indices)):
+                    if indices[i] - indices[i - 1] != 1:
+                        new_rec_index = None
+                        break
 
             model.control_stream.remove_records(records)
 
             if len(rvs) == 1:
                 omega_new, _ = create_omega_single(
-                    model, model.parameters[str(dist.std ** 2)], index=index
+                    model, model.parameters[str(dist.std ** 2)], index=new_rec_index
                 )
             else:
-                omega_new = create_omega_block(model, dist, index=index)
+                omega_new = create_omega_block(model, dist, index=new_rec_index)
 
             omega_start = 1
 
