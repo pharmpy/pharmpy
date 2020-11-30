@@ -519,6 +519,22 @@ def remove_iov(args):
     write_model_or_dataset(model, model.dataset, path=args.output_file, force=False)
 
 
+def power_on_ruv(args):
+    """Subcommand to apply power effect to RUVs."""
+    from pharmpy.modeling import power_on_ruv
+
+    model = args.model
+
+    try:
+        eps = args.eps.split(" ")
+    except AttributeError:
+        eps = args.eps
+
+    power_on_ruv(model, eps)
+
+    write_model_or_dataset(model, model.dataset, path=args.output_file, force=False)
+
+
 def results_bootstrap(args):
     """Subcommand to generate bootstrap results"""
     from pharmpy.methods.bootstrap.results import psn_bootstrap_results
@@ -1161,6 +1177,24 @@ parser_definition = [
                         'description': 'Removes all IOV omegas',
                         'func': remove_iov,
                         'parents': [args_model_input, args_output],
+                    }
+                },
+                {
+                    'power_on_ruv': {
+                        'help': 'Applies power effect to RUVs.',
+                        'description': 'Applies a power effect to provided epsilons.',
+                        'func': power_on_ruv,
+                        'parents': [args_model_input, args_output],
+                        'args': [
+                            {
+                                'name': '--eps',
+                                'type': str,
+                                'default': None,
+                                'help': 'List of epsilons, mark group of epsilons in single quote '
+                                'separated by spaces. To apply to all epsilons, omit this '
+                                'argument.',
+                            },
+                        ],
                     }
                 },
             ],

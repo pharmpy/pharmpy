@@ -338,7 +338,7 @@ Covariate effects may be applied to a model.
    from pharmpy.modeling import add_covariate_effect
    add_covariate_effect(model, 'CL', 'WGT', 'pow', operation='*')
 
-Here, *CL* indicates the name of the parameter onto which you want to apply the effect, *WGT* is the name of thr
+Here, *CL* indicates the name of the parameter onto which you want to apply the effect, *WGT* is the name of the
 covariate, and *pow* (power function) is the effect you want to apply. The effect can be either
 added or multiplied to the parameter, denoted by '*' or '+' (multiplied is default). See
 :py:class:`pharmpy.modeling.add_covariate_effect` for effects with available templates.
@@ -619,6 +619,21 @@ transformed.
    iiv_on_ruv(model)
    model.update_source()
    print_model_diff(model_ref, model)
+
+Power effects on RUVs
+~~~~~~~~~~~~~~~~~~~~~
+
+.. jupyter-execute::
+
+   model = Model(path / "pheno.mod")
+
+   from pharmpy.modeling import power_on_ruv
+   power_on_ruv(model, ['EPS(1)'])
+   model.update_source()
+   print_model_diff(model_ref, model)
+
+A power effect will be applied to all provided epsilons, leave argument empty if all
+epsilons should be transformed.
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Creating full or partial block structures

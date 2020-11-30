@@ -1,3 +1,7 @@
+"""
+:meta private:
+"""
+
 from pharmpy.random_variables import RandomVariables, VariabilityLevel
 
 

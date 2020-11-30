@@ -1,3 +1,7 @@
+"""
+:meta private:
+"""
+
 import warnings
 
 from pharmpy.parameter import Parameter
@@ -5,6 +9,17 @@ from pharmpy.symbols import symbol as S
 
 
 def power_on_ruv(model, list_of_eps=None):
+    """
+    Applies a power effect to provided epsilons.
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model to create block effect on.
+    list_of_eps : list
+        List of epsilons to apply power effect. If None, all epsilons will be used.
+        None is default.
+    """
     eps = _get_epsilons(model, list_of_eps)
     pset, sset = model.parameters, model.statements
 

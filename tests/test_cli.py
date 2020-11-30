@@ -178,3 +178,22 @@ def test_remove_iov(datadir, fs):
 
     assert re.search(r'ETA\(3\)', mod_ori)
     assert not re.search(r'ETA\(3\)', mod_cov)
+
+
+@pytest.mark.parametrize('fs', [[['pkgutil'], [source, etas_record]]], indirect=True)
+@pytest.mark.parametrize('epsilons_args', [['--eps', 'EPS(1)'], []])
+def test_power_on_ruv(datadir, fs, epsilons_args):
+    fs.add_real_file(datadir / 'pheno_real.mod', target_path='run1.mod')
+    fs.add_real_file(datadir / 'pheno.dta', target_path='pheno.dta')
+
+    args = ['model', 'power_on_ruv', 'run1.mod'] + epsilons_args
+    cli.main(args)
+
+    with open('run1.mod', 'r') as f_ori, open('run2.mod', 'r') as f_cov:
+        mod_ori = f_ori.read()
+        mod_cov = f_cov.read()
+
+    assert mod_ori != mod_cov
+
+    assert not re.search(r'CIPREDI', mod_ori)
+    assert re.search(r'CIPREDI', mod_cov)
