@@ -197,3 +197,27 @@ def test_power_on_ruv(datadir, fs, epsilons_args):
 
     assert not re.search(r'CIPREDI', mod_ori)
     assert re.search(r'CIPREDI', mod_cov)
+
+
+@pytest.mark.parametrize('fs', [[['pkgutil'], [source, etas_record]]], indirect=True)
+@pytest.mark.parametrize(
+    'force_args, file_exists', [(['--force_update', 'True'], True), ([], False)]
+)
+def test_update_inits(datadir, fs, force_args, file_exists):
+    fs.add_real_file(datadir / 'pheno_real.mod', target_path='run1.mod')
+    fs.add_real_file(datadir / 'pheno_real.ext', target_path='run1.ext')
+    fs.add_real_file(datadir / 'pheno_real.phi', target_path='run1.phi')
+    fs.add_real_file(datadir / 'pheno.dta', target_path='pheno.dta')
+
+    args = ['model', 'update_inits', 'run1.mod'] + force_args
+    cli.main(args)
+
+    with open('run1.mod', 'r') as f_ori, open('run2.mod', 'r') as f_cov:
+        mod_ori = f_ori.read()
+        mod_cov = f_cov.read()
+
+    assert mod_ori != mod_cov
+
+    assert not re.search(r'\$ETAS FILE=run2_input.phi', mod_ori)
+    assert bool(re.search(r'\$ETAS FILE=run2_input.phi', mod_cov)) is file_exists
+    assert (os.path.isfile('run2_input.phi')) is file_exists

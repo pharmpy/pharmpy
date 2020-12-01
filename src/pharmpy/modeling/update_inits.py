@@ -2,27 +2,31 @@
 :meta private:
 """
 
-from pharmpy.random_variables import RandomVariables, VariabilityLevel
+
+class ModelfitResultsException(Exception):
+    pass
 
 
-def update_inits(model, force_update_individual_estimates=False):
+def update_inits(model, force_individual_estimates=False):
+    """
+    Updates initial estimates from previous output. Can be forced if no initial
+    individual estimates have been read.
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model to create block effect on.
+    force_individual_estimates : bool
+        Whether update of initial individual estimates should be forced.
+    """
     try:
-        model.parameters = model.modelfit_results.parameter_estimates
+        res = model.modelfit_results
     except AttributeError:
-        pass
+        raise ModelfitResultsException('No modelfit results available')
 
-    try:
-        model.initial_individual_estimates = model.modelfit_results.individual_estimates
-    except AttributeError:
-        if force_update_individual_estimates:
-            print('force')
-        else:
-            pass
+    model.parameters = res.parameter_estimates
+
+    if model.initial_individual_estimates is not None or force_individual_estimates:
+        model.initial_individual_estimates = res.individual_estimates
 
     return model
-
-
-def _get_etas(rvs):
-    etas = [eta for eta in rvs if eta.variability_level == VariabilityLevel.IOV]
-
-    return RandomVariables(etas)

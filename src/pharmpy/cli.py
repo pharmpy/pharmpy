@@ -535,6 +535,16 @@ def power_on_ruv(args):
     write_model_or_dataset(model, model.dataset, path=args.output_file, force=False)
 
 
+def update_inits(args):
+    """Subcommand to update initial estimates from previous output."""
+    from pharmpy.modeling import update_inits
+
+    model = args.model
+    update_inits(model, args.force_update)
+
+    write_model_or_dataset(model, model.dataset, path=args.output_file, force=False)
+
+
 def results_bootstrap(args):
     """Subcommand to generate bootstrap results"""
     from pharmpy.methods.bootstrap.results import psn_bootstrap_results
@@ -1193,6 +1203,22 @@ parser_definition = [
                                 'help': 'List of epsilons, mark group of epsilons in single quote '
                                 'separated by spaces. To apply to all epsilons, omit this '
                                 'argument.',
+                            },
+                        ],
+                    }
+                },
+                {
+                    'update_inits': {
+                        'help': 'Update inits using modelfit results.',
+                        'description': 'Update inits using modelfit results, can be forced.',
+                        'func': update_inits,
+                        'parents': [args_model_input, args_output],
+                        'args': [
+                            {
+                                'name': '--force_update',
+                                'type': bool,
+                                'default': False,
+                                'help': 'Force update.',
                             },
                         ],
                     }

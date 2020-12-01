@@ -667,3 +667,21 @@ fixed. If no list is provided as input, a full block structure is implemented.
    create_rv_block(model)
    model.update_source()
    print_model_diff(model_ref, model)
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Update initial estimates from previous run
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If there are results from a previous run, those can be used for initial estimates in your
+pharmpy model.
+
+
+.. jupyter-execute::
+
+   model = Model(path / "pheno.mod")
+   from pharmpy.modeling import update_inits
+
+   update_inits(model, force_individual_estimates=True)
+   model.update_source()
+   print_model_diff(model_ref, model)
+

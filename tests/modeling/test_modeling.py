@@ -4,6 +4,7 @@ from io import StringIO
 
 import numpy as np
 import pytest
+from pyfakefs.fake_filesystem import set_uid
 from pyfakefs.fake_filesystem_unittest import Patcher
 
 from pharmpy import Model
@@ -1525,20 +1526,30 @@ def test_remove_iov(testdata):
         remove_iov(model)
 
 
-def test_update_inits(testdata):
+@pytest.mark.parametrize(
+    'etas_file, force, file_exists',
+    [('', False, False), ('', True, True), ('$ETAS FILE=run1.phi', False, True)],
+)
+def test_update_inits(testdata, etas_file, force, file_exists):
     with Patcher(additional_skip_names=['pkgutil']) as patcher:
+        set_uid(0)  # Set to root user for write permission
+
         fs = patcher.fs
 
         fs.add_real_file(testdata / 'nonmem/pheno.mod', target_path='run1.mod')
         fs.add_real_file(testdata / 'nonmem/pheno.phi', target_path='run1.phi')
         fs.add_real_file(testdata / 'nonmem/pheno.ext', target_path='run1.ext')
         fs.add_real_file(testdata / 'nonmem/pheno.dta', target_path='pheno.dta')
+
+        with open('run1.mod', 'a') as f:
+            f.write(etas_file)
+
         model = Model('run1.mod')
-        update_inits(model)
+        update_inits(model, force)
         model.update_source()
 
-        assert '$ETAS FILE=run1_input.phi' in str(model)
-        assert os.path.isfile('run1_input.phi')
+        assert ('$ETAS FILE=run1_input.phi' in str(model)) is file_exists
+        assert (os.path.isfile('run1_input.phi')) is file_exists
 
 
 @pytest.mark.parametrize(
