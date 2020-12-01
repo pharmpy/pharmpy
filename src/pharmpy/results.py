@@ -17,16 +17,19 @@
 
 import json
 import math
+import warnings
 from pathlib import Path
 
 import altair as alt
 import numpy as np
 import pandas as pd
+import sympy
 
 import pharmpy.config as config
 import pharmpy.visualization
 from pharmpy.data import PharmDataFrame
 from pharmpy.math import cov2corr
+from pharmpy.parameter_sampling import sample_from_covariance_matrix
 from pharmpy.random_variables import VariabilityLevel
 
 
@@ -520,3 +523,28 @@ class ChainedModelfitResults(list, ModelfitResults):
         return self[-1].model_name
 
     # FIXME: To not have to manually intercept everything here. Could do it in a general way.
+
+
+def individual_parameter_statistics(model, expr):
+    """Calculate statistics for an individual parameter
+
+    The parameter does not have to be in the model, but can be an
+    expression of other parameters from the model.
+    Does not support parameters that relies on the solution of the ODE-system
+    """
+    expr = sympy.sympify(expr)
+    pe = dict(model.modelfit_results.parameter_estimates)
+    full_expr = model.statements.full_expression_from_odes(expr)
+    expr = model.random_variables.expression(full_expr.subs(pe), pe)
+    mean = np.float64(sympy.stats.E(expr))
+    variance = np.float64(sympy.stats.variance(expr))
+    parameters = sample_from_covariance_matrix(model, n=10)
+    samples = []
+    with warnings.catch_warnings():
+        warnings.filterwarnings('ignore')
+        for _, row in parameters.iterrows():
+            expr = model.random_variables.expression(full_expr.subs(dict(row)), dict(row))
+            samples.extend(next(sympy.stats.sample(expr, library='numpy', size=10)).tolist())
+    stderr = pd.Series(samples).std()
+    res = {'mean': mean, 'variance': variance, 'stderr': stderr}
+    return pd.Series(res)

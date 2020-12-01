@@ -504,6 +504,26 @@ class RandomVariables(OrderedSet):
                             nearest[dist.sigma[row, col].name] = B[row, col]
         return nearest
 
+    def expression(self, expr, parameters):
+        """Replace all symbols with same names as rvs with the corresponding rvs
+        or indexed variables for joint distributions and replace parameter values
+        """
+        d = dict()
+        i = 1
+        for rvs, dist in self.distributions():
+            if len(rvs) > 1:
+                joint_name = f'__J{i}'
+                mu = dist.mu.subs(parameters)
+                sigma = dist.sigma.subs(parameters)
+                x = stats.Normal(joint_name, mu, sigma)
+                d.update({symbol(rv.name): x[n] for n, rv in enumerate(rvs)})
+                i += 1
+            else:
+                mean = dist.mean.subs(parameters)
+                std = dist.std.subs(parameters)
+                d[symbol(rvs[0].name)] = stats.Normal(rvs[0].name, mean, std)
+        return expr.subs(d)
+
 
 # pharmpy sets a parametrization attribute to the sympy distributions
 # It will currently not affect the sympy distribution itself just convey the information

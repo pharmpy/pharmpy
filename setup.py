@@ -70,7 +70,7 @@ setup(
     ],
     install_requires=[
         'lark-parser',
-        'sympy>=1.6.1',
+        'sympy>=1.7',
         'symengine',
         'pandas',
         'numexpr',
