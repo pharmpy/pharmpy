@@ -55,8 +55,6 @@ def create_rv_block(model, list_of_rvs=None):
     model.random_variables = rvs_new
     model.parameters = pset
 
-    model.modelfit_results = None
-
     return model
 
 

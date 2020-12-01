@@ -33,8 +33,6 @@ def power_on_ruv(model, list_of_eps=None):
     model.parameters = pset
     model.statements = sset
 
-    model.modelfit_results = None
-
     return model
 
 
