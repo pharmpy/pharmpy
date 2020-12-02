@@ -12,4 +12,4 @@ def test_individual_parameter_statistics(testdata):
 
     assert stats['mean'] == pytest.approx(0.00470525776968202)
     assert stats['variance'] == pytest.approx(8.12398122254498e-6)
-    assert stats['stderr'] == pytest.approx(0.003400, abs=1e-5)
+    assert stats['stderr'] == pytest.approx(0.00344872, abs=1e-5)

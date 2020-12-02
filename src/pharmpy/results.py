@@ -538,7 +538,7 @@ def individual_parameter_statistics(model, expr):
     expr = model.random_variables.expression(full_expr.subs(pe), pe)
     mean = np.float64(sympy.stats.E(expr))
     variance = np.float64(sympy.stats.variance(expr))
-    parameters = sample_from_covariance_matrix(model, n=10)
+    parameters = sample_from_covariance_matrix(model, n=100)
     samples = []
     with warnings.catch_warnings():
         warnings.filterwarnings('ignore')
