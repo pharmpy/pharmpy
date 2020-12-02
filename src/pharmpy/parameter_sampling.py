@@ -1,3 +1,4 @@
+import warnings
 from functools import partial
 
 import numpy as np
@@ -107,7 +108,15 @@ def sample_from_covariance_matrix(
     sigma = modelfit_results.covariance_matrix[parameters].loc[parameters].to_numpy()
     if not is_posdef(sigma):
         if force_posdef_covmatrix:
+            old_sigma = sigma
             sigma = nearest_posdef(sigma)
+            delta_frobenius = np.linalg.norm(old_sigma) - np.linalg.norm(sigma)
+            delta_max = np.abs(old_sigma).max() - np.abs(sigma).max()
+            warnings.warn(
+                f'Covariance matrix was forced to become positive definite.\n'
+                f'    Difference in the frobenius norm: {delta_frobenius:.3f}\n'
+                f'    Difference in the max norm: {delta_max:.3f}\n'
+            )
         else:
             raise ValueError("Uncertainty covariance matrix not positive-definite")
 

@@ -21,6 +21,10 @@ def test_sample_from_covariance_matrix(testdata):
         }
     )
     pd.testing.assert_frame_equal(samples, correct, atol=1e-6)
+    # Make cov matrix non-posdef
+    model.modelfit_results.covariance_matrix['THETA(1)']['THETA(1)'] = -1
+    with pytest.warns(UserWarning):
+        sample_from_covariance_matrix(model, n=1, force_posdef_covmatrix=True)
 
 
 def test_sample_individual_estimates(testdata):
