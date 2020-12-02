@@ -114,8 +114,8 @@ def sample_from_covariance_matrix(
             delta_max = np.abs(old_sigma).max() - np.abs(sigma).max()
             warnings.warn(
                 f'Covariance matrix was forced to become positive definite.\n'
-                f'    Difference in the frobenius norm: {delta_frobenius:.3f}\n'
-                f'    Difference in the max norm: {delta_max:.3f}\n'
+                f'    Difference in the frobenius norm: {delta_frobenius:.3e}\n'
+                f'    Difference in the max norm: {delta_max:.3e}\n'
             )
         else:
             raise ValueError("Uncertainty covariance matrix not positive-definite")
