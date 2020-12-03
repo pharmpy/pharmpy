@@ -520,7 +520,8 @@ def calculate_results_from_samples(frem_model, continuous, categorical, parvecs,
     sigma_symb = symengine.sympify(sigma_symb)
     parvecs.columns = [symengine.Symbol(colname) for colname in parvecs.columns]
 
-    covbase = covariate_baselines.to_numpy()
+    estimated_covbase = _calculate_covariate_baselines(frem_model, covariates)
+    covbase = estimated_covbase.to_numpy()
 
     for sample_no, params in parvecs.iterrows():
         sigma = sigma_symb.subs(dict(params))
@@ -552,7 +553,7 @@ def calculate_results_from_samples(frem_model, continuous, categorical, parvecs,
             else:
                 original_variability[i + 1, :] = np.diag(sigma_bar)
 
-        for i in range(len(covariate_baselines)):
+        for i in range(len(estimated_covbase)):
             row = covbase[i, :]
             id_mu = np.array([0] * npars + list(cov_refs))
             mu_id_bar, sigma_id_bar = conditional_joint_normal(id_mu, sigma, row)
@@ -700,6 +701,33 @@ def rename_duplicate(params, stem):
         if candidate not in params:
             return candidate
         i += 1
+
+
+def _calculate_covariate_baselines(model, covariates):
+    exprs = [
+        ass.expression.args[0][0]
+        for ass in model.statements
+        if symbols.symbol('FREMTYPE') in ass.free_symbols and ass.symbol.name == 'IPRED'
+    ]
+    exprs = [
+        expr.subs(dict(model.modelfit_results.parameter_estimates)).subs(model.parameters.inits)
+        for expr in exprs
+    ]
+    new = []
+    for expr in exprs:
+        for symb in expr.free_symbols:
+            stat = model.statements.find_assignment(symb.name)
+            if stat is not None:
+                expr = expr.subs(symb, stat.expression)
+        new.append(expr)
+    exprs = new
+
+    def fn(row):
+        return [np.float64(expr.subs(dict(row))) for expr in exprs]
+
+    df = model.modelfit_results.individual_estimates.apply(fn, axis=1, result_type='expand')
+    df.columns = covariates
+    return df
 
 
 def calculate_results_using_bipp(frem_model, continuous, categorical, rescale=True, samples=2000):
