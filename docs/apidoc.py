@@ -12,6 +12,9 @@ import pharmpy
 
 pharmpy_path = Path(pharmpy.__file__).parent
 
+# Remove old rst files to make sure no
+os.system('rm docs/reference/*.rst')
+
 exclude = []
 noclass = []
 for _, modname, _ in pkgutil.walk_packages([Path('src/pharmpy')], 'pharmpy.'):

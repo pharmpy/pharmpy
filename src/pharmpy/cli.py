@@ -587,7 +587,6 @@ def results_frem(args):
     res.create_report(args.psn_dir)
 
 
-
 def results_linearize(args):
     from pharmpy.methods.linearize.results import psn_linearize_results
 
