@@ -584,6 +584,8 @@ def results_frem(args):
     res.add_plots()
     res.to_json(path=args.psn_dir / 'results.json')
     res.to_csv(path=args.psn_dir / 'results.csv')
+    res.create_report(args.psn_dir)
+
 
 
 def results_linearize(args):
