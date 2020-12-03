@@ -575,7 +575,8 @@ def calculate_results_from_samples(frem_model, continuous, categorical, parvecs,
     q95_95th = np.quantile(mu_bars_given_95th, 0.95, axis=0)
 
     df = pd.DataFrame(columns=['parameter', 'covariate', 'condition', 'p5', 'mean', 'p95'])
-    param_names = [rv.name for rv in rvs][:npars]
+    param_names = get_params(frem_model, rvs, npars)
+
     for param, cov in itertools.product(range(npars), range(ncovs)):
         if covariates[cov] in categorical:
             df = df.append(
@@ -670,6 +671,35 @@ def calculate_results_from_samples(frem_model, continuous, categorical, parvecs,
     res.covariate_baselines = covariate_baselines
 
     return res
+
+
+def get_params(frem_model, rvs, npars):
+    param_names = [rv.name for rv in rvs][:npars]
+    sset = frem_model.statements.before_ode()
+    symbs = []
+
+    for p in param_names:
+        s = sset.find_assignment(p, is_symbol=False)
+        if str(s.expression) == p:
+            s = sset.find_assignment(s.symbol.name, is_symbol=False)
+        symbs.append(s.symbol.name)
+
+    duplicates = set([e for e in symbs if symbs.count(e) > 1])
+
+    for i, s in enumerate(symbs):
+        if s in duplicates:
+            symbs[i] = rename_duplicate(symbs, s)
+
+    return symbs
+
+
+def rename_duplicate(params, stem):
+    i = 1
+    while True:
+        candidate = f'{stem}({i})'
+        if candidate not in params:
+            return candidate
+        i += 1
 
 
 def calculate_results_using_bipp(frem_model, continuous, categorical, rescale=True, samples=2000):

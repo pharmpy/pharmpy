@@ -765,6 +765,15 @@ class ModelStatements(list):
                 return s
         return None
 
+    def before_ode(self):
+        sset = ModelStatements()
+        for s in self:
+            if isinstance(s, ODESystem):
+                break
+            sset.append(s)
+
+        return sset
+
     def _ode_index(self):
         for i, s in enumerate(self):
             if isinstance(s, ODESystem):

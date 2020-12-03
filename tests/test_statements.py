@@ -225,3 +225,9 @@ def test_add_before_odes(testdata):
     model.statements.add_before_odes(Assignment('CL', sympy.Integer(1)))
     model.update_source()
     assert str(model).split('\n')[6] == 'CL = 1'
+
+
+def test_before_ode(pheno_path):
+    model = Model(pheno_path)
+    before_ode = model.statements.before_ode()
+    assert before_ode[-1].symbol.name == 'S1'
