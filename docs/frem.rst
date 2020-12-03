@@ -10,26 +10,94 @@ Pharmpy currently handles the postprocessing, plotting and creation of model_3b 
 The FREM postprocessing and results
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-All FREM postprocessing use the results from the final FREM model (model_4) only. Let us denote the FREM matrix :math:`\Omega`. This matrix is then a partition as follows:
+The postprocessing starts after estimating the parameters $P$ of the FREM model together with their uncertainty covariance matrix :math:`Cov(P)`. Let us denote the random variables representing the model parameters :math:`\eta_i` for :math:`1 \leq i \leq n_{par}` and the random variables for the covariates
+:math:`\eta_k` for :math:`n_{par} + 1 \leq k \leq n_{cov} + n_{par}`. Then
 
 .. math::
 
-   \Omega = 
+        \begin{bmatrix}
+            \eta_1 \\
+            \vdots \\
+	        \eta_{n_{par}} \\
+	        \eta_{n_{par} + 1} \\
+	        \vdots \\
+	        \eta_{n_{par} + n_{cov}} \\
+         \end{bmatrix}
+	\sim \mathcal{N}(\mu, \Omega)
 
-The first step is to find the parameter uncertainty of the parameters of the
+where 
 
+.. math::
+
+
+	\mu = 
+    \begin{bmatrix}
+        0 \\
+        \vdots \\
+        0 \\	
+        \overline{C}_{1} \\
+        \vdots \\ 
+	    \overline{C}_{n_{cov}} \\
+    \end{bmatrix}
+
+and
+
+.. math::
+
+    \Omega =
+    \begin{bmatrix}
+        \omega_{11} & \omega_{21} & \cdots & \omega_{n1} \\
+        \omega_{21} & \omega_{22} & \cdots & \omega_{n2} \\
+        \vdots & \vdots & \ddots & \vdots \\
+        \omega_{n1} & \omega_{n2} & \cdots & \omega_{nn} \\
+    \end{bmatrix} =
+    \begin{bmatrix}
+        \Omega_{11} & \Omega_{12} \\
+        \Omega_{21} & \Omega_{22} \\
+   \end{bmatrix}
+
+:math:`\overline{C}_k` is the mean of the covariate in the dataset.
+The latter partition being for parameters (index 1) and covariates (index 2), i.e.
+:math:`\Omega_{11}` is the original parameter matrix, :math:`\Omega_{22}` is the covariate matrix and :math:`\Omega_{21}` and :math:`\Omega_{12}^T` is the parameter-covariate covariance block. 
+
+Covariate effects
+~~~~~~~~~~~~~~~~~
+
+The effects of each covariate on each parameter is calculated with uncertainty and summarized in the `covariate_effects` table.
 
 .. jupyter-execute::
-   :hide-output:
-   :hide-code:
+    :hide-code:
 
-   from pathlib import Path
-   path = Path('tests/testdata/nonmem/')
+    from pharmpy.results import read_results
+    res = read_results('tests/testdata/frem/results.json')
+    res.covariate_effects
 
-.. jupyter-execute::
+The effects are given as fractions where 1 means no effect and are calculated conditioned on the 5th and 95th percentile of the covariate values respectively.
 
-   from pharmpy import Model
+Assume that the estimated parameter vector is joint normally distributed with mean vector :math:`P` and covariance matrix :math:`Cov(P)`. Then the marginal distribution of the :math:`\omega_{ij}` of :math:`\Omega` will also be joint normally distributed. Sample 1000 times from this marginal distribution to get :math:`\omega_{ijk}` and :math:`\Omega_k` for :math:`1\leq k \leq 1000`.
 
-   model = Model(path / "pheno_real.mod")
-   df = model.dataset
-   df
+If the covariate etas were scaled in the FREM model the scaling needs to be applied to all :math:`\Omega_k` by first creating the scaling matrix
+
+.. math::
+
+	S=
+    \begin{bmatrix}
+        1 & & & & \\
+        & 1 & & & \\
+        & & \ddots & &\\
+        & & & \sigma_1 &\\
+        & & & & \sigma_2 \\
+    \end{bmatrix}
+
+where :math:`\sigma_i` is the standard deviation of the i:th covariate in the data, and then get each scaled matrix as :math:`S \Omega_k S`.
+
+Do for each sample:
+For each covariate :math:`k` create the marginal distribution of all parameters and that single covariate. Calculate the means of the parameters given the covariate values in the 5th and 95th percentile of the dataset in turn. The vector of the means would be given by the conditional joint normal distribution as:
+
+.. math::
+
+	\bar{\mu} = \mu_1 + \Omega_{12}\Omega_{22}^{-1}(a - \mu_2)
+
+where :math:`a` is the given value of the covariate.
+
+For each parameter and covariate calculate the mean, 5:th and 95:th percentile over all conditional parameter means. These are the covariate effects and their uncertainties. I.e. the conditional mean of the parameter given in turn the 5th and the 95th percentile of the covariate data. Since we currently assume log-normally distributed individual parameters each mean is exponentiated.
