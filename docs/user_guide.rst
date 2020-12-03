@@ -9,6 +9,7 @@ User guide
    data
    modeling
    frem
+   plots
    cli
    configuration
    using_r

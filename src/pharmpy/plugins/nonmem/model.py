@@ -91,7 +91,7 @@ class Model(pharmpy.model.Model):
         path - path to modelfile
         nofiles - Set to not write any files (i.e. dataset, phi input etc)
         """
-        self._update_initial_individual_estimates(path)
+        self._update_initial_individual_estimates(path, nofiles)
         if hasattr(self, '_random_variables'):
             update_random_variables(self, self._old_random_variables, self._random_variables)
             self._old_random_variables = self._random_variables.copy()
@@ -147,7 +147,7 @@ class Model(pharmpy.model.Model):
         if len(all_sizes) == 0 and len(str(sizes)) > 7:
             self.control_stream.insert_record(str(sizes))
 
-    def _update_initial_individual_estimates(self, path):
+    def _update_initial_individual_estimates(self, path, nofiles=False):
         """Update $ETAS
 
         Could have 0 FIX in model. Need to read these
@@ -165,9 +165,10 @@ class Model(pharmpy.model.Model):
                 for eta in zero_fix:
                     etas[eta] = 0
             etas = self._sort_eta_columns(etas)
-            phi = PhiTable(df=etas)
-            table_file = NONMEMTableFile(tables=[phi])
-            table_file.write(phi_path)
+            if not nofiles:
+                phi = PhiTable(df=etas)
+                table_file = NONMEMTableFile(tables=[phi])
+                table_file.write(phi_path)
             # FIXME: This is a common operation
             eta_records = self.control_stream.get_records('ETAS')
             if eta_records:

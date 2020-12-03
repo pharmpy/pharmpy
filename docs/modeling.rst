@@ -682,6 +682,6 @@ pharmpy model.
    from pharmpy.modeling import update_inits
 
    update_inits(model, force_individual_estimates=True)
-   model.update_source()
+   model.update_source(nofiles=True)
    print_model_diff(model_ref, model)
 
