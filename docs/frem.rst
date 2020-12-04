@@ -39,6 +39,11 @@ where
         \vdots \\ 
 	    \overline{C}_{n_{cov}} \\
     \end{bmatrix}
+    =
+    \begin{bmatrix}
+        \mu_1 \\
+        \mu_2 \\
+    \end{bmatrix}
 
 and
 
@@ -56,7 +61,7 @@ and
         \Omega_{21} & \Omega_{22} \\
    \end{bmatrix}
 
-:math:`\overline{C}_k` is the mean of the covariate in the dataset.
+:math:`\overline{C}_k` is the covariate reference. For continuous covariates the reference is the mean of the baselines and for categoricals it is the non-mode value of the baselines.
 The latter partition being for parameters (index 1) and covariates (index 2), i.e.
 :math:`\Omega_{11}` is the original parameter matrix, :math:`\Omega_{22}` is the covariate matrix and :math:`\Omega_{21}` and :math:`\Omega_{12}^T` is the parameter-covariate covariance block. 
 
@@ -101,3 +106,57 @@ For each covariate :math:`k` create the marginal distribution of all parameters 
 where :math:`a` is the given value of the covariate.
 
 For each parameter and covariate calculate the mean, 5:th and 95:th percentile over all conditional parameter means. These are the covariate effects and their uncertainties. I.e. the conditional mean of the parameter given in turn the 5th and the 95th percentile of the covariate data. Since we currently assume log-normally distributed individual parameters each mean is exponentiated.
+
+The covariate effect plots give the covariate effects in percent with uncertainty for each parameter and covariate in turn. The red figures are the 5th and 95th percentile covariate values.
+
+.. jupyter-execute::
+    :hide-code:
+
+    res.plot_covariate_effects()
+
+
+
+Individual covariate effects
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The combined effects of all covariates on the parameters of each individual is calculated with uncertainty and summarized in the `individual_effects` table.
+
+.. jupyter-execute::
+    :hide-code:
+
+    res.individual_effects
+
+The conditional distribution as above is calculated for the estimated parameters (observed in the table) and the samples (that gives p5 and p95). The same :math:`\mu` and :math:`\Omega` are used, but the given condition is instead the covariate baseline as estimated from the model for each individual.
+
+The plot shows the individuals with the lowest and the highest percentual covariate effect and the uncertainty.
+
+.. jupyter-execute::
+    :hide-code:
+
+    res.plot_individual_effects()
+
+
+Unexplained variability
+~~~~~~~~~~~~~~~~~~~~~~~
+
+The unexplained variability is calculated and summarized in the `unexplained_variability` table.
+
+.. jupyter-execute::
+    :hide-code:
+
+    res.unexplained_variability
+
+For each sample the conditional distribution is calculated given no covariates, each covariate in turn and all covariates at the same time. The variability will be given by the conditional covariance matrix that can be calculated as:
+
+.. math::
+
+	\bar{\Omega} = \Omega_{11} - \Omega_{12} \Omega_{22}^{-1} \Omega_{21} =  \Omega_{11} - \Omega_{21}^T \Omega_{22}^{-1} \Omega_{21}
+
+The presented results are the 5th and 95th percetiles of the standard deviations of the parameters from :math:`\bar{\Omega}`. The observed standard deviation is the conditional 
+
+The plot display the original unexplained variability with the uncertainty for all parameter and covariate combinations.
+
+.. jupyter-execute::
+    :hide-code:
+
+    res.plot_unexplained_variability()
