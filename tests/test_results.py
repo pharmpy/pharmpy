@@ -13,3 +13,7 @@ def test_individual_parameter_statistics(testdata):
     assert stats['mean'] == pytest.approx(0.00470525776968202)
     assert stats['variance'] == pytest.approx(8.12398122254498e-6)
     assert stats['stderr'] == pytest.approx(0.00344872, abs=1e-5)
+
+    model = Model(testdata / 'nonmem' / 'secondary_parameters' / 'run1.mod')
+    np.random.seed(5678)
+    # stats = individual_parameter_statistics(model, 'CL/V')
