@@ -220,7 +220,7 @@ class FREMResults(Results):
             )
 
             plot = (
-                alt.layer(error_bars, rule, points, text, data=df, width=800, height=100)
+                alt.layer(error_bars, rule, points, text, data=df, width=700, height=100)
                 .facet(columns=1.0, row=alt.Facet('covariate:N', title=None), title=f'{parameter}')
                 .resolve_scale(y='independent')
             )
@@ -284,7 +284,7 @@ class FREMResults(Results):
                 error_bars,
                 rule,
                 data=df,
-                width=800,
+                width=700,
                 title=f'Individuals for parameter {parameter}',
             )
             if len(df) > 20:
@@ -357,7 +357,7 @@ class FREMResults(Results):
                 error_bars,
                 rule,
                 data=df,
-                width=800,
+                width=700,
                 title=f'Unexplained variability on {parameter}',
             )
 
