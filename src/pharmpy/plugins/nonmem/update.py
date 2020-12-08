@@ -290,7 +290,7 @@ def update_ode_system(model, old, new):
         advan = subs.get_option_startswith('ADVAN')
         trans = subs.get_option_startswith('TRANS')
         if len(new) > 5 or new.n_connected(new.find_central()) != len(new) - 1:
-            change_advan(model, 'ADVAN5', advan, trans)
+            change_advan(model, 'ADVAN5')
             advan = 'ADVAN5'
         update_lag_time(model, old, new)
         if isinstance(new.find_dosing().dose, Bolus) and 'RATE' in model.dataset.columns:
@@ -315,7 +315,6 @@ def update_ode_system(model, old, new):
                 subs.replace_option(advan, to_advan)
         elif old.find_depot(model._old_statements) and not new.find_depot(statements):
             # Depot was removed
-            statements = model.statements
             if advan == 'ADVAN2':
                 to_advan = 'ADVAN1'
             elif advan == 'ADVAN4':
@@ -602,10 +601,16 @@ def pk_param_conversion_map(cs, oldmap, from_advan=None, to_advan=None, trans=No
     return d
 
 
-def change_advan(model, advan, oldadvan, oldtrans):
+def change_advan(model, advan):
     """Change from one advan to another"""
+    subs = model.control_stream.get_records('SUBROUTINES')[0]
+    oldadvan = subs.get_option_startswith('ADVAN')
+    oldtrans = subs.get_option_startswith('TRANS')
+    odes = model.statements.ode_system
     assignments = []
     newtrans = None
+    if len(odes) > 5 or odes.n_connected(odes.find_central()) != len(odes) - 1:
+        advan = 'ADVAN5'
     if advan == oldadvan:
         return
     subs = model.control_stream.get_records('SUBROUTINES')[0]
