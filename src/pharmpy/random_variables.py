@@ -2,6 +2,7 @@ import enum
 import itertools
 
 import numpy as np
+import pandas as pd
 import symengine
 import sympy
 import sympy.stats as stats
@@ -523,6 +524,39 @@ class RandomVariables(OrderedSet):
                 std = dist.std.subs(parameters)
                 d[symbol(rvs[0].name)] = stats.Normal(rvs[0].name, mean, std)
         return expr.subs(d)
+
+    def sample(self, expr, parameters, n=1):
+        """Sample the value of an expression"""
+        expr = self.expression(expr, parameters)
+        replacement_expression = expr
+        i = 1
+        samples = pd.DataFrame()
+        symbols = list()
+        for sym in expr.free_symbols:
+            if isinstance(sym, sympy.Indexed):
+                # Need to handled indexed RV specially due to sympy issue #20541
+                new_symbs = []
+                for k in range(i, i + sym.pspace.distribution.sigma.cols):
+                    name = f'__x{k}'
+                    new_sym = sympy.Symbol(name)
+                    symbols.append(new_sym)
+                    new_symbs.append(name)
+                    replacement_expression = replacement_expression.subs({sym: new_sym})
+                    i += 1
+                a = sympy.stats.sample(sym.args[0], size=n)
+                samples[new_symbs] = list(a)
+
+            elif isinstance(sym, sympy.stats.rv.RandomSymbol):
+                # free_symbols include both the indexed and the non-indexed RV symbol
+                name = f'__x{i}'
+                new_sym = sympy.Symbol(name)
+                symbols.append(new_sym)
+                replacement_expression = replacement_expression.subs({sym: new_sym})
+                i += 1
+                a = sympy.stats.sample(sym, size=n)
+                samples[name] = list(a)
+        func = sympy.lambdify([tuple(symbols)], replacement_expression)
+        return func  # FIXME: Continue here
 
 
 # pharmpy sets a parametrization attribute to the sympy distributions
