@@ -578,6 +578,9 @@ def pk_param_conversion_map(cs, oldmap, from_advan=None, to_advan=None, trans=No
                         symbol('K42'): symbol('K31'),
                     }
                 )
+    if trans == 'TRANS1' and len(oldmap) == 3 and len(newmap) > 3:
+        n = len(newmap)
+        d[symbol('K')] = symbol(f'K{n-1}0')
     return d
 
 
@@ -613,40 +616,42 @@ def change_advan(model):
     if advan == 'ADVAN5' or advan == 'ADVAN7':
         newtrans = 'TRANS1'
         if oldadvan == 'ADVAN1':
-            if oldtrans == 'TRANS1':
-                ass = Assignment('K10', symbol('K'))
-            else:  # TRANS2
+            if oldtrans == 'TRANS2':
                 ass = Assignment('K10', symbol('CL') / symbol('V'))
-            assignments.append(ass)
+                assignments.append(ass)
         elif oldadvan == 'ADVAN2':
             # FIXME: Might create too many new parameters
             assignments.append(Assignment('K12', symbol('KA')))
-            if oldtrans == 'TRANS1':
-                ass = Assignment('K20', symbol('K'))
-            else:  # TRANS2
+            if oldtrans == 'TRANS2':
                 ass = Assignment('K20', symbol('CL') / symbol('V'))
-            assignments.append(ass)
+                assignments.append(ass)
         elif oldadvan == 'ADVAN3':
             k, k12, k21 = _advan3_trans(oldtrans)
             ass1 = Assignment('K12', k12)
             ass2 = Assignment('K21', k21)
-            ass3 = Assignment('K20', k)
-            assignments.extend([ass1, ass2, ass3])
+            assignments.extend([ass1, ass2])
+            if oldtrans != 'TRANS1':
+                ass3 = Assignment('K20', k)
+                assignments.append(ass3)
         elif oldadvan == 'ADVAN4':
             k, k23, k32, ka = _advan4_trans(oldtrans)
             ass1 = Assignment('K12', ka)
             ass2 = Assignment('K23', k23)
             ass3 = Assignment('K32', k32)
-            ass4 = Assignment('K30', k)
-            assignments.extend([ass1, ass2, ass3, ass4])
+            assignments.extend([ass1, ass2, ass3])
+            if oldtrans != 'TRANS1':
+                ass4 = Assignment('K30', k)
+                assignments.append(ass4)
         elif oldadvan == 'ADVAN11':
             k, k12, k21, k13, k31 = _advan11_trans(oldtrans)
             ass1 = Assignment('K12', k12)
             ass2 = Assignment('K21', k21)
             ass3 = Assignment('K13', k13)
             ass4 = Assignment('K31', k31)
-            ass5 = Assignment('K30', k)
-            assignments.extend([ass1, ass2, ass3, ass4, ass5])
+            assignments.extend([ass1, ass2, ass3, ass4])
+            if oldtrans != 'TRANS1':
+                ass5 = Assignment('K30', k)
+                assignments.append(ass5)
         elif oldadvan == 'ADVAN12':
             k, k23, k32, k24, k42, ka = _advan12_trans(oldtrans)
             ass1 = Assignment('K12', ka)
@@ -654,8 +659,10 @@ def change_advan(model):
             ass3 = Assignment('K32', k32)
             ass4 = Assignment('K24', k24)
             ass5 = Assignment('K42', k42)
-            ass6 = Assignment('K40', k)
-            assignments.extend([ass1, ass2, ass3, ass4, ass5, ass6])
+            assignments.extend([ass1, ass2, ass3, ass4, ass5])
+            if oldtrans != 'TRANS1':
+                ass6 = Assignment('K40', k)
+                assignments.append(ass6)
 
         for ass in assignments:
             model.statements.add_before_odes(ass)
