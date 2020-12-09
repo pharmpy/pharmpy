@@ -606,8 +606,9 @@ def change_advan(model):
     else:  # len(odes) == 5
         advan = 'ADAN12'
 
-    if advan == oldadvan:
-        return conv_advan, advan
+    # FIXME: Currently cannot go from ADVAN5 to other advans
+    if advan == oldadvan or oldadvan == 'ADVAN5':
+        return conv_advan, oldadvan
     subs = model.control_stream.get_records('SUBROUTINES')[0]
     if advan == 'ADVAN5' or advan == 'ADVAN7':
         newtrans = 'TRANS1'
