@@ -23,9 +23,14 @@ def power_on_ruv(model, list_of_eps=None):
     eps = _get_epsilons(model, list_of_eps)
     pset, sset = model.parameters, model.statements
 
+    if model.error_model == 'PROP':
+        theta_init = 1
+    else:
+        theta_init = 0.1
+
     for i, e in enumerate(eps):
         theta_name = str(model.create_symbol(stem='power', force_numbering=True))
-        theta = Parameter(theta_name, 0.01)
+        theta = Parameter(theta_name, theta_init)
         pset.add(theta)
 
         sset.subs({e.name: model.individual_prediction_symbol ** S(theta.name) * e})

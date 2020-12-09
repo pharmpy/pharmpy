@@ -15,9 +15,9 @@ def add_parameter(model, name):
     return model
 
 
-def _add_parameter(model, name):
+def _add_parameter(model, name, init=0.1):
     pops = model.create_symbol(f'POP_{name}')
-    pop_param = Parameter(pops.name, init=0.1, lower=0)
+    pop_param = Parameter(pops.name, init=init, lower=0)
     model.parameters.add(pop_param)
     symb = model.create_symbol(name)
     ass = Assignment(symb, pop_param.symbol)
@@ -63,21 +63,25 @@ def combined_mm_fo_elimination(model):
 
 
 def _do_michaelis_menten_elimination(model, combined=False):
-    km = _add_parameter(model, 'KM')
-    clmm = _add_parameter(model, 'CLMM')
     odes = model.statements.ode_system
     central = odes.find_central()
     output = odes.find_output()
     old_rate = odes.get_flow(central, output)
     numer, denom = old_rate.as_numer_denom()
+
+    km_init, clmm_init = _get_mm_inits(model, numer, combined)
+
+    km = _add_parameter(model, 'KM', init=km_init)
+    clmm = _add_parameter(model, 'CLMM', init=clmm_init)
+
     if denom != 1:
         if combined:
             cl = numer
         vc = denom
     else:
         if combined:
-            cl = _add_parameter(model, 'CL')
-        vc = _add_parameter(model, 'VC')
+            cl = _add_parameter(model, 'CL', clmm_init)
+        vc = _add_parameter(model, 'VC')  # FIXME: decide better initial estimate
     if not combined:
         cl = 0
 
@@ -89,6 +93,20 @@ def _do_michaelis_menten_elimination(model, combined=False):
     return model
 
 
+def _get_mm_inits(model, rate_numer, combined):
+    pset, sset = model.parameters, model.statements
+
+    clmm_init = sset.extract_params_from_symb(rate_numer.name, pset).init
+
+    if combined:
+        clmm_init /= 2
+
+    dv_max = model.dataset.pharmpy.observations.max()
+    km_init = dv_max * 2
+
+    return km_init, clmm_init
+
+
 def set_transit_compartments(model, n):
     """Set the number of transit compartments of model"""
     statements = model.statements
@@ -98,7 +116,7 @@ def set_transit_compartments(model, n):
     if len(transits) == n:
         pass
     elif len(transits) == 0:
-        mdt_symb = _add_parameter(model, 'MDT')
+        mdt_symb = _add_parameter(model, 'MDT', init=get_absorption_init(model, 'MDT'))
         rate = n / mdt_symb
         comp = odes.find_dosing()
         dose = comp.dose
@@ -143,7 +161,7 @@ def add_lag_time(model):
     odes = model.statements.ode_system
     dosing_comp = odes.find_dosing()
     old_lag_time = dosing_comp.lag_time
-    mdt_symb = _add_parameter(model, 'MDT')
+    mdt_symb = _add_parameter(model, 'MDT', init=get_absorption_init(model, 'MDT'))
     dosing_comp.lag_time = mdt_symb
     if old_lag_time:
         model.statements.remove_symbol_definitions(old_lag_time.free_symbols, odes)
@@ -308,7 +326,9 @@ def add_zero_order_absorption(model, amount, to_comp, parameter_name):
     """Add zero order absorption to a compartment.
     Disregards what is currently in the model.
     """
-    mat_symb = _add_parameter(model, parameter_name)
+    mat_symb = _add_parameter(
+        model, parameter_name, init=get_absorption_init(model, parameter_name)
+    )
     new_dose = Infusion(amount, duration=mat_symb * 2)
     to_comp.dose = new_dose
 
@@ -320,9 +340,30 @@ def add_first_order_absorption(model, dose, to_comp):
     odes = model.statements.ode_system
     depot = odes.add_compartment('DEPOT')
     depot.dose = dose
-    mat_symb = _add_parameter(model, 'MAT')
+    mat_symb = _add_parameter(model, 'MAT', get_absorption_init(model, 'MAT'))
     odes.add_flow(depot, to_comp, 1 / mat_symb)
     return depot
+
+
+def get_absorption_init(model, param_name):
+    try:
+        if param_name == 'MDT':
+            param_prev = model.statements.lag_time
+        else:
+            param_prev = model.statements.extract_params_from_symb(param_name, model.parameters)
+        return param_prev.init
+    except AttributeError:
+        pass
+
+    dt = model.dataset
+    time_label = dt.pharmpy.idv_label
+    obs = dt.pharmpy.observations
+    time_min = obs.index.get_level_values(level=time_label).min()
+
+    if param_name == 'MDT':
+        return float(time_min) / 2
+    elif param_name == 'MAT':
+        return float(time_min) * 2
 
 
 def add_peripheral_compartment(model):

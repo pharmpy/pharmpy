@@ -42,7 +42,7 @@ def add_etas(model, parameter, expression, operation='*'):
     eta.variability_level = VariabilityLevel.IIV
 
     rvs.add(eta)
-    pset.add(Parameter(str(omega), 0.1))
+    pset.add(Parameter(str(omega), init=0.09))
 
     statement = sset.find_assignment(parameter)
     eta_addition = _create_template(expression, operation)

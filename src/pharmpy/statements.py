@@ -701,6 +701,11 @@ class ModelStatements(list):
         else:
             return assignments
 
+    def extract_params_from_symb(self, symbol_name, pset):
+        terms = {symb.name for symb in self.find_assignment(symbol_name).free_symbols}
+        theta_name = terms.intersection(pset.names).pop()
+        return pset[theta_name]
+
     def reassign(self, symbol, expression):
         """Reassign symbol to expression"""
         last = True

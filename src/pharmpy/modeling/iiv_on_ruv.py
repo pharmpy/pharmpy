@@ -73,7 +73,7 @@ def _get_epsilons(model, list_of_eps):
 
 def _create_eta(pset, number):
     omega = S(f'IIV_RUV{number}')
-    pset.add(Parameter(str(omega), 0.01))
+    pset.add(Parameter(str(omega), 0.09))
 
     eta = stats.Normal(f'RV{number}', 0, sympy.sqrt(omega))
     eta.variability_level = VariabilityLevel.IIV

@@ -9,7 +9,7 @@ from pyfakefs.fake_filesystem_unittest import Patcher
 
 from pharmpy import Model
 from pharmpy.config import ConfigurationContext
-from pharmpy.modeling import (
+from pharmpy.modeling import (  # TODO: test error
     add_covariate_effect,
     add_etas,
     add_lag_time,
@@ -60,7 +60,7 @@ Y=F+F*EPS(1)
 
 $THETA (0,1.00916) ; TVV
 $THETA  (0,0.067) FIX ; POP_KM
-$THETA  (0,0.1) ; POP_CLMM
+$THETA  (0,0.00469307) ; POP_CLMM
 $OMEGA 0.031128  ; IVV
 $SIGMA 0.013241
 
@@ -91,8 +91,8 @@ $ERROR
 Y=F+F*EPS(1)
 
 $THETA (0,1.00916) ; TVV
-$THETA  (0,0.1) ; POP_KM
-$THETA  (0,0.1) ; POP_CLMM
+$THETA  (0,135.8) ; POP_KM
+$THETA  (0,0.00469307) ; POP_CLMM
 $OMEGA 0.031128  ; IVV
 $SIGMA 0.013241
 
@@ -132,8 +132,8 @@ $DES
 DADT(1) = -A(1)*CLMM*KM/(VC*(A(1)/VC + KM))
 $ERROR
 Y=F+F*EPS(1)
-$THETA  (0,0.1) ; POP_KM
-$THETA  (0,0.1) ; POP_CLMM
+$THETA  (0,135.8) ; POP_KM
+$THETA  (0,0.00469307) ; POP_CLMM
 $THETA  (0,0.1) ; POP_VC
 $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION
@@ -180,8 +180,8 @@ $ERROR
 Y=F+F*EPS(1)
 $THETA (0,0.00469307) ; TVCL
 $THETA (0,1.00916) ; TVV
-$THETA  (0,0.1) ; POP_KM
-$THETA  (0,0.1) ; POP_CLMM
+$THETA  (0,135.8) ; POP_KM
+$THETA  (0,0.002346535) ; POP_CLMM
 $OMEGA 0.0309626  ; IVCL
 $OMEGA 0.031128  ; IVV
 $SIGMA 0.013241
@@ -222,9 +222,9 @@ $DES
 DADT(1) = -A(1)*(CL + CLMM*KM/(A(1)/VC + KM))/VC
 $ERROR
 Y=F+F*EPS(1)
-$THETA  (0,0.1) ; POP_KM
-$THETA  (0,0.1) ; POP_CLMM
-$THETA  (0,0.1) ; POP_CL
+$THETA  (0,135.8) ; POP_KM
+$THETA  (0,0.002346535) ; POP_CLMM
+$THETA  (0,0.002346535) ; POP_CL
 $THETA  (0,0.1) ; POP_VC
 $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION
@@ -345,6 +345,12 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
 '''
     )
     assert str(model) == correct
+    model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan2.mod')
+    set_transit_compartments(model, 1)
+    model.update_source()
+
+    assert not re.search(r'K *= *', str(model))
+    assert re.search('K30 = CL/V', str(model))
 
 
 def test_transit_compartments_added_mdt(testdata):
@@ -387,7 +393,7 @@ $THETA (0,1.00916) ; V
 $THETA (-.99,.1)
 $THETA (0,10)
 $THETA (0,10)
-$THETA  (0,0.1) ; POP_MDT
+$THETA  (0,0.5) ; POP_MDT
 $OMEGA DIAGONAL(2)
  0.0309626  ;       IVCL
  0.031128  ;        IVV
@@ -440,7 +446,7 @@ IWRES=IRES/W
 $THETA (0,0.00469307) ; CL
 $THETA (0,1.00916) ; V
 $THETA (-.99,.1)
-$THETA  (0,0.1) ; POP_MDT
+$THETA  (0,0.5) ; POP_MDT
 $OMEGA DIAGONAL(2)
  0.0309626  ;       IVCL
  0.031128  ;        IVV
@@ -487,7 +493,7 @@ IWRES=IRES/W
 $THETA (0,0.00469307) ; CL
 $THETA (0,1.00916) ; V
 $THETA (-.99,.1)
-$THETA  (0,0.1) ; POP_MDT
+$THETA  (0,0.5) ; POP_MDT
 $OMEGA DIAGONAL(2)
  0.0309626  ;       IVCL
  0.031128  ;        IVV
@@ -693,7 +699,7 @@ Y = CONC + CONC*EPS(1)
 
 $THETA (0,0.00469307) ; TVCL
 $THETA (0,1.00916) ; TVV
-$THETA  (0,0.1) ; POP_MAT
+$THETA  (0,2.0) ; POP_MAT
 $OMEGA 0.0309626  ; IVCL
 $OMEGA 0.031128  ; IVV
 $SIGMA 0.013241
@@ -798,7 +804,7 @@ IWRES=IRES/W
 $THETA (0,0.00469307) ; CL
 $THETA (0,1.00916) ; V
 $THETA (-.99,.1)
-$THETA  (0,0.1) ; POP_MAT
+$THETA  (0,2.0) ; POP_MAT
 $OMEGA DIAGONAL(2)
  0.0309626  ;       IVCL
  0.031128  ;        IVV
@@ -854,7 +860,7 @@ IWRES=IRES/W
 $THETA (0,0.00469307) ; CL
 $THETA (0,1.00916) ; V
 $THETA (-.99,.1)
-$THETA  (0,0.1) ; POP_MAT
+$THETA  (0,2.0) ; POP_MAT
 $OMEGA DIAGONAL(2)
  0.0309626  ;       IVCL
  0.031128  ;        IVV
@@ -995,8 +1001,8 @@ IWRES=IRES/W
 $THETA (0,0.00469307) ; CL
 $THETA (0,1.00916) ; V
 $THETA (-.99,.1)
-$THETA  (0,0.1) ; POP_MAT
-$THETA  (0,0.1) ; POP_MDT
+$THETA  (0,2.0) ; POP_MAT
+$THETA  (0,0.5) ; POP_MDT
 $OMEGA DIAGONAL(2)
  0.0309626  ;       IVCL
  0.031128  ;        IVV
@@ -1043,7 +1049,7 @@ $THETA (0,0.00469307) ; CL
 $THETA (0,1.00916) ; V
 $THETA (-.99,.1)
 $THETA (0,0.1)
-$THETA  (0,0.1) ; POP_MAT
+$THETA  (0,2.0) ; POP_MAT
 $OMEGA DIAGONAL(2)
  0.0309626  ;       IVCL
  0.031128  ;        IVV
@@ -1090,7 +1096,7 @@ $THETA (0,0.00469307) ; CL
 $THETA (0,1.00916) ; V
 $THETA (-.99,.1)
 $THETA (0,0.1) ; KA
-$THETA  (0,0.1) ; POP_MDT
+$THETA  (0,0.5) ; POP_MDT
 $OMEGA DIAGONAL(2)
  0.0309626  ;       IVCL
  0.031128  ;        IVV
@@ -1259,7 +1265,7 @@ def test_add_etas(pheno_path, parameter, expression, operation, buf_new):
 
     last_rec = model.control_stream.get_records('OMEGA')[-1]
 
-    assert str(last_rec) == f'$OMEGA  0.1 ; IIV_{parameter}\n'
+    assert str(last_rec) == f'$OMEGA  0.09 ; IIV_{parameter}\n'
 
 
 @pytest.mark.parametrize(
@@ -1363,7 +1369,7 @@ def test_block_rvs(testdata, etas, pk_ref, omega_ref):
             ['EPS(1)'],
             False,
             'Y = EPS(1)*W*EXP(ETA(3)) + F\n' 'IPRED=F+EPS(2)\n' 'IRES=DV-IPRED+EPS(3)\n',
-            '$OMEGA  0.01 ; IIV_RUV1',
+            '$OMEGA  0.09 ; IIV_RUV1',
         ),
         (
             ['EPS(1)', 'EPS(2)'],
@@ -1371,7 +1377,7 @@ def test_block_rvs(testdata, etas, pk_ref, omega_ref):
             'Y = EPS(1)*W*EXP(ETA(3)) + F\n'
             'IPRED = EPS(2)*EXP(ETA(4)) + F\n'
             'IRES=DV-IPRED+EPS(3)\n',
-            '$OMEGA  0.01 ; IIV_RUV1\n' '$OMEGA  0.01 ; IIV_RUV2',
+            '$OMEGA  0.09 ; IIV_RUV1\n' '$OMEGA  0.09 ; IIV_RUV2',
         ),
         (
             ['EPS(1)', 'EPS(3)'],
@@ -1379,7 +1385,7 @@ def test_block_rvs(testdata, etas, pk_ref, omega_ref):
             'Y = EPS(1)*W*EXP(ETA(3)) + F\n'
             'IPRED = EPS(2) + F\n'
             'IRES = DV + EPS(3)*EXP(ETA(4)) - IPRED\n',
-            '$OMEGA  0.01 ; IIV_RUV1\n' '$OMEGA  0.01 ; IIV_RUV2',
+            '$OMEGA  0.09 ; IIV_RUV1\n' '$OMEGA  0.09 ; IIV_RUV2',
         ),
         (
             None,
@@ -1387,7 +1393,7 @@ def test_block_rvs(testdata, etas, pk_ref, omega_ref):
             'Y = EPS(1)*W*EXP(ETA(3)) + F\n'
             'IPRED = EPS(2)*EXP(ETA(4)) + F\n'
             'IRES = DV + EPS(3)*EXP(ETA(5)) - IPRED\n',
-            '$OMEGA  0.01 ; IIV_RUV1\n' '$OMEGA  0.01 ; IIV_RUV2\n' '$OMEGA  0.01 ; IIV_RUV3',
+            '$OMEGA  0.09 ; IIV_RUV1\n' '$OMEGA  0.09 ; IIV_RUV2\n' '$OMEGA  0.09 ; IIV_RUV3',
         ),
         (
             None,
@@ -1395,7 +1401,7 @@ def test_block_rvs(testdata, etas, pk_ref, omega_ref):
             'Y = EPS(1)*W*EXP(ETA(3)) + F\n'
             'IPRED = EPS(2)*EXP(ETA(3)) + F\n'
             'IRES = DV + EPS(3)*EXP(ETA(3)) - IPRED\n',
-            '$OMEGA  0.01 ; IIV_RUV1',
+            '$OMEGA  0.09 ; IIV_RUV1',
         ),
     ],
 )
@@ -1558,28 +1564,28 @@ def test_update_inits(testdata, etas_file, force, file_exists):
         (
             ['EPS(1)'],
             'Y = CIPREDI**THETA(4)*W*EPS(1) + F\n' 'IPRED=F+EPS(2)\n' 'IRES=DV-IPRED+EPS(3)',
-            '$THETA  0.01 ; power1',
+            '$THETA  1 ; power1',
         ),
         (
             ['EPS(1)', 'EPS(2)'],
             'Y = CIPREDI**THETA(4)*W*EPS(1) + F\n'
             'IPRED = CIPREDI**THETA(5)*EPS(2) + F\n'
             'IRES=DV-IPRED+EPS(3)',
-            '$THETA  0.01 ; power1\n' '$THETA  0.01 ; power2',
+            '$THETA  1 ; power1\n' '$THETA  1 ; power2',
         ),
         (
             ['EPS(1)', 'EPS(3)'],
             'Y = CIPREDI**THETA(4)*W*EPS(1) + F\n'
             'IPRED = EPS(2) + F\n'
             'IRES = CIPREDI**THETA(5)*EPS(3) + DV - IPRED',
-            '$THETA  0.01 ; power1\n' '$THETA  0.01 ; power2',
+            '$THETA  1 ; power1\n' '$THETA  1 ; power2',
         ),
         (
             None,
             'Y = CIPREDI**THETA(4)*W*EPS(1) + F\n'
             'IPRED = CIPREDI**THETA(5)*EPS(2) + F\n'
             'IRES = CIPREDI**THETA(6)*EPS(3) + DV - IPRED',
-            '$THETA  0.01 ; power1\n' '$THETA  0.01 ; power2\n' '$THETA  0.01 ; power3',
+            '$THETA  1 ; power1\n' '$THETA  1 ; power2\n' '$THETA  1 ; power3',
         ),
     ],
 )
