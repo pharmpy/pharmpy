@@ -15,13 +15,13 @@ from pharmpy.modeling import (  # TODO: test error
     add_lag_time,
     bolus_absorption,
     boxcox,
-    combined_mm_fo_elimination,
     create_rv_block,
     explicit_odes,
     first_order_absorption,
     iiv_on_ruv,
     john_draper,
     michaelis_menten_elimination,
+    mixed_mm_fo_elimination,
     power_on_ruv,
     remove_iiv,
     remove_iov,
@@ -161,7 +161,7 @@ $ESTIMATION METHOD=1 INTERACTION
 """
     model = Model(StringIO(code))
     model.source.path = testdata / 'nonmem' / 'pheno.mod'  # To be able to find dataset
-    combined_mm_fo_elimination(model)
+    mixed_mm_fo_elimination(model)
     model.update_source()
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
@@ -206,7 +206,7 @@ $ESTIMATION METHOD=1 INTERACTION
 """
     model = Model(StringIO(code))
     model.source.path = testdata / 'nonmem' / 'pheno.mod'  # To be able to find dataset
-    combined_mm_fo_elimination(model)
+    mixed_mm_fo_elimination(model)
     model.update_source()
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@

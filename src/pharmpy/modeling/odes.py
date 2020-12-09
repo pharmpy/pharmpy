@@ -57,7 +57,7 @@ def michaelis_menten_elimination(model):
     return model
 
 
-def combined_mm_fo_elimination(model):
+def mixed_mm_fo_elimination(model):
     _do_michaelis_menten_elimination(model, combined=True)
     return model
 
