@@ -255,10 +255,16 @@ class DataFrameAccessor:
                 label = self.labels_by_type[ColumnType.DOSE]
             except KeyError:
                 raise DatasetError('Could not identify observation rows in dataset')
+
         label = label[0]
         idcol = self.id_label
         idvcol = self.idv_label
         df = self._obj.query(f'{label} == 0')
+
+        if df.empty:
+            df = self._obj.astype({label: 'float'})
+            df = df.query(f'{label} == 0')
+
         df = df[[idcol, idvcol, self.dv_label]]
         df.set_index([idcol, idvcol], inplace=True)
         return df.squeeze()
