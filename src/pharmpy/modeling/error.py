@@ -48,13 +48,18 @@ def additive_error(model):
 
     # FIXME: Refactor to model.add_parameter
     sigma = model.create_symbol('sigma')
-    sigma_par = Parameter(sigma.name, init=0.1)
+    sigma_par = Parameter(sigma.name, init=_get_prop_init(model.dataset))
     model.parameters.add(sigma_par)
 
     eps = sympy.stats.Normal(ruv.name, 0, sympy.sqrt(sigma))
     eps.variability_level = VariabilityLevel.RUV
     model.random_variables.add(eps)
     return model
+
+
+def _get_prop_init(dt):
+    dv_min = dt.pharmpy.observations.min()
+    return (dv_min / 2) ** 2
 
 
 def proportional_error(model):
@@ -73,7 +78,7 @@ def proportional_error(model):
 
     # FIXME: Refactor to model.add_parameter
     sigma = model.create_symbol('sigma')
-    sigma_par = Parameter(sigma.name, init=0.1)
+    sigma_par = Parameter(sigma.name, init=0.09)
     model.parameters.add(sigma_par)
 
     eps = sympy.stats.Normal(ruv.name, 0, sympy.sqrt(sigma))
@@ -99,10 +104,10 @@ def combined_error(model):
 
     # FIXME: Refactor to model.add_parameter
     sigma_prop = model.create_symbol('sigma_prop')
-    sigma_par1 = Parameter(sigma_prop.name, init=0.1)
+    sigma_par1 = Parameter(sigma_prop.name, init=0.09)
     model.parameters.add(sigma_par1)
     sigma_add = model.create_symbol('sigma_add')
-    sigma_par2 = Parameter(sigma_add.name, init=0.1)
+    sigma_par2 = Parameter(sigma_add.name, init=_get_prop_init(model.dataset))
     model.parameters.add(sigma_par2)
 
     eps_prop = sympy.stats.Normal(ruv_prop.name, 0, sympy.sqrt(sigma_prop))

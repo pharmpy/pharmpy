@@ -2,6 +2,7 @@ from io import StringIO
 
 from pharmpy import Model
 from pharmpy.modeling import additive_error, combined_error, proportional_error, remove_error
+from pharmpy.modeling.error import _get_prop_init
 
 
 def test_remove_error_model(testdata):
@@ -16,7 +17,7 @@ def test_additive_error_model(testdata):
     additive_error(model)
     model.update_source()
     assert str(model).split('\n')[11] == 'Y = EPS(1) + F'
-    assert str(model).split('\n')[17] == '$SIGMA  0.1 ; sigma'
+    assert str(model).split('\n')[17] == '$SIGMA  11.2225 ; sigma'
 
 
 def test_proportional_error_model(testdata):
@@ -24,7 +25,7 @@ def test_proportional_error_model(testdata):
     proportional_error(model)
     model.update_source()
     assert str(model).split('\n')[11] == 'Y=F+F*EPS(1)'
-    assert str(model).split('\n')[17] == '$SIGMA  0.1 ; sigma'
+    assert str(model).split('\n')[17] == '$SIGMA  0.09 ; sigma'
 
 
 def test_combined_error_model(testdata):
@@ -32,8 +33,8 @@ def test_combined_error_model(testdata):
     combined_error(model)
     model.update_source()
     assert str(model).split('\n')[11] == 'Y = EPS(1)*F + EPS(2) + F'
-    assert str(model).split('\n')[17] == '$SIGMA  0.1 ; sigma_prop'
-    assert str(model).split('\n')[18] == '$SIGMA  0.1 ; sigma_add'
+    assert str(model).split('\n')[17] == '$SIGMA  0.09 ; sigma_prop'
+    assert str(model).split('\n')[18] == '$SIGMA  11.2225 ; sigma_add'
 
 
 def test_remove_error_without_f(testdata):
@@ -115,7 +116,16 @@ $THETA (0,0.00469307) ; TVCL
 $THETA (0,1.00916) ; TVV
 $OMEGA 0.0309626  ; IVCL
 $OMEGA 0.031128  ; IVV
-$SIGMA  0.1 ; sigma
+$SIGMA  11.2225 ; sigma
 $ESTIMATION METHOD=1 INTERACTION
 """
     assert str(model) == correct
+
+
+def test_get_prop_init(testdata):
+    model = Model(testdata / 'nonmem' / 'pheno.mod')
+    model.source.path = testdata / 'nonmem' / 'pheno.mod'  # To be able to find dataset
+
+    init = _get_prop_init(model.dataset)
+
+    assert init == 11.2225

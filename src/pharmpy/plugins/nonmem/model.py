@@ -5,6 +5,8 @@ import warnings
 from os import stat
 from pathlib import Path
 
+from sympy import Symbol
+
 import pharmpy.data
 import pharmpy.model
 import pharmpy.plugins.nonmem
@@ -411,6 +413,21 @@ class Model(pharmpy.model.Model):
                 )
                 zero_fix += new_zero_fix
         return zero_fix
+
+    @property
+    def error_model(self):
+        error = self._get_error_record()
+        y_args = error.statements.find_assignment('Y').expression.args
+
+        if len(y_args) == 0:
+            return 'NONE'
+        elif len(y_args) == 2:
+            if isinstance(y_args[0], Symbol) and isinstance(y_args[1], Symbol):
+                return 'ADD'
+            else:
+                return 'PROP'
+        else:
+            return 'ADD_PROP'
 
     @property
     def random_variables(self):
