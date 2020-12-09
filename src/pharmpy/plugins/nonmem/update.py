@@ -287,48 +287,28 @@ def update_ode_system(model, old, new):
         to_des(model, new)
     elif type(old) == CompartmentalSystem and type(new) == CompartmentalSystem:
         subs = model.control_stream.get_records('SUBROUTINES')[0]
-        advan = subs.get_option_startswith('ADVAN')
-        trans = subs.get_option_startswith('TRANS')
-        if len(new) > 5 or new.n_connected(new.find_central()) != len(new) - 1:
-            change_advan(model, 'ADVAN5')
-            advan = 'ADVAN5'
+        old_trans = subs.get_option_startswith('TRANS')
+        conv_advan, new_advan = change_advan(model)
         update_lag_time(model, old, new)
         if isinstance(new.find_dosing().dose, Bolus) and 'RATE' in model.dataset.columns:
             df = model.dataset
             df.drop(columns=['RATE'], inplace=True)
             model.dataset = df
         statements = model.statements
-        to_advan = advan  # Default to not change ADVAN
+
         if not old.find_depot(model._old_statements) and new.find_depot(statements):
             # Depot was added
             comp, rate = new.get_compartment_outflows(new.find_depot(statements))[0]
             ass = Assignment('KA', rate)
             statements.add_before_odes(ass)
             new.add_flow(new.find_depot(statements), comp, ass.symbol)
-            if advan == 'ADVAN1':
-                to_advan = 'ADVAN2'
-            elif advan == 'ADVAN3':
-                to_advan = 'ADVAN4'
-            elif advan == 'ADVAN11':
-                to_advan = 'ADVAN12'
-            if advan not in ['ADVAN5', 'ADVAN7']:
-                subs.replace_option(advan, to_advan)
-        elif old.find_depot(model._old_statements) and not new.find_depot(statements):
-            # Depot was removed
-            if advan == 'ADVAN2':
-                to_advan = 'ADVAN1'
-            elif advan == 'ADVAN4':
-                to_advan = 'ADVAN3'
-            elif advan == 'ADVAN12':
-                to_advan = 'ADVAN11'
-            subs.replace_option(advan, to_advan)
 
         param_conversion = pk_param_conversion_map(
-            new, model._compartment_map, from_advan=advan, to_advan=to_advan, trans=trans
+            new, model._compartment_map, from_advan=conv_advan, to_advan=new_advan, trans=old_trans
         )
         statements.subs(param_conversion)
 
-        if advan == 'ADVAN5' or advan == 'ADVAN7':
+        if new_advan == 'ADVAN5' or new_advan == 'ADVAN7':
             remove_compartments(model, old, new)
             add_compartments(model, old, new)
 
@@ -601,18 +581,33 @@ def pk_param_conversion_map(cs, oldmap, from_advan=None, to_advan=None, trans=No
     return d
 
 
-def change_advan(model, advan):
+def change_advan(model):
     """Change from one advan to another"""
     subs = model.control_stream.get_records('SUBROUTINES')[0]
     oldadvan = subs.get_option_startswith('ADVAN')
+    conv_advan = oldadvan
     oldtrans = subs.get_option_startswith('TRANS')
+    statements = model.statements
     odes = model.statements.ode_system
     assignments = []
     newtrans = None
     if len(odes) > 5 or odes.n_connected(odes.find_central()) != len(odes) - 1:
         advan = 'ADVAN5'
+    elif len(odes) == 2:
+        advan = 'ADVAN1'
+    elif len(odes) == 3 and odes.find_depot(statements):
+        advan = 'ADVAN2'
+    elif len(odes) == 3:
+        advan = 'ADVAN3'
+    elif len(odes) == 4 and odes.find_depot(statements):
+        advan = 'ADVAN4'
+    elif len(odes) == 4:
+        advan = 'ADVAN11'
+    else:  # len(odes) == 5
+        advan = 'ADAN12'
+
     if advan == oldadvan:
-        return
+        return conv_advan, advan
     subs = model.control_stream.get_records('SUBROUTINES')[0]
     if advan == 'ADVAN5' or advan == 'ADVAN7':
         newtrans = 'TRANS1'
@@ -664,7 +659,6 @@ def change_advan(model, advan):
         for ass in assignments:
             model.statements.add_before_odes(ass)
 
-        subs.replace_option(oldadvan, advan)
         if newtrans is not None:
             subs.replace_option(oldtrans, newtrans)
 
@@ -680,3 +674,7 @@ def change_advan(model, advan):
             else:
                 mod.add_compartment(comps[i], dosing=False)
             i += 1
+        conv_advan = advan
+
+    subs.replace_option(oldadvan, advan)
+    return conv_advan, advan
