@@ -288,7 +288,7 @@ def update_ode_system(model, old, new):
     elif type(old) == CompartmentalSystem and type(new) == CompartmentalSystem:
         subs = model.control_stream.get_records('SUBROUTINES')[0]
         old_trans = subs.get_option_startswith('TRANS')
-        conv_advan, new_advan = change_advan(model)
+        conv_advan, new_advan, new_trans = change_advan(model)
         update_lag_time(model, old, new)
         if isinstance(new.find_dosing().dose, Bolus) and 'RATE' in model.dataset.columns:
             df = model.dataset
@@ -296,12 +296,7 @@ def update_ode_system(model, old, new):
             model.dataset = df
         statements = model.statements
 
-        if not old.find_depot(model._old_statements) and new.find_depot(statements):
-            # Depot was added
-            comp, rate = new.get_compartment_outflows(new.find_depot(statements))[0]
-            ass = Assignment('KA', rate)
-            statements.add_before_odes(ass)
-            new.add_flow(new.find_depot(statements), comp, ass.symbol)
+        add_needed_pk_parameters(model, new_advan, new_trans)
 
         param_conversion = pk_param_conversion_map(
             new, model._compartment_map, from_advan=conv_advan, to_advan=new_advan, trans=old_trans
@@ -336,6 +331,49 @@ def update_ode_system(model, old, new):
             model.dataset = df
 
     force_des(model, new)
+
+
+def add_needed_pk_parameters(model, advan, trans):
+    """Add missing pk parameters that NONMEM needs
+    """
+    statements = model.statements
+    odes = statements.ode_system
+    if advan == 'ADVAN2' or advan == 'ADVAN4' or advan == 'ADVAN12':
+        if not statements.find_assignment('KA'):
+            comp, rate = odes.get_compartment_outflows(odes.find_depot(statements))[0]
+            ass = Assignment('KA', rate)
+            if rate != ass.symbol:
+                statements.add_before_odes(ass)
+                odes.add_flow(odes.find_depot(statements), comp, ass.symbol)
+    if advan == 'ADVAN3' and trans == 'TRANS4':
+        central = odes.find_central()
+        output = odes.find_output()
+        peripheral = odes.find_peripherals()[0]
+        if not statements.find_assignment('CL') or not statements.find_assignment('V1'):
+            rate = odes.get_flow(central, output)
+            numer, denom = rate.as_numer_denom()
+            cl = Assignment('CL', numer)
+            v1 = Assignment('V1', denom)
+            if rate != cl.symbol / v1.symbol:
+                if not statements.find_assignment('CL'):
+                    statements.add_before_odes(cl)
+                if not statements.find_assignment('V1'):
+                    statements.add_before_odes(v1)
+            odes.add_flow(central, output, cl.symbol / v1.symbol)
+        if not statements.find_assignment('Q'):
+            rate = odes.get_flow(central, peripheral)
+            numer, denom = rate.as_numer_denom()
+            q = Assignment('Q', numer)
+            if rate != q.symbol / symbol('V1'):
+                statements.add_before_odes(q)
+            odes.add_flow(central, peripheral, q.symbol / symbol('V1'))
+        if not statements.find_assignment('V2'):
+            rate = odes.get_flow(peripheral, central)
+            numer, denom = rate.as_numer_denom()
+            v2 = Assignment('V2', denom)
+            if rate != symbol('Q') / v2.symbol:
+                statements.add_before_odes(v2)
+            odes.add_flow(peripheral, central, symbol('Q') / v2.symbol)
 
 
 def force_des(model, odes):
@@ -514,6 +552,13 @@ def pk_param_conversion_map(cs, oldmap, from_advan=None, to_advan=None, trans=No
                     to_j = j
                 d[symbol(f'K{i}{j}')] = symbol(f'K{to_i}{to_j}')
                 d[symbol(f'K{i}T{j}')] = symbol(f'K{to_i}T{to_j}')
+        if to_advan == 'ADVAN3':
+            n = len(oldmap)
+            for i in range(1, n):
+                d[symbol(f'K{i}0')] = symbol('K')
+                d[symbol(f'K{i}T0')] = symbol('K')
+                d[symbol(f'K{i}{n}')] = symbol('K')
+                d[symbol(f'K{i}T{n}')] = symbol('K')
     elif from_advan == 'ADVAN3':
         if to_advan == 'ADVAN4':
             if trans == 'TRANS4':
@@ -610,8 +655,8 @@ def change_advan(model):
         advan = 'ADAN12'
 
     # FIXME: Currently cannot go from ADVAN5 to other advans
-    if advan == oldadvan or oldadvan == 'ADVAN5':
-        return conv_advan, oldadvan
+    if advan == oldadvan or (oldadvan == 'ADVAN5' and advan != 'ADVAN3'):
+        return conv_advan, oldadvan, oldtrans
     subs = model.control_stream.get_records('SUBROUTINES')[0]
     if advan == 'ADVAN5' or advan == 'ADVAN7':
         newtrans = 'TRANS1'
@@ -667,9 +712,6 @@ def change_advan(model):
         for ass in assignments:
             model.statements.add_before_odes(ass)
 
-        if newtrans is not None:
-            subs.replace_option(oldtrans, newtrans)
-
         mod = model.control_stream.insert_record('$MODEL\n')
         output_name = model.statements.ode_system.find_output().name
         comps = {v: k for k, v in model._compartment_map.items() if k != output_name}
@@ -683,6 +725,13 @@ def change_advan(model):
                 mod.add_compartment(comps[i], dosing=False)
             i += 1
         conv_advan = advan
+    else:
+        model.control_stream.remove_records(model.control_stream.get_records('MODEL'))
+
+    if newtrans is not None:
+        subs.replace_option(oldtrans, newtrans)
+    else:
+        newtrans = oldtrans
 
     subs.replace_option(oldadvan, advan)
-    return conv_advan, advan
+    return conv_advan, advan, newtrans
