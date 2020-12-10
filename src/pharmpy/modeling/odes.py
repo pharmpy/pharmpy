@@ -95,7 +95,6 @@ def _do_michaelis_menten_elimination(model, combined=False):
 
 def _get_mm_inits(model, rate_numer, combined):
     pset, sset = model.parameters, model.statements
-
     clmm_init = sset.extract_params_from_symb(rate_numer.name, pset).init
 
     if combined:
@@ -116,7 +115,7 @@ def set_transit_compartments(model, n):
     if len(transits) == n:
         pass
     elif len(transits) == 0:
-        mdt_symb = _add_parameter(model, 'MDT', init=get_absorption_init(model, 'MDT'))
+        mdt_symb = _add_parameter(model, 'MDT', init=_get_absorption_init(model, 'MDT'))
         rate = n / mdt_symb
         comp = odes.find_dosing()
         dose = comp.dose
@@ -161,7 +160,7 @@ def add_lag_time(model):
     odes = model.statements.ode_system
     dosing_comp = odes.find_dosing()
     old_lag_time = dosing_comp.lag_time
-    mdt_symb = _add_parameter(model, 'MDT', init=get_absorption_init(model, 'MDT'))
+    mdt_symb = _add_parameter(model, 'MDT', init=_get_absorption_init(model, 'MDT'))
     dosing_comp.lag_time = mdt_symb
     if old_lag_time:
         model.statements.remove_symbol_definitions(old_lag_time.free_symbols, odes)
@@ -327,7 +326,7 @@ def add_zero_order_absorption(model, amount, to_comp, parameter_name):
     Disregards what is currently in the model.
     """
     mat_symb = _add_parameter(
-        model, parameter_name, init=get_absorption_init(model, parameter_name)
+        model, parameter_name, init=_get_absorption_init(model, parameter_name)
     )
     new_dose = Infusion(amount, duration=mat_symb * 2)
     to_comp.dose = new_dose
@@ -340,12 +339,12 @@ def add_first_order_absorption(model, dose, to_comp):
     odes = model.statements.ode_system
     depot = odes.add_compartment('DEPOT')
     depot.dose = dose
-    mat_symb = _add_parameter(model, 'MAT', get_absorption_init(model, 'MAT'))
+    mat_symb = _add_parameter(model, 'MAT', _get_absorption_init(model, 'MAT'))
     odes.add_flow(depot, to_comp, 1 / mat_symb)
     return depot
 
 
-def get_absorption_init(model, param_name):
+def _get_absorption_init(model, param_name):
     try:
         if param_name == 'MDT':
             param_prev = model.statements.lag_time
