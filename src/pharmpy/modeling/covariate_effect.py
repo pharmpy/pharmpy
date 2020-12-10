@@ -314,9 +314,8 @@ class CovariateEffect:
     def categorical(cls, counts):
         """Linear categorical template (for categorical covariates)."""
         symbol = S('symbol')
-        most_common = counts[counts.idxmax()]
+        most_common = counts.mode().pop(0)
         categories = counts.unique()
-
         values = [1]
 
         if np.isnan(most_common):
