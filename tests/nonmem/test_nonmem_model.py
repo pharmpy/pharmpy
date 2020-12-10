@@ -140,6 +140,7 @@ def test_adjust_iovs(testdata):
         (Parameter('COVEFF', 0.2), 0.2, '$THETA  0.2 ; COVEFF'),
         (Parameter('THETA', 0.1), 0.1, '$THETA  0.1 ; THETA'),
         (Parameter('THETA', 0.1, 0, fix=True), 0.1, '$THETA  (0,0.1) FIX ; THETA'),
+        (Parameter('RUV_prop', 0.1), 0.1, '$THETA  0.1 ; RUV_prop'),
     ],
 )
 def test_add_parameters(pheno_path, param_new, init_expected, buf_new):

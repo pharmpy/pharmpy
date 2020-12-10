@@ -560,7 +560,7 @@ def test_translate_sympy_parse(parser, buf_original):
 )
 def test_translate_sympy_piecewise(parser, symbol, expression, buf_expected):
     buf_original = '$PRED\nY = THETA(1) + ETA(1) + EPS(1)\n'
-    rec = parser.parse(f'$PRED{buf_original}').records[0]
+    rec = parser.parse(buf_original).records[0]
     s = Assignment(symbol, expression)
 
     assert rec._translate_sympy_piecewise(s) == buf_expected.strip()

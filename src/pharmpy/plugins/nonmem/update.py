@@ -334,8 +334,7 @@ def update_ode_system(model, old, new):
 
 
 def add_needed_pk_parameters(model, advan, trans):
-    """Add missing pk parameters that NONMEM needs
-    """
+    """Add missing pk parameters that NONMEM needs"""
     statements = model.statements
     odes = statements.ode_system
     if advan == 'ADVAN2' or advan == 'ADVAN4' or advan == 'ADVAN12':
@@ -435,6 +434,9 @@ def update_statements(model, old, new, trans):
             error_statements.pop(0)  # Remove the link statement
         error_statements.subs(trans)
         error.statements = error_statements
+        error.is_updated = True
+
+    rec.is_updated = True
 
 
 def update_lag_time(model, old, new):

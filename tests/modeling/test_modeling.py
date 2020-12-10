@@ -627,7 +627,7 @@ def test_add_covariate_effect_nan(pheno_path):
     model.update_source(nofiles=True)
 
     assert not re.search('NaN', str(model))
-    assert re.search(r'new_col\.EQ\.-99', str(model))
+    assert re.search(r'NEW_COL\.EQ\.-99', str(model))
 
 
 def test_add_covariate_effect_duplicates(pheno_path):

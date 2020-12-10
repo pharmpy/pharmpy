@@ -71,7 +71,7 @@ class Assignment:
         return type(self)(self.symbol, self.expression)
 
     def __repr__(self):
-        return f'{self.symbol} := {self.expression}'.upper()
+        return f'{self.symbol} := {self.expression}'
 
     def _repr_latex_(self):
         sym = self.symbol._repr_latex_()[1:-1]

@@ -49,7 +49,7 @@ class ExpressionInterpreter(lark.visitors.Interpreter):
         return expr
 
     def logical_expression(self, node):
-        t = self.visit_cildren(node)
+        t = self.visit_children(node)
         if len(t) > 2:
             ops = t[1::2]
             terms = t[2::2]
@@ -223,6 +223,7 @@ def diff(old, new):
 
 class CodeRecord(Record):
     def __init__(self, content, parser_class):
+        self._is_updated = False
         super().__init__(content, parser_class)
 
     @property
@@ -445,3 +446,16 @@ class CodeRecord(Record):
             expression = ode.rhs.subs(function_map)
             statements.append(Assignment(symbol, expression))
         self.statements = statements
+
+    @property
+    def is_updated(self):
+        return self._is_updated
+
+    @is_updated.setter
+    def is_updated(self, is_updated):
+        self._is_updated = is_updated
+
+    def __str__(self):
+        if self.is_updated:
+            return self.raw_name + str(self.root).upper()
+        return super(CodeRecord, self).__str__()
