@@ -307,7 +307,7 @@ Michaelis-Menten elimination
    model.update_source()
    print_model_diff(model_ref, model)
 
-Combined Michaelis-Menten + First-Order elimination
+Mixed Michaelis-Menten + First-Order elimination
 ===================================================
 
 .. jupyter-execute::
@@ -317,8 +317,8 @@ Combined Michaelis-Menten + First-Order elimination
 
 .. jupyter-execute::
 
-   from pharmpy.modeling import combined_mm_fo_elimination
-   combined_mm_fo_elimination(model)
+   from pharmpy.modeling import mixed_mm_fo_elimination
+   mixed_mm_fo_elimination(model)
    model.update_source()
    print_model_diff(model_ref, model)
 
