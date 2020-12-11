@@ -315,8 +315,10 @@ class CompartmentalSystem(ODESystem):
         central = self.find_central()
         oneout = {node for node, out_degree in self._g.out_degree() if out_degree == 1}
         onein = {node for node, in_degree in self._g.in_degree() if in_degree == 1}
-        peripherals = (oneout & onein) - {central}
-        return list(peripherals)
+        cout = {comp for comp in oneout if self.get_flow(comp, central) is not None}
+        cin = {comp for comp in onein if self.get_flow(central, comp) is not None}
+        peripherals = list(cout & cin)
+        return peripherals
 
     def find_transit_compartments(self, statements):
         """Find all transit compartments

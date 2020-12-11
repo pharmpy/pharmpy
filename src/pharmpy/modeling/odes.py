@@ -376,11 +376,8 @@ def add_peripheral_compartment(model):
     output = odes.find_output()
     elimination_rate = odes.get_flow(central, output)
     numer, denom = elimination_rate.as_numer_denom()
-    if denom != 1:
-        vc = denom
-    else:
-        pass
+    vc = denom
     peripheral = odes.add_compartment(f'PERIPHERAL{n}')
     odes.add_flow(central, peripheral, q / vc)
-    odes.add_flow(central, peripheral, q / vp)
+    odes.add_flow(peripheral, central, q / vp)
     return model
