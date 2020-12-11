@@ -223,7 +223,7 @@ def diff(old, new):
 
 class CodeRecord(Record):
     def __init__(self, content, parser_class):
-        self._is_updated = False
+        self.is_updated = False
         super().__init__(content, parser_class)
 
     @property
@@ -446,14 +446,6 @@ class CodeRecord(Record):
             expression = ode.rhs.subs(function_map)
             statements.append(Assignment(symbol, expression))
         self.statements = statements
-
-    @property
-    def is_updated(self):
-        return self._is_updated
-
-    @is_updated.setter
-    def is_updated(self, is_updated):
-        self._is_updated = is_updated
 
     def __str__(self):
         if self.is_updated:
