@@ -477,9 +477,9 @@ def pk_param_conversion(model, advan, trans):
                 d[symbol(f'K{i}{n}')] = symbol('K')
                 d[symbol(f'K{i}T{n}')] = symbol('K')
     elif from_advan == 'ADVAN1':
-        if advan == 'ADVAN3':
+        if advan == 'ADVAN3' or advan == 'ADVAN11':
             d[symbol('V')] = symbol('V1')
-        elif advan == 'ADVAN4':
+        elif advan == 'ADVAN4' or advan == 'ADVAN12':
             d[symbol('V')] = symbol('V2')
     elif from_advan == 'ADVAN2':
         if advan == 'ADVAN3':
@@ -661,7 +661,6 @@ def add_needed_pk_parameters(model, advan, trans):
             if rate != ass.symbol:
                 statements.add_before_odes(ass)
                 odes.add_flow(odes.find_depot(statements), comp, ass.symbol)
-    # FIXME: Need refactoring into functions
     if advan == 'ADVAN3' and trans == 'TRANS4':
         central = odes.find_central()
         output = odes.find_output()
@@ -679,9 +678,6 @@ def add_needed_pk_parameters(model, advan, trans):
         output = odes.find_output()
         peripheral1 = odes.find_peripherals()[0]
         peripheral2 = odes.find_peripherals()[1]
-        if peripheral2.name in model._compartment_map.keys():
-            # Order is non-deterministic
-            peripheral1, peripheral2 = peripheral2, peripheral1
         add_parameters_ratio(model, 'CL', 'V2', central, output)
         add_parameters_ratio(model, 'Q3', 'V3', peripheral1, central)
         add_parameters_ratio(model, 'Q4', 'V4', peripheral2, central)
@@ -690,9 +686,6 @@ def add_needed_pk_parameters(model, advan, trans):
         output = odes.find_output()
         peripheral1 = odes.find_peripherals()[0]
         peripheral2 = odes.find_peripherals()[1]
-        if peripheral2.name in model._compartment_map.keys():
-            # Order is non-deterministic
-            peripheral1, peripheral2 = peripheral2, peripheral1
         add_parameters_ratio(model, 'CL', 'V1', central, output)
         add_parameters_ratio(model, 'Q2', 'V2', peripheral1, central)
         add_parameters_ratio(model, 'Q3', 'V3', peripheral2, central)

@@ -232,7 +232,7 @@ class CompartmentalSystem(ODESystem):
         return newone
 
     def add_compartment(self, name):
-        comp = Compartment(name)
+        comp = Compartment(name, len(self._g) + 1)
         self._g.add_node(comp)
         return comp
 
@@ -318,6 +318,8 @@ class CompartmentalSystem(ODESystem):
         cout = {comp for comp in oneout if self.get_flow(comp, central) is not None}
         cin = {comp for comp in onein if self.get_flow(central, comp) is not None}
         peripherals = list(cout & cin)
+        # Return in deterministic indexed order
+        peripherals = sorted(peripherals, key=lambda comp: comp.index)
         return peripherals
 
     def find_transit_compartments(self, statements):
@@ -557,8 +559,9 @@ def vertical_arrow(flow, down=True):
 
 
 class Compartment:
-    def __init__(self, name, lag_time=0):
+    def __init__(self, name, index, lag_time=0):
         self.name = name
+        self.index = index
         self.dose = None
         self.lag_time = lag_time
 
