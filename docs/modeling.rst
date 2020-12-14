@@ -322,6 +322,26 @@ Mixed Michaelis-Menten + First-Order elimination
    model.update_source()
    print_model_diff(model_ref, model)
 
+Distribution
+~~~~~~~~~~~~
+
+Add peripheral compartment
+==========================
+
+.. jupyter-execute::
+
+   model = Model(path / "pheno.mod")
+
+Adding a peripheral compartment. 
+
+.. jupyter-execute::
+
+   from pharmpy.modeling import add_peripheral_compartment
+   add_peripheral_compartment(model)
+   model.update_source()
+   print_model_diff(model_ref, model)
+
+
 ~~~~~~~~~~~~~~~~~~~~~~~~
 Adding covariate effects
 ~~~~~~~~~~~~~~~~~~~~~~~~
