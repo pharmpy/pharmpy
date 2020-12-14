@@ -663,60 +663,14 @@ def add_needed_pk_parameters(model, advan, trans):
         central = odes.find_central()
         output = odes.find_output()
         peripheral = odes.find_peripherals()[0]
-        if not statements.find_assignment('CL') or not statements.find_assignment('V1'):
-            rate = odes.get_flow(central, output)
-            numer, denom = rate.as_numer_denom()
-            cl = Assignment('CL', numer)
-            v1 = Assignment('V1', denom)
-            if rate != cl.symbol / v1.symbol:
-                if not statements.find_assignment('CL'):
-                    statements.add_before_odes(cl)
-                if not statements.find_assignment('V1'):
-                    statements.add_before_odes(v1)
-            odes.add_flow(central, output, cl.symbol / v1.symbol)
-        if not statements.find_assignment('Q'):
-            rate = odes.get_flow(central, peripheral)
-            numer, denom = rate.as_numer_denom()
-            q = Assignment('Q', numer)
-            if rate != q.symbol / symbol('V1'):
-                statements.add_before_odes(q)
-            odes.add_flow(central, peripheral, q.symbol / symbol('V1'))
-        if not statements.find_assignment('V2'):
-            rate = odes.get_flow(peripheral, central)
-            numer, denom = rate.as_numer_denom()
-            v2 = Assignment('V2', denom)
-            if rate != symbol('Q') / v2.symbol:
-                statements.add_before_odes(v2)
-            odes.add_flow(peripheral, central, symbol('Q') / v2.symbol)
+        add_parameters_ratio(model, 'CL', 'V1', central, output)
+        add_parameters_ratio(model, 'Q', 'V2', peripheral, central)
     elif advan == 'ADVAN4' and trans == 'TRANS4':
         central = odes.find_central()
         output = odes.find_output()
         peripheral = odes.find_peripherals()[0]
-        if not statements.find_assignment('CL') or not statements.find_assignment('V2'):
-            rate = odes.get_flow(central, output)
-            numer, denom = rate.as_numer_denom()
-            cl = Assignment('CL', numer)
-            v2 = Assignment('V2', denom)
-            if rate != cl.symbol / v2.symbol:
-                if not statements.find_assignment('CL'):
-                    statements.add_before_odes(cl)
-                if not statements.find_assignment('V2'):
-                    statements.add_before_odes(v2)
-            odes.add_flow(central, output, cl.symbol / v2.symbol)
-        if not statements.find_assignment('Q'):
-            rate = odes.get_flow(central, peripheral)
-            numer, denom = rate.as_numer_denom()
-            q = Assignment('Q', numer)
-            if rate != q.symbol / symbol('V2'):
-                statements.add_before_odes(q)
-            odes.add_flow(central, peripheral, q.symbol / symbol('V2'))
-        if not statements.find_assignment('V3'):
-            rate = odes.get_flow(peripheral, central)
-            numer, denom = rate.as_numer_denom()
-            v3 = Assignment('V3', denom)
-            if rate != symbol('Q') / v3.symbol:
-                statements.add_before_odes(v3)
-            odes.add_flow(peripheral, central, symbol('Q') / v3.symbol)
+        add_parameters_ratio(model, 'CL', 'V2', central, output)
+        add_parameters_ratio(model, 'Q', 'V3', peripheral, central)
     elif advan == 'ADVAN12' and trans == 'TRANS4':
         central = odes.find_central()
         output = odes.find_output()
@@ -725,39 +679,9 @@ def add_needed_pk_parameters(model, advan, trans):
         if peripheral2.name in model._compartment_map.keys():
             # Order is non-deterministic
             peripheral1, peripheral2 = peripheral2, peripheral1
-        if not statements.find_assignment('CL') or not statements.find_assignment('V2'):
-            rate = odes.get_flow(central, output)
-            numer, denom = rate.as_numer_denom()
-            cl = Assignment('CL', numer)
-            v2 = Assignment('V2', denom)
-            if rate != cl.symbol / v2.symbol:
-                if not statements.find_assignment('CL'):
-                    statements.add_before_odes(cl)
-                if not statements.find_assignment('V2'):
-                    statements.add_before_odes(v2)
-            odes.add_flow(central, output, cl.symbol / v2.symbol)
-        if not statements.find_assignment('Q3') or not statements.find_assignment('V3'):
-            rate = odes.get_flow(peripheral1, central)
-            numer, denom = rate.as_numer_denom()
-            q3 = Assignment('Q3', numer)
-            v3 = Assignment('V3', denom)
-            if rate != q3.symbol / v3.symbol:
-                if not statements.find_assignment('Q3'):
-                    statements.add_before_odes(q3)
-                if not statements.find_assignment('V3'):
-                    statements.add_before_odes(v3)
-                odes.add_flow(central, peripheral1, q3.symbol / v3.symbol)
-        if not statements.find_assignment('Q4') or not statements.find_assignment('V4'):
-            rate = odes.get_flow(peripheral2, central)
-            numer, denom = rate.as_numer_denom()
-            q4 = Assignment('Q4', numer)
-            v4 = Assignment('V4', denom)
-            if rate != q4.symbol / v4.symbol:
-                if not statements.find_assignment('Q4'):
-                    statements.add_before_odes(q4)
-                if not statements.find_assignment('V4'):
-                    statements.add_before_odes(v4)
-                odes.add_flow(central, peripheral2, q4.symbol / v4.symbol)
+        add_parameters_ratio(model, 'CL', 'V2', central, output)
+        add_parameters_ratio(model, 'Q3', 'V3', peripheral1, central)
+        add_parameters_ratio(model, 'Q4', 'V4', peripheral2, central)
     elif advan == 'ADVAN5' or advan == 'ADVAN7':
         newmap = new_compartmental_map(odes, model._compartment_map)
         for source in newmap.keys():
@@ -782,6 +706,22 @@ def add_needed_pk_parameters(model, advan, trans):
                         add_rate_assignment_if_missing(
                             model, param, rate, source_comp, dest_comp, synonyms=names
                         )
+
+
+def add_parameters_ratio(model, numpar, denompar, source, dest):
+    statements = model.statements
+    if not statements.find_assignment(numpar) or not statements.find_assignment(denompar):
+        odes = statements.ode_system
+        rate = odes.get_flow(source, dest)
+        numer, denom = rate.as_numer_denom()
+        par1 = Assignment(numpar, numer)
+        par2 = Assignment(denompar, denom)
+        if rate != par1.symbol / par2.symbol:
+            if not statements.find_assignment(numpar):
+                statements.add_before_odes(par1)
+            if not statements.find_assignment(denompar):
+                statements.add_before_odes(par2)
+        odes.add_flow(source, dest, par1.symbol / par2.symbol)
 
 
 def define_parameter(model, name, value, synonyms=None):
