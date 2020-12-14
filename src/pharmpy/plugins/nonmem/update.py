@@ -504,6 +504,9 @@ def pk_param_conversion(model, advan, trans):
                 d.update({symbol('K32'): symbol('K21')})
             else:  # TRANS1
                 d.update({symbol('K23'): symbol('K12'), symbol('K32'): symbol('K21')})
+        elif advan == 'ADVAN12':
+            if trans == 'TRANS4':
+                d.update({symbol('Q'): symbol('Q3')})
     elif from_advan == 'ADVAN11':
         if advan == 'ADVAN12':
             if trans == 'TRANS4':
@@ -575,7 +578,7 @@ def new_advan_trans(model):
     elif len(odes) == 4:
         advan = 'ADVAN11'
     else:  # len(odes) == 5
-        advan = 'ADAN12'
+        advan = 'ADVAN12'
 
     if oldtrans == 'TRANS1':
         trans = oldtrans
@@ -655,6 +658,7 @@ def add_needed_pk_parameters(model, advan, trans):
             if rate != ass.symbol:
                 statements.add_before_odes(ass)
                 odes.add_flow(odes.find_depot(statements), comp, ass.symbol)
+    # FIXME: Need refactoring into functions
     if advan == 'ADVAN3' and trans == 'TRANS4':
         central = odes.find_central()
         output = odes.find_output()
@@ -713,6 +717,47 @@ def add_needed_pk_parameters(model, advan, trans):
             if rate != symbol('Q') / v3.symbol:
                 statements.add_before_odes(v3)
             odes.add_flow(peripheral, central, symbol('Q') / v3.symbol)
+    elif advan == 'ADVAN12' and trans == 'TRANS4':
+        central = odes.find_central()
+        output = odes.find_output()
+        peripheral1 = odes.find_peripherals()[0]
+        peripheral2 = odes.find_peripherals()[1]
+        if peripheral2.name in model._compartment_map.keys():
+            # Order is non-deterministic
+            peripheral1, peripheral2 = peripheral2, peripheral1
+        if not statements.find_assignment('CL') or not statements.find_assignment('V2'):
+            rate = odes.get_flow(central, output)
+            numer, denom = rate.as_numer_denom()
+            cl = Assignment('CL', numer)
+            v2 = Assignment('V2', denom)
+            if rate != cl.symbol / v2.symbol:
+                if not statements.find_assignment('CL'):
+                    statements.add_before_odes(cl)
+                if not statements.find_assignment('V2'):
+                    statements.add_before_odes(v2)
+            odes.add_flow(central, output, cl.symbol / v2.symbol)
+        if not statements.find_assignment('Q3') or not statements.find_assignment('V3'):
+            rate = odes.get_flow(peripheral1, central)
+            numer, denom = rate.as_numer_denom()
+            q3 = Assignment('Q3', numer)
+            v3 = Assignment('V3', denom)
+            if rate != q3.symbol / v3.symbol:
+                if not statements.find_assignment('Q3'):
+                    statements.add_before_odes(q3)
+                if not statements.find_assignment('V3'):
+                    statements.add_before_odes(v3)
+                odes.add_flow(central, peripheral1, q3.symbol / v3.symbol)
+        if not statements.find_assignment('Q4') or not statements.find_assignment('V4'):
+            rate = odes.get_flow(peripheral2, central)
+            numer, denom = rate.as_numer_denom()
+            q4 = Assignment('Q4', numer)
+            v4 = Assignment('V4', denom)
+            if rate != q4.symbol / v4.symbol:
+                if not statements.find_assignment('Q4'):
+                    statements.add_before_odes(q4)
+                if not statements.find_assignment('V4'):
+                    statements.add_before_odes(v4)
+                odes.add_flow(central, peripheral2, q4.symbol / v4.symbol)
     elif advan == 'ADVAN5' or advan == 'ADVAN7':
         newmap = new_compartmental_map(odes, model._compartment_map)
         for source in newmap.keys():

@@ -369,7 +369,7 @@ def add_peripheral_compartment(model):
     odes = model.statements.ode_system
     per = odes.find_peripherals()
     n = len(per) + 1
-    q = _add_parameter(model, f'Q{n}')
+    qp = _add_parameter(model, f'QP{n}')
     vp = _add_parameter(model, f'VP{n}')
 
     central = odes.find_central()
@@ -378,6 +378,6 @@ def add_peripheral_compartment(model):
     numer, denom = elimination_rate.as_numer_denom()
     vc = denom
     peripheral = odes.add_compartment(f'PERIPHERAL{n}')
-    odes.add_flow(central, peripheral, q / vc)
-    odes.add_flow(peripheral, central, q / vp)
+    odes.add_flow(central, peripheral, qp / vc)
+    odes.add_flow(peripheral, central, qp / vp)
     return model
