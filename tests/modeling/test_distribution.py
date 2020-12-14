@@ -110,6 +110,65 @@ $ESTIMATION METHOD=1 INTERACTION
     assert str(model) == correct
 
 
+def test_advan3(testdata):
+    code = """$PROBLEM PHENOBARB SIMPLE MODEL
+$DATA pheno.dta IGNORE=@
+$INPUT ID TIME AMT WGT APGR DV
+$SUBROUTINE ADVAN3 TRANS4
+$PK
+VP1 = THETA(4)
+QP1 = THETA(3)
+CL=THETA(1)*EXP(ETA(1))
+VC=THETA(2)*EXP(ETA(2))
+V1 = VC
+Q = QP1
+V2 = VP1
+$ERROR
+Y=F+F*EPS(1)
+$THETA (0,0.00469307) ; POP_CL
+$THETA (0,0.22) ; POP_VC
+$THETA  (0,0.1) ; POP_QP1
+$THETA  (0,0.1) ; POP_VP1
+$OMEGA 0.0309626  ; IVCL
+$OMEGA 0.0309626  ; IVV
+$SIGMA 0.013241
+$ESTIMATION METHOD=1 INTERACTION
+"""
+    model = create_model(code, testdata)
+    add_peripheral_compartment(model)
+    model.update_source()
+    correct = """$PROBLEM PHENOBARB SIMPLE MODEL
+$DATA pheno.dta IGNORE=@
+$INPUT ID TIME AMT WGT APGR DV
+$SUBROUTINE ADVAN11 TRANS4
+$PK
+VP2 = THETA(6)
+QP2 = THETA(5)
+VP1 = THETA(4)
+QP1 = THETA(3)
+CL=THETA(1)*EXP(ETA(1))
+VC=THETA(2)*EXP(ETA(2))
+V1 = VC
+Q2 = QP1
+V2 = VP1
+Q3 = QP2
+V3 = VP2
+$ERROR
+Y=F+F*EPS(1)
+$THETA (0,0.00469307) ; POP_CL
+$THETA (0,0.22) ; POP_VC
+$THETA  (0,0.1) ; POP_QP1
+$THETA  (0,0.1) ; POP_VP1
+$THETA  (0,0.1) ; POP_QP2
+$THETA  (0,0.1) ; POP_VP2
+$OMEGA 0.0309626  ; IVCL
+$OMEGA 0.0309626  ; IVV
+$SIGMA 0.013241
+$ESTIMATION METHOD=1 INTERACTION
+"""
+    assert str(model) == correct
+
+
 def test_advan4(testdata):
     code = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@

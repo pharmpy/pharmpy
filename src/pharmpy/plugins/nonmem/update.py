@@ -496,6 +496,9 @@ def pk_param_conversion(model, advan, trans):
             else:  # TRANS1
                 d[symbol('K12')] = symbol('K23')
                 d[symbol('K21')] = symbol('K32')
+        elif advan == 'ADVAN11':
+            if trans == 'TRANS4':
+                d.update({symbol('Q'): symbol('Q2')})
     elif from_advan == 'ADVAN4':
         if advan == 'ADVAN3':
             if trans == 'TRANS4':
@@ -682,6 +685,17 @@ def add_needed_pk_parameters(model, advan, trans):
         add_parameters_ratio(model, 'CL', 'V2', central, output)
         add_parameters_ratio(model, 'Q3', 'V3', peripheral1, central)
         add_parameters_ratio(model, 'Q4', 'V4', peripheral2, central)
+    elif advan == 'ADVAN11' and trans == 'TRANS4':
+        central = odes.find_central()
+        output = odes.find_output()
+        peripheral1 = odes.find_peripherals()[0]
+        peripheral2 = odes.find_peripherals()[1]
+        if peripheral2.name in model._compartment_map.keys():
+            # Order is non-deterministic
+            peripheral1, peripheral2 = peripheral2, peripheral1
+        add_parameters_ratio(model, 'CL', 'V1', central, output)
+        add_parameters_ratio(model, 'Q2', 'V2', peripheral1, central)
+        add_parameters_ratio(model, 'Q3', 'V3', peripheral2, central)
     elif advan == 'ADVAN5' or advan == 'ADVAN7':
         newmap = new_compartmental_map(odes, model._compartment_map)
         for source in newmap.keys():
