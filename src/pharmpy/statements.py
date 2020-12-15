@@ -722,50 +722,51 @@ class ModelStatements(list):
                 else:
                     del self[i]
 
+    def _create_dependency_graph(self):
+        """Create a graph of dependencies between assignments
+        Does not support dependencies of ODESystem
+        """
+        graph = nx.DiGraph()
+        for i in range(len(self) - 1, -1, -1):
+            rhs = self[i].rhs_symbols
+            for s in rhs:
+                for j in range(i - 1, -1, -1):
+                    if isinstance(self[j], Assignment) and self[j].symbol == s:
+                        graph.add_edge(i, j)
+                        break
+        return graph
+
     def remove_symbol_definitions(self, symbols, statement):
-        """Remove symbol remove_symbol_definitions and dependencies not used elsewhere. statement
+        """Remove symbols and dependencies not used elsewhere. statement
         is the statement from which the symbol was removed
         """
+        graph = self._create_dependency_graph()
         removed_ind = self.index(statement)
-        depinds = set()
-        for symbol in symbols:
-            depinds |= self._find_statement_and_deps(symbol, removed_ind)
-        depsymbs = {self[i].symbol for i in depinds}
-        keep = []
-        for candidate in depsymbs:
-            for i in depinds:
-                if self[i].symbol == candidate:
-                    final = i
-            for stat_ind in range(final + 1, len(self)):
-                stat = self[stat_ind]
-                if stat_ind not in depinds and candidate in stat.rhs_symbols:
-                    indices = [i for i in depinds if self[i].symbol == candidate]
-                    keep += indices
+        # Statements defining symbols and dependencies
+        candidates = set()
+        for s in symbols:
+            for i in range(removed_ind - 1, -1, -1):
+                stat = self[i]
+                if isinstance(stat, Assignment) and stat.symbol == s:
+                    candidates.add(i)
                     break
-        for i in reversed(sorted(depinds)):
-            if i not in keep:
-                del self[i]
-
-    def _find_statement_and_deps(self, symbol, ind):
-        """Find indices of the last symbol definition and its dependenceis before a
-        certain statement
-        """
-        # Find index of final assignment of symbol before before
-        for i in reversed(range(0, ind)):
-            statement = self[i]
-            if symbol == statement.symbol:
-                break
+        for i in candidates.copy():
+            if i in graph:
+                candidates |= set(nx.dfs_preorder_nodes(graph, i))
+        # All statements needed for removed_ind
+        if removed_ind in graph:
+            keep = {down for _, down in nx.dfs_edges(graph, removed_ind)}
         else:
-            return set()
-        found = {i}
-        remaining = statement.free_symbols
-        for j in reversed(range(0, i)):
-            statement = self[j]
-            if statement.symbol in remaining:
-                found |= {j}
-                remaining.remove(statement.symbol)
-                remaining |= statement.rhs_symbols
-        return found
+            keep = set()
+        candidates -= keep
+        # Other dependencies after removed_ind
+        additional = {down for up, down in graph.edges if up > removed_ind and down in candidates}
+        for add in additional.copy():
+            if add in graph:
+                additional |= set(nx.dfs_preorder_nodes(graph, add))
+        remove = candidates - additional
+        for i in reversed(sorted(remove)):
+            del self[i]
 
     @property
     def ode_system(self):
