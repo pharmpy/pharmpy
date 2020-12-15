@@ -401,6 +401,23 @@ def model_transit_compartments(args):
     write_model_or_dataset(model, None, path=args.output_file, force=args.force)
 
 
+def model_peripheral_compartments(args):
+    from pharmpy.modeling import add_peripheral_compartment, remove_peripheral_compartment
+
+    model = args.model
+    p = model.statements.ode_system.find_peripherals()
+    if len(p) < args.n:
+        func = add_peripheral_compartment
+    elif len(p) > args.n:
+        func = remove_peripheral_compartment
+    else:
+        return
+    iters = abs(len(p) - args.n)
+    for _ in range(iters):
+        func(model)
+    write_model_or_dataset(model, None, path=args.output_file, force=args.force)
+
+
 def model_error(args):
     from pharmpy.modeling import error_model
 
@@ -1024,6 +1041,21 @@ parser_definition = [
                         'help': 'Set the number of transit compartments for a PK model',
                         'description': 'Set the number of transit compartments of a PK model',
                         'func': model_transit_compartments,
+                        'parents': [args_model_input, args_output],
+                        'args': [
+                            {
+                                'name': 'n',
+                                'type': int,
+                                'help': 'Number of compartments',
+                            },
+                        ],
+                    }
+                },
+                {
+                    'peripheral_compartments': {
+                        'help': 'Set the number of peripheral compartments for a PK model',
+                        'description': 'Set the number of peripheral compartments of a PK model',
+                        'func': model_peripheral_compartments,
                         'parents': [args_model_input, args_output],
                         'args': [
                             {
