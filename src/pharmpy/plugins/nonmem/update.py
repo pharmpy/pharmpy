@@ -487,7 +487,10 @@ def pk_param_conversion(model, advan, trans):
         elif advan == 'ADVAN4':
             d[symbol('V')] = symbol('V2')
     elif from_advan == 'ADVAN3':
-        if advan == 'ADVAN4':
+        if advan == 'ADVAN1':
+            if trans == 'TRANS2':
+                d[symbol('V1')] = symbol('V')
+        elif advan == 'ADVAN4':
             if trans == 'TRANS4':
                 d[symbol('V1')] = symbol('V2')
                 d[symbol('V2')] = symbol('V3')
