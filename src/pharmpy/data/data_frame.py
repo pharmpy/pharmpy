@@ -269,6 +269,22 @@ class DataFrameAccessor:
         df.set_index([idcol, idvcol], inplace=True)
         return df.squeeze()
 
+    @property
+    def doses(self):
+        """Return a series with all doses. Indexed with ID and TIME"""
+        try:
+            label = self.labels_by_type[ColumnType.DOSE]
+        except KeyError:
+            raise DatasetError('Could not identify dosing rows in dataset')
+
+        label = label[0]
+        idcol = self.id_label
+        idvcol = self.idv_label
+        df = self._obj.query(f'{label} != 0')
+        df = df[[idcol, idvcol, label]]
+        df.set_index([idcol, idvcol], inplace=True)
+        return df.squeeze()
+
     def generate_path(self, path=None, force=False):
         """Generate the path of dataframe if written.
         If no path is supplied or does not contain a filename a name is created
