@@ -40,6 +40,10 @@ Note that all values here are strings
 
    raw.dtypes
 
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Update the dataset of a model
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 A new or updated dataset can be set to a model
 
 .. jupyter-execute::
@@ -48,3 +52,67 @@ A new or updated dataset can be set to a model
 
    df['DV'] = np.log(df['DV'], where=(df['DV'] != 0))
    model.dataset = df 
+
+~~~~~~~~
+Subjects
+~~~~~~~~
+
+An array of all subject IDs can be retrieved using the pharmpy dataframe API extension.
+
+.. jupyter-execute::
+
+   model = Model(path / "pheno_real.mod")
+   df = model.dataset
+   ids = df.pharmpy.ids
+   ids
+
+The number of subjects in the dataset is the length of this array.
+
+.. jupyter-execute::
+
+    len(ids)
+
+
+~~~~~~~~~~~~
+Observations
+~~~~~~~~~~~~
+
+The observations of the dataset indexed on subject ID and the independent variable can be extracted.
+
+.. jupyter-execute::
+
+   obs = df.pharmpy.observations
+   obs
+
+The total number of observations is the length of this series.
+
+.. jupyter-execute::
+
+    len(obs)
+
+~~~~~~
+Dosing
+~~~~~~
+
+The doses of the dataset indexed on subject ID and the independent variable can be extracted.
+
+.. jupyter-execute::
+
+   doses = df.pharmpy.doses
+   doses
+
+All unique doses can be listed
+
+.. jupyter-execute::
+
+    doses.unique()
+
+as well as the largest and the smallest dose
+
+.. jupyter-execute::
+
+    doses.min()
+
+.. jupyter-execute::
+
+    doses.max()
