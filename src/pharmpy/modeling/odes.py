@@ -381,3 +381,17 @@ def add_peripheral_compartment(model):
     odes.add_flow(central, peripheral, qp / vc)
     odes.add_flow(peripheral, central, qp / vp)
     return model
+
+
+def remove_peripheral_compartment(model):
+    odes = model.statements.ode_system
+    peripherals = odes.find_peripherals()
+    if peripherals:
+        last_peripheral = peripherals[-1]
+        central = odes.find_central()
+        symbols = odes.get_flow(central, last_peripheral).free_symbols
+        symbols |= odes.get_flow(last_peripheral, central).free_symbols
+        odes.remove_compartment(last_peripheral)
+        model.statements.remove_symbol_definitions(symbols, odes)
+        model.remove_unused_parameters_and_rvs()
+    return model

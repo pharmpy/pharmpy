@@ -22,6 +22,7 @@ from pharmpy.modeling.odes import (
     michaelis_menten_elimination,
     mixed_mm_fo_elimination,
     remove_lag_time,
+    remove_peripheral_compartment,
     seq_zo_fo_absorption,
     set_transit_compartments,
     zero_order_absorption,
@@ -65,6 +66,7 @@ __all__ = [
     'combined_error',
     'remove_error',
     'add_peripheral_compartment',
+    'remove_peripheral_compartment',
     'update_inits',
     'power_on_ruv',
 ]
