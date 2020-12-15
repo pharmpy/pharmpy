@@ -342,6 +342,20 @@ Adding a peripheral compartment.
    print_model_diff(model_ref, model)
 
 
+Remove peripheral compartment
+=============================
+
+Removing a peripheral compartment. 
+
+.. jupyter-execute::
+
+   from pharmpy.modeling import remove_peripheral_compartment
+   remove_peripheral_compartment(model)
+   remove_ref = model.copy()
+   model.update_source()
+   print_model_diff(remove_ref, model)
+
+
 ~~~~~~~~~~~~~~~~~~~~~~~~
 Adding covariate effects
 ~~~~~~~~~~~~~~~~~~~~~~~~
