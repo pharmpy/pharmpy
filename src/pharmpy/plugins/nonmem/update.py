@@ -503,6 +503,9 @@ def pk_param_conversion(model, advan, trans):
             if trans == 'TRANS4':
                 d.update({symbol('Q'): symbol('Q2')})
     elif from_advan == 'ADVAN4':
+        if advan == 'ADVAN2':
+            if trans == 'TRANS2':
+                d[symbol('V2')] = symbol('V')
         if advan == 'ADVAN3':
             if trans == 'TRANS4':
                 d.update({symbol('V2'): symbol('V1'), symbol('V3'): symbol('V2')})
@@ -514,7 +517,13 @@ def pk_param_conversion(model, advan, trans):
             if trans == 'TRANS4':
                 d.update({symbol('Q'): symbol('Q3')})
     elif from_advan == 'ADVAN11':
-        if advan == 'ADVAN12':
+        if advan == 'ADVAN1':
+            if trans == 'TRANS2':
+                d[symbol('V1')] = symbol('V')
+        elif advan == 'ADVAN3':
+            if trans == 'TRANS4':
+                d[symbol('Q2')] = symbol('Q')
+        elif advan == 'ADVAN12':
             if trans == 'TRANS4':
                 d.update(
                     {
@@ -537,7 +546,13 @@ def pk_param_conversion(model, advan, trans):
                     }
                 )
     elif from_advan == 'ADVAN12':
-        if advan == 'ADVAN11':
+        if advan == 'ADVAN2':
+            if trans == 'TRANS2':
+                d[symbol('V2')] = symbol('V')
+        elif advan == 'ADVAN4':
+            if trans == 'TRANS4':
+                d[symbol('Q3')] = symbol('Q')
+        elif advan == 'ADVAN11':
             if trans == 'TRANS4':
                 d.update(
                     {
