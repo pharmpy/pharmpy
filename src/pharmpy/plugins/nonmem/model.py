@@ -665,8 +665,9 @@ class Model(pharmpy.model.Model):
                 df.pharmpy.column_type['EVID'] = pharmpy.data.ColumnType.EVENT
             if 'AMT' in df.columns:
                 df.pharmpy.column_type['AMT'] = pharmpy.data.ColumnType.DOSE
-            if 'TIME' in df.columns:
-                df.pharmpy.column_type['TIME'] = pharmpy.data.ColumnType.IDV
+        # Let TIME be the idv in both $PK and $PRED models
+        if 'TIME' in df.columns:
+            df.pharmpy.column_type['TIME'] = pharmpy.data.ColumnType.IDV
         df.name = self.dataset_path.stem
         return df
 
