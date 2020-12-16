@@ -300,7 +300,7 @@ class DataFrameAccessor:
 
     def add_time_after_dose(self):
         """Calculate and add a TAD column to the dataset"""
-        # FIXME: Should not rely on name here. Use a coltype for DOSEID
+        # FIXME: Should not rely on name here. Use coltypes for TAD and DOSEID
         # FIXME: TIME is converted to float. Should be handled when reading in dataset
         df = self._obj
         if 'DOSEID' in df.columns:
@@ -315,6 +315,19 @@ class DataFrameAccessor:
         df['TAD'] = df.groupby([idlab, 'DOSEID'])['TAD'].cumsum()
         if not had_doseid:
             df.drop('DOSEID', axis=1, inplace=True)
+
+    def concentration_parameters(self):
+        """Create a dataframe with concentration parameters"""
+        df = self._obj.copy()
+        df.pharmpy.add_doseid()
+        df.pharmpy.add_time_after_dose()
+        idlab = self.id_label
+        dv = self.dv_label
+        idx = df.groupby([idlab, 'DOSEID'])[dv].idxmax()
+        df = df.loc[idx].set_index([idlab, 'DOSEID'])
+        df = df[[dv, 'TAD']]
+        df.rename(columns={dv: 'Cmax', 'TAD': 'Tmax'}, inplace=True)
+        return df
 
     def generate_path(self, path=None, force=False):
         """Generate the path of dataframe if written.

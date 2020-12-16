@@ -130,3 +130,9 @@ Add a column for time after dose (TAD)
 
     df.pharmpy.add_time_after_dose()
     df
+
+Extract pharmacokinetic concentration parameters from the dataset
+
+.. jupyter-execute::
+
+    df.pharmpy.concentration_parameters()

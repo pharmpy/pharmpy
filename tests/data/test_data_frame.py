@@ -176,6 +176,13 @@ def test_tad_pheno(testdata):
     model.dataset.pharmpy.add_time_after_dose()
 
 
+def test_concentration_parameters(df2):
+    df = df2.pharmpy.concentration_parameters()
+    correct = pd.DataFrame({'ID': [1, 2], 'DOSEID': [1, 1], 'Cmax': [0.2, 0.6], 'Tmax': [1.0, 1.0]})
+    correct.set_index(['ID', 'DOSEID'], inplace=True)
+    pd.testing.assert_frame_equal(df, correct)
+
+
 def test_write(fs, df):
     df.pharmpy.write_csv(path="my.csv")
     with open("my.csv", "r") as fh:
