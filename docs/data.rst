@@ -94,6 +94,9 @@ The total number of observations is the length of this series.
 Dosing
 ~~~~~~
 
+Extract dosing information
+==========================
+
 The doses of the dataset indexed on subject ID and the independent variable can be extracted.
 
 .. jupyter-execute::
@@ -117,6 +120,9 @@ as well as the largest and the smallest dose
 
     doses.max()
 
+Dose grouping
+=============
+
 It is possible to add a DOSEID column with a numbering of each dose period starting from 1.
 
 .. jupyter-execute::
@@ -124,12 +130,18 @@ It is possible to add a DOSEID column with a numbering of each dose period start
     df.pharmpy.add_doseid()
     df
 
+Time after dose
+===============
+
 Add a column for time after dose (TAD)
 
 .. jupyter-execute::
 
     df.pharmpy.add_time_after_dose()
     df
+
+Concentration parameters
+========================
 
 Extract pharmacokinetic concentration parameters from the dataset
 

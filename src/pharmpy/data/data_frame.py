@@ -323,10 +323,12 @@ class DataFrameAccessor:
         df.pharmpy.add_time_after_dose()
         idlab = self.id_label
         dv = self.dv_label
+        noobs = df.groupby([idlab, 'DOSEID']).size() == 1
         idx = df.groupby([idlab, 'DOSEID'])[dv].idxmax()
         df = df.loc[idx].set_index([idlab, 'DOSEID'])
         df = df[[dv, 'TAD']]
         df.rename(columns={dv: 'Cmax', 'TAD': 'Tmax'}, inplace=True)
+        df.loc[noobs] = np.nan
         return df
 
     def generate_path(self, path=None, force=False):
