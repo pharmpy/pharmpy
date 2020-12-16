@@ -371,6 +371,7 @@ class OmegaRecord(Record):
         block = self.root.find('block')
         bare_block = self.root.find('bare_block')
         zero_fix = []
+        etas = []
         if not (block or bare_block):
             rvs = RandomVariables()
             i = start_omega
@@ -382,8 +383,10 @@ class OmegaRecord(Record):
                 if not (init == 0 and fixed):  # 0 FIX are not RVs
                     eta = sympy.stats.Normal(name, 0, sympy.sqrt(symbol(rev_map[(i, i)])))
                     rvs.add(eta)
+                    etas.append(eta.name)
                 else:
                     zero_fix.append(name)
+                    etas.append(name)
                 i += 1
         else:
             if bare_block:
@@ -399,12 +402,14 @@ class OmegaRecord(Record):
                     all_zero_fix = False
             if all_zero_fix and len(params) > 0 or (previous_cov == 'ZERO' and same):
                 names = [self._rv_name(i) for i in range(start_omega, start_omega + numetas)]
+                self.eta_map = {eta: start_omega + i for i, eta in enumerate(names)}
                 return RandomVariables(), start_omega + numetas, 'ZERO', names
             if numetas > 1:
                 names = [self._rv_name(i) for i in range(start_omega, start_omega + numetas)]
                 means = [0] * numetas
                 if same:
                     rvs = JointNormalSeparate(names, means, previous_cov)
+                    etas = [rv.name for rv in rvs]
                     next_cov = previous_cov
                 else:
                     cov = sympy.zeros(numetas)
@@ -415,6 +420,7 @@ class OmegaRecord(Record):
                                 cov[col, row] = cov[row, col]
                     next_cov = cov
                     rvs = JointNormalSeparate(names, means, cov)
+                    etas = [rv.name for rv in rvs]
             else:
                 rvs = RandomVariables()
                 name = self._rv_name(start_omega)
@@ -425,6 +431,7 @@ class OmegaRecord(Record):
                 eta = sympy.stats.Normal(name, 0, sympy.sqrt(sym))
                 next_cov = sym
                 rvs.add(eta)
+                etas.append(eta.name)
 
         if self.name == 'OMEGA':
             if same:
@@ -435,7 +442,7 @@ class OmegaRecord(Record):
             level = VariabilityLevel.RUV
         for rv in rvs:
             rv.variability_level = level
-        self.eta_map = {rv.name: start_omega + i for i, rv in enumerate(rvs)}
+        self.eta_map = {eta: start_omega + i for i, eta in enumerate(etas)}
         return rvs, start_omega + numetas, next_cov, zero_fix
 
     def renumber(self, new_start):

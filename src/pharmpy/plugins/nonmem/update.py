@@ -71,6 +71,7 @@ def update_parameters(model, old, new):
 
 
 def update_random_variables(model, old, new):
+    model.control_stream.go_through_omega_rec()
     new_names = {rv.name for rv in new}
     old_names = {rv.name for rv in old}
     removed = old_names - new_names
