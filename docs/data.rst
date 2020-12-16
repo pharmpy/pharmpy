@@ -123,3 +123,10 @@ It is possible to add a DOSEID column with a numbering of each dose period start
 
     df.pharmpy.add_doseid()
     df
+
+Add a column for time after dose (TAD)
+
+.. jupyter-execute::
+
+    df.pharmpy.add_time_after_dose()
+    df
