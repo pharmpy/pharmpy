@@ -25,6 +25,29 @@ def df():
     return df
 
 
+@pytest.fixture
+def df2():
+    df = data.PharmDataFrame(
+        {
+            'ID': [1, 1, 2, 2],
+            'DV': [0, 0.2, 0, 0.6],
+            'WGT': [70, 72, 75, 75],
+            'HGT': [185, 185, 160, 160],
+            'TIME': [0, 1, 0, 1],
+            'AMT': [1, 0, 1, 0],
+        }
+    )
+    df.pharmpy.column_type[('ID', 'DV', 'WGT', 'HGT', 'TIME', 'AMT')] = [
+        data.ColumnType.ID,
+        data.ColumnType.DV,
+        data.ColumnType.COVARIATE,
+        data.ColumnType.COVARIATE,
+        data.ColumnType.IDV,
+        data.ColumnType.DOSE,
+    ]
+    return df
+
+
 def test_column_type():
     col_type = data.ColumnType.ID
     assert col_type == data.ColumnType.ID
@@ -118,31 +141,27 @@ def test_covariate_baselines(df):
     pd.testing.assert_frame_equal(df.pharmpy.covariate_baselines, correct_baselines)
 
 
-def test_observations(df):
-    df = data.PharmDataFrame(
-        {
-            'ID': [1, 1, 2, 2],
-            'DV': [0, 0.2, 0, 0.6],
-            'WGT': [70, 72, 75, 75],
-            'HGT': [185, 185, 160, 160],
-            'TIME': [0, 1, 0, 1],
-            'AMT': [1, 0, 1, 0],
-        }
-    )
-    df.pharmpy.column_type[('ID', 'DV', 'WGT', 'HGT', 'TIME', 'AMT')] = [
-        data.ColumnType.ID,
-        data.ColumnType.DV,
-        data.ColumnType.COVARIATE,
-        data.ColumnType.COVARIATE,
-        data.ColumnType.IDV,
-        data.ColumnType.DOSE,
-    ]
+def test_observations(df2):
     correct_observations = (
         pd.DataFrame({'DV': [0.2, 0.6], 'ID': [1, 2], 'TIME': [1, 1]})
         .set_index(['ID', 'TIME'])
         .squeeze()
     )
-    pd.testing.assert_series_equal(df.pharmpy.observations, correct_observations)
+    pd.testing.assert_series_equal(df2.pharmpy.observations, correct_observations)
+
+
+def test_doses(df2):
+    correct_doses = (
+        pd.DataFrame({'AMT': [1, 1], 'ID': [1, 2], 'TIME': [0, 0]})
+        .set_index(['ID', 'TIME'])
+        .squeeze()
+    )
+    pd.testing.assert_series_equal(df2.pharmpy.doses, correct_doses)
+
+
+def test_add_doseid(df2):
+    df2.pharmpy.add_doseid()
+    assert list(df2['DOSEID']) == [1, 1, 1, 1]
 
 
 def test_write(fs, df):

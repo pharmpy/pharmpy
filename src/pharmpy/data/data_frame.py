@@ -285,6 +285,27 @@ class DataFrameAccessor:
         df.set_index([idcol, idvcol], inplace=True)
         return df.squeeze()
 
+    def add_doseid(self):
+        """Add a column DOSEID with id of each dose period starting from 1"""
+        try:
+            dose = self.labels_by_type[ColumnType.DOSE]
+        except KeyError:
+            raise DatasetError('Could not identify dosing rows in dataset')
+        df = self._obj
+        df['DOSEID'] = df[dose]
+        df.loc[df['DOSEID'] > 0, 'DOSEID'] = 1
+        df['DOSEID'] = df['DOSEID'].astype(int)
+        df['DOSEID'] = df.groupby(self.id_label)['DOSEID'].cumsum()
+
+    # def add_time_after_dose(self):
+    #    """Calculate and add a TAD column to the dataset"""
+    #    try:
+    #        dose = self.labels_by_type[ColumnType.DOSE]
+    #    except KeyError:
+    #        raise DatasetError('Could not identify dosing rows in dataset')
+    #    idv = self.idv_label
+    #    idlab = self.id_label
+
     def generate_path(self, path=None, force=False):
         """Generate the path of dataframe if written.
         If no path is supplied or does not contain a filename a name is created

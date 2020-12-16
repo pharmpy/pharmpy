@@ -116,3 +116,10 @@ as well as the largest and the smallest dose
 .. jupyter-execute::
 
     doses.max()
+
+It is possible to add a DOSEID column with a numbering of each dose period starting from 1.
+
+.. jupyter-execute::
+
+    df.pharmpy.add_doseid()
+    df
