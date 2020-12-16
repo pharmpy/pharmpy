@@ -179,7 +179,7 @@ class Model:
         new_params = ParameterSet()
         for p in self.parameters:
             symb = p.symbol
-            if symb in symbols or symb in new_rvs.free_symbols:
+            if symb in symbols or symb in new_rvs.free_symbols or (p.fix and p.init == 0):
                 new_params.add(p)
         self.parameters = new_params
 
