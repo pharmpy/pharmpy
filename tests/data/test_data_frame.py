@@ -1,5 +1,6 @@
 import copy
 
+import numpy as np
 import pandas as pd
 import pytest
 
@@ -43,6 +44,18 @@ def df2():
         data.ColumnType.DV,
         data.ColumnType.COVARIATE,
         data.ColumnType.COVARIATE,
+        data.ColumnType.IDV,
+        data.ColumnType.DOSE,
+    ]
+    return df
+
+
+@pytest.fixture
+def df3():
+    df = data.PharmDataFrame({'ID': [1, 1, 1, 1, 2, 2, 2, 2], 'DV': [0, 0.1, 0.5, 0.5, 0, 0.3, 4, 1], 'TIME': [0, 2, 5, 9,0, 2, 5 ,9], 'AMT': [4, 0, 3, 0, 2, 0, 0 ,0]})
+    df.pharmpy.column_type[('ID', 'DV', 'TIME', 'AMT')] = [
+        data.ColumnType.ID,
+        data.ColumnType.DV,
         data.ColumnType.IDV,
         data.ColumnType.DOSE,
     ]
@@ -176,9 +189,14 @@ def test_tad_pheno(testdata):
     model.dataset.pharmpy.add_time_after_dose()
 
 
-def test_concentration_parameters(df2):
+def test_concentration_parameters(df2, df3):
     df = df2.pharmpy.concentration_parameters()
-    correct = pd.DataFrame({'ID': [1, 2], 'DOSEID': [1, 1], 'Cmax': [0.2, 0.6], 'Tmax': [1.0, 1.0]})
+    correct = pd.DataFrame({'ID': [1, 2], 'DOSEID': [1, 1], 'Cmax': [0.2, 0.6], 'Tmax': [1.0, 1.0], 'Cmin': np.nan, 'Tmin': np.nan})
+    correct.set_index(['ID', 'DOSEID'], inplace=True)
+    pd.testing.assert_frame_equal(df, correct)
+
+    df = df3.pharmpy.concentration_parameters()
+    correct = pd.DataFrame({'ID': [1, 1, 2], 'DOSEID': [1, 2, 1], 'Cmax': [0.1, 0.5, 4.0], 'Tmax': [2.0, 0.0, 5.0], 'Cmin': [np.nan, 0.5, 1.0], 'Tmin': [np.nan, 4.0, 9.0]})
     correct.set_index(['ID', 'DOSEID'], inplace=True)
     pd.testing.assert_frame_equal(df, correct)
 

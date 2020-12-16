@@ -325,11 +325,24 @@ class DataFrameAccessor:
         dv = self.dv_label
         noobs = df.groupby([idlab, 'DOSEID']).size() == 1
         idx = df.groupby([idlab, 'DOSEID'])[dv].idxmax()
-        df = df.loc[idx].set_index([idlab, 'DOSEID'])
-        df = df[[dv, 'TAD']]
-        df.rename(columns={dv: 'Cmax', 'TAD': 'Tmax'}, inplace=True)
-        df.loc[noobs] = np.nan
-        return df
+        params = df.loc[idx].set_index([idlab, 'DOSEID'])
+        params = params[[dv, 'TAD']]
+        params.rename(columns={dv: 'Cmax', 'TAD': 'Tmax'}, inplace=True)
+        params.loc[noobs] = np.nan
+
+        grpind = df.groupby(['ID', 'DOSEID']).indices
+        keep = []
+        for ind, rows in grpind.items():
+            index = idx.loc[ind]
+            p = params.loc[ind]
+            if not np.isnan(p['Tmax']):
+                keep += [row for row in rows if row > index]
+        minidx = df.iloc[keep].groupby([idlab, 'DOSEID'])[dv].idxmin()
+        params2 = df.loc[minidx].set_index([idlab, 'DOSEID'])
+        params2 = params2[[dv, 'TAD']]
+        params2.rename(columns={dv: 'Cmin', 'TAD': 'Tmin'}, inplace=True)
+        res = params.join(params2)
+        return res
 
     def generate_path(self, path=None, force=False):
         """Generate the path of dataframe if written.
