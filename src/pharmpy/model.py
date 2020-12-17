@@ -43,7 +43,7 @@ class Model:
        dataset
     """
 
-    def to_base_model(self):
+    def to_generic_model(self):
         """Convert a model into the base model class"""
         model = Model()
         model.parameters = self.parameters.copy()

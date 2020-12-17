@@ -11,4 +11,4 @@ def test_detect_model():
 def test_load_plugins():
     plugins = utils.load_plugins()
     names = [x.__name__ for x in plugins]
-    assert names == ['pharmpy.plugins.nonmem']
+    assert set(names) == {'pharmpy.plugins.nonmem', 'pharmpy.plugins.nlmixr'}

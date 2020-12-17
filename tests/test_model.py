@@ -133,10 +133,10 @@ def test_weighted_residuals(testdata):
     pd.testing.assert_series_equal(lincorrect['WRES'], wres, rtol=1e-4, check_names=False)
 
 
-def test_to_base_model(testdata):
+def test_to_generic_model(testdata):
     path = testdata / 'nonmem' / 'pheno.mod'
     nm_model = Model(path)
-    model = nm_model.to_base_model()
+    model = nm_model.to_generic_model()
     assert id(model.parameters) != id(nm_model.parameters)
     assert model.parameters == nm_model.parameters
     assert id(model.random_variables) != id(nm_model.random_variables)
