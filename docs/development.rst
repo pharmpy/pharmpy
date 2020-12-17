@@ -1,6 +1,6 @@
-===========
-Development
-===========
+==========
+Contribute
+==========
 
 .. toctree::
    :maxdepth: 4

@@ -1,9 +1,11 @@
-=======
-Using R
-=======
+.. _using_r:
 
-Using Pharmpy in R is simple, and all the examples for Python are analogous to how they work in R. Simply replace "."
-with "$" for the R equivalent.
+============
+Pharmpy in R
+============
+
+Using Pharmpy in R is similar to how it is used in Python, and all the examples for Python are analogous to how
+they work in R. Replace "." with "$" for the R equivalent. Later an R wrapper will be available.
 
 Relevant imports:
 
@@ -29,5 +31,11 @@ To load a model and access e.g. parameters
      OMEGA(1,1)  0.030963   0.00       oo  False
      OMEGA(2,2)  0.031128   0.00       oo  False
      SIGMA(1,1)  0.013086   0.00       oo  False
+    >>> model$write("run2.mod")
 
-It is also possible to perform different types of transformations, such as addition of covariate effects.
+It is also possible to perform different types of transformations, such as addition of covariate effects. A way to
+write functions from e.g. the modeling module in a more clean way:
+
+.. code-block:: r
+
+    >>> add_covariate_effect <- modeling$add_covariate_effect

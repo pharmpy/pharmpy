@@ -27,10 +27,9 @@ Contents
 .. toctree::
    :maxdepth: 2
 
-   installation
    getting_started
    user_guide
-   Documentation <reference/modules>
+   API reference <reference/modules>
    development
    changelog
    license

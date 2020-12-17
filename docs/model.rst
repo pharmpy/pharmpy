@@ -1,11 +1,10 @@
+.. _model:
+
 =================
 The Pharmpy model
 =================
 
 At the heart of Pharmpy lies its non-linear mixed effects model abstraction. A model needs to follow the interface of the base model class :py:class:`pharmpy.model.Model`. This means that any model format can in theory be supported by Pharmpy via subclasses that implement the same base interface. This makes any operation performed on a model be the same regardless of the underlying implementation of the model and it is one of the core design principles of Pharmpy.
-
-
-.. math::
 
 ~~~~~~~~~~~~~~~~~~
 Reading in a model
@@ -27,18 +26,19 @@ Reading a model from a model specification file into a Pharmy model object is do
    model = Model(path / "pheno_real.mod")
 
 
-Internally this will trigger a model type detection to select which model implementation to use, i.e. if it is an NM-TRAN control stream the Pharmpy NONMEM model class will be selected transparent to the user. 
+Internally this will trigger a model type detection to select which model implementation to use, i.e. if it is an NM-TRAN control stream the Pharmpy NONMEM model class will be selected transparent to the user.
 
 ~~~~~~~~~~
 Model name
 ~~~~~~~~~~
 
-A model has a name property that can be read or changed. After reading a model from a file the name is set to the filename without extension. 
+A model has a name property that can be read or changed. After reading a model from a file the name is set to the filename without extension.
 
 .. jupyter-execute::
 
    model.name
 
+.. _model_write:
 
 ~~~~~~~~~~~~~~~
 Writing a model
@@ -173,7 +173,7 @@ or using the convenience method:
 Random variables
 ~~~~~~~~~~~~~~~~
 
-The random variables of a model are available through the random_variables property: 
+The random variables of a model are available through the random_variables property:
 
 .. jupyter-execute::
 
@@ -240,7 +240,7 @@ or in a pure numerical setting in NumPy
 
 .. jupyter-execute::
 
-   np.linalg.cholesky(a)   
+   np.linalg.cholesky(a)
 
 ~~~~~~~~~~~~~~~~~
 Model statmements
