@@ -14,7 +14,8 @@ from pharmpy.symbols import symbol as S
 
 def boxcox(model, list_of_etas=None):
     """
-    Applies a boxcox transformation to specified etas from a :class:`pharmpy.model`.
+    Applies a boxcox transformation to specified etas from a :class:`pharmpy.model`. Initial
+    estimate for lambda is 0.1 with bounds (-3, 3).
 
     Parameters
     ----------
@@ -31,7 +32,8 @@ def boxcox(model, list_of_etas=None):
 
 def tdist(model, list_of_etas=None):
     """
-    Applies a t-distribution transformation to specified etas from a :class:`pharmpy.model`.
+    Applies a t-distribution transformation to specified etas from a :class:`pharmpy.model`. Initial
+    estimate for degrees of freedom is 80 with bounds (3, 100).
 
     Parameters
     ----------
@@ -49,7 +51,7 @@ def tdist(model, list_of_etas=None):
 def john_draper(model, list_of_etas=None):
     """
     Applies a John Draper transformation [1]_ to specified etas from a
-    :class:`pharmpy.model`.
+    :class:`pharmpy.model`. Initial estimate for lambda is 0.1 with bounds (-3, 3).
 
     .. [1] John, J., Draper, N. (1980). An Alternative Family of Transformations.
        Journal of the Royal Statistical Society. Series C (Applied Statistics),

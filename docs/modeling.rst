@@ -1,10 +1,14 @@
+.. _modeling:
+
 ========
 Modeling
 ========
 
 While the :py:class:`pharmpy.model.Model` class can be directly manipulated
 with low level operations the modeling module offers higher level operations and transformations for building a model.
-These transformations are also available via the Pharmpy command line interface.
+These transformations are also available via the Pharmpy command line interface. To read more about these functions
+such as how the initial estimates of parameters are chosen), see their respective API documentation (linked under
+each section).
 
 .. jupyter-execute::
    :hide-output:
@@ -31,34 +35,18 @@ Many basic model manipulation tasks that could also be done using methods on mod
 makes it possible to do most common model manipulations using a functional interface that is easy to chain into a pipeline. Note that all
 manipulations are done in place, i.e. the model referenced by the input argument will be changed.
 
-Reading, writing and updating source models
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Update model source
+~~~~~~~~~~~~~~~~~~~
 
-Read model from file
-====================
+Changes done to a model will not affect the model code (e.g. the NONMEM code) until performing an update of the source
+code. The new model can then be written to a new model file as described :ref:`here <model_write>`.
 
 .. jupyter-execute::
    :hide-output:
 
    from pharmpy.modeling import *
-   model = read_model(path / 'pheno.mod')
-
-Update model source
-===================
-
-Changes done to a model will not affect the model code (e.g. the NONMEM code) until performing an update of the source.
-
-.. jupyter-execute::
-   :hide-output:
-
+   model = Model(path / 'pheno.mod')
    update_source(model)
-
-Write model to file
-===================
-
-.. code::
-
-   write_model(model, 'mymodel.mod')
 
 Parameters
 ~~~~~~~~~~
@@ -76,6 +64,8 @@ The functions for fixing/unfixing parameters take either a list of parameter nam
 
 Add parameter
 =============
+
+A new parameter can be added by using the name of the new parameter.
 
 .. jupyter-execute::
 
@@ -158,6 +148,8 @@ Let us now change to zero order absorption.
      S -> "Central" [label=Infusion];
    }
 
+See :py:func:`pharmpy.modeling.zero_order_absorption`.
+
 .. jupyter-execute::
 
    from pharmpy.modeling import zero_order_absorption
@@ -181,6 +173,8 @@ First order absorption would mean adding an absorption (depot) compartment like 
      "Central" -> Output [label=K];
      S -> "Depot" [label=Bolus];
    }
+
+See :py:func:`pharmpy.modeling.first_order_absorption`.
 
 .. jupyter-execute::
 
@@ -206,14 +200,14 @@ Sequential zero-order absorption followed by first-order absorption will have an
      S -> "Depot" [label=Infusion];
    }
 
+See :py:func:`pharmpy.modeling.seq_zo_fo_absorption`.
+
 .. jupyter-execute::
 
    from pharmpy.modeling import seq_zo_fo_absorption
    seq_zo_fo_absorption(model)
    model.update_source(nofiles=True)
    print_model_diff(model_ref, model)
-
-.. _cov_effects:
 
 Absorption delay
 ~~~~~~~~~~~~~~~~
@@ -261,51 +255,47 @@ Similarly, to remove lag time:
 Elimination rate
 ~~~~~~~~~~~~~~~~
 
+Pharmpy supports changing a model to first-order, zero-order, Michaelis-Menten and first-orde + Michaelis-Menten
+elimination.
+
 First-order elimination
 =======================
 
 .. jupyter-execute::
-   :hide-output:
-
-   model = Model(path / "pheno.mod")
-
-.. jupyter-execute::
 
    from pharmpy.modeling import first_order_elimination
+   model = Model(path / "pheno.mod")
    first_order_elimination(model)
    model.update_source()
    print_model_diff(model_ref, model)
 
+See :py:func:`pharmpy.modeling.first_order_elimination`.
 
 Zero-order elimination
 ======================
 
 .. jupyter-execute::
-   :hide-output:
-
-   model = Model(path / "pheno.mod")
-
-.. jupyter-execute::
 
    from pharmpy.modeling import zero_order_elimination
+   model = Model(path / "pheno.mod")
    zero_order_elimination(model)
    model.update_source()
    print_model_diff(model_ref, model)
+
+See :py:func:`pharmpy.modeling.zero_order_elimination`.
 
 Michaelis-Menten elimination
 ============================
 
 .. jupyter-execute::
-   :hide-output:
-
-   model = Model(path / "pheno.mod")
-
-.. jupyter-execute::
 
    from pharmpy.modeling import michaelis_menten_elimination
+   model = Model(path / "pheno.mod")
    michaelis_menten_elimination(model)
    model.update_source()
    print_model_diff(model_ref, model)
+
+See :py:func:`pharmpy.modeling.michaelis_menten_elimination`.
 
 Mixed Michaelis-Menten + First-Order elimination
 ===================================================
@@ -313,14 +303,13 @@ Mixed Michaelis-Menten + First-Order elimination
 .. jupyter-execute::
    :hide-output:
 
-   model = Model(path / "pheno.mod")
-
-.. jupyter-execute::
-
    from pharmpy.modeling import mixed_mm_fo_elimination
+   model = Model(path / "pheno.mod")
    mixed_mm_fo_elimination(model)
    model.update_source()
    print_model_diff(model_ref, model)
+
+See :py:func:`pharmpy.modeling.mixed_mm_fo_elimination`.
 
 Distribution
 ~~~~~~~~~~~~
@@ -332,7 +321,7 @@ Add peripheral compartment
 
    model = Model(path / "pheno.mod")
 
-Adding a peripheral compartment. 
+Adding a peripheral compartment.
 
 .. jupyter-execute::
 
@@ -345,7 +334,7 @@ Adding a peripheral compartment.
 Remove peripheral compartment
 =============================
 
-Removing a peripheral compartment. 
+Removing a peripheral compartment.
 
 .. jupyter-execute::
 
@@ -355,6 +344,7 @@ Removing a peripheral compartment.
    model.update_source()
    print_model_diff(remove_ref, model)
 
+.. _cov_effects:
 
 ~~~~~~~~~~~~~~~~~~~~~~~~
 Adding covariate effects
@@ -375,7 +365,7 @@ Covariate effects may be applied to a model.
 Here, *CL* indicates the name of the parameter onto which you want to apply the effect, *WGT* is the name of the
 covariate, and *pow* (power function) is the effect you want to apply. The effect can be either
 added or multiplied to the parameter, denoted by '*' or '+' (multiplied is default). See
-:py:class:`pharmpy.modeling.add_covariate_effect` for effects with available templates.
+:py:class:`pharmpy.modeling.add_covariate_effect` for effects with available templates and initial estimates.
 
 .. jupyter-execute::
 
@@ -411,7 +401,8 @@ Boxcox
 
    model = Model(path / "pheno.mod")
 
-To apply a boxcox transformation, input a list of the etas of interest.
+To apply a boxcox transformation, input a list of the etas of interest. See
+:py:func:`pharmpy.modeling.boxcox`.
 
 .. jupyter-execute::
 
@@ -436,7 +427,8 @@ Approximate t-distribution
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Applying an approximate t-distribution transformation of etas is analogous to a boxcox transformation. The input
-is a list of etas, and if no list is provided all etas will be transformed.
+is a list of etas, and if no list is provided all etas will be transformed. See
+:py:func:`pharmpy.modeling.tdist`.
 
 .. jupyter-execute::
 
@@ -450,7 +442,7 @@ John Draper
 ~~~~~~~~~~~
 
 John Draper transformation is also supported. The function takes a list of etas as input, if no list is
-provided all etas will be transformed.
+provided all etas will be transformed. See :py:func:`pharmpy.modeling.john_draper`.
 
 .. jupyter-execute::
 
@@ -477,8 +469,8 @@ Etas may be added to a model.
    add_etas(model, 'S1', 'exp', operation='*')
 
 In this example, *S1* is the parameter to add the eta to, *exp* is the effect on the new eta (see
-:py:class:`pharmpy.modeling.add_etas` for available templates). The operation denotes whether
-the new eta should be added or multipled (default).
+:py:class:`pharmpy.modeling.add_etas` for available templates and how intial estimates are chosen). The
+operation denotes whether the new eta should be added or multipled (default).
 
 .. jupyter-execute::
 
@@ -486,7 +478,7 @@ the new eta should be added or multipled (default).
    print_model_diff(model_ref, model)
 
 For some of the templates, such as proportional etas, the operation can be omitted since it is
-already defined by the effect (see documentation: :py:class:`pharmpy.modeling.add_etas`).
+already defined by the effect.
 
 .. jupyter-execute::
 
@@ -523,7 +515,8 @@ Remove IIVs
 
    model = Model(path / "pheno.mod")
 
-Etas can also be removed by providing a list of etas and/or name of parameters to remove IIV from.
+Etas can also be removed by providing a list of etas and/or name of parameters to remove IIV from. See
+:py:func:`pharmpy.modeling.remove_iiv`.
 
 .. jupyter-execute::
 
@@ -545,7 +538,8 @@ If you want to remove all etas, leave argument empty.
 Remove IOVs
 ~~~~~~~~~~~
 
-You can remove IOVs as well, however all IOV omegas will be removed.
+You can remove IOVs as well, however all IOV omegas will be removed. See
+:py:func:`pharmpy.modeling.remove_iov`.
 
 .. jupyter-execute::
    :hide-output:
@@ -559,16 +553,18 @@ You can remove IOVs as well, however all IOV omegas will be removed.
 The error model
 ~~~~~~~~~~~~~~~
 
-.. jupyter-execute::
-   :hide-output:
-
-   model = Model(path / "pheno.mod")
-
 Removing the error model
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. warning::
    Removing all epsilons might lead to a model that isn't runnable.
+
+.. jupyter-execute::
+   :hide-output:
+
+   model = Model(path / "pheno.mod")
+
+The error model can be removed.
 
 .. jupyter-execute::
 
@@ -586,6 +582,8 @@ Setting an additive error model
 
    model = Model(path / "pheno.mod")
 
+To set a additive error model:
+
 .. jupyter-execute::
 
    from pharmpy.modeling import additive_error
@@ -593,6 +591,8 @@ Setting an additive error model
    additive_error(model)
    model.update_source()
    print_model_diff(model_ref, model)
+
+See :py:func:`pharmpy.modeling.additive_error`.
 
 Setting a proportional error model
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -602,6 +602,8 @@ Setting a proportional error model
 
    model = Model(path / "pheno.mod")
 
+To set a proportional error model:
+
 .. jupyter-execute::
 
    from pharmpy.modeling import proportional_error
@@ -609,6 +611,8 @@ Setting a proportional error model
    proportional_error(model)
    model.update_source()
    print_model_diff(model_ref, model)
+
+See :py:func:`pharmpy.modeling.proportional_error`.
 
 Setting a combined additive and proportional error model
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -618,6 +622,8 @@ Setting a combined additive and proportional error model
 
    model = Model(path / "pheno.mod")
 
+To set a combined error model:
+
 .. jupyter-execute::
 
    from pharmpy.modeling import combined_error
@@ -625,6 +631,8 @@ Setting a combined additive and proportional error model
    combined_error(model)
    model.update_source()
    print_model_diff(model_ref, model)
+
+See :py:func:`pharmpy.modeling.combined_error`.
 
 Applying IIV on RUVs
 ~~~~~~~~~~~~~~~~~~~~
@@ -654,14 +662,15 @@ transformed.
    model.update_source()
    print_model_diff(model_ref, model)
 
+See :py:func:`pharmpy.modeling.iiv_on_ruv`.
+
 Power effects on RUVs
 ~~~~~~~~~~~~~~~~~~~~~
 
 .. jupyter-execute::
 
-   model = Model(path / "pheno.mod")
-
    from pharmpy.modeling import power_on_ruv
+   model = Model(path / "pheno.mod")
    power_on_ruv(model, ['EPS(1)'])
    model.update_source()
    print_model_diff(model_ref, model)
@@ -669,20 +678,19 @@ Power effects on RUVs
 A power effect will be applied to all provided epsilons, leave argument empty if all
 epsilons should be transformed.
 
+See :py:func:`pharmpy.modeling.power_on_ruv`.
+
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Creating full or partial block structures
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. warning::
-   Creating block structures will render any modelfit results associated to the original model to
-   be obsolete (set to None).
 
 .. jupyter-execute::
    :hide-output:
 
    model = Model(path / "pheno.mod")
 
-Pharmpy supports the creation of full and partial block structures of etas (IIV).
+Pharmpy supports the creation of full and partial block structures of etas (IIV). See
+:py:func:`pharmpy.modeling.create_rv_block`.
 
 .. jupyter-execute::
 
@@ -707,8 +715,7 @@ Update initial estimates from previous run
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 If there are results from a previous run, those can be used for initial estimates in your
-pharmpy model.
-
+pharmpy model. See :py:func:`pharmpy.modeling.update_inits`.
 
 .. jupyter-execute::
 

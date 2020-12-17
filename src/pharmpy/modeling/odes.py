@@ -44,6 +44,8 @@ def first_order_elimination(model):
 
 
 def zero_order_elimination(model):
+    """Sets elimination to zero order. Initial estimate for KM is set to 1% of smallest
+    observation."""
     _do_michaelis_menten_elimination(model)
     obs = model.dataset.pharmpy.observations
     init = obs.min() / 100  # 1% of smallest observation
@@ -53,11 +55,15 @@ def zero_order_elimination(model):
 
 
 def michaelis_menten_elimination(model):
+    """Sets elimination to Michaelis-Menten. Initial estimate for CLMM is set to CL and KM is set to
+    :math:`2*max(DV)`."""
     _do_michaelis_menten_elimination(model)
     return model
 
 
 def mixed_mm_fo_elimination(model):
+    """Sets elimination to mixed Michaelis-Menten and first order. Initial estimate for CLMM is set
+    to CL/2 and KM is set to :math:`2*max(DV)`."""
     _do_michaelis_menten_elimination(model, combined=True)
     return model
 
@@ -107,7 +113,9 @@ def _get_mm_inits(model, rate_numer, combined):
 
 
 def set_transit_compartments(model, n):
-    """Set the number of transit compartments of model"""
+    """Set the number of transit compartments of model. Initial estimate for absorption rate is
+    set the previous rate if available, otherwise it is set to the time of first observation/2
+    is used."""
     statements = model.statements
     odes = statements.ode_system
     transits = odes.find_transit_compartments(statements)
@@ -156,7 +164,9 @@ def set_transit_compartments(model, n):
 
 
 def add_lag_time(model):
-    """Add lag time to the dose compartment of model"""
+    """Add lag time to the dose compartment of model. Initial estimate for lag time is set the
+    previous lag time if available, otherwise it is set to the time of first observation/2 is
+    used."""
     odes = model.statements.ode_system
     dosing_comp = odes.find_dosing()
     old_lag_time = dosing_comp.lag_time
@@ -169,7 +179,7 @@ def add_lag_time(model):
 
 
 def remove_lag_time(model):
-    """Remove lag time from the dose compartment of model"""
+    """Remove lag time from the dose compartment of model."""
     odes = model.statements.ode_system
     dosing_comp = odes.find_dosing()
     lag_time = dosing_comp.lag_time
@@ -182,7 +192,9 @@ def remove_lag_time(model):
 
 
 def zero_order_absorption(model):
-    """Set or change to zero order absorption rate
+    """Set or change to zero order absorption rate. Initial estimate for absorption rate is set
+    the previous rate if available, otherwise it is set to the time of first observation/2 is
+    used.
 
     Parameters
     ----------
@@ -214,7 +226,8 @@ def zero_order_absorption(model):
 
 
 def first_order_absorption(model):
-    """Set or change to first order absorption rate
+    """Set or change to first order absorption rate. Initial estimate for absorption rate is set
+    the previous rate if available, otherwise it is set to the time of first observation/2 is used.
 
     Parameters
     ----------
@@ -242,7 +255,7 @@ def first_order_absorption(model):
 
 
 def bolus_absorption(model):
-    """Set or change to bolus absorption rate
+    """Set or change to bolus absorption rate.
 
     Parameters
     ----------
@@ -273,7 +286,9 @@ def bolus_absorption(model):
 
 
 def seq_zo_fo_absorption(model):
-    """Set or change to sequential zero order first order absorption rate
+    """Set or change to sequential zero order first order absorption rate. Initial estimate for
+    absorption rate is set the previous rate if available, otherwise it is set to the time of
+    first observation/2 is used.
 
     Parameters
     ----------
@@ -322,7 +337,8 @@ def have_zero_order_absorption(model):
 
 
 def add_zero_order_absorption(model, amount, to_comp, parameter_name):
-    """Add zero order absorption to a compartment.
+    """Add zero order absorption to a compartment. Initial estimate for absorption rate is set
+    the previous rate if available, otherwise it is set to the time of first observation/2 is used.
     Disregards what is currently in the model.
     """
     mat_symb = _add_parameter(

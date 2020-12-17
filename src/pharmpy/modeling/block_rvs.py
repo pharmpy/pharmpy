@@ -17,7 +17,9 @@ class RVInputException(Exception):
 def create_rv_block(model, list_of_rvs=None):
     """
     Creates a full or partial block structure of etas. The etas must be IIVs and cannot
-    be fixed.
+    be fixed. Initial estimates for covariance between the etas is dependent on whether
+    the model has results from a previous results. In that case, the correlation will
+    be calculated from individual estimates, otherwise correlation will be set to 10%.
 
     Parameters
     ----------

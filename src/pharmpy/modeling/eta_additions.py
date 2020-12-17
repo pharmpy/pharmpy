@@ -22,7 +22,7 @@ def add_etas(model, parameter, expression, operation='*'):
     - Logit (*logit*)
 
     For all except exponential the operation input is not needed. Otherwise user specified
-    input is supported.
+    input is supported. Initial estimates for new etas are 0.09.
 
     Parameters
     ----------

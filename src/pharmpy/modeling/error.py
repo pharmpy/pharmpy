@@ -19,7 +19,7 @@ def _preparations(model):
 
 
 def remove_error(model):
-    """Remove error model
+    """Remove error model.
 
     Parameters
     ----------
@@ -33,7 +33,7 @@ def remove_error(model):
 
 
 def additive_error(model):
-    """Set an additive error model
+    """Set an additive error model. Initial estimate for new sigma is :math:`(min(DV)/2)²`.
 
     Parameters
     ----------
@@ -63,7 +63,7 @@ def _get_prop_init(dt):
 
 
 def proportional_error(model):
-    """Set a proportional error model
+    """Set a proportional error model. Initial estimate for new sigma is 0.09.
 
     Parameters
     ----------
@@ -88,7 +88,8 @@ def proportional_error(model):
 
 
 def combined_error(model):
-    """Set a combined error model
+    """Set a combined error model. Initial estimates for new sigmas are :math:`(min(DV)/2)²` for
+    proportional and 0.09 for additive.
 
     Parameters
     ----------
