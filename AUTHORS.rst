@@ -13,4 +13,3 @@ Developers
 * Mats Karlsson
 * Andrew Hooker
 * Simon Carter
-* Sebastian Ueckert
