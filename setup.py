@@ -36,7 +36,7 @@ setup(
     long_description='%s\n\n%s'
     % (strip_refs(longdesc(read('README.rst'))), strip_refs(read('CHANGELOG.rst'))),
     author='Rikard Nordgren',
-    author_email='rikard.nordgren@farmbio.uu.se',
+    author_email='rikard.nordgren@farmaci.uu.se',
     url='https://pharmpy.github.io',
     project_urls={
         "Bug Tracker": 'https://github.com/pharmpy/pharmpy/issues',
