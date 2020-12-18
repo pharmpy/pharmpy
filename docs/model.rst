@@ -243,7 +243,7 @@ or in a pure numerical setting in NumPy
    np.linalg.cholesky(a)
 
 ~~~~~~~~~~~~~~~~~
-Model statmements
+Model statements
 ~~~~~~~~~~~~~~~~~
 
 The model statements represent the mathematical description of the model. All statements can be retrieved via the statements property as a :py:class:`pharmpy.ModelStatements` object, which is a list of model statements.
