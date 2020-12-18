@@ -1,3 +1,12 @@
+0.12.0 (2020-12-18)
+-------------------
+
+* Add modeling.update_inits, modeling.add_peripheral_compartment and modeling.remove_peripheral_compartment
+* Update FREM documentation
+* Switch to using modelled covariate values for baselines in FREM
+* Add methods for retrieving doses and Cmax, Tmax, Cmin and Tmin from dataset
+* Various bugfixes and support for more ADVAN/TRANS combinations
+
 0.11.0 (2020-11-20)
 -------------------
 
