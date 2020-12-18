@@ -18,7 +18,7 @@ Copyright
 
    Pharmpy: Pharmacometric models & workflows in Python
 
-   Copyright (C) 2018-2020  Rikard Nordgren, Gunnar Yngman
+   Copyright (C) 2018-2020  The Pharmpy developers
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as published by

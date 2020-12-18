@@ -10,7 +10,7 @@ At the heart of Pharmpy lies its non-linear mixed effects model abstraction. A m
 Reading in a model
 ~~~~~~~~~~~~~~~~~~
 
-Reading a model from a model specification file into a Pharmy model object is done by using the factory constructor
+Reading a model from a model specification file into a Pharmy model object is done by using the factory constructor.
 
 .. jupyter-execute::
    :hide-output:

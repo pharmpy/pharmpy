@@ -12,7 +12,7 @@ Relevant imports:
 .. code-block:: r
 
     >>> library(reticulate)
-    >>> use_python("python3")
+    >>> # use_python("python3")  # Uncomment if needed
     >>> pharmpy <- import("pharmpy")
 
 To load a model and access e.g. parameters

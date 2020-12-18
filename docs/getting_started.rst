@@ -2,7 +2,7 @@
 Getting started
 ===============
 
-Pharmpy can be used in a python program as a module or via its command line interface. It can also
+Pharmpy can be used in a Python program as a module or via its command line interface. It can also
 be used via reticulate from R.
 
 ------------
@@ -14,11 +14,11 @@ Installation
 
 Install the latest stable version from PyPI with::
 
-   pip3 install pharmpy-core
+   pip install pharmpy-core
 
-----------------
-Reading in model
-----------------
+---------------
+A first example
+---------------
 
 The :class:`pharmpy.Model` class is representation of a nonlinear mixed effects model. For example, to
 read the NONMEM model ``pheno_real.mod`` from file into a model object, the following is sufficient:

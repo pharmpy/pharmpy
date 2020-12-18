@@ -7,8 +7,7 @@ Modeling
 While the :py:class:`pharmpy.model.Model` class can be directly manipulated
 with low level operations the modeling module offers higher level operations and transformations for building a model.
 These transformations are also available via the Pharmpy command line interface. To read more about these functions
-such as how the initial estimates of parameters are chosen), see their respective API documentation (linked under
-each section).
+such as how the initial estimates of parameters are chosen, see their respective API documentation.
 
 .. jupyter-execute::
    :hide-output:
@@ -35,18 +34,35 @@ Many basic model manipulation tasks that could also be done using methods on mod
 makes it possible to do most common model manipulations using a functional interface that is easy to chain into a pipeline. Note that all
 manipulations are done in place, i.e. the model referenced by the input argument will be changed.
 
-Update model source
-~~~~~~~~~~~~~~~~~~~
+Reading, writing and updating source models
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Changes done to a model will not affect the model code (e.g. the NONMEM code) until performing an update of the source
-code. The new model can then be written to a new model file as described :ref:`here <model_write>`.
+Read model from file
+====================
 
 .. jupyter-execute::
    :hide-output:
 
    from pharmpy.modeling import *
+   model = read_model(path / 'pheno.mod')
+
+Update model source
+===================
+
+Changes done to a model will not affect the model code (e.g. the NONMEM code) until performing an update of the source.
+
+.. jupyter-execute::
+   :hide-output:
+
    model = Model(path / 'pheno.mod')
    update_source(model)
+
+Write model to file
+===================
+
+.. code::
+
+   write_model(model, 'mymodel.mod')
 
 Parameters
 ~~~~~~~~~~
@@ -255,7 +271,7 @@ Similarly, to remove lag time:
 Elimination rate
 ~~~~~~~~~~~~~~~~
 
-Pharmpy supports changing a model to first-order, zero-order, Michaelis-Menten and first-orde + Michaelis-Menten
+Pharmpy supports changing a model to first-order, zero-order, Michaelis-Menten, and first-order + Michaelis-Menten
 elimination.
 
 First-order elimination
@@ -301,7 +317,6 @@ Mixed Michaelis-Menten + First-Order elimination
 ===================================================
 
 .. jupyter-execute::
-   :hide-output:
 
    from pharmpy.modeling import mixed_mm_fo_elimination
    model = Model(path / "pheno.mod")
@@ -365,7 +380,8 @@ Covariate effects may be applied to a model.
 Here, *CL* indicates the name of the parameter onto which you want to apply the effect, *WGT* is the name of the
 covariate, and *pow* (power function) is the effect you want to apply. The effect can be either
 added or multiplied to the parameter, denoted by '*' or '+' (multiplied is default). See
-:py:class:`pharmpy.modeling.add_covariate_effect` for effects with available templates and initial estimates.
+:py:class:`pharmpy.modeling.add_covariate_effect` for effects with available templates and how their respective
+initial estimates are chosen.
 
 .. jupyter-execute::
 
@@ -582,7 +598,7 @@ Setting an additive error model
 
    model = Model(path / "pheno.mod")
 
-To set a additive error model:
+To set an additive error model:
 
 .. jupyter-execute::
 
