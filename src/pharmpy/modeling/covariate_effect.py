@@ -73,7 +73,7 @@ def add_covariate_effect(model, parameter, covariate, effect, operation='*'):
     statistics['std'] = _calculate_std(model.dataset, covariate)
 
     covariate_effect = _create_template(effect, model, covariate)
-    thetas = _create_thetas(model, effect, covariate, covariate_effect.template)
+    thetas = _create_thetas(model, parameter, effect, covariate, covariate_effect.template)
 
     param_statement = sset.find_assignment(parameter)
 
@@ -93,7 +93,7 @@ def add_covariate_effect(model, parameter, covariate, effect, operation='*'):
     return model
 
 
-def _create_thetas(model, effect, covariate, template):
+def _create_thetas(model, parameter, effect, covariate, template):
     """Creates theta parameters and adds to parameter set of model.
 
     Number of parameters depends on how many thetas have been declared."""
@@ -102,22 +102,20 @@ def _create_thetas(model, effect, covariate, template):
     pset = model.parameters
 
     theta_names = dict()
-    theta_name = str(model.create_symbol(stem='COVEFF', force_numbering=True))
 
     if no_of_thetas == 1:
         inits = _choose_param_inits(effect, model.dataset, covariate)
 
+        theta_name = f'POP_{parameter}{covariate}'
         pset.add(Parameter(theta_name, inits['init'], inits['lower'], inits['upper']))
         theta_names['theta'] = theta_name
     else:
-        cov_eff_number = int(re.findall(r'\d', theta_name)[0])
-
         for i in range(1, no_of_thetas + 1):
             inits = _choose_param_inits(effect, model.dataset, covariate, i)
 
+            theta_name = f'POP_{parameter}{covariate}_{i}'
             pset.add(Parameter(theta_name, inits['init'], inits['lower'], inits['upper']))
             theta_names[f'theta{i}'] = theta_name
-            theta_name = f'COVEFF{cov_eff_number + i}'
 
     model.parameters = pset
 

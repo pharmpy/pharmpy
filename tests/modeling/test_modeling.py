@@ -615,6 +615,7 @@ def test_add_covariate_effect(pheno_path, effect, covariate, operation, buf_new)
     )
 
     assert str(model.get_pred_pk_record()) == rec_ref
+    assert f'POP_CL{covariate}' in str(model)
 
 
 def test_add_covariate_effect_nan(pheno_path):
