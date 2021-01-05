@@ -8,7 +8,9 @@ from .etas_record import EtasRecord
 from .model_record import ModelRecord
 from .omega_record import OmegaRecord
 from .option_record import OptionRecord
+from .abbreviated_record import AbbreviatedRecord
 from .parsers import (
+    AbbreviatedRecordParser,
     CodeRecordParser,
     DataRecordParser,
     OmegaRecordParser,
@@ -23,6 +25,7 @@ from .theta_record import ThetaRecord
 
 # Dictionary from canonical record name to record class and non_empty rules of parser
 known_records = {
+    'ABBREVIATED': (AbbreviatedRecord, AbbreviatedRecordParser),
     'DATA': (DataRecord, DataRecordParser),
     'DES': (CodeRecord, CodeRecordParser),
     'ERROR': (CodeRecord, CodeRecordParser),

@@ -19,6 +19,11 @@ class RecordParser(GenericParser):
 
 
 @install_grammar
+class AbbreviatedRecordParser(RecordParser):
+    grammar_filename = 'abbreviated_record.lark'
+
+
+@install_grammar
 class ProblemRecordParser(RecordParser):
     grammar_filename = 'problem_record.lark'
     non_empty = [

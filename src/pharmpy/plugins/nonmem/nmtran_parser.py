@@ -6,6 +6,22 @@ from .records.factory import create_record
 from .records.raw_record import RawRecord
 
 
+class Abbreviated:
+    """Handling all $ABBREVIATED in a control stream
+    """
+    def __init__(self, stream):
+        self.stream = stream
+
+    @property
+    def replace(self):
+        """Get all $ABBR REPLACE as a dictionary
+        """
+        d = dict()
+        for record in self.stream.get_records('ABBREVIATED'):
+            d.update(record.replace)
+        return d
+
+
 class NMTranParser:
     """Parser for NMTran control streams"""
 
@@ -28,6 +44,7 @@ default_record_order = [
     'SIZES',
     'SUBROUTINES',
     'MODEL',
+    'ABBREVIATED',
     'PK',
     'PRED',
     'DES',
@@ -44,6 +61,7 @@ class NMTranControlStream:
     def __init__(self):
         self.records = []
         self._active_problem = 0
+        self.abbreviated = Abbreviated(self)
 
     def get_records(self, name):
         """Return a list of all records of a certain type in the current $PROBLEM"""
