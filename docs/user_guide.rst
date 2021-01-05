@@ -11,7 +11,7 @@ basic use cases in Pharmpy. More detailed information can be found in the API re
    model
    data
    modeling
-   frem
+   tools
    plots
    cli
    configuration
