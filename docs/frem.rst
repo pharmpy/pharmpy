@@ -10,7 +10,7 @@ Pharmpy currently handles the postprocessing, plotting and creation of model_3b 
 The FREM postprocessing and results
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The postprocessing starts after estimating the parameters $P$ of the FREM model together with their uncertainty covariance matrix :math:`Cov(P)`. Let us denote the random variables representing the model parameters :math:`\eta_i` for :math:`1 \leq i \leq n_{par}` and the random variables for the covariates
+The postprocessing starts after estimating the parameters :math:`P` of the FREM model together with their uncertainty covariance matrix :math:`Cov(P)`. Let us denote the random variables representing the model parameters :math:`\eta_i` for :math:`1 \leq i \leq n_{par}` and the random variables for the covariates
 :math:`\eta_k` for :math:`n_{par} + 1 \leq k \leq n_{cov} + n_{par}`. Then
 
 .. math::
