@@ -1,0 +1,1 @@
+/home/rikard/PsN/bin/frem pheno.mod -cov=APGR,WGT

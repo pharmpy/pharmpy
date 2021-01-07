@@ -9,7 +9,12 @@ from pytest import approx
 from pharmpy import Model
 from pharmpy.methods.frem.method import check_covariates
 from pharmpy.methods.frem.models import calculate_parcov_inits, create_model3b
-from pharmpy.methods.frem.results import calculate_results, calculate_results_using_bipp, get_params
+from pharmpy.methods.frem.results import (
+    calculate_results,
+    calculate_results_using_bipp,
+    get_params,
+    psn_frem_results,
+)
 from pharmpy.random_variables import VariabilityLevel
 
 
@@ -453,3 +458,29 @@ def test_get_params(testdata):
     param_names = get_params(model, rvs, npars)
     print(param_names)
     assert param_names == ['CL', 'V']
+
+
+def test_psn_frem_results(testdata):
+    res = psn_frem_results(testdata / 'psn' / 'frem_dir1', method='bipp')
+    ofv = res.ofv['ofv']
+    assert len(ofv) == 5
+    assert ofv['model_1'] == approx(730.894727)
+    assert ofv['model_2'] == approx(896.974324)
+    assert ofv['model_3'] == approx(868.657803)
+    assert ofv['model_3b'] == approx(852.803483)
+    assert ofv['model_4'] == approx(753.302743)
+
+    correct = """model type		THETA(1)  THETA(2)  OMEGA(1,1)  OMEGA(2,1)  OMEGA(2,2)  OMEGA(3,1)  OMEGA(3,2)  OMEGA(3,3)  OMEGA(4,1)  OMEGA(4,2)  OMEGA(4,3)  OMEGA(4,4)  SIGMA(1,1)
+model_1  init      0.004693   1.00916    0.030963         NaN    0.031128         NaN         NaN         NaN         NaN         NaN         NaN         NaN    0.013241
+model_1  estimate  0.005818   1.44555    0.111053         NaN    0.201526         NaN         NaN         NaN         NaN         NaN         NaN         NaN    0.016418
+model_2  init           NaN       NaN         NaN         NaN         NaN         NaN         NaN    1.000000         NaN         NaN    0.244579    1.000000         NaN
+model_2  estimate       NaN       NaN         NaN         NaN         NaN         NaN         NaN    1.000000         NaN         NaN    0.244579    1.000000         NaN
+model_3  init           NaN       NaN    0.115195    0.007066    0.209016   -0.010583    0.107027    1.000008    0.171529    0.404278    0.244448    1.002173         NaN
+model_3  estimate       NaN       NaN    0.115195    0.007066    0.209016   -0.010583    0.107027    1.000010    0.171529    0.404278    0.244448    1.002170         NaN
+model_3b init      0.005818   1.44555    0.125999    0.020191    0.224959   -0.012042    0.115427    1.000032    0.208475    0.415588    0.244080    1.007763    0.016418
+model_3b estimate  0.005818   1.44555    0.126000    0.020191    0.224959   -0.012042    0.115427    1.000030    0.208475    0.415588    0.244080    1.007760    0.016418
+model_4  init      0.005818   1.44555    0.126000    0.020191    0.224959   -0.012042    0.115427    1.000030    0.208475    0.415588    0.244080    1.007760    0.016418
+model_4  estimate  0.007084   1.38635    0.220463    0.195326    0.176796    0.062712    0.117271    1.039930    0.446939    0.402075    0.249237    1.034610    0.015250
+"""  # noqa E501
+    correct = pd.read_csv(StringIO(correct), index_col=[0, 1], delim_whitespace=True)
+    pd.testing.assert_frame_equal(res.parameter_inits_and_estimates, correct, rtol=1e-4)

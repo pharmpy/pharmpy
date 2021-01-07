@@ -1,0 +1,40 @@
+Raw inits & estimates
+"","          type","          TVCL","           TVV","          IVCL","    OMEGA(2,1)","           IVV","    OMEGA(3,1)","    OMEGA(3,2)","      BSV_APGR","    OMEGA(4,1)","    OMEGA(4,2)","    OMEGA(4,3)","       BSV_WGT","    SIGMA(1,1)",
+"M1 (base model)",          init,    0.00581756,       1.44555,      0.111053,              NA,      0.201526,              NA,              NA,              NA,              NA,              NA,              NA,              NA,     0.0164177,
+"M1 (base model)",      estimate,    0.00581756,       1.44555,      0.111053,              NA,      0.201526,              NA,              NA,              NA,              NA,              NA,              NA,              NA,     0.0164177,
+"M2 (covariates)",          init,              NA,              NA,              NA,              NA,              NA,              NA,              NA,             1,              NA,              NA,      0.244579,             1,              NA,
+"M2 (covariates)",      estimate,              NA,              NA,              NA,              NA,              NA,              NA,              NA,             1,              NA,              NA,      0.244579,             1,              NA,
+"M4 (full FREM)",          init,    0.00581756,       1.44555,         0.126,     0.0201906,      0.224959,    -0.0120416,      0.115427,       1.00003,      0.208475,      0.415588,       0.24408,       1.00776,     0.0164177,
+"M4 (full FREM)",      estimate,    0.00708423,       1.38635,      0.220463,      0.195326,      0.176796,     0.0627118,      0.117271,       1.03993,      0.446939,      0.402075,      0.249237,       1.03461,     0.0152503,
+
+"",
+Base vs. FREM model
+"","          TVCL","           TVV","          IVCL","           IVV","    SIGMA(1,1)",
+"base parameter change (%) by M4",-17.8801365850629,      4.270206,-49.6273751150987,      13.98787,      7.654931,
+
+"",
+Covariates
+"","        source","          APGR","           WGT",
+"          mean",          data,      6.423729,      1.525424,
+"          mean",      estimate,      6.423729,      1.525424,
+"         stdev",          data,      2.237636,     0.7045647,
+"         stdev",      estimate,      2.281873,     0.7166535,
+
+"",
+FREM parameter-covariate coefficients
+"","   cond on cov","","          APGR","           WGT",
+"",           all,        "IVCL",-0.0205029925830029,     0.6288137,
+"",           all,         "IVV",   0.009309051,     0.5444591,
+"",          each,        "IVCL",    0.02694981,     0.6131273,
+"",          each,         "IVV",    0.05039612,     0.5515813,
+FREM parameter (unexplained) variability
+"","   cond on cov","","          IVCL","           IVV",
+"",           all,        "IVCL",    0.02532828,     0.0225709,
+"",           all,         "IVV",     0.0225709,    0.02011455,
+"",          APGR,        "IVCL",     0.2166812,     0.1882541,
+"",          APGR,         "IVV",     0.1882541,     0.1635716,
+"",           WGT,        "IVCL",    0.02739076,    0.02163447,
+"",           WGT,         "IVV",    0.02163447,    0.02053972,
+OFV
+"","            M1","            M2","            M3","            M4",
+"",      730.8947,      896.9743,      868.6578,      753.3027,

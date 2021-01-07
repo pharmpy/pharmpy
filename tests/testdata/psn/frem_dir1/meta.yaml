@@ -1,0 +1,88 @@
+---
+NONMEM_directory: /opt/nm744
+NONMEM_version: '7.4'
+PsN_version: 5.2.1
+command_line: /home/rikard/PsN/bin/frem pheno.mod -cov=APGR,WGT
+common_options:
+  abort_on_fail: 0
+  accepted_ofv_difference: 0.5
+  add_retries: 0
+  always_datafile_in_nmrun: 0
+  check_nmtran: 0
+  clean: 1
+  compress: 0
+  condition_number_limit: 1000
+  correlation_limit: 0.85
+  crash_restarts: 4
+  debug_rmd: 0
+  degree: 0.1
+  directory: /home/rikard/testing/frem_dir1/
+  display_iterations: 0
+  handle_crashes: 1
+  handle_msfo: 0
+  html: 0
+  large_omega_cv_limit: 0.8
+  large_sigma_cv_limit: 0.8
+  large_theta_cv_limit: 0.5
+  last_est_complete: 0
+  lsf_sleep: 3
+  min_retries: 0
+  missing_data_token: '-99'
+  model_subdir: 0
+  near_bound_sign_digits: 2
+  near_zero_boundary_limit: 0.01
+  nice: 19
+  nm_output: phi,ext,cov,cor
+  nm_version: default
+  nmfe: '1'
+  nmfe_options: '''-tprdefault -xmloff'''
+  nmqual: 0
+  nodes: 0
+  pdf: 1
+  picky: 0
+  prepend_model_file_name: 0
+  quick_summarize: 0
+  retries: 0
+  rmarkdown: 1
+  rplots: 0
+  run_on_lsf: 0
+  run_on_sge: 0
+  run_on_slurm: 0
+  run_on_torque: 0
+  run_on_ud: 0
+  run_on_zink: 0
+  seed: 669566
+  send_email: 0
+  shrinkage: 0
+  sign_digits_off_diagonals: 2
+  significant_digits_accept: 0
+  so: 0
+  template_directory_rplots: /home/rikard/PsN/R-scripts/
+  template_file_rplots: frem_default.R
+  threads: '8'
+  tweak_inits: 1
+  verbose: 0
+  zip: '0'
+finish_time: 2021-01-07 08:39:28
+model_files:
+- /home/rikard/testing/pheno.mod
+start_time: 2021-01-07 08:39:06
+tool_name: frem
+tool_options:
+  always_proposal_density: 1
+  bipp: 0
+  categorical: ''
+  check: 0
+  cholesky: 0
+  deriv2_nocommon_maxeta: 60
+  estimate_covariates: 0
+  estimate_means: 1
+  force_posdef_covmatrix: 0
+  force_posdef_samples: 500
+  log: ''
+  mceta: 0
+  mu: 0
+  rescale: 1
+  rse: 30
+  run_sir: 0
+  skip_omegas: ''
