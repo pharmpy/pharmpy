@@ -88,6 +88,11 @@ class ParameterSet(OrderedSet):
         """Initial estimates of parameters as dict"""
         return {p.name: p.init for p in self}
 
+    @property
+    def nonfixed_inits(self):
+        """Dict of initial estimates for all non-fixed parameters"""
+        return {p.name: p.init for p in self if not p.fix}
+
     @inits.setter
     def inits(self, init_dict):
         for name, value in init_dict.items():

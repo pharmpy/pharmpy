@@ -150,6 +150,16 @@ def test_pset_inits():
     assert pset['Z'] == Parameter('Z', 5)
 
 
+def test_pset_nonfixed_inits():
+    p1 = Parameter('Y', 9)
+    p2 = Parameter('X', 3)
+    p3 = Parameter('Z', 1)
+    pset = ParameterSet([p1, p2, p3])
+    assert pset.nonfixed_inits == {'Y': 9, 'X': 3, 'Z': 1}
+    pset['X'].fix = True
+    assert pset.nonfixed_inits == {'Y': 9, 'Z': 1}
+
+
 def test_pset_fix():
     p1 = Parameter('Y', 9, fix=False)
     p2 = Parameter('X', 3, fix=True)
