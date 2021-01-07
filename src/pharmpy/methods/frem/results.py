@@ -153,6 +153,7 @@ class FREMResults(Results):
         covariate_baselines=None,
         parameter_inits_and_estimates=None,
         base_parameter_change=None,
+        estimated_covariates=None,
         ofv=None,
     ):
         # FIXME: Lots of boilerplate code ahead. Could be simplified with python 3.7 dataclass
@@ -168,6 +169,7 @@ class FREMResults(Results):
         self.parameter_inits_and_estimates = parameter_inits_and_estimates
         self.base_parameter_change = base_parameter_change
         self.ofv = ofv
+        self.estimated_covariates = estimated_covariates
 
     def add_plots(self):
         self.covariate_effects_plot = self.plot_covariate_effects()
@@ -419,6 +421,12 @@ def calculate_results(
     add_parameter_inits_and_estimates(res, frem_model, intermediate_models)
     if intermediate_models:
         add_base_vs_frem_model(res, frem_model, intermediate_models[0])
+
+    estimated_covbase = _calculate_covariate_baselines(frem_model, continuous + categorical)
+    mean = estimated_covbase.mean()
+    stdev = estimated_covbase.std()
+    estcovs = pd.DataFrame({'mean': mean, 'stdev': stdev})
+    res.estimated_covariates = estcovs
     return res
 
 

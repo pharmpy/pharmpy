@@ -492,3 +492,10 @@ model_4  estimate  0.007084   1.38635    0.220463    0.195326    0.176796    0.0
     assert pc['OMEGA(1,1)'] == 98.52052623522104
     assert pc['OMEGA(2,2)'] == -12.271369451088198
     assert pc['SIGMA(1,1)'] == -7.110618417927029
+
+    correct = """,mean,stdev
+APGR,6.42372,2.237640
+WGT,1.525424,0.704565
+"""
+    correct = pd.read_csv(StringIO(correct), index_col=[0])
+    pd.testing.assert_frame_equal(res.estimated_covariates, correct, rtol=1e-5)

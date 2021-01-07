@@ -189,3 +189,14 @@ OFV of the base model, all intermediate models and the final FREM model are coll
     :hide-code:
 
     res.ofv
+
+Estimated covariate values
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The FREM model also gives an estimate of the covariate values themselves. Ideally these values should be close to the ones in the dataset. Summary statistics for the estimated
+covariate values are put into `estimated_covariates`.
+
+.. jupyter-execute::
+    :hide-code:
+
+    res.estimated_covariates
