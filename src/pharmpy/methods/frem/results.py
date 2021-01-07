@@ -133,6 +133,10 @@ class FREMResults(Results):
         Initial parameter estimates and estimates after fitting for all intermediate models and
         the final model.
 
+    .. attribute:: base_parameter_change
+
+        The relative change in parameter estimates from base model to the FREM model.
+
     """
 
     rst_path = Path(__file__).parent / 'report.rst'
@@ -148,6 +152,7 @@ class FREMResults(Results):
         unexplained_variability_plot=None,
         covariate_baselines=None,
         parameter_inits_and_estimates=None,
+        base_parameter_change=None,
         ofv=None,
     ):
         # FIXME: Lots of boilerplate code ahead. Could be simplified with python 3.7 dataclass
@@ -161,6 +166,7 @@ class FREMResults(Results):
         self.unexplained_variability_plot = unexplained_variability_plot
         self.covariate_baselines = covariate_baselines
         self.parameter_inits_and_estimates = parameter_inits_and_estimates
+        self.base_parameter_change = base_parameter_change
         self.ofv = ofv
 
     def add_plots(self):
@@ -411,7 +417,18 @@ def calculate_results(
     res.ofv = ofv
 
     add_parameter_inits_and_estimates(res, frem_model, intermediate_models)
+    if intermediate_models:
+        add_base_vs_frem_model(res, frem_model, intermediate_models[0])
     return res
+
+
+def add_base_vs_frem_model(res, frem_model, model_1):
+    base_ests = model_1.modelfit_results.parameter_estimates
+    final_ests = frem_model.modelfit_results.parameter_estimates
+    ser = pd.Series(dtype=np.float64)
+    for param in base_ests.keys():
+        ser[param] = (final_ests[param] - base_ests[param]) / abs(base_ests[param]) * 100
+    res.base_parameter_change = ser
 
 
 def add_parameter_inits_and_estimates(res, frem_model, intermediate_models):

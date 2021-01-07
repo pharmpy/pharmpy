@@ -484,3 +484,11 @@ model_4  estimate  0.007084   1.38635    0.220463    0.195326    0.176796    0.0
 """  # noqa E501
     correct = pd.read_csv(StringIO(correct), index_col=[0, 1], delim_whitespace=True)
     pd.testing.assert_frame_equal(res.parameter_inits_and_estimates, correct, rtol=1e-4)
+
+    pc = res.base_parameter_change
+    assert len(pc) == 5
+    assert pc['THETA(1)'] == 21.77321763763502
+    assert pc['THETA(2)'] == -4.095327038151563
+    assert pc['OMEGA(1,1)'] == 98.52052623522104
+    assert pc['OMEGA(2,2)'] == -12.271369451088198
+    assert pc['SIGMA(1,1)'] == -7.110618417927029
