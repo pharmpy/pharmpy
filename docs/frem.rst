@@ -160,3 +160,32 @@ The plot display the original unexplained variability with the uncertainty for a
     :hide-code:
 
     res.plot_unexplained_variability()
+
+
+Parameter estimates
+~~~~~~~~~~~~~~~~~~~
+
+The parameter initial estimates and final estimates of the base model, all intermediate models and the FREM model are tabled in `parameter_inits_and_estimates`.
+
+.. jupyter-execute::
+    :hide-code:
+
+    res.parameter_inits_and_estimates
+
+Relative difference between of the base model parameters estimates and the final model parameter estimates are calculated in `base_parameter_change`.
+
+.. jupyter-execute::
+    :hide-code:
+
+    res.base_parameter_change
+
+
+OFV
+~~~
+
+OFV of the base model, all intermediate models and the final FREM model are collected into `ofv`.
+
+.. jupyter-execute::
+    :hide-code:
+
+    res.ofv

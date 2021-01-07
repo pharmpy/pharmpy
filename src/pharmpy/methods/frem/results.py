@@ -428,6 +428,7 @@ def add_base_vs_frem_model(res, frem_model, model_1):
     ser = pd.Series(dtype=np.float64)
     for param in base_ests.keys():
         ser[param] = (final_ests[param] - base_ests[param]) / abs(base_ests[param]) * 100
+    ser.name = 'relative_change'
     res.base_parameter_change = ser
 
 
