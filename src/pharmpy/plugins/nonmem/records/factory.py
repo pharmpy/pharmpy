@@ -2,13 +2,13 @@ import re
 
 from pharmpy.model import ModelSyntaxError
 
+from .abbreviated_record import AbbreviatedRecord
 from .code_record import CodeRecord
 from .data_record import DataRecord
 from .etas_record import EtasRecord
 from .model_record import ModelRecord
 from .omega_record import OmegaRecord
 from .option_record import OptionRecord
-from .abbreviated_record import AbbreviatedRecord
 from .parsers import (
     AbbreviatedRecordParser,
     CodeRecordParser,
