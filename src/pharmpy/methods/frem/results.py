@@ -137,12 +137,21 @@ class FREMResults(Results):
 
         The relative change in parameter estimates from base model to the FREM model.
 
+    .. attribute:: covariate_estimates
+
+        Model estimates of covariate statistics
+
+    .. attribute:: parameter_variability
+
+        Conditioned parameter variability
+
     """
 
     rst_path = Path(__file__).parent / 'report.rst'
 
     def __init__(
         self,
+        parameter_variability=None,
         covariate_effects=None,
         individual_effects=None,
         unexplained_variability=None,
@@ -158,6 +167,7 @@ class FREMResults(Results):
     ):
         # FIXME: Lots of boilerplate code ahead. Could be simplified with python 3.7 dataclass
         #        or namedtuple
+        self.parameter_variability = parameter_variability
         self.covariate_effects = covariate_effects
         self.individual_effects = individual_effects
         self.unexplained_variability = unexplained_variability
@@ -582,6 +592,7 @@ def calculate_results_from_samples(frem_model, continuous, categorical, parvecs,
     original_id_bar = np.empty((nids, npars))
     variability = np.empty((n, ncovs + 2, npars))  # none, cov1, cov2, ..., all
     original_variability = np.empty((ncovs + 2, npars))
+    parameter_variability = []
 
     # Switch to symengine for speed
     # Could also assume order of parameters, but not much gain
@@ -620,6 +631,7 @@ def calculate_results_from_samples(frem_model, continuous, categorical, parvecs,
                 variability[sample_no, i + 1, :] = np.diag(sigma_bar)
             else:
                 original_variability[i + 1, :] = np.diag(sigma_bar)
+                parameter_variability.append(sigma_bar)
 
         for i in range(len(estimated_covbase)):
             row = covbase[i, :]
@@ -631,6 +643,7 @@ def calculate_results_from_samples(frem_model, continuous, categorical, parvecs,
             else:
                 original_id_bar[i, :] = mu_id_bar
                 original_variability[ncovs + 1, :] = np.diag(sigma_id_bar)
+                parameter_variability_all = sigma_id_bar
 
     # Create covariate effects table
     mu_bars_given_5th = np.exp(mu_bars_given_5th)
@@ -739,6 +752,19 @@ def calculate_results_from_samples(frem_model, continuous, categorical, parvecs,
 
     res.covariate_baselines = covariate_baselines
 
+    # Create frem_parameter_variability
+    index = pd.MultiIndex.from_product(
+        [['all'] + covariates, param_names], names=['condition', 'parameter']
+    )
+    df = pd.DataFrame(index=index)
+    for i in range(len(param_names)):
+        for j in range(len(param_names)):
+            df.loc[('all', param_names[i]), param_names[j]] = parameter_variability_all[i][j]
+    for k, name in enumerate(covariates):
+        for i in range(len(param_names)):
+            for j in range(len(param_names)):
+                df.loc[(name, param_names[i]), param_names[j]] = parameter_variability[k][i][j]
+    res.parameter_variability = df
     return res
 
 

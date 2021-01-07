@@ -161,6 +161,13 @@ The plot display the original unexplained variability with the uncertainty for a
 
     res.plot_unexplained_variability()
 
+All variability parameters given the estimated parameters conditioned on each covariate in turn can be found in `parameter_variability`.
+
+.. jupyter-execute::
+    :hide-code:
+
+    res.parameter_variability
+
 
 Parameter estimates
 ~~~~~~~~~~~~~~~~~~~
