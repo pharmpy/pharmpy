@@ -127,5 +127,8 @@ def test_get_prop_init(testdata):
     model.source.path = testdata / 'nonmem' / 'pheno.mod'  # To be able to find dataset
 
     init = _get_prop_init(model.dataset)
-
     assert init == 11.2225
+
+    model.dataset['DV'].values[:] = 0.0
+    init = _get_prop_init(model.dataset)
+    assert init == 0.01

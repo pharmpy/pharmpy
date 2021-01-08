@@ -156,18 +156,19 @@ def test_parameters(parser, buf, comment, results):
 
 @pytest.mark.usefixtures('parser')
 @pytest.mark.parametrize(
-    'buf',
+    'buf, exc_msg',
     [
-        ('$OMEGA 0 '),
-        ('$OMEGA DIAG(1) 1 SD VARIANCE'),
-        ('$OMEGA SD BLOCK(2) 0.1 0.001 0.1 STANDARD'),
-        ('$OMEGA CHOLESKY BLOCK(2) 0.1 VAR 0.001 \n  0.1 '),
+        ('$OMEGA 0 ', 'If initial estimate for OMEGA is'),
+        ('$OMEGA DIAG(1) 1 SD VARIANCE', 'Initial estimate for OMEGA cannot'),
+        ('$OMEGA SD BLOCK(2) 0.1 0.001 0.1 STANDARD', 'Cannot specify either option'),
+        ('$OMEGA CHOLESKY BLOCK(2) 0.1 VAR 0.001 \n  0.1 ', 'Cannot specify either option'),
+        ('$OMEGA BLOCK(3) 0.1 \n  0.1', 'Wrong number of inits in BLOCK'),
     ],
 )
-def test_errors(parser, buf):
+def test_errors(parser, buf, exc_msg):
     recs = parser.parse(buf)
     rec = recs.records[0]
-    with pytest.raises(ModelSyntaxError):
+    with pytest.raises(ModelSyntaxError, match=exc_msg):
         pset, _, _ = rec.parameters(1, None)
 
 

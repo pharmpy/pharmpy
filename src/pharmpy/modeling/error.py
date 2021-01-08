@@ -59,7 +59,10 @@ def additive_error(model):
 
 def _get_prop_init(dt):
     dv_min = dt.pharmpy.observations.min()
-    return (dv_min / 2) ** 2
+    if dv_min == 0:
+        return 0.01
+    else:
+        return (dv_min / 2) ** 2
 
 
 def proportional_error(model):

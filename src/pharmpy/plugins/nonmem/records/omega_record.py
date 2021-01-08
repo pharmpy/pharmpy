@@ -47,12 +47,13 @@ class OmegaRecord(Record):
                 n = node.n.INT if node.find('n') else 1
                 if sd and var:
                     raise ModelSyntaxError(
-                        f'Initial estimate for {self.name.upper} cannot be both'
+                        f'Initial estimate for {self.name.upper()} cannot be both'
                         f' on SD and VAR scale\n{self.root}'
                     )
                 if init == 0 and not fixed:
                     raise ModelSyntaxError(
-                        f'If initial estimate for {self.name.upper} is 0 it' f' must be set to FIX'
+                        f'If initial estimate for {self.name.upper()} is 0 it'
+                        f' must be set to FIX'
                     )
                 if sd:
                     init = init ** 2
