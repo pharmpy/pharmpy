@@ -1280,11 +1280,11 @@ def test_john_draper(pheno_path, etas, etad, buf_new):
         ('S1', 'exp', '+', 'V=TVV*EXP(ETA(2))\nS1 = V + EXP(ETA(3))'),
         ('S1', 'exp', '*', 'V=TVV*EXP(ETA(2))\nS1 = V*EXP(ETA(3))'),
         ('V', 'exp', '+', 'V = TVV*EXP(ETA(2)) + EXP(ETA(3))\nS1=V'),
-        ('S1', 'add', None, 'V=TVV*EXP(ETA(2))\nS1 = ETA(3) + V'),
+        ('S1', 'add', None, 'V=TVV*EXP(ETA(2))\nS1 = V + ETA(3)'),
         ('S1', 'prop', None, 'V=TVV*EXP(ETA(2))\nS1 = ETA(3)*V'),
         ('S1', 'log', None, 'V=TVV*EXP(ETA(2))\nS1 = V*EXP(ETA(3))/(EXP(ETA(3)) + 1)'),
-        ('S1', 'eta_new', '+', 'V=TVV*EXP(ETA(2))\nS1 = ETA(3) + V'),
-        ('S1', 'eta_new**2', '+', 'V=TVV*EXP(ETA(2))\nS1 = ETA(3)**2 + V'),
+        ('S1', 'eta_new', '+', 'V=TVV*EXP(ETA(2))\nS1 = V + ETA(3)'),
+        ('S1', 'eta_new**2', '+', 'V=TVV*EXP(ETA(2))\nS1 = V + ETA(3)**2'),
     ],
 )
 def test_add_etas(pheno_path, parameter, expression, operation, buf_new):
@@ -1326,7 +1326,7 @@ def test_add_etas(pheno_path, parameter, expression, operation, buf_new):
         (
             ['ETA(1)', 'ETA(3)'],
             '$PK\nCL = THETA(1)*EXP(ETA(4))\nV = THETA(2)*EXP(ETA(1))\n'
-            'S1 = ETA(2) + ETA(3) + ETA(5) + V\n\n',
+            'S1 = V + ETA(2) + ETA(3) + ETA(5)\n\n',
             '$OMEGA 0.031128  ; IVV\n$OMEGA BLOCK(2)\n0.0309626\n0.0005 0.031128\n'
             '$OMEGA BLOCK(2)\n0.0309626\t; IVCL\n0.0055644\t; COV1\n0.1\n',
         ),
@@ -1343,7 +1343,7 @@ def test_add_etas(pheno_path, parameter, expression, operation, buf_new):
             '$PK\n'
             'CL = THETA(1)*EXP(ETA(3))\n'
             'V = THETA(2)*EXP(ETA(4))\n'
-            'S1 = ETA(1) + ETA(2) + ETA(5) + V\n\n',
+            'S1 = V + ETA(1) + ETA(2) + ETA(5)\n\n',
             '$OMEGA 0.1\n$OMEGA  0.031128\n$OMEGA BLOCK(3)\n0.0309626\t; IVCL\n'
             '0.0031045\t; COV1\n0.031128\t; IVV\n'
             '0.0030963\t; COV2\n0.0031045\t; COV3\n0.0309626\n',
@@ -1411,39 +1411,39 @@ def test_block_rvs(testdata, etas, pk_ref, omega_ref):
         (
             ['EPS(1)'],
             False,
-            'Y = EPS(1)*W*EXP(ETA(3)) + F\n' 'IPRED=F+EPS(2)\n' 'IRES=DV-IPRED+EPS(3)\n',
+            'Y = F + EPS(1)*W*EXP(ETA(3))\n' 'IPRED=F+EPS(2)\n' 'IRES=DV-IPRED+EPS(3)\n',
             '$OMEGA  0.09 ; IIV_RUV1',
         ),
         (
             ['EPS(1)', 'EPS(2)'],
             False,
-            'Y = EPS(1)*W*EXP(ETA(3)) + F\n'
-            'IPRED = EPS(2)*EXP(ETA(4)) + F\n'
+            'Y = F + EPS(1)*W*EXP(ETA(3))\n'
+            'IPRED = F + EPS(2)*EXP(ETA(4))\n'
             'IRES=DV-IPRED+EPS(3)\n',
             '$OMEGA  0.09 ; IIV_RUV1\n' '$OMEGA  0.09 ; IIV_RUV2',
         ),
         (
             ['EPS(1)', 'EPS(3)'],
             False,
-            'Y = EPS(1)*W*EXP(ETA(3)) + F\n'
-            'IPRED = EPS(2) + F\n'
-            'IRES = DV + EPS(3)*EXP(ETA(4)) - IPRED\n',
+            'Y = F + EPS(1)*W*EXP(ETA(3))\n'
+            'IPRED = F + EPS(2)\n'
+            'IRES = DV - IPRED + EPS(3)*EXP(ETA(4))\n',
             '$OMEGA  0.09 ; IIV_RUV1\n' '$OMEGA  0.09 ; IIV_RUV2',
         ),
         (
             None,
             False,
-            'Y = EPS(1)*W*EXP(ETA(3)) + F\n'
-            'IPRED = EPS(2)*EXP(ETA(4)) + F\n'
-            'IRES = DV + EPS(3)*EXP(ETA(5)) - IPRED\n',
+            'Y = F + EPS(1)*W*EXP(ETA(3))\n'
+            'IPRED = F + EPS(2)*EXP(ETA(4))\n'
+            'IRES = DV - IPRED + EPS(3)*EXP(ETA(5))\n',
             '$OMEGA  0.09 ; IIV_RUV1\n' '$OMEGA  0.09 ; IIV_RUV2\n' '$OMEGA  0.09 ; IIV_RUV3',
         ),
         (
             None,
             True,
-            'Y = EPS(1)*W*EXP(ETA(3)) + F\n'
-            'IPRED = EPS(2)*EXP(ETA(3)) + F\n'
-            'IRES = DV + EPS(3)*EXP(ETA(3)) - IPRED\n',
+            'Y = F + EPS(1)*W*EXP(ETA(3))\n'
+            'IPRED = F + EPS(2)*EXP(ETA(3))\n'
+            'IRES = DV - IPRED + EPS(3)*EXP(ETA(3))\n',
             '$OMEGA  0.09 ; IIV_RUV1',
         ),
     ],
@@ -1485,7 +1485,7 @@ def test_iiv_on_ruv(pheno_path, epsilons, same_eta, err_ref, omega_ref):
             '$PK\n'
             'CL = THETA(1)\n'
             'V = THETA(2)*EXP(ETA(1))\n'
-            'S1 = ETA(2) + ETA(3) + ETA(4) + V\n\n',
+            'S1 = V + ETA(2) + ETA(3) + ETA(4)\n\n',
             '$OMEGA 0.031128  ; IVV\n'
             '$OMEGA 0.1\n'
             '$OMEGA BLOCK(2)\n'
@@ -1494,17 +1494,17 @@ def test_iiv_on_ruv(pheno_path, epsilons, same_eta, err_ref, omega_ref):
         ),
         (
             ['ETA(1)', 'ETA(2)'],
-            '$PK\n' 'CL = THETA(1)\n' 'V = THETA(2)\n' 'S1 = ETA(1) + ETA(2) + ETA(3) + V\n\n',
+            '$PK\n' 'CL = THETA(1)\n' 'V = THETA(2)\n' 'S1 = V + ETA(1) + ETA(2) + ETA(3)\n\n',
             '$OMEGA 0.1\n' '$OMEGA BLOCK(2)\n' '0.0309626\n' '0.0005 0.031128\n',
         ),
         (
             ['ETA(1)', 'ETA(4)'],
-            '$PK\n' 'CL = THETA(1)\n' 'V = THETA(2)*EXP(ETA(1))\n' 'S1 = ETA(2) + ETA(3) + V\n\n',
+            '$PK\n' 'CL = THETA(1)\n' 'V = THETA(2)*EXP(ETA(1))\n' 'S1 = V + ETA(2) + ETA(3)\n\n',
             '$OMEGA 0.031128  ; IVV\n' '$OMEGA 0.1\n' '$OMEGA BLOCK(1)\n' '0.031128\n',
         ),
         (
             ['ETA(4)', 'ETA(5)'],
-            '$PK\n' 'CL=THETA(1)*EXP(ETA(1))\n' 'V=THETA(2)*EXP(ETA(2))\n' 'S1 = ETA(3) + V\n\n',
+            '$PK\n' 'CL=THETA(1)*EXP(ETA(1))\n' 'V=THETA(2)*EXP(ETA(2))\n' 'S1 = V + ETA(3)\n\n',
             '$OMEGA 0.0309626  ; IVCL\n' '$OMEGA 0.031128  ; IVV\n' '$OMEGA 0.1\n',
         ),
         (
@@ -1517,7 +1517,7 @@ def test_iiv_on_ruv(pheno_path, epsilons, same_eta, err_ref, omega_ref):
             '$PK\n'
             'CL = THETA(1)\n'
             'V = THETA(2)*EXP(ETA(1))\n'
-            'S1 = ETA(2) + ETA(3) + ETA(4) + V\n\n',
+            'S1 = V + ETA(2) + ETA(3) + ETA(4)\n\n',
             '$OMEGA 0.031128  ; IVV\n'
             '$OMEGA 0.1\n'
             '$OMEGA BLOCK(2)\n'
@@ -1557,7 +1557,7 @@ def test_remove_iov(testdata):
         str(model.get_pred_pk_record()) == '$PK\n'
         'CL=THETA(1)*EXP(ETA(1))\n'
         'V = THETA(2)\n'
-        'S1 = ETA(2) + ETA(3) + V\n\n'
+        'S1 = V + ETA(2) + ETA(3)\n\n'
     )
 
     rec_omega = ''.join(str(rec) for rec in model.control_stream.get_records('OMEGA'))
@@ -1606,28 +1606,28 @@ def test_update_inits(testdata, etas_file, force, file_exists):
     [
         (
             ['EPS(1)'],
-            'Y = CIPREDI**THETA(4)*W*EPS(1) + F\n' 'IPRED=F+EPS(2)\n' 'IRES=DV-IPRED+EPS(3)',
+            'Y = F + W*CIPREDI**THETA(4)*EPS(1)\n' 'IPRED=F+EPS(2)\n' 'IRES=DV-IPRED+EPS(3)',
             '$THETA  1 ; power1',
         ),
         (
             ['EPS(1)', 'EPS(2)'],
-            'Y = CIPREDI**THETA(4)*W*EPS(1) + F\n'
-            'IPRED = CIPREDI**THETA(5)*EPS(2) + F\n'
+            'Y = F + W*CIPREDI**THETA(4)*EPS(1)\n'
+            'IPRED = F + CIPREDI**THETA(5)*EPS(2)\n'
             'IRES=DV-IPRED+EPS(3)',
             '$THETA  1 ; power1\n' '$THETA  1 ; power2',
         ),
         (
             ['EPS(1)', 'EPS(3)'],
-            'Y = CIPREDI**THETA(4)*W*EPS(1) + F\n'
-            'IPRED = EPS(2) + F\n'
-            'IRES = CIPREDI**THETA(5)*EPS(3) + DV - IPRED',
+            'Y = F + W*CIPREDI**THETA(4)*EPS(1)\n'
+            'IPRED = F + EPS(2)\n'  # FIXME: registers as different despite not being changed
+            'IRES = DV - IPRED + CIPREDI**THETA(5)*EPS(3)',
             '$THETA  1 ; power1\n' '$THETA  1 ; power2',
         ),
         (
             None,
-            'Y = CIPREDI**THETA(4)*W*EPS(1) + F\n'
-            'IPRED = CIPREDI**THETA(5)*EPS(2) + F\n'
-            'IRES = CIPREDI**THETA(6)*EPS(3) + DV - IPRED',
+            'Y = F + W*CIPREDI**THETA(4)*EPS(1)\n'
+            'IPRED = F + CIPREDI**THETA(5)*EPS(2)\n'
+            'IRES = DV - IPRED + CIPREDI**THETA(6)*EPS(3)',
             '$THETA  1 ; power1\n' '$THETA  1 ; power2\n' '$THETA  1 ; power3',
         ),
     ],

@@ -374,12 +374,16 @@ def update_statements(model, old, new, trans):
             main_statements.append(s)
 
     main_statements.subs(trans)
+
     rec = model.get_pred_pk_record()
+    rec.rvs, rec.trans = model.random_variables, trans
     rec.statements = main_statements
+
     error = model._get_error_record()
     if error:
         if len(error_statements) > 0:
             error_statements.pop(0)  # Remove the link statement
+        error.rvs, error.trans = model.random_variables, trans
         error_statements.subs(trans)
         error.statements = error_statements
         error.is_updated = True

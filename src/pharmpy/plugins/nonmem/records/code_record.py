@@ -224,6 +224,7 @@ def diff(old, new):
 class CodeRecord(Record):
     def __init__(self, content, parser_class):
         self.is_updated = False
+        self.rvs, self.trans = None, None
         super().__init__(content, parser_class)
 
     @property
@@ -259,7 +260,7 @@ class CodeRecord(Record):
                 elif re.search('sign', str(s.expression)):
                     statement_str = self._translate_sympy_sign(s)
                 else:
-                    statement_str = f'\n{repr(s).replace(":", "")}'
+                    statement_str = s.print_custom(self.rvs, self.trans)
                 node_tree = CodeRecordParser(statement_str).root
                 node = node_tree.all('statement')[0]
                 if node_index == 0:

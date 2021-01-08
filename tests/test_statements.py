@@ -231,3 +231,12 @@ def test_before_ode(pheno_path):
     model = Model(pheno_path)
     before_ode = model.statements.before_ode()
     assert before_ode[-1].symbol.name == 'S1'
+
+
+def test_print_custom(pheno_path):
+    model = Model(pheno_path)
+    s = model.statements.find_assignment('Y')
+
+    s_str = s.print_custom(model.random_variables, None)
+
+    assert s_str == 'Y = F + EPS(1)*W'

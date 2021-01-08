@@ -3,6 +3,7 @@ import math
 
 import networkx as nx
 import sympy
+from sympy.printing.str import StrPrinter
 
 import pharmpy.symbols as symbols
 
@@ -77,6 +78,48 @@ class Assignment:
         sym = self.symbol._repr_latex_()[1:-1]
         expr = self.expression._repr_latex_()[1:-1]
         return f'${sym} := {expr}$'
+
+    def print_custom(self, rvs, trans):
+        expr_ordered = self.order_terms(rvs, trans)
+        return f'{self.symbol} = {expr_ordered}'
+
+    def order_terms(self, rvs, trans):
+        """Order terms such that random variables are placed last. Currently only supports
+        additions."""
+        if not isinstance(self.expression, sympy.Add) or rvs is None:
+            return self.expression
+
+        rvs_names = [rv.name for rv in rvs]
+
+        if trans:
+            trans_rvs = {k: v.name for k, v in trans.items() if str(k) in rvs_names}
+
+        expr_args = self.expression.args
+        terms_rvs = []
+        terms = []
+
+        for arg in expr_args:
+            arg_symbs = [s.name for s in arg.free_symbols]
+            if set(rvs_names).intersection(arg_symbs) or (
+                trans and any(a in trans_rvs.values() for a in arg_symbs)
+            ):
+                terms_rvs.append(arg)
+            else:
+                terms.append(arg)
+
+        if not terms_rvs:
+            return self.expression
+
+        def arg_len(symb):
+            return len([s for s in symb.args])
+
+        terms_rvs.sort(reverse=True, key=arg_len)
+        terms += terms_rvs
+
+        new_order = sympy.Add(*terms, evaluate=False)
+        expr_ordered = sympy.UnevaluatedExpr(new_order)
+
+        return StrPrinter(dict(order="none")).doprint(expr_ordered)
 
 
 class ODESystem:

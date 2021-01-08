@@ -16,7 +16,7 @@ def test_additive_error_model(testdata):
     model = Model(testdata / 'nonmem' / 'pheno.mod')
     additive_error(model)
     model.update_source()
-    assert str(model).split('\n')[11] == 'Y = EPS(1) + F'
+    assert str(model).split('\n')[11] == 'Y = F + EPS(1)'
     assert str(model).split('\n')[17] == '$SIGMA  11.2225 ; sigma'
 
 
@@ -32,7 +32,7 @@ def test_combined_error_model(testdata):
     model = Model(testdata / 'nonmem' / 'pheno.mod')
     combined_error(model)
     model.update_source()
-    assert str(model).split('\n')[11] == 'Y = EPS(1)*F + EPS(2) + F'
+    assert str(model).split('\n')[11] == 'Y = F + EPS(1)*F + EPS(2)'
     assert str(model).split('\n')[17] == '$SIGMA  0.09 ; sigma_prop'
     assert str(model).split('\n')[18] == '$SIGMA  11.2225 ; sigma_add'
 
