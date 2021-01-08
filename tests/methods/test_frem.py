@@ -510,3 +510,13 @@ WGT,V,0.021634,0.020540
 """
     correct = pd.read_csv(StringIO(correct), index_col=[0, 1])
     pd.testing.assert_frame_equal(res.parameter_variability, correct, rtol=1e-4)
+
+    correct = """condition,parameter,APGR,WGT
+all,CL,-0.020503,0.628814
+all,V,0.00930905,0.544459
+each,CL,0.0269498,0.613127
+each,V,0.0503961,0.551581
+"""
+
+    correct = pd.read_csv(StringIO(correct), index_col=[0, 1])
+    pd.testing.assert_frame_equal(res.coefficients, correct, rtol=1e-5)

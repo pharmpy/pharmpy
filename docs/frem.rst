@@ -115,6 +115,16 @@ The covariate effect plots give the covariate effects in percent with uncertaint
     res.plot_covariate_effects()
 
 
+Parameter covariate coefficients
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The parameter covariate coefficients for each covariate separately and for all taken together is available in `coefficients`. The definition for one coefficient is 
+`Cov(Par, Covariate) / Var(Covariate)` and generalized for all together the matrix :math:`\Sigma_{12}\Sigma_{22}^{-1}`
+
+.. jupyter-execute::
+    :hide-code:
+
+    res.coefficients
 
 Individual covariate effects
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~

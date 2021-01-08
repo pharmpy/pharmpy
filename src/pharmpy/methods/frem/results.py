@@ -145,12 +145,17 @@ class FREMResults(Results):
 
         Conditioned parameter variability
 
+    .. attribute:: coefficients
+
+        Parameter covariate coefficients. Calculated one at a time or all together.
+
     """
 
     rst_path = Path(__file__).parent / 'report.rst'
 
     def __init__(
         self,
+        coefficients=None,
         parameter_variability=None,
         covariate_effects=None,
         individual_effects=None,
@@ -167,6 +172,7 @@ class FREMResults(Results):
     ):
         # FIXME: Lots of boilerplate code ahead. Could be simplified with python 3.7 dataclass
         #        or namedtuple
+        self.coefficients = coefficients
         self.parameter_variability = parameter_variability
         self.covariate_effects = covariate_effects
         self.individual_effects = individual_effects
@@ -581,6 +587,7 @@ def calculate_results_from_samples(frem_model, continuous, categorical, parvecs,
 
     ncovs = len(covariates)
     npars = sigma_symb.rows - ncovs
+    param_names = get_params(frem_model, rvs, npars)
     nids = len(covariate_baselines)
     param_indices = list(range(npars))
     if rescale:
@@ -592,6 +599,10 @@ def calculate_results_from_samples(frem_model, continuous, categorical, parvecs,
     original_id_bar = np.empty((nids, npars))
     variability = np.empty((n, ncovs + 2, npars))  # none, cov1, cov2, ..., all
     original_variability = np.empty((ncovs + 2, npars))
+    coefficients_index = pd.MultiIndex.from_product(
+        [['all', 'each'], param_names], names=['condition', 'parameter']
+    )
+    coefficients = pd.DataFrame(index=coefficients_index, columns=covariates, dtype=np.float64)
     parameter_variability = []
 
     # Switch to symengine for speed
@@ -611,6 +622,10 @@ def calculate_results_from_samples(frem_model, continuous, categorical, parvecs,
             variability[sample_no, 0, :] = np.diag(sigma)[:npars]
         else:
             original_variability[0, :] = np.diag(sigma)[:npars]
+            # Coefficients conditioned on all parameters
+            # Sigma_12 * Sigma_22^-1
+            coeffs_all = sigma[0:npars, npars:] @ np.linalg.inv(sigma[npars:, npars:])
+            coefficients.loc['all'] = coeffs_all
         for i, cov in enumerate(covariates):
             indices = param_indices + [i + npars]
             cov_sigma = sigma[indices][:, indices]
@@ -632,6 +647,10 @@ def calculate_results_from_samples(frem_model, continuous, categorical, parvecs,
             else:
                 original_variability[i + 1, :] = np.diag(sigma_bar)
                 parameter_variability.append(sigma_bar)
+                # Calculate coefficients
+                # Cov(Par, covariate) / Var(covariate)
+                for parind, parname in enumerate(param_names):
+                    coefficients[cov]['each', parname] = cov_sigma[parind][-1] / cov_sigma[-1][-1]
 
         for i in range(len(estimated_covbase)):
             row = covbase[i, :]
@@ -645,6 +664,8 @@ def calculate_results_from_samples(frem_model, continuous, categorical, parvecs,
                 original_variability[ncovs + 1, :] = np.diag(sigma_id_bar)
                 parameter_variability_all = sigma_id_bar
 
+    res.coefficients = coefficients
+
     # Create covariate effects table
     mu_bars_given_5th = np.exp(mu_bars_given_5th)
     mu_bars_given_95th = np.exp(mu_bars_given_95th)
@@ -657,7 +678,6 @@ def calculate_results_from_samples(frem_model, continuous, categorical, parvecs,
     q95_95th = np.quantile(mu_bars_given_95th, 0.95, axis=0)
 
     df = pd.DataFrame(columns=['parameter', 'covariate', 'condition', 'p5', 'mean', 'p95'])
-    param_names = get_params(frem_model, rvs, npars)
 
     for param, cov in itertools.product(range(npars), range(ncovs)):
         if covariates[cov] in categorical:
