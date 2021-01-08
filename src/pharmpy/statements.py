@@ -6,6 +6,7 @@ import sympy
 from sympy.printing.str import StrPrinter
 
 import pharmpy.symbols as symbols
+from pharmpy.random_variables import VariabilityLevel
 
 
 class Assignment:
@@ -92,29 +93,39 @@ class Assignment:
         rvs_names = [rv.name for rv in rvs]
 
         if trans:
-            trans_rvs = {k: v.name for k, v in trans.items() if str(k) in rvs_names}
+            trans_rvs = {v.name: k.name for k, v in trans.items() if str(k) in rvs_names}
 
         expr_args = self.expression.args
-        terms_rvs = []
-        terms = []
+        terms_iiv_iov, terms_ruv, terms = [], [], []
 
         for arg in expr_args:
             arg_symbs = [s.name for s in arg.free_symbols]
-            if set(rvs_names).intersection(arg_symbs) or (
-                trans and any(a in trans_rvs.values() for a in arg_symbs)
-            ):
-                terms_rvs.append(arg)
+            rvs_intersect = set(rvs_names).intersection(arg_symbs)
+
+            if trans:
+                trans_intersect = set(trans_rvs.keys()).intersection(arg_symbs)
+                rvs_intersect.update({trans_rvs[rv] for rv in trans_intersect})
+
+            if rvs_intersect:
+                if len(rvs_intersect) == 1:
+                    rv_name = list(rvs_intersect)[0]
+                    variability_level = rvs[rv_name].variability_level
+                    if variability_level == VariabilityLevel.RUV:
+                        terms_ruv.append(arg)
+                        continue
+                terms_iiv_iov.append(arg)
             else:
                 terms.append(arg)
 
-        if not terms_rvs:
+        if not terms_iiv_iov and not terms_ruv:
             return self.expression
 
         def arg_len(symb):
             return len([s for s in symb.args])
 
-        terms_rvs.sort(reverse=True, key=arg_len)
-        terms += terms_rvs
+        terms_iiv_iov.sort(reverse=True, key=arg_len)
+        terms_ruv.sort(reverse=True, key=arg_len)
+        terms += terms_iiv_iov + terms_ruv
 
         new_order = sympy.Add(*terms, evaluate=False)
         expr_ordered = sympy.UnevaluatedExpr(new_order)

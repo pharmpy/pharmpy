@@ -346,6 +346,36 @@ def test_add_random_variables(pheno_path, rv_new, buf_new):
     assert rv.pspace.distribution.std ** 2 == rv_new.symbol
 
 
+def test_add_random_variables_and_statements(pheno_path):
+    model = Model(pheno_path)
+
+    rvs = model.random_variables
+    pset = model.parameters
+
+    eta = sympy.stats.Normal('ETA_NEW', 0, sympy.sqrt(S('omega')))
+    eta.variability_level = VariabilityLevel.IIV
+    rvs.add(eta)
+    pset.add(Parameter('omega', 0.1))
+
+    eps = sympy.stats.Normal('EPS_NEW', 0, sympy.sqrt(S('sigma')))
+    eps.variability_level = VariabilityLevel.RUV
+    rvs.add(eps)
+    pset.add(Parameter('sigma', 0.1))
+
+    model.random_variables = rvs
+    model.parameters = pset
+
+    sset = model.get_pred_pk_record().statements
+
+    statement_new = Assignment(S('X'), 1 + S(eps.name) + S(eta.name))
+    sset.append(statement_new)
+    model.get_pred_pk_record().statements = sset
+
+    model.update_source()
+
+    assert str(model.get_pred_pk_record()).endswith('X = 1 + ETA(3) + EPS(2)\n\n')
+
+
 def test_results(pheno_path):
     model = Model(pheno_path)
     assert len(model.modelfit_results) == 0
