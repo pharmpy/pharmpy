@@ -36,9 +36,13 @@ config_file = read_configuration()
 
 
 class ConfigItem:
-    def __init__(self, default, description):
+    def __init__(self, default, description, cls=None):
         self.default = default
         self.__doc__ = description
+        if cls is None:
+            self.cls = type(self.default)
+        else:
+            self.cls = cls
 
     def __set_name__(self, owner, name):
         self.name = name
@@ -47,12 +51,14 @@ class ConfigItem:
         return instance.__dict__.get(self.name, self.default)
 
     def __set__(self, instance, value):
-        if type(self.default) != type(value):
+        # if self.cls != type(value):
+        try:
+            instance.__dict__[self.name] = self.cls(value)
+        except ValueError as exc:
             raise TypeError(
                 f'Trying to set configuration item {self.name} using object of wrong '
-                f'type: {type(value)} is not {type(self.default)}'
+                f'type: {type(value)} is not {self.cls}'
             )
-        instance.__dict__[self.name] = value
 
 
 class Configuration:

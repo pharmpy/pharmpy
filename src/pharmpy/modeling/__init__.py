@@ -31,8 +31,8 @@ from pharmpy.modeling.odes import (
 from pharmpy.modeling.power_on_ruv import power_on_ruv
 from pharmpy.modeling.remove_iiv import remove_iiv
 from pharmpy.modeling.remove_iov import remove_iov
-from pharmpy.modeling.update_inits import update_inits
 from pharmpy.modeling.run import fit
+from pharmpy.modeling.update_inits import update_inits
 
 __all__ = [
     'add_parameter',
@@ -70,5 +70,5 @@ __all__ = [
     'remove_peripheral_compartment',
     'update_inits',
     'power_on_ruv',
-    'fit'
+    'fit',
 ]

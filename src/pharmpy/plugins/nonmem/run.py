@@ -2,6 +2,8 @@ import shutil
 import subprocess
 from pathlib import Path
 
+import pharmpy.plugins.nonmem as nonmem_plugin
+
 
 class NONMEMRunDirectory:
     def __init__(self, model, n, path=None):
@@ -32,7 +34,7 @@ def execute_model(model, i, path):
     rundir = NONMEMRunDirectory(model, i, path=path)
     subprocess.call(
         [
-            'nmfe74',
+            nmfe_path(),
             model.name + model.source.filename_extension,
             Path(model.name).with_suffix('.lst'),
             f'-rundir={rundir.path}',
@@ -48,3 +50,11 @@ def execute_model(model, i, path):
 
 def results(model):
     return model
+
+
+def nmfe_path():
+    path = nonmem_plugin.conf.default_nonmem_path
+    if path != Path(''):
+        path /= 'run'
+    path /= 'nmfe74'
+    return str(path)
