@@ -2,12 +2,20 @@
 :meta private:
 """
 
+from io import StringIO
+
 from pharmpy.model_factory import Model
 
 
 def read_model(path):
     """Read model from file"""
     model = Model(path)
+    return model
+
+
+def read_model_from_string(code):
+    """Read model directly from the model code in a string"""
+    model = Model(StringIO(code))
     return model
 
 

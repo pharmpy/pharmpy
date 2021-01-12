@@ -2,6 +2,7 @@ from pharmpy.modeling.block_rvs import create_rv_block
 from pharmpy.modeling.common import (
     fix_parameters,
     read_model,
+    read_model_from_string,
     unfix_parameters,
     update_source,
     write_model,
@@ -54,6 +55,7 @@ __all__ = [
     'unfix_parameters',
     'update_source',
     'read_model',
+    'read_model_from_string',
     'write_model',
     'remove_iiv',
     'remove_iov',

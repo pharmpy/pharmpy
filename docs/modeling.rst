@@ -46,6 +46,17 @@ Read model from file
    from pharmpy.modeling import *
    model = read_model(path / 'pheno.mod')
 
+Read model from string
+======================
+
+If the model code is in a string variable it can be read in directly.
+
+.. jupyter-execute::
+    :hide-output:
+
+    code = '$PROBLEM base model\n$INPUT ID DV TIME\n$DATA file.csv IGNORE=@\n$PRED Y = THETA(1) + ETA(1) + ERR(1)\n$THETA 0.1\n$OMEGA 0.01\n$SIGMA 1\n$ESTIMATION METHOD=1' 
+    model = read_model_from_string(code)
+
 Update model source
 ===================
 
