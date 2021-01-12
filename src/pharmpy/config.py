@@ -58,7 +58,7 @@ class ConfigItem:
             raise TypeError(
                 f'Trying to set configuration item {self.name} using object of wrong '
                 f'type: {type(value)} is not {self.cls}'
-            )
+            ) from exc
 
 
 class Configuration:

@@ -4,7 +4,6 @@ import re
 import numpy as np
 import sympy
 
-import pharmpy.modeling as modeling
 from pharmpy import data
 from pharmpy.random_variables import RandomVariables, VariabilityLevel
 from pharmpy.statements import (
@@ -327,6 +326,9 @@ def force_des(model, odes):
     """Switch to $DES if necessary"""
     if isinstance(odes, ExplicitODESystem):
         return
+
+    # Import put here to avoid circular import in Python 3.6
+    import pharmpy.modeling as modeling
 
     amounts = {sympy.Function(amt.name)(symbol('t')) for amt in odes.amounts}
     if odes.atoms(sympy.Function) & amounts:

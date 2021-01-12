@@ -2,7 +2,7 @@ import shutil
 import subprocess
 from pathlib import Path
 
-import pharmpy.plugins.nonmem as nonmem_plugin
+from pharmpy.plugins.nonmem import conf
 
 
 class NONMEMRunDirectory:
@@ -53,7 +53,7 @@ def results(model):
 
 
 def nmfe_path():
-    path = nonmem_plugin.conf.default_nonmem_path
+    path = conf.default_nonmem_path
     if path != Path(''):
         path /= 'run'
     path /= 'nmfe74'

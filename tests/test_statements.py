@@ -4,7 +4,13 @@ import sympy
 import pharmpy.symbols
 from pharmpy import Model
 from pharmpy.modeling import explicit_odes
-from pharmpy.statements import Assignment, CompartmentalSystem, ModelStatements, ODESystem
+from pharmpy.statements import (
+    Assignment,
+    CompartmentalSystem,
+    ExplicitODESystem,
+    ModelStatements,
+    ODESystem,
+)
 
 
 def S(x):
@@ -59,6 +65,16 @@ def test_explicit_ode_system(testdata):
     explicit_odes(model)
     assert 'A_OUTPUT(0) = 0' in str(model.statements.ode_system)
     assert model.statements.ode_system.rhs_symbols == {S('t'), S('AMT'), S('CL'), S('V')}
+
+    odes = ExplicitODESystem([sympy.Eq(S('x'), S('y'))], {})
+    assert str(odes) == '{x = y'
+    assert odes._repr_latex_() == '\\begin{cases} \\displaystyle x = y \\end{cases}'
+
+    odes = ExplicitODESystem([sympy.Eq(S('x'), S('y')), sympy.Eq(S('z'), S('y'))], {})
+    assert 'x = y' in str(odes)
+
+    odes = ExplicitODESystem([sympy.Eq(S('x'), 1)], {})
+    assert odes.free_symbols == {S('x')}
 
 
 def test_ode_free_symbols(testdata):
@@ -240,3 +256,16 @@ def test_print_custom(pheno_path):
     s_str = s.print_custom(model.random_variables, None)
 
     assert s_str == 'Y = F + EPS(1)*W'
+
+
+def test_repr_latex():
+    s1 = Assignment(S('KA'), S('X') + S('Y'))
+    latex = s1._repr_latex_()
+    assert latex == r'$\displaystyle KA := \displaystyle X + Y$'
+
+
+def test_repr_html():
+    s1 = Assignment(S('KA'), S('X') + S('Y'))
+    stats = ModelStatements([s1])
+    html = stats._repr_html_()
+    assert 'X + Y' in html
