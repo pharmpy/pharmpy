@@ -25,10 +25,10 @@ from pharmpy.modeling.odes import (
     remove_lag_time,
     remove_peripheral_compartment,
     seq_zo_fo_absorption,
+    set_ode_solver,
     set_transit_compartments,
     zero_order_absorption,
     zero_order_elimination,
-    set_ode_solver,
 )
 from pharmpy.modeling.power_on_ruv import power_on_ruv
 from pharmpy.modeling.remove_iiv import remove_iiv
