@@ -119,10 +119,11 @@ The ODE system of a PK model can be converted from having a compartmental descri
    explicit_odes(model)
    print(model.statements.ode_system)
 
-For NONMEM models this means going from any of the compartmental ADVANS (ADVAN1-4, ADVAN10-12) to coding using an explicit $DES.
+For NONMEM models this means going from any of the compartmental ADVANs (ADVAN1-4, ADVAN10-12) to coding using an explicit $DES. The exact solver to use (i.e. the specific ADVAN to use) can be set using the function `set_ode_solver`.
 
 .. jupyter-execute::
 
+   set_ode_solver(model, 'ADVAN13')
    model.update_source()
    print_model_diff(model_ref, model)
 

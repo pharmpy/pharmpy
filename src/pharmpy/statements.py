@@ -134,7 +134,17 @@ class Assignment:
 
 
 class ODESystem:
-    """Base class and placeholder for ODE systems of different forms"""
+    """Base class and placeholder for ODE systems of different forms
+
+    Attributes
+    ----------
+    solver : str
+        Solver to use when numerically solving the ode system
+        Currently supports NONMEM ADVANs
+    """
+
+    def __init__(self):
+        self.solver = None
 
     @property
     def free_symbols(self):
@@ -180,6 +190,7 @@ class ExplicitODESystem(ODESystem):
     def __init__(self, odes, ics):
         self.odes = odes
         self.ics = ics
+        super().__init__()
 
     @property
     def free_symbols(self):
@@ -225,6 +236,7 @@ class ExplicitODESystem(ODESystem):
             isinstance(other, ExplicitODESystem)
             and self.odes == other.odes
             and self.ics == other.ics
+            and self.solver == other.solver
         )
 
     def _repr_latex_(self):
@@ -246,6 +258,7 @@ class CompartmentalSystem(ODESystem):
 
     def __init__(self):
         self._g = nx.DiGraph()
+        super().__init__()
 
     def subs(self, substitutions):
         for (u, v, rate) in self._g.edges.data('rate'):
@@ -278,6 +291,7 @@ class CompartmentalSystem(ODESystem):
             isinstance(other, CompartmentalSystem)
             and nx.to_dict_of_dicts(self._g) == nx.to_dict_of_dicts(other._g)
             and self.find_dosing().dose == other.find_dosing().dose
+            and self.solver == other.solver
         )
 
     def __deepcopy__(self, memo):

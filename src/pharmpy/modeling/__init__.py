@@ -28,6 +28,7 @@ from pharmpy.modeling.odes import (
     set_transit_compartments,
     zero_order_absorption,
     zero_order_elimination,
+    set_ode_solver,
 )
 from pharmpy.modeling.power_on_ruv import power_on_ruv
 from pharmpy.modeling.remove_iiv import remove_iiv
@@ -73,4 +74,5 @@ __all__ = [
     'update_inits',
     'power_on_ruv',
     'fit',
+    'set_ode_solver',
 ]

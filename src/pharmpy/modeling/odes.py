@@ -36,6 +36,7 @@ def explicit_odes(model):
         new = ExplicitODESystem(eqs, ics)
         statements[model.statements.index(odes)] = new
         model.statements = statements
+        new.solver = odes.solver
     return model
 
 
@@ -410,4 +411,10 @@ def remove_peripheral_compartment(model):
         odes.remove_compartment(last_peripheral)
         model.statements.remove_symbol_definitions(symbols, odes)
         model.remove_unused_parameters_and_rvs()
+    return model
+
+
+def set_ode_solver(model, solver):
+    odes = model.statements.ode_system
+    odes.solver = solver
     return model

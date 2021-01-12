@@ -645,10 +645,12 @@ def test_add_covariate_effect_duplicates(pheno_path):
 
 def test_to_explicit_odes(pheno_path, testdata):
     model = Model(pheno_path)
+    model.statements.ode_system.solver = 'ADVAN13'
 
     explicit_odes(model)
     model.update_source()
     lines = str(model).split('\n')
+    assert lines[3] == '$SUBROUTINE ADVAN13 TOL=3'
     assert lines[5] == '$MODEL COMPARTMENT=(CENTRAL DEFDOSE)'
     assert lines[16] == '$DES'
     assert lines[17] == 'DADT(1) = -A(1)*CL/V'

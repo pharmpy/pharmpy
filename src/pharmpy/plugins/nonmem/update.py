@@ -341,7 +341,10 @@ def to_des(model, new):
     subs = model.control_stream.get_records('SUBROUTINES')[0]
     subs.remove_option_startswith('TRANS')
     subs.remove_option_startswith('ADVAN')
-    subs.append_option('ADVAN6')
+    if new.solver:
+        subs.append_option(new.solver)
+    else:
+        subs.append_option('ADVAN6')
     subs.append_option('TOL', 3)
     des = model.control_stream.insert_record('$DES\nDUMMY=0')
     des.from_odes(new)
