@@ -12,6 +12,7 @@ import pharmpy.model
 import pharmpy.plugins.nonmem
 import pharmpy.symbols as symbols
 from pharmpy.data import DatasetError
+from pharmpy.model import ModelSyntaxError
 from pharmpy.parameter import ParameterSet
 from pharmpy.plugins.nonmem.results import NONMEMChainedModelfitResults
 from pharmpy.plugins.nonmem.table import NONMEMTableFile, PhiTable
@@ -376,8 +377,10 @@ class Model(pharmpy.model.Model):
     def get_pred_pk_record(self):
         pred = self.control_stream.get_records('PRED')
 
-        if len(pred) == 0:
+        if not pred:
             pk = self.control_stream.get_records('PK')
+            if not pk:
+                raise ModelSyntaxError('Model has no $PK or $PRED')
             return pk[0]
         else:
             return pred[0]
