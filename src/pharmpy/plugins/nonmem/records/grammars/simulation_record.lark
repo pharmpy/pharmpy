@@ -1,0 +1,34 @@
+// from NONMEM 7.4 spec:
+//
+// $SIMULATION  (seed1 [seed2] [NORMAL|UNIFORM|NONPARAMETRIC] [NEW]) ...
+//              [SUBPROBLEMS=n] [ONLYSIMULATION] [OMITTED]
+//              [REQUESTFIRST] [REQUESTSECOND] [PREDICTION|NOPREDICTION]
+//              [TRUE=INITIAL|FINAL|PRIOR]
+//              [BOOTSTRAP=n [REPLACE|NOREPLACE] [STRAT=label] [STRATF=label]]
+//              [NOREWIND|REWIND] [SUPRESET|NOSUPRESET]
+//              [RANMETHOD=[n|S|m|P] ]
+//              [PARAFILE=[filename|ON|OFF]
+
+root : ws ([ws] option | [ws] NEWLINE)*
+
+// option rules
+?option: "(" INT ")"                        -> seed
+       | SUBPROBLEMS SEP INT                -> nsubs 
+       | ONLYSIMULATION                     -> onlysim
+       | OMITTED                            -> omitted
+       | PREDICTION                         -> prediction
+       | NOPREDICTION                       -> noprediction
+
+SEP: /\s*=\s*|\s+(?!=)/
+
+// option terminals
+SUBPROBLEMS: "SUBPROBLEMS" | "SUBPROBS" | "SUBPROB" | "NSUBPROBLEMS" | "NSUBPROBS"
+ONLYSIMULATION: "ONLYSIMULATION" | "ONLYSIMULATIO" | "ONLYSIMULATI" | "ONLYSIMULAT" | "ONLYSIMULA" | "ONLYSIM"
+OMITTED: "OMITTED"
+PREDICTION: "PREDICTION"
+NOPREDICTION: "NOPREDICTION"
+
+// common misc rules
+ws      : WS_ALL
+
+%import .definitions (INT, SIGNED_INT, SYMBOL, WS_ALL, NEWLINE)

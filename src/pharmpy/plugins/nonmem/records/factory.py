@@ -16,10 +16,12 @@ from .parsers import (
     OmegaRecordParser,
     OptionRecordParser,
     ProblemRecordParser,
+    SimulationRecordParser,
     ThetaRecordParser,
 )
 from .problem_record import ProblemRecord
 from .raw_record import RawRecord
+from .simulation_record import SimulationRecord
 from .sizes_record import SizesRecord
 from .theta_record import ThetaRecord
 
@@ -38,6 +40,7 @@ known_records = {
     'PRED': (CodeRecord, CodeRecordParser),
     'PROBLEM': (ProblemRecord, ProblemRecordParser),
     'SIGMA': (OmegaRecord, OmegaRecordParser),
+    'SIMULATION': (SimulationRecord, SimulationRecordParser),
     'SIZES': (SizesRecord, OptionRecordParser),
     'SUBROUTINES': (OptionRecord, OptionRecordParser),
     'TABLE': (EtasRecord, OptionRecordParser),  # Etas for now. Has path property
@@ -66,6 +69,8 @@ def get_canonical_record_name(raw_name):
             return 'DATA'
         elif 'SUBS'.startswith(bare):
             return 'SUBROUTINES'
+        elif bare == 'SIML' or bare == 'SIMULATE':
+            return 'SIMULATION'
     elif bare == 'PK':
         return bare
     return None
