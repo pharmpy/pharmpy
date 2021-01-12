@@ -318,7 +318,7 @@ class NONMEMModelfitResults(ModelfitResults):
 
 
 class NONMEMChainedModelfitResults(ChainedModelfitResults):
-    def __init__(self, path, model=None):
+    def __init__(self, path, model=None, subproblem=None):
         # Path is path to any result file
         self._path = Path(path)
         self._read_phi = False
@@ -327,6 +327,7 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
         self._read_coi = False
         self._read_cor = False
         self._read_lst = False
+        self._subproblem = subproblem
         self.model = model
         extensions = ['.lst', '.ext', '.cov', '.cor', '.coi', '.phi']
         self.tool_files = [self._path.with_suffix(ext) for ext in extensions]
@@ -355,6 +356,8 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
         if not self._read_ext:
             ext_tables = NONMEMTableFile(self._path.with_suffix('.ext'))
             for table in ext_tables:
+                if self._subproblem and table.subproblem != self._subproblem:
+                    continue
                 result_obj = NONMEMModelfitResults(self)
                 result_obj.model_name = self._path.stem
                 result_obj.model = self.model
@@ -506,3 +509,8 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
                     covs = covs.transform(lambda cov: cov[rv_names].loc[rv_names])
                     result_obj._individual_estimates_covariance = covs
             self._read_phi = True
+
+
+def simfit_results(model):
+    """Read in modelfit results from a simulation/estimation model"""
+    pass
