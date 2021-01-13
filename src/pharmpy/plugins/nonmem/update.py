@@ -1,3 +1,4 @@
+import copy
 import itertools
 import re
 
@@ -374,9 +375,9 @@ def update_statements(model, old, new, trans):
         if isinstance(s, ODESystem):
             after_odes = True
         elif after_odes:
-            error_statements.append(s)
+            error_statements.append(copy.deepcopy(s))
         else:
-            main_statements.append(s)
+            main_statements.append(copy.deepcopy(s))
 
     main_statements.subs(trans)
 
