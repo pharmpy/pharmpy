@@ -349,6 +349,7 @@ def to_des(model, new):
     subs.append_option('TOL', 3)
     des = model.control_stream.insert_record('$DES\nDUMMY=0')
     des.from_odes(new)
+    model.control_stream.remove_records(model.control_stream.get_records('MODEL'))
     mod = model.control_stream.insert_record('$MODEL\n')
     for eq, ic in zip(new.odes[:-1], list(new.ics.keys())[:-1]):
         name = eq.lhs.args[0].name[2:]
