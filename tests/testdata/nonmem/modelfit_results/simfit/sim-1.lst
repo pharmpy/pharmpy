@@ -1,0 +1,1193 @@
+ons 13 jan 2021 16:54:16 CET
+;; 1. Based on: 5
+$PROBLEM    PHENOBARB SIMPLE MODEL
+$INPUT      ID DV MDV OPRED D_EPS1 TIME AMT WGT APGR FA1 FA2 D_ETA1
+            D_ETA2 OETA1 OETA2 D_EPSETA1_1 D_EPSETA1_2 TAD
+$DATA      pheno_real_linbase.dta IGNORE=@ IGNORE(MDV.NEN.0)
+$PRED
+BASE1=D_ETA1*(ETA(1)-OETA1)
+BASE2=D_ETA2*(ETA(2)-OETA2)
+BSUM1=BASE1+BASE2
+BASE_TERMS=BSUM1
+IPRED=OPRED+BASE_TERMS
+ERR1=EPS(1)*(D_EPS1+D_EPSETA1_1*(ETA(1)-OETA1))
+ERR2=EPS(1)*(D_EPSETA1_2*(ETA(2)-OETA2))
+ESUM1=ERR1+ERR2
+ERROR_TERMS=ESUM1
+Y=IPRED+ERROR_TERMS
+$OMEGA  DIAGONAL(2)
+ 0.0285735  ;       IVCL
+ 0.0278954  ;        IVV
+$SIGMA  0.013131
+;$SIGMA  0.0130865
+$SIMULATION (672686) SUBPROB=3
+$ESTIMATION PRINT=1 MCETA=1 MAXEVALS=2
+$ESTIMATION METHOD=COND INTERACTION PRINT=1 MCETA=1 MAXEVALS=2
+$TABLE      ID DV MDV CWRES IPRED NOPRINT NOAPPEND ONEHEADER
+            FILE=sim_res_table-1.dta
+
+
+NM-TRAN MESSAGES
+  
+ WARNINGS AND ERRORS (IF ANY) FOR PROBLEM    1
+             
+ (WARNING  2) NM-TRAN INFERS THAT THE DATA ARE POPULATION.
+
+License Registered to: Uppsala University
+Expiration Date:    14 MAR 2021
+Current Date:       13 JAN 2021
+Days until program expires :  61
+1NONLINEAR MIXED EFFECTS MODEL PROGRAM (NONMEM) VERSION 7.4.4
+ ORIGINALLY DEVELOPED BY STUART BEAL, LEWIS SHEINER, AND ALISON BOECKMANN
+ CURRENT DEVELOPERS ARE ROBERT BAUER, ICON DEVELOPMENT SOLUTIONS,
+ AND ALISON BOECKMANN. IMPLEMENTATION, EFFICIENCY, AND STANDARDIZATION
+ PERFORMED BY NOUS INFOSYSTEMS.
+ 
+ PROBLEM NO.:         1
+ PHENOBARB SIMPLE MODEL                                                  
+0DATA CHECKOUT RUN:              NO 
+ DATA SET LOCATED ON UNIT NO.:    2
+ THIS UNIT TO BE REWOUND:        NO 
+ NO. OF DATA RECS IN DATA SET:      155
+ NO. OF DATA ITEMS IN DATA SET:  18
+ ID DATA ITEM IS DATA ITEM NO.:   1
+ DEP VARIABLE IS DATA ITEM NO.:   2
+ MDV DATA ITEM IS DATA ITEM NO.:  3
+0LABELS FOR DATA ITEMS:
+ ID DV MDV OPRED D_EPS1 TIME AMT WGT APGR FA1 FA2 D_ETA1 D_ETA2 OETA1 OETA2 D_EPSETA1_1 D_EPSETA1_2 TAD
+0(NONBLANK) LABELS FOR PRED-DEFINED ITEMS:
+ IPRED
+0FORMAT FOR DATA:
+ (E15.0,2E22.0/3E22.0/3E22.0/2E22.0,E23.0/3E23.0/2E23.0,E22.0)                   
+ 
+ TOT. NO. OF OBS RECS:      155
+ TOT. NO. OF INDIVIDUALS:       59
+0LENGTH OF THETA:   0
+0DEFAULT THETA BOUNDARY TEST OMITTED:    NO 
+0OMEGA HAS SIMPLE DIAGONAL FORM WITH DIMENSION:   2
+0DEFAULT OMEGA BOUNDARY TEST OMITTED:    NO 
+0SIGMA HAS SIMPLE DIAGONAL FORM WITH DIMENSION:   1
+0DEFAULT SIGMA BOUNDARY TEST OMITTED:    NO 
+0INITIAL ESTIMATE OF OMEGA:
+ 0.2857E-01
+ 0.0000E+00   0.2790E-01
+0INITIAL ESTIMATE OF SIGMA:
+ 0.1313E-01
+0SIMULATION STEP OMITTED:    NO 
+ ORIGINAL DATA USED ON EACH NEW SIMULATION:         NO 
+ SEEDS RESET ON EACH NEW SUPERSET ITERATION:        YES 
+0SIMULATION RANDOM METHOD SELECTED (RANMETHOD): 4U                  
+SEED   1 RESET TO INITIAL: YES
+ SOURCE   1:
+   SEED1:        672686   SEED2:             0   PSEUDO-NORMAL       
+ NUMBER OF SUBPROBLEMS:    3
+0TABLES STEP OMITTED:    NO 
+ NO. OF TABLES:           1
+ SEED NUMBER (SEED):    11456       
+ RANMETHOD:             3U                  
+ MC SAMPLES (ESAMPLE):    300         
+ WRES SQUARE ROOT TYPE (WRESCHOL): EIGENVALUE
+0-- TABLE   1 --
+0RECORDS ONLY:    ALL                 
+04 COLUMNS APPENDED:    NO  
+ PRINTED:                NO 
+ HEADER:                YES
+ FILE TO BE FORWARDED:   NO 
+ FORMAT:                S1PE11.4
+ LFORMAT:               
+ RFORMAT:               
+ FIXED_EFFECT_ETAS:     
+0USER-CHOSEN ITEMS:
+ ID DV MDV CWRES IPRED
+1
+ PROBLEM NO.:           1      SUBPROBLEM NO.:           1
+ 
+ SIMULATION STEP PERFORMED
+ SOURCE  1:
+    SEED1:    2121594504   SEED2:    1075619783
+ Elapsed simulation  time in seconds:     0.00
+1
+
+
+ #TBLN:      1
+ #METH: First Order
+
+ ESTIMATION STEP OMITTED:                 NO  
+ ANALYSIS TYPE:                           POPULATION
+ NUMBER OF SADDLE POINT RESET ITERATIONS:      0
+ GRADIENT METHOD USED:               NOSLOW
+ EPS-ETA INTERACTION:                     NO  
+ NO. OF FUNCT. EVALS. ALLOWED:            2
+ NO. OF SIG. FIGURES REQUIRED:            3
+ INTERMEDIATE PRINTOUT:                   YES 
+ ESTIMATE OUTPUT TO MSF:                  NO  
+ IND. OBJ. FUNC. VALUES SORTED:           NO  
+ NUMERICAL DERIVATIVE 
+       FILE REQUEST (NUMDER):               NONE
+ MAP (ETAHAT) ESTIMATION METHOD (OPTMAP):   0           
+ ETA HESSIAN EVALUATION METHOD (ETADER):    0           
+ INITIAL ETA FOR MAP ESTIMATION (MCETA):    1           
+ SIGDIGITS FOR MAP ESTIMATION (SIGLO):      100         
+ GRADIENT SIGDIGITS OF 
+       FIXED EFFECTS PARAMETERS (SIGL):     100         
+ NOPRIOR SETTING (NOPRIOR):                 OFF       
+ NOCOV SETTING (NOCOV):                     OFF       
+ DERCONT SETTING (DERCONT):                 OFF       
+ FINAL ETA RE-EVALUATION (FNLETA):          ON        
+ EXCLUDE NON-INFLUENTIAL (NON-INFL.) ETAS   
+       IN SHRINKAGE (ETASTYPE):             NO        
+ NON-INFL. ETA CORRECTION (NONINFETA):      OFF       
+ RAW OUTPUT FILE (FILE): psn.ext                                                                                                                                                                                                                                                         
+ EXCLUDE TITLE (NOTITLE):                   NO        
+ EXCLUDE COLUMN LABELS (NOLABEL):           NO        
+ FORMAT FOR ADDITIONAL FILES (FORMAT):      S1PE12.5
+ PARAMETER ORDER FOR OUTPUTS (ORDER):       TSOL
+ WISHART PRIOR DF INTERPRETATION (WISHTYPE):0           
+ KNUTHSUMOFF:                               0           
+ INCLUDE LNTWOPI:                           NO        
+ INCLUDE CONSTANT TERM TO PRIOR (PRIORC):   NO        
+ INCLUDE CONSTANT TERM TO OMEGA (ETA) (OLNTWOPI):NO        
+ ADDITIONAL CONVERGENCE TEST (CTYPE=4)?:    NO
+ EM OR BAYESIAN METHOD USED:                 NONE
+
+
+ THE FOLLOWING LABELS ARE EQUIVALENT
+ PRED=NPRED
+ RES=NRES
+ WRES=NWRES
+ IWRS=NIWRES
+ IPRD=NIPRED
+ IRS=NIRES
+
+ MONITORING OF SEARCH:
+
+
+0ITERATION NO.:    0    OBJECTIVE VALUE:   560.510059165093        NO. OF FUNC. EVALS.:   3
+ CUMULATIVE NO. OF FUNC. EVALS.:        3
+ NPARAMETR:  2.8573E-02  2.7895E-02  1.3131E-02
+ PARAMETER:  1.0000E-01  1.0000E-01  1.0000E-01
+ GRADIENT:   4.2230E+00  1.9859E+01  2.0575E+01
+
+ #TERM:
+0MINIMIZATION TERMINATED
+ DUE TO MAX. NO. OF FUNCTION EVALUATIONS EXCEEDED
+ NO. OF FUNCTION EVALUATIONS USED:        3
+ NO. OF SIG. DIGITS UNREPORTABLE
+  
+ TOTAL DATA POINTS NORMALLY DISTRIBUTED (N):          155
+ N*LOG(2PI) CONSTANT TO OBJECTIVE FUNCTION:    284.87094529344853     
+ OBJECTIVE FUNCTION VALUE WITHOUT CONSTANT:    560.51005916509303     
+ OBJECTIVE FUNCTION VALUE WITH CONSTANT:       845.38100445854161     
+ REPORTED OBJECTIVE FUNCTION DOES NOT CONTAIN CONSTANT
+  
+ TOTAL EFFECTIVE ETAS (NIND*NETA):                           118
+  
+ #TERE:
+ Elapsed estimation  time in seconds:     0.00
+1
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ ************************************************************************************************************************
+ ********************                                                                                ********************
+ ********************                                   FIRST ORDER                                  ********************
+ #OBJT:**************                       MINIMUM VALUE OF OBJECTIVE FUNCTION                      ********************
+ ********************                                                                                ********************
+ ************************************************************************************************************************
+ 
+
+
+
+
+
+ #OBJV:********************************************      560.510       **************************************************
+1
+ ************************************************************************************************************************
+ ********************                                                                                ********************
+ ********************                                   FIRST ORDER                                  ********************
+ ********************                             FINAL PARAMETER ESTIMATE                           ********************
+ ********************                                                                                ********************
+ ************************************************************************************************************************
+ 
+
+
+ OMEGA - COV MATRIX FOR RANDOM EFFECTS - ETAS  ********
+
+
+         ETA1      ETA2     
+ 
+ ETA1
++        2.86E-02
+ 
+ ETA2
++        0.00E+00  2.79E-02
+ 
+
+
+ SIGMA - COV MATRIX FOR RANDOM EFFECTS - EPSILONS  ****
+
+
+         EPS1     
+ 
+ EPS1
++        1.31E-02
+ 
+1
+
+
+ OMEGA - CORR MATRIX FOR RANDOM EFFECTS - ETAS  *******
+
+
+         ETA1      ETA2     
+ 
+ ETA1
++        1.69E-01
+ 
+ ETA2
++        0.00E+00  1.67E-01
+ 
+
+
+ SIGMA - CORR MATRIX FOR RANDOM EFFECTS - EPSILONS  ***
+
+
+         EPS1     
+ 
+ EPS1
++        1.15E-01
+ 
+1
+
+
+ #TBLN:      2
+ #METH: First Order Conditional Estimation with Interaction
+
+ ESTIMATION STEP OMITTED:                 NO  
+ ANALYSIS TYPE:                           POPULATION
+ NUMBER OF SADDLE POINT RESET ITERATIONS:      0
+ GRADIENT METHOD USED:               NOSLOW
+ CONDITIONAL ESTIMATES USED:              YES 
+ CENTERED ETA:                            NO  
+ EPS-ETA INTERACTION:                     YES 
+ LAPLACIAN OBJ. FUNC.:                    NO  
+ NO. OF FUNCT. EVALS. ALLOWED:            2
+ NO. OF SIG. FIGURES REQUIRED:            3
+ INTERMEDIATE PRINTOUT:                   YES 
+ ESTIMATE OUTPUT TO MSF:                  NO  
+ IND. OBJ. FUNC. VALUES SORTED:           NO  
+ NUMERICAL DERIVATIVE 
+       FILE REQUEST (NUMDER):               NONE
+ MAP (ETAHAT) ESTIMATION METHOD (OPTMAP):   0           
+ ETA HESSIAN EVALUATION METHOD (ETADER):    0           
+ INITIAL ETA FOR MAP ESTIMATION (MCETA):    1           
+ SIGDIGITS FOR MAP ESTIMATION (SIGLO):      100         
+ GRADIENT SIGDIGITS OF 
+       FIXED EFFECTS PARAMETERS (SIGL):     100         
+ NOPRIOR SETTING (NOPRIOR):                 OFF       
+ NOCOV SETTING (NOCOV):                     OFF       
+ DERCONT SETTING (DERCONT):                 OFF       
+ FINAL ETA RE-EVALUATION (FNLETA):          ON        
+ EXCLUDE NON-INFLUENTIAL (NON-INFL.) ETAS   
+       IN SHRINKAGE (ETASTYPE):             NO        
+ NON-INFL. ETA CORRECTION (NONINFETA):      OFF       
+ RAW OUTPUT FILE (FILE): psn.ext                                                                                                                                                                                                                                                         
+ EXCLUDE TITLE (NOTITLE):                   NO        
+ EXCLUDE COLUMN LABELS (NOLABEL):           NO        
+ FORMAT FOR ADDITIONAL FILES (FORMAT):      S1PE12.5
+ PARAMETER ORDER FOR OUTPUTS (ORDER):       TSOL
+ WISHART PRIOR DF INTERPRETATION (WISHTYPE):0           
+ KNUTHSUMOFF:                               0           
+ INCLUDE LNTWOPI:                           NO        
+ INCLUDE CONSTANT TERM TO PRIOR (PRIORC):   NO        
+ INCLUDE CONSTANT TERM TO OMEGA (ETA) (OLNTWOPI):NO        
+ ADDITIONAL CONVERGENCE TEST (CTYPE=4)?:    NO
+ EM OR BAYESIAN METHOD USED:                 NONE
+
+
+ THE FOLLOWING LABELS ARE EQUIVALENT
+ PRED=PREDI
+ RES=RESI
+ WRES=WRESI
+ IWRS=IWRESI
+ IPRD=IPREDI
+ IRS=IRESI
+
+ MONITORING OF SEARCH:
+
+
+0ITERATION NO.:    0    OBJECTIVE VALUE:   562.353832106468        NO. OF FUNC. EVALS.:   3
+ CUMULATIVE NO. OF FUNC. EVALS.:        3
+ NPARAMETR:  2.8573E-02  2.7895E-02  1.3131E-02
+ PARAMETER:  1.0000E-01  1.0000E-01  1.0000E-01
+ GRADIENT:   5.7235E+00  2.1354E+01  1.3111E+01
+
+ #TERM:
+0MINIMIZATION TERMINATED
+ DUE TO MAX. NO. OF FUNCTION EVALUATIONS EXCEEDED
+ NO. OF FUNCTION EVALUATIONS USED:        3
+ NO. OF SIG. DIGITS UNREPORTABLE
+
+ ETABAR IS THE ARITHMETIC MEAN OF THE ETA-ESTIMATES,
+ AND THE P-VALUE IS GIVEN FOR THE NULL HYPOTHESIS THAT THE TRUE MEAN IS 0.
+
+ ETABAR:         1.7687E-02  2.3287E-02
+ SE:             1.0482E-02  1.6381E-02
+ N:                      59          59
+
+ P VAL.:         9.1515E-02  1.5515E-01
+
+ ETASHRINKSD(%)  5.1962E+01  2.4018E+01
+ ETASHRINKVR(%)  7.6923E+01  4.2267E+01
+ EBVSHRINKSD(%)  4.7055E+01  1.3090E+01
+ EBVSHRINKVR(%)  7.1968E+01  2.4467E+01
+ EPSSHRINKSD(%)  2.4178E+01
+ EPSSHRINKVR(%)  4.2511E+01
+
+  
+ TOTAL DATA POINTS NORMALLY DISTRIBUTED (N):          155
+ N*LOG(2PI) CONSTANT TO OBJECTIVE FUNCTION:    284.87094529344853     
+ OBJECTIVE FUNCTION VALUE WITHOUT CONSTANT:    562.35383210646819     
+ OBJECTIVE FUNCTION VALUE WITH CONSTANT:       847.22477739991677     
+ REPORTED OBJECTIVE FUNCTION DOES NOT CONTAIN CONSTANT
+  
+ TOTAL EFFECTIVE ETAS (NIND*NETA):                           118
+  
+ #TERE:
+ Elapsed estimation  time in seconds:     0.00
+ Elapsed postprocess time in seconds:     0.01
+1
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ ************************************************************************************************************************
+ ********************                                                                                ********************
+ ********************               FIRST ORDER CONDITIONAL ESTIMATION WITH INTERACTION              ********************
+ #OBJT:**************                       MINIMUM VALUE OF OBJECTIVE FUNCTION                      ********************
+ ********************                                                                                ********************
+ ************************************************************************************************************************
+ 
+
+
+
+
+
+ #OBJV:********************************************      562.354       **************************************************
+1
+ ************************************************************************************************************************
+ ********************                                                                                ********************
+ ********************               FIRST ORDER CONDITIONAL ESTIMATION WITH INTERACTION              ********************
+ ********************                             FINAL PARAMETER ESTIMATE                           ********************
+ ********************                                                                                ********************
+ ************************************************************************************************************************
+ 
+
+
+ OMEGA - COV MATRIX FOR RANDOM EFFECTS - ETAS  ********
+
+
+         ETA1      ETA2     
+ 
+ ETA1
++        2.86E-02
+ 
+ ETA2
++        0.00E+00  2.79E-02
+ 
+
+
+ SIGMA - COV MATRIX FOR RANDOM EFFECTS - EPSILONS  ****
+
+
+         EPS1     
+ 
+ EPS1
++        1.31E-02
+ 
+1
+
+
+ OMEGA - CORR MATRIX FOR RANDOM EFFECTS - ETAS  *******
+
+
+         ETA1      ETA2     
+ 
+ ETA1
++        1.69E-01
+ 
+ ETA2
++        0.00E+00  1.67E-01
+ 
+
+
+ SIGMA - CORR MATRIX FOR RANDOM EFFECTS - EPSILONS  ***
+
+
+         EPS1     
+ 
+ EPS1
++        1.15E-01
+ 
+ Elapsed finaloutput time in seconds:     0.00
+1
+ PROBLEM NO.:           1      SUBPROBLEM NO.:           2
+ 
+ SIMULATION STEP PERFORMED
+ SOURCE  1:
+    SEED1:     850940035   SEED2:             0
+ Elapsed simulation  time in seconds:     0.00
+1
+
+
+ #TBLN:      3
+ #METH: First Order
+
+ ESTIMATION STEP OMITTED:                 NO  
+ ANALYSIS TYPE:                           POPULATION
+ NUMBER OF SADDLE POINT RESET ITERATIONS:      0
+ GRADIENT METHOD USED:               NOSLOW
+ EPS-ETA INTERACTION:                     NO  
+ NO. OF FUNCT. EVALS. ALLOWED:            2
+ NO. OF SIG. FIGURES REQUIRED:            3
+ INTERMEDIATE PRINTOUT:                   YES 
+ ESTIMATE OUTPUT TO MSF:                  NO  
+ IND. OBJ. FUNC. VALUES SORTED:           NO  
+ NUMERICAL DERIVATIVE 
+       FILE REQUEST (NUMDER):               NONE
+ MAP (ETAHAT) ESTIMATION METHOD (OPTMAP):   0           
+ ETA HESSIAN EVALUATION METHOD (ETADER):    0           
+ INITIAL ETA FOR MAP ESTIMATION (MCETA):    1           
+ SIGDIGITS FOR MAP ESTIMATION (SIGLO):      100         
+ GRADIENT SIGDIGITS OF 
+       FIXED EFFECTS PARAMETERS (SIGL):     100         
+ NOPRIOR SETTING (NOPRIOR):                 OFF       
+ NOCOV SETTING (NOCOV):                     OFF       
+ DERCONT SETTING (DERCONT):                 OFF       
+ FINAL ETA RE-EVALUATION (FNLETA):          ON        
+ EXCLUDE NON-INFLUENTIAL (NON-INFL.) ETAS   
+       IN SHRINKAGE (ETASTYPE):             NO        
+ NON-INFL. ETA CORRECTION (NONINFETA):      OFF       
+ RAW OUTPUT FILE (FILE): psn.ext                                                                                                                                                                                                                                                         
+ EXCLUDE TITLE (NOTITLE):                   NO        
+ EXCLUDE COLUMN LABELS (NOLABEL):           NO        
+ FORMAT FOR ADDITIONAL FILES (FORMAT):      S1PE12.5
+ PARAMETER ORDER FOR OUTPUTS (ORDER):       TSOL
+ WISHART PRIOR DF INTERPRETATION (WISHTYPE):0           
+ KNUTHSUMOFF:                               0           
+ INCLUDE LNTWOPI:                           NO        
+ INCLUDE CONSTANT TERM TO PRIOR (PRIORC):   NO        
+ INCLUDE CONSTANT TERM TO OMEGA (ETA) (OLNTWOPI):NO        
+ ADDITIONAL CONVERGENCE TEST (CTYPE=4)?:    NO
+ EM OR BAYESIAN METHOD USED:                 NONE
+
+
+ THE FOLLOWING LABELS ARE EQUIVALENT
+ PRED=NPRED
+ RES=NRES
+ WRES=NWRES
+ IWRS=NIWRES
+ IPRD=NIPRED
+ IRS=NIRES
+
+ MONITORING OF SEARCH:
+
+
+0ITERATION NO.:    0    OBJECTIVE VALUE:   567.519543451242        NO. OF FUNC. EVALS.:   3
+ CUMULATIVE NO. OF FUNC. EVALS.:        3
+ NPARAMETR:  2.8573E-02  2.7895E-02  1.3131E-02
+ PARAMETER:  1.0000E-01  1.0000E-01  1.0000E-01
+ GRADIENT:   1.3656E+01  1.3586E+00  1.5624E+01
+
+ #TERM:
+0MINIMIZATION TERMINATED
+ DUE TO MAX. NO. OF FUNCTION EVALUATIONS EXCEEDED
+ NO. OF FUNCTION EVALUATIONS USED:        3
+ NO. OF SIG. DIGITS UNREPORTABLE
+  
+ TOTAL DATA POINTS NORMALLY DISTRIBUTED (N):          155
+ N*LOG(2PI) CONSTANT TO OBJECTIVE FUNCTION:    284.87094529344853     
+ OBJECTIVE FUNCTION VALUE WITHOUT CONSTANT:    567.51954345124250     
+ OBJECTIVE FUNCTION VALUE WITH CONSTANT:       852.39048874469108     
+ REPORTED OBJECTIVE FUNCTION DOES NOT CONTAIN CONSTANT
+  
+ TOTAL EFFECTIVE ETAS (NIND*NETA):                           118
+  
+ #TERE:
+ Elapsed estimation  time in seconds:     0.00
+1
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ ************************************************************************************************************************
+ ********************                                                                                ********************
+ ********************                                   FIRST ORDER                                  ********************
+ #OBJT:**************                       MINIMUM VALUE OF OBJECTIVE FUNCTION                      ********************
+ ********************                                                                                ********************
+ ************************************************************************************************************************
+ 
+
+
+
+
+
+ #OBJV:********************************************      567.520       **************************************************
+1
+ ************************************************************************************************************************
+ ********************                                                                                ********************
+ ********************                                   FIRST ORDER                                  ********************
+ ********************                             FINAL PARAMETER ESTIMATE                           ********************
+ ********************                                                                                ********************
+ ************************************************************************************************************************
+ 
+
+
+ OMEGA - COV MATRIX FOR RANDOM EFFECTS - ETAS  ********
+
+
+         ETA1      ETA2     
+ 
+ ETA1
++        2.86E-02
+ 
+ ETA2
++        0.00E+00  2.79E-02
+ 
+
+
+ SIGMA - COV MATRIX FOR RANDOM EFFECTS - EPSILONS  ****
+
+
+         EPS1     
+ 
+ EPS1
++        1.31E-02
+ 
+1
+
+
+ OMEGA - CORR MATRIX FOR RANDOM EFFECTS - ETAS  *******
+
+
+         ETA1      ETA2     
+ 
+ ETA1
++        1.69E-01
+ 
+ ETA2
++        0.00E+00  1.67E-01
+ 
+
+
+ SIGMA - CORR MATRIX FOR RANDOM EFFECTS - EPSILONS  ***
+
+
+         EPS1     
+ 
+ EPS1
++        1.15E-01
+ 
+1
+
+
+ #TBLN:      4
+ #METH: First Order Conditional Estimation with Interaction
+
+ ESTIMATION STEP OMITTED:                 NO  
+ ANALYSIS TYPE:                           POPULATION
+ NUMBER OF SADDLE POINT RESET ITERATIONS:      0
+ GRADIENT METHOD USED:               NOSLOW
+ CONDITIONAL ESTIMATES USED:              YES 
+ CENTERED ETA:                            NO  
+ EPS-ETA INTERACTION:                     YES 
+ LAPLACIAN OBJ. FUNC.:                    NO  
+ NO. OF FUNCT. EVALS. ALLOWED:            2
+ NO. OF SIG. FIGURES REQUIRED:            3
+ INTERMEDIATE PRINTOUT:                   YES 
+ ESTIMATE OUTPUT TO MSF:                  NO  
+ IND. OBJ. FUNC. VALUES SORTED:           NO  
+ NUMERICAL DERIVATIVE 
+       FILE REQUEST (NUMDER):               NONE
+ MAP (ETAHAT) ESTIMATION METHOD (OPTMAP):   0           
+ ETA HESSIAN EVALUATION METHOD (ETADER):    0           
+ INITIAL ETA FOR MAP ESTIMATION (MCETA):    1           
+ SIGDIGITS FOR MAP ESTIMATION (SIGLO):      100         
+ GRADIENT SIGDIGITS OF 
+       FIXED EFFECTS PARAMETERS (SIGL):     100         
+ NOPRIOR SETTING (NOPRIOR):                 OFF       
+ NOCOV SETTING (NOCOV):                     OFF       
+ DERCONT SETTING (DERCONT):                 OFF       
+ FINAL ETA RE-EVALUATION (FNLETA):          ON        
+ EXCLUDE NON-INFLUENTIAL (NON-INFL.) ETAS   
+       IN SHRINKAGE (ETASTYPE):             NO        
+ NON-INFL. ETA CORRECTION (NONINFETA):      OFF       
+ RAW OUTPUT FILE (FILE): psn.ext                                                                                                                                                                                                                                                         
+ EXCLUDE TITLE (NOTITLE):                   NO        
+ EXCLUDE COLUMN LABELS (NOLABEL):           NO        
+ FORMAT FOR ADDITIONAL FILES (FORMAT):      S1PE12.5
+ PARAMETER ORDER FOR OUTPUTS (ORDER):       TSOL
+ WISHART PRIOR DF INTERPRETATION (WISHTYPE):0           
+ KNUTHSUMOFF:                               0           
+ INCLUDE LNTWOPI:                           NO        
+ INCLUDE CONSTANT TERM TO PRIOR (PRIORC):   NO        
+ INCLUDE CONSTANT TERM TO OMEGA (ETA) (OLNTWOPI):NO        
+ ADDITIONAL CONVERGENCE TEST (CTYPE=4)?:    NO
+ EM OR BAYESIAN METHOD USED:                 NONE
+
+
+ THE FOLLOWING LABELS ARE EQUIVALENT
+ PRED=PREDI
+ RES=RESI
+ WRES=WRESI
+ IWRS=IWRESI
+ IPRD=IPREDI
+ IRS=IRESI
+
+ MONITORING OF SEARCH:
+
+
+0ITERATION NO.:    0    OBJECTIVE VALUE:   565.849043643430        NO. OF FUNC. EVALS.:   3
+ CUMULATIVE NO. OF FUNC. EVALS.:        3
+ NPARAMETR:  2.8573E-02  2.7895E-02  1.3131E-02
+ PARAMETER:  1.0000E-01  1.0000E-01  1.0000E-01
+ GRADIENT:   1.5353E+01  8.3782E-01  3.1552E+01
+
+ #TERM:
+0MINIMIZATION TERMINATED
+ DUE TO MAX. NO. OF FUNCTION EVALUATIONS EXCEEDED
+ NO. OF FUNCTION EVALUATIONS USED:        3
+ NO. OF SIG. DIGITS UNREPORTABLE
+
+ ETABAR IS THE ARITHMETIC MEAN OF THE ETA-ESTIMATES,
+ AND THE P-VALUE IS GIVEN FOR THE NULL HYPOTHESIS THAT THE TRUE MEAN IS 0.
+
+ ETABAR:        -7.7914E-03  3.7013E-03
+ SE:             8.1619E-03  1.8852E-02
+ N:                      59          59
+
+ P VAL.:         3.3978E-01  8.4435E-01
+
+ ETASHRINKSD(%)  6.2594E+01  1.2557E+01
+ ETASHRINKVR(%)  8.6008E+01  2.3537E+01
+ EBVSHRINKSD(%)  4.8054E+01  1.3360E+01
+ EBVSHRINKVR(%)  7.3016E+01  2.4935E+01
+ EPSSHRINKSD(%)  2.7574E+01
+ EPSSHRINKVR(%)  4.7545E+01
+
+  
+ TOTAL DATA POINTS NORMALLY DISTRIBUTED (N):          155
+ N*LOG(2PI) CONSTANT TO OBJECTIVE FUNCTION:    284.87094529344853     
+ OBJECTIVE FUNCTION VALUE WITHOUT CONSTANT:    565.84904364342981     
+ OBJECTIVE FUNCTION VALUE WITH CONSTANT:       850.71998893687828     
+ REPORTED OBJECTIVE FUNCTION DOES NOT CONTAIN CONSTANT
+  
+ TOTAL EFFECTIVE ETAS (NIND*NETA):                           118
+  
+ #TERE:
+ Elapsed estimation  time in seconds:     0.00
+ Elapsed postprocess time in seconds:     0.01
+1
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ ************************************************************************************************************************
+ ********************                                                                                ********************
+ ********************               FIRST ORDER CONDITIONAL ESTIMATION WITH INTERACTION              ********************
+ #OBJT:**************                       MINIMUM VALUE OF OBJECTIVE FUNCTION                      ********************
+ ********************                                                                                ********************
+ ************************************************************************************************************************
+ 
+
+
+
+
+
+ #OBJV:********************************************      565.849       **************************************************
+1
+ ************************************************************************************************************************
+ ********************                                                                                ********************
+ ********************               FIRST ORDER CONDITIONAL ESTIMATION WITH INTERACTION              ********************
+ ********************                             FINAL PARAMETER ESTIMATE                           ********************
+ ********************                                                                                ********************
+ ************************************************************************************************************************
+ 
+
+
+ OMEGA - COV MATRIX FOR RANDOM EFFECTS - ETAS  ********
+
+
+         ETA1      ETA2     
+ 
+ ETA1
++        2.86E-02
+ 
+ ETA2
++        0.00E+00  2.79E-02
+ 
+
+
+ SIGMA - COV MATRIX FOR RANDOM EFFECTS - EPSILONS  ****
+
+
+         EPS1     
+ 
+ EPS1
++        1.31E-02
+ 
+1
+
+
+ OMEGA - CORR MATRIX FOR RANDOM EFFECTS - ETAS  *******
+
+
+         ETA1      ETA2     
+ 
+ ETA1
++        1.69E-01
+ 
+ ETA2
++        0.00E+00  1.67E-01
+ 
+
+
+ SIGMA - CORR MATRIX FOR RANDOM EFFECTS - EPSILONS  ***
+
+
+         EPS1     
+ 
+ EPS1
++        1.15E-01
+ 
+ Elapsed finaloutput time in seconds:     0.00
+1
+ PROBLEM NO.:           1      SUBPROBLEM NO.:           3
+ 
+ SIMULATION STEP PERFORMED
+ SOURCE  1:
+    SEED1:    2124672113   SEED2:    1057964660
+ Elapsed simulation  time in seconds:     0.00
+1
+
+
+ #TBLN:      5
+ #METH: First Order
+
+ ESTIMATION STEP OMITTED:                 NO  
+ ANALYSIS TYPE:                           POPULATION
+ NUMBER OF SADDLE POINT RESET ITERATIONS:      0
+ GRADIENT METHOD USED:               NOSLOW
+ EPS-ETA INTERACTION:                     NO  
+ NO. OF FUNCT. EVALS. ALLOWED:            2
+ NO. OF SIG. FIGURES REQUIRED:            3
+ INTERMEDIATE PRINTOUT:                   YES 
+ ESTIMATE OUTPUT TO MSF:                  NO  
+ IND. OBJ. FUNC. VALUES SORTED:           NO  
+ NUMERICAL DERIVATIVE 
+       FILE REQUEST (NUMDER):               NONE
+ MAP (ETAHAT) ESTIMATION METHOD (OPTMAP):   0           
+ ETA HESSIAN EVALUATION METHOD (ETADER):    0           
+ INITIAL ETA FOR MAP ESTIMATION (MCETA):    1           
+ SIGDIGITS FOR MAP ESTIMATION (SIGLO):      100         
+ GRADIENT SIGDIGITS OF 
+       FIXED EFFECTS PARAMETERS (SIGL):     100         
+ NOPRIOR SETTING (NOPRIOR):                 OFF       
+ NOCOV SETTING (NOCOV):                     OFF       
+ DERCONT SETTING (DERCONT):                 OFF       
+ FINAL ETA RE-EVALUATION (FNLETA):          ON        
+ EXCLUDE NON-INFLUENTIAL (NON-INFL.) ETAS   
+       IN SHRINKAGE (ETASTYPE):             NO        
+ NON-INFL. ETA CORRECTION (NONINFETA):      OFF       
+ RAW OUTPUT FILE (FILE): psn.ext                                                                                                                                                                                                                                                         
+ EXCLUDE TITLE (NOTITLE):                   NO        
+ EXCLUDE COLUMN LABELS (NOLABEL):           NO        
+ FORMAT FOR ADDITIONAL FILES (FORMAT):      S1PE12.5
+ PARAMETER ORDER FOR OUTPUTS (ORDER):       TSOL
+ WISHART PRIOR DF INTERPRETATION (WISHTYPE):0           
+ KNUTHSUMOFF:                               0           
+ INCLUDE LNTWOPI:                           NO        
+ INCLUDE CONSTANT TERM TO PRIOR (PRIORC):   NO        
+ INCLUDE CONSTANT TERM TO OMEGA (ETA) (OLNTWOPI):NO        
+ ADDITIONAL CONVERGENCE TEST (CTYPE=4)?:    NO
+ EM OR BAYESIAN METHOD USED:                 NONE
+
+
+ THE FOLLOWING LABELS ARE EQUIVALENT
+ PRED=NPRED
+ RES=NRES
+ WRES=NWRES
+ IWRS=NIWRES
+ IPRD=NIPRED
+ IRS=NIRES
+
+ MONITORING OF SEARCH:
+
+
+0ITERATION NO.:    0    OBJECTIVE VALUE:   572.008153511250        NO. OF FUNC. EVALS.:   3
+ CUMULATIVE NO. OF FUNC. EVALS.:        3
+ NPARAMETR:  2.8573E-02  2.7895E-02  1.3131E-02
+ PARAMETER:  1.0000E-01  1.0000E-01  1.0000E-01
+ GRADIENT:   6.4183E+00 -6.6390E-01  1.5906E+01
+
+ #TERM:
+0MINIMIZATION TERMINATED
+ DUE TO MAX. NO. OF FUNCTION EVALUATIONS EXCEEDED
+ NO. OF FUNCTION EVALUATIONS USED:        3
+ NO. OF SIG. DIGITS UNREPORTABLE
+  
+ TOTAL DATA POINTS NORMALLY DISTRIBUTED (N):          155
+ N*LOG(2PI) CONSTANT TO OBJECTIVE FUNCTION:    284.87094529344853     
+ OBJECTIVE FUNCTION VALUE WITHOUT CONSTANT:    572.00815351125027     
+ OBJECTIVE FUNCTION VALUE WITH CONSTANT:       856.87909880469874     
+ REPORTED OBJECTIVE FUNCTION DOES NOT CONTAIN CONSTANT
+  
+ TOTAL EFFECTIVE ETAS (NIND*NETA):                           118
+  
+ #TERE:
+ Elapsed estimation  time in seconds:     0.00
+1
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ ************************************************************************************************************************
+ ********************                                                                                ********************
+ ********************                                   FIRST ORDER                                  ********************
+ #OBJT:**************                       MINIMUM VALUE OF OBJECTIVE FUNCTION                      ********************
+ ********************                                                                                ********************
+ ************************************************************************************************************************
+ 
+
+
+
+
+
+ #OBJV:********************************************      572.008       **************************************************
+1
+ ************************************************************************************************************************
+ ********************                                                                                ********************
+ ********************                                   FIRST ORDER                                  ********************
+ ********************                             FINAL PARAMETER ESTIMATE                           ********************
+ ********************                                                                                ********************
+ ************************************************************************************************************************
+ 
+
+
+ OMEGA - COV MATRIX FOR RANDOM EFFECTS - ETAS  ********
+
+
+         ETA1      ETA2     
+ 
+ ETA1
++        2.86E-02
+ 
+ ETA2
++        0.00E+00  2.79E-02
+ 
+
+
+ SIGMA - COV MATRIX FOR RANDOM EFFECTS - EPSILONS  ****
+
+
+         EPS1     
+ 
+ EPS1
++        1.31E-02
+ 
+1
+
+
+ OMEGA - CORR MATRIX FOR RANDOM EFFECTS - ETAS  *******
+
+
+         ETA1      ETA2     
+ 
+ ETA1
++        1.69E-01
+ 
+ ETA2
++        0.00E+00  1.67E-01
+ 
+
+
+ SIGMA - CORR MATRIX FOR RANDOM EFFECTS - EPSILONS  ***
+
+
+         EPS1     
+ 
+ EPS1
++        1.15E-01
+ 
+1
+
+
+ #TBLN:      6
+ #METH: First Order Conditional Estimation with Interaction
+
+ ESTIMATION STEP OMITTED:                 NO  
+ ANALYSIS TYPE:                           POPULATION
+ NUMBER OF SADDLE POINT RESET ITERATIONS:      0
+ GRADIENT METHOD USED:               NOSLOW
+ CONDITIONAL ESTIMATES USED:              YES 
+ CENTERED ETA:                            NO  
+ EPS-ETA INTERACTION:                     YES 
+ LAPLACIAN OBJ. FUNC.:                    NO  
+ NO. OF FUNCT. EVALS. ALLOWED:            2
+ NO. OF SIG. FIGURES REQUIRED:            3
+ INTERMEDIATE PRINTOUT:                   YES 
+ ESTIMATE OUTPUT TO MSF:                  NO  
+ IND. OBJ. FUNC. VALUES SORTED:           NO  
+ NUMERICAL DERIVATIVE 
+       FILE REQUEST (NUMDER):               NONE
+ MAP (ETAHAT) ESTIMATION METHOD (OPTMAP):   0           
+ ETA HESSIAN EVALUATION METHOD (ETADER):    0           
+ INITIAL ETA FOR MAP ESTIMATION (MCETA):    1           
+ SIGDIGITS FOR MAP ESTIMATION (SIGLO):      100         
+ GRADIENT SIGDIGITS OF 
+       FIXED EFFECTS PARAMETERS (SIGL):     100         
+ NOPRIOR SETTING (NOPRIOR):                 OFF       
+ NOCOV SETTING (NOCOV):                     OFF       
+ DERCONT SETTING (DERCONT):                 OFF       
+ FINAL ETA RE-EVALUATION (FNLETA):          ON        
+ EXCLUDE NON-INFLUENTIAL (NON-INFL.) ETAS   
+       IN SHRINKAGE (ETASTYPE):             NO        
+ NON-INFL. ETA CORRECTION (NONINFETA):      OFF       
+ RAW OUTPUT FILE (FILE): psn.ext                                                                                                                                                                                                                                                         
+ EXCLUDE TITLE (NOTITLE):                   NO        
+ EXCLUDE COLUMN LABELS (NOLABEL):           NO        
+ FORMAT FOR ADDITIONAL FILES (FORMAT):      S1PE12.5
+ PARAMETER ORDER FOR OUTPUTS (ORDER):       TSOL
+ WISHART PRIOR DF INTERPRETATION (WISHTYPE):0           
+ KNUTHSUMOFF:                               0           
+ INCLUDE LNTWOPI:                           NO        
+ INCLUDE CONSTANT TERM TO PRIOR (PRIORC):   NO        
+ INCLUDE CONSTANT TERM TO OMEGA (ETA) (OLNTWOPI):NO        
+ ADDITIONAL CONVERGENCE TEST (CTYPE=4)?:    NO
+ EM OR BAYESIAN METHOD USED:                 NONE
+
+
+ THE FOLLOWING LABELS ARE EQUIVALENT
+ PRED=PREDI
+ RES=RESI
+ WRES=WRESI
+ IWRS=IWRESI
+ IPRD=IPREDI
+ IRS=IRESI
+
+ MONITORING OF SEARCH:
+
+
+0ITERATION NO.:    0    OBJECTIVE VALUE:   570.734401141453        NO. OF FUNC. EVALS.:   3
+ CUMULATIVE NO. OF FUNC. EVALS.:        3
+ NPARAMETR:  2.8573E-02  2.7895E-02  1.3131E-02
+ PARAMETER:  1.0000E-01  1.0000E-01  1.0000E-01
+ GRADIENT:   7.8844E+00 -2.4681E+00  1.9674E+01
+
+ #TERM:
+0MINIMIZATION TERMINATED
+ DUE TO MAX. NO. OF FUNCTION EVALUATIONS EXCEEDED
+ NO. OF FUNCTION EVALUATIONS USED:        3
+ NO. OF SIG. DIGITS UNREPORTABLE
+
+ ETABAR IS THE ARITHMETIC MEAN OF THE ETA-ESTIMATES,
+ AND THE P-VALUE IS GIVEN FOR THE NULL HYPOTHESIS THAT THE TRUE MEAN IS 0.
+
+ ETABAR:         4.8179E-03  1.5791E-02
+ SE:             1.0344E-02  1.9158E-02
+ N:                      59          59
+
+ P VAL.:         6.4138E-01  4.0980E-01
+
+ ETASHRINKSD(%)  5.2593E+01  1.1135E+01
+ ETASHRINKVR(%)  7.7526E+01  2.1030E+01
+ EBVSHRINKSD(%)  4.7007E+01  1.3243E+01
+ EBVSHRINKVR(%)  7.1917E+01  2.4732E+01
+ EPSSHRINKSD(%)  2.5552E+01
+ EPSSHRINKVR(%)  4.4574E+01
+
+  
+ TOTAL DATA POINTS NORMALLY DISTRIBUTED (N):          155
+ N*LOG(2PI) CONSTANT TO OBJECTIVE FUNCTION:    284.87094529344853     
+ OBJECTIVE FUNCTION VALUE WITHOUT CONSTANT:    570.73440114145342     
+ OBJECTIVE FUNCTION VALUE WITH CONSTANT:       855.60534643490200     
+ REPORTED OBJECTIVE FUNCTION DOES NOT CONTAIN CONSTANT
+  
+ TOTAL EFFECTIVE ETAS (NIND*NETA):                           118
+  
+ #TERE:
+ Elapsed estimation  time in seconds:     0.00
+ Elapsed postprocess time in seconds:     0.00
+1
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ ************************************************************************************************************************
+ ********************                                                                                ********************
+ ********************               FIRST ORDER CONDITIONAL ESTIMATION WITH INTERACTION              ********************
+ #OBJT:**************                       MINIMUM VALUE OF OBJECTIVE FUNCTION                      ********************
+ ********************                                                                                ********************
+ ************************************************************************************************************************
+ 
+
+
+
+
+
+ #OBJV:********************************************      570.734       **************************************************
+1
+ ************************************************************************************************************************
+ ********************                                                                                ********************
+ ********************               FIRST ORDER CONDITIONAL ESTIMATION WITH INTERACTION              ********************
+ ********************                             FINAL PARAMETER ESTIMATE                           ********************
+ ********************                                                                                ********************
+ ************************************************************************************************************************
+ 
+
+
+ OMEGA - COV MATRIX FOR RANDOM EFFECTS - ETAS  ********
+
+
+         ETA1      ETA2     
+ 
+ ETA1
++        2.86E-02
+ 
+ ETA2
++        0.00E+00  2.79E-02
+ 
+
+
+ SIGMA - COV MATRIX FOR RANDOM EFFECTS - EPSILONS  ****
+
+
+         EPS1     
+ 
+ EPS1
++        1.31E-02
+ 
+1
+
+
+ OMEGA - CORR MATRIX FOR RANDOM EFFECTS - ETAS  *******
+
+
+         ETA1      ETA2     
+ 
+ ETA1
++        1.69E-01
+ 
+ ETA2
++        0.00E+00  1.67E-01
+ 
+
+
+ SIGMA - CORR MATRIX FOR RANDOM EFFECTS - EPSILONS  ***
+
+
+         EPS1     
+ 
+ EPS1
++        1.15E-01
+ 
+ Elapsed finaloutput time in seconds:     0.00
+ #CPUT: Total CPU Time in Seconds,        0.060
+Stop Time:
+ons 13 jan 2021 16:54:17 CET

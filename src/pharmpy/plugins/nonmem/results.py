@@ -513,4 +513,9 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
 
 def simfit_results(model):
     """Read in modelfit results from a simulation/estimation model"""
-    pass
+    nsubs = model.control_stream.get_records('SIMULATION')[0].nsubs
+    results = []
+    for i in range(1, nsubs + 1):
+        res = NONMEMChainedModelfitResults(model.source.path, model=model, subproblem=i)
+        results.append(res)
+    return results

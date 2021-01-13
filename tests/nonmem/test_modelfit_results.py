@@ -4,7 +4,7 @@ import pytest
 import pharmpy.plugins.nonmem as nonmem
 from pharmpy import Model
 from pharmpy.config import ConfigurationContext
-from pharmpy.plugins.nonmem.results import NONMEMChainedModelfitResults
+from pharmpy.plugins.nonmem.results import NONMEMChainedModelfitResults, simfit_results
 
 
 def test_ofv(pheno_lst):
@@ -233,3 +233,11 @@ def test_parameter_estimates(pheno_path):
         assert len(pe) == 6
         assert pe['PTVCL'] == 4.69555e-3
         assert pe['IVV'] == 2.7906e-2
+
+
+def test_simfit(testdata):
+    model = Model(testdata / 'nonmem' / 'modelfit_results' / 'simfit' / 'sim-1.mod')
+    results = simfit_results(model)
+    assert len(results) == 3
+    assert results[1].ofv == 565.8490436434297
+    assert results[2].ofv == 570.7344011414535
