@@ -33,8 +33,13 @@ To load a model and access e.g. parameters
      SIGMA(1,1)  0.013086   0.00       oo  False
     >>> model$write("run2.mod")
 
-It is also possible to perform different types of transformations, such as addition of covariate effects. A way to
-write functions from e.g. the modeling module in a more clean way:
+It is also possible to perform different types of transformations, such as addition of covariate effects (see the
+user guide :ref:`Modeling <modeling>` for available transformations).
+
+.. warning::
+   Note that all manipulations are done in place, i.e. the model referenced by the input argument will be changed.
+
+A way to write functions from e.g. the modeling module in a more clean way:
 
 .. code-block:: r
 
