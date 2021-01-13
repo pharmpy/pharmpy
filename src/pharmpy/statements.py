@@ -1,11 +1,11 @@
 import copy
-import math
 
 import networkx as nx
 import sympy
 from sympy.printing.str import StrPrinter
 
 import pharmpy.symbols as symbols
+import pharmpy.unicode as unicode
 from pharmpy.random_variables import VariabilityLevel
 
 
@@ -533,97 +533,67 @@ class CompartmentalSystem(ODESystem):
 
     def __str__(self):
         output = self.find_output()
-        output_box = box(output.name)
+        output_box = unicode.Box(output.name)
         central = self.find_central()
-        central_box = box(central.name)
+        central_box = unicode.Box(central.name)
         depot = self._find_depot()
+        current = self.find_dosing()
         if depot:
-            depot_box = box(depot.name)
-            depot_central_arrow = arrow(str(self.get_flow(depot, central)))
+            comp = depot
+        else:
+            comp = central
+        transits = []
+        while current != comp:
+            transits.append(current)
+            current = self.get_compartment_outflows(current)[0][0]
         periphs = self.find_peripherals()
-        periph_box = []
-        for p in periphs:
-            periph_box.append(box(p.name))
-
-        upper = []
+        nrows = 1 + 2 * len(periphs)
+        ncols = 2 * len(transits) + (2 if depot else 0) + 3
+        grid = unicode.Grid(nrows, ncols)
+        if nrows == 1:
+            main_row = 0
+        else:
+            main_row = 2
+        col = 0
+        for transit in transits:
+            grid.set(main_row, col, unicode.Box(transit.name))
+            col += 1
+            grid.set(
+                main_row, col, unicode.Arrow(str(self.get_compartment_outflows(transit)[0][1]))
+            )
+            col += 1
+        if depot:
+            grid.set(main_row, col, unicode.Box(depot.name))
+            col += 1
+            grid.set(main_row, col, unicode.Arrow(str(self.get_compartment_outflows(depot)[0][1])))
+            col += 1
+        central_col = col
+        grid.set(main_row, col, central_box)
+        col += 1
+        grid.set(main_row, col, unicode.Arrow(str(self.get_flow(central, output))))
+        col += 1
+        grid.set(main_row, col, output_box)
         if periphs:
-            upper += box(periphs[0].name)
-            up_arrow = vertical_arrow(str(self.get_flow(central, periphs[0])), down=False)
-            down_arrow = vertical_arrow(str(self.get_flow(periphs[0], central)))
-            for i in range(0, len(up_arrow)):
-                upper.append(up_arrow[i] + '  ' + down_arrow[i])
-
-        bottom = []
-        central_output_arrow = arrow(str(self.get_flow(central, output)))
-        for i in range(0, len(output_box)):
-            if i == 1:
-                flow = central_output_arrow
-            else:
-                flow = ' ' * len(central_output_arrow)
-            if depot:
-                if i == 1:
-                    ab = depot_central_arrow
-                else:
-                    ab = ' ' * len(depot_central_arrow)
-                curdepot = depot_box[i] + ab
-            else:
-                curdepot = ''
-
-            bottom.append(curdepot + central_box[i] + flow + output_box[i])
-
-        lower = []
-        if periphs and len(periphs) > 1:
-            down_arrow = vertical_arrow(str(self.get_flow(central, periphs[1])))
-            up_arrow = vertical_arrow(str(self.get_flow(periphs[1], central)), down=False)
-            for i in range(0, len(up_arrow)):
-                lower.append(up_arrow[i] + '  ' + down_arrow[i])
-            lower += box(periphs[1].name)
-
-        upper_str = ''
-        if upper:
-            if depot:
-                pad = ' ' * (len(depot_box[0]) + len(depot_central_arrow))
-            else:
-                pad = ''
-            for line in upper:
-                upper_str += pad + line + '\n'
-
-        lower_str = ''
-        if lower:
-            if depot:
-                pad = ' ' * (len(depot_box[0]) + len(depot_central_arrow))
-            else:
-                pad = ''
-            for line in lower:
-                lower_str += pad + line + '\n'
+            grid.set(0, central_col, unicode.Box(periphs[0].name))
+            grid.set(
+                1,
+                central_col,
+                unicode.DualVerticalArrows(
+                    str(self.get_flow(central, periphs[0])), str(self.get_flow(periphs[0], central))
+                ),
+            )
+        if len(periphs) > 1:
+            grid.set(4, central_col, unicode.Box(periphs[1].name))
+            grid.set(
+                3,
+                central_col,
+                unicode.DualVerticalArrows(
+                    str(self.get_flow(periphs[1], central)), str(self.get_flow(central, periphs[1]))
+                ),
+            )
 
         dose = self.find_dosing().dose
-        return str(dose) + '\n' + upper_str + '\n'.join(bottom) + '\n' + lower_str
-
-
-def box(s):
-    """Draw unicode box around string and return new string"""
-    upper = '┌' + '─' * len(s) + '┐'
-    mid = '│' + s + '│'
-    lower = '└' + '─' * len(s) + '┘'
-    return [upper, mid, lower]
-
-
-def arrow(flow, right=True):
-    if right:
-        return '─' * 2 + flow + '→'
-    else:
-        return '←' + flow + '─' * 2
-
-
-def vertical_arrow(flow, down=True):
-    n = len(flow) / 2
-    before = ' ' * math.floor(n)
-    after = ' ' * math.ceil(n)
-    if down:
-        return [before + '│' + after, flow, before + '↓' + after]
-    else:
-        return [before + '↑' + after, flow, before + '│' + after]
+        return str(dose) + '\n' + str(grid)
 
 
 class Compartment:
