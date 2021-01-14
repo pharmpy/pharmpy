@@ -8,7 +8,6 @@ from pyfakefs.fake_filesystem import set_uid
 from pyfakefs.fake_filesystem_unittest import Patcher
 
 from pharmpy import Model
-from pharmpy.config import ConfigurationContext
 from pharmpy.modeling import (  # TODO: test error
     add_covariate_effect,
     add_etas,
@@ -33,7 +32,6 @@ from pharmpy.modeling import (  # TODO: test error
     zero_order_absorption,
     zero_order_elimination,
 )
-from pharmpy.plugins.nonmem import conf
 from pharmpy.plugins.nonmem.nmtran_parser import NMTranParser
 
 
@@ -1395,16 +1393,15 @@ def test_add_etas(pheno_path, parameter, expression, operation, buf_new):
     ],
 )
 def test_block_rvs(testdata, etas, pk_ref, omega_ref):
-    with ConfigurationContext(conf, parameter_names='comment'):
-        model = Model(testdata / 'nonmem/pheno_block.mod')
-        create_rv_block(model, etas)
-        model.update_source()
+    model = Model(testdata / 'nonmem/pheno_block.mod')
+    create_rv_block(model, etas)
+    model.update_source()
 
-        assert str(model.get_pred_pk_record()) == pk_ref
+    assert str(model.get_pred_pk_record()) == pk_ref
 
-        rec_omega = ''.join(str(rec) for rec in model.control_stream.get_records('OMEGA'))
+    rec_omega = ''.join(str(rec) for rec in model.control_stream.get_records('OMEGA'))
 
-        assert rec_omega == omega_ref
+    assert rec_omega == omega_ref
 
 
 @pytest.mark.parametrize(

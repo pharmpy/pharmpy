@@ -128,6 +128,10 @@ def update_random_variables(model, old, new):
         if rvs not in rvs_old and set(rv_names).issubset(old_names):
             records = get_omega_records(model, rv_names)
 
+            comment_map_new = dict()
+            for comment_map in [omega_record.comment_map for omega_record in records]:
+                comment_map_new.update(comment_map)
+
             indices = [model.control_stream.records.index(rec) for rec in records]
             new_rec_index = None if not indices else indices[0]
 
@@ -146,7 +150,9 @@ def update_random_variables(model, old, new):
                     model, model.parameters[str(dist.std ** 2)], index=new_rec_index
                 )
             else:
-                omega_new = create_omega_block(model, dist, index=new_rec_index)
+                omega_new = create_omega_block(model, dist, comment_map_new, index=new_rec_index)
+
+            omega_new.comment_map = comment_map_new
 
             omega_start = 1
 
@@ -237,7 +243,7 @@ def create_omega_single(model, param, record='OMEGA', index=None):
     return record, eta_number
 
 
-def create_omega_block(model, dist, index=None):
+def create_omega_block(model, dist, comment_map, index=None):
     m = dist.args[1]
     param_str = f'$OMEGA BLOCK({m.shape[0]})\n'
 
@@ -250,6 +256,8 @@ def create_omega_block(model, dist, index=None):
 
             if not re.match(r'OMEGA\(\d+,\d+\)', omega.name):
                 param_str += f'\t; {omega.name}'
+            elif omega.name in comment_map:
+                param_str += f'\t; {comment_map[omega.name]}'
 
             param_str += '\n'
 

@@ -36,6 +36,12 @@ class OmegaRecord(Record):
         same = bool(self.root.find('same'))
         parameters = ParameterSet()
         coords = []
+
+        try:
+            self.comment_map
+        except AttributeError:
+            self.comment_map = dict()
+
         if seen_labels is None:
             seen_labels = set()
         if not (block or bare_block):
@@ -59,8 +65,11 @@ class OmegaRecord(Record):
                     init = init ** 2
                 for _ in range(n):
                     name = self._find_label(node, seen_labels)
+                    comment = self._get_name(node)
                     if not name:
                         name = f'{self.name}({row},{row})'
+                    if comment:
+                        self.comment_map[name] = comment
                     seen_labels.add(name)
                     coords.append((row, row))
                     param = Parameter(name, init, lower=0, fix=fixed)
@@ -127,28 +136,33 @@ class OmegaRecord(Record):
 
     def _find_label(self, node, seen_labels):
         """Find label from comment of omega parameter"""
-        name = None
         # needed to avoid circular import with Python 3.6
         import pharmpy.plugins.nonmem as nonmem
 
+        name = None
         if nonmem.conf.parameter_names == 'comment':
-            found = False
-            for subnode in self.root.tree_walk():
-                if id(subnode) == id(node):
-                    found = True
-                    continue
-                if found and (subnode.rule == 'omega' or subnode.rule == 'diag_item'):
-                    break
-                if found and (subnode.rule == 'NEWLINE' or subnode.rule == 'COMMENT'):
-                    m = re.search(r';\s*([a-zA-Z_]\w*)', str(subnode))
-                    if m:
-                        name = m.group(1)
-                        break
+            name = self._get_name(node)
             if name in seen_labels:
                 warnings.warn(
                     f'The parameter name {name} is duplicated. Falling back to basic NONMEM names.'
                 )
                 name = None
+        return name
+
+    def _get_name(self, node):
+        name = None
+        found = False
+        for subnode in self.root.tree_walk():
+            if id(subnode) == id(node):
+                found = True
+                continue
+            if found and (subnode.rule == 'omega' or subnode.rule == 'diag_item'):
+                break
+            if found and (subnode.rule == 'NEWLINE' or subnode.rule == 'COMMENT'):
+                m = re.search(r';\s*([a-zA-Z_]\w*)', str(subnode))
+                if m:
+                    name = m.group(1)
+                    break
         return name
 
     def _block_flags(self):
