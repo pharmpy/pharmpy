@@ -1671,3 +1671,13 @@ def test_power_on_ruv(testdata, epsilons, err_ref, theta_ref):
             f'$THETA (-.99,.1)\n'
             f'{theta_ref}\n'
         )
+
+
+def test_nested_update_source(pheno_path):
+    model = Model(pheno_path)
+
+    create_rv_block(model)
+    model.update_source()
+    model.update_source()
+
+    assert 'COV1' in str(model)
