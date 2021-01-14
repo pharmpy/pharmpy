@@ -221,3 +221,7 @@ def test_update_inits(datadir, fs, force_args, file_exists):
     assert not re.search(r'\$ETAS FILE=run2_input.phi', mod_ori)
     assert bool(re.search(r'\$ETAS FILE=run2_input.phi', mod_cov)) is file_exists
     assert (os.path.isfile('run2_input.phi')) is file_exists
+
+
+def test_main():
+    import pharmpy.__main__ as main
