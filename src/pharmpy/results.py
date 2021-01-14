@@ -16,6 +16,7 @@
 """
 
 import json
+import lzma
 import math
 import warnings
 from pathlib import Path
@@ -90,8 +91,12 @@ def read_results(path_or_buf):
     except (FileNotFoundError, OSError, TypeError, ValueError):
         s = path_or_buf
     else:
-        with open(path, 'r') as json_file:
-            s = json_file.read()
+        if path.name.endswith('.xz'):
+            with lzma.open(path, 'r') as json_file:
+                s = json_file.read().decode('utf-8')
+        else:
+            with open(path, 'r') as json_file:
+                s = json_file.read()
     decoder = ResultsJSONDecoder()
     d = decoder.decode(s)
     if decoder.cls == 'FREMResults':
@@ -128,13 +133,18 @@ class Results:
     def from_dict(cls, d):
         return cls(**d)
 
-    def to_json(self, path=None):
+    def to_json(self, path=None, lzma=False):
         json_dict = self.to_dict()
         json_dict['__class__'] = self.__class__.__name__
         s = json.dumps(json_dict, cls=ResultsJSONEncoder)
         if path:
-            with open(path, 'w') as fh:
-                fh.write(s)
+            if not lzma:
+                with open(path, 'w') as fh:
+                    fh.write(s)
+            else:
+                xz_path = path.parent / (path.name + '.xz')
+                with lzma.open(xz_path, 'w') as fh:
+                    fh.write(bytes(s, 'utf-8'))
         else:
             return s
 
