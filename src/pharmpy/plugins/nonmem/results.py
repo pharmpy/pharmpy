@@ -191,6 +191,13 @@ class NONMEMModelfitResults(ModelfitResults):
             self._chain._read_phi_table()
             return self._individual_estimates_covariance
 
+    @property
+    def residuals(self):
+        df = self._chain._read_from_tables(['ID', 'TIME', 'RES', 'WRES', 'CWRES'], self)
+        df.set_index(['ID', 'TIME'], inplace=True)
+        df = df.loc[(df != 0).any(axis=1)]  # Simple way of removing non-observations
+        return df
+
     def _set_covariance_status(self, results_file, table_with_cov=None):
         covariance_status = {
             'requested': True
@@ -509,6 +516,28 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
                     covs = covs.transform(lambda cov: cov[rv_names].loc[rv_names])
                     result_obj._individual_estimates_covariance = covs
             self._read_phi = True
+
+    def _read_from_tables(self, columns, result_obj):
+        self._load()
+        table_recs = self.model.control_stream.get_records('TABLE')
+        found = []
+        df = pd.DataFrame()
+        for table_rec in table_recs:
+            columns_in_table = []
+            for key, value in table_rec.all_options:
+                if key in columns and key not in found:
+                    colname = key
+                elif value in columns and value not in found:
+                    colname = value
+                else:
+                    continue
+                found.append(colname)
+                columns_in_table.append(colname)
+            if columns_in_table:
+                table_file = NONMEMTableFile(self.model.source.path.parent / table_rec.path)
+                table = table_file.table_no(result_obj.table_number)
+                df[columns_in_table] = table.data_frame[columns_in_table]
+        return df
 
 
 def simfit_results(model):

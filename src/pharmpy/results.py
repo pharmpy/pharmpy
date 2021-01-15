@@ -525,6 +525,10 @@ class ChainedModelfitResults(list, ModelfitResults):
     def individual_shrinkage(self):
         return self[-1].individual_shrinkage
 
+    @property
+    def residuals(self):
+        return self[-1].residuals
+
     def plot_iofv_vs_iofv(self, other):
         return self[-1].plot_iofv_vs_iofv(other)
 

@@ -225,3 +225,5 @@ def test_update_inits(datadir, fs, force_args, file_exists):
 
 def test_main():
     import pharmpy.__main__ as main
+
+    main

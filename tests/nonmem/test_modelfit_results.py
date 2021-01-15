@@ -241,3 +241,12 @@ def test_simfit(testdata):
     assert len(results) == 3
     assert results[1].ofv == 565.8490436434297
     assert results[2].ofv == 570.7344011414535
+
+
+def test_residuals(testdata):
+    model = Model(testdata / 'nonmem' / 'pheno_real.mod')
+    df = model.modelfit_results.residuals
+    assert len(df) == 155
+    assert list(df.columns) == ['RES', 'CWRES']
+    assert df['RES'][1.0, 2.0] == -0.67071
+    assert df['CWRES'][1.0, 2.0] == -0.401100
