@@ -206,6 +206,4 @@ def test_advan5(testdata):
             [S('K10'), 0, S('K30'), S('K40'), 0, 0],
         ]
     )
-    print(cm.compartmental_matrix)
-    print(compmat)
     assert cm.compartmental_matrix == compmat
