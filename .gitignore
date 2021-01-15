@@ -44,7 +44,6 @@ docs/reference
 # Other
 .DS_Store
 *~
-.appveyor.token
 *.bak
 .build
 .cache

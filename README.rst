@@ -4,11 +4,8 @@
 .. image:: https://img.shields.io/pypi/l/pharmpy-core.svg
    :target: https://github.com/pharmpy/pharmpy/blob/master/LICENSE.LESSER
 
-.. image:: https://travis-ci.com/pharmpy/pharmpy.svg?branch=master
-    :target: https://travis-ci.com/pharmpy/pharmpy
-
-.. image:: https://ci.appveyor.com/api/projects/status/vw5vsw8gkifrcl58?svg=true
-   :target: https://ci.appveyor.com/project/pharmpy/pharmpy
+.. image:: https://github.com/pharmpy/pharmpy/workflows/CI/badge.svg
+    :target: https://github.com/pharmpy/pharmpy/actions
 
 .. image:: https://img.shields.io/badge/python-3.6+-blue.svg
    :target: https://www.python.org/downloads/
