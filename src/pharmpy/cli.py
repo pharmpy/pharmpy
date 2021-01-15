@@ -624,6 +624,16 @@ def results_scm(args):
     res.to_csv(path=args.psn_dir / 'results.csv')
 
 
+def results_simeval(args):
+    from pharmpy.methods.simeval.results import psn_simeval_results
+
+    if not args.psn_dir.is_dir():
+        error(FileNotFoundError(str(args.psn_dir)))
+    res = psn_simeval_results(args.psn_dir)
+    res.to_json(path=args.psn_dir / 'results.json')
+    res.to_csv(path=args.psn_dir / 'results.csv')
+
+
 def results_ofv(args):
     """Subcommand to extract final ofv from multiple results"""
     ofvs = []
@@ -1409,6 +1419,21 @@ parser_definition = [
                                 'metavar': 'PsN directory',
                                 'type': pathlib.Path,
                                 'help': 'Path to PsN scm run directory',
+                            }
+                        ],
+                    }
+                },
+                {
+                    'simeval': {
+                        'help': 'Generate simeval results',
+                        'description': 'Generate results from a PsN simeval run',
+                        'func': results_simeval,
+                        'args': [
+                            {
+                                'name': 'psn_dir',
+                                'metavar': 'PsN directory',
+                                'type': pathlib.Path,
+                                'help': 'Path to PsN simeval run directory',
                             }
                         ],
                     }
