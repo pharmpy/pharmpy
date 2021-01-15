@@ -329,6 +329,7 @@ class Model(pharmpy.model.Model):
         rec = self.get_pred_pk_record()
         statements = rec.statements
 
+        des = self._get_des_record()
         error = self._get_error_record()
         if error:
             sub = self.control_stream.get_records('SUBROUTINES')[0]
@@ -336,7 +337,7 @@ class Model(pharmpy.model.Model):
             trans = sub.get_option_startswith('TRANS')
             if not trans:
                 trans = 'TRANS1'
-            comp = compartmental_model(self, advan, trans)
+            comp = compartmental_model(self, advan, trans, des)
             if comp is not None:
                 cm, link = comp
                 statements += [cm, link]
@@ -396,6 +397,12 @@ class Model(pharmpy.model.Model):
         if error:
             error = error[0]
         return error
+
+    def _get_des_record(self):
+        des = self.control_stream.get_records('DES')
+        if des:
+            des = des[0]
+        return des
 
     def _zero_fix_rvs(self, eta=True):
         zero_fix = []

@@ -1,13 +1,14 @@
 import re
 
 import sympy
+from sympy import Derivative, Eq, Function, Piecewise
 
 from pharmpy.model import ModelSyntaxError
-from pharmpy.statements import Assignment, Bolus, CompartmentalSystem, Infusion
+from pharmpy.statements import Assignment, Bolus, CompartmentalSystem, ExplicitODESystem, Infusion
 from pharmpy.symbols import symbol
 
 
-def compartmental_model(model, advan, trans):
+def compartmental_model(model, advan, trans, des=None):
     if advan == 'ADVAN1':
         cm = CompartmentalSystem()
         central = cm.add_compartment('CENTRAL')
@@ -170,6 +171,31 @@ def compartmental_model(model, advan, trans):
         per2.lag_time = get_alag(model, 4)
         ass = _f_link_assignment(model, central)
         comp_map = {'DEPOT': 1, 'CENTRAL': 2, 'PERIPHERAL1': 3, 'PERIPHERAL2': 4, 'OUTPUT': 5}
+    elif advan == 'ADVAN6':
+        t = symbol('t')
+        a_c = Function('A_CENTRAL')
+        a_o = Function('A_OUTPUT')
+
+        sset = des.statements
+        sset.subs({'DADT(1)': Derivative(a_c(t)), 'A(1)': a_c(t)})
+
+        dadt_c = sset.find_assignment(str(Derivative(a_c(t))))
+        dadt_o = Assignment(Derivative(a_o(t)), dadt_c.expression * -1)
+
+        dose = _dosing(model, 1)
+        ics = {a_c(0): dose.amount, a_o(0): 0}
+
+        if isinstance(dose, Infusion):
+            dadt_c.expression += Piecewise(
+                (dose.amount / dose.duration, dose.duration > t), (0, True)
+            )
+            ics[a_c(0)] = 0
+
+        eqs = [Eq(dadt_c.symbol, dadt_c.expression), Eq(dadt_o.symbol, dadt_o.expression)]
+
+        ode = ExplicitODESystem(eqs, ics)
+        ass = _f_link_assignment(model, symbol('A_CENTRAL'))
+        return ode, ass
     else:
         return None
     model._compartment_map = comp_map
@@ -178,7 +204,10 @@ def compartmental_model(model, advan, trans):
 
 def _f_link_assignment(model, compartment):
     f = symbol('F')
-    fexpr = compartment.amount
+    try:
+        fexpr = compartment.amount
+    except AttributeError:
+        fexpr = compartment
     pkrec = model.control_stream.get_records('PK')[0]
     if pkrec.statements.find_assignment('S1'):
         fexpr = fexpr / symbol('S1')

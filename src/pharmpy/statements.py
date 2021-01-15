@@ -163,6 +163,9 @@ class ODESystem:
     def __str__(self):
         return 'ODESystem()'
 
+    def _repr_html(self):
+        return str(self)
+
 
 def _bracket(a):
     """Append a left bracket for an array of lines"""
