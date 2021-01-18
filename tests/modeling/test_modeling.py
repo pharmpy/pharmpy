@@ -1686,6 +1686,7 @@ def test_nested_update_source(pheno_path):
         ('nonmem/pheno.mod', explicit_odes),
         ('nonmem/pheno.mod', zero_order_elimination),
         ('nonmem/modeling/pheno_advan1_zero_order.mod', explicit_odes),
+        ('nonmem/modeling/pheno_advan5_depot.mod', explicit_odes),
     ],
 )
 def test_des(testdata, model_path, transformation):

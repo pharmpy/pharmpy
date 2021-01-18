@@ -171,27 +171,47 @@ def compartmental_model(model, advan, trans, des=None):
         per2.lag_time = get_alag(model, 4)
         ass = _f_link_assignment(model, central)
         comp_map = {'DEPOT': 1, 'CENTRAL': 2, 'PERIPHERAL1': 3, 'PERIPHERAL2': 4, 'OUTPUT': 5}
-    elif advan == 'ADVAN6':
+    elif advan in ['ADVAN6', 'ADVAN8', 'ADVAN13', 'ADVAN14']:
+        rec_model = model.control_stream.get_records('MODEL')[0]
+
+        subs_dict, comp_names = dict(), dict()
+        comps = [c for c, _ in rec_model.compartments()]
+
         t = symbol('t')
-        a_c = Function('A_CENTRAL')
-        a_o = Function('A_OUTPUT')
+        for i, c in enumerate(comps, 1):
+            a = Function(f'A_{c}')
+            subs_dict[f'DADT({i})'] = Derivative(a(t))
+            subs_dict[f'A({i})'] = a(t)
+            comp_names[f'A({i})'] = a
 
         sset = des.statements
-        sset.subs({'DADT(1)': Derivative(a_c(t)), 'A(1)': a_c(t)})
+        sset.subs(subs_dict)
 
-        dadt_c = sset.find_assignment(str(Derivative(a_c(t))))
-        dadt_o = Assignment(Derivative(a_o(t)), dadt_c.expression * -1)
-
+        a_out = Function('A_OUTPUT')
         dose = _dosing(model, 1)
-        ics = {a_c(0): dose.amount, a_o(0): 0}
+
+        ics = {v(0): 0 for v in comp_names.values()}
+        ics[a_out(0)] = 0
+        ics[comp_names['A(1)'](0)] = dose.amount
+
+        dadt_dose = sset.find_assignment(str(subs_dict['DADT(1)']))
+
+        if len(comps) > 1:
+            dadt_rest = [Eq(s.symbol, s.expression) for s in sset if s != dadt_dose]
+            dadt_out = Eq(
+                Derivative(a_out(t)), symbol(f'K{len(comps)-1}0') * Function('A_CENTRAL')(t)
+            )
+            dadt_rest.append(dadt_out)
+        else:
+            dadt_rest = [Eq(Derivative(a_out(t)), dadt_dose.expression * -1)]
 
         if isinstance(dose, Infusion):
-            dadt_c.expression += Piecewise(
+            dadt_dose.expression += Piecewise(
                 (dose.amount / dose.duration, dose.duration > t), (0, True)
             )
-            ics[a_c(0)] = 0
+            ics[comp_names['A(1)'](0)] = 0
 
-        eqs = [Eq(dadt_c.symbol, dadt_c.expression), Eq(dadt_o.symbol, dadt_o.expression)]
+        eqs = [Eq(dadt_dose.symbol, dadt_dose.expression)] + dadt_rest
 
         ode = ExplicitODESystem(eqs, ics)
         ass = _f_link_assignment(model, symbol('A_CENTRAL'))
