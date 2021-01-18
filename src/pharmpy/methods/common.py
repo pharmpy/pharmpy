@@ -7,13 +7,13 @@ class RunDirectory:
         while True:
             name = f'{method_name}_dir{i}'
             if path is not None:
-                path = path / name
+                test_path = path / name
             else:
-                path = Path(name)
-            if not path.is_file():
-                path.mkdir()
-                self.path = path
-                self.models_path = path / 'models'
+                test_path = Path(name)
+            if not test_path.exists():
+                test_path.mkdir()
+                self.path = test_path
+                self.models_path = test_path / 'models'
                 self.models_path.mkdir()
                 break
             i += 1
