@@ -1,3 +1,17 @@
+0.13.0 (2021-01-18)
+-------------------
+
+* Change names of covariate effect parameters for add_covariate_effects
+* Improve ordering of terms in created NONMEM expressions
+* Add parameter_inits, base_parameter_change, parameter_variability and coefficients to frem_results
+* Add SimevalResults class
+* Add fit and read_model_from_string functions to modeling
+* Add solver attribute to ODESystem to be able to select ODE-system solver. Currently ADVANs for NONMEM
+* New method nonfixed_inits to ParameterSet
+* Add residuals attribute to ModelfitResults
+* Various bug fixes
+* Migrate to github actions for continuous integration
+
 0.12.0 (2020-12-18)
 -------------------
 
