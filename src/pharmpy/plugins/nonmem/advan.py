@@ -171,7 +171,7 @@ def compartmental_model(model, advan, trans, des=None):
         per2.lag_time = get_alag(model, 4)
         ass = _f_link_assignment(model, central)
         comp_map = {'DEPOT': 1, 'CENTRAL': 2, 'PERIPHERAL1': 3, 'PERIPHERAL2': 4, 'OUTPUT': 5}
-    elif advan in ['ADVAN6', 'ADVAN8', 'ADVAN13', 'ADVAN14']:
+    elif des and all(str(s.symbol).startswith('DADT') for s in des.statements):
         rec_model = model.control_stream.get_records('MODEL')[0]
 
         subs_dict, comp_names = dict(), dict()
