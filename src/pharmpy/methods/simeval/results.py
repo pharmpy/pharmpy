@@ -20,7 +20,7 @@ def calculate_results(original_model, simfit_results):
     origiofv = original_model.modelfit_results.individual_ofv
     iofv = pd.DataFrame({'original': origiofv})
     for i, res in enumerate(simfit_results.modelfit_results):
-        iofv[f'sample_{i + 1}'] = res.individual_ofv
+        iofv[f'{i + 1}'] = res.individual_ofv
     df = iofv.T
     first = df.iloc[[0]].values[0]
     df = df.apply(lambda row: (first - row) / row.std(), axis=1)
@@ -37,7 +37,7 @@ def calculate_results(original_model, simfit_results):
     residual_outliers = list(iofv_medians[outser].index)
     res = SimevalResults(
         iofv=iofv,
-        iofv_residuals=iofv_residuals,
+        iofv_residuals=iofv_residuals.T,
         residual_outliers=residual_outliers,
         data_flag=data_flag,
     )
