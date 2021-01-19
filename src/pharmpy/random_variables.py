@@ -150,7 +150,12 @@ class RandomVariables(OrderedSet):
                     return e
         else:
             for e in self:
-                if isinstance(index, str) and e.name == index or not isinstance(index, str) and e.name == index.name:
+                if (
+                    isinstance(index, str)
+                    and e.name == index
+                    or not isinstance(index, str)
+                    and e.name == index.name
+                ):
                     return e
         raise KeyError(f'Random variable "{index}" does not exist')
 
