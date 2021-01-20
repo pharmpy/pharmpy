@@ -177,3 +177,25 @@ class DualVerticalArrows:
         middle_spaces = ' ' * (width - self.minimum_width + 1)
         middle_line = self.up_text + middle_spaces + self.down_text
         return [first_line, middle_line, last_line]
+
+
+def left_parens(height):
+    """Return an array containing each row of a large parenthesis
+    used for pretty printing
+    """
+    a = ['⎧']
+    for _ in range(height - 2):
+        a.append('⎪')
+    a.append('⎩')
+    return a
+
+
+def right_parens(height):
+    """Return an array containing each row of a large parenthesis
+    used for pretty printing
+    """
+    a = ['⎫']
+    for _ in range(height - 2):
+        a.append('⎪')
+    a.append('⎭')
+    return a

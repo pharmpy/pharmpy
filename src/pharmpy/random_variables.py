@@ -10,6 +10,7 @@ import sympy.stats as stats
 from sympy.stats.rv import RandomSymbol
 
 import pharmpy.math
+import pharmpy.unicode as unicode
 from pharmpy.symbols import symbol
 
 from .data_structures import OrderedSet
@@ -64,28 +65,6 @@ class RandomVariables(OrderedSet):
     nletter = '𝒩 '
 
     @staticmethod
-    def _left_parens(height):
-        """Return an array containing each row of a large parenthesis
-        used for pretty printing
-        """
-        a = ['⎧']
-        for _ in range(height - 2):
-            a.append('⎪')
-        a.append('⎩')
-        return a
-
-    @staticmethod
-    def _right_parens(height):
-        """Return an array containing each row of a large parenthesis
-        used for pretty printing
-        """
-        a = ['⎫']
-        for _ in range(height - 2):
-            a.append('⎪')
-        a.append('⎭')
-        return a
-
-    @staticmethod
     def _normal_definition_string(rv):
         """Provide a array of pretty strings for the definition of a Normal random variable
         This should ideally be available from sympy.
@@ -109,8 +88,8 @@ class RandomVariables(OrderedSet):
         sigma_height = len(sigma_strings)
         max_height = max(mu_height, sigma_height)
 
-        left_parens = RandomVariables._left_parens(len(name_strings))
-        right_parens = RandomVariables._right_parens(len(name_strings))
+        left_parens = unicode.left_parens(len(name_strings))
+        right_parens = unicode.right_parens(len(name_strings))
 
         # Pad the smaller of the matrices
         if mu_height != sigma_height:
