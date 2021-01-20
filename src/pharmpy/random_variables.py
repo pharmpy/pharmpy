@@ -1,5 +1,6 @@
 import enum
 import itertools
+import warnings
 
 import numpy as np
 import pandas as pd
@@ -530,38 +531,44 @@ class RandomVariables(OrderedSet):
                 d[symbol(rvs[0].name)] = stats.Normal(rvs[0].name, mean, std)
         return expr.subs(d)
 
-    def sample(self, expr, parameters, n=1):
-        """Sample the value of an expression"""
-        expr = self.expression(expr, parameters)
-        replacement_expression = expr
-        i = 1
-        samples = pd.DataFrame()
-        symbols = list()
-        for sym in expr.free_symbols:
-            if isinstance(sym, sympy.Indexed):
-                # Need to handled indexed RV specially due to sympy issue #20541
-                new_symbs = []
-                for k in range(i, i + sym.pspace.distribution.sigma.cols):
-                    name = f'__x{k}'
-                    new_sym = sympy.Symbol(name)
-                    symbols.append(new_sym)
-                    new_symbs.append(name)
-                    replacement_expression = replacement_expression.subs({sym: new_sym})
-                    i += 1
-                a = sympy.stats.sample(sym.args[0], size=n)
-                samples[new_symbs] = list(a)
+    def sample(self, expr, parameters=None, samples=1):
+        """Sample from the distribution of expr
 
-            elif isinstance(sym, sympy.stats.rv.RandomSymbol):
-                # free_symbols include both the indexed and the non-indexed RV symbol
-                name = f'__x{i}'
-                new_sym = sympy.Symbol(name)
-                symbols.append(new_sym)
-                replacement_expression = replacement_expression.subs({sym: new_sym})
-                i += 1
-                a = sympy.stats.sample(sym, size=n)
-                samples[name] = list(a)
-        func = sympy.lambdify([tuple(symbols)], replacement_expression)
-        return func  # FIXME: Continue here
+        parameters in the distriutions will first be replaced"""
+        expr = sympy.sympify(expr)
+        if not parameters:
+            parameters = dict()
+        symbols = expr.free_symbols
+        expr_names = [symb.name for symb in symbols]
+        i = 0
+        sampling_rvs = []
+        for rvs, dist in self.distributions():
+            names = [rv.name for rv in rvs]
+            if set(names) & set(expr_names):
+                new_name = f'__J{i}'
+                if len(rvs) > 1:
+                    mu = dist.mu.subs(parameters)
+                    sigma = dist.sigma.subs(parameters)
+                else:
+                    mu = dist.mean.subs(parameters)
+                    sigma = dist.std.subs(parameters)
+                new_rv = sympy.stats.Normal(new_name, mu, sigma)
+                sampling_rvs.append((names, new_rv))
+        df = pd.DataFrame(index=range(samples))
+        # FIXME: Unnecessary to go via DataFrame
+        for names, new_rv in sampling_rvs:
+            with warnings.catch_warnings():
+                warnings.filterwarnings('ignore')
+                cursample = next(sympy.stats.sample(new_rv, library='numpy', size=samples))
+                if len(names) > 1:
+                    df[names] = cursample
+                else:
+                    df[names[0]] = cursample
+        ordered_symbols = list(symbols)
+        input_list = [df[symb.name].values for symb in ordered_symbols]
+        fn = sympy.lambdify(ordered_symbols, expr, 'numpy')
+        a = fn(*input_list)
+        return a
 
 
 # pharmpy sets a parametrization attribute to the sympy distributions

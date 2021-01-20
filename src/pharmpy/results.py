@@ -549,16 +549,21 @@ def individual_parameter_statistics(model, expr):
     expr = sympy.sympify(expr)
     pe = dict(model.modelfit_results.parameter_estimates)
     full_expr = model.statements.full_expression_from_odes(expr)
-    expr = model.random_variables.expression(full_expr.subs(pe), pe)
-    mean = np.float64(sympy.stats.E(expr))
-    variance = np.float64(sympy.stats.variance(expr))
+    expr = full_expr.subs(pe)
+    samples = model.random_variables.sample(expr, parameters=pe, samples=1000000)
+
+    mean = np.mean(samples)
+    variance = np.var(samples)
+
     parameters = sample_from_covariance_matrix(model, n=100)
     samples = []
     with warnings.catch_warnings():
         warnings.filterwarnings('ignore')
         for _, row in parameters.iterrows():
-            expr = model.random_variables.expression(full_expr.subs(dict(row)), dict(row))
-            samples.extend(next(sympy.stats.sample(expr, library='numpy', size=10)).tolist())
+            batch = model.random_variables.sample(
+                full_expr.subs(dict(row)), parameters=dict(row), samples=10
+            )
+            samples.extend(list(batch))
     stderr = pd.Series(samples).std()
     res = {'mean': mean, 'variance': variance, 'stderr': stderr}
     return pd.Series(res)
