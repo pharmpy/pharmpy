@@ -1,4 +1,3 @@
-from pharmpy.modeling.add_iovs import add_iov
 from pharmpy.modeling.block_rvs import create_rv_block
 from pharmpy.modeling.common import (
     fix_parameters,
@@ -10,7 +9,7 @@ from pharmpy.modeling.common import (
 )
 from pharmpy.modeling.covariate_effect import add_covariate_effect
 from pharmpy.modeling.error import additive_error, combined_error, proportional_error, remove_error
-from pharmpy.modeling.eta_additions import add_etas
+from pharmpy.modeling.eta_additions import add_iiv, add_iov
 from pharmpy.modeling.eta_transformations import boxcox, john_draper, tdist
 from pharmpy.modeling.iiv_on_ruv import iiv_on_ruv
 from pharmpy.modeling.odes import (
@@ -44,7 +43,7 @@ __all__ = [
     'bolus_absorption',
     'seq_zo_fo_absorption',
     'add_covariate_effect',
-    'add_etas',
+    'add_iiv',
     'add_lag_time',
     'boxcox',
     'create_rv_block',

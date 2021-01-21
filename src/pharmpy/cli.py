@@ -470,10 +470,10 @@ def john_draper(args):
 
 def add_etas(args):
     """Subcommand to add new etas to model."""
-    from pharmpy.modeling import add_etas
+    from pharmpy.modeling import add_iiv
 
     model = args.model
-    add_etas(model, args.param, args.expression, args.operation)
+    add_iiv(model, args.param, args.expression, args.operation)
 
     write_model_or_dataset(model, model.dataset, path=args.output_file, force=False)
 

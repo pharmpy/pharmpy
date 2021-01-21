@@ -10,7 +10,7 @@ from pyfakefs.fake_filesystem_unittest import Patcher
 from pharmpy import Model
 from pharmpy.modeling import (  # TODO: test error
     add_covariate_effect,
-    add_etas,
+    add_iiv,
     add_iov,
     add_lag_time,
     bolus_absorption,
@@ -1291,7 +1291,7 @@ def test_john_draper(pheno_path, etas, etad, buf_new):
 def test_add_etas(pheno_path, parameter, expression, operation, buf_new):
     model = Model(pheno_path)
 
-    add_etas(model, parameter, expression, operation)
+    add_iiv(model, parameter, expression, operation)
     model.update_source()
 
     rec_ref = (
