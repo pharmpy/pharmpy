@@ -1,3 +1,4 @@
+from pharmpy.modeling.add_iovs import add_iov
 from pharmpy.modeling.block_rvs import create_rv_block
 from pharmpy.modeling.common import (
     fix_parameters,
@@ -75,4 +76,5 @@ __all__ = [
     'power_on_ruv',
     'fit',
     'set_ode_solver',
+    'add_iov',
 ]

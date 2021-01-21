@@ -549,6 +549,22 @@ class RandomVariables(OrderedSet):
         a = fn(*input_list)
         return a
 
+    def get_connected_iovs(self, iov):
+        iovs = []
+        connected = False
+        for rv in self:
+            if rv == iov:
+                iovs.append(rv)
+                connected = True
+            elif (
+                rv.variability_level == VariabilityLevel.IOV
+                and rv.pspace.distribution == iov.pspace.distribution
+            ):
+                iovs.append(rv)
+            elif connected:
+                break
+        return iovs
+
 
 # pharmpy sets a parametrization attribute to the sympy distributions
 # It will currently not affect the sympy distribution itself just convey the information

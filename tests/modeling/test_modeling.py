@@ -11,6 +11,7 @@ from pharmpy import Model
 from pharmpy.modeling import (  # TODO: test error
     add_covariate_effect,
     add_etas,
+    add_iov,
     add_lag_time,
     bolus_absorption,
     boxcox,
@@ -1698,3 +1699,52 @@ def test_des(testdata, model_path, transformation):
     model_des.source.path = model_ref.source.path  # To be able to find dataset
 
     assert model_ref.statements.ode_system == model_des.statements.ode_system
+
+
+@pytest.mark.parametrize(
+    'etas, pk_start_ref, pk_end_ref, omega_ref',
+    [
+        (
+            ['ETA(1)'],
+            'IOV_1 = 0\n'
+            'IF (FA1.EQ.0) IOV_1 = ETA(3)\n'
+            'IF (FA1.EQ.1) IOV_1 = ETA(4)\n'
+            'ETAI1 = IOV_1 + ETA(1)\n',
+            'CL = TVCL*EXP(ETAI1)\n' 'V=TVV*EXP(ETA(2))\n',
+            '$OMEGA  BLOCK(1)\n'
+            '0.00309626 ; OMEGA_IOV_1\n'
+            '$OMEGA  BLOCK(1) SAME ; OMEGA_IOV_1\n',
+        ),
+        (
+            None,
+            'IOV_1 = 0\n'
+            'IF (FA1.EQ.0) IOV_1 = ETA(3)\n'
+            'IF (FA1.EQ.1) IOV_1 = ETA(4)\n'
+            'IOV_2 = 0\n'
+            'IF (FA1.EQ.0) IOV_2 = ETA(5)\n'
+            'IF (FA1.EQ.1) IOV_2 = ETA(6)\n'
+            'ETAI1 = IOV_1 + ETA(1)\n'
+            'ETAI2 = IOV_2 + ETA(2)\n',
+            'CL = TVCL*EXP(ETAI1)\n' 'V = TVV*EXP(ETAI2)\n',
+            '$OMEGA  BLOCK(1)\n'
+            '0.00309626 ; OMEGA_IOV_1\n'
+            '$OMEGA  BLOCK(1) SAME ; OMEGA_IOV_1\n'
+            '$OMEGA  BLOCK(1)\n'
+            '0.0031128 ; OMEGA_IOV_2\n'
+            '$OMEGA  BLOCK(1) SAME ; OMEGA_IOV_2\n',
+        ),
+    ],
+)
+def test_add_iov(pheno_path, etas, pk_start_ref, pk_end_ref, omega_ref):
+    model = Model(pheno_path)
+    add_iov(model, 'FA1', etas)
+    model.update_source()
+
+    pk_rec = str(model.get_pred_pk_record())
+
+    assert pk_rec.startswith(f'$PK\n{pk_start_ref}')
+    assert pk_rec.endswith(f'{pk_end_ref}S1=V\n\n')
+
+    rec_omega = ''.join(str(rec) for rec in model.control_stream.get_records('OMEGA'))
+
+    assert rec_omega.endswith(omega_ref)

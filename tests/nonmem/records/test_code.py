@@ -267,6 +267,10 @@ def test_block_if(parser, buf, symb_expr_arr):
         assert statement.symbol == symb
         assert statement.expression == expr
 
+    buf = '$PRED\nIF (FA1.EQ.0) IOV_1 = ETA(3)\nIF (FA1.EQ.1) IOV_1 = ETA(4)'
+    rec = parser.parse(buf).records[0]
+    print(rec.statements)
+
 
 def test_exit(parser):
     rec = parser.parse("$PK IF (CL.EQ.0) EXIT 1").records[0]
@@ -538,7 +542,7 @@ def test_nested_block_if(parser):
 def test_translate_sympy_parse(parser, buf_original):
     rec = parser.parse(f'$PRED{buf_original}').records[0]
     s = rec.statements[0]
-    assert rec._translate_sympy_piecewise(s) == buf_original.strip()
+    assert rec._translate_sympy_piecewise(s).strip() == buf_original.strip()
 
 
 @pytest.mark.usefixtures('parser')
@@ -554,7 +558,7 @@ def test_translate_sympy_parse(parser, buf_original):
         (
             S('CLWGT'),
             sympy.Piecewise((23, sympy.Eq(S('X'), 1)), (0, sympy.Eq(S('X'), 0))),
-            '\nIF (X.EQ.1) THEN\nCLWGT = 23\nELSE IF (X.EQ.0) THEN\nCLWGT = 0\nEND IF\n',
+            '\nIF (X.EQ.1) CLWGT = 23\nIF (X.EQ.0) CLWGT = 0\n',
         ),
     ],
 )
@@ -563,7 +567,7 @@ def test_translate_sympy_piecewise(parser, symbol, expression, buf_expected):
     rec = parser.parse(buf_original).records[0]
     s = Assignment(symbol, expression)
 
-    assert rec._translate_sympy_piecewise(s) == buf_expected.strip()
+    assert rec._translate_sympy_piecewise(s).strip() == buf_expected.strip()
 
 
 def test_empty_record(parser):

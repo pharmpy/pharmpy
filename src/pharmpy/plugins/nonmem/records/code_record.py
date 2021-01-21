@@ -262,17 +262,18 @@ class CodeRecord(Record):
                 else:
                     statement_str = s.print_custom(self.rvs, self.trans)
                 node_tree = CodeRecordParser(statement_str).root
-                node = node_tree.all('statement')[0]
-                if node_index == 0:
-                    node.children.insert(0, AttrToken('LF', '\n'))
-                if (
-                    node_index != 0
-                    or len(self.root.children) > 0
-                    and self.root.children[0].rule != 'empty_line'
-                ):
-                    node.children.append(AttrToken('LF', '\n'))
-                new_nodes.append(node)
-                kept.append(node)
+                for node in node_tree.all('statement'):
+                    if node_index == 0:
+                        node.children.insert(0, AttrToken('LF', '\n'))
+                    if (
+                        not node.all('LF')
+                        and node_index != 0
+                        or len(self.root.children) > 0
+                        and self.root.children[0].rule != 'empty_line'
+                    ):
+                        node.children.append(AttrToken('LF', '\n'))
+                    new_nodes.append(node)
+                    kept.append(node)
             elif op == '-':
                 node_index += 1
                 old_index += 1
@@ -291,6 +292,8 @@ class CodeRecord(Record):
         expression = statement.expression.args
         symbol = statement.symbol
 
+        expressions, _ = zip(*expression)
+
         if len(expression) == 1:
             value = expression[0][0]
             condition = expression[0][1]
@@ -298,14 +301,28 @@ class CodeRecord(Record):
 
             statement_str = f'IF ({condition_translated}) {symbol} = {value}'
             return statement_str
+        elif all(len(e.args) == 0 for e in expressions):
+            return self._translate_sympy_single(symbol, expression)
         else:
             return self._translate_sympy_block(symbol, expression)
 
-    def _translate_sympy_block(self, symbol, expression_block):
+    def _translate_sympy_single(self, symbol, expression):
+        statement_str = ''
+        for e in expression:
+            value = e[0]
+            condition = e[1]
+
+            condition_translated = self._translate_condition(condition)
+
+            statement_str += f'IF ({condition_translated}) {symbol} = {value}\n'
+
+        return statement_str
+
+    def _translate_sympy_block(self, symbol, expression):
         statement_str = 'IF '
-        for i, expression in enumerate(expression_block):
-            value = expression[0]
-            condition = expression[1]
+        for i, e in enumerate(expression):
+            value = e[0]
+            condition = e[1]
 
             condition_translated = self._translate_condition(condition)
 
@@ -316,7 +333,7 @@ class CodeRecord(Record):
 
             statement_str += f'\n{symbol} = {value}\n'
 
-            if i < len(expression_block) - 1:
+            if i < len(expression) - 1:
                 statement_str += 'ELSE IF '
             else:
                 statement_str += 'END IF'

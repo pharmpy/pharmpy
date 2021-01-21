@@ -176,3 +176,30 @@ def test_has_same_order():
 
     rvs_rev = RandomVariables([eta3, eta2, eta1])
     assert not rvs_full.are_consecutive(rvs_rev)
+
+
+def test_get_connected_iovs():
+    omega = symbol('OMEGA(1,1)')
+    eta1 = stats.Normal('ETA(1)', 0, sympy.sqrt(omega))
+    eta2 = stats.Normal('ETA(2)', 0, sympy.sqrt(omega))
+    eta3 = stats.Normal('ETA(3)', 0, sympy.sqrt(omega))
+
+    omega = symbol('OMEGA(2,2)')
+    eta4 = stats.Normal('ETA(4)', 0, sympy.sqrt(omega))
+    eta5 = stats.Normal('ETA(5)', 0, sympy.sqrt(omega))
+
+    rvs_iovs = RandomVariables([eta1, eta2, eta3, eta4, eta5])
+
+    for rv in rvs_iovs:
+        rv.variability_level = VariabilityLevel.IOV
+
+    omega_iiv = symbol('OMEGA(3,3)')
+    eta_iiv = stats.Normal('ETA(6)', 0, sympy.sqrt(omega_iiv))
+    eta_iiv.variability_level = VariabilityLevel.IIV
+
+    rvs = copy.deepcopy(rvs_iovs)
+    rvs.add(eta_iiv)
+
+    assert len(rvs.get_connected_iovs(eta1)) == 3
+    assert len(rvs.get_connected_iovs(eta4)) == 2
+    assert len(rvs.get_connected_iovs(eta_iiv)) == 1

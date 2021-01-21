@@ -98,12 +98,15 @@ def update_random_variables(model, old, new):
                 rv_name = rv.name.upper()
                 omega = model.parameters[omega_name]
 
+                iov_rv = None
                 if rv.variability_level == VariabilityLevel.RUV:
                     record_name = 'SIGMA'
                 else:
                     record_name = 'OMEGA'
+                    if rv.variability_level == VariabilityLevel.IOV:
+                        iov_rv = rv
 
-                record, eta_number = create_omega_single(model, omega, record_name)
+                record, eta_number = create_omega_single(model, omega, record_name, iov_rv=iov_rv)
                 record.add_omega_name_comment(omega_name)
 
                 new_maps.append(
@@ -230,15 +233,26 @@ def create_theta_record(model, param):
     return record
 
 
-def create_omega_single(model, param, record='OMEGA', index=None):
+def create_omega_single(model, param, record='OMEGA', index=None, iov_rv=None):
     eta_number, previous_size = get_next_eta(model, record)
+    rvs = model.random_variables
+    previous_cov = None
 
-    param_str = f'${record}  {param.init}\n'
+    if iov_rv:
+        param_str = f'${record}  BLOCK(1)'
+        first_iov = rvs.get_connected_iovs(iov_rv)[0]
+        if iov_rv == first_iov:
+            param_str += f'\n{param.init}'
+        else:
+            param_str += ' SAME\n'
+        previous_cov = eta_number - 1
+    else:
+        param_str = f'${record}  {param.init}\n'
 
     record = model.control_stream.insert_record(param_str, index)
 
     record.parameters(eta_number, previous_size)
-    record.random_variables(eta_number)
+    record.random_variables(eta_number, previous_cov)
 
     return record, eta_number
 
