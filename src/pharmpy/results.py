@@ -547,23 +547,37 @@ def individual_parameter_statistics(model, expr):
     Does not support parameters that relies on the solution of the ODE-system
     """
     expr = sympy.sympify(expr)
-    pe = dict(model.modelfit_results.parameter_estimates)
     full_expr = model.statements.full_expression_from_odes(expr)
-    expr = full_expr.subs(pe)
-    samples = model.random_variables.sample(expr, parameters=pe, samples=1000000)
+    dataset = model.dataset
+    cols = set(dataset.columns)
+    covariates = {symb.name for symb in full_expr.free_symbols if symb.name in cols}
+    if not covariates:
+        cases = {'median': dict()}
+    else:
+        q5 = dataset[{'ID'} | covariates].groupby('ID').median().quantile(0.05)
+        q95 = dataset[{'ID'} | covariates].groupby('ID').median().quantile(0.95)
+        median = dataset[{'ID'} | covariates].groupby('ID').median().median()
+        cases = {'p5': dict(q5), 'median': dict(median), 'p95': dict(q95)}
 
-    mean = np.mean(samples)
-    variance = np.var(samples)
+    df = pd.DataFrame(index=list(cases.keys()), columns=['mean', 'variance', 'stderr'])
+    for case, cov_values in cases.items():
+        pe = dict(model.modelfit_results.parameter_estimates)
+        cov_expr = full_expr.subs(cov_values)
+        expr = cov_expr.subs(pe)
+        samples = model.random_variables.sample(expr, parameters=pe, samples=1000000)
 
-    parameters = sample_from_covariance_matrix(model, n=100)
-    samples = []
-    with warnings.catch_warnings():
-        warnings.filterwarnings('ignore')
-        for _, row in parameters.iterrows():
-            batch = model.random_variables.sample(
-                full_expr.subs(dict(row)), parameters=dict(row), samples=10
-            )
-            samples.extend(list(batch))
-    stderr = pd.Series(samples).std()
-    res = {'mean': mean, 'variance': variance, 'stderr': stderr}
-    return pd.Series(res)
+        mean = np.mean(samples)
+        variance = np.var(samples)
+
+        parameters = sample_from_covariance_matrix(model, n=100)
+        samples = []
+        with warnings.catch_warnings():
+            warnings.filterwarnings('ignore')
+            for _, row in parameters.iterrows():
+                batch = model.random_variables.sample(
+                    cov_expr.subs(dict(row)), parameters=dict(row), samples=10
+                )
+                samples.extend(list(batch))
+        stderr = pd.Series(samples).std()
+        df.loc[case] = [mean, variance, stderr]
+    return df
