@@ -1,3 +1,5 @@
+import pytest
+
 from pharmpy import Model
 from pharmpy.modeling.remove_iiv import _get_etas
 
@@ -16,3 +18,6 @@ def test_get_etas(testdata):
 
     etas = _get_etas(model, ['ETA(1)', 'S1'])
     assert len(etas) == 4
+
+    with pytest.raises(Exception):
+        _get_etas(model, ['ETA(23)'])
