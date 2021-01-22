@@ -4,7 +4,7 @@ import sympy.stats as stats
 
 from pharmpy import Model
 from pharmpy.modeling import create_rv_block
-from pharmpy.modeling.block_rvs import RVInputException, _choose_param_init, _get_rvs
+from pharmpy.modeling.block_rvs import _choose_param_init, _get_rvs
 from pharmpy.random_variables import RandomVariables, VariabilityLevel
 from pharmpy.results import ModelfitResults
 from pharmpy.symbols import symbol as S
@@ -26,7 +26,7 @@ def test_incorrect_params(testdata, rvs, exception_msg):
     model.parameters
     model.random_variables
 
-    with pytest.raises(RVInputException, match=exception_msg):
+    with pytest.raises(Exception, match=exception_msg):
         create_rv_block(model, rvs)
 
 

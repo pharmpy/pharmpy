@@ -10,10 +10,6 @@ from pharmpy.parameter import Parameter
 from pharmpy.random_variables import RandomVariables, VariabilityLevel
 
 
-class RVInputException(Exception):
-    pass
-
-
 def create_rv_block(model, list_of_rvs=None):
     """
     Creates a full or partial block structure of etas. The etas must be IIVs and cannot
@@ -67,22 +63,22 @@ def _get_rvs(model, list_of_rvs):
         list_of_rvs = [rv for rv in model.random_variables.etas]
         full_block = True
     elif len(list_of_rvs) == 1:
-        raise RVInputException('At least two random variables are needed')
+        raise ValueError('At least two random variables are needed')
 
     rvs = []
     for rv_str in list_of_rvs:
         try:
             rv = model.random_variables[rv_str]
         except KeyError:
-            raise RVInputException(f'Random variable does not exist: {rv_str}')
+            raise KeyError(f'Random variable does not exist: {rv_str}')
 
         if _has_fixed_params(model, rv):
             if not full_block:
-                raise RVInputException(f'Random variable cannot be set to fixed: {rv}')
+                raise ValueError(f'Random variable cannot be set to fixed: {rv}')
             continue
         if rv.variability_level == VariabilityLevel.IOV:
             if not full_block:
-                raise RVInputException(f'Random variable cannot be IOV: {rv}')
+                raise ValueError(f'Random variable cannot be IOV: {rv}')
             continue
 
         rvs.append(rv)
