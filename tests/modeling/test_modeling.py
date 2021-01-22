@@ -1288,7 +1288,7 @@ def test_john_draper(pheno_path, etas, etad, buf_new):
         ('S1', 'eta_new**2', '+', 'V=TVV*EXP(ETA(2))\nS1 = V + ETA(3)**2'),
     ],
 )
-def test_add_etas(pheno_path, parameter, expression, operation, buf_new):
+def test_add_iiv(pheno_path, parameter, expression, operation, buf_new):
     model = Model(pheno_path)
 
     add_iiv(model, parameter, expression, operation)

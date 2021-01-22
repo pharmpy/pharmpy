@@ -14,13 +14,9 @@ from pharmpy.statements import Assignment, ModelStatements
 from pharmpy.symbols import symbol as S
 
 
-class RVNotFoundException(Exception):
-    pass
-
-
 def add_iiv(model, parameter, expression, operation='*'):
     """
-    Adds etas to :class:`pharmpy.model`. Effects that currently have templates are:
+    Adds IIVs to :class:`pharmpy.model`. Effects that currently have templates are:
 
     - Additive (*add*)
     - Proportional (*prop*)
@@ -33,13 +29,13 @@ def add_iiv(model, parameter, expression, operation='*'):
     Parameters
     ----------
     model : Model
-        Pharmpy model to add new etas to.
+        Pharmpy model to add new IIVs to.
     parameter : str
-        Name of parameter to add new etas to.
+        Name of parameter to add new IIVs to.
     expression : str
         Effect on eta. Either abbreviated (see above) or custom.
     operation : str, optional
-        Whether the new eta should be added or multiplied (default).
+        Whether the new IIV should be added or multiplied (default).
     """
     rvs, pset, sset = model.random_variables, model.parameters, model.statements
 
@@ -64,6 +60,20 @@ def add_iiv(model, parameter, expression, operation='*'):
 
 
 def add_iov(model, occ, list_of_parameters=None):
+    """
+    Adds IOVs to :class:`pharmpy.model`. Initial estimate of new IOVs are 10% of the IIV eta
+    it is based on.
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model to add new IOVs to.
+    occ : str
+        Name of occasion column.
+    list_of_parameters : list
+        List of names of parameters and random variables. Accepts random variable names, parameter
+        names, or a mix of both.
+    """
     rvs, pset, sset = model.random_variables, model.parameters, model.statements
     etas = _get_etas(rvs, sset, list_of_parameters)
     iovs, etais = ModelStatements(), ModelStatements()
@@ -140,7 +150,7 @@ def _get_etas(rvs, sset, list_of_parameters):
                 try:
                     exp_symbs = sset.find_assignment(param).expression.free_symbols
                 except AttributeError:
-                    raise RVNotFoundException(f'Symbol/random variable "{param}" does not exist')
+                    raise KeyError(f'Symbol/random variable "{param}" does not exist')
                 etas += [
                     rvs[str(e)]
                     for e in exp_symbs.intersection(rvs.free_symbols)
@@ -157,7 +167,7 @@ def _get_occ_levels(df, occ):
 def _round_categories(categories):
     categories_rounded = []
     for c in categories:
-        if c.is_integer():
+        if not isinstance(c, int) or c.is_integer():
             categories_rounded.append(int(c))
         else:
             categories_rounded.append(c)

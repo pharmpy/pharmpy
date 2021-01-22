@@ -468,12 +468,27 @@ def john_draper(args):
     write_model_or_dataset(model, None, path=args.output_file, force=False)
 
 
-def add_etas(args):
-    """Subcommand to add new etas to model."""
+def add_iiv(args):
+    """Subcommand to add new IIVs to model."""
     from pharmpy.modeling import add_iiv
 
     model = args.model
     add_iiv(model, args.param, args.expression, args.operation)
+
+    write_model_or_dataset(model, model.dataset, path=args.output_file, force=False)
+
+
+def add_iov(args):
+    """Subcommand to add new IOVs to model."""
+    from pharmpy.modeling import add_iov
+
+    model = args.model
+    try:
+        etas = args.etas.split(" ")
+    except AttributeError:
+        etas = args.etas
+
+    add_iov(model, args.occ, etas)
 
     write_model_or_dataset(model, model.dataset, path=args.output_file, force=False)
 
@@ -1145,10 +1160,10 @@ parser_definition = [
                     }
                 },
                 {
-                    'add_etas': {
-                        'help': 'Adds etas',
-                        'description': 'Add etas to a model parameter',
-                        'func': add_etas,
+                    'add_iiv': {
+                        'help': 'Adds IIVs',
+                        'description': 'Add IIVs to a model parameter',
+                        'func': add_iiv,
                         'parents': [args_model_input, args_output],
                         'args': [
                             {'name': 'param', 'type': str, 'help': 'Individual parameter'},
@@ -1158,6 +1173,29 @@ parser_definition = [
                                 'type': str,
                                 'default': '*',
                                 'help': 'Whether effect should be added or multiplied',
+                            },
+                        ],
+                    }
+                },
+                {
+                    'add_iov': {
+                        'help': 'Adds IOVs',
+                        'description': 'Add IOVs to a random variable or a specified model '
+                        'parameter',
+                        'func': add_iov,
+                        'parents': [args_model_input, args_output],
+                        'args': [
+                            {
+                                'name': 'occ',
+                                'type': str,
+                                'help': 'Name of occasion column',
+                            },
+                            {
+                                'name': '--etas',
+                                'type': str,
+                                'default': None,
+                                'help': 'List of etas or parameters, mark group of etas in single '
+                                'quote separated by spaces',
                             },
                         ],
                     }
