@@ -110,11 +110,10 @@ def _create_new_etas(etas_original, transformation):
     else:
         eta_new = 'etan'
 
-    for i, eta in enumerate(etas_original):
-        eta_no = int(re.findall(r'\d', eta.name)[0])
-        etas_subs[eta.name] = f'{eta_new.upper()}{eta_no}'
-        etas_assignment[f'{eta_new}{i + 1}'] = f'{eta_new.upper()}{eta_no}'
-        etas_assignment[f'eta{i + 1}'] = f'ETA({eta_no})'
+    for i, eta in enumerate(etas_original, 1):
+        etas_subs[eta.name] = f'{eta_new.upper()}{i}'
+        etas_assignment[f'{eta_new}{i}'] = f'{eta_new.upper()}{i}'
+        etas_assignment[f'eta{i}'] = eta.name
 
     return etas_assignment, etas_subs
 
