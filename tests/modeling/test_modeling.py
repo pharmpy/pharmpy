@@ -1276,22 +1276,26 @@ def test_john_draper(pheno_path, etas, etad, buf_new):
 
 
 @pytest.mark.parametrize(
-    'parameter, expression, operation, buf_new',
+    'parameter, expression, operation, eta_name, buf_new',
     [
-        ('S1', 'exp', '+', 'V=TVV*EXP(ETA(2))\nS1 = V + EXP(ETA(3))'),
-        ('S1', 'exp', '*', 'V=TVV*EXP(ETA(2))\nS1 = V*EXP(ETA(3))'),
-        ('V', 'exp', '+', 'V = TVV*EXP(ETA(2)) + EXP(ETA(3))\nS1=V'),
-        ('S1', 'add', None, 'V=TVV*EXP(ETA(2))\nS1 = V + ETA(3)'),
-        ('S1', 'prop', None, 'V=TVV*EXP(ETA(2))\nS1 = ETA(3)*V'),
-        ('S1', 'log', None, 'V=TVV*EXP(ETA(2))\nS1 = V*EXP(ETA(3))/(EXP(ETA(3)) + 1)'),
-        ('S1', 'eta_new', '+', 'V=TVV*EXP(ETA(2))\nS1 = V + ETA(3)'),
-        ('S1', 'eta_new**2', '+', 'V=TVV*EXP(ETA(2))\nS1 = V + ETA(3)**2'),
+        ('S1', 'exp', '+', None, 'V=TVV*EXP(ETA(2))\nS1 = V + EXP(ETA(3))'),
+        ('S1', 'exp', '*', None, 'V=TVV*EXP(ETA(2))\nS1 = V*EXP(ETA(3))'),
+        ('V', 'exp', '+', None, 'V = TVV*EXP(ETA(2)) + EXP(ETA(3))\nS1=V'),
+        ('S1', 'add', None, None, 'V=TVV*EXP(ETA(2))\nS1 = V + ETA(3)'),
+        ('S1', 'prop', None, None, 'V=TVV*EXP(ETA(2))\nS1 = ETA(3)*V'),
+        ('S1', 'log', None, None, 'V=TVV*EXP(ETA(2))\nS1 = V*EXP(ETA(3))/(EXP(ETA(3)) + 1)'),
+        ('S1', 'eta_new', '+', None, 'V=TVV*EXP(ETA(2))\nS1 = V + ETA(3)'),
+        ('S1', 'eta_new**2', '+', None, 'V=TVV*EXP(ETA(2))\nS1 = V + ETA(3)**2'),
+        ('S1', 'exp', '+', 'ETA(3)', 'V=TVV*EXP(ETA(2))\nS1 = V + EXP(ETA(3))'),
     ],
 )
-def test_add_iiv(pheno_path, parameter, expression, operation, buf_new):
+def test_add_iiv(pheno_path, parameter, expression, operation, eta_name, buf_new):
     model = Model(pheno_path)
 
-    add_iiv(model, parameter, expression, operation)
+    add_iiv(model, parameter, expression, operation, eta_name)
+
+    assert eta_name in [eta.name for eta in model.random_variables.etas] or eta_name is None
+
     model.update_source()
 
     rec_ref = (
@@ -1702,10 +1706,11 @@ def test_des(testdata, model_path, transformation):
 
 
 @pytest.mark.parametrize(
-    'etas, pk_start_ref, pk_end_ref, omega_ref',
+    'etas, eta_names, pk_start_ref, pk_end_ref, omega_ref',
     [
         (
             ['ETA(1)'],
+            None,
             'IOV_1 = 0\n'
             'IF (FA1.EQ.0) IOV_1 = ETA(3)\n'
             'IF (FA1.EQ.1) IOV_1 = ETA(4)\n'
@@ -1716,6 +1721,7 @@ def test_des(testdata, model_path, transformation):
             '$OMEGA  BLOCK(1) SAME ; OMEGA_IOV_1\n',
         ),
         (
+            None,
             None,
             'IOV_1 = 0\n'
             'IF (FA1.EQ.0) IOV_1 = ETA(3)\n'
@@ -1735,6 +1741,7 @@ def test_des(testdata, model_path, transformation):
         ),
         (
             ['CL'],
+            None,
             'IOV_1 = 0\n'
             'IF (FA1.EQ.0) IOV_1 = ETA(3)\n'
             'IF (FA1.EQ.1) IOV_1 = ETA(4)\n'
@@ -1746,6 +1753,7 @@ def test_des(testdata, model_path, transformation):
         ),
         (
             ['CL', 'ETA(1)'],
+            None,
             'IOV_1 = 0\n'
             'IF (FA1.EQ.0) IOV_1 = ETA(3)\n'
             'IF (FA1.EQ.1) IOV_1 = ETA(4)\n'
@@ -1757,6 +1765,7 @@ def test_des(testdata, model_path, transformation):
         ),
         (
             ['ETA(1)', 'CL'],
+            None,
             'IOV_1 = 0\n'
             'IF (FA1.EQ.0) IOV_1 = ETA(3)\n'
             'IF (FA1.EQ.1) IOV_1 = ETA(4)\n'
@@ -1768,6 +1777,7 @@ def test_des(testdata, model_path, transformation):
         ),
         (
             ['CL', 'ETA(2)'],
+            None,
             'IOV_1 = 0\n'
             'IF (FA1.EQ.0) IOV_1 = ETA(3)\n'
             'IF (FA1.EQ.1) IOV_1 = ETA(4)\n'
@@ -1784,12 +1794,26 @@ def test_des(testdata, model_path, transformation):
             '0.0031128 ; OMEGA_IOV_2\n'
             '$OMEGA  BLOCK(1) SAME ; OMEGA_IOV_2\n',
         ),
+        (
+            ['ETA(1)'],
+            ['ETA(3)', 'ETA(4)'],
+            'IOV_1 = 0\n'
+            'IF (FA1.EQ.0) IOV_1 = ETA(3)\n'
+            'IF (FA1.EQ.1) IOV_1 = ETA(4)\n'
+            'ETAI1 = IOV_1 + ETA(1)\n',
+            'CL = TVCL*EXP(ETAI1)\n' 'V=TVV*EXP(ETA(2))\n',
+            '$OMEGA  BLOCK(1)\n'
+            '0.00309626 ; OMEGA_IOV_1\n'
+            '$OMEGA  BLOCK(1) SAME ; OMEGA_IOV_1\n',
+        ),
     ],
 )
-def test_add_iov(pheno_path, etas, pk_start_ref, pk_end_ref, omega_ref):
+def test_add_iov(pheno_path, etas, eta_names, pk_start_ref, pk_end_ref, omega_ref):
     model = Model(pheno_path)
-    add_iov(model, 'FA1', etas)
+    add_iov(model, 'FA1', etas, eta_names)
     model.update_source()
+
+    assert eta_names is None or eta_names[0] in [eta.name for eta in model.random_variables.etas]
 
     pk_rec = str(model.get_pred_pk_record())
 

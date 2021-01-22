@@ -473,7 +473,7 @@ def add_iiv(args):
     from pharmpy.modeling import add_iiv
 
     model = args.model
-    add_iiv(model, args.param, args.expression, args.operation)
+    add_iiv(model, args.param, args.expression, args.operation, args.eta_name)
 
     write_model_or_dataset(model, model.dataset, path=args.output_file, force=False)
 
@@ -488,7 +488,12 @@ def add_iov(args):
     except AttributeError:
         etas = args.etas
 
-    add_iov(model, args.occ, etas)
+    try:
+        eta_names = args.eta_names.split(" ")
+    except AttributeError:
+        pass
+
+    add_iov(model, args.occ, etas, eta_names)
 
     write_model_or_dataset(model, model.dataset, path=args.output_file, force=False)
 
@@ -1174,6 +1179,12 @@ parser_definition = [
                                 'default': '*',
                                 'help': 'Whether effect should be added or multiplied',
                             },
+                            {
+                                'name': '--eta_name',
+                                'type': str,
+                                'default': None,
+                                'help': 'Optional custom name of new eta',
+                            },
                         ],
                     }
                 },
@@ -1196,6 +1207,14 @@ parser_definition = [
                                 'default': None,
                                 'help': 'List of etas or parameters, mark group of etas in single '
                                 'quote separated by spaces',
+                            },
+                            {
+                                'name': '--eta_names',
+                                'type': str,
+                                'default': None,
+                                'help': 'Optional custom names of new etas. Must be equal to the '
+                                'number of input etas times the number of categories for '
+                                'occasion.',
                             },
                         ],
                     }

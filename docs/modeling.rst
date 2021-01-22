@@ -537,6 +537,15 @@ The new etas need to be denoted as *eta_new*.
    model.update_source()
    print_model_diff(model_ref, model)
 
+You can also provide a custom eta name.
+
+.. jupyter-execute::
+
+   model = Model(path / "pheno.mod")
+   add_iiv(model, 'S1', 'exp', eta_name='ETA(3)')
+   model.update_source()
+   model.random_variables
+
 
 Adding IOVs
 ~~~~~~~~~~~
@@ -586,6 +595,26 @@ supported.
    add_iov(model, 'FA1', ['CL', 'ETA(2)'])
    model.update_source()
    print_model_diff(model_ref, model)
+
+Custom eta names are supported. Not that the number of names must be equal to the number of created etas
+(i.e. the number of input etas times the number of categories for occasion).
+
+.. jupyter-execute::
+
+   model = Model(path / "pheno.mod")
+
+.. jupyter-execute::
+   :hide-output:
+   :hide-code:
+
+   model.dataset['FA1'] = np.random.randint(0, 2, len(model.dataset.index))
+
+.. jupyter-execute::
+
+   add_iov(model, 'FA1', ['ETA(1)'], eta_names=['ETA(3)', 'ETA(4)'])
+   model.update_source()
+   model.random_variables
+
 
 ~~~~~~~~~~~~~
 Removing etas

@@ -56,12 +56,14 @@ def test_eta_transformation(datadir, fs, transformation, eta):
 
 
 @pytest.mark.parametrize('fs', [[['pkgutil'], [source, etas_record]]], indirect=True)
-@pytest.mark.parametrize('operation', ['*', '+'])
-def test_add_iiv(datadir, fs, operation):
+@pytest.mark.parametrize(
+    'options', [['--operation', '+'], ['--operation', '*'], ['--eta_name', 'ETA(3)']]
+)
+def test_add_iiv(datadir, fs, options):
     fs.add_real_file(datadir / 'pheno_real.mod', target_path='run1.mod')
     fs.add_real_file(datadir / 'pheno.dta', target_path='pheno.dta')
 
-    args = ['model', 'add_iiv', 'run1.mod', 'S1', 'exp', '--operation', operation]
+    args = ['model', 'add_iiv', 'run1.mod', 'S1', 'exp'] + options
     cli.main(args)
 
     with open('run1.mod', 'r') as f_ori, open('run2.mod', 'r') as f_cov:
@@ -75,11 +77,12 @@ def test_add_iiv(datadir, fs, operation):
 
 
 @pytest.mark.parametrize('fs', [[['pkgutil'], [source, etas_record]]], indirect=True)
-def test_add_iov(datadir, fs):
+@pytest.mark.parametrize('options', [['--eta_names', 'ETA(3) ETA(4)']])
+def test_add_iov(datadir, fs, options):
     fs.add_real_file(datadir / 'pheno_real.mod', target_path='run1.mod')
     fs.add_real_file(datadir / 'pheno.dta', target_path='pheno.dta')
 
-    args = ['model', 'add_iov', 'run1.mod', 'FA1', '--etas', 'ETA(1)']
+    args = ['model', 'add_iov', 'run1.mod', 'FA1', '--etas', 'ETA(1)'] + options
     cli.main(args)
 
     with open('run1.mod', 'r') as f_ori, open('run2.mod', 'r') as f_cov:

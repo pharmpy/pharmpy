@@ -14,7 +14,7 @@ from pharmpy.statements import Assignment, ModelStatements
 from pharmpy.symbols import symbol as S
 
 
-def add_iiv(model, parameter, expression, operation='*'):
+def add_iiv(model, parameter, expression, operation='*', eta_name=None):
     """
     Adds IIVs to :class:`pharmpy.model`. Effects that currently have templates are:
 
@@ -36,11 +36,16 @@ def add_iiv(model, parameter, expression, operation='*'):
         Effect on eta. Either abbreviated (see above) or custom.
     operation : str, optional
         Whether the new IIV should be added or multiplied (default).
+    eta_name: str, optional
+        Custom name of new eta
     """
     rvs, pset, sset = model.random_variables, model.parameters, model.statements
 
     omega = S(f'IIV_{parameter}')
-    eta = stats.Normal(f'ETA_{parameter}', 0, sympy.sqrt(omega))
+    if not eta_name:
+        eta_name = f'ETA_{parameter}'
+
+    eta = stats.Normal(eta_name, 0, sympy.sqrt(omega))
     eta.variability_level = VariabilityLevel.IIV
 
     rvs.add(eta)
@@ -59,7 +64,7 @@ def add_iiv(model, parameter, expression, operation='*'):
     return model
 
 
-def add_iov(model, occ, list_of_parameters=None):
+def add_iov(model, occ, list_of_parameters=None, eta_names=None):
     """
     Adds IOVs to :class:`pharmpy.model`. Initial estimate of new IOVs are 10% of the IIV eta
     it is based on.
@@ -73,12 +78,20 @@ def add_iov(model, occ, list_of_parameters=None):
     list_of_parameters : list
         List of names of parameters and random variables. Accepts random variable names, parameter
         names, or a mix of both.
+    eta_names: list
+        Custom names of new etas. Must be equal to the number of input etas times the number of
+        categories for occasion.
     """
     rvs, pset, sset = model.random_variables, model.parameters, model.statements
     etas = _get_etas(rvs, sset, list_of_parameters)
     iovs, etais = ModelStatements(), ModelStatements()
 
     categories = _get_occ_levels(model.dataset, occ)
+
+    if eta_names and len(eta_names) != len(etas) * len(categories):
+        raise ValueError(
+            f'Number of provided names incorrect, need {len(etas) * len(categories)} names.'
+        )
 
     for i, eta in enumerate(etas, 1):
         omega_name = str(next(iter(eta.pspace.distribution.free_symbols)))
@@ -90,7 +103,12 @@ def add_iov(model, occ, list_of_parameters=None):
         values, conditions = [], []
 
         for j, cat in enumerate(categories, 1):
-            eta_new = stats.Normal(f'ETA_IOV_{i}{j}', 0, sympy.sqrt(omega))
+            if eta_names:
+                eta_name = eta_names[j - 1]
+            else:
+                eta_name = f'ETA_IOV_{i}{j}'
+
+            eta_new = stats.Normal(eta_name, 0, sympy.sqrt(omega))
             eta_new.variability_level = VariabilityLevel.IOV
 
             rvs.add(eta_new)
