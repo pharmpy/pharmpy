@@ -41,3 +41,6 @@ def test_pk_parameters(testdata):
     assert df['mean'].loc['Tmax', 'median'] == pytest.approx(1.6012919051165513)
     assert df['variance'].loc['Tmax', 'median'] == pytest.approx(0.2992886152583829)
     assert df['stderr'].loc['Tmax', 'median'] == pytest.approx(0.5565206657252156)
+    assert df['mean'].loc['Cmax/dose', 'median'] == pytest.approx(0.630597022391845)
+    assert df['variance'].loc['Cmax/dose', 'median'] == pytest.approx(0.012201307770739035)
+    assert df['stderr'].loc['Cmax/dose', 'median'] == pytest.approx(0.11151092285209177)

@@ -526,14 +526,22 @@ class ModelfitResults(Results):
             expr = sols[1].rhs
             d = sympy.diff(expr, odes.t)
             tmax_closed_form = sympy.solve(d, odes.t)[0]
+            e2 = sympy.simplify(expr / depot.dose.amount / sympy.denom(elimination_rate))
+            cmax_dose_closed_form = sympy.simplify(e2.subs({odes.t: tmax_closed_form}))
         else:
             tmax_closed_form = None
+            cmax_dose_closed_form = None
 
         if tmax_closed_form is not None:
             df = self.individual_parameter_statistics(tmax_closed_form)
             df.reset_index(inplace=True)
             df['parameter'] = 'Tmax'
             df.set_index(['parameter', 'covariates'], inplace=True)
+            inter = self.individual_parameter_statistics(cmax_dose_closed_form)
+            inter.reset_index(inplace=True)
+            inter['parameter'] = 'Cmax/dose'
+            inter.set_index(['parameter', 'covariates'], inplace=True)
+            df = pd.concat([df, inter])
             return df
         else:
             return None
