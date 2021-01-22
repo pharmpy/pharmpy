@@ -12,7 +12,7 @@ from pharmpy.random_variables import VariabilityLevel
 from pharmpy.symbols import symbol as S
 
 
-def iiv_on_ruv(model, list_of_eps=None, same_eta=True):
+def iiv_on_ruv(model, list_of_eps=None, same_eta=True, eta_names=None):
     """
     Multiplies epsilons with exponential (new) etas. Initial estimates for new etas are 0.09.
 
@@ -32,11 +32,11 @@ def iiv_on_ruv(model, list_of_eps=None, same_eta=True):
     rvs, pset, sset = model.random_variables, model.parameters, model.statements
 
     if same_eta:
-        eta = _create_eta(pset, 1)
+        eta = _create_eta(pset, 1, eta_names)
         rvs.add(eta)
         eta_dict = {e: eta for e in eps}
     else:
-        etas = [_create_eta(pset, i + 1) for i in range(len(eps))]
+        etas = [_create_eta(pset, i + 1, eta_names) for i in range(len(eps))]
         for eta in etas:
             rvs.add(eta)
         eta_dict = {e: eta for e, eta in zip(eps, etas)}
@@ -71,11 +71,16 @@ def _get_epsilons(model, list_of_eps):
         return eps
 
 
-def _create_eta(pset, number):
+def _create_eta(pset, number, eta_names):
     omega = S(f'IIV_RUV{number}')
     pset.add(Parameter(str(omega), 0.09))
 
-    eta = stats.Normal(f'RV{number}', 0, sympy.sqrt(omega))
+    if eta_names:
+        eta_name = eta_names[number - 1]
+    else:
+        eta_name = f'RV{number}'
+
+    eta = stats.Normal(eta_name, 0, sympy.sqrt(omega))
     eta.variability_level = VariabilityLevel.IIV
 
     return eta

@@ -491,7 +491,7 @@ def add_iov(args):
     try:
         eta_names = args.eta_names.split(" ")
     except AttributeError:
-        pass
+        eta_names = args.eta_names
 
     add_iov(model, args.occ, etas, eta_names)
 
@@ -525,7 +525,12 @@ def iiv_on_ruv(args):
     except AttributeError:
         eps = args.eps
 
-    iiv_on_ruv(model, eps, args.same_eta)
+    try:
+        eta_names = args.eta_names.split(" ")
+    except AttributeError:
+        eta_names = args.eta_names
+
+    iiv_on_ruv(model, eps, args.same_eta, eta_names)
 
     write_model_or_dataset(model, model.dataset, path=args.output_file, force=False)
 
@@ -1259,6 +1264,14 @@ parser_definition = [
                                 'default': True,
                                 'help': 'whether all RUVs from input should use the same new ETA '
                                 'or if one ETA should be created for each RUV.',
+                            },
+                            {
+                                'name': '--eta_names',
+                                'type': str,
+                                'default': None,
+                                'help': 'Optional custom names of new etas. Must be equal to the '
+                                'number of input etas times the number of categories for '
+                                'occasion.',
                             },
                         ],
                     }

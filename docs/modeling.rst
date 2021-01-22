@@ -537,7 +537,7 @@ The new etas need to be denoted as *eta_new*.
    model.update_source()
    print_model_diff(model_ref, model)
 
-You can also provide a custom eta name.
+You can also provide a custom eta name, i.e the name of the internal representation of the eta in Pharmpy.
 
 .. jupyter-execute::
 
@@ -596,8 +596,14 @@ supported.
    model.update_source()
    print_model_diff(model_ref, model)
 
-Custom eta names are supported. Not that the number of names must be equal to the number of created etas
-(i.e. the number of input etas times the number of categories for occasion).
+.. _add_iov_custom_names:
+
+Custom eta names are supported, meaning that the internal representation of the eta in Pharmpy can be set via
+the eta_names argument.
+
+.. warning::
+The number of names must be equal to the number of created etas (i.e. the number of
+input etas times the number of categories for occasion).
 
 .. jupyter-execute::
 
@@ -776,6 +782,15 @@ transformed.
 
 See :py:func:`pharmpy.modeling.iiv_on_ruv`.
 
+Custom eta names are supported the same way as when :ref:`adding IOVs<add_iov_custom_names>`.
+
+.. jupyter-execute::
+
+   model = Model(path / "pheno.mod")
+   iiv_on_ruv(model, ['EPS(1)'], eta_names=['ETA(3)'])
+   model.random_variables
+
+
 Power effects on RUVs
 ~~~~~~~~~~~~~~~~~~~~~
 
@@ -836,5 +851,3 @@ pharmpy model. See :py:func:`pharmpy.modeling.update_inits`.
 
    update_inits(model, force_individual_estimates=True)
    model.update_source(nofiles=True)
-   print_model_diff(model_ref, model)
-
