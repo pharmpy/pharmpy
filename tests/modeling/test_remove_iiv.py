@@ -19,5 +19,5 @@ def test_get_etas(testdata):
     etas = _get_etas(model, ['ETA(1)', 'S1'])
     assert len(etas) == 4
 
-    with pytest.raises(Exception):
+    with pytest.raises(KeyError):
         _get_etas(model, ['ETA(23)'])

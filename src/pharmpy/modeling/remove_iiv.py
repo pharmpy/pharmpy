@@ -7,10 +7,6 @@ from pharmpy.statements import Assignment
 from pharmpy.symbols import symbol as S
 
 
-class RVInputException(Exception):
-    pass
-
-
 def remove_iiv(model, list_to_remove=None):
     """
     Removes all IIV omegas given a list with eta names and/or parameter names.
@@ -57,11 +53,11 @@ def _get_etas(model, list_to_remove):
                 symbols.append(variable)
                 continue
             else:
-                raise RVInputException(f'Random variable does not exist: {variable}')
+                raise KeyError(f'Random variable does not exist: {variable}')
 
         if eta.variability_level == VariabilityLevel.IOV:
             if list_to_remove:
-                raise RVInputException(f'Random variable cannot be IOV: {variable}')
+                raise ValueError(f'Random variable cannot be IOV: {variable}')
             continue
 
         etas.append(eta)
