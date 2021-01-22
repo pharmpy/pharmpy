@@ -465,11 +465,16 @@ class CompartmentalSystem(ODESystem):
         dod = nx.to_dict_of_dicts(self._g)
         size = len(self._g.nodes)
         f = sympy.zeros(size)
+        nodes = list(self._g.nodes)
+        output = self.find_output()
+        # Put output last
+        nodes.remove(output)
+        nodes.append(output)
         for i in range(0, size):
-            from_comp = list(self._g.nodes)[i]
+            from_comp = nodes[i]
             diagsum = 0
             for j in range(0, size):
-                to_comp = list(self._g.nodes)[j]
+                to_comp = nodes[j]
                 try:
                     rate = dod[from_comp][to_comp]['rate']
                 except KeyError:
