@@ -14,6 +14,10 @@ from pharmpy.statements import Assignment, ModelStatements
 from pharmpy.symbols import symbol as S
 
 
+class RVNotFoundException(Exception):
+    pass
+
+
 def add_iiv(model, parameter, expression, operation='*'):
     """
     Adds etas to :class:`pharmpy.model`. Effects that currently have templates are:
@@ -59,9 +63,9 @@ def add_iiv(model, parameter, expression, operation='*'):
     return model
 
 
-def add_iov(model, occ, list_of_etas=None):
+def add_iov(model, occ, list_of_parameters=None):
     rvs, pset, sset = model.random_variables, model.parameters, model.statements
-    etas = _get_etas(rvs, list_of_etas)
+    etas = _get_etas(rvs, sset, list_of_parameters)
     iovs, etais = ModelStatements(), ModelStatements()
 
     categories = _get_occ_levels(model.dataset, occ)
@@ -123,13 +127,25 @@ def _get_operation_func(operation):
         return add
 
 
-def _get_etas(rvs, list_of_etas):
-    if list_of_etas is None:
+def _get_etas(rvs, sset, list_of_parameters):
+    if list_of_parameters is None:
         return rvs.etas
     else:
         etas = []
-        for eta in list_of_etas:
-            etas.append(rvs[eta.upper()])
+        for param in list_of_parameters:
+            try:
+                if rvs[param.upper()] not in etas:
+                    etas.append(rvs[param.upper()])
+            except KeyError:
+                try:
+                    exp_symbs = sset.find_assignment(param).expression.free_symbols
+                except AttributeError:
+                    raise RVNotFoundException(f'Symbol/random variable "{param}" does not exist')
+                etas += [
+                    rvs[str(e)]
+                    for e in exp_symbs.intersection(rvs.free_symbols)
+                    if rvs[str(e)] not in etas
+                ]
         return etas
 
 

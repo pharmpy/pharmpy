@@ -1733,6 +1733,57 @@ def test_des(testdata, model_path, transformation):
             '0.0031128 ; OMEGA_IOV_2\n'
             '$OMEGA  BLOCK(1) SAME ; OMEGA_IOV_2\n',
         ),
+        (
+            ['CL'],
+            'IOV_1 = 0\n'
+            'IF (FA1.EQ.0) IOV_1 = ETA(3)\n'
+            'IF (FA1.EQ.1) IOV_1 = ETA(4)\n'
+            'ETAI1 = IOV_1 + ETA(1)\n',
+            'CL = TVCL*EXP(ETAI1)\n' 'V=TVV*EXP(ETA(2))\n',
+            '$OMEGA  BLOCK(1)\n'
+            '0.00309626 ; OMEGA_IOV_1\n'
+            '$OMEGA  BLOCK(1) SAME ; OMEGA_IOV_1\n',
+        ),
+        (
+            ['CL', 'ETA(1)'],
+            'IOV_1 = 0\n'
+            'IF (FA1.EQ.0) IOV_1 = ETA(3)\n'
+            'IF (FA1.EQ.1) IOV_1 = ETA(4)\n'
+            'ETAI1 = IOV_1 + ETA(1)\n',
+            'CL = TVCL*EXP(ETAI1)\n' 'V=TVV*EXP(ETA(2))\n',
+            '$OMEGA  BLOCK(1)\n'
+            '0.00309626 ; OMEGA_IOV_1\n'
+            '$OMEGA  BLOCK(1) SAME ; OMEGA_IOV_1\n',
+        ),
+        (
+            ['ETA(1)', 'CL'],
+            'IOV_1 = 0\n'
+            'IF (FA1.EQ.0) IOV_1 = ETA(3)\n'
+            'IF (FA1.EQ.1) IOV_1 = ETA(4)\n'
+            'ETAI1 = IOV_1 + ETA(1)\n',
+            'CL = TVCL*EXP(ETAI1)\n' 'V=TVV*EXP(ETA(2))\n',
+            '$OMEGA  BLOCK(1)\n'
+            '0.00309626 ; OMEGA_IOV_1\n'
+            '$OMEGA  BLOCK(1) SAME ; OMEGA_IOV_1\n',
+        ),
+        (
+            ['CL', 'ETA(2)'],
+            'IOV_1 = 0\n'
+            'IF (FA1.EQ.0) IOV_1 = ETA(3)\n'
+            'IF (FA1.EQ.1) IOV_1 = ETA(4)\n'
+            'IOV_2 = 0\n'
+            'IF (FA1.EQ.0) IOV_2 = ETA(5)\n'
+            'IF (FA1.EQ.1) IOV_2 = ETA(6)\n'
+            'ETAI1 = IOV_1 + ETA(1)\n'
+            'ETAI2 = IOV_2 + ETA(2)\n',
+            'CL = TVCL*EXP(ETAI1)\n' 'V = TVV*EXP(ETAI2)\n',
+            '$OMEGA  BLOCK(1)\n'
+            '0.00309626 ; OMEGA_IOV_1\n'
+            '$OMEGA  BLOCK(1) SAME ; OMEGA_IOV_1\n'
+            '$OMEGA  BLOCK(1)\n'
+            '0.0031128 ; OMEGA_IOV_2\n'
+            '$OMEGA  BLOCK(1) SAME ; OMEGA_IOV_2\n',
+        ),
     ],
 )
 def test_add_iov(pheno_path, etas, pk_start_ref, pk_end_ref, omega_ref):
