@@ -512,14 +512,17 @@ class CompartmentalSystem(ODESystem):
                 inputs.append(0)
         return sympy.Matrix(inputs)
 
-    def to_explicit_odes(self):
+    def to_explicit_odes(self, skip_output=False):
         amount_funcs = sympy.Matrix([sympy.Function(amt.name)(self.t) for amt in self.amounts])
         derivatives = sympy.Matrix([sympy.Derivative(fn, self.t) for fn in amount_funcs])
         inputs = self.zero_order_inputs
         a = self.compartmental_matrix @ amount_funcs + inputs
         eqs = [sympy.Eq(lhs, rhs) for lhs, rhs in zip(derivatives, a)]
         ics = {}
+        output = self.find_output()
         for node in self._g.nodes:
+            if skip_output and node == output:
+                continue
             if node.dose is not None and isinstance(node.dose, Bolus):
                 if node.lag_time:
                     time = node.lag_time
@@ -528,6 +531,8 @@ class CompartmentalSystem(ODESystem):
                 ics[sympy.Function(node.amount.name)(time)] = node.dose.amount
             else:
                 ics[sympy.Function(node.amount.name)(0)] = sympy.Integer(0)
+        if skip_output:
+            eqs = eqs[:-1]
         return eqs, ics
 
     def __len__(self):

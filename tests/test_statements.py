@@ -249,6 +249,17 @@ def test_before_ode(pheno_path):
     assert before_ode[-1].symbol.name == 'S1'
 
 
+def test_to_explicit_ode_system(pheno_path):
+    model = Model(pheno_path)
+    odes, ics = model.statements.ode_system.to_explicit_odes(skip_output=True)
+    assert len(odes) == 1
+    assert len(ics) == 1
+
+    odes, ics = model.statements.ode_system.to_explicit_odes()
+    assert len(odes) == 2
+    assert len(ics) == 2
+
+
 def test_print_custom(pheno_path):
     model = Model(pheno_path)
     s = model.statements.find_assignment('Y')
