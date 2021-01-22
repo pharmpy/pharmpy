@@ -32,3 +32,12 @@ def test_individual_parameter_statistics(testdata):
     assert stats['mean']['p95'] == pytest.approx(0.014618964871102277)
     assert stats['variance']['p95'] == pytest.approx(3.0746876963740084e-05)
     assert stats['stderr']['p95'] == pytest.approx(0.007186921810266427, abs=1e-6)
+
+
+def test_pk_parameters(testdata):
+    model = Model(testdata / 'nonmem' / 'models' / 'mox1.mod')
+    np.random.seed(103)
+    df = model.modelfit_results.pk_parameters()
+    assert df['mean'].loc['Tmax', 'median'] == pytest.approx(1.6012919051165513)
+    assert df['variance'].loc['Tmax', 'median'] == pytest.approx(0.2992886152583829)
+    assert df['stderr'].loc['Tmax', 'median'] == pytest.approx(0.5565206657252156)

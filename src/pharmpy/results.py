@@ -509,7 +509,34 @@ class ModelfitResults(Results):
                     samples.extend(list(batch))
             stderr = pd.Series(samples).std()
             df.loc[case] = [mean, variance, stderr]
+            df.index.name = 'covariates'
         return df
+
+    def pk_parameters(self):
+        statements = self.model.statements
+        odes = statements.ode_system
+        central = odes.find_central()
+        output = odes.find_output()
+        depot = odes.find_depot(statements)
+        elimination_rate = odes.get_flow(central, output)
+        # FO abs + CENTRAL + FO elimination
+        if len(odes) == 3 and depot and odes.t not in elimination_rate.free_symbols:
+            ode_list, ics = odes.to_explicit_odes(skip_output=True)
+            sols = sympy.dsolve(ode_list, ics=ics)
+            expr = sols[1].rhs
+            d = sympy.diff(expr, odes.t)
+            tmax_closed_form = sympy.solve(d, odes.t)[0]
+        else:
+            tmax_closed_form = None
+
+        if tmax_closed_form is not None:
+            df = self.individual_parameter_statistics(tmax_closed_form)
+            df.reset_index(inplace=True)
+            df['parameter'] = 'Tmax'
+            df.set_index(['parameter', 'covariates'], inplace=True)
+            return df
+        else:
+            return None
 
 
 class ChainedModelfitResults(list, ModelfitResults):
@@ -582,5 +609,8 @@ class ChainedModelfitResults(list, ModelfitResults):
 
     def individual_parameter_statistics(self, expr):
         return self[-1].individual_parameter_statistics(expr)
+
+    def pk_parameters(self):
+        return self[-1].pk_parameters()
 
     # FIXME: To not have to manually intercept everything here. Could do it in a general way.
