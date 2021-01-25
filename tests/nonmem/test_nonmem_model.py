@@ -29,7 +29,7 @@ def test_update_inits(pheno_path):
     model = Model(pheno_path)
     model.update_inits()
 
-    with ConfigurationContext(conf, parameter_names='comment'):
+    with ConfigurationContext(conf, parameter_names=['comment', 'basic']):
         model = Model(pheno_path)
         model.update_inits()
         model.update_source()
@@ -492,7 +492,7 @@ def test_remove_eta(pheno_path):
 
 
 def test_symbol_names_in_comment(pheno_path):
-    with ConfigurationContext(conf, parameter_names='comment'):
+    with ConfigurationContext(conf, parameter_names=['comment', 'basic']):
         model = Model(pheno_path)
         assert model.statements[2].expression == S('PTVCL') * S('WGT')
 
@@ -514,8 +514,14 @@ $ESTIMATION METHOD=1 INTER MAXEVALS=9990 PRINT=2 POSTHOC
             assert model.parameters.names == ['THETA(1)', 'OMEGA(1,1)', 'SIGMA(1,1)']
 
 
+def test_symbol_names_in_abbr(pheno_path):
+    with ConfigurationContext(conf, parameter_names=['comment', 'basic']):
+        model = Model(pheno_path)
+        model.statements
+
+
 def test_clashing_parameter_names(datadir):
-    with ConfigurationContext(conf, parameter_names='comment'):
+    with ConfigurationContext(conf, parameter_names=['comment', 'basic']):
         model = Model(datadir / 'pheno_clashing_symbols.mod')
         with pytest.warns(UserWarning):
             model.statements

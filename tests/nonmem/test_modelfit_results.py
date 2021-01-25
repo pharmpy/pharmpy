@@ -110,13 +110,13 @@ def test_special_models(testdata):
 
 
 def test_covariance(pheno_path):
-    with ConfigurationContext(nonmem.conf, parameter_names='basic'):
+    with ConfigurationContext(nonmem.conf, parameter_names=['basic']):
         res = Model(pheno_path).modelfit_results
         cov = res.covariance_matrix
         assert len(cov) == 6
         assert pytest.approx(cov.loc['THETA(1)', 'THETA(1)'], 1e-13) == 4.41151e-08
         assert pytest.approx(cov.loc['OMEGA(2,2)', 'THETA(2)'], 1e-13) == 7.17184e-05
-    with ConfigurationContext(nonmem.conf, parameter_names='comment'):
+    with ConfigurationContext(nonmem.conf, parameter_names=['comment', 'basic']):
         res = Model(pheno_path).modelfit_results
         cov = res.covariance_matrix
         assert len(cov) == 6
@@ -125,13 +125,13 @@ def test_covariance(pheno_path):
 
 
 def test_information(pheno_path):
-    with ConfigurationContext(nonmem.conf, parameter_names='basic'):
+    with ConfigurationContext(nonmem.conf, parameter_names=['basic']):
         res = Model(pheno_path).modelfit_results
         m = res.information_matrix
         assert len(m) == 6
         assert pytest.approx(m.loc['THETA(1)', 'THETA(1)'], 1e-13) == 2.99556e07
         assert pytest.approx(m.loc['OMEGA(2,2)', 'THETA(2)'], 1e-13) == -2.80082e03
-    with ConfigurationContext(nonmem.conf, parameter_names='comment'):
+    with ConfigurationContext(nonmem.conf, parameter_names=['comment', 'basic']):
         res = Model(pheno_path).modelfit_results
         m = res.information_matrix
         assert len(m) == 6
@@ -140,13 +140,13 @@ def test_information(pheno_path):
 
 
 def test_correlation(pheno_path):
-    with ConfigurationContext(nonmem.conf, parameter_names='basic'):
+    with ConfigurationContext(nonmem.conf, parameter_names=['basic']):
         res = Model(pheno_path).modelfit_results
         corr = res.correlation_matrix
         assert len(corr) == 6
         assert corr.loc['THETA(1)', 'THETA(1)'] == 1.0
         assert pytest.approx(corr.loc['OMEGA(2,2)', 'THETA(2)'], 1e-13) == 3.56662e-01
-    with ConfigurationContext(nonmem.conf, parameter_names='comment'):
+    with ConfigurationContext(nonmem.conf, parameter_names=['comment', 'basic']):
         res = Model(pheno_path).modelfit_results
         corr = res.correlation_matrix
         assert len(corr) == 6
@@ -155,12 +155,12 @@ def test_correlation(pheno_path):
 
 
 def test_standard_errors(pheno_path):
-    with ConfigurationContext(nonmem.conf, parameter_names='basic'):
+    with ConfigurationContext(nonmem.conf, parameter_names=['basic']):
         res = Model(pheno_path).modelfit_results
         ses = res.standard_errors
         assert len(ses) == 6
         assert pytest.approx(ses['THETA(1)'], 1e-13) == 2.10036e-04
-    with ConfigurationContext(nonmem.conf, parameter_names='comment'):
+    with ConfigurationContext(nonmem.conf, parameter_names=['comment', 'basic']):
         res = Model(pheno_path).modelfit_results
         ses = res.standard_errors
         assert len(ses) == 6
@@ -221,13 +221,13 @@ def test_individual_estimates_covariance(pheno, pheno_lst):
 
 
 def test_parameter_estimates(pheno_path):
-    with ConfigurationContext(nonmem.conf, parameter_names='basic'):
+    with ConfigurationContext(nonmem.conf, parameter_names=['basic']):
         res = Model(pheno_path).modelfit_results
         pe = res.parameter_estimates
         assert len(pe) == 6
         assert pe['THETA(1)'] == 4.69555e-3
         assert pe['OMEGA(2,2)'] == 2.7906e-2
-    with ConfigurationContext(nonmem.conf, parameter_names='comment'):
+    with ConfigurationContext(nonmem.conf, parameter_names=['comment', 'basic']):
         res = Model(pheno_path).modelfit_results
         pe = res.parameter_estimates
         assert len(pe) == 6

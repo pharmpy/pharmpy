@@ -140,7 +140,7 @@ class OmegaRecord(Record):
         import pharmpy.plugins.nonmem as nonmem
 
         name = None
-        if nonmem.conf.parameter_names == 'comment':
+        if 'comment' in nonmem.conf.parameter_names:
             name = self._get_name(node)
             if name in seen_labels:
                 warnings.warn(

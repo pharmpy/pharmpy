@@ -78,9 +78,9 @@ from pharmpy.plugins.nonmem import conf
 )
 def test_parameters(parser, buf, comment, results):
     if comment:
-        opt = 'comment'
+        opt = ['comment', 'basic']
     else:
-        opt = 'basic'
+        opt = ['basic']
     with ConfigurationContext(conf, parameter_names=opt):
         recs = parser.parse(buf)
         rec = recs.records[0]

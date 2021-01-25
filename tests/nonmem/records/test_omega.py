@@ -132,9 +132,9 @@ def S(x):
 )
 def test_parameters(parser, buf, comment, results):
     if comment:
-        opt = 'comment'
+        opt = ['comment', 'basic']
     else:
-        opt = 'basic'
+        opt = ['basic']
     with ConfigurationContext(conf, parameter_names=opt):
         recs = parser.parse(buf)
         rec = recs.records[0]
@@ -403,7 +403,7 @@ def test_random_variables(parser):
     assert list(rvs)[0].name == 'ETA(3)'
     assert list(rvs)[1].name == 'ETA(4)'
 
-    with ConfigurationContext(conf, parameter_names='comment'):
+    with ConfigurationContext(conf, parameter_names=['comment', 'basic']):
         p = parser.parse("$OMEGA BLOCK(2) 1 ;IV1\n 0.01 ;CORR\n 1 ;IV2\n$OMEGA BLOCK(2) SAME\n")
         rec0 = p.records[0]
         rec1 = p.records[1]

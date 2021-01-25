@@ -210,7 +210,7 @@ class Model(pharmpy.model.Model):
             pass
 
         self._read_parameters()
-        if pharmpy.plugins.nonmem.conf.parameter_names == 'comment':
+        if 'comment' in pharmpy.plugins.nonmem.conf.parameter_names:
             self.statements
         return self._parameters
 
@@ -347,7 +347,7 @@ class Model(pharmpy.model.Model):
                 statements.append(Assignment('F', symbols.symbol('F')))
             statements += error.statements
 
-        if pharmpy.plugins.nonmem.conf.parameter_names == 'comment':
+        if 'comment' in pharmpy.plugins.nonmem.conf.parameter_names:
             if not hasattr(self, '_parameters'):
                 self._read_parameters()
             trans = self.parameter_translation(remove_idempotent=True, as_symbols=True)

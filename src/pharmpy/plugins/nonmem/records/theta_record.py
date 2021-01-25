@@ -54,7 +54,7 @@ class ThetaRecord(Record):
                 name = None
                 import pharmpy.plugins.nonmem as nonmem
 
-                if nonmem.conf.parameter_names == 'comment':
+                if 'comment' in nonmem.conf.parameter_names:
                     # needed to avoid circular import with Python 3.6
                     found = False
                     for subnode in self.root.tree_walk():
