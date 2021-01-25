@@ -1,3 +1,12 @@
+0.14.0 (2021-01-25)
+-------------------
+
+* Support reading $DES-records
+* Add individual_parameter_statistics to ModelfitResults
+* Add pk_parameters to ModelfitResults
+* Add add_iov to modeling 
+* Rename add_etas -> add_iiv
+
 0.13.0 (2021-01-18)
 -------------------
 
