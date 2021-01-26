@@ -518,8 +518,9 @@ class ModelfitResults(Results):
         central = odes.find_central()
         output = odes.find_output()
         depot = odes.find_depot(statements)
+        peripherals = odes.find_peripherals()
         elimination_rate = odes.get_flow(central, output)
-        # FO abs + CENTRAL + FO elimination
+        # FO abs + 1comp + FO elimination
         if len(odes) == 3 and depot and odes.t not in elimination_rate.free_symbols:
             ode_list, ics = odes.to_explicit_odes(skip_output=True)
             sols = sympy.dsolve(ode_list, ics=ics)
@@ -531,6 +532,23 @@ class ModelfitResults(Results):
         else:
             tmax_closed_form = None
             cmax_dose_closed_form = None
+
+        # Any abs + 1comp + FO elimination
+        if not peripherals and odes.t not in elimination_rate.free_symbols:
+            elimination_system = statements.copy().ode_system
+            # keep central and output
+            for name in elimination_system.names:
+                if name not in [central.name, output.name]:
+                    elimination_system.remove_compartment(elimination_system.find_compartment(name))
+                    ode_list, ics = elimination_system.to_explicit_odes(skip_output=True)
+                    A0 = sympy.Symbol('A0')
+                    ic = ics.popitem()
+                    ics = {ic[0]: A0}
+                    sols = sympy.dsolve(ode_list[0], ics=ics)
+                    eq = sympy.Eq(sympy.Rational(1, 2) * A0, sols.rhs)
+                    thalf_elim = sympy.solve(eq, odes.t)[0]
+        else:
+            thalf_elim = None
 
         if tmax_closed_form is not None:
             df = self.individual_parameter_statistics(tmax_closed_form)
