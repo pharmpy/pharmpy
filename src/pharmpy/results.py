@@ -566,7 +566,12 @@ class ModelfitResults(Results):
                     thalf_elim = sympy.solve(eq, odes.t)[0]
                     expressions.append(sympy.Eq(sympy.Symbol('t_half_elim'), thalf_elim))
 
-        return self.individual_parameter_statistics(expressions)
+        # Any abs + any comp + FO elimination
+        if odes.t not in elimination_rate.free_symbols:
+            expressions.append(sympy.Eq(sympy.Symbol('k_e'), elimination_rate))
+
+        df = self.individual_parameter_statistics(expressions)
+        return df
 
 
 class ChainedModelfitResults(list, ModelfitResults):
