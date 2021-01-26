@@ -14,7 +14,7 @@ from pharmpy.statements import Assignment, ModelStatements
 from pharmpy.symbols import symbol as S
 
 
-def add_iiv(model, parameter, expression, operation='*', eta_name=None):
+def add_iiv(model, parameter, expression, operation='*', eta_names=None):
     """
     Adds IIVs to :class:`pharmpy.model`. Effects that currently have templates are:
 
@@ -30,32 +30,51 @@ def add_iiv(model, parameter, expression, operation='*', eta_name=None):
     ----------
     model : Model
         Pharmpy model to add new IIVs to.
-    parameter : str
-        Name of parameter to add new IIVs to.
-    expression : str
-        Effect on eta. Either abbreviated (see above) or custom.
-    operation : str, optional
+    parameter : str, list
+        Name/names of parameter to add new IIVs to.
+    expression : str, list
+        Effect/effects on eta. Either abbreviated (see above) or custom.
+    operation : str, list, optional
         Whether the new IIV should be added or multiplied (default).
-    eta_name: str, optional
-        Custom name of new eta
+    eta_names: str, list, optional
+        Custom name/names of new eta
     """
     rvs, pset, sset = model.random_variables, model.parameters, model.statements
 
-    omega = S(f'IIV_{parameter}')
-    if not eta_name:
-        eta_name = f'ETA_{parameter}'
+    if isinstance(parameter, list):
+        if isinstance(expression, str):
+            expression = [expression] * len(parameter)
+        if isinstance(operation, str):
+            operation = [operation] * len(parameter)
+    else:
+        parameter, expression, operation = [parameter], [expression], [operation]
+        if eta_names:
+            eta_names = [eta_names]
 
-    eta = stats.Normal(eta_name, 0, sympy.sqrt(omega))
-    eta.variability_level = VariabilityLevel.IIV
+    if not (len(parameter) == len(expression) == len(operation)):
+        raise ValueError(
+            'The number of provided expressions and operations must either be equal '
+            'to the number of parameters or equal to 1'
+        )
 
-    rvs.add(eta)
-    pset.add(Parameter(str(omega), init=0.09))
+    for i in range(len(parameter)):
+        omega = S(f'IIV_{parameter[i]}')
+        if not eta_names:
+            eta_name = f'ETA_{parameter[i]}'
+        else:
+            eta_name = eta_names[i]
 
-    statement = sset.find_assignment(parameter)
-    eta_addition = _create_template(expression, operation)
-    eta_addition.apply(statement.expression, eta.name)
+        eta = stats.Normal(eta_name, 0, sympy.sqrt(omega))
+        eta.variability_level = VariabilityLevel.IIV
 
-    statement.expression = eta_addition.template
+        rvs.add(eta)
+        pset.add(Parameter(str(omega), init=0.09))
+
+        statement = sset.find_assignment(parameter[i])
+        eta_addition = _create_template(expression[i], operation[i])
+        eta_addition.apply(statement.expression, eta.name)
+
+        statement.expression = eta_addition.template
 
     model.random_variables = rvs
     model.parameters = pset

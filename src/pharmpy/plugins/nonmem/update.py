@@ -95,7 +95,7 @@ def update_random_variables(model, old, new):
         if rv.name not in old_names:
             omega_name = (rv.pspace.distribution.std ** 2).name
             if omega_name not in old.all_parameters():
-                rv_name = rv.name.upper()
+                rv_name = rv.name
                 omega = model.parameters[omega_name]
 
                 iov_rv = None

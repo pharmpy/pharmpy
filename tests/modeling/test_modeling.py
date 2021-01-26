@@ -1276,25 +1276,43 @@ def test_john_draper(pheno_path, etas, etad, buf_new):
 
 
 @pytest.mark.parametrize(
-    'parameter, expression, operation, eta_name, buf_new',
+    'parameter, expression, operation, eta_name, buf_new, no_of_omega_recs',
     [
-        ('S1', 'exp', '+', None, 'V=TVV*EXP(ETA(2))\nS1 = V + EXP(ETA(3))'),
-        ('S1', 'exp', '*', None, 'V=TVV*EXP(ETA(2))\nS1 = V*EXP(ETA(3))'),
-        ('V', 'exp', '+', None, 'V = TVV*EXP(ETA(2)) + EXP(ETA(3))\nS1=V'),
-        ('S1', 'add', None, None, 'V=TVV*EXP(ETA(2))\nS1 = V + ETA(3)'),
-        ('S1', 'prop', None, None, 'V=TVV*EXP(ETA(2))\nS1 = ETA(3)*V'),
-        ('S1', 'log', None, None, 'V=TVV*EXP(ETA(2))\nS1 = V*EXP(ETA(3))/(EXP(ETA(3)) + 1)'),
-        ('S1', 'eta_new', '+', None, 'V=TVV*EXP(ETA(2))\nS1 = V + ETA(3)'),
-        ('S1', 'eta_new**2', '+', None, 'V=TVV*EXP(ETA(2))\nS1 = V + ETA(3)**2'),
-        ('S1', 'exp', '+', 'ETA(3)', 'V=TVV*EXP(ETA(2))\nS1 = V + EXP(ETA(3))'),
+        ('S1', 'exp', '+', None, 'V=TVV*EXP(ETA(2))\nS1 = V + EXP(ETA(3))', 2),
+        ('S1', 'exp', '*', None, 'V=TVV*EXP(ETA(2))\nS1 = V*EXP(ETA(3))', 2),
+        ('V', 'exp', '+', None, 'V = TVV*EXP(ETA(2)) + EXP(ETA(3))\nS1=V', 2),
+        ('S1', 'add', None, None, 'V=TVV*EXP(ETA(2))\nS1 = V + ETA(3)', 2),
+        ('S1', 'prop', None, None, 'V=TVV*EXP(ETA(2))\nS1 = ETA(3)*V', 2),
+        ('S1', 'log', None, None, 'V=TVV*EXP(ETA(2))\nS1 = V*EXP(ETA(3))/(EXP(ETA(3)) + 1)', 2),
+        ('S1', 'eta_new', '+', None, 'V=TVV*EXP(ETA(2))\nS1 = V + ETA(3)', 2),
+        ('S1', 'eta_new**2', '+', None, 'V=TVV*EXP(ETA(2))\nS1 = V + ETA(3)**2', 2),
+        ('S1', 'exp', '+', 'ETA(3)', 'V=TVV*EXP(ETA(2))\nS1 = V + EXP(ETA(3))', 2),
+        (
+            ['V', 'S1'],
+            'exp',
+            '+',
+            None,
+            'V = TVV*EXP(ETA(2)) + EXP(ETA(3))\nS1 = V + EXP(ETA(4))',
+            3,
+        ),
+        (
+            ['V', 'S1'],
+            'exp',
+            '+',
+            ['new_eta1', 'new_eta2'],
+            'V = TVV*EXP(ETA(2)) + EXP(ETA(3))\nS1 = V + EXP(ETA(4))',
+            3,
+        ),
     ],
 )
-def test_add_iiv(pheno_path, parameter, expression, operation, eta_name, buf_new):
+def test_add_iiv(pheno_path, parameter, expression, operation, eta_name, buf_new, no_of_omega_recs):
     model = Model(pheno_path)
 
     add_iiv(model, parameter, expression, operation, eta_name)
 
-    assert eta_name in [eta.name for eta in model.random_variables.etas] or eta_name is None
+    etas = [eta.name for eta in model.random_variables.etas]
+
+    assert eta_name is None or set(eta_name).intersection(etas) or eta_name in etas
 
     model.update_source()
 
@@ -1311,9 +1329,10 @@ def test_add_iiv(pheno_path, parameter, expression, operation, eta_name, buf_new
 
     assert str(model.get_pred_pk_record()) == rec_ref
 
-    last_rec = model.control_stream.get_records('OMEGA')[-1]
+    omega_rec = model.control_stream.get_records('OMEGA')
 
-    assert str(last_rec) == f'$OMEGA  0.09 ; IIV_{parameter}\n'
+    assert len(omega_rec) == no_of_omega_recs
+    assert '$OMEGA  0.09 ; IIV_' in str(omega_rec[-1])
 
 
 @pytest.mark.parametrize(

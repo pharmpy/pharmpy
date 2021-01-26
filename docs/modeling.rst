@@ -520,6 +520,17 @@ already defined by the effect.
    model.update_source()
    print_model_diff(model_ref, model)
 
+A list of parameter names can also be used as input. In that case, the effect and the operation (if not omitted) must
+be either a string (in that case, all new IIVs will have those settings) or be a list of the same size.
+
+.. jupyter-execute::
+
+   model = Model(path / "pheno.mod")
+   add_iiv(model, ['V', 'S1'], 'exp')
+   model.update_source()
+   print_model_diff(model_ref, model)
+
+
 Similarly to when you :ref:`add a covariate effect<cov_effects>`, you can add user
 specified effects.
 
@@ -542,7 +553,7 @@ You can also provide a custom eta name, i.e the name of the internal representat
 .. jupyter-execute::
 
    model = Model(path / "pheno.mod")
-   add_iiv(model, 'S1', 'exp', eta_name='ETA(3)')
+   add_iiv(model, 'S1', 'exp', eta_names='ETA(3)')
    model.update_source()
    model.random_variables
 
@@ -602,8 +613,8 @@ Custom eta names are supported, meaning that the internal representation of the 
 the eta_names argument.
 
 .. warning::
-The number of names must be equal to the number of created etas (i.e. the number of
-input etas times the number of categories for occasion).
+   The number of names must be equal to the number of created etas (i.e. the number of
+   input etas times the number of categories for occasion).
 
 .. jupyter-execute::
 
