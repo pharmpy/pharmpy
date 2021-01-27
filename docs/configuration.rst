@@ -11,16 +11,21 @@ Each module in Pharmpy can have its own configuration. Each configuration item i
 The configuration file
 ~~~~~~~~~~~~~~~~~~~~~~
 
-Pharmpy can use a configuration file called :code:`pharmpy.conf` that should be placed in the `Pharmpy` configuration directory. The placement of this directory is dependent on the operating system. As Pharmpy is using the appdirs package to find the placement of configuration files in your system please check the appdirs package web page: https://pypi.org/project/appdirs/ for more information. 
+Pharmpy can use a configuration file called :code:`pharmpy.conf` that should be placed in the `Pharmpy` configuration directory. The placement of this directory is dependent on the operating system. As Pharmpy is using the appdirs package to find the placement of configuration files in your system please check the appdirs package web page: https://pypi.org/project/appdirs/ for more information.
 
-The format of the configuration file is a plain ini file where each section is the name of the module being configured. For example
+The format of the configuration file is a plain .ini file where each section is the name of the module being configured. For example:
 
 .. code-block::
 
    [pharmpy.plugins.nonmem]
-   parameter_names=comment
+   parameter_names=['comment']
 
 will set the configuration item `parameter_names` to `comment` in the nonmem module.
+
+.. warning::
+   When changing `parameter_names` from R, use `list('comment')` instead of `c('comment')` due to the fact that
+   Reticulate translates the string array from the list element to separate strings.
+
 
 ~~~~~~~~~~~~~~~~~~~~~
 Environment variables
