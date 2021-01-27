@@ -210,7 +210,10 @@ class Model(pharmpy.model.Model):
             pass
 
         self._read_parameters()
-        if 'comment' in pharmpy.plugins.nonmem.conf.parameter_names:
+        if (
+            'comment' in pharmpy.plugins.nonmem.conf.parameter_names
+            or 'abbr' in pharmpy.plugins.nonmem.conf.parameter_names
+        ):
             self.statements
         return self._parameters
 
@@ -366,6 +369,25 @@ class Model(pharmpy.model.Model):
                 for symb in clashing_symbols:
                     self.parameters[symb.name].name = rev_trans[symb].name
             statements.subs(trans)
+        if self.control_stream.abbreviated.replace:
+            if not hasattr(self, '_parameters'):
+                self._read_parameters()
+            self.random_variables
+            if 'abbr' in pharmpy.plugins.nonmem.conf.parameter_names:
+                param_replace = self.control_stream.abbreviated.translate_to_pharmpy_names()
+                for key, value in param_replace.items():
+                    try:
+                        self.parameters[key].name = value
+                    except KeyError:
+                        pass
+                trans = {
+                    key: param_replace[value]
+                    for key, value in self.control_stream.abbreviated.replace.items()
+                }
+                statements.subs(trans)
+            else:
+                trans = self.control_stream.abbreviated.replace
+                statements.subs(trans)
 
         self._statements = statements
         self._old_statements = statements.copy()
@@ -448,8 +470,16 @@ class Model(pharmpy.model.Model):
         rvs = RandomVariables()
         next_omega = 1
         prev_cov = None
+
+        if 'abbr' in pharmpy.plugins.nonmem.conf.parameter_names:
+            abbr_replace = self.control_stream.abbreviated.translate_to_pharmpy_names()
+        else:
+            abbr_replace = None
+
         for omega_record in self.control_stream.get_records('OMEGA'):
-            etas, next_omega, prev_cov, _ = omega_record.random_variables(next_omega, prev_cov)
+            etas, next_omega, prev_cov, _ = omega_record.random_variables(
+                next_omega, prev_cov, abbr_replace=abbr_replace
+            )
             rvs.update(etas)
         self.adjust_iovs(rvs)
         next_sigma = 1

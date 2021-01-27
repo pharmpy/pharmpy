@@ -368,7 +368,7 @@ class OmegaRecord(Record):
             next_omega = first_omega + size
         return next_omega, size
 
-    def random_variables(self, start_omega, previous_cov=None):
+    def random_variables(self, start_omega, previous_cov=None, abbr_replace=None):
         """Get a RandomVariableSet for this omega record
 
         start_omega - the first omega in this record
@@ -398,6 +398,8 @@ class OmegaRecord(Record):
                 init = node.init.NUMERIC
                 fixed = bool(node.find('FIX'))
                 name = self._rv_name(i)
+                if abbr_replace:
+                    name = abbr_replace[name]
                 if not (init == 0 and fixed):  # 0 FIX are not RVs
                     eta = sympy.stats.Normal(name, 0, sympy.sqrt(symbol(rev_map[(i, i)])))
                     rvs.add(eta)
@@ -442,6 +444,8 @@ class OmegaRecord(Record):
             else:
                 rvs = RandomVariables()
                 name = self._rv_name(start_omega)
+                if abbr_replace:
+                    name = abbr_replace[name]
                 if same:
                     sym = previous_cov
                 else:

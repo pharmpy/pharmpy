@@ -66,7 +66,7 @@ vector: ("A"i | "A_0"i | "A_INITIAL"i | "DADT"i) subscript
 parameter: (THETA | ETA | EPS | OMEGA | SIGMA) subscript
          | (OMEGA | SIGMA) double_subscript
 
-subscript: [WS] "(" [WS] INTEGER [WS] ")"
+subscript: [WS] "(" [WS] INTEGER [WS] ")" | [WS] "(" [WS] NAME [WS] ")"
 double_subscript: [WS] "(" [WS] INTEGER [WS] "," [WS] INTEGER [WS] ")"
 
 number: INTEGER | FLOAT

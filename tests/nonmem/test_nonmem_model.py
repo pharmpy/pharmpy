@@ -514,10 +514,14 @@ $ESTIMATION METHOD=1 INTER MAXEVALS=9990 PRINT=2 POSTHOC
             assert model.parameters.names == ['THETA(1)', 'OMEGA(1,1)', 'SIGMA(1,1)']
 
 
-def test_symbol_names_in_abbr(pheno_path):
-    with ConfigurationContext(conf, parameter_names=['comment', 'basic']):
-        model = Model(pheno_path)
-        model.statements
+def test_symbol_names_in_abbr(testdata):
+    with ConfigurationContext(conf, parameter_names=['abbr', 'basic']):
+        model = Model(testdata / 'nonmem' / 'pheno_abbr.mod')
+        sset, pset, rvs = model.statements, model.parameters, model.random_variables
+
+        assert S('THETA_CL') in sset.find_assignment('THETA_CL', is_symbol=False).free_symbols
+        assert 'THETA_CL' in pset.names
+        assert 'ETA_CL' in [eta.name for eta in rvs.etas]
 
 
 def test_clashing_parameter_names(datadir):
