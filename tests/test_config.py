@@ -2,6 +2,8 @@ import pytest
 
 import pharmpy.config as config
 import pharmpy.data as data
+from pharmpy.config import ConfigurationContext
+from pharmpy.plugins.nonmem import conf
 
 
 def test_config_item():
@@ -22,3 +24,8 @@ def test_data_config():
 
 def test_read_config():
     config.read_configuration()
+
+
+def test_str(pheno_path, datadir, fs):
+    with ConfigurationContext(conf, parameter_names=['abbr', 'basic']):
+        assert str(conf) == "parameter_names:\t['abbr', 'basic']\n"

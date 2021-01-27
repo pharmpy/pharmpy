@@ -70,6 +70,12 @@ class Configuration:
             for key, value in config_file[self.module].items():
                 setattr(self, key, value)
 
+    def __str__(self):
+        settings = ''
+        for key, value in vars(self).items():
+            settings += f"{key}:\t{value}\n"
+        return settings
+
 
 class ConfigurationContext:
     """Context to temporarily set configuration options"""
