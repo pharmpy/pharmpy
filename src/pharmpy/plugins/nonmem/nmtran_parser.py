@@ -20,6 +20,12 @@ class Abbreviated:
             d.update(record.replace)
         return d
 
+    def translate_to_pharmpy_names(self):
+        d = dict()
+        for record in self.stream.get_records('ABBREVIATED'):
+            d.update(record.translate_to_pharmpy_names())
+        return d
+
 
 class NMTranParser:
     """Parser for NMTran control streams"""

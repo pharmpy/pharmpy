@@ -9,3 +9,14 @@ def test_data_filename_set(testdata):
         'ETA(CL)': 'ETA(1)',
         'ETA(V)': 'ETA(2)',
     }
+
+
+def test_translate_to_pharmpy_names(testdata):
+    model = Model(testdata / 'nonmem' / 'pheno_abbr.mod')
+    new_dict = model.control_stream.abbreviated.translate_to_pharmpy_names()
+    assert new_dict == {
+        'THETA(1)': 'THETA_CL',
+        'THETA(2)': 'THETA_V',
+        'ETA(1)': 'ETA_CL',
+        'ETA(2)': 'ETA_V',
+    }

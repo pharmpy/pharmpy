@@ -2,6 +2,7 @@
 NONMEM abbreviated record class.
 """
 
+import re
 
 from .record import Record
 
@@ -24,3 +25,10 @@ class AbbreviatedRecord(Record):
             second = strip_quote(strings[1])
             d[first] = second
         return d
+
+    def translate_to_pharmpy_names(self):
+        parameter_names = dict()
+        for key, value in self.replace.items():
+            key_new = re.sub(r'\((\w+)\)', r'_\1', key)
+            parameter_names[value] = key_new
+        return parameter_names
