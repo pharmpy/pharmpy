@@ -53,5 +53,5 @@ _ws: [WS] [NEWLINE]
 
 %import .definitions (INT, NEWLINE, NUMERIC, WS)
 
-NEG_INF: "-INF" | "-1000000"
-POS_INF: "INF" | "1000000"
+NEG_INF: "-INF"i | "-1000000"
+POS_INF: "INF"i | "1000000"
