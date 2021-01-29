@@ -53,6 +53,8 @@ class ConfigItem:
     def __set__(self, instance, value):
         # if self.cls != type(value):
         try:
+            if isinstance(self.default, list) and isinstance(value, str):
+                value = [v.strip() for v in value.split(',')]
             instance.__dict__[self.name] = self.cls(value)
         except ValueError as exc:
             raise TypeError(

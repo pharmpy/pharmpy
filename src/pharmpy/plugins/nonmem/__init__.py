@@ -28,7 +28,7 @@ r"""
 class NONMEMConfiguration(config.Configuration):
     module = 'pharmpy.plugins.nonmem'
     parameter_names = config.ConfigItem(
-        ['basic'], 'Naming scheme of NONMEM parameters. One of "basic" and "comment"'
+        ['basic'], 'Naming scheme of NONMEM parameters. One of "basic" and "comment"', list
     )
     default_nonmem_path = config.ConfigItem(
         pathlib.Path(''), 'Full path to the default NONMEM installation directory', cls=pathlib.Path

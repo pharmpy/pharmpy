@@ -24,6 +24,7 @@ def test_data_config():
 
 def test_read_config():
     config.read_configuration()
+    assert len(conf.parameter_names) <= 3
 
 
 def test_str(pheno_path, datadir, fs):
