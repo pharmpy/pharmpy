@@ -43,7 +43,11 @@ class JointDistributionSeparate(RandomSymbol):
     """
 
     def __new__(cls, name, joint_symbol):
-        return super().__new__(cls, symbol(name), joint_symbol.pspace)
+        if isinstance(name, str):
+            return super().__new__(cls, symbol(name), joint_symbol.pspace)
+        else:
+            # To mimic original __new__
+            return super().__new__(cls, name, joint_symbol)
 
 
 def JointNormalSeparate(names, mean, cov):
