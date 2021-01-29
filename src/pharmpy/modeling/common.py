@@ -35,6 +35,15 @@ def update_source(model):
     return model
 
 
+def copy_model(model):
+    return model.copy()
+
+
+def set_name(model, name):
+    model.name = name
+    return model
+
+
 def set_initial_estimates(model, inits):
     """Set initial estimates
 

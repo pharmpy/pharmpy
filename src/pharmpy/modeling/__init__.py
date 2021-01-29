@@ -7,6 +7,8 @@ from pharmpy.modeling.common import (
     unfix_parameters,
     update_source,
     write_model,
+    copy_model,
+    set_name,
 )
 from pharmpy.modeling.covariate_effect import add_covariate_effect
 from pharmpy.modeling.error import additive_error, combined_error, proportional_error, remove_error
@@ -78,4 +80,6 @@ __all__ = [
     'set_ode_solver',
     'add_iov',
     'set_initial_estimates',
+    'copy_model',
+    'set_name',
 ]
