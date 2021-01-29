@@ -40,7 +40,6 @@ def execute_model(model, i, path):
             f'-rundir={rundir.path}',
         ]
     )
-    model.modelfit_results = None
     for ext in ['ext', 'lst', 'phi']:
         source_path = rundir.model_path.with_suffix(f'.{ext}')
         dest_path = original_model_path.with_suffix(f'.{ext}')
@@ -48,8 +47,10 @@ def execute_model(model, i, path):
     return model
 
 
-def results(model):
-    return model
+def results(models):
+    for model in models:
+        model.modelfit_results = None
+    return models
 
 
 def nmfe_path():

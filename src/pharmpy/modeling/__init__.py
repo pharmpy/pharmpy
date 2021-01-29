@@ -3,10 +3,10 @@ from pharmpy.modeling.common import (
     fix_parameters,
     read_model,
     read_model_from_string,
+    set_initial_estimates,
     unfix_parameters,
     update_source,
     write_model,
-    set_initial_estimates,
 )
 from pharmpy.modeling.covariate_effect import add_covariate_effect
 from pharmpy.modeling.error import additive_error, combined_error, proportional_error, remove_error
