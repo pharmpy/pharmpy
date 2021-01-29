@@ -35,6 +35,22 @@ def update_source(model):
     return model
 
 
+def set_initial_estimates(model, inits):
+    """Set initial estimates
+
+    Parameters
+    ----------
+    model: Model
+    inits: A dictionary of parameter: init for parameters to change
+
+    Returns
+    -------
+    model: Model
+    """
+    model.parameters.inits = inits
+    return model
+
+
 def fix_parameters(model, parameter_names):
     """Fix parameters
 
