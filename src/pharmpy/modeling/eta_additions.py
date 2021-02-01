@@ -14,7 +14,7 @@ from pharmpy.statements import Assignment, ModelStatements
 from pharmpy.symbols import symbol as S
 
 
-def add_iiv(model, parameter, expression, operation='*', eta_names=None):
+def add_iiv(model, list_of_parameters, expression, operation='*', eta_names=None):
     """
     Adds IIVs to :class:`pharmpy.model`. Effects that currently have templates are:
 
@@ -30,7 +30,7 @@ def add_iiv(model, parameter, expression, operation='*', eta_names=None):
     ----------
     model : Model
         Pharmpy model to add new IIVs to.
-    parameter : str, list
+    list_of_parameters : str, list
         Name/names of parameter to add new IIVs to.
     expression : str, list
         Effect/effects on eta. Either abbreviated (see above) or custom.
@@ -41,17 +41,15 @@ def add_iiv(model, parameter, expression, operation='*', eta_names=None):
     """
     rvs, pset, sset = model.random_variables, model.parameters, model.statements
 
-    if isinstance(parameter, list):
-        if isinstance(expression, str):
-            expression = [expression] * len(parameter)
-        if isinstance(operation, str):
-            operation = [operation] * len(parameter)
-    else:
-        parameter, expression, operation = [parameter], [expression], [operation]
-        if eta_names:
-            eta_names = [eta_names]
+    parameter, additional_options = _change_to_list(
+        list_of_parameters, [expression, operation, eta_names]
+    )
+    expression, operation, eta_names = additional_options
 
-    if not (len(parameter) == len(expression) == len(operation)):
+    if all(eta_name is None for eta_name in eta_names):
+        eta_names = None
+
+    if not all(len(opt) == len(parameter) for opt in additional_options if opt):
         raise ValueError(
             'The number of provided expressions and operations must either be equal '
             'to the number of parameters or equal to 1'
@@ -71,6 +69,7 @@ def add_iiv(model, parameter, expression, operation='*', eta_names=None):
         pset.add(Parameter(str(omega), init=0.09))
 
         statement = sset.find_assignment(parameter[i])
+
         eta_addition = _create_template(expression[i], operation[i])
         eta_addition.apply(statement.expression, eta.name)
 
@@ -94,7 +93,7 @@ def add_iov(model, occ, list_of_parameters=None, eta_names=None):
         Pharmpy model to add new IOVs to.
     occ : str
         Name of occasion column.
-    list_of_parameters : list
+    list_of_parameters : str, list
         List of names of parameters and random variables. Accepts random variable names, parameter
         names, or a mix of both.
     eta_names: list
@@ -102,7 +101,12 @@ def add_iov(model, occ, list_of_parameters=None, eta_names=None):
         categories for occasion.
     """
     rvs, pset, sset = model.random_variables, model.parameters, model.statements
-    etas = _get_etas(rvs, sset, list_of_parameters)
+    params, additional_options = _change_to_list(list_of_parameters, [eta_names])
+
+    if len(additional_options) > 1:
+        eta_names = additional_options[0]
+
+    etas = _get_etas(rvs, sset, params)
     iovs, etais = ModelStatements(), ModelStatements()
 
     categories = _get_occ_levels(model.dataset, occ)
@@ -149,6 +153,24 @@ def add_iov(model, occ, list_of_parameters=None, eta_names=None):
     model.random_variables, model.parameters, model.statements = rvs, pset, iovs
 
     return model
+
+
+def _change_to_list(list_of_params, additional_options):
+    additional_options_as_list = []
+    params = list_of_params
+
+    if isinstance(list_of_params, list):
+        for option in additional_options:
+            if isinstance(option, str) or not option:
+                option = [option] * len(list_of_params)
+            additional_options_as_list.append(option)
+    else:
+        if list_of_params:
+            params = [list_of_params]
+        for option in additional_options:
+            additional_options_as_list.append([option])
+
+    return params, additional_options_as_list
 
 
 def _create_template(expression, operation):
