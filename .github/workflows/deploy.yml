@@ -29,21 +29,23 @@ jobs:
         sudo apt install graphviz
     - name: Test with tox
       run: |
-          cd pharmpy
-          tox
+        cd pharmpy
+        tox
       env:
         PLATFORM: ${{ matrix.platform }}
     - name: Build documentation
       run: |
-          cd pharmpy
-          tox -e apidoc
-          tox -e docs
+        cd pharmpy
+        tox -e apidoc
+        tox -e docs
     - name: Build wheel
       run: |
-          cd pharmpy
-          python setup.py bdist_wheel
+        cd pharmpy
+        python setup.py bdist_wheel
     - name: Build source package
-      run: python setup.py sdist --formats=gztar
+      run: |
+        cd pharmpy
+        python setup.py sdist --formats=gztar
     - name: Prepare upload files
       run: |
         cd pharmpy
@@ -51,13 +53,13 @@ jobs:
         cp dist/*.whl dist/*.tar.gz upload
     - name: Publish documentation
       run: |
-          cp -RT pharmpy/dist/docs/ pharmpy.github.io/latest/
-          cd pharmpy.github.io
-          git config --local user.name "github-actions[bot]"
-          git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
-          git commit -m "Documentation update"
-          git push
+        cp -RT pharmpy/dist/docs/ pharmpy.github.io/latest/
+        cd pharmpy.github.io
+        git config --local user.name "github-actions[bot]"
+        git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
+        git add -A
+        git commit -m "Documentation update"
+        git push
 #    - name: Publish package to PyPI
 #      uses: pypa/gh-action-pypi-publish@master
 #      with:
