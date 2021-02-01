@@ -350,44 +350,17 @@ class Model(pharmpy.model.Model):
                 statements.append(Assignment('F', symbols.symbol('F')))
             statements += error.statements
 
-        if 'comment' in pharmpy.plugins.nonmem.conf.parameter_names:
-            if not hasattr(self, '_parameters'):
-                self._read_parameters()
-            trans = self.parameter_translation(remove_idempotent=True, as_symbols=True)
-            parameter_symbols = {symb for _, symb in trans.items()}
-            clashing_symbols = parameter_symbols & statements.free_symbols
-            if clashing_symbols:
-                warnings.warn(
-                    f'The parameter names {clashing_symbols} are also names of variables '
-                    f'in the model code. Falling back to the NONMEM default parameter '
-                    f'names for these.'
-                )
-                rev_trans = {val: key for key, val in trans.items()}
-                trans = {
-                    nm_symb: symb for nm_symb, symb in trans.items() if symb not in clashing_symbols
-                }
-                for symb in clashing_symbols:
-                    self.parameters[symb.name].name = rev_trans[symb].name
+        parameter_names = pharmpy.plugins.nonmem.conf.parameter_names
+
+        if 'comment' in parameter_names:
+            trans = self._name_as_comments(statements)
             statements.subs(trans)
         if self.control_stream.abbreviated.replace:
-            if not hasattr(self, '_parameters'):
-                self._read_parameters()
-            self.random_variables
-            if 'abbr' in pharmpy.plugins.nonmem.conf.parameter_names:
-                param_replace = self.control_stream.abbreviated.translate_to_pharmpy_names()
-                for key, value in param_replace.items():
-                    try:
-                        self.parameters[key].name = value
-                    except KeyError:
-                        pass
-                trans = {
-                    key: param_replace[value]
-                    for key, value in self.control_stream.abbreviated.replace.items()
-                }
-                statements.subs(trans)
+            if 'abbr' in parameter_names:
+                trans = self._name_as_abbr()
             else:
                 trans = self.control_stream.abbreviated.replace
-                statements.subs(trans)
+            statements.subs(trans)
 
         self._statements = statements
         self._old_statements = statements.copy()
@@ -425,6 +398,43 @@ class Model(pharmpy.model.Model):
         if des:
             des = des[0]
         return des
+
+    def _name_as_comments(self, statements):
+        if not hasattr(self, '_parameters'):
+            self._read_parameters()
+        trans = self.parameter_translation(remove_idempotent=True, as_symbols=True)
+        parameter_symbols = {symb for _, symb in trans.items()}
+        clashing_symbols = parameter_symbols & statements.free_symbols
+        if clashing_symbols:
+            warnings.warn(
+                f'The parameter names {clashing_symbols} are also names of variables '
+                f'in the model code. Falling back to the NONMEM default parameter '
+                f'names for these.'
+            )
+            rev_trans = {val: key for key, val in trans.items()}
+            trans = {
+                nm_symb: symb for nm_symb, symb in trans.items() if symb not in clashing_symbols
+            }
+            for symb in clashing_symbols:
+                self.parameters[symb.name].name = rev_trans[symb].name
+        return trans
+
+    def _name_as_abbr(self):
+        if not hasattr(self, '_parameters'):
+            self._read_parameters()
+        rvs = self.random_variables
+        param_replace = self.control_stream.abbreviated.translate_to_pharmpy_names()
+        for key, value in param_replace.items():
+            try:
+                self.parameters[key].name = value
+            except KeyError:
+                pass
+        rvs.rename(param_replace)
+        trans = {
+            key: param_replace[value]
+            for key, value in self.control_stream.abbreviated.replace.items()
+        }
+        return trans
 
     def _zero_fix_rvs(self, eta=True):
         zero_fix = []
@@ -471,15 +481,8 @@ class Model(pharmpy.model.Model):
         next_omega = 1
         prev_cov = None
 
-        if 'abbr' in pharmpy.plugins.nonmem.conf.parameter_names:
-            abbr_replace = self.control_stream.abbreviated.translate_to_pharmpy_names()
-        else:
-            abbr_replace = None
-
         for omega_record in self.control_stream.get_records('OMEGA'):
-            etas, next_omega, prev_cov, _ = omega_record.random_variables(
-                next_omega, prev_cov, abbr_replace=abbr_replace
-            )
+            etas, next_omega, prev_cov, _ = omega_record.random_variables(next_omega, prev_cov)
             rvs.update(etas)
         self.adjust_iovs(rvs)
         next_sigma = 1

@@ -494,7 +494,9 @@ class RandomVariables(OrderedSet):
                             nearest[dist.sigma[row, col].name] = B[row, col]
         return nearest
 
-    def expression(self, expr, parameters):
+    def expression(
+        self, expr, parameters
+    ):  # FIXME: not represented in any test (no test fails despite assert 0 == 1)
         """Replace all symbols with same names as rvs with the corresponding rvs
         or indexed variables for joint distributions and replace parameter values
         """
@@ -568,6 +570,18 @@ class RandomVariables(OrderedSet):
             elif connected:
                 break
         return iovs
+
+    def rename(self, subs):
+        rvs_new = RandomVariables()
+        for rv in self:
+            self.discard(rv)
+            if rv.name in subs.keys():
+                rv_new = rv.subs(rv.name, subs[rv.name])
+                rv_new.variability_level = rv.variability_level
+                rvs_new.add(rv_new)
+            else:
+                rvs_new.add(rv)
+        self.update(rvs_new)
 
 
 # pharmpy sets a parametrization attribute to the sympy distributions

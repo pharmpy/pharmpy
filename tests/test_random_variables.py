@@ -203,3 +203,21 @@ def test_get_connected_iovs():
     assert len(rvs.get_connected_iovs(eta1)) == 3
     assert len(rvs.get_connected_iovs(eta4)) == 2
     assert len(rvs.get_connected_iovs(eta_iiv)) == 1
+
+
+def test_rename():
+    omega1 = symbol('OMEGA(1,1)')
+    eta1 = stats.Normal('ETA(1)', 0, sympy.sqrt(omega1))
+    omega2 = symbol('OMEGA(2,2)')
+    eta2 = stats.Normal('ETA(2)', 0, sympy.sqrt(omega2))
+    omega3 = symbol('OMEGA(1,1)')
+    eta3 = stats.Normal('ETA(3)', 0, sympy.sqrt(omega3))
+
+    rvs = RandomVariables([eta1, eta2, eta3])
+
+    for rv in rvs:
+        rv.variability_level = VariabilityLevel.IIV
+
+    rvs.rename({'ETA(1)': 'new_name'})
+
+    assert rvs[0].name == 'new_name'
