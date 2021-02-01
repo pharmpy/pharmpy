@@ -18,10 +18,15 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install wheel tox tox-gh-actions
+        sudo apt install graphviz
     - name: Test with tox
       run: tox
       env:
         PLATFORM: ${{ matrix.platform }}
+    - name: Build documentation
+      run: |
+          tox -e apidoc
+          tox -e docs
     - name: Build wheel
       run: python setup.py bdist_wheel
     - name: Build source package
@@ -30,9 +35,21 @@ jobs:
       run: |
         mkdir upload
         cp dist/*.whl dist/*.tar.gz upload
-    - name: Publish package to PyPI
-      uses: pypa/gh-action-pypi-publish@master
-      with:
-        user: __token__
-        password: ${{ secrets.PYPI_API_TOKEN }}
-        packages_dir: upload/
+    - name: Publish documentation
+      run: |
+          cd ..
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git clone https://github.com/pharmpy/pharmpy.github.io
+          cp -RT pharmpy/dist/docs/ pharmpy.github.io/latest/
+          cd pharmpy.github.io
+          git add -A
+          git commit -m "Documentation update"
+          git push
+          cd ../pharmpy 
+#    - name: Publish package to PyPI
+#      uses: pypa/gh-action-pypi-publish@master
+#      with:
+#        user: __token__
+#        password: ${{ secrets.PYPI_API_TOKEN }}
+#        packages_dir: upload/
