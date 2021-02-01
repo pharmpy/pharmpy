@@ -9,7 +9,15 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v1
+    - name: Checkout pharmpy/pharmpy 
+      uses: actions/checkout@v2
+      with:
+          path: pharmpy
+    - name: Checkout pharmpy/pharmpy.github.io
+      uses: actions/checkout@v2
+      with:
+        repository: pharmpy/pharmpy.github.io
+        path: pharmpy.github.io
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
@@ -20,36 +28,39 @@ jobs:
         pip install wheel tox tox-gh-actions
         sudo apt install graphviz
     - name: Test with tox
-      run: tox
+      run: |
+          cd pharmpy
+          tox
       env:
         PLATFORM: ${{ matrix.platform }}
     - name: Build documentation
       run: |
+          cd pharmpy
           tox -e apidoc
           tox -e docs
     - name: Build wheel
-      run: python setup.py bdist_wheel
+      run: |
+          cd pharmpy
+          python setup.py bdist_wheel
     - name: Build source package
       run: python setup.py sdist --formats=gztar
     - name: Prepare upload files
       run: |
+        cd pharmpy
         mkdir upload
         cp dist/*.whl dist/*.tar.gz upload
     - name: Publish documentation
       run: |
-          cd ..
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git clone https://github.com/pharmpy/pharmpy.github.io
           cp -RT pharmpy/dist/docs/ pharmpy.github.io/latest/
           cd pharmpy.github.io
+          git config --local user.name "github-actions[bot]"
+          git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
           git commit -m "Documentation update"
           git push
-          cd ../pharmpy 
 #    - name: Publish package to PyPI
 #      uses: pypa/gh-action-pypi-publish@master
 #      with:
 #        user: __token__
 #        password: ${{ secrets.PYPI_API_TOKEN }}
-#        packages_dir: upload/
+#        packages_dir: pharmpy/upload/
