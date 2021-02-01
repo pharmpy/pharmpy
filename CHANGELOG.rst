@@ -1,3 +1,14 @@
+0.15.0 (2021-02-01)
+-------------------
+
+* Change parameter_names config option to be a list of prioritized methods
+* Option to read names from $ABBR for NONMEM models
+* Add option to give parameter names to methods.add_iiv
+* Add calculation of elimination half-life to one comp models in modelfit_results.pk_parameters
+* Document cdd results
+* Add set_initial_estimates, set_name and copy_model to modeling
+* Allow single str as input to add_iiv and add_iov
+
 0.14.0 (2021-01-25)
 -------------------
 
