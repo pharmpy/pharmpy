@@ -12,7 +12,7 @@ import sympy
 from sympy import Eq, Float, Gt, Le, Piecewise, exp
 
 from pharmpy.parameter import Parameter
-from pharmpy.statements import Assignment
+from pharmpy.statements import Assignment, ModelStatements
 from pharmpy.symbols import symbol as S
 
 
@@ -82,7 +82,9 @@ def add_covariate_effect(model, parameter, covariate, effect, operation='*'):
     covariate_effect.apply(parameter, covariate, thetas, statistics)
     effect_statement = covariate_effect.create_effect_statement(operation, param_statement)
 
-    statements = covariate_effect.statistic_statements
+    statements = ModelStatements()
+
+    statements += [s for s in covariate_effect.statistic_statements if s not in sset]
     statements.append(covariate_effect.template)
     statements.append(effect_statement)
 

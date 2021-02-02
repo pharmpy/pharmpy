@@ -642,6 +642,47 @@ def test_add_covariate_effect_duplicates(pheno_path):
         add_covariate_effect(model, 'CL', 'WGT', 'exp')
 
 
+@pytest.mark.parametrize(
+    'effect, parameters, covariates, operation, buf_new',
+    [
+        (
+            'exp',
+            ['CL', 'V'],
+            ['WGT', 'WGT'],
+            '*',
+            'WGT_MEDIAN = 1.30000\n'
+            'CLWGT = EXP(THETA(4)*(WGT - WGT_MEDIAN))\n'
+            'CL = CL + CLWGT\n'
+            'V = TVV*EXP(ETA(2))\n'
+            'VWGT = EXP(THETA(5)*(WGT - WGT_MEDIAN))\n'
+            'V = V + VWGT',
+        ),
+    ],
+)
+def test_add_covariate_effect_multiple(
+    pheno_path, effect, parameters, covariates, operation, buf_new
+):
+    model = Model(pheno_path)
+
+    add_covariate_effect(model, parameters[0], covariates[0], 'exp', '+')
+    add_covariate_effect(model, parameters[1], covariates[1], 'exp', '+')
+    model.update_source()
+
+    rec_ref = (
+        f'$PK\n'
+        f'IF(AMT.GT.0) BTIME=TIME\n'
+        f'TAD=TIME-BTIME\n'
+        f'TVCL=THETA(1)*WGT\n'
+        f'TVV=THETA(2)*WGT\n'
+        f'IF(APGR.LT.5) TVV=TVV*(1+THETA(3))\n'
+        f'CL=TVCL*EXP(ETA(1))\n'
+        f'{buf_new}\n'
+        f'S1=V\n\n'
+    )
+
+    assert str(model.get_pred_pk_record()) == rec_ref
+
+
 def test_to_explicit_odes(pheno_path, testdata):
     model = Model(pheno_path)
     model.statements.ode_system.solver = 'ADVAN13'
