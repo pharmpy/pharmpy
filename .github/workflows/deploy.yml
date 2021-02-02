@@ -18,6 +18,7 @@ jobs:
       with:
         repository: pharmpy/pharmpy.github.io
         path: pharmpy.github.io
+        token: ${{secrets.DOC_TOKEN}}
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
@@ -59,7 +60,10 @@ jobs:
         git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
         git add -A
         git commit -m "Documentation update"
-        git push
+        git push https://$USERNAME:$REPO_KEY@github.com/pharmpy/pharmpy.github.io.git
+      env:
+        REPO_KEY: ${{secrets.DOC_TOKEN}}
+        USERNAME: githu-actions[bot]
 #    - name: Publish package to PyPI
 #      uses: pypa/gh-action-pypi-publish@master
 #      with:
