@@ -63,10 +63,10 @@ jobs:
         git push https://$USERNAME:$REPO_KEY@github.com/pharmpy/pharmpy.github.io.git
       env:
         REPO_KEY: ${{secrets.DOC_TOKEN}}
-        USERNAME: githu-actions[bot]
-#    - name: Publish package to PyPI
-#      uses: pypa/gh-action-pypi-publish@master
-#      with:
-#        user: __token__
-#        password: ${{ secrets.PYPI_API_TOKEN }}
-#        packages_dir: pharmpy/upload/
+        USERNAME: github-actions[bot]
+    - name: Publish package to PyPI
+      uses: pypa/gh-action-pypi-publish@master
+      with:
+        user: __token__
+        password: ${{ secrets.PYPI_API_TOKEN }}
+        packages_dir: pharmpy/upload/
