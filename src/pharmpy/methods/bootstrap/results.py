@@ -95,7 +95,7 @@ class BootstrapResults(Results):
 
 
 def calculate_results(
-    bootstrap_models, original_model, included_individuals=None, dofv_results=None
+    bootstrap_models, original_model=None, included_individuals=None, dofv_results=None
 ):
     results = [m.modelfit_results for m in bootstrap_models if m.modelfit_results is not None]
     if original_model:
@@ -213,7 +213,10 @@ def psn_bootstrap_results(path):
     results = [m.modelfit_results for m in models if m.modelfit_results is not None]
     if not results:
         raise FileNotFoundError("No model results available in m1")
-    base_model = Model(cmd_line_model_path(path))
+    try:
+        base_model = Model(cmd_line_model_path(path))
+    except FileNotFoundError:
+        base_model = None
 
     # Read dOFV results in NONMEM specific way. Models have multiple $PROBLEM
     # Create proper result objects to pass to calculate_results
@@ -235,6 +238,6 @@ def psn_bootstrap_results(path):
 
     incinds = pd.read_csv(path / 'included_individuals1.csv', header=None).values.tolist()
     res = calculate_results(
-        models, base_model, included_individuals=incinds, dofv_results=dofv_results
+        models, original_model=base_model, included_individuals=incinds, dofv_results=dofv_results
     )
     return res
