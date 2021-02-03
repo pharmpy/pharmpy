@@ -29,7 +29,7 @@ class Assignment:
             self.symbol = symbol
         except AttributeError:
             self.symbol = symbols.symbol(symbol)
-        self.expression = expression
+        self.expression = sympy.sympify(expression)
 
     def subs(self, substitutions):
         """Substitute symbols in assignment.
