@@ -121,3 +121,71 @@ def combined_error(model):
     eps_add.variability_level = VariabilityLevel.RUV
     model.random_variables.add(eps_add)
     return model
+
+
+def has_additive_error(model):
+    """Check if a model has an additive error model
+
+    Parameters
+    ----------
+    model
+        The model to check
+    """
+    y = model.dependent_variable_symbol
+    expr = model.statements.full_expression_after_odes(y)
+    rvs = model.random_variables.ruv_rvs
+    rvs_in_y = {
+        symbols.symbol(rv.name) for rv in rvs if symbols.symbol(rv.name) in expr.free_symbols
+    }
+    if len(rvs_in_y) != 1:
+        return False
+    eps = rvs_in_y.pop()
+    return eps not in (expr - eps).simplify().free_symbols
+
+
+def has_proportional_error(model):
+    """Check if a model has a proportional error model
+
+    Parameters
+    ----------
+    model
+        The model to check
+    """
+    y = model.dependent_variable_symbol
+    expr = model.statements.full_expression_after_odes(y)
+    rvs = model.random_variables.ruv_rvs
+    rvs_in_y = {
+        symbols.symbol(rv.name) for rv in rvs if symbols.symbol(rv.name) in expr.free_symbols
+    }
+    if len(rvs_in_y) != 1:
+        return False
+    eps = rvs_in_y.pop()
+    return eps not in (expr / (1 + eps)).simplify().free_symbols
+
+
+def has_combined_error(model):
+    """Check if a model has a combined additive and proportinal error model
+
+    Parameters
+    ----------
+    model
+        The model to check
+    """
+    y = model.dependent_variable_symbol
+    expr = model.statements.full_expression_after_odes(y)
+    rvs = model.random_variables.ruv_rvs
+    rvs_in_y = {
+        symbols.symbol(rv.name) for rv in rvs if symbols.symbol(rv.name) in expr.free_symbols
+    }
+    if len(rvs_in_y) != 2:
+        return False
+    eps1 = rvs_in_y.pop()
+    eps2 = rvs_in_y.pop()
+    canc1 = ((expr - eps1) / (eps2 + 1)).simplify()
+    canc2 = ((expr - eps2) / (eps1 + 1)).simplify()
+    return (
+        eps1 not in canc1.free_symbols
+        and eps2 not in canc1.free_symbols
+        or eps1 not in canc2.free_symbols
+        and eps2 not in canc2.free_symbols
+    )

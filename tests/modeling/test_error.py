@@ -1,7 +1,16 @@
 from io import StringIO
 
 from pharmpy import Model
-from pharmpy.modeling import additive_error, combined_error, proportional_error, remove_error
+from pharmpy.modeling import (
+    additive_error,
+    combined_error,
+    has_additive_error,
+    has_combined_error,
+    has_proportional_error,
+    proportional_error,
+    read_model_from_string,
+    remove_error,
+)
 from pharmpy.modeling.error import _get_prop_init
 
 
@@ -132,3 +141,128 @@ def test_get_prop_init(testdata):
     model.dataset['DV'].values[:] = 0.0
     init = _get_prop_init(model.dataset)
     assert init == 0.01
+
+
+def test_has_additive_error(testdata):
+    code = """$PROBLEM base model
+$INPUT ID DV TIME
+$DATA file.csv IGNORE=@
+
+$PRED
+Y = THETA(1) + ETA(1) + ERR(1)
+
+$THETA 0.1
+$OMEGA 0.01
+$SIGMA 1
+$ESTIMATION METHOD=1 INTER MAXEVALS=9990 PRINT=2 POSTHOC
+"""
+    model = read_model_from_string(code)
+    assert has_additive_error(model)
+    code = """$PROBLEM base model
+$INPUT ID DV TIME
+$DATA file.csv IGNORE=@
+
+$PRED
+CONC = THETA(1)
+Y = (CONC + ETA(1)) + (CONC + ETA(1)) * ERR(1)
+
+$THETA 0.1
+$OMEGA 0.01
+$SIGMA 1
+$ESTIMATION METHOD=1 INTER MAXEVALS=9990 PRINT=2 POSTHOC
+"""
+    model = read_model_from_string(code)
+    assert not has_additive_error(model)
+
+    model = Model(StringIO(code))
+    model.source.path = testdata / 'nonmem' / 'pheno.mod'  # To be able to find dataset
+    assert not has_additive_error(model)
+
+
+def test_has_proportional_error(testdata):
+    code = """$PROBLEM base model
+$INPUT ID DV TIME
+$DATA file.csv IGNORE=@
+
+$PRED
+Y = THETA(1) + ETA(1) + ERR(1)
+
+$THETA 0.1
+$OMEGA 0.01
+$SIGMA 1
+$ESTIMATION METHOD=1 INTER MAXEVALS=9990 PRINT=2 POSTHOC
+"""
+    model = read_model_from_string(code)
+    assert not has_proportional_error(model)
+    code = """$PROBLEM base model
+$INPUT ID DV TIME
+$DATA file.csv IGNORE=@
+
+$PRED
+CONC = THETA(1)
+Y = (CONC + ETA(1)) + (CONC + ETA(1)) * ERR(1)
+
+$THETA 0.1
+$OMEGA 0.01
+$SIGMA 1
+$ESTIMATION METHOD=1 INTER MAXEVALS=9990 PRINT=2 POSTHOC
+"""
+    model = read_model_from_string(code)
+    assert has_proportional_error(model)
+
+    model = Model(StringIO(code))
+    model.source.path = testdata / 'nonmem' / 'pheno.mod'  # To be able to find dataset
+    assert has_proportional_error(model)
+
+
+def test_has_combined_error(testdata):
+    code = """$PROBLEM base model
+$INPUT ID DV TIME
+$DATA file.csv IGNORE=@
+
+$PRED
+Y = THETA(1) + ETA(1) + ERR(1)
+
+$THETA 0.1
+$OMEGA 0.01
+$SIGMA 1
+$ESTIMATION METHOD=1 INTER MAXEVALS=9990 PRINT=2 POSTHOC
+"""
+    model = read_model_from_string(code)
+    assert not has_combined_error(model)
+    code = """$PROBLEM base model
+$INPUT ID DV TIME
+$DATA file.csv IGNORE=@
+
+$PRED
+CONC = THETA(1)
+Y = (CONC + ETA(1)) + (CONC + ETA(1)) * ERR(1)
+
+$THETA 0.1
+$OMEGA 0.01
+$SIGMA 1
+$ESTIMATION METHOD=1 INTER MAXEVALS=9990 PRINT=2 POSTHOC
+"""
+    model = read_model_from_string(code)
+    assert not has_combined_error(model)
+
+    model = Model(StringIO(code))
+    model.source.path = testdata / 'nonmem' / 'pheno.mod'  # To be able to find dataset
+    assert not has_combined_error(model)
+
+    code = """$PROBLEM base model
+$INPUT ID DV TIME
+$DATA file.csv IGNORE=@
+
+$PRED
+CONC = THETA(1)
+Y = (CONC + ETA(1)) + (CONC + ETA(1)) * ERR(1) + ERR(2)
+
+$THETA 0.1
+$OMEGA 0.01
+$SIGMA 1
+$SIGMA .02
+$ESTIMATION METHOD=1 INTER MAXEVALS=9990 PRINT=2 POSTHOC
+"""
+    model = read_model_from_string(code)
+    assert has_combined_error(model)

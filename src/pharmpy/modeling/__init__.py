@@ -11,7 +11,15 @@ from pharmpy.modeling.common import (
     write_model,
 )
 from pharmpy.modeling.covariate_effect import add_covariate_effect
-from pharmpy.modeling.error import additive_error, combined_error, proportional_error, remove_error
+from pharmpy.modeling.error import (
+    additive_error,
+    combined_error,
+    has_additive_error,
+    has_combined_error,
+    has_proportional_error,
+    proportional_error,
+    remove_error,
+)
 from pharmpy.modeling.eta_additions import add_iiv, add_iov
 from pharmpy.modeling.eta_transformations import boxcox, john_draper, tdist
 from pharmpy.modeling.iiv_on_ruv import iiv_on_ruv
@@ -82,4 +90,7 @@ __all__ = [
     'set_initial_estimates',
     'copy_model',
     'set_name',
+    'has_proportional_error',
+    'has_additive_error',
+    'has_combined_error',
 ]

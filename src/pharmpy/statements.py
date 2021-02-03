@@ -852,6 +852,18 @@ class ModelStatements(list):
             expression = expression.subs({self[j].symbol: self[j].expression})
         return expression
 
+    def full_expression_after_odes(self, expression):
+        """Expand an expression into its full definition
+
+        After ODE system
+        """
+        i = self._ode_index()
+        if i is None:
+            i = -1
+        for j in range(len(self) - 1, i, -1):
+            expression = expression.subs({self[j].symbol: self[j].expression})
+        return expression
+
     def add_before_odes(self, statement):
         """Add a statement just before the ODE system or at the end of the model"""
         for i, s in enumerate(self):
