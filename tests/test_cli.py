@@ -1,5 +1,7 @@
+import io
 import os
 import re
+from contextlib import redirect_stdout
 
 import pytest
 
@@ -244,6 +246,32 @@ def test_update_inits(datadir, fs, force_args, file_exists):
     assert not re.search(r'\$ETAS FILE=run2_input.phi', mod_ori)
     assert bool(re.search(r'\$ETAS FILE=run2_input.phi', mod_cov)) is file_exists
     assert (os.path.isfile('run2_input.phi')) is file_exists
+
+
+@pytest.mark.parametrize('fs', [[['pkgutil'], [source, etas_record]]], indirect=True)
+def test_model_sample(datadir, fs):
+    fs.add_real_file(datadir / 'pheno_real.mod', target_path='run1.mod')
+    fs.add_real_file(datadir / 'pheno_real.ext', target_path='run1.ext')
+    fs.add_real_file(datadir / 'pheno_real.lst', target_path='run1.lst')
+    fs.add_real_file(datadir / 'pheno_real.cov', target_path='run1.cov')
+    fs.add_real_file(datadir / 'pheno.dta', target_path='pheno.dta')
+
+    args = ['model', 'sample', 'run1.mod', '--seed=24']
+    cli.main(args)
+
+    with open('run1.mod', 'r') as f_ori, open('sample_1.mod', 'r') as f_cov:
+        mod_ori = f_ori.read()
+        mod_cov = f_cov.read()
+
+    assert mod_ori != mod_cov
+
+
+def test_usage():
+    f = io.StringIO()
+    with redirect_stdout(f):
+        cli.main([])
+        out = f.getvalue()
+    assert 'usage:' in out
 
 
 def test_main():
