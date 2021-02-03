@@ -391,8 +391,7 @@ def add_peripheral_compartment(model):
     will be parameterized as QPn / VPn where VPn is the volumne of the added peripheral
     compartment.
 
-    Initial estimates
-    =================
+    Initial estimates:
 
     ==  ===================================================
     n
@@ -453,11 +452,78 @@ def add_peripheral_compartment(model):
 
 
 def remove_peripheral_compartment(model):
-    odes = model.statements.ode_system
+    r"""Remove a peripheral distribution compartment from model
+
+    Initial estimates:
+
+    ==  ===================================================
+    n
+    ==  ===================================================
+    2   :math:`\mathsf{CL} = \mathsf{CL'}`,
+        :math:`\mathsf{QP1} = \mathsf{CL'}` and :math:`\mathsf{VP1} = \mathsf{VC'} \cdot 0.05`
+    3   :math:`\mathsf{QP1} = (\mathsf{QP1'} + \mathsf{QP2'}) / 2`,
+        :math:`\mathsf{VP1} = \mathsf{VP1'} + \mathsf{VP2'}`
+    ==  ===================================================
+
+    """
+
+    statements = model.statements
+    odes = statements.ode_system
     peripherals = odes.find_peripherals()
     if peripherals:
         last_peripheral = peripherals[-1]
         central = odes.find_central()
+        if len(peripherals) == 1:
+            output = odes.find_output()
+            elimination_rate = odes.get_flow(central, output)
+            cl, vc = elimination_rate.as_numer_denom()
+            from_rate = odes.get_flow(last_peripheral, central)
+            qp1, vp1 = from_rate.as_numer_denom()
+            full_cl = statements.full_expression_from_odes(cl)
+            full_vc = statements.full_expression_from_odes(vc)
+            full_qp1 = statements.full_expression_from_odes(qp1)
+            full_vp1 = statements.full_expression_from_odes(vp1)
+            pop_cl_candidates = full_cl.free_symbols & set(model.parameters.symbols)
+            pop_cl = pop_cl_candidates.pop()
+            pop_vc_candidates = full_vc.free_symbols & set(model.parameters.symbols)
+            pop_vc = pop_vc_candidates.pop()
+            pop_qp1_candidates = full_qp1.free_symbols & set(model.parameters.symbols)
+            pop_qp1 = pop_qp1_candidates.pop()
+            pop_vp1_candidates = full_vp1.free_symbols & set(model.parameters.symbols)
+            pop_vp1 = pop_vp1_candidates.pop()
+            pop_vc_init = model.parameters[pop_vc].init
+            pop_cl_init = model.parameters[pop_cl].init
+            pop_qp1_init = model.parameters[pop_qp1].init
+            pop_vp1_init = model.parameters[pop_vp1].init
+            new_vc_init = pop_vc_init + pop_qp1_init / pop_cl_init * pop_vp1_init
+            model.parameters[pop_vc].init = new_vc_init
+        elif len(peripherals) == 2:
+            first_peripheral = peripherals[0]
+            from1_rate = odes.get_flow(first_peripheral, central)
+            qp1, vp1 = from1_rate.as_numer_denom()
+            from2_rate = odes.get_flow(last_peripheral, central)
+            qp2, vp2 = from2_rate.as_numer_denom()
+            full_qp2 = statements.full_expression_from_odes(qp2)
+            full_vp2 = statements.full_expression_from_odes(vp2)
+            full_qp1 = statements.full_expression_from_odes(qp1)
+            full_vp1 = statements.full_expression_from_odes(vp1)
+            pop_qp2_candidates = full_qp2.free_symbols & set(model.parameters.symbols)
+            pop_qp2 = pop_qp2_candidates.pop()
+            pop_vp2_candidates = full_vp2.free_symbols & set(model.parameters.symbols)
+            pop_vp2 = pop_vp2_candidates.pop()
+            pop_qp1_candidates = full_qp1.free_symbols & set(model.parameters.symbols)
+            pop_qp1 = pop_qp1_candidates.pop()
+            pop_vp1_candidates = full_vp1.free_symbols & set(model.parameters.symbols)
+            pop_vp1 = pop_vp1_candidates.pop()
+            pop_qp2_init = model.parameters[pop_qp2].init
+            pop_vp2_init = model.parameters[pop_vp2].init
+            pop_qp1_init = model.parameters[pop_qp1].init
+            pop_vp1_init = model.parameters[pop_vp1].init
+            new_qp1_init = (pop_qp1_init + pop_qp2_init) / 2
+            new_vp1_init = pop_vp1_init + pop_vp2_init
+            model.parameters[pop_qp1].init = new_qp1_init
+            model.parameters[pop_vp1].init = new_vp1_init
+
         symbols = odes.get_flow(central, last_peripheral).free_symbols
         symbols |= odes.get_flow(last_peripheral, central).free_symbols
         odes.remove_compartment(last_peripheral)
