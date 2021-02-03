@@ -399,6 +399,8 @@ def add_peripheral_compartment(model):
     ==  ===================================================
     1   :math:`\mathsf{CL} = \mathsf{CL'}`, :math:`\mathsf{VC} = \mathsf{VC'}`,
         :math:`\mathsf{QP1} = \mathsf{CL'}` and :math:`\mathsf{VP1} = \mathsf{VC'} \cdot 0.05`
+    2   :math:`\mathsf{QP1} = \mathsf{QP1' / 2}`, :math:`\mathsf{VP1} = \mathsf{VP1'}`,
+        :math:`\mathsf{QP2} = \mathsf{QP1' / 2}` and :math:`\mathsf{VP2} = \mathsf{VP1'}`
     ==  ===================================================
 
     """
@@ -411,17 +413,33 @@ def add_peripheral_compartment(model):
     output = odes.find_output()
     elimination_rate = odes.get_flow(central, output)
     cl, vc = elimination_rate.as_numer_denom()
-    full_cl = statements.full_expression_from_odes(cl)
-    full_vc = statements.full_expression_from_odes(vc)
-    pop_cl_candidates = full_cl.free_symbols & set(model.parameters.symbols)
-    pop_cl = pop_cl_candidates.pop()
-    pop_vc_candidates = full_vc.free_symbols & set(model.parameters.symbols)
-    pop_vc = pop_vc_candidates.pop()
-    pop_cl_init = model.parameters[pop_cl].init
-    pop_vc_init = model.parameters[pop_vc].init
+
     if n == 1:
+        full_cl = statements.full_expression_from_odes(cl)
+        full_vc = statements.full_expression_from_odes(vc)
+        pop_cl_candidates = full_cl.free_symbols & set(model.parameters.symbols)
+        pop_cl = pop_cl_candidates.pop()
+        pop_vc_candidates = full_vc.free_symbols & set(model.parameters.symbols)
+        pop_vc = pop_vc_candidates.pop()
+        pop_cl_init = model.parameters[pop_cl].init
+        pop_vc_init = model.parameters[pop_vc].init
         qp_init = pop_cl_init
         vp_init = pop_vc_init * 0.05
+    elif n == 2:
+        per1 = per[0]
+        from_rate = odes.get_flow(per1, central)
+        qp1, vp1 = from_rate.as_numer_denom()
+        full_qp1 = statements.full_expression_from_odes(qp1)
+        full_vp1 = statements.full_expression_from_odes(vp1)
+        pop_qp1_candidates = full_qp1.free_symbols & set(model.parameters.symbols)
+        pop_qp1 = pop_qp1_candidates.pop()
+        pop_vp1_candidates = full_vp1.free_symbols & set(model.parameters.symbols)
+        pop_vp1 = pop_vp1_candidates.pop()
+        pop_qp1_init = model.parameters[pop_qp1].init
+        pop_vp1_init = model.parameters[pop_vp1].init
+        model.parameters[pop_qp1].init = pop_qp1_init / 2
+        qp_init = pop_qp1_init / 2
+        vp_init = pop_vp1_init
     else:
         qp_init = 0.1
         vp_init = 0.1
