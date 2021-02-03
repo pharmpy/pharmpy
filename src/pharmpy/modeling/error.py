@@ -40,6 +40,8 @@ def additive_error(model):
     model
         Set error model for this model
     """
+    if has_additive_error(model):
+        return model
     stats, y, f = _preparations(model)
     ruv = model.create_symbol('RUV')
     expr = f + ruv
@@ -73,6 +75,8 @@ def proportional_error(model):
     model
         Set error model for this model
     """
+    if has_proportional_error(model):
+        return model
     stats, y, f = _preparations(model)
     ruv = model.create_symbol('RUV')
     expr = f + f * ruv
@@ -99,6 +103,8 @@ def combined_error(model):
     model
         Set error model for this model
     """
+    if has_combined_error(model):
+        return model
     stats, y, f = _preparations(model)
     ruv_prop = model.create_symbol('RUV_PROP')
     ruv_add = model.create_symbol('RUV_ADD')

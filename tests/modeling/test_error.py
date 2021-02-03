@@ -12,6 +12,7 @@ from pharmpy.modeling import (
     remove_error,
 )
 from pharmpy.modeling.error import _get_prop_init
+from pharmpy.statements import Assignment
 
 
 def test_remove_error_model(testdata):
@@ -31,10 +32,17 @@ def test_additive_error_model(testdata):
 
 def test_proportional_error_model(testdata):
     model = Model(testdata / 'nonmem' / 'pheno.mod')
+    model.statements[5] = Assignment('Y', 'F')
     proportional_error(model)
     model.update_source()
     assert str(model).split('\n')[11] == 'Y=F+F*EPS(1)'
     assert str(model).split('\n')[17] == '$SIGMA  0.09 ; sigma'
+
+    model = Model(testdata / 'nonmem' / 'pheno.mod')
+    proportional_error(model)
+    model.update_source()
+    assert str(model).split('\n')[11] == 'Y=F+F*EPS(1)'
+    assert str(model).split('\n')[17] == '$SIGMA 0.013241'
 
 
 def test_combined_error_model(testdata):
