@@ -24,7 +24,7 @@ class ParameterSet(OrderedSet):
 
     def __getitem__(self, index):
         for e in self:
-            if e.name == index:
+            if e.name == index or e.symbol == index:
                 return e
         raise KeyError(f'Parameter "{index}" does not exist')
 
