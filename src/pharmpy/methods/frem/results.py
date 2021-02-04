@@ -879,6 +879,42 @@ def calculate_results_using_bipp(frem_model, continuous, categorical, rescale=Tr
     return res
 
 
+def psn_reorder_base_model_inits(model, path):
+    """Reorder omega inits from base model in PsN
+
+    If base model was reordered PsN writes the omega inits dict to m1/model_1.inits
+    """
+    order_path = path / 'm1' / 'model_1.inits'
+    if order_path.is_file():
+        with open(order_path, 'r') as fh:
+            lines = fh.readlines()
+        lines = lines[1:-1]
+        replacements = dict()
+        for line in lines:
+            stripped = line.strip().replace(' ', '').replace("'", '').rstrip(',').replace('>', '')
+            a = stripped.split('=')
+            coords = a[0][6:-1]
+            t = tuple(coords.split(','))
+            t = (int(t[0]), int(t[1]))
+            try:
+                replacements[t] = float(a[1])
+            except ValueError:
+                pass
+
+        def sortfunc(x):
+            return float(x[0]) + float(x[1]) / 1000
+
+        order = sorted(replacements, key=sortfunc)
+        values = [replacements[i] for i in order]
+        i = 0
+        for p in model.parameters:
+            if i == len(values):
+                break
+            if p.name in model.random_variables.all_parameters():
+                p.init = values[i]
+                i += 1
+
+
 def psn_frem_results(path, force_posdef_covmatrix=False, force_posdef_samples=500, method=None):
     """Create frem results from a PsN FREM run
 
@@ -945,6 +981,12 @@ def psn_frem_results(path, force_posdef_covmatrix=False, force_posdef_samples=50
         if intmod_path.is_file():
             intmod = Model(intmod_path)
             intmods.append(intmod)
+
+    model1b = Model(path / 'm1' / 'model_1b.mod')
+    model1 = intmods[0]
+    model1b.modelfit_results = model1.modelfit_results
+    model1b.modelfit_results.parameter_estimates = model1b.parameters.nonfixed_inits
+    psn_reorder_base_model_inits(model1b, path)
 
     res = calculate_results(
         model_4,

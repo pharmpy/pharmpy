@@ -36,6 +36,10 @@ class NONMEMModelfitResults(ModelfitResults):
         else:
             return self._parameter_estimates_sdcorr
 
+    @parameter_estimates.setter
+    def parameter_estimates(self, value):
+        self._parameter_estimates = value
+
     @property
     def standard_errors(self):
         if not self._repara:

@@ -299,6 +299,10 @@ class ModelfitResults(Results):
         """Parameter estimates as series"""
         return self._parameter_estimates
 
+    @parameter_estimates.setter
+    def parameter_estimates(self, value):
+        self._parameter_estimates = value
+
     @property
     def covariance_matrix(self):
         """The covariance matrix of the population parameter estimates"""
@@ -598,6 +602,10 @@ class ChainedModelfitResults(list, ModelfitResults):
     @property
     def parameter_estimates(self):
         return self[-1].parameter_estimates
+
+    @parameter_estimates.setter
+    def parameter_estimates(self, value):
+        self[-1].parameter_estimates = value
 
     @property
     def covariance_matrix(self):
