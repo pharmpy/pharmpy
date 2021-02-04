@@ -524,6 +524,44 @@ def test_symbol_names_in_abbr(testdata):
         assert 'ETA_CL' in [eta.name for eta in rvs.etas]
 
 
+@pytest.mark.parametrize(
+    'parameter_names, trans_statements_exp, trans_params_exp',
+    [
+        (
+            ['abbr', 'comment', 'basic'],
+            {'THETA(CL)': 'THETA_CL', 'ETA(CL)': 'ETA_CL', 'THETA(2)': 'TVV'},
+            {'TVCL': 'THETA_CL', 'ETA(1)': 'ETA_CL'},
+        ),
+        (
+            ['comment', 'abbr', 'basic'],
+            {'THETA(CL)': 'TVCL', 'ETA(CL)': 'ETA_CL', 'THETA(2)': 'TVV'},
+            {'ETA(1)': 'ETA_CL'},
+        ),
+        (
+            ['abbr', 'basic'],
+            {'THETA(CL)': 'THETA_CL', 'ETA(CL)': 'ETA_CL'},
+            {'THETA(1)': 'THETA_CL', 'ETA(1)': 'ETA_CL'},
+        ),
+        (
+            ['basic'],
+            {'THETA(CL)': 'THETA(1)', 'ETA(CL)': 'ETA(1)'},
+            {},
+        ),
+    ],
+)
+def test_symbol_names_priority(testdata, parameter_names, trans_statements_exp, trans_params_exp):
+    with ConfigurationContext(conf, parameter_names=parameter_names):
+        model = Model(testdata / 'nonmem' / 'pheno_abbr_comments.mod')
+        model._read_parameters()
+
+        rec = model.get_pred_pk_record()
+        statements = rec.statements
+        trans_statements, trans_params = model._create_name_trans(statements)
+
+        assert trans_statements == trans_statements_exp
+        assert trans_params == trans_params_exp
+
+
 def test_clashing_parameter_names(datadir):
     with ConfigurationContext(conf, parameter_names=['comment', 'basic']):
         model = Model(datadir / 'pheno_clashing_symbols.mod')

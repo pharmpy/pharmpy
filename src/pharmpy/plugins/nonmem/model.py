@@ -350,17 +350,25 @@ class Model(pharmpy.model.Model):
                 statements.append(Assignment('F', symbols.symbol('F')))
             statements += error.statements
 
-        parameter_names = pharmpy.plugins.nonmem.conf.parameter_names
+        if not hasattr(self, '_parameters'):
+            self._read_parameters()
 
-        if 'comment' in parameter_names:
-            trans = self._name_as_comments(statements)
-            statements.subs(trans)
+        if 'comment' in pharmpy.plugins.nonmem.conf.parameter_names:
+            trans_statements, trans_params = self._name_as_comments()
+            trans_statements, trans_params = self._replace_clashing_symbols(
+                statements, trans_statements
+            )
+
+            for key, value in trans_params.items():
+                self.parameters[key].name = value
+            statements.subs(trans_statements)
         if self.control_stream.abbreviated.replace:
-            if 'abbr' in parameter_names:
-                trans = self._name_as_abbr()
+            if 'abbr' in pharmpy.plugins.nonmem.conf.parameter_names:
+                trans_statements, trans_params = self._name_as_abbr()
+                self.replace_abbr(trans_params)
             else:
-                trans = self.control_stream.abbreviated.replace
-            statements.subs(trans)
+                trans_statements = self.control_stream.abbreviated.replace
+            statements.subs(trans_statements)
 
         self._statements = statements
         self._old_statements = statements.copy()
@@ -399,42 +407,127 @@ class Model(pharmpy.model.Model):
             des = des[0]
         return des
 
-    def _name_as_comments(self, statements):
-        if not hasattr(self, '_parameters'):
-            self._read_parameters()
-        trans = self.parameter_translation(remove_idempotent=True, as_symbols=True)
-        parameter_symbols = {symb for _, symb in trans.items()}
+    def _create_name_trans(self, statements):
+        parameter_names = pharmpy.plugins.nonmem.conf.parameter_names
+        conf_functions = {
+            'comment': self._name_as_comments(),
+            'abbr': self._name_as_abbr(),
+            'basic': self._name_as_basic(),
+        }
+
+        rvs = self.random_variables
+        params_current = self.parameter_translation()
+
+        abbr = self.control_stream.abbreviated.replace
+        abbr_replace_rev = {
+            **abbr,
+            **{rv.name: rv.name for rv in rvs if rv.name not in abbr.keys()},
+            **{p: p for p in params_current.keys() if p not in abbr.keys()},
+        }
+        statements_current = {
+            key: value
+            for key, value in abbr_replace_rev.items()
+            if symbols.symbol(key) in statements.free_symbols
+        }
+
+        trans_statements, trans_params = dict(), dict()
+        nonmem_names_all = [rv.name for rv in rvs] + [
+            key for key, value in self.parameter_translation().items()
+        ]
+        names_trans = []
+        for setting in parameter_names:
+            trans_statements_setting, trans_params_setting = conf_functions[setting]
+            for key, value in trans_statements_setting.items():
+                try:
+                    nm_name = statements_current[key]
+                except KeyError:
+                    nm_name = key
+                try:
+                    rev = {value: key for key, value in statements_current.items()}
+                    name_statements_current = rev[nm_name]
+                except KeyError:
+                    name_statements_current = None
+
+                if name_statements_current and nm_name not in names_trans:
+                    trans_statements[name_statements_current] = value
+                    if trans_params_setting:
+                        try:
+                            name_params_current = params_current[nm_name]
+                        except KeyError:
+                            try:
+                                name_params_current = abbr[nm_name]
+                            except KeyError:
+                                name_params_current = nm_name
+                        trans_params[name_params_current] = value
+
+                    names_trans.append(nm_name)
+
+            if setting == 'basic':
+                params_left = {
+                    key: value for key, value in params_current.items() if key not in names_trans
+                }
+                trans_rvs = {rv.name: rv.name for rv in rvs if rv.name not in names_trans}
+                params_left = {**params_left, **trans_rvs}
+                names_trans += [key for key in params_left.keys() if key not in names_trans]
+                break
+
+        if set(nonmem_names_all) - set(names_trans):
+            raise ValueError('Informative error')
+
+        return trans_statements, trans_params
+
+    def _name_as_comments(self):
+        trans_statements = self.parameter_translation(remove_idempotent=True)
+        return trans_statements, dict()
+
+    def _name_as_abbr(self):
+        trans_params = self.control_stream.abbreviated.translate_to_pharmpy_names()
+
+        trans_statements = {
+            key: trans_params[value]
+            for key, value in self.control_stream.abbreviated.replace.items()
+        }
+        return trans_statements, trans_params
+
+    def _name_as_basic(self):
+        trans_params = {
+            key: value
+            for key, value in self.parameter_translation(reverse=True).items()
+            if key != value
+        }
+        trans_statements = self.control_stream.abbreviated.replace
+        return trans_statements, trans_params
+
+    @staticmethod
+    def _replace_clashing_symbols(statements, trans_statements):
+        parameter_symbols = {symbols.symbol(symb) for _, symb in trans_statements.items()}
         clashing_symbols = parameter_symbols & statements.free_symbols
+        trans_params = dict()
         if clashing_symbols:
             warnings.warn(
                 f'The parameter names {clashing_symbols} are also names of variables '
                 f'in the model code. Falling back to the NONMEM default parameter '
                 f'names for these.'
             )
-            rev_trans = {val: key for key, val in trans.items()}
-            trans = {
-                nm_symb: symb for nm_symb, symb in trans.items() if symb not in clashing_symbols
+            trans_params = {
+                symb: nm_symb
+                for nm_symb, symb in trans_statements.items()
+                if symbols.symbol(symb) in clashing_symbols
             }
-            for symb in clashing_symbols:
-                self.parameters[symb.name].name = rev_trans[symb].name
-        return trans
+            trans_statements = {
+                nm_symb: symb
+                for nm_symb, symb in trans_statements.items()
+                if symbols.symbol(symb) not in clashing_symbols
+            }
+        return trans_statements, trans_params
 
-    def _name_as_abbr(self):
-        if not hasattr(self, '_parameters'):
-            self._read_parameters()
-        rvs = self.random_variables
-        param_replace = self.control_stream.abbreviated.translate_to_pharmpy_names()
-        for key, value in param_replace.items():
+    def replace_abbr(self, replace):
+        for key, value in replace.items():
             try:
                 self.parameters[key].name = value
             except KeyError:
                 pass
-        rvs.rename(param_replace)
-        trans = {
-            key: param_replace[value]
-            for key, value in self.control_stream.abbreviated.replace.items()
-        }
-        return trans
+        self.random_variables.rename(replace)
 
     def _zero_fix_rvs(self, eta=True):
         zero_fix = []
