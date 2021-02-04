@@ -8,6 +8,7 @@ from pyfakefs.fake_filesystem_unittest import Patcher
 from pharmpy import Model
 from pharmpy.config import ConfigurationContext
 from pharmpy.model import ModelSyntaxError
+from pharmpy.modeling import explicit_odes, zero_order_elimination
 from pharmpy.parameter import Parameter
 from pharmpy.plugins.nonmem import conf
 from pharmpy.plugins.nonmem.nmtran_parser import NMTranParser
@@ -693,3 +694,23 @@ $ESTIMATION METHOD=1 MAXEVAL=9999 NONINFETA=1 MCETA=1
     model = Model(StringIO(code))
     rvs = model.random_variables
     assert len(rvs) == 11
+
+
+@pytest.mark.parametrize(
+    'model_path, transformation',
+    [
+        ('nonmem/pheno.mod', explicit_odes),
+        ('nonmem/pheno.mod', zero_order_elimination),
+        ('nonmem/modeling/pheno_advan1_zero_order.mod', explicit_odes),
+        ('nonmem/modeling/pheno_advan5_depot.mod', explicit_odes),
+    ],
+)
+def test_des(testdata, model_path, transformation):
+    model_ref = Model(testdata / model_path)
+    transformation(model_ref)
+    model_ref.update_source()
+
+    model_des = Model(StringIO(str(model_ref)))
+    model_des.source.path = model_ref.source.path  # To be able to find dataset
+
+    assert model_ref.statements.ode_system == model_des.statements.ode_system

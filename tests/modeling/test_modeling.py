@@ -1760,26 +1760,6 @@ def test_nested_update_source(pheno_path):
 
 
 @pytest.mark.parametrize(
-    'model_path, transformation',
-    [
-        ('nonmem/pheno.mod', explicit_odes),
-        ('nonmem/pheno.mod', zero_order_elimination),
-        ('nonmem/modeling/pheno_advan1_zero_order.mod', explicit_odes),
-        ('nonmem/modeling/pheno_advan5_depot.mod', explicit_odes),
-    ],
-)
-def test_des(testdata, model_path, transformation):
-    model_ref = Model(testdata / model_path)
-    transformation(model_ref)
-    model_ref.update_source()
-
-    model_des = Model(StringIO(str(model_ref)))
-    model_des.source.path = model_ref.source.path  # To be able to find dataset
-
-    assert model_ref.statements.ode_system == model_des.statements.ode_system
-
-
-@pytest.mark.parametrize(
     'etas, eta_names, pk_start_ref, pk_end_ref, omega_ref',
     [
         (
