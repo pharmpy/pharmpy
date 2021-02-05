@@ -602,6 +602,13 @@ $ESTIMATION METHOD=1 INTER MAXEVALS=9990 PRINT=2 POSTHOC
             assert model.parameters.names == ['TV', 'THETA(2)']
 
 
+def test_missing_parameter_names_settings(pheno_path):
+    with ConfigurationContext(conf, parameter_names=['comment']):
+        model = Model(pheno_path)
+        with pytest.raises(ValueError):
+            model.statements
+
+
 def test_dv_symbol(pheno_path):
     model = Model(pheno_path)
     assert model.dependent_variable_symbol.name == 'Y'

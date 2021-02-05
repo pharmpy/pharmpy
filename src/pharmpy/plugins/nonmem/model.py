@@ -353,22 +353,17 @@ class Model(pharmpy.model.Model):
         if not hasattr(self, '_parameters'):
             self._read_parameters()
 
-        if 'comment' in pharmpy.plugins.nonmem.conf.parameter_names:
-            trans_statements, trans_params = self._name_as_comments()
-            trans_statements, trans_params = self._replace_clashing_symbols(
-                statements, trans_statements
-            )
-
-            for key, value in trans_params.items():
+        trans_statements, trans_params = self._create_name_trans(statements)
+        for key, value in trans_params.items():
+            try:
                 self.parameters[key].name = value
+            except KeyError:
+                self.random_variables.rename({key: value})
+
+        try:
             statements.subs(trans_statements)
-        if self.control_stream.abbreviated.replace:
-            if 'abbr' in pharmpy.plugins.nonmem.conf.parameter_names:
-                trans_statements, trans_params = self._name_as_abbr()
-                self.replace_abbr(trans_params)
-            else:
-                trans_statements = self.control_stream.abbreviated.replace
-            statements.subs(trans_statements)
+        except AttributeError:
+            pass
 
         self._statements = statements
         self._old_statements = statements.copy()
@@ -435,9 +430,13 @@ class Model(pharmpy.model.Model):
             key for key, value in self.parameter_translation().items()
         ]
         names_trans = []
+        clashing_symbols = set()
         for setting in parameter_names:
             trans_statements_setting, trans_params_setting = conf_functions[setting]
+            clashing_symbols.update(self._clashing_symbols(statements, trans_statements_setting))
             for key, value in trans_statements_setting.items():
+                if symbols.symbol(value) in clashing_symbols:
+                    continue
                 try:
                     nm_name = statements_current[key]
                 except KeyError:
@@ -466,10 +465,24 @@ class Model(pharmpy.model.Model):
                 params_left = {
                     key: value for key, value in params_current.items() if key not in names_trans
                 }
+                trans_clashing_symbols = {
+                    value: key
+                    for key, value in params_left.items()
+                    if symbols.symbol(value) in clashing_symbols
+                }
+
+                trans_params = {**trans_params, **trans_clashing_symbols}
                 trans_rvs = {rv.name: rv.name for rv in rvs if rv.name not in names_trans}
                 params_left = {**params_left, **trans_rvs}
                 names_trans += [key for key in params_left.keys() if key not in names_trans]
                 break
+
+        if clashing_symbols:
+            warnings.warn(
+                f'The parameter names {clashing_symbols} are also names of variables '
+                f'in the model code. Falling back to the in naming scheme config '
+                f'names for these.'
+            )
 
         if set(nonmem_names_all) - set(names_trans):
             raise ValueError('Informative error')
@@ -499,27 +512,10 @@ class Model(pharmpy.model.Model):
         return trans_statements, trans_params
 
     @staticmethod
-    def _replace_clashing_symbols(statements, trans_statements):
+    def _clashing_symbols(statements, trans_statements):
         parameter_symbols = {symbols.symbol(symb) for _, symb in trans_statements.items()}
         clashing_symbols = parameter_symbols & statements.free_symbols
-        trans_params = dict()
-        if clashing_symbols:
-            warnings.warn(
-                f'The parameter names {clashing_symbols} are also names of variables '
-                f'in the model code. Falling back to the NONMEM default parameter '
-                f'names for these.'
-            )
-            trans_params = {
-                symb: nm_symb
-                for nm_symb, symb in trans_statements.items()
-                if symbols.symbol(symb) in clashing_symbols
-            }
-            trans_statements = {
-                nm_symb: symb
-                for nm_symb, symb in trans_statements.items()
-                if symbols.symbol(symb) not in clashing_symbols
-            }
-        return trans_statements, trans_params
+        return clashing_symbols
 
     def replace_abbr(self, replace):
         for key, value in replace.items():
