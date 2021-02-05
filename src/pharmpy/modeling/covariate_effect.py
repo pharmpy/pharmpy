@@ -88,6 +88,17 @@ def add_covariate_effect(model, parameter, covariate, effect, operation='*'):
     statements.append(covariate_effect.template)
     statements.append(effect_statement)
 
+    previous_effect = sset.find_assignment(parameter)
+    cov_possible = [f'{parameter}{col_name}' for col_name in model.dataset.columns]
+
+    if all(
+        arg.name in cov_possible for arg in previous_effect.expression.args if str(arg) != parameter
+    ):
+        effect_statement.expression = effect_statement.expression.subs(
+            {parameter: previous_effect.expression}
+        )
+        sset.remove(previous_effect)
+
     for i, statement in enumerate(statements, 1):
         sset.insert(index + i, statement)
 
