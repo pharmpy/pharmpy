@@ -411,9 +411,9 @@ class Model(pharmpy.model.Model):
         }
 
         rvs = self.random_variables
+        abbr = self.control_stream.abbreviated.replace
         params_current = self.parameter_translation()
 
-        abbr = self.control_stream.abbreviated.replace
         abbr_replace_rev = {
             **abbr,
             **{rv.name: rv.name for rv in rvs if rv.name not in abbr.keys()},
@@ -485,7 +485,9 @@ class Model(pharmpy.model.Model):
             )
 
         if set(nonmem_names_all) - set(names_trans):
-            raise ValueError('Informative error')
+            raise ValueError(
+                'Mismatch in number of parameter names, all have not been accounted for.'
+            )
 
         return trans_statements, trans_params
 
