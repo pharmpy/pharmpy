@@ -4,6 +4,7 @@
 
 import warnings
 
+from pharmpy.modeling import has_proportional_error
 from pharmpy.parameter import Parameter
 from pharmpy.symbols import symbol as S
 
@@ -24,7 +25,7 @@ def power_on_ruv(model, list_of_eps=None):
     eps = _get_epsilons(model, list_of_eps)
     pset, sset = model.parameters, model.statements
 
-    if model.error_model == 'PROP':
+    if has_proportional_error(model):
         theta_init = 1
     else:
         theta_init = 0.1

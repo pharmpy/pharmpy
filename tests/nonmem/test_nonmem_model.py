@@ -1,4 +1,3 @@
-import re
 from io import StringIO
 
 import pytest
@@ -280,35 +279,6 @@ def test_add_parameters_and_statements(pheno_path, param_new, statement_new, buf
     )
 
     assert str(model.get_pred_pk_record()) == rec
-
-
-def test_error_model(pheno_path):
-    model_prop = Model(pheno_path)
-    assert model_prop.error_model == 'PROP'
-
-    model_add_str = re.sub(
-        r'Y=F\+W\*EPS\(1\)',
-        'Y=F+EPS(1)',
-        str(model_prop),
-    )
-    model_add = Model(StringIO(model_add_str))
-    assert model_add.error_model == 'ADD'
-
-    model_add_prop_str = re.sub(
-        r'Y=F\+W\*EPS\(1\)',
-        'Y=EPS(1)*F+EPS(2)+F',
-        str(model_prop),
-    )
-    model_add_prop = Model(StringIO(model_add_prop_str))
-    assert model_add_prop.error_model == 'ADD_PROP'
-
-    model_none_str = re.sub(
-        r'Y=F\+W\*EPS\(1\)',
-        'Y=F',
-        str(model_prop),
-    )
-    model_none = Model(StringIO(model_none_str))
-    assert model_none.error_model == 'NONE'
 
 
 @pytest.mark.parametrize('rv_new,buf_new', [(Parameter('omega', 0.1), '$OMEGA  0.1')])
