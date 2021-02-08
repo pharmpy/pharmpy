@@ -1,3 +1,14 @@
+0.16.0 (2021-02-08)
+-------------------
+
+* Improve initial estimates for adding peripheral compartments
+* Parameter names are set according to priority in config
+* Avoid duplication of e.g. median/mean when having multiple covariate effects with the same covariate
+* Change assignments when multiple covariate effects are applied to the same parameter to be combined in one line
+* Do not change error model if it is the same error model transformation multiple times
+* Add AggregatedModelfitResults
+* Document scm results
+
 0.15.0 (2021-02-01)
 -------------------
 
@@ -15,7 +26,7 @@
 * Support reading $DES-records
 * Add individual_parameter_statistics to ModelfitResults
 * Add pk_parameters to ModelfitResults
-* Add add_iov to modeling 
+* Add add_iov to modeling
 * Rename add_etas -> add_iiv
 
 0.13.0 (2021-01-18)
@@ -56,7 +67,7 @@
 0.10.0 (2020-11-16)
 -------------------
 
-* modeling.create_rv_block 
+* modeling.create_rv_block
 * modeling.michaelis_menten_elimination
 * modeling.set_transit_compartments
 * First version of modelfit method
@@ -89,7 +100,7 @@
 0.7.0 (2020-09-28)
 ------------------
 
-* Add method reset_indices in Results to flatten multiindices. Useful from R. 
+* Add method reset_indices in Results to flatten multiindices. Useful from R.
 * absorption_rate can also set sequential zero first absorption
 * New functionsadd_lag_time and remove_lag_time in modeling
 * Add basic functions fix/unfix_parameter, update_source and read_model to modeling API
@@ -100,7 +111,7 @@
 0.6.0 (2020-09-18)
 ------------------
 
-* Add eta transformations: boxcox, t-dist and John Draper 
+* Add eta transformations: boxcox, t-dist and John Draper
 * Add results cdd and scm to CLI
 * Add different views for scm results
 * Add support for taking parameter names from comment in NONMEM model
