@@ -378,13 +378,12 @@ class RandomVariables(OrderedSet):
             raise ValueError('Only normal distributions are supported')
         return M
 
-    def merge_normal_distributions(self, fill=0, create_cov_params=False):
+    def merge_normal_distributions(self, fill=0, create_cov_params=False, rv_to_param=None):
         """Merge all normal distributed rvs together into one joint normal
 
         Set new covariances (and previous 0 covs) to 'fill'
         """
         cov_to_params = dict()
-        cov_number = 1
         means, M, names, others = self._calc_covariance_matrix()
         if fill != 0:
             for row, col in itertools.product(range(M.rows), range(M.cols)):
@@ -393,14 +392,13 @@ class RandomVariables(OrderedSet):
         elif create_cov_params:
             for row, col in itertools.product(range(M.rows), range(M.cols)):
                 if M[row, col] == 0 and row > col:
-                    param_1 = M[row, row]
-                    param_2 = M[col, col]
-                    cov_name = f'COV{cov_number}'
-                    cov_number += 1
+                    param_1, param_2 = M[row, row], M[col, col]
+                    rv_1, rv_2 = names[col], names[row]
+
+                    cov_name = f'IIV_{rv_to_param[rv_1]}_{rv_to_param[rv_2]}'
                     cov_to_params[cov_name] = (str(param_1), str(param_2))
 
-                    M[row, col] = symbol(cov_name)
-                    M[col, row] = symbol(cov_name)
+                    M[row, col], M[col, row] = symbol(cov_name), symbol(cov_name)
 
         new_rvs = JointNormalSeparate(names, means, M)
         self.__init__(new_rvs + others)

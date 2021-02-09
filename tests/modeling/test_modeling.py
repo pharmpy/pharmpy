@@ -1393,48 +1393,82 @@ def test_add_iiv(pheno_path, parameter, expression, operation, eta_name, buf_new
             '$PK\n'
             'CL=THETA(1)*EXP(ETA(1))\n'
             'V=THETA(2)*EXP(ETA(2))\n'
-            'S1=V+ETA(3)+ETA(4)+ETA(5)\n\n',
-            '$OMEGA BLOCK(2)\n0.0309626\t; IVCL\n0.0031045\t; COV1\n0.031128\t; IVV\n'
-            '$OMEGA 0.1\n$OMEGA BLOCK(2)\n0.0309626\n0.0005 0.031128\n',
+            'S1=V+ETA(3)\n'
+            'MAT=THETA(3)*EXP(ETA(4))\n'
+            'Q=THETA(4)*EXP(ETA(5))\n\n',
+            '$OMEGA BLOCK(2)\n'
+            '0.0309626\t; IVCL\n'
+            '0.0031045\t; IIV_CL_V\n'
+            '0.031128\t; IVV\n'
+            '$OMEGA 0.1\n'
+            '$OMEGA BLOCK(2)\n'
+            '0.0309626\n'
+            '0.0005 0.031128\n',
         ),
         (
             ['ETA(1)', 'ETA(3)'],
             '$PK\nCL = THETA(1)*EXP(ETA(4))\nV = THETA(2)*EXP(ETA(1))\n'
-            'S1 = V + ETA(2) + ETA(3) + ETA(5)\n\n',
-            '$OMEGA 0.031128  ; IVV\n$OMEGA BLOCK(2)\n0.0309626\n0.0005 0.031128\n'
-            '$OMEGA BLOCK(2)\n0.0309626\t; IVCL\n0.0055644\t; COV1\n0.1\n',
+            'S1 = V + ETA(5)\n'
+            'MAT = THETA(3)*EXP(ETA(2))\n'
+            'Q = THETA(4)*EXP(ETA(3))\n\n',
+            '$OMEGA 0.031128  ; IVV\n'
+            '$OMEGA BLOCK(2)\n'
+            '0.0309626\n'
+            '0.0005 0.031128\n'
+            '$OMEGA BLOCK(2)\n'
+            '0.0309626\t; IVCL\n'
+            '0.0055644\t; IIV_CL_S1\n'
+            '0.1\n',
         ),
         (
             ['ETA(2)', 'ETA(3)'],
             '$PK\nCL=THETA(1)*EXP(ETA(1))\n'
             'V=THETA(2)*EXP(ETA(2))\n'
-            'S1=V+ETA(3)+ETA(4)+ETA(5)\n\n',
-            '$OMEGA 0.0309626  ; IVCL\n$OMEGA BLOCK(2)\n0.031128\t; IVV\n0.0055792\t; COV1\n0.1\n'
-            '$OMEGA BLOCK(2)\n0.0309626\n0.0005 0.031128\n',
+            'S1=V+ETA(3)\n'
+            'MAT=THETA(3)*EXP(ETA(4))\n'
+            'Q=THETA(4)*EXP(ETA(5))\n\n',
+            '$OMEGA 0.0309626  ; IVCL\n'
+            '$OMEGA BLOCK(2)\n'
+            '0.031128\t; IVV\n'
+            '0.0055792\t; IIV_V_S1\n'
+            '0.1\n'
+            '$OMEGA BLOCK(2)\n'
+            '0.0309626\n'
+            '0.0005 0.031128\n',
         ),
         (
             ['ETA(1)', 'ETA(2)', 'ETA(4)'],
             '$PK\n'
             'CL = THETA(1)*EXP(ETA(3))\n'
             'V = THETA(2)*EXP(ETA(4))\n'
-            'S1 = V + ETA(1) + ETA(2) + ETA(5)\n\n',
-            '$OMEGA 0.1\n$OMEGA  0.031128\n$OMEGA BLOCK(3)\n0.0309626\t; IVCL\n'
-            '0.0031045\t; COV1\n0.031128\t; IVV\n'
-            '0.0030963\t; COV2\n0.0031045\t; COV3\n0.0309626\n',
+            'S1 = V + ETA(1)\n'
+            'MAT = THETA(3)*EXP(ETA(5))\n'
+            'Q = THETA(4)*EXP(ETA(2))\n\n',
+            '$OMEGA 0.1\n'
+            '$OMEGA  0.031128\n'
+            '$OMEGA BLOCK(3)\n'
+            '0.0309626\t; IVCL\n'
+            '0.0031045\t; IIV_CL_V\n'
+            '0.031128\t; IVV\n'
+            '0.0030963\t; IIV_CL_MAT\n'
+            '0.0031045\t; IIV_V_MAT\n'
+            '0.0309626\n',
         ),
         (
             ['ETA(2)', 'ETA(3)', 'ETA(4)'],
             '$PK\n'
             'CL=THETA(1)*EXP(ETA(1))\n'
             'V=THETA(2)*EXP(ETA(2))\n'
-            'S1=V+ETA(3)+ETA(4)+ETA(5)\n\n',
+            'S1=V+ETA(3)\n'
+            'MAT=THETA(3)*EXP(ETA(4))\n'
+            'Q=THETA(4)*EXP(ETA(5))\n\n',
             '$OMEGA 0.0309626  ; IVCL\n'
             '$OMEGA BLOCK(3)\n'
             '0.031128\t; IVV\n'
-            '0.0055792\t; COV1\n'
+            '0.0055792\t; IIV_V_S1\n'
             '0.1\n'
-            '0.0031045\t; COV2\n'
-            '0.0055644\t; COV3\n'
+            '0.0031045\t; IIV_V_MAT\n'
+            '0.0055644\t; IIV_S1_MAT\n'
             '0.0309626\n'
             '$OMEGA  0.031128\n',
         ),
@@ -1443,26 +1477,42 @@ def test_add_iiv(pheno_path, parameter, expression, operation, eta_name, buf_new
             '$PK\n'
             'CL=THETA(1)*EXP(ETA(1))\n'
             'V=THETA(2)*EXP(ETA(2))\n'
-            'S1=V+ETA(3)+ETA(4)+ETA(5)\n\n',
+            'S1=V+ETA(3)\n'
+            'MAT=THETA(3)*EXP(ETA(4))\n'
+            'Q=THETA(4)*EXP(ETA(5))\n\n',
             '$OMEGA 0.0309626  ; IVCL\n'
             '$OMEGA 0.031128  ; IVV\n'
             '$OMEGA BLOCK(3)\n'
             '0.1\n'
-            '0.0055644\t; COV1\n'
+            '0.0055644\t; IIV_S1_Q\n'
             '0.0309626\n'
-            '0.0055792\t; COV2\n'
+            '0.0055792\t; IIV_S1_MAT\n'
             '0.0005\n'
             '0.031128\n',
         ),
         (
             None,
-            '$PK\nCL=THETA(1)*EXP(ETA(1))\nV=THETA(2)*EXP(ETA(2))\nS1=V+ETA(3)+ETA(4)+ETA(5)\n\n',
+            '$PK\nCL=THETA(1)*EXP(ETA(1))\n'
+            'V=THETA(2)*EXP(ETA(2))\n'
+            'S1=V+ETA(3)\n'
+            'MAT=THETA(3)*EXP(ETA(4))\n'
+            'Q=THETA(4)*EXP(ETA(5))\n\n',
             '$OMEGA BLOCK(5)\n'
             '0.0309626\t; IVCL\n'
-            '0.0031045\t; COV1\n0.031128\t; IVV\n'
-            '0.0055644\t; COV2\n0.0055792\t; COV3\n0.1\n'
-            '0.0030963\t; COV4\n0.0031045\t; COV5\n0.0055644\t; COV6\n0.0309626\n'
-            '0.0031045\t; COV7\n0.0031128\t; COV8\n0.0055792\t; COV9\n0.0005\n0.031128\n',
+            '0.0031045\t; IIV_CL_V\n'
+            '0.031128\t; IVV\n'
+            '0.0055644\t; IIV_CL_S1\n'
+            '0.0055792\t; IIV_V_S1\n'
+            '0.1\n'
+            '0.0030963\t; IIV_CL_MAT\n'
+            '0.0031045\t; IIV_V_MAT\n'
+            '0.0055644\t; IIV_S1_MAT\n'
+            '0.0309626\n'
+            '0.0031045\t; IIV_CL_Q\n'
+            '0.0031128\t; IIV_V_Q\n'
+            '0.0055792\t; IIV_S1_Q\n'
+            '0.0005\n'
+            '0.031128\n',
         ),
     ],
 )
@@ -1572,7 +1622,9 @@ def test_iiv_on_ruv(pheno_path, epsilons, same_eta, eta_names, err_ref, omega_re
             '$PK\n'
             'CL = THETA(1)\n'
             'V = THETA(2)*EXP(ETA(1))\n'
-            'S1 = V + ETA(2) + ETA(3) + ETA(4)\n\n',
+            'S1 = V + ETA(2)\n'
+            'MAT = THETA(3)*EXP(ETA(3))\n'
+            'Q = THETA(4)*EXP(ETA(4))\n\n',
             '$OMEGA 0.031128  ; IVV\n'
             '$OMEGA 0.1\n'
             '$OMEGA BLOCK(2)\n'
@@ -1581,22 +1633,42 @@ def test_iiv_on_ruv(pheno_path, epsilons, same_eta, eta_names, err_ref, omega_re
         ),
         (
             ['ETA(1)', 'ETA(2)'],
-            '$PK\n' 'CL = THETA(1)\n' 'V = THETA(2)\n' 'S1 = V + ETA(1) + ETA(2) + ETA(3)\n\n',
+            '$PK\n'
+            'CL = THETA(1)\n'
+            'V = THETA(2)\n'
+            'S1 = V + ETA(1)\n'
+            'MAT = THETA(3)*EXP(ETA(2))\n'
+            'Q = THETA(4)*EXP(ETA(3))\n\n',
             '$OMEGA 0.1\n' '$OMEGA BLOCK(2)\n' '0.0309626\n' '0.0005 0.031128\n',
         ),
         (
             ['ETA(1)', 'ETA(4)'],
-            '$PK\n' 'CL = THETA(1)\n' 'V = THETA(2)*EXP(ETA(1))\n' 'S1 = V + ETA(2) + ETA(3)\n\n',
+            '$PK\n'
+            'CL = THETA(1)\n'
+            'V = THETA(2)*EXP(ETA(1))\n'
+            'S1 = V + ETA(2)\n'
+            'MAT = THETA(3)\n'
+            'Q = THETA(4)*EXP(ETA(3))\n\n',
             '$OMEGA 0.031128  ; IVV\n' '$OMEGA 0.1\n' '$OMEGA BLOCK(1)\n' '0.031128\n',
         ),
         (
             ['ETA(4)', 'ETA(5)'],
-            '$PK\n' 'CL=THETA(1)*EXP(ETA(1))\n' 'V=THETA(2)*EXP(ETA(2))\n' 'S1 = V + ETA(3)\n\n',
+            '$PK\n'
+            'CL=THETA(1)*EXP(ETA(1))\n'
+            'V=THETA(2)*EXP(ETA(2))\n'
+            'S1=V+ETA(3)\n'
+            'MAT = THETA(3)\n'
+            'Q = THETA(4)\n\n',
             '$OMEGA 0.0309626  ; IVCL\n' '$OMEGA 0.031128  ; IVV\n' '$OMEGA 0.1\n',
         ),
         (
             None,
-            '$PK\n' 'CL = THETA(1)\n' 'V = THETA(2)\n' 'S1 = V\n\n',
+            '$PK\n'
+            'CL = THETA(1)\n'
+            'V = THETA(2)\n'
+            'S1 = V\n'
+            'MAT = THETA(3)\n'
+            'Q = THETA(4)\n\n',
             '',
         ),
         (
@@ -1604,7 +1676,9 @@ def test_iiv_on_ruv(pheno_path, epsilons, same_eta, eta_names, err_ref, omega_re
             '$PK\n'
             'CL = THETA(1)\n'
             'V = THETA(2)*EXP(ETA(1))\n'
-            'S1 = V + ETA(2) + ETA(3) + ETA(4)\n\n',
+            'S1 = V + ETA(2)\n'
+            'MAT = THETA(3)*EXP(ETA(3))\n'
+            'Q = THETA(4)*EXP(ETA(4))\n\n',
             '$OMEGA 0.031128  ; IVV\n'
             '$OMEGA 0.1\n'
             '$OMEGA BLOCK(2)\n'
@@ -1644,7 +1718,9 @@ def test_remove_iov(testdata):
         str(model.get_pred_pk_record()) == '$PK\n'
         'CL=THETA(1)*EXP(ETA(1))\n'
         'V = THETA(2)\n'
-        'S1 = V + ETA(2) + ETA(3)\n\n'
+        'S1 = V\n'
+        'MAT = THETA(3)*EXP(ETA(2))\n'
+        'Q = THETA(4)*EXP(ETA(3))\n\n'
     )
 
     rec_omega = ''.join(str(rec) for rec in model.control_stream.get_records('OMEGA'))
@@ -1765,7 +1841,7 @@ def test_nested_update_source(pheno_path):
     model.update_source()
     model.update_source()
 
-    assert 'COV1' in str(model)
+    assert 'IIV_CL_V' in str(model)
 
 
 @pytest.mark.parametrize(

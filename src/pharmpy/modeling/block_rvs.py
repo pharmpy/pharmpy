@@ -96,9 +96,12 @@ def _has_fixed_params(model, rv):
 
 
 def _merge_rvs(model, rvs):
-    pset = model.parameters
+    sset, pset = model.statements, model.parameters
 
-    cov_to_params = rvs.merge_normal_distributions(create_cov_params=True)
+    rv_to_param = {
+        rv.name: sset.find_assignment(rv.name, is_symbol=False).symbol.name for rv in rvs
+    }
+    cov_to_params = rvs.merge_normal_distributions(create_cov_params=True, rv_to_param=rv_to_param)
 
     for rv in rvs:
         rv.variability_level = VariabilityLevel.IIV
