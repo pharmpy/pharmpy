@@ -496,41 +496,54 @@ def test_symbol_names_in_abbr(testdata):
 
 
 @pytest.mark.parametrize(
-    'parameter_names, trans_statements_exp, trans_params_exp',
+    'parameter_names, assignments, params, etas',
     [
         (
             ['abbr', 'comment', 'basic'],
-            {'THETA(CL)': 'THETA_CL', 'ETA(CL)': 'ETA_CL', 'THETA(2)': 'TVV'},
-            {'TVCL': 'THETA_CL', 'ETA(1)': 'ETA_CL'},
+            [
+                Assignment(S('CL'), S('THETA_CL') * sympy.exp(S('ETA_CL'))),
+                Assignment(S('V'), S('TVV') * sympy.exp(S('ETA(2)'))),
+            ],
+            ['THETA_CL', 'TVV', 'IVCL', 'OMEGA(2,2)'],
+            ['ETA_CL', 'ETA(2)'],
         ),
         (
             ['comment', 'abbr', 'basic'],
-            {'THETA(CL)': 'TVCL', 'ETA(CL)': 'ETA_CL', 'THETA(2)': 'TVV'},
-            {'ETA(1)': 'ETA_CL'},
+            [
+                Assignment(S('CL'), S('TVCL') * sympy.exp(S('ETA_CL'))),
+                Assignment(S('V'), S('TVV') * sympy.exp(S('ETA(2)'))),
+            ],
+            ['TVCL', 'TVV', 'IVCL', 'OMEGA(2,2)'],
+            ['ETA_CL', 'ETA(2)'],
         ),
         (
             ['abbr', 'basic'],
-            {'THETA(CL)': 'THETA_CL', 'ETA(CL)': 'ETA_CL'},
-            {'THETA(1)': 'THETA_CL', 'ETA(1)': 'ETA_CL'},
+            [
+                Assignment(S('CL'), S('THETA_CL') * sympy.exp(S('ETA_CL'))),
+                Assignment(S('V'), S('THETA(2)') * sympy.exp(S('ETA(2)'))),
+            ],
+            ['THETA_CL', 'THETA(2)', 'OMEGA(1,1)', 'OMEGA(2,2)'],
+            ['ETA_CL', 'ETA(2)'],
         ),
         (
             ['basic'],
-            {'THETA(CL)': 'THETA(1)', 'ETA(CL)': 'ETA(1)'},
-            {},
+            [
+                Assignment(S('CL'), S('THETA(1)') * sympy.exp(S('ETA(1)'))),
+                Assignment(S('V'), S('THETA(2)') * sympy.exp(S('ETA(2)'))),
+            ],
+            ['THETA(1)', 'THETA(2)', 'OMEGA(1,1)', 'OMEGA(2,2)'],
+            ['ETA(1)', 'ETA(2)'],
         ),
     ],
 )
-def test_symbol_names_priority(testdata, parameter_names, trans_statements_exp, trans_params_exp):
+def test_symbol_names_priority(testdata, parameter_names, assignments, params, etas):
     with ConfigurationContext(conf, parameter_names=parameter_names):
         model = Model(testdata / 'nonmem' / 'pheno_abbr_comments.mod')
-        model._read_parameters()
+        sset, pset, rvs = model.statements, model.parameters, model.random_variables
 
-        rec = model.get_pred_pk_record()
-        statements = rec.statements
-        trans_statements, trans_params = model._create_name_trans(statements)
-
-        assert trans_statements == trans_statements_exp
-        assert trans_params == trans_params_exp
+        assert all(str(a) in [str(s) for s in sset] for a in assignments)
+        assert all(p in pset.names for p in params)
+        assert all(eta in [rv.name for rv in rvs] for eta in etas)
 
 
 def test_clashing_parameter_names(datadir):
