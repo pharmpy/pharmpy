@@ -18,7 +18,7 @@ The format of the configuration file is a plain .ini file where each section is 
 .. code-block::
 
    [pharmpy.plugins.nonmem]
-   parameter_names=['abbr', 'comment', 'basic']
+   parameter_names=abbr,comment,basic
 
 will set the configuration item `parameter_names` to `comment` in the nonmem module. Names must be available to all
 parameters, so if $ABBR and comments are not available for all parameters 'basic also needs to be set for a NONMEM name
