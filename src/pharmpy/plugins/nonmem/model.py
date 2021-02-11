@@ -427,9 +427,9 @@ class Model(pharmpy.model.Model):
             },
         }
 
-        sset_current_rev = {value: key for key, value in sset_current.items()}
         trans_sset, trans_pset = dict(), dict()
-        names_sset_translated, names_pset_translated, clashing_symbols = [], [], set()
+        names_sset_translated, names_pset_translated, names_basic = [], [], []
+        clashing_symbols = set()
 
         for setting in pharmpy.plugins.nonmem.conf.parameter_names:
             trans_sset_setting, trans_pset_setting = conf_functions[setting]
@@ -438,47 +438,31 @@ class Model(pharmpy.model.Model):
                     self._clashing_symbols(statements, {**trans_sset_setting, **trans_pset_setting})
                 )
             for name_current, name_new in trans_sset_setting.items():
-                if S(name_new) in clashing_symbols:
-                    continue
-
                 name_nonmem = sset_current[name_current]
-                if name_nonmem in names_sset_translated:
+
+                if S(name_new) in clashing_symbols or name_nonmem in names_sset_translated:
                     continue
 
-                name_in_sset_current = sset_current_rev[name_nonmem]
+                name_in_sset_current = {v: k for k, v in sset_current.items()}[name_nonmem]
                 trans_sset[name_in_sset_current] = name_new
                 names_sset_translated.append(name_nonmem)
+
                 if name_nonmem in pset_current.values() and name_new in pset_current.keys():
                     names_pset_translated.append(name_nonmem)
 
             for name_current, name_new in trans_pset_setting.items():
-                if S(name_new) in clashing_symbols:
-                    continue
-
                 name_nonmem = pset_current[name_current]
-                if name_nonmem in names_pset_translated:
+
+                if S(name_new) in clashing_symbols or name_nonmem in names_pset_translated:
                     continue
 
                 trans_pset[name_current] = name_new
                 names_pset_translated.append(name_nonmem)
 
             if setting == 'basic':
-                params_left = {
-                    key: value
-                    for key, value in pset_current.items()
-                    if key not in names_pset_translated
-                }
-                trans_clashing_symbols = {
-                    value: key for key, value in params_left.items() if S(value) in clashing_symbols
-                }
-
-                trans_rvs = {rv.name: rv.name for rv in rvs if rv.name not in names_sset_translated}
-                params_left = {**params_left, **trans_rvs}
-
-                trans_pset = {**trans_pset, **trans_clashing_symbols}
-                names_sset_translated += [
-                    key for key in params_left.keys() if key not in names_sset_translated
-                ]
+                params_left = [k for k in pset_current.keys() if k not in names_pset_translated]
+                params_left += [rv.name for rv in rvs if rv.name not in names_sset_translated]
+                names_basic = [name for name in params_left if name not in names_sset_translated]
                 break
 
         if clashing_symbols:
@@ -489,29 +473,29 @@ class Model(pharmpy.model.Model):
             )
 
         names_nonmem_all = [rv.name for rv in rvs] + [
-            key for key, value in self.parameter_translation().items()
+            key for key in self.parameter_translation().keys()
         ]
 
-        if set(names_nonmem_all) - set(names_sset_translated + names_pset_translated):
+        if set(names_nonmem_all) - set(names_sset_translated + names_pset_translated + names_basic):
             raise ValueError(
                 'Mismatch in number of parameter names, all have not been accounted for.'
             )
         return trans_sset, trans_pset
 
     def _name_as_comments(self, statements):
-        trans_statements = self.parameter_translation(remove_idempotent=True)
-        for key, value in self.control_stream.abbreviated.replace.items():
-            if value in trans_statements.keys():
-                trans_statements[key] = trans_statements.pop(value)
+        params_current = self.parameter_translation(remove_idempotent=True)
+        for name_abbr, name_nonmem in self.control_stream.abbreviated.replace.items():
+            if name_nonmem in params_current.keys():
+                params_current[name_abbr] = params_current.pop(name_nonmem)
         trans_params = {
-            value: value
-            for key, value in trans_statements.items()
-            if S(key) not in statements.free_symbols
+            name_comment: name_comment
+            for name_current, name_comment in params_current.items()
+            if S(name_current) not in statements.free_symbols
         }
         trans_statements = {
-            key: value
-            for key, value in trans_statements.items()
-            if S(key) in statements.free_symbols
+            name_current: name_comment
+            for name_current, name_comment in params_current.items()
+            if S(name_current) in statements.free_symbols
         }
         return trans_statements, trans_params
 
@@ -519,27 +503,25 @@ class Model(pharmpy.model.Model):
         pharmpy_names = self.control_stream.abbreviated.translate_to_pharmpy_names()
         params_current = self.parameter_translation(remove_idempotent=True, reverse=True)
         trans_params = {
-            key: value
-            for key, value in pharmpy_names.items()
-            if key in self.parameter_translation().keys() or key in [rv.name for rv in rvs]
+            name_nonmem: name_abbr
+            for name_nonmem, name_abbr in pharmpy_names.items()
+            if name_nonmem in self.parameter_translation().keys()
+            or name_nonmem in [rv.name for rv in rvs]
         }
-
-        for key, value in params_current.items():
-            if value in trans_params.keys():
-                trans_params[key] = trans_params.pop(value)
-
+        for name_nonmem, name_abbr in params_current.items():
+            if name_abbr in trans_params.keys():
+                trans_params[name_nonmem] = trans_params.pop(name_abbr)
         trans_statements = {
-            key: pharmpy_names[value]
-            for key, value in self.control_stream.abbreviated.replace.items()
+            name_abbr: pharmpy_names[name_nonmem]
+            for name_abbr, name_nonmem in self.control_stream.abbreviated.replace.items()
         }
-
         return trans_statements, trans_params
 
     def _name_as_basic(self):
         trans_params = {
-            key: value
-            for key, value in self.parameter_translation(reverse=True).items()
-            if key != value
+            name_current: name_nonmem
+            for name_current, name_nonmem in self.parameter_translation(reverse=True).items()
+            if name_current != name_nonmem
         }
         trans_statements = self.control_stream.abbreviated.replace
         return trans_statements, trans_params

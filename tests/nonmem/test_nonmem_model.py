@@ -534,6 +534,24 @@ def test_symbol_names_in_abbr(testdata):
             ['THETA(1)', 'THETA(2)', 'OMEGA(1,1)', 'OMEGA(2,2)'],
             ['ETA(1)', 'ETA(2)'],
         ),
+        (
+            ['basic', 'comment'],
+            [
+                Assignment(S('CL'), S('THETA(1)') * sympy.exp(S('ETA(1)'))),
+                Assignment(S('V'), S('THETA(2)') * sympy.exp(S('ETA(2)'))),
+            ],
+            ['THETA(1)', 'THETA(2)', 'OMEGA(1,1)', 'OMEGA(2,2)'],
+            ['ETA(1)', 'ETA(2)'],
+        ),
+        (
+            ['basic', 'abbr'],
+            [
+                Assignment(S('CL'), S('THETA(1)') * sympy.exp(S('ETA(1)'))),
+                Assignment(S('V'), S('THETA(2)') * sympy.exp(S('ETA(2)'))),
+            ],
+            ['THETA(1)', 'THETA(2)', 'OMEGA(1,1)', 'OMEGA(2,2)'],
+            ['ETA(1)', 'ETA(2)'],
+        ),
     ],
 )
 def test_symbol_names_priority(testdata, parameter_names, assignments, params, etas):
