@@ -281,7 +281,7 @@ def test_add_parameters_and_statements(pheno_path, param_new, statement_new, buf
     assert str(model.get_pred_pk_record()) == rec
 
 
-@pytest.mark.parametrize('rv_new,buf_new', [(Parameter('omega', 0.1), '$OMEGA  0.1')])
+@pytest.mark.parametrize('rv_new, buf_new', [(Parameter('omega', 0.1), '$OMEGA  0.1')])
 def test_add_random_variables(pheno_path, rv_new, buf_new):
     model = Model(pheno_path)
     rvs = model.random_variables
@@ -314,7 +314,7 @@ def test_add_random_variables(pheno_path, rv_new, buf_new):
     rv = model.random_variables['eta_new']
 
     assert rv.pspace.distribution.mean == 0
-    assert rv.pspace.distribution.std ** 2 == rv_new.symbol
+    assert (rv.pspace.distribution.std ** 2).name == 'omega'
 
 
 def test_add_random_variables_and_statements(pheno_path):
