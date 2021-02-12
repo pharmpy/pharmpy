@@ -827,7 +827,7 @@ Creating full or partial block structures
 
    model = Model(path / "pheno.mod")
 
-Pharmpy supports the creation of full and partial block structures of etas (IIV). See
+Pharmpy supports the creation of full and partial block structures of etas. See
 :py:func:`pharmpy.modeling.create_rv_block`.
 
 .. jupyter-execute::
@@ -847,6 +847,38 @@ fixed. If no list is provided as input, a full block structure is implemented.
    create_rv_block(model)
    model.update_source()
    print_model_diff(model_ref, model)
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Remove covariance between etas
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. jupyter-execute::
+   :hide-output:
+
+   model = Model(path / "pheno.mod")
+
+Covariance can be removed between etas using the function :py:func:`pharmpy.modeling.split_rv_block`. If we have
+the model:
+
+.. jupyter-execute::
+
+   from pharmpy.modeling import create_rv_block
+
+   create_rv_block(model)
+   model.update_source()
+   print(model)
+
+Provide etas as a list.
+
+.. jupyter-execute::
+
+   from pharmpy.modeling import split_rv_block
+
+   split_rv_block(model, ['ETA(1)'])
+   model.update_source()
+   print_model_diff(model_ref, model)
+
+If no list of etas is provided, all block structures will be split.
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Update initial estimates from previous run

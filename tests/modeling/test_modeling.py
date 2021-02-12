@@ -8,7 +8,7 @@ from pyfakefs.fake_filesystem import set_uid
 from pyfakefs.fake_filesystem_unittest import Patcher
 
 from pharmpy import Model
-from pharmpy.modeling import (  # TODO: test error
+from pharmpy.modeling import (
     add_covariate_effect,
     add_iiv,
     add_iov,
@@ -28,6 +28,7 @@ from pharmpy.modeling import (  # TODO: test error
     remove_lag_time,
     seq_zo_fo_absorption,
     set_transit_compartments,
+    split_rv_block,
     tdist,
     update_inits,
     zero_order_absorption,
@@ -1519,6 +1520,93 @@ def test_add_iiv(pheno_path, parameter, expression, operation, eta_name, buf_new
 def test_block_rvs(testdata, etas, pk_ref, omega_ref):
     model = Model(testdata / 'nonmem/pheno_block.mod')
     create_rv_block(model, etas)
+    model.update_source()
+
+    assert str(model.get_pred_pk_record()) == pk_ref
+
+    rec_omega = ''.join(str(rec) for rec in model.control_stream.get_records('OMEGA'))
+
+    assert rec_omega == omega_ref
+
+
+@pytest.mark.parametrize(
+    'etas, pk_ref, omega_ref',
+    [
+        (
+            ['ETA(1)'],
+            '$PK\nCL=THETA(1)*EXP(ETA(1))\n'
+            'V=THETA(2)*EXP(ETA(2))\n'
+            'S1=V+ETA(3)\n'
+            'MAT=THETA(3)*EXP(ETA(4))\n'
+            'Q=THETA(4)*EXP(ETA(5))\n\n',
+            '$OMEGA  0.0309626\n'
+            '$OMEGA BLOCK(4)\n'
+            '0.031128\n'
+            '0.0055792\t; IIV_V_S1\n'
+            '0.1\n'
+            '0.0031045\t; IIV_V_MAT\n'
+            '0.0055644\t; IIV_S1_MAT\n'
+            '0.0309626\n'
+            '0.0031128\t; IIV_V_Q\n'
+            '0.0055792\t; IIV_S1_Q\n'
+            '0.0005\n'
+            '0.031128\n',
+        ),
+        (
+            ['ETA(1)', 'ETA(2)'],
+            '$PK\nCL=THETA(1)*EXP(ETA(1))\n'
+            'V=THETA(2)*EXP(ETA(2))\n'
+            'S1=V+ETA(3)\n'
+            'MAT=THETA(3)*EXP(ETA(4))\n'
+            'Q=THETA(4)*EXP(ETA(5))\n\n',
+            '$OMEGA  0.0309626\n'
+            '$OMEGA  0.031128\n'
+            '$OMEGA BLOCK(3)\n'
+            '0.1\n'
+            '0.0055644\t; IIV_S1_MAT\n'
+            '0.0309626\n'
+            '0.0055792\t; IIV_S1_Q\n'
+            '0.0005\n'
+            '0.031128\n',
+        ),
+        (
+            ['ETA(1)', 'ETA(3)'],
+            '$PK\nCL=THETA(1)*EXP(ETA(1))\n'
+            'V = THETA(2)*EXP(ETA(3))\n'
+            'S1 = V + ETA(2)\n'
+            'MAT=THETA(3)*EXP(ETA(4))\n'
+            'Q=THETA(4)*EXP(ETA(5))\n\n',
+            '$OMEGA  0.0309626\n'
+            '$OMEGA  0.1\n'
+            '$OMEGA BLOCK(3)\n'
+            '0.031128\n'
+            '0.0031045\t; IIV_V_MAT\n'
+            '0.0309626\n'
+            '0.0031128\t; IIV_V_Q\n'
+            '0.0005\n'
+            '0.031128\n',
+        ),
+        (
+            None,
+            '$PK\nCL=THETA(1)*EXP(ETA(1))\n'
+            'V=THETA(2)*EXP(ETA(2))\n'
+            'S1=V+ETA(3)\n'
+            'MAT=THETA(3)*EXP(ETA(4))\n'
+            'Q=THETA(4)*EXP(ETA(5))\n\n',
+            '$OMEGA  0.0309626\n'
+            '$OMEGA  0.031128\n'
+            '$OMEGA  0.1\n'
+            '$OMEGA  0.0309626\n'
+            '$OMEGA  0.031128\n',
+        ),
+    ],
+)
+def test_split_rv_block(testdata, etas, pk_ref, omega_ref):
+    model = Model(testdata / 'nonmem/pheno_block.mod')
+    create_rv_block(model)
+    model.update_source()
+
+    split_rv_block(model, etas)
     model.update_source()
 
     assert str(model.get_pred_pk_record()) == pk_ref

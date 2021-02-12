@@ -241,7 +241,7 @@ class RandomVariables(OrderedSet):
 
         return RandomVariables(joined_rvs)
 
-    def extract_from_block(self, rv_to_extract):
+    def extract_from_block(self, rv_name):
         """
         Extracts single random variable from joint distribution and creates new distribution.
         A new distribution will be created for remaining RVs, single normal distribution if one
@@ -249,8 +249,9 @@ class RandomVariables(OrderedSet):
 
         Parameters
         ----------
-        rv_to_extract : RandomSymbol
-            Random symbol to create new single distribution for."""
+        rv_name : str
+            Name of random variable to create new single distribution for."""
+        rv_to_extract = self[rv_name]
         associated_rvs = self.get_rvs_from_same_dist(rv_to_extract)
 
         cov = associated_rvs.covariance_matrix()
@@ -273,17 +274,18 @@ class RandomVariables(OrderedSet):
             rv_remaining = stats.Normal(names[0], 0, sympy.sqrt(cov[0]))
             rv_remaining.variability_level = VariabilityLevel.IIV
         else:
-            means = sympy.zeros(cov.shape[0] - 1)
+            means = sympy.zeros(cov.shape[0], 1)
             rv_remaining = JointNormalSeparate(names, means, cov)
 
             for rv in rv_remaining:
                 rv.variability_level = VariabilityLevel.IIV
 
-        split_block = [rv_extracted, rv_remaining]
-        split_block = split_block.reverse() if index_to_remove != 0 else split_block
+        if not isinstance(rv_remaining, list):
+            rv_remaining = [rv_remaining]
+
+        split_block = [rv_extracted] + rv_remaining
 
         rvs_new = RandomVariables()
-
         has_added_changed_block = False
 
         for rv in self:
@@ -300,8 +302,7 @@ class RandomVariables(OrderedSet):
         return rv_extracted
 
     def are_consecutive(self, subset):
-        """Determines if subset has same order as full set (self). If totally different,
-        False will be returned."""
+        """Determines if subset has same order as full set (self)."""
         rvs_self = sum([rvs[0] for rvs in self.distributions()], [])
         rvs_subset = sum([rvs[0] for rvs in subset.distributions()], [])
 

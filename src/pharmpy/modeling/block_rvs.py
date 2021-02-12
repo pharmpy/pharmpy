@@ -25,6 +25,9 @@ def create_rv_block(model, list_of_rvs=None):
         List of etas to create a block structure from. If None, all etas that are IIVs and
         non-fixed will be used (full block). None is default.
     """
+    if list_of_rvs and len(list_of_rvs) == 1:
+        raise ValueError('At least two random variables are needed')
+
     rvs_full = model.random_variables
     rvs_block = _get_rvs(model, list_of_rvs)
 
@@ -32,7 +35,7 @@ def create_rv_block(model, list_of_rvs=None):
         for rv in rvs_block:
             if isinstance(rv.pspace.distribution, MultivariateNormalDistribution):
                 if rvs_full.get_rvs_from_same_dist(rv):
-                    rv_extracted = rvs_full.extract_from_block(rv)
+                    rv_extracted = rvs_full.extract_from_block(rv.name)
                     rvs_block.discard(rv)
                     rvs_block.add(rv_extracted)
 
@@ -56,14 +59,46 @@ def create_rv_block(model, list_of_rvs=None):
     return model
 
 
+def split_rv_block(model, list_of_rvs=None):
+    """
+    Splits an block structure given a list of etas to separate.
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model to create block effect on.
+    list_of_rvs : list
+        List of etas to split from block structure. If None, all etas that are IIVs and
+        non-fixed will become single. None is default.
+    """
+    rvs_full = model.random_variables
+    rvs_block = _get_rvs(model, list_of_rvs)
+    pset = model.parameters
+
+    cov_matrix_before = rvs_full.covariance_matrix()
+    for rv in rvs_block:
+        rvs_full.extract_from_block(rv)
+
+    cov_matrix_after = rvs_full.covariance_matrix()
+
+    diff = cov_matrix_before - cov_matrix_after
+    param_names = [elem for elem in diff if elem != 0]
+
+    for param in set(param_names):
+        pset.discard(param)
+
+    model.random_variables = rvs_full
+    model.parameters = pset
+
+    return model
+
+
 def _get_rvs(model, list_of_rvs):
     full_block = False
 
     if list_of_rvs is None:
         list_of_rvs = [rv for rv in model.random_variables.etas]
         full_block = True
-    elif len(list_of_rvs) == 1:
-        raise ValueError('At least two random variables are needed')
 
     rvs = []
     for rv_str in list_of_rvs:

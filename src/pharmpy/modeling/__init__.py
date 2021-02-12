@@ -1,4 +1,4 @@
-from pharmpy.modeling.block_rvs import create_rv_block
+from pharmpy.modeling.block_rvs import create_rv_block, split_rv_block
 from pharmpy.modeling.common import (
     copy_model,
     fix_parameters,
@@ -93,4 +93,5 @@ __all__ = [
     'has_proportional_error',
     'has_additive_error',
     'has_combined_error',
+    'split_rv_block',
 ]
