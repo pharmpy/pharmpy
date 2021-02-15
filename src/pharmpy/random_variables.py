@@ -396,7 +396,7 @@ class RandomVariables(OrderedSet):
                     param_1, param_2 = M[row, row], M[col, col]
                     rv_1, rv_2 = names[col], names[row]
 
-                    cov_name = f'IIV_{rv_to_param[rv_1]}_{rv_to_param[rv_2]}'
+                    cov_name = f'IIV_{rv_to_param[rv_1]}_IIV_{rv_to_param[rv_2]}'
                     cov_to_params[cov_name] = (str(param_1), str(param_2))
 
                     M[row, col], M[col, row] = symbol(cov_name), symbol(cov_name)

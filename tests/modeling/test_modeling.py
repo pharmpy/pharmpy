@@ -1399,7 +1399,7 @@ def test_add_iiv(pheno_path, parameter, expression, operation, eta_name, buf_new
             'Q=THETA(4)*EXP(ETA(5))\n\n',
             '$OMEGA BLOCK(2)\n'
             '0.0309626\t; IVCL\n'
-            '0.0031045\t; IIV_CL_V\n'
+            '0.0031045\t; IIV_CL_IIV_V\n'
             '0.031128\t; IVV\n'
             '$OMEGA 0.1\n'
             '$OMEGA BLOCK(2)\n'
@@ -1418,7 +1418,7 @@ def test_add_iiv(pheno_path, parameter, expression, operation, eta_name, buf_new
             '0.0005 0.031128\n'
             '$OMEGA BLOCK(2)\n'
             '0.0309626\t; IVCL\n'
-            '0.0055644\t; IIV_CL_S1\n'
+            '0.0055644\t; IIV_CL_IIV_S1\n'
             '0.1\n',
         ),
         (
@@ -1431,7 +1431,7 @@ def test_add_iiv(pheno_path, parameter, expression, operation, eta_name, buf_new
             '$OMEGA 0.0309626  ; IVCL\n'
             '$OMEGA BLOCK(2)\n'
             '0.031128\t; IVV\n'
-            '0.0055792\t; IIV_V_S1\n'
+            '0.0055792\t; IIV_V_IIV_S1\n'
             '0.1\n'
             '$OMEGA BLOCK(2)\n'
             '0.0309626\n'
@@ -1449,10 +1449,10 @@ def test_add_iiv(pheno_path, parameter, expression, operation, eta_name, buf_new
             '$OMEGA  0.031128\n'
             '$OMEGA BLOCK(3)\n'
             '0.0309626\t; IVCL\n'
-            '0.0031045\t; IIV_CL_V\n'
+            '0.0031045\t; IIV_CL_IIV_V\n'
             '0.031128\t; IVV\n'
-            '0.0030963\t; IIV_CL_MAT\n'
-            '0.0031045\t; IIV_V_MAT\n'
+            '0.0030963\t; IIV_CL_IIV_MAT\n'
+            '0.0031045\t; IIV_V_IIV_MAT\n'
             '0.0309626\n',
         ),
         (
@@ -1466,10 +1466,10 @@ def test_add_iiv(pheno_path, parameter, expression, operation, eta_name, buf_new
             '$OMEGA 0.0309626  ; IVCL\n'
             '$OMEGA BLOCK(3)\n'
             '0.031128\t; IVV\n'
-            '0.0055792\t; IIV_V_S1\n'
+            '0.0055792\t; IIV_V_IIV_S1\n'
             '0.1\n'
-            '0.0031045\t; IIV_V_MAT\n'
-            '0.0055644\t; IIV_S1_MAT\n'
+            '0.0031045\t; IIV_V_IIV_MAT\n'
+            '0.0055644\t; IIV_S1_IIV_MAT\n'
             '0.0309626\n'
             '$OMEGA  0.031128\n',
         ),
@@ -1485,9 +1485,9 @@ def test_add_iiv(pheno_path, parameter, expression, operation, eta_name, buf_new
             '$OMEGA 0.031128  ; IVV\n'
             '$OMEGA BLOCK(3)\n'
             '0.1\n'
-            '0.0055644\t; IIV_S1_Q\n'
+            '0.0055644\t; IIV_S1_IIV_Q\n'
             '0.0309626\n'
-            '0.0055792\t; IIV_S1_MAT\n'
+            '0.0055792\t; IIV_S1_IIV_MAT\n'
             '0.0005\n'
             '0.031128\n',
         ),
@@ -1500,18 +1500,18 @@ def test_add_iiv(pheno_path, parameter, expression, operation, eta_name, buf_new
             'Q=THETA(4)*EXP(ETA(5))\n\n',
             '$OMEGA BLOCK(5)\n'
             '0.0309626\t; IVCL\n'
-            '0.0031045\t; IIV_CL_V\n'
+            '0.0031045\t; IIV_CL_IIV_V\n'
             '0.031128\t; IVV\n'
-            '0.0055644\t; IIV_CL_S1\n'
-            '0.0055792\t; IIV_V_S1\n'
+            '0.0055644\t; IIV_CL_IIV_S1\n'
+            '0.0055792\t; IIV_V_IIV_S1\n'
             '0.1\n'
-            '0.0030963\t; IIV_CL_MAT\n'
-            '0.0031045\t; IIV_V_MAT\n'
-            '0.0055644\t; IIV_S1_MAT\n'
+            '0.0030963\t; IIV_CL_IIV_MAT\n'
+            '0.0031045\t; IIV_V_IIV_MAT\n'
+            '0.0055644\t; IIV_S1_IIV_MAT\n'
             '0.0309626\n'
-            '0.0031045\t; IIV_CL_Q\n'
-            '0.0031128\t; IIV_V_Q\n'
-            '0.0055792\t; IIV_S1_Q\n'
+            '0.0031045\t; IIV_CL_IIV_Q\n'
+            '0.0031128\t; IIV_V_IIV_Q\n'
+            '0.0055792\t; IIV_S1_IIV_Q\n'
             '0.0005\n'
             '0.031128\n',
         ),
@@ -1542,13 +1542,13 @@ def test_block_rvs(testdata, etas, pk_ref, omega_ref):
             '$OMEGA  0.0309626\n'
             '$OMEGA BLOCK(4)\n'
             '0.031128\n'
-            '0.0055792\t; IIV_V_S1\n'
+            '0.0055792\t; IIV_V_IIV_S1\n'
             '0.1\n'
-            '0.0031045\t; IIV_V_MAT\n'
-            '0.0055644\t; IIV_S1_MAT\n'
+            '0.0031045\t; IIV_V_IIV_MAT\n'
+            '0.0055644\t; IIV_S1_IIV_MAT\n'
             '0.0309626\n'
-            '0.0031128\t; IIV_V_Q\n'
-            '0.0055792\t; IIV_S1_Q\n'
+            '0.0031128\t; IIV_V_IIV_Q\n'
+            '0.0055792\t; IIV_S1_IIV_Q\n'
             '0.0005\n'
             '0.031128\n',
         ),
@@ -1563,9 +1563,9 @@ def test_block_rvs(testdata, etas, pk_ref, omega_ref):
             '$OMEGA  0.031128\n'
             '$OMEGA BLOCK(3)\n'
             '0.1\n'
-            '0.0055644\t; IIV_S1_MAT\n'
+            '0.0055644\t; IIV_S1_IIV_MAT\n'
             '0.0309626\n'
-            '0.0055792\t; IIV_S1_Q\n'
+            '0.0055792\t; IIV_S1_IIV_Q\n'
             '0.0005\n'
             '0.031128\n',
         ),
@@ -1580,9 +1580,9 @@ def test_block_rvs(testdata, etas, pk_ref, omega_ref):
             '$OMEGA  0.1\n'
             '$OMEGA BLOCK(3)\n'
             '0.031128\n'
-            '0.0031045\t; IIV_V_MAT\n'
+            '0.0031045\t; IIV_V_IIV_MAT\n'
             '0.0309626\n'
-            '0.0031128\t; IIV_V_Q\n'
+            '0.0031128\t; IIV_V_IIV_Q\n'
             '0.0005\n'
             '0.031128\n',
         ),
@@ -1929,7 +1929,7 @@ def test_nested_update_source(pheno_path):
     model.update_source()
     model.update_source()
 
-    assert 'IIV_CL_V' in str(model)
+    assert 'IIV_CL_IIV_V' in str(model)
 
 
 @pytest.mark.parametrize(

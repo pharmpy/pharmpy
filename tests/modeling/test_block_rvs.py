@@ -1,10 +1,12 @@
+from io import StringIO
+
 import pytest
 import sympy
 import sympy.stats as stats
 
 from pharmpy import Model
 from pharmpy.modeling import create_rv_block
-from pharmpy.modeling.block_rvs import _choose_param_init, _get_rvs
+from pharmpy.modeling.block_rvs import _choose_param_init, _get_rvs, _merge_rvs
 from pharmpy.random_variables import RandomVariables, VariabilityLevel
 from pharmpy.results import ModelfitResults
 from pharmpy.symbols import symbol as S
@@ -73,3 +75,34 @@ def test_choose_param_init(pheno_path, testdata):
     init = _choose_param_init(model, rvs, params)
 
     assert init == 0.0118179
+
+
+def test_merge_rvs(testdata):
+    model = Model(
+        StringIO(
+            '''$PROBLEM PHENOBARB SIMPLE MODEL
+$DATA pheno.dta IGNORE=@
+$INPUT ID TIME AMT WGT APGR DV
+$SUBROUTINE ADVAN1 TRANS2
+
+$PK
+CL=THETA(1)*EXP(ETA(1))
+V=THETA(2)*EXP(ETA(1))
+S1=V*EXP(ETA(2))
+
+$ERROR
+Y=F+F*EPS(1)
+
+$THETA (0,0.00469307) ; TVCL
+$THETA (0,1.00916) ; TVV
+$OMEGA 0.0309626  ; IVCL
+$OMEGA 0.031128  ; IVV
+$SIGMA 0.013241
+
+$ESTIMATION METHOD=1 INTERACTION
+'''
+        )
+    )
+    model.source.path = testdata / 'nonmem' / 'pheno.mod'
+    pset = _merge_rvs(model, model.random_variables)
+    assert 'IIV_CL_V_IIV_S1' in pset.names

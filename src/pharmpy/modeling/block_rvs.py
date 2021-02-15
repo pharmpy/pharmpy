@@ -133,9 +133,13 @@ def _has_fixed_params(model, rv):
 def _merge_rvs(model, rvs):
     sset, pset = model.statements, model.parameters
 
-    rv_to_param = {
-        rv.name: sset.find_assignment(rv.name, is_symbol=False).symbol.name for rv in rvs
-    }
+    rv_to_param = dict()
+
+    for rv in rvs:
+        statements = sset.find_assignment(rv.name, is_symbol=False, last=False)
+        parameter_names = '_'.join([s.symbol.name for s in statements])
+        rv_to_param[rv.name] = parameter_names
+
     cov_to_params = rvs.merge_normal_distributions(create_cov_params=True, rv_to_param=rv_to_param)
 
     for rv in rvs:
