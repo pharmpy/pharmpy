@@ -2062,3 +2062,11 @@ def test_add_iov(pheno_path, etas, eta_names, pk_start_ref, pk_end_ref, omega_re
     rec_omega = ''.join(str(rec) for rec in model.control_stream.get_records('OMEGA'))
 
     assert rec_omega.endswith(omega_ref)
+
+
+def test_add_iov_only_one_level(pheno_path):
+    model = Model(pheno_path)
+    model.dataset['FA1'] = 1
+
+    with pytest.raises(ValueError, match='Only one value in FA1 column.'):
+        add_iov(model, 'FA1', ['ETA(1)'])

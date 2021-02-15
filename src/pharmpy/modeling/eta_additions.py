@@ -115,6 +115,10 @@ def add_iov(model, occ, list_of_parameters=None, eta_names=None):
         raise ValueError(
             f'Number of provided names incorrect, need {len(etas) * len(categories)} names.'
         )
+    elif len(categories) == 1:
+        raise ValueError(
+            f'Only one value in {occ} column.'
+        )
 
     for i, eta in enumerate(etas, 1):
         omega_name = str(next(iter(eta.pspace.distribution.free_symbols)))
