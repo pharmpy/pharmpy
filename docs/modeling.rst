@@ -862,10 +862,11 @@ the model:
 
 .. jupyter-execute::
 
-   from pharmpy.modeling import create_rv_block
+   from pharmpy.modeling import copy_model, create_rv_block
 
    create_rv_block(model)
    model.update_source()
+   model_block = copy_model(model)
    print(model)
 
 Provide etas as a list.
@@ -876,7 +877,7 @@ Provide etas as a list.
 
    split_rv_block(model, ['ETA(1)'])
    model.update_source()
-   print_model_diff(model_ref, model)
+   print_model_diff(model_block, model)
 
 If no list of etas is provided, all block structures will be split.
 
