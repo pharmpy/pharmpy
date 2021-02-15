@@ -1,3 +1,10 @@
+0.17.0 (2021-02-15)
+-------------------
+
+* Add function to split an eta from a block structure
+* New names for covariance between etas in create_rv_block
+* Clearer error messages when adding IOVs (if only one level of occasion) and for parameter_names config
+
 0.16.0 (2021-02-08)
 -------------------
 
