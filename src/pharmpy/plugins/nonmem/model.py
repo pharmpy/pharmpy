@@ -478,7 +478,9 @@ class Model(pharmpy.model.Model):
 
         if set(names_nonmem_all) - set(names_sset_translated + names_pset_translated + names_basic):
             raise ValueError(
-                'Mismatch in number of parameter names, all have not been accounted for.'
+                'Mismatch in number of parameter names, all have not been accounted for. If basic '
+                'NONMEM-names are desired as fallback, double-check that "basic" is included in '
+                'config-settings for parameter_names.'
             )
         return trans_sset, trans_pset
 
