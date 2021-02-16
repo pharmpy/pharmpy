@@ -190,8 +190,8 @@ def compartmental_model(model, advan, trans, des=None):
         a_out = Function('A_OUTPUT')
         dose = _dosing(model, 1)
 
-        ics = {v(0): 0 for v in comp_names.values()}
-        ics[a_out(0)] = 0
+        ics = {v(0): sympy.Integer(0) for v in comp_names.values()}
+        ics[a_out(0)] = sympy.Integer(0)
         ics[comp_names['A(1)'](0)] = dose.amount
 
         dadt_dose = sset.find_assignment(str(subs_dict['DADT(1)']))
@@ -209,7 +209,7 @@ def compartmental_model(model, advan, trans, des=None):
             dadt_dose.expression += Piecewise(
                 (dose.amount / dose.duration, dose.duration > t), (0, True)
             )
-            ics[comp_names['A(1)'](0)] = 0
+            ics[comp_names['A(1)'](0)] = sympy.Integer(0)
 
         eqs = [Eq(dadt_dose.symbol, dadt_dose.expression)] + dadt_rest
 

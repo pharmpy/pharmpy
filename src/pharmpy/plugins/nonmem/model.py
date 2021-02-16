@@ -357,10 +357,8 @@ class Model(pharmpy.model.Model):
                 self.parameters[key].name = value
             except KeyError:
                 self.random_variables.rename({key: value})
-        try:
-            statements.subs(trans_statements)
-        except AttributeError:
-            pass
+
+        statements.subs(trans_statements)
 
         self._statements = statements
         self._old_statements = statements.copy()
@@ -418,7 +416,7 @@ class Model(pharmpy.model.Model):
             **{
                 rv.name: rv.name
                 for rv in rvs
-                if rv.name not in abbr.keys() and rv.name in statements.free_symbols
+                if rv.name not in abbr.keys() and rv in statements.free_symbols
             },
             **{
                 p: p
