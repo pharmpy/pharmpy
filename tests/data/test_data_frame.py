@@ -164,7 +164,7 @@ def test_covariate_baselines(df):
 
 def test_observations(df2):
     correct_observations = (
-        pd.DataFrame({'DV': [0.2, 0.6], 'ID': [1, 2], 'TIME': [1, 1]})
+        pd.DataFrame({'DV': [0.2, 0.6], 'ID': [1, 2], 'TIME': [1.0, 1.0]})
         .set_index(['ID', 'TIME'])
         .squeeze()
     )

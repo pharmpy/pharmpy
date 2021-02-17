@@ -267,6 +267,7 @@ class DataFrameAccessor:
             df = df.query(f'{label} == 0')
 
         df = df[[idcol, idvcol, self.dv_label]]
+        df = df.astype({idvcol: np.float64})
         df.set_index([idcol, idvcol], inplace=True)
         return df.squeeze()
 
