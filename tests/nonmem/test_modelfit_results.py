@@ -258,3 +258,13 @@ def test_predictions(testdata):
     assert len(df) == 744
     assert list(df.columns) == ['PRED']
     assert df['PRED'][1.0, 0.0] == 18.143
+
+
+def test_plot_individual_predictions(testdata):
+    model = Model(testdata / 'nonmem' / 'pheno_real.mod')
+    plot = model.modelfit_results.plot_individual_predictions()
+    assert plot
+    plot = model.modelfit_results.plot_individual_predictions(
+        predictions=['PRED'], individuals=[1, 2, 5]
+    )
+    assert plot

@@ -496,9 +496,12 @@ class ModelfitResults(Results):
             dvcol = obs.name
             data = data[data['variable'].isin(predictions + [dvcol])]
 
-        plot = alt.Chart(data).mark_line(point=True).encode(
-            x = idvcol,
-            y = 'value', color='variable').facet(f'{idcol}:N', columns=5)
+        plot = (
+            alt.Chart(data)
+            .mark_line(point=True)
+            .encode(x=idvcol, y='value', color='variable')
+            .facet(f'{idcol}:N', columns=5)
+        )
         return plot
 
     def individual_parameter_statistics(self, exprs):
