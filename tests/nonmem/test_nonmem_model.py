@@ -638,14 +638,17 @@ def test_abbr_read_write(pheno_path):
     with ConfigurationContext(
         conf, parameter_names=['abbr', 'comment', 'basic'], write_etas_in_abbr=True
     ):
-        model = Model(pheno_path)
-        add_iiv(model, 'S1', 'add')
-        model.update_source()
-        model = Model(StringIO(str(model)))
-        model.source.path = pheno_path
+        model_write = Model(pheno_path)
+        add_iiv(model_write, 'S1', 'add')
+        model_write.update_source()
+        model_read = Model(StringIO(str(model_write)))
+        model_read.source.path = pheno_path
 
-        assert 'ETA_S1' in [rv.name for rv in model.random_variables]
-        assert S('ETA_S1') in model.statements.free_symbols
+        assert str(model_read) == str(model_write)
+        assert model_read.statements == model_write.statements
+        assert not (
+            model_read.random_variables - model_write.random_variables
+        )  # Different order due to renaming in read
 
 
 def test_dv_symbol(pheno_path):
