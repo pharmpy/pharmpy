@@ -7,6 +7,7 @@ A tool in Pharmpy is an implementation of a pharmacometric method. A tool perfor
 .. toctree::
    :maxdepth: 1
 
+   bootstrap
    cdd
    frem
    linearize
