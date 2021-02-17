@@ -26,6 +26,8 @@ def iiv_on_ruv(model, list_of_eps=None, same_eta=True, eta_names=None):
     same_eta : bool
         Boolean of whether all RUVs from input should use the same new ETA or if one ETA
         should be created for each RUV. True is default.
+    eta_names: list
+        Custom names of new etas. Must be equal to the number epsilons or 1 if same eta.
     """
     eps = _get_epsilons(model, list_of_eps)
 
@@ -78,7 +80,7 @@ def _create_eta(pset, number, eta_names):
     if eta_names:
         eta_name = eta_names[number - 1]
     else:
-        eta_name = f'RV{number}'
+        eta_name = f'ETA_RV{number}'
 
     eta = stats.Normal(eta_name, 0, sympy.sqrt(omega))
     eta.variability_level = VariabilityLevel.IIV

@@ -626,6 +626,13 @@ def test_abbr_write(pheno_path):
         assert 'ETA_S1' in [rv.name for rv in model.random_variables]
         assert S('ETA_S1') in model.statements.free_symbols
 
+        model = Model(pheno_path)
+        add_iiv(model, 'S1', 'add', eta_names='new_name')
+
+        with pytest.warns(UserWarning, match='Not valid format of name new_name'):
+            model.update_source()
+            assert 'ETA(3)' in str(model)
+
 
 def test_abbr_read_write(pheno_path):
     with ConfigurationContext(

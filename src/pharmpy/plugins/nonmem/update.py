@@ -1,6 +1,7 @@
 import copy
 import itertools
 import re
+import warnings
 
 import numpy as np
 import sympy
@@ -814,12 +815,16 @@ def update_abbr_record(model, rv_trans):
     for rv in model.random_variables:
         rv_symb = symbol(rv.name)
         abbr_pattern = re.match(r'ETA_(\w+)', rv.name)
-        if abbr_pattern:
+        if abbr_pattern and '_' not in abbr_pattern.group(1):
             parameter = abbr_pattern.group(1)
-            eta_name = rv_trans[rv_symb]
+            nonmem_name = rv_trans[rv_symb]
             abbr_name = f'ETA({parameter})'
             trans[rv_symb] = symbol(abbr_name)
-
-            abbr_record = f'$ABBR REPLACE {abbr_name}={eta_name}\n'
+            abbr_record = f'$ABBR REPLACE {abbr_name}={nonmem_name}\n'
             model.control_stream.insert_record(abbr_record)
+        elif not re.match(r'(ETA|EPS)\([0-9]\)', rv.name):
+            warnings.warn(
+                f'Not valid format of name {rv}, falling back to NONMEM name. If custom name, '
+                f'follow the format "ETA_X" to get "ETA(X)" in $ABBR.'
+            )
     return trans
