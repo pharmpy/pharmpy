@@ -8,10 +8,10 @@ Pharmpy currently creates results after a PsN simeval run.
 The simeval results
 ~~~~~~~~~~~~~~~~~~~
 
-Individual OFVs
-~~~~~~~~~~~~~~~
+Sampled Individual OFVs
+~~~~~~~~~~~~~~~~~~~~~~~
 
-The `iofv` table contains the estimated individual OFV of the original model and the evaluated individual OFVs for each sampled dataset.
+The `sampled_iofv` table contains the estimated individual OFV of the evaluated individual OFVs for each sampled dataset.
 
 .. jupyter-execute::
     :hide-code:
@@ -19,43 +19,31 @@ The `iofv` table contains the estimated individual OFV of the original model and
     import pathlib
     from pharmpy.methods.simeval.results import psn_simeval_results
     res = psn_simeval_results(pathlib.Path('tests/testdata/psn/simeval_dir1'))
-    res.iofv
+    res.sampled_iofv
 
-Individual OFV residuals
+Individual OFV summary
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-The residual for each sample and ID is the distance from the observed iOFV to the simulated iOFV expressed in standard deviations of the simulated values.
+The `iofv_summary` table contain the iOFVs from the orginal model, the median and standard deviation of the sampled iOFVs, the residual and a
+residual outlier flag. The residual for each sample and ID is the distance from the observed iOFV to the simulated iOFV expressed in standard deviations of the simulated values.
 
 .. math::
 
     \mathrm{res} = \frac{\mathrm{obs} - \mathrm{sim}}{\mathop{sd}(\mathrm{sim})}
 
-The residuals are stored in the `iofv_residuals` table.
+An individual is defined as an outlier if the corresponding residual is 3 or higher.
 
 .. jupyter-execute::
     :hide-code:
 
-    res.iofv_residuals
+    res.iofv_summary
 
-Dataset flag
-~~~~~~~~~~~~
+Individual prediction plot
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-In `data_flag` a flag for each dataset item is generated to indicate the outlier status. The meanings of the flag values are:
-
-=====  ==============
-Value  Meaning
-=====  ==============
-0      Not an outlier
-1      iOFV outlier
-2      CWRES outlier
-=====  ==============
+The `individual_predictions_plot` show PRED, IPRED and DV vs TIME (if available) for outlying individuals.
 
 .. jupyter-execute::
     :hide-code:
 
-    res.data_flag
-
-Residual outliers
-~~~~~~~~~~~~~~~~~
-
-`residual_outliers` is a list of individuals that are outliers based on the residual iOFV.
+    res.individual_predictions_plot
