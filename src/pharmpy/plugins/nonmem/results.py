@@ -202,6 +202,12 @@ class NONMEMModelfitResults(ModelfitResults):
         df = df.loc[(df != 0).any(axis=1)]  # Simple way of removing non-observations
         return df
 
+    @property
+    def predictions(self):
+        df = self._chain._read_from_tables(['ID', 'TIME', 'PRED', 'CIPREDI', 'CPRED'], self)
+        df.set_index(['ID', 'TIME'], inplace=True)
+        return df
+
     def _set_covariance_status(self, results_file, table_with_cov=None):
         covariance_status = {
             'requested': True
@@ -455,6 +461,10 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
     def condition_number(self):
         return self[-1].condition_number
 
+    @property
+    def predictions(self):
+        return self[-1].predictions
+
     def sumo(self, **kwargs):
         return self[-1].sumo(**kwargs)
 
@@ -529,7 +539,8 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
         for table_rec in table_recs:
             columns_in_table = []
             for key, value in table_rec.all_options:
-                if key in columns and key not in found:
+                if key in columns and key not in found and value is None:
+                    # FIXME: Cannot handle synonyms here
                     colname = key
                 elif value in columns and value not in found:
                     colname = value
@@ -539,7 +550,7 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
                 columns_in_table.append(colname)
             if columns_in_table:
                 table_file = NONMEMTableFile(self.model.source.path.parent / table_rec.path)
-                table = table_file.table_no(result_obj.table_number)
+                table = table_file.tables[0]
                 df[columns_in_table] = table.data_frame[columns_in_table]
         return df
 

@@ -250,3 +250,11 @@ def test_residuals(testdata):
     assert list(df.columns) == ['RES', 'CWRES']
     assert df['RES'][1.0, 2.0] == -0.67071
     assert df['CWRES'][1.0, 2.0] == -0.401100
+
+
+def test_predictions(testdata):
+    model = Model(testdata / 'nonmem' / 'pheno_real.mod')
+    df = model.modelfit_results.predictions
+    assert len(df) == 744
+    assert list(df.columns) == ['PRED']
+    assert df['PRED'][1.0, 0.0] == 18.143

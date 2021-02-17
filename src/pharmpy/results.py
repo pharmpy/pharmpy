@@ -471,6 +471,36 @@ class ModelfitResults(Results):
         )
         return plot
 
+    def plot_individual_predictions(self, predictions=None, individuals=None):
+        """Plot DV and predictions grouped on individuals
+
+        Parameters
+        ----------
+        predictions : list
+            A list of names of predictions to plot. None for all available
+        individuals: list
+            A list of individuals to include. None for all individuals
+        """
+        pred = self.predictions
+        obs = self.model.dataset.pharmpy.observations
+        indexcols = pred.index.names
+        idcol = indexcols[0]
+        idvcol = indexcols[1]
+
+        data = pred.join(obs).reset_index()
+        data = data.melt(id_vars=indexcols)
+
+        if individuals is not None:
+            data = data[data[idcol].isin(individuals)]
+        if predictions is not None:
+            dvcol = obs.name
+            data = data[data['variable'].isin(predictions + [dvcol])]
+
+        plot = alt.Chart(data).mark_line(point=True).encode(
+            x = idvcol,
+            y = 'value', color='variable').facet(f'{idcol}:N', columns=5)
+        return plot
+
     def individual_parameter_statistics(self, exprs):
         """Calculate statistics for individual parameters
 
@@ -642,6 +672,10 @@ class ChainedModelfitResults(list, ModelfitResults):
     @property
     def residuals(self):
         return self[-1].residuals
+
+    @property
+    def predictions(self):
+        return self[-1].predictions
 
     def plot_iofv_vs_iofv(self, other):
         return self[-1].plot_iofv_vs_iofv(other)
