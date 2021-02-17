@@ -73,6 +73,18 @@ def test_cdd_psn(testdata):
                 0.31184,
                 0.31729,
             ],
+            'dofv_influential': [
+                False,
+                False,
+                False,
+                False,
+                False,
+                False,
+                False,
+                False,
+                False,
+                False,
+            ],
             'covariance_ratio': [
                 1.218597,
                 1.389662,

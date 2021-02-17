@@ -16,9 +16,10 @@ class CDDResults(Results):
 
     rst_path = Path(__file__).parent / 'report.rst'
 
-    def __init__(self, case_results=None, case_column=None):
+    def __init__(self, case_results=None, case_column=None, individual_predictions_plot=None):
         self.case_results = case_results
         self.case_column = case_column
+        self.individual_predictions_plot = individual_predictions_plot
 
 
 def compute_cook_scores(base_estimate, cdd_estimates, covariance_matrix):
@@ -117,11 +118,27 @@ def calculate_results(base_model, cdd_models, case_column, skipped_individuals, 
             index=cdd_model_names,
         )
 
+    dofv = compute_delta_ofv(base_model, cdd_models, skipped_individuals)
+    dofv_influential = [elt > 3.86 for elt in dofv]
+    infl_list = [
+        skipped[0]
+        for skipped, infl in zip(skipped_individuals, dofv_influential)
+        if infl and len(skipped) == 1
+    ]
+    if infl_list:
+        iplot = base_model.modelfit_results.plot_individual_predictions(
+            individuals=infl_list, predictions=['PRED', 'CIPREDI']
+        )
+    else:
+        iplot = None
+    res.individual_predictions_plot = iplot
+
     res.case_results = pd.DataFrame(
         {
             'cook_score': cook_temp,
             'jackknife_cook_score': jack_cook_score,
-            'delta_ofv': compute_delta_ofv(base_model, cdd_models, skipped_individuals),
+            'delta_ofv': dofv,
+            'dofv_influential': dofv_influential,
             'covariance_ratio': compute_covariance_ratios(
                 cdd_models, base_model.modelfit_results.covariance_matrix
             ),
