@@ -20,7 +20,12 @@ from pharmpy.symbols import symbol as S
 from .advan import compartmental_model
 from .nmtran_parser import NMTranParser
 from .records.factory import create_record
-from .update import update_parameters, update_random_variables, update_statements
+from .update import (
+    update_abbr_record,
+    update_parameters,
+    update_random_variables,
+    update_statements,
+)
 
 
 def detect_model(src, *args, **kwargs):
@@ -102,6 +107,9 @@ class Model(pharmpy.model.Model):
         trans = self.parameter_translation(reverse=True, remove_idempotent=True, as_symbols=True)
         rv_trans = self.rv_translation(reverse=True, remove_idempotent=True, as_symbols=True)
         trans.update(rv_trans)
+        if pharmpy.plugins.nonmem.conf.write_etas_in_abbr:
+            abbr_trans = self._abbr_translation(rv_trans)
+            trans.update(abbr_trans)
         if trans:
             self.statements  # Read statements unless read
         if hasattr(self, '_statements'):
@@ -133,6 +141,18 @@ class Model(pharmpy.model.Model):
         self._update_sizes()
 
         super().update_source()
+
+    def _abbr_translation(self, rv_trans):
+        abbr_pharmpy = self.control_stream.abbreviated.translate_to_pharmpy_names()
+        abbr_replace = self.control_stream.abbreviated.replace
+        abbr_trans = update_abbr_record(self, rv_trans)
+        abbr_recs = {
+            S(abbr_pharmpy[value]): S(key)
+            for key, value in abbr_replace.items()
+            if value in abbr_pharmpy.keys()
+        }
+        abbr_trans.update(abbr_recs)
+        return abbr_trans
 
     def _update_sizes(self):
         """Update $SIZES if needed"""
@@ -581,7 +601,14 @@ class Model(pharmpy.model.Model):
             rvs.update(epsilons)
         self._random_variables = rvs
         self._old_random_variables = rvs.copy()
-        return rvs
+
+        if (
+            'comment' in pharmpy.plugins.nonmem.conf.parameter_names
+            or 'abbr' in pharmpy.plugins.nonmem.conf.parameter_names
+        ):
+            self.statements
+
+        return self._random_variables
 
     @staticmethod
     def adjust_iovs(rvs):

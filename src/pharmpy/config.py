@@ -55,6 +55,11 @@ class ConfigItem:
         try:
             if isinstance(self.default, list) and isinstance(value, str):
                 value = [v.strip() for v in value.split(',')]
+            if isinstance(self.default, bool) and isinstance(value, str):
+                if value.lower() == 'true':
+                    value = True
+                else:
+                    value = False
             instance.__dict__[self.name] = self.cls(value)
         except ValueError as exc:
             raise TypeError(

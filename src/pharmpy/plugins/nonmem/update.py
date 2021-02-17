@@ -805,3 +805,21 @@ def add_rate_assignment_if_missing(model, name, value, source, dest, synonyms=No
     added = define_parameter(model, name, value, synonyms=synonyms)
     if added:
         model.statements.ode_system.add_flow(source, dest, symbol(name))
+
+
+def update_abbr_record(model, rv_trans):
+    trans = dict()
+    if not rv_trans:
+        return trans
+    for rv in model.random_variables:
+        rv_symb = symbol(rv.name)
+        abbr_pattern = re.match(r'ETA_(\w+)', rv.name)
+        if abbr_pattern:
+            parameter = abbr_pattern.group(1)
+            eta_name = rv_trans[rv_symb]
+            abbr_name = f'ETA({parameter})'
+            trans[rv_symb] = symbol(abbr_name)
+
+            abbr_record = f'$ABBR REPLACE {abbr_name}={eta_name}\n'
+            model.control_stream.insert_record(abbr_record)
+    return trans

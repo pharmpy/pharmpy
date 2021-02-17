@@ -7,7 +7,7 @@ from pyfakefs.fake_filesystem_unittest import Patcher
 from pharmpy import Model
 from pharmpy.config import ConfigurationContext
 from pharmpy.model import ModelSyntaxError
-from pharmpy.modeling import explicit_odes, zero_order_elimination
+from pharmpy.modeling import add_iiv, explicit_odes, zero_order_elimination
 from pharmpy.parameter import Parameter
 from pharmpy.plugins.nonmem import conf
 from pharmpy.plugins.nonmem.nmtran_parser import NMTranParser
@@ -608,6 +608,37 @@ def test_missing_parameter_names_settings(pheno_path):
         model = Model(pheno_path)
         with pytest.raises(ValueError):
             model.statements
+
+
+def test_abbr_write(pheno_path):
+    with ConfigurationContext(conf, write_etas_in_abbr=True):
+        model = Model(pheno_path)
+        add_iiv(model, 'S1', 'add')
+        model.update_source()
+
+        assert 'ETA(S1)' in str(model)
+        assert 'ETA_S1' in [rv.name for rv in model.random_variables]
+        assert S('ETA_S1') in model.statements.free_symbols
+
+        model.update_source()
+
+        assert 'ETA(S1)' in str(model)
+        assert 'ETA_S1' in [rv.name for rv in model.random_variables]
+        assert S('ETA_S1') in model.statements.free_symbols
+
+
+def test_abbr_read_write(pheno_path):
+    with ConfigurationContext(
+        conf, parameter_names=['abbr', 'comment', 'basic'], write_etas_in_abbr=True
+    ):
+        model = Model(pheno_path)
+        add_iiv(model, 'S1', 'add')
+        model.update_source()
+        model = Model(StringIO(str(model)))
+        model.source.path = pheno_path
+
+        assert 'ETA_S1' in [rv.name for rv in model.random_variables]
+        assert S('ETA_S1') in model.statements.free_symbols
 
 
 def test_dv_symbol(pheno_path):
