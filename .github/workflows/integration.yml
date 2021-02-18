@@ -1,0 +1,214 @@
+name: CI
+
+on: workflow_dispatch
+
+jobs:
+  get-nonmem:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cache NONMEM
+        id: cache-nonmem
+        uses: actions/cache@v2
+        with:
+            path: 744.zip
+            key: nonmem-744
+      - name: Download NONMEM
+        if: steps.cache-nonmem.outputs.cache-hit != 'true'
+        run: |
+          sudo apt install lynx
+          echo 'key /' >>lynxcmds
+          echo 'key 7' >>lynxcmds
+          echo 'key 4' >>lynxcmds
+          echo 'key 4' >>lynxcmds
+          echo 'key ^J' >>lynxcmds
+          echo 'key ^J' >>lynxcmds
+          echo 'key /' >>lynxcmds
+          echo 'key z' >>lynxcmds
+          echo 'key i' >>lynxcmds
+          echo 'key p' >>lynxcmds
+          echo 'key ^J' >>lynxcmds
+          echo 'key d' >>lynxcmds
+          echo 'key ^J' >>lynxcmds
+          echo 'key <delete>' >>lynxcmds
+          echo 'key <delete>' >>lynxcmds
+          echo 'key <delete>' >>lynxcmds
+          echo 'key <delete>' >>lynxcmds
+          echo 'key <delete>' >>lynxcmds
+          echo 'key <delete>' >>lynxcmds
+          echo 'key <delete>' >>lynxcmds
+          echo 'key <delete>' >>lynxcmds
+          echo 'key <delete>' >>lynxcmds
+          echo 'key <delete>' >>lynxcmds
+          echo 'key <delete>' >>lynxcmds
+          echo 'key <delete>' >>lynxcmds
+          echo 'key <delete>' >>lynxcmds
+          echo 'key <delete>' >>lynxcmds
+          echo 'key <delete>' >>lynxcmds
+          echo 'key <delete>' >>lynxcmds
+          echo 'key <delete>' >>lynxcmds
+          echo 'key <delete>' >>lynxcmds
+          echo 'key <delete>' >>lynxcmds
+          echo 'key <delete>' >>lynxcmds
+          echo 'key <delete>' >>lynxcmds
+          echo 'key <delete>' >>lynxcmds
+          echo 'key <delete>' >>lynxcmds
+          echo 'key <delete>' >>lynxcmds
+          echo 'key <delete>' >>lynxcmds
+          echo 'key <delete>' >>lynxcmds
+          echo 'key <delete>' >>lynxcmds
+          echo 'key <delete>' >>lynxcmds
+          echo 'key <delete>' >>lynxcmds
+          echo 'key <delete>' >>lynxcmds
+          echo 'key <delete>' >>lynxcmds
+          echo 'key <delete>' >>lynxcmds
+          echo 'key <delete>' >>lynxcmds
+          echo 'key <delete>' >>lynxcmds
+          echo 'key <delete>' >>lynxcmds
+          echo 'key 7' >>lynxcmds
+          echo 'key 4' >>lynxcmds
+          echo 'key 4' >>lynxcmds
+          echo 'key .' >>lynxcmds
+          echo 'key z' >>lynxcmds
+          echo 'key i' >>lynxcmds
+          echo 'key p' >>lynxcmds
+          echo 'key ^J' >>lynxcmds
+          echo 'key Q' >>lynxcmds
+          lynx -accept-all-cookies nonmem.iconplc.com -cmd_script=lynxcmds
+
+  integration-ubuntu:
+    needs: [get-nonmem]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cache NONMEM
+        id: cache-nonmem
+        uses: actions/cache@v2
+        with:
+            path: 744.zip
+            key: nonmem-744
+      - name: Unzip NONMEM
+        run: unzip -P $ZIP_KEY 744.zip
+        env:
+          ZIP_KEY: ${{secrets.ZIP_KEY}}
+      - name: Install gfortran
+        run: sudo apt install gfortran
+      - name: Install NONMEM
+        run: |
+          cd nm744CD
+          /bin/bash SETUP74 $(realpath .) $(realpath ../nm744) gfortran y ar same rec q
+      - name: NONMEM license
+        run: echo $LICENSE_KEY >nm744/license/nonmem.lic
+        env:
+          LICENSE_KEY: ${{secrets.LICENSE_KEY}}
+      - name: Create pharmpy.conf
+        run: |
+          mkdir ~/.config/Pharmpy
+          echo '[pharmpy.plugins.nonmem]' > ~/.config/Pharmpy/pharmpy.conf
+          echo 'parameter_names=comment,basic' >> ~/.config/Pharmpy/pharmpy.conf
+          echo "default_nonmem_path=$(pwd)/nm744" >> ~/.config/Pharmpy/pharmpy.conf
+      - uses: actions/checkout@v1
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install tox tox-gh-actions
+      - name: Run integration tests
+        run: tox -e integration
+        env:
+          PLATFORM: ubuntu-latest
+
+  integration-macos:
+    needs: get-nonmem
+    runs-on: macos-latest
+    steps:
+      - name: Setup gfortran
+        run: |
+          sudo ln -s /usr/local/bin/gfortran-9 /usr/local/bin/gfortran
+          sudo mkdir /usr/local/gfortran
+          sudo ln -s /usr/local/Cellar/gcc@9/9.3.0_1/lib/gcc/9 /usr/local/gfortran/lib
+      - name: Get NONMEM
+        id: cache-nonmem
+        uses: actions/cache@v2
+        with:
+            path: 744.zip
+            key: nonmem-744
+      - name: Unzip NONMEM
+        run: unzip -P $ZIP_KEY 744.zip
+        env:
+          ZIP_KEY: ${{secrets.ZIP_KEY}}
+      - name: Install NONMEM
+        run: |
+          cd nm744CD
+          /bin/bash SETUP74 $(realpath .) $(realpath ../nm744) gfortran y ar same rec q
+      - name: NONMEM license
+        run: echo $LICENSE_KEY >nm744/license/nonmem.lic
+        env:
+          LICENSE_KEY: ${{secrets.LICENSE_KEY}}
+      - name: Create pharmpy.conf
+        run: |
+          mkdir ~/Library/Application Support/Pharmpy
+          echo '[pharmpy.plugins.nonmem]' > ~/Library/Application Support/Pharmpy/pharmpy.conf
+          echo 'parameter_names=comment,basic' >> ~/Library/Application Support/Pharmpy/pharmpy.conf
+          echo "default_nonmem_path=$(pwd)/nm744" >> ~/Library/Application Support/pharmpy.conf
+      - uses: actions/checkout@v1
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install tox tox-gh-actions
+      - name: Run integration tests
+        run: tox -e integration
+        env:
+          PLATFORM: macos-latest
+
+  integration-windows:
+      needs: get-nonmem
+      runs-on: windows-latest
+      steps:
+        - name: Get NONMEM
+          id: cache-nonmem
+          uses: actions/cache@v2
+          with:
+            path: 744.zip
+            key: nonmem-744
+        - name: Unzip NONMEM
+          run: 7z x 744.zip -p%ZIP_KEY%
+          env:
+            ZIP_KEY: ${{secrets.ZIP_KEY}}
+          shell: cmd
+        - name: Install NONMEM
+          run: |
+            cd nm744CD
+            SETUP74.bat $(realpath .) $(realpath ../nm744) gfortran y ar same rec q
+          shell: cmd
+        - name: NONMEM license
+          run: echo $LICENSE_KEY >nm744/license/nonmem.lic
+          env:
+            LICENSE_KEY: ${{secrets.LICENSE_KEY}}
+          shell: bash
+        - name: Create pharmpy.conf
+          run: |
+            set CONFDIR=C:\Documents and Settings\%USERNAME%\Application Data\Local Settings\Pharmpy\Pharmpy
+            md %CONFDIR%
+            echo "[pharmpy.plugins.nonmem]" > %CONFDIR%\pharmpy.conf
+            echo "parameter_names=comment,basic" >> %CONFDIR%\pharmpy.conf
+            echo "default_nonmem_path=%CD%/nm744" >> %CONFDIR%\pharmpy.conf
+          shell: cmd
+        - uses: actions/checkout@v1
+        - name: Set up Python ${{ matrix.python-version }}
+          uses: actions/setup-python@v2
+          with:
+            python-version: 3.8
+        - name: Install dependencies
+          run: |
+            python -m pip install --upgrade pip
+            pip install tox tox-gh-actions
+        - name: Run integration tests
+          run: tox -e integration
+          env:
+            PLATFORM: windows-latest
