@@ -105,6 +105,7 @@ jobs:
           echo '[pharmpy.plugins.nonmem]' > ~/.config/Pharmpy/pharmpy.conf
           echo 'parameter_names=comment,basic' >> ~/.config/Pharmpy/pharmpy.conf
           echo "default_nonmem_path=$(pwd)/nm744" >> ~/.config/Pharmpy/pharmpy.conf
+          cat ~/.config/Pharmpy/pharmpy.conf
       - uses: actions/checkout@v1
       - name: Set up Python
         uses: actions/setup-python@v2
@@ -128,6 +129,8 @@ jobs:
           sudo ln -s /usr/local/bin/gfortran-9 /usr/local/bin/gfortran
           sudo mkdir /usr/local/gfortran
           sudo ln -s /usr/local/Cellar/gcc@9/9.3.0_1/lib/gcc/9 /usr/local/gfortran/lib
+      - name: Install realpath
+        run: brew install coreutils
       - name: Get NONMEM
         id: cache-nonmem
         uses: actions/cache@v2
