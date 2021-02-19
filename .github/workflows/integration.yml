@@ -158,7 +158,7 @@ jobs:
         run: |
           export CONFDIR=/Users/runner/Library/Application\ Support/Pharmpy
           mkdir -p $CONFDIR
-          echo '[pharmpy.plugins.nonmem]' > $CONFDIR//pharmpy.conf
+          echo '[pharmpy.plugins.nonmem]' > $CONFDIR/pharmpy.conf
           echo 'parameter_names=comment,basic' >> $CONFDIR/pharmpy.conf
           echo "default_nonmem_path=$(pwd)/nm744" >> $CONFDIR/pharmpy.conf
       - uses: actions/checkout@v1
@@ -199,16 +199,16 @@ jobs:
             cd nm744CD
             SETUP74.bat %CD% %INSTALLDIR% gfortran y ar same rec q
           shell: cmd
-        - name: Create pharmpy.conf
-          run: |
-            set CONFDIR=C:\Documents and Settings\%USERNAME%\Application Data\Local Settings\Pharmpy\Pharmpy
-            md %CONFDIR%
-            echo "[pharmpy.plugins.nonmem]" > %CONFDIR%\pharmpy.conf
-            echo "parameter_names=comment,basic" >> %CONFDIR%\pharmpy.conf
-            echo "default_nonmem_path=%CD%/nm744" >> %CONFDIR%\pharmpy.conf
-          shell: cmd
+#        - name: Create pharmpy.conf
+#          run: |
+#            set CONFDIR=C:\Documents and Settings\%USERNAME%\Application Data\Local Settings\Pharmpy\Pharmpy
+#            md %CONFDIR%
+#            echo "[pharmpy.plugins.nonmem]" > %CONFDIR%\pharmpy.conf
+#            echo "parameter_names=comment,basic" >> %CONFDIR%\pharmpy.conf
+#            echo "default_nonmem_path=%CD%/nm744" >> %CONFDIR%\pharmpy.conf
+#          shell: cmd
         - uses: actions/checkout@v1
-        - name: Set up Python ${{ matrix.python-version }}
+        - name: Set up Python 3.8
           uses: actions/setup-python@v2
           with:
             python-version: 3.8
