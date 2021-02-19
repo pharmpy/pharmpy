@@ -208,7 +208,7 @@ jobs:
         - name: Create pharmpy.conf
           run: |
             export CONFDIR=/mnt/c/Users/runneradmin/AppData/Local/Pharmpy/Pharmpy
-            md $CONFDIR
+            mkdir $CONFDIR
             echo '[pharmpy.plugins.nonmem]' > $CONFDIR/pharmpy.conf
             echo 'parameter_names=comment,basic' >> $CONFDIR/pharmpy.conf
             echo "default_nonmem_path=$(pwd)/nm744" >> $CONFDIR/pharmpy.conf
