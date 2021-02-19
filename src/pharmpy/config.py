@@ -81,7 +81,7 @@ class ConfigItem:
 
 class Configuration:
     def __init__(self):
-        noconfigfile = bool(os.getenv('PHARMPYNOCONFIGFILE', 0))
+        noconfigfile = bool(int(os.getenv('PHARMPYNOCONFIGFILE', 0)))
         if noconfigfile:
             return
         if self.module in config_file.keys():
