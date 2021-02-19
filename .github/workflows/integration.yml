@@ -207,7 +207,7 @@ jobs:
           shell: cmd
         - name: Create pharmpy.conf
           run: |
-            export CONFDIR=/mnt/c/Users/runneradmin/AppData/Local/Pharmpy/Pharmpy
+            export CONFDIR=/c/Users/runneradmin/AppData/Local/Pharmpy/Pharmpy
             mkdir -p $CONFDIR
             echo '[pharmpy.plugins.nonmem]' > $CONFDIR/pharmpy.conf
             echo 'parameter_names=comment,basic' >> $CONFDIR/pharmpy.conf
