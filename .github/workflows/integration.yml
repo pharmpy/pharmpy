@@ -106,11 +106,11 @@ jobs:
           LICENSE_KEY: ${{secrets.LICENSE_KEY}}
       - name: Create pharmpy.conf
         run: |
-          mkdir ~/.config/Pharmpy
-          echo '[pharmpy.plugins.nonmem]' > ~/.config/Pharmpy/pharmpy.conf
-          echo 'parameter_names=comment,basic' >> ~/.config/Pharmpy/pharmpy.conf
-          echo "default_nonmem_path=$(pwd)/nm744" >> ~/.config/Pharmpy/pharmpy.conf
-          cat ~/.config/Pharmpy/pharmpy.conf
+          export CONFDIR=/home/runner/.config/Pharmpy
+          mkdir -p $CONFDIR
+          echo '[pharmpy.plugins.nonmem]' > $CONFDIR/pharmpy.conf
+          echo 'parameter_names=comment,basic' >> $CONFDIR/pharmpy.conf
+          echo "default_nonmem_path=$(pwd)/nm744" >> $CONFDIR/pharmpy.conf
       - uses: actions/checkout@v1
       - name: Set up Python
         uses: actions/setup-python@v2
@@ -156,10 +156,11 @@ jobs:
           LICENSE_KEY: ${{secrets.LICENSE_KEY}}
       - name: Create pharmpy.conf
         run: |
-          mkdir ~/Library/Application\ Support/Pharmpy
-          echo '[pharmpy.plugins.nonmem]' > ~/Library/Application\ Support/Pharmpy/pharmpy.conf
-          echo 'parameter_names=comment,basic' >> ~/Library/Application\ Support/Pharmpy/pharmpy.conf
-          echo "default_nonmem_path=$(pwd)/nm744" >> ~/Library/Application\ Support/pharmpy.conf
+          export CONFDIR=/Users/runner/Library/Application\ Support/Pharmpy
+          mkdir -p $CONFDIR
+          echo '[pharmpy.plugins.nonmem]' > $CONFDIR//pharmpy.conf
+          echo 'parameter_names=comment,basic' >> $CONFDIR/pharmpy.conf
+          echo "default_nonmem_path=$(pwd)/nm744" >> $CONFDIR/pharmpy.conf
       - uses: actions/checkout@v1
       - name: Set up Python
         uses: actions/setup-python@v2
@@ -187,17 +188,17 @@ jobs:
           env:
             ZIP_KEY: ${{secrets.ZIP_KEY}}
           shell: cmd
+        - name: NONMEM license
+          run: echo $LICENSE_KEY >nm744CD/nonmem.lic
+          env:
+            LICENSE_KEY: ${{secrets.LICENSE_KEY}}
+          shell: bash
         - name: Install NONMEM
           run: |
             set INSTALLDIR=%CD%\nm744
             cd nm744CD
             SETUP74.bat %CD% %INSTALLDIR% gfortran y ar same rec q
           shell: cmd
-        - name: NONMEM license
-          run: echo $LICENSE_KEY >nm744/license/nonmem.lic
-          env:
-            LICENSE_KEY: ${{secrets.LICENSE_KEY}}
-          shell: bash
         - name: Create pharmpy.conf
           run: |
             set CONFDIR=C:\Documents and Settings\%USERNAME%\Application Data\Local Settings\Pharmpy\Pharmpy

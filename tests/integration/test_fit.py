@@ -10,7 +10,7 @@ from pharmpy.plugins.nonmem import conf
 def test_configuration():
     print("User config dir:", user_config_dir())
     print("Site config dir:", site_config_dir())
-    print(conf.default_nonmem_path)
+    print("Default NONMEM path:", conf.default_nonmem_path)
     assert (conf.default_nonmem_path / 'license' / 'nonmem.lic').is_file()
 
 
