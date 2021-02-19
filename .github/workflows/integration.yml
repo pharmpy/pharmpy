@@ -74,6 +74,11 @@ jobs:
           echo 'key ^J' >>lynxcmds
           echo 'key Q' >>lynxcmds
           lynx -accept-all-cookies nonmem.iconplc.com -cmd_script=lynxcmds
+      - name: Upload cache workaround
+        uses: actions/upload-artifact@v2
+        with:
+          name: cache-workaround
+          path: 744.zip
 
   integration-ubuntu:
     needs: [get-nonmem]
@@ -121,7 +126,7 @@ jobs:
           PLATFORM: ubuntu-latest
 
   integration-macos:
-    needs: get-nonmem
+    needs: [get-nonmem]
     runs-on: macos-latest
     steps:
       - name: Setup gfortran
@@ -170,15 +175,13 @@ jobs:
           PLATFORM: macos-latest
 
   integration-windows:
-      needs: get-nonmem
+      needs: [get-nonmem]
       runs-on: windows-latest
       steps:
         - name: Get NONMEM
-          id: cache-nonmem
-          uses: actions/cache@v2
+          uses: actions/download-artifact@v2
           with:
-            path: 744.zip
-            key: nonmem-744
+              name: cache-workaround
         - name: Unzip NONMEM
           run: 7z x 744.zip -p%ZIP_KEY%
           env:
