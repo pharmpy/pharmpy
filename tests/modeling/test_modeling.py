@@ -1485,9 +1485,9 @@ def test_add_iiv(pheno_path, parameter, expression, operation, eta_name, buf_new
             '$OMEGA 0.031128  ; IVV\n'
             '$OMEGA BLOCK(3)\n'
             '0.1\n'
-            '0.0055644\t; IIV_S1_IIV_Q\n'
+            '0.0055644\t; IIV_S1_IIV_MAT\n'
             '0.0309626\n'
-            '0.0055792\t; IIV_S1_IIV_MAT\n'
+            '0.0055792\t; IIV_S1_IIV_Q\n'
             '0.0005\n'
             '0.031128\n',
         ),
@@ -1519,6 +1519,7 @@ def test_add_iiv(pheno_path, parameter, expression, operation, eta_name, buf_new
 )
 def test_block_rvs(testdata, etas, pk_ref, omega_ref):
     model = Model(testdata / 'nonmem/pheno_block.mod')
+
     create_rv_block(model, etas)
     model.update_source()
 

@@ -5,7 +5,7 @@ import sympy
 import sympy.stats as stats
 
 from pharmpy import Model
-from pharmpy.modeling import create_rv_block
+from pharmpy.modeling import add_iiv, create_rv_block
 from pharmpy.modeling.block_rvs import _choose_param_init, _get_rvs, _merge_rvs
 from pharmpy.random_variables import RandomVariables, VariabilityLevel
 from pharmpy.results import ModelfitResults
@@ -75,6 +75,15 @@ def test_choose_param_init(pheno_path, testdata):
     init = _choose_param_init(model, rvs, params)
 
     assert init == 0.0118179
+
+    # If one eta doesn't have individual estimates
+    model = Model(pheno_path)
+    add_iiv(model, 'S1', 'add')
+    params = (model.parameters['OMEGA(1,1)'], model.parameters['IIV_S1'])
+    rvs = RandomVariables([model.random_variables['ETA(1)'], model.random_variables['ETA_S1']])
+    init = _choose_param_init(model, rvs, params)
+
+    assert init == 0.0052789
 
 
 def test_merge_rvs(testdata):
