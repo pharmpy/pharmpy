@@ -211,7 +211,7 @@ jobs:
             mkdir -p $CONFDIR
             echo '[pharmpy.plugins.nonmem]' > $CONFDIR/pharmpy.conf
             echo 'parameter_names=comment,basic' >> $CONFDIR/pharmpy.conf
-            echo "default_nonmem_path=$(pwd)/nm744" >> $CONFDIR/pharmpy.conf
+            echo 'default_nonmem_path=D:\a\pharmpy\pharmpy\nm744' >> $CONFDIR/pharmpy.conf
             cat $CONFDIR/pharmpy.conf
           shell: bash
         - name: Set up Python 3.8
