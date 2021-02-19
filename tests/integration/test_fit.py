@@ -1,8 +1,17 @@
 import os
 import shutil
 
-from pharmpy import Model
 import pharmpy.modeling as modeling
+from pharmpy import Model
+from pharmpy.config import site_config_dir, user_config_dir
+from pharmpy.plugins.nonmem import conf
+
+
+def test_configuration():
+    print("User config dir:", user_config_dir())
+    print("Site config dir:", site_config_dir())
+    print(conf.default_nonmem_path)
+    assert (conf.default_nonmem_path / 'license' / 'nonmem.lic').is_file()
 
 
 def test_fit(tmp_path, testdata):

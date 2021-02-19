@@ -7,14 +7,25 @@ from pathlib import Path
 
 import appdirs
 
+appname = 'Pharmpy'
+configuration_filename = 'pharmpy.conf'
+
+
+def user_config_dir():
+    user_path = Path(appdirs.user_config_dir(appname)) / configuration_filename
+    return user_path
+
+
+def site_config_dir():
+    site_path = Path(appdirs.site_config_dir(appname)) / configuration_filename
+    return site_path
+
 
 def read_configuration():
-    appname = 'Pharmpy'
-    filename = 'pharmpy.conf'
     config = configparser.ConfigParser()
     env_path = os.getenv('PHARMPYCONFIGPATH')
     if env_path is not None:
-        env_path = Path(env_path) / filename
+        env_path = Path(env_path) / configuration_filename
         if not env_path.is_file():
             raise ValueError(
                 'Environment variable PHARMPYCONFIGPATH is set but directory does '
@@ -22,11 +33,11 @@ def read_configuration():
             )
         config.read(env_path)
     else:
-        user_path = Path(appdirs.user_config_dir(appname)) / filename
+        user_path = user_config_dir()
         if user_path.is_file():
             config.read(user_path)
         else:
-            site_path = Path(appdirs.site_config_dir(appname)) / filename
+            site_path = site_config_dir()
             if site_path.is_file():
                 config.read(user_path)
     return config

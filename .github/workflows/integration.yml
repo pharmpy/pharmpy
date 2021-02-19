@@ -156,10 +156,10 @@ jobs:
           LICENSE_KEY: ${{secrets.LICENSE_KEY}}
       - name: Create pharmpy.conf
         run: |
-          mkdir ~/Library/Application Support/Pharmpy
-          echo '[pharmpy.plugins.nonmem]' > ~/Library/Application Support/Pharmpy/pharmpy.conf
-          echo 'parameter_names=comment,basic' >> ~/Library/Application Support/Pharmpy/pharmpy.conf
-          echo "default_nonmem_path=$(pwd)/nm744" >> ~/Library/Application Support/pharmpy.conf
+          mkdir ~/Library/Application\ Support/Pharmpy
+          echo '[pharmpy.plugins.nonmem]' > ~/Library/Application\ Support/Pharmpy/pharmpy.conf
+          echo 'parameter_names=comment,basic' >> ~/Library/Application\ Support/Pharmpy/pharmpy.conf
+          echo "default_nonmem_path=$(pwd)/nm744" >> ~/Library/Application\ Support/pharmpy.conf
       - uses: actions/checkout@v1
       - name: Set up Python
         uses: actions/setup-python@v2
@@ -189,8 +189,9 @@ jobs:
           shell: cmd
         - name: Install NONMEM
           run: |
+            set INSTALLDIR=%CD%\nm744
             cd nm744CD
-            SETUP74.bat $(realpath .) $(realpath ../nm744) gfortran y ar same rec q
+            SETUP74.bat %CD% %INSTALLDIR% gfortran y ar same rec q
           shell: cmd
         - name: NONMEM license
           run: echo $LICENSE_KEY >nm744/license/nonmem.lic
