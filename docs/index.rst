@@ -30,7 +30,7 @@ Contents
    getting_started
    user_guide
    API reference <reference/modules>
-   development
+   contribute
    changelog
    license
 
