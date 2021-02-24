@@ -32,8 +32,8 @@ def execute_model(model, i):
         [
             nmfe_path(),
             model.name + model.source.filename_extension,
-            Path(model.name).with_suffix('.lst'),
-            f'-rundir={path}',
+            str(Path(model.name).with_suffix('.lst')),
+            f'-rundir={str(path)}',
         ]
     )
     return model
