@@ -28,14 +28,14 @@ def execute_model(model, i):
     model.source.path = path / 'dummy'
     model.write(path=path, force=True)
     model.source.path = temp
-    subprocess.call(
-        [
-            nmfe_path(),
-            model.name + model.source.filename_extension,
-            str(Path(model.name).with_suffix('.lst')),
-            f'-rundir={str(path)}',
-        ]
-    )
+    args = [
+        nmfe_path(),
+        model.name + model.source.filename_extension,
+        str(Path(model.name).with_suffix('.lst')),
+        f'-rundir={str(path)}',
+    ]
+    print("QQ:", args)
+    subprocess.call(args)
     return model
 
 

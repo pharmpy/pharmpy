@@ -213,6 +213,7 @@ jobs:
             echo 'parameter_names=comment,basic' >> $CONFDIR/pharmpy.conf
             echo 'default_nonmem_path=D:\a\pharmpy\pharmpy\nm744' >> $CONFDIR/pharmpy.conf
             cat $CONFDIR/pharmpy.conf
+            ls -R
           shell: bash
         - name: Set up Python 3.8
           uses: actions/setup-python@v2
