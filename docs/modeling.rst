@@ -34,6 +34,7 @@ Many basic model manipulation tasks that could also be done using methods on mod
 makes it possible to do most common model manipulations using a functional interface that is easy to chain into a pipeline.
 
 .. warning::
+
    Note that all manipulations are done in place, i.e. the model referenced by the input argument will be changed.
 
 Reading, writing and updating source models

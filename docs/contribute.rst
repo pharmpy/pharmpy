@@ -2,15 +2,11 @@
 Contribute
 ==========
 
-.. toctree::
-   :maxdepth: 4
+We encourage your contribution to the Pharmpy project! Anything from plugins for new model types to reporting bugs as
+GitHub issues, any contribution is appreciated.
 
-   NONMEM
-   todo
-   design
-
-Development Environment Installation
-####################################
+Set up of development environment
+#################################
 
 Install and run tox
 *******************
@@ -150,3 +146,13 @@ has a bumpversion_ config in ``.bumpversion.cfg``. Thus, remember to run:
 * ``bumpversion major`` to increase version from `0.1.0` to `1.0.0`.
 
 .. _bumpversion: https://pypi.org/project/bumpversion
+
+Further reading
+###############
+
+.. toctree::
+   :maxdepth: 2
+
+   NONMEM
+   todo
+   design

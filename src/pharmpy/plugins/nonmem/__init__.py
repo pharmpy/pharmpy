@@ -14,14 +14,18 @@ r"""
      - Type
      - Description
    * - ``parameter_names``
-     - ``'basic'``
-     - Str
-     - Naming scheme of NONMEM parameters. One of 'basic' and 'comment'
+     - ``['basic']``
+     - list
+     - Naming scheme of NONMEM parameters. Possible settings are "abbr" ($ABBR), "comment", and
+       "basic". The order denotes priority order
    * - ``default_nonmem_path``
      - Path()
      - pathlib.path
-     - Full path to the default NONMEM installation directory
-
+     - Full path to the default NONMEM installation director
+   * - ``write_etas_in_abbr``
+     - ``False``
+     - bool
+     - Whether to write etas as $ABBR records
 """
 
 
@@ -30,7 +34,7 @@ class NONMEMConfiguration(config.Configuration):
     parameter_names = config.ConfigItem(
         ['basic'],
         'Naming scheme of NONMEM parameters. Possible settings are "abbr" ($ABBR), "comment", and '
-        '"basic". The order denotes priority order.',
+        '"basic". The order denotes priority order',
         list,
     )
     default_nonmem_path = config.ConfigItem(

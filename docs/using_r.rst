@@ -5,16 +5,33 @@ Pharmpy in R
 ============
 
 Using Pharmpy in R is similar to how it is used in Python, and all the examples for Python are analogous to how
-they work in R. Replace "." with "$" for the R equivalent. Later an R wrapper will be available.
+they work in R. Replace "." with "$" for the R equivalent. An R wrapper is being developed.
 
-Relevant imports:
+.. warning::
 
+    When providing a one-element list as an input argument to e.g. transformations or configurations that do not
+    support single strings, use `list()` instead of `c()`. This is because Reticulate translates the string array
+    from the list element to separate strings (e.g. `c('ETA(1)')` will be interpreted as
+    `c('E', 'T', 'A', '(', '1', ')')`.
+
+----------------
+Relevant imports
+----------------
 .. code-block:: r
 
     >>> library(reticulate)
     >>> # use_python("python3")  # Uncomment if needed
     >>> pharmpy <- import("pharmpy")
 
+A way to write functions from e.g. the modeling module in a more clean way:
+
+.. code-block:: r
+
+    >>> add_covariate_effect <- modeling$add_covariate_effect
+
+----------------
+Basic operations
+----------------
 To load a model and access e.g. parameters
 
 .. code-block:: r
@@ -33,14 +50,19 @@ To load a model and access e.g. parameters
      SIGMA(1,1)  0.013086   0.00       oo  False
     >>> model$write("run2.mod")
 
+---------------
+Transformations
+---------------
 It is also possible to perform different types of transformations, such as addition of covariate effects (see the
 user guide :ref:`Modeling <modeling>` for available transformations).
 
-.. warning::
-   Note that all manipulations are done in place, i.e. the model referenced by the input argument will be changed.
-
-A way to write functions from e.g. the modeling module in a more clean way:
+Together with the `dplyr` package, you can create transformation pipelines (note that model is changed in place).
 
 .. code-block:: r
 
-    >>> add_covariate_effect <- modeling$add_covariate_effect
+    >>> model <- pharmpy$Model("run1.mod") %>%
+    >>>     first_order_absorption() %>%
+    >>>     add_iiv("MAT", "exp") %>%
+    >>>     update_source() %>%
+    >>>     write_model("run2.mod")
+̈́
