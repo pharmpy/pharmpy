@@ -1,3 +1,4 @@
+import os
 import subprocess
 from pathlib import Path
 
@@ -34,7 +35,6 @@ def execute_model(model, i):
         str(Path(model.name).with_suffix('.lst')),
         f'-rundir={str(path)}',
     ]
-    print("QQ:", args)
     subprocess.call(args)
     return model
 
@@ -46,8 +46,12 @@ def results(models):
 
 
 def nmfe_path():
+    if os.name == 'nt':
+        nmfe = 'nmfe74.bat'
+    else:
+        nmfe = 'nmfe74'
     path = conf.default_nonmem_path
     if path != Path(''):
         path /= 'run'
-    path /= 'nmfe74'
+    path /= nmfe
     return str(path)
