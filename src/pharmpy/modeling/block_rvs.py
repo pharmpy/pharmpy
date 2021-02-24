@@ -6,7 +6,7 @@ import numpy as np
 from sympy.stats.joint_rv_types import MultivariateNormalDistribution
 
 from pharmpy import math
-from pharmpy.modeling.help_functions import _get_etas
+from pharmpy.modeling.help_functions import _format_input_list, _get_etas
 from pharmpy.parameter import Parameter
 from pharmpy.random_variables import RandomVariables, VariabilityLevel
 
@@ -72,11 +72,12 @@ def split_rv_block(model, list_of_rvs=None):
     ----------
     model : Model
         Pharmpy model to create block effect on.
-    list_of_rvs : list
-        List of etas to split from block structure. If None, all etas that are IIVs and
+    list_of_rvs : str, list
+        Name/names of etas to split from block structure. If None, all etas that are IIVs and
         non-fixed will become single. None is default.
     """
     rvs_full = model.random_variables
+    list_of_rvs = _format_input_list(list_of_rvs)
     rvs_block = _get_etas(model, list_of_rvs)
     pset = model.parameters
 

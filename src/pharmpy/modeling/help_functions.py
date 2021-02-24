@@ -64,3 +64,19 @@ def _has_fixed_params(model, rv):
         if p.name in param_names and p.fix:
             return True
     return False
+
+
+def _format_input_list(list_of_names):
+    if list_of_names and isinstance(list_of_names, str):
+        list_of_names = [list_of_names]
+    return list_of_names
+
+
+def _format_options(list_of_options, no_of_variables):
+    options = []
+    for option in list_of_options:
+        if isinstance(option, str) or not option:
+            option = [option] * no_of_variables
+        options.append(option)
+
+    return options

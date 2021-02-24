@@ -1230,6 +1230,11 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
             'ETAB1 = (EXP(ETA(1))**THETA(4) - 1)/THETA(4)',
             'CL = TVCL*EXP(ETAB1)\nV=TVV*EXP(ETA(2))',
         ),
+        (
+            'ETA(1)',
+            'ETAB1 = (EXP(ETA(1))**THETA(4) - 1)/THETA(4)',
+            'CL = TVCL*EXP(ETAB1)\nV=TVV*EXP(ETA(2))',
+        ),
     ],
 )
 def test_boxcox(pheno_path, etas, etab, buf_new):
@@ -1300,6 +1305,11 @@ def test_tdist(pheno_path):
     [
         (
             ['ETA(1)'],
+            'ETAD1 = ((ABS(ETA(1)) + 1)**THETA(4) - 1)*ABS(ETA(1))/(THETA(4)*ETA(1))',
+            'CL = TVCL*EXP(ETAD1)\nV=TVV*EXP(ETA(2))',
+        ),
+        (
+            'ETA(1)',
             'ETAD1 = ((ABS(ETA(1)) + 1)**THETA(4) - 1)*ABS(ETA(1))/(THETA(4)*ETA(1))',
             'CL = TVCL*EXP(ETAD1)\nV=TVV*EXP(ETA(2))',
         ),
@@ -1600,6 +1610,26 @@ def test_block_rvs(testdata, etas, pk_ref, omega_ref):
             '$OMEGA  0.0309626\n'
             '$OMEGA  0.031128\n',
         ),
+        (
+            'ETA(1)',
+            '$PK\nCL=THETA(1)*EXP(ETA(1))\n'
+            'V=THETA(2)*EXP(ETA(2))\n'
+            'S1=V+ETA(3)\n'
+            'MAT=THETA(3)*EXP(ETA(4))\n'
+            'Q=THETA(4)*EXP(ETA(5))\n\n',
+            '$OMEGA  0.0309626\n'
+            '$OMEGA BLOCK(4)\n'
+            '0.031128\n'
+            '0.0055792\t; IIV_V_IIV_S1\n'
+            '0.1\n'
+            '0.0031045\t; IIV_V_IIV_MAT\n'
+            '0.0055644\t; IIV_S1_IIV_MAT\n'
+            '0.0309626\n'
+            '0.0031128\t; IIV_V_IIV_Q\n'
+            '0.0055792\t; IIV_S1_IIV_Q\n'
+            '0.0005\n'
+            '0.031128\n',
+        ),
     ],
 )
 def test_split_rv_block(testdata, etas, pk_ref, omega_ref):
@@ -1667,6 +1697,13 @@ def test_split_rv_block(testdata, etas, pk_ref, omega_ref):
             ['EPS(1)'],
             False,
             ['ETA(3)'],
+            'Y = F + EPS(1)*W*EXP(ETA(3))\n' 'IPRED=F+EPS(2)\n' 'IRES=DV-IPRED+EPS(3)\n',
+            '$OMEGA  0.09 ; IIV_RUV1',
+        ),
+        (
+            'EPS(1)',
+            False,
+            None,
             'Y = F + EPS(1)*W*EXP(ETA(3))\n' 'IPRED=F+EPS(2)\n' 'IRES=DV-IPRED+EPS(3)\n',
             '$OMEGA  0.09 ; IIV_RUV1',
         ),
@@ -1762,6 +1799,20 @@ def test_iiv_on_ruv(pheno_path, epsilons, same_eta, eta_names, err_ref, omega_re
         ),
         (
             ['CL'],
+            '$PK\n'
+            'CL = THETA(1)\n'
+            'V = THETA(2)*EXP(ETA(1))\n'
+            'S1 = V + ETA(2)\n'
+            'MAT = THETA(3)*EXP(ETA(3))\n'
+            'Q = THETA(4)*EXP(ETA(4))\n\n',
+            '$OMEGA 0.031128  ; IVV\n'
+            '$OMEGA 0.1\n'
+            '$OMEGA BLOCK(2)\n'
+            '0.0309626\n'
+            '0.0005 0.031128\n',
+        ),
+        (
+            'ETA(1)',
             '$PK\n'
             'CL = THETA(1)\n'
             'V = THETA(2)*EXP(ETA(1))\n'

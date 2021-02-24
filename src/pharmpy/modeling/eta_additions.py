@@ -8,7 +8,7 @@ import sympy
 import sympy.stats as stats
 from sympy import Eq, Piecewise
 
-from pharmpy.modeling.help_functions import _get_etas
+from pharmpy.modeling.help_functions import _format_input_list, _format_options, _get_etas
 from pharmpy.parameter import Parameter
 from pharmpy.random_variables import VariabilityLevel
 from pharmpy.statements import Assignment, ModelStatements
@@ -42,24 +42,23 @@ def add_iiv(model, list_of_parameters, expression, operation='*', eta_names=None
     """
     rvs, pset, sset = model.random_variables, model.parameters, model.statements
 
-    parameter, additional_options = _change_to_list(
-        list_of_parameters, [expression, operation, eta_names]
-    )
-    expression, operation, eta_names = additional_options
+    list_of_parameters = _format_input_list(list_of_parameters)
+    list_of_options = _format_options([expression, operation, eta_names], len(list_of_parameters))
+    expression, operation, eta_names = list_of_options
 
     if all(eta_name is None for eta_name in eta_names):
         eta_names = None
 
-    if not all(len(opt) == len(parameter) for opt in additional_options if opt):
+    if not all(len(opt) == len(list_of_parameters) for opt in list_of_options if opt):
         raise ValueError(
             'The number of provided expressions and operations must either be equal '
             'to the number of parameters or equal to 1'
         )
 
-    for i in range(len(parameter)):
-        omega = S(f'IIV_{parameter[i]}')
+    for i in range(len(list_of_parameters)):
+        omega = S(f'IIV_{list_of_parameters[i]}')
         if not eta_names:
-            eta_name = f'ETA_{parameter[i]}'
+            eta_name = f'ETA_{list_of_parameters[i]}'
         else:
             eta_name = eta_names[i]
 
@@ -69,7 +68,7 @@ def add_iiv(model, list_of_parameters, expression, operation='*', eta_names=None
         rvs.add(eta)
         pset.add(Parameter(str(omega), init=0.09))
 
-        statement = sset.find_assignment(parameter[i])
+        statement = sset.find_assignment(list_of_parameters[i])
 
         eta_addition = _create_template(expression[i], operation[i])
         eta_addition.apply(statement.expression, eta.name)
@@ -97,19 +96,14 @@ def add_iov(model, occ, list_of_parameters=None, eta_names=None):
     list_of_parameters : str, list
         List of names of parameters and random variables. Accepts random variable names, parameter
         names, or a mix of both.
-    eta_names: list
+    eta_names: str, list
         Custom names of new etas. Must be equal to the number of input etas times the number of
         categories for occasion.
     """
     rvs, pset, sset = model.random_variables, model.parameters, model.statements
-    params, additional_options = _change_to_list(list_of_parameters, [eta_names])
 
-    if len(additional_options) > 1:
-        eta_names = additional_options[0]
-
-    etas = _get_etas(model, params, include_symbols=True)
-    iovs, etais = ModelStatements(), ModelStatements()
-
+    list_of_parameters = _format_input_list(list_of_parameters)
+    etas = _get_etas(model, list_of_parameters, include_symbols=True)
     categories = _get_occ_levels(model.dataset, occ)
 
     if eta_names and len(eta_names) != len(etas) * len(categories):
@@ -119,6 +113,7 @@ def add_iov(model, occ, list_of_parameters=None, eta_names=None):
     elif len(categories) == 1:
         raise ValueError(f'Only one value in {occ} column.')
 
+    iovs, etais = ModelStatements(), ModelStatements()
     for i, eta in enumerate(etas, 1):
         omega_name = str(next(iter(eta.pspace.distribution.free_symbols)))
         omega = S(f'OMEGA_IOV_{i}')  # TODO: better name
@@ -156,24 +151,6 @@ def add_iov(model, occ, list_of_parameters=None, eta_names=None):
     model.random_variables, model.parameters, model.statements = rvs, pset, iovs
 
     return model
-
-
-def _change_to_list(list_of_params, additional_options):
-    additional_options_as_list = []
-    params = list_of_params
-
-    if isinstance(list_of_params, list):
-        for option in additional_options:
-            if isinstance(option, str) or not option:
-                option = [option] * len(list_of_params)
-            additional_options_as_list.append(option)
-    else:
-        if list_of_params:
-            params = [list_of_params]
-        for option in additional_options:
-            additional_options_as_list.append([option])
-
-    return params, additional_options_as_list
 
 
 def _create_template(expression, operation):

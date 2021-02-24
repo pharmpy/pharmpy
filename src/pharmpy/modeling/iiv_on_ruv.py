@@ -5,7 +5,7 @@
 import sympy
 import sympy.stats as stats
 
-from pharmpy.modeling.help_functions import _get_epsilons
+from pharmpy.modeling.help_functions import _format_input_list, _get_epsilons
 from pharmpy.parameter import Parameter
 from pharmpy.random_variables import VariabilityLevel
 from pharmpy.symbols import symbol as S
@@ -19,16 +19,22 @@ def iiv_on_ruv(model, list_of_eps=None, same_eta=True, eta_names=None):
     ----------
     model : Model
         Pharmpy model to apply IIV on epsilons.
-    list_of_eps : list
-        List of epsilons to multiply with exponential etas. If None, all epsilons will
+    list_of_eps : str, list
+        Name/names of epsilons to multiply with exponential etas. If None, all epsilons will
         be chosen. None is default.
     same_eta : bool
         Boolean of whether all RUVs from input should use the same new ETA or if one ETA
         should be created for each RUV. True is default.
-    eta_names: list
+    eta_names: str, list
         Custom names of new etas. Must be equal to the number epsilons or 1 if same eta.
     """
+    list_of_eps = _format_input_list(list_of_eps)
     eps = _get_epsilons(model, list_of_eps)
+
+    if eta_names and len(eta_names) != len(eps):
+        raise ValueError(
+            'The number of provided eta names must be equal to the number of epsilons.'
+        )
 
     rvs, pset, sset = model.random_variables, model.parameters, model.statements
 

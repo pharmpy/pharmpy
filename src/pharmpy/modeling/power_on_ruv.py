@@ -3,7 +3,7 @@
 """
 
 from pharmpy.modeling import has_proportional_error
-from pharmpy.modeling.help_functions import _get_epsilons
+from pharmpy.modeling.help_functions import _format_input_list, _get_epsilons
 from pharmpy.parameter import Parameter
 from pharmpy.symbols import symbol as S
 
@@ -17,10 +17,11 @@ def power_on_ruv(model, list_of_eps=None):
     ----------
     model : Model
         Pharmpy model to create block effect on.
-    list_of_eps : list
-        List of epsilons to apply power effect. If None, all epsilons will be used.
+    list_of_eps : str, list
+        Name/names of epsilons to apply power effect. If None, all epsilons will be used.
         None is default.
     """
+    list_of_eps = _format_input_list(list_of_eps)
     eps = _get_epsilons(model, list_of_eps)
     pset, sset = model.parameters, model.statements
 

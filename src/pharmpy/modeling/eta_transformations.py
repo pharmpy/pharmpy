@@ -6,7 +6,7 @@ import re
 
 from sympy import exp, sign
 
-from pharmpy.modeling.help_functions import _get_etas
+from pharmpy.modeling.help_functions import _format_input_list, _get_etas
 from pharmpy.parameter import Parameter
 from pharmpy.statements import Assignment, ModelStatements
 from pharmpy.symbols import symbol as S
@@ -21,9 +21,10 @@ def boxcox(model, list_of_etas=None):
     ----------
     model : Model
         Pharmpy model to apply boxcox transformation to.
-    list_of_etas : list
-        List of etas to transform. If None, all etas will be transformed (default).
+    list_of_etas : str, list
+        Name/names of etas to transform. If None, all etas will be transformed (default).
     """
+    list_of_etas = _format_input_list(list_of_etas)
     etas = _get_etas(model, list_of_etas)
     eta_transformation = EtaTransformation.boxcox(len(etas))
     _transform_etas(model, eta_transformation, etas)
@@ -39,9 +40,10 @@ def tdist(model, list_of_etas=None):
     ----------
     model : Model
         Pharmpy model to apply t distribution transformation to.
-    list_of_etas : list
-        List of etas to transform. If None, all etas will be transformed (default).
+    list_of_etas : str, list
+        Name/names of etas to transform. If None, all etas will be transformed (default).
     """
+    list_of_etas = _format_input_list(list_of_etas)
     etas = _get_etas(model, list_of_etas)
     eta_transformation = EtaTransformation.tdist(len(etas))
     _transform_etas(model, eta_transformation, etas)
@@ -61,9 +63,10 @@ def john_draper(model, list_of_etas=None):
     ----------
     model : Model
         Pharmpy model to apply John Draper transformation to.
-    list_of_etas : list
-        List of etas to transform. If None, all etas will be transformed (default).
+    list_of_etas : str, list
+        Name/names of etas to transform. If None, all etas will be transformed (default).
     """
+    list_of_etas = _format_input_list(list_of_etas)
     etas = _get_etas(model, list_of_etas)
     eta_transformation = EtaTransformation.john_draper(len(etas))
     _transform_etas(model, eta_transformation, etas)
