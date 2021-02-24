@@ -2,11 +2,10 @@
 :meta private:
 """
 
-import warnings
-
 import sympy
 import sympy.stats as stats
 
+from pharmpy.modeling.help_functions import _get_epsilons
 from pharmpy.parameter import Parameter
 from pharmpy.random_variables import VariabilityLevel
 from pharmpy.symbols import symbol as S
@@ -56,21 +55,6 @@ def iiv_on_ruv(model, list_of_eps=None, same_eta=True, eta_names=None):
     model.modelfit_results = None
 
     return model
-
-
-def _get_epsilons(model, list_of_eps):
-    rvs = model.random_variables
-
-    if list_of_eps is None:
-        return rvs.ruv_rvs
-    else:
-        eps = []
-        for e in list_of_eps:
-            try:
-                eps.append(rvs[e.upper()])
-            except KeyError:
-                warnings.warn(f'Epsilon "{e}" does not exist')
-        return eps
 
 
 def _create_eta(pset, number, eta_names):

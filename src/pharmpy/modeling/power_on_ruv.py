@@ -2,9 +2,8 @@
 :meta private:
 """
 
-import warnings
-
 from pharmpy.modeling import has_proportional_error
+from pharmpy.modeling.help_functions import _get_epsilons
 from pharmpy.parameter import Parameter
 from pharmpy.symbols import symbol as S
 
@@ -41,18 +40,3 @@ def power_on_ruv(model, list_of_eps=None):
     model.statements = sset
 
     return model
-
-
-def _get_epsilons(model, list_of_eps):
-    rvs = model.random_variables
-
-    if list_of_eps is None:
-        return rvs.ruv_rvs
-    else:
-        eps = []
-        for e in list_of_eps:
-            try:
-                eps.append(rvs[e.upper()])
-            except KeyError:
-                warnings.warn(f'Epsilon "{e}" does not exist')
-        return eps

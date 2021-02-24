@@ -3,10 +3,10 @@
 """
 
 import re
-import warnings
 
 from sympy import exp, sign
 
+from pharmpy.modeling.help_functions import _get_etas
 from pharmpy.parameter import Parameter
 from pharmpy.statements import Assignment, ModelStatements
 from pharmpy.symbols import symbol as S
@@ -68,21 +68,6 @@ def john_draper(model, list_of_etas=None):
     eta_transformation = EtaTransformation.john_draper(len(etas))
     _transform_etas(model, eta_transformation, etas)
     return model
-
-
-def _get_etas(model, list_of_etas):
-    rvs = model.random_variables
-
-    if list_of_etas is None:
-        return rvs.etas
-    else:
-        etas = []
-        for eta in list_of_etas:
-            try:
-                etas.append(rvs[eta.upper()])
-            except KeyError:
-                warnings.warn(f'Random variable "{eta}" does not exist')
-        return etas
 
 
 def _transform_etas(model, transformation, etas):

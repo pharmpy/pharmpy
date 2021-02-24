@@ -6,6 +6,7 @@ import numpy as np
 from sympy.stats.joint_rv_types import MultivariateNormalDistribution
 
 from pharmpy import math
+from pharmpy.modeling.help_functions import _get_etas
 from pharmpy.parameter import Parameter
 from pharmpy.random_variables import RandomVariables, VariabilityLevel
 
@@ -29,7 +30,7 @@ def create_rv_block(model, list_of_rvs=None):
         raise ValueError('At least two random variables are needed')
 
     rvs_full = model.random_variables
-    rvs = _get_rvs(model, list_of_rvs)
+    rvs = _get_etas(model, list_of_rvs)
 
     if list_of_rvs is not None:
         for rv in rvs:
@@ -76,7 +77,7 @@ def split_rv_block(model, list_of_rvs=None):
         non-fixed will become single. None is default.
     """
     rvs_full = model.random_variables
-    rvs_block = _get_rvs(model, list_of_rvs)
+    rvs_block = _get_etas(model, list_of_rvs)
     pset = model.parameters
 
     cov_matrix_before = rvs_full.covariance_matrix()
@@ -95,43 +96,6 @@ def split_rv_block(model, list_of_rvs=None):
     model.parameters = pset
 
     return model
-
-
-def _get_rvs(model, list_of_rvs):
-    full_block = False
-
-    if list_of_rvs is None:
-        list_of_rvs = [rv for rv in model.random_variables.etas]
-        full_block = True
-
-    rvs = []
-    for rv_str in list_of_rvs:
-        try:
-            rv = model.random_variables[rv_str]
-        except KeyError:
-            raise KeyError(f'Random variable does not exist: {rv_str}')
-
-        if _has_fixed_params(model, rv):
-            if not full_block:
-                raise ValueError(f'Random variable cannot be set to fixed: {rv}')
-            continue
-        if rv.variability_level == VariabilityLevel.IOV:
-            if not full_block:
-                raise ValueError(f'Random variable cannot be IOV: {rv}')
-            continue
-
-        rvs.append(rv)
-
-    return RandomVariables(rvs)
-
-
-def _has_fixed_params(model, rv):
-    param_names = model.random_variables.get_eta_params(rv)
-
-    for p in model.parameters:
-        if p.name in param_names and p.fix:
-            return True
-    return False
 
 
 def _merge_rvs(model, rvs):

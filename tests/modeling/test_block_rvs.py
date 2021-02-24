@@ -6,7 +6,7 @@ import sympy.stats as stats
 
 from pharmpy import Model
 from pharmpy.modeling import add_iiv, create_rv_block
-from pharmpy.modeling.block_rvs import _choose_param_init, _get_rvs, _merge_rvs
+from pharmpy.modeling.block_rvs import _choose_param_init, _merge_rvs
 from pharmpy.random_variables import RandomVariables, VariabilityLevel
 from pharmpy.results import ModelfitResults
 from pharmpy.symbols import symbol as S
@@ -30,21 +30,6 @@ def test_incorrect_params(testdata, rvs, exception_msg):
 
     with pytest.raises(Exception, match=exception_msg):
         create_rv_block(model, rvs)
-
-
-def test_get_rvs(testdata):
-    model = Model(testdata / 'nonmem' / 'pheno_block.mod')
-    rvs = _get_rvs(model, None)
-    assert rvs[0].name == 'ETA(1)'
-
-    model.parameters.fix = {'OMEGA(1,1)': True}
-    rvs = _get_rvs(model, None)
-    assert rvs[0].name == 'ETA(2)'
-
-    model = Model(testdata / 'nonmem' / 'pheno_block.mod')
-    model.random_variables['ETA(1)'].variability_level = VariabilityLevel.IOV
-    rvs = _get_rvs(model, None)
-    assert rvs[0].name == 'ETA(2)'
 
 
 def test_choose_param_init(pheno_path, testdata):
