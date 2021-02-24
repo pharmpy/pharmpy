@@ -1,5 +1,7 @@
 from pathlib import Path
 
+import pharmpy.execute as execute
+
 
 class RunDirectory:
     def __init__(self, method_name, path=None):
@@ -20,5 +22,19 @@ class RunDirectory:
 
 
 class Method:
-    def __init__(self, path=None):
+    def __init__(self, dispatcher=None, database=None, job_creator=None, path=None):
         self.rundir = RunDirectory(type(self).__name__.lower(), path=path)
+        if dispatcher is None:
+            self.dispatcher = execute.default_dispatcher
+        else:
+            self.dispatcher = dispatcher
+        if database is None:
+            self.database = execute.default_database
+        else:
+            self.database = database
+        if job_creator is None:
+            import pharmpy.plugins.nonmem.run
+
+            self.job_creator = pharmpy.plugins.nonmem.run.create_job
+        else:
+            self.job_creator = job_creator

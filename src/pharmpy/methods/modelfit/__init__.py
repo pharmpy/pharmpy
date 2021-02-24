@@ -1,4 +1,4 @@
+from .job import ModelfitJob
 from .method import Modelfit
-from .run import run
 
-__all__ = ['run', 'Modelfit']
+__all__ = ['Modelfit', 'ModelfitJob']

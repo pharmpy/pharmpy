@@ -1,5 +1,5 @@
+import pharmpy.methods.modelfit
 import pharmpy.model
-from pharmpy.methods.modelfit import Modelfit
 
 
 def fit(models):
@@ -8,7 +8,7 @@ def fit(models):
         single = True
     else:
         single = False
-    tool = Modelfit(models)
+    tool = pharmpy.methods.modelfit.Modelfit(models)
     tool.run()
     if single:
         return models[0]

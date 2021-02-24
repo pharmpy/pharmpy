@@ -1,6 +1,8 @@
 import os
 import shutil
 
+import pytest
+
 import pharmpy.modeling as modeling
 from pharmpy import Model
 from pharmpy.config import site_config_dir, user_config_dir
@@ -21,4 +23,5 @@ def test_fit(tmp_path, testdata):
     model = Model('pheno.mod')
     modeling.fit(model)
     rundir = tmp_path / 'modelfit_dir1'
+    assert model.modelfit_results.ofv == pytest.approx(730.8947268137308)
     assert rundir.is_dir()
