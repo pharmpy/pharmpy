@@ -735,6 +735,7 @@ def add_needed_pk_parameters(model, advan, trans):
         peripheral = odes.find_peripherals()[0]
         add_parameters_ratio(model, 'CL', 'V1', central, output)
         add_parameters_ratio(model, 'Q', 'V2', peripheral, central)
+        add_parameters_ratio(model, 'Q', 'V1', central, peripheral)
     elif advan == 'ADVAN4' and trans == 'TRANS4':
         central = odes.find_central()
         output = odes.find_output()
@@ -794,8 +795,10 @@ def add_parameters_ratio(model, numpar, denompar, source, dest):
         if rate != par1.symbol / par2.symbol:
             if not statements.find_assignment(numpar):
                 statements.add_before_odes(par1)
+                odes.subs({numer: numpar})
             if not statements.find_assignment(denompar):
                 statements.add_before_odes(par2)
+                odes.subs({denom: denompar})
         odes.add_flow(source, dest, par1.symbol / par2.symbol)
 
 

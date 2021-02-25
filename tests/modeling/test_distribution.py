@@ -1,5 +1,7 @@
 from io import StringIO
 
+import sympy
+
 from pharmpy import Model
 from pharmpy.modeling import add_peripheral_compartment, remove_peripheral_compartment
 
@@ -55,6 +57,11 @@ $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION
 """
     assert str(model) == correct
+    odes = model.statements.ode_system
+    central = odes.find_central()
+    periph = odes.find_peripherals()[0]
+    rate = model.statements.ode_system.get_flow(central, periph)
+    assert rate == sympy.Symbol('Q') / sympy.Symbol('V1')
 
 
 def test_advan2(testdata):
