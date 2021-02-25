@@ -235,8 +235,8 @@ class RandomVariables(OrderedSet):
             Random symbol to find associated rvs for (i.e. rvs with same distribution)."""
         joined_rvs = []
 
-        for rvs, dist in self.distributions():
-            if dist == rv.pspace.distribution:
+        for rvs, _ in self.distributions():
+            if rv.name in [rv_dist.name for rv_dist in rvs]:
                 joined_rvs += rvs
 
         return RandomVariables(joined_rvs)

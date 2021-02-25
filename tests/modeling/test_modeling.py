@@ -1558,6 +1558,50 @@ def test_block_rvs(testdata, etas, pk_ref, omega_ref):
             '0.0055644\t; IIV_CL_IIV_S1\n'
             '0.1\n',
         ),
+        (
+            (None, ['ETA(1)', 'ETA(2)']),
+            '$PK\n'
+            'CL=THETA(1)*EXP(ETA(1))\n'
+            'V=THETA(2)*EXP(ETA(2))\n'
+            'S1=V+ETA(3)\n'
+            'MAT=THETA(3)*EXP(ETA(4))\n'
+            'Q=THETA(4)*EXP(ETA(5))\n\n',
+            '$OMEGA BLOCK(2)\n'
+            '0.0309626\t; IVCL\n'
+            '0.0031045\t; IIV_CL_IIV_V\n'
+            '0.031128\t; IVV\n'
+            '$OMEGA BLOCK(3)\n'
+            '0.1\n'
+            '0.0055644\t; IIV_S1_IIV_MAT\n'
+            '0.0309626\n'
+            '0.0055792\t; IIV_S1_IIV_Q\n'
+            '0.0005\n'
+            '0.031128\n',
+        ),
+        (
+            (['ETA(1)', 'ETA(2)'], None),
+            '$PK\nCL=THETA(1)*EXP(ETA(1))\n'
+            'V=THETA(2)*EXP(ETA(2))\n'
+            'S1=V+ETA(3)\n'
+            'MAT=THETA(3)*EXP(ETA(4))\n'
+            'Q=THETA(4)*EXP(ETA(5))\n\n',
+            '$OMEGA BLOCK(5)\n'
+            '0.0309626\t; IVCL\n'
+            '0.0031045\t; IIV_CL_IIV_V\n'
+            '0.031128\t; IVV\n'
+            '0.0055644\t; IIV_CL_IIV_S1\n'
+            '0.0055792\t; IIV_V_IIV_S1\n'
+            '0.1\n'
+            '0.0030963\t; IIV_CL_IIV_MAT\n'
+            '0.0031045\t; IIV_V_IIV_MAT\n'
+            '0.0055644\t; IIV_S1_IIV_MAT\n'
+            '0.0309626\n'
+            '0.0031045\t; IIV_CL_IIV_Q\n'
+            '0.0031128\t; IIV_V_IIV_Q\n'
+            '0.0055792\t; IIV_S1_IIV_Q\n'
+            '0.0005\n'
+            '0.031128\n',
+        ),
     ],
 )
 def test_block_rvs_nested(testdata, etas, pk_ref, omega_ref):
