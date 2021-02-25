@@ -397,10 +397,14 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
                 if self.model:
                     ests = ests.rename(index=self.model.parameter_translation())
                 result_obj._parameter_estimates = ests
-                sdcorr = table.omega_sigma_stdcorr[~fix]
-                sdcorr_ests = ests.copy()
-                sdcorr_ests.update(sdcorr)
-                result_obj._parameter_estimates_sdcorr = sdcorr_ests
+                try:
+                    sdcorr = table.omega_sigma_stdcorr[~fix]
+                except KeyError:
+                    pass
+                else:
+                    sdcorr_ests = ests.copy()
+                    sdcorr_ests.update(sdcorr)
+                    result_obj._parameter_estimates_sdcorr = sdcorr_ests
                 try:
                     ses = table.standard_errors
                 except Exception:
