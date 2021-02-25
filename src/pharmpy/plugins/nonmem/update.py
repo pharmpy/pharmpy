@@ -106,8 +106,13 @@ def update_random_variables(model, old, new):
                     if rv.variability_level == VariabilityLevel.IOV:
                         iov_rv = rv
 
-                record, eta_number = create_omega_single(model, omega, record_name, iov_rv=iov_rv)
-                record.add_omega_name_comment(omega_name)
+                record, eta_number = create_omega_single(
+                    model,
+                    omega,
+                    record=record_name,
+                    comment_map={omega.name: omega_name},
+                    iov_rv=iov_rv,
+                )
 
                 new_maps.append(
                     (record, {omega_name: (eta_number, eta_number)}, {rv_name: eta_number})
@@ -121,6 +126,7 @@ def update_random_variables(model, old, new):
             record.eta_map = eta_map
 
     rvs_old = [rvs[0] for rvs in old.distributions()]
+    comment_map_new = dict()
 
     for rvs, dist in new.distributions():
         rv_names = [rv.name for rv in rvs]
@@ -131,7 +137,6 @@ def update_random_variables(model, old, new):
         if rvs not in rvs_old and set(rv_names).issubset(old_names):
             records = get_omega_records(model, rv_names)
 
-            comment_map_new = dict()
             for comment_map in [omega_record.comment_map for omega_record in records]:
                 comment_map_new.update(comment_map)
 
@@ -150,7 +155,10 @@ def update_random_variables(model, old, new):
 
             if len(rvs) == 1:
                 omega_new, _ = create_omega_single(
-                    model, model.parameters[str(dist.std ** 2)], index=new_rec_index
+                    model,
+                    model.parameters[str(dist.std ** 2)],
+                    comment_map=comment_map_new,
+                    index=new_rec_index,
                 )
             else:
                 omega_new = create_omega_block(model, dist, comment_map_new, index=new_rec_index)
@@ -160,6 +168,11 @@ def update_random_variables(model, old, new):
             omega_start = 1
 
             for omega_record in model.control_stream.get_records('OMEGA'):
+                try:
+                    omega_record.renumber(omega_start)
+                except AttributeError:
+                    pass
+
                 if omega_record != omega_new:
                     omega_start += len(omega_record)
                 else:
@@ -233,7 +246,7 @@ def create_theta_record(model, param):
     return record
 
 
-def create_omega_single(model, param, record='OMEGA', index=None, iov_rv=None):
+def create_omega_single(model, param, record='OMEGA', comment_map=None, index=None, iov_rv=None):
     eta_number, previous_size = get_next_eta(model, record)
     rvs = model.random_variables
     previous_cov = None
@@ -244,12 +257,15 @@ def create_omega_single(model, param, record='OMEGA', index=None, iov_rv=None):
         if iov_rv == first_iov:
             param_str += f'\n{param.init}'
         else:
-            param_str += ' SAME\n'
+            param_str += ' SAME'
         previous_cov = eta_number - 1
     else:
-        param_str = f'${record}  {param.init}\n'
+        param_str = f'${record}  {param.init}'
 
-    record = model.control_stream.insert_record(param_str, index)
+    if comment_map and param.name in comment_map.keys():
+        param_str += f' ; {comment_map[param.name]}'
+
+    record = model.control_stream.insert_record(f'{param_str}\n', index)
 
     record.parameters(eta_number, previous_size)
     record.random_variables(eta_number, previous_cov)
