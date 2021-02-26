@@ -92,6 +92,18 @@ The functions for fixing/unfixing parameters take either a list of parameter nam
    fix_parameters(model, ['THETA(1)', 'THETA(2)'])
    unfix_parameters(model, 'THETA(1)')
 
+It is also possible to fix and unfix the parameters to a specified value or to a list of values. If parameter_names
+is None, all parameters will be transformed.
+
+.. jupyter-execute::
+   :hide-output:
+
+   fix_parameters_to(model, ['THETA(1)', 'THETA(2)'], [0, 1])
+   fix_parameters_to(model, ['THETA(1)', 'THETA(2)'], 0)
+   unfix_parameters_to(model, 'THETA(1)', 0)
+   unfix_parameters_to(model, None, 0)
+
+
 Add parameter
 =============
 
@@ -549,7 +561,8 @@ The new etas need to be denoted as *eta_new*.
    model.update_source()
    print_model_diff(model_ref, model)
 
-You can also provide a custom eta name, i.e the name of the internal representation of the eta in Pharmpy.
+You can also provide a custom eta name, i.e the name of the internal representation of the eta in Pharmpy. For
+example, if you want to be able to use the NONMEM name.
 
 .. jupyter-execute::
 
@@ -611,7 +624,7 @@ supported.
 .. _add_iov_custom_names:
 
 Custom eta names are supported, meaning that the internal representation of the eta in Pharmpy can be set via
-the eta_names argument.
+the eta_names argument. For example, if you want to be able to use the NONMEM name.
 
 .. warning::
    The number of names must be equal to the number of created etas (i.e. the number of
@@ -848,6 +861,12 @@ fixed. If no list is provided as input, a full block structure is implemented.
    create_rv_block(model)
    model.update_source()
    print_model_diff(model_ref, model)
+
+.. warning::
+
+   If you have an eta block and wish to include another eta, note that you need to have all etas from that
+   block as input argument, any that are not included will be separated from that block.
+
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Remove covariance between etas

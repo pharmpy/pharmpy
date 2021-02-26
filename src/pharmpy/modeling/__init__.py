@@ -2,11 +2,13 @@ from pharmpy.modeling.block_rvs import create_rv_block, split_rv_block
 from pharmpy.modeling.common import (
     copy_model,
     fix_parameters,
+    fix_parameters_to,
     read_model,
     read_model_from_string,
     set_initial_estimates,
     set_name,
     unfix_parameters,
+    unfix_parameters_to,
     update_source,
     write_model,
 )
@@ -94,4 +96,6 @@ __all__ = [
     'has_additive_error',
     'has_combined_error',
     'split_rv_block',
+    'fix_parameters_to',
+    'unfix_parameters_to',
 ]

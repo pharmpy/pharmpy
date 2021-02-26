@@ -1,13 +1,16 @@
 from pathlib import Path
 
+import pytest
 from pyfakefs.fake_filesystem_unittest import Patcher
 
 from pharmpy import Model
 from pharmpy.modeling import (
     fix_parameters,
+    fix_parameters_to,
     read_model,
     read_model_from_string,
     unfix_parameters,
+    unfix_parameters_to,
     update_source,
     write_model,
 )
@@ -69,6 +72,53 @@ def test_unfix_parameters(testdata):
     assert model.parameters['THETA(1)'].fix
     unfix_parameters(model, 'THETA(1)')
     assert not model.parameters['THETA(1)'].fix
+
+
+def test_fix_parameters_to(testdata):
+    model = Model(testdata / 'nonmem' / 'minimal.mod')
+    fix_parameters_to(model, 'THETA(1)', 0)
+    assert model.parameters['THETA(1)'].fix
+    assert model.parameters['THETA(1)'].init == 0
+
+    model = Model(testdata / 'nonmem' / 'minimal.mod')
+    fix_parameters_to(model, ['THETA(1)', 'OMEGA(1,1)'], 0)
+    assert model.parameters['THETA(1)'].fix
+    assert model.parameters['THETA(1)'].init == 0
+    assert model.parameters['THETA(1)'].fix
+    assert model.parameters['OMEGA(1,1)'].init == 0
+
+    model = Model(testdata / 'nonmem' / 'minimal.mod')
+    fix_parameters_to(model, ['THETA(1)', 'OMEGA(1,1)'], [0, 1])
+    assert model.parameters['THETA(1)'].init == 0
+    assert model.parameters['OMEGA(1,1)'].init == 1
+
+    model = Model(testdata / 'nonmem' / 'minimal.mod')
+    fix_parameters_to(model, None, 0)
+    assert all(p.fix for p in model.parameters)
+    assert all(p.init == 0 for p in model.parameters)
+
+    model = Model(testdata / 'nonmem' / 'minimal.mod')
+    with pytest.raises(ValueError, match='Incorrect number of values'):
+        fix_parameters_to(model, ['THETA(1)', 'OMEGA(1,1)'], [0, 0, 0])
+
+
+def test_unfix_parameters_to(testdata):
+    model = Model(testdata / 'nonmem' / 'minimal.mod')
+    fix_parameters(model, ['THETA(1)'])
+    assert model.parameters['THETA(1)'].fix
+    unfix_parameters_to(model, 'THETA(1)', 0)
+    assert not model.parameters['THETA(1)'].fix
+    assert model.parameters['THETA(1)'].init == 0
+
+    model = Model(testdata / 'nonmem' / 'minimal.mod')
+    fix_parameters(model, ['THETA(1)', 'OMEGA(1,1)'])
+    assert model.parameters['THETA(1)'].fix
+    assert model.parameters['OMEGA(1,1)'].fix
+    unfix_parameters_to(model, ['THETA(1)', 'OMEGA(1,1)'], 0)
+    assert not model.parameters['THETA(1)'].fix
+    assert not model.parameters['OMEGA(1,1)'].fix
+    assert model.parameters['THETA(1)'].init == 0
+    assert model.parameters['OMEGA(1,1)'].init == 0
 
 
 def test_update_source(testdata):

@@ -257,6 +257,7 @@ class OmegaRecord(Record):
                             value = float(parameters[name].init)
                         else:
                             value = parameters[name].init ** 0.5
+                        value = int(value) if value.is_integer() else value
                         new_inits.append(value)
                         new_fix.append(parameters[name].fix)
                     if n == 1 or (
@@ -336,7 +337,8 @@ class OmegaRecord(Record):
                     n = node.n.INT if node.find('n') else 1
                     if array[i : i + n].count(array[i]) == n:  # All equal?
                         if float(str(node.init)) != array[i]:
-                            node.init.tokens[0].value = str(array[i])
+                            value = int(array[i]) if float(array[i]).is_integer() else array[i]
+                            node.init.tokens[0].value = str(value)
                         new_nodes.append(node)
                     else:
                         # Need to split xn
@@ -348,6 +350,7 @@ class OmegaRecord(Record):
                         for j, init in enumerate(array[i : i + n]):
                             new_node = AttrTree.transform(node)
                             if float(str(new_node.init)) != init:
+                                init = int(init) if float(init).is_integer() else init
                                 new_node.init.tokens[0].value = str(init)
                             new_nodes.append(new_node)
                             if j != n - 1:  # Not the last

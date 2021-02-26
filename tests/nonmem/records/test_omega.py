@@ -187,13 +187,13 @@ def test_update(parser):
     pset, _, _ = rec.parameters(1, None)
     pset['OMEGA(1,1)'].init = 2
     rec.update(pset, 1, None)
-    assert str(rec) == '$OMEGA 2.0'
+    assert str(rec) == '$OMEGA 2'
 
     rec = parser.parse('$OMEGA 1 SD').records[0]
     pset, _, _ = rec.parameters(1, None)
     pset['OMEGA(1,1)'].init = 4
     rec.update(pset, 1, None)
-    assert str(rec) == '$OMEGA 2.0 SD'
+    assert str(rec) == '$OMEGA 2 SD'
 
     rec = parser.parse('$OMEGA (1)x3\n;FTOL').records[0]
     pset, _, _ = rec.parameters(1, None)
@@ -201,7 +201,7 @@ def test_update(parser):
     pset['OMEGA(2,2)'].init = 4
     pset['OMEGA(3,3)'].init = 4
     rec.update(pset, 1, None)
-    assert str(rec) == '$OMEGA (4.0)x3\n;FTOL'
+    assert str(rec) == '$OMEGA (4)x3\n;FTOL'
 
     rec = parser.parse('$OMEGA (1)x2 2').records[0]
     pset, _, _ = rec.parameters(1, None)
@@ -209,14 +209,14 @@ def test_update(parser):
     pset['OMEGA(2,2)'].init = 2
     pset['OMEGA(3,3)'].init = 0.5
     rec.update(pset, 1, None)
-    assert str(rec) == '$OMEGA (1) (2.0) 0.5'
+    assert str(rec) == '$OMEGA (1) (2) 0.5'
 
     rec = parser.parse("$OMEGA DIAG(2) (1 VAR) (SD 2)").records[0]
     pset, _, _ = rec.parameters(1, None)
     pset['OMEGA(1,1)'].init = 1.5
     pset['OMEGA(2,2)'].init = 16
     rec.update(pset, 1, None)
-    assert str(rec) == '$OMEGA DIAG(2) (1.5 VAR) (SD 4.0)'
+    assert str(rec) == '$OMEGA DIAG(2) (1.5 VAR) (SD 4)'
 
     rec = parser.parse("$OMEGA BLOCK(2) 1 2 4").records[0]
     pset, _, _ = rec.parameters(1, None)
@@ -224,7 +224,7 @@ def test_update(parser):
     pset['OMEGA(2,1)'].init = 0.5
     pset['OMEGA(2,2)'].init = 8
     rec.update(pset, 1, None)
-    assert str(rec) == '$OMEGA BLOCK(2) 7.0 0.5 8.0'
+    assert str(rec) == '$OMEGA BLOCK(2) 7 0.5 8'
 
     rec = parser.parse("$OMEGA BLOCK(2)\n SD 1 0.5 ;COM \n 1\n").records[0]
     pset, _, _ = rec.parameters(1, None)
@@ -232,7 +232,7 @@ def test_update(parser):
     pset['OMEGA(2,1)'].init = 0.25
     pset['OMEGA(2,2)'].init = 9
     rec.update(pset, 1, None)
-    assert str(rec) == '$OMEGA BLOCK(2)\n SD 2.0 0.25 ;COM \n 3.0\n'
+    assert str(rec) == '$OMEGA BLOCK(2)\n SD 2 0.25 ;COM \n 3\n'
 
     rec = parser.parse("$OMEGA CORR BLOCK(2)  1 0.5 1\n").records[0]
     pset, _, _ = rec.parameters(1, None)
@@ -240,7 +240,7 @@ def test_update(parser):
     pset['OMEGA(2,1)'].init = 1
     pset['OMEGA(2,2)'].init = 4
     rec.update(pset, 1, None)
-    assert str(rec) == '$OMEGA CORR BLOCK(2)  4.0 0.25 4.0\n'
+    assert str(rec) == '$OMEGA CORR BLOCK(2)  4 0.25 4\n'
 
     rec = parser.parse("$OMEGA CORR BLOCK(2)  1 0.5 SD 1\n").records[0]
     pset, _, _ = rec.parameters(1, None)
@@ -248,7 +248,7 @@ def test_update(parser):
     pset['OMEGA(2,1)'].init = 1
     pset['OMEGA(2,2)'].init = 4
     rec.update(pset, 1, None)
-    assert str(rec) == '$OMEGA CORR BLOCK(2)  2.0 0.25 SD 2.0\n'
+    assert str(rec) == '$OMEGA CORR BLOCK(2)  2 0.25 SD 2\n'
 
     rec = parser.parse("$OMEGA BLOCK(2) 1 0.1 1\n CHOLESKY").records[0]
     pset, _, _ = rec.parameters(1, None)
@@ -275,7 +275,7 @@ def test_update(parser):
     pset['OMEGA(3,2)'].init = 0.5
     pset['OMEGA(3,3)'].init = 6
     rec.update(pset, 1, None)
-    assert str(rec) == '$OMEGA BLOCK(3) 1 ;CL\n0.2 3.0; V\n0.4 0.5 6.0; KA'
+    assert str(rec) == '$OMEGA BLOCK(3) 1 ;CL\n0.2 3; V\n0.4 0.5 6; KA'
 
     rec = parser.parse("$OMEGA BLOCK(2) SAME").records[0]
     pset, _, _ = rec.parameters(3, 2)
@@ -311,7 +311,7 @@ def test_update_fix(parser):
     pset['OMEGA(3,3)'].fix = True
     pset['OMEGA(3,3)'].init = 23
     rec.update(pset, 1, None)
-    assert str(rec) == '$OMEGA 2 4 FIX 23.0 FIX ;STRAML'
+    assert str(rec) == '$OMEGA 2 4 FIX 23 FIX ;STRAML'
 
     rec = parser.parse("$OMEGA BLOCK(2) 1 .1 2 ;CLERMT").records[0]
     pset, _, _ = rec.parameters(1, None)
