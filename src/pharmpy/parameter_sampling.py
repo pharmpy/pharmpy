@@ -42,7 +42,8 @@ def sample_from_function(model, samplingfn, parameters=None, force_posdef_sample
                 df.apply(model.random_variables.validate_parameters, axis=1, use_cache=True)
             ]
         else:
-            selected = df.transform(model.random_variables.nearest_valid_parameters, axis=1)
+            rvs = model.random_variables
+            selected = df.transform(lambda row: rvs.nearest_valid_parameters(row), axis=1)
         kept_samples = pd.concat((kept_samples, selected))
         remaining = n - len(kept_samples)
         i += 1
