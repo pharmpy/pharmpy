@@ -1,3 +1,5 @@
+.. _config_page:
+
 =============
 Configuration
 =============
