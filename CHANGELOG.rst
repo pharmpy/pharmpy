@@ -1,3 +1,12 @@
+0.18.0 (2021-03-01)
+-------------------
+
+* Add functions to fix and unfix values to a specified value
+* Add documentation for using Pharmpy with NONMEM models
+* New execution system for modelfit
+* Support for single string input for transformations of etas and epsilons (e.g. add_iov)
+* Various bugfixes, including running NONMEM via Pharmpy on Windows
+
 0.17.0 (2021-02-15)
 -------------------
 
