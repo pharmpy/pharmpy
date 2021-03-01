@@ -35,3 +35,15 @@ def test_ignore_with_synonym(pheno_data):
     )
     df = model.dataset
     assert len(df) == 155
+
+
+def test_idv_with_synonym(pheno_data):
+    model = pharmpy.Model(
+        StringIO(
+            f"$PROBLEM dfs\n$INPUT ID TIME=TAD AMT WT APGR DV FA1 FA2\n"
+            f"$DATA {pheno_data} IGNORE=@"
+        )
+    )
+    df = model.dataset
+
+    assert df.pharmpy.column_type['TAD'] == ColumnType.IDV

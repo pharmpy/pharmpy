@@ -825,8 +825,9 @@ class Model(pharmpy.model.Model):
             if 'AMT' in df.columns:
                 df.pharmpy.column_type['AMT'] = pharmpy.data.ColumnType.DOSE
         # Let TIME be the idv in both $PK and $PRED models
-        if 'TIME' in df.columns:
-            df.pharmpy.column_type['TIME'] = pharmpy.data.ColumnType.IDV
+        idvcol = replacements.get('TIME', 'TIME')
+        if idvcol in df.columns:
+            df.pharmpy.column_type[idvcol] = pharmpy.data.ColumnType.IDV
         df.name = self.dataset_path.stem
         return df
 
