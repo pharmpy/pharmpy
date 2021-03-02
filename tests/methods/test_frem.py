@@ -6,7 +6,9 @@ import pandas as pd
 import pytest
 from pytest import approx
 
+import pharmpy.modeling as modeling
 from pharmpy import Model
+from pharmpy.methods.common import create_results
 from pharmpy.methods.frem.method import check_covariates
 from pharmpy.methods.frem.models import calculate_parcov_inits, create_model3b
 from pharmpy.methods.frem.results import (
@@ -520,3 +522,15 @@ each,V,0.0503961,0.551581
 
     correct = pd.read_csv(StringIO(correct), index_col=[0, 1])
     pd.testing.assert_frame_equal(res.coefficients, correct, rtol=1e-5)
+
+
+def test_create_results(testdata):
+    res = create_results(testdata / 'psn' / 'frem_dir1', method='bipp')
+    ofv = res.ofv['ofv']
+    assert len(ofv) == 5
+
+
+def test_modeling_create_results(testdata):
+    res = modeling.create_results(testdata / 'psn' / 'frem_dir1', method='bipp')
+    ofv = res.ofv['ofv']
+    assert len(ofv) == 5

@@ -1,3 +1,4 @@
+import pharmpy.methods.common
 import pharmpy.methods.modelfit
 import pharmpy.model
 
@@ -14,3 +15,8 @@ def fit(models):
         return models[0]
     else:
         return models
+
+
+def create_results(path, **kwargs):
+    res = pharmpy.methods.common.create_results(path, **kwargs)
+    return res

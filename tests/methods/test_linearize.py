@@ -4,6 +4,7 @@ import pandas as pd
 import pytest
 
 from pharmpy import Model
+from pharmpy.methods.common import create_results
 from pharmpy.methods.linearize.results import calculate_results, psn_linearize_results
 
 
@@ -93,5 +94,12 @@ def test_iofv(testdata):
 def test_psn_linearize_results(testdata):
     path = testdata / 'nonmem' / 'linearize' / 'linearize_dir1'
     res = psn_linearize_results(path)
+    assert len(res.iofv) == 59
+    assert res.ofv['ofv']['base'] == pytest.approx(730.894727)
+
+
+def test_create_results(testdata):
+    path = testdata / 'nonmem' / 'linearize' / 'linearize_dir1'
+    res = create_results(path)
     assert len(res.iofv) == 59
     assert res.ofv['ofv']['base'] == pytest.approx(730.894727)
