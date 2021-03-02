@@ -14,6 +14,8 @@ they work in R. Replace "." with "$" for the R equivalent. An R wrapper is being
     from the list element to separate strings (e.g. `c('ETA(1)')` will be interpreted as
     `c('E', 'T', 'A', '(', '1', ')')`.
 
+If you want the documentation for a function, use the function `py_help()` from Reticulate.
+
 ----------------
 Relevant imports
 ----------------

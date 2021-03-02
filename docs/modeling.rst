@@ -406,14 +406,17 @@ Covariate effects may be applied to a model.
 
 Here, *CL* indicates the name of the parameter onto which you want to apply the effect, *WGT* is the name of the
 covariate, and *pow* (power function) is the effect you want to apply. The effect can be either
-added or multiplied to the parameter, denoted by '*' or '+' (multiplied is default). See
-:py:class:`pharmpy.modeling.add_covariate_effect` for effects with available templates and how their respective
-initial estimates are chosen.
+added or multiplied to the parameter, denoted by '*' or '+' (multiplied is default).
 
 .. jupyter-execute::
 
    model.update_source()
    print_model_diff(model_ref, model)
+
+.. note::
+
+   To see the list of available effects and how the initial estimates for each type of effect is chosen,
+   see :py:class:`pharmpy.modeling.add_covariate_effect`.
 
 Pharmpy also supports user formatted covariate effects.
 

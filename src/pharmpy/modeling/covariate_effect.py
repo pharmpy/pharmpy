@@ -21,32 +21,94 @@ def add_covariate_effect(model, parameter, covariate, effect, operation='*'):
     Adds covariate effect to :class:`pharmpy.model`. The following effects have templates:
 
     - Linear function for continuous covariates (*lin*)
-        - Initial estimate: 0.001
-        - Upper bound: 100,000 if the median of the covariate is equal to the minimum, otherwise
-          :math:`1/(median - min)`
-        - Lower bound: -100,000 if the median of the covariate is equal to the maximum, otherwise
-          :math:`1/(median - max)`
+        - Function:
+        .. math::
+
+            \\text{coveff} = 1 + \\text{theta} * (\\text{cov} - \\text{median})
+
+        - Init:  0.001
+        - Upper:
+            - If median of covariate equals minimum: :math:`100,000`
+            - Otherwise: :math:`\\frac{1}{\\text{median} - \\text{min}}`
+        - Lower:
+            - If median of covariate equals maximum: :math:`-100,000`
+            - Otherwise: :math:`\\frac{1}{\\text{median} - \\text{max}}`
     - Linear function for categorical covariates (*cat*)
-        - Initial estimate: 0.001
-        - Upper bound: 100,000
-        - Lower bound: -100,000
+        - Function:
+            - If covariate is most common category:
+
+            .. math::
+
+                \\text{coveff} = 1
+
+            - For each additional category:
+
+            .. math::
+
+                \\text{coveff} = 1 + \\text{theta}
+
+        - Init: :math:`0.001`
+        - Upper: :math:`100,000`
+        - Lower: :math:`-100,000`
     - Piecewise linear function/"hockey-stick", continuous covariates only (*piece_lin*)
-        - Initial estimate: 0.001
-        - Upper bound: for first state 1/(median - minimum), otherwise 100,000
-        - Lower bound: for first state -100,000, otherwise 1/(median - maximum)
+        - Function:
+            - If cov <= median:
+
+            .. math::
+
+                \\text{coveff} = 1 + \\text{theta1} * (\\text{cov} - \\text{median})
+
+            - If cov > median:
+
+            .. math::
+
+                \\text{coveff} = 1 + \\text{theta2} * (\\text{cov} - \\text{median})
+
+
+        - Init: :math:`0.001`
+        - Upper:
+            - For first state: :math:`\\frac{1}{\\text{median} - \\text{min}}`
+            - Otherwise: :math:`100,000`
+        - Lower:
+            - For first state: :math:`-100,000`
+            - Otherwise: :math:`\\frac{1}{\\text{median} - \\text{max}}`
     - Exponential function, continuous covariates only (*exp*)
-        - Initial estimate: 0.001 unless lower bound > 0.001 or upper bound < 0.001. In that case
-          :math:`init = (upper - lower)/2`, if init = 0: :math:`init = upper/2`
-        - Upper bound: if :math:`min - median = 0` or :math:`max - median = 0`, upper bound is 100.
-          Otherwise the upper bound is
-          :math:`min(log(0.01)/(min - median), log(100)/(max - median))`
-        - Lower bound: if :math:`min - median = 0` or :math:`max - median = 0`, lower bound is 0.01.
-          Otherwise the lower bound is
-          :math:`max(log(0.01)/(max - median), log(100)/(min - median))`
+        - Function:
+
+        .. math::
+
+            \\text{coveff} = \\exp(\\text{theta} * (\\text{cov} - \\text{median}))
+
+        - Init:
+            - If lower > 0.001 or upper < 0.001: :math:`\\frac{\\text{upper} - \\text{lower}}{2}`
+            - If estimated init is 0: :math:`\\frac{\\text{upper}}{2}`
+            - Otherwise: :math:`0.001`
+        - Upper:
+            - If min - median = 0 or max - median = 0: :math:`100`
+            - Otherwise:
+            .. math::
+
+                \\min(\\frac{\\log(0.01)}{\\text{min} - \\text{median}},
+                \\frac{\\log(100)}{\\text{max} - \\text{median}})
+        - Lower:
+            - If min - median = 0 or max - median = 0: :math:`0.01`
+            - Otherwise:
+            .. math::
+
+                \\max(\\frac{\\log(0.01)}{\\text{max} - \\text{median}},
+                \\frac{\\log(100)}{\\text{min} - \\text{median}})
+
     - Power function, continuous covariates only (*pow*)
-        - Initial estimate: 0.001
-        - Upper bound: 100,000
-        - Lower bound: -100
+        - Function:
+
+        .. math::
+
+            \\text{coveff} = (\\frac{\\text{cov}}{\\text{median}})^\\text{theta}
+
+        - Init: :math:`0.001`
+        - Upper: :math:`100,000`
+        - Lower: :math:`-100`
+
 
     Parameters
     ----------
