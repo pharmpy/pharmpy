@@ -1,3 +1,9 @@
+0.19.0 (2021-03-02)
+-------------------
+
+* Add create_result to create results from PsN
+* Add documentation for covariate effects
+
 0.18.0 (2021-03-01)
 -------------------
 
