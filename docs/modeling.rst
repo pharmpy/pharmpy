@@ -915,3 +915,29 @@ pharmpy model. See :py:func:`pharmpy.modeling.update_inits`.
 
    update_inits(model, force_individual_estimates=True)
    model.update_source(nofiles=True)
+
+
+~~~~~~~~~~~~~~~
+Fitting a model
+~~~~~~~~~~~~~~~
+
+Pharmpy is designed to be able to do fitting of models to data using different external tools. Currently only NONMEM is supported.
+
+.. code-block:: python
+
+    from pharmpy.modeling import fit
+    fit(model)
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Getting results from a PsN run
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Pharmpy can create results objects from PsN run directories for some of the PsN tools. The result objects is a collection of different
+results from the tool and can be saved as either json or csv.
+
+.. code-block:: python
+
+    from pharmpy.modeling import create_results
+    res = create_results("bootstrap_dir1")
+    res.to_json("bootstrap_dir1/results.json")
+    res.to_csv("bootstrap_dir1/results.csv")
