@@ -2,6 +2,7 @@ import pharmpy.execute as execute
 import pharmpy.methods
 import pharmpy.methods.modelfit as modelfit
 import pharmpy.modeling as modeling
+import pharmpy.results
 import pharmpy.search.algorithms as algorithms
 import pharmpy.search.rankfuncs as rankfuncs
 
@@ -17,9 +18,15 @@ class ModelSearch(pharmpy.methods.Method):
         modelfit_run.run()
 
     def run(self):
-        algorithms.exhaustive(
+        df = algorithms.exhaustive(
             self.base_model,
             [modeling.add_peripheral_compartment, modeling.first_order_absorption],
             self.fit,
             rankfuncs.ofv,
         )
+        print(df)
+
+
+class ModelSearchResults(pharmpy.results.Results):
+    def __init__(self, models=None):
+        self.models = models

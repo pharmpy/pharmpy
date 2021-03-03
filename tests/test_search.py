@@ -1,3 +1,5 @@
+import numpy as np
+
 from pharmpy.search.algorithms import exhaustive
 from pharmpy.search.rankfuncs import ofv
 
@@ -37,7 +39,7 @@ def test_exhaustive():
 
     trans = [do_nothing]
     res = exhaustive(base, trans, do_nothing, ofv)
-    assert res == []
+    assert list(res['rank']) == [np.nan]
 
     def set_ofv(models):
         for i, model in enumerate(models):
@@ -45,4 +47,4 @@ def test_exhaustive():
 
     res = exhaustive(base, trans, set_ofv, ofv)
     assert len(res) == 1
-    assert res[0].modelfit_results.ofv == -4
+    assert list(res['dofv']) == [4]

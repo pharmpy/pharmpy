@@ -25,10 +25,7 @@ def create_job(models):
 
 def execute_model(model, i):
     path = Path(f'NONMEM_run{i}')
-    temp = model.source.path
-    model.source.path = path / 'dummy'
     model.write(path=path, force=True)
-    model.source.path = temp
     args = [
         nmfe_path(),
         model.name + model.source.filename_extension,
@@ -41,7 +38,7 @@ def execute_model(model, i):
 
 def results(models):
     for model in models:
-        model.modelfit_results = None
+        model.modelfit_results.ofv
     return models
 
 
