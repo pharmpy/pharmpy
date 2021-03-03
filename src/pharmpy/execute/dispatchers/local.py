@@ -11,7 +11,7 @@ class LocalDispatcher(ExecutionDispatcher):
     def run(self, job, database):
         with tempfile.TemporaryDirectory() as tempdirname:
             temppath = Path(tempdirname)
-            for source, dest in job.infiles.items():
+            for source, dest in job.infiles:
                 dest_path = temppath / dest
                 dest_path.mkdir(parents=True, exist_ok=True)
                 shutil.copy2(source, dest_path)
