@@ -414,16 +414,23 @@ def add_peripheral_compartment(model):
     cl, vc = elimination_rate.as_numer_denom()
 
     if n == 1:
-        full_cl = statements.full_expression_from_odes(cl)
-        full_vc = statements.full_expression_from_odes(vc)
-        pop_cl_candidates = full_cl.free_symbols & set(model.parameters.symbols)
-        pop_cl = pop_cl_candidates.pop()
-        pop_vc_candidates = full_vc.free_symbols & set(model.parameters.symbols)
-        pop_vc = pop_vc_candidates.pop()
-        pop_cl_init = model.parameters[pop_cl].init
-        pop_vc_init = model.parameters[pop_vc].init
-        qp_init = pop_cl_init
-        vp_init = pop_vc_init * 0.05
+        if vc == 1:
+            kpc = _add_parameter(model, f'KPC{n}', init=0.1)
+            kcp = _add_parameter(model, f'KCP{n}', init=0.1)
+            peripheral = odes.add_compartment(f'PERIPHERAL{n}')
+            odes.add_flow(central, peripheral, kcp)
+            odes.add_flow(peripheral, central, kpc)
+        else:
+            full_cl = statements.full_expression_from_odes(cl)
+            full_vc = statements.full_expression_from_odes(vc)
+            pop_cl_candidates = full_cl.free_symbols & set(model.parameters.symbols)
+            pop_cl = pop_cl_candidates.pop()
+            pop_vc_candidates = full_vc.free_symbols & set(model.parameters.symbols)
+            pop_vc = pop_vc_candidates.pop()
+            pop_cl_init = model.parameters[pop_cl].init
+            pop_vc_init = model.parameters[pop_vc].init
+            qp_init = pop_cl_init
+            vp_init = pop_vc_init * 0.05
     elif n == 2:
         per1 = per[0]
         from_rate = odes.get_flow(per1, central)
@@ -443,11 +450,13 @@ def add_peripheral_compartment(model):
         qp_init = 0.1
         vp_init = 0.1
 
-    qp = _add_parameter(model, f'QP{n}', init=qp_init)
-    vp = _add_parameter(model, f'VP{n}', init=vp_init)
-    peripheral = odes.add_compartment(f'PERIPHERAL{n}')
-    odes.add_flow(central, peripheral, qp / vc)
-    odes.add_flow(peripheral, central, qp / vp)
+    if vc != 1:
+        qp = _add_parameter(model, f'QP{n}', init=qp_init)
+        vp = _add_parameter(model, f'VP{n}', init=vp_init)
+        peripheral = odes.add_compartment(f'PERIPHERAL{n}')
+        odes.add_flow(central, peripheral, qp / vc)
+        odes.add_flow(peripheral, central, qp / vp)
+
     return model
 
 

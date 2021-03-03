@@ -532,9 +532,9 @@ def pk_param_conversion(model, advan, trans):
         elif advan == 'ADVAN4' or advan == 'ADVAN12':
             d[symbol('V')] = symbol('V2')
     elif from_advan == 'ADVAN2':
-        if advan == 'ADVAN3':
+        if advan == 'ADVAN3' and trans != 'TRANS1':
             d[symbol('V')] = symbol('V1')
-        elif advan == 'ADVAN4':
+        elif advan == 'ADVAN4' and trans != 'TRANS1':
             d[symbol('V')] = symbol('V2')
     elif from_advan == 'ADVAN3':
         if advan == 'ADVAN1':
@@ -624,7 +624,7 @@ def pk_param_conversion(model, advan, trans):
                         symbol('K42'): symbol('K31'),
                     }
                 )
-    if trans == 'TRANS1' and len(oldmap) == 3 and len(newmap) > 3:
+    if advan == 'ADVAN5' or advan == 'ADVAN7' and from_advan not in ('ADVAN5', 'ADVAN7'):
         n = len(newmap)
         d[symbol('K')] = symbol(f'K{n-1}0')
     statements.subs(d)
@@ -736,12 +736,18 @@ def add_needed_pk_parameters(model, advan, trans):
         add_parameters_ratio(model, 'CL', 'V1', central, output)
         add_parameters_ratio(model, 'Q', 'V2', peripheral, central)
         add_parameters_ratio(model, 'Q', 'V1', central, peripheral)
-    elif advan == 'ADVAN4' and trans == 'TRANS4':
+    elif advan == 'ADVAN4':
         central = odes.find_central()
         output = odes.find_output()
         peripheral = odes.find_peripherals()[0]
-        add_parameters_ratio(model, 'CL', 'V2', central, output)
-        add_parameters_ratio(model, 'Q', 'V3', peripheral, central)
+        if trans == 'TRANS1':
+            rate1 = odes.get_flow(central, peripheral)
+            add_rate_assignment_if_missing(model, 'K23', rate1, central, peripheral)
+            rate2 = odes.get_flow(peripheral, central)
+            add_rate_assignment_if_missing(model, 'K32', rate2, peripheral, central)
+        if trans == 'TRANS4':
+            add_parameters_ratio(model, 'CL', 'V2', central, output)
+            add_parameters_ratio(model, 'Q', 'V3', peripheral, central)
     elif advan == 'ADVAN12' and trans == 'TRANS4':
         central = odes.find_central()
         output = odes.find_output()
