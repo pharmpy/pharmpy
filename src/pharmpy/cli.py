@@ -165,6 +165,13 @@ def run_execute(args):
     method.run()
 
 
+def run_modelsearch(args):
+    import pharmpy.methods.modelsearch as modelsearch
+
+    method = modelsearch.ModelSearch(args.model)
+    method.run()
+
+
 def data_write(args):
     """Subcommand to write a dataset."""
     try:
@@ -836,6 +843,13 @@ parser_definition = [
                     'bootstrap': {
                         'help': 'Bootstrap',
                         'func': run_bootstrap,
+                        'parents': [args_model_input],
+                    }
+                },
+                {
+                    'modelsearch': {
+                        'help': 'Search for best model',
+                        'func': run_modelsearch,
                         'parents': [args_model_input],
                     }
                 },

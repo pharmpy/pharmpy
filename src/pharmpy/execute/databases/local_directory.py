@@ -6,7 +6,7 @@ from ..database import ModelDatabase
 
 class LocalDirectoryDatabase(ModelDatabase):
     def __init__(self, path='.'):
-        path = Path(path)
+        path = Path(path).resolve()
         if not path.exists():
             path.mkdir(parents=True)
         self.path = path
