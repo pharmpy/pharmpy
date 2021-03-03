@@ -7,8 +7,9 @@ def exhaustive(base_model, transformation_funcs, run_func, rank_func):
         for i in range(len(transformation_funcs))
     )
     torun = []
-    for indices in trans_indices:
+    for n, indices in enumerate(trans_indices):
         model = base_model.copy()
+        model.name = f'candidate{n}'
         for i in indices:
             transformation_funcs[i](model)
         torun.append(model)
