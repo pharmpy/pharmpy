@@ -9,9 +9,10 @@ import pharmpy.search.rankfuncs as rankfuncs
 
 
 class ModelSearch(pharmpy.methods.Method):
-    def __init__(self, base_model, modeling_funcs, **kwargs):
+    def __init__(self, base_model, algorithm, modeling_funcs, **kwargs):
         self.base_model = base_model
         self.funcs = self.create_funcs_from_modeling(modeling_funcs)
+        self.algorithm = getattr(algorithms, algorithm)
         super().__init__(**kwargs)
 
     def create_funcs_from_modeling(self, modeling_funcs):
@@ -40,7 +41,7 @@ class ModelSearch(pharmpy.methods.Method):
         modelfit_run.run()
 
     def run(self):
-        df = algorithms.exhaustive(
+        df = self.algorithm(
             self.base_model,
             self.funcs,
             self.fit,
@@ -57,7 +58,7 @@ class ModelSearchResults(pharmpy.results.Results):
         self.runs = runs
 
 
-def run_modelsearch(base_model, **kwargs):
-    ms = ModelSearch(base_model, **kwargs)
+def run_modelsearch(base_model, algorithm, modeling_funcs, **kwargs):
+    ms = ModelSearch(base_model, algorithm, modeling_funcs, **kwargs)
     res = ms.run()
     return res

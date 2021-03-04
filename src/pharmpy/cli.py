@@ -168,7 +168,7 @@ def run_execute(args):
 def run_modelsearch(args):
     import pharmpy.methods.modelsearch as modelsearch
 
-    method = modelsearch.ModelSearch(args.model, args.funcs)
+    method = modelsearch.ModelSearch(args.model, args.algorithm, args.funcs)
     method.run()
 
 
@@ -859,10 +859,15 @@ parser_definition = [
                         'parents': [args_model_input],
                         'args': [
                             {
-                                'name': '--funcs',
+                                'name': 'algorithm',
+                                'type': str,
+                                'help': 'Name of algorithm to use',
+                            },
+                            {
+                                'name': 'funcs',
                                 'type': semicolon_list,
                                 'help': 'List of function calls from modeling',
-                            }
+                            },
                         ],
                     }
                 },
