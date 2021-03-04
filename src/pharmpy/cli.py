@@ -168,7 +168,7 @@ def run_execute(args):
 def run_modelsearch(args):
     import pharmpy.methods.modelsearch as modelsearch
 
-    method = modelsearch.ModelSearch(args.model, args.algorithm, args.funcs)
+    method = modelsearch.ModelSearch(args.model, args.algorithm, args.funcs, rankfunc=args.rankfunc)
     method.run()
 
 
@@ -867,6 +867,13 @@ parser_definition = [
                                 'name': 'funcs',
                                 'type': semicolon_list,
                                 'help': 'List of function calls from modeling',
+                            },
+                            {
+                                'name': '--rankfunc',
+                                'type': str,
+                                'help': 'Name of function to use for ranking '
+                                'candidates (default ofv).',
+                                'default': 'ofv',
                             },
                         ],
                     }
