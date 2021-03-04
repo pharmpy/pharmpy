@@ -168,7 +168,7 @@ def run_execute(args):
 def run_modelsearch(args):
     import pharmpy.methods.modelsearch as modelsearch
 
-    method = modelsearch.ModelSearch(args.model)
+    method = modelsearch.ModelSearch(args.model, args.funcs)
     method.run()
 
 
@@ -770,10 +770,16 @@ def input_model_or_dataset(path):
     return obj
 
 
-def comma_list(self, s):
+def comma_list(s):
     if s == '':
         return []
     return s.split(',')
+
+
+def semicolon_list(s):
+    if s == '':
+        return []
+    return s.split(';')
 
 
 def random_seed(seed):
@@ -851,6 +857,13 @@ parser_definition = [
                         'help': 'Search for best model',
                         'func': run_modelsearch,
                         'parents': [args_model_input],
+                        'args': [
+                            {
+                                'name': '--funcs',
+                                'type': semicolon_list,
+                                'help': 'List of function calls from modeling',
+                            }
+                        ],
                     }
                 },
             ],
