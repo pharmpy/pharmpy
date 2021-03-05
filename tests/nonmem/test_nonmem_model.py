@@ -784,7 +784,7 @@ def test_des(testdata, model_path, transformation):
         ),
     ],
 )
-def test_estimation(testdata, estcode, correct):
+def test_estimation_steps_getter(estcode, correct):
     code = '''$PROBLEM base model
 $INPUT ID DV TIME
 $DATA file.csv IGNORE=@
@@ -797,3 +797,25 @@ $SIGMA 1
     code += estcode
     model = Model(StringIO(code))
     assert model.estimation_steps == correct
+
+
+def test_estimation_steps_setter():
+    code = '''$PROBLEM base model
+$INPUT ID DV TIME
+$DATA file.csv IGNORE=@
+$PRED
+Y = THETA(1) + ETA(1) + ERR(1)
+$THETA 0.1
+$OMEGA 0.01
+$SIGMA 1
+$EST METH=COND INTER
+'''
+    model = Model(StringIO(code))
+    model.estimation_steps[0].method = 'foi'
+    model.update_source()
+    assert str(model).split('\n')[-2] == '$ESTIMATION METHOD=ZERO INTER'
+
+    model.estimation_steps[0].cov = True
+    model.update_source()
+    print(str(model))
+    assert str(model).split('\n')[-2] == '$COVARIANCE'

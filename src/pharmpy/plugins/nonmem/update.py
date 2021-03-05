@@ -6,6 +6,7 @@ import warnings
 import numpy as np
 import sympy
 
+import pharmpy.plugins.nonmem.records.code_record as code_record
 from pharmpy import data
 from pharmpy.random_variables import RandomVariables, VariabilityLevel
 from pharmpy.statements import (
@@ -18,6 +19,8 @@ from pharmpy.statements import (
     ODESystem,
 )
 from pharmpy.symbols import symbol
+
+from .records.factory import create_record
 
 
 def update_parameters(model, old, new):
@@ -852,3 +855,56 @@ def update_abbr_record(model, rv_trans):
                 f'follow the format "ETA_X" to get "ETA(X)" in $ABBR.'
             )
     return trans
+
+
+def update_estimation(model):
+    try:
+        old = model._old_estimation_steps
+    except AttributeError:
+        return
+    new = model._estimation_steps
+    if old == new:
+        return
+
+    delta = code_record.diff(old, new)
+    old_records = model.control_stream.get_records('ESTIMATION')
+    i = 0
+    new_records = []
+    for op, est in delta:
+        if op == '+':
+            if est.method == 'FO':
+                method = 'ZERO'
+                interaction = ''
+            elif est.method == 'FOI':
+                method = 'ZERO'
+                interaction = ' INTER'
+            elif est.method == 'FOCE':
+                method = 'COND'
+            elif est.method == 'FOCEI':
+                method = 'COND'
+                interaction = ' INTER'
+            est_code = f'$ESTIMATION METHOD={method}{interaction}\n'
+            newrec = create_record(est_code)
+            new_records.append(newrec)
+        elif op == '-':
+            i += 1
+        else:
+            new_records.append(old_records[i])
+            i += 1
+    model.control_stream.replace_records(old_records, new_records)
+
+    old_cov = False
+    for est in old:
+        old_cov |= est.cov
+    new_cov = False
+    for est in new:
+        new_cov |= est.cov
+    if not old_cov and new_cov:
+        # Add $COV
+        model.control_stream.insert_record('$COVARIANCE\n')
+    elif old_cov and not new_cov:
+        # Remove $COV
+        covrecs = model.control_stream.get_records('COVARIANCE')
+        model.control_stream.remove_records(covrecs)
+
+    model._old_estimation_steps = copy.deepcopy(new)

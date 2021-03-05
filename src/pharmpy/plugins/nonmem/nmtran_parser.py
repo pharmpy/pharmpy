@@ -133,6 +133,18 @@ class NMTranControlStream:
         for rec in records:
             self.records.remove(rec)
 
+    def replace_records(self, old, new):
+        keep = []
+        first = True
+        for rec in self.records:
+            if rec not in old:
+                keep.append(rec)
+            else:
+                if first:
+                    keep.extend(new)
+                    first = False
+        self.records = keep
+
     def go_through_omega_rec(self):
         next_omega = 1
         previous_size = None

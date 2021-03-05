@@ -24,6 +24,7 @@ from .nmtran_parser import NMTranParser
 from .records.factory import create_record
 from .update import (
     update_abbr_record,
+    update_estimation,
     update_parameters,
     update_random_variables,
     update_statements,
@@ -141,6 +142,7 @@ class Model(pharmpy.model.Model):
             self._dataset_updated = False
 
         self._update_sizes()
+        update_estimation(self)
 
         super().update_source()
 
