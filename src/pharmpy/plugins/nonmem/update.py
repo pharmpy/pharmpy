@@ -6,7 +6,6 @@ import warnings
 import numpy as np
 import sympy
 
-import pharmpy.plugins.nonmem.records.code_record as code_record
 from pharmpy import data
 from pharmpy.random_variables import RandomVariables, VariabilityLevel
 from pharmpy.statements import (
@@ -865,6 +864,9 @@ def update_estimation(model):
     new = model._estimation_steps
     if old == new:
         return
+
+    # FIXME: Late import to satisfy python 3.6
+    import pharmpy.plugins.nonmem.records.code_record as code_record
 
     delta = code_record.diff(old, new)
     old_records = model.control_stream.get_records('ESTIMATION')
