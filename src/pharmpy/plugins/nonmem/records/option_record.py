@@ -48,6 +48,12 @@ class OptionRecord(Record):
             pairs += [Option(_get_key(node), _get_value(node))]
         return pairs
 
+    def get_option(self, name):
+        for opt in self.all_options:
+            if opt.key[0:3] == name[0:3]:
+                return opt.value
+        return None
+
     def has_option(self, name):
         return name in self.option_pairs.keys()
 

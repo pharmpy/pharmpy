@@ -74,6 +74,8 @@ def get_canonical_record_name(raw_name):
             return 'SIMULATION'
         elif bare == 'COVR':
             return 'COVARIANCE'
+        elif bare == 'ESTM':
+            return 'ESTIMATION'
     elif bare == 'PK':
         return bare
     return None

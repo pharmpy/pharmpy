@@ -1,4 +1,5 @@
 # The NONMEM Model class
+import copy
 import re
 import shutil
 import warnings
@@ -9,6 +10,7 @@ import pharmpy.data
 import pharmpy.model
 import pharmpy.plugins.nonmem
 from pharmpy.data import DatasetError
+from pharmpy.estimation import EstimationMethod
 from pharmpy.model import ModelSyntaxError
 from pharmpy.parameter import ParameterSet
 from pharmpy.plugins.nonmem.results import NONMEMChainedModelfitResults
@@ -632,6 +634,40 @@ class Model(pharmpy.model.Model):
     @random_variables.setter
     def random_variables(self, new):
         self._random_variables = new
+
+    @property
+    def estimation_steps(self):
+        try:
+            return self._estimation_steps
+        except AttributeError:
+            pass
+
+        steps = []
+        records = self.control_stream.get_records('ESTIMATION')
+        covrec = self.control_stream.get_records('COVARIANCE')
+        for record in records:
+            value = record.get_option('METHOD')
+            if value is None or value == '0' or value == 'ZERO':
+                if record.has_option('INTERACTION') or record.has_option('INTER'):
+                    name = 'foi'
+                else:
+                    name = 'fo'
+            elif value == '1' or value == 'CONDITIONAL' or value == 'COND':
+                if record.has_option('INTERACTION') or record.has_option('INTER'):
+                    name = 'focei'
+                else:
+                    name = 'foce'
+            else:
+                raise ModelSyntaxError(f'Non-recognized estimation method in: {str(record.root)}')
+            if covrec:
+                cov = True
+            else:
+                cov = False
+            meth = EstimationMethod(name, cov=cov)
+            steps.append(meth)
+        self._estimation_steps = steps
+        self._old_estimation_steps = copy.deepcopy(steps)
+        return steps
 
     def __str__(self):
         return str(self.control_stream)

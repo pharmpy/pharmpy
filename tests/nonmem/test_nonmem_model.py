@@ -6,6 +6,7 @@ from pyfakefs.fake_filesystem_unittest import Patcher
 
 from pharmpy import Model
 from pharmpy.config import ConfigurationContext
+from pharmpy.estimation import EstimationMethod
 from pharmpy.model import ModelSyntaxError
 from pharmpy.modeling import add_iiv, explicit_odes, zero_order_elimination
 from pharmpy.parameter import Parameter
@@ -763,3 +764,36 @@ def test_des(testdata, model_path, transformation):
     model_des.source.path = model_ref.source.path  # To be able to find dataset
 
     assert model_ref.statements.ode_system == model_des.statements.ode_system
+
+
+@pytest.mark.parametrize(
+    'estcode,correct',
+    [
+        ('$ESTIMATION METH=COND INTERACTION', [EstimationMethod('focei')]),
+        ('$ESTIMATION INTER METH=COND', [EstimationMethod('focei')]),
+        ('$ESTM METH=1 INTERACTION', [EstimationMethod('focei')]),
+        ('$ESTIM METH=1', [EstimationMethod('foce')]),
+        ('$ESTIMA METH=0', [EstimationMethod('fo')]),
+        ('$ESTIMA METH=ZERO', [EstimationMethod('fo')]),
+        ('$ESTIMA MCETA=200', [EstimationMethod('fo')]),
+        ('$ESTIMA INTER', [EstimationMethod('foi')]),
+        ('$ESTIMA INTER\n$COV', [EstimationMethod('foi', cov=True)]),
+        (
+            '$ESTIMA METH=COND INTER\n$EST METH=COND',
+            [EstimationMethod('focei'), EstimationMethod('foce')],
+        ),
+    ],
+)
+def test_estimation(testdata, estcode, correct):
+    code = '''$PROBLEM base model
+$INPUT ID DV TIME
+$DATA file.csv IGNORE=@
+$PRED
+Y = THETA(1) + ETA(1) + ERR(1)
+$THETA 0.1
+$OMEGA 0.01
+$SIGMA 1
+'''
+    code += estcode
+    model = Model(StringIO(code))
+    assert model.estimation_steps == correct
