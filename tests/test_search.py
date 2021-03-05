@@ -1,7 +1,7 @@
 import numpy as np
 
 from pharmpy.search.algorithms import exhaustive
-from pharmpy.search.rankfuncs import ofv, aic, bic
+from pharmpy.search.rankfuncs import aic, bic, ofv
 
 
 class DummyResults:

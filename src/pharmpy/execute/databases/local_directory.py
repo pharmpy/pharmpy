@@ -13,3 +13,8 @@ class LocalDirectoryDatabase(ModelDatabase):
 
     def store_local_file(self, model, path):
         shutil.copy2(path, self.path)
+
+
+class LocalModelDirectoryDatabase(ModelDatabase):
+    def store_local_file(self, model, path):
+        shutil.copy2(path, model.source.path.parent)

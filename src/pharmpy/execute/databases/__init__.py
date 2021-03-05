@@ -1,3 +1,3 @@
-from .local_directory import LocalDirectoryDatabase
+from .local_directory import LocalDirectoryDatabase, LocalModelDirectoryDatabase
 
-__all__ = ['LocalDirectoryDatabase']
+__all__ = ['LocalDirectoryDatabase', 'LocalModelDirectoryDatabase']

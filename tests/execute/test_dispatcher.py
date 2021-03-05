@@ -1,8 +1,8 @@
 import pytest
 
 from pharmpy.execute.databases.local_directory import LocalDirectoryDatabase
-from pharmpy.execute.dispatchers.local import LocalDispatcher
 from pharmpy.execute.dispatcher import ExecutionDispatcher
+from pharmpy.execute.dispatchers.local import LocalDispatcher
 from pharmpy.methods.modelfit.job import ModelfitJob
 
 

@@ -1,5 +1,5 @@
-from pharmpy import Model
 import pharmpy.methods.modelsearch as ms
+from pharmpy import Model
 
 
 def test_modelfit(testdata):

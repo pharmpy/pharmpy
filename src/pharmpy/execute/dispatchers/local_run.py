@@ -1,6 +1,8 @@
+from dask.diagnostics import ProgressBar
 from dask.threaded import get
 
 
 def run(workflow):
-    res = get(workflow, 'results')
+    with ProgressBar(dt=1):
+        res = get(workflow, 'results')
     return res

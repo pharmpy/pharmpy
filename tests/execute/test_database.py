@@ -3,8 +3,8 @@ import os.path
 
 import pytest
 
-from pharmpy.execute.databases.local_directory import LocalDirectoryDatabase
 from pharmpy.execute.database import ModelDatabase
+from pharmpy.execute.databases.local_directory import LocalDirectoryDatabase
 
 
 def test_base_class():

@@ -1,9 +1,14 @@
 from .database import ModelDatabase
-from .databases import LocalDirectoryDatabase
+from .databases import LocalDirectoryDatabase, LocalModelDirectoryDatabase
 from .dispatcher import ExecutionDispatcher
 from .dispatchers import LocalDispatcher
 
 default_dispatcher = LocalDispatcher()
-default_database = LocalDirectoryDatabase()
+default_database = LocalModelDirectoryDatabase()
 
-__all__ = ['ExecutionDispatcher', 'ModelDatabase']
+__all__ = [
+    'LocalDirectoryDatabase',
+    'LocalModelDirectoryDatabase',
+    'ExecutionDispatcher',
+    'ModelDatabase',
+]

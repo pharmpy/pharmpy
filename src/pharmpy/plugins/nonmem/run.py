@@ -33,7 +33,7 @@ def execute_model(model, i):
         str(Path(model.name).with_suffix('.lst')),
         f'-rundir={str(path)}',
     ]
-    subprocess.call(args)
+    subprocess.call(args, stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
     return model
 
 

@@ -21,6 +21,7 @@ def test_fit(tmp_path, testdata):
     shutil.copy2(testdata / 'nonmem' / 'pheno.mod', tmp_path)
     shutil.copy2(testdata / 'nonmem' / 'pheno.dta', tmp_path)
     model = Model('pheno.mod')
+    model.dataset_path = tmp_path / 'pheno.dta'
     modeling.fit(model)
     rundir = tmp_path / 'modelfit_dir1'
     assert model.modelfit_results.ofv == pytest.approx(730.8947268137308)
