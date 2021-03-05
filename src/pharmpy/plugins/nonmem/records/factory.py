@@ -28,6 +28,7 @@ from .theta_record import ThetaRecord
 # Dictionary from canonical record name to record class and non_empty rules of parser
 known_records = {
     'ABBREVIATED': (AbbreviatedRecord, AbbreviatedRecordParser),
+    'COVARIANCE': (OptionRecord, OptionRecordParser),
     'DATA': (DataRecord, DataRecordParser),
     'DES': (CodeRecord, CodeRecordParser),
     'ERROR': (CodeRecord, CodeRecordParser),
@@ -71,6 +72,8 @@ def get_canonical_record_name(raw_name):
             return 'SUBROUTINES'
         elif bare == 'SIML' or bare == 'SIMULATE':
             return 'SIMULATION'
+        elif bare == 'COVR':
+            return 'COVARIANCE'
     elif bare == 'PK':
         return bare
     return None
