@@ -46,6 +46,7 @@ def stepwise(base_model, transformation_funcs, run_func, rank_func):
             func(model)
             torun.append(model)
             features_col.append(tuple(current_features + [i]))
+        print(f'Running step {step + 1}')
         run_func(torun)
         for model in torun:
             dofv = start_model.modelfit_results.ofv - model.modelfit_results.ofv
@@ -54,6 +55,7 @@ def stepwise(base_model, transformation_funcs, run_func, rank_func):
         if not ranks:
             break
         start_model = ranks[0]
+        start_model.update_inits()
         idx = torun.index(start_model)
         current_features.append(remaining[idx])
         del remaining[idx]

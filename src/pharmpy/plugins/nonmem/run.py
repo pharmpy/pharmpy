@@ -11,6 +11,7 @@ def create_job(models):
     dsk = {f'run-{i}': (execute_model, model, i) for i, model in enumerate(models)}
     dsk['results'] = (results, ['run-%d' % i for i, _ in enumerate(models)])
     job = ModelfitJob(dsk)
+    job.models = models
     for i, model in enumerate(models):
         job.add_infiles(model.dataset_path, destination=f'NONMEM_run{i}')
         job.add_outfiles(
@@ -24,7 +25,7 @@ def create_job(models):
 
 
 def execute_model(model, i):
-    path = Path(f'NONMEM_run{i}')
+    path = Path(f'NONMEM_run{i}').resolve()
     model = model.copy()
     model.write(path=path, force=True)
     args = [
@@ -39,6 +40,7 @@ def execute_model(model, i):
 
 def results(models):
     for model in models:
+        model._modelfit_results = None
         model.modelfit_results.ofv
     return models
 

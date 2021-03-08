@@ -21,5 +21,6 @@ def test_local_dispatcher():
     disp = LocalDispatcher()
     wfl = {'results': (fun, 'input')}
     job = ModelfitJob(wfl)
+    job.models = []
     res = disp.run(job, db)
     assert res == 'input'

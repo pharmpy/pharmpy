@@ -19,7 +19,7 @@ class LocalDispatcher(ExecutionDispatcher):
             os.chdir(temppath)
             results = run(job.workflow)
             os.chdir(current)
-            for model, files in zip(results, job.outfiles):
+            for model, files in zip(job.models, job.outfiles):
                 for f in files:
                     database.store_local_file(model, temppath / f)
             return results
