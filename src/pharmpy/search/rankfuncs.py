@@ -13,13 +13,15 @@ def ofv(base, candidates, cutoff=3.84):
     return srtd
 
 
-def aic(base, candidates):
-    filtered = [model for model in candidates]
+def aic(base, candidates, cutoff=3.84):
+    base_aic = base.modelfit_results.aic
+    filtered = [model for model in candidates if base_aic - model.modelfit_results.aic >= cutoff]
     srtd = sorted(filtered, key=lambda model: model.modelfit_results.aic)
     return srtd
 
 
-def bic(base, candidates):
-    filtered = [model for model in candidates]
+def bic(base, candidates, cutoff=3.84):
+    base_bic = base.modelfit_results.bic
+    filtered = [model for model in candidates if base_bic - model.modelfit_results.bic >= cutoff]
     srtd = sorted(filtered, key=lambda model: model.modelfit_results.bic)
     return srtd

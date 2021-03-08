@@ -38,7 +38,7 @@ def test_aic():
     run2 = DummyModel("run2", aic=-1)
     run3 = DummyModel("run3", aic=-14)
     res = aic(run1, [run2, run3])
-    assert [run3, run2] == res
+    assert [run3] == res
 
 
 def test_bic():
@@ -46,7 +46,7 @@ def test_bic():
     run2 = DummyModel("run2", bic=-1)
     run3 = DummyModel("run3", bic=-14)
     res = bic(run1, [run2, run3])
-    assert [run3, run2] == res
+    assert [run3] == res
 
 
 def test_exhaustive():
