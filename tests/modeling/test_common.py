@@ -101,6 +101,11 @@ def test_fix_parameters_to(testdata):
     with pytest.raises(ValueError, match='Incorrect number of values'):
         fix_parameters_to(model, ['THETA(1)', 'OMEGA(1,1)'], [0, 0, 0])
 
+    model = Model(testdata / 'nonmem' / 'minimal.mod')
+    fix_parameters_to(model, None, float(0))
+    assert model.parameters['THETA(1)'].fix
+    assert model.parameters['THETA(1)'].init == 0
+
 
 def test_unfix_parameters_to(testdata):
     model = Model(testdata / 'nonmem' / 'minimal.mod')

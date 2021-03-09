@@ -116,7 +116,7 @@ def fix_parameters_to(model, parameter_names, values):
     model: Model
     parameter_names: list or str
         one parameter name or a list of parameter names
-    values : list or str
+    values : list or int
         one value or a list of values (must be equal to number of parameter_names)
 
     Returns
@@ -143,7 +143,7 @@ def unfix_parameters_to(model, parameter_names, values):
     model: Model
     parameter_names: list or str
         one parameter name or a list of parameter names
-    values : list or str
+    values : list or int
         one value or a list of values (must be equal to number of parameter_names)
 
     Returns
@@ -164,7 +164,7 @@ def _create_init_dict(parameter_names, values):
     if isinstance(parameter_names, str):
         d = {parameter_names: values}
     else:
-        if isinstance(values, int):
+        if not isinstance(values, list):
             values = [values] * len(parameter_names)
         if len(parameter_names) != len(values):
             raise ValueError(
