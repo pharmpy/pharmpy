@@ -18,7 +18,6 @@ from lark.visitors import Interpreter
 
 import pharmpy.modeling as modeling
 
-
 grammar = r"""
 start: feature (_SEPARATOR feature)*
 feature: absorption | elimination | peripherals | transits
@@ -98,7 +97,7 @@ class Peripherals(ModelFeature):
         self._funcs = dict()
         for arg in self.args:
             name = f'PERIPHERALS({arg})'
-            self._funcs[name] = None # FIXME: Need funcs to directly set number of peripherals
+            self._funcs[name] = functools.partial(modeling.set_peripheral_compartments, n=arg)
 
 
 class Lagtime(ModelFeature):
