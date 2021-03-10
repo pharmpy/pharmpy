@@ -382,6 +382,17 @@ def _get_absorption_init(model, param_name):
         return float(time_min) * 2
 
 
+def set_peripheral_compartments(model, n):
+    per = len(model.statements.ode_system.find_peripherals())
+    if per < n:
+        for _ in range(n - per):
+            add_peripheral_compartment(model)
+    elif per > n:
+        for _ in range(per - n):
+            remove_peripheral_compartment(model)
+    return model
+
+
 def add_peripheral_compartment(model):
     r"""Add a peripheral distribution compartment to model
 

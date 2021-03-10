@@ -39,6 +39,7 @@ from pharmpy.modeling.odes import (
     remove_peripheral_compartment,
     seq_zo_fo_absorption,
     set_ode_solver,
+    set_peripheral_compartments,
     set_transit_compartments,
     zero_order_absorption,
     zero_order_elimination,
@@ -99,4 +100,5 @@ __all__ = [
     'fix_parameters_to',
     'unfix_parameters_to',
     'create_results',
+    'set_peripheral_compartments',
 ]

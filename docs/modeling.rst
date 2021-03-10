@@ -388,6 +388,22 @@ Removing a peripheral compartment.
 
 .. _cov_effects:
 
+
+Set the number of peripheral compartments
+=========================================
+
+As an alternative to adding or removing one peripheral compartment a certain number of peripheral compartents can be set directly.
+
+.. jupyter-execute::
+
+   from pharmpy.modeling import set_peripheral_compartments
+   set_peripheral_compartments(model, 2)
+   remove_ref = model.copy()
+   model.update_source()
+   print_model_diff(remove_ref, model)
+
+
+
 ~~~~~~~~~~~~~~~~~~~~~~~~
 Adding covariate effects
 ~~~~~~~~~~~~~~~~~~~~~~~~
