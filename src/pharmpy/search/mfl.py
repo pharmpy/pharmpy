@@ -12,6 +12,7 @@
 
 
 import functools
+import itertools
 
 from lark import Lark
 from lark.visitors import Interpreter
@@ -20,7 +21,7 @@ import pharmpy.modeling as modeling
 
 grammar = r"""
 start: feature (_SEPARATOR feature)*
-feature: absorption | elimination | peripherals | transits
+feature: absorption | elimination | peripherals | transits | lagtime
 
 absorption: "ABSORPTION"i "(" (option) ")"
 elimination: "ELIMINATION"i "(" (option) ")"
@@ -146,7 +147,7 @@ class OneArgInterpreter(Interpreter):
 
     def value(self, tree):
         value = tree.children[0].value
-        if self.name == 'transits':
+        if self.name == 'transits' or self.name == 'peripherals':
             return {int(value)}
         else:
             return {value.upper()}
@@ -167,13 +168,43 @@ class ModelFeatures:
     def __init__(self, code):
         parser = Lark(grammar)
         tree = parser.parse(code)
-        if tree.find_data('absorption'):
+        self._all_features = []
+        if list(tree.find_data('absorption')):
             self.absorption = Absorption(tree)
-        if tree.find_data('elimination'):
+            self._all_features.append(self.absorption)
+        if list(tree.find_data('elimination')):
             self.elimination = Elimination(tree)
-        if tree.find_data('transits'):
+            self._all_features.append(self.elimination)
+        if list(tree.find_data('transits')):
             self.transits = Transits(tree)
-        if tree.find_data('peripherals'):
+            self._all_features.append(self.transits)
+        if list(tree.find_data('peripherals')):
             self.peripherals = Peripherals(tree)
-        if tree.find_data('lagtime'):
+            self._all_features.append(self.peripherals)
+        if list(tree.find_data('lagtime')):
             self.lagtime = Lagtime(tree)
+            self._all_features.append(self.lagtime)
+
+    def all_funcs(self):
+        funcs = dict()
+        for feat in self._all_features:
+            funcs.update(feat._funcs)
+        return funcs
+
+    def next_funcs(self, have):
+        funcs = dict()
+        names = [s.split('(')[0].strip().upper() for s in have]
+        for feat, func in self.all_funcs().items():
+            curname = feat.split('(')[0].strip().upper()
+            if curname not in names:
+                funcs[feat] = func
+        return funcs
+
+    def all_combinations(self):
+        feats = []
+        for feat in self._all_features:
+            feats.append([None] + list(feat._funcs.keys()))
+        for t in itertools.product(*feats):
+            a = [elt for elt in t if elt is not None]
+            if a:
+                yield a

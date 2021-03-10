@@ -2,6 +2,7 @@ import numpy as np
 
 from pharmpy.search.algorithms import exhaustive
 from pharmpy.search.rankfuncs import aic, bic, ofv
+from pharmpy import Model
 
 
 class DummyResults:
@@ -49,20 +50,16 @@ def test_bic():
     assert [run3] == res
 
 
-def test_exhaustive():
-    base = DummyModel("run1", ofv=0)
+def test_exhaustive(testdata):
+    base = Model(testdata / 'nonmem' / 'pheno.mod')
 
     def do_nothing(model):
         return model
 
-    trans = [do_nothing]
+    trans = 'ABSORPTION(FO)'
     res = exhaustive(base, trans, do_nothing, ofv)
-    assert list(res['rank']) == [np.nan]
-
-    def set_ofv(models):
-        for i, model in enumerate(models):
-            model.modelfit_results.ofv = -4 - i * 2
-
-    res = exhaustive(base, trans, set_ofv, ofv)
     assert len(res) == 1
-    assert list(res['dofv']) == [4]
+
+    res = exhaustive(base, trans, do_nothing, ofv)
+    assert len(res) == 1
+    assert list(res['dofv']) == [0.0]

@@ -1,5 +1,3 @@
-import functools
-
 import pharmpy.execute as execute
 import pharmpy.methods
 import pharmpy.methods.modelfit as modelfit
@@ -9,32 +7,12 @@ import pharmpy.search.rankfuncs as rankfuncs
 
 
 class ModelSearch(pharmpy.methods.Method):
-    def __init__(self, base_model, algorithm, modeling_funcs, rankfunc='ofv', **kwargs):
+    def __init__(self, base_model, algorithm, mfl, rankfunc='ofv', **kwargs):
         self.base_model = base_model
-        self.funcs = self.create_funcs_from_modeling(modeling_funcs)
+        self.mfl = mfl
         self.algorithm = getattr(algorithms, algorithm)
         self.rankfunc = getattr(rankfuncs, rankfunc)
         super().__init__(**kwargs)
-
-    def create_funcs_from_modeling(self, modeling_funcs):
-        """Create partial functions given a list of strings of function calls"""
-        funcs = []
-        import pharmpy.modeling
-
-        for funcstr in modeling_funcs:
-            name, args = funcstr.split('(')
-            name = name.strip()
-            args = args.strip()[:-1]
-            if args:
-                argdict = dict(
-                    [e.split('=')[0].strip(), e.split('=')[1].strip()] for e in args.split(',')
-                )
-            else:
-                argdict = dict()
-            function = getattr(pharmpy.modeling, name)
-            func = functools.partial(function, **argdict)
-            funcs.append(func)
-        return funcs
 
     def fit(self, models):
         db = execute.LocalDirectoryDatabase(self.rundir.path / 'models')
@@ -44,7 +22,7 @@ class ModelSearch(pharmpy.methods.Method):
     def run(self):
         df = self.algorithm(
             self.base_model,
-            self.funcs,
+            self.mfl,
             self.fit,
             self.rankfunc,
         )
