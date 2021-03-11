@@ -11,5 +11,6 @@ A tool in Pharmpy is an implementation of a pharmacometric method. A tool perfor
    cdd
    frem
    linearize
+   modelsearch
    scm
    simeval

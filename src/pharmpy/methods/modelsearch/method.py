@@ -37,7 +37,7 @@ class ModelSearchResults(pharmpy.results.Results):
         self.runs = runs
 
 
-def run_modelsearch(base_model, algorithm, modeling_funcs, **kwargs):
-    ms = ModelSearch(base_model, algorithm, modeling_funcs, **kwargs)
+def run_modelsearch(base_model, algorithm, mfl, **kwargs):
+    ms = ModelSearch(base_model, algorithm, mfl, **kwargs)
     res = ms.run()
     return res
