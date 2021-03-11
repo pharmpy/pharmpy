@@ -49,12 +49,12 @@ def set_initial_estimates(model, inits):
 
     Parameters
     ----------
-    model: Model
-    inits: A dictionary of parameter: init for parameters to change
+    model : Model
+    inits : A dictionary of parameter: init for parameters to change
 
     Returns
     -------
-    model: Model
+    model : Model
     """
     model.parameters.inits = inits
     return model
@@ -67,13 +67,13 @@ def fix_parameters(model, parameter_names):
 
     Parameters
     ----------
-    model: Model
-    parameter_names: list or str
+    model : Model
+    parameter_names : list or str
         one parameter name or a list of parameter names
 
     Returns
     -------
-    model: Model
+    model : Model
     """
     if isinstance(parameter_names, str):
         d = {parameter_names: True}
@@ -90,13 +90,13 @@ def unfix_parameters(model, parameter_names):
 
     Parameters
     ----------
-    model: Model
-    parameter_names: list or str
+    model : Model
+    parameter_names : list or str
         one parameter name or a list of parameter names
 
     Returns
     -------
-    model: Model
+    model : Model
     """
     if isinstance(parameter_names, str):
         d = {parameter_names: False}
@@ -113,15 +113,15 @@ def fix_parameters_to(model, parameter_names, values):
 
     Parameters
     ----------
-    model: Model
-    parameter_names: list or str
+    model : Model
+    parameter_names : list or str
         one parameter name or a list of parameter names
     values : list or int
         one value or a list of values (must be equal to number of parameter_names)
 
     Returns
     -------
-    model: Model
+    model : Model
     """
     if not parameter_names:
         parameter_names = [p.name for p in model.parameters]
@@ -140,15 +140,15 @@ def unfix_parameters_to(model, parameter_names, values):
 
     Parameters
     ----------
-    model: Model
-    parameter_names: list or str
+    model : Model
+    parameter_names : list or str
         one parameter name or a list of parameter names
     values : list or int
         one value or a list of values (must be equal to number of parameter_names)
 
     Returns
     -------
-    model: Model
+    model : Model
     """
     if not parameter_names:
         parameter_names = [p.name for p in model.parameters]

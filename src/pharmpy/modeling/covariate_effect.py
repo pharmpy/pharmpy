@@ -22,6 +22,7 @@ def add_covariate_effect(model, parameter, covariate, effect, operation='*'):
 
     - Linear function for continuous covariates (*lin*)
         - Function:
+
         .. math::
 
             \\text{coveff} = 1 + \\text{theta} * (\\text{cov} - \\text{median})
@@ -35,6 +36,7 @@ def add_covariate_effect(model, parameter, covariate, effect, operation='*'):
             - Otherwise: :math:`\\frac{1}{\\text{median} - \\text{max}}`
     - Linear function for categorical covariates (*cat*)
         - Function:
+
             - If covariate is most common category:
 
             .. math::
@@ -86,6 +88,7 @@ def add_covariate_effect(model, parameter, covariate, effect, operation='*'):
         - Upper:
             - If min - median = 0 or max - median = 0: :math:`100`
             - Otherwise:
+
             .. math::
 
                 \\min(\\frac{\\log(0.01)}{\\text{min} - \\text{median}},
@@ -93,6 +96,7 @@ def add_covariate_effect(model, parameter, covariate, effect, operation='*'):
         - Lower:
             - If min - median = 0 or max - median = 0: :math:`0.01`
             - Otherwise:
+
             .. math::
 
                 \\max(\\frac{\\log(0.01)}{\\text{max} - \\text{median}},

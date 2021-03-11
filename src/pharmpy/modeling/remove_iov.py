@@ -15,7 +15,7 @@ def remove_iov(model):
     Parameters
     ----------
     model : Model
-        Pharmpy model to create block effect on.
+        Pharmpy model to remove IOV from.
     """
     rvs, sset = model.random_variables, model.statements
     etas = _get_etas(rvs)

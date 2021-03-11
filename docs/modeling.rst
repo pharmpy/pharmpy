@@ -705,6 +705,13 @@ You can remove IOVs as well, however all IOV omegas will be removed. See
 
 .. jupyter-execute::
    :hide-output:
+   :hide-code:
+
+    import warnings
+    warnings.filterwarnings('ignore', message='No IOVs present')
+
+.. jupyter-execute::
+   :hide-output:
 
    model = Model(path / "pheno.mod")
    from pharmpy.modeling import remove_iov
