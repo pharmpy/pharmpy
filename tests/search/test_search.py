@@ -1,8 +1,6 @@
-import numpy as np
-
+from pharmpy import Model
 from pharmpy.search.algorithms import exhaustive
 from pharmpy.search.rankfuncs import aic, bic, ofv
-from pharmpy import Model
 
 
 class DummyResults:
