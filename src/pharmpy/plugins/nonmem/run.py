@@ -26,8 +26,9 @@ def create_job(models):
 
 def execute_model(model, i):
     path = Path(f'NONMEM_run{i}').resolve()
-    print("YY:", path)
     model = model.copy()
+    model.update_source()
+    model.dataset_path = model.dataset_path.name    # Make path in $DATA local
     model.write(path=path, force=True)
     args = [
         nmfe_path(),
