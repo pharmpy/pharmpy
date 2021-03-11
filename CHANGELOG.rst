@@ -1,3 +1,11 @@
+0.20.0 (2021-03-11)
+-------------------
+
+* New function modeling.set_peripheral_compartments 
+* New tool Model Search
+* New model attribute `estimation_steps` to read and change $ESTIMATION
+* Bugfixes (#99, #118)
+
 0.19.0 (2021-03-02)
 -------------------
 
