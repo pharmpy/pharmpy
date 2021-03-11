@@ -26,6 +26,7 @@ def create_job(models):
 
 def execute_model(model, i):
     path = Path(f'NONMEM_run{i}').resolve()
+    print("YY:", path)
     model = model.copy()
     model.write(path=path, force=True)
     args = [

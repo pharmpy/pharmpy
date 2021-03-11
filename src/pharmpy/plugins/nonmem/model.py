@@ -80,9 +80,12 @@ class Model(pharmpy.model.Model):
     @property
     def modelfit_results(self):
         if self._modelfit_results is None:
+            print("QQ:", self.source.path)
             if self.source.path.is_file():
                 ext_path = self.source.path.with_suffix('.ext')
+                print("QQ2:", ext_path)
                 if ext_path.exists() and stat(ext_path).st_size > 0:
+                    print("HERE!")
                     self._modelfit_results = NONMEMChainedModelfitResults(ext_path, model=self)
                     return self._modelfit_results
             else:
