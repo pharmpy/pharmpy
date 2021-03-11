@@ -10,18 +10,7 @@ from bs4 import BeautifulSoup
 from csscompressor import compress
 from sphinx.application import Sphinx
 
-
-class TemporaryDirectoryChanger:
-    def __init__(self, path):
-        self.path = path
-        self.old_path = Path.cwd()
-
-    def __enter__(self):
-        os.chdir(self.path)
-        return self
-
-    def __exit__(self, *args):
-        os.chdir(self.old_path)
+from pharmpy.utils import TemporaryDirectoryChanger
 
 
 def generate_report(rst_path, results_path):

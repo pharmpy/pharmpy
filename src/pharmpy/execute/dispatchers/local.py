@@ -1,7 +1,8 @@
-import os
 import shutil
 import tempfile
 from pathlib import Path
+
+from pharmpy.utils import TemporaryDirectoryChanger
 
 from ..dispatcher import ExecutionDispatcher
 from .local_run import run
@@ -15,10 +16,8 @@ class LocalDispatcher(ExecutionDispatcher):
                 dest_path = temppath / dest
                 dest_path.mkdir(parents=True, exist_ok=True)
                 shutil.copy2(source, dest_path)
-            current = os.getcwd()  # FIXME: need protection against exceptions!
-            os.chdir(temppath)
-            results = run(job.workflow)
-            os.chdir(current)
+            with TemporaryDirectoryChanger(temppath):
+                results = run(job.workflow)
             for model, files in zip(job.models, job.outfiles):
                 for f in files:
                     database.store_local_file(model, temppath / f)
