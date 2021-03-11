@@ -47,8 +47,50 @@ def test_mfl_elimination(code, args):
         ('TRANSITS(0..1)', {0, 1}),
         ('TRANSITS(1..4)', {1, 2, 3, 4}),
         ('TRANSITS(1..4); TRANSITS(5)', {1, 2, 3, 4, 5}),
+        ('TRANSITS(0);PERIPHERALS(0)', {0}),
     ],
 )
 def test_mfl_transits(code, args):
     mfl = ModelFeatures(code)
     assert mfl.transits.args == args
+
+
+@pytest.mark.parametrize(
+    'code,args',
+    [
+        ('PERIPHERALS(0)', {0}),
+        ('PERIPHERALS([0, 1])', {0, 1}),
+        ('PERIPHERALS([0, 2, 4])', {0, 2, 4}),
+        ('PERIPHERALS(0..1)', {0, 1}),
+        ('PERIPHERALS(1..4)', {1, 2, 3, 4}),
+        ('PERIPHERALS(1..4); PERIPHERALS(5)', {1, 2, 3, 4, 5}),
+    ],
+)
+def test_mfl_peripherals(code, args):
+    mfl = ModelFeatures(code)
+    assert mfl.peripherals.args == args
+
+
+@pytest.mark.parametrize(
+    'code,args',
+    [
+        ('LAGTIME()', None),
+    ],
+)
+def test_mfl_lagtime(code, args):
+    mfl = ModelFeatures(code)
+    assert mfl.lagtime.args == args
+
+
+@pytest.mark.parametrize(
+    'code',
+    [
+        ('ABSORPTION(ILLEGAL)'),
+        ('ELIMINATION(ALSOILLEGAL)'),
+        ('LAGTIME(0)'),
+        ('TRANSITS(*)'),
+    ],
+)
+def test_illegal_mfl(code):
+    with pytest.raises(Exception):
+        ModelFeatures(code)

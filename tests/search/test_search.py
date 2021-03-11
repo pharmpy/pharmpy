@@ -15,9 +15,6 @@ class DummyModel:
         self.name = name
         self.modelfit_results = DummyResults(**kwargs)
 
-    def copy(self):
-        return DummyModel(self.name, ofv=self.modelfit_results.ofv)
-
 
 def test_ofv():
     run1 = DummyModel("run1", ofv=0)

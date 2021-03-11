@@ -40,11 +40,7 @@ NUMBER: /\d+/
 
 
 class ModelFeature:
-    def apply_all(self, model):
-        for name, func in self._funcs:
-            transformed = model.copy()
-            func(transformed)
-            yield name, transformed
+    pass
 
 
 class Absorption(ModelFeature):
@@ -104,6 +100,7 @@ class Peripherals(ModelFeature):
 class Lagtime(ModelFeature):
     def __init__(self, tree):
         self._funcs = {'LAGTIME()': modeling.add_lag_time}
+        self.args = None
 
 
 class OneArgInterpreter(Interpreter):
