@@ -210,7 +210,7 @@ class ExplicitODESystem(ODESystem):
 
     def subs(self, substitutions):
         d = {
-            sympy.Function(key.name)(symbols.symbol('t')): value
+            sympy.Function(str(key))(symbols.symbol('t')): value
             for key, value in substitutions.items()
         }
         self.odes = [ode.subs(d) for ode in self.odes]
