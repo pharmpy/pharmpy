@@ -49,13 +49,17 @@ def results(models):
 
 def nmfe_path():
     if os.name == 'nt':
-        nmfe = 'nmfe74.bat'
+        nmfe_candidates = ['nmfe74.bat', 'nmfe75.bat', 'nmfe73.bat']
     else:
-        nmfe = 'nmfe74'
+        nmfe_candidates = ['nmfe74', 'nmfe75', 'nmfe73']
     path = conf.default_nonmem_path
     if path != Path(''):
         path /= 'run'
-    path /= nmfe
-    if not path.is_file():
+    for nmfe in nmfe_candidates:
+        candidate_path = path / nmfe
+        if candidate_path.is_file():
+            path = candidate_path
+            break
+    else:
         raise FileNotFoundError(f'Cannot find nmfe script for NONMEM ({path})')
     return str(path)
