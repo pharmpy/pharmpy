@@ -94,13 +94,13 @@ class ExpressionInterpreter(lark.visitors.Interpreter):
     @staticmethod
     def intrinsic_func(node):
         name = str(node).upper()
-        if name == "EXP" or name == "DEXP":
+        if name == "EXP" or name == "DEXP" or name == "PEXP":
             return sympy.exp
-        elif name == "LOG":
+        elif name == "LOG" or name == "PLOG":
             return sympy.log
-        elif name == "LOG10":
+        elif name == "LOG10" or name == "PLOG10":
             return lambda x: sympy.log(x, 10)
-        elif name == "SQRT":
+        elif name == "SQRT" or name == "PSQRT":
             return sympy.sqrt
         elif name == "SIN":
             return sympy.sin
@@ -108,18 +108,22 @@ class ExpressionInterpreter(lark.visitors.Interpreter):
             return sympy.cos
         elif name == "ABS":
             return sympy.Abs
-        elif name == "TAN":
+        elif name == "TAN" or name == "PTAN":
             return sympy.tan
-        elif name == "ASIN":
+        elif name == "ASIN" or name == "PASIN":
             return sympy.asin
-        elif name == "ACOS":
+        elif name == "ACOS" or name == "PACOS":
             return sympy.acos
-        elif name == "ATAN":
+        elif name == "ATAN" or name == "PATAN":
             return sympy.atan
         elif name == "INT":
             return lambda x: sympy.sign(x) * sympy.floor(sympy.Abs(x))
         elif name == "GAMLN":
             return sympy.loggamma
+        elif name == "PDZ":
+            return lambda x: sympy.Integer(1) / x
+        elif name == "PZR" or name == "PNP" or name == "PHE" or name == "PNG":
+            return lambda x: x
         else:  # name == "PHI":
             return lambda x: (1 + sympy.erf(x) / sympy.sqrt(2)) / 2
 

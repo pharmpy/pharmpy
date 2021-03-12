@@ -58,6 +58,7 @@ func: intrinsic_func "(" expression ")"
 func2: "MOD"i "(" expression "," expression ")"
 
 intrinsic_func: "LOG"i | "LOG10"i | "EXP"i | "DEXP"i | "SQRT"i | "SIN"i | "COS"i | "ABS"i | "TAN"i | "ASIN"i | "ACOS"i | "ATAN"i | "INT"i | "GAMLN"i | "PHI"i
+    | "PLOG"i | "PLOG10"i | "PSQRT"i | "PEXP"i | "PDZ"i | "PZR"i | "PNP"i | "PHE"i | "PNG"i | "PTAN"i | "PATAN"i | "PASIN"i | "PACOS"i
 
 variable: vector | NAME
 
