@@ -28,7 +28,7 @@ def execute_model(model, i):
     path = Path(f'NONMEM_run{i}').resolve()
     model = model.copy()
     model.update_source()
-    model.dataset_path = model.dataset_path.name    # Make path in $DATA local
+    model.dataset_path = model.dataset_path.name  # Make path in $DATA local
     model.write(path=path, force=True)
     args = [
         nmfe_path(),
@@ -56,4 +56,6 @@ def nmfe_path():
     if path != Path(''):
         path /= 'run'
     path /= nmfe
+    if not path.is_file():
+        raise FileNotFoundError(f'Cannot find nmfe script for NONMEM ({path})')
     return str(path)
