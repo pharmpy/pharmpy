@@ -5,7 +5,11 @@ Pharmpy in R
 ============
 
 Using Pharmpy in R is similar to how it is used in Python, and all the examples for Python are analogous to how
-they work in R. Replace "." with "$" for the R equivalent. An R wrapper is being developed.
+they work in R. Replace "." with "$" for the R equivalent. When a list (denoted [...] in Python) is used as input
+in e.g. transformations, the R equivalent is `c()`. For more information about type conversions from R to Python,
+see `Reticulate's documentation <https://rstudio.github.io/reticulate/index.html#type-conversions>`_.
+
+An R wrapper to Pharmpy is in development.
 
 .. warning::
 
