@@ -19,7 +19,7 @@ def sample_from_function(model, samplingfn, parameters=None, force_posdef_sample
     if parameters is None:
         parameters = model.parameters.names
 
-    parameter_summary = model.parameters.summary().loc[parameters]
+    parameter_summary = model.parameters.to_dataframe().loc[parameters]
     parameter_summary = parameter_summary[~parameter_summary['fix']]
     lower = parameter_summary.lower.astype('float64').to_numpy()
     upper = parameter_summary.upper.astype('float64').to_numpy()

@@ -45,11 +45,11 @@ def test_illegal_initialization(name, init, lower, upper, fix):
 
 def test_any_boundary_near_value():
     param = Parameter('X', 2, lower=0, upper=23.8)
-    assert param.any_boundary_near_value(0.007, zero_limit=0.01, significant_digits=2) is True
-    assert param.any_boundary_near_value(0.007, zero_limit=0.001, significant_digits=2) is False
-    assert param.any_boundary_near_value(23.2, zero_limit=0.001, significant_digits=2) is False
-    assert param.any_boundary_near_value(23.2, zero_limit=0.001, significant_digits=1) is True
-    assert param.any_boundary_near_value(23.5, zero_limit=0.001, significant_digits=2) is True
+    assert param.is_close_to_bound(0.007, zero_limit=0.01, significant_digits=2) is True
+    assert param.is_close_to_bound(0.007, zero_limit=0.001, significant_digits=2) is False
+    assert param.is_close_to_bound(23.2, zero_limit=0.001, significant_digits=2) is False
+    assert param.is_close_to_bound(23.2, zero_limit=0.001, significant_digits=1) is True
+    assert param.is_close_to_bound(23.5, zero_limit=0.001, significant_digits=2) is True
 
 
 def test_repr():

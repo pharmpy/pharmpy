@@ -406,7 +406,7 @@ class ModelfitResults(Results):
         """
         pe = self.parameter_estimates
         # Want parameter estimates combined with fixed parameter values
-        param_inits = self.model.parameters.summary()['value']
+        param_inits = self.model.parameters.to_dataframe()['value']
         pe = pe.combine_first(param_inits)
 
         ie = self.individual_estimates
@@ -429,7 +429,7 @@ class ModelfitResults(Results):
         cov = self.individual_estimates_covariance
         pe = self.parameter_estimates
         # Want parameter estimates combined with fixed parameter values
-        param_inits = self.model.parameters.summary()['value']
+        param_inits = self.model.parameters.to_dataframe()['value']
         pe = pe.combine_first(param_inits)
 
         # Get all iiv variance parameters
@@ -448,7 +448,7 @@ class ModelfitResults(Results):
         return ish
 
     def near_bounds(self, zero_limit=0.001, significant_digits=2):
-        return self.model.parameters.values_near_bounds(
+        return self.model.parameters.is_close_to_bound(
             values=self.parameter_estimates,
             zero_limit=zero_limit,
             significant_digits=significant_digits,
