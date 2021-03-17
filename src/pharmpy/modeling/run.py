@@ -1,6 +1,7 @@
 import pharmpy.methods.common
 import pharmpy.methods.modelfit
 import pharmpy.model
+import pharmpy.results
 
 
 def fit(models):
@@ -19,4 +20,9 @@ def fit(models):
 
 def create_results(path, **kwargs):
     res = pharmpy.methods.common.create_results(path, **kwargs)
+    return res
+
+
+def read_results(path):
+    res = pharmpy.results.read_results(path)
     return res

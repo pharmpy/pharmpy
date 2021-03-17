@@ -47,7 +47,7 @@ from pharmpy.modeling.odes import (
 from pharmpy.modeling.power_on_ruv import power_on_ruv
 from pharmpy.modeling.remove_iiv import remove_iiv
 from pharmpy.modeling.remove_iov import remove_iov
-from pharmpy.modeling.run import create_results, fit
+from pharmpy.modeling.run import create_results, fit, read_results
 from pharmpy.modeling.update_inits import update_inits
 
 __all__ = [
@@ -101,4 +101,5 @@ __all__ = [
     'unfix_parameters_to',
     'create_results',
     'set_peripheral_compartments',
+    'read_results',
 ]
