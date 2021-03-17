@@ -142,6 +142,8 @@ class Parameter:
 
     .. code-block::
 
+        from pharmpy import Parameter
+
         param = Parameter("TVCL", 0.005, lower=0)
         param.fix = True
 
@@ -194,7 +196,7 @@ class Parameter:
 
     @property
     def init(self):
-        """Initial parameter estimate"""
+        """Initial parameter value or estimate"""
         return self._init
 
     @init.setter

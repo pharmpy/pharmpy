@@ -137,31 +137,71 @@ def set_transit_compartments(model, n):
         comp.dose = dose
     elif len(transits) > n:
         nremove = len(transits) - n
-        comp = odes.find_dosing()
-        dose = comp.dose
         removed_symbols = set()
+        trans, destination, flow = _find_last_transit(odes, transits)
+        if n == 0:  # The dosing compartment will be removed
+            dosing = odes.find_dosing()
+            dose = dosing.dose
+        remaining = set(transits)
         while nremove > 0:
-            to_comp, to_flow = odes.get_compartment_outflows(comp)[0]
-            odes.remove_compartment(comp)
-            removed_symbols |= to_flow.free_symbols
-            comp = to_comp
+            from_comp, from_flow = odes.get_compartment_inflows(trans)[0]
+            odes.add_flow(from_comp, destination, from_flow)
+            odes.remove_compartment(trans)
+            remaining.remove(trans)
+            removed_symbols |= flow.free_symbols
+            trans = from_comp
+            flow = from_flow
             nremove -= 1
-        comp.dose = dose
+        if n == 0:
+            destination.dose = dose
+        _update_numerators(model)
         statements.remove_symbol_definitions(removed_symbols, odes)
         model.remove_unused_parameters_and_rvs()
     else:
         nadd = n - len(transits)
-        comp = odes.find_dosing()
-        dose = comp.dose
-        _, rate = odes.get_compartment_outflows(comp)[0]
-        comp.dose = None
+        last, destination, rate = _find_last_transit(odes, transits)
+        odes.remove_flow(last, destination)
         while nadd > 0:
-            new_comp = odes.add_compartment(f'TRANSIT{len(transits) + nadd}')
+            # new_comp = odes.add_compartment(f'TRANSIT{len(transits) + nadd}')
+            new_comp = odes.add_compartment(f'TRANSIT{n - nadd + 1}')
+            odes.add_flow(last, new_comp, rate)
+            if rate.is_Symbol:
+                ass = statements.find_assignment(rate.name)
+                if ass is not None:
+                    rate = ass.expression
+            last = new_comp
             nadd -= 1
-            odes.add_flow(new_comp, comp, rate)
-            comp = new_comp
-        comp.dose = dose
+        odes.add_flow(last, destination, rate)
+        _update_numerators(model)
     return model
+
+
+def _find_last_transit(odes, transits):
+    for trans in transits:
+        destination, flow = odes.get_compartment_outflows(trans)[0]
+        if destination not in transits:
+            return trans, destination, flow
+
+
+def _update_numerators(model):
+    # update numerators for transit compartment rates
+    statements = model.statements
+    odes = statements.ode_system
+    transits = odes.find_transit_compartments(statements)
+    new_numerator = sympy.Integer(len(transits))
+    for comp in transits:
+        to_comp, rate = odes.get_compartment_outflows(comp)[0]
+        numer, denom = rate.as_numer_denom()
+        if numer.is_Integer and numer != new_numerator:
+            new_rate = new_numerator / denom
+            odes.add_flow(comp, to_comp, new_rate)
+        elif numer.is_Symbol:
+            ass = statements.find_assignment(numer.name)
+            if ass is not None:
+                ass_numer, ass_denom = ass.expression.as_numer_denom()
+                if ass_numer.is_Integer and ass_numer != new_numerator:
+                    new_rate = new_numerator / ass_denom
+                    statements.reassign(numer, new_rate)
 
 
 def add_lag_time(model):

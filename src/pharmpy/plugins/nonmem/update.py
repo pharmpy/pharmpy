@@ -509,6 +509,7 @@ def pk_param_conversion(model, advan, trans):
         d[symbol(f'ALAG{old}')] = symbol(f'ALAG{new}')
         d[symbol(f'A({old})')] = symbol(f'A({new})')
     if from_advan == 'ADVAN5' or from_advan == 'ADVAN7':
+        reverse_map = {v: k for k, v in newmap.items()}
         for i, j in itertools.product(range(1, len(oldmap)), range(0, len(oldmap))):
             if i != j and (i in remap and (j in remap or j == 0)):
                 if i in remap:
@@ -519,8 +520,12 @@ def pk_param_conversion(model, advan, trans):
                     to_j = remap[j]
                 else:
                     to_j = j
-                d[symbol(f'K{i}{j}')] = symbol(f'K{to_i}{to_j}')
-                d[symbol(f'K{i}T{j}')] = symbol(f'K{to_i}T{to_j}')
+                outind = to_j if to_j != 0 else len(cs)
+                from_comp = cs.find_compartment(reverse_map[to_i])
+                to_comp = cs.find_compartment(reverse_map[outind])
+                if cs.get_flow(from_comp, to_comp) is not None:
+                    d[symbol(f'K{i}{j}')] = symbol(f'K{to_i}{to_j}')
+                    d[symbol(f'K{i}T{j}')] = symbol(f'K{to_i}T{to_j}')
         if advan == 'ADVAN3':
             n = len(oldmap)
             for i in range(1, n):

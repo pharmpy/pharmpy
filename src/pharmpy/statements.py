@@ -313,6 +313,9 @@ class CompartmentalSystem(ODESystem):
     def add_flow(self, source, destination, rate):
         self._g.add_edge(source, destination, rate=rate)
 
+    def remove_flow(self, source, destination):
+        self._g.remove_edge(source, destination)
+
     def get_flow(self, source, destination):
         try:
             rate = self._g.edges[source, destination]['rate']
