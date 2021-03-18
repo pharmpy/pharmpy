@@ -81,16 +81,14 @@ def split_rv_block(model, list_of_rvs=None):
     rvs_block = _get_etas(model, list_of_rvs)
     pset = model.parameters
 
-    cov_matrix_before = rvs_full.covariance_matrix()
+    cov_matrix_before = [rv for rv in rvs_full.covariance_matrix()]
+
     for rv in rvs_block:
         rvs_full.extract_from_block(rv)
 
-    cov_matrix_after = rvs_full.covariance_matrix()
+    cov_diff = [rv for rv in rvs_full.covariance_matrix() if rv not in cov_matrix_before]
 
-    diff = cov_matrix_before - cov_matrix_after
-    param_names = [elem for elem in diff if elem != 0]
-
-    for param in set(param_names):
+    for param in set(cov_diff):
         pset.discard(param)
 
     model.random_variables = rvs_full
