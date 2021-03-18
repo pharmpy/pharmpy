@@ -23,7 +23,7 @@ def remove_error(model):
 
     Parameters
     ----------
-    model
+    model : Model
         Remove error model for this model
     """
     stats, y, f = _preparations(model)
@@ -37,7 +37,7 @@ def additive_error(model):
 
     Parameters
     ----------
-    model
+    model : Model
         Set error model for this model
     """
     if has_additive_error(model):
@@ -72,7 +72,7 @@ def proportional_error(model):
 
     Parameters
     ----------
-    model
+    model : Model
         Set error model for this model
     """
     if has_proportional_error(model):
@@ -100,7 +100,7 @@ def combined_error(model):
 
     Parameters
     ----------
-    model
+    model : Model
         Set error model for this model
     """
     if has_combined_error(model):
@@ -134,7 +134,7 @@ def has_additive_error(model):
 
     Parameters
     ----------
-    model
+    model : Model
         The model to check
     """
     y = model.dependent_variable_symbol
@@ -154,7 +154,7 @@ def has_proportional_error(model):
 
     Parameters
     ----------
-    model
+    model : Model
         The model to check
     """
     y = model.dependent_variable_symbol
@@ -174,7 +174,7 @@ def has_combined_error(model):
 
     Parameters
     ----------
-    model
+    model : Model
         The model to check
     """
     y = model.dependent_variable_symbol

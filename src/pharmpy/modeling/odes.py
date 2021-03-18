@@ -239,7 +239,7 @@ def zero_order_absorption(model):
 
     Parameters
     ----------
-    model
+    model : Model
         Model to set or change to first order absorption rate
     """
     statements = model.statements
@@ -272,7 +272,7 @@ def first_order_absorption(model):
 
     Parameters
     ----------
-    model
+    model : Model
         Model to set or change to bolus absorption rate
     """
     statements = model.statements
@@ -300,7 +300,7 @@ def bolus_absorption(model):
 
     Parameters
     ----------
-    model
+    model : Model
         Model to set or change absorption rate
     """
     statements = model.statements
@@ -333,7 +333,7 @@ def seq_zo_fo_absorption(model):
 
     Parameters
     ----------
-    model
+    model : Model
         Model to set or change absorption rate
     """
     statements = model.statements
