@@ -1,4 +1,5 @@
 from io import StringIO
+
 from pharmpy import Model
 
 

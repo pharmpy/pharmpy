@@ -272,7 +272,7 @@ class ExplicitODESystem(ODESystem):
                         to_comp = cs.find_compartment(eq.lhs.args[0].name)
                         cs.add_flow(from_comp, to_comp, expr)
 
-        dose = Bolus("AMT")   # FIXME: not true!
+        dose = Bolus("AMT")  # FIXME: not true!
         cs.find_compartment(funcs[0].name).dose = dose
         return cs
 
