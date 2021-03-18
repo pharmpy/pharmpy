@@ -253,6 +253,29 @@ class ExplicitODESystem(ODESystem):
             rows.append(ics_repr)
         return r'\begin{cases} ' + r' \\ '.join(rows) + r' \end{cases}'
 
+    def to_compartmental_system(self):
+        funcs = [eq.lhs.args[0] for eq in self.odes]
+        cs = CompartmentalSystem()
+        for f in funcs:
+            cs.add_compartment(f.name)
+
+        for eq in self.odes:
+            for comp_func in funcs:
+                dep = eq.rhs.as_independent(comp_func, as_Add=True)[1]
+                if dep == 0:
+                    continue
+                terms = sympy.Add.make_args(dep)
+                for term in terms:
+                    expr = term / comp_func
+                    if term.args[0] != -1:
+                        from_comp = cs.find_compartment(comp_func.name)
+                        to_comp = cs.find_compartment(eq.lhs.args[0].name)
+                        cs.add_flow(from_comp, to_comp, expr)
+
+        dose = Bolus("AMT")   # FIXME: not true!
+        cs.find_compartment(funcs[0].name).dose = dose
+        return cs
+
 
 class CompartmentalSystem(ODESystem):
     """System of ODEs descibed as a compartmental system"""

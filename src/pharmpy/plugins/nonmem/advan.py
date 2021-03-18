@@ -198,10 +198,11 @@ def compartmental_model(model, advan, trans, des=None):
 
         if len(comps) > 1:
             dadt_rest = [Eq(s.symbol, s.expression) for s in sset if s != dadt_dose]
-            dadt_out = Eq(
-                Derivative(a_out(t)), symbol(f'K{len(comps)-1}0') * Function('A_CENTRAL')(t)
-            )
-            dadt_rest.append(dadt_out)
+            lhs_sum = dadt_dose.expression
+            for eq in dadt_rest:
+                lhs_sum += eq.rhs
+            dadt_out = Eq(Derivative(a_out(t)), -lhs_sum)
+            dadt_rest.append(sympy.simplify(dadt_out))
         else:
             dadt_rest = [Eq(Derivative(a_out(t)), dadt_dose.expression * -1)]
 
