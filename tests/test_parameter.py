@@ -43,18 +43,26 @@ def test_illegal_initialization(name, init, lower, upper, fix):
         Parameter(name, init, lower, upper, fix)
 
 
-def test_any_boundary_near_value():
+def test_is_close_to_bound():
     param = Parameter('X', 2, lower=0, upper=23.8)
     assert param.is_close_to_bound(0.007, zero_limit=0.01, significant_digits=2) is True
     assert param.is_close_to_bound(0.007, zero_limit=0.001, significant_digits=2) is False
     assert param.is_close_to_bound(23.2, zero_limit=0.001, significant_digits=2) is False
     assert param.is_close_to_bound(23.2, zero_limit=0.001, significant_digits=1) is True
     assert param.is_close_to_bound(23.5, zero_limit=0.001, significant_digits=2) is True
+    assert not param.is_close_to_bound()
 
 
 def test_repr():
     param = Parameter('X', 2, lower=0, upper=23)
     assert repr(param) == 'Parameter("X", 2, lower=0, upper=23, fix=False)'
+
+
+def test_copy():
+    p1 = Parameter('X', 2, lower=0, upper=23)
+    p2 = p1.copy()
+    p1.init = 22
+    assert p2.init == 2
 
 
 def test_unconstrain():
@@ -169,6 +177,8 @@ def test_pset_fix():
     fixedness = {'Y': True, 'X': True, 'Z': True}
     pset.fix = fixedness
     assert pset.fix == {'Y': True, 'X': True, 'Z': True}
+    with pytest.raises(KeyError):
+        pset.fix = {'K': True}
 
 
 def test_pset_repr():
@@ -198,3 +208,36 @@ def test_pset_eq():
     pset3 = ParameterSet([p1, p3, p2])
     assert pset1 != pset3
     assert pset1 == pset1
+
+
+def test_pset_add():
+    p1 = Parameter('Y', 9)
+    p2 = Parameter('X', 3)
+    p3 = Parameter('Z', 1)
+    pset1 = ParameterSet([p1, p2])
+    pset1.add(p3)
+    assert len(pset1) == 3
+
+    with pytest.raises(ValueError):
+        pset1.add(23)
+
+
+def test_pset_discard():
+    p1 = Parameter('Y', 9)
+    p2 = Parameter('X', 3)
+    p3 = Parameter('Z', 1)
+    pset1 = ParameterSet([p1, p2, p3])
+    pset1.discard(p2)
+    assert len(pset1) == 2
+    pset1.discard('Y')
+    assert len(pset1) == 1
+    pset1.discard('Y')
+    assert len(pset1) == 1
+
+
+def test_is_close_to_bound_pset():
+    p1 = Parameter('Y', 9)
+    p2 = Parameter('X', 3, lower=1, upper=24)
+    p3 = Parameter('Z', 1, lower=0, upper=2)
+    pset1 = ParameterSet([p1, p2, p3])
+    assert not pset1.is_close_to_bound().any()
