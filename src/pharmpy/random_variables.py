@@ -19,10 +19,7 @@ from .data_structures import OrderedSet
 class VariabilityLevel(enum.Enum):
     """Representation of a variability level
 
-    currently supports only IIV and RUV.
-    Can be changed into something not-enum
-    in future keeping the IIV and RUV as
-    class singletons
+    currently supports IIV, IOV and RUV.
     """
 
     IIV = enum.auto()
