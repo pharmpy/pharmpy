@@ -1,4 +1,15 @@
-0.21.1 (2021-03-11)
+0.21.0 (2021-03-22)
+-------------------
+
+* New function `read_results` in modeling
+* Add method to convert ExplicitODESystem to CompartmentalSystem
+* Support running NONMEM 7.3 and 7.5
+* Bugfixes:
+
+    * Allow protected functions in NONMEM abbreviated code
+    * Fix bad rates when changing number of transit compartments (#123)
+
+0.20.1 (2021-03-11)
 -------------------
 
 * Fix regression for calling NONMEM
