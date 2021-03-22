@@ -11,5 +11,5 @@ jobs:
           curl \
           -X POST \
           -H "Accept: application/vnd.github.v3+json" \
-          https://api.github.com/repos/pharmpy/pharmr/.github/workflows/build_docs.yaml/dispatches \
-          -d '{"ref":"master"}'
+          https://api.github.com/repos/pharmpy/pharmr/.github/workflows/build_docs/dispatches \
+          -d '{"ref":"main"}'
