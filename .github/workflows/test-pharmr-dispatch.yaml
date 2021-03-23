@@ -9,8 +9,7 @@ jobs:
       - name: Trigger pharmr workflow
         run: |
           curl \
-          -XPOST \
+          -X POST \
           -H "Accept: application/vnd.github.v3+json" \
-          -H "Content-Type: application/json"
           https://api.github.com/repos/pharmpy/pharmr/actions/workflows/build_docs.yaml/dispatches \
           -d '{"ref":"main"}'
