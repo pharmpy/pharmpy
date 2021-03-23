@@ -6,7 +6,6 @@ from sympy.printing.str import StrPrinter
 
 import pharmpy.symbols as symbols
 import pharmpy.unicode as unicode
-from pharmpy.random_variables import VariabilityLevel
 
 
 class Assignment:

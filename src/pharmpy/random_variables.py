@@ -1,6 +1,8 @@
+import copy
 import enum
 import itertools
 import warnings
+from collections.abc import MutableSequence
 
 import numpy as np
 import pandas as pd
@@ -16,142 +18,374 @@ from pharmpy.symbols import symbol
 from .data_structures import OrderedSet
 
 
-class VariabilityLevel(enum.Enum):
-    """Representation of a variability level
+class RandomVariable:
+    def __init__(self, name, level, sympy_rv=None):
+        level = RandomVariable._canonicalize_level(level)
+        self.name = name
+        self.level = level
+        self.symbol = symbol(name)
+        self._sympy_rv = sympy_rv
+        self._mean = None
+        self._variance = None
+        self._symengine_variance = None
+        self._joint_names = None
 
-    currently supports IIV, IOV and RUV.
-    """
-
-    IIV = enum.auto()
-    IOV = enum.auto()
-    RUV = enum.auto()
-
-
-class JointDistributionSeparate(RandomSymbol):
-    """One random variable in a joint distribution
-
-    sympy can currently only represent the random variables in a joint distribution
-    as one single indexed variable that cannot be separately named. This class
-    makes separation possible.
-
-    This class can probably not solve all issues with joint rvs, but it can at least
-    handle separate symbols, pass as a random variable for random_variables and lead back
-    to its pspace.
-    """
-
-    def __new__(cls, name, joint_symbol):
-        if isinstance(name, str):
-            return super().__new__(cls, symbol(name), joint_symbol.pspace)
-        else:
-            # To mimic original __new__
-            return super().__new__(cls, name, joint_symbol)
-
-
-def JointNormalSeparate(names, mean, cov):
-    """Conveniently create a joint normal distribution and create separate random variables"""
-    x = stats.Normal('__DUMMY__', mean, cov)
-    rvs = [JointDistributionSeparate(name, x) for name in names]
-    return rvs
-
-
-class RandomVariables(OrderedSet):
-    """An ordered set of random variables
-
-    currently separately named jointrvs are not supported in sympy
-    (i.e. it is not possible to do [eta1, eta2] = Normal(...))
-    Use JointDistributionSeparate as a workaround
-    Joints must come in the correct order
-    """
-
-    nletter = '𝒩 '
+    def __eq__(self, other):
+        return self.name == other.name and self.level == other.level and self._mean == other._mean and self._variance == other._variance and self._sympy_rv == other._sympy_rv
 
     @staticmethod
-    def _normal_definition_string(rv):
-        """Provide a array of pretty strings for the definition of a Normal random variable
-        This should ideally be available from sympy.
+    def _canonicalize_level(level):
+        supported = ('IIV', 'IOV', 'RUV')
+        ulevel = level.upper()
+        if ulevel not in supported:
+            raise ValueError(f'Unknown variability level {level}. Must be one of {supported}.')
+        return ulevel
+
+    @classmethod
+    def normal(cls, name, level, mean, variance):
+        """Create a normally distributed random variable
+
+        Parameters
+        ----------
+        name : str
+            Name of the random variable
+        level : str
+            Variability level
+        mean : expression or number
+            Mean of the random variable
+        variance : expression or number
+            Variance of the random variable
+
+        Example
+        -------
+        >>> from pharmpy import RandomVariable, Parameter
+        >>> omega = Parameter('OMEGA_CL', 0.1)
+        >>> rv = RandomVariable.normal("IIV_CL", 0, omega.symbol)
         """
-        dist = rv.pspace.distribution
-        return [
-            f'{sympy.pretty(rv, wrap_line=False)}'
-            f'~ {RandomVariables.nletter}({sympy.pretty(dist.mean, wrap_line=False)}, '
-            f'{sympy.pretty(dist.std**2, wrap_line=False)})'
-        ]
+        rv = cls(name, level)
+        rv._mean = sympy.Matrix([sympy.sympify(mean)])
+        rv._variance = sympy.Matrix([sympy.sympify(variance)])
+        rv._symengine_variance = symengine.sympify(rv._variance)
+        return rv
 
-    @staticmethod
-    def _joint_normal_definition_string(rvs):
-        """Create an array of pretty strings for the definition of a Joint Normal random variable"""
-        dist = rvs[0].pspace.distribution
-        name_vector = sympy.Matrix(rvs)
-        name_strings = sympy.pretty(name_vector, wrap_line=False).split('\n')
-        mu_strings = sympy.pretty(dist.mu, wrap_line=False).split('\n')
-        sigma_strings = sympy.pretty(dist.sigma, wrap_line=False).split('\n')
-        mu_height = len(mu_strings)
-        sigma_height = len(sigma_strings)
-        max_height = max(mu_height, sigma_height)
+    @classmethod
+    def joint_normal(cls, names, level, mu, sigma):
+        """Create joint normally distributed random variables
 
-        left_parens = unicode.left_parens(len(name_strings))
-        right_parens = unicode.right_parens(len(name_strings))
+        Parameters
+        ----------
+        names : list
+            Names of the random variables
+        mu : matrix or list
+            Vector of the means of the random variables
+        sigma : matrix or list of lists
+            Covariance matrix of the random variables
 
-        # Pad the smaller of the matrices
-        if mu_height != sigma_height:
-            to_pad = mu_strings if mu_strings < sigma_strings else sigma_strings
-            num_lines = abs(mu_height - sigma_height)
-            padding = ' ' * len(to_pad[0])
-            for i in range(0, num_lines):
-                if i // 2 == 0:
-                    to_pad.append(padding)
-                else:
-                    to_pad.insert(0, padding)
+        Example
+        -------
+        >>> from pharmpy import RandomVariables, Parameter
+        >>> omega_cl = Parameter("OMEGA_CL", 0.1)
+        >>> omega_v = Parameter("OMEGA_V", 0.1)
+        >>> corr_cl_v = Parameter("OMEGA_CL_V", 0.01)
+        >>> RandomVariable.joint_normal(["IIV_CL", "IIV_V"], [0, 0], [[omega_cl.symbol, corr_cl_v], [corr_cl_v, omega_v]])
+        """
 
-        central_index = max_height // 2
-        res = []
-        enumerator = enumerate(
-            zip(name_strings, left_parens, mu_strings, sigma_strings, right_parens)
-        )
-        for i, (name_line, lpar, mu_line, sigma_line, rpar) in enumerator:
-            if i == central_index:
-                res.append(
-                    name_line
-                    + f' ~ {RandomVariables.nletter}'
-                    + lpar
-                    + mu_line
-                    + ', '
-                    + sigma_line
-                    + rpar
-                )
+        mean = sympy.Matrix(mu)
+        variance = sympy.Matrix(sigma)
+        if variance.is_positive_semidefinite is False:
+            raise ValueError(f'Sigma matrix is not positive semidefinite')
+        rvs = []
+        for name in names:
+            rv = cls(name, level)
+            rv._mean = mean
+            rv._variance = variance
+            rv._symengine_variance = symengine.Matrix(sigma)
+            rv._joint_names = names
+            rvs.append(rv)
+        return rvs
+
+    @property
+    def sympy_rv(self):
+        """Get the corresponding sympy random variable
+        """
+        if self._sympy_rv is None:
+            # Normal distribution that might have 0 variance
+            if self._variance.is_zero:
+                return sympy.Integer(0)
+            elif self._mean.rows > 1:
+                return sympy.stats.Normal('X', self._mean, self._variance)
             else:
-                res.append(name_line + '     ' + lpar + mu_line + '  ' + sigma_line + rpar)
-
-        return res
-
-    def __getitem__(self, index):
-        if isinstance(index, int):
-            for i, e in enumerate(self):
-                if i == index:
-                    return e
+                return sympy.stats.Normal(self.name, self._mean[0], sympy.sqrt(self._variance[0]))
         else:
-            for e in self:
-                if (
-                    isinstance(index, str)
-                    and e.name == index
-                    or not isinstance(index, str)
-                    and e.name == index.name
-                ):
-                    return e
-        raise KeyError(f'Random variable "{index}" does not exist')
+            return self._sympy_rv
+
+    @property
+    def free_symbols(self):
+        if self._mean is not None:
+            return {self.symbol} | self._mean.free_symbols | self._variance.free_symbols
+        else:
+            free = {s for s in rv.pspace.free_symbols if s.name != rv.name}
+            return free | {self.symbol}
+
+    def copy(self):
+        return copy.deepcopy(self)
+
+    def __deepcopy__(self, memo):
+        self._symengine_variance = None
+        method = self.__deepcopy__
+        # Trick to use default deepcopy
+        self.__deepcopy__ = None
+        new = copy.deepcopy(self)
+        self.__deepcopy__ = method
+        new._symengine_variance = symengine.sympify(self._variance)
+        return new
 
     def __repr__(self):
-        """Give a nicely formatted view of the definitions of all
-        random variables.
+        if self._mean is not None:    # Normal distribution
+            if self._mean.rows > 1:
+                name_vector = sympy.Matrix(self._joint_names)
+                name_strings = sympy.pretty(name_vector, wrap_line=False).split('\n')
+                mu_strings = sympy.pretty(self._mean, wrap_line=False).split('\n')
+                sigma_strings = sympy.pretty(self._variance, wrap_line=False).split('\n')
+                mu_height = len(mu_strings)
+                sigma_height = len(sigma_strings)
+                max_height = max(mu_height, sigma_height)
+
+                left_parens = unicode.left_parens(len(name_strings))
+                right_parens = unicode.right_parens(len(name_strings))
+
+                # Pad the smaller of the matrices
+                if mu_height != sigma_height:
+                    to_pad = mu_strings if mu_strings < sigma_strings else sigma_strings
+                    num_lines = abs(mu_height - sigma_height)
+                    padding = ' ' * len(to_pad[0])
+                    for i in range(0, num_lines):
+                        if i // 2 == 0:
+                            to_pad.append(padding)
+                        else:
+                            to_pad.insert(0, padding)
+
+                central_index = max_height // 2
+                res = []
+                enumerator = enumerate(
+                    zip(name_strings, left_parens, mu_strings, sigma_strings, right_parens)
+                )
+                for i, (name_line, lpar, mu_line, sigma_line, rpar) in enumerator:
+                    if i == central_index:
+                        res.append(
+                            name_line
+                            + f' ~ {unicode.mathematical_script_capital_n}'
+                            + lpar
+                            + mu_line
+                            + ', '
+                            + sigma_line
+                            + rpar
+                        )
+                    else:
+                        res.append(name_line + '     ' + lpar + mu_line + '  ' + sigma_line + rpar)
+                return '\n'.join(res) + '\n'
+            else:
+                return f'{sympy.pretty(self.symbol, wrap_line=False)}' \
+                f' ~ {unicode.mathematical_script_capital_n}({sympy.pretty(self._mean[0], wrap_line=False)}, ' \
+                f'{sympy.pretty(self._variance[0], wrap_line=False)})\n'
+
+
+
+class RandomVariables(MutableSequence):
+    """A collection of random variables
+    """
+
+    def __init__(self, rvs=None):
+        if isinstance(rvs, RandomVariables):
+            self._rvs = copy.deepcopy(rvs._rvs)
+        elif rvs is None:
+            self._rvs = []
+        else:
+            self._rvs = list(rvs)
+
+    def __len__(self):
+        return len(self._rvs)
+
+    def __eq__(self, other):
+        if len(self) == len(other):
+            for s, o in zip(self, other):
+                if s != o:
+                    return False
+            return True
+        return False
+
+    def _lookup_rv(self, ind, insert=False):
+        if isinstance(ind, sympy.Symbol):
+            ind = ind.name
+        if isinstance(ind, str):
+            for i, rv in enumerate(self._rvs):
+                if ind == rv.name:
+                    return i, rv
+            raise KeyError(f'Could not find {ind} in RandomVariables')
+        elif isinstance(ind, RandomVariable):
+            i = self._rvs.index(ind)
+            return i, ind
+        if insert:
+            # Must allow for inserting after last element.
+            return ind, None
+        else:
+            return ind, self._rvs[ind]
+
+    def __getitem__(self, ind):
+        _, rv = self._lookup_rv(ind)
+        return rv
+
+    def _remove_joint_normal(self, rv):
+        joint_names = rv._joint_names
+        if joint_names is not None:
+            joint_index = joint_names.index(rv.name)
+            for name in joint_names:
+                if name == rv.name:
+                    continue
+                other = self[name]
+                del other._joint_names[joint_index]
+                other._mean.row_del(joint_index)
+                other._variance.row_del(joint_index)
+                other._variance.col_del(joint_index)
+                other._symengine_variance = symengine.sympify(other._variance)
+
+    def __setitem__(self, ind, value):
+        if not isinstance(value, RandomVariable):
+            raise ValueError(f'Trying to set {type(value)} to RandomVariables. Must be of type RandomVariable.')
+        i, rv = self._lookup_rv(ind)
+        if rv._joint_names is not None:
+            self._remove_joint_normal(rv)
+        self._rvs[i] = rv
+
+    def __delitem__(self, ind):
+        i, rv = self._lookup_rv(ind)
+        joint_names = rv._joint_names
+        if joint_names is not None:
+            joint_index = joint_names.index(rv.name)
+            for name in joint_names:
+                other = self[name]
+                del other._joint_names[joint_index]
+                other._mean.row_del(joint_index)
+                other._variance.row_del(joint_index)
+                other._variance.col_del(joint_index)
+                other._symengine_variance = symengine.sympify(other._variance)
+        del self._rvs[i]
+
+    def insert(self, ind, value):
+        if not isinstance(value, RandomVariable):
+            raise ValueError(f'Trying to insert {type(value)} into RandomVariables. Must be of type RandomVariable.')
+        i, _ = self._lookup_rv(ind, insert=True)
+        self._rvs.insert(i, value)
+
+    @property
+    def names(self):
+        """List of the names of all random variables"""
+        return [rv.name for rv in self._rvs]
+
+    @property
+    def epsilons(self):
+        """Get only the epsilons"""
+        return RandomVariables([rv for rv in self._rvs if rv.level == 'RUV'])
+
+    @property
+    def etas(self):
+        """Get only the etas"""
+        return RandomVariables([rv for rv in self._rvs if rv.level in ('IIV', 'IOV')])
+
+    @property
+    def free_symbols(self):
+        """Set of free symbols for all random variables"""
+        symbs = set()
+        for rv in self._rvs:
+            symbs |= rv.free_symbols
+        return symbs
+
+    def copy(self):
+        new = RandomVariables()
+        for rv in self._rvs:
+            new._rvs.append(rv.copy())
+        return new
+
+    def remove_covariance(self, ind):
+        """Remove all covariances the random variable has with other random variables
+
         """
+        i, rv = self._lookup_rv(ind)
+        index = rv._joint_names.index(rv.name)
+        del self[i]
+        rv._mean = sympy.Matrix([rv._mean[index, index]])
+        rv._variance = sympy.Matrix([rv._variance[index, index]])
+        rv._symengine_variance = symengine.sympify(rv._variance)
+        rv._joint_names = None
+        rv.insert(i - index, rv)
+
+    def distributions(self):
+        """List with one entry per distribution instead of per random variable.
+        """
+        distributions = []
+        i = 0
+        while i < len(self):
+            rv = self[i]
+            symrv = rv.sympy_rv
+            n = 0 if rv._joint_names is None else len(rv._joint_names)
+            if symrv == 0:
+                if n == 1:
+                    # Workaround beause sympy disallows 0 std and sigma
+                    symrv = sympy.stats.Normal(rv.name, rv._mean, 9999)
+                    symrv.pspace.distribution.std = 0
+                    symrv.pspace.distribution.args = (rv._mean, 0)
+                else:
+                    symrv = sympy.stats.Normal('X', rv._mean, sympy.eyes(n))
+                    symrv.pspace.distribution.sigma = sympy.zeroes(n)
+                    symrv.pspace.distribution.args = (rv._mean, sympy.zeroes(n))
+
+            dist = symrv.pspace.distribution
+            if isinstance(dist, stats.crv_types.NormalDistribution):
+                i += 1
+                distributions.append(([rv], dist))
+            else:  # Joint Normal
+                rvs = [self[k] for k in range(i, i + n)]
+                i += n
+                distributions.append((rvs, dist))
+        return distributions
+
+    def nearest_valid_parameters(self, parameter_values):
+        """Force parameter values into being valid
+
+        As small changes as possible
+
+        returns an updated parameter_values
+        """
+        nearest = parameter_values.copy()
+        for rvs, dist in self.distributions():
+            if len(rvs) > 1:
+                symb_sigma = rvs[0]._variance
+                sigma = symb_sigma.subs(dict(parameter_values))
+                A = np.array(sigma).astype(np.float64)
+                B = pharmpy.math.nearest_posdef(A)
+                if B is not A:
+                    for row in range(len(A)):
+                        for col in range(row + 1):
+                            nearest[symb_sigma[row, col].name] = B[row, col]
+        return nearest
+
+    def __repr__(self):
         res = ''
         for rvs, dist in self.distributions():
-            if isinstance(dist, stats.crv_types.NormalDistribution):
-                lines = RandomVariables._normal_definition_string(rvs[0])
-            elif isinstance(dist, stats.joint_rv_types.MultivariateNormalDistribution):
-                lines = RandomVariables._joint_normal_definition_string(rvs)
-            res += '\n'.join(lines) + '\n'
+            res += repr(rvs[0])
         return res
+
+
+
+
+    @property
+    def all_parameters(self):
+        # FIXME: Shaky to rely on sorting. I guess this is to get results in correct order
+        params = set()
+        dists = self.distributions()
+        for _, dist in dists:
+            params |= dist.free_symbols
+        return sorted([str(p) for p in params])
 
     def _repr_latex_(self):
         lines = []
@@ -169,22 +403,6 @@ class RandomVariables(OrderedSet):
             lines.append(latex)
         return '\\begin{align*}\n' + r' \\ '.join(lines) + '\\end{align*}'
 
-    @property
-    def free_symbols(self):
-        symbs = set()
-        for rv in self:
-            free = {s for s in rv.pspace.free_symbols if s.name != rv.name}
-            symbs |= free
-            symbs.add(symbol(rv.name))
-        return symbs
-
-    def all_parameters(self):
-        params = set()
-        dists = self.distributions()
-        for _, dist in dists:
-            params |= dist.free_symbols
-        return sorted([str(p) for p in params])
-
     def get_eta_params(self, eta_name):
         params = set()
         for rvs, dist in self.distributions():
@@ -192,36 +410,6 @@ class RandomVariables(OrderedSet):
                 params |= dist.free_symbols
         return sorted([str(p) for p in params])
 
-    def distributions(self, level=None, exclude_level=None):
-        """List with one entry per distribution instead of per random variable.
-
-        Parameters
-        ----------
-        level
-            Only iterate over random variables of this variability level
-        exclude_level
-            Iterate over random variables of all other variability levels
-        """
-        distributions = []
-        i = 0
-        while i < len(self):
-            rv = self[i]
-            dist = rv.pspace.distribution
-            if isinstance(dist, stats.crv_types.NormalDistribution):
-                i += 1
-                if (level is None or level == rv.variability_level) and (
-                    exclude_level is None or exclude_level != rv.variability_level
-                ):
-                    distributions.append(([rv], dist))
-            else:  # Joint Normal
-                n = self[i].pspace.distribution.sigma.rows
-                rvs = [self[k] for k in range(i, i + n)]
-                i += n
-                if (level is None or level == rv.variability_level) and (
-                    exclude_level is None or exclude_level != rv.variability_level
-                ):
-                    distributions.append((rvs, dist))
-        return distributions
 
     def get_rvs_from_same_dist(self, rv):
         """Get all RVs from same distribution as input rv.
@@ -238,66 +426,6 @@ class RandomVariables(OrderedSet):
 
         return RandomVariables(joined_rvs)
 
-    def extract_from_block(self, rv_name):
-        """
-        Extracts single random variable from joint distribution and creates new distribution.
-        A new distribution will be created for remaining RVs, single normal distribution if one
-        remains, joint normal otherwise.
-
-        Parameters
-        ----------
-        rv_name : str
-            Name of random variable to create new single distribution for."""
-        rv_to_extract = self[rv_name]
-        associated_rvs = self.get_rvs_from_same_dist(rv_to_extract)
-
-        cov = associated_rvs.covariance_matrix()
-        rv_extracted = None
-        index_to_remove = None
-        names = []
-
-        for i, rv in enumerate(associated_rvs):
-            if rv.name == rv_to_extract.name:
-                rv_extracted = stats.Normal(rv.name, 0, sympy.sqrt(cov[i, i]))
-                rv_extracted.variability_level = VariabilityLevel.IIV
-                index_to_remove = i
-            else:
-                names.append(rv.name)
-
-        cov.row_del(index_to_remove)
-        cov.col_del(index_to_remove)
-
-        if len(cov) == 1:
-            rv_remaining = stats.Normal(names[0], 0, sympy.sqrt(cov[0]))
-            rv_remaining.variability_level = VariabilityLevel.IIV
-        else:
-            means = sympy.zeros(cov.shape[0], 1)
-            rv_remaining = JointNormalSeparate(names, means, cov)
-
-            for rv in rv_remaining:
-                rv.variability_level = VariabilityLevel.IIV
-
-        if not isinstance(rv_remaining, list):
-            rv_remaining = [rv_remaining]
-
-        split_block = [rv_extracted] + rv_remaining
-
-        rvs_new = RandomVariables()
-        has_added_changed_block = False
-
-        for rv in self:
-            if rv in associated_rvs:
-                if not has_added_changed_block:
-                    {rvs_new.add(rv_block) for rv_block in split_block}
-                    has_added_changed_block = True
-            else:
-                rvs_new.add(rv)
-            self.discard(rv)
-
-        self.update(rvs_new)
-
-        return rv_extracted
-
     def are_consecutive(self, subset):
         """Determines if subset has same order as full set (self)."""
         rvs_self = sum([rvs[0] for rvs in self.distributions()], [])
@@ -312,24 +440,6 @@ class RandomVariables(OrderedSet):
             elif i > 0:
                 return False
         return False
-
-    @property
-    def ruv_rvs(self):
-        """Get list of all ruv random variables (epsilons)"""
-        ruv = []
-        for rv in self:
-            if rv.variability_level == VariabilityLevel.RUV:
-                ruv.append(rv)
-        return ruv
-
-    @property
-    def etas(self):
-        """Get list of all eta random variables"""
-        etas = []
-        for rv in self:
-            if rv.variability_level != VariabilityLevel.RUV:
-                etas.append(rv)
-        return etas
 
     def variance_parameters(self, unique=True, level=None, exclude_level=None):
         parameters = []
@@ -402,35 +512,6 @@ class RandomVariables(OrderedSet):
         self.__init__(new_rvs + others)
         return cov_to_params
 
-    def __getstate__(self):
-        """Serialization methods needed to handle variability_level on random variables"""
-        var_levels = [rv.variability_level for rv in self]
-        return {'self': list(self), 'var_levels': var_levels}
-
-    def __setstate__(self, d):
-        OrderedSet.__init__(self)
-        for rv, var_level in zip(d['self'], d['var_levels']):
-            rv.variability_level = var_level
-            self.add(rv)
-
-    def __deepcopy__(self, memo):
-        return self.copy()
-
-    def copy(self):
-        # Special copy because separated joints need special treatment
-        new_rvs = RandomVariables()
-        for rvs, dist in self.distributions():
-            if len(rvs) == 1:
-                rv = rvs[0].copy()
-                rv.variability_level = rvs[0].variability_level
-                new_rvs.add(rv)
-            else:
-                cp = JointNormalSeparate([rv.name for rv in rvs], dist.mu, dist.sigma)
-                for new, old in zip(cp, rvs):
-                    new.variability_level = old.variability_level
-                new_rvs.update(cp)
-        return new_rvs
-
     def validate_parameters(self, parameter_values, use_cache=False):
         """Validate a dict or Series of parameter values
 
@@ -470,25 +551,6 @@ class RandomVariables(OrderedSet):
                         if not pharmpy.math.is_posdef(a):
                             return False
         return True
-
-    def nearest_valid_parameters(self, parameter_values):
-        """Force parameter values into being valid
-
-        As small changes as possible
-
-        returns an updated parameter_values
-        """
-        nearest = parameter_values.copy()
-        for rvs, dist in self.distributions():
-            if len(rvs) > 1:
-                sigma = dist.sigma.subs(dict(parameter_values))
-                A = np.array(sigma).astype(np.float64)
-                B = pharmpy.math.nearest_posdef(A)
-                if B is not A:
-                    for row in range(len(A)):
-                        for col in range(row + 1):
-                            nearest[dist.sigma[row, col].name] = B[row, col]
-        return nearest
 
     def expression(
         self, expr, parameters
