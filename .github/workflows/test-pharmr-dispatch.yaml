@@ -12,6 +12,5 @@ jobs:
           curl \
           -X POST \
           -H "Accept: application/vnd.github.v3+json" \
-          -u "$github-actions[bot]:${{secrets.DOC_TOKEN}}" \
           https://api.github.com/repos/pharmpy/pharmr/actions/workflows/build_docs.yaml/dispatches \
-          -d '{"ref":"main", "event_type": "ping"}'
+          -d '{"ref":"main"}'
