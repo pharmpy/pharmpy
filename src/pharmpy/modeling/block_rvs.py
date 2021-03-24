@@ -8,7 +8,7 @@ from sympy.stats.joint_rv_types import MultivariateNormalDistribution
 from pharmpy import math
 from pharmpy.modeling.help_functions import _format_input_list, _get_etas
 from pharmpy.parameter import Parameter
-from pharmpy.random_variables import RandomVariables, VariabilityLevel
+from pharmpy.random_variables import RandomVariables
 
 
 def create_rv_block(model, list_of_rvs=None):
@@ -34,7 +34,7 @@ def create_rv_block(model, list_of_rvs=None):
 
     if list_of_rvs is not None:
         for rv in rvs:
-            if isinstance(rv.pspace.distribution, MultivariateNormalDistribution):
+            if isinstance(rv.sympy_rv.pspace.distribution, MultivariateNormalDistribution):
                 rvs_same_dist = rvs_full.get_rvs_from_same_dist(rv)
                 if not all(rv in rvs for rv in rvs_same_dist):
                     rvs_full.extract_from_block(rv)
@@ -42,7 +42,7 @@ def create_rv_block(model, list_of_rvs=None):
     rvs_block = RandomVariables()
     for rv in rvs_full:
         if rv.name in [rv.name for rv in rvs]:
-            rvs_block.add(rv)
+            rvs_block.append(rv)
 
     pset = _merge_rvs(model, rvs_block)
 
@@ -51,12 +51,12 @@ def create_rv_block(model, list_of_rvs=None):
 
     for rv in rvs_full:
         if rv.name not in [rv.name for rv in rvs_block.etas]:
-            rvs_new.add(rv)
+            rvs_new.append(rv)
         elif are_consecutive:
-            rvs_new.add(rvs_block[rv.name])
+            rvs_new.append(rvs_block[rv.name])
 
     if not are_consecutive:
-        {rvs_new.add(rv) for rv in rvs_block}  # Add new block last
+        {rvs_new.append(rv) for rv in rvs_block}  # Add new block last
 
     model.random_variables = rvs_new
     model.parameters = pset
@@ -110,7 +110,7 @@ def _merge_rvs(model, rvs):
     cov_to_params = rvs.merge_normal_distributions(create_cov_params=True, rv_to_param=rv_to_param)
 
     for rv in rvs:
-        rv.variability_level = VariabilityLevel.IIV
+        rv.level = 'IIV'
 
     for cov_name, param_names in cov_to_params.items():
         parent_params = (pset[param_names[0]], pset[param_names[1]])
@@ -127,7 +127,7 @@ def _choose_param_init(model, rvs, params):
 
     etas = []
     for i in range(len(rvs)):
-        elem = rvs.covariance_matrix().row(i).col(i)[0]
+        elem = rvs.covariance_matrix.row(i).col(i)[0]
         if str(elem) in [p.name for p in params]:
             etas.append(rvs_names[i])
 

@@ -39,7 +39,7 @@ def sample_from_function(model, samplingfn, parameters=None, force_posdef_sample
         df = pd.DataFrame(samples, columns=parameters)
         if not force_posdef:
             selected = df[
-                df.apply(model.random_variables.validate_parameters, axis=1, use_cache=True)
+                df.apply(model.random_variables.validate_parameters, axis=1)
             ]
         else:
             rvs = model.random_variables

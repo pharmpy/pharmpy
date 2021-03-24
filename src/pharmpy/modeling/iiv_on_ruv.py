@@ -7,7 +7,7 @@ import sympy.stats as stats
 
 from pharmpy.modeling.help_functions import _format_input_list, _get_epsilons
 from pharmpy.parameter import Parameter
-from pharmpy.random_variables import VariabilityLevel
+from pharmpy.random_variables import RandomVariable
 from pharmpy.symbols import symbol as S
 
 
@@ -40,12 +40,12 @@ def iiv_on_ruv(model, list_of_eps=None, same_eta=True, eta_names=None):
 
     if same_eta:
         eta = _create_eta(pset, 1, eta_names)
-        rvs.add(eta)
+        rvs.append(eta)
         eta_dict = {e: eta for e in eps}
     else:
         etas = [_create_eta(pset, i + 1, eta_names) for i in range(len(eps))]
         for eta in etas:
-            rvs.add(eta)
+            rvs.append(eta)
         eta_dict = {e: eta for e, eta in zip(eps, etas)}
 
     for e in eps:
@@ -72,7 +72,5 @@ def _create_eta(pset, number, eta_names):
     else:
         eta_name = f'ETA_RV{number}'
 
-    eta = stats.Normal(eta_name, 0, sympy.sqrt(omega))
-    eta.variability_level = VariabilityLevel.IIV
-
+    eta = RandomVariable.normal(eta_name, 'iiv', 0, omega)
     return eta

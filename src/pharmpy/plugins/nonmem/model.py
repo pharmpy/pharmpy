@@ -15,7 +15,7 @@ from pharmpy.model import ModelSyntaxError
 from pharmpy.parameter import ParameterSet
 from pharmpy.plugins.nonmem.results import NONMEMChainedModelfitResults
 from pharmpy.plugins.nonmem.table import NONMEMTableFile, PhiTable
-from pharmpy.random_variables import JointDistributionSeparate, RandomVariables, VariabilityLevel
+from pharmpy.random_variables import RandomVariables
 from pharmpy.statements import Assignment, CompartmentalSystem, ODESystem
 from pharmpy.symbols import symbol as S
 
@@ -440,7 +440,7 @@ class Model(pharmpy.model.Model):
             **{
                 rv.name: rv.name
                 for rv in rvs
-                if rv.name not in abbr.keys() and rv in statements.free_symbols
+                if rv.name not in abbr.keys() and rv.symbol in statements.free_symbols
             },
             **{
                 p: p
@@ -596,13 +596,13 @@ class Model(pharmpy.model.Model):
 
         for omega_record in self.control_stream.get_records('OMEGA'):
             etas, next_omega, prev_cov, _ = omega_record.random_variables(next_omega, prev_cov)
-            rvs.update(etas)
+            rvs.extend(etas)
         self.adjust_iovs(rvs)
         next_sigma = 1
         prev_cov = None
         for sigma_record in self.control_stream.get_records('SIGMA'):
             epsilons, next_sigma, prev_cov, _ = sigma_record.random_variables(next_sigma, prev_cov)
-            rvs.update(epsilons)
+            rvs.extend(epsilons)
         self._random_variables = rvs
         self._old_random_variables = rvs.copy()
 
@@ -619,19 +619,16 @@ class Model(pharmpy.model.Model):
         for i, rv in enumerate(rvs):
             try:
                 next_rv = rvs[i + 1]
-            except KeyError:
+            except IndexError:
                 break
 
-            if (
-                rv.variability_level != VariabilityLevel.IOV
-                and next_rv.variability_level == VariabilityLevel.IOV
-            ):
-                if isinstance(rv, JointDistributionSeparate):
-                    associated_rvs = rvs.get_rvs_from_same_dist(rv)
+            if rv.level != 'IOV' and next_rv.level == 'IOV':
+                associated_rvs = rv.joint_names
+                if len(associated_rvs) > 1:
                     for rv_con in associated_rvs:
-                        rv_con.variability_level = VariabilityLevel.IOV
+                        rvs[rv_con].level = 'IOV'
                 else:
-                    rv.variability_level = VariabilityLevel.IOV
+                    rv.level = 'IOV'
 
     @random_variables.setter
     def random_variables(self, new):

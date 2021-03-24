@@ -7,7 +7,7 @@ import sympy.stats as stats
 from pharmpy import Model
 from pharmpy.modeling import add_iiv, create_rv_block
 from pharmpy.modeling.block_rvs import _choose_param_init, _merge_rvs
-from pharmpy.random_variables import RandomVariables, VariabilityLevel
+from pharmpy.random_variables import RandomVariable, RandomVariables
 from pharmpy.results import ModelfitResults
 from pharmpy.symbols import symbol as S
 
@@ -49,9 +49,8 @@ def test_choose_param_init(pheno_path, testdata):
     model = Model(pheno_path)
 
     omega1 = S('OMEGA(3,3)')
-    x = stats.Normal('ETA(3)', 0, sympy.sqrt(omega1))
-    x.variability_level = VariabilityLevel.IIV
-    rvs.add(x)
+    x = RandomVariable.normal('ETA(3)', 'IIV', 0, omega1)
+    rvs.append(x)
 
     ie = model.modelfit_results.individual_estimates
     ie['ETA(3)'] = ie['ETA(1)']

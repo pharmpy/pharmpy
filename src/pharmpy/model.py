@@ -170,10 +170,10 @@ class Model:
         new_rvs = RandomVariables()
         for rv in self.random_variables:
             # FIXME: change if rvs are random symbols in expressions
-            if pharmpy.symbols.symbol(rv.name) in symbols or not symbols.isdisjoint(
-                rv.pspace.free_symbols
+            if rv.symbol in symbols or not symbols.isdisjoint(
+                rv.sympy_rv.pspace.free_symbols
             ):
-                new_rvs.add(rv)
+                new_rvs.append(rv)
         self.random_variables = new_rvs
 
         new_params = ParameterSet()
@@ -206,7 +206,7 @@ class Model:
         """Symbolic model individual prediction"""
         y = self._observation()
 
-        for eps in self.random_variables.ruv_rvs:
+        for eps in self.random_variables.epsilons:
             # FIXME: The rv symbol and the code symbol are different.
             y = y.subs({eps.name: 0})
 
@@ -276,14 +276,14 @@ class Model:
 
     def symbolic_eta_gradient(self):
         y = self._observation()
-        for eps in self.random_variables.ruv_rvs:
+        for eps in self.random_variables.epsilons:
             y = y.subs({eps.name: 0})
         d = [y.diff(pharmpy.symbols.symbol(x.name)) for x in self.random_variables.etas]
         return d
 
     def symbolic_eps_gradient(self):
         y = self._observation()
-        d = [y.diff(pharmpy.symbols.symbol(x.name)) for x in self.random_variables.ruv_rvs]
+        d = [y.diff(pharmpy.symbols.symbol(x.name)) for x in self.random_variables.epsilons]
         return d
 
     def _replace_parameters(self, y, parameters):
@@ -335,7 +335,7 @@ class Model:
         """Numeric epsilon gradient"""
         y = self.symbolic_eps_gradient()
         y = self._replace_parameters(y, parameters)
-        eps_names = [eps.name for eps in self.random_variables.ruv_rvs]
+        eps_names = [eps.name for eps in self.random_variables.epsilons]
         repl = {pharmpy.symbols.symbol(eps): 0 for eps in eps_names}
         y = [x.subs(repl) for x in y]
 
@@ -369,8 +369,8 @@ class Model:
         return grad
 
     def weighted_residuals(self, parameters=None, dataset=None):
-        omega = self.random_variables.covariance_matrix()
-        sigma = self.random_variables.covariance_matrix(ruv=True)
+        omega = self.random_variables.etas.covariance_matrix
+        sigma = self.random_variables.epsilons.covariance_matrix
         if parameters is None:
             if self.modelfit_results is not None:
                 parameters = self.modelfit_results.parameter_estimates.to_dict()

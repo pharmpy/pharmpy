@@ -11,7 +11,6 @@ from pharmpy import Model
 from pharmpy.data import ColumnType
 from pharmpy.math import conditional_joint_normal, is_posdef
 from pharmpy.parameter_sampling import sample_from_covariance_matrix, sample_individual_estimates
-from pharmpy.random_variables import VariabilityLevel
 from pharmpy.results import Results
 
 
@@ -514,7 +513,7 @@ def calculate_results_using_cov_sampling(
     else:
         uncertainty_results = frem_model.modelfit_results
 
-    _, dist = frem_model.random_variables.distributions(level=VariabilityLevel.IIV)[-1]
+    _, dist = frem_model.random_variables.iiv.distributions()[-1]
     sigma_symb = dist.sigma
 
     parameters = [
@@ -539,7 +538,7 @@ def calculate_results_using_cov_sampling(
 def calculate_results_from_samples(frem_model, continuous, categorical, parvecs, rescale=True):
     """Calculate the FREM results given samples of parameter estimates"""
     n = len(parvecs)
-    rvs, dist = frem_model.random_variables.distributions(level=VariabilityLevel.IIV)[-1]
+    rvs, dist = frem_model.random_variables.iiv.distributions()[-1]
     sigma_symb = dist.sigma
     parameters = [
         s
@@ -852,7 +851,7 @@ def calculate_results_using_bipp(frem_model, continuous, categorical, rescale=Tr
     are needed.
 
     """
-    rvs, dist = frem_model.random_variables.distributions(level=VariabilityLevel.IIV)[-1]
+    rvs, dist = frem_model.random_variables.iiv.distributions()[-1]
     etas = [rv.name for rv in rvs]
     pool = sample_individual_estimates(frem_model, parameters=etas)
     ninds = len(pool.index.unique())

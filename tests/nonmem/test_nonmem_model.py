@@ -12,7 +12,6 @@ from pharmpy.modeling import add_iiv, explicit_odes, zero_order_elimination
 from pharmpy.parameter import Parameter
 from pharmpy.plugins.nonmem import conf
 from pharmpy.plugins.nonmem.nmtran_parser import NMTranParser
-from pharmpy.random_variables import VariabilityLevel
 from pharmpy.statements import Assignment, ModelStatements, ODESystem
 from pharmpy.symbols import symbol
 
@@ -120,19 +119,19 @@ def test_adjust_iovs(testdata):
     model.parameters
     rvs = model.random_variables
 
-    assert rvs[0].variability_level == VariabilityLevel.IIV
-    assert rvs[3].variability_level == VariabilityLevel.IOV
-    assert rvs[4].variability_level == VariabilityLevel.IOV
-    assert rvs[6].variability_level == VariabilityLevel.IOV
+    assert rvs[0].level == 'IIV'
+    assert rvs[3].level == 'IOV'
+    assert rvs[4].level == 'IOV'
+    assert rvs[6].level == 'IOV'
 
     model = Model(testdata / 'nonmem' / 'qa' / 'iov.mod')
     rvs = model.random_variables
-    assert rvs[0].variability_level == VariabilityLevel.IIV
-    assert rvs[1].variability_level == VariabilityLevel.IIV
-    assert rvs[2].variability_level == VariabilityLevel.IOV
-    assert rvs[3].variability_level == VariabilityLevel.IOV
-    assert rvs[4].variability_level == VariabilityLevel.IOV
-    assert rvs[5].variability_level == VariabilityLevel.IOV
+    assert rvs[0].level == 'IIV'
+    assert rvs[1].level == 'IIV'
+    assert rvs[2].level == 'IOV'
+    assert rvs[3].level == 'IOV'
+    assert rvs[4].level == 'IOV'
+    assert rvs[5].level == 'IOV'
 
 
 @pytest.mark.parametrize(
@@ -289,7 +288,7 @@ def test_add_random_variables(pheno_path, rv_new, buf_new):
     pset = model.parameters
 
     eta = sympy.stats.Normal('eta_new', 0, sympy.sqrt(S(rv_new.name)))
-    eta.variability_level = VariabilityLevel.IIV
+    eta.level = 'IIV'
 
     rvs.add(eta)
     pset.add(rv_new)
@@ -325,12 +324,12 @@ def test_add_random_variables_and_statements(pheno_path):
     pset = model.parameters
 
     eta = sympy.stats.Normal('ETA_NEW', 0, sympy.sqrt(S('omega')))
-    eta.variability_level = VariabilityLevel.IIV
+    eta.level = 'IIV'
     rvs.add(eta)
     pset.add(Parameter('omega', 0.1))
 
     eps = sympy.stats.Normal('EPS_NEW', 0, sympy.sqrt(S('sigma')))
-    eps.variability_level = VariabilityLevel.RUV
+    eps.level = 'RUV'
     rvs.add(eps)
     pset.add(Parameter('sigma', 0.1))
 

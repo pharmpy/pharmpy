@@ -35,7 +35,7 @@ def power_on_ruv(model, list_of_eps=None):
         theta = Parameter(theta_name, theta_init)
         pset.add(theta)
 
-        sset.subs({e.name: model.individual_prediction_symbol ** S(theta.name) * e})
+        sset.subs({e.name: model.individual_prediction_symbol ** S(theta.name) * e.symbol})
 
     model.parameters = pset
     model.statements = sset

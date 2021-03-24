@@ -3,9 +3,9 @@ import pickle
 
 import pytest
 import sympy
+import numpy as np
 import sympy.stats as stats
 
-#from pharmpy.model_factory import Model
 from pharmpy.random_variables import RandomVariable, RandomVariables
 from pharmpy.symbols import symbol
 
@@ -51,11 +51,24 @@ def test_repr_rv():
 ⎣ETA(2)⎦     ⎩⎣0⎦  ⎣0.1   2 ⎦⎭
 """
 
+def test_repr_latex_rv():
+    rv1, rv2 = RandomVariable.joint_normal(['x', 'y'], 'iiv', [0, 0], [[1, 0.1], [0.1, 2]])
+    assert rv1._repr_latex_() == '$\\displaystyle \\left[\\begin{matrix}x\\\\y\\end{matrix}\\right]\\sim \\mathcal{N} \\left(\\displaystyle \\left[\\begin{matrix}0\\\\0\\end{matrix}\\right],\\displaystyle \\left[\\begin{matrix}1 & 0.1\\\\0.1 & 2\\end{matrix}\\right]\\right)$'
+
+    rv = RandomVariable.normal('x', 'iiv', 0, 1)
+    assert rv._repr_latex_() == '$\\displaystyle x\\sim  \\mathcal{N} \\left(\\displaystyle 0,\\displaystyle 1\\right)$'
+
+
 def test_copy_rv():
     rv1 = RandomVariable.normal('ETA(1)', 'iiv', 0, 1)
     rv2 = rv1.copy()
     assert rv1 is not rv2
     assert rv1 == rv2
+
+
+def test_parameters_rv():
+    rv1 = RandomVariable.normal('ETA(2)', 'iiv', 0, symbol('OMEGA(2,2)'))
+    assert rv1.parameter_names == ['OMEGA(2,2)']
 
 
 def test_len():
@@ -124,6 +137,13 @@ def test_free_symbols():
     assert rvs.free_symbols == {symbol('ETA(1)'), symbol('ETA(2)'), symbol('OMEGA(2,2)')}
 
 
+def test_parameter_names():
+    rv1, rv2 = RandomVariable.joint_normal(['ETA(1)', 'ETA(2)'], 'iiv', [0, 0], [[symbol('OMEGA(1,1)'), symbol('OMEGA(2,1)')], [symbol('OMEGA(2,1)'), symbol('OMEGA(2,2)')]])
+    rv3 = RandomVariable.normal('ETA(1)', 'iiv', 0, symbol('OMEGA(3,3)'))
+    rvs = RandomVariables([rv1, rv2, rv3])
+    assert rvs.parameter_names == ['OMEGA(1,1)', 'OMEGA(2,1)', 'OMEGA(2,2)', 'OMEGA(3,3)']
+
+
 def test_distributions():
     rv1, rv2 = RandomVariable.joint_normal(['ETA(1)', 'ETA(2)'], 'iiv', [0, 0], [[1, 0.1], [0.1, 2]])
     rvs = RandomVariables([rv1, rv2])
@@ -153,6 +173,13 @@ ETA(3) ~ 𝒩 (2, 1)
     assert str(rvs) == res
 
 
+def test_repr_latex():
+    rv1 = RandomVariable.normal('x', 'iiv', 0, 1)
+    rv2, rv3 = RandomVariable.joint_normal(['x', 'y'], 'iiv', [0, 0], [[1, 0.1], [0.1, 2]])
+    rvs = RandomVariables([rv1, rv2, rv3])
+    assert rvs._repr_latex_() == '\\begin{align*}\n\\displaystyle x & \\sim  \\mathcal{N} \\left(\\displaystyle 0,\\displaystyle 1\\right) \\\\ \\displaystyle \\left[\\begin{matrix}x\\\\y\\end{matrix}\\right] & \\sim \\mathcal{N} \\left(\\displaystyle \\left[\\begin{matrix}0\\\\0\\end{matrix}\\right],\\displaystyle \\left[\\begin{matrix}1 & 0.1\\\\0.1 & 2\\end{matrix}\\right]\\right)\\end{align*}'
+
+
 def test_copy():
     rv1, rv2 = RandomVariable.joint_normal(['ETA(1)', 'ETA(2)'], 'iiv', [0, 0], [[1, 0.1], [0.1, 2]])
     rv3 = RandomVariable.normal('ETA(3)', 'iiv', 2, 1)
@@ -171,6 +198,35 @@ def test_nearest_valid_parameters():
     values = {'x': 1, 'y': 1.1, 'z': 1}
     new = rvs.nearest_valid_parameters(values)
     assert new == {'x': 1.0500000000000005, 'y': 1.0500000000000003, 'z': 1.050000000000001}
+
+
+def test_validate_parameters():
+    a, b, c, d = (symbol('a'), symbol('b'), symbol('c'), symbol('d'))
+    rv1, rv2 = RandomVariable.joint_normal(['ETA(1)', 'ETA(2)'], 'iiv', [0, 0], [[symbol('a'), symbol('b')], [symbol('c'), symbol('d')]])
+    rvs = RandomVariables([rv1, rv2])
+    rv3 = RandomVariable.normal('ETA(3)', 'iiv', 0.5, d)
+    rvs.append(rv3)
+    params = {'a': 2, 'b': 0.1, 'c': 1, 'd': 23}
+    assert rvs.validate_parameters(params)
+    params2 = {'a': 2, 'b': 2, 'c': 23, 'd': 1}
+    assert not rvs.validate_parameters(params2)
+
+
+def test_sample():
+    rv1, rv2 = RandomVariable.joint_normal(['ETA(1)', 'ETA(2)'], 'iiv', [0, 0], [[symbol('a'), symbol('b')], [symbol('b'), symbol('c')]])
+    rvs = RandomVariables([rv1, rv2])
+    params = {'a': 1, 'b': 0.1, 'c': 2}
+    np.random.seed(9532)
+    samples = rvs.sample(rv1.symbol + rv2.symbol, parameters=params, samples=2)
+    assert list(samples) == pytest.approx([-0.5628150524258084, 0.8789382930246744])
+
+
+def test_variance_parameters():
+    rv1, rv2 = RandomVariable.joint_normal(['ETA(1)', 'ETA(2)'], 'iiv', [0, 0], [[symbol('OMEGA(1,1)'), symbol('OMEGA(2,1)')], [symbol('OMEGA(2,1)'), symbol('OMEGA(2,2)')]])
+    rv3 = RandomVariable.normal('ETA(1)', 'iiv', 0, symbol('OMEGA(3,3)'))
+    rvs = RandomVariables([rv1, rv2, rv3])
+    assert rvs.variance_parameters == ['OMEGA(1,1)', 'OMEGA(2,2)', 'OMEGA(3,3)']
+
 
 """
 
@@ -223,17 +279,6 @@ def test_merge_normal_distributions():
     # assert dist.sigma == sympy.Matrix([[3, 0.25, 1], [0.25, 1, 1], [1, 1, 4]])
 
 
-def test_validate_parameters():
-    a, b, c, d = (symbol('a'), symbol('b'), symbol('c'), symbol('d'))
-    rvs = JointNormalSeparate(['ETA(1)', 'ETA(2)'], [0, 0], [[a, b], [b, c]])
-    rvs = RandomVariables(rvs)
-    rvs.add(stats.Normal('ETA(3)', 0.5, d))
-    params = {'a': 2, 'b': 0.1, 'c': 1, 'd': 23}
-    assert rvs.validate_parameters(params)
-    params2 = {'a': 2, 'b': 2, 'c': 1, 'd': 23}
-    assert not rvs.validate_parameters(params2)
-
-
 def test_all_parameters():
     omega1 = symbol('OMEGA(1,1)')
     eta1 = stats.Normal('ETA(1)', 0, sympy.sqrt(omega1))
@@ -284,25 +329,6 @@ def test_copy(testdata):
         assert bool(rv.variability_level)
 
 
-def test_extract_from_block():
-    etas = JointNormalSeparate(['ETA(1)', 'ETA(2)'], [0, 0], [[3, 0.25], [0.25, 1]])
-    for rv in etas:
-        rv.variability_level = VariabilityLevel.IIV
-    rvs = RandomVariables(etas)
-    eta3 = stats.Normal('ETA(3)', 0.5, 2)
-    eta3.variability_level = VariabilityLevel.IIV
-    rvs.add(eta3)
-
-    dists = rvs.distributions()
-    assert len(dists) == 2
-
-    rvs.extract_from_block(etas[0])
-    dists = rvs.distributions()
-    assert len(dists) == 3
-    assert rvs[0].name == 'ETA(1)'
-    assert rvs[2].name == 'ETA(3)'
-
-
 def test_has_same_order():
     omega1 = symbol('OMEGA(1,1)')
     eta1 = stats.Normal('ETA(1)', 0, sympy.sqrt(omega1))
@@ -346,22 +372,4 @@ def test_get_connected_iovs():
     assert len(rvs.get_connected_iovs(eta1)) == 3
     assert len(rvs.get_connected_iovs(eta4)) == 2
     assert len(rvs.get_connected_iovs(eta_iiv)) == 1
-
-
-def test_rename():
-    omega1 = symbol('OMEGA(1,1)')
-    eta1 = stats.Normal('ETA(1)', 0, sympy.sqrt(omega1))
-    omega2 = symbol('OMEGA(2,2)')
-    eta2 = stats.Normal('ETA(2)', 0, sympy.sqrt(omega2))
-    omega3 = symbol('OMEGA(1,1)')
-    eta3 = stats.Normal('ETA(3)', 0, sympy.sqrt(omega3))
-
-    rvs = RandomVariables([eta1, eta2, eta3])
-
-    for rv in rvs:
-        rv.variability_level = VariabilityLevel.IIV
-
-    rvs.rename({'ETA(1)': 'new_name'})
-
-    assert rvs[0].name == 'new_name'
 """

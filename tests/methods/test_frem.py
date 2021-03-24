@@ -17,7 +17,6 @@ from pharmpy.methods.frem.results import (
     get_params,
     psn_frem_results,
 )
-from pharmpy.random_variables import VariabilityLevel
 
 
 def test_check_covariates(testdata):
@@ -426,7 +425,7 @@ V,all,0.1441532460182698,0.11380319105403863,0.18470095021420732
 
 def test_get_params(testdata):
     model_frem = Model(testdata / 'nonmem' / 'frem' / 'pheno' / 'model_4.mod')
-    rvs, _ = model_frem.random_variables.distributions(level=VariabilityLevel.IIV)[-1]
+    rvs, _ = model_frem.random_variables.etas.distributions()[-1]
     npars = 2
 
     param_names = get_params(model_frem, rvs, npars)
@@ -440,7 +439,7 @@ def test_get_params(testdata):
 
     model = Model(StringIO(model_multiple_etas))
     model.dataset = model_frem.dataset
-    rvs, _ = model.random_variables.distributions(level=VariabilityLevel.IIV)[-1]
+    rvs, _ = model.random_variables.etas.distributions()[-1]
     npars = 3
 
     param_names = get_params(model, rvs, npars)
@@ -454,7 +453,7 @@ def test_get_params(testdata):
 
     model = Model(StringIO(model_separate_declare))
     model.dataset = model_frem.dataset
-    rvs, _ = model.random_variables.distributions(level=VariabilityLevel.IIV)[-1]
+    rvs, _ = model.random_variables.etas.distributions()[-1]
     npars = 2
 
     param_names = get_params(model, rvs, npars)

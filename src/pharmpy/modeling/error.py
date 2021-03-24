@@ -6,14 +6,14 @@ import sympy
 
 import pharmpy.symbols as symbols
 from pharmpy.parameter import Parameter
-from pharmpy.random_variables import VariabilityLevel
+from pharmpy.random_variables import RandomVariable
 
 
 def _preparations(model):
     stats = model.statements
     y = model.dependent_variable_symbol
     f = model.statements.find_assignment(y.name).expression
-    for eps in model.random_variables.ruv_rvs:
+    for eps in model.random_variables.epsilons:
         f = f.subs({symbols.symbol(eps.name): 0})
     return stats, y, f
 
@@ -53,9 +53,8 @@ def additive_error(model):
     sigma_par = Parameter(sigma.name, init=_get_prop_init(model.dataset))
     model.parameters.add(sigma_par)
 
-    eps = sympy.stats.Normal(ruv.name, 0, sympy.sqrt(sigma))
-    eps.variability_level = VariabilityLevel.RUV
-    model.random_variables.add(eps)
+    eps = RandomVariable.normal(ruv.name, 'RUV', 0, sigma)
+    model.random_variables.append(eps)
     return model
 
 
@@ -88,9 +87,8 @@ def proportional_error(model):
     sigma_par = Parameter(sigma.name, init=0.09)
     model.parameters.add(sigma_par)
 
-    eps = sympy.stats.Normal(ruv.name, 0, sympy.sqrt(sigma))
-    eps.variability_level = VariabilityLevel.RUV
-    model.random_variables.add(eps)
+    eps = RandomVariable.normal(ruv.name, 'RUV', 0, sigma)
+    model.random_variables.append(eps)
     return model
 
 
@@ -120,12 +118,10 @@ def combined_error(model):
     sigma_par2 = Parameter(sigma_add.name, init=_get_prop_init(model.dataset))
     model.parameters.add(sigma_par2)
 
-    eps_prop = sympy.stats.Normal(ruv_prop.name, 0, sympy.sqrt(sigma_prop))
-    eps_prop.variability_level = VariabilityLevel.RUV
-    model.random_variables.add(eps_prop)
-    eps_add = sympy.stats.Normal(ruv_add.name, 0, sympy.sqrt(sigma_add))
-    eps_add.variability_level = VariabilityLevel.RUV
-    model.random_variables.add(eps_add)
+    eps_prop = RandomVariable.normal(ruv_prop.name, 'RUV', 0, sigma_prop)
+    model.random_variables.append(eps_prop)
+    eps_add = RandomVariable.normal(ruv_add.name, 'RUV', 0, sigma_add)
+    model.random_variables.append(eps_add)
     return model
 
 
@@ -139,7 +135,7 @@ def has_additive_error(model):
     """
     y = model.dependent_variable_symbol
     expr = model.statements.full_expression_after_odes(y)
-    rvs = model.random_variables.ruv_rvs
+    rvs = model.random_variables.epsilons
     rvs_in_y = {
         symbols.symbol(rv.name) for rv in rvs if symbols.symbol(rv.name) in expr.free_symbols
     }
@@ -159,7 +155,7 @@ def has_proportional_error(model):
     """
     y = model.dependent_variable_symbol
     expr = model.statements.full_expression_after_odes(y)
-    rvs = model.random_variables.ruv_rvs
+    rvs = model.random_variables.epsilons
     rvs_in_y = {
         symbols.symbol(rv.name) for rv in rvs if symbols.symbol(rv.name) in expr.free_symbols
     }
@@ -179,7 +175,7 @@ def has_combined_error(model):
     """
     y = model.dependent_variable_symbol
     expr = model.statements.full_expression_after_odes(y)
-    rvs = model.random_variables.ruv_rvs
+    rvs = model.random_variables.epsilons
     rvs_in_y = {
         symbols.symbol(rv.name) for rv in rvs if symbols.symbol(rv.name) in expr.free_symbols
     }

@@ -4,7 +4,6 @@ import sympy
 from pharmpy.config import ConfigurationContext
 from pharmpy.model import ModelSyntaxError
 from pharmpy.plugins.nonmem import conf
-from pharmpy.random_variables import VariabilityLevel
 from pharmpy.symbols import symbol
 
 
@@ -453,9 +452,9 @@ def test_remove(parser, buf, remove, result):
 def test_iov(parser):
     rec = parser.parse('$OMEGA BLOCK(2) SAME').records[0]
     rvs, _, _, _ = rec.random_variables(1, 2)
-    assert rvs[0].variability_level == VariabilityLevel.IOV
-    assert rvs[1].variability_level == VariabilityLevel.IOV
+    assert rvs[0].level == 'IOV'
+    assert rvs[1].level == 'IOV'
 
     rec = parser.parse('$OMEGA 1').records[0]
     rvs, _, _, _ = rec.random_variables(1)
-    assert rvs[0].variability_level == VariabilityLevel.IIV
+    assert rvs[0].level == 'IIV'

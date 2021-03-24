@@ -108,8 +108,8 @@ class Assignment:
             if rvs_intersect:
                 if len(rvs_intersect) == 1:
                     rv_name = list(rvs_intersect)[0]
-                    variability_level = rvs[rv_name].variability_level
-                    if variability_level == VariabilityLevel.RUV:
+                    variability_level = rvs[rv_name].level
+                    if variability_level == 'RUV':
                         terms_ruv.append(arg)
                         continue
                 terms_iiv_iov.append(arg)

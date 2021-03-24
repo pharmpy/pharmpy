@@ -99,10 +99,16 @@ class RandomVariable:
             rv = cls(name, level)
             rv._mean = mean
             rv._variance = variance
-            rv._symengine_variance = symengine.Matrix(sigma)
+            rv._symengine_variance = symengine.Matrix(variance.rows, variance.cols, sigma)
             rv._joint_names = names
             rvs.append(rv)
         return rvs
+
+    @property
+    def joint_names(self):
+        """Get the names of all (including this) jointly varying rvs
+        """
+        return [] if not self._joint_names else self._joint_names
 
     @property
     def sympy_rv(self):
@@ -127,10 +133,19 @@ class RandomVariable:
             free = {s for s in rv.pspace.free_symbols if s.name != rv.name}
             return free | {self.symbol}
 
+    @property
+    def parameter_names(self):
+        if self._mean is not None:
+            params = self._mean.free_symbols | self._variance.free_symbols
+        else:
+            params = {s for s in rv.pspace.free_symbols if s.name != rv.name}
+        return [p.name for p in params]
+
     def copy(self):
         return copy.deepcopy(self)
 
     def __deepcopy__(self, memo):
+        symengine_variance = self._symengine_variance
         self._symengine_variance = None
         method = self.__deepcopy__
         # Trick to use default deepcopy
@@ -138,7 +153,11 @@ class RandomVariable:
         new = copy.deepcopy(self)
         self.__deepcopy__ = method
         new._symengine_variance = symengine.sympify(self._variance)
+        self._symengine_variance = symengine_variance
         return new
+
+    def __hash__(self):
+        return hash(self.name)
 
     def __repr__(self):
         if self._mean is not None:    # Normal distribution
@@ -189,6 +208,28 @@ class RandomVariable:
                 f' ~ {unicode.mathematical_script_capital_n}({sympy.pretty(self._mean[0], wrap_line=False)}, ' \
                 f'{sympy.pretty(self._variance[0], wrap_line=False)})\n'
 
+    def _latex_string(self, aligned=False):
+        lines = []
+        if aligned:
+            align_str = ' & '
+        else:
+            align_str = ''
+        if self._mean.rows > 1:
+            rv_vec = sympy.Matrix(self._joint_names)._repr_latex_()[1:-1]
+            mean_vec = self._mean._repr_latex_()[1:-1]
+            sigma = self._variance._repr_latex_()[1:-1]
+            latex = rv_vec + align_str + r'\sim \mathcal{N} \left(' + mean_vec + ',' + sigma + r'\right)'
+        else:
+            rv = self.symbol._repr_latex_()[1:-1]
+            mean = self._mean[0]._repr_latex_()[1:-1]
+            sigma = (self._variance[0])._repr_latex_()[1:-1]
+            latex = rv + align_str + r'\sim  \mathcal{N} \left(' + mean + ',' + sigma + r'\right)'
+        if not aligned:
+            latex = '$' + latex + '$'
+        return latex
+
+    def _repr_latex_(self):
+        return self._latex_string()
 
 
 class RandomVariables(MutableSequence):
@@ -293,6 +334,16 @@ class RandomVariables(MutableSequence):
         return RandomVariables([rv for rv in self._rvs if rv.level in ('IIV', 'IOV')])
 
     @property
+    def iiv(self):
+        """Get only the iiv etas"""
+        return RandomVariables([rv for rv in self._rvs if rv.level == 'IIV'])
+
+    @property
+    def iov(self):
+        """Get only the iov etas"""
+        return RandomVariables([rv for rv in self._rvs if rv.level == 'IOV'])
+
+    @property
     def free_symbols(self):
         """Set of free symbols for all random variables"""
         symbs = set()
@@ -306,6 +357,23 @@ class RandomVariables(MutableSequence):
             new._rvs.append(rv.copy())
         return new
 
+    @property
+    def parameter_names(self):
+        params = set()
+        for rv in self:
+            params |= set(rv.parameter_names)
+        return sorted([str(p) for p in params])
+
+    @property
+    def variance_parameters(self):
+        parameters = []
+        for rvs, dist in self.distributions():
+            if len(rvs) == 1:
+                parameters.append(dist.std ** 2)
+            else:
+                parameters += list(dist.sigma.diagonal())
+        return [p.name for p in parameters]
+
     def remove_covariance(self, ind):
         """Remove all covariances the random variable has with other random variables
 
@@ -318,6 +386,35 @@ class RandomVariables(MutableSequence):
         rv._symengine_variance = symengine.sympify(rv._variance)
         rv._joint_names = None
         rv.insert(i - index, rv)
+
+    def join(self, inds, fill=0, create_cov_params=False, rv_to_param=None):
+        """Join random variables together into one joint distribution
+
+        Set new covariances (and previous 0 covs) to 'fill'
+        """
+        cov_to_params = dict()
+        selection = RandomVariables([self[ind] for ind in inds])
+        means, M, names, others = selection._calc_covariance_matrix()
+        if fill != 0:
+            for row, col in itertools.product(range(M.rows), range(M.cols)):
+                if M[row, col] == 0:
+                    M[row, col] = fill
+        elif create_cov_params:
+            for row, col in itertools.product(range(M.rows), range(M.cols)):
+                if M[row, col] == 0 and row > col:
+                    param_1, param_2 = M[row, row], M[col, col]
+                    rv_1, rv_2 = names[col], names[row]
+
+                    cov_name = f'IIV_{rv_to_param[rv_1]}_IIV_{rv_to_param[rv_2]}'
+                    cov_to_params[cov_name] = (str(param_1), str(param_2))
+
+                    M[row, col], M[col, row] = symbol(cov_name), symbol(cov_name)
+
+        # FIXME: Should support other than IIV
+        new_rvs = RandomVariable.joint_normal(names, 'iiv', means, M)
+        self[inds[0]] = new_rvs[0]
+        self.__init__(new_rvs + others)
+        return cov_to_params
 
     def distributions(self):
         """List with one entry per distribution instead of per random variable.
@@ -369,210 +466,24 @@ class RandomVariables(MutableSequence):
                             nearest[symb_sigma[row, col].name] = B[row, col]
         return nearest
 
-    def __repr__(self):
-        res = ''
-        for rvs, dist in self.distributions():
-            res += repr(rvs[0])
-        return res
-
-
-
-
-    @property
-    def all_parameters(self):
-        # FIXME: Shaky to rely on sorting. I guess this is to get results in correct order
-        params = set()
-        dists = self.distributions()
-        for _, dist in dists:
-            params |= dist.free_symbols
-        return sorted([str(p) for p in params])
-
-    def _repr_latex_(self):
-        lines = []
-        for rvs, dist in self.distributions():
-            if isinstance(dist, stats.joint_rv_types.MultivariateNormalDistribution):
-                rv_vec = sympy.Matrix(rvs)._repr_latex_()[1:-1]
-                mean_vec = dist.mu._repr_latex_()[1:-1]
-                sigma = dist.sigma._repr_latex_()[1:-1]
-                latex = rv_vec + r' & \sim \mathcal{N} \left(' + mean_vec + ',' + sigma + r'\right)'
-            else:
-                rv = rvs[0]._repr_latex_()[1:-1]
-                mean = dist.mean._repr_latex_()[1:-1]
-                sigma = (dist.std ** 2)._repr_latex_()[1:-1]
-                latex = rv + r' & \sim  \mathcal{N} \left(' + mean + ',' + sigma + r'\right)'
-            lines.append(latex)
-        return '\\begin{align*}\n' + r' \\ '.join(lines) + '\\end{align*}'
-
-    def get_eta_params(self, eta_name):
-        params = set()
-        for rvs, dist in self.distributions():
-            if eta_name in [rv for rv in rvs]:
-                params |= dist.free_symbols
-        return sorted([str(p) for p in params])
-
-
-    def get_rvs_from_same_dist(self, rv):
-        """Get all RVs from same distribution as input rv.
-
-        Parameters
-        ----------
-        rv : RandomSymbol
-            Random symbol to find associated rvs for (i.e. rvs with same distribution)."""
-        joined_rvs = []
-
-        for rvs, _ in self.distributions():
-            if rv.name in [rv_dist.name for rv_dist in rvs]:
-                joined_rvs += rvs
-
-        return RandomVariables(joined_rvs)
-
-    def are_consecutive(self, subset):
-        """Determines if subset has same order as full set (self)."""
-        rvs_self = sum([rvs[0] for rvs in self.distributions()], [])
-        rvs_subset = sum([rvs[0] for rvs in subset.distributions()], [])
-
-        i = 0
-        for rv in rvs_self:
-            if rv.name == rvs_subset[i].name:
-                if i == len(rvs_subset) - 1:
-                    return True
-                i += 1
-            elif i > 0:
-                return False
-        return False
-
-    def variance_parameters(self, unique=True, level=None, exclude_level=None):
-        parameters = []
-        for rvs, dist in self.distributions(level=level, exclude_level=exclude_level):
-            if len(rvs) == 1:
-                parameters.append(dist.std ** 2)
-            else:
-                parameters += list(dist.sigma.diagonal())
-        if unique:
-            parameters = list(OrderedSet(parameters))  # Only unique in order
-        return parameters
-
-    def _calc_covariance_matrix(self, ruv=False):
-        non_altered = []
-        means = []
-        blocks = []
-        names = []
-        if ruv:
-            dists = self.distributions(level=VariabilityLevel.RUV)
-        else:
-            dists = self.distributions(exclude_level=VariabilityLevel.RUV)
-        for rvs, dist in dists:
-            names.extend([rv.name for rv in rvs])
-            if isinstance(dist, stats.crv_types.NormalDistribution):
-                means.append(dist.mean)
-                blocks.append(sympy.Matrix([dist.std ** 2]))
-            elif isinstance(dist, stats.joint_rv_types.MultivariateNormalDistribution):
-                means.extend(dist.mu)
-                blocks.append(dist.sigma)
-            else:
-                non_altered.extend(rvs)
-        if names:
-            M = sympy.BlockDiagMatrix(*blocks)
-            M = sympy.Matrix(M)
-        return means, M, names, non_altered
-
-    def covariance_matrix(self, ruv=False):
-        """Covariance matrix of all random variables
-
-        currently only supports normal distribution
-        """
-        _, M, _, others = self._calc_covariance_matrix(ruv=ruv)
-        if others:
-            raise ValueError('Only normal distributions are supported')
-        return M
-
-    def merge_normal_distributions(self, fill=0, create_cov_params=False, rv_to_param=None):
-        """Merge all normal distributed rvs together into one joint normal
-
-        Set new covariances (and previous 0 covs) to 'fill'
-        """
-        cov_to_params = dict()
-        means, M, names, others = self._calc_covariance_matrix()
-        if fill != 0:
-            for row, col in itertools.product(range(M.rows), range(M.cols)):
-                if M[row, col] == 0:
-                    M[row, col] = fill
-        elif create_cov_params:
-            for row, col in itertools.product(range(M.rows), range(M.cols)):
-                if M[row, col] == 0 and row > col:
-                    param_1, param_2 = M[row, row], M[col, col]
-                    rv_1, rv_2 = names[col], names[row]
-
-                    cov_name = f'IIV_{rv_to_param[rv_1]}_IIV_{rv_to_param[rv_2]}'
-                    cov_to_params[cov_name] = (str(param_1), str(param_2))
-
-                    M[row, col], M[col, row] = symbol(cov_name), symbol(cov_name)
-
-        new_rvs = JointNormalSeparate(names, means, M)
-        self.__init__(new_rvs + others)
-        return cov_to_params
-
-    def validate_parameters(self, parameter_values, use_cache=False):
+    def validate_parameters(self, parameter_values):
         """Validate a dict or Series of parameter values
 
         Currently checks that all covariance matrices are posdef
         use_cache for using symengine cached matrices
         """
-        if use_cache and not hasattr(self, '_cached_sigmas'):
-            self._cached_sigmas = {}
-            for rvs, dist in self.distributions():
-                if len(rvs) > 1:
-                    sigma = dist.sigma
-                    a = [
-                        [symengine.Symbol(e.name) for e in sigma.row(i)] for i in range(sigma.rows)
-                    ]
-                    A = symengine.Matrix(a)
-                    self._cached_sigmas[rvs[0]] = A
-
         for rvs, dist in self.distributions():
             if len(rvs) > 1:
-                if not use_cache:
-                    sigma = dist.sigma.subs(dict(parameter_values))
-                    # Switch to numpy here. Sympy posdef check is problematic
-                    # see https://github.com/sympy/sympy/issues/18955
-                    if not sigma.free_symbols:
-                        a = np.array(sigma).astype(np.float64)
-                        if not pharmpy.math.is_posdef(a):
-                            return False
-                else:
-                    sigma = self._cached_sigmas[rvs[0]]
-                    replacement = {}
-                    # Following because https://github.com/symengine/symengine/issues/1660
-                    for param in dict(parameter_values):
-                        replacement[symengine.Symbol(param)] = parameter_values[param]
-                    sigma = sigma.subs(replacement)
-                    if not sigma.free_symbols:  # Cannot validate since missing params
-                        a = np.array(sigma).astype(np.float64)
-                        if not pharmpy.math.is_posdef(a):
-                            return False
+                sigma = rvs[0]._symengine_variance
+                replacement = {}
+                for param in dict(parameter_values):
+                    replacement[symengine.Symbol(param)] = parameter_values[param]
+                sigma = sigma.subs(replacement)
+                if not sigma.free_symbols:  # Cannot validate since missing params
+                    a = np.array(sigma).astype(np.float64)
+                    if not pharmpy.math.is_posdef(a):
+                        return False
         return True
-
-    def expression(
-        self, expr, parameters
-    ):  # FIXME: not represented in any test (no test fails despite assert 0 == 1)
-        """Replace all symbols with same names as rvs with the corresponding rvs
-        or indexed variables for joint distributions and replace parameter values
-        """
-        d = dict()
-        i = 1
-        for rvs, dist in self.distributions():
-            if len(rvs) > 1:
-                joint_name = f'__J{i}'
-                mu = dist.mu.subs(parameters)
-                sigma = dist.sigma.subs(parameters)
-                x = stats.Normal(joint_name, mu, sigma)
-                d.update({symbol(rv.name): x[n] for n, rv in enumerate(rvs)})
-                i += 1
-            else:
-                mean = dist.mean.subs(parameters)
-                std = dist.std.subs(parameters)
-                d[symbol(rvs[0].name)] = stats.Normal(rvs[0].name, mean, std)
-        return expr.subs(d)
 
     def sample(self, expr, parameters=None, samples=1):
         """Sample from the distribution of expr
@@ -613,73 +524,96 @@ class RandomVariables(MutableSequence):
         a = fn(*input_list)
         return a
 
-    def get_connected_iovs(self, iov):
-        iovs = []
-        connected = False
-        for rv in self:
-            if rv == iov:
-                iovs.append(rv)
-                connected = True
-            elif (
-                rv.variability_level == VariabilityLevel.IOV
-                and rv.pspace.distribution == iov.pspace.distribution
-            ):
-                iovs.append(rv)
-            elif connected:
-                break
-        return iovs
-
-    def rename(self, subs):
-        rvs_new = RandomVariables()
-        for rv in self:
-            self.discard(rv)
-            if rv.name in subs.keys():
-                rv_new = rv.subs(rv.name, subs[rv.name])
-                rv_new.variability_level = rv.variability_level
-                rvs_new.add(rv_new)
+    def _calc_covariance_matrix(self):
+        non_altered = []
+        means = []
+        blocks = []
+        names = []
+        for rvs, dist in self.distributions():
+            names.extend([rv.name for rv in rvs])
+            if isinstance(dist, stats.crv_types.NormalDistribution):
+                means.append(dist.mean)
+                blocks.append(sympy.Matrix([dist.std ** 2]))
+            elif isinstance(dist, stats.joint_rv_types.MultivariateNormalDistribution):
+                means.extend(dist.mu)
+                blocks.append(dist.sigma)
             else:
-                rvs_new.add(rv)
-        self.update(rvs_new)
+                non_altered.extend(rvs)
+        if names:
+            M = sympy.BlockDiagMatrix(*blocks)
+            M = sympy.Matrix(M)
+        return means, M, names, non_altered
+
+    @property
+    def covariance_matrix(self):
+        """Covariance matrix of all random variables
+
+        currently only supports normal distribution
+        """
+        _, M, _, others = self._calc_covariance_matrix()
+        if others:
+            raise ValueError('Only normal distributions are supported')
+        return M
+
+    def __repr__(self):
+        res = ''
+        for rvs, dist in self.distributions():
+            res += repr(rvs[0])
+        return res
+
+    def _repr_latex_(self):
+        lines = []
+        for rvs, dist in self.distributions():
+            rv = rvs[0]
+            latex = rv._latex_string(aligned=True)
+            lines.append(latex)
+        return '\\begin{align*}\n' + r' \\ '.join(lines) + '\\end{align*}'
+
+#    def get_rvs_from_same_dist(self, rv):
+#        """Get all RVs from same distribution as input rv.
+#
+#        Parameters
+#        ----------
+#        rv : RandomSymbol
+#            Random symbol to find associated rvs for (i.e. rvs with same distribution)."""
+#        joined_rvs = []
+
+#        for rvs, _ in self.distributions():
+#            if rv.name in [rv_dist.name for rv_dist in rvs]:
+#                joined_rvs += rvs
+#
+#        return RandomVariables(joined_rvs)
+#
+#    def are_consecutive(self, subset):
+#        """Determines if subset has same order as full set (self)."""
+#        rvs_self = sum([rvs[0] for rvs in self.distributions()], [])
+#        rvs_subset = sum([rvs[0] for rvs in subset.distributions()], [])
+#
+#        i = 0
+#        for rv in rvs_self:
+#            if rv.name == rvs_subset[i].name:
+#                if i == len(rvs_subset) - 1:
+#                    return True
+#                i += 1
+#            elif i > 0:
+#                return False
+#        return False
+#
 
 
-# pharmpy sets a parametrization attribute to the sympy distributions
-# It will currently not affect the sympy distribution itself just convey the information
-# The distribution class itself need to change to accomodate pdf etc.
-# Could have different distributions for different parametrization, but would like to be able
-# to convert between them. Ideally also support arbitrary parametrizations.
-# Classes will be used by ModelfitResults to be able to reparametrize results without
-# reparametrizing the whole model.
-
-# For now simply use these for the results object to set proper parametrization of parameter.
-
-
-class NormalParametrizationVariance:
-    name = 'variance'
-    distribution = stats.crv_types.NormalDistribution
-
-    def __init__(self, mean, variance):
-        pass
-
-
-class NormalParametrizationSd:
-    name = 'sd'
-    distribution = stats.crv_types.NormalDistribution
-
-    def __init__(self, mean, sd):
-        pass
-
-
-class MultivariateNormalParametrizationCovariance:
-    name = 'covariance'
-    distribution = stats.joint_rv_types.MultivariateNormalDistribution
-
-    def __init__(self, mean, variance):
-        pass
-
-
-class MultivariateNormalParametrizationSdCorr:
-    name = 'sdcorr'
-    distribution = stats.joint_rv_types.MultivariateNormalDistribution
-
-    def __init__(self, mean, sd, corr):
-        pass
+#
+#    def get_connected_iovs(self, iov):
+#        iovs = []
+#        connected = False
+#        for rv in self:
+#            if rv == iov:
+#                iovs.append(rv)
+#                connected = True
+#            elif (
+#                rv.variability_level == VariabilityLevel.IOV
+#                and rv.pspace.distribution == iov.pspace.distribution
+#            ):
+#                iovs.append(rv)
+#            elif connected:
+#                break
+#        return iovs

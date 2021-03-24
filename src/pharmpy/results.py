@@ -20,6 +20,7 @@ import lzma
 import math
 import warnings
 from pathlib import Path
+from pharmpy.data_structures import OrderedSet
 
 import altair as alt
 import numpy as np
@@ -31,7 +32,6 @@ import pharmpy.visualization
 from pharmpy.data import PharmDataFrame
 from pharmpy.math import cov2corr
 from pharmpy.parameter_sampling import sample_from_covariance_matrix
-from pharmpy.random_variables import VariabilityLevel
 
 
 class ResultsConfiguration(config.Configuration):
@@ -410,8 +410,7 @@ class ModelfitResults(Results):
         pe = pe.combine_first(param_inits)
 
         ie = self.individual_estimates
-        parameters = self.model.random_variables.variance_parameters(level=VariabilityLevel.IIV)
-        param_names = [param.name for param in parameters]
+        param_names = self.model.random_variables.iiv.variance_parameters
         diag_ests = pe[param_names]
         diag_ests.index = ie.columns
         if not sd:
@@ -433,10 +432,9 @@ class ModelfitResults(Results):
         pe = pe.combine_first(param_inits)
 
         # Get all iiv variance parameters
-        parameters = self.model.random_variables.variance_parameters(
-            unique=False, exclude_level=VariabilityLevel.RUV
-        )
-        param_names = [param.name for param in parameters]
+        param_names = self.model.random_variables.etas.variance_parameters
+        param_names = list(OrderedSet(param_names))  # Only unique in order
+
         diag_ests = pe[param_names]
 
         def fn(row, ests):

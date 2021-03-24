@@ -7,7 +7,6 @@ import pharmpy.methods.psn_helpers as psn_helpers
 import pharmpy.random_variables
 import pharmpy.symbols
 from pharmpy import Model
-from pharmpy.random_variables import VariabilityLevel
 from pharmpy.results import Results, read_results
 
 
@@ -140,15 +139,15 @@ def calc_iov(original_model, iov_model):
             pharmpy.random_variables.MultivariateNormalParametrizationSdCorr,
         ]
     )
-    iov_params = iov_model.random_variables.variance_parameters(level=VariabilityLevel.IOV)
+    iov_params = iov_model.random_variables.iov.variance_parameters
     iov_sds = [iov_res.parameter_estimates[param.name] for param in iov_params]
-    iiv_params = iov_model.random_variables.variance_parameters(level=VariabilityLevel.IIV)
+    iiv_params = iov_model.random_variables.iiv.variance_parameters
     iiv_params = [param for param in iiv_params if not original_model.parameters[param.name].fix]
     new_iiv_sds = [iov_res.parameter_estimates[param.name] for param in iiv_params]
     old_iiv_sds = [origres.parameter_estimates[param.name] for param in iiv_params]
 
     etas = []
-    for rvs, dist in original_model.random_variables.distributions(level=VariabilityLevel.IIV):
+    for rvs, dist in original_model.random_variables.iiv.distributions():
         if not set(iiv_params).isdisjoint(dist.free_symbols):
             etas.extend(rvs)
     etas = [eta.name for eta in etas]
@@ -187,12 +186,10 @@ def calc_add_etas(original_model, add_etas_model, etas_added_to):
     original_etas = [rv.name for rv in original_model.random_variables.etas]
     all_etas = original_etas + etas_added_to
     added = [True] * len(original_etas) + [False] * len(etas_added_to)
-    params = add_etas_model.random_variables.variance_parameters(exclude_level=VariabilityLevel.RUV)
-    params = [pharmpy.symbols.symbol(p.name) for p in params]
-    orig_params = original_model.random_variables.variance_parameters(
-        exclude_level=VariabilityLevel.RUV
-    )
-    orig_params = [pharmpy.symbols.symbol(p.name) for p in orig_params]
+    params = add_etas_model.random_variables.etas.variance_parameters
+    params = [pharmpy.symbols.symbol(p) for p in params]
+    orig_params = original_model.random_variables.etas.variance_parameters
+    orig_params = [pharmpy.symbols.symbol(p) for p in orig_params]
     origres.reparameterize(
         [
             pharmpy.random_variables.NormalParametrizationSd,
@@ -298,8 +295,8 @@ def calc_transformed_etas(original_model, new_model, transform_name, parameter_n
     newres = new_model.modelfit_results
     if newres is None:
         return None, dofv_tab
-    params = new_model.random_variables.variance_parameters(exclude_level=VariabilityLevel.RUV)
-    params = [pharmpy.symbols.symbol(p.name) for p in params]
+    params = new_model.random_variables.etas.variance_parameters
+    params = [pharmpy.symbols.symbol(p) for p in params]
     origres.reparameterize(
         [
             pharmpy.random_variables.NormalParametrizationSd,
@@ -349,7 +346,7 @@ def calc_fullblock(original_model, fullblock_model):
     fullres = fullblock_model.modelfit_results
     if fullres is None:
         return None, dofv_tab
-    _, dist = fullblock_model.random_variables.distributions(level=VariabilityLevel.IIV)[0]
+    _, dist = fullblock_model.random_variables.iiv.distributions()[0]
     fullblock_parameters = [str(symb) for symb in dist.free_symbols]
     origres.reparameterize(
         [

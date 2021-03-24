@@ -7,7 +7,7 @@ import numpy as np
 import sympy
 
 from pharmpy import data
-from pharmpy.random_variables import RandomVariables, VariabilityLevel
+from pharmpy.random_variables import RandomVariables
 from pharmpy.statements import (
     Assignment,
     Bolus,
@@ -50,7 +50,7 @@ def update_parameters(model, old, new):
 
     for p in new:
         name = p.name
-        if name not in old and name not in model.random_variables.all_parameters():
+        if name not in old and name not in model.random_variables.parameter_names:
             # This is a new theta
             theta_number = get_next_theta(model)
             record = create_theta_record(model, p)
@@ -95,17 +95,17 @@ def update_random_variables(model, old, new):
     new_maps = []
     for rv in new:
         if rv.name not in old_names:
-            omega_name = (rv.pspace.distribution.std ** 2).name
-            if omega_name not in old.all_parameters():
+            omega_name = (rv.sympy_rv.pspace.distribution.std ** 2).name
+            if omega_name not in old.parameter_names:
                 rv_name = rv.name
                 omega = model.parameters[omega_name]
 
                 iov_rv = None
-                if rv.variability_level == VariabilityLevel.RUV:
+                if rv.level == 'RUV':
                     record_name = 'SIGMA'
                 else:
                     record_name = 'OMEGA'
-                    if rv.variability_level == VariabilityLevel.IOV:
+                    if rv.level == 'IOV':
                         iov_rv = rv
 
                 record, eta_number = create_omega_single(
