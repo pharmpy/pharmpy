@@ -14,6 +14,7 @@ from pharmpy.plugins.nonmem import conf
 from pharmpy.plugins.nonmem.nmtran_parser import NMTranParser
 from pharmpy.statements import Assignment, ModelStatements, ODESystem
 from pharmpy.symbols import symbol
+from pharmpy.random_variables import RandomVariable
 
 
 def S(x):
@@ -287,10 +288,9 @@ def test_add_random_variables(pheno_path, rv_new, buf_new):
     rvs = model.random_variables
     pset = model.parameters
 
-    eta = sympy.stats.Normal('eta_new', 0, sympy.sqrt(S(rv_new.name)))
-    eta.level = 'IIV'
+    eta = RandomVariable.normal('eta_new', 'iiv', 0, S(rv_new.name))
 
-    rvs.add(eta)
+    rvs.append(eta)
     pset.add(rv_new)
 
     model.random_variables = rvs
@@ -313,8 +313,8 @@ def test_add_random_variables(pheno_path, rv_new, buf_new):
 
     rv = model.random_variables['eta_new']
 
-    assert rv.pspace.distribution.mean == 0
-    assert (rv.pspace.distribution.std ** 2).name == 'omega'
+    assert rv.sympy_rv.pspace.distribution.mean == 0
+    assert (rv.sympy_rv.pspace.distribution.std ** 2).name == 'omega'
 
 
 def test_add_random_variables_and_statements(pheno_path):
@@ -323,14 +323,12 @@ def test_add_random_variables_and_statements(pheno_path):
     rvs = model.random_variables
     pset = model.parameters
 
-    eta = sympy.stats.Normal('ETA_NEW', 0, sympy.sqrt(S('omega')))
-    eta.level = 'IIV'
-    rvs.add(eta)
+    eta = RandomVariable.normal('ETA_NEW', 'iiv', 0, S('omega'))
+    rvs.append(eta)
     pset.add(Parameter('omega', 0.1))
 
-    eps = sympy.stats.Normal('EPS_NEW', 0, sympy.sqrt(S('sigma')))
-    eps.level = 'RUV'
-    rvs.add(eps)
+    eps = RandomVariable.normal('EPS_NEW', 'ruv', 0, S('sigma'))
+    rvs.append(eps)
     pset.add(Parameter('sigma', 0.1))
 
     model.random_variables = rvs
@@ -457,7 +455,7 @@ def test_remove_eta(pheno_path):
     model = Model(pheno_path)
     rvs = model.random_variables
     eta1 = rvs['ETA(1)']
-    rvs.discard(eta1)
+    del rvs[eta1]
     model.update_source()
     assert str(model).split('\n')[12] == 'V = TVV*EXP(ETA(1))'
 

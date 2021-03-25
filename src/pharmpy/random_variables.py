@@ -2,7 +2,7 @@ import copy
 import enum
 import itertools
 import warnings
-from collections.abc import MutableSequence
+from collections.abc import MutableSequence, Iterable
 
 import numpy as np
 import pandas as pd
@@ -21,7 +21,7 @@ from .data_structures import OrderedSet
 class RandomVariable:
     def __init__(self, name, level, sympy_rv=None):
         level = RandomVariable._canonicalize_level(level)
-        self.name = name
+        self._name = name
         self.level = level
         self.symbol = symbol(name)
         self._sympy_rv = sympy_rv
@@ -91,6 +91,7 @@ class RandomVariable:
         """
 
         mean = sympy.Matrix(mu)
+        print(sigma)
         variance = sympy.Matrix(sigma)
         if variance.is_positive_semidefinite is False:
             raise ValueError(f'Sigma matrix is not positive semidefinite')
@@ -103,6 +104,17 @@ class RandomVariable:
             rv._joint_names = names
             rvs.append(rv)
         return rvs
+
+    @property
+    def name(self):
+        return self._name
+
+    @name.setter
+    def name(self, name):
+        if self._joint_names:
+            index = self._joint_names.index(value)
+            self._joint_names[index] = name
+        self._name = name
 
     @property
     def joint_names(self):
@@ -140,6 +152,14 @@ class RandomVariable:
         else:
             params = {s for s in rv.pspace.free_symbols if s.name != rv.name}
         return [p.name for p in params]
+
+    def subs(self, d):
+        if self._mean is not None:
+            self._mean = self._mean.subs(d)
+            self._variance = self._variance.subs(d)
+            self._symengine_variance = symengine.Matrix(self._variance.rows, self._variance.cols, self._variance)
+        if self._sympy_rv is not None:
+            self._sympy_rv = self._sympy_rv.subs(d)
 
     def copy(self):
         return copy.deepcopy(self)
@@ -291,6 +311,10 @@ class RandomVariables(MutableSequence):
                 other._symengine_variance = symengine.sympify(other._variance)
 
     def __setitem__(self, ind, value):
+        if isinstance(ind, slice):
+            # FIXME: This is too crude
+            self._rvs[ind] = value
+            return
         if not isinstance(value, RandomVariable):
             raise ValueError(f'Trying to set {type(value)} to RandomVariables. Must be of type RandomVariable.')
         i, rv = self._lookup_rv(ind)
@@ -311,6 +335,13 @@ class RandomVariables(MutableSequence):
                 other._variance.col_del(joint_index)
                 other._symengine_variance = symengine.sympify(other._variance)
         del self._rvs[i]
+
+    def __sub__(self, other):
+        new = RandomVariables(self._rvs)
+        for rv in other:
+            if rv in new:
+                del new[rv]
+        return new
 
     def insert(self, ind, value):
         if not isinstance(value, RandomVariable):
@@ -374,7 +405,18 @@ class RandomVariables(MutableSequence):
                 parameters += list(dist.sigma.diagonal())
         return [p.name for p in parameters]
 
+    def subs(self, d):
+        s = dict()
+        for key, value in d.items():
+            if key in self.names:
+                self[key].name = value
+            else:
+                s[key] = value
+        for rv in self._rvs:
+            rv.subs(s)
+
     def remove_covariance(self, ind):
+        # FIXME: Call disjoin? dejoin? unjoin?
         """Remove all covariances the random variable has with other random variables
 
         """
@@ -387,7 +429,7 @@ class RandomVariables(MutableSequence):
         rv._joint_names = None
         rv.insert(i - index, rv)
 
-    def join(self, inds, fill=0, create_cov_params=False, rv_to_param=None):
+    def join(self, inds, fill=0, name_template=None, param_names=None):
         """Join random variables together into one joint distribution
 
         Set new covariances (and previous 0 covs) to 'fill'
@@ -399,21 +441,32 @@ class RandomVariables(MutableSequence):
             for row, col in itertools.product(range(M.rows), range(M.cols)):
                 if M[row, col] == 0:
                     M[row, col] = fill
-        elif create_cov_params:
+        elif name_template:
             for row, col in itertools.product(range(M.rows), range(M.cols)):
                 if M[row, col] == 0 and row > col:
                     param_1, param_2 = M[row, row], M[col, col]
-                    rv_1, rv_2 = names[col], names[row]
-
-                    cov_name = f'IIV_{rv_to_param[rv_1]}_IIV_{rv_to_param[rv_2]}'
+                    cov_name = name_template.format(param_names[col], param_names[row])
                     cov_to_params[cov_name] = (str(param_1), str(param_2))
-
                     M[row, col], M[col, row] = symbol(cov_name), symbol(cov_name)
 
-        # FIXME: Should support other than IIV
+        new = []
+        first = True
+        for rv in self._rvs:
+            if rv in selection:
+                if first:
+                    new.extend(selection._rvs)
+                    first = False
+            else:
+                new.append(rv)
+
         new_rvs = RandomVariable.joint_normal(names, 'iiv', means, M)
-        self[inds[0]] = new_rvs[0]
-        self.__init__(new_rvs + others)
+        for rv, new_rv in zip(selection, new_rvs):
+            rv._sympy_rv = new_rv._sympy_rv
+            rv._mean = sympy.Matrix(means)
+            rv._variance = M
+            rv._symengine_variance = symengine.Matrix(M.rows, M.cols, M)
+            rv._joint_names = [rv.name for rv in new_rvs]
+        self._rvs = new
         return cov_to_params
 
     def distributions(self):

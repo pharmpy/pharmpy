@@ -26,7 +26,14 @@ def create_rv_block(model, list_of_rvs=None):
         List of etas to create a block structure from. If None, all etas that are IIVs and
         non-fixed will be used (full block). None is default.
     """
-    if list_of_rvs and len(list_of_rvs) == 1:
+    rvs = model.random_variables
+    if list_of_rvs is None:
+        list_of_rvs = model.random_variables.iiv.names
+    else:
+        for rv in rvs:
+            if rv.name in list_of_rvs and rv.level == 'iov':
+                raise ValueError('Joining iov random variables is currently not supported')
+    if len(list_of_rvs) == 1:
         raise ValueError('At least two random variables are needed')
 
     rvs_full = model.random_variables
@@ -101,13 +108,15 @@ def _merge_rvs(model, rvs):
     sset, pset = model.statements, model.parameters
 
     rv_to_param = dict()
+    paramnames = []
 
     for rv in rvs:
         statements = sset.find_assignment(rv.name, is_symbol=False, last=False)
         parameter_names = '_'.join([s.symbol.name for s in statements])
         rv_to_param[rv.name] = parameter_names
+        paramnames.append(parameter_names)
 
-    cov_to_params = rvs.merge_normal_distributions(create_cov_params=True, rv_to_param=rv_to_param)
+    cov_to_params = rvs.join(name_template='IIV_{}_IIV_{}', param_names=paramnames)
 
     for rv in rvs:
         rv.level = 'IIV'

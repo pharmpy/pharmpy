@@ -380,7 +380,7 @@ class Model(pharmpy.model.Model):
             try:
                 self.parameters[key].name = value
             except KeyError:
-                self.random_variables.rename({key: value})
+                self.random_variables.subs({key: value})
 
         statements.subs(trans_statements)
 

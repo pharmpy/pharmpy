@@ -228,55 +228,25 @@ def test_variance_parameters():
     assert rvs.variance_parameters == ['OMEGA(1,1)', 'OMEGA(2,2)', 'OMEGA(3,3)']
 
 
+def test_join():
+    rv1 = RandomVariable.normal('ETA(1)', 'iiv', 0, symbol('OMEGA(1,1)'))
+    rv2 = RandomVariable.normal('ETA(2)', 'iiv', 0, symbol('OMEGA(2,2)'))
+    rvs = RandomVariables([rv1, rv2])
+    rvs.join(['ETA(1)', 'ETA(2)'])
+    assert rv1.sympy_rv.pspace.distribution.sigma == sympy.Matrix([[symbol('OMEGA(1,1)'), 0], [0, symbol('OMEGA(2,2)')]])
+    rv1 = RandomVariable.normal('ETA(1)', 'iiv', 0, symbol('OMEGA(1,1)'))
+    rv2 = RandomVariable.normal('ETA(2)', 'iiv', 0, symbol('OMEGA(2,2)'))
+    rvs = RandomVariables([rv1, rv2])
+    rvs.join(['ETA(1)', 'ETA(2)'], fill=1)
+    assert rv1.sympy_rv.pspace.distribution.sigma == sympy.Matrix([[symbol('OMEGA(1,1)'), 1], [1, symbol('OMEGA(2,2)')]])
+    rv1 = RandomVariable.normal('ETA(1)', 'iiv', 0, symbol('OMEGA(1,1)'))
+    rv2 = RandomVariable.normal('ETA(2)', 'iiv', 0, symbol('OMEGA(2,2)'))
+    rvs = RandomVariables([rv1, rv2])
+    rvs.join(['ETA(1)', 'ETA(2)'], name_template='IIV_{}_IIV_{}', param_names=['CL', 'V'])
+    assert rv1.sympy_rv.pspace.distribution.sigma == sympy.Matrix([[symbol('OMEGA(1,1)'), symbol('IIV_CL_IIV_V')], [symbol('IIV_CL_IIV_V'), symbol('OMEGA(2,2)')]])
+
+
 """
-
-def test_add_joint_normal():
-    rvs = RandomVariables()
-    rvs.add_joint_normal(['ETA(1)', 'ETA(2)'], [0, 0], [[symbol('OMEGA(1,1)'), symbol('OMEGA(2,1)')], [symbol('OMEGA(2,1)'), symbol('OMEGA(2,2)')]], level='iiv')
-    assert len(rvs) == 2
-    assert rvs.names == ['ETA(1)', 'ETA(2)']
-
-def test_joint_normal_separate():
-    rvs = JointNormalSeparate(['ETA(1)', 'ETA(2)'], [0, 0], [[1, 0], [0, 1]])
-    assert rvs[0].name == 'ETA(1)'
-    assert rvs[1].name == 'ETA(2)'
-    assert rvs[0].pspace.distribution.mu == sympy.Matrix([[0], [0]])
-    assert rvs[0].pspace.distribution.sigma == sympy.Matrix([[1, 0], [0, 1]])
-    assert stats.random_symbols(rvs[0]) == [rvs[0]]
-    assert stats.random_symbols(rvs[1]) == [rvs[1]]
-
-    rvs2 = JointNormalSeparate(['ETA(3)', 'ETA(4)'], [1, 1], [[6, 3], [4, 5]])
-    # Check that previously created rvs are still intact
-    assert rvs[0].name == 'ETA(1)'
-    assert rvs[1].name == 'ETA(2)'
-    assert rvs[0].pspace.distribution.mu == sympy.Matrix([[0], [0]])
-    assert rvs[0].pspace.distribution.sigma == sympy.Matrix([[1, 0], [0, 1]])
-    assert stats.random_symbols(rvs[0]) == [rvs[0]]
-    assert stats.random_symbols(rvs[1]) == [rvs[1]]
-    assert len(rvs2) == 2
-
-
-def test_merge_normal_distributions():
-    rvs = JointNormalSeparate(['ETA(1)', 'ETA(2)'], [0, 0], [[3, 0.25], [0.25, 1]])
-    for rv in rvs:
-        rv.variability_level = VariabilityLevel.IIV
-    rvs = RandomVariables(rvs)
-    eta3 = stats.Normal('ETA(3)', 0.5, 2)
-    eta3.variability_level = VariabilityLevel.IIV
-    rvs.add(eta3)
-    rvs.merge_normal_distributions()
-    assert len(rvs) == 3
-    assert rvs['ETA(1)'].name == 'ETA(1)'
-    assert rvs[1].name == 'ETA(2)'
-    assert rvs[2].name == 'ETA(3)'
-    assert rvs[0].pspace is rvs[1].pspace
-    assert rvs[0].pspace is rvs[2].pspace
-    dist = rvs[0].pspace.distribution
-    assert dist.mu == sympy.Matrix([0, 0, 0.5])
-    assert dist.sigma == sympy.Matrix([[3, 0.25, 0], [0.25, 1, 0], [0, 0, 4]])
-    # rvs.merge_normal_distributions(fill=1)
-    # dist = rvs[0].pspace.distribution
-    # assert dist.sigma == sympy.Matrix([[3, 0.25, 1], [0.25, 1, 1], [1, 1, 4]])
 
 
 def test_all_parameters():

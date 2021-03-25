@@ -855,7 +855,7 @@ def update_abbr_record(model, rv_trans):
             model.control_stream.insert_record(abbr_record)
         elif not re.match(r'(ETA|EPS)\([0-9]\)', rv.name):
             warnings.warn(
-                f'Not valid format of name {rv}, falling back to NONMEM name. If custom name, '
+                f'Not valid format of name {rv.name}, falling back to NONMEM name. If custom name, '
                 f'follow the format "ETA_X" to get "ETA(X)" in $ABBR.'
             )
     return trans
