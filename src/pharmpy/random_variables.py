@@ -19,6 +19,21 @@ from .data_structures import OrderedSet
 
 
 class RandomVariable:
+    """A single random variable
+
+    Example
+    -------
+
+    Parameters
+    ----------
+    name : str
+        Name of the random variable
+    level : str
+        Name of the variability level. The default levels are IIV, IOV and RUV
+    sympy_rv : sympy.RandomSymbol
+        RandomSymbol to use for this random variable. See also the normal
+        and joint_normal classmethods.
+    """
     def __init__(self, name, level, sympy_rv=None):
         level = RandomVariable._canonicalize_level(level)
         self._name = name
@@ -50,7 +65,7 @@ class RandomVariable:
         name : str
             Name of the random variable
         level : str
-            Variability level
+            Name of the variability level
         mean : expression or number
             Mean of the random variable
         variance : expression or number
@@ -91,7 +106,6 @@ class RandomVariable:
         """
 
         mean = sympy.Matrix(mu)
-        print(sigma)
         variance = sympy.Matrix(sigma)
         if variance.is_positive_semidefinite is False:
             raise ValueError(f'Sigma matrix is not positive semidefinite')
@@ -252,8 +266,97 @@ class RandomVariable:
         return self._latex_string()
 
 
+class VariabilityLevel:
+    def __init__(self, name, level, group):
+        self.name = name
+        self.level = level
+        self.group = group
+
+
+class VariabilityHierarchy:
+    def __init__(self):
+        self._levels = []
+
+    @property
+    def names(self):
+        return [varlev.name for varlev in self._levels]
+
+    @property
+    def levels(self):
+        return [varlev.level for varlev in self._levels]
+
+    def get_name(self, i):
+        for varlev in self._levels:
+            if varlev.level == i:
+                return varlev.name
+        raise KeyError(f'No variability level {i}')
+
+    def add_variability_level(self, name, level, group):
+        nums = self.levels
+        new = VariabilityLevel(name, level, group)
+        if nums:
+            if not (level == min(nums) - 1 or level == max(nums) + 1):
+                raise ValueError(f'Cannot set variability level {self.level}. '
+                    'New variability level must be one level higher or one level lower than any current level')
+            if level == min(nums) - 1:
+                self._levels.insert(0, new)
+            else:
+                self._levels.append(new)
+        else:
+            self._levels.append(new)
+
+    def add_higher_level(self, name, group):
+        nums = self.levels
+        level = max(nums) + 1
+        self.add_variability_level(name, level, group)
+
+    def add_lower_level(self, name, group):
+        nums = [varlev.level for varlev in self._levels]
+        level = min(nums) + 1
+        self.add_variability_level(name, level, group)
+
+    def set_variability_level(self, level, name, group):
+        """Change the name and group of variability level
+        """
+        for varlev in self._levels:
+            if varlev.level == level:
+                varlev.name = name
+                varlev.group = group
+                break
+        else:
+            raise KeyError(f'No variability level {level}')
+
+    def remove_variability_level(self, ind):
+        """Remove a variability level
+
+        Parameters
+        ----------
+        ind : str or int
+            name or number of variability level
+        """
+        for i, varlev in enumerate(self._levels):
+            if isinstance(ind, str) and varlev.name == ind or isinstance(ind, int) and varlev.level == ind:
+                index = i
+                break
+        else:
+            raise KeyError(f'No variability level {ind}')
+        if index == 0:
+            raise ValueError(f'Cannot remove the base variability level (0)')
+        del self._levels[index]
+        for varlev in self._levels:
+            if index < 0 and varlevel.level < index:
+                varlev.level += 1
+            elif index > 0 and varlevel.level > index:
+                varlev.level -= 1
+
+    def __len__(self):
+        return len(self._levels)
+
+
 class RandomVariables(MutableSequence):
     """A collection of random variables
+
+        Describe default levels here
     """
 
     def __init__(self, rvs=None):
@@ -263,6 +366,13 @@ class RandomVariables(MutableSequence):
             self._rvs = []
         else:
             self._rvs = list(rvs)
+        eta_levels = VariabilityHierarchy()
+        eta_levels.add_variability_level('IIV', 0, 'ID')
+        eta_levels.add_higher_level('IOV', 'OCC')
+        epsilon_levels = VariabilityHierarchy()
+        epsilon_levels.add_variability_level('RUV', 0, None)
+        self._eta_levels = eta_levels
+        self._epsilon_levels = epsilon_levels
 
     def __len__(self):
         return len(self._rvs)
@@ -357,22 +467,22 @@ class RandomVariables(MutableSequence):
     @property
     def epsilons(self):
         """Get only the epsilons"""
-        return RandomVariables([rv for rv in self._rvs if rv.level == 'RUV'])
+        return RandomVariables([rv for rv in self._rvs if rv.level in self._epsilon_levels.names])
 
     @property
     def etas(self):
         """Get only the etas"""
-        return RandomVariables([rv for rv in self._rvs if rv.level in ('IIV', 'IOV')])
+        return RandomVariables([rv for rv in self._rvs if rv.level in self._eta_levels.names])
 
     @property
     def iiv(self):
-        """Get only the iiv etas"""
-        return RandomVariables([rv for rv in self._rvs if rv.level == 'IIV'])
+        """Get only the iiv etas, i.e. etas with variability level 0"""
+        return RandomVariables([rv for rv in self._rvs if rv.level == self._eta_levels.get_name(0)])
 
     @property
     def iov(self):
-        """Get only the iov etas"""
-        return RandomVariables([rv for rv in self._rvs if rv.level == 'IOV'])
+        """Get only the iov etas, i.e. etas with variability level 1"""
+        return RandomVariables([rv for rv in self._rvs if rv.level == self._eta_levels.get_name(1)])
 
     @property
     def free_symbols(self):

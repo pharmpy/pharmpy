@@ -15,6 +15,8 @@ def test_normal_rv():
     assert rv.name == 'ETA(1)'
     assert rv.symbol == symbol('ETA(1)')
     assert rv.level == 'IIV'
+    with pytest.raises(ValueError):
+        rvbad = RandomVariable.normal('ETA(1)', 'uuu', 0, 1)
 
 
 def test_joint_normal_rv():
