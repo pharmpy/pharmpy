@@ -36,10 +36,12 @@ def update_source(model):
 
 
 def copy_model(model):
+    """Copies model to a new model object"""
     return model.copy()
 
 
 def set_name(model, name):
+    """Sets name of model object"""
     model.name = name
     return model
 
@@ -50,7 +52,9 @@ def set_initial_estimates(model, inits):
     Parameters
     ----------
     model : Model
-    inits : A dictionary of parameter: init for parameters to change
+        Pharmpy model
+    inits : dict
+        A dictionary of parameter init for parameters to change
 
     Returns
     -------
@@ -68,6 +72,7 @@ def fix_parameters(model, parameter_names):
     Parameters
     ----------
     model : Model
+        Pharmpy model
     parameter_names : list or str
         one parameter name or a list of parameter names
 
@@ -91,6 +96,7 @@ def unfix_parameters(model, parameter_names):
     Parameters
     ----------
     model : Model
+        Pharmpy model
     parameter_names : list or str
         one parameter name or a list of parameter names
 
@@ -114,6 +120,7 @@ def fix_parameters_to(model, parameter_names, values):
     Parameters
     ----------
     model : Model
+        Pharmpy model
     parameter_names : list or str
         one parameter name or a list of parameter names
     values : list or int
@@ -141,6 +148,7 @@ def unfix_parameters_to(model, parameter_names, values):
     Parameters
     ----------
     model : Model
+        Pharmpy model
     parameter_names : list or str
         one parameter name or a list of parameter names
     values : list or int
