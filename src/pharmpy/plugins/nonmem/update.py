@@ -255,7 +255,7 @@ def create_omega_single(model, param, record='OMEGA', comment_map=None, index=No
 
     if iov_rv:
         param_str = f'${record}  BLOCK(1)'
-        first_iov = rvs.get_connected_iovs(iov_rv)[0]
+        first_iov = [iov for iov in rvs.iov if iov.parameter_names == iov_rv.parameter_names][0]
         if iov_rv == first_iov:
             param_str += f'\n{param.init}'
         else:
