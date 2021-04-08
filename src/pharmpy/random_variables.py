@@ -10,6 +10,8 @@ import symengine
 import sympy
 import sympy.stats as stats
 from sympy.stats.rv import RandomSymbol
+from sympy.stats.crv_types import NormalDistribution, ExponentialDistribution
+from sympy.stats.joint_rv_types import MultivariateNormalDistribution
 
 import pharmpy.math
 import pharmpy.unicode as unicode
@@ -21,9 +23,6 @@ from .data_structures import OrderedSet
 class RandomVariable:
     """A single random variable
 
-    Example
-    -------
-
     Parameters
     ----------
     name : str
@@ -33,6 +32,21 @@ class RandomVariable:
     sympy_rv : sympy.RandomSymbol
         RandomSymbol to use for this random variable. See also the normal
         and joint_normal classmethods.
+
+    Examples
+    --------
+
+    >>> import sympy.stats
+    >>> import pharmpy.RandomVariable
+    >>> name = "ETA(1)"
+    >>> sd = sympy.sqrt(sympy.Symbol('OMEGA(1,1)'))
+    >>> rv = RandomVariable(name, "IIV", sympy.stats.Normal(name, 0, sd))
+    >>> rv
+    ETA(1) ~ 𝒩 (0, OMEGA(1,1))
+
+    See Also
+    --------
+    normal, joint_normal
     """
     def __init__(self, name, level, sympy_rv=None):
         level = RandomVariable._canonicalize_level(level)
@@ -40,8 +54,19 @@ class RandomVariable:
         self.level = level
         self.symbol = symbol(name)
         self._sympy_rv = sympy_rv
-        self._mean = None
-        self._variance = None
+        if sympy_rv is not None:
+            if isinstance(sympy_rv.pspace.distribution, NormalDistribution):
+                self._mean = sympy.Matrix([sympy_rv.pspace.distribution.mean])
+                self._variance = sympy.Matrix([sympy_rv.pspace.distribution.std ** 2])
+            elif isinstance(sympy_rv.pspace.distribution, MultivariateNormalDistribution):
+                raise ValueError("Cannot create multivariate random variables using constructor. "
+                        "Use the joint_normal classmethod instead.")
+            else:
+                self._mean = None
+                self._variance = None
+        else:
+            self._mean = None
+            self._variance = None
         self._symengine_variance = None
         self._joint_names = None
 
@@ -80,6 +105,8 @@ class RandomVariable:
         rv = cls(name, level)
         rv._mean = sympy.Matrix([sympy.sympify(mean)])
         rv._variance = sympy.Matrix([sympy.sympify(variance)])
+        if rv._variance.is_positive_semidefinite is False:
+            raise ValueError(f"Mean cannot be {mean} must be positive")
         rv._symengine_variance = symengine.sympify(rv._variance)
         return rv
 
@@ -91,6 +118,8 @@ class RandomVariable:
         ----------
         names : list
             Names of the random variables
+        level : str
+            Variability level
         mu : matrix or list
             Vector of the means of the random variables
         sigma : matrix or list of lists
@@ -102,7 +131,7 @@ class RandomVariable:
         >>> omega_cl = Parameter("OMEGA_CL", 0.1)
         >>> omega_v = Parameter("OMEGA_V", 0.1)
         >>> corr_cl_v = Parameter("OMEGA_CL_V", 0.01)
-        >>> RandomVariable.joint_normal(["IIV_CL", "IIV_V"], [0, 0], [[omega_cl.symbol, corr_cl_v], [corr_cl_v, omega_v]])
+        >>> RandomVariable.joint_normal(["IIV_CL", "IIV_V"], 'IIV', [0, 0], [[omega_cl.symbol, corr_cl_v], [corr_cl_v, omega_v]])
         """
 
         mean = sympy.Matrix(mu)
@@ -121,28 +150,29 @@ class RandomVariable:
 
     @property
     def name(self):
+        """Name of the random variable"""
         return self._name
 
     @name.setter
     def name(self, name):
         if self._joint_names:
-            index = self._joint_names.index(value)
+            index = self._joint_names.index(self._name)
             self._joint_names[index] = name
         self._name = name
 
     @property
     def joint_names(self):
-        """Get the names of all (including this) jointly varying rvs
+        """Names of all (including this) jointly varying rvs in a list
         """
         return [] if not self._joint_names else self._joint_names
 
     @property
     def sympy_rv(self):
-        """Get the corresponding sympy random variable
+        """Corresponding sympy random variable
         """
         if self._sympy_rv is None:
             # Normal distribution that might have 0 variance
-            if self._variance.is_zero:
+            if len(self._variance) == 1 and self._variance[0].is_zero:
                 return sympy.Integer(0)
             elif self._mean.rows > 1:
                 return sympy.stats.Normal('X', self._mean, self._variance)
@@ -153,21 +183,42 @@ class RandomVariable:
 
     @property
     def free_symbols(self):
+        """Free symbols including random variable itself
+        """
         if self._mean is not None:
             return {self.symbol} | self._mean.free_symbols | self._variance.free_symbols
         else:
-            free = {s for s in rv.pspace.free_symbols if s.name != rv.name}
+            free = {s for s in self.sympy_rv.pspace.free_symbols if s.name != self.name}
             return free | {self.symbol}
 
     @property
     def parameter_names(self):
+        """List of names of all parameters used in definition
+        """
         if self._mean is not None:
             params = self._mean.free_symbols | self._variance.free_symbols
         else:
-            params = {s for s in rv.pspace.free_symbols if s.name != rv.name}
-        return [p.name for p in params]
+            params = {s for s in self.sympy_rv.pspace.free_symbols if s.name != self.name}
+        return sorted([p.name for p in params])
 
     def subs(self, d):
+        """Substitute expressions
+
+        Parameters
+        ----------
+        d : dict
+            Dictionary of from: to pairs for substitution
+
+        Examples
+        --------
+        >>> import sympy
+        >>> from pharmpy import RandomVariable, Parameter
+        >>> omega = Parameter("OMEGA_CL", 0.1)
+        >>> rv = RandomVariable.normal("IIV_CL", "IIV", 0, omega.symbol)
+        >>> rv.subs({omega.symbol: sympy.Symbol("OMEGA_NEW")})
+        IIV_CL ~ 𝒩 (0, OMEGA_NEW)
+
+        """
         if self._mean is not None:
             self._mean = self._mean.subs(d)
             self._variance = self._variance.subs(d)
@@ -175,8 +226,18 @@ class RandomVariable:
         if self._sympy_rv is not None:
             self._sympy_rv = self._sympy_rv.subs(d)
 
-    def copy(self):
-        return copy.deepcopy(self)
+    def copy(self, deep=True):
+        """Make copy of RandomVariable
+
+        Parameters
+        ----------
+        deep : bool
+            Deep copy if True (default) else shallow
+        """
+        if deep:
+            return copy.deepcopy(self)
+        else:
+            return copy.copy(self)
 
     def __copy__(self):
         return self.copy()
@@ -208,19 +269,29 @@ class RandomVariable:
                 sigma_height = len(sigma_strings)
                 max_height = max(mu_height, sigma_height)
 
-                left_parens = unicode.left_parens(len(name_strings))
-                right_parens = unicode.right_parens(len(name_strings))
+                left_parens = unicode.left_parens(max_height)
+                right_parens = unicode.right_parens(max_height)
 
                 # Pad the smaller of the matrices
                 if mu_height != sigma_height:
-                    to_pad = mu_strings if mu_strings < sigma_strings else sigma_strings
+                    to_pad = mu_strings if mu_height < sigma_height else sigma_strings
                     num_lines = abs(mu_height - sigma_height)
                     padding = ' ' * len(to_pad[0])
                     for i in range(0, num_lines):
-                        if i // 2 == 0:
+                        if i % 2 == 0:
                             to_pad.append(padding)
                         else:
                             to_pad.insert(0, padding)
+
+                # Pad names
+                if len(name_strings) < max_height:
+                    num_lines = abs(max_height - len(name_strings))
+                    padding = ' ' * len(name_strings[0])
+                    for i in range(0, num_lines):
+                        if i % 2 == 0:
+                            name_strings.append(padding)
+                        else:
+                            name_strings.insert(0, padding)
 
                 central_index = max_height // 2
                 res = []
@@ -245,6 +316,11 @@ class RandomVariable:
                 return f'{sympy.pretty(self.symbol, wrap_line=False)}' \
                 f' ~ {unicode.mathematical_script_capital_n}({sympy.pretty(self._mean[0], wrap_line=False)}, ' \
                 f'{sympy.pretty(self._variance[0], wrap_line=False)})\n'
+        else:
+            if isinstance(self.sympy_rv.pspace.distribution, ExponentialDistribution):
+                return f'{sympy.pretty(self.symbol)} ~ Exp({self.sympy_rv.pspace.distribution.rate})'
+            else:
+                return f'{sympy.pretty(self.symbol)} ~ UnknownDistribution'
 
     def _latex_string(self, aligned=False):
         lines = []
@@ -271,36 +347,91 @@ class RandomVariable:
 
 
 class VariabilityLevel:
-    def __init__(self, name, level, group):
+    """A variability level
+
+    Parameters
+    ----------
+    name : str
+        A unique identifying name
+    level : int
+        Numeric level. 0 is the base level. Lower levels consists of groups of higher levels.
+        If for example 0 is IIV then IOV could be 1 and COUNTRY could be -1
+    group : str
+        Name of data column to group this level. None for no grouping (default)
+    """
+    def __init__(self, name, level, group=None):
         self.name = name
         self.level = level
         self.group = group
 
 
 class VariabilityHierarchy:
+    """Description of a variability hierarchy
+    """
     def __init__(self):
         self._levels = []
 
     @property
     def names(self):
+        """Names of all variability levels
+        """
         return [varlev.name for varlev in self._levels]
 
     @property
     def levels(self):
+        """All numerical levels
+        """
         return [varlev.level for varlev in self._levels]
 
     def get_name(self, i):
+        """Retrieve name of variability level
+
+        Parameters
+        ----------
+        i - int
+            Numeric variability level
+
+        Examples
+        --------
+        >>> hierarchy = VariabilityHierarchy()
+        >>> hierarchy.add_variability_level("IIV", 0, "ID")
+        >>> hierarchy.add_variability_level("IOV", 1, "OCC")
+        >>> hierarchy.get_name(1)
+        IOV
+        >>> hierarchy.get_name(0)
+        IIV
+
+        """
         for varlev in self._levels:
             if varlev.level == i:
                 return varlev.name
         raise KeyError(f'No variability level {i}')
 
     def add_variability_level(self, name, level, group):
+        """Add variability level to hierarchy
+
+        Parameters
+        ----------
+        name : str
+            A unique identifying name
+        level : int
+            Numeric level. 0 is the base level. Lower levels consists of groups of higher levels.
+            If for example 0 is IIV then IOV could be 1 and COUNTRY could be -1
+        group : str
+            Name of data column to group this level. None for no grouping (default)
+
+        Examples
+        --------
+        >>> hierarchy = VariabilityHierarchy()
+        >>> hierarchy.add_variability_level("IIV", 0, "ID")
+        >>> hierarchy.add_variability_level("IOV", 1, "OCC")
+
+        """
         nums = self.levels
         new = VariabilityLevel(name, level, group)
         if nums:
             if not (level == min(nums) - 1 or level == max(nums) + 1):
-                raise ValueError(f'Cannot set variability level {self.level}. '
+                raise ValueError(f'Cannot set variability level {level}. '
                     'New variability level must be one level higher or one level lower than any current level')
             if level == min(nums) - 1:
                 self._levels.insert(0, new)
@@ -310,17 +441,76 @@ class VariabilityHierarchy:
             self._levels.append(new)
 
     def add_higher_level(self, name, group):
+        """Add a higher variability level to hierarchy
+
+        Parameters
+        ----------
+        name : str
+            Name of new variability level
+        group : str
+            Name of data column to group this level. None for no grouping (default)
+
+        Examples
+        --------
+        >>> hierarchy = VariabilityHierarchy()
+        >>> hierarchy.add_variability_level("IIV", 0, "ID")
+        >>> hierarchy.add_higher_level("IOV", "OCC")
+
+        See Also
+        --------
+        add_variability_level, add_lower_level
+        """
         nums = self.levels
         level = max(nums) + 1
         self.add_variability_level(name, level, group)
 
     def add_lower_level(self, name, group):
+        """Add a lower variability level to hierarchy
+
+        Parameters
+        ----------
+        name : str
+            Name of new variability level
+        group : str
+            Name of data column to group this level. None for no grouping (default)
+
+        Examples
+        --------
+        >>> hierarchy = VariabilityHierarchy()
+        >>> hierarchy.add_variability_level("IIV", 0, "ID")
+        >>> hierarchy.add_lower_level("ICV", "COUNTRY")
+
+        See Also
+        --------
+        add_variability_level, add_higher_level
+        """
+
         nums = [varlev.level for varlev in self._levels]
-        level = min(nums) + 1
+        level = min(nums) - 1
         self.add_variability_level(name, level, group)
 
     def set_variability_level(self, level, name, group):
         """Change the name and group of variability level
+
+        Parameters
+        ----------
+        level : int
+            Numeric level to change
+        name : str
+            Name of new variability level
+        group : str
+            Name of data column to group this level. None for no grouping (default)
+
+        Examples
+        --------
+        >>> hierarchy = VariabilityHierarchy()
+        >>> hierarchy.add_variability_level("IIV", 0, "ID")
+        >>> hierarchy.add_lower_level("ICV", "COUNTRY")
+        >>> hierarchy.set_variability_level(-1, "ICV", "CENTER")
+
+        See Also
+        --------
+        remove_variability_level
         """
         for varlev in self._levels:
             if varlev.level == level:
@@ -337,6 +527,18 @@ class VariabilityHierarchy:
         ----------
         ind : str or int
             name or number of variability level
+
+        Examples
+        --------
+        >>> hierarchy = VariabilityHierarchy()
+        >>> hierarchy.add_variability_level("IIV", 0, "ID")
+        >>> hierarchy.add_lower_level("ICV", "COUNTRY")
+        >>> hierarchy.remove_variability_level(-1)
+
+        See Also
+        --------
+        set_variability_level
+
         """
         for i, varlev in enumerate(self._levels):
             if isinstance(ind, str) and varlev.name == ind or isinstance(ind, int) and varlev.level == ind:
@@ -344,13 +546,14 @@ class VariabilityHierarchy:
                 break
         else:
             raise KeyError(f'No variability level {ind}')
-        if index == 0:
+        n = self._levels[index].level
+        if n == 0:
             raise ValueError(f'Cannot remove the base variability level (0)')
         del self._levels[index]
         for varlev in self._levels:
-            if index < 0 and varlevel.level < index:
+            if n < 0 and varlev.level < n:
                 varlev.level += 1
-            elif index > 0 and varlevel.level > index:
+            elif n > 0 and varlev.level > n:
                 varlev.level -= 1
 
     def __len__(self):
@@ -411,7 +614,7 @@ class RandomVariables(MutableSequence):
 
     def __getitem__(self, ind):
         if isinstance(ind, list):
-            selection = self.copy()
+            selection = self.copy(deep=False)
             include = []
             for i in ind:
                 _, rv = self._lookup_rv(i)
@@ -522,10 +725,13 @@ class RandomVariables(MutableSequence):
             symbs |= rv.free_symbols
         return symbs
 
-    def copy(self):
+    def copy(self, deep=True):
         new = RandomVariables()
         for rv in self._rvs:
-            new._rvs.append(rv.copy())
+            if deep:
+                new._rvs.append(rv.copy(deep=deep))
+            else:
+                new._rvs.append(rv)
         return new
 
     @property

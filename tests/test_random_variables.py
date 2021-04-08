@@ -6,8 +6,19 @@ import sympy
 import numpy as np
 import sympy.stats as stats
 
-from pharmpy.random_variables import RandomVariable, RandomVariables
+from pharmpy.random_variables import RandomVariable, RandomVariables, VariabilityHierarchy
 from pharmpy.symbols import symbol
+
+
+def test_general_rv():
+    rv = RandomVariable('X', 'iiv', stats.Normal('X', 0, 1))
+    assert rv.name == 'X'
+    assert rv.symbol == symbol('X')
+    assert rv.level == 'IIV'
+    assert rv.sympy_rv.pspace.distribution.mean == 0
+    with pytest.raises(ValueError):
+        RandomVariable('X', 'iiv', stats.Normal('X', [0, 0], [[1, 0], [0, 2]]))
+    rv = RandomVariable('X', 'iiv', stats.Exponential('X', 1))
 
 
 def test_normal_rv():
@@ -15,8 +26,13 @@ def test_normal_rv():
     assert rv.name == 'ETA(1)'
     assert rv.symbol == symbol('ETA(1)')
     assert rv.level == 'IIV'
+    assert rv.joint_names == []
+    rv.name = 'NEW'
+    assert rv.name == 'NEW'
     with pytest.raises(ValueError):
-        rvbad = RandomVariable.normal('ETA(1)', 'uuu', 0, 1)
+        RandomVariable.normal('ETA(1)', 'uuu', 0, 1)
+    with pytest.raises(ValueError):
+        RandomVariable.normal('X', 'iiv', 0, -1)
 
 
 def test_joint_normal_rv():
@@ -27,6 +43,12 @@ def test_joint_normal_rv():
     assert rv2.symbol == symbol('ETA(2)')
     assert rv1.level == 'IIV'
     assert rv2.level == 'IIV'
+    assert rv1.joint_names == ['ETA(1)', 'ETA(2)']
+    assert rv2.joint_names == ['ETA(1)', 'ETA(2)']
+    rv1.name = 'NEW'
+    assert rv1.name == 'NEW'
+    with pytest.raises(ValueError):
+        RandomVariable.joint_normal(['ETA(1)', 'ETA(2)'], 'iiv', [0, 0], [[-1, 0.1], [0.1, 2]])
 
 
 def test_eq_rv():
@@ -42,6 +64,8 @@ def test_eq_rv():
 def test_sympy_rv():
     rv1 = RandomVariable.normal('ETA(1)', 'iiv', 0, 1)
     assert rv1.sympy_rv == sympy.stats.Normal('ETA(1)', 0, 1)
+    rv1 = RandomVariable.normal('ETA(1)', 'iiv', 0, 0)
+    assert rv1.sympy_rv == sympy.Integer(0)
 
 
 def test_repr_rv():
@@ -73,11 +97,30 @@ def test_parameters_rv():
     assert rv1.parameter_names == ['OMEGA(2,2)']
 
 
+def test_init_from_rvs():
+    rv1 = RandomVariable.normal('ETA(1)', 'iiv', 0, 1)
+    rv2 = RandomVariable.normal('ETA(2)', 'iiv', 0, 1)
+    rvs = RandomVariables([rv1, rv2])
+    rvs2 = RandomVariables(rvs)
+    assert len(rvs2) == 2
+
+
 def test_len():
     rv1 = RandomVariable.normal('ETA(1)', 'iiv', 0, 1)
     rv2 = RandomVariable.normal('ETA(1)', 'iiv', 0, 1)
     rvs = RandomVariables([rv1, rv2])
     assert len(rvs) == 2
+
+
+def test_eq():
+    rv1 = RandomVariable.normal('ETA(1)', 'iiv', 0, 1)
+    rv2 = RandomVariable.normal('ETA(2)', 'iiv', 0, 1)
+    rv3 = RandomVariable.normal('ETA(3)', 'iiv', 0, 1)
+    rvs = RandomVariables([rv1, rv2])
+    rvs2 = RandomVariables([rv1])
+    assert rvs != rvs2
+    rvs3 = RandomVariables([rv1, rv3])
+    assert rvs != rvs
 
 
 def test_getitem():
@@ -135,15 +178,32 @@ def test_etas():
 def test_free_symbols():
     rv1 = RandomVariable.normal('ETA(1)', 'iiv', 0, 1)
     rv2 = RandomVariable.normal('ETA(2)', 'iiv', 0, symbol('OMEGA(2,2)'))
+    assert rv2.free_symbols == {symbol('ETA(2)'), symbol('OMEGA(2,2)')}
     rvs = RandomVariables([rv1, rv2])
     assert rvs.free_symbols == {symbol('ETA(1)'), symbol('ETA(2)'), symbol('OMEGA(2,2)')}
+    rv_exp = RandomVariable('X', 'iiv', stats.Exponential('X', 1))
+    assert rv_exp.free_symbols == {symbol('X')}
 
 
 def test_parameter_names():
     rv1, rv2 = RandomVariable.joint_normal(['ETA(1)', 'ETA(2)'], 'iiv', [0, 0], [[symbol('OMEGA(1,1)'), symbol('OMEGA(2,1)')], [symbol('OMEGA(2,1)'), symbol('OMEGA(2,2)')]])
+    assert rv1.parameter_names == ['OMEGA(1,1)', 'OMEGA(2,1)', 'OMEGA(2,2)']
+    assert rv2.parameter_names == ['OMEGA(1,1)', 'OMEGA(2,1)', 'OMEGA(2,2)']
     rv3 = RandomVariable.normal('ETA(1)', 'iiv', 0, symbol('OMEGA(3,3)'))
+    assert rv3.parameter_names == ['OMEGA(3,3)']
     rvs = RandomVariables([rv1, rv2, rv3])
     assert rvs.parameter_names == ['OMEGA(1,1)', 'OMEGA(2,1)', 'OMEGA(2,2)', 'OMEGA(3,3)']
+    rv_exp = RandomVariable('X', 'iiv', stats.Exponential('X', symbol('Z')))
+    assert rv_exp.parameter_names == ['Z']
+
+
+def test_subs():
+    rv = RandomVariable.normal('ETA(1)', 'iiv', 0, symbol('OMEGA(3,3)'))
+    rv.subs({symbol('OMEGA(3,3)'): symbol('VAR')})
+    assert rv.sympy_rv.pspace.distribution.std == sympy.sqrt(symbol('VAR'))
+    rv_exp = RandomVariable('X', 'iiv', stats.Exponential('X', symbol('Z')))
+    rv_exp.subs({symbol('Z'): symbol('TV')})
+    assert rv_exp.sympy_rv.pspace.distribution.rate == symbol('TV')
 
 
 def test_distributions():
@@ -173,6 +233,18 @@ def test_repr():
 ETA(3) ~ 𝒩 (2, 1)
 """
     assert str(rvs) == res
+    rv_exp = RandomVariable('X', 'iiv', stats.Exponential('X', symbol('Z')))
+    assert str(rv_exp) == 'X ~ Exp(Z)'
+    rv_f = RandomVariable('X', 'iiv', stats.FDistribution('X', symbol('Z'), 2))
+    assert str(rv_f) == 'X ~ UnknownDistribution'
+    rv3, rv4 = RandomVariable.joint_normal(['ETA(1)', 'ETA(2)'], 'iiv', [sympy.sqrt(sympy.Rational(2, 5)), 0], [[1, 0.1], [0.1, 2]])
+    print(str(rv3))
+    assert str(rv3) == '''             ⎧⎡√10⎤            ⎫
+⎡ETA(1)⎤     ⎪⎢───⎥  ⎡ 1   0.1⎤⎪
+⎢      ⎥ ~ 𝒩 ⎪⎢ 5 ⎥, ⎢        ⎥⎪
+⎣ETA(2)⎦     ⎪⎢   ⎥  ⎣0.1   2 ⎦⎪
+             ⎩⎣ 0 ⎦            ⎭
+'''
 
 
 def test_repr_latex():
@@ -189,6 +261,14 @@ def test_copy():
     rvs2 = rvs.copy()
     assert rvs == rvs2
     assert rvs is not rvs2
+    rv4 = rv3.copy(deep=False)
+    assert rv4.name == rv3.name
+
+
+def test_hash():
+    rv1 = RandomVariable.normal('ETA(3)', 'iiv', 2, 1)
+    rv2 = RandomVariable.normal('ETA(2)', 'iiv', 2, 0)
+    assert hash(rv1) != hash(rv2)
 
 
 def test_nearest_valid_parameters():
@@ -249,27 +329,42 @@ def test_join():
     assert rv1.sympy_rv.pspace.distribution.sigma == sympy.Matrix([[symbol('OMEGA(1,1)'), symbol('IIV_CL_IIV_V')], [symbol('IIV_CL_IIV_V'), symbol('OMEGA(2,2)')]])
 
 
+def test_variability_hierarchy():
+    lev = VariabilityHierarchy()
+    lev.add_variability_level('IIV', 0, 'ID')
+    assert lev.get_name(0) == 'IIV'
+    with pytest.raises(KeyError):
+        lev.get_name(1)
+    with pytest.raises(ValueError):
+        lev.add_variability_level('IOV', 2, 'OCC')
+    lev.add_variability_level('CENTER', -1, 'CENTER')
+    assert len(lev) == 2
+    lev.add_lower_level('PLANET', 'PLANET')
+    assert len(lev) == 3
+    lev.set_variability_level(-1, 'COHORT', 'X2')
+    assert lev.get_name(-1) == 'COHORT'
+    with pytest.raises(KeyError):
+        lev.set_variability_level(2, 'X', 'Y')
+    lev.remove_variability_level(-2)
+    assert len(lev) == 2
+    with pytest.raises(KeyError):
+        lev.remove_variability_level(2)
+    with pytest.raises(ValueError):
+        lev.remove_variability_level('IIV')
+    lev = VariabilityHierarchy()
+    lev.add_variability_level('IIV', 0, 'ID')
+    lev.add_higher_level('IOV', 'OCC')
+    lev.add_higher_level('IOVIOV', 'SUBOCC')
+    lev.add_lower_level('PLANET', 'PLANET')
+    lev.add_lower_level('GALAXY', 'GALAXY')
+    lev.remove_variability_level('IOV')
+    assert len(lev) == 4
+    lev.remove_variability_level('PLANET')
+    assert len(lev) == 3
+
+
+
 """
-
-
-def test_all_parameters():
-    omega1 = symbol('OMEGA(1,1)')
-    eta1 = stats.Normal('ETA(1)', 0, sympy.sqrt(omega1))
-    omega2 = symbol('OMEGA(2,2)')
-    eta2 = stats.Normal('ETA(2)', 0, sympy.sqrt(omega2))
-    sigma = symbol('SIGMA(1,1)')
-    eps = stats.Normal('EPS(1)', 0, sympy.sqrt(sigma))
-
-    rvs = RandomVariables([eta1, eta2, eps])
-
-    assert len(rvs) == 3
-
-    params = rvs.all_parameters()
-
-    assert len(params) == 3
-    assert params == ['OMEGA(1,1)', 'OMEGA(2,2)', 'SIGMA(1,1)']
-
-
 @pytest.mark.parametrize(
     'model_file,expected_length',
     [
@@ -284,40 +379,6 @@ def test_all_parameters_models(testdata, model_file, expected_length):
 
     assert len(model.random_variables.all_parameters()) == expected_length
     assert len(model.parameters) != len(model.random_variables.all_parameters())
-
-
-def test_copy(testdata):
-    model = Model(testdata / 'nonmem' / 'pheno.mod')
-    rvs = model.random_variables.copy()
-    for rv in rvs:
-        assert bool(rv.variability_level)
-
-    rvs = copy.deepcopy(model.random_variables)
-    for rv in rvs:
-        assert bool(rv.variability_level)
-
-    ser = pickle.dumps(model.random_variables)
-    rvs = pickle.loads(ser)
-    for rv in rvs:
-        assert bool(rv.variability_level)
-
-
-def test_has_same_order():
-    omega1 = symbol('OMEGA(1,1)')
-    eta1 = stats.Normal('ETA(1)', 0, sympy.sqrt(omega1))
-    omega2 = symbol('OMEGA(2,2)')
-    eta2 = stats.Normal('ETA(2)', 0, sympy.sqrt(omega2))
-    omega3 = symbol('OMEGA(1,1)')
-    eta3 = stats.Normal('ETA(3)', 0, sympy.sqrt(omega3))
-
-    rvs_full = RandomVariables([eta1, eta2, eta3])
-    assert rvs_full.are_consecutive(rvs_full)
-
-    rvs_sub = RandomVariables([eta1, eta2])
-    assert rvs_full.are_consecutive(rvs_sub)
-
-    rvs_rev = RandomVariables([eta3, eta2, eta1])
-    assert not rvs_full.are_consecutive(rvs_rev)
 
 
 def test_get_connected_iovs():
