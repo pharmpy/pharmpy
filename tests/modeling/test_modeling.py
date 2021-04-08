@@ -1521,11 +1521,11 @@ def test_add_iiv(pheno_path, parameter, expression, operation, eta_name, buf_new
         (
             ['ETA(1)', 'ETA(2)', 'ETA(4)'],
             '$PK\n'
-            'CL = THETA(1)*EXP(ETA(3))\n'
-            'V = THETA(2)*EXP(ETA(4))\n'
-            'S1 = V + ETA(1)\n'
-            'MAT = THETA(3)*EXP(ETA(5))\n'
-            'Q = THETA(4)*EXP(ETA(2))\n\n',
+            'CL=THETA(1)*EXP(ETA(1))\n'
+            'V=THETA(2)*EXP(ETA(2))\n'
+            'S1 = V + ETA(4)\n'
+            'MAT = THETA(3)*EXP(ETA(3))\n'
+            'Q=THETA(4)*EXP(ETA(5))\n\n',
             '$OMEGA 0.1\n'
             '$OMEGA  0.031128\n'
             '$OMEGA BLOCK(3)\n'
@@ -1600,9 +1600,14 @@ def test_add_iiv(pheno_path, parameter, expression, operation, eta_name, buf_new
 )
 def test_block_rvs(testdata, etas, pk_ref, omega_ref):
     model = Model(testdata / 'nonmem/pheno_block.mod')
+    print(str(model))
 
+    print("NEW")
+    print(etas)
+    print(model.random_variables)
     create_rv_block(model, etas)
     model.update_source()
+    print(model.random_variables)
 
     assert str(model.get_pred_pk_record()) == pk_ref
 
@@ -2059,26 +2064,26 @@ def test_update_inits(testdata, etas_file, force, file_exists):
     [
         (
             ['EPS(1)'],
-            'Y = F + W*CIPREDI**THETA(4)*EPS(1)\n' 'IPRED=F+EPS(2)\n' 'IRES=DV-IPRED+EPS(3)',
+            'Y = F + CIPREDI**THETA(4)*EPS(1)*W\n' 'IPRED=F+EPS(2)\n' 'IRES=DV-IPRED+EPS(3)',
             '$THETA  1 ; power1',
         ),
         (
             ['EPS(1)', 'EPS(2)'],
-            'Y = F + W*CIPREDI**THETA(4)*EPS(1)\n'
+            'Y = F + CIPREDI**THETA(4)*EPS(1)*W\n'
             'IPRED = F + CIPREDI**THETA(5)*EPS(2)\n'
             'IRES=DV-IPRED+EPS(3)',
             '$THETA  1 ; power1\n' '$THETA  1 ; power2',
         ),
         (
             ['EPS(1)', 'EPS(3)'],
-            'Y = F + W*CIPREDI**THETA(4)*EPS(1)\n'
+            'Y = F + CIPREDI**THETA(4)*EPS(1)*W\n'
             'IPRED = F + EPS(2)\n'  # FIXME: registers as different despite not being changed
             'IRES = DV - IPRED + CIPREDI**THETA(5)*EPS(3)',
             '$THETA  1 ; power1\n' '$THETA  1 ; power2',
         ),
         (
             None,
-            'Y = F + W*CIPREDI**THETA(4)*EPS(1)\n'
+            'Y = F + CIPREDI**THETA(4)*EPS(1)*W\n'
             'IPRED = F + CIPREDI**THETA(5)*EPS(2)\n'
             'IRES = DV - IPRED + CIPREDI**THETA(6)*EPS(3)',
             '$THETA  1 ; power1\n' '$THETA  1 ; power2\n' '$THETA  1 ; power3',
@@ -2112,7 +2117,8 @@ def test_power_on_ruv(testdata, epsilons, err_ref, theta_ref):
         model.update_source()
 
         rec_err = str(model.control_stream.get_records('ERROR')[0])
-        assert rec_err == f'$ERROR\n' f'W=F\n' f'{err_ref}\n' f'IWRES=IRES/W\n\n'
+        correct = f'$ERROR\n' f'W=F\n' f'{err_ref}\n' f'IWRES=IRES/W\n\n'
+        assert rec_err == correct
 
         rec_theta = ''.join(str(rec) for rec in model.control_stream.get_records('THETA'))
 

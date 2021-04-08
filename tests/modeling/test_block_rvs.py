@@ -6,7 +6,7 @@ import sympy.stats as stats
 
 from pharmpy import Model
 from pharmpy.modeling import add_iiv, create_rv_block
-from pharmpy.modeling.block_rvs import _choose_param_init, _merge_rvs
+from pharmpy.modeling.block_rvs import _choose_param_init
 from pharmpy.random_variables import RandomVariable, RandomVariables
 from pharmpy.results import ModelfitResults
 from pharmpy.symbols import symbol as S
@@ -15,9 +15,8 @@ from pharmpy.symbols import symbol as S
 @pytest.mark.parametrize(
     'rvs, exception_msg',
     [
-        (['ETA(1)', 'ETA(2)'], r'.*fixed: ETA\(1\)'),
-        (['ETA(3)', 'NON_EXISTENT_RV'], r'.*does not exist: NON_EXISTENT_RV'),
-        (['ETA(3)', 'ETA(6)'], r'.*IOV: ETA\(6\)'),
+        (['ETA(3)', 'NON_EXISTENT_RV'], r'.*NON_EXISTENT_RV.*'),
+        (['ETA(3)', 'ETA(6)'], r'.*ETA\(6\).*'),
         (['ETA(1)'], 'At least two random variables are needed'),
     ],
 )
@@ -25,8 +24,6 @@ def test_incorrect_params(testdata, rvs, exception_msg):
     model = Model(
         testdata / 'nonmem' / 'modelfit_results' / 'onePROB' / 'multEST' / 'noSIM' / 'withBayes.mod'
     )
-    model.parameters
-    model.random_variables
 
     with pytest.raises(Exception, match=exception_msg):
         create_rv_block(model, rvs)
@@ -70,7 +67,7 @@ def test_choose_param_init(pheno_path, testdata):
     assert init == 0.0052789
 
 
-def test_merge_rvs(testdata):
+def test_names(testdata):
     model = Model(
         StringIO(
             '''$PROBLEM PHENOBARB SIMPLE MODEL
@@ -97,5 +94,5 @@ $ESTIMATION METHOD=1 INTERACTION
         )
     )
     model.source.path = testdata / 'nonmem' / 'pheno.mod'
-    pset = _merge_rvs(model, model.random_variables)
-    assert 'IIV_CL_V_IIV_S1' in pset.names
+    pset = create_rv_block(model, model.random_variables.names)
+    assert 'IIV_CL_V_IIV_S1' in model.parameters.names

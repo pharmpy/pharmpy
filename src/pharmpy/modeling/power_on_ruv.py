@@ -22,7 +22,9 @@ def power_on_ruv(model, list_of_eps=None):
         None is default.
     """
     list_of_eps = _format_input_list(list_of_eps)
-    eps = _get_epsilons(model, list_of_eps)
+    eps = model.random_variables.epsilons
+    if list_of_eps is not None:
+        eps = eps[list_of_eps]
     pset, sset = model.parameters, model.statements
 
     if has_proportional_error(model):
@@ -34,7 +36,6 @@ def power_on_ruv(model, list_of_eps=None):
         theta_name = str(model.create_symbol(stem='power', force_numbering=True))
         theta = Parameter(theta_name, theta_init)
         pset.add(theta)
-
         sset.subs({e.name: model.individual_prediction_symbol ** S(theta.name) * e.symbol})
 
     model.parameters = pset

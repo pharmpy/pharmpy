@@ -28,45 +28,37 @@ def create_rv_block(model, list_of_rvs=None):
     """
     rvs = model.random_variables
     if list_of_rvs is None:
-        list_of_rvs = model.random_variables.iiv.names
+        iiv_rvs = model.random_variables.iiv
+        nonfix = RandomVariables()
+        for rv in iiv_rvs:
+            for name in iiv_rvs.parameter_names:
+                if model.parameters[name].fix:
+                    break
+            else:
+                nonfix.append(rv)
+        list_of_rvs = nonfix.names
     else:
-        for rv in rvs:
-            if rv.name in list_of_rvs and rv.level == 'iov':
-                raise ValueError('Joining iov random variables is currently not supported')
+        for name in list_of_rvs:
+            if name in rvs and rvs[name].level == 'IOV':
+                raise ValueError(f'{name} describes IOV: Joining IOV random variables is currently not supported')
     if len(list_of_rvs) == 1:
         raise ValueError('At least two random variables are needed')
 
-    rvs_full = model.random_variables
-    rvs = _get_etas(model, list_of_rvs)
+    sset = model.statements
+    paramnames = []
+    for rv in list_of_rvs:
+        statements = sset.find_assignment(rv, is_symbol=False, last=False)
+        parameter_names = '_'.join([s.symbol.name for s in statements])
+        paramnames.append(parameter_names)
 
-    if list_of_rvs is not None:
-        for rv in rvs:
-            if isinstance(rv.sympy_rv.pspace.distribution, MultivariateNormalDistribution):
-                rvs_same_dist = rvs_full.get_rvs_from_same_dist(rv)
-                if not all(rv in rvs for rv in rvs_same_dist):
-                    rvs_full.extract_from_block(rv)
+    cov_to_params = rvs.join(list_of_rvs, name_template='IIV_{}_IIV_{}', param_names=paramnames)
 
-    rvs_block = RandomVariables()
-    for rv in rvs_full:
-        if rv.name in [rv.name for rv in rvs]:
-            rvs_block.append(rv)
-
-    pset = _merge_rvs(model, rvs_block)
-
-    rvs_new = RandomVariables()
-    are_consecutive = rvs_full.are_consecutive(rvs_block)
-
-    for rv in rvs_full:
-        if rv.name not in [rv.name for rv in rvs_block.etas]:
-            rvs_new.append(rv)
-        elif are_consecutive:
-            rvs_new.append(rvs_block[rv.name])
-
-    if not are_consecutive:
-        {rvs_new.append(rv) for rv in rvs_block}  # Add new block last
-
-    model.random_variables = rvs_new
-    model.parameters = pset
+    pset = model.parameters
+    for cov_name, param_names in cov_to_params.items():
+        parent_params = (pset[param_names[0]], pset[param_names[1]])
+        covariance_init = _choose_param_init(model, rvs, parent_params)
+        param_new = Parameter(cov_name, covariance_init)
+        pset.add(param_new)
 
     return model
 
@@ -102,32 +94,6 @@ def split_rv_block(model, list_of_rvs=None):
     model.parameters = pset
 
     return model
-
-
-def _merge_rvs(model, rvs):
-    sset, pset = model.statements, model.parameters
-
-    rv_to_param = dict()
-    paramnames = []
-
-    for rv in rvs:
-        statements = sset.find_assignment(rv.name, is_symbol=False, last=False)
-        parameter_names = '_'.join([s.symbol.name for s in statements])
-        rv_to_param[rv.name] = parameter_names
-        paramnames.append(parameter_names)
-
-    cov_to_params = rvs.join(name_template='IIV_{}_IIV_{}', param_names=paramnames)
-
-    for rv in rvs:
-        rv.level = 'IIV'
-
-    for cov_name, param_names in cov_to_params.items():
-        parent_params = (pset[param_names[0]], pset[param_names[1]])
-        covariance_init = _choose_param_init(model, rvs, parent_params)
-        param_new = Parameter(cov_name, covariance_init)
-        pset.add(param_new)
-
-    return pset
 
 
 def _choose_param_init(model, rvs, params):

@@ -178,16 +178,20 @@ class RandomVariable:
     def copy(self):
         return copy.deepcopy(self)
 
+    def __copy__(self):
+        return self.copy()
+
     def __deepcopy__(self, memo):
-        symengine_variance = self._symengine_variance
-        self._symengine_variance = None
-        method = self.__deepcopy__
-        # Trick to use default deepcopy
-        self.__deepcopy__ = None
-        new = copy.deepcopy(self)
-        self.__deepcopy__ = method
+        # Custom copier because symengine objects cannot be copied
+        new = RandomVariable(self.name, self.level)
+        new._mean = self._mean.copy()
+        new._variance = self._variance.copy()
         new._symengine_variance = symengine.sympify(self._variance)
-        self._symengine_variance = symengine_variance
+        new._sympy_rv = self._sympy_rv
+        if self._joint_names is None:
+            new._joint_names = None
+        else:
+            new._joint_names = self._joint_names.copy()
         return new
 
     def __hash__(self):
@@ -394,7 +398,10 @@ class RandomVariables(MutableSequence):
                     return i, rv
             raise KeyError(f'Could not find {ind} in RandomVariables')
         elif isinstance(ind, RandomVariable):
-            i = self._rvs.index(ind)
+            try:
+                i = self._rvs.index(ind)
+            except ValueError:
+                raise KeyError(f'Could not find {ind.name} in RandomVariables')
             return i, ind
         if insert:
             # Must allow for inserting after last element.
@@ -403,8 +410,26 @@ class RandomVariables(MutableSequence):
             return ind, self._rvs[ind]
 
     def __getitem__(self, ind):
-        _, rv = self._lookup_rv(ind)
-        return rv
+        if isinstance(ind, list):
+            selection = self.copy()
+            include = []
+            for i in ind:
+                _, rv = self._lookup_rv(i)
+                include.append(rv.name)
+            for rv in self._rvs:
+                if rv.name not in include:
+                    del selection[rv.name]
+            return selection
+        else:
+            _, rv = self._lookup_rv(ind)
+            return rv
+
+    def __contains__(self, ind):
+        try:
+            _, _ = self._lookup_rv(ind)
+        except KeyError:
+            return False
+        return True
 
     def _remove_joint_normal(self, rv):
         joint_names = rv._joint_names
@@ -415,6 +440,8 @@ class RandomVariables(MutableSequence):
                     continue
                 other = self[name]
                 del other._joint_names[joint_index]
+                if len(other._joint_names) == 1:
+                    other._joint_names = None
                 other._mean.row_del(joint_index)
                 other._variance.row_del(joint_index)
                 other._variance.col_del(joint_index)
@@ -436,10 +463,13 @@ class RandomVariables(MutableSequence):
         i, rv = self._lookup_rv(ind)
         joint_names = rv._joint_names
         if joint_names is not None:
+            joint_names = joint_names.copy()
             joint_index = joint_names.index(rv.name)
             for name in joint_names:
                 other = self[name]
                 del other._joint_names[joint_index]
+                if len(other._joint_names) == 1:
+                    other._joint_names = None
                 other._mean.row_del(joint_index)
                 other._variance.row_del(joint_index)
                 other._variance.col_del(joint_index)
@@ -545,7 +575,19 @@ class RandomVariables(MutableSequence):
         Set new covariances (and previous 0 covs) to 'fill'
         """
         cov_to_params = dict()
-        selection = RandomVariables([self[ind] for ind in inds])
+        #ind_names = []
+        #for i in inds:
+        #    _, rv = self._lookup_rv(i)
+        #    ind_names.append(rv.name)
+        #allinds = []
+        #for rv in self:
+        #    if rv.name in ind_names:
+        #        allinds.append(rv.name)
+        #    elif rv._joint_names is not None and any(x in rv._joint_names for x in ind_names):
+        #        for n in rv._joint_names:
+        #            if n not in ind_names and n not in allinds:
+        #                allinds.append(n)
+        selection = self[inds]
         means, M, names, others = selection._calc_covariance_matrix()
         if fill != 0:
             for row, col in itertools.product(range(M.rows), range(M.cols)):
@@ -559,10 +601,13 @@ class RandomVariables(MutableSequence):
                     cov_to_params[cov_name] = (str(param_1), str(param_2))
                     M[row, col], M[col, row] = symbol(cov_name), symbol(cov_name)
 
+        for i in inds:
+            self._remove_joint_normal(self[i])
+
         new = []
         first = True
         for rv in self._rvs:
-            if rv in selection:
+            if rv.name in selection:
                 if first:
                     new.extend(selection._rvs)
                     first = False

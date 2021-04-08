@@ -300,8 +300,8 @@ def create_omega_block(model, dist, comment_map, index=None):
 
 
 def create_record_maps(etas, rvs, name_map, eta_map):
-    cov_rvs = RandomVariables(rvs).covariance_matrix()
-    cov_rec = RandomVariables(etas).covariance_matrix()
+    cov_rvs = RandomVariables(rvs).covariance_matrix
+    cov_rec = RandomVariables(etas).covariance_matrix
 
     for row in range(cov_rvs.shape[0]):
         for col in range(cov_rvs.shape[1]):
@@ -310,7 +310,7 @@ def create_record_maps(etas, rvs, name_map, eta_map):
                 elem_rec = cov_rec.row(row).col(col)[0]
                 name_map[str(elem_new)] = name_map.pop(str(elem_rec))
     for rv, eta in zip(rvs, etas):
-        eta_map[str(rv)] = eta_map.pop(str(eta))
+        eta_map[rv.name] = eta_map.pop(eta.name)
 
 
 def update_ode_system(model, old, new):
