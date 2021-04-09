@@ -639,6 +639,10 @@ class ChainedModelfitResults(list, ModelfitResults):
         self[-1].parameter_estimates = value
 
     @property
+    def parameter_estimates_sdcorr(self):
+        return self[-1].parameter_estimates_sdcorr
+
+    @property
     def covariance_matrix(self):
         return self[-1].covariance_matrix
 
@@ -653,6 +657,10 @@ class ChainedModelfitResults(list, ModelfitResults):
     @property
     def standard_errors(self):
         return self[-1].standard_errors
+
+    @property
+    def standard_errors(self):
+        return self[-1].standard_errors_sdcorr
 
     @property
     def individual_ofv(self):

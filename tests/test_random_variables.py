@@ -440,6 +440,22 @@ def test_sub():
     assert rvs3.names == ['ETA(2)']
 
 
+
+def test_parameters_sdcorr():
+    rv1 = RandomVariable.normal('ETA(1)', 'iiv', 0, symbol('OMEGA(1,1)'))
+    rv2 = RandomVariable.normal('ETA(2)', 'iiv', 0, symbol('OMEGA(2,2)'))
+    rvs = RandomVariables([rv1, rv2])
+    params = rvs.parameters_sdcorr({'OMEGA(1,1)': 4})
+    assert params == {'OMEGA(1,1)': 2}
+    params = rvs.parameters_sdcorr({'OMEGA(1,1)': 4, 'OMEGA(2,2)': 16})
+    assert params == {'OMEGA(1,1)': 2, 'OMEGA(2,2)': 4}
+
+    rv1, rv2 = RandomVariable.joint_normal(['ETA(1)', 'ETA(2)'], 'iiv', [0, 0], [[symbol('x'), symbol('y')], [symbol('y'), symbol('z')]])
+    rvs = RandomVariables([rv1, rv2])
+    params = rvs.parameters_sdcorr({'x': 4, 'y': 0.5, 'z': 16, 'k': 23})
+    assert params == {'x': 2.0, 'y': 0.0625, 'z': 4.0, 'k': 23}
+
+
 def test_variability_hierarchy():
     lev = VariabilityHierarchy()
     lev.add_variability_level('IIV', 0, 'ID')
@@ -472,49 +488,3 @@ def test_variability_hierarchy():
     assert len(lev) == 4
     lev.remove_variability_level('PLANET')
     assert len(lev) == 3
-
-
-
-"""
-@pytest.mark.parametrize(
-    'model_file,expected_length',
-    [
-        ('nonmem/pheno_real.mod', 3),
-        ('nonmem/frem/pheno/model_3.mod', 12),
-        ('nonmem/frem/pheno/model_4.mod', 12),
-    ],
-)
-def test_all_parameters_models(testdata, model_file, expected_length):
-    model_path = testdata / model_file
-    model = Model(model_path)
-
-    assert len(model.random_variables.all_parameters()) == expected_length
-    assert len(model.parameters) != len(model.random_variables.all_parameters())
-
-
-def test_get_connected_iovs():
-    omega = symbol('OMEGA(1,1)')
-    eta1 = stats.Normal('ETA(1)', 0, sympy.sqrt(omega))
-    eta2 = stats.Normal('ETA(2)', 0, sympy.sqrt(omega))
-    eta3 = stats.Normal('ETA(3)', 0, sympy.sqrt(omega))
-
-    omega = symbol('OMEGA(2,2)')
-    eta4 = stats.Normal('ETA(4)', 0, sympy.sqrt(omega))
-    eta5 = stats.Normal('ETA(5)', 0, sympy.sqrt(omega))
-
-    rvs_iovs = RandomVariables([eta1, eta2, eta3, eta4, eta5])
-
-    for rv in rvs_iovs:
-        rv.variability_level = VariabilityLevel.IOV
-
-    omega_iiv = symbol('OMEGA(3,3)')
-    eta_iiv = stats.Normal('ETA(6)', 0, sympy.sqrt(omega_iiv))
-    eta_iiv.variability_level = VariabilityLevel.IIV
-
-    rvs = copy.deepcopy(rvs_iovs)
-    rvs.add(eta_iiv)
-
-    assert len(rvs.get_connected_iovs(eta1)) == 3
-    assert len(rvs.get_connected_iovs(eta4)) == 2
-    assert len(rvs.get_connected_iovs(eta_iiv)) == 1
-"""

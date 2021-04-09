@@ -754,9 +754,13 @@ class RandomVariables(MutableSequence):
         parameters = []
         for rvs, dist in self.distributions():
             if len(rvs) == 1:
-                parameters.append(dist.std ** 2)
+                p = dist.std ** 2
+                if p not in parameters:
+                    parameters.append(dist.std ** 2)
             else:
-                parameters += list(dist.sigma.diagonal())
+                for p in dist.sigma.diagonal():
+                    if p not in parameters:
+                        parameters.append(p)
         return [p.name for p in parameters]
 
     def _rename_rv(self, current, new):
@@ -848,17 +852,6 @@ class RandomVariables(MutableSequence):
             rv = self[i]
             symrv = rv.sympy_rv
             n = 1 if rv._joint_names is None else len(rv._joint_names)
-            #if symrv is None and rv._variance is not None and not rv._variance.is_positive_semidefinite:
-            #    if n == 1:
-                    # Workaround beause sympy disallows 0 std and sigma
-            #        symrv = sympy.stats.Normal(rv.name, rv._mean, 9999)
-            #        symrv.pspace.distribution.std = 0
-            #    else:
-            #        symrv = sympy.stats.Normal('X', rv._mean, sympy.eye(n))
-            #        symrv.pspace.distribution.sigma = sympy.zeroes(n)
-            #else:
-            #    symrv = rv.sympy_rv
-
             dist = symrv.pspace.distribution
             if isinstance(dist, stats.crv_types.NormalDistribution):
                 i += 1
@@ -991,3 +984,34 @@ class RandomVariables(MutableSequence):
             latex = rv._latex_string(aligned=True)
             lines.append(latex)
         return '\\begin{align*}\n' + r' \\ '.join(lines) + '\\end{align*}'
+
+    def parameters_sdcorr(self, values):
+        """Convert parameter values to sd/corr form
+
+        All parameter values will be converted to sd/corr assuming
+        they are given in var/cov form. Only parameters for normal
+        distributions will be affected.
+
+        Parameters
+        ----------
+        values : dict
+            Dict of parameter names to values
+        """
+        newdict = values.copy()
+        for rvs, dist in self.distributions():
+            if len(rvs) > 1:
+                sigma_sym = dist.sigma
+                sigma = np.array(sigma_sym.subs(values)).astype(np.float64)
+                corr = pharmpy.math.cov2corr(sigma)
+                for i in range(sigma_sym.rows):
+                    for j in range(sigma_sym.cols):
+                        name = sigma_sym[i, j].name
+                        if i != j:
+                            newdict[name] = corr[i, j]
+                        else:
+                            newdict[name] = np.sqrt(sigma[i, j])
+            else:
+                name = (dist.std ** 2).name
+                if name in newdict:
+                    newdict[name] = dist.std.subs(values)
+        return newdict

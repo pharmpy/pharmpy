@@ -11,15 +11,7 @@ from pharmpy.results import ChainedModelfitResults, ModelfitResults
 class NONMEMModelfitResults(ModelfitResults):
     # objects here need to know what chain they are in to be able to do lazy reading
     def __init__(self, chain):
-        self._repara = False
         self._chain = chain
-
-    def reparameterize(self, parameterizations):
-        names = {p.name for p in parameterizations}
-        if len(names) == 2 and names == {'sdcorr', 'sd'}:
-            self._repara = True
-        else:
-            raise NotImplementedError("Only support reparametrization to sdcorr and sd")
 
     @property
     def ofv(self):
@@ -31,10 +23,11 @@ class NONMEMModelfitResults(ModelfitResults):
 
     @property
     def parameter_estimates(self):
-        if not self._repara:
-            return self._parameter_estimates
-        else:
-            return self._parameter_estimates_sdcorr
+        return self._parameter_estimates
+
+    @property
+    def parameter_estimates_sdcorr(self):
+        return self._parameter_estimates_sdcorr
 
     @parameter_estimates.setter
     def parameter_estimates(self, value):
@@ -42,10 +35,11 @@ class NONMEMModelfitResults(ModelfitResults):
 
     @property
     def standard_errors(self):
-        if not self._repara:
-            return self._standard_errors
-        else:
-            return self._standard_errors_sdcorr
+        return self._standard_errors
+
+    @property
+    def standard_errors_sdcorr(self):
+        return self._standard_errors_sdcorr
 
     @property
     def minimization_successful(self):

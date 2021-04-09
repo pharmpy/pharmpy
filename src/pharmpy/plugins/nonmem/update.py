@@ -93,7 +93,6 @@ def update_random_variables(model, old, new):
 
     eta_number = 1
     for i, (op, (rvs, dist)) in enumerate(rvs_diff):
-        print(op, rvs, eta_number)
         if op == '+':
             if len(rvs) == 1:
                 rv = rvs[0]
@@ -107,7 +106,6 @@ def update_random_variables(model, old, new):
                     eta_number=eta_number,
                     previous_size=1,
                 )
-                print(record)
                 new_maps.append(
                     (record, {variance_param_name: (eta_number, eta_number)}, {rv.name: eta_number})
                 )
@@ -340,8 +338,12 @@ def create_omega_single(model, rv, param, eta_number, previous_size):
     if not param.name.startswith('OMEGA('):
         param_str += f' ; {param.name}'
 
-    first_rec = model.control_stream.get_records(record_type)[0]
-    record = model.control_stream.insert_record(f'{param_str}\n', records.index(first_rec) + eta_number)
+    tprecs = model.control_stream.get_records(record_type)
+    if tprecs:
+        index = records.index(tprecs[0])
+        record = model.control_stream.insert_record(f'{param_str}\n', index + eta_number)
+    else:
+        record = model.control_stream.insert_record(f'{param_str}\n')
 
     record.parameters(eta_number, previous_size)
     record.random_variables(eta_number, previous_cov)
