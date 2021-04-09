@@ -653,8 +653,15 @@ class RandomVariables(MutableSequence):
 
     def __setitem__(self, ind, value):
         if isinstance(ind, slice):
-            # FIXME: This is too crude
-            self._rvs[ind] = value
+            if ind.step is None:
+                step = 1
+            else:
+                step = ind.step
+            indices = list(range(ind.start, ind.stop, step))
+            if len(value) != len(indices):
+                raise ValueError('Bad number of rvs to set using slice')
+            for i, val in zip(indices, value):
+                self[i] = val
             return
         if not isinstance(value, RandomVariable):
             raise ValueError(f'Trying to set {type(value)} to RandomVariables. Must be of type RandomVariable.')
@@ -840,17 +847,17 @@ class RandomVariables(MutableSequence):
         while i < len(self):
             rv = self[i]
             symrv = rv.sympy_rv
-            n = 0 if rv._joint_names is None else len(rv._joint_names)
-            if symrv == 0:
-                if n == 1:
+            n = 1 if rv._joint_names is None else len(rv._joint_names)
+            #if symrv is None and rv._variance is not None and not rv._variance.is_positive_semidefinite:
+            #    if n == 1:
                     # Workaround beause sympy disallows 0 std and sigma
-                    symrv = sympy.stats.Normal(rv.name, rv._mean, 9999)
-                    symrv.pspace.distribution.std = 0
-                    symrv.pspace.distribution.args = (rv._mean, 0)
-                else:
-                    symrv = sympy.stats.Normal('X', rv._mean, sympy.eyes(n))
-                    symrv.pspace.distribution.sigma = sympy.zeroes(n)
-                    symrv.pspace.distribution.args = (rv._mean, sympy.zeroes(n))
+            #        symrv = sympy.stats.Normal(rv.name, rv._mean, 9999)
+            #        symrv.pspace.distribution.std = 0
+            #    else:
+            #        symrv = sympy.stats.Normal('X', rv._mean, sympy.eye(n))
+            #        symrv.pspace.distribution.sigma = sympy.zeroes(n)
+            #else:
+            #    symrv = rv.sympy_rv
 
             dist = symrv.pspace.distribution
             if isinstance(dist, stats.crv_types.NormalDistribution):

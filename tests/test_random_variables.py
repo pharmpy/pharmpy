@@ -183,6 +183,21 @@ def test_setitem():
     with pytest.raises(ValueError):
         rvs[0] = 0
 
+    rv1, rv2, rv3 = RandomVariable.joint_normal(['x', 'y', 'z'], 'iiv', [0, 0, 1], [[1, 0.1, 0.1], [0.1, 4, 0.1], [0.1, 0.1, 9]])
+    rv4 = RandomVariable.normal('w', 'iiv', 0, 0.1)
+    rvs = RandomVariables([rv1, rv2, rv3])
+    rvs[0:1] = [rv4]
+    assert len(rvs) == 3
+    assert rvs.names == ['w', 'y', 'z']
+
+    with pytest.raises(ValueError):
+        rvs[0:2] = [rv4]
+
+    rv1, rv2, rv3 = RandomVariable.joint_normal(['x', 'y', 'z'], 'iiv', [0, 0, 1], [[1, 0.1, 0.1], [0.1, 4, 0.1], [0.1, 0.1, 9]])
+    rv4 = RandomVariable.normal('w', 'iiv', 0, 0.1)
+    rvs = RandomVariables([rv1, rv2, rv3])
+    rvs[0:3:2] = [rv1, rv4]
+
 
 def test_insert():
     rv1, rv2 = RandomVariable.joint_normal(['x', 'y'], 'iiv', [0, 0], [[1, 0.1], [0.1, 2]])
@@ -407,6 +422,22 @@ def test_join():
     rvs = RandomVariables([rv1, rv2])
     rvs.join(['ETA(1)', 'ETA(2)'], name_template='IIV_{}_IIV_{}', param_names=['CL', 'V'])
     assert rv1.sympy_rv.pspace.distribution.sigma == sympy.Matrix([[symbol('OMEGA(1,1)'), symbol('IIV_CL_IIV_V')], [symbol('IIV_CL_IIV_V'), symbol('OMEGA(2,2)')]])
+    rv1 = RandomVariable.normal('ETA(1)', 'iiv', 0, symbol('OMEGA(1,1)'))
+    rv2 = RandomVariable.normal('ETA(2)', 'iiv', 0, symbol('OMEGA(2,2)'))
+    rv3 = RandomVariable.normal('ETA(3)', 'iiv', 0, symbol('OMEGA(3,3)'))
+    rvs = RandomVariables([rv1, rv2, rv3])
+    rvs.join(['ETA(2)', 'ETA(3)'])
+    assert rv2.sympy_rv.pspace.distribution.sigma == sympy.Matrix([[symbol('OMEGA(2,2)'), 0], [0, symbol('OMEGA(3,3)')]])
+
+
+def test_sub():
+    rv1 = RandomVariable.normal('ETA(1)', 'iiv', 0, symbol('OMEGA(1,1)'))
+    rv2 = RandomVariable.normal('ETA(2)', 'iiv', 0, symbol('OMEGA(2,2)'))
+    rv3 = RandomVariable.normal('ETA(3)', 'iiv', 0, symbol('OMEGA(3,3)'))
+    rvs = RandomVariables([rv1, rv2])
+    rvs2 = RandomVariables([rv1, rv3])
+    rvs3 = rvs - rvs2
+    assert rvs3.names == ['ETA(2)']
 
 
 def test_variability_hierarchy():
