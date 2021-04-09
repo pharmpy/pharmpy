@@ -180,6 +180,16 @@ def test_setitem():
     assert rv3.sympy_rv.pspace.distribution.sigma == cov
     assert rvs.names == ['w', 'x', 'z']
 
+    with pytest.raises(ValueError):
+        rvs[0] = 0
+
+
+def test_insert():
+    rv1, rv2 = RandomVariable.joint_normal(['x', 'y'], 'iiv', [0, 0], [[1, 0.1], [0.1, 2]])
+    rvs = RandomVariables([rv1, rv2])
+    with pytest.raises(ValueError):
+        rvs.insert(0, 23)
+
 
 def test_delitem():
     rv1 = RandomVariable.normal('ETA', 'iiv', 0, 1)
@@ -194,6 +204,11 @@ def test_delitem():
     rvs = RandomVariables([rv1, rv2])
     del rvs[0]
     assert len(rvs) == 1
+
+    rv1, rv2, rv3 = RandomVariable.joint_normal(['x', 'y', 'z'], 'iiv', [0, 0, 1], [[1, 0.1, 0.1], [0.1, 4, 0.1], [0.1, 0.1, 9]])
+    rvs = RandomVariables([rv1, rv2, rv3])
+    del rvs[1]
+    assert len(rvs) == 2
 
 
 def test_names():
@@ -221,6 +236,27 @@ def test_etas():
     assert rvs.etas.names == ['ETA', 'ETA2']
 
 
+def test_iiv_iov():
+    rv1 = RandomVariable.normal('ETA', 'iiv', 0, 1)
+    rv2 = RandomVariable.normal('ETA2', 'iov', 0, 0.1)
+    rv3 = RandomVariable.normal('EPS', 'ruv', 0, 0.1)
+    rvs = RandomVariables([rv1, rv2, rv3])
+    assert rvs.iiv == RandomVariables([rv1])
+    assert rvs.iiv.names == ['ETA']
+    assert rvs.iov == RandomVariables([rv2])
+    assert rvs.iov.names == ['ETA2']
+
+
+def test_subs():
+    rv1, rv2 = RandomVariable.joint_normal(['ETA(1)', 'ETA(2)'], 'iiv', [0, 0], [[symbol('OMEGA(1,1)'), symbol('OMEGA(2,1)')], [symbol('OMEGA(2,1)'), symbol('OMEGA(2,2)')]])
+    rv3 = RandomVariable.normal('ETA(3)', 'iiv', 0, symbol('OMEGA(3,3)'))
+    rvs = RandomVariables([rv1, rv2, rv3])
+    rvs.subs({symbol('ETA(2)'): symbol('w'), symbol('OMEGA(1,1)'): symbol('x'), symbol('OMEGA(3,3)'): symbol('y')})
+    assert rv1.sympy_rv.pspace.distribution.sigma == sympy.Matrix([[symbol('x'), symbol('OMEGA(2,1)')], [symbol('OMEGA(2,1)'), symbol('OMEGA(2,2)')]])
+    assert rv3.sympy_rv.pspace.distribution.std ** 2 == symbol('y')
+    assert rvs.names == ['ETA(1)', 'w', 'ETA(3)']
+
+
 def test_free_symbols():
     rv1 = RandomVariable.normal('ETA(1)', 'iiv', 0, 1)
     rv2 = RandomVariable.normal('ETA(2)', 'iiv', 0, symbol('OMEGA(2,2)'))
@@ -243,7 +279,7 @@ def test_parameter_names():
     assert rv_exp.parameter_names == ['Z']
 
 
-def test_subs():
+def test_subs_rv():
     rv = RandomVariable.normal('ETA(1)', 'iiv', 0, symbol('OMEGA(3,3)'))
     rv.subs({symbol('OMEGA(3,3)'): symbol('VAR')})
     assert rv.sympy_rv.pspace.distribution.std == sympy.sqrt(symbol('VAR'))
@@ -284,7 +320,6 @@ ETA(3) ~ 𝒩 (2, 1)
     rv_f = RandomVariable('X', 'iiv', stats.FDistribution('X', symbol('Z'), 2))
     assert str(rv_f) == 'X ~ UnknownDistribution'
     rv3, rv4 = RandomVariable.joint_normal(['ETA(1)', 'ETA(2)'], 'iiv', [sympy.sqrt(sympy.Rational(2, 5)), 0], [[1, 0.1], [0.1, 2]])
-    print(str(rv3))
     assert str(rv3) == '''             ⎧⎡√10⎤            ⎫
 ⎡ETA(1)⎤     ⎪⎢───⎥  ⎡ 1   0.1⎤⎪
 ⎢      ⎥ ~ 𝒩 ⎪⎢ 5 ⎥, ⎢        ⎥⎪
@@ -361,7 +396,6 @@ def test_join():
     rv2 = RandomVariable.normal('ETA(2)', 'iiv', 0, symbol('OMEGA(2,2)'))
     rvs = RandomVariables([rv1, rv2])
     rvs.join(['ETA(1)', 'ETA(2)'])
-    print(rv1)
     assert rv1.sympy_rv.pspace.distribution.sigma == sympy.Matrix([[symbol('OMEGA(1,1)'), 0], [0, symbol('OMEGA(2,2)')]])
     rv1 = RandomVariable.normal('ETA(1)', 'iiv', 0, symbol('OMEGA(1,1)'))
     rv2 = RandomVariable.normal('ETA(2)', 'iiv', 0, symbol('OMEGA(2,2)'))

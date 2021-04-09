@@ -649,7 +649,6 @@ class RandomVariables(MutableSequence):
                 other._mean.row_del(joint_index)
                 other._variance.row_del(joint_index)
                 other._variance.col_del(joint_index)
-                print("LL:", name, other._variance)
                 other._symengine_variance = symengine.sympify(other._variance)
 
     def __setitem__(self, ind, value):
@@ -753,11 +752,21 @@ class RandomVariables(MutableSequence):
                 parameters += list(dist.sigma.diagonal())
         return [p.name for p in parameters]
 
+    def _rename_rv(self, current, new):
+        for rv in self._rvs:
+            if rv.name == current:
+                rv.name = new
+            if rv._joint_names and current in rv._joint_names:
+                i = rv._joint_names.index(current)
+                rv._joint_names[i] = new
+
     def subs(self, d):
         s = dict()
         for key, value in d.items():
-            if key in self.names:
-                self[key].name = value
+            key = sympy.sympify(key)
+            value = sympy.sympify(value)
+            if key.name in self.names:
+                self._rename_rv(key.name, value.name)
             else:
                 s[key] = value
         for rv in self._rvs:
@@ -975,52 +984,3 @@ class RandomVariables(MutableSequence):
             latex = rv._latex_string(aligned=True)
             lines.append(latex)
         return '\\begin{align*}\n' + r' \\ '.join(lines) + '\\end{align*}'
-
-#    def get_rvs_from_same_dist(self, rv):
-#        """Get all RVs from same distribution as input rv.
-#
-#        Parameters
-#        ----------
-#        rv : RandomSymbol
-#            Random symbol to find associated rvs for (i.e. rvs with same distribution)."""
-#        joined_rvs = []
-
-#        for rvs, _ in self.distributions():
-#            if rv.name in [rv_dist.name for rv_dist in rvs]:
-#                joined_rvs += rvs
-#
-#        return RandomVariables(joined_rvs)
-#
-#    def are_consecutive(self, subset):
-#        """Determines if subset has same order as full set (self)."""
-#        rvs_self = sum([rvs[0] for rvs in self.distributions()], [])
-#        rvs_subset = sum([rvs[0] for rvs in subset.distributions()], [])
-#
-#        i = 0
-#        for rv in rvs_self:
-#            if rv.name == rvs_subset[i].name:
-#                if i == len(rvs_subset) - 1:
-#                    return True
-#                i += 1
-#            elif i > 0:
-#                return False
-#        return False
-#
-
-
-#
-#    def get_connected_iovs(self, iov):
-#        iovs = []
-#        connected = False
-#        for rv in self:
-#            if rv == iov:
-#                iovs.append(rv)
-#                connected = True
-#            elif (
-#                rv.variability_level == VariabilityLevel.IOV
-#                and rv.pspace.distribution == iov.pspace.distribution
-#            ):
-#                iovs.append(rv)
-#            elif connected:
-#                break
-#        return iovs
