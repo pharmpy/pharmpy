@@ -1600,14 +1600,9 @@ def test_add_iiv(pheno_path, parameter, expression, operation, eta_name, buf_new
 )
 def test_block_rvs(testdata, etas, pk_ref, omega_ref):
     model = Model(testdata / 'nonmem/pheno_block.mod')
-    print(str(model))
 
-    print("NEW")
-    print(etas)
-    print(model.random_variables)
     create_rv_block(model, etas)
     model.update_source()
-    print(model.random_variables)
 
     assert str(model.get_pred_pk_record()) == pk_ref
 
@@ -1930,7 +1925,7 @@ def test_iiv_on_ruv(pheno_path, epsilons, same_eta, eta_names, err_ref, omega_re
             'S1 = V + ETA(2)\n'
             'MAT = THETA(3)\n'
             'Q = THETA(4)*EXP(ETA(3))\n\n',
-            '$OMEGA 0.031128  ; IVV\n' '$OMEGA 0.1\n' '$OMEGA BLOCK(1)\n' '0.031128\n',
+            '$OMEGA 0.031128  ; IVV\n' '$OMEGA 0.1\n' '$OMEGA  0.031128\n',
         ),
         (
             ['ETA(4)', 'ETA(5)'],
@@ -1983,6 +1978,8 @@ def test_iiv_on_ruv(pheno_path, epsilons, same_eta, eta_names, err_ref, omega_re
     ],
 )
 def test_remove_iiv(testdata, etas, pk_ref, omega_ref):
+    print('\n')
+    print('ETAS ', etas)
     model = Model(testdata / 'nonmem/pheno_block.mod')
     remove_iiv(model, etas)
     model.update_source()
