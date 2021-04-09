@@ -120,7 +120,7 @@ def test_eq():
     rvs2 = RandomVariables([rv1])
     assert rvs != rvs2
     rvs3 = RandomVariables([rv1, rv3])
-    assert rvs != rvs
+    assert rvs != rvs3
 
 
 def test_getitem():
@@ -133,6 +133,52 @@ def test_getitem():
     assert rvs['ETA(2)'] == rv2
     assert rvs[symbol('ETA(1)')] == rv1
     assert rvs[symbol('ETA(2)')] == rv2
+    with pytest.raises(IndexError):
+        rvs[23]
+    with pytest.raises(KeyError):
+        rvs['NOKEYOFTHIS']
+
+    rv1 = RandomVariable.normal('ETA(1)', 'iiv', 0, 1)
+    rv2 = RandomVariable.normal('ETA(2)', 'iiv', 0, 0.1)
+    rv3 = RandomVariable.normal('ETA(3)', 'iiv', 0, 0.1)
+    rvs = RandomVariables([rv1, rv2, rv3])
+    selection = rvs[[rv1, rv2]]
+    assert len(selection) == 2
+
+
+def test_contains():
+    rv1 = RandomVariable.normal('ETA(1)', 'iiv', 0, 1)
+    rv2 = RandomVariable.normal('ETA(2)', 'iiv', 0, 0.1)
+    rv3 = RandomVariable.normal('ETA(3)', 'iiv', 0, 0.1)
+    rvs = RandomVariables([rv1, rv2, rv3])
+    assert 'ETA(2)' in rvs
+    assert 'ETA(4)' not in rvs
+
+
+def test_setitem():
+    rv1 = RandomVariable.normal('ETA(1)', 'iiv', 0, 1)
+    rv2 = RandomVariable.normal('ETA(2)', 'iiv', 0, 0.1)
+    rv3 = RandomVariable.normal('ETA(3)', 'iiv', 0, 0.1)
+    rvs = RandomVariables([rv1])
+    rvs[rv1] = rv2
+    assert len(rvs) == 1
+    assert rvs[0].name == 'ETA(2)'
+    with pytest.raises(KeyError):
+        rvs[rv3] = rv2
+
+    rv1, rv2 = RandomVariable.joint_normal(['x', 'y'], 'iiv', [0, 0], [[1, 0.1], [0.1, 2]])
+    rv3 = RandomVariable.normal('z', 'iiv', 0, 0.1)
+    rvs = RandomVariables([rv1, rv2])
+    rvs['x'] = rv3
+
+    rv1, rv2, rv3 = RandomVariable.joint_normal(['x', 'y', 'z'], 'iiv', [0, 0, 1], [[1, 0.1, 0.1], [0.1, 4, 0.1], [0.1, 0.1, 9]])
+    rv4 = RandomVariable.normal('w', 'iiv', 0, 0.1)
+    rvs = RandomVariables([rv1, rv2, rv3])
+    rvs['y'] = rv4
+    cov = sympy.Matrix([[1, 0.1], [0.1, 9]])
+    assert rv1.sympy_rv.pspace.distribution.sigma == cov
+    assert rv3.sympy_rv.pspace.distribution.sigma == cov
+    assert rvs.names == ['w', 'x', 'z']
 
 
 def test_delitem():

@@ -141,10 +141,10 @@ class RandomVariable:
         rvs = []
         for name in names:
             rv = cls(name, level)
-            rv._mean = mean
-            rv._variance = variance
+            rv._mean = mean.copy()
+            rv._variance = variance.copy()
             rv._symengine_variance = symengine.Matrix(variance.rows, variance.cols, sigma)
-            rv._joint_names = names
+            rv._joint_names = names.copy()
             rvs.append(rv)
         return rvs
 
@@ -635,6 +635,7 @@ class RandomVariables(MutableSequence):
         return True
 
     def _remove_joint_normal(self, rv):
+        # Remove rv from all other rvs
         joint_names = rv._joint_names
         if joint_names is not None:
             joint_index = joint_names.index(rv.name)
@@ -648,6 +649,7 @@ class RandomVariables(MutableSequence):
                 other._mean.row_del(joint_index)
                 other._variance.row_del(joint_index)
                 other._variance.col_del(joint_index)
+                print("LL:", name, other._variance)
                 other._symengine_variance = symengine.sympify(other._variance)
 
     def __setitem__(self, ind, value):
@@ -658,9 +660,9 @@ class RandomVariables(MutableSequence):
         if not isinstance(value, RandomVariable):
             raise ValueError(f'Trying to set {type(value)} to RandomVariables. Must be of type RandomVariable.')
         i, rv = self._lookup_rv(ind)
-        if rv._joint_names is not None:
-            self._remove_joint_normal(rv)
-        self._rvs[i] = rv
+        self.unjoin(rv)
+        i, _ = self._lookup_rv(ind)     # Might have moved
+        self._rvs[i] = value
 
     def __delitem__(self, ind):
         i, rv = self._lookup_rv(ind)
@@ -761,19 +763,21 @@ class RandomVariables(MutableSequence):
         for rv in self._rvs:
             rv.subs(s)
 
-    def remove_covariance(self, ind):
-        # FIXME: Call disjoin? dejoin? unjoin?
+    def unjoin(self, ind):
         """Remove all covariances the random variable has with other random variables
 
         """
         i, rv = self._lookup_rv(ind)
+        if rv._joint_names is None:
+            return
         index = rv._joint_names.index(rv.name)
-        del self[i]
-        rv._mean = sympy.Matrix([rv._mean[index, index]])
+        self._remove_joint_normal(rv)
+        del self._rvs[i]
+        rv._mean = sympy.Matrix([rv._mean[index]])
         rv._variance = sympy.Matrix([rv._variance[index, index]])
         rv._symengine_variance = symengine.sympify(rv._variance)
         rv._joint_names = None
-        rv.insert(i - index, rv)
+        self._rvs.insert(i - index, rv)
 
     def join(self, inds, fill=0, name_template=None, param_names=None):
         """Join random variables together into one joint distribution
@@ -781,18 +785,6 @@ class RandomVariables(MutableSequence):
         Set new covariances (and previous 0 covs) to 'fill'
         """
         cov_to_params = dict()
-        #ind_names = []
-        #for i in inds:
-        #    _, rv = self._lookup_rv(i)
-        #    ind_names.append(rv.name)
-        #allinds = []
-        #for rv in self:
-        #    if rv.name in ind_names:
-        #        allinds.append(rv.name)
-        #    elif rv._joint_names is not None and any(x in rv._joint_names for x in ind_names):
-        #        for n in rv._joint_names:
-        #            if n not in ind_names and n not in allinds:
-        #                allinds.append(n)
         selection = self[inds]
         means, M, names, others = selection._calc_covariance_matrix()
         if fill != 0:
@@ -829,6 +821,7 @@ class RandomVariables(MutableSequence):
             rv._joint_names = [rv.name for rv in new_rvs]
         self._rvs = new
         return cov_to_params
+
 
     def distributions(self):
         """List with one entry per distribution instead of per random variable.
