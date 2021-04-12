@@ -75,12 +75,23 @@ def update_parameters(model, old, new):
 
 def update_random_variables(model, old, new):
     from pharmpy.plugins.nonmem.records.code_record import diff
+    model.control_stream.go_through_omega_rec()
+    rec_dict = dict()
+    comment_dict = dict()
+
+    for omega_record in model.control_stream.get_records(
+        'OMEGA'
+    ) + model.control_stream.get_records('SIGMA'):
+        comment_dict = {**comment_dict, **omega_record.comment_map}
+        current_names = list(omega_record.eta_map.keys())
+        for name in current_names:
+            rec_dict[name] = omega_record
 
     rvs_diff_eta = diff(old.etas.distributions(), new.etas.distributions())
     rvs_diff_eps = diff(old.epsilons.distributions(), new.epsilons.distributions())
 
-    new_maps = update_random_variable_records(model, rvs_diff_eta)
-    new_maps += update_random_variable_records(model, rvs_diff_eps)
+    new_maps = update_random_variable_records(model, rvs_diff_eta, rec_dict, comment_dict)
+    new_maps += update_random_variable_records(model, rvs_diff_eps, rec_dict, comment_dict)
 
     if new_maps:
         for record, name_map, eta_map in new_maps:
@@ -98,20 +109,12 @@ def update_random_variables(model, old, new):
         next_eps += len(sigma_record)
 
 
-def update_random_variable_records(model, rvs_diff):
+def update_random_variable_records(model, rvs_diff, rec_dict, comment_dict):
     pset = model.parameters
     removed = []
     eta_number = 1
+    number_of_records = 0
     new_maps = []
-    rec_dict = dict()
-
-    for omega_record in model.control_stream.get_records(
-        'OMEGA'
-    ) + model.control_stream.get_records('SIGMA'):
-        current_names = list(omega_record.eta_map.keys())
-        for name in current_names:
-            rec_dict[name] = omega_record
-
     for i, (op, (rvs, dist)) in enumerate(rvs_diff):
         if op == '+':
             if len(rvs) == 1:
@@ -122,15 +125,33 @@ def update_random_variable_records(model, rvs_diff):
                     model,
                     rv,
                     variance_param,
-                    eta_number=eta_number,
+                    record_number=number_of_records,
                     previous_size=1,
+                    comment_dict=comment_dict
                 )
-                new_maps.append(
-                    (record, {variance_param_name: (eta_number, eta_number)}, {rv.name: eta_number})
-                )
+                eta_map = {rv.name: eta_number}
+                name_map = {variance_param_name: (eta_number, eta_number)}
 
                 eta_number += 1
+            else:
+                record = create_omega_block(model, dist, number_of_records, comment_dict)
+                rvs = RandomVariables(rvs)
+                eta_map, name_map = dict(), dict()
 
+                for rv in rvs:
+                    variance_param_name = rvs.get_variance(rv).name
+                    eta_map[rv.name] = eta_number
+                    name_map[variance_param_name] = (eta_number, eta_number)
+                    eta_number += 1
+
+                pairs = [(rv1.name, rv2.name) for idx, rv1 in enumerate(rvs) for rv2 in rvs[idx + 1:]]
+                name_covariance = {rvs.get_covariance(rv1, rv2).name: (eta_map[rv2], eta_map[rv1])
+                                   for rv1, rv2 in pairs}
+                name_map = {**name_map, **name_covariance}
+            new_maps.append(
+                (record, name_map, eta_map)
+            )
+            number_of_records += 1
         elif op == '-':
             if len(rvs) == 1:
                 rv = rvs[0]
@@ -144,128 +165,9 @@ def update_random_variable_records(model, rvs_diff):
                 removed.append([rec for rec in recs_to_remove])
         else:
             eta_number += len(rvs)
+            number_of_records += 1
 
     return new_maps
-
-
-def update_random_variables_old(model, old, new):
-    new_names = {rv.name for rv in new}
-    old_names = {rv.name for rv in old}
-    removed = old_names - new_names
-    modified_names = []
-    if removed:
-        remove_records = []
-        for omega_record in model.control_stream.get_records(
-            'OMEGA'
-        ) + model.control_stream.get_records('SIGMA'):
-            current_names = omega_record.eta_map.keys()
-            if removed >= current_names:
-                remove_records.append(omega_record)
-            elif not removed.isdisjoint(current_names):
-                # one or more in the record
-                omega_record.remove(removed & current_names)
-                modified_names += current_names
-        model.control_stream.remove_records(remove_records)
-
-    new_maps = []
-    for rv in new:
-        if rv.name not in old_names:
-            omega_name = (rv.sympy_rv.pspace.distribution.std ** 2).name
-            if omega_name not in old.parameter_names:
-                rv_name = rv.name
-                omega = model.parameters[omega_name]
-
-                iov_rv = None
-                if rv.level == 'RUV':
-                    record_name = 'SIGMA'
-                else:
-                    record_name = 'OMEGA'
-                    if rv.level == 'IOV':
-                        iov_rv = rv
-
-                record, eta_number = create_omega_single(
-                    model,
-                    omega,
-                    record=record_name,
-                    comment_map={omega.name: omega_name},
-                    iov_rv=iov_rv,
-                )
-
-                new_maps.append(
-                    (record, {omega_name: (eta_number, eta_number)}, {rv_name: eta_number})
-                )
-    # FIXME: Setting the maps needs to be done here and not in loop. Automatic renumbering is
-    #        probably the culprit. There should be a difference between added parameters and
-    #        original parameters when it comes to which naming scheme to use
-    if new_maps:
-        for record, name_map, eta_map in new_maps:
-            record.name_map = name_map
-            record.eta_map = eta_map
-
-    rvs_old = [rvs[0] for rvs in old.distributions()]
-    comment_map_new = dict()
-
-    for rvs, dist in new.distributions():
-        rv_names = [rv.name for rv in rvs]
-
-        if modified_names and set(modified_names).issubset(rv_names):
-            continue
-
-        if rvs not in rvs_old and set(rv_names).issubset(old_names):
-            records = get_omega_records(model, rv_names)
-
-            for comment_map in [omega_record.comment_map for omega_record in records]:
-                comment_map_new.update(comment_map)
-
-            indices = [model.control_stream.records.index(rec) for rec in records]
-            new_rec_index = None if not indices else indices[0]
-
-            if len(indices) != len(rvs):
-                new_rec_index = None
-            elif new_rec_index and len(indices) == len(rvs):
-                for i in range(1, len(indices)):
-                    if indices[i] - indices[i - 1] != 1:
-                        new_rec_index = None
-                        break
-
-            model.control_stream.remove_records(records)
-
-            if len(rvs) == 1:
-                omega_new, _ = create_omega_single(
-                    model,
-                    model.parameters[str(dist.std ** 2)],
-                    comment_map=comment_map_new,
-                    index=new_rec_index,
-                )
-            else:
-                omega_new = create_omega_block(model, dist, comment_map_new, index=new_rec_index)
-
-            omega_new.comment_map = comment_map_new
-
-            omega_start = 1
-
-            for omega_record in model.control_stream.get_records('OMEGA'):
-                try:
-                    omega_record.renumber(omega_start)
-                except AttributeError:
-                    pass
-
-                if omega_record != omega_new:
-                    omega_start += len(omega_record)
-                else:
-                    etas, _, _, _ = omega_record.random_variables(omega_start)
-
-                    create_record_maps(etas, rvs, omega_record.name_map, omega_record.eta_map)
-
-    next_eta = 1
-    for omega_record in model.control_stream.get_records('OMEGA'):
-        omega_record.renumber(next_eta)
-        next_eta += len(omega_record)
-
-    next_eps = 1
-    for sigma_record in model.control_stream.get_records('SIGMA'):
-        sigma_record.renumber(next_eps)
-        next_eps += len(sigma_record)
 
 
 def get_omega_records(model, params):
@@ -323,7 +225,7 @@ def create_theta_record(model, param):
     return record
 
 
-def create_omega_single(model, rv, param, eta_number, previous_size):
+def create_omega_single(model, rv, param, record_number, previous_size, comment_dict):
     rvs = model.random_variables
     records = model.control_stream.records
     previous_cov = None
@@ -340,27 +242,29 @@ def create_omega_single(model, rv, param, eta_number, previous_size):
             param_str += f'\n{param.init}'
         else:
             param_str += ' SAME'
-        previous_cov = eta_number - 1
+        previous_cov = record_number - 1
     else:
         param_str = f'${record_type}  {param.init}'
 
     if not param.name.startswith('OMEGA('):
         param_str += f' ; {param.name}'
+    elif comment_dict and param.name in comment_dict.keys():
+        param_str += f' ; {comment_dict[param.name]}'
 
     tprecs = model.control_stream.get_records(record_type)
     if tprecs:
         index = records.index(tprecs[0])
-        record = model.control_stream.insert_record(f'{param_str}\n', index + eta_number - 1)
+        record = model.control_stream.insert_record(f'{param_str}\n', index + record_number)
     else:
         record = model.control_stream.insert_record(f'{param_str}\n')
 
-    record.parameters(eta_number, previous_size)
-    record.random_variables(eta_number, previous_cov)
+    record.parameters(record_number, previous_size)
+    record.random_variables(record_number, previous_cov)
 
     return record
 
 
-def create_omega_block(model, dist, index=None):
+def create_omega_block(model, dist, eta_number=None, comment_dict=None):
     m = dist.args[1]
     param_str = f'$OMEGA BLOCK({m.shape[0]})\n'
 
@@ -371,16 +275,23 @@ def create_omega_block(model, dist, index=None):
             omega = model.parameters[name]
             param_str += f'{omega.init}'
 
-            # if not re.match(r'OMEGA\(\d+,\d+\)', omega.name):
-            #     param_str += f'\t; {omega.name}'
-            # elif omega.name in comment_map:
-            #     param_str += f'\t; {comment_map[omega.name]}'
+            if not re.match(r'OMEGA\(\d+,\d+\)', omega.name):
+                param_str += f'\t; {omega.name}'
+            elif comment_dict and omega.name in comment_dict:
+                param_str += f'\t; {comment_dict[omega.name]}'
 
             param_str += '\n'
 
         param_str = f'{param_str.rstrip()}\n'
 
-    record = model.control_stream.insert_record(param_str, index)
+    records = model.control_stream.records
+    tprecs = model.control_stream.get_records('OMEGA')
+    if tprecs:
+        index = records.index(tprecs[0])
+        record = model.control_stream.insert_record(param_str, index + eta_number)
+    else:
+        record = model.control_stream.insert_record(param_str)
+
     return record
 
 

@@ -1489,18 +1489,18 @@ def test_add_iiv(pheno_path, parameter, expression, operation, eta_name, buf_new
         ),
         (
             ['ETA(1)', 'ETA(3)'],
-            '$PK\nCL = THETA(1)*EXP(ETA(4))\nV = THETA(2)*EXP(ETA(1))\n'
-            'S1 = V + ETA(5)\n'
-            'MAT = THETA(3)*EXP(ETA(2))\n'
-            'Q = THETA(4)*EXP(ETA(3))\n\n',
-            '$OMEGA 0.031128  ; IVV\n'
-            '$OMEGA BLOCK(2)\n'
-            '0.0309626\n'
-            '0.0005 0.031128\n'
+            '$PK\nCL=THETA(1)*EXP(ETA(1))\nV = THETA(2)*EXP(ETA(3))\n'
+            'S1 = V + ETA(2)\n'
+            'MAT=THETA(3)*EXP(ETA(4))\n'
+            'Q=THETA(4)*EXP(ETA(5))\n\n',
             '$OMEGA BLOCK(2)\n'
             '0.0309626\t; IVCL\n'
             '0.0055644\t; IIV_CL_IIV_S1\n'
-            '0.1\n',
+            '0.1\n'
+            '$OMEGA  0.031128 ; IVV\n'
+            '$OMEGA BLOCK(2)\n'
+            '0.0309626\n'
+            '0.0005 0.031128\n',
         ),
         (
             ['ETA(2)', 'ETA(3)'],
@@ -1526,15 +1526,15 @@ def test_add_iiv(pheno_path, parameter, expression, operation, eta_name, buf_new
             'S1 = V + ETA(4)\n'
             'MAT = THETA(3)*EXP(ETA(3))\n'
             'Q=THETA(4)*EXP(ETA(5))\n\n',
-            '$OMEGA 0.1\n'
-            '$OMEGA  0.031128\n'
             '$OMEGA BLOCK(3)\n'
             '0.0309626\t; IVCL\n'
             '0.0031045\t; IIV_CL_IIV_V\n'
             '0.031128\t; IVV\n'
             '0.0030963\t; IIV_CL_IIV_MAT\n'
             '0.0031045\t; IIV_V_IIV_MAT\n'
-            '0.0309626\n',
+            '0.0309626\n'
+            '$OMEGA  0.1\n'
+            '$OMEGA  0.031128\n',
         ),
         (
             ['ETA(2)', 'ETA(3)', 'ETA(4)'],
@@ -1601,11 +1601,7 @@ def test_add_iiv(pheno_path, parameter, expression, operation, eta_name, buf_new
 def test_block_rvs(testdata, etas, pk_ref, omega_ref):
     model = Model(testdata / 'nonmem/pheno_block.mod')
 
-    print("BEGIN:", etas)
-    print(model.random_variables)
     create_rv_block(model, etas)
-    print(model.random_variables)
-    print("END")
     model.update_source()
 
     assert str(model.get_pred_pk_record()) == pk_ref
@@ -1620,18 +1616,18 @@ def test_block_rvs(testdata, etas, pk_ref, omega_ref):
     [
         (
             (['ETA(1)', 'ETA(2)'], ['ETA(1)', 'ETA(3)']),
-            '$PK\nCL = THETA(1)*EXP(ETA(4))\nV = THETA(2)*EXP(ETA(1))\n'
-            'S1 = V + ETA(5)\n'
-            'MAT = THETA(3)*EXP(ETA(2))\n'
-            'Q = THETA(4)*EXP(ETA(3))\n\n',
-            '$OMEGA  0.031128 ; IVV\n'
-            '$OMEGA BLOCK(2)\n'
-            '0.0309626\n'
-            '0.0005 0.031128\n'
+            '$PK\nCL=THETA(1)*EXP(ETA(1))\nV = THETA(2)*EXP(ETA(3))\n'
+            'S1 = V + ETA(2)\n'
+            'MAT=THETA(3)*EXP(ETA(4))\n'
+            'Q=THETA(4)*EXP(ETA(5))\n\n',
             '$OMEGA BLOCK(2)\n'
             '0.0309626\t; IVCL\n'
             '0.0055644\t; IIV_CL_IIV_S1\n'
-            '0.1\n',
+            '0.1\n'
+            '$OMEGA  0.031128 ; IVV\n'
+            '$OMEGA BLOCK(2)\n'
+            '0.0309626\n'
+            '0.0005 0.031128\n',
         ),
         (
             (None, ['ETA(1)', 'ETA(2)']),
