@@ -650,20 +650,20 @@ class RandomVariables(MutableSequence):
 
     def _remove_joint_normal(self, rv):
         # Remove rv from all other rvs
-        joint_names = rv._joint_names
-        if joint_names is not None:
+        for other in self:
+            if other.name == rv.name:
+                continue
+            joint_names = other._joint_names
+            if joint_names is None or rv.name not in joint_names:
+                continue
             joint_index = joint_names.index(rv.name)
-            for name in joint_names:
-                if name == rv.name:
-                    continue
-                other = self[name]
-                del other._joint_names[joint_index]
-                if len(other._joint_names) == 1:
-                    other._joint_names = None
-                other._mean.row_del(joint_index)
-                other._variance.row_del(joint_index)
-                other._variance.col_del(joint_index)
-                other._symengine_variance = symengine.sympify(other._variance)
+            del other._joint_names[joint_index]
+            if len(other._joint_names) == 1:
+                other._joint_names = None
+            other._mean.row_del(joint_index)
+            other._variance.row_del(joint_index)
+            other._variance.col_del(joint_index)
+            other._symengine_variance = symengine.sympify(other._variance)
 
     def _remove_joint_normal_not_in_self(self):
         # Remove rv from all joint normals not in self

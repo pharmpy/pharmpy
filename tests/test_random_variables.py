@@ -456,6 +456,8 @@ def test_join():
 
     rvs = rvs_copy
     rvs.join(['ETA(1)', 'ETA(4)'])
+    assert rvs['ETA(4)'].joint_names == ['ETA(1)', 'ETA(4)']
+    assert rvs['ETA(5)'].joint_names == []
 
 
 def test_sub():
