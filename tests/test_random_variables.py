@@ -406,6 +406,22 @@ def test_variance_parameters():
     assert rvs.variance_parameters == ['OMEGA(1,1)', 'OMEGA(2,2)', 'OMEGA(3,3)']
 
 
+def test_get_variance():
+    rv1, rv2 = RandomVariable.joint_normal(['ETA(1)', 'ETA(2)'], 'iiv', [0, 0], [[symbol('OMEGA(1,1)'), symbol('OMEGA(2,1)')], [symbol('OMEGA(2,1)'), symbol('OMEGA(2,2)')]])
+    rv3 = RandomVariable.normal('ETA(3)', 'iiv', 0, symbol('OMEGA(3,3)'))
+    rvs = RandomVariables([rv1, rv2, rv3])
+    assert rvs.get_variance('ETA(1)') == symbol('OMEGA(1,1)')
+    assert rvs.get_variance(rv3) == symbol('OMEGA(3,3)')
+
+
+def test_get_covariance():
+    rv1, rv2 = RandomVariable.joint_normal(['ETA(1)', 'ETA(2)'], 'iiv', [0, 0], [[symbol('OMEGA(1,1)'), symbol('OMEGA(2,1)')], [symbol('OMEGA(2,1)'), symbol('OMEGA(2,2)')]])
+    rv3 = RandomVariable.normal('ETA(3)', 'iiv', 0, symbol('OMEGA(3,3)'))
+    rvs = RandomVariables([rv1, rv2, rv3])
+    assert rvs.get_covariance('ETA(1)', 'ETA(2)') == symbol('OMEGA(2,1)')
+    assert rvs.get_covariance(rv3, rv2) == 0
+
+
 def test_join():
     rv1 = RandomVariable.normal('ETA(1)', 'iiv', 0, symbol('OMEGA(1,1)'))
     rv2 = RandomVariable.normal('ETA(2)', 'iiv', 0, symbol('OMEGA(2,2)'))

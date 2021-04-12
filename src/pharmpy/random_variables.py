@@ -127,7 +127,7 @@ class RandomVariable:
 
         Example
         -------
-        >>> from pharmpy import RandomVariables, Parameter
+        >>> from pharmpy import RandomVariable, Parameter
         >>> omega_cl = Parameter("OMEGA_CL", 0.1)
         >>> omega_v = Parameter("OMEGA_V", 0.1)
         >>> corr_cl_v = Parameter("OMEGA_CL_V", 0.01)
@@ -563,9 +563,27 @@ class VariabilityHierarchy:
 class RandomVariables(MutableSequence):
     """A collection of random variables
 
-        Describe default levels here
-    """
+       This class provides a container for random variables that preserves their order
+       and acts list-like while also allowing for indexing on names.
 
+       Each RandomVariables object has two VariabilityHierarchies that describes the
+       allowed variability levels for the contined random variables. One hierarchy
+       for residual error variability (epsilons) and one for parameter variability (etas).
+       By default the eta hierarchy has the two levels IIV and IOV and the epsilon
+       hierarchy has one single level.
+
+       Parameters
+       ----------
+       rvs : list
+           A list of RandomVariable to add. Default is to create an empty RandomVariabels.
+
+       Examples
+       --------
+       >>> from pharmpy import RandomVariables, RandomVariable, Parameter
+       >>> omega = Parameter('OMEGA_CL', 0.1)
+       >>> rv = RandomVariable.normal("IIV_CL", 0, omega.symbol)
+       >>> rvs = RandomVariables([rv])
+    """
     def __init__(self, rvs=None):
         if isinstance(rvs, RandomVariables):
             self._rvs = copy.deepcopy(rvs._rvs)
@@ -730,6 +748,13 @@ class RandomVariables(MutableSequence):
         return symbs
 
     def copy(self, deep=True):
+        """Make copy of RandomVariables
+
+        Parameters
+        ----------
+        deep : bool
+            Deep copy if True (default) else shallow
+        """
         new = RandomVariables()
         for rv in self._rvs:
             if deep:
@@ -740,6 +765,7 @@ class RandomVariables(MutableSequence):
 
     @property
     def parameter_names(self):
+        """List of parameter names for all random variables"""
         params = set()
         for rv in self:
             params |= set(rv.parameter_names)
@@ -747,6 +773,7 @@ class RandomVariables(MutableSequence):
 
     @property
     def variance_parameters(self):
+        """List of all parameters representing variance for all random variables"""
         parameters = []
         for rvs, dist in self.distributions():
             if len(rvs) == 1:
@@ -759,6 +786,26 @@ class RandomVariables(MutableSequence):
                         parameters.append(p)
         return [p.name for p in parameters]
 
+    def get_variance(self, rv):
+        """Get variance for a random variable"""
+        _, rv = self._lookup_rv(rv)
+        if rv._joint_names is None:
+            return rv._variance[0]
+        else:
+            i = rv._joint_names.index(rv.name)
+            return rv._variance[i, i]
+
+    def get_covariance(self, rv1, rv2):
+        """Get covariance between two random variables"""
+        _, rv1 = self._lookup_rv(rv1)
+        _, rv2 = self._lookup_rv(rv2)
+        if rv1._joint_names is None or rv2.name not in rv1._joint_names:
+            return sympy.Integer(0)
+        else:
+            i1 = rv1._joint_names.index(rv1.name)
+            i2 = rv1._joint_names.index(rv2.name)
+            return rv1._variance[i1, i2]
+
     def _rename_rv(self, current, new):
         for rv in self._rvs:
             if rv.name == current:
@@ -768,6 +815,24 @@ class RandomVariables(MutableSequence):
                 rv._joint_names[i] = new
 
     def subs(self, d):
+        """Substitute expressions
+
+        Parameters
+        ----------
+        d : dict
+            Dictionary of from: to pairs for substitution
+
+        Examples
+        --------
+        >>> import sympy
+        >>> from pharmpy import RandomVariables, Parameter
+        >>> omega = Parameter("OMEGA_CL", 0.1)
+        >>> rv = RandomVariable.normal("IIV_CL", "IIV", 0, omega.symbol)
+        >>> rvs = RandomVariables([rv])
+        >>> rvs.subs({omega.symbol: sympy.Symbol("OMEGA_NEW")})
+        IIV_CL ~ 𝒩 (0, OMEGA_NEW)
+
+        """
         s = dict()
         for key, value in d.items():
             key = sympy.sympify(key)
@@ -780,7 +845,23 @@ class RandomVariables(MutableSequence):
             rv.subs(s)
 
     def unjoin(self, inds):
-        """Remove all covariances the random no_of_variables has with other random variables
+        """Remove all covariances the random variables have with other random variables
+
+        Parameters
+        ----------
+        inds
+            One or multiple indices to unjoin
+
+        Examples
+        --------
+        >>> from pharmpy import RandomVariables, RandomVariable, Parameter
+        >>> omega_cl = Parameter("OMEGA_CL", 0.1)
+        >>> omega_v = Parameter("OMEGA_V", 0.1)
+        >>> corr_cl_v = Parameter("OMEGA_CL_V", 0.01)
+        >>> rv1, rv2, rv3 = RandomVariable.joint_normal(["IIV_CL", "IIV_V"], 'IIV', [0, 0], [[omega_cl.symbol, corr_cl_v], [corr_cl_v, omega_v]])
+        >>> rvs = RandomVariables([rv1, rv2, rv3])
+        >>> rvs.unjoin('ETA(1)')
+        >>> rvs
 
         """
         if not isinstance(inds, list):
