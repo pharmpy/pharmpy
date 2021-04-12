@@ -75,53 +75,12 @@ def update_parameters(model, old, new):
 
 def update_random_variables(model, old, new):
     from pharmpy.plugins.nonmem.records.code_record import diff
-    pset = model.parameters
 
-    rvs_diff = diff(old.distributions(), new.distributions())
-    new_maps = []
+    rvs_diff_eta = diff(old.etas.distributions(), new.etas.distributions())
+    rvs_diff_eps = diff(old.epsilons.distributions(), new.epsilons.distributions())
 
-    rec_dict = dict()
-
-    for omega_record in model.control_stream.get_records(
-        'OMEGA'
-    ) + model.control_stream.get_records('SIGMA'):
-        current_names = list(omega_record.eta_map.keys())
-        for name in current_names:
-            rec_dict[name] = omega_record
-
-    removed = []
-
-    eta_number = 1
-    for i, (op, (rvs, dist)) in enumerate(rvs_diff):
-        if op == '+':
-            if len(rvs) == 1:
-                rv = rvs[0]
-                variance_param_name = rv.parameter_names[0]
-                variance_param = pset[variance_param_name]
-                eta_number += 1
-                record = create_omega_single(
-                    model,
-                    rv,
-                    variance_param,
-                    eta_number=eta_number,
-                    previous_size=1,
-                )
-                new_maps.append(
-                    (record, {variance_param_name: (eta_number, eta_number)}, {rv.name: eta_number})
-                )
-        elif op == '-':
-            if len(rvs) == 1:
-                rv = rvs[0]
-                recs_to_remove = [rec_dict[rv.name]]
-            else:
-                recs_to_remove = list({rec_dict[rv.name] for rv in rvs})
-
-            recs_to_remove = [rec for rec in recs_to_remove if rec not in removed]
-            if recs_to_remove:
-                model.control_stream.remove_records(recs_to_remove)
-                removed.append([rec for rec in recs_to_remove])
-        else:
-            eta_number += len(rvs)
+    new_maps = update_random_variable_records(model, rvs_diff_eta)
+    new_maps += update_random_variable_records(model, rvs_diff_eps)
 
     if new_maps:
         for record, name_map, eta_map in new_maps:
@@ -137,6 +96,56 @@ def update_random_variables(model, old, new):
     for sigma_record in model.control_stream.get_records('SIGMA'):
         sigma_record.renumber(next_eps)
         next_eps += len(sigma_record)
+
+
+def update_random_variable_records(model, rvs_diff):
+    pset = model.parameters
+    removed = []
+    eta_number = 1
+    new_maps = []
+    rec_dict = dict()
+
+    for omega_record in model.control_stream.get_records(
+        'OMEGA'
+    ) + model.control_stream.get_records('SIGMA'):
+        current_names = list(omega_record.eta_map.keys())
+        for name in current_names:
+            rec_dict[name] = omega_record
+
+    for i, (op, (rvs, dist)) in enumerate(rvs_diff):
+        if op == '+':
+            if len(rvs) == 1:
+                rv = rvs[0]
+                variance_param_name = rv.parameter_names[0]
+                variance_param = pset[variance_param_name]
+                record = create_omega_single(
+                    model,
+                    rv,
+                    variance_param,
+                    eta_number=eta_number,
+                    previous_size=1,
+                )
+                new_maps.append(
+                    (record, {variance_param_name: (eta_number, eta_number)}, {rv.name: eta_number})
+                )
+
+                eta_number += 1
+
+        elif op == '-':
+            if len(rvs) == 1:
+                rv = rvs[0]
+                recs_to_remove = [rec_dict[rv.name]]
+            else:
+                recs_to_remove = list({rec_dict[rv.name] for rv in rvs})
+
+            recs_to_remove = [rec for rec in recs_to_remove if rec not in removed]
+            if recs_to_remove:
+                model.control_stream.remove_records(recs_to_remove)
+                removed.append([rec for rec in recs_to_remove])
+        else:
+            eta_number += len(rvs)
+
+    return new_maps
 
 
 def update_random_variables_old(model, old, new):
@@ -341,7 +350,7 @@ def create_omega_single(model, rv, param, eta_number, previous_size):
     tprecs = model.control_stream.get_records(record_type)
     if tprecs:
         index = records.index(tprecs[0])
-        record = model.control_stream.insert_record(f'{param_str}\n', index + eta_number)
+        record = model.control_stream.insert_record(f'{param_str}\n', index + eta_number - 1)
     else:
         record = model.control_stream.insert_record(f'{param_str}\n')
 
