@@ -614,15 +614,11 @@ class RandomVariables(MutableSequence):
 
     def __getitem__(self, ind):
         if isinstance(ind, list):
-            selection = self.copy(deep=False)
-            include = []
+            rvs = []
             for i in ind:
-                _, rv = self._lookup_rv(i)
-                include.append(rv.name)
-            for rv in self._rvs:
-                if rv.name not in include:
-                    del selection[rv.name]
-            return selection
+                index, rv = self._lookup_rv(i)
+                rvs.append(self[index])
+            return RandomVariables(rvs)
         else:
             _, rv = self._lookup_rv(ind)
             return rv

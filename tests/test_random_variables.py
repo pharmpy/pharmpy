@@ -429,6 +429,14 @@ def test_join():
     rvs.join(['ETA(2)', 'ETA(3)'])
     assert rv2.sympy_rv.pspace.distribution.sigma == sympy.Matrix([[symbol('OMEGA(2,2)'), 0], [0, symbol('OMEGA(3,3)')]])
 
+    rv1 = RandomVariable.normal('ETA(1)', 'iiv', 0, symbol('OMEGA(1,1)'))
+    rv2 = RandomVariable.normal('ETA(2)', 'iiv', 0, symbol('OMEGA(2,2)'))
+    rv3 = RandomVariable.normal('ETA(3)', 'iiv', 0, symbol('OMEGA(3,3)'))
+    rv4, rv5 = RandomVariable.joint_normal(['ETA(4)', 'ETA(5)'], 'iiv', [0, 0], [[symbol('OMEGA(4,4)'), symbol('OMEGA(5,4)')], [symbol('OMEGA(5,4)'), symbol('OMEGA(5,5)')]])
+    rv6 = RandomVariable.normal('EPS(1)', 'ruv', 0, symbol('SIGMA(1,1)'))
+    rvs = RandomVariables([rv1, rv2, rv3, rv4, rv5, rv6])
+    rvs.join(['ETA(1)', 'ETA(2)'])
+
 
 def test_sub():
     rv1 = RandomVariable.normal('ETA(1)', 'iiv', 0, symbol('OMEGA(1,1)'))

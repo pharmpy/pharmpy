@@ -1601,7 +1601,11 @@ def test_add_iiv(pheno_path, parameter, expression, operation, eta_name, buf_new
 def test_block_rvs(testdata, etas, pk_ref, omega_ref):
     model = Model(testdata / 'nonmem/pheno_block.mod')
 
+    print("BEGIN:", etas)
+    print(model.random_variables)
     create_rv_block(model, etas)
+    print(model.random_variables)
+    print("END")
     model.update_source()
 
     assert str(model.get_pred_pk_record()) == pk_ref
