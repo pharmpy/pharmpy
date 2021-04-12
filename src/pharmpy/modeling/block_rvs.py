@@ -65,7 +65,7 @@ def create_rv_block(model, list_of_rvs=None):
 
 def split_rv_block(model, list_of_rvs=None):
     """
-    Splits an block structure given a list of etas to separate.
+    Splits a block structure given a list of etas to separate.
 
     Parameters
     ----------
@@ -75,23 +75,17 @@ def split_rv_block(model, list_of_rvs=None):
         Name/names of etas to split from block structure. If None, all etas that are IIVs and
         non-fixed will become single. None is default.
     """
-    rvs_full = model.random_variables
+    rvs = model.random_variables
     list_of_rvs = _format_input_list(list_of_rvs)
-    rvs_block = _get_etas(model, list_of_rvs)
+
+    parameters_before = rvs.parameter_names
+    rvs.unjoin(list_of_rvs)
+    parameters_after = rvs.parameter_names
+
+    removed_parameters =set(parameters_before) - set(parameters_after)
     pset = model.parameters
-
-    cov_matrix_before = [rv for rv in rvs_full.covariance_matrix]
-
-    for rv in rvs_block:
-        rvs_full.extract_from_block(rv)
-
-    cov_diff = [rv for rv in rvs_full.covariance_matrix if rv not in cov_matrix_before]
-
-    for param in set(cov_diff):
+    for param in removed_parameters:
         pset.discard(param)
-
-    model.random_variables = rvs_full
-    model.parameters = pset
 
     return model
 

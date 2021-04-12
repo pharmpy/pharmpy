@@ -779,21 +779,24 @@ class RandomVariables(MutableSequence):
         for rv in self._rvs:
             rv.subs(s)
 
-    def unjoin(self, ind):
-        """Remove all covariances the random variable has with other random variables
+    def unjoin(self, inds):
+        """Remove all covariances the random no_of_variables has with other random variables
 
         """
-        i, rv = self._lookup_rv(ind)
-        if rv._joint_names is None:
-            return
-        index = rv._joint_names.index(rv.name)
-        self._remove_joint_normal(rv)
-        del self._rvs[i]
-        rv._mean = sympy.Matrix([rv._mean[index]])
-        rv._variance = sympy.Matrix([rv._variance[index, index]])
-        rv._symengine_variance = symengine.sympify(rv._variance)
-        rv._joint_names = None
-        self._rvs.insert(i - index, rv)
+        if not isinstance(inds, list):
+            inds = [inds]
+        for ind in inds:
+            i, rv = self._lookup_rv(ind)
+            if rv._joint_names is None:
+                return
+            index = rv._joint_names.index(rv.name)
+            self._remove_joint_normal(rv)
+            del self._rvs[i]
+            rv._mean = sympy.Matrix([rv._mean[index]])
+            rv._variance = sympy.Matrix([rv._variance[index, index]])
+            rv._symengine_variance = symengine.sympify(rv._variance)
+            rv._joint_names = None
+            self._rvs.insert(i - index, rv)
 
     def join(self, inds, fill=0, name_template=None, param_names=None):
         """Join random variables together into one joint distribution
@@ -832,7 +835,7 @@ class RandomVariables(MutableSequence):
         for rv, new_rv in zip(selection, new_rvs):
             rv._sympy_rv = new_rv._sympy_rv
             rv._mean = sympy.Matrix(means)
-            rv._variance = M
+            rv._variance = M.copy()
             rv._symengine_variance = symengine.Matrix(M.rows, M.cols, M)
             rv._joint_names = [rv.name for rv in new_rvs]
         self._rvs = new

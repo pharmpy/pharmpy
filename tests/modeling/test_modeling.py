@@ -1792,6 +1792,7 @@ def test_split_rv_block(testdata, etas, pk_ref, omega_ref):
     model.update_source()
 
     split_rv_block(model, etas)
+    print(model.random_variables, model.parameters)
     model.update_source()
 
     assert str(model.get_pred_pk_record()) == pk_ref
