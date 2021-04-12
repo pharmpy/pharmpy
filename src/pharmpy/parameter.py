@@ -86,10 +86,10 @@ class ParameterSet(OrderedSet):
         >>> par2 = Parameter("V", 10, lower=0, upper=100)
         >>> pset = ParameterSet([par1, par2])
         >>> pset.to_dataframe()
-
             value  lower  upper    fix
         CL      1      0     10  False
         V      10      0    100  False
+
         """
         symbols = [param.name for param in self]
         values = [param.init for param in self]

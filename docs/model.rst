@@ -190,11 +190,11 @@ And the parameters of the random variable can be retrieved:
 
 .. jupyter-execute::
 
-   eta1.pspace.distribution.mean
+   eta1.sympy_rv.pspace.distribution.mean
 
 .. jupyter-execute::
 
-   eta1.pspace.distribution.std
+   eta1.sympy_rv.pspace.distribution.std
 
 Joint distributions are also supported
 
@@ -207,7 +207,7 @@ Joint distributions are also supported
 
 .. jupyter-execute::
 
-   omega = rvs['ETA(1)'].pspace.distribution.sigma
+   omega = rvs['ETA(1)'].sympy_rv.pspace.distribution.sigma
    omega
 
 Substitution of numerical values can be done directly from initial values

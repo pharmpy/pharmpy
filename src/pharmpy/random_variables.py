@@ -131,7 +131,7 @@ class RandomVariable:
         >>> omega_cl = Parameter("OMEGA_CL", 0.1)
         >>> omega_v = Parameter("OMEGA_V", 0.1)
         >>> corr_cl_v = Parameter("OMEGA_CL_V", 0.01)
-        >>> RandomVariable.joint_normal(["IIV_CL", "IIV_V"], 'IIV', [0, 0], [[omega_cl.symbol, corr_cl_v], [corr_cl_v, omega_v]])
+        >>> RandomVariable.joint_normal(["IIV_CL", "IIV_V"], 'IIV', [0, 0], [[omega_cl.symbol, corr_cl_v.symbol], [corr_cl_v.symbol, omega_v.symbol]])
         """
 
         mean = sympy.Matrix(mu)
@@ -858,11 +858,16 @@ class RandomVariables(MutableSequence):
         >>> omega_cl = Parameter("OMEGA_CL", 0.1)
         >>> omega_v = Parameter("OMEGA_V", 0.1)
         >>> corr_cl_v = Parameter("OMEGA_CL_V", 0.01)
-        >>> rv1, rv2, rv3 = RandomVariable.joint_normal(["IIV_CL", "IIV_V"], 'IIV', [0, 0], [[omega_cl.symbol, corr_cl_v], [corr_cl_v, omega_v]])
-        >>> rvs = RandomVariables([rv1, rv2, rv3])
-        >>> rvs.unjoin('ETA(1)')
+        >>> rv1, rv2 = RandomVariable.joint_normal(["IIV_CL", "IIV_V"], 'IIV', [0, 0], [[omega_cl.symbol, corr_cl_v.symbol], [corr_cl_v.symbol, omega_v.symbol]])
+        >>> rvs = RandomVariables([rv1, rv2])
+        >>> rvs.unjoin('IIV_CL')
         >>> rvs
+        IIV_CL ~ 𝒩 (0, OMEGA_CL)
+        IIV_V ~ 𝒩 (0, OMEGA_V)
 
+        See Also
+        --------
+        join
         """
         if not isinstance(inds, list):
             inds = [inds]
@@ -883,6 +888,37 @@ class RandomVariables(MutableSequence):
         """Join random variables together into one joint distribution
 
         Set new covariances (and previous 0 covs) to 'fill'
+
+        Parameters
+        ----------
+        inds
+            Indices of variables to join
+        fill : value
+            Value to use for new covariances. Default is 0
+        name_template : str
+            A string template to use for new covariance symbols.
+            Using this option will override fill.
+        param_names : list
+            List of parameter names to be used together with
+            name_template.
+
+        Examples
+        --------
+        >>> from pharmpy import RandomVariables, RandomVariable, Parameter
+        >>> omega_cl = Parameter("OMEGA_CL", 0.1)
+        >>> omega_v = Parameter("OMEGA_V", 0.1)
+        >>> rv1 = RandomVariable.normal("IIV_CL", 'IIV', 0, omega_cl.symbol)
+        >>> rv2 = RandomVariable.normal("IIV_V", 'IIV', 0, omega_v.symbol)
+        >>> rvs = RandomVariables([rv1, rv2])
+        >>> rvs.join(['IIV_CL', 'IIV_V'])
+        >>> rvs
+        ⎡IIV_CL⎤     ⎧⎡0⎤  ⎡OMEGA_CL     0   ⎤⎫
+        ⎢      ⎥ ~ 𝒩 ⎪⎢ ⎥, ⎢                 ⎥⎪
+        ⎣IIV_V ⎦     ⎩⎣0⎦  ⎣   0      OMEGA_V⎦⎭
+
+        See Also
+        --------
+        unjoin
         """
         cov_to_params = dict()
         selection = self[inds]
@@ -925,6 +961,22 @@ class RandomVariables(MutableSequence):
 
     def distributions(self):
         """List with one entry per distribution instead of per random variable.
+
+        Returned is a list of tuples of a list of random variables that are jointly
+        distributed and the distribution.
+
+        Example
+        -------
+        >>> from pharmpy import RandomVariables, RandomVariable, Parameter
+        >>> omega_cl = Parameter("OMEGA_CL", 0.1)
+        >>> omega_v = Parameter("OMEGA_V", 0.1)
+        >>> omega_ka = Parameter("OMEGA_KA", 0.1)
+        >>> corr_cl_v = Parameter("OMEGA_CL_V", 0.01)
+        >>> rv1, rv2 = RandomVariable.joint_normal(["IIV_CL", "IIV_V"], 'IIV', [0, 0], [[omega_cl.symbol, corr_cl_v.symbol], [corr_cl_v.symbol, omega_v.symbol]])
+        >>> rv3 = RandomVariable.normal("IIV_KA", 'IIV', 0, omega_ka.symbol)
+        >>> rvs = RandomVariables([rv1, rv2, rv3])
+        >>> dists = rvs.distributions()
+
         """
         distributions = []
         i = 0
@@ -947,7 +999,7 @@ class RandomVariables(MutableSequence):
 
         As small changes as possible
 
-        returns an updated parameter_values
+        returns a dict with the valid parameter values
         """
         nearest = parameter_values.copy()
         for rvs, dist in self.distributions():
@@ -1044,7 +1096,6 @@ class RandomVariables(MutableSequence):
     def covariance_matrix(self):
         """Covariance matrix of all random variables
 
-        currently only supports normal distribution
         """
         _, M, _, others = self._calc_covariance_matrix()
         if others:
