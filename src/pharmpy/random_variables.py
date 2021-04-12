@@ -665,6 +665,21 @@ class RandomVariables(MutableSequence):
                 other._variance.col_del(joint_index)
                 other._symengine_variance = symengine.sympify(other._variance)
 
+    def _remove_joint_normal_not_in_self(self):
+        # Remove rv from all joint normals not in self
+        names = self.names
+        for rv in self._rvs:
+            if rv._joint_names is not None:
+                indices = [i for i, joint_name in enumerate(rv._joint_names) if joint_name in names]
+                new_joint = [rv._joint_names[i] for i in indices]
+                if len(new_joint) == 1:
+                    new_joint = None
+                rv._joint_names = new_joint
+                means = [rv._mean[i] for i in indices]
+                rv._mean = sympy.Matrix(means)
+                rv._variance = rv._variance[indices, indices]
+                rv._symengine_variance = symengine.sympify(rv._variance)
+
     def __setitem__(self, ind, value):
         if isinstance(ind, slice):
             if ind.step is None:
@@ -922,6 +937,7 @@ class RandomVariables(MutableSequence):
         """
         cov_to_params = dict()
         selection = self[inds]
+        selection._remove_joint_normal_not_in_self()
         means, M, names, others = selection._calc_covariance_matrix()
         if fill != 0:
             for row, col in itertools.product(range(M.rows), range(M.cols)):

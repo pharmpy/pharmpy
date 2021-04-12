@@ -451,7 +451,11 @@ def test_join():
     rv4, rv5 = RandomVariable.joint_normal(['ETA(4)', 'ETA(5)'], 'iiv', [0, 0], [[symbol('OMEGA(4,4)'), symbol('OMEGA(5,4)')], [symbol('OMEGA(5,4)'), symbol('OMEGA(5,5)')]])
     rv6 = RandomVariable.normal('EPS(1)', 'ruv', 0, symbol('SIGMA(1,1)'))
     rvs = RandomVariables([rv1, rv2, rv3, rv4, rv5, rv6])
+    rvs_copy = rvs.copy()
     rvs.join(['ETA(1)', 'ETA(2)'])
+
+    rvs = rvs_copy
+    rvs.join(['ETA(1)', 'ETA(4)'])
 
 
 def test_sub():
