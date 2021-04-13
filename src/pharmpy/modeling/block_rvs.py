@@ -59,7 +59,7 @@ def create_rv_block(model, list_of_rvs=None):
         parent_params = (pset[param_names[0]], pset[param_names[1]])
         covariance_init = _choose_param_init(model, rvs, parent_params)
         param_new = Parameter(cov_name, covariance_init)
-        pset.add(param_new)
+        pset.append(param_new)
 
     return model
 
@@ -86,7 +86,7 @@ def split_rv_block(model, list_of_rvs=None):
     removed_parameters = set(parameters_before) - set(parameters_after)
     pset = model.parameters
     for param in removed_parameters:
-        pset.discard(param)
+        del pset[param]
 
     return model
 

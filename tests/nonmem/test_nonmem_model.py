@@ -150,7 +150,7 @@ def test_add_parameters(pheno_path, param_new, init_expected, buf_new):
 
     assert len(pset) == 6
 
-    pset.add(param_new)
+    pset.append(param_new)
     model.parameters = pset
     model.update_source()
 
@@ -184,8 +184,8 @@ def test_add_two_parameters(pheno_path):
 
     param_1 = Parameter('COVEFF1', 0.2)
     param_2 = Parameter('COVEFF2', 0.1)
-    pset.add(param_1)
-    pset.add(param_2)
+    pset.append(param_1)
+    pset.append(param_2)
     model.parameters = pset
     model.update_source()
 
@@ -251,7 +251,7 @@ def test_add_parameters_and_statements(pheno_path, param_new, statement_new, buf
     model = Model(pheno_path)
 
     pset = model.parameters
-    pset.add(param_new)
+    pset.append(param_new)
     model.parameters = pset
 
     sset = model.statements
@@ -291,7 +291,7 @@ def test_add_random_variables(pheno_path, rv_new, buf_new):
     eta = RandomVariable.normal('eta_new', 'iiv', 0, S(rv_new.name))
 
     rvs.append(eta)
-    pset.add(rv_new)
+    pset.append(rv_new)
 
     model.random_variables = rvs
     model.parameters = pset
@@ -325,11 +325,11 @@ def test_add_random_variables_and_statements(pheno_path):
 
     eta = RandomVariable.normal('ETA_NEW', 'iiv', 0, S('omega'))
     rvs.append(eta)
-    pset.add(Parameter('omega', 0.1))
+    pset.append(Parameter('omega', 0.1))
 
     eps = RandomVariable.normal('EPS_NEW', 'ruv', 0, S('sigma'))
     rvs.append(eps)
-    pset.add(Parameter('sigma', 0.1))
+    pset.append(Parameter('sigma', 0.1))
 
     model.random_variables = rvs
     model.parameters = pset

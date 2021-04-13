@@ -49,7 +49,7 @@ def additive_error(model):
     # FIXME: Refactor to model.add_parameter
     sigma = model.create_symbol('sigma')
     sigma_par = Parameter(sigma.name, init=_get_prop_init(model.dataset))
-    model.parameters.add(sigma_par)
+    model.parameters.append(sigma_par)
 
     eps = RandomVariable.normal(ruv.name, 'RUV', 0, sigma)
     model.random_variables.append(eps)
@@ -83,7 +83,7 @@ def proportional_error(model):
     # FIXME: Refactor to model.add_parameter
     sigma = model.create_symbol('sigma')
     sigma_par = Parameter(sigma.name, init=0.09)
-    model.parameters.add(sigma_par)
+    model.parameters.append(sigma_par)
 
     eps = RandomVariable.normal(ruv.name, 'RUV', 0, sigma)
     model.random_variables.append(eps)
@@ -111,10 +111,10 @@ def combined_error(model):
     # FIXME: Refactor to model.add_parameter
     sigma_prop = model.create_symbol('sigma_prop')
     sigma_par1 = Parameter(sigma_prop.name, init=0.09)
-    model.parameters.add(sigma_par1)
+    model.parameters.append(sigma_par1)
     sigma_add = model.create_symbol('sigma_add')
     sigma_par2 = Parameter(sigma_add.name, init=_get_prop_init(model.dataset))
-    model.parameters.add(sigma_par2)
+    model.parameters.append(sigma_par2)
 
     eps_prop = RandomVariable.normal(ruv_prop.name, 'RUV', 0, sigma_prop)
     model.random_variables.append(eps_prop)

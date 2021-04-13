@@ -64,7 +64,7 @@ def iiv_on_ruv(model, list_of_eps=None, same_eta=True, eta_names=None):
 
 def _create_eta(pset, number, eta_names):
     omega = S(f'IIV_RUV{number}')
-    pset.add(Parameter(str(omega), 0.09))
+    pset.append(Parameter(str(omega), 0.09))
 
     if eta_names:
         eta_name = eta_names[number - 1]

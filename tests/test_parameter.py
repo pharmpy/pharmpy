@@ -1,7 +1,8 @@
+import pandas as pd
 import pytest
 import sympy
 
-from pharmpy.parameter import Parameter, ParameterSet
+from pharmpy.parameter import Parameter, Parameters
 from pharmpy.symbols import symbol
 
 
@@ -91,14 +92,29 @@ def test_init():
     param.init = 22
 
 
-def test_pset_index():
+def test_pset_init():
     p = Parameter('Y', 9)
-    pset = ParameterSet((p,))
+    pset = Parameters([p])
+    pset2 = Parameters(pset)
+    assert len(pset2) == 1
+    assert pset2['Y'].init == 9
+
+    p2 = Parameter('Y', 12)
+    with pytest.raises(ValueError):
+        Parameters([p, p2])
+
+    with pytest.raises(ValueError):
+        Parameters([23])
+
+
+def test_pset_getitem():
+    p = Parameter('Y', 9)
+    pset = Parameters((p,))
     assert len(pset) == 1
     assert pset['Y'] is p
 
     p2 = Parameter('Z', 5)
-    pset.add(p2)
+    pset.append(p2)
 
     assert len(pset) == 2
 
@@ -109,12 +125,34 @@ def test_pset_index():
         else:
             assert param is p2
 
+    assert pset[symbol('Z')] == p2
+
+    p3 = Parameter('K', 19)
+    with pytest.raises(KeyError):
+        pset[p3]
+
+    assert len(pset[[p]]) == 1
+
+
+def test_pset_setitem():
+    p1 = Parameter('P1', 1)
+    p2 = Parameter('P2', 2)
+    p3 = Parameter('P3', 3)
+    ps = Parameters([p1, p2, p3])
+    p4 = Parameter('P4', 4)
+    ps[p1] = p4
+    assert len(ps) == 3
+    assert ps[0].name == 'P4'
+
+    with pytest.raises(ValueError):
+        ps[0] = 23
+
 
 def test_pset_remove_fixed():
     p1 = Parameter('Y', 9, fix=False)
     p2 = Parameter('X', 3, fix=True)
     p3 = Parameter('Z', 1, fix=False)
-    pset = ParameterSet([p1, p2, p3])
+    pset = Parameters([p1, p2, p3])
     pset.remove_fixed()
     assert len(pset) == 2
     assert pset['Y'] == Parameter('Y', 9)
@@ -124,7 +162,7 @@ def test_pset_names():
     p1 = Parameter('Y', 9)
     p2 = Parameter('X', 3)
     p3 = Parameter('Z', 1)
-    pset = ParameterSet([p1, p2, p3])
+    pset = Parameters([p1, p2, p3])
     assert pset.names == ['Y', 'X', 'Z']
     assert pset.symbols == [symbol('Y'), symbol('X'), symbol('Z')]
 
@@ -132,7 +170,7 @@ def test_pset_names():
 def test_pset_lower_upper():
     p1 = Parameter('X', 0, lower=-1, upper=1)
     p2 = Parameter('Y', 1, lower=0)
-    pset = ParameterSet([p1, p2])
+    pset = Parameters([p1, p2])
     assert pset.lower == {'X': -1, 'Y': 0}
     assert pset.upper == {'X': 1, 'Y': sympy.oo}
 
@@ -141,7 +179,7 @@ def test_pset_inits():
     p1 = Parameter('Y', 9)
     p2 = Parameter('X', 3)
     p3 = Parameter('Z', 1)
-    pset = ParameterSet([p1, p2, p3])
+    pset = Parameters([p1, p2, p3])
     pset.inits = {'X': 28}
     assert len(pset) == 3
     assert pset['X'] == Parameter('X', 28)
@@ -162,7 +200,7 @@ def test_pset_nonfixed_inits():
     p1 = Parameter('Y', 9)
     p2 = Parameter('X', 3)
     p3 = Parameter('Z', 1)
-    pset = ParameterSet([p1, p2, p3])
+    pset = Parameters([p1, p2, p3])
     assert pset.nonfixed_inits == {'Y': 9, 'X': 3, 'Z': 1}
     pset['X'].fix = True
     assert pset.nonfixed_inits == {'Y': 9, 'Z': 1}
@@ -172,7 +210,7 @@ def test_pset_fix():
     p1 = Parameter('Y', 9, fix=False)
     p2 = Parameter('X', 3, fix=True)
     p3 = Parameter('Z', 1, fix=False)
-    pset = ParameterSet([p1, p2, p3])
+    pset = Parameters([p1, p2, p3])
     assert pset.fix == {'Y': False, 'X': True, 'Z': False}
     fixedness = {'Y': True, 'X': True, 'Z': True}
     pset.fix = fixedness
@@ -183,10 +221,10 @@ def test_pset_fix():
 
 def test_pset_repr():
     p1 = Parameter('Y', 9, fix=False)
-    pset = ParameterSet([p1])
+    pset = Parameters([p1])
     assert type(repr(pset)) == str
     assert type(pset._repr_html_()) == str
-    pset = ParameterSet()
+    pset = Parameters()
     assert type(repr(pset)) == str
     assert type(pset._repr_html_()) == str
 
@@ -202,10 +240,10 @@ def test_pset_eq():
     p1 = Parameter('Y', 9)
     p2 = Parameter('X', 3)
     p3 = Parameter('Z', 1)
-    pset1 = ParameterSet([p1, p2, p3])
-    pset2 = ParameterSet([p1, p2])
+    pset1 = Parameters([p1, p2, p3])
+    pset2 = Parameters([p1, p2])
     assert pset1 != pset2
-    pset3 = ParameterSet([p1, p3, p2])
+    pset3 = Parameters([p1, p3, p2])
     assert pset1 != pset3
     assert pset1 == pset1
 
@@ -214,24 +252,22 @@ def test_pset_add():
     p1 = Parameter('Y', 9)
     p2 = Parameter('X', 3)
     p3 = Parameter('Z', 1)
-    pset1 = ParameterSet([p1, p2])
-    pset1.add(p3)
+    pset1 = Parameters([p1, p2])
+    pset1.append(p3)
     assert len(pset1) == 3
 
     with pytest.raises(ValueError):
-        pset1.add(23)
+        pset1.append(23)
 
 
 def test_pset_discard():
     p1 = Parameter('Y', 9)
     p2 = Parameter('X', 3)
     p3 = Parameter('Z', 1)
-    pset1 = ParameterSet([p1, p2, p3])
-    pset1.discard(p2)
+    pset1 = Parameters([p1, p2, p3])
+    del pset1[p2]
     assert len(pset1) == 2
-    pset1.discard('Y')
-    assert len(pset1) == 1
-    pset1.discard('Y')
+    del pset1['Y']
     assert len(pset1) == 1
 
 
@@ -239,5 +275,24 @@ def test_is_close_to_bound_pset():
     p1 = Parameter('Y', 9)
     p2 = Parameter('X', 3, lower=1, upper=24)
     p3 = Parameter('Z', 1, lower=0, upper=2)
-    pset1 = ParameterSet([p1, p2, p3])
+    pset1 = Parameters([p1, p2, p3])
     assert not pset1.is_close_to_bound().any()
+    assert not pset1.is_close_to_bound(pd.Series({'X': 3.5, 'Y': 19})).any()
+
+
+def test_copy_pset():
+    p1 = Parameter('Y', 9)
+    p2 = Parameter('X', 3, lower=1, upper=24)
+    p3 = Parameter('Z', 1, lower=0, upper=2)
+    pset1 = Parameters([p1, p2, p3])
+    pset2 = pset1.copy()
+    assert pset1 == pset2
+    assert id(pset1[0]) != id(pset2[0])
+    p4 = p1.copy()
+    assert p4 == p1
+    assert id(p4) != id(p1)
+
+
+def test_hash():
+    p1 = Parameter('Y', 9)
+    hash(p1)

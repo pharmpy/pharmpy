@@ -35,7 +35,7 @@ def power_on_ruv(model, list_of_eps=None):
     for i, e in enumerate(eps):
         theta_name = str(model.create_symbol(stem='power', force_numbering=True))
         theta = Parameter(theta_name, theta_init)
-        pset.add(theta)
+        pset.append(theta)
         sset.subs({e.name: model.individual_prediction_symbol ** S(theta.name) * e.symbol})
 
     model.parameters = pset

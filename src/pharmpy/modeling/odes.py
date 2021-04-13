@@ -18,7 +18,7 @@ def add_parameter(model, name):
 def _add_parameter(model, name, init=0.1):
     pops = model.create_symbol(f'POP_{name}')
     pop_param = Parameter(pops.name, init=init, lower=0)
-    model.parameters.add(pop_param)
+    model.parameters.append(pop_param)
     symb = model.create_symbol(name)
     ass = Assignment(symb, pop_param.symbol)
     model.statements.insert(0, ass)

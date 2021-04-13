@@ -12,7 +12,7 @@ import pharmpy.plugins.nonmem
 from pharmpy.data import DatasetError
 from pharmpy.estimation import EstimationMethod
 from pharmpy.model import ModelSyntaxError
-from pharmpy.parameter import ParameterSet
+from pharmpy.parameter import Parameters
 from pharmpy.plugins.nonmem.results import NONMEMChainedModelfitResults
 from pharmpy.plugins.nonmem.table import NONMEMTableFile, PhiTable
 from pharmpy.random_variables import RandomVariables
@@ -225,7 +225,7 @@ class Model(pharmpy.model.Model):
 
     @property
     def parameters(self):
-        """Get the ParameterSet of all parameters"""
+        """Get the Parameters of all parameters"""
         try:
             return self._parameters
         except AttributeError:
@@ -241,10 +241,10 @@ class Model(pharmpy.model.Model):
 
     def _read_parameters(self):
         next_theta = 1
-        params = ParameterSet()
+        params = Parameters()
         for theta_record in self.control_stream.get_records('THETA'):
             thetas = theta_record.parameters(next_theta, seen_labels=set(params.names))
-            params.update(thetas)
+            params.extend(thetas)
             next_theta += len(thetas)
         next_omega = 1
         previous_size = None
@@ -252,26 +252,26 @@ class Model(pharmpy.model.Model):
             omegas, next_omega, previous_size = omega_record.parameters(
                 next_omega, previous_size, seen_labels=set(params.names)
             )
-            params.update(omegas)
+            params.extend(omegas)
         next_sigma = 1
         previous_size = None
         for sigma_record in self.control_stream.get_records('SIGMA'):
             sigmas, next_sigma, previous_size = sigma_record.parameters(
                 next_sigma, previous_size, seen_labels=set(params.names)
             )
-            params.update(sigmas)
+            params.extend(sigmas)
         self._parameters = params
         self._old_parameters = params.copy()
 
     @parameters.setter
     def parameters(self, params):
-        """params can be a ParameterSet or a dict-like with name: value
+        """params can be a Parameters or a dict-like with name: value
 
         Current restrictions:
-         * ParameterSet only supported for new initial estimates and fix
+         * Parameters only supported for new initial estimates and fix
          * Only set the exact same parameters. No additions and no removing of parameters
         """
-        if isinstance(params, ParameterSet):
+        if isinstance(params, Parameters):
             inits = params.inits
         else:
             inits = params
@@ -279,7 +279,7 @@ class Model(pharmpy.model.Model):
             raise ValueError("New parameter inits are not valid")
 
         self.parameters
-        if not isinstance(params, ParameterSet):
+        if not isinstance(params, Parameters):
             self._parameters.inits = params
         else:
             self._parameters = params

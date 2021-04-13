@@ -1,15 +1,15 @@
 import copy
+from collections.abc import MutableSequence
 
 import pandas as pd
 import sympy
 
 import pharmpy.symbols as symbols
-from pharmpy.data_structures import OrderedSet
 from pharmpy.math import is_near_target
 
 
-class ParameterSet(OrderedSet):
-    """A set of parameters
+class Parameters(MutableSequence):
+    """A collection of parameters
 
     Class representing a group of parameters. Usually all parameters in a model.
     This class give a ways of displaying, summarizing and manipulating
@@ -20,54 +20,101 @@ class ParameterSet(OrderedSet):
     Example
     -------
 
-    >>> from pharmpy import ParameterSet, Parameter
+    >>> from pharmpy import Parameters, Parameter
     >>> par1 = Parameter("x", 0)
     >>> par2 = Parameter("y", 1)
-    >>> pset = ParameterSet([par1, par2])
+    >>> pset = Parameters([par1, par2])
     >>> pset["x"]
     Parameter("x", 0, lower=-oo, upper=oo, fix=False)
 
     >>> "x" in pset
     True
 
-    >>> pset.add(Parameter("z", 0.1))
+    >>> pset.append(Parameter("z", 0.1))
     >>> len(pset)
     3
 
-    >>> pset.remove("x")
+    >>> del pset["x"]
     >>> len(pset)
     2
     """
 
-    def add(self, key):
-        if not isinstance(key, Parameter):
-            raise ValueError(f"Can not add variable of type {type(key)} to ParameterSet.")
-        super().add(key)
+    def __init__(self, params=None):
+        if isinstance(params, Parameters):
+            self._params = copy.deepcopy(params._params)
+        elif params is None:
+            self._params = []
+        else:
+            self._params = list(params)
+        names = set()
+        for p in self._params:
+            if not isinstance(p, Parameter):
+                raise ValueError(f'Can not add variable of type {type(p)} to Parameters')
+            if p.name in names:
+                raise ValueError(
+                    f'Parameter names must be unique. Parameter "{p.name}" '
+                    'was added more than once to Parameters'
+                )
+            names.add(p.name)
 
-    def discard(self, key):
-        if isinstance(key, str) or isinstance(key, sympy.Symbol):
-            if key in self:
-                key = self[key]
-        super().discard(key)
+    def __len__(self):
+        return len(self._params)
 
-    def __getitem__(self, index):
-        for e in self:
-            if e.name == index or e.symbol == index:
-                return e
-        raise KeyError(f'Parameter "{index}" does not exist')
+    def _lookup_param(self, ind, insert=False):
+        if isinstance(ind, sympy.Symbol):
+            ind = ind.name
+        if isinstance(ind, str):
+            for i, param in enumerate(self._params):
+                if ind == param.name:
+                    return i, param
+            raise KeyError(f'Could not find {ind} in Parameters')
+        elif isinstance(ind, Parameter):
+            try:
+                i = self._params.index(ind)
+            except ValueError:
+                raise KeyError(f'Could not find {ind.name} in Parameters')
+            return i, ind
+        if insert:
+            # Must allow for inserting after last element.
+            return ind, None
+        else:
+            return ind, self._params[ind]
 
-    def __contains__(self, item):
-        for e in self:
-            if (
-                isinstance(item, str)
-                and e.name == item
-                or isinstance(item, sympy.Symbol)
-                and e.name == item.name
-                or isinstance(item, Parameter)
-                and e == item
-            ):
-                return True
-        return False
+    def __getitem__(self, ind):
+        if isinstance(ind, list):
+            params = []
+            for i in ind:
+                index, param = self._lookup_param(i)
+                params.append(self[index])
+            return Parameters(params)
+        else:
+            _, param = self._lookup_param(ind)
+            return param
+
+    def __setitem__(self, ind, value):
+        if not isinstance(value, Parameter):
+            raise ValueError(f"Can not set variable of type {type(value)} to Parameters.")
+        i, _ = self._lookup_param(ind)
+        self._params[i] = value
+
+    def __delitem__(self, ind):
+        i, _ = self._lookup_param(ind)
+        del self._params[i]
+
+    def insert(self, ind, value):
+        if not isinstance(value, Parameter):
+            raise ValueError(
+                f'Trying to insert {type(value)} into Parameters. ' 'Must be of type Parameter.'
+            )
+        i, _ = self._lookup_param(ind, insert=True)
+        self._params.insert(i, value)
+
+    def __contains__(self, ind):
+        try:
+            _, _ = self._lookup_param(ind)
+        except KeyError:
+            return False
+        return True
 
     def to_dataframe(self):
         """Create a dataframe with a summary of all Parameters
@@ -81,21 +128,21 @@ class ParameterSet(OrderedSet):
 
         Example
         -------
-        >>> from pharmpy import ParameterSet, Parameter
+        >>> from pharmpy import Parameters, Parameter
         >>> par1 = Parameter("CL", 1, lower=0, upper=10)
         >>> par2 = Parameter("V", 10, lower=0, upper=100)
-        >>> pset = ParameterSet([par1, par2])
+        >>> pset = Parameters([par1, par2])
         >>> pset.to_dataframe()
             value  lower  upper    fix
         CL      1      0     10  False
         V      10      0    100  False
 
         """
-        symbols = [param.name for param in self]
-        values = [param.init for param in self]
-        lower = [param.lower for param in self]
-        upper = [param.upper for param in self]
-        fix = [param.fix for param in self]
+        symbols = [param.name for param in self._params]
+        values = [param.init for param in self._params]
+        lower = [param.lower for param in self._params]
+        upper = [param.upper for param in self._params]
+        fix = [param.fix for param in self._params]
         return pd.DataFrame(
             {'value': values, 'lower': lower, 'upper': upper, 'fix': fix}, index=symbols
         )
@@ -116,10 +163,10 @@ class ParameterSet(OrderedSet):
 
         Example
         -------
-        >>> from pharmpy import ParameterSet, Parameter
+        >>> from pharmpy import Parameters, Parameter
         >>> par1 = Parameter("CL", 1, lower=0, upper=10)
         >>> par2 = Parameter("V", 10, lower=0, upper=100)
-        >>> pset = ParameterSet([par1, par2])
+        >>> pset = Parameters([par1, par2])
         >>> pset.is_close_to_bound()
         CL    False
         V     False
@@ -140,61 +187,61 @@ class ParameterSet(OrderedSet):
     @property
     def names(self):
         """List of all parameter names"""
-        return [p.name for p in self]
+        return [p.name for p in self._params]
 
     @property
     def symbols(self):
         """List of all parameter symbols"""
-        return [p.symbol for p in self]
+        return [p.symbol for p in self._params]
 
     @property
     def lower(self):
         """Lower bounds of all parameters as a dictionary"""
-        return {p.name: p.lower for p in self}
+        return {p.name: p.lower for p in self._params}
 
     @property
     def upper(self):
         """Upper bounds of all parameters as a dictionary"""
-        return {p.name: p.upper for p in self}
+        return {p.name: p.upper for p in self._params}
 
     @property
     def inits(self):
         """Initial estimates of parameters as dict"""
-        return {p.name: p.init for p in self}
+        return {p.name: p.init for p in self._params}
 
     @property
     def nonfixed_inits(self):
         """Dict of initial estimates for all non-fixed parameters"""
-        return {p.name: p.init for p in self if not p.fix}
+        return {p.name: p.init for p in self._params if not p.fix}
 
     @inits.setter
     def inits(self, init_dict):
         for key, _ in init_dict.items():
             if key not in self:
-                raise KeyError(f'Parameter {key} not in ParameterSet')
+                raise KeyError(f'Parameter {key} not in Parameters')
         for name, value in init_dict.items():
             self[name].init = value
 
     @property
     def fix(self):
         """Fixedness of parameters as dict"""
-        return {p.name: p.fix for p in self}
+        return {p.name: p.fix for p in self._params}
 
     @fix.setter
     def fix(self, fix_dict):
         for key in fix_dict:
             if key not in self:
-                raise KeyError(f'Parameter {key} not in ParameterSet')
+                raise KeyError(f'Parameter {key} not in Parameters')
         for name, value in fix_dict.items():
             self[name].fix = value
 
     def remove_fixed(self):
         """Remove all fixed parameters"""
-        fixed = [p for p in self if p.fix]
-        self -= fixed
+        nonfixed = [p for p in self._params if not p.fix]
+        self._params = nonfixed
 
     def copy(self):
-        """Create a deep copy of this ParameterSet"""
+        """Create a deep copy of this Parameters"""
         return copy.deepcopy(self)
 
     def __eq__(self, other):
@@ -207,12 +254,12 @@ class ParameterSet(OrderedSet):
 
     def __repr__(self):
         if len(self) == 0:
-            return "ParameterSet()"
+            return "Parameters()"
         return self.to_dataframe().to_string()
 
     def _repr_html_(self):
         if len(self) == 0:
-            return "ParameterSet()"
+            return "Parameters()"
         else:
             return self.to_dataframe().to_html()
 

@@ -8,7 +8,7 @@ import sympy.stats
 
 import pharmpy.math
 from pharmpy.model import ModelSyntaxError
-from pharmpy.parameter import Parameter, ParameterSet
+from pharmpy.parameter import Parameter, Parameters
 from pharmpy.parse_utils.generic import (
     AttrToken,
     AttrTree,
@@ -25,12 +25,12 @@ from .record import Record
 
 class OmegaRecord(Record):
     def parameters(self, start_omega, previous_size, seen_labels=None):
-        """Get a ParameterSet for this omega record"""
+        """Get a Parameters for this omega record"""
         row = start_omega
         block = self.root.find('block')
         bare_block = self.root.find('bare_block')
         same = bool(self.root.find('same'))
-        parameters = ParameterSet()
+        parameters = Parameters()
         coords = []
 
         try:
@@ -69,7 +69,7 @@ class OmegaRecord(Record):
                     seen_labels.add(name)
                     coords.append((row, row))
                     param = Parameter(name, init, lower=0, fix=fixed)
-                    parameters.add(param)
+                    parameters.append(param)
                     row += 1
             size = 1
             next_omega = row
@@ -121,7 +121,7 @@ class OmegaRecord(Record):
                         init = A[i, j]
                         lower = None if i != j else 0
                         param = Parameter(name, init, lower=lower, fix=fix)
-                        parameters.add(param)
+                        parameters.append(param)
                         label_index += 1
             next_omega = start_omega + size
         try:
@@ -233,7 +233,7 @@ class OmegaRecord(Record):
         return name
 
     def update(self, parameters, first_omega, previous_size):
-        """From a ParameterSet update the OMEGAs in this record
+        """From a Parameters update the OMEGAs in this record
         returns the next omega number
         """
         block = self.root.find('block')

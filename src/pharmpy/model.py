@@ -21,7 +21,7 @@ import pandas as pd
 import scipy.linalg
 
 import pharmpy.symbols
-from pharmpy import ParameterSet, RandomVariables
+from pharmpy import Parameters, RandomVariables
 
 
 class ModelException(Exception):
@@ -174,11 +174,11 @@ class Model:
                 new_rvs.append(rv)
         self.random_variables = new_rvs
 
-        new_params = ParameterSet()
+        new_params = Parameters()
         for p in self.parameters:
             symb = p.symbol
             if symb in symbols or symb in new_rvs.free_symbols or (p.fix and p.init == 0):
-                new_params.add(p)
+                new_params.append(p)
         self.parameters = new_params
 
     def _observation(self):

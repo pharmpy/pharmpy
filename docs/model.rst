@@ -97,7 +97,7 @@ The parameter space of a parameter can be retrieved via a property:
 Parameter sets
 ~~~~~~~~~~~~~~
 
-It is often convenient to work with a set of parameters at the same time, for example all parameters of a model. In Pharmpy a multiple parameters are organized in the :py:class:`pharmpy.ParameterSet` class as an ordered set of :py:class:`pharmpy.Parameter`. All parameters of a model can be accessed by using the parameters attribute:
+It is often convenient to work with a set of parameters at the same time, for example all parameters of a model. In Pharmpy a multiple parameters are organized in the :py:class:`pharmpy.Parameters` class as an ordered set of :py:class:`pharmpy.Parameter`. All parameters of a model can be accessed by using the parameters attribute:
 
 .. jupyter-execute::
 

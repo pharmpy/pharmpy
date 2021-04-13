@@ -541,7 +541,9 @@ class ModelfitResults(Results):
                 mean = np.mean(samples)
                 variance = np.var(samples)
 
-                parameters = sample_from_covariance_matrix(model, n=100, force_posdef_covmatrix=True)
+                parameters = sample_from_covariance_matrix(
+                    model, n=100, force_posdef_covmatrix=True
+                )
                 samples = []
                 with warnings.catch_warnings():
                     warnings.filterwarnings('ignore')

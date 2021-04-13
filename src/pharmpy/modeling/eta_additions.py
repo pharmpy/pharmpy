@@ -64,7 +64,7 @@ def add_iiv(model, list_of_parameters, expression, operation='*', eta_names=None
         eta = RandomVariable.normal(eta_name, 'iiv', 0, omega)
 
         rvs.append(eta)
-        pset.add(Parameter(str(omega), init=0.09))
+        pset.append(Parameter(str(omega), init=0.09))
 
         statement = sset.find_assignment(list_of_parameters[i])
 
@@ -115,7 +115,7 @@ def add_iov(model, occ, list_of_parameters=None, eta_names=None):
     for i, eta in enumerate(etas, 1):
         omega_name = str(next(iter(eta.sympy_rv.pspace.distribution.free_symbols)))
         omega = S(f'OMEGA_IOV_{i}')  # TODO: better name
-        pset.add(Parameter(str(omega), init=pset[omega_name].init * 0.1))
+        pset.append(Parameter(str(omega), init=pset[omega_name].init * 0.1))
 
         iov = S(f'IOV_{i}')
 

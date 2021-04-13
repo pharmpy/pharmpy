@@ -14,7 +14,7 @@ __version__ = '0.22.0'
 import logging
 
 from .model_factory import Model
-from .parameter import Parameter, ParameterSet
+from .parameter import Parameter, Parameters
 from .random_variables import RandomVariable, RandomVariables, VariabilityHierarchy
 from .statements import ModelStatements
 from .symbols import symbol
@@ -26,7 +26,7 @@ __all__ = [
     'Model',
     'ModelStatements',
     'Parameter',
-    'ParameterSet',
+    'Parameters',
     'RandomVariable',
     'RandomVariables',
     'VariabilityHierarchy',

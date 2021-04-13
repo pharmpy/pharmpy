@@ -1,7 +1,7 @@
 import re
 import warnings
 
-from pharmpy.parameter import Parameter, ParameterSet
+from pharmpy.parameter import Parameter, Parameters
 from pharmpy.parse_utils.generic import AttrToken, remove_token_and_space
 
 from .record import Record
@@ -26,7 +26,7 @@ class ThetaRecord(Record):
         """
         if seen_labels is None:
             seen_labels = set()
-        pset = ParameterSet()
+        pset = Parameters()
         current_theta = first_theta
         for theta in self.root.all('theta'):
             init = theta.init.tokens[0].eval
@@ -81,7 +81,7 @@ class ThetaRecord(Record):
                 seen_labels.add(name)
                 new_par = Parameter(name, init, lower, upper, fix)
                 current_theta += 1
-                pset.add(new_par)
+                pset.append(new_par)
 
         if not self.name_map:
             self.name_map = {name: first_theta + i for i, name in enumerate(pset.names)}
@@ -97,7 +97,7 @@ class ThetaRecord(Record):
         return n
 
     def update(self, parameters, first_theta):
-        """From a ParameterSet update the THETAs in this record
+        """From a Parameters update the THETAs in this record
 
         Currently only updating initial estimates
         """
