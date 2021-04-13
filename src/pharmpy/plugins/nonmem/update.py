@@ -115,6 +115,7 @@ def update_random_variable_records(model, rvs_diff, rec_dict, comment_dict):
     number_of_records = 0
     new_maps = []
     for i, (op, (rvs, dist)) in enumerate(rvs_diff):
+        print(op, rvs)
         if op == '+':
             if len(rvs) == 1:
                 rv = rvs[0]
@@ -149,9 +150,8 @@ def update_random_variable_records(model, rvs_diff, rec_dict, comment_dict):
                 name_covariance = {rvs.get_covariance(rv1, rv2).name: (eta_map[rv2], eta_map[rv1])
                                    for rv1, rv2 in pairs}
                 name_map = {**name_map, **name_covariance}
-            new_maps.append(
-                (record, name_map, eta_map)
-            )
+
+            new_maps.append((record, name_map, eta_map))
             number_of_records += 1
         elif op == '-':
             if len(rvs) == 1:
@@ -159,11 +159,10 @@ def update_random_variable_records(model, rvs_diff, rec_dict, comment_dict):
                 recs_to_remove = [rec_dict[rv.name]]
             else:
                 recs_to_remove = list({rec_dict[rv.name] for rv in rvs})
-
             recs_to_remove = [rec for rec in recs_to_remove if rec not in removed]
             if recs_to_remove:
                 model.control_stream.remove_records(recs_to_remove)
-                removed.append([rec for rec in recs_to_remove])
+                removed += [rec for rec in recs_to_remove]
         else:
             eta_number += len(rvs)
             number_of_records += 1
