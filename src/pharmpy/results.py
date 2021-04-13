@@ -20,7 +20,6 @@ import lzma
 import math
 import warnings
 from pathlib import Path
-from pharmpy.data_structures import OrderedSet
 
 import altair as alt
 import numpy as np
@@ -30,6 +29,7 @@ import sympy
 import pharmpy.config as config
 import pharmpy.visualization
 from pharmpy.data import PharmDataFrame
+from pharmpy.data_structures import OrderedSet
 from pharmpy.math import cov2corr
 from pharmpy.parameter_sampling import sample_from_covariance_matrix
 
@@ -659,7 +659,7 @@ class ChainedModelfitResults(list, ModelfitResults):
         return self[-1].standard_errors
 
     @property
-    def standard_errors(self):
+    def standard_errors_sdcorr(self):
         return self[-1].standard_errors_sdcorr
 
     @property

@@ -3,7 +3,7 @@
 """
 
 from pharmpy.modeling import has_proportional_error
-from pharmpy.modeling.help_functions import _format_input_list, _get_epsilons
+from pharmpy.modeling.help_functions import _format_input_list
 from pharmpy.parameter import Parameter
 from pharmpy.symbols import symbol as S
 

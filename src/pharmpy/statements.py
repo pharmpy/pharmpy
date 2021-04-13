@@ -7,9 +7,6 @@ from sympy.printing.str import StrPrinter
 import pharmpy.symbols as symbols
 import pharmpy.unicode as unicode
 
-import sympy
-from sympy.printing.str import StrPrinter
-
 
 class MyPrinter(StrPrinter):
     def _print_Add(self, expr):

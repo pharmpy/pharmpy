@@ -38,9 +38,7 @@ def sample_from_function(model, samplingfn, parameters=None, force_posdef_sample
         samples = samplingfn(lower, upper, n=remaining)
         df = pd.DataFrame(samples, columns=parameters)
         if not force_posdef:
-            selected = df[
-                df.apply(model.random_variables.validate_parameters, axis=1)
-            ]
+            selected = df[df.apply(model.random_variables.validate_parameters, axis=1)]
         else:
             rvs = model.random_variables
             selected = df.transform(lambda row: rvs.nearest_valid_parameters(row), axis=1)

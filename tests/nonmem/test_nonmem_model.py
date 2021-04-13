@@ -12,9 +12,9 @@ from pharmpy.modeling import add_iiv, explicit_odes, zero_order_elimination
 from pharmpy.parameter import Parameter
 from pharmpy.plugins.nonmem import conf
 from pharmpy.plugins.nonmem.nmtran_parser import NMTranParser
+from pharmpy.random_variables import RandomVariable
 from pharmpy.statements import Assignment, ModelStatements, ODESystem
 from pharmpy.symbols import symbol
-from pharmpy.random_variables import RandomVariable
 
 
 def S(x):

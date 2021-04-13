@@ -170,9 +170,7 @@ class Model:
         new_rvs = RandomVariables()
         for rv in self.random_variables:
             # FIXME: change if rvs are random symbols in expressions
-            if rv.symbol in symbols or not symbols.isdisjoint(
-                rv.sympy_rv.pspace.free_symbols
-            ):
+            if rv.symbol in symbols or not symbols.isdisjoint(rv.sympy_rv.pspace.free_symbols):
                 new_rvs.append(rv)
         self.random_variables = new_rvs
 

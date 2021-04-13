@@ -3,7 +3,6 @@
 """
 
 import sympy
-import sympy.stats as stats
 
 from pharmpy.modeling.help_functions import _format_input_list, _get_epsilons
 from pharmpy.parameter import Parameter

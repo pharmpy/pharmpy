@@ -39,7 +39,9 @@ def create_rv_block(model, list_of_rvs=None):
     else:
         for name in list_of_rvs:
             if name in rvs and rvs[name].level == 'IOV':
-                raise ValueError(f'{name} describes IOV: Joining IOV random variables is currently not supported')
+                raise ValueError(
+                    f'{name} describes IOV: Joining IOV random variables is currently not supported'
+                )
     if len(list_of_rvs) == 1:
         raise ValueError('At least two random variables are needed')
 
@@ -81,7 +83,7 @@ def split_rv_block(model, list_of_rvs=None):
     rvs.unjoin(list_of_rvs)
     parameters_after = rvs.parameter_names
 
-    removed_parameters =set(parameters_before) - set(parameters_after)
+    removed_parameters = set(parameters_before) - set(parameters_after)
     pset = model.parameters
     for param in removed_parameters:
         pset.discard(param)

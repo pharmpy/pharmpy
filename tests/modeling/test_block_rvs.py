@@ -1,8 +1,6 @@
 from io import StringIO
 
 import pytest
-import sympy
-import sympy.stats as stats
 
 from pharmpy import Model
 from pharmpy.modeling import add_iiv, create_rv_block
@@ -94,5 +92,5 @@ $ESTIMATION METHOD=1 INTERACTION
         )
     )
     model.source.path = testdata / 'nonmem' / 'pheno.mod'
-    pset = create_rv_block(model, model.random_variables.names)
+    create_rv_block(model, model.random_variables.names)
     assert 'IIV_CL_V_IIV_S1' in model.parameters.names

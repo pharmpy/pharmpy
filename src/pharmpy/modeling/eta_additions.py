@@ -5,14 +5,13 @@
 from operator import add, mul
 
 import sympy
-import sympy.stats as stats
 from sympy import Eq, Piecewise
 
 from pharmpy.modeling.help_functions import _format_input_list, _format_options, _get_etas
 from pharmpy.parameter import Parameter
+from pharmpy.random_variables import RandomVariable
 from pharmpy.statements import Assignment, ModelStatements
 from pharmpy.symbols import symbol as S
-from pharmpy.random_variables import RandomVariable
 
 
 def add_iiv(model, list_of_parameters, expression, operation='*', eta_names=None):

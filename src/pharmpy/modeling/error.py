@@ -2,8 +2,6 @@
 :meta private:
 """
 
-import sympy
-
 import pharmpy.symbols as symbols
 from pharmpy.parameter import Parameter
 from pharmpy.random_variables import RandomVariable
