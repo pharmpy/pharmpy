@@ -18,6 +18,7 @@ def _get_epsilons(model, list_of_eps):
 
 def _get_etas(model, list_of_etas, include_symbols=False, fixed_allowed=False, iov_allowed=False):
     rvs = model.random_variables
+    list_of_etas = _format_input_list(list_of_etas)
     all_valid_etas = False
 
     if list_of_etas is None:

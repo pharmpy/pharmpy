@@ -75,7 +75,6 @@ def update_parameters(model, old, new):
 
 def update_random_variables(model, old, new):
     from pharmpy.plugins.nonmem.records.code_record import diff
-    model.control_stream.go_through_omega_rec()
     rec_dict = dict()
     comment_dict = dict()
 
@@ -129,12 +128,14 @@ def update_random_variable_records(model, rvs_diff, rec_dict, comment_dict):
                     previous_size=1,
                     comment_dict=comment_dict
                 )
+                record.comment_map = comment_dict
                 eta_map = {rv.name: eta_number}
                 name_map = {variance_param_name: (eta_number, eta_number)}
 
                 eta_number += 1
             else:
                 record = create_omega_block(model, dist, number_of_records, comment_dict)
+                record.comment_map = comment_dict
                 rvs = RandomVariables(rvs)
                 eta_map, name_map = dict(), dict()
 

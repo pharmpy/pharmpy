@@ -3,10 +3,9 @@
 """
 
 import numpy as np
-from sympy.stats.joint_rv_types import MultivariateNormalDistribution
 
 from pharmpy import math
-from pharmpy.modeling.help_functions import _format_input_list, _get_etas
+from pharmpy.modeling.help_functions import _get_etas
 from pharmpy.parameter import Parameter
 from pharmpy.random_variables import RandomVariables
 
@@ -76,7 +75,7 @@ def split_rv_block(model, list_of_rvs=None):
         non-fixed will become single. None is default.
     """
     rvs = model.random_variables
-    list_of_rvs = _format_input_list(list_of_rvs)
+    list_of_rvs = _get_etas(model, list_of_rvs)
 
     parameters_before = rvs.parameter_names
     rvs.unjoin(list_of_rvs)
