@@ -15,7 +15,7 @@ import logging
 
 from .model_factory import Model
 from .parameter import Parameter, ParameterSet
-from .random_variables import RandomVariable, RandomVariables
+from .random_variables import VariabilityHierarchy, RandomVariable, RandomVariables
 from .statements import ModelStatements
 from .symbols import symbol
 

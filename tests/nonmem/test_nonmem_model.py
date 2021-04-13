@@ -814,5 +814,4 @@ $EST METH=COND INTER
 
     model.estimation_steps[0].cov = True
     model.update_source()
-    print(str(model))
     assert str(model).split('\n')[-2] == '$COVARIANCE'

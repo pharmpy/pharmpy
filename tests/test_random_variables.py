@@ -70,12 +70,11 @@ def test_sympy_rv():
 
 def test_repr_rv():
     rv1 = RandomVariable.normal('ETA(1)', 'iiv', 0, 1)
-    assert repr(rv1) == 'ETA(1) ~ 𝒩 (0, 1)\n'
+    assert repr(rv1) == 'ETA(1) ~ 𝒩 (0, 1)'
     rv1, rv2 = RandomVariable.joint_normal(['ETA(1)', 'ETA(2)'], 'iiv', [0, 0], [[1, 0.1], [0.1, 2]])
     assert repr(rv1) == """⎡ETA(1)⎤     ⎧⎡0⎤  ⎡ 1   0.1⎤⎫
 ⎢      ⎥ ~ 𝒩 ⎪⎢ ⎥, ⎢        ⎥⎪
-⎣ETA(2)⎦     ⎩⎣0⎦  ⎣0.1   2 ⎦⎭
-"""
+⎣ETA(2)⎦     ⎩⎣0⎦  ⎣0.1   2 ⎦⎭"""
 
 def test_repr_latex_rv():
     rv1, rv2 = RandomVariable.joint_normal(['x', 'y'], 'iiv', [0, 0], [[1, 0.1], [0.1, 2]])
@@ -327,8 +326,7 @@ def test_repr():
     res = """⎡ETA(1)⎤     ⎧⎡0⎤  ⎡ 1   0.1⎤⎫
 ⎢      ⎥ ~ 𝒩 ⎪⎢ ⎥, ⎢        ⎥⎪
 ⎣ETA(2)⎦     ⎩⎣0⎦  ⎣0.1   2 ⎦⎭
-ETA(3) ~ 𝒩 (2, 1)
-"""
+ETA(3) ~ 𝒩 (2, 1)"""
     assert str(rvs) == res
     rv_exp = RandomVariable('X', 'iiv', stats.Exponential('X', symbol('Z')))
     assert str(rv_exp) == 'X ~ Exp(Z)'
@@ -339,8 +337,7 @@ ETA(3) ~ 𝒩 (2, 1)
 ⎡ETA(1)⎤     ⎪⎢───⎥  ⎡ 1   0.1⎤⎪
 ⎢      ⎥ ~ 𝒩 ⎪⎢ 5 ⎥, ⎢        ⎥⎪
 ⎣ETA(2)⎦     ⎪⎢   ⎥  ⎣0.1   2 ⎦⎪
-             ⎩⎣ 0 ⎦            ⎭
-'''
+             ⎩⎣ 0 ⎦            ⎭'''
 
 
 def test_repr_latex():

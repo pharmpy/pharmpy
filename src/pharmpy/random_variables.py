@@ -36,8 +36,9 @@ class RandomVariable:
     Examples
     --------
 
+    >>> import sympy
     >>> import sympy.stats
-    >>> import pharmpy.RandomVariable
+    >>> from pharmpy import RandomVariable
     >>> name = "ETA(1)"
     >>> sd = sympy.sqrt(sympy.Symbol('OMEGA(1,1)'))
     >>> rv = RandomVariable(name, "IIV", sympy.stats.Normal(name, 0, sd))
@@ -100,7 +101,10 @@ class RandomVariable:
         -------
         >>> from pharmpy import RandomVariable, Parameter
         >>> omega = Parameter('OMEGA_CL', 0.1)
-        >>> rv = RandomVariable.normal("IIV_CL", 0, omega.symbol)
+        >>> rv = RandomVariable.normal("IIV_CL", "IIV", 0, omega.symbol)
+        >>> rv
+        IIV_CL ~ 𝒩 (0, OMEGA_CL)
+
         """
         rv = cls(name, level)
         rv._mean = sympy.Matrix([sympy.sympify(mean)])
@@ -131,7 +135,12 @@ class RandomVariable:
         >>> omega_cl = Parameter("OMEGA_CL", 0.1)
         >>> omega_v = Parameter("OMEGA_V", 0.1)
         >>> corr_cl_v = Parameter("OMEGA_CL_V", 0.01)
-        >>> RandomVariable.joint_normal(["IIV_CL", "IIV_V"], 'IIV', [0, 0], [[omega_cl.symbol, corr_cl_v.symbol], [corr_cl_v.symbol, omega_v.symbol]])
+        >>> rv1, rv2 = RandomVariable.joint_normal(["IIV_CL", "IIV_V"], 'IIV', [0, 0], [[omega_cl.symbol, corr_cl_v.symbol], [corr_cl_v.symbol, omega_v.symbol]])
+        >>> rv1
+	⎡IIV_CL⎤     ⎧⎡0⎤  ⎡ OMEGA_CL   OMEGA_CL_V⎤⎫
+	⎢      ⎥ ~ 𝒩 ⎪⎢ ⎥, ⎢                      ⎥⎪
+	⎣IIV_V ⎦     ⎩⎣0⎦  ⎣OMEGA_CL_V   OMEGA_V  ⎦⎭
+
         """
 
         mean = sympy.Matrix(mu)
@@ -216,6 +225,7 @@ class RandomVariable:
         >>> omega = Parameter("OMEGA_CL", 0.1)
         >>> rv = RandomVariable.normal("IIV_CL", "IIV", 0, omega.symbol)
         >>> rv.subs({omega.symbol: sympy.Symbol("OMEGA_NEW")})
+        >>> rv
         IIV_CL ~ 𝒩 (0, OMEGA_NEW)
 
         """
@@ -262,9 +272,9 @@ class RandomVariable:
         if self._mean is not None:    # Normal distribution
             if self._mean.rows > 1:
                 name_vector = sympy.Matrix(self._joint_names)
-                name_strings = sympy.pretty(name_vector, wrap_line=False).split('\n')
-                mu_strings = sympy.pretty(self._mean, wrap_line=False).split('\n')
-                sigma_strings = sympy.pretty(self._variance, wrap_line=False).split('\n')
+                name_strings = sympy.pretty(name_vector, wrap_line=False, use_unicode=True).split('\n')
+                mu_strings = sympy.pretty(self._mean, wrap_line=False, use_unicode=True).split('\n')
+                sigma_strings = sympy.pretty(self._variance, wrap_line=False, use_unicode=True).split('\n')
                 mu_height = len(mu_strings)
                 sigma_height = len(sigma_strings)
                 max_height = max(mu_height, sigma_height)
@@ -311,16 +321,16 @@ class RandomVariable:
                         )
                     else:
                         res.append(name_line + '     ' + lpar + mu_line + '  ' + sigma_line + rpar)
-                return '\n'.join(res) + '\n'
+                return '\n'.join(res)
             else:
-                return f'{sympy.pretty(self.symbol, wrap_line=False)}' \
-                f' ~ {unicode.mathematical_script_capital_n}({sympy.pretty(self._mean[0], wrap_line=False)}, ' \
-                f'{sympy.pretty(self._variance[0], wrap_line=False)})\n'
+                return f'{sympy.pretty(self.symbol, wrap_line=False, use_unicode=True)}' \
+                        f' ~ {unicode.mathematical_script_capital_n}({sympy.pretty(self._mean[0], wrap_line=False, use_unicode=True)}, ' \
+                f'{sympy.pretty(self._variance[0], wrap_line=False, use_unicode=True)})'
         else:
             if isinstance(self.sympy_rv.pspace.distribution, ExponentialDistribution):
-                return f'{sympy.pretty(self.symbol)} ~ Exp({self.sympy_rv.pspace.distribution.rate})'
+                return f'{sympy.pretty(self.symbol, use_unicode=True)} ~ Exp({self.sympy_rv.pspace.distribution.rate})'
             else:
-                return f'{sympy.pretty(self.symbol)} ~ UnknownDistribution'
+                return f'{sympy.pretty(self.symbol, use_unicode=True)} ~ UnknownDistribution'
 
     def _latex_string(self, aligned=False):
         lines = []
@@ -393,13 +403,14 @@ class VariabilityHierarchy:
 
         Examples
         --------
+        >>> from pharmpy import VariabilityHierarchy
         >>> hierarchy = VariabilityHierarchy()
         >>> hierarchy.add_variability_level("IIV", 0, "ID")
         >>> hierarchy.add_variability_level("IOV", 1, "OCC")
         >>> hierarchy.get_name(1)
-        IOV
+        'IOV'
         >>> hierarchy.get_name(0)
-        IIV
+        'IIV'
 
         """
         for varlev in self._levels:
@@ -422,6 +433,7 @@ class VariabilityHierarchy:
 
         Examples
         --------
+        >>> from pharmpy import VariabilityHierarchy
         >>> hierarchy = VariabilityHierarchy()
         >>> hierarchy.add_variability_level("IIV", 0, "ID")
         >>> hierarchy.add_variability_level("IOV", 1, "OCC")
@@ -452,6 +464,7 @@ class VariabilityHierarchy:
 
         Examples
         --------
+        >>> from pharmpy import VariabilityHierarchy
         >>> hierarchy = VariabilityHierarchy()
         >>> hierarchy.add_variability_level("IIV", 0, "ID")
         >>> hierarchy.add_higher_level("IOV", "OCC")
@@ -503,6 +516,7 @@ class VariabilityHierarchy:
 
         Examples
         --------
+        >>> from pharmpy import VariabilityHierarchy
         >>> hierarchy = VariabilityHierarchy()
         >>> hierarchy.add_variability_level("IIV", 0, "ID")
         >>> hierarchy.add_lower_level("ICV", "COUNTRY")
@@ -530,6 +544,7 @@ class VariabilityHierarchy:
 
         Examples
         --------
+        >>> from pharmpy import VariabilityHierarchy
         >>> hierarchy = VariabilityHierarchy()
         >>> hierarchy.add_variability_level("IIV", 0, "ID")
         >>> hierarchy.add_lower_level("ICV", "COUNTRY")
@@ -580,8 +595,8 @@ class RandomVariables(MutableSequence):
        Examples
        --------
        >>> from pharmpy import RandomVariables, RandomVariable, Parameter
-       >>> omega = Parameter('OMEGA_CL', 0.1)
-       >>> rv = RandomVariable.normal("IIV_CL", 0, omega.symbol)
+       >>> omega = Parameter("OMEGA_CL", 0.1)
+       >>> rv = RandomVariable.normal("IIV_CL", "iiv", 0, omega.symbol)
        >>> rvs = RandomVariables([rv])
     """
     def __init__(self, rvs=None):
@@ -845,6 +860,7 @@ class RandomVariables(MutableSequence):
         >>> rv = RandomVariable.normal("IIV_CL", "IIV", 0, omega.symbol)
         >>> rvs = RandomVariables([rv])
         >>> rvs.subs({omega.symbol: sympy.Symbol("OMEGA_NEW")})
+        >>> rvs
         IIV_CL ~ 𝒩 (0, OMEGA_NEW)
 
         """
@@ -917,6 +933,13 @@ class RandomVariables(MutableSequence):
             List of parameter names to be used together with
             name_template.
 
+
+        Returns
+        -------
+        A dictionary from newly created covariance parameter names to
+        tuple of parameter names. Empty dictionary if no parameter
+        symbols were created
+
         Examples
         --------
         >>> from pharmpy import RandomVariables, RandomVariable, Parameter
@@ -926,6 +949,7 @@ class RandomVariables(MutableSequence):
         >>> rv2 = RandomVariable.normal("IIV_V", 'IIV', 0, omega_v.symbol)
         >>> rvs = RandomVariables([rv1, rv2])
         >>> rvs.join(['IIV_CL', 'IIV_V'])
+        {}
         >>> rvs
         ⎡IIV_CL⎤     ⎧⎡0⎤  ⎡OMEGA_CL     0   ⎤⎫
         ⎢      ⎥ ~ 𝒩 ⎪⎢ ⎥, ⎢                 ⎥⎪
@@ -1119,10 +1143,10 @@ class RandomVariables(MutableSequence):
         return M
 
     def __repr__(self):
-        res = ''
+        strings = []
         for rvs, dist in self.distributions():
-            res += repr(rvs[0])
-        return res
+            strings.append(repr(rvs[0]))
+        return '\n'.join(strings)
 
     def _repr_latex_(self):
         lines = []
