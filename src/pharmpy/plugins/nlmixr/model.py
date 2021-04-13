@@ -1,7 +1,6 @@
 from sympy.printing.str import StrPrinter
 
 import pharmpy.model
-from pharmpy.random_variables import VariabilityLevel
 from pharmpy.statements import Assignment
 
 
@@ -69,7 +68,7 @@ def create_ini(cg, model):
         theta_name = name_mangle(theta.name)
         cg.add(f'{theta_name} <- {theta.init}')
 
-    for rvs, dist in model.random_variables.distributions(exclude_level=VariabilityLevel.RUV):
+    for rvs, dist in model.random_variables.etas.distributions():
         if len(rvs) == 1:
             omega = dist.std ** 2
             init = model.parameters[omega.name].init
@@ -82,7 +81,7 @@ def create_ini(cg, model):
                     inits.append(model.parameters[omega[row, col].name].init)
             cg.add(f'{" + ".join([name_mangle(rv.name) for rv in rvs])} ~ c({", ".join(inits)})')
 
-    for rvs, dist in model.random_variables.distributions(level=VariabilityLevel.RUV):
+    for rvs, dist in model.random_variables.epsilons.distributions():
         sigma = dist.std ** 2
         cg.add(f'{name_mangle(sigma.name)} <- {model.parameters[sigma.name].init}')
 
@@ -101,7 +100,7 @@ def create_model(cg, model):
         if isinstance(s, Assignment):
             if s.symbol == model.dependent_variable_symbol:
 
-                for rvs, dist in model.random_variables.distributions(level=VariabilityLevel.RUV):
+                for rvs, dist in model.random_variables.epsilons.distributions():
                     sigma = dist.std ** 2
                 cg.add(f'{s.symbol.name} ~ prop({name_mangle(sigma.name)})')
             else:

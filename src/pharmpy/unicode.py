@@ -1,5 +1,7 @@
 import math
 
+mathematical_script_capital_n = '𝒩 '
+
 
 class Grid:
     def __init__(self, nrows, ncols):

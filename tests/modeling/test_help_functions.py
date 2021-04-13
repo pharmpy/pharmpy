@@ -2,7 +2,6 @@ import pytest
 
 from pharmpy import Model
 from pharmpy.modeling.help_functions import _get_etas
-from pharmpy.random_variables import VariabilityLevel
 
 
 def test_get_etas(pheno_path, testdata):
@@ -29,6 +28,6 @@ def test_get_etas(pheno_path, testdata):
     assert rvs[0].name == 'ETA(2)'
 
     model = Model(testdata / 'nonmem' / 'pheno_block.mod')
-    model.random_variables['ETA(1)'].variability_level = VariabilityLevel.IOV
+    model.random_variables['ETA(1)'].level = 'IOV'
     rvs = _get_etas(model, None)
     assert rvs[0].name == 'ETA(2)'

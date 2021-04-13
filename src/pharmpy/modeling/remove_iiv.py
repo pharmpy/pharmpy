@@ -25,7 +25,7 @@ def remove_iiv(model, list_to_remove=None):
     for eta in etas:
         statement = sset.find_assignment(eta.name, is_symbol=False)
         statement.expression = statement.expression.subs(S(eta.name), 0)
-        rvs.discard(eta)
+        del rvs[eta]
 
     model.random_variables = rvs
     model.statements = sset

@@ -6,7 +6,15 @@ from sympy.printing.str import StrPrinter
 
 import pharmpy.symbols as symbols
 import pharmpy.unicode as unicode
-from pharmpy.random_variables import VariabilityLevel
+
+
+class MyPrinter(StrPrinter):
+    def _print_Add(self, expr):
+        args = expr.args
+        new = []
+        for arg in args:
+            new.append(self._print(arg))
+        return super()._print_Add(sympy.Add(*args, evaluate=False), order='none')
 
 
 class Assignment:
@@ -89,7 +97,7 @@ class Assignment:
         additions."""
         if not isinstance(self.expression, sympy.Add) or rvs is None:
             return self.expression
-
+        # FIXME: This should be in MyPrinter
         rvs_names = [rv.name for rv in rvs]
 
         if trans:
@@ -109,8 +117,8 @@ class Assignment:
             if rvs_intersect:
                 if len(rvs_intersect) == 1:
                     rv_name = list(rvs_intersect)[0]
-                    variability_level = rvs[rv_name].variability_level
-                    if variability_level == VariabilityLevel.RUV:
+                    variability_level = rvs[rv_name].level
+                    if variability_level == 'RUV':
                         terms_ruv.append(arg)
                         continue
                 terms_iiv_iov.append(arg)
@@ -128,9 +136,8 @@ class Assignment:
         terms += terms_iiv_iov + terms_ruv
 
         new_order = sympy.Add(*terms, evaluate=False)
-        expr_ordered = sympy.UnevaluatedExpr(new_order)
 
-        return StrPrinter(dict(order="none")).doprint(expr_ordered)
+        return MyPrinter().doprint(new_order)
 
 
 class ODESystem:

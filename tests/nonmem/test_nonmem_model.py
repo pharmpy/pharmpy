@@ -12,7 +12,7 @@ from pharmpy.modeling import add_iiv, explicit_odes, zero_order_elimination
 from pharmpy.parameter import Parameter
 from pharmpy.plugins.nonmem import conf
 from pharmpy.plugins.nonmem.nmtran_parser import NMTranParser
-from pharmpy.random_variables import VariabilityLevel
+from pharmpy.random_variables import RandomVariable
 from pharmpy.statements import Assignment, ModelStatements, ODESystem
 from pharmpy.symbols import symbol
 
@@ -120,19 +120,19 @@ def test_adjust_iovs(testdata):
     model.parameters
     rvs = model.random_variables
 
-    assert rvs[0].variability_level == VariabilityLevel.IIV
-    assert rvs[3].variability_level == VariabilityLevel.IOV
-    assert rvs[4].variability_level == VariabilityLevel.IOV
-    assert rvs[6].variability_level == VariabilityLevel.IOV
+    assert rvs[0].level == 'IIV'
+    assert rvs[3].level == 'IOV'
+    assert rvs[4].level == 'IOV'
+    assert rvs[6].level == 'IOV'
 
     model = Model(testdata / 'nonmem' / 'qa' / 'iov.mod')
     rvs = model.random_variables
-    assert rvs[0].variability_level == VariabilityLevel.IIV
-    assert rvs[1].variability_level == VariabilityLevel.IIV
-    assert rvs[2].variability_level == VariabilityLevel.IOV
-    assert rvs[3].variability_level == VariabilityLevel.IOV
-    assert rvs[4].variability_level == VariabilityLevel.IOV
-    assert rvs[5].variability_level == VariabilityLevel.IOV
+    assert rvs[0].level == 'IIV'
+    assert rvs[1].level == 'IIV'
+    assert rvs[2].level == 'IOV'
+    assert rvs[3].level == 'IOV'
+    assert rvs[4].level == 'IOV'
+    assert rvs[5].level == 'IOV'
 
 
 @pytest.mark.parametrize(
@@ -288,10 +288,9 @@ def test_add_random_variables(pheno_path, rv_new, buf_new):
     rvs = model.random_variables
     pset = model.parameters
 
-    eta = sympy.stats.Normal('eta_new', 0, sympy.sqrt(S(rv_new.name)))
-    eta.variability_level = VariabilityLevel.IIV
+    eta = RandomVariable.normal('eta_new', 'iiv', 0, S(rv_new.name))
 
-    rvs.add(eta)
+    rvs.append(eta)
     pset.add(rv_new)
 
     model.random_variables = rvs
@@ -314,8 +313,8 @@ def test_add_random_variables(pheno_path, rv_new, buf_new):
 
     rv = model.random_variables['eta_new']
 
-    assert rv.pspace.distribution.mean == 0
-    assert (rv.pspace.distribution.std ** 2).name == 'omega'
+    assert rv.sympy_rv.pspace.distribution.mean == 0
+    assert (rv.sympy_rv.pspace.distribution.std ** 2).name == 'omega'
 
 
 def test_add_random_variables_and_statements(pheno_path):
@@ -324,14 +323,12 @@ def test_add_random_variables_and_statements(pheno_path):
     rvs = model.random_variables
     pset = model.parameters
 
-    eta = sympy.stats.Normal('ETA_NEW', 0, sympy.sqrt(S('omega')))
-    eta.variability_level = VariabilityLevel.IIV
-    rvs.add(eta)
+    eta = RandomVariable.normal('ETA_NEW', 'iiv', 0, S('omega'))
+    rvs.append(eta)
     pset.add(Parameter('omega', 0.1))
 
-    eps = sympy.stats.Normal('EPS_NEW', 0, sympy.sqrt(S('sigma')))
-    eps.variability_level = VariabilityLevel.RUV
-    rvs.add(eps)
+    eps = RandomVariable.normal('EPS_NEW', 'ruv', 0, S('sigma'))
+    rvs.append(eps)
     pset.add(Parameter('sigma', 0.1))
 
     model.random_variables = rvs
@@ -458,7 +455,7 @@ def test_remove_eta(pheno_path):
     model = Model(pheno_path)
     rvs = model.random_variables
     eta1 = rvs['ETA(1)']
-    rvs.discard(eta1)
+    del rvs[eta1]
     model.update_source()
     assert str(model).split('\n')[12] == 'V = TVV*EXP(ETA(1))'
 
@@ -817,5 +814,4 @@ $EST METH=COND INTER
 
     model.estimation_steps[0].cov = True
     model.update_source()
-    print(str(model))
     assert str(model).split('\n')[-2] == '$COVARIANCE'

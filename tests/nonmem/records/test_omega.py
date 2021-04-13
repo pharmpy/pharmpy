@@ -4,7 +4,6 @@ import sympy
 from pharmpy.config import ConfigurationContext
 from pharmpy.model import ModelSyntaxError
 from pharmpy.plugins.nonmem import conf
-from pharmpy.random_variables import VariabilityLevel
 from pharmpy.symbols import symbol
 
 
@@ -349,7 +348,7 @@ def test_random_variables(parser):
     assert nxt == 3
     assert len(rvs) == 1
     assert rvs[0].name == 'ETA(2)'
-    assert isinstance(rvs[0].pspace.distribution, sympy.stats.crv_types.NormalDistribution)
+    assert isinstance(rvs[0].sympy_rv.pspace.distribution, sympy.stats.crv_types.NormalDistribution)
     assert cov == S('OMEGA(2,2)')
     assert len(zero_fix) == 0
 
@@ -364,7 +363,7 @@ def test_random_variables(parser):
     assert len(cov) == 4
     assert len(zero_fix) == 0
     A = sympy.Matrix([[S('OMEGA(1,1)'), S('OMEGA(2,1)')], [S('OMEGA(2,1)'), S('OMEGA(2,2)')]])
-    assert rvs[0].pspace.distribution.sigma == A
+    assert rvs[0].sympy_rv.pspace.distribution.sigma == A
     rvs, nxt, cov, zero_fix = rec1.random_variables(nxt, cov)
     assert nxt == 5
     assert len(rvs) == 2
@@ -372,7 +371,7 @@ def test_random_variables(parser):
     assert rvs[1].name == 'ETA(4)'
     assert len(cov) == 4
     assert len(zero_fix) == 0
-    assert rvs[0].pspace.distribution.sigma == A
+    assert rvs[0].sympy_rv.pspace.distribution.sigma == A
 
     rec = parser.parse("$OMEGA 0 FIX").records[0]
     rvs, _, _, zero_fix = rec.random_variables(1)
@@ -415,7 +414,7 @@ def test_random_variables(parser):
         assert len(cov) == 4
         assert len(zero_fix) == 0
         A = sympy.Matrix([[S('IV1'), S('CORR')], [S('CORR'), S('IV2')]])
-        assert rvs[0].pspace.distribution.sigma == A
+        assert rvs[0].sympy_rv.pspace.distribution.sigma == A
         rvs, nxt, cov, zero_fix = rec1.random_variables(nxt, cov)
         assert nxt == 5
         assert len(rvs) == 2
@@ -423,7 +422,7 @@ def test_random_variables(parser):
         assert rvs[1].name == 'ETA(4)'
         assert len(cov) == 4
         assert len(zero_fix) == 0
-        assert rvs[0].pspace.distribution.sigma == A
+        assert rvs[0].sympy_rv.pspace.distribution.sigma == A
 
 
 @pytest.mark.parametrize(
@@ -452,10 +451,10 @@ def test_remove(parser, buf, remove, result):
 
 def test_iov(parser):
     rec = parser.parse('$OMEGA BLOCK(2) SAME').records[0]
-    rvs, _, _, _ = rec.random_variables(1, 2)
-    assert rvs[0].variability_level == VariabilityLevel.IOV
-    assert rvs[1].variability_level == VariabilityLevel.IOV
+    rvs, _, _, _ = rec.random_variables(1, sympy.Matrix([[2, 0], [0, 1]]))
+    assert rvs[0].level == 'IOV'
+    assert rvs[1].level == 'IOV'
 
     rec = parser.parse('$OMEGA 1').records[0]
     rvs, _, _, _ = rec.random_variables(1)
-    assert rvs[0].variability_level == VariabilityLevel.IIV
+    assert rvs[0].level == 'IIV'

@@ -16,7 +16,7 @@ from pharmpy.parse_utils.generic import (
     insert_before_or_at_end,
     remove_token_and_space,
 )
-from pharmpy.random_variables import JointNormalSeparate, RandomVariables, VariabilityLevel
+from pharmpy.random_variables import RandomVariable, RandomVariables
 from pharmpy.symbols import symbol
 
 from .parsers import OmegaRecordParser
@@ -398,8 +398,8 @@ class OmegaRecord(Record):
                 fixed = bool(node.find('FIX'))
                 name = self._rv_name(i)
                 if not (init == 0 and fixed):  # 0 FIX are not RVs
-                    eta = sympy.stats.Normal(name, 0, sympy.sqrt(symbol(rev_map[(i, i)])))
-                    rvs.add(eta)
+                    eta = RandomVariable.normal(name, 'iiv', 0, symbol(rev_map[(i, i)]))
+                    rvs.append(eta)
                     etas.append(eta.name)
                 else:
                     zero_fix.append(name)
@@ -425,7 +425,7 @@ class OmegaRecord(Record):
                 names = [self._rv_name(i) for i in range(start_omega, start_omega + numetas)]
                 means = [0] * numetas
                 if same:
-                    rvs = JointNormalSeparate(names, means, previous_cov)
+                    rvs = RandomVariable.joint_normal(names, 'iiv', means, previous_cov)
                     etas = [rv.name for rv in rvs]
                     next_cov = previous_cov
                 else:
@@ -436,7 +436,7 @@ class OmegaRecord(Record):
                             if row != col:
                                 cov[col, row] = cov[row, col]
                     next_cov = cov
-                    rvs = JointNormalSeparate(names, means, cov)
+                    rvs = RandomVariable.joint_normal(names, 'iiv', means, cov)
                     etas = [rv.name for rv in rvs]
             else:
                 rvs = RandomVariables()
@@ -445,20 +445,20 @@ class OmegaRecord(Record):
                     sym = previous_cov
                 else:
                     sym = symbol(rev_map[(start_omega, start_omega)])
-                eta = sympy.stats.Normal(name, 0, sympy.sqrt(sym))
+                eta = RandomVariable.normal(name, 'iiv', 0, sym)
                 next_cov = sym
-                rvs.add(eta)
+                rvs.append(eta)
                 etas.append(eta.name)
 
         if self.name == 'OMEGA':
             if same:
-                level = VariabilityLevel.IOV
+                level = 'IOV'
             else:
-                level = VariabilityLevel.IIV
+                level = 'IIV'
         else:
-            level = VariabilityLevel.RUV
+            level = 'RUV'
         for rv in rvs:
-            rv.variability_level = level
+            rv.level = level
         self.eta_map = {eta: start_omega + i for i, eta in enumerate(etas)}
         return rvs, start_omega + numetas, next_cov, zero_fix
 

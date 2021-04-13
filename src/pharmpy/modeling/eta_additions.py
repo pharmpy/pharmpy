@@ -5,12 +5,11 @@
 from operator import add, mul
 
 import sympy
-import sympy.stats as stats
 from sympy import Eq, Piecewise
 
 from pharmpy.modeling.help_functions import _format_input_list, _format_options, _get_etas
 from pharmpy.parameter import Parameter
-from pharmpy.random_variables import VariabilityLevel
+from pharmpy.random_variables import RandomVariable
 from pharmpy.statements import Assignment, ModelStatements
 from pharmpy.symbols import symbol as S
 
@@ -62,10 +61,9 @@ def add_iiv(model, list_of_parameters, expression, operation='*', eta_names=None
         else:
             eta_name = eta_names[i]
 
-        eta = stats.Normal(eta_name, 0, sympy.sqrt(omega))
-        eta.variability_level = VariabilityLevel.IIV
+        eta = RandomVariable.normal(eta_name, 'iiv', 0, omega)
 
-        rvs.add(eta)
+        rvs.append(eta)
         pset.add(Parameter(str(omega), init=0.09))
 
         statement = sset.find_assignment(list_of_parameters[i])
@@ -115,7 +113,7 @@ def add_iov(model, occ, list_of_parameters=None, eta_names=None):
 
     iovs, etais = ModelStatements(), ModelStatements()
     for i, eta in enumerate(etas, 1):
-        omega_name = str(next(iter(eta.pspace.distribution.free_symbols)))
+        omega_name = str(next(iter(eta.sympy_rv.pspace.distribution.free_symbols)))
         omega = S(f'OMEGA_IOV_{i}')  # TODO: better name
         pset.add(Parameter(str(omega), init=pset[omega_name].init * 0.1))
 
@@ -129,10 +127,8 @@ def add_iov(model, occ, list_of_parameters=None, eta_names=None):
             else:
                 eta_name = f'ETA_IOV_{i}{j}'
 
-            eta_new = stats.Normal(eta_name, 0, sympy.sqrt(omega))
-            eta_new.variability_level = VariabilityLevel.IOV
-
-            rvs.add(eta_new)
+            eta_new = RandomVariable.normal(eta_name, 'iov', 0, omega)
+            rvs.append(eta_new)
 
             values += [S(eta_new.name)]
             conditions += [Eq(cat, S(occ))]
@@ -141,7 +137,7 @@ def add_iov(model, occ, list_of_parameters=None, eta_names=None):
 
         iovs.append(Assignment(iov, sympy.sympify(0)))
         iovs.append(Assignment(iov, expression))
-        etais.append(Assignment(S(f'ETAI{i}'), eta + iov))
+        etais.append(Assignment(S(f'ETAI{i}'), eta.symbol + iov))
 
         sset.subs({eta.name: S(f'ETAI{i}')})
 

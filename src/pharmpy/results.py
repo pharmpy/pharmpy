@@ -29,9 +29,9 @@ import sympy
 import pharmpy.config as config
 import pharmpy.visualization
 from pharmpy.data import PharmDataFrame
+from pharmpy.data_structures import OrderedSet
 from pharmpy.math import cov2corr
 from pharmpy.parameter_sampling import sample_from_covariance_matrix
-from pharmpy.random_variables import VariabilityLevel
 
 
 class ResultsConfiguration(config.Configuration):
@@ -410,8 +410,7 @@ class ModelfitResults(Results):
         pe = pe.combine_first(param_inits)
 
         ie = self.individual_estimates
-        parameters = self.model.random_variables.variance_parameters(level=VariabilityLevel.IIV)
-        param_names = [param.name for param in parameters]
+        param_names = self.model.random_variables.iiv.variance_parameters
         diag_ests = pe[param_names]
         diag_ests.index = ie.columns
         if not sd:
@@ -433,10 +432,9 @@ class ModelfitResults(Results):
         pe = pe.combine_first(param_inits)
 
         # Get all iiv variance parameters
-        parameters = self.model.random_variables.variance_parameters(
-            unique=False, exclude_level=VariabilityLevel.RUV
-        )
-        param_names = [param.name for param in parameters]
+        param_names = self.model.random_variables.etas.variance_parameters
+        param_names = list(OrderedSet(param_names))  # Only unique in order
+
         diag_ests = pe[param_names]
 
         def fn(row, ests):
@@ -641,6 +639,10 @@ class ChainedModelfitResults(list, ModelfitResults):
         self[-1].parameter_estimates = value
 
     @property
+    def parameter_estimates_sdcorr(self):
+        return self[-1].parameter_estimates_sdcorr
+
+    @property
     def covariance_matrix(self):
         return self[-1].covariance_matrix
 
@@ -655,6 +657,10 @@ class ChainedModelfitResults(list, ModelfitResults):
     @property
     def standard_errors(self):
         return self[-1].standard_errors
+
+    @property
+    def standard_errors_sdcorr(self):
+        return self[-1].standard_errors_sdcorr
 
     @property
     def individual_ofv(self):
@@ -700,10 +706,17 @@ def _split_equation(s):
     if isinstance(s, str):
         a = s.split('=')
         if len(a) == 1:
-            return None, sympy.sympify(s)
+            name = None
+            expr = sympy.sympify(s)
         else:
-            return a[0].strip(), sympy.sympify(a[1])
+            name = a[0].strip()
+            expr = sympy.sympify(a[1])
     elif isinstance(s, sympy.Eq):
-        return s.lhs.name, s.rhs
+        name = s.lhs.name
+        expr = s.rhs
     else:  # sympy expr
-        return None, s
+        name = None
+        expr = s
+    if name is None and isinstance(expr, sympy.Symbol):
+        name = expr.name
+    return name, expr
