@@ -706,10 +706,17 @@ def _split_equation(s):
     if isinstance(s, str):
         a = s.split('=')
         if len(a) == 1:
-            return None, sympy.sympify(s)
+            name = None
+            expr = sympy.sympify(s)
         else:
-            return a[0].strip(), sympy.sympify(a[1])
+            name = a[0].strip()
+            expr = sympy.sympify(a[1])
     elif isinstance(s, sympy.Eq):
-        return s.lhs.name, s.rhs
+        name = s.lhs.name
+        expr = s.rhs
     else:  # sympy expr
-        return None, s
+        name = None
+        expr = s
+    if name is None and isinstance(expr, sympy.Symbol):
+        name = expr.name
+    return name, expr
