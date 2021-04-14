@@ -18,6 +18,7 @@ jobs:
         github_token: ${{ secrets.DOC_TOKEN }}
         workflow_file_name: test-tag-workflow.yml
   test-ci:
+    needs: test-tag
     runs-on: ubuntu-latest
     steps:
       - name: CI test
@@ -31,8 +32,8 @@ jobs:
           github_token: ${{ secrets.DOC_TOKEN }}
           workflow_file_name: main.yml
   print-successful:
+      needs: test-ci
       runs-on: ubuntu-latest
       steps:
         - name: print sucess
           run: echo "Sucess"
-      
