@@ -1,22 +1,32 @@
 name: Test workflow wait
 
 on:
-  workflow_run:
-    workflows: ["Version tags"]
-    branches: [master]
-    types:
-      - completed
+  push:
 
 jobs:
-  test-wait:
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+  test-tag:
     runs-on: ubuntu-latest
     steps:
-    - name: Print success message
-      run: echo "Succcess"
-  test-failure:
-    if: ${{ github.event.workflow_run.conclusion == 'failure' }}
-    runs-on: ubuntu-latest
-    steps:
-    - name: Print failure message
-      run: echo "Failure"
+    - name: Version tags test
+      run: |
+        echo "Version tags"
+        sleep 10s
+    - uses: convictional/trigger-workflow-and-wait@v1.3.0
+      with:
+        owner: pharmpy
+        repo: pharmpy
+        github_token: ${{ secrets.DOC_TOKEN }}
+        workflow_file_name: test-tag-workflow.yml
+  test-ci:
+      runs-on: ubuntu-latest
+      steps:
+          -   name: CI test
+              run: |
+                  echo "CI"
+                  sleep 10s
+          -   uses: convictional/trigger-workflow-and-wait@v1.3.0
+              with:
+                  owner: pharmpy
+                  repo: pharmpy
+                  github_token: ${{ secrets.DOC_TOKEN }}
+                  workflow_file_name: main.yml

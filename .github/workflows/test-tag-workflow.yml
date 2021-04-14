@@ -1,10 +1,12 @@
 name: Version tags
 
-on: push
+on:
+  workflow_dispatch:
+  push:
 
 jobs:
   test:
     runs-on: ubuntu-latest
     steps:
     - name: Return status
-      run: (exit 1)
+      run: (exit 0)
