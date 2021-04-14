@@ -7,16 +7,14 @@ jobs:
   test-tag:
     runs-on: ubuntu-latest
     steps:
-    - name: Version tags test
-      run: |
-        echo "Version tags"
-        sleep 10s
-    - uses: convictional/trigger-workflow-and-wait@v1.3.0
-      with:
-        owner: pharmpy
-        repo: pharmpy
-        github_token: ${{ secrets.DOC_TOKEN }}
-        workflow_file_name: test-tag-workflow.yml
+        - uses: actions/checkout@master
+        - name: Wait on version test
+          uses: lewagon/wait-on-check-action@v0.2
+          with:
+            ref: master
+            check-name: test-tag-workflow
+            repo-token: ${{ secrets.DOC_TOKEN }}
+            wait-interval: 20
   test-ci:
     needs: test-tag
     runs-on: ubuntu-latest
