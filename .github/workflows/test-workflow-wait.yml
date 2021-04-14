@@ -2,7 +2,7 @@ name: Test workflow wait
 
 on:
   workflow_run:
-    workflows: ["CI", "Version tags"]
+    workflows: ["Version tags"]
     branches: [master]
     types:
       - completed
