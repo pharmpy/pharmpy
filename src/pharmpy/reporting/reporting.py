@@ -15,6 +15,7 @@ from pharmpy.utils import TemporaryDirectoryChanger
 
 def generate_report(rst_path, results_path):
     """Generate report from rst and results json"""
+    results_path = Path(results_path)
     with tempfile.TemporaryDirectory() as tmpdirname:
         tmp_path = Path(tmpdirname)
         source_path = tmp_path / 'source'
