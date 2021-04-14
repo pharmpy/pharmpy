@@ -1,4 +1,4 @@
-name: Version update
+name: Version tags
 
 on:
   push:
@@ -9,7 +9,5 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout pharmpy/pharmpy
-      uses: actions/checkout@v2
-      with:
-          path: pharmpy
+    - name: Return status
+      run: (exit 0)

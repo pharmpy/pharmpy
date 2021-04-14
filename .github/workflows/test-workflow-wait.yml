@@ -9,9 +9,14 @@ on:
 
 jobs:
   test-wait:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout pharmpy/pharmpy
-      uses: actions/checkout@v2
-      with:
-          path: pharmpy
+    - name: Print success message
+      run: echo "Succcess"
+  test-failure:
+    if: ${{ github.event.workflow_run.conclusion == 'failure' }}
+    runs-on: ubuntu-latest
+    steps:
+    - name: Print failure message
+      run: echo "Failure"
