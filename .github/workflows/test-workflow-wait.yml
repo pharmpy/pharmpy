@@ -6,6 +6,9 @@ on:
     branches: [master]
     types:
       - completed
+  push:
+    tags:
+      - 'v*'
 
 jobs:
   test-wait:
