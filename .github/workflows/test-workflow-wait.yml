@@ -1,0 +1,11 @@
+name: Test workflow wait
+
+on: push
+
+jobs:
+  test-wait:
+    needs: main
+    runs-on: ubuntu-latest
+    steps:
+    - name: Wait for tests to run
+      run: echo "Wait"
