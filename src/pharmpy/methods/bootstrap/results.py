@@ -25,6 +25,10 @@ class BootstrapResults(Results):
         included_individuals=None,
         ofvs=None,
         parameter_estimates=None,
+        ofv_plot=None,
+        parameter_estimates_correlation_plot=None,
+        dofv_quantiles_plot=None,
+        parameter_estimates_histogram=None,
     ):
         self.parameter_statistics = parameter_statistics
         self.parameter_distribution = parameter_distribution
@@ -34,6 +38,10 @@ class BootstrapResults(Results):
         self.included_individuals = included_individuals
         self.ofvs = ofvs
         self.parameter_estimates = parameter_estimates
+        self.ofv_plot = ofv_plot
+        self.parameter_estimates_correlation_plot = parameter_estimates_correlation_plot
+        self.dofv_quantiles_plot = dofv_quantiles_plot
+        self.parameter_estimates_histogram = parameter_estimates_histogram
 
     def add_plots(self):
         self.ofv_plot = self.plot_ofv()
