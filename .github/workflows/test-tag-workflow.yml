@@ -10,4 +10,4 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Return status
-      run: (exit 0)
+      run: (exit 1)
