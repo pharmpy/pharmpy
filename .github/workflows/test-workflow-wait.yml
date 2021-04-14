@@ -9,3 +9,10 @@ jobs:
     steps:
     - name: Wait for tests to run
       run: echo "Wait"
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout pharmpy/pharmpy
+      uses: actions/checkout@v2
+      with:
+          path: pharmpy
