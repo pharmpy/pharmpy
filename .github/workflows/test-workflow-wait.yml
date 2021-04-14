@@ -1,7 +1,6 @@
 name: Test workflow wait
 
-on:
-  push:
+on: workflow_dispatch
 
 jobs:
   test-tag:
@@ -12,7 +11,7 @@ jobs:
           uses: lewagon/wait-on-check-action@v0.2
           with:
             ref: master
-            check-name: test-tag-workflow
+            check-name: "Return status"
             repo-token: ${{ secrets.DOC_TOKEN }}
             wait-interval: 20
   test-ci:
