@@ -18,15 +18,21 @@ jobs:
         github_token: ${{ secrets.DOC_TOKEN }}
         workflow_file_name: test-tag-workflow.yml
   test-ci:
+    runs-on: ubuntu-latest
+    steps:
+      - name: CI test
+        run: |
+          echo "CI"
+          sleep 10s
+      - uses: convictional/trigger-workflow-and-wait@v1.3.0
+        with:
+          owner: pharmpy
+          repo: pharmpy
+          github_token: ${{ secrets.DOC_TOKEN }}
+          workflow_file_name: main.yml
+  print-successful:
       runs-on: ubuntu-latest
       steps:
-          -   name: CI test
-              run: |
-                  echo "CI"
-                  sleep 10s
-          -   uses: convictional/trigger-workflow-and-wait@v1.3.0
-              with:
-                  owner: pharmpy
-                  repo: pharmpy
-                  github_token: ${{ secrets.DOC_TOKEN }}
-                  workflow_file_name: main.yml
+        - name: print sucess
+          run: echo "Sucess"
+      
