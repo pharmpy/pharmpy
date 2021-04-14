@@ -147,6 +147,10 @@ def test_pset_setitem():
     with pytest.raises(ValueError):
         ps[0] = 23
 
+    p5 = Parameter('P4', 0)
+    with pytest.raises(ValueError):
+        ps[1] = p5
+
 
 def test_pset_remove_fixed():
     p1 = Parameter('Y', 9, fix=False)
@@ -296,3 +300,16 @@ def test_copy_pset():
 def test_hash():
     p1 = Parameter('Y', 9)
     hash(p1)
+
+
+def test_insert():
+    p1 = Parameter('Y', 9)
+    p2 = Parameter('X', 3, lower=1, upper=24)
+    p3 = Parameter('Z', 1, lower=0, upper=2)
+    pset1 = Parameters([p1, p2])
+    pset1.insert(0, p3)
+    assert pset1.names == ['Z', 'Y', 'X']
+
+    p4 = Parameter('Y', 0)
+    with pytest.raises(ValueError):
+        pset1.insert(1, p4)

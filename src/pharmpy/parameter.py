@@ -94,7 +94,11 @@ class Parameters(MutableSequence):
     def __setitem__(self, ind, value):
         if not isinstance(value, Parameter):
             raise ValueError(f"Can not set variable of type {type(value)} to Parameters.")
-        i, _ = self._lookup_param(ind)
+        i, rv = self._lookup_param(ind)
+        if rv.name != value.name and value.name in self.names:
+            raise ValueError(
+                f"Cannot set parameter with already existing name {value.name} " "into Parameters."
+            )
         self._params[i] = value
 
     def __delitem__(self, ind):
@@ -104,9 +108,14 @@ class Parameters(MutableSequence):
     def insert(self, ind, value):
         if not isinstance(value, Parameter):
             raise ValueError(
-                f'Trying to insert {type(value)} into Parameters. ' 'Must be of type Parameter.'
+                f'Trying to insert {type(value)} into Parameters. Must be of type Parameter.'
             )
         i, _ = self._lookup_param(ind, insert=True)
+        if value.name in self.names:
+            raise ValueError(
+                f"Cannot insert parameter with alread existing name {value.name} "
+                "into Parameters."
+            )
         self._params.insert(i, value)
 
     def __contains__(self, ind):

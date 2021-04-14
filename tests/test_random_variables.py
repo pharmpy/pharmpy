@@ -117,9 +117,18 @@ def test_init_from_rvs():
     assert len(rvs2) == 2
 
 
-def test_len():
+def test_illegal_inits():
+    with pytest.raises(ValueError):
+        RandomVariables([8, 1])
     rv1 = RandomVariable.normal('ETA(1)', 'iiv', 0, 1)
     rv2 = RandomVariable.normal('ETA(1)', 'iiv', 0, 1)
+    with pytest.raises(ValueError):
+        RandomVariables([rv1, rv2])
+
+
+def test_len():
+    rv1 = RandomVariable.normal('ETA(1)', 'iiv', 0, 1)
+    rv2 = RandomVariable.normal('ETA(2)', 'iiv', 0, 1)
     rvs = RandomVariables([rv1, rv2])
     assert len(rvs) == 2
 
@@ -332,7 +341,7 @@ def test_parameter_names():
     )
     assert rv1.parameter_names == ['OMEGA(1,1)', 'OMEGA(2,1)', 'OMEGA(2,2)']
     assert rv2.parameter_names == ['OMEGA(1,1)', 'OMEGA(2,1)', 'OMEGA(2,2)']
-    rv3 = RandomVariable.normal('ETA(1)', 'iiv', 0, symbol('OMEGA(3,3)'))
+    rv3 = RandomVariable.normal('ETA(3)', 'iiv', 0, symbol('OMEGA(3,3)'))
     assert rv3.parameter_names == ['OMEGA(3,3)']
     rvs = RandomVariables([rv1, rv2, rv3])
     assert rvs.parameter_names == ['OMEGA(1,1)', 'OMEGA(2,1)', 'OMEGA(2,2)', 'OMEGA(3,3)']
@@ -397,12 +406,12 @@ ETA(3) ~ 𝒩 (2, 1)"""
 
 
 def test_repr_latex():
-    rv1 = RandomVariable.normal('x', 'iiv', 0, 1)
+    rv1 = RandomVariable.normal('z', 'iiv', 0, 1)
     rv2, rv3 = RandomVariable.joint_normal(['x', 'y'], 'iiv', [0, 0], [[1, 0.1], [0.1, 2]])
     rvs = RandomVariables([rv1, rv2, rv3])
     assert (
         rvs._repr_latex_()
-        == '\\begin{align*}\n\\displaystyle x & \\sim  \\mathcal{N} \\left(\\displaystyle 0,\\displaystyle 1\\right) \\\\ \\displaystyle \\left[\\begin{matrix}x\\\\y\\end{matrix}\\right] & \\sim \\mathcal{N} \\left(\\displaystyle \\left[\\begin{matrix}0\\\\0\\end{matrix}\\right],\\displaystyle \\left[\\begin{matrix}1 & 0.1\\\\0.1 & 2\\end{matrix}\\right]\\right)\\end{align*}'  # noqa E501
+        == '\\begin{align*}\n\\displaystyle z & \\sim  \\mathcal{N} \\left(\\displaystyle 0,\\displaystyle 1\\right) \\\\ \\displaystyle \\left[\\begin{matrix}x\\\\y\\end{matrix}\\right] & \\sim \\mathcal{N} \\left(\\displaystyle \\left[\\begin{matrix}0\\\\0\\end{matrix}\\right],\\displaystyle \\left[\\begin{matrix}1 & 0.1\\\\0.1 & 2\\end{matrix}\\right]\\right)\\end{align*}'  # noqa E501
     )
 
 
@@ -493,7 +502,7 @@ def test_variance_parameters():
             [symbol('OMEGA(2,1)'), symbol('OMEGA(2,2)')],
         ],
     )
-    rv3 = RandomVariable.normal('ETA(1)', 'iiv', 0, symbol('OMEGA(3,3)'))
+    rv3 = RandomVariable.normal('ETA(3)', 'iiv', 0, symbol('OMEGA(3,3)'))
     rvs = RandomVariables([rv1, rv2, rv3])
     assert rvs.variance_parameters == ['OMEGA(1,1)', 'OMEGA(2,2)', 'OMEGA(3,3)']
 

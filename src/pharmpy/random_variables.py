@@ -644,6 +644,17 @@ class RandomVariables(MutableSequence):
             self._rvs = []
         else:
             self._rvs = list(rvs)
+            names = set()
+            for rv in self._rvs:
+                if not isinstance(rv, RandomVariable):
+                    raise ValueError(f'Can not add variable of type {type(rv)} to RandomVariables')
+                if rv.name in names:
+                    raise ValueError(
+                        f'Names of random variables must be unique. Random Variable "{rv.name}" '
+                        'was added more than once to RandomVariables'
+                    )
+                names.add(rv.name)
+
         eta_levels = VariabilityHierarchy()
         eta_levels.add_variability_level('IIV', 0, 'ID')
         eta_levels.add_higher_level('IOV', 'OCC')
