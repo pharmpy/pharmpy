@@ -1,14 +1,12 @@
-name: Test workflow wait
+name: Version update
 
 on:
-  workflow_run:
-    workflows: ["CI", "Version update"]
-    branches: [master]
-    types:
-      - completed
+  push:
+    tags:
+      - 'v*'
 
 jobs:
-  test-wait:
+  test:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout pharmpy/pharmpy
