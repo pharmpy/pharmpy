@@ -211,6 +211,8 @@ class ExtTable(NONMEMTable):
     def _get_ofv(self, iteration):
         df = self.data_frame
         row = df.loc[df['ITERATION'] == iteration]
+        if row.empty:
+            raise KeyError(f'Row {iteration} not available in ext-file')
         row.squeeze()
         return row['OBJ'].squeeze()
 
@@ -267,7 +269,12 @@ class ExtTable(NONMEMTable):
 
     @property
     def final_ofv(self):
-        return self._get_ofv(-1000000000)
+        try:
+            ser = self._get_ofv(-1000000000)
+        except KeyError:
+            final_iter = max(self.iterations)
+            ser = self._get_ofv(final_iter)
+        return ser
 
     @property
     def initial_ofv(self):
