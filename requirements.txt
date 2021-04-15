@@ -11,7 +11,7 @@ chardet==4.0.0
 colorama==0.4.4
 contextlib2==0.6.0.post1
 csscompressor==0.9.5
-dask==2021.4.0
+dask==2.25.0
 decorator==4.4.2
 dill==0.3.2
 distlib==0.3.0
