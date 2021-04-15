@@ -4,7 +4,7 @@ on:
   push:
 
 jobs:
-  test:
+  test-tag:
     runs-on: ubuntu-latest
     steps:
     - name: Return status
