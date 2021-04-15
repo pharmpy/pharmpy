@@ -29,7 +29,7 @@ jobs:
         with:
           ref: ${{ github.sha }}
           running-workflow-name: wait-for-ci
-          check-name: build-ci (${{ matrix.python-platform }}, ${{ matrix.python-version }})
+          check-name: "build-ci (${{ matrix.python-platform }}, ${{ matrix.python-version }})"
           repo-token: ${{ secrets.DOC_TOKEN }}
           wait-interval: 20
   print-successful:
