@@ -12,10 +12,24 @@ jobs:
         with:
           ref: ${{ github.sha }}
           running-workflow-name: wait-for-tag
+          check-name: test-tag
+          repo-token: ${{ secrets.DOC_TOKEN }}
+          wait-interval: 20
+  wait-for-ci:
+    needs: wait-for-tag
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@master
+      - name: Wait on CI test
+        uses: lewagon/wait-on-check-action@v0.2
+        with:
+          ref: ${{ github.sha }}
+          running-workflow-name: wait-for-ci
+          check-name: build-ci
           repo-token: ${{ secrets.DOC_TOKEN }}
           wait-interval: 20
   print-successful:
-      needs: wait-for-tag
+      needs: wait-for-ci
       runs-on: ubuntu-latest
       steps:
         - name: print sucess

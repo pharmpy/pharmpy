@@ -3,7 +3,8 @@ name: CI
 on: [push, pull_request]
 
 jobs:
-  build-ci:
+  build:
+    name: build-ci
     runs-on: ${{ matrix.platform }}
     strategy:
       matrix:
