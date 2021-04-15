@@ -3,18 +3,19 @@ name: Test workflow wait
 on: push
 
 jobs:
-  test-tag:
+  wait-for-tag:
     runs-on: ubuntu-latest
     steps:
         - uses: actions/checkout@master
         - name: Wait on version test
           uses: lewagon/wait-on-check-action@v0.2
           with:
-            ref: master
+            ref: ${{ github.sha }}
+            running-workflow-name: wait-for-tag
             check-name: test-tag
             repo-token: ${{ secrets.DOC_TOKEN }}
             wait-interval: 20
-  test-ci:
+  wait-for-ci:
     needs: test-tag
     runs-on: ubuntu-latest
     steps:
