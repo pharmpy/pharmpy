@@ -3,6 +3,7 @@
 table.dataframe {
     border-collapse: collapse;
     border: none;
+    margin-bottom: 20px;
 }
 
 table.dataframe tr {
