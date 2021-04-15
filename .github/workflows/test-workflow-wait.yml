@@ -27,7 +27,7 @@ jobs:
       - name: Wait on CI test
         uses: lewagon/wait-on-check-action@v0.2
         with:
-            ref: ${{ github.sha }}
+          ref: ${{ github.sha }}
           running-workflow-name: wait-for-ci
           check-name: build-ci (${{ matrix.python-platform }}, ${{ matrix.python-version }})
           repo-token: ${{ secrets.DOC_TOKEN }}
