@@ -18,14 +18,18 @@ jobs:
   wait-for-ci:
     needs: wait-for-tag
     runs-on: ubuntu-latest
+    strategy:
+        matrix:
+          platform: [ubuntu-latest, macos-latest, windows-latest]
+          python-version: [3.6, 3.7, 3.8, 3.9]
     steps:
       - uses: actions/checkout@master
       - name: Wait on CI test
         uses: lewagon/wait-on-check-action@v0.2
         with:
-          ref: ${{ github.sha }}
+            ref: ${{ github.sha }}
           running-workflow-name: wait-for-ci
-          check-name: main
+          check-name: build-ci (${{ matrix.python-platform }}, ${{ matrix.python-version }})
           repo-token: ${{ secrets.DOC_TOKEN }}
           wait-interval: 20
   print-successful:
