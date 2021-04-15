@@ -1,6 +1,6 @@
 name: Test workflow wait
 
-on: push
+on: workflow_dispatch
 
 jobs:
   wait-for-tag:

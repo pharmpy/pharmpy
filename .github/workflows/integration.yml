@@ -1,6 +1,10 @@
 name: Integration
 
-on: workflow_dispatch
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch
 
 jobs:
   get-nonmem:
@@ -84,7 +88,7 @@ jobs:
     needs: [get-nonmem]
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Pharmpy 
+      - name: Checkout Pharmpy
         uses: actions/checkout@v1
       - name: Cache NONMEM
         id: cache-nonmem
@@ -132,7 +136,7 @@ jobs:
     needs: [get-nonmem]
     runs-on: macos-latest
     steps:
-      - name: Checkout Pharmpy 
+      - name: Checkout Pharmpy
         uses: actions/checkout@v1
       - name: Setup gfortran
         run: |
@@ -183,7 +187,7 @@ jobs:
       needs: [get-nonmem]
       runs-on: windows-latest
       steps:
-        - name: Checkout Pharmpy 
+        - name: Checkout Pharmpy
           uses: actions/checkout@v1
         - name: Get NONMEM
           uses: actions/download-artifact@v2

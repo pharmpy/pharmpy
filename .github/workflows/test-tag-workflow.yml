@@ -1,7 +1,6 @@
 name: Version tags
 
-on:
-  push:
+on: workflow_dispatch
 
 jobs:
   test-tag:
