@@ -37,6 +37,9 @@ jobs:
   check-integration-tests:
       needs: check-get-nonmem
       runs-on: ubuntu-latest
+      strategy:
+          matrix:
+              platform: [ ubuntu, macos, windows ]
       steps:
           -   uses: actions/checkout@master
           -   name: Wait on integration tests
@@ -44,7 +47,7 @@ jobs:
               with:
                   ref: ${{ github.sha }}
                   running-workflow-name: check-integration-tests
-                  check-name: integration-ubuntu
+                  check-name: integration-${{ matrix.platform }}
                   repo-token: ${{ secrets.DOC_TOKEN }}
                   wait-interval: 20
   build:
@@ -112,3 +115,18 @@ jobs:
         user: __token__
         password: ${{ secrets.PYPI_API_TOKEN }}
         packages_dir: pharmpy/upload/
+  trigger-pharmr-release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger pharmr workflow
+        run: |
+          curl \
+          -X POST \
+          -H "Accept: application/vnd.github.v3+json" \
+          -u "$USERNAME:$REPO_KEY" \
+          https://api.github.com/repos/pharmpy/pharmr/actions/workflows/build_docs.yaml/dispatches \
+          -d '{"ref":"main"}'
+        env:
+            REPO_KEY: ${{secrets.DOC_TOKEN}}
+            USERNAME: github-actions[bot]
