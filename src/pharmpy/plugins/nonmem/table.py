@@ -215,12 +215,24 @@ class ExtTable(NONMEMTable):
         return row['OBJ'].squeeze()
 
     @property
+    def iterations(self):
+        """List of all iteration numbers (except the special negative)"""
+        it = self.data_frame['ITERATION']
+        return list(it[it >= 0])
+
+    @property
     def final_parameter_estimates(self):
         """Get the final parameter estimates as a Series
         A specific parameter estimate can be retreived as
         final_parameter_estimates['THETA1']
+        Fallback to estimates from last iteration in case
+        of an aborted or failed run.
         """
-        ser = self._get_parameters(-1000000000)
+        try:
+            ser = self._get_parameters(-1000000000)
+        except KeyError:
+            final_iter = max(self.iterations)
+            ser = self._get_parameters(final_iter)
         ser.name = 'estimates'
         return ser
 
