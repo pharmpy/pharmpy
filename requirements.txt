@@ -7,7 +7,7 @@ Babel==2.9.0
 beautifulsoup4==4.9.3
 CacheControl==0.12.6
 certifi==2020.12.5
-chardet==4.0.0
+chardet==3.0.4
 colorama==0.4.4
 contextlib2==0.6.0.post1
 csscompressor==0.9.5
