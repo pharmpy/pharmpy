@@ -16,7 +16,7 @@ jobs:
             repo-token: ${{ secrets.DOC_TOKEN }}
             wait-interval: 20
   wait-for-ci:
-    needs: test-tag
+    needs: wait-for-tag
     runs-on: ubuntu-latest
     steps:
       - name: CI test
@@ -30,7 +30,7 @@ jobs:
           github_token: ${{ secrets.DOC_TOKEN }}
           workflow_file_name: main.yml
   print-successful:
-      needs: test-ci
+      needs: wait-for-ci
       runs-on: ubuntu-latest
       steps:
         - name: print sucess
