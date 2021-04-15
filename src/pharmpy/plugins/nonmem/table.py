@@ -278,4 +278,8 @@ class ExtTable(NONMEMTable):
 
     @property
     def initial_ofv(self):
-        return self._get_ofv(0)
+        try:
+            ser = self._get_ofv(0)
+        except KeyError:
+            ser = self._get_ofv(-1000000000)
+        return ser
