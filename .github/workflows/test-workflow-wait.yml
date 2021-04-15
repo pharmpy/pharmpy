@@ -25,7 +25,7 @@ jobs:
         with:
           ref: ${{ github.sha }}
           running-workflow-name: wait-for-ci
-          check-name: build-ci
+          check-name: main
           repo-token: ${{ secrets.DOC_TOKEN }}
           wait-interval: 20
   print-successful:
