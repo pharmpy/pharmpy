@@ -24,13 +24,9 @@ jobs:
           wait-interval: 20
   check-get-nonmem:
       runs-on: ubuntu-latest
-      strategy:
-          matrix:
-              platform: [ ubuntu-latest, macos-latest, windows-latest ]
-              python-version: [ 3.6, 3.7, 3.8, 3.9 ]
       steps:
           -   uses: actions/checkout@master
-          -   name: Wait on CI test
+          -   name: Wait on nonmem
               uses: lewagon/wait-on-check-action@v0.2
               with:
                   ref: ${{ github.sha }}
@@ -41,13 +37,9 @@ jobs:
   check-integration-tests:
       needs: check-get-nonmem
       runs-on: ubuntu-latest
-      strategy:
-          matrix:
-              platform: [ ubuntu-latest, macos-latest, windows-latest ]
-              python-version: [ 3.6, 3.7, 3.8, 3.9 ]
       steps:
           -   uses: actions/checkout@master
-          -   name: Wait on CI test
+          -   name: Wait on integration tests
               uses: lewagon/wait-on-check-action@v0.2
               with:
                   ref: ${{ github.sha }}
