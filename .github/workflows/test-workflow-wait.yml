@@ -6,29 +6,28 @@ jobs:
   wait-for-tag:
     runs-on: ubuntu-latest
     steps:
-        - uses: actions/checkout@master
-        - name: Wait on version test
-          uses: lewagon/wait-on-check-action@v0.2
-          with:
-            ref: ${{ github.sha }}
-            running-workflow-name: wait-for-tag
-            check-name: test-tag
-            repo-token: ${{ secrets.DOC_TOKEN }}
-            wait-interval: 20
+      - uses: actions/checkout@master
+      - name: Wait on version test
+        uses: lewagon/wait-on-check-action@v0.2
+        with:
+          ref: ${{ github.sha }}
+          running-workflow-name: wait-for-tag
+          check-name: test-tag
+          repo-token: ${{ secrets.DOC_TOKEN }}
+          wait-interval: 20
   wait-for-ci:
     needs: wait-for-tag
     runs-on: ubuntu-latest
     steps:
-      - name: CI test
-        run: |
-          echo "CI"
-          sleep 10s
-      - uses: convictional/trigger-workflow-and-wait@v1.3.0
+      - uses: actions/checkout@master
+      - name: Wait on version test
+        uses: lewagon/wait-on-check-action@v0.2
         with:
-          owner: pharmpy
-          repo: pharmpy
-          github_token: ${{ secrets.DOC_TOKEN }}
-          workflow_file_name: main.yml
+          ref: ${{ github.sha }}
+          running-workflow-name: wait-for-ci
+          check-name: build-ci
+          repo-token: ${{ secrets.DOC_TOKEN }}
+          wait-interval: 20
   print-successful:
       needs: wait-for-ci
       runs-on: ubuntu-latest
