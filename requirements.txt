@@ -68,5 +68,5 @@ sympy==1.7
 toolz==0.10.0
 urllib3==1.25.10
 webencodings==0.5.1
-websocket-client==0.57.0
+websocket-client==0.58.0
 zipp==3.4.1
