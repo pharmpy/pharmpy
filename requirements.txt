@@ -18,10 +18,10 @@ distlib==0.3.1
 distro==1.5.0
 docker==4.3.1
 docker-pycreds==0.4.0
-docutils==0.16
+docutils==0.17
 entrypoints==0.3
 future==0.18.2
-html5lib==1.0.1
+html5lib==1.1
 idna==2.10
 imagesize==1.2.0
 importlib-metadata==1.7.0
