@@ -8,7 +8,7 @@ certifi==2020.12.5
 chardet==3.0.4
 cloudpickle==1.6.0
 csscompressor==0.9.5
-dask==2.25.0
+dask==2021.4.0
 decorator==5.0.7
 docutils==0.17
 entrypoints==0.3
