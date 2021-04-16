@@ -35,7 +35,7 @@ MarkupSafe==1.1.1
 mpmath==1.1.0
 msgpack==0.6.2
 networkx==2.5
-numexpr==2.7.2
+numexpr==2.7.3
 numpy==1.19.5
 packaging==20.4
 pandas==1.1.3
