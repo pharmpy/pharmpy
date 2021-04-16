@@ -9,8 +9,8 @@ be used via reticulate from R.
 Installation
 ------------
 
-.. warning:: Pharmpy requires python 3.6 or later,
-    and is currently tested on python 3.6, 3.7, 3.8 and 3.9 on Linux, MacOS and Windows.
+.. warning:: Pharmpy requires python 3.7 or later,
+    and is currently tested on python 3.7, 3.8 and 3.9 on Linux, MacOS and Windows.
 
 Install the latest stable version from PyPI with::
 
@@ -49,7 +49,7 @@ From R
 Pharmpy can also be used in R. To call Pharmpy from R the following is needed on your computer:
 
 #. The reticulate R package
-#. Python 3.6 or newer
+#. Python 3.7 or newer
 #. Pharmpy
 
 See :ref:`here <using_r>` for more information on how to use Pharmpy in R.
