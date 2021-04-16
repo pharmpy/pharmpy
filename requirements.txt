@@ -12,7 +12,7 @@ colorama==0.4.4
 contextlib2==0.6.0.post1
 csscompressor==0.9.5
 dask==2.25.0
-decorator==4.4.2
+decorator==5.0.7
 dill==0.3.3
 distlib==0.3.1
 distro==1.5.0
