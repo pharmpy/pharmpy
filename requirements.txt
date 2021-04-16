@@ -12,7 +12,7 @@ colorama==0.4.4
 contextlib2==0.6.0.post1
 csscompressor==0.9.5
 dask==2.25.0
-decorator==4.4.2
+decorator==5.0.7
 dill==0.3.3
 distlib==0.3.1
 distro==1.5.0
@@ -42,7 +42,7 @@ pandas==1.1.3
 pathlib2==2.3.5
 pep517==0.8.2
 progress==1.5
-psutil==5.7.2
+psutil==5.8.0
 Pygments==2.7.4
 pyparsing==2.4.7
 pyrsistent==0.16.0
