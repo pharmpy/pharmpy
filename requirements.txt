@@ -35,7 +35,7 @@ MarkupSafe==1.1.1
 mpmath==1.1.0
 msgpack==0.6.2
 networkx==2.5
-numexpr==2.7.2
+numexpr==2.7.3
 numpy==1.19.5
 packaging==20.4
 pandas==1.1.3
@@ -54,7 +54,7 @@ requests==2.24.0
 retrying==1.3.3
 scipy==1.5.4
 six==1.15.0
-snowballstemmer==2.0.0
+snowballstemmer==2.1.0
 soupsieve==2.0.1
 Sphinx==3.2.1
 sphinxcontrib-applehelp==1.0.2
@@ -69,4 +69,4 @@ toolz==0.10.0
 urllib3==1.25.10
 webencodings==0.5.1
 websocket-client==0.57.0
-zipp==3.1.0
+zipp==3.4.1
