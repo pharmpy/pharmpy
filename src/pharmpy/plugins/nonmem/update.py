@@ -752,10 +752,10 @@ def add_parameters_ratio(model, numpar, denompar, source, dest):
         if rate != par1.symbol / par2.symbol:
             if not statements.find_assignment(numpar):
                 statements.add_before_odes(par1)
-                odes.subs({numer: numpar})
+                odes.subs({numer: sympy.Symbol(numpar)})
             if not statements.find_assignment(denompar):
                 statements.add_before_odes(par2)
-                odes.subs({denom: denompar})
+                odes.subs({denom: sympy.Symbol(denompar)})
         odes.add_flow(source, dest, par1.symbol / par2.symbol)
 
 
