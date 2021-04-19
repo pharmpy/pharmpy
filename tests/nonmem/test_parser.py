@@ -23,6 +23,7 @@ def test_simple_parse():
 def test_round_trip(pheno_path):
     parser = NMTranParser()
 
-    content = open(pheno_path, 'r').read()
+    with open(pheno_path, 'r') as fh:
+        content = fh.read()
     model = parser.parse(content)
     assert str(model) == content
