@@ -304,7 +304,7 @@ def read_nonmem_dataset(
         header=None,
         engine='python',
         quoting=3,
-        dtype=np.object,
+        dtype=object,
     )
     df = pharmpy.data.PharmDataFrame(df)
 
