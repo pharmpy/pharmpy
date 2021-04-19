@@ -502,7 +502,7 @@ class ModelfitResults(Results):
         )
         return plot
 
-    def individual_parameter_statistics(self, exprs):
+    def individual_parameter_statistics(self, exprs, seed=None):
         """Calculate statistics for individual parameters
 
         exprs - is one string or an iterable of strings
@@ -536,20 +536,28 @@ class ModelfitResults(Results):
                 pe = dict(model.modelfit_results.parameter_estimates)
                 cov_expr = full_expr.subs(cov_values)
                 expr = cov_expr.subs(pe)
-                samples = model.random_variables.sample(expr, parameters=pe, samples=1000000)
+                samples = model.random_variables.sample(
+                    expr, parameters=pe, samples=1000000, seed=seed
+                )
 
                 mean = np.mean(samples)
                 variance = np.var(samples)
 
                 parameters = sample_from_covariance_matrix(
-                    model, n=100, force_posdef_covmatrix=True
+                    model,
+                    n=100,
+                    force_posdef_covmatrix=True,
+                    seed=seed,
                 )
                 samples = []
                 with warnings.catch_warnings():
                     warnings.filterwarnings('ignore')
                     for _, row in parameters.iterrows():
                         batch = model.random_variables.sample(
-                            cov_expr.subs(dict(row)), parameters=dict(row), samples=10
+                            cov_expr.subs(dict(row)),
+                            parameters=dict(row),
+                            samples=10,
+                            seed=seed,
                         )
                         samples.extend(list(batch))
                 stderr = pd.Series(samples).std()
@@ -565,7 +573,7 @@ class ModelfitResults(Results):
         table.set_index(['parameter', 'covariates'], inplace=True)
         return table
 
-    def pk_parameters(self):
+    def pk_parameters(self, seed=None):
         statements = self.model.statements
         odes = statements.ode_system
         central = odes.find_central()
@@ -607,7 +615,7 @@ class ModelfitResults(Results):
         if odes.t not in elimination_rate.free_symbols:
             expressions.append(sympy.Eq(sympy.Symbol('k_e'), elimination_rate))
 
-        df = self.individual_parameter_statistics(expressions)
+        df = self.individual_parameter_statistics(expressions, seed=seed)
         return df
 
 
@@ -695,11 +703,11 @@ class ChainedModelfitResults(list, ModelfitResults):
     def model_name(self):
         return self[-1].model_name
 
-    def individual_parameter_statistics(self, expr):
-        return self[-1].individual_parameter_statistics(expr)
+    def individual_parameter_statistics(self, expr, seed=None):
+        return self[-1].individual_parameter_statistics(expr, seed=seed)
 
-    def pk_parameters(self):
-        return self[-1].pk_parameters()
+    def pk_parameters(self, seed=None):
+        return self[-1].pk_parameters(seed=seed)
 
     # FIXME: To not have to manually intercept everything here. Could do it in a general way.
 

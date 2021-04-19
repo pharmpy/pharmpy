@@ -1,6 +1,5 @@
 import pickle
 
-import numpy as np
 import pytest
 import sympy
 import sympy.stats as stats
@@ -487,9 +486,8 @@ def test_sample():
     )
     rvs = RandomVariables([rv1, rv2])
     params = {'a': 1, 'b': 0.1, 'c': 2}
-    np.random.seed(9532)
-    samples = rvs.sample(rv1.symbol + rv2.symbol, parameters=params, samples=2)
-    assert list(samples) == pytest.approx([-0.5628150524258084, 0.8789382930246744])
+    samples = rvs.sample(rv1.symbol + rv2.symbol, parameters=params, samples=2, seed=9532)
+    assert list(samples) == pytest.approx([1.7033555824617346, -1.4031809274765599])
 
 
 def test_variance_parameters():

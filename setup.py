@@ -67,7 +67,7 @@ setup(
     ],
     install_requires=[
         'lark-parser',
-        'sympy>=1.7',
+        'sympy>=1.8',
         'symengine',
         'pandas',
         'numexpr',
@@ -76,7 +76,7 @@ setup(
         'csscompressor',
         'beautifulsoup4',
         'lxml',
-        'numpy',
+        'numpy>=1.17',
         'scipy',
         'dask',
         'networkx',

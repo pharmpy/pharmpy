@@ -398,7 +398,7 @@ class FREMResults(Results):
 
 
 def calculate_results(
-    frem_model, continuous, categorical, method=None, intermediate_models=None, **kwargs
+    frem_model, continuous, categorical, method=None, intermediate_models=None, seed=None, **kwargs
 ):
     """Calculate FREM results
 
@@ -410,13 +410,13 @@ def calculate_results(
     if method is None or method == 'cov_sampling':
         try:
             res = calculate_results_using_cov_sampling(
-                frem_model, continuous, categorical, **kwargs
+                frem_model, continuous, categorical, seed=seed, **kwargs
             )
         except AttributeError:
             # Fallback to bipp
-            res = calculate_results_using_bipp(frem_model, continuous, categorical)
+            res = calculate_results_using_bipp(frem_model, continuous, categorical, seed=seed)
     elif method == 'bipp':
-        res = calculate_results_using_bipp(frem_model, continuous, categorical)
+        res = calculate_results_using_bipp(frem_model, continuous, categorical, seed=seed)
     else:
         raise ValueError(f'Unknown frem postprocessing method {method}')
     mod_names = []
@@ -494,6 +494,7 @@ def calculate_results_using_cov_sampling(
     force_posdef_covmatrix=False,
     samples=1000,
     rescale=True,
+    seed=None,
 ):
     """Calculate the FREM results using covariance matrix for uncertainty
 
@@ -528,6 +529,7 @@ def calculate_results_using_cov_sampling(
         force_posdef_covmatrix=force_posdef_covmatrix,
         parameters=parameters,
         n=samples,
+        seed=seed,
     )
     res = calculate_results_from_samples(
         frem_model, continuous, categorical, parvecs, rescale=rescale
@@ -843,7 +845,9 @@ def _calculate_covariate_baselines(model, covariates):
     return df
 
 
-def calculate_results_using_bipp(frem_model, continuous, categorical, rescale=True, samples=2000):
+def calculate_results_using_bipp(
+    frem_model, continuous, categorical, rescale=True, samples=2000, seed=None
+):
     """Estimate a covariance matrix for the frem model using the BIPP method
 
     Bootstrap on the individual parameter posteriors
@@ -851,9 +855,11 @@ def calculate_results_using_bipp(frem_model, continuous, categorical, rescale=Tr
     are needed.
 
     """
+    if seed is None or isinstance(seed, int):
+        seed = np.random.default_rng(seed)
     rvs, dist = frem_model.random_variables.iiv.distributions()[-1]
     etas = [rv.name for rv in rvs]
-    pool = sample_individual_estimates(frem_model, parameters=etas)
+    pool = sample_individual_estimates(frem_model, parameters=etas, seed=seed)
     ninds = len(pool.index.unique())
     ishr = frem_model.modelfit_results.individual_shrinkage
     lower_indices = np.tril_indices(len(etas))
@@ -862,7 +868,7 @@ def calculate_results_using_bipp(frem_model, continuous, categorical, rescale=Tr
     remaining_samples = samples
     k = 0
     while k < remaining_samples:
-        bootstrap = pool.sample(n=ninds, replace=True)
+        bootstrap = pool.sample(n=ninds, replace=True, random_state=seed.bit_generator)
         ishk = ishr.loc[bootstrap.index]
         cf = (1 / (1 - ishk.mean())) ** (1 / 2)
         corrected_bootstrap = bootstrap * cf
@@ -997,5 +1003,6 @@ def psn_frem_results(path, force_posdef_covmatrix=False, force_posdef_samples=50
         cov_model=cov_model,
         rescale=rescale,
         intermediate_models=intmods,
+        seed=np.random.default_rng(9843),
     )
     return res

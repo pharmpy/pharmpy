@@ -1128,7 +1128,7 @@ class RandomVariables(MutableSequence):
                         return False
         return True
 
-    def sample(self, expr, parameters=None, samples=1):
+    def sample(self, expr, parameters=None, samples=1, seed=None):
         """Sample from the distribution of expr
 
         parameters in the distriutions will first be replaced"""
@@ -1156,7 +1156,9 @@ class RandomVariables(MutableSequence):
         for names, new_rv in sampling_rvs:
             with warnings.catch_warnings():
                 warnings.filterwarnings('ignore')
-                cursample = next(sympy.stats.sample(new_rv, library='numpy', size=samples))
+                cursample = next(
+                    sympy.stats.sample(new_rv, library='numpy', size=samples, seed=seed)
+                )
                 if len(names) > 1:
                     df[names] = cursample
                 else:

@@ -51,7 +51,9 @@ def sample_from_function(model, samplingfn, parameters=None, force_posdef_sample
     return kept_samples.reset_index(drop=True)
 
 
-def sample_uniformly(model, fraction=0.1, parameters=None, force_posdef_samples=None, n=1):
+def sample_uniformly(
+    model, fraction=0.1, parameters=None, force_posdef_samples=None, n=1, seed=None
+):
     """Sample parameter vectors using uniform sampling
 
     Each parameter value will be randomly sampled from a uniform distriution
@@ -59,10 +61,13 @@ def sample_uniformly(model, fraction=0.1, parameters=None, force_posdef_samples=
     estimate + estimate * fraction
     """
 
+    if seed is None or isinstance(seed, int):
+        seed = np.random.default_rng(seed)
+
     def fn(lower, upper, n):
         samples = np.empty((n, len(lower)))
         for i, (a, b) in enumerate(zip(lower, upper)):
-            samples[i, :] = np.random.uniform(a, b, n)
+            samples[i, :] = seed.uniform(a, b, n)
         return samples
 
     samples = sample_from_function(
@@ -78,6 +83,7 @@ def sample_from_covariance_matrix(
     force_posdef_samples=None,
     force_posdef_covmatrix=False,
     n=1,
+    seed=None,
 ):
     """Sample parameter vectors using the covariance matrix
 
@@ -101,6 +107,9 @@ def sample_from_covariance_matrix(
     if parameters is None:
         parameters = list(modelfit_results.parameter_estimates.index)
 
+    if seed is None or isinstance(seed, int):
+        seed = np.random.default_rng(seed)
+
     pe = modelfit_results.parameter_estimates[parameters]
     index = pe.index
     mu = pe.to_numpy()
@@ -119,14 +128,14 @@ def sample_from_covariance_matrix(
         else:
             raise ValueError("Uncertainty covariance matrix not positive-definite")
 
-    fn = partial(sample_truncated_joint_normal, mu, sigma)
+    fn = partial(sample_truncated_joint_normal, mu, sigma, seed=seed)
     samples = sample_from_function(
         model, fn, parameters=index, force_posdef_samples=force_posdef_samples, n=n
     )
     return samples
 
 
-def sample_individual_estimates(model, parameters=None, samples_per_id=100):
+def sample_individual_estimates(model, parameters=None, samples_per_id=100, seed=None):
     """Sample individual estimates given their covariance.
 
     Parameters
@@ -138,6 +147,8 @@ def sample_individual_estimates(model, parameters=None, samples_per_id=100):
     -------
     Pool of samples in a DataFrame
     """
+    if seed is None or isinstance(seed, int):
+        seed = np.random.default_rng(seed)
     ests = model.modelfit_results.individual_estimates
     covs = model.modelfit_results.individual_estimates_covariance
     if parameters is None:
@@ -147,7 +158,7 @@ def sample_individual_estimates(model, parameters=None, samples_per_id=100):
     for (idx, mu), sigma in zip(ests.iterrows(), covs):
         sigma = sigma[parameters].loc[parameters]
         sigma = nearest_posdef(sigma)
-        id_samples = np.random.multivariate_normal(mu.values, sigma.values, size=samples_per_id)
+        id_samples = seed.multivariate_normal(mu.values, sigma.values, size=samples_per_id)
         id_df = pd.DataFrame(id_samples, columns=ests.columns)
         id_df.index = [idx] * len(id_df)  # ID as index
         samples = pd.concat((samples, id_df))
