@@ -14,8 +14,8 @@ def test_ofv(pheno_lst):
 
 def test_aic_bic(testdata):
     model = Model(testdata / 'nonmem' / 'pheno.mod')
-    assert model.modelfit_results.aic == 740.8947268137308
-    assert model.modelfit_results.bic == 756.111852398327033103
+    assert model.modelfit_results.aic == 740.8947268137307
+    assert model.modelfit_results.bic == 756.111852398327
 
 
 def test_tool_files(pheno_lst):
@@ -239,8 +239,8 @@ def test_simfit(testdata):
     model = Model(testdata / 'nonmem' / 'modelfit_results' / 'simfit' / 'sim-1.mod')
     results = simfit_results(model)
     assert len(results) == 3
-    assert results[1].ofv == 565.8490436434297
-    assert results[2].ofv == 570.7344011414535
+    assert results[1].ofv == 565.84904364342981
+    assert results[2].ofv == 570.73440114145342
 
 
 def test_residuals(testdata):

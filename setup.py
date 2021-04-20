@@ -69,7 +69,7 @@ setup(
         'lark-parser',
         'sympy>=1.8',
         'symengine',
-        'pandas',
+        'pandas>=1.0',
         'numexpr',
         'altair',
         'sphinx',

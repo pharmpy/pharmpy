@@ -128,9 +128,9 @@ class NONMEMTable:
         else:
             df = df.reindex(labels)
         df = df.reindex(labels, axis=1)
-        df.columns = df.columns.str.replace(r'THETA(\d+)', r'THETA(\1)')
+        df.columns = df.columns.str.replace(r'THETA(\d+)', r'THETA(\1)', regex=True)
         if not ext:
-            df.index = df.index.str.replace(r'THETA(\d+)', r'THETA(\1)')
+            df.index = df.index.str.replace(r'THETA(\d+)', r'THETA(\1)', regex=True)
         return df
 
 
