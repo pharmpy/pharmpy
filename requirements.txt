@@ -49,4 +49,4 @@ sphinxcontrib-serializinghtml==1.1.4
 symengine==0.7.2
 sympy==1.8
 toolz==0.11.1
-urllib3==1.25.10
+urllib3==1.26.4
