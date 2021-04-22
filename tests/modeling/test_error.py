@@ -28,6 +28,9 @@ def test_additive_error_model(testdata):
     model.update_source()
     assert str(model).split('\n')[11] == 'Y = F + EPS(1)'
     assert str(model).split('\n')[17] == '$SIGMA  11.2225 ; sigma'
+    before = str(model)
+    additive_error(model)  # One more time and nothing should change
+    assert before == str(model)
 
 
 def test_proportional_error_model(testdata):
@@ -52,6 +55,9 @@ def test_combined_error_model(testdata):
     assert str(model).split('\n')[11] == 'Y = F + EPS(1)*F + EPS(2)'
     assert str(model).split('\n')[17] == '$SIGMA  0.09 ; sigma_prop'
     assert str(model).split('\n')[18] == '$SIGMA  11.2225 ; sigma_add'
+    before = str(model)
+    combined_error(model)  # One more time and nothing should change
+    assert before == str(model)
 
 
 def test_remove_error_without_f(testdata):
@@ -176,6 +182,23 @@ Y = (CONC + ETA(1)) + (CONC + ETA(1)) * ERR(1)
 
 $THETA 0.1
 $OMEGA 0.01
+$SIGMA 1
+$ESTIMATION METHOD=1 INTER MAXEVALS=9990 PRINT=2 POSTHOC
+"""
+    model = read_model_from_string(code)
+    assert not has_additive_error(model)
+
+    code = """$PROBLEM base model
+$INPUT ID DV TIME
+$DATA file.csv IGNORE=@
+
+$PRED
+CONC = THETA(1)
+Y = CONC + EPS(1) + CONC*EPS(2)
+
+$THETA 0.1
+$OMEGA 0.01
+$SIGMA 1
 $SIGMA 1
 $ESTIMATION METHOD=1 INTER MAXEVALS=9990 PRINT=2 POSTHOC
 """
