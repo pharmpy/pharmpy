@@ -11,6 +11,7 @@ basic use cases in Pharmpy. More detailed information can be found in the API re
    model
    data
    modeling
+   modelfit
    tools
    plots
    nonmem_plugin
