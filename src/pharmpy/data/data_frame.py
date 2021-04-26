@@ -68,7 +68,7 @@ class PharmDataFrame(pd.DataFrame):
         return self.copy()
 
     def copy(self, *kwargs):
-        """"""
+        """ """
         # FIXME: Set empty docstring to avoid getting documentation from base class
         #        would like sphinx to do this so that in object docstring is kept.
         new_df = super().copy(*kwargs)
@@ -77,6 +77,10 @@ class PharmDataFrame(pd.DataFrame):
         except AttributeError:
             pass
         return new_df
+
+    def to_json(self, **kwargs):
+        # FIXME: Directly using to_json on PharmDataFrame doesn't work
+        return pd.DataFrame(self).to_json(**kwargs)
 
 
 class ColumnTypeIndexer:

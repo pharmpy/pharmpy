@@ -48,7 +48,7 @@ class ResultsJSONEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, pd.DataFrame) or isinstance(obj, pd.Series):
             d = json.loads(obj.to_json(orient='table'))
-            if isinstance(obj, PharmDataFrame):
+            if isinstance(obj, pd.DataFrame):
                 d['__class__'] = 'DataFrame'
             elif isinstance(obj, pd.Series):
                 d['__class__'] = 'Series'
