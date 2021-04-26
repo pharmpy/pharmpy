@@ -84,13 +84,14 @@ class ResultsJSONDecoder(json.JSONDecoder):
 
 
 def read_results(path_or_buf):
-    try:
-        path = Path(path_or_buf)
-        if not path.is_file():
-            raise FileNotFoundError
-    except (FileNotFoundError, OSError, TypeError, ValueError):
+    if '{' in str(path_or_buf):  # Heuristic to determine if path or buffer
         s = path_or_buf
     else:
+        path = Path(path_or_buf)
+        if path.is_dir():
+            path /= 'results.json'
+        if not path.is_file():
+            raise FileNotFoundError(str(path))
         if path.name.endswith('.xz'):
             with lzma.open(path, 'r') as json_file:
                 s = json_file.read().decode('utf-8')
