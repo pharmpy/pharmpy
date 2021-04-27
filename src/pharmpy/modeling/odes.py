@@ -273,7 +273,7 @@ def first_order_absorption(model):
     Parameters
     ----------
     model : Model
-        Model to set or change to bolus absorption rate
+        Model to set or change to use first order absorption rate
     """
     statements = model.statements
     odes = statements.ode_system
@@ -284,9 +284,9 @@ def first_order_absorption(model):
     dose_comp = odes.find_dosing()
     amount = dose_comp.dose.amount
     symbols = dose_comp.free_symbols
-    if depot:
-        dose_comp.dose = Bolus(depot.dose.amount)
-    else:
+    if depot and depot == dose_comp:
+        dose_comp.dose = Bolus(dose_comp.dose.amount)
+    elif not depot:
         dose_comp.dose = None
     statements.remove_symbol_definitions(symbols, odes)
     model.remove_unused_parameters_and_rvs()
