@@ -24,6 +24,7 @@ from pharmpy.modeling.error import (
 )
 from pharmpy.modeling.eta_additions import add_iiv, add_iov
 from pharmpy.modeling.eta_transformations import boxcox, john_draper, tdist
+from pharmpy.modeling.evaluation import evaluate_expression
 from pharmpy.modeling.iiv_on_ruv import iiv_on_ruv
 from pharmpy.modeling.odes import (
     add_lag_time,
@@ -49,7 +50,6 @@ from pharmpy.modeling.remove_iiv import remove_iiv
 from pharmpy.modeling.remove_iov import remove_iov
 from pharmpy.modeling.run import create_results, fit, read_results
 from pharmpy.modeling.update_inits import update_inits
-from pharmpy.modeling.evaluation import evaluate_expression
 
 __all__ = [
     'add_parameter',

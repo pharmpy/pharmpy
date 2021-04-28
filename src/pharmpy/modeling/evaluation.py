@@ -1,5 +1,5 @@
-import sympy
 import numpy as np
+import sympy
 
 
 def evaluate_expression(model, expression):
@@ -9,7 +9,9 @@ def evaluate_expression(model, expression):
     inits = model.parameters.inits
     expr = full_expr.subs(dict(pe)).subs(inits)
     data = model.dataset
+
     def func(row):
         return np.float64(expr.evalf(subs=dict(row)))
+
     df = data.apply(func, axis=1)
     return df
