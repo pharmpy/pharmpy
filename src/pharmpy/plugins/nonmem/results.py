@@ -373,6 +373,10 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
                 res = NONMEMModelfitResults(self)
                 res.model_name = self._path.stem
                 res.model = self.model
+                # Parameter esitimates NaN for all parameters that should be estimated
+                pe = pd.Series(np.nan, index=list(self.model.parameters.nonfixed_inits.keys()))
+                res._parameter_estimates = pe
+                res._ofv = np.nan
                 self.append(res)
                 return
             for table in ext_tables:
