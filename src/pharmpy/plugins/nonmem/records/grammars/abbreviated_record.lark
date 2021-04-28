@@ -24,11 +24,12 @@ root : ws ([ws] option | [ws] NEWLINE)*
         | NOCHECKMU                         -> nocheckmu
         | DES SEP ("COMPACT" | "FULL")      -> des
         | REPLACE ws ANY SEP ANY            -> replace
-        | DECLARE                           -> declare
+        | DECLARE ws declaration ("," declaration)* -> declare
         | PROTECT                           -> protect
         | FUNCTION SYMBOL "(" SYMBOL "," INT ")" -> function
         | VECTOR SYMBOL "(" INT ")"       -> vector
 
+declaration: [ws] [(INTEGER | DOWHILE) ws] CNAME ["(" [ws] INT ["," [ws] INT] [ws] ")"] [ws] -> declare
 
 ANY: /[^ \n\r\t=]+/
 SEP: /\s*=\s*|\s+(?!=)/
@@ -48,9 +49,12 @@ DECLARE: "DECLARE" | "DECLAR" | "DECLA" | "DECL" | "DEC"
 PROTECT: "PROTECT" | "PROTEC" | "PROTE" | "PROT" | "PRO"
 FUNCTION: "FUNCTION" | "FUNCTIO" | "FUNCTI" | "FUNCT" | "FUNC" | "FUN"
 VECTOR: "VECTOR" | "VECTO" | "VECT" | "VEC"
+INTEGER: "INTEGER"
+DOWHILE: "DOWHILE"
 
 
 // common misc rules
 ws      : WS_ALL
 
 %import .definitions (INT, SIGNED_INT, SYMBOL, WS_ALL, NEWLINE)
+%import common.CNAME
