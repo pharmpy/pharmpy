@@ -881,6 +881,8 @@ class ModelStatements(list):
         Before ODE system
         """
         i = self._ode_index()
+        if i is None:
+            i = len(self)
         for j in range(i - 1, -1, -1):
             expression = expression.subs({self[j].symbol: self[j].expression})
         return expression
