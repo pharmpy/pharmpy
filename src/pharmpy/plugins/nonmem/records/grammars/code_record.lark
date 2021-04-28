@@ -14,8 +14,8 @@ VERBATIM_STATEMENT: /"[^\n]*/
 
 statement: [WS] (assignment | logical_if | block_if | exit | call | return) [WS] [COMMENT] [LF]
 
-exit: "EXIT"i ([WS] | WS ("1" | "2") | WS ("1" | "2") WS INTEGER)
-call: "CALL"i WS NAME [WS] "(" [WS] _atom [WS] ("," [WS] _atom [WS])* ")"
+exit: "EXIT"i ([WS] | WS ("1" | "2") | WS ("1" | "2") WS SIGNED_INT)
+call: "CALL"i WS CNAME [WS] "(" [WS] _atom [WS] ("," [WS] _atom [WS])* ")"
 return: "RETURN"i
 assignment: variable [WS] "=" [WS] expression
 
@@ -60,21 +60,18 @@ func2: "MOD"i "(" expression "," expression ")"
 intrinsic_func: "LOG"i | "LOG10"i | "EXP"i | "DEXP"i | "SQRT"i | "SIN"i | "COS"i | "ABS"i | "TAN"i | "ASIN"i | "ACOS"i | "ATAN"i | "INT"i | "GAMLN"i | "PHI"i
     | "PLOG"i | "PLOG10"i | "PSQRT"i | "PEXP"i | "PDZ"i | "PZR"i | "PNP"i | "PHE"i | "PNG"i | "PTAN"i | "PATAN"i | "PASIN"i | "PACOS"i
 
-variable: vector | NAME
+variable: vector | CNAME
 
-symbol: parameter | vector | NAME
-vector: ("A"i | "A_0"i | "A_INITIAL"i | "DADT"i | "COM"i) subscript
+symbol: parameter | vector | CNAME
+vector: CNAME (subscript | double_subscript)
 parameter: (THETA | ETA | EPS | OMEGA | SIGMA) subscript
          | (OMEGA | SIGMA) double_subscript
 
-subscript: [WS] "(" [WS] INTEGER [WS] ")" | [WS] "(" [WS] NAME [WS] ")"
-double_subscript: [WS] "(" [WS] INTEGER [WS] "," [WS] INTEGER [WS] ")"
+subscript: [WS] "(" [WS] SIGNED_INT [WS] ")" | [WS] "(" [WS] CNAME [WS] ")"
+double_subscript: [WS] "(" [WS] SIGNED_INT [WS] "," [WS] SIGNED_INT [WS] ")"
 
-number: INTEGER | FLOAT
+number: SIGNED_INT | FLOAT
 
-NAME: /[A-Za-z_]\w*/
-
-INTEGER: /[-+]?\d+/
 FLOAT: /[-+]?((\d+\.\d*|\.\d+)([ed][-+]?\d+)?|\d+([ed][-+]?\d+))/i
 THETA: "THETA"i
 ETA: "ETA"i
@@ -83,3 +80,4 @@ OMEGA: "OMEGA"i
 SIGMA: "SIGMA"i
 
 %import .definitions (COMMENT, NEWLINE, WS, WS_ALL)
+%import common (CNAME, SIGNED_INT)

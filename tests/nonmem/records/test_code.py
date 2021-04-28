@@ -155,6 +155,8 @@ def S(x):
         ('$PRED\nCL = 2\nCALL RANDOM (2, R)\n', S('CL'), 2),
         ('$PRED\nCL = 2\n  RETURN  \n', S('CL'), 2),
         ('$PRED\nCOM(1) = 0\n', S('COM(1)'), 0),
+        ('$PRED\nANYTHING(1) = 0\n', S('ANYTHING(1)'), 0),
+        ('$PRED\nGROK(1,3) = 0\n', S('GROK(1,3)'), 0),
     ],
 )
 def test_single_assignments(parser, buf, sym, expression):
