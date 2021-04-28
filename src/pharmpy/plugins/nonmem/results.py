@@ -365,7 +365,16 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
 
     def _read_ext_table(self):
         if not self._read_ext:
-            ext_tables = NONMEMTableFile(self._path.with_suffix('.ext'))
+            try:
+                ext_tables = NONMEMTableFile(self._path.with_suffix('.ext'))
+            except ValueError:
+                # The ext-file is illegal
+                self._read_ext = True
+                res = NONMEMModelfitResults(self)
+                res.model_name = self._path.stem
+                res.model = self.model
+                self.append(res)
+                return
             for table in ext_tables:
                 if self._subproblem and table.subproblem != self._subproblem:
                     continue

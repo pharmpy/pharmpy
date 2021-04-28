@@ -43,7 +43,9 @@ class NONMEMTableFile:
             table = CovTable(''.join(content))
         else:
             table = NONMEMTable(''.join(content))  # Fallback to non-specific table type
-        m = re.match(r'TABLE NO.\s+(\d+)', table_line)  # This is guaranteed to match
+        m = re.match(r'TABLE NO.\s+(\d+)', table_line)
+        if not m:
+            raise ValueError("Illegal ext-file: missing TABLE NO.")
         table.number = int(m.group(1))
         table.is_evaluation = False
         if re.search(r'(Evaluation)', table_line):
