@@ -1,3 +1,11 @@
+0.23.0 (2021-04-28)
+-------------------
+
+* Add function modelling.evaluate_expression
+* Some documentation for modelfit_results 
+* Reworked interface to RandomVariables and Parameters
+* Bugfixes
+
 0.22.0 (2021-03-29)
 -------------------
 
