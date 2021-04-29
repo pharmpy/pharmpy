@@ -70,56 +70,56 @@ def S(x):
         ('$PRED CL = MOD(1, 2)', S('CL'), sympy.Mod(1, 2)),
         ('$PRED CL = GAMLN(2 + X)   ;COMMENT', S('CL'), sympy.loggamma(S('X') + 2)),
         ('$PRED C02 = PHI(2 + X)', S('C02'), (1 + sympy.erf(2 + S('X')) / sympy.sqrt(2)) / 2),
-        ('$PRED IF (X.EQ.2) CL=23', S('CL'), sympy.Piecewise((23, sympy.Eq(S('X'), 2)))),
-        ('$PRED if (x.EQ.2) Cl=23', S('CL'), sympy.Piecewise((23, sympy.Eq(S('X'), 2)))),
+        ('$PRED IF (X.EQ.2) CL=23', S('CL'), sympy.Piecewise((23, sympy.Eq(S('X'), 2)), (0, True))),
+        ('$PRED if (x.EQ.2) Cl=23', S('CL'), sympy.Piecewise((23, sympy.Eq(S('X'), 2)), (0, True))),
         (
             '$PRED IF (X.NE.1.5) CL=THETA(1)',
             S('CL'),
-            sympy.Piecewise((S('THETA(1)'), sympy.Ne(S('X'), 1.5))),
+            sympy.Piecewise((S('THETA(1)'), sympy.Ne(S('X'), 1.5)), (0, True)),
         ),
-        ('$PRED IF (X.EQ.2+1) CL=23', S('CL'), sympy.Piecewise((23, sympy.Eq(S('X'), 3)))),
+        ('$PRED IF (X.EQ.2+1) CL=23', S('CL'), sympy.Piecewise((23, sympy.Eq(S('X'), 3)), (0, True))),
         (
             '$PRED IF (X < ETA(1)) CL=23',
             S('CL'),
-            sympy.Piecewise((23, sympy.Lt(S('X'), S('ETA(1)')))),
+            sympy.Piecewise((23, sympy.Lt(S('X'), S('ETA(1)'))), (0, True)),
         ),
         (
             '$PK IF(AMT.GT.0) BTIME=TIME',
             S('BTIME'),
-            sympy.Piecewise((S('TIME'), sympy.Gt(S('AMT'), 0))),
+            sympy.Piecewise((S('TIME'), sympy.Gt(S('AMT'), 0)), (0, True)),
         ),
         (
             '$PRED IF (X.EQ.2.AND.Y.EQ.3) CL=23',
             S('CL'),
-            sympy.Piecewise((23, sympy.And(sympy.Eq(S('X'), 2), sympy.Eq(S('Y'), 3)))),
+            sympy.Piecewise((23, sympy.And(sympy.Eq(S('X'), 2), sympy.Eq(S('Y'), 3))), (0, True)),
         ),
         (
             '$PRED IF (X.EQ.2.OR.Y.EQ.3) CL=23',
             S('CL'),
-            sympy.Piecewise((23, sympy.Or(sympy.Eq(S('X'), 2), sympy.Eq(S('Y'), 3)))),
+            sympy.Piecewise((23, sympy.Or(sympy.Eq(S('X'), 2), sympy.Eq(S('Y'), 3))), (0, True)),
         ),
         (
             '$PRED IF (.NOT.X.EQ.2) CL=25',
             S('CL'),
-            sympy.Piecewise((25, sympy.Not(sympy.Eq(S('X'), 2)))),
+            sympy.Piecewise((25, sympy.Not(sympy.Eq(S('X'), 2))), (0, True)),
         ),
         (
             '$PRED IF (Q.EQ.(R+C)/D) L=0',
             S('L'),
             sympy.Piecewise(
-                (0, sympy.Eq(S('Q'), sympy.Mul(sympy.Add(S('R'), S('C')), 1 / S('D'))))
+                (0, sympy.Eq(S('Q'), sympy.Mul(sympy.Add(S('R'), S('C')), 1 / S('D')))), (0, True)
             ),
         ),
         (
             '$PRED IF (Q.EQ.R+C/D) L=0',
             S('L'),
-            sympy.Piecewise((0, sympy.Eq(S('Q'), S('R') + S('C') / S('D')))),
+            sympy.Piecewise((0, sympy.Eq(S('Q'), S('R') + S('C') / S('D'))), (0, True)),
         ),
         ('$PRED\nA_0(1) = 2', S('A_0(1)'), 2),
         (
             '$PRED\nIF(SPECIES.EQ.4)     IPRG = THETA(49)*EXP(ETA(11))',
             S('IPRG'),
-            sympy.Piecewise((S('THETA(49)') * sympy.exp(S('ETA(11)')), sympy.Eq(S('SPECIES'), 4))),
+            sympy.Piecewise((S('THETA(49)') * sympy.exp(S('ETA(11)')), sympy.Eq(S('SPECIES'), 4)), (0, True)),
         ),
         ('$PRED\nCL=-KA', S('CL'), -S('KA')),
         ('$PRED\nCL=-KA+2', S('CL'), -S('KA') + 2),
@@ -134,7 +134,7 @@ def S(x):
                     sympy.And(
                         sympy.Eq(S('ROUT'), 0), sympy.Eq(S('DAYP'), 1), sympy.Eq(S('PROT'), 1088)
                     ),
-                )
+                ), (0, True)
             ),
         ),
         ('$PRED X=A+B+C', S('X'), S('A') + S('B') + S('C')),
@@ -287,7 +287,6 @@ def test_block_if(parser, buf, symb_expr_arr):
 
     buf = '$PRED\nIF (FA1.EQ.0) IOV_1 = ETA(3)\nIF (FA1.EQ.1) IOV_1 = ETA(4)'
     rec = parser.parse(buf).records[0]
-    print(rec.statements)
 
 
 def test_exit(parser):
@@ -343,12 +342,12 @@ IF(APGR.LT.5) TVV=TVV*(1+THETA(3))
     assert rec.statements[5].symbol == S('CL')
     assert rec.statements[6].symbol == S('V')
     assert rec.statements[7].symbol == S('S1')
-    assert rec.statements[0].expression == sympy.Piecewise((S('TIME'), sympy.Gt(S('AMT'), 0)))
+    assert rec.statements[0].expression == sympy.Piecewise((S('TIME'), sympy.Gt(S('AMT'), 0)), (0, True))
     assert rec.statements[1].expression == S('TIME') - S('BTIME')
     assert rec.statements[2].expression == S('THETA(1)') * S('WGT')
     assert rec.statements[3].expression == S('THETA(2)') * S('WGT')
     assert rec.statements[4].expression == sympy.Piecewise(
-        (S('TVV') * (1 + S('THETA(3)')), sympy.Lt(S('APGR'), 5))
+        (S('TVV') * (1 + S('THETA(3)')), sympy.Lt(S('APGR'), 5)), (S('TVV'), True)
     )
     assert rec.statements[5].expression == S('TVCL') * sympy.exp(S('ETA(1)'))
     assert rec.statements[6].expression == S('TVV') * sympy.exp(S('ETA(2)'))
@@ -552,19 +551,6 @@ def test_nested_block_if(parser):
 
 @pytest.mark.usefixtures('parser')
 @pytest.mark.parametrize(
-    'buf_original',
-    [
-        '\nIF (AMT.GT.0) BTIME = TIME\n',
-    ],
-)
-def test_translate_sympy_parse(parser, buf_original):
-    rec = parser.parse(f'$PRED{buf_original}').records[0]
-    s = rec.statements[0]
-    assert rec._translate_sympy_piecewise(s).strip() == buf_original.strip()
-
-
-@pytest.mark.usefixtures('parser')
-@pytest.mark.parametrize(
     'symbol, expression, buf_expected',
     [
         (
@@ -584,8 +570,10 @@ def test_translate_sympy_piecewise(parser, symbol, expression, buf_expected):
     buf_original = '$PRED\nY = THETA(1) + ETA(1) + EPS(1)\n'
     rec = parser.parse(buf_original).records[0]
     s = Assignment(symbol, expression)
-
-    assert rec._translate_sympy_piecewise(s).strip() == buf_expected.strip()
+    statements = rec.statements
+    statements.append(s)
+    rec.statements = statements
+    assert str(rec) == buf_original.strip() + buf_expected
 
 
 def test_empty_record(parser):

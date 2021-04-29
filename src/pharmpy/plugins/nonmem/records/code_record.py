@@ -249,6 +249,7 @@ class CodeRecord(Record):
         node_index = 0
         kept = []
         new_nodes = []
+        defined_symbols = set()     # Set of all defined symbols updated so far
         for op, s in diff(old, new):
             while (
                 node_index < len(self.root.children)
@@ -260,7 +261,7 @@ class CodeRecord(Record):
                 node_index += 1
             if op == '+':
                 if isinstance(s.expression, Piecewise):
-                    statement_str = self._translate_sympy_piecewise(s)
+                    statement_str = self._translate_sympy_piecewise(s, defined_symbols)
                 elif re.search('sign', str(s.expression)):
                     statement_str = self._translate_sympy_sign(s)
                 else:
@@ -278,6 +279,7 @@ class CodeRecord(Record):
                         node.children.append(AttrToken('LF', '\n'))
                     new_nodes.append(node)
                     kept.append(node)
+                defined_symbols.add(s.symbol)
             elif op == '-':
                 node_index += 1
                 old_index += 1
@@ -286,15 +288,20 @@ class CodeRecord(Record):
                 new_nodes.append(self.root.children[node_index])
                 node_index += 1
                 old_index += 1
+                defined_symbols.add(s.symbol)
         if node_index < len(self.root.children):  # Remaining non-statements
             kept.extend(self.root.children[node_index:])
         self.root.children = kept
         self.nodes = new_nodes
         self._statements = new.copy()
 
-    def _translate_sympy_piecewise(self, statement):
+    def _translate_sympy_piecewise(self, statement, defined_symbols):
         expression = statement.expression.args
         symbol = statement.symbol
+        # Did we (possibly) add the default in the piecewise with 0 or symbol?
+        has_added_else = expression[-1][1] is sympy.true and (expression[-1][0] == symbol or (expression[-1][0] == 0 and symbol not in defined_symbols))
+        if has_added_else:
+            expression = expression[0:-1]
 
         expressions, _ = zip(*expression)
 
@@ -390,7 +397,13 @@ class CodeRecord(Record):
                     else:
                         name = str(assignment.variable).upper()
                         expr = ExpressionInterpreter().visit(assignment.expression)
-                        pw = sympy.Piecewise((expr, logic_expr))
+                        # Check if symbol was previously declared
+                        else_val = sympy.Integer(0)
+                        for prevass in s:
+                            if prevass.symbol.name == name:
+                                else_val = sympy.Symbol(name)
+                                break
+                        pw = sympy.Piecewise((expr, logic_expr), (else_val, True))
                         ass = Assignment(name, pw)
                         s.append(ass)
                     self.nodes.append(statement)
