@@ -101,27 +101,27 @@ def read_results(path_or_buf):
     decoder = ResultsJSONDecoder()
     d = decoder.decode(s)
     if decoder.cls == 'FREMResults':
-        from pharmpy.methods.frem import FREMResults
+        from pharmpy.tools.frem import FREMResults
 
         res = FREMResults.from_dict(d)
     elif decoder.cls == 'BootstrapResults':
-        from pharmpy.methods.bootstrap import BootstrapResults
+        from pharmpy.tools.bootstrap import BootstrapResults
 
         res = BootstrapResults.from_dict(d)
     elif decoder.cls == 'CDDResults':
-        from pharmpy.methods.cdd import CDDResults
+        from pharmpy.tools.cdd import CDDResults
 
         res = CDDResults.from_dict(d)
     elif decoder.cls == 'SCMResults':
-        from pharmpy.methods.scm import SCMResults
+        from pharmpy.tools.scm import SCMResults
 
         res = SCMResults.from_dict(d)
     elif decoder.cls == 'QAResults':
-        from pharmpy.methods.qa import QAResults
+        from pharmpy.tools.qa import QAResults
 
         res = QAResults.from_dict(d)
     elif decoder.cls == 'LinearizeResults':
-        from pharmpy.methods.linearize import LinearizeResults
+        from pharmpy.tools.linearize import LinearizeResults
 
         res = LinearizeResults.from_dict(d)
     return res

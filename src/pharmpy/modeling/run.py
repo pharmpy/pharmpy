@@ -1,7 +1,7 @@
-import pharmpy.methods.common
-import pharmpy.methods.modelfit
 import pharmpy.model
 import pharmpy.results
+import pharmpy.tools.common
+import pharmpy.tools.modelfit
 
 
 def fit(models):
@@ -10,7 +10,7 @@ def fit(models):
         single = True
     else:
         single = False
-    tool = pharmpy.methods.modelfit.Modelfit(models)
+    tool = pharmpy.tools.modelfit.Modelfit(models)
     tool.run()
     if single:
         return models[0]
@@ -19,7 +19,7 @@ def fit(models):
 
 
 def create_results(path, **kwargs):
-    res = pharmpy.methods.common.create_results(path, **kwargs)
+    res = pharmpy.tools.common.create_results(path, **kwargs)
     return res
 
 

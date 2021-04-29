@@ -2,8 +2,8 @@ import os
 import subprocess
 from pathlib import Path
 
-from pharmpy.methods.modelfit.job import ModelfitJob
 from pharmpy.plugins.nonmem import conf
+from pharmpy.tools.modelfit.job import ModelfitJob
 
 
 def create_job(models):

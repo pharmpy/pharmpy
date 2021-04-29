@@ -152,21 +152,21 @@ def format_keyval_pairs(data_dict, sort=True, right_just=False):
 
 
 def run_bootstrap(args):
-    import pharmpy.methods.bootstrap as bootstrap
+    import pharmpy.tools.bootstrap as bootstrap
 
     method = bootstrap.Bootstrap(args.model)
     method.run()
 
 
 def run_execute(args):
-    import pharmpy.methods.modelfit as modelfit
+    import pharmpy.tools.modelfit as modelfit
 
     method = modelfit.Modelfit(args.models)
     method.run()
 
 
 def run_modelsearch(args):
-    import pharmpy.methods.modelsearch as modelsearch
+    import pharmpy.tools.modelsearch as modelsearch
 
     method = modelsearch.ModelSearch(args.model, args.algorithm, args.funcs, rankfunc=args.rankfunc)
     method.run()
@@ -596,7 +596,7 @@ def update_inits(args):
 
 def results_bootstrap(args):
     """Subcommand to generate bootstrap results"""
-    from pharmpy.methods.bootstrap.results import psn_bootstrap_results
+    from pharmpy.tools.bootstrap.results import psn_bootstrap_results
 
     if not args.psn_dir.is_dir():
         error(FileNotFoundError(str(args.psn_dir)))
@@ -609,7 +609,7 @@ def results_bootstrap(args):
 
 
 def results_cdd(args):
-    from pharmpy.methods.cdd.results import psn_cdd_results
+    from pharmpy.tools.cdd.results import psn_cdd_results
 
     if not args.psn_dir.is_dir():
         error(FileNotFoundError(str(args.psn_dir)))
@@ -620,7 +620,7 @@ def results_cdd(args):
 
 def results_frem(args):
     """Generate frem results"""
-    from pharmpy.methods.frem.results import psn_frem_results
+    from pharmpy.tools.frem.results import psn_frem_results
 
     if not args.psn_dir.is_dir():
         error(FileNotFoundError(str(args.psn_dir)))
@@ -637,7 +637,7 @@ def results_frem(args):
 
 
 def results_linearize(args):
-    from pharmpy.methods.linearize.results import psn_linearize_results
+    from pharmpy.tools.linearize.results import psn_linearize_results
 
     if not args.psn_dir.is_dir():
         error(FileNotFoundError(str(args.psn_dir)))
@@ -647,7 +647,7 @@ def results_linearize(args):
 
 
 def results_scm(args):
-    from pharmpy.methods.scm.results import psn_scm_results
+    from pharmpy.tools.scm.results import psn_scm_results
 
     if not args.psn_dir.is_dir():
         error(FileNotFoundError(str(args.psn_dir)))
@@ -657,7 +657,7 @@ def results_scm(args):
 
 
 def results_simeval(args):
-    from pharmpy.methods.simeval.results import psn_simeval_results
+    from pharmpy.tools.simeval.results import psn_simeval_results
 
     if not args.psn_dir.is_dir():
         error(FileNotFoundError(str(args.psn_dir)))
@@ -693,7 +693,7 @@ def results_print(args):
 
 
 def results_qa(args):
-    from pharmpy.methods.qa.results import psn_qa_results
+    from pharmpy.tools.qa.results import psn_qa_results
 
     if not args.psn_dir.is_dir():
         error(FileNotFoundError(str(args.psn_dir)))
@@ -880,7 +880,7 @@ parser_definition = [
                 },
             ],
             'help': 'Run a method',
-            'title': 'Pharmpy commands for running methods',
+            'title': 'Pharmpy commands for running tools',
             'metavar': 'METHOD',
         }
     },
