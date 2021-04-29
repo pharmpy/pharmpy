@@ -79,6 +79,8 @@ class PharmDataFrame(pd.DataFrame):
         return new_df
 
     def to_json(self, **kwargs):
+        """ """
+        # FIXME: Same docstring issue as for copy
         # FIXME: Directly using to_json on PharmDataFrame doesn't work
         return pd.DataFrame(self).to_json(**kwargs)
 
