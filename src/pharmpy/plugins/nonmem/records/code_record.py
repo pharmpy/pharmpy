@@ -249,7 +249,7 @@ class CodeRecord(Record):
         node_index = 0
         kept = []
         new_nodes = []
-        defined_symbols = set()     # Set of all defined symbols updated so far
+        defined_symbols = set()  # Set of all defined symbols updated so far
         for op, s in diff(old, new):
             while (
                 node_index < len(self.root.children)
@@ -299,7 +299,10 @@ class CodeRecord(Record):
         expression = statement.expression.args
         symbol = statement.symbol
         # Did we (possibly) add the default in the piecewise with 0 or symbol?
-        has_added_else = expression[-1][1] is sympy.true and (expression[-1][0] == symbol or (expression[-1][0] == 0 and symbol not in defined_symbols))
+        has_added_else = expression[-1][1] is sympy.true and (
+            expression[-1][0] == symbol
+            or (expression[-1][0] == 0 and symbol not in defined_symbols)
+        )
         if has_added_else:
             expression = expression[0:-1]
 

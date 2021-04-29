@@ -77,7 +77,11 @@ def S(x):
             S('CL'),
             sympy.Piecewise((S('THETA(1)'), sympy.Ne(S('X'), 1.5)), (0, True)),
         ),
-        ('$PRED IF (X.EQ.2+1) CL=23', S('CL'), sympy.Piecewise((23, sympy.Eq(S('X'), 3)), (0, True))),
+        (
+            '$PRED IF (X.EQ.2+1) CL=23',
+            S('CL'),
+            sympy.Piecewise((23, sympy.Eq(S('X'), 3)), (0, True)),
+        ),
         (
             '$PRED IF (X < ETA(1)) CL=23',
             S('CL'),
@@ -119,7 +123,9 @@ def S(x):
         (
             '$PRED\nIF(SPECIES.EQ.4)     IPRG = THETA(49)*EXP(ETA(11))',
             S('IPRG'),
-            sympy.Piecewise((S('THETA(49)') * sympy.exp(S('ETA(11)')), sympy.Eq(S('SPECIES'), 4)), (0, True)),
+            sympy.Piecewise(
+                (S('THETA(49)') * sympy.exp(S('ETA(11)')), sympy.Eq(S('SPECIES'), 4)), (0, True)
+            ),
         ),
         ('$PRED\nCL=-KA', S('CL'), -S('KA')),
         ('$PRED\nCL=-KA+2', S('CL'), -S('KA') + 2),
@@ -134,7 +140,8 @@ def S(x):
                     sympy.And(
                         sympy.Eq(S('ROUT'), 0), sympy.Eq(S('DAYP'), 1), sympy.Eq(S('PROT'), 1088)
                     ),
-                ), (0, True)
+                ),
+                (0, True),
             ),
         ),
         ('$PRED X=A+B+C', S('X'), S('A') + S('B') + S('C')),
@@ -342,7 +349,9 @@ IF(APGR.LT.5) TVV=TVV*(1+THETA(3))
     assert rec.statements[5].symbol == S('CL')
     assert rec.statements[6].symbol == S('V')
     assert rec.statements[7].symbol == S('S1')
-    assert rec.statements[0].expression == sympy.Piecewise((S('TIME'), sympy.Gt(S('AMT'), 0)), (0, True))
+    assert rec.statements[0].expression == sympy.Piecewise(
+        (S('TIME'), sympy.Gt(S('AMT'), 0)), (0, True)
+    )
     assert rec.statements[1].expression == S('TIME') - S('BTIME')
     assert rec.statements[2].expression == S('THETA(1)') * S('WGT')
     assert rec.statements[3].expression == S('THETA(2)') * S('WGT')
