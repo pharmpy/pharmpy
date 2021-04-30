@@ -1,5 +1,6 @@
 from pharmpy.modeling.block_rvs import create_rv_block, split_rv_block
 from pharmpy.modeling.common import (
+    convert_model,
     copy_model,
     fix_parameters,
     fix_parameters_to,
@@ -104,4 +105,5 @@ __all__ = [
     'set_peripheral_compartments',
     'read_results',
     'evaluate_expression',
+    'convert_model',
 ]

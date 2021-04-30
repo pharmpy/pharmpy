@@ -25,6 +25,29 @@ def write_model(model, path='', force=False):
     return model
 
 
+def convert_model(model, to):
+    """Convert model to other format
+
+    Parameters
+    ----------
+    model : Model
+        Model to convert
+    to : str
+        Name of format to convert into. Currently supported 'nlmixr'
+
+    Results
+    -------
+    Model
+        New model object with new underlying model format.
+    """
+    if to != 'nlmixr':
+        raise ValueError(f"Unknown format {to}: supported format is 'nlmixr'")
+    import pharmpy.plugins.nlmixr.model as nlmixr
+
+    new = nlmixr.convert_model(model)
+    return new
+
+
 def update_source(model):
     """Update source
 
