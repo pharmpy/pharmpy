@@ -102,6 +102,8 @@ def create_model(cg, model):
 
                 for rvs, dist in model.random_variables.epsilons.distributions():
                     sigma = dist.std ** 2
+                # FIXME: Needs to be generalized
+                cg.add('Y <- F')
                 cg.add(f'{s.symbol.name} ~ prop({name_mangle(sigma.name)})')
             else:
                 cg.add(f'{s.symbol.name} <- {printer.doprint(s.expression)}')
@@ -115,7 +117,7 @@ def create_model(cg, model):
 
 def create_fit(cg, model):
     """Create the call to fit"""
-    cg.add(f'fit <- nlmixr({model.name}, dataset, "saem"')
+    cg.add(f'fit <- nlmixr({model.name}, dataset, "saem")')
     cg.add('print(fit)')
 
 
