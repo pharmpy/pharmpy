@@ -58,6 +58,13 @@ class ExpressionPrinter(StrPrinter):
             return expr.func.__name__ + f'({self.stringify(expr.args, ", ")})'
 
 
+def create_dataset(cg, model):
+    """Create dataset for nlmixr"""
+    dataname = f'{model.name}.csv'
+    # model.dataset.pharmpy.write_csv(dataname)
+    cg.add(f'dataset <- read.csv("{dataname}")')
+
+
 def create_ini(cg, model):
     """Create the nlmixr ini section code"""
     cg.add('ini({')
@@ -117,7 +124,7 @@ def create_model(cg, model):
 
 def create_fit(cg, model):
     """Create the call to fit"""
-    cg.add(f'fit <- nlmixr({model.name}, dataset, "saem")')
+    cg.add(f'fit <- nlmixr({model.name}, dataset, "focei")')
     cg.add('print(fit)')
 
 
@@ -125,6 +132,8 @@ class Model(pharmpy.model.Model):
     def update_source(self):
         cg = CodeGenerator()
         cg.add('library(nlmixr)')
+        cg.empty_line()
+        create_dataset(cg, self)
         cg.empty_line()
         cg.add(f'{self.name} <- function() {{')
         cg.indent()
