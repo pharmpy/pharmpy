@@ -29,7 +29,7 @@ project = 'Pharmpy'
 year = '2018-2021'
 authors = ['the Pharmpy development team']
 copyright = '{0}; {1}'.format(year, ', '.join(authors))
-version = release = '0.23.3'
+version = release = '0.23.4'
 
 pygments_style = 'trac'
 templates_path = ['.']
