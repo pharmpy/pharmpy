@@ -915,7 +915,7 @@ def psn_reorder_base_model_inits(model, path):
         for p in model.parameters:
             if i == len(values):
                 break
-            if p.name in model.random_variables.all_parameters():
+            if p.name in model.random_variables.parameter_names():
                 p.init = values[i]
                 i += 1
 
