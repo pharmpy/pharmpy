@@ -1,3 +1,8 @@
+0.23.4 (2021-05-03)
+-------------------
+
+* 10-100 times Speedup of modeling.evaluate_expression
+
 0.23.3 (2021-04-29)
 -------------------
 
@@ -18,7 +23,7 @@
 0.23.0 (2021-04-28)
 -------------------
 
-* Add function modelling.evaluate_expression
+* Add function modeling.evaluate_expression
 * Some documentation for modelfit_results 
 * Reworked interface to RandomVariables and Parameters
 * Bugfixes
