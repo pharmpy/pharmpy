@@ -1,4 +1,5 @@
 import numpy as np
+import symengine
 import sympy
 
 
@@ -26,9 +27,11 @@ def evaluate_expression(model, expression):
     inits = model.parameters.inits
     expr = full_expr.subs(dict(pe)).subs(inits)
     data = model.dataset
+    expr = symengine.sympify(expr)
 
     def func(row):
-        return np.float64(expr.evalf(subs=dict(row)))
+        subs = expr.subs(dict(row))
+        return np.float64(subs.evalf())
 
     df = data.apply(func, axis=1)
     return df
