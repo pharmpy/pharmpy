@@ -16,7 +16,7 @@ The easiest way to start a model search run is to use the `run_modelsearch` func
 
 .. code:: python
 
-    from pharmpy.methods.modelsearch import run_modelsearch
+    from pharmpy.tools.modelsearch import run_modelsearch
 
     run_modelsearch(base_model, algorithm, mfl, rankfunc='ofv')
 
@@ -79,7 +79,7 @@ An exhaustive search will test all possible combinations of features in one big 
 
 
 Stepwise search
-~~~~~~~~~~~~~~~ 
+~~~~~~~~~~~~~~~
 
 Here is an example of a search tree for the search space
 
@@ -212,7 +212,7 @@ is equivalent to
 
 and
 
-.. code:: 
+.. code::
 
     PERIPHERALS(1..2)
     PERIPHERALS(1)

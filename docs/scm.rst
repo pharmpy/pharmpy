@@ -17,7 +17,7 @@ The `steps` table contains information on the models run in each step.
     :hide-code:
 
     import pathlib
-    from pharmpy.methods.scm.results import psn_scm_results
+    from pharmpy.tools.scm.results import psn_scm_results
     res = psn_scm_results(pathlib.Path('tests/testdata/nonmem/scm/mergeofv_dir1'))
     res.steps
 
@@ -26,8 +26,8 @@ The table index has multiple levels
 ==============  =============================================
 Level           Description
 ==============  =============================================
-step            A step index starting with 1 
-parameter       Parameter to which covariate effect was added 
+step            A step index starting with 1
+parameter       Parameter to which covariate effect was added
 covariate       Covariate used
 extended_state  The covariate effect (state) added
 ==============  =============================================
@@ -56,7 +56,7 @@ OFV Summary
 ~~~~~~~~~~~
 
 The `ofv_summary` method can be used to create a slightly different view of the runs. The included relations in the final model are
-listed under the direction "Final included". 
+listed under the direction "Final included".
 
 .. jupyter-execute::
 

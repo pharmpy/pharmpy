@@ -17,7 +17,7 @@ The `sampled_iofv` table contains the estimated individual OFV of the evaluated 
     :hide-code:
 
     import pathlib
-    from pharmpy.methods.simeval.results import psn_simeval_results
+    from pharmpy.tools.simeval.results import psn_simeval_results
     res = psn_simeval_results(pathlib.Path('tests/testdata/psn/simeval_dir1'))
     res.sampled_iofv
 
