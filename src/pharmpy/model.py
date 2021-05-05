@@ -19,9 +19,20 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import scipy.linalg
+import sympy
 
 import pharmpy.symbols
 from pharmpy import Parameters, RandomVariables
+
+
+def canonicalize_data_transformation(model, value):
+    if value is None:
+        value = model.dependent_variable_symbol
+    else:
+        value = sympy.sympify(value)
+        if value.free_symbols != {model.dependent_variable_symbol}:
+            raise ValueError(f"Expression for data transformation must contain the dependent variable {model.dependent_variable_symbol} on no other variables")
+    return value
 
 
 class ModelException(Exception):
@@ -62,6 +73,18 @@ class Model:
     @property
     def modelfit_results(self):
         return None
+
+    @property
+    def data_transformation(self):
+        try:
+            return self._data_transformation
+        except AttributeError:
+            return self.dependent_variable_symbol
+
+    @data_transformation.setter
+    def data_transformation(self, value):
+        value = canonicalize_data_transformation(self, value)
+        self._data_transformation = value
 
     def update_source(self):
         """Update the source"""
