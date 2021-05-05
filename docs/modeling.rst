@@ -746,6 +746,16 @@ The error model can be removed.
 Setting an additive error model
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+The additive error model is :math:`y = f + \epsilon_1`. In the case of log transformed data the
+same error model can be approximated to :math:`y = \log f + \frac{\epsilon_1}{f}`. This because
+
+.. math::
+
+    \log (f + \epsilon_1) = \log (f(1+\frac{\epsilon_1}{f})) = \log f + \log(1+ \frac{\epsilon_1}{f}) \approx \log f + \frac{\epsilon_1}{f}
+
+where the approximation is the first term of the Taylor expansion of :math:`\log(1 + x)`.
+
+
 .. jupyter-execute::
    :hide-output:
 
@@ -758,13 +768,40 @@ To set an additive error model:
    from pharmpy.modeling import additive_error
 
    additive_error(model)
+   model.statements.find_assignment('Y')
+
+.. jupyter-execute::
+
    model.update_source()
    print_model_diff(model_ref, model)
+
+To set an additive error model with log transformed data:
+
+
+.. jupyter-execute::
+
+   from pharmpy.modeling import additive_error
+
+   model = Model(path / "pheno.mod")
+   additive_error(model, data_trans='log(Y)')
+   model.update_source()
+   print_model_diff(model_ref, model)
+
+or set the `data_transformation` attribute on the model.
 
 See :py:func:`pharmpy.modeling.additive_error`.
 
 Setting a proportional error model
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The proportinal error model is :math:`y = f + f \epsilon_1`. In the case of log transformed data the
+same error model can be approximated to :math:`y = \log f + \epsilon_1`. This because
+
+.. math::
+
+    \log (f + f\epsilon_1) = \log (f(1+\epsilon_1)) = \log f + \log(1+ \epsilon_1) \approx \log f + \epsilon_1
+
+where again the approximation is the first term of the Taylor expansion of :math:`\log(1 + x)`.
 
 .. jupyter-execute::
    :hide-output:
@@ -778,13 +815,38 @@ To set a proportional error model:
    from pharmpy.modeling import proportional_error
 
    proportional_error(model)
+   model.statements.find_assignment('Y')
+
+.. jupyter-execute::
+
    model.update_source()
    print_model_diff(model_ref, model)
+
+To set a proportional error model with log transformed data:
+
+.. jupyter-execute::
+
+   from pharmpy.modeling import proportional_error
+
+   model = Model(path / "pheno.mod")
+   proportional_error(model, data_trans='log(Y)')
+   model.update_source()
+   print_model_diff(model_ref, model)
+
 
 See :py:func:`pharmpy.modeling.proportional_error`.
 
 Setting a combined additive and proportional error model
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The combined error model is :math:`y = f + f \epsilon_1 + \epsilon_2`. In the case of log transformed data the
+same error model can be approximated to :math:`y = \log f + \epsilon_1 + \frac{\epsilon_2}{f}`. This because
+
+.. math::
+
+    \log (f + f\epsilon_1 + \epsilon_2) = \log (f(1+\epsilon_1+\frac{\epsilon_2}{f})) = \log f + \log(1+ \epsilon_1 + \frac{\epsilon_2}{f}) \approx \log f + \epsilon_1 + \frac{\epsilon_2}{f}
+
+where again the approximation is the first term of the Taylor expansion of :math:`\log(1 + x)`.
 
 .. jupyter-execute::
    :hide-output:
@@ -798,8 +860,24 @@ To set a combined error model:
    from pharmpy.modeling import combined_error
 
    combined_error(model)
+   model.statements.find_assignment('Y')
+
+.. jupyter-execute::
+
    model.update_source()
    print_model_diff(model_ref, model)
+
+To set a combined error model with log transformed data:
+
+.. jupyter-execute::
+
+   from pharmpy.modeling import combined_error
+
+   model = Model(path / "pheno.mod")
+   combined_error(model, data_trans='log(Y)')
+   model.update_source()
+   print_model_diff(model_ref, model)
+
 
 See :py:func:`pharmpy.modeling.combined_error`.
 
