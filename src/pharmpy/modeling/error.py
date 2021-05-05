@@ -2,6 +2,9 @@
 :meta private:
 """
 
+import sympy
+
+import pharmpy.model
 import pharmpy.symbols as symbols
 from pharmpy.parameter import Parameter
 from pharmpy.random_variables import RandomVariable
@@ -30,19 +33,40 @@ def remove_error(model):
     return model
 
 
-def additive_error(model):
-    """Set an additive error model. Initial estimate for new sigma is :math:`(min(DV)/2)²`.
+def additive_error(model, data_trans=None):
+    r"""Set an additive error model. Initial estimate for new sigma is :math:`(min(DV)/2)²`.
+
+    The error function being applied depends on the data transformation.
+
+    +------------------------+----------------------------------------+
+    | Data transformation    | Additive error                         |
+    +========================+========================================+
+    | :math:`y`              | :math:`f + \epsilon_1`                 |
+    +------------------------+----------------------------------------+
+    | :math:`log(y)`         | :math:`\log(f) + \frac{\epsilon_1}{f}` |
+    +------------------------+----------------------------------------+
 
     Parameters
     ----------
     model : Model
         Set error model for this model
+    data_trans : str or expression
+        A data transformation expression or None (default) to use the transformation
+        specified by the model.
     """
     if has_additive_error(model):
         return model
     stats, y, f = _preparations(model)
     ruv = model.create_symbol('RUV')
-    expr = f + ruv
+
+    data_trans = pharmpy.model.canonicalize_data_transformation(model, data_trans)
+    if data_trans == sympy.log(model.dependent_variable_symbol):
+        expr = sympy.log(f) + ruv / f
+    elif data_trans == model.dependent_variable_symbol:
+        expr = f + ruv
+    else:
+        raise ValueError(f"Not supported data transformation {data_trans}")
+
     stats.reassign(y, expr)
     model.remove_unused_parameters_and_rvs()
 
@@ -64,19 +88,40 @@ def _get_prop_init(dt):
         return (dv_min / 2) ** 2
 
 
-def proportional_error(model):
-    """Set a proportional error model. Initial estimate for new sigma is 0.09.
+def proportional_error(model, data_trans=None):
+    r"""Set a proportional error model. Initial estimate for new sigma is 0.09.
+
+    The error function being applied depends on the data transformation.
+
+    +------------------------+----------------------------------------+
+    | Data transformation    | Proportional error                     |
+    +========================+========================================+
+    | :math:`y`              | :math:`f + f \epsilon_1`               |
+    +------------------------+----------------------------------------+
+    | :math:`log(y)`         | :math:`\log(f) + \epsilon_1`           |
+    +------------------------+----------------------------------------+
 
     Parameters
     ----------
     model : Model
         Set error model for this model
+    data_trans : str or expression
+        A data transformation expression or None (default) to use the transformation
+        specified by the model.
     """
     if has_proportional_error(model):
         return model
     stats, y, f = _preparations(model)
     ruv = model.create_symbol('RUV')
-    expr = f + f * ruv
+
+    data_trans = pharmpy.model.canonicalize_data_transformation(model, data_trans)
+    if data_trans == sympy.log(model.dependent_variable_symbol):
+        expr = sympy.log(f) + ruv
+    elif data_trans == model.dependent_variable_symbol:
+        expr = f + f * ruv
+    else:
+        raise ValueError(f"Not supported data transformation {data_trans}")
+
     stats.reassign(y, expr)
     model.remove_unused_parameters_and_rvs()
 
@@ -90,21 +135,42 @@ def proportional_error(model):
     return model
 
 
-def combined_error(model):
-    """Set a combined error model. Initial estimates for new sigmas are :math:`(min(DV)/2)²` for
+def combined_error(model, data_trans=None):
+    r"""Set a combined error model. Initial estimates for new sigmas are :math:`(min(DV)/2)²` for
     proportional and 0.09 for additive.
+
+    The error function being applied depends on the data transformation.
+
+    +------------------------+-----------------------------------------------------+
+    | Data transformation    | Combined error                                      |
+    +========================+=====================================================+
+    | :math:`y`              | :math:`f + f \epsilon_1 + \epsilon_2`               |
+    +------------------------+-----------------------------------------------------+
+    | :math:`log(y)`         | :math:`\log(f) + \epsilon_1 + \frac{\epsilon_2}{f}` |
+    +------------------------+-----------------------------------------------------+
 
     Parameters
     ----------
     model : Model
         Set error model for this model
+    data_trans : str or expression
+        A data transformation expression or None (default) to use the transformation
+        specified by the model.
     """
     if has_combined_error(model):
         return model
     stats, y, f = _preparations(model)
     ruv_prop = model.create_symbol('RUV_PROP')
     ruv_add = model.create_symbol('RUV_ADD')
-    expr = f + f * ruv_prop + ruv_add
+
+    data_trans = pharmpy.model.canonicalize_data_transformation(model, data_trans)
+    if data_trans == sympy.log(model.dependent_variable_symbol):
+        expr = sympy.log(f) + ruv_prop + ruv_add / f
+    elif data_trans == model.dependent_variable_symbol:
+        expr = f + f * ruv_prop + ruv_add
+    else:
+        raise ValueError(f"Not supported data transformation {data_trans}")
+
     stats.reassign(y, expr)
     model.remove_unused_parameters_and_rvs()
 

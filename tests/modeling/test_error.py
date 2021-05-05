@@ -33,6 +33,14 @@ def test_additive_error_model(testdata):
     assert before == str(model)
 
 
+def test_additive_error_model_logdv(testdata):
+    model = Model(testdata / 'nonmem' / 'pheno.mod')
+    additive_error(model, data_trans="log(Y)")
+    model.update_source()
+    assert str(model).split('\n')[11] == 'Y = LOG(F) + EPS(1)/F'
+    assert str(model).split('\n')[17] == '$SIGMA  11.2225 ; sigma'
+
+
 def test_proportional_error_model(testdata):
     model = Model(testdata / 'nonmem' / 'pheno.mod')
     model.statements[5] = Assignment('Y', 'F')
@@ -48,11 +56,32 @@ def test_proportional_error_model(testdata):
     assert str(model).split('\n')[17] == '$SIGMA 0.013241'
 
 
+def test_proportional_error_model_log(testdata):
+    model = Model(testdata / 'nonmem' / 'pheno.mod')
+    model.statements[5] = Assignment('Y', 'F')
+    proportional_error(model, data_trans='log(Y)')
+    model.update_source()
+    assert str(model).split('\n')[11] == 'Y = LOG(F) + EPS(1)'
+    assert str(model).split('\n')[17] == '$SIGMA  0.09 ; sigma'
+
+
 def test_combined_error_model(testdata):
     model = Model(testdata / 'nonmem' / 'pheno.mod')
     combined_error(model)
     model.update_source()
     assert str(model).split('\n')[11] == 'Y = F + EPS(1)*F + EPS(2)'
+    assert str(model).split('\n')[17] == '$SIGMA  0.09 ; sigma_prop'
+    assert str(model).split('\n')[18] == '$SIGMA  11.2225 ; sigma_add'
+    before = str(model)
+    combined_error(model)  # One more time and nothing should change
+    assert before == str(model)
+
+
+def test_combined_error_model_log(testdata):
+    model = Model(testdata / 'nonmem' / 'pheno.mod')
+    combined_error(model, data_trans='log(Y)')
+    model.update_source()
+    assert str(model).split('\n')[11] == 'Y = LOG(F) + EPS(2)/F + EPS(1)'
     assert str(model).split('\n')[17] == '$SIGMA  0.09 ; sigma_prop'
     assert str(model).split('\n')[18] == '$SIGMA  11.2225 ; sigma_add'
     before = str(model)
