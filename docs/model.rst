@@ -280,3 +280,13 @@ Get the compartmental matrix:
 .. jupyter-execute::
 
    statements.ode_system.compartmental_matrix
+
+~~~~~~~~~~~~~~~~~~~
+Data transformation
+~~~~~~~~~~~~~~~~~~~
+
+If a dataset has transformed data this can be described in the `data_transformation` attribute of the model. This attribute can be set to the transformation expression describing how the `dependent_variable` is transformed in the data. Default this is set to the `dependent_variable`, i.e. no transformation. Note that setting this attribute only changes the interpretation of the model, not the model itself. Pharmpy can use this information for example when applying an error model to be able to set the correct model given the data transformation.
+
+.. jupyter-execute::
+
+    model.data_transformation = 'log(Y)'
