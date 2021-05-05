@@ -651,7 +651,7 @@ def test_abbr_read_write(pheno_path):
 
 def test_dv_symbol(pheno_path):
     model = Model(pheno_path)
-    assert model.dependent_variable_symbol.name == 'Y'
+    assert model.dependent_variable.name == 'Y'
 
 
 def test_insert_unknown_record(pheno_path):

@@ -27,11 +27,14 @@ from pharmpy import Parameters, RandomVariables
 
 def canonicalize_data_transformation(model, value):
     if value is None:
-        value = model.dependent_variable_symbol
+        value = model.dependent_variable
     else:
         value = sympy.sympify(value)
-        if value.free_symbols != {model.dependent_variable_symbol}:
-            raise ValueError(f"Expression for data transformation must contain the dependent variable {model.dependent_variable_symbol} on no other variables")
+        if value.free_symbols != {model.dependent_variable}:
+            raise ValueError(
+                f"Expression for data transformation must contain the dependent variable "
+                f"{model.dependent_variable} on no other variables"
+            )
     return value
 
 
@@ -47,7 +50,7 @@ class ModelSyntaxError(ModelException):
 class Model:
     """
     Attribute: name
-       dependent_variable_symbol
+       dependent_variable
        parameters
        random_variables
        statements
@@ -62,7 +65,7 @@ class Model:
         model.statements = self.statements.copy()
         model.dataset = self.dataset.copy()
         model.name = self.name
-        model.dependent_variable_symbol = self.dependent_variable_symbol
+        model.dependent_variable = self.dependent_variable
         return model
 
     def _repr_html_(self):
@@ -79,7 +82,7 @@ class Model:
         try:
             return self._data_transformation
         except AttributeError:
-            return self.dependent_variable_symbol
+            return self.dependent_variable
 
     @data_transformation.setter
     def data_transformation(self, value):
@@ -172,7 +175,7 @@ class Model:
         params = [param.name for param in self.parameters]
         rvs = [rv.name for rv in self.random_variables]
         dataset_col = list(self.dataset.columns)
-        misc = [self.dependent_variable_symbol]
+        misc = [self.dependent_variable]
 
         all_names = symbols + params + rvs + dataset_col + misc
 

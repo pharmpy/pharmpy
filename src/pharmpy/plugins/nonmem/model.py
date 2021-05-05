@@ -55,7 +55,7 @@ class Model(pharmpy.model.Model):
         self._updated_etas_file = None
         self._dataset_updated = False
         self._modelfit_results = None
-        self.dependent_variable_symbol = S('Y')
+        self.dependent_variable = S('Y')
         self.individual_prediction_symbol = S('CIPREDI')
 
     @property

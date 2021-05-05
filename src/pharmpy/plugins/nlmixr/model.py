@@ -105,7 +105,7 @@ def create_model(cg, model):
     cg.indent()
     for s in model.statements:
         if isinstance(s, Assignment):
-            if s.symbol == model.dependent_variable_symbol:
+            if s.symbol == model.dependent_variable:
 
                 for rvs, dist in model.random_variables.epsilons.distributions():
                     sigma = dist.std ** 2

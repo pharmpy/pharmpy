@@ -12,7 +12,7 @@ from pharmpy.random_variables import RandomVariable
 
 def _preparations(model):
     stats = model.statements
-    y = model.dependent_variable_symbol
+    y = model.dependent_variable
     f = model.statements.find_assignment(y.name).expression
     for eps in model.random_variables.epsilons:
         f = f.subs({symbols.symbol(eps.name): 0})
@@ -60,9 +60,9 @@ def additive_error(model, data_trans=None):
     ruv = model.create_symbol('RUV')
 
     data_trans = pharmpy.model.canonicalize_data_transformation(model, data_trans)
-    if data_trans == sympy.log(model.dependent_variable_symbol):
+    if data_trans == sympy.log(model.dependent_variable):
         expr = sympy.log(f) + ruv / f
-    elif data_trans == model.dependent_variable_symbol:
+    elif data_trans == model.dependent_variable:
         expr = f + ruv
     else:
         raise ValueError(f"Not supported data transformation {data_trans}")
@@ -115,9 +115,9 @@ def proportional_error(model, data_trans=None):
     ruv = model.create_symbol('RUV')
 
     data_trans = pharmpy.model.canonicalize_data_transformation(model, data_trans)
-    if data_trans == sympy.log(model.dependent_variable_symbol):
+    if data_trans == sympy.log(model.dependent_variable):
         expr = sympy.log(f) + ruv
-    elif data_trans == model.dependent_variable_symbol:
+    elif data_trans == model.dependent_variable:
         expr = f + f * ruv
     else:
         raise ValueError(f"Not supported data transformation {data_trans}")
@@ -164,9 +164,9 @@ def combined_error(model, data_trans=None):
     ruv_add = model.create_symbol('RUV_ADD')
 
     data_trans = pharmpy.model.canonicalize_data_transformation(model, data_trans)
-    if data_trans == sympy.log(model.dependent_variable_symbol):
+    if data_trans == sympy.log(model.dependent_variable):
         expr = sympy.log(f) + ruv_prop + ruv_add / f
-    elif data_trans == model.dependent_variable_symbol:
+    elif data_trans == model.dependent_variable:
         expr = f + f * ruv_prop + ruv_add
     else:
         raise ValueError(f"Not supported data transformation {data_trans}")
@@ -197,7 +197,7 @@ def has_additive_error(model):
     model : Model
         The model to check
     """
-    y = model.dependent_variable_symbol
+    y = model.dependent_variable
     expr = model.statements.full_expression_after_odes(y)
     rvs = model.random_variables.epsilons
     rvs_in_y = {
@@ -217,7 +217,7 @@ def has_proportional_error(model):
     model : Model
         The model to check
     """
-    y = model.dependent_variable_symbol
+    y = model.dependent_variable
     expr = model.statements.full_expression_after_odes(y)
     rvs = model.random_variables.epsilons
     rvs_in_y = {
@@ -237,7 +237,7 @@ def has_combined_error(model):
     model : Model
         The model to check
     """
-    y = model.dependent_variable_symbol
+    y = model.dependent_variable
     expr = model.statements.full_expression_after_odes(y)
     rvs = model.random_variables.epsilons
     rvs_in_y = {
