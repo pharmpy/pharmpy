@@ -256,7 +256,7 @@ def _find_rates(model, ncomps):
                         t1 = int(n[1:])
                         f2 = int(n[0:2])
                         t2 = int(n[2:])
-                        q1 = f1 <= ncomps and t1 <= ncomps
+                        q1 = f1 <= ncomps and t1 <= ncomps and t1 != 0
                         q2 = f2 <= ncomps and t2 <= ncomps
                         if q1 and q2:
                             raise ModelSyntaxError(
@@ -425,9 +425,9 @@ def _advan12_trans(trans):
 
 
 def _dosing(model, dose_comp):
-    df = model.dataset
-    colnames = df.columns
+    colnames, _, _, _ = model._column_info()
     if 'RATE' in colnames:
+        df = model.dataset
         if (df['RATE'] == 0).all():
             return Bolus('AMT')
         elif (df['RATE'] == -1).any():

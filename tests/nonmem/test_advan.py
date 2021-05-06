@@ -1,6 +1,6 @@
 import pytest
 import sympy
-
+from io import StringIO
 import pharmpy.symbols
 from pharmpy import Model
 from pharmpy.plugins.nonmem.advan import compartmental_model
@@ -207,3 +207,48 @@ def test_advan5(testdata):
         ]
     )
     assert cm.compartmental_matrix == compmat
+
+
+def test_rate_constants():
+    code = """$PROBLEM
+$INPUT ID VISI DAT1 DGRP DOSE FLAG ONO XIME DVO NEUY SCR AGE SEX
+       NYHA WT COMP IACE DIG DIU NUMB TAD TIME VID CRCL AMT SS II
+       VID1 CMT CONO DV EVID OVID SHR SHR2
+$DATA mx19B.csv IGNORE=@
+$SUBROUTINE ADVAN5 TRANS1
+$MODEL COMPARTMENT=(TRANSIT1 DEFDOSE) COMPARTMENT=(TRANSIT2) COMPARTMENT=(TRANSIT3) COMPARTMENT=(TRANSIT4) COMPARTMENT=(TRANSIT5) COMPARTMENT=(TRANSIT6) COMPARTMENT=(TRANSIT7) COMPARTMENT=(TRANSIT8) COMPARTMENT=(DEPOT) COMPARTMENT=(CENTRAL)
+$PK
+MDT = THETA(4)*EXP(ETA(4))
+CL = THETA(1) * EXP(ETA(1))
+VC = THETA(2) * EXP(ETA(2))
+MAT = THETA(3) * EXP(ETA(3))
+KA = 1/MAT
+V = VC
+K12 = 8/MDT
+K910 = KA
+K100 = CL/V
+K23 = 8/MDT
+K34 = 8/MDT
+K45 = 8/MDT
+K56 = 8/MDT
+K67 = 8/MDT
+K78 = 8/MDT
+K89 = 8/MDT
+$ERROR
+CONC = A(10)/VC
+Y = CONC + CONC * EPS(1)
+$ESTIMATION METHOD=1 INTER MAXEVAL=9999
+$COVARIANCE PRINT=E
+$THETA  (0,22.7,Inf) ; POP_CL
+$THETA  (0,128,Inf) ; POP_VC
+$THETA  (0,0.196,Inf) ; POP_MAT
+$THETA  (0,0.003) ; POP_MDT
+$OMEGA  0.001  ;     IIV_CL
+$OMEGA  0.001  ;     IIV_VC
+$OMEGA  0.001  ;    IIV_MAT
+$OMEGA  0.001 ; IIV_MDT
+$SIGMA  0.273617  ;   RUV_PROP
+"""
+    model = Model(StringIO(code))
+    odes = model.statements.ode_system
+    assert odes.get_flow(odes.find_central(), odes.find_output()) == sympy.Symbol('K100')
