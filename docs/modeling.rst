@@ -746,12 +746,12 @@ The error model can be removed.
 Setting an additive error model
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The additive error model is :math:`y = f + \epsilon_1`. In the case of log transformed data the
-same error model can be approximated to :math:`y = \log f + \frac{\epsilon_1}{f}`. This because
+The additive error model is :math:`y = f + \epsilon_a`. In the case of log transformed data the
+same error model can be approximated to :math:`y = \log f + \frac{\epsilon_a}{f}`. This because
 
 .. math::
 
-    \log (f + \epsilon_1) = \log (f(1+\frac{\epsilon_1}{f})) = \log f + \log(1+ \frac{\epsilon_1}{f}) \approx \log f + \frac{\epsilon_1}{f}
+    \log (f + \epsilon_a) = \log (f(1+\frac{\epsilon_a}{f})) = \log f + \log(1 + \frac{\epsilon_a}{f}) \approx \log f + \frac{\epsilon_a}{f}
 
 where the approximation is the first term of the Taylor expansion of :math:`\log(1 + x)`.
 
@@ -794,12 +794,12 @@ See :py:func:`pharmpy.modeling.additive_error`.
 Setting a proportional error model
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The proportinal error model is :math:`y = f + f \epsilon_1`. In the case of log transformed data the
-same error model can be approximated to :math:`y = \log f + \epsilon_1`. This because
+The proportinal error model is :math:`y = f + f \epsilon_p`. In the case of log transformed data the
+same error model can be approximated to :math:`y = \log f + \epsilon_p`. This because
 
 .. math::
 
-    \log (f + f\epsilon_1) = \log (f(1+\epsilon_1)) = \log f + \log(1+ \epsilon_1) \approx \log f + \epsilon_1
+    \log (f + f\epsilon_p) = \log (f(1+\epsilon_p)) = \log f + \log(1+ \epsilon_p) \approx \log f + \epsilon_p
 
 where again the approximation is the first term of the Taylor expansion of :math:`\log(1 + x)`.
 
@@ -839,12 +839,12 @@ See :py:func:`pharmpy.modeling.proportional_error`.
 Setting a combined additive and proportional error model
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The combined error model is :math:`y = f + f \epsilon_1 + \epsilon_2`. In the case of log transformed data the
-same error model can be approximated to :math:`y = \log f + \epsilon_1 + \frac{\epsilon_2}{f}`. This because
+The combined error model is :math:`y = f + f \epsilon_p + \epsilon_a`. In the case of log transformed data the
+same error model can be approximated to :math:`y = \log f + \epsilon_p + \frac{\epsilon_a}{f}`. This because
 
 .. math::
 
-    \log (f + f\epsilon_1 + \epsilon_2) = \log (f(1+\epsilon_1+\frac{\epsilon_2}{f})) = \log f + \log(1+ \epsilon_1 + \frac{\epsilon_2}{f}) \approx \log f + \epsilon_1 + \frac{\epsilon_2}{f}
+    \log (f + f\epsilon_p + \epsilon_a) = \log (f(1+\epsilon_p+\frac{\epsilon_a}{f})) = \log f + \log(1 + \epsilon_p + \frac{\epsilon_a}{f}) \approx \log f + \epsilon_p + \frac{\epsilon_a}{f}
 
 where again the approximation is the first term of the Taylor expansion of :math:`\log(1 + x)`.
 
