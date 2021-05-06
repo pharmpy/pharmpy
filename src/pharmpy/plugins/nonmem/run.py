@@ -3,25 +3,30 @@ import subprocess
 from pathlib import Path
 
 from pharmpy.plugins.nonmem import conf
-from pharmpy.tools.modelfit.job import ModelfitJob
+from pharmpy.tools.workflows import Task, Workflow
 
 
 def create_job(models):
-    # Return ModelfitJob object
-    dsk = {f'run-{i}': (execute_model, model, i) for i, model in enumerate(models)}
-    dsk['results'] = (results, ['run-%d' % i for i, _ in enumerate(models)])
-    job = ModelfitJob(dsk)
-    job.models = models
+    wf = Workflow()
+    task_names = []
+
     for i, model in enumerate(models):
-        job.add_infiles(model.dataset_path, destination=f'NONMEM_run{i}')
-        job.add_outfiles(
+        wf.add_task(Task(f'run-{i}', execute_model, (model, i)))
+        task_names.append(f'run-{i}')
+
+    wf.add_task(Task('results', results, task_names))
+    wf.models = models
+
+    for i, model in enumerate(models):
+        wf.add_infiles(model.dataset_path, destination=f'NONMEM_run{i}')
+        wf.add_outfiles(
             [
                 f'NONMEM_run{i}/{model.name}.lst',
                 f'NONMEM_run{i}/{model.name}.ext',
                 f'NONMEM_run{i}/{model.name}.phi',
             ]
         )
-    return job
+    return wf
 
 
 def execute_model(model, i):
