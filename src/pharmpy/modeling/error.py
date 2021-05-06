@@ -57,7 +57,7 @@ def additive_error(model, data_trans=None):
     if has_additive_error(model):
         return model
     stats, y, f = _preparations(model)
-    ruv = model.create_symbol('RUV')
+    ruv = model.create_symbol('epsilon_a')
 
     data_trans = pharmpy.model.canonicalize_data_transformation(model, data_trans)
     if data_trans == sympy.log(model.dependent_variable):
@@ -112,7 +112,7 @@ def proportional_error(model, data_trans=None):
     if has_proportional_error(model):
         return model
     stats, y, f = _preparations(model)
-    ruv = model.create_symbol('RUV')
+    ruv = model.create_symbol('epsilon_p')
 
     data_trans = pharmpy.model.canonicalize_data_transformation(model, data_trans)
     if data_trans == sympy.log(model.dependent_variable):
@@ -160,8 +160,8 @@ def combined_error(model, data_trans=None):
     if has_combined_error(model):
         return model
     stats, y, f = _preparations(model)
-    ruv_prop = model.create_symbol('RUV_PROP')
-    ruv_add = model.create_symbol('RUV_ADD')
+    ruv_prop = model.create_symbol('epsilon_p')
+    ruv_add = model.create_symbol('epsilon_a')
 
     data_trans = pharmpy.model.canonicalize_data_transformation(model, data_trans)
     if data_trans == sympy.log(model.dependent_variable):
