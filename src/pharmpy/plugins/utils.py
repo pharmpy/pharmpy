@@ -38,7 +38,8 @@ def load_plugins():
 
     modules = list()
 
-    for _, modname, ispkg in pkgutil.iter_modules([plugin_path], 'pharmpy.plugins.'):
+    # str on path to workaround https://bugs.python.org/issue44061
+    for _, modname, ispkg in pkgutil.iter_modules([str(plugin_path)], 'pharmpy.plugins.'):
         if ispkg:
             module = importlib.import_module(modname)
             modules.append(module)
