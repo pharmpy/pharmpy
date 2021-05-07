@@ -165,6 +165,8 @@ def calculate_results(
 
     if original_results is not None:
         ofvs['delta_origdata'] = ofvs['bootstrap_origdata_ofv'] - base_ofv
+    else:
+        ofvs['delta_origdata'] = np.nan
 
     with warnings.catch_warnings():
         # Catch numpy warnings beause of NaN in ofvs
