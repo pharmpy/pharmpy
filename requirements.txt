@@ -1,7 +1,7 @@
 alabaster==0.7.12
 altair==4.1.0
 appdirs==1.4.4
-attrs==20.3.0
+attrs==21.1.0
 Babel==2.9.1
 beautifulsoup4==4.9.3
 certifi==2020.12.5
