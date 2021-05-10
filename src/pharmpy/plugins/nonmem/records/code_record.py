@@ -93,15 +93,24 @@ class ExpressionInterpreter(lark.visitors.Interpreter):
 
     @staticmethod
     def intrinsic_func(node):
+        smallz = 2.8E-103
         name = str(node).upper()
-        if name == "EXP" or name == "DEXP" or name == "PEXP":
+        if name == "EXP" or name == "DEXP":
             return sympy.exp
-        elif name == "LOG" or name == "PLOG":
+        if name == "PEXP":
+            return lambda x: sympy.Piecewise((sympy.exp(100), x > 100), (sympy.exp(x), True))
+        elif name == "LOG":
             return sympy.log
-        elif name == "LOG10" or name == "PLOG10":
+        elif name == "PLOG":
+            return lambda x: sympy.Piecewise((sympy.log(smallz), x < smallz), (sympy.log(x), True))
+        elif name == "LOG10":
             return lambda x: sympy.log(x, 10)
-        elif name == "SQRT" or name == "PSQRT":
+        elif name == "PLOG10":
+            return lambda x: sympy.Piecewise((sympy.log(smallz, 10), x < smallz), (sympy.log(x, 10), True))
+        elif name == "SQRT":
             return sympy.sqrt
+        elif name == "PSQRT":
+            return lambda x: sympy.Piecewise((0, x < 0), (sympy.sqrt(x), True))
         elif name == "SIN":
             return sympy.sin
         elif name == "COS":
@@ -121,9 +130,15 @@ class ExpressionInterpreter(lark.visitors.Interpreter):
         elif name == "GAMLN":
             return sympy.loggamma
         elif name == "PDZ":
-            return lambda x: sympy.Integer(1) / x
-        elif name == "PZR" or name == "PNP" or name == "PHE" or name == "PNG":
-            return lambda x: x
+            return lambda x: sympy.Piecewise((1 / smallz, abs(x) < smallz), (1 / x, True))
+        elif name == "PZR":
+            return lambda x: sympy.Piecewise((smallz, abs(x) < smallz), (x, True))
+        elif name == "PNP":
+            return lambda x: sympy.Piecewise((smallz, x < smallz), (x, True))
+        elif name == "PHE":
+            return lambda x: sympy.Piecewise((100, x > 100), (x, True))
+        elif name == "PNG":
+            return lambda x: sympy.Piecewise((0, x < 0), (x, True))
         else:  # name == "PHI":
             return lambda x: (1 + sympy.erf(x) / sympy.sqrt(2)) / 2
 
