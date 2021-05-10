@@ -1,5 +1,6 @@
 import re
 from io import StringIO
+import shutil
 
 import numpy as np
 import pandas as pd
@@ -534,3 +535,12 @@ def test_modeling_create_results(testdata):
     res = modeling.create_results(testdata / 'psn' / 'frem_dir1', method='bipp')
     ofv = res.ofv['ofv']
     assert len(ofv) == 5
+
+
+def test_create_report(testdata, tmp_path):
+    res = modeling.read_results(testdata / 'frem' / 'results.json')
+    shutil.copy(testdata / 'frem' / 'results.json', tmp_path)
+    res.create_report(tmp_path)
+    html = tmp_path / 'results.html'
+    assert html.is_file()
+    assert html.stat().st_size > 500000
