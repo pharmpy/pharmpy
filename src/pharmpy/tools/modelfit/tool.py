@@ -7,8 +7,8 @@ class Modelfit(pharmpy.tools.Tool):
         super().__init__(**kwargs)
 
     def run(self):
-        job = self.job_creator(self.models)
-        fit_models = self.dispatcher.run(job, self.database)
+        workflow = self.workflow_creator(self.models)
+        fit_models = self.dispatcher.run(workflow, self.database)
         for i in range(len(fit_models)):
             self.models[i].modelfit_results = fit_models[i].modelfit_results
         # res = self.models[0].modelfit_results

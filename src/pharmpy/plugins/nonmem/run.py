@@ -6,16 +6,16 @@ from pharmpy.plugins.nonmem import conf
 from pharmpy.tools.workflows import Task, Workflow
 
 
-def create_job(models):
-    wf = Workflow()
-    task_names = []
+def create_workflow(models):
+    wf = Workflow(models=models)
+    task_names, execute_tasks = [], []
 
     for i, model in enumerate(models):
-        wf.add_task(Task(f'run-{i}', execute_model, (model, i)))
+        execute_tasks.append(Task(f'run-{i}', execute_model, (model, i)))
         task_names.append(f'run-{i}')
 
-    wf.add_task(Task('results', results, task_names))
-    wf.models = models
+    wf.add_tasks(execute_tasks)
+    wf.add_tasks(Task('results', results, task_names))
 
     for i, model in enumerate(models):
         wf.add_infiles(model.dataset_path, destination=f'NONMEM_run{i}')

@@ -1,18 +1,19 @@
 class Workflow:
-    def __init__(self, tasks=None):
-        if not tasks:
-            tasks = []
-        elif tasks and not isinstance(tasks, list):
-            tasks = [tasks]
-        self.tasks = tasks
+    def __init__(self, tasks=None, models=None):
+        self.tasks = []
+        if tasks:
+            self.add_tasks(tasks)
+        self.models = models
         self.infiles = []
         self.outfiles = []
 
-    def add_task(self, task):
-        self.tasks.append(task)
+    def add_tasks(self, tasks):
+        if isinstance(tasks, list):
+            self.tasks.extend(tasks)
+        else:
+            self.tasks.append(tasks)
 
-    @property
-    def workflow(self):
+    def as_dict(self):
         as_dict = dict()
         for task in self.tasks:
             if isinstance(task.task_input, tuple):
@@ -42,7 +43,7 @@ class Task:
         self.task_input = task_input
         self.condition = condition
 
-    def add_prerequisite(self, other):
+    def add_condition(self, other):
         if self.condition and not isinstance(self.condition, list):
             self.condition = list(self.condition)
         self.condition.append(other)

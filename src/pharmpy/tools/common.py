@@ -24,7 +24,7 @@ class RunDirectory:
 
 
 class Tool:
-    def __init__(self, dispatcher=None, database=None, job_creator=None, path=None):
+    def __init__(self, dispatcher=None, database=None, workflow_creator=None, path=None):
         self.rundir = RunDirectory(type(self).__name__.lower(), path=path)
         if dispatcher is None:
             self.dispatcher = execute.default_dispatcher
@@ -34,12 +34,12 @@ class Tool:
             self.database = execute.default_database
         else:
             self.database = database
-        if job_creator is None:
+        if workflow_creator is None:
             import pharmpy.plugins.nonmem.run
 
-            self.job_creator = pharmpy.plugins.nonmem.run.create_job
+            self.workflow_creator = pharmpy.plugins.nonmem.run.create_workflow
         else:
-            self.job_creator = job_creator
+            self.workflow_creator = workflow_creator
 
 
 def create_results(path, **kwargs):
