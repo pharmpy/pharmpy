@@ -93,7 +93,7 @@ class ExpressionInterpreter(lark.visitors.Interpreter):
 
     @staticmethod
     def intrinsic_func(node):
-        smallz = 2.8E-103
+        smallz = 2.8e-103
         name = str(node).upper()
         if name == "EXP" or name == "DEXP":
             return sympy.exp
@@ -106,7 +106,9 @@ class ExpressionInterpreter(lark.visitors.Interpreter):
         elif name == "LOG10":
             return lambda x: sympy.log(x, 10)
         elif name == "PLOG10":
-            return lambda x: sympy.Piecewise((sympy.log(smallz, 10), x < smallz), (sympy.log(x, 10), True))
+            return lambda x: sympy.Piecewise(
+                (sympy.log(smallz, 10), x < smallz), (sympy.log(x, 10), True)
+            )
         elif name == "SQRT":
             return sympy.sqrt
         elif name == "PSQRT":

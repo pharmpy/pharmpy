@@ -1,6 +1,6 @@
 import re
-from io import StringIO
 import shutil
+from io import StringIO
 
 import numpy as np
 import pandas as pd
