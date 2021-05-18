@@ -936,6 +936,21 @@ epsilons should be transformed.
 
 See :py:func:`pharmpy.modeling.power_on_ruv`.
 
+Estimate standard deviation of epsilons with thetas
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Someimes it is useful to estimate a theta instead of a sigma. This can be done by fixing the sigma to 1 and multiplying the
+correspondng epsilon with a theta. This way the theta will represent the standard deviation of the epsilon.
+
+.. jupyter-execute::
+
+    from pharmpy.modeling import theta_as_stdev
+    model = Model(path / "pheno.mod")
+    theta_as_stdev(model)
+    model.update_source()
+    print_model_diff(model_ref, model)
+
+
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Creating full or partial block structures
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

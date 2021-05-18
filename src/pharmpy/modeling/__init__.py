@@ -22,6 +22,7 @@ from pharmpy.modeling.error import (
     has_proportional_error,
     proportional_error,
     remove_error,
+    theta_as_stdev,
 )
 from pharmpy.modeling.eta_additions import add_iiv, add_iov
 from pharmpy.modeling.eta_transformations import boxcox, john_draper, tdist
@@ -106,4 +107,5 @@ __all__ = [
     'read_results',
     'evaluate_expression',
     'convert_model',
+    'theta_as_stdev',
 ]

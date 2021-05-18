@@ -255,3 +255,22 @@ def has_combined_error(model):
         or eps1 not in canc2.free_symbols
         and eps2 not in canc2.free_symbols
     )
+
+
+def theta_as_stdev(model):
+    """Use thetas to estimate standard deviation of error"""
+    rvs = model.random_variables.epsilons
+    for eps in rvs:
+        sigmas = eps.parameter_names
+        if len(sigmas) > 1:
+            raise ValueError('theta_as_stdev only supports non-correlated sigmas')
+        sigma = sigmas[0]
+        param = model.parameters[sigma]
+        param.fix = True
+        theta_init = param.init ** 0.5
+        param.init = 1
+        theta = Parameter(f'SD_{eps.name}', theta_init, lower=0)
+        model.parameters.append(theta)
+        symb = sympy.Symbol(eps.name)
+        model.statements.subs({symb: theta.symbol * symb})
+    return model
