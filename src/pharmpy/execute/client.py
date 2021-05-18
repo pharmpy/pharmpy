@@ -5,7 +5,7 @@ import pandas as pd
 
 class Client:
     def __init__(self):
-        self._log = []   # list of tuples of timestamp, category and message
+        self._log = []  # list of tuples of timestamp, category and message
 
     def log_error(self, message):
         self._log.append((datetime.datetime.now(), 'ERROR', message))
