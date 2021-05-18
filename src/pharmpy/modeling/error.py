@@ -8,6 +8,7 @@ import pharmpy.model
 import pharmpy.symbols as symbols
 from pharmpy.parameter import Parameter
 from pharmpy.random_variables import RandomVariable
+from pharmpy.statements import Assignment
 
 
 def _preparations(model):
@@ -273,4 +274,32 @@ def theta_as_stdev(model):
         model.parameters.append(theta)
         symb = sympy.Symbol(eps.name)
         model.statements.subs({symb: theta.symbol * symb})
+    return model
+
+
+def set_weighted_error_model(model):
+    """Encode error model with one epsilon and W as weight"""
+    stats, y, f = _preparations(model)
+    epsilons = model.random_variables.epsilons
+    expr = stats.find_assignment(y.name).expression
+    ssum = 0
+    q = sympy.Q.real(y)  # Dummy predicate
+    for term in expr.args:
+        eps = [x for x in term.free_symbols if x.name in epsilons.names]
+        if len(eps) > 0:
+            eps = eps[0]
+            remaining = term / eps
+            ssum += remaining ** 2
+            for symb in remaining.free_symbols:
+                q &= sympy.Q.positive(symb)
+    w = sympy.sqrt(ssum)
+    w = sympy.refine(w, q)
+
+    for i, s in enumerate(stats):
+        if isinstance(s, Assignment) and s.symbol == y:
+            stats.insert(i, Assignment('W', w))
+            break
+
+    stats.reassign(y, f + sympy.Symbol('W') * sympy.Symbol(epsilons[0].name))
+    model.remove_unused_parameters_and_rvs()
     return model

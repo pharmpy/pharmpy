@@ -22,6 +22,7 @@ from pharmpy.modeling.error import (
     has_proportional_error,
     proportional_error,
     remove_error,
+    set_weighted_error_model,
     theta_as_stdev,
 )
 from pharmpy.modeling.eta_additions import add_iiv, add_iov
@@ -108,4 +109,5 @@ __all__ = [
     'evaluate_expression',
     'convert_model',
     'theta_as_stdev',
+    'set_weighted_error_model',
 ]

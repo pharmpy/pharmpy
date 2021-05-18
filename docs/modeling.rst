@@ -950,6 +950,16 @@ correspondng epsilon with a theta. This way the theta will represent the standar
     model.update_source()
     print_model_diff(model_ref, model)
 
+Weighted error model
+~~~~~~~~~~~~~~~~~~~~
+
+.. jupyter-execute::
+
+    from pharmpy.modeling import set_weighted_error_model
+    model = Model(path / "pheno.mod")
+    set_weighted_error_model(model)
+    model.update_source()
+    print_model_diff(model_ref, model)
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Creating full or partial block structures

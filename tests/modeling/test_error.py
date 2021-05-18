@@ -10,6 +10,7 @@ from pharmpy.modeling import (
     proportional_error,
     read_model_from_string,
     remove_error,
+    set_weighted_error_model,
     theta_as_stdev,
 )
 from pharmpy.modeling.error import _get_prop_init
@@ -357,6 +358,97 @@ $THETA  (0,1.0) ; SD_EPS(1)
 $OMEGA 0.01
 $SIGMA 1 FIX
 $ESTIMATION METHOD=1 INTER MAXEVALS=9990 PRINT=2 POSTHOC
+"""
+
+    assert str(model) == correct
+
+
+def test_set_weighted_error_model():
+    code = """$PROBLEM PHENOBARB SIMPLE MODEL
+$DATA pheno.dta IGNORE=@
+$INPUT ID TIME AMT WGT APGR DV
+$SUBROUTINE ADVAN1 TRANS2
+$PK
+CL=THETA(1)*EXP(ETA(1))
+V=THETA(2)*EXP(ETA(2))
+$ERROR
+PRED=A(1)/V
+CONC=PRED
+Y=CONC+CONC*EPS(1)
+$THETA (0,0.00469307) ; TVCL
+$THETA (0,1.00916) ; TVV
+$OMEGA 0.0309626  ; IVCL
+$OMEGA 0.031128  ; IVV
+$SIGMA 0.013241
+$ESTIMATION METHOD=1 INTERACTION
+"""
+    model = read_model_from_string(code)
+    set_weighted_error_model(model)
+    model.update_source()
+    correct = """$PROBLEM PHENOBARB SIMPLE MODEL
+$DATA pheno.dta IGNORE=@
+$INPUT ID TIME AMT WGT APGR DV
+$SUBROUTINE ADVAN1 TRANS2
+$PK
+CL=THETA(1)*EXP(ETA(1))
+V=THETA(2)*EXP(ETA(2))
+$ERROR
+PRED=A(1)/V
+CONC=PRED
+W = CONC
+Y = CONC + EPS(1)*W
+$THETA (0,0.00469307) ; TVCL
+$THETA (0,1.00916) ; TVV
+$OMEGA 0.0309626  ; IVCL
+$OMEGA 0.031128  ; IVV
+$SIGMA 0.013241
+$ESTIMATION METHOD=1 INTERACTION
+"""
+
+    code = """$PROBLEM PHENOBARB SIMPLE MODEL
+$DATA pheno.dta IGNORE=@
+$INPUT ID TIME AMT WGT APGR DV
+$SUBROUTINE ADVAN1 TRANS2
+$PK
+CL=THETA(1)*EXP(ETA(1))
+V=THETA(2)*EXP(ETA(2))
+$ERROR
+PRED=A(1)/V
+CONC=PRED
+Y=CONC+CONC*THETA(3)*EPS(1)+THETA(4)*EPS(2)
+$THETA (0,0.00469307) ; TVCL
+$THETA (0,1.00916) ; TVV
+$THETA (0, 0.1) ; SD1
+$THETA (0, 0.2) ; SD2
+$OMEGA 0.0309626  ; IVCL
+$OMEGA 0.031128  ; IVV
+$SIGMA 0.013241
+$SIGMA 0.013241
+$ESTIMATION METHOD=1 INTERACTION
+"""
+    model = read_model_from_string(code)
+    set_weighted_error_model(model)
+    model.update_source()
+    correct = """$PROBLEM PHENOBARB SIMPLE MODEL
+$DATA pheno.dta IGNORE=@
+$INPUT ID TIME AMT WGT APGR DV
+$SUBROUTINE ADVAN1 TRANS2
+$PK
+CL=THETA(1)*EXP(ETA(1))
+V=THETA(2)*EXP(ETA(2))
+$ERROR
+PRED=A(1)/V
+CONC=PRED
+W = SQRT(CONC**2*THETA(3)**2 + THETA(4)**2)
+Y = CONC + EPS(1)*W
+$THETA (0,0.00469307) ; TVCL
+$THETA (0,1.00916) ; TVV
+$THETA (0, 0.1) ; SD1
+$THETA (0, 0.2) ; SD2
+$OMEGA 0.0309626  ; IVCL
+$OMEGA 0.031128  ; IVV
+$SIGMA 0.013241
+$ESTIMATION METHOD=1 INTERACTION
 """
 
     assert str(model) == correct
