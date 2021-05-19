@@ -7,6 +7,8 @@ import re
 
 import lark
 import sympy
+import sympy.printing.codeprinter
+import sympy.printing.fortran
 from sympy import Piecewise
 
 import pharmpy.symbols as symbols
@@ -16,6 +18,28 @@ from pharmpy.plugins.nonmem.records.parsers import CodeRecordParser
 from pharmpy.statements import Assignment, ModelStatements
 
 from .record import Record
+
+
+class FortranPrinter(sympy.printing.fortran.FCodePrinter):
+    _relationals = {
+        '<=': '.LE.',
+        '>=': '.GE.',
+        '<': '.LT.',
+        '>': '.GT.',
+        '!=': '.NE.',
+        '==': '.EQ.',
+    }
+    _operators = {
+        'and': '.AND.',
+        'or': '.OR.',
+        'xor': '.NEQV.',
+        'equivalent': '.EQV.',
+        'not': '.NOT. ',
+    }
+
+    def _print_Float(self, expr):
+        printed = sympy.printing.codeprinter.CodePrinter._print_Float(self, expr)
+        return printed
 
 
 class ExpressionInterpreter(lark.visitors.Interpreter):
@@ -351,13 +375,14 @@ class CodeRecord(Record):
 
     def _translate_sympy_block(self, symbol, expression):
         statement_str = 'IF '
+
         for i, e in enumerate(expression):
             value = e[0]
             condition = e[1]
 
             condition_translated = self._translate_condition(condition)
 
-            if condition_translated == 'True':
+            if condition_translated == '.true.':
                 statement_str = re.sub('ELSE IF ', 'ELSE', statement_str)
             else:
                 statement_str += f'({condition_translated}) THEN'
@@ -373,15 +398,9 @@ class CodeRecord(Record):
 
     @staticmethod
     def _translate_condition(c):
-        sign_dict = {'>': '.GT.', '<': '.LT.', '>=': '.GE.', '<=': '.LE.'}
-        if str(c).startswith('Eq'):
-            c_split = re.split('[(,) ]', str(c))
-            c_clean = [item for item in c_split if item != '' and item != 'Eq']
-            c_transl = '.EQ.'.join([c_clean[0], c_clean[1]])
-        else:
-            c_split = str(c).split(' ')
-            c_transl = ''.join([sign_dict.get(symbol, symbol) for symbol in c_split])
-        return c_transl
+        fprn = FortranPrinter(settings={'source_format': 'free'})
+        fortran = fprn.doprint(c).replace(' ', '')
+        return fortran
 
     @staticmethod
     def _translate_sympy_sign(s):
