@@ -621,6 +621,11 @@ def test_nested_block_if(parser):
             sympy.Piecewise((0, sympy.Ne(S('Y'), 1)), (1, True)),
             '\nIF (Y.NE.1) THEN\nX = 0\nELSE\nX = 1\nEND IF\n',
         ),
+        (
+            S('X'),
+            sympy.Piecewise((0, sympy.Ne(S('Y'), 1)), (2, sympy.Eq(S('Y'), 15)), (1, True)),
+            '\nIF (Y.NE.1) THEN\nX = 0\nELSE IF (Y.EQ.15) THEN\nX = 2\nELSE\nX = 1\nEND IF\n',
+        ),
     ],
 )
 def test_translate_sympy_piecewise(parser, symbol, expression, buf_expected):

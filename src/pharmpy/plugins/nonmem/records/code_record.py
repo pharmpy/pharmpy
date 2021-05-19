@@ -380,26 +380,22 @@ class CodeRecord(Record):
         return statement_str
 
     def _translate_sympy_block(self, symbol, expression):
-        statement_str = 'IF '
-
         for i, e in enumerate(expression):
             value = e[0]
             condition = e[1]
 
             condition_translated = self._translate_condition(condition)
 
-            if condition_translated == '.true.':
-                statement_str = re.sub('ELSE IF ', 'ELSE', statement_str)
+            if i == 0:
+                statement_str = f'IF ({condition_translated}) THEN\n'
+            elif condition_translated == '.true.':
+                statement_str += 'ELSE\n'
             else:
-                statement_str += f'({condition_translated}) THEN'
+                statement_str += f'ELSE IF ({condition_translated}) THEN\n'
 
-            statement_str += f'\n{symbol} = {value}\n'
+            statement_str += f'{symbol} = {value}\n'
 
-            if i < len(expression) - 1:
-                statement_str += 'ELSE IF '
-            else:
-                statement_str += 'END IF'
-
+        statement_str += 'END IF'
         return statement_str
 
     @staticmethod
