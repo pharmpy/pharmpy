@@ -21,6 +21,11 @@ from .record import Record
 
 
 class FortranPrinter(sympy.printing.fortran.FCodePrinter):
+    # Differences from FCodePrinter in sympy
+    # 1. Upper case
+    # 2. Use Fortran 77 names for relationals
+    # 3. Use default kind for reals (which will be translated to double kind by NMTRAN)
+    # All these could be submitted as options to the sympy printer
     _relationals = {
         '<=': '.LE.',
         '>=': '.GE.',
@@ -346,6 +351,7 @@ class CodeRecord(Record):
         )
         if has_added_else:
             expression = expression[0:-1]
+        has_else = expression[-1][1] is sympy.true
 
         expressions, _ = zip(*expression)
 
@@ -356,7 +362,7 @@ class CodeRecord(Record):
 
             statement_str = f'IF ({condition_translated}) {symbol} = {value}'
             return statement_str
-        elif all(len(e.args) == 0 for e in expressions):
+        elif all(len(e.args) == 0 for e in expressions) and not has_else:
             return self._translate_sympy_single(symbol, expression)
         else:
             return self._translate_sympy_block(symbol, expression)

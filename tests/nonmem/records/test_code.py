@@ -616,13 +616,17 @@ def test_nested_block_if(parser):
             sympy.Piecewise((0, sympy.And(sympy.Ne(S('Y'), 1), sympy.Ne(S('K'), 2)))),
             '\nIF (K.NE.2.AND.Y.NE.1) X = 0\n',
         ),
+        (
+            S('X'),
+            sympy.Piecewise((0, sympy.Ne(S('Y'), 1)), (1, True)),
+            '\nIF (Y.NE.1) THEN\nX = 0\nELSE\nX = 1\nEND IF\n',
+        ),
     ],
 )
 def test_translate_sympy_piecewise(parser, symbol, expression, buf_expected):
     buf_original = '$PRED\nY = THETA(1) + ETA(1) + EPS(1)\n'
     rec = parser.parse(buf_original).records[0]
     s = Assignment(symbol, expression)
-    print("YY", expression)
     statements = rec.statements
     statements.append(s)
     rec.statements = statements
