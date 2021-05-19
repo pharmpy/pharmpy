@@ -303,3 +303,32 @@ def set_weighted_error_model(model):
     stats.reassign(y, f + sympy.Symbol('W') * sympy.Symbol(epsilons[0].name))
     model.remove_unused_parameters_and_rvs()
     return model
+
+
+def set_dtbs_error(model):
+    """Dynamic transform both sides"""
+    theta_as_stdev(model)
+    set_weighted_error_model(model)
+    stats, y, f = _preparations(model)
+    tbs_lambda = Parameter('tbs_lambda', 1)
+    tbs_zeta = Parameter('tbs_zeta', 0.001)
+    model.parameters.append(tbs_lambda)
+    model.parameters.append(tbs_zeta)
+    lam = tbs_lambda.symbol
+    zeta = tbs_zeta.symbol
+
+    for i, s in enumerate(stats):
+        if isinstance(s, Assignment) and s.symbol == sympy.Symbol('W'):
+            break
+
+    stats.insert(i + 1, Assignment('W', (f ** zeta) * sympy.Symbol('W')))
+    ipred = sympy.Piecewise(
+        ((f ** lam - 1) / lam, sympy.And(sympy.Ne(lam, 0), sympy.Ne(f, 0))),
+        (sympy.log(f), sympy.And(sympy.Eq(lam, 0), sympy.Ne(f, 0))),
+        (-1 / lam, sympy.And(sympy.Eq(lam, 0), sympy.Eq(f, 0))),
+        (-1000000000, True),
+    )
+    stats.insert(i + 2, Assignment('IPRED', ipred))
+    yexpr = stats.find_assignment(y.name)
+    yexpr.subs({f: sympy.Symbol('IPRED')})
+    return model

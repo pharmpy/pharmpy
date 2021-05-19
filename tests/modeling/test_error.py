@@ -10,6 +10,7 @@ from pharmpy.modeling import (
     proportional_error,
     read_model_from_string,
     remove_error,
+    set_dtbs_error,
     set_weighted_error_model,
     theta_as_stdev,
 )
@@ -450,5 +451,62 @@ $OMEGA 0.031128  ; IVV
 $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION
 """
+    assert str(model) == correct
 
+
+def test_set_dtbs_error():
+    code = """$PROBLEM PHENOBARB SIMPLE MODEL
+$DATA pheno.dta IGNORE=@
+$INPUT ID TIME AMT WGT APGR DV
+$SUBROUTINE ADVAN1 TRANS2
+$PK
+CL=THETA(1)*EXP(ETA(1))
+V=THETA(2)*EXP(ETA(2))
+$ERROR
+CONC=A(1)/V
+Y=CONC+CONC*EPS(1)+EPS(2)
+$THETA (0,0.00469307) ; TVCL
+$THETA (0,1.00916) ; TVV
+$OMEGA 0.0309626  ; IVCL
+$OMEGA 0.031128  ; IVV
+$SIGMA 0.013241
+$SIGMA 0.013241
+$ESTIMATION METHOD=1 INTERACTION
+"""
+    model = read_model_from_string(code)
+    set_dtbs_error(model)
+    model.update_source()
+
+    correct = """$PROBLEM PHENOBARB SIMPLE MODEL
+$DATA pheno.dta IGNORE=@
+$INPUT ID TIME AMT WGT APGR DV
+$SUBROUTINE ADVAN1 TRANS2
+$PK
+CL=THETA(1)*EXP(ETA(1))
+V=THETA(2)*EXP(ETA(2))
+$ERROR
+CONC=A(1)/V
+W = SQRT(CONC**2*THETA(3)**2 + THETA(4)**2)
+W = CONC**THETA(6)*W
+IF (CONC.NE.0.AND.THETA(5).NE.0) THEN
+IPRED = (CONC**THETA(5) - 1)/THETA(5)
+ELSE IF (THETA(5).EQ.0.AND.CONC.NE.0) THEN
+IPRED = LOG(CONC)
+ELSE IF (CONC.EQ.0.AND.THETA(5).EQ.0) THEN
+IPRED = -1/THETA(5)
+ELSE
+IPRED = -1000000000
+END IF
+Y = IPRED + EPS(1)*W
+$THETA (0,0.00469307) ; TVCL
+$THETA (0,1.00916) ; TVV
+$THETA  (0,0.11506954418958998) ; SD_EPS(1)
+$THETA  (0,0.11506954418958998) ; SD_EPS(2)
+$THETA  1 ; tbs_lambda
+$THETA  0.001 ; tbs_zeta
+$OMEGA 0.0309626  ; IVCL
+$OMEGA 0.031128  ; IVV
+$SIGMA 1 FIX
+$ESTIMATION METHOD=1 INTERACTION
+"""
     assert str(model) == correct

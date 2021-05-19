@@ -22,6 +22,7 @@ from pharmpy.modeling.error import (
     has_proportional_error,
     proportional_error,
     remove_error,
+    set_dtbs_error,
     set_weighted_error_model,
     theta_as_stdev,
 )
@@ -110,4 +111,5 @@ __all__ = [
     'convert_model',
     'theta_as_stdev',
     'set_weighted_error_model',
+    'set_dtbs_error',
 ]
