@@ -7,7 +7,7 @@ from pharmpy.tools.workflows import Task, Workflow
 
 
 def create_workflow(models):
-    wf = Workflow(models=models)
+    wf = Workflow()
     task_names, execute_tasks = [], []
 
     for i, model in enumerate(models):
@@ -17,15 +17,19 @@ def create_workflow(models):
     wf.add_tasks(execute_tasks)
     wf.add_tasks(Task('results', results, task_names))
 
+    infiles, outfiles = [], {}
+
     for i, model in enumerate(models):
-        wf.add_infiles(model.dataset_path, destination=f'NONMEM_run{i}')
-        wf.add_outfiles(
-            [
-                f'NONMEM_run{i}/{model.name}.lst',
-                f'NONMEM_run{i}/{model.name}.ext',
-                f'NONMEM_run{i}/{model.name}.phi',
-            ]
-        )
+        infiles.append((model.dataset_path, f'NONMEM_run{i}'))
+        outfiles[model] = [
+            f'NONMEM_run{i}/{model.name}.lst',
+            f'NONMEM_run{i}/{model.name}.ext',
+            f'NONMEM_run{i}/{model.name}.phi',
+        ]
+
+    wf.add_infiles(infiles)
+    wf.add_outfiles(outfiles)
+
     return wf
 
 

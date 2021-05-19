@@ -1,17 +1,28 @@
 class Workflow:
-    def __init__(self, tasks=None, models=None):
+    def __init__(self, tasks=None):
         self.tasks = []
         if tasks:
             self.add_tasks(tasks)
-        self.models = models
         self.infiles = []
-        self.outfiles = []
+        self.outfiles = {}
 
     def add_tasks(self, tasks):
         if isinstance(tasks, list):
             self.tasks.extend(tasks)
         else:
             self.tasks.append(tasks)
+
+    def add_infiles(self, infile_new):
+        if isinstance(infile_new, list):
+            self.infiles.extend(infile_new)
+        elif isinstance(infile_new, tuple):
+            self.infiles.append(infile_new)
+        else:
+            self.infiles.append((infile_new, '.'))
+
+    def add_outfiles(self, outfiles):
+        # TODO: cover cases when same model have added outfiles
+        self.outfiles = {**self.outfiles, **outfiles}
 
     def as_dict(self):
         as_dict = dict()
@@ -29,11 +40,18 @@ class Workflow:
                 return task
         return None
 
-    def add_infiles(self, source, destination='.'):
-        self.infiles.append((source, destination))
+    def merge_workflows(self, other):
+        self.add_tasks(other.tasks)
+        self.add_infiles(other.infiles)
+        self.add_outfiles(other.outfiles)
 
-    def add_outfiles(self, outfiles):
-        self.outfiles.append(outfiles)
+    def __str__(self):
+        tasks_str = '\n'.join([str(task) for task in self.tasks])
+        infiles_str = '\n'.join([f'{source},{destination}' for source, destination in self.infiles])
+        outfiles_str = '\n'.join(
+            [f'{model.name},{outfile}' for model, outfile in self.outfiles.items()]
+        )
+        return f'Tasks:\n{tasks_str}\nInfiles:\n{infiles_str}\nOutfiles:\n{outfiles_str}'
 
 
 class Task:

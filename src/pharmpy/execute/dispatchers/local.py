@@ -18,7 +18,7 @@ class LocalDispatcher(ExecutionDispatcher):
                 shutil.copy2(source, dest_path)
             with TemporaryDirectoryChanger(temppath):
                 results = run(workflow.as_dict())
-            for model, files in zip(workflow.models, workflow.outfiles):
+            for model, files in workflow.outfiles.items():
                 for f in files:
                     database.store_local_file(model, temppath / f)
             return results
