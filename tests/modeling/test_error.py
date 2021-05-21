@@ -479,7 +479,6 @@ $ESTIMATION METHOD=1 INTERACTION
     set_dtbs_error(model)
 
     with Patcher(additional_skip_names=['pkgutil']) as patcher:
-        fs = patcher.fs
         model.update_source()
         with open('run1_contr.f90') as fh:
             assert fh.readline().startswith('      subroutine contr')
