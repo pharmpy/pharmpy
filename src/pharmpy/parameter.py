@@ -272,6 +272,30 @@ class Parameters(MutableSequence):
         else:
             return self.to_dataframe().to_html()
 
+    def simplify(self, expr):
+        """Simplify expression given constraints of parameters"""
+        d = dict()
+        for p in self._params:
+            if p.fix:
+                s = sympy.Float(p.init)
+            elif p.upper < 0:
+                s = sympy.Symbol(p.name, real=True, negative=True)
+                d[s] = p.symbol
+            elif p.upper <= 0:
+                s = sympy.Symbol(p.name, real=True, nonpositive=True)
+                d[s] = p.symbol
+            elif p.lower > 0:
+                s = sympy.Symbol(p.name, real=True, positive=True)
+                d[s] = p.symbol
+            elif p.lower >= 0:
+                s = sympy.Symbol(p.name, real=True, nonnegative=True)
+                d[s] = p.symbol
+            else:
+                s = p.symbol
+            expr = expr.subs(p.symbol, s)
+        simp = sympy.simplify(expr)  # Subs symbols back to non-constrained
+        return simp.subs(d)
+
 
 class Parameter:
     """A single parameter
