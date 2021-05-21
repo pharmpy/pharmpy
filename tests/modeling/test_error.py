@@ -475,11 +475,16 @@ $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION
 """
     model = read_model_from_string(code)
+    model.name = 'run1'
     set_dtbs_error(model)
 
     with Patcher(additional_skip_names=['pkgutil']) as patcher:
         fs = patcher.fs
         model.update_source()
+        with open('run1_contr.f90') as fh:
+            assert fh.readline().startswith('      subroutine contr')
+        with open('run1_ccontra.f90') as fh:
+            assert fh.readline().startswith('      subroutine ccontr')
 
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
