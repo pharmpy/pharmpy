@@ -291,7 +291,8 @@ class Parameters(MutableSequence):
                 s = sympy.Symbol(p.name, real=True, nonnegative=True)
                 d[s] = p.symbol
             else:
-                s = p.symbol
+                s = sympy.Symbol(p.name, real=True)
+                d[s] = p.symbol
             expr = expr.subs(p.symbol, s)
         simp = sympy.simplify(expr)  # Subs symbols back to non-constrained
         return simp.subs(d)
