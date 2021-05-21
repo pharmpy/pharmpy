@@ -1,4 +1,5 @@
 from io import StringIO
+from pyfakefs.fake_filesystem_unittest import Patcher
 
 from pharmpy import Model
 from pharmpy.modeling import (
@@ -475,7 +476,10 @@ $ESTIMATION METHOD=1 INTERACTION
 """
     model = read_model_from_string(code)
     set_dtbs_error(model)
-    model.update_source()
+
+    with Patcher(additional_skip_names=['pkgutil']) as patcher:
+        fs = patcher.fs
+        model.update_source()
 
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
