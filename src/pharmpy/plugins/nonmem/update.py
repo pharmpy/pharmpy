@@ -2,6 +2,7 @@ import copy
 import itertools
 import re
 import warnings
+from pathlib import Path
 
 import numpy as np
 import sympy
@@ -859,3 +860,61 @@ def update_estimation(model):
         model.control_stream.remove_records(covrecs)
 
     model._old_estimation_steps = copy.deepcopy(new)
+
+
+def update_ccontra(model, path=None, force=False):
+    h = model.observation_transformation
+    y = model.dependent_variable
+    dhdy = sympy.diff(h, y)
+    ll = -2 * sympy.log(dhdy)
+    ll = ll.subs(y, sympy.Symbol('y', real=True, positive=True))
+    ll = model.parameters.simplify(ll)
+    ll = ll.subs(sympy.Symbol('y', real=True, positive=True), y)
+
+    # FIXME: break out into method to get path
+    if path is None:
+        path = Path('.')
+    else:
+        path = path.parent
+    contr_path = path / f'{model.name}_contr.f90'
+    ccontr_path = path / f'{model.name}_ccontra.f90'
+
+    contr = """      subroutine contr (icall,cnt,ier1,ier2)
+      double precision cnt
+      call ncontr (cnt,ier1,ier2,l2r)
+      return
+      end
+"""
+    with open(contr_path, 'w') as fh:
+        fh.write(contr)
+
+    ccontr1 = """      subroutine ccontr (icall,c1,c2,c3,ier1,ier2)
+      USE ROCM_REAL,   ONLY: theta=>THETAC,y=>DV_ITM2
+      USE NM_INTERFACE,ONLY: CELS
+      double precision c1,c2,c3,w,one,two
+      dimension c2(:),c3(:,:)
+      if (icall.le.1) return
+      w=y(1)
+
+"""
+
+    ccontr2 = """
+      call cels (c1,c2,c3,ier1,ier2)
+      y(1)=w
+"""
+
+    ccontr3 = """
+      return
+      end
+"""
+
+    with open(ccontr_path, 'w') as fh:
+        fh.write(ccontr1)
+        e1 = sympy.printing.fortran.fcode(h.subs(y, sympy.Symbol('y(1)')), assign_to='y(1)')
+        fh.write(e1)
+        fh.write(ccontr2)
+        e2 = sympy.printing.fortran.fcode(
+            sympy.Symbol('c1') + ll.subs(y, sympy.Symbol('y(1)')), assign_to='c1'
+        )
+        fh.write(e2)
+        fh.write(ccontr3)

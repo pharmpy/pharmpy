@@ -33,7 +33,7 @@ def canonicalize_data_transformation(model, value):
         if value.free_symbols != {model.dependent_variable}:
             raise ValueError(
                 f"Expression for data transformation must contain the dependent variable "
-                f"{model.dependent_variable} on no other variables"
+                f"{model.dependent_variable} and no other variables"
             )
     return value
 
@@ -79,6 +79,7 @@ class Model:
 
     @property
     def data_transformation(self):
+        """Transformation used for DV in dataset"""
         try:
             return self._data_transformation
         except AttributeError:

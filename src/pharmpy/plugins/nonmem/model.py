@@ -24,6 +24,7 @@ from .nmtran_parser import NMTranParser
 from .records.factory import create_record
 from .update import (
     update_abbr_record,
+    update_ccontra,
     update_estimation,
     update_parameters,
     update_random_variables,
@@ -57,6 +58,8 @@ class Model(pharmpy.model.Model):
         self._modelfit_results = None
         self.dependent_variable = S('Y')
         self.individual_prediction_symbol = S('CIPREDI')
+        self.observation_transformation = self.dependent_variable
+        self._old_observation_transformation = self.dependent_variable
 
     @property
     def name(self):
@@ -143,6 +146,10 @@ class Model(pharmpy.model.Model):
 
         self._update_sizes()
         update_estimation(self)
+
+        if self.observation_transformation != self._old_observation_transformation:
+            if not nofiles:
+                update_ccontra(self, path, force)
 
         super().update_source()
 
