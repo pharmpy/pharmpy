@@ -1,4 +1,5 @@
 from io import StringIO
+
 from pyfakefs.fake_filesystem_unittest import Patcher
 
 from pharmpy import Model
@@ -478,7 +479,7 @@ $ESTIMATION METHOD=1 INTERACTION
     model.name = 'run1'
     set_dtbs_error(model)
 
-    with Patcher(additional_skip_names=['pkgutil']) as patcher:
+    with Patcher(additional_skip_names=['pkgutil']):
         model.update_source()
         with open('run1_contr.f90') as fh:
             assert fh.readline().startswith('      subroutine contr')
