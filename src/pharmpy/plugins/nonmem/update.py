@@ -871,6 +871,10 @@ def update_ccontra(model, path=None, force=False):
     ll = model.parameters.simplify(ll)
     ll = ll.subs(sympy.Symbol('y', real=True, positive=True), y)
 
+    tr = model.parameter_translation(reverse=True, remove_idempotent=True, as_symbols=True)
+    ll = ll.subs(tr)
+    h = h.subs(tr)
+
     # FIXME: break out into method to get path
     if path is None:
         path = Path('.')
