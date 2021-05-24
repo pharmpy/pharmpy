@@ -54,26 +54,21 @@ If this configuration is not specified, all are set to True.
 
 import contextlib
 import io
-import os
 import json
+import os
 import warnings
 
+import altair as alt
 import jinja2
-
+from altair.utils.execeval import eval_block
 from docutils import nodes
 from docutils.parsers.rst import Directive
 from docutils.parsers.rst.directives import flag, unchanged
-
 from sphinx.locale import _
-
-import altair as alt
-from altair.utils.execeval import eval_block
 
 # These default URLs can be changed in conf.py; see setup() below.
 VEGA_JS_URL_DEFAULT = "https://cdn.jsdelivr.net/npm/vega@{}".format(alt.VEGA_VERSION)
-VEGALITE_JS_URL_DEFAULT = "https://cdn.jsdelivr.net/npm/vega-lite@{}".format(
-    alt.VEGALITE_VERSION
-)
+VEGALITE_JS_URL_DEFAULT = "https://cdn.jsdelivr.net/npm/vega-lite@{}".format(alt.VEGALITE_VERSION)
 VEGAEMBED_JS_URL_DEFAULT = "https://cdn.jsdelivr.net/npm/vega-embed@{}".format(
     alt.VEGAEMBED_VERSION
 )
@@ -154,9 +149,7 @@ class AltairPlotDirective(Directive):
         if not hasattr(env, "_altair_namespaces"):
             env._altair_namespaces = {}
         namespace_id = self.options.get("namespace", "default")
-        namespace = env._altair_namespaces.setdefault(env.docname, {}).setdefault(
-            namespace_id, {}
-        )
+        namespace = env._altair_namespaces.setdefault(env.docname, {}).setdefault(namespace_id, {})
 
         code = "\n".join(self.content)
 
@@ -186,9 +179,7 @@ class AltairPlotDirective(Directive):
         plot_node["relpath"] = os.path.relpath(rst_dir, env.srcdir)
         plot_node["rst_source"] = rst_source
         plot_node["rst_lineno"] = self.lineno
-        plot_node["links"] = self.options.get(
-            "links", app.builder.config.altairplot_links
-        )
+        plot_node["links"] = self.options.get("links", app.builder.config.altairplot_links)
         plot_node["output"] = self.options.get("output", "plot")
         plot_node["chart-var-name"] = self.options.get("chart-var-name", None)
 
@@ -218,18 +209,14 @@ def html_visit_altair_plot(self, node):
     except Exception as e:
         warnings.warn(
             "altair-plot: {}:{} Code Execution failed:"
-            "{}: {}".format(
-                node["rst_source"], node["rst_lineno"], e.__class__.__name__, str(e)
-            )
+            "{}: {}".format(node["rst_source"], node["rst_lineno"], e.__class__.__name__, str(e))
         )
         raise nodes.SkipNode
 
     chart_name = node["chart-var-name"]
     if chart_name is not None:
         if chart_name not in namespace:
-            raise ValueError(
-                "chart-var-name='{}' not present in namespace" "".format(chart_name)
-            )
+            raise ValueError("chart-var-name='{}' not present in namespace" "".format(chart_name))
         chart = namespace[chart_name]
 
     output = node["output"]
@@ -318,9 +305,7 @@ def setup(app):
 
     app.add_config_value("altairplot_vega_js_url", VEGA_JS_URL_DEFAULT, "html")
     app.add_config_value("altairplot_vegalite_js_url", VEGALITE_JS_URL_DEFAULT, "html")
-    app.add_config_value(
-        "altairplot_vegaembed_js_url", VEGAEMBED_JS_URL_DEFAULT, "html"
-    )
+    app.add_config_value("altairplot_vegaembed_js_url", VEGAEMBED_JS_URL_DEFAULT, "html")
 
     app.add_directive("altair-plot", AltairPlotDirective)
 
