@@ -141,6 +141,17 @@ def parse_runtable_block(block, parcov_dictionary=None, included_relations=None)
     else:
         raise NotImplementedError('Unsupported runtable header string')
 
+    # First column might be wider than 16 characters. Must be padded in that case
+    lens = []
+    for line in block:
+        a = line.split(maxsplit=1)
+        lens.append(len(a[0]))
+    maxlen = max(lens)
+    if maxlen > 16:
+        for i, length in enumerate(lens):
+            collen = 16 if length < 16 else length
+            block[i] = block[i][:length] + (maxlen - collen) * ' ' + block[i][length:]
+
     rawtable = pd.read_fwf(
         StringIO(str.join('', block)),
         skiprows=1,
@@ -149,7 +160,6 @@ def parse_runtable_block(block, parcov_dictionary=None, included_relations=None)
         true_values=['YES!'],
         na_values=['FAILED'],
     )
-
     if len(rawtable.base.unique()) > 1:
         rawtable = split_merged_base_and_new_ofv(rawtable)
 
