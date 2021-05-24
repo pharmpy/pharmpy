@@ -15,12 +15,12 @@ entrypoints==0.3
 fsspec==2021.5.0
 idna==2.10
 imagesize==1.2.0
-Jinja2==2.11.3
+Jinja2==3.0.1
 jsonschema==3.2.0
 lark-parser==0.11.3
 locket==0.2.1
 lxml==4.6.3
-MarkupSafe==1.1.1
+MarkupSafe==2.0.1
 mpmath==1.2.1
 networkx==2.5
 numexpr==2.7.3
@@ -39,7 +39,7 @@ scipy==1.6.3
 six==1.16.0
 snowballstemmer==2.1.0
 soupsieve==2.2.1
-Sphinx==3.4.3
+Sphinx==4.0.2
 sphinxcontrib-applehelp==1.0.2
 sphinxcontrib-devhelp==1.0.2
 sphinxcontrib-htmlhelp==2.0.0

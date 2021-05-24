@@ -1,4 +1,6 @@
-extensions = ['altair.sphinxext.altairplot']
+#See issue #20
+#extensions = ['altair.sphinxext.altairplot']
+extensions = ['pharmpy.reporting.altairplot']
 html_sidebars = {
     '**': ['localtoc.html'],
 }
