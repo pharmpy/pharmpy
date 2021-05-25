@@ -1,3 +1,15 @@
+0.24.0 (2021-05-25)
+-------------------
+
+* Added theta_as_stdev, set_weighted_error_model and set_dtbs_error
+* Error models can be added with log transformed DV using `data_trans` option 
+* Added model attributes data_transformation and observation_transformation
+* Protected functions in NM-TRAN translated to Piecewise. Should now give the
+  same result as when evalutated by NONMEM.
+* Bugfixes for frem, scm and bootstrap results generation
+* Rename model attribute dependent_variable_symbol to dependent_variable
+* Added simplify method on Parameter class to simplify expressions given parameter constraints
+
 0.23.4 (2021-05-03)
 -------------------
 
