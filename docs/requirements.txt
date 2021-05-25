@@ -1,4 +1,4 @@
-pydata-sphinx-theme==0.5.2
+pydata-sphinx-theme==0.6.3
 sphinxcontrib-autoprogram>=0.1.7
 jupyter-sphinx
 markdown
