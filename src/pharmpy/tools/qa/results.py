@@ -22,6 +22,7 @@ class QAResults(Results):
         influential_individuals=None,
         covariate_effects=None,
         univariate_sum=None,
+        residual_error=None,
     ):
         self.dofv = dofv
         self.fullblock_parameters = fullblock_parameters
@@ -32,6 +33,7 @@ class QAResults(Results):
         self.influential_individuals = influential_individuals
         self.covariate_effects = covariate_effects
         self.univariate_sum = univariate_sum
+        self.residual_error = residual_error
 
 
 def calculate_results(
@@ -46,6 +48,7 @@ def calculate_results(
     frem_results=None,
     cdd_results=None,
     scm_results=None,
+    resmod_idv_results=None,
 ):
     fullblock_table, fullblock_dofv = calc_fullblock(original_model, fullblock_model)
     boxcox_table, boxcox_dofv = calc_transformed_etas(
@@ -57,6 +60,8 @@ def calculate_results(
     frem_dofv = calc_frem_dofv(base_model, fullblock_model, frem_results)
     univariate_sum, scm_table, scm_dofv = calc_scm_dofv(scm_results)
     infinds, cdd_dofv = influential_individuals(cdd_results)
+    resmodtab, resmod_dofv = resmod(resmod_idv_results)
+
     dofv_table = pd.concat(
         [
             fullblock_dofv,
@@ -67,6 +72,7 @@ def calculate_results(
             frem_dofv,
             scm_dofv,
             cdd_dofv,
+            resmod_dofv,
         ]
     )
     dofv_table.set_index(['section', 'run'], inplace=True)
@@ -80,6 +86,7 @@ def calculate_results(
         influential_individuals=infinds,
         covariate_effects=scm_table,
         univariate_sum=univariate_sum,
+        residual_error=resmodtab,
     )
     return res
 
@@ -110,6 +117,48 @@ def influential_individuals(cdd_res):
         }
     )
     return influentials, dofv_tab
+
+
+def resmod(res):
+    dofv_tab = pd.DataFrame(
+        {
+            'section': ['residual_error_model'],
+            'run': ['1'],
+            'dofv': [np.nan],
+            'df': [np.nan],
+        }
+    )
+    if res is None:
+        return None, dofv_tab
+
+    df = res.models.copy()
+    df = df.droplevel([0, 1])
+    df['dOFV'] = -df['dOFV']
+    df.drop(['idv_varying_RUV', 'idv_varying_combined', 'idv_varying_theta'], inplace=True)
+
+    # Select the best idv_varying cut
+    idvvar = df.index.str.startswith("idv_varying")
+    best_timevar_idx = df.loc[idvvar]['dOFV'].idxmax()
+    for name in df.loc[idvvar].index:
+        if name != best_timevar_idx:
+            df.drop(name, inplace=True)
+    df.rename(index={best_timevar_idx: 'time_varying'}, inplace=True)
+
+    df.sort_values(by='dOFV', ascending=False, inplace=True)
+    n = df['parameters'].apply(lambda x: len(x))
+    df.insert(1, 'additional_parameters', n)
+    df.loc['time_varying', 'additional_parameters'] = 2
+
+    dofv_tab = pd.DataFrame(
+        {
+            'section': ['residual_error_model'] * 2,
+            'run': list(df.index[:2]),
+            'dofv': list(df['dOFV'].iloc[:2]),
+            'df': list(df['additional_parameters'].iloc[:2]),
+        }
+    )
+
+    return df, dofv_tab
 
 
 def calc_iov(original_model, iov_model):
@@ -394,6 +443,13 @@ def psn_qa_results(path):
     else:
         etas_added_to = args['add_etas'].split(',')
 
+    idv = args.get('resmod_idv', 'TIME')
+    resmod_idv_path = path / f'resmod_{idv}' / 'results.json'
+    if resmod_idv_path.is_file():
+        resmod_idv_res = read_results(resmod_idv_path)
+    else:
+        resmod_idv_res = None
+
     res = calculate_results(
         original_model,
         base_model,
@@ -406,5 +462,6 @@ def psn_qa_results(path):
         frem_results=frem_res,
         cdd_results=cdd_res,
         scm_results=scm_res,
+        resmod_idv_results=resmod_idv_res,
     )
     return res

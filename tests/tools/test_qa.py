@@ -123,3 +123,21 @@ ETA(2),WGT,0.00887,-0.003273
     pd.testing.assert_frame_equal(res.covariate_effects, correct, atol=1e-6)
     assert res.dofv['dofv']['covariates', 'ET1APGR-2'] == pytest.approx(2.48792)
     assert res.dofv['df']['covariates', 'ET1APGR-2'] == 1
+
+
+def test_resmod(testdata):
+    orig = Model(testdata / 'nonmem' / 'pheno.mod')
+    base = Model(testdata / 'nonmem' / 'qa' / 'pheno_linbase.mod')
+    resmod_res = read_results(testdata / 'nonmem' / 'qa' / 'resmod_results.json')
+    res = calculate_results(orig, base, resmod_idv_results=resmod_res)
+    assert list(res.residual_error['additional_parameters']) == [2, 2, 1, 1, 1, 1]
+    assert list(res.residual_error['dOFV']) == [13.91, 8.03, 5.53, 3.34, 1.31, 0.03]
+    assert list(res.residual_error.index) == [
+        'dtbs',
+        'time_varying',
+        'tdist',
+        'autocorrelation',
+        'IIV_on_RUV',
+        'power',
+    ]
+    assert res.dofv['dofv']['residual_error_model', 'dtbs'] == pytest.approx(13.91)

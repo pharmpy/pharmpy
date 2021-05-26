@@ -31,7 +31,7 @@ def psn_resmod_results(path):
         for i in range(4, len(row)):
             if row[i] is not None:
                 a = row[i].split('=')
-                d[a[0]] = a[1]
+                d[a[0]] = float(a[1])
         parameters[rowind] = d
     parameters.index = df2.index
     df2['parameters'] = parameters
