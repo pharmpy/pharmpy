@@ -124,6 +124,11 @@ def read_results(path_or_buf):
         from pharmpy.tools.linearize import LinearizeResults
 
         res = LinearizeResults.from_dict(d)
+    elif decoder.cls == 'ResmodResults':
+        from pharmpy.tools.resmod import ResmodResults
+
+        res = ResmodResults.from_dict(d)
+
     return res
 
 

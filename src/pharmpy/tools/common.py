@@ -65,6 +65,11 @@ def create_results(path, **kwargs):
         from pharmpy.tools.linearize.results import psn_linearize_results
 
         res = psn_linearize_results(path, **kwargs)
+    elif name == 'resmod':
+        from pharmpy.tools.resmod.results import psn_resmod_results
+
+        res = psn_resmod_results(path, **kwargs)
+
     elif name == 'scm':
         from pharmpy.tools.scm.results import psn_scm_results
 
