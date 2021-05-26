@@ -646,6 +646,16 @@ def results_linearize(args):
     res.to_csv(path=args.psn_dir / 'results.csv')
 
 
+def results_resmod(args):
+    from pharmpy.tools.resmod.results import psn_resmod_results
+
+    if not args.psn_dir.is_dir():
+        error(FileNotFoundError(str(args.psn_dir)))
+    res = psn_resmod_results(args.psn_dir)
+    res.to_json(path=args.psn_dir / 'results.json')
+    res.to_csv(path=args.psn_dir / 'results.csv')
+
+
 def results_scm(args):
     from pharmpy.tools.scm.results import psn_scm_results
 
@@ -1513,6 +1523,21 @@ parser_definition = [
                                 'metavar': 'PsN directory',
                                 'type': pathlib.Path,
                                 'help': 'Path to PsN run directory',
+                            }
+                        ],
+                    }
+                },
+                {
+                    'resmod': {
+                        'help': 'Generate resmod results',
+                        'description': 'Generate results from a PsN resmod run',
+                        'func': results_resmod,
+                        'args': [
+                            {
+                                'name': 'psn_dir',
+                                'metavar': 'PsN directory',
+                                'type': pathlib.Path,
+                                'help': 'Path to PsN resmod run directory',
                             }
                         ],
                     }
