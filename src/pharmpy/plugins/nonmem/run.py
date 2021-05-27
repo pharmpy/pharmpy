@@ -11,33 +11,23 @@ def create_workflow(models):
     task_names, execute_tasks = [], []
 
     for i, model in enumerate(models):
-        execute_tasks.append(Task(f'run-{i}', execute_model, (model, i)))
-        task_names.append(f'run-{i}')
+        task = Task(f'run-{i}', execute_model, [model, i])
+        execute_tasks.append(task)
+        task_names.append(task.task_id)
 
     wf.add_tasks(execute_tasks)
-    wf.add_tasks(Task('results', results, task_names))
-
-    infiles, outfiles = [], {}
-
-    for i, model in enumerate(models):
-        infiles.append((model.dataset_path, f'NONMEM_run{i}'))
-        outfiles[model] = [
-            f'NONMEM_run{i}/{model.name}.lst',
-            f'NONMEM_run{i}/{model.name}.ext',
-            f'NONMEM_run{i}/{model.name}.phi',
-        ]
-
-    wf.add_infiles(infiles)
-    wf.add_outfiles(outfiles)
+    wf.add_tasks(Task('fit_results', results, [task_names]))
 
     return wf
 
 
 def execute_model(model, i):
-    path = Path(f'NONMEM_run{i}').resolve()
+    path = Path.cwd() / f'NONMEM_run{i}'
+    path.mkdir(parents=True, exist_ok=True)
     model = model.copy()
-    model.update_source()
-    model.dataset_path = model.dataset_path.name  # Make path in $DATA local
+    model.update_source(nofiles=True)
+    datapath = model.dataset.pharmpy.write_csv(path=path)
+    model.dataset_path = datapath.name  # Make path in $DATA local
     model.write(path=path, force=True)
     args = [
         nmfe_path(),

@@ -1,10 +1,11 @@
+import uuid
+
+
 class Workflow:
     def __init__(self, tasks=None):
         self.tasks = []
         if tasks:
             self.add_tasks(tasks)
-        self.infiles = []
-        self.outfiles = {}
 
     def add_tasks(self, tasks):
         if isinstance(tasks, list):
@@ -12,26 +13,14 @@ class Workflow:
         else:
             self.tasks.append(tasks)
 
-    def add_infiles(self, infile_new):
-        if isinstance(infile_new, list):
-            self.infiles.extend(infile_new)
-        elif isinstance(infile_new, tuple):
-            self.infiles.append(infile_new)
-        else:
-            self.infiles.append((infile_new, '.'))
-
-    def add_outfiles(self, outfiles):
-        # TODO: cover cases when same model have added outfiles
-        self.outfiles = {**self.outfiles, **outfiles}
-
     def as_dict(self):
         as_dict = dict()
         for task in self.tasks:
-            if isinstance(task.task_input, tuple):
-                value = (task.function, *task.task_input)
+            if isinstance(task.task_input, Task):
+                value = (task.function, task.task_input.task_id)
             else:
-                value = (task.function, task.task_input)
-            as_dict[task.name] = value
+                value = (task.function, *task.task_input)
+            as_dict[task.task_id] = value
         return as_dict
 
     def get_task(self, name):
@@ -42,24 +31,36 @@ class Workflow:
 
     def merge_workflows(self, other):
         self.add_tasks(other.tasks)
-        self.add_infiles(other.infiles)
-        self.add_outfiles(other.outfiles)
 
     def __str__(self):
-        tasks_str = '\n'.join([str(task) for task in self.tasks])
-        infiles_str = '\n'.join([f'{source},{destination}' for source, destination in self.infiles])
-        outfiles_str = '\n'.join(
-            [f'{model.name},{outfile}' for model, outfile in self.outfiles.items()]
-        )
-        return f'Tasks:\n{tasks_str}\nInfiles:\n{infiles_str}\nOutfiles:\n{outfiles_str}'
+        return '\n'.join([str(task) for task in self.tasks])
 
 
 class Task:
-    def __init__(self, name, function, task_input, condition=None):
+    def __init__(self, name, function, task_input, final_task=False, condition=None):
         self.name = name
         self.function = function
-        self.task_input = task_input
+        self.task_input = self.format_input(task_input)
+        if not final_task:
+            self.task_id = f'{name}_{uuid.uuid1()}'
+        else:
+            self.task_id = 'results'
         self.condition = condition
+
+    @staticmethod
+    def format_input(task_input):
+        input_formatted = []
+        if isinstance(task_input, str):
+            task_input = [task_input]
+        try:
+            for elem in task_input:
+                if isinstance(elem, Task):
+                    input_formatted.append(elem.task_id)
+                else:
+                    input_formatted.append(elem)
+        except TypeError:
+            input_formatted = [task_input]
+        return input_formatted
 
     def add_condition(self, other):
         if self.condition and not isinstance(self.condition, list):
@@ -67,4 +68,5 @@ class Task:
         self.condition.append(other)
 
     def __str__(self):
-        return f'{self.name}: {self.function}({self.task_input})'
+        input_str = ', '.join([str(type(elem)) for elem in self.task_input])
+        return f'{self.name}: {self.function}({input_str})'
