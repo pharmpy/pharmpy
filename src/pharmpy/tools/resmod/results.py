@@ -22,7 +22,7 @@ def psn_resmod_results(path):
     df[1].fillna(1, inplace=True)
     df.dropna(how='all', axis=1, inplace=True)
     df2 = df[[0, 1, 2, 3]].copy()
-    df2 = df2.astype({0: int, 1: int})
+    df2 = df2.astype({0: int})
     df2.columns = ['iteration', 'DVID', 'model', 'dOFV']
     df2.set_index(['iteration', 'DVID', 'model'], inplace=True)
     parameters = pd.Series(name='parameters', index=df.index, dtype=object)

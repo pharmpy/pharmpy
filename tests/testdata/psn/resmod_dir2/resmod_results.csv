@@ -1,0 +1,107 @@
+Iteration,DVID,Model,dOFV,Parameters
+NA,1,IIV_on_RUV,0.00,%CV=0.100
+NA,1,autocorrelation,-0.74,half-life=0.230
+NA,1,idv_varying_RUV,-18.76,sdeps_0-t1=0.891,sdeps_t1-t2=1.331,sdeps_t2-t3=0.570,sdeps_t3-t4=1.080,sdeps_t4-t5=1.153,sdeps_t5-t6=1.504,sdeps_t6-t7=1.122,sdeps_t7-t8=0.730,sdeps_t8-t9=1.377,sdeps_t9-288=1.840,t1=7.03 ,t2=41.48 ,t3=47.92 ,t4=49.27 ,t5=61.38 ,t6=68.17 ,t7=79.13 ,t8=82.00 ,t9=97.75 
+NA,1,idv_varying_RUV_cutoff0,-1.78,sdeps_0-t0=0.894,sdeps_t0-288=1.287,t0=7.03
+NA,1,idv_varying_RUV_cutoff1,-0.73,sdeps_0-t0=1.085,sdeps_t0-288=1.289,t0=41.48
+NA,1,idv_varying_RUV_cutoff2,-4.84,sdeps_0-t0=0.932,sdeps_t0-288=1.366,t0=47.92
+NA,1,idv_varying_RUV_cutoff3,-4.82,sdeps_0-t0=0.980,sdeps_t0-288=1.388,t0=49.27
+NA,1,idv_varying_RUV_cutoff4,-5.14,sdeps_0-t0=0.991,sdeps_t0-288=1.422,t0=61.38
+NA,1,idv_varying_RUV_cutoff5,-3.00,sdeps_0-t0=1.055,sdeps_t0-288=1.420,t0=68.17
+NA,1,idv_varying_RUV_cutoff6,-3.55,sdeps_0-t0=1.104,sdeps_t0-288=1.479,t0=79.13
+NA,1,idv_varying_RUV_cutoff7,-7.04,sdeps_0-t0=1.062,sdeps_t0-288=1.637,t0=82.00
+NA,1,idv_varying_RUV_cutoff8,-6.46,sdeps_0-t0=1.114,sdeps_t0-288=1.841,t0=97.75
+NA,1,idv_varying_combined,-34.68,sdeps_0-t1=0.891,th_0-t1=0.024,sdeps_t1-t2=0.945,th_t1-t2=0.966,sdeps_t2-t3=0.559,th_t2-t3=-0.080,sdeps_t3-t4=0.834,th_t3-t4=-0.657,sdeps_t4-t5=1.141,th_t4-t5=-0.137,sdeps_t5-t6=1.455,th_t5-t6=0.407,sdeps_t6-t7=1.122,th_t6-t7=0.057,sdeps_t7-t8=0.656,th_t7-t8=0.349,sdeps_t8-t9=1.235,th_t8-t9=-0.580,sdeps_t9-288=1.733,th_t9-288=0.647,t1=7.03 ,t2=41.48 ,t3=47.92 ,t4=49.27 ,t5=61.38 ,t6=68.17 ,t7=79.13 ,t8=82.00 ,t9=97.75 
+NA,1,idv_varying_theta,-15.25,th_0-t1=0.062,th_t1-t2=1.064,th_t2-t3=-0.062,th_t3-t4=-0.656,th_t4-t5=-0.147,th_t5-t6=0.418,th_t6-t7=0.109,th_t7-t8=0.324,th_t8-t9=-0.587,th_t9-288=0.664,t1=7.03 ,t2=41.48 ,t3=47.92 ,t4=49.27 ,t5=61.38 ,t6=68.17 ,t7=79.13 ,t8=82.00 ,t9=97.75 
+NA,1,tdist,-0.92,df=10.051
+NA,2,IIV_on_RUV,-19.44,%CV=43.224
+NA,2,autocorrelation,-22.21,half-life=1.210
+NA,2,idv_varying_RUV,-56.09,sdeps_0-t1=1.388,sdeps_t1-t2=0.276,sdeps_t2-t3=0.364,sdeps_t3-t4=0.420,sdeps_t4-t5=0.167,sdeps_t5-t6=0.306,sdeps_t6-t7=0.657,sdeps_t7-t8=0.207,sdeps_t8-t9=1.230,sdeps_t9-288=0.774,t1=7.03 ,t2=41.48 ,t3=47.92 ,t4=49.27 ,t5=61.38 ,t6=68.17 ,t7=79.13 ,t8=82.00 ,t9=97.75 
+NA,2,idv_varying_RUV_cutoff0,-17.40,sdeps_0-t0=1.420,sdeps_t0-288=0.614,t0=7.03
+NA,2,idv_varying_RUV_cutoff1,-8.23,sdeps_0-t0=1.052,sdeps_t0-288=0.638,t0=41.48
+NA,2,idv_varying_RUV_cutoff2,-3.19,sdeps_0-t0=0.882,sdeps_t0-288=0.661,t0=47.92
+NA,2,idv_varying_RUV_cutoff3,-1.55,sdeps_0-t0=0.822,sdeps_t0-288=0.674,t0=49.27
+NA,2,idv_varying_RUV_cutoff4,-0.00,sdeps_0-t0=0.728,sdeps_t0-288=0.734,t0=61.38
+NA,2,idv_varying_RUV_cutoff5,-0.47,sdeps_0-t0=0.694,sdeps_t0-288=0.776,t0=68.17
+NA,2,idv_varying_RUV_cutoff6,-0.72,sdeps_0-t0=0.693,sdeps_t0-288=0.798,t0=79.13
+NA,2,idv_varying_RUV_cutoff7,-3.21,sdeps_0-t0=0.647,sdeps_t0-288=0.914,t0=82.00
+NA,2,idv_varying_RUV_cutoff8,-0.10,sdeps_0-t0=0.738,sdeps_t0-288=0.688,t0=97.75
+NA,2,idv_varying_combined,-104.80,sdeps_0-t1=1.384,th_0-t1=0.340,sdeps_t1-t2=0.263,th_t1-t2=0.038,sdeps_t2-t3=0.304,th_t2-t3=0.247,sdeps_t3-t4=0.462,th_t3-t4=0.160,sdeps_t4-t5=0.100,th_t4-t5=-0.196,sdeps_t5-t6=0.213,th_t5-t6=0.430,sdeps_t6-t7=0.581,th_t6-t7=-0.291,sdeps_t7-t8=0.178,th_t7-t8=0.289,sdeps_t8-t9=0.627,th_t8-t9=-0.874,sdeps_t9-288=0.703,th_t9-288=-0.033,t1=7.03 ,t2=41.48 ,t3=47.92 ,t4=49.27 ,t5=61.38 ,t6=68.17 ,t7=79.13 ,t8=82.00 ,t9=97.75 
+NA,2,idv_varying_theta,-31.20,th_0-t1=0.354,th_t1-t2=-0.000,th_t2-t3=0.251,th_t3-t4=0.160,th_t4-t5=-0.222,th_t5-t6=0.419,th_t6-t7=-0.320,th_t7-t8=0.304,th_t8-t9=-0.850,th_t9-288=-0.098,t1=7.03 ,t2=41.48 ,t3=47.92 ,t4=49.27 ,t5=61.38 ,t6=68.17 ,t7=79.13 ,t8=82.00 ,t9=97.75 
+NA,2,tdist,-21.24,df=3.278
+NA,3,IIV_on_RUV,0.00,%CV=0.113
+NA,3,autocorrelation,-0.31,half-life=3.994
+NA,3,idv_varying_RUV,-21.18,sdeps_0-t1=0.130,sdeps_t1-t2=1.074,sdeps_t2-t3=0.007,sdeps_t3-t4=0.386,sdeps_t4-t5=1.496,sdeps_t5-t6=1.226,sdeps_t6-t7=0.334,sdeps_t7-t8=0.452,sdeps_t8-t9=0.707,sdeps_t9-288=0.707,t1=7.03 ,t2=41.48 ,t3=47.92 ,t4=49.27 ,t5=61.38 ,t6=68.17 ,t7=79.13 ,t8=82.00 ,t9=97.75 
+NA,3,idv_varying_RUV_cutoff0,-7.96,sdeps_0-t0=0.007,sdeps_t0-288=0.836,t0=7.03
+NA,3,idv_varying_RUV_cutoff1,-0.00,sdeps_0-t0=0.692,sdeps_t0-288=0.667,t0=41.48
+NA,3,idv_varying_RUV_cutoff2,-0.30,sdeps_0-t0=0.617,sdeps_t0-288=0.817,t0=47.92
+NA,3,idv_varying_RUV_cutoff3,-2.07,sdeps_0-t0=0.533,sdeps_t0-288=0.947,t0=49.27
+NA,3,idv_varying_RUV_cutoff4,-0.03,sdeps_0-t0=0.663,sdeps_t0-288=0.716,t0=61.38
+NA,3,idv_varying_RUV_cutoff5,-2.79,sdeps_0-t0=0.787,sdeps_t0-288=0.115,t0=68.17
+NA,3,idv_varying_RUV_cutoff6,-1.04,sdeps_0-t0=0.684,sdeps_t0-288=0.007,t0=79.13
+NA,3,idv_varying_RUV_cutoff7,-0.00,sdeps_0-t0=0.683,sdeps_t0-288=0.707,t0=82.00
+NA,3,idv_varying_RUV_cutoff8,-0.00,sdeps_0-t0=0.683,sdeps_t0-288=0.707,t0=97.75
+NA,3,idv_varying_combined,-44.87,sdeps_0-t1=0.007,th_0-t1=-0.397,sdeps_t1-t2=0.214,th_t1-t2=0.764,sdeps_t2-t3=0.007,th_t2-t3=-0.228,sdeps_t3-t4=0.346,th_t3-t4=-0.204,sdeps_t4-t5=0.007,th_t4-t5=-1.767,sdeps_t5-t6=1.147,th_t5-t6=0.167,sdeps_t6-t7=0.144,th_t6-t7=0.023,sdeps_t7-t8=0.323,th_t7-t8=-0.588,sdeps_t8-t9=0.707,th_t8-t9=0.030,sdeps_t9-288=0.707,th_t9-288=0.030,t1=7.03 ,t2=41.48 ,t3=47.92 ,t4=49.27 ,t5=61.38 ,t6=68.17 ,t7=79.13 ,t8=82.00 ,t9=97.75 
+NA,3,idv_varying_theta,-22.59,th_0-t1=-0.553,th_t1-t2=0.608,th_t2-t3=-0.207,th_t3-t4=-0.204,th_t4-t5=-1.455,th_t5-t6=-0.652,th_t6-t7=0.429,th_t7-t8=0.230,th_t8-t9=0.030,th_t9-288=0.030,t1=7.03 ,t2=41.48 ,t3=47.92 ,t4=49.27 ,t5=61.38 ,t6=68.17 ,t7=79.13 ,t8=82.00 ,t9=97.75 
+NA,3,tdist,0.01,df=297.100
+NA,4,IIV_on_RUV,-3.02,%CV=47.465
+NA,4,autocorrelation,-2.65,half-life=7.487
+NA,4,idv_varying_RUV,-19.98,sdeps_0-t1=0.451,sdeps_t1-t2=0.949,sdeps_t2-t3=0.048,sdeps_t3-t4=1.168,sdeps_t4-t5=0.748,sdeps_t5-t6=0.338,sdeps_t6-t7=0.630,sdeps_t7-t8=0.027,sdeps_t8-t9=0.707,sdeps_t9-288=0.707,t1=7.03 ,t2=41.48 ,t3=47.92 ,t4=49.27 ,t5=61.38 ,t6=68.17 ,t7=79.13 ,t8=82.00 ,t9=97.75 
+NA,4,idv_varying_RUV_cutoff0,0.12,sdeps_0-t0=1.147,sdeps_t0-288=0.523,t0=7.03
+NA,4,idv_varying_RUV_cutoff1,-0.02,sdeps_0-t0=0.736,sdeps_t0-288=0.691,t0=41.48
+NA,4,idv_varying_RUV_cutoff2,-0.07,sdeps_0-t0=0.662,sdeps_t0-288=0.740,t0=47.92
+NA,4,idv_varying_RUV_cutoff3,-3.01,sdeps_0-t0=0.913,sdeps_t0-288=0.448,t0=49.27
+NA,4,idv_varying_RUV_cutoff4,-3.46,sdeps_0-t0=0.878,sdeps_t0-288=0.406,t0=61.38
+NA,4,idv_varying_RUV_cutoff5,-2.09,sdeps_0-t0=0.831,sdeps_t0-288=0.381,t0=68.17
+NA,4,idv_varying_RUV_cutoff6,-11.29,sdeps_0-t0=0.780,sdeps_t0-288=0.007,t0=79.13
+NA,4,idv_varying_RUV_cutoff7,0.00,sdeps_0-t0=0.707,sdeps_t0-288=0.707,t0=82.00
+NA,4,idv_varying_RUV_cutoff8,0.00,sdeps_0-t0=0.707,sdeps_t0-288=0.707,t0=97.75
+NA,4,idv_varying_combined,-41.89,sdeps_0-t1=0.332,th_0-t1=-0.168,sdeps_t1-t2=0.932,th_t1-t2=0.317,sdeps_t2-t3=0.007,th_t2-t3=0.088,sdeps_t3-t4=1.017,th_t3-t4=0.712,sdeps_t4-t5=0.007,th_t4-t5=-0.612,sdeps_t5-t6=0.159,th_t5-t6=0.434,sdeps_t6-t7=0.310,th_t6-t7=-0.412,sdeps_t7-t8=0.026,th_t7-t8=0.144,sdeps_t8-t9=0.707,th_t8-t9=0.030,sdeps_t9-288=0.707,th_t9-288=0.030,t1=7.03 ,t2=41.48 ,t3=47.92 ,t4=49.27 ,t5=61.38 ,t6=68.17 ,t7=79.13 ,t8=82.00 ,t9=97.75 
+NA,4,idv_varying_theta,-6.15,th_0-t1=-0.209,th_t1-t2=0.276,th_t2-t3=0.229,th_t3-t4=0.712,th_t4-t5=-0.530,th_t5-t6=0.413,th_t6-t7=-0.403,th_t7-t8=0.166,th_t8-t9=0.030,th_t9-288=0.030,t1=7.03 ,t2=41.48 ,t3=47.92 ,t4=49.27 ,t5=61.38 ,t6=68.17 ,t7=79.13 ,t8=82.00 ,t9=97.75 
+NA,4,tdist,-2.41,df=3.070
+NA,5,IIV_on_RUV,0.00,%CV=0.100
+NA,5,autocorrelation,0.00,half-life=0.011
+NA,5,idv_varying_RUV,-9.90,sdeps_0-t1=0.845,sdeps_t1-t2=0.310,sdeps_t2-t3=1.105,sdeps_t3-t4=1.104,sdeps_t4-t5=0.135,sdeps_t5-t6=0.951,sdeps_t6-t7=1.784,sdeps_t7-t8=0.917,sdeps_t8-t9=0.707,sdeps_t9-288=0.707,t1=7.03 ,t2=41.48 ,t3=47.92 ,t4=49.27 ,t5=61.38 ,t6=68.17 ,t7=79.13 ,t8=82.00 ,t9=97.75 
+NA,5,idv_varying_RUV_cutoff0,-0.09,sdeps_0-t0=0.684,sdeps_t0-288=0.916,t0=7.03
+NA,5,idv_varying_RUV_cutoff1,-1.68,sdeps_0-t0=0.506,sdeps_t0-288=1.034,t0=41.48
+NA,5,idv_varying_RUV_cutoff2,-1.04,sdeps_0-t0=0.617,sdeps_t0-288=1.065,t0=47.92
+NA,5,idv_varying_RUV_cutoff3,-0.25,sdeps_0-t0=0.814,sdeps_t0-288=1.034,t0=49.27
+NA,5,idv_varying_RUV_cutoff4,-1.84,sdeps_0-t0=0.702,sdeps_t0-288=1.287,t0=61.38
+NA,5,idv_varying_RUV_cutoff5,-1.41,sdeps_0-t0=0.766,sdeps_t0-288=1.300,t0=68.17
+NA,5,idv_varying_RUV_cutoff6,-0.02,sdeps_0-t0=0.924,sdeps_t0-288=0.845,t0=79.13
+NA,5,idv_varying_RUV_cutoff7,0.00,sdeps_0-t0=0.916,sdeps_t0-288=0.707,t0=82.00
+NA,5,idv_varying_RUV_cutoff8,0.00,sdeps_0-t0=0.916,sdeps_t0-288=0.707,t0=97.75
+NA,5,idv_varying_combined,-53.21,sdeps_0-t1=0.007,th_0-t1=-0.572,sdeps_t1-t2=0.302,th_t1-t2=0.344,sdeps_t2-t3=0.007,th_t2-t3=-0.832,sdeps_t3-t4=1.059,th_t3-t4=-0.042,sdeps_t4-t5=0.135,th_t4-t5=0.281,sdeps_t5-t6=0.007,th_t5-t6=1.225,sdeps_t6-t7=0.007,th_t6-t7=2.058,sdeps_t7-t8=0.719,th_t7-t8=-0.295,sdeps_t8-t9=0.707,th_t8-t9=0.030,sdeps_t9-288=0.707,th_t9-288=0.030,t1=7.03 ,t2=41.48 ,t3=47.92 ,t4=49.27 ,t5=61.38 ,t6=68.17 ,t7=79.13 ,t8=82.00 ,t9=97.75 
+NA,5,idv_varying_theta,-12.99,th_0-t1=-0.572,th_t1-t2=0.344,th_t2-t3=-0.832,th_t3-t4=-0.042,th_t4-t5=0.282,th_t5-t6=1.225,th_t6-t7=2.058,th_t7-t8=-0.295,th_t8-t9=0.030,th_t9-288=0.030,t1=7.03 ,t2=41.48 ,t3=47.92 ,t4=49.27 ,t5=61.38 ,t6=68.17 ,t7=79.13 ,t8=82.00 ,t9=97.75 
+NA,5,tdist,0.01,df=297.100
+NA,6,IIV_on_RUV,-4.77,%CV=95.757
+NA,6,autocorrelation,-0.00,half-life=0.011
+NA,6,idv_varying_RUV,-31.76,sdeps_0-t1=3.254,sdeps_t1-t2=0.235,sdeps_t2-t3=0.007,sdeps_t3-t4=0.273,sdeps_t4-t5=0.343,sdeps_t5-t6=0.541,sdeps_t6-t7=0.126,sdeps_t7-t8=0.296,sdeps_t8-t9=0.707,sdeps_t9-288=0.707,t1=7.03 ,t2=41.48 ,t3=47.92 ,t4=49.27 ,t5=61.38 ,t6=68.17 ,t7=79.13 ,t8=82.00 ,t9=97.75 
+NA,6,idv_varying_RUV_cutoff0,-22.79,sdeps_0-t0=3.223,sdeps_t0-288=0.297,t0=7.03
+NA,6,idv_varying_RUV_cutoff1,-15.79,sdeps_0-t0=1.866,sdeps_t0-288=0.309,t0=41.48
+NA,6,idv_varying_RUV_cutoff2,-12.43,sdeps_0-t0=1.610,sdeps_t0-288=0.328,t0=47.92
+NA,6,idv_varying_RUV_cutoff3,-7.80,sdeps_0-t0=1.393,sdeps_t0-288=0.163,t0=49.27
+NA,6,idv_varying_RUV_cutoff4,-6.25,sdeps_0-t0=1.129,sdeps_t0-288=0.139,t0=61.38
+NA,6,idv_varying_RUV_cutoff5,-5.23,sdeps_0-t0=1.096,sdeps_t0-288=0.140,t0=68.17
+NA,6,idv_varying_RUV_cutoff6,-2.17,sdeps_0-t0=1.039,sdeps_t0-288=0.321,t0=79.13
+NA,6,idv_varying_RUV_cutoff7,0.00,sdeps_0-t0=0.936,sdeps_t0-288=0.707,t0=82.00
+NA,6,idv_varying_RUV_cutoff8,0.00,sdeps_0-t0=0.936,sdeps_t0-288=0.707,t0=97.75
+NA,6,idv_varying_combined,-65.57,sdeps_0-t1=0.007,th_0-t1=3.251,sdeps_t1-t2=0.234,th_t1-t2=0.018,sdeps_t2-t3=0.007,th_t2-t3=-0.006,sdeps_t3-t4=0.107,th_t3-t4=0.245,sdeps_t4-t5=0.202,th_t4-t5=-0.284,sdeps_t5-t6=0.007,th_t5-t6=0.535,sdeps_t6-t7=0.007,th_t6-t7=-0.132,sdeps_t7-t8=0.294,th_t7-t8=-0.040,sdeps_t8-t9=0.707,th_t8-t9=0.030,sdeps_t9-288=0.707,th_t9-288=0.030,t1=7.03 ,t2=41.48 ,t3=47.92 ,t4=49.27 ,t5=61.38 ,t6=68.17 ,t7=79.13 ,t8=82.00 ,t9=97.75 
+NA,6,idv_varying_theta,-39.62,th_0-t1=3.251,th_t1-t2=0.018,th_t2-t3=-0.006,th_t3-t4=0.245,th_t4-t5=-0.284,th_t5-t6=0.535,th_t6-t7=-0.132,th_t7-t8=-0.040,th_t8-t9=0.030,th_t9-288=0.030,t1=7.03 ,t2=41.48 ,t3=47.92 ,t4=49.27 ,t5=61.38 ,t6=68.17 ,t7=79.13 ,t8=82.00 ,t9=97.75 
+NA,6,tdist,-11.43,df=3.070
+NA,sum,IIV_on_RUV,-27.23
+NA,sum,autocorrelation,-25.91
+NA,sum,idv_varying_RUV,-157.67
+NA,sum,idv_varying_RUV_cutoff0,-49.9
+NA,sum,idv_varying_RUV_cutoff1,-26.45
+NA,sum,idv_varying_RUV_cutoff2,-21.87
+NA,sum,idv_varying_RUV_cutoff3,-19.5
+NA,sum,idv_varying_RUV_cutoff4,-16.72
+NA,sum,idv_varying_RUV_cutoff5,-14.99
+NA,sum,idv_varying_RUV_cutoff6,-18.79
+NA,sum,idv_varying_RUV_cutoff7,-10.25
+NA,sum,idv_varying_RUV_cutoff8,-6.56
+NA,sum,idv_varying_combined,-345.02
+NA,sum,idv_varying_theta,-127.8
+NA,sum,tdist,-35.98
+NA,sum,L2,-39.19

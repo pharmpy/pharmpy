@@ -22,3 +22,10 @@ def test_resmod_results(testdata):
         -0.03,
         -5.53,
     ]
+
+
+def test_resmod_results_dvid(testdata):
+    res = psn_resmod_results(testdata / 'psn' / 'resmod_dir2')
+    df = res.models
+    assert df['dOFV'].loc[1, '1', 'autocorrelation'] == -0.74
+    assert df['dOFV'].loc[1, 'sum', 'tdist'] == -35.98
