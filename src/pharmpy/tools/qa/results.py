@@ -132,22 +132,36 @@ def resmod(res):
         return None, dofv_tab
 
     df = res.models.copy()
-    df = df.droplevel([0, 1])
+    df = df.droplevel(0)
+    df.drop('sum', level='DVID', errors='ignore', inplace=True)
     df['dOFV'] = -df['dOFV']
-    df.drop(['idv_varying_RUV', 'idv_varying_combined', 'idv_varying_theta'], inplace=True)
+    df.drop(
+        ['idv_varying_RUV', 'idv_varying_combined', 'idv_varying_theta'],
+        level='model',
+        inplace=True,
+    )
 
-    # Select the best idv_varying cut
-    idvvar = df.index.str.startswith("idv_varying")
-    best_timevar_idx = df.loc[idvvar]['dOFV'].idxmax()
-    for name in df.loc[idvvar].index:
-        if name != best_timevar_idx:
-            df.drop(name, inplace=True)
-    df.rename(index={best_timevar_idx: 'time_varying'}, inplace=True)
+    # Select the best idv_varying cut for each DVID
+    remaining_timevar = []
+    for dvid in df.index.unique(level='DVID'):
+        subdf = df.loc[dvid]
+        idvvar = subdf.index.str.startswith("idv_varying")
+        best_timevar_idx = subdf.loc[idvvar]['dOFV'].idxmax()
+        for name in subdf.loc[idvvar].index:
+            if name != best_timevar_idx:
+                df.drop((dvid, name), inplace=True)
+        remaining_timevar.append(best_timevar_idx)
+    for ind in remaining_timevar:
+        df.rename(index={ind: 'time_varying'}, level='model', inplace=True)
 
-    df.sort_values(by='dOFV', ascending=False, inplace=True)
+    df = df.groupby(level='DVID', sort=False).apply(
+        lambda x: x.sort_values(['dOFV'], ascending=False)
+    )
+    df = df.droplevel(0)  # FIXME: Why was an extra DVID level added?
     n = df['parameters'].apply(lambda x: len(x))
     df.insert(1, 'additional_parameters', n)
-    df.loc['time_varying', 'additional_parameters'] = 2
+    for dvid in df.index.unique(level='DVID'):
+        df.loc[(dvid, 'time_varying'), 'additional_parameters'] = 2
 
     dofv_tab = pd.DataFrame(
         {

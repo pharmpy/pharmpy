@@ -6,6 +6,7 @@ import pytest
 from pharmpy import Model
 from pharmpy.results import read_results
 from pharmpy.tools.qa.results import calculate_results
+from pharmpy.tools.resmod.results import psn_resmod_results
 
 
 def test_add_etas(testdata):
@@ -132,12 +133,23 @@ def test_resmod(testdata):
     res = calculate_results(orig, base, resmod_idv_results=resmod_res)
     assert list(res.residual_error['additional_parameters']) == [2, 2, 1, 1, 1, 1]
     assert list(res.residual_error['dOFV']) == [13.91, 8.03, 5.53, 3.34, 1.31, 0.03]
-    assert list(res.residual_error.index) == [
-        'dtbs',
-        'time_varying',
-        'tdist',
-        'autocorrelation',
-        'IIV_on_RUV',
-        'power',
+    assert res.residual_error.index.tolist() == [
+        (1, 'dtbs'),
+        (1, 'time_varying'),
+        (1, 'tdist'),
+        (1, 'autocorrelation'),
+        (1, 'IIV_on_RUV'),
+        (1, 'power'),
     ]
-    assert res.dofv['dofv']['residual_error_model', 'dtbs'] == pytest.approx(13.91)
+    assert res.dofv['dofv']['residual_error_model', (1, 'dtbs')] == pytest.approx(13.91)
+
+
+def test_resmod_dvid(testdata):
+    orig = Model(testdata / 'nonmem' / 'pheno.mod')
+    base = Model(testdata / 'nonmem' / 'qa' / 'pheno_linbase.mod')
+    resmod_res = psn_resmod_results(testdata / 'psn' / 'resmod_dir2')
+    res = calculate_results(orig, base, resmod_idv_results=resmod_res)
+    assert res.residual_error.loc[("4", "tdist"), 'dOFV'] == 2.41
+    print(res.dofv)
+
+    # assert res.dofv['dofv']['residual_error_model', 'dtbs'] == pytest.approx(13.91)
