@@ -4,6 +4,7 @@ from pathlib import Path
 
 from pharmpy.plugins.nonmem import conf
 from pharmpy.tools.workflows import Task, Workflow
+from pharmpy.utils import TemporaryDirectoryChanger
 
 
 def create_workflow(models):
@@ -33,11 +34,11 @@ def execute_model(model, i):
         nmfe_path(),
         model.name + model.source.filename_extension,
         str(Path(model.name).with_suffix('.lst')),
-        f'-rundir={str(path)}',
     ]
-    subprocess.call(
-        args, stdin=subprocess.DEVNULL, stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL
-    )
+    with TemporaryDirectoryChanger(path):
+        subprocess.call(
+            args, stdin=subprocess.DEVNULL, stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL
+        )
     return model
 
 
