@@ -79,6 +79,7 @@ setup(
         'numpy>=1.17',
         'scipy',
         'dask',
+        'dask[distributed]',
         'networkx',
         'appdirs',
     ],
