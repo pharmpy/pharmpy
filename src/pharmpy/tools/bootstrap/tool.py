@@ -12,18 +12,21 @@ class Bootstrap(pharmpy.tools.Tool):
 
     def run(self):
         workflow = Workflow()
-        resample_tasks, task_names = [], []
+        resample_tasks, resample_names = [], []
 
         for i in range(self.resamples):
             task = Task(f'resample-{i}', resample_model, [self.model])
             resample_tasks.append(task)
-            task_names.append(task.task_id)
-
-        modelfit_run = modelfit.Modelfit(task_names, path=self.rundir.path)
+            resample_names.append(task.task_id)
 
         workflow.add_tasks(resample_tasks)
-        workflow.merge_workflows(modelfit_run.workflow_creator(task_names))
-        workflow.add_tasks(Task('results', final_models, [workflow.tasks[-1]], final_task=True))
+
+        modelfit_run = modelfit.Modelfit(resample_names, path=self.rundir.path)
+        modelfit_workflow = modelfit_run.workflow_creator(resample_names)
+
+        workflow.merge_workflows(modelfit_workflow)
+        postprocessing_task = Task('results', final_models, [workflow.tasks[-1]], final_task=True)
+        workflow.add_tasks(postprocessing_task)
 
         fit_models = self.dispatcher.run(workflow, self.database)
         return fit_models
