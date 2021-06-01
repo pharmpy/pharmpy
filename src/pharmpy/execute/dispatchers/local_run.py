@@ -1,10 +1,11 @@
-from dask.diagnostics import ProgressBar
+# from dask.diagnostics import ProgressBar
 from dask.multiprocessing import get
+
+# from dask.distributed import Client
 
 
 def run(workflow):
-    with ProgressBar(dt=1):
-        # FIXME: issue with NONMEM license file, use multiprocessing instead of threads
-        #  as temporary solution
-        res = get(workflow, 'results')
+    # with Client() as client:
+    #    res = client.get(workflow, 'results')
+    res = get(workflow, 'results')
     return res
