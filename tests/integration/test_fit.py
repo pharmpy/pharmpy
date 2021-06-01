@@ -16,7 +16,7 @@ def test_configuration():
     assert (conf.default_nonmem_path / 'license' / 'nonmem.lic').is_file()
 
 
-def test_fit(tmp_path, testdata):
+def test_fit_single(tmp_path, testdata):
     with TemporaryDirectoryChanger(tmp_path):
         shutil.copy2(testdata / 'nonmem' / 'pheno.mod', tmp_path)
         shutil.copy2(testdata / 'nonmem' / 'pheno.dta', tmp_path)
