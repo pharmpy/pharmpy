@@ -11,8 +11,5 @@ def test_bootstrap(tmp_path, testdata):
         shutil.copy2(testdata / 'nonmem' / 'pheno.dta', tmp_path)
         model = Model('pheno.mod')
         model.dataset_path = tmp_path / 'pheno.dta'
-        models = Bootstrap(model, 3).run()
-        assert len(models) == 3
-        assert not all(mod.dataset.equals(model.dataset) for mod in models)
-        ofvs = [mod.modelfit_results.ofv for mod in models]
-        assert len(set(ofvs)) > 1
+        res = Bootstrap(model, 3).run()
+        assert len(res.parameter_estimates) == 3
