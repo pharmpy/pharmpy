@@ -1,6 +1,7 @@
 import pharmpy.tools
 import pharmpy.tools.modelfit as modelfit
 from pharmpy.data.iterators import Resample
+from pharmpy.execute import NullToolDatabase
 from pharmpy.tools.workflows import Task, Workflow
 
 
@@ -21,7 +22,7 @@ class Bootstrap(pharmpy.tools.Tool):
 
         workflow.add_tasks(resample_tasks)
 
-        modelfit_run = modelfit.Modelfit(resample_names, path=self.rundir.path)
+        modelfit_run = modelfit.Modelfit(resample_names, database=NullToolDatabase)
         modelfit_workflow = modelfit_run.workflow_creator(resample_names)
 
         workflow.merge_workflows(modelfit_workflow)
