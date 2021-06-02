@@ -154,7 +154,7 @@ def format_keyval_pairs(data_dict, sort=True, right_just=False):
 def run_bootstrap(args):
     import pharmpy.tools.bootstrap as bootstrap
 
-    method = bootstrap.Bootstrap(args.model)
+    method = bootstrap.Bootstrap(args.model, resamples=args.samples)
     method.run()
 
 
@@ -860,6 +860,13 @@ parser_definition = [
                         'help': 'Bootstrap',
                         'func': run_bootstrap,
                         'parents': [args_model_input],
+                        'args': [
+                            {
+                                'name': '--samples',
+                                'type': int,
+                                'help': 'Number of bootstrap datasets',
+                            },
+                        ],
                     }
                 },
                 {
