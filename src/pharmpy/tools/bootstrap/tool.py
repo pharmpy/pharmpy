@@ -18,7 +18,7 @@ class Bootstrap(pharmpy.tools.Tool):
         resample_tasks, resample_names = [], []
 
         for i in range(self.resamples):
-            task = Task(f'resample-{i}', resample_model, [i, self.model])
+            task = Task('resample', resample_model, [self.model, f'bs_{i + 1}'])
             resample_tasks.append(task)
             resample_names.append(task.task_id)
 
@@ -39,10 +39,8 @@ class Bootstrap(pharmpy.tools.Tool):
         return res
 
 
-def resample_model(i, model):
-    resample = Resample(
-        model, model.dataset.pharmpy.id_label, resamples=1, replace=True, name_pattern=f'bs_{i}'
-    )
+def resample_model(model, name):
+    resample = Resample(model, model.dataset.pharmpy.id_label, resamples=1, name=name)
     model, _ = next(resample)
     return model
 

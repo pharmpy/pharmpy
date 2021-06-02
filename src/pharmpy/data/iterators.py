@@ -13,6 +13,7 @@ Currenly contains:
 """
 
 import collections
+import warnings
 
 import numpy as np
 import pandas as pd
@@ -30,7 +31,7 @@ class DatasetIterator:
     def __init__(self, iterations, name_pattern='dataset_{}'):
         """Initialization of the base class
         :param iterations: is the number of iterations
-        :param name_pattern: Name too use for generated datasets.
+        :param name_pattern: Name pattern to use for generated datasets.
              A number starting from 1 will be put in the placeholder.
         """
         self._next = 1
@@ -140,6 +141,7 @@ class Resample(DatasetIterator):
         sample_size=None,
         replace=False,
         name_pattern='resample_{}',
+        name=None,
     ):
         df = self._retrieve_dataset(dataset_or_model)
         unique_groups = df[group].unique()
@@ -190,6 +192,14 @@ class Resample(DatasetIterator):
         self._replace = replace
         self._stratas = stratas
         self._sample_size_dict = sample_size_dict
+        if resamples > 1 and name:
+            warnings.warn(
+                f'One name was provided despite having multiple resamples, falling back to '
+                f'name pattern: {name_pattern}'
+            )
+            self._name = None
+        else:
+            self._name = name
         super().__init__(resamples, name_pattern=name_pattern)
 
     def __next__(self):
@@ -208,6 +218,9 @@ class Resample(DatasetIterator):
             sub[self._group] = new_grp
             new_df = new_df.append(sub)
         new_df.reset_index(inplace=True, drop=True)
-        self._prepare_next(new_df)
+        if self._name:
+            new_df.name = self._name
+        else:
+            self._prepare_next(new_df)
 
         return self._combine_dataset(new_df), random_groups

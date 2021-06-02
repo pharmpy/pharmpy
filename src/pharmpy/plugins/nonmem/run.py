@@ -1,5 +1,6 @@
 import os
 import subprocess
+import uuid
 from pathlib import Path
 
 from pharmpy.plugins.nonmem import conf
@@ -11,8 +12,8 @@ def create_workflow(models):
     wf = Workflow()
     task_names, execute_tasks = [], []
 
-    for i, model in enumerate(models):
-        task = Task(f'run-{i}', execute_model, [model, i])
+    for model in models:
+        task = Task('run', execute_model, [model])
         execute_tasks.append(task)
         task_names.append(task.task_id)
 
@@ -22,8 +23,8 @@ def create_workflow(models):
     return wf
 
 
-def execute_model(model, i):
-    path = Path.cwd() / f'NONMEM_run{i}'
+def execute_model(model):
+    path = Path.cwd() / f'NONMEM_run_{model.name}-{uuid.uuid1()}'
     path.mkdir(parents=True, exist_ok=True)
     model = model.copy()
     model.update_source(nofiles=True)
