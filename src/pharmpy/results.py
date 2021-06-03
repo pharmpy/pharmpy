@@ -15,10 +15,12 @@
        Otherwise pharmpy will calculate shrinkage
 """
 
+import copy
 import json
 import lzma
 import math
 import warnings
+from collections.abc import MutableSequence
 from pathlib import Path
 
 import altair as alt
@@ -625,11 +627,34 @@ class ModelfitResults(Results):
         return df
 
 
-class ChainedModelfitResults(list, ModelfitResults):
-    """A list of modelfit results given in order from first to final
+class ChainedModelfitResults(MutableSequence, ModelfitResults):
+    """A sequence of modelfit results given in order from first to final
     inherits from both list and ModelfitResults. Each method from ModelfitResults
     will be performed on the final modelfit object
     """
+
+    def __init__(self, results=None):
+        if isinstance(results, ChainedModelfitResults):
+            self._results = copy.deepcopy(results._results)
+        elif results is None:
+            self._results = []
+        else:
+            self._results = list(results)
+
+    def __getitem__(self, ind):
+        return self._results[ind]
+
+    def __setitem__(self, ind, value):
+        self._results[ind] = value
+
+    def __delitem__(self, ind):
+        del self._results[ind]
+
+    def __len__(self):
+        return len(self._results)
+
+    def insert(self, ind, value):
+        self._results.insert(ind, value)
 
     def reparameterize(self, parameterizations):
         return self[-1].reparameterize(parameterizations)

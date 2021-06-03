@@ -342,6 +342,7 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
         self.model = model
         extensions = ['.lst', '.ext', '.cov', '.cor', '.coi', '.phi']
         self.tool_files = [self._path.with_suffix(ext) for ext in extensions]
+        super().__init__()
 
     def __getattr__(self, item):
         # Avoid infinite recursion when deepcopying
@@ -365,6 +366,7 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
 
     def _read_ext_table(self):
         if not self._read_ext:
+            self._read_ext = True
             try:
                 ext_tables = NONMEMTableFile(self._path.with_suffix('.ext'))
             except ValueError:
@@ -443,7 +445,6 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
                     else:
                         result_obj._condition_number = condition_number
                 self.append(result_obj)
-            self._read_ext = True
 
     def _read_lst_file(self):
         if not self._read_lst:
