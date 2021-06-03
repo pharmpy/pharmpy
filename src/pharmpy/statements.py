@@ -1,4 +1,5 @@
 import copy
+from collections.abc import MutableSequence
 
 import networkx as nx
 import sympy
@@ -751,8 +752,31 @@ class Infusion:
         return f'Infusion({self.amount}, {arg})'
 
 
-class ModelStatements(list):
+class ModelStatements(MutableSequence):
     """A list of sympy statements describing the model"""
+
+    def __init__(self, statements=None):
+        if isinstance(statements, ModelStatements):
+            self._statements = copy.deepcopy(statements._statements)
+        elif statements is None:
+            self._statements = []
+        else:
+            self._statements = list(statements)
+
+    def __getitem__(self, ind):
+        return self._statements[ind]
+
+    def __setitem__(self, ind, value):
+        self._statements[ind] = value
+
+    def __delitem__(self, ind):
+        del self._statements[ind]
+
+    def __len__(self):
+        return len(self._statements)
+
+    def insert(self, ind, value):
+        self._statements.insert(ind, value)
 
     @property
     def free_symbols(self):
