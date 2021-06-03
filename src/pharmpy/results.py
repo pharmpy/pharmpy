@@ -619,6 +619,10 @@ class ModelfitResults(Results):
         df = self.individual_parameter_statistics(expressions, seed=seed)
         return df
 
+    def __repr__(self):
+        df = self.parameter_summary()
+        return df.to_string()
+
 
 class ChainedModelfitResults(MutableSequence, ModelfitResults):
     """A sequence of modelfit results given in order from first to final
@@ -729,6 +733,9 @@ class ChainedModelfitResults(MutableSequence, ModelfitResults):
 
     def pk_parameters(self, seed=None):
         return self[-1].pk_parameters(seed=seed)
+
+    def __repr__(self):
+        return repr(self._results[-1])
 
     # FIXME: To not have to manually intercept everything here. Could do it in a general way.
 
