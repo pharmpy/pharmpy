@@ -262,13 +262,6 @@ class ModelfitResults(Results):
         """Convert results object to a dictionary"""
         return {'parameter_estimates': self.parameter_estimates}
 
-    def reparameterize(self, parameterizations):
-        """Reparametrize all parameters given a list of parametrization object
-        will change the parameter_estimates and standard_errors to be for
-        the transformed parameter
-        """
-        raise NotImplementedError("Not implemented")
-
     @property
     def ofv(self):
         """Final objective function value"""
@@ -655,9 +648,6 @@ class ChainedModelfitResults(MutableSequence, ModelfitResults):
 
     def insert(self, ind, value):
         self._results.insert(ind, value)
-
-    def reparameterize(self, parameterizations):
-        return self[-1].reparameterize(parameterizations)
 
     @property
     def ofv(self):

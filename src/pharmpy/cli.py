@@ -727,12 +727,6 @@ def results_summary(args):
     """Subcommand to output summary of modelfit"""
     for model in args.models:
         print(model.name)
-        model.modelfit_results.reparameterize(
-            [
-                pharmpy.random_variables.NormalParametrizationSd,
-                pharmpy.random_variables.MultivariateNormalParametrizationSdCorr,
-            ]
-        )
         print(model.modelfit_results.parameter_summary())
         print()
 
