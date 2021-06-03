@@ -409,6 +409,8 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
                 except KeyError:
                     pass
                 else:
+                    if self.model:
+                        sdcorr = sdcorr.rename(index=self.model.parameter_translation())
                     sdcorr_ests = ests.copy()
                     sdcorr_ests.update(sdcorr)
                     result_obj._parameter_estimates_sdcorr = sdcorr_ests
