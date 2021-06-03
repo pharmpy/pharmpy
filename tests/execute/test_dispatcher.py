@@ -17,11 +17,8 @@ def test_base_class():
 
 
 def test_local_dispatcher():
-    import sys
-    if sys.version_info >= (3, 8, 0):
-        # Disable test for python 3.7. Gets issues in windows
-        db = LocalDirectoryDatabase()
-        disp = LocalDispatcher()
-        wf = Workflow(Task('results', fun, 'input', final_task=True))
-        res = disp.run(wf, db)
-        assert res == 'input'
+    db = LocalDirectoryDatabase()
+    disp = LocalDispatcher()
+    wf = Workflow(Task('results', fun, 'input', final_task=True))
+    res = disp.run(wf, db)
+    assert res == 'input'
