@@ -1,3 +1,4 @@
+import sympy
 from sympy.printing.str import StrPrinter
 
 import pharmpy.model
@@ -56,6 +57,15 @@ class ExpressionPrinter(StrPrinter):
             return expr.func.__name__
         else:
             return expr.func.__name__ + f'({self.stringify(expr.args, ", ")})'
+
+    def _print_Piecewise(self, expr):
+        s = ''
+        for value, cond in expr.args:
+            if cond is not sympy.S.true:
+                s += f'ifelse({self._print(cond)}, {self._print(value)}, '
+            else:
+                s += self._print(value) + ')'
+        return s
 
 
 def create_dataset(cg, model):
