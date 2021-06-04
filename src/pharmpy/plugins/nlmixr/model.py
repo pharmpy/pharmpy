@@ -58,15 +58,6 @@ class ExpressionPrinter(StrPrinter):
         else:
             return expr.func.__name__ + f'({self.stringify(expr.args, ", ")})'
 
-    def _print_Piecewise(self, expr):
-        s = ''
-        for value, cond in expr.args:
-            if cond is not sympy.S.true:
-                s += f'ifelse({self._print(cond)}, {self._print(value)}, '
-            else:
-                s += self._print(value) + ')'
-        return s
-
 
 def create_dataset(cg, model):
     """Create dataset for nlmixr"""
@@ -123,7 +114,25 @@ def create_model(cg, model):
                 cg.add('Y <- F')
                 cg.add(f'{s.symbol.name} ~ prop({name_mangle(sigma.name)})')
             else:
-                cg.add(f'{s.symbol.name} <- {printer.doprint(s.expression)}')
+                expr = s.expression
+                if expr.is_Piecewise:
+                    first = True
+                    for value, cond in expr.args:
+                        if cond is not sympy.S.true:
+                            if first:
+                                cg.add(f'if ({cond}) {{')
+                                first = False
+                            else:
+                                cg.add(f'}} else if ({cond}) {{')
+                        else:
+                            cg.add('} else {')
+                        cg.indent()
+                        cg.add(f'{s.symbol.name} <- {printer.doprint(value)}')
+                        cg.dedent()
+                    cg.add('}')
+                else:
+                    cg.add(f'{s.symbol.name} <- {printer.doprint(expr)}')
+
         else:
             eqs, _ = s.to_explicit_odes()
             for eq in eqs[:-1]:

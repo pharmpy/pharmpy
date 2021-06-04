@@ -11,4 +11,5 @@ def test_model(testdata):
 def test_pheno_real(testdata):
     nmmodel = Model(testdata / 'nonmem' / 'pheno_real.mod')
     model = convert_model(nmmodel)
-    assert 'ifelse' in str(model)
+    print(str(model))
+    assert '} else {' in str(model)
