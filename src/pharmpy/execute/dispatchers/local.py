@@ -11,4 +11,4 @@ class LocalDispatcher(ExecutionDispatcher):
         with tempfile.TemporaryDirectory() as tempdirname:
             with TemporaryDirectoryChanger(tempdirname):
                 results = run(workflow.as_dict())
-            return results
+        return results
