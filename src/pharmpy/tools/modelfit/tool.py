@@ -8,12 +8,15 @@ class Modelfit(pharmpy.tools.Tool):
         super().__init__(**kwargs)
 
     def run(self):
+        wf = self.workflow_creator(self.models)
+        leaf_tasks = wf.get_leaf_tasks()
+        result_task = Task('results', post_process_results, leaf_tasks, final_task=True)
+        wf.add_tasks(result_task)
+        wf.connect_tasks({task: result_task for task in leaf_tasks})
         for model in self.models:
             model.dataset
             model.database = self.database.model_database
-        workflow = self.workflow_creator(self.models)
-        workflow.add_tasks(Task('results', final_models, [workflow.tasks[-1]], final_task=True))
-        fit_models = self.dispatcher.run(workflow, self.database)
+        fit_models = self.dispatcher.run(wf, self.database)
         for i in range(len(fit_models)):
             self.models[i].modelfit_results = fit_models[i].modelfit_results
         # res = self.models[0].modelfit_results
@@ -21,5 +24,5 @@ class Modelfit(pharmpy.tools.Tool):
         # res.to_csv(path=self.rundir.path / 'results.csv')
 
 
-def final_models(models):
-    return models
+def post_process_results(models):
+    return [model for model_sublist in models for model in model_sublist]
