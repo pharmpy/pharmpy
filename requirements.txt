@@ -13,7 +13,7 @@ dask[distributed]==2021.6.0
 decorator==5.0.9
 docutils==0.17.1
 entrypoints==0.3
-fsspec==2021.5.0
+fsspec==2021.6.0
 idna==2.10
 imagesize==1.2.0
 Jinja2==3.0.1
