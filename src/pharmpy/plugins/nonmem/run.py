@@ -30,15 +30,20 @@ def execute_model(model, i):
     datapath = model.dataset.pharmpy.write_csv(path=path)
     model.dataset_path = datapath.name  # Make path in $DATA local
     model.write(path=path, force=True)
+    basepath = Path(model.name)
     args = [
         nmfe_path(),
         model.name + model.source.filename_extension,
-        str(Path(model.name).with_suffix('.lst')),
+        str(basepath.with_suffix('.lst')),
     ]
     with TemporaryDirectoryChanger(path):
         subprocess.call(
             args, stdin=subprocess.DEVNULL, stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL
         )
+        model.database.store_local_file(model, basepath.with_suffix('.mod'))
+        model.database.store_local_file(model, basepath.with_suffix('.lst'))
+        model.database.store_local_file(model, basepath.with_suffix('.ext'))
+        model.database.store_local_file(model, basepath.with_suffix('.phi'))
     return model
 
 
