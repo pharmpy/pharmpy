@@ -11,6 +11,7 @@ class Bootstrap(pharmpy.tools.Tool):
         self.model = model
         self.resamples = resamples
         super().__init__()
+        self.model.database = self.database.model_database
 
     def run(self):
         workflow = Workflow()

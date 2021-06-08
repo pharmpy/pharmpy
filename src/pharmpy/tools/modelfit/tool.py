@@ -10,6 +10,7 @@ class Modelfit(pharmpy.tools.Tool):
     def run(self):
         for model in self.models:
             model.dataset
+            model.database = self.database.model_database
         workflow = self.workflow_creator(self.models)
         workflow.add_tasks(Task('results', final_models, [workflow.tasks[-1]], final_task=True))
         fit_models = self.dispatcher.run(workflow, self.database)
