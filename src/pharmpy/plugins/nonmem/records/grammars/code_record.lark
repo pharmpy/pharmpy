@@ -79,5 +79,7 @@ EPS: "EPS"i | "ERR"i
 OMEGA: "OMEGA"i
 SIGMA: "SIGMA"i
 
-%import .definitions (COMMENT, NEWLINE, WS, WS_ALL)
+WS: /([ \t]+|[ \t]*&[ \t]*\r?\n[ \t]*)/
+
+%import .definitions (COMMENT, NEWLINE, WS_ALL)
 %import common (CNAME, SIGNED_INT)
