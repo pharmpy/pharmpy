@@ -2,6 +2,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import yaml
 
 import pharmpy.random_variables
 import pharmpy.symbols
@@ -23,6 +24,7 @@ class QAResults(Results):
         covariate_effects=None,
         univariate_sum=None,
         residual_error=None,
+        structural_bias=None,
     ):
         self.dofv = dofv
         self.fullblock_parameters = fullblock_parameters
@@ -34,6 +36,7 @@ class QAResults(Results):
         self.covariate_effects = covariate_effects
         self.univariate_sum = univariate_sum
         self.residual_error = residual_error
+        self.structural_bias = structural_bias
 
 
 def calculate_results(
@@ -396,6 +399,38 @@ def calc_fullblock(original_model, fullblock_model):
     return table, dofv_tab
 
 
+def read_results_summary(path):
+    summary_path = path / 'results_summary.yaml'
+    if not summary_path.is_file():
+        return
+    with open(summary_path, 'r') as fh:
+        summary = yaml.safe_load(fh)
+    dfs = []
+    for idvtab in summary['structural']:
+        idv = idvtab['idv']
+        dvid = idvtab['dvid']
+        if dvid == 'NA':
+            dvid = 1
+        cwres = [float(num) for num in idvtab['second_table']['CWRES']]
+        cpred = [int(num) for num in idvtab['second_table']['%CPRED']]
+        binmin = idvtab['table']['bin_min']
+        binmax = idvtab['table']['bin_max']
+        df = pd.DataFrame(
+            {
+                'idv': idv,
+                'dvid': dvid,
+                'binmin': binmin,
+                'binmax': binmax,
+                'cwres': cwres,
+                'cpred': cpred,
+            }
+        )
+        df.set_index(['idv', 'dvid'], inplace=True)
+        dfs.append(df)
+    bias = pd.concat(dfs)
+    return bias
+
+
 def psn_qa_results(path):
     """Create qa results from a PsN qa run
 
@@ -478,4 +513,8 @@ def psn_qa_results(path):
         scm_results=scm_res,
         resmod_idv_results=resmod_idv_res,
     )
+
+    bias = read_results_summary(path)
+    res.structural_bias = bias
+
     return res

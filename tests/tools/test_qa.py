@@ -5,7 +5,7 @@ import pytest
 
 from pharmpy import Model
 from pharmpy.results import read_results
-from pharmpy.tools.qa.results import calculate_results
+from pharmpy.tools.qa.results import calculate_results, psn_qa_results
 from pharmpy.tools.resmod.results import psn_resmod_results
 
 
@@ -150,6 +150,42 @@ def test_resmod_dvid(testdata):
     resmod_res = psn_resmod_results(testdata / 'psn' / 'resmod_dir2')
     res = calculate_results(orig, base, resmod_idv_results=resmod_res)
     assert res.residual_error.loc[("4", "tdist"), 'dOFV'] == 2.41
-    print(res.dofv)
 
-    # assert res.dofv['dofv']['residual_error_model', 'dtbs'] == pytest.approx(13.91)
+
+def test_psn_qa_results(testdata):
+    path = testdata / 'psn' / 'qa_dir1'
+    res = psn_qa_results(path)
+    correct = """idv,dvid,binmin,binmax,cwres,cpred
+TIME,1,0.00,2.00,0.28,-6
+TIME,1,2.00,2.55,0.12,-2
+TIME,1,2.55,11.00,-0.29,6
+TIME,1,11.00,47.25,0.04,-1
+TIME,1,47.25,63.50,-0.39,7
+TIME,1,63.50,83.10,0.20,-4
+TIME,1,83.10,112.30,0.11,-2
+TIME,1,112.30,135.50,-0.29,5
+TIME,1,135.50,159.80,0.19,-4
+TIME,1,159.80,390.00,-0.02,1
+TAD,1,0.00,1.50,0.06,-1
+TAD,1,1.50,2.00,0.41,-8
+TAD,1,2.00,3.00,-0.13,3
+TAD,1,3.00,6.00,-0.06,1
+TAD,1,6.00,11.00,-0.18,3
+TAD,1,11.00,11.50,0.54,-10
+TAD,1,11.50,11.70,-0.24,4
+TAD,1,11.70,14.00,0.06,-1
+TAD,1,14.00,258.00,0.07,-1
+PRED,1,8.00,17.67,0.19,-5
+PRED,1,17.67,19.50,0.10,-1
+PRED,1,19.50,20.13,-0.17,3
+PRED,1,20.13,21.39,-0.01,0
+PRED,1,21.39,24.32,0.24,-4
+PRED,1,24.32,26.63,0.06,-1
+PRED,1,26.63,28.70,0.05,-1
+PRED,1,28.70,31.28,-0.05,1
+PRED,1,31.28,36.34,0.07,0
+PRED,1,36.34,54.00,-0.47,9
+"""
+
+    correct = pd.read_csv(StringIO(correct), index_col=[0, 1])
+    pd.testing.assert_frame_equal(res.structural_bias, correct, atol=1e-6)

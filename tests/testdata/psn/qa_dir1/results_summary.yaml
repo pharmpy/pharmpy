@@ -1,0 +1,655 @@
+model_filename: pheno_real.mod
+nonlinear: no
+nonlinear_base_model_ofv: '586.276056338578'
+linearized_base_model_ofv_before_estimation: '586.276056344011'
+linearized_base_model_ofv_after_estimation: '586.26876178381'
+sum_of_individual_ofv_values: '586.268761771427'
+dvid_exists: no
+all_idv:
+  - TIME
+  - TAD
+  - PRED
+overview:
+  structural:
+    - dofv:
+        - '7.7'
+        - '7.7'
+        - '5.8'
+      additional_param:
+        - '9'
+        - '8'
+        - '9'
+  param_variability:
+    dofv:
+      - '2.6'
+      - '2.2'
+      - NA
+      - '0.0'
+      - NA
+    additional_param:
+      - '1'
+      - '2'
+      - ''
+      - '2'
+      - ''
+  frem:
+    dofv: NA
+    additional_param: ''
+  scm:
+    dofv: NA
+    additional_param: ''
+  residual_error:
+    - dofv:
+        - '13.9'
+        - '8.0'
+      additional_param:
+        - '2'
+        - '2'
+  infl_id:
+    dofv: ''
+    additional_param: ''
+  outliers:
+    dofv: '0.4'
+    additional_param: ''
+structural:
+  - idv: TIME
+    dvid: NA
+    dOFV: 7.66
+    second_table:
+      Bin:
+        - '  0.00  :    2.00'
+        - '  2.00  :    2.55'
+        - '  2.55  :   11.00'
+        - ' 11.00  :   47.25'
+        - ' 47.25  :   63.50'
+        - ' 63.50  :   83.10'
+        - ' 83.10  :  112.30'
+        - '112.30  :  135.50'
+        - '135.50  :  159.80'
+        - '159.80  :  390.00'
+      CWRES:
+        - ' 0.28'
+        - ' 0.12'
+        - '-0.29'
+        - ' 0.04'
+        - '-0.39'
+        - ' 0.20'
+        - ' 0.11'
+        - '-0.29'
+        - ' 0.19'
+        - '-0.02'
+      '%CPRED':
+        - '-6'
+        - '-2'
+        - '6'
+        - '-1'
+        - '7'
+        - '-4'
+        - '-2'
+        - '5'
+        - '-4'
+        - '1'
+    table:
+      model:
+        - theta
+        - theta
+        - theta
+        - theta
+        - theta
+        - theta
+        - theta
+        - theta
+        - theta
+        - theta
+      type:
+        - mean
+        - mean
+        - mean
+        - mean
+        - mean
+        - mean
+        - mean
+        - mean
+        - mean
+        - mean
+      value:
+        - 0.279
+        - 0.124
+        - -0.289
+        - 0.045
+        - -0.386
+        - 0.203
+        - 0.112
+        - -0.287
+        - 0.19
+        - -0.019
+      bin_min:
+        - 0.0
+        - 2.0
+        - 2.55
+        - 11.0
+        - 47.25
+        - 63.5
+        - 83.1
+        - 112.3
+        - 135.5
+        - 159.8
+      bin_max:
+        - 2.0
+        - 2.55
+        - 11.0
+        - 47.25
+        - 63.5
+        - 83.1
+        - 112.3
+        - 135.5
+        - 159.8
+        - 390.0
+      bin_mean:
+        - 1.0
+        - 2.275
+        - 6.775
+        - 29.125
+        - 55.375
+        - 73.3
+        - 97.7
+        - 123.9
+        - 147.65
+        - 274.9
+      relative_shift:
+        - -5.7806913
+        - -1.7605145
+        - 5.6874179
+        - -0.584552
+        - 6.6470836
+        - -4.2986915
+        - -1.7027847
+        - 4.7147044
+        - -3.6332302
+        - 0.5156337
+      shift:
+        - -1.1644546
+        - -0.3106677
+        - 1.1080987
+        - -0.1058349
+        - 1.7058872
+        - -1.1862879
+        - -0.5109854
+        - 1.4715222
+        - -1.1599158
+        - 0.076708
+      nobs:
+        - 5.4449113
+        - 6.0
+        - 5.6360186
+        - 5.820855
+        - 5.6360186
+        - 5.820855
+        - 5.6360186
+        - 5.6360186
+        - 5.820855
+        - 5.820855
+      nobs_pr:
+        - 9.0322581
+        - 10.9677419
+        - 9.6774194
+        - 10.3225806
+        - 9.6774194
+        - 10.3225806
+        - 9.6774194
+        - 9.6774194
+        - 10.3225806
+        - 10.3225806
+  - idv: TAD
+    dvid: NA
+    dOFV: 7.7
+    second_table:
+      Bin:
+        - ' 0.00  :    1.50'
+        - ' 1.50  :    2.00'
+        - ' 2.00  :    3.00'
+        - ' 3.00  :    6.00'
+        - ' 6.00  :   11.00'
+        - '11.00  :   11.50'
+        - '11.50  :   11.70'
+        - '11.70  :   14.00'
+        - '14.00  :  258.00'
+      CWRES:
+        - ' 0.06'
+        - ' 0.41'
+        - '-0.13'
+        - '-0.06'
+        - '-0.18'
+        - ' 0.54'
+        - '-0.24'
+        - ' 0.06'
+        - ' 0.07'
+      '%CPRED':
+        - '-1'
+        - '-8'
+        - '3'
+        - '1'
+        - '3'
+        - '-10'
+        - '4'
+        - '-1'
+        - '-1'
+    table:
+      model:
+        - theta
+        - theta
+        - theta
+        - theta
+        - theta
+        - theta
+        - theta
+        - theta
+        - theta
+      type:
+        - mean
+        - mean
+        - mean
+        - mean
+        - mean
+        - mean
+        - mean
+        - mean
+        - mean
+      value:
+        - 0.057
+        - 0.407
+        - -0.134
+        - -0.055
+        - -0.181
+        - 0.536
+        - -0.237
+        - 0.055
+        - 0.072
+      bin_min:
+        - 0.0
+        - 1.5
+        - 2.0
+        - 3.0
+        - 6.0
+        - 11.0
+        - 11.5
+        - 11.7
+        - 14.0
+      bin_max:
+        - 1.5
+        - 2.0
+        - 3.0
+        - 6.0
+        - 11.0
+        - 11.5
+        - 11.7
+        - 14.0
+        - 258.0
+      bin_mean:
+        - 0.75
+        - 1.75
+        - 2.5
+        - 4.5
+        - 8.5
+        - 11.25
+        - 11.6
+        - 12.85
+        - 136.0
+      relative_shift:
+        - -0.985329
+        - -8.171045
+        - 2.8262774
+        - 1.0267854
+        - 2.7115343
+        - -10.0149275
+        - 3.9384921
+        - -0.5448413
+        - -1.1670617
+      shift:
+        - -0.2491623
+        - -1.7357022
+        - 0.6059874
+        - 0.2539647
+        - 0.7163097
+        - -2.5571339
+        - 1.0418616
+        - -0.1539906
+        - -0.2237414
+      nobs:
+        - 3.4641016
+        - 3.4641016
+        - 6.0
+        - 4.0
+        - 4.0
+        - 3.3166248
+        - 4.472136
+        - 4.0
+        - 4.0
+      nobs_pr:
+        - 7.7419355
+        - 7.7419355
+        - 23.2258065
+        - 10.3225806
+        - 10.3225806
+        - 7.0967742
+        - 12.9032258
+        - 10.3225806
+        - 10.3225806
+  - idv: PRED
+    dvid: NA
+    dOFV: 5.79
+    second_table:
+      Bin:
+        - ' 8.00  :  17.67'
+        - '17.67  :  19.50'
+        - '19.50  :  20.13'
+        - '20.13  :  21.39'
+        - '21.39  :  24.32'
+        - '24.32  :  26.63'
+        - '26.63  :  28.70'
+        - '28.70  :  31.28'
+        - '31.28  :  36.34'
+        - '36.34  :  54.00'
+      CWRES:
+        - ' 0.19'
+        - ' 0.10'
+        - '-0.17'
+        - '-0.01'
+        - ' 0.24'
+        - ' 0.06'
+        - ' 0.05'
+        - '-0.05'
+        - ' 0.07'
+        - '-0.47'
+      '%CPRED':
+        - '-5'
+        - '-1'
+        - '3'
+        - '0'
+        - '-4'
+        - '-1'
+        - '-1'
+        - '1'
+        - '0'
+        - '9'
+    table:
+      model:
+        - theta
+        - theta
+        - theta
+        - theta
+        - theta
+        - theta
+        - theta
+        - theta
+        - theta
+        - theta
+      type:
+        - mean
+        - mean
+        - mean
+        - mean
+        - mean
+        - mean
+        - mean
+        - mean
+        - mean
+        - mean
+      value:
+        - 0.194
+        - 0.101
+        - -0.167
+        - -0.014
+        - 0.243
+        - 0.056
+        - 0.052
+        - -0.046
+        - 0.07
+        - -0.472
+      bin_min:
+        - 8.0
+        - 17.67
+        - 19.5
+        - 20.13
+        - 21.39
+        - 24.32
+        - 26.63
+        - 28.7
+        - 31.28
+        - 36.34
+      bin_max:
+        - 17.67
+        - 19.5
+        - 20.13
+        - 21.39
+        - 24.32
+        - 26.63
+        - 28.7
+        - 31.28
+        - 36.34
+        - 54.0
+      bin_mean:
+        - 12.835
+        - 18.585
+        - 19.815
+        - 20.76
+        - 22.855
+        - 25.475
+        - 27.665
+        - 29.99
+        - 33.81
+        - 45.17
+      relative_shift:
+        - -4.6105225
+        - -1.4331086
+        - 3.2398304
+        - 0.0220499
+        - -4.1153064
+        - -1.2076519
+        - -1.1279964
+        - 1.1986375
+        - -0.253064
+        - 8.7179393
+      shift:
+        - -0.685683
+        - -0.2736169
+        - 0.6437175
+        - 0.0059498
+        - -0.9405404
+        - -0.3051924
+        - -0.3095112
+        - 0.3515598
+        - -0.0864622
+        - 3.6104728
+      nobs:
+        - 5.3665631
+        - 5.1961524
+        - 6.0
+        - 4.4497191
+        - 5.3665631
+        - 5.1961524
+        - 5.1961524
+        - 5.1961524
+        - 5.5317267
+        - 5.1961524
+      nobs_pr:
+        - 10.3225806
+        - 9.6774194
+        - 12.9032258
+        - 7.0967742
+        - 10.3225806
+        - 9.6774194
+        - 9.6774194
+        - 9.6774194
+        - 10.9677419
+        - 9.6774194
+parameter_variability:
+  full_omega_block_table:
+    full_omega_block_table:
+      '':
+        - sd(1)
+        - corr(2,1)
+        - sd(2)
+        - dOFV
+      New:
+        - '0.18'
+        - '0.55'
+        - '0.15'
+        - '2.6'
+      Old:
+        - '0.17'
+        - NA
+        - '0.17'
+        - ''
+    full_omega_block_error: no
+  boxcox_table:
+    param_extra_table:
+      '':
+        - ETA(1)
+        - ETA(2)
+        - dOFV
+      Lambda:
+        - '-0.92'
+        - '1.33'
+        - '2.2'
+      New SD:
+        - '0.18'
+        - '0.17'
+        - ''
+      Old SD:
+        - '0.17'
+        - '0.17'
+        - ''
+    param_extra_table_orig:
+      ETA:
+        - ETA(1)
+        - ETA(2)
+      Lambda:
+        - -0.922083
+        - 1.3328
+      New SD:
+        - 0.1820374
+        - 0.1660205
+      Old SD:
+        - 0.1713056
+        - 0.167053
+    param_extra_table_error: no
+  tdist_table:
+    param_extra_table:
+      '':
+        - ETA(1)
+        - ETA(2)
+        - dOFV
+      Degrees of freedom:
+        - '80.00'
+        - '80.00'
+        - '0.0'
+      New SD:
+        - '0.17'
+        - '0.17'
+        - ''
+      Old SD:
+        - '0.17'
+        - '0.17'
+        - ''
+    param_extra_table_orig:
+      ETA:
+        - ETA(1)
+        - ETA(2)
+      Degrees of freedom:
+        - 79.9997
+        - 79.9986
+      New SD:
+        - 0.1684764
+        - 0.1664686
+      Old SD:
+        - 0.1713056
+        - 0.167053
+    param_extra_table_error: no
+frem:
+  frem_files_exists: no
+  frem_table:
+    '': FREM
+    dOFV: NA
+    Add.params: ''
+scm:
+  scm_files_exists: no
+  scm_table:
+    '': SCM
+    dOFV: NA
+  max_scm_table:
+    '': SCM
+    dOFV: NA
+    Add.params: ''
+resmod:
+  - resmod_ruv_table:
+      Model:
+        - dtbs
+        - time varying
+        - tdist
+        - autocorrelation
+        - tad varying
+        - IIV on RUV
+        - power
+      dOFV:
+        - '13.91'
+        - '8.03'
+        - '5.53'
+        - '3.34'
+        - '2.75'
+        - '1.31'
+        - '0.03'
+      Additional parameters:
+        - 2.0
+        - 2.0
+        - 1.0
+        - 1.0
+        - 2.0
+        - 1.0
+        - 1.0
+      Parameter values:
+        - lambda=0.242,zeta=0.042
+        - sdeps_0-t0=0.271,sdeps_t0-390=0.956,t0=2.00
+        - df=5.106
+        - half-life=16.700
+        - sdeps_0-t0=0.894,sdeps_t0-258=1.107,t0=11.50
+        - '%CV=21.772'
+        - delta_power=-0.037
+cdd:
+  files_exist: yes
+  ii_table:
+    - No influential individuals detected
+simeval:
+  simeval_files_exist: yes
+  outliers_table:
+    Subjects:
+      - Subject 42
+      - Subject 11
+    dOFV:
+      - '0.4'
+      - '0.1'
+  max_outlier_table:
+    '': Subject 42
+    dOFV: 0.38438
+  outlier_ids:
+    - 11.0
+    - 42.0
+overall_outliers:
+  all_outlier_table:
+    ID:
+      - '11'
+      - '25'
+      - '42'
+    OFV outliers (SD):
+      - '4.098'
+      - ''
+      - '4.554'
+    EBE NPDE outliers (ETA numbers):
+      - ''
+      - ''
+      - ''
+    CWRES outliers:
+      - '1'
+      - '1'
+      - '1'
+  files_exist: yes

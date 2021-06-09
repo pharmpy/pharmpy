@@ -1,0 +1,49 @@
+;; 1. Based on: 5
+$PROBLEM    PHENOBARB SIMPLE MODEL
+$DATA      ../../../pheno.dta IGNORE=@
+$INPUT      ID TIME AMT WGT APGR DV FA1 FA2
+$SUBROUTINE ADVAN1 TRANS2
+$PK
+
+IF(AMT.GT.0) BTIME=TIME
+TAD=TIME-BTIME
+      TVCL=THETA(1)*WGT
+      TVV=THETA(2)*WGT
+IF(APGR.LT.5) TVV=TVV*(1+THETA(3))
+      CL=TVCL*EXP(ETA(1))
+      V=TVV*EXP(ETA(2))
+      S1=V
+
+;;;SCM-LINEARIZE_CONSTANTS
+$ERROR
+
+      W=F
+      Y=F+W*EPS(1)
+
+      IPRED=F         ;  individual-specific prediction
+      IRES=DV-IPRED   ;  individual-specific residual
+      IWRES=IRES/W    ;  individual-specific weighted residual
+
+D_EPSETA1_1 = 0
+D_EPSETA1_2 = 0
+"LAST
+"  D_EPSETA1_1=HH(1,2)
+"  D_EPSETA1_2=HH(1,3)
+$THETA  (0,0.00469556) ; pCL
+$THETA  (0,0.984244) ; pV
+$THETA  (-.99,0.158967)
+$OMEGA  DIAGONAL(2)
+ 0.0293456  ;       IVCL
+ 0.0279067  ;        IVV
+$SIGMA  0.0132416
+;$SIGMA  0.0130865
+$ESTIMATION METHOD=1 INTERACTION MCETA=1 MAXEVALS=0
+$COVARIANCE OMITTED
+$TABLE      ID DV MDV CIPREDI=OPRED H011 TIME AMT WGT APGR FA1 FA2
+            G011 G021 ETA1 ETA2 D_EPSETA1_1 D_EPSETA1_2 TAD NOPRINT
+            NOAPPEND ONEHEADER FILE=pheno_real_linbase.dta
+            RFORMAT="(1PE16.9,300(1PE24.16))"
+$TABLE      ID CWRES PRED CIPREDI CPRED TIME TAD MDV NOPRINT NOAPPEND
+            ONEHEADER FILE=extra_table
+$ETAS       FILE=/home/rikard/testing/pheno_real.phi
+

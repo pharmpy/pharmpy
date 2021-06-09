@@ -1,0 +1,1 @@
+/home/rikard/PsN/bin/qa pheno_real.mod
