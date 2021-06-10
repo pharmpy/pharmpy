@@ -21,6 +21,8 @@ def test_create_tasks():
     assert t3.task_input[2] == 3
     t4 = Task('t4', 'func', [1, 2, 3])
     assert t4.task_input[0] == [1, 2, 3]
+    t5 = Task('t5', 'func')
+    assert not t5.has_input()
 
 
 def test_add_tasks(tasks):
@@ -33,6 +35,41 @@ def test_add_tasks(tasks):
 
     wf.add_tasks([t2, t3])
     assert len(list(wf.tasks.nodes)) == 3
+
+
+def test_add_tasks_workflow(tasks):
+    t1, t2, t3, _ = tasks
+
+    wf_sequential = Workflow([t1, t2, t3])
+    wf_sequential.connect_tasks({t1: [t2, t3]})
+    assert len(wf_sequential.tasks.edges) == 2
+    assert list(wf_sequential.tasks.successors(t1)) == [t2, t3]
+
+    t4 = Task('t4', 'func', 'input')
+    wf_t4 = Workflow(t4)
+
+    wf_sequential.add_tasks(wf_t4, connect=True)
+    assert list(wf_sequential.tasks.predecessors(t4)) == [t2, t3]
+    assert len(wf_sequential.tasks.edges) == 4
+    assert list(wf_sequential.tasks.nodes) == [t1, t2, t3, t4]
+
+    wf_parallel = Workflow([t1, t2, t3])
+    wf_parallel.connect_tasks({t1: [t2, t3]})
+    wf_parallel.add_tasks(wf_t4, connect=False)
+    assert not list(wf_parallel.tasks.predecessors(t4))
+    assert len(wf_parallel.tasks.edges) == 2
+    assert list(wf_parallel.tasks.nodes) == [t1, t2, t3, t4]
+
+    wf_empty_task_input = Workflow([t1, t2, t3])
+    wf_empty_task_input.connect_tasks({t1: [t2, t3]})
+    t5 = Task('t5', 'func')
+    wf_t5 = Workflow(t5)
+    assert not t5.has_input()
+    wf_empty_task_input.add_tasks(wf_t5, connect=True)
+    assert list(wf_empty_task_input.tasks.predecessors(t5)) == [t2, t3]
+    assert len(wf_empty_task_input.tasks.edges) == 4
+    assert list(wf_empty_task_input.tasks.nodes) == [t1, t2, t3, t5]
+    assert t5.task_input[0] == [t2, t3]
 
 
 def test_connect_tasks(tasks):
@@ -50,7 +87,7 @@ def test_connect_tasks(tasks):
         wf.connect_tasks({t1: t1})
 
 
-def test_get_leaf_tasks(tasks):
+def test_get_output(tasks):
     wf = Workflow()
 
     t1, t2, t3, t4 = tasks
@@ -58,12 +95,12 @@ def test_get_leaf_tasks(tasks):
     wf.add_tasks([t1, t2, t3])
     wf.connect_tasks({t1: [t2, t3]})
 
-    assert wf.get_leaf_tasks() == [t2, t3]
+    assert wf.get_output() == [t2, t3]
 
     wf.add_tasks(t4)
     wf.connect_tasks({t2: t4, t3: t4})
 
-    assert wf.get_leaf_tasks() == [t4]
+    assert wf.get_output() == [t4]
 
 
 def test_as_dict(tasks):
@@ -82,27 +119,3 @@ def test_as_dict(tasks):
     assert wf_inputs[0].startswith('input')
     assert wf_inputs[1].startswith('t1')
     assert isinstance(wf_inputs[3], list)
-
-
-def test_merge_workflows(tasks):
-    t1, t2, t3, _ = tasks
-
-    wf_sequential = Workflow([t1, t2, t3])
-    wf_sequential.connect_tasks({t1: [t2, t3]})
-    assert len(wf_sequential.tasks.edges) == 2
-    assert list(wf_sequential.tasks.successors(t1)) == [t2, t3]
-
-    t4 = Task('t4', 'func', 'input')
-    wf_t4 = Workflow(t4)
-
-    wf_sequential.merge_workflows(wf_t4, connect=True)
-    assert list(wf_sequential.tasks.predecessors(t4)) == [t2, t3]
-    assert len(wf_sequential.tasks.edges) == 4
-    assert list(wf_sequential.tasks.nodes) == [t1, t2, t3, t4]
-
-    wf_parallel = Workflow([t1, t2, t3])
-    wf_parallel.connect_tasks({t1: [t2, t3]})
-    wf_parallel.merge_workflows(wf_t4, connect=False)
-    assert not list(wf_parallel.tasks.predecessors(t4))
-    assert len(wf_parallel.tasks.edges) == 2
-    assert list(wf_parallel.tasks.nodes) == [t1, t2, t3, t4]

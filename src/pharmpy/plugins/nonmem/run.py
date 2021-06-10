@@ -8,19 +8,21 @@ from pharmpy.tools.workflows import Task, Workflow
 from pharmpy.utils import TemporaryDirectoryChanger
 
 
-def create_workflow(models):
-    wf = Workflow()
+def create_workflow(models=None):
+    wf_run = Workflow()
 
-    for model in models:
-        task = Task('run', execute_model, model)
-        wf.add_tasks(task)
+    if models:
+        for model in models:
+            task_execute = Task('run', execute_model, model)
+            wf_run.add_tasks(task_execute)
+    else:
+        task_execute = Task('run', execute_model)
+        wf_run.add_tasks(task_execute)
 
-    leaf_tasks = wf.get_leaf_tasks()
-    result_task = Task('fit_results', results, leaf_tasks)
-    wf.add_tasks(result_task)
-    wf.connect_tasks({task: result_task for task in leaf_tasks})
+    result_task = Task('fit_results', results)
+    wf_run.add_tasks(result_task, connect=True, as_single_element=False)
 
-    return wf
+    return wf_run
 
 
 def execute_model(model):

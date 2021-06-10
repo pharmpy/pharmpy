@@ -8,13 +8,51 @@ class Workflow:
     def __init__(self, tasks=None):
         self.tasks = nx.DiGraph()
         if tasks:
-            self.add_tasks(tasks)
+            self.add_tasks(tasks, connect=False)
 
-    def add_tasks(self, tasks):
-        if isinstance(tasks, list):
-            self.tasks.add_nodes_from(tasks)
+    def add_tasks(self, other, connect=False, as_single_element=True):
+        """Keep all nodes and edges, connects output from first workflow to input in second if connect=True
+        (assumes 1:M, M:1 or 1:1 connections)"""
+        wf1_out_tasks = self.get_output()
+        if not isinstance(other, Workflow):
+            wf2_in_tasks = []
+            if isinstance(other, list):
+                self.tasks.add_nodes_from(other)
+                wf2_in_tasks.extend(other)
+            else:
+                self.tasks.add_node(other)
+                wf2_in_tasks.append(other)
         else:
-            self.tasks.add_node(tasks)
+            wf2_in_tasks = other.get_input()
+            self.tasks = nx.compose(self.tasks, other.tasks)
+
+        if not connect:
+            return
+        else:
+            workflow_connection = self.find_workflow_connections(wf1_out_tasks, wf2_in_tasks)
+            for wf2_in_task in wf2_in_tasks:
+                if not wf2_in_task.has_input():
+                    # TODO: Find better system to track input, e.g. if function takes multiple args
+                    if as_single_element and len(wf1_out_tasks) == 1:
+                        wf2_in_task.task_input = (wf1_out_tasks[0],)
+                    else:
+                        wf2_in_task.task_input = (wf1_out_tasks,)
+            self.connect_tasks(workflow_connection)
+
+    @staticmethod
+    def find_workflow_connections(wf1_out_tasks, wf2_in_tasks):
+        if len(wf1_out_tasks) > 1 and len(wf2_in_tasks) > 1:
+            raise ValueError('Having N:M connections currently not supported')
+        elif len(wf1_out_tasks) > 1:
+            wf2_in_task = wf2_in_tasks[0]
+            workflow_connection = {wf1_out_task: wf2_in_task for wf1_out_task in wf1_out_tasks}
+        elif len(wf2_in_tasks) > 1:
+            wf1_out_task = wf1_out_tasks[0]
+            workflow_connection = {wf1_out_task: wf2_in_task for wf2_in_task in wf2_in_tasks}
+        else:
+            wf1_out_task, wf2_in_task = wf1_out_tasks[0], wf2_in_tasks[0]
+            workflow_connection = {wf1_out_task: wf2_in_task}
+        return workflow_connection
 
     def connect_tasks(self, connect_dict):
         """Connects task with dict: {from: to}"""
@@ -29,29 +67,6 @@ class Workflow:
                 edges.append((key, value))
         self.tasks.add_edges_from(edges)
 
-    def merge_workflows(self, other, connect=True, edges=None):
-        """Keep all nodes and edges, create edge between self sink and other source
-        (assumes 1:M, M:1 or 1:1 connections)"""
-        self_leaf_tasks, other_root_tasks = self.get_leaf_tasks(), other.get_root_tasks()
-
-        self.tasks = nx.compose(self.tasks, other.tasks)
-
-        if not connect:
-            return
-
-        if edges:
-            workflow_connection = edges
-        elif len(other_root_tasks) > 1 and len(self_leaf_tasks) > 1:
-            raise ValueError('Having N:M connections currently not supported')
-        elif len(self_leaf_tasks) > 1:
-            workflow_connection = {s: other_root_tasks[0] for s in self_leaf_tasks}
-        elif len(other_root_tasks) > 1:
-            workflow_connection = {s: self_leaf_tasks[0] for s in other_root_tasks}
-        else:
-            workflow_connection = {self_leaf_tasks[0]: other_root_tasks[0]}
-
-        self.connect_tasks(workflow_connection)
-
     def as_dict(self):
         as_dict = dict()
         for task in nx.dfs_tree(self.tasks):
@@ -63,7 +78,7 @@ class Workflow:
 
     @staticmethod
     def id_convert(task):
-        # TODO: see if better to do recursively
+        # TODO: Convert recursively
         if isinstance(task, Task):
             return task.task_id
         elif isinstance(task, list):
@@ -71,10 +86,10 @@ class Workflow:
         else:
             return task
 
-    def get_leaf_tasks(self):
+    def get_output(self):
         return [node for node in self.tasks.nodes if self.tasks.out_degree(node) == 0]
 
-    def get_root_tasks(self):
+    def get_input(self):
         return [node for node in self.tasks.nodes if self.tasks.in_degree(node) == 0]
 
     def plot_dask(self, filename):
@@ -98,9 +113,11 @@ class Task:
         else:
             self.task_id = 'results'
 
+    def has_input(self):
+        return len(self.task_input) > 0
+
     def __repr__(self):
         return self.name
 
     def __str__(self):
-        # input_str = ', '.join([str(type(elem).__name__) for elem in self.task_input])
         return self.name

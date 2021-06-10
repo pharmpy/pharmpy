@@ -12,31 +12,27 @@ class Bootstrap(pharmpy.tools.Tool):
         self.model.database = self.database.model_database
 
     def run(self):
-        wf = Workflow()
-
-        for i in range(self.resamples):
-            resample_task = Task('resample', resample_model, self.model, f'bs_{i + 1}')
-            wf.add_tasks(resample_task)
-            run_workflow = self.workflow_creator([resample_task])
-            wf.merge_workflows(
-                run_workflow,
-                edges={resample_task: run_task for run_task in run_workflow.get_root_tasks()},
-            )
-
-        # db = NullToolDatabase
-        # db.model_database = self.database.model_database
-        # modelfit_run = modelfit.Modelfit(resample_names, database=db)
-        # modelfit_workflow = modelfit_run.workflow_creator(resample_names)
-
-        leaf_tasks = wf.get_leaf_tasks()
-        result_task = Task('results', post_process_results, leaf_tasks, self.model, final_task=True)
-        wf.add_tasks(result_task)
-        wf.connect_tasks({task: result_task for task in leaf_tasks})
-
-        res = self.dispatcher.run(wf, self.database)
+        wf_bootstrap = self.create_workflow()
+        task_result = Task('results', post_process_results, final_task=True)
+        wf_bootstrap.add_tasks(task_result, connect=True)
+        res = self.dispatcher.run(wf_bootstrap, self.database)
         res.to_json(path=self.database.path / 'results.json')
         res.to_csv(path=self.database.path / 'results.csv')
         return res
+
+    def create_workflow(self):
+        wf_bootstrap = Workflow()
+
+        for i in range(self.resamples):
+            wf_resample = Workflow()
+            task_resample = Task('resample', resample_model, self.model, f'bs_{i + 1}')
+            wf_resample.add_tasks(task_resample, connect=False)
+            wf_fit = self.workflow_creator()
+            wf_resample.add_tasks(wf_fit, connect=True)
+
+            wf_bootstrap.add_tasks(wf_resample, connect=False)
+
+        return wf_bootstrap
 
 
 def resample_model(model, name):
@@ -45,9 +41,10 @@ def resample_model(model, name):
     return model
 
 
-def post_process_results(models, original_model):
+def post_process_results(models):
+    # Flattening nested list
     models = [model for model_sublist in models for model in model_sublist]
     res = calculate_results(
-        models, original_model=original_model, included_individuals=None, dofv_results=None
+        models, original_model=None, included_individuals=None, dofv_results=None
     )
     return res
