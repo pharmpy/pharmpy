@@ -47,13 +47,20 @@ def execute_model(model):
         model.database.store_local_file(model, basepath.with_suffix('.lst'))
         model.database.store_local_file(model, basepath.with_suffix('.ext'))
         model.database.store_local_file(model, basepath.with_suffix('.phi'))
+        cov_path = basepath.with_suffix('.cov')
+        if cov_path.is_file():
+            model.database.store_local_file(model, cov_path)
     return model
 
 
 def results(models):
     for model in models:
         model._modelfit_results = None
+        # FIXME: On the fly reading doesn't work since files
+        # doesn't get copied up. Reading in now as a workaround.
         model.modelfit_results.ofv
+        model.modelfit_results.covariance_matrix
+        model.modelfit_results.individual_estimates
     return models
 
 
