@@ -154,17 +154,45 @@ def test_correlation(pheno_path):
         assert pytest.approx(corr.loc['IVV', 'PTVV'], 1e-13) == 3.56662e-01
 
 
-def test_standard_errors(pheno_path):
+def test_standard_errors(testdata, pheno_path):
     with ConfigurationContext(nonmem.conf, parameter_names=['basic']):
         res = Model(pheno_path).modelfit_results
         ses = res.standard_errors
         assert len(ses) == 6
         assert pytest.approx(ses['THETA(1)'], 1e-13) == 2.10036e-04
+        ses_sd = res.standard_errors_sdcorr
+        correct = pd.Series(
+            {
+                'THETA(1)': 0.000210036,
+                'THETA(2)': 0.0268952,
+                'THETA(3)': 0.0837623,
+                'OMEGA(1,1)': 0.0391526,
+                'OMEGA(2,2)': 0.0223779,
+                'SIGMA(1,1)': 0.00990444,
+            }
+        )
+        correct.name = 'SE'
+        pd.testing.assert_series_equal(ses_sd, correct)
+
     with ConfigurationContext(nonmem.conf, parameter_names=['comment', 'basic']):
         res = Model(pheno_path).modelfit_results
         ses = res.standard_errors
         assert len(ses) == 6
         assert pytest.approx(ses['PTVCL'], 1e-13) == 2.10036e-04
+
+        ses_sd = res.standard_errors_sdcorr
+        correct = pd.Series(
+            {
+                'PTVCL': 0.000210036,
+                'PTVV': 0.0268952,
+                'THETA(3)': 0.0837623,
+                'IVCL': 0.0391526,
+                'IVV': 0.0223779,
+                'SIGMA(1,1)': 0.00990444,
+            }
+        )
+        correct.name = 'SE'
+        pd.testing.assert_series_equal(ses_sd, correct)
 
 
 def test_individual_ofv(pheno, pheno_lst):
@@ -227,6 +255,20 @@ def test_parameter_estimates(pheno_path):
         assert len(pe) == 6
         assert pe['THETA(1)'] == 4.69555e-3
         assert pe['OMEGA(2,2)'] == 2.7906e-2
+        pe_sd = res.parameter_estimates_sdcorr
+        correct = pd.Series(
+            {
+                'THETA(1)': 0.00469555,
+                'THETA(2)': 0.984258,
+                'THETA(3)': 0.158920,
+                'OMEGA(1,1)': 0.171321,
+                'OMEGA(2,2)': 0.167051,
+                'SIGMA(1,1)': 0.115069,
+            }
+        )
+        correct.name = 'estimates'
+        pd.testing.assert_series_equal(pe_sd, correct)
+
     with ConfigurationContext(nonmem.conf, parameter_names=['comment', 'basic']):
         res = Model(pheno_path).modelfit_results
         pe = res.parameter_estimates

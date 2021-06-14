@@ -429,10 +429,11 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
                     result_obj._set_covariance_status(None)
                 else:
                     ses = ses[~fix]
+                    sdcorr = table.omega_sigma_se_stdcorr[~fix]
                     if self.model:
                         ses = ses.rename(index=self.model.parameter_translation())
+                        sdcorr = sdcorr.rename(index=self.model.parameter_translation())
                     result_obj._standard_errors = ses
-                    sdcorr = table.omega_sigma_se_stdcorr[~fix]
                     sdcorr_ses = ses.copy()
                     sdcorr_ses.update(sdcorr)
                     if self.model:
