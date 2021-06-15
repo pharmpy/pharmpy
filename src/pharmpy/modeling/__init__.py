@@ -14,6 +14,7 @@ from pharmpy.modeling.common import (
     write_model,
 )
 from pharmpy.modeling.covariate_effect import add_covariate_effect
+from pharmpy.modeling.data import ninds
 from pharmpy.modeling.error import (
     additive_error,
     combined_error,
@@ -112,4 +113,5 @@ __all__ = [
     'theta_as_stdev',
     'set_weighted_error_model',
     'set_dtbs_error',
+    'ninds',
 ]
