@@ -9,3 +9,8 @@ def ninds(model):
 def nobs(model):
     """Retrieve the total number of observations in the model dataset"""
     return model.dataset.pharmpy.nobs
+
+
+def nobsi(model):
+    """Number of observations for each individual"""
+    return model.dataset.pharmpy.nobsi

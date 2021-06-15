@@ -286,6 +286,10 @@ class DataFrameAccessor:
         return len(self.observations)
 
     @property
+    def nobsi(self):
+        return self.observations.groupby(self.id_label).count()
+
+    @property
     def doses(self):
         """Return a series with all doses. Indexed with ID and TIME"""
         try:
