@@ -1,3 +1,4 @@
+import warnings
 from pathlib import Path
 
 import numpy as np
@@ -371,6 +372,7 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
                 ext_tables = NONMEMTableFile(self._path.with_suffix('.ext'))
             except ValueError:
                 # The ext-file is illegal
+                warnings.warn(f"Broken ext-file {self._path.with_suffix('.ext')}")
                 self._read_ext = True
                 res = NONMEMModelfitResults(self)
                 res.model_name = self._path.stem

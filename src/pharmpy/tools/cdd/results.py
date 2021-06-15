@@ -42,6 +42,9 @@ def compute_cook_scores(base_estimate, cdd_estimates, covariance_matrix):
 
 def compute_delta_ofv(base_model, cdd_models, skipped_individuals):
     iofv = base_model.modelfit_results.individual_ofv
+    if iofv is None:
+        return [np.nan for m in cdd_models]
+
     cdd_ofvs = [m.modelfit_results.ofv if m.modelfit_results else np.nan for m in cdd_models]
 
     # need to set dtype for index.difference to work
@@ -94,16 +97,21 @@ def calculate_results(base_model, cdd_models, case_column, skipped_individuals, 
 
     # create Series of NaN values and then replace any computable results
     cook_temp = pd.Series(np.nan, index=cdd_model_names)
-    cook_temp.update(
-        pd.Series(
-            compute_cook_scores(
-                base_model.modelfit_results.parameter_estimates,
-                cdd_estimates,
-                base_model.modelfit_results.covariance_matrix,
-            ),
-            index=cdd_estimates.index,
+    try:
+        base_model.modelfit_results.covariance_matrix
+    except Exception:
+        pass
+    else:
+        cook_temp.update(
+            pd.Series(
+                compute_cook_scores(
+                    base_model.modelfit_results.parameter_estimates,
+                    cdd_estimates,
+                    base_model.modelfit_results.covariance_matrix,
+                ),
+                index=cdd_estimates.index,
+            )
         )
-    )
 
     jack_cook_score = None
     if len(cdd_model_names) == cdd_estimates.shape[0]:
@@ -133,15 +141,20 @@ def calculate_results(base_model, cdd_models, case_column, skipped_individuals, 
         iplot = None
     res.individual_predictions_plot = iplot
 
+    try:
+        covmatrix = base_model.modelfit_results.covariance_matrix
+    except Exception:
+        covratios = np.nan
+    else:
+        covratios = compute_covariance_ratios(cdd_models, covmatrix)
+
     res.case_results = pd.DataFrame(
         {
             'cook_score': cook_temp,
             'jackknife_cook_score': jack_cook_score,
             'delta_ofv': dofv,
             'dofv_influential': dofv_influential,
-            'covariance_ratio': compute_covariance_ratios(
-                cdd_models, base_model.modelfit_results.covariance_matrix
-            ),
+            'covariance_ratio': covratios,
             'skipped_individuals': skipped_individuals,
         },
         index=cdd_model_names,
