@@ -278,6 +278,14 @@ class DataFrameAccessor:
         return df.squeeze()
 
     @property
+    def ninds(self):
+        return len(self.ids)
+
+    @property
+    def nobs(self):
+        return len(self.observations)
+
+    @property
     def doses(self):
         """Return a series with all doses. Indexed with ID and TIME"""
         try:
