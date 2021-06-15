@@ -3,3 +3,7 @@
 
 def ninds(model):
     return len(model.dataset.pharmpy.ids)
+
+
+def nobs(model):
+    return len(model.dataset.pharmpy.observations)
