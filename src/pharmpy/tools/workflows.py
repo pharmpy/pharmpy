@@ -92,6 +92,10 @@ class Workflow:
     def get_input(self):
         return [node for node in self.tasks.nodes if self.tasks.in_degree(node) == 0]
 
+    def get_upstream_tasks(self, task):
+        edges = list(nx.edge_dfs(self.tasks, task, orientation='reverse'))
+        return [node for node, _, _ in edges]
+
     def plot_dask(self, filename):
         visualize(self.as_dict(), filename=filename, collapse_outputs=True)
 

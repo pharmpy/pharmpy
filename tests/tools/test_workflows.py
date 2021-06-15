@@ -77,7 +77,7 @@ def test_connect_tasks(tasks):
 
     t1, t2, t3, t4 = tasks
 
-    wf.add_tasks([t1, t2, t3, t4])
+    wf.add_tasks([t1, t2, t3, t4], connect=False)
     wf.connect_tasks({t1: [t2, t3], t2: t4, t3: t4})
 
     assert list(wf.tasks.successors(t1)) == [t2, t3]
@@ -85,6 +85,24 @@ def test_connect_tasks(tasks):
 
     with pytest.raises(ValueError):
         wf.connect_tasks({t1: t1})
+
+
+def test_get_upstream_tasks(tasks):
+    wf = Workflow()
+
+    t1, t2, t3, t4 = tasks
+    t5 = Task('t5', 'func', t1)
+    t6 = Task('t6', 'func', t3)
+
+    wf.add_tasks(t1)
+    wf.add_tasks([t2, t3], connect=True)
+    wf.add_tasks(t4, connect=True)
+    wf.add_tasks(t5, connect=False)
+    wf.connect_tasks({t1: t5, t3: t6})
+
+    assert set(wf.get_upstream_tasks(t4)) == {t1, t2, t3}
+    assert set(wf.get_upstream_tasks(t6)) == {t1, t3}
+    assert wf.get_upstream_tasks(t5) == [t1]
 
 
 def test_get_output(tasks):
