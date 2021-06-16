@@ -846,6 +846,28 @@ class ModelStatements(MutableSequence):
                         graph.add_edge(i, j)
         return graph
 
+    def dependencies(self, symbol):
+        """Find all dependencies of a symbol"""
+        for i in range(len(self) - 1, -1, -1):
+            if (
+                isinstance(self[i], Assignment)
+                and self[i].symbol == symbol
+                or isinstance(self[i], ODESystem)
+                and symbol in self[i].amounts
+            ):
+                break
+        else:
+            raise KeyError(f"Could not find symbol {symbol}")
+        g = self._create_dependency_graph()
+        symbs = self[i].rhs_symbols
+        for j, _ in nx.bfs_predecessors(g, i):
+            if isinstance(self[j], Assignment):
+                symbs -= {self[j].symbol}
+            elif isinstance(self[j], ODESystem):
+                symbs -= set(self[j].amounts)
+            symbs |= self[j].rhs_symbols
+        return symbs
+
     def remove_symbol_definitions(self, symbols, statement):
         """Remove symbols and dependencies not used elsewhere. statement
         is the statement from which the symbol was removed

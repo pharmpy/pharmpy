@@ -280,3 +280,22 @@ def test_repr_html():
     stats = ModelStatements([s1])
     html = stats._repr_html_()
     assert 'X + Y' in html
+
+
+def test_dependencies(pheno_path):
+    model = Model(pheno_path)
+    depsy = model.statements.dependencies(S('Y'))
+    assert depsy == {
+        S('EPS(1)'),
+        S('AMT'),
+        S('THETA(1)'),
+        S('t'),
+        S('THETA(2)'),
+        S('THETA(3)'),
+        S('APGR'),
+        S('WGT'),
+        S('ETA(2)'),
+        S('ETA(1)'),
+    }
+    depscl = model.statements.dependencies(S('CL'))
+    assert depscl == {S('THETA(1)'), S('WGT'), S('ETA(1)')}
