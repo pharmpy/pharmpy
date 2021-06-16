@@ -1,9 +1,9 @@
 import pharmpy.execute as execute
 import pharmpy.results
-import pharmpy.search.algorithms as algorithms
-import pharmpy.search.rankfuncs as rankfuncs
 import pharmpy.tools
 import pharmpy.tools.modelfit as modelfit
+import pharmpy.tools.modelsearch.algorithms as algorithms
+import pharmpy.tools.modelsearch.rankfuncs as rankfuncs
 
 
 class ModelSearch(pharmpy.tools.Tool):

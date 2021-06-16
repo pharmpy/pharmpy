@@ -1,6 +1,6 @@
 from pharmpy import Model
-from pharmpy.search.algorithms import exhaustive
-from pharmpy.search.rankfuncs import aic, bic, ofv
+from pharmpy.tools.modelsearch.algorithms import exhaustive
+from pharmpy.tools.modelsearch.rankfuncs import aic, bic, ofv
 
 
 class DummyResults:

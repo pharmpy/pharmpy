@@ -1,6 +1,6 @@
 import pytest
 
-from pharmpy.search.mfl import ModelFeatures
+from pharmpy.tools.modelsearch.mfl import ModelFeatures
 
 
 @pytest.mark.parametrize(
