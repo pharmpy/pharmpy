@@ -831,17 +831,19 @@ class ModelStatements(MutableSequence):
                     del self[i]
 
     def _create_dependency_graph(self):
-        """Create a graph of dependencies between assignments
-        Does not support dependencies of ODESystem
-        """
+        """Create a graph of dependencies between statements"""
         graph = nx.DiGraph()
         for i in range(len(self) - 1, -1, -1):
             rhs = self[i].rhs_symbols
             for s in rhs:
                 for j in range(i - 1, -1, -1):
-                    if isinstance(self[j], Assignment) and self[j].symbol == s:
+                    if (
+                        isinstance(self[j], Assignment)
+                        and self[j].symbol == s
+                        or isinstance(self[j], ODESystem)
+                        and s in self[j].amounts
+                    ):
                         graph.add_edge(i, j)
-                        break
         return graph
 
     def remove_symbol_definitions(self, symbols, statement):
