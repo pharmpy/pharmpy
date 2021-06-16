@@ -1,6 +1,6 @@
 import os
 import shutil
-import sys
+import time
 import warnings
 import weakref
 from pathlib import Path
@@ -61,6 +61,7 @@ class TemporaryDirectory:
                         os.unlink(path)
                     # PermissionError is raised on FreeBSD for directories
                     except (IsADirectoryError, PermissionError):
+                        time.sleep(0.1)
                         cls._rmtree(path)
                 except FileNotFoundError:
                     pass
@@ -90,5 +91,6 @@ class TemporaryDirectory:
             self._rmtree(self.name)
 
 
-if sys.version_info >= (3, 9):
+if os.name != 'nt':
+    # Only use the custom implementation for Windows.
     from tempfile import TemporaryDirectory  # noqa
