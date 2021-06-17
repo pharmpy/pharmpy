@@ -137,3 +137,34 @@ def test_as_dict(tasks):
     assert wf_inputs[0].startswith('input')
     assert wf_inputs[1].startswith('t1')
     assert isinstance(wf_inputs[3], list)
+
+
+def test_force_new_task_ids(tasks):
+    wf = Workflow()
+
+    t1, t2, t3, t4 = tasks
+    wf.add_tasks([t1, t2, t3, t4])
+    t1_id, t2_id, t3_id, t4_id = t1.task_id, t2.task_id, t3.task_id, t4.task_id
+    wf.force_new_task_ids()
+
+    assert (
+        t1_id != t1.task_id and t2_id != t2.task_id and t3_id != t3.task_id and t4_id != t4.task_id
+    )
+
+
+def test_copy(tasks):
+    wf = Workflow()
+
+    t1, t2, t3, t4 = tasks
+
+    wf.add_tasks([t1, t2, t3, t4])
+    wf.connect_tasks({t1: [t2, t3]})
+    wf.connect_tasks({t2: t4, t3: t4})
+
+    task_ids = [task.task_id for task in wf.tasks.nodes]
+
+    wf_copy = wf.copy(new_ids=False)
+    assert task_ids == [task.task_id for task in wf_copy.tasks.nodes]
+
+    wf_copy_new_ids = wf.copy(new_ids=True)
+    assert task_ids != [task.task_id for task in wf_copy_new_ids.tasks.nodes]

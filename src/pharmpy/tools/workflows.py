@@ -1,3 +1,4 @@
+import copy
 import uuid
 
 import networkx as nx
@@ -96,6 +97,16 @@ class Workflow:
         edges = list(nx.edge_dfs(self.tasks, task, orientation='reverse'))
         return [node for node, _, _ in edges]
 
+    def force_new_task_ids(self):
+        for task in self.tasks.nodes:
+            task.force_new_id()
+
+    def copy(self, new_ids=True):
+        wf_copy = copy.deepcopy(self)
+        if new_ids:
+            wf_copy.force_new_task_ids()
+        return wf_copy
+
     def plot_dask(self, filename):
         visualize(self.as_dict(), filename=filename, collapse_outputs=True)
 
@@ -113,12 +124,15 @@ class Task:
         self.function = function
         self.task_input = task_input
         if not final_task:
-            self.task_id = f'{name}-{uuid.uuid1()}'
+            self.task_id = f'{name}-{uuid.uuid4()}'
         else:
             self.task_id = 'results'
 
     def has_input(self):
         return len(self.task_input) > 0
+
+    def force_new_id(self):
+        self.task_id = f'{self.name}-{uuid.uuid4()}'
 
     def __repr__(self):
         return self.name
