@@ -120,6 +120,14 @@ class ThetaRecord(Record):
             n = self._multiple(theta)
             i += n
 
+    def update_name_map(self, trans):
+        """Update name_map given dict from -> to"""
+        for key, value in trans.items():
+            if key in self.name_map:
+                n = self.name_map[key]
+                del self.name_map[key]
+                self.name_map[value] = n
+
     def renumber(self, new_start):
         old_start = min(self.name_map.values())
         if new_start != old_start:

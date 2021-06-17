@@ -522,5 +522,13 @@ class OmegaRecord(Record):
             parser = OmegaRecordParser(s)
             self.root = parser.root
 
+    def update_name_map(self, trans):
+        """Update name_map given dict from -> to"""
+        for key, value in trans.items():
+            if key in self.name_map:
+                n = self.name_map[key]
+                del self.name_map[key]
+                self.name_map[value] = n
+
     def __len__(self):
         return len(self.eta_map)

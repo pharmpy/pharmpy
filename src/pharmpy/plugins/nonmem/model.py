@@ -244,6 +244,8 @@ class Model(pharmpy.model.Model):
             or 'abbr' in pharmpy.plugins.nonmem.conf.parameter_names
         ):
             self.statements
+            # reading statements might change parameters. Resetting _old_parameters
+            self._old_parameters = self._parameters.copy()
         return self._parameters
 
     def _read_parameters(self):
@@ -386,6 +388,12 @@ class Model(pharmpy.model.Model):
         for key, value in trans_params.items():
             try:
                 self.parameters[key].name = value
+                for theta in self.control_stream.get_records('THETA'):
+                    theta.update_name_map(trans_params)
+                for omega in self.control_stream.get_records('OMEGA'):
+                    omega.update_name_map(trans_params)
+                for sigma in self.control_stream.get_records('SIGMA'):
+                    sigma.update_name_map(trans_params)
             except KeyError:
                 self.random_variables.subs({S(key): value})
 

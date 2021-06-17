@@ -44,7 +44,7 @@ def create_model3b(model1b, model3, ncovs):
     * Set FIX pattern back from model1b
     * Use initial etas from model3
     """
-    parameters = model3.parameters
+    parameters = model3.parameters.copy()
 
     parcov_inits = calculate_parcov_inits(model3, ncovs)
     parameters.inits = parcov_inits
