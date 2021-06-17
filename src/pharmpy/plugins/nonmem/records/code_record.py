@@ -525,5 +525,15 @@ class CodeRecord(Record):
 
     def __str__(self):
         if self.is_updated:
-            return self.raw_name + str(self.root).upper()
+            s = str(self.root)
+            newlines = []
+            # FIXME: Workaround for upper casing all code but not comments.
+            # should properly be handled in a custom printer
+            for line in s.split('\n'):
+                parts = line.split(';', 1)
+                modline = parts[0].upper()
+                if len(parts) == 2:
+                    modline += ';' + parts[1]
+                newlines.append(modline)
+            return self.raw_name + '\n'.join(newlines)
         return super(CodeRecord, self).__str__()

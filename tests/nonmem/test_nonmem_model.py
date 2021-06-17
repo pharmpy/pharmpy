@@ -815,3 +815,47 @@ $EST METH=COND INTER
     model.estimation_steps[0].cov = True
     model.update_source()
     assert str(model).split('\n')[-2] == '$COVARIANCE'
+
+
+def test_update_source_comments():
+    code = """
+$PROBLEM    run3.mod PHENOBARB SIMPLE MODEL
+$DATA      ../../pheno.dta IGNORE=@
+$INPUT      ID TIME AMT WGT APGR DV FA1 FA2
+$SUBROUTINE ADVAN1 TRANS2
+$PK
+
+
+IF(AMT.GT.0) BTIME=TIME
+TAD=TIME-BTIME
+      TVCL=THETA(1)*WGT
+      TVV=THETA(2)*WGT
+IF(APGR.LT.5) TVV=TVV*(1+THETA(3))
+      CL=TVCL*EXP(ETA(1))
+      V=TVV*EXP(ETA(2))
+      S1=V
+$ERROR
+
+      W=F
+      Y=F+W*EPS(1)
+
+      IPRED=F         ;  individual-specific prediction
+      IRES=DV-IPRED   ;  individual-specific residual
+      IWRES=IRES/W    ;  individual-specific weighted residual
+
+$THETA  (0,0.00469555) ; CL
+$THETA  (0,0.984258) ; V
+$THETA  (-.99,0.15892)
+$OMEGA  DIAGONAL(2)
+ 0.0293508  ;       IVCL
+ 0.027906  ;        IVV
+$SIGMA  0.013241
+$ESTIMATION METHOD=1 INTERACTION MAXEVALS=9999
+$COVARIANCE UNCONDITIONAL
+$TABLE      ID TIME AMT WGT APGR IPRED PRED TAD CWRES NPDE NOAPPEND
+            NOPRINT ONEHEADER FILE=mytab3
+"""
+    with ConfigurationContext(conf, parameter_names=['comment', 'basic']):
+        with pytest.warns(UserWarning):
+            model = Model(StringIO(code))
+            model.update_source()
