@@ -26,3 +26,43 @@ Structural bias
     :hide-code:
 
     res.structural_bias
+
+Boxcox
+~~~~~~
+
+.. jupyter-execute::
+    :hide-code:
+
+    res.boxcox_parameters
+
+Tdist
+~~~~~
+
+.. jupyter-execute::
+    :hide-code:
+
+    res.tdist_parameters
+
+Fullblock
+~~~~~~~~~
+
+.. jupyter-execute::
+    :hide-code:
+
+    res.fullblock_parameters
+
+Residual error
+~~~~~~~~~~~~~~
+
+.. jupyter-execute::
+    :hide-code:
+
+    res.residual_error
+
+Covariate effects
+~~~~~~~~~~~~~~~~~
+
+.. jupyter-execute::
+    :hide-code:
+
+    res.covariate_effects
