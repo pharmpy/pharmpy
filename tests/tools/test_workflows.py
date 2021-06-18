@@ -60,6 +60,11 @@ def test_add_tasks_workflow(tasks):
     assert len(wf_parallel.tasks.edges) == 2
     assert list(wf_parallel.tasks.nodes) == [t1, t2, t3, t4]
 
+    wf_specified_output_nodes = Workflow([t1, t2, t3])
+    wf_specified_output_nodes.connect_tasks({t1: [t2, t3]})
+    wf_specified_output_nodes.add_tasks(wf_t4, connect=True, output_nodes=[t3])
+    assert list(wf_specified_output_nodes.tasks.predecessors(t4)) == [t3]
+
     wf_empty_task_input = Workflow([t1, t2, t3])
     wf_empty_task_input.connect_tasks({t1: [t2, t3]})
     t5 = Task('t5', 'func')

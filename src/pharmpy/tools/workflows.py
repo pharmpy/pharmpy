@@ -11,10 +11,13 @@ class Workflow:
         if tasks:
             self.add_tasks(tasks, connect=False)
 
-    def add_tasks(self, other, connect=False, as_single_element=True):
+    def add_tasks(self, other, connect=False, output_nodes=None, as_single_element=True):
         """Keep all nodes and edges, connects output from first workflow to input in second if connect=True
         (assumes 1:M, M:1 or 1:1 connections)"""
-        wf1_out_tasks = self.get_output()
+        if output_nodes:
+            wf1_out_tasks = output_nodes
+        else:
+            wf1_out_tasks = self.get_output()
         if not isinstance(other, Workflow):
             wf2_in_tasks = []
             if isinstance(other, list):
