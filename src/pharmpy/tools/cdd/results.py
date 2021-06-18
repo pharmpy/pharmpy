@@ -133,10 +133,14 @@ def calculate_results(base_model, cdd_models, case_column, skipped_individuals, 
         for skipped, infl in zip(skipped_individuals, dofv_influential)
         if infl and len(skipped) == 1
     ]
+
     if infl_list:
-        iplot = base_model.modelfit_results.plot_individual_predictions(
-            individuals=infl_list, predictions=['PRED', 'CIPREDI']
-        )
+        try:
+            iplot = base_model.modelfit_results.plot_individual_predictions(
+                individuals=infl_list, predictions=['PRED', 'CIPREDI']
+            )
+        except KeyError:
+            iplot = None
     else:
         iplot = None
     res.individual_predictions_plot = iplot
