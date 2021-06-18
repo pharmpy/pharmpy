@@ -1,5 +1,6 @@
 from io import StringIO
 
+import numpy as np
 import pandas as pd
 import pytest
 
@@ -23,10 +24,10 @@ V,False,0.010000,NaN
     correct = pd.read_csv(StringIO(correct), index_col=[0])
     pd.testing.assert_frame_equal(res.add_etas_parameters, correct, atol=1e-6)
 
-    assert res.dofv['dofv']['parameter_variability', 'add_etas'] == pytest.approx(
+    assert res.dofv['dofv']['parameter_variability', 'add_etas', np.nan] == pytest.approx(
         730.89472681373070 - 730.84697789365532
     )
-    assert res.dofv['df']['parameter_variability', 'add_etas'] == 2
+    assert res.dofv['df']['parameter_variability', 'add_etas', np.nan] == 2
 
 
 def test_fullblock(testdata):
@@ -42,10 +43,10 @@ def test_fullblock(testdata):
     correct = pd.read_csv(StringIO(correct), index_col=[0])
     pd.testing.assert_frame_equal(res.fullblock_parameters, correct)
 
-    assert res.dofv['dofv']['parameter_variability', 'fullblock'] == pytest.approx(
+    assert res.dofv['dofv']['parameter_variability', 'fullblock', np.nan] == pytest.approx(
         730.89472681373070 - 706.36113798726512
     )
-    assert res.dofv['df']['parameter_variability', 'fullblock'] == 1
+    assert res.dofv['df']['parameter_variability', 'fullblock', np.nan] == 1
 
     res = calculate_results(orig, base, fullblock_model=None)
     assert res.fullblock_parameters is None
@@ -63,10 +64,10 @@ ETA(2),0.645817,0.429369,0.448917
     correct = pd.read_csv(StringIO(correct), index_col=[0])
     pd.testing.assert_frame_equal(res.boxcox_parameters, correct)
 
-    assert res.dofv['dofv']['parameter_variability', 'boxcox'] == pytest.approx(
+    assert res.dofv['dofv']['parameter_variability', 'boxcox', np.nan] == pytest.approx(
         730.89472681373070 - 721.78812733817688
     )
-    assert res.dofv['df']['parameter_variability', 'boxcox'] == 2
+    assert res.dofv['df']['parameter_variability', 'boxcox', np.nan] == 2
 
     res = calculate_results(orig, base, boxcox_model=None)
     assert res.boxcox_parameters is None
@@ -84,10 +85,10 @@ ETA(2),3.77,0.400863,0.448917
     correct = pd.read_csv(StringIO(correct), index_col=[0])
     pd.testing.assert_frame_equal(res.tdist_parameters, correct)
 
-    assert res.dofv['dofv']['parameter_variability', 'tdist'] == pytest.approx(
+    assert res.dofv['dofv']['parameter_variability', 'tdist', np.nan] == pytest.approx(
         730.89472681373070 - 729.45800311609150
     )
-    assert res.dofv['df']['parameter_variability', 'tdist'] == 2
+    assert res.dofv['df']['parameter_variability', 'tdist', np.nan] == 2
 
     res = calculate_results(orig, base, tdist_model=None)
 
@@ -104,8 +105,8 @@ ETA(2),0.071481,0.448917,0.400451
     correct = pd.read_csv(StringIO(correct), index_col=[0])
     pd.testing.assert_frame_equal(res.iov_parameters, correct)
 
-    assert res.dofv['dofv']['parameter_variability', 'iov'] == pytest.approx(42.314986)
-    assert res.dofv['df']['parameter_variability', 'iov'] == 2
+    assert res.dofv['dofv']['parameter_variability', 'iov', np.nan] == pytest.approx(42.314986)
+    assert res.dofv['df']['parameter_variability', 'iov', np.nan] == 2
 
 
 def test_scm(testdata):
@@ -122,8 +123,8 @@ ETA(2),WGT,0.00887,-0.003273
     correct = pd.read_csv(StringIO(correct), index_col=[0, 1])
     correct.index.set_names(['parameter', 'covariate'], inplace=True)
     pd.testing.assert_frame_equal(res.covariate_effects, correct, atol=1e-6)
-    assert res.dofv['dofv']['covariates', 'ET1APGR-2'] == pytest.approx(2.48792)
-    assert res.dofv['df']['covariates', 'ET1APGR-2'] == 1
+    assert res.dofv['dofv']['covariates', 'ET1APGR-2', np.nan] == pytest.approx(2.48792)
+    assert res.dofv['df']['covariates', 'ET1APGR-2', np.nan] == 1
 
 
 def test_resmod(testdata):
@@ -141,7 +142,7 @@ def test_resmod(testdata):
         (1, 'IIV_on_RUV'),
         (1, 'power'),
     ]
-    assert res.dofv['dofv']['residual_error_model', (1, 'dtbs')] == pytest.approx(13.91)
+    assert res.dofv['dofv']['residual_error_model', 'dtbs', 1] == pytest.approx(13.91)
 
 
 def test_resmod_dvid(testdata):

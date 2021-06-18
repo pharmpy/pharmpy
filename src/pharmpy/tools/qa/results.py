@@ -78,7 +78,7 @@ def calculate_results(
             resmod_dofv,
         ]
     )
-    dofv_table.set_index(['section', 'run'], inplace=True)
+    dofv_table.set_index(['section', 'run', 'dvid'], inplace=True)
     res = QAResults(
         dofv=dofv_table,
         fullblock_parameters=fullblock_table,
@@ -126,7 +126,8 @@ def resmod(res):
     dofv_tab = pd.DataFrame(
         {
             'section': ['residual_error_model'],
-            'run': ['1'],
+            'run': [np.nan],
+            'dvid': [np.nan],
             'dofv': [np.nan],
             'df': [np.nan],
         }
@@ -166,10 +167,15 @@ def resmod(res):
     for dvid in df.index.unique(level='DVID'):
         df.loc[(dvid, 'time_varying'), 'additional_parameters'] = 2
 
+    inds = list(df.index[:2])
+    dvid2 = [dvid for dvid, _ in inds]
+    run2 = [run for _, run in inds]
+
     dofv_tab = pd.DataFrame(
         {
             'section': ['residual_error_model'] * 2,
-            'run': list(df.index[:2]),
+            'run': run2,
+            'dvid': dvid2,
             'dofv': list(df['dOFV'].iloc[:2]),
             'df': list(df['additional_parameters'].iloc[:2]),
         }
@@ -183,6 +189,7 @@ def calc_iov(original_model, iov_model):
         {
             'section': ['parameter_variability'],
             'run': ['iov'],
+            'dvid': [np.nan],
             'dofv': [np.nan],
             'df': [np.nan],
         }
@@ -215,6 +222,7 @@ def calc_iov(original_model, iov_model):
         {
             'section': ['parameter_variability'],
             'run': ['iov'],
+            'dvid': [np.nan],
             'dofv': [dofv],
             'df': [len(iov_params)],
         }
@@ -227,6 +235,7 @@ def calc_add_etas(original_model, add_etas_model, etas_added_to):
         {
             'section': ['parameter_variability'],
             'run': ['add_etas'],
+            'dvid': [np.nan],
             'dofv': [np.nan],
             'df': [np.nan],
         }
@@ -255,6 +264,7 @@ def calc_add_etas(original_model, add_etas_model, etas_added_to):
         {
             'section': ['parameter_variability'],
             'run': ['add_etas'],
+            'dvid': [np.nan],
             'dofv': [dofv],
             'df': [len(etas_added_to)],
         }
@@ -264,7 +274,13 @@ def calc_add_etas(original_model, add_etas_model, etas_added_to):
 
 def calc_scm_dofv(scm_results):
     dofv_tab = pd.DataFrame(
-        {'section': ['covariates'], 'run': ['scm'], 'dofv': [np.nan], 'df': [np.nan]}
+        {
+            'section': ['covariates'],
+            'run': ['scm'],
+            'dvid': [np.nan],
+            'dofv': [np.nan],
+            'df': [np.nan],
+        }
     )
     if scm_results is None:
         return None, None, dofv_tab
@@ -281,6 +297,7 @@ def calc_scm_dofv(scm_results):
         {
             'section': ['covariates'],
             'run': top['model'].values,
+            'dvid': [np.nan],
             'dofv': top['ofv_drop'].values,
             'df': top['delta_df'].values,
         }
@@ -291,7 +308,13 @@ def calc_scm_dofv(scm_results):
 def calc_frem_dofv(base_model, fullblock_model, frem_results):
     """Calculate the dOFV for the frem model"""
     dofv_tab = pd.DataFrame(
-        {'section': ['covariates'], 'run': ['frem'], 'dofv': [np.nan], 'df': [np.nan]}
+        {
+            'section': ['covariates'],
+            'run': ['frem'],
+            'dvid': [np.nan],
+            'dofv': [np.nan],
+            'df': [np.nan],
+        }
     )
     if base_model is None or frem_results is None:
         return dofv_tab
@@ -316,7 +339,13 @@ def calc_frem_dofv(base_model, fullblock_model, frem_results):
     npar = len(frem_results.covariate_effects.index.get_level_values('parameter').unique())
     ncov = len(frem_results.covariate_effects.index.get_level_values('covariate').unique())
     dofv_tab = pd.DataFrame(
-        {'section': ['covariates'], 'run': ['frem'], 'dofv': [dofv], 'df': [npar * ncov]}
+        {
+            'section': ['covariates'],
+            'run': ['frem'],
+            'dvid': [np.nan],
+            'dofv': [dofv],
+            'df': [npar * ncov],
+        }
     )
     return dofv_tab
 
@@ -327,6 +356,7 @@ def calc_transformed_etas(original_model, new_model, transform_name, parameter_n
         {
             'section': ['parameter_variability'],
             'run': [transform_name],
+            'dvid': [np.nan],
             'dofv': [np.nan],
             'df': [np.nan],
         }
@@ -366,6 +396,7 @@ def calc_fullblock(original_model, fullblock_model):
         {
             'section': ['parameter_variability'],
             'run': ['fullblock'],
+            'dvid': [np.nan],
             'dofv': [np.nan],
             'df': [np.nan],
         }
@@ -392,6 +423,7 @@ def calc_fullblock(original_model, fullblock_model):
         {
             'section': ['parameter_variability'],
             'run': ['fullblock'],
+            'dvid': [np.nan],
             'dofv': [dofv],
             'df': [degrees],
         }
