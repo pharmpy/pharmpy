@@ -1,19 +1,36 @@
+import pytest
+
 from pharmpy import Model
-from pharmpy.tools.modelsearch.algorithms import exhaustive
+from pharmpy.tools.modelsearch.algorithms import (
+    create_workflow_transform,
+    exhaustive,
+    exhaustive_stepwise,
+)
+from pharmpy.tools.modelsearch.mfl import ModelFeatures
 from pharmpy.tools.modelsearch.rankfuncs import aic, bic, ofv
+from pharmpy.tools.workflows import Task, Workflow
 
 
 class DummyResults:
-    def __init__(self, ofv=None, aic=None, bic=None):
+    def __init__(self, ofv=None, aic=None, bic=None, parameter_estimates=None):
         self.ofv = ofv
         self.aic = aic
         self.bic = bic
+        self.parameter_estimates = parameter_estimates
 
 
 class DummyModel:
     def __init__(self, name, **kwargs):
         self.name = name
         self.modelfit_results = DummyResults(**kwargs)
+
+
+@pytest.fixture
+def wf_run():
+    def run(model):
+        return model
+
+    return Workflow(Task('run', run))
 
 
 def test_ofv():
@@ -58,3 +75,31 @@ def test_exhaustive(testdata):
     res = exhaustive(base, trans, do_nothing, ofv)
     assert len(res) == 1
     assert list(res['dofv']) == [0.0]
+
+
+@pytest.mark.parametrize(
+    'res, mfl, no_of_tasks, task_names_ref',
+    [
+        ((1, True), 'ELIMINATION(ZO)\nPERIPHERALS(2)', 2, {'update_inits'}),
+        ((1, True), 'ELIMINATION(ZO)\nPERIPHERALS(2)\nABSORPTION(ZO)', 3, {'update_inits'}),
+        ((None, None), 'ELIMINATION(ZO)\nPERIPHERALS(2)', 1, {'run'}),
+    ],
+)
+def test_exhaustive_stepwise(wf_run, res, mfl, no_of_tasks, task_names_ref):
+    base_model = DummyModel('run1', ofv=res[0], parameter_estimates=res[1])
+    mfl = ModelFeatures(mfl)
+    wf_search = exhaustive_stepwise(base_model, mfl, wf_run)
+    start_node = wf_search.get_input()[0]
+    start_node_successors = list(wf_search.tasks.successors(start_node))
+    print(start_node_successors)
+    assert len(start_node_successors) == no_of_tasks
+    task_names = {task.name for task in start_node_successors}
+    assert task_names == task_names_ref
+
+
+def test_create_workflow_transform(wf_run):
+    def transform_nothing(model):
+        return model
+
+    wf = create_workflow_transform('transform', transform_nothing, wf_run)
+    assert len(wf.tasks.nodes) == 3
