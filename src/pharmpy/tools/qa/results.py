@@ -451,15 +451,16 @@ def read_results_summary(path):
             {
                 'idv': idv,
                 'dvid': dvid,
+                'binid': list(range(1, len(cpred) + 1)),
                 'binmin': binmin,
                 'binmax': binmax,
                 'cwres': cwres,
                 'cpred': cpred,
             }
         )
-        df.set_index(['idv', 'dvid'], inplace=True)
         dfs.append(df)
     bias = pd.concat(dfs)
+    bias.set_index(['idv', 'dvid', 'binid'], inplace=True)
     return bias
 
 
