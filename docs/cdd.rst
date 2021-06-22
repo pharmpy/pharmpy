@@ -28,24 +28,24 @@ The Cook score for each case is calculated as:
 
 .. math::
 
-    \sqrt{(P_i - P_{orig})^T \mathop{cov}(P_{orig})^{-1} (P_i - P_{orig})}
+    \sqrt{(P_i - P_{orig})^T \operatorname{cov}(P_{orig})^{-1} (P_i - P_{orig})}
 
-Where :math:`P_i` is the estimated parameter vector for case :math:`i`, :math:`P_{orig}` is the estimated parameter vector for the original model and :math:`\mathop{cov}(P_{orig})` is the covariance matrix of the estimated parameters.
+Where :math:`P_i` is the estimated parameter vector for case :math:`i`, :math:`P_{orig}` is the estimated parameter vector for the original model and :math:`\operatorname{cov}(P_{orig})` is the covariance matrix of the estimated parameters.
 
 Jackknife cookscore
 ~~~~~~~~~~~~~~~~~~~
 
-This is the same as the Cook score above, but instead using the Jackknige covariance matrix.
+This is the same as the Cook score above, but instead using the Jackknife covariance matrix.
 
 .. math::
 
-    \sqrt{(P_i - P_{orig})^T \mathop{cov}^{jackknife}(P_{orig})^{-1} (P_i - P_{orig})}
+    \sqrt{(P_i - P_{orig})^T \operatorname{cov}^{\operatorname{jackknife}}(P_{orig})^{-1} (P_i - P_{orig})}
 
 where
 
 .. math::
 
-    \mathop{cov}_{j,k}^{jackknife} = \frac{N - 1}{N}\sum_{i=1}^N(p_{i,j} - \overline{p}_j)(p_{i,k} - \overline{p}_k)
+    \operatorname{cov}_{j,k}^{\operatorname{jackknife}} = \frac{N - 1}{N}\sum_{i=1}^N(p_{i,j} - \overline{p}_j)(p_{i,k} - \overline{p}_k)
 
 is the jackknife estimate of the covariance between :math:`p_{orig,j}` and :math:`p_{orig,k}` which is used to calculate the
 full jackknife covariance matrix.
@@ -63,7 +63,7 @@ The covariance ratio for each case is calculated as:
 
 .. math::
 
-    \sqrt{\frac{\mathop{det}({\mathop{cov}(P_i))}}{\mathop{det}(\mathop{cov}(P_{orig}))}}
+    \sqrt{\frac{\operatorname{det}({\operatorname{cov}(P_i))}}{\operatorname{det}(\operatorname{cov}(P_{orig}))}}
 
 Delta OFV
 ~~~~~~~~~
