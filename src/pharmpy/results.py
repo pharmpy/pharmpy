@@ -130,6 +130,10 @@ def read_results(path_or_buf):
         from pharmpy.tools.resmod import ResmodResults
 
         res = ResmodResults.from_dict(d)
+    elif decoder.cls == 'SimevalResults':
+        from pharmpy.tools.simeval import SimevalResults
+
+        res = SimevalResults.from_dict(d)
 
     return res
 

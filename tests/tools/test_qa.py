@@ -190,3 +190,11 @@ PRED,1,10,36.34,54.00,-0.47,9
 
     correct = pd.read_csv(StringIO(correct), index_col=[0, 1, 2])
     pd.testing.assert_frame_equal(res.structural_bias, correct, atol=1e-6)
+
+
+def test_simeval(testdata):
+    orig = Model(testdata / 'nonmem' / 'pheno.mod')
+    base = Model(testdata / 'nonmem' / 'qa' / 'pheno_linbase.mod')
+    simeval_res = read_results(testdata / 'nonmem' / 'qa' / 'simeval_results.json')
+    cdd_res = read_results(testdata / 'nonmem' / 'qa' / 'cdd_results.json')
+    calculate_results(orig, base, simeval_results=simeval_res, cdd_results=cdd_res)

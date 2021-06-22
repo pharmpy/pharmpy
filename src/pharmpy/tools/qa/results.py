@@ -51,6 +51,7 @@ def calculate_results(
     frem_results=None,
     cdd_results=None,
     scm_results=None,
+    simeval_results=None,
     resmod_idv_results=None,
 ):
     fullblock_table, fullblock_dofv = calc_fullblock(original_model, fullblock_model)
@@ -63,6 +64,7 @@ def calculate_results(
     frem_dofv = calc_frem_dofv(base_model, fullblock_model, frem_results)
     univariate_sum, scm_table, scm_dofv = calc_scm_dofv(scm_results)
     infinds, cdd_dofv = influential_individuals(cdd_results)
+    outs, simeval_dofv = outliers(simeval_results, cdd_results)
     resmodtab, resmod_dofv = resmod(resmod_idv_results)
 
     dofv_table = pd.concat(
@@ -75,6 +77,7 @@ def calculate_results(
             frem_dofv,
             scm_dofv,
             cdd_dofv,
+            simeval_dofv,
             resmod_dofv,
         ]
     )
@@ -92,6 +95,37 @@ def calculate_results(
         residual_error=resmodtab,
     )
     return res
+
+
+def outliers(simeval_res, cdd_res):
+    dofv_tab = pd.DataFrame(
+        {
+            'section': ['outliers'],
+            'run': ['1'],
+            'dofv': [np.nan],
+            'df': [np.nan],
+        }
+    )
+    if simeval_res is None or cdd_res is None:
+        return None, dofv_tab
+    iofv = simeval_res.iofv_summary
+    outliers = list(iofv.loc[iofv['residual_outlier']].index)
+    cases = cdd_res.case_results.copy()
+    cases['skipped_individuals'] = cases['skipped_individuals'].transform(lambda x: int(x[0]))
+    cases.reset_index(inplace=True)
+    cases.set_index('skipped_individuals', inplace=True)
+    dofv = cases.loc[outliers].delta_ofv
+    top_three = dofv.sort_values(ascending=False)[:3]
+    dofv_tab = pd.DataFrame(
+        {
+            'section': ['outliers'] * len(top_three),
+            'run': list(top_three.index),
+            'dofv': top_three,
+            'df': [np.nan] * len(top_three),
+        }
+    )
+
+    return None, dofv_tab
 
 
 def influential_individuals(cdd_res):
@@ -519,6 +553,12 @@ def psn_qa_results(path):
     else:
         scm_res = None
 
+    simeval_path = path / 'simeval_run' / 'results.json'
+    if simeval_path.is_file():
+        simeval_res = read_results(simeval_path)
+    else:
+        simeval_res = None
+
     args = psn_helpers.options_from_command(psn_helpers.psn_command(path))
     if 'add_etas' not in args:
         etas_added_to = None
@@ -544,6 +584,7 @@ def psn_qa_results(path):
         frem_results=frem_res,
         cdd_results=cdd_res,
         scm_results=scm_res,
+        simeval_results=simeval_res,
         resmod_idv_results=resmod_idv_res,
     )
 
