@@ -1,3 +1,4 @@
+import networkx as nx
 import pytest
 
 from pharmpy import Model
@@ -78,23 +79,76 @@ def test_exhaustive(testdata):
 
 
 @pytest.mark.parametrize(
-    'res, mfl, no_of_tasks, task_names_ref',
+    'res, mfl, task_names_ref',
     [
-        ((1, True), 'ELIMINATION(ZO)\nPERIPHERALS(2)', 2, {'update_inits'}),
-        ((1, True), 'ELIMINATION(ZO)\nPERIPHERALS(2)\nABSORPTION(ZO)', 3, {'update_inits'}),
-        ((None, None), 'ELIMINATION(ZO)\nPERIPHERALS(2)', 1, {'run'}),
+        (
+            (1, True),
+            'ELIMINATION(ZO)\nPERIPHERALS(2)',
+            [
+                'start_model',
+                'update_inits',
+                'copy',
+                'copy',
+                'ELIMINATION(ZO)',
+                'PERIPHERALS(2)',
+                'run',
+            ],
+        ),
+        (
+            (1, True),
+            'ELIMINATION(ZO)\nPERIPHERALS([2,3])',
+            [
+                'start_model',
+                'update_inits',
+                'copy',
+                'copy',
+                'copy',
+                'ELIMINATION(ZO)',
+                'PERIPHERALS(2)',
+                'PERIPHERALS(3)',
+                'run',
+            ],
+        ),
+        (
+            (1, True),
+            'ELIMINATION(ZO)\nPERIPHERALS(2)\nABSORPTION(ZO)',
+            [
+                'start_model',
+                'update_inits',
+                'copy',
+                'copy',
+                'copy',
+                'ABSORPTION(ZO)',
+                'ELIMINATION(ZO)',
+                'PERIPHERALS(2)',
+                'run',
+            ],
+        ),
+        (
+            (None, None),
+            'ELIMINATION(ZO)\nPERIPHERALS(2)',
+            [
+                'start_model',
+                'run',
+                'update_inits',
+                'copy',
+                'copy',
+                'ELIMINATION(ZO)',
+                'PERIPHERALS(2)',
+                'run',
+            ],
+        ),
     ],
 )
-def test_exhaustive_stepwise(wf_run, res, mfl, no_of_tasks, task_names_ref):
+def test_exhaustive_stepwise(wf_run, res, mfl, task_names_ref):
     base_model = DummyModel('run1', ofv=res[0], parameter_estimates=res[1])
     mfl = ModelFeatures(mfl)
     wf_search = exhaustive_stepwise(base_model, mfl, wf_run)
     start_node = wf_search.get_input()[0]
     start_node_successors = list(wf_search.tasks.successors(start_node))
-    print(start_node_successors)
-    assert len(start_node_successors) == no_of_tasks
-    task_names = {task.name for task in start_node_successors}
-    assert task_names == task_names_ref
+    assert len(start_node_successors) == 1
+    bfs_node_names = [task.name for task in nx.bfs_tree(wf_search.tasks, start_node)]
+    assert bfs_node_names[: len(task_names_ref)] == task_names_ref
 
 
 def test_create_workflow_transform(wf_run):
@@ -102,4 +156,4 @@ def test_create_workflow_transform(wf_run):
         return model
 
     wf = create_workflow_transform('transform', transform_nothing, wf_run)
-    assert len(wf.tasks.nodes) == 3
+    assert len(wf.tasks.nodes) == 2

@@ -78,7 +78,7 @@ def exhaustive_stepwise(base_model, mfl, wf_run):
     wf_search = Workflow(Task('start_model', return_model, base_model))
     # TODO: Consider using a __bool__ in modelfit_results
     if not (base_model.modelfit_results.ofv and base_model.modelfit_results.parameter_estimates):
-        wf_search.add_tasks(wf_run, connect=True)
+        wf_search.add_tasks(wf_run.copy(new_ids=True), connect=True)
 
     while True:
         no_of_trans = 0
@@ -89,9 +89,13 @@ def exhaustive_stepwise(base_model, mfl, wf_run):
             }
             if len(possible_funcs) > 0:
                 no_of_trans += 1
-            for feat, func in possible_funcs.items():
-                wf_trans = create_workflow_transform(feat, func, wf_run.copy(new_ids=True))
-                wf_search.add_tasks(wf_trans, connect=True, output_nodes=[task])
+                task_update_inits = Task('update_inits', update_inits, task)
+                wf_search.add_tasks(task_update_inits, connect=True, output_nodes=[task])
+                for feat, func in possible_funcs.items():
+                    task_copy = Task('copy', copy_model, feat)
+                    wf_search.add_tasks(task_copy, connect=True, output_nodes=[task_update_inits])
+                    wf_trans = create_workflow_transform(feat, func, wf_run.copy(new_ids=True))
+                    wf_search.add_tasks(wf_trans, connect=True, output_nodes=[task_copy])
         if no_of_trans == 0:
             break
 
@@ -109,14 +113,16 @@ def return_model(model):
     return model
 
 
-def create_workflow_transform(feature_name, function, wf_run):
-    # TODO: add copy model, feature tracking
+def create_workflow_transform(feat, func, wf_run):
+    # TODO: add feature tracking
     wf_trans = Workflow()
-    task_update_inits = Task('update_inits', update_inits)
-    wf_trans.add_tasks(task_update_inits, connect=False)  # TODO: combine for multiple tasks
-    task_function = Task(
-        feature_name, function
-    )  # TODO: check how partial functions work w.r.t. dask
-    wf_trans.add_tasks(task_function, connect=True)
+    task_function = Task(feat, func)  # TODO: check how partial functions work w.r.t. dask
+    wf_trans.add_tasks(task_function, connect=False)
     wf_trans.add_tasks(wf_run, connect=True)
     return wf_trans
+
+
+def copy_model(model, feat):
+    model_copy = model.copy()
+    model_copy.name = f'model_{feat}'
+    return model_copy
