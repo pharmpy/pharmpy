@@ -11,7 +11,9 @@ class Workflow:
         if tasks:
             self.add_tasks(tasks, connect=False)
 
-    def add_tasks(self, other, connect=False, output_nodes=None, as_single_element=True):
+    def add_tasks(
+        self, other, connect=False, output_nodes=None, as_single_element=True, arg_index=0
+    ):
         """Keep all nodes and edges, connects output from first workflow to input in second if connect=True
         (assumes 1:M, M:1 or 1:1 connections)"""
         if output_nodes:
@@ -33,14 +35,19 @@ class Workflow:
         if not connect:
             return
         else:
+            # TODO: assert this is consistent with task input
             workflow_connection = self.find_workflow_connections(wf1_out_tasks, wf2_in_tasks)
             for wf2_in_task in wf2_in_tasks:
+                if as_single_element and len(wf1_out_tasks) == 1:
+                    wf1_out_task = wf1_out_tasks[0]
+                else:
+                    wf1_out_task = wf1_out_tasks
                 if not wf2_in_task.has_input():
-                    # TODO: Find better system to track input, e.g. if function takes multiple args
-                    if as_single_element and len(wf1_out_tasks) == 1:
-                        wf2_in_task.task_input = (wf1_out_tasks[0],)
-                    else:
-                        wf2_in_task.task_input = (wf1_out_tasks,)
+                    wf2_in_task.task_input = (wf1_out_task,)
+                else:
+                    wf2_in_task_input = list(wf2_in_task.task_input)
+                    wf2_in_task_input.insert(arg_index, wf1_out_task)
+                    wf2_in_task.task_input = tuple(wf2_in_task_input)
             self.connect_tasks(workflow_connection)
 
     @staticmethod

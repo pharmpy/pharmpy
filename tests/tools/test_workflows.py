@@ -76,6 +76,15 @@ def test_add_tasks_workflow(tasks):
     assert list(wf_empty_task_input.tasks.nodes) == [t1, t2, t3, t5]
     assert t5.task_input[0] == [t2, t3]
 
+    wf_existing_task_input = Workflow([t1, t2, t3])
+    wf_existing_task_input.connect_tasks({t1: [t2, t3]})
+    t6 = Task('t6', 'func', 'x')
+    wf_t6 = Workflow(t6)
+    assert t6.has_input()
+    wf_existing_task_input.add_tasks(wf_t6, connect=True, arg_index=0)
+    assert t6.task_input[0] == [t2, t3]
+    assert t6.task_input[1] == 'x'
+
 
 def test_connect_tasks(tasks):
     wf = Workflow()
