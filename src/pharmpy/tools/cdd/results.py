@@ -152,7 +152,7 @@ def calculate_results(base_model, cdd_models, case_column, skipped_individuals, 
     else:
         covratios = compute_covariance_ratios(cdd_models, covmatrix)
 
-    res.case_results = pd.DataFrame(
+    case_results = pd.DataFrame(
         {
             'cook_score': cook_temp,
             'jackknife_cook_score': jack_cook_score,
@@ -163,6 +163,9 @@ def calculate_results(base_model, cdd_models, case_column, skipped_individuals, 
         },
         index=cdd_model_names,
     )
+
+    case_results.index = pd.RangeIndex(start=1, stop=len(case_results) + 1)
+    res.case_results = case_results
     return res
 
 
