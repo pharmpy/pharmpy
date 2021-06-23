@@ -58,6 +58,10 @@ def create_results(path, **kwargs):
         from pharmpy.tools.simeval.results import psn_simeval_results
 
         res = psn_simeval_results(path, **kwargs)
+    elif name == 'crossval':
+        from pharmpy.tools.crossval.results import psn_crossval_results
+
+        res = psn_crossval_results(path, **kwargs)
     else:
         raise ValueError("Not a valid run directory")
     return res

@@ -1,0 +1,1 @@
+/home/rikard/PsN/bin/crossval pheno.mod -groups=4

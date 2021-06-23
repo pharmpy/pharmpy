@@ -134,6 +134,10 @@ def read_results(path_or_buf):
         from pharmpy.tools.simeval import SimevalResults
 
         res = SimevalResults.from_dict(d)
+    elif decoder.cls == 'CrossvalResults':
+        from pharmpy.tools.crossval import CrossvalResults
+
+        res = CrossvalResults.from_dict(d)
 
     return res
 
