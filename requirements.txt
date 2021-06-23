@@ -27,7 +27,7 @@ networkx==2.5
 numexpr==2.7.3
 numpy==1.20.3
 packaging==20.9
-pandas==1.2.4
+pandas==1.2.5
 partd==1.2.0
 Pygments==2.9.0
 pyparsing==2.4.7
