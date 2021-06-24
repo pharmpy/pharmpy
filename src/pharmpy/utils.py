@@ -6,6 +6,9 @@ import weakref
 from pathlib import Path
 from tempfile import mkdtemp
 
+import sympy
+import sympy.physics.units as units
+
 
 class TemporaryDirectoryChanger:
     def __init__(self, path):
@@ -94,3 +97,15 @@ class TemporaryDirectory:
 if os.name != 'nt':
     # Only use the custom implementation for Windows.
     from tempfile import TemporaryDirectory  # noqa
+
+
+unit_subs = {}
+for k, v in units.__dict__.items():
+    if isinstance(v, sympy.Expr) and v.has(units.Unit):
+        unit_subs[sympy.Symbol(k)] = v
+
+
+def parse_units(s):
+    if not isinstance(s, str):
+        return s
+    return sympy.sympify(s).subs(unit_subs)
