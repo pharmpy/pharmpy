@@ -1,6 +1,7 @@
 import pandas as pd
 import pytest
 import sympy
+import sympy.physics.units as units
 
 from pharmpy.parameter import Parameter, Parameters
 from pharmpy.symbols import symbol
@@ -348,3 +349,10 @@ def test_simplify():
     p2 = Parameter('y', 9)
     pset = Parameters([p1, p2])
     assert pset.simplify(x * y) == x * y
+
+
+def test_unit():
+    p = Parameter('x', 3, unit='l/h')
+    assert p.unit == units.liter / units.hour
+    p2 = Parameter('x', 3)
+    assert p2.unit == 1
