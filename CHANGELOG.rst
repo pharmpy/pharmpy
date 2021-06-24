@@ -1,3 +1,15 @@
+0.25.0 (2021-06-24)
+-------------------
+
+* Add modeling.ninds, nobs and nobsi to get number of individuals and observations of dataset
+* Add reading results for resmod and crossval
+* Add structural bias, simeval and resmod results to qa results
+* Update index of cdd case_results to plain numbers
+* Support line continuation (&) in NM-TRAN code
+* Fix error in calculation of sdcorr form of parameter estimates
+* Fix crash of cdd results retrieval
+* Various fixes for running NONMEM models
+
 0.24.0 (2021-05-25)
 -------------------
 
