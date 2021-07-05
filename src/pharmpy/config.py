@@ -39,7 +39,7 @@ def read_configuration():
         else:
             site_path = site_config_dir()
             if site_path.is_file():
-                config.read(user_path)
+                config.read(site_path)
     return config
 
 
