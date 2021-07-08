@@ -1,3 +1,9 @@
+0.25.1 (2021-07-08)
+-------------------
+
+* Read site path if user path doesn't exist (previously read user path)
+* Change return type of covariates to a list for easier handling in R
+
 0.25.0 (2021-06-24)
 -------------------
 
@@ -14,7 +20,7 @@
 -------------------
 
 * Added theta_as_stdev, set_weighted_error_model and set_dtbs_error
-* Error models can be added with log transformed DV using `data_trans` option 
+* Error models can be added with log transformed DV using `data_trans` option
 * Added model attributes data_transformation and observation_transformation
 * Protected functions in NM-TRAN translated to Piecewise. Should now give the
   same result as when evalutated by NONMEM.
@@ -48,7 +54,7 @@
 -------------------
 
 * Add function modeling.evaluate_expression
-* Some documentation for modelfit_results 
+* Some documentation for modelfit_results
 * Reworked interface to RandomVariables and Parameters
 * Bugfixes
 
