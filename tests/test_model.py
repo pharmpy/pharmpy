@@ -150,4 +150,4 @@ def test_to_generic_model(testdata):
 
 def test_covariates(testdata):
     model = Model(testdata / 'nonmem' / 'pheno_real.mod')
-    assert model.covariates == {sympy.Symbol('WGT'), sympy.Symbol('APGR')}
+    assert set(model.covariates) == {sympy.Symbol('WGT'), sympy.Symbol('APGR')}

@@ -93,7 +93,7 @@ class Model:
 
     @property
     def covariates(self):
-        """Set of covariates used in model"""
+        """List of covariates used in model"""
         symbs = self.statements.dependencies(self.dependent_variable)
         # Remove dose symbol if not used as covariate
         datasymbs = {sympy.Symbol(s) for s in self.dataset.columns}
@@ -104,7 +104,7 @@ class Model:
             for s in self.statements:
                 if isinstance(s, Assignment):
                     cov_dose_symbols |= dosesyms.intersection(s.rhs_symbols)
-        return symbs.intersection(datasymbs) - cov_dose_symbols
+        return list(symbs.intersection(datasymbs) - cov_dose_symbols)
 
     def update_source(self):
         """Update the source"""
