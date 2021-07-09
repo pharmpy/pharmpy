@@ -826,17 +826,15 @@ def update_estimation(model):
         if op == '+':
             if est.method == 'FO':
                 method = 'ZERO'
-                interaction = ''
-            elif est.method == 'FOI':
-                method = 'ZERO'
-                interaction = ' INTER'
             elif est.method == 'FOCE':
                 method = 'COND'
-                interaction == ''
-            elif est.method == 'FOCEI':
-                method = 'COND'
-                interaction = ' INTER'
-            method_code = f'METHOD={method}{interaction}'
+            else:
+                method = est.method
+            if est.interaction:
+                inter = ' INTER'
+            else:
+                inter = ''
+            method_code = f'METHOD={method}{inter}'
             est_code = f'$ESTIMATION {method_code}'
             if est.other_options:
                 other_options_code = ' '.join(

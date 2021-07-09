@@ -10,7 +10,7 @@ import pharmpy.data
 import pharmpy.model
 import pharmpy.plugins.nonmem
 from pharmpy.data import DatasetError
-from pharmpy.estimation import EstimationMethod
+from pharmpy.estimation import EstimationMethod, list_supported_est
 from pharmpy.model import ModelSyntaxError
 from pharmpy.parameter import Parameters
 from pharmpy.plugins.nonmem.results import NONMEMChainedModelfitResults
@@ -662,17 +662,20 @@ class Model(pharmpy.model.Model):
         for record in records:
             value = record.get_option('METHOD')
             if value is None or value == '0' or value == 'ZERO':
-                if record.has_option('INTERACTION') or record.has_option('INTER'):
-                    name = 'foi'
-                else:
-                    name = 'fo'
+                name = 'fo'
             elif value == '1' or value == 'CONDITIONAL' or value == 'COND':
-                if record.has_option('INTERACTION') or record.has_option('INTER'):
-                    name = 'focei'
-                else:
-                    name = 'foce'
+                name = 'foce'
             else:
-                raise ModelSyntaxError(f'Non-recognized estimation method in: {str(record.root)}')
+                if value in list_supported_est():
+                    name = value
+                else:
+                    raise ModelSyntaxError(
+                        f'Non-recognized estimation method in: {str(record.root)}'
+                    )
+            if record.has_option('INTERACTION') or record.has_option('INTER'):
+                interaction = True
+            else:
+                interaction = False
             if covrec:
                 cov = True
             else:
@@ -683,7 +686,9 @@ class Model(pharmpy.model.Model):
                 option for option in record.all_options if option.key not in options_stored
             ]
 
-            meth = EstimationMethod(name, cov=cov, other_options=options_left)
+            meth = EstimationMethod(
+                name, interaction=interaction, cov=cov, other_options=options_left
+            )
             steps.append(meth)
         self._estimation_steps = steps
         self._old_estimation_steps = copy.deepcopy(steps)

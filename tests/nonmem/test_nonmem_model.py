@@ -766,18 +766,22 @@ def test_des(testdata, model_path, transformation):
 @pytest.mark.parametrize(
     'estcode,correct',
     [
-        ('$ESTIMATION METH=COND INTERACTION', [EstimationMethod('focei')]),
-        ('$ESTIMATION INTER METH=COND', [EstimationMethod('focei')]),
-        ('$ESTM METH=1 INTERACTION', [EstimationMethod('focei')]),
-        ('$ESTIM METH=1', [EstimationMethod('foce')]),
-        ('$ESTIMA METH=0', [EstimationMethod('fo')]),
-        ('$ESTIMA METH=ZERO', [EstimationMethod('fo')]),
-        ('$ESTIMA INTER', [EstimationMethod('foi')]),
-        ('$ESTIMA INTER\n$COV', [EstimationMethod('foi', cov=True)]),
+        ('$ESTIMATION METH=COND INTERACTION', [EstimationMethod('foce', interaction=True)]),
+        ('$ESTIMATION INTER METH=COND', [EstimationMethod('foce', interaction=True)]),
+        ('$ESTM METH=1 INTERACTION', [EstimationMethod('foce', interaction=True)]),
+        ('$ESTIM METH=1', [EstimationMethod('foce', interaction=False)]),
+        ('$ESTIMA METH=0', [EstimationMethod('fo', interaction=False)]),
+        ('$ESTIMA METH=ZERO', [EstimationMethod('fo', interaction=False)]),
+        ('$ESTIMA INTER', [EstimationMethod('fo', interaction=True)]),
+        ('$ESTIMA INTER\n$COV', [EstimationMethod('fo', interaction=True, cov=True)]),
         (
             '$ESTIMA METH=COND INTER\n$EST METH=COND',
-            [EstimationMethod('focei'), EstimationMethod('foce')],
+            [
+                EstimationMethod('foce', interaction=True),
+                EstimationMethod('foce', interaction=False),
+            ],
         ),
+        ('$ESTIMATION METH=SAEM', [EstimationMethod('saem', interaction=False)]),
     ],
 )
 def test_estimation_steps_getter(estcode, correct):
@@ -800,6 +804,7 @@ $SIGMA 1
     [
         ('$ESTIMA MCETA=200', 'FO', 'MCETA', '200'),
         ('$ESTIMATION METHOD=1 MAXEVAL=9999', 'FOCE', 'MAXEVAL', '9999'),
+        ('$ESTIMATION METHOD=SAEM MAXEVAL=9999', 'SAEM', 'MAXEVAL', '9999'),
     ],
 )
 def test_estimation_steps_getter_other_options(estcode, method_ref, key_ref, value_ref):
@@ -820,19 +825,28 @@ $SIGMA 1
 
 
 @pytest.mark.parametrize(
-    'estcode,cov,rec_ref',
+    'estcode,method,inter,cov,rec_ref',
     [
-        ('$EST METH=COND INTER', False, '$ESTIMATION METHOD=ZERO INTER'),
-        ('$EST METH=COND INTER', True, '$COVARIANCE'),
+        ('$EST METH=COND INTER', 'fo', True, False, '$ESTIMATION METHOD=ZERO INTER'),
+        ('$EST METH=COND INTER', 'fo', True, True, '$COVARIANCE'),
         (
             '$EST METH=COND INTER MAXEVAL=99999',
+            'fo',
+            True,
             False,
             '$ESTIMATION METHOD=ZERO INTER MAXEVAL=99999',
         ),
-        ('$EST METH=COND INTER POSTHOC', False, '$ESTIMATION METHOD=ZERO INTER POSTHOC'),
+        (
+            '$EST METH=COND INTER POSTHOC',
+            'fo',
+            True,
+            False,
+            '$ESTIMATION METHOD=ZERO INTER POSTHOC',
+        ),
+        ('$EST METH=COND INTER', 'saem', True, False, '$ESTIMATION METHOD=SAEM INTER'),
     ],
 )
-def test_estimation_steps_setter(estcode, cov, rec_ref):
+def test_estimation_steps_setter(estcode, method, inter, cov, rec_ref):
     code = '''$PROBLEM base model
 $INPUT ID DV TIME
 $DATA file.csv IGNORE=@
@@ -844,7 +858,8 @@ $SIGMA 1
 '''
     code += estcode
     model = Model(StringIO(code))
-    model.estimation_steps[0].method = 'foi'
+    model.estimation_steps[0].method = method
+    model.estimation_steps[0].interaction = inter
     model.estimation_steps[0].cov = cov
     model.update_source()
     assert str(model).split('\n')[-2] == rec_ref

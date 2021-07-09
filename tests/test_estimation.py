@@ -14,5 +14,5 @@ def test_estimation_method():
     a.method = 'fo'
     assert a.method == 'FO'
 
-    assert a == EstimationMethod('fo', cov=True)
-    assert repr(a) == 'EstimationMethod("FO", cov=True, other_options=[])'
+    assert a == EstimationMethod('fo', interaction=False, cov=True)
+    assert repr(a) == 'EstimationMethod("FO", interaction=False, cov=True, other_options=[])'

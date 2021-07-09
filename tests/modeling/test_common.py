@@ -137,6 +137,11 @@ def test_update_source(testdata):
 def test_set_estimation_method(testdata):
     model = Model(testdata / 'nonmem' / 'minimal.mod')
     assert str(model).split('\n')[-2] == '$ESTIMATION METHOD=1 INTER MAXEVALS=9990 PRINT=2 POSTHOC'
-    set_estimation_method(model, 'fo')
+    set_estimation_method(model, 'fo', False)
     update_source(model)
     assert str(model).split('\n')[-2] == '$ESTIMATION METHOD=ZERO MAXEVALS=9990 PRINT=2 POSTHOC'
+    set_estimation_method(model, 'fo', True)
+    update_source(model)
+    assert (
+        str(model).split('\n')[-2] == '$ESTIMATION METHOD=ZERO INTER MAXEVALS=9990 PRINT=2 POSTHOC'
+    )

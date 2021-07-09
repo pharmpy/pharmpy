@@ -207,11 +207,11 @@ def _create_init_dict(parameter_names, values):
     return d
 
 
-def set_estimation_method(model, method, est_ind=0):
+def set_estimation_method(model, method, interaction, est_ind=0):
     """Set estimation method
 
     Sets estimation method for a model. Methods currently supported are:
-        FO, FOI, FOCE, FOCEI
+        FO, FOCE, ITS, LAPLACE, IMPMAP, IMP, SAEM
 
     Parameters
     ----------
@@ -221,10 +221,13 @@ def set_estimation_method(model, method, est_ind=0):
         estimation method to change to
     est_ind : int
         index of estimation step, default is 0 (first estimation step)
+    interaction : bool
+        whether to use interaction or not
 
     Returns
     -------
     model : Model
     """
     model.estimation_steps[est_ind].method = method
+    model.estimation_steps[est_ind].interaction = interaction
     return model
