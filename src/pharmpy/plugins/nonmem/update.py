@@ -832,10 +832,18 @@ def update_estimation(model):
                 interaction = ' INTER'
             elif est.method == 'FOCE':
                 method = 'COND'
+                interaction == ''
             elif est.method == 'FOCEI':
                 method = 'COND'
                 interaction = ' INTER'
-            est_code = f'$ESTIMATION METHOD={method}{interaction}\n'
+            method_code = f'METHOD={method}{interaction}'
+            est_code = f'$ESTIMATION {method_code}'
+            if est.other_options:
+                other_options_code = ' '.join(
+                    [f'{key}={value}' for key, value in est.other_options]
+                )
+                est_code += f' {other_options_code}'
+            est_code += '\n'
             newrec = create_record(est_code)
             new_records.append(newrec)
         elif op == '-':

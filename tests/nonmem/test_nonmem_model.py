@@ -772,7 +772,6 @@ def test_des(testdata, model_path, transformation):
         ('$ESTIM METH=1', [EstimationMethod('foce')]),
         ('$ESTIMA METH=0', [EstimationMethod('fo')]),
         ('$ESTIMA METH=ZERO', [EstimationMethod('fo')]),
-        ('$ESTIMA MCETA=200', [EstimationMethod('fo')]),
         ('$ESTIMA INTER', [EstimationMethod('foi')]),
         ('$ESTIMA INTER\n$COV', [EstimationMethod('foi', cov=True)]),
         (
@@ -796,6 +795,30 @@ $SIGMA 1
     assert model.estimation_steps == correct
 
 
+@pytest.mark.parametrize(
+    'estcode,method_ref,key_ref,value_ref',
+    [
+        ('$ESTIMA MCETA=200', 'FO', 'MCETA', '200'),
+        ('$ESTIMATION METHOD=1 MAXEVAL=9999', 'FOCE', 'MAXEVAL', '9999'),
+    ],
+)
+def test_estimation_steps_getter_other_options(estcode, method_ref, key_ref, value_ref):
+    code = '''$PROBLEM base model
+$INPUT ID DV TIME
+$DATA file.csv IGNORE=@
+$PRED
+Y = THETA(1) + ETA(1) + ERR(1)
+$THETA 0.1
+$OMEGA 0.01
+$SIGMA 1
+'''
+    code += estcode
+    model = Model(StringIO(code))
+    assert model.estimation_steps[0].method == method_ref
+    assert model.estimation_steps[0].other_options[0].key == key_ref
+    assert model.estimation_steps[0].other_options[0].value == value_ref
+
+
 def test_estimation_steps_setter():
     code = '''$PROBLEM base model
 $INPUT ID DV TIME
@@ -815,6 +838,21 @@ $EST METH=COND INTER
     model.estimation_steps[0].cov = True
     model.update_source()
     assert str(model).split('\n')[-2] == '$COVARIANCE'
+
+    code = '''$PROBLEM base model
+$INPUT ID DV TIME
+$DATA file.csv IGNORE=@
+$PRED
+Y = THETA(1) + ETA(1) + ERR(1)
+$THETA 0.1
+$OMEGA 0.01
+$SIGMA 1
+$ESTIMATION METH=COND INTER MAXEVAL=99999
+'''
+    model = Model(StringIO(code))
+    model.estimation_steps[0].method = 'foi'
+    model.update_source()
+    assert str(model).split('\n')[-2] == '$ESTIMATION METHOD=ZERO INTER MAXEVAL=99999'
 
 
 def test_update_source_comments():
