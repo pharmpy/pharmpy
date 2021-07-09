@@ -840,7 +840,7 @@ def update_estimation(model):
             est_code = f'$ESTIMATION {method_code}'
             if est.other_options:
                 other_options_code = ' '.join(
-                    [f'{key}={value}' for key, value in est.other_options]
+                    [f'{key}={value}' if value else f'{key}' for key, value in est.other_options]
                 )
                 est_code += f' {other_options_code}'
             est_code += '\n'

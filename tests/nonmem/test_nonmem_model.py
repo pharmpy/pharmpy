@@ -819,7 +819,20 @@ $SIGMA 1
     assert model.estimation_steps[0].other_options[0].value == value_ref
 
 
-def test_estimation_steps_setter():
+@pytest.mark.parametrize(
+    'estcode,cov,rec_ref',
+    [
+        ('$EST METH=COND INTER', False, '$ESTIMATION METHOD=ZERO INTER'),
+        ('$EST METH=COND INTER', True, '$COVARIANCE'),
+        (
+            '$EST METH=COND INTER MAXEVAL=99999',
+            False,
+            '$ESTIMATION METHOD=ZERO INTER MAXEVAL=99999',
+        ),
+        ('$EST METH=COND INTER POSTHOC', False, '$ESTIMATION METHOD=ZERO INTER POSTHOC'),
+    ],
+)
+def test_estimation_steps_setter(estcode, cov, rec_ref):
     code = '''$PROBLEM base model
 $INPUT ID DV TIME
 $DATA file.csv IGNORE=@
@@ -828,31 +841,13 @@ Y = THETA(1) + ETA(1) + ERR(1)
 $THETA 0.1
 $OMEGA 0.01
 $SIGMA 1
-$EST METH=COND INTER
 '''
+    code += estcode
     model = Model(StringIO(code))
     model.estimation_steps[0].method = 'foi'
+    model.estimation_steps[0].cov = cov
     model.update_source()
-    assert str(model).split('\n')[-2] == '$ESTIMATION METHOD=ZERO INTER'
-
-    model.estimation_steps[0].cov = True
-    model.update_source()
-    assert str(model).split('\n')[-2] == '$COVARIANCE'
-
-    code = '''$PROBLEM base model
-$INPUT ID DV TIME
-$DATA file.csv IGNORE=@
-$PRED
-Y = THETA(1) + ETA(1) + ERR(1)
-$THETA 0.1
-$OMEGA 0.01
-$SIGMA 1
-$ESTIMATION METH=COND INTER MAXEVAL=99999
-'''
-    model = Model(StringIO(code))
-    model.estimation_steps[0].method = 'foi'
-    model.update_source()
-    assert str(model).split('\n')[-2] == '$ESTIMATION METHOD=ZERO INTER MAXEVAL=99999'
+    assert str(model).split('\n')[-2] == rec_ref
 
 
 def test_update_source_comments():
