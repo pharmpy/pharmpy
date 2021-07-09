@@ -23,7 +23,7 @@ locket==0.2.1
 lxml==4.6.3
 MarkupSafe==2.0.1
 mpmath==1.2.1
-networkx==2.5
+networkx==2.6.1
 numexpr==2.7.3
 numpy==1.21.0
 packaging==20.9
