@@ -205,3 +205,26 @@ def _create_init_dict(parameter_names, values):
         d = {name: value for name, value in zip(parameter_names, values)}
 
     return d
+
+
+def set_estimation_method(model, method, est_ind=0):
+    """Set estimation method
+
+    Sets estimation method for a model. Methods currently supported are:
+        FO, FOI, FOCE, FOCEI
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+    method : str
+        estimation method to change to
+    est_ind : int
+        index of estimation step, default is 0 (first estimation step)
+
+    Returns
+    -------
+    model : Model
+    """
+    model.estimation_steps[est_ind].method = method
+    return model
