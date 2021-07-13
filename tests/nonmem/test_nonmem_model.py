@@ -807,7 +807,7 @@ $SIGMA 1
         ('$ESTIMATION METHOD=SAEM MAXEVAL=9999', 'SAEM', 'MAXEVAL', '9999'),
     ],
 )
-def test_estimation_steps_getter_other_options(estcode, method_ref, key_ref, value_ref):
+def test_estimation_steps_getter_options(estcode, method_ref, key_ref, value_ref):
     code = '''$PROBLEM base model
 $INPUT ID DV TIME
 $DATA file.csv IGNORE=@
@@ -820,8 +820,8 @@ $SIGMA 1
     code += estcode
     model = Model(StringIO(code))
     assert model.estimation_steps[0].method == method_ref
-    assert model.estimation_steps[0].other_options[0].key == key_ref
-    assert model.estimation_steps[0].other_options[0].value == value_ref
+    assert model.estimation_steps[0].options[0].key == key_ref
+    assert model.estimation_steps[0].options[0].value == value_ref
 
 
 @pytest.mark.parametrize(

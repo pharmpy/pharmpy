@@ -9,7 +9,7 @@ from pharmpy.modeling import (
     fix_parameters_to,
     read_model,
     read_model_from_string,
-    set_estimation_method,
+    set_estimation_step,
     unfix_parameters,
     unfix_parameters_to,
     update_source,
@@ -134,14 +134,17 @@ def test_update_source(testdata):
     assert str(model).split('\n')[7] == '$THETA 0.1 FIX'
 
 
-def test_set_estimation_method(testdata):
+def test_set_estimation_step(testdata):
     model = Model(testdata / 'nonmem' / 'minimal.mod')
     assert str(model).split('\n')[-2] == '$ESTIMATION METHOD=1 INTER MAXEVALS=9990 PRINT=2 POSTHOC'
-    set_estimation_method(model, 'fo', False)
+    set_estimation_step(model, 'fo', False)
     update_source(model)
     assert str(model).split('\n')[-2] == '$ESTIMATION METHOD=ZERO MAXEVALS=9990 PRINT=2 POSTHOC'
-    set_estimation_method(model, 'fo', True)
+    set_estimation_step(model, 'fo', True)
     update_source(model)
     assert (
         str(model).split('\n')[-2] == '$ESTIMATION METHOD=ZERO INTER MAXEVALS=9990 PRINT=2 POSTHOC'
     )
+    set_estimation_step(model, 'fo', options={'saddle_reset': 1})
+    update_source(model)
+    assert str(model).split('\n')[-2] == '$ESTIMATION METHOD=ZERO INTER SADDLE_RESET=1'

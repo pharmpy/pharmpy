@@ -6,7 +6,7 @@ from pharmpy.modeling.common import (
     fix_parameters_to,
     read_model,
     read_model_from_string,
-    set_estimation_method,
+    set_estimation_step,
     set_initial_estimates,
     set_name,
     unfix_parameters,
@@ -117,5 +117,5 @@ __all__ = [
     'ninds',
     'nobs',
     'nobsi',
-    'set_estimation_method',
+    'set_estimation_step',
 ]

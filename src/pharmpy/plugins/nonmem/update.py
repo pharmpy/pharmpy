@@ -836,11 +836,11 @@ def update_estimation(model):
                 inter = ''
             method_code = f'METHOD={method}{inter}'
             est_code = f'$ESTIMATION {method_code}'
-            if est.other_options:
-                other_options_code = ' '.join(
-                    [f'{key}={value}' if value else f'{key}' for key, value in est.other_options]
+            if est.options:
+                options_code = ' '.join(
+                    [f'{key}={value}'.upper() if value else f'{key}' for key, value in est.options]
                 )
-                est_code += f' {other_options_code}'
+                est_code += f' {options_code}'
             est_code += '\n'
             newrec = create_record(est_code)
             new_records.append(newrec)

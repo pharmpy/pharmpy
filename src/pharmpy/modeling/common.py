@@ -207,8 +207,8 @@ def _create_init_dict(parameter_names, values):
     return d
 
 
-def set_estimation_method(model, method, interaction, est_ind=0):
-    """Set estimation method
+def set_estimation_step(model, method, interaction=True, options={}, est_ind=0):
+    """Set estimation step
 
     Sets estimation method for a model. Methods currently supported are:
         FO, FOCE, ITS, LAPLACE, IMPMAP, IMP, SAEM
@@ -219,10 +219,12 @@ def set_estimation_method(model, method, interaction, est_ind=0):
         Pharmpy model
     method : str
         estimation method to change to
+    interaction : bool
+        whether to use interaction or not, default is true
+    options : dict
+        any additional options. Note that this removes old options
     est_ind : int
         index of estimation step, default is 0 (first estimation step)
-    interaction : bool
-        whether to use interaction or not
 
     Returns
     -------
@@ -230,4 +232,6 @@ def set_estimation_method(model, method, interaction, est_ind=0):
     """
     model.estimation_steps[est_ind].method = method
     model.estimation_steps[est_ind].interaction = interaction
+    if options:
+        model.estimation_steps[est_ind].options = options
     return model

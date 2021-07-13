@@ -686,9 +686,7 @@ class Model(pharmpy.model.Model):
                 option for option in record.all_options if option.key not in options_stored
             ]
 
-            meth = EstimationMethod(
-                name, interaction=interaction, cov=cov, other_options=options_left
-            )
+            meth = EstimationMethod(name, interaction=interaction, cov=cov, options=options_left)
             steps.append(meth)
         self._estimation_steps = steps
         self._old_estimation_steps = copy.deepcopy(steps)
