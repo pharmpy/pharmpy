@@ -1639,7 +1639,7 @@ parser = argparse.ArgumentParser(
     formatter_class=formatter,
     allow_abbrev=True,
 )
-parser.add_argument('--version', action='version', version='0.25.1')
+parser.add_argument('--version', action='version', version='0.26.0')
 
 # subcommand parsers
 subparsers = parser.add_subparsers(title='Pharmpy commands', metavar='COMMAND')
