@@ -5,10 +5,12 @@ from pyfakefs.fake_filesystem_unittest import Patcher
 
 from pharmpy import Model
 from pharmpy.modeling import (
+    add_estimation_step,
     fix_parameters,
     fix_parameters_to,
     read_model,
     read_model_from_string,
+    remove_estimation_step,
     set_estimation_step,
     unfix_parameters,
     unfix_parameters_to,
@@ -148,3 +150,21 @@ def test_set_estimation_step(testdata):
     set_estimation_step(model, 'fo', options={'saddle_reset': 1})
     update_source(model)
     assert str(model).split('\n')[-2] == '$ESTIMATION METHOD=ZERO INTER SADDLE_RESET=1'
+
+
+def test_add_estimation_step(testdata):
+    model = Model(testdata / 'nonmem' / 'minimal.mod')
+    assert len(model.estimation_steps) == 1
+    add_estimation_step(model, 'fo')
+    update_source(model)
+    assert len(model.estimation_steps) == 2
+    assert str(model).split('\n')[-2] == '$ESTIMATION METHOD=ZERO INTER'
+
+
+def test_remove_estimation_step(testdata):
+    model = Model(testdata / 'nonmem' / 'minimal.mod')
+    assert len(model.estimation_steps) == 1
+    remove_estimation_step(model, 0)
+    update_source(model)
+    assert not model.estimation_steps
+    assert str(model).split('\n')[-2] == '$SIGMA 1'

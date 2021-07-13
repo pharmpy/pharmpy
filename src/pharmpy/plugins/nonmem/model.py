@@ -692,6 +692,16 @@ class Model(pharmpy.model.Model):
         self._old_estimation_steps = copy.deepcopy(steps)
         return steps
 
+    def add_estimation_step(self, name, interaction, cov, options=[], idx=None):
+        meth = EstimationMethod(name, interaction=interaction, cov=cov, options=options)
+        if isinstance(idx, int):
+            self.estimation_steps.insert(idx, meth)
+        else:
+            self.estimation_steps.append(meth)
+
+    def remove_estimation_step(self, idx):
+        del self.estimation_steps[idx]
+
     def __str__(self):
         return str(self.control_stream)
 

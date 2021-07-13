@@ -865,6 +865,44 @@ $SIGMA 1
     assert str(model).split('\n')[-2] == rec_ref
 
 
+def test_add_estimation_step():
+    code = '''$PROBLEM base model
+$INPUT ID DV TIME
+$DATA file.csv IGNORE=@
+$PRED
+Y = THETA(1) + ETA(1) + ERR(1)
+$THETA 0.1
+$OMEGA 0.01
+$SIGMA 1
+$EST METH=COND INTER
+'''
+    model = Model(StringIO(code))
+    model.add_estimation_step('IMP', True, False, {'saddle_reset': 1})
+    model.update_source()
+    assert str(model).split('\n')[-2] == '$ESTIMATION METHOD=IMP INTER SADDLE_RESET=1'
+    model.add_estimation_step('SAEM', True, False, idx=0)
+    model.update_source()
+    assert str(model).split('\n')[-4] == '$ESTIMATION METHOD=SAEM INTER'
+
+
+def test_remove_estimation_step():
+    code = '''$PROBLEM base model
+$INPUT ID DV TIME
+$DATA file.csv IGNORE=@
+$PRED
+Y = THETA(1) + ETA(1) + ERR(1)
+$THETA 0.1
+$OMEGA 0.01
+$SIGMA 1
+$EST METH=COND INTER
+'''
+    model = Model(StringIO(code))
+    model.remove_estimation_step(0)
+    assert not model.estimation_steps
+    model.update_source()
+    assert str(model).split('\n')[-2] == '$SIGMA 1'
+
+
 def test_update_source_comments():
     code = """
 $PROBLEM    run3.mod PHENOBARB SIMPLE MODEL

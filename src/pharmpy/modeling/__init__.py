@@ -1,11 +1,13 @@
 from pharmpy.modeling.block_rvs import create_rv_block, split_rv_block
 from pharmpy.modeling.common import (
+    add_estimation_step,
     convert_model,
     copy_model,
     fix_parameters,
     fix_parameters_to,
     read_model,
     read_model_from_string,
+    remove_estimation_step,
     set_estimation_step,
     set_initial_estimates,
     set_name,
@@ -118,4 +120,6 @@ __all__ = [
     'nobs',
     'nobsi',
     'set_estimation_step',
+    'add_estimation_step',
+    'remove_estimation_step',
 ]

@@ -207,10 +207,10 @@ def _create_init_dict(parameter_names, values):
     return d
 
 
-def set_estimation_step(model, method, interaction=True, options={}, est_ind=0):
+def set_estimation_step(model, method, interaction=True, options={}, est_idx=0):
     """Set estimation step
 
-    Sets estimation method for a model. Methods currently supported are:
+    Sets estimation step for a model. Methods currently supported are:
         FO, FOCE, ITS, LAPLACE, IMPMAP, IMP, SAEM
 
     Parameters
@@ -223,15 +223,60 @@ def set_estimation_step(model, method, interaction=True, options={}, est_ind=0):
         whether to use interaction or not, default is true
     options : dict
         any additional options. Note that this removes old options
-    est_ind : int
+    est_idx : int
         index of estimation step, default is 0 (first estimation step)
 
     Returns
     -------
     model : Model
     """
-    model.estimation_steps[est_ind].method = method
-    model.estimation_steps[est_ind].interaction = interaction
+    model.estimation_steps[est_idx].method = method
+    model.estimation_steps[est_idx].interaction = interaction
     if options:
-        model.estimation_steps[est_ind].options = options
+        model.estimation_steps[est_idx].options = options
+    return model
+
+
+def add_estimation_step(model, method, interaction=True, options={}, est_idx=None):
+    """Add estimation step
+
+    Adds estimation step for a model in a given index. Methods currently supported are:
+        FO, FOCE, ITS, LAPLACE, IMPMAP, IMP, SAEM
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+    method : str
+        estimation method to change to
+    interaction : bool
+        whether to use interaction or not, default is true
+    options : dict
+        any additional options. Note that this removes old options
+    est_idx : int
+        index of estimation step, default is None (adds step last)
+
+    Returns
+    -------
+    model : Model
+    """
+    model.add_estimation_step(method, interaction, False, options, est_idx)
+    return model
+
+
+def remove_estimation_step(model, est_idx):
+    """Remove estimation step
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+    est_idx : int
+        index of estimation step to remove
+
+    Returns
+    -------
+    model : Model
+    """
+    model.remove_estimation_step(est_idx)
     return model
