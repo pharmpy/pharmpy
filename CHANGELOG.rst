@@ -1,3 +1,10 @@
+0.26.0 (2021-07-13)
+-------------------
+
+* Add functions to set, add, and remove estimation step
+* Add supported estimation methods (ITS, LAPLACE, IMPMAP, IMP, SAEM)
+* When updating estimation step, old options are kept
+
 0.25.1 (2021-07-08)
 -------------------
 
