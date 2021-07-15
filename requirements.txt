@@ -40,7 +40,7 @@ scipy==1.7.0
 six==1.16.0
 snowballstemmer==2.1.0
 soupsieve==2.2.1
-Sphinx==4.0.2
+Sphinx==4.1.1
 sphinxcontrib-applehelp==1.0.2
 sphinxcontrib-devhelp==1.0.2
 sphinxcontrib-htmlhelp==2.0.0
