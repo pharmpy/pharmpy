@@ -250,6 +250,7 @@ class DataFrameAccessor:
         covariates = self.labels_by_type[ColumnType.COVARIATE]
         idlab = self.id_label
         df = self._obj[covariates + [idlab]]
+        df.set_index(idlab, inplace=True)
         return df.groupby(idlab).nth(0)
 
     @property
