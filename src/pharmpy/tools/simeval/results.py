@@ -28,7 +28,7 @@ def calculate_results(original_model, simfit_results):
         }
     )
     iofv_summary['residual'] = (
-        abs(iofv_summary['original'] - iofv_summary['sampled_median'])
+        (iofv_summary['original'] - iofv_summary['sampled_median'])
         / iofv_summary['sampled_stdev']
     )
     iofv_summary['residual_outlier'] = iofv_summary['residual'] >= 3
