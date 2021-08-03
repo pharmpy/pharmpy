@@ -782,6 +782,7 @@ def test_des(testdata, model_path, transformation):
             ],
         ),
         ('$ESTIMATION METH=SAEM', [EstimationMethod('saem', interaction=False)]),
+        ('$ESTIMATION METH=1 LAPLACE', [EstimationMethod('laplace', interaction=False)]),
     ],
 )
 def test_estimation_steps_getter(estcode, correct):
@@ -844,6 +845,7 @@ $SIGMA 1
             '$ESTIMATION METHOD=ZERO INTER POSTHOC',
         ),
         ('$EST METH=COND INTER', 'saem', True, False, '$ESTIMATION METHOD=SAEM INTER'),
+        ('$EST METH=COND INTER', 'laplace', False, False, '$ESTIMATION METHOD=1 LAPLACE'),
     ],
 )
 def test_estimation_steps_setter(estcode, method, inter, cov, rec_ref):

@@ -829,7 +829,10 @@ def update_estimation(model):
             elif est.method == 'FOCE':
                 method = 'COND'
             else:
-                method = est.method
+                if est.method == 'LAPLACE':
+                    method = f'1 {est.method}'
+                else:
+                    method = est.method
             if est.interaction:
                 inter = ' INTER'
             else:

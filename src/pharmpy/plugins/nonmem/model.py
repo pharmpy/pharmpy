@@ -664,7 +664,10 @@ class Model(pharmpy.model.Model):
             if value is None or value == '0' or value == 'ZERO':
                 name = 'fo'
             elif value == '1' or value == 'CONDITIONAL' or value == 'COND':
-                name = 'foce'
+                if record.has_option('LAPLACE'):
+                    name = 'laplace'
+                else:
+                    name = 'foce'
             else:
                 if value in list_supported_est():
                     name = value
@@ -681,7 +684,7 @@ class Model(pharmpy.model.Model):
             else:
                 cov = False
 
-            options_stored = ['METHOD', 'METH', 'INTERACTION', 'INTER']
+            options_stored = ['METHOD', 'METH', 'INTERACTION', 'INTER', name.upper()]
             options_left = [
                 option for option in record.all_options if option.key not in options_stored
             ]
