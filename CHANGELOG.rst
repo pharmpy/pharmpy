@@ -1,3 +1,9 @@
+0.26.1 (2021-08-04)
+-------------------
+
+* Correct residual calculation in simeval
+* Correct how laplace estimation method is written
+
 0.26.0 (2021-07-13)
 -------------------
 
