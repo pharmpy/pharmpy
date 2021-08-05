@@ -266,6 +266,9 @@ class ModelfitResults(Results):
         self._individual_estimates = individual_estimates
         self._individual_ofv = individual_ofv
 
+    def __bool__(self):
+        return bool(self._ofv) and bool(self._parameter_estimates)
+
     def to_dict(self):
         """Convert results object to a dictionary"""
         return {'parameter_estimates': self.parameter_estimates}

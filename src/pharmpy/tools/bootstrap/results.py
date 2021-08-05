@@ -145,7 +145,7 @@ def calculate_results(
     ofvs = pd.DataFrame(ofvs)
     ofvs['original_bootdata_ofv'] = np.nan
     ofvs['bootstrap_origdata_ofv'] = np.nan
-    if original_results:
+    if original_results is not None:
         base_iofv = original_results.individual_ofv
         if included_individuals and base_iofv is not None:
             for i, included in enumerate(included_individuals):

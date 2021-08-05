@@ -7,7 +7,6 @@ from pharmpy.tools.modelsearch.algorithms import (
     exhaustive,
     exhaustive_stepwise,
 )
-from pharmpy.tools.modelsearch.mfl import ModelFeatures
 from pharmpy.tools.modelsearch.rankfuncs import aic, bic, ofv
 from pharmpy.tools.workflows import Task, Workflow
 
@@ -18,6 +17,9 @@ class DummyResults:
         self.aic = aic
         self.bic = bic
         self.parameter_estimates = parameter_estimates
+
+    def __bool__(self):
+        return bool(self.ofv) and bool(self.parameter_estimates)
 
 
 class DummyModel:
@@ -142,7 +144,6 @@ def test_exhaustive(testdata):
 )
 def test_exhaustive_stepwise(wf_run, res, mfl, task_names_ref):
     base_model = DummyModel('run1', ofv=res[0], parameter_estimates=res[1])
-    mfl = ModelFeatures(mfl)
     wf_search = exhaustive_stepwise(base_model, mfl, wf_run)
     start_node = wf_search.get_input()[0]
     start_node_successors = list(wf_search.tasks.successors(start_node))
