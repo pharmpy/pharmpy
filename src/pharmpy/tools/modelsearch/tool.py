@@ -13,6 +13,7 @@ class ModelSearch(pharmpy.tools.Tool):
         self.algorithm = getattr(algorithms, algorithm)
         self.rankfunc = getattr(rankfuncs, rankfunc)
         super().__init__(**kwargs)
+        self.base_model.database = self.database.model_database
 
     def fit(self, models):
         db = execute.LocalDirectoryDatabase(self.rundir.path / 'models')
@@ -20,15 +21,26 @@ class ModelSearch(pharmpy.tools.Tool):
         modelfit_run.run()
 
     def run(self):
-        df = self.algorithm(
-            self.base_model,
-            self.mfl,
-            self.fit,
-            self.rankfunc,
-        )
-        res = ModelSearchResults(runs=df)
-        res.to_json(path=self.rundir.path / 'results.json')
-        res.to_csv(path=self.rundir.path / 'results.csv')
+        if self.algorithm.__name__ == 'exhaustive_stepwise':
+            wf_fit = self.workflow_creator()
+            wf_search = self.algorithm(
+                self.base_model,
+                self.mfl,
+                wf_fit,
+            )
+            res = self.dispatcher.run(
+                wf_search, self.database
+            )  # FIXME: postprocessing/collecting needed
+        else:
+            df = self.algorithm(
+                self.base_model,
+                self.mfl,
+                self.fit,
+                self.rankfunc,
+            )
+            res = ModelSearchResults(runs=df)
+            res.to_json(path=self.rundir.path / 'results.json')
+            res.to_csv(path=self.rundir.path / 'results.csv')
         return res
 
 

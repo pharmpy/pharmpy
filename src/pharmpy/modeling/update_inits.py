@@ -19,6 +19,9 @@ def update_inits(model, force_individual_estimates=False):
     force_individual_estimates : bool
         Whether update of initial individual estimates should be forced.
     """
+    if isinstance(model, list) and len(model) == 1:
+        model = model[0]
+
     try:
         res = model.modelfit_results
     except AttributeError:

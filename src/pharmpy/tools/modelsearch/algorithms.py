@@ -74,10 +74,10 @@ def stepwise(base_model, mfl, run_func, rank_func):
 
 
 def exhaustive_stepwise(base_model, mfl, wf_run):
+    features = ModelFeatures(mfl)
     # TODO: Base condition/warning for input model?
     wf_search = Workflow(Task('start_model', return_model, base_model))
-    # TODO: Consider using a __bool__ in modelfit_results
-    if not (base_model.modelfit_results.ofv and base_model.modelfit_results.parameter_estimates):
+    if not base_model.modelfit_results:
         wf_search.add_tasks(wf_run.copy(new_ids=True), connect=True)
 
     while True:
@@ -85,11 +85,13 @@ def exhaustive_stepwise(base_model, mfl, wf_run):
         for task in wf_search.get_output():
             previous_funcs = [task.function for task in wf_search.get_upstream_tasks(task)]
             possible_funcs = {
-                feat: func for feat, func in mfl.all_funcs().items() if func not in previous_funcs
+                feat: func
+                for feat, func in features.all_funcs().items()
+                if func not in previous_funcs
             }
             if len(possible_funcs) > 0:
                 no_of_trans += 1
-                task_update_inits = Task('update_inits', update_inits, task)
+                task_update_inits = Task('update_inits', update_inits)
                 wf_search.add_tasks(task_update_inits, connect=True, output_nodes=[task])
                 for feat, func in possible_funcs.items():
                     task_copy = Task('copy', copy_model, feat)
@@ -124,5 +126,5 @@ def create_workflow_transform(feat, func, wf_run):
 
 def copy_model(model, feat):
     model_copy = model.copy()
-    model_copy.name = f'model_{feat}'
+    model_copy.name = f'{model.name}_{feat}'
     return model_copy
