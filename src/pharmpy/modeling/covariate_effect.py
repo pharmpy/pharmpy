@@ -205,12 +205,12 @@ def _count_categorical(model, covariate):
     """Gets the number of individuals that has a level of categorical covariate."""
     idcol = model.dataset.pharmpy.id_label
     df = model.dataset.set_index(idcol)
-    col = df[covariate]
-    col.fillna(-99, inplace=True)       # FIXME: Should not use -99 explicitly here
-    allcounts = col.groupby('ID').value_counts()
+    allcounts = df[covariate].groupby('ID').value_counts()
     allcounts.name = None     # To avoid collisions when resetting index
     counts = allcounts.reset_index().iloc[:, 1].value_counts()
     counts.sort_index(inplace=True) # To make deterministic in case of multiple modes
+    if model.dataset[covariate].isna().any():
+        counts[np.nan] = 0
     return counts
 
 
@@ -420,23 +420,21 @@ class CovariateEffect:
         symbol = S('symbol')
         most_common = counts.idxmax()
         categories = list(counts.index)
+
         values = [1]
-
-        if np.isnan(most_common):
-            most_common = S('NaN')
-
         conditions = [Eq(S('cov'), most_common)]
 
         for i, cat in enumerate(categories):
             if cat != most_common:
-                if len(categories) == 2:
-                    values += [1 + S('theta')]
-                else:
-                    values += [1 + S(f'theta{i}')]
                 if np.isnan(cat):
                     conditions += [Eq(S('cov'), S('NaN'))]
+                    values += [1]
                 else:
                     conditions += [Eq(S('cov'), cat)]
+                    if len(categories) == 2:
+                        values += [1 + S('theta')]
+                    else:
+                        values += [1 + S(f'theta{i}')]
 
         expression = Piecewise(*zip(values, conditions))
 
