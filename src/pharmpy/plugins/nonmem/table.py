@@ -151,6 +151,8 @@ class PhiTable(NONMEMTable):
     @property
     def iofv(self):
         df = self._df.copy(deep=True)
+        # Remove all zero lines. These are from individuals with no observations
+        df = df.loc[df.iloc[:, 2:].any(axis=1)]
         iofv = df[['ID', 'OBJ']]
         iofv.set_index('ID', inplace=True)
         iofv.columns = ['iOFV']
@@ -159,6 +161,7 @@ class PhiTable(NONMEMTable):
     @property
     def etas(self):
         df = self._df.copy(deep=True)
+        df = df.loc[df.iloc[:, 2:].any(axis=1)]
         eta_col_names = [col for col in df if col.startswith('ETA')]
         etas = df[eta_col_names]
         etas.index = df['ID']
@@ -167,6 +170,7 @@ class PhiTable(NONMEMTable):
     @property
     def etcs(self):
         df = self._df.copy(deep=True)
+        df = df.loc[df.iloc[:, 2:].any(axis=1)]
         eta_col_names = [col for col in df if col.startswith('ETA')]
         etc_col_names = [col for col in df if col.startswith('ETC')]
         vals = df[etc_col_names].values
