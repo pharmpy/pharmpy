@@ -901,6 +901,16 @@ class Model(pharmpy.model.Model):
         if idvcol in df.columns:
             df.pharmpy.column_type[idvcol] = pharmpy.data.ColumnType.IDV
         df.name = self.dataset_path.stem
+
+        # Remove individuals without observations
+        try:
+            have_obs = set(df.pharmpy.observations.index.unique(level=0))
+        except DatasetError:
+            pass
+        else:
+            all_ids = set(df.pharmpy.ids)
+            ids_to_remove = all_ids - have_obs
+            df = df[~df['ID'].isin(ids_to_remove)]
         return df
 
     def rv_translation(self, reverse=False, remove_idempotent=False, as_symbols=False):
