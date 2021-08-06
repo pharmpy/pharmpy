@@ -616,9 +616,9 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
             'cat',
             'FA1',
             '*',
-            'IF (FA1.EQ.1.0) THEN\n'
+            'IF (FA1.EQ.0.0) THEN\n'
             'CLFA1 = 1\n'
-            'ELSE IF (FA1.EQ.0.0) THEN\n'
+            'ELSE IF (FA1.EQ.1.0) THEN\n'
             'CLFA1 = THETA(4) + 1\n'
             'END IF\n'
             'CL = CL*CLFA1',
@@ -689,7 +689,7 @@ def test_add_covariate_effect(pheno_path, effect, covariate, operation, buf_new)
     assert f'POP_CL{covariate}' in str(model)
 
 
-def test_add_covariate_effect_nan(pheno_path):
+def test_nan_add_covariate_effect(pheno_path):
     model = Model(pheno_path)
     data = model.dataset
 
@@ -705,7 +705,7 @@ def test_add_covariate_effect_nan(pheno_path):
     assert re.search(r'NEW_COL\.EQ\.-99', str(model))
 
 
-def test_add_covariate_effect_nested(pheno_path):
+def test_nested_add_covariate_effect(pheno_path):
     model = Model(pheno_path)
 
     add_covariate_effect(model, 'CL', 'WGT', 'exp')

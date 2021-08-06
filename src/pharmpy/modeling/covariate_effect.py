@@ -202,10 +202,14 @@ def _create_thetas(model, parameter, effect, covariate, template):
 
 
 def _count_categorical(model, covariate):
-    """Gets most common level per individual of specified covariate."""
-    data = model.dataset.groupby('ID')[covariate]
-    counts = data.agg(lambda ids: ids.value_counts(dropna=False).index[0])
-
+    """Gets the number of individuals that has a level of categorical covariate."""
+    df = model.dataset.set_index('ID')       # FIXME: Should not use ID explicitly here
+    col = df[covariate]
+    col.fillna(-99, inplace=True)       # FIXME: Should not use -99 explicitly here
+    allcounts = col.groupby('ID').value_counts()
+    allcounts.name = None     # To avoid collisions when resetting index
+    counts = allcounts.reset_index().iloc[:, 1].value_counts()
+    counts.sort_index(inplace=True) # To make deterministic in case of multiple modes
     return counts
 
 
@@ -413,8 +417,8 @@ class CovariateEffect:
     def categorical(cls, counts):
         """Linear categorical template (for categorical covariates)."""
         symbol = S('symbol')
-        most_common = counts.mode().pop(0)
-        categories = counts.unique()
+        most_common = counts.idxmax()
+        categories = list(counts.index)
         values = [1]
 
         if np.isnan(most_common):
