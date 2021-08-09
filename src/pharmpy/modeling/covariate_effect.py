@@ -206,9 +206,9 @@ def _count_categorical(model, covariate):
     idcol = model.dataset.pharmpy.id_label
     df = model.dataset.set_index(idcol)
     allcounts = df[covariate].groupby('ID').value_counts()
-    allcounts.name = None     # To avoid collisions when resetting index
+    allcounts.name = None  # To avoid collisions when resetting index
     counts = allcounts.reset_index().iloc[:, 1].value_counts()
-    counts.sort_index(inplace=True) # To make deterministic in case of multiple modes
+    counts.sort_index(inplace=True)  # To make deterministic in case of multiple modes
     if model.dataset[covariate].isna().any():
         counts[np.nan] = 0
     return counts
