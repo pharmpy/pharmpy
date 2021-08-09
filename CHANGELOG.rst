@@ -1,3 +1,9 @@
+0.27.0 (2021-08-09)
+-------------------
+
+* Use dask threaded for Windows, allow configuration of dispatcher type
+* Filter out individuals without observations in .phi-file
+
 0.26.1 (2021-08-04)
 -------------------
 
