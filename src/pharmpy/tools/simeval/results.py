@@ -16,9 +16,11 @@ class SimevalResults(Results):
 
 def calculate_results(original_model, simfit_results):
     """Calculate simeval results"""
-    sampled_iofv = pd.DataFrame()
-    for i, res in enumerate(simfit_results.modelfit_results):
-        sampled_iofv[f'{i + 1}'] = res.individual_ofv
+    sampled_iofv = pd.concat(
+        [res.individual_ofv for res in simfit_results.modelfit_results],
+        axis=1,
+        keys=range(1, len(simfit_results.modelfit_results) + 1),
+    )
     origiofv = original_model.modelfit_results.individual_ofv
     iofv_summary = pd.DataFrame(
         {
