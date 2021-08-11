@@ -56,7 +56,10 @@ from pharmpy.modeling.odes import (
 from pharmpy.modeling.power_on_ruv import power_on_ruv
 from pharmpy.modeling.remove_iiv import remove_iiv
 from pharmpy.modeling.remove_iov import remove_iov
-from pharmpy.modeling.results import individual_parameter_statistics, pk_parameters
+from pharmpy.modeling.results import (
+    calculate_individual_parameter_statistics,
+    calculate_pk_parameters_statistics,
+)
 from pharmpy.modeling.run import create_results, fit, read_results
 from pharmpy.modeling.update_inits import update_inits
 
@@ -123,6 +126,6 @@ __all__ = [
     'set_estimation_step',
     'add_estimation_step',
     'remove_estimation_step',
-    'individual_parameter_statistics',
-    'pk_parameters',
+    'calculate_individual_parameter_statistics',
+    'calculate_pk_parameters_statistics',
 ]

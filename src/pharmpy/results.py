@@ -620,12 +620,6 @@ class ChainedModelfitResults(MutableSequence, ModelfitResults):
     def model_name(self):
         return self[-1].model_name
 
-    def individual_parameter_statistics(self, expr, seed=None):
-        return self[-1].individual_parameter_statistics(expr, seed=seed)
-
-    def pk_parameters(self, seed=None):
-        return self[-1].pk_parameters(seed=seed)
-
     def __repr__(self):
         return repr(self._results[-1])
 

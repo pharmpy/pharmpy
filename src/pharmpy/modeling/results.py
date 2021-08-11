@@ -7,7 +7,7 @@ import sympy
 from pharmpy.parameter_sampling import sample_from_covariance_matrix
 
 
-def individual_parameter_statistics(model, exprs, seed=None):
+def calculate_individual_parameter_statistics(model, exprs, seed=None):
     """Calculate statistics for individual parameters
 
     exprs - is one string or an iterable of strings
@@ -79,7 +79,7 @@ def individual_parameter_statistics(model, exprs, seed=None):
     return table
 
 
-def pk_parameters(model, seed=None):
+def calculate_pk_parameters_statistics(model, seed=None):
     statements = model.statements
     odes = statements.ode_system
     central = odes.find_central()
@@ -121,7 +121,7 @@ def pk_parameters(model, seed=None):
     if odes.t not in elimination_rate.free_symbols:
         expressions.append(sympy.Eq(sympy.Symbol('k_e'), elimination_rate))
 
-    df = individual_parameter_statistics(model, expressions, seed=seed)
+    df = calculate_individual_parameter_statistics(model, expressions, seed=seed)
     return df
 
 
