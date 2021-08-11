@@ -1,5 +1,3 @@
-import os
-
 from dask.distributed import Client
 from dask.threaded import get
 
@@ -9,8 +7,6 @@ import pharmpy.execute.dispatchers
 def run(workflow):
     if pharmpy.execute.dispatchers.conf.dask_dispatcher:
         dask_dispatcher = pharmpy.execute.dispatchers.conf.dask_dispatcher
-    elif os.name == 'nt':
-        dask_dispatcher = 'threaded'
     else:
         dask_dispatcher = 'distributed'
 
