@@ -76,6 +76,7 @@ def calculate_individual_parameter_statistics(model, exprs, seed=None):
         df['parameter'] = name
         table = pd.concat([table, df])
     table.set_index(['parameter', 'covariates'], inplace=True)
+    table = table.astype('float64')
     return table
 
 
@@ -116,6 +117,31 @@ def calculate_pk_parameters_statistics(model, seed=None):
                 eq = sympy.Eq(sympy.Rational(1, 2) * A0, sols.rhs)
                 thalf_elim = sympy.solve(eq, odes.t)[0]
                 expressions.append(sympy.Eq(sympy.Symbol('t_half_elim'), thalf_elim))
+
+    # Bolus dose + 2comp + FO elimination
+    if len(peripherals) == 1 and len(odes) == 3 and odes.t not in elimination_rate.free_symbols:
+        ode_list, ics = odes.to_explicit_odes(skip_output=True)
+        sols = sympy.dsolve(ode_list, ics=ics)
+        A = sympy.Wild('A')
+        B = sympy.Wild('B')
+        alpha = sympy.Wild('alpha')
+        beta = sympy.Wild('beta')
+
+        m = sols[0].rhs.match(A * sympy.exp(-alpha) + B * sympy.exp(-beta))
+
+        beta = m[beta] / odes.t
+        alpha = m[alpha] / odes.t
+        A = m[A] / central.dose.amount
+        B = m[B] / central.dose.amount
+
+        if (alpha - alpha).extract_multiplicatively(-1) is not None:
+            # alpha > beta  (sympy couldn't simplify this directly)
+            alpha, beta = beta, alpha
+            A, B = B, A
+        expressions.append(sympy.Eq(sympy.Symbol('A'), A))
+        expressions.append(sympy.Eq(sympy.Symbol('B'), B))
+        expressions.append(sympy.Eq(sympy.Symbol('alpha'), alpha))
+        expressions.append(sympy.Eq(sympy.Symbol('beta'), beta))
 
     # Any abs + any comp + FO elimination
     if odes.t not in elimination_rate.free_symbols:
