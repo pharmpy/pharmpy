@@ -10,11 +10,29 @@ from pharmpy.parameter_sampling import sample_from_covariance_matrix
 def calculate_individual_parameter_statistics(model, exprs, seed=None):
     """Calculate statistics for individual parameters
 
-    exprs - is one string or an iterable of strings
+    Calculate the mean (expected value of the distribution), variance
+    (variance of the distribution) and standard error for individual
+    parameters described by arbitrary expressions. Any dataset column or
+    variable used in the model can be used in the expression. The exception
+    being that variables that depends on the solution of the ODE system
+    cannot be used. If covariates are used in the expression the statistics
+    of the parameter is calculated at the median value of each covariate as well
+    as at the 5:th and 95:th percentiles.
 
-    The parameter does not have to be in the model, but can be an
-    expression of other parameters from the model.
-    Does not support parameters that relies on the solution of the ODE-system
+    Parameters
+    ----------
+    model : Model
+        A previously estimated model
+    exprs : str, sympy expression or iterable of str or sympy expressions
+        Expressions or equations for parameters of interest. If equations are used
+        the names of the left hand sides will be used as the names of the parameters.
+    seed : int or numpy rng
+
+    Returns
+    -------
+    pd.DataFrame
+        A DataFrame of statistics indexed on parameter and covariate value.
+
     """
     if seed is None or isinstance(seed, int):
         seed = np.random.default_rng(seed)
@@ -81,6 +99,29 @@ def calculate_individual_parameter_statistics(model, exprs, seed=None):
 
 
 def calculate_pk_parameters_statistics(model, seed=None):
+    """Calculate statistics for common pharmacokinetic parameters
+
+    Calculate the mean (expected value of the distribution), variance
+    (variance of the distribution) and standard error for some individual
+    pre-defined pharmacokinetic parameters.
+
+    Parameters
+    ----------
+    model : Model
+        A previously estimated model
+    seed : int or numpy rng
+
+    Returns
+    -------
+    pd.DataFrame
+        A DataFrame of statistics indexed on parameter and covariate value.
+
+    See Also
+    --------
+    calculate_individual_parameter_statistics : Calculation of statistics for arbitrary parameters
+
+    """
+
     statements = model.statements
     odes = statements.ode_system
     central = odes.find_central()
