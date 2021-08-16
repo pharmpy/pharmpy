@@ -29,7 +29,7 @@ numpy==1.21.2
 packaging==21.0
 pandas==1.3.2
 partd==1.2.0
-Pygments==2.9.0
+Pygments==2.10.0
 pyparsing==2.4.7
 pyrsistent==0.18.0
 python-dateutil==2.8.2
