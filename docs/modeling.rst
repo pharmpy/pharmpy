@@ -1081,3 +1081,17 @@ results from the tool and can be saved as either json or csv.
     res = create_results("bootstrap_dir1")
     res.to_json("bootstrap_dir1/results.json")
     res.to_csv("bootstrap_dir1/results.csv")
+
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Individual parameter calculations
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Pharmpy has functions to calculate statistics for individual parameters that are either defined
+in the model code or that can be defined expressions containing dataset columns and/or variables
+from the model code.
+
+.. code-block:: python
+
+    from pharmpy.modeling import calculate_individual_parameter_statistics
+    model = read_model(path / 'secondary_parameters'/ 'run2.mod')
