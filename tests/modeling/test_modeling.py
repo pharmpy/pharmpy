@@ -15,7 +15,7 @@ from pharmpy.modeling import (
     add_lag_time,
     bolus_absorption,
     boxcox,
-    create_rv_block,
+    create_joint_distribution,
     explicit_odes,
     first_order_absorption,
     iiv_on_ruv,
@@ -1601,7 +1601,7 @@ def test_add_iiv(pheno_path, parameter, expression, operation, eta_name, buf_new
 def test_block_rvs(testdata, etas, pk_ref, omega_ref):
     model = Model(testdata / 'nonmem/pheno_block.mod')
 
-    create_rv_block(model, etas)
+    create_joint_distribution(model, etas)
     model.update_source()
 
     assert str(model.get_pred_pk_record()) == pk_ref
@@ -1678,9 +1678,9 @@ def test_block_rvs(testdata, etas, pk_ref, omega_ref):
 def test_block_rvs_nested(testdata, etas, pk_ref, omega_ref):
     model = Model(testdata / 'nonmem/pheno_block.mod')
 
-    create_rv_block(model, etas[0])
+    create_joint_distribution(model, etas[0])
     model.update_source()
-    create_rv_block(model, etas[1])
+    create_joint_distribution(model, etas[1])
     model.update_source()
 
     assert str(model.get_pred_pk_record()) == pk_ref
@@ -1784,7 +1784,7 @@ def test_block_rvs_nested(testdata, etas, pk_ref, omega_ref):
 )
 def test_split_rv_block(testdata, etas, pk_ref, omega_ref):
     model = Model(testdata / 'nonmem/pheno_block.mod')
-    create_rv_block(model)
+    create_joint_distribution(model)
     model.update_source()
 
     split_rv_block(model, etas)
@@ -2131,7 +2131,7 @@ def test_power_on_ruv(testdata, epsilons, err_ref, theta_ref):
 def test_nested_update_source(pheno_path):
     model = Model(pheno_path)
 
-    create_rv_block(model)
+    create_joint_distribution(model)
     model.update_source()
     model.update_source()
 

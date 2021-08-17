@@ -3,7 +3,7 @@ from io import StringIO
 import pytest
 
 from pharmpy import Model
-from pharmpy.modeling import add_iiv, create_rv_block
+from pharmpy.modeling import add_iiv, create_joint_distribution
 from pharmpy.modeling.block_rvs import _choose_param_init
 from pharmpy.random_variables import RandomVariable, RandomVariables
 from pharmpy.results import ModelfitResults
@@ -24,7 +24,7 @@ def test_incorrect_params(testdata, rvs, exception_msg):
     )
 
     with pytest.raises(Exception, match=exception_msg):
-        create_rv_block(model, rvs)
+        create_joint_distribution(model, rvs)
 
 
 def test_choose_param_init(pheno_path, testdata):
@@ -92,5 +92,5 @@ $ESTIMATION METHOD=1 INTERACTION
         )
     )
     model.source.path = testdata / 'nonmem' / 'pheno.mod'
-    create_rv_block(model, model.random_variables.names)
+    create_joint_distribution(model, model.random_variables.names)
     assert 'IIV_CL_V_IIV_S1' in model.parameters.names

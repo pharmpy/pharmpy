@@ -10,9 +10,11 @@ from pharmpy.parameter import Parameter
 from pharmpy.random_variables import RandomVariables
 
 
-def create_rv_block(model, list_of_rvs=None):
+def create_joint_distribution(model, list_of_rvs=None):
     """
-    Creates a full or partial block structure of etas. The etas must be IIVs and cannot
+    Combines some or all etas into a joint distribution.
+
+    The etas must be IIVs and cannot
     be fixed. Initial estimates for covariance between the etas is dependent on whether
     the model has results from a previous results. In that case, the correlation will
     be calculated from individual estimates, otherwise correlation will be set to 10%.
@@ -20,9 +22,9 @@ def create_rv_block(model, list_of_rvs=None):
     Parameters
     ----------
     model : Model
-        Pharmpy model to create block effect on.
+        Pharmpy model
     list_of_rvs : list
-        List of etas to create a block structure from. If None, all etas that are IIVs and
+        List of etas to combine. If None, all etas that are IIVs and
         non-fixed will be used (full block). None is default.
     """
     rvs = model.random_variables

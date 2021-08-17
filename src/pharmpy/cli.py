@@ -505,9 +505,9 @@ def add_iov(args):
     write_model_or_dataset(model, model.dataset, path=args.output_file, force=False)
 
 
-def create_rv_block(args):
+def create_joint_distribution(args):
     """Subcommand to create full or partial block structures."""
-    from pharmpy.modeling import create_rv_block
+    from pharmpy.modeling import create_joint_distribution
 
     model = args.model
 
@@ -516,7 +516,7 @@ def create_rv_block(args):
     except AttributeError:
         etas = args.etas
 
-    create_rv_block(model, etas)
+    create_joint_distribution(model, etas)
 
     write_model_or_dataset(model, model.dataset, path=args.output_file, force=False)
 
@@ -1275,10 +1275,10 @@ parser_definition = [
                     }
                 },
                 {
-                    'create_rv_block': {
-                        'help': 'Creates block structures',
+                    'create_joint_distribution': {
+                        'help': 'Combine etas into joint distributions',
                         'description': 'Creates full or partial block structures of etas (IIV)',
-                        'func': create_rv_block,
+                        'func': create_joint_distribution,
                         'parents': [args_model_input, args_output],
                         'args': [
                             {
@@ -1286,8 +1286,8 @@ parser_definition = [
                                 'type': str,
                                 'default': None,
                                 'help': 'List of etas, mark group of etas in single quote '
-                                'separated by spaces. For partial block structures provide list, '
-                                'for full no arguments are needed',
+                                'separated by spaces. To combine some etas provide list, '
+                                'for all etas no arguments are needed',
                             },
                         ],
                     }

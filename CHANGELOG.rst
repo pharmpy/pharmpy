@@ -3,6 +3,7 @@ next version
 
 * Move method individual_parameter_statistics from Results to a function in modeling and rename to calculate_individual_parameter_statistics
 * Move method pk_parameters from Results to a function in modeling and rename to calculate_pk_parameters_statistics
+* Rename create_rv_block to create_joint_distribution
 
 0.27.0 (2021-08-09)
 -------------------

@@ -1,4 +1,4 @@
-from pharmpy.modeling.block_rvs import create_rv_block, split_rv_block
+from pharmpy.modeling.block_rvs import create_joint_distribution, split_rv_block
 from pharmpy.modeling.common import (
     add_estimation_step,
     convert_model,
@@ -73,7 +73,7 @@ __all__ = [
     'add_iiv',
     'add_lag_time',
     'boxcox',
-    'create_rv_block',
+    'create_joint_distribution',
     'explicit_odes',
     'fix_parameters',
     'iiv_on_ruv',

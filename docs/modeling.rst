@@ -972,40 +972,40 @@ dTBS error model
     model.update_source(nofiles=True)
     print_model_diff(model_ref, model)
 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Creating full or partial block structures
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Creating joint distributions of multiple etas
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. jupyter-execute::
    :hide-output:
 
    model = Model(path / "pheno.mod")
 
-Pharmpy supports the creation of full and partial block structures of etas. See
-:py:func:`pharmpy.modeling.create_rv_block`.
+Pharmpy supports the joining of multiple etas into a joint distribution. See
+:py:func:`pharmpy.modeling.create_joint_distribution`.
 
 .. jupyter-execute::
 
-   from pharmpy.modeling import create_rv_block
+   from pharmpy.modeling import create_joint_distribution
 
-   create_rv_block(model, ['ETA(1)', 'ETA(2)'])
+   create_joint_distribution(model, ['ETA(1)', 'ETA(2)'])
    model.update_source()
    print_model_diff(model_ref, model)
 
-To create a partial block structure, provide the etas as a list. Valid etas must be IIVs and cannot be
-fixed. If no list is provided as input, a full block structure is implemented.
+The listed etas will be combined into a new distribution. Valid etas must be IIVs and cannot be
+fixed. If no list is provided as input, all etas would be included in the same distribution.
 
 .. jupyter-execute::
 
    model = Model(path / "pheno.mod")
-   create_rv_block(model)
+   create_joint_distribution(model)
    model.update_source()
    print_model_diff(model_ref, model)
 
 .. warning::
 
-   If you have an eta block and wish to include another eta, note that you need to have all etas from that
-   block as input argument, any that are not included will be separated from that block.
+   If you already have a joint distribution and wish to include another eta, note that you need to have all etas from that
+   distribution as input argument, any that are not included will be separated from that distribution.
 
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1022,9 +1022,9 @@ the model:
 
 .. jupyter-execute::
 
-   from pharmpy.modeling import copy_model, create_rv_block
+   from pharmpy.modeling import copy_model, create_joint_distribution
 
-   create_rv_block(model)
+   create_joint_distribution(model)
    model.update_source()
    model_block = copy_model(model)
    print(model)

@@ -127,11 +127,11 @@ def test_results_linearize(datadir, fs):
 
 @pytest.mark.parametrize('fs', [[['pkgutil'], [source, etas_record]]], indirect=True)
 @pytest.mark.parametrize('eta_args', [['--etas', 'ETA(1) ETA(2)'], []])
-def test_create_rv_block(datadir, fs, eta_args):
+def test_create_joint_distribution(datadir, fs, eta_args):
     fs.add_real_file(datadir / 'pheno_real.mod', target_path='run1.mod')
     fs.add_real_file(datadir / 'pheno.dta', target_path='pheno.dta')
 
-    args = ['model', 'create_rv_block', 'run1.mod'] + eta_args
+    args = ['model', 'create_joint_distribution', 'run1.mod'] + eta_args
     cli.main(args)
 
     with open('run1.mod', 'r') as f_ori, open('run2.mod', 'r') as f_cov:
