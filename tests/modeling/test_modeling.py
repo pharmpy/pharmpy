@@ -28,7 +28,7 @@ from pharmpy.modeling import (
     remove_lag_time,
     seq_zo_fo_absorption,
     set_transit_compartments,
-    split_rv_block,
+    split_joint_distribution,
     tdist,
     update_inits,
     zero_order_absorption,
@@ -1782,12 +1782,12 @@ def test_block_rvs_nested(testdata, etas, pk_ref, omega_ref):
         ),
     ],
 )
-def test_split_rv_block(testdata, etas, pk_ref, omega_ref):
+def test_joint_distribution(testdata, etas, pk_ref, omega_ref):
     model = Model(testdata / 'nonmem/pheno_block.mod')
     create_joint_distribution(model)
     model.update_source()
 
-    split_rv_block(model, etas)
+    split_joint_distribution(model, etas)
     print(model.random_variables, model.parameters)
     model.update_source()
 

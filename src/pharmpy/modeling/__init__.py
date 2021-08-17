@@ -1,4 +1,4 @@
-from pharmpy.modeling.block_rvs import create_joint_distribution, split_rv_block
+from pharmpy.modeling.block_rvs import create_joint_distribution, split_joint_distribution
 from pharmpy.modeling.common import (
     add_estimation_step,
     convert_model,
@@ -109,7 +109,7 @@ __all__ = [
     'has_proportional_error',
     'has_additive_error',
     'has_combined_error',
-    'split_rv_block',
+    'split_joint_distribution',
     'fix_parameters_to',
     'unfix_parameters_to',
     'create_results',

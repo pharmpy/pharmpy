@@ -1017,7 +1017,7 @@ Remove covariance between etas
 
    model = Model(path / "pheno.mod")
 
-Covariance can be removed between etas using the function :py:func:`pharmpy.modeling.split_rv_block`. If we have
+Covariance can be removed between etas using the function :py:func:`pharmpy.modeling.split_joint_distribution`. If we have
 the model:
 
 .. jupyter-execute::
@@ -1033,9 +1033,9 @@ Provide etas as a list.
 
 .. jupyter-execute::
 
-   from pharmpy.modeling import split_rv_block
+   from pharmpy.modeling import split_joint_distribution
 
-   split_rv_block(model, ['ETA(1)'])
+   split_joint_distribution(model, ['ETA(1)'])
    model.update_source()
    print_model_diff(model_block, model)
 

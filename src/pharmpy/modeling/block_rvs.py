@@ -66,16 +66,16 @@ def create_joint_distribution(model, list_of_rvs=None):
     return model
 
 
-def split_rv_block(model, list_of_rvs=None):
+def split_joint_distribution(model, list_of_rvs=None):
     """
-    Splits a block structure given a list of etas to separate.
+    Splits etas following a joint distribution into separate distributions.
 
     Parameters
     ----------
     model : Model
-        Pharmpy model to create block effect on.
+        Pharmpy model
     list_of_rvs : str, list
-        Name/names of etas to split from block structure. If None, all etas that are IIVs and
+        Name/names of etas to separate. If None, all etas that are IIVs and
         non-fixed will become single. None is default.
     """
     rvs = model.random_variables
