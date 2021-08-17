@@ -88,9 +88,10 @@ def test_exhaustive(testdata):
             'ELIMINATION(ZO)\nPERIPHERALS(2)',
             [
                 'start_model',
+                'copy',
+                'copy',
                 'update_inits',
-                'copy',
-                'copy',
+                'update_inits',
                 'ELIMINATION(ZO)',
                 'PERIPHERALS(2)',
                 'run',
@@ -101,10 +102,12 @@ def test_exhaustive(testdata):
             'ELIMINATION(ZO)\nPERIPHERALS([2,3])',
             [
                 'start_model',
+                'copy',
+                'copy',
+                'copy',
                 'update_inits',
-                'copy',
-                'copy',
-                'copy',
+                'update_inits',
+                'update_inits',
                 'ELIMINATION(ZO)',
                 'PERIPHERALS(2)',
                 'PERIPHERALS(3)',
@@ -116,10 +119,12 @@ def test_exhaustive(testdata):
             'ELIMINATION(ZO)\nPERIPHERALS(2)\nABSORPTION(ZO)',
             [
                 'start_model',
+                'copy',
+                'copy',
+                'copy',
                 'update_inits',
-                'copy',
-                'copy',
-                'copy',
+                'update_inits',
+                'update_inits',
                 'ABSORPTION(ZO)',
                 'ELIMINATION(ZO)',
                 'PERIPHERALS(2)',
@@ -132,9 +137,10 @@ def test_exhaustive(testdata):
             [
                 'start_model',
                 'run',
+                'copy',
+                'copy',
                 'update_inits',
-                'copy',
-                'copy',
+                'update_inits',
                 'ELIMINATION(ZO)',
                 'PERIPHERALS(2)',
                 'run',
@@ -147,7 +153,7 @@ def test_exhaustive_stepwise(wf_run, res, mfl, task_names_ref):
     wf_search = exhaustive_stepwise(base_model, mfl, wf_run)
     start_node = wf_search.get_input()[0]
     start_node_successors = list(wf_search.tasks.successors(start_node))
-    assert len(start_node_successors) == 1
+    assert len(start_node_successors) > 1 if res[1] else len(start_node_successors) == 1
     bfs_node_names = [task.name for task in nx.bfs_tree(wf_search.tasks, start_node)]
     assert bfs_node_names[: len(task_names_ref)] == task_names_ref
 

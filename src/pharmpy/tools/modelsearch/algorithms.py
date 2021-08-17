@@ -80,6 +80,7 @@ def exhaustive_stepwise(base_model, mfl, wf_run):
     if not base_model.modelfit_results:
         wf_search.add_tasks(wf_run.copy(new_ids=True), connect=True)
 
+    models = []
     while True:
         no_of_trans = 0
         for task in wf_search.get_output():
@@ -91,15 +92,22 @@ def exhaustive_stepwise(base_model, mfl, wf_run):
             }
             if len(possible_funcs) > 0:
                 no_of_trans += 1
-                task_update_inits = Task('update_inits', update_inits)
-                wf_search.add_tasks(task_update_inits, connect=True, output_nodes=[task])
                 for feat, func in possible_funcs.items():
                     task_copy = Task('copy', copy_model, feat)
-                    wf_search.add_tasks(task_copy, connect=True, output_nodes=[task_update_inits])
+                    wf_search.add_tasks(task_copy, connect=True, output_nodes=[task])
+                    task_update_inits = Task('update_inits', update_inits)
+                    wf_search.add_tasks(task_update_inits, connect=True, output_nodes=[task_copy])
+                    # TODO: move wf_run here to be more explicit
                     wf_trans = create_workflow_transform(feat, func, wf_run.copy(new_ids=True))
-                    wf_search.add_tasks(wf_trans, connect=True, output_nodes=[task_copy])
+                    wf_search.add_tasks(wf_trans, connect=True, output_nodes=[task_update_inits])
+                    models.append(wf_search.get_output())
         if no_of_trans == 0:
             break
+
+    # TODO: consider merging with task_result
+    task_collect = Task('collect', post_process_results)
+    models_transformed = list(set([item for sublist in models for item in sublist]))
+    wf_search.add_tasks(task_collect, connect=True, output_nodes=models_transformed)
 
     task_result = Task('results', post_process_results, final_task=True)
     wf_search.add_tasks(task_result, connect=True)
@@ -125,6 +133,8 @@ def create_workflow_transform(feat, func, wf_run):
 
 
 def copy_model(model, feat):
+    if isinstance(model, list):
+        model = model[0]
     model_copy = model.copy()
     model_copy.name = f'{model.name}_{feat}'
     return model_copy
