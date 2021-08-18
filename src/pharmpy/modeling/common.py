@@ -19,20 +19,20 @@ def read_model_from_string(code):
     return model
 
 
-def write_model(model, path='', force=False):
+def write_model(model, path='', force=True):
     """Write model to file"""
     model.write(path=path, force=force)
     return model
 
 
-def convert_model(model, to):
+def convert_model(model, to_format):
     """Convert model to other format
 
     Parameters
     ----------
     model : Model
         Model to convert
-    to : str
+    to_format : str
         Name of format to convert into. Currently supported 'nlmixr'
 
     Results
@@ -40,7 +40,7 @@ def convert_model(model, to):
     Model
         New model object with new underlying model format.
     """
-    if to != 'nlmixr':
+    if to_format != 'nlmixr':
         raise ValueError(f"Unknown format {to}: supported format is 'nlmixr'")
     import pharmpy.plugins.nlmixr.model as nlmixr
 
@@ -63,9 +63,9 @@ def copy_model(model):
     return model.copy()
 
 
-def set_name(model, name):
+def set_name(model, new_name):
     """Sets name of model object"""
-    model.name = name
+    model.name = new_name
     return model
 
 
