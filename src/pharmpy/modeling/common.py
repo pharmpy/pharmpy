@@ -41,7 +41,7 @@ def convert_model(model, to_format):
         New model object with new underlying model format.
     """
     if to_format != 'nlmixr':
-        raise ValueError(f"Unknown format {to}: supported format is 'nlmixr'")
+        raise ValueError(f"Unknown format {to_format}: supported format is 'nlmixr'")
     import pharmpy.plugins.nlmixr.model as nlmixr
 
     new = nlmixr.convert_model(model)
