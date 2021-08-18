@@ -254,6 +254,7 @@ class ModelfitResults(Results):
         minimization_successful=None,
         individual_ofv=None,
         individual_estimates=None,
+        runtime_total=None,
     ):
         self._ofv = ofv
         self._parameter_estimates = parameter_estimates
@@ -262,6 +263,7 @@ class ModelfitResults(Results):
         self._minimization_successful = minimization_successful
         self._individual_estimates = individual_estimates
         self._individual_ofv = individual_ofv
+        self._runtime_total = runtime_total
 
     def __bool__(self):
         return bool(self._ofv) and bool(self._parameter_estimates)
@@ -454,6 +456,10 @@ class ModelfitResults(Results):
         ish = pd.DataFrame(cov).apply(fn, axis=1, ests=diag_ests.values)
         return ish
 
+    @property
+    def runtime_total(self):
+        return self._runtime_total
+
     def near_bounds(self, zero_limit=0.001, significant_digits=2):
         return self.model.parameters.is_close_to_bound(
             values=self.parameter_estimates,
@@ -619,6 +625,10 @@ class ChainedModelfitResults(MutableSequence, ModelfitResults):
     @property
     def model_name(self):
         return self[-1].model_name
+
+    @property
+    def runtime_total(self):
+        return self[-1].runtime_total
 
     def __repr__(self):
         return repr(self._results[-1])

@@ -203,6 +203,14 @@ class NONMEMModelfitResults(ModelfitResults):
         df.set_index(['ID', 'TIME'], inplace=True)
         return df
 
+    @property
+    def runtime_total(self):
+        try:
+            return self._runtime_total
+        except AttributeError:
+            self._chain._read_lst_file()
+            return self._runtime_total
+
     def _set_covariance_status(self, results_file, table_with_cov=None):
         covariance_status = {
             'requested': True
@@ -464,6 +472,7 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
                 # _covariance_status already set to None if ext table did not have standard errors
                 if hasattr(result_obj, '_covariance_status') is False:
                     result_obj._set_covariance_status(rfile, table_with_cov=table_with_cov)
+                result_obj._runtime_total = rfile.runtime_total
         self._read_lst = True
 
     @property

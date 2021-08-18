@@ -1,6 +1,8 @@
-# import dateutil.parser
 import re
+import warnings
+from datetime import datetime
 
+import dateutil.parser
 from numpy import nan
 from packaging import version
 
@@ -15,10 +17,12 @@ class NONMEMResultsFile:
     def __init__(self, path=None):
         self.table = dict()
         self.nonmem_version = None
+        self.runtime_total = None
         if path is not None:
             for name, content in NONMEMResultsFile.table_blocks(path):
                 if name == 'INIT':
                     self.nonmem_version = content.pop('nonmem_version', None)
+                    self.runtime_total = content.pop('runtime', None)
                 else:
                     self.table[name] = content
 
@@ -183,6 +187,95 @@ class NONMEMResultsFile:
         return result
 
     @staticmethod
+    def parse_runtime(path):
+        weekday_month_en = re.compile(
+            r'^\s*(Sun|Mon|Tue|Wed|Thu|Fri|Sat)'
+            r'\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)'  # Month
+            r'\s+(\d+)'  # Day
+            r'\s+.*'
+            r'\s+(\d{4})'  # Year
+        )
+        weekday_month_sv = re.compile(
+            r'^\s*(mån|tis|ons|tor|fre|lör|sön)'
+            r'\s+(\d+)'  # Day
+            r'\s+(jan|feb|mar|apr|maj|jun|jul|aug|sep|okt|nov|dec)'  # Month
+            r'\s+(\d+)'  # Year
+        )
+        day_month_year = re.compile(r'^(\d{2})/(\d{2})/(\d{4})\s*$')  # dd/mm/yyyy
+        year_month_day = re.compile(r'^(\d{4})-\d{2}-\d{2}\s*$')  # yyyy/mm/dd
+        timestamp = re.compile(r'([0-9]{2}:[0-9]{2}:[0-9]{2})')
+
+        month_no = {
+            'JAN': 1,
+            'FEB': 2,
+            'MAR': 3,
+            'APR': 4,
+            'MAY': 5,
+            'JUN': 6,
+            'JUL': 7,
+            'AUG': 8,
+            'SEP': 9,
+            'OCT': 10,
+            'NOV': 11,
+            'DEC': 12,
+        }
+        month_trans = {'MAJ': 'MAY', 'OKT': 'OCT'}
+
+        starttime = None
+        endtime = None
+
+        with open(path) as file:
+            for row in file:
+                date_time = None
+                if weekday_month_en.match(row) or weekday_month_sv.match(row):
+                    if weekday_month_en.match(row):
+                        _, month, day, year = weekday_month_en.match(row).groups()
+                    else:
+                        _, day, month, year = weekday_month_sv.match(row).groups()
+
+                    try:
+                        month = month_no[month.upper()]
+                    except KeyError:
+                        month_en = month_trans[month.upper()]
+                        month = month_no[month_en.upper()]
+
+                    date = datetime(int(year), int(month), int(day))
+
+                    time_str = timestamp.search(row).groups()[0]
+                    time = dateutil.parser.parse(time_str).time()
+
+                    date_time = datetime.combine(date, time)
+                elif day_month_year.match(row) or year_month_day.match(row):
+                    if day_month_year.match(row):
+                        dayfirst = True
+                    else:
+                        dayfirst = False
+
+                    time_str = next(file)
+
+                    date = dateutil.parser.parse(row, dayfirst=dayfirst).date()
+                    time = dateutil.parser.parse(time_str).time()
+
+                    date_time = datetime.combine(date, time)
+                if not starttime and not endtime:
+                    starttime = date_time
+                elif starttime and not endtime:
+                    endtime = date_time
+                elif date_time and starttime and endtime:
+                    warnings.warn('More than two timestamps found')
+                    return None
+
+        if not starttime:
+            warnings.warn('Start time not found, format not supported')
+            return None
+        if not endtime:
+            warnings.warn('End time not found, format not supported')
+            return None
+
+        runtime_total = (endtime - starttime).total_seconds()
+        return runtime_total
+
+    @staticmethod
     def tag_items(path):
         nmversion = re.compile(r'1NONLINEAR MIXED EFFECTS MODEL PROGRAM \(NONMEM\) VERSION\s+(\S+)')
         tag = re.compile(r'\s*#([A-Z]{4}):\s*(.*)')
@@ -196,6 +289,10 @@ class NONMEMResultsFile:
         with open(path) as file:
             version_number = None
             for row in file:
+                runtime_total = NONMEMResultsFile.parse_runtime(
+                    path
+                )  # TODO: consider moving to avoid re-parse
+                yield ('runtime', runtime_total)
                 m = nmversion.match(row)
                 if m:
                     version_number = NONMEMResultsFile.cleanup_version(m.group(1))
@@ -203,6 +300,7 @@ class NONMEMResultsFile:
                     break  # we will stay at current file position
             if NONMEMResultsFile.supported_version(version_number):
                 for row in file:
+
                     m = tag.match(row)
                     if m:
                         if m.group(1) == 'TERM':

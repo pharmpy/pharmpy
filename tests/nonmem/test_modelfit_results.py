@@ -1,5 +1,8 @@
+import re
+
 import pandas as pd
 import pytest
+from pyfakefs.fake_filesystem_unittest import Patcher
 
 import pharmpy.plugins.nonmem as nonmem
 from pharmpy import Model
@@ -310,3 +313,74 @@ def test_plot_individual_predictions(testdata):
         predictions=['PRED'], individuals=[1, 2, 5]
     )
     assert plot
+
+
+def test_runtime_total(testdata):
+    model = Model(testdata / 'nonmem' / 'pheno_real.mod')
+    runtime = model.modelfit_results.runtime_total
+    assert runtime == 4
+
+
+@pytest.mark.parametrize(
+    'starttime, endtime, runtime_ref',
+    [
+        (
+            'Sat Sep 8 10:57:25 CEST 2018',
+            'Sat Sep 8 10:57:29 CEST 2018',
+            4,
+        ),
+        (
+            '08/09/2018\n10:57:25',
+            '08/09/2018\n10:57:29',
+            4,
+        ),
+        (
+            '2018-09-08\n10:57:25',
+            '2018-09-08\n10:57:29',
+            4,
+        ),
+        (
+            '2018-09-08\n10:57',
+            '2018-09-08\n10:57',
+            0,
+        ),
+        (
+            '2018-09-08\n10:57',
+            '2018-09-08\n10:58',
+            60,
+        ),
+    ],
+)
+def test_runtime_different_formats(testdata, starttime, endtime, runtime_ref):
+    with open(testdata / 'nonmem' / 'pheno_real.lst') as lst_file:
+        lst_file_str = lst_file.read()
+
+        repl_dict = {
+            'start': ('lör  8 sep 2018 10:57:25 CEST', starttime),
+            'end': ('lör  8 sep 2018 10:57:29 CEST', endtime),
+        }
+
+        lst_file_repl = re.sub(
+            repl_dict['start'][0],
+            repl_dict['start'][1],
+            lst_file_str,
+        )
+        lst_file_repl = re.sub(
+            repl_dict['end'][0],
+            repl_dict['end'][1],
+            lst_file_repl,
+        )
+        assert repl_dict['start'][0] not in lst_file_repl
+        assert repl_dict['end'][0] not in lst_file_repl
+
+    with Patcher(additional_skip_names=['pkgutil']) as patcher:
+        fs = patcher.fs
+        fs.add_real_file(testdata / 'nonmem' / 'pheno_real.mod', target_path='pheno_real.mod')
+        fs.add_real_file(testdata / 'nonmem' / 'pheno_real.ext', target_path='pheno_real.ext')
+
+        with open('pheno_real.lst', 'a') as f:
+            f.write(lst_file_repl)
+
+        model = Model('pheno_real.mod')
+        runtime = model.modelfit_results.runtime_total
+        assert runtime == runtime_ref

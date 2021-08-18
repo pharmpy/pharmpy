@@ -292,7 +292,10 @@ def test_estimation_status_empty():
 
 def test_estimation_status_withsim(testdata):
     p = Path(testdata / 'nonmem' / 'modelfit_results' / 'onePROB' / 'oneEST' / 'withSIM')
-    rfile = rf.NONMEMResultsFile(p / 'control3boot.res')
+    with pytest.warns(
+        UserWarning, match='Start time not found, format not supported'
+    ):  # TODO: support AM/PM
+        rfile = rf.NONMEMResultsFile(p / 'control3boot.res')
 
     assert rfile.estimation_status(45) == {
         'minimization_successful': True,
