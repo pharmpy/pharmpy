@@ -10,7 +10,7 @@ from pharmpy.parameter import Parameter
 from pharmpy.random_variables import RandomVariables
 
 
-def create_joint_distribution(model, list_of_rvs=None):
+def create_joint_distribution(model, rvs=None):
     """
     Combines some or all etas into a joint distribution.
 
@@ -23,12 +23,12 @@ def create_joint_distribution(model, list_of_rvs=None):
     ----------
     model : Model
         Pharmpy model
-    list_of_rvs : list
-        List of etas to combine. If None, all etas that are IIVs and
+    rvs : list
+        Sequence of etas or names of etas to combine. If None, all etas that are IIVs and
         non-fixed will be used (full block). None is default.
     """
-    rvs = model.random_variables
-    if list_of_rvs is None:
+    all_rvs = model.random_variables
+    if rvs is None:
         iiv_rvs = model.random_variables.iiv
         nonfix = RandomVariables()
         for rv in iiv_rvs:
@@ -37,36 +37,36 @@ def create_joint_distribution(model, list_of_rvs=None):
                     break
             else:
                 nonfix.append(rv)
-        list_of_rvs = nonfix.names
+        rvs = nonfix.names
     else:
-        for name in list_of_rvs:
-            if name in rvs and rvs[name].level == 'IOV':
+        for name in rvs:
+            if name in all_rvs and all_rvs[name].level == 'IOV':
                 raise ValueError(
                     f'{name} describes IOV: Joining IOV random variables is currently not supported'
                 )
-    if len(list_of_rvs) == 1:
+    if len(rvs) == 1:
         raise ValueError('At least two random variables are needed')
 
     sset = model.statements
     paramnames = []
-    for rv in list_of_rvs:
+    for rv in rvs:
         statements = sset.find_assignment(rv, is_symbol=False, last=False)
         parameter_names = '_'.join([s.symbol.name for s in statements])
         paramnames.append(parameter_names)
 
-    cov_to_params = rvs.join(list_of_rvs, name_template='IIV_{}_IIV_{}', param_names=paramnames)
+    cov_to_params = all_rvs.join(rvs, name_template='IIV_{}_IIV_{}', param_names=paramnames)
 
     pset = model.parameters
     for cov_name, param_names in cov_to_params.items():
         parent_params = (pset[param_names[0]], pset[param_names[1]])
-        covariance_init = _choose_param_init(model, rvs, parent_params)
+        covariance_init = _choose_param_init(model, all_rvs, parent_params)
         param_new = Parameter(cov_name, covariance_init)
         pset.append(param_new)
 
     return model
 
 
-def split_joint_distribution(model, list_of_rvs=None):
+def split_joint_distribution(model, rvs=None):
     """
     Splits etas following a joint distribution into separate distributions.
 
@@ -74,16 +74,16 @@ def split_joint_distribution(model, list_of_rvs=None):
     ----------
     model : Model
         Pharmpy model
-    list_of_rvs : str, list
+    rvs : str, list
         Name/names of etas to separate. If None, all etas that are IIVs and
         non-fixed will become single. None is default.
     """
-    rvs = model.random_variables
-    list_of_rvs = _get_etas(model, list_of_rvs)
+    all_rvs = model.random_variables
+    rvs = _get_etas(model, rvs)
 
-    parameters_before = rvs.parameter_names
-    rvs.unjoin(list_of_rvs)
-    parameters_after = rvs.parameter_names
+    parameters_before = all_rvs.parameter_names
+    all_rvs.unjoin(rvs)
+    parameters_after = all_rvs.parameter_names
 
     removed_parameters = set(parameters_before) - set(parameters_after)
     pset = model.parameters
