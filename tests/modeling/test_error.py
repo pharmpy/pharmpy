@@ -11,7 +11,7 @@ from pharmpy.modeling import (
     remove_error_model,
     set_additive_error_model,
     set_combined_error_model,
-    set_dtbs_error,
+    set_dtbs_error_model,
     set_proportional_error_model,
     set_weighted_error_model,
     use_thetas_for_error_stdev,
@@ -456,7 +456,7 @@ $ESTIMATION METHOD=1 INTERACTION
     assert str(model) == correct
 
 
-def test_set_dtbs_error():
+def test_set_dtbs_error_model():
     code = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV
@@ -477,7 +477,7 @@ $ESTIMATION METHOD=1 INTERACTION
 """
     model = read_model_from_string(code)
     model.name = 'run1'
-    set_dtbs_error(model)
+    set_dtbs_error_model(model)
 
     with Patcher(additional_skip_names=['pkgutil']):
         model.update_source()

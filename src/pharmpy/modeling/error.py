@@ -305,7 +305,7 @@ def set_weighted_error_model(model):
     return model
 
 
-def set_dtbs_error(model):
+def set_dtbs_error_model(model):
     """Dynamic transform both sides"""
     use_thetas_for_error_stdev(model)
     set_weighted_error_model(model)

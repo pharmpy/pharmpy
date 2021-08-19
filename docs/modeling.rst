@@ -968,7 +968,7 @@ dTBS error model
 
     from pharmpy.modeling import set_weighted_error_model
     model = Model(path / "pheno.mod")
-    set_dtbs_error(model)
+    set_dtbs_error_model(model)
     model.update_source(nofiles=True)
     print_model_diff(model_ref, model)
 
