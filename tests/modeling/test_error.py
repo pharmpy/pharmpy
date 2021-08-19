@@ -4,7 +4,6 @@ from pyfakefs.fake_filesystem_unittest import Patcher
 
 from pharmpy import Model
 from pharmpy.modeling import (
-    additive_error,
     combined_error,
     has_additive_error,
     has_combined_error,
@@ -12,6 +11,7 @@ from pharmpy.modeling import (
     proportional_error,
     read_model_from_string,
     remove_error_model,
+    set_additive_error_model,
     set_dtbs_error,
     set_weighted_error_model,
     theta_as_stdev,
@@ -27,20 +27,20 @@ def test_remove_error_model(testdata):
     assert str(model).split('\n')[11] == 'Y = F'
 
 
-def test_additive_error_model(testdata):
+def test_set_additive_error_model(testdata):
     model = Model(testdata / 'nonmem' / 'pheno.mod')
-    additive_error(model)
+    set_additive_error_model(model)
     model.update_source()
     assert str(model).split('\n')[11] == 'Y = F + EPS(1)'
     assert str(model).split('\n')[17] == '$SIGMA  11.2225 ; sigma'
     before = str(model)
-    additive_error(model)  # One more time and nothing should change
+    set_additive_error_model(model)  # One more time and nothing should change
     assert before == str(model)
 
 
-def test_additive_error_model_logdv(testdata):
+def test_set_additive_error_model_logdv(testdata):
     model = Model(testdata / 'nonmem' / 'pheno.mod')
-    additive_error(model, data_trans="log(Y)")
+    set_additive_error_model(model, data_trans="log(Y)")
     model.update_source()
     assert str(model).split('\n')[11] == 'Y = LOG(F) + EPS(1)/F'
     assert str(model).split('\n')[17] == '$SIGMA  11.2225 ; sigma'
@@ -156,7 +156,7 @@ $ESTIMATION METHOD=1 INTERACTION
 """
     model = Model(StringIO(code))
     model.source.path = testdata / 'nonmem' / 'pheno.mod'  # To be able to find dataset
-    additive_error(model)
+    set_additive_error_model(model)
     model.update_source()
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@

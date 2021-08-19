@@ -765,9 +765,9 @@ To set an additive error model:
 
 .. jupyter-execute::
 
-   from pharmpy.modeling import additive_error
+   from pharmpy.modeling import set_additive_error_model
 
-   additive_error(model)
+   set_additive_error_model(model)
    model.statements.find_assignment('Y')
 
 .. jupyter-execute::
@@ -780,16 +780,16 @@ To set an additive error model with log transformed data:
 
 .. jupyter-execute::
 
-   from pharmpy.modeling import additive_error
+   from pharmpy.modeling import set_additive_error_model
 
    model = Model(path / "pheno.mod")
-   additive_error(model, data_trans='log(Y)')
+   set_additive_error_model(model, data_trans='log(Y)')
    model.update_source()
    print_model_diff(model_ref, model)
 
 or set the `data_transformation` attribute on the model.
 
-See :py:func:`pharmpy.modeling.additive_error`.
+See :py:func:`pharmpy.modeling.set_additive_error_model`.
 
 Setting a proportional error model
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

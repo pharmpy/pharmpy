@@ -34,7 +34,7 @@ def remove_error_model(model):
     return model
 
 
-def additive_error(model, data_trans=None):
+def set_additive_error_model(model, data_trans=None):
     r"""Set an additive error model. Initial estimate for new sigma is :math:`(min(DV)/2)²`.
 
     The error function being applied depends on the data transformation.
