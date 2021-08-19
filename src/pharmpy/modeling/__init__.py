@@ -24,7 +24,7 @@ from pharmpy.modeling.data import (
 )
 from pharmpy.modeling.error import (
     has_additive_error_model,
-    has_combined_error,
+    has_combined_error_model,
     has_proportional_error_model,
     remove_error_model,
     set_additive_error_model,
@@ -112,7 +112,7 @@ __all__ = [
     'set_name',
     'has_proportional_error_model',
     'has_additive_error_model',
-    'has_combined_error',
+    'has_combined_error_model',
     'split_joint_distribution',
     'fix_parameters_to',
     'unfix_parameters_to',
