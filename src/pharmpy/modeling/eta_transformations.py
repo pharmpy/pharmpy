@@ -45,7 +45,7 @@ def transform_etas_tdist(model, list_of_etas=None):
     """
     list_of_etas = _format_input_list(list_of_etas)
     etas = _get_etas(model, list_of_etas)
-    eta_transformation = EtaTransformation.transform_etas_tdist(len(etas))
+    eta_transformation = EtaTransformation.tdist(len(etas))
     _transform_etas(model, eta_transformation, etas)
     return model
 
