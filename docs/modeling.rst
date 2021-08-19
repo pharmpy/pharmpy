@@ -737,9 +737,9 @@ The error model can be removed.
 
 .. jupyter-execute::
 
-   from pharmpy.modeling import remove_error
+   from pharmpy.modeling import remove_error_model
 
-   remove_error(model)
+   remove_error_model(model)
    model.update_source()
    print_model_diff(model_ref, model)
 

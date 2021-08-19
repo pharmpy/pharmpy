@@ -20,7 +20,7 @@ def _preparations(model):
     return stats, y, f
 
 
-def remove_error(model):
+def remove_error_model(model):
     """Remove error model.
 
     Parameters

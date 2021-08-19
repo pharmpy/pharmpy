@@ -11,7 +11,7 @@ from pharmpy.modeling import (
     has_proportional_error,
     proportional_error,
     read_model_from_string,
-    remove_error,
+    remove_error_model,
     set_dtbs_error,
     set_weighted_error_model,
     theta_as_stdev,
@@ -22,7 +22,7 @@ from pharmpy.statements import Assignment
 
 def test_remove_error_model(testdata):
     model = Model(testdata / 'nonmem' / 'pheno.mod')
-    remove_error(model)
+    remove_error_model(model)
     model.update_source()
     assert str(model).split('\n')[11] == 'Y = F'
 
@@ -114,7 +114,7 @@ $ESTIMATION METHOD=1 INTERACTION
 """
     model = Model(StringIO(code))
     model.source.path = testdata / 'nonmem' / 'pheno.mod'  # To be able to find dataset
-    remove_error(model)
+    remove_error_model(model)
     model.update_source()
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
