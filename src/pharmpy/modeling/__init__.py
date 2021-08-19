@@ -41,7 +41,7 @@ from pharmpy.modeling.eta_transformations import (
     transform_etas_tdist,
 )
 from pharmpy.modeling.evaluation import evaluate_expression
-from pharmpy.modeling.iiv_on_ruv import iiv_on_ruv
+from pharmpy.modeling.iiv_on_ruv import set_iiv_on_ruv
 from pharmpy.modeling.odes import (
     add_lag_time,
     add_parameter,
@@ -84,7 +84,7 @@ __all__ = [
     'create_joint_distribution',
     'explicit_odes',
     'fix_parameters',
-    'iiv_on_ruv',
+    'set_iiv_on_ruv',
     'transform_etas_john_draper',
     'remove_lag_time',
     'transform_etas_tdist',

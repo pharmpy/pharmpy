@@ -21,6 +21,7 @@ next version
 * Rename boxcox to transform_etas_boxcox
 * Rename tdist to transform_etas_tdist
 * Rename john_draper to transform_etas_john_draper
+* Rename iiv_on_ruv to set_iiv_on_ruv
 
 0.27.0 (2021-08-09)
 -------------------

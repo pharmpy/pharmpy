@@ -893,9 +893,9 @@ IIVs can be added to RUVs by multiplying epsilons with an exponential new eta.
 
 .. jupyter-execute::
 
-   from pharmpy.modeling import iiv_on_ruv
+   from pharmpy.modeling import set_iiv_on_ruv
 
-   iiv_on_ruv(model, ['EPS(1)'])
+   set_iiv_on_ruv(model, ['EPS(1)'])
    model.update_source()
    print_model_diff(model_ref, model)
 
@@ -905,18 +905,18 @@ transformed.
 .. jupyter-execute::
 
    model = Model(path / "pheno.mod")
-   iiv_on_ruv(model)
+   set_iiv_on_ruv(model)
    model.update_source()
    print_model_diff(model_ref, model)
 
-See :py:func:`pharmpy.modeling.iiv_on_ruv`.
+See :py:func:`pharmpy.modeling.set_iiv_on_ruv`.
 
 Custom eta names are supported the same way as when :ref:`adding IOVs<add_iov_custom_names>`.
 
 .. jupyter-execute::
 
    model = Model(path / "pheno.mod")
-   iiv_on_ruv(model, ['EPS(1)'], eta_names=['ETA(3)'])
+   set_iiv_on_ruv(model, ['EPS(1)'], eta_names=['ETA(3)'])
    model.random_variables
 
 

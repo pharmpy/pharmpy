@@ -10,7 +10,7 @@ from pharmpy.random_variables import RandomVariable
 from pharmpy.symbols import symbol as S
 
 
-def iiv_on_ruv(model, list_of_eps=None, same_eta=True, eta_names=None):
+def set_iiv_on_ruv(model, list_of_eps=None, same_eta=True, eta_names=None):
     """
     Multiplies epsilons with exponential (new) etas. Initial estimates for new etas are 0.09.
 

@@ -523,7 +523,7 @@ def create_joint_distribution(args):
 
 def iiv_on_ruv(args):
     """Subcommand to multiply epsilons with exponential etas."""
-    from pharmpy.modeling import iiv_on_ruv
+    from pharmpy.modeling import set_iiv_on_ruv
 
     model = args.model
 
@@ -537,7 +537,7 @@ def iiv_on_ruv(args):
     except AttributeError:
         eta_names = args.eta_names
 
-    iiv_on_ruv(model, eps, args.same_eta, eta_names)
+    set_iiv_on_ruv(model, eps, args.same_eta, eta_names)
 
     write_model_or_dataset(model, model.dataset, path=args.output_file, force=False)
 

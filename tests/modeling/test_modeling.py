@@ -17,7 +17,6 @@ from pharmpy.modeling import (
     create_joint_distribution,
     explicit_odes,
     first_order_absorption,
-    iiv_on_ruv,
     michaelis_menten_elimination,
     mixed_mm_fo_elimination,
     power_on_ruv,
@@ -25,6 +24,7 @@ from pharmpy.modeling import (
     remove_iov,
     remove_lag_time,
     seq_zo_fo_absorption,
+    set_iiv_on_ruv,
     set_transit_compartments,
     split_joint_distribution,
     transform_etas_boxcox,
@@ -1860,7 +1860,7 @@ def test_joint_distribution(testdata, etas, pk_ref, omega_ref):
         ),
     ],
 )
-def test_iiv_on_ruv(pheno_path, epsilons, same_eta, eta_names, err_ref, omega_ref):
+def test_set_iiv_on_ruv(pheno_path, epsilons, same_eta, eta_names, err_ref, omega_ref):
     model = Model(pheno_path)
 
     model_str = str(model)
@@ -1872,7 +1872,7 @@ def test_iiv_on_ruv(pheno_path, epsilons, same_eta, eta_names, err_ref, omega_re
     )
     model.control_stream = NMTranParser().parse(model_sigma)
 
-    iiv_on_ruv(model, epsilons, same_eta, eta_names)
+    set_iiv_on_ruv(model, epsilons, same_eta, eta_names)
     model.update_source()
 
     assert eta_names is None or eta_names[0] in [eta.name for eta in model.random_variables.etas]
