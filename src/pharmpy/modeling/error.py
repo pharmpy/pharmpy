@@ -136,7 +136,7 @@ def set_proportional_error_model(model, data_trans=None):
     return model
 
 
-def combined_error(model, data_trans=None):
+def set_combined_error_model(model, data_trans=None):
     r"""Set a combined error model. Initial estimates for new sigmas are :math:`(min(DV)/2)²` for
     proportional and 0.09 for additive.
 

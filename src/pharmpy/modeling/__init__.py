@@ -23,12 +23,12 @@ from pharmpy.modeling.data import (
     get_number_of_observations_per_individual,
 )
 from pharmpy.modeling.error import (
-    combined_error,
     has_additive_error,
     has_combined_error,
     has_proportional_error,
     remove_error_model,
     set_additive_error_model,
+    set_combined_error_model,
     set_dtbs_error,
     set_proportional_error_model,
     set_weighted_error_model,
@@ -98,7 +98,7 @@ __all__ = [
     'first_order_elimination',
     'set_additive_error_model',
     'set_proportional_error_model',
-    'combined_error',
+    'set_combined_error_model',
     'remove_error_model',
     'add_peripheral_compartment',
     'remove_peripheral_compartment',

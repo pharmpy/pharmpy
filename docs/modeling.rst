@@ -857,9 +857,9 @@ To set a combined error model:
 
 .. jupyter-execute::
 
-   from pharmpy.modeling import combined_error
+   from pharmpy.modeling import set_combined_error_model
 
-   combined_error(model)
+   set_combined_error_model(model)
    model.statements.find_assignment('Y')
 
 .. jupyter-execute::
@@ -871,15 +871,15 @@ To set a combined error model with log transformed data:
 
 .. jupyter-execute::
 
-   from pharmpy.modeling import combined_error
+   from pharmpy.modeling import set_combined_error_model
 
    model = Model(path / "pheno.mod")
-   combined_error(model, data_trans='log(Y)')
+   set_combined_error_model(model, data_trans='log(Y)')
    model.update_source()
    print_model_diff(model_ref, model)
 
 
-See :py:func:`pharmpy.modeling.combined_error`.
+See :py:func:`pharmpy.modeling.set_combined_error_model`.
 
 Applying IIV on RUVs
 ~~~~~~~~~~~~~~~~~~~~

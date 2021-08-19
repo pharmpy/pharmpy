@@ -4,13 +4,13 @@ from pyfakefs.fake_filesystem_unittest import Patcher
 
 from pharmpy import Model
 from pharmpy.modeling import (
-    combined_error,
     has_additive_error,
     has_combined_error,
     has_proportional_error,
     read_model_from_string,
     remove_error_model,
     set_additive_error_model,
+    set_combined_error_model,
     set_dtbs_error,
     set_proportional_error_model,
     set_weighted_error_model,
@@ -70,27 +70,27 @@ def test_set_proportional_error_model_log(testdata):
     assert str(model).split('\n')[17] == '$SIGMA  0.09 ; sigma'
 
 
-def test_combined_error_model(testdata):
+def test_set_combined_error_model(testdata):
     model = Model(testdata / 'nonmem' / 'pheno.mod')
-    combined_error(model)
+    set_combined_error_model(model)
     model.update_source()
     assert str(model).split('\n')[11] == 'Y = F + EPS(1)*F + EPS(2)'
     assert str(model).split('\n')[17] == '$SIGMA  0.09 ; sigma_prop'
     assert str(model).split('\n')[18] == '$SIGMA  11.2225 ; sigma_add'
     before = str(model)
-    combined_error(model)  # One more time and nothing should change
+    set_combined_error_model(model)  # One more time and nothing should change
     assert before == str(model)
 
 
-def test_combined_error_model_log(testdata):
+def test_set_combined_error_model_log(testdata):
     model = Model(testdata / 'nonmem' / 'pheno.mod')
-    combined_error(model, data_trans='log(Y)')
+    set_combined_error_model(model, data_trans='log(Y)')
     model.update_source()
     assert str(model).split('\n')[11] == 'Y = LOG(F) + EPS(2)/F + EPS(1)'
     assert str(model).split('\n')[17] == '$SIGMA  0.09 ; sigma_prop'
     assert str(model).split('\n')[18] == '$SIGMA  11.2225 ; sigma_add'
     before = str(model)
-    combined_error(model)  # One more time and nothing should change
+    set_combined_error_model(model)  # One more time and nothing should change
     assert before == str(model)
 
 
