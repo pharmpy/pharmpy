@@ -67,6 +67,7 @@ from pharmpy.modeling.remove_iov import remove_iov
 from pharmpy.modeling.results import (
     calculate_individual_parameter_statistics,
     calculate_pk_parameters_statistics,
+    summarize_models,
 )
 from pharmpy.modeling.run import create_results, fit, read_results
 from pharmpy.modeling.update_inits import update_inits
@@ -136,4 +137,5 @@ __all__ = [
     'remove_estimation_step',
     'calculate_individual_parameter_statistics',
     'calculate_pk_parameters_statistics',
+    'summarize_models',
 ]

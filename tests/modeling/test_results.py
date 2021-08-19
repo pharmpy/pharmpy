@@ -8,6 +8,7 @@ from pharmpy import Model
 from pharmpy.modeling import (
     calculate_individual_parameter_statistics,
     calculate_pk_parameters_statistics,
+    summarize_models,
 )
 
 
@@ -73,3 +74,13 @@ k_e,median,13.319584,2.67527,2.633615
     correct.index.set_names(['parameter', 'covariates'], inplace=True)
     correct.drop('stderr', inplace=True, axis=1)
     # pd.testing.assert_frame_equal(df, correct, atol=1e-4)
+
+
+def test_summarize_models(testdata, pheno_path):
+    mox = Model(testdata / 'nonmem' / 'models' / 'mox1.mod')
+    pheno = Model(pheno_path)
+    summary = summarize_models([mox, pheno])
+
+    assert summary.loc['mox1', 'ofv'] == -624.5229577248352
+    assert summary['OMEGA(1,1)_estimate'].mean() == 0.2236304
+    assert summary['OMEGA(2,1)_estimate'].mean() == 0.395647  # One is NaN
