@@ -4,6 +4,18 @@ next version
 * Move method individual_parameter_statistics from Results to a function in modeling and rename to calculate_individual_parameter_statistics
 * Move method pk_parameters from Results to a function in modeling and rename to calculate_pk_parameters_statistics
 * Rename create_rv_block to create_joint_distribution
+* Rename split_rv_block to split_joint_distribution
+* New default option force=True for write_model
+* Rename ninds to get_number_of_individuals
+* Rename nobs to get_number_of_observations
+* Rename nobsi to get_number_of_observations_per_individual
+* Rename remove_error to remove_error_model
+* Rename additive_error to set_additive_error_model
+* Rename proportional_error to set_proportional_error_model
+* Rename combined_error to set_combined_error_model
+* Rename has_additive_error to has_additive_error_model
+* Rename has_proportional_error to has_proportional_error_model
+* Rename has_combined_error to has_combined_error_model
 
 0.27.0 (2021-08-09)
 -------------------
