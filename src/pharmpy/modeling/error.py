@@ -55,7 +55,7 @@ def set_additive_error_model(model, data_trans=None):
         A data transformation expression or None (default) to use the transformation
         specified by the model.
     """
-    if has_additive_error(model):
+    if has_additive_error_model(model):
         return model
     stats, y, f = _preparations(model)
     ruv = model.create_symbol('epsilon_a')
@@ -190,7 +190,7 @@ def set_combined_error_model(model, data_trans=None):
     return model
 
 
-def has_additive_error(model):
+def has_additive_error_model(model):
     """Check if a model has an additive error model
 
     Parameters

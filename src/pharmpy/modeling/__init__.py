@@ -23,7 +23,7 @@ from pharmpy.modeling.data import (
     get_number_of_observations_per_individual,
 )
 from pharmpy.modeling.error import (
-    has_additive_error,
+    has_additive_error_model,
     has_combined_error,
     has_proportional_error,
     remove_error_model,
@@ -111,7 +111,7 @@ __all__ = [
     'copy_model',
     'set_name',
     'has_proportional_error',
-    'has_additive_error',
+    'has_additive_error_model',
     'has_combined_error',
     'split_joint_distribution',
     'fix_parameters_to',

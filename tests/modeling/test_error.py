@@ -4,7 +4,7 @@ from pyfakefs.fake_filesystem_unittest import Patcher
 
 from pharmpy import Model
 from pharmpy.modeling import (
-    has_additive_error,
+    has_additive_error_model,
     has_combined_error,
     has_proportional_error,
     read_model_from_string,
@@ -191,7 +191,7 @@ def test_get_prop_init(testdata):
     assert init == 0.01
 
 
-def test_has_additive_error(testdata):
+def test_has_additive_error_model(testdata):
     code = """$PROBLEM base model
 $INPUT ID DV TIME
 $DATA file.csv IGNORE=@
@@ -205,7 +205,7 @@ $SIGMA 1
 $ESTIMATION METHOD=1 INTER MAXEVALS=9990 PRINT=2 POSTHOC
 """
     model = read_model_from_string(code)
-    assert has_additive_error(model)
+    assert has_additive_error_model(model)
     code = """$PROBLEM base model
 $INPUT ID DV TIME
 $DATA file.csv IGNORE=@
@@ -220,7 +220,7 @@ $SIGMA 1
 $ESTIMATION METHOD=1 INTER MAXEVALS=9990 PRINT=2 POSTHOC
 """
     model = read_model_from_string(code)
-    assert not has_additive_error(model)
+    assert not has_additive_error_model(model)
 
     code = """$PROBLEM base model
 $INPUT ID DV TIME
@@ -237,11 +237,11 @@ $SIGMA 1
 $ESTIMATION METHOD=1 INTER MAXEVALS=9990 PRINT=2 POSTHOC
 """
     model = read_model_from_string(code)
-    assert not has_additive_error(model)
+    assert not has_additive_error_model(model)
 
     model = Model(StringIO(code))
     model.source.path = testdata / 'nonmem' / 'pheno.mod'  # To be able to find dataset
-    assert not has_additive_error(model)
+    assert not has_additive_error_model(model)
 
 
 def test_has_proportional_error(testdata):
