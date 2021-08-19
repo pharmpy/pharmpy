@@ -50,7 +50,7 @@ def transform_etas_tdist(model, list_of_etas=None):
     return model
 
 
-def john_draper(model, list_of_etas=None):
+def transform_etas_john_draper(model, list_of_etas=None):
     """
     Applies a John Draper transformation [1]_ to specified etas from a
     :class:`pharmpy.model`. Initial estimate for lambda is 0.1 with bounds (-3, 3).
@@ -68,7 +68,7 @@ def john_draper(model, list_of_etas=None):
     """
     list_of_etas = _format_input_list(list_of_etas)
     etas = _get_etas(model, list_of_etas)
-    eta_transformation = EtaTransformation.john_draper(len(etas))
+    eta_transformation = EtaTransformation.transform_etas_john_draper(len(etas))
     _transform_etas(model, eta_transformation, etas)
     return model
 

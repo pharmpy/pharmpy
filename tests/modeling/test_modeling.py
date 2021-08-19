@@ -18,7 +18,6 @@ from pharmpy.modeling import (
     explicit_odes,
     first_order_absorption,
     iiv_on_ruv,
-    john_draper,
     michaelis_menten_elimination,
     mixed_mm_fo_elimination,
     power_on_ruv,
@@ -29,6 +28,7 @@ from pharmpy.modeling import (
     set_transit_compartments,
     split_joint_distribution,
     transform_etas_boxcox,
+    transform_etas_john_draper,
     transform_etas_tdist,
     update_inits,
     zero_order_absorption,
@@ -1386,10 +1386,10 @@ def test_transform_etas_tdist(pheno_path):
         ),
     ],
 )
-def test_john_draper(pheno_path, etas, etad, buf_new):
+def test_transform_etas_john_draper(pheno_path, etas, etad, buf_new):
     model = Model(pheno_path)
 
-    john_draper(model, etas)
+    transform_etas_john_draper(model, etas)
     model.update_source()
 
     rec_ref = (

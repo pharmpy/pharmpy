@@ -504,13 +504,13 @@ John Draper
 ~~~~~~~~~~~
 
 John Draper transformation is also supported. The function takes a list of etas as input, if no list is
-provided all etas will be transformed. See :py:func:`pharmpy.modeling.john_draper`.
+provided all etas will be transformed. See :py:func:`pharmpy.modeling.transform_etas_john_draper`.
 
 .. jupyter-execute::
 
    model = Model(path / "pheno.mod")
-   from pharmpy.modeling import john_draper
-   john_draper(model, ['ETA(1)'])
+   from pharmpy.modeling import transform_etas_john_draper
+   transform_etas_john_draper(model, ['ETA(1)'])
    model.update_source()
    print_model_diff(model_ref, model)
 

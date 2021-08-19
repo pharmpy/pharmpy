@@ -20,6 +20,7 @@ next version
 * Rename set_dtbs_error to set_dtbs_error_model
 * Rename boxcox to transform_etas_boxcox
 * Rename tdist to transform_etas_tdist
+* Rename john_draper to transform_etas_john_draper
 
 0.27.0 (2021-08-09)
 -------------------

@@ -463,7 +463,7 @@ def tdist(args):
 
 def john_draper(args):
     """Subcommand to apply John Draper transformation to specified etas of model."""
-    from pharmpy.modeling import john_draper
+    from pharmpy.modeling import transform_etas_john_draper
 
     model = args.model
     try:
@@ -471,7 +471,7 @@ def john_draper(args):
     except AttributeError:
         etas = args.etas
 
-    john_draper(model, etas)
+    transform_etas_john_draper(model, etas)
     write_model_or_dataset(model, None, path=args.output_file, force=False)
 
 

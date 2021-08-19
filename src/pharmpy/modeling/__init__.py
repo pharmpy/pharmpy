@@ -36,8 +36,8 @@ from pharmpy.modeling.error import (
 )
 from pharmpy.modeling.eta_additions import add_iiv, add_iov
 from pharmpy.modeling.eta_transformations import (
-    john_draper,
     transform_etas_boxcox,
+    transform_etas_john_draper,
     transform_etas_tdist,
 )
 from pharmpy.modeling.evaluation import evaluate_expression
@@ -85,7 +85,7 @@ __all__ = [
     'explicit_odes',
     'fix_parameters',
     'iiv_on_ruv',
-    'john_draper',
+    'transform_etas_john_draper',
     'remove_lag_time',
     'transform_etas_tdist',
     'unfix_parameters',
