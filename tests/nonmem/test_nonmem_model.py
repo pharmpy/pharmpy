@@ -8,7 +8,13 @@ from pharmpy import Model
 from pharmpy.config import ConfigurationContext
 from pharmpy.estimation import EstimationMethod
 from pharmpy.model import ModelSyntaxError
-from pharmpy.modeling import add_iiv, explicit_odes, zero_order_elimination
+from pharmpy.modeling import (
+    add_estimation_step,
+    add_iiv,
+    explicit_odes,
+    remove_estimation_step,
+    zero_order_elimination,
+)
 from pharmpy.parameter import Parameter
 from pharmpy.plugins.nonmem import conf
 from pharmpy.plugins.nonmem.nmtran_parser import NMTranParser
@@ -879,10 +885,10 @@ $SIGMA 1
 $EST METH=COND INTER
 '''
     model = Model(StringIO(code))
-    model.add_estimation_step('IMP', True, False, {'saddle_reset': 1})
+    add_estimation_step(model, 'IMP', True, {'saddle_reset': 1})
     model.update_source()
     assert str(model).split('\n')[-2] == '$ESTIMATION METHOD=IMP INTER SADDLE_RESET=1'
-    model.add_estimation_step('SAEM', True, False, idx=0)
+    add_estimation_step(model, 'SAEM', True, idx=0)
     model.update_source()
     assert str(model).split('\n')[-4] == '$ESTIMATION METHOD=SAEM INTER'
 
@@ -899,7 +905,7 @@ $SIGMA 1
 $EST METH=COND INTER
 '''
     model = Model(StringIO(code))
-    model.remove_estimation_step(0)
+    remove_estimation_step(model, 0)
     assert not model.estimation_steps
     model.update_source()
     assert str(model).split('\n')[-2] == '$SIGMA 1'
