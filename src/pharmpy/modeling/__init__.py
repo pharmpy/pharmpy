@@ -17,7 +17,11 @@ from pharmpy.modeling.common import (
     write_model,
 )
 from pharmpy.modeling.covariate_effect import add_covariate_effect
-from pharmpy.modeling.data import ninds, nobs, nobsi
+from pharmpy.modeling.data import (
+    get_number_of_individuals,
+    get_number_of_observations,
+    get_number_of_observations_per_individual,
+)
 from pharmpy.modeling.error import (
     additive_error,
     combined_error,
@@ -120,9 +124,9 @@ __all__ = [
     'theta_as_stdev',
     'set_weighted_error_model',
     'set_dtbs_error',
-    'ninds',
-    'nobs',
-    'nobsi',
+    'get_number_of_individuals',
+    'get_number_of_observations',
+    'get_number_of_observations_per_individual',
     'set_estimation_step',
     'add_estimation_step',
     'remove_estimation_step',

@@ -4,6 +4,7 @@
 
 from io import StringIO
 
+from pharmpy.estimation import EstimationMethod
 from pharmpy.model_factory import Model
 
 
@@ -237,7 +238,7 @@ def set_estimation_step(model, method, interaction=True, options={}, est_idx=0):
     return model
 
 
-def add_estimation_step(model, method, interaction=True, options={}, est_idx=None):
+def add_estimation_step(model, method, interaction=True, options=None, idx=None):
     """Add estimation step
 
     Adds estimation step for a model in a given index. Methods currently supported are:
@@ -253,30 +254,38 @@ def add_estimation_step(model, method, interaction=True, options={}, est_idx=Non
         whether to use interaction or not, default is true
     options : dict
         any additional options. Note that this removes old options
-    est_idx : int
+    idx : int
         index of estimation step, default is None (adds step last)
 
     Returns
     -------
     model : Model
     """
-    model.add_estimation_step(method, interaction, False, options, est_idx)
+    if options is None:
+        options = {}
+
+    meth = EstimationMethod(method, interaction=interaction, options=options)
+    if isinstance(idx, int):
+        model.estimation_steps.insert(idx, meth)
+    else:
+        model.estimation_steps.append(meth)
+
     return model
 
 
-def remove_estimation_step(model, est_idx):
+def remove_estimation_step(model, idx):
     """Remove estimation step
 
     Parameters
     ----------
     model : Model
         Pharmpy model
-    est_idx : int
+    idx : int
         index of estimation step to remove
 
     Returns
     -------
     model : Model
     """
-    model.remove_estimation_step(est_idx)
+    del model.estimation_steps[idx]
     return model
