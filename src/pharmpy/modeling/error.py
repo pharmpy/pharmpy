@@ -110,7 +110,7 @@ def set_proportional_error_model(model, data_trans=None):
         A data transformation expression or None (default) to use the transformation
         specified by the model.
     """
-    if has_proportional_error(model):
+    if has_proportional_error_model(model):
         return model
     stats, y, f = _preparations(model)
     ruv = model.create_symbol('epsilon_p')
@@ -210,7 +210,7 @@ def has_additive_error_model(model):
     return eps not in (expr - eps).simplify().free_symbols
 
 
-def has_proportional_error(model):
+def has_proportional_error_model(model):
     """Check if a model has a proportional error model
 
     Parameters

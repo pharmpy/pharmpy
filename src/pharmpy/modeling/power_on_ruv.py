@@ -2,7 +2,7 @@
 :meta private:
 """
 
-from pharmpy.modeling import has_proportional_error
+from pharmpy.modeling import has_proportional_error_model
 from pharmpy.modeling.help_functions import _format_input_list
 from pharmpy.parameter import Parameter
 from pharmpy.symbols import symbol as S
@@ -27,7 +27,7 @@ def power_on_ruv(model, list_of_eps=None):
         eps = eps[list_of_eps]
     pset, sset = model.parameters, model.statements
 
-    if has_proportional_error(model):
+    if has_proportional_error_model(model):
         theta_init = 1
     else:
         theta_init = 0.1

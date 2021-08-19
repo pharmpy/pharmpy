@@ -6,7 +6,7 @@ from pharmpy import Model
 from pharmpy.modeling import (
     has_additive_error_model,
     has_combined_error,
-    has_proportional_error,
+    has_proportional_error_model,
     read_model_from_string,
     remove_error_model,
     set_additive_error_model,
@@ -244,7 +244,7 @@ $ESTIMATION METHOD=1 INTER MAXEVALS=9990 PRINT=2 POSTHOC
     assert not has_additive_error_model(model)
 
 
-def test_has_proportional_error(testdata):
+def test_has_proportional_error_model(testdata):
     code = """$PROBLEM base model
 $INPUT ID DV TIME
 $DATA file.csv IGNORE=@
@@ -258,7 +258,7 @@ $SIGMA 1
 $ESTIMATION METHOD=1 INTER MAXEVALS=9990 PRINT=2 POSTHOC
 """
     model = read_model_from_string(code)
-    assert not has_proportional_error(model)
+    assert not has_proportional_error_model(model)
     code = """$PROBLEM base model
 $INPUT ID DV TIME
 $DATA file.csv IGNORE=@
@@ -273,11 +273,11 @@ $SIGMA 1
 $ESTIMATION METHOD=1 INTER MAXEVALS=9990 PRINT=2 POSTHOC
 """
     model = read_model_from_string(code)
-    assert has_proportional_error(model)
+    assert has_proportional_error_model(model)
 
     model = Model(StringIO(code))
     model.source.path = testdata / 'nonmem' / 'pheno.mod'  # To be able to find dataset
-    assert has_proportional_error(model)
+    assert has_proportional_error_model(model)
 
 
 def test_has_combined_error(testdata):
