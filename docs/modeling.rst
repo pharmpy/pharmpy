@@ -812,9 +812,9 @@ To set a proportional error model:
 
 .. jupyter-execute::
 
-   from pharmpy.modeling import proportional_error
+   from pharmpy.modeling import set_proportional_error_model
 
-   proportional_error(model)
+   set_proportional_error_model(model)
    model.statements.find_assignment('Y')
 
 .. jupyter-execute::
@@ -826,15 +826,15 @@ To set a proportional error model with log transformed data:
 
 .. jupyter-execute::
 
-   from pharmpy.modeling import proportional_error
+   from pharmpy.modeling import set_proportional_error_model
 
    model = Model(path / "pheno.mod")
-   proportional_error(model, data_trans='log(Y)')
+   set_proportional_error_model(model, data_trans='log(Y)')
    model.update_source()
    print_model_diff(model_ref, model)
 
 
-See :py:func:`pharmpy.modeling.proportional_error`.
+See :py:func:`pharmpy.modeling.set_proportional_error_model`.
 
 Setting a combined additive and proportional error model
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

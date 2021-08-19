@@ -8,11 +8,11 @@ from pharmpy.modeling import (
     has_additive_error,
     has_combined_error,
     has_proportional_error,
-    proportional_error,
     read_model_from_string,
     remove_error_model,
     set_additive_error_model,
     set_dtbs_error,
+    set_proportional_error_model,
     set_weighted_error_model,
     theta_as_stdev,
 )
@@ -46,25 +46,25 @@ def test_set_additive_error_model_logdv(testdata):
     assert str(model).split('\n')[17] == '$SIGMA  11.2225 ; sigma'
 
 
-def test_proportional_error_model(testdata):
+def test_set_proportional_error_model(testdata):
     model = Model(testdata / 'nonmem' / 'pheno.mod')
     model.statements[5] = Assignment('Y', 'F')
-    proportional_error(model)
+    set_proportional_error_model(model)
     model.update_source()
     assert str(model).split('\n')[11] == 'Y=F+F*EPS(1)'
     assert str(model).split('\n')[17] == '$SIGMA  0.09 ; sigma'
 
     model = Model(testdata / 'nonmem' / 'pheno.mod')
-    proportional_error(model)
+    set_proportional_error_model(model)
     model.update_source()
     assert str(model).split('\n')[11] == 'Y=F+F*EPS(1)'
     assert str(model).split('\n')[17] == '$SIGMA 0.013241'
 
 
-def test_proportional_error_model_log(testdata):
+def test_set_proportional_error_model_log(testdata):
     model = Model(testdata / 'nonmem' / 'pheno.mod')
     model.statements[5] = Assignment('Y', 'F')
-    proportional_error(model, data_trans='log(Y)')
+    set_proportional_error_model(model, data_trans='log(Y)')
     model.update_source()
     assert str(model).split('\n')[11] == 'Y = LOG(F) + EPS(1)'
     assert str(model).split('\n')[17] == '$SIGMA  0.09 ; sigma'

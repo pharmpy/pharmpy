@@ -89,7 +89,7 @@ def _get_prop_init(dt):
         return (dv_min / 2) ** 2
 
 
-def proportional_error(model, data_trans=None):
+def set_proportional_error_model(model, data_trans=None):
     r"""Set a proportional error model. Initial estimate for new sigma is 0.09.
 
     The error function being applied depends on the data transformation.
