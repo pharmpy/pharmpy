@@ -9,7 +9,7 @@ from pharmpy.parameter import Parameter
 from pharmpy.statements import Assignment, Bolus, CompartmentalSystem, ExplicitODESystem, Infusion
 
 
-def add_parameter(model, name):
+def add_individual_parameter(model, name):
     """Add an individual or pk parameter to a model"""
     _add_parameter(model, name)
     return model

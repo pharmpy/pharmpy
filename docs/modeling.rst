@@ -112,7 +112,7 @@ A new parameter can be added by using the name of the new parameter.
 .. jupyter-execute::
 
    model = Model(path / 'pheno.mod')
-   add_parameter(model, 'MAT')
+   add_individual_parameter(model, 'MAT')
    update_source(model)
    print_model_diff(model_ref, model)
 

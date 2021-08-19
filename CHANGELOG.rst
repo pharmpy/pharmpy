@@ -22,6 +22,7 @@ next version
 * Rename tdist to transform_etas_tdist
 * Rename john_draper to transform_etas_john_draper
 * Rename iiv_on_ruv to set_iiv_on_ruv
+* Rename add_parameter to add_individual_parameter
 
 0.27.0 (2021-08-09)
 -------------------

@@ -43,8 +43,8 @@ from pharmpy.modeling.eta_transformations import (
 from pharmpy.modeling.evaluation import evaluate_expression
 from pharmpy.modeling.iiv_on_ruv import set_iiv_on_ruv
 from pharmpy.modeling.odes import (
+    add_individual_parameter,
     add_lag_time,
-    add_parameter,
     add_peripheral_compartment,
     bolus_absorption,
     explicit_odes,
@@ -72,7 +72,7 @@ from pharmpy.modeling.run import create_results, fit, read_results
 from pharmpy.modeling.update_inits import update_inits
 
 __all__ = [
-    'add_parameter',
+    'add_individual_parameter',
     'zero_order_absorption',
     'first_order_absorption',
     'bolus_absorption',
