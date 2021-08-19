@@ -490,13 +490,13 @@ Approximate t-distribution
 
 Applying an approximate t-distribution transformation of etas is analogous to a boxcox transformation. The input
 is a list of etas, and if no list is provided all etas will be transformed. See
-:py:func:`pharmpy.modeling.tdist`.
+:py:func:`pharmpy.modeling.transform_etas_tdist`.
 
 .. jupyter-execute::
 
    model = Model(path / "pheno.mod")
-   from pharmpy.modeling import tdist
-   tdist(model, ['ETA(1)'])
+   from pharmpy.modeling import transform_etas_tdist
+   transform_etas_tdist(model, ['ETA(1)'])
    model.update_source()
    print_model_diff(model_ref, model)
 

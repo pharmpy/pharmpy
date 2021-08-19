@@ -35,7 +35,11 @@ from pharmpy.modeling.error import (
     use_thetas_for_error_stdev,
 )
 from pharmpy.modeling.eta_additions import add_iiv, add_iov
-from pharmpy.modeling.eta_transformations import john_draper, tdist, transform_etas_boxcox
+from pharmpy.modeling.eta_transformations import (
+    john_draper,
+    transform_etas_boxcox,
+    transform_etas_tdist,
+)
 from pharmpy.modeling.evaluation import evaluate_expression
 from pharmpy.modeling.iiv_on_ruv import iiv_on_ruv
 from pharmpy.modeling.odes import (
@@ -83,7 +87,7 @@ __all__ = [
     'iiv_on_ruv',
     'john_draper',
     'remove_lag_time',
-    'tdist',
+    'transform_etas_tdist',
     'unfix_parameters',
     'update_source',
     'read_model',

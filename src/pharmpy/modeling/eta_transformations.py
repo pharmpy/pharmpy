@@ -31,7 +31,7 @@ def transform_etas_boxcox(model, list_of_etas=None):
     return model
 
 
-def tdist(model, list_of_etas=None):
+def transform_etas_tdist(model, list_of_etas=None):
     """
     Applies a t-distribution transformation to specified etas from a :class:`pharmpy.model`. Initial
     estimate for degrees of freedom is 80 with bounds (3, 100).
@@ -45,7 +45,7 @@ def tdist(model, list_of_etas=None):
     """
     list_of_etas = _format_input_list(list_of_etas)
     etas = _get_etas(model, list_of_etas)
-    eta_transformation = EtaTransformation.tdist(len(etas))
+    eta_transformation = EtaTransformation.transform_etas_tdist(len(etas))
     _transform_etas(model, eta_transformation, etas)
     return model
 

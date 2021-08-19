@@ -449,7 +449,7 @@ def boxcox(args):
 
 def tdist(args):
     """Subcommand to apply t-distribution transformation to specified etas of model."""
-    from pharmpy.modeling import tdist
+    from pharmpy.modeling import transform_etas_tdist
 
     model = args.model
     try:
@@ -457,7 +457,7 @@ def tdist(args):
     except AttributeError:
         etas = args.etas
 
-    tdist(model, etas)
+    transform_etas_tdist(model, etas)
     write_model_or_dataset(model, None, path=args.output_file, force=False)
 
 

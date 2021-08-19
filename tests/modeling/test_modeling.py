@@ -28,8 +28,8 @@ from pharmpy.modeling import (
     seq_zo_fo_absorption,
     set_transit_compartments,
     split_joint_distribution,
-    tdist,
     transform_etas_boxcox,
+    transform_etas_tdist,
     update_inits,
     zero_order_absorption,
     zero_order_elimination,
@@ -1330,10 +1330,10 @@ def test_transform_etas_boxcox(pheno_path, etas, etab, buf_new):
     assert model.parameters['lambda1'].init == 0.01
 
 
-def test_tdist(pheno_path):
+def test_transform_etas_tdist(pheno_path):
     model = Model(pheno_path)
 
-    tdist(model, ['ETA(1)'])
+    transform_etas_tdist(model, ['ETA(1)'])
     model.update_source()
 
     symbol = 'ETAT1'

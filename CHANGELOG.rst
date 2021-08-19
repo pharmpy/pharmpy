@@ -19,6 +19,7 @@ next version
 * Rename theta_as_stdev to use_thetas_for_error_stdev
 * Rename set_dtbs_error to set_dtbs_error_model
 * Rename boxcox to transform_etas_boxcox
+* Rename tdist to transform_etas_tdist
 
 0.27.0 (2021-08-09)
 -------------------
