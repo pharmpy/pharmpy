@@ -464,12 +464,12 @@ Boxcox
    model = Model(path / "pheno.mod")
 
 To apply a boxcox transformation, input a list of the etas of interest. See
-:py:func:`pharmpy.modeling.boxcox`.
+:py:func:`pharmpy.modeling.transform_etas_boxcox`.
 
 .. jupyter-execute::
 
-   from pharmpy.modeling import boxcox
-   boxcox(model, ['ETA(1)'])
+   from pharmpy.modeling import transform_etas_boxcox
+   transform_etas_boxcox(model, ['ETA(1)'])
    model.update_source()
    print_model_diff(model_ref, model)
 
@@ -481,7 +481,7 @@ If no list is provided, all etas will be updated.
 .. jupyter-execute::
 
    model = Model(path / "pheno.mod")
-   boxcox(model)
+   transform_etas_boxcox(model)
    model.update_source()
    print_model_diff(model_ref, model)
 

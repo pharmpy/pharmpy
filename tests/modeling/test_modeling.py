@@ -14,7 +14,6 @@ from pharmpy.modeling import (
     add_iov,
     add_lag_time,
     bolus_absorption,
-    boxcox,
     create_joint_distribution,
     explicit_odes,
     first_order_absorption,
@@ -30,6 +29,7 @@ from pharmpy.modeling import (
     set_transit_compartments,
     split_joint_distribution,
     tdist,
+    transform_etas_boxcox,
     update_inits,
     zero_order_absorption,
     zero_order_elimination,
@@ -1308,10 +1308,10 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
         ),
     ],
 )
-def test_boxcox(pheno_path, etas, etab, buf_new):
+def test_transform_etas_boxcox(pheno_path, etas, etab, buf_new):
     model = Model(pheno_path)
 
-    boxcox(model, etas)
+    transform_etas_boxcox(model, etas)
     model.update_source()
 
     rec_ref = (

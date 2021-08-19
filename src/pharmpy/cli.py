@@ -435,7 +435,7 @@ def model_error(args):
 
 def boxcox(args):
     """Subcommand to apply boxcox transformation to specified etas of model."""
-    from pharmpy.modeling import boxcox
+    from pharmpy.modeling import transform_etas_boxcox
 
     model = args.model
     try:
@@ -443,7 +443,7 @@ def boxcox(args):
     except AttributeError:
         etas = args.etas
 
-    boxcox(model, etas)
+    transform_etas_boxcox(model, etas)
     write_model_or_dataset(model, None, path=args.output_file, force=False)
 
 

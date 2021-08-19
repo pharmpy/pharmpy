@@ -12,7 +12,7 @@ from pharmpy.statements import Assignment, ModelStatements
 from pharmpy.symbols import symbol as S
 
 
-def boxcox(model, list_of_etas=None):
+def transform_etas_boxcox(model, list_of_etas=None):
     """
     Applies a boxcox transformation to specified etas from a :class:`pharmpy.model`. Initial
     estimate for lambda is 0.1 with bounds (-3, 3).

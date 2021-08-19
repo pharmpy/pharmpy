@@ -18,6 +18,7 @@ next version
 * Rename has_combined_error to has_combined_error_model
 * Rename theta_as_stdev to use_thetas_for_error_stdev
 * Rename set_dtbs_error to set_dtbs_error_model
+* Rename boxcox to transform_etas_boxcox
 
 0.27.0 (2021-08-09)
 -------------------

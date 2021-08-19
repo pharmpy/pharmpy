@@ -35,7 +35,7 @@ from pharmpy.modeling.error import (
     use_thetas_for_error_stdev,
 )
 from pharmpy.modeling.eta_additions import add_iiv, add_iov
-from pharmpy.modeling.eta_transformations import boxcox, john_draper, tdist
+from pharmpy.modeling.eta_transformations import john_draper, tdist, transform_etas_boxcox
 from pharmpy.modeling.evaluation import evaluate_expression
 from pharmpy.modeling.iiv_on_ruv import iiv_on_ruv
 from pharmpy.modeling.odes import (
@@ -76,7 +76,7 @@ __all__ = [
     'add_covariate_effect',
     'add_iiv',
     'add_lag_time',
-    'boxcox',
+    'transform_etas_boxcox',
     'create_joint_distribution',
     'explicit_odes',
     'fix_parameters',
