@@ -944,9 +944,9 @@ correspondng epsilon with a theta. This way the theta will represent the standar
 
 .. jupyter-execute::
 
-    from pharmpy.modeling import theta_as_stdev
+    from pharmpy.modeling import use_thetas_for_error_stdev
     model = Model(path / "pheno.mod")
-    theta_as_stdev(model)
+    use_thetas_for_error_stdev(model)
     model.update_source()
     print_model_diff(model_ref, model)
 

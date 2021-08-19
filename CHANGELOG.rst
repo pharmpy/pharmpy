@@ -16,6 +16,7 @@ next version
 * Rename has_additive_error to has_additive_error_model
 * Rename has_proportional_error to has_proportional_error_model
 * Rename has_combined_error to has_combined_error_model
+* Rename theta_as_stdev to use_thetas_for_error_stdev
 
 0.27.0 (2021-08-09)
 -------------------

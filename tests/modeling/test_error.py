@@ -14,7 +14,7 @@ from pharmpy.modeling import (
     set_dtbs_error,
     set_proportional_error_model,
     set_weighted_error_model,
-    theta_as_stdev,
+    use_thetas_for_error_stdev,
 )
 from pharmpy.modeling.error import _get_prop_init
 from pharmpy.statements import Assignment
@@ -333,7 +333,7 @@ $ESTIMATION METHOD=1 INTER MAXEVALS=9990 PRINT=2 POSTHOC
     assert has_combined_error_model(model)
 
 
-def test_theta_as_stdev():
+def test_use_theta_for_error_stdev():
     code = """$PROBLEM base model
 $INPUT ID DV TIME
 $DATA file.csv IGNORE=@
@@ -347,7 +347,7 @@ $SIGMA 1
 $ESTIMATION METHOD=1 INTER MAXEVALS=9990 PRINT=2 POSTHOC
 """
     model = read_model_from_string(code)
-    theta_as_stdev(model)
+    use_thetas_for_error_stdev(model)
     model.update_source()
     correct = """$PROBLEM base model
 $INPUT ID DV TIME

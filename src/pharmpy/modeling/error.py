@@ -258,13 +258,13 @@ def has_combined_error_model(model):
     )
 
 
-def theta_as_stdev(model):
+def use_thetas_for_error_stdev(model):
     """Use thetas to estimate standard deviation of error"""
     rvs = model.random_variables.epsilons
     for eps in rvs:
         sigmas = eps.parameter_names
         if len(sigmas) > 1:
-            raise ValueError('theta_as_stdev only supports non-correlated sigmas')
+            raise ValueError('use_thetas_for_error_stdev only supports non-correlated sigmas')
         sigma = sigmas[0]
         param = model.parameters[sigma]
         param.fix = True
@@ -307,7 +307,7 @@ def set_weighted_error_model(model):
 
 def set_dtbs_error(model):
     """Dynamic transform both sides"""
-    theta_as_stdev(model)
+    use_thetas_for_error_stdev(model)
     set_weighted_error_model(model)
     stats, y, f = _preparations(model)
     tbs_lambda = Parameter('tbs_lambda', 1)

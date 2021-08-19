@@ -32,7 +32,7 @@ from pharmpy.modeling.error import (
     set_dtbs_error,
     set_proportional_error_model,
     set_weighted_error_model,
-    theta_as_stdev,
+    use_thetas_for_error_stdev,
 )
 from pharmpy.modeling.eta_additions import add_iiv, add_iov
 from pharmpy.modeling.eta_transformations import boxcox, john_draper, tdist
@@ -121,7 +121,7 @@ __all__ = [
     'read_results',
     'evaluate_expression',
     'convert_model',
-    'theta_as_stdev',
+    'use_thetas_for_error_stdev',
     'set_weighted_error_model',
     'set_dtbs_error',
     'get_number_of_individuals',
