@@ -68,7 +68,7 @@ def transform_etas_john_draper(model, list_of_etas=None):
     """
     list_of_etas = _format_input_list(list_of_etas)
     etas = _get_etas(model, list_of_etas)
-    eta_transformation = EtaTransformation.transform_etas_john_draper(len(etas))
+    eta_transformation = EtaTransformation.john_draper(len(etas))
     _transform_etas(model, eta_transformation, etas)
     return model
 
