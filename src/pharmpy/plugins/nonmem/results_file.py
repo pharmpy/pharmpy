@@ -224,9 +224,8 @@ class NONMEMResultsFile:
         starttime = None
         endtime = None
 
-        with open(path, 'rb') as file:
+        with open(path, encoding='utf-8') as file:
             for row in file:
-                row = row.decode('utf-8')
                 date_time = None
                 if weekday_month_en.match(row) or weekday_month_sv.match(row):
                     if weekday_month_en.match(row):
@@ -289,11 +288,11 @@ class NONMEMResultsFile:
 
         with open(path) as file:
             version_number = None
+            runtime_total = NONMEMResultsFile.parse_runtime(
+                path
+            )  # TODO: consider rewrite/split to avoid re-parse
+            yield ('runtime', runtime_total)
             for row in file:
-                runtime_total = NONMEMResultsFile.parse_runtime(
-                    path
-                )  # TODO: consider moving to avoid re-parse
-                yield ('runtime', runtime_total)
                 m = nmversion.match(row)
                 if m:
                     version_number = NONMEMResultsFile.cleanup_version(m.group(1))
@@ -301,7 +300,6 @@ class NONMEMResultsFile:
                     break  # we will stay at current file position
             if NONMEMResultsFile.supported_version(version_number):
                 for row in file:
-
                     m = tag.match(row)
                     if m:
                         if m.group(1) == 'TERM':

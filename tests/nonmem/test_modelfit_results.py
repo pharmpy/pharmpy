@@ -352,8 +352,8 @@ def test_runtime_total(testdata):
     ],
 )
 def test_runtime_different_formats(testdata, starttime, endtime, runtime_ref):
-    with open(testdata / 'nonmem' / 'pheno_real.lst', 'rb') as lst_file:
-        lst_file_str = lst_file.read().decode('utf-8')
+    with open(testdata / 'nonmem' / 'pheno_real.lst', encoding='utf-8') as lst_file:
+        lst_file_str = lst_file.read()
 
         repl_dict = {
             'start': ('lör  8 sep 2018 10:57:25 CEST', starttime),
