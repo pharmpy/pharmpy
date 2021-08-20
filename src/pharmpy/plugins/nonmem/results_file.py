@@ -224,8 +224,9 @@ class NONMEMResultsFile:
         starttime = None
         endtime = None
 
-        with open(path) as file:
+        with open(path, 'rb') as file:
             for row in file:
+                row = row.decode('utf-8')
                 date_time = None
                 if weekday_month_en.match(row) or weekday_month_sv.match(row):
                     if weekday_month_en.match(row):
