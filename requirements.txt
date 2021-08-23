@@ -8,9 +8,9 @@ certifi==2021.5.30
 chardet==4.0.0
 cloudpickle==1.6.0
 csscompressor==0.9.5
-dask==2021.8.0
+dask==2021.8.1
 decorator==5.0.9
-distributed==2021.8.0
+distributed==2021.8.1
 docutils==0.17.1
 entrypoints==0.3
 fsspec==2021.7.0
