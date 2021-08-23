@@ -394,7 +394,7 @@ def model_elimination_rate(args):
     elif args.order == 'FO':
         modeling.set_first_order_elimination(model)
     elif args.order == 'MM':
-        modeling.michaelis_menten_elimination(model)
+        modeling.set_michaelis_menten_elimination(model)
     elif args.order == 'comb-FO-MM':
         modeling.combined_mm_fo_elimination(model)
     write_model_or_dataset(model, None, path=args.output_file, force=args.force)

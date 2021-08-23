@@ -55,7 +55,7 @@ def zero_order_elimination(model):
     return model
 
 
-def michaelis_menten_elimination(model):
+def set_michaelis_menten_elimination(model):
     """Sets elimination to Michaelis-Menten. Initial estimate for CLMM is set to CL and KM is set to
     :math:`2*max(DV)`."""
     _do_michaelis_menten_elimination(model)

@@ -17,7 +17,6 @@ from pharmpy.modeling import (
     create_joint_distribution,
     explicit_odes,
     first_order_absorption,
-    michaelis_menten_elimination,
     mixed_mm_fo_elimination,
     power_on_ruv,
     remove_iiv,
@@ -25,6 +24,7 @@ from pharmpy.modeling import (
     remove_lag_time,
     seq_zo_fo_absorption,
     set_iiv_on_ruv,
+    set_michaelis_menten_elimination,
     set_transit_compartments,
     set_zero_order_elimination,
     split_joint_distribution,
@@ -69,9 +69,9 @@ $ESTIMATION METHOD=1 INTERACTION
     assert str(model) == correct
 
 
-def test_michaelis_menten_elimination(testdata):
+def test_set_michaelis_menten_elimination(testdata):
     model = Model(testdata / 'nonmem' / 'pheno.mod')
-    michaelis_menten_elimination(model)
+    set_michaelis_menten_elimination(model)
     model.update_source()
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
@@ -101,7 +101,7 @@ $ESTIMATION METHOD=1 INTERACTION
     assert str(model) == correct
 
 
-def test_michaelis_menten_elimination_from_k(testdata):
+def test_set_michaelis_menten_elimination_from_k(testdata):
     code = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV
@@ -117,7 +117,7 @@ $ESTIMATION METHOD=1 INTERACTION
 """
     model = Model(StringIO(code))
     model.source.path = testdata / 'nonmem' / 'pheno.mod'  # To be able to find dataset
-    michaelis_menten_elimination(model)
+    set_michaelis_menten_elimination(model)
     model.update_source()
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
