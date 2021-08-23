@@ -44,7 +44,7 @@ def set_first_order_elimination(model):
     return model
 
 
-def zero_order_elimination(model):
+def set_zero_order_elimination(model):
     """Sets elimination to zero order. Initial estimate for KM is set to 1% of smallest
     observation."""
     _do_michaelis_menten_elimination(model)
