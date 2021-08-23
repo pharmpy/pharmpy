@@ -62,7 +62,7 @@ def set_michaelis_menten_elimination(model):
     return model
 
 
-def mixed_mm_fo_elimination(model):
+def set_mixed_mm_fo_elimination(model):
     """Sets elimination to mixed Michaelis-Menten and first order. Initial estimate for CLMM is set
     to CL/2 and KM is set to :math:`2*max(DV)`."""
     _do_michaelis_menten_elimination(model, combined=True)

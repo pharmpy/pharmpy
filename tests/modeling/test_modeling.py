@@ -17,7 +17,6 @@ from pharmpy.modeling import (
     create_joint_distribution,
     explicit_odes,
     first_order_absorption,
-    mixed_mm_fo_elimination,
     power_on_ruv,
     remove_iiv,
     remove_iov,
@@ -25,6 +24,7 @@ from pharmpy.modeling import (
     seq_zo_fo_absorption,
     set_iiv_on_ruv,
     set_michaelis_menten_elimination,
+    set_mixed_mm_fo_elimination,
     set_transit_compartments,
     set_zero_order_elimination,
     split_joint_distribution,
@@ -161,7 +161,7 @@ $ESTIMATION METHOD=1 INTERACTION
 """
     model = Model(StringIO(code))
     model.source.path = testdata / 'nonmem' / 'pheno.mod'  # To be able to find dataset
-    mixed_mm_fo_elimination(model)
+    set_mixed_mm_fo_elimination(model)
     model.update_source()
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
@@ -206,7 +206,7 @@ $ESTIMATION METHOD=1 INTERACTION
 """
     model = Model(StringIO(code))
     model.source.path = testdata / 'nonmem' / 'pheno.mod'  # To be able to find dataset
-    mixed_mm_fo_elimination(model)
+    set_mixed_mm_fo_elimination(model)
     model.update_source()
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@

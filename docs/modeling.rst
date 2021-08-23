@@ -345,13 +345,13 @@ Mixed Michaelis-Menten + First-Order elimination
 
 .. jupyter-execute::
 
-   from pharmpy.modeling import mixed_mm_fo_elimination
+   from pharmpy.modeling import set_mixed_mm_fo_elimination
    model = Model(path / "pheno.mod")
-   mixed_mm_fo_elimination(model)
+   set_mixed_mm_fo_elimination(model)
    model.update_source()
    print_model_diff(model_ref, model)
 
-See :py:func:`pharmpy.modeling.mixed_mm_fo_elimination`.
+See :py:func:`pharmpy.modeling.set_mixed_mm_fo_elimination`.
 
 Distribution
 ~~~~~~~~~~~~

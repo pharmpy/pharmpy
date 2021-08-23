@@ -26,6 +26,7 @@ next version
 * Rename first_order_elimination to set_first_order_elimination
 * Rename zero_order_elimination to set_zero_order_elimination
 * Rename michaelis_menten_elimination to set_michaelis_menten_elimination
+* Rename mixed_mm_fo_elimination to mixed_mm_fo_elimination
 
 0.27.0 (2021-08-09)
 -------------------
