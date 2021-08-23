@@ -23,6 +23,8 @@ next version
 * Rename john_draper to transform_etas_john_draper
 * Rename iiv_on_ruv to set_iiv_on_ruv
 * Rename add_parameter to add_individual_parameter
+* Rename first_order_elimination to set_first_order_elimination
+* Rename zero_order_elimination to set_zero_order_elimination
 
 0.27.0 (2021-08-09)
 -------------------

@@ -390,7 +390,7 @@ def model_elimination_rate(args):
 
     model = args.model
     if args.order == 'ZO':
-        modeling.zero_order_elimination(model)
+        modeling.set_zero_order_elimination(model)
     elif args.order == 'FO':
         modeling.set_first_order_elimination(model)
     elif args.order == 'MM':

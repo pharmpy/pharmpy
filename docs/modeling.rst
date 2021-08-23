@@ -319,13 +319,13 @@ Zero-order elimination
 
 .. jupyter-execute::
 
-   from pharmpy.modeling import zero_order_elimination
+   from pharmpy.modeling import set_zero_order_elimination
    model = Model(path / "pheno.mod")
-   zero_order_elimination(model)
+   set_zero_order_elimination(model)
    model.update_source()
    print_model_diff(model_ref, model)
 
-See :py:func:`pharmpy.modeling.zero_order_elimination`.
+See :py:func:`pharmpy.modeling.set_zero_order_elimination`.
 
 Michaelis-Menten elimination
 ============================

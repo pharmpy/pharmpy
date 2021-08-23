@@ -58,8 +58,8 @@ from pharmpy.modeling.odes import (
     set_ode_solver,
     set_peripheral_compartments,
     set_transit_compartments,
+    set_zero_order_elimination,
     zero_order_absorption,
-    zero_order_elimination,
 )
 from pharmpy.modeling.power_on_ruv import power_on_ruv
 from pharmpy.modeling.remove_iiv import remove_iiv
@@ -98,7 +98,7 @@ __all__ = [
     'remove_iov',
     'set_transit_compartments',
     'michaelis_menten_elimination',
-    'zero_order_elimination',
+    'set_zero_order_elimination',
     'mixed_mm_fo_elimination',
     'set_first_order_elimination',
     'set_additive_error_model',

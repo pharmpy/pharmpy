@@ -70,7 +70,7 @@ class Elimination(ModelFeature):
             if arg == 'FO':
                 self._funcs[name] = modeling.set_first_order_elimination
             elif arg == 'ZO':
-                self._funcs[name] = modeling.zero_order_elimination
+                self._funcs[name] = modeling.set_zero_order_elimination
             elif arg == 'MM':
                 self._funcs[name] = modeling.michaelis_menten_elimination
             elif arg == 'MIX-FO-MM':

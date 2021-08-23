@@ -13,7 +13,7 @@ from pharmpy.modeling import (
     add_iiv,
     explicit_odes,
     remove_estimation_step,
-    zero_order_elimination,
+    set_zero_order_elimination,
 )
 from pharmpy.parameter import Parameter
 from pharmpy.plugins.nonmem import conf
@@ -753,7 +753,7 @@ $ESTIMATION METHOD=1 MAXEVAL=9999 NONINFETA=1 MCETA=1
     'model_path, transformation',
     [
         ('nonmem/pheno.mod', explicit_odes),
-        ('nonmem/pheno.mod', zero_order_elimination),
+        ('nonmem/pheno.mod', set_zero_order_elimination),
         ('nonmem/modeling/pheno_advan1_zero_order.mod', explicit_odes),
         ('nonmem/modeling/pheno_advan5_depot.mod', explicit_odes),
     ],

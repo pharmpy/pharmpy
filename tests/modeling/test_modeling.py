@@ -26,20 +26,20 @@ from pharmpy.modeling import (
     seq_zo_fo_absorption,
     set_iiv_on_ruv,
     set_transit_compartments,
+    set_zero_order_elimination,
     split_joint_distribution,
     transform_etas_boxcox,
     transform_etas_john_draper,
     transform_etas_tdist,
     update_inits,
     zero_order_absorption,
-    zero_order_elimination,
 )
 from pharmpy.plugins.nonmem.nmtran_parser import NMTranParser
 
 
-def test_zero_order_elimination(testdata):
+def test_set_zero_order_elimination(testdata):
     model = Model(testdata / 'nonmem' / 'pheno.mod')
-    zero_order_elimination(model)
+    set_zero_order_elimination(model)
     model.update_source()
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
