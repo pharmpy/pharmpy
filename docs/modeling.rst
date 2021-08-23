@@ -306,13 +306,13 @@ First-order elimination
 
 .. jupyter-execute::
 
-   from pharmpy.modeling import first_order_elimination
+   from pharmpy.modeling import set_first_order_elimination
    model = Model(path / "pheno.mod")
-   first_order_elimination(model)
+   set_first_order_elimination(model)
    model.update_source()
    print_model_diff(model_ref, model)
 
-See :py:func:`pharmpy.modeling.first_order_elimination`.
+See :py:func:`pharmpy.modeling.set_first_order_elimination`.
 
 Zero-order elimination
 ======================

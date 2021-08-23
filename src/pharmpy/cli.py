@@ -392,7 +392,7 @@ def model_elimination_rate(args):
     if args.order == 'ZO':
         modeling.zero_order_elimination(model)
     elif args.order == 'FO':
-        modeling.first_order_elimination(model)
+        modeling.set_first_order_elimination(model)
     elif args.order == 'MM':
         modeling.michaelis_menten_elimination(model)
     elif args.order == 'comb-FO-MM':

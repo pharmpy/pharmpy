@@ -40,7 +40,7 @@ def explicit_odes(model):
     return model
 
 
-def first_order_elimination(model):
+def set_first_order_elimination(model):
     return model
 
 

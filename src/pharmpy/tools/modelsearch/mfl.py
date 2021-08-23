@@ -68,7 +68,7 @@ class Elimination(ModelFeature):
         for arg in self.args:
             name = f'ELIMINATION({arg})'
             if arg == 'FO':
-                self._funcs[name] = modeling.first_order_elimination
+                self._funcs[name] = modeling.set_first_order_elimination
             elif arg == 'ZO':
                 self._funcs[name] = modeling.zero_order_elimination
             elif arg == 'MM':
