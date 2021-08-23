@@ -211,6 +211,14 @@ class NONMEMModelfitResults(ModelfitResults):
             self._chain._read_lst_file()
             return self._runtime_total
 
+    def predictions_for_observations(self):
+        """predictions only for observation data records"""
+        df = self._chain._read_from_tables(['ID', 'TIME', 'MDV', 'PRED', 'CIPREDI', 'CPRED'], self)
+        df.set_index(['ID', 'TIME'], inplace=True)
+        df = df[df['MDV'] == 0]
+        df = df.drop(columns=['MDV'])
+        return df
+
     def _set_covariance_status(self, results_file, table_with_cov=None):
         covariance_status = {
             'requested': True
@@ -490,6 +498,10 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
     @property
     def predictions(self):
         return self[-1].predictions
+
+    @property
+    def predictions_for_observations(self):
+        return self[-1].predictions_for_observations
 
     def sumo(self, **kwargs):
         return self[-1].sumo(**kwargs)
