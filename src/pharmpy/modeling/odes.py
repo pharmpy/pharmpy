@@ -295,7 +295,7 @@ def set_first_order_absorption(model):
     return model
 
 
-def bolus_absorption(model):
+def set_bolus_absorption(model):
     """Set or change to bolus absorption rate.
 
     Parameters

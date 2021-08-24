@@ -163,14 +163,14 @@ Let us use a model with bolus absorption as a starting point.
 
 .. jupyter-execute::
 
-   from pharmpy.modeling import bolus_absorption
+   from pharmpy.modeling import set_bolus_absorption
    model = Model(path / "pheno.mod")
 
 This type of absorption can be created with:
 
 .. jupyter-execute::
 
-    bolus_absorption(model)
+    set_bolus_absorption(model)
     model.update_source()
     print_model_diff(model_ref, model)
 

@@ -13,7 +13,7 @@ from pharmpy.modeling import (
     add_iiv,
     add_iov,
     add_lag_time,
-    bolus_absorption,
+    set_bolus_absorption,
     create_joint_distribution,
     explicit_odes,
     power_on_ruv,
@@ -839,44 +839,44 @@ $ESTIMATION METHOD=1 INTERACTION
 def test_absorption_rate(testdata):
     model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan1.mod')
     advan1_before = str(model)
-    bolus_absorption(model)
+    set_bolus_absorption(model)
     assert advan1_before == str(model)
 
     model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan2.mod')
-    bolus_absorption(model)
+    set_bolus_absorption(model)
     model.update_source()
     assert str(model) == advan1_before
 
     model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan3.mod')
     advan3_before = str(model)
-    bolus_absorption(model)
+    set_bolus_absorption(model)
     model.update_source()
     assert str(model) == advan3_before
 
     model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan4.mod')
-    bolus_absorption(model)
+    set_bolus_absorption(model)
     model.update_source()
     assert str(model) == advan3_before
 
     model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan11.mod')
     advan11_before = str(model)
-    bolus_absorption(model)
+    set_bolus_absorption(model)
     model.update_source()
     assert str(model) == advan11_before
 
     model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan12.mod')
-    bolus_absorption(model)
+    set_bolus_absorption(model)
     model.update_source()
     assert str(model) == advan11_before
 
     model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan5_nodepot.mod')
     advan5_nodepot_before = str(model)
-    bolus_absorption(model)
+    set_bolus_absorption(model)
     model.update_source()
     assert str(model) == advan5_nodepot_before
 
     model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan5_depot.mod')
-    bolus_absorption(model)
+    set_bolus_absorption(model)
     model.update_source()
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA ../pheno.dta IGNORE=@
@@ -928,7 +928,7 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
 
     # 0-order to Bolus
     model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan1_zero_order.mod')
-    bolus_absorption(model)
+    set_bolus_absorption(model)
     model.update_source(nofiles=True)
     assert str(model).split('\n')[2:] == advan1_before.split('\n')[2:]
 

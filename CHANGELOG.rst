@@ -3,6 +3,7 @@ next version
 
 * Rename zero_order_absorption to set_zero_order_absorption
 * Rename first_order_absorption to set_first_order_absorption
+* Rename bolus_absorption to set_bolus_absorption
 
 0.28.0 (2021-08-24)
 -------------------
