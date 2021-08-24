@@ -262,7 +262,7 @@ def set_zero_order_absorption(model):
     statements.remove_symbol_definitions(symbols, odes)
     model.remove_unused_parameters_and_rvs()
     if not has_zero_order_absorption(model):
-        add_zero_order_absorption(model, dose.amount, to_comp, 'MAT')
+        _add_zero_order_absorption(model, dose.amount, to_comp, 'MAT')
     return model
 
 
@@ -291,7 +291,7 @@ def set_first_order_absorption(model):
     statements.remove_symbol_definitions(symbols, odes)
     model.remove_unused_parameters_and_rvs()
     if not depot:
-        add_first_order_absorption(model, Bolus(amount), dose_comp)
+        _add_first_order_absorption(model, Bolus(amount), dose_comp)
     return model
 
 
@@ -345,15 +345,15 @@ def set_seq_zo_fo_absorption(model):
     dose_comp = odes.find_dosing()
     have_ZO = has_zero_order_absorption(model)
     if depot and not have_ZO:
-        add_zero_order_absorption(model, dose_comp.amount, depot, 'MDT')
+        _add_zero_order_absorption(model, dose_comp.amount, depot, 'MDT')
     elif not depot and have_ZO:
-        add_first_order_absorption(model, dose_comp.dose, dose_comp)
+        _add_first_order_absorption(model, dose_comp.dose, dose_comp)
         dose_comp.dose = None
     elif not depot and not have_ZO:
         amount = dose_comp.dose.amount
         dose_comp.dose = None
-        depot = add_first_order_absorption(model, amount, dose_comp)
-        add_zero_order_absorption(model, amount, depot, 'MDT')
+        depot = _add_first_order_absorption(model, amount, dose_comp)
+        _add_zero_order_absorption(model, amount, depot, 'MDT')
     return model
 
 
@@ -377,7 +377,7 @@ def has_zero_order_absorption(model):
     return False
 
 
-def add_zero_order_absorption(model, amount, to_comp, parameter_name):
+def _add_zero_order_absorption(model, amount, to_comp, parameter_name):
     """Add zero order absorption to a compartment. Initial estimate for absorption rate is set
     the previous rate if available, otherwise it is set to the time of first observation/2 is used.
     Disregards what is currently in the model.
@@ -389,7 +389,7 @@ def add_zero_order_absorption(model, amount, to_comp, parameter_name):
     to_comp.dose = new_dose
 
 
-def add_first_order_absorption(model, dose, to_comp):
+def _add_first_order_absorption(model, dose, to_comp):
     """Add first order absorption
     Disregards what is currently in the model.
     """
