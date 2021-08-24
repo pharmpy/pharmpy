@@ -29,7 +29,6 @@ import pandas as pd
 import pharmpy.config as config
 import pharmpy.visualization
 from pharmpy.data import PharmDataFrame
-from pharmpy.data_structures import OrderedSet
 from pharmpy.math import cov2corr
 
 
@@ -431,32 +430,6 @@ class ModelfitResults(Results):
         return shrinkage
 
     @property
-    def individual_shrinkage(self):
-        """The individual eta-shrinkage
-
-        Definition: ieta_shr = (var(eta) / omega)
-        """
-        cov = self.individual_estimates_covariance
-        pe = self.parameter_estimates
-        # Want parameter estimates combined with fixed parameter values
-        param_inits = self.model.parameters.to_dataframe()['value']
-        pe = pe.combine_first(param_inits)
-
-        # Get all iiv variance parameters
-        param_names = self.model.random_variables.etas.variance_parameters
-        param_names = list(OrderedSet(param_names))  # Only unique in order
-
-        diag_ests = pe[param_names]
-
-        def fn(row, ests):
-            names = row[0].index
-            ser = pd.Series(np.diag(row[0].values) / ests, index=names)
-            return ser
-
-        ish = pd.DataFrame(cov).apply(fn, axis=1, ests=diag_ests.values)
-        return ish
-
-    @property
     def runtime_total(self):
         return self._runtime_total
 
@@ -606,10 +579,6 @@ class ChainedModelfitResults(MutableSequence, ModelfitResults):
     @property
     def individual_estimates_covariance(self):
         return self[-1].individual_estimates_covariance
-
-    @property
-    def individual_shrinkage(self):
-        return self[-1].individual_shrinkage
 
     @property
     def residuals(self):

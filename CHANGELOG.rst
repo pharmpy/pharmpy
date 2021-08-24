@@ -8,6 +8,7 @@ next version
 * Rename have_zero_order_absorption to has_zero_order_absorption
 * Rename power_on_ruv to set_power_on_ruv
 * Rename add_lag_time to set_lag_time
+* Move individual_shrinkage results method to modeling.calculate_individual_shrinkage
 
 0.28.0 (2021-08-24)
 -------------------

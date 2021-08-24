@@ -7,9 +7,17 @@ import pytest
 from pharmpy import Model
 from pharmpy.modeling import (
     calculate_individual_parameter_statistics,
+    calculate_individual_shrinkage,
     calculate_pk_parameters_statistics,
     summarize_models,
 )
+
+
+def test_calculate_individual_shrinkage(testdata):
+    pheno = Model(testdata / 'nonmem' / 'pheno_real.mod')
+    ishr = calculate_individual_shrinkage(pheno)
+    assert len(ishr) == 59
+    assert pytest.approx(ishr['ETA(1)'][1], 1e-15) == 0.84778949807160287
 
 
 def test_calculate_individual_parameter_statistics(testdata):

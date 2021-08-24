@@ -217,13 +217,6 @@ def test_individual_estimates(pheno, pheno_lst):
     assert pytest.approx(ie['ETA(2)'][28], 1e-15) == 8.32311e-02
 
 
-def test_individual_shrinkage(pheno, pheno_lst):
-    res = NONMEMChainedModelfitResults(pheno_lst, model=pheno)
-    ishr = res.individual_shrinkage
-    assert len(ishr) == 59
-    assert pytest.approx(ishr['ETA(1)'][1], 1e-15) == 0.84778949807160287
-
-
 def test_eta_shrinkage(pheno, pheno_lst):
     res = NONMEMChainedModelfitResults(pheno_lst, model=pheno)
     shrinkage = res.eta_shrinkage()

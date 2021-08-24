@@ -67,6 +67,7 @@ from pharmpy.modeling.remove_iiv import remove_iiv
 from pharmpy.modeling.remove_iov import remove_iov
 from pharmpy.modeling.results import (
     calculate_individual_parameter_statistics,
+    calculate_individual_shrinkage,
     calculate_pk_parameters_statistics,
     summarize_models,
 )
@@ -140,4 +141,5 @@ __all__ = [
     'calculate_pk_parameters_statistics',
     'summarize_models',
     'has_zero_order_absorption',
+    'calculate_individual_shrinkage',
 ]

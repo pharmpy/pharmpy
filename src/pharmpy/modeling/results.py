@@ -4,7 +4,35 @@ import numpy as np
 import pandas as pd
 import sympy
 
+from pharmpy.data_structures import OrderedSet
 from pharmpy.parameter_sampling import sample_from_covariance_matrix
+
+
+def calculate_individual_shrinkage(model):
+    """Calculate the individual eta-shrinkage
+
+    Definition: ieta_shr = (var(eta) / omega)
+    """
+    res = model.modelfit_results
+    cov = res.individual_estimates_covariance
+    pe = res.parameter_estimates
+    # Want parameter estimates combined with fixed parameter values
+    param_inits = model.parameters.to_dataframe()['value']
+    pe = pe.combine_first(param_inits)
+
+    # Get all iiv variance parameters
+    param_names = model.random_variables.etas.variance_parameters
+    param_names = list(OrderedSet(param_names))  # Only unique in order
+
+    diag_ests = pe[param_names]
+
+    def fn(row, ests):
+        names = row[0].index
+        ser = pd.Series(np.diag(row[0].values) / ests, index=names)
+        return ser
+
+    ish = pd.DataFrame(cov).apply(fn, axis=1, ests=diag_ests.values)
+    return ish
 
 
 def calculate_individual_parameter_statistics(model, exprs, seed=None):

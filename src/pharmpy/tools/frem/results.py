@@ -10,6 +10,7 @@ import pharmpy.symbols as symbols
 from pharmpy import Model
 from pharmpy.data import ColumnType
 from pharmpy.math import conditional_joint_normal, is_posdef
+from pharmpy.modeling import calculate_individual_shrinkage
 from pharmpy.parameter_sampling import sample_from_covariance_matrix, sample_individual_estimates
 from pharmpy.results import Results
 
@@ -861,7 +862,7 @@ def calculate_results_using_bipp(
     etas = [rv.name for rv in rvs]
     pool = sample_individual_estimates(frem_model, parameters=etas, seed=seed)
     ninds = len(pool.index.unique())
-    ishr = frem_model.modelfit_results.individual_shrinkage
+    ishr = calculate_individual_shrinkage(frem_model)
     lower_indices = np.tril_indices(len(etas))
     pop_params = np.array(dist.sigma).astype(str)[lower_indices]
     parameter_samples = np.empty((samples, len(pop_params)))
