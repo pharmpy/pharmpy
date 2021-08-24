@@ -46,6 +46,7 @@ from pharmpy.modeling.odes import (
     add_individual_parameter,
     add_peripheral_compartment,
     explicit_odes,
+    has_zero_order_absorption,
     remove_lag_time,
     remove_peripheral_compartment,
     set_bolus_absorption,
@@ -138,4 +139,5 @@ __all__ = [
     'calculate_individual_parameter_statistics',
     'calculate_pk_parameters_statistics',
     'summarize_models',
+    'has_zero_order_absorption',
 ]
