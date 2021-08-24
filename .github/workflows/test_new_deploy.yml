@@ -1,7 +1,6 @@
 name: test_deploy
 
 on:
-  workflow_dispatch:
   workflow_run:
       workflows: [ "CI" ]
       type:
