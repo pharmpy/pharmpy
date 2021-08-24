@@ -217,12 +217,12 @@ First order absorption would mean adding an absorption (depot) compartment like 
      S -> "Depot" [label=Bolus];
    }
 
-See :py:func:`pharmpy.modeling.first_order_absorption`.
+See :py:func:`pharmpy.modeling.set_first_order_absorption`.
 
 .. jupyter-execute::
 
-   from pharmpy.modeling import first_order_absorption
-   first_order_absorption(model)
+   from pharmpy.modeling import set_first_order_absorption
+   set_first_order_absorption(model)
    model.update_source(nofiles=True)
    print_model_diff(model_ref, model)
 

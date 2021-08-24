@@ -67,7 +67,7 @@ Together with the `dplyr` package, you can create transformation pipelines (note
 .. code-block:: r
 
     >>> model <- pharmpy$Model("run1.mod") %>%
-    >>>     first_order_absorption() %>%
+    >>>     set_first_order_absorption() %>%
     >>>     add_iiv("MAT", "exp") %>%
     >>>     update_source() %>%
     >>>     write_model("run2.mod")

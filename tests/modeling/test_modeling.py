@@ -16,12 +16,12 @@ from pharmpy.modeling import (
     bolus_absorption,
     create_joint_distribution,
     explicit_odes,
-    first_order_absorption,
     power_on_ruv,
     remove_iiv,
     remove_iov,
     remove_lag_time,
     seq_zo_fo_absorption,
+    set_first_order_absorption,
     set_iiv_on_ruv,
     set_michaelis_menten_elimination,
     set_mixed_mm_fo_elimination,
@@ -807,7 +807,7 @@ $ESTIMATION METHOD=1 INTERACTION
 """
     model = Model(StringIO(code))
     model.source.path = testdata / 'nonmem' / 'pheno.mod'  # To be able to find dataset
-    first_order_absorption(model)
+    set_first_order_absorption(model)
     model.update_source()
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
@@ -935,13 +935,13 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
     # 1st order to 1st order
     model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan2.mod')
     advan2_before = str(model)
-    first_order_absorption(model)
+    set_first_order_absorption(model)
     model.update_source(nofiles=True)
     assert str(model) == advan2_before
 
     # 0-order to 1st order
     model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan1_zero_order.mod')
-    first_order_absorption(model)
+    set_first_order_absorption(model)
     model.update_source(nofiles=True)
     correct = '''$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno_zero_order.csv IGNORE=@
@@ -985,7 +985,7 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
 
     # Bolus to 1st order
     model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan1.mod')
-    first_order_absorption(model)
+    set_first_order_absorption(model)
     model.update_source(nofiles=True)
     assert str(model).split('\n')[2:] == correct.split('\n')[2:]
 
@@ -1048,7 +1048,7 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
 
 def test_seq_to_FO(testdata):
     model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan2_seq.mod')
-    first_order_absorption(model)
+    set_first_order_absorption(model)
     model.update_source(nofiles=True)
     correct = '''$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno_zero_order.csv IGNORE=@

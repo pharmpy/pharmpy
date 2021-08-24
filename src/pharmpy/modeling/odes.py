@@ -266,7 +266,7 @@ def set_zero_order_absorption(model):
     return model
 
 
-def first_order_absorption(model):
+def set_first_order_absorption(model):
     """Set or change to first order absorption rate. Initial estimate for absorption rate is set
     the previous rate if available, otherwise it is set to the time of first observation/2 is used.
 
