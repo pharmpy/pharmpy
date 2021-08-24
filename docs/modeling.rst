@@ -281,8 +281,8 @@ Lag time may be added to a dose compartment of a model.
 
 .. jupyter-execute::
 
-   from pharmpy.modeling import add_lag_time
-   add_lag_time(model)
+   from pharmpy.modeling import set_lag_time
+   set_lag_time(model)
    model.update_source()
    print_model_diff(model_ref, model)
 

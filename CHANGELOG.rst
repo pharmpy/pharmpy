@@ -7,6 +7,7 @@ next version
 * Rename seq_zo_fo_absorption to set_seq_zo_fo_absorption
 * Rename have_zero_order_absorption to has_zero_order_absorption
 * Rename power_on_ruv to set_power_on_ruv
+* Rename add_lag_time to set_lag_time
 
 0.28.0 (2021-08-24)
 -------------------

@@ -99,7 +99,7 @@ class Peripherals(ModelFeature):
 
 class Lagtime(ModelFeature):
     def __init__(self, tree):
-        self._funcs = {'LAGTIME()': modeling.add_lag_time}
+        self._funcs = {'LAGTIME()': modeling.set_lag_time}
         self.args = None
 
 

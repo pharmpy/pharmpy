@@ -12,7 +12,7 @@ from pharmpy.modeling import (
     add_covariate_effect,
     add_iiv,
     add_iov,
-    add_lag_time,
+    set_lag_time,
     create_joint_distribution,
     explicit_odes,
     set_power_on_ruv,
@@ -538,7 +538,7 @@ $ESTIMATION METHOD=1 INTERACTION
 def test_lag_time(testdata):
     model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan1.mod')
     before = str(model)
-    add_lag_time(model)
+    set_lag_time(model)
     model.update_source()
     correct = '''$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA ../pheno.dta IGNORE=@

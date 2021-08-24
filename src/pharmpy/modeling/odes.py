@@ -204,7 +204,7 @@ def _update_numerators(model):
                     statements.reassign(numer, new_rate)
 
 
-def add_lag_time(model):
+def set_lag_time(model):
     """Add lag time to the dose compartment of model. Initial estimate for lag time is set the
     previous lag time if available, otherwise it is set to the time of first observation/2 is
     used."""

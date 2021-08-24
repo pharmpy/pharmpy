@@ -44,7 +44,7 @@ from pharmpy.modeling.evaluation import evaluate_expression
 from pharmpy.modeling.iiv_on_ruv import set_iiv_on_ruv
 from pharmpy.modeling.odes import (
     add_individual_parameter,
-    add_lag_time,
+    set_lag_time,
     add_peripheral_compartment,
     explicit_odes,
     remove_lag_time,
@@ -80,7 +80,7 @@ __all__ = [
     'set_seq_zo_fo_absorption',
     'add_covariate_effect',
     'add_iiv',
-    'add_lag_time',
+    'set_lag_time',
     'transform_etas_boxcox',
     'create_joint_distribution',
     'explicit_odes',
