@@ -44,7 +44,6 @@ from pharmpy.modeling.evaluation import evaluate_expression
 from pharmpy.modeling.iiv_on_ruv import set_iiv_on_ruv
 from pharmpy.modeling.odes import (
     add_individual_parameter,
-    set_lag_time,
     add_peripheral_compartment,
     explicit_odes,
     remove_lag_time,
@@ -52,6 +51,7 @@ from pharmpy.modeling.odes import (
     set_bolus_absorption,
     set_first_order_absorption,
     set_first_order_elimination,
+    set_lag_time,
     set_michaelis_menten_elimination,
     set_mixed_mm_fo_elimination,
     set_ode_solver,
