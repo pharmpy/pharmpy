@@ -1,5 +1,5 @@
-next version
-------------
+0.28.0 (2021-08-24)
+-------------------
 
 * Move method individual_parameter_statistics from Results to a function in modeling and rename to calculate_individual_parameter_statistics
 * Move method pk_parameters from Results to a function in modeling and rename to calculate_pk_parameters_statistics
@@ -27,6 +27,9 @@ next version
 * Rename zero_order_elimination to set_zero_order_elimination
 * Rename michaelis_menten_elimination to set_michaelis_menten_elimination
 * Rename mixed_mm_fo_elimination to mixed_mm_fo_elimination
+* Function summarize_models to create a summary of models
+* Parse total runtime
+* Revert to dask distributed
 
 0.27.0 (2021-08-09)
 -------------------
