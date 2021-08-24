@@ -261,7 +261,7 @@ def set_zero_order_absorption(model):
         to_comp = dose_comp
     statements.remove_symbol_definitions(symbols, odes)
     model.remove_unused_parameters_and_rvs()
-    if not have_zero_order_absorption(model):
+    if not has_zero_order_absorption(model):
         add_zero_order_absorption(model, dose.amount, to_comp, 'MAT')
     return model
 
@@ -316,7 +316,7 @@ def set_bolus_absorption(model):
         symbols = ka.free_symbols
         statements.remove_symbol_definitions(symbols, odes)
         model.remove_unused_parameters_and_rvs()
-    if have_zero_order_absorption(model):
+    if has_zero_order_absorption(model):
         dose_comp = odes.find_dosing()
         old_symbols = dose_comp.free_symbols
         dose_comp.dose = Bolus(dose_comp.dose.amount)
@@ -343,7 +343,7 @@ def set_seq_zo_fo_absorption(model):
     depot = odes.find_depot(statements)
 
     dose_comp = odes.find_dosing()
-    have_ZO = have_zero_order_absorption(model)
+    have_ZO = has_zero_order_absorption(model)
     if depot and not have_ZO:
         add_zero_order_absorption(model, dose_comp.amount, depot, 'MDT')
     elif not depot and have_ZO:
@@ -357,7 +357,7 @@ def set_seq_zo_fo_absorption(model):
     return model
 
 
-def have_zero_order_absorption(model):
+def has_zero_order_absorption(model):
     """Check if ode system describes a zero order absorption
 
     currently defined as having Infusion dose with rate not in dataset
