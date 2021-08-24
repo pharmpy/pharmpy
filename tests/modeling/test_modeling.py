@@ -20,7 +20,7 @@ from pharmpy.modeling import (
     remove_iiv,
     remove_iov,
     remove_lag_time,
-    seq_zo_fo_absorption,
+    set_seq_zo_fo_absorption,
     set_first_order_absorption,
     set_iiv_on_ruv,
     set_michaelis_menten_elimination,
@@ -1136,7 +1136,7 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
 
 def test_bolus_to_seq(testdata):
     model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan1.mod')
-    seq_zo_fo_absorption(model)
+    set_seq_zo_fo_absorption(model)
     model.update_source(nofiles=True)
     correct = '''$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA ../pheno.dta IGNORE=@
@@ -1184,7 +1184,7 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
 
 def test_ZO_to_seq(testdata):
     model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan1_zero_order.mod')
-    seq_zo_fo_absorption(model)
+    set_seq_zo_fo_absorption(model)
     model.update_source(nofiles=True)
     correct = '''$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno_zero_order.csv IGNORE=@
@@ -1231,7 +1231,7 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
 
 def test_FO_to_seq(testdata):
     model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan2.mod')
-    seq_zo_fo_absorption(model)
+    set_seq_zo_fo_absorption(model)
     model.update_source(nofiles=True)
     correct = '''$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA ../pheno.dta IGNORE=@

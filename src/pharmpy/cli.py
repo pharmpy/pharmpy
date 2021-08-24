@@ -381,7 +381,7 @@ def model_absorption_rate(args):
     elif args.order == 'bolus':
         modeling.set_bolus_absorption(model)
     elif args.order == 'seq-ZO-FO':
-        modeling.seq_zo_fo_absorption(model)
+        modeling.set_seq_zo_fo_absorption(model)
     write_model_or_dataset(model, None, path=args.output_file, force=args.force)
 
 

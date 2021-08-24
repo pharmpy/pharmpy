@@ -54,7 +54,7 @@ class Absorption(ModelFeature):
             elif arg == 'ZO':
                 self._funcs[name] = modeling.set_zero_order_absorption
             elif arg == 'SEQ-ZO-FO':
-                self._funcs[name] = modeling.seq_zo_fo_absorption
+                self._funcs[name] = modeling.set_seq_zo_fo_absorption
             else:
                 raise ValueError(f'Absorption {arg} not supported')
 

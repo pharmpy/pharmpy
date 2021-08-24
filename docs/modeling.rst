@@ -243,12 +243,12 @@ Sequential zero-order absorption followed by first-order absorption will have an
      S -> "Depot" [label=Infusion];
    }
 
-See :py:func:`pharmpy.modeling.seq_zo_fo_absorption`.
+See :py:func:`pharmpy.modeling.set_seq_zo_fo_absorption`.
 
 .. jupyter-execute::
 
-   from pharmpy.modeling import seq_zo_fo_absorption
-   seq_zo_fo_absorption(model)
+   from pharmpy.modeling import set_seq_zo_fo_absorption
+   set_seq_zo_fo_absorption(model)
    model.update_source(nofiles=True)
    print_model_diff(model_ref, model)
 
