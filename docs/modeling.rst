@@ -925,16 +925,16 @@ Power effects on RUVs
 
 .. jupyter-execute::
 
-   from pharmpy.modeling import power_on_ruv
+   from pharmpy.modeling import set_power_on_ruv
    model = Model(path / "pheno.mod")
-   power_on_ruv(model, ['EPS(1)'])
+   set_power_on_ruv(model, ['EPS(1)'])
    model.update_source()
    print_model_diff(model_ref, model)
 
 A power effect will be applied to all provided epsilons, leave argument empty if all
 epsilons should be transformed.
 
-See :py:func:`pharmpy.modeling.power_on_ruv`.
+See :py:func:`pharmpy.modeling.set_power_on_ruv`.
 
 Estimate standard deviation of epsilons with thetas
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

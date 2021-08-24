@@ -207,11 +207,11 @@ def test_remove_iov(datadir, fs):
 
 @pytest.mark.parametrize('fs', [[['pkgutil'], [source, etas_record]]], indirect=True)
 @pytest.mark.parametrize('epsilons_args', [['--eps', 'EPS(1)'], []])
-def test_power_on_ruv(datadir, fs, epsilons_args):
+def test_set_power_on_ruv(datadir, fs, epsilons_args):
     fs.add_real_file(datadir / 'pheno_real.mod', target_path='run1.mod')
     fs.add_real_file(datadir / 'pheno.dta', target_path='pheno.dta')
 
-    args = ['model', 'power_on_ruv', 'run1.mod'] + epsilons_args
+    args = ['model', 'set_power_on_ruv', 'run1.mod'] + epsilons_args
     cli.main(args)
 
     with open('run1.mod', 'r') as f_ori, open('run2.mod', 'r') as f_cov:

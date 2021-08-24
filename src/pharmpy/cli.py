@@ -570,7 +570,7 @@ def remove_iov(args):
 
 def power_on_ruv(args):
     """Subcommand to apply power effect to RUVs."""
-    from pharmpy.modeling import power_on_ruv
+    from pharmpy.modeling import set_power_on_ruv
 
     model = args.model
 
@@ -579,7 +579,7 @@ def power_on_ruv(args):
     except AttributeError:
         eps = args.eps
 
-    power_on_ruv(model, eps)
+    set_power_on_ruv(model, eps)
 
     write_model_or_dataset(model, model.dataset, path=args.output_file, force=False)
 

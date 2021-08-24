@@ -15,7 +15,7 @@ from pharmpy.modeling import (
     add_lag_time,
     create_joint_distribution,
     explicit_odes,
-    power_on_ruv,
+    set_power_on_ruv,
     remove_iiv,
     remove_iov,
     remove_lag_time,
@@ -2088,7 +2088,7 @@ def test_update_inits(testdata, etas_file, force, file_exists):
         ),
     ],
 )
-def test_power_on_ruv(testdata, epsilons, err_ref, theta_ref):
+def test_set_power_on_ruv(testdata, epsilons, err_ref, theta_ref):
     with Patcher(additional_skip_names=['pkgutil']) as patcher:
         fs = patcher.fs
 
@@ -2111,7 +2111,7 @@ def test_power_on_ruv(testdata, epsilons, err_ref, theta_ref):
         model = Model(StringIO(model_more_eps))
         model.dataset = model_pheno.dataset
 
-        power_on_ruv(model, epsilons)
+        set_power_on_ruv(model, epsilons)
         model.update_source()
 
         rec_err = str(model.control_stream.get_records('ERROR')[0])

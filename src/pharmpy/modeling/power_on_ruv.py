@@ -8,7 +8,7 @@ from pharmpy.parameter import Parameter
 from pharmpy.symbols import symbol as S
 
 
-def power_on_ruv(model, list_of_eps=None):
+def set_power_on_ruv(model, list_of_eps=None):
     """
     Applies a power effect to provided epsilons. Initial estimates for new thetas are 1 if the error
     model is proportional, otherwise they are 0.1.
