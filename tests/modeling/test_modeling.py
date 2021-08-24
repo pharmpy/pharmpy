@@ -26,13 +26,13 @@ from pharmpy.modeling import (
     set_michaelis_menten_elimination,
     set_mixed_mm_fo_elimination,
     set_transit_compartments,
+    set_zero_order_absorption,
     set_zero_order_elimination,
     split_joint_distribution,
     transform_etas_boxcox,
     transform_etas_john_draper,
     transform_etas_tdist,
     update_inits,
-    zero_order_absorption,
 )
 from pharmpy.plugins.nonmem.nmtran_parser import NMTranParser
 
@@ -922,7 +922,7 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
     # 0-order to 0-order
     model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan1_zero_order.mod')
     advan1_zero_order_before = str(model)
-    zero_order_absorption(model)
+    set_zero_order_absorption(model)
     model.update_source()
     assert str(model) == advan1_zero_order_before
 
@@ -997,7 +997,7 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
         fs.add_real_file(datadir / 'pheno_advan2.mod', target_path='dir/pheno_advan2.mod')
         fs.add_real_file(datadir.parent / 'pheno.dta', target_path='pheno.dta')
         model = Model('dir/pheno_advan1.mod')
-        zero_order_absorption(model)
+        set_zero_order_absorption(model)
         model.update_source()
         correct = '''$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.csv IGNORE=@
@@ -1041,7 +1041,7 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
 
         # 1st to 0-order
         model = Model('dir/pheno_advan2.mod')
-        zero_order_absorption(model)
+        set_zero_order_absorption(model)
         model.update_source(force=True)
         assert str(model) == correct
 
@@ -1092,7 +1092,7 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
 
 def test_seq_to_ZO(testdata):
     model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan2_seq.mod')
-    zero_order_absorption(model)
+    set_zero_order_absorption(model)
     model.update_source(nofiles=True)
     correct = '''$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno_zero_order.csv IGNORE=@

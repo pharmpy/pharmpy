@@ -191,12 +191,12 @@ Let us now change to zero order absorption.
      S -> "Central" [label=Infusion];
    }
 
-See :py:func:`pharmpy.modeling.zero_order_absorption`.
+See :py:func:`pharmpy.modeling.set_zero_order_absorption`.
 
 .. jupyter-execute::
 
-   from pharmpy.modeling import zero_order_absorption
-   zero_order_absorption(model)
+   from pharmpy.modeling import set_zero_order_absorption
+   set_zero_order_absorption(model)
    model.update_source(nofiles=True)
    print_model_diff(model_ref, model)
 

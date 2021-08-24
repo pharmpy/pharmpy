@@ -58,8 +58,8 @@ from pharmpy.modeling.odes import (
     set_ode_solver,
     set_peripheral_compartments,
     set_transit_compartments,
+    set_zero_order_absorption,
     set_zero_order_elimination,
-    zero_order_absorption,
 )
 from pharmpy.modeling.power_on_ruv import power_on_ruv
 from pharmpy.modeling.remove_iiv import remove_iiv
@@ -74,7 +74,7 @@ from pharmpy.modeling.update_inits import update_inits
 
 __all__ = [
     'add_individual_parameter',
-    'zero_order_absorption',
+    'set_zero_order_absorption',
     'first_order_absorption',
     'bolus_absorption',
     'seq_zo_fo_absorption',

@@ -52,7 +52,7 @@ class Absorption(ModelFeature):
             if arg == 'FO':
                 self._funcs[name] = modeling.first_order_absorption
             elif arg == 'ZO':
-                self._funcs[name] = modeling.zero_order_absorption
+                self._funcs[name] = modeling.set_zero_order_absorption
             elif arg == 'SEQ-ZO-FO':
                 self._funcs[name] = modeling.seq_zo_fo_absorption
             else:

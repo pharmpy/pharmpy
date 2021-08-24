@@ -232,7 +232,7 @@ def remove_lag_time(model):
     return model
 
 
-def zero_order_absorption(model):
+def set_zero_order_absorption(model):
     """Set or change to zero order absorption rate. Initial estimate for absorption rate is set
     the previous rate if available, otherwise it is set to the time of first observation/2 is
     used.

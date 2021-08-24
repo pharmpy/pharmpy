@@ -375,7 +375,7 @@ def model_absorption_rate(args):
 
     model = args.model
     if args.order == 'ZO':
-        modeling.zero_order_absorption(model)
+        modeling.set_zero_order_absorption(model)
     elif args.order == 'FO':
         modeling.first_order_absorption(model)
     elif args.order == 'bolus':
