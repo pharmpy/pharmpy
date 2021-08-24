@@ -5,10 +5,18 @@ on:
       workflows: [ "CI" ]
       type:
           - complete
+          - requested
 
 jobs:
-  print_ci_complete:
-      runs-on: ubuntu-latest
-      steps:
-          -   name: print
-              run: echo "ci complete"
+  on-success:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    steps:
+        - name: print-success
+          run: echo "sucess"
+  on-failure:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'failure' }}
+    steps:
+        - name: print-failure
+          run: echo "failure"
