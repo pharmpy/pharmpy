@@ -36,7 +36,7 @@ def add_iiv(model, list_of_parameters, expression, operation='*', eta_names=None
         Effect/effects on eta. Either abbreviated (see above) or custom.
     operation : str, list, optional
         Whether the new IIV should be added or multiplied (default).
-    eta_names: str, list, optional
+    eta_names : str, list, optional
         Custom name/names of new eta
     """
     rvs, pset, sset = model.random_variables, model.parameters, model.statements
@@ -94,7 +94,7 @@ def add_iov(model, occ, list_of_parameters=None, eta_names=None):
     list_of_parameters : str, list
         List of names of parameters and random variables. Accepts random variable names, parameter
         names, or a mix of both.
-    eta_names: str, list
+    eta_names : str, list
         Custom names of new etas. Must be equal to the number of input etas times the number of
         categories for occasion.
     """

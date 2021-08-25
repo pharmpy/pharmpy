@@ -2,15 +2,33 @@
 
 
 def get_number_of_individuals(model):
-    """Retrieve the number of individuals in the model dataset"""
+    """Retrieve the number of individuals in the model dataset
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+    """
     return model.dataset.pharmpy.ninds
 
 
 def get_number_of_observations(model):
-    """Retrieve the total number of observations in the model dataset"""
+    """Retrieve the total number of observations in the model dataset
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+    """
     return model.dataset.pharmpy.nobs
 
 
 def get_number_of_observations_per_individual(model):
-    """Number of observations for each individual"""
+    """Number of observations for each individual
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+    """
     return model.dataset.pharmpy.nobsi

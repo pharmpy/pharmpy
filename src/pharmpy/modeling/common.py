@@ -9,19 +9,41 @@ from pharmpy.model_factory import Model
 
 
 def read_model(path):
-    """Read model from file"""
+    """Read model from file
+
+    Parameters
+    ----------
+    path : str or Path
+        Path to model
+    """
     model = Model(path)
     return model
 
 
 def read_model_from_string(code):
-    """Read model directly from the model code in a string"""
+    """Read model directly from the model code in a string
+
+    Parameters
+    ----------
+    code : str
+        Model code to read
+    """
     model = Model(StringIO(code))
     return model
 
 
 def write_model(model, path='', force=True):
-    """Write model to file"""
+    """Write model to file
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+    path : str
+        Destination path
+    force : bool
+        Force overwrite, default is True
+    """
     model.write(path=path, force=force)
     return model
 
@@ -36,9 +58,9 @@ def convert_model(model, to_format):
     to_format : str
         Name of format to convert into. Currently supported 'nlmixr'
 
-    Results
+    Returns
     -------
-    Model
+    model : Model
         New model object with new underlying model format.
     """
     if to_format != 'nlmixr':
@@ -54,18 +76,37 @@ def update_source(model):
 
     Let the code of the underlying source language be updated to reflect
     changes in the model object.
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
     """
     model.update_source()
     return model
 
 
 def copy_model(model):
-    """Copies model to a new model object"""
+    """Copies model to a new model object
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+    """
     return model.copy()
 
 
 def set_name(model, new_name):
-    """Sets name of model object"""
+    """Sets name of model object
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+    new_name : str
+        New name of model
+    """
     model.name = new_name
     return model
 

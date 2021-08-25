@@ -12,6 +12,11 @@ def calculate_individual_shrinkage(model):
     """Calculate the individual eta-shrinkage
 
     Definition: ieta_shr = (var(eta) / omega)
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
     """
     res = model.modelfit_results
     cov = res.individual_estimates_covariance
@@ -242,6 +247,14 @@ def _split_equation(s):
 
 # TODO: consider moving part of function to results-object
 def summarize_models(models):
+    """Summarize results of multiple model runs, includes runtime, ofv and parameter estimates
+    (with errors).
+
+    Parameters
+    ----------
+    models : list
+        List of models
+    """
     run_summaries = []
     parameter_summaries = []
 

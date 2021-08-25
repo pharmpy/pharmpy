@@ -259,7 +259,13 @@ def has_combined_error_model(model):
 
 
 def use_thetas_for_error_stdev(model):
-    """Use thetas to estimate standard deviation of error"""
+    """Use thetas to estimate standard deviation of error
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+    """
     rvs = model.random_variables.epsilons
     for eps in rvs:
         sigmas = eps.parameter_names
@@ -278,7 +284,13 @@ def use_thetas_for_error_stdev(model):
 
 
 def set_weighted_error_model(model):
-    """Encode error model with one epsilon and W as weight"""
+    """Encode error model with one epsilon and W as weight
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+    """
     stats, y, f = _preparations(model)
     epsilons = model.random_variables.epsilons
     expr = stats.find_assignment(y.name).expression
@@ -306,7 +318,13 @@ def set_weighted_error_model(model):
 
 
 def set_dtbs_error_model(model):
-    """Dynamic transform both sides"""
+    """Dynamic transform both sides
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+    """
     use_thetas_for_error_stdev(model)
     set_weighted_error_model(model)
     stats, y, f = _preparations(model)

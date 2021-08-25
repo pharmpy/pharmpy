@@ -9,8 +9,17 @@ from pharmpy.parameter import Parameter
 from pharmpy.statements import Assignment, Bolus, CompartmentalSystem, ExplicitODESystem, Infusion
 
 
+# TODO: elaborate documentation
 def add_individual_parameter(model, name):
-    """Add an individual or pk parameter to a model"""
+    """Add an individual or pk parameter to a model
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+    name : str
+        Name of individual/pk parameter
+    """
     _add_parameter(model, name)
     return model
 
@@ -28,6 +37,11 @@ def _add_parameter(model, name, init=0.1):
 def explicit_odes(model):
     """Convert model from compartmental system to explicit ODE system
     or do nothing if it already has an explicit ODE system
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
     """
     statements = model.statements
     odes = statements.ode_system
@@ -40,13 +54,27 @@ def explicit_odes(model):
     return model
 
 
+# TODO: elaborate documentation
 def set_first_order_elimination(model):
+    """Sets elimination to first order
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+    """
     return model
 
 
 def set_zero_order_elimination(model):
     """Sets elimination to zero order. Initial estimate for KM is set to 1% of smallest
-    observation."""
+    observation.
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+    """
     _do_michaelis_menten_elimination(model)
     obs = model.dataset.pharmpy.observations
     init = obs.min() / 100  # 1% of smallest observation
@@ -57,14 +85,26 @@ def set_zero_order_elimination(model):
 
 def set_michaelis_menten_elimination(model):
     """Sets elimination to Michaelis-Menten. Initial estimate for CLMM is set to CL and KM is set to
-    :math:`2*max(DV)`."""
+    :math:`2*max(DV)`.
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+    """
     _do_michaelis_menten_elimination(model)
     return model
 
 
 def set_mixed_mm_fo_elimination(model):
     """Sets elimination to mixed Michaelis-Menten and first order. Initial estimate for CLMM is set
-    to CL/2 and KM is set to :math:`2*max(DV)`."""
+    to CL/2 and KM is set to :math:`2*max(DV)`.
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+    """
     _do_michaelis_menten_elimination(model, combined=True)
     return model
 
@@ -116,7 +156,15 @@ def _get_mm_inits(model, rate_numer, combined):
 def set_transit_compartments(model, n):
     """Set the number of transit compartments of model. Initial estimate for absorption rate is
     set the previous rate if available, otherwise it is set to the time of first observation/2
-    is used."""
+    is used.
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+    n : int
+        Number of transit compartments
+    """
     statements = model.statements
     odes = statements.ode_system
     transits = odes.find_transit_compartments(statements)
@@ -207,7 +255,13 @@ def _update_numerators(model):
 def set_lag_time(model):
     """Add lag time to the dose compartment of model. Initial estimate for lag time is set the
     previous lag time if available, otherwise it is set to the time of first observation/2 is
-    used."""
+    used.
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+    """
     odes = model.statements.ode_system
     dosing_comp = odes.find_dosing()
     old_lag_time = dosing_comp.lag_time
@@ -220,7 +274,13 @@ def set_lag_time(model):
 
 
 def remove_lag_time(model):
-    """Remove lag time from the dose compartment of model."""
+    """Remove lag time from the dose compartment of model.
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+    """
     odes = model.statements.ode_system
     dosing_comp = odes.find_dosing()
     lag_time = dosing_comp.lag_time
@@ -361,6 +421,11 @@ def has_zero_order_absorption(model):
     """Check if ode system describes a zero order absorption
 
     currently defined as having Infusion dose with rate not in dataset
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
     """
     odes = model.statements.ode_system
     dosing = odes.find_dosing()
@@ -422,7 +487,17 @@ def _get_absorption_init(model, param_name):
         return float(time_min) * 2
 
 
+# TODO: elaborate documentation
 def set_peripheral_compartments(model, n):
+    """Sets the number of peripheral compartments to a specified number.
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+    n : int
+        Number of transit compartments
+    """
     per = len(model.statements.ode_system.find_peripherals())
     if per < n:
         for _ in range(n - per):
@@ -453,6 +528,10 @@ def add_peripheral_compartment(model):
         :math:`\mathsf{QP2} = \mathsf{QP1' / 2}` and :math:`\mathsf{VP2} = \mathsf{VP1'}`
     ==  ===================================================
 
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
     """
     statements = model.statements
     odes = statements.ode_system
@@ -525,8 +604,11 @@ def remove_peripheral_compartment(model):
         :math:`\mathsf{VP1} = \mathsf{VP1'} + \mathsf{VP2'}`
     ==  ===================================================
 
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
     """
-
     statements = model.statements
     odes = statements.ode_system
     peripherals = odes.find_peripherals()
@@ -592,7 +674,17 @@ def remove_peripheral_compartment(model):
     return model
 
 
+# TODO: elaborate documentation
 def set_ode_solver(model, solver):
+    """Sets ode solver
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+    solver : str
+        Solver to use
+    """
     odes = model.statements.ode_system
     odes.solver = solver
     return model

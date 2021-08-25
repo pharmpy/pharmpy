@@ -13,6 +13,8 @@ def evaluate_expression(model, expression):
 
     Parameters
     ----------
+    model : Model
+        Pharmpy model
     expression : str or sympy expression
         Expression to evaluate
 
