@@ -66,6 +66,7 @@ from pharmpy.modeling.power_on_ruv import set_power_on_ruv
 from pharmpy.modeling.remove_iiv import remove_iiv
 from pharmpy.modeling.remove_iov import remove_iov
 from pharmpy.modeling.results import (
+    calculate_eta_shrinkage,
     calculate_individual_parameter_statistics,
     calculate_individual_shrinkage,
     calculate_pk_parameters_statistics,
@@ -142,4 +143,5 @@ __all__ = [
     'summarize_models',
     'has_zero_order_absorption',
     'calculate_individual_shrinkage',
+    'calculate_eta_shrinkage',
 ]

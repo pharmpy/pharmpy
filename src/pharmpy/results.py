@@ -409,26 +409,6 @@ class ModelfitResults(Results):
         """The covariance matrix of the individual estimates"""
         raise NotImplementedError("Not implemented")
 
-    def eta_shrinkage(self, sd=False):
-        """Eta shrinkage for each eta
-
-        Variance = False to get sd scale
-        """
-        pe = self.parameter_estimates
-        # Want parameter estimates combined with fixed parameter values
-        param_inits = self.model.parameters.to_dataframe()['value']
-        pe = pe.combine_first(param_inits)
-
-        ie = self.individual_estimates
-        param_names = self.model.random_variables.iiv.variance_parameters
-        diag_ests = pe[param_names]
-        diag_ests.index = ie.columns
-        if not sd:
-            shrinkage = 1 - (ie.var() / diag_ests)
-        else:
-            shrinkage = 1 - (ie.std() / (diag_ests ** 0.5))
-        return shrinkage
-
     @property
     def runtime_total(self):
         return self._runtime_total

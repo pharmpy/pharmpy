@@ -144,17 +144,3 @@ Uncertainty for the individual estimates can be found in `individual_estimates_c
 .. jupyter-execute::
 
     model.modelfit_results.individual_estimates_covariance[1]
-
-Eta shrinkage
-~~~~~~~~~~~~~
-
-The results object has a function `eta_shrinkage` to calculate the eta shrinkage either on the standard deviation scale or on the variance scale
-
-.. jupyter-execute::
-
-    model.modelfit_results.eta_shrinkage()
-
-
-.. jupyter-execute::
-
-    model.modelfit_results.eta_shrinkage(sd=True)

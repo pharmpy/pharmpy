@@ -6,11 +6,24 @@ import pytest
 
 from pharmpy import Model
 from pharmpy.modeling import (
+    calculate_eta_shrinkage,
     calculate_individual_parameter_statistics,
     calculate_individual_shrinkage,
     calculate_pk_parameters_statistics,
     summarize_models,
 )
+
+
+def test_calculate_eta_shrinkage(testdata):
+    pheno = Model(testdata / 'nonmem' / 'pheno_real.mod')
+    shrinkage = calculate_eta_shrinkage(pheno)
+    assert len(shrinkage) == 2
+    assert pytest.approx(shrinkage['ETA(1)'], 0.0001) == 7.2048e01 / 100
+    assert pytest.approx(shrinkage['ETA(2)'], 0.0001) == 2.4030e01 / 100
+    shrinkage = calculate_eta_shrinkage(pheno, sd=True)
+    assert len(shrinkage) == 2
+    assert pytest.approx(shrinkage['ETA(1)'], 0.0001) == 4.7130e01 / 100
+    assert pytest.approx(shrinkage['ETA(2)'], 0.0001) == 1.2839e01 / 100
 
 
 def test_calculate_individual_shrinkage(testdata):

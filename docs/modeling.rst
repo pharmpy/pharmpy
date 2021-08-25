@@ -1082,6 +1082,22 @@ results from the tool and can be saved as either json or csv.
     res.to_json("bootstrap_dir1/results.json")
     res.to_csv("bootstrap_dir1/results.csv")
 
+~~~~~~~~~~~~~
+Eta shrinkage
+~~~~~~~~~~~~~
+
+Eta shrinkage can be calculated either on the standard deviation scale or on the variance scale
+
+.. jupyter-execute::
+
+    from pharmpy.modeling import calculate_eta_shrinkage
+
+    calculate_eta_shrinkage(model)
+
+
+.. jupyter-execute::
+
+    calculate_eta_shrinkage(model, sd=True)
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Individual parameter calculations

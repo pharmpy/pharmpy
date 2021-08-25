@@ -8,6 +8,28 @@ from pharmpy.data_structures import OrderedSet
 from pharmpy.parameter_sampling import sample_from_covariance_matrix
 
 
+def calculate_eta_shrinkage(model, sd=False):
+    """Calculate eta shrinkage for each eta
+
+    Variance = False to get sd scale
+    """
+    res = model.modelfit_results
+    pe = res.parameter_estimates
+    # Want parameter estimates combined with fixed parameter values
+    param_inits = model.parameters.to_dataframe()['value']
+    pe = pe.combine_first(param_inits)
+
+    ie = res.individual_estimates
+    param_names = model.random_variables.iiv.variance_parameters
+    diag_ests = pe[param_names]
+    diag_ests.index = ie.columns
+    if not sd:
+        shrinkage = 1 - (ie.var() / diag_ests)
+    else:
+        shrinkage = 1 - (ie.std() / (diag_ests ** 0.5))
+    return shrinkage
+
+
 def calculate_individual_shrinkage(model):
     """Calculate the individual eta-shrinkage
 
