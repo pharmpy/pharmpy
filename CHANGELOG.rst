@@ -1,5 +1,5 @@
-next version
-------------
+0.29.0 (2021-08-25)
+-------------------
 
 * Rename zero_order_absorption to set_zero_order_absorption
 * Rename first_order_absorption to set_first_order_absorption
