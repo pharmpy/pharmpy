@@ -2,7 +2,7 @@ import pathlib
 
 import pharmpy.config as config
 
-from .model import Model, detect_model
+from .model import Model, convert_model, detect_model
 
 r"""
 .. list-table:: Options for the nonmem plugin
@@ -46,4 +46,4 @@ class NONMEMConfiguration(config.Configuration):
 conf = NONMEMConfiguration()
 
 
-__all__ = ['detect_model', 'Model']
+__all__ = ['detect_model', 'convert_model', 'Model']

@@ -3,11 +3,13 @@ import copy
 import re
 import shutil
 import warnings
+from io import StringIO
 from os import stat
 from pathlib import Path
 
 import pharmpy.data
 import pharmpy.model
+import pharmpy.model_factory
 import pharmpy.plugins.nonmem
 from pharmpy.data import DatasetError
 from pharmpy.estimation import EstimationMethod, list_supported_est
@@ -41,6 +43,21 @@ def detect_model(src, *args, **kwargs):
         return Model
     else:
         return None
+
+
+def convert_model(model):
+    """Convert any model into a NONMEM model"""
+    model = model.to_generic_model()
+    code = '$PROBLEM\n'
+    if model.statements.ode_system is None:
+        code += '$PRED\n'
+    else:
+        code += '$PK\n'
+    nm_model = pharmpy.model_factory.Model(StringIO(code))
+    nm_model.random_variables = model.random_variables
+    nm_model.parameters = model.parameters
+    nm_model.update_source()
+    return nm_model
 
 
 class Model(pharmpy.model.Model):
@@ -647,7 +664,8 @@ class Model(pharmpy.model.Model):
 
     @random_variables.setter
     def random_variables(self, new):
-        self._random_variables = new
+        self.random_variables  # Read in old random variables
+        self._random_variables = new.copy()
 
     @property
     def estimation_steps(self):

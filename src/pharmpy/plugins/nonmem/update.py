@@ -57,8 +57,7 @@ def update_parameters(model, old, new):
             record = create_theta_record(model, p)
             if re.match(r'THETA\(\d+\)', name):
                 p.name = f'THETA({theta_number})'
-            else:
-                record.add_nonmem_name(name, theta_number)
+            record.add_nonmem_name(p.name, theta_number)
 
     next_theta = 1
     for theta_record in model.control_stream.get_records('THETA'):

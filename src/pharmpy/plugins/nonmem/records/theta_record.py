@@ -16,8 +16,9 @@ class ThetaRecord(Record):
         self.name_map = None
 
     def add_nonmem_name(self, name_original, theta_number):
-        self.root.add_comment_node(name_original)
-        self.root.add_newline_node()
+        if not re.match(r'THETA\(\d+\)', name_original):
+            self.root.add_comment_node(name_original)
+            self.root.add_newline_node()
         self.name_map = {name_original: theta_number}
 
     def parameters(self, first_theta, seen_labels=None):

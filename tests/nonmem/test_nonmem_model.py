@@ -16,7 +16,7 @@ from pharmpy.modeling import (
     set_zero_order_elimination,
 )
 from pharmpy.parameter import Parameter
-from pharmpy.plugins.nonmem import conf
+from pharmpy.plugins.nonmem import conf, convert_model
 from pharmpy.plugins.nonmem.nmtran_parser import NMTranParser
 from pharmpy.random_variables import RandomVariable
 from pharmpy.statements import Assignment, ModelStatements, ODESystem
@@ -953,3 +953,22 @@ $TABLE      ID TIME AMT WGT APGR IPRED PRED TAD CWRES NPDE NOAPPEND
         with pytest.warns(UserWarning):
             model = Model(StringIO(code))
             model.update_source()
+
+
+def test_convert_model(testdata):
+    code = """$PROBLEM base model
+$INPUT ID DV TIME
+$DATA file.csv IGNORE=@
+
+$PRED
+Y = THETA(1) + ETA(1) + EPS(1)
+
+$THETA 1  ; TH1
+$OMEGA 2 ; OM1
+$SIGMA 3 ; SI1
+$ESTIMATION METHOD=1 INTER
+"""
+    base = Model(StringIO(code))
+    base.dataset_path = testdata / 'nonmem' / 'file.csv'
+    model = convert_model(base)
+    assert model
