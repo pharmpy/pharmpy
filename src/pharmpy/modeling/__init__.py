@@ -5,6 +5,7 @@ from pharmpy.modeling.common import (
     copy_model,
     fix_parameters,
     fix_parameters_to,
+    load_example_model,
     read_model,
     read_model_from_string,
     remove_estimation_step,
@@ -144,4 +145,5 @@ __all__ = [
     'has_zero_order_absorption',
     'calculate_individual_shrinkage',
     'calculate_eta_shrinkage',
+    'load_example_model',
 ]

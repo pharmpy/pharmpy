@@ -3,6 +3,7 @@
 """
 
 from io import StringIO
+from pathlib import Path
 
 from pharmpy.estimation import EstimationMethod
 from pharmpy.model_factory import Model
@@ -329,4 +330,13 @@ def remove_estimation_step(model, idx):
     model : Model
     """
     del model.estimation_steps[idx]
+    return model
+
+
+def load_example_model(name):
+    available = ('pheno',)
+    if name not in available:
+        raise ValueError(f'Unknown example model {name}. Available examples: {available}')
+    path = Path(__file__).parent.resolve() / 'example_models' / (name + '.mod')
+    model = read_model(path)
     return model

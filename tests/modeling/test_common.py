@@ -8,6 +8,7 @@ from pharmpy.modeling import (
     add_estimation_step,
     fix_parameters,
     fix_parameters_to,
+    load_example_model,
     read_model,
     read_model_from_string,
     remove_estimation_step,
@@ -168,3 +169,12 @@ def test_remove_estimation_step(testdata):
     update_source(model)
     assert not model.estimation_steps
     assert str(model).split('\n')[-2] == '$SIGMA 1'
+
+
+def test_load_example_model():
+    model = load_example_model("pheno")
+    assert len(model.parameters) == 6
+    assert len(model.modelfit_results.parameter_estimates) == 6
+
+    with pytest.raises(ValueError):
+        load_example_model("grekztalb23=")
