@@ -16,25 +16,64 @@ def read_model(path):
     ----------
     path : str or Path
         Path to model
+
+    Returns
+    -------
+    Model
+        Read model object
+
+    Example
+    -------
+    >>> read_model("/home/run1.mod")    # doctest: +SKIP
+
+    See also
+    --------
+    read_model_from_string : Read model from string
+
     """
     model = Model(path)
     return model
 
 
 def read_model_from_string(code):
-    """Read model directly from the model code in a string
+    """Read model from the model code in a string
 
     Parameters
     ----------
     code : str
         Model code to read
+
+    Returns
+    -------
+    Model
+        Read model object
+
+    Example
+    -------
+    >>> from pharmpy.modeling import read_model_from_string
+    >>> s = '''$PROBLEM
+    ... $INPUT ID DV TIME
+    ... $DATA file.csv
+    ... $PRED
+    ... Y=THETA(1)+ETA(1)+ERR(1)
+    ... $THETA 1
+    ... $OMEGA 0.1
+    ... $SIGMA 1
+    ... $ESTIMATION METHOD=1'''
+    >>> read_model_from_string(s)  # doctest:+ELLIPSIS
+    <...>
+
+    See also
+    --------
+    read_model : Read model from file
+
     """
     model = Model(StringIO(code))
     return model
 
 
 def write_model(model, path='', force=True):
-    """Write model to file
+    """Write model code to file
 
     Parameters
     ----------
@@ -44,6 +83,18 @@ def write_model(model, path='', force=True):
         Destination path
     force : bool
         Force overwrite, default is True
+
+    Returns
+    -------
+    Model
+        Reference to the same model object
+
+    Example
+    -------
+    >>> from pharmpy.modeling import load_example_model, write_model
+    >>> model = load_example_model("pheno")
+    >>> write_model(model)   # doctest: +SKIP
+
     """
     model.write(path=path, force=force)
     return model
@@ -61,8 +112,15 @@ def convert_model(model, to_format):
 
     Returns
     -------
-    model : Model
+    Model
         New model object with new underlying model format.
+
+    Example
+    -------
+    >>> from pharmpy.modeling import load_example_model, convert_model
+    >>> model = load_example_model("pheno")
+    >>> converted_model = convert_model(model, "nlmixr")    # doctest: +SKIP
+
     """
     if to_format != 'nlmixr':
         raise ValueError(f"Unknown format {to_format}: supported format is 'nlmixr'")
@@ -82,6 +140,23 @@ def update_source(model):
     ----------
     model : Model
         Pharmpy model
+
+    Returns
+    -------
+    Model
+        Reference to the same model object
+
+    Example
+    -------
+    >>> from pharmpy.modeling import load_example_model, fix_parameters, update_source
+    >>> model = load_example_model("pheno")
+    >>> fix_parameters(model, ['THETA(1)'])  # doctest: +ELLIPSIS
+    <...>
+    >>> update_source(model)  # doctest: +ELLIPSIS
+    <...>
+    >>> print(str(model).splitlines()[22])
+    $THETA (0,0.00469307) FIX ; PTVCL
+
     """
     model.update_source()
     return model
