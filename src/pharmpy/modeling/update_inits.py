@@ -30,12 +30,12 @@ def update_inits(model, force_individual_estimates=False):
     -------
     >>> from pharmpy.modeling import load_example_model, update_inits
     >>> model = load_example_model("pheno")
-    >>> model.parameters.inits
-    {'THETA(1)': 0.00469307, 'THETA(2)': 1.00916, 'THETA(3)': 0.1, 'OMEGA(1,1)': 0.0309626, 'OMEGA(2,2)': 0.031128, 'SIGMA(1,1)': 0.013241}
+    >>> model.parameters.inits  # doctest:+ELLIPSIS
+    {'THETA(1)': 0.00469307, 'THETA(2)': 1.00916, 'THETA(3)': 0.1, 'OMEGA(1,1)': 0.0309626...}
     >>> update_inits(model)  # doctest:+ELLIPSIS
     <...>
-    >>> model.parameters.inits
-    {'THETA(1)': 0.00469555, 'THETA(2)': 0.984258, 'THETA(3)': 0.15892, 'OMEGA(1,1)': 0.0293508, 'OMEGA(2,2)': 0.027906, 'SIGMA(1,1)': 0.013241}
+    >>> model.parameters.inits  # doctest:+ELLIPSIS
+    {'THETA(1)': 0.00469555, 'THETA(2)': 0.984258, 'THETA(3)': 0.15892, 'OMEGA(1,1)': 0.0293508...}
 
     """
     if isinstance(model, list) and len(model) == 1:
