@@ -8,16 +8,35 @@ class ModelfitResultsException(Exception):
 
 
 def update_inits(model, force_individual_estimates=False):
-    """
-    Updates initial estimates from previous output. Can be forced if no initial
-    individual estimates have been read.
+    """Update initial parameter estimate for a model
+
+    Updates initial estimates of population parameters for a model from
+    its modelfit_results. If the model has used initial estimates for
+    individual estimates these will also be updated. If initial estimates
 
     Parameters
     ----------
     model : Model
-        Pharmpy model to create block effect on.
+        Pharmpy model to update initial estimates
     force_individual_estimates : bool
-        Whether update of initial individual estimates should be forced.
+        Update initial individual estimates even if model din't use them previously.
+
+    Returns
+    -------
+    Model
+        Reference to the same model
+
+    Example
+    -------
+    >>> from pharmpy.modeling import load_example_model, update_inits
+    >>> model = load_example_model("pheno")
+    >>> model.parameters.inits
+    {'THETA(1)': 0.00469307, 'THETA(2)': 1.00916, 'THETA(3)': 0.1, 'OMEGA(1,1)': 0.0309626, 'OMEGA(2,2)': 0.031128, 'SIGMA(1,1)': 0.013241}
+    >>> update_inits(model)  # doctest:+ELLIPSIS
+    <...>
+    >>> model.parameters.inits
+    {'THETA(1)': 0.00469555, 'THETA(2)': 0.984258, 'THETA(3)': 0.15892, 'OMEGA(1,1)': 0.0293508, 'OMEGA(2,2)': 0.027906, 'SIGMA(1,1)': 0.013241}
+
     """
     if isinstance(model, list) and len(model) == 1:
         model = model[0]
