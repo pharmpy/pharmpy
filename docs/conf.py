@@ -15,6 +15,7 @@ extensions = [
     'sphinx.ext.napoleon',
     'sphinx.ext.todo',
     'sphinx.ext.viewcode',
+    'sphinx_automodapi.automodapi',
     'jupyter_sphinx',
     'sphinxcontrib.autoprogram',
 ]

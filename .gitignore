@@ -39,7 +39,7 @@ nosetests.xml
 # Sphinx
 docs/_build
 docs/.doctrees
-docs/reference
+docs/api
 
 # Other
 .DS_Store
