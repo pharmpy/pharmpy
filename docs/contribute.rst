@@ -49,7 +49,7 @@ Build the documentation
 
 To build the documentation separately run:
 
-    tox -e apidoc,docs
+    tox -e docs
 
 The local version of the documentation can now be found in ``dist/docs/``.
 

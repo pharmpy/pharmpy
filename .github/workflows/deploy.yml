@@ -29,7 +29,7 @@ jobs:
         PLATFORM: ${{ matrix.platform }}
     - name: Test docs
       if: matrix.platform == 'ubuntu-latest' && matrix.python-version == '3.9'
-      run: tox -e apidoc,docs,doctest
+      run: tox -e docs,doctest
 
   get-nonmem:
     runs-on: ubuntu-latest
@@ -286,7 +286,6 @@ jobs:
     - name: Build documentation
       run: |
         cd pharmpy
-        tox -e apidoc
         tox -e docs
     - name: Build wheel
       run: |
