@@ -356,6 +356,14 @@ def read_nonmem_dataset(
         df[column] = df[column].apply(_convert_data_item, args=(str(null_value),))
     df = _make_ids_unique(df, parse_columns)
 
+    # Make ID int if possible
+    try:
+        idcol = df.pharmpy.id_label
+    except KeyError:
+        pass
+    else:
+        df[idcol] = df[idcol].convert_dtypes()
+
     return df
 
 

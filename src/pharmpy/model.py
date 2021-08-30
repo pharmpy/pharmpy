@@ -440,7 +440,7 @@ class Model:
         for i in df.pharmpy.ids:
             Gi = np.float64(G.loc[[i]])
             Hi = np.float64(H.loc[[i]])
-            Fi = F[i:i].values
+            Fi = F.loc[i:i]
             DVi = np.float64(df['DV'][df[df.pharmpy.id_label] == i])
             Ci = Gi @ omega @ Gi.T + np.diag(np.diag(Hi @ sigma @ Hi.T))
             WRESi = scipy.linalg.sqrtm(scipy.linalg.inv(Ci)) @ (DVi - Fi)
