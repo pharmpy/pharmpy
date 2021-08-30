@@ -29,7 +29,8 @@ def get_number_of_individuals(model):
     See also
     --------
     get_number_of_observations : Get the number of observations in a dataset
-    get_number_of_observations_per_individual : Get the number of observations per individual in a dataset
+    get_number_of_observations_per_individual : Get the number of observations per individual in a
+        dataset
 
     """
     return model.dataset.pharmpy.ninds
@@ -147,7 +148,7 @@ def get_number_of_observations_per_individual(model):
     57.0    2
     58.0    3
     59.0    3
-    Name: DV, dtype: int64
+    Name: observation_count, dtype: int64
 
     Notes
     -----

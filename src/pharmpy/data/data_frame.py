@@ -288,7 +288,9 @@ class DataFrameAccessor:
 
     @property
     def nobsi(self):
-        return self.observations.groupby(self.id_label).count()
+        ser = self.observations.groupby(self.id_label).count()
+        ser.name = "observation_count"
+        return ser
 
     @property
     def doses(self):
