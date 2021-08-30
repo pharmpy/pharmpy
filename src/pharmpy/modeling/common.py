@@ -192,11 +192,11 @@ def set_name(model, new_name):
     >>> from pharmpy.modeling import set_name, load_example_model
     >>> model = load_example_model("pheno")
     >>> model.name
-    pheno
+    'pheno'
     >>> set_name(model, "run2")  # doctest:+ELLIPSIS
     <...>
     >>> model.name
-    run2
+    'run2'
 
     """
     model.name = new_name
