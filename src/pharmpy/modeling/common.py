@@ -169,6 +169,17 @@ def copy_model(model):
     ----------
     model : Model
         Pharmpy model
+
+    Results
+    -------
+    Model : A copy of the input model
+
+    Example
+    -------
+    >>> from pharmpy.modeling import copy_model, load_example_model
+    >>> model = load_example_model("pheno")
+    >>> model_copy = copy_model(model)
+
     """
     return model.copy()
 
@@ -193,7 +204,7 @@ def set_name(model, new_name):
     >>> model = load_example_model("pheno")
     >>> model.name
     'pheno'
-    >>> set_name(model, "run2")  # doctest:+ELLIPSIS
+    >>> set_name(model, "run2")  # doctest: +ELLIPSIS
     <...>
     >>> model.name
     'run2'
@@ -235,7 +246,26 @@ def fix_parameters(model, parameter_names):
 
     Returns
     -------
-    model : Model
+    Model : Reference to the same model
+
+    Example
+    -------
+    >>> from pharmpy.modeling import fix_parameters, load_example_model
+    >>> model = load_example_model("pheno")
+    >>> model.parameters['THETA(1)']
+    Parameter("THETA(1)", 0.00469307, lower=0.0, upper=1000000, fix=False)
+    >>> fix_parameters(model, 'THETA(1)')       # doctest: +ELLIPSIS
+    <...>
+    >>> model.parameters['THETA(1)']
+    Parameter("THETA(1)", 0.00469307, lower=0.0, upper=1000000, fix=True)
+
+    See also
+    --------
+    fix_parameters_to : Fixing and setting parameter initial estimates in the same function
+    unfix_paramaters : Unfixing parameters
+    unfix_paramaters_to : Unfixing parameters and setting a new initial estimate in the same
+        function
+
     """
     if isinstance(parameter_names, str):
         d = {parameter_names: True}
@@ -259,7 +289,28 @@ def unfix_parameters(model, parameter_names):
 
     Returns
     -------
-    model : Model
+    Model : Reference to the same model object
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import fix_parameters, unfix_parameters, load_example_model
+    >>> model = load_example_model("pheno")
+    >>> fix_parameters(model, ['THETA(1)', 'THETA(2)', 'THETA(3)'])     # doctest: +ELLIPSIS
+    <...>
+    >>> model.parameters.fix    # doctest: +ELLIPSIS
+    {'THETA(1)': True, 'THETA(2)': True, 'THETA(3)': True, ...}
+    >>> unfix_parameters(model, 'THETA(1)')       # doctest: +ELLIPSIS
+    <...>
+    >>> model.parameters.fix        # doctest: +ELLIPSIS
+    {'THETA(1)': False, 'THETA(2)': True, 'THETA(3)': True, ...}
+
+    See also
+    --------
+    unfix_paramaters_to : Unfixing parameters and setting a new initial estimate in the same
+        function
+    fix_parameters : Fix parameters
+    fix_parameters_to : Fixing and setting parameter initial estimates in the same function
+
     """
     if isinstance(parameter_names, str):
         d = {parameter_names: False}
