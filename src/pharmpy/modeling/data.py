@@ -64,7 +64,8 @@ def get_number_of_observations(model):
     See also
     --------
     get_number_of_individuals : Get the number of individuals in a dataset
-    get_number_of_observations_per_individual : Get the number of observations per individual in a dataset
+    get_number_of_observations_per_individual : Get the number of observations per individual in a
+        dataset
 
     """
     return model.dataset.pharmpy.nobs
@@ -152,13 +153,14 @@ def get_number_of_observations_per_individual(model):
 
     Notes
     -----
-    For NONMEM models this is the individuals and number of observations of the active dataset, i.e. after filtering
-    of IGNORE and ACCEPT and removal of individuals with no observations.
+    For NONMEM models this is the individuals and number of observations of the active dataset, i.e.
+    after filtering of IGNORE and ACCEPT and removal of individuals with no observations.
 
     See also
     --------
     get_number_of_individuals : Get the number of individuals in a dataset
-    get_number_of_observations_per_individual : Get the number of observations per individual in a dataset
+    get_number_of_observations_per_individual : Get the number of observations per individual in a
+        dataset
 
     """
     return model.dataset.pharmpy.nobsi
