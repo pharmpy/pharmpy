@@ -174,7 +174,7 @@ def copy_model(model):
 
 
 def set_name(model, new_name):
-    """Sets name of model object
+    """Set name of model object
 
     Parameters
     ----------
@@ -182,6 +182,22 @@ def set_name(model, new_name):
         Pharmpy model
     new_name : str
         New name of model
+
+    Returns
+    -------
+    Model : Reference to the same model object
+
+    Example
+    -------
+    >>> from pharmpy.modeling import set_name, load_example_model
+    >>> model = load_example_model("pheno")
+    >>> model.name
+    pheno
+    >>> set_name(model, "run2")  # doctest:+ELLIPSIS
+    <...>
+    >>> model.name
+    run2
+
     """
     model.name = new_name
     return model
@@ -409,6 +425,54 @@ def remove_estimation_step(model, idx):
 
 
 def load_example_model(name):
+    """Load an example model
+
+    Load an example model from models built into Pharmpy
+
+    Parameters
+    ----------
+    name : str
+        Name of the model. Currently available model is "pheno"
+
+    Returns
+    -------
+    Model : Loaded model object
+
+    Example
+    -------
+    >>> from pharmpy.modeling import load_example_model
+    >>> model = load_example_model("pheno")
+    >>> print(model.statements)
+             ⎧TIME  for AMT > 0
+             ⎨
+    BTIME := ⎩ 0     otherwise
+    TAD := -BTIME + TIME
+    TVCL := THETA(1)⋅WGT
+    TVV := THETA(2)⋅WGT
+           ⎧TVV⋅(THETA(3) + 1)  for APGR < 5
+           ⎨
+    TVV := ⎩       TVV           otherwise
+                ETA(1)
+    CL := TVCL⋅ℯ
+              ETA(2)
+    V := TVV⋅ℯ
+    S₁ := V
+    Bolus(AMT)
+    ┌───────┐       ┌──────┐
+    │CENTRAL│──CL/V→│OUTPUT│
+    └───────┘       └──────┘
+         A_CENTRAL
+         ─────────
+    F :=     S₁
+    W := F
+    Y := EPS(1)⋅W + F
+    IPRED := F
+    IRES := DV - IPRED
+             IRES
+             ────
+    IWRES :=  W
+
+    """
     available = ('pheno',)
     if name not in available:
         raise ValueError(f'Unknown example model {name}. Available examples: {available}')

@@ -68,7 +68,7 @@ class Assignment:
 
     def __str__(self):
         expression = sympy.pretty(self.expression)
-        lines = expression.split('\n')
+        lines = [line.rstrip() for line in expression.split('\n')]
         definition = f'{sympy.pretty(self.symbol)} := '
         s = ''
         for line in lines:
@@ -978,7 +978,7 @@ class ModelStatements(MutableSequence):
         s = ''
         for statement in self:
             s += str(statement)
-        return s
+        return s.rstrip()
 
     def _repr_html_(self):
         html = r'\begin{align*}'
