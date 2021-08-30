@@ -76,7 +76,7 @@ from pharmpy.modeling.results import (
 from pharmpy.modeling.run import create_results, fit, read_results
 from pharmpy.modeling.update_inits import update_inits
 
-__all__ = [
+__all__ = sorted([
     'add_individual_parameter',
     'set_zero_order_absorption',
     'set_first_order_absorption',
@@ -146,4 +146,4 @@ __all__ = [
     'calculate_individual_shrinkage',
     'calculate_eta_shrinkage',
     'load_example_model',
-]
+])
