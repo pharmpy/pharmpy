@@ -973,6 +973,7 @@ $ESTIMATION METHOD=1 INTER
     model = convert_model(base)
     correct = """$PROBLEM
 $INPUT ID DV TIME
+$DATA file.csv IGNORE=@
 $PRED
 Y = THETA(1) + ETA(1) + EPS(1)
 $THETA  1.0

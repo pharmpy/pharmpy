@@ -50,6 +50,7 @@ def convert_model(model):
     model = model.to_generic_model()
     code = '$PROBLEM\n'
     code += '$INPUT ' + ' '.join(model.dataset.columns) + '\n'
+    code += '$DATA file.csv IGNORE=@\n'
     if model.statements.ode_system is None:
         code += '$PRED\n'
     else:
@@ -62,6 +63,7 @@ def convert_model(model):
         nm_model.name = model.name
     if hasattr(model, 'dependent_variable'):
         nm_model.dependent_variable = model.dependent_variable
+    nm_model._data_frame = model.dataset
     nm_model.update_source()
     return nm_model
 
