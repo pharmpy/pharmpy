@@ -66,7 +66,7 @@ class AttrToken(Token):
         kwargs = {
             'type_': token.type,
             'value': token.value,
-            'pos_in_stream': token.pos_in_stream,
+            'start_pos': token.start_pos,
             'line': token.line,
             'column': token.column,
             **kwargs,
@@ -109,7 +109,7 @@ class AttrToken(Token):
         return self.transform(token=self, value=value)
 
     def __deepcopy__(self, memo):
-        return AttrToken(self.type, self.value, self.pos_in_stream, self.line, self.column)
+        return AttrToken(self.type, self.value, self.start_pos, self.line, self.column)
 
     def __repr__(self):
         return '%s(%s, %s)' % (self.__class__.__name__, repr(self.rule), repr(self.value))
