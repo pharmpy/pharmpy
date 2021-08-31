@@ -27,6 +27,26 @@ def remove_error_model(model):
     ----------
     model : Model
         Remove error model for this model
+
+    Return
+    ------
+    Model : Reference to the same model
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import remove_error_model, load_example_model
+    >>> model = load_example_model("pheno")
+    >>> model.statements.find_assignment("Y")
+    Y := EPS(1)*W + F
+    >>> remove_error_model(model)    # doctest: +ELLIPSIS
+    <...>
+    >>> model.statements.find_assignment("Y")
+    Y := F
+
+    Warnings
+    --------
+    Removing the error model will make the model unrunable for some tools.
+
     """
     stats, y, f = _preparations(model)
     stats.reassign(y, f)
@@ -54,6 +74,36 @@ def set_additive_error_model(model, data_trans=None):
     data_trans : str or expression
         A data transformation expression or None (default) to use the transformation
         specified by the model.
+
+    Return
+    ------
+    Model : Reference to the same model
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import set_additive_error_model, load_example_model
+    >>> model = load_example_model("pheno")
+    >>> model.statements.find_assignment("Y")
+    Y := EPS(1)*W + F
+    >>> set_additive_error_model(model)    # doctest: +ELLIPSIS
+    <...>
+    >>> model.statements.find_assignment("Y")
+    Y := F + epsilon_a
+
+    >>> from pharmpy.modeling import set_additive_error_model, load_example_model
+    >>> model = load_example_model("pheno")
+    >>> model.statements.find_assignment("Y")
+    Y := EPS(1)*W + F
+    >>> set_additive_error_model(model, data_trans="log(Y)")    # doctest: +ELLIPSIS
+    <...>
+    >>> model.statements.find_assignment("Y")
+    Y := log(F) + epsilon_a/F
+
+    See Also
+    --------
+    set_proportional_error_model : Proportional error model
+    set_combined_error_model : Combined error model
+
     """
     if has_additive_error_model(model):
         return model
@@ -61,6 +111,7 @@ def set_additive_error_model(model, data_trans=None):
     ruv = model.create_symbol('epsilon_a')
 
     data_trans = pharmpy.model.canonicalize_data_transformation(model, data_trans)
+
     if data_trans == sympy.log(model.dependent_variable):
         expr = sympy.log(f) + ruv / f
     elif data_trans == model.dependent_variable:
@@ -109,6 +160,12 @@ def set_proportional_error_model(model, data_trans=None):
     data_trans : str or expression
         A data transformation expression or None (default) to use the transformation
         specified by the model.
+
+    See Also
+    --------
+    set_additive_error_model : Additive error model
+    set_combined_error_model : Combined error model
+
     """
     if has_proportional_error_model(model):
         return model

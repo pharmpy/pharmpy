@@ -331,12 +331,31 @@ def fix_parameters_to(model, parameter_names, values):
         Pharmpy model
     parameter_names : list or str
         one parameter name or a list of parameter names
-    values : list or int
+    values : list or float
         one value or a list of values (must be equal to number of parameter_names)
 
     Returns
     -------
-    model : Model
+    Model : Reference to the same model object
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import fix_parameters_to, load_example_model
+    >>> model = load_example_model("pheno")
+    >>> model.parameters['THETA(1)']
+    Parameter("THETA(1)", 0.00469307, lower=0.0, upper=1000000, fix=False)
+    >>> fix_parameters_to(model, 'THETA(1)', 0.5)       # doctest: +ELLIPSIS
+    <...>
+    >>> model.parameters['THETA(1)']
+    Parameter("THETA(1)", 0.5, lower=0.0, upper=1000000, fix=True)
+
+    See also
+    --------
+    fix_parameters : Fix parameters
+    unfix_paramaters : Unfixing parameters
+    unfix_paramaters_to : Unfixing parameters and setting a new initial estimate in the same
+        function
+
     """
     if not parameter_names:
         parameter_names = [p.name for p in model.parameters]
@@ -359,12 +378,28 @@ def unfix_parameters_to(model, parameter_names, values):
         Pharmpy model
     parameter_names : list or str
         one parameter name or a list of parameter names
-    values : list or int
+    values : list or float
         one value or a list of values (must be equal to number of parameter_names)
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import fix_parameters, unfix_parameters_to, load_example_model
+    >>> model = load_example_model("pheno")
+    >>> fix_parameters(model, ['THETA(1)', 'THETA(2)', 'THETA(3)'])     # doctest: +ELLIPSIS
+    <...>
+    >>> model.parameters.fix    # doctest: +ELLIPSIS
+    {'THETA(1)': True, 'THETA(2)': True, 'THETA(3)': True, ...}
+    >>> unfix_parameters_to(model, 'THETA(1)', 0.5)       # doctest: +ELLIPSIS
+    <...>
+    >>> model.parameters.fix        # doctest: +ELLIPSIS
+    {'THETA(1)': False, 'THETA(2)': True, 'THETA(3)': True, ...}
+    >>> model.parameters['THETA(1)']
+    Parameter("THETA(1)", 0.5, lower=0.0, upper=1000000, fix=False)
 
     Returns
     -------
-    model : Model
+    Model : Reference to the same model
+
     """
     if not parameter_names:
         parameter_names = [p.name for p in model.parameters]
