@@ -1,4 +1,4 @@
-ipykernel==6.3.0
+ipykernel==5.5.5
 pydata-sphinx-theme==0.5.2
 sphinxcontrib-autoprogram==0.1.7
 sphinx-automodapi==0.13
