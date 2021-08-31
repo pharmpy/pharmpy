@@ -49,6 +49,7 @@ def convert_model(model):
     """Convert any model into a NONMEM model"""
     model = model.to_generic_model()
     code = '$PROBLEM\n'
+    code += '$INPUT ' + ' '.join(model.dataset.columns) + '\n'
     if model.statements.ode_system is None:
         code += '$PRED\n'
     else:

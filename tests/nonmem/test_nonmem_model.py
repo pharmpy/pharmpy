@@ -972,6 +972,7 @@ $ESTIMATION METHOD=1 INTER
     base.dataset_path = testdata / 'nonmem' / 'file.csv'
     model = convert_model(base)
     correct = """$PROBLEM
+$INPUT ID DV TIME
 $PRED
 Y = THETA(1) + ETA(1) + EPS(1)
 $THETA  1.0
