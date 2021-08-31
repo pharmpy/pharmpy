@@ -56,6 +56,7 @@ def convert_model(model):
     nm_model = pharmpy.model_factory.Model(StringIO(code))
     nm_model.random_variables = model.random_variables
     nm_model.parameters = model.parameters
+    nm_model.statements = model.statements
     nm_model.update_source()
     return nm_model
 
@@ -422,6 +423,7 @@ class Model(pharmpy.model.Model):
 
     @statements.setter
     def statements(self, statements_new):
+        self.statements  # Read in old statements
         self._statements = statements_new
 
     def get_pred_pk_record(self):

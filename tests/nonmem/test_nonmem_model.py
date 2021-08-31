@@ -971,4 +971,11 @@ $ESTIMATION METHOD=1 INTER
     base = Model(StringIO(code))
     base.dataset_path = testdata / 'nonmem' / 'file.csv'
     model = convert_model(base)
-    assert model
+    correct = """$PROBLEM
+$PRED
+Y = THETA(1) + ETA(1) + EPS(1)
+$THETA  1.0
+$OMEGA  2.0
+$SIGMA  3.0
+"""
+    assert str(model) == correct
