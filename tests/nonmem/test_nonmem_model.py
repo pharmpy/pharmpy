@@ -971,13 +971,17 @@ $ESTIMATION METHOD=1 INTER
     base = Model(StringIO(code))
     base.dataset_path = testdata / 'nonmem' / 'file.csv'
     model = convert_model(base)
-    correct = """$PROBLEM
+    model.dataset_path = "file.csv"  # Otherwise we get full path
+    correct = """$PROBLEM base model
 $INPUT ID DV TIME
 $DATA file.csv IGNORE=@
+
 $PRED
 Y = THETA(1) + ETA(1) + EPS(1)
-$THETA  1.0
-$OMEGA  2.0
-$SIGMA  3.0
+
+$THETA 1  ; TH1
+$OMEGA 2 ; OM1
+$SIGMA 3 ; SI1
+$ESTIMATION METHOD=1 INTER
 """
     assert str(model) == correct
