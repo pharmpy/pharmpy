@@ -167,23 +167,19 @@ def set_proportional_error_model(model, data_trans=None):
 
     Examples
     --------
-    >>> from pharmpy.modeling import set_proportional_error_model, load_example_model
-    >>> model = load_example_model("pheno")
-    >>> model.statements.find_assignment("Y")
-    Y := EPS(1)*W + F
-    >>> set_additive_error_model(model)    # doctest: +ELLIPSIS
+    >>> from pharmpy.modeling import *
+    >>> model = remove_error_model(load_example_model("pheno"))
+    >>> set_proportional_error_model(model)    # doctest: +ELLIPSIS
     <...>
     >>> model.statements.find_assignment("Y")
-    Y := F + epsilon_a
+    Y := F*epsilon_p + F
 
-    >>> from pharmpy.modeling import set_additive_error_model, load_example_model
-    >>> model = load_example_model("pheno")
-    >>> model.statements.find_assignment("Y")
-    Y := EPS(1)*W + F
-    >>> set_additive_error_model(model, data_trans="log(Y)")    # doctest: +ELLIPSIS
+    >>> from pharmpy.modeling import *
+    >>> model = remove_error_model(load_example_model("pheno"))
+    >>> set_proportional_error_model(model, data_trans="log(Y)")    # doctest: +ELLIPSIS
     <...>
     >>> model.statements.find_assignment("Y")
-    Y := log(F) + epsilon_a/F
+    Y := epsilon_p + log(F)
 
     See Also
     --------
