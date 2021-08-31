@@ -1,10 +1,10 @@
-from dask.distributed import Client
-from dask.threaded import get
-
 import pharmpy.execute.dispatchers
 
 
 def run(workflow):
+    from dask.distributed import Client
+    from dask.threaded import get
+
     if pharmpy.execute.dispatchers.conf.dask_dispatcher:
         dask_dispatcher = pharmpy.execute.dispatchers.conf.dask_dispatcher
     else:

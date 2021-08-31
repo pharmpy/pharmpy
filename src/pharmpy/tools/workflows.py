@@ -2,7 +2,6 @@ import copy
 import uuid
 
 import networkx as nx
-from dask import visualize
 
 
 class Workflow:
@@ -118,6 +117,8 @@ class Workflow:
         return wf_copy
 
     def plot_dask(self, filename):
+        from dask import visualize
+
         visualize(self.as_dict(), filename=filename, collapse_outputs=True)
 
     # def plot_graph(self, filename):
