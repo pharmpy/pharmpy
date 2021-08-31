@@ -57,6 +57,10 @@ def convert_model(model):
     nm_model.random_variables = model.random_variables
     nm_model.parameters = model.parameters
     nm_model.statements = model.statements
+    if hasattr(model, 'name'):
+        nm_model.name = model.name
+    if hasattr(model, 'dependent_variable'):
+        nm_model.dependent_variable = model.dependent_variable
     nm_model.update_source()
     return nm_model
 
