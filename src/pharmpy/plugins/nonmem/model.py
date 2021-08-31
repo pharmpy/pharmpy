@@ -47,6 +47,8 @@ def detect_model(src, *args, **kwargs):
 
 def convert_model(model):
     """Convert any model into a NONMEM model"""
+    if isinstance(model, Model):
+        return model
     model = model.to_generic_model()
     code = '$PROBLEM\n'
     code += '$INPUT ' + ' '.join(model.dataset.columns) + '\n'
