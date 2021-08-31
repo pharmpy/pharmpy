@@ -3,7 +3,7 @@ import subprocess
 import uuid
 from pathlib import Path
 
-from pharmpy.plugins.nonmem import conf
+from pharmpy.plugins.nonmem import conf, convert_model
 from pharmpy.tools.workflows import Task, Workflow
 from pharmpy.utils import TemporaryDirectoryChanger
 
@@ -26,6 +26,7 @@ def create_workflow(models=None):
 
 
 def execute_model(model):
+    model = convert_model(model)
     path = Path.cwd() / f'NONMEM_run_{model.name}-{uuid.uuid1()}'
     path.mkdir(parents=True, exist_ok=True)
     model = model.copy()
