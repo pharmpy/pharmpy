@@ -54,10 +54,11 @@ def remove_error_model(model):
     return model
 
 
-def set_additive_error_model(model, data_trans=None):
+def set_additive_error_model(model, data_trans=None, series_terms=2):
     r"""Set an additive error model. Initial estimate for new sigma is :math:`(min(DV)/2)²`.
 
-    The error function being applied depends on the data transformation.
+    The error function being applied depends on the data transformation. The table displays
+    some examples.
 
     +------------------------+----------------------------------------+
     | Data transformation    | Additive error                         |
@@ -73,7 +74,10 @@ def set_additive_error_model(model, data_trans=None):
         Set error model for this model
     data_trans : str or expression
         A data transformation expression or None (default) to use the transformation
-        specified by the model.
+        specified by the model. Series expansion will be used for approximation.
+    series_terms : int
+        Number of terms to use for the series expansion approximation for data
+        transformation.
 
     Return
     ------
@@ -111,13 +115,9 @@ def set_additive_error_model(model, data_trans=None):
     ruv = model.create_symbol('epsilon_a')
 
     data_trans = pharmpy.model.canonicalize_data_transformation(model, data_trans)
-
-    if data_trans == sympy.log(model.dependent_variable):
-        expr = sympy.log(f) + ruv / f
-    elif data_trans == model.dependent_variable:
-        expr = f + ruv
-    else:
-        raise ValueError(f"Not supported data transformation {data_trans}")
+    expr = f + ruv
+    if data_trans != model.dependent_variable:
+        expr = data_trans.subs(model.dependent_variable, expr).series(ruv, n=series_terms).removeO()
 
     stats.reassign(y, expr)
     model.remove_unused_parameters_and_rvs()
@@ -160,6 +160,30 @@ def set_proportional_error_model(model, data_trans=None):
     data_trans : str or expression
         A data transformation expression or None (default) to use the transformation
         specified by the model.
+
+    Returns
+    -------
+    Model : Reference to the same model
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import set_proportional_error_model, load_example_model
+    >>> model = load_example_model("pheno")
+    >>> model.statements.find_assignment("Y")
+    Y := EPS(1)*W + F
+    >>> set_additive_error_model(model)    # doctest: +ELLIPSIS
+    <...>
+    >>> model.statements.find_assignment("Y")
+    Y := F + epsilon_a
+
+    >>> from pharmpy.modeling import set_additive_error_model, load_example_model
+    >>> model = load_example_model("pheno")
+    >>> model.statements.find_assignment("Y")
+    Y := EPS(1)*W + F
+    >>> set_additive_error_model(model, data_trans="log(Y)")    # doctest: +ELLIPSIS
+    <...>
+    >>> model.statements.find_assignment("Y")
+    Y := log(F) + epsilon_a/F
 
     See Also
     --------
