@@ -31,6 +31,10 @@ def execute_model(model):
     path.mkdir(parents=True, exist_ok=True)
     model = model.copy()
     model.update_source(nofiles=True)
+    try:
+        model.dataset.name
+    except AttributeError:
+        model.dataset.name = "dataset"
     datapath = model.dataset.pharmpy.write_csv(path=path)
     model.dataset_path = datapath.name  # Make path in $DATA local
     model.write(path=path, force=True)
@@ -44,7 +48,9 @@ def execute_model(model):
         subprocess.call(
             args, stdin=subprocess.DEVNULL, stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL
         )
-        model.database.store_local_file(model, basepath.with_suffix('.mod'))
+        model.database.store_local_file(
+            model, basepath.with_suffix(model.source.filename_extension)
+        )
         model.database.store_local_file(model, basepath.with_suffix('.lst'))
         model.database.store_local_file(model, basepath.with_suffix('.ext'))
         model.database.store_local_file(model, basepath.with_suffix('.phi'))
