@@ -13,7 +13,7 @@ class Bootstrap(pharmpy.tools.Tool):
 
     def run(self):
         wf_bootstrap = self.create_workflow()
-        task_result = Task('results', post_process_results, final_task=True)
+        task_result = Task('results', post_process_results, self.model, final_task=True)
         wf_bootstrap.add_tasks(task_result, connect=True)
         res = self.dispatcher.run(wf_bootstrap, self.database)
         res.to_json(path=self.database.path / 'results.json')
@@ -41,10 +41,10 @@ def resample_model(model, name):
     return model
 
 
-def post_process_results(models):
+def post_process_results(models, original_model):
     # Flattening nested list
     models = [model for model_sublist in models for model in model_sublist]
     res = calculate_results(
-        models, original_model=None, included_individuals=None, dofv_results=None
+        models, original_model=original_model, included_individuals=None, dofv_results=None
     )
     return res
