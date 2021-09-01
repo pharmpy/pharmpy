@@ -70,6 +70,10 @@ class Model:
         model.dataset = self.dataset.copy()
         model.name = self.name
         model.dependent_variable = self.dependent_variable
+        try:
+            model.database = self.database
+        except AttributeError:
+            pass
         return model
 
     def _repr_html_(self):

@@ -67,6 +67,10 @@ def convert_model(model):
         nm_model.dependent_variable = model.dependent_variable
     nm_model._data_frame = model.dataset
     nm_model.update_source()
+    try:
+        nm_model.database = model.database
+    except AttributeError:
+        pass
     return nm_model
 
 
