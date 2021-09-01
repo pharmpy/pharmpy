@@ -560,7 +560,8 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
                 result_obj._individual_estimates = None
                 result_obj._individual_estimates_covariance = None
 
-            rv_names = [rv.name for rv in self.model.random_variables if rv.name.startswith('ETA')]
+            trans = self.model.rv_translation(reverse=True)
+            rv_names = [name for name in self.model.random_variables.etas.names if name in trans]
             try:
                 phi_tables = NONMEMTableFile(self._path.with_suffix('.phi'))
             except FileNotFoundError:
@@ -569,8 +570,15 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
                 table = phi_tables.table_no(result_obj.table_number)
                 if table is not None:
                     result_obj._individual_ofv = table.iofv
-                    result_obj._individual_estimates = table.etas[rv_names]
+                    result_obj._individual_estimates = table.etas.rename(
+                        columns=self.model.rv_translation()
+                    )[rv_names]
                     covs = table.etcs
+                    covs = covs.transform(
+                        lambda cov: cov.rename(
+                            columns=self.model.rv_translation(), index=self.model.rv_translation()
+                        )
+                    )
                     covs = covs.transform(lambda cov: cov[rv_names].loc[rv_names])
                     result_obj._individual_estimates_covariance = covs
             self._read_phi = True
