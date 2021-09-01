@@ -192,9 +192,15 @@ class NONMEMModelfitResults(ModelfitResults):
 
     @property
     def residuals(self):
+        try:
+            return self._residuals
+        except AttributeError:
+            pass
+
         df = self._chain._read_from_tables(['ID', 'TIME', 'RES', 'WRES', 'CWRES'], self)
         df.set_index(['ID', 'TIME'], inplace=True)
         df = df.loc[(df != 0).any(axis=1)]  # Simple way of removing non-observations
+        self._residuals = df
         return df
 
     @property
