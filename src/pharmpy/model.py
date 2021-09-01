@@ -58,6 +58,9 @@ class Model:
        dataset
     """
 
+    def __init__(self):
+        self.modelfit_results = None
+
     def to_generic_model(self):
         """Convert a model into the base model class"""
         model = Model()
@@ -76,7 +79,11 @@ class Model:
 
     @property
     def modelfit_results(self):
-        return None
+        return self._modelfit_results
+
+    @modelfit_results.setter
+    def modelfit_results(self, value):
+        self._modelfit_results = value
 
     @property
     def data_transformation(self):
