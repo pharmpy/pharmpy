@@ -4,7 +4,7 @@ from .psn_helpers import tool_name
 
 
 class Tool:
-    def __init__(self, dispatcher=None, database=None, workflow_creator=None, path=None):
+    def __init__(self, dispatcher=None, database=None, path=None):
         toolname = type(self).__name__.lower()
         if dispatcher is None:
             self.dispatcher = execute.default_dispatcher
@@ -14,12 +14,6 @@ class Tool:
             self.database = execute.default_tool_database(toolname=toolname, path=path)
         else:
             self.database = database
-        if workflow_creator is None:
-            import pharmpy.plugins.nonmem.run
-
-            self.workflow_creator = pharmpy.plugins.nonmem.run.create_workflow
-        else:
-            self.workflow_creator = workflow_creator
 
 
 def create_results(path, **kwargs):

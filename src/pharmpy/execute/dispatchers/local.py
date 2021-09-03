@@ -8,5 +8,5 @@ class LocalDispatcher(ExecutionDispatcher):
     def run(self, workflow, database):
         with TemporaryDirectory() as tempdirname:
             with TemporaryDirectoryChanger(tempdirname):
-                results = run(workflow.as_dict())
+                results = run(workflow.as_dask_dict())
         return results

@@ -4,25 +4,7 @@ import uuid
 from pathlib import Path
 
 from pharmpy.plugins.nonmem import conf, convert_model
-from pharmpy.tools.workflows import Task, Workflow
 from pharmpy.utils import TemporaryDirectoryChanger
-
-
-def create_workflow(models=None):
-    wf_run = Workflow()
-
-    if models:
-        for model in models:
-            task_execute = Task('run', execute_model, model)
-            wf_run.add_tasks(task_execute)
-    else:
-        task_execute = Task('run', execute_model)
-        wf_run.add_tasks(task_execute)
-
-    result_task = Task('fit_results', results)
-    wf_run.add_tasks(result_task, connect=True, as_single_element=False)
-
-    return wf_run
 
 
 def execute_model(model):
@@ -57,18 +39,16 @@ def execute_model(model):
         cov_path = basepath.with_suffix('.cov')
         if cov_path.is_file():
             model.database.store_local_file(model, cov_path)
+
+    # Read in results
+    model._modelfit_results = None
+    # FIXME: On the fly reading doesn't work since files
+    #  doesn't get copied up. Reading in now as a workaround.
+    if any(step.cov for step in model.estimation_steps):
+        model.modelfit_results.covariance_matrix
+    model.modelfit_results.individual_estimates
+
     return model
-
-
-def results(models):
-    for model in models:
-        model._modelfit_results = None
-        # FIXME: On the fly reading doesn't work since files
-        #  doesn't get copied up. Reading in now as a workaround.
-        if any(step.cov for step in model.estimation_steps):
-            model.modelfit_results.covariance_matrix
-        model.modelfit_results.individual_estimates
-    return models
 
 
 def nmfe_path():

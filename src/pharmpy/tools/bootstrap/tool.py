@@ -1,6 +1,7 @@
 import pharmpy.tools
 from pharmpy.data.iterators import Resample
 from pharmpy.tools.bootstrap.results import calculate_results
+from pharmpy.tools.modelfit import create_multiple_fit_workflow
 from pharmpy.tools.workflows import Task, Workflow
 
 
@@ -13,26 +14,25 @@ class Bootstrap(pharmpy.tools.Tool):
 
     def run(self):
         wf_bootstrap = self.create_workflow()
-        task_result = Task('results', post_process_results, self.model, final_task=True)
-        wf_bootstrap.add_tasks(task_result, connect=True)
         res = self.dispatcher.run(wf_bootstrap, self.database)
         res.to_json(path=self.database.path / 'results.json')
         res.to_csv(path=self.database.path / 'results.csv')
         return res
 
     def create_workflow(self):
-        wf_bootstrap = Workflow()
+        wf = Workflow()
 
         for i in range(self.resamples):
-            wf_resample = Workflow()
             task_resample = Task('resample', resample_model, self.model, f'bs_{i + 1}')
-            wf_resample.add_tasks(task_resample, connect=False)
-            wf_fit = self.workflow_creator()
-            wf_resample.add_tasks(wf_fit, connect=True)
+            wf.add_task(task_resample)
 
-            wf_bootstrap.add_tasks(wf_resample, connect=False)
+        wf_fit = create_multiple_fit_workflow(n=self.resamples)
+        wf.insert_workflow(wf_fit)
 
-        return wf_bootstrap
+        task_result = Task('results', post_process_results, self.model)
+        wf.add_task(task_result, predecessors=wf.output_tasks)
+
+        return wf
 
 
 def resample_model(model, name):
@@ -41,9 +41,7 @@ def resample_model(model, name):
     return model
 
 
-def post_process_results(models, original_model):
-    # Flattening nested list
-    models = [model for model_sublist in models for model in model_sublist]
+def post_process_results(original_model, *models):
     res = calculate_results(
         models, original_model=original_model, included_individuals=None, dofv_results=None
     )

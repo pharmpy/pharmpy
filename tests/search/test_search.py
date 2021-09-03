@@ -33,7 +33,7 @@ def wf_run():
     def run(model):
         return model
 
-    return Workflow(Task('run', run))
+    return Workflow([Task('run', run)])
 
 
 def test_ofv():

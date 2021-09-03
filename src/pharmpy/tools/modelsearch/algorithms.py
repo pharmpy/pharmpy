@@ -76,14 +76,14 @@ def stepwise(base_model, mfl, run_func, rank_func):
 def exhaustive_stepwise(base_model, mfl, wf_run):
     features = ModelFeatures(mfl)
     # TODO: Base condition/warning for input model?
-    wf_search = Workflow(Task('start_model', return_model, base_model))
+    wf_search = Workflow([Task('start_model', return_model, base_model)])
     if not base_model.modelfit_results:
-        wf_search.add_tasks(wf_run.copy(new_ids=True), connect=True)
+        wf_search.insert_workflow(wf_run.copy())
 
     models = []
     while True:
         no_of_trans = 0
-        for task in wf_search.get_output():
+        for task in wf_search.output_tasks:
             previous_funcs = [task.function for task in wf_search.get_upstream_tasks(task)]
             possible_funcs = {
                 feat: func
