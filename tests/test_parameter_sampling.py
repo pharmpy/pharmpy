@@ -3,7 +3,7 @@ import pandas as pd
 import pytest
 
 from pharmpy import Model
-from pharmpy.parameter_sampling import sample_from_covariance_matrix, sample_individual_estimates
+from pharmpy.modeling import sample_from_covariance_matrix, sample_individual_estimates
 
 
 def test_sample_from_covariance_matrix(testdata):

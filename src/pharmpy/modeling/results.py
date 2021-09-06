@@ -5,7 +5,7 @@ import pandas as pd
 import sympy
 
 from pharmpy.data_structures import OrderedSet
-from pharmpy.parameter_sampling import sample_from_covariance_matrix
+from pharmpy.modeling import sample_from_covariance_matrix
 
 
 def calculate_eta_shrinkage(model, sd=False):

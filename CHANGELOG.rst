@@ -1,3 +1,8 @@
+next release
+------------
+
+* Move parameter_sampling-functions into modeling module
+
 0.30.0 (2021-09-06)
 -------------------
 

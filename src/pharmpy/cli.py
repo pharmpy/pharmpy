@@ -343,7 +343,7 @@ def model_print(args):
 
 def model_sample(args):
     model = args.model
-    from pharmpy.parameter_sampling import sample_from_covariance_matrix
+    from pharmpy.modeling import sample_from_covariance_matrix
 
     samples = sample_from_covariance_matrix(model, n=args.samples)
     for row, params in samples.iterrows():

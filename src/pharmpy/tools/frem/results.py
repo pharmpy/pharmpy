@@ -10,8 +10,11 @@ import pharmpy.symbols as symbols
 from pharmpy import Model
 from pharmpy.data import ColumnType
 from pharmpy.math import conditional_joint_normal, is_posdef
-from pharmpy.modeling import calculate_individual_shrinkage
-from pharmpy.parameter_sampling import sample_from_covariance_matrix, sample_individual_estimates
+from pharmpy.modeling import (
+    calculate_individual_shrinkage,
+    sample_from_covariance_matrix,
+    sample_individual_estimates,
+)
 from pharmpy.results import Results
 
 

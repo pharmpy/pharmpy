@@ -63,6 +63,12 @@ from pharmpy.modeling.odes import (
     set_zero_order_absorption,
     set_zero_order_elimination,
 )
+from pharmpy.modeling.parameter_sampling import (
+    sample_from_covariance_matrix,
+    sample_from_function,
+    sample_individual_estimates,
+    sample_uniformly,
+)
 from pharmpy.modeling.power_on_ruv import set_power_on_ruv
 from pharmpy.modeling.remove_iiv import remove_iiv
 from pharmpy.modeling.remove_iov import remove_iov
@@ -114,6 +120,10 @@ __all__ = [
     'remove_iov',
     'remove_lag_time',
     'remove_peripheral_compartment',
+    'sample_from_covariance_matrix',
+    'sample_from_function',
+    'sample_individual_estimates',
+    'sample_uniformly',
     'set_additive_error_model',
     'set_bolus_absorption',
     'set_combined_error_model',
