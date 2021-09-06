@@ -1,5 +1,5 @@
 0.30.0 (2021-09-06)
-------------
+-------------------
 
 * Add modeling.load_example_model
 * Move eta_shrinkage results method to modeling.calculate_eta_shrinkage
