@@ -1,8 +1,12 @@
-next version
+0.30.0 (2021-09-06)
 ------------
 
 * Add modeling.load_example_model
 * Move eta_shrinkage results method to modeling.calculate_eta_shrinkage
+* Add first version of resmod tool
+* Update documentation (including API reference)
+* Rename summarize_models to summarize_modelfit_results
+* Fix bug related in running NONMEM on Windows via Rstudio
 
 0.29.0 (2021-08-25)
 -------------------
