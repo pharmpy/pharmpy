@@ -10,7 +10,7 @@ from pharmpy.modeling import (
     calculate_individual_parameter_statistics,
     calculate_individual_shrinkage,
     calculate_pk_parameters_statistics,
-    summarize_models,
+    summarize_modelfit_results,
 )
 
 
@@ -100,7 +100,7 @@ k_e,median,13.319584,2.67527,2.633615
 def test_summarize_models(testdata, pheno_path):
     mox = Model(testdata / 'nonmem' / 'models' / 'mox1.mod')
     pheno = Model(pheno_path)
-    summary = summarize_models([mox, pheno])
+    summary = summarize_modelfit_results([mox, pheno])
 
     assert summary.loc['mox1', 'ofv'] == -624.5229577248352
     assert summary['OMEGA(1,1)_estimate'].mean() == 0.2236304

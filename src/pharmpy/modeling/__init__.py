@@ -71,7 +71,7 @@ from pharmpy.modeling.results import (
     calculate_individual_parameter_statistics,
     calculate_individual_shrinkage,
     calculate_pk_parameters_statistics,
-    summarize_models,
+    summarize_modelfit_results,
 )
 from pharmpy.modeling.run import create_results, fit, read_results
 from pharmpy.modeling.update_inits import update_inits
@@ -137,7 +137,7 @@ __all__ = [
     'set_zero_order_absorption',
     'set_zero_order_elimination',
     'split_joint_distribution',
-    'summarize_models',
+    'summarize_modelfit_results',
     'transform_etas_boxcox',
     'transform_etas_john_draper',
     'transform_etas_tdist',

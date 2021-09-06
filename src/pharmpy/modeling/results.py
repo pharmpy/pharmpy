@@ -268,7 +268,7 @@ def _split_equation(s):
 
 
 # TODO: consider moving part of function to results-object
-def summarize_models(models):
+def summarize_modelfit_results(models):
     """Summarize results of multiple model runs, includes runtime, ofv and parameter estimates
     (with errors).
 
