@@ -125,7 +125,7 @@ def calculate_individual_parameter_statistics(model, exprs, seed=None):
                 model,
                 n=100,
                 force_posdef_covmatrix=True,
-                seed=seed,
+                rng=seed,
             )
             samples = []
             with warnings.catch_warnings():

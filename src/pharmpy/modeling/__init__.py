@@ -64,8 +64,8 @@ from pharmpy.modeling.odes import (
     set_zero_order_elimination,
 )
 from pharmpy.modeling.parameter_sampling import (
+    create_rng,
     sample_from_covariance_matrix,
-    sample_from_function,
     sample_individual_estimates,
     sample_uniformly,
 )
@@ -98,6 +98,7 @@ __all__ = [
     'copy_model',
     'create_joint_distribution',
     'create_results',
+    'create_rng',
     'evaluate_expression',
     'explicit_odes',
     'fit',
@@ -121,7 +122,6 @@ __all__ = [
     'remove_lag_time',
     'remove_peripheral_compartment',
     'sample_from_covariance_matrix',
-    'sample_from_function',
     'sample_individual_estimates',
     'sample_uniformly',
     'set_additive_error_model',

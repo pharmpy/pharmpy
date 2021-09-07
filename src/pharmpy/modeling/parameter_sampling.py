@@ -4,20 +4,85 @@ from functools import partial
 import numpy as np
 import pandas as pd
 
-from pharmpy.math import is_posdef, nearest_posdef, sample_truncated_joint_normal
+from pharmpy.math import is_posdef, nearest_posdef
 
 
-def sample_from_function(model, samplingfn, parameters=None, force_posdef_samples=None, n=1):
+def create_rng(seed=None):
+    """Create a new random number generator
+
+    Pharmpy functions that use random sampling take a random number generator or seed as input.
+    This function can be used to create a default new random number generator.
+
+    Parameters
+    ----------
+    seed : int or rng
+        Seed for the random number generator or None (default) for a randomized seed. If seed
+        is generator it will be passed through.
+
+    Returns
+    -------
+    Generator : Initialized numpy random number generator object
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import create_rng
+    >>> rng = create_rng(23)
+    >>> rng.standard_normal()
+    0.5532605888887387
+
+    """
+    if isinstance(seed, np.random.Generator):
+        rng = seed
+    else:
+        rng = np.random.default_rng(seed)
+    return rng
+
+
+def _sample_truncated_joint_normal(sigma, mu, a, b, n, rng):
+    """Give an array of samples from the truncated joint normal distributon using sample rejection
+    - mu, sigma - parameters for the normal distribution
+    - a, b - vectors of lower and upper limits for each random variable
+    - n - number of samples
+    """
+    if not is_posdef(sigma):
+        raise ValueError("Covariance matrix not positive definite")
+    kept_samples = np.empty((0, len(mu)))
+    remaining = n
+    while remaining > 0:
+        samples = rng.multivariate_normal(mu, sigma, size=remaining, check_valid='ignore')
+        in_range = np.logical_and(samples > a, samples < b).all(axis=1)
+        kept_samples = np.concatenate((kept_samples, samples[in_range]))
+        remaining = n - len(kept_samples)
+    return kept_samples
+
+
+def _sample_from_function(
+    model,
+    samplingfn,
+    modelfit_results=None,
+    parameters=None,
+    force_posdef_samples=None,
+    n=1,
+    rng=None,
+):
     """Sample parameter vectors using a general function
 
     The sampling function will be given three arguments:
 
+    - estimated parameter values
     - lower - lower bounds of parameters
     - upper - upper bounds of parameters
     - n - number of samples
     """
+    rng = create_rng(rng)
+
+    if modelfit_results is None:
+        modelfit_results = model.modelfit_results
+
     if parameters is None:
-        parameters = model.parameters.names
+        parameters = list(modelfit_results.parameter_estimates.index)
+
+    pe = modelfit_results.parameter_estimates[parameters].to_numpy()
 
     parameter_summary = model.parameters.to_dataframe().loc[parameters]
     parameter_summary = parameter_summary[~parameter_summary['fix']]
@@ -35,7 +100,7 @@ def sample_from_function(model, samplingfn, parameters=None, force_posdef_sample
 
     i = 0
     while remaining > 0:
-        samples = samplingfn(lower, upper, n=remaining)
+        samples = samplingfn(pe, lower, upper, n=remaining, rng=rng)
         df = pd.DataFrame(samples, columns=parameters)
         if not force_posdef:
             selected = df[df.apply(model.random_variables.validate_parameters, axis=1)]
@@ -52,26 +117,62 @@ def sample_from_function(model, samplingfn, parameters=None, force_posdef_sample
 
 
 def sample_uniformly(
-    model, fraction=0.1, parameters=None, force_posdef_samples=None, n=1, seed=None
+    model, fraction=0.1, parameters=None, force_posdef_samples=None, n=1, rng=None
 ):
     """Sample parameter vectors using uniform sampling
 
-    Each parameter value will be randomly sampled from a uniform distriution
-    with lower bound estimate - estimate * fraction and upper bound
-    estimate + estimate * fraction
+    Each parameter value will be randomly sampled from a uniform distribution
+    with the bounds being estimate ± estimate * fraction.
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+    fraction : float
+        Fraction of estimate value to use for distribution bounds
+    parameters : pd.Series
+        Names of parameters to use. Default is to use all parameters in the model.
+    force_posdef_samples : int
+        Number of samples to reject before forcing variability parameters to give
+        positive definite covariance matrices.
+    n : int
+        Number of samples
+    rng : int or rng
+        Random number generator or seed
+
+    Returns
+    -------
+    pd.DataFrame : samples
+
+    Example
+    -------
+    >>> from pharmpy.modeling import create_rng, sample_uniformly, load_example_model
+    >>> model = load_example_model("pheno")
+    >>> rng = create_rng(23)
+    >>> sample_uniformly(model, n=3, rng=rng)
+       THETA(1)  THETA(2)  THETA(3)  OMEGA(1,1)  OMEGA(2,2)  SIGMA(1,1)
+    0  0.004878  0.908216  0.149441    0.029179    0.025472    0.012947
+    1  0.004828  1.014444  0.149958    0.028853    0.027653    0.013348
+    2  0.004347  1.053837  0.165804    0.028465    0.026798    0.013727
+
+    See also
+    --------
+    sample_from_covariance_matrix : Sample parameter vectors using the uncertainty covariance
+        matrix
+    sample_from_function : Sample parameter vectors using a general function
+
     """
 
-    if seed is None or isinstance(seed, int):
-        seed = np.random.default_rng(seed)
-
-    def fn(lower, upper, n):
+    def fn(pe, lower, upper, n, rng):
         samples = np.empty((n, len(lower)))
-        for i, (a, b) in enumerate(zip(lower, upper)):
-            samples[i, :] = seed.uniform(a, b, n)
+        for i, (x, a, b) in enumerate(zip(pe, lower, upper)):
+            lower = max(a, x - x * fraction)
+            upper = min(b, x + x * fraction)
+            samples[:, i] = rng.uniform(lower, upper, n)
         return samples
 
-    samples = sample_from_function(
-        model, fn, parameters=parameters, force_posdef_samples=force_posdef_samples, n=n
+    samples = _sample_from_function(
+        model, fn, parameters=parameters, force_posdef_samples=force_posdef_samples, n=n, rng=rng
     )
     return samples
 
@@ -83,7 +184,7 @@ def sample_from_covariance_matrix(
     force_posdef_samples=None,
     force_posdef_covmatrix=False,
     n=1,
-    seed=None,
+    rng=None,
 ):
     """Sample parameter vectors using the covariance matrix
 
@@ -107,12 +208,6 @@ def sample_from_covariance_matrix(
     if parameters is None:
         parameters = list(modelfit_results.parameter_estimates.index)
 
-    if seed is None or isinstance(seed, int):
-        seed = np.random.default_rng(seed)
-
-    pe = modelfit_results.parameter_estimates[parameters]
-    index = pe.index
-    mu = pe.to_numpy()
     sigma = modelfit_results.covariance_matrix[parameters].loc[parameters].to_numpy()
     if not is_posdef(sigma):
         if force_posdef_covmatrix:
@@ -128,27 +223,33 @@ def sample_from_covariance_matrix(
         else:
             raise ValueError("Uncertainty covariance matrix not positive-definite")
 
-    fn = partial(sample_truncated_joint_normal, mu, sigma, seed=seed)
-    samples = sample_from_function(
-        model, fn, parameters=index, force_posdef_samples=force_posdef_samples, n=n
+    fn = partial(_sample_truncated_joint_normal, sigma)
+    samples = _sample_from_function(
+        model, fn, parameters=parameters, force_posdef_samples=force_posdef_samples, n=n, rng=rng
     )
     return samples
 
 
-def sample_individual_estimates(model, parameters=None, samples_per_id=100, seed=None):
+def sample_individual_estimates(model, parameters=None, samples_per_id=100, rng=None):
     """Sample individual estimates given their covariance.
 
     Parameters
     ----------
-    parameters
-        A list of a subset of parameters to sample. Default is None, which means all.
+    model : Model
+        Pharmpy model
+    parameters : list
+        A list of a subset of individual parameters to sample. Default is None, which means all.
+    samples_per_id : int
+        Number of samples per individual
+    rng : rng or int
+        Random number generator or seed
 
     Returns
     -------
-    Pool of samples in a DataFrame
+    pd.DataFrame : Pool of samples in a DataFrame
+
     """
-    if seed is None or isinstance(seed, int):
-        seed = np.random.default_rng(seed)
+    rng = create_rng(rng)
     ests = model.modelfit_results.individual_estimates
     covs = model.modelfit_results.individual_estimates_covariance
     if parameters is None:
@@ -158,7 +259,7 @@ def sample_individual_estimates(model, parameters=None, samples_per_id=100, seed
     for (idx, mu), sigma in zip(ests.iterrows(), covs):
         sigma = sigma[parameters].loc[parameters]
         sigma = nearest_posdef(sigma)
-        id_samples = seed.multivariate_normal(mu.values, sigma.values, size=samples_per_id)
+        id_samples = rng.multivariate_normal(mu.values, sigma.values, size=samples_per_id)
         id_df = pd.DataFrame(id_samples, columns=ests.columns)
         id_df.index = [idx] * len(id_df)  # ID as index
         samples = pd.concat((samples, id_df))

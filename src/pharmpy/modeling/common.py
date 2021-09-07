@@ -162,13 +162,15 @@ def update_source(model):
     return model
 
 
-def copy_model(model):
+def copy_model(model, name=None):
     """Copies model to a new model object
 
     Parameters
     ----------
     model : Model
         Pharmpy model
+    name : str
+        Optional new name of model
 
     Results
     -------
@@ -178,10 +180,13 @@ def copy_model(model):
     -------
     >>> from pharmpy.modeling import copy_model, load_example_model
     >>> model = load_example_model("pheno")
-    >>> model_copy = copy_model(model)
+    >>> model_copy = copy_model(model, "pheno2")
 
     """
-    return model.copy()
+    new = model.copy()
+    if name is not None:
+        new.name = name
+    return new
 
 
 def set_name(model, new_name):

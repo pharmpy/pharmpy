@@ -105,16 +105,6 @@ def test_nearest_posdef():
             assert pharmpy.math.is_posdef(B)
 
 
-def test_sample_truncated_joint_normal():
-    samples = pharmpy.math.sample_truncated_joint_normal(
-        np.array([0, 0]), np.array([[2, 0.1], [0.1, 1]]), np.array([-1, -2]), np.array([1, 2]), 10
-    )
-    assert (samples[:, 0] > -1).all()
-    assert (samples[:, 0] < 1).all()
-    assert (samples[:, 1] > -2).all()
-    assert (samples[:, 1] < 2).all()
-
-
 def test_conditional_joint_normal():
     sigma = [
         [0.0419613930249351, 0.0194493895550238, -0.00815616219453746, 0.0943578658777171],

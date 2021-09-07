@@ -533,7 +533,7 @@ def calculate_results_using_cov_sampling(
         force_posdef_covmatrix=force_posdef_covmatrix,
         parameters=parameters,
         n=samples,
-        seed=seed,
+        rng=seed,
     )
     res = calculate_results_from_samples(
         frem_model, continuous, categorical, parvecs, rescale=rescale
@@ -863,7 +863,7 @@ def calculate_results_using_bipp(
         seed = np.random.default_rng(seed)
     rvs, dist = frem_model.random_variables.iiv.distributions()[-1]
     etas = [rv.name for rv in rvs]
-    pool = sample_individual_estimates(frem_model, parameters=etas, seed=seed)
+    pool = sample_individual_estimates(frem_model, parameters=etas, rng=seed)
     ninds = len(pool.index.unique())
     ishr = calculate_individual_shrinkage(frem_model)
     lower_indices = np.tril_indices(len(etas))

@@ -146,26 +146,6 @@ def nearest_posdef(A):
     return A3
 
 
-def sample_truncated_joint_normal(mu, sigma, a, b, n, seed=None):
-    """Give an array of samples from the truncated joint normal distributon using sample rejection
-    - mu, sigma - parameters for the normal distribution
-    - a, b - vectors of lower and upper limits for each random variable
-    - n - number of samples
-    """
-    if not is_posdef(sigma):
-        raise ValueError("Covariance matrix not positive definite")
-    if seed is None or isinstance(seed, int):
-        seed = np.random.default_rng(seed)
-    kept_samples = np.empty((0, len(mu)))
-    remaining = n
-    while remaining > 0:
-        samples = seed.multivariate_normal(mu, sigma, size=remaining, check_valid='ignore')
-        in_range = np.logical_and(samples > a, samples < b).all(axis=1)
-        kept_samples = np.concatenate((kept_samples, samples[in_range]))
-        remaining = n - len(kept_samples)
-    return kept_samples
-
-
 def conditional_joint_normal(mu, sigma, a):
     """Give parameters of the conditional joint normal distribution
 
