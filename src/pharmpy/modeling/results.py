@@ -12,6 +12,14 @@ def calculate_eta_shrinkage(model, sd=False):
     """Calculate eta shrinkage for each eta
 
     Variance = False to get sd scale
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+    sd : bool
+        Calculate shrinkage on the standard deviation scale (default is to calculate on the
+        variance scale)
     """
     res = model.modelfit_results
     pe = res.parameter_estimates

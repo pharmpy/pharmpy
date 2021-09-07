@@ -113,7 +113,7 @@ def convert_model(model, to_format):
     Returns
     -------
     Model
-        New model object with new underlying model format.
+        New model object with new underlying model format
 
     Example
     -------
@@ -172,9 +172,10 @@ def copy_model(model, name=None):
     name : str
         Optional new name of model
 
-    Results
+    Returns
     -------
-    Model : A copy of the input model
+    Model
+        A copy of the input model
 
     Example
     -------
@@ -201,7 +202,8 @@ def set_name(model, new_name):
 
     Returns
     -------
-    Model : Reference to the same model object
+    Model
+        Reference to the same model object
 
     Example
     -------
@@ -231,7 +233,8 @@ def set_initial_estimates(model, inits):
 
     Returns
     -------
-    model : Model
+    Model
+        Reference to the same model object
     """
     model.parameters.inits = inits
     return model
@@ -251,7 +254,8 @@ def fix_parameters(model, parameter_names):
 
     Returns
     -------
-    Model : Reference to the same model
+    Model
+        Reference to the same model object
 
     Example
     -------
@@ -294,7 +298,8 @@ def unfix_parameters(model, parameter_names):
 
     Returns
     -------
-    Model : Reference to the same model object
+    Model
+        Reference to the same model object
 
     Examples
     --------
@@ -341,7 +346,8 @@ def fix_parameters_to(model, parameter_names, values):
 
     Returns
     -------
-    Model : Reference to the same model object
+    Model
+        Reference to the same model object
 
     Examples
     --------
@@ -403,8 +409,8 @@ def unfix_parameters_to(model, parameter_names, values):
 
     Returns
     -------
-    Model : Reference to the same model
-
+    Model
+        Reference to the same model object
     """
     if not parameter_names:
         parameter_names = [p.name for p in model.parameters]
@@ -453,7 +459,8 @@ def set_estimation_step(model, method, interaction=True, options={}, est_idx=0):
 
     Returns
     -------
-    model : Model
+    Model
+        Reference to the same model object
     """
     model.estimation_steps[est_idx].method = method
     model.estimation_steps[est_idx].interaction = interaction
@@ -483,7 +490,8 @@ def add_estimation_step(model, method, interaction=True, options=None, idx=None)
 
     Returns
     -------
-    model : Model
+    Model
+        Reference to the same model object
     """
     if options is None:
         options = {}
@@ -509,7 +517,8 @@ def remove_estimation_step(model, idx):
 
     Returns
     -------
-    model : Model
+    Model
+        Reference to the same model object
     """
     del model.estimation_steps[idx]
     return model
@@ -527,7 +536,8 @@ def load_example_model(name):
 
     Returns
     -------
-    Model : Loaded model object
+    Model
+        Loaded model object
 
     Example
     -------

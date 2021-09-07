@@ -30,7 +30,8 @@ def remove_error_model(model):
 
     Return
     ------
-    Model : Reference to the same model
+    Model
+        Reference to the same model object
 
     Examples
     --------
@@ -81,7 +82,8 @@ def set_additive_error_model(model, data_trans=None, series_terms=2):
 
     Return
     ------
-    Model : Reference to the same model
+    Model
+        Reference to the same model object
 
     Examples
     --------
@@ -163,7 +165,8 @@ def set_proportional_error_model(model, data_trans=None):
 
     Returns
     -------
-    Model : Reference to the same model
+    Model
+        Reference to the same model object
 
     Examples
     --------
