@@ -5,7 +5,7 @@ import pandas as pd
 import sympy
 
 from pharmpy.data_structures import OrderedSet
-from pharmpy.modeling import create_rng, sample_from_covariance_matrix
+from pharmpy.modeling import create_rng, sample_parameters_from_covariance_matrix
 
 
 def calculate_eta_shrinkage(model, sd=False):
@@ -121,7 +121,7 @@ def calculate_individual_parameter_statistics(model, exprs, rng=None):
             mean = np.mean(samples)
             variance = np.var(samples)
 
-            parameters = sample_from_covariance_matrix(
+            parameters = sample_parameters_from_covariance_matrix(
                 model,
                 n=100,
                 force_posdef_covmatrix=True,

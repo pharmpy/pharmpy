@@ -6,9 +6,9 @@ from pharmpy import Model
 from pharmpy.modeling import (
     create_rng,
     load_example_model,
-    sample_from_covariance_matrix,
     sample_individual_estimates,
-    sample_uniformly,
+    sample_parameters_from_covariance_matrix,
+    sample_parameters_uniformly,
 )
 
 
@@ -17,17 +17,17 @@ def test_create_rng():
     assert rng.standard_normal() == 0.5532605888887387
 
 
-def test_sample_uniformly():
+def test_sample_parameters_uniformly():
     model = load_example_model("pheno")
     rng = create_rng(23)
-    df = sample_uniformly(model, n=3, rng=rng)
+    df = sample_parameters_uniformly(model, n=3, rng=rng)
     assert df['THETA(1)'][0] == 0.004877674495376137
 
 
-def test_sample_from_covariance_matrix(testdata):
+def test_sample_parameter_from_covariance_matrix(testdata):
     model = Model(testdata / 'nonmem' / 'pheno_real.mod')
     rng = np.random.default_rng(318)
-    samples = sample_from_covariance_matrix(model, n=3, rng=rng)
+    samples = sample_parameters_from_covariance_matrix(model, n=3, rng=rng)
     correct = pd.DataFrame(
         {
             'THETA(1)': [0.004489330033579095, 0.004866193232279955, 0.004619661658761273],
@@ -42,7 +42,7 @@ def test_sample_from_covariance_matrix(testdata):
     # Make cov matrix non-posdef
     model.modelfit_results.covariance_matrix['THETA(1)']['THETA(1)'] = -1
     with pytest.warns(UserWarning):
-        sample_from_covariance_matrix(model, n=1, force_posdef_covmatrix=True)
+        sample_parameters_from_covariance_matrix(model, n=1, force_posdef_covmatrix=True)
 
 
 def test_sample_individual_estimates(testdata):

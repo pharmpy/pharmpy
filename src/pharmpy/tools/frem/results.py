@@ -13,8 +13,8 @@ from pharmpy.math import conditional_joint_normal, is_posdef
 from pharmpy.modeling import (
     calculate_individual_shrinkage,
     create_rng,
-    sample_from_covariance_matrix,
     sample_individual_estimates,
+    sample_parameters_from_covariance_matrix,
 )
 from pharmpy.results import Results
 
@@ -527,7 +527,7 @@ def calculate_results_using_cov_sampling(
         for s in frem_model.modelfit_results.parameter_estimates.index
         if symbols.symbol(s) in sigma_symb.free_symbols
     ]
-    parvecs = sample_from_covariance_matrix(
+    parvecs = sample_parameters_from_covariance_matrix(
         frem_model,
         modelfit_results=uncertainty_results,
         force_posdef_samples=force_posdef_samples,

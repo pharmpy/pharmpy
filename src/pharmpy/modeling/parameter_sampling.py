@@ -116,7 +116,7 @@ def _sample_from_function(
     return kept_samples.reset_index(drop=True)
 
 
-def sample_uniformly(
+def sample_parameters_uniformly(
     model, fraction=0.1, parameters=None, force_posdef_samples=None, n=1, rng=None
 ):
     """Sample parameter vectors using uniform sampling
@@ -146,10 +146,10 @@ def sample_uniformly(
 
     Example
     -------
-    >>> from pharmpy.modeling import create_rng, sample_uniformly, load_example_model
+    >>> from pharmpy.modeling import create_rng, sample_parameters_uniformly, load_example_model
     >>> model = load_example_model("pheno")
     >>> rng = create_rng(23)
-    >>> sample_uniformly(model, n=3, rng=rng)
+    >>> sample_parameters_uniformly(model, n=3, rng=rng)
        THETA(1)  THETA(2)  THETA(3)  OMEGA(1,1)  OMEGA(2,2)  SIGMA(1,1)
     0  0.004878  0.908216  0.149441    0.029179    0.025472    0.012947
     1  0.004828  1.014444  0.149958    0.028853    0.027653    0.013348
@@ -157,8 +157,8 @@ def sample_uniformly(
 
     See also
     --------
-    sample_from_covariance_matrix : Sample parameter vectors using the uncertainty covariance
-        matrix
+    sample_parameters_from_covariance_matrix : Sample parameter vectors using the
+        uncertainty covariance matrix
     sample_from_function : Sample parameter vectors using a general function
 
     """
@@ -177,7 +177,7 @@ def sample_uniformly(
     return samples
 
 
-def sample_from_covariance_matrix(
+def sample_parameters_from_covariance_matrix(
     model,
     modelfit_results=None,
     parameters=None,
