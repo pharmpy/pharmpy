@@ -16,6 +16,15 @@ import pharmpy.unicode as unicode
 from pharmpy.symbols import symbol
 
 
+def _create_rng(seed=None):
+    """Create a new random number generator"""
+    if isinstance(seed, np.random.Generator):
+        rng = seed
+    else:
+        rng = np.random.default_rng(seed)
+    return rng
+
+
 class RandomVariable:
     """A single random variable
 
@@ -1128,10 +1137,11 @@ class RandomVariables(MutableSequence):
                         return False
         return True
 
-    def sample(self, expr, parameters=None, samples=1, seed=None):
+    def sample(self, expr, parameters=None, samples=1, rng=None):
         """Sample from the distribution of expr
 
         parameters in the distriutions will first be replaced"""
+        rng = _create_rng(rng)
         expr = sympy.sympify(expr)
         if not parameters:
             parameters = dict()
@@ -1157,7 +1167,7 @@ class RandomVariables(MutableSequence):
             with warnings.catch_warnings():
                 warnings.filterwarnings('ignore')
                 cursample = next(
-                    sympy.stats.sample(new_rv, library='numpy', size=samples, seed=seed)
+                    sympy.stats.sample(new_rv, library='numpy', size=samples, seed=rng)
                 )
                 if len(names) > 1:
                     df[names] = cursample

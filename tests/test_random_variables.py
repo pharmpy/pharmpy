@@ -486,7 +486,7 @@ def test_sample():
     )
     rvs = RandomVariables([rv1, rv2])
     params = {'a': 1, 'b': 0.1, 'c': 2}
-    samples = rvs.sample(rv1.symbol + rv2.symbol, parameters=params, samples=2, seed=9532)
+    samples = rvs.sample(rv1.symbol + rv2.symbol, parameters=params, samples=2, rng=9532)
     assert list(samples) == pytest.approx([1.7033555824617346, -1.4031809274765599])
 
 

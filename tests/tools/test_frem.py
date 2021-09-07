@@ -79,7 +79,7 @@ def test_bipp_covariance(testdata):
 def test_frem_results_pheno(testdata):
     model = Model(testdata / 'nonmem' / 'frem' / 'pheno' / 'model_4.mod')
     rng = np.random.default_rng(39)
-    res = calculate_results(model, continuous=['APGR', 'WGT'], categorical=[], samples=10, seed=rng)
+    res = calculate_results(model, continuous=['APGR', 'WGT'], categorical=[], samples=10, rng=rng)
 
     correct = """parameter,covariate,condition,p5,mean,p95
 CL,APGR,5th,0.972200,1.099294,1.242870
@@ -255,7 +255,7 @@ V,all,0.14572521381314374,0.11146577839548052,0.16976758171177983
 def test_frem_results_pheno_categorical(testdata):
     model = Model(testdata / 'nonmem' / 'frem' / 'pheno_cat' / 'model_4.mod')
     rng = np.random.default_rng(8978)
-    res = calculate_results(model, continuous=['WGT'], categorical=['APGRX'], samples=10, seed=rng)
+    res = calculate_results(model, continuous=['WGT'], categorical=['APGRX'], samples=10, rng=rng)
 
     correct = """parameter,covariate,condition,p5,mean,p95
 CL,WGT,5th,0.8819981232638212,0.921855097970373,0.9914329783724809

@@ -36,7 +36,7 @@ def test_calculate_individual_shrinkage(testdata):
 def test_calculate_individual_parameter_statistics(testdata):
     model = Model(testdata / 'nonmem' / 'secondary_parameters' / 'pheno.mod')
     rng = np.random.default_rng(103)
-    stats = calculate_individual_parameter_statistics(model, 'CL/V', seed=rng)
+    stats = calculate_individual_parameter_statistics(model, 'CL/V', rng=rng)
 
     assert stats['mean'][0] == pytest.approx(0.004700589484324183)
     assert stats['variance'][0] == pytest.approx(8.086653508585209e-06)
@@ -44,14 +44,14 @@ def test_calculate_individual_parameter_statistics(testdata):
 
     model = Model(testdata / 'nonmem' / 'secondary_parameters' / 'run1.mod')
     rng = np.random.default_rng(5678)
-    stats = calculate_individual_parameter_statistics(model, 'CL/V', seed=rng)
+    stats = calculate_individual_parameter_statistics(model, 'CL/V', rng=rng)
     assert stats['mean'][0] == pytest.approx(0.0049100899539843)
     assert stats['variance'][0] == pytest.approx(7.391076132098555e-07)
     assert stats['stderr'][0] == pytest.approx(0.0009425952783595735, abs=1e-6)
 
     covmodel = Model(testdata / 'nonmem' / 'secondary_parameters' / 'run2.mod')
     rng = np.random.default_rng(8976)
-    stats = calculate_individual_parameter_statistics(covmodel, 'K = CL/V', seed=rng)
+    stats = calculate_individual_parameter_statistics(covmodel, 'K = CL/V', rng=rng)
     assert stats['mean']['K', 'median'] == pytest.approx(0.004525842355027405)
     assert stats['variance']['K', 'median'] == pytest.approx(2.9540381716908423e-06)
     assert stats['stderr']['K', 'median'] == pytest.approx(0.001804371451706786, abs=1e-6)
@@ -66,7 +66,7 @@ def test_calculate_individual_parameter_statistics(testdata):
 def test_calculate_pk_parameters_statistics(testdata):
     model = Model(testdata / 'nonmem' / 'models' / 'mox1.mod')
     rng = np.random.default_rng(103)
-    df = calculate_pk_parameters_statistics(model, seed=rng)
+    df = calculate_pk_parameters_statistics(model, rng=rng)
     assert df['mean'].loc['t_max', 'median'] == pytest.approx(1.5999856886869577)
     assert df['variance'].loc['t_max', 'median'] == pytest.approx(0.29728565293669557)
     assert df['stderr'].loc['t_max', 'median'] == pytest.approx(0.589128711884761)
@@ -80,7 +80,7 @@ def test_calc_pk_two_comp_bolus(testdata):
     # Results are not verified
     model = Model(testdata / 'nonmem' / 'models' / 'mox_2comp.mod')
     rng = np.random.default_rng(103)
-    df = calculate_pk_parameters_statistics(model, seed=rng)
+    df = calculate_pk_parameters_statistics(model, rng=rng)
     # FIXME: Why doesn't random state handle this difference in stderr?
     df.drop('stderr', inplace=True, axis=1)
 

@@ -5,7 +5,7 @@ import pandas as pd
 import sympy
 
 from pharmpy.data_structures import OrderedSet
-from pharmpy.modeling import sample_from_covariance_matrix
+from pharmpy.modeling import create_rng, sample_from_covariance_matrix
 
 
 def calculate_eta_shrinkage(model, sd=False):
@@ -62,7 +62,7 @@ def calculate_individual_shrinkage(model):
     return ish
 
 
-def calculate_individual_parameter_statistics(model, exprs, seed=None):
+def calculate_individual_parameter_statistics(model, exprs, rng=None):
     """Calculate statistics for individual parameters
 
     Calculate the mean (expected value of the distribution), variance
@@ -81,7 +81,8 @@ def calculate_individual_parameter_statistics(model, exprs, seed=None):
     exprs : str, sympy expression or iterable of str or sympy expressions
         Expressions or equations for parameters of interest. If equations are used
         the names of the left hand sides will be used as the names of the parameters.
-    seed : int or numpy rng
+    rng : Generator or int
+        Random number generator or int seed
 
     Returns
     -------
@@ -89,8 +90,7 @@ def calculate_individual_parameter_statistics(model, exprs, seed=None):
         A DataFrame of statistics indexed on parameter and covariate value.
 
     """
-    if seed is None or isinstance(seed, int):
-        seed = np.random.default_rng(seed)
+    rng = create_rng(rng)
 
     if isinstance(exprs, str) or isinstance(exprs, sympy.Basic):
         exprs = [_split_equation(exprs)]
@@ -116,7 +116,7 @@ def calculate_individual_parameter_statistics(model, exprs, seed=None):
             pe = dict(model.modelfit_results.parameter_estimates)
             cov_expr = full_expr.subs(cov_values)
             expr = cov_expr.subs(pe)
-            samples = model.random_variables.sample(expr, parameters=pe, samples=1000000, seed=seed)
+            samples = model.random_variables.sample(expr, parameters=pe, samples=1000000, rng=rng)
 
             mean = np.mean(samples)
             variance = np.var(samples)
@@ -125,7 +125,7 @@ def calculate_individual_parameter_statistics(model, exprs, seed=None):
                 model,
                 n=100,
                 force_posdef_covmatrix=True,
-                rng=seed,
+                rng=rng,
             )
             samples = []
             with warnings.catch_warnings():
@@ -135,7 +135,7 @@ def calculate_individual_parameter_statistics(model, exprs, seed=None):
                         cov_expr.subs(dict(row)),
                         parameters=dict(row),
                         samples=10,
-                        seed=seed,
+                        rng=rng,
                     )
                     samples.extend(list(batch))
             stderr = pd.Series(samples).std()
@@ -153,7 +153,7 @@ def calculate_individual_parameter_statistics(model, exprs, seed=None):
     return table
 
 
-def calculate_pk_parameters_statistics(model, seed=None):
+def calculate_pk_parameters_statistics(model, rng=None):
     """Calculate statistics for common pharmacokinetic parameters
 
     Calculate the mean (expected value of the distribution), variance
@@ -164,7 +164,8 @@ def calculate_pk_parameters_statistics(model, seed=None):
     ----------
     model : Model
         A previously estimated model
-    seed : int or numpy rng
+    rng : Generator or int
+        Random number generator or seed
 
     Returns
     -------
@@ -243,7 +244,7 @@ def calculate_pk_parameters_statistics(model, seed=None):
     if odes.t not in elimination_rate.free_symbols:
         expressions.append(sympy.Eq(sympy.Symbol('k_e'), elimination_rate))
 
-    df = calculate_individual_parameter_statistics(model, expressions, seed=seed)
+    df = calculate_individual_parameter_statistics(model, expressions, rng=rng)
     return df
 
 
