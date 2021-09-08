@@ -198,6 +198,7 @@ class NONMEMModelfitResults(ModelfitResults):
             pass
 
         df = self._chain._read_from_tables(['ID', 'TIME', 'RES', 'WRES', 'CWRES'], self)
+        df['ID'] = df['ID'].convert_dtypes()
         df.set_index(['ID', 'TIME'], inplace=True)
         df = df.loc[(df != 0).any(axis=1)]  # Simple way of removing non-observations
         self._residuals = df
