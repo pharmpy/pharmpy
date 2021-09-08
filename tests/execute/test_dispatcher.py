@@ -19,6 +19,6 @@ def test_base_class():
 def test_local_dispatcher():
     db = LocalDirectoryDatabase()
     disp = LocalDispatcher()
-    wf = Workflow(Task('results', fun, 'input', final_task=True))
+    wf = Workflow([Task('results', fun, 'input')])
     res = disp.run(wf, db)
     assert res == 'input'

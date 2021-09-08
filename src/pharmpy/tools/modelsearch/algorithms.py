@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 
 from pharmpy.modeling import update_inits
+from pharmpy.tools.modelfit import create_single_fit_workflow
 from pharmpy.tools.workflows import Task, Workflow
 
 from .mfl import ModelFeatures
@@ -73,17 +74,18 @@ def stepwise(base_model, mfl, run_func, rank_func):
     return df
 
 
-def exhaustive_stepwise(base_model, mfl, wf_run):
+def exhaustive_stepwise(base_model, mfl):
     features = ModelFeatures(mfl)
     # TODO: Base condition/warning for input model?
-    wf_search = Workflow(Task('start_model', return_model, base_model))
+    wf_search = Workflow()
     if not base_model.modelfit_results:
-        wf_search.add_tasks(wf_run.copy(new_ids=True), connect=True)
+        wf_fit = create_single_fit_workflow(base_model)
+        wf_search.insert_workflow(wf_fit)
 
-    models = []
+    models_transformed = []
     while True:
         no_of_trans = 0
-        for task in wf_search.get_output():
+        for task in wf_search.output_tasks:
             previous_funcs = [task.function for task in wf_search.get_upstream_tasks(task)]
             possible_funcs = {
                 feat: func
@@ -93,48 +95,27 @@ def exhaustive_stepwise(base_model, mfl, wf_run):
             if len(possible_funcs) > 0:
                 no_of_trans += 1
                 for feat, func in possible_funcs.items():
+                    # Create tasks
                     task_copy = Task('copy', copy_model, feat)
-                    wf_search.add_tasks(task_copy, connect=True, output_nodes=[task])
                     task_update_inits = Task('update_inits', update_inits)
-                    wf_search.add_tasks(task_update_inits, connect=True, output_nodes=[task_copy])
-                    # TODO: move wf_run here to be more explicit
-                    wf_trans = create_workflow_transform(feat, func, wf_run.copy(new_ids=True))
-                    wf_search.add_tasks(wf_trans, connect=True, output_nodes=[task_update_inits])
-                    models.append(wf_search.get_output())
+                    task_function = Task(
+                        feat, func
+                    )  # TODO: check how partial functions work w.r.t. dask
+                    wf_fit = create_single_fit_workflow()
+
+                    # Add tasks
+                    wf_search.add_task(task_copy, predecessors=[task])
+                    wf_search.add_task(task_update_inits, predecessors=[task_copy])
+                    wf_search.add_task(task_function, predecessors=[task_update_inits])
+                    wf_search.insert_workflow(wf_fit, predecessors=[task_function])
+                    models_transformed += wf_search.output_tasks
         if no_of_trans == 0:
             break
 
-    # TODO: consider merging with task_result
-    task_collect = Task('collect', post_process_results)
-    models_transformed = list(set([item for sublist in models for item in sublist]))
-    wf_search.add_tasks(task_collect, connect=True, output_nodes=models_transformed)
-
-    task_result = Task('results', post_process_results, final_task=True)
-    wf_search.add_tasks(task_result, connect=True)
-
-    return wf_search
+    return wf_search, models_transformed
 
 
-def post_process_results(models):
-    return models
-
-
-def return_model(model):
-    return model
-
-
-def create_workflow_transform(feat, func, wf_run):
-    # TODO: add feature tracking
-    wf_trans = Workflow()
-    task_function = Task(feat, func)  # TODO: check how partial functions work w.r.t. dask
-    wf_trans.add_tasks(task_function, connect=False)
-    wf_trans.add_tasks(wf_run, connect=True)
-    return wf_trans
-
-
-def copy_model(model, feat):
-    if isinstance(model, list):
-        model = model[0]
+def copy_model(feat, model):
     model_copy = model.copy()
     model_copy.name = f'{model.name}_{feat}'
     return model_copy

@@ -1,5 +1,30 @@
 import pharmpy.tools
-from pharmpy.tools.workflows import Task
+from pharmpy.plugins.nonmem.run import execute_model
+from pharmpy.tools.workflows import Task, Workflow
+
+
+def create_single_fit_workflow(model=None):
+    wf = Workflow()
+    if model is None:
+        task = Task('run', execute_model)
+    else:
+        task = Task('run', execute_model, model)
+    wf.add_task(task)
+    return wf
+
+
+def create_multiple_fit_workflow(models=None, n=None):
+    """Either specify models or n"""
+    wf = Workflow()
+    if models is None:
+        for i in range(n):
+            task = Task(f'run{i}', execute_model)
+            wf.add_task(task)
+    else:
+        for i, model in enumerate(models):
+            task = Task(f'run{i}', execute_model, model)
+            wf.add_task(task)
+    return wf
 
 
 class Modelfit(pharmpy.tools.Tool):
@@ -8,9 +33,9 @@ class Modelfit(pharmpy.tools.Tool):
         super().__init__(**kwargs)
 
     def run(self):
-        wf_fit = self.workflow_creator(self.models)
-        task_result = Task('results', post_process_results, final_task=True)
-        wf_fit.add_tasks(task_result, connect=True)
+        wf_fit = create_multiple_fit_workflow(self.models)
+        task_result = Task('results', post_process_results)
+        wf_fit.add_task(task_result, predecessors=wf_fit.output_tasks)
         for model in self.models:
             model.dataset
             model.database = self.database.model_database
@@ -22,5 +47,5 @@ class Modelfit(pharmpy.tools.Tool):
         # res.to_csv(path=self.rundir.path / 'results.csv')
 
 
-def post_process_results(models):
+def post_process_results(*models):
     return models

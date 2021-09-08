@@ -5,6 +5,7 @@ import pharmpy.tools
 from pharmpy import Parameter, Parameters, RandomVariable, RandomVariables
 from pharmpy.modeling import set_iiv_on_ruv, set_power_on_ruv
 from pharmpy.statements import Assignment, ModelStatements
+from pharmpy.tools.modelfit import create_multiple_fit_workflow
 from pharmpy.tools.workflows import Task, Workflow
 
 
@@ -12,7 +13,7 @@ class Resmod(pharmpy.tools.Tool):
     def __init__(self, model):
         self.model = model
         super().__init__()
-        self.model.database = self.database.model_database
+        self.model.database = self.database.model_database      # FIXME: Changes the user model object
 
     def run(self):
         wf = self.create_workflow()
@@ -26,21 +27,24 @@ class Resmod(pharmpy.tools.Tool):
             self.database.model_database
         )  # FIXME: Not right! Changes the user model object
         wf = Workflow()
+
         task_base_model = Task('create_base_model', _create_base_model, self.model)
-        task_iiv = Task('create_iiv_on_ruv_model', _create_iiv_on_ruv_model)
-        wf.add_tasks(task_base_model)
-        wf.add_tasks(task_iiv, connect=True)
-        # task_create_models = Task('create_models', create_models, self.model, final_task=False)
-        # wf.add_tasks(task_create_models)
-        wf_fit = self.workflow_creator()
-        wf.add_tasks(wf_fit, connect=True)
-        task_results = Task('results', post_process, final_task=True)
-        wf.add_tasks(task_results, connect=True)
+        wf.add_task(task_base_model)
+
+        task_iiv = Task('create_iiv_on_ruv_model', _create_iiv_on_ruv_model, self.model)
+        wf.add_task(task_iiv)
+        # task_power = Task('create_power_model', _create_power_model, self.model)
+
+        fit_wf = create_multiple_fit_workflow(n=2)
+        wf.insert_workflow(fit_wf, predecessors=[task_base_model, task_iiv])
+
+        task_results = Task('results', post_process)
+        wf.add_task(task_results, predecessors=fit_wf.output_tasks)
         return wf
 
 
-def post_process(models):
-    return models
+def post_process(*models):
+    return models[0]
 
 
 def _create_base_model(input_model):
@@ -67,7 +71,8 @@ def _create_base_model(input_model):
     return base_model
 
 
-def _create_iiv_on_ruv_model(base_model):
+def _create_iiv_on_ruv_model(input_model):
+    base_model = _create_base_model(input_model)  # FIXME: could be done only once in the workflow
     model = base_model.copy()
     model.database = base_model.database  # FIXME: Should be unnecessary
     set_iiv_on_ruv(model)
@@ -75,10 +80,12 @@ def _create_iiv_on_ruv_model(base_model):
     return model
 
 
-def _create_power_model(base_model):
+def _create_power_model(input_model):
+    base_model = _create_base_model(input_model)  # FIXME: could be done only once in the workflow
     model = base_model.copy()
-    model.individual_prediction_symbol = sympy.Symbol('IPRED')
+    model.individual_prediction_symbol = sympy.Symbol('CIPREDI')  # FIXME: Not model agnostic
     set_power_on_ruv(model)
+    model.name = 'power'
     return model
 
 
@@ -86,11 +93,3 @@ def _create_dataset(input_model):
     residuals = input_model.modelfit_results.residuals
     df = residuals['CWRES'].reset_index().rename(columns={'CWRES': 'DV'})
     return df
-
-
-# def create_models(input_model):
-#    dataset = _create_dataset(input_model)
-#    base_model = _create_base_model(dataset)
-#    iiv_on_ruv = _create_iiv_on_ruv_model(base_model)
-#    power = _create_power_model(base_model)
-#    return (base_model, iiv_on_ruv, power)
