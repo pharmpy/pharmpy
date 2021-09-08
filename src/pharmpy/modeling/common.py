@@ -5,8 +5,11 @@
 from io import StringIO
 from pathlib import Path
 
+import sympy
+
 from pharmpy.estimation import EstimationMethod
 from pharmpy.model_factory import Model
+from pharmpy.statements import Assignment, CompartmentalSystem
 
 
 def read_model(path):
@@ -580,3 +583,38 @@ def load_example_model(name):
     path = Path(__file__).parent.resolve() / 'example_models' / (name + '.mod')
     model = read_model(path)
     return model
+
+
+def get_model_covariates(model, strings=False):
+    """List of covariates used in model
+
+    A covariate in the model is defined to be a data item
+    affecting the model prediction except dosing items.
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+    strings : bool
+        Return strings instead of symbols? False (default) will give symbols
+
+    Returns
+    -------
+    list
+        Covariate symbols or names
+
+    """
+    symbs = model.statements.dependencies(model.dependent_variable)
+    # Remove dose symbol if not used as covariate
+    datasymbs = {sympy.Symbol(s) for s in model.dataset.columns}
+    cov_dose_symbols = set()
+    if isinstance(model.statements.ode_system, CompartmentalSystem):
+        dosecmt = model.statements.ode_system.find_dosing()
+        dosesyms = dosecmt.free_symbols
+        for s in model.statements:
+            if isinstance(s, Assignment):
+                cov_dose_symbols |= dosesyms.intersection(s.rhs_symbols)
+    covs = list(symbs.intersection(datasymbs) - cov_dose_symbols)
+    if strings:
+        covs = [str(x) for x in covs]
+    return covs

@@ -3,7 +3,6 @@ from pathlib import Path
 
 import pandas as pd
 import pytest
-import sympy
 
 import pharmpy.data
 import pharmpy.model
@@ -146,8 +145,3 @@ def test_to_generic_model(testdata):
     assert id(model.statements) != id(nm_model.statements)
     assert model.statements == nm_model.statements
     assert type(model) == pharmpy.model.Model
-
-
-def test_covariates(testdata):
-    model = Model(testdata / 'nonmem' / 'pheno_real.mod')
-    assert set(model.covariates) == {sympy.Symbol('WGT'), sympy.Symbol('APGR')}

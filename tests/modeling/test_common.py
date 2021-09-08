@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import pytest
+import sympy
 from pyfakefs.fake_filesystem_unittest import Patcher
 
 from pharmpy import Model
@@ -8,6 +9,7 @@ from pharmpy.modeling import (
     add_estimation_step,
     fix_parameters,
     fix_parameters_to,
+    get_model_covariates,
     load_example_model,
     read_model,
     read_model_from_string,
@@ -178,3 +180,8 @@ def test_load_example_model():
 
     with pytest.raises(ValueError):
         load_example_model("grekztalb23=")
+
+
+def test_get_model_covariates(testdata):
+    model = Model(testdata / 'nonmem' / 'pheno_real.mod')
+    assert set(get_model_covariates(model)) == {sympy.Symbol('WGT'), sympy.Symbol('APGR')}

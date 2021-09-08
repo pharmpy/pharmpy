@@ -23,7 +23,6 @@ import sympy
 
 import pharmpy.symbols
 from pharmpy import Parameters, RandomVariables
-from pharmpy.statements import Assignment, CompartmentalSystem
 
 
 def canonicalize_data_transformation(model, value):
@@ -101,21 +100,6 @@ class Model:
     def data_transformation(self, value):
         value = canonicalize_data_transformation(self, value)
         self._data_transformation = value
-
-    @property
-    def covariates(self):
-        """List of covariates used in model"""
-        symbs = self.statements.dependencies(self.dependent_variable)
-        # Remove dose symbol if not used as covariate
-        datasymbs = {sympy.Symbol(s) for s in self.dataset.columns}
-        cov_dose_symbols = set()
-        if isinstance(self.statements.ode_system, CompartmentalSystem):
-            dosecmt = self.statements.ode_system.find_dosing()
-            dosesyms = dosecmt.free_symbols
-            for s in self.statements:
-                if isinstance(s, Assignment):
-                    cov_dose_symbols |= dosesyms.intersection(s.rhs_symbols)
-        return list(symbs.intersection(datasymbs) - cov_dose_symbols)
 
     def update_source(self):
         """Update the source"""
