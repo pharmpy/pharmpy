@@ -76,6 +76,10 @@ class Workflow:
     def output_tasks(self):
         return [node for node in self._g.nodes if self._g.out_degree(node) == 0]
 
+    def get_upstream_tasks(self, task):
+        edges = list(nx.edge_dfs(self._g, task, orientation='reverse'))
+        return [node for node, _, _ in edges]
+
     def get_predecessors(self, task):
         return list(self._g.predecessors(task))
 
@@ -89,7 +93,7 @@ class Workflow:
     def plot_dask(self, filename):
         from dask import visualize
 
-        visualize(self.as_dict(), filename=filename, collapse_outputs=True)
+        visualize(self.as_dask_dict(), filename=filename, collapse_outputs=True)
 
     def __len__(self):
         return len(self._g.nodes)

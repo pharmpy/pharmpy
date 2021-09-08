@@ -4,6 +4,7 @@ import pharmpy.tools
 import pharmpy.tools.modelfit as modelfit
 import pharmpy.tools.modelsearch.algorithms as algorithms
 import pharmpy.tools.modelsearch.rankfuncs as rankfuncs
+from pharmpy.tools.workflows import Task
 
 
 class ModelSearch(pharmpy.tools.Tool):
@@ -22,15 +23,12 @@ class ModelSearch(pharmpy.tools.Tool):
 
     def run(self):
         if self.algorithm.__name__ == 'exhaustive_stepwise':
-            wf_fit = self.workflow_creator()
-            wf_search = self.algorithm(
-                self.base_model,
-                self.mfl,
-                wf_fit,
-            )
-            res = self.dispatcher.run(
-                wf_search, self.database
-            )  # FIXME: postprocessing/collecting needed
+            wf, models_transformed = self.algorithm(self.base_model, self.mfl)
+
+            task_result = Task('results', post_process_results)
+            wf.add_task(task_result, predecessors=models_transformed)
+
+            res = self.dispatcher.run(wf, self.database)  # FIXME: postprocessing/collecting needed
         else:
             df = self.algorithm(
                 self.base_model,
@@ -42,6 +40,10 @@ class ModelSearch(pharmpy.tools.Tool):
             res.to_json(path=self.rundir.path / 'results.json')
             res.to_csv(path=self.rundir.path / 'results.csv')
         return res
+
+
+def post_process_results(*models):
+    return models
 
 
 class ModelSearchResults(pharmpy.results.Results):

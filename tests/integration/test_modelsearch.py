@@ -18,4 +18,6 @@ def test_exhaustive_stepwise(tmp_path, testdata):
         model.update_source(force=True)
 
         res = ModelSearch(model, 'exhaustive_stepwise', 'ABSORPTION(ZO)\nPERIPHERALS(1)').run()
-        assert res
+
+        assert len(res) == 4
+        assert all(int(model.modelfit_results.ofv) in range(-1443, -1430) for model in res)
