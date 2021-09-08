@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 
-from pharmpy.modeling import update_inits
+from pharmpy.modeling import copy_model, update_inits
 from pharmpy.tools.modelfit import create_single_fit_workflow
 from pharmpy.tools.workflows import Task, Workflow
 
@@ -96,7 +96,7 @@ def exhaustive_stepwise(base_model, mfl):
                 no_of_trans += 1
                 for feat, func in possible_funcs.items():
                     # Create tasks
-                    task_copy = Task('copy', copy_model, feat)
+                    task_copy = Task('copy', copy, feat)
                     task_update_inits = Task('update_inits', update_inits)
                     task_function = Task(
                         feat, func
@@ -115,7 +115,6 @@ def exhaustive_stepwise(base_model, mfl):
     return wf_search, models_transformed
 
 
-def copy_model(feat, model):
-    model_copy = model.copy()
-    model_copy.name = f'{model.name}_{feat}'
+def copy(feat, model):
+    model_copy = copy_model(model, f'{model.name}_{feat}')
     return model_copy
