@@ -81,7 +81,6 @@ class DataRecord(OptionRecord):
     @ignore_character.setter
     def ignore_character(self, c):
         if c != self.ignore_character:
-            print("QQ", c, self.ignore_character)
             self.root.remove('ignchar')
             char_node = AttrTree.create('char', [{'CHAR': c}])
             node = AttrTree.create('ignchar', [{'IGNORE': 'IGNORE'}, {'EQUALS': '='}, char_node])
@@ -142,41 +141,3 @@ class DataRecord(OptionRecord):
         """
         if len(self.root.all('ignchar')) > 1:
             raise ModelSyntaxError('More than one IGNORE=c')
-
-    # @filters.setter
-    # def filters(self, filters):
-    #    # Install new filters at the end
-    #    if not filters:     # This was easiest kept as a special case
-    #        return
-    #    if filters.accept:
-    #        tp = 'ACCEPT'
-    #    else:
-    #        tp = 'IGNORE'
-    #    nodes = [{tp: tp}, {'EQUAL': '='}, {'LPAR': '('}]
-    #    first = True
-    #    for f in filters:
-    #        if not first:
-    #            nodes += [{'COMMA': ','}]
-    #        new = [{'COLUMN': f.symbol}]
-    #        if f.operator == InputFilterOperator.EQUAL:
-    #            new.append({'OP_EQ': '.EQN.'})
-    #        elif f.operator == InputFilterOperator.STRING_EQUAL:
-    #            new.append({'OP_STR_EQ': '.EQ.'})
-    #        elif f.operator == InputFilterOperator.NOT_EQUAL:
-    #            new.append({'OP_NE': '.NEN.'})
-    #        elif f.operator == InputFilterOperator.STRING_NOT_EQUAL:
-    #            new.append({'OP_STR_NE': '.NE.'})
-    #        elif f.operator == InputFilterOperator.LESS_THAN:
-    #            new.append({'OP_LT': '.LT.'})
-    #        elif f.operator == InputFilterOperator.GREATER_THAN:
-    #            new.append({'OP_GT': '.GT.'})
-    #        elif f.operator == InputFilterOperator.LESS_THAN_OR_EQUAL:
-    #            new.append({'OP_LT_EQ': '.LE.'})
-    #        elif f.operator == InputFilterOperator.GREATER_THAN_OR_EQUAL:
-    #            new.append({'OP_GT_EQ': '.GE.'})
-    #        new.append({'TEXT': f.value})
-    #        nodes += [AttrTree.create('filter', new)]
-    #        first = False
-    #    nodes += [{'RPAR': ')'}]
-    #    top = AttrTree.create(tp.lower(), nodes)
-    #    self.root.children += [top]
