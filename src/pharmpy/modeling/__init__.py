@@ -44,6 +44,7 @@ from pharmpy.modeling.eta_transformations import (
 )
 from pharmpy.modeling.evaluation import evaluate_expression
 from pharmpy.modeling.iiv_on_ruv import set_iiv_on_ruv
+from pharmpy.modeling.ml import predict_outliers
 from pharmpy.modeling.odes import (
     add_individual_parameter,
     add_peripheral_compartment,
@@ -114,6 +115,7 @@ __all__ = [
     'has_proportional_error_model',
     'has_zero_order_absorption',
     'load_example_model',
+    'predict_outliers',
     'read_model',
     'read_model_from_string',
     'read_results',

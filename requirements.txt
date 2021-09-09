@@ -58,3 +58,5 @@ toolz==0.11.1
 tornado==6.1
 urllib3==1.26.6
 zict==2.0.0
+--extra-index-url https://google-coral.github.io/py-repo/
+tflite_runtime==2.5.0.post1
