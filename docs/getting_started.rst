@@ -16,6 +16,10 @@ Install the latest stable version from PyPI with::
 
    pip install pharmpy-core
 
+To be able to use components using machine learning the tflite package is needed. It can be installed using::
+
+    pip install --index-url https://google-coral.github.io/py-repo/ tflite_runtime
+
 ---------------
 A first example
 ---------------
