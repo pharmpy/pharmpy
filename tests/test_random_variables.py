@@ -423,8 +423,6 @@ def test_copy():
     rvs2 = rvs.copy()
     assert rvs == rvs2
     assert rvs is not rvs2
-    rv4 = rv3.copy(deep=False)
-    assert rv4.name == rv3.name
 
 
 def test_pickle():

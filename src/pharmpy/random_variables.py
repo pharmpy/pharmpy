@@ -249,18 +249,9 @@ class RandomVariable:
         if self._sympy_rv is not None:
             self._sympy_rv = self._sympy_rv.subs(d)
 
-    def copy(self, deep=True):
-        """Make copy of RandomVariable
-
-        Parameters
-        ----------
-        deep : bool
-            Deep copy if True (default) else shallow
-        """
-        if deep:
-            return copy.deepcopy(self)
-        else:
-            return copy.copy(self)
+    def copy(self):
+        """Make copy of RandomVariable"""
+        return copy.deepcopy(self)
 
     def __copy__(self):
         return self.copy()
@@ -840,20 +831,11 @@ class RandomVariables(MutableSequence):
             symbs |= rv.free_symbols
         return symbs
 
-    def copy(self, deep=True):
-        """Make copy of RandomVariables
-
-        Parameters
-        ----------
-        deep : bool
-            Deep copy if True (default) else shallow
-        """
+    def copy(self):
+        """Make copy of RandomVariables"""
         new = RandomVariables()
         for rv in self._rvs:
-            if deep:
-                new._rvs.append(rv.copy(deep=deep))
-            else:
-                new._rvs.append(rv)
+            new._rvs.append(rv.copy())
         return new
 
     @property
