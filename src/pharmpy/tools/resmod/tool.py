@@ -13,7 +13,7 @@ class Resmod(pharmpy.tools.Tool):
     def __init__(self, model):
         self.model = model
         super().__init__()
-        self.model.database = self.database.model_database      # FIXME: Changes the user model object
+        self.model.database = self.database.model_database  # FIXME: Changes the user model object
 
     def run(self):
         wf = self.create_workflow()
