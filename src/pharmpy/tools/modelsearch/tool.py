@@ -25,10 +25,12 @@ class ModelSearch(pharmpy.tools.Tool):
         if self.algorithm.__name__ == 'exhaustive_stepwise':
             wf, models_transformed = self.algorithm(self.base_model, self.mfl)
 
-            task_result = Task('results', post_process_results)
+            task_result = Task('results', post_process_results, self.base_model)
             wf.add_task(task_result, predecessors=models_transformed)
 
-            res = self.dispatcher.run(wf, self.database)  # FIXME: postprocessing/collecting needed
+            base_model, res_models = self.dispatcher.run(wf, self.database)
+            self.base_model.modelfit_results = base_model.modelfit_results
+            return res_models
         else:
             df = self.algorithm(
                 self.base_model,
@@ -42,8 +44,15 @@ class ModelSearch(pharmpy.tools.Tool):
         return res
 
 
-def post_process_results(*models):
-    return models
+def post_process_results(base_model, *models):
+    res_models = []
+    for model in models:
+        model.modelfit_results.estimation_step
+        if model.name == base_model.name:
+            base_model.modelfit_results = model.modelfit_results
+        else:
+            res_models.append(model)
+    return base_model, res_models
 
 
 class ModelSearchResults(pharmpy.results.Results):

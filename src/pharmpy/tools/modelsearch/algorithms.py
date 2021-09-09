@@ -78,11 +78,13 @@ def exhaustive_stepwise(base_model, mfl):
     features = ModelFeatures(mfl)
     # TODO: Base condition/warning for input model?
     wf_search = Workflow()
+    models_transformed = []
+
     if not base_model.modelfit_results:
         wf_fit = create_single_fit_workflow(base_model)
         wf_search.insert_workflow(wf_fit)
+        models_transformed += wf_search.output_tasks
 
-    models_transformed = []
     while True:
         no_of_trans = 0
         for task in wf_search.output_tasks:

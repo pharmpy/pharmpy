@@ -17,7 +17,8 @@ def test_exhaustive_stepwise(tmp_path, testdata):
         set_first_order_elimination(model)
         model.update_source(force=True)
 
-        res = ModelSearch(model, 'exhaustive_stepwise', 'ABSORPTION(ZO)\nPERIPHERALS(1)').run()
+        mfl = 'ABSORPTION(ZO)\nPERIPHERALS(1)'
+        res = ModelSearch(model, 'exhaustive_stepwise', mfl, rankfunc='ofv').run()
 
         assert len(res) == 4
         assert all(int(model.modelfit_results.ofv) in range(-1443, -1430) for model in res)
