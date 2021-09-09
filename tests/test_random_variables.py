@@ -1,3 +1,4 @@
+import copy
 import pickle
 
 import pytest
@@ -423,6 +424,9 @@ def test_copy():
     rvs2 = rvs.copy()
     assert rvs == rvs2
     assert rvs is not rvs2
+    rvs3 = copy.copy(rvs2)
+    assert rvs == rvs3
+    assert rvs is not rvs3
 
 
 def test_pickle():
@@ -473,6 +477,8 @@ def test_validate_parameters():
     assert rvs.validate_parameters(params)
     params2 = {'a': 2, 'b': 2, 'c': 23, 'd': 1}
     assert not rvs.validate_parameters(params2)
+    with pytest.raises(TypeError):
+        rvs.validate_parameters({})
 
 
 def test_sample():
@@ -486,6 +492,8 @@ def test_sample():
     params = {'a': 1, 'b': 0.1, 'c': 2}
     samples = rvs.sample(rv1.symbol + rv2.symbol, parameters=params, samples=2, rng=9532)
     assert list(samples) == pytest.approx([1.7033555824617346, -1.4031809274765599])
+    with pytest.raises(TypeError):
+        rvs.sample(rv1.symbol + rv2.symbol, samples=1, rng=9532)
 
 
 def test_variance_parameters():
@@ -501,6 +509,11 @@ def test_variance_parameters():
     rv3 = RandomVariable.normal('ETA(3)', 'iiv', 0, symbol('OMEGA(3,3)'))
     rvs = RandomVariables([rv1, rv2, rv3])
     assert rvs.variance_parameters == ['OMEGA(1,1)', 'OMEGA(2,2)', 'OMEGA(3,3)']
+
+    rv1 = RandomVariable.normal('x', 'iiv', 0, symbol('omega'))
+    rv2 = RandomVariable.normal('y', 'iiv', 0, symbol('omega'))
+    rvs = RandomVariables([rv1, rv2])
+    assert rvs.variance_parameters == ['omega']
 
 
 def test_get_variance():
@@ -654,3 +667,13 @@ def test_variability_hierarchy():
     assert len(lev) == 4
     lev.remove_variability_level('PLANET')
     assert len(lev) == 3
+
+
+def test_covariance_matrix():
+    rv1 = RandomVariable.normal('ETA(1)', 'iiv', 0, symbol('OMEGA(1,1)'))
+    rv2 = RandomVariable('X', 'iiv', sympy.stats.Exponential('X', 23))
+    rvs = RandomVariables([rv1, rv2])
+    with pytest.raises(ValueError):
+        rvs.covariance_matrix
+    rvs = RandomVariables([])
+    assert len(rvs.covariance_matrix) == 0

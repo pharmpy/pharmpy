@@ -1117,6 +1117,8 @@ class RandomVariables(MutableSequence):
                     a = np.array(sigma).astype(np.float64)
                     if not pharmpy.math.is_posdef(a):
                         return False
+                else:
+                    raise TypeError("Cannot validate parameters since all are not numeric")
         return True
 
     def sample(self, expr, parameters=None, samples=1, rng=None):
@@ -1179,6 +1181,8 @@ class RandomVariables(MutableSequence):
         if names:
             M = sympy.BlockDiagMatrix(*blocks)
             M = sympy.Matrix(M)
+        else:
+            M = sympy.Matrix()
         return means, M, names, non_altered
 
     @property
