@@ -68,7 +68,7 @@ setup(
     install_requires=[
         'lark-parser>=0.12.0',
         'sympy>=1.8',
-        'symengine',
+        'symengine>=0.7.2',
         'pandas>=1.0',
         'numexpr',
         'altair',
