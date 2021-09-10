@@ -1,3 +1,6 @@
+import numpy as np
+import pandas as pd
+
 import pharmpy.execute as execute
 import pharmpy.results
 import pharmpy.tools
@@ -23,14 +26,16 @@ class ModelSearch(pharmpy.tools.Tool):
 
     def run(self):
         if self.algorithm.__name__ == 'exhaustive_stepwise':
-            wf, models_transformed = self.algorithm(self.base_model, self.mfl)
+            wf, model_tasks, model_features = self.algorithm(self.base_model, self.mfl)
 
             task_result = Task('results', post_process_results, self.base_model)
-            wf.add_task(task_result, predecessors=models_transformed)
+            wf.add_task(task_result, predecessors=model_tasks)
 
             base_model, res_models = self.dispatcher.run(wf, self.database)
             self.base_model.modelfit_results = base_model.modelfit_results
-            return res_models
+            df = create_res_df(base_model, res_models, self.rankfunc, model_features)
+            res = ModelSearchResults(runs=df)
+            return res
         else:
             df = self.algorithm(
                 self.base_model,
@@ -53,6 +58,26 @@ def post_process_results(base_model, *models):
         else:
             res_models.append(model)
     return base_model, res_models
+
+
+def create_res_df(base_model, res_models, rankfunc, model_features):
+    res_data = {'dofv': [], 'features': [], 'rank': []}
+    model_names = []
+
+    ranks = rankfunc(base_model, res_models)
+
+    for model in res_models:
+        model_names.append(model.name)
+        res_data['dofv'].append(base_model.modelfit_results.ofv - model.modelfit_results.ofv)
+        res_data['features'].append(model_features[model.name])
+        if model in ranks:
+            res_data['rank'].append(ranks.index(model) + 1)
+        else:
+            res_data['rank'].append(np.nan)
+
+    df = pd.DataFrame(res_data, index=model_names)
+
+    return df
 
 
 class ModelSearchResults(pharmpy.results.Results):

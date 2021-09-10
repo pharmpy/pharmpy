@@ -76,47 +76,70 @@ def stepwise(base_model, mfl, run_func, rank_func):
 
 def exhaustive_stepwise(base_model, mfl):
     features = ModelFeatures(mfl)
+    all_funcs = features.all_funcs()
     # TODO: Base condition/warning for input model?
     wf_search = Workflow()
-    models_transformed = []
+    model_tasks = []
+    model_features = dict()
 
     if not base_model.modelfit_results:
         wf_fit = create_single_fit_workflow(base_model)
         wf_search.insert_workflow(wf_fit)
-        models_transformed += wf_search.output_tasks
+        model_tasks += wf_search.output_tasks
+
+    model_features[base_model.name] = tuple()
+    candidate_count = 1
 
     while True:
         no_of_trans = 0
         for task in wf_search.output_tasks:
-            previous_funcs = [task.function for task in wf_search.get_upstream_tasks(task)]
-            possible_funcs = {
-                feat: func
-                for feat, func in features.all_funcs().items()
-                if func not in previous_funcs
+            trans_previous = [
+                task.function
+                for task in wf_search.get_upstream_tasks(task)
+                if task.function in all_funcs.values()
+            ]
+            trans_possible = {
+                feat: func for feat, func in all_funcs.items() if func not in trans_previous
             }
-            if len(possible_funcs) > 0:
+
+            if len(trans_possible) > 0:
                 no_of_trans += 1
-                for feat, func in possible_funcs.items():
+                for feat, func in trans_possible.items():
+                    model_name = f'candidate{candidate_count}'
+
                     # Create tasks
-                    task_copy = Task('copy', copy, feat)
+                    task_copy = Task('copy', copy, model_name)
                     task_update_inits = Task('update_inits', update_inits)
                     task_function = Task(
                         feat, func
                     )  # TODO: check how partial functions work w.r.t. dask
+                    task_update_source = Task('update_source', update_source)
                     wf_fit = create_single_fit_workflow()
 
                     # Add tasks
                     wf_search.add_task(task_copy, predecessors=[task])
                     wf_search.add_task(task_update_inits, predecessors=[task_copy])
                     wf_search.add_task(task_function, predecessors=[task_update_inits])
-                    wf_search.insert_workflow(wf_fit, predecessors=[task_function])
-                    models_transformed += wf_search.output_tasks
+                    wf_search.add_task(task_update_source, predecessors=[task_function])
+                    wf_search.insert_workflow(wf_fit, predecessors=[task_update_source])
+                    model_tasks += wf_search.output_tasks
+
+                    feat_previous = [
+                        feat for feat, func in all_funcs.items() if func in trans_previous
+                    ]
+                    model_features[model_name] = tuple(feat_previous + [feat])
+                    candidate_count += 1
         if no_of_trans == 0:
             break
 
-    return wf_search, models_transformed
+    return wf_search, model_tasks, model_features
 
 
-def copy(feat, model):
-    model_copy = copy_model(model, f'{model.name}_{feat}')
+def copy(name, model):
+    model_copy = copy_model(model, name)
     return model_copy
+
+
+def update_source(model):
+    model.update_source(nofiles=True)
+    return model
