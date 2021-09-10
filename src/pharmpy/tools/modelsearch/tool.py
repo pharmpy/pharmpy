@@ -11,11 +11,12 @@ from pharmpy.tools.workflows import Task
 
 
 class ModelSearch(pharmpy.tools.Tool):
-    def __init__(self, base_model, algorithm, mfl, rankfunc='ofv', **kwargs):
+    def __init__(self, base_model, algorithm, mfl, rankfunc='ofv', cutoff=None, **kwargs):
         self.base_model = base_model
         self.mfl = mfl
         self.algorithm = getattr(algorithms, algorithm)
         self.rankfunc = getattr(rankfuncs, rankfunc)
+        self.cutoff = cutoff
         super().__init__(**kwargs)
         self.base_model.database = self.database.model_database
 
@@ -28,13 +29,17 @@ class ModelSearch(pharmpy.tools.Tool):
         if self.algorithm.__name__ == 'exhaustive_stepwise':
             wf, model_tasks, model_features = self.algorithm(self.base_model, self.mfl)
 
-            task_result = Task('results', post_process_results, self.base_model)
+            task_result = Task(
+                'results',
+                post_process_results,
+                self.base_model,
+                self.rankfunc,
+                self.cutoff,
+                model_features,
+            )
             wf.add_task(task_result, predecessors=model_tasks)
+            res = self.dispatcher.run(wf, self.database)
 
-            base_model, res_models = self.dispatcher.run(wf, self.database)
-            self.base_model.modelfit_results = base_model.modelfit_results
-            df = create_res_df(base_model, res_models, self.rankfunc, model_features)
-            res = ModelSearchResults(runs=df)
             return res
         else:
             df = self.algorithm(
@@ -43,13 +48,16 @@ class ModelSearch(pharmpy.tools.Tool):
                 self.fit,
                 self.rankfunc,
             )
-            res = ModelSearchResults(runs=df)
+            res = ModelSearchResults(summary=df)
             res.to_json(path=self.rundir.path / 'results.json')
             res.to_csv(path=self.rundir.path / 'results.csv')
         return res
 
 
-def post_process_results(base_model, *models):
+def post_process_results(base_model, rankfunc, cutoff, model_features, *models):
+    res_data = {'dofv': [], 'features': [], 'rank': []}
+    model_names = []
+
     res_models = []
     for model in models:
         model.modelfit_results.estimation_step
@@ -57,14 +65,11 @@ def post_process_results(base_model, *models):
             base_model.modelfit_results = model.modelfit_results
         else:
             res_models.append(model)
-    return base_model, res_models
 
-
-def create_res_df(base_model, res_models, rankfunc, model_features):
-    res_data = {'dofv': [], 'features': [], 'rank': []}
-    model_names = []
-
-    ranks = rankfunc(base_model, res_models)
+    if cutoff is not None:
+        ranks = rankfunc(base_model, res_models, cutoff=cutoff)
+    else:
+        ranks = rankfunc(base_model, res_models)
 
     for model in res_models:
         model_names.append(model.name)
@@ -75,14 +80,20 @@ def create_res_df(base_model, res_models, rankfunc, model_features):
         else:
             res_data['rank'].append(np.nan)
 
+    # FIXME: in ranks, if any row has NaN the rank converts to float
     df = pd.DataFrame(res_data, index=model_names)
 
-    return df
+    res = ModelSearchResults(summary=df, base_model=base_model, models=res_models)
+
+    return res
 
 
 class ModelSearchResults(pharmpy.results.Results):
-    def __init__(self, runs=None):
-        self.runs = runs
+    def __init__(self, summary=None, best_model=None, base_model=None, models=None):
+        self.summary = summary
+        self.best_model = best_model
+        self.base_model = base_model
+        self.models = models
 
 
 def run_modelsearch(base_model, algorithm, mfl, **kwargs):

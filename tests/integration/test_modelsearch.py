@@ -18,6 +18,6 @@ def test_exhaustive_stepwise(tmp_path, testdata):
         model.update_source(force=True)
 
         mfl = 'ABSORPTION(ZO)\nPERIPHERALS(1)'
-        res = ModelSearch(model, 'exhaustive_stepwise', mfl, rankfunc='ofv').run()
+        res = ModelSearch(model, 'exhaustive_stepwise', mfl, rankfunc='ofv', cutoff=0).run()
 
-        assert len(res.runs) == 4
+        assert len(res.summary) == 4

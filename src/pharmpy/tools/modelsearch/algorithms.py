@@ -77,7 +77,6 @@ def stepwise(base_model, mfl, run_func, rank_func):
 def exhaustive_stepwise(base_model, mfl):
     features = ModelFeatures(mfl)
     all_funcs = features.all_funcs()
-    # TODO: Base condition/warning for input model?
     wf_search = Workflow()
     model_tasks = []
     model_features = dict()
