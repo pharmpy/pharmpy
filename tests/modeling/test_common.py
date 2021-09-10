@@ -7,6 +7,8 @@ from pyfakefs.fake_filesystem_unittest import Patcher
 from pharmpy import Model
 from pharmpy.modeling import (
     add_estimation_step,
+    convert_model,
+    copy_model,
     fix_parameters,
     fix_parameters_to,
     get_model_covariates,
@@ -15,6 +17,7 @@ from pharmpy.modeling import (
     read_model_from_string,
     remove_estimation_step,
     set_estimation_step,
+    set_name,
     unfix_parameters,
     unfix_parameters_to,
     update_source,
@@ -131,6 +134,8 @@ def test_unfix_parameters_to(testdata):
     assert model.parameters['THETA(1)'].init == 0
     assert model.parameters['OMEGA(1,1)'].init == 0
 
+    unfix_parameters_to(model, None, values=[1, 2, 3])
+
 
 def test_update_source(testdata):
     model = Model(testdata / 'nonmem' / 'minimal.mod')
@@ -183,5 +188,28 @@ def test_load_example_model():
 
 
 def test_get_model_covariates(testdata):
-    model = Model(testdata / 'nonmem' / 'pheno_real.mod')
+    model = load_example_model("pheno")
     assert set(get_model_covariates(model)) == {sympy.Symbol('WGT'), sympy.Symbol('APGR')}
+    minimal = Model(testdata / 'nonmem' / 'minimal.mod')
+    assert set(get_model_covariates(minimal)) == set()
+
+
+def test_set_name():
+    model = load_example_model("pheno")
+    set_name(model, "run1")
+    assert model.name == "run1"
+
+
+def test_copy_model():
+    model = load_example_model("pheno")
+    run1 = copy_model(model)
+    assert id(model) != id(run1)
+    assert id(model.parameters) != id(run1.parameters)
+    run2 = copy_model(run1, "run2")
+    assert run2.name == "run2"
+
+
+def test_convert_model():
+    model = load_example_model("pheno")
+    run1 = convert_model(model, "nlmixr")
+    assert model.name == run1.name

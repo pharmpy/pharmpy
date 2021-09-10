@@ -6,7 +6,7 @@ class NullToolDatabase(ToolDatabase):
         self.model_database = NullModelDatabase()
         super().__init__(toolname)
 
-    def store_local_file(source_path):
+    def store_local_file(self, source_path):
         pass
 
 
