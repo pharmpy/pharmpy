@@ -95,6 +95,11 @@ class Workflow:
 
         visualize(self.as_dask_dict(), filename=filename, collapse_outputs=True)
 
+    @property
+    def tasks(self):
+        """All tasks"""
+        return list(self._g.nodes())
+
     def __len__(self):
         return len(self._g.nodes)
 

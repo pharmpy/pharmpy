@@ -1,7 +1,10 @@
+import importlib
+
 import pharmpy.model
 import pharmpy.results
 import pharmpy.tools.common
 import pharmpy.tools.modelfit
+from pharmpy.execute import execute_workflow
 
 
 # TODO: elaborate documentation
@@ -49,4 +52,11 @@ def read_results(path):
         Path to results file
     """
     res = pharmpy.results.read_results(path)
+    return res
+
+
+def run_tool(name, *args, **kwargs):
+    tool = importlib.import_module(f'pharmpy.tools.{name}')
+    wf = tool.create_workflow(*args, **kwargs)
+    res = execute_workflow(wf)
     return res

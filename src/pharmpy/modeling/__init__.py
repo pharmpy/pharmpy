@@ -81,7 +81,7 @@ from pharmpy.modeling.results import (
     calculate_pk_parameters_statistics,
     summarize_modelfit_results,
 )
-from pharmpy.modeling.run import create_results, fit, read_results
+from pharmpy.modeling.run import create_results, fit, read_results, run_tool
 from pharmpy.modeling.update_inits import update_inits
 
 # Remember to sort __all__ alphabetically for order in documentation
@@ -125,6 +125,7 @@ __all__ = [
     'remove_iov',
     'remove_lag_time',
     'remove_peripheral_compartment',
+    'run_tool',
     'sample_parameters_from_covariance_matrix',
     'sample_individual_estimates',
     'sample_parameters_uniformly',

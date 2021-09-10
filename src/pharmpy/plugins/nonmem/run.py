@@ -12,7 +12,7 @@ def execute_model(model):
     path = Path.cwd() / f'NONMEM_run_{model.name}-{uuid.uuid1()}'
     path.mkdir(parents=True, exist_ok=True)
     model = model.copy()
-    model._dataset_updated = True   # Hack to get update_source to update IGNORE
+    model._dataset_updated = True  # Hack to get update_source to update IGNORE
     model.update_source(nofiles=True)
     try:
         model.dataset.name

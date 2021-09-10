@@ -9,38 +9,23 @@ from pharmpy.tools.modelfit import create_multiple_fit_workflow
 from pharmpy.tools.workflows import Task, Workflow
 
 
-class Resmod(pharmpy.tools.Tool):
-    def __init__(self, model):
-        self.model = model
-        super().__init__()
-        self.model.database = self.database.model_database  # FIXME: Changes the user model object
+def create_workflow(model):
+    wf = Workflow()
+    wf.name = "resmod"  # FIXME: Could have as input to Workflow
 
-    def run(self):
-        wf = self.create_workflow()
-        res = self.dispatcher.run(wf, self.database)
-        # res.to_json(path=self.database.path / 'results.json')
-        # res.to_csv(path=self.database.path / 'results.csv')
-        return res
+    task_base_model = Task('create_base_model', _create_base_model, model)
+    wf.add_task(task_base_model)
 
-    def create_workflow(self):
-        self.model.database = (
-            self.database.model_database
-        )  # FIXME: Not right! Changes the user model object
-        wf = Workflow()
+    task_iiv = Task('create_iiv_on_ruv_model', _create_iiv_on_ruv_model, model)
+    wf.add_task(task_iiv)
+    # task_power = Task('create_power_model', _create_power_model, self.model)
 
-        task_base_model = Task('create_base_model', _create_base_model, self.model)
-        wf.add_task(task_base_model)
+    fit_wf = create_multiple_fit_workflow(n=2)
+    wf.insert_workflow(fit_wf, predecessors=[task_base_model, task_iiv])
 
-        task_iiv = Task('create_iiv_on_ruv_model', _create_iiv_on_ruv_model, self.model)
-        wf.add_task(task_iiv)
-        # task_power = Task('create_power_model', _create_power_model, self.model)
-
-        fit_wf = create_multiple_fit_workflow(n=2)
-        wf.insert_workflow(fit_wf, predecessors=[task_base_model, task_iiv])
-
-        task_results = Task('results', post_process)
-        wf.add_task(task_results, predecessors=fit_wf.output_tasks)
-        return wf
+    task_results = Task('results', post_process)
+    wf.add_task(task_results, predecessors=fit_wf.output_tasks)
+    return wf
 
 
 def post_process(*models):

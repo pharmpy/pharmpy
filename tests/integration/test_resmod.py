@@ -1,7 +1,7 @@
 import shutil
 
 from pharmpy import Model
-from pharmpy.tools.resmod import Resmod
+from pharmpy.modeling import run_tool
 from pharmpy.utils import TemporaryDirectoryChanger
 
 
@@ -15,5 +15,5 @@ def test_resmod(tmp_path, testdata):
         model = Model('pheno_real.mod')
         model.dataset_path = tmp_path / 'pheno.dta'
         model.modelfit_results.residuals  # FIXME: Shouldn't be needed
-        res = Resmod(model).run()
+        res = run_tool('resmod', model)
         assert res

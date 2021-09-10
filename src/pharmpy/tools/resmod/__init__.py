@@ -1,4 +1,4 @@
 from .results import ResmodResults
-from .tool import Resmod
+from .tool import create_workflow
 
-__all__ = ['Resmod', 'ResmodResults']
+__all__ = ['create_workflow', 'ResmodResults']
