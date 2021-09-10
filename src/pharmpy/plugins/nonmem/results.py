@@ -206,8 +206,17 @@ class NONMEMModelfitResults(ModelfitResults):
 
     @property
     def predictions(self):
-        df = self._chain._read_from_tables(['ID', 'TIME', 'PRED', 'CIPREDI', 'CPRED'], self)
+        try:
+            return self._predictions
+        except AttributeError:
+            pass
+
+        df = self._chain._read_from_tables(
+            ['ID', 'TIME', 'PRED', 'CIPREDI', 'CPRED', 'IPRED'], self
+        )
+        df['ID'] = df['ID'].convert_dtypes()
         df.set_index(['ID', 'TIME'], inplace=True)
+        self._predictions = df
         return df
 
     @property

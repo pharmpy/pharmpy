@@ -282,7 +282,7 @@ def test_predictions(testdata):
     model = Model(testdata / 'nonmem' / 'pheno_real.mod')
     df = model.modelfit_results.predictions
     assert len(df) == 744
-    assert list(df.columns) == ['PRED']
+    assert list(df.columns) == ['IPRED', 'PRED']
     assert df['PRED'][1.0, 0.0] == 18.143
 
 
