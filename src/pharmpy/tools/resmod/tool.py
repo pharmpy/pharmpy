@@ -1,3 +1,4 @@
+import pandas as pd
 import sympy
 
 import pharmpy.model
@@ -18,10 +19,11 @@ def create_workflow(model):
 
     task_iiv = Task('create_iiv_on_ruv_model', _create_iiv_on_ruv_model, model)
     wf.add_task(task_iiv)
-    # task_power = Task('create_power_model', _create_power_model, self.model)
+    task_power = Task('create_power_model', _create_power_model, model)
+    wf.add_task(task_power)
 
-    fit_wf = create_multiple_fit_workflow(n=2)
-    wf.insert_workflow(fit_wf, predecessors=[task_base_model, task_iiv])
+    fit_wf = create_multiple_fit_workflow(n=3)
+    wf.insert_workflow(fit_wf, predecessors=[task_base_model, task_iiv, task_power])
 
     task_results = Task('results', post_process)
     wf.add_task(task_results, predecessors=fit_wf.output_tasks)
@@ -59,7 +61,7 @@ def _create_base_model(input_model):
 def _create_iiv_on_ruv_model(input_model):
     base_model = _create_base_model(input_model)  # FIXME: could be done only once in the workflow
     model = base_model.copy()
-    model.database = base_model.database  # FIXME: Should be unnecessary
+    #    model.database = base_model.database  # FIXME: Should be unnecessary
     set_iiv_on_ruv(model)
     model.name = 'iiv_on_ruv'
     return model
@@ -68,7 +70,7 @@ def _create_iiv_on_ruv_model(input_model):
 def _create_power_model(input_model):
     base_model = _create_base_model(input_model)  # FIXME: could be done only once in the workflow
     model = base_model.copy()
-    model.individual_prediction_symbol = sympy.Symbol('CIPREDI')  # FIXME: Not model agnostic
+    model.individual_prediction_symbol = sympy.Symbol('IPRED')
     set_power_on_ruv(model)
     model.name = 'power'
     return model
@@ -76,5 +78,8 @@ def _create_power_model(input_model):
 
 def _create_dataset(input_model):
     residuals = input_model.modelfit_results.residuals
-    df = residuals['CWRES'].reset_index().rename(columns={'CWRES': 'DV'})
+    cwres = residuals['CWRES']
+    predictions = input_model.modelfit_results.predictions
+    ipred = predictions['IPRED'].reindex(cwres.index)
+    df = pd.concat([cwres, ipred], axis=1).rename(columns={'CWRES': 'DV'})
     return df

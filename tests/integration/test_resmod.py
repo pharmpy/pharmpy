@@ -15,5 +15,7 @@ def test_resmod(tmp_path, testdata):
         model = Model('pheno_real.mod')
         model.dataset_path = tmp_path / 'pheno.dta'
         model.modelfit_results.residuals  # FIXME: Shouldn't be needed
+        model.modelfit_results.predictions  # FIXME: Shouldn't be needed
         res = run_tool('resmod', model)
+        print(res)
         assert res
