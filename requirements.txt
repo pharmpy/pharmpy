@@ -29,7 +29,7 @@ networkx==2.6.3
 numexpr==2.7.3
 numpy==1.21.2
 packaging==21.0
-pandas==1.3.2
+pandas==1.3.3
 partd==1.2.0
 psutil==5.8.0
 Pygments==2.10.0
