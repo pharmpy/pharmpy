@@ -38,8 +38,9 @@ class ModelSearch(pharmpy.tools.Tool):
                 model_features,
             )
             wf.add_task(task_result, predecessors=model_tasks)
-            res = self.dispatcher.run(wf, self.database)
 
+            res = self.dispatcher.run(wf, self.database)
+            self.base_model.modelfit_results = res.base_model.modelfit_results
             return res
         else:
             df = self.algorithm(
@@ -83,7 +84,12 @@ def post_process_results(base_model, rankfunc, cutoff, model_features, *models):
     # FIXME: in ranks, if any row has NaN the rank converts to float
     df = pd.DataFrame(res_data, index=model_names)
 
-    res = ModelSearchResults(summary=df, base_model=base_model, models=res_models)
+    best_model_name = df['rank'].idxmin()
+    best_model = [model for model in res_models if model.name == best_model_name][0]
+
+    res = ModelSearchResults(
+        summary=df, best_model=best_model, base_model=base_model, models=res_models
+    )
 
     return res
 
