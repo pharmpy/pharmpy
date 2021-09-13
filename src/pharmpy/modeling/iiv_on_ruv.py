@@ -26,6 +26,11 @@ def set_iiv_on_ruv(model, list_of_eps=None, same_eta=True, eta_names=None):
         should be created for each RUV. True is default.
     eta_names : str, list
         Custom names of new etas. Must be equal to the number epsilons or 1 if same eta.
+
+    Return
+    ------
+    Model
+        Reference to same model
     """
     list_of_eps = _format_input_list(list_of_eps)
     eps = _get_epsilons(model, list_of_eps)

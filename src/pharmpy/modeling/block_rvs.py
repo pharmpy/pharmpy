@@ -26,6 +26,11 @@ def create_joint_distribution(model, rvs=None):
     rvs : list
         Sequence of etas or names of etas to combine. If None, all etas that are IIVs and
         non-fixed will be used (full block). None is default.
+
+    Return
+    ------
+    Model
+        Reference to the same model
     """
     all_rvs = model.random_variables
     if rvs is None:
@@ -77,6 +82,11 @@ def split_joint_distribution(model, rvs=None):
     rvs : str, list
         Name/names of etas to separate. If None, all etas that are IIVs and
         non-fixed will become single. None is default.
+
+    Return
+    ------
+    Model
+        Reference to the same model
     """
     all_rvs = model.random_variables
     rvs = _get_etas(model, rvs)

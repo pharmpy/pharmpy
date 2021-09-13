@@ -19,6 +19,11 @@ def add_individual_parameter(model, name):
         Pharmpy model
     name : str
         Name of individual/pk parameter
+
+    Return
+    ------
+    Model
+        Reference to same model
     """
     _add_parameter(model, name)
     return model
@@ -42,6 +47,11 @@ def explicit_odes(model):
     ----------
     model : Model
         Pharmpy model
+
+    Return
+    ------
+    Model
+        Reference to same model
     """
     statements = model.statements
     odes = statements.ode_system
@@ -62,6 +72,11 @@ def set_first_order_elimination(model):
     ----------
     model : Model
         Pharmpy model
+
+    Return
+    ------
+    Model
+        Reference to same model
     """
     return model
 
@@ -74,6 +89,11 @@ def set_zero_order_elimination(model):
     ----------
     model : Model
         Pharmpy model
+
+    Return
+    ------
+    Model
+        Reference to same model
     """
     _do_michaelis_menten_elimination(model)
     obs = model.dataset.pharmpy.observations
@@ -91,6 +111,11 @@ def set_michaelis_menten_elimination(model):
     ----------
     model : Model
         Pharmpy model
+
+    Return
+    ------
+    Model
+        Reference to the same model
     """
     _do_michaelis_menten_elimination(model)
     return model
@@ -104,6 +129,11 @@ def set_mixed_mm_fo_elimination(model):
     ----------
     model : Model
         Pharmpy model
+
+    Return
+    ------
+    Model
+        Reference to same model
     """
     _do_michaelis_menten_elimination(model, combined=True)
     return model
@@ -164,6 +194,11 @@ def set_transit_compartments(model, n):
         Pharmpy model
     n : int
         Number of transit compartments
+
+    Return
+    ------
+    Model
+        Reference to same model
     """
     statements = model.statements
     odes = statements.ode_system
@@ -261,6 +296,11 @@ def set_lag_time(model):
     ----------
     model : Model
         Pharmpy model
+
+    Return
+    ------
+    Model
+        Reference to same model
     """
     odes = model.statements.ode_system
     dosing_comp = odes.find_dosing()
@@ -280,6 +320,11 @@ def remove_lag_time(model):
     ----------
     model : Model
         Pharmpy model
+
+    Return
+    ------
+    Model
+        Reference to same model
     """
     odes = model.statements.ode_system
     dosing_comp = odes.find_dosing()
@@ -301,6 +346,11 @@ def set_zero_order_absorption(model):
     ----------
     model : Model
         Model to set or change to first order absorption rate
+
+    Return
+    ------
+    Model
+        Reference to the same model
     """
     statements = model.statements
     odes = statements.ode_system
@@ -334,6 +384,11 @@ def set_first_order_absorption(model):
     ----------
     model : Model
         Model to set or change to use first order absorption rate
+
+    Return
+    ------
+    Model
+        Reference to same model
     """
     statements = model.statements
     odes = statements.ode_system
@@ -362,6 +417,11 @@ def set_bolus_absorption(model):
     ----------
     model : Model
         Model to set or change absorption rate
+
+    Return
+    ------
+    Model
+        Reference to same model
     """
     statements = model.statements
     odes = statements.ode_system
@@ -395,6 +455,11 @@ def set_seq_zo_fo_absorption(model):
     ----------
     model : Model
         Model to set or change absorption rate
+
+    Return
+    ------
+    Model
+        Reference to same model
     """
     statements = model.statements
     odes = statements.ode_system
@@ -426,6 +491,11 @@ def has_zero_order_absorption(model):
     ----------
     model : Model
         Pharmpy model
+
+    Return
+    ------
+    Model
+        Reference to same model
     """
     odes = model.statements.ode_system
     dosing = odes.find_dosing()
@@ -497,6 +567,11 @@ def set_peripheral_compartments(model, n):
         Pharmpy model
     n : int
         Number of transit compartments
+
+    Return
+    ------
+    Model
+        Reference to same model
     """
     per = len(model.statements.ode_system.find_peripherals())
     if per < n:
@@ -532,6 +607,11 @@ def add_peripheral_compartment(model):
     ----------
     model : Model
         Pharmpy model
+
+    Return
+    ------
+    Model
+        Reference to same model
     """
     statements = model.statements
     odes = statements.ode_system
@@ -608,6 +688,11 @@ def remove_peripheral_compartment(model):
     ----------
     model : Model
         Pharmpy model
+
+    Return
+    ------
+    Model
+        Reference to same model
     """
     statements = model.statements
     odes = statements.ode_system
@@ -684,6 +769,11 @@ def set_ode_solver(model, solver):
         Pharmpy model
     solver : str
         Solver to use
+
+    Return
+    ------
+    Model
+        Reference to same model
     """
     odes = model.statements.ode_system
     odes.solver = solver

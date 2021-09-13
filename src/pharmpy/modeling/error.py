@@ -237,6 +237,11 @@ def set_combined_error_model(model, data_trans=None):
     data_trans : str or expression
         A data transformation expression or None (default) to use the transformation
         specified by the model.
+
+    Return
+    ------
+    Model
+        Reference to the same model
     """
     if has_combined_error_model(model):
         return model
@@ -277,6 +282,11 @@ def has_additive_error_model(model):
     ----------
     model : Model
         The model to check
+
+    Return
+    ------
+    bool
+        True if the model has an additive error model and False otherwise
     """
     y = model.dependent_variable
     expr = model.statements.full_expression_after_odes(y)
@@ -297,6 +307,11 @@ def has_proportional_error_model(model):
     ----------
     model : Model
         The model to check
+
+    Return
+    ------
+    bool
+        True if the model has a proportional error model and False otherwise
     """
     y = model.dependent_variable
     expr = model.statements.full_expression_after_odes(y)
@@ -317,6 +332,11 @@ def has_combined_error_model(model):
     ----------
     model : Model
         The model to check
+
+    Return
+    ------
+    bool
+        True if the model has a combined error model and False otherwise
     """
     y = model.dependent_variable
     expr = model.statements.full_expression_after_odes(y)
@@ -345,6 +365,11 @@ def use_thetas_for_error_stdev(model):
     ----------
     model : Model
         Pharmpy model
+
+    Return
+    ------
+    Model
+        Reference to the same model
     """
     rvs = model.random_variables.epsilons
     for eps in rvs:
@@ -370,6 +395,11 @@ def set_weighted_error_model(model):
     ----------
     model : Model
         Pharmpy model
+
+    Return
+    ------
+    Model
+        Reference to the same model
     """
     stats, y, f = _preparations(model)
     epsilons = model.random_variables.epsilons
@@ -404,6 +434,11 @@ def set_dtbs_error_model(model):
     ----------
     model : Model
         Pharmpy model
+
+    Return
+    ------
+    Model
+        Reference to the same model
     """
     use_thetas_for_error_stdev(model)
     set_weighted_error_model(model)

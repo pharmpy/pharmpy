@@ -23,6 +23,11 @@ def transform_etas_boxcox(model, list_of_etas=None):
         Pharmpy model to apply boxcox transformation to.
     list_of_etas : str, list
         Name/names of etas to transform. If None, all etas will be transformed (default).
+
+    Return
+    ------
+    Model
+        Reference to the same model
     """
     list_of_etas = _format_input_list(list_of_etas)
     etas = _get_etas(model, list_of_etas)
@@ -42,6 +47,11 @@ def transform_etas_tdist(model, list_of_etas=None):
         Pharmpy model to apply t distribution transformation to.
     list_of_etas : str, list
         Name/names of etas to transform. If None, all etas will be transformed (default).
+
+    Return
+    ------
+    Model
+        Reference to the same model
     """
     list_of_etas = _format_input_list(list_of_etas)
     etas = _get_etas(model, list_of_etas)
@@ -65,6 +75,11 @@ def transform_etas_john_draper(model, list_of_etas=None):
         Pharmpy model to apply John Draper transformation to.
     list_of_etas : str, list
         Name/names of etas to transform. If None, all etas will be transformed (default).
+
+    Return
+    ------
+    Model
+        Reference to the same model
     """
     list_of_etas = _format_input_list(list_of_etas)
     etas = _get_etas(model, list_of_etas)

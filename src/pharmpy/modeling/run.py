@@ -15,6 +15,11 @@ def fit(models):
     ----------
     models : list
         List of models
+
+    Return
+    ------
+    Model
+        Reference to same model
     """
     if isinstance(models, pharmpy.model.Model):
         models = [models]
@@ -37,6 +42,13 @@ def create_results(path, **kwargs):
     ----------
     path : str, Path
         Path to run directory
+    kwargs
+        Arguments to pass to tool specific create results function
+
+    Returns
+    -------
+    Results
+        Results object for tool
     """
     res = pharmpy.tools.common.create_results(path, **kwargs)
     return res
@@ -50,12 +62,33 @@ def read_results(path):
     ----------
     path : str, Path
         Path to results file
+
+    Return
+    ------
+    Results
+        Results object for tool
     """
     res = pharmpy.results.read_results(path)
     return res
 
 
 def run_tool(name, *args, **kwargs):
+    """Run tool workflow
+
+    Parameters
+    ----------
+    name : str
+        Name of tool to run
+    args
+        Arguments to pass to tool
+    kwargs
+        Arguments to pass to tool
+
+    Return
+    ------
+    Results
+        Results object for tool
+    """
     tool = importlib.import_module(f'pharmpy.tools.{name}')
     wf = tool.create_workflow(*args, **kwargs)
     res = execute_workflow(wf)

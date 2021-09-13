@@ -20,6 +20,12 @@ def calculate_eta_shrinkage(model, sd=False):
     sd : bool
         Calculate shrinkage on the standard deviation scale (default is to calculate on the
         variance scale)
+
+    Return
+    ------
+    Series
+        Shrinkage for each eta
+
     """
     res = model.modelfit_results
     pe = res.parameter_estimates
@@ -47,6 +53,11 @@ def calculate_individual_shrinkage(model):
     ----------
     model : Model
         Pharmpy model
+
+    Return
+    ------
+    DataFrame
+        Shrinkage for each eta and individual
     """
     res = model.modelfit_results
     cov = res.individual_estimates_covariance
@@ -285,6 +296,11 @@ def summarize_modelfit_results(models):
     ----------
     models : list
         List of models
+
+    Return
+    ------
+    DataFrame
+        One row per model
     """
     run_summaries = []
     parameter_summaries = []

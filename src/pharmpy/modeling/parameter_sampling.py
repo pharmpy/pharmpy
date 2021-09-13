@@ -192,15 +192,26 @@ def sample_parameters_from_covariance_matrix(
 
     Parameters
     ----------
+    model : Model
+        Input model
+    modelfit_results : ModelfitResults
+        Alternative results object. Default is to use the one in model
     parameters
         Use to only sample a subset of the parameters. None means all
-    force_posdef_samples
+    force_posdef_samples : int
         Set to how many iterations to do before forcing all samples to be positive definite. None is
         default and means never and 0 means always
+    force_posdef_covmatrix : bool
+        Set to True to force the input covariance matrix to be positive definite
+    n : int
+        Number of samples
+    rng : Generator
+        Random number generator
 
     Returns
     -------
-    A dataframe with one sample per row
+    DataFrame
+        A dataframe with one sample per row
     """
     if modelfit_results is None:
         modelfit_results = model.modelfit_results

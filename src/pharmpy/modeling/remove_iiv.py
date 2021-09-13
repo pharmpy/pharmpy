@@ -17,6 +17,11 @@ def remove_iiv(model, to_remove=None):
     to_remove : str, list
         Name/names of etas and/or name/names of individual parameters to remove.
         If None, all etas that are IIVs will be removed. None is default.
+
+    Return
+    ------
+    Model
+        Reference to the same model
     """
     rvs, sset = model.random_variables, model.statements
     to_remove = _format_input_list(to_remove)

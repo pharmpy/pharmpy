@@ -61,7 +61,7 @@ def _create_dataset(model):
 
 
 def predict_outliers(model):
-    """Predict outliers for a model using machine learning"""
+    """Predict outliers for a model using machine learning."""
     model_path = Path(__file__).parent.resolve() / 'ml_models' / 'outliers.tflite'
     interpreter = tflite.Interpreter(str(model_path))
     interpreter.allocate_tensors()

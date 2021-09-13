@@ -126,6 +126,11 @@ def add_covariate_effect(model, parameter, covariate, effect, operation='*'):
         Type of covariate effect. May be abbreviated covariate effect (see above) or custom.
     operation : str, optional
         Whether the covariate effect should be added or multiplied (default).
+
+    Return
+    ------
+    Model
+        Reference to the same model
     """
     sset = model.statements
 

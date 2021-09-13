@@ -16,6 +16,11 @@ def remove_iov(model):
     ----------
     model : Model
         Pharmpy model to remove IOV from.
+
+    Return
+    ------
+    Model
+        Reference to the same model
     """
     rvs, sset = model.random_variables, model.statements
     etas = _get_etas(rvs)

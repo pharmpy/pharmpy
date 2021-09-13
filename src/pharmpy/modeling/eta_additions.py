@@ -38,6 +38,11 @@ def add_iiv(model, list_of_parameters, expression, operation='*', eta_names=None
         Whether the new IIV should be added or multiplied (default).
     eta_names : str, list, optional
         Custom name/names of new eta
+
+    Return
+    ------
+    Model
+        Reference to the same model
     """
     rvs, pset, sset = model.random_variables, model.parameters, model.statements
 
@@ -97,6 +102,11 @@ def add_iov(model, occ, list_of_parameters=None, eta_names=None):
     eta_names : str, list
         Custom names of new etas. Must be equal to the number of input etas times the number of
         categories for occasion.
+
+    Return
+    ------
+    Model
+        Reference to the same model
     """
     rvs, pset, sset = model.random_variables, model.parameters, model.statements
 

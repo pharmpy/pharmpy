@@ -20,6 +20,11 @@ def set_power_on_ruv(model, list_of_eps=None):
     list_of_eps : str, list
         Name/names of epsilons to apply power effect. If None, all epsilons will be used.
         None is default.
+
+    Return
+    ------
+    Model
+        Reference to the same model
     """
     list_of_eps = _format_input_list(list_of_eps)
     eps = model.random_variables.epsilons
