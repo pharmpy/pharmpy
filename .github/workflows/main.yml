@@ -30,4 +30,4 @@ jobs:
         PLATFORM: ${{ matrix.platform }}
     - name: Test docs
       if: matrix.platform == 'ubuntu-latest' && matrix.python-version == '3.9'
-      run: tox -e docs,doctest
+      run: tox -e docs,doctest,doccheck
