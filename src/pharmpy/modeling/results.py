@@ -108,6 +108,17 @@ def calculate_individual_parameter_statistics(model, exprs, rng=None):
     pd.DataFrame
         A DataFrame of statistics indexed on parameter and covariate value.
 
+    Examples
+    --------
+    >>> from pharmpy.modeling import load_example_model, create_rng, calculate_individual_parameter_statistics
+    >>> model = load_example_model("pheno")
+    >>> rng = create_rng(23)
+    >>> calculate_individual_parameter_statistics(model, "K=CL/V", rng=rng)  # doctest: +NORMALIZE_WHITESPACE
+                              mean  variance    stderr
+    parameter covariates
+    K         p5          0.004234  0.000001  0.001138
+              median      0.004909  0.000001  0.001212
+              p95         0.004910  0.000001  0.001263
     """
     rng = create_rng(rng)
 
@@ -190,6 +201,18 @@ def calculate_pk_parameters_statistics(model, rng=None):
     -------
     pd.DataFrame
         A DataFrame of statistics indexed on parameter and covariate value.
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import load_example_model, create_rng, calculate_pk_parameters_statistics
+    >>> model = load_example_model("pheno")
+    >>> rng = create_rng(23)
+    >>> calculate_pk_parameters_statistics(model, rng=rng)  # doctest: +NORMALIZE_WHITESPACE
+                              mean  variance    stderr
+    parameter covariates
+    k_e       p5          0.004234  0.000001  0.001138
+              median      0.004909  0.000001  0.001212
+              p95         0.004910  0.000001  0.001263
 
     See Also
     --------
