@@ -13,7 +13,7 @@ def execute_workflow(workflow, dispatcher=None, database=None, path=None):
     if database is None:
         database = default_tool_database(toolname=workflow.name, path=path)
 
-    # For all input models set new database
+    # For all input models set new database and read in results
     for task in workflow.tasks:
         if task.has_input():
             new_inp = []
@@ -21,6 +21,11 @@ def execute_workflow(workflow, dispatcher=None, database=None, path=None):
                 if isinstance(inp, Model):
                     new_model = inp.copy()
                     new_model.database = database.model_database
+                    try:
+                        new_model.modelfit_results.residuals
+                        new_model.modelfit_results.predictions
+                    except AttributeError:
+                        pass
                     new_inp.append(new_model)
                 else:
                     new_inp.append(inp)
