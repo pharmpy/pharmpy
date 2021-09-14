@@ -110,10 +110,11 @@ def calculate_individual_parameter_statistics(model, exprs, rng=None):
 
     Examples
     --------
-    >>> from pharmpy.modeling import load_example_model, create_rng, calculate_individual_parameter_statistics
+    >>> from pharmpy.modeling import load_example_model, create_rng
+    >>> from pharmpy.modeling import calculate_individual_parameter_statistics
     >>> model = load_example_model("pheno")
     >>> rng = create_rng(23)
-    >>> calculate_individual_parameter_statistics(model, "K=CL/V", rng=rng)  # doctest: +NORMALIZE_WHITESPACE
+    >>> calculate_individual_parameter_statistics(model, "K=CL/V", rng=rng)  # doctest: +NORMALIZE_WHITESPACE   # noqa: E501
                               mean  variance    stderr
     parameter covariates
     K         p5          0.004234  0.000001  0.001138
@@ -204,7 +205,8 @@ def calculate_pk_parameters_statistics(model, rng=None):
 
     Examples
     --------
-    >>> from pharmpy.modeling import load_example_model, create_rng, calculate_pk_parameters_statistics
+    >>> from pharmpy.modeling import load_example_model, create_rng
+    >>> from pharmpy.modeling import calculate_pk_parameters_statistics
     >>> model = load_example_model("pheno")
     >>> rng = create_rng(23)
     >>> calculate_pk_parameters_statistics(model, rng=rng)  # doctest: +NORMALIZE_WHITESPACE
