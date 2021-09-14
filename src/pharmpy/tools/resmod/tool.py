@@ -9,6 +9,8 @@ from pharmpy.statements import Assignment, ModelStatements
 from pharmpy.tools.modelfit import create_multiple_fit_workflow
 from pharmpy.tools.workflows import Task, Workflow
 
+from .results import calculate_results
+
 
 def create_workflow(model):
     wf = Workflow()
@@ -31,7 +33,18 @@ def create_workflow(model):
 
 
 def post_process(*models):
-    return models[0]
+    res = calculate_results(
+        base_model=_find_model(models, 'base'),
+        iiv_on_ruv=_find_model(models, 'iiv_on_ruv'),
+        power=_find_model(models, 'power'),
+    )
+    return res
+
+
+def _find_model(models, name):
+    for model in models:
+        if model.name == name:
+            return model
 
 
 def _create_base_model(input_model):
@@ -52,7 +65,7 @@ def _create_base_model(input_model):
     base_model.statements = stats
 
     base_model.dependent_variable = y.symbol
-    base_model.name = "base"
+    base_model.name = 'base'
     base_model.dataset = _create_dataset(input_model)
     base_model.database = input_model.database
     return base_model

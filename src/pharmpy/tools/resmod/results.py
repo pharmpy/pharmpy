@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 
 from pharmpy.results import Results
@@ -10,6 +11,24 @@ class ResmodResults(Results):
 
     def __init__(self, models=None):
         self.models = models
+
+
+def calculate_results(base_model, iiv_on_ruv, power):
+    base_ofv = base_model.modelfit_results.ofv
+    dofv_iiv_on_ruv = iiv_on_ruv.modelfit_results.ofv - base_ofv
+    dofv_power = power.modelfit_results.ofv - base_ofv
+    df = pd.DataFrame(
+        {
+            'model': ['IIV_on_RUV', 'power'],
+            'dvid': 1,
+            'iteration': 1,
+            'dofv': [dofv_iiv_on_ruv, dofv_power],
+            'parameters': np.nan,
+        }
+    )
+    df.set_index(['model', 'dvid', 'iteration'], inplace=True)
+    res = ResmodResults(models=df)
+    return res
 
 
 def psn_resmod_results(path):
