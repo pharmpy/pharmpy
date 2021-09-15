@@ -242,6 +242,28 @@ def set_combined_error_model(model, data_trans=None):
     ------
     Model
         Reference to the same model
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import *
+    >>> model = remove_error_model(load_example_model("pheno"))
+    >>> set_combined_error_model(model)    # doctest: +ELLIPSIS
+    <...>
+    >>> model.statements.find_assignment("Y")
+    Y := F*epsilon_p + F + epsilon_a
+
+    >>> from pharmpy.modeling import *
+    >>> model = remove_error_model(load_example_model("pheno"))
+    >>> set_combined_error_model(model, data_trans="log(Y)")    # doctest: +ELLIPSIS
+    <...>
+    >>> model.statements.find_assignment("Y")
+    Y := epsilon_p + log(F) + epsilon_a/F
+
+    See Also
+    --------
+    set_additive_error_model : Additive error model
+    set_proportional_error_model: Proportional error model
+
     """
     if has_combined_error_model(model):
         return model
@@ -287,6 +309,18 @@ def has_additive_error_model(model):
     ------
     bool
         True if the model has an additive error model and False otherwise
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import load_example_model, has_additive_error_model
+    >>> model = load_example_model("pheno")
+    >>> has_additive_error_model(model)
+    False
+
+    See Also
+    --------
+    has_proportional_error_model : Check if a model has a proportional error model
+    has_combined_error_model : Check if a model has a combined error model
     """
     y = model.dependent_variable
     expr = model.statements.full_expression_after_odes(y)
@@ -312,6 +346,18 @@ def has_proportional_error_model(model):
     ------
     bool
         True if the model has a proportional error model and False otherwise
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import load_example_model, has_proportional_error_model
+    >>> model = load_example_model("pheno")
+    >>> has_proportional_error_model(model)
+    True
+
+    See Also
+    --------
+    has_additive_error_model : Check if a model has an additive error model
+    has_combined_error_model : Check if a model has a combined error model
     """
     y = model.dependent_variable
     expr = model.statements.full_expression_after_odes(y)
@@ -337,6 +383,18 @@ def has_combined_error_model(model):
     ------
     bool
         True if the model has a combined error model and False otherwise
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import load_example_model, has_combined_error_model
+    >>> model = load_example_model("pheno")
+    >>> has_combined_error_model(model)
+    False
+
+    See Also
+    --------
+    has_additive_error_model : Check if a model has an additive error model
+    has_proportional_error_model : Check if a model has a proportional error model
     """
     y = model.dependent_variable
     expr = model.statements.full_expression_after_odes(y)
@@ -370,6 +428,19 @@ def use_thetas_for_error_stdev(model):
     ------
     Model
         Reference to the same model
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import load_example_model, use_thetas_for_error_stdev
+    >>> model = load_example_model("pheno")
+    >>> use_thetas_for_error_stdev(model)    # doctest: +ELLIPSIS
+    <...>
+    >>> model.statements.find_assignment("Y")
+    Y := EPS(1)*SD_EPS(1)*W + F
+
+    See also
+    --------
+    set_weighted_error_model : Encode error model with one epsilon and weight
     """
     rvs = model.random_variables.epsilons
     for eps in rvs:
@@ -400,6 +471,17 @@ def set_weighted_error_model(model):
     ------
     Model
         Reference to the same model
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import load_example_model, set_weighted_error_model
+    >>> model = load_example_model("pheno")
+    >>> set_weighted_error_model(model)    # doctest: +ELLIPSIS
+    <...>
+
+    See also
+    --------
+    use_thetas_for_error_stdev : Use thetas to estimate error
     """
     stats, y, f = _preparations(model)
     epsilons = model.random_variables.epsilons
@@ -439,6 +521,14 @@ def set_dtbs_error_model(model):
     ------
     Model
         Reference to the same model
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import load_example_model, set_dtbs_error_model
+    >>> model = load_example_model("pheno")
+    >>> set_dtbs_error_model(model)    # doctest: +ELLIPSIS
+    <...>
+
     """
     use_thetas_for_error_stdev(model)
     set_weighted_error_model(model)
