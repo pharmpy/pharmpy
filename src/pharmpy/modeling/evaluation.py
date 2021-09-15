@@ -22,6 +22,25 @@ def evaluate_expression(model, expression):
     -------
     pd.Series
         A series of one evaluated value for each data record
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import load_example_model, evaluate_expression
+    >>> model = load_example_model("pheno")
+    >>> evaluate_expression(model, "TVCL*1000")
+    0      6.573770
+    1      6.573770
+    2      6.573770
+    3      6.573770
+    4      6.573770
+             ...
+    739    5.165105
+    740    5.165105
+    741    5.165105
+    742    5.165105
+    743    5.165105
+    Length: 744, dtype: float64
+
     """
     expression = sympy.sympify(expression)
     full_expr = model.statements.full_expression_from_odes(expression)

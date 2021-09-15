@@ -238,6 +238,16 @@ def set_initial_estimates(model, inits):
     -------
     Model
         Reference to the same model object
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import load_example_model, set_initial_estimates
+    >>> model = load_example_model("pheno")
+    >>> set_initial_estimates(model, {'THETA(1)': 2})   # doctest: +ELLIPSIS
+    <...>
+    >>> model.parameters['THETA(1)']
+    Parameter("THETA(1)", 2, lower=0.0, upper=1000000, fix=False)
+
     """
     model.parameters.inits = inits
     return model
@@ -588,8 +598,8 @@ def load_example_model(name):
 def get_model_covariates(model, strings=False):
     """List of covariates used in model
 
-    A covariate in the model is defined to be a data item
-    affecting the model prediction except dosing items.
+    A covariate in the model is here defined to be a data item
+    affecting the model prediction excluding dosing items.
 
     Parameters
     ----------
@@ -603,6 +613,15 @@ def get_model_covariates(model, strings=False):
     list
         Covariate symbols or names
 
+    Examples
+    --------
+    >>> from pharmpy.modeling import load_example_model, get_model_covariates
+    >>> model = load_example_model("pheno")
+    >>> get_model_covariates(model)
+    [APGR, WGT]
+    >>> get_model_covariates(model, strings=True)
+    ['APGR', 'WGT']
+
     """
     symbs = model.statements.dependencies(model.dependent_variable)
     # Remove dose symbol if not used as covariate
@@ -615,6 +634,7 @@ def get_model_covariates(model, strings=False):
             if isinstance(s, Assignment):
                 cov_dose_symbols |= dosesyms.intersection(s.rhs_symbols)
     covs = list(symbs.intersection(datasymbs) - cov_dose_symbols)
+    covs = sorted(covs, key=lambda x: x.name)   # sort to make order deterministic
     if strings:
         covs = [str(x) for x in covs]
     return covs
