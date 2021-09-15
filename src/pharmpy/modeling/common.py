@@ -634,7 +634,7 @@ def get_model_covariates(model, strings=False):
             if isinstance(s, Assignment):
                 cov_dose_symbols |= dosesyms.intersection(s.rhs_symbols)
     covs = list(symbs.intersection(datasymbs) - cov_dose_symbols)
-    covs = sorted(covs, key=lambda x: x.name)   # sort to make order deterministic
+    covs = sorted(covs, key=lambda x: x.name)  # sort to make order deterministic
     if strings:
         covs = [str(x) for x in covs]
     return covs
