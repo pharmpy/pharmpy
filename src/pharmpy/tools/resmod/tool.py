@@ -12,17 +12,22 @@ from pharmpy.tools.workflows import Task, Workflow
 from .results import calculate_results
 
 
-def create_workflow(model):
+def create_workflow(model=None):
     wf = Workflow()
     wf.name = "resmod"  # FIXME: Could have as input to Workflow
 
-    task_base_model = Task('create_base_model', _create_base_model, model)
-    wf.add_task(task_base_model)
+    if model is not None:
+        start_task = Task('start_resmod', start, model)
+    else:
+        start_task = Task('start_resmod', start)
 
-    task_iiv = Task('create_iiv_on_ruv_model', _create_iiv_on_ruv_model, model)
-    wf.add_task(task_iiv)
-    task_power = Task('create_power_model', _create_power_model, model)
-    wf.add_task(task_power)
+    task_base_model = Task('create_base_model', _create_base_model)
+    wf.add_task(task_base_model, predecessors=start_task)
+
+    task_iiv = Task('create_iiv_on_ruv_model', _create_iiv_on_ruv_model)
+    wf.add_task(task_iiv, predecessors=start_task)
+    task_power = Task('create_power_model', _create_power_model)
+    wf.add_task(task_power, predecessors=start_task)
 
     fit_wf = create_multiple_fit_workflow(n=3)
     wf.insert_workflow(fit_wf, predecessors=[task_base_model, task_iiv, task_power])
@@ -30,6 +35,10 @@ def create_workflow(model):
     task_results = Task('results', post_process)
     wf.add_task(task_results, predecessors=fit_wf.output_tasks)
     return wf
+
+
+def start(model):
+    return model
 
 
 def post_process(*models):
