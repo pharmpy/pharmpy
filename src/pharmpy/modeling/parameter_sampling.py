@@ -159,7 +159,7 @@ def sample_parameters_uniformly(
     --------
     sample_parameters_from_covariance_matrix : Sample parameter vectors using the
         uncertainty covariance matrix
-    sample_from_function : Sample parameter vectors using a general function
+    sample_individual_estimates : Sample individual estiates given their covariance
 
     """
 
@@ -212,6 +212,23 @@ def sample_parameters_from_covariance_matrix(
     -------
     DataFrame
         A dataframe with one sample per row
+
+    Example
+    -------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> rng = create_rng(23)
+    >>> sample_parameters_from_covariance_matrix(model, n=3, rng=rng)
+       THETA(1)  THETA(2)  THETA(3)  OMEGA(1,1)  OMEGA(2,2)  SIGMA(1,1)
+    0  0.005069  0.974989  0.204629    0.024756    0.012088    0.012943
+    1  0.004690  0.958431  0.233231    0.038866    0.029000    0.012516
+    2  0.004902  0.950778  0.128388    0.019020    0.023866    0.013413
+
+    See also
+    --------
+    sample_parameters_uniformly : Sample parameter vectors using uniform distribution
+    sample_individual_estimates : Sample individual estiates given their covariance
+
     """
     if modelfit_results is None:
         modelfit_results = model.modelfit_results
@@ -259,6 +276,34 @@ def sample_individual_estimates(model, parameters=None, samples_per_id=100, rng=
     -------
     pd.DataFrame : Pool of samples in a DataFrame
 
+    Example
+    -------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> rng = create_rng(23)
+    >>> sample_individual_estimates(model, samples_per_id=2, rng=rng)
+                 ETA(1)    ETA(2)
+    ID sample
+    1  0      -0.127941  0.037273
+       1      -0.065492 -0.182851
+    2  0      -0.263323 -0.265849
+       1      -0.295883 -0.060346
+    3  0      -0.012108  0.219967
+    ...             ...       ...
+    57 1      -0.034279 -0.040988
+    58 0      -0.187879 -0.143184
+       1      -0.088845 -0.034655
+    59 0      -0.187779 -0.014214
+       1      -0.019953 -0.151151
+    <BLANKLINE>
+    [118 rows x 2 columns]
+
+    See also
+    --------
+    sample_parameters_from_covariance_matrix : Sample parameter vectors using the
+        uncertainty covariance matrix
+    sample_parameters_uniformly : Sample parameter vectors using uniform distribution
+
     """
     rng = create_rng(rng)
     ests = model.modelfit_results.individual_estimates
@@ -272,6 +317,8 @@ def sample_individual_estimates(model, parameters=None, samples_per_id=100, rng=
         sigma = nearest_posdef(sigma)
         id_samples = rng.multivariate_normal(mu.values, sigma.values, size=samples_per_id)
         id_df = pd.DataFrame(id_samples, columns=ests.columns)
-        id_df.index = [idx] * len(id_df)  # ID as index
+        id_df['ID'] = idx
+        id_df['sample'] = list(range(0, samples_per_id))
+        id_df.set_index(['ID', 'sample'], drop=True, inplace=True)
         samples = pd.concat((samples, id_df))
     return samples

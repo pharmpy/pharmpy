@@ -863,7 +863,7 @@ def calculate_results_using_bipp(
     rng = create_rng(rng)
     rvs, dist = frem_model.random_variables.iiv.distributions()[-1]
     etas = [rv.name for rv in rvs]
-    pool = sample_individual_estimates(frem_model, parameters=etas, rng=rng)
+    pool = sample_individual_estimates(frem_model, parameters=etas, rng=rng).droplevel('sample')
     ninds = len(pool.index.unique())
     ishr = calculate_individual_shrinkage(frem_model)
     lower_indices = np.tril_indices(len(etas))
