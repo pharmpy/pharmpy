@@ -11,8 +11,6 @@ from pharmpy.modeling import create_rng, sample_parameters_from_covariance_matri
 def calculate_eta_shrinkage(model, sd=False):
     """Calculate eta shrinkage for each eta
 
-    Variance = False to get sd scale
-
     Parameters
     ----------
     model : Model
@@ -25,6 +23,23 @@ def calculate_eta_shrinkage(model, sd=False):
     ------
     Series
         Shrinkage for each eta
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> calculate_eta_shrinkage(model)
+    ETA(1)    0.720481
+    ETA(2)    0.240295
+    dtype: float64
+    >>> calculate_eta_shrinkage(model, sd=True)
+    ETA(1)    0.471305
+    ETA(2)    0.128389
+    dtype: float64
+
+    See also
+    --------
+    calculate_individual_shrinkage
 
     """
     res = model.modelfit_results
@@ -58,6 +73,78 @@ def calculate_individual_shrinkage(model):
     ------
     DataFrame
         Shrinkage for each eta and individual
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> calculate_individual_shrinkage(model)
+          ETA(1)    ETA(2)
+    ID
+    1   0.847789  0.256473
+    2   0.796643  0.210669
+    3   0.755025  0.226957
+    4   0.764541  0.216405
+    5   0.816192  0.203974
+    6   0.778108  0.210992
+    7   0.659420  0.236875
+    8   0.668551  0.240097
+    9   0.260056  0.200374
+    10  0.725190  0.226563
+    11  0.972110  0.421852
+    12  0.249640  0.254119
+    13  0.730294  0.364932
+    14  0.165785  0.194464
+    15  0.813399  0.313554
+    16  0.797328  0.213211
+    17  0.769059  0.278079
+    18  0.098506  0.176778
+    19  0.749022  0.235386
+    20  0.742181  0.222932
+    21  0.317956  0.264473
+    22  0.943950  0.232732
+    23  0.707183  0.259077
+    24  0.553787  0.247717
+    25  0.826349  0.114302
+    26  0.854777  0.341384
+    27  0.820829  0.263235
+    28  0.999942  0.319986
+    29  0.967084  0.432760
+    30  0.404773  0.325215
+    31  0.999980  0.318421
+    32  0.925283  0.167667
+    33  0.913706  0.242106
+    34  0.875554  0.249197
+    35  0.849135  0.294294
+    36  0.172206  0.246422
+    37  0.747380  0.278340
+    38  0.187440  0.231249
+    39  0.237805  0.254485
+    40  0.999925  0.189793
+    41  0.941906  0.170998
+    42  0.923801  0.244046
+    43  0.999928  0.320403
+    44  0.237637  0.260453
+    45  0.869540  0.194503
+    46  0.999949  0.319750
+    47  0.983782  0.393234
+    48  0.698267  0.169337
+    49  0.776674  0.214962
+    50  0.688847  0.192608
+    51  0.822213  0.202534
+    52  0.511489  0.273601
+    53  0.964757  0.223448
+    54  0.762153  0.181648
+    55  0.965657  0.435741
+    56  0.995278  0.354798
+    57  0.813382  0.263372
+    58  0.727295  0.232867
+    59  0.738777  0.224742
+
+    See also
+    --------
+    calculate_eta_shrinkage
+
     """
     res = model.modelfit_results
     cov = res.individual_estimates_covariance

@@ -815,7 +815,7 @@ class ModelStatements(MutableSequence):
             return assignments
 
     def extract_params_from_symb(self, symbol_name, pset):
-        terms = {symb.name for symb in self.find_assignment(symbol_name).free_symbols}
+        terms = {symb.name for symb in self.full_expression_from_odes(sympy.Symbol(symbol_name)).free_symbols}
         theta_name = terms.intersection(pset.names).pop()
         return pset[theta_name]
 

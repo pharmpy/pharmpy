@@ -64,7 +64,6 @@ def explicit_odes(model):
     return model
 
 
-# TODO: elaborate documentation
 def set_first_order_elimination(model):
     """Sets elimination to first order
 
@@ -77,13 +76,33 @@ def set_first_order_elimination(model):
     ------
     Model
         Reference to same model
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> set_first_order_elimination(model)     # doctest: +ELLIPSIS
+    <...>
+    >>> print(model.statements.ode_system)
+    Bolus(AMT)
+    ┌───────┐       ┌──────┐
+    │CENTRAL│──CL/V→│OUTPUT│
+    └───────┘       └──────┘
+    <BLANKLINE>
+
+    See also
+    --------
+    set_zero_order_elimination
+    set_michaelis_menten_elimination
+
     """
     return model
 
 
 def set_zero_order_elimination(model):
-    """Sets elimination to zero order. Initial estimate for KM is set to 1% of smallest
-    observation.
+    """Sets elimination to zero order.
+
+    Initial estimate for KM is set to 1% of smallest observation.
 
     Parameters
     ----------
@@ -94,6 +113,25 @@ def set_zero_order_elimination(model):
     ------
     Model
         Reference to same model
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> set_zero_order_elimination(model)     # doctest: +ELLIPSIS
+    <...>
+    >>> print(model.statements.ode_system)
+    Bolus(AMT)
+    ┌───────┐                                    ┌──────┐
+    │CENTRAL│──CLMM*KM/(V*(KM + A_CENTRAL(t)/V))→│OUTPUT│
+    └───────┘                                    └──────┘
+    <BLANKLINE>
+
+    See also
+    --------
+    set_first_order_elimination
+    set_michaelis_menten_elimination
+
     """
     _do_michaelis_menten_elimination(model)
     obs = model.dataset.pharmpy.observations
@@ -338,9 +376,10 @@ def remove_lag_time(model):
 
 
 def set_zero_order_absorption(model):
-    """Set or change to zero order absorption rate. Initial estimate for absorption rate is set
-    the previous rate if available, otherwise it is set to the time of first observation/2 is
-    used.
+    """Set or change to zero order absorption rate.
+
+    Initial estimate for absorption rate is set
+    the previous rate if available, otherwise it is set to the time of first observation/2.
 
     Parameters
     ----------
@@ -351,6 +390,25 @@ def set_zero_order_absorption(model):
     ------
     Model
         Reference to the same model
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> set_zero_order_absorption(model)     # doctest: +ELLIPSIS
+    <...>
+    >>> print(model.statements.ode_system)
+    Infusion(AMT, duration=2*MAT)
+    ┌───────┐       ┌──────┐
+    │CENTRAL│──CL/V→│OUTPUT│
+    └───────┘       └──────┘
+    <BLANKLINE>
+
+    See also
+    --------
+    set_bolus_order_absorption
+    set_first_order_absorption
+
     """
     statements = model.statements
     odes = statements.ode_system
@@ -377,8 +435,10 @@ def set_zero_order_absorption(model):
 
 
 def set_first_order_absorption(model):
-    """Set or change to first order absorption rate. Initial estimate for absorption rate is set
-    the previous rate if available, otherwise it is set to the time of first observation/2 is used.
+    """Set or change to first order absorption rate.
+
+    Initial estimate for absorption rate is set to
+    the previous rate if available, otherwise it is set to the time of first observation/2.
 
     Parameters
     ----------
@@ -389,6 +449,25 @@ def set_first_order_absorption(model):
     ------
     Model
         Reference to same model
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> set_first_order_absorption(model)     # doctest: +ELLIPSIS
+    <...>
+    >>> print(model.statements.ode_system)
+    Bolus(AMT)
+    ┌─────┐        ┌───────┐       ┌──────┐
+    │DEPOT│──1/MAT→│CENTRAL│──CL/V→│OUTPUT│
+    └─────┘        └───────┘       └──────┘
+    <BLANKLINE>
+
+    See also
+    --------
+    set_bolus_order_absorption
+    set_zero_order_absorption
+
     """
     statements = model.statements
     odes = statements.ode_system
@@ -422,6 +501,25 @@ def set_bolus_absorption(model):
     ------
     Model
         Reference to same model
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> set_bolus_absorption(model)     # doctest: +ELLIPSIS
+    <...>
+    >>> print(model.statements.ode_system)
+    Bolus(AMT)
+    ┌───────┐       ┌──────┐
+    │CENTRAL│──CL/V→│OUTPUT│
+    └───────┘       └──────┘
+    <BLANKLINE>
+
+    See also
+    --------
+    set_zero_order_absorption
+    set_first_order_absorption
+
     """
     statements = model.statements
     odes = statements.ode_system
@@ -447,9 +545,11 @@ def set_bolus_absorption(model):
 
 
 def set_seq_zo_fo_absorption(model):
-    """Set or change to sequential zero order first order absorption rate. Initial estimate for
+    """Set or change to sequential zero order first order absorption rate.
+
+    Initial estimate for
     absorption rate is set the previous rate if available, otherwise it is set to the time of
-    first observation/2 is used.
+    first observation/2.
 
     Parameters
     ----------
@@ -460,6 +560,26 @@ def set_seq_zo_fo_absorption(model):
     ------
     Model
         Reference to same model
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> set_seq_zo_fo_absorption(model)     # doctest: +ELLIPSIS
+    <...>
+    >>> print(model.statements.ode_system)
+    Infusion(AMT, duration=2*MDT)
+    ┌─────┐        ┌───────┐       ┌──────┐
+    │DEPOT│──1/MAT→│CENTRAL│──CL/V→│OUTPUT│
+    └─────┘        └───────┘       └──────┘
+    <BLANKLINE>
+
+    See also
+    --------
+    set_bolus_order_absorption
+    set_zero_order_absorption
+    set_first_order_absorption
+
     """
     statements = model.statements
     odes = statements.ode_system
@@ -543,7 +663,7 @@ def _get_absorption_init(model, param_name):
         else:
             param_prev = model.statements.extract_params_from_symb(param_name, model.parameters)
         return param_prev.init
-    except AttributeError:
+    except (AttributeError, KeyError):
         pass
 
     dt = model.dataset
