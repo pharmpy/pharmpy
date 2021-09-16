@@ -6,7 +6,7 @@ import sympy
 
 import pharmpy.symbols
 from pharmpy.parameter import Parameter
-from pharmpy.statements import Assignment, Bolus, CompartmentalSystem, ExplicitODESystem, Infusion
+from pharmpy.statements import Assignment, Bolus, CompartmentalSystem, Infusion
 
 
 # TODO: elaborate documentation
@@ -37,31 +37,6 @@ def _add_parameter(model, name, init=0.1):
     ass = Assignment(symb, pop_param.symbol)
     model.statements.insert(0, ass)
     return symb
-
-
-def explicit_odes(model):
-    """Convert model from compartmental system to explicit ODE system
-    or do nothing if it already has an explicit ODE system
-
-    Parameters
-    ----------
-    model : Model
-        Pharmpy model
-
-    Return
-    ------
-    Model
-        Reference to same model
-    """
-    statements = model.statements
-    odes = statements.ode_system
-    if isinstance(odes, CompartmentalSystem):
-        eqs, ics = odes.to_explicit_odes()
-        new = ExplicitODESystem(eqs, ics)
-        statements[model.statements.index(odes)] = new
-        model.statements = statements
-        new.solver = odes.solver
-    return model
 
 
 def set_first_order_elimination(model):

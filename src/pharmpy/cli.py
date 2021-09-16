@@ -317,10 +317,6 @@ def model_print(args):
     """Subcommand for formatting/printing model components."""
     lines = []
     for i, model in enumerate(args.models):
-        if args.explicit_odes:
-            from pharmpy.modeling import explicit_odes
-
-            explicit_odes(model)
         lines += ['[%d/%d] %r' % (i + 1, len(args.models), model.name)]
         dict_ = OrderedDict()
         try:
@@ -360,14 +356,6 @@ def add_covariate_effect(args):
     add_covariate_effect(model, args.param, args.covariate, args.effect, args.operation)
 
     write_model_or_dataset(model, model.dataset, path=args.output_file, force=False)
-
-
-def model_explicit_odes(args):
-    from pharmpy.modeling import explicit_odes
-
-    model = args.model
-    explicit_odes(model)
-    write_model_or_dataset(model, None, path=args.output_file, force=args.force)
 
 
 def model_absorption_rate(args):
@@ -1076,15 +1064,6 @@ parser_definition = [
                                 'help': 'Whether effect should be added or multiplied',
                             },
                         ],
-                    }
-                },
-                {
-                    'explicit_odes': {
-                        'help': 'Make ODEs explicit',
-                        'description': 'Convert from compartmental or implicit description of '
-                        'ODE-system to explicit. I.e. create a $DES',
-                        'func': model_explicit_odes,
-                        'parents': [args_model_input, args_output],
                     }
                 },
                 {

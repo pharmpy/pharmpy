@@ -48,7 +48,6 @@ from pharmpy.modeling.ml import predict_outliers
 from pharmpy.modeling.odes import (
     add_individual_parameter,
     add_peripheral_compartment,
-    explicit_odes,
     has_zero_order_absorption,
     remove_lag_time,
     remove_peripheral_compartment,
@@ -102,7 +101,6 @@ __all__ = [
     'create_results',
     'create_rng',
     'evaluate_expression',
-    'explicit_odes',
     'fit',
     'fix_parameters',
     'fix_parameters_to',

@@ -11,7 +11,6 @@ from pharmpy.model import ModelSyntaxError
 from pharmpy.modeling import (
     add_estimation_step,
     add_iiv,
-    explicit_odes,
     remove_estimation_step,
     set_zero_order_elimination,
 )
@@ -752,10 +751,7 @@ $ESTIMATION METHOD=1 MAXEVAL=9999 NONINFETA=1 MCETA=1
 @pytest.mark.parametrize(
     'model_path, transformation',
     [
-        ('nonmem/pheno.mod', explicit_odes),
         ('nonmem/pheno.mod', set_zero_order_elimination),
-        ('nonmem/modeling/pheno_advan1_zero_order.mod', explicit_odes),
-        ('nonmem/modeling/pheno_advan5_depot.mod', explicit_odes),
     ],
 )
 def test_des(testdata, model_path, transformation):

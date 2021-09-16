@@ -312,14 +312,36 @@ def force_des(model, odes):
     if isinstance(odes, ExplicitODESystem):
         return
 
-    # Import put here to avoid circular import in Python 3.6
-    import pharmpy.modeling as modeling
-
     amounts = {sympy.Function(amt.name)(symbol('t')) for amt in odes.amounts}
     if odes.atoms(sympy.Function) & amounts:
-        modeling.explicit_odes(model)
+        explicit_odes(model)
         new = model.statements.ode_system
         to_des(model, new)
+
+
+def explicit_odes(model):
+    """Convert model from compartmental system to explicit ODE system
+    or do nothing if it already has an explicit ODE system
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+
+    Return
+    ------
+    Model
+        Reference to same model
+    """
+    statements = model.statements
+    odes = statements.ode_system
+    if isinstance(odes, CompartmentalSystem):
+        eqs, ics = odes.to_explicit_odes()
+        new = ExplicitODESystem(eqs, ics)
+        statements[model.statements.index(odes)] = new
+        model.statements = statements
+        new.solver = odes.solver
+    return model
 
 
 def to_des(model, new):

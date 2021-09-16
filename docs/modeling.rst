@@ -124,17 +124,7 @@ PK models and ODE systems
 
    model = Model(path / "pheno.mod")
 
-The ODE system of a PK model can be converted from having a compartmental description to be described with an explicit ODE-system.
-
-.. jupyter-execute::
-
-   from pharmpy.modeling import explicit_odes
-
-   print(model.statements.ode_system)
-   explicit_odes(model)
-   print(model.statements.ode_system)
-
-For NONMEM models this means going from any of the compartmental ADVANs (ADVAN1-4, ADVAN10-12) to coding using an explicit $DES. The exact solver to use (i.e. the specific ADVAN to use) can be set using the function `set_ode_solver`.
+The exact solver to use (i.e. the specific ADVAN to use) can be set using the function `set_ode_solver`.
 
 .. jupyter-execute::
 
