@@ -474,6 +474,22 @@ def set_estimation_step(model, method, interaction=True, options={}, est_idx=0):
     -------
     Model
         Reference to the same model object
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> opts = {'NITER': 1000, 'ISAMPLE': 100, 'EONLY': 1}
+    >>> set_estimation_step(model, "IMP", options=opts)   # doctest: +ELLIPSIS
+    <...>
+    >>> model.estimation_steps[0]   # doctest: +ELLIPSIS
+    EstimationMethod("IMP", interaction=True, cov=True, options=[Option(key='NITER', value=1000),...
+
+    See also
+    --------
+    add_estimation_step
+    remove_estimation_step
+
     """
     model.estimation_steps[est_idx].method = method
     model.estimation_steps[est_idx].interaction = interaction
@@ -497,14 +513,33 @@ def add_estimation_step(model, method, interaction=True, options=None, idx=None)
     interaction : bool
         whether to use interaction or not, default is true
     options : dict
-        any additional options. Note that this removes old options
+        any additional tool specific options. Note that this removes old options
     idx : int
-        index of estimation step, default is None (adds step last)
+        index of estimation step, default is None (adds step at the end)
 
     Returns
     -------
     Model
         Reference to the same model object
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> opts = {'NITER': 1000, 'ISAMPLE': 100, 'EONLY': 1}
+    >>> add_estimation_step(model, "IMP", options=opts)   # doctest: +ELLIPSIS
+    <...>
+    >>> ests = model.estimation_steps
+    >>> len(ests)
+    2
+    >>> ests[1]   # doctest: +ELLIPSIS
+    EstimationMethod("IMP", interaction=True, cov=False, options=[Option(key='NITER', value=1000...
+
+    See also
+    --------
+    set_estimation_step
+    remove_estimation_step
+
     """
     if options is None:
         options = {}
@@ -532,6 +567,25 @@ def remove_estimation_step(model, idx):
     -------
     Model
         Reference to the same model object
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> opts = {'NITER': 1000, 'ISAMPLE': 100, 'EONLY': 1}
+    >>> add_estimation_step(model, "IMP", options=opts)   # doctest: +ELLIPSIS
+    <...>
+    >>> remove_estimation_step(model, 1)      # doctest: +ELLIPSIS
+    <...>
+    >>> ests = model.estimation_steps
+    >>> len(ests)
+    1
+
+    See also
+    --------
+    add_estimation_step
+    set_estimation_step
+
     """
     del model.estimation_steps[idx]
     return model
