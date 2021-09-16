@@ -31,6 +31,24 @@ def create_joint_distribution(model, rvs=None):
     ------
     Model
         Reference to the same model
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import load_example_model, create_joint_distribution
+    >>> model = load_example_model("pheno")
+    >>> model.random_variables.etas
+    ETA(1) ~ 𝒩 (0, OMEGA(1,1))
+    ETA(2) ~ 𝒩 (0, OMEGA(2,2))
+    >>> create_joint_distribution(model, ['ETA(1)', 'ETA(2)'])      # doctest: +ELLIPSIS
+    <...>
+    >>> model.random_variables.etas
+    ⎡ETA(1)⎤     ⎧⎡0⎤  ⎡ OMEGA(1,1)   IIV_CL_IIV_V⎤⎫
+    ⎢      ⎥ ~ 𝒩 ⎪⎢ ⎥, ⎢                          ⎥⎪
+    ⎣ETA(2)⎦     ⎩⎣0⎦  ⎣IIV_CL_IIV_V   OMEGA(2,2) ⎦⎭
+
+    See also
+    --------
+    split_joint_distribution : split etas into separate distributions
     """
     all_rvs = model.random_variables
     if rvs is None:
@@ -87,6 +105,26 @@ def split_joint_distribution(model, rvs=None):
     ------
     Model
         Reference to the same model
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> create_joint_distribution(model, ['ETA(1)', 'ETA(2)'])      # doctest: +ELLIPSIS
+    <...>
+    >>> model.random_variables.etas
+    ⎡ETA(1)⎤     ⎧⎡0⎤  ⎡ OMEGA(1,1)   IIV_CL_IIV_V⎤⎫
+    ⎢      ⎥ ~ 𝒩 ⎪⎢ ⎥, ⎢                          ⎥⎪
+    ⎣ETA(2)⎦     ⎩⎣0⎦  ⎣IIV_CL_IIV_V   OMEGA(2,2) ⎦⎭
+    >>> split_joint_distribution(model, ['ETA(1)', 'ETA(2)'])       # doctest: +ELLIPSIS
+    <...>
+    >>> model.random_variables.etas
+    ETA(1) ~ 𝒩 (0, OMEGA(1,1))
+    ETA(2) ~ 𝒩 (0, OMEGA(2,2))
+
+    See also
+    --------
+    create_joint_distribution : combine etas into a join distribution
     """
     all_rvs = model.random_variables
     rvs = _get_etas(model, rvs)
