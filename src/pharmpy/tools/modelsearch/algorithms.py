@@ -92,26 +92,28 @@ def exhaustive_stepwise(base_model, mfl):
     while True:
         no_of_trans = 0
         for task in wf_search.output_tasks:
-            trans_previous = [
-                task.function
+            trans_previous = {
+                task.name: task.function
                 for task in wf_search.get_upstream_tasks(task)
                 if task.function in all_funcs.values()
-            ]
+            }
             trans_possible = {
-                feat: func for feat, func in all_funcs.items() if func not in trans_previous
+                feat: func
+                for feat, func in all_funcs.items()
+                if func not in trans_previous.values()
             }
 
             if len(trans_possible) > 0:
-                no_of_trans += 1
                 for feat, func in trans_possible.items():
+                    if not is_allowed(feat, trans_previous.keys()):
+                        continue
+
                     model_name = f'candidate{candidate_count}'
 
                     # Create tasks
                     task_copy = Task('copy', copy, model_name)
                     task_update_inits = Task('update_inits', update_inits)
-                    task_function = Task(
-                        feat, func
-                    )  # TODO: check how partial functions work w.r.t. dask
+                    task_function = Task(feat, func)
                     task_update_source = Task('update_source', update_source)
                     wf_fit = create_single_fit_workflow()
 
@@ -123,15 +125,22 @@ def exhaustive_stepwise(base_model, mfl):
                     wf_search.insert_workflow(wf_fit, predecessors=[task_update_source])
                     model_tasks += wf_search.output_tasks
 
-                    feat_previous = [
-                        feat for feat, func in all_funcs.items() if func in trans_previous
-                    ]
-                    model_features[model_name] = tuple(feat_previous + [feat])
+                    model_features[model_name] = tuple(list(trans_previous.keys()) + [feat])
+
                     candidate_count += 1
+                    no_of_trans += 1
         if no_of_trans == 0:
             break
 
     return wf_search, model_tasks, model_features
+
+
+def is_allowed(feat_current, feat_previous):
+    not_supported_combo = {'ABSORPTION(ZO)': 'TRANSITS(1)'}
+    for key, value in not_supported_combo.items():
+        if any(feat_current == key and feat == value for feat in feat_previous):
+            return False
+    return True
 
 
 def copy(name, model):

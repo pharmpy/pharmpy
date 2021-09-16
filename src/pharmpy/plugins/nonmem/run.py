@@ -47,6 +47,7 @@ def execute_model(model):
     #  doesn't get copied up. Reading in now as a workaround.
     if any(step.cov for step in model.estimation_steps):
         model.modelfit_results.covariance_matrix
+    model.modelfit_results.minimization_successful
     model.modelfit_results.individual_estimates
 
     return model
