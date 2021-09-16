@@ -83,7 +83,7 @@ def set_first_order_elimination(model):
     >>> model = load_example_model("pheno")
     >>> set_first_order_elimination(model)     # doctest: +ELLIPSIS
     <...>
-    >>> print(model.statements.ode_system)
+    >>> model.statements.ode_system
     Bolus(AMT)
     ┌───────┐       ┌──────┐
     │CENTRAL│──CL/V→│OUTPUT│
@@ -119,7 +119,7 @@ def set_zero_order_elimination(model):
     >>> model = load_example_model("pheno")
     >>> set_zero_order_elimination(model)     # doctest: +ELLIPSIS
     <...>
-    >>> print(model.statements.ode_system)
+    >>> model.statements.ode_system
     Bolus(AMT)
     ┌───────┐                                    ┌──────┐
     │CENTRAL│──CLMM*KM/(V*(KM + A_CENTRAL(t)/V))→│OUTPUT│
@@ -140,8 +140,9 @@ def set_zero_order_elimination(model):
 
 
 def set_michaelis_menten_elimination(model):
-    """Sets elimination to Michaelis-Menten. Initial estimate for CLMM is set to CL and KM is set to
-    :math:`2*max(DV)`.
+    """Sets elimination to Michaelis-Menten.
+
+    Initial estimate for CLMM is set to CL and KM is set to :math:`2*max(DV)`.
 
     Parameters
     ----------
@@ -152,14 +153,33 @@ def set_michaelis_menten_elimination(model):
     ------
     Model
         Reference to the same model
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> set_michaelis_menten_elimination(model)     # doctest: +ELLIPSIS
+    <...>
+    >>> model.statements.ode_system
+    Bolus(AMT)
+    ┌───────┐                                    ┌──────┐
+    │CENTRAL│──CLMM*KM/(V*(KM + A_CENTRAL(t)/V))→│OUTPUT│
+    └───────┘                                    └──────┘
+
+    See also
+    --------
+    set_first_order_elimination
+    set_zero_order_elimination
+
     """
     _do_michaelis_menten_elimination(model)
     return model
 
 
 def set_mixed_mm_fo_elimination(model):
-    """Sets elimination to mixed Michaelis-Menten and first order. Initial estimate for CLMM is set
-    to CL/2 and KM is set to :math:`2*max(DV)`.
+    """Sets elimination to mixed Michaelis-Menten and first order.
+
+    Initial estimate for CLMM is set to CL/2 and KM is set to :math:`2*max(DV)`.
 
     Parameters
     ----------
@@ -169,7 +189,26 @@ def set_mixed_mm_fo_elimination(model):
     Return
     ------
     Model
-        Reference to same model
+        Reference to the same model
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> set_mixed_mm_fo_elimination(model)     # doctest: +ELLIPSIS
+    <...>
+    >>> model.statements.ode_system
+    Bolus(AMT)
+    ┌───────┐                                         ┌──────┐
+    │CENTRAL│──(CL + CLMM*KM/(KM + A_CENTRAL(t)/V))/V→│OUTPUT│
+    └───────┘                                         └──────┘
+
+    See also
+    --------
+    set_first_order_elimination
+    set_zero_order_elimination
+    set_michaelis_menten_elimination
+
     """
     _do_michaelis_menten_elimination(model, combined=True)
     return model
@@ -220,9 +259,10 @@ def _get_mm_inits(model, rate_numer, combined):
 
 
 def set_transit_compartments(model, n):
-    """Set the number of transit compartments of model. Initial estimate for absorption rate is
-    set the previous rate if available, otherwise it is set to the time of first observation/2
-    is used.
+    """Set the number of transit compartments of model.
+
+    Initial estimate for absorption rate is
+    set the previous rate if available, otherwise it is set to the time of first observation/2.
 
     Parameters
     ----------
@@ -235,6 +275,23 @@ def set_transit_compartments(model, n):
     ------
     Model
         Reference to same model
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> set_transit_compartments(model, 3)     # doctest: +ELLIPSIS
+    <...>
+    >>> model.statements.ode_system
+    Bolus(AMT)
+    ┌────────┐        ┌────────┐        ┌────────┐        ┌───────┐       ┌──────┐
+    │TRANSIT1│──3/MDT→│TRANSIT2│──3/MDT→│TRANSIT3│──3/MDT→│CENTRAL│──CL/V→│OUTPUT│
+    └────────┘        └────────┘        └────────┘        └───────┘       └──────┘
+
+    See also
+    --------
+    set_lag_time
+
     """
     statements = model.statements
     odes = statements.ode_system
@@ -324,9 +381,10 @@ def _update_numerators(model):
 
 
 def set_lag_time(model):
-    """Add lag time to the dose compartment of model. Initial estimate for lag time is set the
-    previous lag time if available, otherwise it is set to the time of first observation/2 is
-    used.
+    """Add lag time to the dose compartment of model.
+
+    Initial estimate for lag time is set the
+    previous lag time if available, otherwise it is set to the time of first observation/2.
 
     Parameters
     ----------
@@ -337,6 +395,19 @@ def set_lag_time(model):
     ------
     Model
         Reference to same model
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> set_lag_time(model)     # doctest: +ELLIPSIS
+    <...>
+
+    See also
+    --------
+    set_transit_compartments
+    remove_lag_time
+
     """
     odes = model.statements.ode_system
     dosing_comp = odes.find_dosing()
@@ -361,6 +432,20 @@ def remove_lag_time(model):
     ------
     Model
         Reference to same model
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> remove_lag_time(model)     # doctest: +ELLIPSIS
+    <...>
+
+    See also
+    --------
+    set_transit_compartments
+    set_lag_time
+
+
     """
     odes = model.statements.ode_system
     dosing_comp = odes.find_dosing()
@@ -395,7 +480,7 @@ def set_zero_order_absorption(model):
     >>> model = load_example_model("pheno")
     >>> set_zero_order_absorption(model)     # doctest: +ELLIPSIS
     <...>
-    >>> print(model.statements.ode_system)
+    >>> model.statements.ode_system
     Infusion(AMT, duration=2*MAT)
     ┌───────┐       ┌──────┐
     │CENTRAL│──CL/V→│OUTPUT│
@@ -453,7 +538,7 @@ def set_first_order_absorption(model):
     >>> model = load_example_model("pheno")
     >>> set_first_order_absorption(model)     # doctest: +ELLIPSIS
     <...>
-    >>> print(model.statements.ode_system)
+    >>> model.statements.ode_system
     Bolus(AMT)
     ┌─────┐        ┌───────┐       ┌──────┐
     │DEPOT│──1/MAT→│CENTRAL│──CL/V→│OUTPUT│
@@ -504,7 +589,7 @@ def set_bolus_absorption(model):
     >>> model = load_example_model("pheno")
     >>> set_bolus_absorption(model)     # doctest: +ELLIPSIS
     <...>
-    >>> print(model.statements.ode_system)
+    >>> model.statements.ode_system
     Bolus(AMT)
     ┌───────┐       ┌──────┐
     │CENTRAL│──CL/V→│OUTPUT│
@@ -562,7 +647,7 @@ def set_seq_zo_fo_absorption(model):
     >>> model = load_example_model("pheno")
     >>> set_seq_zo_fo_absorption(model)     # doctest: +ELLIPSIS
     <...>
-    >>> print(model.statements.ode_system)
+    >>> model.statements.ode_system
     Infusion(AMT, duration=2*MDT)
     ┌─────┐        ┌───────┐       ┌──────┐
     │DEPOT│──1/MAT→│CENTRAL│──CL/V→│OUTPUT│
@@ -671,7 +756,6 @@ def _get_absorption_init(model, param_name):
         return float(time_min) * 2
 
 
-# TODO: elaborate documentation
 def set_peripheral_compartments(model, n):
     """Sets the number of peripheral compartments to a specified number.
 
@@ -686,6 +770,36 @@ def set_peripheral_compartments(model, n):
     ------
     Model
         Reference to same model
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> set_peripheral_compartments(model, 2)     # doctest: +ELLIPSIS
+    <...>
+    >>> model.statements.ode_system
+    Bolus(AMT)
+    ┌───────────┐
+    │PERIPHERAL1│
+    └───────────┘
+      ↑      │
+    QP1/V QP1/VP1
+      │      ↓
+    ┌───────────┐       ┌──────┐
+    │  CENTRAL  │──CL/V→│OUTPUT│
+    └───────────┘       └──────┘
+       ↑      │
+    QP2/VP2 QP2/V
+       │      ↓
+    ┌───────────┐
+    │PERIPHERAL2│
+    └───────────┘
+
+    See also
+    --------
+    add_peripheral_compartment
+    remove_peripheral_compartment
+
     """
     per = len(model.statements.ode_system.find_peripherals())
     if per < n:
@@ -726,6 +840,30 @@ def add_peripheral_compartment(model):
     ------
     Model
         Reference to same model
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> add_peripheral_compartment(model)     # doctest: +ELLIPSIS
+    <...>
+    >>> model.statements.ode_system
+    Bolus(AMT)
+    ┌───────────┐
+    │PERIPHERAL1│
+    └───────────┘
+      ↑      │
+    QP1/V QP1/VP1
+      │      ↓
+    ┌───────────┐       ┌──────┐
+    │  CENTRAL  │──CL/V→│OUTPUT│
+    └───────────┘       └──────┘
+
+    See also
+    --------
+    set_peripheral_compartment
+    remove_peripheral_compartment
+
     """
     statements = model.statements
     odes = statements.ode_system
@@ -807,6 +945,32 @@ def remove_peripheral_compartment(model):
     ------
     Model
         Reference to same model
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> set_peripheral_compartments(model, 2)     # doctest: +ELLIPSIS
+    <...>
+    >>> remove_peripheral_compartment(model)      # doctest: +ELLIPSIS
+    <...>
+    >>> model.statements.ode_system
+    Bolus(AMT)
+    ┌───────────┐
+    │PERIPHERAL1│
+    └───────────┘
+      ↑      │
+    QP1/V QP1/VP1
+      │      ↓
+    ┌───────────┐       ┌──────┐
+    │  CENTRAL  │──CL/V→│OUTPUT│
+    └───────────┘       └──────┘
+
+    See also
+    --------
+    set_peripheral_compartment
+    add_peripheral_compartment
+
     """
     statements = model.statements
     odes = statements.ode_system
