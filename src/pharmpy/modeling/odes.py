@@ -88,7 +88,6 @@ def set_first_order_elimination(model):
     ┌───────┐       ┌──────┐
     │CENTRAL│──CL/V→│OUTPUT│
     └───────┘       └──────┘
-    <BLANKLINE>
 
     See also
     --------
@@ -125,7 +124,6 @@ def set_zero_order_elimination(model):
     ┌───────┐                                    ┌──────┐
     │CENTRAL│──CLMM*KM/(V*(KM + A_CENTRAL(t)/V))→│OUTPUT│
     └───────┘                                    └──────┘
-    <BLANKLINE>
 
     See also
     --------
@@ -402,7 +400,6 @@ def set_zero_order_absorption(model):
     ┌───────┐       ┌──────┐
     │CENTRAL│──CL/V→│OUTPUT│
     └───────┘       └──────┘
-    <BLANKLINE>
 
     See also
     --------
@@ -461,7 +458,6 @@ def set_first_order_absorption(model):
     ┌─────┐        ┌───────┐       ┌──────┐
     │DEPOT│──1/MAT→│CENTRAL│──CL/V→│OUTPUT│
     └─────┘        └───────┘       └──────┘
-    <BLANKLINE>
 
     See also
     --------
@@ -513,7 +509,6 @@ def set_bolus_absorption(model):
     ┌───────┐       ┌──────┐
     │CENTRAL│──CL/V→│OUTPUT│
     └───────┘       └──────┘
-    <BLANKLINE>
 
     See also
     --------
@@ -572,7 +567,6 @@ def set_seq_zo_fo_absorption(model):
     ┌─────┐        ┌───────┐       ┌──────┐
     │DEPOT│──1/MAT→│CENTRAL│──CL/V→│OUTPUT│
     └─────┘        └───────┘       └──────┘
-    <BLANKLINE>
 
     See also
     --------

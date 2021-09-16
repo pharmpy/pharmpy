@@ -168,7 +168,7 @@ class ODESystem:
     def __eq__(self, other):
         return isinstance(other, ODESystem)
 
-    def __str__(self):
+    def __repr__(self):
         return 'ODESystem()'
 
     def _repr_html(self):
@@ -578,7 +578,7 @@ class CompartmentalSystem(ODESystem):
         s = str(self)
         return f'<pre>{s}</pre>'
 
-    def __str__(self):
+    def __repr__(self):
         output = self.find_output()
         output_box = unicode.Box(output.name)
         central = self.find_central()
@@ -640,7 +640,8 @@ class CompartmentalSystem(ODESystem):
             )
 
         dose = self.find_dosing().dose
-        return str(dose) + '\n' + str(grid)
+        s = str(dose) + '\n' + str(grid).rstrip()
+        return s
 
 
 class Compartment:
@@ -815,7 +816,10 @@ class ModelStatements(MutableSequence):
             return assignments
 
     def extract_params_from_symb(self, symbol_name, pset):
-        terms = {symb.name for symb in self.full_expression_from_odes(sympy.Symbol(symbol_name)).free_symbols}
+        terms = {
+            symb.name
+            for symb in self.full_expression_from_odes(sympy.Symbol(symbol_name)).free_symbols
+        }
         theta_name = terms.intersection(pset.names).pop()
         return pset[theta_name]
 
