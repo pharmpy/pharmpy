@@ -62,3 +62,6 @@ inheritance_graph_attrs = dict()
 inheritance_node_attrs = dict(font='Palatino', color='gray50', fontcolor='black')
 inheritance_edge_attrs = dict(color='maroon')
 graphviz_output_format = 'svg'
+
+import doctest
+doctest_default_flags = doctest.NORMALIZE_WHITESPACE
