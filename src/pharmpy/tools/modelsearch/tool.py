@@ -7,7 +7,8 @@ import pharmpy.tools
 import pharmpy.tools.modelfit as modelfit
 import pharmpy.tools.modelsearch.algorithms as algorithms
 import pharmpy.tools.modelsearch.rankfuncs as rankfuncs
-from pharmpy.tools.workflows import Task
+from pharmpy.tools.modelfit import create_single_fit_workflow
+from pharmpy.tools.workflows import Task, Workflow
 
 
 class ModelSearch(pharmpy.tools.Tool):
@@ -26,34 +27,53 @@ class ModelSearch(pharmpy.tools.Tool):
         modelfit_run.run()
 
     def run(self):
-        if self.algorithm.__name__ == 'exhaustive_stepwise':
-            # FIXME: running twice causes fail
-            wf, model_tasks, model_features = self.algorithm(self.start_model, self.mfl)
-
-            task_result = Task(
-                'results',
-                post_process_results,
-                self.start_model,
-                self.rankfunc,
-                self.cutoff,
-                model_features,
-            )
-            wf.add_task(task_result, predecessors=model_tasks)
-
-            res = self.dispatcher.run(wf, self.database)
-            self.start_model.modelfit_results = res.start_model.modelfit_results
-            return res
-        else:
-            df = self.algorithm(
-                self.start_model,
-                self.mfl,
-                self.fit,
-                self.rankfunc,
-            )
-            res = ModelSearchResults(summary=df)
-            res.to_json(path=self.rundir.path / 'results.json')
-            res.to_csv(path=self.rundir.path / 'results.csv')
+        df = self.algorithm(
+            self.start_model,
+            self.mfl,
+            self.fit,
+            self.rankfunc,
+        )
+        res = ModelSearchResults(summary=df)
+        res.to_json(path=self.rundir.path / 'results.json')
+        res.to_csv(path=self.rundir.path / 'results.csv')
         return res
+
+
+def create_workflow(model, algorithm, mfl, rankfunc='ofv', cutoff=None):
+    algorithm_func = getattr(algorithms, algorithm)
+    rankfunc_func = getattr(rankfuncs, rankfunc)
+
+    wf = Workflow()
+    wf.name = 'modelsearch'
+
+    start_task = Task('start_modelsearch', start, model)
+    wf.add_task(start_task)
+
+    start_model_task = []
+    if not model.modelfit_results:
+        wf_fit = create_single_fit_workflow()
+        wf.insert_workflow(wf_fit, predecessors=start_task)
+        start_model_task = wf_fit.output_tasks
+
+    wf_search, candidate_model_tasks, model_features = algorithm_func(mfl)
+    wf.insert_workflow(wf_search, predecessors=wf.output_tasks)
+
+    task_result = Task(
+        'results',
+        post_process_results,
+        model,
+        rankfunc_func,
+        cutoff,
+        model_features,
+    )
+
+    wf.add_task(task_result, predecessors=start_model_task + candidate_model_tasks)
+
+    return wf
+
+
+def start(model):
+    return model
 
 
 def post_process_results(start_model, rankfunc, cutoff, model_features, *models):

@@ -3,8 +3,7 @@ import shutil
 import pytest
 
 from pharmpy import Model
-from pharmpy.modeling import set_first_order_absorption, set_first_order_elimination
-from pharmpy.tools.modelsearch import ModelSearch
+from pharmpy.modeling import run_tool, set_first_order_absorption, set_first_order_elimination
 from pharmpy.utils import TemporaryDirectoryChanger
 
 
@@ -27,7 +26,7 @@ def test_exhaustive_stepwise(tmp_path, testdata, mfl, no_of_models):
         set_first_order_elimination(model)
         model.update_source(nofiles=True)
 
-        res = ModelSearch(model, 'exhaustive_stepwise', mfl, rankfunc='ofv', cutoff=0).run()
+        res = run_tool('modelsearch', model, 'exhaustive_stepwise', mfl, rankfunc='ofv', cutoff=0)
 
         assert len(res.summary) == no_of_models
         assert len(res.models) == no_of_models

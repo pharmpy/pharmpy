@@ -74,76 +74,86 @@ def stepwise(base_model, mfl, run_func, rank_func):
     return df
 
 
-def exhaustive_stepwise(base_model, mfl):
+def exhaustive_stepwise(mfl):
     features = ModelFeatures(mfl)
-    all_funcs = features.all_funcs()
     wf_search = Workflow()
+
     model_tasks = []
     model_features = dict()
 
-    if not base_model.modelfit_results:
-        wf_fit = create_single_fit_workflow(base_model)
-        wf_search.insert_workflow(wf_fit)
-        model_tasks += wf_search.output_tasks
-
-    model_features[base_model.name] = tuple()
     candidate_count = 1
 
     while True:
         no_of_trans = 0
-        for task in wf_search.output_tasks:
-            trans_previous = {
-                task.name: task.function
-                for task in wf_search.get_upstream_tasks(task)
-                if task.function in all_funcs.values()
+
+        if wf_search.output_tasks:
+            actions = {
+                task: _find_possible_trans(wf_search, task, features)
+                for task in wf_search.output_tasks
             }
-            trans_possible = {
-                feat: func
-                for feat, func in all_funcs.items()
-                if func not in trans_previous.values()
-            }
+        else:
+            actions = {'': (dict(), features.all_funcs())}
 
-            if len(trans_possible) > 0:
-                for feat, func in trans_possible.items():
-                    if not is_allowed(feat, trans_previous.keys()):
-                        continue
-                    elif any(
-                        func in features.get_funcs_same_type(feat)
-                        for func in trans_previous.values()
-                    ):
-                        continue
+        for task, trans in actions.items():
+            trans_previous, trans_possible = trans
 
-                    model_name = f'candidate{candidate_count}'
+            for feat, func in trans_possible.items():
+                model_name = f'candidate{candidate_count}'
 
-                    # Create tasks
-                    task_copy = Task('copy', copy, model_name)
-                    task_update_inits = Task('update_inits', update_inits)
-                    task_function = Task(feat, func)
-                    task_update_source = Task('update_source', update_source)
-                    wf_fit = create_single_fit_workflow()
-
-                    # Add tasks
+                task_copy = Task('copy', copy, model_name)
+                if task:
                     wf_search.add_task(task_copy, predecessors=[task])
-                    wf_search.add_task(task_update_inits, predecessors=[task_copy])
-                    wf_search.add_task(task_function, predecessors=[task_update_inits])
-                    wf_search.add_task(task_update_source, predecessors=[task_function])
-                    wf_search.insert_workflow(wf_fit, predecessors=[task_update_source])
-                    model_tasks += wf_search.output_tasks
+                else:
+                    wf_search.add_task(task_copy)
 
-                    model_features[model_name] = tuple(list(trans_previous.keys()) + [feat])
+                task_update_inits = Task('update_inits', update_inits)
+                wf_search.add_task(task_update_inits, predecessors=task_copy)
 
-                    candidate_count += 1
-                    no_of_trans += 1
+                task_function = Task(feat, func)
+                wf_search.add_task(task_function, predecessors=task_update_inits)
+
+                task_update_source = Task('update_source', update_source)
+                wf_search.add_task(task_update_source, predecessors=task_function)
+
+                wf_fit = create_single_fit_workflow()
+                wf_search.insert_workflow(wf_fit, predecessors=task_update_source)
+
+                model_tasks += wf_fit.output_tasks
+                model_features[model_name] = tuple(list(trans_previous.keys()) + [feat])
+
+                candidate_count += 1
+                no_of_trans += 1
         if no_of_trans == 0:
             break
 
     return wf_search, model_tasks, model_features
 
 
-def is_allowed(feat_current, feat_previous):
+def _find_possible_trans(wf, task, features):
+    funcs = features.all_funcs()
+    trans_previous = {
+        task.name: task.function
+        for task in wf.get_upstream_tasks(task)
+        if task.function in funcs.values()
+    }
+
+    trans_possible = {
+        feat: func
+        for feat, func in funcs.items()
+        if _is_allowed(feat, func, trans_previous, features)
+    }
+
+    return trans_previous, trans_possible
+
+
+def _is_allowed(feat_current, func_current, trans_previous, features):
+    if func_current in trans_previous.values():
+        return False
+    if any(func in features.get_funcs_same_type(feat_current) for func in trans_previous.values()):
+        return False
     not_supported_combo = {'ABSORPTION(ZO)': 'TRANSITS(1)'}
     for key, value in not_supported_combo.items():
-        if any(feat_current == key and feat == value for feat in feat_previous):
+        if any(feat_current == key and feat == value for feat in trans_previous.keys()):
             return False
     return True
 
