@@ -1016,6 +1016,24 @@ def remove_peripheral_compartment(model):
 def set_ode_solver(model, solver):
     """Sets ode solver
 
+    Recognized solvers and their corresponding NONMEM advans:
+
+    +------------------------+------------------+
+    | Solver                 | NONMEM ADVAN     |
+    +========================+==================+
+    | CVODES                 | ADVAN14          |
+    +------------------------+------------------+
+    | DGEAR                  | ADVAN8           |
+    +------------------------+------------------+
+    | DVERK                  | ADVAN6           |
+    +------------------------+------------------+
+    | IDA                    | ADVAN15          |
+    +------------------------+------------------+
+    | LSODA                  | ADVAN13          |
+    +------------------------+------------------+
+    | LSODI                  | ADVAN9           |
+    +------------------------+------------------+
+
     Parameters
     ----------
     model : Model

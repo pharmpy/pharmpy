@@ -148,15 +148,33 @@ class ODESystem:
     ----------
     solver : str
         Solver to use when numerically solving the ode system
-        Currently supports NONMEM ADVANs
+        Supported solvers and their NONMEM ADVAN
+
+        +------------------------+------------------+
+        | Solver                 | NONMEM ADVAN     |
+        +========================+==================+
+        | LSODA                  | ADVAN13          |
+        +------------------------+------------------+
+
     """
 
     def __init__(self):
-        self.solver = None
+        self._solver = None
 
     @property
     def free_symbols(self):
         return set()
+
+    @property
+    def solver(self):
+        return self._solver
+
+    @solver.setter
+    def solver(self, value):
+        supported = ['LSODA']
+        if not (value is None or value.upper() in supported):
+            raise ValueError(f"Unknown solver {value}. Recognized solvers are {supported}.")
+        self._solver = value
 
     @property
     def rhs_symbols(self):

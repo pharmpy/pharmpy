@@ -349,7 +349,21 @@ def to_des(model, new):
     subs.remove_option_startswith('TRANS')
     subs.remove_option_startswith('ADVAN')
     if new.solver:
-        subs.append_option(new.solver)
+        if new.solver == 'LSODA':
+            advan = 'ADVAN13'
+        elif new.solver == 'CVODES':
+            advan = 'ADVAN14'
+        elif new.solver == 'DGEAR':
+            advan = 'ADVAN8'
+        elif new.solver == 'DVERK':
+            advan = 'ADVAN6'
+        elif new.solver == 'IDA':
+            advan = 'ADVAN15'
+        elif new.solver == 'LSODA':
+            advan = 'ADVAN13'
+        elif new.solver == 'LSODI':
+            advan = 'ADVAN9'
+        subs.append_option(advan)
     else:
         subs.append_option('ADVAN6')
     subs.append_option('TOL', 3)
