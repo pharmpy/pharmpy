@@ -7,19 +7,28 @@ import pharmpy.tools.modelfit
 from pharmpy.execute import execute_workflow
 
 
-# TODO: elaborate documentation
 def fit(models):
     """Fit models.
 
     Parameters
     ----------
     models : list
-        List of models
+        List of models or one single model
 
     Return
     ------
     Model
         Reference to same model
+
+    Examples
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> fit(model)      # doctest: +SKIP
+
+    See also
+    --------
+    run_tool
+
     """
     if isinstance(models, pharmpy.model.Model):
         models = [models]
@@ -34,9 +43,8 @@ def fit(models):
         return models
 
 
-# TODO: elaborate documentation
 def create_results(path, **kwargs):
-    """Create results object
+    """Create/recalculate results object given path to run directory
 
     Parameters
     ----------
@@ -49,14 +57,23 @@ def create_results(path, **kwargs):
     -------
     Results
         Results object for tool
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import *
+    >>> res = create_results("frem_dir1")   # doctest: +SKIP
+
+    See also
+    --------
+    read_results
+
     """
     res = pharmpy.tools.common.create_results(path, **kwargs)
     return res
 
 
-# TODO: elaborate documentation
 def read_results(path):
-    """Read results object
+    """Read results object from file
 
     Parameters
     ----------
@@ -67,6 +84,16 @@ def read_results(path):
     ------
     Results
         Results object for tool
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import *
+    >>> res = read_resuts("results.json")     # doctest: +SKIP
+
+    See also
+    --------
+    create_results
+
     """
     res = pharmpy.results.read_results(path)
     return res
@@ -88,6 +115,13 @@ def run_tool(name, *args, **kwargs):
     ------
     Results
         Results object for tool
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> res = run_tool("resmod", model)   # doctest: +SKIP
+
     """
     tool = importlib.import_module(f'pharmpy.tools.{name}')
     wf = tool.create_workflow(*args, **kwargs)

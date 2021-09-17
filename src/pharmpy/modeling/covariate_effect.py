@@ -17,8 +17,9 @@ from pharmpy.symbols import symbol as S
 
 
 def add_covariate_effect(model, parameter, covariate, effect, operation='*'):
-    """
-    Adds covariate effect to :class:`pharmpy.model`. The following effects have templates:
+    """Adds covariate effect to :class:`pharmpy.model`.
+
+    The following effects have templates:
 
     - Linear function for continuous covariates (*lin*)
         - Function:
@@ -131,6 +132,16 @@ def add_covariate_effect(model, parameter, covariate, effect, operation='*'):
     ------
     Model
         Reference to the same model
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> add_covariate_effect(model, "CL", "APGR", "exp")    # doctest: +ELLIPSIS
+    <...>
+    >>> model.statements.full_expression_from_odes("CL")
+    THETA(1)*WGT*exp(ETA(1))*exp(POP_CLAPGR*(APGR - 7.0))
+
     """
     sset = model.statements
 
