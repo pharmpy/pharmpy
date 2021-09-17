@@ -13,9 +13,9 @@ from pharmpy.symbols import symbol as S
 
 
 def transform_etas_boxcox(model, list_of_etas=None):
-    """
-    Applies a boxcox transformation to specified etas from a :class:`pharmpy.model`. Initial
-    estimate for lambda is 0.1 with bounds (-3, 3).
+    """Applies a boxcox transformation to selected etas
+
+    Initial estimate for lambda is 0.1 with bounds (-3, 3).
 
     Parameters
     ----------
@@ -28,6 +28,21 @@ def transform_etas_boxcox(model, list_of_etas=None):
     ------
     Model
         Reference to the same model
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> transform_etas_boxcox(model, ["ETA(1)"])    # doctest: +ELLIPSIS
+    <...>
+    >>> model.statements.full_expression_from_odes("CL")
+    THETA(1)*WGT*exp((exp(ETA(1))**lambda1 - 1)/lambda1)
+
+    See also
+    --------
+    transform_etas_tdist
+    transform_etas_john_draper
+
     """
     list_of_etas = _format_input_list(list_of_etas)
     etas = _get_etas(model, list_of_etas)
@@ -37,9 +52,9 @@ def transform_etas_boxcox(model, list_of_etas=None):
 
 
 def transform_etas_tdist(model, list_of_etas=None):
-    """
-    Applies a t-distribution transformation to specified etas from a :class:`pharmpy.model`. Initial
-    estimate for degrees of freedom is 80 with bounds (3, 100).
+    """Applies a t-distribution transformation to selected etas
+
+    Initial estimate for degrees of freedom is 80 with bounds (3, 100).
 
     Parameters
     ----------
@@ -52,6 +67,21 @@ def transform_etas_tdist(model, list_of_etas=None):
     ------
     Model
         Reference to the same model
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> transform_etas_tdist(model, ["ETA(1)"])    # doctest: +ELLIPSIS
+    <...>
+    >>> model.statements.full_expression_from_odes("CL")    # doctest: +ELLIPSIS
+    THETA(1)*WGT*exp((1 + (ETA(1)**2 + 1)/(4*df1) + (5*ETA(1)**4 + 16*ETA(1)**2 + 3)/(96*df1**2)...
+
+    See also
+    --------
+    transform_etas_boxcox
+    transform_etas_john_draper
+
     """
     list_of_etas = _format_input_list(list_of_etas)
     etas = _get_etas(model, list_of_etas)
@@ -61,9 +91,9 @@ def transform_etas_tdist(model, list_of_etas=None):
 
 
 def transform_etas_john_draper(model, list_of_etas=None):
-    """
-    Applies a John Draper transformation [1]_ to specified etas from a
-    :class:`pharmpy.model`. Initial estimate for lambda is 0.1 with bounds (-3, 3).
+    """Applies a John Draper transformation [1]_ to spelected etas
+
+    Initial estimate for lambda is 0.1 with bounds (-3, 3).
 
     .. [1] John, J., Draper, N. (1980). An Alternative Family of Transformations.
        Journal of the Royal Statistical Society. Series C (Applied Statistics),
@@ -80,6 +110,21 @@ def transform_etas_john_draper(model, list_of_etas=None):
     ------
     Model
         Reference to the same model
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> transform_etas_john_draper(model, ["ETA(1)"])    # doctest: +ELLIPSIS
+    <...>
+    >>> model.statements.full_expression_from_odes("CL")
+    THETA(1)*WGT*exp(((Abs(ETA(1)) + 1)**lambda1 - 1)*sign(ETA(1))/lambda1)
+
+    See also
+    --------
+    transform_etas_boxcox
+    transform_etas_tdist
+
     """
     list_of_etas = _format_input_list(list_of_etas)
     etas = _get_etas(model, list_of_etas)

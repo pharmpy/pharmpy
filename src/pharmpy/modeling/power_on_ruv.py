@@ -9,8 +9,9 @@ from pharmpy.symbols import symbol as S
 
 
 def set_power_on_ruv(model, list_of_eps=None):
-    """
-    Applies a power effect to provided epsilons. Initial estimates for new thetas are 1 if the error
+    """Applies a power effect to provided epsilons.
+
+    Initial estimates for new thetas are 1 if the error
     model is proportional, otherwise they are 0.1.
 
     Parameters
@@ -25,6 +26,20 @@ def set_power_on_ruv(model, list_of_eps=None):
     ------
     Model
         Reference to the same model
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> set_power_on_ruv(model)   # doctest: +ELLIPSIS
+    <...>
+    >>> model.statements.find_assignment("Y")
+    Y := CIPREDI**power1*EPS(1)*W + F
+
+    See also
+    --------
+    set_iiv_on_ruv
+
     """
     list_of_eps = _format_input_list(list_of_eps)
     eps = model.random_variables.epsilons

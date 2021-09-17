@@ -15,8 +15,9 @@ from pharmpy.symbols import symbol as S
 
 
 def add_iiv(model, list_of_parameters, expression, operation='*', eta_names=None):
-    """
-    Adds IIVs to :class:`pharmpy.model`. Effects that currently have templates are:
+    """Adds IIVs to :class:`pharmpy.model`.
+
+    Effects that currently have templates are:
 
     - Additive (*add*)
     - Proportional (*prop*)
@@ -43,6 +44,24 @@ def add_iiv(model, list_of_parameters, expression, operation='*', eta_names=None
     ------
     Model
         Reference to the same model
+
+    Example
+    -------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> remove_iiv(model, "CL") # doctest: +ELLIPSIS
+    <...>
+    >>> add_iiv(model, "CL", "add")  # doctest: +ELLIPSIS
+    <...>
+    >>> model.statements.find_assignment("CL")
+    CL := ETA_CL + TVCL
+
+    See also
+    --------
+    add_iov
+    remove_iiv
+    remove_iov
+
     """
     rvs, pset, sset = model.random_variables, model.parameters, model.statements
 
@@ -86,9 +105,9 @@ def add_iiv(model, list_of_parameters, expression, operation='*', eta_names=None
 
 
 def add_iov(model, occ, list_of_parameters=None, eta_names=None):
-    """
-    Adds IOVs to :class:`pharmpy.model`. Initial estimate of new IOVs are 10% of the IIV eta
-    it is based on.
+    """Adds IOVs to :class:`pharmpy.model`.
+
+    Initial estimate of new IOVs are 10% of the IIV eta it is based on.
 
     Parameters
     ----------
@@ -107,6 +126,22 @@ def add_iov(model, occ, list_of_parameters=None, eta_names=None):
     ------
     Model
         Reference to the same model
+
+    Example
+    -------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> add_iov(model, "TIME", "CL")  # doctest: +SKIP
+    <...>
+    >>> model.statements.find_assignment("CL")  # doctest: +SKIP
+    CL := ETA_CL + TVCL
+
+    See also
+    --------
+    add_iiv
+    remove_iiv
+    remove_iov
+
     """
     rvs, pset, sset = model.random_variables, model.parameters, model.statements
 

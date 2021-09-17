@@ -8,7 +8,7 @@ from pharmpy.symbols import symbol as S
 
 def remove_iiv(model, to_remove=None):
     """
-    Removes all IIV omegas given a list with eta names and/or parameter names.
+    Removes all IIV etas given a list with eta names and/or parameter names.
 
     Parameters
     ----------
@@ -22,6 +22,28 @@ def remove_iiv(model, to_remove=None):
     ------
     Model
         Reference to the same model
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> remove_iiv(model)  # doctest: +ELLIPSIS
+    <...>
+    >>> model.statements.find_assignment("CL")
+    CL := TVCL
+
+    >>> model = load_example_model("pheno")
+    >>> remove_iiv(model, "V")  # doctest: +ELLIPSIS
+    <...>
+    >>> model.statements.find_assignment("V")
+    V := TVV
+
+    See also
+    --------
+    remove_iov
+    add_iiv
+    add_iov
+
     """
     rvs, sset = model.random_variables, model.statements
     to_remove = _format_input_list(to_remove)

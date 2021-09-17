@@ -9,7 +9,6 @@ from pharmpy.parameter import Parameter
 from pharmpy.statements import Assignment, Bolus, CompartmentalSystem, Infusion
 
 
-# TODO: elaborate documentation
 def add_individual_parameter(model, name):
     """Add an individual or pk parameter to a model
 
@@ -24,6 +23,16 @@ def add_individual_parameter(model, name):
     ------
     Model
         Reference to same model
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> add_individual_parameter(model, "KA")   # doctest: +ELLIPSIS
+    <...>
+    >>> model.statements.find_assignment("KA")
+    KA := POP_KA
+
     """
     _add_parameter(model, name)
     return model
@@ -670,6 +679,14 @@ def has_zero_order_absorption(model):
     ------
     Model
         Reference to same model
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> has_zero_order_absorption(model)
+    False
+
     """
     odes = model.statements.ode_system
     dosing = odes.find_dosing()
@@ -1012,9 +1029,8 @@ def remove_peripheral_compartment(model):
     return model
 
 
-# TODO: elaborate documentation
 def set_ode_solver(model, solver):
-    """Sets ode solver
+    """Sets ODE solver to use for model
 
     Recognized solvers and their corresponding NONMEM advans:
 
@@ -1039,12 +1055,20 @@ def set_ode_solver(model, solver):
     model : Model
         Pharmpy model
     solver : str
-        Solver to use
+        Solver to use or None for no preference
 
     Return
     ------
     Model
         Reference to same model
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> set_ode_solver(model, 'LSODA')    # doctest: +ELLIPSIS
+    <...>
+
     """
     odes = model.statements.ode_system
     odes.solver = solver

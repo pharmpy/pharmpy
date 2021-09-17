@@ -953,6 +953,8 @@ class ModelStatements(MutableSequence):
 
         Before ODE system
         """
+        if isinstance(expression, str):
+            expression = sympy.sympify(expression)
         i = self._ode_index()
         if i is None:
             i = len(self)
@@ -965,6 +967,8 @@ class ModelStatements(MutableSequence):
 
         After ODE system
         """
+        if isinstance(expression, str):
+            expression = sympy.sympify(expression)
         i = self._ode_index()
         if i is None:
             i = -1

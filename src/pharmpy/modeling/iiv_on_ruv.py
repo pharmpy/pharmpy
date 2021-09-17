@@ -12,7 +12,9 @@ from pharmpy.symbols import symbol as S
 
 def set_iiv_on_ruv(model, list_of_eps=None, same_eta=True, eta_names=None):
     """
-    Multiplies epsilons with exponential (new) etas. Initial estimates for new etas are 0.09.
+    Multiplies epsilons with exponential (new) etas.
+
+    Initial variance for new etas is 0.09.
 
     Parameters
     ----------
@@ -31,6 +33,20 @@ def set_iiv_on_ruv(model, list_of_eps=None, same_eta=True, eta_names=None):
     ------
     Model
         Reference to same model
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> set_iiv_on_ruv(model)   # doctest: +ELLIPSIS
+    <...>
+    >>> model.statements.find_assignment("Y")
+    Y := EPS(1)*W*exp(ETA_RV1) + F
+
+    See also
+    --------
+    set_power_on_ruv
+
     """
     list_of_eps = _format_input_list(list_of_eps)
     eps = _get_epsilons(model, list_of_eps)

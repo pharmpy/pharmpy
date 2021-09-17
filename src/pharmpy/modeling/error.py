@@ -124,7 +124,6 @@ def set_additive_error_model(model, data_trans=None, series_terms=2):
     stats.reassign(y, expr)
     model.remove_unused_parameters_and_rvs()
 
-    # FIXME: Refactor to model.add_parameter
     sigma = model.create_symbol('sigma')
     sigma_par = Parameter(sigma.name, init=_get_prop_init(model.dataset))
     model.parameters.append(sigma_par)
@@ -206,7 +205,6 @@ def set_proportional_error_model(model, data_trans=None):
     stats.reassign(y, expr)
     model.remove_unused_parameters_and_rvs()
 
-    # FIXME: Refactor to model.add_parameter
     sigma = model.create_symbol('sigma')
     sigma_par = Parameter(sigma.name, init=0.09)
     model.parameters.append(sigma_par)
@@ -282,7 +280,6 @@ def set_combined_error_model(model, data_trans=None):
     stats.reassign(y, expr)
     model.remove_unused_parameters_and_rvs()
 
-    # FIXME: Refactor to model.add_parameter
     sigma_prop = model.create_symbol('sigma_prop')
     sigma_par1 = Parameter(sigma_prop.name, init=0.09)
     model.parameters.append(sigma_par1)
