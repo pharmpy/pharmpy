@@ -205,3 +205,18 @@ class ModelFeatures:
             a = [elt for elt in t if elt is not None]
             if a:
                 yield a
+
+    def get_funcs_same_type(self, feat):
+        if hasattr(self, 'absorption') and feat in self.absorption._funcs.keys():
+            funcs = self.absorption._funcs.values()
+        elif hasattr(self, 'elimination') and feat in self.elimination._funcs.keys():
+            funcs = self.elimination._funcs.values()
+        elif hasattr(self, 'transits') and feat in self.transits._funcs.keys():
+            funcs = self.transits._funcs.values()
+        elif hasattr(self, 'peripherals') and feat in self.peripherals._funcs.keys():
+            funcs = self.peripherals._funcs.values()
+        elif hasattr(self, 'lagtime') and feat in self.lagtime._funcs.keys():
+            funcs = self.lagtime._funcs.values()
+        else:
+            return []
+        return list(funcs)

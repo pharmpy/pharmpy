@@ -107,6 +107,11 @@ def exhaustive_stepwise(base_model, mfl):
                 for feat, func in trans_possible.items():
                     if not is_allowed(feat, trans_previous.keys()):
                         continue
+                    elif any(
+                        func in features.get_funcs_same_type(feat)
+                        for func in trans_previous.values()
+                    ):
+                        continue
 
                     model_name = f'candidate{candidate_count}'
 
