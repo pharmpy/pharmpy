@@ -24,7 +24,7 @@ def execute_workflow(workflow, dispatcher=None, database=None, path=None):
                     try:
                         new_model.modelfit_results.residuals
                         new_model.modelfit_results.predictions
-                    except AttributeError:
+                    except (AttributeError, KeyError):
                         pass
                     new_inp.append(new_model)
                 else:
