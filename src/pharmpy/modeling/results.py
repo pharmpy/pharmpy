@@ -401,8 +401,10 @@ def _split_equation(s):
 
 # TODO: consider moving part of function to results-object
 def summarize_modelfit_results(models):
-    """Summarize results of multiple model runs, includes runtime, ofv and parameter estimates
-    (with errors).
+    """Summarize results of multiple model runs
+
+    Summarize different results after fitting a model, includes runtime, ofv,
+    and parameter estimates (with errors).
 
     Parameters
     ----------
@@ -411,8 +413,16 @@ def summarize_modelfit_results(models):
 
     Return
     ------
-    DataFrame
-        One row per model
+    pd.DataFrame
+        A DataFrame of modelfit results, one row per model.
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import load_example_model, summarize_modelfit_results
+    >>> model = load_example_model("pheno")
+    >>> summarize_modelfit_results([model])
+               minimization_successful         ofv  ... THETA(3)_SE  THETA(3)_estimate
+    pheno_real                    True  586.276056  ...    0.083762            0.15892
     """
     run_summaries = []
     parameter_summaries = []
