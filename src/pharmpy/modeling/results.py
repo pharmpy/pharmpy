@@ -420,9 +420,9 @@ def summarize_modelfit_results(models):
     --------
     >>> from pharmpy.modeling import load_example_model, summarize_modelfit_results
     >>> model = load_example_model("pheno")
-    >>> summarize_modelfit_results([model])
-               minimization_successful         ofv  ... THETA(3)_SE  THETA(3)_estimate
-    pheno_real                    True  586.276056  ...    0.083762            0.15892
+    >>> summarize_modelfit_results([model]) # doctest: +ELLIPSIS
+          minimization_successful         ofv runtime_total  THETA(1)_estimate  ... SIGMA(1,1)_RSE
+    pheno                    True  586.276056           4.0           0.004696  ...       0.172147
     """
     run_summaries = []
     parameter_summaries = []

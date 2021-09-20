@@ -105,4 +105,3 @@ def test_summarize_modelfit_results(testdata, pheno_path):
     assert summary.loc['mox1', 'ofv'] == -624.5229577248352
     assert summary['OMEGA(1,1)_estimate'].mean() == 0.2236304
     assert summary['OMEGA(2,1)_estimate'].mean() == 0.395647  # One is NaN
-    print(summary)
