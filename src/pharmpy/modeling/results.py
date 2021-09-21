@@ -178,7 +178,8 @@ def calculate_individual_parameter_statistics(model, exprs, rng=None):
     being that variables that depends on the solution of the ODE system
     cannot be used. If covariates are used in the expression the statistics
     of the parameter is calculated at the median value of each covariate as well
-    as at the 5:th and 95:th percentiles.
+    as at the 5:th and 95:th percentiles. If no parameter uncertainty is available
+    for the model the standard error will not be calculated.
 
     Parameters
     ----------
@@ -239,24 +240,27 @@ def calculate_individual_parameter_statistics(model, exprs, rng=None):
             mean = np.mean(samples)
             variance = np.var(samples)
 
-            parameters = sample_parameters_from_covariance_matrix(
-                model,
-                n=100,
-                force_posdef_covmatrix=True,
-                rng=rng,
-            )
-            samples = []
-            with warnings.catch_warnings():
-                warnings.filterwarnings('ignore')
-                for _, row in parameters.iterrows():
-                    batch = model.random_variables.sample(
-                        cov_expr.subs(dict(row)),
-                        parameters=dict(row),
-                        samples=10,
-                        rng=rng,
-                    )
-                    samples.extend(list(batch))
-            stderr = pd.Series(samples).std()
+            if model.modelfit_results.covariance_matrix is not None:
+                parameters = sample_parameters_from_covariance_matrix(
+                    model,
+                    n=100,
+                    force_posdef_covmatrix=True,
+                    rng=rng,
+                )
+                samples = []
+                with warnings.catch_warnings():
+                    warnings.filterwarnings('ignore')
+                    for _, row in parameters.iterrows():
+                        batch = model.random_variables.sample(
+                            cov_expr.subs(dict(row)),
+                            parameters=dict(row),
+                            samples=10,
+                            rng=rng,
+                        )
+                        samples.extend(list(batch))
+                stderr = pd.Series(samples).std()
+            else:
+                stderr = np.nan
             df.loc[case] = [mean, variance, stderr]
             df.index.name = 'covariates'
 
