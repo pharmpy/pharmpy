@@ -418,11 +418,6 @@ def summarize_modelfit_results(models):
 
     Examples
     --------
-    .. testsetup:: *
-        >>> import pandas as pd
-        >>> pd.set_option('display.width', 1000)
-        >>> pd.set_option('display.max_columns', 1000)
-
     >>> from pharmpy.modeling import load_example_model, summarize_modelfit_results
     >>> model = load_example_model("pheno")
     >>> summarize_modelfit_results([model]) # doctest: +ELLIPSIS
