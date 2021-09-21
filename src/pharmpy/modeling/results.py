@@ -420,6 +420,9 @@ def summarize_modelfit_results(models):
     --------
     >>> from pharmpy.modeling import load_example_model, summarize_modelfit_results
     >>> model = load_example_model("pheno")
+    >>> import pandas as pd
+    >>> pd.set_option('display.width', 1000)
+    >>> pd.set_option('display.max_columns', 1000)
     >>> summarize_modelfit_results([model]) # doctest: +ELLIPSIS
           minimization_successful         ofv runtime_total  THETA(1)_estimate  ... SIGMA(1,1)_RSE
     pheno                    True  586.276056           4.0           0.004696  ...       0.172147
