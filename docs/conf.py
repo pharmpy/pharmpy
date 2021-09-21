@@ -66,3 +66,8 @@ graphviz_output_format = 'svg'
 
 import doctest
 doctest_default_flags = doctest.NORMALIZE_WHITESPACE
+doctest_global_setup = '''
+import pandas as pd
+pd.set_option('display.width', 1000)
+pd.set_option('display.max_columns', 1000)
+'''
