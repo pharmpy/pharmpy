@@ -2,7 +2,7 @@ next release
 ------------
 
 * Move parameter_sampling-functions into modeling module
-* Add predict_outliers function to modeling
+* Add predict_outliers, predict_influential_individuals and predict_influential_outliers functions to modeling
 
 0.30.0 (2021-09-06)
 -------------------

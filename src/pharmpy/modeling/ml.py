@@ -140,17 +140,88 @@ def predict_outliers(model):
     57 -0.345342    False
     58 -0.666367    False
     59 -0.578347    False
+
+    See also
+    --------
+    predict_influential_individuals
+    predict_influential_outliers
+
     """
     model_path = Path(__file__).parent.resolve() / 'ml_models' / 'outliers.tflite'
+    data = _create_dataset(model)
+    output = _predict_with_tflite(model_path, data)
+    df = pd.DataFrame({'residual': output, 'outlier': output > 3}, index=model.dataset.pharmpy.ids)
+    return df
+
+
+def predict_influential_individuals(model):
+    """Predict influential individuals for a model using a machine learning model.
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+
+    Returns
+    -------
+    pd.Dataframe
+        Dataframe over the individuals with a `dofv` column containing the raw predicted
+        delta-OFV and an `influential` column with a boolean to tell whether the individual is
+        influential or not.
+
+    See also
+    --------
+    predict_influential_outliers
+    predict_outliers
+
+    """
+
+    model_path = Path(__file__).parent.resolve() / 'ml_models' / 'infinds.tflite'
+    data = _create_dataset(model)
+    data['linearized'] = 0.0
+    output = _predict_with_tflite(model_path, data)
+    df = pd.DataFrame(
+        {'dofv': output, 'influential': output > 3.84}, index=model.dataset.pharmpy.ids
+    )
+    return df
+
+
+def predict_influential_outliers(model):
+    """Predict influential outliers for a model using a machine learning model.
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+
+    Returns
+    -------
+    pd.Dataframe
+        Dataframe over the individuals with a `outliers` and `dofv` columns containing the raw
+        predictions and `influential`, `outlier` and `influential_outlier` boolean columns.
+
+    See also
+    --------
+    predict_influential_individuals
+    predict_outliers
+
+    """
+
+    outliers = predict_outliers(model)
+    infinds = predict_influential_individuals(model)
+    df = pd.concat([outliers, infinds], axis=1)
+    df['influential_outlier'] = df['outlier'] & df['influential']
+    return df
+
+
+def _predict_with_tflite(model_path, data):
     interpreter = tflite.Interpreter(str(model_path))
     interpreter.allocate_tensors()
     input_details = interpreter.get_input_details()
     output_details = interpreter.get_output_details()
 
-    data = _create_dataset(model)
-    nrows = len(data)
     npdata = data.astype('float32').values
-
+    nrows = len(data)
     output = np.empty(nrows)
 
     for i in range(0, nrows):
@@ -159,6 +230,4 @@ def predict_outliers(model):
         output_data = interpreter.get_tensor(output_details[0]['index'])
         output[i] = output_data
 
-    df = pd.DataFrame({'residual': output, 'outlier': output > 3}, index=model.dataset.pharmpy.ids)
-
-    return df
+    return output
