@@ -1,8 +1,10 @@
-next release
-------------
+0.31.0 (2021-09-21)
+-------------------
 
 * Move parameter_sampling-functions into modeling module
+* Add run_tool function to modeling
 * Add predict_outliers, predict_influential_individuals and predict_influential_outliers functions to modeling
+* Update API documentation (e.g. add examples, and improved index)
 
 0.30.0 (2021-09-06)
 -------------------
