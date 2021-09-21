@@ -29,7 +29,7 @@ residual outlier flag. The residual for each sample and ID is the distance from 
 
 .. math::
 
-    \mathrm{res} = \frac{\mathrm{obs} - \mathrm{sim}}{\mathop{sd}(\mathrm{sim})}
+    \mathrm{res} = \frac{\mathrm{obs} - \mathop{median}(\mathrm{sim})}{\mathop{sd}(\mathrm{sim})}
 
 An individual is defined as an outlier if the corresponding residual is 3 or higher.
 
