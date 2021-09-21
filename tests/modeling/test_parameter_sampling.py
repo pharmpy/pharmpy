@@ -16,6 +16,9 @@ def test_create_rng():
     rng = create_rng(23)
     assert rng.standard_normal() == 0.5532605888887387
 
+    rng = create_rng(23.0)
+    assert rng.standard_normal() == 0.5532605888887387
+
 
 def test_sample_parameters_uniformly():
     model = load_example_model("pheno")

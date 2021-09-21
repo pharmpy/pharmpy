@@ -33,6 +33,9 @@ def create_rng(seed=None):
     """
     if isinstance(seed, np.random.Generator):
         rng = seed
+    elif isinstance(seed, float) and int(seed) == seed:
+        # Case to support int-like floats in pharmr
+        rng = np.random.default_rng(int(seed))
     else:
         rng = np.random.default_rng(seed)
     return rng
