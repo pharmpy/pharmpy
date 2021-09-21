@@ -63,6 +63,8 @@ def _create_dataset(model):
 def predict_outliers(model):
     """Predict outliers for a model using a machine learning model.
 
+    See the :ref:`simeval <Individual OFV summary>` documentation for a definition of the `residual`
+
     Parameters
     ----------
     model : Model
