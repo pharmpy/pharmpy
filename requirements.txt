@@ -9,8 +9,8 @@ charset-normalizer==2.0.6
 click==8.0.1
 cloudpickle==2.0.0
 csscompressor==0.9.5
-dask==2021.9.0
-distributed==2021.9.0
+dask==2021.9.1
+distributed==2021.9.1
 docutils==0.17.1
 entrypoints==0.3
 fsspec==2021.8.1
