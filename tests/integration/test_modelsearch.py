@@ -26,7 +26,9 @@ def test_exhaustive_stepwise(tmp_path, testdata, mfl, no_of_models):
         set_first_order_elimination(model)
         model.update_source(nofiles=True)
 
-        res = run_tool('modelsearch', model, 'exhaustive_stepwise', mfl, rankfunc='ofv', cutoff=0)
+        res = run_tool(
+            'modelsearch', 'exhaustive_stepwise', mfl, rankfunc='ofv', cutoff=0, model=model
+        )
 
         assert len(res.summary) == no_of_models
         assert len(res.models) == no_of_models
@@ -46,7 +48,9 @@ def test_exhaustive_stepwise_already_fit(tmp_path, testdata):
         fit(model)
 
         mfl = 'ABSORPTION(ZO)\nPERIPHERALS(1)'
-        res = run_tool('modelsearch', model, 'exhaustive_stepwise', mfl, rankfunc='ofv', cutoff=0)
+        res = run_tool(
+            'modelsearch', 'exhaustive_stepwise', mfl, rankfunc='ofv', cutoff=0, model=model
+        )
 
         assert len(res.summary) == 4
         assert len(res.models) == 4

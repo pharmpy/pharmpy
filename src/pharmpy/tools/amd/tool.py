@@ -1,4 +1,5 @@
 import pharmpy.modeling as modeling
+import pharmpy.tools.modelsearch as modelsearch
 import pharmpy.tools.resmod as resmod
 from pharmpy.tools.workflows import Task, Workflow
 
@@ -9,17 +10,34 @@ def create_workflow(model):
 
     preprocess_task = Task('preprocess', preprocess, model)
 
+    mfl = 'ABSORPTION(ZO)\nPERIPHERALS(1)'
+    wf_modelsearch = modelsearch.create_workflow('exhaustive_stepwise', mfl)
+    wf.insert_workflow(wf_modelsearch, predecessors=preprocess_task)
+
+    select_modelsearch_task = Task('select_modelsearch', select_modelsearch, model)
+    wf.add_task(select_modelsearch_task, predecessors=wf_modelsearch.output_tasks)
+
     wf_resmod = resmod.create_workflow()
-    wf.insert_workflow(wf_resmod, predecessors=preprocess_task)
+    wf.insert_workflow(wf_resmod, predecessors=wf.output_tasks)
 
     select_task = Task('select_resmod', select_resmod)
-    wf.add_task(select_task, predecessors=[preprocess_task] + wf_resmod.output_tasks)
+    wf.add_task(select_task, predecessors=[select_modelsearch_task] + wf_resmod.output_tasks)
+
+    post_process_task = Task('results', post_process)
+    wf.add_task(post_process_task, predecessors=wf.output_tasks)
 
     return wf
 
 
 def preprocess(model):
     return model
+
+
+def select_modelsearch(model, res):
+    if res.best_model:
+        return res.best_model
+    else:
+        return model
 
 
 def select_resmod(model, res):
@@ -31,3 +49,8 @@ def select_resmod(model, res):
         modeling.set_iiv_on_ruv(model)
     model.update_source()
     return model
+
+
+def post_process(*models):
+    res = [model for model in models]
+    return res

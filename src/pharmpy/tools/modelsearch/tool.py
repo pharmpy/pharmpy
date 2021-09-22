@@ -39,21 +39,26 @@ class ModelSearch(pharmpy.tools.Tool):
         return res
 
 
-def create_workflow(model, algorithm, mfl, rankfunc='ofv', cutoff=None):
+def create_workflow(algorithm, mfl, rankfunc='ofv', cutoff=None, model=None):
     algorithm_func = getattr(algorithms, algorithm)
     rankfunc_func = getattr(rankfuncs, rankfunc)
 
     wf = Workflow()
     wf.name = 'modelsearch'
 
-    start_task = Task('start_modelsearch', start, model)
+    if model:
+        start_task = Task('start_modelsearch', start, model)
+    else:
+        start_task = Task('start_modelsearch', start)
+
     wf.add_task(start_task)
 
-    start_model_task = []
-    if not model.modelfit_results:
+    if model and not model.modelfit_results:
         wf_fit = create_single_fit_workflow()
         wf.insert_workflow(wf_fit, predecessors=start_task)
         start_model_task = wf_fit.output_tasks
+    else:
+        start_model_task = [start_task]
 
     wf_search, candidate_model_tasks, model_features = algorithm_func(mfl)
     wf.insert_workflow(wf_search, predecessors=wf.output_tasks)
@@ -61,7 +66,6 @@ def create_workflow(model, algorithm, mfl, rankfunc='ofv', cutoff=None):
     task_result = Task(
         'results',
         post_process_results,
-        model,
         rankfunc_func,
         cutoff,
         model_features,
@@ -76,15 +80,16 @@ def start(model):
     return model
 
 
-def post_process_results(start_model, rankfunc, cutoff, model_features, *models):
+def post_process_results(rankfunc, cutoff, model_features, *models):
     res_data = {'dofv': [], 'features': [], 'rank': []}
     model_names = []
 
     res_models = []
     for model in models:
         model.modelfit_results.estimation_step
-        if model.name == start_model.name:
-            start_model.modelfit_results = model.modelfit_results
+        # TODO: change to better mechanism than naming?
+        if not model.name.startswith('candidate'):
+            start_model = model
         else:
             res_models.append(model)
 

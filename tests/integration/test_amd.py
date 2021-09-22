@@ -14,5 +14,9 @@ def test_amd(tmp_path, testdata):
 
         model = Model('pheno_real.mod')
         model.dataset_path = tmp_path / 'pheno.dta'
+
+        # FIXME: remove after updating results
+        model.modelfit_results.estimation_step
+
         res = run_tool('amd', model)
         assert res
