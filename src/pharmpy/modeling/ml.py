@@ -2,7 +2,6 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-import tflite_runtime.interpreter as tflite
 
 from .common import get_model_covariates
 from .data import (
@@ -217,6 +216,8 @@ def predict_influential_outliers(model):
 
 
 def _predict_with_tflite(model_path, data):
+    import tflite_runtime.interpreter as tflite
+
     interpreter = tflite.Interpreter(str(model_path))
     interpreter.allocate_tensors()
     input_details = interpreter.get_input_details()
