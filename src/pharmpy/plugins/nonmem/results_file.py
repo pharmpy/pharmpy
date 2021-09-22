@@ -269,7 +269,7 @@ class NONMEMResultsFile:
         found_runtime = False
         found_endtime = False
 
-        with open(path) as file:
+        with open(path, encoding='utf-8') as file:
             version_number = None
             first_row = True
             for row in file:
