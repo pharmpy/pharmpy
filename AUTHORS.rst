@@ -1,7 +1,7 @@
 .. _AUTHORS:
 
-Contributors
-============
+Current and previous contributors
+=================================
 
 Development
 ~~~~~~~~~~~
@@ -24,6 +24,6 @@ Research and scientific advice
 Funding
 ~~~~~~~
 
-F. Hoffman-La Roche Ltd.
-
-
+* F. Hoffman-La Roche Ltd.
+* Pharmetheus
+* Uppsala University
