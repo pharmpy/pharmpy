@@ -32,6 +32,8 @@ Contents
    api
    contribute
    changelog
+   contributors
+   References and citation <citation>
    license
 
 Indices and tables
