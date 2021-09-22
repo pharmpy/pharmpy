@@ -16,6 +16,7 @@ Research and scientific advice
 
 * Mats O. Karlsson
 * Andrew C. Hooker
+* Sebastian Ueckert
 * Simon Carter
 * Simon Buatois
 * João A. Abrantes
