@@ -1,5 +1,4 @@
 import re
-import warnings
 from datetime import datetime
 
 import dateutil.parser
@@ -22,7 +21,8 @@ class NONMEMResultsFile:
             for name, content in NONMEMResultsFile.table_blocks(path):
                 if name == 'INIT':
                     self.nonmem_version = content.pop('nonmem_version', None)
-                    self.runtime_total = content.pop('runtime', None)
+                elif name == 'runtime':
+                    self.runtime_total = content.pop('total', None)
                 else:
                     self.table[name] = content
 
@@ -187,7 +187,8 @@ class NONMEMResultsFile:
         return result
 
     @staticmethod
-    def parse_runtime(path):
+    def parse_runtime(row, row_next=None):
+        # TODO: support AM/PM
         weekday_month_en = re.compile(
             r'^\s*(Sun|Mon|Tue|Wed|Thu|Fri|Sat)'
             r'\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)'  # Month
@@ -221,59 +222,39 @@ class NONMEMResultsFile:
         }
         month_trans = {'MAJ': 'MAY', 'OKT': 'OCT'}
 
-        starttime = None
-        endtime = None
+        date_time = None
+        if weekday_month_en.match(row) or weekday_month_sv.match(row):
+            if weekday_month_en.match(row):
+                _, month, day, year = weekday_month_en.match(row).groups()
+            else:
+                _, day, month, year = weekday_month_sv.match(row).groups()
 
-        with open(path, encoding='utf-8') as file:
-            for row in file:
-                date_time = None
-                if weekday_month_en.match(row) or weekday_month_sv.match(row):
-                    if weekday_month_en.match(row):
-                        _, month, day, year = weekday_month_en.match(row).groups()
-                    else:
-                        _, day, month, year = weekday_month_sv.match(row).groups()
+            try:
+                month = month_no[month.upper()]
+            except KeyError:
+                month_en = month_trans[month.upper()]
+                month = month_no[month_en.upper()]
 
-                    try:
-                        month = month_no[month.upper()]
-                    except KeyError:
-                        month_en = month_trans[month.upper()]
-                        month = month_no[month_en.upper()]
+            date = datetime(int(year), int(month), int(day))
 
-                    date = datetime(int(year), int(month), int(day))
+            time_str = timestamp.search(row).groups()[0]
+            time = dateutil.parser.parse(time_str).time()
 
-                    time_str = timestamp.search(row).groups()[0]
-                    time = dateutil.parser.parse(time_str).time()
+            date_time = datetime.combine(date, time)
+        elif day_month_year.match(row) or year_month_day.match(row):
+            if day_month_year.match(row):
+                dayfirst = True
+            else:
+                dayfirst = False
 
-                    date_time = datetime.combine(date, time)
-                elif day_month_year.match(row) or year_month_day.match(row):
-                    if day_month_year.match(row):
-                        dayfirst = True
-                    else:
-                        dayfirst = False
+            time_str = row_next
 
-                    time_str = next(file)
+            date = dateutil.parser.parse(row, dayfirst=dayfirst).date()
+            time = dateutil.parser.parse(time_str).time()
 
-                    date = dateutil.parser.parse(row, dayfirst=dayfirst).date()
-                    time = dateutil.parser.parse(time_str).time()
+            date_time = datetime.combine(date, time)
 
-                    date_time = datetime.combine(date, time)
-                if not starttime and not endtime:
-                    starttime = date_time
-                elif starttime and not endtime:
-                    endtime = date_time
-                elif date_time and starttime and endtime:
-                    warnings.warn('More than two timestamps found')
-                    return None
-
-        if not starttime:
-            warnings.warn('Start time not found, format not supported')
-            return None
-        if not endtime:
-            warnings.warn('End time not found, format not supported')
-            return None
-
-        runtime_total = (endtime - starttime).total_seconds()
-        return runtime_total
+        return date_time
 
     @staticmethod
     def tag_items(path):
@@ -285,21 +266,23 @@ class NONMEMResultsFile:
         TERE = list()
         found_TERM = False
         found_TERE = False
+        found_runtime = False
+        found_endtime = False
 
         with open(path) as file:
             version_number = None
-            runtime_total = NONMEMResultsFile.parse_runtime(
-                path
-            )  # TODO: consider rewrite/split to avoid re-parse
-            yield ('runtime', runtime_total)
+            first_row = True
             for row in file:
+                if first_row:
+                    starttime = NONMEMResultsFile.parse_runtime(row, next(file))
+                    first_row = False
                 m = nmversion.match(row)
                 if m:
                     version_number = NONMEMResultsFile.cleanup_version(m.group(1))
                     yield ('nonmem_version', version_number)
                     break  # we will stay at current file position
             if NONMEMResultsFile.supported_version(version_number):
-                for row in file:
+                for i, row in enumerate(file):
                     m = tag.match(row)
                     if m:
                         if m.group(1) == 'TERM':
@@ -328,10 +311,24 @@ class NONMEMResultsFile:
                             TERE.append(row)
                     elif found_TERM:
                         TERM.append(row)
+                    if row.strip() == 'Stop Time:':
+                        found_endtime = True
+                        continue
+                    if found_endtime:
+                        try:
+                            row_next = next(file)
+                        except StopIteration:
+                            row_next = None
+                        endtime = NONMEMResultsFile.parse_runtime(row, row_next)
+                        if starttime and endtime:
+                            runtime = (endtime - starttime).total_seconds()
+                            found_runtime = True
                 if found_TERM:
                     yield ('TERM', NONMEMResultsFile.parse_termination(TERM))
                 if found_TERE:
                     yield ('TERE', NONMEMResultsFile.parse_covariance(TERE))
+                if found_runtime:
+                    yield ('runtime', runtime)
 
     @staticmethod
     def table_blocks(path):
@@ -346,6 +343,8 @@ class NONMEMResultsFile:
                     yield (table_number, block)
                 block = dict()
                 table_number = int(content)
+            elif name == 'runtime':
+                yield ('runtime', {'total': content})
             else:
                 # If already set then it means TBLN was missing, probably $SIM, skip
                 if name not in block.keys():
