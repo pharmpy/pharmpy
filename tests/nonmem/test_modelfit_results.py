@@ -10,8 +10,8 @@ from pharmpy.config import ConfigurationContext
 from pharmpy.plugins.nonmem.results import NONMEMChainedModelfitResults, simfit_results
 
 
-def test_ofv(pheno_lst):
-    res = NONMEMChainedModelfitResults(pheno_lst)
+def test_ofv(pheno):
+    res = pheno.modelfit_results
     assert res.ofv == 586.27605628188053
 
 
@@ -21,8 +21,8 @@ def test_aic_bic(testdata):
     assert model.modelfit_results.bic == 756.111852398327
 
 
-def test_tool_files(pheno_lst):
-    res = NONMEMChainedModelfitResults(pheno_lst)
+def test_tool_files(pheno):
+    res = pheno.modelfit_results
     names = [str(p.name) for p in res.tool_files]
     assert names == [
         'pheno_real.lst',
@@ -34,8 +34,8 @@ def test_tool_files(pheno_lst):
     ]
 
 
-def test_condition_number(testdata, pheno_lst):
-    res = NONMEMChainedModelfitResults(pheno_lst)
+def test_condition_number(testdata, pheno):
+    res = pheno.modelfit_results
     assert res.condition_number == pytest.approx(4.39152)
 
     maxeval3 = Model(

@@ -52,47 +52,6 @@ class NONMEMModelfitResults(ModelfitResults):
             return self._condition_number
 
     @property
-    def individual_ofv(self):
-        """A Series with individual estimates indexed over ID"""
-        try:
-            return self._individual_ofv
-        except AttributeError:
-            self._chain._read_phi_table()
-            return self._individual_ofv
-
-    @property
-    def individual_estimates(self):
-        """ETA values from phi-file"""
-        try:
-            return self._individual_estimates
-        except AttributeError:
-            self._chain._read_phi_table()
-            return self._individual_estimates
-
-    @property
-    def individual_estimates_covariance(self):
-        """ETCs from phi-file as Series of DataFrames"""
-        try:
-            return self._individual_estimates_covariance
-        except AttributeError:
-            self._chain._read_phi_table()
-            return self._individual_estimates_covariance
-
-    @property
-    def residuals(self):
-        try:
-            return self._residuals
-        except AttributeError:
-            pass
-
-        df = self._chain._read_from_tables(['ID', 'TIME', 'RES', 'WRES', 'CWRES'], self)
-        df['ID'] = df['ID'].convert_dtypes()
-        df.set_index(['ID', 'TIME'], inplace=True)
-        df = df.loc[(df != 0).any(axis=1)]  # Simple way of removing non-observations
-        self._residuals = df
-        return df
-
-    @property
     def predictions(self):
         try:
             return self._predictions
@@ -106,14 +65,6 @@ class NONMEMModelfitResults(ModelfitResults):
         df.set_index(['ID', 'TIME'], inplace=True)
         self._predictions = df
         return df
-
-    @property
-    def runtime_total(self):
-        try:
-            return self._runtime_total
-        except AttributeError:
-            self._chain._read_lst_file()
-            return self._runtime_total
 
     def predictions_for_observations(self):
         """predictions only for observation data records"""
@@ -253,17 +204,18 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
     def __init__(self, path, model=None, subproblem=None):
         # Path is path to any result file
         self._path = Path(path)
-        self._read_phi = False
-        self._read_lst = False
         self._subproblem = subproblem
         self.model = model
         extensions = ['.lst', '.ext', '.cov', '.cor', '.coi', '.phi']
         self.tool_files = [self._path.with_suffix(ext) for ext in extensions]
         super().__init__()
         self._read_ext_table()
+        self._read_lst_file()
         self._read_cov_table()
         self._read_cor_table()
         self._read_coi_table()
+        self._read_phi_table()
+        self._read_residuals()
         self._calculate_cov_cor_coi()
 
     def __getattr__(self, item):
@@ -362,21 +314,22 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
             self.append(result_obj)
 
     def _read_lst_file(self):
-        if not self._read_lst:
+        try:
             rfile = NONMEMResultsFile(self._path.with_suffix('.lst'))
-            table_with_cov = -99
-            if self.model is not None:
-                if len(self.model.control_stream.get_records('COVARIANCE')) > 0:
-                    table_with_cov = self[-1].table_number  # correct unless interrupted
-            for result_obj in self:
-                # _estimation_status is already set to None if ext table has (Evaluation)
-                if hasattr(result_obj, '_estimation_status') is False:
-                    result_obj._set_estimation_status(rfile, requested=True)
-                # _covariance_status already set to None if ext table did not have standard errors
-                if hasattr(result_obj, '_covariance_status') is False:
-                    result_obj._set_covariance_status(rfile, table_with_cov=table_with_cov)
-                result_obj._runtime_total = rfile.runtime_total
-        self._read_lst = True
+        except OSError:
+            return
+        table_with_cov = -99
+        if self.model is not None:
+            if len(self.model.control_stream.get_records('COVARIANCE')) > 0:
+                table_with_cov = self[-1].table_number  # correct unless interrupted
+        for result_obj in self:
+            # _estimation_status is already set to None if ext table has (Evaluation)
+            if hasattr(result_obj, '_estimation_status') is False:
+                result_obj._set_estimation_status(rfile, requested=True)
+            # _covariance_status already set to None if ext table did not have standard errors
+            if hasattr(result_obj, '_covariance_status') is False:
+                result_obj._set_covariance_status(rfile, table_with_cov=table_with_cov)
+            result_obj.runtime_total = rfile.runtime_total
 
     @property
     def covariance_step(self):
@@ -474,23 +427,23 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
                     obj.standard_errors = obj._se_from_inf()
 
     def _read_phi_table(self):
-        if not self._read_phi:
-            for result_obj in self:
-                result_obj._individual_ofv = None
-                result_obj._individual_estimates = None
-                result_obj._individual_estimates_covariance = None
+        for result_obj in self:
+            result_obj.individual_ofv = None
+            result_obj.individual_estimates = None
+            result_obj.individual_estimates_covariance = None
 
-            trans = self.model.rv_translation(reverse=True)
-            rv_names = [name for name in self.model.random_variables.etas.names if name in trans]
-            try:
-                phi_tables = NONMEMTableFile(self._path.with_suffix('.phi'))
-            except FileNotFoundError:
-                return
-            for result_obj in self:
-                table = phi_tables.table_no(result_obj.table_number)
-                if table is not None:
-                    result_obj._individual_ofv = table.iofv
-                    result_obj._individual_estimates = table.etas.rename(
+        trans = self.model.rv_translation(reverse=True)
+        rv_names = [name for name in self.model.random_variables.etas.names if name in trans]
+        try:
+            phi_tables = NONMEMTableFile(self._path.with_suffix('.phi'))
+        except FileNotFoundError:
+            return
+        for result_obj in self:
+            table = phi_tables.table_no(result_obj.table_number)
+            if table is not None:
+                try:
+                    result_obj.individual_ofv = table.iofv
+                    result_obj.individual_estimates = table.etas.rename(
                         columns=self.model.rv_translation()
                     )[rv_names]
                     covs = table.etcs
@@ -500,8 +453,23 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
                         )
                     )
                     covs = covs.transform(lambda cov: cov[rv_names].loc[rv_names])
-                    result_obj._individual_estimates_covariance = covs
-            self._read_phi = True
+                    result_obj.individual_estimates_covariance = covs
+                except KeyError:
+                    result_obj.individual_ofv = None
+                    result_obj.inividual_estimates = None
+                    result_obj.individual_estimates_covariance = None
+
+    def _read_residuals(self):
+        for obj in self:
+            try:
+                df = self._read_from_tables(['ID', 'TIME', 'RES', 'WRES', 'CWRES'], obj)
+                df['ID'] = df['ID'].convert_dtypes()
+                df.set_index(['ID', 'TIME'], inplace=True)
+            except (KeyError, OSError):
+                obj.residuals = None
+            else:
+                df = df.loc[(df != 0).any(axis=1)]  # Simple way of removing non-observations
+                obj.residuals = df
 
     def _read_from_tables(self, columns, result_obj):
         table_recs = self.model.control_stream.get_records('TABLE')

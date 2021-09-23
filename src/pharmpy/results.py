@@ -253,11 +253,19 @@ class ModelfitResults(Results):
         iteration.
     individual_ofv : pd.Series
         OFV for each individual
+    individual_estimates : pd.DataFrame
+        Estimates for etas
+    individual_estimates_covariance : pd.Series
+        Estimated covariance between etas
     parameter_estimates : pd.Series
         Population parameter estimates
     parameter_estimates_sdcorr : pd.Series
         Population parameter estimates with variability parameters as standard deviations and
         correlations
+    residuals: pd.DataFrame
+        Table of various residuals
+    runtime_total : float
+        Total runtime of estimation
     standard_errors : pd.Series
         Standard errors of the population parameter estimates
     standard_errors_sdcorr : pd.Series
@@ -277,6 +285,8 @@ class ModelfitResults(Results):
         minimization_successful=None,
         individual_ofv=None,
         individual_estimates=None,
+        individual_estimates_covariance=None,
+        residuals=None,
         runtime_total=None,
     ):
         self.ofv = ofv
@@ -286,9 +296,10 @@ class ModelfitResults(Results):
         self.correlation_matrix = correlation_matrix
         self.standard_errors = standard_errors
         self._minimization_successful = minimization_successful
-        self._individual_estimates = individual_estimates
-        self._individual_ofv = individual_ofv
-        self._runtime_total = runtime_total
+        self.individual_estimates = individual_estimates
+        self.individual_ofv = individual_ofv
+        self.residuals = residuals
+        self.runtime_total = runtime_total
 
     def __bool__(self):
         return bool(self.ofv) and bool(self.parameter_estimates)
@@ -373,28 +384,6 @@ class ModelfitResults(Results):
         Im = self.information_matrix
         se = pd.Series(np.sqrt(np.linalg.inv(Im.values)), index=Im.index)
         return se
-
-    @property
-    def individual_ofv(self):
-        """A Series with individual estimates indexed over ID"""
-        return self._individual_ofv
-
-    @property
-    def individual_estimates(self):
-        """Individual parameter estimates
-
-        A DataFrame with ID as index one column for each individual parameter
-        """
-        return self._individual_estimates
-
-    @property
-    def individual_estimates_covariance(self):
-        """The covariance matrix of the individual estimates"""
-        raise NotImplementedError("Not implemented")
-
-    @property
-    def runtime_total(self):
-        return self._runtime_total
 
     def near_bounds(self, zero_limit=0.001, significant_digits=2):
         return self.model.parameters.is_close_to_bound(
