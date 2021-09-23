@@ -199,7 +199,7 @@ def sample_parameters_from_covariance_matrix(
         Input model
     modelfit_results : ModelfitResults
         Alternative results object. Default is to use the one in model
-    parameters
+    parameters : list
         Use to only sample a subset of the parameters. None means all
     force_posdef_samples : int
         Set to how many iterations to do before forcing all samples to be positive definite. None is
