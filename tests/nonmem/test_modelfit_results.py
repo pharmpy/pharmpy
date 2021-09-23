@@ -198,13 +198,11 @@ def test_standard_errors(testdata, pheno_path):
         pd.testing.assert_series_equal(ses_sd, correct)
 
 
-def test_individual_ofv(pheno, pheno_lst):
-    res = NONMEMChainedModelfitResults(pheno_lst, model=pheno)
-    iofv = res.individual_ofv
+def test_individual_ofv(pheno):
+    iofv = pheno.modelfit_results.individual_ofv
     assert len(iofv) == 59
     assert pytest.approx(iofv[1], 1e-15) == 5.9473520242962552
     assert pytest.approx(iofv[57], 1e-15) == 5.6639479151436394
-    assert res.plot_iofv_vs_iofv(res)
 
 
 def test_individual_estimates(pheno, pheno_lst):

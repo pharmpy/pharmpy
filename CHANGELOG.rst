@@ -1,3 +1,8 @@
+next release
+------------
+
+* Move plot_iofv_vs_iofv to modeling
+
 0.31.0 (2021-09-21)
 -------------------
 

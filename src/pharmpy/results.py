@@ -27,8 +27,6 @@ import numpy as np
 import pandas as pd
 
 import pharmpy.config as config
-import pharmpy.visualization
-from pharmpy.data import PharmDataFrame
 from pharmpy.math import cov2corr
 
 
@@ -428,15 +426,6 @@ class ModelfitResults(Results):
         df = pd.DataFrame({'estimate': pe, 'SE': ses, 'RSE': rses})
         return df
 
-    def plot_iofv_vs_iofv(self, other):
-        x_label = f'{self.model_name} iOFV'
-        y_label = f'{other.model_name} iOFV'
-        df = PharmDataFrame({x_label: self.individual_ofv, y_label: other.individual_ofv})
-        plot = pharmpy.visualization.scatter_plot_correlation(
-            df, x_label, y_label, title='iOFV vs iOFV'
-        )
-        return plot
-
     def plot_individual_predictions(self, predictions=None, individuals=None):
         """Plot DV and predictions grouped on individuals
 
@@ -567,9 +556,6 @@ class ChainedModelfitResults(MutableSequence, ModelfitResults):
     @property
     def predictions(self):
         return self[-1].predictions
-
-    def plot_iofv_vs_iofv(self, other):
-        return self[-1].plot_iofv_vs_iofv(other)
 
     @property
     def model_name(self):

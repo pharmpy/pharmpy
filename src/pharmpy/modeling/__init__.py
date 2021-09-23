@@ -87,6 +87,8 @@ from pharmpy.modeling.results import (
 from pharmpy.modeling.run import create_results, fit, read_results, run_tool
 from pharmpy.modeling.update_inits import update_inits
 
+from .plots import plot_iofv_vs_iofv
+
 # Remember to sort __all__ alphabetically for order in documentation
 __all__ = [
     'add_covariate_effect',
@@ -117,6 +119,7 @@ __all__ = [
     'has_proportional_error_model',
     'has_zero_order_absorption',
     'load_example_model',
+    'plot_iofv_vs_iofv',
     'predict_influential_individuals',
     'predict_influential_outliers',
     'predict_outliers',

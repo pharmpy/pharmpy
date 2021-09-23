@@ -44,11 +44,14 @@ alt.themes.register('pharmpy', pharmpy_theme)
 alt.themes.enable('pharmpy')
 
 
-def scatter_plot_correlation(df, x, y, title=""):
+def scatter_plot_correlation(df, x, y, tooltip_columns=None, title=""):
+    if tooltip_columns is None:
+        tooltip_columns = []
+
     chart = (
         alt.Chart(df, width=_chart_width, height=_chart_height)
         .mark_circle(size=100)
-        .encode(alt.X(x), alt.Y(y), tooltip=[x, y])
+        .encode(alt.X(x), alt.Y(y), tooltip=[x, y] + tooltip_columns)
         .properties(
             title=title,
         )
