@@ -237,42 +237,65 @@ class Results:
 class ModelfitResults(Results):
     """Base class for results from a modelfit operation
 
-    properties: individual_OFV is a df with currently ID and iOFV columns
-        model_name - name of model that generated the results
-        model
+    model_name - name of model that generated the results model
+
+    Attributes
+    ----------
+    correlation_matrix : pd.DataFrame
+        Correlation matrix of the population parameter estimates
+    covariance_matrix : pd.DataFrame
+        Covariance matrix of the population parameter estimates
+    information_matrix : pd.DataFrame
+        Fischer information matrix of the population parameter estimates
+    evaluation_ofv : float
+        The objective function value as if the model was evaluated. Currently
+        workfs for classical estimation methods by taking the OFV of the first
+        iteration.
+    individual_ofv : pd.Series
+        OFV for each individual
+    parameter_estimates : pd.Series
+        Population parameter estimates
+    parameter_estimates_sdcorr : pd.Series
+        Population parameter estimates with variability parameters as standard deviations and
+        correlations
+    standard_errors : pd.Series
+        Standard errors of the population parameter estimates
+    standard_errors_sdcorr : pd.Series
+        Standard errors of the population parameter estimates on standard deviation and correlation
+        scale
     """
 
     def __init__(
         self,
         ofv=None,
         parameter_estimates=None,
+        parameter_estimates_sdcorr=None,
         covariance_matrix=None,
+        correlation_matrix=None,
+        information_matrix=None,
         standard_errors=None,
         minimization_successful=None,
         individual_ofv=None,
         individual_estimates=None,
         runtime_total=None,
     ):
-        self._ofv = ofv
-        self._parameter_estimates = parameter_estimates
-        self._covariance_matrix = covariance_matrix
-        self._standard_errors = standard_errors
+        self.ofv = ofv
+        self.parameter_estimates = parameter_estimates
+        self.parameter_estimates_sdcorr = parameter_estimates_sdcorr
+        self.covariance_matrix = covariance_matrix
+        self.correlation_matrix = correlation_matrix
+        self.standard_errors = standard_errors
         self._minimization_successful = minimization_successful
         self._individual_estimates = individual_estimates
         self._individual_ofv = individual_ofv
         self._runtime_total = runtime_total
 
     def __bool__(self):
-        return bool(self._ofv) and bool(self._parameter_estimates)
+        return bool(self.ofv) and bool(self.parameter_estimates)
 
     def to_dict(self):
         """Convert results object to a dictionary"""
         return {'parameter_estimates': self.parameter_estimates}
-
-    @property
-    def ofv(self):
-        """Final objective function value"""
-        return self._ofv
 
     @property
     def aic(self):
@@ -289,32 +312,9 @@ class ModelfitResults(Results):
         return self.ofv + len(parameters) * math.log(len(self.model.dataset.pharmpy.observations))
 
     @property
-    def evaluation_ofv(self):
-        """The ofv as if the model was evaulated
-
-        Currently works for classical estimation methods by taking the OFV of the
-        first iteration.
-        """
-        return self._evaluation_ofv
-
-    @property
     def minimization_successful(self):
         """Was the minimization successful"""
         return self._minimization_successful
-
-    @property
-    def parameter_estimates(self):
-        """Parameter estimates as series"""
-        return self._parameter_estimates
-
-    @parameter_estimates.setter
-    def parameter_estimates(self, value):
-        self._parameter_estimates = value
-
-    @property
-    def covariance_matrix(self):
-        """The covariance matrix of the population parameter estimates"""
-        return self._covariance_matrix
 
     def _cov_from_inf(self):
         Im = self.information_matrix
@@ -329,11 +329,6 @@ class ModelfitResults(Results):
         cov_df = pd.DataFrame(cov, index=corr.index, columns=corr.columns)
         return cov_df
 
-    @property
-    def information_matrix(self):
-        """The Fischer information matrix of the population parameter estimates"""
-        raise NotImplementedError()
-
     def _inf_from_cov(self):
         C = self.covariance_matrix
         Im = pd.DataFrame(np.linalg.inv(C.values), index=C.index, columns=C.columns)
@@ -347,11 +342,6 @@ class ModelfitResults(Results):
         Im = pd.DataFrame(np.linalg.inv(cov), index=corr.index, columns=corr.columns)
         return Im
 
-    @property
-    def correlation_matrix(self):
-        """The correlation matrix of the population parameter estimates"""
-        raise NotImplementedError()
-
     def _corr_from_cov(self):
         C = self.covariance_matrix
         corr = pd.DataFrame(cov2corr(C.values), index=C.index, columns=C.columns)
@@ -361,11 +351,6 @@ class ModelfitResults(Results):
         Im = self.information_matrix
         corr = pd.DataFrame(cov2corr(np.linalg.inv(Im.values)), index=Im.index, columns=Im.columns)
         return corr
-
-    @property
-    def standard_errors(self):
-        """Standard errors of population parameter estimates"""
-        return self._standard_errors
 
     @property
     def relative_standard_errors(self):

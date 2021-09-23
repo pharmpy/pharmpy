@@ -53,6 +53,9 @@ def test_condition_number(testdata, pheno_lst):
 def test_sumo(testdata):
     onePROB = testdata / 'nonmem' / 'modelfit_results' / 'onePROB'
     pheno = Model(onePROB / 'oneEST' / 'noSIM' / 'pheno.mod')
+    from pharmpy.modeling import load_example_model
+
+    pheno = load_example_model("pheno")
     d = pheno.modelfit_results.sumo(to_string=False)
     assert 'Messages' in d.keys()
     assert 'Parameter summary' in d.keys()
