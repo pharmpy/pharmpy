@@ -352,8 +352,6 @@ def test_add_random_variables_and_statements(pheno_path):
 
 def test_results(pheno_path):
     model = Model(pheno_path)
-    assert len(model.modelfit_results) == 0
-    assert bool(model.modelfit_results) is True  # results loaded on access
     assert len(model.modelfit_results) == 1  # A chain of one estimation
 
 

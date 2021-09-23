@@ -376,6 +376,7 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
         extensions = ['.lst', '.ext', '.cov', '.cor', '.coi', '.phi']
         self.tool_files = [self._path.with_suffix(ext) for ext in extensions]
         super().__init__()
+        self._read_ext_table()
 
     def __getattr__(self, item):
         # Avoid infinite recursion when deepcopying
@@ -390,7 +391,8 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
         return super().__getitem__(key)
 
     def _load(self):
-        self._read_ext_table()
+        pass
+        # self._read_ext_table()
 
     def __bool__(self):
         # without this, an existing but 'unloaded' object will evaluate to False
