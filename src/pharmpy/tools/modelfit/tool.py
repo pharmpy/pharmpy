@@ -1,6 +1,6 @@
 import pharmpy.tools
 from pharmpy.plugins.nonmem.run import execute_model
-from pharmpy.tools.workflows import Task, Workflow
+from pharmpy.workflows import Task, Workflow
 
 
 def create_single_fit_workflow(model=None):

@@ -8,7 +8,7 @@ import pharmpy.tools.modelsearch.algorithms as algorithms
 import pharmpy.tools.modelsearch.rankfuncs as rankfuncs
 import pharmpy.workflows as workflows
 from pharmpy.tools.modelfit import create_single_fit_workflow
-from pharmpy.tools.workflows import Task, Workflow
+from pharmpy.workflows import Task, Workflow
 
 
 class ModelSearch(pharmpy.tools.Tool):

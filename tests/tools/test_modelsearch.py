@@ -7,7 +7,7 @@ from pharmpy.plugins.nonmem import conf
 from pharmpy.tools.modelsearch.algorithms import exhaustive
 from pharmpy.tools.modelsearch.mfl import ModelFeatures
 from pharmpy.tools.modelsearch.rankfuncs import aic, bic, ofv
-from pharmpy.tools.workflows import Task, Workflow
+from pharmpy.workflows import Task, Workflow
 
 
 def test_modelsearch(datadir):

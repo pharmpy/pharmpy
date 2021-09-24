@@ -7,7 +7,7 @@ from pharmpy import Parameter, Parameters, RandomVariable, RandomVariables
 from pharmpy.modeling import set_iiv_on_ruv, set_power_on_ruv
 from pharmpy.statements import Assignment, ModelStatements
 from pharmpy.tools.modelfit import create_multiple_fit_workflow
-from pharmpy.tools.workflows import Task, Workflow
+from pharmpy.workflows import Task, Workflow
 
 from .results import calculate_results
 

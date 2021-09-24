@@ -1,7 +1,7 @@
 import pharmpy.modeling as modeling
 import pharmpy.tools.modelsearch as modelsearch
 import pharmpy.tools.resmod as resmod
-from pharmpy.tools.workflows import Task, Workflow
+from pharmpy.workflows import Task, Workflow
 
 
 def create_workflow(model):

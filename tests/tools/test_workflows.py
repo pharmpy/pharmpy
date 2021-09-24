@@ -2,7 +2,7 @@ import re
 
 import pytest
 
-from pharmpy.tools.workflows import Task, Workflow
+from pharmpy.workflows import Task, Workflow
 
 
 @pytest.fixture

@@ -3,7 +3,7 @@ import pandas as pd
 
 from pharmpy.modeling import copy_model, update_inits
 from pharmpy.tools.modelfit import create_single_fit_workflow
-from pharmpy.tools.workflows import Task, Workflow
+from pharmpy.workflows import Task, Workflow
 
 from .mfl import ModelFeatures
 

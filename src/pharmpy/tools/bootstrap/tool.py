@@ -2,7 +2,7 @@ import pharmpy.tools
 from pharmpy.data.iterators import Resample
 from pharmpy.tools.bootstrap.results import calculate_results
 from pharmpy.tools.modelfit import create_multiple_fit_workflow
-from pharmpy.tools.workflows import Task, Workflow
+from pharmpy.workflows import Task, Workflow
 
 
 class Bootstrap(pharmpy.tools.Tool):
