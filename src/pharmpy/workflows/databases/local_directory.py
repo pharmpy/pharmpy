@@ -27,7 +27,7 @@ class LocalDirectoryToolDatabase(ToolDatabase):
         super().__init__(toolname)
 
     def store_local_file(self, source_path):
-        if source_path.is_file():
+        if Path(source_path).is_file():
             shutil.copy2(source_path, self.path)
 
 
@@ -39,11 +39,11 @@ class LocalDirectoryDatabase(ModelDatabase):
         self.path = path
 
     def store_local_file(self, model, path):
-        if path.is_file():
+        if Path(path).is_file():
             shutil.copy2(path, self.path)
 
 
 class LocalModelDirectoryDatabase(ModelDatabase):
     def store_local_file(self, model, path):
-        if path.is_file():
+        if Path(path).is_file():
             shutil.copy2(path, model.source.path.parent)
