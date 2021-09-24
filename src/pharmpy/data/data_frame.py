@@ -274,7 +274,12 @@ class DataFrameAccessor:
             df = df.query(f'{label} == 0')
 
         df = df[[idcol, idvcol, self.dv_label]]
-        df = df.astype({idvcol: np.float64})
+        try:
+            # FIXME: This shouldn't be needed
+            df = df.astype({idvcol: np.float64})
+        except ValueError:
+            # TIME could not be converted to float (e.g. 10:15)
+            pass
         df.set_index([idcol, idvcol], inplace=True)
         return df.squeeze()
 
