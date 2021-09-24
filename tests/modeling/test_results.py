@@ -98,10 +98,17 @@ k_e,median,13.319584,2.67527,2.633615
 
 
 def test_summarize_modelfit_results(testdata, pheno_path):
-    mox = Model(testdata / 'nonmem' / 'models' / 'mox1.mod')
     pheno = Model(pheno_path)
-    summary = summarize_modelfit_results([mox, pheno])
 
-    assert summary.loc['mox1', 'ofv'] == -624.5229577248352
-    assert summary['OMEGA(1,1)_estimate'].mean() == 0.2236304
-    assert summary['OMEGA(2,1)_estimate'].mean() == 0.395647  # One is NaN
+    summary_single = summarize_modelfit_results(pheno)
+
+    assert summary_single.loc['pheno_real', 'ofv'] == 586.2760562818805
+    assert summary_single['OMEGA(1,1)_estimate'].mean() == 0.0293508
+
+    mox = Model(testdata / 'nonmem' / 'models' / 'mox1.mod')
+
+    summary_multiple = summarize_modelfit_results([pheno, mox])
+
+    assert summary_multiple.loc['mox1', 'ofv'] == -624.5229577248352
+    assert summary_multiple['OMEGA(1,1)_estimate'].mean() == 0.2236304
+    assert summary_multiple['OMEGA(2,1)_estimate'].mean() == 0.395647  # One is NaN

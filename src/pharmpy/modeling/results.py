@@ -5,6 +5,7 @@ import pandas as pd
 import sympy
 
 from pharmpy.data_structures import OrderedSet
+from pharmpy.model import Model
 from pharmpy.modeling import create_rng, sample_parameters_from_covariance_matrix
 
 
@@ -428,6 +429,9 @@ def summarize_modelfit_results(models):
           minimization_successful         ofv runtime_total  THETA(1)_estimate  ... SIGMA(1,1)_RSE
     pheno                    True  586.276056           4.0           0.004696  ...       0.172147
     """
+    if isinstance(models, Model):
+        models = [models]
+
     run_summaries = []
     parameter_summaries = []
 
