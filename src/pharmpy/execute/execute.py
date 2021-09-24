@@ -22,7 +22,6 @@ def execute_workflow(workflow, dispatcher=None, database=None, path=None):
                     new_model = inp.copy()
                     new_model.database = database.model_database
                     try:
-                        new_model.modelfit_results.residuals
                         new_model.modelfit_results.predictions
                     except (AttributeError, KeyError):
                         pass
