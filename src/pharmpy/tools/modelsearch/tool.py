@@ -1,12 +1,12 @@
 import numpy as np
 import pandas as pd
 
-import pharmpy.execute as execute
 import pharmpy.results
 import pharmpy.tools
 import pharmpy.tools.modelfit as modelfit
 import pharmpy.tools.modelsearch.algorithms as algorithms
 import pharmpy.tools.modelsearch.rankfuncs as rankfuncs
+import pharmpy.workflows as workflows
 from pharmpy.tools.modelfit import create_single_fit_workflow
 from pharmpy.tools.workflows import Task, Workflow
 
@@ -22,7 +22,7 @@ class ModelSearch(pharmpy.tools.Tool):
         self.start_model.database = self.database.model_database
 
     def fit(self, models):
-        db = execute.LocalDirectoryDatabase(self.rundir.path / 'models')
+        db = workflows.LocalDirectoryDatabase(self.rundir.path / 'models')
         modelfit_run = modelfit.Modelfit(models, database=db, path=self.rundir.path)
         modelfit_run.run()
 

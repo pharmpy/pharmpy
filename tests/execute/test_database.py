@@ -3,9 +3,9 @@ import os.path
 
 import pytest
 
-from pharmpy.execute.database import ModelDatabase
-from pharmpy.execute.databases.local_directory import LocalDirectoryDatabase
-from pharmpy.execute.databases.null_database import NullModelDatabase, NullToolDatabase
+from pharmpy.workflows.database import ModelDatabase
+from pharmpy.workflows.databases.local_directory import LocalDirectoryDatabase
+from pharmpy.workflows.databases.null_database import NullModelDatabase, NullToolDatabase
 
 
 def test_base_class():

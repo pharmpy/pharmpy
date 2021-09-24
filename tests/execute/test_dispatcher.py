@@ -1,9 +1,9 @@
 import pytest
 
-from pharmpy.execute.databases.local_directory import LocalDirectoryDatabase
-from pharmpy.execute.dispatcher import ExecutionDispatcher
-from pharmpy.execute.dispatchers.local import LocalDispatcher
 from pharmpy.tools.workflows import Task, Workflow
+from pharmpy.workflows.databases.local_directory import LocalDirectoryDatabase
+from pharmpy.workflows.dispatcher import ExecutionDispatcher
+from pharmpy.workflows.dispatchers.local import LocalDispatcher
 
 
 def fun(s):

@@ -4,7 +4,7 @@ from .local import LocalDispatcher
 
 
 class DispatcherConfiguration(config.Configuration):
-    module = 'pharmpy.execute.dispatchers'
+    module = 'pharmpy.workflows.dispatchers'
     dask_dispatcher = config.ConfigItem(
         None,
         'Which type of dask scheduler to use (supports threaded and distributed).',

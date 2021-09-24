@@ -1,8 +1,8 @@
-import pharmpy.execute.client
+import pharmpy.workflows.client
 
 
 def test_log():
-    client = pharmpy.execute.client.Client()
+    client = pharmpy.workflows.client.Client()
     client.log_error("help!")
     client.log_warning("an annoying warning")
     df = client.log_as_dataframe()

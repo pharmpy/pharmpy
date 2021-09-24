@@ -4,7 +4,7 @@ import pharmpy.model
 import pharmpy.results
 import pharmpy.tools.common
 import pharmpy.tools.modelfit
-from pharmpy.execute import execute_workflow
+from pharmpy.workflows import execute_workflow
 
 
 def fit(models):

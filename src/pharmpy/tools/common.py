@@ -1,4 +1,4 @@
-import pharmpy.execute as execute
+import pharmpy.workflows as workflows
 
 from .psn_helpers import tool_name
 
@@ -7,11 +7,11 @@ class Tool:
     def __init__(self, dispatcher=None, database=None, path=None):
         toolname = type(self).__name__.lower()
         if dispatcher is None:
-            self.dispatcher = execute.default_dispatcher
+            self.dispatcher = workflows.default_dispatcher
         else:
             self.dispatcher = dispatcher
         if database is None:
-            self.database = execute.default_tool_database(toolname=toolname, path=path)
+            self.database = workflows.default_tool_database(toolname=toolname, path=path)
         else:
             self.database = database
 
