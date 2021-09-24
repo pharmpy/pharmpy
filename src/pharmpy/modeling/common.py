@@ -451,7 +451,7 @@ def _create_init_dict(parameter_names, values):
     return d
 
 
-def set_estimation_step(model, method, interaction=True, options={}, est_idx=0):
+def set_estimation_step(model, method, interaction=True, options=None, est_idx=0):
     """Set estimation step
 
     Sets estimation step for a model. Methods currently supported are:
