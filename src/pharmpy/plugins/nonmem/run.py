@@ -37,9 +37,9 @@ def execute_model(model):
         model.database.store_local_file(model, basepath.with_suffix('.lst'))
         model.database.store_local_file(model, basepath.with_suffix('.ext'))
         model.database.store_local_file(model, basepath.with_suffix('.phi'))
-        cov_path = basepath.with_suffix('.cov')
-        if cov_path.is_file():
-            model.database.store_local_file(model, cov_path)
+        model.database.store_local_file(model, basepath.with_suffix('.cov'))
+        model.database.store_local_file(model, basepath.with_suffix('.cor'))
+        model.database.store_local_file(model, basepath.with_suffix('.coi'))
 
     # Read in results
     model._modelfit_results = None
