@@ -7,6 +7,7 @@ import pandas as pd
 from scipy.linalg import cho_factor, solve_triangular
 
 from pharmpy import Model
+from pharmpy.modeling import plot_individual_predictions
 from pharmpy.results import Results
 from pharmpy.tools.psn_helpers import model_paths, options_from_command
 
@@ -136,8 +137,8 @@ def calculate_results(base_model, cdd_models, case_column, skipped_individuals, 
 
     if infl_list:
         try:
-            iplot = base_model.modelfit_results.plot_individual_predictions(
-                individuals=infl_list, predictions=['PRED', 'CIPREDI']
+            iplot = plot_individual_predictions(
+                base_model, individuals=infl_list, predictions=['PRED', 'CIPREDI']
             )
         except KeyError:
             iplot = None

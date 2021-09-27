@@ -1,6 +1,7 @@
 import pandas as pd
 
 from pharmpy import Model
+from pharmpy.modeling import plot_individual_predictions
 from pharmpy.results import Results
 from pharmpy.tools.simfit.results import psn_simfit_results
 
@@ -38,8 +39,8 @@ def calculate_results(original_model, simfit_results):
     id_plot = None
     if ids:
         try:
-            id_plot = original_model.modelfit_results.plot_individual_predictions(
-                predictions=['CIPREDI', 'PRED'], individuals=ids
+            id_plot = plot_individual_predictions(
+                original_model, predictions=['CIPREDI', 'PRED'], individuals=ids
             )
         except Exception:
             pass

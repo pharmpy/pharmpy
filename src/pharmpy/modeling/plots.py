@@ -1,3 +1,5 @@
+import altair as alt
+
 import pharmpy.visualization
 from pharmpy.data import PharmDataFrame
 
@@ -14,7 +16,7 @@ def plot_iofv_vs_iofv(model, other):
 
     Results
     -------
-    Plot
+    alt.Chart
         Scatterplot
 
     """
@@ -30,5 +32,48 @@ def plot_iofv_vs_iofv(model, other):
     df = df.reset_index()
     plot = pharmpy.visualization.scatter_plot_correlation(
         df, x_label, y_label, tooltip_columns=[id_name], title='iOFV vs iOFV'
+    )
+    return plot
+
+
+def plot_individual_predictions(model, predictions=None, individuals=None):
+    """Plot DV and predictions grouped on individuals
+
+    Parameters
+    ----------
+    model : Model
+        Previously run Pharmpy model.
+    predictions : list
+        A list of names of predictions to plot. None for all available
+    individuals: list
+        A list of individuals to include. None for all individuals
+
+    Returns
+    -------
+    alt.Chart
+        Plot
+
+    """
+    res = model.modelfit_results
+    pred = res.predictions
+    obs = model.dataset.pharmpy.observations
+    indexcols = pred.index.names
+    idcol = indexcols[0]
+    idvcol = indexcols[1]
+
+    data = pred.join(obs).reset_index()
+    data = data.melt(id_vars=indexcols)
+
+    if individuals is not None:
+        data = data[data[idcol].isin(individuals)]
+    if predictions is not None:
+        dvcol = obs.name
+        data = data[data['variable'].isin(predictions + [dvcol])]
+
+    plot = (
+        alt.Chart(data)
+        .mark_line(point=True)
+        .encode(x=idvcol, y='value', color='variable', tooltip=[idvcol, 'value'])
+        .facet(f'{idcol}:N', columns=5)
     )
     return plot
