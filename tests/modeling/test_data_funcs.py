@@ -3,6 +3,7 @@ from pharmpy.modeling import (
     get_number_of_individuals,
     get_number_of_observations,
     get_number_of_observations_per_individual,
+    get_observations,
 )
 
 
@@ -75,3 +76,10 @@ def test_number_of_observations(testdata):
         3,
         3,
     ]
+
+
+def test_get_observations(testdata):
+    model = Model(testdata / 'nonmem' / 'pheno_real.mod')
+    obs = get_observations(model)
+    assert len(obs) == 155
+    assert obs.loc[1, 2.0] == 17.3

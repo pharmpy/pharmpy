@@ -164,3 +164,44 @@ def get_number_of_observations_per_individual(model):
 
     """
     return model.dataset.pharmpy.nobsi
+
+
+def get_observations(model):
+    """Get observations from dataset
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+
+    Returns
+    -------
+    pd.Series
+        Observations indexed over ID and TIME
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import get_observations, load_example_model
+    >>> model = load_example_model("pheno")
+    >>> get_observations(model)
+        ID  TIME
+    1   2.0      17.3
+        112.5    31.0
+    2   2.0       9.7
+        63.5     24.6
+        135.5    33.0
+                 ...
+    58  47.5     27.9
+        131.8    31.0
+    59  1.8      22.6
+        73.8     34.3
+        146.8    40.2
+    Name: DV, Length: 155, dtype: float64
+
+    See also
+    --------
+    get_number_of_observations
+    get_number_of_observations_per_individual
+
+    """
+    return model.dataset.pharmpy.observations

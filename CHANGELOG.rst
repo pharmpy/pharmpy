@@ -2,6 +2,7 @@ next release
 ------------
 
 * Move plot_iofv_vs_iofv to modeling
+* Add modeling.get_observations
 
 0.31.0 (2021-09-21)
 -------------------
