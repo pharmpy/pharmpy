@@ -21,7 +21,8 @@ def create_rng(seed=None):
 
     Returns
     -------
-    Generator : Initialized numpy random number generator object
+    Generator
+        Initialized numpy random number generator object
 
     Examples
     --------
@@ -145,7 +146,8 @@ def sample_parameters_uniformly(
 
     Returns
     -------
-    pd.DataFrame : samples
+    pd.DataFrame
+        samples
 
     Example
     -------
@@ -213,7 +215,7 @@ def sample_parameters_from_covariance_matrix(
 
     Returns
     -------
-    DataFrame
+    pd.DataFrame
         A dataframe with one sample per row
 
     Example
@@ -277,7 +279,8 @@ def sample_individual_estimates(model, parameters=None, samples_per_id=100, rng=
 
     Returns
     -------
-    pd.DataFrame : Pool of samples in a DataFrame
+    pd.DataFrame
+        Pool of samples in a DataFrame
 
     Example
     -------
