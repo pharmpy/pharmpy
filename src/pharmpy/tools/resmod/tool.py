@@ -110,11 +110,13 @@ def _create_dataset(input_model):
 
 
 def _create_best_model(model, res):
-    idx = res.models['dofv'].idxmax()
-    name = idx[0]
-    if name == 'power':
-        set_power_on_ruv(model)
-    else:
-        set_iiv_on_ruv(model)
-    model.update_source()
+    model = model.copy()
+    if any(res.models['dofv'] > 3.84):
+        idx = res.models['dofv'].idxmax()
+        name = idx[0]
+        if name == 'power':
+            set_power_on_ruv(model)
+        else:
+            set_iiv_on_ruv(model)
+        model.update_source()
     res.best_model = model
