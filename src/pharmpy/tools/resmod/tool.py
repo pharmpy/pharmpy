@@ -33,7 +33,8 @@ def create_workflow(model=None):
     wf.insert_workflow(fit_wf, predecessors=[task_base_model, task_iiv, task_power])
 
     task_results = Task('results', post_process)
-    wf.add_task(task_results, predecessors=fit_wf.output_tasks)
+    wf.add_task(task_results, predecessors=[start_task] + fit_wf.output_tasks)
+
     return wf
 
 
@@ -41,12 +42,13 @@ def start(model):
     return model
 
 
-def post_process(*models):
+def post_process(start_model, *models):
     res = calculate_results(
         base_model=_find_model(models, 'base'),
         iiv_on_ruv=_find_model(models, 'iiv_on_ruv'),
         power=_find_model(models, 'power'),
     )
+    _create_best_model(start_model, res)
     return res
 
 
@@ -105,3 +107,14 @@ def _create_dataset(input_model):
     ipred = predictions['IPRED'].reindex(cwres.index)
     df = pd.concat([cwres, ipred], axis=1).rename(columns={'CWRES': 'DV'})
     return df
+
+
+def _create_best_model(model, res):
+    idx = res.models['dofv'].idxmax()
+    name = idx[0]
+    if name == 'power':
+        set_power_on_ruv(model)
+    else:
+        set_iiv_on_ruv(model)
+    model.update_source()
+    res.best_model = model

@@ -1,4 +1,3 @@
-import pharmpy.modeling as modeling
 import pharmpy.tools.modelsearch as modelsearch
 import pharmpy.tools.resmod as resmod
 from pharmpy.workflows import Task, Workflow
@@ -21,7 +20,7 @@ def create_workflow(model):
     wf.insert_workflow(wf_resmod, predecessors=wf.output_tasks)
 
     select_task = Task('select_resmod', select_resmod)
-    wf.add_task(select_task, predecessors=[select_modelsearch_task] + wf_resmod.output_tasks)
+    wf.add_task(select_task, predecessors=wf_resmod.output_tasks)
 
     post_process_task = Task('results', post_process)
     wf.add_task(post_process_task, predecessors=wf.output_tasks)
@@ -40,15 +39,8 @@ def select_modelsearch(model, res):
         return model
 
 
-def select_resmod(model, res):
-    idx = res.models['dofv'].idxmax()
-    name = idx[0]
-    if name == 'power':
-        modeling.set_power_on_ruv(model)
-    else:
-        modeling.set_iiv_on_ruv(model)
-    model.update_source()
-    return model
+def select_resmod(res):
+    return res.best_model
 
 
 def post_process(*models):
