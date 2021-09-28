@@ -1,6 +1,8 @@
 import shutil
 from pathlib import Path
 
+from pharmpy.model_factory import Model
+
 from ..database import ModelDatabase, ToolDatabase
 
 
@@ -32,15 +34,22 @@ class LocalDirectoryToolDatabase(ToolDatabase):
 
 
 class LocalDirectoryDatabase(ModelDatabase):
-    def __init__(self, path='.'):
-        path = Path(path).resolve()
+    def __init__(self, path='.', file_extension='.mod'):
+        path = Path(path)
         if not path.exists():
             path.mkdir(parents=True)
         self.path = path
+        self.file_extension = file_extension
 
     def store_local_file(self, model, path):
         if Path(path).is_file():
             shutil.copy2(path, self.path)
+
+    def get_model(self, name):
+        filename = name + self.file_extension
+        path = self.path / filename
+        model = Model(path)
+        return model
 
 
 class LocalModelDirectoryDatabase(ModelDatabase):
