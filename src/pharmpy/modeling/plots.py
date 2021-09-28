@@ -45,7 +45,7 @@ def plot_individual_predictions(model, predictions=None, individuals=None):
         Previously run Pharmpy model.
     predictions : list
         A list of names of predictions to plot. None for all available
-    individuals: list
+    individuals : list
         A list of individuals to include. None for all individuals
 
     Returns
