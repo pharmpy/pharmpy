@@ -1,3 +1,8 @@
+next version
+------------
+
+* Add modeling.read_model_from_database
+
 0.32.0 (2021-09-28)
 -------------------
 
