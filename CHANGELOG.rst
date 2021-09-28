@@ -1,8 +1,9 @@
-next release
-------------
+0.32.0 (2021-09-28)
+-------------------
 
 * Move plot_iofv_vs_iofv to modeling
 * Add modeling.get_observations
+* Add modeling.plot_individual_predictions
 
 0.31.0 (2021-09-21)
 -------------------
