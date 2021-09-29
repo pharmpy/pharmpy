@@ -980,3 +980,10 @@ class Model(pharmpy.model.Model):
         if as_symbols:
             d = {S(key): S(val) for key, val in d.items()}
         return d
+
+    def read_modelfit_results(self, path):
+        if self.source.path.is_file():
+            ext_path = self.source.path.with_suffix('.ext')
+            if ext_path.exists() and stat(ext_path).st_size > 0:
+                self._modelfit_results = NONMEMChainedModelfitResults(ext_path, model=self)
+                return self._modelfit_results

@@ -49,6 +49,7 @@ class LocalDirectoryDatabase(ModelDatabase):
         filename = name + self.file_extension
         path = self.path / filename
         model = Model(path)
+        model.read_modelfit_results(path)
         return model
 
 
