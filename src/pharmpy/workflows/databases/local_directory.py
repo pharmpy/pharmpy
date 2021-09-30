@@ -53,7 +53,16 @@ class LocalDirectoryDatabase(ModelDatabase):
         return model
 
 
-class LocalModelDirectoryDatabase(ModelDatabase):
+class LocalModelDirectoryDatabase(LocalDirectoryDatabase):
     def store_local_file(self, model, path):
         if Path(path).is_file():
-            shutil.copy2(path, model.source.path.parent)
+            destination = self.path / model.name
+            if not destination.is_dir():
+                destination.mkdir(parents=True)
+            shutil.copy2(path, destination)
+
+    def get_model(self, name):
+        filename = name + self.file_extension
+        path = self.path / filename
+        model = Model(path)
+        model.read_modelfit_results(self.path / name)

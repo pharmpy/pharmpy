@@ -983,7 +983,8 @@ class Model(pharmpy.model.Model):
 
     def read_modelfit_results(self, path):
         if self.source.path.is_file():
-            ext_path = self.source.path.with_suffix('.ext')
+            ext_path = (path / self.name).with_suffix('.ext')
+            print(ext_path)
             if ext_path.exists() and stat(ext_path).st_size > 0:
                 self._modelfit_results = NONMEMChainedModelfitResults(ext_path, model=self)
                 return self._modelfit_results
