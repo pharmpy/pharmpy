@@ -92,6 +92,12 @@ class Model(pharmpy.model.Model):
         self.observation_transformation = self.dependent_variable
         self._old_observation_transformation = self.dependent_variable
 
+    def __eq__(self, other):
+        # Compare NONMEM code to see if models are the same
+        self.update_source()
+        other.update_source()
+        return str(self) == str(other)
+
     @property
     def name(self):
         return self._name
@@ -984,7 +990,6 @@ class Model(pharmpy.model.Model):
     def read_modelfit_results(self, path):
         if self.source.path.is_file():
             ext_path = (path / self.name).with_suffix('.ext')
-            print(ext_path)
             if ext_path.exists() and stat(ext_path).st_size > 0:
                 self._modelfit_results = NONMEMChainedModelfitResults(ext_path, model=self)
                 return self._modelfit_results
