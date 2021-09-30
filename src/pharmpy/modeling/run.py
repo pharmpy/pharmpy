@@ -6,6 +6,8 @@ import pharmpy.tools.common
 import pharmpy.tools.modelfit
 from pharmpy.workflows import execute_workflow
 
+from .common import read_model_from_database
+
 
 def fit(models):
     """Fit models.
@@ -35,8 +37,17 @@ def fit(models):
         single = True
     else:
         single = False
-    tool = pharmpy.tools.modelfit.Modelfit(models)
-    tool.run()
+    kept = []
+    # Do not fit model if already fit
+    for model in models:
+        db_model = read_model_from_database(model.name)
+        if db_model.modelfit_results is not None and db_model == model:
+            model.modelfit_results = db_model.modelfit_results
+        else:
+            kept.append(model)
+    if kept:
+        tool = pharmpy.tools.modelfit.Modelfit(kept)
+        tool.run()
     if single:
         return models[0]
     else:
