@@ -494,6 +494,8 @@ def test_sample():
     assert list(samples) == pytest.approx([1.7033555824617346, -1.4031809274765599])
     with pytest.raises(TypeError):
         rvs.sample(rv1.symbol + rv2.symbol, samples=1, rng=9532)
+    samples = rvs.sample(1, samples=2)
+    assert list(samples) == [1.0, 1.0]
 
 
 def test_variance_parameters():

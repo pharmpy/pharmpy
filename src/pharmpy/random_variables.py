@@ -1126,9 +1126,9 @@ class RandomVariables(MutableSequence):
 
         parameters in the distriutions will first be replaced"""
         rng = _create_rng(rng)
-        expr = sympy.sympify(expr)
         if not parameters:
             parameters = dict()
+        expr = sympy.sympify(expr).subs(parameters)
         symbols = expr.free_symbols
         expr_names = [symb.name for symb in symbols]
         i = 0
@@ -1145,22 +1145,25 @@ class RandomVariables(MutableSequence):
                     sigma = dist.std.subs(parameters)
                 new_rv = sympy.stats.Normal(new_name, mu, sigma)
                 sampling_rvs.append((names, new_rv))
-        df = pd.DataFrame(index=range(samples))
-        # FIXME: Unnecessary to go via DataFrame
-        for names, new_rv in sampling_rvs:
-            with warnings.catch_warnings():
-                warnings.filterwarnings('ignore')
-                cursample = next(
-                    sympy.stats.sample(new_rv, library='numpy', size=samples, seed=rng)
-                )
-                if len(names) > 1:
-                    df[names] = cursample
-                else:
-                    df[names[0]] = cursample
-        ordered_symbols = list(symbols)
-        input_list = [df[symb.name].values for symb in ordered_symbols]
-        fn = sympy.lambdify(ordered_symbols, expr, 'numpy')
-        a = fn(*input_list)
+        if sampling_rvs:
+            # FIXME: Unnecessary to go via DataFrame
+            df = pd.DataFrame(index=range(samples))
+            for names, new_rv in sampling_rvs:
+                with warnings.catch_warnings():
+                    warnings.filterwarnings('ignore')
+                    cursample = next(
+                        sympy.stats.sample(new_rv, library='numpy', size=samples, seed=rng)
+                    )
+                    if len(names) > 1:
+                        df[names] = cursample
+                    else:
+                        df[names[0]] = cursample
+            ordered_symbols = list(symbols)
+            input_list = [df[symb.name].values for symb in ordered_symbols]
+            fn = sympy.lambdify(ordered_symbols, expr, 'numpy')
+            a = fn(*input_list)
+        else:
+            a = np.full(samples, float(expr.evalf()))
         return a
 
     def _calc_covariance_matrix(self):
