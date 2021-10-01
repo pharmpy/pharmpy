@@ -46,8 +46,7 @@ def fit(models):
         else:
             kept.append(model)
     if kept:
-        tool = pharmpy.tools.modelfit.Modelfit(kept)
-        tool.run()
+        run_tool('modelfit', kept)
     if single:
         return models[0]
     else:

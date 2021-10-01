@@ -1,8 +1,38 @@
 import pharmpy.tools
+from pharmpy.model import Model
 from pharmpy.plugins.nonmem.run import execute_model
 from pharmpy.workflows import Task, Workflow
 
 
+def create_workflow(models=None, n=None):
+    """
+    If models is None and n is None: fit one unknown model
+    If models is model object (n must be None): fit that one model
+    If models is list of models (n must be None): fit these models
+    If models is None and n is an int: fit n unknown models
+    """
+    wf = Workflow()
+    wf.name = "modelfit"
+    if models is None:
+        if n is None:
+            task = Task('run', execute_model)
+            wf.add_task(task)
+        else:
+            for i in range(n):
+                task = Task(f'run{i}', execute_model)
+                wf.add_task(task)
+    elif isinstance(models, Model):
+        task = Task('run', execute_model, models)
+    else:
+        for i, model in enumerate(models):
+            task = Task(f'run{i}', execute_model, model)
+            wf.add_task(task)
+    task_result = Task('results', post_process_results)
+    wf.add_task(task_result, predecessors=wf.output_tasks)
+    return wf
+
+
+# FIXME: These two aren't really needed
 def create_single_fit_workflow(model=None):
     wf = Workflow()
     if model is None:
@@ -42,9 +72,6 @@ class Modelfit(pharmpy.tools.Tool):
         fit_models = self.dispatcher.run(wf_fit, self.database)
         for i in range(len(fit_models)):
             self.models[i].modelfit_results = fit_models[i].modelfit_results
-        # res = self.models[0].modelfit_results
-        # res.to_json(path=self.rundir.path / 'results.json')
-        # res.to_csv(path=self.rundir.path / 'results.csv')
 
 
 def post_process_results(*models):

@@ -34,6 +34,8 @@ class LocalDirectoryToolDatabase(ToolDatabase):
 
 
 class LocalDirectoryDatabase(ModelDatabase):
+    # Files are all stored in the same directory
+    # Assuming filenames connected to a model are named modelname + extension
     def __init__(self, path='.', file_extension='.mod'):
         path = Path(path)
         if not path.exists():
@@ -44,6 +46,12 @@ class LocalDirectoryDatabase(ModelDatabase):
     def store_local_file(self, model, path):
         if Path(path).is_file():
             shutil.copy2(path, self.path)
+
+    def retrieve_local_files(self, name, destination_path):
+        # Retrieve all files stored for one model
+        files = self.path.glob(f'{name}.*')
+        for f in files:
+            shutil.copy2(f, destination_path)
 
     def get_model(self, name):
         filename = name + self.file_extension

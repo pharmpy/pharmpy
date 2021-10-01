@@ -7,13 +7,17 @@ from .databases import (
 )
 from .dispatcher import ExecutionDispatcher
 from .dispatchers import LocalDispatcher
-from .execute import default_dispatcher, default_tool_database, execute_workflow
+from .execute import (
+    default_dispatcher,
+    default_model_database,
+    default_tool_database,
+    execute_workflow,
+)
 from .workflows import Task, Workflow
-
-default_model_database = LocalDirectoryDatabase()
 
 __all__ = [
     'default_dispatcher',
+    'default_model_database',
     'default_tool_database',
     'execute_workflow',
     'LocalDispatcher',
