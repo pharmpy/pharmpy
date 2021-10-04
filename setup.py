@@ -72,6 +72,7 @@ setup(
         'pandas>=1.0',
         'numexpr',
         'altair',
+        'jsonschema<=3.2.0'
         'sphinx',
         'csscompressor',
         'beautifulsoup4',
