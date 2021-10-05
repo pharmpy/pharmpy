@@ -727,6 +727,8 @@ class Model(pharmpy.model.Model):
             options_left = [
                 option for option in record.all_options if option.key not in options_stored
             ]
+            if not options_left:
+                options_left = None
 
             meth = EstimationMethod(name, interaction=interaction, cov=cov, options=options_left)
             steps.append(meth)

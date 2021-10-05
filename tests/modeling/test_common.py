@@ -144,20 +144,36 @@ def test_update_source(testdata):
     assert str(model).split('\n')[7] == '$THETA 0.1 FIX'
 
 
-def test_set_estimation_step(testdata):
+@pytest.mark.parametrize(
+    'args,code_ref',
+    [
+        (
+            {'method': 'fo', 'interaction': False},
+            '$ESTIMATION METHOD=ZERO MAXEVALS=9990 PRINT=2 POSTHOC',
+        ),
+        (
+            {'method': 'fo', 'interaction': True},
+            '$ESTIMATION METHOD=ZERO INTER MAXEVALS=9990 PRINT=2 POSTHOC',
+        ),
+        (
+            {'method': 'fo', 'options': {'saddle_reset': 1}},
+            '$ESTIMATION METHOD=ZERO INTER SADDLE_RESET=1',
+        ),
+        (
+            {'method': 'fo', 'options': {'saddle_reset': 1}, 'append_options': True},
+            '$ESTIMATION METHOD=ZERO INTER MAXEVALS=9990 PRINT=2 POSTHOC SADDLE_RESET=1',
+        ),
+        (
+            {'method': 'bayes', 'interaction': True},
+            '$ESTIMATION METHOD=BAYES INTER MAXEVALS=9990 PRINT=2 POSTHOC',
+        ),
+    ],
+)
+def test_set_estimation_step(testdata, args, code_ref):
     model = Model(testdata / 'nonmem' / 'minimal.mod')
-    assert str(model).split('\n')[-2] == '$ESTIMATION METHOD=1 INTER MAXEVALS=9990 PRINT=2 POSTHOC'
-    set_estimation_step(model, 'fo', False)
+    set_estimation_step(model, **args)
     update_source(model)
-    assert str(model).split('\n')[-2] == '$ESTIMATION METHOD=ZERO MAXEVALS=9990 PRINT=2 POSTHOC'
-    set_estimation_step(model, 'fo', True)
-    update_source(model)
-    assert (
-        str(model).split('\n')[-2] == '$ESTIMATION METHOD=ZERO INTER MAXEVALS=9990 PRINT=2 POSTHOC'
-    )
-    set_estimation_step(model, 'fo', options={'saddle_reset': 1})
-    update_source(model)
-    assert str(model).split('\n')[-2] == '$ESTIMATION METHOD=ZERO INTER SADDLE_RESET=1'
+    assert str(model).split('\n')[-2] == code_ref
 
 
 def test_add_estimation_step(testdata):

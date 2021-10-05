@@ -488,11 +488,13 @@ def _create_init_dict(parameter_names, values):
     return d
 
 
-def set_estimation_step(model, method, interaction=True, options=None, est_idx=0):
+def set_estimation_step(
+    model, method, interaction=True, options=None, append_options=False, est_idx=0
+):
     """Set estimation step
 
     Sets estimation step for a model. Methods currently supported are:
-        FO, FOCE, ITS, LAPLACE, IMPMAP, IMP, SAEM
+        FO, FOCE, ITS, LAPLACE, IMPMAP, IMP, SAEM, BAYES
 
     Parameters
     ----------
@@ -504,6 +506,8 @@ def set_estimation_step(model, method, interaction=True, options=None, est_idx=0
         whether to use interaction or not, default is true
     options : dict
         any additional options. Note that this removes old options
+    append_options : bool
+        whether to append options to current options, default is False
     est_idx : int
         index of estimation step, default is 0 (first estimation step)
 
@@ -531,7 +535,10 @@ def set_estimation_step(model, method, interaction=True, options=None, est_idx=0
     model.estimation_steps[est_idx].method = method
     model.estimation_steps[est_idx].interaction = interaction
     if options:
-        model.estimation_steps[est_idx].options = options
+        if append_options:
+            model.estimation_steps[est_idx].append_options(options)
+        else:
+            model.estimation_steps[est_idx].options = options
     return model
 
 
