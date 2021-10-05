@@ -232,15 +232,6 @@ def test_to_explicit_ode_system(pheno_path):
     assert len(ics) == 2
 
 
-def test_print_custom(pheno_path):
-    model = Model(pheno_path)
-    s = model.statements.find_assignment('Y')
-
-    s_str = s.print_custom(model.random_variables, None)
-
-    assert s_str == 'Y = F + EPS(1)*W'
-
-
 def test_repr_latex():
     s1 = Assignment(S('KA'), S('X') + S('Y'))
     latex = s1._repr_latex_()

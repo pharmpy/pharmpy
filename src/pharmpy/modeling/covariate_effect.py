@@ -3,7 +3,6 @@
 """
 
 import math
-import re
 import warnings
 from operator import add, mul
 
@@ -192,7 +191,9 @@ def _create_thetas(model, parameter, effect, covariate, template):
     """Creates theta parameters and adds to parameter set of model.
 
     Number of parameters depends on how many thetas have been declared."""
-    no_of_thetas = len(re.findall(r'theta\d*', str(repr(template)), re.IGNORECASE))
+    no_of_thetas = len(
+        {str(sym) for sym in template.expression.free_symbols if str(sym).startswith('theta')}
+    )
 
     pset = model.parameters
 

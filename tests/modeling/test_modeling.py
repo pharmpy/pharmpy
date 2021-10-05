@@ -665,7 +665,7 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
         ),
     ],
 )
-def test_add_covariate_effect(pheno_path, effect, covariate, operation, buf_new):
+def test_single_add_covariate_effect(pheno_path, effect, covariate, operation, buf_new):
     model = Model(pheno_path)
 
     add_covariate_effect(model, 'CL', covariate, effect, operation)
@@ -1331,7 +1331,7 @@ def test_transform_etas_tdist(pheno_path):
     denom_3 = f'384*{theta}**3'
 
     expression = (
-        f'(1 + ({num_1})/({denom_1}) + ({num_2})/({denom_2}) + ' f'({num_3})/({denom_3}))*ETA(1)'
+        f'ETA(1)*(1 + ({num_1})/({denom_1}) + ({num_2})/({denom_2}) + ' f'({num_3})/({denom_3}))'
     )
 
     rec_ref = (
@@ -1356,12 +1356,12 @@ def test_transform_etas_tdist(pheno_path):
     [
         (
             ['ETA(1)'],
-            'ETAD1 = ((ABS(ETA(1)) + 1)**THETA(4) - 1)*ABS(ETA(1))/(THETA(4)*ETA(1))',
+            'ETAD1 = ((ABS(ETA(1)) + 1)**THETA(4) - 1)*ABS(ETA(1))/(ETA(1)*THETA(4))',
             'CL = TVCL*EXP(ETAD1)\nV=TVV*EXP(ETA(2))',
         ),
         (
             'ETA(1)',
-            'ETAD1 = ((ABS(ETA(1)) + 1)**THETA(4) - 1)*ABS(ETA(1))/(THETA(4)*ETA(1))',
+            'ETAD1 = ((ABS(ETA(1)) + 1)**THETA(4) - 1)*ABS(ETA(1))/(ETA(1)*THETA(4))',
             'CL = TVCL*EXP(ETAD1)\nV=TVV*EXP(ETA(2))',
         ),
     ],

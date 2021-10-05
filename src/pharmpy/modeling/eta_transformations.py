@@ -4,6 +4,7 @@
 
 import re
 
+import sympy
 from sympy import exp, sign
 
 from pharmpy.modeling.help_functions import _format_input_list, _get_etas
@@ -157,11 +158,10 @@ def _create_new_etas(etas_original, transformation):
         eta_new = 'etad'
     else:
         eta_new = 'etan'
-
     for i, eta in enumerate(etas_original, 1):
-        etas_subs[eta.name] = f'{eta_new.upper()}{i}'
-        etas_assignment[f'{eta_new}{i}'] = f'{eta_new.upper()}{i}'
-        etas_assignment[f'eta{i}'] = eta.name
+        etas_subs[eta.symbol] = sympy.Symbol(f'{eta_new.upper()}{i}')
+        etas_assignment[sympy.Symbol(f'{eta_new}{i}')] = sympy.Symbol(f'{eta_new.upper()}{i}')
+        etas_assignment[sympy.Symbol(f'eta{i}')] = eta.symbol
 
     return etas_assignment, etas_subs
 

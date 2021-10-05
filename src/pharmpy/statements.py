@@ -3,60 +3,56 @@ from collections.abc import MutableSequence
 
 import networkx as nx
 import sympy
-from sympy.printing.str import StrPrinter
 
 import pharmpy.symbols as symbols
 import pharmpy.unicode as unicode
 
 
-class MyPrinter(StrPrinter):
-    def _print_Add(self, expr):
-        args = expr.args
-        new = []
-        for arg in args:
-            new.append(self._print(arg))
-        return super()._print_Add(sympy.Add(*args, evaluate=False), order='none')
-
-
 class Assignment:
-    """Representation of variable assignment, similar to :class:`sympy.codegen.Assignment`
+    """Representation of variable assignment
+
+    This class is similar to :class:`sympy.codegen.Assignment`
 
     Attributes
     ----------
     symbol : sympy.Symbol
         Symbol of statement
-    expression
+    expression : sympy.Expr
         Expression of statement
     """
 
     def __init__(self, symbol, expression):
-        """symbol can be either string or sympy symbol
-        symbol can be a string and a real symbol will be created
-        """
         try:
             symbol.is_Symbol
             self.symbol = symbol
         except AttributeError:
-            self.symbol = symbols.symbol(symbol)
+            self.symbol = sympy.Symbol(symbol)
         self.expression = sympy.sympify(expression)
 
     def subs(self, substitutions):
-        """Substitute symbols in assignment.
+        """Substitute symbols in assignment
 
-        substitutions - dictionary with old-new pair (can be type str or
-                        sympy symbol)
+        Parameters
+        ----------
+        substitutions : dict
+            old-new pairs
         """
         self.symbol = self.symbol.subs(substitutions, simultaneous=True)
         self.expression = self.expression.subs(substitutions, simultaneous=True)
 
     @property
     def free_symbols(self):
+        """Get set of all free symbols in the assignment
+
+        Note that the left hand side symbol will be in the set
+        """
         symbols = {self.symbol}
         symbols |= self.expression.free_symbols
         return symbols
 
     @property
     def rhs_symbols(self):
+        """Get set of all free symbols in the right hand side expression"""
         return self.expression.free_symbols
 
     def __eq__(self, other):
@@ -66,7 +62,7 @@ class Assignment:
             and self.expression == other.expression
         )
 
-    def __str__(self):
+    def __repr__(self):
         expression = sympy.pretty(self.expression)
         lines = [line.rstrip() for line in expression.split('\n')]
         definition = f'{sympy.pretty(self.symbol)} := '
@@ -81,64 +77,14 @@ class Assignment:
     def __deepcopy__(self, memo):
         return type(self)(self.symbol, self.expression)
 
-    def __repr__(self):
-        return f'{self.symbol} := {self.expression}'
+    def copy(self):
+        """Create a copy of the Assignment object"""
+        return copy.deepcopy(self)
 
     def _repr_latex_(self):
         sym = self.symbol._repr_latex_()[1:-1]
         expr = self.expression._repr_latex_()[1:-1]
         return f'${sym} := {expr}$'
-
-    def print_custom(self, rvs, trans):
-        expr_ordered = self.order_terms(rvs, trans)
-        return f'{self.symbol} = {expr_ordered}'
-
-    def order_terms(self, rvs, trans):
-        """Order terms such that random variables are placed last. Currently only supports
-        additions."""
-        if not isinstance(self.expression, sympy.Add) or rvs is None:
-            return self.expression
-        # FIXME: This should be in MyPrinter
-        rvs_names = [rv.name for rv in rvs]
-
-        if trans:
-            trans_rvs = {v.name: k.name for k, v in trans.items() if str(k) in rvs_names}
-
-        expr_args = self.expression.args
-        terms_iiv_iov, terms_ruv, terms = [], [], []
-
-        for arg in expr_args:
-            arg_symbs = [s.name for s in arg.free_symbols]
-            rvs_intersect = set(rvs_names).intersection(arg_symbs)
-
-            if trans:
-                trans_intersect = set(trans_rvs.keys()).intersection(arg_symbs)
-                rvs_intersect.update({trans_rvs[rv] for rv in trans_intersect})
-
-            if rvs_intersect:
-                if len(rvs_intersect) == 1:
-                    rv_name = list(rvs_intersect)[0]
-                    variability_level = rvs[rv_name].level
-                    if variability_level == 'RUV':
-                        terms_ruv.append(arg)
-                        continue
-                terms_iiv_iov.append(arg)
-            else:
-                terms.append(arg)
-
-        if not terms_iiv_iov and not terms_ruv:
-            return self.expression
-
-        def arg_len(symb):
-            return len([s for s in symb.args])
-
-        terms_iiv_iov.sort(reverse=True, key=arg_len)
-        terms_ruv.sort(reverse=True, key=arg_len)
-        terms += terms_iiv_iov + terms_ruv
-
-        new_order = sympy.Add(*terms, evaluate=False)
-
-        return MyPrinter().doprint(new_order)
 
 
 class ODESystem:

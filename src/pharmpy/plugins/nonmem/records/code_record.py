@@ -10,6 +10,7 @@ import sympy
 import sympy.printing.codeprinter
 import sympy.printing.fortran
 from sympy import Piecewise
+from sympy.printing.str import StrPrinter
 
 import pharmpy.symbols as symbols
 from pharmpy.data_structures import OrderedSet
@@ -20,7 +21,16 @@ from pharmpy.statements import Assignment, ModelStatements
 from .record import Record
 
 
-class FortranPrinter(sympy.printing.fortran.FCodePrinter):
+class MyPrinter(StrPrinter):
+    def _print_Add(self, expr):
+        args = expr.args
+        new = []
+        for arg in args:
+            new.append(self._print(arg))
+        return super()._print_Add(sympy.Add(*args, evaluate=False), order='none')
+
+
+class NMTranPrinter(sympy.printing.fortran.FCodePrinter):
     # Differences from FCodePrinter in sympy
     # 1. Upper case
     # 2. Use Fortran 77 names for relationals
@@ -42,9 +52,157 @@ class FortranPrinter(sympy.printing.fortran.FCodePrinter):
         'not': '.NOT. ',
     }
 
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self._settings["standard"] = 95
+
     def _print_Float(self, expr):
         printed = sympy.printing.codeprinter.CodePrinter._print_Float(self, expr)
         return printed
+
+
+def nmtran_assignment_string(assignment, defined_symbols, rvs, trans):
+    if isinstance(assignment.expression, Piecewise):
+        statement_str = _translate_sympy_piecewise(assignment, defined_symbols)
+    elif re.search('sign', str(assignment.expression)):  # FIXME: Don't use re here
+        statement_str = _translate_sympy_sign(assignment)
+    else:
+        statement_str = _print_custom(assignment, rvs, trans)
+    return statement_str
+
+
+def _translate_sympy_piecewise(statement, defined_symbols):
+    expression = statement.expression.args
+    symbol = statement.symbol
+    # Did we (possibly) add the default in the piecewise with 0 or symbol?
+    has_added_else = expression[-1][1] is sympy.true and (
+        expression[-1][0] == symbol or (expression[-1][0] == 0 and symbol not in defined_symbols)
+    )
+    if has_added_else:
+        expression = expression[0:-1]
+    has_else = expression[-1][1] is sympy.true
+
+    expressions, _ = zip(*expression)
+
+    if len(expression) == 1:
+        value = expression[0][0]
+        condition = expression[0][1]
+        condition_translated = _translate_condition(condition)
+
+        statement_str = f'IF ({condition_translated}) {symbol} = {value}'
+        return statement_str
+    elif all(len(e.args) == 0 for e in expressions) and not has_else:
+        return _translate_sympy_single(symbol, expression)
+    else:
+        return _translate_sympy_block(symbol, expression)
+
+
+def _translate_sympy_single(symbol, expression):
+    statement_str = ''
+    for e in expression:
+        value = e[0]
+        condition = e[1]
+
+        condition_translated = _translate_condition(condition)
+
+        statement_str += f'IF ({condition_translated}) {symbol} = {value}\n'
+
+    return statement_str
+
+
+def _translate_sympy_block(symbol, expression):
+    for i, e in enumerate(expression):
+        value = e[0]
+        condition = e[1]
+
+        condition_translated = _translate_condition(condition)
+
+        if i == 0:
+            statement_str = f'IF ({condition_translated}) THEN\n'
+        elif condition_translated == '.true.':
+            statement_str += 'ELSE\n'
+        else:
+            statement_str += f'ELSE IF ({condition_translated}) THEN\n'
+
+        statement_str += f'{symbol} = {value}\n'
+
+    statement_str += 'END IF'
+    return statement_str
+
+
+def _translate_condition(c):
+    fprn = NMTranPrinter(settings={'source_format': 'free'})
+    fortran = fprn.doprint(c).replace(' ', '')
+    return fortran
+
+
+def _translate_sympy_sign(s):
+    args = s.expression.args
+
+    subs_dict = dict()
+    for arg in args:
+        if str(arg).startswith('sign'):
+            sign_arg = arg.args[0]
+            subs_dict[arg] = abs(sign_arg) / sign_arg
+
+    s.subs(subs_dict)
+    fprn = NMTranPrinter(settings={'source_format': 'free'})
+    fortran = fprn.doprint(s.expression)
+    expr_str = f'{s.symbol} = {fortran}'
+    return expr_str
+
+
+def _print_custom(assignment, rvs, trans):
+    expr_ordered = _order_terms(assignment, rvs, trans)
+    return f'{assignment.symbol} = {expr_ordered}'
+
+
+def _order_terms(assignment, rvs, trans):
+    """Order terms such that random variables are placed last. Currently only supports
+    additions."""
+    if not isinstance(assignment.expression, sympy.Add) or rvs is None:
+        return assignment.expression
+
+    rvs_names = [rv.name for rv in rvs]
+
+    if trans:
+        trans_rvs = {v.name: k.name for k, v in trans.items() if str(k) in rvs_names}
+
+    expr_args = assignment.expression.args
+    terms_iiv_iov, terms_ruv, terms = [], [], []
+
+    for arg in expr_args:
+        arg_symbs = [s.name for s in arg.free_symbols]
+        rvs_intersect = set(rvs_names).intersection(arg_symbs)
+
+        if trans:
+            trans_intersect = set(trans_rvs.keys()).intersection(arg_symbs)
+            rvs_intersect.update({trans_rvs[rv] for rv in trans_intersect})
+
+        if rvs_intersect:
+            if len(rvs_intersect) == 1:
+                rv_name = list(rvs_intersect)[0]
+                variability_level = rvs[rv_name].level
+                if variability_level == 'RUV':
+                    terms_ruv.append(arg)
+                    continue
+            terms_iiv_iov.append(arg)
+        else:
+            terms.append(arg)
+
+    if not terms_iiv_iov and not terms_ruv:
+        return assignment.expression
+
+    def arg_len(symb):
+        return len([s for s in symb.args])
+
+    terms_iiv_iov.sort(reverse=True, key=arg_len)
+    terms_ruv.sort(reverse=True, key=arg_len)
+    terms += terms_iiv_iov + terms_ruv
+
+    new_order = sympy.Add(*terms, evaluate=False)
+
+    return MyPrinter().doprint(new_order)
 
 
 class ExpressionInterpreter(lark.visitors.Interpreter):
@@ -306,12 +464,7 @@ class CodeRecord(Record):
                 kept.append(node)
                 node_index += 1
             if op == '+':
-                if isinstance(s.expression, Piecewise):
-                    statement_str = self._translate_sympy_piecewise(s, defined_symbols)
-                elif re.search('sign', str(s.expression)):
-                    statement_str = self._translate_sympy_sign(s)
-                else:
-                    statement_str = s.print_custom(self.rvs, self.trans)
+                statement_str = nmtran_assignment_string(s, defined_symbols, self.rvs, self.trans)
                 node_tree = CodeRecordParser(statement_str).root
                 for node in node_tree.all('statement'):
                     if node_index == 0:
@@ -340,83 +493,6 @@ class CodeRecord(Record):
         self.root.children = kept
         self.nodes = new_nodes
         self._statements = new.copy()
-
-    def _translate_sympy_piecewise(self, statement, defined_symbols):
-        expression = statement.expression.args
-        symbol = statement.symbol
-        # Did we (possibly) add the default in the piecewise with 0 or symbol?
-        has_added_else = expression[-1][1] is sympy.true and (
-            expression[-1][0] == symbol
-            or (expression[-1][0] == 0 and symbol not in defined_symbols)
-        )
-        if has_added_else:
-            expression = expression[0:-1]
-        has_else = expression[-1][1] is sympy.true
-
-        expressions, _ = zip(*expression)
-
-        if len(expression) == 1:
-            value = expression[0][0]
-            condition = expression[0][1]
-            condition_translated = self._translate_condition(condition)
-
-            statement_str = f'IF ({condition_translated}) {symbol} = {value}'
-            return statement_str
-        elif all(len(e.args) == 0 for e in expressions) and not has_else:
-            return self._translate_sympy_single(symbol, expression)
-        else:
-            return self._translate_sympy_block(symbol, expression)
-
-    def _translate_sympy_single(self, symbol, expression):
-        statement_str = ''
-        for e in expression:
-            value = e[0]
-            condition = e[1]
-
-            condition_translated = self._translate_condition(condition)
-
-            statement_str += f'IF ({condition_translated}) {symbol} = {value}\n'
-
-        return statement_str
-
-    def _translate_sympy_block(self, symbol, expression):
-        for i, e in enumerate(expression):
-            value = e[0]
-            condition = e[1]
-
-            condition_translated = self._translate_condition(condition)
-
-            if i == 0:
-                statement_str = f'IF ({condition_translated}) THEN\n'
-            elif condition_translated == '.true.':
-                statement_str += 'ELSE\n'
-            else:
-                statement_str += f'ELSE IF ({condition_translated}) THEN\n'
-
-            statement_str += f'{symbol} = {value}\n'
-
-        statement_str += 'END IF'
-        return statement_str
-
-    @staticmethod
-    def _translate_condition(c):
-        fprn = FortranPrinter(settings={'source_format': 'free'})
-        fortran = fprn.doprint(c).replace(' ', '')
-        return fortran
-
-    @staticmethod
-    def _translate_sympy_sign(s):
-        args = s.expression.args
-
-        subs_dict = dict()
-        for arg in args:
-            if str(arg).startswith('sign'):
-                sign_arg = arg.args[0]
-                subs_dict[arg] = abs(sign_arg) / sign_arg
-
-        s.subs(subs_dict)
-
-        return f'\n{repr(s).replace(":", "")}'
 
     def _assign_statements(self):
         s = []
