@@ -11,7 +11,8 @@ import pharmpy.unicode as unicode
 class Assignment:
     """Representation of variable assignment
 
-    This class is similar to :class:`sympy.codegen.Assignment`
+    This class is similar to :class:`sympy.codegen.Assignment` and are
+    combined together into a ModelStatements object.
 
     Attributes
     ----------
@@ -36,6 +37,17 @@ class Assignment:
         ----------
         substitutions : dict
             old-new pairs
+
+        Examples
+        --------
+        >>> from pharmpy import Assignment
+        >>> a = Assignment('CL', 'POP_CL + ETA_CL')
+        >>> a
+        CL := ETA_CL + POP_CL
+        >>> a.subs({'ETA_CL' : 'ETA_CL * WGT'})
+        >>> a
+        CL := ETA_CL⋅WGT + POP_CL
+
         """
         self.symbol = self.symbol.subs(substitutions, simultaneous=True)
         self.expression = self.expression.subs(substitutions, simultaneous=True)
@@ -45,6 +57,14 @@ class Assignment:
         """Get set of all free symbols in the assignment
 
         Note that the left hand side symbol will be in the set
+
+        Examples
+        --------
+        >>> from pharmpy import Assignment
+        >>> a = Assignment('CL', 'POP_CL + ETA_CL')
+        >>> a.free_symbols      # doctest: +SKIP
+        {CL, ETA_CL, POP_CL}
+
         """
         symbols = {self.symbol}
         symbols |= self.expression.free_symbols
@@ -52,7 +72,16 @@ class Assignment:
 
     @property
     def rhs_symbols(self):
-        """Get set of all free symbols in the right hand side expression"""
+        """Get set of all free symbols in the right hand side expression
+
+        Examples
+        --------
+        >>> from pharmpy import Assignment
+        >>> a = Assignment('CL', 'POP_CL + ETA_CL')
+        >>> a.rhs_symbols      # doctest: +SKIP
+        {ETA_CL, POP_CL}
+
+        """
         return self.expression.free_symbols
 
     def __eq__(self, other):
