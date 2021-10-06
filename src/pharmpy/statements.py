@@ -949,12 +949,6 @@ class ModelStatements(MutableSequence):
             s += repr(statement) + '\n'
         return s
 
-    def __str__(self):
-        s = ''
-        for statement in self:
-            s += str(statement)
-        return s.rstrip()
-
     def _repr_html_(self):
         html = r'\begin{align*}'
         for statement in self:
