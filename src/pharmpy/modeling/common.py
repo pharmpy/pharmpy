@@ -654,7 +654,7 @@ def load_example_model(name):
     -------
     >>> from pharmpy.modeling import load_example_model
     >>> model = load_example_model("pheno")
-    >>> print(model.statements)
+    >>> model.statements
              ⎧TIME  for AMT > 0
              ⎨
     BTIME := ⎩ 0     otherwise

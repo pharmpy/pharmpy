@@ -72,7 +72,7 @@ class Assignment:
                 s += definition + line + '\n'
             else:
                 s += len(definition) * ' ' + line + '\n'
-        return s
+        return s.rstrip()
 
     def __deepcopy__(self, memo):
         return type(self)(self.symbol, self.expression)

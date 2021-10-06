@@ -34,7 +34,8 @@ def set_power_on_ruv(model, list_of_eps=None):
     >>> set_power_on_ruv(model)   # doctest: +ELLIPSIS
     <...>
     >>> model.statements.find_assignment("Y")
-    Y := CIPREDI**power1*EPS(1)*W + F
+                power₁
+    Y := CIPREDI      ⋅EPS(1)⋅W + F
 
     See also
     --------

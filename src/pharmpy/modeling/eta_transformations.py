@@ -76,7 +76,7 @@ def transform_etas_tdist(model, list_of_etas=None):
     >>> transform_etas_tdist(model, ["ETA(1)"])    # doctest: +ELLIPSIS
     <...>
     >>> model.statements.full_expression_from_odes("CL")    # doctest: +ELLIPSIS
-    THETA(1)*WGT*exp((1 + (ETA(1)**2 + 1)/(4*df1) + (5*ETA(1)**4 + 16*ETA(1)**2 + 3)/(96*df1**2)...
+    THETA(1)*WGT*exp(ETA(1)*(1 + (ETA(1)**2 + 1)/(4*df1) + (5*ETA(1)**4 + 16*ETA(1)**2 + 3)/(96*...
 
     See also
     --------

@@ -38,7 +38,7 @@ def remove_error_model(model):
     >>> from pharmpy.modeling import remove_error_model, load_example_model
     >>> model = load_example_model("pheno")
     >>> model.statements.find_assignment("Y")
-    Y := EPS(1)*W + F
+    Y := EPS(1)⋅W + F
     >>> remove_error_model(model)    # doctest: +ELLIPSIS
     <...>
     >>> model.statements.find_assignment("Y")
@@ -90,20 +90,22 @@ def set_additive_error_model(model, data_trans=None, series_terms=2):
     >>> from pharmpy.modeling import set_additive_error_model, load_example_model
     >>> model = load_example_model("pheno")
     >>> model.statements.find_assignment("Y")
-    Y := EPS(1)*W + F
+    Y := EPS(1)⋅W + F
     >>> set_additive_error_model(model)    # doctest: +ELLIPSIS
     <...>
     >>> model.statements.find_assignment("Y")
-    Y := F + epsilon_a
+    Y := F + εₐ
 
     >>> from pharmpy.modeling import set_additive_error_model, load_example_model
     >>> model = load_example_model("pheno")
     >>> model.statements.find_assignment("Y")
-    Y := EPS(1)*W + F
+    Y := EPS(1)⋅W + F
     >>> set_additive_error_model(model, data_trans="log(Y)")    # doctest: +ELLIPSIS
     <...>
     >>> model.statements.find_assignment("Y")
-    Y := log(F) + epsilon_a/F
+                  εₐ
+         log(F) + ──
+    Y :=          F
 
     See Also
     --------
@@ -174,14 +176,14 @@ def set_proportional_error_model(model, data_trans=None):
     >>> set_proportional_error_model(model)    # doctest: +ELLIPSIS
     <...>
     >>> model.statements.find_assignment("Y")
-    Y := F*epsilon_p + F
+    Y := F⋅εₚ + F
 
     >>> from pharmpy.modeling import *
     >>> model = remove_error_model(load_example_model("pheno"))
     >>> set_proportional_error_model(model, data_trans="log(Y)")    # doctest: +ELLIPSIS
     <...>
     >>> model.statements.find_assignment("Y")
-    Y := epsilon_p + log(F)
+    Y := εₚ + log(F)
 
     See Also
     --------
@@ -248,14 +250,16 @@ def set_combined_error_model(model, data_trans=None):
     >>> set_combined_error_model(model)    # doctest: +ELLIPSIS
     <...>
     >>> model.statements.find_assignment("Y")
-    Y := F*epsilon_p + F + epsilon_a
+    Y := F⋅εₚ + F + εₐ
 
     >>> from pharmpy.modeling import *
     >>> model = remove_error_model(load_example_model("pheno"))
     >>> set_combined_error_model(model, data_trans="log(Y)")    # doctest: +ELLIPSIS
     <...>
     >>> model.statements.find_assignment("Y")
-    Y := epsilon_p + log(F) + epsilon_a/F
+                      εₐ
+        εₚ + log(F) + ──
+    Y :=              F
 
     See Also
     --------
@@ -433,7 +437,7 @@ def use_thetas_for_error_stdev(model):
     >>> use_thetas_for_error_stdev(model)    # doctest: +ELLIPSIS
     <...>
     >>> model.statements.find_assignment("Y")
-    Y := EPS(1)*SD_EPS(1)*W + F
+    Y := EPS(1)⋅SD_EPS(1)⋅W + F
 
     See also
     --------

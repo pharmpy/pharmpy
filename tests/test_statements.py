@@ -12,11 +12,11 @@ def S(x):
 
 def test_str(testdata):
     s1 = Assignment(S('KA'), S('X') + S('Y'))
-    assert str(s1) == 'KA := X + Y\n'
+    assert str(s1) == 'KA := X + Y'
     s2 = Assignment(S('X2'), sympy.exp('X'))
     a = str(s2).split('\n')
     assert a[0].startswith(' ')
-    assert len(a) == 3
+    assert len(a) == 2
 
     model = Model(testdata / 'nonmem' / 'pheno.mod')
     assert 'THETA(2)' in str(model.statements)
