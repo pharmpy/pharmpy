@@ -207,9 +207,14 @@ def compartmental_model(model, advan, trans, des=None):
             dadt_rest = [Eq(Derivative(a_out(t)), dadt_dose.expression * -1)]
 
         if isinstance(dose, Infusion):
-            dadt_dose.expression += Piecewise(
-                (dose.amount / dose.duration, dose.duration > t), (0, True)
-            )
+            if dose.duration:
+                rate = dose.amount / dose.duration
+                duration = dose.duration
+            else:
+                rate = dose.rate
+                duration = dose.amount / dose.rate
+
+            dadt_dose.expression += Piecewise((rate, duration > t), (0, True))
             ics[comp_names['A(1)'](0)] = sympy.Integer(0)
 
         eqs = [Eq(dadt_dose.symbol, dadt_dose.expression)] + dadt_rest
