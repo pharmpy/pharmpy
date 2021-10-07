@@ -39,10 +39,15 @@ class EstimationMethod:
             self._options = options
 
     def append_options(self, options):
-        if isinstance(options, dict):
-            options_new = self.options + self._options_dict_to_tuple(options)
+        if self.options:
+            options_old = self.options
         else:
-            options_new = self.options + options
+            options_old = []
+
+        if isinstance(options, dict):
+            options_new = options_old + self._options_dict_to_tuple(options)
+        else:
+            options_new = options_old + options
         self.options = options_new
 
     @staticmethod
