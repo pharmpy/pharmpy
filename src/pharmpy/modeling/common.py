@@ -736,3 +736,52 @@ def get_model_covariates(model, strings=False):
     if strings:
         covs = [str(x) for x in covs]
     return covs
+
+
+def print_model_symbols(model):
+    """Print all symbols defined in a model
+
+    Symbols will be in one of the categories thetas, etas, omegas, epsilons, sigmas,
+    variables and data columns
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model object
+
+    Example
+    -------
+    >>> from pharmpy.modeling import load_example_model, print_model_symbols
+    >>> model = load_example_model("pheno")
+    >>> print_model_symbols(model)
+    Thetas: THETA(1), THETA(2), THETA(3)
+    Etas: ETA(1), ETA(2)
+    Omegas: OMEGA(1,1), OMEGA(2,2)
+    Epsilons: EPS(1)
+    Sigmas: SIGMA(1,1)
+    Variables: BTIME, TAD, TVCL, TVV, TVV, CL, V, S₁, F, W, Y, IPRED, IRES, IWRES
+    Data columns: ID, TIME, AMT, WGT, APGR, DV, FA1, FA2
+
+    """
+    etas = [sympy.pretty(sympy.Symbol(name)) for name in model.random_variables.etas.names]
+    epsilons = [sympy.pretty(sympy.Symbol(name)) for name in model.random_variables.epsilons.names]
+    omegas = [sympy.pretty(sympy.Symbol(n)) for n in model.random_variables.etas.parameter_names]
+    sigmas = [
+        sympy.pretty(sympy.Symbol(n)) for n in model.random_variables.epsilons.parameter_names
+    ]
+    thetas = []
+    for param in model.parameters:
+        if param.name not in model.random_variables.parameter_names:
+            thetas.append(sympy.pretty(param.symbol))
+    variables = []
+    for sta in model.statements:
+        if hasattr(sta, 'symbol'):
+            variables.append(sympy.pretty(sta.symbol))
+    s = f'Thetas: {", ".join(thetas)}\n'
+    s += f'Etas: {", ".join(etas)}\n'
+    s += f'Omegas: {", ".join(omegas)}\n'
+    s += f'Epsilons: {", ".join(epsilons)}\n'
+    s += f'Sigmas: {", ".join(sigmas)}\n'
+    s += f'Variables: {", ".join(variables)}\n'
+    s += f'Data columns: {", ".join(model.dataset.columns)}'
+    print(s)

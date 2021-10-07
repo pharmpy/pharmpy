@@ -2,6 +2,7 @@ next version
 ------------
 
 * Add modeling.read_model_from_database
+* Add modeling.print_model_symbols
 
 0.32.0 (2021-09-28)
 -------------------
