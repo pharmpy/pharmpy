@@ -3,6 +3,7 @@ import sympy
 
 import pharmpy.model
 import pharmpy.tools
+import pharmpy.tools.modelfit as modelfit
 from pharmpy import Parameter, Parameters, RandomVariable, RandomVariables
 from pharmpy.modeling import set_iiv_on_ruv, set_power_on_ruv
 from pharmpy.statements import Assignment, ModelStatements
@@ -32,8 +33,17 @@ def create_workflow(model=None):
     fit_wf = create_multiple_fit_workflow(n=3)
     wf.insert_workflow(fit_wf, predecessors=[task_base_model, task_iiv, task_power])
 
-    task_results = Task('results', post_process)
-    wf.add_task(task_results, predecessors=[start_task] + fit_wf.output_tasks)
+    task_post_process = Task('post_process', post_process)
+    wf.add_task(task_post_process, predecessors=[start_task] + fit_wf.output_tasks)
+
+    task_unpack = Task('unpack', _unpack)
+    wf.add_task(task_unpack, predecessors=[task_post_process])
+
+    fit_final = modelfit.create_single_fit_workflow()
+    wf.insert_workflow(fit_final, predecessors=[task_unpack])
+
+    task_results = Task('results', _results)
+    wf.add_task(task_results, predecessors=[task_post_process] + fit_final.output_tasks)
 
     return wf
 
@@ -48,8 +58,18 @@ def post_process(start_model, *models):
         iiv_on_ruv=_find_model(models, 'iiv_on_ruv'),
         power=_find_model(models, 'power'),
     )
-    _create_best_model(start_model, res)
+    best_model = _create_best_model(start_model, res)
+    res.best_model = best_model
     return res
+
+
+def _results(res, best_model):
+    res.best_model = best_model
+    return res
+
+
+def _unpack(res):
+    return res.best_model
 
 
 def _find_model(models, name):
@@ -119,4 +139,4 @@ def _create_best_model(model, res):
         else:
             set_iiv_on_ruv(model)
         model.update_source()
-    res.best_model = model
+    return model
