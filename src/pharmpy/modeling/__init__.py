@@ -1,6 +1,7 @@
 from pharmpy.modeling.block_rvs import create_joint_distribution, split_joint_distribution
 from pharmpy.modeling.common import (
     add_estimation_step,
+    append_estimation_step_options,
     convert_model,
     copy_model,
     fix_parameters,
@@ -100,6 +101,7 @@ __all__ = [
     'add_individual_parameter',
     'add_iov',
     'add_peripheral_compartment',
+    'append_estimation_step_options',
     'calculate_eta_shrinkage',
     'calculate_individual_parameter_statistics',
     'calculate_individual_shrinkage',

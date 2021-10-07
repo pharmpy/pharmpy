@@ -7,6 +7,7 @@ from pyfakefs.fake_filesystem_unittest import Patcher
 from pharmpy import Model
 from pharmpy.modeling import (
     add_estimation_step,
+    append_estimation_step_options,
     convert_model,
     copy_model,
     fix_parameters,
@@ -160,10 +161,6 @@ def test_update_source(testdata):
             '$ESTIMATION METHOD=ZERO INTER SADDLE_RESET=1',
         ),
         (
-            {'method': 'fo', 'options': {'saddle_reset': 1}, 'append_options': True},
-            '$ESTIMATION METHOD=ZERO INTER MAXEVALS=9990 PRINT=2 POSTHOC SADDLE_RESET=1',
-        ),
-        (
             {'method': 'bayes', 'interaction': True},
             '$ESTIMATION METHOD=BAYES INTER MAXEVALS=9990 PRINT=2 POSTHOC',
         ),
@@ -192,6 +189,18 @@ def test_remove_estimation_step(testdata):
     update_source(model)
     assert not model.estimation_steps
     assert str(model).split('\n')[-2] == '$SIGMA 1'
+
+
+def test_append_estimation_step_options(testdata):
+    model = Model(testdata / 'nonmem' / 'minimal.mod')
+    assert len(model.estimation_steps) == 1
+    append_estimation_step_options(model, {'EONLY': 1}, 0)
+    update_source(model)
+    assert (
+        str(model).split('\n')[-2]
+        == '$ESTIMATION METHOD=COND INTER MAXEVALS=9990 PRINT=2 POSTHOC EONLY=1'
+    )
+    print(model.estimation_steps[0].options)
 
 
 def test_load_example_model():

@@ -488,9 +488,7 @@ def _create_init_dict(parameter_names, values):
     return d
 
 
-def set_estimation_step(
-    model, method, interaction=True, options=None, append_options=False, est_idx=0
-):
+def set_estimation_step(model, method, interaction=True, options=None, idx=0):
     """Set estimation step
 
     Sets estimation step for a model. Methods currently supported are:
@@ -505,10 +503,9 @@ def set_estimation_step(
     interaction : bool
         whether to use interaction or not, default is true
     options : dict
-        any additional options. Note that this removes old options
-    append_options : bool
-        whether to append options to current options, default is False
-    est_idx : int
+        any additional options. Note that this replaces old options (see
+            append_estimation_step_options to keep old options)
+    idx : int
         index of estimation step, default is 0 (first estimation step)
 
     Returns
@@ -530,15 +527,13 @@ def set_estimation_step(
     --------
     add_estimation_step
     remove_estimation_step
+    append_estimation_step_options
 
     """
-    model.estimation_steps[est_idx].method = method
-    model.estimation_steps[est_idx].interaction = interaction
+    model.estimation_steps[idx].method = method
+    model.estimation_steps[idx].interaction = interaction
     if options:
-        if append_options:
-            model.estimation_steps[est_idx].append_options(options)
-        else:
-            model.estimation_steps[est_idx].options = options
+        model.estimation_steps[idx].options = options
     return model
 
 
@@ -557,7 +552,7 @@ def add_estimation_step(model, method, interaction=True, options=None, idx=None)
     interaction : bool
         whether to use interaction or not, default is true
     options : dict
-        any additional tool specific options. Note that this removes old options
+        any additional tool specific options
     idx : int
         index of estimation step, default is None (adds step at the end)
 
@@ -583,11 +578,9 @@ def add_estimation_step(model, method, interaction=True, options=None, idx=None)
     --------
     set_estimation_step
     remove_estimation_step
+    append_estimation_step_options
 
     """
-    if options is None:
-        options = {}
-
     meth = EstimationMethod(method, interaction=interaction, options=options)
     if isinstance(idx, int):
         model.estimation_steps.insert(idx, meth)
@@ -629,9 +622,51 @@ def remove_estimation_step(model, idx):
     --------
     add_estimation_step
     set_estimation_step
+    append_estimation_step_options
 
     """
     del model.estimation_steps[idx]
+    return model
+
+
+def append_estimation_step_options(model, options, idx):
+    """Append estimation step options
+
+    Appends options to an existing estimation step.
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+    options : dict
+        any additional tool specific options
+    idx : int
+        index of estimation step
+
+    Returns
+    -------
+    Model
+        Reference to the same model object
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> opts = {'NITER': 1000, 'ISAMPLE': 100, 'EONLY': 1}
+    >>> append_estimation_step_options(model, options=opts, idx=0)   # doctest: +ELLIPSIS
+    <...>
+    >>> est = model.estimation_steps[0]
+    >>> len(est.options)
+    3
+
+    See also
+    --------
+    add_estimation_step
+    set_estimation_step
+    remove_estimation_step
+
+    """
+    model.estimation_steps[idx].append_options(options)
     return model
 
 
