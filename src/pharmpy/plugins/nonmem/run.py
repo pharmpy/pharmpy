@@ -42,12 +42,7 @@ def execute_model(model):
         model.database.store_local_file(model, basepath.with_suffix('.coi'))
         for rec in model.control_stream.get_records('TABLE'):
             model.database.store_local_file(model, rec.path)
-
-    # Read in results
-    model._modelfit_results = None
-    # FIXME: On the fly reading doesn't work since files
-    #  doesn't get copied up. Reading in now as a workaround.
-    model.modelfit_results.minimization_successful
+        model.read_modelfit_results(path)
 
     return model
 
