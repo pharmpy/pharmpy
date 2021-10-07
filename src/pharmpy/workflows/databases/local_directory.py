@@ -24,7 +24,7 @@ class LocalDirectoryToolDatabase(ToolDatabase):
         path.mkdir(parents=True)
         self.path = path
 
-        modeldb = LocalDirectoryDatabase(path / 'models')
+        modeldb = LocalModelDirectoryDatabase(path / 'models')
         self.model_database = modeldb
         super().__init__(toolname)
 
@@ -68,6 +68,12 @@ class LocalModelDirectoryDatabase(LocalDirectoryDatabase):
             if not destination.is_dir():
                 destination.mkdir(parents=True)
             shutil.copy2(path, destination)
+
+    def retrieve_local_files(self, name, destination_path):
+        path = self.path / name
+        files = path.glob('*')
+        for f in files:
+            shutil.copy2(f, destination_path)
 
     def get_model(self, name):
         filename = name + self.file_extension
