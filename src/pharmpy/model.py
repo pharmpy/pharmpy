@@ -75,6 +75,9 @@ class Model:
             pass
         return model
 
+    def __repr__(self):
+        return f'<Pharmpy model object {self.name}>'
+
     def _repr_html_(self):
         stat = self.statements._repr_html_()
         rvs = self.random_variables._repr_latex_()
