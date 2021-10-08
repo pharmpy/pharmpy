@@ -5,6 +5,7 @@ next version
 * Add modeling.print_model_symbols
 * Add modeling.append_estimation_step_options
 * Fix crash for $DES models with RATE in dataset
+* Fix estimation status for evaluation steps to use latest estimation
 
 0.32.0 (2021-09-28)
 -------------------
