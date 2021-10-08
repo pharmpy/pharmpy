@@ -2,6 +2,8 @@
 :meta private:
 """
 
+import sympy
+
 from pharmpy.modeling import has_proportional_error_model
 from pharmpy.modeling.help_functions import _format_input_list
 from pharmpy.parameter import Parameter
@@ -9,7 +11,7 @@ from pharmpy.statements import Assignment
 from pharmpy.symbols import symbol as S
 
 
-def set_power_on_ruv(model, list_of_eps=None):
+def set_power_on_ruv(model, list_of_eps=None, ipred=None):
     """Applies a power effect to provided epsilons.
 
     Initial estimates for new thetas are 1 if the error
@@ -22,6 +24,8 @@ def set_power_on_ruv(model, list_of_eps=None):
     list_of_eps : str, list
         Name/names of epsilons to apply power effect. If None, all epsilons will be used.
         None is default.
+    ipred : Symbol
+        Symbol to use as IPRED. Default is to autodetect expression for IPRED.
 
     Return
     ------
@@ -49,7 +53,10 @@ def set_power_on_ruv(model, list_of_eps=None):
         eps = eps[list_of_eps]
     pset, sset = model.parameters, model.statements
 
-    ipred = get_ipred(model)
+    if ipred is None:
+        ipred = get_ipred(model)
+    else:
+        ipred = sympy.sympify(ipred)
 
     if has_proportional_error_model(model):
         theta_init = 1
