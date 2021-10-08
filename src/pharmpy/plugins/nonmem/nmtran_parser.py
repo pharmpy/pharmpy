@@ -57,6 +57,8 @@ default_record_order = [
     'THETA',
     'OMEGA',
     'SIGMA',
+    'ESTIMATION',
+    'TABLE',
 ]
 
 
