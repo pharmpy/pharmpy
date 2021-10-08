@@ -220,8 +220,8 @@ def test_power_on_ruv(datadir, fs, epsilons_args):
 
     assert mod_ori != mod_cov
 
-    assert not re.search(r'CIPREDI', mod_ori)
-    assert re.search(r'CIPREDI', mod_cov)
+    assert not re.search(r'\*\*', mod_ori)
+    assert re.search(r'\*\*', mod_cov)
 
 
 @pytest.mark.parametrize('fs', [[['pkgutil'], [source, etas_record]]], indirect=True)

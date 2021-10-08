@@ -2042,28 +2042,28 @@ def test_update_inits(testdata, etas_file, force, file_exists):
     [
         (
             ['EPS(1)'],
-            'Y = F + CIPREDI**THETA(4)*EPS(1)*W\n' 'IPRED=F+EPS(2)\n' 'IRES=DV-IPRED+EPS(3)',
+            'Y = F + EPS(1)*F**THETA(4)*W\n' 'IPRED=F+EPS(2)\n' 'IRES=DV-IPRED+EPS(3)',
             '$THETA  1 ; power1',
         ),
         (
             ['EPS(1)', 'EPS(2)'],
-            'Y = F + CIPREDI**THETA(4)*EPS(1)*W\n'
-            'IPRED = F + CIPREDI**THETA(5)*EPS(2)\n'
+            'Y = F + EPS(1)*F**THETA(4)*W\n'
+            'IPRED = F + EPS(2)*F**THETA(5)\n'
             'IRES=DV-IPRED+EPS(3)',
             '$THETA  1 ; power1\n' '$THETA  1 ; power2',
         ),
         (
             ['EPS(1)', 'EPS(3)'],
-            'Y = F + CIPREDI**THETA(4)*EPS(1)*W\n'
+            'Y = F + EPS(1)*F**THETA(4)*W\n'
             'IPRED = F + EPS(2)\n'  # FIXME: registers as different despite not being changed
-            'IRES = DV - IPRED + CIPREDI**THETA(5)*EPS(3)',
+            'IRES = DV - IPRED + EPS(3)*F**THETA(5)',
             '$THETA  1 ; power1\n' '$THETA  1 ; power2',
         ),
         (
             None,
-            'Y = F + CIPREDI**THETA(4)*EPS(1)*W\n'
-            'IPRED = F + CIPREDI**THETA(5)*EPS(2)\n'
-            'IRES = DV - IPRED + CIPREDI**THETA(6)*EPS(3)',
+            'Y = F + EPS(1)*F**THETA(4)*W\n'
+            'IPRED = F + EPS(2)*F**THETA(5)\n'
+            'IRES = DV - IPRED + EPS(3)*F**THETA(6)',
             '$THETA  1 ; power1\n' '$THETA  1 ; power2\n' '$THETA  1 ; power3',
         ),
     ],

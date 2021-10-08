@@ -5,6 +5,7 @@
 from pharmpy.modeling import has_proportional_error_model
 from pharmpy.modeling.help_functions import _format_input_list
 from pharmpy.parameter import Parameter
+from pharmpy.statements import Assignment
 from pharmpy.symbols import symbol as S
 
 
@@ -34,8 +35,8 @@ def set_power_on_ruv(model, list_of_eps=None):
     >>> set_power_on_ruv(model)   # doctest: +ELLIPSIS
     <...>
     >>> model.statements.find_assignment("Y")
-                power₁
-    Y := CIPREDI      ⋅EPS(1)⋅W + F
+                 power₁
+    Y := EPS(1)⋅F      ⋅W + F
 
     See also
     --------
@@ -48,6 +49,8 @@ def set_power_on_ruv(model, list_of_eps=None):
         eps = eps[list_of_eps]
     pset, sset = model.parameters, model.statements
 
+    ipred = get_ipred(model)
+
     if has_proportional_error_model(model):
         theta_init = 1
     else:
@@ -57,9 +60,21 @@ def set_power_on_ruv(model, list_of_eps=None):
         theta_name = str(model.create_symbol(stem='power', force_numbering=True))
         theta = Parameter(theta_name, theta_init)
         pset.append(theta)
-        sset.subs({e.name: model.individual_prediction_symbol ** S(theta.name) * e.symbol})
+        sset.subs({e.name: ipred ** S(theta.name) * e.symbol})
 
     model.parameters = pset
     model.statements = sset
 
     return model
+
+
+def get_ipred(model):
+    expr = model.statements.full_expression_after_odes(model.dependent_variable)
+    for rv in model.random_variables:
+        expr = expr.subs(rv.symbol, 0)
+    ipred = expr
+    for s in model.statements:
+        if isinstance(s, Assignment) and s.expression == ipred:
+            ipred = s.symbol
+            break
+    return ipred
