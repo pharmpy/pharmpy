@@ -444,6 +444,15 @@ class ChainedModelfitResults(MutableSequence, ModelfitResults):
 
     @property
     def minimization_successful(self):
+        # If last step was estimation
+        if self[-1].estimation_step['is_estimation'] and self[-1].minimization_successful:
+            return self[-1].minimization_successful
+        # If last was evaluation, find latest estimation
+        for i in reversed(range(len(self))):
+            is_estimation = self[i].estimation_step['is_estimation']
+            if is_estimation:
+                return self[i].minimization_successful
+        # If all steps were evaluation the last evaluation step is relevant
         return self[-1].minimization_successful
 
     @property

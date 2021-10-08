@@ -88,8 +88,8 @@ class NONMEMModelfitResults(ModelfitResults):
                 covariance_status['warnings'] = not status['covariance_step_ok']
         self._covariance_status = covariance_status
 
-    def _set_estimation_status(self, results_file, requested):
-        estimation_status = {'requested': requested}
+    def _set_estimation_status(self, results_file, requested, is_estimation=False):
+        estimation_status = {'requested': requested, 'is_estimation': is_estimation}
         status = NONMEMResultsFile.unknown_termination()
         if results_file is not None:
             status = results_file.estimation_status(self.table_number)
@@ -322,10 +322,12 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
         if self.model is not None:
             if len(self.model.control_stream.get_records('COVARIANCE')) > 0:
                 table_with_cov = self[-1].table_number  # correct unless interrupted
-        for result_obj in self:
+        for table_no, result_obj in enumerate(self, 1):
             # _estimation_status is already set to None if ext table has (Evaluation)
             if hasattr(result_obj, '_estimation_status') is False:
-                result_obj._set_estimation_status(rfile, requested=True)
+                result_obj._set_estimation_status(rfile, requested=True, is_estimation=True)
+            else:
+                result_obj._set_estimation_status(rfile, requested=True, is_estimation=False)
             # _covariance_status already set to None if ext table did not have standard errors
             if hasattr(result_obj, '_covariance_status') is False:
                 result_obj._set_covariance_status(rfile, table_with_cov=table_with_cov)
