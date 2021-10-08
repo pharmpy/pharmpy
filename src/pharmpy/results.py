@@ -515,6 +515,26 @@ class ChainedModelfitResults(MutableSequence, ModelfitResults):
     def runtime_total(self):
         return self[-1].runtime_total
 
+    def get_result_summary(self):
+        summary_dict = dict()
+
+        summary_dict['minimization_successful'] = self.minimization_successful
+        summary_dict['ofv'] = self.ofv
+        summary_dict['runtime_total'] = self.runtime_total
+
+        pe = self.parameter_estimates
+        ses = self.standard_errors
+        rses = self.relative_standard_errors
+
+        for param in pe.index:
+            summary_dict[f'{param}_estimate'] = pe[param]
+            if ses is None:
+                summary_dict[f'{param}_SE'] = ses[param]
+            if rses is None:
+                summary_dict[f'{param}_RSE'] = rses[param]
+
+        return pd.Series(summary_dict)
+
     def __repr__(self):
         return repr(self._results[-1])
 

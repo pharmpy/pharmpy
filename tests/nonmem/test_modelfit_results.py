@@ -356,3 +356,11 @@ def test_runtime_different_formats(testdata, starttime, endtime, runtime_ref):
         model = Model('pheno_real.mod')
         runtime = model.modelfit_results.runtime_total
         assert runtime == runtime_ref
+
+
+def test_result_summary(pheno_path):
+    res = Model(pheno_path).modelfit_results
+
+    summary = res.get_result_summary()
+    assert summary['ofv'] == 586.2760562818805
+    assert summary['OMEGA(1,1)_estimate'] == 0.0293508

@@ -432,26 +432,8 @@ def summarize_modelfit_results(models):
     if isinstance(models, Model):
         models = [models]
 
-    run_summaries = []
-    parameter_summaries = []
-
+    modelfit_results_dict = {}
     for model in models:
-        res = model.modelfit_results
-        parameter_summary = res.parameter_summary().stack().rename(model.name)
-        run_summary = pd.Series(
-            {
-                'minimization_successful': res.minimization_successful,
-                'ofv': res.ofv,
-                'runtime_total': res.runtime_total,
-            },
-            name=model.name,
-        )
-        parameter_summaries.append(parameter_summary)
-        run_summaries.append(run_summary)
+        modelfit_results_dict[model.name] = model.modelfit_results.get_result_summary()
 
-    parameter_summaries = pd.concat(parameter_summaries, axis=1).T
-    run_summaries = pd.concat(run_summaries, axis=1).T
-    summary = pd.concat([run_summaries, parameter_summaries], axis=1)
-
-    rename_map = {t: (f'{t[0]}_{t[1]}' if isinstance(t, tuple) else t) for t in summary.columns}
-    return summary.rename(columns=rename_map)
+    return pd.DataFrame.from_dict(modelfit_results_dict, orient='index')
