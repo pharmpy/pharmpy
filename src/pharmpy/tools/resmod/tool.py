@@ -1,5 +1,4 @@
 import pandas as pd
-import sympy
 
 import pharmpy.model
 import pharmpy.tools
@@ -118,8 +117,7 @@ def _create_iiv_on_ruv_model(input_model):
 def _create_power_model(input_model):
     base_model = _create_base_model(input_model)  # FIXME: could be done only once in the workflow
     model = base_model.copy()
-    model.individual_prediction_symbol = sympy.Symbol('IPRED')
-    set_power_on_ruv(model)
+    set_power_on_ruv(model, ipred='IPRED')
     model.name = 'power'
     return model
 
