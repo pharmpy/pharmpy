@@ -842,14 +842,13 @@ def update_abbr_record(model, rv_trans):
 
 
 def update_estimation(model):
+    new = model.estimation_steps
     try:
         old = model._old_estimation_steps
     except AttributeError:
-        return
-    new = model._estimation_steps
+        old = []
     if old == new:
         return
-
     # FIXME: Late import to satisfy python 3.6
     import pharmpy.plugins.nonmem.records.code_record as code_record
 
@@ -887,7 +886,11 @@ def update_estimation(model):
         else:
             new_records.append(old_records[i])
             i += 1
-    model.control_stream.replace_records(old_records, new_records)
+    if old_records:
+        model.control_stream.replace_records(old_records, new_records)
+    else:
+        for rec in new_records:
+            model.control_stream.insert_record(str(rec))
 
     old_cov = False
     for est in old:

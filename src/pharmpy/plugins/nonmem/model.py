@@ -66,6 +66,7 @@ def convert_model(model):
     if hasattr(model, 'dependent_variable'):
         nm_model.dependent_variable = model.dependent_variable
     nm_model._data_frame = model.dataset
+    nm_model._estimation_steps = model.estimation_steps
     nm_model.update_source()
     try:
         nm_model.database = model.database
