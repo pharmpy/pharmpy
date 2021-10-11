@@ -1151,9 +1151,12 @@ class RandomVariables(MutableSequence):
             for names, new_rv in sampling_rvs:
                 with warnings.catch_warnings():
                     warnings.filterwarnings('ignore')
-                    cursample = next(
-                        sympy.stats.sample(new_rv, library='numpy', size=samples, seed=rng)
-                    )
+                    if sympy.__version__ == '1.8':
+                        cursample = next(
+                            sympy.stats.sample(new_rv, library='numpy', size=samples, seed=rng)
+                        )
+                    else:
+                        cursample = sympy.stats.sample(new_rv, library='numpy', size=samples, seed=rng)
                     if len(names) > 1:
                         df[names] = cursample
                     else:
