@@ -528,9 +528,9 @@ class ChainedModelfitResults(MutableSequence, ModelfitResults):
 
         for param in pe.index:
             summary_dict[f'{param}_estimate'] = pe[param]
-            if ses is None:
+            if ses is not None:
                 summary_dict[f'{param}_SE'] = ses[param]
-            if rses is None:
+            if rses is not None:
                 summary_dict[f'{param}_RSE'] = rses[param]
 
         return pd.Series(summary_dict)
