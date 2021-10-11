@@ -1,5 +1,5 @@
-next version
-------------
+0.33.0 (2021-10-11)
+-------------------
 
 * Add modeling.read_model_from_database
 * Add modeling.print_model_symbols
