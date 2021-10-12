@@ -12,12 +12,8 @@ class LocalDirectoryToolDatabase(ToolDatabase):
             i = 1
             while True:
                 name = f'{toolname}_dir{i}'
-                if path is not None:
-                    test_path = path / name
-                else:
-                    test_path = Path(name)
-                if not test_path.exists():
-                    path = test_path
+                path = Path(name)
+                if not path.exists():
                     break
                 i += 1
         path = Path(path).resolve()

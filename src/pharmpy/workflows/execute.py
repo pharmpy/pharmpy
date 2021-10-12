@@ -46,6 +46,7 @@ def execute_workflow(workflow, dispatcher=None, database=None, path=None):
                 # Do not copy the model file.
                 if f.name != model.source.path.name:
                     default_model_database.store_local_file(model, f)
+        # Set modelfit_results for local model objects
         new_model = default_model_database.get_model(model.name)
         model.modelfit_results = new_model.modelfit_results
 

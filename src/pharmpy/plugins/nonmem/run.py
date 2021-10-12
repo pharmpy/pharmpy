@@ -42,6 +42,7 @@ def execute_model(model):
         model.database.store_local_file(model, basepath.with_suffix('.coi'))
         for rec in model.control_stream.get_records('TABLE'):
             model.database.store_local_file(model, rec.path)
+        # Read in results for the server side
         model.read_modelfit_results(path)
 
     return model
