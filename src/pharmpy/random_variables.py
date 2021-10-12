@@ -1156,7 +1156,9 @@ class RandomVariables(MutableSequence):
                             sympy.stats.sample(new_rv, library='numpy', size=samples, seed=rng)
                         )
                     else:
-                        cursample = sympy.stats.sample(new_rv, library='numpy', size=samples, seed=rng)
+                        cursample = sympy.stats.sample(
+                            new_rv, library='numpy', size=samples, seed=rng
+                        )
                     if len(names) > 1:
                         df[names] = cursample
                     else:
