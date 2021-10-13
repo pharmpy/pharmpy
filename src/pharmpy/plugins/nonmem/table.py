@@ -11,21 +11,24 @@ import pharmpy.math
 class NONMEMTableFile:
     """A NONMEM table file that can contain multiple tables"""
 
-    def __init__(self, path=None, tables=None):
+    def __init__(self, path=None, tables=None, notitle=False, nolabel=False):
         if path is not None:
             path = Path(path)
             suffix = path.suffix
             self.tables = []
             with open(str(path), 'r') as tablefile:
-                current = []
-                for line in tablefile:
-                    if line.startswith("TABLE NO."):
-                        if current:
-                            self._add_table(current, suffix)
-                        current = [line]
-                    else:
-                        current.append(line)
-                self._add_table(current, suffix)
+                if notitle:
+                    self._add_table(tablefile.read().splitlines(), notitle=notitle, nolabel=nolabel)
+                else:
+                    current = []
+                    for line in tablefile:
+                        if line.startswith("TABLE NO."):
+                            if current:
+                                self._add_table(current, suffix)
+                            current = [line]
+                        else:
+                            current.append(line)
+                    self._add_table(current, suffix)
             self._count = 0
         else:
             self.tables = tables
@@ -33,8 +36,9 @@ class NONMEMTableFile:
     def __iter__(self):
         return self
 
-    def _add_table(self, content, suffix):
-        table_line = content.pop(0)
+    def _add_table(self, content, suffix=None, notitle=False, nolabel=False):
+        if not notitle:
+            table_line = content.pop(0)
         if suffix == '.ext':
             table = ExtTable(''.join(content))
         elif suffix == '.phi':
@@ -43,28 +47,29 @@ class NONMEMTableFile:
             table = CovTable(''.join(content))
         else:
             table = NONMEMTable(''.join(content))  # Fallback to non-specific table type
-        m = re.match(r'TABLE NO.\s+(\d+)', table_line)
-        if not m:
-            raise ValueError("Illegal ext-file: missing TABLE NO.")
-        table.number = int(m.group(1))
-        table.is_evaluation = False
-        if re.search(r'(Evaluation)', table_line):
-            table.is_evaluation = True  # No estimation step was run
-        m = re.match(
-            r'TABLE NO.\s+\d+: (.*?): (?:Goal Function=(.*): )?Problem=(\d+) '
-            r'Subproblem=(\d+) Superproblem1=(\d+) Iteration1=(\d+) Superproblem2=(\d+) '
-            r'Iteration2=(\d+)',
-            table_line,
-        )
-        if m:
-            table.method = m.group(1)
-            table.goal_function = m.group(2)
-            table.problem = int(m.group(3))
-            table.subproblem = int(m.group(4))
-            table.superproblem1 = int(m.group(5))
-            table.iteration1 = int(m.group(6))
-            table.superproblem2 = int(m.group(7))
-            table.iteration2 = int(m.group(8))
+        if not notitle:
+            m = re.match(r'TABLE NO.\s+(\d+)', table_line)
+            if not m:
+                raise ValueError(f"Illegal {suffix}-file: missing TABLE NO.")
+            table.number = int(m.group(1))
+            table.is_evaluation = False
+            if re.search(r'(Evaluation)', table_line):
+                table.is_evaluation = True  # No estimation step was run
+            m = re.match(
+                r'TABLE NO.\s+\d+: (.*?): (?:Goal Function=(.*): )?Problem=(\d+) '
+                r'Subproblem=(\d+) Superproblem1=(\d+) Iteration1=(\d+) Superproblem2=(\d+) '
+                r'Iteration2=(\d+)',
+                table_line,
+            )
+            if m:
+                table.method = m.group(1)
+                table.goal_function = m.group(2)
+                table.problem = int(m.group(3))
+                table.subproblem = int(m.group(4))
+                table.superproblem1 = int(m.group(5))
+                table.iteration1 = int(m.group(6))
+                table.superproblem2 = int(m.group(7))
+                table.iteration2 = int(m.group(8))
         self.tables.append(table)
 
     def __len__(self):

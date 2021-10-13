@@ -490,7 +490,12 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
                 found.append(colname)
                 columns_in_table.append(colname)
             if columns_in_table:
-                table_file = NONMEMTableFile(self.model.source.path.parent / table_rec.path)
+                noheader = table_rec.has_option("NOHEADER")
+                notitle = table_rec.has_option("NOTITLE") or noheader
+                nolabel = table_rec.has_option("NOLABEL") or noheader
+                table_file = NONMEMTableFile(
+                    self.model.source.path.parent / table_rec.path, notitle=notitle, nolabel=nolabel
+                )
                 table = table_file.tables[0]
                 df[columns_in_table] = table.data_frame[columns_in_table]
         return df
