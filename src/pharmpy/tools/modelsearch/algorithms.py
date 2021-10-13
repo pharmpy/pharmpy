@@ -151,9 +151,16 @@ def _is_allowed(feat_current, func_current, trans_previous, features):
         return False
     if any(func in features.get_funcs_same_type(feat_current) for func in trans_previous.values()):
         return False
-    not_supported_combo = {'ABSORPTION(ZO)': 'TRANSITS(1)'}
+    not_supported_combo = {
+        'ABSORPTION(ZO)': 'TRANSITS(1)',
+        'LAGTIME': 'TRANSITS',
+        'TRANSITS': 'LAGTIME',
+    }
     for key, value in not_supported_combo.items():
-        if any(feat_current == key and feat == value for feat in trans_previous.keys()):
+        if any(
+            feat_current.startswith(key) and feat.startswith(value)
+            for feat in trans_previous.keys()
+        ):
             return False
     return True
 

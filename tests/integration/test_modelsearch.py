@@ -13,6 +13,7 @@ from pharmpy.utils import TemporaryDirectoryChanger
         ('ABSORPTION(ZO)\nPERIPHERALS(1)', 4),
         ('ABSORPTION(ZO)\nTRANSITS(1)', 3),
         ('ABSORPTION([ZO,SEQ-ZO-FO])\nPERIPHERALS(1)', 7),
+        ('LAGTIME\nTRANSITS(1)', 2),
     ],
 )
 def test_exhaustive_stepwise(tmp_path, testdata, mfl, no_of_models):
