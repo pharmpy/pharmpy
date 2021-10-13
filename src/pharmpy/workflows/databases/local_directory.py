@@ -16,11 +16,11 @@ class LocalDirectoryToolDatabase(ToolDatabase):
                 if not path.exists():
                     break
                 i += 1
-        path = Path(path).resolve()
+        path = Path(path)
         path.mkdir(parents=True)
-        self.path = path
+        self.path = path.resolve()
 
-        modeldb = LocalModelDirectoryDatabase(path / 'models')
+        modeldb = LocalModelDirectoryDatabase(self.path / 'models')
         self.model_database = modeldb
         super().__init__(toolname)
 
