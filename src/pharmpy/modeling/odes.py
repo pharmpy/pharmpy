@@ -5,6 +5,7 @@
 import sympy
 
 import pharmpy.symbols
+from pharmpy.model import ModelException
 from pharmpy.parameter import Parameter
 from pharmpy.statements import Assignment, Bolus, CompartmentalSystem, Infusion
 
@@ -480,6 +481,7 @@ def set_zero_order_absorption(model):
     odes = statements.ode_system
     if not isinstance(odes, CompartmentalSystem):
         raise ValueError("Setting absorption is not supported for ExplicitODESystem")
+    _disallow_infusion(model)
     depot = odes.find_depot(statements)
 
     dose_comp = odes.find_dosing()
@@ -648,6 +650,7 @@ def set_seq_zo_fo_absorption(model):
     odes = statements.ode_system
     if not isinstance(odes, CompartmentalSystem):
         raise ValueError("Setting absorption is not supported for ExplicitODESystem")
+    _disallow_infusion(model)
     depot = odes.find_depot(statements)
 
     dose_comp = odes.find_dosing()
@@ -663,6 +666,19 @@ def set_seq_zo_fo_absorption(model):
         depot = _add_first_order_absorption(model, amount, dose_comp)
         _add_zero_order_absorption(model, amount, depot, 'MDT')
     return model
+
+
+def _disallow_infusion(model):
+    odes = model.statements.ode_system
+    dose_comp = odes.find_dosing()
+    if isinstance(dose_comp.dose, Infusion):
+        if dose_comp.dose.rate is not None:
+            ex = dose_comp.dose.rate
+        else:
+            ex = dose_comp.dose.duration
+        for s in ex.free_symbols:
+            if s.name in model.dataset.columns:
+                raise ModelException("Model already has an infusion given in the dataset")
 
 
 def has_zero_order_absorption(model):
