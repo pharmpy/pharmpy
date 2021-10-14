@@ -823,6 +823,19 @@ def update_abbr_record(model, rv_trans):
     trans = dict()
     if not rv_trans:
         return trans
+    # Remove already abbreviated symbols
+    # FIXME: Doesn't update if name has changed
+    kept = rv_trans.copy()
+    abbr_recs = model.control_stream.get_records('ABBREVIATED')
+    for rec in abbr_recs:
+        for rk, rv in rec.replace.items():
+            for tk, tv in rv_trans.items():
+                if tv.name == rv:
+                    del kept[tk]
+    rv_trans = kept
+    if not rv_trans:
+        return trans
+
     for rv in model.random_variables:
         rv_symb = symbol(rv.name)
         abbr_pattern = re.match(r'ETA_(\w+)', rv.name)

@@ -187,8 +187,7 @@ class Model(pharmpy.model.Model):
         if self.observation_transformation != self._old_observation_transformation:
             if not nofiles:
                 update_ccontra(self, path, force)
-
-        super().update_source()
+        self.source.code = str(self.control_stream)
 
     def _abbr_translation(self, rv_trans):
         abbr_pharmpy = self.control_stream.abbreviated.translate_to_pharmpy_names()
@@ -736,7 +735,9 @@ class Model(pharmpy.model.Model):
         self._old_estimation_steps = copy.deepcopy(steps)
         return steps
 
-    def __str__(self):
+    @property
+    def model_code(self):
+        self.update_source(nofiles=True)
         return str(self.control_stream)
 
     @property

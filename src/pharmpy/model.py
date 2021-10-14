@@ -105,10 +105,6 @@ class Model:
         value = canonicalize_data_transformation(self, value)
         self._data_transformation = value
 
-    def update_source(self):
-        """Update the source"""
-        self.source.code = str(self)
-
     def write(self, path='', force=False):
         """Write model to file using its source format
         If no path is supplied or does not contain a filename a name is created

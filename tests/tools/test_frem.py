@@ -434,9 +434,7 @@ def test_get_params(testdata):
     assert param_names == ['CL', 'V']
 
     model_multiple_etas = re.sub(
-        r'(V=TVV\*EXP\(ETA\(2\)\))',
-        r'\1*EXP(ETA(3))',
-        str(model_frem),
+        r'(V=TVV\*EXP\(ETA\(2\)\))', r'\1*EXP(ETA(3))', model_frem.model_code
     )
 
     model = Model(StringIO(model_multiple_etas))
@@ -450,7 +448,7 @@ def test_get_params(testdata):
     model_separate_declare = re.sub(
         r'(V=TVV\*EXP\(ETA\(2\)\))',
         'ETA2=ETA(2)\n      V=TVV*EXP(ETA2)',
-        str(model_frem),
+        model_frem.model_code,
     )
 
     model = Model(StringIO(model_separate_declare))

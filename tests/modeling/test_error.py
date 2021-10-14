@@ -23,75 +23,64 @@ from pharmpy.statements import Assignment
 def test_remove_error_model(testdata):
     model = Model(testdata / 'nonmem' / 'pheno.mod')
     remove_error_model(model)
-    model.update_source()
-    assert str(model).split('\n')[11] == 'Y = F'
+    assert model.model_code.split('\n')[11] == 'Y = F'
 
 
 def test_set_additive_error_model(testdata):
     model = Model(testdata / 'nonmem' / 'pheno.mod')
     set_additive_error_model(model)
-    model.update_source()
-    assert str(model).split('\n')[11] == 'Y = F + EPS(1)'
-    assert str(model).split('\n')[17] == '$SIGMA  11.2225 ; sigma'
-    before = str(model)
+    assert model.model_code.split('\n')[11] == 'Y = F + EPS(1)'
+    assert model.model_code.split('\n')[17] == '$SIGMA  11.2225 ; sigma'
+    before = model.model_code
     set_additive_error_model(model)  # One more time and nothing should change
-    assert before == str(model)
+    assert before == model.model_code
 
 
 def test_set_additive_error_model_logdv(testdata):
     model = Model(testdata / 'nonmem' / 'pheno.mod')
     set_additive_error_model(model, data_trans="log(Y)")
-    model.update_source()
-    assert str(model).split('\n')[11] == 'Y = LOG(F) + EPS(1)/F'
-    assert str(model).split('\n')[17] == '$SIGMA  11.2225 ; sigma'
+    assert model.model_code.split('\n')[11] == 'Y = LOG(F) + EPS(1)/F'
+    assert model.model_code.split('\n')[17] == '$SIGMA  11.2225 ; sigma'
 
 
 def test_set_proportional_error_model(testdata):
     model = Model(testdata / 'nonmem' / 'pheno.mod')
     model.statements[5] = Assignment('Y', 'F')
     set_proportional_error_model(model)
-    model.update_source()
-    assert str(model).split('\n')[11] == 'Y=F+F*EPS(1)'
-    assert str(model).split('\n')[17] == '$SIGMA  0.09 ; sigma'
+    assert model.model_code.split('\n')[11] == 'Y=F+F*EPS(1)'
+    assert model.model_code.split('\n')[17] == '$SIGMA  0.09 ; sigma'
 
     model = Model(testdata / 'nonmem' / 'pheno.mod')
     set_proportional_error_model(model)
-    model.update_source()
-    assert str(model).split('\n')[11] == 'Y=F+F*EPS(1)'
-    assert str(model).split('\n')[17] == '$SIGMA 0.013241'
+    assert model.model_code.split('\n')[11] == 'Y=F+F*EPS(1)'
+    assert model.model_code.split('\n')[17] == '$SIGMA 0.013241'
 
 
 def test_set_proportional_error_model_log(testdata):
     model = Model(testdata / 'nonmem' / 'pheno.mod')
     model.statements[5] = Assignment('Y', 'F')
     set_proportional_error_model(model, data_trans='log(Y)')
-    model.update_source()
-    assert str(model).split('\n')[11] == 'Y = LOG(F) + EPS(1)'
-    assert str(model).split('\n')[17] == '$SIGMA  0.09 ; sigma'
+    assert model.model_code.split('\n')[11] == 'Y = LOG(F) + EPS(1)'
+    assert model.model_code.split('\n')[17] == '$SIGMA  0.09 ; sigma'
 
 
 def test_set_combined_error_model(testdata):
     model = Model(testdata / 'nonmem' / 'pheno.mod')
     set_combined_error_model(model)
-    model.update_source()
-    assert str(model).split('\n')[11] == 'Y = F + EPS(1)*F + EPS(2)'
-    assert str(model).split('\n')[17] == '$SIGMA  0.09 ; sigma_prop'
-    assert str(model).split('\n')[18] == '$SIGMA  11.2225 ; sigma_add'
-    before = str(model)
+    assert model.model_code.split('\n')[11] == 'Y = F + EPS(1)*F + EPS(2)'
+    assert model.model_code.split('\n')[17] == '$SIGMA  0.09 ; sigma_prop'
+    assert model.model_code.split('\n')[18] == '$SIGMA  11.2225 ; sigma_add'
+    before = model.model_code
     set_combined_error_model(model)  # One more time and nothing should change
-    assert before == str(model)
+    assert before == model.model_code
 
 
 def test_set_combined_error_model_log(testdata):
     model = Model(testdata / 'nonmem' / 'pheno.mod')
     set_combined_error_model(model, data_trans='log(Y)')
-    model.update_source()
-    assert str(model).split('\n')[11] == 'Y = LOG(F) + EPS(2)/F + EPS(1)'
-    assert str(model).split('\n')[17] == '$SIGMA  0.09 ; sigma_prop'
-    assert str(model).split('\n')[18] == '$SIGMA  11.2225 ; sigma_add'
-    before = str(model)
-    set_combined_error_model(model)  # One more time and nothing should change
-    assert before == str(model)
+    assert model.model_code.split('\n')[11] == 'Y = LOG(F) + EPS(2)/F + EPS(1)'
+    assert model.model_code.split('\n')[17] == '$SIGMA  0.09 ; sigma_prop'
+    assert model.model_code.split('\n')[18] == '$SIGMA  11.2225 ; sigma_add'
 
 
 def test_remove_error_without_f(testdata):
@@ -115,7 +104,6 @@ $ESTIMATION METHOD=1 INTERACTION
     model = Model(StringIO(code))
     model.source.path = testdata / 'nonmem' / 'pheno.mod'  # To be able to find dataset
     remove_error_model(model)
-    model.update_source()
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV
@@ -132,7 +120,7 @@ $OMEGA 0.0309626  ; IVCL
 $OMEGA 0.031128  ; IVV
 $ESTIMATION METHOD=1 INTERACTION
 """
-    assert str(model) == correct
+    assert model.model_code == correct
 
 
 def test_additive_error_without_f(testdata):
@@ -157,7 +145,6 @@ $ESTIMATION METHOD=1 INTERACTION
     model = Model(StringIO(code))
     model.source.path = testdata / 'nonmem' / 'pheno.mod'  # To be able to find dataset
     set_additive_error_model(model)
-    model.update_source()
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV
@@ -176,7 +163,7 @@ $OMEGA 0.031128  ; IVV
 $SIGMA  11.2225 ; sigma
 $ESTIMATION METHOD=1 INTERACTION
 """
-    assert str(model) == correct
+    assert model.model_code == correct
 
 
 def test_get_prop_init(testdata):
@@ -348,7 +335,6 @@ $ESTIMATION METHOD=1 INTER MAXEVALS=9990 PRINT=2 POSTHOC
 """
     model = read_model_from_string(code)
     use_thetas_for_error_stdev(model)
-    model.update_source()
     correct = """$PROBLEM base model
 $INPUT ID DV TIME
 $DATA file.csv IGNORE=@
@@ -363,7 +349,7 @@ $SIGMA 1 FIX
 $ESTIMATION METHOD=1 INTER MAXEVALS=9990 PRINT=2 POSTHOC
 """
 
-    assert str(model) == correct
+    assert model.model_code == correct
 
 
 def test_set_weighted_error_model():
@@ -387,7 +373,6 @@ $ESTIMATION METHOD=1 INTERACTION
 """
     model = read_model_from_string(code)
     set_weighted_error_model(model)
-    model.update_source()
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV
@@ -431,7 +416,6 @@ $ESTIMATION METHOD=1 INTERACTION
 """
     model = read_model_from_string(code)
     set_weighted_error_model(model)
-    model.update_source()
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV
@@ -453,7 +437,7 @@ $OMEGA 0.031128  ; IVV
 $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION
 """
-    assert str(model) == correct
+    assert model.model_code == correct
 
 
 def test_set_dtbs_error_model():
@@ -518,4 +502,4 @@ $OMEGA 0.031128  ; IVV
 $SIGMA 1 FIX
 $ESTIMATION METHOD=1 INTERACTION
 """
-    assert str(model) == correct
+    assert model.model_code == correct

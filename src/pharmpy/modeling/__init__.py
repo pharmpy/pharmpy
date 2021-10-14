@@ -6,6 +6,7 @@ from pharmpy.modeling.common import (
     copy_model,
     fix_parameters,
     fix_parameters_to,
+    generate_model_code,
     get_model_covariates,
     load_example_model,
     print_model_symbols,
@@ -18,7 +19,6 @@ from pharmpy.modeling.common import (
     set_name,
     unfix_parameters,
     unfix_parameters_to,
-    update_source,
     write_model,
 )
 from pharmpy.modeling.covariate_effect import add_covariate_effect
@@ -118,6 +118,7 @@ __all__ = [
     'get_number_of_individuals',
     'get_number_of_observations',
     'get_number_of_observations_per_individual',
+    'generate_model_code',
     'get_model_covariates',
     'get_observations',
     'has_additive_error_model',
@@ -175,7 +176,6 @@ __all__ = [
     'unfix_parameters',
     'unfix_parameters_to',
     'update_inits',
-    'update_source',
     'use_thetas_for_error_stdev',
     'write_model',
 ]

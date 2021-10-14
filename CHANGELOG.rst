@@ -1,3 +1,9 @@
+next version
+------------
+
+* Remove the need for update_source. Instead use model.model_code or modelling.generate_model_code(model)
+* str(model) can no longer be used to get the model_code
+
 0.33.0 (2021-10-11)
 -------------------
 

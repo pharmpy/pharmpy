@@ -177,11 +177,8 @@ def convert_model(model, to_format):
     return new
 
 
-def update_source(model):
-    """Update source
-
-    Let the code of the underlying source language be updated to reflect
-    changes in the model object.
+def generate_model_code(model):
+    """Get the model code of the underlying model language
 
     Parameters
     ----------
@@ -190,23 +187,17 @@ def update_source(model):
 
     Returns
     -------
-    Model
-        Reference to the same model object
+    str
+        Model code
 
-    Example
-    -------
-    >>> from pharmpy.modeling import load_example_model, fix_parameters, update_source
+    Examples
+    --------
+    >>> from pharmpy.modeling import generate_model_code, load_example_model
     >>> model = load_example_model("pheno")
-    >>> fix_parameters(model, ['THETA(1)'])  # doctest: +ELLIPSIS
-    <...>
-    >>> update_source(model)  # doctest: +ELLIPSIS
-    <...>
-    >>> print(str(model).splitlines()[22])
-    $THETA (0,0.00469307) FIX ; PTVCL
+    >>> generate_model_code(model)  # doctest: +SKIP
 
     """
-    model.update_source()
-    return model
+    return model.model_code
 
 
 def copy_model(model, name=None):

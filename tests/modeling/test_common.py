@@ -12,6 +12,7 @@ from pharmpy.modeling import (
     copy_model,
     fix_parameters,
     fix_parameters_to,
+    generate_model_code,
     get_model_covariates,
     load_example_model,
     read_model,
@@ -21,7 +22,6 @@ from pharmpy.modeling import (
     set_name,
     unfix_parameters,
     unfix_parameters_to,
-    update_source,
     write_model,
 )
 
@@ -138,11 +138,10 @@ def test_unfix_parameters_to(testdata):
     unfix_parameters_to(model, None, values=[1, 2, 3])
 
 
-def test_update_source(testdata):
+def test_generate_model_code(testdata):
     model = Model(testdata / 'nonmem' / 'minimal.mod')
     fix_parameters(model, ['THETA(1)'])
-    update_source(model)
-    assert str(model).split('\n')[7] == '$THETA 0.1 FIX'
+    assert generate_model_code(model).split('\n')[7] == '$THETA 0.1 FIX'
 
 
 @pytest.mark.parametrize(
@@ -169,35 +168,31 @@ def test_update_source(testdata):
 def test_set_estimation_step(testdata, args, code_ref):
     model = Model(testdata / 'nonmem' / 'minimal.mod')
     set_estimation_step(model, **args)
-    update_source(model)
-    assert str(model).split('\n')[-2] == code_ref
+    assert generate_model_code(model).split('\n')[-2] == code_ref
 
 
 def test_add_estimation_step(testdata):
     model = Model(testdata / 'nonmem' / 'minimal.mod')
     assert len(model.estimation_steps) == 1
     add_estimation_step(model, 'fo')
-    update_source(model)
     assert len(model.estimation_steps) == 2
-    assert str(model).split('\n')[-2] == '$ESTIMATION METHOD=ZERO INTER'
+    assert generate_model_code(model).split('\n')[-2] == '$ESTIMATION METHOD=ZERO INTER'
 
 
 def test_remove_estimation_step(testdata):
     model = Model(testdata / 'nonmem' / 'minimal.mod')
     assert len(model.estimation_steps) == 1
     remove_estimation_step(model, 0)
-    update_source(model)
     assert not model.estimation_steps
-    assert str(model).split('\n')[-2] == '$SIGMA 1'
+    assert generate_model_code(model).split('\n')[-2] == '$SIGMA 1'
 
 
 def test_append_estimation_step_options(testdata):
     model = Model(testdata / 'nonmem' / 'minimal.mod')
     assert len(model.estimation_steps) == 1
     append_estimation_step_options(model, {'EONLY': 1}, 0)
-    update_source(model)
     assert (
-        str(model).split('\n')[-2]
+        model.model_code.split('\n')[-2]
         == '$ESTIMATION METHOD=COND INTER MAXEVALS=9990 PRINT=2 POSTHOC EONLY=1'
     )
     print(model.estimation_steps[0].options)

@@ -211,8 +211,7 @@ def test_find_transit_compartments(testdata):
 def test_add_before_odes(testdata):
     model = Model(testdata / 'nonmem' / 'minimal.mod')
     model.statements.add_before_odes(Assignment('CL', sympy.Integer(1)))
-    model.update_source()
-    assert str(model).split('\n')[6] == 'CL = 1'
+    assert model.model_code.split('\n')[6] == 'CL = 1'
 
 
 def test_before_ode(pheno_path):

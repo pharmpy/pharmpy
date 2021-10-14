@@ -157,15 +157,9 @@ def test_add_parameters(pheno_path, param_new, init_expected, buf_new):
 
     pset.append(param_new)
     model.parameters = pset
-    model.update_source()
 
     assert len(pset) == 7
     assert model.parameters[param_new.name].init == init_expected
-
-    parser = NMTranParser()
-    stream = parser.parse(str(model))
-
-    assert str(model.control_stream) == str(stream)
 
     rec_ref = (
         f'$THETA (0,0.00469307) ; PTVCL\n'
@@ -174,6 +168,7 @@ def test_add_parameters(pheno_path, param_new, init_expected, buf_new):
         f'{buf_new}\n'
     )
 
+    model.update_source()
     rec_mod = ''
     for rec in model.control_stream.get_records('THETA'):
         rec_mod += str(rec)
@@ -224,7 +219,7 @@ def test_add_statements(pheno_path, statement_new, buf_new):
     assert len(model.statements) == 16
 
     parser = NMTranParser()
-    stream = parser.parse(str(model))
+    stream = parser.parse(model.model_code)
 
     assert str(model.control_stream) == str(stream)
 
@@ -401,7 +396,7 @@ def test_update_individual_estimates(datadir):
         model.update_source()
         with open('run2_input.phi', 'r') as fp, open('run1.phi') as op:
             assert fp.read() == op.read()
-        assert str(model).endswith(
+        assert model.model_code.endswith(
             """$ESTIMATION METHOD=1 INTERACTION MCETA=1
 $COVARIANCE UNCONDITIONAL
 $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
@@ -460,7 +455,7 @@ def test_remove_eta(pheno_path):
     eta1 = rvs['ETA(1)']
     del rvs[eta1]
     model.update_source()
-    assert str(model).split('\n')[12] == 'V = TVV*EXP(ETA(1))'
+    assert model.model_code.split('\n')[12] == 'V = TVV*EXP(ETA(1))'
 
 
 def test_symbol_names_in_comment(pheno_path):
@@ -617,13 +612,13 @@ def test_abbr_write(pheno_path):
         add_iiv(model, 'S1', 'add')
         model.update_source()
 
-        assert 'ETA(S1)' in str(model)
+        assert 'ETA(S1)' in model.model_code
         assert 'ETA_S1' in [rv.name for rv in model.random_variables]
         assert S('ETA_S1') in model.statements.free_symbols
 
         model.update_source()
 
-        assert 'ETA(S1)' in str(model)
+        assert 'ETA(S1)' in model.model_code
         assert 'ETA_S1' in [rv.name for rv in model.random_variables]
         assert S('ETA_S1') in model.statements.free_symbols
 
@@ -632,7 +627,7 @@ def test_abbr_write(pheno_path):
 
         with pytest.warns(UserWarning, match='Not valid format of name new_name'):
             model.update_source()
-            assert 'ETA(3)' in str(model)
+            assert 'ETA(3)' in model.model_code
 
 
 def test_abbr_read_write(pheno_path):
@@ -641,11 +636,9 @@ def test_abbr_read_write(pheno_path):
     ):
         model_write = Model(pheno_path)
         add_iiv(model_write, 'S1', 'add')
-        model_write.update_source()
-        model_read = Model(StringIO(str(model_write)))
+        model_read = Model(StringIO(model_write.model_code))
         model_read.source.path = pheno_path
-
-        assert str(model_read) == str(model_write)
+        assert model_read.model_code == model_write.model_code
         assert model_read.statements == model_write.statements
         assert not (
             model_read.random_variables - model_write.random_variables
@@ -660,10 +653,10 @@ def test_dv_symbol(pheno_path):
 def test_insert_unknown_record(pheno_path):
     model = Model(pheno_path)
     model.control_stream.insert_record('$TRIREME one')
-    assert str(model).split('\n')[-1] == '$TRIREME one'
+    assert model.model_code.split('\n')[-1] == '$TRIREME one'
 
     model.control_stream.insert_record('\n$OA two')
-    assert str(model).split('\n')[-1] == '$OA two'
+    assert model.model_code.split('\n')[-1] == '$OA two'
 
 
 def test_parse_illegal_record_name():
@@ -755,9 +748,8 @@ $ESTIMATION METHOD=1 MAXEVAL=9999 NONINFETA=1 MCETA=1
 def test_des(testdata, model_path, transformation):
     model_ref = Model(testdata / model_path)
     transformation(model_ref)
-    model_ref.update_source()
 
-    model_des = Model(StringIO(str(model_ref)))
+    model_des = Model(StringIO(model_ref.model_code))
     model_des.source.path = model_ref.source.path  # To be able to find dataset
 
     assert model_ref.statements.ode_system == model_des.statements.ode_system
@@ -864,7 +856,7 @@ $SIGMA 1
     model.estimation_steps[0].interaction = inter
     model.estimation_steps[0].cov = cov
     model.update_source()
-    assert str(model).split('\n')[-2] == rec_ref
+    assert model.model_code.split('\n')[-2] == rec_ref
 
 
 def test_add_estimation_step():
@@ -881,10 +873,10 @@ $EST METH=COND INTER
     model = Model(StringIO(code))
     add_estimation_step(model, 'IMP', True, {'saddle_reset': 1})
     model.update_source()
-    assert str(model).split('\n')[-2] == '$ESTIMATION METHOD=IMP INTER SADDLE_RESET=1'
+    assert model.model_code.split('\n')[-2] == '$ESTIMATION METHOD=IMP INTER SADDLE_RESET=1'
     add_estimation_step(model, 'SAEM', True, idx=0)
     model.update_source()
-    assert str(model).split('\n')[-4] == '$ESTIMATION METHOD=SAEM INTER'
+    assert model.model_code.split('\n')[-4] == '$ESTIMATION METHOD=SAEM INTER'
 
 
 def test_remove_estimation_step():
@@ -902,7 +894,7 @@ $EST METH=COND INTER
     remove_estimation_step(model, 0)
     assert not model.estimation_steps
     model.update_source()
-    assert str(model).split('\n')[-2] == '$SIGMA 1'
+    assert model.model_code.split('\n')[-2] == '$SIGMA 1'
 
 
 def test_update_source_comments():
@@ -978,4 +970,4 @@ $OMEGA 2 ; OM1
 $SIGMA 3 ; SI1
 $ESTIMATION METHOD=1 INTER
 """
-    assert str(model) == correct
+    assert model.model_code == correct
