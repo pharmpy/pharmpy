@@ -40,8 +40,11 @@ def fit(models):
     kept = []
     # Do not fit model if already fit
     for model in models:
-        db_model = read_model_from_database(model.name)
-        if db_model.modelfit_results is not None and db_model == model:
+        try:
+            db_model = read_model_from_database(model.name)
+        except KeyError:
+            db_model = None
+        if db_model and db_model.modelfit_results is not None and db_model == model:
             model.modelfit_results = db_model.modelfit_results
         else:
             kept.append(model)

@@ -52,7 +52,10 @@ class LocalDirectoryDatabase(ModelDatabase):
     def get_model(self, name):
         filename = name + self.file_extension
         path = self.path / filename
-        model = Model(path)
+        try:
+            model = Model(path)
+        except FileNotFoundError:
+            raise KeyError('Model cannot be found in database')
         model.read_modelfit_results(path)
         return model
 
