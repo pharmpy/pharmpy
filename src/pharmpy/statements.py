@@ -747,7 +747,7 @@ class Infusion:
 
 
 class ModelStatements(MutableSequence):
-    """A list of sympy statements describing the model"""
+    """A sequence of symbolic statements describing the model"""
 
     def __init__(self, statements=None):
         if isinstance(statements, ModelStatements):
@@ -774,7 +774,17 @@ class ModelStatements(MutableSequence):
 
     @property
     def free_symbols(self):
-        """Get a set of all free symbols"""
+        """Get a set of all free symbols
+
+        Examples
+        --------
+        >>> from pharmpy.modeling import load_example_model
+        >>> model = load_example_model("pheno")
+        >>> model.statements.free_symbols   # doctest: +SKIP
+        {AMT, APGR, A_CENTRAL, BTIME, CL, DV, EPS(1), ETA(1), ETA(2), F, IPRED, IRES, IWRES, S1,
+        TAD, THETA(1), THETA(2), THETA(3), TIME, TVCL, TVV, V, W, WGT, Y, t}
+
+        """
         symbols = set()
         for assignment in self:
             symbols |= assignment.free_symbols
@@ -783,8 +793,17 @@ class ModelStatements(MutableSequence):
     def subs(self, substitutions):
         """Substitute symbols in all statements.
 
-        substitutions - dictionary with old-new pair (can be type str or
-                        sympy symbol)
+        Parameters
+        ----------
+        substitutions : dict
+            Old-new pairs(can be type str or sympy symbol)
+
+        Examples
+        --------
+        >>> from pharmpy.modeling import load_example_model
+        >>> model = load_example_model("pheno")
+        >>> model.statements.subs({'WGT': 'WT'})
+
         """
         for assignment in self:
             assignment.subs(substitutions)
@@ -961,6 +980,7 @@ class ModelStatements(MutableSequence):
         self.insert(i, statement)
 
     def copy(self):
+        """Create a copy of the ModelStatements object"""
         return copy.deepcopy(self)
 
     def __eq__(self, other):
