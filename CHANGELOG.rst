@@ -1,8 +1,9 @@
-next version
-------------
+0.34.0 (2021-10-14)
+-------------------
 
 * Remove the need for update_source. Instead use model.model_code or modelling.generate_model_code(model)
 * str(model) can no longer be used to get the model_code
+* Fix crash in model database when using copies of models
 
 0.33.0 (2021-10-11)
 -------------------
