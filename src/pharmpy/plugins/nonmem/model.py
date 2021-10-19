@@ -1,10 +1,10 @@
-# The NONMEM Model class
+# The NONMEM Model clas
+
 import copy
 import re
 import shutil
 import warnings
 from io import StringIO
-from os import stat
 from pathlib import Path
 
 import pharmpy.data
@@ -20,6 +20,7 @@ from pharmpy.plugins.nonmem.table import NONMEMTableFile, PhiTable
 from pharmpy.random_variables import RandomVariables
 from pharmpy.statements import Assignment, CompartmentalSystem, ODESystem
 from pharmpy.symbols import symbol as S
+from pharmpy.workflows import NullModelDatabase, default_model_database
 
 from .advan import compartmental_model
 from .nmtran_parser import NMTranParser
@@ -38,7 +39,9 @@ def detect_model(src, *args, **kwargs):
     """Check if src represents a NONMEM control stream
     i.e. check if it is a file that contain $PRO
     """
-    is_control_stream = re.search(r'^\s*\$PRO', src.code, re.MULTILINE)
+    if not isinstance(src, str):
+        return None
+    is_control_stream = re.search(r'^\s*\$PRO', src, re.MULTILINE)
     if is_control_stream:
         return Model
     else:
@@ -76,14 +79,18 @@ def convert_model(model):
 
 
 class Model(pharmpy.model.Model):
-    def __init__(self, src, **kwargs):
+    def __init__(self, code, path=None, **kwargs):
         super().__init__()
         parser = NMTranParser()
-        self.source = src
-        if not self.source.filename_extension:
-            self.source.filename_extension = '.ctl'
-        self._name = self.source.path.stem
-        self.control_stream = parser.parse(src.code)
+        if path is None:
+            self._name = 'run1'
+            self.database = NullModelDatabase()
+            self.filename_extension = '.ctl'
+        else:
+            self._name = path.stem
+            self.database = default_model_database(path=path.parent)
+            self.filename_extension = path.suffix
+        self.control_stream = parser.parse(code)
         self._initial_individual_estimates_updated = False
         self._updated_etas_file = None
         self._dataset_updated = False
@@ -120,15 +127,8 @@ class Model(pharmpy.model.Model):
     @property
     def modelfit_results(self):
         if self._modelfit_results is None:
-            if self.source.path.is_file():
-                ext_path = self.source.path.with_suffix('.ext')
-                if ext_path.exists() and stat(ext_path).st_size > 0:
-                    self._modelfit_results = NONMEMChainedModelfitResults(ext_path, model=self)
-                    return self._modelfit_results
-            else:
-                return None
-        else:
-            return self._modelfit_results
+            self.read_modelfit_results()
+        return self._modelfit_results
 
     @modelfit_results.setter
     def modelfit_results(self, res):
@@ -187,7 +187,6 @@ class Model(pharmpy.model.Model):
         if self.observation_transformation != self._old_observation_transformation:
             if not nofiles:
                 update_ccontra(self, path, force)
-        self.source.code = str(self.control_stream)
 
     def _abbr_translation(self, rv_trans):
         abbr_pharmpy = self.control_stream.abbreviated.translate_to_pharmpy_names()
@@ -346,7 +345,9 @@ class Model(pharmpy.model.Model):
         if etas:
             path = Path(etas[0].path)
             if not path.is_absolute():
-                source_dir = self.source.path.parent
+                source_dir = self.database.retrieve_file(
+                    self.name, self.name + self.filename_extension
+                ).parent
                 path = source_dir / path
                 path = path.resolve()
             phi_tables = NONMEMTableFile(path)
@@ -384,7 +385,8 @@ class Model(pharmpy.model.Model):
             del self._initial_individual_estimates
         except AttributeError:
             pass
-        self._updated_etas_file = self.source.path.with_suffix('.phi')
+        path = self.database.retrieve_file(source.name, source.name + source.filename_extension)
+        self._updated_etas_file = path.parent / (source.name + '.phi')
 
     def _sort_eta_columns(self, df):
         return df.reindex(sorted(df.columns), axis=1)
@@ -746,7 +748,7 @@ class Model(pharmpy.model.Model):
         record = self.control_stream.get_records('DATA')[0]
         path = Path(record.filename)
         if not path.is_absolute():
-            path = self.source.path.parent / path  # Relative model source file.
+            path = self.database.retrieve_file(self.name, path)
         try:
             return path.resolve()
         except FileNotFoundError:
@@ -990,9 +992,12 @@ class Model(pharmpy.model.Model):
             d = {S(key): S(val) for key, val in d.items()}
         return d
 
-    def read_modelfit_results(self, path):
-        if self.source.path.is_file():
-            ext_path = (path / self.name).with_suffix('.ext')
-            if ext_path.exists() and stat(ext_path).st_size > 0:
-                self._modelfit_results = NONMEMChainedModelfitResults(ext_path, model=self)
-                return self._modelfit_results
+    def read_modelfit_results(self):
+        try:
+            ext_path = self.database.retrieve_file(self.name, self.name + '.ext')
+        except FileNotFoundError:
+            self._modelfit_results = None
+            return None
+        if ext_path is not None:
+            self._modelfit_results = NONMEMChainedModelfitResults(ext_path, model=self)
+            return self._modelfit_results

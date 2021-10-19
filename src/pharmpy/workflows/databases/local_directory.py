@@ -1,4 +1,5 @@
 import shutil
+from os import stat
 from pathlib import Path
 
 from pharmpy.model_factory import Model
@@ -36,7 +37,7 @@ class LocalDirectoryDatabase(ModelDatabase):
         path = Path(path)
         if not path.exists():
             path.mkdir(parents=True)
-        self.path = path
+        self.path = path.resolve()
         self.file_extension = file_extension
 
     def store_local_file(self, model, path):
@@ -49,6 +50,14 @@ class LocalDirectoryDatabase(ModelDatabase):
         for f in files:
             shutil.copy2(f, destination_path)
 
+    def retrieve_file(self, model_name, filename):
+        # Return path to file
+        path = self.path / filename
+        if path.is_file() and stat(path).st_size > 0:
+            return path
+        else:
+            raise FileNotFoundError(f"Cannot retrieve {filename} for {model_name}")
+
     def get_model(self, name):
         filename = name + self.file_extension
         path = self.path / filename
@@ -56,7 +65,8 @@ class LocalDirectoryDatabase(ModelDatabase):
             model = Model(path)
         except FileNotFoundError:
             raise KeyError('Model cannot be found in database')
-        model.read_modelfit_results(path)
+        model.database = self
+        model.read_modelfit_results()
         return model
 
 
@@ -74,8 +84,17 @@ class LocalModelDirectoryDatabase(LocalDirectoryDatabase):
         for f in files:
             shutil.copy2(f, destination_path)
 
+    def retrieve_file(self, model_name, filename):
+        # Return path to file
+        path = self.path / model_name / filename
+        if path.is_file() and stat(path).st_size > 0:
+            return path
+        else:
+            raise FileNotFoundError(f"Cannot retrieve {filename} for {model_name}")
+
     def get_model(self, name):
         filename = name + self.file_extension
         path = self.path / filename
         model = Model(path)
-        model.read_modelfit_results(self.path / name)
+        model.database = self
+        model.read_modelfit_results()

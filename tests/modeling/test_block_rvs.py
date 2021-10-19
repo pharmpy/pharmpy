@@ -36,7 +36,8 @@ def test_choose_param_init(pheno_path, testdata):
     assert init == 0.0118179
 
     model = Model(pheno_path)
-    model.source.path = testdata  # Path where there is no .ext-file
+    model.modelfit_results = None
+    model.name = 'run23'  # So that no results could be found
     init = _choose_param_init(model, rvs, params)
 
     assert init == 0.0031045
@@ -91,6 +92,5 @@ $ESTIMATION METHOD=1 INTERACTION
 '''
         )
     )
-    model.source.path = testdata / 'nonmem' / 'pheno.mod'
     create_joint_distribution(model, model.random_variables.names)
     assert 'IIV_CL_V_IIV_S1' in model.parameters.names

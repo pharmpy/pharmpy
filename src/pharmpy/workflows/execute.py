@@ -1,12 +1,11 @@
 from pathlib import Path
 
-from pharmpy.model import Model
 from pharmpy.utils import TemporaryDirectory
 
 from .databases import LocalDirectoryDatabase, LocalDirectoryToolDatabase
 from .dispatchers import LocalDispatcher
 
-default_model_database = LocalDirectoryDatabase()
+default_model_database = LocalDirectoryDatabase
 default_tool_database = LocalDirectoryToolDatabase
 default_dispatcher = LocalDispatcher()
 
@@ -22,15 +21,18 @@ def execute_workflow(workflow, dispatcher=None, database=None, path=None):
     for task in workflow.tasks:
         if task.has_input():
             new_inp = []
+            from pharmpy.model import Model
+
             for inp in task.task_input:
                 if isinstance(inp, Model):
                     new_model = inp.copy()
-                    new_model.database = database.model_database
+                    # FIXME: predictions should always be read
                     try:
                         new_model.modelfit_results.predictions
                     except (AttributeError, KeyError):
                         pass
                     new_model.dataset
+                    new_model.database = database.model_database
                     new_inp.append(new_model)
                     input_models.append(new_model)
                 else:
@@ -44,10 +46,10 @@ def execute_workflow(workflow, dispatcher=None, database=None, path=None):
             database.model_database.retrieve_local_files(model.name, temppath)
             for f in Path(temppath).glob('*'):
                 # Do not copy the model file.
-                if f.name != model.source.path.name:
-                    default_model_database.store_local_file(model, f)
+                if f.name != model.name + model.filename_extension:
+                    default_model_database().store_local_file(model, f)
         # Set modelfit_results for local model objects
-        new_model = default_model_database.get_model(model.name)
+        new_model = default_model_database().get_model(model.name)
         model.modelfit_results = new_model.modelfit_results
 
     return res

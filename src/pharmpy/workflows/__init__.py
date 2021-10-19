@@ -3,6 +3,7 @@ from .databases import (
     LocalDirectoryDatabase,
     LocalDirectoryToolDatabase,
     LocalModelDirectoryDatabase,
+    NullModelDatabase,
     NullToolDatabase,
 )
 from .dispatcher import ExecutionDispatcher
@@ -24,6 +25,7 @@ __all__ = [
     'LocalDirectoryDatabase',
     'LocalModelDirectoryDatabase',
     'LocalDirectoryToolDatabase',
+    'NullModelDatabase',
     'NullToolDatabase',
     'ExecutionDispatcher',
     'ModelDatabase',

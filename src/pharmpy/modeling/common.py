@@ -69,7 +69,7 @@ def read_model_from_database(name, database=None):
     if database is None:
         import pharmpy.workflows
 
-        database = pharmpy.workflows.default_model_database
+        database = pharmpy.workflows.default_model_database()
     model = database.get_model(name)
     return model
 

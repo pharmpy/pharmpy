@@ -493,9 +493,11 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
                 noheader = table_rec.has_option("NOHEADER")
                 notitle = table_rec.has_option("NOTITLE") or noheader
                 nolabel = table_rec.has_option("NOLABEL") or noheader
-                table_file = NONMEMTableFile(
-                    self.model.source.path.parent / table_rec.path, notitle=notitle, nolabel=nolabel
-                )
+                path = table_rec.path
+                if not path.is_absolute():
+                    model_path = self.model.database.retrieve_file(self.model.name, path)
+                    path = model_path.parent / path  # Relative model source file.
+                table_file = NONMEMTableFile(path, notitle=notitle, nolabel=nolabel)
                 table = table_file.tables[0]
                 df[columns_in_table] = table.data_frame[columns_in_table]
         return df
@@ -506,6 +508,7 @@ def simfit_results(model):
     nsubs = model.control_stream.get_records('SIMULATION')[0].nsubs
     results = []
     for i in range(1, nsubs + 1):
-        res = NONMEMChainedModelfitResults(model.source.path, model=model, subproblem=i)
+        model_path = model.database.retrieve_file(model.name, model.name + model.filename_extension)
+        res = NONMEMChainedModelfitResults(model_path, model=model, subproblem=i)
         results.append(res)
     return results

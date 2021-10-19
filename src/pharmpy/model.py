@@ -23,6 +23,7 @@ import sympy
 
 import pharmpy.symbols
 from pharmpy import Parameters, RandomVariables
+from pharmpy.workflows import default_model_database
 
 
 def canonicalize_data_transformation(model, value):
@@ -115,7 +116,7 @@ class Model:
         path = Path(path)
         if not path or path.is_dir():
             try:
-                filename = f'{self.name}{self.source.filename_extension}'
+                filename = f'{self.name}{self.filename_extension}'
             except AttributeError:
                 raise ValueError(
                     'Cannot name model file as no path argument was supplied and the'
@@ -131,7 +132,11 @@ class Model:
         if new_name:
             self.name = new_name
         self.update_source(path=path, force=force)
-        self.source.write(path, force=force)
+        if force and path.exists():
+            raise FileExistsError(f'Cannot overwrite model at {path} with "force" not set')
+        with open(path, 'w', encoding='latin-1') as fp:
+            fp.write(self.model_code)
+        self.database = default_model_database(path=path.parent)
         return path
 
     def update_inits(self):
@@ -149,7 +154,7 @@ class Model:
         return copy.deepcopy(self)
 
     def update_individual_estimates(self, source):
-        self.initial_individual_estimates = self.modelfit_results.individual_estimates
+        self.initial_individual_estimates = source.modelfit_results.individual_estimates
 
     def read_raw_dataset(self, parse_columns=tuple()):
         raise NotImplementedError()
@@ -167,7 +172,7 @@ class Model:
             while True:
                 n += 1
                 new_name = f'{stem}{n}'
-                new_path = (path / new_name).with_suffix(self.source.filename_extension)
+                new_path = (path / new_name).with_suffix(self.filename_extension)
                 if not new_path.exists():
                     break
             self.name = new_name

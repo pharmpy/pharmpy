@@ -14,9 +14,6 @@ def detect_model(src):
     Return a model object
     """
 
-    if not hasattr(src, 'obj'):
-        raise PluginError("Input to detect_model doesn't seem to be a source object")
-
     plugins = load_plugins()
     detected_classes = []
     for module in plugins:
@@ -26,9 +23,9 @@ def detect_model(src):
                 detected_classes.append(cls)
 
     if len(detected_classes) == 0:
-        raise PluginError(f"No support for model {src.obj}")
+        raise PluginError(f"No support for model {src}")
     if len(detected_classes) > 1:
-        raise PluginError(f"More than one model plugin supports model {src.obj}")
+        raise PluginError(f"More than one model plugin supports model {src}")
     return detected_classes[0]
 
 

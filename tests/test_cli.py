@@ -5,7 +5,7 @@ from contextlib import redirect_stdout
 
 import pytest
 
-from pharmpy import cli, source
+from pharmpy import cli
 from pharmpy.plugins.nonmem.records import etas_record
 
 
@@ -16,8 +16,8 @@ def test_model_print(datadir, capsys):
     assert 'ETA(1)' in captured.out
 
 
-# Skip pkgutil, reload source
-@pytest.mark.parametrize('fs', [[['pkgutil'], [source, etas_record]]], indirect=True)
+# Skip pkgutil
+@pytest.mark.parametrize('fs', [[['pkgutil'], [etas_record]]], indirect=True)
 @pytest.mark.parametrize('operation', ['*', '+'])
 def test_add_covariate_effect(datadir, fs, operation):
     fs.add_real_file(datadir / 'pheno_real.mod', target_path='run1.mod')
@@ -36,7 +36,7 @@ def test_add_covariate_effect(datadir, fs, operation):
     assert re.search('CLWGT', mod_cov)
 
 
-@pytest.mark.parametrize('fs', [[['pkgutil'], [source, etas_record]]], indirect=True)
+@pytest.mark.parametrize('fs', [[['pkgutil'], [etas_record]]], indirect=True)
 @pytest.mark.parametrize(
     'transformation, eta', [('boxcox', 'ETAB1'), ('tdist', 'ETAT1'), ('john_draper', 'ETAD1')]
 )
@@ -57,7 +57,7 @@ def test_eta_transformation(datadir, fs, transformation, eta):
     assert re.search(eta, mod_box)
 
 
-@pytest.mark.parametrize('fs', [[['pkgutil'], [source, etas_record]]], indirect=True)
+@pytest.mark.parametrize('fs', [[['pkgutil'], [etas_record]]], indirect=True)
 @pytest.mark.parametrize(
     'options', [['--operation', '+'], ['--operation', '*'], ['--eta_name', 'ETA(3)']]
 )
@@ -78,7 +78,7 @@ def test_add_iiv(datadir, fs, options):
     assert re.search(r'EXP\(ETA\(3\)\)', mod_cov)
 
 
-@pytest.mark.parametrize('fs', [[['pkgutil'], [source, etas_record]]], indirect=True)
+@pytest.mark.parametrize('fs', [[['pkgutil'], [etas_record]]], indirect=True)
 @pytest.mark.parametrize('options', [['--eta_names', 'ETA(3) ETA(4)']])
 def test_add_iov(datadir, fs, options):
     fs.add_real_file(datadir / 'pheno_real.mod', target_path='run1.mod')
@@ -97,7 +97,7 @@ def test_add_iov(datadir, fs, options):
     assert re.search(r'ETAI1', mod_cov)
 
 
-@pytest.mark.parametrize('fs', [[['pkgutil'], [source, cli]]], indirect=True)
+@pytest.mark.parametrize('fs', [[['pkgutil'], [cli]]], indirect=True)
 def test_results_linearize(datadir, fs):
     path = datadir / 'linearize' / 'linearize_dir1'
     fs.create_dir('linearize_dir1')
@@ -125,7 +125,7 @@ def test_results_linearize(datadir, fs):
     assert os.path.exists('linearize_dir1/results.json')
 
 
-@pytest.mark.parametrize('fs', [[['pkgutil'], [source, etas_record]]], indirect=True)
+@pytest.mark.parametrize('fs', [[['pkgutil'], [etas_record]]], indirect=True)
 @pytest.mark.parametrize('eta_args', [['--etas', 'ETA(1) ETA(2)'], []])
 def test_create_joint_distribution(datadir, fs, eta_args):
     fs.add_real_file(datadir / 'pheno_real.mod', target_path='run1.mod')
@@ -144,7 +144,7 @@ def test_create_joint_distribution(datadir, fs, eta_args):
     assert re.search(r'BLOCK\(2\)', mod_cov)
 
 
-@pytest.mark.parametrize('fs', [[['pkgutil'], [source, etas_record]]], indirect=True)
+@pytest.mark.parametrize('fs', [[['pkgutil'], [etas_record]]], indirect=True)
 @pytest.mark.parametrize(
     'epsilons_args', [['--eps', 'EPS(1)'], [], ['--same_eta', 'False'], ['--eta_names', 'ETA(3)']]
 )
@@ -165,7 +165,7 @@ def test_iiv_on_ruv(datadir, fs, epsilons_args):
     assert re.search(r'EXP\(ETA\(3\)\)', mod_cov)
 
 
-@pytest.mark.parametrize('fs', [[['pkgutil'], [source, etas_record]]], indirect=True)
+@pytest.mark.parametrize('fs', [[['pkgutil'], [etas_record]]], indirect=True)
 @pytest.mark.parametrize('to_remove', [['--to_remove', 'ETA(2)'], []])
 def test_remove_iiv(datadir, fs, to_remove):
     fs.add_real_file(datadir / 'pheno.mod', target_path='run1.mod')
@@ -184,7 +184,7 @@ def test_remove_iiv(datadir, fs, to_remove):
     assert not re.search(r'EXP\(ETA\(2\)\)', mod_cov)
 
 
-@pytest.mark.parametrize('fs', [[['pkgutil'], [source, etas_record]]], indirect=True)
+@pytest.mark.parametrize('fs', [[['pkgutil'], [etas_record]]], indirect=True)
 def test_remove_iov(datadir, fs):
     fs.add_real_file(datadir / 'qa/iov.mod', target_path='run1.mod')
     fs.add_real_file(datadir / 'pheno.dta', target_path='pheno.dta')
@@ -205,7 +205,7 @@ def test_remove_iov(datadir, fs):
     assert not re.search(r'ETA\(3\)', mod_cov)
 
 
-@pytest.mark.parametrize('fs', [[['pkgutil'], [source, etas_record]]], indirect=True)
+@pytest.mark.parametrize('fs', [[['pkgutil'], [etas_record]]], indirect=True)
 @pytest.mark.parametrize('epsilons_args', [['--eps', 'EPS(1)'], []])
 def test_power_on_ruv(datadir, fs, epsilons_args):
     fs.add_real_file(datadir / 'pheno_real.mod', target_path='run1.mod')
@@ -224,7 +224,7 @@ def test_power_on_ruv(datadir, fs, epsilons_args):
     assert re.search(r'\*\*', mod_cov)
 
 
-@pytest.mark.parametrize('fs', [[['pkgutil'], [source, etas_record]]], indirect=True)
+@pytest.mark.parametrize('fs', [[['pkgutil'], [etas_record]]], indirect=True)
 @pytest.mark.parametrize(
     'force_args, file_exists', [(['--force_update', 'True'], True), ([], False)]
 )
@@ -248,7 +248,7 @@ def test_update_inits(datadir, fs, force_args, file_exists):
     assert (os.path.isfile('run2_input.phi')) is file_exists
 
 
-@pytest.mark.parametrize('fs', [[['pkgutil'], [source, etas_record]]], indirect=True)
+@pytest.mark.parametrize('fs', [[['pkgutil'], [etas_record]]], indirect=True)
 def test_model_sample(datadir, fs):
     fs.add_real_file(datadir / 'pheno_real.mod', target_path='run1.mod')
     fs.add_real_file(datadir / 'pheno_real.ext', target_path='run1.ext')

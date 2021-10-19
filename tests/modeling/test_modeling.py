@@ -13,6 +13,7 @@ from pharmpy.modeling import (
     add_iiv,
     add_iov,
     create_joint_distribution,
+    load_example_model,
     remove_iiv,
     remove_iov,
     remove_lag_time,
@@ -100,7 +101,7 @@ $ESTIMATION METHOD=1 INTERACTION
 def test_set_michaelis_menten_elimination_from_k(testdata):
     code = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
-$INPUT ID TIME AMT WGT APGR DV
+$INPUT ID TIME AMT WGT APGR DV FA1 FA2
 $SUBROUTINE ADVAN1 TRANS1
 $PK
 K=THETA(1)*EXP(ETA(1))
@@ -112,11 +113,11 @@ $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION
 """
     model = Model(StringIO(code))
-    model.source.path = testdata / 'nonmem' / 'pheno.mod'  # To be able to find dataset
+    model.dataset = load_example_model("pheno").dataset
     set_michaelis_menten_elimination(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
-$INPUT ID TIME AMT WGT APGR DV
+$INPUT ID TIME AMT WGT APGR DV FA1 FA2
 $SUBROUTINE ADVAN6 TOL=3
 $MODEL COMPARTMENT=(CENTRAL DEFDOSE)
 $PK
@@ -139,7 +140,7 @@ $ESTIMATION METHOD=1 INTERACTION
 def test_combined_mm_fo_elimination(testdata):
     code = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
-$INPUT ID TIME AMT WGT APGR DV
+$INPUT ID TIME AMT WGT APGR DV FA1 FA2
 $SUBROUTINE ADVAN1 TRANS2
 $PK
 CL=THETA(1)*EXP(ETA(1))
@@ -155,11 +156,11 @@ $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION
 """
     model = Model(StringIO(code))
-    model.source.path = testdata / 'nonmem' / 'pheno.mod'  # To be able to find dataset
+    model.dataset = load_example_model("pheno").dataset
     set_mixed_mm_fo_elimination(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
-$INPUT ID TIME AMT WGT APGR DV
+$INPUT ID TIME AMT WGT APGR DV FA1 FA2
 $SUBROUTINE ADVAN6 TOL=3
 $MODEL COMPARTMENT=(CENTRAL DEFDOSE)
 $PK
@@ -187,7 +188,7 @@ $ESTIMATION METHOD=1 INTERACTION
 def test_combined_mm_fo_elimination_from_k(testdata):
     code = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
-$INPUT ID TIME AMT WGT APGR DV
+$INPUT ID TIME AMT WGT APGR DV FA1 FA2
 $SUBROUTINE ADVAN1 TRANS1
 $PK
 K=THETA(1)*EXP(ETA(1))
@@ -199,11 +200,11 @@ $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION
 """
     model = Model(StringIO(code))
-    model.source.path = testdata / 'nonmem' / 'pheno.mod'  # To be able to find dataset
+    model.dataset = load_example_model("pheno").dataset
     set_mixed_mm_fo_elimination(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
-$INPUT ID TIME AMT WGT APGR DV
+$INPUT ID TIME AMT WGT APGR DV FA1 FA2
 $SUBROUTINE ADVAN6 TOL=3
 $MODEL COMPARTMENT=(CENTRAL DEFDOSE)
 $PK
@@ -748,7 +749,7 @@ def test_add_covariate_effect_multiple(
 def test_add_depot(testdata):
     code = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
-$INPUT ID TIME AMT WGT APGR DV
+$INPUT ID TIME AMT WGT APGR DV FA1 FA2
 $SUBROUTINE ADVAN1 TRANS2
 
 $PK
@@ -768,11 +769,11 @@ $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION
 """
     model = Model(StringIO(code))
-    model.source.path = testdata / 'nonmem' / 'pheno.mod'  # To be able to find dataset
+    model.dataset = load_example_model("pheno").dataset
     set_first_order_absorption(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
-$INPUT ID TIME AMT WGT APGR DV
+$INPUT ID TIME AMT WGT APGR DV FA1 FA2
 $SUBROUTINE ADVAN2 TRANS2
 
 $PK

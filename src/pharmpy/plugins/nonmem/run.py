@@ -8,6 +8,7 @@ from pharmpy.utils import TemporaryDirectoryChanger
 
 
 def execute_model(model):
+    database = model.database
     model = convert_model(model)
     path = Path.cwd() / f'NONMEM_run_{model.name}-{uuid.uuid1()}'
     path.mkdir(parents=True, exist_ok=True)
@@ -24,26 +25,24 @@ def execute_model(model):
     basepath = Path(model.name)
     args = [
         nmfe_path(),
-        model.name + model.source.filename_extension,
+        model.name + model.filename_extension,
         str(basepath.with_suffix('.lst')),
     ]
     with TemporaryDirectoryChanger(path):
         subprocess.call(
             args, stdin=subprocess.DEVNULL, stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL
         )
-        model.database.store_local_file(
-            model, basepath.with_suffix(model.source.filename_extension)
-        )
-        model.database.store_local_file(model, basepath.with_suffix('.lst'))
-        model.database.store_local_file(model, basepath.with_suffix('.ext'))
-        model.database.store_local_file(model, basepath.with_suffix('.phi'))
-        model.database.store_local_file(model, basepath.with_suffix('.cov'))
-        model.database.store_local_file(model, basepath.with_suffix('.cor'))
-        model.database.store_local_file(model, basepath.with_suffix('.coi'))
+        database.store_local_file(model, basepath.with_suffix(model.filename_extension))
+        database.store_local_file(model, basepath.with_suffix('.lst'))
+        database.store_local_file(model, basepath.with_suffix('.ext'))
+        database.store_local_file(model, basepath.with_suffix('.phi'))
+        database.store_local_file(model, basepath.with_suffix('.cov'))
+        database.store_local_file(model, basepath.with_suffix('.cor'))
+        database.store_local_file(model, basepath.with_suffix('.coi'))
         for rec in model.control_stream.get_records('TABLE'):
-            model.database.store_local_file(model, rec.path)
+            database.store_local_file(model, rec.path)
         # Read in results for the server side
-        model.read_modelfit_results(path)
+        model.read_modelfit_results()
 
     return model
 

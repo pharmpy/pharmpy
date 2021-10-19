@@ -28,7 +28,7 @@ def S(x):
 
 def test_source(pheno_path):
     model = Model(pheno_path)
-    assert model.source.code.startswith('$PROBLEM PHENOBARB')
+    assert model.model_code.startswith('$PROBLEM PHENOBARB')
 
 
 def test_update_inits(pheno_path):
@@ -46,7 +46,8 @@ def test_empty_ext_file(testdata):
     model = Model(
         testdata / 'nonmem' / 'modelfit_results' / 'onePROB' / 'noESTwithSIM' / 'onlysim.mod'
     )
-    assert model.source.path.with_suffix('.ext').exists() is True
+    with pytest.raises(FileNotFoundError):
+        model.database.retrieve_file(model.name, model.name + '.ext')
     assert model.modelfit_results is None
 
 
@@ -391,12 +392,13 @@ def test_update_individual_estimates(datadir):
         fs.add_real_file(datadir / 'pheno_real.ext', target_path='run1.ext')
         fs.add_real_file(datadir / 'pheno.dta', target_path='pheno.dta')
         model = Model('run1.mod')
-        model.name = 'run2'
-        model.update_individual_estimates(model)
-        model.update_source()
+        model2 = model.copy()
+        model2.name = 'run2'
+        model2.update_individual_estimates(model)
+        model2.update_source()
         with open('run2_input.phi', 'r') as fp, open('run1.phi') as op:
             assert fp.read() == op.read()
-        assert model.model_code.endswith(
+        assert model2.model_code.endswith(
             """$ESTIMATION METHOD=1 INTERACTION MCETA=1
 $COVARIANCE UNCONDITIONAL
 $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
@@ -637,7 +639,6 @@ def test_abbr_read_write(pheno_path):
         model_write = Model(pheno_path)
         add_iiv(model_write, 'S1', 'add')
         model_read = Model(StringIO(model_write.model_code))
-        model_read.source.path = pheno_path
         assert model_read.model_code == model_write.model_code
         assert model_read.statements == model_write.statements
         assert not (
@@ -750,7 +751,6 @@ def test_des(testdata, model_path, transformation):
     transformation(model_ref)
 
     model_des = Model(StringIO(model_ref.model_code))
-    model_des.source.path = model_ref.source.path  # To be able to find dataset
 
     assert model_ref.statements.ode_system == model_des.statements.ode_system
 

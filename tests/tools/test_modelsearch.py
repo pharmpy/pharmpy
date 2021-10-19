@@ -83,6 +83,7 @@ def test_exhaustive(testdata):
     base = Model(testdata / 'nonmem' / 'pheno.mod')
 
     def do_nothing(model):
+        model[0].modelfit_results = base.modelfit_results
         return model
 
     trans = 'ABSORPTION(FO)'

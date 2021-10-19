@@ -7,6 +7,7 @@ from pharmpy.modeling import (
     has_additive_error_model,
     has_combined_error_model,
     has_proportional_error_model,
+    load_example_model,
     read_model_from_string,
     remove_error_model,
     set_additive_error_model,
@@ -102,7 +103,6 @@ $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION
 """
     model = Model(StringIO(code))
-    model.source.path = testdata / 'nonmem' / 'pheno.mod'  # To be able to find dataset
     remove_error_model(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
@@ -126,7 +126,7 @@ $ESTIMATION METHOD=1 INTERACTION
 def test_additive_error_without_f(testdata):
     code = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
-$INPUT ID TIME AMT WGT APGR DV
+$INPUT ID TIME AMT WGT APGR DV FA1 FA2
 $SUBROUTINE ADVAN1 TRANS2
 $PK
 CL=THETA(1)*EXP(ETA(1))
@@ -143,11 +143,11 @@ $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION
 """
     model = Model(StringIO(code))
-    model.source.path = testdata / 'nonmem' / 'pheno.mod'  # To be able to find dataset
+    model.dataset = load_example_model("pheno").dataset
     set_additive_error_model(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
-$INPUT ID TIME AMT WGT APGR DV
+$INPUT ID TIME AMT WGT APGR DV FA1 FA2
 $SUBROUTINE ADVAN1 TRANS2
 $PK
 CL=THETA(1)*EXP(ETA(1))
@@ -168,7 +168,6 @@ $ESTIMATION METHOD=1 INTERACTION
 
 def test_get_prop_init(testdata):
     model = Model(testdata / 'nonmem' / 'pheno.mod')
-    model.source.path = testdata / 'nonmem' / 'pheno.mod'  # To be able to find dataset
 
     init = _get_prop_init(model.dataset)
     assert init == 11.2225
@@ -227,7 +226,6 @@ $ESTIMATION METHOD=1 INTER MAXEVALS=9990 PRINT=2 POSTHOC
     assert not has_additive_error_model(model)
 
     model = Model(StringIO(code))
-    model.source.path = testdata / 'nonmem' / 'pheno.mod'  # To be able to find dataset
     assert not has_additive_error_model(model)
 
 
@@ -263,7 +261,6 @@ $ESTIMATION METHOD=1 INTER MAXEVALS=9990 PRINT=2 POSTHOC
     assert has_proportional_error_model(model)
 
     model = Model(StringIO(code))
-    model.source.path = testdata / 'nonmem' / 'pheno.mod'  # To be able to find dataset
     assert has_proportional_error_model(model)
 
 
@@ -299,7 +296,6 @@ $ESTIMATION METHOD=1 INTER MAXEVALS=9990 PRINT=2 POSTHOC
     assert not has_combined_error_model(model)
 
     model = Model(StringIO(code))
-    model.source.path = testdata / 'nonmem' / 'pheno.mod'  # To be able to find dataset
     assert not has_combined_error_model(model)
 
     code = """$PROBLEM base model
