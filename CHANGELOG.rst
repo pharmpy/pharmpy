@@ -1,3 +1,8 @@
+0.34.1 (2021-10-20)
+-------------------
+
+* Fix issues with retrieving results after model runs
+
 0.34.0 (2021-10-14)
 -------------------
 
