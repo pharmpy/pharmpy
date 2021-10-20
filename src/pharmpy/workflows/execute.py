@@ -17,6 +17,7 @@ def execute_workflow(workflow, dispatcher=None, database=None, path=None):
         database = default_tool_database(toolname=workflow.name, path=path)
 
     # For all input models set new database and read in results
+    original_input_models = []
     input_models = []
     for task in workflow.tasks:
         if task.has_input():
@@ -25,6 +26,7 @@ def execute_workflow(workflow, dispatcher=None, database=None, path=None):
 
             for inp in task.task_input:
                 if isinstance(inp, Model):
+                    original_input_models.append(inp)
                     new_model = inp.copy()
                     # FIXME: predictions should always be read
                     try:
@@ -41,15 +43,14 @@ def execute_workflow(workflow, dispatcher=None, database=None, path=None):
 
     res = dispatcher.run(workflow, database)
     # Transfer files from tool model database to default model database
-    for model in input_models:
+    for model in original_input_models:
         with TemporaryDirectory() as temppath:
             database.model_database.retrieve_local_files(model.name, temppath)
             for f in Path(temppath).glob('*'):
                 # Do not copy the model file.
                 if f.name != model.name + model.filename_extension:
-                    default_model_database().store_local_file(model, f)
+                    model.database.store_local_file(model, f)
         # Set modelfit_results for local model objects
-        new_model = default_model_database().get_model(model.name)
-        model.modelfit_results = new_model.modelfit_results
+        model.read_modelfit_results()
 
     return res

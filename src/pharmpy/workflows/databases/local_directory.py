@@ -94,7 +94,8 @@ class LocalModelDirectoryDatabase(LocalDirectoryDatabase):
 
     def get_model(self, name):
         filename = name + self.file_extension
-        path = self.path / filename
+        path = self.path / name / filename
         model = Model(path)
         model.database = self
         model.read_modelfit_results()
+        return model
