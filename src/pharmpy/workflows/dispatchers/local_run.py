@@ -2,8 +2,6 @@ import pharmpy.workflows.dispatchers
 
 
 def run(workflow):
-    from dask.distributed import Client
-    from dask.threaded import get
 
     if pharmpy.workflows.dispatchers.conf.dask_dispatcher:
         dask_dispatcher = pharmpy.workflows.dispatchers.conf.dask_dispatcher
@@ -11,8 +9,14 @@ def run(workflow):
         dask_dispatcher = 'distributed'
 
     if dask_dispatcher == 'threaded':
+        from dask.threaded import get
         res = get(workflow, 'results')
     else:
-        with Client(threads_per_worker=1, processes=False) as client:
-            res = client.get(workflow, 'results')
+        import dask
+        from dask.distributed import Client, LocalCluster
+        import tempfile
+        dask.config.set({'temporary_directory': tempfile.gettempdir()})
+        with LocalCluster(threads_per_worker=1, processes=True) as cluster:
+            with Client(cluster) as client:
+                res = client.get(workflow, 'results')
     return res
