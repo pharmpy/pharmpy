@@ -13,6 +13,6 @@ def run(workflow):
     if dask_dispatcher == 'threaded':
         res = get(workflow, 'results')
     else:
-        with Client(processes=False) as client:
+        with Client(threads_per_worker=1, processes=False) as client:
             res = client.get(workflow, 'results')
     return res
