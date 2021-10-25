@@ -10,13 +10,24 @@ def run(workflow):
 
     if dask_dispatcher == 'threaded':
         from dask.threaded import get
+
         res = get(workflow, 'results')
     else:
+        import tempfile
+
         import dask
         from dask.distributed import Client, LocalCluster
-        import tempfile
+
         dask.config.set({'temporary_directory': tempfile.gettempdir()})
-        with LocalCluster(threads_per_worker=1, processes=True) as cluster:
+        import os
+
+        if os.name == 'nt':
+            # Parallelization does not work in R on Windows
+            # always disable on Windows as workaround.
+            processes = False
+        else:
+            processes = True
+        with LocalCluster(threads_per_worker=1, processes=processes) as cluster:
             with Client(cluster) as client:
                 res = client.get(workflow, 'results')
     return res
