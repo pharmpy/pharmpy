@@ -1,3 +1,9 @@
+0.34.2 (2021-10-26)
+-------------------
+
+* Fix broken parallelization for tools (workflows)
+* Fix bug causing parsing of some NM-TRAN datasets to set a column index
+
 0.34.1 (2021-10-20)
 -------------------
 
