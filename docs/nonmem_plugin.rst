@@ -79,8 +79,7 @@ the NONMEM name for them would be `ETA(1)` and `OMEGA(1,1)` respectively. Now we
 
    remove_iiv(model, ['ETA_CL'])
 
-We still have to refer to the eta as `ETA_CL`, regardless of whether you have called
-:py:func:`pharmpy.modeling.update_source` or not. If you update the NONMEM code, `ETA_CL` will be replaced
+We still have to refer to the eta as `ETA_CL`. If you update the NONMEM code, `ETA_CL` will be replaced
 with `ETA(1)` in the code (this does however not affect the Pharmpy name).
 
 Writing a model
