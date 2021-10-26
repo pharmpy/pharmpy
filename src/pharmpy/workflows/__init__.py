@@ -14,6 +14,7 @@ from .execute import (
     default_tool_database,
     execute_workflow,
 )
+from .log import Log
 from .workflows import Task, Workflow
 
 __all__ = [
@@ -25,6 +26,7 @@ __all__ = [
     'LocalDirectoryDatabase',
     'LocalModelDirectoryDatabase',
     'LocalDirectoryToolDatabase',
+    'Log',
     'NullModelDatabase',
     'NullToolDatabase',
     'ExecutionDispatcher',
