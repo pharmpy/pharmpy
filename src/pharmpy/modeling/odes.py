@@ -882,6 +882,10 @@ def add_peripheral_compartment(model):
     output = odes.find_output()
     elimination_rate = odes.get_flow(central, output)
     cl, vc = elimination_rate.as_numer_denom()
+    if cl.is_Symbol and vc == 1:
+        # If K = CL / V
+        s = statements.find_assignment(cl.name)
+        cl, vc = s.expression.as_numer_denom()
 
     if n == 1:
         if vc == 1:
