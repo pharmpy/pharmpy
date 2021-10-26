@@ -26,9 +26,9 @@ def create_workflow(model=None):
     wf.add_task(task_base_model, predecessors=start_task)
 
     task_iiv = Task('create_iiv_on_ruv_model', _create_iiv_on_ruv_model)
-    wf.add_task(task_iiv, predecessors=start_task)
+    wf.add_task(task_iiv, predecessors=task_base_model)
     task_power = Task('create_power_model', _create_power_model)
-    wf.add_task(task_power, predecessors=start_task)
+    wf.add_task(task_power, predecessors=task_base_model)
 
     fit_wf = create_multiple_fit_workflow(n=3)
     wf.insert_workflow(fit_wf, predecessors=[task_base_model, task_iiv, task_power])
@@ -106,16 +106,15 @@ def _create_base_model(input_model):
 
 
 def _create_iiv_on_ruv_model(input_model):
-    base_model = _create_base_model(input_model)  # FIXME: could be done only once in the workflow
+    base_model = input_model
     model = base_model.copy()
-    #    model.database = base_model.database  # FIXME: Should be unnecessary
     set_iiv_on_ruv(model)
     model.name = 'iiv_on_ruv'
     return model
 
 
 def _create_power_model(input_model):
-    base_model = _create_base_model(input_model)  # FIXME: could be done only once in the workflow
+    base_model = input_model
     model = base_model.copy()
     set_power_on_ruv(model, ipred='IPRED')
     model.name = 'power'
