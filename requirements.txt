@@ -11,7 +11,7 @@ cloudpickle==2.0.0
 csscompressor==0.9.5
 dask==2021.10.0
 distributed==2021.10.0
-docutils==0.17.1
+docutils==0.18
 entrypoints==0.3
 fsspec==2021.10.1
 HeapDict==1.0.1
