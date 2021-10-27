@@ -4,72 +4,113 @@
 Pharmpy in R
 ============
 
-Using Pharmpy in R is similar to how it is used in Python, and all the examples for Python are analogous to how
-they work in R. Replace "." with "$" for the R equivalent. When a list (denoted [...] in Python) is used as input
-in e.g. transformations, the R equivalent is `c()`. For more information about type conversions from R to Python,
-see `Reticulate's documentation <https://rstudio.github.io/reticulate/index.html#type-conversions>`_.
+Pharmr is an R wrapper to Pharmpy. It provides an R interface to all functions found in
+the modeling-module (documented `here <https://pharmpy.github.io/latest/reference/pharmpy.modeling.html>`_).
+Each function is also available via the help-function (or `?`). The version number of Pharmr
+mirrors Pharmpy, so it is import to make sure they have the same version number (a warning
+will appear if they are different). Pharmr version 0.33.1 is on CRAN. However, since Pharmpy
+still is under development and different features constantly are being released, we still
+recommend using the development version on Github until Pharmpy/Pharmr version 1.0.0 is released.
 
-An R wrapper to Pharmpy is in development.
-
-.. warning::
-
-    When providing a one-element list as an input argument to e.g. transformations or configurations that do not
-    support single strings, use `list()` instead of `c()`. This is because Reticulate translates the string array
-    from the list element to separate strings (e.g. `c('ETA(1)')` will be interpreted as
-    `c('E', 'T', 'A', '(', '1', ')')`.
-
-If you want the documentation for a function, use the function `py_help()` from Reticulate.
-
-----------------
-Relevant imports
-----------------
-.. code-block:: r
-
-    >>> library(reticulate)
-    >>> # use_python("python3")  # Uncomment if needed
-    >>> pharmpy <- import("pharmpy")
-
-A way to write functions from e.g. the modeling module in a more clean way:
+Installation
+~~~~~~~~~~~~
+Pharmr uses the package `reticulate <https://rstudio.github.io/reticulate>`_ for calling Python from R. When installing Pharmr,
+reticulate will give a prompt to set up the reticulate environment. To use Python 3.9
+in your environment run the following code in R before installing Pharmr:
 
 .. code-block:: r
 
-    >>> add_covariate_effect <- modeling$add_covariate_effect
+    Sys.setenv(RETICULATE_MINICONDA_PYTHON_VERSION="3.9")
 
-----------------
-Basic operations
-----------------
-To load a model and access e.g. parameters
+Then install Pharmr and Pharmpy:
 
 .. code-block:: r
 
-    >>> model <- pharmpy$Model("run1.mod")
-    >>> model$modelfit_results$parameter_estimates
-      THETA(1)   THETA(2)   THETA(3) OMEGA(1,1) OMEGA(2,2) SIGMA(1,1)
-    0.00469555 0.98425800 0.15892000 0.02935080 0.02790600 0.01324100
-    >>> model$parameters
-           name     value  lower    upper    fix
-       THETA(1)  0.004693   0.00  1000000  False
-       THETA(2)  1.009160   0.00  1000000  False
-       THETA(3)  0.100000  -0.99  1000000  False
-     OMEGA(1,1)  0.030963   0.00       oo  False
-     OMEGA(2,2)  0.031128   0.00       oo  False
-     SIGMA(1,1)  0.013086   0.00       oo  False
-    >>> model$write("run2.mod")
+    remotes::install_github("pharmpy/pharmr", ref="main")
+    pharmr::install_pharmpy()
 
----------------
-Transformations
----------------
-It is also possible to perform different types of transformations, such as addition of covariate effects (see the
-user guide :ref:`Modeling <modeling>` for available transformations).
-
-Together with the `dplyr` package, you can create transformation pipelines (note that model is changed in place).
+Trouble shooting
+================
+When reticulate sets up Miniconda it will default to use Python 3.6 (which Pharmpy does not
+support). If you have any trouble installing Pharmpy or any of its dependencies, you can do
+the following to check the Python version in your reticulate environment:
 
 .. code-block:: r
 
-    >>> model <- pharmpy$Model("run1.mod") %>%
-    >>>     set_first_order_absorption() %>%
-    >>>     add_iiv("MAT", "exp") %>%
-    >>>     update_source() %>%
-    >>>     write_model("run2.mod")
+    library(reticulate)
+    reticulate::py_discover_config()
 
+Make sure the Pyrhon version is >= 3.7. If it is not, you can run the following in R:
 
+.. code-block:: r
+
+    conda_create('r-reticulate', python_version = '3.9')
+
+Restart the session and try installing Pharmpy again:
+
+.. code-block:: r
+
+    library(pharmr)
+    pharmr::install_pharmpy()
+
+Using Pharmr
+~~~~~~~~~~~~
+In Pharmr, you can pipe different Pharmpy functions together with the magrittr-package:
+
+.. code-block:: r
+
+    library(pharmr)
+    model <- load_example_model('pheno') %>%
+      add_parameter('MAT') %>%
+      fit()
+
+`fit() <https://pharmpy.github.io/latest/modelfit.html>`_ will call the appropriate software/package to run the model (e.g. a NONMEM model will
+be run using NONMEM, currently only this is supported). Most methods return model object
+references, allowing you to pipe more easily.
+
+.. note::
+
+    If you try to access data frames belonging to a Pharmpy object you need to reset the index.
+    All functions available in Pharmr do this internally, it is only when you have data frames
+    nested in objects (such as a model object) that you need to do this. An example:
+
+    .. code-block:: r
+
+        model <- load_example_model('pheno')
+        residuals <- reset_index(model$modelfit_results$residuals)
+
+Gotchas
+~~~~~~~
+The model object
+================
+In Pharmpy, all changes to a model object occur in place.
+
+.. code-block:: r
+
+    model_a <- model_b <- load_example_model(’pheno’)
+
+All changes to model_a will be also applied to model_b since they refer to the same object.
+In order to have to different models we recommend the following to have two different models:
+
+.. code-block:: r
+
+    model_a <- load_example_model(’pheno’)
+    model_b <- copy_model(model_a, name=’pheno2’)
+
+List indices
+============
+One difference between Python and R is that in Python, list indices start at 0 while in R
+it starts at 1. Since Pharmpy is developed in R, in functions where you have arguments
+referring to indices, you need to use the Python way. For example:
+
+.. code-block:: r
+
+    set_estimation_step(model, method, interaction = TRUE, options = NULL, idx = 0)
+
+Note that normal R data structures such as vectors, lists and data frames are still indexed
+the same way as usual:
+
+.. code-block:: r
+
+    etas <- model$random_variables
+    etas[1] # access first element
