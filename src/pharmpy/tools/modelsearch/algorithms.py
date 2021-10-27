@@ -112,11 +112,8 @@ def exhaustive_stepwise(mfl):
                 task_function = Task(feat, func)
                 wf_search.add_task(task_function, predecessors=task_update_inits)
 
-                task_update_source = Task('update_source', update_source)
-                wf_search.add_task(task_update_source, predecessors=task_function)
-
                 wf_fit = create_single_fit_workflow()
-                wf_search.insert_workflow(wf_fit, predecessors=task_update_source)
+                wf_search.insert_workflow(wf_fit, predecessors=task_function)
 
                 model_tasks += wf_fit.output_tasks
                 model_features[model_name] = tuple(list(trans_previous.keys()) + [feat])
@@ -168,8 +165,3 @@ def _is_allowed(feat_current, func_current, trans_previous, features):
 def copy(name, model):
     model_copy = copy_model(model, name)
     return model_copy
-
-
-def update_source(model):
-    model.update_source(nofiles=True)
-    return model
