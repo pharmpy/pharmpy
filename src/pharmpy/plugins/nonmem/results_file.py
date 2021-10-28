@@ -290,9 +290,9 @@ class NONMEMResultsFile:
             except UnicodeDecodeError:
                 decoded_chunk = chunk.decode('latin-1', errors='ignore')
 
-            lines = [line1.rstrip()]
+            lines = [line1]
             lines += decoded_chunk.split('\n')
-            lines[-1] = last_line.rstrip()  # Replace since lst-files always end with \n
+            lines[-1] = last_line  # Replace since lst-files always end with \n
 
         version_number = None
         starttime = NONMEMResultsFile.parse_runtime(lines[0], lines[1])
@@ -305,6 +305,7 @@ class NONMEMResultsFile:
 
         if NONMEMResultsFile.supported_version(version_number):
             for i, row in enumerate(lines):
+                row = row.rstrip()
                 m = tag.match(row)
                 if m:
                     if m.group(1) == 'TERM':
