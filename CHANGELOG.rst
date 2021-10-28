@@ -1,3 +1,9 @@
+0.34.3 (2021-10-28)
+-------------------
+
+* Let parametrization of periperal compartment rates be kept if volume parameter can be found in the expression for K.
+* Fix bug causing crashes when parsing some lst-files due to mixed encodings. 
+
 0.34.2 (2021-10-26)
 -------------------
 
