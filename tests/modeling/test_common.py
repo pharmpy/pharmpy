@@ -163,6 +163,10 @@ def test_generate_model_code(testdata):
             {'method': 'bayes', 'interaction': True},
             '$ESTIMATION METHOD=BAYES INTER MAXEVALS=9990 PRINT=2 POSTHOC',
         ),
+        (
+            {'method': 'fo', 'interaction': False, 'evaluation': True},
+            '$ESTIMATION METHOD=ZERO MAXEVAL=0 MAXEVALS=9990 PRINT=2 POSTHOC',
+        ),
     ],
 )
 def test_set_estimation_step(testdata, args, code_ref):
@@ -178,6 +182,12 @@ def test_add_estimation_step(testdata):
     assert len(model.estimation_steps) == 2
     assert generate_model_code(model).split('\n')[-2] == '$ESTIMATION METHOD=ZERO INTER'
 
+    model = Model(testdata / 'nonmem' / 'minimal.mod')
+    assert len(model.estimation_steps) == 1
+    add_estimation_step(model, 'fo', evaluation=True)
+    assert len(model.estimation_steps) == 2
+    assert generate_model_code(model).split('\n')[-2] == '$ESTIMATION METHOD=ZERO INTER MAXEVAL=0'
+
 
 def test_remove_estimation_step(testdata):
     model = Model(testdata / 'nonmem' / 'minimal.mod')
@@ -190,12 +200,11 @@ def test_remove_estimation_step(testdata):
 def test_append_estimation_step_options(testdata):
     model = Model(testdata / 'nonmem' / 'minimal.mod')
     assert len(model.estimation_steps) == 1
-    append_estimation_step_options(model, {'EONLY': 1}, 0)
+    append_estimation_step_options(model, {'SADDLE_RESET': 1}, 0)
     assert (
         model.model_code.split('\n')[-2]
-        == '$ESTIMATION METHOD=COND INTER MAXEVALS=9990 PRINT=2 POSTHOC EONLY=1'
+        == '$ESTIMATION METHOD=COND INTER MAXEVALS=9990 PRINT=2 POSTHOC SADDLE_RESET=1'
     )
-    print(model.estimation_steps[0].options)
 
 
 def test_load_example_model():

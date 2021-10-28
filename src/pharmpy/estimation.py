@@ -4,11 +4,12 @@ from collections import namedtuple
 
 
 class EstimationMethod:
-    def __init__(self, method, interaction=False, cov=False, options=None):
+    def __init__(self, method, interaction=False, cov=False, evaluation=False, options=None):
         method = self._canonicalize_and_check_method(method)
         self._method = method
         self.interaction = interaction
         self.cov = cov
+        self.evaluation = evaluation
         self.options = options
 
     def _canonicalize_and_check_method(self, method):
@@ -63,13 +64,14 @@ class EstimationMethod:
             self._method == other._method
             and self.interaction == other.interaction
             and self.cov == other.cov
+            and self.evaluation == other.evaluation
             and self.options == other.options
         )
 
     def __repr__(self):
         return (
             f'EstimationMethod("{self._method}", interaction={self.interaction}, cov={self.cov}, '
-            f'options={self.options})'
+            f'evaluation={self.evaluation}, options={self.options})'
         )
 
 

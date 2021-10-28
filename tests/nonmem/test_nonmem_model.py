@@ -8,12 +8,7 @@ from pharmpy import Model
 from pharmpy.config import ConfigurationContext
 from pharmpy.estimation import EstimationMethod
 from pharmpy.model import ModelSyntaxError
-from pharmpy.modeling import (
-    add_estimation_step,
-    add_iiv,
-    remove_estimation_step,
-    set_zero_order_elimination,
-)
+from pharmpy.modeling import add_iiv, set_zero_order_elimination
 from pharmpy.parameter import Parameter
 from pharmpy.plugins.nonmem import conf, convert_model
 from pharmpy.plugins.nonmem.nmtran_parser import NMTranParser
@@ -775,6 +770,14 @@ def test_des(testdata, model_path, transformation):
         ),
         ('$ESTIMATION METH=SAEM', [EstimationMethod('saem', interaction=False)]),
         ('$ESTIMATION METH=1 LAPLACE', [EstimationMethod('laplace', interaction=False)]),
+        (
+            '$ESTIMATION METH=0 MAXEVAL=0',
+            [EstimationMethod('fo', interaction=False, evaluation=True)],
+        ),
+        (
+            '$ESTIMATION METH=IMP EONLY=1',
+            [EstimationMethod('imp', interaction=False, evaluation=True)],
+        ),
     ],
 )
 def test_estimation_steps_getter(estcode, correct):
@@ -855,7 +858,6 @@ $SIGMA 1
     model.estimation_steps[0].method = method
     model.estimation_steps[0].interaction = inter
     model.estimation_steps[0].cov = cov
-    model.update_source()
     assert model.model_code.split('\n')[-2] == rec_ref
 
 
@@ -871,12 +873,18 @@ $SIGMA 1
 $EST METH=COND INTER
 '''
     model = Model(StringIO(code))
-    add_estimation_step(model, 'IMP', True, {'saddle_reset': 1})
-    model.update_source()
+    est_new = EstimationMethod('IMP', interaction=True, options={'saddle_reset': 1})
+    model.estimation_steps.append(est_new)
     assert model.model_code.split('\n')[-2] == '$ESTIMATION METHOD=IMP INTER SADDLE_RESET=1'
-    add_estimation_step(model, 'SAEM', True, idx=0)
-    model.update_source()
+    est_new = EstimationMethod('SAEM', interaction=True)
+    model.estimation_steps.insert(0, est_new)
     assert model.model_code.split('\n')[-4] == '$ESTIMATION METHOD=SAEM INTER'
+    est_new = EstimationMethod('FO', evaluation=True)
+    model.estimation_steps.append(est_new)
+    assert model.model_code.split('\n')[-2] == '$ESTIMATION METHOD=ZERO MAXEVAL=0'
+    est_new = EstimationMethod('IMP', evaluation=True)
+    model.estimation_steps.append(est_new)
+    assert model.model_code.split('\n')[-2] == '$ESTIMATION METHOD=IMP EONLY=1'
 
 
 def test_remove_estimation_step():
@@ -891,7 +899,7 @@ $SIGMA 1
 $EST METH=COND INTER
 '''
     model = Model(StringIO(code))
-    remove_estimation_step(model, 0)
+    del model.estimation_steps[0]
     assert not model.estimation_steps
     model.update_source()
     assert model.model_code.split('\n')[-2] == '$SIGMA 1'

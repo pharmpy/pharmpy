@@ -486,7 +486,7 @@ def _create_init_dict(parameter_names, values):
     return d
 
 
-def set_estimation_step(model, method, interaction=True, options=None, idx=0):
+def set_estimation_step(model, method, interaction=True, evaluation=False, options=None, idx=0):
     """Set estimation step
 
     Sets estimation step for a model. Methods currently supported are:
@@ -530,12 +530,13 @@ def set_estimation_step(model, method, interaction=True, options=None, idx=0):
     """
     model.estimation_steps[idx].method = method
     model.estimation_steps[idx].interaction = interaction
+    model.estimation_steps[idx].evaluation = evaluation
     if options:
         model.estimation_steps[idx].options = options
     return model
 
 
-def add_estimation_step(model, method, interaction=True, options=None, idx=None):
+def add_estimation_step(model, method, interaction=True, evaluation=False, options=None, idx=None):
     """Add estimation step
 
     Adds estimation step for a model in a given index. Methods currently supported are:
@@ -579,7 +580,7 @@ def add_estimation_step(model, method, interaction=True, options=None, idx=None)
     append_estimation_step_options
 
     """
-    meth = EstimationMethod(method, interaction=interaction, options=options)
+    meth = EstimationMethod(method, interaction=interaction, evaluation=evaluation, options=options)
     if isinstance(idx, int):
         model.estimation_steps.insert(idx, meth)
     else:

@@ -715,23 +715,41 @@ class Model(pharmpy.model.Model):
                     raise ModelSyntaxError(
                         f'Non-recognized estimation method in: {str(record.root)}'
                     )
+            protected_names = ['METHOD', 'METH', 'INTERACTION', 'INTER', name.upper()]
             if record.has_option('INTERACTION') or record.has_option('INTER'):
                 interaction = True
             else:
                 interaction = False
+            evaluation = False
+            if name.upper() == 'FO' or name.upper() == 'FOCE':
+                eval_opt = None
+                # FIXME: see if this can be written more general to avoid repetition
+                if record.get_option('MAXEVAL'):
+                    eval_opt = record.get_option('MAXEVAL')
+                elif record.get_option('MAXEVALS'):
+                    eval_opt = record.get_option('MAXEVALS')
+                if eval_opt is not None and int(eval_opt) == 0:
+                    evaluation = True
+                    protected_names += ['MAXEVAL', 'MAXEVALS']
+            else:
+                eval_opt = record.get_option('EONLY')
+                if eval_opt is not None and int(eval_opt) == 1:
+                    evaluation = True
+                    protected_names += ['EONLY']
             if covrec:
                 cov = True
             else:
                 cov = False
 
-            options_stored = ['METHOD', 'METH', 'INTERACTION', 'INTER', name.upper()]
             options_left = [
-                option for option in record.all_options if option.key not in options_stored
+                option for option in record.all_options if option.key not in protected_names
             ]
             if not options_left:
                 options_left = None
 
-            meth = EstimationMethod(name, interaction=interaction, cov=cov, options=options_left)
+            meth = EstimationMethod(
+                name, interaction=interaction, cov=cov, evaluation=evaluation, options=options_left
+            )
             steps.append(meth)
         self._estimation_steps = steps
         self._old_estimation_steps = copy.deepcopy(steps)

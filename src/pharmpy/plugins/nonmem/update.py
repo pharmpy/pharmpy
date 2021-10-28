@@ -886,6 +886,11 @@ def update_estimation(model):
                 inter = ''
             method_code = f'METHOD={method}{inter}'
             est_code = f'$ESTIMATION {method_code}'
+            if est.evaluation:
+                if est.method == 'FO' or est.method == 'FOCE':
+                    est_code += ' MAXEVAL=0'
+                else:
+                    est_code += ' EONLY=1'
             if est.options:
                 options_code = ' '.join(
                     [f'{key}={value}'.upper() if value else f'{key}' for key, value in est.options]
