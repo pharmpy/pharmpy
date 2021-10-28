@@ -267,68 +267,92 @@ class NONMEMResultsFile:
         found_TERM = False
         found_TERE = False
         found_runtime = False
-        found_endtime = False
+        endtime_index = None
 
-        with open(path, encoding='utf-8') as file:
-            version_number = None
-            first_row = True
-            for row in file:
-                if first_row:
-                    starttime = NONMEMResultsFile.parse_runtime(row, next(file))
-                    first_row = False
-                m = nmversion.match(row)
+        with open(path, 'rb') as fp:
+            binary = fp.readlines()
+            # Since lst-files sometimes can have mixed encodings:
+            # Allow for separate encodings of date strings and the rest of the content
+            # Always try utf-8 first and fallback to latin-1 separately for each section
+            try:
+                line1 = binary[0].decode('utf-8')
+            except UnicodeDecodeError:
+                line1 = binary[0].decode('latin-1', errors='ignore')
+
+            try:
+                last_line = binary[-1].decode('utf-8')
+            except UnicodeDecodeError:
+                last_line = binary[-1].decode('latin-1', errors='ignore')
+
+            chunk = b''.join(binary[1:-1])
+            try:
+                decoded_chunk = chunk.decode('utf-8')
+            except UnicodeDecodeError:
+                decoded_chunk = chunk.decode('latin-1', errors='ignore')
+
+            lines = [line1.rstrip()]
+            lines += decoded_chunk.split('\n')
+            lines[-1] = last_line.rstrip()  # Replace since lst-files always end with \n
+
+        version_number = None
+        starttime = NONMEMResultsFile.parse_runtime(lines[0], lines[1])
+        for row in lines:
+            m = nmversion.match(row)
+            if m:
+                version_number = NONMEMResultsFile.cleanup_version(m.group(1))
+                yield ('nonmem_version', version_number)
+                break  # we will stay at current file position
+
+        if NONMEMResultsFile.supported_version(version_number):
+            for i, row in enumerate(lines):
+                m = tag.match(row)
                 if m:
-                    version_number = NONMEMResultsFile.cleanup_version(m.group(1))
-                    yield ('nonmem_version', version_number)
-                    break  # we will stay at current file position
-            if NONMEMResultsFile.supported_version(version_number):
-                for i, row in enumerate(file):
-                    m = tag.match(row)
-                    if m:
-                        if m.group(1) == 'TERM':
-                            if found_TERM:
-                                raise NotImplementedError('Two TERM tags without TERE in between')
-                            found_TERM = True
-                            TERM = list()
-                        elif m.group(1) == 'TERE':
-                            if not found_TERM:
-                                raise NotImplementedError('TERE tag without TERM tag')
-                            found_TERE = True
-                            yield ('TERM', NONMEMResultsFile.parse_termination(TERM))
-                            found_TERM = False
-                            TERM = list()
-                        elif found_TERE:
-                            raise NotImplementedError('TERE tag without ^1 or ^0 before next tag')
-                        else:
-                            v = cleanup.sub('', m.group(2))
-                            yield (m.group(1), v.strip())
+                    if m.group(1) == 'TERM':
+                        if found_TERM:
+                            raise NotImplementedError('Two TERM tags without TERE in between')
+                        found_TERM = True
+                        TERM = list()
+                    elif m.group(1) == 'TERE':
+                        if not found_TERM:
+                            raise NotImplementedError('TERE tag without TERM tag')
+                        found_TERE = True
+                        yield ('TERM', NONMEMResultsFile.parse_termination(TERM))
+                        found_TERM = False
+                        TERM = list()
                     elif found_TERE:
-                        if end_TERE.match(row):
-                            yield ('TERE', NONMEMResultsFile.parse_covariance(TERE))
-                            found_TERE = False
-                            TERE = list()
-                        else:
-                            TERE.append(row)
-                    elif found_TERM:
-                        TERM.append(row)
-                    if row.strip() == 'Stop Time:':
-                        found_endtime = True
-                        continue
-                    if found_endtime:
-                        try:
-                            row_next = next(file)
-                        except StopIteration:
-                            row_next = None
-                        endtime = NONMEMResultsFile.parse_runtime(row, row_next)
-                        if starttime and endtime:
-                            runtime = (endtime - starttime).total_seconds()
-                            found_runtime = True
-                if found_TERM:
-                    yield ('TERM', NONMEMResultsFile.parse_termination(TERM))
-                if found_TERE:
-                    yield ('TERE', NONMEMResultsFile.parse_covariance(TERE))
-                if found_runtime:
-                    yield ('runtime', runtime)
+                        raise NotImplementedError('TERE tag without ^1 or ^0 before next tag')
+                    else:
+                        v = cleanup.sub('', m.group(2))
+                        yield (m.group(1), v.strip())
+                elif found_TERE:
+                    if end_TERE.match(row):
+                        yield ('TERE', NONMEMResultsFile.parse_covariance(TERE))
+                        found_TERE = False
+                        TERE = list()
+                    else:
+                        TERE.append(row)
+                elif found_TERM:
+                    TERM.append(row)
+                if row == 'Stop Time:':
+                    endtime_index = i + 1
+                    continue
+
+            if endtime_index is not None:
+                if endtime_index + 1 < len(lines):
+                    second_line = lines[endtime_index + 1]
+                else:
+                    second_line = None
+                endtime = NONMEMResultsFile.parse_runtime(lines[endtime_index], second_line)
+                if starttime and endtime:
+                    runtime = (endtime - starttime).total_seconds()
+                    found_runtime = True
+
+            if found_TERM:
+                yield ('TERM', NONMEMResultsFile.parse_termination(TERM))
+            if found_TERE:
+                yield ('TERE', NONMEMResultsFile.parse_covariance(TERE))
+            if found_runtime:
+                yield ('runtime', runtime)
 
     @staticmethod
     def table_blocks(path):
