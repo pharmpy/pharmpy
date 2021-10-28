@@ -805,8 +805,8 @@ class ModelStatements(MutableSequence):
         >>> model.statements.subs({'WGT': 'WT'})
 
         """
-        for assignment in self:
-            assignment.subs(substitutions)
+        for statement in self:
+            statement.subs(substitutions)
 
     def find_assignment(self, variable, is_symbol=True, last=True):
         """Returns full last statement or all assignments that contains the symbol or
