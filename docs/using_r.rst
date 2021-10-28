@@ -4,8 +4,8 @@
 Pharmpy in R
 ============
 
-Pharmr is an R wrapper to Pharmpy. It provides an R interface to all functions found in
-the modeling-module (documented `here <https://pharmpy.github.io/latest/reference/pharmpy.modeling.html>`_).
+`Pharmr <https://github.com/pharmpy/pharmr>`_ is an R wrapper to Pharmpy. It provides an R interface to all functions
+found in the modeling-module (documented `here <https://pharmpy.github.io/latest/reference/pharmpy.modeling.html>`_).
 Each function is also available via the help-function (or `?`). The version number of Pharmr
 mirrors Pharmpy, so it is import to make sure they have the same version number (a warning
 will appear if they are different). Pharmr version 0.33.1 is on CRAN. However, since Pharmpy
