@@ -169,8 +169,8 @@ def test_generate_model_code(testdata):
         ),
         (
             'fo',
-            {'interaction': False, 'evaluation': True},
-            '$ESTIMATION METHOD=ZERO MAXEVAL=0 MAXEVAL=9990 PRINT=2 POSTHOC',
+            {'interaction': False, 'evaluation': True, 'maximum_evaluations': None},
+            '$ESTIMATION METHOD=ZERO MAXEVAL=0 PRINT=2 POSTHOC',
         ),
     ],
 )

@@ -16,10 +16,12 @@ def test_estimation_method():
 
     assert a == EstimationMethod('fo', interaction=False, cov=True)
     assert (
-        repr(a)
-        == 'EstimationMethod("FO", interaction=False, cov=True, evaluation=False, maxeval=None, '
-        'tool_options=None)'
+        repr(a) == 'EstimationMethod("FO", interaction=False, cov=True, evaluation=False, '
+        'maximum_evaluations=None, laplace=False, tool_options=None)'
     )
+
+    with pytest.raises(ValueError):
+        EstimationMethod('fo', maximum_evaluations=0)
 
 
 def test_append_options():
@@ -30,3 +32,10 @@ def test_append_options():
 
     a.append_tool_options({'PRINT': 1})
     assert len(a.tool_options) == 2
+
+
+def test_copy(datadir):
+    a = EstimationMethod('foce', cov=True)
+    b = a.copy()
+    assert id(a) != id(b)
+    assert b.method == 'FOCE'

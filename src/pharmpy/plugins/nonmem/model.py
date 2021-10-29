@@ -704,10 +704,7 @@ class Model(pharmpy.model.Model):
             if value is None or value == '0' or value == 'ZERO':
                 name = 'fo'
             elif value == '1' or value == 'CONDITIONAL' or value == 'COND':
-                if record.has_option('LAPLACE'):
-                    name = 'laplace'
-                else:
-                    name = 'foce'
+                name = 'foce'
             else:
                 if value in list_supported_est():
                     name = value
@@ -718,12 +715,12 @@ class Model(pharmpy.model.Model):
 
             interaction = False
             evaluation = False
-            maxeval = None
+            maximum_evaluations = None
             cov = False
+            laplace = False
 
             if record.has_option('INTERACTION') or record.has_option('INTER'):
                 interaction = True
-
             maxeval_opt = (
                 record.get_option('MAXEVAL') if not None else record.get_option('MAXEVALS')
             )
@@ -731,23 +728,26 @@ class Model(pharmpy.model.Model):
                 if (name.upper() == 'FO' or name.upper() == 'FOCE') and int(maxeval_opt) == 0:
                     evaluation = True
                 else:
-                    maxeval = int(maxeval_opt)
+                    maximum_evaluations = int(maxeval_opt)
             else:
                 eval_opt = record.get_option('EONLY')
                 if eval_opt is not None and int(eval_opt) == 1:
                     evaluation = True
             if covrec:
                 cov = True
-
+            if record.has_option('LAPLACIAN') or record.has_option('LAPLACE'):
+                laplace = True
             protected_names = [
                 name.upper(),
-                'METHOD',
-                'METH',
+                'EONLY',
                 'INTERACTION',
                 'INTER',
+                'LAPLACE',
+                'LAPLACIAN',
                 'MAXEVAL',
                 'MAXEVALS',
-                'EONLY',
+                'METHOD',
+                'METH',
             ]
 
             tool_options = {
@@ -763,7 +763,8 @@ class Model(pharmpy.model.Model):
                 interaction=interaction,
                 cov=cov,
                 evaluation=evaluation,
-                maxeval=maxeval,
+                maximum_evaluations=maximum_evaluations,
+                laplace=laplace,
                 tool_options=tool_options,
             )
             steps.append(meth)

@@ -871,29 +871,42 @@ def update_estimation(model):
     new_records = []
     for op, est in delta:
         if op == '+':
+            est_code = '$ESTIMATION'
+            protected_attributes = []
             if est.method == 'FO':
                 method = 'ZERO'
             elif est.method == 'FOCE':
                 method = 'COND'
             else:
-                if est.method == 'LAPLACE':
-                    method = f'1 {est.method}'
-                else:
-                    method = est.method
+                method = est.method
+            est_code += f' METHOD={method}'
+            if est.laplace:
+                est_code += ' LAPLACE'
+                protected_attributes += ['LAPLACE']
             if est.interaction:
-                inter = ' INTER'
-            else:
-                inter = ''
-            method_code = f'METHOD={method}{inter}'
-            est_code = f'$ESTIMATION {method_code}'
+                est_code += ' INTER'
+                protected_attributes += ['INTERACTION', 'INTER']
             if est.evaluation:
                 if est.method == 'FO' or est.method == 'FOCE':
                     est_code += ' MAXEVAL=0'
+                    protected_attributes += ['MAXEVALS', 'MAXEVAL']
                 else:
                     est_code += ' EONLY=1'
-            if est.maxeval:
-                est_code += f' MAXEVAL={est.maxeval}'
+                    protected_attributes += ['EONLY']
+            if est.maximum_evaluations is not None:
+                est_code += f' MAXEVAL={est.maximum_evaluations}'
+                if set(protected_attributes).intersection({'MAXEVALS', 'MAXEVAL'}):
+                    raise ValueError('MAXEVAL already set by evaluation=True')
+                protected_attributes += ['MAXEVALS', 'MAXEVAL']
             if est.tool_options:
+                option_names = {key for key in est.tool_options.keys()}
+                overlapping_attributes = set(protected_attributes).intersection(option_names)
+                if overlapping_attributes:
+                    overlapping_attributes_str = ', '.join(list(overlapping_attributes))
+                    raise ValueError(
+                        f'{overlapping_attributes_str} already set as attribute in '
+                        f'estimation method object'
+                    )
                 options_code = ' '.join(
                     [
                         f'{key}={value}'.upper() if value else f'{key}'

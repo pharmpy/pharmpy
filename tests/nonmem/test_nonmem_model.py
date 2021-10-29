@@ -769,7 +769,7 @@ def test_des(testdata, model_path, transformation):
             ],
         ),
         ('$ESTIMATION METH=SAEM', [EstimationMethod('saem', interaction=False)]),
-        ('$ESTIMATION METH=1 LAPLACE', [EstimationMethod('laplace', interaction=False)]),
+        ('$ESTIMATION METH=1 LAPLACE', [EstimationMethod('foce', interaction=False, laplace=True)]),
         (
             '$ESTIMATION METH=0 MAXEVAL=0',
             [EstimationMethod('fo', interaction=False, evaluation=True)],
@@ -778,7 +778,10 @@ def test_des(testdata, model_path, transformation):
             '$ESTIMATION METH=IMP EONLY=1',
             [EstimationMethod('imp', interaction=False, evaluation=True)],
         ),
-        ('$ESTIMATION METH=COND MAXEVAL=9999', [EstimationMethod('foce', maxeval=9999)]),
+        (
+            '$ESTIMATION METH=COND MAXEVAL=9999',
+            [EstimationMethod('foce', maximum_evaluations=9999)],
+        ),
     ],
 )
 def test_estimation_steps_getter(estcode, correct):
@@ -813,29 +816,25 @@ $ESTIMATION METHOD=1 SADDLE_RESET=1
 
 
 @pytest.mark.parametrize(
-    'estcode,method,inter,cov,rec_ref',
+    'estcode,kwargs,rec_ref',
     [
-        ('$EST METH=COND INTER', 'fo', True, False, '$ESTIMATION METHOD=ZERO INTER'),
-        ('$EST METH=COND INTER', 'fo', True, True, '$COVARIANCE'),
+        ('$EST METH=COND INTER', {'method': 'fo'}, '$ESTIMATION METHOD=ZERO INTER'),
+        ('$EST METH=COND INTER', {'interaction': False}, '$ESTIMATION METHOD=COND'),
+        ('$EST METH=COND INTER', {'cov': True}, '$COVARIANCE'),
         (
             '$EST METH=COND INTER MAXEVAL=99999',
-            'fo',
-            True,
-            False,
+            {'method': 'fo'},
             '$ESTIMATION METHOD=ZERO INTER MAXEVAL=99999',
         ),
         (
             '$EST METH=COND INTER POSTHOC',
-            'fo',
-            True,
-            False,
+            {'method': 'fo'},
             '$ESTIMATION METHOD=ZERO INTER POSTHOC',
         ),
-        ('$EST METH=COND INTER', 'saem', True, False, '$ESTIMATION METHOD=SAEM INTER'),
-        ('$EST METH=COND INTER', 'laplace', False, False, '$ESTIMATION METHOD=1 LAPLACE'),
+        ('$EST METH=COND INTER', {'laplace': True}, '$ESTIMATION METHOD=COND LAPLACE INTER'),
     ],
 )
-def test_estimation_steps_setter(estcode, method, inter, cov, rec_ref):
+def test_estimation_steps_setter(estcode, kwargs, rec_ref):
     code = '''$PROBLEM base model
 $INPUT ID DV TIME
 $DATA file.csv IGNORE=@
@@ -847,13 +846,27 @@ $SIGMA 1
 '''
     code += estcode
     model = Model(StringIO(code))
-    model.estimation_steps[0].method = method
-    model.estimation_steps[0].interaction = inter
-    model.estimation_steps[0].cov = cov
+    for key, value in kwargs.items():
+        setattr(model.estimation_steps[0], key, value)
     assert model.model_code.split('\n')[-2] == rec_ref
 
 
-def test_set_estimation_steps_option_clash():
+@pytest.mark.parametrize(
+    'estcode,kwargs,error_msg',
+    [
+        (
+            '$EST METH=COND MAXEVAL=0',
+            {'tool_options': {'MAXEVAL': 999}},
+            'MAXEVAL already set as attribute in estimation method object',
+        ),
+        (
+            '$EST METH=COND INTER',
+            {'tool_options': {'INTERACTION': None}},
+            'INTERACTION already set as attribute in estimation method object',
+        ),
+    ],
+)
+def test_set_estimation_steps_option_clash(estcode, kwargs, error_msg):
     code = '''$PROBLEM base model
 $INPUT ID DV TIME
 $DATA file.csv IGNORE=@
@@ -862,11 +875,16 @@ Y = THETA(1) + ETA(1) + ERR(1)
 $THETA 0.1
 $OMEGA 0.01
 $SIGMA 1
-$EST METH=COND INTER
 '''
+    code += estcode
     model = Model(StringIO(code))
-    est_new = EstimationMethod('IMP', evaluation=True, tool_options={'MAXEVAL': 999})
-    model.estimation_steps.append(est_new)
+
+    for key, value in kwargs.items():
+        setattr(model.estimation_steps[0], key, value)
+
+    with pytest.raises(ValueError) as excinfo:
+        model.update_source(nofiles=True)
+    assert error_msg == str(excinfo.value)
 
 
 def test_add_estimation_step():
