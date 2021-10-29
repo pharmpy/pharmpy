@@ -19,6 +19,7 @@ from pharmpy.statements import (
     ODESystem,
 )
 from pharmpy.symbols import symbol
+from pharmpy.plugins.nonmem.records import code_record
 
 from .records.factory import create_record
 
@@ -862,8 +863,6 @@ def update_estimation(model):
         old = []
     if old == new:
         return
-    # FIXME: Late import to satisfy python 3.6
-    import pharmpy.plugins.nonmem.records.code_record as code_record
 
     delta = code_record.diff(old, new)
     old_records = model.control_stream.get_records('ESTIMATION')
