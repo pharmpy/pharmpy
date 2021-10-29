@@ -8,6 +8,7 @@ import numpy as np
 import sympy
 
 from pharmpy import data
+from pharmpy.plugins.nonmem.records import code_record
 from pharmpy.random_variables import RandomVariables
 from pharmpy.statements import (
     Assignment,
@@ -19,7 +20,6 @@ from pharmpy.statements import (
     ODESystem,
 )
 from pharmpy.symbols import symbol
-from pharmpy.plugins.nonmem.records import code_record
 
 from .records.factory import create_record
 
