@@ -498,13 +498,10 @@ def set_estimation_step(model, method, idx=0, **kwargs):
         Pharmpy model
     method : str
         estimation method to change to
-    interaction : bool
-        whether to use interaction or not, default is true
-    options : dict
-        any additional options. Note that this replaces old options (see
-            append_estimation_step_options to keep old options)
     idx : int
         index of estimation step, default is 0 (first estimation step)
+    kwargs
+        Arguments to pass to EstimationMethod (such as interaction, evaluation)
 
     Returns
     -------
@@ -515,11 +512,11 @@ def set_estimation_step(model, method, idx=0, **kwargs):
     --------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> opts = {'NITER': 1000, 'ISAMPLE': 100, 'EONLY': 1}
-    >>> set_estimation_step(model, "IMP", options=opts)   # doctest: +ELLIPSIS
+    >>> opts = {'NITER': 1000, 'ISAMPLE': 100}
+    >>> set_estimation_step(model, "IMP", evaluation=True, tool_options=opts)   # doctest: +ELLIPSIS
     <...>
     >>> model.estimation_steps[0]   # doctest: +ELLIPSIS
-    EstimationMethod("IMP", interaction=True, cov=True, options=[Option(key='NITER', value=1000),...
+    EstimationMethod("IMP", interaction=True, cov=True, evaluation=True, ..., tool_options=...
 
     See also
     --------
@@ -546,12 +543,10 @@ def add_estimation_step(model, method, idx=None, **kwargs):
         Pharmpy model
     method : str
         estimation method to change to
-    interaction : bool
-        whether to use interaction or not, default is true
-    options : dict
-        any additional tool specific options
     idx : int
         index of estimation step, default is None (adds step at the end)
+    kwargs
+        Arguments to pass to EstimationMethod (such as interaction, evaluation)
 
     Returns
     -------
@@ -562,14 +557,14 @@ def add_estimation_step(model, method, idx=None, **kwargs):
     --------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> opts = {'NITER': 1000, 'ISAMPLE': 100, 'EONLY': 1}
-    >>> add_estimation_step(model, "IMP", options=opts)   # doctest: +ELLIPSIS
+    >>> opts = {'NITER': 1000, 'ISAMPLE': 100}
+    >>> add_estimation_step(model, "IMP", tool_options=opts)   # doctest: +ELLIPSIS
     <...>
     >>> ests = model.estimation_steps
     >>> len(ests)
     2
     >>> ests[1]   # doctest: +ELLIPSIS
-    EstimationMethod("IMP", interaction=True, cov=False, options=[Option(key='NITER', value=1000...
+    EstimationMethod("IMP", interaction=False, cov=False, ..., tool_options={'NITER': 1000,...
 
     See also
     --------
@@ -607,14 +602,11 @@ def remove_estimation_step(model, idx):
     --------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> opts = {'NITER': 1000, 'ISAMPLE': 100, 'EONLY': 1}
-    >>> add_estimation_step(model, "IMP", options=opts)   # doctest: +ELLIPSIS
-    <...>
-    >>> remove_estimation_step(model, 1)      # doctest: +ELLIPSIS
+    >>> remove_estimation_step(model, 0)      # doctest: +ELLIPSIS
     <...>
     >>> ests = model.estimation_steps
     >>> len(ests)
-    1
+    0
 
     See also
     --------
@@ -636,7 +628,7 @@ def append_estimation_step_options(model, tool_options, idx):
     ----------
     model : Model
         Pharmpy model
-    options : dict
+    tool_options : dict
         any additional tool specific options
     idx : int
         index of estimation step
@@ -650,12 +642,12 @@ def append_estimation_step_options(model, tool_options, idx):
     --------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> opts = {'NITER': 1000, 'ISAMPLE': 100, 'EONLY': 1}
-    >>> append_estimation_step_options(model, options=opts, idx=0)   # doctest: +ELLIPSIS
+    >>> opts = {'NITER': 1000, 'ISAMPLE': 100}
+    >>> append_estimation_step_options(model, tool_options=opts, idx=0)   # doctest: +ELLIPSIS
     <...>
     >>> est = model.estimation_steps[0]
-    >>> len(est.options)
-    3
+    >>> len(est.tool_options)
+    2
 
     See also
     --------
