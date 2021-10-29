@@ -5,6 +5,7 @@ from numpy import nan
 
 import pharmpy.plugins.nonmem.results_file as rf
 import pharmpy.plugins.nonmem.table as table
+from pharmpy.workflows.log import Log
 
 
 def test_supported_version():
@@ -236,7 +237,8 @@ def test_data_io(pheno_lst):
 )
 def test_estimation_status(testdata, file, table_number, expected, covariance_step_ok):
     p = Path(testdata / 'nonmem' / 'modelfit_results' / 'onePROB' / 'oneEST' / 'noSIM')
-    rfile = rf.NONMEMResultsFile(p / file)
+    log = Log()
+    rfile = rf.NONMEMResultsFile(p / file, log=log)
     assert rfile.estimation_status(table_number) == expected
     if covariance_step_ok is None:
         assert rfile.covariance_status(table_number)['covariance_step_ok'] is None

@@ -1,4 +1,3 @@
-import warnings
 from pathlib import Path
 
 import numpy as np
@@ -7,6 +6,7 @@ import pandas as pd
 from pharmpy.plugins.nonmem.results_file import NONMEMResultsFile
 from pharmpy.plugins.nonmem.table import NONMEMTableFile
 from pharmpy.results import ChainedModelfitResults, ModelfitResults
+from pharmpy.workflows.log import Log
 
 
 class NONMEMModelfitResults(ModelfitResults):
@@ -203,6 +203,7 @@ class NONMEMModelfitResults(ModelfitResults):
 class NONMEMChainedModelfitResults(ChainedModelfitResults):
     def __init__(self, path, model=None, subproblem=None):
         # Path is path to any result file
+        self.log = Log()
         self._path = Path(path)
         self._subproblem = subproblem
         self.model = model
@@ -237,13 +238,20 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
             ext_tables = NONMEMTableFile(self._path.with_suffix('.ext'))
         except ValueError:
             # The ext-file is illegal
-            warnings.warn(f"Broken ext-file {self._path.with_suffix('.ext')}")
+            self.log.log_error(f"Broken ext-file {self._path.with_suffix('.ext')}")
             res = NONMEMModelfitResults(self)
+            res.table_number = 1
             res.model_name = self._path.stem
             res.model = self.model
             # Parameter esitimates NaN for all parameters that should be estimated
-            pe = pd.Series(np.nan, index=list(self.model.parameters.nonfixed_inits.keys()))
+            pe = pd.Series(
+                np.nan, name='estimates', index=list(self.model.parameters.nonfixed_inits.keys())
+            )
+            se = pd.Series(
+                np.nan, name='SE', index=list(self.model.parameters.nonfixed_inits.keys())
+            )
             res.parameter_estimates = pe
+            res.standard_errors = se
             res.ofv = np.nan
             self.append(res)
             return
@@ -315,7 +323,7 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
 
     def _read_lst_file(self):
         try:
-            rfile = NONMEMResultsFile(self._path.with_suffix('.lst'))
+            rfile = NONMEMResultsFile(self._path.with_suffix('.lst'), self.log)
         except OSError:
             return
         table_with_cov = -99

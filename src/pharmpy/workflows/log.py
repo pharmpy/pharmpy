@@ -48,3 +48,11 @@ class Log:
             }
         )
         return df
+
+    def __repr__(self):
+        s = ''
+        for entry in self._log:
+            s += f'{entry.category:<8} {entry.time.strftime("%Y-%m-%d %H:%M:%S")}\n'
+            for line in entry.message.split('\n'):
+                s += f'    {line}\n'
+        return s

@@ -13,12 +13,13 @@ class NONMEMResultsFile:
     We rely on tags in NONMEM >= 7.2.0
     """
 
-    def __init__(self, path=None):
+    def __init__(self, path=None, log=None):
+        self.log = log
         self.table = dict()
         self.nonmem_version = None
         self.runtime_total = None
         if path is not None:
-            for name, content in NONMEMResultsFile.table_blocks(path):
+            for name, content in self.table_blocks(path):
                 if name == 'INIT':
                     self.nonmem_version = content.pop('nonmem_version', None)
                 elif name == 'runtime':
@@ -256,8 +257,7 @@ class NONMEMResultsFile:
 
         return date_time
 
-    @staticmethod
-    def tag_items(path):
+    def tag_items(self, path):
         nmversion = re.compile(r'1NONLINEAR MIXED EFFECTS MODEL PROGRAM \(NONMEM\) VERSION\s+(\S+)')
         tag = re.compile(r'\s*#([A-Z]{4}):\s*(.*)')
         end_TERE = re.compile(r'(0|1)')  # The part we need after #TERE: will preceed next ^1 or ^0
@@ -303,6 +303,26 @@ class NONMEMResultsFile:
                 yield ('nonmem_version', version_number)
                 break  # we will stay at current file position
 
+        i = 0
+        while i < len(lines):
+            line = lines[i]
+            if line.startswith('0WARNING:'):
+                message = line[10:]
+                if lines[i + 1].startswith(' '):
+                    i += 1
+                    message += lines[i]
+                self.log.log_warning(message)
+            elif line.startswith('0PROGRAM TERMINATED'):
+                message = line[1:]
+                while i < len(lines):
+                    i += 1
+                    if lines[i].startswith(' '):
+                        message += '\n' + lines[i]
+                    else:
+                        break
+                self.log.log_error(message)
+            i += 1
+
         if NONMEMResultsFile.supported_version(version_number):
             for i, row in enumerate(lines):
                 row = row.rstrip()
@@ -321,7 +341,8 @@ class NONMEMResultsFile:
                         found_TERM = False
                         TERM = list()
                     elif found_TERE:
-                        raise NotImplementedError('TERE tag without ^1 or ^0 before next tag')
+                        found_TERE = False
+                        # raise NotImplementedError('TERE tag without ^1 or ^0 before next tag')
                     else:
                         v = cleanup.sub('', m.group(2))
                         yield (m.group(1), v.strip())
@@ -336,7 +357,6 @@ class NONMEMResultsFile:
                     TERM.append(row)
                 if row == 'Stop Time:':
                     endtime_index = i + 1
-                    continue
 
             if endtime_index is not None:
                 if endtime_index + 1 < len(lines):
@@ -355,11 +375,10 @@ class NONMEMResultsFile:
             if found_runtime:
                 yield ('runtime', runtime)
 
-    @staticmethod
-    def table_blocks(path):
+    def table_blocks(self, path):
         block = dict()
         table_number = 'INIT'
-        for name, content in NONMEMResultsFile.tag_items(path):
+        for name, content in self.tag_items(path):
             if name == 'TERM' or name == 'TERE':
                 for k, v in content.items():
                     block[k] = v
