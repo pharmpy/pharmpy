@@ -778,6 +778,7 @@ def test_des(testdata, model_path, transformation):
             '$ESTIMATION METH=IMP EONLY=1',
             [EstimationMethod('imp', interaction=False, evaluation=True)],
         ),
+        ('$ESTIMATION METH=COND MAXEVAL=9999', [EstimationMethod('foce', maxeval=9999)]),
     ],
 )
 def test_estimation_steps_getter(estcode, correct):
@@ -795,15 +796,7 @@ $SIGMA 1
     assert model.estimation_steps == correct
 
 
-@pytest.mark.parametrize(
-    'estcode,method_ref,key_ref,value_ref',
-    [
-        ('$ESTIMA MCETA=200', 'FO', 'MCETA', '200'),
-        ('$ESTIMATION METHOD=1 MAXEVAL=9999', 'FOCE', 'MAXEVAL', '9999'),
-        ('$ESTIMATION METHOD=SAEM MAXEVAL=9999', 'SAEM', 'MAXEVAL', '9999'),
-    ],
-)
-def test_estimation_steps_getter_options(estcode, method_ref, key_ref, value_ref):
+def test_estimation_steps_getter_options():
     code = '''$PROBLEM base model
 $INPUT ID DV TIME
 $DATA file.csv IGNORE=@
@@ -812,12 +805,11 @@ Y = THETA(1) + ETA(1) + ERR(1)
 $THETA 0.1
 $OMEGA 0.01
 $SIGMA 1
+$ESTIMATION METHOD=1 SADDLE_RESET=1
 '''
-    code += estcode
     model = Model(StringIO(code))
-    assert model.estimation_steps[0].method == method_ref
-    assert model.estimation_steps[0].options[0].key == key_ref
-    assert model.estimation_steps[0].options[0].value == value_ref
+    assert model.estimation_steps[0].method == 'FOCE'
+    assert model.estimation_steps[0].tool_options['SADDLE_RESET'] == '1'
 
 
 @pytest.mark.parametrize(
@@ -861,6 +853,22 @@ $SIGMA 1
     assert model.model_code.split('\n')[-2] == rec_ref
 
 
+def test_set_estimation_steps_option_clash():
+    code = '''$PROBLEM base model
+$INPUT ID DV TIME
+$DATA file.csv IGNORE=@
+$PRED
+Y = THETA(1) + ETA(1) + ERR(1)
+$THETA 0.1
+$OMEGA 0.01
+$SIGMA 1
+$EST METH=COND INTER
+'''
+    model = Model(StringIO(code))
+    est_new = EstimationMethod('IMP', evaluation=True, tool_options={'MAXEVAL': 999})
+    model.estimation_steps.append(est_new)
+
+
 def test_add_estimation_step():
     code = '''$PROBLEM base model
 $INPUT ID DV TIME
@@ -873,7 +881,7 @@ $SIGMA 1
 $EST METH=COND INTER
 '''
     model = Model(StringIO(code))
-    est_new = EstimationMethod('IMP', interaction=True, options={'saddle_reset': 1})
+    est_new = EstimationMethod('IMP', interaction=True, tool_options={'saddle_reset': 1})
     model.estimation_steps.append(est_new)
     assert model.model_code.split('\n')[-2] == '$ESTIMATION METHOD=IMP INTER SADDLE_RESET=1'
     est_new = EstimationMethod('SAEM', interaction=True)

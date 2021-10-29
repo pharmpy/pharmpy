@@ -891,9 +891,14 @@ def update_estimation(model):
                     est_code += ' MAXEVAL=0'
                 else:
                     est_code += ' EONLY=1'
-            if est.options:
+            if est.maxeval:
+                est_code += f' MAXEVAL={est.maxeval}'
+            if est.tool_options:
                 options_code = ' '.join(
-                    [f'{key}={value}'.upper() if value else f'{key}' for key, value in est.options]
+                    [
+                        f'{key}={value}'.upper() if value else f'{key}'
+                        for key, value in est.tool_options.items()
+                    ]
                 )
                 est_code += f' {options_code}'
             est_code += '\n'

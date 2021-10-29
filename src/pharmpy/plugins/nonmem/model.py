@@ -715,42 +715,59 @@ class Model(pharmpy.model.Model):
                     raise ModelSyntaxError(
                         f'Non-recognized estimation method in: {str(record.root)}'
                     )
-            protected_names = ['METHOD', 'METH', 'INTERACTION', 'INTER', name.upper()]
+
+            interaction = False
+            evaluation = False
+            maxeval = None
+            cov = False
+
             if record.has_option('INTERACTION') or record.has_option('INTER'):
                 interaction = True
-            else:
-                interaction = False
-            evaluation = False
-            if name.upper() == 'FO' or name.upper() == 'FOCE':
-                eval_opt = None
-                # FIXME: see if this can be written more general to avoid repetition
-                if record.get_option('MAXEVAL'):
-                    eval_opt = record.get_option('MAXEVAL')
-                elif record.get_option('MAXEVALS'):
-                    eval_opt = record.get_option('MAXEVALS')
-                if eval_opt is not None and int(eval_opt) == 0:
+
+            maxeval_opt = (
+                record.get_option('MAXEVAL') if not None else record.get_option('MAXEVALS')
+            )
+            if maxeval_opt:
+                if (name.upper() == 'FO' or name.upper() == 'FOCE') and int(maxeval_opt) == 0:
                     evaluation = True
-                    protected_names += ['MAXEVAL', 'MAXEVALS']
+                else:
+                    maxeval = int(maxeval_opt)
             else:
                 eval_opt = record.get_option('EONLY')
                 if eval_opt is not None and int(eval_opt) == 1:
                     evaluation = True
-                    protected_names += ['EONLY']
             if covrec:
                 cov = True
-            else:
-                cov = False
 
-            options_left = [
-                option for option in record.all_options if option.key not in protected_names
+            protected_names = [
+                name.upper(),
+                'METHOD',
+                'METH',
+                'INTERACTION',
+                'INTER',
+                'MAXEVAL',
+                'MAXEVALS',
+                'EONLY',
             ]
-            if not options_left:
-                options_left = None
+
+            tool_options = {
+                option.key: option.value
+                for option in record.all_options
+                if option.key not in protected_names
+            }
+            if not tool_options:
+                tool_options = None
 
             meth = EstimationMethod(
-                name, interaction=interaction, cov=cov, evaluation=evaluation, options=options_left
+                name,
+                interaction=interaction,
+                cov=cov,
+                evaluation=evaluation,
+                maxeval=maxeval,
+                tool_options=tool_options,
             )
             steps.append(meth)
+
         self._estimation_steps = steps
         self._old_estimation_steps = copy.deepcopy(steps)
         return steps

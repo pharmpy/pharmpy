@@ -17,15 +17,16 @@ def test_estimation_method():
     assert a == EstimationMethod('fo', interaction=False, cov=True)
     assert (
         repr(a)
-        == 'EstimationMethod("FO", interaction=False, cov=True, evaluation=False, options=None)'
+        == 'EstimationMethod("FO", interaction=False, cov=True, evaluation=False, maxeval=None, '
+        'tool_options=None)'
     )
 
 
 def test_append_options():
     a = EstimationMethod('foce')
 
-    a.append_options({'EONLY': 1})
-    assert len(a.options) == 1
+    a.append_tool_options({'EONLY': 1})
+    assert len(a.tool_options) == 1
 
-    a.append_options({'PRINT': 1})
-    assert len(a.options) == 2
+    a.append_tool_options({'PRINT': 1})
+    assert len(a.tool_options) == 2
