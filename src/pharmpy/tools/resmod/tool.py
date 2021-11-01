@@ -127,6 +127,7 @@ def _create_dataset(input_model):
     predictions = input_model.modelfit_results.predictions
     ipred = predictions['IPRED'].reindex(cwres.index)
     df = pd.concat([cwres, ipred], axis=1).rename(columns={'CWRES': 'DV'})
+    df.reset_index(inplace=True)
     return df
 
 
