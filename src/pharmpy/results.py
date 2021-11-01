@@ -445,12 +445,12 @@ class ChainedModelfitResults(MutableSequence, ModelfitResults):
     @property
     def minimization_successful(self):
         # If last step was estimation
-        if self[-1].estimation_step['is_estimation'] and self[-1].minimization_successful:
+        est_steps = self.model.estimation_steps
+        if not est_steps[-1].evaluation and self[-1].minimization_successful:
             return self[-1].minimization_successful
         # If last was evaluation, find latest estimation
         for i in reversed(range(len(self))):
-            is_estimation = self[i].estimation_step['is_estimation']
-            if is_estimation:
+            if not est_steps[i].evaluation:
                 return self[i].minimization_successful
         # If all steps were evaluation the last evaluation step is relevant
         return self[-1].minimization_successful
@@ -515,16 +515,40 @@ class ChainedModelfitResults(MutableSequence, ModelfitResults):
     def runtime_total(self):
         return self[-1].runtime_total
 
-    def get_result_summary(self):
+    def result_summary(self, include_all_estimation_steps=False):
+        if not include_all_estimation_steps:
+            summary_dict = self._summarize_step(-1)
+            index = pd.MultiIndex.from_tuples(
+                [(self.model_name, len(self))], names=['model_name', 'step']
+            )
+            summary_df = pd.DataFrame(summary_dict, index=index)
+            return summary_df
+        else:
+            summary_dicts = []
+            tuples = []
+            for i in range(len(self)):
+                summary_dict = self._summarize_step(i)
+                summary_dicts.append(summary_dict)
+                tuples.append((self.model_name, i + 1))
+            index = pd.MultiIndex.from_tuples(tuples, names=['model_name', 'step'])
+            summary_df = pd.DataFrame(summary_dicts, index=index)
+            return summary_df
+
+    def _summarize_step(self, i):
         summary_dict = dict()
 
-        summary_dict['minimization_successful'] = self.minimization_successful
-        summary_dict['ofv'] = self.ofv
-        summary_dict['runtime_total'] = self.runtime_total
+        if i >= 0:
+            step = self[i]
+        else:
+            step = self
 
-        pe = self.parameter_estimates
-        ses = self.standard_errors
-        rses = self.relative_standard_errors
+        summary_dict['minimization_successful'] = step.minimization_successful
+        summary_dict['ofv'] = step.ofv
+        summary_dict['runtime_total'] = step.runtime_total
+
+        pe = step.parameter_estimates
+        ses = step.standard_errors
+        rses = step.relative_standard_errors
 
         for param in pe.index:
             summary_dict[f'{param}_estimate'] = pe[param]
@@ -533,7 +557,7 @@ class ChainedModelfitResults(MutableSequence, ModelfitResults):
             if rses is not None:
                 summary_dict[f'{param}_RSE'] = rses[param]
 
-        return pd.Series(summary_dict)
+        return summary_dict
 
     def __repr__(self):
         return repr(self._results[-1])

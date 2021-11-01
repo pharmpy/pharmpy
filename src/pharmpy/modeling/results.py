@@ -404,36 +404,47 @@ def _split_equation(s):
     return name, expr
 
 
-# TODO: consider moving part of function to results-object
-def summarize_modelfit_results(models):
+def summarize_modelfit_results(models, include_all_estimation_steps=False):
     """Summarize results of model runs
 
     Summarize different results after fitting a model, includes runtime, ofv,
-    and parameter estimates (with errors).
+    and parameter estimates (with errors). If include_all_estimation_steps is False,
+    only the last estimation step will be included (note that in that case, the
+    minimization_successful value will be referring to the last estimation step, if
+    last step is evaluation it will go backwards until it finds an estimation step
+    that wasn't an evaluation).
 
     Parameters
     ----------
     models : list, Model
         List of models or single model
+    include_all_estimation_steps : bool
+        Whether to include all estimation steps, default is True
 
     Return
     ------
     pd.DataFrame
-        A DataFrame of modelfit results, one row per model.
+        A DataFrame of modelfit results with model name and estmation step as index.
 
     Examples
     --------
     >>> from pharmpy.modeling import load_example_model, summarize_modelfit_results
     >>> model = load_example_model("pheno")
     >>> summarize_modelfit_results([model]) # doctest: +ELLIPSIS
-          minimization_successful         ofv runtime_total  THETA(1)_estimate  ... SIGMA(1,1)_RSE
-    pheno                    True  586.276056           4.0           0.004696  ...       0.172147
+                     minimization_successful         ofv  runtime_total ... SIGMA(1,1)_RSE
+    model_name step
+    pheno      1                        True  586.276056            4.0 ...       0.172147
+
+
     """
     if isinstance(models, Model):
         models = [models]
 
-    modelfit_results_dict = {}
-    for model in models:
-        modelfit_results_dict[model.name] = model.modelfit_results.get_result_summary()
+    summaries = []
 
-    return pd.DataFrame.from_dict(modelfit_results_dict, orient='index')
+    for model in models:
+        summaries.append(model.modelfit_results.result_summary(include_all_estimation_steps))
+
+    summary = pd.concat(summaries).sort_index()
+
+    return summary

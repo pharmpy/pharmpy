@@ -88,8 +88,8 @@ class NONMEMModelfitResults(ModelfitResults):
                 covariance_status['warnings'] = not status['covariance_step_ok']
         self._covariance_status = covariance_status
 
-    def _set_estimation_status(self, results_file, requested, is_estimation=False):
-        estimation_status = {'requested': requested, 'is_estimation': is_estimation}
+    def _set_estimation_status(self, results_file, requested):
+        estimation_status = {'requested': requested}
         status = NONMEMResultsFile.unknown_termination()
         if results_file is not None:
             status = results_file.estimation_status(self.table_number)
@@ -264,8 +264,6 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
             result_obj.table_number = table.number
             result_obj.ofv = table.final_ofv
             result_obj.evaluation_ofv = table.initial_ofv
-            if table.is_evaluation:
-                result_obj._set_estimation_status(results_file=None, requested=False)
             ests = table.final_parameter_estimates
             try:
                 fix = table.fixed
@@ -331,11 +329,7 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
             if len(self.model.control_stream.get_records('COVARIANCE')) > 0:
                 table_with_cov = self[-1].table_number  # correct unless interrupted
         for table_no, result_obj in enumerate(self, 1):
-            # _estimation_status is already set to None if ext table has (Evaluation)
-            if hasattr(result_obj, '_estimation_status') is False:
-                result_obj._set_estimation_status(rfile, requested=True, is_estimation=True)
-            else:
-                result_obj._set_estimation_status(rfile, requested=True, is_estimation=False)
+            result_obj._set_estimation_status(rfile, requested=True)
             # _covariance_status already set to None if ext table did not have standard errors
             if hasattr(result_obj, '_covariance_status') is False:
                 result_obj._set_covariance_status(rfile, table_with_cov=table_with_cov)
