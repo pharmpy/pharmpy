@@ -1,8 +1,15 @@
+0.35.0 (2021-11-02)
+-------------------
+
+* Option to include all estimation steps in summarize_modelfit_results
+* Use **kwargs in set_estimation_step and add_estimation_step
+* First version of logger (via model.modelfit_results.log)
+
 0.34.3 (2021-10-28)
 -------------------
 
-* Let parametrization of periperal compartment rates be kept if volume parameter can be found in the expression for K.
-* Fix bug causing crashes when parsing some lst-files due to mixed encodings. 
+* Let parametrization of peripheral compartment rates be kept if volume parameter can be found in the expression for K.
+* Fix bug causing crashes when parsing some lst-files due to mixed encodings.
 
 0.34.2 (2021-10-26)
 -------------------
