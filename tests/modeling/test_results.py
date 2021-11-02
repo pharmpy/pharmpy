@@ -104,7 +104,7 @@ def test_summarize_modelfit_results(testdata, pheno_path):
 
     assert len(summary_single.index) == 1
 
-    assert summary_single.loc['pheno_real', 1]['ofv'] == 586.2760562818805
+    assert summary_single.loc['pheno_real']['ofv'] == 586.2760562818805
     assert summary_single['OMEGA(1,1)_estimate'].mean() == 0.0293508
 
     mox = Model(testdata / 'nonmem' / 'models' / 'mox1.mod')
@@ -113,11 +113,11 @@ def test_summarize_modelfit_results(testdata, pheno_path):
 
     assert len(summary_multiple.index) == 2
 
-    assert summary_multiple.loc['mox1', 1]['ofv'] == -624.5229577248352
+    assert summary_multiple.loc['mox1']['ofv'] == -624.5229577248352
     assert summary_multiple['OMEGA(1,1)_estimate'].mean() == 0.2236304
     assert summary_multiple['OMEGA(2,1)_estimate'].mean() == 0.395647  # One is NaN
 
-    assert list(summary_multiple.index.get_level_values('model_name')) == ['mox1', 'pheno_real']
+    assert list(summary_multiple.index) == ['mox1', 'pheno_real']
 
     pheno_multest = Model(
         testdata
@@ -132,7 +132,6 @@ def test_summarize_modelfit_results(testdata, pheno_path):
     summary_multest = summarize_modelfit_results([pheno_multest, mox])
 
     assert len(summary_multest.index) == 2
-    assert len(set(summary_multest.index.get_level_values('model_name'))) == 2
 
     summary_multest_full = summarize_modelfit_results(
         [pheno_multest, mox], include_all_estimation_steps=True

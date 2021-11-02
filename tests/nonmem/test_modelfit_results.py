@@ -364,8 +364,8 @@ def test_result_summary(pheno_path, testdata):
 
     summary = res.result_summary()
 
-    assert summary.loc['pheno_real', 1]['ofv'] == 586.2760562818805
-    assert summary.loc['pheno_real', 1]['OMEGA(1,1)_estimate'] == 0.0293508
+    assert summary.loc['pheno_real']['ofv'] == 586.2760562818805
+    assert summary.loc['pheno_real']['OMEGA(1,1)_estimate'] == 0.0293508
 
     model = Model(
         testdata

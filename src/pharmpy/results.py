@@ -518,10 +518,7 @@ class ChainedModelfitResults(MutableSequence, ModelfitResults):
     def result_summary(self, include_all_estimation_steps=False):
         if not include_all_estimation_steps:
             summary_dict = self._summarize_step(-1)
-            index = pd.MultiIndex.from_tuples(
-                [(self.model_name, len(self))], names=['model_name', 'step']
-            )
-            summary_df = pd.DataFrame(summary_dict, index=index)
+            summary_df = pd.DataFrame(summary_dict, index=[self.model_name])
             return summary_df
         else:
             summary_dicts = []
