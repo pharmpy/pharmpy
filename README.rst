@@ -31,9 +31,9 @@ https://pharmpy.github.io
 
 .. start-longdesc
 
-Pharmpy is a library for pharmacometrics. It can be used as a regular python package, in R via reticulate or via its built in command line interface.
-
-Pharmpy is architectured to be able to handle different types of model formats and data formats and exposes a model agnostic API.
+Pharmpy is a library for pharmacometrics. It can be used as a regular python package, in R
+via the `Pharmr <https://github.com/pharmpy/pharmr>`_ package or via its built in command
+line interface.
 
 Current features:
 
@@ -52,7 +52,8 @@ Install the latest stable version from PyPI::
 
     pip install pharmpy-core    # or 'pip3 install' if that is your default python3 pip
 
-To be able to use components using machine learning the tflite package is needed. It can be installed using::
+To be able to use components using machine learning the tflite package is needed. It can
+be installed using::
 
     pip install --index-url https://google-coral.github.io/py-repo/ tflite_runtime
 
@@ -86,10 +87,8 @@ R Example
 .. code-block:: r
    :skipif: False
 
->>> library(reticulate)
->>> use_python("python3")
->>> pharmpy <- import("pharmpy")
->>> model <- pharmpy$Model("run1.mod")
+>>> library(pharmr)
+>>> model <- read_model("run1.mod")
 >>> model$modelfit_results$parameter_estimates
   THETA(1)   THETA(2)   THETA(3) OMEGA(1,1) OMEGA(2,2) SIGMA(1,1)
 0.00469555 0.98425800 0.15892000 0.02935080 0.02790600 0.01324100
@@ -116,9 +115,3 @@ CLI Example
 
     # Extract and print ofvs from multiple model runs
     pharmpy results ofv run*.mod
-
-
-Development
-===========
-
-For information for contributors and developers see https://pharmpy.github.io/latest/development.html 

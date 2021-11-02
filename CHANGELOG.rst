@@ -2,7 +2,7 @@
 -------------------
 
 * Option to include all estimation steps in summarize_modelfit_results
-* Use **kwargs in set_estimation_step and add_estimation_step
+* Use kwargs in set_estimation_step and add_estimation_step
 * First version of logger (via model.modelfit_results.log)
 
 0.34.3 (2021-10-28)
