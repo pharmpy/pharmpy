@@ -724,15 +724,14 @@ class Model(pharmpy.model.Model):
             maxeval_opt = (
                 record.get_option('MAXEVAL') if not None else record.get_option('MAXEVALS')
             )
-            if maxeval_opt:
+            if maxeval_opt is not None:
                 if (name.upper() == 'FO' or name.upper() == 'FOCE') and int(maxeval_opt) == 0:
                     evaluation = True
                 else:
                     maximum_evaluations = int(maxeval_opt)
-            else:
-                eval_opt = record.get_option('EONLY')
-                if eval_opt is not None and int(eval_opt) == 1:
-                    evaluation = True
+            eval_opt = record.get_option('EONLY')
+            if eval_opt is not None and int(eval_opt) == 1:
+                evaluation = True
             if covrec:
                 cov = True
             if record.has_option('LAPLACIAN') or record.has_option('LAPLACE'):
