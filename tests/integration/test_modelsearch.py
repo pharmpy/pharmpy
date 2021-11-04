@@ -34,6 +34,9 @@ def test_exhaustive_stepwise(tmp_path, testdata, mfl, no_of_models):
         assert len(res.summary) == no_of_models
         assert len(res.models) == no_of_models
         assert all(int(model.modelfit_results.ofv) in range(-1443, -1430) for model in res.models)
+        rundir = tmp_path / 'modelsearch_dir1'
+        assert rundir.is_dir()
+        assert len(list((rundir / 'models').iterdir())) == no_of_models + 1
 
 
 def test_exhaustive_stepwise_already_fit(tmp_path, testdata):
@@ -56,3 +59,6 @@ def test_exhaustive_stepwise_already_fit(tmp_path, testdata):
         assert len(res.summary) == 4
         assert len(res.models) == 4
         assert all(int(model.modelfit_results.ofv) in range(-1443, -1430) for model in res.models)
+        rundir = tmp_path / 'modelsearch_dir1'
+        assert rundir.is_dir()
+        assert len(list((rundir / 'models').iterdir())) == 4

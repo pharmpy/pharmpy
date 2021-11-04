@@ -55,6 +55,8 @@ def execute_model(model):
         database.store_local_file(model, path / rec.path)
     # Read in results for the server side
     model.read_modelfit_results()
+    # FIXME: the database path is changed in write
+    model.database = database
 
     return model
 
