@@ -47,8 +47,9 @@ def execute_workflow(workflow, dispatcher=None, database=None, path=None):
         with TemporaryDirectory() as temppath:
             database.model_database.retrieve_local_files(model.name, temppath)
             for f in Path(temppath).glob('*'):
-                # Do not copy the model file.
-                if f.name != model.name + model.filename_extension:
+                # Copies all result files, copy model file if model does not have a file
+                model_file = model.name + model.filename_extension
+                if f.name != model_file or not (model.database.path / model_file).exists():
                     model.database.store_local_file(model, f)
         # Set modelfit_results for local model objects
         model.read_modelfit_results()
