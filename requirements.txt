@@ -54,7 +54,7 @@ sphinxcontrib-serializinghtml==1.1.5
 symengine==0.8.1
 sympy==1.9
 tblib==1.7.0
-toolz==0.11.1
+toolz==0.11.2
 tornado==6.1
 urllib3==1.26.7
 zict==2.0.0
