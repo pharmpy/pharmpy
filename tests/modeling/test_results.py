@@ -118,6 +118,15 @@ def test_summarize_modelfit_results(testdata, pheno_path):
     assert len(summary_multiple.index) == 2
     assert list(summary_multiple.index) == ['mox1', 'pheno_real']
 
+    pheno_no_res = Model(StringIO(pheno.model_code))
+    pheno_no_res.name = 'pheno_no_res'
+
+    summary_no_res = summarize_modelfit_results([pheno, pheno_no_res])
+
+    assert summary_no_res.loc['pheno_real']['ofv'] == 586.2760562818805
+    assert np.isnan(summary_no_res.loc['pheno_no_res']['ofv'])
+    assert np.all(np.isnan(summary_no_res.loc['pheno_no_res']))
+
     pheno_multest = Model(
         testdata
         / 'nonmem'
