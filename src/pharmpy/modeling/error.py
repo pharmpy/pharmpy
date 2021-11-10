@@ -510,13 +510,15 @@ def set_weighted_error_model(model):
     return model
 
 
-def set_dtbs_error_model(model):
+def set_dtbs_error_model(model, fix_to_log=False):
     """Dynamic transform both sides
 
     Parameters
     ----------
     model : Model
         Pharmpy model
+    fix_to_log : Boolean
+        Set to True to fix lambda and zeta to 0, i.e. emulating log-transformed data
 
     Return
     ------
@@ -536,6 +538,11 @@ def set_dtbs_error_model(model):
     stats, y, f = _preparations(model)
     tbs_lambda = Parameter('tbs_lambda', 1)
     tbs_zeta = Parameter('tbs_zeta', 0.001)
+    if fix_to_log:
+        tbs_lambda.fix = True
+        tbs_lambda.init = 0
+        tbs_zeta.fix = True
+        tbs_zeta.init = 0
     model.parameters.append(tbs_lambda)
     model.parameters.append(tbs_zeta)
     lam = tbs_lambda.symbol
