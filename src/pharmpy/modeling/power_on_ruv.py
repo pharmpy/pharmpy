@@ -40,7 +40,7 @@ def set_power_on_ruv(model, list_of_eps=None, ipred=None):
     <...>
     >>> model.statements.find_assignment("Y")
                  power₁
-    Y := EPS(1)⋅F      ⋅W + F
+    Y := EPS(1)⋅F       + F
 
     See also
     --------
@@ -63,10 +63,21 @@ def set_power_on_ruv(model, list_of_eps=None, ipred=None):
     else:
         theta_init = 0.1
 
+    # Find for example W = IPRED
+    for s in sset:
+        if isinstance(s, Assignment) and s.expression == ipred:
+            alternative = s.symbol
+            break
+    else:
+        alternative = None
+
     for i, e in enumerate(eps):
         theta_name = str(model.create_symbol(stem='power', force_numbering=True))
         theta = Parameter(theta_name, theta_init)
         pset.append(theta)
+        sset.subs({e.symbol * ipred: e.symbol})  # To avoid getting F*EPS*F**THETA
+        if alternative:  # To avoid getting W*EPS*F**THETA
+            sset.subs({e.symbol * alternative: e.symbol})
         sset.subs({e.name: ipred ** S(theta.name) * e.symbol})
 
     model.parameters = pset
