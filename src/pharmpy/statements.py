@@ -993,6 +993,34 @@ class ModelStatements(MutableSequence):
                 return i
         return None
 
+    def full_expression(self, expression):
+        """Expand an expression into its full definition
+
+        Parameters
+        ----------
+        expression : expression or str
+            Expression to expand. A string will be converted to an expression.
+
+        Return
+        ------
+        expression
+            Expanded expression
+
+        Examples
+        --------
+        >>> from pharmpy.modeling import load_example_model
+        >>> model = load_example_model("pheno")
+        >>> model.statements.before_odes.full_expression("CL")
+        THETA(1)*WGT*exp(ETA(1))
+        """
+        if isinstance(expression, str):
+            expression = sympy.sympify(expression)
+        for statement in reversed(self):
+            if isinstance(statement, ODESystem):
+                raise ValueError("ODESystem not supported by full_expression. Use the properties before_odes or after_odes.")
+            expression = expression.subs({statement.symbol: statement.expression})
+        return expression
+
     def full_expression_from_odes(self, expression):
         """Expand an expression into its full definition
 
