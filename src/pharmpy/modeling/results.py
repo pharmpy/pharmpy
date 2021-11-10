@@ -221,7 +221,7 @@ def calculate_individual_parameter_statistics(model, exprs, rng=None):
     i = 0
     table = pd.DataFrame(columns=['parameter', 'covariates', 'mean', 'variance', 'stderr'])
     for name, expr in exprs:
-        full_expr = model.statements.full_expression_from_odes(expr)
+        full_expr = model.statements.before_odes.full_expression(expr)
         covariates = {symb.name for symb in full_expr.free_symbols if symb.name in cols}
         if not covariates:
             cases = {'median': dict()}

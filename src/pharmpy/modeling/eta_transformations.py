@@ -36,7 +36,7 @@ def transform_etas_boxcox(model, list_of_etas=None):
     >>> model = load_example_model("pheno")
     >>> transform_etas_boxcox(model, ["ETA(1)"])    # doctest: +ELLIPSIS
     <...>
-    >>> model.statements.full_expression_from_odes("CL")
+    >>> model.statements.before_odes.full_expression("CL")
     THETA(1)*WGT*exp((exp(ETA(1))**lambda1 - 1)/lambda1)
 
     See also
@@ -75,7 +75,7 @@ def transform_etas_tdist(model, list_of_etas=None):
     >>> model = load_example_model("pheno")
     >>> transform_etas_tdist(model, ["ETA(1)"])    # doctest: +ELLIPSIS
     <...>
-    >>> model.statements.full_expression_from_odes("CL")    # doctest: +ELLIPSIS
+    >>> model.statements.before_odes.full_expression("CL")    # doctest: +ELLIPSIS
     THETA(1)*WGT*exp(ETA(1)*(1 + (ETA(1)**2 + 1)/(4*df1) + (5*ETA(1)**4 + 16*ETA(1)**2 + 3)/(96*...
 
     See also
@@ -118,7 +118,7 @@ def transform_etas_john_draper(model, list_of_etas=None):
     >>> model = load_example_model("pheno")
     >>> transform_etas_john_draper(model, ["ETA(1)"])    # doctest: +ELLIPSIS
     <...>
-    >>> model.statements.full_expression_from_odes("CL")
+    >>> model.statements.before_odes.full_expression("CL")
     THETA(1)*WGT*exp(((Abs(ETA(1)) + 1)**lambda1 - 1)*sign(ETA(1))/lambda1)
 
     See also

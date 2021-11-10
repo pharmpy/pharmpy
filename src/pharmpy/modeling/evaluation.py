@@ -43,7 +43,7 @@ def evaluate_expression(model, expression):
 
     """
     expression = sympy.sympify(expression)
-    full_expr = model.statements.full_expression_from_odes(expression)
+    full_expr = model.statements.before_odes.full_expression(expression)
     pe = model.modelfit_results.parameter_estimates
     inits = model.parameters.inits
     expr = full_expr.subs(dict(pe)).subs(inits)

@@ -437,7 +437,7 @@ class CompartmentalSystem(ODESystem):
             return transits
         transits.append(comp)
         comp, rate = outflows[0]
-        rate = statements.full_expression_from_odes(rate)
+        rate = statements.before_odes.full_expression(rate)
         while True:
             if len(self.get_compartment_inflows(comp)) != 1:
                 break
@@ -445,7 +445,7 @@ class CompartmentalSystem(ODESystem):
             if len(outflows) != 1:
                 break
             next_comp, next_rate = outflows[0]
-            next_rate = statements.full_expression_from_odes(next_rate)
+            next_rate = statements.before_odes.full_expression(next_rate)
             if rate != next_rate:
                 break
             transits.append(comp)
@@ -843,6 +843,8 @@ class ModelStatements(MutableSequence):
         """
         sset = ModelStatements()
         found = False
+        if self.ode_system is None:
+            return self
         for s in self:
             if isinstance(s, ODESystem):
                 found = True
@@ -890,13 +892,34 @@ class ModelStatements(MutableSequence):
     def extract_params_from_symb(self, symbol_name, pset):
         terms = {
             symb.name
-            for symb in self.full_expression_from_odes(sympy.Symbol(symbol_name)).free_symbols
+            for symb in self.before_odes.full_expression(sympy.Symbol(symbol_name)).free_symbols
         }
         theta_name = terms.intersection(pset.names).pop()
         return pset[theta_name]
 
     def reassign(self, symbol, expression):
-        """Reassign symbol to expression"""
+        """Reassign symbol to expression
+
+        Set symbol to be expression and remove all previous assignments of symbol
+
+        Parameters
+        ----------
+        symbol : Symbol or str
+            Symbol to reassign
+        expression : Expression or str
+            The new expression to assign to symbol
+
+        Examples
+        --------
+        >>> from pharmpy.modeling import load_example_model
+        >>> model = load_example_model("pheno")
+        >>> model.statements.reassign("CL", "TVCL + eta")
+        """
+        if isinstance(symbol, str):
+            symbol = sympy.sympify(symbol)
+        if isinstance(expression, str):
+            expression = sympy.sympify(expression)
+
         last = True
         for i, stat in zip(range(len(self) - 1, -1, -1), reversed(self)):
             if isinstance(stat, Assignment) and stat.symbol == symbol:
@@ -1022,34 +1045,6 @@ class ModelStatements(MutableSequence):
                     "or after_odes."
                 )
             expression = expression.subs({statement.symbol: statement.expression})
-        return expression
-
-    def full_expression_from_odes(self, expression):
-        """Expand an expression into its full definition
-
-        Before ODE system
-        """
-        if isinstance(expression, str):
-            expression = sympy.sympify(expression)
-        i = self._ode_index()
-        if i is None:
-            i = len(self)
-        for j in range(i - 1, -1, -1):
-            expression = expression.subs({self[j].symbol: self[j].expression})
-        return expression
-
-    def full_expression_after_odes(self, expression):
-        """Expand an expression into its full definition
-
-        After ODE system
-        """
-        if isinstance(expression, str):
-            expression = sympy.sympify(expression)
-        i = self._ode_index()
-        if i is None:
-            i = -1
-        for j in range(len(self) - 1, i, -1):
-            expression = expression.subs({self[j].symbol: self[j].expression})
         return expression
 
     def add_before_odes(self, statement):

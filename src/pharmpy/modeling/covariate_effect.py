@@ -138,7 +138,7 @@ def add_covariate_effect(model, parameter, covariate, effect, operation='*'):
     >>> model = load_example_model("pheno")
     >>> add_covariate_effect(model, "CL", "APGR", "exp")    # doctest: +ELLIPSIS
     <...>
-    >>> model.statements.full_expression_from_odes("CL")
+    >>> model.statements.before_odes.full_expression("CL")
     THETA(1)*WGT*exp(ETA(1))*exp(POP_CLAPGR*(APGR - 7.0))
 
     """

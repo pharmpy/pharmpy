@@ -324,7 +324,7 @@ def has_additive_error_model(model):
     has_combined_error_model : Check if a model has a combined error model
     """
     y = model.dependent_variable
-    expr = model.statements.full_expression_after_odes(y)
+    expr = model.statements.after_odes.full_expression(y)
     rvs = model.random_variables.epsilons
     rvs_in_y = {
         symbols.symbol(rv.name) for rv in rvs if symbols.symbol(rv.name) in expr.free_symbols
@@ -361,7 +361,7 @@ def has_proportional_error_model(model):
     has_combined_error_model : Check if a model has a combined error model
     """
     y = model.dependent_variable
-    expr = model.statements.full_expression_after_odes(y)
+    expr = model.statements.after_odes.full_expression(y)
     rvs = model.random_variables.epsilons
     rvs_in_y = {
         symbols.symbol(rv.name) for rv in rvs if symbols.symbol(rv.name) in expr.free_symbols
@@ -398,7 +398,7 @@ def has_combined_error_model(model):
     has_proportional_error_model : Check if a model has a proportional error model
     """
     y = model.dependent_variable
-    expr = model.statements.full_expression_after_odes(y)
+    expr = model.statements.after_odes.full_expression(y)
     rvs = model.random_variables.epsilons
     rvs_in_y = {
         symbols.symbol(rv.name) for rv in rvs if symbols.symbol(rv.name) in expr.free_symbols

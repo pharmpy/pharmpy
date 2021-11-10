@@ -87,7 +87,7 @@ def set_power_on_ruv(model, list_of_eps=None, ipred=None):
 
 
 def get_ipred(model):
-    expr = model.statements.full_expression_after_odes(model.dependent_variable)
+    expr = model.statements.after_odes.full_expression(model.dependent_variable)
     for rv in model.random_variables:
         expr = expr.subs(rv.symbol, 0)
     ipred = expr
