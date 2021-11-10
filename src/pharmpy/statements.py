@@ -1038,8 +1038,8 @@ class ModelStatements(MutableSequence):
         if len(self) != len(other):
             return False
         else:
-            for i in range(len(self)):
-                if self[i] != other[i]:
+            for first, second in zip(self, other):
+                if first != second:
                     return False
         return True
 
