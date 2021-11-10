@@ -223,7 +223,9 @@ def test_before_odes(pheno_path):
 def test_full_expression(pheno_path):
     model = Model(pheno_path)
     expr = model.statements.before_odes.full_expression("CL")
-    assert expr == sympy.Symbol("THETA(1)") * sympy.Symbol("WGT") * sympy.exp(sympy.Symbol("ETA(1)"))
+    assert expr == sympy.Symbol("THETA(1)") * sympy.Symbol("WGT") * sympy.exp(
+        sympy.Symbol("ETA(1)")
+    )
 
 
 def test_to_explicit_ode_system(pheno_path):

@@ -1017,7 +1017,10 @@ class ModelStatements(MutableSequence):
             expression = sympy.sympify(expression)
         for statement in reversed(self):
             if isinstance(statement, ODESystem):
-                raise ValueError("ODESystem not supported by full_expression. Use the properties before_odes or after_odes.")
+                raise ValueError(
+                    "ODESystem not supported by full_expression. Use the properties before_odes "
+                    "or after_odes."
+                )
             expression = expression.subs({statement.symbol: statement.expression})
         return expression
 
