@@ -6,6 +6,7 @@ import sympy
 
 import pharmpy.symbols
 from pharmpy.model import ModelException
+from pharmpy.modeling.help_functions import _as_integer
 from pharmpy.parameter import Parameter
 from pharmpy.statements import Assignment, Bolus, CompartmentalSystem, Infusion
 
@@ -281,7 +282,10 @@ def set_transit_compartments(model, n):
     statements = model.statements
     odes = statements.ode_system
     transits = odes.find_transit_compartments(statements)
-    n = int(n)
+    try:
+        n = _as_integer(n)
+    except ValueError:
+        raise ValueError(f'Number of compartments must be integer: {n}')
     if len(transits) == n:
         pass
     elif len(transits) == 0:

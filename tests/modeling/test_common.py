@@ -194,6 +194,13 @@ def test_add_estimation_step(testdata):
     assert generate_model_code(model).split('\n')[-2] == '$ESTIMATION METHOD=ZERO MAXEVAL=0'
 
 
+def test_add_estimation_step_non_int(testdata):
+    model = Model(testdata / 'nonmem' / 'minimal.mod')
+    add_estimation_step(model, 'fo', idx=1.0)
+    with pytest.raises(TypeError, match='Index must be integer'):
+        add_estimation_step(model, 'fo', idx=1.5)
+
+
 def test_remove_estimation_step(testdata):
     model = Model(testdata / 'nonmem' / 'minimal.mod')
     assert len(model.estimation_steps) == 1

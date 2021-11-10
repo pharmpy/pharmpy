@@ -9,6 +9,7 @@ import sympy
 
 from pharmpy.estimation import EstimationMethod
 from pharmpy.model_factory import Model
+from pharmpy.modeling.help_functions import _as_integer
 from pharmpy.statements import Assignment, CompartmentalSystem
 
 
@@ -525,6 +526,11 @@ def set_estimation_step(model, method, idx=0, **kwargs):
     append_estimation_step_options
 
     """
+    try:
+        idx = _as_integer(idx)
+    except TypeError:
+        raise TypeError(f'Index must be integer: {idx}')
+
     model.estimation_steps[idx].method = method
     for key, value in kwargs.items():
         setattr(model.estimation_steps[idx], key, value)
@@ -575,7 +581,11 @@ def add_estimation_step(model, method, idx=None, **kwargs):
     """
     meth = EstimationMethod(method, **kwargs)
 
-    if isinstance(idx, int):
+    if idx is not None:
+        try:
+            idx = _as_integer(idx)
+        except TypeError:
+            raise TypeError(f'Index must be integer: {idx}')
         model.estimation_steps.insert(idx, meth)
     else:
         model.estimation_steps.append(meth)
@@ -615,6 +625,11 @@ def remove_estimation_step(model, idx):
     append_estimation_step_options
 
     """
+    try:
+        idx = _as_integer(idx)
+    except TypeError:
+        raise TypeError(f'Index must be integer: {idx}')
+
     del model.estimation_steps[idx]
     return model
 
@@ -656,6 +671,11 @@ def append_estimation_step_options(model, tool_options, idx):
     remove_estimation_step
 
     """
+    try:
+        idx = _as_integer(idx)
+    except TypeError:
+        raise TypeError(f'Index must be integer: {idx}')
+
     model.estimation_steps[idx].append_tool_options(tool_options)
     return model
 

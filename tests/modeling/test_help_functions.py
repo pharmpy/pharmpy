@@ -1,7 +1,7 @@
 import pytest
 
 from pharmpy import Model
-from pharmpy.modeling.help_functions import _get_etas
+from pharmpy.modeling.help_functions import _as_integer, _get_etas
 
 
 def test_get_etas(pheno_path, testdata):
@@ -31,3 +31,12 @@ def test_get_etas(pheno_path, testdata):
     model.random_variables['ETA(1)'].level = 'IOV'
     rvs = _get_etas(model, None)
     assert rvs[0].name == 'ETA(2)'
+
+
+def test_as_integer():
+    n = _as_integer(1)
+    assert isinstance(n, int) and n == 1
+    n = _as_integer(1.0)
+    assert isinstance(n, int) and n == 1
+    with pytest.raises(TypeError):
+        _as_integer(1.5)
