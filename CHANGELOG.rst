@@ -1,3 +1,11 @@
+next release
+------------
+
+* Create model file when fitting a model that has no model file
+* Fix bug where files are missing during e.g. modelsearch
+* Fix crash when including a model with no results in summarize_modelfit_results
+* Fix bug in Pharmr where integers where interpreted as floats
+
 0.35.0 (2021-11-02)
 -------------------
 
