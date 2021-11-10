@@ -214,9 +214,9 @@ def test_add_before_odes(testdata):
     assert model.model_code.split('\n')[6] == 'CL = 1'
 
 
-def test_before_ode(pheno_path):
+def test_before_odes(pheno_path):
     model = Model(pheno_path)
-    before_ode = model.statements.before_ode()
+    before_ode = model.statements.before_odes
     assert before_ode[-1].symbol.name == 'S1'
 
 

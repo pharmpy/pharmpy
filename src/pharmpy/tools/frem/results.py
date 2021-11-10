@@ -796,7 +796,7 @@ def calculate_results_from_samples(frem_model, continuous, categorical, parvecs,
 
 def get_params(frem_model, rvs, npars):
     param_names = [rv.name for rv in rvs][:npars]
-    sset = frem_model.statements.before_ode()
+    sset = frem_model.statements.before_odes
     symbs = []
 
     for p in param_names:

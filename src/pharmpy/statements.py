@@ -790,6 +790,66 @@ class ModelStatements(MutableSequence):
             symbols |= assignment.free_symbols
         return symbols
 
+    @property
+    def before_odes(self):
+        """All statements before the ODE system
+
+        Examples
+        --------
+        >>> from pharmpy.modeling import load_example_model
+        >>> model = load_example_model("pheno")
+        >>> model.statements.before_odes
+                 ⎧TIME  for AMT > 0
+                 ⎨
+        BTIME := ⎩ 0     otherwise
+        TAD := -BTIME + TIME
+        TVCL := THETA(1)⋅WGT
+        TVV := THETA(2)⋅WGT
+               ⎧TVV⋅(THETA(3) + 1)  for APGR < 5
+               ⎨
+        TVV := ⎩       TVV           otherwise
+                    ETA(1)
+        CL := TVCL⋅ℯ
+                  ETA(2)
+        V := TVV⋅ℯ
+        S₁ := V
+        """
+        sset = ModelStatements()
+        for s in self:
+            if isinstance(s, ODESystem):
+                break
+            sset.append(s)
+        return sset
+
+    @property
+    def after_odes(self):
+        """All statements after the ODE system
+
+        Examples
+        --------
+        >>> from pharmpy.modeling import load_example_model
+        >>> model = load_example_model("pheno")
+        >>> model.statements.after_odes
+             A_CENTRAL
+             ─────────
+        F :=     S₁
+        W := F
+        Y := EPS(1)⋅W + F
+        IPRED := F
+        IRES := DV - IPRED
+                  IRES
+                  ────
+        IWRES :=   W
+        """
+        sset = ModelStatements()
+        found = False
+        for s in self:
+            if isinstance(s, ODESystem):
+                found = True
+            elif found:
+                sset.append(s)
+        return sset
+
     def subs(self, substitutions):
         """Substitute symbols in all statements.
 
@@ -927,15 +987,6 @@ class ModelStatements(MutableSequence):
                 return s
         return None
 
-    def before_ode(self):
-        sset = ModelStatements()
-        for s in self:
-            if isinstance(s, ODESystem):
-                break
-            sset.append(s)
-
-        return sset
-
     def _ode_index(self):
         for i, s in enumerate(self):
             if isinstance(s, ODESystem):
@@ -993,10 +1044,7 @@ class ModelStatements(MutableSequence):
         return True
 
     def __repr__(self):
-        s = ''
-        for statement in self:
-            s += repr(statement) + '\n'
-        return s
+        return '\n'.join([repr(statement) for statement in self])
 
     def _repr_html_(self):
         html = r'\begin{align*}'
