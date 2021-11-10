@@ -390,6 +390,14 @@ def update_statements(model, old, new, trans):
     if new_odes is not None:
         old_odes = old.ode_system
         if new_odes != old_odes:
+            colnames, _, drop, _ = model._column_info()
+            col_dropped = {key: value for key, value in zip(colnames, drop)}
+            if 'CMT' in col_dropped.keys() and not col_dropped['CMT']:
+                warnings.warn(
+                    'Compartment structure has been updated, CMT-column '
+                    'in dataset might not be relevant anymore. Check '
+                    'CMT-column or drop column'
+                )
             update_ode_system(model, old_odes, new_odes)
 
     after_odes = False

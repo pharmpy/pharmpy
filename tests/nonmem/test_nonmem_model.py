@@ -8,7 +8,7 @@ from pharmpy import Model
 from pharmpy.config import ConfigurationContext
 from pharmpy.estimation import EstimationMethod
 from pharmpy.model import ModelSyntaxError
-from pharmpy.modeling import add_iiv, set_zero_order_elimination
+from pharmpy.modeling import add_iiv, set_zero_order_absorption, set_zero_order_elimination
 from pharmpy.parameter import Parameter
 from pharmpy.plugins.nonmem import conf, convert_model
 from pharmpy.plugins.nonmem.nmtran_parser import NMTranParser
@@ -748,6 +748,19 @@ def test_des(testdata, model_path, transformation):
     model_des = Model(StringIO(model_ref.model_code))
 
     assert model_ref.statements.ode_system == model_des.statements.ode_system
+
+
+def test_cmt_warning(testdata):
+    model_original = Model(testdata / 'nonmem' / 'models' / 'mox1.mod')
+
+    model_str = model_original.model_code.replace('CMT=DROP', 'CMT')
+    model = Model(StringIO(model_str))
+    model.dataset_path = model_original.dataset_path
+
+    set_zero_order_absorption(model)
+
+    with pytest.raises(UserWarning, match='Compartment structure has been updated'):
+        model.update_source(nofiles=True)
 
 
 @pytest.mark.parametrize(
