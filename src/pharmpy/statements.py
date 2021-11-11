@@ -31,7 +31,7 @@ class Assignment:
         self.expression = sympy.sympify(expression)
 
     def subs(self, substitutions):
-        """Substitute symbols in assignment
+        """Substitute expressions or symbols in assignment
 
         Parameters
         ----------
@@ -682,14 +682,53 @@ class Compartment:
 
 
 class Bolus:
+    """A Bolus dose
+
+    Attributes
+    ----------
+    amount : symbol
+        Symbolic amount of dose
+
+    Examples
+    --------
+    >>> from pharmpy import Bolus
+    >>> dose = Bolus("AMT")
+    >>> dose
+    Bolus(AMT)
+    """
+
     def __init__(self, amount):
-        self.amount = symbols.symbol(str(amount))
+        self.amount = sympy.sympify(amount)
 
     @property
     def free_symbols(self):
+        """Get set of all free symbols in the dose
+
+        Examples
+        --------
+        >>> from pharmpy import Bolus
+        >>> dose = Bolus("AMT")
+        >>> dose.free_symbols
+        {AMT}
+        """
         return {self.amount}
 
     def subs(self, substitutions):
+        """Substitute expressions or symbols in dose
+
+        Parameters
+        ----------
+        substitutions : dict
+            Dictionary of from, to pairs
+
+        Examples
+        --------
+        >>> from pharmpy import Bolus
+        >>> dose = Bolus("AMT")
+        >>> dose.subs({'AMT': 'DOSE'})
+        >>> dose
+        Bolus(DOSE)
+        """
         self.amount = self.amount.subs(substitutions, simultaneous=True)
 
     def __deepcopy__(self, memo):
@@ -704,6 +743,28 @@ class Bolus:
 
 
 class Infusion:
+    """An infusion dose
+
+    Attributes
+    ----------
+    amount : expression
+        Symbolic amount of dose
+    rate : expression
+        Symbolic rate. Mutually excluseive with duration
+    duration : expression
+        Symbolic duration. Mutually excluseive with rate
+
+    Examples
+    --------
+    >>> from pharmpy import Infusion
+    >>> dose = Infusion("AMT", duration="D1")
+    >>> dose
+    Infusion(AMT, duration=D1)
+    >>> dose = Infusion("AMT", rate="R1")
+    >>> dose
+    Infusion(AMT, rate=R1)
+    """
+
     def __init__(self, amount, rate=None, duration=None):
         if rate is None and duration is None:
             raise ValueError('Need rate or duration for Infusion')
@@ -713,6 +774,15 @@ class Infusion:
 
     @property
     def free_symbols(self):
+        """Get set of all free symbols in the dose
+
+        Examples
+        --------
+        >>> from pharmpy import Infusion
+        >>> dose = Infusion("AMT", rate="RATE")
+        >>> dose.free_symbols   # doctest: +SKIP
+        {AMT, RATE}
+        """
         if self.rate is not None:
             symbs = self.rate.free_symbols
         else:
@@ -720,6 +790,21 @@ class Infusion:
         return symbs | self.amount.free_symbols
 
     def subs(self, substitutions):
+        """Substitute expressions or symbols in dose
+
+        Parameters
+        ----------
+        substitutions : dict
+            Dictionary of from, to pairs
+
+        Examples
+        --------
+        >>> from pharmpy import Infusion
+        >>> dose = Infusion("AMT", duration="DUR")
+        >>> dose.subs({'DUR': 'D1'})
+        >>> dose
+        Infusion(AMT, duration=D1)
+        """
         self.amount = self.amount.subs(substitutions, simultaneous=True)
         if self.rate is not None:
             self.rate = self.rate.subs(substitutions, simultaneous=True)
