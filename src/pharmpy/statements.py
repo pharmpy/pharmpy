@@ -791,6 +791,25 @@ class ModelStatements(MutableSequence):
         return symbols
 
     @property
+    def ode_system(self):
+        """Returns the ODE system of the model or None if the model doesn't have an ODE system
+
+        Examples
+        --------
+        >>> from pharmpy.modeling import load_example_model
+        >>> model = load_example_model("pheno")
+        >>> model.statements.ode_system
+        Bolus(AMT)
+        ┌───────┐       ┌──────┐
+        │CENTRAL│──CL/V→│OUTPUT│
+        └───────┘       └──────┘
+        """
+        for s in self:
+            if isinstance(s, ODESystem):
+                return s
+        return None
+
+    @property
     def before_odes(self):
         """All statements before the ODE system
 
@@ -1001,21 +1020,6 @@ class ModelStatements(MutableSequence):
         remove = candidates - additional
         for i in reversed(sorted(remove)):
             del self[i]
-
-    @property
-    def ode_system(self):
-        """Returns the ODE system of the model or None if the model doesn't have an ODE system
-
-        Examples
-        --------
-        >>> from pharmpy.modeling import load_example_model
-        >>> model = load_example_model("pheno")
-        >>> model.statements.ode_system
-        """
-        for s in self:
-            if isinstance(s, ODESystem):
-                return s
-        return None
 
     def _ode_index(self):
         for i, s in enumerate(self):
