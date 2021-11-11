@@ -1021,12 +1021,6 @@ class ModelStatements(MutableSequence):
         for i in reversed(sorted(remove)):
             del self[i]
 
-    def _ode_index(self):
-        for i, s in enumerate(self):
-            if isinstance(s, ODESystem):
-                return i
-        return None
-
     def full_expression(self, expression):
         """Expand an expression into its full definition
 
