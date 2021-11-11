@@ -908,14 +908,6 @@ class ModelStatements(MutableSequence):
         else:
             return assignments
 
-    def extract_params_from_symb(self, symbol_name, pset):
-        terms = {
-            symb.name
-            for symb in self.before_odes.full_expression(sympy.Symbol(symbol_name)).free_symbols
-        }
-        theta_name = terms.intersection(pset.names).pop()
-        return pset[theta_name]
-
     def reassign(self, symbol, expression):
         """Reassign symbol to expression
 
@@ -1009,8 +1001,19 @@ class ModelStatements(MutableSequence):
         return symbs
 
     def remove_symbol_definitions(self, symbols, statement):
-        """Remove symbols and dependencies not used elsewhere. statement
-        is the statement from which the symbol was removed
+        """Remove symbols and dependencies not used elsewhere
+
+        If the statement no longer depends on the specified
+        symbols, this method will make sure that the definitions
+        of these symbols will be removed unless they are dependencies
+        of other statements.
+
+        Parameters
+        ----------
+        symbols : iterable
+            Iterable of symbols no longer used in the statement
+        statement : Statement
+            Statement from which the symbols were removed
         """
         graph = self._create_dependency_graph()
         removed_ind = self.index(statement)

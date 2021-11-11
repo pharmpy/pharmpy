@@ -11,6 +11,15 @@ from pharmpy.parameter import Parameter
 from pharmpy.statements import Assignment, Bolus, CompartmentalSystem, Infusion
 
 
+def _extract_params_from_symb(statements, symbol_name, pset):
+    terms = {
+        symb.name
+        for symb in statements.before_odes.full_expression(sympy.Symbol(symbol_name)).free_symbols
+    }
+    theta_name = terms.intersection(pset.names).pop()
+    return pset[theta_name]
+
+
 def add_individual_parameter(model, name):
     """Add an individual or pk parameter to a model
 
@@ -233,7 +242,7 @@ def _do_michaelis_menten_elimination(model, combined=False):
 
 def _get_mm_inits(model, rate_numer, combined):
     pset, sset = model.parameters, model.statements
-    clmm_init = sset.extract_params_from_symb(rate_numer.name, pset).init
+    clmm_init = _extract_params_from_symb(sset, rate_numer.name, pset).init
 
     if combined:
         clmm_init /= 2
@@ -752,7 +761,7 @@ def _get_absorption_init(model, param_name):
         if param_name == 'MDT':
             param_prev = model.statements.lag_time
         else:
-            param_prev = model.statements.extract_params_from_symb(param_name, model.parameters)
+            param_prev = _extract_params_from_symb(model.statements, param_name, model.parameters)
         return param_prev.init
     except (AttributeError, KeyError):
         pass
