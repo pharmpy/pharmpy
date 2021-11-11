@@ -965,7 +965,26 @@ class ModelStatements(MutableSequence):
         return graph
 
     def dependencies(self, symbol):
-        """Find all dependencies of a symbol"""
+        """Find all dependencies of a symbol
+
+        Parameters
+        ----------
+        symbol : Symbol or str
+            Input symbol
+
+        Returns
+        -------
+        set
+            Set of symbols
+
+        Examples
+        --------
+        >>> from pharmpy.modeling import load_example_model
+        >>> model = load_example_model("pheno")
+        >>> model.statements.dependencies("CL")   # doctest: +SKIP
+        {ETA(1), THETA(1), WGT}
+        """
+        symbol = sympy.sympify(symbol)
         for i in range(len(self) - 1, -1, -1):
             if (
                 isinstance(self[i], Assignment)
