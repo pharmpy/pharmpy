@@ -208,9 +208,9 @@ def test_find_transit_compartments(testdata):
     assert transits[1].name == 'TRANS2'
 
 
-def test_add_before_odes(testdata):
+def test_insert_before_odes(testdata):
     model = Model(testdata / 'nonmem' / 'minimal.mod')
-    model.statements.add_before_odes(Assignment('CL', sympy.Integer(1)))
+    model.statements.insert_before_odes(Assignment('CL', sympy.Integer(1)))
     assert model.model_code.split('\n')[6] == 'CL = 1'
 
 
