@@ -5,6 +5,7 @@ import altair as alt
 import numpy as np
 import pandas as pd
 import symengine
+import sympy
 
 import pharmpy.symbols as symbols
 from pharmpy import Model
@@ -800,10 +801,10 @@ def get_params(frem_model, rvs, npars):
     symbs = []
 
     for p in param_names:
-        s = sset.find_assignment(p, is_symbol=False)
-        if str(s.expression) == p:
-            s = sset.find_assignment(s.symbol.name, is_symbol=False)
-        symbs.append(s.symbol.name)
+        statement = [s for s in reversed(sset) if sympy.Symbol(p) in s.rhs_symbols][0]
+        if str(statement.expression) == p:
+            statement = [s for s in reversed(sset) if statement.symbol in s.rhs_symbols][0]
+        symbs.append(statement.symbol.name)
 
     duplicates = set([e for e in symbs if symbs.count(e) > 1])
 

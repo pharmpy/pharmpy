@@ -5,7 +5,6 @@
 import warnings
 
 from pharmpy.random_variables import RandomVariables
-from pharmpy.symbols import symbol as S
 
 
 def remove_iov(model):
@@ -43,8 +42,7 @@ def remove_iov(model):
         return model
 
     for eta in etas:
-        statement = sset.find_assignment(eta.name, is_symbol=False)
-        statement.expression = statement.expression.subs(S(eta.name), 0)
+        sset.subs({eta.symbol: 0})
         del rvs[eta]
 
     model.random_variables = rvs

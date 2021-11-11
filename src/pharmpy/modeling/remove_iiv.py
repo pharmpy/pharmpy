@@ -3,7 +3,6 @@
 """
 
 from pharmpy.modeling.help_functions import _format_input_list, _get_etas
-from pharmpy.symbols import symbol as S
 
 
 def remove_iiv(model, to_remove=None):
@@ -50,8 +49,7 @@ def remove_iiv(model, to_remove=None):
     etas = _get_etas(model, to_remove, include_symbols=True)
 
     for eta in etas:
-        statement = sset.find_assignment(eta.name, is_symbol=False)
-        statement.expression = statement.expression.subs(S(eta.name), 0)
+        sset.subs({eta.symbol: 0})
         del rvs[eta]
 
     model.random_variables = rvs

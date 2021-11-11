@@ -3,6 +3,7 @@
 """
 
 import numpy as np
+import sympy
 
 from pharmpy import math
 from pharmpy.modeling.help_functions import _get_etas
@@ -73,8 +74,9 @@ def create_joint_distribution(model, rvs=None):
     sset = model.statements
     paramnames = []
     for rv in rvs:
-        statements = sset.find_assignment(rv, is_symbol=False, last=False)
-        parameter_names = '_'.join([s.symbol.name for s in statements])
+        parameter_names = '_'.join(
+            [s.symbol.name for s in sset if sympy.Symbol(rv) in s.rhs_symbols]
+        )
         paramnames.append(parameter_names)
 
     cov_to_params = all_rvs.join(rvs, name_template='IIV_{}_IIV_{}', param_names=paramnames)

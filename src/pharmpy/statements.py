@@ -889,24 +889,34 @@ class ModelStatements(MutableSequence):
         for statement in self:
             statement.subs(substitutions)
 
-    def find_assignment(self, variable, is_symbol=True, last=True):
-        """Returns full last statement or all assignments that contains the symbol or
-        variable of interest of an assignment"""
-        assignments = []
+    def find_assignment(self, symbol):
+        """Returns last assignment of symbol
+
+        Parameters
+        ----------
+        symbol : Symbol or str
+            Symbol to look for
+
+        Returns
+        -------
+        Assignment
+            An Assignment or None if no assignment to symbol exists
+
+        Examples
+        --------
+        >>> from pharmpy.modeling import load_example_model
+        >>> model = load_example_model("pheno")
+        >>> model.statements.find_assignment("CL")
+                    ETA(1)
+        CL := TVCL⋅ℯ
+        """
+        symbol = sympy.sympify(symbol)
+        assignment = None
         for statement in self:
             if isinstance(statement, Assignment):
-                if is_symbol and str(statement.symbol) == variable:
-                    assignments.append(statement)
-                elif not is_symbol and variable in [s.name for s in statement.free_symbols]:
-                    assignments.append(statement)
-
-        if last:
-            try:
-                return assignments[-1]
-            except IndexError:
-                return None
-        else:
-            return assignments
+                if statement.symbol == symbol:
+                    assignment = statement
+        return assignment
 
     def reassign(self, symbol, expression):
         """Reassign symbol to expression
