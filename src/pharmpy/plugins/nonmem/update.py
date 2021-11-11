@@ -297,7 +297,7 @@ def update_ode_system(model, old, new):
             else:
                 raise NotImplementedError("First order infusion rate is not yet supported")
             statements = model.statements
-            statements.add_before_odes(ass)
+            statements.insert_before_odes(ass)
             df = model.dataset
             rate = np.where(df['AMT'] == 0, 0, -2)
             df['RATE'] = rate
@@ -433,7 +433,7 @@ def update_lag_time(model, old, new):
     old_lag_time = old.find_dosing().lag_time
     if new_lag_time != old_lag_time and new_lag_time != 0:
         ass = Assignment('ALAG1', new_lag_time)
-        model.statements.add_before_odes(ass)
+        model.statements.insert_before_odes(ass)
         new_dosing.lag_time = ass.symbol
 
 
@@ -723,7 +723,7 @@ def add_needed_pk_parameters(model, advan, trans):
             comp, rate = odes.get_compartment_outflows(odes.find_depot(statements))[0]
             ass = Assignment('KA', rate)
             if rate != ass.symbol:
-                statements.add_before_odes(ass)
+                statements.insert_before_odes(ass)
                 odes.add_flow(odes.find_depot(statements), comp, ass.symbol)
     if advan == 'ADVAN3' and trans == 'TRANS4':
         central = odes.find_central()
@@ -796,10 +796,10 @@ def add_parameters_ratio(model, numpar, denompar, source, dest):
         par2 = Assignment(denompar, denom)
         if rate != par1.symbol / par2.symbol:
             if not statements.find_assignment(numpar):
-                statements.add_before_odes(par1)
+                statements.insert_before_odes(par1)
                 odes.subs({numer: sympy.Symbol(numpar)})
             if not statements.find_assignment(denompar):
-                statements.add_before_odes(par2)
+                statements.insert_before_odes(par2)
                 odes.subs({denom: sympy.Symbol(denompar)})
         odes.add_flow(source, dest, par1.symbol / par2.symbol)
 
@@ -818,7 +818,7 @@ def define_parameter(model, name, value, synonyms=None):
                 ass.expression = value
             return False
     new_ass = Assignment(name, value)
-    model.statements.add_before_odes(new_ass)
+    model.statements.insert_before_odes(new_ass)
     return True
 
 

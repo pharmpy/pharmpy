@@ -1004,7 +1004,14 @@ class ModelStatements(MutableSequence):
 
     @property
     def ode_system(self):
-        """Returns the ODE system of the model or None if the model doesn't have an ODE system"""
+        """Returns the ODE system of the model or None if the model doesn't have an ODE system
+
+        Examples
+        --------
+        >>> from pharmpy.modeling import load_example_model
+        >>> model = load_example_model("pheno")
+        >>> model.statements.ode_system
+        """
         for s in self:
             if isinstance(s, ODESystem):
                 return s
@@ -1047,8 +1054,22 @@ class ModelStatements(MutableSequence):
             expression = expression.subs({statement.symbol: statement.expression})
         return expression
 
-    def add_before_odes(self, statement):
-        """Add a statement just before the ODE system or at the end of the model"""
+    def insert_before_odes(self, statement):
+        """Insert a statement just before the ODE system or at the end of the model
+
+        Parameters
+        ----------
+        statement : Statement
+            Statement to insert
+
+        Examples
+        --------
+        >>> from pharmpy import Assignment
+        >>> from pharmpy.modeling import load_example_model
+        >>> model = load_example_model("pheno")
+        >>> a = Assignment("WGT_G", "WGT*1000")
+        >>> model.statements.insert_before_odes(a)
+        """
         for i, s in enumerate(self):
             if isinstance(s, ODESystem):
                 break
