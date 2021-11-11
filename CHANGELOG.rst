@@ -1,10 +1,12 @@
-next release
-------------
+0.36.0 (2021-11-11)
+-------------------
 
+* Add option to set_dtbs_error_model to fix parameters to 0 (i.e. get data on log-scale)
 * Create model file when fitting a model that has no model file
 * Fix bug where files are missing during e.g. modelsearch
 * Fix crash when including a model with no results in summarize_modelfit_results
 * Fix bug in Pharmr where integers where interpreted as floats
+* Fix issue with extra IPRED on power_on_ruv model
 
 0.35.0 (2021-11-02)
 -------------------
