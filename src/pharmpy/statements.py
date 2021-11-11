@@ -747,7 +747,13 @@ class Infusion:
 
 
 class ModelStatements(MutableSequence):
-    """A sequence of symbolic statements describing the model"""
+    """A sequence of symbolic statements describing the model
+
+    Two types of statements are supported: Assignment and ODESystem.
+    A ModelStatements object can have 0 or 1 ODESystem. The order of
+    the statements is significant and the same symbol can be assigned
+    to multiple times.
+    """
 
     def __init__(self, statements=None):
         if isinstance(statements, ModelStatements):
