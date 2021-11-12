@@ -400,7 +400,7 @@ def model_peripheral_compartments(args):
     from pharmpy.modeling import add_peripheral_compartment, remove_peripheral_compartment
 
     model = args.model
-    p = model.statements.ode_system.find_peripherals()
+    p = model.statements.ode_system.peripheral_compartments
     if len(p) < args.n:
         func = add_peripheral_compartment
     elif len(p) > args.n:

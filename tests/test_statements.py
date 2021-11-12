@@ -153,26 +153,26 @@ def test_find_compartment(testdata):
     assert comp is None
 
 
-def test_find_output(testdata):
+def test_output_compartment(testdata):
     model = Model(testdata / 'nonmem' / 'pheno.mod')
     model.statements.ode_system.add_compartment("NEW")
     with pytest.raises(ValueError):
-        model.statements.ode_system.find_output()
+        model.statements.ode_system.output_compartment
 
 
-def test_find_dosing(testdata):
+def test_dosing_compartment(testdata):
     model = Model(testdata / 'nonmem' / 'pheno.mod')
-    assert model.statements.ode_system.find_dosing().name == 'CENTRAL'
-    model.statements.ode_system.find_dosing().dose = None
+    assert model.statements.ode_system.dosing_compartment.name == 'CENTRAL'
+    model.statements.ode_system.dosing_compartment.dose = None
     with pytest.raises(ValueError):
-        model.statements.ode_system.find_dosing()
+        model.statements.ode_system.dosing_compartment
 
 
-def test_find_central(testdata):
+def test_central_compartment(testdata):
     model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan2.mod')
-    assert model.statements.ode_system.find_central().name == 'CENTRAL'
+    assert model.statements.ode_system.central_compartment.name == 'CENTRAL'
     model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan5_nodepot.mod')
-    assert model.statements.ode_system.find_central().name == 'CENTRAL'
+    assert model.statements.ode_system.central_compartment.name == 'CENTRAL'
 
 
 def test_find_depot(testdata):
@@ -186,9 +186,9 @@ def test_find_depot(testdata):
     assert model.statements.ode_system.find_depot(model.statements) is None
 
 
-def test_find_peripherals(testdata):
+def test_peripheral_compartments(testdata):
     model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan2.mod')
-    assert model.statements.ode_system.find_peripherals() == []
+    assert model.statements.ode_system.peripheral_compartments == []
 
 
 def test_find_transit_compartments(testdata):

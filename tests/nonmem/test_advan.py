@@ -255,4 +255,4 @@ $SIGMA  0.273617  ;   RUV_PROP
 """
     model = Model(StringIO(code))
     odes = model.statements.ode_system
-    assert odes.get_flow(odes.find_central(), odes.find_output()) == sympy.Symbol('K100')
+    assert odes.get_flow(odes.central_compartment, odes.output_compartment) == sympy.Symbol('K100')

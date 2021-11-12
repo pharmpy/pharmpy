@@ -62,8 +62,8 @@ $ESTIMATION METHOD=1 INTERACTION
 """
     assert model.model_code == correct
     odes = model.statements.ode_system
-    central = odes.find_central()
-    periph = odes.find_peripherals()[0]
+    central = odes.central_compartment
+    periph = odes.peripheral_compartments[0]
     rate = model.statements.ode_system.get_flow(central, periph)
     assert rate == sympy.Symbol('Q') / sympy.Symbol('V1')
 

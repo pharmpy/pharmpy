@@ -211,8 +211,8 @@ def set_mixed_mm_fo_elimination(model):
 
 def _do_michaelis_menten_elimination(model, combined=False):
     odes = model.statements.ode_system
-    central = odes.find_central()
-    output = odes.find_output()
+    central = odes.central_compartment
+    output = odes.output_compartment
     old_rate = odes.get_flow(central, output)
     numer, denom = old_rate.as_numer_denom()
 
@@ -300,7 +300,7 @@ def set_transit_compartments(model, n):
     elif len(transits) == 0:
         mdt_symb = _add_parameter(model, 'MDT', init=_get_absorption_init(model, 'MDT'))
         rate = n / mdt_symb
-        comp = odes.find_dosing()
+        comp = odes.dosing_compartment
         dose = comp.dose
         comp.dose = None
         while n > 0:
@@ -314,7 +314,7 @@ def set_transit_compartments(model, n):
         removed_symbols = set()
         trans, destination, flow = _find_last_transit(odes, transits)
         if n == 0:  # The dosing compartment will be removed
-            dosing = odes.find_dosing()
+            dosing = odes.dosing_compartment
             dose = dosing.dose
         remaining = set(transits)
         while nremove > 0:
@@ -408,7 +408,7 @@ def set_lag_time(model):
 
     """
     odes = model.statements.ode_system
-    dosing_comp = odes.find_dosing()
+    dosing_comp = odes.dosing_compartment
     old_lag_time = dosing_comp.lag_time
     mdt_symb = _add_parameter(model, 'MDT', init=_get_absorption_init(model, 'MDT'))
     dosing_comp.lag_time = mdt_symb
@@ -446,7 +446,7 @@ def remove_lag_time(model):
 
     """
     odes = model.statements.ode_system
-    dosing_comp = odes.find_dosing()
+    dosing_comp = odes.dosing_compartment
     lag_time = dosing_comp.lag_time
     if lag_time:
         symbols = lag_time.free_symbols
@@ -497,12 +497,12 @@ def set_zero_order_absorption(model):
     _disallow_infusion(model)
     depot = odes.find_depot(statements)
 
-    dose_comp = odes.find_dosing()
+    dose_comp = odes.dosing_compartment
     symbols = dose_comp.free_symbols
     dose = dose_comp.dose
     if depot:
         to_comp, _ = odes.get_compartment_outflows(depot)[0]
-        ka = odes.get_flow(depot, odes.find_central())
+        ka = odes.get_flow(depot, odes.central_compartment)
         odes.remove_compartment(depot)
         symbols |= ka.free_symbols
         to_comp.dose = dose
@@ -555,7 +555,7 @@ def set_first_order_absorption(model):
         raise ValueError("Setting absorption is not supported for ExplicitODESystem")
     depot = odes.find_depot(statements)
 
-    dose_comp = odes.find_dosing()
+    dose_comp = odes.dosing_compartment
     amount = dose_comp.dose.amount
     symbols = dose_comp.free_symbols
     if depot and depot == dose_comp:
@@ -608,13 +608,13 @@ def set_bolus_absorption(model):
     if depot:
         to_comp, _ = odes.get_compartment_outflows(depot)[0]
         to_comp.dose = depot.dose
-        ka = odes.get_flow(depot, odes.find_central())
+        ka = odes.get_flow(depot, odes.central_compartment)
         odes.remove_compartment(depot)
         symbols = ka.free_symbols
         statements.remove_symbol_definitions(symbols, odes)
         model.remove_unused_parameters_and_rvs()
     if has_zero_order_absorption(model):
-        dose_comp = odes.find_dosing()
+        dose_comp = odes.dosing_compartment
         old_symbols = dose_comp.free_symbols
         dose_comp.dose = Bolus(dose_comp.dose.amount)
         unneeded_symbols = old_symbols - dose_comp.dose.free_symbols
@@ -666,7 +666,7 @@ def set_seq_zo_fo_absorption(model):
     _disallow_infusion(model)
     depot = odes.find_depot(statements)
 
-    dose_comp = odes.find_dosing()
+    dose_comp = odes.dosing_compartment
     have_ZO = has_zero_order_absorption(model)
     if depot and not have_ZO:
         _add_zero_order_absorption(model, dose_comp.amount, depot, 'MDT')
@@ -683,7 +683,7 @@ def set_seq_zo_fo_absorption(model):
 
 def _disallow_infusion(model):
     odes = model.statements.ode_system
-    dose_comp = odes.find_dosing()
+    dose_comp = odes.dosing_compartment
     if isinstance(dose_comp.dose, Infusion):
         if dose_comp.dose.rate is not None:
             ex = dose_comp.dose.rate
@@ -718,7 +718,7 @@ def has_zero_order_absorption(model):
 
     """
     odes = model.statements.ode_system
-    dosing = odes.find_dosing()
+    dosing = odes.dosing_compartment
     dose = dosing.dose
     if isinstance(dose, Infusion):
         if dose.rate is None:
@@ -822,7 +822,7 @@ def set_peripheral_compartments(model, n):
     remove_peripheral_compartment
 
     """
-    per = len(model.statements.ode_system.find_peripherals())
+    per = len(model.statements.ode_system.peripheral_compartments)
     if per < n:
         for _ in range(n - per):
             add_peripheral_compartment(model)
@@ -888,11 +888,11 @@ def add_peripheral_compartment(model):
     """
     statements = model.statements
     odes = statements.ode_system
-    per = odes.find_peripherals()
+    per = odes.peripheral_compartments
     n = len(per) + 1
 
-    central = odes.find_central()
-    output = odes.find_output()
+    central = odes.central_compartment
+    output = odes.output_compartment
     elimination_rate = odes.get_flow(central, output)
     cl, vc = elimination_rate.as_numer_denom()
     if cl.is_Symbol and vc == 1:
@@ -999,12 +999,12 @@ def remove_peripheral_compartment(model):
     """
     statements = model.statements
     odes = statements.ode_system
-    peripherals = odes.find_peripherals()
+    peripherals = odes.peripheral_compartments
     if peripherals:
         last_peripheral = peripherals[-1]
-        central = odes.find_central()
+        central = odes.central_compartment
         if len(peripherals) == 1:
-            output = odes.find_output()
+            output = odes.output_compartment
             elimination_rate = odes.get_flow(central, output)
             cl, vc = elimination_rate.as_numer_denom()
             from_rate = odes.get_flow(last_peripheral, central)

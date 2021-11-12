@@ -279,7 +279,32 @@ class ExplicitODESystem(ODESystem):
 
 
 class CompartmentalSystem(ODESystem):
-    """System of ODEs descibed as a compartmental system"""
+    """System of ODEs descibed as a compartmental system
+
+    Examples
+    --------
+    >>> from pharmpy import Bolus, CompartmentalSystem
+    >>> cs = CompartmentalSystem()
+    >>> dose = Bolus("AMT")
+    >>> central = cs.add_compartment("CENTRAL")
+    >>> central.dose = dose
+    >>> peripheral = cs.add_compartment("PERIPHERAL")
+    >>> output = cs.add_compartment("OUTPUT")
+    >>> cs.add_flow(central, peripheral, "K12")
+    >>> cs.add_flow(peripheral, central, "K21")
+    >>> cs.add_flow(central, output, "CL / V")
+    >>> cs        # doctest: +SKIP
+    Bolus(AMT)
+                     ┌──────────┐
+                     │PERIPHERAL│
+                     └──────────┘
+                      ↑        │
+                     K12      K21
+                      │        ↓
+    ┌───────┐      ┌──────────┐      ┌──────────┐       ┌──────┐
+    │CENTRAL│──K12→│PERIPHERAL│──K21→│ CENTRAL  │──CL/V→│OUTPUT│
+    └───────┘      └──────────┘      └──────────┘       └──────┘
+    """
 
     t = symbols.symbol('t')
 
@@ -317,7 +342,7 @@ class CompartmentalSystem(ODESystem):
         return (
             isinstance(other, CompartmentalSystem)
             and nx.to_dict_of_dicts(self._g) == nx.to_dict_of_dicts(other._g)
-            and self.find_dosing().dose == other.find_dosing().dose
+            and self.dosing_compartment.dose == other.dosing_compartment.dose
             and self.solver == other.solver
         )
 
@@ -527,17 +552,48 @@ class CompartmentalSystem(ODESystem):
         else:
             return None
 
-    def n_connected(self, comp):
-        """Get the number of compartments connected to comp"""
+    def get_n_connected(self, comp):
+        """Get the number of compartments connected to a compartment
+
+        Parameters
+        ----------
+        comp : Compartment or str
+            The compartment
+
+        Returns
+        -------
+        int
+            Number of compartments connected to comp
+
+        Examples
+        --------
+        >>> from pharmpy.modeling import load_example_model
+        >>> model = load_example_model("pheno")
+        >>> model.statements.ode_system.get_n_connected("CENTRAL")
+        1
+        """
         out_comps = {c for c, _ in self.get_compartment_outflows(comp)}
         in_comps = {c for c, _ in self.get_compartment_inflows(comp)}
         return len(out_comps | in_comps)
 
-    def find_output(self):
-        """Find the output compartment
+    @property
+    def output_compartment(self):
+        """Get the output compartment
 
         An output compartment is defined to be a compartment that does not have any outward
         flow. A model has to have one and only one output compartment.
+
+        Returns
+        -------
+        Compartment
+            Output compartment of compartmental system
+
+        Examples
+        --------
+        >>> from pharmpy.modeling import load_example_model
+        >>> model = load_example_model("pheno")
+        >>> model.statements.ode_system.output_compartment
+        Compartment(OUTPUT)
         """
         zeroout = [node for node, out_degree in self._g.out_degree() if out_degree == 0]
         if len(zeroout) == 1:
@@ -545,29 +601,73 @@ class CompartmentalSystem(ODESystem):
         else:
             raise ValueError('More than one or zero output compartments')
 
-    def find_dosing(self):
-        """Find the dosing compartment
+    @property
+    def dosing_compartment(self):
+        """The dosing compartment
 
         A dosing compartment is a compartment that receives an input dose. Only one dose
         compartment is supported.
+
+        Returns
+        -------
+        Compartment
+            Dosing compartment
+
+        Examples
+        --------
+        >>> from pharmpy.modeling import load_example_model
+        >>> model = load_example_model("pheno")
+        >>> model.statements.ode_system.dosing_compartment
+        Compartment(CENTRAL, dose=Bolus(AMT))
         """
         for node in self._g.nodes:
             if node.dose is not None:
                 return node
         raise ValueError('No dosing compartment exists')
 
-    def find_central(self):
-        """Find the central compartment
+    @property
+    def central_compartment(self):
+        """The central compartment
 
         The central compartment is defined to be the compartment that has an outward flow
         to the output compartment. Only one central compartment is supported.
+
+        Returns
+        -------
+        Compartment
+            Central compartment
+
+        Examples
+        --------
+        >>> from pharmpy.modeling import load_example_model
+        >>> model = load_example_model("pheno")
+        >>> model.statements.ode_system.central_compartment
+        Compartment(CENTRAL, dose=Bolus(AMT))
         """
-        output = self.find_output()
+        output = self.output_compartment
         central = next(self._g.predecessors(output))
         return central
 
-    def find_peripherals(self):
-        central = self.find_central()
+    @property
+    def peripheral_compartments(self):
+        """Find perihperal compartments
+
+        A peripheral compartment is defined as having one flow to the central compartment and
+        one flow from the central compartment.
+
+        Returns
+        -------
+        list of compartments
+            Peripheral compartments
+
+        Examples
+        --------
+        >>> from pharmpy.modeling import load_example_model
+        >>> model = load_example_model("pheno")
+        >>> model.statements.ode_system.peripheral_compartments
+        []
+        """
+        central = self.central_compartment
         oneout = {node for node, out_degree in self._g.out_degree() if out_degree == 1}
         onein = {node for node, in_degree in self._g.in_degree() if in_degree == 1}
         cout = {comp for comp in oneout if self.get_flow(comp, central) is not None}
@@ -584,9 +684,21 @@ class CompartmentalSystem(ODESystem):
         the dose compartment. Because one single transit compartment cannot be distinguished
         from one depot compartment such compartment will be defined to be a depot and not
         a transit compartment.
+
+        Returns
+        -------
+        list of compartments
+            Transit compartments
+
+        Examples
+        --------
+        >>> from pharmpy.modeling import load_example_model
+        >>> model = load_example_model("pheno")
+        >>> model.statements.ode_system.find_transit_compartments(model.statements)
+        []
         """
         transits = []
-        comp = self.find_dosing()
+        comp = self.dosing_compartment
         if len(self.get_compartment_inflows(comp)) != 0:
             return transits
         outflows = self.get_compartment_outflows(comp)
@@ -609,7 +721,7 @@ class CompartmentalSystem(ODESystem):
             comp = next_comp
         # Special case of one transit directly into central is not defined as a transit
         # Also not central itself
-        central = self.find_central()
+        central = self.central_compartment
         if len(transits) == 1 and (
             self.get_flow(transits[0], central) is not None or transits[0] == central
         ):
@@ -622,6 +734,20 @@ class CompartmentalSystem(ODESystem):
 
         The depot compartment is defined to be the compartment that only has out flow to the
         central compartment, but no flow from the central compartment.
+
+        Returns
+        -------
+        Compartment
+            Depot compartment
+
+        Examples
+        --------
+        >>> from pharmpy.modeling import load_example_model, set_first_order_absorption
+        >>> model = load_example_model("pheno")
+        >>> set_first_order_absorption(model)       # doctest: +ELLIPSIS
+        <...>
+        >>> model.statements.ode_system.find_depot(model.statements)
+        Compartment(DEPOT, dose=Bolus(AMT))
         """
         transits = self.find_transit_compartments(statements)
         depot = self._find_depot()
@@ -630,7 +756,7 @@ class CompartmentalSystem(ODESystem):
         return depot
 
     def _find_depot(self):
-        central = self.find_central()
+        central = self.central_compartment
         depot = None
         for to_central, _ in self.get_compartment_inflows(central):
             outflows = self.get_compartment_outflows(to_central)
@@ -646,11 +772,27 @@ class CompartmentalSystem(ODESystem):
 
     @property
     def compartmental_matrix(self):
+        """Compartmental matrix of the compartmental system
+
+        Examples
+        --------
+        >>> from pharmpy.modeling import load_example_model, set_first_order_absorption
+        >>> import sympy
+        >>> model = load_example_model("pheno")
+        >>> sympy.pprint(model.statements.ode_system.compartmental_matrix)
+        ⎡-CL    ⎤
+        ⎢────  0⎥
+        ⎢ V     ⎥
+        ⎢       ⎥
+        ⎢ CL    ⎥
+        ⎢ ──   0⎥
+        ⎣ V     ⎦
+        """
         dod = nx.to_dict_of_dicts(self._g)
         size = len(self._g.nodes)
         f = sympy.zeros(size)
         nodes = list(self._g.nodes)
-        output = self.find_output()
+        output = self.output_compartment
         # Put output last
         nodes.remove(output)
         nodes.append(output)
@@ -670,17 +812,58 @@ class CompartmentalSystem(ODESystem):
 
     @property
     def amounts(self):
+        """Column vector of amounts for all compartments
+
+        Examples
+        --------
+        >>> from pharmpy.modeling import load_example_model, set_first_order_absorption
+        >>> import sympy
+        >>> model = load_example_model("pheno")
+        >>> sympy.pprint(model.statements.ode_system.amounts)
+        ⎡A_CENTRAL⎤
+        ⎢         ⎥
+        ⎣A_OUTPUT ⎦
+        """
         amts = [node.amount for node in self._g.nodes]
         return sympy.Matrix(amts)
 
     @property
     def names(self):
-        """A list of the names of all compartments"""
+        """List of the names of all compartments
+
+        Examples
+        --------
+        >>> from pharmpy.modeling import load_example_model, set_first_order_absorption
+        >>> model = load_example_model("pheno")
+        >>> model.statements.ode_system.names
+        ['CENTRAL', 'OUTPUT']
+        """
         return [node.name for node in self._g.nodes]
 
     @property
     def zero_order_inputs(self):
-        """A vector of all zero order inputs to each compartment"""
+        """Vector of all zero order inputs to each compartment
+
+        Example
+        -------
+        >>> from pharmpy.modeling import load_example_model, set_zero_order_absorption
+        >>> import sympy
+        >>> model = load_example_model("pheno")
+        >>> sympy.pprint(model.statements.ode_system.zero_order_inputs)
+        ⎡0⎤
+        ⎢ ⎥
+        ⎣0⎦
+        >>> set_zero_order_absorption(model)    # doctest: +ELLIPSIS
+        <...>
+        >>> sympy.pprint(model.statements.ode_system.zero_order_inputs)
+        ⎡⎧ AMT                ⎤
+        ⎢⎪─────  for t < 2⋅MAT⎥
+        ⎢⎨2⋅MAT               ⎥
+        ⎢⎪                    ⎥
+        ⎢⎩  0      otherwise  ⎥
+        ⎢                     ⎥
+        ⎣          0          ⎦
+        """
         inputs = []
         for node in self._g.nodes:
             if node.dose is not None and isinstance(node.dose, Infusion):
@@ -697,13 +880,38 @@ class CompartmentalSystem(ODESystem):
         return sympy.Matrix(inputs)
 
     def to_explicit_odes(self, skip_output=False):
+        """Get the explicit ODEs and initial conditions for the system
+
+        Parameters
+        ----------
+        skip_output : boolean
+            Set to true to leave the output compartment out
+
+        Results
+        -------
+        tuple
+            Pair of equations and initial conditions
+
+        Example
+        -------
+        >>> from pharmpy.modeling import load_example_model, set_zero_order_absorption
+        >>> import sympy
+        >>> model = load_example_model("pheno")
+        >>> eqs, ics = model.statements.ode_system.to_explicit_odes()
+        >>> sympy.pprint(eqs)
+        ⎡d                  -CL⋅A_CENTRAL(t)   d                 CL⋅A_CENTRAL(t)⎤
+        ⎢──(A_CENTRAL(t)) = ─────────────────, ──(A_OUTPUT(t)) = ───────────────⎥
+        ⎣dt                         V          dt                       V       ⎦
+        >>> ics
+        {A_CENTRAL(0): AMT, A_OUTPUT(0): 0}
+        """
         amount_funcs = sympy.Matrix([sympy.Function(amt.name)(self.t) for amt in self.amounts])
         derivatives = sympy.Matrix([sympy.Derivative(fn, self.t) for fn in amount_funcs])
         inputs = self.zero_order_inputs
         a = self.compartmental_matrix @ amount_funcs + inputs
         eqs = [sympy.Eq(lhs, rhs) for lhs, rhs in zip(derivatives, a)]
         ics = {}
-        output = self.find_output()
+        output = self.output_compartment
         for node in self._g.nodes:
             if skip_output and node == output:
                 continue
@@ -720,7 +928,7 @@ class CompartmentalSystem(ODESystem):
         return eqs, ics
 
     def __len__(self):
-        """Get the number of compartments including output"""
+        """The number of compartments including output"""
         return len(self._g.nodes)
 
     def _repr_html_(self):
@@ -729,12 +937,12 @@ class CompartmentalSystem(ODESystem):
         return f'<pre>{s}</pre>'
 
     def __repr__(self):
-        output = self.find_output()
+        output = self.output_compartment
         output_box = unicode.Box(output.name)
-        central = self.find_central()
+        central = self.central_compartment
         central_box = unicode.Box(central.name)
         depot = self._find_depot()
-        current = self.find_dosing()
+        current = self.dosing_compartment
         if depot:
             comp = depot
         else:
@@ -743,7 +951,7 @@ class CompartmentalSystem(ODESystem):
         while current != comp:
             transits.append(current)
             current = self.get_compartment_outflows(current)[0][0]
-        periphs = self.find_peripherals()
+        periphs = self.peripheral_compartments
         nrows = 1 + 2 * len(periphs)
         ncols = 2 * len(transits) + (2 if depot else 0) + 3
         grid = unicode.Grid(nrows, ncols)
@@ -789,7 +997,7 @@ class CompartmentalSystem(ODESystem):
                 ),
             )
 
-        dose = self.find_dosing().dose
+        dose = self.dosing_compartment.dose
         s = str(dose) + '\n' + str(grid).rstrip()
         return s
 

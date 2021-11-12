@@ -270,7 +270,7 @@ def update_ode_system(model, old, new):
         # old_trans = subs.get_option_startswith('TRANS')
         # conv_advan, new_advan, new_trans = change_advan(model)
         update_lag_time(model, old, new)
-        if isinstance(new.find_dosing().dose, Bolus) and 'RATE' in model.dataset.columns:
+        if isinstance(new.dosing_compartment.dose, Bolus) and 'RATE' in model.dataset.columns:
             df = model.dataset
             df.drop(columns=['RATE'], inplace=True)
             model.dataset = df
@@ -282,14 +282,16 @@ def update_ode_system(model, old, new):
         update_model_record(model, advan)
 
         statements = model.statements
-        if isinstance(new.find_dosing().dose, Infusion) and not statements.find_assignment('D1'):
+        if isinstance(new.dosing_compartment.dose, Infusion) and not statements.find_assignment(
+            'D1'
+        ):
             # Handle direct moving of Infusion dose
             statements.subs({'D2': 'D1'})
 
-        if isinstance(new.find_dosing().dose, Infusion) and isinstance(
-            old.find_dosing().dose, Bolus
+        if isinstance(new.dosing_compartment.dose, Infusion) and isinstance(
+            old.dosing_compartment.dose, Bolus
         ):
-            dose = new.find_dosing().dose
+            dose = new.dosing_compartment.dose
             if dose.rate is None:
                 # FIXME: Not always D1 here!
                 ass = Assignment('D1', dose.duration)
@@ -428,9 +430,9 @@ def update_statements(model, old, new, trans):
 
 
 def update_lag_time(model, old, new):
-    new_dosing = new.find_dosing()
+    new_dosing = new.dosing_compartment
     new_lag_time = new_dosing.lag_time
-    old_lag_time = old.find_dosing().lag_time
+    old_lag_time = old.dosing_compartment.lag_time
     if new_lag_time != old_lag_time and new_lag_time != 0:
         ass = Assignment('ALAG1', new_lag_time)
         model.statements.insert_before_odes(ass)
@@ -444,8 +446,8 @@ def new_compartmental_map(cs, oldmap):
 
     Can handle compartments from dosing to central, peripherals and output
     """
-    comp = cs.find_dosing()
-    central = cs.find_central()
+    comp = cs.dosing_compartment
+    central = cs.central_compartment
     i = 1
     compmap = dict()
     while True:
@@ -455,7 +457,7 @@ def new_compartmental_map(cs, oldmap):
             break
         comp, _ = cs.get_compartment_outflows(comp)[0]
 
-    peripherals = cs.find_peripherals()
+    peripherals = cs.peripheral_compartments
     for p in peripherals:
         compmap[p.name] = i
         i += 1
@@ -632,7 +634,7 @@ def new_advan_trans(model):
     oldtrans = subs.get_option_startswith('TRANS')
     statements = model.statements
     odes = model.statements.ode_system
-    if len(odes) > 5 or odes.n_connected(odes.find_central()) != len(odes) - 1:
+    if len(odes) > 5 or odes.get_n_connected(odes.central_compartment) != len(odes) - 1:
         advan = 'ADVAN5'
     elif len(odes) == 2:
         advan = 'ADVAN1'
@@ -700,7 +702,7 @@ def update_model_record(model, advan):
         if oldmap != newmap:
             model.control_stream.remove_records(model.control_stream.get_records('MODEL'))
             mod = model.control_stream.insert_record('$MODEL\n')
-            output_name = model.statements.ode_system.find_output().name
+            output_name = model.statements.ode_system.output_compartment.name
             comps = {v: k for k, v in newmap.items() if k != output_name}
             i = 1
             while True:
@@ -726,16 +728,16 @@ def add_needed_pk_parameters(model, advan, trans):
                 statements.insert_before_odes(ass)
                 odes.add_flow(odes.find_depot(statements), comp, ass.symbol)
     if advan == 'ADVAN3' and trans == 'TRANS4':
-        central = odes.find_central()
-        output = odes.find_output()
-        peripheral = odes.find_peripherals()[0]
+        central = odes.central_compartment
+        output = odes.output_compartment
+        peripheral = odes.peripheral_compartments[0]
         add_parameters_ratio(model, 'CL', 'V1', central, output)
         add_parameters_ratio(model, 'Q', 'V2', peripheral, central)
         add_parameters_ratio(model, 'Q', 'V1', central, peripheral)
     elif advan == 'ADVAN4':
-        central = odes.find_central()
-        output = odes.find_output()
-        peripheral = odes.find_peripherals()[0]
+        central = odes.central_compartment
+        output = odes.output_compartment
+        peripheral = odes.peripheral_compartments[0]
         if trans == 'TRANS1':
             rate1 = odes.get_flow(central, peripheral)
             add_rate_assignment_if_missing(model, 'K23', rate1, central, peripheral)
@@ -745,18 +747,18 @@ def add_needed_pk_parameters(model, advan, trans):
             add_parameters_ratio(model, 'CL', 'V2', central, output)
             add_parameters_ratio(model, 'Q', 'V3', peripheral, central)
     elif advan == 'ADVAN12' and trans == 'TRANS4':
-        central = odes.find_central()
-        output = odes.find_output()
-        peripheral1 = odes.find_peripherals()[0]
-        peripheral2 = odes.find_peripherals()[1]
+        central = odes.central_compartment
+        output = odes.output_compartment
+        peripheral1 = odes.peripheral_compartments[0]
+        peripheral2 = odes.peripheral_compartments[1]
         add_parameters_ratio(model, 'CL', 'V2', central, output)
         add_parameters_ratio(model, 'Q3', 'V3', peripheral1, central)
         add_parameters_ratio(model, 'Q4', 'V4', peripheral2, central)
     elif advan == 'ADVAN11' and trans == 'TRANS4':
-        central = odes.find_central()
-        output = odes.find_output()
-        peripheral1 = odes.find_peripherals()[0]
-        peripheral2 = odes.find_peripherals()[1]
+        central = odes.central_compartment
+        output = odes.output_compartment
+        peripheral1 = odes.peripheral_compartments[0]
+        peripheral2 = odes.peripheral_compartments[1]
         add_parameters_ratio(model, 'CL', 'V1', central, output)
         add_parameters_ratio(model, 'Q2', 'V2', peripheral1, central)
         add_parameters_ratio(model, 'Q3', 'V3', peripheral2, central)

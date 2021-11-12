@@ -771,7 +771,7 @@ def get_model_covariates(model, strings=False):
     datasymbs = {sympy.Symbol(s) for s in model.dataset.columns}
     cov_dose_symbols = set()
     if isinstance(model.statements.ode_system, CompartmentalSystem):
-        dosecmt = model.statements.ode_system.find_dosing()
+        dosecmt = model.statements.ode_system.dosing_compartment
         dosesyms = dosecmt.free_symbols
         for s in model.statements:
             if isinstance(s, Assignment):
