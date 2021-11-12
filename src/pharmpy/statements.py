@@ -638,11 +638,26 @@ class CompartmentalSystem(ODESystem):
 
 
 class Compartment:
+    """Compartment for a compartmental system
+
+    Attributes
+    ----------
+    name : str
+        Compartment name
+    dose : Dose
+        Dose object for dose into this compartment. Default None for no dose.
+    lag_time : Expression
+        Lag time for doses entering this compartment. Default 0
+    """
     def __init__(self, name, index, lag_time=0):
         self.name = name
         self.index = index
         self.dose = None
         self.lag_time = lag_time
+
+    @property
+    def amount(self):
+        return symbols.symbol(f'A_{self.name}')
 
     @property
     def lag_time(self):
@@ -676,9 +691,9 @@ class Compartment:
     def __hash__(self):
         return hash(self.name)
 
-    @property
-    def amount(self):
-        return symbols.symbol(f'A_{self.name}')
+    def __repr__(self):
+        lag = '' if self.lag_time == 0 else f', lag_time={self.lag_time}'
+        return f'Compartment({self.name}{lag})'
 
 
 class Bolus:
