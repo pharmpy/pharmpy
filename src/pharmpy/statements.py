@@ -327,7 +327,7 @@ class CompartmentalSystem(ODESystem):
         return newone
 
     def add_compartment(self, name):
-        comp = Compartment(name, len(self._g) + 1)
+        comp = Compartment(name)
         self._g.add_node(comp)
         return comp
 
@@ -416,8 +416,8 @@ class CompartmentalSystem(ODESystem):
         cout = {comp for comp in oneout if self.get_flow(comp, central) is not None}
         cin = {comp for comp in onein if self.get_flow(central, comp) is not None}
         peripherals = list(cout & cin)
-        # Return in deterministic indexed order
-        peripherals = sorted(peripherals, key=lambda comp: comp.index)
+        # Return in deterministic order
+        peripherals = sorted(peripherals, key=lambda comp: comp.name)
         return peripherals
 
     def find_transit_compartments(self, statements):
@@ -648,15 +648,38 @@ class Compartment:
         Dose object for dose into this compartment. Default None for no dose.
     lag_time : Expression
         Lag time for doses entering this compartment. Default 0
+
+    Examples
+    --------
+    >>> from pharmpy import Bolus, Compartment
+    >>> comp = Compartment("CENTRAL")
+    >>> comp
+    Compartment(CENTRAL)
+    >>> comp = Compartment("DEPOT", lag_time="ALAG")
+    >>> comp
+    Compartment(DEPOT, lag_time=ALAG)
+    >>> dose = Bolus("AMT")
+    >>> comp = Compartment("DEPOT", dose=dose)
+    >>> comp
+    Compartment(DEPOT, dose=Bolus(AMT))
     """
-    def __init__(self, name, index, lag_time=0):
+
+    def __init__(self, name, dose=None, lag_time=0):
         self.name = name
-        self.index = index
-        self.dose = None
+        self.dose = dose
         self.lag_time = lag_time
 
     @property
     def amount(self):
+        """Symbol for the amount in the compartment
+
+        Examples
+        --------
+        >>> from pharmpy import Compartment
+        >>> comp = Compartment("CENTRAL")
+        >>> comp.amount
+        A_CENTRAL
+        """
         return symbols.symbol(f'A_{self.name}')
 
     @property
@@ -669,6 +692,16 @@ class Compartment:
 
     @property
     def free_symbols(self):
+        """Get set of all free symbols in the compartment
+
+        Examples
+        --------
+        >>> from pharmpy import Bolus, Compartment
+        >>> dose = Bolus("AMT")
+        >>> comp = Compartment("CENTRAL", dose=dose, lag_time="ALAG")
+        >>> comp.free_symbols  # doctest: +SKIP
+        {ALAG, AMT}
+        """
         symbs = set()
         if self.dose is not None:
             symbs |= self.dose.free_symbols
@@ -676,6 +709,17 @@ class Compartment:
         return symbs
 
     def subs(self, substitutions):
+        """Substitute expressions or symbols in compartment
+
+        Examples
+        --------
+        >>> from pharmpy import Bolus, Compartment
+        >>> dose = Bolus("AMT")
+        >>> comp = Compartment("CENTRAL", dose=dose)
+        >>> comp.subs({"AMT": "DOSE"})
+        >>> comp
+        Compartment(CENTRAL, dose=Bolus(DOSE))
+        """
         if self.dose is not None:
             self.dose.subs(substitutions)
         self.lag_time.subs(substitutions)
@@ -693,7 +737,8 @@ class Compartment:
 
     def __repr__(self):
         lag = '' if self.lag_time == 0 else f', lag_time={self.lag_time}'
-        return f'Compartment({self.name}{lag})'
+        dose = '' if self.dose is None else f', dose={self.dose}'
+        return f'Compartment({self.name}{dose}{lag})'
 
 
 class Bolus:
