@@ -16,7 +16,14 @@ import logging
 from .model_factory import Model
 from .parameter import Parameter, Parameters
 from .random_variables import RandomVariable, RandomVariables, VariabilityHierarchy
-from .statements import Assignment, Bolus, Compartment, Infusion, ModelStatements
+from .statements import (
+    Assignment,
+    Bolus,
+    Compartment,
+    CompartmentalSystem,
+    Infusion,
+    ModelStatements,
+)
 from .symbols import symbol
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
@@ -26,6 +33,7 @@ __all__ = [
     'Assignment',
     'Bolus',
     'Compartment',
+    'CompartmentalSystem',
     'Infusion',
     'Model',
     'ModelStatements',

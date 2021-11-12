@@ -287,13 +287,6 @@ class CompartmentalSystem(ODESystem):
         self._g = nx.DiGraph()
         super().__init__()
 
-    def subs(self, substitutions):
-        for (u, v, rate) in self._g.edges.data('rate'):
-            rate_sub = rate.subs(substitutions, simultaneous=True)
-            self._g.edges[u, v]['rate'] = rate_sub
-        for comp in self._g.nodes:
-            comp.subs(substitutions)
-
     @property
     def free_symbols(self):
         free = {symbols.symbol('t')}
@@ -306,6 +299,13 @@ class CompartmentalSystem(ODESystem):
     @property
     def rhs_symbols(self):
         return self.free_symbols  # This works currently
+
+    def subs(self, substitutions):
+        for (u, v, rate) in self._g.edges.data('rate'):
+            rate_sub = rate.subs(substitutions, simultaneous=True)
+            self._g.edges[u, v]['rate'] = rate_sub
+        for comp in self._g.nodes:
+            comp.subs(substitutions)
 
     def atoms(self, cls):
         atoms = set()
@@ -327,20 +327,117 @@ class CompartmentalSystem(ODESystem):
         return newone
 
     def add_compartment(self, name):
+        """Create and add compartment to system
+
+        The compartment will be added without any flows to other compartments.
+        Use the add_flow method to add flows to and from the newly added compartment.
+
+        Parameters
+        ----------
+        name : str
+            Name for created compartment
+
+        Returns
+        -------
+        Compartment
+            Newly created compartment
+
+        Examples
+        --------
+        >>> from pharmpy import CompartmentalSystem
+        >>> odes = CompartmentalSystem()
+        >>> central = odes.add_compartment("CENTRAL")
+        """
         comp = Compartment(name)
         self._g.add_node(comp)
         return comp
 
     def remove_compartment(self, compartment):
+        """Remove compartment from system
+
+        Parameters
+        ----------
+        compartment : Compartment
+            Compartment object to remove from system
+
+        Examples
+        --------
+        >>> from pharmpy import CompartmentalSystem
+        >>> odes = CompartmentalSystem()
+        >>> central = odes.add_compartment("CENTRAL")
+        >>> odes.remove_compartment(central)
+        """
         self._g.remove_node(compartment)
 
     def add_flow(self, source, destination, rate):
-        self._g.add_edge(source, destination, rate=rate)
+        """Add flow between two compartments
+
+        Parameters
+        ----------
+        source : Compartment
+            Source compartment
+        destination : Compartment
+            Destination compartment
+        rate : Expression
+            Symbolic rate of flow
+
+        Examples
+        --------
+        >>> from pharmpy import CompartmentalSystem
+        >>> odes = CompartmentalSystem()
+        >>> depot = odes.add_compartment("DEPOT")
+        >>> central = odes.add_compartment("CENTRAL")
+        >>> odes.add_flow(depot, central, "KA")
+        """
+        self._g.add_edge(source, destination, rate=sympy.sympify(rate))
 
     def remove_flow(self, source, destination):
+        """Remove flow between two compartments
+
+        Parameters
+        ----------
+        source : Compartment
+            Source compartment
+        destination : Compartment
+            Destination compartment
+
+        Examples
+        --------
+        >>> from pharmpy import CompartmentalSystem
+        >>> odes = CompartmentalSystem()
+        >>> depot = odes.add_compartment("DEPOT")
+        >>> central = odes.add_compartment("CENTRAL")
+        >>> odes.add_flow(depot, central, "KA")
+        >>> odes.remove_flow(depot, central)
+        """
         self._g.remove_edge(source, destination)
 
     def get_flow(self, source, destination):
+        """Get the rate of flow between two compartments
+
+        Parameters
+        ----------
+        source : Compartment
+            Source compartment
+        destination : Compartment
+            Destination compartment
+
+        Returns
+        -------
+        list
+            Symbolic rates
+
+        Examples
+        --------
+        >>> from pharmpy import CompartmentalSystem
+        >>> odes = CompartmentalSystem()
+        >>> depot = odes.add_compartment("DEPOT")
+        >>> central = odes.add_compartment("CENTRAL")
+        >>> odes.add_flow(depot, central, "KA")
+        >>> odes.get_flow(depot, central)
+        KA
+        >>> odes.get_flow(central, depot)
+        """
         try:
             rate = self._g.edges[source, destination]['rate']
         except KeyError:
@@ -348,7 +445,27 @@ class CompartmentalSystem(ODESystem):
         return rate
 
     def get_compartment_outflows(self, compartment):
-        """Generate all flows going out of a compartment"""
+        """Get list of all flows going out from a compartment
+
+        Parameters
+        ----------
+        compartment : Compartment or str
+            Get outflows for this compartment
+
+        Returns
+        -------
+        list
+            Pairs of compartments and symbolic rates
+
+        Examples
+        --------
+        >>> from pharmpy.modeling import load_example_model
+        >>> model = load_example_model("pheno")
+        >>> model.statements.ode_system.get_compartment_outflows("CENTRAL")
+        [(Compartment(OUTPUT), CL/V)]
+        """
+        if isinstance(compartment, str):
+            compartment = self.find_compartment(compartment)
         flows = []
         for node in self._g.successors(compartment):
             flow = self.get_flow(compartment, node)
@@ -356,7 +473,27 @@ class CompartmentalSystem(ODESystem):
         return flows
 
     def get_compartment_inflows(self, compartment):
-        """Generate all flows going in to a compartment"""
+        """Get list of all flows going in to a compartment
+
+        Parameters
+        ----------
+        compartment : Compartment or str
+            Get inflows to this compartment
+
+        Returns
+        -------
+        list
+            Pairs of compartments and symbolic rates
+
+        Examples
+        --------
+        >>> from pharmpy.modeling import load_example_model
+        >>> model = load_example_model("pheno")
+        >>> model.statements.ode_system.get_compartment_inflows("OUTPUT")
+        [(Compartment(CENTRAL, dose=Bolus(AMT)), CL/V)]
+        """
+        if isinstance(compartment, str):
+            compartment = self.find_compartment(compartment)
         flows = []
         for node in self._g.predecessors(compartment):
             flow = self.get_flow(node, compartment)
@@ -364,6 +501,26 @@ class CompartmentalSystem(ODESystem):
         return flows
 
     def find_compartment(self, name):
+        """Find a compartment using its name
+
+        Parameters
+        ----------
+        name : str
+            Name of compartment to find
+
+        Returns
+        -------
+        Compartment
+            Compartment named name or None if not found
+
+        Examples
+        --------
+        >>> from pharmpy.modeling import load_example_model
+        >>> model = load_example_model("pheno")
+        >>> central = model.statements.ode_system.find_compartment("CENTRAL")
+        >>> central
+        Compartment(CENTRAL, dose=Bolus(AMT))
+        """
         for comp in self._g.nodes:
             if comp.name == name:
                 return comp
