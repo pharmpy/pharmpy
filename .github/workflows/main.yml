@@ -28,6 +28,9 @@ jobs:
       run: tox
       env:
         PLATFORM: ${{ matrix.platform }}
+    - name: Upload coverage to Codecov
+      if: matrix.platform == 'ubuntu-latest' && matrix.python-version == '3.9'
+      uses: codecov/codecov-action@v2
     - name: Test docs
       if: matrix.platform == 'ubuntu-latest' && matrix.python-version == '3.9'
       run: tox -e docs,doctest,doccheck
