@@ -55,6 +55,7 @@ from pharmpy.modeling.ml import (
 )
 from pharmpy.modeling.odes import (
     add_individual_parameter,
+    add_lag_time,
     add_peripheral_compartment,
     has_zero_order_absorption,
     remove_lag_time,
@@ -62,7 +63,6 @@ from pharmpy.modeling.odes import (
     set_bolus_absorption,
     set_first_order_absorption,
     set_first_order_elimination,
-    set_lag_time,
     set_michaelis_menten_elimination,
     set_mixed_mm_fo_elimination,
     set_ode_solver,
@@ -100,6 +100,7 @@ __all__ = [
     'add_iiv',
     'add_individual_parameter',
     'add_iov',
+    'add_lag_time',
     'add_peripheral_compartment',
     'append_estimation_step_options',
     'calculate_eta_shrinkage',
@@ -155,7 +156,6 @@ __all__ = [
     'set_first_order_elimination',
     'set_iiv_on_ruv',
     'set_initial_estimates',
-    'set_lag_time',
     'set_michaelis_menten_elimination',
     'set_mixed_mm_fo_elimination',
     'set_name',

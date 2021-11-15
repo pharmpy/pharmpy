@@ -285,7 +285,7 @@ def set_transit_compartments(model, n):
 
     See also
     --------
-    set_lag_time
+    add_lag_time
 
     """
     statements = model.statements
@@ -378,7 +378,7 @@ def _update_numerators(model):
                     statements.reassign(numer, new_rate)
 
 
-def set_lag_time(model):
+def add_lag_time(model):
     """Add lag time to the dose compartment of model.
 
     Initial estimate for lag time is set the
@@ -398,7 +398,7 @@ def set_lag_time(model):
     --------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> set_lag_time(model)     # doctest: +ELLIPSIS
+    >>> add_lag_time(model)     # doctest: +ELLIPSIS
     <...>
 
     See also
@@ -441,7 +441,7 @@ def remove_lag_time(model):
     See also
     --------
     set_transit_compartments
-    set_lag_time
+    add_lag_time
 
 
     """

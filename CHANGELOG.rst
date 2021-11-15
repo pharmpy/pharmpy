@@ -1,3 +1,8 @@
+next version
+------------
+
+* Rename set_lag_time to add_lag_time
+
 0.36.0 (2021-11-11)
 -------------------
 
