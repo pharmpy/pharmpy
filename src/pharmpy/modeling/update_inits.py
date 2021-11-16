@@ -3,10 +3,6 @@
 """
 
 
-class ModelfitResultsException(Exception):
-    pass
-
-
 def update_inits(model, force_individual_estimates=False):
     """Update initial parameter estimate for a model
 
@@ -41,10 +37,9 @@ def update_inits(model, force_individual_estimates=False):
     if isinstance(model, list) and len(model) == 1:
         model = model[0]
 
-    try:
-        res = model.modelfit_results
-    except AttributeError:
-        raise ModelfitResultsException('No modelfit results available')
+    res = model.modelfit_results
+    if not res:
+        raise ValueError('No modelfit results available')
 
     model.parameters = res.parameter_estimates
 

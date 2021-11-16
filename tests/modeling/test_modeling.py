@@ -2007,6 +2007,20 @@ def test_update_inits(testdata, etas_file, force, file_exists):
         assert (os.path.isfile('run1_input.phi')) is file_exists
 
 
+def test_update_inits_no_res(testdata):
+    with Patcher(additional_skip_names=['pkgutil']) as patcher:
+        set_uid(0)  # Set to root user for write permission
+
+        fs = patcher.fs
+
+        fs.add_real_file(testdata / 'nonmem/pheno.mod', target_path='run1.mod')
+        fs.add_real_file(testdata / 'nonmem/pheno.dta', target_path='pheno.dta')
+
+        model = Model('run1.mod')
+        with pytest.raises(ValueError):
+            update_inits(model)
+
+
 @pytest.mark.parametrize(
     'epsilons, err_ref, theta_ref',
     [
