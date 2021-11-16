@@ -312,6 +312,14 @@ class NONMEMResultsFile:
                     i += 1
                     message += lines[i]
                 self.log.log_warning(message)
+            elif line.startswith(" AN ERROR WAS FOUND IN THE CONTROL STATEMENTS."):
+                if i + 6 < len(lines):
+                    end = len(lines)
+                else:
+                    end = i + 6
+                message = '\n'.join(lines[i:end])
+                self.log.log_error(message)
+                i += 5
             elif line.startswith('0PROGRAM TERMINATED'):
                 message = line[1:]
                 while i < len(lines):

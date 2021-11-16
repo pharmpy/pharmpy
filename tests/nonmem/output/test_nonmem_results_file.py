@@ -349,3 +349,9 @@ def test_ofv_table_gap(testdata):
 
     for n in table_numbers:
         assert rfile.ofv(n) == pytest.approx(ext_table_file.table_no(n).final_ofv)
+
+
+def test_errors(testdata):
+    lst = rf.NONMEMResultsFile(testdata / 'nonmem' / 'errors' / 'control_stream_error.lst', log=Log())
+    print(lst.log.to_dataframe()['message'].iloc[0])
+    assert 'FIX OPTION CANNOT' in lst.log.to_dataframe()['message'].iloc[0]
