@@ -147,8 +147,13 @@ class OptionRecord(Record):
             self.root.children += [ws_node, node]
         elif last_child.rule == 'ws':
             if '\n' in str(last_child):
-                ws_node = AttrTree.create('ws', [{'WS_ALL': ' '}])
-                self.root.children[-1:0] = [ws_node, node]
+                if len(self.root.children) > 1 and self.root.children[-2].rule == 'comment':
+                    # Avoid putting option at same line as comment
+                    ws_node = AttrTree.create('ws', [{'WS_ALL': '\n'}])
+                    self.root.children += [node, ws_node]
+                else:
+                    ws_node = AttrTree.create('ws', [{'WS_ALL': ' '}])
+                    self.root.children[-1:0] = [ws_node, node]
             else:
                 self.root.children.append(node)
         else:

@@ -164,7 +164,10 @@ class ODESystem:
     def __repr__(self):
         return 'ODESystem()'
 
-    def _repr_html(self):
+    def _repr_html_(self):
+        return str(self)
+
+    def _repr_latex_(self):
         return str(self)
 
 

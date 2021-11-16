@@ -36,8 +36,8 @@ EQUALS : "="
 NULL : "NULL"|"NUL"
 
 // generic option terminals (key/value)
-KEY   : /(?!(IGN|ACC|NULL|NUL))\w+/      // TODO: parse all options or use priority (instead of negative lookahead)
-VALUE : /(?!(IGN|ACC|NULL|NUL))[^\s=]+/  // TODO: parse all options or use priority (instead of negative lookahead)
+KEY   : /(?!(;|IGN|ACC|NULL|NUL))\w+/      // TODO: parse all options or use priority (instead of negative lookahead)
+VALUE : /(?!(;|IGN|ACC|NULL|NUL))[^\s=]+/  // TODO: parse all options or use priority (instead of negative lookahead)
 
 // _list is only a container (filter thus on accept/ignore)
 _list  : "(" [ws] filter [ws] ("," [ws] filter [ws])* ")"

@@ -160,3 +160,13 @@ def test_data_infile(parser):
     assert record.name == 'DATA'
     assert record.filename == 'pheno.dta'
     assert record.raw_name == '$INFILE'
+
+
+def test_comment(parser):
+    contents = r"""$DATA     cpt7.dta IGNORE= #
+;         Dataset
+"""
+    record = parser.parse(contents).records[0]
+    record.ignore_character = "A"
+    assert str(record) == '$DATA     cpt7.dta \n;         Dataset\nIGNORE=A\n'
+    print(record.root.treeprint())
