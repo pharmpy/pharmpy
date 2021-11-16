@@ -445,9 +445,17 @@ def summarize_modelfit_results(models, include_all_estimation_steps=False):
             summaries.append(res.result_summary(include_all_estimation_steps))
         else:
             # FIXME: in read_modelfit_results, maybe some parts can be extracted (i.e.
-            #   create modelfit_results object
-            empty_df = pd.DataFrame({'minimization_successful': np.nan}, index=[model.name])
-            summaries.append(empty_df)
+            #   create modelfit_results object)
+            if include_all_estimation_steps:
+                for i in range(len(model.estimation_steps)):
+                    index = pd.MultiIndex.from_tuples(
+                        [(model.name, i + 1)], names=['model_name', 'step']
+                    )
+                    empty_df = pd.DataFrame({'minimization_successful': np.nan}, index=index)
+                    summaries.append(empty_df)
+            else:
+                empty_df = pd.DataFrame({'minimization_successful': np.nan}, index=[model.name])
+                summaries.append(empty_df)
 
     summary = pd.concat(summaries).sort_index()
 
