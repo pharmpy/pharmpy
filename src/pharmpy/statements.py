@@ -290,10 +290,16 @@ class ExplicitODESystem(ODESystem):
         return r'\begin{cases} ' + r' \\ '.join(rows) + r' \end{cases}'
 
     def to_compartmental_system(self):
+        def convert_name(name):
+            if name.startswith('A_'):
+                return name[2:]
+            else:
+                return name
+
         funcs = [eq.lhs.args[0] for eq in self.odes]
         cs = CompartmentalSystem()
         for f in funcs:
-            cs.add_compartment(f.name)
+            cs.add_compartment(convert_name(f.name))
 
         for eq in self.odes:
             for comp_func in funcs:
@@ -304,12 +310,12 @@ class ExplicitODESystem(ODESystem):
                 for term in terms:
                     expr = term / comp_func
                     if term.args[0] != -1:
-                        from_comp = cs.find_compartment(comp_func.name)
-                        to_comp = cs.find_compartment(eq.lhs.args[0].name)
+                        from_comp = cs.find_compartment(convert_name(comp_func.name))
+                        to_comp = cs.find_compartment(convert_name(eq.lhs.args[0].name))
                         cs.add_flow(from_comp, to_comp, expr)
 
         dose = Bolus("AMT")  # FIXME: not true in general!
-        cs.find_compartment(funcs[0].name).dose = dose
+        cs.find_compartment(convert_name(funcs[0].name)).dose = dose
         return cs
 
 
@@ -1658,6 +1664,55 @@ class ModelStatements(MutableSequence):
         else:
             i += 1
         self.insert(i, statement)
+
+    def to_compartmental_system(self):
+        """Convert ODE system to a compartmental system
+
+        raise if not possible
+        >>> from pharmpy.modeling import load_example_model
+        >>> model = load_example_model("pheno")
+        >>> model.statements.to_explicit_system()
+        >>> model.statements.to_compartmental_system()
+        >>> model.statements.ode_system
+        Bolus(AMT)
+        ┌───────┐       ┌──────┐
+        │CENTRAL│──CL/V→│OUTPUT│
+        └───────┘       └──────┘
+        """
+        for i, s in enumerate(self):
+            if isinstance(s, ExplicitODESystem):
+                new = s.to_compartmental_system()
+                self[i] = new
+                return
+
+    def to_explicit_system(self):
+        """Convert ODE system to an explicit ODE system
+
+        Example
+        -------
+        >>> from pharmpy.modeling import load_example_model
+        >>> model = load_example_model("pheno")
+        >>> model.statements.ode_system
+        Bolus(AMT)
+        ┌───────┐       ┌──────┐
+        │CENTRAL│──CL/V→│OUTPUT│
+        └───────┘       └──────┘
+        >>> model.statements.to_explicit_system()
+        >>> model.statements.ode_system
+        ⎧d                  -CL⋅A_CENTRAL(t)
+        ⎪──(A_CENTRAL(t)) = ─────────────────
+        ⎪dt                         V
+        ⎨d                 CL⋅A_CENTRAL(t)
+        ⎪──(A_OUTPUT(t)) = ───────────────
+        ⎪dt                       V
+        ⎪A_CENTRAL(0) = AMT
+        ⎩A_OUTPUT(0) = 0
+        """
+        for i, s in enumerate(self):
+            if isinstance(s, CompartmentalSystem):
+                new = s.to_explicit_odes()
+                self[i] = new
+                return
 
     def copy(self):
         """Create a copy of the ModelStatements object"""
