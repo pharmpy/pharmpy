@@ -233,6 +233,22 @@ class ExplicitODESystem(ODESystem):
 
     @property
     def free_symbols(self):
+        """Get set of all free symbols in the ODE system
+
+        Returns
+        -------
+        set
+            Set of symbols
+
+        Examples
+        --------
+        >>> from pharmpy.modeling import load_example_model
+        >>> model = load_example_model("pheno")
+        >>> model.statements.to_explicit_system()
+        >>> model.statements.ode_system.free_symbols  # doctest: +SKIP
+        {AMT, CL, V, t}
+        """
+
         free = set()
         for ode in self.odes:
             free |= ode.free_symbols
@@ -245,15 +261,49 @@ class ExplicitODESystem(ODESystem):
         return free
 
     def subs(self, substitutions):
+        """Substitute expressions or symbols in ODE system
+
+        Examples
+        --------
+        >>> from pharmpy.modeling import load_example_model
+        >>> model = load_example_model("pheno")
+        >>> model.statements.to_explicit_system()
+        >>> model.statements.ode_system.subs({'AMT': 'DOSE'})
+        >>> model.statements.ode_system
+        ⎧d                  -CL⋅A_CENTRAL(t)
+        ⎪──(A_CENTRAL(t)) = ─────────────────
+        ⎪dt                         V
+        ⎨d                 CL⋅A_CENTRAL(t)
+        ⎪──(A_OUTPUT(t)) = ───────────────
+        ⎪dt                       V
+        ⎪A_CENTRAL(0) = DOSE
+        ⎩A_OUTPUT(0) = 0
+        """
         d = {
             sympy.Function(str(key))(symbols.symbol('t')): value
             for key, value in substitutions.items()
         }
+        d.update(substitutions)
         self.odes = [ode.subs(d) for ode in self.odes]
         self.ics = {key.subs(d): value.subs(d) for key, value in self.ics.items()}
 
     @property
     def rhs_symbols(self):
+        """Get set of all free symbols in the right hand side expressions
+
+        Returns
+        -------
+        set
+            Set of symbols
+
+        Examples
+        --------
+        >>> from pharmpy.modeling import load_example_model
+        >>> model = load_example_model("pheno")
+        >>> model.statements.to_explicit_system()
+        >>> model.statements.ode_system.rhs_symbols   # doctest: +SKIP
+        {AMT, CL, V, t}
+        """
         return self.free_symbols
 
     def __repr__(self):
@@ -290,6 +340,26 @@ class ExplicitODESystem(ODESystem):
         return r'\begin{cases} ' + r' \\ '.join(rows) + r' \end{cases}'
 
     def to_compartmental_system(self):
+        """Get the explicit system as a compartmental ODE system
+
+        Results
+        -------
+        CompartmentalSystem
+            The same ODE system in compartmental representation
+
+        Example
+        -------
+        >>> from pharmpy.modeling import load_example_model
+        >>> model = load_example_model("pheno")
+        >>> model.statements.to_explicit_system()
+        >>> odes = model.statements.ode_system.to_compartmental_system()
+        >>> odes
+        Bolus(AMT)
+        ┌───────┐       ┌──────┐
+        │CENTRAL│──CL/V→│OUTPUT│
+        └───────┘       └──────┘
+        """
+
         def convert_name(name):
             if name.startswith('A_'):
                 return name[2:]
@@ -989,8 +1059,7 @@ class CompartmentalSystem(ODESystem):
 
         Example
         -------
-        >>> from pharmpy.modeling import load_example_model, set_zero_order_absorption
-        >>> import sympy
+        >>> from pharmpy.modeling import load_example_model
         >>> model = load_example_model("pheno")
         >>> odes = model.statements.ode_system.to_explicit_system()
         >>> odes
