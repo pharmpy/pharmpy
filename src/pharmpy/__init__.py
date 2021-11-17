@@ -21,6 +21,7 @@ from .statements import (
     Bolus,
     Compartment,
     CompartmentalSystem,
+    ExplicitODESystem,
     Infusion,
     ModelStatements,
 )
@@ -34,6 +35,7 @@ __all__ = [
     'Bolus',
     'Compartment',
     'CompartmentalSystem',
+    'ExplicitODESystem',
     'Infusion',
     'Model',
     'ModelStatements',

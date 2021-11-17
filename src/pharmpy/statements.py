@@ -133,6 +133,8 @@ class ODESystem:
 
     """
 
+    t = symbols.symbol('t')
+
     def __init__(self):
         self._solver = None
 
@@ -192,7 +194,37 @@ def _bracket(a):
 
 
 class ExplicitODESystem(ODESystem):
-    """System of ODEs described explicitly"""
+    """System of ODEs described explicitly
+
+    Attributes
+    ----------
+    odes : list
+        Symbolic differential equations
+    ics : dict
+        Symbolic initial conditions
+
+    Examples
+    --------
+    >>> from pharmpy import ExplicitODESystem
+    >>> import sympy
+    >>> A_DEPOT = sympy.Function('A_DEPOT')
+    >>> A_CENTRAL = sympy.Function('A_CENTRAL')
+    >>> t = ExplicitODESystem.t
+    >>> AMT, KA, K = sympy.symbols('AMT KA K')
+    >>> eq1 = sympy.Eq(sympy.Derivative(A_DEPOT(t), t), -KA * A_DEPOT(t))
+    >>> eq2 = sympy.Eq(sympy.Derivative(A_CENTRAL(t)), -K*A_CENTRAL(t) + KA*A_DEPOT(t))
+    >>> ics = {A_DEPOT(0): AMT, A_CENTRAL(0): 0}
+    >>> odes = ExplicitODESystem([eq1, eq2], ics)
+    >>> odes
+    ⎧d
+    ⎪──(A_DEPOT(t)) = -KA⋅A_DEPOT(t)
+    ⎪dt
+    ⎨d
+    ⎪──(A_CENTRAL(t)) = -K⋅A_CENTRAL(t) + KA⋅A_DEPOT(t)
+    ⎪dt
+    ⎪A_DEPOT(0) = AMT
+    ⎩A_CENTRAL(0) = 0
+    """
 
     def __init__(self, odes, ics):
         self.odes = odes
@@ -224,7 +256,7 @@ class ExplicitODESystem(ODESystem):
     def rhs_symbols(self):
         return self.free_symbols
 
-    def __str__(self):
+    def __repr__(self):
         a = []
         for ode in self.odes:
             ode_str = sympy.pretty(ode)
@@ -276,7 +308,7 @@ class ExplicitODESystem(ODESystem):
                         to_comp = cs.find_compartment(eq.lhs.args[0].name)
                         cs.add_flow(from_comp, to_comp, expr)
 
-        dose = Bolus("AMT")  # FIXME: not true!
+        dose = Bolus("AMT")  # FIXME: not true in general!
         cs.find_compartment(funcs[0].name).dose = dose
         return cs
 
@@ -308,8 +340,6 @@ class CompartmentalSystem(ODESystem):
     │CENTRAL│──K12→│PERIPHERAL│──K21→│ CENTRAL  │──CL/V→│OUTPUT│
     └───────┘      └──────────┘      └──────────┘       └──────┘
     """
-
-    t = symbols.symbol('t')
 
     def __init__(self):
         self._g = nx.DiGraph()
