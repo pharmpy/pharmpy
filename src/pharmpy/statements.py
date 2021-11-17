@@ -913,7 +913,7 @@ class CompartmentalSystem(ODESystem):
         return sympy.Matrix(inputs)
 
     def to_explicit_odes(self, skip_output=False):
-        """Get the explicit ODEs and initial conditions for the system
+        """Get the compartmental system as an explicit ODE system
 
         Parameters
         ----------
@@ -922,21 +922,24 @@ class CompartmentalSystem(ODESystem):
 
         Results
         -------
-        tuple
-            Pair of equations and initial conditions
+        ExplicitODESystem
+            The same ODE system with explicit equations and initial conditions
 
         Example
         -------
         >>> from pharmpy.modeling import load_example_model, set_zero_order_absorption
         >>> import sympy
         >>> model = load_example_model("pheno")
-        >>> eqs, ics = model.statements.ode_system.to_explicit_odes()
-        >>> sympy.pprint(eqs)
-        ⎡d                  -CL⋅A_CENTRAL(t)   d                 CL⋅A_CENTRAL(t)⎤
-        ⎢──(A_CENTRAL(t)) = ─────────────────, ──(A_OUTPUT(t)) = ───────────────⎥
-        ⎣dt                         V          dt                       V       ⎦
-        >>> ics
-        {A_CENTRAL(0): AMT, A_OUTPUT(0): 0}
+        >>> odes = model.statements.ode_system.to_explicit_odes()
+        >>> odes
+        ⎧d                  -CL⋅A_CENTRAL(t)
+        ⎪──(A_CENTRAL(t)) = ─────────────────
+        ⎪dt                         V
+        ⎨d                 CL⋅A_CENTRAL(t)
+        ⎪──(A_OUTPUT(t)) = ───────────────
+        ⎪dt                       V
+        ⎪A_CENTRAL(0) = AMT
+        ⎩A_OUTPUT(0) = 0
         """
         amount_funcs = sympy.Matrix([sympy.Function(amt.name)(self.t) for amt in self.amounts])
         derivatives = sympy.Matrix([sympy.Derivative(fn, self.t) for fn in amount_funcs])
@@ -958,7 +961,7 @@ class CompartmentalSystem(ODESystem):
                 ics[sympy.Function(node.amount.name)(0)] = sympy.Integer(0)
         if skip_output:
             eqs = eqs[:-1]
-        return eqs, ics
+        return ExplicitODESystem(eqs, ics)
 
     def __len__(self):
         """The number of compartments including output"""

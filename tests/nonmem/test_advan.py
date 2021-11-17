@@ -184,7 +184,8 @@ def test_pheno(pheno_path, advan, trans, compmat, amounts, strodes, corrics):
     assert ass.expression == S('A_CENTRAL') / S('S1')
     assert cm.compartmental_matrix == sympy.Matrix(compmat)
     assert cm.amounts == sympy.Matrix(amounts)
-    odes, ics = cm.to_explicit_odes()
+    exodes = cm.to_explicit_odes()
+    odes, ics = exodes.odes, exodes.ics
     odes = [str(ode) for ode in odes]
     assert odes == strodes
     assert ics == corrics

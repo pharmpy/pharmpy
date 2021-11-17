@@ -325,7 +325,8 @@ def calculate_pk_parameters_statistics(model, rng=None):
     expressions = []  # Eq(name, expr)
     # FO abs + 1comp + FO elimination
     if len(odes) == 3 and depot and odes.t not in elimination_rate.free_symbols:
-        ode_list, ics = odes.to_explicit_odes(skip_output=True)
+        exodes = odes.to_explicit_odes(skip_output=True)
+        ode_list, ics = exodes.odes, exodes.ics
         sols = sympy.dsolve(ode_list, ics=ics)
         expr = sols[1].rhs
         d = sympy.diff(expr, odes.t)
@@ -342,7 +343,8 @@ def calculate_pk_parameters_statistics(model, rng=None):
         for name in elimination_system.names:
             if name not in [central.name, output.name]:
                 elimination_system.remove_compartment(elimination_system.find_compartment(name))
-                ode_list, ics = elimination_system.to_explicit_odes(skip_output=True)
+                exodes = elimination_system.to_explicit_odes(skip_output=True)
+                ode_list, ics = exodes.odes, exodes.ics
                 A0 = sympy.Symbol('A0')
                 ic = ics.popitem()
                 ics = {ic[0]: A0}
@@ -353,7 +355,8 @@ def calculate_pk_parameters_statistics(model, rng=None):
 
     # Bolus dose + 2comp + FO elimination
     if len(peripherals) == 1 and len(odes) == 3 and odes.t not in elimination_rate.free_symbols:
-        ode_list, ics = odes.to_explicit_odes(skip_output=True)
+        exodes = odes.to_explicit_odes(skip_output=True)
+        ode_list, ics = exodes.odes, exodes.ics
         sols = sympy.dsolve(ode_list, ics=ics)
         A = sympy.Wild('A')
         B = sympy.Wild('B')
