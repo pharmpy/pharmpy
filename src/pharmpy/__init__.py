@@ -24,6 +24,7 @@ from .statements import (
     ExplicitODESystem,
     Infusion,
     ModelStatements,
+    ODESystem,
 )
 from .symbols import symbol
 
@@ -39,6 +40,7 @@ __all__ = [
     'Infusion',
     'Model',
     'ModelStatements',
+    'ODESystem',
     'Parameter',
     'Parameters',
     'RandomVariable',
