@@ -265,6 +265,9 @@ def update_ode_system(model, old, new):
     """
     if type(old) == CompartmentalSystem and type(new) == ExplicitODESystem:
         to_des(model, new)
+    elif type(old) == ExplicitODESystem and type(new) == CompartmentalSystem:
+        # Stay with $DES for now
+        update_des(model, old, new)
     elif type(old) == CompartmentalSystem and type(new) == CompartmentalSystem:
         # subs = model.control_stream.get_records('SUBROUTINES')[0]
         # old_trans = subs.get_option_startswith('TRANS')
@@ -308,6 +311,11 @@ def update_ode_system(model, old, new):
             model.dataset = df
 
     force_des(model, new)
+
+
+def update_des(model, old, new):
+    """Update where both old and new should be explicit ODE systems"""
+    pass
 
 
 def force_des(model, odes):

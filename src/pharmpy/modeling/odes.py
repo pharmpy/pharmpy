@@ -550,9 +550,8 @@ def set_first_order_absorption(model):
 
     """
     statements = model.statements
+    statements.to_compartmental_system()
     odes = statements.ode_system
-    if not isinstance(odes, CompartmentalSystem):
-        raise ValueError("Setting absorption is not supported for ExplicitODESystem")
     depot = odes.find_depot(statements)
 
     dose_comp = odes.dosing_compartment
