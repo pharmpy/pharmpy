@@ -265,7 +265,7 @@ ODE systems can either be described as a compartmental system via :py:class:`pha
 
 .. jupyter-execute::
 
-   odes = statements.ode_system.to_explicit_odes()
+   odes = statements.ode_system.to_explicit_system()
    odes
 
 Get the amounts vector:

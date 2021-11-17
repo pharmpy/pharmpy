@@ -353,6 +353,15 @@ class CompartmentalSystem(ODESystem):
 
     @property
     def free_symbols(self):
+        """Get set of all free symbols in the compartmental system
+
+        Examples
+        --------
+        >>> from pharmpy.modeling import load_example_model
+        >>> model = load_example_model("pheno")
+        >>> model.free_symbols  # doctest: +SKIP
+        {AMT, CL, V, t}
+        """
         free = {symbols.symbol('t')}
         for (_, _, rate) in self._g.edges.data('rate'):
             free |= rate.free_symbols
@@ -918,7 +927,7 @@ class CompartmentalSystem(ODESystem):
                 inputs.append(0)
         return sympy.Matrix(inputs)
 
-    def to_explicit_odes(self, skip_output=False):
+    def to_explicit_system(self, skip_output=False):
         """Get the compartmental system as an explicit ODE system
 
         Parameters
@@ -936,7 +945,7 @@ class CompartmentalSystem(ODESystem):
         >>> from pharmpy.modeling import load_example_model, set_zero_order_absorption
         >>> import sympy
         >>> model = load_example_model("pheno")
-        >>> odes = model.statements.ode_system.to_explicit_odes()
+        >>> odes = model.statements.ode_system.to_explicit_system()
         >>> odes
         ⎧d                  -CL⋅A_CENTRAL(t)
         ⎪──(A_CENTRAL(t)) = ─────────────────
@@ -1710,7 +1719,7 @@ class ModelStatements(MutableSequence):
         """
         for i, s in enumerate(self):
             if isinstance(s, CompartmentalSystem):
-                new = s.to_explicit_odes()
+                new = s.to_explicit_system()
                 self[i] = new
                 return
 

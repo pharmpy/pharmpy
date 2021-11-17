@@ -229,12 +229,12 @@ def test_full_expression(pheno_path):
 
 def test_to_explicit_ode_system(pheno_path):
     model = Model(pheno_path)
-    exodes = model.statements.ode_system.to_explicit_odes(skip_output=True)
+    exodes = model.statements.ode_system.to_explicit_system(skip_output=True)
     odes, ics = exodes.odes, exodes.ics
     assert len(odes) == 1
     assert len(ics) == 1
 
-    exodes = model.statements.ode_system.to_explicit_odes()
+    exodes = model.statements.ode_system.to_explicit_system()
     odes, ics = exodes.odes, exodes.ics
     assert len(odes) == 2
     assert len(ics) == 2

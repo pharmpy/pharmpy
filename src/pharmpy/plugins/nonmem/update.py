@@ -339,7 +339,7 @@ def explicit_odes(model):
     statements = model.statements
     odes = statements.ode_system
     if isinstance(odes, CompartmentalSystem):
-        new = odes.to_explicit_odes()
+        new = odes.to_explicit_system()
         statements[model.statements.index(odes)] = new
         model.statements = statements
         new.solver = odes.solver
