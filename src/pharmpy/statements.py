@@ -355,11 +355,16 @@ class CompartmentalSystem(ODESystem):
     def free_symbols(self):
         """Get set of all free symbols in the compartmental system
 
+        Returns
+        -------
+        set
+            Set of symbols
+
         Examples
         --------
         >>> from pharmpy.modeling import load_example_model
         >>> model = load_example_model("pheno")
-        >>> model.free_symbols  # doctest: +SKIP
+        >>> model.statements.ode_system.free_symbols  # doctest: +SKIP
         {AMT, CL, V, t}
         """
         free = {symbols.symbol('t')}
@@ -371,9 +376,36 @@ class CompartmentalSystem(ODESystem):
 
     @property
     def rhs_symbols(self):
+        """Get set of all free symbols in the right hand side expressions
+
+        Returns
+        -------
+        set
+            Set of symbols
+
+        Examples
+        --------
+        >>> from pharmpy.modeling import load_example_model
+        >>> model = load_example_model("pheno")
+        >>> model.statements.ode_system.rhs_symbols   # doctest: +SKIP
+        {AMT, CL, V, t}
+        """
         return self.free_symbols  # This works currently
 
     def subs(self, substitutions):
+        """Substitute expressions or symbols in ODE system
+
+        Examples
+        --------
+        >>> from pharmpy.modeling import load_example_model
+        >>> model = load_example_model("pheno")
+        >>> model.statements.ode_system.subs({'AMT': 'DOSE'})
+        >>> model.statements.ode_system
+        Bolus(DOSE)
+        ┌───────┐       ┌──────┐
+        │CENTRAL│──CL/V→│OUTPUT│
+        └───────┘       └──────┘
+        """
         for (u, v, rate) in self._g.edges.data('rate'):
             rate_sub = rate.subs(substitutions, simultaneous=True)
             self._g.edges[u, v]['rate'] = rate_sub
@@ -381,6 +413,21 @@ class CompartmentalSystem(ODESystem):
             comp.subs(substitutions)
 
     def atoms(self, cls):
+        """Get set of all symbolic atoms of some kind
+
+        For more information see
+        https://docs.sympy.org/latest/modules/core.html#sympy.core.basic.Basic.atoms
+
+        Parameters
+        ----------
+        cls : type
+            Type of atoms to find
+
+        Returns
+        -------
+        set
+            Set of symbolic atoms
+        """
         atoms = set()
         for (_, _, rate) in self._g.edges.data('rate'):
             atoms |= rate.atoms(cls)
