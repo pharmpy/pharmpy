@@ -132,7 +132,7 @@ class Model:
         if new_name:
             self.name = new_name
         self.update_source(path=path, force=force)
-        if force and path.exists():
+        if not force and path.exists():
             raise FileExistsError(f'Cannot overwrite model at {path} with "force" not set')
         with open(path, 'w', encoding='latin-1') as fp:
             fp.write(self.model_code)
