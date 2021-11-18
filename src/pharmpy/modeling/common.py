@@ -86,7 +86,7 @@ def read_model_from_string(code):
     Returns
     -------
     Model
-        Read model object
+        Pharmpy model object
 
     Example
     -------
