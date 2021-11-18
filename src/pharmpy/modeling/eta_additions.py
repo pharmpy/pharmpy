@@ -22,7 +22,7 @@ def add_iiv(model, list_of_parameters, expression, operation='*', eta_names=None
     - Additive (*add*)
     - Proportional (*prop*)
     - Exponential (*exp*)
-    - Logit (*logit*)
+    - Logit (*log*)
 
     For all except exponential the operation input is not needed. Otherwise user specified
     input is supported. Initial estimates for new etas are 0.09.

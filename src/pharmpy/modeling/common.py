@@ -550,7 +550,7 @@ def add_estimation_step(model, method, idx=None, **kwargs):
     method : str
         estimation method to change to
     idx : int
-        index of estimation step, default is None (adds step at the end)
+        index of estimation step (starting from 0), default is None (adds step at the end)
     kwargs
         Arguments to pass to EstimationMethod (such as interaction, evaluation)
 
@@ -601,7 +601,7 @@ def remove_estimation_step(model, idx):
     model : Model
         Pharmpy model
     idx : int
-        index of estimation step to remove
+        index of estimation step to remove (starting from 0)
 
     Returns
     -------
@@ -646,7 +646,7 @@ def append_estimation_step_options(model, tool_options, idx):
     tool_options : dict
         any additional tool specific options
     idx : int
-        index of estimation step
+        index of estimation step (starting from 0)
 
     Returns
     -------
