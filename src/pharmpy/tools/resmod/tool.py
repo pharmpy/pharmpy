@@ -133,8 +133,8 @@ def _create_dataset(input_model):
 
 def _create_best_model(model, res):
     model = model.copy()
-    if any(res.models['dofv'] > 3.84):
-        idx = res.models['dofv'].idxmax()
+    if any(-res.models['dofv'] > 3.84):
+        idx = res.models['dofv'].idxmin()
         name = idx[0]
         if name == 'power':
             set_power_on_ruv(model)
