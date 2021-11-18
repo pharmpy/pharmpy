@@ -1614,7 +1614,7 @@ def test_add_iiv(pheno_path, parameter, expression, operation, eta_name, buf_new
         ),
     ],
 )
-def test_block_rvs(testdata, etas, pk_ref, omega_ref):
+def test_create_joint_distribution(testdata, etas, pk_ref, omega_ref):
     model = Model(testdata / 'nonmem/pheno_block.mod')
 
     create_joint_distribution(model, etas)
@@ -1691,7 +1691,7 @@ def test_block_rvs(testdata, etas, pk_ref, omega_ref):
         ),
     ],
 )
-def test_block_rvs_nested(testdata, etas, pk_ref, omega_ref):
+def test_create_joint_distribution_nested(testdata, etas, pk_ref, omega_ref):
     model = Model(testdata / 'nonmem/pheno_block.mod')
 
     create_joint_distribution(model, etas[0])
@@ -1798,7 +1798,7 @@ def test_block_rvs_nested(testdata, etas, pk_ref, omega_ref):
         ),
     ],
 )
-def test_joint_distribution(testdata, etas, pk_ref, omega_ref):
+def test_split_joint_distribution(testdata, etas, pk_ref, omega_ref):
     model = Model(testdata / 'nonmem/pheno_block.mod')
     create_joint_distribution(model)
     model.update_source()
