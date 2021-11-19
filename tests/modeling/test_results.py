@@ -149,6 +149,8 @@ def test_summarize_modelfit_results(testdata, pheno_path):
 
     assert len(summary_multest_full.index) == 3
     assert len(set(summary_multest_full.index.get_level_values('model_name'))) == 2
+    assert summary_multest_full.loc['pheno_multEST', 1]['run_type'] == 'estimation'
+    assert summary_multest_full.loc['pheno_multEST', 2]['run_type'] == 'evaluation'
 
     assert not summary_multest_full.loc['pheno_multEST', 1]['minimization_successful']
 
@@ -161,4 +163,5 @@ def test_summarize_modelfit_results(testdata, pheno_path):
 
     assert summary_multest_full_no_res.loc['mox1', 1]['ofv'] == -624.5229577248352
     assert np.isnan(summary_multest_full_no_res.loc['pheno_multest_no_res', 1]['ofv'])
-    assert np.all(np.isnan(summary_multest_full_no_res.loc['pheno_multest_no_res']))
+    estimates = summary_multest_full_no_res.loc['pheno_multest_no_res', 2].iloc[2:]
+    assert estimates.isnull().all()

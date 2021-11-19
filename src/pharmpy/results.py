@@ -525,6 +525,12 @@ class ChainedModelfitResults(MutableSequence, ModelfitResults):
             tuples = []
             for i in range(len(self)):
                 summary_dict = self._summarize_step(i)
+                is_evaluation = self.model.estimation_steps[i].evaluation
+                if is_evaluation:
+                    run_type = 'evaluation'
+                else:
+                    run_type = 'estimation'
+                summary_dict = {**{'run_type': run_type}, **summary_dict}
                 summary_dicts.append(summary_dict)
                 tuples.append((self.model_name, i + 1))
             index = pd.MultiIndex.from_tuples(tuples, names=['model_name', 'step'])

@@ -454,7 +454,9 @@ def summarize_modelfit_results(models, include_all_estimation_steps=False):
                     index = pd.MultiIndex.from_tuples(
                         [(model.name, i + 1)], names=['model_name', 'step']
                     )
-                    empty_df = pd.DataFrame({'minimization_successful': np.nan}, index=index)
+                    empty_df = pd.DataFrame(
+                        {'run_type': None, 'minimization_successful': None}, index=index
+                    )
                     summaries.append(empty_df)
             else:
                 empty_df = pd.DataFrame({'minimization_successful': np.nan}, index=[model.name])

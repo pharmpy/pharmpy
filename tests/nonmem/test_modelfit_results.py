@@ -381,6 +381,8 @@ def test_result_summary(pheno_path, testdata):
 
     assert not summary.loc['pheno_multEST', 1]['minimization_successful']
     assert summary.loc['pheno_multEST', 2]['minimization_successful']
+    assert summary.loc['pheno_multEST', 1]['run_type'] == 'estimation'
+    assert summary.loc['pheno_multEST', 2]['run_type'] == 'evaluation'
 
     assert summary.loc['pheno_multEST', 1]['ofv'] != summary.loc['pheno_multEST', 2]['ofv']
 
