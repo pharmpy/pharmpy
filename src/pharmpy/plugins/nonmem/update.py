@@ -113,33 +113,40 @@ def update_random_variable_records(model, rvs_diff, rec_dict, comment_dict):
     eta_number = 1
     number_of_records = 0
 
+    rvs_diff = list(rvs_diff)
+
+    rvs_removed = [RandomVariables(rvs).names for (op, (rvs, _)) in rvs_diff if op == '-']
+    rvs_removed = [rv for sublist in rvs_removed for rv in sublist]
+
     for i, (op, (rvs, _)) in enumerate(rvs_diff):
         if op == '+':
             if len(rvs) == 1:
                 create_omega_single(model, rvs[0], eta_number, number_of_records, comment_dict)
-                eta_number += 1
             else:
-                create_omega_block(
-                    model, RandomVariables(rvs), eta_number, number_of_records, comment_dict
-                )
-                eta_number += len(rvs)
+                create_omega_block(model, rvs, eta_number, number_of_records, comment_dict)
+            eta_number += len(rvs)
             number_of_records += 1
         elif op == '-':
-            if len(rvs) == 1:
-                recs_to_remove = [rec_dict[rvs[0].name]]
-            else:
-                recs_to_remove = list({rec_dict[rv.name] for rv in rvs})
-            recs_to_remove = [rec for rec in recs_to_remove if rec not in removed]
+            rvs_rec = list({rec_dict[rv.name] for rv in rvs})
+            recs_to_remove = [rec for rec in rvs_rec if rec not in removed]
             if recs_to_remove:
                 model.control_stream.remove_records(recs_to_remove)
                 removed += [rec for rec in recs_to_remove]
         else:
-            if len(rvs) == 1 and rec_dict[rvs[0].name] in removed:  # Account for etas in diagonal
+            diag_rvs = get_diagonal(rvs[0], rec_dict)
+            # Account for etas in diagonal
+            if len(rvs) == 1 and diag_rvs and any(rv in rvs_removed for rv in diag_rvs):
                 create_omega_single(model, rvs[0], eta_number, number_of_records, comment_dict)
-                eta_number += 1
-            else:
-                eta_number += len(rvs)
+            eta_number += len(rvs)
             number_of_records += 1
+
+
+def get_diagonal(rv, rec_dict):
+    rv_rec = rec_dict[rv.name]
+    etas_from_same_record = [eta for eta, rec in rec_dict.items() if rec == rv_rec]
+    if len(etas_from_same_record) > 1:
+        return etas_from_same_record
+    return None
 
 
 def get_next_theta(model):
@@ -206,6 +213,7 @@ def create_omega_single(model, rv, eta_number, record_number, comment_dict):
 
 
 def create_omega_block(model, rvs, eta_number, record_number, comment_dict):
+    rvs = RandomVariables(rvs)
     param_str = f'$OMEGA BLOCK({rvs.covariance_matrix.shape[0]})\n'
 
     for row in range(rvs.covariance_matrix.shape[0]):

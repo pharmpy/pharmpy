@@ -1525,7 +1525,7 @@ def test_add_iiv(pheno_path, parameter, expression, operation, eta_name, buf_new
             'S1=V+ETA(3)\n'
             'MAT=THETA(3)*EXP(ETA(4))\n'
             'Q=THETA(4)*EXP(ETA(5))\n\n',
-            '$OMEGA 0.0309626  ; IVCL\n'
+            '$OMEGA  0.0309626 ; IVCL\n'
             '$OMEGA BLOCK(2)\n'
             '0.031128\t; IVV\n'
             '0.0055792\t; IIV_V_IIV_S1\n'
@@ -1560,7 +1560,7 @@ def test_add_iiv(pheno_path, parameter, expression, operation, eta_name, buf_new
             'S1=V+ETA(3)\n'
             'MAT=THETA(3)*EXP(ETA(4))\n'
             'Q=THETA(4)*EXP(ETA(5))\n\n',
-            '$OMEGA 0.0309626  ; IVCL\n'
+            '$OMEGA  0.0309626 ; IVCL\n'
             '$OMEGA BLOCK(3)\n'
             '0.031128\t; IVV\n'
             '0.0055792\t; IIV_V_IIV_S1\n'
@@ -1578,8 +1578,9 @@ def test_add_iiv(pheno_path, parameter, expression, operation, eta_name, buf_new
             'S1=V+ETA(3)\n'
             'MAT=THETA(3)*EXP(ETA(4))\n'
             'Q=THETA(4)*EXP(ETA(5))\n\n',
-            '$OMEGA 0.0309626  ; IVCL\n'
-            '$OMEGA 0.031128  ; IVV\n'
+            '$OMEGA DIAGONAL(2)\n'
+            '0.0309626  ; IVCL\n'
+            '0.031128  ; IVV\n'
             '$OMEGA BLOCK(3)\n'
             '0.1\n'
             '0.0055644\t; IIV_S1_IIV_MAT\n'
@@ -1917,7 +1918,7 @@ def test_set_iiv_on_ruv(pheno_path, epsilons, same_eta, eta_names, err_ref, omeg
             'S1 = V + ETA(2)\n'
             'MAT = THETA(3)*EXP(ETA(3))\n'
             'Q = THETA(4)*EXP(ETA(4))\n\n',
-            '$OMEGA 0.031128  ; IVV\n'
+            '$OMEGA  0.031128 ; IVV\n'
             '$OMEGA 0.1\n'
             '$OMEGA BLOCK(2)\n'
             '0.0309626\n'
@@ -1941,7 +1942,7 @@ def test_set_iiv_on_ruv(pheno_path, epsilons, same_eta, eta_names, err_ref, omeg
             'S1 = V + ETA(2)\n'
             'MAT = THETA(3)\n'
             'Q = THETA(4)*EXP(ETA(3))\n\n',
-            '$OMEGA 0.031128  ; IVV\n' '$OMEGA 0.1\n' '$OMEGA  0.031128\n',
+            '$OMEGA  0.031128 ; IVV\n' '$OMEGA 0.1\n' '$OMEGA  0.031128\n',
         ),
         (
             ['ETA(4)', 'ETA(5)'],
@@ -1951,7 +1952,7 @@ def test_set_iiv_on_ruv(pheno_path, epsilons, same_eta, eta_names, err_ref, omeg
             'S1=V+ETA(3)\n'
             'MAT = THETA(3)\n'
             'Q = THETA(4)\n\n',
-            '$OMEGA 0.0309626  ; IVCL\n' '$OMEGA 0.031128  ; IVV\n' '$OMEGA 0.1\n',
+            '$OMEGA DIAGONAL(2)\n' '0.0309626  ; IVCL\n' '0.031128  ; IVV\n' '$OMEGA 0.1\n',
         ),
         (
             None,
@@ -1971,7 +1972,7 @@ def test_set_iiv_on_ruv(pheno_path, epsilons, same_eta, eta_names, err_ref, omeg
             'S1 = V + ETA(2)\n'
             'MAT = THETA(3)*EXP(ETA(3))\n'
             'Q = THETA(4)*EXP(ETA(4))\n\n',
-            '$OMEGA 0.031128  ; IVV\n'
+            '$OMEGA  0.031128 ; IVV\n'
             '$OMEGA 0.1\n'
             '$OMEGA BLOCK(2)\n'
             '0.0309626\n'
@@ -1985,7 +1986,7 @@ def test_set_iiv_on_ruv(pheno_path, epsilons, same_eta, eta_names, err_ref, omeg
             'S1 = V + ETA(2)\n'
             'MAT = THETA(3)*EXP(ETA(3))\n'
             'Q = THETA(4)*EXP(ETA(4))\n\n',
-            '$OMEGA 0.031128  ; IVV\n'
+            '$OMEGA  0.031128 ; IVV\n'
             '$OMEGA 0.1\n'
             '$OMEGA BLOCK(2)\n'
             '0.0309626\n'
@@ -2009,10 +2010,9 @@ def test_remove_iov(testdata):
     model = Model(testdata / 'nonmem/pheno_block.mod')
 
     model_str = model.model_code
-    model_with_iov = re.sub(
-        r'\$OMEGA 0.031128  ; IVV\n\$OMEGA 0.1',
-        r'$OMEGA BLOCK(1)\n0.1\n$OMEGA BLOCK(1) SAME\n',
-        model_str,
+    model_with_iov = model_str.replace(
+        '$OMEGA DIAGONAL(2)\n' '0.0309626  ; IVCL\n' '0.031128  ; IVV',
+        '$OMEGA BLOCK(1)\n0.1\n$OMEGA BLOCK(1) SAME\n',
     )
 
     model = Model(StringIO(model_with_iov))
@@ -2022,20 +2022,15 @@ def test_remove_iov(testdata):
 
     assert (
         str(model.get_pred_pk_record()) == '$PK\n'
-        'CL=THETA(1)*EXP(ETA(1))\n'
+        'CL = THETA(1)\n'
         'V = THETA(2)\n'
-        'S1 = V\n'
+        'S1 = V + ETA(1)\n'
         'MAT = THETA(3)*EXP(ETA(2))\n'
         'Q = THETA(4)*EXP(ETA(3))\n\n'
     )
     rec_omega = ''.join(str(rec) for rec in model.control_stream.get_records('OMEGA'))
 
-    assert (
-        rec_omega == '$OMEGA 0.0309626  ; IVCL\n'
-        '$OMEGA BLOCK(2)\n'
-        '0.0309626\n'
-        '0.0005 0.031128\n'
-    )
+    assert rec_omega == '$OMEGA 0.1\n' '$OMEGA BLOCK(2)\n' '0.0309626\n' '0.0005 0.031128\n'
 
     model = Model(testdata / 'nonmem/pheno_block.mod')
 
@@ -2162,6 +2157,26 @@ def test_nested_update_source(pheno_path):
     model.update_source()
 
     assert 'IIV_CL_IIV_V' in model.model_code
+
+    model = Model(pheno_path)
+
+    remove_iiv(model, 'CL')
+
+    model.update_source()
+    model.update_source()
+
+    assert '0.031128 ; IVV' in model.model_code
+    assert '0.0309626  ;       IVCL' not in model.model_code
+
+    model = Model(pheno_path)
+
+    remove_iiv(model, 'V')
+
+    model.update_source()
+    model.update_source()
+
+    assert '0.0309626 ; IVCL' in model.model_code
+    assert '0.031128  ;        IVV' not in model.model_code
 
 
 @pytest.mark.parametrize(
