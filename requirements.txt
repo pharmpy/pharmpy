@@ -10,7 +10,7 @@ click==8.0.3
 cloudpickle==2.0.0
 csscompressor==0.9.5
 dask==2021.11.1
-distributed==2021.11.1
+distributed==2021.11.2
 docutils==0.17.1
 entrypoints==0.3
 fsspec==2021.11.0
