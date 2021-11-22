@@ -6,6 +6,7 @@ import pytest
 from pharmpy import Model
 from pharmpy.tools.common import create_results
 from pharmpy.tools.linearize.results import calculate_results, psn_linearize_results
+from pharmpy.tools.linearize.tool import create_linearized_model
 
 
 def test_ofv(testdata):
@@ -103,3 +104,10 @@ def test_create_results(testdata):
     res = create_results(path)
     assert len(res.iofv) == 59
     assert res.ofv['ofv']['base'] == pytest.approx(730.894727)
+
+
+def test_create_linearized_model(testdata):
+    path = testdata / 'nonmem' / 'pheno_real.mod'
+    model = Model(path)
+    linbase = create_linearized_model(model)
+    assert len(linbase.statements) == 8
