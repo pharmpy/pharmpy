@@ -208,7 +208,7 @@ def psn_cdd_skipped_individuals(path):
     return a
 
 
-def psn_cdd_results(path):
+def psn_cdd_results(path, base_model_path=None):
     """Create cdd results from a PsN CDD run
 
     :param path: Path to PsN cdd run directory
@@ -221,8 +221,9 @@ def psn_cdd_results(path):
 
     options = psn_cdd_options(path)
 
-    model_path = Path(options['model_path'])
-    base_model = Model(model_path)
+    if base_model_path is None:
+        base_model_path = Path(options['model_path'])
+    base_model = Model(base_model_path)
 
     cdd_models = [Model(p) for p in model_paths(path, 'cdd_*.mod')]
     skipped_individuals = psn_cdd_skipped_individuals(path)
