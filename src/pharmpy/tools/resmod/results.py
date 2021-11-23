@@ -1,6 +1,5 @@
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
 
 from pharmpy.results import Results
@@ -17,13 +16,15 @@ def calculate_results(base_model, iiv_on_ruv, power):
     base_ofv = base_model.modelfit_results.ofv
     dofv_iiv_on_ruv = iiv_on_ruv.modelfit_results.ofv - base_ofv
     dofv_power = power.modelfit_results.ofv - base_ofv
+    omega_iiv_on_ruv = iiv_on_ruv.modelfit_results.parameter_estimates["IIV_RUV1"]
+    theta_power = power.modelfit_results.parameter_estimates["power1"]
     df = pd.DataFrame(
         {
             'model': ['IIV_on_RUV', 'power'],
             'dvid': 1,
             'iteration': 1,
             'dofv': [dofv_iiv_on_ruv, dofv_power],
-            'parameters': np.nan,
+            'parameters': [{'omega': omega_iiv_on_ruv}, {'theta': theta_power}],
         }
     )
     df.set_index(['model', 'dvid', 'iteration'], inplace=True)
