@@ -1,11 +1,8 @@
-import numpy as np
-import pandas as pd
-
 import pharmpy.results
 import pharmpy.tools
 import pharmpy.tools.modelfit as modelfit
 import pharmpy.tools.modelsearch.algorithms as algorithms
-import pharmpy.tools.modelsearch.rankfuncs as rankfuncs
+import pharmpy.tools.rankfuncs as rankfuncs
 import pharmpy.workflows as workflows
 from pharmpy.tools.modelfit import create_single_fit_workflow
 from pharmpy.workflows import Task, Workflow
@@ -41,7 +38,6 @@ class ModelSearch(pharmpy.tools.Tool):
 
 def create_workflow(algorithm, mfl, rankfunc='ofv', cutoff=None, model=None):
     algorithm_func = getattr(algorithms, algorithm)
-    rankfunc_func = getattr(rankfuncs, rankfunc)
 
     wf = Workflow()
     wf.name = 'modelsearch'
@@ -66,7 +62,7 @@ def create_workflow(algorithm, mfl, rankfunc='ofv', cutoff=None, model=None):
     task_result = Task(
         'results',
         post_process_results,
-        rankfunc_func,
+        rankfunc,
         cutoff,
         model_features,
     )
@@ -81,34 +77,16 @@ def start(model):
 
 
 def post_process_results(rankfunc, cutoff, model_features, *models):
-    res_data = {'dofv': [], 'features': [], 'rank': []}
-    model_names = []
-
     res_models = []
     for model in models:
-        model.modelfit_results.estimation_step
-        # TODO: change to better mechanism than naming?
         if not model.name.startswith('candidate'):
             start_model = model
         else:
             res_models.append(model)
 
-    if cutoff is not None:
-        ranks = rankfunc(start_model, res_models, cutoff=cutoff)
-    else:
-        ranks = rankfunc(start_model, res_models)
-
-    for model in res_models:
-        model_names.append(model.name)
-        res_data['dofv'].append(start_model.modelfit_results.ofv - model.modelfit_results.ofv)
-        res_data['features'].append(model_features[model.name])
-        if model in ranks:
-            res_data['rank'].append(ranks.index(model) + 1)
-        else:
-            res_data['rank'].append(np.nan)
-
-    # FIXME: in ranks, if any row has NaN the rank converts to float
-    df = pd.DataFrame(res_data, index=model_names)
+    df = pharmpy.tools.common.create_summary(
+        res_models, start_model, rankfunc, cutoff, model_features
+    )
 
     best_model_name = df['rank'].idxmin()
     try:

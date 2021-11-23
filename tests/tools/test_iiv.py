@@ -1,7 +1,8 @@
 from io import StringIO
 
-from pharmpy import Model
-from pharmpy.tools.iiv.tool import _get_iiv_combinations
+from pharmpy import Model, RandomVariable, RandomVariables
+from pharmpy.tools.iiv.algorithms import _get_iiv_combinations
+from pharmpy.tools.iiv.tool import _get_iiv_block
 
 
 def test_get_iiv_combinations(testdata, pheno_path):
@@ -50,3 +51,13 @@ $ESTIMATION METHOD=1 INTERACTION
         ['ETA(2)', 'ETA(3)', 'ETA(4)'],
         ['ETA(1)', 'ETA(2)', 'ETA(3)', 'ETA(4)'],
     ]
+
+
+def test_get_iiv_block():
+    rv1 = RandomVariable.normal('ETA(1)', 'iiv', 0, 1)
+    rv2, rv3 = RandomVariable.joint_normal(
+        ['ETA(2)', 'ETA(3)'], 'iiv', [0, 0], [[1, 0.1], [0.1, 2]]
+    )
+    rv4 = RandomVariable.normal('ETA(4)', 'iiv', 0, 1)
+    rvs = RandomVariables([rv1, rv2, rv3, rv4])
+    assert _get_iiv_block(rvs) == ['ETA(2)', 'ETA(3)']

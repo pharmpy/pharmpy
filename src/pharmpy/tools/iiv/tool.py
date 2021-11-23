@@ -1,14 +1,12 @@
-from itertools import combinations
-
 import pharmpy.results
-from pharmpy.modeling import copy_model
-from pharmpy.modeling.block_rvs import create_joint_distribution
-from pharmpy.tools.modelfit import create_multiple_fit_workflow
+import pharmpy.tools.iiv.algorithms as algorithms
+from pharmpy.tools.modelfit import create_single_fit_workflow
 from pharmpy.workflows import Task, Workflow
 
 
-def create_workflow(model=None):
-    # Assume start model has been run
+def create_workflow(algorithm, rankfunc='ofv', cutoff=None, model=None):
+    algorithm_func = getattr(algorithms, algorithm)
+
     wf = Workflow()
     wf.name = "iiv"
 
@@ -19,11 +17,24 @@ def create_workflow(model=None):
 
     wf.add_task(start_task)
 
-    wf_method = brute_force_method(model)
+    if model and not model.modelfit_results:
+        wf_fit = create_single_fit_workflow()
+        wf.insert_workflow(wf_fit, predecessors=start_task)
+        start_model_task = wf_fit.output_tasks
+    else:
+        start_model_task = [start_task]
+
+    wf_method = algorithm_func(model)
     wf.insert_workflow(wf_method)
 
-    post_process_task = Task('post_process', post_process, model)
-    wf.add_task(post_process_task, predecessors=wf.output_tasks)
+    task_result = Task(
+        'results',
+        post_process_results,
+        rankfunc,
+        cutoff,
+    )
+
+    wf.add_task(task_result, predecessors=start_model_task + wf.output_tasks)
 
     return wf
 
@@ -32,47 +43,34 @@ def start(model):
     return model
 
 
-def brute_force_method(model):
-    wf = Workflow()
-    eta_combos = _get_iiv_combinations(model)
+def post_process_results(rankfunc, cutoff, *models):
+    res_models = []
+    model_features = dict()
 
-    for i, combo in enumerate(eta_combos, 1):
-        model_name = f'candidate{i}'
-        task_copy = Task('copy', copy, model_name)
-        wf.add_task(task_copy)
+    for model in models:
+        if not model.name.startswith('candidate'):
+            start_model = model
+        else:
+            res_models.append(model)
+            model_features[model.name] = _get_iiv_block(model.random_variables)
 
-        task_joint_dist = Task('create_joint_dist', create_joint_dist, combo)
-        wf.add_task(task_joint_dist, predecessors=task_copy)
+    df = pharmpy.tools.common.create_summary(
+        res_models, start_model, rankfunc, cutoff, model_features
+    )
 
-    wf_fit = create_multiple_fit_workflow(n=len(eta_combos))
-    wf.insert_workflow(wf_fit)
-    return wf
+    best_model_name = df['rank'].idxmin()
+    try:
+        best_model = [model for model in res_models if model.name == best_model_name][0]
+    except IndexError:
+        best_model = None
 
+    res = IIVResults(summary=df, best_model=best_model, start_model=start_model, models=res_models)
 
-def _create_joint_distribution(rvs, model):
-    return create_joint_distribution(model, rvs)
-
-
-def _get_iiv_combinations(model):
-    eta_names = model.random_variables.etas.names
-    no_of_etas = len(eta_names)
-    eta_combos = []
-    for i in range(2, no_of_etas + 1):
-        eta_combos += [list(combo) for combo in combinations(eta_names, i)]
-    return eta_combos
+    return res
 
 
-def create_joint_dist(list_of_etas, model):
-    return create_joint_distribution(model, list_of_etas)
-
-
-def copy(name, model):
-    model_copy = copy_model(model, name)
-    return model_copy
-
-
-def post_process(start_model, *models):
-    return IIVResults(start_model=start_model, models=[model for model in models])
+def _get_iiv_block(rvs):
+    return [eta.name for eta in rvs.iiv if len(eta.joint_names) > 0]
 
 
 class IIVResults(pharmpy.results.Results):
