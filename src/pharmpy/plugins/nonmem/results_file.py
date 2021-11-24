@@ -138,6 +138,7 @@ class NONMEMResultsFile:
         failure = [
             re.compile(r'0MINIMIZATION TERMINATED'),
             re.compile(r'0SEARCH WITH ESTIMATION STEP WILL NOT PROCEED'),
+            re.compile(r'\s*INDIVIDUAL OBJECTIVE FUNCTION VALUES ARE ALL ZERO\. PROBLEM ENDED'),
         ]
         maybe = re.compile(
             r' (REDUCED STOCHASTIC PORTION|OPTIMIZATION|'
@@ -320,6 +321,13 @@ class NONMEMResultsFile:
                 message = '\n'.join(lines[i:end])
                 self.log.log_error(message)
                 i += 5
+            elif line == '0PRED EXIT CODE = 1':
+                message = line[1:] + '\n' + lines[i + 1][1:].rstrip() + '\n'
+                i += 1
+                while not lines[i + 1].startswith('0PROGRAM TERMINATED'):
+                    i += 1
+                    message += lines[i].rstrip() + '\n'
+                self.log.log_error(message)
             elif line.startswith('0PROGRAM TERMINATED'):
                 message = line[1:]
                 while i < len(lines):

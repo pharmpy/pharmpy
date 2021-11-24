@@ -1,4 +1,5 @@
 import pandas as pd
+import pytest
 
 import pharmpy.plugins.nonmem.table as table
 
@@ -72,3 +73,9 @@ def test_create_phi_table(fs):
         cont = fp.read()
     correct = 'TABLE NO.     1\n' + correct
     assert cont == correct
+
+
+def test_errors(testdata):
+    ext_file = table.NONMEMTableFile(testdata / 'nonmem' / 'errors' / 'no_header_error.ext')
+    with pytest.raises(ValueError):
+        ext_file.table_no(2).data_frame

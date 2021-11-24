@@ -351,9 +351,21 @@ def test_ofv_table_gap(testdata):
         assert rfile.ofv(n) == pytest.approx(ext_table_file.table_no(n).final_ofv)
 
 
-def test_errors(testdata):
-    lst = rf.NONMEMResultsFile(
-        testdata / 'nonmem' / 'errors' / 'control_stream_error.lst', log=Log()
-    )
-    print(lst.log.to_dataframe()['message'].iloc[0])
-    assert 'FIX OPTION CANNOT' in lst.log.to_dataframe()['message'].iloc[0]
+@pytest.mark.parametrize(
+    'file_name, ref, idx',
+    [
+        (
+            'control_stream_error.lst',
+            'FIX OPTION CANNOT',
+            0,
+        ),
+        (
+            'no_header_error.lst',
+            'OCCURS DURING SEARCH FOR ETA AT INITIAL VALUE',
+            1,
+        ),
+    ],
+)
+def test_errors(testdata, file_name, ref, idx):
+    lst = rf.NONMEMResultsFile(testdata / 'nonmem' / 'errors' / file_name, log=Log())
+    assert ref in lst.log.to_dataframe()['message'].iloc[idx]

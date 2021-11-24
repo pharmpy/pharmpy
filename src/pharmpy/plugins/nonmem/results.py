@@ -239,21 +239,12 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
         except ValueError:
             # The ext-file is illegal
             self.log.log_error(f"Broken ext-file {self._path.with_suffix('.ext')}")
-            res = NONMEMModelfitResults(self)
-            res.table_number = 1
-            res.model_name = self._path.stem
-            res.model = self.model
-            # Parameter esitimates NaN for all parameters that should be estimated
-            pe = pd.Series(
-                np.nan, name='estimates', index=list(self.model.parameters.nonfixed_inits.keys())
-            )
-            se = pd.Series(
-                np.nan, name='SE', index=list(self.model.parameters.nonfixed_inits.keys())
-            )
-            res.parameter_estimates = pe
-            res.standard_errors = se
-            res.ofv = np.nan
-            self.append(res)
+            result_obj = NONMEMModelfitResults(self)
+            result_obj.model_name = self._path.stem
+            result_obj.model = self.model
+            result_obj = self._fill_empty_results(result_obj)
+            result_obj.table_number = 1
+            self.append(result_obj)
             return
         for table in ext_tables:
             if self._subproblem and table.subproblem != self._subproblem:
@@ -262,6 +253,18 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
             result_obj.model_name = self._path.stem
             result_obj.model = self.model
             result_obj.table_number = table.number
+
+            try:
+                table.data_frame
+            except ValueError:
+                self.log.log_error(
+                    f"Broken table in ext-file {self._path.with_suffix('.ext')}, "
+                    f"table no. {table.number}"
+                )
+                result_obj = self._fill_empty_results(result_obj)
+                self.append(result_obj)
+                continue
+
             result_obj.ofv = table.final_ofv
             result_obj.evaluation_ofv = table.initial_ofv
             ests = table.final_parameter_estimates
@@ -318,6 +321,17 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
                 else:
                     result_obj._condition_number = condition_number
             self.append(result_obj)
+
+    def _fill_empty_results(self, result_obj):
+        # Parameter estimates NaN for all parameters that should be estimated
+        pe = pd.Series(
+            np.nan, name='estimates', index=list(self.model.parameters.nonfixed_inits.keys())
+        )
+        se = pd.Series(np.nan, name='SE', index=list(self.model.parameters.nonfixed_inits.keys()))
+        result_obj.parameter_estimates = pe
+        result_obj.standard_errors = se
+        result_obj.ofv = np.nan
+        return result_obj
 
     def _read_lst_file(self):
         try:

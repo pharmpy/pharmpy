@@ -206,6 +206,8 @@ class ExtTable(NONMEMTable):
     def data_frame(self):
         df = self._df.copy(deep=True)
         df = NONMEMTable.rename_index(df)
+        if df['ITERATION'].isnull().values.all():
+            raise ValueError('Broken table in ext-file')
         return df
 
     def _get_parameters(self, iteration, include_thetas=True):
