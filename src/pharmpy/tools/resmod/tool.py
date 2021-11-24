@@ -138,9 +138,13 @@ def _create_best_model(model, res):
         name = idx[0]
         if name == 'power':
             set_power_on_ruv(model)
-            model.parameters.inits = {'power1': res.models['parameters'].loc['power', 1, 1].get('theta')}
+            model.parameters.inits = {
+                'power1': res.models['parameters'].loc['power', 1, 1].get('theta')
+            }
         else:
             set_iiv_on_ruv(model)
-            model.parameters.inits = {'IIV_RUV1': res.models['parameters'].loc['IIV_on_RUV', 1, 1].get('omega')}
+            model.parameters.inits = {
+                'IIV_RUV1': res.models['parameters'].loc['IIV_on_RUV', 1, 1].get('omega')
+            }
         model.update_source()
     return model
