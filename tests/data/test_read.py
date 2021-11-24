@@ -79,7 +79,8 @@ def test_read_small_nonmem_datasets():
     assert list(df.iloc[0]) == [0, 2, 4]
     df = data.read_nonmem_dataset(StringIO("1\t2\t3"), colnames=abc)
     assert list(df.iloc[0]) == [1, 2, 3]
-    df = data.read_nonmem_dataset(StringIO("1\t2\t"), colnames=abc)
+    with pytest.warns(UserWarning):
+        df = data.read_nonmem_dataset(StringIO("1\t2\t"), colnames=abc)
     assert list(df.iloc[0]) == [1, 2, 0]
     df = data.read_nonmem_dataset(StringIO("3 4 6"), colnames=abc)
     assert list(df.iloc[0]) == [3, 4, 6]
@@ -93,7 +94,8 @@ def test_read_small_nonmem_datasets():
         df = data.read_nonmem_dataset(StringIO("1\t2 \t3"), colnames=abc)
 
     # Mismatch length of column_names and data frame
-    df = data.read_nonmem_dataset(StringIO("1,2,3"), colnames=abc + ['D'])
+    with pytest.warns(UserWarning):
+        df = data.read_nonmem_dataset(StringIO("1,2,3"), colnames=abc + ['D'])
     assert list(df.iloc[0]) == [1, 2, 3, 0]
     assert list(df.columns) == ['A', 'B', 'C', 'D']
     df = data.read_nonmem_dataset(StringIO("1,2,3,6"), colnames=abc)

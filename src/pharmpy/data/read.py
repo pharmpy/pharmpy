@@ -319,8 +319,9 @@ def read_nonmem_dataset(
         if raw:
             df.columns = colnames[0 : len(df.columns)]
         else:
+            warnings.warn("There are more columns in $INPUT than in the dataset")
             for i in range(abs(diff_cols)):  # Create empty columns.
-                df[f'__{i}]'] = null_value  # FIXME assure no name collisions here
+                df[f'__{i}]'] = str(null_value)  # FIXME assure no name collisions here
             df.columns = colnames
     else:
         df.columns = colnames
