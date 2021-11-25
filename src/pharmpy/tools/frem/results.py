@@ -883,6 +883,9 @@ def calculate_results_using_bipp(
         parameter_samples[k, :] = bootstrap_cov.values[lower_indices]
         k += 1
     frame = pd.DataFrame(parameter_samples, columns=pop_params)
+    # Shift to the mean of the parameter estimate
+    shift = frem_model.modelfit_results.parameter_estimates[pop_params] - frame.mean()
+    frame = frame + shift
     res = calculate_results_from_samples(
         frem_model, continuous, categorical, frame, rescale=rescale
     )
