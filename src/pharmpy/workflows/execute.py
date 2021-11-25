@@ -28,11 +28,6 @@ def execute_workflow(workflow, dispatcher=None, database=None, path=None):
                 if isinstance(inp, Model):
                     original_input_models.append(inp)
                     new_model = inp.copy()
-                    # FIXME: predictions should always be read
-                    try:
-                        new_model.modelfit_results.predictions
-                    except (AttributeError, KeyError):
-                        pass
                     new_model.dataset
                     new_model.database = database.model_database
                     new_inp.append(new_model)

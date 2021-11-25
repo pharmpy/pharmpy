@@ -51,21 +51,6 @@ class NONMEMModelfitResults(ModelfitResults):
                 self._condition_number = None
             return self._condition_number
 
-    @property
-    def predictions(self):
-        try:
-            return self._predictions
-        except AttributeError:
-            pass
-
-        df = self._chain._read_from_tables(
-            ['ID', 'TIME', 'PRED', 'CIPREDI', 'CPRED', 'IPRED'], self
-        )
-        df['ID'] = df['ID'].convert_dtypes()
-        df.set_index(['ID', 'TIME'], inplace=True)
-        self._predictions = df
-        return df
-
     def predictions_for_observations(self):
         """predictions only for observation data records"""
         df = self._chain._read_from_tables(['ID', 'TIME', 'MDV', 'PRED', 'CIPREDI', 'CPRED'], self)
@@ -217,6 +202,7 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
         self._read_coi_table()
         self._read_phi_table()
         self._read_residuals()
+        self._read_predictions()
         self._calculate_cov_cor_coi()
 
     def __getattr__(self, item):
@@ -488,6 +474,20 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
             else:
                 df = df.loc[(df != 0).any(axis=1)]  # Simple way of removing non-observations
                 obj.residuals = df
+
+    def _read_predictions(self):
+        for obj in self:
+            try:
+
+                df = self._read_from_tables(
+                    ['ID', 'TIME', 'PRED', 'CIPREDI', 'CPRED', 'IPRED'], obj
+                )
+                df['ID'] = df['ID'].convert_dtypes()
+                df.set_index(['ID', 'TIME'], inplace=True)
+            except (KeyError, OSError):
+                obj.predictions = None
+            else:
+                obj.predictions = df
 
     def _read_from_tables(self, columns, result_obj):
         table_recs = self.model.control_stream.get_records('TABLE')
