@@ -48,7 +48,7 @@ def post_process_results(rankfunc, cutoff, *models):
     model_features = dict()
 
     for model in models:
-        if not model.name.startswith('candidate'):
+        if not model.name.startswith('iiv_candidate'):
             start_model = model
         else:
             res_models.append(model)

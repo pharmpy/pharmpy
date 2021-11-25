@@ -98,7 +98,7 @@ def exhaustive_stepwise(mfl):
             trans_previous, trans_possible = trans
 
             for feat, func in trans_possible.items():
-                model_name = f'candidate{candidate_count}'
+                model_name = f'modelsearch_candidate{candidate_count}'
 
                 task_copy = Task('copy', copy, model_name)
                 if task:

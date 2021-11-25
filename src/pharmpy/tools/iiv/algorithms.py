@@ -11,7 +11,7 @@ def brute_force(model):
     eta_combos = _get_iiv_combinations(model)
 
     for i, combo in enumerate(eta_combos, 1):
-        model_name = f'candidate{i}'
+        model_name = f'iiv_candidate{i}'
         task_copy = Task('copy', copy, model_name)
         wf.add_task(task_copy)
 

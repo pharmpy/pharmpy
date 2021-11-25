@@ -79,7 +79,7 @@ def start(model):
 def post_process_results(rankfunc, cutoff, model_features, *models):
     res_models = []
     for model in models:
-        if not model.name.startswith('candidate'):
+        if not model.name.startswith('modelsearch_candidate'):
             start_model = model
         else:
             res_models.append(model)
