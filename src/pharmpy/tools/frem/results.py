@@ -8,6 +8,7 @@ import symengine
 import sympy
 
 import pharmpy.symbols as symbols
+import pharmpy.visualization  # noqa
 from pharmpy import Model
 from pharmpy.data import ColumnType
 from pharmpy.math import conditional_joint_normal, is_posdef
