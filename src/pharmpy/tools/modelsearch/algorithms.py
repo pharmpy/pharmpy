@@ -106,7 +106,7 @@ def exhaustive_stepwise(mfl):
                 else:
                     wf_search.add_task(task_copy)
 
-                task_update_inits = Task('update_inits', update_inits)
+                task_update_inits = Task('update_inits', update_initial_estimates)
                 wf_search.add_task(task_update_inits, predecessors=task_copy)
 
                 task_function = Task(feat, func)
@@ -165,3 +165,12 @@ def _is_allowed(feat_current, func_current, trans_previous, features):
 def copy(name, model):
     model_copy = copy_model(model, name)
     return model_copy
+
+
+def update_initial_estimates(model):
+    # FIXME: later this should use dynamic workflows and not dispatch the next task
+    try:
+        update_inits(model)
+    except ValueError:
+        pass
+    return model
