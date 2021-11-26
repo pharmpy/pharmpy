@@ -125,8 +125,14 @@ def _create_dataset(input_model):
     residuals = input_model.modelfit_results.residuals
     cwres = residuals['CWRES']
     predictions = input_model.modelfit_results.predictions
-    ipred = predictions['IPRED'].reindex(cwres.index)
-    df = pd.concat([cwres, ipred], axis=1).rename(columns={'CWRES': 'DV'})
+    if 'CIPREDI' in predictions:
+        ipredcol = 'CIPREDI'
+    elif 'IPRED' in predictions:
+        ipredcol = 'IPRED'
+    else:
+        raise ValueError("Need CIPREDI or IPRED")
+    ipred = predictions[ipredcol].reindex(cwres.index)
+    df = pd.concat([cwres, ipred], axis=1).rename(columns={'CWRES': 'DV', ipredcol: 'IPRED'})
     df.reset_index(inplace=True)
     return df
 

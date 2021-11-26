@@ -27,7 +27,7 @@ def execute_workflow(workflow, dispatcher=None, database=None, path=None):
             for inp in task.task_input:
                 if isinstance(inp, Model):
                     original_input_models.append(inp)
-                    inp.modelfit_results    # To read in the results
+                    inp.modelfit_results  # To read in the results
                     new_model = inp.copy()
                     new_model.dataset
                     new_model.database = database.model_database
