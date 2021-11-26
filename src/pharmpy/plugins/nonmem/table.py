@@ -184,7 +184,7 @@ class PhiTable(NONMEMTable):
             pd.DataFrame(matrix, columns=eta_col_names, index=eta_col_names)
             for matrix in matrix_array
         ]
-        etcs = pd.Series(etc_frames, index=df['ID'])
+        etcs = pd.Series(etc_frames, index=df['ID'], dtype='object')
         return etcs
 
     def create_content(self):
