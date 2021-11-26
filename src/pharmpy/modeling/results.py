@@ -4,7 +4,6 @@ import numpy as np
 import pandas as pd
 import sympy
 
-from pharmpy.data_structures import OrderedSet
 from pharmpy.model import Model
 from pharmpy.modeling import create_rng, sample_parameters_from_covariance_matrix
 
@@ -154,9 +153,11 @@ def calculate_individual_shrinkage(model):
     param_inits = model.parameters.to_dataframe()['value']
     pe = pe.combine_first(param_inits)
 
-    # Get all iiv variance parameters
-    param_names = model.random_variables.etas.variance_parameters
-    param_names = list(OrderedSet(param_names))  # Only unique in order
+    # Get all iiv and iov variance parameters
+    diag = model.random_variables.etas.covariance_matrix.diagonal()
+    param_names = [s.name for s in diag]
+    # param_names = model.random_variables.etas.variance_parameters
+    # param_names = list(OrderedSet(param_names))  # Only unique in order
 
     diag_ests = pe[param_names]
 
