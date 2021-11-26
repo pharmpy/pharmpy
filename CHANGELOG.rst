@@ -1,3 +1,9 @@
+0.37.1 (2021-11-26)
+-------------------
+
+* Fix bug causing frem report to crash with #IDs > 5000
+* Fix bug for shifted uncertanity in frem with bipp
+
 0.37.0 (2021-11-24)
 -------------------
 
