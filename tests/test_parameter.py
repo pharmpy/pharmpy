@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 import pytest
 import sympy
@@ -91,6 +92,9 @@ def test_init():
     with pytest.raises(ValueError):
         param.init = -1
     param.init = 22
+
+    with pytest.raises(ValueError, match='Initial estimate cannot be set to NaN'):
+        param.init = np.nan
 
 
 def test_pset_init():
@@ -199,6 +203,9 @@ def test_pset_inits():
     assert pset['X'] == Parameter('X', 0)
     assert pset['Y'] == Parameter('Y', 2)
     assert pset['Z'] == Parameter('Z', 5)
+
+    with pytest.raises(ValueError, match='Initial estimate cannot be set to NaN'):
+        pset.inits = {'X': np.nan, 'Y': 2, 'Z': 5}
 
 
 def test_pset_nonfixed_inits():

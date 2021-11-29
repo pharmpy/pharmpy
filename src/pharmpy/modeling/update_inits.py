@@ -41,7 +41,10 @@ def update_inits(model, force_individual_estimates=False):
     if not res:
         raise ValueError('No modelfit results available')
 
-    model.parameters = res.parameter_estimates
+    try:
+        model.parameters = res.parameter_estimates
+    except ValueError:
+        raise ValueError('One or more parameter estimates are NaN')
 
     if model.initial_individual_estimates is not None or force_individual_estimates:
         model.initial_individual_estimates = res.individual_estimates

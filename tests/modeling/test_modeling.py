@@ -3,6 +3,7 @@ import re
 from io import StringIO
 
 import numpy as np
+import pandas as pd
 import pytest
 from pyfakefs.fake_filesystem import set_uid
 from pyfakefs.fake_filesystem_unittest import Patcher
@@ -2074,7 +2075,19 @@ def test_update_inits_no_res(testdata):
         fs.add_real_file(testdata / 'nonmem/pheno.dta', target_path='pheno.dta')
 
         model = Model('run1.mod')
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match='No modelfit results available'):
+            update_inits(model)
+
+        fs.add_real_file(testdata / 'nonmem/pheno.ext', target_path='run1.ext')
+        fs.add_real_file(testdata / 'nonmem/pheno.lst', target_path='run1.lst')
+
+        model = Model('run1.mod')
+
+        model.modelfit_results.parameter_estimates = pd.Series(
+            np.nan, name='estimates', index=list(model.parameters.nonfixed_inits.keys())
+        )
+
+        with pytest.raises(ValueError, match='One or more parameter estimates are NaN'):
             update_inits(model)
 
 

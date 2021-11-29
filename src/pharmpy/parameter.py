@@ -1,6 +1,7 @@
 import copy
 from collections.abc import MutableSequence
 
+import numpy as np
 import pandas as pd
 import sympy
 
@@ -229,6 +230,7 @@ class Parameters(MutableSequence):
         for key, _ in init_dict.items():
             if key not in self:
                 raise KeyError(f'Parameter {key} not in Parameters')
+        [self[name].is_valid_init(value) for name, value in init_dict.items()]
         for name, value in init_dict.items():
             self[name].init = value
 
@@ -373,13 +375,20 @@ class Parameter:
 
     @init.setter
     def init(self, new_init):
+        if self.is_valid_init(new_init):
+            self._init = new_init
+
+    def is_valid_init(self, new_init):
+        """Checks if new initial estimate is valid (is within bounds and is not NaN)"""
+        if np.isnan(new_init):
+            raise ValueError('Initial estimate cannot be set to NaN')
         if new_init < self.lower or new_init > self.upper:
             raise ValueError(
                 f'Initial estimate must be within the constraints of the parameter: '
                 f'{new_init} ∉ {sympy.pretty(sympy.Interval(self.lower, self.upper))}'
                 f'\nUnconstrain the parameter before setting an initial estimate.'
             )
-        self._init = new_init
+        return True
 
     def is_close_to_bound(self, value=None, zero_limit=0.01, significant_digits=2):
         """Check if parameter value is close to any bound
