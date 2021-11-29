@@ -1,7 +1,9 @@
+import re
+
 import numpy as np
 import pandas as pd
 
-from pharmpy.modeling import copy_model, update_inits
+from pharmpy.modeling import add_iiv, copy_model, update_inits
 from pharmpy.tools.modelfit import create_single_fit_workflow
 from pharmpy.workflows import Task, Workflow
 
@@ -74,7 +76,7 @@ def stepwise(base_model, mfl, run_func, rank_func):
     return df
 
 
-def exhaustive_stepwise(mfl):
+def exhaustive_stepwise(mfl, add_etas):
     features = ModelFeatures(mfl)
     wf_search = Workflow()
 
@@ -112,8 +114,15 @@ def exhaustive_stepwise(mfl):
                 task_function = Task(feat, func)
                 wf_search.add_task(task_function, predecessors=task_update_inits)
 
+                if add_etas:
+                    task_add_etas = Task('add_etas', add_etas_to_func, feat)
+                    wf_search.add_task(task_add_etas, predecessors=task_function)
+                    task_transformed = task_add_etas
+                else:
+                    task_transformed = task_function
+
                 wf_fit = create_single_fit_workflow()
-                wf_search.insert_workflow(wf_fit, predecessors=task_function)
+                wf_search.insert_workflow(wf_fit, predecessors=task_transformed)
 
                 model_tasks += wf_fit.output_tasks
                 model_features[model_name] = tuple(list(trans_previous.keys()) + [feat])
@@ -168,9 +177,30 @@ def copy(name, model):
 
 
 def update_initial_estimates(model):
-    # FIXME: later this should use dynamic workflows and not dispatch the next task
+    # FIXME: this should use dynamic workflows and not dispatch the next task
     try:
         update_inits(model)
     except ValueError:
         pass
+    return model
+
+
+def add_etas_to_func(feat, model):
+    eta_dict = {
+        'ABSORPTION(ZO)': ['MAT'],
+        'ABSORPTION(SEQ-ZO-FO)': ['MAT', 'MDT'],
+        'LAGTIME()': ['MDT'],
+    }
+    parameters = []
+    try:
+        parameters = eta_dict[feat]
+    except KeyError:
+        if feat.startswith('TRANSITS'):
+            parameters = ['MDT']
+        elif feat.startswith('PERIPHERALS'):
+            no_of_peripherals = re.search(r'PERIPHERALS\((\d+)\)', feat).group(1)
+            parameters = [f'VP{i}' for i in range(1, int(no_of_peripherals) + 1)] + [
+                f'QP{i}' for i in range(1, int(no_of_peripherals) + 1)
+            ]
+    add_iiv(model, parameters, 'exp')
     return model
