@@ -868,6 +868,7 @@ def calculate_results_using_bipp(
     pool = sample_individual_estimates(frem_model, parameters=etas, rng=rng).droplevel('sample')
     ninds = len(pool.index.unique())
     ishr = calculate_individual_shrinkage(frem_model)
+    ishr = ishr[pool.columns]
     lower_indices = np.tril_indices(len(etas))
     pop_params = np.array(dist.sigma).astype(str)[lower_indices]
     parameter_samples = np.empty((samples, len(pop_params)))
