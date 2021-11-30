@@ -230,7 +230,7 @@ class Parameters(MutableSequence):
         for key, _ in init_dict.items():
             if key not in self:
                 raise KeyError(f'Parameter {key} not in Parameters')
-        [self[name].is_valid_init(value) for name, value in init_dict.items()]
+        [self[name].verify_init(value) for name, value in init_dict.items()]
         for name, value in init_dict.items():
             self[name].init = value
 
@@ -375,12 +375,37 @@ class Parameter:
 
     @init.setter
     def init(self, new_init):
-        if self.is_valid_init(new_init):
-            self._init = new_init
+        self.verify_init(new_init)
+        self._init = new_init
 
-    def is_valid_init(self, new_init):
-        """Checks if new initial estimate is valid (is within bounds and is not NaN)"""
-        if np.isnan(new_init):
+    def verify_init(self, new_init):
+        """Verify initial estimate
+
+        Verifies that an initial estimate is valid (i.e. is within bounds and is not NaN).
+
+        Parameters
+        ----------
+        new_init : number
+            value to to set as new initial estimate
+
+        Examples
+        --------
+        >>> import numpy as np
+        >>> from pharmpy import Parameter
+        >>> par = Parameter("x", 1, lower=0, upper=10)
+        >>> par.verify_init(5)
+        >>> par.verify_init(11)
+        Traceback (most recent call last):
+        ...
+        ValueError: Initial estimate must be within the constraints of the parameter: 11 ∉ [0, 10]
+        Unconstrain the parameter before setting an initial estimate.
+
+        >>> par.verify_init(np.nan)
+        Traceback (most recent call last):
+        ...
+        ValueError: Initial estimate cannot be set to NaN
+        """
+        if new_init is sympy.nan or np.isnan(new_init):
             raise ValueError('Initial estimate cannot be set to NaN')
         if new_init < self.lower or new_init > self.upper:
             raise ValueError(
@@ -388,7 +413,6 @@ class Parameter:
                 f'{new_init} ∉ {sympy.pretty(sympy.Interval(self.lower, self.upper))}'
                 f'\nUnconstrain the parameter before setting an initial estimate.'
             )
-        return True
 
     def is_close_to_bound(self, value=None, zero_limit=0.01, significant_digits=2):
         """Check if parameter value is close to any bound
@@ -404,7 +428,6 @@ class Parameter:
 
         Examples
         --------
-
         >>> from pharmpy import Parameter
         >>> par = Parameter("x", 1, lower=0, upper=10)
         >>> par.is_close_to_bound()

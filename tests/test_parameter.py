@@ -363,3 +363,16 @@ def test_unit():
     assert p.unit == units.liter / units.hour
     p2 = Parameter('x', 3)
     assert p2.unit == 1
+
+
+def test_verify_init():
+    p = Parameter('X', 2, lower=0, upper=23)
+
+    with pytest.raises(ValueError, match='Initial estimate must be within the constraints'):
+        p.verify_init(24)
+
+    with pytest.raises(ValueError, match='Initial estimate cannot be set to NaN'):
+        p.verify_init(np.nan)
+
+    with pytest.raises(ValueError, match='Initial estimate cannot be set to NaN'):
+        p.verify_init(sympy.nan)
