@@ -51,6 +51,9 @@ def execute_model(model):
     database.store_local_file(model, (path / basepath).with_suffix('.cov'))
     database.store_local_file(model, (path / basepath).with_suffix('.cor'))
     database.store_local_file(model, (path / basepath).with_suffix('.coi'))
+    if False:
+        # FIXME: Have option for saving the dataset.
+        database.store_local_file(model, (path / model.dataset.name).with_suffix('.csv'))
     for rec in model.control_stream.get_records('TABLE'):
         database.store_local_file(model, path / rec.path)
     # Read in results for the server side
