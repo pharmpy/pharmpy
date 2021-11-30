@@ -46,6 +46,8 @@ class NONMEMTableFile:
         elif suffix == '.cov' or suffix == '.cor' or suffix == '.coi':
             table = CovTable(''.join(content))
         else:
+            # Remove repeated header lines, but not the first
+            content[1:] = [line for line in content[1:] if not re.match(r'\s[A-Za-z_]', line)]
             table = NONMEMTable(''.join(content))  # Fallback to non-specific table type
         if not notitle:
             m = re.match(r'TABLE NO.\s+(\d+)', table_line)
