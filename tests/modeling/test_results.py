@@ -125,7 +125,7 @@ def test_summarize_modelfit_results(testdata, pheno_path):
 
     assert summary_no_res.loc['pheno_real']['ofv'] == 586.2760562818805
     assert np.isnan(summary_no_res.loc['pheno_no_res']['ofv'])
-    assert np.all(np.isnan(summary_no_res.loc['pheno_no_res']))
+    assert np.all(np.isnan(summary_no_res.filter(regex='estimate$').loc['pheno_no_res']))
 
     pheno_multest = Model(
         testdata
@@ -165,3 +165,4 @@ def test_summarize_modelfit_results(testdata, pheno_path):
     assert np.isnan(summary_multest_full_no_res.loc['pheno_multest_no_res', 1]['ofv'])
     estimates = summary_multest_full_no_res.loc['pheno_multest_no_res', 2].iloc[2:]
     assert estimates.isnull().all()
+    assert summary_multest_full_no_res.dtypes['minimization_successful'] == bool
