@@ -1,4 +1,5 @@
 import copy
+from abc import ABC, abstractmethod
 from collections.abc import MutableSequence
 
 import networkx as nx
@@ -8,7 +9,25 @@ import pharmpy.symbols as symbols
 import pharmpy.unicode as unicode
 
 
-class Assignment:
+class Statement(ABC):
+    """Abstract base class for all types of statements"""
+
+    @abstractmethod
+    def subs(self, substitutions):
+        pass
+
+    @property
+    @abstractmethod
+    def free_symbols(self):
+        pass
+
+    @property
+    @abstractmethod
+    def rhs_symbols(self):
+        pass
+
+
+class Assignment(Statement):
     """Representation of variable assignment
 
     This class is similar to :class:`sympy.codegen.Assignment` and are
@@ -116,7 +135,7 @@ class Assignment:
         return f'${sym} := {expr}$'
 
 
-class ODESystem:
+class ODESystem(Statement):
     """Base class and placeholder for ODE systems of different forms
 
     Attributes
