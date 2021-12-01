@@ -1776,6 +1776,29 @@ class ModelStatements(MutableSequence):
             expression = expression.subs({statement.symbol: statement.expression})
         return expression
 
+    def insert_before(self, statement, new_statement):
+        """Insert a statement just before another statement
+
+        Parameters
+        ----------
+        statement : Statement
+            Insert before this statement
+        new_statement : Statement
+            Statement to insert
+
+        Examples
+        --------
+        >>> from pharmpy import Assignment
+        >>> from pharmpy.modeling import load_example_model
+        >>> model = load_example_model("pheno")
+        >>> a = Assignment("WGT_G", "WGT*1000")
+        >>> b = model.statements.find_assignment("CL")
+        >>> model.statements.insert_before(b, a)
+
+        """
+        i = self.index(statement)
+        self.insert(i, new_statement)
+
     def insert_before_odes(self, statement):
         """Insert a statement just before the ODE system or at the end of the model
 

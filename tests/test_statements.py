@@ -270,3 +270,14 @@ def test_dependencies(pheno_path):
     }
     depscl = model.statements.dependencies(S('CL'))
     assert depscl == {S('THETA(1)'), S('WGT'), S('ETA(1)')}
+
+
+def test_insert_before():
+    s1 = Assignment(S('KA'), S('X') + S('Y'))
+    s2 = Assignment(S('Z'), sympy.Integer(23) + S('M'))
+    s3 = Assignment(S('M'), sympy.Integer(2))
+    s4 = Assignment(S('G'), sympy.Integer(3))
+    s = ModelStatements([s4, s3, s2, s1])
+    new = Assignment(S('NEW'), 58)
+    s.insert_before(s2, new)
+    assert s == ModelStatements([s4, s3, new, s2, s1])
