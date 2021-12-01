@@ -61,8 +61,33 @@ def test_set_proportional_error_model_log(testdata):
     model = Model(testdata / 'nonmem' / 'pheno.mod')
     model.statements[5] = Assignment('Y', 'F')
     set_proportional_error_model(model, data_trans='log(Y)')
-    assert model.model_code.split('\n')[11] == 'Y = LOG(F) + EPS(1)'
-    assert model.model_code.split('\n')[17] == '$SIGMA  0.09 ; sigma'
+    print(model.model_code)
+    correct = """$PROBLEM PHENOBARB SIMPLE MODEL
+$DATA pheno.dta IGNORE=@
+$INPUT ID TIME AMT WGT APGR DV
+$SUBROUTINE ADVAN1 TRANS2
+
+$PK
+CL=THETA(1)*EXP(ETA(1))
+V=THETA(2)*EXP(ETA(2))
+S1=V
+
+$ERROR
+IF (F.EQ.0) THEN
+IPREDADJ = 2.22500000000000E-307
+ELSE
+IPREDADJ = F
+END IF
+Y = LOG(IPREDADJ) + EPS(1)
+
+$THETA (0,0.00469307) ; TVCL
+$THETA (0,1.00916) ; TVV
+$OMEGA 0.0309626  ; IVCL
+$OMEGA 0.031128  ; IVV
+$SIGMA  0.09 ; sigma
+$ESTIMATION METHOD=1 INTERACTION
+"""
+    assert model.model_code == correct
 
 
 def test_set_combined_error_model(testdata):
