@@ -228,7 +228,8 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
             result_obj = NONMEMModelfitResults(self)
             result_obj.model_name = self._path.stem
             result_obj.model = self.model
-            result_obj = self._fill_empty_results(result_obj)
+            is_covariance_step = self.model.estimation_steps[0].cov
+            result_obj = self._fill_empty_results(result_obj, is_covariance_step)
             result_obj.table_number = 1
             self.append(result_obj)
             return
@@ -247,7 +248,8 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
                     f"Broken table in ext-file {self._path.with_suffix('.ext')}, "
                     f"table no. {table.number}"
                 )
-                result_obj = self._fill_empty_results(result_obj)
+                is_covariance_step = self.model.estimation_steps[table.number - 1].cov
+                result_obj = self._fill_empty_results(result_obj, is_covariance_step)
                 self.append(result_obj)
                 continue
 
@@ -308,15 +310,20 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
                     result_obj._condition_number = condition_number
             self.append(result_obj)
 
-    def _fill_empty_results(self, result_obj):
+    def _fill_empty_results(self, result_obj, is_covariance_step):
         # Parameter estimates NaN for all parameters that should be estimated
         pe = pd.Series(
             np.nan, name='estimates', index=list(self.model.parameters.nonfixed_inits.keys())
         )
-        se = pd.Series(np.nan, name='SE', index=list(self.model.parameters.nonfixed_inits.keys()))
         result_obj.parameter_estimates = pe
-        result_obj.standard_errors = se
         result_obj.ofv = np.nan
+        if is_covariance_step:
+            se = pd.Series(
+                np.nan, name='SE', index=list(self.model.parameters.nonfixed_inits.keys())
+            )
+            result_obj.standard_errors = se
+        else:
+            result_obj.standard_errors = None
         return result_obj
 
     def _read_lst_file(self):
