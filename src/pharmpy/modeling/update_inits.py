@@ -8,7 +8,8 @@ def update_inits(model, force_individual_estimates=False):
 
     Updates initial estimates of population parameters for a model from
     its modelfit_results. If the model has used initial estimates for
-    individual estimates these will also be updated. If initial estimates
+    individual estimates these will also be updated. If the new initial estimates
+    are out of bounds or NaN this function will raise.
 
     Parameters
     ----------
@@ -25,7 +26,7 @@ def update_inits(model, force_individual_estimates=False):
     Example
     -------
     >>> from pharmpy.modeling import load_example_model, update_inits
-    >>> model = load_example_model("pheno")
+    >>> model = load_example_model("pheno")   # This model was previously fitted to its data
     >>> model.parameters.inits  # doctest:+ELLIPSIS
     {'THETA(1)': 0.00469307, 'THETA(2)': 1.00916, 'THETA(3)': 0.1, 'OMEGA(1,1)': 0.0309626...}
     >>> update_inits(model)  # doctest:+ELLIPSIS
