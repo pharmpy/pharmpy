@@ -73,7 +73,7 @@ def set_power_on_ruv(model, list_of_eps=None, ipred=None):
 
     for i, e in enumerate(eps):
         theta_name = str(model.create_symbol(stem='power', force_numbering=True))
-        theta = Parameter(theta_name, theta_init)
+        theta = Parameter(theta_name, theta_init, lower=0.01)
         pset.append(theta)
         sset.subs({e.symbol * ipred: e.symbol})  # To avoid getting F*EPS*F**THETA
         if alternative:  # To avoid getting W*EPS*F**THETA
