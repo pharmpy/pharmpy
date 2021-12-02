@@ -61,7 +61,6 @@ def test_set_proportional_error_model_log(testdata):
     model = Model(testdata / 'nonmem' / 'pheno.mod')
     model.statements[5] = Assignment('Y', 'F')
     set_proportional_error_model(model, data_trans='log(Y)')
-    print(model.model_code)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV
@@ -74,9 +73,9 @@ S1=V
 
 $ERROR
 IF (F.EQ.0) THEN
-IPREDADJ = 2.22500000000000E-307
+    IPREDADJ = 2.22500000000000E-307
 ELSE
-IPREDADJ = F
+    IPREDADJ = F
 END IF
 Y = LOG(IPREDADJ) + EPS(1)
 
@@ -503,13 +502,13 @@ CONC=A(1)/V
 W = SQRT(CONC**2*THETA(3)**2 + THETA(4)**2)
 W = CONC**THETA(6)*W
 IF (CONC.NE.0.AND.THETA(5).NE.0) THEN
-IPRED = (CONC**THETA(5) - 1)/THETA(5)
+    IPRED = (CONC**THETA(5) - 1)/THETA(5)
 ELSE IF (THETA(5).EQ.0.AND.CONC.NE.0) THEN
-IPRED = LOG(CONC)
+    IPRED = LOG(CONC)
 ELSE IF (CONC.EQ.0.AND.THETA(5).EQ.0) THEN
-IPRED = -1/THETA(5)
+    IPRED = -1/THETA(5)
 ELSE
-IPRED = -1000000000
+    IPRED = -1000000000
 END IF
 Y = IPRED + EPS(1)*W
 $THETA (0,0.00469307) ; TVCL

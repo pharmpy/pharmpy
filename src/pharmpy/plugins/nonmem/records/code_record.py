@@ -124,7 +124,7 @@ def _translate_sympy_block(symbol, expression):
         else:
             statement_str += f'ELSE IF ({condition_translated}) THEN\n'
 
-        statement_str += f'{symbol} = {value}\n'
+        statement_str += f'    {symbol} = {value}\n'
 
     statement_str += 'END IF'
     return statement_str

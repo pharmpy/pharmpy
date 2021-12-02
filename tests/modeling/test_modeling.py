@@ -601,9 +601,9 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
             'FA1',
             '*',
             'IF (FA1.EQ.0.0) THEN\n'
-            'CLFA1 = 1\n'
+            '    CLFA1 = 1\n'
             'ELSE IF (FA1.EQ.1.0) THEN\n'
-            'CLFA1 = THETA(4) + 1\n'
+            '    CLFA1 = THETA(4) + 1\n'
             'END IF\n'
             'CL = CL*CLFA1',
         ),
@@ -613,9 +613,9 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
             '*',
             'WGT_MEDIAN = 1.30000\n'
             'IF (WGT.LE.WGT_MEDIAN) THEN\n'
-            'CLWGT = THETA(4)*(WGT - WGT_MEDIAN) + 1\n'
+            '    CLWGT = THETA(4)*(WGT - WGT_MEDIAN) + 1\n'
             'ELSE\n'
-            'CLWGT = THETA(5)*(WGT - WGT_MEDIAN) + 1\n'
+            '    CLWGT = THETA(5)*(WGT - WGT_MEDIAN) + 1\n'
             'END IF\n'
             'CL = CL*CLWGT',
         ),
