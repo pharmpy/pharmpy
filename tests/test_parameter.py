@@ -39,6 +39,7 @@ def test_initialization(name, init, lower, upper, fix):
     [
         ('OMEGA(2,1)', 0.1, 2, None, None),
         ('X', 1, 0, -1, None),
+        ('X', np.nan, 0, 2, None),
     ],
 )
 def test_illegal_initialization(name, init, lower, upper, fix):

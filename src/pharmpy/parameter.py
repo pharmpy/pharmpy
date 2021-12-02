@@ -339,6 +339,7 @@ class Parameter:
             self.lower = lower
         if upper is not None:
             self.upper = upper
+        self.verify_init(self._init)
         self.unit = parse_units(unit)
 
     @property
