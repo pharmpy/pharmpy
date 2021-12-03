@@ -3,7 +3,7 @@ import re
 import numpy as np
 import pandas as pd
 
-from pharmpy.modeling import add_iiv, copy_model, update_inits
+from pharmpy.modeling import add_iiv, copy_model, create_joint_distribution, update_inits
 from pharmpy.tools.modelfit import create_single_fit_workflow
 from pharmpy.workflows import Task, Workflow
 
@@ -76,7 +76,7 @@ def stepwise(base_model, mfl, run_func, rank_func):
     return df
 
 
-def exhaustive_stepwise(mfl, add_etas):
+def exhaustive_stepwise(mfl, add_etas, etas_as_fullblock):
     features = ModelFeatures(mfl)
     wf_search = Workflow()
 
@@ -115,7 +115,7 @@ def exhaustive_stepwise(mfl, add_etas):
                 wf_search.add_task(task_function, predecessors=task_update_inits)
 
                 if add_etas:
-                    task_add_etas = Task('add_etas', add_etas_to_func, feat)
+                    task_add_etas = Task('add_etas', add_etas_to_func, feat, etas_as_fullblock)
                     wf_search.add_task(task_add_etas, predecessors=task_function)
                     task_transformed = task_add_etas
                 else:
@@ -131,7 +131,7 @@ def exhaustive_stepwise(mfl, add_etas):
                 no_of_trans += 1
         if no_of_trans == 0:
             break
-
+    print(model_features)
     return wf_search, model_tasks, model_features
 
 
@@ -186,7 +186,7 @@ def update_initial_estimates(model):
     return model
 
 
-def add_etas_to_func(feat, model):
+def add_etas_to_func(feat, etas_as_fullblock, model):
     eta_dict = {
         'ABSORPTION(ZO)': ['MAT'],
         'ABSORPTION(SEQ-ZO-FO)': ['MAT', 'MDT'],
@@ -203,5 +203,14 @@ def add_etas_to_func(feat, model):
             parameters = [f'VP{i}' for i in range(1, int(no_of_peripherals) + 1)] + [
                 f'QP{i}' for i in range(1, int(no_of_peripherals) + 1)
             ]
-    add_iiv(model, parameters, 'exp')
+
+    for param in parameters:
+        try:
+            add_iiv(model, param, 'exp')
+        except ValueError as e:
+            if not str(e).startswith('Cannot insert parameter with already existing name'):
+                raise
+    if etas_as_fullblock:
+        create_joint_distribution(model)
+
     return model
