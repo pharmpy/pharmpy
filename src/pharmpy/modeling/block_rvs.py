@@ -156,7 +156,10 @@ def _choose_param_init(model, rvs, params):
     sd = np.array([np.sqrt(params[0].init), np.sqrt(params[1].init)])
     init_default = round(0.1 * sd[0] * sd[1], 7)
 
-    if res is not None:
+    last_estimation_step = [est for est in model.estimation_steps if not est.evaluation][-1]
+    if last_estimation_step.method == 'FO':
+        return init_default
+    elif res is not None:
         try:
             ie = res.individual_estimates
             if not all(eta in ie.columns for eta in etas):
