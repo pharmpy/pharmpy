@@ -36,6 +36,8 @@ def test_exhaustive_stepwise(tmp_path, testdata, mfl, no_of_models, best_model_n
         assert rundir.is_dir()
         assert len(list((rundir / 'models').iterdir())) == no_of_models + 1
 
+        assert res.to_json()
+
 
 @pytest.mark.parametrize(
     'mfl, as_fullblock, no_of_models, best_model_name, no_of_added_etas',

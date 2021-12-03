@@ -131,7 +131,7 @@ def exhaustive_stepwise(mfl, add_etas, etas_as_fullblock):
                 no_of_trans += 1
         if no_of_trans == 0:
             break
-    print(model_features)
+
     return wf_search, model_tasks, model_features
 
 
