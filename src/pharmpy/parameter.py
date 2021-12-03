@@ -115,7 +115,7 @@ class Parameters(MutableSequence):
         i, _ = self._lookup_param(ind, insert=True)
         if value.name in self.names:
             raise ValueError(
-                f"Cannot insert parameter with alread existing name {value.name} "
+                f"Cannot insert parameter with already existing name {value.name} "
                 "into Parameters."
             )
         self._params.insert(i, value)
