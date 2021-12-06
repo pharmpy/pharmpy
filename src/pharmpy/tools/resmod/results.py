@@ -14,8 +14,8 @@ class ResmodResults(Results):
 
 def calculate_results(base_model, iiv_on_ruv, power):
     base_ofv = base_model.modelfit_results.ofv
-    dofv_iiv_on_ruv = iiv_on_ruv.modelfit_results.ofv - base_ofv
-    dofv_power = power.modelfit_results.ofv - base_ofv
+    dofv_iiv_on_ruv = base_ofv - iiv_on_ruv.modelfit_results.ofv
+    dofv_power = base_ofv - power.modelfit_results.ofv
     omega_iiv_on_ruv = iiv_on_ruv.modelfit_results.parameter_estimates["IIV_RUV1"]
     theta_power = power.modelfit_results.parameter_estimates["power1"]
     df = pd.DataFrame(

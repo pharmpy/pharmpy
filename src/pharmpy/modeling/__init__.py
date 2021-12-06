@@ -23,6 +23,7 @@ from pharmpy.modeling.common import (
 )
 from pharmpy.modeling.covariate_effect import add_covariate_effect
 from pharmpy.modeling.data import (
+    get_mdv,
     get_number_of_individuals,
     get_number_of_observations,
     get_number_of_observations_per_individual,
@@ -120,6 +121,7 @@ __all__ = [
     'get_number_of_observations',
     'get_number_of_observations_per_individual',
     'generate_model_code',
+    'get_mdv',
     'get_model_covariates',
     'get_observations',
     'has_additive_error_model',
