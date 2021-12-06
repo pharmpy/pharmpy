@@ -56,6 +56,8 @@ def plot_individual_predictions(model, predictions=None, individuals=None):
     """
     res = model.modelfit_results
     pred = res.predictions
+    if pred is None:
+        raise ValueError("No predictions available in modelfit_results")
     obs = model.dataset.pharmpy.observations
     indexcols = pred.index.names
     idcol = indexcols[0]
