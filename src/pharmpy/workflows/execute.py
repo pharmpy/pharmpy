@@ -10,11 +10,13 @@ default_tool_database = LocalDirectoryToolDatabase
 default_dispatcher = LocalDispatcher()
 
 
-def execute_workflow(workflow, dispatcher=None, database=None, path=None):
+def execute_workflow(workflow, dispatcher=None, database=None, path=None, directory=None):
     if dispatcher is None:
         dispatcher = default_dispatcher
     if database is None:
         database = default_tool_database(toolname=workflow.name, path=path)
+    if directory is not None:
+        pass
 
     # For all input models set new database and read in results
     original_input_models = []
@@ -51,3 +53,16 @@ def execute_workflow(workflow, dispatcher=None, database=None, path=None):
         model.read_modelfit_results()
 
     return res
+
+
+def split_common_options(d):
+    """Split the dict into common options and other options"""
+    execute_options = ['directory']
+    common_options = dict()
+    other_options = dict()
+    for key, value in d.items():
+        if key in execute_options:
+            common_options[key] = value
+        else:
+            other_options[key] = value
+    return common_options, other_options

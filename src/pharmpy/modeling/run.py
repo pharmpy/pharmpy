@@ -4,7 +4,7 @@ import pharmpy.model
 import pharmpy.results
 import pharmpy.tools.common
 import pharmpy.tools.modelfit
-from pharmpy.workflows import execute_workflow
+from pharmpy.workflows import execute_workflow, split_common_options
 
 from .common import read_model_from_database
 
@@ -137,6 +137,7 @@ def run_tool(name, *args, **kwargs):
 
     """
     tool = importlib.import_module(f'pharmpy.tools.{name}')
-    wf = tool.create_workflow(*args, **kwargs)
-    res = execute_workflow(wf)
+    common_options, tool_options = split_common_options(kwargs)
+    wf = tool.create_workflow(*args, **tool_options)
+    res = execute_workflow(wf, **common_options)
     return res
