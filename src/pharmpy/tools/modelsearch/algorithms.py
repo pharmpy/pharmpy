@@ -161,11 +161,11 @@ def _is_allowed(feat_current, func_current, trans_previous, features):
         'ABSORPTION(ZO)': 'TRANSITS',
         'ABSORPTION(SEQ-ZO-FO)': 'TRANSITS',
         'LAGTIME': 'TRANSITS',
-        'TRANSITS': 'LAGTIME',
     }
     for key, value in not_supported_combo.items():
         if any(
-            feat_current.startswith(key) and feat.startswith(value)
+            (feat_current.startswith(key) and feat.startswith(value))
+            or (feat_current.startswith(value) and feat.startswith(key))
             for feat in trans_previous.keys()
         ):
             return False
