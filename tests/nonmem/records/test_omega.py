@@ -380,7 +380,7 @@ def test_random_variables(parser):
 
     rec = parser.parse("$OMEGA  BLOCK(2) FIX 0 0 0").records[0]
     rvs, _, _, zero_fix = rec.random_variables(1)
-    assert len(rvs) == 0
+    assert len(rvs) == 2
     assert zero_fix == ['ETA(1)', 'ETA(2)']
 
     p = parser.parse("$OMEGA BLOCK(1) 0 FIX\n$OMEGA BLOCK(1) SAME")
@@ -388,11 +388,11 @@ def test_random_variables(parser):
     rec1 = p.records[1]
     rvs, nxt, _, zero_fix = rec0.random_variables(1)
     assert nxt == 2
-    assert len(rvs) == 0
+    assert len(rvs) == 1
     assert zero_fix == ['ETA(1)']
     rvs, nxt, _, zero_fix = rec1.random_variables(2, previous_cov='ZERO')
     assert nxt == 3
-    assert len(rvs) == 0
+    assert len(rvs) == 1
     assert zero_fix == ['ETA(2)']
 
     rec = parser.parse("$OMEGA BLOCK SAME").records[0]
@@ -458,3 +458,9 @@ def test_iov(parser):
     rec = parser.parse('$OMEGA 1').records[0]
     rvs, _, _, _ = rec.random_variables(1)
     assert rvs[0].level == 'IIV'
+
+
+def test_zero_fix(parser):
+    code = '$OMEGA BLOCK(2) 0 0 0 FIX'
+    rec = parser.parse(code).records[0]
+    rvs, _, _, _ = rec.random_variables(1)
