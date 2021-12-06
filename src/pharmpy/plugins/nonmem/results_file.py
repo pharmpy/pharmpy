@@ -321,7 +321,7 @@ class NONMEMResultsFile:
                 message = '\n'.join(lines[i:end])
                 self.log.log_error(message)
                 i += 5
-            elif line == '0PRED EXIT CODE = 1':
+            elif line.startswith('0PRED EXIT CODE = 1'):
                 message = line[1:] + '\n' + lines[i + 1][1:].rstrip() + '\n'
                 i += 1
                 while not lines[i + 1].startswith('0PROGRAM TERMINATED'):

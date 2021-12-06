@@ -42,6 +42,7 @@ def pharmpy_theme():
 
 alt.themes.register('pharmpy', pharmpy_theme)
 alt.themes.enable('pharmpy')
+alt.data_transformers.disable_max_rows()
 
 
 def scatter_plot_correlation(df, x, y, tooltip_columns=None, title=""):

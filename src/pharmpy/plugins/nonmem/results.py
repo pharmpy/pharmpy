@@ -51,21 +51,6 @@ class NONMEMModelfitResults(ModelfitResults):
                 self._condition_number = None
             return self._condition_number
 
-    @property
-    def predictions(self):
-        try:
-            return self._predictions
-        except AttributeError:
-            pass
-
-        df = self._chain._read_from_tables(
-            ['ID', 'TIME', 'PRED', 'CIPREDI', 'CPRED', 'IPRED'], self
-        )
-        df['ID'] = df['ID'].convert_dtypes()
-        df.set_index(['ID', 'TIME'], inplace=True)
-        self._predictions = df
-        return df
-
     def predictions_for_observations(self):
         """predictions only for observation data records"""
         df = self._chain._read_from_tables(['ID', 'TIME', 'MDV', 'PRED', 'CIPREDI', 'CPRED'], self)
@@ -217,6 +202,7 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
         self._read_coi_table()
         self._read_phi_table()
         self._read_residuals()
+        self._read_predictions()
         self._calculate_cov_cor_coi()
 
     def __getattr__(self, item):
@@ -242,7 +228,8 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
             result_obj = NONMEMModelfitResults(self)
             result_obj.model_name = self._path.stem
             result_obj.model = self.model
-            result_obj = self._fill_empty_results(result_obj)
+            is_covariance_step = self.model.estimation_steps[0].cov
+            result_obj = self._fill_empty_results(result_obj, is_covariance_step)
             result_obj.table_number = 1
             self.append(result_obj)
             return
@@ -261,7 +248,8 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
                     f"Broken table in ext-file {self._path.with_suffix('.ext')}, "
                     f"table no. {table.number}"
                 )
-                result_obj = self._fill_empty_results(result_obj)
+                is_covariance_step = self.model.estimation_steps[table.number - 1].cov
+                result_obj = self._fill_empty_results(result_obj, is_covariance_step)
                 self.append(result_obj)
                 continue
 
@@ -322,15 +310,20 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
                     result_obj._condition_number = condition_number
             self.append(result_obj)
 
-    def _fill_empty_results(self, result_obj):
+    def _fill_empty_results(self, result_obj, is_covariance_step):
         # Parameter estimates NaN for all parameters that should be estimated
         pe = pd.Series(
             np.nan, name='estimates', index=list(self.model.parameters.nonfixed_inits.keys())
         )
-        se = pd.Series(np.nan, name='SE', index=list(self.model.parameters.nonfixed_inits.keys()))
         result_obj.parameter_estimates = pe
-        result_obj.standard_errors = se
         result_obj.ofv = np.nan
+        if is_covariance_step:
+            se = pd.Series(
+                np.nan, name='SE', index=list(self.model.parameters.nonfixed_inits.keys())
+            )
+            result_obj.standard_errors = se
+        else:
+            result_obj.standard_errors = None
         return result_obj
 
     def _read_lst_file(self):
@@ -488,6 +481,20 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
             else:
                 df = df.loc[(df != 0).any(axis=1)]  # Simple way of removing non-observations
                 obj.residuals = df
+
+    def _read_predictions(self):
+        for obj in self:
+            try:
+
+                df = self._read_from_tables(
+                    ['ID', 'TIME', 'PRED', 'CIPREDI', 'CPRED', 'IPRED'], obj
+                )
+                df['ID'] = df['ID'].convert_dtypes()
+                df.set_index(['ID', 'TIME'], inplace=True)
+            except (KeyError, OSError):
+                obj.predictions = None
+            else:
+                obj.predictions = df
 
     def _read_from_tables(self, columns, result_obj):
         table_recs = self.model.control_stream.get_records('TABLE')

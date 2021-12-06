@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 import pytest
 import sympy
@@ -38,6 +39,7 @@ def test_initialization(name, init, lower, upper, fix):
     [
         ('OMEGA(2,1)', 0.1, 2, None, None),
         ('X', 1, 0, -1, None),
+        ('X', np.nan, 0, 2, None),
     ],
 )
 def test_illegal_initialization(name, init, lower, upper, fix):
@@ -91,6 +93,9 @@ def test_init():
     with pytest.raises(ValueError):
         param.init = -1
     param.init = 22
+
+    with pytest.raises(ValueError, match='Initial estimate cannot be set to NaN'):
+        param.init = np.nan
 
 
 def test_pset_init():
@@ -199,6 +204,9 @@ def test_pset_inits():
     assert pset['X'] == Parameter('X', 0)
     assert pset['Y'] == Parameter('Y', 2)
     assert pset['Z'] == Parameter('Z', 5)
+
+    with pytest.raises(ValueError, match='Initial estimate cannot be set to NaN'):
+        pset.inits = {'X': np.nan, 'Y': 2, 'Z': 5}
 
 
 def test_pset_nonfixed_inits():
@@ -356,3 +364,16 @@ def test_unit():
     assert p.unit == units.liter / units.hour
     p2 = Parameter('x', 3)
     assert p2.unit == 1
+
+
+def test_verify_init():
+    p = Parameter('X', 2, lower=0, upper=23)
+
+    with pytest.raises(ValueError, match='Initial estimate must be within the constraints'):
+        p.verify_init(24)
+
+    with pytest.raises(ValueError, match='Initial estimate cannot be set to NaN'):
+        p.verify_init(np.nan)
+
+    with pytest.raises(ValueError, match='Initial estimate cannot be set to NaN'):
+        p.verify_init(sympy.nan)

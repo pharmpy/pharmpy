@@ -8,6 +8,7 @@ import symengine
 import sympy
 
 import pharmpy.symbols as symbols
+import pharmpy.visualization  # noqa
 from pharmpy import Model
 from pharmpy.data import ColumnType
 from pharmpy.math import conditional_joint_normal, is_posdef
@@ -867,6 +868,7 @@ def calculate_results_using_bipp(
     pool = sample_individual_estimates(frem_model, parameters=etas, rng=rng).droplevel('sample')
     ninds = len(pool.index.unique())
     ishr = calculate_individual_shrinkage(frem_model)
+    ishr = ishr[pool.columns]
     lower_indices = np.tril_indices(len(etas))
     pop_params = np.array(dist.sigma).astype(str)[lower_indices]
     parameter_samples = np.empty((samples, len(pop_params)))
@@ -883,6 +885,9 @@ def calculate_results_using_bipp(
         parameter_samples[k, :] = bootstrap_cov.values[lower_indices]
         k += 1
     frame = pd.DataFrame(parameter_samples, columns=pop_params)
+    # Shift to the mean of the parameter estimate
+    shift = frem_model.modelfit_results.parameter_estimates[pop_params] - frame.mean()
+    frame = frame + shift
     res = calculate_results_from_samples(
         frem_model, continuous, categorical, frame, rescale=rescale
     )

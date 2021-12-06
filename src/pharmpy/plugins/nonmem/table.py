@@ -46,6 +46,8 @@ class NONMEMTableFile:
         elif suffix == '.cov' or suffix == '.cor' or suffix == '.coi':
             table = CovTable(''.join(content))
         else:
+            # Remove repeated header lines, but not the first
+            content[1:] = [line for line in content[1:] if not re.match(r'\s[A-Za-z_]', line)]
             table = NONMEMTable(''.join(content))  # Fallback to non-specific table type
         if not notitle:
             m = re.match(r'TABLE NO.\s+(\d+)', table_line)
@@ -184,7 +186,7 @@ class PhiTable(NONMEMTable):
             pd.DataFrame(matrix, columns=eta_col_names, index=eta_col_names)
             for matrix in matrix_array
         ]
-        etcs = pd.Series(etc_frames, index=df['ID'])
+        etcs = pd.Series(etc_frames, index=df['ID'], dtype='object')
         return etcs
 
     def create_content(self):

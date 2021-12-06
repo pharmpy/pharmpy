@@ -182,8 +182,20 @@ def set_proportional_error_model(model, data_trans=None):
     >>> model = remove_error_model(load_example_model("pheno"))
     >>> set_proportional_error_model(model, data_trans="log(Y)")    # doctest: +ELLIPSIS
     <...>
-    >>> model.statements.find_assignment("Y")
-    Y := εₚ + log(F)
+    >>> model.statements.after_odes
+         A_CENTRAL
+         ─────────
+    F :=     S₁
+    W := F
+                ⎧2.225e-307  for F = 0
+                ⎨
+    IPREDADJ := ⎩    F       otherwise
+    Y := εₚ + log(IPREDADJ)
+    IPRED := F
+    IRES := DV - IPRED
+             IRES
+             ────
+    IWRES :=  W
 
     See Also
     --------
@@ -198,7 +210,12 @@ def set_proportional_error_model(model, data_trans=None):
 
     data_trans = pharmpy.model.canonicalize_data_transformation(model, data_trans)
     if data_trans == sympy.log(model.dependent_variable):
-        expr = sympy.log(f) + ruv
+        # Add protection for log(0)
+        new_ipred = model.create_symbol('IPREDADJ')
+        guard_expr = sympy.Piecewise((2.225e-307, sympy.Eq(f, 0)), (f, True))
+        guard_assignment = Assignment(new_ipred, guard_expr)
+        stats.insert_before(stats.find_assignment(y), guard_assignment)
+        expr = sympy.log(new_ipred) + ruv
     elif data_trans == model.dependent_variable:
         expr = f + f * ruv
     else:

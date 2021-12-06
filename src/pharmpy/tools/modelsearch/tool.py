@@ -36,7 +36,9 @@ class ModelSearch(pharmpy.tools.Tool):
         return res
 
 
-def create_workflow(algorithm, mfl, rankfunc='ofv', cutoff=None, model=None):
+def create_workflow(
+    algorithm, mfl, rankfunc='ofv', cutoff=None, add_etas=False, etas_as_fullblock=False, model=None
+):
     algorithm_func = getattr(algorithms, algorithm)
 
     wf = Workflow()
@@ -56,7 +58,9 @@ def create_workflow(algorithm, mfl, rankfunc='ofv', cutoff=None, model=None):
     else:
         start_model_task = [start_task]
 
-    wf_search, candidate_model_tasks, model_features = algorithm_func(mfl)
+    wf_search, candidate_model_tasks, model_features = algorithm_func(
+        mfl, add_etas, etas_as_fullblock
+    )
     wf.insert_workflow(wf_search, predecessors=wf.output_tasks)
 
     task_result = Task(
@@ -79,7 +83,7 @@ def start(model):
 def post_process_results(rankfunc, cutoff, model_features, *models):
     res_models = []
     for model in models:
-        if not model.name.startswith('candidate'):
+        if not model.name.startswith('modelsearch_candidate'):
             start_model = model
         else:
             res_models.append(model)
@@ -92,7 +96,7 @@ def post_process_results(rankfunc, cutoff, model_features, *models):
     try:
         best_model = [model for model in res_models if model.name == best_model_name][0]
     except IndexError:
-        best_model = None
+        best_model = start_model
 
     res = ModelSearchResults(
         summary=df, best_model=best_model, start_model=start_model, models=res_models
@@ -107,6 +111,11 @@ class ModelSearchResults(pharmpy.results.Results):
         self.best_model = best_model
         self.start_model = start_model
         self.models = models
+
+    def to_json(self, path=None, lzma=False):
+        s = pharmpy.results.Results.to_json(self.summary, path, lzma)
+        if s:
+            return s
 
 
 def run_modelsearch(base_model, algorithm, mfl, **kwargs):

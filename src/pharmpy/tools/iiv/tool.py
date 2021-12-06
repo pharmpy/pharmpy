@@ -48,7 +48,7 @@ def post_process_results(rankfunc, cutoff, *models):
     model_features = dict()
 
     for model in models:
-        if not model.name.startswith('candidate'):
+        if not model.name.startswith('iiv_candidate'):
             start_model = model
         else:
             res_models.append(model)
@@ -62,7 +62,7 @@ def post_process_results(rankfunc, cutoff, *models):
     try:
         best_model = [model for model in res_models if model.name == best_model_name][0]
     except IndexError:
-        best_model = None
+        best_model = start_model
 
     res = IIVResults(summary=df, best_model=best_model, start_model=start_model, models=res_models)
 

@@ -69,6 +69,9 @@ class LocalDirectoryDatabase(ModelDatabase):
         model.read_modelfit_results()
         return model
 
+    def __repr__(self):
+        return f"LocalDirectoryDatabase({self.path})"
+
 
 class LocalModelDirectoryDatabase(LocalDirectoryDatabase):
     def store_local_file(self, model, path):
@@ -99,3 +102,6 @@ class LocalModelDirectoryDatabase(LocalDirectoryDatabase):
         model.database = self
         model.read_modelfit_results()
         return model
+
+    def __repr__(self):
+        return f"LocalModelDirectoryDatabase({self.path})"

@@ -1,7 +1,9 @@
+import re
+
 import numpy as np
 import pandas as pd
 
-from pharmpy.modeling import copy_model, update_inits
+from pharmpy.modeling import add_iiv, copy_model, create_joint_distribution, update_inits
 from pharmpy.tools.modelfit import create_single_fit_workflow
 from pharmpy.workflows import Task, Workflow
 
@@ -74,7 +76,7 @@ def stepwise(base_model, mfl, run_func, rank_func):
     return df
 
 
-def exhaustive_stepwise(mfl):
+def exhaustive_stepwise(mfl, add_etas, etas_as_fullblock):
     features = ModelFeatures(mfl)
     wf_search = Workflow()
 
@@ -98,7 +100,7 @@ def exhaustive_stepwise(mfl):
             trans_previous, trans_possible = trans
 
             for feat, func in trans_possible.items():
-                model_name = f'candidate{candidate_count}'
+                model_name = f'modelsearch_candidate{candidate_count}'
 
                 task_copy = Task('copy', copy, model_name)
                 if task:
@@ -106,14 +108,21 @@ def exhaustive_stepwise(mfl):
                 else:
                     wf_search.add_task(task_copy)
 
-                task_update_inits = Task('update_inits', update_inits)
+                task_update_inits = Task('update_inits', update_initial_estimates)
                 wf_search.add_task(task_update_inits, predecessors=task_copy)
 
                 task_function = Task(feat, func)
                 wf_search.add_task(task_function, predecessors=task_update_inits)
 
+                if add_etas:
+                    task_add_etas = Task('add_etas', add_etas_to_func, feat, etas_as_fullblock)
+                    wf_search.add_task(task_add_etas, predecessors=task_function)
+                    task_transformed = task_add_etas
+                else:
+                    task_transformed = task_function
+
                 wf_fit = create_single_fit_workflow()
-                wf_search.insert_workflow(wf_fit, predecessors=task_function)
+                wf_search.insert_workflow(wf_fit, predecessors=task_transformed)
 
                 model_tasks += wf_fit.output_tasks
                 model_features[model_name] = tuple(list(trans_previous.keys()) + [feat])
@@ -149,7 +158,8 @@ def _is_allowed(feat_current, func_current, trans_previous, features):
     if any(func in features.get_funcs_same_type(feat_current) for func in trans_previous.values()):
         return False
     not_supported_combo = {
-        'ABSORPTION(ZO)': 'TRANSITS(1)',
+        'ABSORPTION(ZO)': 'TRANSITS',
+        'ABSORPTION(SEQ-ZO-FO)': 'TRANSITS',
         'LAGTIME': 'TRANSITS',
         'TRANSITS': 'LAGTIME',
     }
@@ -165,3 +175,42 @@ def _is_allowed(feat_current, func_current, trans_previous, features):
 def copy(name, model):
     model_copy = copy_model(model, name)
     return model_copy
+
+
+def update_initial_estimates(model):
+    # FIXME: this should use dynamic workflows and not dispatch the next task
+    try:
+        update_inits(model)
+    except ValueError:
+        pass
+    return model
+
+
+def add_etas_to_func(feat, etas_as_fullblock, model):
+    eta_dict = {
+        'ABSORPTION(ZO)': ['MAT'],
+        'ABSORPTION(SEQ-ZO-FO)': ['MAT', 'MDT'],
+        'LAGTIME()': ['MDT'],
+    }
+    parameters = []
+    try:
+        parameters = eta_dict[feat]
+    except KeyError:
+        if feat.startswith('TRANSITS'):
+            parameters = ['MDT']
+        elif feat.startswith('PERIPHERALS'):
+            no_of_peripherals = re.search(r'PERIPHERALS\((\d+)\)', feat).group(1)
+            parameters = [f'VP{i}' for i in range(1, int(no_of_peripherals) + 1)] + [
+                f'QP{i}' for i in range(1, int(no_of_peripherals) + 1)
+            ]
+
+    for param in parameters:
+        try:
+            add_iiv(model, param, 'exp')
+        except ValueError as e:
+            if not str(e).startswith('Cannot insert parameter with already existing name'):
+                raise
+    if etas_as_fullblock:
+        create_joint_distribution(model)
+
+    return model

@@ -1,7 +1,19 @@
-next version
-------------
+0.37.1 (2021-11-26)
+-------------------
 
+* Fix bug causing frem report to crash with #IDs > 5000
+* Fix bug for shifted uncertanity in frem with bipp
+
+0.37.0 (2021-11-24)
+-------------------
+
+* First version of IIV-tool
 * Rename set_lag_time to add_lag_time
+* Include run type in summarize_modelfit_results
+* Fix bug with force option in write_model
+* Fix bug in parsing .ext-files with tables without header
+* Fix bug with nested update_source crashing due to incorrect handling of diagonal records
+* Fix bug with inserted IGNORE on comment lines
 
 0.36.0 (2021-11-11)
 -------------------

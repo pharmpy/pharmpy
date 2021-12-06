@@ -15,7 +15,10 @@ class DummyResults:
 class DummyModel:
     def __init__(self, name, **kwargs):
         self.name = name
-        self.modelfit_results = DummyResults(**kwargs)
+        if 'no_modelfit_results' in kwargs.keys():
+            self.modelfit_results = None
+        else:
+            self.modelfit_results = DummyResults(**kwargs)
 
 
 def test_ofv():
@@ -29,6 +32,15 @@ def test_ofv():
     run5 = DummyModel("run5", ofv=-2)
     res = ofv(run1, [run2, run3, run4, run5], cutoff=2)
     assert [run3, run5] == res
+
+    run6 = DummyModel("run6", no_modelfit_results=True)
+    res = ofv(run6, [run1, run2, run3])
+    assert [] == res
+
+    run7 = DummyModel("run7", no_modelfit_results=True)
+    run8 = DummyModel("run8", no_modelfit_results=True)
+    res = ofv(run6, [run7, run8])
+    assert [] == res
 
 
 def test_aic():

@@ -78,7 +78,10 @@ def create_summary(models, start_model, rankfunc, cutoff, model_features):
 
     for model in models:
         model_names.append(model.name)
-        res_data['dofv'].append(start_model.modelfit_results.ofv - model.modelfit_results.ofv)
+        try:
+            res_data['dofv'].append(start_model.modelfit_results.ofv - model.modelfit_results.ofv)
+        except AttributeError:
+            res_data['dofv'].append(np.nan)
         res_data['features'].append(model_features[model.name])
         if model in ranks:
             res_data['rank'].append(ranks.index(model) + 1)

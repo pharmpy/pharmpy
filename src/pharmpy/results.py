@@ -545,7 +545,11 @@ class ChainedModelfitResults(MutableSequence, ModelfitResults):
         else:
             step = self
 
-        summary_dict['minimization_successful'] = step.minimization_successful
+        if step.minimization_successful is not None:
+            summary_dict['minimization_successful'] = step.minimization_successful
+        else:
+            summary_dict['minimization_successful'] = False
+
         summary_dict['ofv'] = step.ofv
         summary_dict['runtime_total'] = step.runtime_total
 

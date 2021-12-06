@@ -4,7 +4,6 @@ import numpy as np
 import pandas as pd
 import sympy
 
-from pharmpy.data_structures import OrderedSet
 from pharmpy.model import Model
 from pharmpy.modeling import create_rng, sample_parameters_from_covariance_matrix
 
@@ -154,9 +153,11 @@ def calculate_individual_shrinkage(model):
     param_inits = model.parameters.to_dataframe()['value']
     pe = pe.combine_first(param_inits)
 
-    # Get all iiv variance parameters
-    param_names = model.random_variables.etas.variance_parameters
-    param_names = list(OrderedSet(param_names))  # Only unique in order
+    # Get all iiv and iov variance parameters
+    diag = model.random_variables.etas.covariance_matrix.diagonal()
+    param_names = [s.name for s in diag]
+    # param_names = model.random_variables.etas.variance_parameters
+    # param_names = list(OrderedSet(param_names))  # Only unique in order
 
     diag_ests = pe[param_names]
 
@@ -450,16 +451,20 @@ def summarize_modelfit_results(models, include_all_estimation_steps=False):
             # FIXME: in read_modelfit_results, maybe some parts can be extracted (i.e.
             #   create modelfit_results object)
             if include_all_estimation_steps:
-                for i in range(len(model.estimation_steps)):
+                for i, est in enumerate(model.estimation_steps):
                     index = pd.MultiIndex.from_tuples(
                         [(model.name, i + 1)], names=['model_name', 'step']
                     )
+                    if est.evaluation:
+                        run_type = 'evaluation'
+                    else:
+                        run_type = 'estimation'
                     empty_df = pd.DataFrame(
-                        {'run_type': None, 'minimization_successful': None}, index=index
+                        {'run_type': run_type, 'minimization_successful': False}, index=index
                     )
                     summaries.append(empty_df)
             else:
-                empty_df = pd.DataFrame({'minimization_successful': np.nan}, index=[model.name])
+                empty_df = pd.DataFrame({'minimization_successful': False}, index=[model.name])
                 summaries.append(empty_df)
 
     summary = pd.concat(summaries).sort_index()
