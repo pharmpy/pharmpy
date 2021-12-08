@@ -7,6 +7,7 @@ from pathlib import Path
 
 import sympy
 
+from pharmpy import config
 from pharmpy.estimation import EstimationMethod
 from pharmpy.model_factory import Model
 from pharmpy.modeling.help_functions import _as_integer
@@ -837,3 +838,20 @@ def print_model_symbols(model):
     s += f'Variables: {", ".join(variables)}\n'
     s += f'Data columns: {", ".join(model.dataset.columns)}'
     print(s)
+
+
+def get_config_path():
+    """Returns path to the user config path
+
+    Returns
+    -------
+    str
+        Path to user config
+
+    Example
+    -------
+    >>> from pharmpy.modeling import get_config_path
+    >>> get_config_path()    # doctest: +ELLIPSIS
+    '.../pharmpy.conf'
+    """
+    return str(config.user_config_dir())
