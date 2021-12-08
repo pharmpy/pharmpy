@@ -1,6 +1,7 @@
-from .run import run_tool
-from pharmpy.workflows import default_tool_database
 from pharmpy.results import Results
+from pharmpy.workflows import default_tool_database
+
+from .run import run_tool
 
 
 class AMDResults(Results):
@@ -13,7 +14,9 @@ def run_amd(model):
     run_tool('modelfit', model, path=db.path / 'modelfit')
 
     mfl = 'LAGTIME()\nPERIPHERALS(1)'
-    res_modelsearch = run_tool('modelsearch', 'exhaustive_stepwise', mfl=mfl, rankfunc='ofv', cutoff=3.84, model=model)
+    res_modelsearch = run_tool(
+        'modelsearch', 'exhaustive_stepwise', mfl=mfl, rankfunc='ofv', cutoff=3.84, model=model
+    )
     selected_model = res_modelsearch.best_model
 
     res_iiv = run_tool('iiv', 'brute_force', rankfunc='ofv', cutoff=3.84, model=selected_model)
