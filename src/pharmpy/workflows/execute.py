@@ -10,13 +10,11 @@ default_tool_database = LocalDirectoryToolDatabase
 default_dispatcher = LocalDispatcher()
 
 
-def execute_workflow(workflow, dispatcher=None, database=None, path=None, directory=None):
+def execute_workflow(workflow, dispatcher=None, database=None, path=None):
     if dispatcher is None:
         dispatcher = default_dispatcher
     if database is None:
         database = default_tool_database(toolname=workflow.name, path=path)
-    if directory is not None:
-        pass
 
     # For all input models set new database and read in results
     original_input_models = []
@@ -40,6 +38,7 @@ def execute_workflow(workflow, dispatcher=None, database=None, path=None, direct
             task.task_input = new_inp
 
     res = dispatcher.run(workflow, database)
+
     # Transfer files from tool model database to default model database
     for model in original_input_models:
         with TemporaryDirectory() as temppath:
@@ -57,7 +56,7 @@ def execute_workflow(workflow, dispatcher=None, database=None, path=None, direct
 
 def split_common_options(d):
     """Split the dict into common options and other options"""
-    execute_options = ['directory']
+    execute_options = ['path']
     common_options = dict()
     other_options = dict()
     for key, value in d.items():
