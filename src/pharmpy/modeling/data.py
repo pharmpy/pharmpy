@@ -1,4 +1,8 @@
 # Functional interface to extract dataset information
+import numpy as np
+import pandas as pd
+
+from pharmpy.data import ColumnType
 
 
 def get_number_of_individuals(model):
@@ -205,3 +209,32 @@ def get_observations(model):
 
     """
     return model.dataset.pharmpy.observations
+
+
+def get_mdv(model):
+    """Get MDVs from dataset
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+
+    Returns
+    -------
+    pd.Series
+        MDVs
+    """
+    try:
+        label = model.dataset.pharmpy.labels_by_type[ColumnType.EVENT]
+    except KeyError:
+        try:
+            label = model.dataset.pharmpy.labels_by_type[ColumnType.DOSE]
+        except KeyError:
+            label = model.dataset.pharmpy.labels_by_type[ColumnType.DV]
+            data = model.dataset[label].astype('float64').squeeze()
+            mdv = pd.Series(np.zeros(len(data))).astype('int64').rename('MDV')
+            return mdv
+
+    data = model.dataset[label].astype('float64').squeeze()
+    mdv = data.where(data == 0, other=1).astype('int64').rename('MDV')
+    return mdv
