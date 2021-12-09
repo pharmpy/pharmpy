@@ -12,7 +12,7 @@ from pharmpy.utils import TemporaryDirectoryChanger
     'mfl, no_of_models, best_model_name',
     [
         ('ABSORPTION(ZO)\nPERIPHERALS(1)', 4, 'modelsearch_candidate2'),
-        ('ABSORPTION(ZO)\nTRANSITS(1)', 3, 'mox2'),
+        ('ABSORPTION(ZO)\nTRANSITS(1)', 2, 'mox2'),
         ('ABSORPTION([ZO,SEQ-ZO-FO])\nPERIPHERALS(1)', 7, 'modelsearch_candidate3'),
         ('LAGTIME()\nTRANSITS(1)', 2, 'mox2'),
     ],
@@ -36,17 +36,20 @@ def test_exhaustive_stepwise(tmp_path, testdata, mfl, no_of_models, best_model_n
         assert rundir.is_dir()
         assert len(list((rundir / 'models').iterdir())) == no_of_models + 1
 
+        assert res.to_json()
+
 
 @pytest.mark.parametrize(
-    'mfl, no_of_models, best_model_name, no_of_added_etas',
+    'mfl, as_fullblock, no_of_models, best_model_name, no_of_added_etas',
     [
-        ('ABSORPTION(ZO)\nPERIPHERALS(1)', 4, 'modelsearch_candidate2', 2),
-        ('ABSORPTION(ZO)\nPERIPHERALS([1, 2])', 7, 'modelsearch_candidate2', 4),
-        ('LAGTIME()\nTRANSITS(1)', 2, 'mox2', 1),
+        ('ABSORPTION(ZO)\nPERIPHERALS(1)', False, 4, 'modelsearch_candidate2', 2),
+        ('ABSORPTION(ZO)\nPERIPHERALS([1, 2])', False, 7, 'modelsearch_candidate2', 4),
+        ('LAGTIME()\nTRANSITS(1)', False, 2, 'mox2', 1),
+        ('ABSORPTION(ZO)\nPERIPHERALS(1)', True, 4, 'modelsearch_candidate2', 2),
     ],
 )
 def test_exhaustive_stepwise_add_etas(
-    tmp_path, testdata, mfl, no_of_models, best_model_name, no_of_added_etas
+    tmp_path, testdata, mfl, as_fullblock, no_of_models, best_model_name, no_of_added_etas
 ):
     with TemporaryDirectoryChanger(tmp_path):
         shutil.copy2(testdata / 'nonmem' / 'models' / 'mox2.mod', tmp_path)

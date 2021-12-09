@@ -7,6 +7,7 @@ from pharmpy.modeling.common import (
     fix_parameters,
     fix_parameters_to,
     generate_model_code,
+    get_config_path,
     get_model_covariates,
     load_example_model,
     print_model_symbols,
@@ -92,6 +93,7 @@ from pharmpy.modeling.results import (
 from pharmpy.modeling.run import create_results, fit, read_results, run_tool
 from pharmpy.modeling.update_inits import update_inits
 
+from .amd import run_amd
 from .plots import plot_individual_predictions, plot_iofv_vs_iofv
 
 # Remember to sort __all__ alphabetically for order in documentation
@@ -121,6 +123,7 @@ __all__ = [
     'get_number_of_observations',
     'get_number_of_observations_per_individual',
     'generate_model_code',
+    'get_config_path',
     'get_mdv',
     'get_model_covariates',
     'get_observations',
@@ -145,6 +148,7 @@ __all__ = [
     'remove_iov',
     'remove_lag_time',
     'remove_peripheral_compartment',
+    'run_amd',
     'run_tool',
     'sample_parameters_from_covariance_matrix',
     'sample_individual_estimates',

@@ -601,9 +601,9 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
             'FA1',
             '*',
             'IF (FA1.EQ.0.0) THEN\n'
-            'CLFA1 = 1\n'
+            '    CLFA1 = 1\n'
             'ELSE IF (FA1.EQ.1.0) THEN\n'
-            'CLFA1 = THETA(4) + 1\n'
+            '    CLFA1 = THETA(4) + 1\n'
             'END IF\n'
             'CL = CL*CLFA1',
         ),
@@ -613,9 +613,9 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
             '*',
             'WGT_MEDIAN = 1.30000\n'
             'IF (WGT.LE.WGT_MEDIAN) THEN\n'
-            'CLWGT = THETA(4)*(WGT - WGT_MEDIAN) + 1\n'
+            '    CLWGT = THETA(4)*(WGT - WGT_MEDIAN) + 1\n'
             'ELSE\n'
-            'CLWGT = THETA(5)*(WGT - WGT_MEDIAN) + 1\n'
+            '    CLWGT = THETA(5)*(WGT - WGT_MEDIAN) + 1\n'
             'END IF\n'
             'CL = CL*CLWGT',
         ),
@@ -2097,28 +2097,28 @@ def test_update_inits_no_res(testdata):
         (
             ['EPS(1)'],
             'Y = F + EPS(1)*F**THETA(4)\n' 'IPRED=F+EPS(2)\n' 'IRES=DV-IPRED+EPS(3)',
-            '$THETA  1 ; power1',
+            '$THETA  (0.01,1) ; power1',
         ),
         (
             ['EPS(1)', 'EPS(2)'],
             'Y = F + EPS(1)*F**THETA(4)\n'
             'IPRED = F + EPS(2)*F**THETA(5)\n'
             'IRES=DV-IPRED+EPS(3)',
-            '$THETA  1 ; power1\n' '$THETA  1 ; power2',
+            '$THETA  (0.01,1) ; power1\n' '$THETA  (0.01,1) ; power2',
         ),
         (
             ['EPS(1)', 'EPS(3)'],
             'Y = F + EPS(1)*F**THETA(4)\n'
             'IPRED = F + EPS(2)\n'  # FIXME: registers as different despite not being changed
             'IRES = DV - IPRED + EPS(3)*F**THETA(5)',
-            '$THETA  1 ; power1\n' '$THETA  1 ; power2',
+            '$THETA  (0.01,1) ; power1\n' '$THETA  (0.01,1) ; power2',
         ),
         (
             None,
             'Y = F + EPS(1)*F**THETA(4)\n'
             'IPRED = F + EPS(2)*F**THETA(5)\n'
             'IRES = DV - IPRED + EPS(3)*F**THETA(6)',
-            '$THETA  1 ; power1\n' '$THETA  1 ; power2\n' '$THETA  1 ; power3',
+            '$THETA  (0.01,1) ; power1\n' '$THETA  (0.01,1) ; power2\n' '$THETA  (0.01,1) ; power3',
         ),
     ],
 )

@@ -373,6 +373,7 @@ class OmegaRecord(Record):
         start_omega - the first omega in this record
         previous_cov - the matrix of the previous omega block
         """
+        all_zero_fix = False
         same = bool(self.root.find('same'))
         if not hasattr(self, 'name_map') and not same:
             if isinstance(previous_cov, sympy.Symbol):
@@ -418,11 +419,13 @@ class OmegaRecord(Record):
                 if not (param.init == 0 and param.fix):
                     all_zero_fix = False
             if all_zero_fix and len(params) > 0 or (previous_cov == 'ZERO' and same):
-                names = [self._rv_name(i) for i in range(start_omega, start_omega + numetas)]
-                self.eta_map = {eta: start_omega + i for i, eta in enumerate(names)}
-                return RandomVariables(), start_omega + numetas, 'ZERO', names
+                all_zero_fix = True
+            else:
+                all_zero_fix = False
             if numetas > 1:
                 names = [self._rv_name(i) for i in range(start_omega, start_omega + numetas)]
+                if all_zero_fix:
+                    zero_fix = names
                 means = [0] * numetas
                 if same:
                     rvs = RandomVariable.joint_normal(names, 'iiv', means, previous_cov)
@@ -441,6 +444,8 @@ class OmegaRecord(Record):
             else:
                 rvs = RandomVariables()
                 name = self._rv_name(start_omega)
+                if all_zero_fix:
+                    zero_fix = [name]
                 if same:
                     sym = previous_cov
                 else:
@@ -460,6 +465,8 @@ class OmegaRecord(Record):
         for rv in rvs:
             rv.level = level
         self.eta_map = {eta: start_omega + i for i, eta in enumerate(etas)}
+        if all_zero_fix:
+            next_cov = 'ZERO'
         return rvs, start_omega + numetas, next_cov, zero_fix
 
     def renumber(self, new_start):

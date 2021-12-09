@@ -66,6 +66,39 @@ def test_choose_param_init(pheno_path, testdata):
     assert init == 0.0052789
 
 
+def test_choose_param_init_fo():
+    model = Model(
+        StringIO(
+            '''$PROBLEM PHENOBARB SIMPLE MODEL
+$DATA pheno.dta IGNORE=@
+$INPUT ID TIME AMT WGT APGR DV
+$SUBROUTINE ADVAN1 TRANS2
+
+$PK
+CL=THETA(1)*EXP(ETA(1))
+V=THETA(2)*EXP(ETA(1))
+S1=V*EXP(ETA(2))
+
+$ERROR
+Y=F+F*EPS(1)
+
+$THETA (0,0.00469307) ; TVCL
+$THETA (0,1.00916) ; TVV
+$OMEGA 0.1  ; IVCL
+$OMEGA 0.1  ; IVV
+$SIGMA 0.013241
+
+$ESTIMATION METHOD=0
+'''
+        )
+    )
+    params = (model.parameters['OMEGA(1,1)'], model.parameters['OMEGA(2,2)'])
+    rvs = RandomVariables(model.random_variables.etas)
+    init = _choose_param_init(model, rvs, params)
+
+    assert init == 0.01
+
+
 def test_names(testdata):
     model = Model(
         StringIO(

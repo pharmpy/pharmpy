@@ -23,6 +23,7 @@ def create_workflow(models=None, n=None):
                 wf.add_task(task)
     elif isinstance(models, Model):
         task = Task('run', execute_model, models)
+        wf.add_task(task)
     else:
         for i, model in enumerate(models):
             task = Task(f'run{i}', execute_model, model)

@@ -36,7 +36,9 @@ class ModelSearch(pharmpy.tools.Tool):
         return res
 
 
-def create_workflow(algorithm, mfl, rankfunc='ofv', cutoff=None, add_etas=False, model=None):
+def create_workflow(
+    algorithm, mfl, rankfunc='ofv', cutoff=None, add_etas=False, etas_as_fullblock=False, model=None
+):
     algorithm_func = getattr(algorithms, algorithm)
 
     wf = Workflow()
@@ -56,7 +58,9 @@ def create_workflow(algorithm, mfl, rankfunc='ofv', cutoff=None, add_etas=False,
     else:
         start_model_task = [start_task]
 
-    wf_search, candidate_model_tasks, model_features = algorithm_func(mfl, add_etas)
+    wf_search, candidate_model_tasks, model_features = algorithm_func(
+        mfl, add_etas, etas_as_fullblock
+    )
     wf.insert_workflow(wf_search, predecessors=wf.output_tasks)
 
     task_result = Task(
@@ -107,6 +111,11 @@ class ModelSearchResults(pharmpy.results.Results):
         self.best_model = best_model
         self.start_model = start_model
         self.models = models
+
+    def to_json(self, path=None, lzma=False):
+        s = pharmpy.results.Results.to_json(self.summary, path, lzma)
+        if s:
+            return s
 
 
 def run_modelsearch(base_model, algorithm, mfl, **kwargs):

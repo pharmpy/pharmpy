@@ -38,6 +38,7 @@ def execute_workflow(workflow, dispatcher=None, database=None, path=None):
             task.task_input = new_inp
 
     res = dispatcher.run(workflow, database)
+
     # Transfer files from tool model database to default model database
     for model in original_input_models:
         with TemporaryDirectory() as temppath:
@@ -51,3 +52,16 @@ def execute_workflow(workflow, dispatcher=None, database=None, path=None):
         model.read_modelfit_results()
 
     return res
+
+
+def split_common_options(d):
+    """Split the dict into common options and other options"""
+    execute_options = ['path']
+    common_options = dict()
+    other_options = dict()
+    for key, value in d.items():
+        if key in execute_options:
+            common_options[key] = value
+        else:
+            other_options[key] = value
+    return common_options, other_options

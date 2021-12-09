@@ -1,8 +1,19 @@
+0.38.0 (2021-12-08)
+-------------------
+
+* Add function to get path to user configuration file
+* Add function to get missing DVs
+* Add option to add IIV on structural parameters (as diagonal and block)
+* Add guard for log(0) in proportional error for log data
+* Avoid crash if plots cannot be created in CDD results
+* Fix issue saving modelsearch results
+* Fix bipp issues with etas outside of FREM matrix
+
 0.37.1 (2021-11-26)
 -------------------
 
 * Fix bug causing frem report to crash with #IDs > 5000
-* Fix bug for shifted uncertanity in frem with bipp
+* Fix bug for shifted uncertainty in frem with bipp
 
 0.37.0 (2021-11-24)
 -------------------

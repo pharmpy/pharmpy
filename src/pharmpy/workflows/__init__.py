@@ -13,6 +13,7 @@ from .execute import (
     default_model_database,
     default_tool_database,
     execute_workflow,
+    split_common_options,
 )
 from .log import Log
 from .workflows import Task, Workflow
@@ -22,6 +23,7 @@ __all__ = [
     'default_model_database',
     'default_tool_database',
     'execute_workflow',
+    'split_common_options',
     'LocalDispatcher',
     'LocalDirectoryDatabase',
     'LocalModelDirectoryDatabase',

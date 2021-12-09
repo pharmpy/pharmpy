@@ -140,7 +140,7 @@ def calculate_results(base_model, cdd_models, case_column, skipped_individuals, 
             iplot = plot_individual_predictions(
                 base_model, individuals=infl_list, predictions=['PRED', 'CIPREDI']
             )
-        except KeyError:
+        except ValueError:
             iplot = None
     else:
         iplot = None

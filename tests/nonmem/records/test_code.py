@@ -621,12 +621,12 @@ def test_nested_block_if(parser):
         (
             S('X'),
             sympy.Piecewise((0, sympy.Ne(S('Y'), 1)), (1, True)),
-            '\nIF (Y.NE.1) THEN\nX = 0\nELSE\nX = 1\nEND IF\n',
+            '\nIF (Y.NE.1) THEN\n    X = 0\nELSE\n    X = 1\nEND IF\n',
         ),
         (
             S('X'),
             sympy.Piecewise((0, sympy.Ne(S('Y'), 1)), (2, sympy.Eq(S('Y'), 15)), (1, True)),
-            '\nIF (Y.NE.1) THEN\nX = 0\nELSE IF (Y.EQ.15) THEN\nX = 2\nELSE\nX = 1\nEND IF\n',
+            '\nIF (Y.NE.1) THEN\n    X = 0\nELSE IF (Y.EQ.15) THEN\n    X = 2\nELSE\n    X = 1\nEND IF\n',  # noqa: E501
         ),
     ],
 )
@@ -643,3 +643,20 @@ def test_translate_sympy_piecewise(parser, symbol, expression, buf_expected):
 def test_empty_record(parser):
     rec = parser.parse('$PRED\n').records[0]
     assert len(rec.statements) == 0
+
+
+def test_set_block_if(parser):
+    rec = parser.parse('$PRED\n').records[0]
+    z = S('z')
+    s = Assignment('X', sympy.Piecewise((23, z < 12), (5, True)))
+    statements = rec.statements
+    statements.append(s)
+    rec.statements = statements
+    correct = """$PRED
+IF (z.LT.12) THEN
+    X = 23
+ELSE
+    X = 5
+END IF
+"""
+    assert str(rec) == correct

@@ -5,7 +5,7 @@ import pharmpy.tools
 import pharmpy.tools.modelfit as modelfit
 from pharmpy import Parameter, Parameters, RandomVariable, RandomVariables
 from pharmpy.estimation import EstimationMethod
-from pharmpy.modeling import set_iiv_on_ruv, set_power_on_ruv
+from pharmpy.modeling import get_mdv, set_iiv_on_ruv, set_power_on_ruv
 from pharmpy.statements import Assignment, ModelStatements
 from pharmpy.tools.modelfit import create_multiple_fit_workflow
 from pharmpy.workflows import Task, Workflow
@@ -123,7 +123,7 @@ def _create_power_model(input_model):
 
 def _create_dataset(input_model):
     residuals = input_model.modelfit_results.residuals
-    cwres = residuals['CWRES']
+    cwres = residuals['CWRES'].reset_index(drop=True)
     predictions = input_model.modelfit_results.predictions
     if 'CIPREDI' in predictions:
         ipredcol = 'CIPREDI'
@@ -131,16 +131,18 @@ def _create_dataset(input_model):
         ipredcol = 'IPRED'
     else:
         raise ValueError("Need CIPREDI or IPRED")
-    ipred = predictions[ipredcol].reindex(cwres.index)
-    df = pd.concat([cwres, ipred], axis=1).rename(columns={'CWRES': 'DV', ipredcol: 'IPRED'})
-    df.reset_index(inplace=True)
+    ipred = predictions[ipredcol].reset_index(drop=True)
+    mdv = get_mdv(input_model)
+    df_ipred = pd.concat([mdv, ipred], axis=1).rename(columns={ipredcol: 'IPRED'})
+    df_ipred = df_ipred[df_ipred['MDV'] == 0].reset_index(drop=True)
+    df = pd.concat([cwres, df_ipred['IPRED']], axis=1).rename(columns={'CWRES': 'DV'})
     return df
 
 
 def _create_best_model(model, res):
     model = model.copy()
-    if any(-res.models['dofv'] > 3.84):
-        idx = res.models['dofv'].idxmin()
+    if any(res.models['dofv'] > 3.84):
+        idx = res.models['dofv'].idxmax()
         name = idx[0]
         if name == 'power':
             set_power_on_ruv(model)
