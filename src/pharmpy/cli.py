@@ -159,9 +159,9 @@ def run_bootstrap(args):
 
 
 def run_execute(args):
-    import pharmpy.tools.modelfit as modelfit
+    import pharmpy.modeling.run as run
 
-    method = modelfit.Modelfit(args.models)
+    method = run.fit(args.models)
     method.run()
 
 

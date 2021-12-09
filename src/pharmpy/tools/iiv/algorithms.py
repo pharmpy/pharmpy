@@ -1,8 +1,8 @@
 from itertools import combinations
 
+import pharmpy.tools.modelfit as modelfit
 from pharmpy.modeling import copy_model
 from pharmpy.modeling.block_rvs import create_joint_distribution
-from pharmpy.tools.modelfit import create_multiple_fit_workflow
 from pharmpy.workflows import Task, Workflow
 
 
@@ -18,7 +18,7 @@ def brute_force(model):
         task_joint_dist = Task('create_joint_dist', create_joint_dist, combo)
         wf.add_task(task_joint_dist, predecessors=task_copy)
 
-    wf_fit = create_multiple_fit_workflow(n=len(eta_combos_all))
+    wf_fit = modelfit.create_workflow(n=len(eta_combos_all))
     wf.insert_workflow(wf_fit)
     return wf
 

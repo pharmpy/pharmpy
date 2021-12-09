@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 
 from pharmpy.modeling import add_iiv, copy_model, create_joint_distribution, update_inits
-from pharmpy.tools.modelfit import create_single_fit_workflow
+from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.workflows import Task, Workflow
 
 from .mfl import ModelFeatures
@@ -121,7 +121,7 @@ def exhaustive_stepwise(mfl, add_etas, etas_as_fullblock):
                 else:
                     task_transformed = task_function
 
-                wf_fit = create_single_fit_workflow()
+                wf_fit = create_fit_workflow(n=1)
                 wf_search.insert_workflow(wf_fit, predecessors=task_transformed)
 
                 model_tasks += wf_fit.output_tasks

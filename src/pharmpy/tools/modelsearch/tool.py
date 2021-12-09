@@ -4,7 +4,7 @@ import pharmpy.tools.modelfit as modelfit
 import pharmpy.tools.modelsearch.algorithms as algorithms
 import pharmpy.tools.rankfuncs as rankfuncs
 import pharmpy.workflows as workflows
-from pharmpy.tools.modelfit import create_single_fit_workflow
+from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.workflows import Task, Workflow
 
 
@@ -52,7 +52,7 @@ def create_workflow(
     wf.add_task(start_task)
 
     if model and not model.modelfit_results:
-        wf_fit = create_single_fit_workflow()
+        wf_fit = create_fit_workflow(n=1)
         wf.insert_workflow(wf_fit, predecessors=start_task)
         start_model_task = wf_fit.output_tasks
     else:
