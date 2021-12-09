@@ -1,5 +1,8 @@
 # Functional interface to extract dataset information
-from pharmpy.data import ColumnType, DatasetError
+import numpy as np
+import pandas as pd
+
+from pharmpy.data import ColumnType
 
 
 def get_number_of_individuals(model):
@@ -227,8 +230,11 @@ def get_mdv(model):
         try:
             label = model.dataset.pharmpy.labels_by_type[ColumnType.DOSE]
         except KeyError:
-            raise DatasetError('Could not find EVID or AMT column in dataset')
+            label = model.dataset.pharmpy.labels_by_type[ColumnType.DV]
+            data = model.dataset[label].astype('float64').squeeze()
+            mdv = pd.Series(np.zeros(len(data))).astype('int64').rename('MDV')
+            return mdv
 
-    dose = model.dataset[label].astype('float64').squeeze()
-    mdv = dose.where(dose == 0, other=1).astype('int64').rename('MDV')
+    data = model.dataset[label].astype('float64').squeeze()
+    mdv = data.where(data == 0, other=1).astype('int64').rename('MDV')
     return mdv
