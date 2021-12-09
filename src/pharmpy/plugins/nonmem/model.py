@@ -11,7 +11,7 @@ import pharmpy.model
 import pharmpy.model_factory
 import pharmpy.plugins.nonmem
 from pharmpy.data import DatasetError
-from pharmpy.estimation import EstimationStep, EstimationSteps, list_supported_est
+from pharmpy.estimation import EstimationStep, EstimationSteps
 from pharmpy.model import ModelSyntaxError
 from pharmpy.parameter import Parameters
 from pharmpy.plugins.nonmem.results import NONMEMChainedModelfitResults
@@ -705,13 +705,7 @@ class Model(pharmpy.model.Model):
             elif value == '1' or value == 'CONDITIONAL' or value == 'COND':
                 name = 'foce'
             else:
-                if value in list_supported_est():
-                    name = value
-                else:
-                    raise ModelSyntaxError(
-                        f'Non-recognized estimation method in: {str(record.root)}'
-                    )
-
+                name = value
             interaction = False
             evaluation = False
             maximum_evaluations = None
@@ -756,15 +750,18 @@ class Model(pharmpy.model.Model):
             if not tool_options:
                 tool_options = None
 
-            meth = EstimationStep(
-                name,
-                interaction=interaction,
-                cov=cov,
-                evaluation=evaluation,
-                maximum_evaluations=maximum_evaluations,
-                laplace=laplace,
-                tool_options=tool_options,
-            )
+            try:
+                meth = EstimationStep(
+                    name,
+                    interaction=interaction,
+                    cov=cov,
+                    evaluation=evaluation,
+                    maximum_evaluations=maximum_evaluations,
+                    laplace=laplace,
+                    tool_options=tool_options,
+                )
+            except ValueError:
+                raise ModelSyntaxError(f'Non-recognized estimation method in: {str(record.root)}')
             steps.append(meth)
 
         steps = EstimationSteps(steps)

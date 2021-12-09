@@ -73,6 +73,9 @@ class EstimationSteps(MutableSequence):
 
 
 class EstimationStep:
+
+    supported_methods = ['FO', 'FOCE', 'ITS', 'IMPMAP', 'IMP', 'SAEM', 'BAYES']
+
     def __init__(
         self,
         method,
@@ -94,9 +97,10 @@ class EstimationStep:
 
     def _canonicalize_and_check_method(self, method):
         method = method.upper()
-        supported = list_supported_est()
-        if method not in supported:
-            raise ValueError(f'EstimationStep: {method} not recognized. Use any of {supported}.')
+        if method not in self.supported_methods:
+            raise ValueError(
+                f'EstimationStep: {method} not recognized. Use any of {self.supported_methods}.'
+            )
         return method
 
     @property
@@ -150,7 +154,3 @@ class EstimationStep:
 
     def copy(self):
         return copy.deepcopy(self)
-
-
-def list_supported_est():
-    return ['FO', 'FOCE', 'ITS', 'IMPMAP', 'IMP', 'SAEM', 'BAYES']
