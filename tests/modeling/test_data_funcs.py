@@ -91,7 +91,7 @@ def test_get_mdv(testdata):
     model = Model(testdata / 'nonmem' / 'pheno_real.mod')
     mdv = get_mdv(model)
     label_test = model.dataset.pharmpy.labels_by_type[ColumnType.DOSE]
-    dose_test = model.dataset[label_test].astype('float64').squeeze()
-    mdv_test = dose_test.where(dose_test == 0, other=1).astype('int64')
+    data_test = model.dataset[label_test].astype('float64').squeeze()
+    mdv_test = data_test.where(data_test == 0, other=1).astype('int64')
     result = mdv.equals(other=mdv_test)
     assert result is True
