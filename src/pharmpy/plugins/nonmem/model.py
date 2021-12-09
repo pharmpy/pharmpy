@@ -1,6 +1,5 @@
-# The NONMEM Model clas
+# The NONMEM Model class
 
-import copy
 import re
 import shutil
 import warnings
@@ -12,7 +11,7 @@ import pharmpy.model
 import pharmpy.model_factory
 import pharmpy.plugins.nonmem
 from pharmpy.data import DatasetError
-from pharmpy.estimation import EstimationMethod, list_supported_est
+from pharmpy.estimation import EstimationMethod, EstimationSteps, list_supported_est
 from pharmpy.model import ModelSyntaxError
 from pharmpy.parameter import Parameters
 from pharmpy.plugins.nonmem.results import NONMEMChainedModelfitResults
@@ -768,9 +767,15 @@ class Model(pharmpy.model.Model):
             )
             steps.append(meth)
 
+        steps = EstimationSteps(steps)
         self._estimation_steps = steps
-        self._old_estimation_steps = copy.deepcopy(steps)
+        self._old_estimation_steps = steps.copy()
         return steps
+
+    @estimation_steps.setter
+    def estimation_steps(self, value):
+        self._old_estimation_steps = self._estimation_steps.copy()
+        self._estimation_steps = value
 
     @property
     def model_code(self):

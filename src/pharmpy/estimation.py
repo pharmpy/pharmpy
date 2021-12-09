@@ -1,4 +1,75 @@
 import copy
+from collections.abc import MutableSequence
+
+import pandas as pd
+
+
+class EstimationSteps(MutableSequence):
+    def __init__(self, steps=None):
+        if isinstance(steps, EstimationSteps):
+            self._steps = copy.deepcopy(steps._steps)
+        elif steps is None:
+            self._steps = []
+        else:
+            self._steps = list(steps)
+
+    def __getitem__(self, i):
+        return self._steps[i]
+
+    def __setitem__(self, i, value):
+        self._steps[i] = value
+
+    def __delitem__(self, i):
+        del self._steps[i]
+
+    def __len__(self):
+        return len(self._steps)
+
+    def __eq__(self, other):
+        if len(self) != len(other):
+            return False
+        for s1, s2 in zip(self, other):
+            if s1 != s2:
+                return False
+        return True
+
+    def insert(self, i, value):
+        self._steps.insert(i, value)
+
+    def copy(self):
+        return copy.deepcopy(self)
+
+    def to_dataframe(self):
+        method = [s.method for s in self._steps]
+        interaction = [s.interaction for s in self._steps]
+        cov = [s.cov for s in self._steps]
+        evaluation = [s.evaluation for s in self._steps]
+        maximum_evaluations = [s.maximum_evaluations for s in self._steps]
+        laplace = [s.laplace for s in self._steps]
+        tool_options = [s.tool_options for s in self._steps]
+        df = pd.DataFrame(
+            {
+                'method': method,
+                'interaction': interaction,
+                'cov': cov,
+                'evaluation': evaluation,
+                'maximum_evaluations': maximum_evaluations,
+                'laplace': laplace,
+                'tool_options': tool_options,
+            }
+        )
+        return df
+
+    def __repr__(self):
+        if len(self) == 0:
+            return "EstimationSteps()"
+        return self.to_dataframe().to_string()
+
+    def _repr_html_(self):
+        if len(self) == 0:
+            return "EstimationSteps()"
+        else:
+            return self.to_dataframe().to_html()
 
 
 class EstimationMethod:
