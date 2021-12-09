@@ -6,7 +6,7 @@ from pyfakefs.fake_filesystem_unittest import Patcher
 
 from pharmpy import Model
 from pharmpy.config import ConfigurationContext
-from pharmpy.estimation import EstimationMethod
+from pharmpy.estimation import EstimationStep
 from pharmpy.model import ModelSyntaxError
 from pharmpy.modeling import add_iiv, set_zero_order_absorption, set_zero_order_elimination
 from pharmpy.parameter import Parameter
@@ -765,34 +765,34 @@ def test_cmt_warning(testdata):
 @pytest.mark.parametrize(
     'estcode,correct',
     [
-        ('$ESTIMATION METH=COND INTERACTION', [EstimationMethod('foce', interaction=True)]),
-        ('$ESTIMATION INTER METH=COND', [EstimationMethod('foce', interaction=True)]),
-        ('$ESTM METH=1 INTERACTION', [EstimationMethod('foce', interaction=True)]),
-        ('$ESTIM METH=1', [EstimationMethod('foce', interaction=False)]),
-        ('$ESTIMA METH=0', [EstimationMethod('fo', interaction=False)]),
-        ('$ESTIMA METH=ZERO', [EstimationMethod('fo', interaction=False)]),
-        ('$ESTIMA INTER', [EstimationMethod('fo', interaction=True)]),
-        ('$ESTIMA INTER\n$COV', [EstimationMethod('fo', interaction=True, cov=True)]),
+        ('$ESTIMATION METH=COND INTERACTION', [EstimationStep('foce', interaction=True)]),
+        ('$ESTIMATION INTER METH=COND', [EstimationStep('foce', interaction=True)]),
+        ('$ESTM METH=1 INTERACTION', [EstimationStep('foce', interaction=True)]),
+        ('$ESTIM METH=1', [EstimationStep('foce', interaction=False)]),
+        ('$ESTIMA METH=0', [EstimationStep('fo', interaction=False)]),
+        ('$ESTIMA METH=ZERO', [EstimationStep('fo', interaction=False)]),
+        ('$ESTIMA INTER', [EstimationStep('fo', interaction=True)]),
+        ('$ESTIMA INTER\n$COV', [EstimationStep('fo', interaction=True, cov=True)]),
         (
             '$ESTIMA METH=COND INTER\n$EST METH=COND',
             [
-                EstimationMethod('foce', interaction=True),
-                EstimationMethod('foce', interaction=False),
+                EstimationStep('foce', interaction=True),
+                EstimationStep('foce', interaction=False),
             ],
         ),
-        ('$ESTIMATION METH=SAEM', [EstimationMethod('saem', interaction=False)]),
-        ('$ESTIMATION METH=1 LAPLACE', [EstimationMethod('foce', interaction=False, laplace=True)]),
+        ('$ESTIMATION METH=SAEM', [EstimationStep('saem', interaction=False)]),
+        ('$ESTIMATION METH=1 LAPLACE', [EstimationStep('foce', interaction=False, laplace=True)]),
         (
             '$ESTIMATION METH=0 MAXEVAL=0',
-            [EstimationMethod('fo', interaction=False, evaluation=True)],
+            [EstimationStep('fo', interaction=False, evaluation=True)],
         ),
         (
             '$ESTIMATION METH=IMP EONLY=1',
-            [EstimationMethod('imp', interaction=False, evaluation=True)],
+            [EstimationStep('imp', interaction=False, evaluation=True)],
         ),
         (
             '$ESTIMATION METH=COND MAXEVAL=9999',
-            [EstimationMethod('foce', maximum_evaluations=9999)],
+            [EstimationStep('foce', maximum_evaluations=9999)],
         ),
     ],
 )
@@ -911,16 +911,16 @@ $SIGMA 1
 $EST METH=COND INTER
 '''
     model = Model(StringIO(code))
-    est_new = EstimationMethod('IMP', interaction=True, tool_options={'saddle_reset': 1})
+    est_new = EstimationStep('IMP', interaction=True, tool_options={'saddle_reset': 1})
     model.estimation_steps.append(est_new)
     assert model.model_code.split('\n')[-2] == '$ESTIMATION METHOD=IMP INTER SADDLE_RESET=1'
-    est_new = EstimationMethod('SAEM', interaction=True)
+    est_new = EstimationStep('SAEM', interaction=True)
     model.estimation_steps.insert(0, est_new)
     assert model.model_code.split('\n')[-4] == '$ESTIMATION METHOD=SAEM INTER'
-    est_new = EstimationMethod('FO', evaluation=True)
+    est_new = EstimationStep('FO', evaluation=True)
     model.estimation_steps.append(est_new)
     assert model.model_code.split('\n')[-2] == '$ESTIMATION METHOD=ZERO MAXEVAL=0'
-    est_new = EstimationMethod('IMP', evaluation=True)
+    est_new = EstimationStep('IMP', evaluation=True)
     model.estimation_steps.append(est_new)
     assert model.model_code.split('\n')[-2] == '$ESTIMATION METHOD=IMP EONLY=1'
 

@@ -11,7 +11,7 @@ import pharmpy.model
 import pharmpy.model_factory
 import pharmpy.plugins.nonmem
 from pharmpy.data import DatasetError
-from pharmpy.estimation import EstimationMethod, EstimationSteps, list_supported_est
+from pharmpy.estimation import EstimationStep, EstimationSteps, list_supported_est
 from pharmpy.model import ModelSyntaxError
 from pharmpy.parameter import Parameters
 from pharmpy.plugins.nonmem.results import NONMEMChainedModelfitResults
@@ -756,7 +756,7 @@ class Model(pharmpy.model.Model):
             if not tool_options:
                 tool_options = None
 
-            meth = EstimationMethod(
+            meth = EstimationStep(
                 name,
                 interaction=interaction,
                 cov=cov,

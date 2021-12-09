@@ -2,7 +2,7 @@ import sympy
 
 import pharmpy.model
 from pharmpy import Assignment, ModelStatements
-from pharmpy.estimation import EstimationMethod
+from pharmpy.estimation import EstimationStep, EstimationSteps
 from pharmpy.workflows import Task, Workflow
 
 
@@ -67,6 +67,6 @@ def create_linearized_model(model):
 
     linbase.name = 'linbase'
 
-    est = EstimationMethod('foce', interaction=True)
-    linbase.estimation_steps = [est]
+    est = EstimationStep('foce', interaction=True)
+    linbase.estimation_steps = EstimationSteps([est])
     return linbase

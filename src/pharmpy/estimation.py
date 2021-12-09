@@ -72,7 +72,7 @@ class EstimationSteps(MutableSequence):
             return self.to_dataframe().to_html()
 
 
-class EstimationMethod:
+class EstimationStep:
     def __init__(
         self,
         method,
@@ -96,7 +96,7 @@ class EstimationMethod:
         method = method.upper()
         supported = list_supported_est()
         if method not in supported:
-            raise ValueError(f'Estimation method: {method} not recognized. Use any of {supported}.')
+            raise ValueError(f'EstimationStep: {method} not recognized. Use any of {supported}.')
         return method
 
     @property
@@ -142,7 +142,7 @@ class EstimationMethod:
 
     def __repr__(self):
         return (
-            f'EstimationMethod("{self.method}", interaction={self.interaction}, '
+            f'EstimationStep("{self.method}", interaction={self.interaction}, '
             f'cov={self.cov}, evaluation={self.evaluation}, '
             f'maximum_evaluations={self.maximum_evaluations}, laplace={self.laplace}, '
             f'tool_options={self.tool_options})'

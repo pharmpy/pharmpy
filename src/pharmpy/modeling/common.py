@@ -8,7 +8,7 @@ from pathlib import Path
 import sympy
 
 from pharmpy import config
-from pharmpy.estimation import EstimationMethod
+from pharmpy.estimation import EstimationStep
 from pharmpy.model_factory import Model
 from pharmpy.modeling.help_functions import _as_integer
 from pharmpy.statements import Assignment, CompartmentalSystem
@@ -510,7 +510,7 @@ def set_estimation_step(model, method, idx=0, **kwargs):
     idx : int
         index of estimation step, default is 0 (first estimation step)
     kwargs
-        Arguments to pass to EstimationMethod (such as interaction, evaluation)
+        Arguments to pass to EstimationStep (such as interaction, evaluation)
 
     Returns
     -------
@@ -525,7 +525,7 @@ def set_estimation_step(model, method, idx=0, **kwargs):
     >>> set_estimation_step(model, "IMP", evaluation=True, tool_options=opts)   # doctest: +ELLIPSIS
     <...>
     >>> model.estimation_steps[0]   # doctest: +ELLIPSIS
-    EstimationMethod("IMP", interaction=True, cov=True, evaluation=True, ..., tool_options=...
+    EstimationStep("IMP", interaction=True, cov=True, evaluation=True, ..., tool_options=...
 
     See also
     --------
@@ -560,7 +560,7 @@ def add_estimation_step(model, method, idx=None, **kwargs):
     idx : int
         index of estimation step (starting from 0), default is None (adds step at the end)
     kwargs
-        Arguments to pass to EstimationMethod (such as interaction, evaluation)
+        Arguments to pass to EstimationStep (such as interaction, evaluation)
 
     Returns
     -------
@@ -578,7 +578,7 @@ def add_estimation_step(model, method, idx=None, **kwargs):
     >>> len(ests)
     2
     >>> ests[1]   # doctest: +ELLIPSIS
-    EstimationMethod("IMP", interaction=False, cov=False, ..., tool_options={'NITER': 1000,...
+    EstimationStep("IMP", interaction=False, cov=False, ..., tool_options={'NITER': 1000,...
 
     See also
     --------
@@ -587,7 +587,7 @@ def add_estimation_step(model, method, idx=None, **kwargs):
     append_estimation_step_options
 
     """
-    meth = EstimationMethod(method, **kwargs)
+    meth = EstimationStep(method, **kwargs)
 
     if idx is not None:
         try:

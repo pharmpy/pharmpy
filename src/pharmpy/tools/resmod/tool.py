@@ -4,7 +4,7 @@ import pharmpy.model
 import pharmpy.tools
 import pharmpy.tools.modelfit as modelfit
 from pharmpy import Parameter, Parameters, RandomVariable, RandomVariables
-from pharmpy.estimation import EstimationMethod
+from pharmpy.estimation import EstimationStep, EstimationSteps
 from pharmpy.modeling import get_mdv, set_iiv_on_ruv, set_power_on_ruv
 from pharmpy.statements import Assignment, ModelStatements
 from pharmpy.tools.modelfit import create_multiple_fit_workflow
@@ -100,8 +100,8 @@ def _create_base_model(input_model):
     base_model.dataset = _create_dataset(input_model)
     base_model.database = input_model.database
 
-    est = EstimationMethod('foce', interaction=True)
-    base_model.estimation_steps = [est]
+    est = EstimationStep('foce', interaction=True)
+    base_model.estimation_steps = EstimationSteps([est])
     return base_model
 
 
