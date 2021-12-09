@@ -1,6 +1,6 @@
 import pharmpy.results
 import pharmpy.tools.iiv.algorithms as algorithms
-from pharmpy.tools.modelfit import create_single_fit_workflow
+from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.workflows import Task, Workflow
 
 
@@ -18,7 +18,7 @@ def create_workflow(algorithm, rankfunc='ofv', cutoff=None, model=None):
     wf.add_task(start_task)
 
     if model and not model.modelfit_results:
-        wf_fit = create_single_fit_workflow()
+        wf_fit = create_fit_workflow(n=1)
         wf.insert_workflow(wf_fit, predecessors=start_task)
         start_model_task = wf_fit.output_tasks
     else:
@@ -44,15 +44,12 @@ def start(model):
 
 
 def post_process_results(rankfunc, cutoff, *models):
-    res_models = []
-    model_features = dict()
+    start_model, res_models = models
 
-    for model in models:
-        if not model.name.startswith('iiv_candidate'):
-            start_model = model
-        else:
-            res_models.append(model)
-            model_features[model.name] = _get_iiv_block(model.random_variables)
+    if not isinstance(res_models, tuple):
+        res_models = [res_models]
+
+    model_features = {model.name: _get_iiv_block(model.random_variables) for model in res_models}
 
     df = pharmpy.tools.common.create_summary(
         res_models, start_model, rankfunc, cutoff, model_features
