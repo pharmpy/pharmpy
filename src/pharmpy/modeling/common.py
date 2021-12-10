@@ -532,6 +532,8 @@ def set_estimation_step(model, method, idx=0, **kwargs):
     add_estimation_step
     remove_estimation_step
     append_estimation_step_options
+    add_covariance_step
+    remove_covariance_step
 
     """
     try:
@@ -585,6 +587,8 @@ def add_estimation_step(model, method, idx=None, **kwargs):
     set_estimation_step
     remove_estimation_step
     append_estimation_step_options
+    add_covariance_step
+    remove_covariance_step
 
     """
     meth = EstimationStep(method, **kwargs)
@@ -631,6 +635,8 @@ def remove_estimation_step(model, idx):
     add_estimation_step
     set_estimation_step
     append_estimation_step_options
+    add_covariance_step
+    remove_covariance_step
 
     """
     try:
@@ -677,6 +683,8 @@ def append_estimation_step_options(model, tool_options, idx):
     add_estimation_step
     set_estimation_step
     remove_estimation_step
+    add_covariance_step
+    remove_covariance_step
 
     """
     try:
@@ -685,6 +693,80 @@ def append_estimation_step_options(model, tool_options, idx):
         raise TypeError(f'Index must be integer: {idx}')
 
     model.estimation_steps[idx].append_tool_options(tool_options)
+    return model
+
+
+def add_covariance_step(model):
+    """Adds covariance step to the final estimation step
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+
+    Returns
+    -------
+    Model
+        Reference to the same model object
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> set_estimation_step(model, 'FOCE', cov=False)      # doctest: +ELLIPSIS
+    <...>
+    >>> add_covariance_step(model)      # doctest: +ELLIPSIS
+    <...>
+    >>> ests = model.estimation_steps
+    >>> ests[0]   # doctest: +ELLIPSIS
+    EstimationStep("FOCE", interaction=True, cov=True, ...)
+
+    See also
+    --------
+    add_estimation_step
+    set_estimation_step
+    remove_estimation_step
+    append_estimation_step_options
+    remove_covariance_step
+
+    """
+    model.estimation_steps[-1].cov = True
+    return model
+
+
+def remove_covariance_step(model):
+    """Removes covariance step to the final estimation step
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+
+    Returns
+    -------
+    Model
+        Reference to the same model object
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> remove_covariance_step(model)      # doctest: +ELLIPSIS
+    <...>
+    >>> ests = model.estimation_steps
+    >>> ests[0]   # doctest: +ELLIPSIS
+    EstimationStep("FOCE", interaction=True, cov=False, ...)
+
+    See also
+    --------
+    add_estimation_step
+    set_estimation_step
+    remove_estimation_step
+    append_estimation_step_options
+    add_covariance_step
+
+    """
+    model.estimation_steps[-1].cov = False
     return model
 
 

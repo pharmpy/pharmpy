@@ -1,5 +1,6 @@
 from pharmpy.modeling.block_rvs import create_joint_distribution, split_joint_distribution
 from pharmpy.modeling.common import (
+    add_covariance_step,
     add_estimation_step,
     append_estimation_step_options,
     convert_model,
@@ -14,6 +15,7 @@ from pharmpy.modeling.common import (
     read_model,
     read_model_from_database,
     read_model_from_string,
+    remove_covariance_step,
     remove_estimation_step,
     set_estimation_step,
     set_initial_estimates,
@@ -98,6 +100,7 @@ from .plots import plot_individual_predictions, plot_iofv_vs_iofv
 
 # Remember to sort __all__ alphabetically for order in documentation
 __all__ = [
+    'add_covariance_step',
     'add_covariate_effect',
     'add_estimation_step',
     'add_iiv',
@@ -142,6 +145,7 @@ __all__ = [
     'read_model_from_database',
     'read_model_from_string',
     'read_results',
+    'remove_covariance_step',
     'remove_error_model',
     'remove_estimation_step',
     'remove_iiv',

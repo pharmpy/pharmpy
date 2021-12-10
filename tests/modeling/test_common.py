@@ -6,6 +6,7 @@ from pyfakefs.fake_filesystem_unittest import Patcher
 
 from pharmpy import Model
 from pharmpy.modeling import (
+    add_covariance_step,
     add_estimation_step,
     append_estimation_step_options,
     convert_model,
@@ -17,6 +18,7 @@ from pharmpy.modeling import (
     load_example_model,
     read_model,
     read_model_from_string,
+    remove_covariance_step,
     remove_estimation_step,
     set_estimation_step,
     set_name,
@@ -207,6 +209,26 @@ def test_remove_estimation_step(testdata):
     remove_estimation_step(model, 0)
     assert not model.estimation_steps
     assert generate_model_code(model).split('\n')[-2] == '$SIGMA 1'
+
+
+def test_add_covariance_step(testdata):
+    model = Model(testdata / 'nonmem' / 'minimal.mod')
+    assert len(model.estimation_steps) == 1
+    add_covariance_step(model)
+    print(model.model_code)
+    assert len(model.estimation_steps) == 1
+    assert generate_model_code(model).split('\n')[-2] == '$COVARIANCE'
+
+
+def test_remove_covariance_step(testdata):
+    model = Model(testdata / 'nonmem' / 'minimal.mod')
+    add_covariance_step(model)
+    assert generate_model_code(model).split('\n')[-2] == '$COVARIANCE'
+    remove_covariance_step(model)
+    assert (
+        generate_model_code(model).split('\n')[-2]
+        == '$ESTIMATION METHOD=COND INTER MAXEVAL=9990 PRINT=2 POSTHOC'
+    )
 
 
 def test_append_estimation_step_options(testdata):
