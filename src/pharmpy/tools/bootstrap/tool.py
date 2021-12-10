@@ -1,7 +1,7 @@
 import pharmpy.tools
 from pharmpy.data.iterators import Resample
 from pharmpy.tools.bootstrap.results import calculate_results
-from pharmpy.tools.modelfit import create_multiple_fit_workflow
+from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.workflows import Task, Workflow
 
 
@@ -26,7 +26,7 @@ class Bootstrap(pharmpy.tools.Tool):
             task_resample = Task('resample', resample_model, self.model, f'bs_{i + 1}')
             wf.add_task(task_resample)
 
-        wf_fit = create_multiple_fit_workflow(n=self.resamples)
+        wf_fit = create_fit_workflow(n=self.resamples)
         wf.insert_workflow(wf_fit)
 
         task_result = Task('results', post_process_results, self.model)

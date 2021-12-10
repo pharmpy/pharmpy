@@ -2,12 +2,11 @@ import pandas as pd
 
 import pharmpy.model
 import pharmpy.tools
-import pharmpy.tools.modelfit as modelfit
 from pharmpy import Parameter, Parameters, RandomVariable, RandomVariables
 from pharmpy.estimation import EstimationStep, EstimationSteps
 from pharmpy.modeling import get_mdv, set_iiv_on_ruv, set_power_on_ruv
 from pharmpy.statements import Assignment, ModelStatements
-from pharmpy.tools.modelfit import create_multiple_fit_workflow
+from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.workflows import Task, Workflow
 
 from .results import calculate_results
@@ -30,7 +29,7 @@ def create_workflow(model=None):
     task_power = Task('create_power_model', _create_power_model)
     wf.add_task(task_power, predecessors=task_base_model)
 
-    fit_wf = create_multiple_fit_workflow(n=3)
+    fit_wf = create_fit_workflow(n=3)
     wf.insert_workflow(fit_wf, predecessors=[task_base_model, task_iiv, task_power])
 
     task_post_process = Task('post_process', post_process)
@@ -39,7 +38,7 @@ def create_workflow(model=None):
     task_unpack = Task('unpack', _unpack)
     wf.add_task(task_unpack, predecessors=[task_post_process])
 
-    fit_final = modelfit.create_single_fit_workflow()
+    fit_final = create_fit_workflow(n=1)
     wf.insert_workflow(fit_final, predecessors=[task_unpack])
 
     task_results = Task('results', _results)
