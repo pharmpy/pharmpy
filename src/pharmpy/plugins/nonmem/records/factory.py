@@ -23,6 +23,7 @@ from .problem_record import ProblemRecord
 from .raw_record import RawRecord
 from .simulation_record import SimulationRecord
 from .sizes_record import SizesRecord
+from .table_record import TableRecord
 from .theta_record import ThetaRecord
 
 # Dictionary from canonical record name to record class and non_empty rules of parser
@@ -44,7 +45,7 @@ known_records = {
     'SIMULATION': (SimulationRecord, SimulationRecordParser),
     'SIZES': (SizesRecord, OptionRecordParser),
     'SUBROUTINES': (OptionRecord, OptionRecordParser),
-    'TABLE': (EtasRecord, OptionRecordParser),  # Etas for now. Has path property
+    'TABLE': (TableRecord, OptionRecordParser),
     'THETA': (ThetaRecord, ThetaRecordParser),
 }
 

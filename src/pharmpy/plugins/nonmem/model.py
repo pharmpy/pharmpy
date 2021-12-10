@@ -765,6 +765,23 @@ class Model(pharmpy.model.Model):
             steps.append(meth)
 
         steps = EstimationSteps(steps)
+
+        # Read eta and epsilon derivatives
+        table_records = self.control_stream.get_records('TABLE')
+        for table in table_records:
+            etaderivs = table.eta_derivatives
+            if etaderivs:
+                etas = self.random_variables.etas
+                etaderiv_names = [etas[i - 1].name for i in etaderivs]
+                for step in steps:
+                    step.eta_derivatives = etaderiv_names
+            epsderivs = table.epsilon_derivatives
+            if epsderivs:
+                epsilons = self.random_variables.epsilons
+                epsilonderivs_names = [epsilons[i - 1].name for i in epsderivs]
+                for step in steps:
+                    step.epsilon_derivatives = epsilonderivs_names
+
         self._estimation_steps = steps
         self._old_estimation_steps = steps.copy()
         return steps
