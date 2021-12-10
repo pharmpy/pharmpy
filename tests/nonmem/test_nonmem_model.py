@@ -1017,3 +1017,11 @@ $SIGMA 3 ; SI1
 $ESTIMATION METHOD=1 INTER
 """
     assert model.model_code == correct
+
+
+def test_parse_derivatives(testdata):
+    model = Model(
+        testdata / "nonmem" / "linearize" / "linearize_dir1" / "scm_dir1" / "derivatives.mod"
+    )
+    assert model.estimation_steps[0].eta_derivatives == ['ETA(1)', 'ETA(2)']
+    assert model.estimation_steps[0].epsilon_derivatives == ['EPS(1)']
