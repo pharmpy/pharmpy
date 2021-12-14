@@ -11,7 +11,7 @@ from pharmpy.statements import Assignment
 from pharmpy.symbols import symbol as S
 
 
-def set_power_on_ruv(model, list_of_eps=None, ipred=None):
+def set_power_on_ruv(model, list_of_eps=None, lower_limit=0.01, ipred=None):
     """Applies a power effect to provided epsilons.
 
     Initial estimates for new thetas are 1 if the error
@@ -24,6 +24,8 @@ def set_power_on_ruv(model, list_of_eps=None, ipred=None):
     list_of_eps : str, list
         Name/names of epsilons to apply power effect. If None, all epsilons will be used.
         None is default.
+    lower_limit : int or None
+        Lower limit of power (theta). None for no limit.
     ipred : Symbol
         Symbol to use as IPRED. Default is to autodetect expression for IPRED.
 
@@ -73,7 +75,10 @@ def set_power_on_ruv(model, list_of_eps=None, ipred=None):
 
     for i, e in enumerate(eps):
         theta_name = str(model.create_symbol(stem='power', force_numbering=True))
-        theta = Parameter(theta_name, theta_init, lower=0.01)
+        if lower_limit is None:
+            theta = Parameter(theta_name, theta_init)
+        else:
+            theta = Parameter(theta_name, theta_init, lower=lower_limit)
         pset.append(theta)
         sset.subs({e.symbol * ipred: e.symbol})  # To avoid getting F*EPS*F**THETA
         if alternative:  # To avoid getting W*EPS*F**THETA
