@@ -1,26 +1,56 @@
 from itertools import combinations
 
 import pharmpy.tools.modelfit as modelfit
-from pharmpy.modeling import copy_model
+from pharmpy.modeling import copy_model, fix_parameters_to
 from pharmpy.modeling.block_rvs import create_joint_distribution
 from pharmpy.workflows import Task, Workflow
 
 
-def brute_force(model):
+def brute_force_no_of_etas(model):
     wf = Workflow()
+    model_features = dict()
+
+    for i, eta in enumerate(model.random_variables.etas, 1):
+        model_name = f'iiv_no_of_etas_candidate{i}'
+        task_copy = Task('copy', copy, model_name)
+        wf.add_task(task_copy)
+
+        task_set_eta_to_zero = Task('set_eta_to_zero', set_eta_to_zero, eta)
+        wf.add_task(task_set_eta_to_zero, predecessors=task_copy)
+
+        model_features[model_name] = eta.name
+
+    wf_fit = modelfit.create_workflow(n=i)
+    wf.insert_workflow(wf_fit)
+    return wf, model_features
+
+
+def set_eta_to_zero(eta, model):
+    param = eta.parameter_names
+    fix_parameters_to(model, param, 0)
+    return model
+
+
+def brute_force_block_structure(model):
+    wf = Workflow()
+    model_features = dict()
+
     eta_combos_single_blocks, eta_combos_multi_blocks = _get_iiv_combinations(model)
     eta_combos_all = eta_combos_single_blocks + eta_combos_multi_blocks
+
     for i, combo in enumerate(eta_combos_all, 1):
-        model_name = f'iiv_candidate{i}'
+        model_name = f'iiv_block_structure_candidate{i}'
         task_copy = Task('copy', copy, model_name)
         wf.add_task(task_copy)
 
         task_joint_dist = Task('create_joint_dist', create_joint_dist, combo)
         wf.add_task(task_joint_dist, predecessors=task_copy)
 
+        model_features[model_name] = combo
+
     wf_fit = modelfit.create_workflow(n=len(eta_combos_all))
     wf.insert_workflow(wf_fit)
-    return wf
+    return wf, model_features
 
 
 def _get_iiv_combinations(model):
