@@ -96,10 +96,12 @@ from pharmpy.modeling.run import create_results, fit, read_results, run_tool
 from pharmpy.modeling.update_inits import update_inits
 
 from .amd import run_amd, run_iiv
+from .allometry import add_allometry
 from .plots import plot_individual_predictions, plot_iofv_vs_iofv
 
 # Remember to sort __all__ alphabetically for order in documentation
 __all__ = [
+    'add_allometry',
     'add_covariance_step',
     'add_covariate_effect',
     'add_estimation_step',
