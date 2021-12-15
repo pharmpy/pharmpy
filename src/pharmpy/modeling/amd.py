@@ -1,4 +1,8 @@
+import pandas as pd
+
+from pharmpy.modeling import copy_model, remove_iiv
 from pharmpy.results import Results
+from pharmpy.tools.iiv.tool import IIVResults
 from pharmpy.workflows import default_tool_database
 
 from .run import run_tool
@@ -26,5 +30,30 @@ def run_amd(model):
     final_model = res_resmod.best_model
 
     res = AMDResults(final_model=final_model)
+
+    return res
+
+
+def run_iiv(model):
+    res_no_of_etas = run_tool('iiv', 'brute_force_no_of_etas', model=model)
+
+    if res_no_of_etas.best_model != model:
+        best_model = res_no_of_etas.best_model
+        best_model_eta_removed = copy_model(res_no_of_etas.best_model, 'iiv_no_of_etas_best_model')
+        features = res_no_of_etas.summary.loc[best_model.name]['features']
+        remove_iiv(best_model_eta_removed, features)
+    else:
+        best_model = model
+
+    res_block_structure = run_tool('iiv', 'brute_force_block_structure', model=best_model)
+
+    best_model = res_block_structure.best_model
+    summary = pd.concat([res_no_of_etas.summary, res_block_structure.summary])
+    res = IIVResults(
+        summary=summary,
+        best_model=best_model,
+        models=res_no_of_etas.models + res_block_structure.models,
+        start_model=model,
+    )
 
     return res
