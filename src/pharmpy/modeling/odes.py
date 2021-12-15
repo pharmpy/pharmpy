@@ -500,18 +500,19 @@ def set_zero_order_absorption(model):
     dose_comp = odes.dosing_compartment
     symbols = dose_comp.free_symbols
     dose = dose_comp.dose
+    lag_time = dose_comp.lag_time
     if depot:
         to_comp, _ = odes.get_compartment_outflows(depot)[0]
         ka = odes.get_flow(depot, odes.central_compartment)
         odes.remove_compartment(depot)
-        symbols |= ka.free_symbols
+        symbols = ka.free_symbols
         to_comp.dose = dose
     else:
         to_comp = dose_comp
     statements.remove_symbol_definitions(symbols, odes)
     model.remove_unused_parameters_and_rvs()
     if not has_zero_order_absorption(model):
-        _add_zero_order_absorption(model, dose.amount, to_comp, 'MAT')
+        _add_zero_order_absorption(model, dose.amount, to_comp, 'MAT', lag_time)
     return model
 
 
@@ -557,6 +558,7 @@ def set_first_order_absorption(model):
     dose_comp = odes.dosing_compartment
     amount = dose_comp.dose.amount
     symbols = dose_comp.free_symbols
+    lag_time = dose_comp.lag_time
     if depot and depot == dose_comp:
         dose_comp.dose = Bolus(dose_comp.dose.amount)
     elif not depot:
@@ -564,12 +566,14 @@ def set_first_order_absorption(model):
     statements.remove_symbol_definitions(symbols, odes)
     model.remove_unused_parameters_and_rvs()
     if not depot:
-        _add_first_order_absorption(model, Bolus(amount), dose_comp)
+        _add_first_order_absorption(model, Bolus(amount), dose_comp, lag_time)
     return model
 
 
 def set_bolus_absorption(model):
     """Set or change to bolus absorption rate.
+
+    Currently lagtime together with bolus absorption is not supported.
 
     Parameters
     ----------
@@ -628,6 +632,9 @@ def set_seq_zo_fo_absorption(model):
     Initial estimate for
     absorption rate is set the previous rate if available, otherwise it is set to the time of
     first observation/2.
+
+    Currently lagtime together with sequential zero order first order absorption is not
+    supported.
 
     Parameters
     ----------
@@ -731,19 +738,24 @@ def has_zero_order_absorption(model):
     return False
 
 
-def _add_zero_order_absorption(model, amount, to_comp, parameter_name):
+def _add_zero_order_absorption(model, amount, to_comp, parameter_name, lag_time=None):
     """Add zero order absorption to a compartment. Initial estimate for absorption rate is set
     the previous rate if available, otherwise it is set to the time of first observation/2 is used.
     Disregards what is currently in the model.
     """
+    # if parameter_name == model.statements.find_assignment(lag_time.name).expression.name:
+    #     mat_symb = model.parameters[f'POP_{parameter_name}'].symbol
+    # else:
     mat_symb = _add_parameter(
         model, parameter_name, init=_get_absorption_init(model, parameter_name)
     )
     new_dose = Infusion(amount, duration=mat_symb * 2)
     to_comp.dose = new_dose
+    if lag_time and lag_time != 0:
+        to_comp.lag_time = lag_time
 
 
-def _add_first_order_absorption(model, dose, to_comp):
+def _add_first_order_absorption(model, dose, to_comp, lag_time=None):
     """Add first order absorption
     Disregards what is currently in the model.
     """
@@ -752,6 +764,8 @@ def _add_first_order_absorption(model, dose, to_comp):
     depot.dose = dose
     mat_symb = _add_parameter(model, 'MAT', _get_absorption_init(model, 'MAT'))
     odes.add_flow(depot, to_comp, 1 / mat_symb)
+    if lag_time and lag_time != 0:
+        depot.lag_time = lag_time
     return depot
 
 
