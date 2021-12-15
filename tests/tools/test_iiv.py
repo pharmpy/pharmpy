@@ -1,7 +1,7 @@
 from io import StringIO
 
 from pharmpy import Model, RandomVariable, RandomVariables
-from pharmpy.tools.iiv.algorithms import _get_iiv_combinations
+from pharmpy.tools.iiv.algorithms import _get_possible_iiv_blocks
 from pharmpy.tools.iiv.tool import _get_iiv_block
 
 
@@ -38,7 +38,7 @@ $ESTIMATION METHOD=1 INTERACTION
 
     model.path = testdata / 'nonmem' / 'pheno.mod'  # To be able to find dataset
 
-    iiv_single_block, iiv_multi_block = _get_iiv_combinations(model)
+    iiv_single_block, iiv_multi_block = _get_possible_iiv_blocks(model)
 
     assert iiv_single_block == [
         ['ETA(1)', 'ETA(2)'],
@@ -95,7 +95,7 @@ $ESTIMATION METHOD=1 INTERACTION
 
     model.path = testdata / 'nonmem' / 'pheno.mod'  # To be able to find dataset
 
-    iiv_single_block, iiv_multi_block = _get_iiv_combinations(model)
+    iiv_single_block, iiv_multi_block = _get_possible_iiv_blocks(model)
 
     assert iiv_single_block == [
         ['ETA(1)', 'ETA(2)'],
