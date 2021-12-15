@@ -1,3 +1,14 @@
+0.39.0 (2021-12-15)
+-------------------
+
+* Add AMD and IIV tool and respective functions run_amd and run_iiv
+* Add function add_covariance_step and remove_covariance_step
+* Add method insert_after to ModelStatements
+* Add option to set limit or no limit for power_on_ruv theta
+* Rename EstimationMethod to EstimationStep and add EstimationSteps class
+* Parse eta and epsilon derivatives from $TABLE
+* Fix bug where lag time is removed when changing to ZO or FO absorption
+
 0.38.0 (2021-12-08)
 -------------------
 
