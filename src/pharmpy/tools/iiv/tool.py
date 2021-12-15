@@ -24,7 +24,7 @@ def create_workflow(algorithm, rankfunc='ofv', cutoff=None, model=None):
     else:
         start_model_task = [start_task]
 
-    wf_method = algorithm_func(model)
+    wf_method, model_features = algorithm_func(model)
     wf.insert_workflow(wf_method)
 
     task_result = Task(
@@ -32,6 +32,7 @@ def create_workflow(algorithm, rankfunc='ofv', cutoff=None, model=None):
         post_process_results,
         rankfunc,
         cutoff,
+        model_features,
     )
 
     wf.add_task(task_result, predecessors=start_model_task + wf.output_tasks)
@@ -43,13 +44,14 @@ def start(model):
     return model
 
 
-def post_process_results(rankfunc, cutoff, *models):
+def post_process_results(rankfunc, cutoff, model_features, *models):
     start_model, res_models = models
 
-    if not isinstance(res_models, tuple):
+    if isinstance(res_models, tuple):
+        res_models = list(res_models)
+    else:
         res_models = [res_models]
 
-    model_features = {model.name: _get_iiv_block(model.random_variables) for model in res_models}
 
     df = pharmpy.tools.common.create_summary(
         res_models, start_model, rankfunc, cutoff, model_features
