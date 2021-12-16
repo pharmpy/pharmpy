@@ -52,6 +52,7 @@ def post_process_results(rankfunc, cutoff, model_features, *models):
     else:
         res_models = [res_models]
 
+
     df = pharmpy.tools.common.create_summary(
         res_models, start_model, rankfunc, cutoff, model_features
     )

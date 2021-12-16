@@ -1,7 +1,9 @@
 from itertools import combinations
 
 import pharmpy.tools.modelfit as modelfit
+
 from pharmpy.modeling import copy_model, fix_parameters_to
+
 from pharmpy.modeling.block_rvs import create_joint_distribution
 from pharmpy.workflows import Task, Workflow
 
@@ -47,7 +49,6 @@ def brute_force_block_structure(model):
 
         task_joint_dist = Task('create_joint_dist', create_joint_dist, combo)
         wf.add_task(task_joint_dist, predecessors=task_copy)
-
         model_features[model_name] = combo
 
     wf_fit = modelfit.create_workflow(n=len(eta_combos_all))

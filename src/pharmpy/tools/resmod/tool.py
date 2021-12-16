@@ -115,7 +115,7 @@ def _create_iiv_on_ruv_model(input_model):
 def _create_power_model(input_model):
     base_model = input_model
     model = base_model.copy()
-    set_power_on_ruv(model, ipred='IPRED')
+    set_power_on_ruv(model, ipred='IPRED', lower_limit=None)
     model.name = 'power'
     return model
 
@@ -146,7 +146,7 @@ def _create_best_model(model, res):
         if name == 'power':
             set_power_on_ruv(model)
             model.parameters.inits = {
-                'power1': res.models['parameters'].loc['power', 1, 1].get('theta')
+                'power1': res.models['parameters'].loc['power', 1, 1].get('theta') + 1
             }
         else:
             set_iiv_on_ruv(model)
