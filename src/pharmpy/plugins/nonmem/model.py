@@ -957,6 +957,15 @@ class Model(pharmpy.model.Model):
         if 'DV' in colnames:
             di.dv_label = 'DV'
         self.datainfo = di
+        if 'TIME' in colnames:
+            di.idv_label = 'TIME'
+        if self._get_pk_record():
+            if 'EVID' in colnames:
+                if 'MDV' in colnames:
+                    di.set_column_type('MDV', 'unknown')
+                di.set_column_type('EVID', 'event')
+            if 'AMT' in colnames:
+                di.set_column_type('AMT', 'dose')
 
     def _read_dataset(self, raw=False, parse_columns=tuple()):
         data_records = self.control_stream.get_records('DATA')
@@ -1005,11 +1014,16 @@ class Model(pharmpy.model.Model):
 
         # Remove individuals without observations
         try:
-            have_obs = set(df.pharmpy.observations.index.unique(level=0))
+            from pharmpy.modeling.data import get_observations
+
+            # This is a hack to be able to use the get_observations function
+            # before the dataset has been properly read in.
+            self._data_frame = df
+            have_obs = set(get_observations(self).index.unique(level=0))
         except DatasetError:
             pass
         else:
-            all_ids = set(df.pharmpy.ids)
+            all_ids = set(df['ID'].unique())
             ids_to_remove = all_ids - have_obs
             df = df[~df['ID'].isin(ids_to_remove)]
         return df

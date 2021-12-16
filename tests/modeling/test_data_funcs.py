@@ -20,6 +20,14 @@ def test_get_number_of_individuals():
     assert get_number_of_individuals(model) == 59
 
 
+def test_get_observations():
+    ser = get_observations(model)
+    print(ser)
+    assert ser.loc[1, 2.0] == 17.3
+    assert ser.loc[2, 63.5] == 24.6
+    assert len(ser) == 155
+
+
 def test_number_of_observations():
     assert get_number_of_observations(model) == 155
     assert list(get_number_of_observations_per_individual(model)) == [
@@ -83,12 +91,6 @@ def test_number_of_observations():
         3,
         3,
     ]
-
-
-def test_get_observations():
-    obs = get_observations(model)
-    assert len(obs) == 155
-    assert obs.loc[1, 2.0] == 17.3
 
 
 def test_get_mdv():

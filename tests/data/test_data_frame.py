@@ -162,15 +162,6 @@ def test_covariate_baselines(df):
     pd.testing.assert_frame_equal(df.pharmpy.covariate_baselines, correct_baselines)
 
 
-def test_observations(df2):
-    correct_observations = (
-        pd.DataFrame({'DV': [0.2, 0.6], 'ID': [1, 2], 'TIME': [1.0, 1.0]})
-        .set_index(['ID', 'TIME'])
-        .squeeze()
-    )
-    pd.testing.assert_series_equal(df2.pharmpy.observations, correct_observations)
-
-
 def test_doses(df2):
     correct_doses = (
         pd.DataFrame({'AMT': [1, 1], 'ID': [1, 2], 'TIME': [0, 0]})

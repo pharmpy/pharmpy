@@ -10,6 +10,8 @@ from pharmpy.parameter import Parameter
 from pharmpy.random_variables import RandomVariable
 from pharmpy.statements import Assignment
 
+from .data import get_observations
+
 
 def _preparations(model):
     stats = model.statements
@@ -127,7 +129,7 @@ def set_additive_error_model(model, data_trans=None, series_terms=2):
     model.remove_unused_parameters_and_rvs()
 
     sigma = model.create_symbol('sigma')
-    sigma_par = Parameter(sigma.name, init=_get_prop_init(model.dataset))
+    sigma_par = Parameter(sigma.name, init=_get_prop_init(model))
     model.parameters.append(sigma_par)
 
     eps = RandomVariable.normal(ruv.name, 'RUV', 0, sigma)
@@ -135,8 +137,8 @@ def set_additive_error_model(model, data_trans=None, series_terms=2):
     return model
 
 
-def _get_prop_init(dt):
-    dv_min = dt.pharmpy.observations.min()
+def _get_prop_init(model):
+    dv_min = get_observations(model).min()
     if dv_min == 0:
         return 0.01
     else:
@@ -305,7 +307,7 @@ def set_combined_error_model(model, data_trans=None):
     sigma_par1 = Parameter(sigma_prop.name, init=0.09)
     model.parameters.append(sigma_par1)
     sigma_add = model.create_symbol('sigma_add')
-    sigma_par2 = Parameter(sigma_add.name, init=_get_prop_init(model.dataset))
+    sigma_par2 = Parameter(sigma_add.name, init=_get_prop_init(model))
     model.parameters.append(sigma_par2)
 
     eps_prop = RandomVariable.normal(ruv_prop.name, 'RUV', 0, sigma_prop)

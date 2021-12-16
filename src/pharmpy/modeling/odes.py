@@ -10,6 +10,8 @@ from pharmpy.modeling.help_functions import _as_integer
 from pharmpy.parameter import Parameter
 from pharmpy.statements import Assignment, Bolus, CompartmentalSystem, Infusion
 
+from .data import get_observations
+
 
 def _extract_params_from_symb(statements, symbol_name, pset):
     terms = {
@@ -127,7 +129,7 @@ def set_zero_order_elimination(model):
 
     """
     _do_michaelis_menten_elimination(model)
-    obs = model.dataset.pharmpy.observations
+    obs = get_observations(model)
     init = obs.min() / 100  # 1% of smallest observation
     model.parameters['POP_KM'].init = init
     model.parameters['POP_KM'].fix = True
@@ -247,7 +249,7 @@ def _get_mm_inits(model, rate_numer, combined):
     if combined:
         clmm_init /= 2
 
-    dv_max = model.dataset.pharmpy.observations.max()
+    dv_max = get_observations(model).max()
     km_init = dv_max * 2
 
     return km_init, clmm_init
@@ -781,7 +783,7 @@ def _get_absorption_init(model, param_name):
 
     dt = model.dataset
     time_label = dt.pharmpy.idv_label
-    obs = dt.pharmpy.observations
+    obs = get_observations(model)
     time_min = obs.index.get_level_values(level=time_label).min()
 
     if param_name == 'MDT':

@@ -320,7 +320,9 @@ class ModelfitResults(Results):
         """Final BIC value assuming the OFV to be -2LL"""
         parameters = self.model.parameters.copy()
         parameters.remove_fixed()
-        return self.ofv + len(parameters) * math.log(len(self.model.dataset.pharmpy.observations))
+        from pharmpy.modeling import get_observations
+
+        return self.ofv + len(parameters) * math.log(len(get_observations(self.model)))
 
     @property
     def minimization_successful(self):

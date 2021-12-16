@@ -3,6 +3,8 @@ import altair as alt
 import pharmpy.visualization
 from pharmpy.data import PharmDataFrame
 
+from .data import get_observations
+
 
 def plot_iofv_vs_iofv(model, other):
     """Plot individual OFV of two models against each other
@@ -58,7 +60,7 @@ def plot_individual_predictions(model, predictions=None, individuals=None):
     pred = res.predictions
     if pred is None:
         raise ValueError("No predictions available in modelfit_results")
-    obs = model.dataset.pharmpy.observations
+    obs = get_observations(model)
     indexcols = pred.index.names
     idcol = indexcols[0]
     idvcol = indexcols[1]

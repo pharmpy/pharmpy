@@ -2,7 +2,7 @@
 import numpy as np
 import pandas as pd
 
-from pharmpy.data import ColumnType
+from pharmpy.data import ColumnType, DatasetError
 
 
 def get_ids(model):
@@ -97,7 +97,7 @@ def get_number_of_observations(model):
         dataset
 
     """
-    return model.dataset.pharmpy.nobs
+    return len(get_observations(model))
 
 
 def get_number_of_observations_per_individual(model):
@@ -192,7 +192,9 @@ def get_number_of_observations_per_individual(model):
         dataset
 
     """
-    return model.dataset.pharmpy.nobsi
+    ser = get_observations(model).groupby(model.datainfo.id_label).count()
+    ser.name = "observation_count"
+    return ser
 
 
 def get_observations(model):
@@ -229,11 +231,32 @@ def get_observations(model):
 
     See also
     --------
-    get_number_of_observations
-    get_number_of_observations_per_individual
-
+    get_number_of_observations : get the number of observations
+    get_number_of_observations_per_individual : get the number of observations per individual
     """
-    return model.dataset.pharmpy.observations
+    label = model.datainfo.get_column_label('event')
+    if label is None:
+        label = model.datainfo.get_column_label('dose')
+        if label is None:
+            raise DatasetError('Could not identify observation rows in dataset')
+
+    idcol = model.datainfo.id_label
+    idvcol = model.datainfo.idv_label
+    df = model.dataset.query(f'{label} == 0')
+
+    if df.empty:
+        df = model.dataset.astype({label: 'float'})
+        df = df.query(f'{label} == 0')
+
+    df = df[[idcol, idvcol, model.datainfo.dv_label]]
+    try:
+        # FIXME: This shouldn't be needed
+        df = df.astype({idvcol: np.float64})
+    except ValueError:
+        # TIME could not be converted to float (e.g. 10:15)
+        pass
+    df.set_index([idcol, idvcol], inplace=True)
+    return df.squeeze()
 
 
 def get_mdv(model):

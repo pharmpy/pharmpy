@@ -254,46 +254,6 @@ class DataFrameAccessor:
         return df.groupby(idlab).nth(0)
 
     @property
-    def observations(self):
-        """Return a series with observations. Indexed with ID and TIME"""
-        try:
-            label = self.labels_by_type[ColumnType.EVENT]
-        except KeyError:
-            try:
-                label = self.labels_by_type[ColumnType.DOSE]
-            except KeyError:
-                raise DatasetError('Could not identify observation rows in dataset')
-
-        label = label[0]
-        idcol = self.id_label
-        idvcol = self.idv_label
-        df = self._obj.query(f'{label} == 0')
-
-        if df.empty:
-            df = self._obj.astype({label: 'float'})
-            df = df.query(f'{label} == 0')
-
-        df = df[[idcol, idvcol, self.dv_label]]
-        try:
-            # FIXME: This shouldn't be needed
-            df = df.astype({idvcol: np.float64})
-        except ValueError:
-            # TIME could not be converted to float (e.g. 10:15)
-            pass
-        df.set_index([idcol, idvcol], inplace=True)
-        return df.squeeze()
-
-    @property
-    def nobs(self):
-        return len(self.observations)
-
-    @property
-    def nobsi(self):
-        ser = self.observations.groupby(self.id_label).count()
-        ser.name = "observation_count"
-        return ser
-
-    @property
     def doses(self):
         """Return a series with all doses. Indexed with ID and TIME"""
         try:

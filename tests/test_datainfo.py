@@ -27,10 +27,11 @@ def test_idv_label():
     assert di.idv_label == 'TIME'
 
 
-def test_set_column_type():
+def test_get_set_column_type():
     di = DataInfo(['ID', 'TIME', 'DV'])
     di.set_column_type('ID', 'id')
     with pytest.raises(KeyError):
         di.set_column_type('DUMMY', 'id')
     with pytest.raises(KeyError):
         di.set_column_type('TIME', 'kzarqj')
+    assert di.get_column_type('ID') == 'id'

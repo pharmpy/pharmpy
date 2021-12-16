@@ -3,7 +3,8 @@
 
 
 class ColumnInfo:
-    all_types = ['id', 'dv', 'idv', 'unknown']
+    all_types = ['id', 'dv', 'idv', 'unknown', 'dose', 'event']
+
     def __init__(self, name, tp='unknown'):
         self.name = name
         self._type = tp
@@ -72,4 +73,16 @@ class DataInfo:
                     col.type = tp
                     break
             else:
-                raise KeyError(f"There is no column named {label}")
+                raise KeyError(f"No column named {label}")
+
+    def get_column_type(self, label):
+        for col in self.columns:
+            if col.name == label:
+                return col.type
+        raise KeyError(f"No column named {label}")
+
+    def get_column_label(self, tp):
+        for col in self.columns:
+            if col.type == tp:
+                return col.name
+        return None
