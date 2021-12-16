@@ -25,3 +25,12 @@ def test_idv_label():
         di.idv_label = 'DUMMY'
     di.idv_label = 'TIME'
     assert di.idv_label == 'TIME'
+
+
+def test_set_column_type():
+    di = DataInfo(['ID', 'TIME', 'DV'])
+    di.set_column_type('ID', 'id')
+    with pytest.raises(KeyError):
+        di.set_column_type('DUMMY', 'id')
+    with pytest.raises(KeyError):
+        di.set_column_type('TIME', 'kzarqj')

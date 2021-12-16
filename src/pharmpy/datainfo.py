@@ -62,3 +62,14 @@ class DataInfo:
     @idv_label.setter
     def idv_label(self, name):
         self._set_one_label_to_type(name, 'idv')
+
+    def set_column_type(self, labels, tp):
+        if isinstance(labels, str):
+            labels = [labels]
+        for label in labels:
+            for col in self.columns:
+                if col.name in labels:
+                    col.type = tp
+                    break
+            else:
+                raise KeyError(f"There is no column named {label}")
