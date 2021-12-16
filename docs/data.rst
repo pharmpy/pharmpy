@@ -2,6 +2,10 @@
 Datasets in Pharmpy
 ===================
 
+.. warning::
+
+    This section is being reworked.
+
 Datasets in Pharmpy are represented using the :py:class:`pharmpy.data.PharmDataFrame` class. It is a subclass of the pandas DataFrame and have some additions specific to Pharmacometrics. 
 
 .. math::
@@ -81,8 +85,9 @@ The observations of the dataset indexed on subject ID and the independent variab
 
 .. jupyter-execute::
 
-   obs = df.pharmpy.observations
-   obs
+    from pharmpy.modeling import get_observations
+    obs = get_observations(model)
+    obs
 
 The total number of observations is the length of this series.
 
