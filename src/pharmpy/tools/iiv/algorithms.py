@@ -1,9 +1,7 @@
 from itertools import combinations
 
 import pharmpy.tools.modelfit as modelfit
-
 from pharmpy.modeling import copy_model, fix_parameters_to
-
 from pharmpy.modeling.block_rvs import create_joint_distribution
 from pharmpy.workflows import Task, Workflow
 

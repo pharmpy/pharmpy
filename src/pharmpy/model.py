@@ -294,7 +294,7 @@ class Model:
         else:
             df = self.dataset
 
-        idcol = df.pharmpy.id_label
+        idcol = self.datainfo.id_label
 
         if etas is None:
             if self.initial_individual_estimates is not None:
@@ -348,7 +348,7 @@ class Model:
             df = dataset
         else:
             df = self.dataset
-        idcol = df.pharmpy.id_label
+        idcol = self.datainfo.id_label
 
         if etas is None:
             if self.initial_individual_estimates is not None:
@@ -385,7 +385,7 @@ class Model:
         else:
             df = self.dataset
 
-        idcol = df.pharmpy.id_label
+        idcol = self.datainfo.id_label
 
         if etas is None:
             if self.initial_individual_estimates is not None:
@@ -432,7 +432,7 @@ class Model:
         G = self.eta_gradient(etas=etas, parameters=parameters, dataset=dataset)
         H = self.eps_gradient(etas=etas, parameters=parameters, dataset=dataset)
         F = self.population_prediction()
-        index = df[df.pharmpy.id_label]
+        index = df[self.datainfo.id_label]
         G.index = index
         H.index = index
         F.index = index
@@ -441,7 +441,7 @@ class Model:
             Gi = np.float64(G.loc[[i]])
             Hi = np.float64(H.loc[[i]])
             Fi = F.loc[i:i]
-            DVi = np.float64(df['DV'][df[df.pharmpy.id_label] == i])
+            DVi = np.float64(df['DV'][df[self.datainfo.id_label] == i])
             Ci = Gi @ omega @ Gi.T + np.diag(np.diag(Hi @ sigma @ Hi.T))
             WRESi = scipy.linalg.sqrtm(scipy.linalg.inv(Ci)) @ (DVi - Fi)
             WRES = np.concatenate((WRES, WRESi))

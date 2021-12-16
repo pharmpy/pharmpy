@@ -11,6 +11,7 @@ import pharmpy.model
 import pharmpy.model_factory
 import pharmpy.plugins.nonmem
 from pharmpy.data import DatasetError
+from pharmpy.datainfo import DataInfo
 from pharmpy.estimation import EstimationStep, EstimationSteps
 from pharmpy.model import ModelSyntaxError
 from pharmpy.parameter import Parameters
@@ -90,6 +91,7 @@ class Model(pharmpy.model.Model):
             self.database = default_model_database(path=path.parent)
             self.filename_extension = path.suffix
         self.control_stream = parser.parse(code)
+        self._create_datainfo()
         self._initial_individual_estimates_updated = False
         self._updated_etas_file = None
         self._dataset_updated = False
@@ -944,6 +946,15 @@ class Model(pharmpy.model.Model):
                 s = str(f)
             result.append(s)
         return result
+
+    def _create_datainfo(self):
+        (colnames, coltypes, drop, replacements) = self._column_info()
+        di = DataInfo(colnames)
+        if 'ID' in colnames:
+            di.id_label = 'ID'
+        elif 'L1' in colnames:
+            di.id_label = 'L1'
+        self.datainfo = di
 
     def _read_dataset(self, raw=False, parse_columns=tuple()):
         data_records = self.control_stream.get_records('DATA')

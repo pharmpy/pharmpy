@@ -220,7 +220,7 @@ def _create_thetas(model, parameter, effect, covariate, template):
 
 def _count_categorical(model, covariate):
     """Gets the number of individuals that has a level of categorical covariate."""
-    idcol = model.dataset.pharmpy.id_label
+    idcol = model.datainfo.id_label
     df = model.dataset.set_index(idcol)
     allcounts = df[covariate].groupby('ID').value_counts()
     allcounts.name = None  # To avoid collisions when resetting index
