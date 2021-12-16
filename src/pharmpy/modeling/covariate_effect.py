@@ -14,6 +14,8 @@ from pharmpy.parameter import Parameter
 from pharmpy.statements import Assignment, ModelStatements
 from pharmpy.symbols import symbol as S
 
+from .data import get_baselines
+
 
 def add_covariate_effect(model, parameter, covariate, effect, operation='*'):
     """Adds covariate effect to :class:`pharmpy.model`.
@@ -150,8 +152,8 @@ def add_covariate_effect(model, parameter, covariate, effect, operation='*'):
 
     statistics = dict()
     statistics['mean'] = _calculate_mean(model.dataset, covariate)
-    statistics['median'] = _calculate_median(model.dataset, covariate)
-    statistics['std'] = _calculate_std(model.dataset, covariate)
+    statistics['median'] = _calculate_median(model, covariate)
+    statistics['std'] = _calculate_std(model, covariate)
 
     covariate_effect = _create_template(effect, model, covariate)
     thetas = _create_thetas(model, parameter, effect, covariate, covariate_effect.template)
@@ -200,14 +202,14 @@ def _create_thetas(model, parameter, effect, covariate, template):
     theta_names = dict()
 
     if no_of_thetas == 1:
-        inits = _choose_param_inits(effect, model.dataset, covariate)
+        inits = _choose_param_inits(effect, model, covariate)
 
         theta_name = f'POP_{parameter}{covariate}'
         pset.append(Parameter(theta_name, inits['init'], inits['lower'], inits['upper']))
         theta_names['theta'] = theta_name
     else:
         for i in range(1, no_of_thetas + 1):
-            inits = _choose_param_inits(effect, model.dataset, covariate, i)
+            inits = _choose_param_inits(effect, model, covariate, i)
 
             theta_name = f'POP_{parameter}{covariate}_{i}'
             pset.append(Parameter(theta_name, inits['init'], inits['lower'], inits['upper']))
@@ -240,32 +242,35 @@ def _calculate_mean(df, covariate, baselines=False):
         return df.groupby('ID')[str(covariate)].mean().mean()
 
 
-def _calculate_median(df, covariate, baselines=False):
+def _calculate_median(model, covariate, baselines=False):
     """Calculate median. Can be set to use baselines, otherwise it is
     calculated first per individual, then for the group."""
     if baselines:
-        return df.pharmpy.baselines[str(covariate)].median()
+        return get_baselines(model)[str(covariate)].median()
     else:
+        df = model.dataset
         return df.groupby('ID')[str(covariate)].median().median()
 
 
-def _calculate_std(df, covariate, baselines=False):
+def _calculate_std(model, covariate, baselines=False):
     """Calculate median. Can be set to use baselines, otherwise it is
     calculated first per individual, then for the group."""
     if baselines:
-        return df.pharmpy.baselines[str(covariate)].std()
+        return get_baselines(model)[str(covariate)].std()
     else:
+        df = model.dataset
         return df.groupby('ID')[str(covariate)].mean().std()
 
 
-def _choose_param_inits(effect, df, covariate, index=None):
+def _choose_param_inits(effect, model, covariate, index=None):
     """Chooses inits for parameters. If the effect is exponential, the
     bounds need to be dynamic."""
+    df = model.dataset
     init_default = 0.001
 
     inits = dict()
 
-    cov_median = _calculate_median(df, covariate)
+    cov_median = _calculate_median(model, covariate)
     cov_min = df[str(covariate)].min()
     cov_max = df[str(covariate)].max()
 

@@ -15,6 +15,7 @@ from pharmpy.math import conditional_joint_normal, is_posdef
 from pharmpy.modeling import (
     calculate_individual_shrinkage,
     create_rng,
+    get_baselines,
     sample_individual_estimates,
     sample_parameters_from_covariance_matrix,
 )
@@ -985,7 +986,7 @@ def psn_frem_results(path, force_posdef_covmatrix=False, force_posdef_samples=50
             df[f'LN{lncov}'] = np.log(df[lncov])
         model_4.dataset = df
 
-    nunique = model_4.dataset.pharmpy.baselines[all_covariates].nunique()
+    nunique = get_baselines(model_4)[all_covariates].nunique()
     continuous = list(nunique.index[nunique != 2])
     categorical = list(nunique.index[nunique == 2])
 

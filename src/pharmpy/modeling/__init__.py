@@ -26,6 +26,7 @@ from pharmpy.modeling.common import (
 )
 from pharmpy.modeling.covariate_effect import add_covariate_effect
 from pharmpy.modeling.data import (
+    get_baselines,
     get_ids,
     get_mdv,
     get_number_of_individuals,
@@ -125,6 +126,7 @@ __all__ = [
     'fit',
     'fix_parameters',
     'fix_parameters_to',
+    'get_baselines',
     'get_ids',
     'get_number_of_individuals',
     'get_number_of_observations',

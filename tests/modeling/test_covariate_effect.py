@@ -36,7 +36,7 @@ def test_apply(cov_eff, symbol, expression):
 def test_choose_param_inits(pheno_path, cov_eff, init, lower, upper):
     model = Model(pheno_path)
 
-    inits = _choose_param_inits(cov_eff, model.dataset, 'WGT')
+    inits = _choose_param_inits(cov_eff, model, 'WGT')
 
     assert inits['init'] == init
     assert inits['lower'] == lower
