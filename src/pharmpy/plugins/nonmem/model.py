@@ -954,6 +954,8 @@ class Model(pharmpy.model.Model):
             di.id_label = 'ID'
         elif 'L1' in colnames:
             di.id_label = 'L1'
+        if 'DV' in colnames:
+            di.dv_label = 'DV'
         self.datainfo = di
 
     def _read_dataset(self, raw=False, parse_columns=tuple()):

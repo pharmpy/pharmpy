@@ -1,21 +1,26 @@
-from pharmpy import Model
 from pharmpy.data import ColumnType
 from pharmpy.modeling import (
+    get_ids,
     get_mdv,
     get_number_of_individuals,
     get_number_of_observations,
     get_number_of_observations_per_individual,
     get_observations,
+    load_example_model,
 )
 
+model = load_example_model("pheno")
 
-def test_get_number_of_individuals(testdata):
-    model = Model(testdata / 'nonmem' / 'pheno_real.mod')
+
+def test_get_ids():
+    assert get_ids(model) == list(range(1, 60))
+
+
+def test_get_number_of_individuals():
     assert get_number_of_individuals(model) == 59
 
 
-def test_number_of_observations(testdata):
-    model = Model(testdata / 'nonmem' / 'pheno_real.mod')
+def test_number_of_observations():
     assert get_number_of_observations(model) == 155
     assert list(get_number_of_observations_per_individual(model)) == [
         2,
@@ -80,15 +85,13 @@ def test_number_of_observations(testdata):
     ]
 
 
-def test_get_observations(testdata):
-    model = Model(testdata / 'nonmem' / 'pheno_real.mod')
+def test_get_observations():
     obs = get_observations(model)
     assert len(obs) == 155
     assert obs.loc[1, 2.0] == 17.3
 
 
-def test_get_mdv(testdata):
-    model = Model(testdata / 'nonmem' / 'pheno_real.mod')
+def test_get_mdv():
     mdv = get_mdv(model)
     label_test = model.dataset.pharmpy.labels_by_type[ColumnType.DOSE]
     data_test = model.dataset[label_test].astype('float64').squeeze()

@@ -284,10 +284,6 @@ class DataFrameAccessor:
         return df.squeeze()
 
     @property
-    def ninds(self):
-        return len(self.ids)
-
-    @property
     def nobs(self):
         return len(self.observations)
 

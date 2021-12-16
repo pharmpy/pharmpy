@@ -5,6 +5,31 @@ import pandas as pd
 from pharmpy.data import ColumnType
 
 
+def get_ids(model):
+    """Retrieve a list of all subject ids of the dataset
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+
+    Returns
+    -------
+    list
+        All subject ids
+
+    Example
+    -------
+    >>> from pharmpy.modeling import load_example_model, get_ids
+    >>> model = load_example_model("pheno")
+    >>> get_ids(model)      # doctest: +ELLIPSIS
+    [1, 2, 3, ..., 57, 58, 59]
+    """
+    idcol = model.datainfo.id_label
+    ids = model.dataset[idcol].unique()
+    return ids
+
+
 def get_number_of_individuals(model):
     """Retrieve the number of individuals in the model dataset
 
@@ -37,7 +62,7 @@ def get_number_of_individuals(model):
         dataset
 
     """
-    return model.dataset.pharmpy.ninds
+    return len(get_ids(model))
 
 
 def get_number_of_observations(model):
