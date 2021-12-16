@@ -781,8 +781,7 @@ def _get_absorption_init(model, param_name):
     except (AttributeError, KeyError):
         pass
 
-    dt = model.dataset
-    time_label = dt.pharmpy.idv_label
+    time_label = model.datainfo.idv_label
     obs = get_observations(model)
     time_min = obs.index.get_level_values(level=time_label).min()
 
