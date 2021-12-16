@@ -1,5 +1,5 @@
-next version
-------------
+0.40.0 (2021-12-16)
+-------------------
 
 * Add modeling.add_allometry
 
