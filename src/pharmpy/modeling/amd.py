@@ -14,6 +14,32 @@ class AMDResults(Results):
 
 
 def run_amd(model):
+    """Run Automatic Model Development (AMD) tool
+
+    Runs structural modelsearch, IIV building, and resmod
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+
+    Returns
+    -------
+    Model
+        Reference to the same model object
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> run_amd(model)      # doctest: +SKIP
+
+    See also
+    --------
+    run_iiv
+    run_tool
+
+    """
     db = default_tool_database(toolname='amd')
     run_tool('modelfit', model, path=db.path / 'modelfit')
 
@@ -35,6 +61,32 @@ def run_amd(model):
 
 
 def run_iiv(model):
+    """Run IIV tool
+
+    Runs two IIV workflows: testing the number of etas and testing which block structure
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+
+    Returns
+    -------
+    Model
+        Reference to the same model object
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> run_iiv(model)      # doctest: +SKIP
+
+    See also
+    --------
+    run_amd
+    run_tool
+
+    """
     res_no_of_etas = run_tool('iiv', 'brute_force_no_of_etas', model=model)
 
     if res_no_of_etas.best_model != model:

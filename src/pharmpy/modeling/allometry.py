@@ -22,6 +22,8 @@ def add_allometry(
 
     Parameters
     ----------
+    model : Model
+        Pharmpy model
     allometric_variable : str or Symbol
         Variable to use for allometry (X above)
     reference_value : str, int, float or expression
@@ -34,6 +36,8 @@ def add_allometry(
         Lower bounds for the exponents. Default is 0 for all parameters
     upper_bounds : list
         Upper bounds for the exponents. Default is 2 for all parameters
+    fixed : bool
+        Whether the exponents should be fixed
 
     Return
     ------
