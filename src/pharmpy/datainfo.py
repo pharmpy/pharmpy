@@ -3,9 +3,20 @@
 
 
 class ColumnInfo:
+    all_types = ['id', 'dv', 'idv', 'unknown']
     def __init__(self, name, tp='unknown'):
         self.name = name
-        self.type = tp
+        self._type = tp
+
+    @property
+    def type(self):
+        return self._type
+
+    @type.setter
+    def type(self, value):
+        if value not in ColumnInfo.all_types:
+            raise KeyError(f"Unknown column type {value}")
+        self._type = value
 
 
 class DataInfo:

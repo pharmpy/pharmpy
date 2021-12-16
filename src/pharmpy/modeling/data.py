@@ -26,7 +26,7 @@ def get_ids(model):
     [1, 2, 3, ..., 57, 58, 59]
     """
     idcol = model.datainfo.id_label
-    ids = model.dataset[idcol].unique()
+    ids = list(model.dataset[idcol].unique())
     return ids
 
 
