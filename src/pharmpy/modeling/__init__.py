@@ -95,8 +95,8 @@ from pharmpy.modeling.results import (
 from pharmpy.modeling.run import create_results, fit, read_results, run_tool
 from pharmpy.modeling.update_inits import update_inits
 
-from .amd import run_amd, run_iiv
 from .allometry import add_allometry
+from .amd import run_amd, run_iiv
 from .plots import plot_individual_predictions, plot_iofv_vs_iofv
 
 # Remember to sort __all__ alphabetically for order in documentation
