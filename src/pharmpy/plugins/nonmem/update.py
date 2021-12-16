@@ -933,7 +933,7 @@ def update_estimation(model):
                     )
                 options_code = ' '.join(
                     [
-                        f'{key}={value}'.upper() if value else f'{key}'
+                        f'{key}={value}'.upper() if value else str(key).upper()
                         for key, value in est.tool_options.items()
                     ]
                 )
