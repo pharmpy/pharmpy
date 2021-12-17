@@ -1,6 +1,7 @@
 from pharmpy.data import ColumnType
 from pharmpy.modeling import (
     get_covariate_baselines,
+    get_doses,
     get_ids,
     get_mdv,
     get_number_of_individuals,
@@ -23,7 +24,6 @@ def test_get_number_of_individuals():
 
 def test_get_observations():
     ser = get_observations(model)
-    print(ser)
     assert ser.loc[1, 2.0] == 17.3
     assert ser.loc[2, 63.5] == 24.6
     assert len(ser) == 155
@@ -102,6 +102,12 @@ def test_covariate_baselines():
     assert df.index.name == 'ID'
     assert df['WGT'].loc[2] == 1.5
     assert df['APGR'].loc[11] == 7.0
+
+
+def test_doses():
+    ser = get_doses(model)
+    assert len(ser) == 589
+    assert ser.loc[1, 0.0] == 25.0
 
 
 def test_get_mdv():

@@ -155,15 +155,6 @@ def test_time_varying_covariates(df):
     assert df_untyped.pharmpy.time_varying_covariates == []
 
 
-def test_doses(df2):
-    correct_doses = (
-        pd.DataFrame({'AMT': [1, 1], 'ID': [1, 2], 'TIME': [0, 0]})
-        .set_index(['ID', 'TIME'])
-        .squeeze()
-    )
-    pd.testing.assert_series_equal(df2.pharmpy.doses, correct_doses)
-
-
 def test_add_doseid(df2):
     df2.pharmpy.add_doseid()
     assert list(df2['DOSEID']) == [1, 1, 1, 1]

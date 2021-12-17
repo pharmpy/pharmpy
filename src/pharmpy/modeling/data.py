@@ -440,6 +440,60 @@ def get_covariate_baselines(model):
     return df.groupby(idlab).nth(0)
 
 
+def get_doses(model):
+    """Get a series of all doses
+
+    Indexed with ID and TIME
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+
+    Returns
+    -------
+    pd.Series
+        doses
+
+    Example
+    -------
+    >>> from pharmpy.modeling import load_example_model, get_doses
+    >>> model = load_example_model("pheno")
+    >>> get_doses(model)
+    ID  TIME
+    1   0.0      25.0
+        12.5      3.5
+        24.5      3.5
+        37.0      3.5
+        48.0      3.5
+                 ...
+    59  96.0      3.0
+        108.3     3.0
+        120.5     3.0
+        132.3     3.0
+        144.8     3.0
+    Name: AMT, Length: 589, dtype: float64
+
+    """
+    try:
+        label = model.datainfo.get_column_label('dose')
+    except KeyError:
+        raise DatasetError('Could not identify dosing rows in dataset')
+
+    idcol = model.datainfo.id_label
+    idvcol = model.datainfo.idv_label
+    df = model.dataset.query(f'{label} != 0')
+    df = df[[idcol, idvcol, label]]
+    try:
+        # FIXME: This shouldn't be needed
+        df = df.astype({idvcol: np.float64})
+    except ValueError:
+        # TIME could not be converted to float (e.g. 10:15)
+        pass
+    df.set_index([idcol, idvcol], inplace=True)
+    return df.squeeze()
+
+
 def get_mdv(model):
     """Get MDVs from dataset
 

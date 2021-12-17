@@ -106,8 +106,9 @@ The doses of the dataset indexed on subject ID and the independent variable can 
 
 .. jupyter-execute::
 
-   doses = df.pharmpy.doses
-   doses
+    from pharmpy.modeling import get_doses
+    doses = get_doses(model)
+    doses
 
 All unique doses can be listed
 
