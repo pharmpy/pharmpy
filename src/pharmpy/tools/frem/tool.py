@@ -3,9 +3,8 @@ import warnings
 from pathlib import Path
 
 from pharmpy import Model
-from pharmpy.data import ColumnType
 from pharmpy.data_structures import OrderedSet
-from pharmpy.modeling import get_covariate_baselines
+from pharmpy.modeling import get_covariate_baselines, list_time_varying_covariates
 
 from .models import create_model3b
 
@@ -36,9 +35,7 @@ def check_covariates(input_model, covariates):
     input_model.datainfo.set_column_type(covariates, 'covariate')
     cov_bls = get_covariate_baselines(input_model)
 
-    data = input_model.dataset
-    data.pharmpy.column_type[covariates] = ColumnType.COVARIATE
-    tvar = data.pharmpy.time_varying_covariates
+    tvar = list_time_varying_covariates(input_model)
     if tvar:
         warnings.warn(
             f'The covariates {tvar} are time varying, but FREM will only use the '

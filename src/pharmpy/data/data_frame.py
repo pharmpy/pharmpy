@@ -224,16 +224,6 @@ class DataFrameAccessor:
         """Return the ids in the dataset"""
         return self._obj[self.id_label].unique()
 
-    @property
-    def time_varying_covariates(self):
-        """Return a list of labels for all time varying covariates"""
-        cov_labels = self.labels_by_type[ColumnType.COVARIATE]
-        if len(cov_labels) == 0:
-            return []
-        else:
-            time_var = self._obj.groupby(by=self.id_label)[cov_labels].nunique().gt(1).any()
-            return list(time_var.index[time_var])
-
     def add_doseid(self):
         """Add a column DOSEID with id of each dose period starting from 1"""
         try:

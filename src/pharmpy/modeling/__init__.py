@@ -35,6 +35,7 @@ from pharmpy.modeling.data import (
     get_number_of_observations,
     get_number_of_observations_per_individual,
     get_observations,
+    list_time_varying_covariates,
 )
 from pharmpy.modeling.error import (
     has_additive_error_model,
@@ -144,6 +145,7 @@ __all__ = [
     'has_combined_error_model',
     'has_proportional_error_model',
     'has_zero_order_absorption',
+    'list_time_varying_covariates',
     'load_example_model',
     'plot_individual_predictions',
     'plot_iofv_vs_iofv',

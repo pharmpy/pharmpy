@@ -8,6 +8,7 @@ from pharmpy.modeling import (
     get_number_of_observations,
     get_number_of_observations_per_individual,
     get_observations,
+    list_time_varying_covariates,
     load_example_model,
 )
 
@@ -108,6 +109,11 @@ def test_doses():
     ser = get_doses(model)
     assert len(ser) == 589
     assert ser.loc[1, 0.0] == 25.0
+
+
+def test_timevarying_covariates():
+    a = list_time_varying_covariates(model)
+    assert a == []
 
 
 def test_get_mdv():

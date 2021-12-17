@@ -440,6 +440,41 @@ def get_covariate_baselines(model):
     return df.groupby(idlab).nth(0)
 
 
+def list_time_varying_covariates(model):
+    """Return a list of names of all time varying covariates
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+
+    Returns
+    -------
+    list
+        Names of all time varying covariates
+
+    See also
+    --------
+    get_covariate_baselines : get baselines for all covariates
+
+    Example
+    -------
+    >>> from pharmpy.modeling import load_example_model, list_time_varying_covariates
+    >>> model = load_example_model("pheno")
+    >>> list_time_varying_covariates(model)
+    []
+
+    """
+    cov_labels = model.datainfo.get_column_labels('covariate')
+    if len(cov_labels) == 0:
+        return []
+    else:
+        time_var = (
+            model.dataset.groupby(by=model.datainfo.id_label)[cov_labels].nunique().gt(1).any()
+        )
+        return list(time_var.index[time_var])
+
+
 def get_doses(model):
     """Get a series of all doses
 

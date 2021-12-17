@@ -149,12 +149,6 @@ def test_accessor_get_set_column_type():
     ]
 
 
-def test_time_varying_covariates(df):
-    assert df.pharmpy.time_varying_covariates == ['WGT']
-    df_untyped = data.PharmDataFrame({'ID': [1, 1, 2, 2], 'DV': [0.1, 0.2, 0.5, 0.6]})
-    assert df_untyped.pharmpy.time_varying_covariates == []
-
-
 def test_add_doseid(df2):
     df2.pharmpy.add_doseid()
     assert list(df2['DOSEID']) == [1, 1, 1, 1]
