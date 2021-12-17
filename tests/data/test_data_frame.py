@@ -155,13 +155,6 @@ def test_time_varying_covariates(df):
     assert df_untyped.pharmpy.time_varying_covariates == []
 
 
-def test_covariate_baselines(df):
-    correct_baselines = pd.DataFrame(
-        {'WGT': [70, 75], 'HGT': [185, 160]}, index=pd.Int64Index([1, 2], name='ID')
-    )
-    pd.testing.assert_frame_equal(df.pharmpy.covariate_baselines, correct_baselines)
-
-
 def test_doses(df2):
     correct_doses = (
         pd.DataFrame({'AMT': [1, 1], 'ID': [1, 2], 'TIME': [0, 0]})

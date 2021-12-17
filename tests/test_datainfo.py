@@ -35,3 +35,11 @@ def test_get_set_column_type():
     with pytest.raises(KeyError):
         di.set_column_type('TIME', 'kzarqj')
     assert di.get_column_type('ID') == 'id'
+
+
+def test_get_column_label():
+    di = DataInfo(['ID', 'TIME', 'DV', 'WGT', 'APGR'])
+    di.set_column_type('ID', 'id')
+    di.set_column_type(['WGT', 'APGR'], 'covariate')
+    assert di.get_column_label('id') == 'ID'
+    assert di.get_column_labels('covariate') == ['WGT', 'APGR']

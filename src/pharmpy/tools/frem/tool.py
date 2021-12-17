@@ -5,6 +5,7 @@ from pathlib import Path
 from pharmpy import Model
 from pharmpy.data import ColumnType
 from pharmpy.data_structures import OrderedSet
+from pharmpy.modeling import get_covariate_baselines
 
 from .models import create_model3b
 
@@ -24,10 +25,19 @@ def check_covariates(input_model, covariates):
 
     Return a new list of covariates with "bad" ones removed
     """
+    kept = []
+    for cov in covariates:
+        if cov not in input_model.datainfo.column_names:
+            warnings.warn(f'The covariate {cov} is not available in the dataset. Will be skipped.')
+        else:
+            kept.append(cov)
+    covariates = kept
+
+    input_model.datainfo.set_column_type(covariates, 'covariate')
+    cov_bls = get_covariate_baselines(input_model)
+
     data = input_model.dataset
     data.pharmpy.column_type[covariates] = ColumnType.COVARIATE
-    cov_bls = data.pharmpy.covariate_baselines
-
     tvar = data.pharmpy.time_varying_covariates
     if tvar:
         warnings.warn(

@@ -235,17 +235,6 @@ class DataFrameAccessor:
             return list(time_var.index[time_var])
 
     @property
-    def covariate_baselines(self):
-        """Return a dataframe with baselines of all covariates for each id.
-        Baseline is taken to be the first row even if that has a missing value.
-        """
-        covariates = self.labels_by_type[ColumnType.COVARIATE]
-        idlab = self.id_label
-        df = self._obj[covariates + [idlab]]
-        df.set_index(idlab, inplace=True)
-        return df.groupby(idlab).nth(0)
-
-    @property
     def doses(self):
         """Return a series with all doses. Indexed with ID and TIME"""
         try:

@@ -1,9 +1,10 @@
 """DataInfo is a companion to the dataset. It contains metadata of the dataset
 """
+import pandas as pd
 
 
 class ColumnInfo:
-    all_types = ['id', 'dv', 'idv', 'unknown', 'dose', 'event']
+    all_types = ['id', 'dv', 'idv', 'unknown', 'dose', 'event', 'covariate']
 
     def __init__(self, name, tp='unknown'):
         self.name = name
@@ -64,12 +65,16 @@ class DataInfo:
     def idv_label(self, name):
         self._set_one_label_to_type(name, 'idv')
 
+    @property
+    def column_names(self):
+        return [col.name for col in self.columns]
+
     def set_column_type(self, labels, tp):
         if isinstance(labels, str):
             labels = [labels]
         for label in labels:
             for col in self.columns:
-                if col.name in labels:
+                if col.name == label:
                     col.type = tp
                     break
             else:
@@ -86,3 +91,14 @@ class DataInfo:
             if col.type == tp:
                 return col.name
         return None
+
+    def get_column_labels(self, tp):
+        labels = [col.name for col in self.columns if col.type == tp]
+        return labels
+
+    def __repr__(self):
+        labels = [col.name for col in self.columns]
+        types = [col.type for col in self.columns]
+        df = pd.DataFrame(columns=labels)
+        df.loc['type'] = types
+        return df.to_string()

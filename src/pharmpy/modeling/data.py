@@ -271,7 +271,7 @@ def get_baselines(model):
 
     Returns
     -------
-    DataFrame
+    pd.DataFrame
         Dataset with the baselines
 
     Examples
@@ -344,6 +344,100 @@ def get_baselines(model):
     idlab = model.datainfo.id_label
     baselines = model.dataset.groupby(idlab).nth(0)
     return baselines
+
+
+def get_covariate_baselines(model):
+    """Return a dataframe with baselines of all covariates for each id.
+
+    Baseline is taken to be the first row even if that has a missing value.
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+
+    Returns
+    -------
+    pd.DataFrame
+        covariate baselines
+
+    See also
+    --------
+    get_baselines : baselines for all data columns
+
+    Example
+    -------
+    >>> from pharmpy.modeling import load_example_model, get_covariate_baselines
+    >>> model = load_example_model("pheno")
+    >>> model.datainfo.set_column_type(["WGT", "APGR"], "covariate")
+    >>> get_covariate_baselines(model)
+        WGT  APGR
+    ID
+    1   1.4   7.0
+    2   1.5   9.0
+    3   1.5   6.0
+    4   0.9   6.0
+    5   1.4   7.0
+    6   1.2   5.0
+    7   1.0   5.0
+    8   1.2   7.0
+    9   1.4   8.0
+    10  1.4   7.0
+    11  1.2   7.0
+    12  1.3   6.0
+    13  1.1   6.0
+    14  1.1   7.0
+    15  1.3   7.0
+    16  1.2   9.0
+    17  1.1   5.0
+    18  1.0   5.0
+    19  1.0   1.0
+    20  1.2   6.0
+    21  1.8   7.0
+    22  1.5   8.0
+    23  3.1   3.0
+    24  3.2   2.0
+    25  0.7   1.0
+    26  3.5   9.0
+    27  1.9   5.0
+    28  3.2   9.0
+    29  1.0   7.0
+    30  1.8   8.0
+    31  1.4   8.0
+    32  3.6   9.0
+    33  1.7   8.0
+    34  1.7   4.0
+    35  2.5   5.0
+    36  1.5   5.0
+    37  1.2   9.0
+    38  1.3   8.0
+    39  1.9  10.0
+    40  1.1   3.0
+    41  1.7   7.0
+    42  2.8   9.0
+    43  0.9   1.0
+    44  1.4   7.0
+    45  0.8   2.0
+    46  1.1   8.0
+    47  2.6   9.0
+    48  0.7   8.0
+    49  1.3   8.0
+    50  1.1   6.0
+    51  0.9   9.0
+    52  0.9   7.0
+    53  1.7   8.0
+    54  1.8   8.0
+    55  1.1   4.0
+    56  0.6   4.0
+    57  2.1   6.0
+    58  1.4   8.0
+    59  1.1   6.0
+    """
+    covariates = model.datainfo.get_column_labels('covariate')
+    idlab = model.datainfo.id_label
+    df = model.dataset[covariates + [idlab]]
+    df.set_index(idlab, inplace=True)
+    return df.groupby(idlab).nth(0)
 
 
 def get_mdv(model):

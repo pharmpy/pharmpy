@@ -3,6 +3,7 @@ next version
 
 * Add modeling.get_individuals
 * Add modeling.get_baselines
+* Add modeling.get_covariate_baselines
 
 0.40.0 (2021-12-16)
 -------------------

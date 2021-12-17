@@ -16,6 +16,7 @@ from pharmpy.modeling import (
     calculate_individual_shrinkage,
     create_rng,
     get_baselines,
+    get_covariate_baselines,
     sample_individual_estimates,
     sample_parameters_from_covariance_matrix,
 )
@@ -560,7 +561,8 @@ def calculate_results_from_samples(frem_model, continuous, categorical, parvecs,
     df = frem_model.dataset
     covariates = continuous + categorical
     df.pharmpy.column_type[covariates] = ColumnType.COVARIATE
-    covariate_baselines = df.pharmpy.covariate_baselines
+    frem_model.datainfo.set_column_type(covariates, 'covariate')
+    covariate_baselines = get_covariate_baselines(frem_model)
     covariate_baselines = covariate_baselines[covariates]
     cov_means = covariate_baselines.mean()
     cov_modes = covariate_baselines.mode().iloc[0]  # Select first mode if more than one
