@@ -55,3 +55,14 @@ def test_scale():
     assert col
     with pytest.raises(TypeError):
         ColumnInfo('DUMMY', scale='dummy')
+
+
+def test_json():
+    col1 = ColumnInfo("ID", type='id', scale='nominal')
+    col2 = ColumnInfo("TIME", type='idv', scale='ratio', unit="h")
+    di = DataInfo([col1, col2])
+    correct = '{"columns": [{"name": "ID", "type": "id", "scale": "nominal", "continuous": false, "unit": "1"}, {"name": "TIME", "type": "idv", "scale": "ratio", "continuous": true, "unit": "hour"}]}'  # noqa: E501
+    assert di.to_json() == correct
+
+    newdi = DataInfo.from_json(correct)
+    assert newdi == di

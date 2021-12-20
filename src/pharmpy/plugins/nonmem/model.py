@@ -11,7 +11,7 @@ import pharmpy.model
 import pharmpy.model_factory
 import pharmpy.plugins.nonmem
 from pharmpy.data import DatasetError
-from pharmpy.datainfo import DataInfo
+from pharmpy.datainfo import ColumnInfo, DataInfo
 from pharmpy.estimation import EstimationStep, EstimationSteps
 from pharmpy.model import ModelSyntaxError
 from pharmpy.parameter import Parameters
@@ -949,23 +949,33 @@ class Model(pharmpy.model.Model):
 
     def _create_datainfo(self):
         (colnames, coltypes, drop, replacements) = self._column_info()
-        di = DataInfo(colnames)
-        if 'ID' in colnames:
-            di.id_label = 'ID'
-        elif 'L1' in colnames:
-            di.id_label = 'L1'
-        if 'DV' in colnames:
-            di.dv_label = 'DV'
+        column_info = []
+        for colname in colnames:
+            info = ColumnInfo(colname)
+            if colname == 'ID' or colname == 'L1':
+                info.type = 'id'
+                info.scale = 'nominal'
+            elif colname == 'DV':
+                info.type = 'dv'
+            elif colname == 'TIME':
+                info.type = 'idv'
+                info.scale = 'ratio'
+            elif colname == 'EVID' and self._get_pk_record():
+                info.type = 'event'
+                info.scale = 'nominal'
+            elif colname == 'MDV' and self._get_pk_record():
+                if 'EVID' in colnames:
+                    info.type = 'unknown'
+                else:
+                    info.type = 'event'
+                info.scale = 'nominal'
+            elif colname == 'AMT' and self._get_pk_record():
+                info.type = 'dose'
+                info.scale = 'ratio'
+            column_info.append(info)
+
+        di = DataInfo(column_info)
         self.datainfo = di
-        if 'TIME' in colnames:
-            di.idv_label = 'TIME'
-        if self._get_pk_record():
-            if 'EVID' in colnames:
-                if 'MDV' in colnames:
-                    di.set_column_type('MDV', 'unknown')
-                di.set_column_type('EVID', 'event')
-            if 'AMT' in colnames:
-                di.set_column_type('AMT', 'dose')
 
     def _read_dataset(self, raw=False, parse_columns=tuple()):
         data_records = self.control_stream.get_records('DATA')

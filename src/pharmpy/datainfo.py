@@ -1,5 +1,6 @@
 """DataInfo is a companion to the dataset. It contains metadata of the dataset
 """
+import json
 from collections.abc import MutableSequence
 
 import pandas as pd
@@ -15,7 +16,7 @@ class ColumnInfo:
     def __init__(
         self,
         name,
-        tp='unknown',
+        type='unknown',
         unit=sympy.Integer(1),
         scale='ratio',
         continuous=True,
@@ -25,12 +26,21 @@ class ColumnInfo:
             continuous = False
         self._continuous = continuous
         self.name = name
-        self.type = tp
-        self._unit = unit
+        self.type = type
+        self.unit = unit
         self.scale = scale
         self.continuous = continuous
-        if categories is not None:
-            self.categories = categories  # dict from value to descriptive string
+        self.categories = categories  # dict from value to descriptive string
+
+    def __eq__(self, other):
+        return (
+            self.name == other.name
+            and self.type == other.type
+            and self.unit == other.unit
+            and self.scale == other.scale
+            and self.continuous == other.continuous
+            and self.categories == other.categories
+        )
 
     @property
     def type(self):
@@ -85,11 +95,22 @@ class ColumnInfo:
 
 
 class DataInfo(MutableSequence):
-    def __init__(self, column_names):
-        self._columns = []
-        for name in column_names:
-            colinf = ColumnInfo(name)
-            self._columns.append(colinf)
+    def __init__(self, columns):
+        if len(columns) > 0 and isinstance(columns[0], str):
+            self._columns = []
+            for name in columns:
+                colinf = ColumnInfo(name)
+                self._columns.append(colinf)
+        else:
+            self._columns = columns
+
+    def __eq__(self, other):
+        if len(self) != len(other):
+            return False
+        for col1, col2 in zip(self, other):
+            if col1 != col2:
+                return False
+        return True
 
     def __len__(self):
         return len(self._columns)
@@ -184,9 +205,45 @@ class DataInfo(MutableSequence):
         labels = [col.name for col in self._columns if col.type == tp]
         return labels
 
+    def to_json(self):
+        a = []
+        for col in self._columns:
+            d = {
+                "name": col.name,
+                "type": col.type,
+                "scale": col.scale,
+                "continuous": col.continuous,
+                "unit": str(col.unit),
+            }
+            a.append(d)
+        return json.dumps({"columns": a})
+
+    @staticmethod
+    def from_json(s):
+        d = json.loads(s)
+        columns = []
+        for col in d['columns']:
+            ci = ColumnInfo(
+                name=col['name'],
+                type=col['type'],
+                scale=col['scale'],
+                continuous=col['continuous'],
+                unit=col['unit'],
+            )
+            columns.append(ci)
+        return DataInfo(columns)
+
     def __repr__(self):
         labels = [col.name for col in self._columns]
         types = [col.type for col in self._columns]
+        scales = [col.scale for col in self._columns]
+        cont = [col.continuous for col in self._columns]
+        cats = [col.categories for col in self._columns]
+        units = [col.unit for col in self._columns]
         df = pd.DataFrame(columns=labels)
         df.loc['type'] = types
+        df.loc['scale'] = scales
+        df.loc['continuous'] = cont
+        df.loc['categories'] = cats
+        df.loc['unit'] = units
         return df.to_string()
