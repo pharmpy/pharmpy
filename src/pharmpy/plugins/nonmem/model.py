@@ -950,7 +950,8 @@ class Model(pharmpy.model.Model):
     def _create_datainfo(self):
         try:
             path = self.dataset_path.with_suffix('.datainfo')
-        except:     # FIXME: dataset_path could fail in so many ways!
+        except:  # noqa: E722
+            # FIXME: dataset_path could fail in so many ways!
             pass
         else:
             if path.is_file():
