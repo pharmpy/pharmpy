@@ -93,6 +93,10 @@ class ColumnInfo:
     def is_numerical(self):
         return self.scale in ['interval', 'ratio']
 
+    def __repr__(self):
+        di = DataInfo([self])
+        return repr(di)
+
 
 class DataInfo(MutableSequence):
     def __init__(self, columns):
@@ -205,7 +209,7 @@ class DataInfo(MutableSequence):
         labels = [col.name for col in self._columns if col.type == tp]
         return labels
 
-    def to_json(self):
+    def to_json(self, path=None):
         a = []
         for col in self._columns:
             d = {
@@ -216,7 +220,12 @@ class DataInfo(MutableSequence):
                 "unit": str(col.unit),
             }
             a.append(d)
-        return json.dumps({"columns": a})
+        s = json.dumps({"columns": a})
+        if path is None:
+            return s
+        else:
+            with open(path, 'w') as fp:
+                fp.write(s)
 
     @staticmethod
     def from_json(s):
@@ -227,11 +236,17 @@ class DataInfo(MutableSequence):
                 name=col['name'],
                 type=col['type'],
                 scale=col['scale'],
-                continuous=col['continuous'],
-                unit=col['unit'],
+                continuous=col.get('continuous', True),
+                unit=col.get('unit', sympy.Integer(1)),
             )
             columns.append(ci)
         return DataInfo(columns)
+
+    @staticmethod
+    def read_json(path):
+        with open(path, 'r') as fp:
+            s = fp.read()
+        return DataInfo.from_json(s)
 
     def __repr__(self):
         labels = [col.name for col in self._columns]

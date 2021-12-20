@@ -948,6 +948,15 @@ class Model(pharmpy.model.Model):
         return result
 
     def _create_datainfo(self):
+        try:
+            path = self.dataset_path.with_suffix('.datainfo')
+        except:     # FIXME: dataset_path could fail in so many ways!
+            pass
+        else:
+            if path.is_file():
+                di = DataInfo.read_json(path)
+                self.datainfo = di
+                return
         (colnames, coltypes, drop, replacements) = self._column_info()
         column_info = []
         for colname in colnames:
