@@ -1,6 +1,6 @@
 import pytest
 
-from pharmpy.datainfo import DataInfo
+from pharmpy.datainfo import ColumnInfo, DataInfo
 
 
 def test_id_label():
@@ -32,7 +32,7 @@ def test_get_set_column_type():
     di.set_column_type('ID', 'id')
     with pytest.raises(KeyError):
         di.set_column_type('DUMMY', 'id')
-    with pytest.raises(KeyError):
+    with pytest.raises(TypeError):
         di.set_column_type('TIME', 'kzarqj')
     assert di.get_column_type('ID') == 'id'
 
@@ -43,3 +43,15 @@ def test_get_column_label():
     di.set_column_type(['WGT', 'APGR'], 'covariate')
     assert di.get_column_label('id') == 'ID'
     assert di.get_column_labels('covariate') == ['WGT', 'APGR']
+
+
+def test_unit():
+    di = DataInfo(['ID', 'TIME', 'DV', 'WGT', 'APGR'])
+    assert di['ID'].unit == 1
+
+
+def test_scale():
+    col = ColumnInfo('WGT', scale='ratio')
+    assert col
+    with pytest.raises(TypeError):
+        ColumnInfo('DUMMY', scale='dummy')
