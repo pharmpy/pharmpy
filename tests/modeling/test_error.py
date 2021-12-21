@@ -51,10 +51,10 @@ def test_set_proportional_error_model_nolog(testdata):
     assert model.model_code.split('\n')[16] == 'Y = F + EPS(1)*IPREDADJ'
     assert model.model_code.split('\n')[22] == '$SIGMA  0.09 ; sigma'
 
-    #model = Model(testdata / 'nonmem' / 'pheno.mod')
-    #set_proportional_error_model(model)
-    #assert model.model_code.split('\n')[11] == 'Y=F+F*EPS(1)'
-    #assert model.model_code.split('\n')[17] == '$SIGMA 0.013241'
+    model = Model(testdata / 'nonmem' / 'pheno.mod')
+    set_proportional_error_model(model)
+    assert model.model_code.split('\n')[11] == 'Y=F+F*EPS(1)'
+    assert model.model_code.split('\n')[17] == '$SIGMA 0.013241'
 
 
 def test_set_proportional_error_model_log(testdata):
