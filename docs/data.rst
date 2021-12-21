@@ -133,6 +133,7 @@ It is possible to create a DOSEID that groups each dose period starting from 1.
 
 .. jupyter-execute::
 
+    from pharmpy.modeling import get_doseid
     ser = get_doseid(model)
     ser
 
@@ -143,8 +144,9 @@ Add a column for time after dose (TAD)
 
 .. jupyter-execute::
 
-    df.pharmpy.add_time_after_dose()
-    df
+    from pharmpy.modeling import add_time_after_dose
+    add_time_after_dose(model)
+    model.dataset['TAD']
 
 Concentration parameters
 ========================

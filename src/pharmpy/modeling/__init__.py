@@ -26,6 +26,7 @@ from pharmpy.modeling.common import (
 )
 from pharmpy.modeling.covariate_effect import add_covariate_effect
 from pharmpy.modeling.data import (
+    add_time_after_dose,
     get_baselines,
     get_covariate_baselines,
     get_doseid,
@@ -116,6 +117,7 @@ __all__ = [
     'add_iov',
     'add_lag_time',
     'add_peripheral_compartment',
+    'add_time_after_dose',
     'append_estimation_step_options',
     'calculate_eta_shrinkage',
     'calculate_individual_parameter_statistics',

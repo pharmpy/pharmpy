@@ -1,5 +1,6 @@
 from pharmpy.data import ColumnType
 from pharmpy.modeling import (
+    add_time_after_dose,
     get_covariate_baselines,
     get_doseid,
     get_doses,
@@ -131,3 +132,12 @@ def test_get_mdv():
     mdv_test = data_test.where(data_test == 0, other=1).astype('int64')
     result = mdv.equals(other=mdv_test)
     assert result is True
+
+
+def test_add_time_after_dose():
+    m = model.copy()
+    add_time_after_dose(m)
+    tad = m.dataset['TAD']
+    assert tad[0] == 0.0
+    assert tad[1] == 2.0
+    assert tad[743] == 2.0

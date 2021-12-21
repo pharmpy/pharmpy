@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 
 from pharmpy.data import ColumnType, DatasetError
+from pharmpy.datainfo import ColumnInfo
 
 
 def get_ids(model):
@@ -547,18 +548,18 @@ def get_doseid(model):
     >>> from pharmpy.modeling import load_example_model, get_doseid
     >>> model = load_example_model("pheno")
     >>> get_doseid(model)
-         ID   TIME   AMT  WGT APGR    DV  FA1  FA2  DOSEID
-    0     1     0.  25.0  1.4    7   0.0  1.0  1.0       1
-    1     1    2.0   0.0  1.4    7  17.3  0.0  0.0       1
-    2     1   12.5   3.5  1.4    7   0.0  1.0  1.0       2
-    3     1   24.5   3.5  1.4    7   0.0  1.0  1.0       3
-    4     1   37.0   3.5  1.4    7   0.0  1.0  1.0       4
-    ..   ..    ...   ...  ...  ...   ...  ...  ...     ...
-    739  59  108.3   3.0  1.1    6   0.0  1.0  1.0      10
-    740  59  120.5   3.0  1.1    6   0.0  1.0  1.0      11
-    741  59  132.3   3.0  1.1    6   0.0  1.0  1.0      12
-    742  59  144.8   3.0  1.1    6   0.0  1.0  1.0      13
-    743  59  146.8   0.0  1.1    6  40.2  0.0  0.0      13
+    0       1
+    1       1
+    2       2
+    3       3
+    4       4
+           ..
+    739    10
+    740    11
+    741    12
+    742    13
+    743    13
+    Name: pheno, Length: 744, dtype: int64
     """
     try:
         dose = model.datainfo.get_column_label('dose')
@@ -599,3 +600,40 @@ def get_mdv(model):
     data = model.dataset[label].astype('float64').squeeze()
     mdv = data.where(data == 0, other=1).astype('int64').rename('MDV')
     return mdv
+
+
+def add_time_after_dose(model):
+    """Calculate and add a TAD column to the dataset"
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+
+    Returns
+    -------
+    Model
+        Reference to the same model object
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import load_example_model, add_time_after_dose
+    >>> model = load_example_model("pheno")
+    >>> add_time_after_dose(model)  # doctest: +ELLIPSIS
+    <...>
+
+    """
+    # FIXME: Should not rely on name here. Use coltypes for TAD
+    # FIXME: TIME is converted to float. Should be handled when reading in dataset
+    df = model.dataset
+    doseid = get_doseid(model)
+    df['DOSEID'] = doseid
+    idv = model.datainfo.idv_label
+    idlab = model.datainfo.id_label
+    df[idv] = df[idv].astype(np.float64)
+    df['TAD'] = df.groupby([idlab, 'DOSEID'])[idv].diff().fillna(0)
+    df['TAD'] = df.groupby([idlab, 'DOSEID'])['TAD'].cumsum()
+    df.drop('DOSEID', axis=1, inplace=True)
+    ci = ColumnInfo('TAD')
+    model.datainfo.append(ci)
+    return model

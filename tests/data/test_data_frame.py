@@ -5,7 +5,6 @@ import pandas as pd
 import pytest
 
 import pharmpy.data as data
-from pharmpy import Model
 
 
 @pytest.fixture
@@ -147,17 +146,6 @@ def test_accessor_get_set_column_type():
         data.ColumnType.COVARIATE,
         data.ColumnType.COVARIATE,
     ]
-
-
-def test_add_time_after_dose(df2):
-    df2.pharmpy.add_time_after_dose()
-    assert list(df2['TAD']) == [0, 1, 0, 1]
-
-
-def test_tad_pheno(testdata):
-    model = Model(testdata / 'nonmem' / 'pheno.mod')
-    print(model.dataset.dtypes)
-    model.dataset.pharmpy.add_time_after_dose()
 
 
 def test_concentration_parameters(df2, df3):

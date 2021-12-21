@@ -142,7 +142,7 @@ class DataInfo(MutableSequence):
         del self._columns[self._getindex(i)]
 
     def insert(self, i, value):
-        self._columns.index(self._getindex(i), value)
+        self._columns.insert(self._getindex(i), value)
 
     def _get_one_label_by_type(self, tp):
         for col in self._columns:
