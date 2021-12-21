@@ -529,6 +529,49 @@ def get_doses(model):
     return df.squeeze()
 
 
+def get_doseid(model):
+    """Get a DOSEID series from the dataset with an id of each dose period starting from 1
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+
+    Returns
+    -------
+    pd.Series
+        DOSEIDs
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import load_example_model, get_doseid
+    >>> model = load_example_model("pheno")
+    >>> get_doseid(model)
+         ID   TIME   AMT  WGT APGR    DV  FA1  FA2  DOSEID
+    0     1     0.  25.0  1.4    7   0.0  1.0  1.0       1
+    1     1    2.0   0.0  1.4    7  17.3  0.0  0.0       1
+    2     1   12.5   3.5  1.4    7   0.0  1.0  1.0       2
+    3     1   24.5   3.5  1.4    7   0.0  1.0  1.0       3
+    4     1   37.0   3.5  1.4    7   0.0  1.0  1.0       4
+    ..   ..    ...   ...  ...  ...   ...  ...  ...     ...
+    739  59  108.3   3.0  1.1    6   0.0  1.0  1.0      10
+    740  59  120.5   3.0  1.1    6   0.0  1.0  1.0      11
+    741  59  132.3   3.0  1.1    6   0.0  1.0  1.0      12
+    742  59  144.8   3.0  1.1    6   0.0  1.0  1.0      13
+    743  59  146.8   0.0  1.1    6  40.2  0.0  0.0      13
+    """
+    try:
+        dose = model.datainfo.get_column_label('dose')
+    except KeyError:
+        raise DatasetError('Could not identify dosing rows in dataset')
+    df = model.dataset.copy()
+    df['DOSEID'] = df[dose]
+    df.loc[df['DOSEID'] > 0, 'DOSEID'] = 1
+    df['DOSEID'] = df['DOSEID'].astype(int)
+    df['DOSEID'] = df.groupby(model.datainfo.id_label)['DOSEID'].cumsum()
+    return df['DOSEID'].copy()
+
+
 def get_mdv(model):
     """Get MDVs from dataset
 

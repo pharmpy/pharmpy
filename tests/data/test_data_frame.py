@@ -149,11 +149,6 @@ def test_accessor_get_set_column_type():
     ]
 
 
-def test_add_doseid(df2):
-    df2.pharmpy.add_doseid()
-    assert list(df2['DOSEID']) == [1, 1, 1, 1]
-
-
 def test_add_time_after_dose(df2):
     df2.pharmpy.add_time_after_dose()
     assert list(df2['TAD']) == [0, 1, 0, 1]

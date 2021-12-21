@@ -1,3 +1,8 @@
+next version
+------------
+
+* Add modeling.get_doseid
+
 0.41.0 (2021-12-21)
 -------------------
 

@@ -1,6 +1,7 @@
 from pharmpy.data import ColumnType
 from pharmpy.modeling import (
     get_covariate_baselines,
+    get_doseid,
     get_doses,
     get_ids,
     get_mdv,
@@ -17,6 +18,13 @@ model = load_example_model("pheno")
 
 def test_get_ids():
     assert get_ids(model) == list(range(1, 60))
+
+
+def test_get_doseid():
+    doseid = get_doseid(model)
+    assert len(doseid) == 744
+    assert doseid[0] == 1
+    assert doseid[743] == 13
 
 
 def test_get_number_of_individuals():

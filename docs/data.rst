@@ -129,12 +129,12 @@ as well as the largest and the smallest dose
 Dose grouping
 =============
 
-It is possible to add a DOSEID column with a numbering of each dose period starting from 1.
+It is possible to create a DOSEID that groups each dose period starting from 1.
 
 .. jupyter-execute::
 
-    df.pharmpy.add_doseid()
-    df
+    ser = get_doseid(model)
+    ser
 
 Time after dose
 ===============
