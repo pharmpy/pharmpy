@@ -184,7 +184,7 @@ def _create_best_model(model, res):
             model.parameters.inits = {
                 'power1': res.models['parameters'].loc['power', 1, 1].get('theta') + 1
             }
-        elif name == 'iiv_on_ruv':
+        elif name == 'IIV_on_RUV':
             set_iiv_on_ruv(model)
             model.parameters.inits = {
                 'IIV_RUV1': res.models['parameters'].loc['IIV_on_RUV', 1, 1].get('omega')
