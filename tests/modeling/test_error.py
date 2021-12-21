@@ -44,23 +44,23 @@ def test_set_additive_error_model_logdv(testdata):
     assert model.model_code.split('\n')[17] == '$SIGMA  11.2225 ; sigma'
 
 
-def test_set_proportional_error_model(testdata):
+def test_set_proportional_error_model_nolog(testdata):
     model = Model(testdata / 'nonmem' / 'pheno.mod')
     model.statements[5] = Assignment('Y', 'F')
-    set_proportional_error_model(model)
-    assert model.model_code.split('\n')[11] == 'Y=F+F*EPS(1)'
-    assert model.model_code.split('\n')[17] == '$SIGMA  0.09 ; sigma'
+    set_proportional_error_model(model, zero_protection=True)
+    assert model.model_code.split('\n')[16] == 'Y = F + EPS(1)*IPREDADJ'
+    assert model.model_code.split('\n')[22] == '$SIGMA  0.09 ; sigma'
 
-    model = Model(testdata / 'nonmem' / 'pheno.mod')
-    set_proportional_error_model(model)
-    assert model.model_code.split('\n')[11] == 'Y=F+F*EPS(1)'
-    assert model.model_code.split('\n')[17] == '$SIGMA 0.013241'
+    #model = Model(testdata / 'nonmem' / 'pheno.mod')
+    #set_proportional_error_model(model)
+    #assert model.model_code.split('\n')[11] == 'Y=F+F*EPS(1)'
+    #assert model.model_code.split('\n')[17] == '$SIGMA 0.013241'
 
 
 def test_set_proportional_error_model_log(testdata):
     model = Model(testdata / 'nonmem' / 'pheno.mod')
     model.statements[5] = Assignment('Y', 'F')
-    set_proportional_error_model(model, data_trans='log(Y)')
+    set_proportional_error_model(model, data_trans='log(Y)', zero_protection=True)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV

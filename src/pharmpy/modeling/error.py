@@ -145,7 +145,7 @@ def _get_prop_init(model):
         return (dv_min / 2) ** 2
 
 
-def set_proportional_error_model(model, data_trans=None):
+def set_proportional_error_model(model, data_trans=None, zero_protection=False):
     r"""Set a proportional error model. Initial estimate for new sigma is 0.09.
 
     The error function being applied depends on the data transformation.
@@ -165,6 +165,8 @@ def set_proportional_error_model(model, data_trans=None):
     data_trans : str or expression
         A data transformation expression or None (default) to use the transformation
         specified by the model.
+    zero_protection : bool
+        Set to True to add code protecting from IPRED=0
 
     Returns
     -------
@@ -182,7 +184,7 @@ def set_proportional_error_model(model, data_trans=None):
 
     >>> from pharmpy.modeling import *
     >>> model = remove_error_model(load_example_model("pheno"))
-    >>> set_proportional_error_model(model, data_trans="log(Y)")    # doctest: +ELLIPSIS
+    >>> set_proportional_error_model(model, data_trans="log(Y)", zero_protection=True)    # doctest: +ELLIPSIS  # noqa: E501
     <...>
     >>> model.statements.after_odes
          A_CENTRAL
@@ -211,15 +213,21 @@ def set_proportional_error_model(model, data_trans=None):
     ruv = model.create_symbol('epsilon_p')
 
     data_trans = pharmpy.model.canonicalize_data_transformation(model, data_trans)
-    if data_trans == sympy.log(model.dependent_variable):
-        # Add protection for log(0)
-        new_ipred = model.create_symbol('IPREDADJ')
+    if zero_protection:
+        ipred = model.create_symbol('IPREDADJ')
         guard_expr = sympy.Piecewise((2.225e-307, sympy.Eq(f, 0)), (f, True))
-        guard_assignment = Assignment(new_ipred, guard_expr)
-        stats.insert_before(stats.find_assignment(y), guard_assignment)
-        expr = sympy.log(new_ipred) + ruv
+        guard_assignment = Assignment(ipred, guard_expr)
+    else:
+        ipred = f
+
+    if data_trans == sympy.log(model.dependent_variable):
+        if zero_protection:
+            stats.insert_before(stats.find_assignment(y), guard_assignment)
+        expr = sympy.log(ipred) + ruv
     elif data_trans == model.dependent_variable:
-        expr = f + f * ruv
+        if zero_protection:
+            stats.insert_before(stats.find_assignment(y), guard_assignment)
+        expr = f + ipred * ruv
     else:
         raise ValueError(f"Not supported data transformation {data_trans}")
 
