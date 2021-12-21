@@ -1,15 +1,17 @@
 import pandas as pd
+import sympy
 
 import pharmpy.model
 import pharmpy.tools
 from pharmpy import Parameter, Parameters, RandomVariable, RandomVariables
 from pharmpy.data import ColumnType
 from pharmpy.estimation import EstimationStep, EstimationSteps
-from pharmpy.modeling import get_mdv, set_iiv_on_ruv, set_power_on_ruv
+from pharmpy.modeling import get_mdv, set_combined_error_model, set_iiv_on_ruv, set_power_on_ruv
 from pharmpy.statements import Assignment, ModelStatements
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.workflows import Task, Workflow
 
+from ...modeling.error import remove_error_model
 from .results import calculate_results
 
 
@@ -29,9 +31,11 @@ def create_workflow(model=None):
     wf.add_task(task_iiv, predecessors=task_base_model)
     task_power = Task('create_power_model', _create_power_model)
     wf.add_task(task_power, predecessors=task_base_model)
+    task_combined = Task('create_combined_error_model', _create_combined_model)
+    wf.add_task(task_combined, predecessors=task_base_model)
 
-    fit_wf = create_fit_workflow(n=3)
-    wf.insert_workflow(fit_wf, predecessors=[task_base_model, task_iiv, task_power])
+    fit_wf = create_fit_workflow(n=4)
+    wf.insert_workflow(fit_wf, predecessors=[task_base_model, task_iiv, task_power, task_combined])
 
     task_post_process = Task('post_process', post_process)
     wf.add_task(task_post_process, predecessors=[start_task] + fit_wf.output_tasks)
@@ -57,6 +61,7 @@ def post_process(start_model, *models):
         base_model=_find_model(models, 'base'),
         iiv_on_ruv=_find_model(models, 'iiv_on_ruv'),
         power=_find_model(models, 'power'),
+        combined=_find_model(models, 'combined'),
     )
     best_model = _create_best_model(start_model, res)
     res.best_model = best_model
@@ -121,6 +126,32 @@ def _create_power_model(input_model):
     return model
 
 
+def _create_combined_model(input_model):
+    base_model = input_model
+    model = base_model.copy()
+    remove_error_model(model)
+    s = model.statements[0]
+    ruv_prop = model.create_symbol('epsilon_p')
+    ruv_add = model.create_symbol('epsilon_a')
+    ipred = sympy.sympify('IPRED')
+    s.expression = s.expression + ruv_prop + ruv_add / ipred
+
+    sigma_prop = Parameter('sigma_prop', 1, lower=0)
+    model.parameters.append(sigma_prop)
+    ipred_min = model.dataset['IPRED'].min()
+    sigma_add_init = ipred_min / 2
+    sigma_add = Parameter('sigma_add', sigma_add_init, lower=0)
+    model.parameters.append(sigma_add)
+
+    eps_prop = RandomVariable.normal(ruv_prop.name, 'ruv', 0, sigma_prop.symbol)
+    model.random_variables.append(eps_prop)
+    eps_add = RandomVariable.normal(ruv_add.name, 'ruv', 0, sigma_add.symbol)
+    model.random_variables.append(eps_add)
+
+    model.name = 'combined'
+    return model
+
+
 def _create_dataset(input_model):
     residuals = input_model.modelfit_results.residuals
     cwres = residuals['CWRES'].reset_index(drop=True)
@@ -153,10 +184,16 @@ def _create_best_model(model, res):
             model.parameters.inits = {
                 'power1': res.models['parameters'].loc['power', 1, 1].get('theta') + 1
             }
-        else:
+        elif name == 'iiv_on_ruv':
             set_iiv_on_ruv(model)
             model.parameters.inits = {
                 'IIV_RUV1': res.models['parameters'].loc['IIV_on_RUV', 1, 1].get('omega')
+            }
+        else:
+            set_combined_error_model(model)
+            model.parameters.inits = {
+                'sigma_prop': res.models['parameters'].loc['combined', 1, 1].get('sigma_prop'),
+                'sigma_add': res.models['parameters'].loc['combined', 1, 1].get('sigma_add'),
             }
         model.update_source()
     return model

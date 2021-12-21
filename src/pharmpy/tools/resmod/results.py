@@ -12,19 +12,27 @@ class ResmodResults(Results):
         self.models = models
 
 
-def calculate_results(base_model, iiv_on_ruv, power):
+def calculate_results(base_model, iiv_on_ruv, power, combined):
     base_ofv = base_model.modelfit_results.ofv
     dofv_iiv_on_ruv = base_ofv - iiv_on_ruv.modelfit_results.ofv
     dofv_power = base_ofv - power.modelfit_results.ofv
-    omega_iiv_on_ruv = iiv_on_ruv.modelfit_results.parameter_estimates["IIV_RUV1"]
-    theta_power = power.modelfit_results.parameter_estimates["power1"]
+    dofv_combined = base_ofv - combined.modelfit_results.ofv
+    omega_iiv_on_ruv = round(iiv_on_ruv.modelfit_results.parameter_estimates["IIV_RUV1"], 6)
+    theta_power = round(power.modelfit_results.parameter_estimates["power1"], 6)
+    sigma_add = round(combined.modelfit_results.parameter_estimates["sigma_add"], 6)
+    sigma_prop = round(combined.modelfit_results.parameter_estimates["sigma_prop"], 6)
+
     df = pd.DataFrame(
         {
-            'model': ['IIV_on_RUV', 'power'],
+            'model': ['IIV_on_RUV', 'power', 'combined'],
             'dvid': 1,
             'iteration': 1,
-            'dofv': [dofv_iiv_on_ruv, dofv_power],
-            'parameters': [{'omega': omega_iiv_on_ruv}, {'theta': theta_power}],
+            'dofv': [dofv_iiv_on_ruv, dofv_power, dofv_combined],
+            'parameters': [
+                {'omega': omega_iiv_on_ruv},
+                {'theta': theta_power},
+                dict(sigma_add=sigma_add, sigma_prop=sigma_prop),
+            ],
         }
     )
     df.set_index(['model', 'dvid', 'iteration'], inplace=True)
