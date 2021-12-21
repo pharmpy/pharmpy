@@ -1,11 +1,16 @@
-next version
-------------
+0.41.0 (2021-12-21)
+-------------------
 
 * Add modeling.get_individuals
 * Add modeling.get_baselines
 * Add modeling.get_covariate_baselines
 * Add modeling.get_doses
 * Add modeling.list_time_varying_covariates
+* Add combined error model to resmod
+* Add option to zero_protect to set_proportional_error_model
+* Add tool estmeth to find optimal estimation method for a model
+* Fix bug causing resmod models to be incorrect
+* New model.datainfo object
 
 0.40.0 (2021-12-16)
 -------------------
