@@ -960,8 +960,8 @@ class Model(pharmpy.model.Model):
                 return
         (colnames, coltypes, drop, replacements) = self._column_info()
         column_info = []
-        for colname in colnames:
-            info = ColumnInfo(colname)
+        for colname, coldrop in zip(colnames, drop):
+            info = ColumnInfo(colname, drop=coldrop)
             if colname == 'ID' or colname == 'L1':
                 info.type = 'id'
                 info.scale = 'nominal'
