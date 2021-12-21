@@ -21,6 +21,7 @@ class ColumnInfo:
         scale='ratio',
         continuous=True,
         categories=None,
+        drop=False,
     ):
         if scale in ['nominal', 'ordinal']:
             continuous = False
@@ -31,6 +32,7 @@ class ColumnInfo:
         self.scale = scale
         self.continuous = continuous
         self.categories = categories  # dict from value to descriptive string
+        self.drop = drop
 
     def __eq__(self, other):
         return (
@@ -40,6 +42,7 @@ class ColumnInfo:
             and self.scale == other.scale
             and self.continuous == other.continuous
             and self.categories == other.categories
+            and self.drop == other.drop
         )
 
     @property
@@ -255,10 +258,12 @@ class DataInfo(MutableSequence):
         cont = [col.continuous for col in self._columns]
         cats = [col.categories for col in self._columns]
         units = [col.unit for col in self._columns]
+        drop = [col.drop for col in self._columns]
         df = pd.DataFrame(columns=labels)
         df.loc['type'] = types
         df.loc['scale'] = scales
         df.loc['continuous'] = cont
         df.loc['categories'] = cats
         df.loc['unit'] = units
+        df.loc['drop'] = drop
         return df.to_string()
