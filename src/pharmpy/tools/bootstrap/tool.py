@@ -36,7 +36,7 @@ class Bootstrap(pharmpy.tools.Tool):
 
 
 def resample_model(model, name):
-    resample = Resample(model, model.modelinfo.id_label, resamples=1, name=name)
+    resample = Resample(model, model.datainfo.id_label, resamples=1, name=name)
     model, _ = next(resample)
     return model
 
