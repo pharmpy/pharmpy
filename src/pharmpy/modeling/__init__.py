@@ -105,6 +105,7 @@ from pharmpy.modeling.update_inits import update_inits
 from .allometry import add_allometry
 from .amd import run_amd, run_iiv
 from .plots import plot_individual_predictions, plot_iofv_vs_iofv
+from .units import get_unit_of
 
 # Remember to sort __all__ alphabetically for order in documentation
 __all__ = [
@@ -145,6 +146,7 @@ __all__ = [
     'get_mdv',
     'get_model_covariates',
     'get_observations',
+    'get_unit_of',
     'has_additive_error_model',
     'has_combined_error_model',
     'has_proportional_error_model',

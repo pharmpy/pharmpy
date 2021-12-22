@@ -1,0 +1,8 @@
+{"columns":[
+	{ "name": "ID", "type": "id", "scale": "nominal" },
+	{ "name": "TIME", "type": "idv", "scale": "ratio", "unit": "h" },
+	{ "name": "AMT", "type": "dose", "scale": "ratio", "unit": "mg" },
+	{ "name": "WGT", "type": "covariate", "scale": "ratio", "unit": "kg" },
+	{ "name": "APGR", "type": "covariate", "scale": "ordinal" },
+	{ "name": "DV", "type": "dv", "scale": "ratio", "unit": "mg/l" }
+]}

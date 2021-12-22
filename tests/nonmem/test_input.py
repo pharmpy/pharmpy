@@ -25,6 +25,7 @@ def test_ignore_with_synonym(pheno_data):
             f"$DATA {pheno_data} IGNORE=@ IGNORE=(CONC.EQN.0)"
         )
     )
+    model.datainfo['DV'].name = 'CONC'
     df = model.dataset
     assert len(df) == 155
     model = pharmpy.Model(
@@ -33,6 +34,7 @@ def test_ignore_with_synonym(pheno_data):
             f"$DATA {pheno_data} IGNORE=@ IGNORE=(DV.EQN.0)"
         )
     )
+    model.datainfo['DV'].name = 'CONC'
     df = model.dataset
     assert len(df) == 155
 
@@ -44,6 +46,7 @@ def test_idv_with_synonym(pheno_data):
             f"$DATA {pheno_data} IGNORE=@"
         )
     )
+    model.datainfo['TIME'].name = 'TAD'
     df = model.dataset
 
     assert df.pharmpy.column_type['TAD'] == ColumnType.IDV

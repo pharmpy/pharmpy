@@ -2,6 +2,7 @@ next version
 ------------
 
 * Add modeling.get_doseid
+* Add modeling.get_unit_of
 
 0.41.0 (2021-12-21)
 -------------------
