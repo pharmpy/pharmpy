@@ -9,8 +9,8 @@ be used via reticulate from R.
 Installation
 ------------
 
-.. warning:: Pharmpy requires python 3.7 or later,
-    and is currently tested on python 3.7, 3.8 and 3.9 on Linux, MacOS and Windows.
+.. warning:: Pharmpy requires python 3.8 or later,
+    and is currently tested on python 3.8 and 3.9 on Linux, MacOS and Windows.
 
 Install the latest stable version from PyPI with::
 
@@ -28,7 +28,7 @@ The :class:`pharmpy.Model` class is representation of a nonlinear mixed effects 
 read the NONMEM model ``pheno_real.mod`` from file into a model object, the following is sufficient:
 
 .. testcode::
-    :pyversion: > 3.6
+    :pyversion: > 3.7
 
     from pharmpy import Model
 
@@ -38,7 +38,7 @@ read the NONMEM model ``pheno_real.mod`` from file into a model object, the foll
 The model file format is automatically detected:
 
 .. doctest::
-    :pyversion: > 3.6
+    :pyversion: > 3.7
 
     >>> type(pheno)
     <class 'pharmpy.plugins.nonmem.model.Model'>
@@ -53,7 +53,7 @@ From R
 Pharmpy can also be used in R. To call Pharmpy from R the following is needed on your computer:
 
 #. The reticulate R package
-#. Python 3.7 or newer
+#. Python 3.8 or newer
 #. Pharmpy
 
 See :ref:`here <using_r>` for more information on how to use Pharmpy in R.

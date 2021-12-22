@@ -90,7 +90,6 @@ OR
 
 .. code-block:: sh
 
-    pyenv install 3.7.7
     pyenv install 3.8.3
     pyenv install 3.9.1
 
@@ -98,7 +97,7 @@ OR
 
 .. code-block:: sh
 
-    pyenv local 3.7.7 3.8.3 3.9.1
+    pyenv local 3.8.3 3.9.1
 
 Sources:
 https://realpython.com/intro-to-pyenv/
