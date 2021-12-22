@@ -236,24 +236,6 @@ class DataFrameAccessor:
         df['DOSEID'] = df['DOSEID'].astype(int)
         df['DOSEID'] = df.groupby(self.id_label)['DOSEID'].cumsum()
 
-    def add_time_after_dose(self):
-        """Calculate and add a TAD column to the dataset"""
-        # FIXME: Should not rely on name here. Use coltypes for TAD and DOSEID
-        # FIXME: TIME is converted to float. Should be handled when reading in dataset
-        df = self._obj
-        if 'DOSEID' in df.columns:
-            had_doseid = True
-        else:
-            self.add_doseid()
-            had_doseid = False
-        idv = self.idv_label
-        idlab = self.id_label
-        df[idv] = df[idv].astype(np.float64)
-        df['TAD'] = df.groupby([idlab, 'DOSEID'])[idv].diff().fillna(0)
-        df['TAD'] = df.groupby([idlab, 'DOSEID'])['TAD'].cumsum()
-        if not had_doseid:
-            df.drop('DOSEID', axis=1, inplace=True)
-
     def generate_path(self, path=None, force=False):
         """Generate the path of dataframe if written.
         If no path is supplied or does not contain a filename a name is created
