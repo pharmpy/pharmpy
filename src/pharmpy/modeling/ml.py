@@ -5,6 +5,7 @@ import pandas as pd
 
 from .common import get_model_covariates
 from .data import (
+    get_ids,
     get_number_of_individuals,
     get_number_of_observations,
     get_number_of_observations_per_individual,
@@ -151,7 +152,7 @@ def predict_outliers(model):
     model_path = Path(__file__).parent.resolve() / 'ml_models' / 'outliers.tflite'
     data = _create_dataset(model)
     output = _predict_with_tflite(model_path, data)
-    df = pd.DataFrame({'residual': output, 'outlier': output > 3}, index=model.dataset.pharmpy.ids)
+    df = pd.DataFrame({'residual': output, 'outlier': output > 3}, index=get_ids(model))
     return df
 
 
@@ -181,9 +182,7 @@ def predict_influential_individuals(model):
     data = _create_dataset(model)
     data['linearized'] = 0.0
     output = _predict_with_tflite(model_path, data)
-    df = pd.DataFrame(
-        {'dofv': output, 'influential': output > 3.84}, index=model.dataset.pharmpy.ids
-    )
+    df = pd.DataFrame({'dofv': output, 'influential': output > 3.84}, index=get_ids(model))
     return df
 
 

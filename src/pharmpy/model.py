@@ -302,7 +302,7 @@ class Model:
             else:
                 etas = pd.DataFrame(
                     0,
-                    index=df.pharmpy.ids,
+                    index=df[idcol].unique(),
                     columns=[eta.name for eta in self.random_variables.etas],
                 )
 
@@ -356,7 +356,7 @@ class Model:
             else:
                 etas = pd.DataFrame(
                     0,
-                    index=df.pharmpy.ids,
+                    index=df[idcol].unique(),
                     columns=[eta.name for eta in self.random_variables.etas],
                 )
 
@@ -393,7 +393,7 @@ class Model:
             else:
                 etas = pd.DataFrame(
                     0,
-                    index=df.pharmpy.ids,
+                    index=df[idcol].unique(),
                     columns=[eta.name for eta in self.random_variables.etas],
                 )
 
@@ -427,7 +427,9 @@ class Model:
             df = self.dataset
         # FIXME: Could have option to gradients to set all etas 0
         etas = pd.DataFrame(
-            0, index=df.pharmpy.ids, columns=[eta.name for eta in self.random_variables.etas]
+            0,
+            index=df[self.datainfo.id_label].unique(),
+            columns=[eta.name for eta in self.random_variables.etas],
         )
         G = self.eta_gradient(etas=etas, parameters=parameters, dataset=dataset)
         H = self.eps_gradient(etas=etas, parameters=parameters, dataset=dataset)
@@ -437,7 +439,7 @@ class Model:
         H.index = index
         F.index = index
         WRES = np.float64([])
-        for i in df.pharmpy.ids:
+        for i in df[self.datainfo.id_label].unique():
             Gi = np.float64(G.loc[[i]])
             Hi = np.float64(H.loc[[i]])
             Fi = F.loc[i:i]

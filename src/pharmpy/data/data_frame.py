@@ -203,16 +203,6 @@ class DataFrameAccessor:
     def labels_by_type(self):
         return LabelsByTypeIndexer(self)
 
-    @property
-    def id_label(self):
-        """Return the label of the id column"""
-        return self.labels_by_type[ColumnType.ID][0]
-
-    @property
-    def ids(self):
-        """Return the ids in the dataset"""
-        return self._obj[self.id_label].unique()
-
     def generate_path(self, path=None, force=False):
         """Generate the path of dataframe if written.
         If no path is supplied or does not contain a filename a name is created

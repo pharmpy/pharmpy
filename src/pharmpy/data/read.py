@@ -101,19 +101,21 @@ def _convert_data_item(x, null_value):
 
 def _make_ids_unique(df, columns):
     """Check if id numbers are reused and make renumber. If not simply pass through the dataset."""
-    try:
-        id_label = df.pharmpy.id_label
-    except KeyError:
+    if 'ID' in df.columns:
+        id_label = 'ID'
+    elif 'L1' in df.columns:
+        id_label = 'L1'
+    else:
         return df
     if id_label in columns:
         id_series = df[id_label]
         id_change = id_series.diff(1) != 0
-        if len(id_series[id_change]) != len(df.pharmpy.ids):
+        if len(id_series[id_change]) != len(id_series.unique()):
             warnings.warn(
                 "Dataset contains non-unique id numbers. Renumbering starting from 1",
                 DatasetWarning,
             )
-            df[df.pharmpy.id_label] = id_change.cumsum()
+            df[id_label] = id_change.cumsum()
     return df
 
 
@@ -359,13 +361,10 @@ def read_nonmem_dataset(
     df = _make_ids_unique(df, parse_columns)
 
     # Make ID int if possible
-    try:
-        idcol = df.pharmpy.id_label
-    except KeyError:
-        pass
-    else:
-        df[idcol] = df[idcol].convert_dtypes()
-
+    if 'ID' in df.columns:
+        df['ID'] = df['ID'].convert_dtypes()
+    elif 'L1' in df.columns:
+        df['L1'] = df['L1'].convert_dtypes()
     return df
 
 

@@ -111,7 +111,7 @@ def test_nonmem_dataset_with_nonunique_ids():
     colnames = ['ID', 'DV']
     with pytest.warns(DatasetWarning):
         df = data.read_nonmem_dataset(StringIO("1,2\n2,3\n1,4\n2,5"), colnames=colnames)
-    assert list(df[df.pharmpy.id_label]) == [1, 2, 3, 4]
+    assert list(df['ID']) == [1, 2, 3, 4]
     assert list(df['DV']) == [2, 3, 4, 5]
 
 

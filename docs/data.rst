@@ -61,20 +61,20 @@ A new or updated dataset can be set to a model
 Subjects
 ~~~~~~~~
 
-An array of all subject IDs can be retrieved using the pharmpy dataframe API extension.
+An array of all subject IDs can be retrieved.
 
 .. jupyter-execute::
 
-   model = Model(path / "pheno_real.mod")
-   df = model.dataset
-   ids = df.pharmpy.ids
-   ids
+    from pharmpy.modeling import get_ids
+    model = Model(path / "pheno_real.mod")
+    get_ids(model)
 
-The number of subjects in the dataset is the length of this array.
+The number of subjects in the dataset could optionally be retrieved directly.
 
 .. jupyter-execute::
 
-    len(ids)
+    from pharmpy.modeling import get_number_of_individuals
+    get_number_of_individuals(model)
 
 
 ~~~~~~~~~~~~
@@ -86,14 +86,14 @@ The observations of the dataset indexed on subject ID and the independent variab
 .. jupyter-execute::
 
     from pharmpy.modeling import get_observations
-    obs = get_observations(model)
-    obs
+    get_observations(model)
 
-The total number of observations is the length of this series.
+The total number of observations can optionally be retrieved directly.
 
 .. jupyter-execute::
 
-    len(obs)
+    from pharmpy.modeling import get_number_of_observations
+    get_number_of_observations(model)
 
 ~~~~~~
 Dosing
@@ -155,5 +155,5 @@ Extract pharmacokinetic concentration parameters from the dataset
 
 .. jupyter-execute::
 
-    from pharmpy.modeling import get_concentration_parameters_from_dataset
-    get_concentration_parameters_from_dataset(model)
+    from pharmpy.modeling import get_concentration_parameters_from_data
+    get_concentration_parameters_from_data
