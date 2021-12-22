@@ -1,7 +1,6 @@
 import enum
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
 
 import pharmpy.data
@@ -208,16 +207,6 @@ class DataFrameAccessor:
     def id_label(self):
         """Return the label of the id column"""
         return self.labels_by_type[ColumnType.ID][0]
-
-    @property
-    def idv_label(self):
-        """Return the label of the idv column"""
-        return self.labels_by_type[ColumnType.IDV][0]
-
-    @property
-    def dv_label(self):
-        """Return the label of the dv column"""
-        return self.labels_by_type[ColumnType.DV][0]
 
     @property
     def ids(self):
