@@ -28,6 +28,7 @@ from pharmpy.modeling.covariate_effect import add_covariate_effect
 from pharmpy.modeling.data import (
     add_time_after_dose,
     get_baselines,
+    get_concentration_parameters_from_data,
     get_covariate_baselines,
     get_doseid,
     get_doses,
@@ -134,6 +135,7 @@ __all__ = [
     'fix_parameters',
     'fix_parameters_to',
     'get_baselines',
+    'get_concentration_parameters_from_data',
     'get_covariate_baselines',
     'get_doses',
     'get_doseid',

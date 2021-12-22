@@ -1,7 +1,5 @@
 import copy
 
-import numpy as np
-import pandas as pd
 import pytest
 
 import pharmpy.data as data
@@ -146,36 +144,6 @@ def test_accessor_get_set_column_type():
         data.ColumnType.COVARIATE,
         data.ColumnType.COVARIATE,
     ]
-
-
-def test_concentration_parameters(df2, df3):
-    df = df2.pharmpy.concentration_parameters()
-    correct = pd.DataFrame(
-        {
-            'ID': [1, 2],
-            'DOSEID': [1, 1],
-            'Cmax': [0.2, 0.6],
-            'Tmax': [1.0, 1.0],
-            'Cmin': np.nan,
-            'Tmin': np.nan,
-        }
-    )
-    correct.set_index(['ID', 'DOSEID'], inplace=True)
-    pd.testing.assert_frame_equal(df, correct)
-
-    df = df3.pharmpy.concentration_parameters()
-    correct = pd.DataFrame(
-        {
-            'ID': [1, 1, 2],
-            'DOSEID': [1, 2, 1],
-            'Cmax': [0.1, 0.5, 4.0],
-            'Tmax': [2.0, 0.0, 5.0],
-            'Cmin': [np.nan, 0.5, 1.0],
-            'Tmin': [np.nan, 4.0, 9.0],
-        }
-    )
-    correct.set_index(['ID', 'DOSEID'], inplace=True)
-    pd.testing.assert_frame_equal(df, correct)
 
 
 def test_write(fs, df):

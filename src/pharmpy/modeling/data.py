@@ -637,3 +637,68 @@ def add_time_after_dose(model):
     ci = ColumnInfo('TAD')
     model.datainfo.append(ci)
     return model
+
+
+def get_concentration_parameters_from_data(model):
+    """Create a dataframe with concentration parameters
+
+    Note that all values are directly calculated from the dataset
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model object
+
+    Results
+    -------
+    pd.DataFrame
+        Concentration parameters
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import load_example_model, get_concentration_parameters_from_data
+    >>> model = load_example_model("pheno")
+    >>> get_concentration_parameters_from_data(model)
+               Cmax  Tmax  Cmin  Tmin
+    ID DOSEID
+    1  1       17.3   2.0   NaN   NaN
+       2        NaN   NaN   NaN   NaN
+       3        NaN   NaN   NaN   NaN
+       4        NaN   NaN   NaN   NaN
+       5        NaN   NaN   NaN   NaN
+    ...         ...   ...   ...   ...
+    59 9        NaN   NaN   NaN   NaN
+       10       NaN   NaN   NaN   NaN
+       11       NaN   NaN   NaN   NaN
+       12       NaN   NaN   NaN   NaN
+       13      40.2   2.0   NaN   NaN
+    <BLANKLINE>
+    [589 rows x 4 columns]
+    """
+    model = model.copy()
+    df = model.dataset
+    add_time_after_dose(model)
+    doseid = get_doseid(model)
+    df['DOSEID'] = doseid
+    idlab = model.datainfo.id_label
+    dv = model.datainfo.dv_label
+    noobs = df.groupby([idlab, 'DOSEID']).size() == 1
+    idx = df.groupby([idlab, 'DOSEID'])[dv].idxmax()
+    params = df.loc[idx].set_index([idlab, 'DOSEID'])
+    params = params[[dv, 'TAD']]
+    params.rename(columns={dv: 'Cmax', 'TAD': 'Tmax'}, inplace=True)
+    params.loc[noobs] = np.nan
+
+    grpind = df.groupby(['ID', 'DOSEID']).indices
+    keep = []
+    for ind, rows in grpind.items():
+        index = idx.loc[ind]
+        p = params.loc[ind]
+        if not np.isnan(p['Tmax']):
+            keep += [row for row in rows if row > index]
+    minidx = df.iloc[keep].groupby([idlab, 'DOSEID'])[dv].idxmin()
+    params2 = df.loc[minidx].set_index([idlab, 'DOSEID'])
+    params2 = params2[[dv, 'TAD']]
+    params2.rename(columns={dv: 'Cmin', 'TAD': 'Tmin'}, inplace=True)
+    res = params.join(params2)
+    return res

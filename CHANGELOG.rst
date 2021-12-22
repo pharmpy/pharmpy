@@ -3,6 +3,7 @@ next version
 
 * Add modeling.get_doseid
 * Add modeling.get_unit_of
+* Add modeling.get_concentration_parameters_from_data
 
 0.41.0 (2021-12-21)
 -------------------

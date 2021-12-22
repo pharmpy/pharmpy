@@ -1,6 +1,7 @@
 from pharmpy.data import ColumnType
 from pharmpy.modeling import (
     add_time_after_dose,
+    get_concentration_parameters_from_data,
     get_covariate_baselines,
     get_doseid,
     get_doses,
@@ -141,3 +142,8 @@ def test_add_time_after_dose():
     assert tad[0] == 0.0
     assert tad[1] == 2.0
     assert tad[743] == 2.0
+
+
+def test_get_concentration_parameters_from_data():
+    df = get_concentration_parameters_from_data(model)
+    assert df['Cmax'].loc[1, 1] == 17.3
