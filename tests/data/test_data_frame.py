@@ -115,16 +115,9 @@ def test_accessor_get_set_column_type():
     assert df.pharmpy.column_type['DV'] == data.ColumnType.DV
     assert df.pharmpy.column_type[['ID', 'DV']] == [data.ColumnType.ID, data.ColumnType.DV]
     df.pharmpy.column_type[['HGT', 'WGT']] = data.ColumnType.COVARIATE
-    assert df.pharmpy.labels_by_type[data.ColumnType.COVARIATE] == ['WGT', 'HGT']
     df2 = df.copy()
     assert df2.pharmpy.column_type['ID'] == data.ColumnType.ID
     assert df2.pharmpy.column_type['DV'] == data.ColumnType.DV
-
-    assert df2.pharmpy.labels_by_type[data.ColumnType.ID] == ['ID']
-    assert df2.pharmpy.labels_by_type[[data.ColumnType.ID]] == ['ID']
-    assert df2.pharmpy.labels_by_type[[]] == []
-    assert df2.pharmpy.labels_by_type[data.ColumnType.DV] == ['DV']
-    assert df2.pharmpy.labels_by_type[[data.ColumnType.ID, data.ColumnType.DV]] == ['ID', 'DV']
 
     df2.pharmpy.column_type[['ID', 'DV']] = (data.ColumnType.COVARIATE, data.ColumnType.IDV)
     assert df2.pharmpy.column_type[['ID', 'DV']] == [data.ColumnType.COVARIATE, data.ColumnType.IDV]

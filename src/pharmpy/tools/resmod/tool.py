@@ -4,7 +4,6 @@ import sympy
 import pharmpy.model
 import pharmpy.tools
 from pharmpy import Parameter, Parameters, RandomVariable, RandomVariables
-from pharmpy.data import ColumnType
 from pharmpy.estimation import EstimationStep, EstimationSteps
 from pharmpy.modeling import get_mdv, set_combined_error_model, set_iiv_on_ruv, set_power_on_ruv
 from pharmpy.statements import Assignment, ModelStatements
@@ -166,7 +165,7 @@ def _create_dataset(input_model):
     mdv = get_mdv(input_model)
     df_ipred = pd.concat([mdv, ipred], axis=1).rename(columns={ipredcol: 'IPRED'})
     df_ipred = df_ipred[df_ipred['MDV'] == 0].reset_index(drop=True)
-    label_id = input_model.dataset.pharmpy.labels_by_type[ColumnType.ID]
+    label_id = input_model.datainfo.id_label
     input_id = input_model.dataset[label_id].astype('int64').squeeze()
     df_id = pd.concat([mdv, input_id], axis=1)
     df_id = df_id[df_id['MDV'] == 0].reset_index(drop=True)

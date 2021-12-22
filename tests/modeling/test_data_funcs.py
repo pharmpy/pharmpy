@@ -1,4 +1,3 @@
-from pharmpy.data import ColumnType
 from pharmpy.modeling import (
     add_time_after_dose,
     get_concentration_parameters_from_data,
@@ -128,7 +127,7 @@ def test_timevarying_covariates():
 
 def test_get_mdv():
     mdv = get_mdv(model)
-    label_test = model.dataset.pharmpy.labels_by_type[ColumnType.DOSE]
+    label_test = model.datainfo.get_column_label('dose')
     data_test = model.dataset[label_test].astype('float64').squeeze()
     mdv_test = data_test.where(data_test == 0, other=1).astype('int64')
     result = mdv.equals(other=mdv_test)

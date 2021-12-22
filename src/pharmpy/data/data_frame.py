@@ -150,46 +150,6 @@ class ColumnTypeIndexer:
                 return self._get_one_column_type(ind)
 
 
-class LabelsByTypeIndexer:
-    """Indexing a PharmDataFrame to get labels from ColumnTypes"""
-
-    def __init__(self, acc):
-        self._acc = acc
-
-    def _get_one_label(self, tp):
-        labels = self._get_many_labels(tp)
-        if len(labels) == 0:
-            raise KeyError(str(tp))
-        elif len(labels) > 1:
-            raise KeyError('Did not expect more than one ' + str(tp))
-        else:
-            return labels
-
-    def _get_many_labels(self, column_type):
-        """Will raise if no columns of the type exists
-        Always returns a list of labels
-        """
-        return [
-            label for label in self._acc._obj.columns if self._acc.column_type[label] == column_type
-        ]
-
-    def __getitem__(self, tp):
-        try:
-            len(tp)
-            labels = []
-            for t in tp:
-                if t.max_one:
-                    labels.extend(self._get_one_label(t))
-                else:
-                    labels.extend(self._get_many_labels(t))
-            return labels
-        except TypeError:
-            if tp.max_one:
-                return self._get_one_label(tp)
-            else:
-                return self._get_many_labels(tp)
-
-
 @pd.api.extensions.register_dataframe_accessor('pharmpy')
 class DataFrameAccessor:
     def __init__(self, obj):
@@ -198,10 +158,6 @@ class DataFrameAccessor:
     @property
     def column_type(self):
         return ColumnTypeIndexer(self._obj)
-
-    @property
-    def labels_by_type(self):
-        return LabelsByTypeIndexer(self)
 
     def generate_path(self, path=None, force=False):
         """Generate the path of dataframe if written.

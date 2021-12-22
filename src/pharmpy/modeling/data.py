@@ -2,7 +2,7 @@
 import numpy as np
 import pandas as pd
 
-from pharmpy.data import ColumnType, DatasetError
+from pharmpy.data import DatasetError
 from pharmpy.datainfo import ColumnInfo
 
 
@@ -586,19 +586,17 @@ def get_mdv(model):
     pd.Series
         MDVs
     """
-    try:
-        label = model.dataset.pharmpy.labels_by_type[ColumnType.EVENT]
-    except KeyError:
-        try:
-            label = model.dataset.pharmpy.labels_by_type[ColumnType.DOSE]
-        except KeyError:
-            label = model.dataset.pharmpy.labels_by_type[ColumnType.DV]
-            data = model.dataset[label].astype('float64').squeeze()
-            mdv = pd.Series(np.zeros(len(data))).astype('int64').rename('MDV')
-            return mdv
+    label = model.datainfo.get_column_label('event')
+    if label is None:
+        label = model.datainfo.get_column_label('dose')
 
-    data = model.dataset[label].astype('float64').squeeze()
-    mdv = data.where(data == 0, other=1).astype('int64').rename('MDV')
+    if label is None:
+        label = model.datainfo.dv_label
+        data = model.dataset[label].astype('float64').squeeze()
+        mdv = pd.Series(np.zeros(len(data))).astype('int64').rename('MDV')
+    else:
+        data = model.dataset[label].astype('float64').squeeze()
+        mdv = data.where(data == 0, other=1).astype('int64').rename('MDV')
     return mdv
 
 
