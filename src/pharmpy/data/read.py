@@ -9,7 +9,7 @@ import pandas as pd
 from lark import Lark
 
 import pharmpy.data
-from pharmpy.data import ColumnType, DatasetError, DatasetWarning
+from pharmpy.data import DatasetError, DatasetWarning
 
 
 class NMTRANDataIO(StringIO):
@@ -212,18 +212,6 @@ def _filter_ignore_accept(df, ignore, accept, null_value):
     return df
 
 
-def infer_column_type(colname):
-    """If possible infer the column type from the column name else use unknown"""
-    if colname == 'ID' or colname == 'L1':
-        return ColumnType.ID
-    elif colname == 'DV':
-        return ColumnType.DV
-    elif colname == 'MDV':
-        return ColumnType.EVENT
-    else:
-        return ColumnType.UNKNOWN
-
-
 # def _translate_nonmem_time_value(time):
 #    if ':' in time:
 #        components = time.split(':')
@@ -265,7 +253,6 @@ def read_nonmem_dataset(
     raw=False,
     ignore_character='#',
     colnames=tuple(),
-    coltypes=None,
     drop=None,
     null_value='0',
     parse_columns=tuple(),
@@ -327,14 +314,6 @@ def read_nonmem_dataset(
             df.columns = colnames
     else:
         df.columns = colnames
-
-    if coltypes is None:
-        for label in df.columns:
-            df.pharmpy.column_type[label] = infer_column_type(label)
-    else:
-        if len(coltypes) < len(df.columns):
-            coltypes += [pharmpy.data.ColumnType.UNKNOWN] * (len(df.columns) - len(coltypes))
-        df.pharmpy.column_type[list(df.columns)] = coltypes
 
     df = _filter_ignore_accept(df, ignore, accept, null_value)
 

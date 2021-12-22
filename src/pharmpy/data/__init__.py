@@ -2,13 +2,6 @@ r"""
 Data
 ====
 
-The PharmPy data package is a standalone package.
-
-The main class is the PharmDataFrame which is a pandas DataFrame with some extras
-relevant to pharmacometrics.
-
-Manipulation of stand alone datasets
-
 .. list-table:: Options for the data module
    :widths: 25 25 50 150
    :header-rows: 1
@@ -29,7 +22,7 @@ Manipulation of stand alone datasets
 """
 
 import pharmpy.config as config
-from pharmpy.data.data_frame import ColumnType, DatasetError, DatasetWarning, PharmDataFrame
+from pharmpy.data.data_frame import DatasetError, DatasetWarning, PharmDataFrame
 from pharmpy.data.read import read_csv, read_nonmem_dataset
 
 
@@ -46,7 +39,6 @@ conf = DataConfiguration()
 __all__ = [
     'DatasetError',
     'DatasetWarning',
-    'ColumnType',
     'PharmDataFrame',
     'read_nonmem_dataset',
     'read_csv',

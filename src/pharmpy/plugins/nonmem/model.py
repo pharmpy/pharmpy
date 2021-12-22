@@ -876,13 +876,12 @@ class Model(pharmpy.model.Model):
     def _column_info(self):
         """List all column names in order.
         Use the synonym when synonym exists.
-        return tuple of three lists, colnames, coltypes and drop together with a dictionary
+        return tuple of two lists, colnames, and drop together with a dictionary
         of replacements for reserved names (aka synonyms).
         Anonymous columns, i.e. DROP or SKIP alone, will be given unique names _DROP1, ...
         """
         input_records = self.control_stream.get_records("INPUT")
         colnames = []
-        coltypes = []
         drop = []
         synonym_replacement = {}
         next_anonymous = 1
@@ -913,15 +912,14 @@ class Model(pharmpy.model.Model):
                         drop.append(False)
                         colnames.append(key)
                         reserved_name = key
-                coltypes.append(pharmpy.data.read.infer_column_type(reserved_name))
-        return colnames, coltypes, drop, synonym_replacement
+        return colnames, drop, synonym_replacement
 
     def _update_input(self, new_names):
         """Update $INPUT with new column names
 
         currently supporting append columns at end and removing columns
         """
-        colnames, _, _, _ = self._column_info()
+        colnames, _, _ = self._column_info()
         removed_columns = set(colnames) - set(new_names)
         input_records = self.control_stream.get_records("INPUT")
         for col in removed_columns:
@@ -958,7 +956,7 @@ class Model(pharmpy.model.Model):
                 di = DataInfo.read_json(path)
                 self.datainfo = di
                 return
-        (colnames, coltypes, drop, replacements) = self._column_info()
+        (colnames, drop, replacements) = self._column_info()
         column_info = []
         for colname, coldrop in zip(colnames, drop):
             info = ColumnInfo(colname, drop=coldrop)
@@ -991,7 +989,7 @@ class Model(pharmpy.model.Model):
         data_records = self.control_stream.get_records('DATA')
         ignore_character = data_records[0].ignore_character
         null_value = data_records[0].null_value
-        (colnames, coltypes, drop, replacements) = self._column_info()
+        (colnames, drop, replacements) = self._column_info()
 
         if raw:
             ignore = None
@@ -1012,24 +1010,13 @@ class Model(pharmpy.model.Model):
             raw,
             ignore_character,
             colnames,
-            coltypes,
             drop,
             null_value=null_value,
             parse_columns=parse_columns,
             ignore=ignore,
             accept=accept,
         )
-        if self._get_pk_record():
-            if 'EVID' in df.columns:
-                if 'MDV' in df.columns:
-                    df.pharmpy.column_type['MDV'] = pharmpy.data.ColumnType.UNKNOWN
-                df.pharmpy.column_type['EVID'] = pharmpy.data.ColumnType.EVENT
-            if 'AMT' in df.columns:
-                df.pharmpy.column_type['AMT'] = pharmpy.data.ColumnType.DOSE
         # Let TIME be the idv in both $PK and $PRED models
-        idvcol = replacements.get('TIME', 'TIME')
-        if idvcol in df.columns:
-            df.pharmpy.column_type[idvcol] = pharmpy.data.ColumnType.IDV
         df.name = self.dataset_path.stem
 
         # Remove individuals without observations

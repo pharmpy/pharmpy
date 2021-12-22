@@ -430,7 +430,7 @@ def _advan12_trans(trans):
 
 
 def _dosing(model, dose_comp):
-    colnames, _, _, _ = model._column_info()
+    colnames, _, _ = model._column_info()
     if 'RATE' in colnames:
         df = model.dataset
         if (df['RATE'] == 0).all():

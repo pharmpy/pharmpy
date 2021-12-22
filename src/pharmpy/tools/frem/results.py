@@ -10,7 +10,6 @@ import sympy
 import pharmpy.symbols as symbols
 import pharmpy.visualization  # noqa
 from pharmpy import Model
-from pharmpy.data import ColumnType
 from pharmpy.math import conditional_joint_normal, is_posdef
 from pharmpy.modeling import (
     calculate_individual_shrinkage,
@@ -560,7 +559,6 @@ def calculate_results_from_samples(frem_model, continuous, categorical, parvecs,
 
     df = frem_model.dataset
     covariates = continuous + categorical
-    df.pharmpy.column_type[covariates] = ColumnType.COVARIATE
     frem_model.datainfo.set_column_type(covariates, 'covariate')
     covariate_baselines = get_covariate_baselines(frem_model)
     covariate_baselines = covariate_baselines[covariates]
