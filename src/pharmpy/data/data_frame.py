@@ -224,18 +224,6 @@ class DataFrameAccessor:
         """Return the ids in the dataset"""
         return self._obj[self.id_label].unique()
 
-    def add_doseid(self):
-        """Add a column DOSEID with id of each dose period starting from 1"""
-        try:
-            dose = self.labels_by_type[ColumnType.DOSE]
-        except KeyError:
-            raise DatasetError('Could not identify dosing rows in dataset')
-        df = self._obj
-        df['DOSEID'] = df[dose]
-        df.loc[df['DOSEID'] > 0, 'DOSEID'] = 1
-        df['DOSEID'] = df['DOSEID'].astype(int)
-        df['DOSEID'] = df.groupby(self.id_label)['DOSEID'].cumsum()
-
     def generate_path(self, path=None, force=False):
         """Generate the path of dataframe if written.
         If no path is supplied or does not contain a filename a name is created
