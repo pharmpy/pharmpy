@@ -217,8 +217,7 @@ def calculate_individual_parameter_statistics(model, exprs, rng=None):
         exprs = [_split_equation(exprs)]
     else:
         exprs = [_split_equation(expr) for expr in exprs]
-    dataset = model.dataset
-    cols = set(dataset.columns)
+    cols = set(model.datainfo.column_names)
     i = 0
     table = pd.DataFrame(columns=['parameter', 'covariates', 'mean', 'variance', 'stderr'])
     for name, expr in exprs:
@@ -227,6 +226,7 @@ def calculate_individual_parameter_statistics(model, exprs, rng=None):
         if not covariates:
             cases = {'median': dict()}
         else:
+            dataset = model.dataset
             q5 = dataset[{'ID'} | covariates].groupby('ID').median().quantile(0.05)
             q95 = dataset[{'ID'} | covariates].groupby('ID').median().quantile(0.95)
             median = dataset[{'ID'} | covariates].groupby('ID').median().median()

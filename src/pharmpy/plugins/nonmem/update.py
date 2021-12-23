@@ -281,7 +281,7 @@ def update_ode_system(model, old, new):
         # old_trans = subs.get_option_startswith('TRANS')
         # conv_advan, new_advan, new_trans = change_advan(model)
         update_lag_time(model, old, new)
-        if isinstance(new.dosing_compartment.dose, Bolus) and 'RATE' in model.dataset.columns:
+        if isinstance(new.dosing_compartment.dose, Bolus) and 'RATE' in model.datainfo.column_names:
             df = model.dataset
             df.drop(columns=['RATE'], inplace=True)
             model.dataset = df

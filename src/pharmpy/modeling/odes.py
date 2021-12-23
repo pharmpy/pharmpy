@@ -698,7 +698,7 @@ def _disallow_infusion(model):
         else:
             ex = dose_comp.dose.duration
         for s in ex.free_symbols:
-            if s.name in model.dataset.columns:
+            if s.name in model.datainfo.column_names:
                 raise ModelException("Model already has an infusion given in the dataset")
 
 
@@ -735,7 +735,7 @@ def has_zero_order_absorption(model):
             value = dose.rate
         if isinstance(value, sympy.Symbol) or isinstance(value, str):
             name = str(value)
-            if name not in model.dataset.columns:
+            if name not in model.datainfo.column_names:
                 return True
     return False
 
