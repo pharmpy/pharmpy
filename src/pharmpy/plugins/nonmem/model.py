@@ -10,6 +10,7 @@ import pharmpy.data
 import pharmpy.model
 import pharmpy.model_factory
 import pharmpy.plugins.nonmem
+import pharmpy.plugins.nonmem.dataset
 from pharmpy.data import DatasetError
 from pharmpy.datainfo import ColumnInfo, DataInfo
 from pharmpy.estimation import EstimationStep, EstimationSteps
@@ -1006,7 +1007,7 @@ class Model(pharmpy.model.Model):
             else:
                 accept = Model._replace_synonym_in_filters(accept, replacements)
 
-        df = pharmpy.data.read_nonmem_dataset(
+        df = pharmpy.plugins.nonmem.dataset.read_nonmem_dataset(
             self.dataset_path,
             raw,
             ignore_character,

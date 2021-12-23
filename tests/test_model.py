@@ -8,9 +8,10 @@ import pharmpy.data
 import pharmpy.model
 import pharmpy.symbols
 from pharmpy import Model
+from pharmpy.plugins.nonmem.dataset import read_nonmem_dataset
 
 tabpath = Path(__file__).parent / 'testdata' / 'nonmem' / 'pheno_real_linbase.tab'
-lincorrect = pharmpy.data.read_nonmem_dataset(
+lincorrect = read_nonmem_dataset(
     tabpath,
     ignore_character='@',
     colnames=['ID', 'G11', 'G21', 'H11', 'CIPREDI', 'DV', 'PRED', 'RES', 'WRES'],
@@ -65,9 +66,7 @@ def test_individual_prediction(testdata):
     path = testdata / 'nonmem' / 'minimal.mod'
     model = Model(path)
 
-    dataset = pharmpy.data.read_nonmem_dataset(
-        StringIO('1 0 3\n2 0 4\n'), colnames=['ID', 'TIME', 'DV']
-    )
+    dataset = read_nonmem_dataset(StringIO('1 0 3\n2 0 4\n'), colnames=['ID', 'TIME', 'DV'])
     pred = model.individual_prediction(dataset=dataset)
 
     assert list(pred) == [0.1, 0.1]
@@ -97,9 +96,7 @@ def test_eta_gradient(testdata):
     path = testdata / 'nonmem' / 'minimal.mod'
     model = Model(path)
 
-    dataset = pharmpy.data.read_nonmem_dataset(
-        StringIO('1 0 3\n2 0 4\n'), colnames=['ID', 'TIME', 'DV']
-    )
+    dataset = read_nonmem_dataset(StringIO('1 0 3\n2 0 4\n'), colnames=['ID', 'TIME', 'DV'])
     grad = model.eta_gradient(dataset=dataset)
     pd.testing.assert_frame_equal(grad, pd.DataFrame([1.0, 1.0], columns=['dF/dETA(1)']))
 
@@ -114,9 +111,7 @@ def test_eps_gradient(testdata):
     path = testdata / 'nonmem' / 'minimal.mod'
     model = Model(path)
 
-    dataset = pharmpy.data.read_nonmem_dataset(
-        StringIO('1 0 3\n2 0 4\n'), colnames=['ID', 'TIME', 'DV']
-    )
+    dataset = read_nonmem_dataset(StringIO('1 0 3\n2 0 4\n'), colnames=['ID', 'TIME', 'DV'])
     grad = model.eps_gradient(dataset=dataset)
     pd.testing.assert_frame_equal(grad, pd.DataFrame([1.0, 1.0], columns=['dY/dEPS(1)']))
 
