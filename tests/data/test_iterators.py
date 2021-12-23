@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import pandas.testing
 import pytest
 
@@ -97,7 +98,7 @@ def test_stratification(df):
 
 def test_resampler_anonymization(testdata):
     np.random.seed(28)
-    df = pharmpy.data.read_csv(testdata / 'pheno_data.csv')
+    df = pd.read_csv(testdata / 'pheno_data.csv')
     resampler = iters.Resample(df, group='ID')
     (new_df, ids) = next(resampler)
     assert all(e in ids for e in range(1, 60))

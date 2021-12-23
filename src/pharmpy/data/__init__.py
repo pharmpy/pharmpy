@@ -23,7 +23,7 @@ Data
 
 import pharmpy.config as config
 from pharmpy.data.data_frame import DatasetError, DatasetWarning, PharmDataFrame
-from pharmpy.data.read import read_csv, read_nonmem_dataset
+from pharmpy.data.read import read_nonmem_dataset
 
 
 class DataConfiguration(config.Configuration):
@@ -41,5 +41,4 @@ __all__ = [
     'DatasetWarning',
     'PharmDataFrame',
     'read_nonmem_dataset',
-    'read_csv',
 ]

@@ -2,7 +2,6 @@
 import re
 import warnings
 from io import StringIO
-from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -344,23 +343,4 @@ def read_nonmem_dataset(
         df['ID'] = df['ID'].convert_dtypes()
     elif 'L1' in df.columns:
         df['L1'] = df['L1'].convert_dtypes()
-    return df
-
-
-def read_csv(path_or_io, raw=False, parse_columns=tuple()):
-    """Read a csv with header into a PharmDataFrame"""
-    if not raw:
-        df = pd.read_csv(path_or_io)
-    else:
-        df = pd.read_csv(path_or_io, dtype=str)
-        for col in parse_columns:
-            df[col] = pd.to_numeric(df[col])
-
-    df = pharmpy.data.PharmDataFrame(df)
-
-    # Set name of PharmDataFrame in case we have a Pathlike input
-    if isinstance(path_or_io, Path) or isinstance(path_or_io, str):
-        path = Path(path_or_io)
-        df.name = path.stem
-
     return df

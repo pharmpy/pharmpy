@@ -102,6 +102,7 @@ pharmpy = LazyLoader('pharmpy', globals(), 'pharmpy')
 np = LazyLoader('numpy', globals(), 'numpy')
 iterators = LazyLoader('iterators', globals(), 'pharmpy.data.iterators')
 plugin_utils = LazyLoader('plugin_utils', globals(), 'pharmpy.plugins.utils')
+pd = LazyLoader('pd', globals(), 'pandas')
 
 formatter = argparse.ArgumentDefaultsHelpFormatter
 
@@ -289,7 +290,9 @@ def data_anonymize(args):
     Will be default try to overwrite original file (but won't unless force)
     """
     path = check_input_path(args.dataset)
-    dataset = pharmpy.data.read_csv(path, raw=True, parse_columns=[args.group])
+    dataset = pd.read_csv(path, dtype=str)
+    dataset[args.group] = pd.to_numeric(dataset[args.group])
+
     resampler = pharmpy.data.iterators.Resample(dataset, args.group)
     df, _ = next(resampler)
     if args.output_file:
