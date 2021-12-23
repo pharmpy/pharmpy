@@ -34,7 +34,7 @@ def test_check_covariates(testdata):
     assert newcov == ['APGR', 'WGT']
     with pytest.warns(UserWarning):
         newcov = check_covariates(model, ['NEW', 'APGR', 'WGT'])
-    assert newcov == ['APGR', 'WGT']
+    assert newcov == ['NEW', 'APGR']
 
 
 @pytest.mark.filterwarnings("ignore::UserWarning")

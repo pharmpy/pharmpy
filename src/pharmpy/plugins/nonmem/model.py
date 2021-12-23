@@ -831,6 +831,7 @@ class Model(pharmpy.model.Model):
     def dataset(self, df):
         self._dataset_updated = True
         self._data_frame = df
+        self.update_datainfo()
 
     def read_raw_dataset(self, parse_columns=tuple()):
         return self._read_dataset(raw=True, parse_columns=parse_columns)

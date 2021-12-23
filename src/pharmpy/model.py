@@ -23,6 +23,7 @@ import sympy
 
 import pharmpy.symbols
 from pharmpy import Parameters, RandomVariables
+from pharmpy.datainfo import ColumnInfo, DataInfo
 from pharmpy.workflows import default_model_database
 
 
@@ -148,6 +149,19 @@ class Model:
             raise ModelException(
                 "Cannot update initial parameter estimates " "since parameters were not estimated"
             )
+
+    def update_datainfo(self):
+        """Update model.datainfo for a new dataset"""
+        colnames = self.dataset.columns
+        curdi = self.datainfo
+        newdi = DataInfo()
+        for colname in colnames:
+            try:
+                col = curdi[colname]
+            except IndexError:
+                col = ColumnInfo(colname)
+            newdi.append(col)
+        self.datainfo = newdi
 
     def copy(self):
         """Create a deepcopy of the model object"""

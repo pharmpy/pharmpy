@@ -102,8 +102,10 @@ class ColumnInfo:
 
 
 class DataInfo(MutableSequence):
-    def __init__(self, columns):
-        if len(columns) > 0 and isinstance(columns[0], str):
+    def __init__(self, columns=None):
+        if columns is None:
+            self._columns = []
+        elif len(columns) > 0 and isinstance(columns[0], str):
             self._columns = []
             for name in columns:
                 colinf = ColumnInfo(name)
@@ -127,6 +129,7 @@ class DataInfo(MutableSequence):
             for n, col in enumerate(self._columns):
                 if col.name == i:
                     return n
+            raise IndexError(f"Cannot find column {i} in DataInfo")
         elif isinstance(i, int):
             return i
         else:
