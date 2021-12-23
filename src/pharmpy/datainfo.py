@@ -102,7 +102,7 @@ class ColumnInfo:
 
 
 class DataInfo(MutableSequence):
-    def __init__(self, columns=None):
+    def __init__(self, columns=None, path=None):
         if columns is None:
             self._columns = []
         elif len(columns) > 0 and isinstance(columns[0], str):
@@ -112,6 +112,7 @@ class DataInfo(MutableSequence):
                 self._columns.append(colinf)
         else:
             self._columns = columns
+        self.path = path
 
     def __eq__(self, other):
         if len(self) != len(other):

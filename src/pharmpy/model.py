@@ -161,6 +161,9 @@ class Model:
             except IndexError:
                 col = ColumnInfo(colname)
             newdi.append(col)
+        if curdi != newdi:
+            # Remove path if dataset has been updated
+            newdi.path = None
         self.datainfo = newdi
 
     def copy(self):
