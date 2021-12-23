@@ -895,7 +895,7 @@ def print_model_symbols(model):
     Epsilons: EPS(1)
     Sigmas: SIGMA(1,1)
     Variables: BTIME, TAD, TVCL, TVV, TVV, CL, V, S₁, F, W, Y, IPRED, IRES, IWRES
-    Data columns: ID, TIME, AMT, WGT, APGR, DV, FA1, FA2
+    Data columns: ID, TIME, AMT, WGT, APGR, DV
 
     """
     etas = [sympy.pretty(sympy.Symbol(name)) for name in model.random_variables.etas.names]
