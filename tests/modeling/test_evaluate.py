@@ -11,6 +11,7 @@ from pharmpy.modeling import (
     evaluate_expression,
     evaluate_individual_prediction,
     evaluate_population_prediction,
+    evaluate_weighted_residuals,
 )
 from pharmpy.plugins.nonmem.dataset import read_nonmem_dataset
 
@@ -90,3 +91,10 @@ def test_evaluate_epsilon_gradient(testdata):
     linmod = Model(linpath)
     grad = evaluate_epsilon_gradient(linmod, etas=linmod.modelfit_results.individual_estimates)
     pd.testing.assert_series_equal(lincorrect['H11'], grad.iloc[:, 0], rtol=1e-4, check_names=False)
+
+
+def test_evaluate_weighted_residuals(testdata):
+    linpath = testdata / 'nonmem' / 'pheno_real_linbase.mod'
+    linmod = Model(linpath)
+    wres = evaluate_weighted_residuals(linmod)
+    pd.testing.assert_series_equal(lincorrect['WRES'], wres, rtol=1e-4, check_names=False)

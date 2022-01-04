@@ -16,6 +16,7 @@ next version
 * Add modeling.calculate_epsilon_gradient_expression
 * Add modeling.evaluate_eta_gradient
 * Add modeling.evaluate_epsilon_gradient
+* Add modeling.evaluate_weighted_residuals
 * Support for Python 3.7 dropped
 
 0.41.0 (2021-12-21)

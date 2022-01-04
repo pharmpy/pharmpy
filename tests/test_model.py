@@ -1,6 +1,5 @@
 from pathlib import Path
 
-import pandas as pd
 import pytest
 
 import pharmpy.data
@@ -25,13 +24,6 @@ def test_create_symbol(testdata, stem, force_numbering, symbol_name):
     symbol = model.create_symbol(stem=stem, force_numbering=force_numbering)
 
     assert symbol.name == symbol_name
-
-
-def test_weighted_residuals(testdata):
-    linpath = testdata / 'nonmem' / 'pheno_real_linbase.mod'
-    linmod = Model(linpath)
-    wres = linmod.weighted_residuals()
-    pd.testing.assert_series_equal(lincorrect['WRES'], wres, rtol=1e-4, check_names=False)
 
 
 def test_to_generic_model(testdata):

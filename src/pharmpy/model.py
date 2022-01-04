@@ -476,4 +476,6 @@ class Model:
             Ci = Gi @ omega @ Gi.T + np.diag(np.diag(Hi @ sigma @ Hi.T))
             WRESi = scipy.linalg.sqrtm(scipy.linalg.inv(Ci)) @ (DVi - Fi)
             WRES = np.concatenate((WRES, WRESi))
-        return pd.Series(WRES)
+        ser = pd.Series(WRES)
+        ser.name = 'WRES'
+        return ser

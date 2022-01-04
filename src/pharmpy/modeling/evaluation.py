@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import scipy.linalg
 import symengine
 import sympy
 
@@ -412,3 +413,88 @@ def evaluate_epsilon_gradient(model, etas=None, parameters=None, dataset=None):
     grad = pd.DataFrame(grad)
     grad.columns = derivative_names
     return grad
+
+
+def evaluate_weighted_residuals(model, parameters=None, dataset=None):
+    """Evaluate the weighted residuals
+
+    The residuals is evaluated at the current model parameter values
+    or optionally at the given parameter values.
+    The residuals is done for each data record in the model dataset
+    or optionally using the dataset argument.
+
+    This function currently only support models without ODE systems
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+    parameters : dict
+        Optional dictionary of parameters and values
+    dataset : pd.DataFrame
+        Optional dataset
+
+    Returns
+    -------
+    pd.Series
+        WRES
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import load_example_model, evaluate_weighted_residuals
+    >>> model = load_example_model("pheno_linear")
+    >>> evaluate_weighted_residuals(model)
+    0     -0.313859
+    1      0.675721
+    2     -1.544240
+    3      1.921720
+    4      1.517677
+            ...
+    150    1.223935
+    151   -0.053334
+    152   -0.007023
+    153    0.931252
+    154    0.778389
+    Name: WRES, Length: 155, dtype: float64
+    """
+
+    omega = model.random_variables.etas.covariance_matrix
+    sigma = model.random_variables.epsilons.covariance_matrix
+    if parameters is None:
+        if model.modelfit_results is not None:
+            parameters = model.modelfit_results.parameter_estimates.to_dict()
+        else:
+            parameters = model.parameters.inits
+    omega = omega.subs(parameters)
+    sigma = sigma.subs(parameters)
+    omega = np.float64(omega)
+    sigma = np.float64(sigma)
+    if dataset is not None:
+        df = dataset
+    else:
+        df = model.dataset
+    # FIXME: Could have option to gradients to set all etas 0
+    etas = pd.DataFrame(
+        0,
+        index=df[model.datainfo.id_label].unique(),
+        columns=[eta.name for eta in model.random_variables.etas],
+    )
+    G = evaluate_eta_gradient(model, etas=etas, parameters=parameters, dataset=dataset)
+    H = evaluate_epsilon_gradient(model, etas=etas, parameters=parameters, dataset=dataset)
+    F = evaluate_population_prediction(model)
+    index = df[model.datainfo.id_label]
+    G.index = index
+    H.index = index
+    F.index = index
+    WRES = np.float64([])
+    for i in df[model.datainfo.id_label].unique():
+        Gi = np.float64(G.loc[[i]])
+        Hi = np.float64(H.loc[[i]])
+        Fi = F.loc[i:i]
+        DVi = np.float64(df['DV'][df[model.datainfo.id_label] == i])
+        Ci = Gi @ omega @ Gi.T + np.diag(np.diag(Hi @ sigma @ Hi.T))
+        WRESi = scipy.linalg.sqrtm(scipy.linalg.inv(Ci)) @ (DVi - Fi)
+        WRES = np.concatenate((WRES, WRESi))
+    ser = pd.Series(WRES)
+    ser.name = 'WRES'
+    return ser

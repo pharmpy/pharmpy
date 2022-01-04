@@ -111,6 +111,7 @@ from .evaluation import (
     evaluate_expression,
     evaluate_individual_prediction,
     evaluate_population_prediction,
+    evaluate_weighted_residuals,
 )
 from .expressions import (
     calculate_epsilon_gradient_expression,
@@ -152,6 +153,7 @@ __all__ = [
     'evaluate_expression',
     'evaluate_individual_prediction',
     'evaluate_population_prediction',
+    'evaluate_weighted_residuals',
     'fit',
     'fix_parameters',
     'fix_parameters_to',
