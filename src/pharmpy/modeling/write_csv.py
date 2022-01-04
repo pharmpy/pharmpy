@@ -6,6 +6,8 @@ def write_csv(model, path=None, force=False):
 
     Parameters
     ----------
+    model : Model
+        Model whose dataset to write to file
     path : Path
         Destination path. Default is to use original path with .csv suffix.
     force : bool
