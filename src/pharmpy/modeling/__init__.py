@@ -58,7 +58,6 @@ from pharmpy.modeling.eta_transformations import (
     transform_etas_john_draper,
     transform_etas_tdist,
 )
-from pharmpy.modeling.evaluation import evaluate_expression
 from pharmpy.modeling.iiv_on_ruv import set_iiv_on_ruv
 from pharmpy.modeling.ml import (
     predict_influential_individuals,
@@ -106,6 +105,11 @@ from pharmpy.modeling.write_csv import write_csv
 
 from .allometry import add_allometry
 from .amd import run_amd, run_iiv
+from .evaluation import (
+    evaluate_expression,
+    evaluate_individual_prediction,
+    evaluate_population_prediction,
+)
 from .expressions import (
     get_individual_prediction_expression,
     get_observation_expression,
@@ -138,6 +142,8 @@ __all__ = [
     'create_results',
     'create_rng',
     'evaluate_expression',
+    'evaluate_individual_prediction',
+    'evaluate_population_prediction',
     'fit',
     'fix_parameters',
     'fix_parameters_to',

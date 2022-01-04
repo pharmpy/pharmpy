@@ -1,7 +1,23 @@
+from io import StringIO
+from pathlib import Path
+
+import pandas as pd
 import pytest
 
 from pharmpy import Model
-from pharmpy.modeling import evaluate_expression
+from pharmpy.modeling import (
+    evaluate_expression,
+    evaluate_individual_prediction,
+    evaluate_population_prediction,
+)
+from pharmpy.plugins.nonmem.dataset import read_nonmem_dataset
+
+tabpath = Path(__file__).parent.parent / 'testdata' / 'nonmem' / 'pheno_real_linbase.tab'
+lincorrect = read_nonmem_dataset(
+    tabpath,
+    ignore_character='@',
+    colnames=['ID', 'G11', 'G21', 'H11', 'CIPREDI', 'DV', 'PRED', 'RES', 'WRES'],
+)
 
 
 def test_evaluate_expression(testdata):
@@ -9,3 +25,37 @@ def test_evaluate_expression(testdata):
     ser = evaluate_expression(model, 'TVV')
     assert ser[0] == pytest.approx(1.413062)
     assert ser[743] == pytest.approx(1.110262)
+
+
+def test_evaulate_population_prediction(testdata):
+    path = testdata / 'nonmem' / 'minimal.mod'
+    model = Model(path)
+
+    dataset = pd.DataFrame({'ID': [1, 2], 'TIME': [0, 0], 'DV': [3, 4]})
+    pred = evaluate_population_prediction(model, dataset=dataset)
+
+    assert list(pred) == [0.1, 0.1]
+
+    linpath = testdata / 'nonmem' / 'pheno_real_linbase.mod'
+    linmod = Model(linpath)
+    pred = evaluate_population_prediction(linmod)
+
+    pd.testing.assert_series_equal(lincorrect['PRED'], pred, rtol=1e-4, check_names=False)
+
+
+def test_evaluate_individual_prediction(testdata):
+    path = testdata / 'nonmem' / 'minimal.mod'
+    model = Model(path)
+
+    dataset = read_nonmem_dataset(StringIO('1 0 3\n2 0 4\n'), colnames=['ID', 'TIME', 'DV'])
+    pred = evaluate_individual_prediction(model, dataset=dataset)
+
+    assert list(pred) == [0.1, 0.1]
+
+    linpath = testdata / 'nonmem' / 'pheno_real_linbase.mod'
+    linmod = Model(linpath)
+    pred = evaluate_individual_prediction(
+        model=linmod, etas=linmod.modelfit_results.individual_estimates
+    )
+
+    pd.testing.assert_series_equal(lincorrect['CIPREDI'], pred, rtol=1e-4, check_names=False)

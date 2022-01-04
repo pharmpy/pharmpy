@@ -28,56 +28,6 @@ def test_create_symbol(testdata, stem, force_numbering, symbol_name):
     assert symbol.name == symbol_name
 
 
-def S(x):
-    return pharmpy.symbols.symbol(x)
-
-
-def test_symbolic_population_prediction(testdata):
-    path = testdata / 'nonmem' / 'minimal.mod'
-    model = Model(path)
-
-    assert model.symbolic_population_prediction() == S('THETA(1)')
-
-
-def test_symbolic_individual_prediction(testdata):
-    path = testdata / 'nonmem' / 'minimal.mod'
-    model = Model(path)
-
-    assert model.symbolic_individual_prediction() == S('THETA(1)') + S('ETA(1)')
-
-
-def test_population_prediction(testdata):
-    path = testdata / 'nonmem' / 'minimal.mod'
-    model = Model(path)
-
-    dataset = pd.DataFrame({'ID': [1, 2], 'TIME': [0, 0], 'DV': [3, 4]})
-    pred = model.population_prediction(dataset=dataset)
-
-    assert list(pred) == [0.1, 0.1]
-
-    linpath = testdata / 'nonmem' / 'pheno_real_linbase.mod'
-    linmod = Model(linpath)
-    pred = linmod.population_prediction()
-
-    pd.testing.assert_series_equal(lincorrect['PRED'], pred, rtol=1e-4, check_names=False)
-
-
-def test_individual_prediction(testdata):
-    path = testdata / 'nonmem' / 'minimal.mod'
-    model = Model(path)
-
-    dataset = read_nonmem_dataset(StringIO('1 0 3\n2 0 4\n'), colnames=['ID', 'TIME', 'DV'])
-    pred = model.individual_prediction(dataset=dataset)
-
-    assert list(pred) == [0.1, 0.1]
-
-    linpath = testdata / 'nonmem' / 'pheno_real_linbase.mod'
-    linmod = Model(linpath)
-    pred = linmod.individual_prediction(etas=linmod.modelfit_results.individual_estimates)
-
-    pd.testing.assert_series_equal(lincorrect['CIPREDI'], pred, rtol=1e-4, check_names=False)
-
-
 def test_symbolic_eta_gradient(testdata):
     path = testdata / 'nonmem' / 'minimal.mod'
     model = Model(path)
