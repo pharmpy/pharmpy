@@ -98,3 +98,69 @@ def get_population_prediction_expression(model):
     for eta in model.random_variables.etas:
         y = y.subs({eta.symbol: 0})
     return y
+
+
+def calculate_eta_gradient_expression(model):
+    """Calculate the symbolic expression for the eta gradient
+
+    This function currently only support models without ODE systems
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model object
+
+    Returns
+    -------
+    Expression
+        Symbolic expression
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import load_example_model, calculate_eta_gradient_expression
+    >>> model = load_example_model("pheno_linear")
+    >>> calculate_eta_gradient_expression(model)
+    [D_ETA1, D_ETA2]
+
+    See also
+    --------
+    calculate_epsilon_gradient_expression : Epsilon gradient
+    """
+
+    y = get_observation_expression(model)
+    for eps in model.random_variables.epsilons:
+        y = y.subs({eps.symbol: 0})
+    d = [y.diff(x.symbol) for x in model.random_variables.etas]
+    return d
+
+
+def calculate_epsilon_gradient_expression(model):
+    """Calculate the symbolic expression for the epsilon gradient
+
+    This function currently only support models without ODE systems
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model object
+
+    Returns
+    -------
+    Expression
+        Symbolic expression
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import load_example_model, calculate_epsilon_gradient_expression
+    >>> model = load_example_model("pheno_linear")
+    >>> calculate_epsilon_gradient_expression(model)
+    [D_EPS1 + D_EPSETA1_1*(ETA(1) - OETA1) + D_EPSETA1_2*(ETA(2) - OETA2)]
+
+    See also
+    --------
+    calculate_eta_gradient_expression : Eta gradient
+    """
+
+    y = get_observation_expression(model)
+    d = [y.diff(x.symbol) for x in model.random_variables.epsilons]
+    return d

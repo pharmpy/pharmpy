@@ -28,20 +28,6 @@ def test_create_symbol(testdata, stem, force_numbering, symbol_name):
     assert symbol.name == symbol_name
 
 
-def test_symbolic_eta_gradient(testdata):
-    path = testdata / 'nonmem' / 'minimal.mod'
-    model = Model(path)
-
-    assert model.symbolic_eta_gradient() == [1]
-
-
-def test_symbolic_eps_gradient(testdata):
-    path = testdata / 'nonmem' / 'minimal.mod'
-    model = Model(path)
-
-    assert model.symbolic_eps_gradient() == [1]
-
-
 def test_eta_gradient(testdata):
     path = testdata / 'nonmem' / 'minimal.mod'
     model = Model(path)

@@ -111,6 +111,8 @@ from .evaluation import (
     evaluate_population_prediction,
 )
 from .expressions import (
+    calculate_epsilon_gradient_expression,
+    calculate_eta_gradient_expression,
     get_individual_prediction_expression,
     get_observation_expression,
     get_population_prediction_expression,
@@ -132,6 +134,8 @@ __all__ = [
     'add_peripheral_compartment',
     'add_time_after_dose',
     'append_estimation_step_options',
+    'calculate_epsilon_gradient_expression',
+    'calculate_eta_gradient_expression',
     'calculate_eta_shrinkage',
     'calculate_individual_parameter_statistics',
     'calculate_individual_shrinkage',
