@@ -1,5 +1,5 @@
 import pharmpy.tools
-from pharmpy.data.iterators import Resample
+from pharmpy.modeling import resample_data
 from pharmpy.tools.bootstrap.results import calculate_results
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.workflows import Task, Workflow
@@ -36,7 +36,7 @@ class Bootstrap(pharmpy.tools.Tool):
 
 
 def resample_model(model, name):
-    resample = Resample(model, model.datainfo.id_label, resamples=1, name=name)
+    resample = resample_data(model, model.datainfo.id_label, resamples=1, name=name)
     model, _ = next(resample)
     return model
 

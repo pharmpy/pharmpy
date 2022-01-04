@@ -3,7 +3,7 @@ import pandas as pd
 import pandas.testing
 import pytest
 
-import pharmpy.data.iterators as iters
+import pharmpy.modeling.iterators as iters
 
 
 @pytest.fixture

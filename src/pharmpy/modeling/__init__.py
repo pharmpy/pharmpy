@@ -106,6 +106,7 @@ from pharmpy.modeling.write_csv import write_csv
 
 from .allometry import add_allometry
 from .amd import run_amd, run_iiv
+from .iterators import omit_data, resample_data
 from .plots import plot_individual_predictions, plot_iofv_vs_iofv
 from .units import get_unit_of
 
@@ -156,6 +157,7 @@ __all__ = [
     'has_zero_order_absorption',
     'list_time_varying_covariates',
     'load_example_model',
+    'omit_data',
     'plot_individual_predictions',
     'plot_iofv_vs_iofv',
     'predict_influential_individuals',
@@ -173,6 +175,7 @@ __all__ = [
     'remove_iov',
     'remove_lag_time',
     'remove_peripheral_compartment',
+    'resample_data',
     'run_amd',
     'run_iiv',
     'run_tool',

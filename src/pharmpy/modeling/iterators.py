@@ -1,7 +1,4 @@
 """
-data.iterators
-==============
-
 Iterators generating new datasets from a dataset. The dataset could either be stand alone
 or connected to a model. If a model is used the same model will be updated with different
 datasets for each iteration.
@@ -24,7 +21,7 @@ import pharmpy.math
 class DatasetIterator:
     """Base class for iterator classes that generate new datasets from an input dataset
 
-    The __next__ function could return either a DataFrame or a tuple where the first
+    The __next__ method could return either a DataFrame or a tuple where the first
     element is the main DataFrame.
     """
 
@@ -102,6 +99,26 @@ class Omit(DatasetIterator):
         new_df = df[df[self._group] != next_group]
         self._prepare_next(new_df)
         return self._combine_dataset(new_df), next_group
+
+
+def omit_data(dataset_or_model, group, name_pattern='omitted_{}'):
+    """Iterate over omissions of a certain group in a dataset. One group is omitted at a time.
+
+    Parameters
+    ----------
+    dataset_or_model : pd.DataFrame or Model
+        Dataset or model for which to omit records
+    group : str
+        Name of the column to use for grouping
+    name_pattern : str
+        Name to use for generated datasets. A number starting from 1 will be put in the placeholder.
+
+    Returns
+    -------
+    iterator
+        Iterator yielding tuples of models/dataframes and the omited group
+    """
+    return Omit(dataset_or_model, group, name_pattern)
 
 
 class Resample(DatasetIterator):
@@ -224,3 +241,63 @@ class Resample(DatasetIterator):
             self._prepare_next(new_df)
 
         return self._combine_dataset(new_df), random_groups
+
+
+def resample_data(
+    dataset_or_model,
+    group,
+    resamples=1,
+    stratify=None,
+    sample_size=None,
+    replace=False,
+    name_pattern='resample_{}',
+    name=None,
+):
+    """Iterate over resamples of a dataset.
+
+    The dataset will be grouped on the group column then groups will be selected
+    randomly with or without replacement to form a new dataset.
+    The groups will be renumbered from 1 and upwards to keep them separated in the new
+    dataset.
+
+    Parameters
+    ----------
+    dataset_or_model : pd.DataFrame or Model
+        Dataset or Model to use
+    group : str
+        Name of column to group by
+    resamples : int
+        Number of resamples (iterations) to make
+    stratify : str
+        Name of column to use for stratification.
+        The values in the stratification column must be equal within a group so that the group
+        can be uniquely determined. A ValueError exception will be raised otherwise.
+    sample_size : int
+        The number of groups that should be sampled. The default is
+        the number of groups. If using stratification the default is to sample using the
+        proportion of the stratas in the dataset. A dictionary of specific sample sizes
+        for each strata can also be supplied.
+    replace : bool
+        A boolean controlling whether sampling should be done with or
+        without replacement
+    name_pattern : str
+        Name to use for generated datasets. A number starting from 1 will
+        be put in the placeholder.
+    name : str
+        Option to name pattern in case of only one resample
+
+    Returns
+    -------
+    iterator
+        An iterator yielding tuples of a resampled DataFrame and a list of resampled groups in order
+    """
+    return Resample(
+        dataset_or_model,
+        group,
+        resamples=resamples,
+        stratify=stratify,
+        sample_size=sample_size,
+        replace=replace,
+        name_pattern=name_pattern,
+        name=name,
+    )

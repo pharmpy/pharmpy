@@ -100,7 +100,6 @@ class LazyLoader(types.ModuleType):
 
 pharmpy = LazyLoader('pharmpy', globals(), 'pharmpy')
 np = LazyLoader('numpy', globals(), 'numpy')
-iterators = LazyLoader('iterators', globals(), 'pharmpy.data.iterators')
 plugin_utils = LazyLoader('plugin_utils', globals(), 'pharmpy.plugins.utils')
 pd = LazyLoader('pd', globals(), 'pandas')
 
@@ -264,7 +263,9 @@ def write_model_or_dataset(model_or_dataset, new_df, path, force):
 
 def data_resample(args):
     """Subcommand to resample a dataset."""
-    resampler = iterators.Resample(
+    from pharmpy.modeling import resample_data
+
+    resampler = resample_data(
         args.model_or_dataset,
         args.group,
         resamples=args.resamples,
@@ -294,7 +295,9 @@ def data_anonymize(args):
     dataset = pd.read_csv(path, dtype=str)
     dataset[args.group] = pd.to_numeric(dataset[args.group])
 
-    resampler = pharmpy.data.iterators.Resample(dataset, args.group)
+    from pharmpy.modeling import resample_data
+
+    resampler = resample_data(dataset, args.group)
     df, _ = next(resampler)
     if args.output_file:
         output_file = args.output_file
