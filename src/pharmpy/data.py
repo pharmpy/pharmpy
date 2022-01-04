@@ -22,7 +22,6 @@ Data
 """
 
 import pharmpy.config as config
-from pharmpy.data.data_frame import DatasetError, DatasetWarning
 
 
 class DataConfiguration(config.Configuration):
@@ -35,7 +34,10 @@ class DataConfiguration(config.Configuration):
 
 conf = DataConfiguration()
 
-__all__ = [
-    'DatasetError',
-    'DatasetWarning',
-]
+
+class DatasetError(Exception):
+    pass
+
+
+class DatasetWarning(Warning):
+    pass
