@@ -106,6 +106,7 @@ from pharmpy.modeling.write_csv import write_csv
 
 from .allometry import add_allometry
 from .amd import run_amd, run_iiv
+from .expressions import get_observation_expression
 from .iterators import omit_data, resample_data
 from .plots import plot_individual_predictions, plot_iofv_vs_iofv
 from .units import get_unit_of
@@ -150,6 +151,7 @@ __all__ = [
     'get_mdv',
     'get_model_covariates',
     'get_observations',
+    'get_observation_expression',
     'get_unit_of',
     'has_additive_error_model',
     'has_combined_error_model',

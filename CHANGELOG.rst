@@ -7,6 +7,7 @@ next version
 * Add modeling.write_csv
 * Add modeling.resample_data
 * Add modeling.omit_data
+* Add modeling.get_observation_expression
 * Support for Python 3.7 dropped
 
 0.41.0 (2021-12-21)

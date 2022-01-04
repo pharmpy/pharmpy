@@ -778,7 +778,7 @@ def load_example_model(name):
     Parameters
     ----------
     name : str
-        Name of the model. Currently available model is "pheno"
+        Name of the model. Currently available models are "pheno" and "pheno_linear"
 
     Returns
     -------
@@ -820,7 +820,7 @@ def load_example_model(name):
     IWRES :=  W
 
     """
-    available = ('pheno',)
+    available = ('pheno', 'pheno_linear')
     if name not in available:
         raise ValueError(f'Unknown example model {name}. Available examples: {available}')
     path = Path(__file__).parent.resolve() / 'example_models' / (name + '.mod')
