@@ -8,6 +8,8 @@ next version
 * Add modeling.resample_data
 * Add modeling.omit_data
 * Add modeling.get_observation_expression
+* Add modeling.get_individual_prediction_expression
+* Add modeling.get_population_prediction_expression
 * Support for Python 3.7 dropped
 
 0.41.0 (2021-12-21)

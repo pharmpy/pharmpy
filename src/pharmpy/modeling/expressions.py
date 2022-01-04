@@ -1,5 +1,5 @@
 def get_observation_expression(model):
-    """Gets the full symbolic expression for the observation according to the model
+    """Get the full symbolic expression for the observation according to the model
 
     This function currently only support models without ODE systems
 
@@ -32,4 +32,69 @@ def get_observation_expression(model):
     for j in range(i, -1, -1):
         y = y.subs({stats[j].symbol: stats[j].expression})
 
+    return y
+
+
+def get_individual_prediction_expression(model):
+    """Get the full symbolic expression for the modelled individual prediction
+
+    This function currently only support models without ODE systems
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model object
+
+    Returns
+    -------
+    Expression
+        Symbolic expression
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import load_example_model, get_individual_prediction_expression
+    >>> model = load_example_model("pheno_linear")
+    >>> get_individual_prediction_expression(model)
+    D_ETA1*(ETA(1) - OETA1) + D_ETA2*(ETA(2) - OETA2) + OPRED
+
+    See Also
+    --------
+    get_population_prediction_expression : Get full symbolic epression for the population prediction
+    """
+    y = get_observation_expression(model)
+    for eps in model.random_variables.epsilons:
+        y = y.subs({eps.symbol: 0})
+    return y
+
+
+def get_population_prediction_expression(model):
+    """Get the full symbolic expression for the modelled population prediction
+
+    This function currently only support models without ODE systems
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model object
+
+    Returns
+    -------
+    Expression
+        Symbolic expression
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import load_example_model, get_population_prediction_expression
+    >>> model = load_example_model("pheno_linear")
+    >>> get_population_prediction_expression(model)
+    -D_ETA1*OETA1 - D_ETA2*OETA2 + OPRED
+
+    See also
+    --------
+    get_individual_prediction_expression : Get full symbolic epression for the individual prediction
+    """
+
+    y = get_individual_prediction_expression(model)
+    for eta in model.random_variables.etas:
+        y = y.subs({eta.symbol: 0})
     return y
