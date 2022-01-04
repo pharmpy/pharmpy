@@ -14,6 +14,8 @@ next version
 * Add modeling.evaluate_population_prediction
 * Add modeling.calculate_eta_gradient_expression
 * Add modeling.calculate_epsilon_gradient_expression
+* Add modeling.evaluate_eta_gradient
+* Add modeling.evaluate_epsilon_gradient
 * Support for Python 3.7 dropped
 
 0.41.0 (2021-12-21)

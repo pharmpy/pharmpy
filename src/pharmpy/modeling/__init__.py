@@ -106,6 +106,8 @@ from pharmpy.modeling.write_csv import write_csv
 from .allometry import add_allometry
 from .amd import run_amd, run_iiv
 from .evaluation import (
+    evaluate_epsilon_gradient,
+    evaluate_eta_gradient,
     evaluate_expression,
     evaluate_individual_prediction,
     evaluate_population_prediction,
@@ -145,6 +147,8 @@ __all__ = [
     'create_joint_distribution',
     'create_results',
     'create_rng',
+    'evaluate_epsilon_gradient',
+    'evaluate_eta_gradient',
     'evaluate_expression',
     'evaluate_individual_prediction',
     'evaluate_population_prediction',

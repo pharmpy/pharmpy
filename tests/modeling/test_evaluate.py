@@ -6,6 +6,8 @@ import pytest
 
 from pharmpy import Model
 from pharmpy.modeling import (
+    evaluate_epsilon_gradient,
+    evaluate_eta_gradient,
     evaluate_expression,
     evaluate_individual_prediction,
     evaluate_population_prediction,
@@ -59,3 +61,32 @@ def test_evaluate_individual_prediction(testdata):
     )
 
     pd.testing.assert_series_equal(lincorrect['CIPREDI'], pred, rtol=1e-4, check_names=False)
+
+
+def test_evaluate_eta_gradient(testdata):
+    path = testdata / 'nonmem' / 'minimal.mod'
+    model = Model(path)
+
+    dataset = read_nonmem_dataset(StringIO('1 0 3\n2 0 4\n'), colnames=['ID', 'TIME', 'DV'])
+    grad = evaluate_eta_gradient(model, dataset=dataset)
+    pd.testing.assert_frame_equal(grad, pd.DataFrame([1.0, 1.0], columns=['dF/dETA(1)']))
+
+    linpath = testdata / 'nonmem' / 'pheno_real_linbase.mod'
+    linmod = Model(linpath)
+    grad = evaluate_eta_gradient(linmod)
+    pd.testing.assert_series_equal(lincorrect['G11'], grad.iloc[:, 0], rtol=1e-4, check_names=False)
+    pd.testing.assert_series_equal(lincorrect['G21'], grad.iloc[:, 1], rtol=1e-4, check_names=False)
+
+
+def test_evaluate_epsilon_gradient(testdata):
+    path = testdata / 'nonmem' / 'minimal.mod'
+    model = Model(path)
+
+    dataset = read_nonmem_dataset(StringIO('1 0 3\n2 0 4\n'), colnames=['ID', 'TIME', 'DV'])
+    grad = evaluate_epsilon_gradient(model, dataset=dataset)
+    pd.testing.assert_frame_equal(grad, pd.DataFrame([1.0, 1.0], columns=['dY/dEPS(1)']))
+
+    linpath = testdata / 'nonmem' / 'pheno_real_linbase.mod'
+    linmod = Model(linpath)
+    grad = evaluate_epsilon_gradient(linmod, etas=linmod.modelfit_results.individual_estimates)
+    pd.testing.assert_series_equal(lincorrect['H11'], grad.iloc[:, 0], rtol=1e-4, check_names=False)

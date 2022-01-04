@@ -3,7 +3,12 @@ import pandas as pd
 import symengine
 import sympy
 
-from .expressions import get_individual_prediction_expression, get_population_prediction_expression
+from .expressions import (
+    calculate_epsilon_gradient_expression,
+    calculate_eta_gradient_expression,
+    get_individual_prediction_expression,
+    get_population_prediction_expression,
+)
 
 
 def evaluate_expression(model, expression):
@@ -215,3 +220,195 @@ def evaluate_individual_prediction(model, etas=None, parameters=None, dataset=No
     ipred = df.apply(fn, axis=1)
     ipred.name = 'IPRED'
     return ipred
+
+
+def _replace_parameters(model, y, parameters):
+    if parameters is not None:
+        y = [x.subs(parameters) for x in y]
+    else:
+        y = [x.subs(model.parameters.inits) for x in y]
+    return y
+
+
+def evaluate_eta_gradient(model, etas=None, parameters=None, dataset=None):
+    """Evaluate the numeric eta gradient
+
+    The gradient is evaluated at the current model parameter values
+    or optionally at the given parameter values.
+    The gradient is done for each data record in the model dataset
+    or optionally using the dataset argument.
+    The gradient is done at the current eta values
+    or optionally at the given eta values.
+
+    This function currently only support models without ODE systems
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+    etas : dict
+        Optional dictionary of eta values
+    parameters : dict
+        Optional dictionary of parameters and values
+    dataset : pd.DataFrame
+        Optional dataset
+
+    Returns
+    -------
+    pd.DataFrame
+        Gradient
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import load_example_model, evaluate_eta_gradient
+    >>> model = load_example_model("pheno_linear")
+    >>> evaluate_eta_gradient(model)
+         dF/dETA(1)  dF/dETA(2)
+    0     -0.159537  -17.609116
+    1     -9.325893  -19.562289
+    2     -0.104417  -11.346161
+    3     -4.452951  -16.682310
+    4    -10.838840  -18.981836
+    ..          ...         ...
+    150   -5.424423  -19.973013
+    151  -14.497185  -17.344797
+    152   -0.198714  -22.697161
+    153   -7.987731  -23.941806
+    154  -15.817067  -22.309945
+    <BLANKLINE>
+    [155 rows x 2 columns]
+
+    See also
+    --------
+    evaluate_epsilon_gradient : Evaluate the epsilon gradient
+    """
+
+    y = calculate_eta_gradient_expression(model)
+    y = _replace_parameters(model, y, parameters)
+
+    if dataset is not None:
+        df = dataset
+    else:
+        df = model.dataset
+    idcol = model.datainfo.id_label
+
+    if etas is None:
+        if (
+            model.modelfit_results is not None
+            and model.modelfit_results.individual_estimates is not None
+        ):
+            etas = model.modelfit_results.individual_estimates
+        elif model.initial_individual_estimates is not None:
+            etas = model.initial_individual_estimates
+        else:
+            etas = pd.DataFrame(
+                0,
+                index=df[idcol].unique(),
+                columns=[eta.name for eta in model.random_variables.etas],
+            )
+
+    def fn(row):
+        row = row.to_dict()
+        curetas = etas.loc[row[idcol]].to_dict()
+        a = [np.float64(x.subs(row).subs(curetas)) for x in y]
+        return a
+
+    derivative_names = [f'dF/d{eta.name}' for eta in model.random_variables.etas]
+    grad = df.apply(fn, axis=1, result_type='expand')
+    grad = pd.DataFrame(grad)
+    grad.columns = derivative_names
+    return grad
+
+
+def evaluate_epsilon_gradient(model, etas=None, parameters=None, dataset=None):
+    """Evaluate the numeric epsilon gradient
+
+    The gradient is evaluated at the current model parameter values
+    or optionally at the given parameter values.
+    The gradient is done for each data record in the model dataset
+    or optionally using the dataset argument.
+    The gradient is done at the current eta values
+    or optionally at the given eta values.
+
+    This function currently only support models without ODE systems
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+    etas : dict
+        Optional dictionary of eta values
+    parameters : dict
+        Optional dictionary of parameters and values
+    dataset : pd.DataFrame
+        Optional dataset
+
+    Returns
+    -------
+    pd.DataFrame
+        Gradient
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import load_example_model, evaluate_epsilon_gradient
+    >>> model = load_example_model("pheno_linear")
+    >>> evaluate_epsilon_gradient(model)
+         dY/dEPS(1)
+    0     17.771084
+    1     28.881859
+    2     11.441728
+    3     21.113050
+    4     29.783055
+    ..          ...
+    150   25.375041
+    151   31.833395
+    152   22.876707
+    153   31.905095
+    154   38.099690
+    <BLANKLINE>
+    [155 rows x 1 columns]
+
+    See also
+    --------
+    evaluate_eta_gradient : Evaluate the eta gradient
+    """
+
+    y = calculate_epsilon_gradient_expression(model)
+    y = _replace_parameters(model, y, parameters)
+    eps_names = [eps.name for eps in model.random_variables.epsilons]
+    repl = {sympy.Symbol(eps): 0 for eps in eps_names}
+    y = [x.subs(repl) for x in y]
+
+    if dataset is not None:
+        df = dataset
+    else:
+        df = model.dataset
+
+    idcol = model.datainfo.id_label
+
+    if etas is None:
+        if (
+            model.modelfit_results is not None
+            and model.modelfit_results.individual_estimates is not None
+        ):
+            etas = model.modelfit_results.individual_estimates
+        elif model.initial_individual_estimates is not None:
+            etas = model.initial_individual_estimates
+        else:
+            etas = pd.DataFrame(
+                0,
+                index=df[idcol].unique(),
+                columns=[eta.name for eta in model.random_variables.etas],
+            )
+
+    def fn(row):
+        row = row.to_dict()
+        curetas = etas.loc[row[idcol]].to_dict()
+        a = [np.float64(x.subs(row).subs(curetas)) for x in y]
+        return a
+
+    grad = df.apply(fn, axis=1, result_type='expand')
+    derivative_names = [f'dY/d{eps}' for eps in eps_names]
+    grad = pd.DataFrame(grad)
+    grad.columns = derivative_names
+    return grad
