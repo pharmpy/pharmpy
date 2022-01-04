@@ -4,6 +4,7 @@ next version
 * Add modeling.get_doseid
 * Add modeling.get_unit_of
 * Add modeling.get_concentration_parameters_from_data
+* Add modeling.write_csv
 * Support for Python 3.7 dropped
 
 0.41.0 (2021-12-21)

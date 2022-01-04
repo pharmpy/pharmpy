@@ -13,6 +13,6 @@ def test_resmod(tmp_path, testdata):
         shutil.copy2(testdata / 'nonmem' / 'sdtab1', tmp_path)
 
         model = Model('pheno_real.mod')
-        model.dataset_path = tmp_path / 'pheno.dta'
+        model.datainfo.path = tmp_path / 'pheno.dta'
         res = run_tool('resmod', model)
         assert res

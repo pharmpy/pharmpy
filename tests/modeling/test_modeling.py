@@ -1109,7 +1109,7 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
         set_zero_order_absorption(model)
         model.update_source()
         correct = '''$PROBLEM PHENOBARB SIMPLE MODEL
-$DATA pheno.csv IGNORE=@
+$DATA pheno_advan1.csv IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2 RATE
 $SUBROUTINE ADVAN1 TRANS2
 
@@ -1147,6 +1147,45 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
        NOPRINT ONEHEADER FILE=sdtab1
 '''
         assert model.model_code == correct
+
+        correct = '''$PROBLEM PHENOBARB SIMPLE MODEL
+$DATA pheno_advan2.csv IGNORE=@
+$INPUT ID TIME AMT WGT APGR DV FA1 FA2 RATE
+$SUBROUTINE ADVAN1 TRANS2
+
+$PK
+MAT = THETA(4)
+IF(AMT.GT.0) BTIME=TIME
+TAD=TIME-BTIME
+TVCL=THETA(1)*WGT
+TVV=THETA(2)*WGT
+IF(APGR.LT.5) TVV=TVV*(1+THETA(3))
+CL=TVCL*EXP(ETA(1))
+V=TVV*EXP(ETA(2))
+S1=V
+D1 = 2*MAT
+
+$ERROR
+W=F
+Y=F+W*EPS(1)
+IPRED=F
+IRES=DV-IPRED
+IWRES=IRES/W
+
+$THETA (0,0.00469307) ; CL
+$THETA (0,1.00916) ; V
+$THETA (-.99,.1)
+$THETA  (0,2.0) ; POP_MAT
+$OMEGA DIAGONAL(2)
+ 0.0309626  ;       IVCL
+ 0.031128  ;        IVV
+
+$SIGMA 1e-7
+$ESTIMATION METHOD=1 INTERACTION
+$COVARIANCE UNCONDITIONAL
+$TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
+       NOPRINT ONEHEADER FILE=sdtab1
+'''
 
         # 1st to 0-order
         model = Model('dir/pheno_advan2.mod')
@@ -2215,7 +2254,13 @@ def test_update_inits_no_res(testdata):
     ],
 )
 def test_set_power_on_ruv(testdata, epsilons, err_ref, theta_ref):
-    with Patcher(additional_skip_names=['pkgutil']) as patcher:
+    with Patcher(
+        additional_skip_names=[
+            'pkgutil',
+            'pharmpy.plugins.nonmem.records.parsers',
+            'lark.load_grammar',
+        ]
+    ) as patcher:
         fs = patcher.fs
 
         fs.add_real_file(testdata / 'nonmem/pheno_real.mod', target_path='run1.mod')

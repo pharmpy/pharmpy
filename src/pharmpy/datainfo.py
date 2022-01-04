@@ -2,6 +2,7 @@
 """
 import json
 from collections.abc import MutableSequence
+from pathlib import Path
 
 import pandas as pd
 import sympy
@@ -160,6 +161,17 @@ class DataInfo(MutableSequence):
                 col.type = tp
                 return
         raise KeyError(f"No column with the name {name}")
+
+    @property
+    def path(self):
+        return self._path
+
+    @path.setter
+    def path(self, value):
+        if value is not None:
+            self._path = Path(value)
+        else:
+            self._path = None
 
     @property
     def id_label(self):

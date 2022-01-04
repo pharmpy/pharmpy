@@ -102,6 +102,7 @@ from pharmpy.modeling.results import (
 )
 from pharmpy.modeling.run import create_results, fit, read_results, run_tool
 from pharmpy.modeling.update_inits import update_inits
+from pharmpy.modeling.write_csv import write_csv
 
 from .allometry import add_allometry
 from .amd import run_amd, run_iiv
@@ -208,5 +209,6 @@ __all__ = [
     'unfix_parameters_to',
     'update_inits',
     'use_thetas_for_error_stdev',
+    'write_csv',
     'write_model',
 ]

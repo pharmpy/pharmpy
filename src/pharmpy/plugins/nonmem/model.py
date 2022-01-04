@@ -15,6 +15,7 @@ from pharmpy.data import DatasetError
 from pharmpy.datainfo import ColumnInfo, DataInfo
 from pharmpy.estimation import EstimationStep, EstimationSteps
 from pharmpy.model import ModelSyntaxError
+from pharmpy.modeling.write_csv import write_csv
 from pharmpy.parameter import Parameters
 from pharmpy.plugins.nonmem.results import NONMEMChainedModelfitResults
 from pharmpy.plugins.nonmem.table import NONMEMTableFile, PhiTable
@@ -71,6 +72,7 @@ def convert_model(model):
         nm_model.dependent_variable = model.dependent_variable
     nm_model._data_frame = model.dataset
     nm_model._estimation_steps = model.estimation_steps
+    nm_model._datainfo = model.datainfo
     nm_model.update_source()
     try:
         nm_model.database = model.database
@@ -167,9 +169,9 @@ class Model(pharmpy.model.Model):
                 if path is not None:
                     dir_path = path.parent
                 else:
-                    dir_path = None
-                datapath = self.dataset.pharmpy.write_csv(path=dir_path, force=force)
-                self.dataset_path = datapath.name
+                    dir_path = self.name + ".csv"
+                datapath = write_csv(self, path=dir_path, force=force)
+                self.datainfo.path = datapath.name
 
             data_record = self.control_stream.get_records('DATA')[0]
 
@@ -182,6 +184,14 @@ class Model(pharmpy.model.Model):
             del data_record.ignore
             del data_record.accept
             self._dataset_updated = False
+
+            path = self.datainfo.path
+            if path is not None:
+                assert (
+                    not path.exists() or path.is_file()
+                ), f'input path change, but no file exists at target {str(path)}'
+                record = self.control_stream.get_records('DATA')[0]
+                record.filename = str(path)
 
         self._update_sizes()
         update_estimation(self)
@@ -799,26 +809,24 @@ class Model(pharmpy.model.Model):
         self.update_source(nofiles=True)
         return str(self.control_stream)
 
-    @property
-    def dataset_path(self):
-        """This property is NONMEM specific"""
-        record = self.control_stream.get_records('DATA')[0]
+    def _read_dataset_path(self):
+        datas = self.control_stream.get_records('DATA')
+        if datas:
+            record = datas[0]
+        else:
+            return None
         path = Path(record.filename)
         if not path.is_absolute():
-            path = self.database.retrieve_file(self.name, path)
+            try:
+                path = self.database.retrieve_file(self.name, path)
+            except FileNotFoundError:
+                path = None
+        if path is None:
+            return path
         try:
             return path.resolve()
         except FileNotFoundError:
             return path
-
-    @dataset_path.setter
-    def dataset_path(self, path):
-        path = Path(path)
-        assert (
-            not path.exists() or path.is_file()
-        ), 'input path change, but non-file exists at ' 'target (%s)' % str(path)
-        record = self.control_stream.get_records('DATA')[0]
-        record.filename = str(path)
 
     @property
     def dataset(self):
@@ -948,14 +956,16 @@ class Model(pharmpy.model.Model):
         return result
 
     def _create_datainfo(self):
+        dataset_path = self._read_dataset_path()
         try:
-            path = self.dataset_path.with_suffix('.datainfo')
+            path = dataset_path.with_suffix('.datainfo')
         except:  # noqa: E722
             # FIXME: dataset_path could fail in so many ways!
             pass
         else:
             if path.is_file():
                 di = DataInfo.read_json(path)
+                di.path = dataset_path
                 self.datainfo = di
                 return
         (colnames, drop, replacements) = self._column_info()
@@ -985,6 +995,7 @@ class Model(pharmpy.model.Model):
             column_info.append(info)
 
         di = DataInfo(column_info)
+        di.path = dataset_path
         self.datainfo = di
 
     def _read_dataset(self, raw=False, parse_columns=tuple()):
@@ -1008,7 +1019,7 @@ class Model(pharmpy.model.Model):
                 accept = Model._replace_synonym_in_filters(accept, replacements)
 
         df = pharmpy.plugins.nonmem.dataset.read_nonmem_dataset(
-            self.dataset_path,
+            self.datainfo.path,
             raw,
             ignore_character,
             colnames,
@@ -1019,7 +1030,6 @@ class Model(pharmpy.model.Model):
             accept=accept,
         )
         # Let TIME be the idv in both $PK and $PRED models
-        df.name = self.dataset_path.stem
 
         # Remove individuals without observations
         try:

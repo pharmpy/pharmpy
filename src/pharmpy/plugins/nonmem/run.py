@@ -13,13 +13,7 @@ def execute_model(model):
     path.mkdir(parents=True, exist_ok=True)
     model = model.copy()
     model._dataset_updated = True  # Hack to get update_source to update IGNORE
-    model.update_source(nofiles=True)
-    try:
-        model.dataset.name
-    except AttributeError:
-        model.dataset.name = "dataset"
-    datapath = model.dataset.pharmpy.write_csv(path=path)
-    model.dataset_path = datapath.name  # Make path in $DATA local
+    model.update_source(path=path / model.name)
     model.write(path=path, force=True)
     basepath = Path(model.name)
     args = [
@@ -53,7 +47,7 @@ def execute_model(model):
     database.store_local_file(model, (path / basepath).with_suffix('.coi'))
     if False:
         # FIXME: Have option for saving the dataset.
-        database.store_local_file(model, (path / model.dataset.name).with_suffix('.csv'))
+        database.store_local_file(model, model.datainfo.path)
     for rec in model.control_stream.get_records('TABLE'):
         database.store_local_file(model, path / rec.path)
     # Read in results for the server side

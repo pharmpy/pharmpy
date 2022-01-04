@@ -176,13 +176,10 @@ def run_modelsearch(args):
 def data_write(args):
     """Subcommand to write a dataset."""
     try:
-        df = args.model_or_dataset.dataset
-    except plugin_utils.PluginError:
-        df = args.model_or_dataset
-    path = args.output_file
-    try:
+        from pharmpy.modeling import write_csv
+
         # If no output_file supplied will use name of df
-        path = df.pharmpy.write_csv(path=path, force=args.force)
+        path = write_csv(args.model, path=args.output_file, force=args.force)
         print(f'Dataset written to {path}')
     except OSError as e:
         error(e)
@@ -237,8 +234,11 @@ def write_model_or_dataset(model_or_dataset, new_df, path, force):
         # Is a dataset
         try:
             # If no output_file supplied will use name of df
-            path = new_df.pharmpy.write_csv(path=path, force=force)
-            print(f'Dataset written to {path}')
+            if not force or not path.is_file():
+                path = new_df.to_csv(path=path)
+                print(f'Dataset written to {path}')
+            else:
+                error(exception=FileExistsError("Use -f or --force to force an overwrite"))
         except FileExistsError as e:
             error(
                 exception=FileExistsError(
@@ -248,7 +248,7 @@ def write_model_or_dataset(model_or_dataset, new_df, path, force):
     else:
         # Is a model
         model = model_or_dataset
-        if new_df is not None:
+        if new_df is not None and new_df is not model.dataset:
             model.dataset = new_df
         try:
             if path:
@@ -278,7 +278,8 @@ def data_resample(args):
             try:
                 resampled_obj.write()
             except AttributeError:
-                resampled_obj.pharmpy.write_csv()
+                # FIXME!
+                resampled_obj.to_csv()
         except OSError as e:
             error(e)
 
@@ -761,7 +762,7 @@ def input_model_or_dataset(path):
     try:
         obj = pharmpy.Model(path)
     except pharmpy.plugins.utils.PluginError:
-        obj = pharmpy.data.read_csv(path)
+        obj = pd.read_csv(path)
     return obj
 
 
@@ -892,9 +893,9 @@ parser_definition = [
                 {
                     'write': {
                         'help': 'Write dataset',
-                        'parents': [args_model_or_data_input, args_output],
+                        'parents': [args_model_input, args_output],
                         'func': data_write,
-                        'description': 'Write a dataset from model or csv file as the model sees '
+                        'description': 'Write a dataset from model as the model sees '
                         'it. For NM-TRAN models this means to filter all IGNORE and '
                         'ACCEPT statements in $DATA and to convert the dataset to '
                         'csv format.',

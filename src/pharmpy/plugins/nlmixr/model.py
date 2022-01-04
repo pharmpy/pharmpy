@@ -62,7 +62,6 @@ class ExpressionPrinter(StrPrinter):
 def create_dataset(cg, model):
     """Create dataset for nlmixr"""
     dataname = f'{model.name}.csv'
-    # model.dataset.pharmpy.write_csv(dataname)
     cg.add(f'dataset <- read.csv("{dataname}")')
 
 

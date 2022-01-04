@@ -1,5 +1,4 @@
 from pharmpy.model import Model
-from pharmpy.plugins.nonmem.run import execute_model
 from pharmpy.workflows import Task, Workflow
 
 
@@ -18,6 +17,8 @@ def create_workflow(models=None, n=None):
 
 
 def create_fit_workflow(models=None, n=None):
+    from pharmpy.plugins.nonmem.run import execute_model
+
     wf = Workflow()
     if models is None:
         if n is None:

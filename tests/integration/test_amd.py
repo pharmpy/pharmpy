@@ -13,7 +13,7 @@ def test_amd(tmp_path, testdata):
         shutil.copy2(testdata / 'nonmem' / 'sdtab1', tmp_path)
 
         model = Model('pheno_real.mod')
-        model.dataset_path = tmp_path / 'pheno.dta'
+        model.datainfo.path = tmp_path / 'pheno.dta'
 
         # FIXME: remove after updating results
         model.modelfit_results.estimation_step
@@ -27,7 +27,7 @@ def test_iiv(tmp_path, testdata):
         shutil.copy2(testdata / 'nonmem' / 'models' / 'mox2.mod', tmp_path)
         shutil.copy2(testdata / 'nonmem' / 'models' / 'mx19B.csv', tmp_path)
         model_start = Model('mox2.mod')
-        model_start.dataset_path = tmp_path / 'mx19B.csv'
+        model_start.datainfo.path = tmp_path / 'mx19B.csv'
 
         res = run_iiv(model_start)
 

@@ -150,10 +150,22 @@ class Model:
                 "Cannot update initial parameter estimates " "since parameters were not estimated"
             )
 
+    @property
+    def dataset(self):
+        return self._dataset
+
+    @dataset.setter
+    def dataset(self, value):
+        self._dataset = value
+        self.update_datainfo()
+
     def update_datainfo(self):
         """Update model.datainfo for a new dataset"""
         colnames = self.dataset.columns
-        curdi = self.datainfo
+        try:
+            curdi = self.datainfo
+        except AttributeError:
+            curdi = DataInfo()
         newdi = DataInfo()
         for colname in colnames:
             try:
