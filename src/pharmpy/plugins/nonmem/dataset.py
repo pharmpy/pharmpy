@@ -295,7 +295,6 @@ def read_nonmem_dataset(
         dtype=object,
         index_col=False,
     )
-    df = pharmpy.data.PharmDataFrame(df)
 
     diff_cols = len(df.columns) - len(colnames)
     if diff_cols > 0:

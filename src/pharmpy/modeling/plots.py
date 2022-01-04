@@ -1,7 +1,7 @@
 import altair as alt
+import pandas as pd
 
 import pharmpy.visualization
-from pharmpy.data import PharmDataFrame
 
 from .data import get_observations
 
@@ -24,7 +24,7 @@ def plot_iofv_vs_iofv(model, other):
     """
     x_label = f'{model.name} iOFV'
     y_label = f'{other.name} iOFV'
-    df = PharmDataFrame(
+    df = pd.DataFrame(
         {
             x_label: model.modelfit_results.individual_ofv,
             y_label: other.modelfit_results.individual_ofv,

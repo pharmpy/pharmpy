@@ -11,6 +11,22 @@ from pharmpy.utils import parse_units
 
 
 class ColumnInfo:
+    """Information about one data column
+
+    ============  =============
+    ColumnType    Description
+    ============  =============
+    id            Individual identifier. Max one per DataFrame. All values have to be unique
+    idv           Independent variable. Max one per DataFrame.
+    dv            Dependent variable
+    covariate     Covariate
+    dose          Dose amount
+    event         0 = observation
+    unknown       Unkown type. This will be the default for columns that hasn't been assigned a type
+    ============  =============
+
+    """
+
     all_types = ['id', 'dv', 'idv', 'unknown', 'dose', 'event', 'covariate']
     all_scales = ['nominal', 'ordinal', 'interval', 'ratio']
 

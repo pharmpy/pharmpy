@@ -3,13 +3,12 @@ import pandas as pd
 import pandas.testing
 import pytest
 
-import pharmpy.data
 import pharmpy.data.iterators as iters
 
 
 @pytest.fixture
 def df():
-    return pharmpy.data.PharmDataFrame(
+    return pd.DataFrame(
         {'ID': [1, 1, 2, 2, 4, 4], 'DV': [5, 6, 3, 4, 0, 9], 'STRAT': [1, 1, 2, 2, 2, 2]}
     )
 

@@ -757,7 +757,7 @@ def input_model(path):
 
 
 def input_model_or_dataset(path):
-    """Returns :class:`~pharmpy.model.Model` or :class:`~pharmpy.data.PharmDataFrame` from *path*"""
+    """Returns :class:`~pharmpy.model.Model` or pd.DataFrame from *path*"""
     path = check_input_path(path)
     try:
         obj = pharmpy.Model(path)
