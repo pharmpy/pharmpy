@@ -343,6 +343,26 @@ class Parameter:
         self.unit = parse_units(unit)
 
     @property
+    def name(self):
+        """Parameter name"""
+        return self._name
+
+    @name.setter
+    def name(self, value):
+        if not isinstance(value, str):
+            raise TypeError("Name of parameter must be of type string")
+        self._name = value
+
+    @property
+    def fix(self):
+        """Should parameter be fixed or not"""
+        return self._fix
+
+    @fix.setter
+    def fix(self, value):
+        self._fix = bool(value)
+
+    @property
     def symbol(self):
         """Symbol representing the parameter"""
         return symbols.symbol(self.name)

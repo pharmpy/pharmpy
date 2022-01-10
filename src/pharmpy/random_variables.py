@@ -40,7 +40,6 @@ class RandomVariable:
 
     Examples
     --------
-
     >>> import sympy
     >>> import sympy.stats
     >>> from pharmpy import RandomVariable
@@ -56,7 +55,6 @@ class RandomVariable:
     """
 
     def __init__(self, name, level, sympy_rv=None):
-        level = RandomVariable._canonicalize_level(level)
         self._name = name
         self.level = level
         self.symbol = symbol(name)
@@ -87,6 +85,15 @@ class RandomVariable:
             and self._variance == other._variance
             and self._sympy_rv == other._sympy_rv
         )
+
+    @property
+    def level(self):
+        return self._level
+
+    @level.setter
+    def level(self, value):
+        level = RandomVariable._canonicalize_level(value)
+        self._level = level
 
     @staticmethod
     def _canonicalize_level(level):

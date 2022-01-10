@@ -33,21 +33,41 @@ class Assignment(Statement):
     This class is similar to :class:`sympy.codegen.Assignment` and are
     combined together into a ModelStatements object.
 
-    Attributes
+    Parameters
     ----------
-    symbol : sympy.Symbol
+    symbol : sympy.Symbol or str
         Symbol of statement
     expression : sympy.Expr
-        Expression of statement
+        Expression of assignment
     """
 
     def __init__(self, symbol, expression):
-        try:
-            symbol.is_Symbol
-            self.symbol = symbol
-        except AttributeError:
-            self.symbol = sympy.Symbol(symbol)
+        self.symbol = symbol
         self.expression = sympy.sympify(expression)
+
+    @property
+    def symbol(self):
+        """Symbol of statement"""
+        return self._symbol
+
+    @symbol.setter
+    def symbol(self, value):
+        if isinstance(value, str):
+            value = sympy.Symbol(value)
+        if not (value.is_Symbol or value.is_Derivative):
+            raise TypeError("symbol of Assignment must be a Symbol or str representing a symbol")
+        self._symbol = value
+
+    @property
+    def expression(self):
+        """Expression of assignment"""
+        return self._expression
+
+    @expression.setter
+    def expression(self, value):
+        if isinstance(value, str):
+            value = sympy.sympify(value)
+        self._expression = value
 
     def subs(self, substitutions):
         """Substitute expressions or symbols in assignment
@@ -136,12 +156,20 @@ class Assignment(Statement):
 
 
 class ODESystem(Statement):
-    """Base class and placeholder for ODE systems of different forms
+    """Base class and placeholder for ODE systems of different forms"""
 
-    Attributes
-    ----------
-    solver : str
-        Solver to use when numerically solving the ode system
+    t = symbols.symbol('t')
+
+    def __init__(self):
+        self._solver = None
+
+    @property
+    def free_symbols(self):
+        return set()
+
+    @property
+    def solver(self):
+        """Numerical solver to use when numerically solving the ode system
         Supported solvers and their NONMEM ADVAN
 
         +------------------------+------------------+
@@ -159,24 +187,12 @@ class ODESystem(Statement):
         +------------------------+------------------+
         | LSODI                  | ADVAN9           |
         +------------------------+------------------+
-    """
-
-    t = symbols.symbol('t')
-
-    def __init__(self):
-        self._solver = None
-
-    @property
-    def free_symbols(self):
-        return set()
-
-    @property
-    def solver(self):
+        """
         return self._solver
 
     @solver.setter
     def solver(self, value):
-        supported = ['LSODA']
+        supported = ['CVODES', 'DGEAR', 'DVERK', 'IDA', 'LSODA', 'LSODI']
         if not (value is None or value.upper() in supported):
             raise ValueError(f"Unknown solver {value}. Recognized solvers are {supported}.")
         self._solver = value
@@ -224,7 +240,7 @@ def _bracket(a):
 class ExplicitODESystem(ODESystem):
     """System of ODEs described explicitly
 
-    Attributes
+    Parameters
     ----------
     odes : list
         Symbolic differential equations
@@ -258,6 +274,24 @@ class ExplicitODESystem(ODESystem):
         self.odes = odes
         self.ics = ics
         super().__init__()
+
+    @property
+    def odes(self):
+        """List of ordinary differential equations"""
+        return self._odes
+
+    @odes.setter
+    def odes(self, value):
+        self._odes = value
+
+    @property
+    def ics(self):
+        """Initial conditions"""
+        return self._ics
+
+    @ics.setter
+    def ics(self, value):
+        self._ics = value
 
     @property
     def free_symbols(self):
@@ -1200,7 +1234,7 @@ class CompartmentalSystem(ODESystem):
 class Compartment:
     """Compartment for a compartmental system
 
-    Attributes
+    Parameters
     ----------
     name : str
         Compartment name
@@ -1230,6 +1264,28 @@ class Compartment:
         self.lag_time = lag_time
 
     @property
+    def name(self):
+        """Compartment name"""
+        return self._name
+
+    @name.setter
+    def name(self, value):
+        if not isinstance(value, str):
+            raise TypeError("Name of a Compartment must be of string type")
+        self._name = value
+
+    @property
+    def dose(self):
+        return self._dose
+
+    @dose.setter
+    def dose(self, value):
+        """Dose into compartent"""
+        if value is not None and not isinstance(value, Dose):
+            raise TypeError("dose must be of Dose type (or None)")
+        self._dose = value
+
+    @property
     def amount(self):
         """Symbol for the amount in the compartment
 
@@ -1244,6 +1300,7 @@ class Compartment:
 
     @property
     def lag_time(self):
+        """Lag time for doses into compartment"""
         return self._lag_time
 
     @lag_time.setter
@@ -1301,10 +1358,23 @@ class Compartment:
         return f'Compartment({self.name}{dose}{lag})'
 
 
-class Bolus:
+class Dose(ABC):
+    """Abstract base class for different types of doses"""
+
+    @abstractmethod
+    def subs(self, substitutions):
+        pass
+
+    @property
+    @abstractmethod
+    def free_symbols(self):
+        pass
+
+
+class Bolus(Dose):
     """A Bolus dose
 
-    Attributes
+    Parameters
     ----------
     amount : symbol
         Symbolic amount of dose
@@ -1318,7 +1388,16 @@ class Bolus:
     """
 
     def __init__(self, amount):
-        self.amount = sympy.sympify(amount)
+        self.amount = amount
+
+    @property
+    def amount(self):
+        """Symbolic amount of dose"""
+        return self._amount
+
+    @amount.setter
+    def amount(self, value):
+        self._amount = sympy.sympify(value)
 
     @property
     def free_symbols(self):
@@ -1362,15 +1441,15 @@ class Bolus:
         return f'Bolus({self.amount})'
 
 
-class Infusion:
+class Infusion(Dose):
     """An infusion dose
 
-    Attributes
+    Parameters
     ----------
     amount : expression
         Symbolic amount of dose
     rate : expression
-        Symbolic rate. Mutually excluseive with duration
+        Symbolic rate. Mutually exclusive with duration
     duration : expression
         Symbolic duration. Mutually excluseive with rate
 
@@ -1388,9 +1467,46 @@ class Infusion:
     def __init__(self, amount, rate=None, duration=None):
         if rate is None and duration is None:
             raise ValueError('Need rate or duration for Infusion')
-        self.rate = sympy.sympify(rate)
-        self.duration = sympy.sympify(duration)
-        self.amount = sympy.sympify(amount)
+        self.rate = rate
+        self.duration = duration
+        self.amount = amount
+
+    @property
+    def amount(self):
+        """Symbolic amount of dose"""
+        return self._amount
+
+    @amount.setter
+    def amount(self, value):
+        self._amount = sympy.sympify(value)
+
+    @property
+    def rate(self):
+        """Symbolic rate
+
+        Mutually exclusive with duration.
+        """
+        return self._rate
+
+    @rate.setter
+    def rate(self, value):
+        self._rate = sympy.sympify(value)
+        if value is not None:
+            self._duration = None
+
+    @property
+    def duration(self):
+        """Symbolc duration
+
+        Mutually exclusive with rate.
+        """
+        return self._duration
+
+    @duration.setter
+    def duration(self, value):
+        self._duration = sympy.sympify(value)
+        if value is not None:
+            self._rate = None
 
     @property
     def free_symbols(self):
@@ -1458,6 +1574,11 @@ class ModelStatements(MutableSequence):
     A ModelStatements object can have 0 or 1 ODESystem. The order of
     the statements is significant and the same symbol can be assigned
     to multiple times.
+
+    Parameters
+    ----------
+    statements : list or ModelStatements
+        A list of Statements or another ModelStatements to populate this object
     """
 
     def __init__(self, statements=None):
