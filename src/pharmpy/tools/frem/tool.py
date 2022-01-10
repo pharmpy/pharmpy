@@ -26,13 +26,13 @@ def check_covariates(input_model, covariates):
     """
     kept = []
     for cov in covariates:
-        if cov not in input_model.datainfo.column_names:
+        if cov not in input_model.datainfo.names:
             warnings.warn(f'The covariate {cov} is not available in the dataset. Will be skipped.')
         else:
             kept.append(cov)
     covariates = kept
 
-    input_model.datainfo.set_column_type(covariates, 'covariate')
+    input_model.datainfo[covariates].types = 'covariate'
     cov_bls = get_covariate_baselines(input_model)
 
     tvar = list_time_varying_covariates(input_model)

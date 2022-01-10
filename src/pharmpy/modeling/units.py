@@ -47,14 +47,14 @@ def get_unit_of(model, variable):
         variable = variable.name
 
     di = model.datainfo
-    if variable in di.column_names:
+    if variable in di.names:
         return di[variable].unit
 
     y = model.dependent_variable
     input_units = {sympy.Symbol(col.name): col.unit for col in di}
     input_units[sympy.exp] = 1
     unit_eqs = []
-    unit_eqs.append(y - di[di.dv_label].unit)
+    unit_eqs.append(y - di[di.dv_column.name].unit)
 
     for s in model.statements:
         if isinstance(s, Assignment):
@@ -65,8 +65,8 @@ def get_unit_of(model, variable):
             else:
                 unit_eqs.append(s.symbol - _extract_minus(expr))
         elif isinstance(s, ODESystem):
-            amt_unit = di[di.get_column_label('dose')].unit
-            time_unit = di[di.idv_label].unit
+            amt_unit = di[di.typeix['dose'][0].name].unit
+            time_unit = di[di.idv_column.name].unit
             for e in s.compartmental_matrix.diagonal():
                 if e.is_Add:
                     for term in e.args:

@@ -217,7 +217,7 @@ class Model:
         symbols = [str(symbol) for symbol in self.statements.free_symbols]
         params = [param.name for param in self.parameters]
         rvs = [rv.name for rv in self.random_variables]
-        dataset_col = self.datainfo.column_names
+        dataset_col = self.datainfo.names
         misc = [self.dependent_variable]
 
         all_names = symbols + params + rvs + dataset_col + misc

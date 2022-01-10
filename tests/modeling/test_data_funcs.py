@@ -105,7 +105,7 @@ def test_number_of_observations():
 
 
 def test_covariate_baselines():
-    model.datainfo.set_column_type(['WGT', 'APGR'], 'covariate')
+    model.datainfo[['WGT', 'APGR']].types = 'covariate'
     df = get_covariate_baselines(model)
     assert len(df) == 59
     assert list(df.columns) == ['WGT', 'APGR']
@@ -127,7 +127,7 @@ def test_timevarying_covariates():
 
 def test_get_mdv():
     mdv = get_mdv(model)
-    label_test = model.datainfo.get_column_label('dose')
+    label_test = model.datainfo.typeix['dose'][0].name
     data_test = model.dataset[label_test].astype('float64').squeeze()
     mdv_test = data_test.where(data_test == 0, other=1).astype('int64')
     result = mdv.equals(other=mdv_test)

@@ -26,7 +26,7 @@ def get_ids(model):
     >>> get_ids(model)      # doctest: +ELLIPSIS
     [1, 2, 3, ..., 57, 58, 59]
     """
-    idcol = model.datainfo.id_label
+    idcol = model.datainfo.id_column.name
     ids = list(model.dataset[idcol].unique())
     return ids
 
@@ -193,7 +193,7 @@ def get_number_of_observations_per_individual(model):
         dataset
 
     """
-    ser = get_observations(model).groupby(model.datainfo.id_label).count()
+    ser = get_observations(model).groupby(model.datainfo.id_column.name).count()
     ser.name = "observation_count"
     return ser
 
@@ -235,21 +235,23 @@ def get_observations(model):
     get_number_of_observations : get the number of observations
     get_number_of_observations_per_individual : get the number of observations per individual
     """
-    label = model.datainfo.get_column_label('event')
-    if label is None:
-        label = model.datainfo.get_column_label('dose')
-        if label is None:
+    try:
+        label = model.datainfo.typeix['event'][0].name
+    except IndexError:
+        try:
+            label = model.datainfo.typeix['dose'][0].name
+        except IndexError:
             raise DatasetError('Could not identify observation rows in dataset')
 
-    idcol = model.datainfo.id_label
-    idvcol = model.datainfo.idv_label
+    idcol = model.datainfo.id_column.name
+    idvcol = model.datainfo.idv_column.name
     df = model.dataset.query(f'{label} == 0')
 
     if df.empty:
         df = model.dataset.astype({label: 'float'})
         df = df.query(f'{label} == 0')
 
-    df = df[[idcol, idvcol, model.datainfo.dv_label]]
+    df = df[[idcol, idvcol, model.datainfo.dv_column.name]]
     try:
         # FIXME: This shouldn't be needed
         df = df.astype({idvcol: np.float64})
@@ -342,7 +344,7 @@ def get_baselines(model):
     58   0.  14.0  1.4   8.0  0.0  1.0  1.0
     59   0.  22.8  1.1   6.0  0.0  1.0  1.0
     """
-    idlab = model.datainfo.id_label
+    idlab = model.datainfo.id_column.name
     baselines = model.dataset.groupby(idlab).nth(0)
     return baselines
 
@@ -370,7 +372,7 @@ def get_covariate_baselines(model):
     -------
     >>> from pharmpy.modeling import load_example_model, get_covariate_baselines
     >>> model = load_example_model("pheno")
-    >>> model.datainfo.set_column_type(["WGT", "APGR"], "covariate")
+    >>> model.datainfo[["WGT", "APGR"]].types = "covariate"
     >>> get_covariate_baselines(model)
         WGT  APGR
     ID
@@ -434,8 +436,8 @@ def get_covariate_baselines(model):
     58  1.4   8.0
     59  1.1   6.0
     """
-    covariates = model.datainfo.get_column_labels('covariate')
-    idlab = model.datainfo.id_label
+    covariates = model.datainfo.typeix['covariate'].names
+    idlab = model.datainfo.id_column.name
     df = model.dataset[covariates + [idlab]]
     df.set_index(idlab, inplace=True)
     return df.groupby(idlab).nth(0)
@@ -466,12 +468,15 @@ def list_time_varying_covariates(model):
     []
 
     """
-    cov_labels = model.datainfo.get_column_labels('covariate')
+    cov_labels = model.datainfo.typeix['covariate'].names
     if len(cov_labels) == 0:
         return []
     else:
         time_var = (
-            model.dataset.groupby(by=model.datainfo.id_label)[cov_labels].nunique().gt(1).any()
+            model.dataset.groupby(by=model.datainfo.id_column.name)[cov_labels]
+            .nunique()
+            .gt(1)
+            .any()
         )
         return list(time_var.index[time_var])
 
@@ -512,12 +517,12 @@ def get_doses(model):
 
     """
     try:
-        label = model.datainfo.get_column_label('dose')
-    except KeyError:
+        label = model.datainfo.typeix['dose'][0].name
+    except IndexError:
         raise DatasetError('Could not identify dosing rows in dataset')
 
-    idcol = model.datainfo.id_label
-    idvcol = model.datainfo.idv_label
+    idcol = model.datainfo.id_column.name
+    idvcol = model.datainfo.idv_column.name
     df = model.dataset.query(f'{label} != 0')
     df = df[[idcol, idvcol, label]]
     try:
@@ -562,14 +567,14 @@ def get_doseid(model):
     Name: DOSEID, Length: 744, dtype: int64
     """
     try:
-        dose = model.datainfo.get_column_label('dose')
-    except KeyError:
+        dose = model.datainfo.typeix['dose'][0].name
+    except IndexError:
         raise DatasetError('Could not identify dosing rows in dataset')
     df = model.dataset.copy()
     df['DOSEID'] = df[dose]
     df.loc[df['DOSEID'] > 0, 'DOSEID'] = 1
     df['DOSEID'] = df['DOSEID'].astype(int)
-    df['DOSEID'] = df.groupby(model.datainfo.id_label)['DOSEID'].cumsum()
+    df['DOSEID'] = df.groupby(model.datainfo.id_column.name)['DOSEID'].cumsum()
     return df['DOSEID'].copy()
 
 
@@ -586,17 +591,18 @@ def get_mdv(model):
     pd.Series
         MDVs
     """
-    label = model.datainfo.get_column_label('event')
-    if label is None:
-        label = model.datainfo.get_column_label('dose')
-
-    if label is None:
-        label = model.datainfo.dv_label
-        data = model.dataset[label].astype('float64').squeeze()
-        mdv = pd.Series(np.zeros(len(data))).astype('int64').rename('MDV')
-    else:
-        data = model.dataset[label].astype('float64').squeeze()
-        mdv = data.where(data == 0, other=1).astype('int64').rename('MDV')
+    try:
+        label = model.datainfo.typeix['event'][0].name
+    except IndexError:
+        try:
+            label = model.datainfo.typeix['dose'][0].name
+        except IndexError:
+            label = model.datainfo.dv_column.name
+            data = model.dataset[label].astype('float64').squeeze()
+            mdv = pd.Series(np.zeros(len(data))).astype('int64').rename('MDV')
+            return mdv
+    data = model.dataset[label].astype('float64').squeeze()
+    mdv = data.where(data == 0, other=1).astype('int64').rename('MDV')
     return mdv
 
 
@@ -626,8 +632,8 @@ def add_time_after_dose(model):
     df = model.dataset
     doseid = get_doseid(model)
     df['DOSEID'] = doseid
-    idv = model.datainfo.idv_label
-    idlab = model.datainfo.id_label
+    idv = model.datainfo.idv_column.name
+    idlab = model.datainfo.id_column.name
     df[idv] = df[idv].astype(np.float64)
     df['TAD'] = df.groupby([idlab, 'DOSEID'])[idv].diff().fillna(0)
     df['TAD'] = df.groupby([idlab, 'DOSEID'])['TAD'].cumsum()
@@ -678,8 +684,8 @@ def get_concentration_parameters_from_data(model):
     add_time_after_dose(model)
     doseid = get_doseid(model)
     df['DOSEID'] = doseid
-    idlab = model.datainfo.id_label
-    dv = model.datainfo.dv_label
+    idlab = model.datainfo.id_column.name
+    dv = model.datainfo.dv_column.name
     noobs = df.groupby([idlab, 'DOSEID']).size() == 1
     idx = df.groupby([idlab, 'DOSEID'])[dv].idxmax()
     params = df.loc[idx].set_index([idlab, 'DOSEID'])

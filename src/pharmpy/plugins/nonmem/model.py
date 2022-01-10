@@ -56,7 +56,7 @@ def convert_model(model):
         return model
     model = model.to_generic_model()
     code = '$PROBLEM\n'
-    code += '$INPUT ' + ' '.join(model.datainfo.column_names) + '\n'
+    code += '$INPUT ' + ' '.join(model.datainfo.names) + '\n'
     code += '$DATA file.csv IGNORE=@\n'
     if model.statements.ode_system is None:
         code += '$PRED\n'
@@ -175,9 +175,9 @@ class Model(pharmpy.model.Model):
 
             data_record = self.control_stream.get_records('DATA')[0]
 
-            label = self.datainfo.column_names[0]
+            label = self.datainfo.names[0]
             data_record.ignore_character_from_header(label)
-            self._update_input(self.datainfo.column_names)
+            self._update_input(self.datainfo.names)
 
             # Remove IGNORE/ACCEPT. Could do diff between old dataset and find simple
             # IGNOREs to add i.e. for filter out certain ID.

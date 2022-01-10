@@ -217,7 +217,7 @@ def calculate_individual_parameter_statistics(model, exprs, rng=None):
         exprs = [_split_equation(exprs)]
     else:
         exprs = [_split_equation(expr) for expr in exprs]
-    cols = set(model.datainfo.column_names)
+    cols = set(model.datainfo.names)
     i = 0
     table = pd.DataFrame(columns=['parameter', 'covariates', 'mean', 'variance', 'stderr'])
     for name, expr in exprs:

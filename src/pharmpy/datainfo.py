@@ -226,6 +226,18 @@ class ColumnInfo:
 
 
 class DataInfo(MutableSequence):
+    """Metadata for the dataset
+
+    Can be indexed to get ColumnInfo for the columns.
+
+    Parameters
+    ----------
+    columns : list
+        List of column names
+    path : Path
+        Path to dataset file
+    """
+
     def __init__(self, columns=None, path=None):
         if columns is None:
             self._columns = []
@@ -261,6 +273,12 @@ class DataInfo(MutableSequence):
             raise TypeError(f"Cannot index DataInfo by {type(i)}")
 
     def __getitem__(self, i):
+        if isinstance(i, list):
+            cols = []
+            for ind in i:
+                index = self._getindex(ind)
+                cols.append(self._columns[index])
+            return DataInfo(columns=cols)
         return self._columns[self._getindex(i)]
 
     def __setitem__(self, i, value):
@@ -272,21 +290,17 @@ class DataInfo(MutableSequence):
     def insert(self, i, value):
         self._columns.insert(self._getindex(i), value)
 
-    def _get_one_label_by_type(self, tp):
-        for col in self._columns:
-            if tp == col.type:
-                return col.name
-        return None
-
-    def _set_one_label_to_type(self, name, tp):
-        for col in self._columns:
-            if name == col.name:
-                col.type = tp
-                return
-        raise KeyError(f"No column with the name {name}")
-
     @property
     def path(self):
+        """Path of dataset file
+
+        Examples
+        --------
+        >>> from pharmpy.modeling import load_example_model
+        >>> model = load_example_model("pheno")
+        >>> model.datainfo.path     # doctest: +ELLIPSIS
+        ...pharmpy/modeling/example_models/pheno.dta')
+        """
         return self._path
 
     @path.setter
@@ -297,59 +311,100 @@ class DataInfo(MutableSequence):
             self._path = None
 
     @property
-    def id_label(self):
-        return self._get_one_label_by_type('id')
+    def typeix(self):
+        """Type indexer
 
-    @id_label.setter
-    def id_label(self, name):
-        self._set_one_label_to_type(name, 'id')
-
-    @property
-    def dv_label(self):
-        return self._get_one_label_by_type('dv')
-
-    @dv_label.setter
-    def dv_label(self, name):
-        self._set_one_label_to_type(name, 'dv')
+        Example
+        -------
+        >>> from pharmpy.modeling import load_example_model
+        >>> model = load_example_model("pheno")
+        >>> model.datainfo.typeix['covariate'].names
+        ['WGT', 'APGR']
+        """
+        return TypeIndexer(self)
 
     @property
-    def idv_label(self):
-        return self._get_one_label_by_type('idv')
+    def id_column(self):
+        """The id column
 
-    @idv_label.setter
-    def idv_label(self, name):
-        self._set_one_label_to_type(name, 'idv')
+        Examples
+        --------
+        >>> from pharmpy.modeling import load_example_model
+        >>> model = load_example_model("pheno")
+        >>> model.datainfo.id_column.name
+        'ID'
+        """
+        return self.typeix['id'][0]
+
+    @id_column.setter
+    def id_column(self, value):
+        self[value].type = 'id'
 
     @property
-    def column_names(self):
+    def dv_column(self):
+        """The dv column
+
+        Examples
+        --------
+        >>> from pharmpy.modeling import load_example_model
+        >>> model = load_example_model("pheno")
+        >>> model.datainfo.dv_column.name
+        'DV'
+        """
+        return self.typeix['dv'][0]
+
+    @dv_column.setter
+    def dv_column(self, value):
+        self[value].type = 'dv'
+
+    @property
+    def idv_column(self):
+        """The idv column
+
+        Examples
+        --------
+        >>> from pharmpy.modeling import load_example_model
+        >>> model = load_example_model("pheno")
+        >>> model.datainfo.idv_column.name
+        'TIME'
+        """
+        return self.typeix['idv'][0]
+
+    @idv_column.setter
+    def idv_column(self, value):
+        self[value].type = 'idv'
+
+    @property
+    def names(self):
+        """All column names
+
+        Examples
+        --------
+        >>> from pharmpy.modeling import load_example_model
+        >>> model = load_example_model("pheno")
+        >>> model.datainfo.names
+        ['ID', 'TIME', 'AMT', 'WGT', 'APGR', 'DV']
+        """
         return [col.name for col in self._columns]
 
-    def set_column_type(self, labels, tp):
-        if isinstance(labels, str):
-            labels = [labels]
-        for label in labels:
-            for col in self._columns:
-                if col.name == label:
-                    col.type = tp
-                    break
-            else:
-                raise KeyError(f"No column named {label}")
+    @property
+    def types(self):
+        """All column types"""
+        return [col.type for col in self._columns]
 
-    def get_column_type(self, label):
-        for col in self._columns:
-            if col.name == label:
-                return col.type
-        raise KeyError(f"No column named {label}")
-
-    def get_column_label(self, tp):
-        for col in self._columns:
-            if col.type == tp:
-                return col.name
-        return None
-
-    def get_column_labels(self, tp):
-        labels = [col.name for col in self._columns if col.type == tp]
-        return labels
+    @types.setter
+    def types(self, value):
+        if isinstance(value, str):
+            value = [value]
+        if len(value) == 1:
+            value *= len(self)
+        if len(value) != len(self):
+            raise ValueError(
+                "Length mismatch. "
+                "Can only set the same number of names as columns or 1 for broadcasting"
+            )
+        for v, col in zip(value, self._columns):
+            col.type = v
 
     def to_json(self, path=None):
         a = []
@@ -371,6 +426,18 @@ class DataInfo(MutableSequence):
 
     @staticmethod
     def from_json(s):
+        """Create DataInfo from JSON string
+
+        Parameters
+        ----------
+        s : str
+            JSON string
+
+        Return
+        ------
+        DataInfo
+            Created DataInfo object
+        """
         d = json.loads(s)
         columns = []
         for col in d['columns']:
@@ -386,6 +453,18 @@ class DataInfo(MutableSequence):
 
     @staticmethod
     def read_json(path):
+        """Read DataInfo from JSON file
+
+        Parameters
+        ----------
+        path : Path or str
+            Path to JSON datainfo file
+
+        Return
+        ------
+        DataInfo
+            Created DataInfo object
+        """
         with open(path, 'r') as fp:
             s = fp.read()
         return DataInfo.from_json(s)
@@ -406,3 +485,14 @@ class DataInfo(MutableSequence):
         df.loc['unit'] = units
         df.loc['drop'] = drop
         return df.to_string()
+
+
+class TypeIndexer:
+    def __init__(self, obj):
+        self._obj = obj
+
+    def __getitem__(self, i):
+        cols = [col for col in self._obj if col.type == i]
+        if not cols:
+            raise IndexError(f"No columns of type {i} available")
+        return DataInfo(cols)

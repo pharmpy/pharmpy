@@ -165,7 +165,7 @@ def _create_dataset(input_model):
     mdv = get_mdv(input_model)
     df_ipred = pd.concat([mdv, ipred], axis=1).rename(columns={ipredcol: 'IPRED'})
     df_ipred = df_ipred[df_ipred['MDV'] == 0].reset_index(drop=True)
-    label_id = input_model.datainfo.id_label
+    label_id = input_model.datainfo.id_column.name
     input_id = input_model.dataset[label_id].astype('int64').squeeze()
     df_id = pd.concat([mdv, input_id], axis=1)
     df_id = df_id[df_id['MDV'] == 0].reset_index(drop=True)

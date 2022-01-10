@@ -64,46 +64,46 @@ drop          False"""
     assert repr(col) == correct
 
 
-def test_id_label():
+def test_id_column():
     di = DataInfo(['ID', 'TIME', 'DV'])
-    with pytest.raises(KeyError):
-        di.id_label = 'DUMMY'
-    di.id_label = 'ID'
-    assert di.id_label == 'ID'
+    with pytest.raises(IndexError):
+        di.id_column = 'DUMMY'
+    di.id_column = 'ID'
+    assert di.id_column.name == 'ID'
 
 
 def test_dv_label():
     di = DataInfo(['ID', 'TIME', 'DV'])
-    with pytest.raises(KeyError):
-        di.dv_label = 'DUMMY'
-    di.dv_label = 'DV'
-    assert di.dv_label == 'DV'
+    with pytest.raises(IndexError):
+        di.dv_column = 'DUMMY'
+    di.dv_column = 'DV'
+    assert di.dv_column.name == 'DV'
 
 
 def test_idv_label():
     di = DataInfo(['ID', 'TIME', 'DV'])
-    with pytest.raises(KeyError):
-        di.idv_label = 'DUMMY'
-    di.idv_label = 'TIME'
-    assert di.idv_label == 'TIME'
+    with pytest.raises(IndexError):
+        di.idv_column = 'DUMMY'
+    di.idv_column = 'TIME'
+    assert di.idv_column.name == 'TIME'
 
 
 def test_get_set_column_type():
     di = DataInfo(['ID', 'TIME', 'DV'])
-    di.set_column_type('ID', 'id')
-    with pytest.raises(KeyError):
-        di.set_column_type('DUMMY', 'id')
+    di['ID'].type = 'id'
+    with pytest.raises(IndexError):
+        di['DUMMY'].type = 'id'
     with pytest.raises(TypeError):
-        di.set_column_type('TIME', 'kzarqj')
-    assert di.get_column_type('ID') == 'id'
+        di['TIME'].type = 'kzarqj'
+    assert di['ID'].type == 'id'
 
 
 def test_get_column_label():
     di = DataInfo(['ID', 'TIME', 'DV', 'WGT', 'APGR'])
-    di.set_column_type('ID', 'id')
-    di.set_column_type(['WGT', 'APGR'], 'covariate')
-    assert di.get_column_label('id') == 'ID'
-    assert di.get_column_labels('covariate') == ['WGT', 'APGR']
+    di['ID'].type = 'id'
+    di[['WGT', 'APGR']].types = 'covariate'
+    assert di.typeix['id'].names == ['ID']
+    assert di.typeix['covariate'].names == ['WGT', 'APGR']
 
 
 def test_unit():

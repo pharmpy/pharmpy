@@ -172,7 +172,7 @@ def add_covariate_effect(model, parameter, covariate, effect, operation='*'):
     statements.append(effect_statement)
 
     previous_effect = sset.find_assignment(parameter)
-    cov_possible = [f'{parameter}{col_name}' for col_name in model.datainfo.column_names]
+    cov_possible = [f'{parameter}{col_name}' for col_name in model.datainfo.names]
 
     if previous_effect.expression.args and all(
         arg.name in cov_possible for arg in previous_effect.expression.args if str(arg) != parameter
@@ -222,7 +222,7 @@ def _create_thetas(model, parameter, effect, covariate, template):
 
 def _count_categorical(model, covariate):
     """Gets the number of individuals that has a level of categorical covariate."""
-    idcol = model.datainfo.id_label
+    idcol = model.datainfo.id_column.name
     df = model.dataset.set_index(idcol)
     allcounts = df[covariate].groupby('ID').value_counts()
     allcounts.name = None  # To avoid collisions when resetting index

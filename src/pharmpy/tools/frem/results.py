@@ -559,7 +559,7 @@ def calculate_results_from_samples(frem_model, continuous, categorical, parvecs,
 
     df = frem_model.dataset
     covariates = continuous + categorical
-    frem_model.datainfo.set_column_type(covariates, 'covariate')
+    frem_model.datainfo[covariates].types = 'covariate'
     covariate_baselines = get_covariate_baselines(frem_model)
     covariate_baselines = covariate_baselines[covariates]
     cov_means = covariate_baselines.mean()

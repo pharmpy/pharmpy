@@ -858,7 +858,7 @@ def get_model_covariates(model, strings=False):
     """
     symbs = model.statements.dependencies(model.dependent_variable)
     # Remove dose symbol if not used as covariate
-    datasymbs = {sympy.Symbol(s) for s in model.datainfo.column_names}
+    datasymbs = {sympy.Symbol(s) for s in model.datainfo.names}
     cov_dose_symbols = set()
     if isinstance(model.statements.ode_system, CompartmentalSystem):
         dosecmt = model.statements.ode_system.dosing_compartment
@@ -918,7 +918,7 @@ def print_model_symbols(model):
     s += f'Epsilons: {", ".join(epsilons)}\n'
     s += f'Sigmas: {", ".join(sigmas)}\n'
     s += f'Variables: {", ".join(variables)}\n'
-    s += f'Data columns: {", ".join(model.datainfo.column_names)}'
+    s += f'Data columns: {", ".join(model.datainfo.names)}'
     print(s)
 
 

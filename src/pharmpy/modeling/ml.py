@@ -13,7 +13,7 @@ from .data import (
 
 
 def _create_dataset(model):
-    idcol = model.datainfo.id_label
+    idcol = model.datainfo.id_column.name
     nids = get_number_of_individuals(model)
     nobs = get_number_of_observations(model)
     nobsi = get_number_of_observations_per_individual(model)

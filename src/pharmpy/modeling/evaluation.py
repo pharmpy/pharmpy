@@ -195,7 +195,7 @@ def evaluate_individual_prediction(model, etas=None, parameters=None, dataset=No
     else:
         df = model.dataset
 
-    idcol = model.datainfo.id_label
+    idcol = model.datainfo.id_column.name
 
     if etas is None:
         if (
@@ -291,7 +291,7 @@ def evaluate_eta_gradient(model, etas=None, parameters=None, dataset=None):
         df = dataset
     else:
         df = model.dataset
-    idcol = model.datainfo.id_label
+    idcol = model.datainfo.id_column.name
 
     if etas is None:
         if (
@@ -385,7 +385,7 @@ def evaluate_epsilon_gradient(model, etas=None, parameters=None, dataset=None):
     else:
         df = model.dataset
 
-    idcol = model.datainfo.id_label
+    idcol = model.datainfo.id_column.name
 
     if etas is None:
         if (
@@ -476,22 +476,22 @@ def evaluate_weighted_residuals(model, parameters=None, dataset=None):
     # FIXME: Could have option to gradients to set all etas 0
     etas = pd.DataFrame(
         0,
-        index=df[model.datainfo.id_label].unique(),
+        index=df[model.datainfo.id_column.name].unique(),
         columns=[eta.name for eta in model.random_variables.etas],
     )
     G = evaluate_eta_gradient(model, etas=etas, parameters=parameters, dataset=dataset)
     H = evaluate_epsilon_gradient(model, etas=etas, parameters=parameters, dataset=dataset)
     F = evaluate_population_prediction(model)
-    index = df[model.datainfo.id_label]
+    index = df[model.datainfo.id_column.name]
     G.index = index
     H.index = index
     F.index = index
     WRES = np.float64([])
-    for i in df[model.datainfo.id_label].unique():
+    for i in df[model.datainfo.id_column.name].unique():
         Gi = np.float64(G.loc[[i]])
         Hi = np.float64(H.loc[[i]])
         Fi = F.loc[i:i]
-        DVi = np.float64(df['DV'][df[model.datainfo.id_label] == i])
+        DVi = np.float64(df['DV'][df[model.datainfo.id_column.name] == i])
         Ci = Gi @ omega @ Gi.T + np.diag(np.diag(Hi @ sigma @ Hi.T))
         WRESi = scipy.linalg.sqrtm(scipy.linalg.inv(Ci)) @ (DVi - Fi)
         WRES = np.concatenate((WRES, WRESi))
