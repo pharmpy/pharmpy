@@ -12,9 +12,9 @@ from pharmpy.utils import TemporaryDirectoryChanger
     'mfl, no_of_models, best_model_name',
     [
         ('ABSORPTION(ZO)\nPERIPHERALS(1)', 4, 'modelsearch_candidate2'),
-        # ('ABSORPTION(ZO)\nTRANSITS(1)', 2, 'mox2'),
-        # ('ABSORPTION([ZO,SEQ-ZO-FO])\nPERIPHERALS(1)', 7, 'modelsearch_candidate3'),
-        # ('LAGTIME()\nTRANSITS(1)', 2, 'mox2'),
+        ('ABSORPTION(ZO)\nTRANSITS(1)', 2, 'mox2'),
+        ('ABSORPTION([ZO,SEQ-ZO-FO])\nPERIPHERALS(1)', 7, 'modelsearch_candidate3'),
+        ('LAGTIME()\nTRANSITS(1)', 2, 'mox2'),
     ],
 )
 def test_exhaustive_stepwise_basic(tmp_path, testdata, mfl, no_of_models, best_model_name):
