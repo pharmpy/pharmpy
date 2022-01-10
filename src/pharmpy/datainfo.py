@@ -13,18 +13,14 @@ from pharmpy.utils import parse_units
 class ColumnInfo:
     """Information about one data column
 
-    ============  =============
-    ColumnType    Description
-    ============  =============
-    id            Individual identifier. Max one per DataFrame. All values have to be unique
-    idv           Independent variable. Max one per DataFrame.
-    dv            Dependent variable
-    covariate     Covariate
-    dose          Dose amount
-    event         0 = observation
-    unknown       Unkown type. This will be the default for columns that hasn't been assigned a type
-    ============  =============
-
+    Attributes
+    ----------
+    name : str
+        Colum name
+    categories : list
+        List of all possible categories
+    drop : bool
+        Should column be dropped (i.e. barred from being used)
     """
 
     all_types = ['id', 'dv', 'idv', 'unknown', 'dose', 'event', 'covariate']
@@ -64,6 +60,21 @@ class ColumnInfo:
 
     @property
     def type(self):
+        """Type of column
+
+        ============  =============
+        type          Description
+        ============  =============
+        id            Individual identifier. Max one per DataFrame. All values have to be unique
+        idv           Independent variable. Max one per DataFrame.
+        dv            Dependent variable
+        covariate     Covariate
+        dose          Dose amount
+        event         0 = observation
+        unknown       Unkown type. This will be the default for columns that hasn't been
+                      assigned a type
+        ============  =============
+        """
         return self._type
 
     @type.setter
@@ -74,6 +85,11 @@ class ColumnInfo:
 
     @property
     def unit(self):
+        """Unit of the column data
+
+        Custom units are allowed, but units that are available in sympy.physics.units can be
+        recognized. The default unit is 1, i.e. without unit.
+        """
         return self._unit
 
     @unit.setter
@@ -83,6 +99,11 @@ class ColumnInfo:
 
     @property
     def scale(self):
+        """Scale of measurement
+
+        The statistical scale of measurement for the column data. Can be one of
+        'nominal', 'ordinal', 'interval' and 'rational'.
+        """
         return self._scale
 
     @scale.setter
@@ -97,6 +118,11 @@ class ColumnInfo:
 
     @property
     def continuous(self):
+        """Is the column data continuous
+
+        True for continuous data and False for discrete. Note that nominal and ordinal data have to
+        be discrete.
+        """
         return self._continuous
 
     @continuous.setter
@@ -108,9 +134,53 @@ class ColumnInfo:
         self._continuous = value
 
     def is_categorical(self):
+        """Check if the column data is categorical
+
+        Returns
+        -------
+        bool
+            True if categorical (nominal or ordinal) and False otherwise.
+
+        See also
+        --------
+        is_numerical : Check if the column data is numerical
+
+        Examples
+        --------
+        >>> from pharmpy.datainfo import ColumnInfo
+        >>> col1 = ColumnInfo("WGT", scale='ratio')
+        >>> col1.is_categorical()
+        False
+        >>> col2 = ColumnInfo("ID", scale='nominal')
+        >>> col2.is_categorical()
+        True
+
+        """
         return self.scale in ['nominal', 'ordinal']
 
     def is_numerical(self):
+        """Check if the column data is numerical
+
+        Returns
+        -------
+        bool
+            True if numerical (interval or ratio) and False otherwise.
+
+        See also
+        --------
+        is_categorical : Check if the column data is categorical
+
+        Examples
+        --------
+        >>> from pharmpy.datainfo import ColumnInfo
+        >>> col1 = ColumnInfo("WGT", scale='ratio')
+        >>> col1.is_numerical()
+        True
+        >>> col2 = ColumnInfo("ID", scale='nominal')
+        >>> col2.is_numerical()
+        False
+
+        """
         return self.scale in ['interval', 'ratio']
 
     def __repr__(self):

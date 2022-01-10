@@ -1,6 +1,62 @@
 import pytest
+import sympy
+import sympy.physics.units
 
 from pharmpy.datainfo import ColumnInfo, DataInfo
+
+
+def test_columninfo_type():
+    col = ColumnInfo("DUMMY")
+    with pytest.raises(TypeError):
+        col.type = "notaknowntype"
+    col.type = 'id'
+    assert col.type == 'id'
+
+    col2 = ColumnInfo("DUMMY", type='dv')
+    assert col2.type == 'dv'
+    assert col2.continuous
+
+
+def test_columninfo_scale():
+    col = ColumnInfo("DUMMY")
+    with pytest.raises(TypeError):
+        col.scale = 'notavalidscale'
+    col.scale = 'nominal'
+    assert col.scale == 'nominal'
+    assert not col.continuous
+
+
+def test_columninfo_unit():
+    col = ColumnInfo("DUMMY")
+    col.unit = "nospecialunit"
+    assert col.unit == sympy.Symbol("nospecialunit")
+    col.unit = "kg"
+    assert col.unit == sympy.physics.units.kg
+
+
+def test_columninfo_continuous():
+    col = ColumnInfo("DUMMY", scale="nominal")
+    with pytest.raises(ValueError):
+        col.continuous = True
+
+
+def test_columninfo_is_numerical():
+    col = ColumnInfo("DUMMY", scale='nominal')
+    assert not col.is_numerical()
+    col = ColumnInfo("DUMMY", scale='ratio')
+    assert col.is_numerical()
+
+
+def test_columninfo_repr():
+    col = ColumnInfo("DUMMY", scale='nominal')
+    correct = """              DUMMY
+type        unknown
+scale       nominal
+continuous    False
+categories     None
+unit              1
+drop          False"""
+    assert repr(col) == correct
 
 
 def test_id_label():
