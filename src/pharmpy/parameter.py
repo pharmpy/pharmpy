@@ -7,7 +7,6 @@ import sympy
 
 import pharmpy.symbols as symbols
 from pharmpy.math import is_near_target
-from pharmpy.utils import parse_units
 
 
 class Parameters(MutableSequence):
@@ -325,11 +324,9 @@ class Parameter:
         The lower bound of the parameter. Default no bound. Must be less than the init.
     upper : number
         The upper bound of the parameter. Default no bound. Must be greater than the init.
-    unit : str or unit expression
-        Unit of parameter. Default to unitless
     """
 
-    def __init__(self, name, init, lower=None, upper=None, fix=False, unit=1):
+    def __init__(self, name, init, lower=None, upper=None, fix=False):
         self._init = init
         self.name = name
         self.fix = bool(fix)
@@ -340,7 +337,6 @@ class Parameter:
         if upper is not None:
             self.upper = upper
         self.verify_init(self._init)
-        self.unit = parse_units(unit)
 
     @property
     def name(self):
