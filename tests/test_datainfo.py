@@ -5,6 +5,11 @@ import sympy.physics.units
 from pharmpy.datainfo import ColumnInfo, DataInfo
 
 
+def test_columninfo_name():
+    with pytest.raises(TypeError):
+        ColumnInfo(1)
+
+
 def test_columninfo_type():
     col = ColumnInfo("DUMMY")
     with pytest.raises(TypeError):

@@ -13,18 +13,26 @@ from pharmpy.utils import parse_units
 class ColumnInfo:
     """Information about one data column
 
-    Attributes
+    Parameters
     ----------
     name : str
         Colum name
+    type : str
+        Type (see the "type" attribute)
+    unit : str
+        Unit (see the "unit" attribute)
+    scale : str
+        Scale of measurement (see the "scale" attribute)
+    continuous : bool
+        True if continuous or False if discrete
     categories : list
         List of all possible categories
     drop : bool
         Should column be dropped (i.e. barred from being used)
     """
 
-    all_types = ['id', 'dv', 'idv', 'unknown', 'dose', 'event', 'covariate']
-    all_scales = ['nominal', 'ordinal', 'interval', 'ratio']
+    _all_types = ['id', 'dv', 'idv', 'unknown', 'dose', 'event', 'covariate']
+    _all_scales = ['nominal', 'ordinal', 'interval', 'ratio']
 
     def __init__(
         self,
@@ -59,6 +67,18 @@ class ColumnInfo:
         )
 
     @property
+    def name(self):
+        """Column name
+        """
+        return self._name
+
+    @name.setter
+    def name(self, value):
+        if not isinstance(value, str):
+            raise TypeError("Column name must be a string")
+        self._name = value
+
+    @property
     def type(self):
         """Type of column
 
@@ -79,7 +99,7 @@ class ColumnInfo:
 
     @type.setter
     def type(self, value):
-        if value not in ColumnInfo.all_types:
+        if value not in ColumnInfo._all_types:
             raise TypeError(f"Unknown column type {value}")
         self._type = value
 
@@ -108,9 +128,9 @@ class ColumnInfo:
 
     @scale.setter
     def scale(self, value):
-        if value not in ColumnInfo.all_scales:
+        if value not in ColumnInfo._all_scales:
             raise TypeError(
-                f"Unknown scale of measurement {value}. Only {ColumnInfo.all_scales} are possible."
+                f"Unknown scale of measurement {value}. Only {ColumnInfo._all_scales} are possible."
             )
         self._scale = value
         if self.continuous and value in ['nominal', 'ordinal']:
@@ -132,6 +152,26 @@ class ColumnInfo:
                 f"Cannot set variable on {self.scale} scale of measurement to continuous"
             )
         self._continuous = value
+
+    @property
+    def categories(self):
+        """List of allowed categories
+        """
+        return self._categories
+
+    @categories.setter
+    def categories(self, value):
+        self._categories = value
+
+    @property
+    def drop(self):
+        """Should this column be dropped
+        """
+        return self._drop
+
+    @drop.setter
+    def drop(self, value):
+        self._drop = bool(value)
 
     def is_categorical(self):
         """Check if the column data is categorical
