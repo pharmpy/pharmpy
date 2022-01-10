@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import pytest
 import sympy
 import sympy.physics.units
@@ -5,7 +7,7 @@ import sympy.physics.units
 from pharmpy.datainfo import ColumnInfo, DataInfo
 
 
-def test_columninfo_name():
+def test_columninfo_init():
     with pytest.raises(TypeError):
         ColumnInfo(1)
 
@@ -62,6 +64,33 @@ categories     None
 unit              1
 drop          False"""
     assert repr(col) == correct
+
+
+def test_init():
+    di = DataInfo()
+    assert len(di) == 0
+
+
+def test_eq():
+    di1 = DataInfo()
+    di2 = DataInfo(columns=["COL1", "COL2"])
+    assert di1 != di2
+    di3 = DataInfo(columns=["DUMMY1", "DUMMY2"])
+    assert di2 != di3
+
+
+def test_indexing():
+    di = DataInfo(columns=["COL1", "COL2"])
+    assert di[0].name == 'COL1'
+    with pytest.raises(TypeError):
+        di[1.0]
+    col = ColumnInfo("COL3")
+    di[0] = col
+    assert di["COL3"].name == "COL3"
+    del di[0]
+    assert len(di) == 1
+    di.insert(1, col)
+    assert len(di) == 2
 
 
 def test_id_column():
@@ -127,3 +156,17 @@ def test_json():
 
     newdi = DataInfo.from_json(correct)
     assert newdi == di
+
+
+def test_path():
+    di = DataInfo(["C1", "C2"])
+    di.path = "file.datainfo"
+    assert di.path == Path("file.datainfo")
+
+
+def test_types():
+    di = DataInfo(['ID', 'TIME', 'DV'])
+    di.id_column = 'ID'
+    di.dv_column = 'DV'
+    di.idv_column = 'TIME'
+    assert di.types == ['id', 'idv', 'dv']
