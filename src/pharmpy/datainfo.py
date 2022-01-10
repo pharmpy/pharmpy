@@ -68,8 +68,7 @@ class ColumnInfo:
 
     @property
     def name(self):
-        """Column name
-        """
+        """Column name"""
         return self._name
 
     @name.setter
@@ -155,8 +154,7 @@ class ColumnInfo:
 
     @property
     def categories(self):
-        """List of allowed categories
-        """
+        """List of allowed categories"""
         return self._categories
 
     @categories.setter
@@ -165,8 +163,7 @@ class ColumnInfo:
 
     @property
     def drop(self):
-        """Should this column be dropped
-        """
+        """Should this column be dropped"""
         return self._drop
 
     @drop.setter
