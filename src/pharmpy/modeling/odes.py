@@ -684,7 +684,7 @@ def set_seq_zo_fo_absorption(model):
     elif not depot and not have_ZO:
         amount = dose_comp.dose.amount
         dose_comp.dose = None
-        depot = _add_first_order_absorption(model, amount, dose_comp)
+        depot = _add_first_order_absorption(model, Bolus(amount), dose_comp)
         _add_zero_order_absorption(model, amount, depot, 'MDT')
     return model
 
