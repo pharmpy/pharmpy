@@ -13,7 +13,7 @@ __version__ = '0.41.0'
 
 import logging
 
-from .datainfo import ColumnInfo
+from .datainfo import ColumnInfo, DataInfo
 from .model_factory import Model
 from .parameter import Parameter, Parameters
 from .random_variables import RandomVariable, RandomVariables, VariabilityHierarchy
@@ -38,6 +38,7 @@ __all__ = [
     'ColumnInfo',
     'Compartment',
     'CompartmentalSystem',
+    'DataInfo',
     'ExplicitODESystem',
     'Infusion',
     'Model',
