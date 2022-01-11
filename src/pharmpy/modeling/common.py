@@ -2,6 +2,7 @@
 :meta private:
 """
 
+import re
 from io import StringIO
 from pathlib import Path
 
@@ -265,6 +266,54 @@ def set_name(model, new_name):
 
     """
     model.name = new_name
+    return model
+
+
+def bump_model_number(model, path=None):
+    """If the model name ends in a number increase it
+
+    If path is set increase the number until no file exists
+    with the same name in path.
+    If model name does not end in a number do nothing.
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model object
+    path : Path in which to find next unique number
+        Default is to not look for files.
+
+    Returns
+    -------
+    Model
+        Reference to the same model object
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import load_example_model
+    >>> model = load_example_model("pheno")
+    >>> model.name = "run2"
+    >>> bump_model_number(model)    # doctest: +ELLIPSIS
+    <...>
+    >>> model.name
+    "run3"
+    """
+    name = model.name
+    m = re.search(r'(.*?)(\d+)$', name)
+    if m:
+        stem = m.group(1)
+        n = int(m.group(2))
+        if path is None:
+            new_name = f'{stem}{n + 1}'
+        else:
+            path = Path(path)
+            while True:
+                n += 1
+                new_name = f'{stem}{n}'
+                new_path = (path / new_name).with_suffix(model.filename_extension)
+                if not new_path.exists():
+                    break
+        model.name = new_name
     return model
 
 

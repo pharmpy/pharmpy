@@ -1,3 +1,8 @@
+next version
+------------
+
+* Add modeling.bump_model_number
+
 0.42.0 (2022-01-11)
 -------------------
 

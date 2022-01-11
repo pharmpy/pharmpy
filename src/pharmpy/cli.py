@@ -250,12 +250,14 @@ def write_model_or_dataset(model_or_dataset, new_df, path, force):
         if new_df is not None and new_df is not model.dataset:
             model.dataset = new_df
         try:
+            from pharmpy.modeling import bump_model_number
+
             if path:
                 if not path.is_dir():
-                    model.bump_model_number(path)
+                    bump_model_number(model, path)
                 model.write(path=path, force=force)
             else:
-                model.bump_model_number()
+                bump_model_number(model, path='.')
                 model.write(force=force)
         except FileExistsError as e:
             error(FileExistsError(f'{e.args[0]} Use -f or --force to ' 'force an overwrite'))
