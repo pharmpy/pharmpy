@@ -28,7 +28,7 @@ def create_workflow(methods=None, model=None):
     task_base_model_fit = wf.output_tasks
 
     if not methods:
-        methods = ['foce', 'foce_fast', 'imp', 'laplace']
+        methods = ['foce', 'imp', 'impmap', 'its', 'saem', 'laplace']
     if isinstance(methods, str):
         methods = [methods]
     if 'foce' not in methods:
@@ -85,27 +85,28 @@ def _create_base_model(model):
 
 
 def _create_eval_settings(laplace=False):
-    # FIXME: handle tool options
     evaluation_step = {
         'method': 'IMP',
         'interaction': True,
         'laplace': laplace,
         'evaluation': True,
         'maximum_evaluations': 9999,
+        'isample': 10000,
+        'niter': 10,
+        'keep_nth_iterations': 1,
     }
     return evaluation_step
 
 
 def _create_est_settings(method):
-    # FIXME: handle tool options
     settings = dict()
     interaction = True
     laplace = False
     maximum_evaluations = 9999
+    auto_settings = True
+    keep_nth_iterations = 1
 
-    if method == 'foce_fast':
-        settings['method'] = 'foce'
-    elif method == 'laplace':
+    if method == 'laplace':
         settings['method'] = 'foce'
         laplace = True
     else:
@@ -114,6 +115,8 @@ def _create_est_settings(method):
     settings['interaction'] = interaction
     settings['laplace'] = laplace
     settings['maximum_evaluations'] = maximum_evaluations
+    settings['auto_settings'] = auto_settings
+    settings['keep_nth_iterations'] = keep_nth_iterations
 
     return settings
 
