@@ -1,5 +1,5 @@
-next version
-------------
+0.42.0 (2022-01-11)
+-------------------
 
 * Add modeling.get_doseid
 * Add modeling.get_unit_of
