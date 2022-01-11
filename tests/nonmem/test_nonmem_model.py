@@ -5,7 +5,7 @@ import sympy
 
 from pharmpy import Model
 from pharmpy.config import ConfigurationContext
-from pharmpy.estimation import EstimationStep
+from pharmpy.estimation import EstimationStep, EstimationSteps
 from pharmpy.model import ModelSyntaxError
 from pharmpy.modeling import add_iiv, set_zero_order_absorption, set_zero_order_elimination
 from pharmpy.parameter import Parameter
@@ -740,14 +740,14 @@ def test_cmt_warning(testdata):
 
 
 @pytest.mark.parametrize(
-    'estcode,correct',
+    'estcode,est_steps',
     [
         ('$ESTIMATION METH=COND INTERACTION', [EstimationStep('foce', interaction=True)]),
         ('$ESTIMATION INTER METH=COND', [EstimationStep('foce', interaction=True)]),
         ('$ESTM METH=1 INTERACTION', [EstimationStep('foce', interaction=True)]),
-        ('$ESTIM METH=1', [EstimationStep('foce', interaction=False)]),
-        ('$ESTIMA METH=0', [EstimationStep('fo', interaction=False)]),
-        ('$ESTIMA METH=ZERO', [EstimationStep('fo', interaction=False)]),
+        ('$ESTIM METH=1', [EstimationStep('foce')]),
+        ('$ESTIMA METH=0', [EstimationStep('fo')]),
+        ('$ESTIMA METH=ZERO', [EstimationStep('fo')]),
         ('$ESTIMA INTER', [EstimationStep('fo', interaction=True)]),
         ('$ESTIMA INTER\n$COV', [EstimationStep('fo', interaction=True, cov=True)]),
         (
@@ -757,23 +757,31 @@ def test_cmt_warning(testdata):
                 EstimationStep('foce', interaction=False),
             ],
         ),
-        ('$ESTIMATION METH=SAEM', [EstimationStep('saem', interaction=False)]),
-        ('$ESTIMATION METH=1 LAPLACE', [EstimationStep('foce', interaction=False, laplace=True)]),
+        ('$ESTIMATION METH=SAEM', [EstimationStep('saem')]),
+        ('$ESTIMATION METH=1 LAPLACE', [EstimationStep('foce', laplace=True)]),
         (
             '$ESTIMATION METH=0 MAXEVAL=0',
-            [EstimationStep('fo', interaction=False, evaluation=True)],
+            [EstimationStep('fo', evaluation=True)],
         ),
         (
             '$ESTIMATION METH=IMP EONLY=1',
-            [EstimationStep('imp', interaction=False, evaluation=True)],
+            [EstimationStep('imp', evaluation=True)],
         ),
         (
             '$ESTIMATION METH=COND MAXEVAL=9999',
             [EstimationStep('foce', maximum_evaluations=9999)],
         ),
+        (
+            '$ESTIMATION METH=COND ISAMPLE=10 NITER=5 AUTO=1 PRINT=2',
+            [
+                EstimationStep(
+                    'foce', isample=10, niter=5, auto_settings=True, keep_nth_iterations=2
+                )
+            ],
+        ),
     ],
 )
-def test_estimation_steps_getter(estcode, correct):
+def test_estimation_steps_getter(estcode, est_steps):
     code = '''$PROBLEM base model
 $INPUT ID DV TIME
 $DATA file.csv IGNORE=@
@@ -785,6 +793,7 @@ $SIGMA 1
 '''
     code += estcode
     model = Model.create_model(StringIO(code))
+    correct = EstimationSteps(steps=est_steps)
     assert model.estimation_steps == correct
 
 
@@ -821,6 +830,17 @@ $ESTIMATION METHOD=1 SADDLE_RESET=1
             '$ESTIMATION METHOD=ZERO INTER POSTHOC',
         ),
         ('$EST METH=COND INTER', {'laplace': True}, '$ESTIMATION METHOD=COND LAPLACE INTER'),
+        (
+            '$EST METH=COND INTER',
+            {'isample': 10, 'niter': 5},
+            '$ESTIMATION METHOD=COND INTER ISAMPLE=10 NITER=5',
+        ),
+        (
+            '$EST METH=COND INTER',
+            {'auto_settings': True, 'keep_nth_iterations': 2},
+            '$ESTIMATION METHOD=COND INTER AUTO=1 PRINT=2',
+        ),
+        ('$EST METH=COND INTER', {'auto_settings': False}, '$ESTIMATION METHOD=COND INTER AUTO=0'),
     ],
 )
 def test_estimation_steps_setter(estcode, kwargs, rec_ref):

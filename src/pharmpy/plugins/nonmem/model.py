@@ -716,6 +716,10 @@ class Model(pharmpy.model.Model):
             maximum_evaluations = None
             cov = False
             laplace = False
+            isample = None
+            niter = None
+            auto_settings = None
+            keep_nth_iterations = None
 
             if record.has_option('INTERACTION') or record.has_option('INTER'):
                 interaction = True
@@ -734,6 +738,19 @@ class Model(pharmpy.model.Model):
                 cov = True
             if record.has_option('LAPLACIAN') or record.has_option('LAPLACE'):
                 laplace = True
+            if record.has_option('ISAMPLE'):
+                isample = int(record.get_option('ISAMPLE'))
+            if record.has_option('NITER'):
+                niter = int(record.get_option('NITER'))
+            if record.has_option('AUTO'):
+                auto_opt = record.get_option('AUTO')
+                if auto_opt is not None and int(auto_opt) in [0, 1]:
+                    auto_settings = bool(auto_opt)
+                else:
+                    raise ValueError('Currently only AUTO=0 and AUTO=1 is supported')
+            if record.has_option('PRINT'):
+                keep_nth_iterations = int(record.get_option('PRINT'))
+
             protected_names = [
                 name.upper(),
                 'EONLY',
@@ -745,6 +762,10 @@ class Model(pharmpy.model.Model):
                 'MAXEVALS',
                 'METHOD',
                 'METH',
+                'ISAMPLE',
+                'NITER',
+                'AUTO',
+                'PRINT',
             ]
 
             tool_options = {
@@ -763,6 +784,10 @@ class Model(pharmpy.model.Model):
                     evaluation=evaluation,
                     maximum_evaluations=maximum_evaluations,
                     laplace=laplace,
+                    isample=isample,
+                    niter=niter,
+                    auto_settings=auto_settings,
+                    keep_nth_iterations=keep_nth_iterations,
                     tool_options=tool_options,
                 )
             except ValueError:

@@ -922,6 +922,14 @@ def update_estimation(model):
                 if set(protected_attributes).intersection({'MAXEVALS', 'MAXEVAL'}):
                     raise ValueError('MAXEVAL already set by evaluation=True')
                 protected_attributes += ['MAXEVALS', 'MAXEVAL']
+            if est.isample is not None:
+                est_code += f' ISAMPLE={est.isample}'
+            if est.niter is not None:
+                est_code += f' NITER={est.niter}'
+            if est.auto_settings is not None:
+                est_code += f' AUTO={int(est.auto_settings)}'
+            if est.keep_nth_iterations is not None:
+                est_code += f' PRINT={est.keep_nth_iterations}'
             if est.tool_options:
                 option_names = {key for key in est.tool_options.keys()}
                 overlapping_attributes = set(protected_attributes).intersection(option_names)

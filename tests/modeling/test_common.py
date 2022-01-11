@@ -163,7 +163,7 @@ def test_generate_model_code(testdata):
         (
             'fo',
             {'tool_options': {'saddle_reset': 1}},
-            '$ESTIMATION METHOD=ZERO INTER MAXEVAL=9990 SADDLE_RESET=1',
+            '$ESTIMATION METHOD=ZERO INTER MAXEVAL=9990 PRINT=2 SADDLE_RESET=1',
         ),
         (
             'bayes',
