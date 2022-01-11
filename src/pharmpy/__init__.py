@@ -13,6 +13,7 @@ __version__ = '0.42.0'
 
 import logging
 
+from .data import DatasetError, DatasetWarning
 from .datainfo import ColumnInfo, DataInfo
 from .model_factory import Model
 from .parameter import Parameter, Parameters
@@ -39,6 +40,8 @@ __all__ = [
     'Compartment',
     'CompartmentalSystem',
     'DataInfo',
+    'DatasetError',
+    'DatasetWarning',
     'ExplicitODESystem',
     'Infusion',
     'Model',
