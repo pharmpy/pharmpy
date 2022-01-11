@@ -414,6 +414,7 @@ class DataInfo(MutableSequence):
                 "type": col.type,
                 "scale": col.scale,
                 "continuous": col.continuous,
+                "categories": col.categories,
                 "unit": str(col.unit),
             }
             a.append(d)
@@ -447,6 +448,7 @@ class DataInfo(MutableSequence):
                 scale=col['scale'],
                 continuous=col.get('continuous', True),
                 unit=col.get('unit', sympy.Integer(1)),
+                categories=col.get('categories', None),
             )
             columns.append(ci)
         return DataInfo(columns)
