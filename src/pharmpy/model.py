@@ -18,9 +18,11 @@ from pathlib import Path
 import sympy
 
 import pharmpy.symbols
-from pharmpy import Parameters, RandomVariables
 from pharmpy.datainfo import ColumnInfo, DataInfo
 from pharmpy.workflows import default_model_database
+
+from .parameter import Parameters
+from .random_variables import RandomVariables
 
 
 def canonicalize_data_transformation(model, value):
