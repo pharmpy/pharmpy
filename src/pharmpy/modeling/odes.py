@@ -11,6 +11,7 @@ from pharmpy.parameter import Parameter
 from pharmpy.statements import Assignment, Bolus, CompartmentalSystem, Infusion
 
 from .data import get_observations
+from .expressions import create_symbol
 
 
 def _extract_params_from_symb(statements, symbol_name, pset):
@@ -52,10 +53,10 @@ def add_individual_parameter(model, name):
 
 
 def _add_parameter(model, name, init=0.1):
-    pops = model.create_symbol(f'POP_{name}')
+    pops = create_symbol(model, f'POP_{name}')
     pop_param = Parameter(pops.name, init=init, lower=0)
     model.parameters.append(pop_param)
-    symb = model.create_symbol(name)
+    symb = create_symbol(model, name)
     ass = Assignment(symb, pop_param.symbol)
     model.statements.insert(0, ass)
     return symb

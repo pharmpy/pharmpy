@@ -6,7 +6,7 @@ import pharmpy.data
 import pharmpy.model
 import pharmpy.symbols
 from pharmpy import Model
-from pharmpy.modeling import convert_model
+from pharmpy.modeling import convert_model, create_symbol
 from pharmpy.plugins.nonmem.dataset import read_nonmem_dataset
 
 tabpath = Path(__file__).parent / 'testdata' / 'nonmem' / 'pheno_real_linbase.tab'
@@ -22,7 +22,7 @@ lincorrect = read_nonmem_dataset(
 )
 def test_create_symbol(testdata, stem, force_numbering, symbol_name):
     model = Model(testdata / 'nonmem' / 'pheno_real.mod')
-    symbol = model.create_symbol(stem=stem, force_numbering=force_numbering)
+    symbol = create_symbol(model, stem=stem, force_numbering=force_numbering)
 
     assert symbol.name == symbol_name
 

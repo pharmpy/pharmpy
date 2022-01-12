@@ -1,3 +1,8 @@
+next version
+------------
+
+* Add modeling.create_symbol
+
 0.43.0 (2022-01-12)
 -------------------
 

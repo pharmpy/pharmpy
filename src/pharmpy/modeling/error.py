@@ -11,6 +11,7 @@ from pharmpy.random_variables import RandomVariable
 from pharmpy.statements import Assignment
 
 from .data import get_observations
+from .expressions import create_symbol
 
 
 def _preparations(model):
@@ -118,7 +119,7 @@ def set_additive_error_model(model, data_trans=None, series_terms=2):
     if has_additive_error_model(model):
         return model
     stats, y, f = _preparations(model)
-    ruv = model.create_symbol('epsilon_a')
+    ruv = create_symbol(model, 'epsilon_a')
 
     data_trans = pharmpy.model.canonicalize_data_transformation(model, data_trans)
     expr = f + ruv
@@ -128,7 +129,7 @@ def set_additive_error_model(model, data_trans=None, series_terms=2):
     stats.reassign(y, expr)
     model.remove_unused_parameters_and_rvs()
 
-    sigma = model.create_symbol('sigma')
+    sigma = create_symbol(model, 'sigma')
     sigma_par = Parameter(sigma.name, init=_get_prop_init(model))
     model.parameters.append(sigma_par)
 
@@ -210,11 +211,11 @@ def set_proportional_error_model(model, data_trans=None, zero_protection=False):
     if has_proportional_error_model(model):
         return model
     stats, y, f = _preparations(model)
-    ruv = model.create_symbol('epsilon_p')
+    ruv = create_symbol(model, 'epsilon_p')
 
     data_trans = pharmpy.model.canonicalize_data_transformation(model, data_trans)
     if zero_protection:
-        ipred = model.create_symbol('IPREDADJ')
+        ipred = create_symbol(model, 'IPREDADJ')
         guard_expr = sympy.Piecewise((2.225e-307, sympy.Eq(f, 0)), (f, True))
         guard_assignment = Assignment(ipred, guard_expr)
     else:
@@ -234,7 +235,7 @@ def set_proportional_error_model(model, data_trans=None, zero_protection=False):
     stats.reassign(y, expr)
     model.remove_unused_parameters_and_rvs()
 
-    sigma = model.create_symbol('sigma')
+    sigma = create_symbol(model, 'sigma')
     sigma_par = Parameter(sigma.name, init=0.09)
     model.parameters.append(sigma_par)
 
@@ -297,8 +298,8 @@ def set_combined_error_model(model, data_trans=None):
     if has_combined_error_model(model):
         return model
     stats, y, f = _preparations(model)
-    ruv_prop = model.create_symbol('epsilon_p')
-    ruv_add = model.create_symbol('epsilon_a')
+    ruv_prop = create_symbol(model, 'epsilon_p')
+    ruv_add = create_symbol(model, 'epsilon_a')
 
     data_trans = pharmpy.model.canonicalize_data_transformation(model, data_trans)
     if data_trans == sympy.log(model.dependent_variable):
@@ -311,10 +312,10 @@ def set_combined_error_model(model, data_trans=None):
     stats.reassign(y, expr)
     model.remove_unused_parameters_and_rvs()
 
-    sigma_prop = model.create_symbol('sigma_prop')
+    sigma_prop = create_symbol(model, 'sigma_prop')
     sigma_par1 = Parameter(sigma_prop.name, init=0.09)
     model.parameters.append(sigma_par1)
-    sigma_add = model.create_symbol('sigma_add')
+    sigma_add = create_symbol(model, 'sigma_add')
     sigma_par2 = Parameter(sigma_add.name, init=_get_prop_init(model))
     model.parameters.append(sigma_par2)
 

@@ -12,6 +12,8 @@ from pharmpy.parameter import Parameter
 from pharmpy.statements import Assignment, ModelStatements
 from pharmpy.symbols import symbol as S
 
+from .expressions import create_symbol
+
 
 def transform_etas_boxcox(model, list_of_etas=None):
     """Applies a boxcox transformation to selected etas
@@ -169,7 +171,7 @@ def _create_new_etas(etas_original, transformation):
 def _create_new_thetas(model, transformation, no_of_thetas):
     pset = model.parameters
     thetas = dict()
-    theta_name = str(model.create_symbol(stem=transformation, force_numbering=True))
+    theta_name = str(create_symbol(model, stem=transformation, force_numbering=True))
 
     if transformation == 'lambda':
         param_settings = [0.01, -3, 3]

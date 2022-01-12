@@ -10,6 +10,8 @@ from pharmpy.parameter import Parameter
 from pharmpy.statements import Assignment
 from pharmpy.symbols import symbol as S
 
+from .expressions import create_symbol
+
 
 def set_power_on_ruv(model, list_of_eps=None, lower_limit=0.01, ipred=None):
     """Applies a power effect to provided epsilons.
@@ -74,7 +76,7 @@ def set_power_on_ruv(model, list_of_eps=None, lower_limit=0.01, ipred=None):
         alternative = None
 
     for i, e in enumerate(eps):
-        theta_name = str(model.create_symbol(stem='power', force_numbering=True))
+        theta_name = str(create_symbol(model, stem='power', force_numbering=True))
         if lower_limit is None:
             theta = Parameter(theta_name, theta_init)
         else:

@@ -5,7 +5,13 @@ import pharmpy.model
 import pharmpy.tools
 from pharmpy import Parameter, Parameters, RandomVariable, RandomVariables
 from pharmpy.estimation import EstimationStep, EstimationSteps
-from pharmpy.modeling import get_mdv, set_combined_error_model, set_iiv_on_ruv, set_power_on_ruv
+from pharmpy.modeling import (
+    create_symbol,
+    get_mdv,
+    set_combined_error_model,
+    set_iiv_on_ruv,
+    set_power_on_ruv,
+)
 from pharmpy.statements import Assignment, ModelStatements
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.workflows import Task, Workflow
@@ -130,8 +136,8 @@ def _create_combined_model(input_model):
     model = base_model.copy()
     remove_error_model(model)
     s = model.statements[0]
-    ruv_prop = model.create_symbol('epsilon_p')
-    ruv_add = model.create_symbol('epsilon_a')
+    ruv_prop = create_symbol(model, 'epsilon_p')
+    ruv_add = create_symbol(model, 'epsilon_a')
     ipred = sympy.sympify('IPRED')
     s.expression = s.expression + ruv_prop + ruv_add / ipred
 

@@ -17,7 +17,6 @@ from pathlib import Path
 
 import sympy
 
-import pharmpy.symbols
 from pharmpy.datainfo import ColumnInfo, DataInfo
 from pharmpy.workflows import default_model_database
 
@@ -163,35 +162,6 @@ class Model:
 
     def read_raw_dataset(self, parse_columns=tuple()):
         raise NotImplementedError()
-
-    def create_symbol(self, stem, force_numbering=False):
-        """Create a new unique variable symbol
-
-        Parameters
-        ----------
-        stem : str
-            First part of the new variable name
-        force_numbering : bool
-            Forces addition of number to name even if variable does not exist, e.g.
-            COVEFF --> COVEFF1
-        """
-        symbols = [str(symbol) for symbol in self.statements.free_symbols]
-        params = [param.name for param in self.parameters]
-        rvs = [rv.name for rv in self.random_variables]
-        dataset_col = self.datainfo.names
-        misc = [self.dependent_variable]
-
-        all_names = symbols + params + rvs + dataset_col + misc
-
-        if str(stem) not in all_names and not force_numbering:
-            return pharmpy.symbols.symbol(str(stem))
-
-        i = 1
-        while True:
-            candidate = f'{stem}{i}'
-            if candidate not in all_names:
-                return pharmpy.symbols.symbol(candidate)
-            i += 1
 
     def remove_unused_parameters_and_rvs(self):
         """Remove any parameters and rvs that are not used in the model statements"""

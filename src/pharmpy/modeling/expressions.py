@@ -1,3 +1,6 @@
+import sympy
+
+
 def get_observation_expression(model):
     """Get the full symbolic expression for the observation according to the model
 
@@ -164,3 +167,49 @@ def calculate_epsilon_gradient_expression(model):
     y = get_observation_expression(model)
     d = [y.diff(x.symbol) for x in model.random_variables.epsilons]
     return d
+
+
+def create_symbol(model, stem, force_numbering=False):
+    """Create a new unique variable symbol given a model
+
+    Parameters
+    ----------
+    stem : str
+        First part of the new variable name
+    force_numbering : bool
+        Forces addition of number to name even if variable does not exist, e.g.
+        COVEFF --> COVEFF1
+
+    Returns
+    -------
+    Symbol
+        Created symbol with unique name
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import load_example_model, create_symbol
+    >>> model = load_example_model("pheno")
+    >>> create_symbol(model, "TEMP")
+    TEMP
+    >>> create_symbol(model, "TEMP", force_numbering=True)
+    TEMP1
+    >>> create_symbol(model, "CL")
+    CL1
+    """
+    symbols = [str(symbol) for symbol in model.statements.free_symbols]
+    params = [param.name for param in model.parameters]
+    rvs = [rv.name for rv in model.random_variables]
+    dataset_col = model.datainfo.names
+    misc = [model.dependent_variable]
+
+    all_names = symbols + params + rvs + dataset_col + misc
+
+    if str(stem) not in all_names and not force_numbering:
+        return sympy.Symbol(str(stem))
+
+    i = 1
+    while True:
+        candidate = f'{stem}{i}'
+        if candidate not in all_names:
+            return sympy.Symbol(candidate)
+        i += 1

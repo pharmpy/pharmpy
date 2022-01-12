@@ -117,6 +117,7 @@ from .evaluation import (
 from .expressions import (
     calculate_epsilon_gradient_expression,
     calculate_eta_gradient_expression,
+    create_symbol,
     get_individual_prediction_expression,
     get_observation_expression,
     get_population_prediction_expression,
@@ -150,6 +151,7 @@ __all__ = [
     'create_joint_distribution',
     'create_results',
     'create_rng',
+    'create_symbol',
     'evaluate_epsilon_gradient',
     'evaluate_eta_gradient',
     'evaluate_expression',

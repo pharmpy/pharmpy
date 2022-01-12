@@ -3,6 +3,8 @@ import sympy
 from pharmpy.parameter import Parameter
 from pharmpy.statements import Assignment
 
+from .expressions import create_symbol
+
 
 def add_allometry(
     model,
@@ -155,7 +157,7 @@ def add_allometry(
         raise ValueError("The number of parameters, initials and bounds must be the same")
 
     for p, init, lower, upper in zip(parameters, initials, lower_bounds, upper_bounds):
-        symb = model.create_symbol(f'ALLO_{p.name}')
+        symb = create_symbol(model, f'ALLO_{p.name}')
         param = Parameter(symb.name, init=init, lower=lower, upper=upper, fix=fixed)
         model.parameters.append(param)
         expr = p * (allometric_variable / reference_value) ** param.symbol
