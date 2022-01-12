@@ -74,3 +74,26 @@ def nmfe_path():
     else:
         raise FileNotFoundError(f'Cannot find nmfe script for NONMEM ({path})')
     return str(path)
+
+
+def evaluate_design(model):
+    # Prepare and run model for design evaluation
+    model = model.copy()
+    model.name = '_design_model'
+
+    estrecs = model.control_stream.get_records('ESTIMATION')
+    model.control_stream.remove_records(estrecs)
+
+    design_code = '$DESIGN APPROX=FOCEI MODE=1 NELDER FIMDIAG=0 DATASIM=1 GROUPSIZE=32 OFVTYPE=0'
+    model.control_stream.insert_record(design_code)
+
+    execute_model(model)
+
+    from pharmpy.tools.evaldesign import EvalDesignResults
+
+    res = EvalDesignResults(
+        ofv=model.modelfit_results.ofv,
+        individual_ofv=model.modelfit_results.individual_ofv,
+        information_matrix=model.modelfit_results.information_matrix,
+    )
+    return res
