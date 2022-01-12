@@ -174,6 +174,8 @@ def create_symbol(model, stem, force_numbering=False):
 
     Parameters
     ----------
+    model : Model
+        Pharmpy model object
     stem : str
         First part of the new variable name
     force_numbering : bool
