@@ -2206,7 +2206,7 @@ def test_update_inits_no_res(testdata):
         fs.add_real_file(testdata / 'nonmem/pheno.dta', target_path='pheno.dta')
 
         model = Model('run1.mod')
-        with pytest.raises(ValueError, match='No modelfit results available'):
+        with pytest.raises(ValueError):
             update_inits(model)
 
         fs.add_real_file(testdata / 'nonmem/pheno.ext', target_path='run1.ext')
