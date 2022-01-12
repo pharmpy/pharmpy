@@ -68,7 +68,7 @@ class Model:
         model.name = self.name
         model.dependent_variable = self.dependent_variable
         model.estimation_steps = self.estimation_steps
-        model.datainfo = self.datainfo
+        model.datainfo = self.datainfo.copy()
         try:
             model.database = self.database
         except AttributeError:

@@ -1,5 +1,6 @@
 """DataInfo is a companion to the dataset. It contains metadata of the dataset
 """
+import copy
 import json
 from collections.abc import MutableSequence
 from pathlib import Path
@@ -219,6 +220,16 @@ class ColumnInfo:
 
         """
         return self.scale in ['interval', 'ratio']
+
+    def copy(self):
+        """Create a deep copy of the ColumnInfo
+
+        Returns
+        -------
+        ColumnInfo
+            Copied object
+        """
+        return copy.deepcopy(self)
 
     def __repr__(self):
         di = DataInfo([self])
@@ -470,6 +481,16 @@ class DataInfo(MutableSequence):
         with open(path, 'r') as fp:
             s = fp.read()
         return DataInfo.from_json(s)
+
+    def copy(self):
+        """Create a deep copy of the datainfo
+
+        Returns
+        -------
+        DataInfo
+            Copied object
+        """
+        return copy.deepcopy(self)
 
     def __repr__(self):
         labels = [col.name for col in self._columns]
