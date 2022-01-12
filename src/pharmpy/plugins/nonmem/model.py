@@ -975,9 +975,9 @@ class Model(pharmpy.model.Model):
             if colname == 'ID' or colname == 'L1':
                 info.type = 'id'
                 info.scale = 'nominal'
-            elif colname == 'DV':
+            elif colname == 'DV' or colname == replacements.get('DV', None):
                 info.type = 'dv'
-            elif colname == 'TIME':
+            elif colname == 'TIME' or colname == replacements.get('TIME', None):
                 info.type = 'idv'
                 info.scale = 'ratio'
             elif colname == 'EVID' and self._get_pk_record():
@@ -989,7 +989,7 @@ class Model(pharmpy.model.Model):
                 else:
                     info.type = 'event'
                 info.scale = 'nominal'
-            elif colname == 'AMT' and self._get_pk_record():
+            elif (colname == 'AMT' or colname == replacements.get('AMT', None)) and self._get_pk_record():
                 info.type = 'dose'
                 info.scale = 'ratio'
             column_info.append(info)
