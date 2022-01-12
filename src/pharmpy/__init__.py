@@ -15,6 +15,7 @@ import logging
 
 from .data import DatasetError, DatasetWarning
 from .datainfo import ColumnInfo, DataInfo
+from .model import ModelSyntaxError
 from .model_factory import Model
 from .parameter import Parameter, Parameters
 from .random_variables import RandomVariable, RandomVariables, VariabilityHierarchy
@@ -46,6 +47,7 @@ __all__ = [
     'Infusion',
     'Model',
     'ModelStatements',
+    'ModelSyntaxError',
     'ODESystem',
     'Parameter',
     'Parameters',

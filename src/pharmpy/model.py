@@ -41,6 +41,8 @@ class ModelException(Exception):
 
 
 class ModelSyntaxError(ModelException):
+    """Exception for Syntax errors in model code"""
+
     def __init__(self, msg='model syntax error'):
         super().__init__(msg)
 
