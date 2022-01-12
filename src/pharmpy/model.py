@@ -67,7 +67,7 @@ class Model:
         model.dataset = self.dataset.copy()
         model.name = self.name
         model.dependent_variable = self.dependent_variable
-        model.estimation_steps = self.estimation_steps
+        model.estimation_steps = self.estimation_steps.copy()
         model.datainfo = self.datainfo.copy()
         try:
             model.database = self.database
