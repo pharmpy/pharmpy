@@ -1,7 +1,8 @@
-next version
-------------
+0.43.0 (2022-01-12)
+-------------------
 
 * Add modeling.bump_model_number
+* Fix regression in detection of dv column when synonym was used
 
 0.42.0 (2022-01-11)
 -------------------
