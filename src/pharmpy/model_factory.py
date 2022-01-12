@@ -11,7 +11,7 @@ from pathlib import Path
 from pharmpy.plugins.utils import detect_model
 
 
-def Model(obj, **kwargs):
+def Model(obj=None, **kwargs):
     """Factory for creating a :class:`pharmpy.model` object from an object representing the model
     (i.e. path).
 
@@ -33,6 +33,10 @@ def Model(obj, **kwargs):
         path = obj
     elif isinstance(obj, io.IOBase):
         path = None
+    elif obj is None:
+        import pharmpy.model
+
+        return pharmpy.model.Model()
     else:
         raise ValueError("Unknown input type to Model constructor")
     if path is not None:

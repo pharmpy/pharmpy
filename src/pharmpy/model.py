@@ -64,23 +64,6 @@ class Model:
     def __init__(self):
         self.modelfit_results = None
 
-    def to_generic_model(self):
-        """Convert a model into the base model class"""
-        model = Model()
-        model.parameters = self.parameters.copy()
-        model.random_variables = self.random_variables.copy()
-        model.statements = self.statements.copy()
-        model.dataset = self.dataset.copy()
-        model.name = self.name
-        model.dependent_variable = self.dependent_variable
-        model.estimation_steps = self.estimation_steps.copy()
-        model.datainfo = self.datainfo.copy()
-        try:
-            model.database = self.database
-        except AttributeError:
-            pass
-        return model
-
     def __repr__(self):
         return f'<Pharmpy model object {self.name}>'
 

@@ -29,7 +29,9 @@ class CodeGenerator:
 def convert_model(model):
     """Convert any model into an nlmixr model"""
     nlmixr_model = Model()
-    generic_model = model.to_generic_model()
+    from pharmpy.modeling import convert_model
+
+    generic_model = convert_model(model, 'generic')
     nlmixr_model.__dict__ = generic_model.__dict__
     nlmixr_model.update_source()
     return nlmixr_model

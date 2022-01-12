@@ -153,12 +153,14 @@ def write_model(model, path='', force=True):
 def convert_model(model, to_format):
     """Convert model to other format
 
+    Note that the operation is not done inplace.
+
     Parameters
     ----------
     model : Model
         Model to convert
     to_format : str
-        Name of format to convert into. Currently supported 'nlmixr' and 'nonmem'
+        Name of format to convert into. Currently supported 'generic', 'nlmixr' and 'nonmem'
 
     Returns
     -------
@@ -172,11 +174,26 @@ def convert_model(model, to_format):
     >>> converted_model = convert_model(model, "nlmixr")    # doctest: +SKIP
 
     """
-    supported = ['nlmixr', 'nonmem']
+    supported = ['generic', 'nlmixr', 'nonmem']
     if to_format not in supported:
         raise ValueError(f"Unknown format {to_format}: supported formats are f{supported}")
-    # FIXME: Use generic code below
-    if to_format == 'nlmixr':
+    # FIXME: Use code that can discover plugins below
+    if to_format == 'generic':
+        new = Model()
+        new.parameters = model.parameters.copy()
+        new.random_variables = model.random_variables.copy()
+        new.statements = model.statements.copy()
+        new.dataset = model.dataset.copy()
+        new.name = model.name
+        new.dependent_variable = model.dependent_variable
+        new.estimation_steps = model.estimation_steps.copy()
+        new.datainfo = model.datainfo.copy()
+        try:
+            new.database = model.database
+        except AttributeError:
+            pass
+        return new
+    elif to_format == 'nlmixr':
         import pharmpy.plugins.nlmixr.model as nlmixr
 
         new = nlmixr.convert_model(model)

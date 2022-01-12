@@ -6,6 +6,7 @@ import pharmpy.data
 import pharmpy.model
 import pharmpy.symbols
 from pharmpy import Model
+from pharmpy.modeling import convert_model
 from pharmpy.plugins.nonmem.dataset import read_nonmem_dataset
 
 tabpath = Path(__file__).parent / 'testdata' / 'nonmem' / 'pheno_real_linbase.tab'
@@ -29,7 +30,8 @@ def test_create_symbol(testdata, stem, force_numbering, symbol_name):
 def test_to_generic_model(testdata):
     path = testdata / 'nonmem' / 'pheno.mod'
     nm_model = Model(path)
-    model = nm_model.to_generic_model()
+    model = convert_model(nm_model, 'generic')
+
     assert id(model.parameters) != id(nm_model.parameters)
     assert model.parameters == nm_model.parameters
     assert id(model.random_variables) != id(nm_model.random_variables)

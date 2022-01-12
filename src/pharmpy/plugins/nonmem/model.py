@@ -54,7 +54,9 @@ def convert_model(model):
     """Convert any model into a NONMEM model"""
     if isinstance(model, Model):
         return model
-    model = model.to_generic_model()
+    from pharmpy.modeling import convert_model
+
+    model = convert_model(model, 'generic')
     code = '$PROBLEM\n'
     code += '$INPUT ' + ' '.join(model.datainfo.names) + '\n'
     code += '$DATA file.csv IGNORE=@\n'
