@@ -40,7 +40,9 @@ def update_inits(model, force_individual_estimates=False):
 
     res = model.modelfit_results
     if not res:
-        raise ValueError('No modelfit results available')
+        raise ValueError(
+            'Cannot update initial parameter estimates since no modelfit results are available'
+        )
 
     try:
         model.parameters = res.parameter_estimates

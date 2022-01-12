@@ -126,16 +126,6 @@ class Model:
         self.database = default_model_database(path=path.parent)
         return path
 
-    def update_inits(self):
-        """Update inital estimates of model from its own ModelfitResults"""
-        if self.modelfit_results:
-            self.parameters = self.modelfit_results.parameter_estimates
-        else:
-            # FIXME: Other exception here. ModelfitError?
-            raise ModelError(
-                "Cannot update initial parameter estimates " "since parameters were not estimated"
-            )
-
     @property
     def dataset(self):
         return self._dataset

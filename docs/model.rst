@@ -163,11 +163,12 @@ Updating all initial estimates of a model from its own results can be done eithe
 
    model.parameters = model.modelfit_results.parameter_estimates
 
-or using the convenience method:
+or using the convenient function:
 
 .. jupyter-execute::
 
-   model.update_inits()
+    from pharmpy.modeling import update_inits
+    update_inits(model)
 
 ~~~~~~~~~~~~~~~~
 Random variables

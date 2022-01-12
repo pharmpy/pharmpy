@@ -27,12 +27,14 @@ def test_source(pheno_path):
 
 
 def test_update_inits(pheno_path):
+    from pharmpy.modeling import update_inits
+
     model = Model(pheno_path)
-    model.update_inits()
+    update_inits(model)
 
     with ConfigurationContext(conf, parameter_names=['comment', 'basic']):
         model = Model(pheno_path)
-        model.update_inits()
+        update_inits(model)
         model.update_source()
 
 

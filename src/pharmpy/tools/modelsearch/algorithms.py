@@ -62,7 +62,7 @@ def stepwise(base_model, mfl, run_func, rank_func):
         if not ranks:
             break
         start_model = ranks[0]
-        start_model.update_inits()
+        update_inits(start_model)
         idx = torun.index(start_model)
         selected_feature = list(remaining.keys())[idx]
         current_features.append(selected_feature)
