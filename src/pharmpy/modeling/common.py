@@ -290,13 +290,13 @@ def bump_model_number(model, path=None):
 
     Examples
     --------
-    >>> from pharmpy.modeling import load_example_model
+    >>> from pharmpy.modeling import bump_model_number, load_example_model
     >>> model = load_example_model("pheno")
     >>> model.name = "run2"
     >>> bump_model_number(model)    # doctest: +ELLIPSIS
     <...>
     >>> model.name
-    "run3"
+    'run3'
     """
     name = model.name
     m = re.search(r'(.*?)(\d+)$', name)
