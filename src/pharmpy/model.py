@@ -38,11 +38,13 @@ def canonicalize_data_transformation(model, value):
     return value
 
 
-class ModelException(Exception):
+class ModelError(Exception):
+    """Exception for errors in model object"""
+
     pass
 
 
-class ModelSyntaxError(ModelException):
+class ModelSyntaxError(ModelError):
     """Exception for Syntax errors in model code"""
 
     def __init__(self, msg='model syntax error'):
@@ -147,7 +149,7 @@ class Model:
             self.parameters = self.modelfit_results.parameter_estimates
         else:
             # FIXME: Other exception here. ModelfitError?
-            raise ModelException(
+            raise ModelError(
                 "Cannot update initial parameter estimates " "since parameters were not estimated"
             )
 

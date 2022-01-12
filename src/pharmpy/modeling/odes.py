@@ -5,7 +5,7 @@
 import sympy
 
 import pharmpy.symbols
-from pharmpy.model import ModelException
+from pharmpy.model import ModelError
 from pharmpy.modeling.help_functions import _as_integer
 from pharmpy.parameter import Parameter
 from pharmpy.statements import Assignment, Bolus, CompartmentalSystem, Infusion
@@ -699,7 +699,7 @@ def _disallow_infusion(model):
             ex = dose_comp.dose.duration
         for s in ex.free_symbols:
             if s.name in model.datainfo.names:
-                raise ModelException("Model already has an infusion given in the dataset")
+                raise ModelError("Model already has an infusion given in the dataset")
 
 
 def has_zero_order_absorption(model):
