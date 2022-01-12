@@ -17,7 +17,14 @@ def create_workflow(models=None, n=None):
 
 
 def create_fit_workflow(models=None, n=None):
-    from pharmpy.plugins.nonmem.run import execute_model
+    from pharmpy.tools.modelfit import conf
+
+    if conf.default_tool == 'nonmem':
+        from pharmpy.plugins.nonmem.run import execute_model
+    elif conf.default_tool == 'nlmixr':
+        from pharmpy.plugins.nlmixr.run import execute_model
+    else:
+        raise ValueError(f"Unknown estimation tool {conf.default_tool}")
 
     wf = Workflow()
     if models is None:
