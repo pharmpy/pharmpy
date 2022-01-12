@@ -1,3 +1,6 @@
+import uuid
+from pathlib import Path
+
 import sympy
 from sympy.printing.str import StrPrinter
 
@@ -145,7 +148,6 @@ def create_model(cg, model):
 def create_fit(cg, model):
     """Create the call to fit"""
     cg.add(f'fit <- nlmixr({model.name}, dataset, "focei")')
-    cg.add('print(fit)')
 
 
 class Model(pharmpy.model.Model):
@@ -165,5 +167,32 @@ class Model(pharmpy.model.Model):
         create_fit(cg, self)
         self._src = str(cg)
 
-    def __str__(self):
+    @property
+    def model_code(self):
+        self.update_source()
         return self._src
+
+
+def run(model):
+    database = model.database
+    model = convert_model(model)
+    path = Path.cwd() / f'nlmixr_run_{model.name}-{uuid.uuid1()}'
+    path.mkdir(parents=True, exist_ok=True)
+
+    code = model.model_code
+    cg = CodeGenerator()
+    cg.add('ofv <- fit$ofv')
+    cg.add('thetas <- fit$theta')
+    cg.add('omega <- fit$omega')
+    cg.add('sigma <- fit$sigma')
+    cg.add('save(file="nlmixr.RDATA, ofv, thetas, omega, sigma)')
+    code += f'\n{str(cg)}'
+    with open(path / 'model.R', 'w') as fh:
+        fh.write(code)
+
+    import os
+
+    os.system(f"/home/rikard/R/R-4.1.2/bin/Rscript {path}/model.R")
+
+    database.store_local_file(model, path / 'model.R')
+    database.store_local_file(model, path / 'nlmixr.RDATA')
