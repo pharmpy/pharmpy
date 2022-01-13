@@ -5,8 +5,7 @@ Generic Model class
 
 **Base class of all implementations.**
 
-Inherit to *implement*, i.e. to define support for a specific model type. Duck typing is utilized,
-but an implementation is expected to implement **all** methods/attributes.
+Inherit to *implement*, i.e. to define support for a specific model type.
 
 Definitions
 -----------
@@ -18,7 +17,10 @@ import pathlib
 from pathlib import Path
 
 from pharmpy.datainfo import ColumnInfo, DataInfo
+from pharmpy.parameter import Parameters
 from pharmpy.plugins.utils import detect_model
+from pharmpy.random_variables import RandomVariables
+from pharmpy.statements import ModelStatements
 from pharmpy.workflows import default_model_database
 
 
@@ -36,14 +38,7 @@ class ModelSyntaxError(ModelError):
 
 
 class Model:
-    """
-    Attribute: name
-       dependent_variable
-       parameters
-       random_variables
-       statements
-       dataset
-    """
+    """Model"""
 
     def __init__(self):
         self.modelfit_results = None
@@ -57,7 +52,103 @@ class Model:
         return f'<hr>{stat}<hr>${rvs}$<hr>{self.parameters._repr_html_()}<hr>'
 
     @property
+    def name(self):
+        """Name of the model"""
+        return self._name
+
+    @name.setter
+    def name(self, value):
+        if not isinstance(value, str):
+            raise TypeError("Name of a model has to be of string type")
+        self._name = value
+
+    @property
+    def dependent_variable(self):
+        """The model dependent variable, i.e. y"""
+        return self._dependent_variable
+
+    @dependent_variable.setter
+    def dependent_variable(self, value):
+        self._dependent_variable = value
+
+    @property
+    def observation_transformation(self):
+        """Transformation to be applied to the observation data"""
+        return self._observation_transformation
+
+    @observation_transformation.setter
+    def observation_transformation(self, value):
+        self._observation_transformation = value
+
+    @property
+    def parameters(self):
+        """Definitions of population parameters
+
+        See :class:`pharmpy.Parameters`
+        """
+        return self._parameters
+
+    @parameters.setter
+    def parameters(self, value):
+        if not isinstance(value, Parameters):
+            raise TypeError("model.parameters must be of Parameters type")
+        self._parameters = value
+
+    @property
+    def random_variables(self):
+        """Definitions of random variables
+
+        See :class:`pharmpy.RandomVariables`
+        """
+        return self._random_variables
+
+    @random_variables.setter
+    def random_variables(self, value):
+        if not isinstance(value, RandomVariables):
+            raise TypeError("model.random_variables must be of RandomVariables type")
+        self._random_variables = value
+
+    @property
+    def statements(self):
+        """Definitions of model statements
+
+        See :class:`pharmpy.ModelStatements`
+        """
+        return self._statements
+
+    @statements.setter
+    def statements(self, value):
+        if not isinstance(value, ModelStatements):
+            raise TypeError("model.statements must be of ModelStatements type")
+        self._statements = value
+
+    @property
+    def datainfo(self):
+        """Definitions of model statements
+
+        See :class:`pharmpy.ModelStatements`
+        """
+        return self._datainfo
+
+    @datainfo.setter
+    def datainfo(self, value):
+        if not isinstance(value, DataInfo):
+            raise TypeError("model.datainfo must be of DataInfo type")
+        self._datainfo = value
+
+    @property
+    def dataset(self):
+        """Dataset connected to model"""
+        return self._dataset
+
+    @dataset.setter
+    def dataset(self, value):
+        self._dataset = value
+        self.update_datainfo()
+
+    @property
     def modelfit_results(self):
+        """Modelfit results for this model"""
         return self._modelfit_results
 
     @modelfit_results.setter
@@ -96,15 +187,6 @@ class Model:
             fp.write(self.model_code)
         self.database = default_model_database(path=path.parent)
         return path
-
-    @property
-    def dataset(self):
-        return self._dataset
-
-    @dataset.setter
-    def dataset(self, value):
-        self._dataset = value
-        self.update_datainfo()
 
     def update_datainfo(self):
         """Update model.datainfo for a new dataset"""
@@ -154,7 +236,7 @@ class Model:
         """
         if isinstance(obj, str):
             path = Path(obj)
-        elif isinstance(obj, pathlib.Path):     # DO NOT change to Path! Will fail fakefs tests
+        elif isinstance(obj, pathlib.Path):  # DO NOT change to Path! Will fail fakefs tests
             path = obj
         elif isinstance(obj, io.IOBase):
             path = None
