@@ -85,7 +85,7 @@ def convert_model(model):
 
 class Model(pharmpy.model.Model):
     def __init__(self, code, path=None, **kwargs):
-        model.modelfit_results = None
+        self.modelfit_results = None
         parser = NMTranParser()
         if path is None:
             self._name = 'run1'
