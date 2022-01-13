@@ -16,6 +16,8 @@ import io
 import pathlib
 from pathlib import Path
 
+import sympy
+
 from pharmpy.datainfo import ColumnInfo, DataInfo
 from pharmpy.parameter import Parameters
 from pharmpy.plugins.utils import detect_model
@@ -41,6 +43,11 @@ class Model:
     """Model"""
 
     def __init__(self):
+        self.parameters = Parameters([])
+        self.random_variables = RandomVariables([])
+        self.statements = ModelStatements([])
+        self.dependent_variable = sympy.Symbol('y')
+        self.observation_transformation = self.dependent_variable
         self.modelfit_results = None
 
     def __repr__(self):
