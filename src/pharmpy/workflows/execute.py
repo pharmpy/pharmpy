@@ -14,7 +14,9 @@ def execute_workflow(workflow, dispatcher=None, database=None, path=None):
     if dispatcher is None:
         dispatcher = default_dispatcher
     if database is None:
-        database = default_tool_database(toolname=workflow.name, path=path)
+        database = default_tool_database(
+            toolname=workflow.name, path=path
+        )  # TODO: database -> tool_database
 
     # For all input models set new database and read in results
     original_input_models = []
@@ -50,6 +52,11 @@ def execute_workflow(workflow, dispatcher=None, database=None, path=None):
                     model.database.store_local_file(model, f)
         # Set modelfit_results for local model objects
         model.read_modelfit_results()
+
+    from pharmpy.results import Results
+
+    if isinstance(res, Results):
+        database.store_results(res)
 
     return res
 

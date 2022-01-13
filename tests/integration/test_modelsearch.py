@@ -35,8 +35,8 @@ def test_exhaustive_stepwise_basic(tmp_path, testdata, mfl, no_of_models, best_m
         rundir = tmp_path / 'modelsearch_dir1'
         assert rundir.is_dir()
         assert len(list((rundir / 'models').iterdir())) == no_of_models + 1
-
-        assert res.to_json()
+        assert (rundir / 'results.json').exists()
+        assert (rundir / 'results.csv').exists()
 
 
 @pytest.mark.parametrize(
@@ -69,6 +69,8 @@ def test_exhaustive_stepwise_add_etas(
         rundir = tmp_path / 'modelsearch_dir1'
         assert rundir.is_dir()
         assert len(list((rundir / 'models').iterdir())) == no_of_models + 1
+        assert (rundir / 'results.json').exists()
+        assert (rundir / 'results.csv').exists()
 
 
 def test_exhaustive_stepwise_already_fit(tmp_path, testdata):
@@ -92,6 +94,8 @@ def test_exhaustive_stepwise_already_fit(tmp_path, testdata):
         rundir = tmp_path / 'modelsearch_dir1'
         assert rundir.is_dir()
         assert len(list((rundir / 'models').iterdir())) == 4
+        assert (rundir / 'results.json').exists()
+        assert (rundir / 'results.csv').exists()
 
 
 def test_exhaustive_stepwise_start_model_fail(tmp_path, testdata):

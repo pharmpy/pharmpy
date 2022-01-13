@@ -152,8 +152,3 @@ class EstMethodResults(pharmpy.results.Results):
         self.best_model = best_model
         self.start_model = start_model
         self.models = models
-
-    def to_json(self, path=None, lzma=False):
-        s = pharmpy.results.Results.to_json(self.summary, path, lzma)
-        if s:
-            return s

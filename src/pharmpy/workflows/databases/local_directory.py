@@ -27,6 +27,10 @@ class LocalDirectoryToolDatabase(ToolDatabase):
         if Path(source_path).is_file():
             shutil.copy2(source_path, self.path)
 
+    def store_results(self, res):
+        res.to_json(path=self.path / 'results.json')
+        res.to_csv(path=self.path / 'results.csv')
+
 
 class LocalDirectoryDatabase(ModelDatabase):
     # Files are all stored in the same directory

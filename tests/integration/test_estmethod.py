@@ -27,3 +27,5 @@ def test_estmethod(tmp_path, testdata, method):
         rundir = tmp_path / 'estmethod_dir1'
         assert rundir.is_dir()
         assert len(list((rundir / 'models').iterdir())) == no_of_models
+        assert (rundir / 'results.json').exists()
+        assert (rundir / 'results.csv').exists()

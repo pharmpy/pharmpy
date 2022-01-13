@@ -112,11 +112,6 @@ class ModelSearchResults(pharmpy.results.Results):
         self.start_model = start_model
         self.models = models
 
-    def to_json(self, path=None, lzma=False):
-        s = pharmpy.results.Results.to_json(self.summary, path, lzma)
-        if s:
-            return s
-
 
 def run_modelsearch(base_model, algorithm, mfl, **kwargs):
     ms = ModelSearch(base_model, algorithm, mfl, **kwargs)

@@ -27,6 +27,7 @@ import numpy as np
 import pandas as pd
 
 import pharmpy.config as config
+import pharmpy.model
 from pharmpy.math import cov2corr
 
 
@@ -55,6 +56,9 @@ class ResultsJSONEncoder(json.JSONEncoder):
             d = obj.to_dict()
             d['__class__'] = 'vega-lite'
             return d
+        elif isinstance(obj, pharmpy.model.Model):
+            # TODO: consider using other representation, e.g. path
+            return None
         else:
             return json.JSONEncoder.encode(self, obj)
 
@@ -204,6 +208,10 @@ class Results:
         s = ""
         for key, value in d.items():
             if value.__class__.__module__.startswith('altair.'):
+                continue
+            elif isinstance(value, pharmpy.model.Model):
+                continue
+            elif isinstance(value, list) and isinstance(value[0], pharmpy.model.Model):
                 continue
             s += f'{key}\n'
             if isinstance(value, pd.DataFrame):
