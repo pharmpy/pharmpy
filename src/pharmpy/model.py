@@ -15,23 +15,8 @@ Definitions
 import copy
 from pathlib import Path
 
-import sympy
-
 from pharmpy.datainfo import ColumnInfo, DataInfo
 from pharmpy.workflows import default_model_database
-
-
-def canonicalize_data_transformation(model, value):
-    if value is None:
-        value = model.dependent_variable
-    else:
-        value = sympy.sympify(value)
-        if value.free_symbols != {model.dependent_variable}:
-            raise ValueError(
-                f"Expression for data transformation must contain the dependent variable "
-                f"{model.dependent_variable} and no other variables"
-            )
-    return value
 
 
 class ModelError(Exception):
@@ -75,19 +60,6 @@ class Model:
     @modelfit_results.setter
     def modelfit_results(self, value):
         self._modelfit_results = value
-
-    @property
-    def data_transformation(self):
-        """Transformation used for DV in dataset"""
-        try:
-            return self._data_transformation
-        except AttributeError:
-            return self.dependent_variable
-
-    @data_transformation.setter
-    def data_transformation(self, value):
-        value = canonicalize_data_transformation(self, value)
-        self._data_transformation = value
 
     def write(self, path='', force=False):
         """Write model to file using its source format

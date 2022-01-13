@@ -4,7 +4,6 @@
 
 import sympy
 
-import pharmpy.model
 import pharmpy.symbols as symbols
 from pharmpy.parameter import Parameter
 from pharmpy.random_variables import RandomVariable
@@ -22,6 +21,19 @@ def _preparations(model):
     for eps in model.random_variables.epsilons:
         f = f.subs({symbols.symbol(eps.name): 0})
     return stats, y, f
+
+
+def _canonicalize_data_transformation(model, value):
+    if value is None:
+        value = model.dependent_variable
+    else:
+        value = sympy.sympify(value)
+        if value.free_symbols != {model.dependent_variable}:
+            raise ValueError(
+                f"Expression for data transformation must contain the dependent variable "
+                f"{model.dependent_variable} and no other variables"
+            )
+    return value
 
 
 def remove_error_model(model):
@@ -122,7 +134,7 @@ def set_additive_error_model(model, data_trans=None, series_terms=2):
     stats, y, f = _preparations(model)
     ruv = create_symbol(model, 'epsilon_a')
 
-    data_trans = pharmpy.model.canonicalize_data_transformation(model, data_trans)
+    data_trans = _canonicalize_data_transformation(model, data_trans)
     expr = f + ruv
     if data_trans != model.dependent_variable:
         expr = data_trans.subs(model.dependent_variable, expr).series(ruv, n=series_terms).removeO()
@@ -214,7 +226,7 @@ def set_proportional_error_model(model, data_trans=None, zero_protection=False):
     stats, y, f = _preparations(model)
     ruv = create_symbol(model, 'epsilon_p')
 
-    data_trans = pharmpy.model.canonicalize_data_transformation(model, data_trans)
+    data_trans = _canonicalize_data_transformation(model, data_trans)
     if zero_protection:
         ipred = create_symbol(model, 'IPREDADJ')
         guard_expr = sympy.Piecewise((2.225e-307, sympy.Eq(f, 0)), (f, True))
@@ -302,7 +314,7 @@ def set_combined_error_model(model, data_trans=None):
     ruv_prop = create_symbol(model, 'epsilon_p')
     ruv_add = create_symbol(model, 'epsilon_a')
 
-    data_trans = pharmpy.model.canonicalize_data_transformation(model, data_trans)
+    data_trans = _canonicalize_data_transformation(model, data_trans)
     if data_trans == sympy.log(model.dependent_variable):
         expr = sympy.log(f) + ruv_prop + ruv_add / f
     elif data_trans == model.dependent_variable:
