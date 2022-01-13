@@ -183,10 +183,11 @@ def convert_model(model, to_format):
         new.random_variables = model.random_variables.copy()
         new.statements = model.statements.copy()
         new.dataset = model.dataset.copy()
-        new.name = model.name
-        new.dependent_variable = model.dependent_variable
         new.estimation_steps = model.estimation_steps.copy()
         new.datainfo = model.datainfo.copy()
+        new.name = model.name
+        new.dependent_variable = model.dependent_variable
+        new.observation_transformation = model.observation_transformation
         try:
             new.database = model.database
         except AttributeError:
