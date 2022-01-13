@@ -10,8 +10,8 @@ from pharmpy.tools.linearize.tool import create_linearized_model
 
 
 def test_ofv(testdata):
-    base = Model(testdata / 'nonmem' / 'pheno.mod')
-    lin = Model(testdata / 'nonmem' / 'qa' / 'pheno_linbase.mod')
+    base = Model.create_model(testdata / 'nonmem' / 'pheno.mod')
+    lin = Model.create_model(testdata / 'nonmem' / 'qa' / 'pheno_linbase.mod')
     res = calculate_results(base, lin)
     correct = """,ofv
 base,730.894727
@@ -23,8 +23,8 @@ lin_estimated,730.847272
 
 
 def test_iofv(testdata):
-    base = Model(testdata / 'nonmem' / 'pheno.mod')
-    lin = Model(testdata / 'nonmem' / 'qa' / 'pheno_linbase.mod')
+    base = Model.create_model(testdata / 'nonmem' / 'pheno.mod')
+    lin = Model.create_model(testdata / 'nonmem' / 'qa' / 'pheno_linbase.mod')
     res = calculate_results(base, lin)
     correct = """,base,linear,delta
 1,7.742852,7.722670,-0.020182
@@ -108,6 +108,6 @@ def test_create_results(testdata):
 
 def test_create_linearized_model(testdata):
     path = testdata / 'nonmem' / 'pheno_real.mod'
-    model = Model(path)
+    model = Model.create_model(path)
     linbase = create_linearized_model(model)
     assert len(linbase.statements) == 8

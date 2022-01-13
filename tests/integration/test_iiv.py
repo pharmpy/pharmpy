@@ -15,7 +15,7 @@ def test_iiv_block_structure(tmp_path, testdata, list_of_parameters, no_of_model
     with TemporaryDirectoryChanger(tmp_path):
         shutil.copy2(testdata / 'nonmem' / 'models' / 'mox2.mod', tmp_path)
         shutil.copy2(testdata / 'nonmem' / 'models' / 'mx19B.csv', tmp_path)
-        model_start = Model('mox2.mod')
+        model_start = Model.create_model('mox2.mod')
         model_start.datainfo.path = tmp_path / 'mx19B.csv'
 
         add_peripheral_compartment(model_start)
@@ -35,7 +35,7 @@ def test_iiv_no_of_etas(tmp_path, testdata):
     with TemporaryDirectoryChanger(tmp_path):
         shutil.copy2(testdata / 'nonmem' / 'models' / 'mox2.mod', tmp_path)
         shutil.copy2(testdata / 'nonmem' / 'models' / 'mx19B.csv', tmp_path)
-        model_start = Model('mox2.mod')
+        model_start = Model.create_model('mox2.mod')
         model_start.datainfo.path = tmp_path / 'mx19B.csv'
 
         res = run_tool('iiv', 'brute_force_no_of_etas', model=model_start)

@@ -12,7 +12,7 @@ from pharmpy.modeling import (
 
 
 def create_model(s, testdata):
-    model = Model(StringIO(s))
+    model = Model.create_model(StringIO(s))
     model.dataset = load_example_model("pheno").dataset
     return model
 

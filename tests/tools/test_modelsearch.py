@@ -18,14 +18,14 @@ def test_modelsearch(datadir):
         fs.add_real_file(datadir / 'pheno_real.lst', target_path='run1.lst')
         fs.add_real_file(datadir / 'pheno_real.ext', target_path='run1.ext')
         fs.add_real_file(datadir / 'pheno.dta', target_path='pheno.dta')
-        model = Model('run1.mod')
+        model = Model.create_model('run1.mod')
 
         tool = ms.ModelSearch(model, 'stepwise', 'ABSORPTION(FO)')
         assert tool
 
 
 def test_exhaustive(testdata):
-    base = Model(testdata / 'nonmem' / 'pheno.mod')
+    base = Model.create_model(testdata / 'nonmem' / 'pheno.mod')
 
     def do_nothing(model):
         model[0].modelfit_results = base.modelfit_results

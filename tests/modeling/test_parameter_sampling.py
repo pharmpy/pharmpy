@@ -28,7 +28,7 @@ def test_sample_parameters_uniformly():
 
 
 def test_sample_parameter_from_covariance_matrix(testdata):
-    model = Model(testdata / 'nonmem' / 'pheno_real.mod')
+    model = Model.create_model(testdata / 'nonmem' / 'pheno_real.mod')
     rng = np.random.default_rng(318)
     samples = sample_parameters_from_covariance_matrix(model, n=3, rng=rng)
     correct = pd.DataFrame(
@@ -49,7 +49,7 @@ def test_sample_parameter_from_covariance_matrix(testdata):
 
 
 def test_sample_individual_estimates(testdata):
-    model = Model(testdata / 'nonmem' / 'pheno_real.mod')
+    model = Model.create_model(testdata / 'nonmem' / 'pheno_real.mod')
     rng = np.random.default_rng(86)
     samples = sample_individual_estimates(model, rng=rng)
     assert len(samples) == 59 * 100

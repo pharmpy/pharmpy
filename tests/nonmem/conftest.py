@@ -40,5 +40,5 @@ def pheno_data(datadir):
 
 @pytest.fixture(scope='session')
 def pheno(pheno_path):
-    model = pharmpy.Model(pheno_path)
+    model = pharmpy.Model.create_model(pheno_path)
     return model

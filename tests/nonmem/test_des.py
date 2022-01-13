@@ -50,8 +50,8 @@ $OMEGA 0.1; IIV_KLO
 $OMEGA 0.1; IIV_VL
 $SIGMA 0.1; RUV_ADD
 """
-    pheno = Model(testdata / 'nonmem' / 'pheno.mod')
-    model = Model(StringIO(code))
+    pheno = Model.create_model(testdata / 'nonmem' / 'pheno.mod')
+    model = Model.create_model(StringIO(code))
     model.dataset = pheno.dataset
     cs = model.statements.ode_system.to_compartmental_system()
     assert len(cs) == 5

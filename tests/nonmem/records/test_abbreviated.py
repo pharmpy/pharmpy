@@ -2,7 +2,7 @@ from pharmpy import Model
 
 
 def test_data_filename_set(testdata):
-    model = Model(testdata / 'nonmem' / 'pheno_abbr.mod')
+    model = Model.create_model(testdata / 'nonmem' / 'pheno_abbr.mod')
     assert model.control_stream.abbreviated.replace == {
         'THETA(CL)': 'THETA(1)',
         'THETA(V)': 'THETA(2)',
@@ -17,7 +17,7 @@ def test_replace(parser):
 
 
 def test_translate_to_pharmpy_names(testdata):
-    model = Model(testdata / 'nonmem' / 'pheno_abbr.mod')
+    model = Model.create_model(testdata / 'nonmem' / 'pheno_abbr.mod')
     new_dict = model.control_stream.abbreviated.translate_to_pharmpy_names()
     assert new_dict == {
         'THETA(1)': 'THETA_CL',

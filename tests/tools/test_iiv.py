@@ -6,7 +6,7 @@ from pharmpy.tools.iiv.tool import _get_iiv_block
 
 
 def test_get_iiv_combinations_4_etas(testdata, pheno_path):
-    model = Model(
+    model = Model.create_model(
         StringIO(
             '''
 $PROBLEM PHENOBARB SIMPLE MODEL
@@ -62,7 +62,7 @@ $ESTIMATION METHOD=1 INTERACTION
 
 
 def test_get_iiv_combinations_5_etas(testdata, pheno_path):
-    model = Model(
+    model = Model.create_model(
         StringIO(
             '''
 $PROBLEM PHENOBARB SIMPLE MODEL

@@ -38,8 +38,8 @@ def psn_crossval_results(path):
     est_paths.sort(key=natural_keys)
     pred_paths = [str(p) for p in (path / 'm1').glob('pred_model*.mod')]
     pred_paths.sort(key=natural_keys)
-    ests = [Model(path) for path in est_paths]
-    preds = [Model(path) for path in pred_paths]
+    ests = [Model.create_model(path) for path in est_paths]
+    preds = [Model.create_model(path) for path in pred_paths]
 
     res = calculate_results(ests, preds)
     return res

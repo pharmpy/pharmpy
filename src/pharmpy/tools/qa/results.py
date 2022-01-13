@@ -506,32 +506,32 @@ def psn_qa_results(path):
     """
     path = Path(path)
 
-    original_model = Model(path / 'linearize_run' / 'scm_dir1' / 'derivatives.mod')
+    original_model = Model.create_model(path / 'linearize_run' / 'scm_dir1' / 'derivatives.mod')
     base_path = list(path.glob('*_linbase.mod'))[0]
-    base_model = Model(base_path)
+    base_model = Model.create_model(base_path)
     fullblock_path = path / 'modelfit_run' / 'fullblock.mod'
     if fullblock_path.is_file():
-        fullblock_model = Model(fullblock_path)
+        fullblock_model = Model.create_model(fullblock_path)
     else:
         fullblock_model = None
     boxcox_path = path / 'modelfit_run' / 'boxcox.mod'
     if boxcox_path.is_file():
-        boxcox_model = Model(boxcox_path)
+        boxcox_model = Model.create_model(boxcox_path)
     else:
         boxcox_model = None
     tdist_path = path / 'modelfit_run' / 'tdist.mod'
     if tdist_path.is_file():
-        tdist_model = Model(tdist_path)
+        tdist_model = Model.create_model(tdist_path)
     else:
         tdist_model = None
     addetas_path = path / 'add_etas_run' / 'add_etas_linbase.mod'
     if addetas_path.is_file():
-        addetas_model = Model(addetas_path)
+        addetas_model = Model.create_model(addetas_path)
     else:
         addetas_model = None
     iov_path = path / 'modelfit_run' / 'iov.mod'
     if iov_path.is_file():
-        iov_model = Model(iov_path)
+        iov_model = Model.create_model(iov_path)
     else:
         iov_model = None
 

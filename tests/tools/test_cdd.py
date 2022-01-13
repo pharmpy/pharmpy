@@ -29,8 +29,8 @@ def test_psn_options():
 
 def test_cdd_psn(testdata):
     path = testdata / 'nonmem' / 'cdd' / 'pheno_real_bin10'
-    base_model = Model(testdata / 'nonmem' / 'pheno_real.mod')
-    cdd_models = [Model(p) for p in model_paths(path, 'cdd_*.mod')]
+    base_model = Model.create_model(testdata / 'nonmem' / 'pheno_real.mod')
+    cdd_models = [Model.create_model(p) for p in model_paths(path, 'cdd_*.mod')]
     skipped_individuals = cdd.psn_cdd_skipped_individuals(path)
 
     cdd_bin_id = cdd.calculate_results(base_model, cdd_models, 'ID', skipped_individuals)
@@ -129,10 +129,10 @@ def test_cdd_psn(testdata):
 def test_cdd_calculate_results(testdata):
     path = testdata / 'nonmem' / 'cdd' / 'pheno_real_bin10'
     skipped_individuals = cdd.psn_cdd_skipped_individuals(path)
-    base_model = Model(testdata / 'nonmem' / 'pheno_real.mod')
+    base_model = Model.create_model(testdata / 'nonmem' / 'pheno_real.mod')
     cdd_model_paths = model_paths(path, 'cdd_*.mod')
 
-    cdd_models = [Model(p) for p in cdd_model_paths]
+    cdd_models = [Model.create_model(p) for p in cdd_model_paths]
 
     # Results for plain PsN run
     delta_ofv = cdd.compute_delta_ofv(base_model, cdd_models, skipped_individuals)
@@ -236,9 +236,9 @@ def test_cdd_calculate_results(testdata):
 
     # Replace three estimated cdd_models with fake models without estimates
     # and recompute results to verify handling of missing output
-    cdd_models[0] = Model(path / 'm1' / 'rem_1.mod')
-    cdd_models[1] = Model(path / 'm1' / 'rem_2.mod')
-    cdd_models[3] = Model(path / 'm1' / 'rem_4.mod')
+    cdd_models[0] = Model.create_model(path / 'm1' / 'rem_1.mod')
+    cdd_models[1] = Model.create_model(path / 'm1' / 'rem_2.mod')
+    cdd_models[3] = Model.create_model(path / 'm1' / 'rem_4.mod')
 
     res = cdd.calculate_results(base_model, cdd_models, 'ID', skipped_individuals)
 

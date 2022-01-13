@@ -2,8 +2,6 @@ import shutil
 from os import stat
 from pathlib import Path
 
-from pharmpy.model_factory import Model
-
 from ..database import ModelDatabase, ToolDatabase
 
 
@@ -61,8 +59,10 @@ class LocalDirectoryDatabase(ModelDatabase):
     def get_model(self, name):
         filename = name + self.file_extension
         path = self.path / filename
+        from pharmpy.model import Model
+
         try:
-            model = Model(path)
+            model = Model.create_model(path)
         except FileNotFoundError:
             raise KeyError('Model cannot be found in database')
         model.database = self
@@ -98,7 +98,9 @@ class LocalModelDirectoryDatabase(LocalDirectoryDatabase):
     def get_model(self, name):
         filename = name + self.file_extension
         path = self.path / name / filename
-        model = Model(path)
+        from pharmpy.model import Model
+
+        model = Model.create_model(path)
         model.database = self
         model.read_modelfit_results()
         return model

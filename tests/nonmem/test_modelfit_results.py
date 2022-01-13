@@ -16,7 +16,7 @@ def test_ofv(pheno):
 
 
 def test_aic_bic(testdata):
-    model = Model(testdata / 'nonmem' / 'pheno.mod')
+    model = Model.create_model(testdata / 'nonmem' / 'pheno.mod')
     assert model.modelfit_results.aic == 740.8947268137307
     assert model.modelfit_results.bic == 756.111852398327
 
@@ -38,13 +38,13 @@ def test_condition_number(testdata, pheno):
     res = pheno.modelfit_results
     assert res.condition_number == pytest.approx(4.39152)
 
-    maxeval3 = Model(
+    maxeval3 = Model.create_model(
         testdata / 'nonmem' / 'modelfit_results' / 'onePROB' / 'oneEST' / 'noSIM' / 'maxeval3.mod'
     )
 
     assert maxeval3.modelfit_results.condition_number == 4.77532e06
 
-    maxeval0 = Model(
+    maxeval0 = Model.create_model(
         testdata / 'nonmem' / 'modelfit_results' / 'onePROB' / 'oneEST' / 'noSIM' / 'maxeval0.mod'
     )
     assert maxeval0.modelfit_results.condition_number is None
@@ -52,7 +52,7 @@ def test_condition_number(testdata, pheno):
 
 def test_sumo(testdata):
     onePROB = testdata / 'nonmem' / 'modelfit_results' / 'onePROB'
-    pheno = Model(onePROB / 'oneEST' / 'noSIM' / 'pheno.mod')
+    pheno = Model.create_model(onePROB / 'oneEST' / 'noSIM' / 'pheno.mod')
     from pharmpy.modeling import load_example_model
 
     pheno = load_example_model("pheno")
@@ -63,7 +63,7 @@ def test_sumo(testdata):
 
 def test_special_models(testdata):
     onePROB = testdata / 'nonmem' / 'modelfit_results' / 'onePROB'
-    withBayes = Model(onePROB / 'multEST' / 'noSIM' / 'withBayes.mod')
+    withBayes = Model.create_model(onePROB / 'multEST' / 'noSIM' / 'withBayes.mod')
     assert (
         pytest.approx(withBayes.modelfit_results.standard_errors['THETA(1)'], 1e-13) == 2.51942e00
     )
@@ -84,10 +84,10 @@ def test_special_models(testdata):
         'warnings': False,
     }
 
-    maxeval0 = Model(onePROB / 'oneEST' / 'noSIM' / 'maxeval0.mod')
+    maxeval0 = Model.create_model(onePROB / 'oneEST' / 'noSIM' / 'maxeval0.mod')
     assert maxeval0.modelfit_results.minimization_successful is None
 
-    maxeval3 = Model(onePROB / 'oneEST' / 'noSIM' / 'maxeval3.mod')
+    maxeval3 = Model.create_model(onePROB / 'oneEST' / 'noSIM' / 'maxeval3.mod')
     assert maxeval3.modelfit_results.minimization_successful is False
     assert maxeval3.modelfit_results.covariance_step == {
         'requested': True,
@@ -95,7 +95,7 @@ def test_special_models(testdata):
         'warnings': True,
     }
 
-    nearbound = Model(onePROB / 'oneEST' / 'noSIM' / 'near_bounds.mod')
+    nearbound = Model.create_model(onePROB / 'oneEST' / 'noSIM' / 'near_bounds.mod')
     correct = pd.Series(
         [False, True, False, False, False, False, False, False, True, True, False],
         index=[
@@ -117,13 +117,13 @@ def test_special_models(testdata):
 
 def test_covariance(pheno_path):
     with ConfigurationContext(nonmem.conf, parameter_names=['basic']):
-        res = Model(pheno_path).modelfit_results
+        res = Model.create_model(pheno_path).modelfit_results
         cov = res.covariance_matrix
         assert len(cov) == 6
         assert pytest.approx(cov.loc['THETA(1)', 'THETA(1)'], 1e-13) == 4.41151e-08
         assert pytest.approx(cov.loc['OMEGA(2,2)', 'THETA(2)'], 1e-13) == 7.17184e-05
     with ConfigurationContext(nonmem.conf, parameter_names=['comment', 'basic']):
-        res = Model(pheno_path).modelfit_results
+        res = Model.create_model(pheno_path).modelfit_results
         cov = res.covariance_matrix
         assert len(cov) == 6
         assert pytest.approx(cov.loc['PTVCL', 'PTVCL'], 1e-13) == 4.41151e-08
@@ -132,13 +132,13 @@ def test_covariance(pheno_path):
 
 def test_information(pheno_path):
     with ConfigurationContext(nonmem.conf, parameter_names=['basic']):
-        res = Model(pheno_path).modelfit_results
+        res = Model.create_model(pheno_path).modelfit_results
         m = res.information_matrix
         assert len(m) == 6
         assert pytest.approx(m.loc['THETA(1)', 'THETA(1)'], 1e-13) == 2.99556e07
         assert pytest.approx(m.loc['OMEGA(2,2)', 'THETA(2)'], 1e-13) == -2.80082e03
     with ConfigurationContext(nonmem.conf, parameter_names=['comment', 'basic']):
-        res = Model(pheno_path).modelfit_results
+        res = Model.create_model(pheno_path).modelfit_results
         m = res.information_matrix
         assert len(m) == 6
         assert pytest.approx(m.loc['PTVCL', 'PTVCL'], 1e-13) == 2.99556e07
@@ -147,13 +147,13 @@ def test_information(pheno_path):
 
 def test_correlation(pheno_path):
     with ConfigurationContext(nonmem.conf, parameter_names=['basic']):
-        res = Model(pheno_path).modelfit_results
+        res = Model.create_model(pheno_path).modelfit_results
         corr = res.correlation_matrix
         assert len(corr) == 6
         assert corr.loc['THETA(1)', 'THETA(1)'] == 1.0
         assert pytest.approx(corr.loc['OMEGA(2,2)', 'THETA(2)'], 1e-13) == 3.56662e-01
     with ConfigurationContext(nonmem.conf, parameter_names=['comment', 'basic']):
-        res = Model(pheno_path).modelfit_results
+        res = Model.create_model(pheno_path).modelfit_results
         corr = res.correlation_matrix
         assert len(corr) == 6
         assert corr.loc['PTVCL', 'PTVV'] == 0.00709865
@@ -162,7 +162,7 @@ def test_correlation(pheno_path):
 
 def test_standard_errors(testdata, pheno_path):
     with ConfigurationContext(nonmem.conf, parameter_names=['basic']):
-        res = Model(pheno_path).modelfit_results
+        res = Model.create_model(pheno_path).modelfit_results
         ses = res.standard_errors
         assert len(ses) == 6
         assert pytest.approx(ses['THETA(1)'], 1e-13) == 2.10036e-04
@@ -181,7 +181,7 @@ def test_standard_errors(testdata, pheno_path):
         pd.testing.assert_series_equal(ses_sd, correct)
 
     with ConfigurationContext(nonmem.conf, parameter_names=['comment', 'basic']):
-        res = Model(pheno_path).modelfit_results
+        res = Model.create_model(pheno_path).modelfit_results
         ses = res.standard_errors
         assert len(ses) == 6
         assert pytest.approx(ses['PTVCL'], 1e-13) == 2.10036e-04
@@ -235,7 +235,7 @@ def test_individual_estimates_covariance(pheno, pheno_lst):
 
 def test_parameter_estimates(pheno_path):
     with ConfigurationContext(nonmem.conf, parameter_names=['basic']):
-        res = Model(pheno_path).modelfit_results
+        res = Model.create_model(pheno_path).modelfit_results
         pe = res.parameter_estimates
         assert len(pe) == 6
         assert pe['THETA(1)'] == 4.69555e-3
@@ -255,7 +255,7 @@ def test_parameter_estimates(pheno_path):
         pd.testing.assert_series_equal(pe_sd, correct)
 
     with ConfigurationContext(nonmem.conf, parameter_names=['comment', 'basic']):
-        res = Model(pheno_path).modelfit_results
+        res = Model.create_model(pheno_path).modelfit_results
         pe = res.parameter_estimates
         assert len(pe) == 6
         assert pe['PTVCL'] == 4.69555e-3
@@ -263,7 +263,7 @@ def test_parameter_estimates(pheno_path):
 
 
 def test_simfit(testdata):
-    model = Model(testdata / 'nonmem' / 'modelfit_results' / 'simfit' / 'sim-1.mod')
+    model = Model.create_model(testdata / 'nonmem' / 'modelfit_results' / 'simfit' / 'sim-1.mod')
     results = simfit_results(model)
     assert len(results) == 3
     assert results[1].ofv == 565.84904364342981
@@ -271,7 +271,7 @@ def test_simfit(testdata):
 
 
 def test_residuals(testdata):
-    model = Model(testdata / 'nonmem' / 'pheno_real.mod')
+    model = Model.create_model(testdata / 'nonmem' / 'pheno_real.mod')
     df = model.modelfit_results.residuals
     assert len(df) == 155
     assert list(df.columns) == ['RES', 'CWRES']
@@ -280,7 +280,7 @@ def test_residuals(testdata):
 
 
 def test_predictions(testdata):
-    model = Model(testdata / 'nonmem' / 'pheno_real.mod')
+    model = Model.create_model(testdata / 'nonmem' / 'pheno_real.mod')
     df = model.modelfit_results.predictions
     assert len(df) == 744
     assert list(df.columns) == ['IPRED', 'PRED']
@@ -288,7 +288,7 @@ def test_predictions(testdata):
 
 
 def test_runtime_total(testdata):
-    model = Model(testdata / 'nonmem' / 'pheno_real.mod')
+    model = Model.create_model(testdata / 'nonmem' / 'pheno_real.mod')
     runtime = model.modelfit_results.runtime_total
     assert runtime == 4
 
@@ -353,13 +353,13 @@ def test_runtime_different_formats(testdata, starttime, endtime, runtime_ref):
         with open('pheno_real.lst', 'a') as f:
             f.write(lst_file_repl)
 
-        model = Model('pheno_real.mod')
+        model = Model.create_model('pheno_real.mod')
         runtime = model.modelfit_results.runtime_total
         assert runtime == runtime_ref
 
 
 def test_result_summary(pheno_path, testdata):
-    model = Model(pheno_path)
+    model = Model.create_model(pheno_path)
     res = model.modelfit_results
 
     summary = res.result_summary()
@@ -367,7 +367,7 @@ def test_result_summary(pheno_path, testdata):
     assert summary.loc['pheno_real']['ofv'] == 586.2760562818805
     assert summary.loc['pheno_real']['OMEGA(1,1)_estimate'] == 0.0293508
 
-    model = Model(
+    model = Model.create_model(
         testdata
         / 'nonmem'
         / 'modelfit_results'
@@ -388,7 +388,7 @@ def test_result_summary(pheno_path, testdata):
 
 
 def test_evaluation(testdata):
-    model = Model(
+    model = Model.create_model(
         testdata
         / 'nonmem'
         / 'modelfit_results'

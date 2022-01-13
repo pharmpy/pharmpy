@@ -20,7 +20,7 @@ def test_fit_single(tmp_path, testdata):
     with TemporaryDirectoryChanger(tmp_path):
         shutil.copy2(testdata / 'nonmem' / 'pheno.mod', tmp_path)
         shutil.copy2(testdata / 'nonmem' / 'pheno.dta', tmp_path)
-        model = Model('pheno.mod')
+        model = Model.create_model('pheno.mod')
         model.datainfo.path = tmp_path / 'pheno.dta'
         modeling.fit(model)
         rundir = tmp_path / 'modelfit_dir1'
@@ -33,12 +33,12 @@ def test_fit_multiple(tmp_path, testdata):
     with TemporaryDirectoryChanger(tmp_path):
         shutil.copy2(testdata / 'nonmem' / 'pheno.mod', tmp_path / 'pheno_1.mod')
         shutil.copy2(testdata / 'nonmem' / 'pheno.dta', tmp_path / 'pheno_1.dta')
-        model_1 = Model('pheno_1.mod')
+        model_1 = Model.create_model('pheno_1.mod')
         model_1.datainfo.path = tmp_path / 'pheno_1.dta'
         model_1.update_source()
         shutil.copy2(testdata / 'nonmem' / 'pheno.mod', tmp_path / 'pheno_2.mod')
         shutil.copy2(testdata / 'nonmem' / 'pheno.dta', tmp_path / 'pheno_2.dta')
-        model_2 = Model('pheno_2.mod')
+        model_2 = Model.create_model('pheno_2.mod')
         model_2.datainfo.path = tmp_path / 'pheno_2.dta'
         model_2.update_source()
         modeling.fit([model_1, model_2])
@@ -54,7 +54,7 @@ def test_fit_copy(tmp_path, testdata):
         shutil.copy2(testdata / 'nonmem' / 'pheno.mod', tmp_path / 'pheno.mod')
         shutil.copy2(testdata / 'nonmem' / 'pheno.dta', tmp_path / 'pheno.dta')
 
-        model_1 = Model('pheno.mod')
+        model_1 = Model.create_model('pheno.mod')
         model_1.datainfo.path = tmp_path / 'pheno.dta'
         modeling.fit(model_1)
 

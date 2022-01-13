@@ -17,7 +17,7 @@ def test_read_raw_dataset(pheno):
 
 
 def test_ignore_with_synonym(pheno_data):
-    model = pharmpy.Model(
+    model = pharmpy.Model.create_model(
         StringIO(
             f"$PROBLEM dfs\n$INPUT ID TIME AMT WT APGR DV=CONC FA1 FA2\n"
             f"$DATA {pheno_data} IGNORE=@ IGNORE=(CONC.EQN.0)"
@@ -26,7 +26,7 @@ def test_ignore_with_synonym(pheno_data):
     model.datainfo['DV'].name = 'CONC'
     df = model.dataset
     assert len(df) == 155
-    model = pharmpy.Model(
+    model = pharmpy.Model.create_model(
         StringIO(
             f"$PROBLEM dfs\n$INPUT ID TIME AMT WT APGR DV=CONC FA1 FA2\n"
             f"$DATA {pheno_data} IGNORE=@ IGNORE=(DV.EQN.0)"
@@ -38,7 +38,7 @@ def test_ignore_with_synonym(pheno_data):
 
 
 def test_idv_with_synonym(pheno_data):
-    model = pharmpy.Model(
+    model = pharmpy.Model.create_model(
         StringIO(
             f"$PROBLEM dfs\n$INPUT ID TIME=TAD AMT WT APGR DV FA1 FA2\n"
             f"$DATA {pheno_data} IGNORE=@"

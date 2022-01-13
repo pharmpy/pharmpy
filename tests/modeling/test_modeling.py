@@ -38,7 +38,7 @@ from pharmpy.modeling import (
 
 
 def test_set_zero_order_elimination(testdata):
-    model = Model(testdata / 'nonmem' / 'pheno.mod')
+    model = Model.create_model(testdata / 'nonmem' / 'pheno.mod')
     set_zero_order_elimination(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
@@ -69,7 +69,7 @@ $ESTIMATION METHOD=1 INTERACTION
 
 
 def test_set_michaelis_menten_elimination(testdata):
-    model = Model(testdata / 'nonmem' / 'pheno.mod')
+    model = Model.create_model(testdata / 'nonmem' / 'pheno.mod')
     set_michaelis_menten_elimination(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
@@ -113,7 +113,7 @@ $OMEGA 0.0309626  ; IVCL
 $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION
 """
-    model = Model(StringIO(code))
+    model = Model.create_model(StringIO(code))
     model.dataset = load_example_model("pheno").dataset
     set_michaelis_menten_elimination(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
@@ -156,7 +156,7 @@ $OMEGA 0.031128  ; IVV
 $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION
 """
-    model = Model(StringIO(code))
+    model = Model.create_model(StringIO(code))
     model.dataset = load_example_model("pheno").dataset
     set_mixed_mm_fo_elimination(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
@@ -200,7 +200,7 @@ $OMEGA 0.0309626  ; IVCL
 $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION
 """
-    model = Model(StringIO(code))
+    model = Model.create_model(StringIO(code))
     model.dataset = load_example_model("pheno").dataset
     set_mixed_mm_fo_elimination(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
@@ -228,11 +228,11 @@ $ESTIMATION METHOD=1 INTERACTION
 
 
 def test_transit_compartments(testdata):
-    model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan1.mod')
+    model = Model.create_model(testdata / 'nonmem' / 'modeling' / 'pheno_advan1.mod')
     set_transit_compartments(model, 0)
     transits = model.statements.ode_system.find_transit_compartments(model.statements)
     assert len(transits) == 0
-    model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_2transits.mod')
+    model = Model.create_model(testdata / 'nonmem' / 'modeling' / 'pheno_2transits.mod')
     set_transit_compartments(model, 1)
     transits = model.statements.ode_system.find_transit_compartments(model.statements)
     assert len(transits) == 1
@@ -284,7 +284,7 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
 """
     )
     assert model.model_code == correct
-    model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_2transits.mod')
+    model = Model.create_model(testdata / 'nonmem' / 'modeling' / 'pheno_2transits.mod')
     set_transit_compartments(model, 4)
     transits = model.statements.ode_system.find_transit_compartments(model.statements)
     assert len(transits) == 4
@@ -339,7 +339,7 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
 '''
     )
     assert model.model_code == correct
-    model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan2.mod')
+    model = Model.create_model(testdata / 'nonmem' / 'modeling' / 'pheno_advan2.mod')
     set_transit_compartments(model, 1)
 
     assert not re.search(r'K *= *', model.model_code)
@@ -347,7 +347,7 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
 
 
 def test_transit_compartments_added_mdt(testdata):
-    model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan5_nodepot.mod')
+    model = Model.create_model(testdata / 'nonmem' / 'modeling' / 'pheno_advan5_nodepot.mod')
     set_transit_compartments(model, 2)
     transits = model.statements.ode_system.find_transit_compartments(model.statements)
     assert len(transits) == 2
@@ -402,7 +402,7 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
 
 
 def test_transit_compartments_change_advan(testdata):
-    model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan1.mod')
+    model = Model.create_model(testdata / 'nonmem' / 'modeling' / 'pheno_advan1.mod')
     set_transit_compartments(model, 3)
     transits = model.statements.ode_system.find_transit_compartments(model.statements)
     assert len(transits) == 3
@@ -455,7 +455,7 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
 
 
 def test_transit_compartments_change_number(testdata):
-    model = Model(testdata / 'nonmem' / 'pheno.mod')
+    model = Model.create_model(testdata / 'nonmem' / 'pheno.mod')
     set_transit_compartments(model, 3)
     set_transit_compartments(model, 2)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
@@ -487,7 +487,7 @@ $ESTIMATION METHOD=1 INTERACTION
 """
     assert model.model_code == correct
 
-    model = Model(testdata / 'nonmem' / 'pheno.mod')
+    model = Model.create_model(testdata / 'nonmem' / 'pheno.mod')
     set_transit_compartments(model, 2)
     set_transit_compartments(model, 3)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
@@ -522,7 +522,7 @@ $ESTIMATION METHOD=1 INTERACTION
 
 
 def test_lag_time(testdata):
-    model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan1.mod')
+    model = Model.create_model(testdata / 'nonmem' / 'modeling' / 'pheno_advan1.mod')
     before = model.model_code
     add_lag_time(model)
     correct = '''$PROBLEM PHENOBARB SIMPLE MODEL
@@ -570,7 +570,7 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
 
 
 def test_add_lag_time_updated_dose(testdata):
-    model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan1.mod')
+    model = Model.create_model(testdata / 'nonmem' / 'modeling' / 'pheno_advan1.mod')
     add_lag_time(model)
     set_first_order_absorption(model)
     correct = '''$PROBLEM PHENOBARB SIMPLE MODEL
@@ -743,7 +743,7 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
     ],
 )
 def test_single_add_covariate_effect(pheno_path, effect, covariate, operation, buf_new):
-    model = Model(pheno_path)
+    model = Model.create_model(pheno_path)
 
     add_covariate_effect(model, 'CL', covariate, effect, operation)
     model.update_source()
@@ -766,7 +766,7 @@ def test_single_add_covariate_effect(pheno_path, effect, covariate, operation, b
 
 
 def test_nan_add_covariate_effect(pheno_path):
-    model = Model(pheno_path)
+    model = Model.create_model(pheno_path)
     data = model.dataset
 
     new_col = [np.nan] * 10 + ([1.0] * (len(data.index) - 10))
@@ -782,14 +782,14 @@ def test_nan_add_covariate_effect(pheno_path):
 
 
 def test_nested_add_covariate_effect(pheno_path):
-    model = Model(pheno_path)
+    model = Model.create_model(pheno_path)
 
     add_covariate_effect(model, 'CL', 'WGT', 'exp')
 
     with pytest.warns(UserWarning):
         add_covariate_effect(model, 'CL', 'WGT', 'exp')
 
-    model = Model(pheno_path)
+    model = Model.create_model(pheno_path)
 
     add_covariate_effect(model, 'CL', 'WGT', 'exp')
     add_covariate_effect(model, 'CL', 'APGR', 'exp')
@@ -818,7 +818,7 @@ def test_nested_add_covariate_effect(pheno_path):
 def test_add_covariate_effect_multiple(
     pheno_path, effect, parameters, covariates, operation, buf_new
 ):
-    model = Model(pheno_path)
+    model = Model.create_model(pheno_path)
 
     add_covariate_effect(model, parameters[0], covariates[0], 'exp', '+')
     add_covariate_effect(model, parameters[1], covariates[1], 'exp', '+')
@@ -861,7 +861,7 @@ $SIGMA 0.013241
 
 $ESTIMATION METHOD=1 INTERACTION
 """
-    model = Model(StringIO(code))
+    model = Model.create_model(StringIO(code))
     model.dataset = load_example_model("pheno").dataset
     set_first_order_absorption(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
@@ -917,7 +917,7 @@ $OMEGA  DIAGONAL(2)
 $SIGMA  1e-7
 $ESTIMATION METHOD=1 INTERACTION
 """
-    model = Model(StringIO(code))
+    model = Model.create_model(StringIO(code))
     model.dataset = load_example_model("pheno").dataset
     set_first_order_absorption(model)
     correct = """
@@ -954,39 +954,39 @@ $ESTIMATION METHOD=1 INTERACTION
 
 
 def test_absorption_rate(testdata):
-    model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan1.mod')
+    model = Model.create_model(testdata / 'nonmem' / 'modeling' / 'pheno_advan1.mod')
     advan1_before = model.model_code
     set_bolus_absorption(model)
     assert advan1_before == model.model_code
 
-    model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan2.mod')
+    model = Model.create_model(testdata / 'nonmem' / 'modeling' / 'pheno_advan2.mod')
     set_bolus_absorption(model)
     assert model.model_code == advan1_before
 
-    model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan3.mod')
+    model = Model.create_model(testdata / 'nonmem' / 'modeling' / 'pheno_advan3.mod')
     advan3_before = model.model_code
     set_bolus_absorption(model)
     assert model.model_code == advan3_before
 
-    model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan4.mod')
+    model = Model.create_model(testdata / 'nonmem' / 'modeling' / 'pheno_advan4.mod')
     set_bolus_absorption(model)
     assert model.model_code == advan3_before
 
-    model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan11.mod')
+    model = Model.create_model(testdata / 'nonmem' / 'modeling' / 'pheno_advan11.mod')
     advan11_before = model.model_code
     set_bolus_absorption(model)
     assert model.model_code == advan11_before
 
-    model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan12.mod')
+    model = Model.create_model(testdata / 'nonmem' / 'modeling' / 'pheno_advan12.mod')
     set_bolus_absorption(model)
     assert model.model_code == advan11_before
 
-    model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan5_nodepot.mod')
+    model = Model.create_model(testdata / 'nonmem' / 'modeling' / 'pheno_advan5_nodepot.mod')
     advan5_nodepot_before = model.model_code
     set_bolus_absorption(model)
     assert model.model_code == advan5_nodepot_before
 
-    model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan5_depot.mod')
+    model = Model.create_model(testdata / 'nonmem' / 'modeling' / 'pheno_advan5_depot.mod')
     set_bolus_absorption(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA ../pheno.dta IGNORE=@
@@ -1030,26 +1030,26 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
     assert model.model_code == correct
 
     # 0-order to 0-order
-    model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan1_zero_order.mod')
+    model = Model.create_model(testdata / 'nonmem' / 'modeling' / 'pheno_advan1_zero_order.mod')
     advan1_zero_order_before = model.model_code
     set_zero_order_absorption(model)
     assert model.model_code == advan1_zero_order_before
 
     # 0-order to Bolus
-    model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan1_zero_order.mod')
+    model = Model.create_model(testdata / 'nonmem' / 'modeling' / 'pheno_advan1_zero_order.mod')
     set_bolus_absorption(model)
     model.update_source(nofiles=True)
     assert model.model_code.split('\n')[2:] == advan1_before.split('\n')[2:]
 
     # 1st order to 1st order
-    model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan2.mod')
+    model = Model.create_model(testdata / 'nonmem' / 'modeling' / 'pheno_advan2.mod')
     advan2_before = model.model_code
     set_first_order_absorption(model)
     model.update_source(nofiles=True)
     assert model.model_code == advan2_before
 
     # 0-order to 1st order
-    model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan1_zero_order.mod')
+    model = Model.create_model(testdata / 'nonmem' / 'modeling' / 'pheno_advan1_zero_order.mod')
     set_first_order_absorption(model)
     model.update_source(nofiles=True)
     correct = '''$PROBLEM PHENOBARB SIMPLE MODEL
@@ -1093,7 +1093,7 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
     assert model.model_code == correct
 
     # Bolus to 1st order
-    model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan1.mod')
+    model = Model.create_model(testdata / 'nonmem' / 'modeling' / 'pheno_advan1.mod')
     set_first_order_absorption(model)
     model.update_source(nofiles=True)
     assert model.model_code.split('\n')[2:] == correct.split('\n')[2:]
@@ -1105,7 +1105,7 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
         fs.add_real_file(datadir / 'pheno_advan1.mod', target_path='dir/pheno_advan1.mod')
         fs.add_real_file(datadir / 'pheno_advan2.mod', target_path='dir/pheno_advan2.mod')
         fs.add_real_file(datadir.parent / 'pheno.dta', target_path='pheno.dta')
-        model = Model('dir/pheno_advan1.mod')
+        model = Model.create_model('dir/pheno_advan1.mod')
         set_zero_order_absorption(model)
         model.update_source()
         correct = '''$PROBLEM PHENOBARB SIMPLE MODEL
@@ -1188,14 +1188,14 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
 '''
 
         # 1st to 0-order
-        model = Model('dir/pheno_advan2.mod')
+        model = Model.create_model('dir/pheno_advan2.mod')
         set_zero_order_absorption(model)
         model.update_source(force=True)
         assert model.model_code == correct
 
 
 def test_seq_to_FO(testdata):
-    model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan2_seq.mod')
+    model = Model.create_model(testdata / 'nonmem' / 'modeling' / 'pheno_advan2_seq.mod')
     set_first_order_absorption(model)
     model.update_source(nofiles=True)
     correct = '''$PROBLEM PHENOBARB SIMPLE MODEL
@@ -1239,7 +1239,7 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
 
 
 def test_seq_to_ZO(testdata):
-    model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan2_seq.mod')
+    model = Model.create_model(testdata / 'nonmem' / 'modeling' / 'pheno_advan2_seq.mod')
     set_zero_order_absorption(model)
     model.update_source(nofiles=True)
     correct = '''$PROBLEM PHENOBARB SIMPLE MODEL
@@ -1283,7 +1283,7 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
 
 
 def test_bolus_to_seq(testdata):
-    model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan1.mod')
+    model = Model.create_model(testdata / 'nonmem' / 'modeling' / 'pheno_advan1.mod')
     set_seq_zo_fo_absorption(model)
     model.update_source(nofiles=True)
     correct = '''$PROBLEM PHENOBARB SIMPLE MODEL
@@ -1331,7 +1331,7 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
 
 
 def test_ZO_to_seq(testdata):
-    model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan1_zero_order.mod')
+    model = Model.create_model(testdata / 'nonmem' / 'modeling' / 'pheno_advan1_zero_order.mod')
     set_seq_zo_fo_absorption(model)
     model.update_source(nofiles=True)
     correct = '''$PROBLEM PHENOBARB SIMPLE MODEL
@@ -1378,7 +1378,7 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
 
 
 def test_FO_to_seq(testdata):
-    model = Model(testdata / 'nonmem' / 'modeling' / 'pheno_advan2.mod')
+    model = Model.create_model(testdata / 'nonmem' / 'modeling' / 'pheno_advan2.mod')
     set_seq_zo_fo_absorption(model)
     model.update_source(nofiles=True)
     correct = '''$PROBLEM PHENOBARB SIMPLE MODEL
@@ -1457,7 +1457,7 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
     ],
 )
 def test_transform_etas_boxcox(pheno_path, etas, etab, buf_new):
-    model = Model(pheno_path)
+    model = Model.create_model(pheno_path)
 
     transform_etas_boxcox(model, etas)
     model.update_source()
@@ -1479,7 +1479,7 @@ def test_transform_etas_boxcox(pheno_path, etas, etab, buf_new):
 
 
 def test_transform_etas_tdist(pheno_path):
-    model = Model(pheno_path)
+    model = Model.create_model(pheno_path)
 
     transform_etas_tdist(model, ['ETA(1)'])
     model.update_source()
@@ -1535,7 +1535,7 @@ def test_transform_etas_tdist(pheno_path):
     ],
 )
 def test_transform_etas_john_draper(pheno_path, etas, etad, buf_new):
-    model = Model(pheno_path)
+    model = Model.create_model(pheno_path)
 
     transform_etas_john_draper(model, etas)
     model.update_source()
@@ -1586,7 +1586,7 @@ def test_transform_etas_john_draper(pheno_path, etas, etad, buf_new):
     ],
 )
 def test_add_iiv(pheno_path, parameter, expression, operation, eta_name, buf_new, no_of_omega_recs):
-    model = Model(pheno_path)
+    model = Model.create_model(pheno_path)
 
     add_iiv(model, parameter, expression, operation, eta_name)
 
@@ -1748,7 +1748,7 @@ def test_add_iiv(pheno_path, parameter, expression, operation, eta_name, buf_new
     ],
 )
 def test_create_joint_distribution(testdata, etas, pk_ref, omega_ref):
-    model = Model(testdata / 'nonmem/pheno_block.mod')
+    model = Model.create_model(testdata / 'nonmem/pheno_block.mod')
 
     create_joint_distribution(model, etas)
     model.update_source()
@@ -1825,7 +1825,7 @@ def test_create_joint_distribution(testdata, etas, pk_ref, omega_ref):
     ],
 )
 def test_create_joint_distribution_nested(testdata, etas, pk_ref, omega_ref):
-    model = Model(testdata / 'nonmem/pheno_block.mod')
+    model = Model.create_model(testdata / 'nonmem/pheno_block.mod')
 
     create_joint_distribution(model, etas[0])
     model.update_source()
@@ -1932,7 +1932,7 @@ def test_create_joint_distribution_nested(testdata, etas, pk_ref, omega_ref):
     ],
 )
 def test_split_joint_distribution(testdata, etas, pk_ref, omega_ref):
-    model = Model(testdata / 'nonmem/pheno_block.mod')
+    model = Model.create_model(testdata / 'nonmem/pheno_block.mod')
     create_joint_distribution(model)
     model.update_source()
 
@@ -2009,7 +2009,7 @@ def test_split_joint_distribution(testdata, etas, pk_ref, omega_ref):
     ],
 )
 def test_set_iiv_on_ruv(pheno_path, epsilons, same_eta, eta_names, err_ref, omega_ref):
-    model = Model(pheno_path)
+    model = Model.create_model(pheno_path)
 
     model_str = model.model_code
     model_more_eps = re.sub(
@@ -2018,7 +2018,7 @@ def test_set_iiv_on_ruv(pheno_path, epsilons, same_eta, eta_names, err_ref, omeg
     model_sigma = re.sub(
         r'\$SIGMA 0.013241', '$SIGMA 0.013241\n$SIGMA 0.1\n$SIGMA 0.1', model_more_eps
     )
-    model = Model(StringIO(model_sigma))
+    model = Model.create_model(StringIO(model_sigma))
 
     set_iiv_on_ruv(model, epsilons, same_eta, eta_names)
     model.update_source()
@@ -2127,7 +2127,7 @@ def test_set_iiv_on_ruv(pheno_path, epsilons, same_eta, eta_names, err_ref, omeg
     ],
 )
 def test_remove_iiv(testdata, etas, pk_ref, omega_ref):
-    model = Model(testdata / 'nonmem/pheno_block.mod')
+    model = Model.create_model(testdata / 'nonmem/pheno_block.mod')
     remove_iiv(model, etas)
     model.update_source()
 
@@ -2139,7 +2139,7 @@ def test_remove_iiv(testdata, etas, pk_ref, omega_ref):
 
 
 def test_remove_iov(testdata):
-    model = Model(testdata / 'nonmem/pheno_block.mod')
+    model = Model.create_model(testdata / 'nonmem/pheno_block.mod')
 
     model_str = model.model_code
     model_with_iov = model_str.replace(
@@ -2147,7 +2147,7 @@ def test_remove_iov(testdata):
         '$OMEGA BLOCK(1)\n0.1\n$OMEGA BLOCK(1) SAME\n',
     )
 
-    model = Model(StringIO(model_with_iov))
+    model = Model.create_model(StringIO(model_with_iov))
 
     remove_iov(model)
     model.update_source()
@@ -2164,7 +2164,7 @@ def test_remove_iov(testdata):
 
     assert rec_omega == '$OMEGA 0.1\n' '$OMEGA BLOCK(2)\n' '0.0309626\n' '0.0005 0.031128\n'
 
-    model = Model(testdata / 'nonmem/pheno_block.mod')
+    model = Model.create_model(testdata / 'nonmem/pheno_block.mod')
 
     with pytest.warns(UserWarning):
         remove_iov(model)
@@ -2188,7 +2188,7 @@ def test_update_inits(testdata, etas_file, force, file_exists):
         with open('run1.mod', 'a') as f:
             f.write(etas_file)
 
-        model = Model('run1.mod')
+        model = Model.create_model('run1.mod')
         update_inits(model, force)
         model.update_source()
 
@@ -2205,14 +2205,14 @@ def test_update_inits_no_res(testdata):
         fs.add_real_file(testdata / 'nonmem/pheno.mod', target_path='run1.mod')
         fs.add_real_file(testdata / 'nonmem/pheno.dta', target_path='pheno.dta')
 
-        model = Model('run1.mod')
+        model = Model.create_model('run1.mod')
         with pytest.raises(ValueError):
             update_inits(model)
 
         fs.add_real_file(testdata / 'nonmem/pheno.ext', target_path='run1.ext')
         fs.add_real_file(testdata / 'nonmem/pheno.lst', target_path='run1.lst')
 
-        model = Model('run1.mod')
+        model = Model.create_model('run1.mod')
 
         model.modelfit_results.parameter_estimates = pd.Series(
             np.nan, name='estimates', index=list(model.parameters.nonfixed_inits.keys())
@@ -2268,7 +2268,7 @@ def test_set_power_on_ruv(testdata, epsilons, err_ref, theta_ref):
         fs.add_real_file(testdata / 'nonmem/pheno_real.ext', target_path='run1.ext')
         fs.add_real_file(testdata / 'nonmem/pheno.dta', target_path='pheno.dta')
 
-        model_pheno = Model('run1.mod')
+        model_pheno = Model.create_model('run1.mod')
         model_more_eps = re.sub(
             r'( 0.031128  ;        IVV\n)',
             '$SIGMA 0.1\n$SIGMA 0.1',
@@ -2279,7 +2279,7 @@ def test_set_power_on_ruv(testdata, epsilons, err_ref, theta_ref):
             r'IPRED=F+EPS(2)\nIRES=DV-IPRED+EPS(3)',
             model_more_eps,
         )
-        model = Model(StringIO(model_more_eps))
+        model = Model.create_model(StringIO(model_more_eps))
         model.dataset = model_pheno.dataset
 
         set_power_on_ruv(model, epsilons)
@@ -2300,7 +2300,7 @@ def test_set_power_on_ruv(testdata, epsilons, err_ref, theta_ref):
 
 
 def test_nested_update_source(pheno_path):
-    model = Model(pheno_path)
+    model = Model.create_model(pheno_path)
 
     create_joint_distribution(model)
     model.update_source()
@@ -2308,7 +2308,7 @@ def test_nested_update_source(pheno_path):
 
     assert 'IIV_CL_IIV_V' in model.model_code
 
-    model = Model(pheno_path)
+    model = Model.create_model(pheno_path)
 
     remove_iiv(model, 'CL')
 
@@ -2318,7 +2318,7 @@ def test_nested_update_source(pheno_path):
     assert '0.031128 ; IVV' in model.model_code
     assert '0.0309626  ;       IVCL' not in model.model_code
 
-    model = Model(pheno_path)
+    model = Model.create_model(pheno_path)
 
     remove_iiv(model, 'V')
 
@@ -2445,7 +2445,7 @@ def test_nested_update_source(pheno_path):
     ],
 )
 def test_add_iov(pheno_path, etas, eta_names, pk_start_ref, pk_end_ref, omega_ref):
-    model = Model(pheno_path)
+    model = Model.create_model(pheno_path)
     add_iov(model, 'FA1', etas, eta_names)
     model.update_source()
 
@@ -2462,7 +2462,7 @@ def test_add_iov(pheno_path, etas, eta_names, pk_start_ref, pk_end_ref, omega_re
 
 
 def test_add_iov_only_one_level(pheno_path):
-    model = Model(pheno_path)
+    model = Model.create_model(pheno_path)
     model.dataset['FA1'] = 1
 
     with pytest.raises(ValueError, match='Only one value in FA1 column.'):

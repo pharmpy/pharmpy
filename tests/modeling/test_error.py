@@ -22,13 +22,13 @@ from pharmpy.statements import Assignment
 
 
 def test_remove_error_model(testdata):
-    model = Model(testdata / 'nonmem' / 'pheno.mod')
+    model = Model.create_model(testdata / 'nonmem' / 'pheno.mod')
     remove_error_model(model)
     assert model.model_code.split('\n')[11] == 'Y = F'
 
 
 def test_set_additive_error_model(testdata):
-    model = Model(testdata / 'nonmem' / 'pheno.mod')
+    model = Model.create_model(testdata / 'nonmem' / 'pheno.mod')
     set_additive_error_model(model)
     assert model.model_code.split('\n')[11] == 'Y = F + EPS(1)'
     assert model.model_code.split('\n')[17] == '$SIGMA  11.2225 ; sigma'
@@ -38,27 +38,27 @@ def test_set_additive_error_model(testdata):
 
 
 def test_set_additive_error_model_logdv(testdata):
-    model = Model(testdata / 'nonmem' / 'pheno.mod')
+    model = Model.create_model(testdata / 'nonmem' / 'pheno.mod')
     set_additive_error_model(model, data_trans="log(Y)")
     assert model.model_code.split('\n')[11] == 'Y = LOG(F) + EPS(1)/F'
     assert model.model_code.split('\n')[17] == '$SIGMA  11.2225 ; sigma'
 
 
 def test_set_proportional_error_model_nolog(testdata):
-    model = Model(testdata / 'nonmem' / 'pheno.mod')
+    model = Model.create_model(testdata / 'nonmem' / 'pheno.mod')
     model.statements[5] = Assignment('Y', 'F')
     set_proportional_error_model(model, zero_protection=True)
     assert model.model_code.split('\n')[16] == 'Y = F + EPS(1)*IPREDADJ'
     assert model.model_code.split('\n')[22] == '$SIGMA  0.09 ; sigma'
 
-    model = Model(testdata / 'nonmem' / 'pheno.mod')
+    model = Model.create_model(testdata / 'nonmem' / 'pheno.mod')
     set_proportional_error_model(model)
     assert model.model_code.split('\n')[11] == 'Y=F+F*EPS(1)'
     assert model.model_code.split('\n')[17] == '$SIGMA 0.013241'
 
 
 def test_set_proportional_error_model_log(testdata):
-    model = Model(testdata / 'nonmem' / 'pheno.mod')
+    model = Model.create_model(testdata / 'nonmem' / 'pheno.mod')
     model.statements[5] = Assignment('Y', 'F')
     set_proportional_error_model(model, data_trans='log(Y)', zero_protection=True)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
@@ -90,7 +90,7 @@ $ESTIMATION METHOD=1 INTERACTION
 
 
 def test_set_combined_error_model(testdata):
-    model = Model(testdata / 'nonmem' / 'pheno.mod')
+    model = Model.create_model(testdata / 'nonmem' / 'pheno.mod')
     set_combined_error_model(model)
     assert model.model_code.split('\n')[11] == 'Y = F + EPS(1)*F + EPS(2)'
     assert model.model_code.split('\n')[17] == '$SIGMA  0.09 ; sigma_prop'
@@ -101,7 +101,7 @@ def test_set_combined_error_model(testdata):
 
 
 def test_set_combined_error_model_log(testdata):
-    model = Model(testdata / 'nonmem' / 'pheno.mod')
+    model = Model.create_model(testdata / 'nonmem' / 'pheno.mod')
     set_combined_error_model(model, data_trans='log(Y)')
     assert model.model_code.split('\n')[11] == 'Y = LOG(F) + EPS(2)/F + EPS(1)'
     assert model.model_code.split('\n')[17] == '$SIGMA  0.09 ; sigma_prop'
@@ -126,7 +126,7 @@ $OMEGA 0.031128  ; IVV
 $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION
 """
-    model = Model(StringIO(code))
+    model = Model.create_model(StringIO(code))
     remove_error_model(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
@@ -166,7 +166,7 @@ $OMEGA 0.031128  ; IVV
 $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION
 """
-    model = Model(StringIO(code))
+    model = Model.create_model(StringIO(code))
     model.dataset = load_example_model("pheno").dataset
     set_additive_error_model(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
@@ -191,7 +191,7 @@ $ESTIMATION METHOD=1 INTERACTION
 
 
 def test_get_prop_init(testdata):
-    model = Model(testdata / 'nonmem' / 'pheno.mod')
+    model = Model.create_model(testdata / 'nonmem' / 'pheno.mod')
 
     init = _get_prop_init(model)
     assert init == 11.2225
@@ -249,7 +249,7 @@ $ESTIMATION METHOD=1 INTER MAXEVALS=9990 PRINT=2 POSTHOC
     model = read_model_from_string(code)
     assert not has_additive_error_model(model)
 
-    model = Model(StringIO(code))
+    model = Model.create_model(StringIO(code))
     assert not has_additive_error_model(model)
 
 
@@ -284,7 +284,7 @@ $ESTIMATION METHOD=1 INTER MAXEVALS=9990 PRINT=2 POSTHOC
     model = read_model_from_string(code)
     assert has_proportional_error_model(model)
 
-    model = Model(StringIO(code))
+    model = Model.create_model(StringIO(code))
     assert has_proportional_error_model(model)
 
 
@@ -319,7 +319,7 @@ $ESTIMATION METHOD=1 INTER MAXEVALS=9990 PRINT=2 POSTHOC
     model = read_model_from_string(code)
     assert not has_combined_error_model(model)
 
-    model = Model(StringIO(code))
+    model = Model.create_model(StringIO(code))
     assert not has_combined_error_model(model)
 
     code = """$PROBLEM base model

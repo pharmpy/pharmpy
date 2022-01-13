@@ -758,14 +758,14 @@ def input_model(path):
     Raises if not found or is dir, without tracebacks (see :func:`error_exit`).
     """
     path = check_input_path(path)
-    return pharmpy.Model(path)
+    return pharmpy.Model.create_model(path)
 
 
 def input_model_or_dataset(path):
     """Returns :class:`~pharmpy.model.Model` or pd.DataFrame from *path*"""
     path = check_input_path(path)
     try:
-        obj = pharmpy.Model(path)
+        obj = pharmpy.Model.create_model(path)
     except pharmpy.plugins.utils.PluginError:
         obj = pd.read_csv(path)
     return obj

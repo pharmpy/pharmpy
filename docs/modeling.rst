@@ -21,9 +21,9 @@ The following model is the start model for the examples.
 
 .. jupyter-execute::
 
-   from pharmpy import Model
+   from pharmpy.modeling import read_model
 
-   model_ref = Model(path / "pheno.mod")
+   model_ref = read_model(path / "pheno.mod")
    print(model_ref)
 
 ~~~~~~~~~~~~~~~
@@ -68,7 +68,7 @@ The model code (e.g. the NONMEM code) can be retrieved using the `model_code` at
 .. jupyter-execute::
    :hide-output:
 
-   model = Model(path / 'pheno.mod')
+   model = read_model(path / 'pheno.mod')
    model.model_code
 
 Write model to file
@@ -111,7 +111,7 @@ A new parameter can be added by using the name of the new parameter.
 
 .. jupyter-execute::
 
-   model = Model(path / 'pheno.mod')
+   model = read_model(path / 'pheno.mod')
    add_individual_parameter(model, 'MAT')
    print_model_diff(model_ref, model)
 
@@ -121,7 +121,7 @@ PK models and ODE systems
 
 .. jupyter-execute::
 
-   model = Model(path / "pheno.mod")
+   model = read_model(path / "pheno.mod")
 
 The exact solver to use (corresponding to a specific ADVAN in NONMEM) can be set using the function `set_ode_solver`.
 
@@ -152,7 +152,7 @@ Let us use a model with bolus absorption as a starting point.
 .. jupyter-execute::
 
    from pharmpy.modeling import set_bolus_absorption
-   model = Model(path / "pheno.mod")
+   model = read_model(path / "pheno.mod")
 
 This type of absorption can be created with:
 
@@ -246,7 +246,7 @@ Transit compartments can be added or removed using the :py:func:`pharmpy.modelin
 
 .. jupyter-execute::
 
-   model = Model(path / "pheno.mod")
+   model = read_model(path / "pheno.mod")
    from pharmpy.modeling import set_transit_compartments
 
    set_transit_compartments(model, 4)
@@ -258,7 +258,7 @@ Lag time
 
 .. jupyter-execute::
 
-   model = Model(path / "pheno.mod")
+   model = read_model(path / "pheno.mod")
 
 Lag time may be added to a dose compartment of a model.
 
@@ -288,7 +288,7 @@ First-order elimination
 .. jupyter-execute::
 
    from pharmpy.modeling import set_first_order_elimination
-   model = Model(path / "pheno.mod")
+   model = read_model(path / "pheno.mod")
    set_first_order_elimination(model)
    print_model_diff(model_ref, model)
 
@@ -300,7 +300,7 @@ Zero-order elimination
 .. jupyter-execute::
 
    from pharmpy.modeling import set_zero_order_elimination
-   model = Model(path / "pheno.mod")
+   model = read_model(path / "pheno.mod")
    set_zero_order_elimination(model)
    print_model_diff(model_ref, model)
 
@@ -312,7 +312,7 @@ Michaelis-Menten elimination
 .. jupyter-execute::
 
    from pharmpy.modeling import set_michaelis_menten_elimination
-   model = Model(path / "pheno.mod")
+   model = read_model(path / "pheno.mod")
    set_michaelis_menten_elimination(model)
    print_model_diff(model_ref, model)
 
@@ -324,7 +324,7 @@ Mixed Michaelis-Menten + First-Order elimination
 .. jupyter-execute::
 
    from pharmpy.modeling import set_mixed_mm_fo_elimination
-   model = Model(path / "pheno.mod")
+   model = read_model(path / "pheno.mod")
    set_mixed_mm_fo_elimination(model)
    print_model_diff(model_ref, model)
 
@@ -338,7 +338,7 @@ Add peripheral compartment
 
 .. jupyter-execute::
 
-   model = Model(path / "pheno.mod")
+   model = read_model(path / "pheno.mod")
 
 Adding a peripheral compartment.
 
@@ -384,7 +384,7 @@ Adding covariate effects
 
 .. jupyter-execute::
 
-   model = Model(path / "pheno.mod")
+   model = read_model(path / "pheno.mod")
 
 Covariate effects may be applied to a model.
 
@@ -412,7 +412,7 @@ Pharmpy also supports user formatted covariate effects.
 .. jupyter-execute::
    :hide-output:
 
-   model = Model(path / "pheno.mod")
+   model = read_model(path / "pheno.mod")
    user_effect = '((cov/std) - median) * theta'
    add_covariate_effect(model, 'CL', 'WGT', user_effect, operation='*')
 
@@ -433,7 +433,7 @@ Boxcox
 
 .. jupyter-execute::
 
-   model = Model(path / "pheno.mod")
+   model = read_model(path / "pheno.mod")
 
 To apply a boxcox transformation, input a list of the etas of interest. See
 :py:func:`pharmpy.modeling.transform_etas_boxcox`.
@@ -451,7 +451,7 @@ If no list is provided, all etas will be updated.
 
 .. jupyter-execute::
 
-   model = Model(path / "pheno.mod")
+   model = read_model(path / "pheno.mod")
    transform_etas_boxcox(model)
    print_model_diff(model_ref, model)
 
@@ -464,7 +464,7 @@ is a list of etas, and if no list is provided all etas will be transformed. See
 
 .. jupyter-execute::
 
-   model = Model(path / "pheno.mod")
+   model = read_model(path / "pheno.mod")
    from pharmpy.modeling import transform_etas_tdist
    transform_etas_tdist(model, ['ETA(1)'])
    print_model_diff(model_ref, model)
@@ -477,7 +477,7 @@ provided all etas will be transformed. See :py:func:`pharmpy.modeling.transform_
 
 .. jupyter-execute::
 
-   model = Model(path / "pheno.mod")
+   model = read_model(path / "pheno.mod")
    from pharmpy.modeling import transform_etas_john_draper
    transform_etas_john_draper(model, ['ETA(1)'])
    print_model_diff(model_ref, model)
@@ -491,7 +491,7 @@ Adding IIVs
 
 .. jupyter-execute::
 
-   model = Model(path / "pheno.mod")
+   model = read_model(path / "pheno.mod")
 
 IIVs may be added to a model.
 
@@ -514,7 +514,7 @@ already defined by the effect.
 
 .. jupyter-execute::
 
-   model = Model(path / "pheno.mod")
+   model = read_model(path / "pheno.mod")
    add_iiv(model, 'S1', 'prop')
    print_model_diff(model_ref, model)
 
@@ -523,7 +523,7 @@ be either a string (in that case, all new IIVs will have those settings) or be a
 
 .. jupyter-execute::
 
-   model = Model(path / "pheno.mod")
+   model = read_model(path / "pheno.mod")
    add_iiv(model, ['V', 'S1'], 'exp')
    print_model_diff(model_ref, model)
 
@@ -534,7 +534,7 @@ specified effects.
 .. jupyter-execute::
    :hide-output:
 
-   model = Model(path / "pheno.mod")
+   model = read_model(path / "pheno.mod")
    user_effect = 'eta_new**2'
    add_iiv(model, 'S1', user_effect, operation='*')
 
@@ -549,7 +549,7 @@ example, if you want to be able to use the NONMEM name.
 
 .. jupyter-execute::
 
-   model = Model(path / "pheno.mod")
+   model = read_model(path / "pheno.mod")
    add_iiv(model, 'S1', 'exp', eta_names='ETA(3)')
    model.random_variables
 
@@ -559,7 +559,7 @@ Adding IOVs
 
 .. jupyter-execute::
 
-   model = Model(path / "pheno.mod")
+   model = read_model(path / "pheno.mod")
 
 .. jupyter-execute::
    :hide-output:
@@ -588,7 +588,7 @@ supported.
 
 .. jupyter-execute::
 
-   model = Model(path / "pheno.mod")
+   model = read_model(path / "pheno.mod")
 
 .. jupyter-execute::
    :hide-output:
@@ -612,7 +612,7 @@ the eta_names argument. For example, if you want to be able to use the NONMEM na
 
 .. jupyter-execute::
 
-   model = Model(path / "pheno.mod")
+   model = read_model(path / "pheno.mod")
 
 .. jupyter-execute::
    :hide-output:
@@ -635,7 +635,7 @@ Remove IIVs
 
 .. jupyter-execute::
 
-   model = Model(path / "pheno.mod")
+   model = read_model(path / "pheno.mod")
 
 Etas can also be removed by providing a list of etas and/or name of parameters to remove IIV from. See
 :py:func:`pharmpy.modeling.remove_iiv`.
@@ -650,7 +650,7 @@ If you want to remove all etas, leave argument empty.
 
 .. jupyter-execute::
 
-   model = Model(path / "pheno.mod")
+   model = read_model(path / "pheno.mod")
    from pharmpy.modeling import remove_iiv
    remove_iiv(model)
    print_model_diff(model_ref, model)
@@ -671,7 +671,7 @@ You can remove IOVs as well, however all IOV omegas will be removed. See
 .. jupyter-execute::
    :hide-output:
 
-   model = Model(path / "pheno.mod")
+   model = read_model(path / "pheno.mod")
    from pharmpy.modeling import remove_iov
    remove_iov(model)
 
@@ -688,7 +688,7 @@ Removing the error model
 .. jupyter-execute::
    :hide-output:
 
-   model = Model(path / "pheno.mod")
+   model = read_model(path / "pheno.mod")
 
 The error model can be removed.
 
@@ -715,7 +715,7 @@ where the approximation is the first term of the Taylor expansion of :math:`\log
 .. jupyter-execute::
    :hide-output:
 
-   model = Model(path / "pheno.mod")
+   model = read_model(path / "pheno.mod")
 
 To set an additive error model:
 
@@ -737,7 +737,7 @@ To set an additive error model with log transformed data:
 
    from pharmpy.modeling import set_additive_error_model
 
-   model = Model(path / "pheno.mod")
+   model = read_model(path / "pheno.mod")
    set_additive_error_model(model, data_trans='log(Y)')
    print_model_diff(model_ref, model)
 
@@ -760,7 +760,7 @@ where again the approximation is the first term of the Taylor expansion of :math
 .. jupyter-execute::
    :hide-output:
 
-   model = Model(path / "pheno.mod")
+   model = read_model(path / "pheno.mod")
 
 To set a proportional error model:
 
@@ -781,7 +781,7 @@ To set a proportional error model with log transformed data:
 
    from pharmpy.modeling import set_proportional_error_model
 
-   model = Model(path / "pheno.mod")
+   model = read_model(path / "pheno.mod")
    set_proportional_error_model(model, data_trans='log(Y)')
    print_model_diff(model_ref, model)
 
@@ -803,7 +803,7 @@ where again the approximation is the first term of the Taylor expansion of :math
 .. jupyter-execute::
    :hide-output:
 
-   model = Model(path / "pheno.mod")
+   model = read_model(path / "pheno.mod")
 
 To set a combined error model:
 
@@ -824,7 +824,7 @@ To set a combined error model with log transformed data:
 
    from pharmpy.modeling import set_combined_error_model
 
-   model = Model(path / "pheno.mod")
+   model = read_model(path / "pheno.mod")
    set_combined_error_model(model, data_trans='log(Y)')
    print_model_diff(model_ref, model)
 
@@ -837,7 +837,7 @@ Applying IIV on RUVs
 .. jupyter-execute::
    :hide-output:
 
-   model = Model(path / "pheno.mod")
+   model = read_model(path / "pheno.mod")
 
 IIVs can be added to RUVs by multiplying epsilons with an exponential new eta.
 
@@ -853,7 +853,7 @@ transformed.
 
 .. jupyter-execute::
 
-   model = Model(path / "pheno.mod")
+   model = read_model(path / "pheno.mod")
    set_iiv_on_ruv(model)
    print_model_diff(model_ref, model)
 
@@ -863,7 +863,7 @@ Custom eta names are supported the same way as when :ref:`adding IOVs<add_iov_cu
 
 .. jupyter-execute::
 
-   model = Model(path / "pheno.mod")
+   model = read_model(path / "pheno.mod")
    set_iiv_on_ruv(model, ['EPS(1)'], eta_names=['ETA(3)'])
    model.random_variables
 
@@ -874,7 +874,7 @@ Power effects on RUVs
 .. jupyter-execute::
 
    from pharmpy.modeling import set_power_on_ruv
-   model = Model(path / "pheno.mod")
+   model = read_model(path / "pheno.mod")
    set_power_on_ruv(model, ['EPS(1)'])
    print_model_diff(model_ref, model)
 
@@ -892,7 +892,7 @@ correspondng epsilon with a theta. This way the theta will represent the standar
 .. jupyter-execute::
 
     from pharmpy.modeling import use_thetas_for_error_stdev
-    model = Model(path / "pheno.mod")
+    model = read_model(path / "pheno.mod")
     use_thetas_for_error_stdev(model)
     print_model_diff(model_ref, model)
 
@@ -902,7 +902,7 @@ Weighted error model
 .. jupyter-execute::
 
     from pharmpy.modeling import set_weighted_error_model
-    model = Model(path / "pheno.mod")
+    model = read_model(path / "pheno.mod")
     set_weighted_error_model(model)
     print_model_diff(model_ref, model)
 
@@ -912,7 +912,7 @@ dTBS error model
 .. jupyter-execute::
 
     from pharmpy.modeling import set_weighted_error_model
-    model = Model(path / "pheno.mod")
+    model = read_model(path / "pheno.mod")
     set_dtbs_error_model(model)
     print_model_diff(model_ref, model)
 
@@ -923,7 +923,7 @@ Creating joint distributions of multiple etas
 .. jupyter-execute::
    :hide-output:
 
-   model = Model(path / "pheno.mod")
+   model = read_model(path / "pheno.mod")
 
 Pharmpy supports the joining of multiple etas into a joint distribution. See
 :py:func:`pharmpy.modeling.create_joint_distribution`.
@@ -940,7 +940,7 @@ fixed. If no list is provided as input, all etas would be included in the same d
 
 .. jupyter-execute::
 
-   model = Model(path / "pheno.mod")
+   model = read_model(path / "pheno.mod")
    create_joint_distribution(model)
    print_model_diff(model_ref, model)
 
@@ -957,7 +957,7 @@ Remove covariance between etas
 .. jupyter-execute::
    :hide-output:
 
-   model = Model(path / "pheno.mod")
+   model = read_model(path / "pheno.mod")
 
 Covariance can be removed between etas using the function :py:func:`pharmpy.modeling.split_joint_distribution`. If we have
 the model:
@@ -990,8 +990,9 @@ pharmpy model. See :py:func:`pharmpy.modeling.update_inits`.
 
 .. jupyter-execute::
 
-   model = Model(path / "pheno.mod")
-   from pharmpy.modeling import update_inits
+   from pharmpy.modeling import read_model, update_inits
+
+   model = read_model(path / "pheno.mod")
 
    update_inits(model, force_individual_estimates=True)
 

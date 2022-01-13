@@ -8,7 +8,6 @@ from pathlib import Path
 
 import pharmpy.data
 import pharmpy.model
-import pharmpy.model_factory
 import pharmpy.plugins.nonmem
 import pharmpy.plugins.nonmem.dataset
 from pharmpy.data import DatasetError
@@ -64,7 +63,7 @@ def convert_model(model):
         code += '$PRED\n'
     else:
         code += '$PK\n'
-    nm_model = pharmpy.model_factory.Model(StringIO(code))
+    nm_model = pharmpy.model.Model.create_model(StringIO(code))
     nm_model.random_variables = model.random_variables
     nm_model.parameters = model.parameters
     nm_model.statements = model.statements

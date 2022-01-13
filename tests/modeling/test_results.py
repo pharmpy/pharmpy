@@ -15,7 +15,7 @@ from pharmpy.modeling import (
 
 
 def test_calculate_eta_shrinkage(testdata):
-    pheno = Model(testdata / 'nonmem' / 'pheno_real.mod')
+    pheno = Model.create_model(testdata / 'nonmem' / 'pheno_real.mod')
     shrinkage = calculate_eta_shrinkage(pheno)
     assert len(shrinkage) == 2
     assert pytest.approx(shrinkage['ETA(1)'], 0.0001) == 7.2048e01 / 100
@@ -27,14 +27,14 @@ def test_calculate_eta_shrinkage(testdata):
 
 
 def test_calculate_individual_shrinkage(testdata):
-    pheno = Model(testdata / 'nonmem' / 'pheno_real.mod')
+    pheno = Model.create_model(testdata / 'nonmem' / 'pheno_real.mod')
     ishr = calculate_individual_shrinkage(pheno)
     assert len(ishr) == 59
     assert pytest.approx(ishr['ETA(1)'][1], 1e-15) == 0.84778949807160287
 
 
 def test_calculate_individual_parameter_statistics(testdata):
-    model = Model(testdata / 'nonmem' / 'secondary_parameters' / 'pheno.mod')
+    model = Model.create_model(testdata / 'nonmem' / 'secondary_parameters' / 'pheno.mod')
     rng = np.random.default_rng(103)
     stats = calculate_individual_parameter_statistics(model, 'CL/V', rng=rng)
 
@@ -42,14 +42,14 @@ def test_calculate_individual_parameter_statistics(testdata):
     assert stats['variance'][0] == pytest.approx(8.086653508585209e-06)
     assert stats['stderr'][0] == pytest.approx(0.0035089729730046304, abs=1e-6)
 
-    model = Model(testdata / 'nonmem' / 'secondary_parameters' / 'run1.mod')
+    model = Model.create_model(testdata / 'nonmem' / 'secondary_parameters' / 'run1.mod')
     rng = np.random.default_rng(5678)
     stats = calculate_individual_parameter_statistics(model, 'CL/V', rng=rng)
     assert stats['mean'][0] == pytest.approx(0.0049100899539843)
     assert stats['variance'][0] == pytest.approx(7.391076132098555e-07)
     assert stats['stderr'][0] == pytest.approx(0.0009425952783595735, abs=1e-6)
 
-    covmodel = Model(testdata / 'nonmem' / 'secondary_parameters' / 'run2.mod')
+    covmodel = Model.create_model(testdata / 'nonmem' / 'secondary_parameters' / 'run2.mod')
     rng = np.random.default_rng(8976)
     stats = calculate_individual_parameter_statistics(covmodel, 'K = CL/V', rng=rng)
     assert stats['mean']['K', 'median'] == pytest.approx(0.004525842355027405)
@@ -64,7 +64,7 @@ def test_calculate_individual_parameter_statistics(testdata):
 
 
 def test_calculate_pk_parameters_statistics(testdata):
-    model = Model(testdata / 'nonmem' / 'models' / 'mox1.mod')
+    model = Model.create_model(testdata / 'nonmem' / 'models' / 'mox1.mod')
     rng = np.random.default_rng(103)
     df = calculate_pk_parameters_statistics(model, rng=rng)
     assert df['mean'].loc['t_max', 'median'] == pytest.approx(1.5999856886869577)
@@ -78,7 +78,7 @@ def test_calculate_pk_parameters_statistics(testdata):
 def test_calc_pk_two_comp_bolus(testdata):
     # Warning: These results are based on a manually modified cov-matrix
     # Results are not verified
-    model = Model(testdata / 'nonmem' / 'models' / 'mox_2comp.mod')
+    model = Model.create_model(testdata / 'nonmem' / 'models' / 'mox_2comp.mod')
     rng = np.random.default_rng(103)
     df = calculate_pk_parameters_statistics(model, rng=rng)
     # FIXME: Why doesn't random state handle this difference in stderr?
@@ -98,7 +98,7 @@ k_e,median,13.319584,2.67527,2.633615
 
 
 def test_summarize_modelfit_results(testdata, pheno_path):
-    pheno = Model(pheno_path)
+    pheno = Model.create_model(pheno_path)
 
     summary_single = summarize_modelfit_results(pheno)
 
@@ -107,7 +107,7 @@ def test_summarize_modelfit_results(testdata, pheno_path):
 
     assert len(summary_single.index) == 1
 
-    mox = Model(testdata / 'nonmem' / 'models' / 'mox1.mod')
+    mox = Model.create_model(testdata / 'nonmem' / 'models' / 'mox1.mod')
 
     summary_multiple = summarize_modelfit_results([pheno, mox])
 
@@ -118,7 +118,7 @@ def test_summarize_modelfit_results(testdata, pheno_path):
     assert len(summary_multiple.index) == 2
     assert list(summary_multiple.index) == ['mox1', 'pheno_real']
 
-    pheno_no_res = Model(StringIO(pheno.model_code))
+    pheno_no_res = Model.create_model(StringIO(pheno.model_code))
     pheno_no_res.name = 'pheno_no_res'
 
     summary_no_res = summarize_modelfit_results([pheno, pheno_no_res])
@@ -127,7 +127,7 @@ def test_summarize_modelfit_results(testdata, pheno_path):
     assert np.isnan(summary_no_res.loc['pheno_no_res']['ofv'])
     assert np.all(np.isnan(summary_no_res.filter(regex='estimate$').loc['pheno_no_res']))
 
-    pheno_multest = Model(
+    pheno_multest = Model.create_model(
         testdata
         / 'nonmem'
         / 'modelfit_results'
@@ -154,7 +154,7 @@ def test_summarize_modelfit_results(testdata, pheno_path):
 
     assert not summary_multest_full.loc['pheno_multEST', 1]['minimization_successful']
 
-    pheno_multest_no_res = Model(StringIO(pheno_multest.model_code))
+    pheno_multest_no_res = Model.create_model(StringIO(pheno_multest.model_code))
     pheno_multest_no_res.name = 'pheno_multest_no_res'
 
     summary_multest_full_no_res = summarize_modelfit_results(

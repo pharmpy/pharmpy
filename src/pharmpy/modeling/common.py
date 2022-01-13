@@ -8,9 +8,8 @@ from pathlib import Path
 
 import sympy
 
-from pharmpy import Parameters, RandomVariables, config
+from pharmpy import Model, Parameters, RandomVariables, config
 from pharmpy.estimation import EstimationStep
-from pharmpy.model_factory import Model
 from pharmpy.modeling.help_functions import _as_integer
 from pharmpy.statements import Assignment, CompartmentalSystem
 
@@ -39,7 +38,7 @@ def read_model(path):
     read_model_from_string : Read model from string
 
     """
-    model = Model(path)
+    model = Model.create_model(path)
     return model
 
 
@@ -113,7 +112,7 @@ def read_model_from_string(code, path=None):
     read_model_from_database : Read model from database
 
     """
-    model = Model(StringIO(code))
+    model = Model.create_model(StringIO(code))
     if path is not None:
         path = Path(path)
         import pharmpy.workflows
@@ -179,7 +178,7 @@ def convert_model(model, to_format):
         raise ValueError(f"Unknown format {to_format}: supported formats are f{supported}")
     # FIXME: Use code that can discover plugins below
     if to_format == 'generic':
-        new = Model()
+        new = Model.create_model()
         new.parameters = model.parameters.copy()
         new.random_variables = model.random_variables.copy()
         new.statements = model.statements.copy()

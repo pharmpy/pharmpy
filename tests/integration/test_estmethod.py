@@ -16,7 +16,7 @@ def test_estmethod(tmp_path, testdata, method):
         for path in (testdata / 'nonmem').glob('pheno_real.*'):
             shutil.copy2(path, tmp_path)
         shutil.copy2(testdata / 'nonmem' / 'pheno.dta', tmp_path)
-        model_start = Model('pheno_real.mod')
+        model_start = Model.create_model('pheno_real.mod')
         model_start.datainfo.path = tmp_path / 'pheno.dta'
 
         res = run_tool('estmethod', methods=method, model=model_start)

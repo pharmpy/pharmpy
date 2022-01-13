@@ -10,7 +10,7 @@ At the heart of Pharmpy lies its non-linear mixed effects model abstraction. A m
 Reading in a model
 ~~~~~~~~~~~~~~~~~~
 
-Reading a model from a model specification file into a Pharmy model object is done by using the factory constructor.
+Reading a model from a model specification file into a Pharmy model object can be done by using the factory constructor.
 
 .. jupyter-execute::
    :hide-output:
@@ -23,7 +23,7 @@ Reading a model from a model specification file into a Pharmy model object is do
 
    from pharmpy import Model
 
-   model = Model(path / "pheno_real.mod")
+   model = Model.create_model(path / "pheno_real.mod")
 
 
 Internally this will trigger a model type detection to select which model implementation to use, i.e. if it is an NM-TRAN control stream the Pharmpy NONMEM model class will be selected transparent to the user.
@@ -201,7 +201,7 @@ Joint distributions are also supported
 
 .. jupyter-execute::
 
-   frem_model = Model(path / "frem" / "pheno" / "model_4.mod")
+   frem_model = Model.create_model(path / "frem" / "pheno" / "model_4.mod")
 
    rvs = frem_model.random_variables
    rvs

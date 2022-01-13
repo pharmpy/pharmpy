@@ -56,7 +56,7 @@ def calculate_results(original_model, simfit_results):
 def psn_simeval_results(path):
     simfit_paths = (path / 'm1').glob('sim-*.mod')
     simfit_results = psn_simfit_results(simfit_paths)
-    original = Model(path / 'm1' / 'original.mod')
+    original = Model.create_model(path / 'm1' / 'original.mod')
     res = calculate_results(original, simfit_results)
 
     # Add CWRES outliers as 2 in data_flag

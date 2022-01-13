@@ -23,9 +23,9 @@ Retrieving the dataset from a model
 
 .. jupyter-execute::
 
-   from pharmpy import Model
+   from pharmpy.modeling import read_model
 
-   model = Model(path / "pheno_real.mod")
+   model = read_model(path / "pheno_real.mod")
    df = model.dataset
    df
 
@@ -66,7 +66,7 @@ An array of all subject IDs can be retrieved.
 .. jupyter-execute::
 
     from pharmpy.modeling import get_ids
-    model = Model(path / "pheno_real.mod")
+    model = read_model(path / "pheno_real.mod")
     get_ids(model)
 
 The number of subjects in the dataset could optionally be retrieved directly.

@@ -6,7 +6,7 @@ import pandas as pd
 import scipy.stats
 
 import pharmpy.visualization
-from pharmpy.model_factory import Model
+from pharmpy import Model
 from pharmpy.results import ModelfitResults, Results
 from pharmpy.tools.psn_helpers import cmd_line_model_path, model_paths
 
@@ -218,13 +218,13 @@ def psn_bootstrap_results(path):
     """
     path = Path(path)
 
-    models = [Model(p) for p in model_paths(path, 'bs_pr1_*.mod')]
+    models = [Model.create_model(p) for p in model_paths(path, 'bs_pr1_*.mod')]
     # Read the results already now to give an appropriate error if no results exists
     results = [m.modelfit_results for m in models if m.modelfit_results is not None]
     if not results:
         raise FileNotFoundError("No model results available in m1")
     try:
-        base_model = Model(cmd_line_model_path(path))
+        base_model = Model.create_model(cmd_line_model_path(path))
     except FileNotFoundError:
         base_model = None
 

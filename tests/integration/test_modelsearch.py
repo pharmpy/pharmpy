@@ -21,7 +21,7 @@ def test_exhaustive_stepwise_basic(tmp_path, testdata, mfl, no_of_models, best_m
     with TemporaryDirectoryChanger(tmp_path):
         shutil.copy2(testdata / 'nonmem' / 'models' / 'mox2.mod', tmp_path)
         shutil.copy2(testdata / 'nonmem' / 'models' / 'mx19B.csv', tmp_path)
-        model_start = Model('mox2.mod')
+        model_start = Model.create_model('mox2.mod')
         model_start.datainfo.path = tmp_path / 'mx19B.csv'
         res = run_tool('modelsearch', 'exhaustive_stepwise', mfl, model=model_start)
 
@@ -54,7 +54,7 @@ def test_exhaustive_stepwise_add_etas(
     with TemporaryDirectoryChanger(tmp_path):
         shutil.copy2(testdata / 'nonmem' / 'models' / 'mox2.mod', tmp_path)
         shutil.copy2(testdata / 'nonmem' / 'models' / 'mx19B.csv', tmp_path)
-        model_start = Model('mox2.mod')
+        model_start = Model.create_model('mox2.mod')
         model_start.datainfo.path = tmp_path / 'mx19B.csv'
         res = run_tool('modelsearch', 'exhaustive_stepwise', mfl, add_etas=True, model=model_start)
 
@@ -75,7 +75,7 @@ def test_exhaustive_stepwise_already_fit(tmp_path, testdata):
     with TemporaryDirectoryChanger(tmp_path):
         shutil.copy2(testdata / 'nonmem' / 'models' / 'mox2.mod', tmp_path)
         shutil.copy2(testdata / 'nonmem' / 'models' / 'mx19B.csv', tmp_path)
-        model_start = Model('mox2.mod')
+        model_start = Model.create_model('mox2.mod')
         model_start.datainfo.path = tmp_path / 'mx19B.csv'
 
         fit(model_start)
@@ -98,7 +98,7 @@ def test_exhaustive_stepwise_start_model_fail(tmp_path, testdata):
     with TemporaryDirectoryChanger(tmp_path):
         shutil.copy2(testdata / 'nonmem' / 'models' / 'mox2.mod', tmp_path)
         shutil.copy2(testdata / 'nonmem' / 'models' / 'mx19B.csv', tmp_path)
-        model_start = Model('mox2.mod')
+        model_start = Model.create_model('mox2.mod')
         model_start.datainfo.path = tmp_path / 'mx19B.csv'
 
         add_iiv(model_start, 'V', 'incorrect_syntax')

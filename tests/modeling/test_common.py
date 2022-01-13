@@ -62,25 +62,25 @@ def test_write_model(testdata):
 
 
 def test_fix_parameters(testdata):
-    model = Model(testdata / 'nonmem' / 'minimal.mod')
+    model = Model.create_model(testdata / 'nonmem' / 'minimal.mod')
     assert not model.parameters['THETA(1)'].fix
     fix_parameters(model, ['THETA(1)'])
     assert model.parameters['THETA(1)'].fix
 
-    model = Model(testdata / 'nonmem' / 'minimal.mod')
+    model = Model.create_model(testdata / 'nonmem' / 'minimal.mod')
     assert not model.parameters['THETA(1)'].fix
     fix_parameters(model, 'THETA(1)')
     assert model.parameters['THETA(1)'].fix
 
 
 def test_unfix_parameters(testdata):
-    model = Model(testdata / 'nonmem' / 'minimal.mod')
+    model = Model.create_model(testdata / 'nonmem' / 'minimal.mod')
     fix_parameters(model, ['THETA(1)'])
     assert model.parameters['THETA(1)'].fix
     unfix_parameters(model, ['THETA(1)'])
     assert not model.parameters['THETA(1)'].fix
 
-    model = Model(testdata / 'nonmem' / 'minimal.mod')
+    model = Model.create_model(testdata / 'nonmem' / 'minimal.mod')
     fix_parameters(model, 'THETA(1)')
     assert model.parameters['THETA(1)'].fix
     unfix_parameters(model, 'THETA(1)')
@@ -88,47 +88,47 @@ def test_unfix_parameters(testdata):
 
 
 def test_fix_parameters_to(testdata):
-    model = Model(testdata / 'nonmem' / 'minimal.mod')
+    model = Model.create_model(testdata / 'nonmem' / 'minimal.mod')
     fix_parameters_to(model, 'THETA(1)', 0)
     assert model.parameters['THETA(1)'].fix
     assert model.parameters['THETA(1)'].init == 0
 
-    model = Model(testdata / 'nonmem' / 'minimal.mod')
+    model = Model.create_model(testdata / 'nonmem' / 'minimal.mod')
     fix_parameters_to(model, ['THETA(1)', 'OMEGA(1,1)'], 0)
     assert model.parameters['THETA(1)'].fix
     assert model.parameters['THETA(1)'].init == 0
     assert model.parameters['THETA(1)'].fix
     assert model.parameters['OMEGA(1,1)'].init == 0
 
-    model = Model(testdata / 'nonmem' / 'minimal.mod')
+    model = Model.create_model(testdata / 'nonmem' / 'minimal.mod')
     fix_parameters_to(model, ['THETA(1)', 'OMEGA(1,1)'], [0, 1])
     assert model.parameters['THETA(1)'].init == 0
     assert model.parameters['OMEGA(1,1)'].init == 1
 
-    model = Model(testdata / 'nonmem' / 'minimal.mod')
+    model = Model.create_model(testdata / 'nonmem' / 'minimal.mod')
     fix_parameters_to(model, None, 0)
     assert all(p.fix for p in model.parameters)
     assert all(p.init == 0 for p in model.parameters)
 
-    model = Model(testdata / 'nonmem' / 'minimal.mod')
+    model = Model.create_model(testdata / 'nonmem' / 'minimal.mod')
     with pytest.raises(ValueError, match='Incorrect number of values'):
         fix_parameters_to(model, ['THETA(1)', 'OMEGA(1,1)'], [0, 0, 0])
 
-    model = Model(testdata / 'nonmem' / 'minimal.mod')
+    model = Model.create_model(testdata / 'nonmem' / 'minimal.mod')
     fix_parameters_to(model, None, float(0))
     assert model.parameters['THETA(1)'].fix
     assert model.parameters['THETA(1)'].init == 0
 
 
 def test_unfix_parameters_to(testdata):
-    model = Model(testdata / 'nonmem' / 'minimal.mod')
+    model = Model.create_model(testdata / 'nonmem' / 'minimal.mod')
     fix_parameters(model, ['THETA(1)'])
     assert model.parameters['THETA(1)'].fix
     unfix_parameters_to(model, 'THETA(1)', 0)
     assert not model.parameters['THETA(1)'].fix
     assert model.parameters['THETA(1)'].init == 0
 
-    model = Model(testdata / 'nonmem' / 'minimal.mod')
+    model = Model.create_model(testdata / 'nonmem' / 'minimal.mod')
     fix_parameters(model, ['THETA(1)', 'OMEGA(1,1)'])
     assert model.parameters['THETA(1)'].fix
     assert model.parameters['OMEGA(1,1)'].fix
@@ -142,7 +142,7 @@ def test_unfix_parameters_to(testdata):
 
 
 def test_generate_model_code(testdata):
-    model = Model(testdata / 'nonmem' / 'minimal.mod')
+    model = Model.create_model(testdata / 'nonmem' / 'minimal.mod')
     fix_parameters(model, ['THETA(1)'])
     assert generate_model_code(model).split('\n')[7] == '$THETA 0.1 FIX'
 
@@ -178,19 +178,19 @@ def test_generate_model_code(testdata):
     ],
 )
 def test_set_estimation_step(testdata, method, kwargs, code_ref):
-    model = Model(testdata / 'nonmem' / 'minimal.mod')
+    model = Model.create_model(testdata / 'nonmem' / 'minimal.mod')
     set_estimation_step(model, method, **kwargs)
     assert generate_model_code(model).split('\n')[-2] == code_ref
 
 
 def test_add_estimation_step(testdata):
-    model = Model(testdata / 'nonmem' / 'minimal.mod')
+    model = Model.create_model(testdata / 'nonmem' / 'minimal.mod')
     assert len(model.estimation_steps) == 1
     add_estimation_step(model, 'fo')
     assert len(model.estimation_steps) == 2
     assert generate_model_code(model).split('\n')[-2] == '$ESTIMATION METHOD=ZERO'
 
-    model = Model(testdata / 'nonmem' / 'minimal.mod')
+    model = Model.create_model(testdata / 'nonmem' / 'minimal.mod')
     assert len(model.estimation_steps) == 1
     add_estimation_step(model, 'fo', evaluation=True)
     assert len(model.estimation_steps) == 2
@@ -198,14 +198,14 @@ def test_add_estimation_step(testdata):
 
 
 def test_add_estimation_step_non_int(testdata):
-    model = Model(testdata / 'nonmem' / 'minimal.mod')
+    model = Model.create_model(testdata / 'nonmem' / 'minimal.mod')
     add_estimation_step(model, 'fo', idx=1.0)
     with pytest.raises(TypeError, match='Index must be integer'):
         add_estimation_step(model, 'fo', idx=1.5)
 
 
 def test_remove_estimation_step(testdata):
-    model = Model(testdata / 'nonmem' / 'minimal.mod')
+    model = Model.create_model(testdata / 'nonmem' / 'minimal.mod')
     assert len(model.estimation_steps) == 1
     remove_estimation_step(model, 0)
     assert not model.estimation_steps
@@ -213,7 +213,7 @@ def test_remove_estimation_step(testdata):
 
 
 def test_add_covariance_step(testdata):
-    model = Model(testdata / 'nonmem' / 'minimal.mod')
+    model = Model.create_model(testdata / 'nonmem' / 'minimal.mod')
     assert len(model.estimation_steps) == 1
     add_covariance_step(model)
     print(model.model_code)
@@ -222,7 +222,7 @@ def test_add_covariance_step(testdata):
 
 
 def test_remove_covariance_step(testdata):
-    model = Model(testdata / 'nonmem' / 'minimal.mod')
+    model = Model.create_model(testdata / 'nonmem' / 'minimal.mod')
     add_covariance_step(model)
     assert generate_model_code(model).split('\n')[-2] == '$COVARIANCE'
     remove_covariance_step(model)
@@ -233,7 +233,7 @@ def test_remove_covariance_step(testdata):
 
 
 def test_append_estimation_step_options(testdata):
-    model = Model(testdata / 'nonmem' / 'minimal.mod')
+    model = Model.create_model(testdata / 'nonmem' / 'minimal.mod')
     assert len(model.estimation_steps) == 1
     append_estimation_step_options(model, {'SADDLE_RESET': 1}, 0)
     assert (
@@ -254,7 +254,7 @@ def test_load_example_model():
 def test_get_model_covariates(testdata):
     model = load_example_model("pheno")
     assert set(get_model_covariates(model)) == {sympy.Symbol('WGT'), sympy.Symbol('APGR')}
-    minimal = Model(testdata / 'nonmem' / 'minimal.mod')
+    minimal = Model.create_model(testdata / 'nonmem' / 'minimal.mod')
     assert set(get_model_covariates(minimal)) == set()
 
 
@@ -280,5 +280,5 @@ def test_convert_model():
 
 
 def test_remove_unused_parameters_and_rvs(testdata):
-    model = Model(testdata / 'nonmem' / 'pheno_real.mod')
+    model = Model.create_model(testdata / 'nonmem' / 'pheno_real.mod')
     remove_unused_parameters_and_rvs(model)

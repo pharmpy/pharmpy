@@ -21,7 +21,7 @@ from pharmpy.tools.frem.tool import check_covariates
 
 
 def test_check_covariates(testdata):
-    model = Model(testdata / 'nonmem' / 'pheno_real.mod')
+    model = Model.create_model(testdata / 'nonmem' / 'pheno_real.mod')
     newcov = check_covariates(model, ['WGT', 'APGR'])
     assert newcov == ['WGT', 'APGR']
     newcov = check_covariates(model, ['APGR', 'WGT'])
@@ -41,13 +41,13 @@ def test_check_covariates(testdata):
 def test_check_covariates_mult_warns(testdata):
     # These are separated because capturing the warnings did not work.
     # Possibly because more than one warning is issued
-    model = Model(testdata / 'nonmem' / 'pheno_real.mod')
+    model = Model.create_model(testdata / 'nonmem' / 'pheno_real.mod')
     newcov = check_covariates(model, ['FA1', 'FA2'])
     assert newcov == []
 
 
 def test_parcov_inits(testdata):
-    model = Model(testdata / 'nonmem' / 'frem' / 'pheno' / 'model_3.mod')
+    model = Model.create_model(testdata / 'nonmem' / 'frem' / 'pheno' / 'model_3.mod')
     params = calculate_parcov_inits(model, 2)
     assert params == approx(
         {
@@ -60,8 +60,8 @@ def test_parcov_inits(testdata):
 
 
 def test_create_model3b(testdata):
-    model3 = Model(testdata / 'nonmem' / 'frem' / 'pheno' / 'model_3.mod')
-    model1b = Model(testdata / 'nonmem' / 'pheno_real.mod')
+    model3 = Model.create_model(testdata / 'nonmem' / 'frem' / 'pheno' / 'model_3.mod')
+    model1b = Model.create_model(testdata / 'nonmem' / 'pheno_real.mod')
     model3b = create_model3b(model1b, model3, 2)
     pset = model3b.parameters
     assert pset['OMEGA(3,1)'].init == approx(0.02560327)
@@ -70,14 +70,14 @@ def test_create_model3b(testdata):
 
 
 def test_bipp_covariance(testdata):
-    model = Model(testdata / 'nonmem' / 'frem' / 'pheno' / 'model_4.mod')
+    model = Model.create_model(testdata / 'nonmem' / 'frem' / 'pheno' / 'model_4.mod')
     np.random.seed(9532)
     res = calculate_results_using_bipp(model, continuous=['APGR', 'WGT'], categorical=[])
     assert res
 
 
 def test_frem_results_pheno(testdata):
-    model = Model(testdata / 'nonmem' / 'frem' / 'pheno' / 'model_4.mod')
+    model = Model.create_model(testdata / 'nonmem' / 'frem' / 'pheno' / 'model_4.mod')
     rng = np.random.default_rng(39)
     res = calculate_results(model, continuous=['APGR', 'WGT'], categorical=[], samples=10, rng=rng)
 
@@ -253,7 +253,7 @@ V,all,0.14572521381314374,0.11146577839548052,0.16976758171177983
 
 
 def test_frem_results_pheno_categorical(testdata):
-    model = Model(testdata / 'nonmem' / 'frem' / 'pheno_cat' / 'model_4.mod')
+    model = Model.create_model(testdata / 'nonmem' / 'frem' / 'pheno_cat' / 'model_4.mod')
     rng = np.random.default_rng(8978)
     res = calculate_results(model, continuous=['WGT'], categorical=['APGRX'], samples=10, rng=rng)
 
@@ -426,7 +426,7 @@ V,all,0.1441532460182698,0.1294082747127788,0.16527164471815176
 
 
 def test_get_params(testdata):
-    model_frem = Model(testdata / 'nonmem' / 'frem' / 'pheno' / 'model_4.mod')
+    model_frem = Model.create_model(testdata / 'nonmem' / 'frem' / 'pheno' / 'model_4.mod')
     rvs, _ = model_frem.random_variables.etas.distributions()[-1]
     npars = 2
 
@@ -437,7 +437,7 @@ def test_get_params(testdata):
         r'(V=TVV\*EXP\(ETA\(2\)\))', r'\1*EXP(ETA(3))', model_frem.model_code
     )
 
-    model = Model(StringIO(model_multiple_etas))
+    model = Model.create_model(StringIO(model_multiple_etas))
     model.dataset = model_frem.dataset
     rvs, _ = model.random_variables.etas.distributions()[-1]
     npars = 3
@@ -451,7 +451,7 @@ def test_get_params(testdata):
         model_frem.model_code,
     )
 
-    model = Model(StringIO(model_separate_declare))
+    model = Model.create_model(StringIO(model_separate_declare))
     model.dataset = model_frem.dataset
     rvs, _ = model.random_variables.etas.distributions()[-1]
     npars = 2

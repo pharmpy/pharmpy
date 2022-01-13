@@ -39,9 +39,9 @@ def psn_linearize_results(path):
     """
     path = Path(path)
 
-    base_model = Model(path / 'scm_dir1' / 'derivatives.mod')
+    base_model = Model.create_model(path / 'scm_dir1' / 'derivatives.mod')
     lin_path = list(path.glob('*_linbase.mod'))[0]
-    lin_model = Model(lin_path)
+    lin_model = Model.create_model(lin_path)
 
     res = calculate_results(base_model, lin_model)
     return res

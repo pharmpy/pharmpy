@@ -30,10 +30,10 @@ read the NONMEM model ``pheno_real.mod`` from file into a model object, the foll
 .. testcode::
     :pyversion: > 3.7
 
-    from pharmpy import Model
+    from pharmpy.modeling import read_model
 
     path = 'tests/testdata/nonmem/pheno_real.mod'
-    pheno = Model(path)
+    pheno = read_model(path)
 
 The model file format is automatically detected:
 

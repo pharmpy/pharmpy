@@ -5,7 +5,7 @@ from pharmpy.modeling.help_functions import _as_integer, _get_etas
 
 
 def test_get_etas(pheno_path, testdata):
-    model = Model(pheno_path)
+    model = Model.create_model(pheno_path)
 
     etas = _get_etas(model, ['ETA(1)'])
     assert len(etas) == 1
@@ -19,7 +19,7 @@ def test_get_etas(pheno_path, testdata):
     with pytest.raises(KeyError):
         _get_etas(model, ['ETA(23)'])
 
-    model = Model(testdata / 'nonmem' / 'pheno_block.mod')
+    model = Model.create_model(testdata / 'nonmem' / 'pheno_block.mod')
     rvs = _get_etas(model, None)
     assert rvs[0].name == 'ETA(1)'
 
@@ -27,7 +27,7 @@ def test_get_etas(pheno_path, testdata):
     rvs = _get_etas(model, None)
     assert rvs[0].name == 'ETA(2)'
 
-    model = Model(testdata / 'nonmem' / 'pheno_block.mod')
+    model = Model.create_model(testdata / 'nonmem' / 'pheno_block.mod')
     model.random_variables['ETA(1)'].level = 'IOV'
     rvs = _get_etas(model, None)
     assert rvs[0].name == 'ETA(2)'

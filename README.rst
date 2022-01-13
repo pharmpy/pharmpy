@@ -64,8 +64,8 @@ Python Example
 ==============
 
 
->>> from pharmpy import Model
->>> model = Model("run1.mod")
+>>> from pharmpy.modeling import read_model
+>>> model = read_model("run1.mod")
 >>> print(model.modelfit_results.parameter_estimates)
 THETA(1)      0.004696
 THETA(2)      0.984258

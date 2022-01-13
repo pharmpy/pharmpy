@@ -8,7 +8,7 @@ def test_plot_iofv_vs_iofv():
 
 
 def test_plot_individual_predictions(testdata):
-    model = Model(testdata / 'nonmem' / 'pheno_real.mod')
+    model = Model.create_model(testdata / 'nonmem' / 'pheno_real.mod')
     plot = plot_individual_predictions(model)
     assert plot
     plot = plot_individual_predictions(model, predictions=['PRED'], individuals=[1, 2, 5])

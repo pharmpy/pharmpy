@@ -21,7 +21,7 @@ lincorrect = read_nonmem_dataset(
     'stem,force_numbering,symbol_name', [('DV', False, 'DV1'), ('X', False, 'X'), ('X', True, 'X1')]
 )
 def test_create_symbol(testdata, stem, force_numbering, symbol_name):
-    model = Model(testdata / 'nonmem' / 'pheno_real.mod')
+    model = Model.create_model(testdata / 'nonmem' / 'pheno_real.mod')
     symbol = create_symbol(model, stem=stem, force_numbering=force_numbering)
 
     assert symbol.name == symbol_name
@@ -29,7 +29,7 @@ def test_create_symbol(testdata, stem, force_numbering, symbol_name):
 
 def test_to_generic_model(testdata):
     path = testdata / 'nonmem' / 'pheno.mod'
-    nm_model = Model(path)
+    nm_model = Model.create_model(path)
     model = convert_model(nm_model, 'generic')
 
     assert id(model.parameters) != id(nm_model.parameters)

@@ -943,7 +943,7 @@ def psn_frem_results(path, force_posdef_covmatrix=False, force_posdef_samples=50
     model_4_path = path / 'final_models' / 'model_4.mod'
     if not model_4_path.is_file():
         raise IOError(f'Could not find FREM model 4: {str(model_4_path)}')
-    model_4 = Model(model_4_path)
+    model_4 = Model.create_model(model_4_path)
     if model_4.modelfit_results is None:
         raise ValueError('Model 4 has no results')
     cov_model = None
@@ -953,7 +953,7 @@ def psn_frem_results(path, force_posdef_covmatrix=False, force_posdef_samples=50
         except Exception:
             model_4b_path = path / 'final_models' / 'model_4b.mod'
             try:
-                model_4b = Model(model_4b_path)
+                model_4b = Model.create_model(model_4b_path)
             except FileNotFoundError:
                 pass
             else:
@@ -995,10 +995,10 @@ def psn_frem_results(path, force_posdef_covmatrix=False, force_posdef_samples=50
     for m in intmod_names:
         intmod_path = path / 'm1' / m
         if intmod_path.is_file():
-            intmod = Model(intmod_path)
+            intmod = Model.create_model(intmod_path)
             intmods.append(intmod)
 
-    model1b = Model(path / 'm1' / 'model_1b.mod')
+    model1b = Model.create_model(path / 'm1' / 'model_1b.mod')
     model1 = intmods[0]
     model1b.modelfit_results = model1.modelfit_results
     model1b.modelfit_results.parameter_estimates = model1b.parameters.nonfixed_inits

@@ -177,7 +177,7 @@ def S(x):
     ],
 )
 def test_pheno(pheno_path, advan, trans, compmat, amounts, strodes, corrics):
-    model = Model(pheno_path)
+    model = Model.create_model(pheno_path)
     cm, ass = compartmental_model(model, advan, trans)
 
     assert ass.symbol == S('F')
@@ -192,7 +192,7 @@ def test_pheno(pheno_path, advan, trans, compmat, amounts, strodes, corrics):
 
 
 def test_advan5(testdata):
-    model = Model(testdata / 'nonmem' / 'DDMODEL00000130')
+    model = Model.create_model(testdata / 'nonmem' / 'DDMODEL00000130')
     cm, ass = compartmental_model(model, 'ADVAN5', 'TRANS1')
     assert ass.symbol == S('F')
     assert ass.expression == S('A_CMS1')
@@ -254,6 +254,6 @@ $OMEGA  0.001  ;    IIV_MAT
 $OMEGA  0.001 ; IIV_MDT
 $SIGMA  0.273617  ;   RUV_PROP
 """
-    model = Model(StringIO(code))
+    model = Model.create_model(StringIO(code))
     odes = model.statements.ode_system
     assert odes.get_flow(odes.central_compartment, odes.output_compartment) == sympy.Symbol('K100')
