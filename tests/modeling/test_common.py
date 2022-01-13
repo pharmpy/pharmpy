@@ -20,6 +20,7 @@ from pharmpy.modeling import (
     read_model_from_string,
     remove_covariance_step,
     remove_estimation_step,
+    remove_unused_parameters_and_rvs,
     set_estimation_step,
     set_name,
     unfix_parameters,
@@ -276,3 +277,8 @@ def test_convert_model():
     model = load_example_model("pheno")
     run1 = convert_model(model, "nlmixr")
     assert model.name == run1.name
+
+
+def test_remove_unused_parameters_and_rvs(testdata):
+    model = Model(testdata / 'nonmem' / 'pheno_real.mod')
+    remove_unused_parameters_and_rvs(model)

@@ -10,6 +10,7 @@ from pharmpy.parameter import Parameter
 from pharmpy.random_variables import RandomVariable
 from pharmpy.statements import Assignment
 
+from .common import remove_unused_parameters_and_rvs
 from .data import get_observations
 from .expressions import create_symbol
 
@@ -54,7 +55,7 @@ def remove_error_model(model):
     """
     stats, y, f = _preparations(model)
     stats.reassign(y, f)
-    model.remove_unused_parameters_and_rvs()
+    remove_unused_parameters_and_rvs(model)
     return model
 
 
@@ -127,7 +128,7 @@ def set_additive_error_model(model, data_trans=None, series_terms=2):
         expr = data_trans.subs(model.dependent_variable, expr).series(ruv, n=series_terms).removeO()
 
     stats.reassign(y, expr)
-    model.remove_unused_parameters_and_rvs()
+    remove_unused_parameters_and_rvs(model)
 
     sigma = create_symbol(model, 'sigma')
     sigma_par = Parameter(sigma.name, init=_get_prop_init(model))
@@ -233,7 +234,7 @@ def set_proportional_error_model(model, data_trans=None, zero_protection=False):
         raise ValueError(f"Not supported data transformation {data_trans}")
 
     stats.reassign(y, expr)
-    model.remove_unused_parameters_and_rvs()
+    remove_unused_parameters_and_rvs(model)
 
     sigma = create_symbol(model, 'sigma')
     sigma_par = Parameter(sigma.name, init=0.09)
@@ -310,7 +311,7 @@ def set_combined_error_model(model, data_trans=None):
         raise ValueError(f"Not supported data transformation {data_trans}")
 
     stats.reassign(y, expr)
-    model.remove_unused_parameters_and_rvs()
+    remove_unused_parameters_and_rvs(model)
 
     sigma_prop = create_symbol(model, 'sigma_prop')
     sigma_par1 = Parameter(sigma_prop.name, init=0.09)
@@ -534,7 +535,7 @@ def set_weighted_error_model(model):
             break
 
     stats.reassign(y, f + sympy.Symbol('W') * sympy.Symbol(epsilons[0].name))
-    model.remove_unused_parameters_and_rvs()
+    remove_unused_parameters_and_rvs(model)
     return model
 
 

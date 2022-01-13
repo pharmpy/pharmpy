@@ -10,6 +10,7 @@ from pharmpy.modeling.help_functions import _as_integer
 from pharmpy.parameter import Parameter
 from pharmpy.statements import Assignment, Bolus, CompartmentalSystem, Infusion
 
+from .common import remove_unused_parameters_and_rvs
 from .data import get_observations
 from .expressions import create_symbol
 
@@ -239,7 +240,7 @@ def _do_michaelis_menten_elimination(model, combined=False):
     rate = (clmm * km / (km + amount / vc) + cl) / vc
     odes.add_flow(central, output, rate)
     model.statements.remove_symbol_definitions(numer.free_symbols, odes)
-    model.remove_unused_parameters_and_rvs()
+    remove_unused_parameters_and_rvs(model)
     return model
 
 
@@ -333,7 +334,7 @@ def set_transit_compartments(model, n):
             destination.dose = dose
         _update_numerators(model)
         statements.remove_symbol_definitions(removed_symbols, odes)
-        model.remove_unused_parameters_and_rvs()
+        remove_unused_parameters_and_rvs(model)
     else:
         nadd = n - len(transits)
         last, destination, rate = _find_last_transit(odes, transits)
@@ -417,7 +418,7 @@ def add_lag_time(model):
     dosing_comp.lag_time = mdt_symb
     if old_lag_time:
         model.statements.remove_symbol_definitions(old_lag_time.free_symbols, odes)
-        model.remove_unused_parameters_and_rvs()
+        remove_unused_parameters_and_rvs(model)
     return model
 
 
@@ -455,7 +456,7 @@ def remove_lag_time(model):
         symbols = lag_time.free_symbols
         dosing_comp.lag_time = 0
         model.statements.remove_symbol_definitions(symbols, odes)
-        model.remove_unused_parameters_and_rvs()
+        remove_unused_parameters_and_rvs(model)
     return model
 
 
@@ -513,7 +514,7 @@ def set_zero_order_absorption(model):
     else:
         to_comp = dose_comp
     statements.remove_symbol_definitions(symbols, odes)
-    model.remove_unused_parameters_and_rvs()
+    remove_unused_parameters_and_rvs(model)
     if not has_zero_order_absorption(model):
         _add_zero_order_absorption(model, dose.amount, to_comp, 'MAT', lag_time)
     return model
@@ -567,7 +568,7 @@ def set_first_order_absorption(model):
     elif not depot:
         dose_comp.dose = None
     statements.remove_symbol_definitions(symbols, odes)
-    model.remove_unused_parameters_and_rvs()
+    remove_unused_parameters_and_rvs(model)
     if not depot:
         _add_first_order_absorption(model, Bolus(amount), dose_comp, lag_time)
     return model
@@ -618,14 +619,14 @@ def set_bolus_absorption(model):
         odes.remove_compartment(depot)
         symbols = ka.free_symbols
         statements.remove_symbol_definitions(symbols, odes)
-        model.remove_unused_parameters_and_rvs()
+        remove_unused_parameters_and_rvs(model)
     if has_zero_order_absorption(model):
         dose_comp = odes.dosing_compartment
         old_symbols = dose_comp.free_symbols
         dose_comp.dose = Bolus(dose_comp.dose.amount)
         unneeded_symbols = old_symbols - dose_comp.dose.free_symbols
         statements.remove_symbol_definitions(unneeded_symbols, odes)
-        model.remove_unused_parameters_and_rvs()
+        remove_unused_parameters_and_rvs(model)
     return model
 
 
@@ -1078,7 +1079,7 @@ def remove_peripheral_compartment(model):
         symbols |= odes.get_flow(last_peripheral, central).free_symbols
         odes.remove_compartment(last_peripheral)
         model.statements.remove_symbol_definitions(symbols, odes)
-        model.remove_unused_parameters_and_rvs()
+        remove_unused_parameters_and_rvs(model)
     return model
 
 

@@ -8,7 +8,7 @@ from pathlib import Path
 
 import sympy
 
-from pharmpy import config
+from pharmpy import Parameters, RandomVariables, config
 from pharmpy.estimation import EstimationStep
 from pharmpy.model_factory import Model
 from pharmpy.modeling.help_functions import _as_integer
@@ -1003,3 +1003,33 @@ def get_config_path():
     '.../pharmpy.conf'
     """
     return str(config.user_config_dir())
+
+
+def remove_unused_parameters_and_rvs(model):
+    """Remove any parameters and rvs that are not used in the model statements
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model object
+
+    Returns
+    -------
+    Model
+        Reference to same model object
+    """
+    symbols = model.statements.free_symbols
+
+    new_rvs = RandomVariables()
+    for rv in model.random_variables:
+        if rv.symbol in symbols or not symbols.isdisjoint(rv.sympy_rv.pspace.free_symbols):
+            new_rvs.append(rv)
+    model.random_variables = new_rvs
+
+    new_params = Parameters()
+    for p in model.parameters:
+        symb = p.symbol
+        if symb in symbols or symb in new_rvs.free_symbols or (p.fix and p.init == 0):
+            new_params.append(p)
+    model.parameters = new_params
+    return model

@@ -20,9 +20,6 @@ import sympy
 from pharmpy.datainfo import ColumnInfo, DataInfo
 from pharmpy.workflows import default_model_database
 
-from .parameter import Parameters
-from .random_variables import RandomVariables
-
 
 def canonicalize_data_transformation(model, value):
     if value is None:
@@ -162,21 +159,3 @@ class Model:
 
     def read_raw_dataset(self, parse_columns=tuple()):
         raise NotImplementedError()
-
-    def remove_unused_parameters_and_rvs(self):
-        """Remove any parameters and rvs that are not used in the model statements"""
-        symbols = self.statements.free_symbols
-
-        new_rvs = RandomVariables()
-        for rv in self.random_variables:
-            # FIXME: change if rvs are random symbols in expressions
-            if rv.symbol in symbols or not symbols.isdisjoint(rv.sympy_rv.pspace.free_symbols):
-                new_rvs.append(rv)
-        self.random_variables = new_rvs
-
-        new_params = Parameters()
-        for p in self.parameters:
-            symb = p.symbol
-            if symb in symbols or symb in new_rvs.free_symbols or (p.fix and p.init == 0):
-                new_params.append(p)
-        self.parameters = new_params

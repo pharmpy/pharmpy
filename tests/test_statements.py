@@ -125,11 +125,6 @@ def test_remove_symbol_definition():
     assert s == ModelStatements([s4])
 
 
-def test_remove_unused_parameters_and_rvs(testdata):
-    model = Model(testdata / 'nonmem' / 'pheno_real.mod')
-    model.remove_unused_parameters_and_rvs()
-
-
 def test_reassign():
     s1 = Assignment(S('G'), sympy.Integer(3))
     s2 = Assignment(S('M'), sympy.Integer(2))

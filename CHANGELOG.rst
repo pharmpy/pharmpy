@@ -2,6 +2,7 @@ next version
 ------------
 
 * Add modeling.create_symbol
+* Add modeling.remove_unused_parameters_and_rvs
 
 0.43.0 (2022-01-12)
 -------------------
