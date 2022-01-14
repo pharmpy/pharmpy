@@ -17,9 +17,9 @@ import pathlib
 from pathlib import Path
 
 import sympy
-from model.estimation import EstimationSteps
 
 from pharmpy.datainfo import ColumnInfo, DataInfo
+from pharmpy.estimation import EstimationSteps
 from pharmpy.parameter import Parameters
 from pharmpy.plugins.utils import detect_model
 from pharmpy.random_variables import RandomVariables
@@ -58,6 +58,17 @@ class Model:
         stat = self.statements._repr_html_()
         rvs = self.random_variables._repr_latex_()
         return f'<hr>{stat}<hr>${rvs}$<hr>{self.parameters._repr_html_()}<hr>'
+
+    @property
+    def name(self):
+        """Name of the model"""
+        return self._name
+
+    @name.setter
+    def name(self, value):
+        if not isinstance(value, str):
+            raise TypeError("Name of a model has to be of string type")
+        self._name = value
 
     @property
     def name(self):
@@ -257,19 +268,19 @@ class Model:
     @staticmethod
     def create_model(obj=None, **kwargs):
         """Factory for creating a :class:`pharmpy.model` object from an object representing the model
-        (i.e. path).
 
         .. _path-like object: https://docs.python.org/3/glossary.html#term-path-like-object
 
         Parameters
         ----------
         obj
-            Currently a `path-like object`_ pointing to the model file.
+            `path-like object`_ pointing to the model file or an IO object.
 
         Returns
         -------
-        - Generic :class:`~pharmpy.generic.Model` if path is None, otherwise appropriate
-          implementation is invoked (e.g. NONMEM7 :class:`~pharmpy.api_nonmem.model.Model`).
+        Model
+            Generic :class:`~pharmpy.generic.Model` if obj is None, otherwise appropriate
+            implementation is invoked (e.g. NONMEM7 :class:`~pharmpy.plugins.nonmem.Model`).
         """
         if isinstance(obj, str):
             path = Path(obj)
