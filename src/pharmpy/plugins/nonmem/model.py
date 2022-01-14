@@ -718,8 +718,8 @@ class Model(pharmpy.model.Model):
             laplace = False
             isample = None
             niter = None
-            auto_settings = None
-            keep_nth_iterations = None
+            auto = None
+            keep_every_nth_iter = None
 
             if record.has_option('INTERACTION') or record.has_option('INTER'):
                 interaction = True
@@ -745,11 +745,11 @@ class Model(pharmpy.model.Model):
             if record.has_option('AUTO'):
                 auto_opt = record.get_option('AUTO')
                 if auto_opt is not None and int(auto_opt) in [0, 1]:
-                    auto_settings = bool(auto_opt)
+                    auto = bool(auto_opt)
                 else:
                     raise ValueError('Currently only AUTO=0 and AUTO=1 is supported')
             if record.has_option('PRINT'):
-                keep_nth_iterations = int(record.get_option('PRINT'))
+                keep_every_nth_iter = int(record.get_option('PRINT'))
 
             protected_names = [
                 name.upper(),
@@ -786,8 +786,8 @@ class Model(pharmpy.model.Model):
                     laplace=laplace,
                     isample=isample,
                     niter=niter,
-                    auto_settings=auto_settings,
-                    keep_nth_iterations=keep_nth_iterations,
+                    auto=auto,
+                    keep_every_nth_iter=keep_every_nth_iter,
                     tool_options=tool_options,
                 )
             except ValueError:

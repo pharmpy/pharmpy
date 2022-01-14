@@ -48,8 +48,8 @@ class EstimationSteps(MutableSequence):
         laplace = [s.laplace for s in self._steps]
         isample = [s.isample for s in self._steps]
         niter = [s.niter for s in self._steps]
-        auto_settings = [s.auto_settings for s in self._steps]
-        keep_nth_iterations = [s.keep_nth_iterations for s in self._steps]
+        auto = [s.auto for s in self._steps]
+        keep_every_nth_iter = [s.keep_every_nth_iter for s in self._steps]
         tool_options = [s.tool_options for s in self._steps]
         df = pd.DataFrame(
             {
@@ -61,8 +61,8 @@ class EstimationSteps(MutableSequence):
                 'laplace': laplace,
                 'isample': isample,
                 'niter': niter,
-                'auto_settings': auto_settings,
-                'keep_nth_iterations': keep_nth_iterations,
+                'auto': auto,
+                'keep_every_nth_iter': keep_every_nth_iter,
                 'tool_options': tool_options,
             }
         )
@@ -94,8 +94,8 @@ class EstimationStep:
         laplace=False,
         isample=None,
         niter=None,
-        auto_settings=None,
-        keep_nth_iterations=None,
+        auto=None,
+        keep_every_nth_iter=None,
         tool_options=None,
     ):
         method = self._canonicalize_and_check_method(method)
@@ -107,8 +107,8 @@ class EstimationStep:
         self.laplace = laplace
         self.isample = isample
         self.niter = niter
-        self.auto_settings = auto_settings
-        self.keep_nth_iterations = keep_nth_iterations
+        self.auto = auto
+        self.keep_every_nth_iter = keep_every_nth_iter
         self.tool_options = tool_options
 
     def _canonicalize_and_check_method(self, method):
@@ -159,8 +159,8 @@ class EstimationStep:
             and self.laplace == other.laplace
             and self.isample == other.isample
             and self.niter == other.niter
-            and self.auto_settings == other.auto_settings
-            and self.keep_nth_iterations == other.keep_nth_iterations
+            and self.auto == other.auto
+            and self.keep_every_nth_iter == other.keep_every_nth_iter
             and self.tool_options == other.tool_options
         )
 
@@ -169,8 +169,8 @@ class EstimationStep:
             f'EstimationStep("{self.method}", interaction={self.interaction}, '
             f'cov={self.cov}, evaluation={self.evaluation}, '
             f'maximum_evaluations={self.maximum_evaluations}, laplace={self.laplace}, '
-            f'isample={self.isample}, niter={self.niter}, auto_settings={self.auto_settings}, '
-            f'keep_nth_iterations={self.keep_nth_iterations}, '
+            f'isample={self.isample}, niter={self.niter}, auto={self.auto}, '
+            f'keep_every_nth_iter={self.keep_every_nth_iter}, '
             f'tool_options={self.tool_options})'
         )
 

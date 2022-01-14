@@ -17,8 +17,8 @@ def test_estimation_method():
     assert a == EstimationStep('fo', interaction=False, cov=True)
     assert (
         repr(a) == 'EstimationStep("FO", interaction=False, cov=True, evaluation=False, '
-        'maximum_evaluations=None, laplace=False, isample=None, niter=None, auto_settings=None, '
-        'keep_nth_iterations=None, tool_options=None)'
+        'maximum_evaluations=None, laplace=False, isample=None, niter=None, auto=None, '
+        'keep_every_nth_iter=None, tool_options=None)'
     )
 
     with pytest.raises(ValueError):

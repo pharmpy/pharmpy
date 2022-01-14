@@ -773,11 +773,7 @@ def test_cmt_warning(testdata):
         ),
         (
             '$ESTIMATION METH=COND ISAMPLE=10 NITER=5 AUTO=1 PRINT=2',
-            [
-                EstimationStep(
-                    'foce', isample=10, niter=5, auto_settings=True, keep_nth_iterations=2
-                )
-            ],
+            [EstimationStep('foce', isample=10, niter=5, auto=True, keep_every_nth_iter=2)],
         ),
     ],
 )
@@ -837,10 +833,10 @@ $ESTIMATION METHOD=1 SADDLE_RESET=1
         ),
         (
             '$EST METH=COND INTER',
-            {'auto_settings': True, 'keep_nth_iterations': 2},
+            {'auto': True, 'keep_every_nth_iter': 2},
             '$ESTIMATION METHOD=COND INTER AUTO=1 PRINT=2',
         ),
-        ('$EST METH=COND INTER', {'auto_settings': False}, '$ESTIMATION METHOD=COND INTER AUTO=0'),
+        ('$EST METH=COND INTER', {'auto': False}, '$ESTIMATION METHOD=COND INTER AUTO=0'),
     ],
 )
 def test_estimation_steps_setter(estcode, kwargs, rec_ref):

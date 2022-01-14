@@ -95,7 +95,7 @@ def _create_eval_settings(laplace=False):
         'maximum_evaluations': 9999,
         'isample': 10000,
         'niter': 10,
-        'keep_nth_iterations': 1,
+        'keep_every_nth_iter': 1,
     }
     return evaluation_step
 
@@ -105,8 +105,8 @@ def _create_est_settings(method):
     interaction = True
     laplace = False
     maximum_evaluations = 9999
-    auto_settings = True
-    keep_nth_iterations = 1
+    auto = True
+    keep_every_nth_iter = 1
 
     if method == 'laplace':
         settings['method'] = 'foce'
@@ -117,8 +117,8 @@ def _create_est_settings(method):
     settings['interaction'] = interaction
     settings['laplace'] = laplace
     settings['maximum_evaluations'] = maximum_evaluations
-    settings['auto_settings'] = auto_settings
-    settings['keep_nth_iterations'] = keep_nth_iterations
+    settings['auto'] = auto
+    settings['keep_every_nth_iter'] = keep_every_nth_iter
 
     return settings
 
