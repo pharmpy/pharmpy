@@ -71,15 +71,15 @@ class Model:
         self._name = value
 
     @property
-    def name(self):
-        """Name of the model"""
-        return self._name
+    def filename_extension(self):
+        """Filename extension of model file"""
+        return self._filename_extension
 
-    @name.setter
-    def name(self, value):
+    @filename_extension.setter
+    def filename_extension(self, value):
         if not isinstance(value, str):
-            raise TypeError("Name of a model has to be of string type")
-        self._name = value
+            raise TypeError("Filename extension has to be of string type")
+        self._filename_extension = value
 
     @property
     def dependent_variable(self):
