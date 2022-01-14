@@ -183,6 +183,11 @@ class Model:
         """
         raise NotImplementedError("Generic model does not implement the model_code property")
 
+    def read_modelfit_results(self):
+        """Read in modelfit results
+        """
+        raise NotImplementedError("Read modelfit results not implemented for generic models")
+
     def write(self, path='', force=False):
         """Write model to file using its source format
         If no path is supplied or does not contain a filename a name is created
