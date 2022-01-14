@@ -130,6 +130,20 @@ class Model:
         self._statements = value
 
     @property
+    def estimation_steps(self):
+        """Definitions of estimation steps
+
+        See :class:`pharmpy.EstimationSteps`
+        """
+        return self._estimation_steps
+
+    @estimation_steps.setter
+    def estimation_steps(self, value):
+        if not isinstance(value, EstimationSteps):
+            raise TypeError("model.estimation_steps must be of EstimationSteps type")
+        self._estimation_steps = value
+
+    @property
     def datainfo(self):
         """Definitions of model statements
 
