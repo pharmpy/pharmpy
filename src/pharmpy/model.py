@@ -169,6 +169,15 @@ class Model:
         self.update_datainfo()
 
     @property
+    def initial_individual_estimates(self):
+        """Initial estimates for individual parameters"""
+        return self._initial_individual_estimates
+
+    @initial_individual_estimates.setter
+    def initial_individual_estimates(self, value):
+        self._initial_individual_estimates = value
+
+    @property
     def modelfit_results(self):
         """Modelfit results for this model"""
         return self._modelfit_results
@@ -179,13 +188,11 @@ class Model:
 
     @property
     def model_code(self):
-        """Model type specific code
-        """
+        """Model type specific code"""
         raise NotImplementedError("Generic model does not implement the model_code property")
 
     def read_modelfit_results(self):
-        """Read in modelfit results
-        """
+        """Read in modelfit results"""
         raise NotImplementedError("Read modelfit results not implemented for generic models")
 
     def write(self, path='', force=False):
