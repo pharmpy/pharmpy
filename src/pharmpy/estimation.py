@@ -105,7 +105,7 @@ class EstimationSteps(MutableSequence):
 
 
 class EstimationStep:
-    """Definitions of one estimation operation"""
+    """Definition of one estimation operation"""
 
     """Supported estimation methods
     """
