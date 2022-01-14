@@ -18,7 +18,7 @@ def test_estimation_method():
     assert (
         repr(a) == 'EstimationStep("FO", interaction=False, cov=True, evaluation=False, '
         'maximum_evaluations=None, laplace=False, isample=None, niter=None, auto=None, '
-        'keep_every_nth_iter=None, tool_options=None)'
+        'keep_every_nth_iter=None, tool_options={})'
     )
 
     with pytest.raises(ValueError):
@@ -28,10 +28,10 @@ def test_estimation_method():
 def test_append_options():
     a = EstimationStep('foce')
 
-    a.append_tool_options({'EONLY': 1})
+    a.tool_options.update({'EONLY': 1})
     assert len(a.tool_options) == 1
 
-    a.append_tool_options({'PRINT': 1})
+    a.tool_options.update({'PRINT': 1})
     assert len(a.tool_options) == 2
 
 

@@ -787,7 +787,7 @@ def append_estimation_step_options(model, tool_options, idx):
     except TypeError:
         raise TypeError(f'Index must be integer: {idx}')
 
-    model.estimation_steps[idx].append_tool_options(tool_options)
+    model.estimation_steps[idx].tool_options.update(tool_options)
     return model
 
 
