@@ -1,3 +1,3 @@
-from .tool import create_workflow
+from .tool import EstMethodResults, create_workflow
 
-__all__ = ['create_workflow']
+__all__ = [EstMethodResults, 'create_workflow']

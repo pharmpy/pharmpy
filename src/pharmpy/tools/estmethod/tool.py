@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import pharmpy.results
 from pharmpy.modeling import (
     add_estimation_step,
@@ -147,6 +149,8 @@ def _clear_estimation_steps(model):
 
 
 class EstMethodResults(pharmpy.results.Results):
+    rst_path = Path(__file__).parent / 'report.rst'
+
     def __init__(self, summary=None, best_model=None, start_model=None, models=None):
         self.summary = summary
         self.best_model = best_model

@@ -29,3 +29,4 @@ def test_estmethod(tmp_path, testdata, method):
         assert len(list((rundir / 'models').iterdir())) == no_of_models
         assert (rundir / 'results.json').exists()
         assert (rundir / 'results.csv').exists()
+        assert (rundir / 'results.html').exists()

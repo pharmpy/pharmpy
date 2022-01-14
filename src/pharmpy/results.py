@@ -136,6 +136,10 @@ def read_results(path_or_buf):
         from pharmpy.tools.crossval import CrossvalResults
 
         res = CrossvalResults.from_dict(d)
+    elif decoder.cls == 'EstMethodResults':
+        from pharmpy.tools.estmethod import EstMethodResults
+
+        res = EstMethodResults.from_dict(d)
 
     return res
 
