@@ -17,6 +17,7 @@ import pathlib
 from pathlib import Path
 
 import sympy
+from model.estimation import EstimationSteps
 
 from pharmpy.datainfo import ColumnInfo, DataInfo
 from pharmpy.parameter import Parameters
@@ -175,6 +176,12 @@ class Model:
     @modelfit_results.setter
     def modelfit_results(self, value):
         self._modelfit_results = value
+
+    @property
+    def model_code(self):
+        """Model type specific code
+        """
+        raise NotImplementedError("Generic model does not implement the model_code property")
 
     def write(self, path='', force=False):
         """Write model to file using its source format
