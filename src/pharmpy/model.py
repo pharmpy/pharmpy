@@ -254,9 +254,6 @@ class Model:
     def update_individual_estimates(self, source):
         self.initial_individual_estimates = source.modelfit_results.individual_estimates
 
-    def read_raw_dataset(self, parse_columns=tuple()):
-        raise NotImplementedError()
-
     @staticmethod
     def create_model(obj=None, **kwargs):
         """Factory for creating a :class:`pharmpy.model` object from an object representing the model
