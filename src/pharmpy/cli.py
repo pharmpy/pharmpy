@@ -250,15 +250,15 @@ def write_model_or_dataset(model_or_dataset, new_df, path, force):
         if new_df is not None and new_df is not model.dataset:
             model.dataset = new_df
         try:
-            from pharmpy.modeling import bump_model_number
+            from pharmpy.modeling import bump_model_number, write_model
 
             if path:
                 if not path.is_dir():
                     bump_model_number(model, path)
-                model.write(path=path, force=force)
+                write_model(model, path=path, force=force)
             else:
                 bump_model_number(model, path='.')
-                model.write(force=force)
+                write_model(model, force=force)
         except FileExistsError as e:
             error(FileExistsError(f'{e.args[0]} Use -f or --force to ' 'force an overwrite'))
 
@@ -279,7 +279,9 @@ def data_resample(args):
     for resampled_obj, _ in resampler:
         try:
             try:
-                resampled_obj.write()
+                from pharmpy.modeling import write_model
+
+                write_model(resampled_obj)
             except AttributeError:
                 # FIXME!
                 resampled_obj.to_csv()
@@ -354,7 +356,9 @@ def model_sample(args):
     for row, params in samples.iterrows():
         model.parameters = params
         model.name = f'sample_{row + 1}'
-        model.write()
+        from pharmpy.modeling import write_model
+
+        write_model(model)
 
 
 def add_covariate_effect(args):

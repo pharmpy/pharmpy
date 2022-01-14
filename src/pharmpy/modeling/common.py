@@ -12,6 +12,7 @@ from pharmpy import Model, Parameters, RandomVariables, config
 from pharmpy.estimation import EstimationStep
 from pharmpy.modeling.help_functions import _as_integer
 from pharmpy.statements import Assignment, CompartmentalSystem
+from pharmpy.workflows import default_model_database
 
 
 def read_model(path):
@@ -145,7 +146,30 @@ def write_model(model, path='', force=True):
     >>> write_model(model)   # doctest: +SKIP
 
     """
-    model.write(path=path, force=force)
+    path = Path(path)
+    if not path or path.is_dir():
+        try:
+            filename = f'{model.name}{model.filename_extension}'
+        except AttributeError:
+            raise ValueError(
+                'Cannot name model file as no path argument was supplied and the'
+                'model has no name.'
+            )
+        path = path / filename
+        new_name = None
+    else:
+        # Set new name given filename, but after we've checked for existence
+        new_name = path.stem
+    if not force and path.exists():
+        raise FileExistsError(f'File {path} already exists.')
+    if new_name:
+        model.name = new_name
+    model.update_source(path=path, force=force)
+    if not force and path.exists():
+        raise FileExistsError(f'Cannot overwrite model at {path} with "force" not set')
+    with open(path, 'w', encoding='latin-1') as fp:
+        fp.write(model.model_code)
+    model.database = default_model_database(path=path.parent)
     return model
 
 

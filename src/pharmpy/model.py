@@ -24,7 +24,6 @@ from pharmpy.parameter import Parameters
 from pharmpy.plugins.utils import detect_model
 from pharmpy.random_variables import RandomVariables
 from pharmpy.statements import ModelStatements
-from pharmpy.workflows import default_model_database
 
 
 class ModelError(Exception):
@@ -205,39 +204,6 @@ class Model:
     def read_modelfit_results(self):
         """Read in modelfit results"""
         raise NotImplementedError("Read modelfit results not implemented for generic models")
-
-    def write(self, path='', force=False):
-        """Write model to file using its source format
-        If no path is supplied or does not contain a filename a name is created
-        from the name property of the model
-        Will not overwrite in case force is True.
-        return path written to
-        """
-        path = Path(path)
-        if not path or path.is_dir():
-            try:
-                filename = f'{self.name}{self.filename_extension}'
-            except AttributeError:
-                raise ValueError(
-                    'Cannot name model file as no path argument was supplied and the'
-                    'model has no name.'
-                )
-            path = path / filename
-            new_name = None
-        else:
-            # Set new name given filename, but after we've checked for existence
-            new_name = path.stem
-        if not force and path.exists():
-            raise FileExistsError(f'File {path} already exists.')
-        if new_name:
-            self.name = new_name
-        self.update_source(path=path, force=force)
-        if not force and path.exists():
-            raise FileExistsError(f'Cannot overwrite model at {path} with "force" not set')
-        with open(path, 'w', encoding='latin-1') as fp:
-            fp.write(self.model_code)
-        self.database = default_model_database(path=path.parent)
-        return path
 
     def update_datainfo(self):
         """Update model.datainfo for a new dataset"""

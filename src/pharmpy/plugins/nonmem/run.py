@@ -3,6 +3,7 @@ import subprocess
 import uuid
 from pathlib import Path
 
+from pharmpy.modeling import write_model
 from pharmpy.plugins.nonmem import conf, convert_model
 
 
@@ -14,7 +15,7 @@ def execute_model(model):
     model = model.copy()
     model._dataset_updated = True  # Hack to get update_source to update IGNORE
     model.update_source(path=path / model.name)
-    model.write(path=path, force=True)
+    write_model(model, path=path, force=True)
     basepath = Path(model.name)
     args = [
         nmfe_path(),

@@ -48,13 +48,14 @@ A model object can be written to a file using its source format. By default the 
 
 .. code-block::
 
-   model.write()
+    from pharmpy.modeling import write_model
+    write_model(model)
 
 Optionally a path can be specified:
 
 .. code-block::
 
-   model.write(path='/home/user/mymodel.mod')
+   write_model(model, path='/home/user/mymodel.mod')
 
 
 ~~~~~~~~~~~~~~~~~~~~~~

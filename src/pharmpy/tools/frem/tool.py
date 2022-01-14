@@ -4,7 +4,7 @@ from pathlib import Path
 
 from pharmpy import Model
 from pharmpy.data_structures import OrderedSet
-from pharmpy.modeling import get_covariate_baselines, list_time_varying_covariates
+from pharmpy.modeling import get_covariate_baselines, list_time_varying_covariates, write_model
 
 from .models import create_model3b
 
@@ -76,4 +76,4 @@ def update_model3b_for_psn(rundir, ncovs):
     model1b = Model.create_model(model_path / 'model_1b.mod')
     model3 = Model.create_model(model_path / 'model_3.mod')
     model3b = create_model3b(model1b, model3, int(ncovs))
-    model3b.write(model_path, force=True)
+    write_model(model3b, model_path, force=True)
