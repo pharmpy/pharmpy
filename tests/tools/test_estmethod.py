@@ -21,7 +21,7 @@ from pharmpy.tools.estmethod.tool import _clear_estimation_steps, _create_est_mo
     ],
 )
 def test_create_est_model(pheno_path, method, est_rec, eval_rec):
-    model = Model(pheno_path)
+    model = Model.create_model(pheno_path)
     assert len(model.estimation_steps) == 1
     est_model = _create_est_model(method, update=False, model=model)
     assert len(est_model.estimation_steps) == 2
@@ -31,7 +31,7 @@ def test_create_est_model(pheno_path, method, est_rec, eval_rec):
 
 
 def test_clear_estimation_steps(pheno_path):
-    model = Model(pheno_path)
+    model = Model.create_model(pheno_path)
     assert len(model.estimation_steps) == 1
     _clear_estimation_steps(model)
     assert len(model.estimation_steps) == 0
