@@ -392,16 +392,6 @@ class Model(pharmpy.model.Model):
         self._initial_individual_estimates_updated = True
         self._updated_etas_file = None
 
-    def update_individual_estimates(self, source):
-        """Update initial individual estimates from another model"""
-        self._initial_individual_estimates_updated = False
-        try:
-            del self._initial_individual_estimates
-        except AttributeError:
-            pass
-        path = self.database.retrieve_file(source.name, source.name + source.filename_extension)
-        self._updated_etas_file = path.parent / (source.name + '.phi')
-
     def _sort_eta_columns(self, df):
         return df.reindex(sorted(df.columns), axis=1)
 

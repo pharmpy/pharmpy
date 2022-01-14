@@ -40,7 +40,7 @@ class ModelSyntaxError(ModelError):
 
 
 class Model:
-    """Model"""
+    """The Pharmpy model class"""
 
     def __init__(self):
         self.parameters = Parameters([])
@@ -227,9 +227,6 @@ class Model:
     def copy(self):
         """Create a deepcopy of the model object"""
         return copy.deepcopy(self)
-
-    def update_individual_estimates(self, source):
-        self.initial_individual_estimates = source.modelfit_results.individual_estimates
 
     @staticmethod
     def create_model(obj=None, **kwargs):

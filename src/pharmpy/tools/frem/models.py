@@ -54,5 +54,5 @@ def create_model3b(model1b, model3, ncovs):
     model3b = model3.copy()
     model3b.parameters = parameters
     model3b.name = 'model_3b'
-    model3b.update_individual_estimates(model3)
+    model3b.initial_individual_estimates = model3.modelfit_results.individual_estimates
     return model3b
