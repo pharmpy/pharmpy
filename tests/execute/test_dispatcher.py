@@ -1,7 +1,6 @@
 import pytest
 
-from pharmpy.workflows import Task, Workflow
-from pharmpy.workflows.databases.local_directory import LocalDirectoryDatabase
+from pharmpy.workflows import LocalDirectoryDatabase, Task, Workflow
 from pharmpy.workflows.dispatcher import ExecutionDispatcher
 from pharmpy.workflows.dispatchers.local import LocalDispatcher
 
