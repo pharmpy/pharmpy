@@ -1,4 +1,4 @@
-from ..model_database import ModelDatabase, NullModelDatabase
+from ..model_database import NullModelDatabase
 from .baseclass import ToolDatabase
 
 
