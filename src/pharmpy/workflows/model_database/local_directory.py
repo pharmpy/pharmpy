@@ -21,6 +21,7 @@ class LocalDirectoryDatabase(ModelDatabase):
     file_extension : str
         File extension to use for model files.
     """
+
     def __init__(self, path='.', file_extension='.mod'):
         path = Path(path)
         if not path.exists():

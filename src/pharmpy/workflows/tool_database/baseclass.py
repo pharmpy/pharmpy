@@ -15,8 +15,7 @@ class ToolDatabase(ABC):
 
     @property
     def model_database(self):
-        """ModelDatabase to store results of models run by tool
-        """
+        """ModelDatabase to store results of models run by tool"""
         return self._model_database
 
     @model_database.setter

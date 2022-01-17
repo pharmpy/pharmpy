@@ -8,6 +8,7 @@ class NullToolDatabase(ToolDatabase):
     No operation does anything. This database can be used if no storing of files
     is desireable.
     """
+
     def __init__(self, toolname, **kwargs):
         self.model_database = NullModelDatabase()
         super().__init__(toolname)

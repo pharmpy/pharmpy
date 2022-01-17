@@ -15,6 +15,7 @@ class LocalDirectoryToolDatabase(ToolDatabase):
     path : str or Path
         Path to directory. Will be created if it does not exist.
     """
+
     def __init__(self, toolname, path=None):
         if path is None:
             i = 1
