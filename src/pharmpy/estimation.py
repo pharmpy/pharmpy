@@ -60,7 +60,7 @@ class EstimationSteps(MutableSequence):
 
         >>> from pharmpy.modeling import load_example_model
         >>> model = load_example_model("pheno")
-        >>> model.estimation_steps.to_dataframe()
+        >>> model.estimation_steps.to_dataframe()   # doctest: +ELLIPSIS
           method  interaction   cov  ...  auto keep_every_nth_iter  tool_options
         0   FOCE         True  True  ...  None                None            {}
         """
