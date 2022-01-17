@@ -2,6 +2,11 @@ from .baseclass import ModelDatabase
 
 
 class NullModelDatabase(ModelDatabase):
+    """Dummy model database implementation
+
+    No operation does anything. This database can be used if no storing of files
+    is desireable.
+    """
     def __init__(self, **kwargs):
         pass
 
