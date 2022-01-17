@@ -6,8 +6,21 @@ from .baseclass import ModelDatabase
 
 
 class LocalDirectoryDatabase(ModelDatabase):
-    # Files are all stored in the same directory
-    # Assuming filenames connected to a model are named modelname + extension
+    """ModelDatabase implementation for single local directory
+
+    All files will be stored in the same directory. It is assumed that
+    all files connected to a model are named modelname + extension. This means that
+    care must be taken to keep filenames unique. Clashing filenames will
+    be overwritten. It is recommended to use the LocalModelDirectoryDatabase
+    instead.
+
+    Parameters
+    ----------
+    path : str or Path
+        Path to the database directory. Will be created if it does not exist.
+    file_extension : str
+        File extension to use for model files.
+    """
     def __init__(self, path='.', file_extension='.mod'):
         path = Path(path)
         if not path.exists():
@@ -51,6 +64,20 @@ class LocalDirectoryDatabase(ModelDatabase):
 
 
 class LocalModelDirectoryDatabase(LocalDirectoryDatabase):
+    """ModelDatabase implementation for a local directory structure
+
+    Files will be stored in separate subdirectories named after each model.
+    There are no restrictions on names of the files so models can have the same
+    name of some connected file without creating a name clash.
+
+    Parameters
+    ----------
+    path : str or Path
+        Path to the base database directory. Will be created if it does not exist.
+    file_extension : str
+        File extension to use for model files.
+    """
+
     def store_local_file(self, model, path):
         if Path(path).is_file():
             destination = self.path / model.name
