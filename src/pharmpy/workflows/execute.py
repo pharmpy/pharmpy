@@ -2,13 +2,13 @@ from pathlib import Path
 
 from pharmpy.utils import TemporaryDirectory
 
-from .dispatchers import LocalDispatcher
+from .dispatchers import local_dask
 from .model_database import LocalDirectoryDatabase
 from .tool_database import LocalDirectoryToolDatabase
 
 default_model_database = LocalDirectoryDatabase
 default_tool_database = LocalDirectoryToolDatabase
-default_dispatcher = LocalDispatcher()
+default_dispatcher = local_dask
 
 
 def execute_workflow(workflow, dispatcher=None, database=None, path=None):
@@ -40,7 +40,7 @@ def execute_workflow(workflow, dispatcher=None, database=None, path=None):
                     new_inp.append(inp)
             task.task_input = new_inp
 
-    res = dispatcher.run(workflow, database)
+    res = dispatcher.run(workflow)
 
     # Transfer files from tool model database to default model database
     for model in original_input_models:

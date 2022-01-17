@@ -1,5 +1,4 @@
-from .dispatcher import ExecutionDispatcher
-from .dispatchers import LocalDispatcher
+from .dispatchers import local_dask
 from .execute import (
     default_dispatcher,
     default_model_database,
@@ -23,14 +22,13 @@ __all__ = [
     'default_tool_database',
     'execute_workflow',
     'split_common_options',
-    'LocalDispatcher',
+    'local_dask',
     'LocalDirectoryDatabase',
     'LocalModelDirectoryDatabase',
     'LocalDirectoryToolDatabase',
     'Log',
     'NullModelDatabase',
     'NullToolDatabase',
-    'ExecutionDispatcher',
     'ModelDatabase',
     'Task',
     'ToolDatabase',

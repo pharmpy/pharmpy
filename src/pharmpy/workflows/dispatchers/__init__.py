@@ -1,7 +1,5 @@
 import pharmpy.config as config
 
-from .local import LocalDispatcher
-
 
 class DispatcherConfiguration(config.Configuration):
     module = 'pharmpy.workflows.dispatchers'
@@ -13,6 +11,3 @@ class DispatcherConfiguration(config.Configuration):
 
 
 conf = DispatcherConfiguration()
-
-
-__all__ = ['LocalDispatcher']
