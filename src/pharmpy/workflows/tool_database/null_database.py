@@ -1,4 +1,4 @@
-from ..model_database import ModelDatabase
+from ..model_database import ModelDatabase, NullModelDatabase
 from .baseclass import ToolDatabase
 
 
@@ -8,18 +8,4 @@ class NullToolDatabase(ToolDatabase):
         super().__init__(toolname)
 
     def store_local_file(self, source_path):
-        pass
-
-
-class NullModelDatabase(ModelDatabase):
-    def __init__(self, **kwargs):
-        pass
-
-    def store_local_file(self, model, path):
-        pass
-
-    def retrieve_file(self, model_name, filename):
-        pass
-
-    def get_model(self, name):
         pass

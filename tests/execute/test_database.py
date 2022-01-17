@@ -3,15 +3,14 @@ import os.path
 
 import pytest
 
-from pharmpy.workflows.database import ModelDatabase
-from pharmpy.workflows.databases.local_directory import LocalDirectoryDatabase
-from pharmpy.workflows.databases.null_database import NullModelDatabase, NullToolDatabase
+from pharmpy.workflows import ModelDatabase
+from pharmpy.workflows import LocalDirectoryDatabase
+from pharmpy.workflows import NullModelDatabase, NullToolDatabase
 
 
 def test_base_class():
-    db = ModelDatabase()
-    with pytest.raises(NotImplementedError):
-        db.store_local_file(None, "file.txt")
+    with pytest.raises(TypeError):
+        db = ModelDatabase()
 
 
 def test_local_directory(fs):

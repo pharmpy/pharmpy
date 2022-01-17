@@ -1,9 +1,25 @@
-class ModelDatabase:
-    """Database of results for particular model runs
+from abc import ABC, abstractmethod
 
-    This corresponds to the m1 directory and copying up files in PsN
+
+class ModelDatabase(ABC):
+    """Database for models and results of model runs
+
+    primary key is the model name
     """
 
+    @abstractmethod
     def store_local_file(self, model, path):
         """Store a file from the local machine"""
-        raise NotImplementedError()
+        pass
+
+    @abstractmethod
+    def retrieve_local_files(self, name, destination_path):
+        pass
+
+    @abstractmethod
+    def retrieve_file(self, model_name, filename):
+        pass
+
+    @abstractmethod
+    def get_model(self, name):
+        pass
