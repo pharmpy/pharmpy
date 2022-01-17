@@ -2,8 +2,9 @@ from pathlib import Path
 
 from pharmpy.utils import TemporaryDirectory
 
-from .databases import LocalDirectoryDatabase, LocalDirectoryToolDatabase
 from .dispatchers import LocalDispatcher
+from .model_database import LocalDirectoryDatabase
+from .tool_database import LocalDirectoryToolDatabase
 
 default_model_database = LocalDirectoryDatabase
 default_tool_database = LocalDirectoryToolDatabase
