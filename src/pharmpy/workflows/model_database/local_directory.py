@@ -25,13 +25,13 @@ class LocalDirectoryDatabase(ModelDatabase):
         for f in files:
             shutil.copy2(f, destination_path)
 
-    def retrieve_file(self, model_name, filename):
+    def retrieve_file(self, name, filename):
         # Return path to file
         path = self.path / filename
         if path.is_file() and stat(path).st_size > 0:
             return path
         else:
-            raise FileNotFoundError(f"Cannot retrieve {filename} for {model_name}")
+            raise FileNotFoundError(f"Cannot retrieve {filename} for {name}")
 
     def get_model(self, name):
         filename = name + self.file_extension
@@ -64,13 +64,13 @@ class LocalModelDirectoryDatabase(LocalDirectoryDatabase):
         for f in files:
             shutil.copy2(f, destination_path)
 
-    def retrieve_file(self, model_name, filename):
+    def retrieve_file(self, name, filename):
         # Return path to file
-        path = self.path / model_name / filename
+        path = self.path / name / filename
         if path.is_file() and stat(path).st_size > 0:
             return path
         else:
-            raise FileNotFoundError(f"Cannot retrieve {filename} for {model_name}")
+            raise FileNotFoundError(f"Cannot retrieve {filename} for {name}")
 
     def get_model(self, name):
         filename = name + self.file_extension
