@@ -2,14 +2,6 @@ from pathlib import Path
 
 from pharmpy.utils import TemporaryDirectory
 
-from .dispatchers import local_dask
-from .model_database import LocalDirectoryDatabase
-from .tool_database import LocalDirectoryToolDatabase
-
-default_model_database = LocalDirectoryDatabase
-default_tool_database = LocalDirectoryToolDatabase
-default_dispatcher = local_dask
-
 
 def execute_workflow(workflow, dispatcher=None, database=None, path=None):
     """Execute workflow
@@ -29,8 +21,12 @@ def execute_workflow(workflow, dispatcher=None, database=None, path=None):
         Results object created by workflow
     """
     if dispatcher is None:
+        from pharmpy.workflows import default_dispatcher
+
         dispatcher = default_dispatcher
     if database is None:
+        from pharmpy.workflows import default_tool_database
+
         database = default_tool_database(
             toolname=workflow.name, path=path
         )  # TODO: database -> tool_database

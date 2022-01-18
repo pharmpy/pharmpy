@@ -14,7 +14,7 @@ class Bootstrap(pharmpy.tools.Tool):
 
     def run(self):
         wf_bootstrap = self.create_workflow()
-        res = self.dispatcher.run(wf_bootstrap, self.database)
+        res = self.dispatcher.run(wf_bootstrap)
         res.to_json(path=self.database.path / 'results.json')
         res.to_csv(path=self.database.path / 'results.csv')
         return res
