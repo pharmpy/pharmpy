@@ -172,6 +172,12 @@ def run_modelsearch(args):
     method.run()
 
 
+def run_estmethod(args):
+    from pharmpy.modeling.run import run_tool
+
+    run_tool('estmethod', methods=args.methods, model=args.model)
+
+
 def data_write(args):
     """Subcommand to write a dataset."""
     try:
@@ -886,6 +892,21 @@ parser_definition = [
                                 'help': 'Name of function to use for ranking '
                                 'candidates (default ofv).',
                                 'default': 'ofv',
+                            },
+                        ],
+                    }
+                },
+                {
+                    'estmethod': {
+                        'help': 'Find best estimation method',
+                        'func': run_estmethod,
+                        'parents': [args_model_input],
+                        'args': [
+                            {
+                                'name': 'methods',
+                                'type': semicolon_list,
+                                'help': 'List of methods to try. Supported are: FOCE, IMP, IMPMAP, '
+                                'ITS, SAEM, LAPLACE.',
                             },
                         ],
                     }
