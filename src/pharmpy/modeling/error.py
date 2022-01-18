@@ -597,3 +597,49 @@ def set_dtbs_error_model(model, fix_to_log=False):
     model.observation_transformation = obs
 
     return model
+
+
+def set_time_varying_error_model(model, cutoff, idv='TIME'):
+    """Set a time varying error model per time cutoff
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+    cutoff : float
+        A value at the given quantile over idv column
+    idv : str
+        Time or time after dose, default is Time
+
+    Return
+    ------
+    Model
+        Reference to the same model object
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import load_example_model, add_time_varying_error_model
+    >>> model = load_example_model("pheno")
+    >>> set_time_varying_error_model(model, cutoff=1.0)    # doctest: +ELLIPSIS
+    <...>
+    >>> model.statements.find_assignment("Y")
+          ⎧EPS(1)⋅F⋅time_varying + F  for TIME < 1.0
+         ⎨
+    Y := ⎩      EPS(1)⋅F + F           otherwise
+
+    """
+    stats = model.statements
+    y = stats.find_assignment('Y')
+    idv = sympy.sympify(idv)
+    theta = create_symbol(model, 'time_varying')
+    eps = model.random_variables.epsilons
+    expr = sympy.Piecewise(
+        (y.expression.subs({e.symbol: e.symbol * theta for e in eps}), idv < cutoff),
+        (y.expression, True),
+    )
+    stats.reassign(y.symbol, expr)
+
+    theta_tvar = Parameter(theta.name, init=0.1)
+    model.parameters.append(theta_tvar)
+
+    return model
