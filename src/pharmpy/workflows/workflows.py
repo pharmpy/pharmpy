@@ -5,6 +5,17 @@ import networkx as nx
 
 
 class Workflow:
+    """Workflow class
+
+    Representation of a directed acyclic graph with Tasks as nodes and
+    the flow of parameters as edges.
+
+    Parameters
+    ----------
+    tasks : list
+        List of tasks for initialization
+    """
+
     def __init__(self, tasks=None):
         self._g = nx.DiGraph()
         if tasks:
@@ -12,9 +23,16 @@ class Workflow:
                 self.add_task(task)
 
     def add_task(self, task, predecessors=None):
-        """Add a task to the workflow.
+        """Add a task to the workflow
 
         Predecessors will be connected if given.
+
+        Parameters
+        ----------
+        task : Task
+            Task to add
+        predecessors : list or Task
+            One or multiple predecessor tasks to connect to the added task
         """
         self._g.add_node(task)
         if predecessors is not None:
@@ -25,6 +43,17 @@ class Workflow:
                     self._g.add_edge(pred, task)
 
     def insert_workflow(self, other, predecessors=None):
+        """Insert other workflow
+
+        Parameters
+        ----------
+        other : Workflow
+            Workflow to insert
+        predecessors : list or Task
+            One or multiple predecessor tasks to connect to the inputs
+            of the inserted workflow. If None all output tasks will be found
+            and used as predecessors.
+        """
         if predecessors is None:
             output_tasks = self.output_tasks
         else:
@@ -47,6 +76,13 @@ class Workflow:
             raise ValueError('Having N:M connections between workflows is currently not supported')
 
     def as_dask_dict(self):
+        """Create a dask workflow dictionary
+
+        Returns
+        -------
+        dict
+            Dask workflow dictionary
+        """
         ids = dict()
         for task in self._g.nodes():
             ids[task] = f'{task.name}-{uuid.uuid4()}'
@@ -70,34 +106,86 @@ class Workflow:
 
     @property
     def input_tasks(self):
+        """All input (source) tasks of entire workflow"""
         return [node for node in self._g.nodes if self._g.in_degree(node) == 0]
 
     @property
     def output_tasks(self):
+        """All output tasks (sink) tasks of entire workflow"""
         return [node for node in self._g.nodes if self._g.out_degree(node) == 0]
 
     def get_upstream_tasks(self, task):
+        """Get all tasks upstream of a certain task
+
+        Parameters
+        ----------
+        task : Task
+            Downstream task
+
+        Returns
+        -------
+        list
+            Upstream tasks
+        """
         edges = list(nx.edge_dfs(self._g, task, orientation='reverse'))
         return [node for node, _, _ in edges]
 
     def get_predecessors(self, task):
+        """Get all predecessors of task
+
+        Parameters
+        ----------
+        task : Task
+            Downstream task
+
+        Returns
+        -------
+        list
+            Predecessors of task
+        """
         return list(self._g.predecessors(task))
 
     def get_successors(self, task):
+        """Get all successors of task
+
+        Parameters
+        ----------
+        task : Task
+            Upstream task
+
+        Returns
+        -------
+        list
+            Successors of task
+        """
         return list(self._g.successors(task))
 
     def copy(self):
+        """Deepcopy of workflow
+
+        Returns
+        -------
+        Workflow
+            Deepcopy
+        """
         wf_copy = copy.deepcopy(self)
         return wf_copy
 
     def plot_dask(self, filename):
+        """Save a visualization of workflow to file
+
+        Parameters
+        ----------
+        filename : str
+            Path
+        """
         from dask import visualize
 
         visualize(self.as_dask_dict(), filename=filename, collapse_outputs=True)
 
     @property
     def tasks(self):
-        """All tasks"""
+        """All tasks in workflow"""
         return list(self._g.nodes())
 
     def __len__(self):
@@ -108,12 +196,31 @@ class Workflow:
 
 
 class Task:
+    """One task
+
+    Parameters
+    ----------
+    name : str
+        Name of task
+    function : func
+        Task function
+    task_input : any
+        Input arguments to func
+    """
+
     def __init__(self, name, function, *task_input):
         self.name = name
         self.function = function
         self.task_input = task_input
 
     def has_input(self):
+        """Check if task has any input
+
+        Returns
+        -------
+        bool
+            True if input else False
+        """
         return len(self.task_input) > 0
 
     def __repr__(self):
