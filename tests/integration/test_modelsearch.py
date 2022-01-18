@@ -8,6 +8,30 @@ from pharmpy.modeling import add_iiv, fit, run_tool
 from pharmpy.utils import TemporaryDirectoryChanger
 
 
+def test_exhaustive(tmp_path, testdata):
+    with TemporaryDirectoryChanger(tmp_path):
+        shutil.copy2(testdata / 'nonmem' / 'models' / 'mox2.mod', tmp_path)
+        shutil.copy2(testdata / 'nonmem' / 'models' / 'mx19B.csv', tmp_path)
+        model_start = Model.create_model('mox2.mod')
+        model_start.datainfo.path = tmp_path / 'mx19B.csv'
+        res = run_tool(
+            'modelsearch', 'exhaustive', 'ABSORPTION(ZO)\nPERIPHERALS(1)', model=model_start
+        )
+
+        assert len(res.summary) == 3
+        assert len(res.models) == 3
+        assert all(
+            model.modelfit_results and not np.isnan(model.modelfit_results.ofv)
+            for model in res.models
+        )
+        assert res.best_model.name == 'modelsearch_candidate1'
+        rundir = tmp_path / 'modelsearch_dir1'
+        assert rundir.is_dir()
+        assert len(list((rundir / 'models').iterdir())) == 4
+        assert (rundir / 'results.json').exists()
+        assert (rundir / 'results.csv').exists()
+
+
 @pytest.mark.parametrize(
     'mfl, no_of_models, best_model_name',
     [

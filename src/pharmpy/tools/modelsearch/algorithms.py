@@ -10,31 +10,42 @@ from pharmpy.workflows import Task, Workflow
 from .mfl import ModelFeatures
 
 
-def exhaustive(base_model, mfl, run_func, rank_func):
+def exhaustive(mfl, add_etas, etas_as_fullblock):
     features = ModelFeatures(mfl)
-    torun = []
+    wf_search = Workflow()
+
+    model_tasks = []
+    model_features = dict()
+
     combinations = list(features.all_combinations())
-    df = pd.DataFrame(
-        index=pd.RangeIndex(stop=len(combinations)),
-        columns=['features', 'dofv', 'rank'],
-    )
     funcs = features.all_funcs()
-    for i, combo in enumerate(combinations):
-        model = base_model.copy()
-        model.name = f'candidate{i}'
+
+    for i, combo in enumerate(combinations, 1):
+        model_name = f'modelsearch_candidate{i}'
+
+        task_copy = Task('copy', copy, model_name)
+        wf_search.add_task(task_copy)
+
+        task_previous = task_copy
         for feat in combo:
-            funcs[feat](model)
-        df.loc[i]['features'] = tuple(combo)
-        torun.append(model)
-    run_func(torun)
-    for i, model in enumerate(torun):
-        df.loc[i]['dofv'] = base_model.modelfit_results.ofv - model.modelfit_results.ofv
-    ranks = rank_func(base_model, torun)
-    for i, ranked_model in enumerate(ranks):
-        idx = torun.index(ranked_model)
-        df.loc[idx]['rank'] = i + 1
-    df = df.astype({'rank': 'Int64'})
-    return df
+            func = funcs[feat]
+            task_function = Task(feat, func)
+            wf_search.add_task(task_function, predecessors=task_previous)
+            if add_etas:
+                task_add_etas = Task('add_etas', add_etas_to_func, feat, etas_as_fullblock)
+                wf_search.add_task(task_add_etas, predecessors=task_function)
+                task_previous = task_add_etas
+            else:
+                task_previous = task_function
+
+        wf_fit = create_fit_workflow(n=1)
+        wf_search.insert_workflow(wf_fit, predecessors=task_previous)
+
+        model_features[model_name] = tuple(combo)
+
+        model_tasks += wf_fit.output_tasks
+
+    return wf_search, model_tasks, model_features
 
 
 def stepwise(base_model, mfl, run_func, rank_func):
