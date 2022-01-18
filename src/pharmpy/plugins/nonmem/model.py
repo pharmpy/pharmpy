@@ -1002,7 +1002,7 @@ class Model(pharmpy.model.Model):
                 info.scale = 'nominal'
             elif colname == 'MDV' and self._get_pk_record():
                 if 'EVID' in colnames:
-                    info.type = 'unknown'
+                    info.type = 'mdv'
                 else:
                     info.type = 'event'
                 info.scale = 'nominal'

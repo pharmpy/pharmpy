@@ -32,7 +32,7 @@ class ColumnInfo:
         Should column be dropped (i.e. barred from being used)
     """
 
-    _all_types = ['id', 'dv', 'idv', 'unknown', 'dose', 'event', 'covariate']
+    _all_types = ['id', 'dv', 'idv', 'unknown', 'dose', 'event', 'covariate', 'mdv']
     _all_scales = ['nominal', 'ordinal', 'interval', 'ratio']
 
     def __init__(
@@ -91,6 +91,7 @@ class ColumnInfo:
         covariate     Covariate
         dose          Dose amount
         event         0 = observation
+        mdv           0 = DV is observation value, 1 = DV is missing
         unknown       Unkown type. This will be the default for columns that hasn't been
                       assigned a type
         ============  =============

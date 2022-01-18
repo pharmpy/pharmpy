@@ -592,15 +592,18 @@ def get_mdv(model):
         MDVs
     """
     try:
-        label = model.datainfo.typeix['event'][0].name
+        label = model.datainfo.typeix['mdv'][0].name
     except IndexError:
         try:
-            label = model.datainfo.typeix['dose'][0].name
+            label = model.datainfo.typeix['event'][0].name
         except IndexError:
-            label = model.datainfo.dv_column.name
-            data = model.dataset[label].astype('float64').squeeze()
-            mdv = pd.Series(np.zeros(len(data))).astype('int64').rename('MDV')
-            return mdv
+            try:
+                label = model.datainfo.typeix['dose'][0].name
+            except IndexError:
+                label = model.datainfo.dv_column.name
+                data = model.dataset[label].astype('float64').squeeze()
+                mdv = pd.Series(np.zeros(len(data))).astype('int64').rename('MDV')
+                return mdv
     data = model.dataset[label].astype('float64').squeeze()
     mdv = data.where(data == 0, other=1).astype('int64').rename('MDV')
     return mdv
