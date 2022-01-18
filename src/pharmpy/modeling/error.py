@@ -618,7 +618,7 @@ def set_time_varying_error_model(model, cutoff, idv='TIME'):
 
     Examples
     --------
-    >>> from pharmpy.modeling import load_example_model, add_time_varying_error_model
+    >>> from pharmpy.modeling import load_example_model, set_time_varying_error_model
     >>> model = load_example_model("pheno")
     >>> set_time_varying_error_model(model, cutoff=1.0)    # doctest: +ELLIPSIS
     <...>
