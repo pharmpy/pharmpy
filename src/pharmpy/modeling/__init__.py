@@ -51,6 +51,7 @@ from pharmpy.modeling.error import (
     set_combined_error_model,
     set_dtbs_error_model,
     set_proportional_error_model,
+    set_time_varying_error_model,
     set_weighted_error_model,
     use_thetas_for_error_stdev,
 )
@@ -229,6 +230,7 @@ __all__ = [
     'set_power_on_ruv',
     'set_proportional_error_model',
     'set_seq_zo_fo_absorption',
+    'set_time_varying_error_model',
     'set_transit_compartments',
     'set_weighted_error_model',
     'set_zero_order_absorption',

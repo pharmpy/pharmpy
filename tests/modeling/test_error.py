@@ -17,7 +17,7 @@ from pharmpy.modeling import (
     set_weighted_error_model,
     use_thetas_for_error_stdev,
 )
-from pharmpy.modeling.error import _get_prop_init
+from pharmpy.modeling.error import _get_prop_init, set_time_varying_error_model
 from pharmpy.statements import Assignment
 
 
@@ -520,6 +520,51 @@ $THETA  0.001 ; tbs_zeta
 $OMEGA 0.0309626  ; IVCL
 $OMEGA 0.031128  ; IVV
 $SIGMA 1 FIX
+$ESTIMATION METHOD=1 INTERACTION
+"""
+    assert model.model_code == correct
+
+
+def test_set_time_varying_error_model(testdata):
+    code = """$PROBLEM PHENOBARB SIMPLE MODEL
+$DATA pheno.dta IGNORE=@
+$INPUT ID TIME AMT WGT APGR DV
+$SUBROUTINE ADVAN1 TRANS2
+$PK
+CL=THETA(1)*EXP(ETA(1))
+V=THETA(2)*EXP(ETA(2))
+S1=V
+$ERROR
+Y=F+F*EPS(1)
+$THETA (0,0.00469307) ; TVCL
+$THETA (0,1.00916) ; TVV
+$OMEGA 0.0309626  ; IVCL
+$OMEGA 0.031128  ; IVV
+$SIGMA 0.013241
+$ESTIMATION METHOD=1 INTERACTION
+"""
+    model = read_model_from_string(code)
+    set_time_varying_error_model(model, cutoff=1.0)
+    correct = """$PROBLEM PHENOBARB SIMPLE MODEL
+$DATA pheno.dta IGNORE=@
+$INPUT ID TIME AMT WGT APGR DV
+$SUBROUTINE ADVAN1 TRANS2
+$PK
+CL=THETA(1)*EXP(ETA(1))
+V=THETA(2)*EXP(ETA(2))
+S1=V
+$ERROR
+IF (TIME.LT.1.0) THEN
+    Y = EPS(1)*F*THETA(3) + F
+ELSE
+    Y = EPS(1)*F + F
+END IF
+$THETA (0,0.00469307) ; TVCL
+$THETA (0,1.00916) ; TVV
+$THETA  0.1 ; time_varying
+$OMEGA 0.0309626  ; IVCL
+$OMEGA 0.031128  ; IVV
+$SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION
 """
     assert model.model_code == correct
