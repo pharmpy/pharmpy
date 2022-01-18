@@ -1,6 +1,17 @@
 import pytest
 
 from pharmpy.tools.modelsearch.mfl import ModelFeatures
+from pharmpy.tools.modelsearch.tool import create_workflow
+
+
+@pytest.mark.parametrize(
+    'algorithm, no_of_models',
+    [('exhaustive', 3), ('exhaustive_stepwise', 4)],
+)
+def test_create_workflow(algorithm, no_of_models):
+    wf = create_workflow(algorithm, 'ABSORPTION(ZO)\nPERIPHERALS(1)')
+    fit_tasks = [task.name for task in wf.tasks if task.name.startswith('run')]
+    assert len(fit_tasks) == no_of_models
 
 
 @pytest.mark.parametrize(
