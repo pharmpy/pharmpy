@@ -623,7 +623,7 @@ def set_time_varying_error_model(model, cutoff, idv='TIME'):
     >>> set_time_varying_error_model(model, cutoff=1.0)    # doctest: +ELLIPSIS
     <...>
     >>> model.statements.find_assignment("Y")
-          ⎧EPS(1)⋅F⋅time_varying + F  for TIME < 1.0
+         ⎧EPS(1)⋅F⋅time_varying + F  for TIME < 1.0
          ⎨
     Y := ⎩      EPS(1)⋅F + F           otherwise
 
