@@ -12,6 +12,22 @@ default_dispatcher = local_dask
 
 
 def execute_workflow(workflow, dispatcher=None, database=None, path=None):
+    """Execute workflow
+
+    Parameters
+    ----------
+    dispatcher : ExecutionDispatcher
+        Dispatcher to use. None for the default dispatcher
+    database : ToolDatabase
+        Tool database to use. None for the default Tool database.
+    path : Path
+        Path to use for database if applicable.
+
+    Returns
+    -------
+    Results
+        Results object created by workflow
+    """
     if dispatcher is None:
         dispatcher = default_dispatcher
     if database is None:
@@ -65,7 +81,17 @@ def execute_workflow(workflow, dispatcher=None, database=None, path=None):
 
 
 def split_common_options(d):
-    """Split the dict into common options and other options"""
+    """Split the dict into common options and other options
+
+    Parameters
+    ----------
+    d : dict
+        Dictionary of all options
+
+    Returns
+    -------
+    Tuple of common options and other option dictionaries
+    """
     execute_options = ['path']
     common_options = dict()
     other_options = dict()
