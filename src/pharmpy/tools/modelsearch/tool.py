@@ -1,39 +1,8 @@
 import pharmpy.results
 import pharmpy.tools
-import pharmpy.tools.modelfit as modelfit
 import pharmpy.tools.modelsearch.algorithms as algorithms
-import pharmpy.tools.rankfuncs as rankfuncs
-import pharmpy.workflows as workflows
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.workflows import Task, Workflow
-
-
-class ModelSearch(pharmpy.tools.Tool):
-    def __init__(self, start_model, algorithm, mfl, rankfunc='ofv', cutoff=None, **kwargs):
-        self.start_model = start_model
-        self.mfl = mfl
-        self.algorithm = getattr(algorithms, algorithm)
-        self.rankfunc = getattr(rankfuncs, rankfunc)
-        self.cutoff = cutoff
-        super().__init__(**kwargs)
-        self.start_model.database = self.database.model_database
-
-    def fit(self, models):
-        db = workflows.LocalDirectoryDatabase(self.rundir.path / 'models')
-        modelfit_run = modelfit.Modelfit(models, database=db, path=self.rundir.path)
-        modelfit_run.run()
-
-    def run(self):
-        df = self.algorithm(
-            self.start_model,
-            self.mfl,
-            self.fit,
-            self.rankfunc,
-        )
-        res = ModelSearchResults(summary=df)
-        res.to_json(path=self.rundir.path / 'results.json')
-        res.to_csv(path=self.rundir.path / 'results.csv')
-        return res
 
 
 def create_workflow(
@@ -111,9 +80,3 @@ class ModelSearchResults(pharmpy.results.Results):
         self.best_model = best_model
         self.start_model = start_model
         self.models = models
-
-
-def run_modelsearch(base_model, algorithm, mfl, **kwargs):
-    ms = ModelSearch(base_model, algorithm, mfl, **kwargs)
-    res = ms.run()
-    return res
