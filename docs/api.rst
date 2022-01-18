@@ -7,3 +7,4 @@ API Reference
 
    api_pharmpy
    api_modeling
+   api_workflows
