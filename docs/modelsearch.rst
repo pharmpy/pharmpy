@@ -77,38 +77,6 @@ An exhaustive search will test all possible combinations of features in one big 
         base -> s8
     }
 
-
-Stepwise search
-~~~~~~~~~~~~~~~
-
-Here is an example of a search tree for the search space
-
-.. code::
-
-    ABSORPTION([FO, ZO])
-    ELIMINATION([FO, ZO])
-
-.. graphviz::
-
-    digraph BST {
-        node [fontname="Arial"];
-        base [label="Base model"]
-        s1_1 [style="bold", label="ABSORPTION(FO)"]
-        s1_2 [label="ABSORPTION(ZO)"]
-        s1_3 [label="ELIMINATION(FO)"]
-        s1_4 [label="ELIMINATION(ZO)"]
-        base -> s1_1
-        base -> s1_2
-        base -> s1_3
-        base -> s1_4
-        s2_2 [style="bold", label="ABSORPTION(FO);ELIMINATION(FO)"]
-        s2_3 [label="ABSORPTION(FO);ELIMINATION(ZO)"]
-        s1_1 -> s2_2
-        s1_1 -> s2_3
-    }
-
-Nodes in bold was selected at each step. Initial estimates are updated between the steps.
-
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Comparing and ranking candidates
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
