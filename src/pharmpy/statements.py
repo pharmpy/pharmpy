@@ -676,8 +676,8 @@ class CompartmentalSystem(ODESystem):
 
         Returns
         -------
-        list
-            Symbolic rates
+        Expression
+            Symbolic rate
 
         Examples
         --------
