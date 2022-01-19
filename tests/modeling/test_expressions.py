@@ -1,6 +1,15 @@
+import pytest
 import sympy
 
-from pharmpy import Model
+from pharmpy import (
+    Assignment,
+    Model,
+    ModelStatements,
+    Parameter,
+    Parameters,
+    RandomVariable,
+    RandomVariables,
+)
 from pharmpy.modeling import (
     calculate_epsilon_gradient_expression,
     calculate_eta_gradient_expression,
@@ -8,11 +17,8 @@ from pharmpy.modeling import (
     get_observation_expression,
     get_population_prediction_expression,
     mu_reference_model,
-    read_model,
     read_model_from_string,
 )
-from pharmpy import RandomVariable, RandomVariables, ModelStatements, Assignment, Parameters, Parameter
-import pytest
 
 
 def s(x):
@@ -111,9 +117,28 @@ $SIGMA 0.013241 ;sigma
 @pytest.mark.parametrize(
     'statements,correct',
     [
-        ([Assignment('CL', s('THETA(1)') + s('ETA(1)'))], [Assignment('mu_1', s('THETA(1)')), Assignment('CL', s('mu_1') + s('ETA(1)'))]),
-        ([Assignment('CL', s('THETA(1)')*s('AGE')**s('THETA(2)')*sympy.exp(s('ETA(1)'))), Assignment('V', s('THETA(3)')*sympy.exp(s('ETA(2)')))], [Assignment('mu_1', sympy.log(s('THETA(1)') * s('AGE')**s('THETA(2)'))), Assignment('CL', sympy.exp(s('mu_1') + s('ETA(1)'))), Assignment('mu_2', sympy.log(s('THETA(3)'))), Assignment('V', sympy.exp(s('mu_2') + s('ETA(2)')))]),
-        ([Assignment('CL', s('THETA(1)') + s('ETA(1)') + s('ETA(2)'))], [Assignment('CL', s('THETA(1)') + s('ETA(1)') + s('ETA(2)'))]),
+        (
+            [Assignment('CL', s('THETA(1)') + s('ETA(1)'))],
+            [Assignment('mu_1', s('THETA(1)')), Assignment('CL', s('mu_1') + s('ETA(1)'))],
+        ),
+        (
+            [
+                Assignment(
+                    'CL', s('THETA(1)') * s('AGE') ** s('THETA(2)') * sympy.exp(s('ETA(1)'))
+                ),
+                Assignment('V', s('THETA(3)') * sympy.exp(s('ETA(2)'))),
+            ],
+            [
+                Assignment('mu_1', sympy.log(s('THETA(1)') * s('AGE') ** s('THETA(2)'))),
+                Assignment('CL', sympy.exp(s('mu_1') + s('ETA(1)'))),
+                Assignment('mu_2', sympy.log(s('THETA(3)'))),
+                Assignment('V', sympy.exp(s('mu_2') + s('ETA(2)'))),
+            ],
+        ),
+        (
+            [Assignment('CL', s('THETA(1)') + s('ETA(1)') + s('ETA(2)'))],
+            [Assignment('CL', s('THETA(1)') + s('ETA(1)') + s('ETA(2)'))],
+        ),
     ],
 )
 def test_mu_reference_model_generic(testdata, statements, correct):

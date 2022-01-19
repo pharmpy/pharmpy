@@ -1,4 +1,5 @@
 import sympy
+
 from pharmpy.statements import Assignment
 
 
@@ -225,18 +226,23 @@ def _find_eta_assignments(model):
     found = set()
     leafs = []
     for s in reversed(statements):
-        if etas & s.free_symbols and len(etas & statements.full_expression(s.symbol).free_symbols) == 1 and s.symbol not in found:
+        if (
+            etas & s.free_symbols
+            and len(etas & statements.full_expression(s.symbol).free_symbols) == 1
+            and s.symbol not in found
+        ):
             leafs = [s] + leafs
             found.update(s.free_symbols)
     return leafs
 
 
 def mu_reference_model(model):
-    """Convert model to use mu-referencing
+    r"""Convert model to use mu-referencing
 
     Mu-referencing an eta is to separately define its actual mu (mean) parameter.
-    For example: :math:`CL = \\theta_1 e^{\eta_1}` with :math:`\eta_1` following a zero-mean
-    normal distribution would give :math:`\mu_1 = \log{\\theta_1}` and :math:`CL = e^{\mu_1 + \eta_1}`
+    For example: :math:`CL = \theta_1 e^{\eta_1}` with :math:`\eta_1` following a zero-mean
+    normal distribution would give :math:`\mu_1 = \log{\theta_1}` and
+    :math:`CL = e^{\mu_1 + \eta_1}`
 
     Parameters
     ----------
