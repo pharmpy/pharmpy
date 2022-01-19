@@ -38,10 +38,12 @@ def create_workflow(methods=None, model=None):
 
     for method in methods:
         if method != 'foce':
-            task_no_update = Task(f'create_{method}_no_update', _create_est_model, method, False)
+            task_no_update = Task(
+                f'create_{method.upper()}_raw_inits', _create_est_model, method, False
+            )
             wf.add_task(task_no_update, predecessors=task_base_model_fit)
 
-        task_update = Task(f'create_{method}_update', _create_est_model, method, True)
+        task_update = Task(f'create_{method.upper()}_update_inits', _create_est_model, method, True)
         wf.add_task(task_update, predecessors=task_base_model_fit)
 
     no_of_models = 2 * len(methods) - 1
@@ -77,7 +79,7 @@ def start(model):
 
 
 def _create_base_model(model):
-    base_model = copy_model(model, 'estmethod_foce_no_update')
+    base_model = copy_model(model, 'estmethod_FOCE_raw_inits')
     _clear_estimation_steps(base_model)
     est_settings = _create_est_settings('foce')
     eval_settings = _create_eval_settings()
@@ -88,7 +90,7 @@ def _create_base_model(model):
 
 def _create_eval_settings(laplace=False):
     evaluation_step = {
-        'method': 'IMP',
+        'method': 'imp',
         'interaction': True,
         'laplace': laplace,
         'evaluation': True,
@@ -125,9 +127,9 @@ def _create_est_settings(method):
 
 def _create_est_model(method, update, model):
     if update:
-        model_name = f'estmethod_{method}_update'
+        model_name = f'estmethod_{method.upper()}_update_inits'
     else:
-        model_name = f'estmethod_{method}_no_update'
+        model_name = f'estmethod_{method.upper()}_raw_inits'
     est_model = copy_model(model, model_name)
     _clear_estimation_steps(est_model)
     if update:

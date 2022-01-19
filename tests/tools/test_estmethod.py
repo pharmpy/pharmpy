@@ -25,7 +25,7 @@ def test_create_est_model(pheno_path, method, est_rec, eval_rec):
     assert len(model.estimation_steps) == 1
     est_model = _create_est_model(method, update=False, model=model)
     assert len(est_model.estimation_steps) == 2
-    assert est_model.name == f'estmethod_{method}_no_update'
+    assert est_model.name == f'estmethod_{method.upper()}_raw_inits'
     assert est_model.model_code.split('\n')[-5] == est_rec
     assert est_model.model_code.split('\n')[-4] == eval_rec
 
