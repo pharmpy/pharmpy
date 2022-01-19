@@ -18,6 +18,7 @@ from pharmpy.modeling import (
     get_population_prediction_expression,
     mu_reference_model,
     read_model_from_string,
+    simplify_expression,
 )
 
 
@@ -155,3 +156,45 @@ def test_mu_reference_model_generic(testdata, statements, correct):
     model.parameters = params
     mu_reference_model(model)
     assert model.statements == ModelStatements(correct)
+
+
+def test_simplify_expression():
+    model = Model()
+    x = sympy.Symbol('x')
+    y = sympy.Symbol('y')
+
+    p1 = Parameter('x', 3)
+    p2 = Parameter('y', 9, fix=True)
+    pset = Parameters([p1, p2])
+    model.parameters = pset
+    assert simplify_expression(model, x * y) == 9.0 * x
+
+    p1 = Parameter('x', 3, lower=0.001)
+    p2 = Parameter('y', 9)
+    pset = Parameters([p1, p2])
+    model.parameters = pset
+    assert simplify_expression(model, abs(x)) == x
+
+    p1 = Parameter('x', 3, lower=0)
+    p2 = Parameter('y', 9)
+    pset = Parameters([p1, p2])
+    model.parameters = pset
+    assert simplify_expression(model, sympy.Piecewise((2, sympy.Ge(x, 0)), (56, True))) == 2
+
+    p1 = Parameter('x', -3, upper=-1)
+    p2 = Parameter('y', 9)
+    pset = Parameters([p1, p2])
+    model.parameters = pset
+    assert simplify_expression(model, abs(x)) == -x
+
+    p1 = Parameter('x', -3, upper=0)
+    p2 = Parameter('y', 9)
+    pset = Parameters([p1, p2])
+    model.parameters = pset
+    assert simplify_expression(model, sympy.Piecewise((2, sympy.Le(x, 0)), (56, True))) == 2
+
+    p1 = Parameter('x', 3)
+    p2 = Parameter('y', 9)
+    pset = Parameters([p1, p2])
+    model.parameters = pset
+    assert simplify_expression(model, x * y) == x * y

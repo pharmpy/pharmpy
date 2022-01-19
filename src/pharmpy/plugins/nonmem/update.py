@@ -8,6 +8,7 @@ import numpy as np
 import sympy
 
 from pharmpy import data
+from pharmpy.modeling import simplify_expression
 from pharmpy.plugins.nonmem.records import code_record
 from pharmpy.random_variables import RandomVariables
 from pharmpy.statements import (
@@ -983,7 +984,7 @@ def update_ccontra(model, path=None, force=False):
     dhdy = sympy.diff(h, y)
     ll = -2 * sympy.log(dhdy)
     ll = ll.subs(y, sympy.Symbol('y', real=True, positive=True))
-    ll = model.parameters.simplify(ll)
+    ll = simplify_expression(model, ll)
     ll = ll.subs(sympy.Symbol('y', real=True, positive=True), y)
 
     tr = model.parameter_translation(reverse=True, remove_idempotent=True, as_symbols=True)

@@ -291,3 +291,56 @@ def mu_reference_model(model):
                 model.statements.insert_before(assignment, mu_ass)
                 assignment.expression = newdep
     return model
+
+
+def simplify_expression(model, expr):
+    """Simplify expression given constraints in model
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model object
+    expr : Expression
+        Expression to simplify
+
+    Returns
+    -------
+    Expression
+        Simplified expression
+
+    Example
+    -------
+    >>> from pharmpy.modeling import load_example_model, simplify_expression
+    >>> model = load_example_model("pheno")
+    >>> simplify_expression(model, "Abs(PTVCL)")
+    PTVCL
+    """
+    expr = sympy.sympify(expr)
+    d = dict()
+    for p in model.parameters:
+        if p.fix:
+            s = sympy.Float(p.init)
+        elif p.upper < 0:
+            s = sympy.Symbol(p.name, real=True, negative=True)
+            d[s] = p.symbol
+        elif p.upper <= 0:
+            s = sympy.Symbol(p.name, real=True, nonpositive=True)
+            d[s] = p.symbol
+        elif p.lower > 0:
+            s = sympy.Symbol(p.name, real=True, positive=True)
+            d[s] = p.symbol
+        elif p.lower >= 0:
+            s = sympy.Symbol(p.name, real=True, nonnegative=True)
+            d[s] = p.symbol
+        else:
+            s = sympy.Symbol(p.name, real=True)
+            d[s] = p.symbol
+        expr = expr.subs(p.symbol, s)
+    # Remaining symbols should all be real
+    for s in expr.free_symbols:
+        if s.is_real is not True:
+            new = sympy.Symbol(s.name, real=True)
+            expr = expr.subs(s, new)
+            d[new] = s
+    simp = sympy.simplify(expr).subs(d)  # Subs symbols back to non-constrained
+    return simp

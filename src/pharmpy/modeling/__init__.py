@@ -124,6 +124,7 @@ from .expressions import (
     get_observation_expression,
     get_population_prediction_expression,
     mu_reference_model,
+    simplify_expression,
 )
 from .iterators import omit_data, resample_data
 from .plots import plot_individual_predictions, plot_iofv_vs_iofv
@@ -237,6 +238,7 @@ __all__ = [
     'set_weighted_error_model',
     'set_zero_order_absorption',
     'set_zero_order_elimination',
+    'simplify_expression',
     'split_joint_distribution',
     'summarize_modelfit_results',
     'transform_etas_boxcox',
