@@ -6,6 +6,7 @@ import pharmpy.tools
 from pharmpy import Parameter, Parameters, RandomVariable, RandomVariables
 from pharmpy.estimation import EstimationStep, EstimationSteps
 from pharmpy.modeling import (
+    add_time_after_dose,
     create_symbol,
     get_mdv,
     set_combined_error_model,
@@ -167,15 +168,16 @@ def _create_dataset(input_model):
         ipredcol = 'IPRED'
     else:
         raise ValueError("Need CIPREDI or IPRED")
-    ipred = predictions[ipredcol].reset_index(drop=True)
+    ipred = predictions[ipredcol].reset_index(drop=True).rename({ipredcol: 'IPRED'})
     mdv = get_mdv(input_model)
-    df_ipred = pd.concat([mdv, ipred], axis=1).rename(columns={ipredcol: 'IPRED'})
-    df_ipred = df_ipred[df_ipred['MDV'] == 0].reset_index(drop=True)
+    mdv.reset_index(drop=True)
     label_id = input_model.datainfo.id_column.name
-    input_id = input_model.dataset[label_id].astype('int64').squeeze()
-    df_id = pd.concat([mdv, input_id], axis=1)
-    df_id = df_id[df_id['MDV'] == 0].reset_index(drop=True)
-    df = pd.concat([df_id, cwres, df_ipred['IPRED']], axis=1).rename(columns={'CWRES': 'DV'})
+    input_id = input_model.dataset[label_id].astype('int64').squeeze().reset_index(drop=True)
+    add_time_after_dose(input_model)
+    tad = input_model.dataset['TAD'].squeeze().reset_index(drop=True)
+    df = pd.concat([mdv, input_id, tad, ipred], axis=1)
+    df = df[df['MDV'] == 0].reset_index(drop=True)
+    df = pd.concat([df, cwres], axis=1).rename(columns={'CWRES': 'DV'})
     return df
 
 
