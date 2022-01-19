@@ -1,4 +1,5 @@
 import sympy
+from pharmpy.statements import Assignment
 
 
 def get_observation_expression(model):
@@ -215,3 +216,72 @@ def create_symbol(model, stem, force_numbering=False):
         if candidate not in all_names:
             return sympy.Symbol(candidate)
         i += 1
+
+
+def _find_eta_assignments(model):
+    # Is this find individual parameters?
+    statements = model.statements.before_odes
+    etas = {eta.symbol for eta in model.random_variables.etas}
+    found = set()
+    leafs = []
+    for s in reversed(statements):
+        if etas & s.free_symbols and len(etas & statements.full_expression(s.symbol).free_symbols) == 1 and s.symbol not in found:
+            leafs = [s] + leafs
+            found.update(s.free_symbols)
+    return leafs
+
+
+def mu_reference_model(model):
+    """Convert model to use mu-referencing
+
+    Mu-referencing an eta is to separately define its actual mu (mean) parameter.
+    For example: :math:`CL = \\theta_1 e^{\eta_1}` with :math:`\eta_1` following a zero-mean
+    normal distribution would give :math:`\mu_1 = \log{\\theta_1}` and :math:`CL = e^{\mu_1 + \eta_1}`
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model object
+
+    Returns
+    -------
+    Model
+        Reference to same object
+
+    Example
+    -------
+    >>> from pharmpy.modeling import load_example_model, mu_reference_model
+    >>> model = load_example_model("pheno")
+    >>> mu_reference_model(model).statements.before_odes
+             ⎧TIME  for AMT > 0
+             ⎨
+    BTIME := ⎩ 0     otherwise
+    TAD := -BTIME + TIME
+    TVCL := THETA(1)⋅WGT
+    TVV := THETA(2)⋅WGT
+           ⎧TVV⋅(THETA(3) + 1)  for APGR < 5
+           ⎨
+    TVV := ⎩       TVV           otherwise
+    μ₁ := log(TVCL)
+           ETA(1) + μ₁
+    CL := ℯ
+    μ₂ := log(TVV)
+          ETA(2) + μ₂
+    V := ℯ
+    S₁ := V
+    """
+    statements = model.statements.before_odes
+    assignments = _find_eta_assignments(model)
+    for i, eta in enumerate(model.random_variables.etas, start=1):
+        for s in assignments:
+            if eta.symbol in s.expression.free_symbols:
+                assignment = statements.find_assignment(s.symbol)
+                expr = assignment.expression
+                indep, dep = expr.as_independent(eta.symbol)
+                mu = sympy.Symbol(f'mu_{i}')
+                newdep = dep.subs({eta.symbol: mu + eta.symbol})
+                mu_expr = sympy.solve(expr - newdep, mu)[0]
+                mu_ass = Assignment(mu, mu_expr)
+                model.statements.insert_before(assignment, mu_ass)
+                assignment.expression = newdep
+    return model

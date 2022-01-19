@@ -3,6 +3,7 @@ next version
 
 * Add modeling.create_symbol
 * Add modeling.remove_unused_parameters_and_rvs
+* Add modeling.mu_reference_model
 
 0.43.0 (2022-01-12)
 -------------------

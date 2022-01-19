@@ -123,6 +123,7 @@ from .expressions import (
     get_individual_prediction_expression,
     get_observation_expression,
     get_population_prediction_expression,
+    mu_reference_model,
 )
 from .iterators import omit_data, resample_data
 from .plots import plot_individual_predictions, plot_iofv_vs_iofv
@@ -187,6 +188,7 @@ __all__ = [
     'has_zero_order_absorption',
     'list_time_varying_covariates',
     'load_example_model',
+    'mu_reference_model',
     'omit_data',
     'plot_individual_predictions',
     'plot_iofv_vs_iofv',
