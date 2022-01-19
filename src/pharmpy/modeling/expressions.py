@@ -310,10 +310,13 @@ def simplify_expression(model, expr):
 
     Example
     -------
+    >>> from pharmpy.plugins.nonmem import conf
+    >>> conf.parameter_names = ['comment', 'basic']
     >>> from pharmpy.modeling import load_example_model, simplify_expression
     >>> model = load_example_model("pheno")
     >>> simplify_expression(model, "Abs(PTVCL)")
     PTVCL
+    >>> conf.parameter_names = ['basic']
     """
     expr = sympy.sympify(expr)
     d = dict()
