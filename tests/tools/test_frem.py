@@ -9,7 +9,6 @@ from pytest import approx
 
 import pharmpy.modeling as modeling
 from pharmpy import Model
-from pharmpy.tools.common import create_results
 from pharmpy.tools.frem.models import calculate_parcov_inits, create_model3b
 from pharmpy.tools.frem.results import (
     calculate_results,
@@ -18,6 +17,7 @@ from pharmpy.tools.frem.results import (
     psn_frem_results,
 )
 from pharmpy.tools.frem.tool import check_covariates
+from pharmpy.tools.psn_helpers import create_results
 
 
 def test_check_covariates(testdata):

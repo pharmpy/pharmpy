@@ -1,4 +1,4 @@
-from pharmpy.tools.rankfuncs import aic, bic, ofv
+from pharmpy.tools.modelsearch.rankfuncs import aic, bic, ofv
 
 
 class DummyResults:

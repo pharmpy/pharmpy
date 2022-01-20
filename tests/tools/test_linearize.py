@@ -4,9 +4,9 @@ import pandas as pd
 import pytest
 
 from pharmpy import Model
-from pharmpy.tools.common import create_results
 from pharmpy.tools.linearize.results import calculate_results, psn_linearize_results
 from pharmpy.tools.linearize.tool import create_linearized_model
+from pharmpy.tools.psn_helpers import create_results
 
 
 def test_ofv(testdata):
