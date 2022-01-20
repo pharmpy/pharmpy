@@ -75,3 +75,16 @@ def test_fit_copy(tmp_path, testdata):
             path for path in tmp_path.iterdir() if path.is_file() and path.suffix == '.mod'
         ]
         assert len(mod_files) == 2
+
+
+# def test_fit_nlmixr(tmp_path, testdata):
+#    with TemporaryDirectoryChanger(tmp_path):
+#        shutil.copy2(testdata / 'nonmem' / 'pheno.mod', tmp_path)
+#        shutil.copy2(testdata / 'nonmem' / 'pheno.dta', tmp_path)
+#        model = Model.create_model('pheno.mod')
+#        model.datainfo.path = tmp_path / 'pheno.dta'
+#        model = modeling.convert_model(model, 'nlmixr')
+# FIXME: Should not be needed
+#        model.filename_extension = '.R'
+#        modeling.fit(model, tool='nlmixr')
+#        assert model.modelfit_results.ofv == pytest.approx(732.58737)

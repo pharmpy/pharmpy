@@ -1,10 +1,14 @@
+import os
 import uuid
+import warnings
 from pathlib import Path
 
 import sympy
 from sympy.printing.str import StrPrinter
 
 import pharmpy.model
+from pharmpy.modeling import write_csv
+from pharmpy.results import ModelfitResults
 from pharmpy.statements import Assignment
 
 
@@ -64,10 +68,13 @@ class ExpressionPrinter(StrPrinter):
             return expr.func.__name__ + f'({self.stringify(expr.args, ", ")})'
 
 
-def create_dataset(cg, model):
+def create_dataset(cg, model, path=None):
     """Create dataset for nlmixr"""
     dataname = f'{model.name}.csv'
-    cg.add(f'dataset <- read.csv("{dataname}")')
+    if path is None:
+        path = ""
+    path = Path(path) / dataname
+    cg.add(f'dataset <- read.csv("{path}")')
 
 
 def create_ini(cg, model):
@@ -151,11 +158,14 @@ def create_fit(cg, model):
 
 
 class Model(pharmpy.model.Model):
-    def update_source(self):
+    def __init__(self):
+        self._filename_extension = '.R'
+
+    def update_source(self, path=None):
         cg = CodeGenerator()
         cg.add('library(nlmixr)')
         cg.empty_line()
-        create_dataset(cg, self)
+        create_dataset(cg, self, path)
         cg.empty_line()
         cg.add(f'{self.name} <- function() {{')
         cg.indent()
@@ -166,18 +176,42 @@ class Model(pharmpy.model.Model):
         cg.empty_line()
         create_fit(cg, self)
         self._src = str(cg)
+        self._path = None
 
     @property
     def model_code(self):
-        self.update_source()
+        self.update_source(path=self._path)
         return self._src
 
+    def read_modelfit_results(self):
+        try:
+            rdata_path = self.database.retrieve_file(self.name, self.name + '.RDATA')
+        except FileNotFoundError:
+            self.modelfit_results = None
+            return None
+        if rdata_path is not None:
+            read_modelfit_results(self, rdata_path)
+            return self.modelfit_results
 
-def run(model):
+
+def read_modelfit_results(model, rdata_path):
+    with warnings.catch_warnings():
+        # Supress a numpy deprecation warning
+        warnings.simplefilter("ignore")
+        import pyreadr
+    rdata = pyreadr.read_r(rdata_path)
+    ofv = rdata['ofv']['ofv'][0]
+    res = ModelfitResults(ofv=ofv)
+    model.modelfit_results = res
+
+
+def execute_model(model):
     database = model.database
     model = convert_model(model)
     path = Path.cwd() / f'nlmixr_run_{model.name}-{uuid.uuid1()}'
+    model._path = path
     path.mkdir(parents=True, exist_ok=True)
+    write_csv(model, path=path)
 
     code = model.model_code
     cg = CodeGenerator()
@@ -185,14 +219,14 @@ def run(model):
     cg.add('thetas <- fit$theta')
     cg.add('omega <- fit$omega')
     cg.add('sigma <- fit$sigma')
-    cg.add('save(file="nlmixr.RDATA, ofv, thetas, omega, sigma)')
+    cg.add(f'save(file="{path}/{model.name}.RDATA", ofv, thetas, omega, sigma)')
     code += f'\n{str(cg)}'
-    with open(path / 'model.R', 'w') as fh:
+    with open(path / f'{model.name}.R', 'w') as fh:
         fh.write(code)
 
-    import os
-
-    os.system(f"/home/rikard/R/R-4.1.2/bin/Rscript {path}/model.R")
-
-    database.store_local_file(model, path / 'model.R')
-    database.store_local_file(model, path / 'nlmixr.RDATA')
+    os.system(f"Rscript {path}/{model.name}.R")
+    rdata_path = path / f'{model.name}.RDATA'
+    database.store_local_file(model, path / f'{model.name}.R')
+    database.store_local_file(model, rdata_path)
+    read_modelfit_results(model, rdata_path)
+    return model

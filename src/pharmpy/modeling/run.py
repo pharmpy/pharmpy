@@ -9,13 +9,15 @@ from pharmpy.workflows import execute_workflow, split_common_options
 from .common import read_model_from_database
 
 
-def fit(models):
+def fit(models, tool=None):
     """Fit models.
 
     Parameters
     ----------
     models : list
-        List of models or one single model
+        List of models or_ one single model
+    tool : str
+        Estimation tool to use. None to use default
 
     Return
     ------
@@ -23,6 +25,7 @@ def fit(models):
         Reference to same model
 
     Examples
+    --------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
     >>> fit(model)      # doctest: +SKIP
@@ -49,7 +52,7 @@ def fit(models):
         else:
             kept.append(model)
     if kept:
-        run_tool('modelfit', kept)
+        run_tool('modelfit', kept, tool=tool)
     if single:
         return models[0]
     else:
