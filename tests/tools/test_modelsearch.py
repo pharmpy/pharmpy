@@ -5,11 +5,16 @@ from pharmpy.tools.modelsearch.tool import create_workflow
 
 
 @pytest.mark.parametrize(
-    'algorithm, no_of_models',
-    [('exhaustive', 3), ('exhaustive_stepwise', 4)],
+    'algorithm, mfl, no_of_models',
+    [
+        ('exhaustive', 'ABSORPTION(ZO)\nPERIPHERALS(1)', 3),
+        ('exhaustive_stepwise', 'ABSORPTION(ZO)\nPERIPHERALS(1)', 4),
+        ('exhaustive_stepwise', 'ABSORPTION(ZO)\nTRANSITS(1)', 2),
+    ],
 )
-def test_create_workflow(algorithm, no_of_models):
-    wf = create_workflow(algorithm, 'ABSORPTION(ZO)\nPERIPHERALS(1)')
+def test_create_workflow(algorithm, mfl, no_of_models):
+    print('')
+    wf = create_workflow(algorithm, mfl)
     fit_tasks = [task.name for task in wf.tasks if task.name.startswith('run')]
     assert len(fit_tasks) == no_of_models
 
@@ -50,22 +55,24 @@ def test_mfl_elimination(code, args):
 
 
 @pytest.mark.parametrize(
-    'code,args',
+    'code,args,depot',
     [
-        ('TRANSITS(0)', {0}),
-        ('TRANSITS([0, 1])', {0, 1}),
-        ('TRANSITS([0, 2, 4])', {0, 2, 4}),
-        ('TRANSITS(0..1)', {0, 1}),
-        ('TRANSITS(1..4)', {1, 2, 3, 4}),
-        ('TRANSITS(1..4); TRANSITS(5)', {1, 2, 3, 4, 5}),
-        ('TRANSITS(0);PERIPHERALS(0)', {0}),
-        ('TRANSITS(1..4, DEPOT)', {1, 2, 3, 4}),
-        ('TRANSITS(1..4, NODEPOT)', {1, 2, 3, 4}),
+        ('TRANSITS(0)', {0}, 'DEPOT'),
+        ('TRANSITS([0, 1])', {0, 1}, 'DEPOT'),
+        ('TRANSITS([0, 2, 4])', {0, 2, 4}, 'DEPOT'),
+        ('TRANSITS(0..1)', {0, 1}, 'DEPOT'),
+        ('TRANSITS(1..4)', {1, 2, 3, 4}, 'DEPOT'),
+        ('TRANSITS(1..4); TRANSITS(5)', {1, 2, 3, 4, 5}, 'DEPOT'),
+        ('TRANSITS(0);PERIPHERALS(0)', {0}, 'DEPOT'),
+        ('TRANSITS(1..4, DEPOT)', {1, 2, 3, 4}, 'DEPOT'),
+        ('TRANSITS(1..4, NODEPOT)', {1, 2, 3, 4}, 'NODEPOT'),
+        ('TRANSITS(1..4, *)', {1, 2, 3, 4}, '*'),
     ],
 )
-def test_mfl_transits(code, args):
+def test_mfl_transits(code, args, depot):
     mfl = ModelFeatures(code)
     assert mfl.transits.args == args
+    assert mfl.transits.depot == depot
 
 
 @pytest.mark.parametrize(

@@ -87,14 +87,17 @@ class Transits(ModelFeature):
         interpreter = OneArgInterpreter('transits', [])
         self.args = interpreter.interpret(tree)
         depot = getattr(interpreter, 'depot_opt_value', 'DEPOT')
-        self.depot = depot
+        if isinstance(depot, str):
+            self.depot = depot
+        else:
+            self.depot = 'DEPOT'
         self._funcs = dict()
         for arg in self.args:
-            if depot != 'NODEPOT':
+            if self.depot != 'NODEPOT':
                 self._funcs[f'TRANSITS({arg})'] = functools.partial(
                     modeling.set_transit_compartments, n=arg
                 )
-            if depot != 'DEPOT':
+            if self.depot != 'DEPOT':
                 self._funcs[f'TRANSITS({arg}, NODEPOT)'] = functools.partial(
                     modeling.set_transit_compartments, n=arg, keep_depot=False
                 )
@@ -155,7 +158,10 @@ class OneArgInterpreter(Interpreter):
         return self.visit_children(tree)
 
     def depot_opt(self, tree):
-        self.depot_opt_value = str(tree)
+        depot_opt = tree.children[0]
+        if not isinstance(depot_opt, str):
+            depot_opt = '*'
+        self.depot_opt_value = depot_opt
         return []
 
     def value(self, tree):
