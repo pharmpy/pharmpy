@@ -1,4 +1,4 @@
 from .results import BootstrapResults
-from .tool import Bootstrap
+from .tool import create_workflow
 
-__all__ = ['Bootstrap', 'BootstrapResults']
+__all__ = ['create_workflow', 'BootstrapResults']

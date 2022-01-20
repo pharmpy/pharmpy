@@ -3,7 +3,7 @@ import pandas as pd
 
 import pharmpy.results
 import pharmpy.tools.modelsearch.algorithms as algorithms
-import pharmpy.tools.rankfuncs as rankfuncs
+import pharmpy.tools.modelsearch.rankfuncs as rankfuncs
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.workflows import Task, Workflow
 

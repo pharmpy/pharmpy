@@ -1,38 +1,24 @@
-import pharmpy.tools
 from pharmpy.modeling import resample_data
 from pharmpy.tools.bootstrap.results import calculate_results
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.workflows import Task, Workflow
 
 
-class Bootstrap(pharmpy.tools.Tool):
-    def __init__(self, model, resamples=1):
-        self.model = model
-        self.resamples = resamples
-        super().__init__()
-        self.model.database = self.database.model_database
+def create_workflow(model, resamples=1):
+    wf = Workflow()
+    wf.name = 'bootstrap'
 
-    def run(self):
-        wf_bootstrap = self.create_workflow()
-        res = self.dispatcher.run(wf_bootstrap)
-        res.to_json(path=self.database.path / 'results.json')
-        res.to_csv(path=self.database.path / 'results.csv')
-        return res
+    for i in range(resamples):
+        task_resample = Task('resample', resample_model, model, f'bs_{i + 1}')
+        wf.add_task(task_resample)
 
-    def create_workflow(self):
-        wf = Workflow()
+    wf_fit = create_fit_workflow(n=resamples)
+    wf.insert_workflow(wf_fit)
 
-        for i in range(self.resamples):
-            task_resample = Task('resample', resample_model, self.model, f'bs_{i + 1}')
-            wf.add_task(task_resample)
+    task_result = Task('results', post_process_results, model)
+    wf.add_task(task_result, predecessors=wf.output_tasks)
 
-        wf_fit = create_fit_workflow(n=self.resamples)
-        wf.insert_workflow(wf_fit)
-
-        task_result = Task('results', post_process_results, self.model)
-        wf.add_task(task_result, predecessors=wf.output_tasks)
-
-        return wf
+    return wf
 
 
 def resample_model(model, name):

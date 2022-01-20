@@ -1,7 +1,7 @@
 import shutil
 
 from pharmpy import Model
-from pharmpy.tools.bootstrap import Bootstrap
+from pharmpy.modeling import run_tool
 from pharmpy.utils import TemporaryDirectoryChanger
 
 
@@ -14,5 +14,5 @@ def test_bootstrap(tmp_path, testdata):
         model = Model.create_model('pheno.mod')
         model.datainfo.path = tmp_path / 'pheno.dta'
         model.modelfit_results.ofv  # Read in results
-        res = Bootstrap(model, 3).run()
+        res = run_tool('bootstrap', model, resamples=3)
         assert len(res.parameter_estimates) == 3
