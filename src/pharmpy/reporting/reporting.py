@@ -32,6 +32,9 @@ def generate_report(rst_path, results_path):
                     # See https://github.com/pharmpy/pharmpy/issues/20
                     warnings.filterwarnings("ignore", message="The app.add_stylesheet")
                     warnings.filterwarnings("ignore", message="The app.add_javascript")
+                    # Deprecation warning in jupyter_sphinx
+                    warnings.filterwarnings("ignore", message="Passing a schema to Validator")
+
                     app = Sphinx(
                         str(source_path),
                         str(conf_path),
@@ -80,6 +83,8 @@ def embed_css_and_js(html, target):
             infile.close()
         else:
             path = html.parent / source
+            if path.name == 'thebelab-helper.js':  # This file wasn't created
+                continue
             with open(path, 'r') as sh:
                 content = sh.read()
 
@@ -96,6 +101,8 @@ def embed_css_and_js(html, target):
         tag = soup.new_tag("style")
         tag['type'] = 'text/css'
         path = html.parent / stylesheet_src
+        if path.name == 'thebelab.css':  # This file wasn't created
+            continue
         with open(path, 'r') as sh:
             content = sh.read()
         if '@import' in content:
