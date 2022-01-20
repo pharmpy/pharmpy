@@ -2,8 +2,8 @@ import importlib
 
 import pharmpy.model
 import pharmpy.results
-import pharmpy.tools.common
 import pharmpy.tools.modelfit
+import pharmpy.tools.psn_helpers
 from pharmpy.workflows import execute_workflow, split_common_options
 
 from .common import read_model_from_database
@@ -81,7 +81,7 @@ def create_results(path, **kwargs):
     read_results
 
     """
-    res = pharmpy.tools.common.create_results(path, **kwargs)
+    res = pharmpy.tools.psn_helpers.create_results(path, **kwargs)
     return res
 
 
