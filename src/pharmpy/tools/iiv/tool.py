@@ -1,5 +1,6 @@
 import pharmpy.results
 import pharmpy.tools.iiv.algorithms as algorithms
+import pharmpy.tools.modelsearch.tool
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.workflows import Task, Workflow
 
@@ -52,7 +53,7 @@ def post_process_results(rankfunc, cutoff, model_features, *models):
     else:
         res_models = [res_models]
 
-    df = pharmpy.tools.common.create_summary(
+    df = pharmpy.tools.modelsearch.tool.create_summary(
         res_models, start_model, rankfunc, cutoff, model_features
     )
 

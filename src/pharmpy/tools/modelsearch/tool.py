@@ -1,6 +1,9 @@
+import numpy as np
+import pandas as pd
+
 import pharmpy.results
-import pharmpy.tools
 import pharmpy.tools.modelsearch.algorithms as algorithms
+import pharmpy.tools.rankfuncs as rankfuncs
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.workflows import Task, Workflow
 
@@ -57,9 +60,7 @@ def post_process_results(rankfunc, cutoff, model_features, *models):
         else:
             res_models.append(model)
 
-    df = pharmpy.tools.common.create_summary(
-        res_models, start_model, rankfunc, cutoff, model_features
-    )
+    df = create_summary(res_models, start_model, rankfunc, cutoff, model_features)
 
     best_model_name = df['rank'].idxmin()
     try:
@@ -80,3 +81,30 @@ class ModelSearchResults(pharmpy.results.Results):
         self.best_model = best_model
         self.start_model = start_model
         self.models = models
+
+
+def create_summary(models, start_model, rankfunc, cutoff, model_features):
+    rankfunc = getattr(rankfuncs, rankfunc)
+
+    res_data = {'dofv': [], 'features': [], 'rank': []}
+    model_names = []
+
+    if cutoff is not None:
+        ranks = rankfunc(start_model, models, cutoff=cutoff)
+    else:
+        ranks = rankfunc(start_model, models)
+
+    for model in models:
+        model_names.append(model.name)
+        try:
+            res_data['dofv'].append(start_model.modelfit_results.ofv - model.modelfit_results.ofv)
+        except AttributeError:
+            res_data['dofv'].append(np.nan)
+        res_data['features'].append(model_features[model.name])
+        if model in ranks:
+            res_data['rank'].append(ranks.index(model) + 1)
+        else:
+            res_data['rank'].append(np.nan)
+
+    # FIXME: in ranks, if any row has NaN the rank converts to float
+    return pd.DataFrame(res_data, index=model_names)
