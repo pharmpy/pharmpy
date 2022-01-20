@@ -257,7 +257,7 @@ def _get_mm_inits(model, rate_numer, combined):
     return km_init, clmm_init
 
 
-def set_transit_compartments(model, n):
+def set_transit_compartments(model, n, keep_depot=True):
     """Set the number of transit compartments of model.
 
     Initial estimate for absorption rate is
@@ -269,6 +269,8 @@ def set_transit_compartments(model, n):
         Pharmpy model
     n : int
         Number of transit compartments
+    keep_depot : bool
+        False to convert depot compartment into a transit compartment
 
     Return
     ------
@@ -299,10 +301,41 @@ def set_transit_compartments(model, n):
         n = _as_integer(n)
     except ValueError:
         raise ValueError(f'Number of compartments must be integer: {n}')
+
+    # Handle keep_depot option
+    depot = odes.find_depot(statements)
+    mdt_init = None
+    if not keep_depot and depot:
+        central = odes.central_compartment
+        rate = odes.get_flow(depot, central)
+        if not rate.is_Symbol:
+            num, den = rate.as_numer_denom()
+            if num == 1 and den.is_Symbol:
+                symbol = den
+            else:
+                symbol = None
+        else:
+            symbol = rate
+        if symbol:
+            mdt_init = _extract_params_from_symb(statements, symbol.name, model.parameters).init
+        inflows = odes.get_compartment_inflows(depot)
+        if len(inflows) == 1:
+            innode, inflow = inflows[0]
+            odes.add_flow(innode, central, inflow)
+        else:
+            central.dose = depot.dose
+        odes.remove_compartment(depot)
+        statements.remove_symbol_definitions(rate.free_symbols, odes)
+        remove_unused_parameters_and_rvs(model)
+
     if len(transits) == n:
         pass
     elif len(transits) == 0:
-        mdt_symb = _add_parameter(model, 'MDT', init=_get_absorption_init(model, 'MDT'))
+        if mdt_init is not None:
+            init = mdt_init
+        else:
+            init = _get_absorption_init(model, 'MDT')
+        mdt_symb = _add_parameter(model, 'MDT', init=init)
         rate = n / mdt_symb
         comp = odes.dosing_compartment
         dose = comp.dose
@@ -340,7 +373,6 @@ def set_transit_compartments(model, n):
         last, destination, rate = _find_last_transit(odes, transits)
         odes.remove_flow(last, destination)
         while nadd > 0:
-            # new_comp = odes.add_compartment(f'TRANSIT{len(transits) + nadd}')
             new_comp = odes.add_compartment(f'TRANSIT{n - nadd + 1}')
             odes.add_flow(last, new_comp, rate)
             if rate.is_Symbol:

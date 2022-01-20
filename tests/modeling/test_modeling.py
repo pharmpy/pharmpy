@@ -346,6 +346,122 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
     assert re.search('K30 = CL/V', model.model_code)
 
 
+def test_transits_absfo(testdata):
+    model = Model.create_model(testdata / 'nonmem' / 'modeling' / 'pheno_advan2.mod')
+    set_transit_compartments(model, 0, keep_depot=False)
+    transits = model.statements.ode_system.find_transit_compartments(model.statements)
+    assert len(transits) == 0
+    assert len(model.statements.ode_system) == 2
+
+    model = Model.create_model(testdata / 'nonmem' / 'modeling' / 'pheno_2transits.mod')
+    set_transit_compartments(model, 1, keep_depot=False)
+    transits = model.statements.ode_system.find_transit_compartments(model.statements)
+    assert len(transits) == 0
+    assert len(model.statements.ode_system) == 4
+    correct = """$PROBLEM PHENOBARB SIMPLE MODEL
+$DATA ../pheno.dta IGNORE=@
+$INPUT ID TIME AMT WGT APGR DV FA1 FA2
+$SUBROUTINE ADVAN4 TRANS1
+$PK
+IF(AMT.GT.0) BTIME=TIME
+TAD=TIME-BTIME
+TVCL=THETA(1)*WGT
+TVV=THETA(2)*WGT
+IF(APGR.LT.5) TVV=TVV*(1+THETA(3))
+CL=TVCL*EXP(ETA(1))
+V=TVV*EXP(ETA(2))
+K20 = CL/V
+K23 = THETA(4)
+K32 = THETA(5)
+K12 = THETA(6)
+S2 = V
+KA = K12
+
+$ERROR
+W=F
+Y=F+W*EPS(1)
+IPRED=F
+IRES=DV-IPRED
+IWRES=IRES/W
+
+$THETA (0,0.00469307) ; CL
+$THETA (0,1.00916) ; V
+$THETA (-.99,.1)
+$THETA (0,10)
+$THETA (0,10)
+$THETA (1,10)
+$OMEGA DIAGONAL(2)
+ 0.0309626  ;       IVCL
+ 0.031128  ;        IVV
+
+$SIGMA 1e-7
+$ESTIMATION METHOD=1 INTERACTION
+$COVARIANCE UNCONDITIONAL
+$TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
+       NOPRINT ONEHEADER FILE=sdtab1
+"""
+    assert model.model_code == correct
+
+    model = Model.create_model(testdata / 'nonmem' / 'modeling' / 'pheno_2transits.mod')
+    set_transit_compartments(model, 4, keep_depot=False)
+    transits = model.statements.ode_system.find_transit_compartments(model.statements)
+    assert len(transits) == 4
+    correct = (
+        '''$PROBLEM PHENOBARB SIMPLE MODEL
+$DATA ../pheno.dta IGNORE=@
+$INPUT ID TIME AMT WGT APGR DV FA1 FA2
+$SUBROUTINE ADVAN5 TRANS1
+$MODEL COMPARTMENT=(TRANS1 DEFDOSE) COMPARTMENT=(TRANS2) COMPARTMENT=(TRANSIT3) '''
+        + '''COMPARTMENT=(TRANSIT4) COMPARTMENT=(CENTRAL) COMPARTMENT=(PERIPHERAL)
+$PK
+IF(AMT.GT.0) BTIME=TIME
+TAD=TIME-BTIME
+TVCL=THETA(1)*WGT
+TVV=THETA(2)*WGT
+IF(APGR.LT.5) TVV=TVV*(1+THETA(3))
+CL=TVCL*EXP(ETA(1))
+V=TVV*EXP(ETA(2))
+K50 = CL/V
+K56 = THETA(4)
+K65 = THETA(5)
+K12 = THETA(6)
+K23 = THETA(6)
+S5 = V
+K34 = THETA(6)
+K45 = THETA(6)
+
+$ERROR
+W=F
+Y=F+W*EPS(1)
+IPRED=F
+IRES=DV-IPRED
+IWRES=IRES/W
+
+$THETA (0,0.00469307) ; CL
+$THETA (0,1.00916) ; V
+$THETA (-.99,.1)
+$THETA (0,10)
+$THETA (0,10)
+$THETA (1,10)
+$OMEGA DIAGONAL(2)
+ 0.0309626  ;       IVCL
+ 0.031128  ;        IVV
+
+$SIGMA 1e-7
+$ESTIMATION METHOD=1 INTERACTION
+$COVARIANCE UNCONDITIONAL
+$TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
+       NOPRINT ONEHEADER FILE=sdtab1
+'''
+    )
+    assert model.model_code == correct
+    model = Model.create_model(testdata / 'nonmem' / 'modeling' / 'pheno_advan2.mod')
+    set_transit_compartments(model, 1, keep_depot=False)
+
+    assert not re.search(r'K *= *', model.model_code)
+    assert re.search('KA = 1/MDT', model.model_code)
+
+
 def test_transit_compartments_added_mdt(testdata):
     model = Model.create_model(testdata / 'nonmem' / 'modeling' / 'pheno_advan5_nodepot.mod')
     set_transit_compartments(model, 2)

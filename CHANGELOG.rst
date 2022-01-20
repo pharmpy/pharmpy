@@ -5,6 +5,7 @@ next version
 * Add modeling.remove_unused_parameters_and_rvs
 * Add modeling.mu_reference_model
 * Add modeling.simplify_expression
+* Add option keep_depot to modeling.set_transit_compartments
 
 0.43.0 (2022-01-12)
 -------------------
