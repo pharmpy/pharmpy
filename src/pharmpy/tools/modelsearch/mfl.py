@@ -26,7 +26,10 @@ feature: absorption | elimination | peripherals | transits | lagtime
 absorption: "ABSORPTION"i "(" (option) ")"
 elimination: "ELIMINATION"i "(" (option) ")"
 peripherals: "PERIPHERALS"i "(" (option) ")"
-transits: "TRANSITS"i "(" (option) ")"
+transits: "TRANSITS"i "(" option ["," depot_opt] ")"
+depot_opt: (DEPOT | NODEPOT | wildcard)
+DEPOT: "DEPOT"
+NODEPOT: "NODEPOT"
 lagtime: "LAGTIME()"
 option: (wildcard | range | value | array)
 wildcard: "*"
@@ -81,11 +84,19 @@ class Elimination(ModelFeature):
 
 class Transits(ModelFeature):
     def __init__(self, tree):
-        self.args = OneArgInterpreter('transits', []).interpret(tree)
+        interpreter = OneArgInterpreter('transits', [])
+        self.args = interpreter.interpret(tree)
+        depot = getattr(interpreter, 'depot_opt_value', 'DEPOT')
+        self.depot = depot
         self._funcs = dict()
         for arg in self.args:
             name = f'TRANSITS({arg})'
-            self._funcs[name] = functools.partial(modeling.set_transit_compartments, n=arg)
+            if depot != 'NODEPOT':
+                self._funcs[name] = functools.partial(modeling.set_transit_compartments, n=arg)
+            if depot != 'DEPOT':
+                self._funcs[name] = functools.partial(
+                    modeling.set_transit_compartments, n=arg, keep_depot=False
+                )
 
 
 class Peripherals(ModelFeature):
@@ -141,6 +152,10 @@ class OneArgInterpreter(Interpreter):
 
     def option(self, tree):
         return self.visit_children(tree)
+
+    def depot_opt(self, tree):
+        self.depot_opt_value = str(tree)
+        return []
 
     def value(self, tree):
         value = tree.children[0].value

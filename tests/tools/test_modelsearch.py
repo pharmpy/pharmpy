@@ -59,6 +59,8 @@ def test_mfl_elimination(code, args):
         ('TRANSITS(1..4)', {1, 2, 3, 4}),
         ('TRANSITS(1..4); TRANSITS(5)', {1, 2, 3, 4, 5}),
         ('TRANSITS(0);PERIPHERALS(0)', {0}),
+        ('TRANSITS(1..4, DEPOT)', {1, 2, 3, 4}),
+        ('TRANSITS(1..4, NODEPOT)', {1, 2, 3, 4}),
     ],
 )
 def test_mfl_transits(code, args):
