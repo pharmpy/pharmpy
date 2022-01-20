@@ -1,6 +1,8 @@
 import pandas as pd
 import sympy
 
+from functools import partial
+
 import pharmpy.model
 import pharmpy.tools
 from pharmpy import Parameter, Parameters, RandomVariable, RandomVariables
@@ -40,8 +42,16 @@ def create_workflow(model=None):
     task_combined = Task('create_combined_error_model', _create_combined_model)
     wf.add_task(task_combined, predecessors=task_base_model)
 
-    fit_wf = create_fit_workflow(n=4)
-    wf.insert_workflow(fit_wf, predecessors=[task_base_model, task_iiv, task_power, task_combined])
+    tasks = []
+    groups = 4
+    for i in range(1, groups):
+        tvar = partial(_create_time_varying_model, groups=groups, i=i)
+        task = Task(f"create_time_varying_model{i}", tvar)
+        tasks.append(task)
+        wf.add_task(task, predecessors=task_base_model)
+
+    fit_wf = create_fit_workflow(n=3+groups)
+    wf.insert_workflow(fit_wf, predecessors=[task_base_model, task_iiv, task_power, task_combined]+tasks)
 
     task_post_process = Task('post_process', post_process)
     wf.add_task(task_post_process, predecessors=[start_task] + fit_wf.output_tasks)
