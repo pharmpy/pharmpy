@@ -17,7 +17,7 @@ from pharmpy.statements import Assignment, ModelStatements
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.workflows import Task, Workflow
 
-from ...modeling.error import remove_error_model
+from ...modeling.error import remove_error_model, set_time_varying_error_model
 from .results import calculate_results
 
 
@@ -129,6 +129,16 @@ def _create_power_model(input_model):
     model = base_model.copy()
     set_power_on_ruv(model, ipred='IPRED', lower_limit=None)
     model.name = 'power'
+    return model
+
+
+def _create_time_varying_model(input_model, groups, i):
+    base_model = input_model
+    model = base_model.copy()
+    quantile = i / groups
+    cutoff = model.dataset['TAD'].quantile(q=quantile)
+    set_time_varying_error_model(model, cutoff=cutoff, idv='TAD')
+    model.name = f"time_varying{i}"
     return model
 
 
