@@ -1,3 +1,5 @@
-from .tool import create_workflow
+from .tool import IIVResults, create_workflow
 
-__all__ = ['create_workflow']
+results_object = IIVResults
+
+__all__ = ['create_workflow', 'IIVResults']

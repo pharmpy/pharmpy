@@ -16,6 +16,7 @@
 """
 
 import copy
+import importlib
 import json
 import lzma
 import math
@@ -100,47 +101,10 @@ def read_results(path_or_buf):
                 s = json_file.read()
     decoder = ResultsJSONDecoder()
     d = decoder.decode(s)
-    if decoder.cls == 'FREMResults':
-        from pharmpy.tools.frem import FREMResults
-
-        res = FREMResults.from_dict(d)
-    elif decoder.cls == 'BootstrapResults':
-        from pharmpy.tools.bootstrap import BootstrapResults
-
-        res = BootstrapResults.from_dict(d)
-    elif decoder.cls == 'CDDResults':
-        from pharmpy.tools.cdd import CDDResults
-
-        res = CDDResults.from_dict(d)
-    elif decoder.cls == 'SCMResults':
-        from pharmpy.tools.scm import SCMResults
-
-        res = SCMResults.from_dict(d)
-    elif decoder.cls == 'QAResults':
-        from pharmpy.tools.qa import QAResults
-
-        res = QAResults.from_dict(d)
-    elif decoder.cls == 'LinearizeResults':
-        from pharmpy.tools.linearize import LinearizeResults
-
-        res = LinearizeResults.from_dict(d)
-    elif decoder.cls == 'ResmodResults':
-        from pharmpy.tools.resmod import ResmodResults
-
-        res = ResmodResults.from_dict(d)
-    elif decoder.cls == 'SimevalResults':
-        from pharmpy.tools.simeval import SimevalResults
-
-        res = SimevalResults.from_dict(d)
-    elif decoder.cls == 'CrossvalResults':
-        from pharmpy.tools.crossval import CrossvalResults
-
-        res = CrossvalResults.from_dict(d)
-    elif decoder.cls == 'EstMethodResults':
-        from pharmpy.tools.estmethod import EstMethodResults
-
-        res = EstMethodResults.from_dict(d)
-
+    tool_name = decoder.cls[:-7].lower()
+    tool_module = importlib.import_module(f'pharmpy.tools.{tool_name}')
+    results_class = tool_module.results_class
+    res = results_class.from_dict(d)
     return res
 
 
