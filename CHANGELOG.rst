@@ -1,11 +1,14 @@
-next version
-------------
+0.44.0 (2022-01-20)
+-------------------
 
 * Add modeling.create_symbol
 * Add modeling.remove_unused_parameters_and_rvs
 * Add modeling.mu_reference_model
 * Add modeling.simplify_expression
 * Add option keep_depot to modeling.set_transit_compartments
+* Add CLI for estmethod tool
+* Add attributes isample, niter, auto and keep_every_nth_iter to EstimationStep
+* Remove stepwise algorithm in modelsearch tool
 
 0.43.0 (2022-01-12)
 -------------------
