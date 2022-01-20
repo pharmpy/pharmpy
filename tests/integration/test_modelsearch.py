@@ -39,6 +39,7 @@ def test_exhaustive(tmp_path, testdata):
         ('ABSORPTION(ZO)\nTRANSITS(1)', 2, 'mox2'),
         ('ABSORPTION([ZO,SEQ-ZO-FO])\nPERIPHERALS(1)', 7, 'modelsearch_candidate3'),
         ('LAGTIME()\nTRANSITS(1)', 2, 'mox2'),
+        ('ABSORPTION(ZO)\nTRANSITS(3, *)', 3, 'mox2'),
     ],
 )
 def test_exhaustive_stepwise_basic(tmp_path, testdata, mfl, no_of_models, best_model_name):
