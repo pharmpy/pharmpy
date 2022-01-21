@@ -22,7 +22,7 @@ def test_estmethod(tmp_path, testdata, method):
         res = run_tool('estmethod', methods=method, model=model_start)
 
         no_of_models = 4
-        assert len(res.summary) == no_of_models * 2
+        assert len(res.summary) == no_of_models
         assert len(res.models) == no_of_models
         rundir = tmp_path / 'estmethod_dir1'
         assert rundir.is_dir()

@@ -1,5 +1,7 @@
 from pathlib import Path
 
+import pandas as pd
+
 import pharmpy.results
 from pharmpy.modeling import (
     add_estimation_step,
@@ -30,9 +32,11 @@ def create_workflow(methods=None, model=None):
     task_base_model_fit = wf.output_tasks
 
     if not methods:
-        methods = ['foce', 'imp', 'impmap', 'its', 'saem', 'laplace']
-    if isinstance(methods, str):
+        methods = ['foce', 'fo', 'imp', 'impmap', 'its', 'saem', 'laplace', 'bayes']
+    elif isinstance(methods, str):
         methods = [methods]
+    elif isinstance(methods, list):
+        methods = [method.lower() for method in methods]
     if 'foce' not in methods:
         methods.insert(0, 'foce')
 
@@ -67,9 +71,12 @@ def post_process(*models):
         else:
             res_models.append(model)
 
-    df = summarize_modelfit_results(res_models, include_all_estimation_steps=True)
+    summary = summarize_modelfit_results(res_models)
+    settings = summarize_estimation_steps(res_models)
 
-    res = EstMethodResults(summary=df, start_model=start_model, models=res_models)
+    res = EstMethodResults(
+        summary=summary, settings=settings, start_model=start_model, models=res_models
+    )
 
     return res
 
@@ -89,7 +96,7 @@ def _create_base_model(model):
 
 
 def _create_eval_settings(laplace=False):
-    evaluation_step = {
+    eval_settings = {
         'method': 'imp',
         'interaction': True,
         'laplace': laplace,
@@ -97,32 +104,32 @@ def _create_eval_settings(laplace=False):
         'maximum_evaluations': 9999,
         'isample': 10000,
         'niter': 10,
-        'keep_every_nth_iter': 1,
+        'keep_every_nth_iter': 10,
     }
-    return evaluation_step
+    return eval_settings
 
 
 def _create_est_settings(method):
-    settings = dict()
+    est_settings = dict()
     interaction = True
     laplace = False
     maximum_evaluations = 9999
     auto = True
-    keep_every_nth_iter = 1
+    keep_every_nth_iter = 10
 
     if method == 'laplace':
-        settings['method'] = 'foce'
+        est_settings['method'] = 'foce'
         laplace = True
     else:
-        settings['method'] = method
+        est_settings['method'] = method
 
-    settings['interaction'] = interaction
-    settings['laplace'] = laplace
-    settings['maximum_evaluations'] = maximum_evaluations
-    settings['auto'] = auto
-    settings['keep_every_nth_iter'] = keep_every_nth_iter
+    est_settings['interaction'] = interaction
+    est_settings['laplace'] = laplace
+    est_settings['maximum_evaluations'] = maximum_evaluations
+    est_settings['auto'] = auto
+    est_settings['keep_every_nth_iter'] = keep_every_nth_iter
 
-    return settings
+    return est_settings
 
 
 def _create_est_model(method, update, model):
@@ -153,8 +160,23 @@ def _clear_estimation_steps(model):
 class EstMethodResults(pharmpy.results.Results):
     rst_path = Path(__file__).parent / 'report.rst'
 
-    def __init__(self, summary=None, best_model=None, start_model=None, models=None):
+    def __init__(self, summary=None, settings=None, best_model=None, start_model=None, models=None):
         self.summary = summary
+        self.settings = settings
         self.best_model = best_model
         self.start_model = start_model
         self.models = models
+
+    def sorted_by_ofv(self):
+        df = self.summary[['ofv', 'runtime_total']].sort_values(by=['ofv'])
+        return df
+
+
+def summarize_estimation_steps(models):
+    dfs = dict()
+    for model in models:
+        df = model.estimation_steps.to_dataframe()
+        df.index = range(1, len(df) + 1)
+        dfs[model.name] = df.drop(columns=['tool_options'])
+
+    return pd.concat(dfs.values(), keys=dfs.keys())
