@@ -355,10 +355,6 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
         return self[-1].condition_number
 
     @property
-    def predictions(self):
-        return self[-1].predictions
-
-    @property
     def predictions_for_observations(self):
         return self[-1].predictions_for_observations
 

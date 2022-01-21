@@ -95,13 +95,6 @@ from pharmpy.modeling.parameter_sampling import (
 from pharmpy.modeling.power_on_ruv import set_power_on_ruv
 from pharmpy.modeling.remove_iiv import remove_iiv
 from pharmpy.modeling.remove_iov import remove_iov
-from pharmpy.modeling.results import (
-    calculate_eta_shrinkage,
-    calculate_individual_parameter_statistics,
-    calculate_individual_shrinkage,
-    calculate_pk_parameters_statistics,
-    summarize_modelfit_results,
-)
 from pharmpy.modeling.run import create_results, fit, read_results, run_tool
 from pharmpy.modeling.update_inits import update_inits
 from pharmpy.modeling.write_csv import write_csv
@@ -128,6 +121,14 @@ from .expressions import (
 )
 from .iterators import omit_data, resample_data
 from .plots import plot_individual_predictions, plot_iofv_vs_iofv
+from .results import (
+    calculate_aic,
+    calculate_eta_shrinkage,
+    calculate_individual_parameter_statistics,
+    calculate_individual_shrinkage,
+    calculate_pk_parameters_statistics,
+    summarize_modelfit_results,
+)
 from .units import get_unit_of
 
 # Remember to sort __all__ alphabetically for order in documentation
@@ -144,6 +145,7 @@ __all__ = [
     'add_time_after_dose',
     'append_estimation_step_options',
     'bump_model_number',
+    'calculate_aic',
     'calculate_epsilon_gradient_expression',
     'calculate_eta_gradient_expression',
     'calculate_eta_shrinkage',

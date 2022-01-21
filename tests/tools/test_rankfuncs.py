@@ -1,10 +1,10 @@
+from pharmpy.parameter import Parameters
 from pharmpy.tools.modelsearch.rankfuncs import aic, bic, ofv
 
 
 class DummyResults:
-    def __init__(self, ofv=None, aic=None, bic=None, parameter_estimates=None):
+    def __init__(self, ofv=None, bic=None, parameter_estimates=None):
         self.ofv = ofv
-        self.aic = aic
         self.bic = bic
         self.parameter_estimates = parameter_estimates
 
@@ -13,8 +13,9 @@ class DummyResults:
 
 
 class DummyModel:
-    def __init__(self, name, **kwargs):
+    def __init__(self, name, parameters=None, **kwargs):
         self.name = name
+        self.parameters = parameters
         if 'no_modelfit_results' in kwargs.keys():
             self.modelfit_results = None
         else:
@@ -44,9 +45,9 @@ def test_ofv():
 
 
 def test_aic():
-    run1 = DummyModel("run1", aic=0)
-    run2 = DummyModel("run2", aic=-1)
-    run3 = DummyModel("run3", aic=-14)
+    run1 = DummyModel("run1", ofv=0, parameters=Parameters([]))
+    run2 = DummyModel("run2", ofv=-1, parameters=Parameters([]))
+    run3 = DummyModel("run3", ofv=-14, parameters=Parameters([]))
     res = aic(run1, [run2, run3])
     assert [run3] == res
 

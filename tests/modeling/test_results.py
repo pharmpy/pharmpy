@@ -6,6 +6,7 @@ import pytest
 
 from pharmpy import Model
 from pharmpy.modeling import (
+    calculate_aic,
     calculate_eta_shrinkage,
     calculate_individual_parameter_statistics,
     calculate_individual_shrinkage,
@@ -166,3 +167,8 @@ def test_summarize_modelfit_results(testdata, pheno_path):
     estimates = summary_multest_full_no_res.loc['pheno_multest_no_res', 2].iloc[2:]
     assert estimates.isnull().all()
     assert summary_multest_full_no_res.dtypes['minimization_successful'] == bool
+
+
+def test_aic(testdata):
+    model = Model.create_model(testdata / 'nonmem' / 'pheno.mod')
+    assert calculate_aic(model) == 740.8947268137307

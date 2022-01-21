@@ -470,3 +470,21 @@ def summarize_modelfit_results(models, include_all_estimation_steps=False):
     summary = pd.concat(summaries).sort_index()
 
     return summary
+
+
+def calculate_aic(model):
+    """Calculate final AIC for model assuming the OFV to be -2LL
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model object
+
+    Returns
+    -------
+    float
+        AIC of model fit
+    """
+    parameters = model.parameters.copy()
+    parameters.remove_fixed()
+    return model.modelfit_results.ofv + 2 * len(parameters)

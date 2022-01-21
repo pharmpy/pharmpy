@@ -285,13 +285,6 @@ class ModelfitResults(Results):
         return {'parameter_estimates': self.parameter_estimates}
 
     @property
-    def aic(self):
-        """Final AIC value assuming the OFV to be -2LL"""
-        parameters = self.model.parameters.copy()
-        parameters.remove_fixed()
-        return self.ofv + 2 * len(parameters)
-
-    @property
     def bic(self):
         """Final BIC value assuming the OFV to be -2LL"""
         parameters = self.model.parameters.copy()

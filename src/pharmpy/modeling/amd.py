@@ -2,7 +2,6 @@ import pandas as pd
 
 from pharmpy.modeling import copy_model, remove_iiv
 from pharmpy.results import Results
-from pharmpy.tools.iiv.tool import IIVResults
 from pharmpy.workflows import default_tool_database
 
 from .run import run_tool
@@ -101,6 +100,8 @@ def run_iiv(model):
 
     best_model = res_block_structure.best_model
     summary = pd.concat([res_no_of_etas.summary, res_block_structure.summary])
+    from pharmpy.tools.iiv.tool import IIVResults
+
     res = IIVResults(
         summary=summary,
         best_model=best_model,

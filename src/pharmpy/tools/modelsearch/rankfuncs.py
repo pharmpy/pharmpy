@@ -1,5 +1,7 @@
 import numpy as np
 
+from pharmpy.modeling import calculate_aic
+
 # All functions used for comparing a set of candidate models and
 # ranking them take the same base arguments
 # base - the base model
@@ -18,7 +20,7 @@ def ofv(base, candidates, cutoff=3.84):
 
 def aic(base, candidates, cutoff=3.84):
     try:
-        base_aic = base.modelfit_results.aic
+        base_aic = calculate_aic(base)
     except AttributeError:
         base_aic = np.nan
     return rank_models('aic', base_aic, candidates, cutoff)
@@ -33,11 +35,26 @@ def bic(base, candidates, cutoff=3.84):
 
 
 def rank_models(rank_type, base_value, candidates, cutoff):
-    filtered = [
-        model
-        for model in candidates
-        if model.modelfit_results is not None
-        and base_value - getattr(model.modelfit_results, rank_type) >= cutoff
-    ]
-    srtd = sorted(filtered, key=lambda model: getattr(model.modelfit_results, rank_type))
+    if rank_type == 'aic':
+        # FIXME: Temporary after converting aic to function
+        filtered = [
+            model
+            for model in candidates
+            if model.modelfit_results is not None and base_value - calculate_aic(model) >= cutoff
+        ]
+    else:
+        filtered = [
+            model
+            for model in candidates
+            if model.modelfit_results is not None
+            and base_value - getattr(model.modelfit_results, rank_type) >= cutoff
+        ]
+
+    def fn(model):
+        if rank_type == 'aic':
+            return calculate_aic(model)
+        else:
+            return getattr(model.modelfit_results, rank_type)
+
+    srtd = sorted(filtered, key=fn)
     return srtd
