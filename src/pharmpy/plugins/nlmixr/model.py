@@ -3,6 +3,7 @@ import uuid
 import warnings
 from pathlib import Path
 
+import pandas as pd
 import sympy
 from sympy.printing.str import StrPrinter
 
@@ -40,6 +41,7 @@ def convert_model(model):
 
     generic_model = convert_model(model, 'generic')
     nlmixr_model.__dict__ = generic_model.__dict__
+    nlmixr_model.filename_extension = '.R'
     nlmixr_model.update_source()
     return nlmixr_model
 
@@ -158,9 +160,6 @@ def create_fit(cg, model):
 
 
 class Model(pharmpy.model.Model):
-    def __init__(self):
-        self._filename_extension = '.R'
-
     def update_source(self, path=None):
         cg = CodeGenerator()
         cg.add('library(nlmixr)')
@@ -201,7 +200,28 @@ def read_modelfit_results(model, rdata_path):
         import pyreadr
     rdata = pyreadr.read_r(rdata_path)
     ofv = rdata['ofv']['ofv'][0]
-    res = ModelfitResults(ofv=ofv)
+    omegas_sigmas = dict()
+    omega = model.random_variables.etas.covariance_matrix
+    for i in range(0, omega.rows):
+        for j in range(0, omega.cols):
+            symb = omega.row(i)[j]
+            if symb != 0:
+                omegas_sigmas[symb.name] = rdata['omega'].values[i, j]
+    sigma = model.random_variables.epsilons.covariance_matrix
+    for i in range(len(sigma)):
+        omegas_sigmas[sigma[i]] = rdata['sigma']['sigma'][i]
+    thetas_index = 0
+    pe = dict()
+    for param in model.parameters:
+        if param.fix:
+            continue
+        elif param.name in omegas_sigmas:
+            pe[param.name] = omegas_sigmas[param.name]
+        else:
+            pe[param.name] = rdata['thetas']['thetas'][thetas_index]
+            thetas_index += 1
+    pe = pd.Series(pe)
+    res = ModelfitResults(ofv=ofv, parameter_estimates=pe)
     model.modelfit_results = res
 
 
@@ -224,7 +244,10 @@ def execute_model(model):
     with open(path / f'{model.name}.R', 'w') as fh:
         fh.write(code)
 
-    os.system(f"Rscript {path}/{model.name}.R")
+    from pharmpy.plugins.nlmixr import conf
+
+    rpath = conf.rpath / 'bin' / 'Rscript'
+    os.system(f"{rpath} {path}/{model.name}.R")
     rdata_path = path / f'{model.name}.RDATA'
     database.store_local_file(model, path / f'{model.name}.R')
     database.store_local_file(model, rdata_path)

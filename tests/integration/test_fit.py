@@ -77,14 +77,17 @@ def test_fit_copy(tmp_path, testdata):
         assert len(mod_files) == 2
 
 
-# def test_fit_nlmixr(tmp_path, testdata):
-#    with TemporaryDirectoryChanger(tmp_path):
-#        shutil.copy2(testdata / 'nonmem' / 'pheno.mod', tmp_path)
-#        shutil.copy2(testdata / 'nonmem' / 'pheno.dta', tmp_path)
-#        model = Model.create_model('pheno.mod')
-#        model.datainfo.path = tmp_path / 'pheno.dta'
-#        model = modeling.convert_model(model, 'nlmixr')
-# FIXME: Should not be needed
-#        model.filename_extension = '.R'
-#        modeling.fit(model, tool='nlmixr')
-#        assert model.modelfit_results.ofv == pytest.approx(732.58737)
+def test_fit_nlmixr(tmp_path, testdata):
+    from pharmpy.plugins.nlmixr import conf
+
+    if str(conf.rpath) == '.':
+        pytest.skip("No R selected in conf. Skipping nlmixr tests")
+    with TemporaryDirectoryChanger(tmp_path):
+        shutil.copy2(testdata / 'nonmem' / 'pheno.mod', tmp_path)
+        shutil.copy2(testdata / 'nonmem' / 'pheno.dta', tmp_path)
+        model = Model.create_model('pheno.mod')
+        model.datainfo.path = tmp_path / 'pheno.dta'
+        model = modeling.convert_model(model, 'nlmixr')
+        modeling.fit(model, tool='nlmixr')
+        assert model.modelfit_results.ofv == pytest.approx(732.58737)
+        assert model.modelfit_results.parameter_estimates['TVCL'] == pytest.approx(0.0058606648)

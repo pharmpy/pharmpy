@@ -213,6 +213,10 @@ def convert_model(model, to_format):
         new.dependent_variable = model.dependent_variable
         new.observation_transformation = model.observation_transformation
         try:
+            new.filename_extension = model.filename_extension
+        except AttributeError:
+            pass
+        try:
             if model.initial_individual_estimates is not None:
                 new.initial_individual_estimates = model.initial_individual_estimates.copy()
         except AttributeError:
