@@ -175,7 +175,11 @@ def run_modelsearch(args):
 def run_estmethod(args):
     from pharmpy.modeling.run import run_tool
 
-    run_tool('estmethod', methods=args.methods, model=args.model)
+    try:
+        methods = args.methods.split(" ")
+    except AttributeError:
+        methods = args.methods
+    run_tool('estmethod', methods=methods, model=args.model)
 
 
 def data_write(args):
@@ -903,10 +907,12 @@ parser_definition = [
                         'parents': [args_model_input],
                         'args': [
                             {
-                                'name': 'methods',
-                                'type': semicolon_list,
-                                'help': 'List of methods to try. Supported are: FOCE, IMP, IMPMAP, '
-                                'ITS, SAEM, LAPLACE.',
+                                'name': '--methods',
+                                'type': str,
+                                'default': None,
+                                'help': 'List of methods to try, mark group of methods in single '
+                                'quote separated by spaces. Supported are: FOCE, FO, IMP, '
+                                'IMPMAP, ITS, SAEM, LAPLACE, BAYES.',
                             },
                         ],
                     }
