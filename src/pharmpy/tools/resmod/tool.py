@@ -174,6 +174,7 @@ def _create_combined_model(input_model):
 
     sigma_prop = Parameter('sigma_prop', 1, lower=0)
     model.parameters.append(sigma_prop)
+    model.dataset['IPRED'].replace(0, 2.225e-307, inplace=True)
     ipred_min = model.dataset['IPRED'].min()
     sigma_add_init = ipred_min / 2
     sigma_add = Parameter('sigma_add', sigma_add_init, lower=0)
