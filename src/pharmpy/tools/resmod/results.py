@@ -73,7 +73,7 @@ def calculate_results(base_model, iiv_on_ruv, power, combined, tvar_models):
     df_final = pd.concat([df, df_tvar])
     df_final.set_index(['model', 'dvid', 'iteration'], inplace=True)
 
-    res = ResmodResults(models=df)
+    res = ResmodResults(models=df_final)
     return res
 
 
