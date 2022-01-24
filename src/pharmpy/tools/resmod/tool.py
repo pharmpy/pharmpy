@@ -147,7 +147,7 @@ def _create_iiv_on_ruv_model(input_model):
 def _create_power_model(input_model):
     base_model = input_model
     model = base_model.copy()
-    set_power_on_ruv(model, ipred='IPRED', lower_limit=None)
+    set_power_on_ruv(model, ipred='IPRED', lower_limit=None, zero_protection=True)
     model.name = 'power'
     return model
 
@@ -174,6 +174,7 @@ def _create_combined_model(input_model):
 
     sigma_prop = Parameter('sigma_prop', 1, lower=0)
     model.parameters.append(sigma_prop)
+    model.dataset['IPRED'].replace(0, 2.225e-307, inplace=True)
     ipred_min = model.dataset['IPRED'].min()
     sigma_add_init = ipred_min / 2
     sigma_add = Parameter('sigma_add', sigma_add_init, lower=0)
