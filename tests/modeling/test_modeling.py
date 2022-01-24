@@ -2343,11 +2343,15 @@ def test_update_inits_no_res(testdata):
     [
         (
             ['EPS(1)'],
-            'Y = F + EPS(1)*F**THETA(4)\n' 'IPRED=F+EPS(2)\n' 'IRES=DV-IPRED+EPS(3)',
+            'IF (F.EQ.0) F = 2.22500000000000E-307\n'
+            'Y = F + EPS(1)*F**THETA(4)\n'
+            'IPRED=F+EPS(2)\n'
+            'IRES=DV-IPRED+EPS(3)',
             '$THETA  (0.01,1) ; power1',
         ),
         (
             ['EPS(1)', 'EPS(2)'],
+            'IF (F.EQ.0) F = 2.22500000000000E-307\n'
             'Y = F + EPS(1)*F**THETA(4)\n'
             'IPRED = F + EPS(2)*F**THETA(5)\n'
             'IRES=DV-IPRED+EPS(3)',
@@ -2355,6 +2359,7 @@ def test_update_inits_no_res(testdata):
         ),
         (
             ['EPS(1)', 'EPS(3)'],
+            'IF (F.EQ.0) F = 2.22500000000000E-307\n'
             'Y = F + EPS(1)*F**THETA(4)\n'
             'IPRED = F + EPS(2)\n'  # FIXME: registers as different despite not being changed
             'IRES = DV - IPRED + EPS(3)*F**THETA(5)',
@@ -2362,6 +2367,7 @@ def test_update_inits_no_res(testdata):
         ),
         (
             None,
+            'IF (F.EQ.0) F = 2.22500000000000E-307\n'
             'Y = F + EPS(1)*F**THETA(4)\n'
             'IPRED = F + EPS(2)*F**THETA(5)\n'
             'IRES = DV - IPRED + EPS(3)*F**THETA(6)',
@@ -2398,7 +2404,7 @@ def test_set_power_on_ruv(testdata, epsilons, err_ref, theta_ref):
         model = Model.create_model(StringIO(model_more_eps))
         model.dataset = model_pheno.dataset
 
-        set_power_on_ruv(model, epsilons)
+        set_power_on_ruv(model, epsilons, zero_protection=True)
         model.update_source()
 
         rec_err = str(model.control_stream.get_records('ERROR')[0])

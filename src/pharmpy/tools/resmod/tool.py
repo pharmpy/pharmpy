@@ -147,7 +147,7 @@ def _create_iiv_on_ruv_model(input_model):
 def _create_power_model(input_model):
     base_model = input_model
     model = base_model.copy()
-    set_power_on_ruv(model, ipred='IPRED', lower_limit=None)
+    set_power_on_ruv(model, ipred='IPRED', lower_limit=None, zero_protection=True)
     model.name = 'power'
     return model
 
