@@ -35,7 +35,7 @@ pandas==1.3.5
 partd==1.2.0
 psutil==5.9.0
 Pygments==2.11.2
-pyparsing==3.0.6
+pyparsing==3.0.7
 pyreadr==0.4.4
 pyrsistent==0.18.1
 python-dateutil==2.8.2
