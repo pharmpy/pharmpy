@@ -119,7 +119,8 @@ def calculate_results(
 
     df = pd.DataFrame()
     for res in results:
-        df = df.append(res.parameter_estimates, ignore_index=True, sort=False)
+        df = pd.concat([df, res.parameter_estimates], axis=1, ignore_index=True, sort=False)
+    df = df.T
     df = df.reindex(results[0].parameter_estimates.index, axis=1)
     parameter_estimates = df.reset_index(drop=True)
 

@@ -90,7 +90,7 @@ def ofv_summary_dataframe(steps, final_included=True, iterations=True):
                 # all selected rows without ofv info
                 final = pd.DataFrame(columns=steps.columns, index=steps[steps['selected']].index)
             final['is_backward'] = 'Final included'
-            df = df.append(final)
+            df = pd.concat([df, final])
         df.rename(columns={'is_backward': 'direction'}, inplace=True)
         columns = ['direction', 'reduced_ofv', 'extended_ofv', 'ofv_drop']
         if 'pvalue' in steps.columns:

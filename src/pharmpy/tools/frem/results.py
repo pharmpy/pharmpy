@@ -440,7 +440,6 @@ def calculate_results(
     ofv = pd.DataFrame({'ofv': mod_ofvs}, index=mod_names)
     ofv.index.name = 'model_name'
     res.ofv = ofv
-
     add_parameter_inits_and_estimates(res, frem_model, intermediate_models)
     if intermediate_models:
         add_base_vs_frem_model(res, frem_model, intermediate_models[0])
@@ -468,25 +467,28 @@ def add_parameter_inits_and_estimates(res, frem_model, intermediate_models):
     df = pd.DataFrame()
 
     for model in intermediate_models:
-        try:
-            df = df.append(model.parameters.nonfixed_inits, ignore_index=True)
-        except AttributeError:
-            df = df.append(np.NaN)
-        try:
-            df = df.append(model.modelfit_results.parameter_estimates, ignore_index=True)
-        except AttributeError:
-            df = df.append(np.NaN)
+        df = pd.concat(
+            [
+                df,
+                pd.Series(model.parameters.nonfixed_inits),
+                model.modelfit_results.parameter_estimates,
+            ],
+            ignore_index=True,
+            axis=1,
+        )
         model_names.append(model.name)
 
-    try:
-        df = df.append(frem_model.parameters.nonfixed_inits, ignore_index=True)
-        df = df.reindex(columns=frem_model.parameters.nonfixed_inits.keys())
-    except AttributeError:
-        df = df.append(np.NaN)
-    try:
-        df = df.append(frem_model.modelfit_results.parameter_estimates, ignore_index=True)
-    except AttributeError:
-        df = df.append(np.NaN)
+    df = pd.concat(
+        [
+            df,
+            pd.Series(frem_model.parameters.nonfixed_inits),
+            frem_model.modelfit_results.parameter_estimates,
+        ],
+        ignore_index=True,
+        axis=1,
+    )
+    df = df.T
+    df = df.reindex(columns=frem_model.parameters.nonfixed_inits.keys())
     model_names.append(frem_model.name)
     index = pd.MultiIndex.from_product([model_names, ['init', 'estimate']], names=['model', 'type'])
     df.index = index
@@ -555,7 +557,7 @@ def calculate_results_from_samples(frem_model, continuous, categorical, parvecs,
         for s in frem_model.modelfit_results.parameter_estimates.index
         if symbols.symbol(s) in sigma_symb.free_symbols
     ]
-    parvecs = parvecs.append(frem_model.modelfit_results.parameter_estimates.loc[parameters])
+    parvecs.loc['estimates'] = frem_model.modelfit_results.parameter_estimates.loc[parameters]
 
     df = frem_model.dataset
     covariates = continuous + categorical
@@ -686,44 +688,46 @@ def calculate_results_from_samples(frem_model, continuous, categorical, parvecs,
     q95_5th = np.quantile(mu_bars_given_5th, 0.95, axis=0)
     q95_95th = np.quantile(mu_bars_given_95th, 0.95, axis=0)
 
-    df = pd.DataFrame(columns=['parameter', 'covariate', 'condition', 'p5', 'mean', 'p95'])
+    param_col = []
+    cov_col = []
+    cond_col = []
+    p5_col = []
+    mean_col = []
+    p95_col = []
 
     for param, cov in itertools.product(range(npars), range(ncovs)):
         if covariates[cov] in categorical:
-            df = df.append(
-                {
-                    'parameter': param_names[param],
-                    'covariate': covariates[cov],
-                    'condition': 'other',
-                    'p5': q5_5th[cov, param],
-                    'mean': means_5th[cov, param],
-                    'p95': q95_5th[cov, param],
-                },
-                ignore_index=True,
-            )
+            param_col.append(param_names[param])
+            cov_col.append(covariates[cov])
+            cond_col.append('other')
+            p5_col.append(q5_5th[cov, param])
+            mean_col.append(means_5th[cov, param])
+            p95_col.append(q95_5th[cov, param])
         else:
-            df = df.append(
-                {
-                    'parameter': param_names[param],
-                    'covariate': covariates[cov],
-                    'condition': '5th',
-                    'p5': q5_5th[cov, param],
-                    'mean': means_5th[cov, param],
-                    'p95': q95_5th[cov, param],
-                },
-                ignore_index=True,
-            )
-            df = df.append(
-                {
-                    'parameter': param_names[param],
-                    'covariate': covariates[cov],
-                    'condition': '95th',
-                    'p5': q5_95th[cov, param],
-                    'mean': means_95th[cov, param],
-                    'p95': q95_95th[cov, param],
-                },
-                ignore_index=True,
-            )
+            param_col.append(param_names[param])
+            cov_col.append(covariates[cov])
+            cond_col.append('5th')
+            p5_col.append(q5_5th[cov, param])
+            mean_col.append(means_5th[cov, param])
+            p95_col.append(q95_5th[cov, param])
+
+            param_col.append(param_names[param])
+            cov_col.append(covariates[cov])
+            cond_col.append('95th')
+            p5_col.append(q5_95th[cov, param])
+            mean_col.append(means_95th[cov, param])
+            p95_col.append(q95_95th[cov, param])
+
+    df = pd.DataFrame(
+        {
+            'parameter': param_col,
+            'covariate': cov_col,
+            'condition': cond_col,
+            'p5': p5_col,
+            'mean': mean_col,
+            'p95': p95_col,
+        }
+    )
     df.set_index(['parameter', 'covariate', 'condition'], inplace=True)
     res.covariate_effects = df
 
@@ -736,19 +740,20 @@ def calculate_results_from_samples(frem_model, continuous, categorical, parvecs,
         id_5th = np.nanquantile(mu_id_bars, 0.05, axis=0)
         id_95th = np.nanquantile(mu_id_bars, 0.95, axis=0)
 
-    df = pd.DataFrame(columns=['parameter', 'observed', 'p5', 'p95'])
+    param_col = []
+    obs_col = []
+    p5_col = []
+    p95_col = []
+    ind_col = []
     for curid, param in itertools.product(range(nids), range(npars)):
-        df = df.append(
-            pd.Series(
-                {
-                    'parameter': param_names[param],
-                    'observed': original_id_bar[curid, param],
-                    'p5': id_5th[curid, param],
-                    'p95': id_95th[curid, param],
-                },
-                name=covariate_baselines.index[curid],
-            )
-        )
+        param_col.append(param_names[param])
+        obs_col.append(original_id_bar[curid, param])
+        p5_col.append(id_5th[curid, param])
+        p95_col.append(id_95th[curid, param])
+        ind_col.append(covariate_baselines.index[curid])
+    df = pd.DataFrame(
+        {'parameter': param_col, 'observed': obs_col, 'p5': p5_col, 'p95': p95_col}, index=ind_col
+    )
     df.index.name = 'ID'
     df = df.set_index('parameter', append=True)
     res.individual_effects = df
@@ -758,7 +763,11 @@ def calculate_results_from_samples(frem_model, continuous, categorical, parvecs,
     sd_95th = np.sqrt(np.nanquantile(variability, 0.95, axis=0))
     original_sd = np.sqrt(original_variability)
 
-    df = pd.DataFrame(columns=['parameter', 'covariate', 'sd_observed', 'sd_5th', 'sd_95th'])
+    param_col = []
+    cov_col = []
+    sdobs_col = []
+    sd5th_col = []
+    sd95th_col = []
     for par, cond in itertools.product(range(npars), range(ncovs + 2)):
         if cond == 0:
             condition = 'none'
@@ -766,16 +775,20 @@ def calculate_results_from_samples(frem_model, continuous, categorical, parvecs,
             condition = 'all'
         else:
             condition = covariates[cond - 1]
-        df = df.append(
-            {
-                'parameter': param_names[par],
-                'covariate': condition,
-                'sd_observed': original_sd[cond, par],
-                'sd_5th': sd_5th[cond, par],
-                'sd_95th': sd_95th[cond, par],
-            },
-            ignore_index=True,
-        )
+        param_col.append(param_names[par])
+        cov_col.append(condition)
+        sdobs_col.append(original_sd[cond, par])
+        sd5th_col.append(sd_5th[cond, par])
+        sd95th_col.append(sd_95th[cond, par])
+    df = pd.DataFrame(
+        {
+            'parameter': param_col,
+            'covariate': cov_col,
+            'sd_observed': sdobs_col,
+            'sd_5th': sd5th_col,
+            'sd_95th': sd95th_col,
+        }
+    )
     df = df.set_index(['parameter', 'covariate'])
     res.unexplained_variability = df
 
@@ -1001,7 +1014,7 @@ def psn_frem_results(path, force_posdef_covmatrix=False, force_posdef_samples=50
     model1b = Model.create_model(path / 'm1' / 'model_1b.mod')
     model1 = intmods[0]
     model1b.modelfit_results = model1.modelfit_results
-    model1b.modelfit_results.parameter_estimates = model1b.parameters.nonfixed_inits
+    model1b.modelfit_results.parameter_estimates = pd.Series(model1b.parameters.nonfixed_inits)
     psn_reorder_base_model_inits(model1b, path)
 
     res = calculate_results(

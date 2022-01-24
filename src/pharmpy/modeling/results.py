@@ -227,9 +227,9 @@ def calculate_individual_parameter_statistics(model, exprs, rng=None):
             cases = {'median': dict()}
         else:
             dataset = model.dataset
-            q5 = dataset[{'ID'} | covariates].groupby('ID').median().quantile(0.05)
-            q95 = dataset[{'ID'} | covariates].groupby('ID').median().quantile(0.95)
-            median = dataset[{'ID'} | covariates].groupby('ID').median().median()
+            q5 = dataset[['ID'] + list(covariates)].groupby('ID').median().quantile(0.05)
+            q95 = dataset[['ID'] + list(covariates)].groupby('ID').median().quantile(0.95)
+            median = dataset[['ID'] + list(covariates)].groupby('ID').median().median()
             cases = {'p5': dict(q5), 'median': dict(median), 'p95': dict(q95)}
 
         df = pd.DataFrame(index=list(cases.keys()), columns=['mean', 'variance', 'stderr'])

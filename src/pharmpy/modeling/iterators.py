@@ -233,7 +233,7 @@ class Resample(DatasetIterator):
         for grp_id, new_grp in zip(random_groups, range(1, len(random_groups) + 1)):
             sub = self._df.loc[self._df[self._group] == grp_id].copy()
             sub[self._group] = new_grp
-            new_df = new_df.append(sub)
+            new_df = pd.concat([new_df, sub])
         new_df.reset_index(inplace=True, drop=True)
         if self._name:
             new_df.name = self._name
