@@ -198,7 +198,7 @@ def _create_dataset(input_model):
         ipredcol = 'IPRED'
     else:
         raise ValueError("Need CIPREDI or IPRED")
-    ipred = predictions[ipredcol].reset_index(drop=True).rename({ipredcol: 'IPRED'})
+    ipred = predictions[ipredcol].reset_index(drop=True)
     mdv = get_mdv(input_model)
     mdv.reset_index(drop=True)
     label_id = input_model.datainfo.id_column.name
@@ -207,7 +207,7 @@ def _create_dataset(input_model):
     tad = input_model.dataset['TAD'].squeeze().reset_index(drop=True)
     df = pd.concat([mdv, input_id, tad, ipred], axis=1)
     df = df[df['MDV'] == 0].reset_index(drop=True)
-    df = pd.concat([df, cwres], axis=1).rename(columns={'CWRES': 'DV'})
+    df = pd.concat([df, cwres], axis=1).rename(columns={'CWRES': 'DV', ipredcol: 'IPRED'})
     return df
 
 
