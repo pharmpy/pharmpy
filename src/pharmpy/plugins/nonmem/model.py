@@ -835,11 +835,12 @@ class Model(pharmpy.model.Model):
         path = Path(record.filename)
         if not path.is_absolute():
             try:
-                path = self.database.retrieve_file(self.name, path)
+                dbpath = self.database.retrieve_file(self.name, path)
             except FileNotFoundError:
-                path = None
-        if path is None:
-            return path
+                pass
+            else:
+                if dbpath is not None:
+                    path = dbpath
         try:
             return path.resolve()
         except FileNotFoundError:
