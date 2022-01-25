@@ -2,6 +2,7 @@ next version
 ------------
 
 * Add modeling.calculate_aic
+* Add modeling.print_model_code
 
 0.45.0 (2022-01-21)
 -------------------

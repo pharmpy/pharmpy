@@ -260,6 +260,57 @@ def generate_model_code(model):
     return model.model_code
 
 
+def print_model_code(model):
+    """Print the model code of the underlying model language
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import print_model_code, load_example_model
+    >>> model = load_example_model("pheno")
+    >>> print_model_code(model)
+    $PROBLEM PHENOBARB SIMPLE MODEL
+    $DATA 'pheno.dta' IGNORE=@
+    $INPUT ID TIME AMT WGT APGR DV FA1 FA2
+    $SUBROUTINE ADVAN1 TRANS2
+    <BLANKLINE>
+    $PK
+    IF(AMT.GT.0) BTIME=TIME
+    TAD=TIME-BTIME
+    TVCL=THETA(1)*WGT
+    TVV=THETA(2)*WGT
+    IF(APGR.LT.5) TVV=TVV*(1+THETA(3))
+    CL=TVCL*EXP(ETA(1))
+    V=TVV*EXP(ETA(2))
+    S1=V
+    <BLANKLINE>
+    $ERROR
+    W=F
+    Y=F+W*EPS(1)
+    IPRED=F
+    IRES=DV-IPRED
+    IWRES=IRES/W
+    <BLANKLINE>
+    $THETA (0,0.00469307) ; PTVCL
+    $THETA (0,1.00916) ; PTVV
+    $THETA (-.99,.1)
+    $OMEGA DIAGONAL(2)
+     0.0309626  ;       IVCL
+     0.031128  ;        IVV
+    <BLANKLINE>
+    $SIGMA 0.013241
+    $ESTIMATION METHOD=1 INTERACTION
+    $COVARIANCE UNCONDITIONAL
+    $TABLE ID TIME AMT WGT APGR IPRED PRED TAD CWRES NPDE NOAPPEND
+           NOPRINT ONEHEADER FILE=pheno.tab
+    """
+    print(model.model_code)
+
+
 def copy_model(model, name=None):
     """Copies model to a new model object
 
