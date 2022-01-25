@@ -364,9 +364,12 @@ def explicit_odes(model):
 
 
 def to_des(model, new):
+    old_des = model.control_stream.get_records('DES')
+    model.control_stream.remove_records(old_des)
     subs = model.control_stream.get_records('SUBROUTINES')[0]
     subs.remove_option_startswith('TRANS')
     subs.remove_option_startswith('ADVAN')
+    subs.remove_option('TOL')
     if new.solver:
         if new.solver == 'LSODA':
             advan = 'ADVAN13'
@@ -385,7 +388,8 @@ def to_des(model, new):
         subs.append_option(advan)
     else:
         subs.append_option('ADVAN6')
-    subs.append_option('TOL', 3)
+    if not subs.has_option('TOL'):
+        subs.append_option('TOL', 3)
     des = model.control_stream.insert_record('$DES\nDUMMY=0')
     des.from_odes(new)
     model.control_stream.remove_records(model.control_stream.get_records('MODEL'))

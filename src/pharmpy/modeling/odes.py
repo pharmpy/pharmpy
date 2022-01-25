@@ -138,6 +138,44 @@ def set_zero_order_elimination(model):
     return model
 
 
+def has_michaelis_menten_elimination(model):
+    """Check if the model describes Michaelis-Menten elimination
+
+    This function relies on heuristics and will not be able to detect all
+    possible ways of coding the Michalis-Menten elimination.
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+
+    Return
+    ------
+    Model
+        Reference to the same model
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> has_michaelis_menten_elimination(model)
+    False
+    >>> set_michaelis_menten_elimination(model)   # doctest: +ELLIPSIS
+    <...>
+    >>> has_michaelis_menten_elimination(model)
+    True
+    """
+    model.statements.to_compartmental_system()
+    odes = model.statements.ode_system
+    output = odes.output_compartment
+    central = odes.central_compartment
+    rate = odes.get_flow(central, output)
+    is_nonlinear = odes.t in rate.free_symbols
+    is_zero_order = 'POP_KM' in model.parameters and model.parameters['POP_KM'].fix
+    could_be_mixed = sympy.Symbol('CL') in rate.free_symbols
+    return is_nonlinear and not is_zero_order and not could_be_mixed
+
+
 def set_michaelis_menten_elimination(model):
     """Sets elimination to Michaelis-Menten.
 
@@ -171,6 +209,8 @@ def set_michaelis_menten_elimination(model):
     set_zero_order_elimination
 
     """
+    if has_michaelis_menten_elimination(model):
+        return model
     _do_michaelis_menten_elimination(model)
     return model
 
