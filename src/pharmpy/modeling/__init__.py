@@ -1,6 +1,5 @@
 from pharmpy.modeling.block_rvs import create_joint_distribution, split_joint_distribution
 from pharmpy.modeling.common import (
-        print_model_code,
     add_covariance_step,
     add_estimation_step,
     append_estimation_step_options,
@@ -13,6 +12,7 @@ from pharmpy.modeling.common import (
     get_config_path,
     get_model_covariates,
     load_example_model,
+    print_model_code,
     print_model_symbols,
     read_model,
     read_model_from_database,
