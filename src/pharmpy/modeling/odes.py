@@ -8,7 +8,7 @@ import pharmpy.symbols
 from pharmpy.model import ModelError
 from pharmpy.modeling.help_functions import _as_integer
 from pharmpy.parameter import Parameter
-from pharmpy.statements import Assignment, Bolus, CompartmentalSystem, Infusion
+from pharmpy.statements import Assignment, Bolus, Infusion
 
 from .common import remove_unused_parameters_and_rvs
 from .data import get_observations
@@ -214,6 +214,7 @@ def set_mixed_mm_fo_elimination(model):
 
 
 def _do_michaelis_menten_elimination(model, combined=False):
+    model.statements.to_compartmental_system()
     odes = model.statements.ode_system
     central = odes.central_compartment
     output = odes.output_compartment
@@ -295,6 +296,7 @@ def set_transit_compartments(model, n, keep_depot=True):
 
     """
     statements = model.statements
+    statements.to_compartmental_system()
     odes = statements.ode_system
     transits = odes.find_transit_compartments(statements)
     try:
@@ -443,6 +445,7 @@ def add_lag_time(model):
     remove_lag_time
 
     """
+    model.statements.to_compartmental_system()
     odes = model.statements.ode_system
     dosing_comp = odes.dosing_compartment
     old_lag_time = dosing_comp.lag_time
@@ -481,6 +484,7 @@ def remove_lag_time(model):
 
 
     """
+    model.statements.to_compartmental_system()
     odes = model.statements.ode_system
     dosing_comp = odes.dosing_compartment
     lag_time = dosing_comp.lag_time
@@ -527,9 +531,8 @@ def set_zero_order_absorption(model):
 
     """
     statements = model.statements
+    statements.to_compartmental_system()
     odes = statements.ode_system
-    if not isinstance(odes, CompartmentalSystem):
-        raise ValueError("Setting absorption is not supported for ExplicitODESystem")
     _disallow_infusion(model)
     depot = odes.find_depot(statements)
 
@@ -640,9 +643,8 @@ def set_bolus_absorption(model):
 
     """
     statements = model.statements
+    statements.to_compartmental_system()
     odes = statements.ode_system
-    if not isinstance(odes, CompartmentalSystem):
-        raise ValueError("Setting absorption is not supported for ExplicitODESystem")
     depot = odes.find_depot(statements)
     if depot:
         to_comp, _ = odes.get_compartment_outflows(depot)[0]
@@ -702,9 +704,8 @@ def set_seq_zo_fo_absorption(model):
 
     """
     statements = model.statements
+    statements.to_compartmental_system()
     odes = statements.ode_system
-    if not isinstance(odes, CompartmentalSystem):
-        raise ValueError("Setting absorption is not supported for ExplicitODESystem")
     _disallow_infusion(model)
     depot = odes.find_depot(statements)
 
@@ -870,6 +871,7 @@ def set_peripheral_compartments(model, n):
     remove_peripheral_compartment
 
     """
+    model.statements.to_compartmental_system()
     try:
         n = _as_integer(n)
     except TypeError:
@@ -940,6 +942,7 @@ def add_peripheral_compartment(model):
 
     """
     statements = model.statements
+    statements.to_compartmental_system()
     odes = statements.ode_system
     per = odes.peripheral_compartments
     n = len(per) + 1
@@ -1051,6 +1054,7 @@ def remove_peripheral_compartment(model):
 
     """
     statements = model.statements
+    statements.to_compartmental_system()
     odes = statements.ode_system
     peripherals = odes.peripheral_compartments
     if peripherals:
