@@ -1018,11 +1018,7 @@ class CompartmentalSystem(ODESystem):
         dod = nx.to_dict_of_dicts(self._g)
         size = len(self._g.nodes)
         f = sympy.zeros(size)
-        nodes = list(self._g.nodes)
-        output = self.output_compartment
-        # Put output last
-        nodes.remove(output)
-        nodes.append(output)
+        nodes = self._order_compartments()
         for i in range(0, size):
             from_comp = nodes[i]
             diagsum = 0
@@ -1051,8 +1047,31 @@ class CompartmentalSystem(ODESystem):
         ⎢         ⎥
         ⎣A_OUTPUT ⎦
         """
-        amts = [node.amount for node in self._g.nodes]
+        ordered_cmts = self._order_compartments()
+        amts = [cmt.amount for cmt in ordered_cmts]
         return sympy.Matrix(amts)
+
+    def _order_compartments(self):
+        """Return list of all compartments in canonical order"""
+        try:
+            dosecmt = self.dosing_compartment
+        except ValueError:
+            # Fallback for cases where no dose is available (yet)
+            nodes = [node for node in self._g.nodes]
+            return nodes
+        # Order compartments
+        output = self.output_compartment
+
+        def sortfunc(x):
+            a = list(x)
+            if output in a:
+                a.remove(output)
+            a = sorted(a, key=lambda x: x.name)
+            return iter(a)
+
+        nodes = list(nx.bfs_tree(self._g, dosecmt, sort_neighbors=sortfunc))
+        nodes.append(output)
+        return nodes
 
     @property
     def names(self):
@@ -1065,7 +1084,7 @@ class CompartmentalSystem(ODESystem):
         >>> model.statements.ode_system.names
         ['CENTRAL', 'OUTPUT']
         """
-        return [node.name for node in self._g.nodes]
+        return [cmt.name for cmt in self._order_compartments()]
 
     @property
     def zero_order_inputs(self):
