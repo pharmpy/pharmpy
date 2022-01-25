@@ -63,7 +63,7 @@ def exhaustive_stepwise(mfl, add_etas, etas_as_fullblock):
                 for task in wf_search.output_tasks
             }
         else:
-            actions = {'': (dict(), features.all_funcs())}
+            actions = {'': _find_possible_trans(wf_search, None, features)}
 
         for task, trans in actions.items():
             trans_previous, trans_possible = trans
@@ -94,7 +94,14 @@ def exhaustive_stepwise(mfl, add_etas, etas_as_fullblock):
                 wf_search.insert_workflow(wf_fit, predecessors=task_transformed)
 
                 model_tasks += wf_fit.output_tasks
-                model_features[model_name] = tuple(list(trans_previous.keys()) + [feat])
+
+                funcs = features.all_funcs()
+                tasks_upstream = wf_search.get_upstream_tasks(task_transformed)
+                tasks_upstream.reverse()
+                features_previous = [
+                    task.name for task in tasks_upstream if task.name in funcs.keys()
+                ]
+                model_features[model_name] = tuple(features_previous + [feat])
 
                 candidate_count += 1
                 no_of_trans += 1
@@ -106,11 +113,14 @@ def exhaustive_stepwise(mfl, add_etas, etas_as_fullblock):
 
 def _find_possible_trans(wf, task, features):
     funcs = features.all_funcs()
-    trans_previous = {
-        task.name: task.function
-        for task in wf.get_upstream_tasks(task)
-        if task.function in funcs.values()
-    }
+    if task:
+        trans_previous = {
+            task.name: task.function
+            for task in wf.get_upstream_tasks(task)
+            if task.function in funcs.values()
+        }
+    else:
+        trans_previous = dict()
 
     trans_possible = {
         feat: func
@@ -122,8 +132,12 @@ def _find_possible_trans(wf, task, features):
 
 
 def _is_allowed(feat_current, func_current, trans_previous, features):
-    if func_current in trans_previous.values():
+    if trans_previous and func_current in trans_previous.values():
         return False
+    if feat_current.startswith('PERIPHERALS'):
+        return _is_allowed_peripheral(func_current, trans_previous, features)
+    if not trans_previous:
+        return True
     if any(func in features.get_funcs_same_type(feat_current) for func in trans_previous.values()):
         return False
     not_supported_combo = {
@@ -139,6 +153,28 @@ def _is_allowed(feat_current, func_current, trans_previous, features):
         ):
             return False
     return True
+
+
+def _is_allowed_peripheral(func_current, trans_previous, features):
+    n_all = list(features.peripherals.args)
+    n = func_current.keywords['n']
+    if trans_previous:
+        n_prev = [
+            func.keywords['n']
+            for feat, func in trans_previous.items()
+            if feat.startswith('PERIPHERALS')
+        ]
+    else:
+        n_prev = []
+    if not n_prev:
+        if n == min(n_all):
+            return True
+        else:
+            return False
+    n_index = n_all.index(n)
+    if n_index > 0 and n_all[n_index - 1] < n:
+        return True
+    return False
 
 
 def copy(name, model):
@@ -174,6 +210,10 @@ def add_etas_to_func(feat, etas_as_fullblock, model):
             ]
 
     for param in parameters:
+        assignment = model.statements.find_assignment(param)
+        etas = {eta.name for eta in assignment.rhs_symbols}
+        if etas.intersection(model.random_variables.etas.names):
+            continue
         try:
             add_iiv(model, param, 'exp')
         except ValueError as e:

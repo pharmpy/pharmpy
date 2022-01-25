@@ -68,7 +68,7 @@ def test_exhaustive_stepwise_basic(tmp_path, testdata, mfl, no_of_models, best_m
     'mfl, as_fullblock, no_of_models, best_model_name, no_of_added_etas',
     [
         ('ABSORPTION(ZO)\nPERIPHERALS(1)', False, 4, 'modelsearch_candidate2', 2),
-        ('ABSORPTION(ZO)\nPERIPHERALS([1, 2])', False, 7, 'modelsearch_candidate2', 4),
+        ('ABSORPTION(ZO)\nPERIPHERALS([1, 2])', False, 8, 'modelsearch_candidate2', 4),
         ('LAGTIME()\nTRANSITS(1)', False, 2, 'mox2', 1),
         ('ABSORPTION(ZO)\nPERIPHERALS(1)', True, 4, 'modelsearch_candidate2', 2),
     ],
