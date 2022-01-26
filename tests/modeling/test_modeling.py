@@ -15,6 +15,7 @@ from pharmpy.modeling import (
     add_iov,
     add_lag_time,
     create_joint_distribution,
+    has_first_order_elimination,
     has_michaelis_menten_elimination,
     has_zero_order_elimination,
     load_example_model,
@@ -23,6 +24,7 @@ from pharmpy.modeling import (
     remove_lag_time,
     set_bolus_absorption,
     set_first_order_absorption,
+    set_first_order_elimination,
     set_iiv_on_ruv,
     set_michaelis_menten_elimination,
     set_mixed_mm_fo_elimination,
@@ -39,12 +41,21 @@ from pharmpy.modeling import (
 )
 
 
+def test_set_first_order_elimination(testdata):
+    model = Model.create_model(testdata / 'nonmem' / 'pheno.mod')
+    correct = model.model_code
+    set_first_order_elimination(model)
+    assert model.model_code == correct
+    assert has_first_order_elimination(model)
+
+
 def test_set_zero_order_elimination(testdata):
     model = Model.create_model(testdata / 'nonmem' / 'pheno.mod')
     assert not has_zero_order_elimination(model)
     set_zero_order_elimination(model)
     assert has_zero_order_elimination(model)
     assert not has_michaelis_menten_elimination(model)
+    assert not has_first_order_elimination(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV
@@ -81,6 +92,7 @@ def test_set_michaelis_menten_elimination(testdata):
     set_michaelis_menten_elimination(model)
     assert has_michaelis_menten_elimination(model)
     assert not has_zero_order_elimination(model)
+    assert not has_first_order_elimination(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV

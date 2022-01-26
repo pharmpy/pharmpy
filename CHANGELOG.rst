@@ -5,6 +5,7 @@ next version
 * Add modeling.print_model_code
 * Add modeling.has_michaelis_menten_elimination
 * Add modeling.has_zero_order_elimination
+* Add modeling.has_first_order_elimination
 
 0.45.0 (2022-01-21)
 -------------------
