@@ -48,6 +48,32 @@ def test_set_first_order_elimination(testdata):
     set_first_order_elimination(model)
     assert model.model_code == correct
     assert has_first_order_elimination(model)
+    set_zero_order_elimination(model)
+    set_first_order_elimination(model)
+    correct = """$PROBLEM PHENOBARB SIMPLE MODEL
+$DATA pheno.dta IGNORE=@
+$INPUT ID TIME AMT WGT APGR DV
+$SUBROUTINE ADVAN1 TRANS2
+
+$PK
+CL = THETA(2)
+V = THETA(1)*EXP(ETA(1))
+S1=V
+
+$ERROR
+Y=F+F*EPS(1)
+
+$THETA (0,1.00916) ; TVV
+$THETA  (0,0.00469307) ; POP_CL
+$OMEGA 0.031128  ; IVV
+$SIGMA 0.013241
+
+$ESTIMATION METHOD=1 INTERACTION
+"""
+    assert model.model_code == correct
+    set_michaelis_menten_elimination(model)
+    set_first_order_elimination(model)
+    assert model.model_code == correct
 
 
 def test_set_zero_order_elimination(testdata):

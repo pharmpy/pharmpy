@@ -95,7 +95,19 @@ def set_first_order_elimination(model):
 
     """
     if has_first_order_elimination(model):
-        return model
+        pass
+    elif has_zero_order_elimination(model) or has_michaelis_menten_elimination(model):
+        model.parameters['POP_CLMM'].name = 'POP_CL'
+        ass = model.statements.find_assignment('CLMM')
+        ass.symbol = 'CL'
+        ass.subs({'POP_CLMM': 'POP_CL'})
+        odes = model.statements.ode_system
+        central = odes.central_compartment
+        output = odes.output_compartment
+        odes.remove_flow(central, output)
+        odes.add_flow(central, output, sympy.Symbol('CL') / sympy.Symbol('V'))
+        model.statements.remove_symbol_definitions({sympy.Symbol('KM')}, odes)
+        remove_unused_parameters_and_rvs(model)
     return model
 
 
