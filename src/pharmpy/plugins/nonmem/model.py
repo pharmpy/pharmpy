@@ -101,6 +101,7 @@ class Model(pharmpy.model.Model):
         self._updated_etas_file = None
         self._dataset_updated = False
         self._modelfit_results = None
+        self._parent_model = None
         self.dependent_variable = S('Y')
         self.observation_transformation = self.dependent_variable
         self._old_observation_transformation = self.dependent_variable
