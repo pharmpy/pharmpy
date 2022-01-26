@@ -156,6 +156,17 @@ def set_zero_order_elimination(model):
         pass
     elif has_michaelis_menten_elimination(model):
         model.parameters['POP_KM'].fix = True
+    elif has_mixed_mm_fo_elimination(model):
+        model.parameters['POP_KM'].fix = True
+        odes = model.statements.ode_system
+        central = odes.central_compartment
+        output = odes.output_compartment
+        rate = odes.get_flow(central, output)
+        rate = rate.subs('CL', 0)
+        odes.remove_flow(central, output)
+        odes.add_flow(central, output, rate)
+        model.statements.remove_symbol_definitions({sympy.Symbol('CL')}, odes)
+        remove_unused_parameters_and_rvs(model)
     else:
         _do_michaelis_menten_elimination(model)
         obs = get_observations(model)
