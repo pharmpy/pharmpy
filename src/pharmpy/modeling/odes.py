@@ -104,16 +104,24 @@ def set_first_order_elimination(model):
         odes = model.statements.ode_system
         central = odes.central_compartment
         output = odes.output_compartment
+        v = sympy.Symbol('V')
+        rate = odes.get_flow(central, output)
+        if v not in rate.free_symbols:
+            v = sympy.Symbol('VC')
         odes.remove_flow(central, output)
-        odes.add_flow(central, output, sympy.Symbol('CL') / sympy.Symbol('V'))
+        odes.add_flow(central, output, sympy.Symbol('CL') / v)
         model.statements.remove_symbol_definitions({sympy.Symbol('KM')}, odes)
         remove_unused_parameters_and_rvs(model)
     elif has_mixed_mm_fo_elimination(model):
         odes = model.statements.ode_system
         central = odes.central_compartment
         output = odes.output_compartment
+        v = sympy.Symbol('V')
+        rate = odes.get_flow(central, output)
+        if v not in rate.free_symbols:
+            v = sympy.Symbol('VC')
         odes.remove_flow(central, output)
-        odes.add_flow(central, output, sympy.Symbol('CL') / sympy.Symbol('V'))
+        odes.add_flow(central, output, sympy.Symbol('CL') / v)
         model.statements.remove_symbol_definitions({sympy.Symbol('KM'), sympy.Symbol('CLMM')}, odes)
         remove_unused_parameters_and_rvs(model)
     return model
