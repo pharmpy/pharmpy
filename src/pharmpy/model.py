@@ -49,6 +49,7 @@ class Model:
         self.dependent_variable = sympy.Symbol('y')
         self.observation_transformation = self.dependent_variable
         self.modelfit_results = None
+        self.parent_model = None
 
     def __repr__(self):
         return f'<Pharmpy model object {self.name}>'
@@ -201,6 +202,15 @@ class Model:
         """Model type specific code"""
         raise NotImplementedError("Generic model does not implement the model_code property")
 
+    @property
+    def parent_model(self):
+        """Name of parent model"""
+        return self._parent_model
+
+    @parent_model.setter
+    def parent_model(self, value):
+        self._parent_model = value
+
     def read_modelfit_results(self):
         """Read in modelfit results"""
         raise NotImplementedError("Read modelfit results not implemented for generic models")
@@ -226,7 +236,9 @@ class Model:
 
     def copy(self):
         """Create a deepcopy of the model object"""
-        return copy.deepcopy(self)
+        model_copy = copy.deepcopy(self)
+        model_copy.parent_model = self.name
+        return model_copy
 
     @staticmethod
     def create_model(obj=None, **kwargs):

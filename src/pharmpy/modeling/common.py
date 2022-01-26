@@ -212,6 +212,7 @@ def convert_model(model, to_format):
         new.name = model.name
         new.dependent_variable = model.dependent_variable
         new.observation_transformation = model.observation_transformation
+        new.parent_model = model.name
         try:
             new.filename_extension = model.filename_extension
         except AttributeError:
