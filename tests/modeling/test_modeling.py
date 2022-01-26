@@ -413,6 +413,33 @@ $ESTIMATION METHOD=1 INTERACTION
 """
     assert model.model_code == correct
 
+    model = Model.create_model(StringIO(code))
+    model.dataset = load_example_model("pheno").dataset
+    set_zero_order_elimination(model)
+    set_mixed_mm_fo_elimination(model)
+    correct = """$PROBLEM PHENOBARB SIMPLE MODEL
+$DATA pheno.dta IGNORE=@
+$INPUT ID TIME AMT WGT APGR DV FA1 FA2
+$SUBROUTINE ADVAN6 TOL=3
+$MODEL COMPARTMENT=(CENTRAL DEFDOSE)
+$PK
+CL = THETA(4)
+VC = THETA(3)
+CLMM = THETA(2)
+KM = THETA(1)
+$DES
+DADT(1) = A(1)*(-CL/VC - CLMM*KM/(VC*(A(1)/VC + KM)))
+$ERROR
+Y=F+F*EPS(1)
+$THETA  (0,0.067) ; POP_KM
+$THETA  (0,0.00469307) ; POP_CLMM
+$THETA  (0,0.1) ; POP_VC
+$THETA  (0,0.1) ; POP_CL
+$SIGMA 0.013241
+$ESTIMATION METHOD=1 INTERACTION
+"""
+    assert model.model_code == correct
+
 
 def test_transit_compartments(testdata):
     model = Model.create_model(testdata / 'nonmem' / 'modeling' / 'pheno_advan1.mod')

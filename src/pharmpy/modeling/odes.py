@@ -410,8 +410,21 @@ def set_mixed_mm_fo_elimination(model):
 
     """
     if has_mixed_mm_fo_elimination(model):
-        return model
-    _do_michaelis_menten_elimination(model, combined=True)
+        pass
+    elif has_michaelis_menten_elimination(model) or has_zero_order_elimination(model):
+        model.parameters['POP_KM'].fix = False
+        odes = model.statements.ode_system
+        central = odes.central_compartment
+        output = odes.output_compartment
+        add_individual_parameter(model, 'CL')
+        rate = odes.get_flow(central, output)
+        odes.remove_flow(central, output)
+        v = sympy.Symbol('V')
+        if v not in rate.free_symbols:
+            v = sympy.Symbol('VC')
+        odes.add_flow(central, output, sympy.Symbol('CL') / v + rate)
+    else:
+        _do_michaelis_menten_elimination(model, combined=True)
     return model
 
 
