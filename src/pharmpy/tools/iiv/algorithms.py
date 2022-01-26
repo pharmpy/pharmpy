@@ -10,7 +10,7 @@ def brute_force_no_of_etas(model):
     wf = Workflow()
     model_features = dict()
 
-    param_names = [eta.parameter_names[0] for eta in model.random_variables.etas]
+    param_names = [eta.parameter_names[0] for eta in model.random_variables.iiv]
     param_combos = _get_combinations(param_names, include_single=True)
 
     for i, combo in enumerate(param_combos, 1):
@@ -66,7 +66,7 @@ def _get_combinations(names, include_single=False):
 
 
 def _get_possible_iiv_blocks(model):
-    eta_names = model.random_variables.etas.names
+    eta_names = model.random_variables.iiv.names
     eta_combos_single_blocks = _get_combinations(eta_names)
     if len(eta_names) < 4:
         return eta_combos_single_blocks, []

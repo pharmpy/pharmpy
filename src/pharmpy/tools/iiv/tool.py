@@ -68,10 +68,6 @@ def post_process_results(rankfunc, cutoff, model_features, *models):
     return res
 
 
-def _get_iiv_block(rvs):
-    return [eta.name for eta in rvs.iiv if len(eta.joint_names) > 0]
-
-
 class IIVResults(pharmpy.results.Results):
     def __init__(self, summary=None, best_model=None, start_model=None, models=None):
         self.summary = summary
