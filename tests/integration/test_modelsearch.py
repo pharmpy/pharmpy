@@ -61,8 +61,14 @@ def test_exhaustive_stepwise_basic(
         assert len(res.summary) == no_of_models
         assert len(res.models) == no_of_models
         assert res.best_model.name == best_model_name
+
         assert res.models[0].parent_model == 'mox2'
         assert res.models[-1].parent_model == last_model_parent_name
+        if last_model_parent_name != 'mox2':
+            last_model_features = res.summary.loc[res.models[-1].name]['features']
+            parent_model_features = res.summary.loc[last_model_parent_name]['features']
+            assert last_model_features[: len(parent_model_features)] == parent_model_features
+
         rundir = tmp_path / 'modelsearch_dir1'
         assert rundir.is_dir()
         assert len(list((rundir / 'models').iterdir())) == no_of_models + 1
