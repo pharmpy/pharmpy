@@ -33,17 +33,24 @@ def test_exhaustive(tmp_path, testdata):
 
 
 @pytest.mark.parametrize(
-    'mfl, no_of_models, best_model_name',
+    'mfl, no_of_models, best_model_name, last_model_parent_name',
     [
-        ('ABSORPTION(ZO)\nPERIPHERALS(1)', 4, 'modelsearch_candidate2'),
-        ('ABSORPTION(ZO)\nELIMINATION(ZO)', 4, 'mox2'),
-        ('ABSORPTION(ZO)\nTRANSITS(1)', 2, 'mox2'),
-        ('ABSORPTION([ZO,SEQ-ZO-FO])\nPERIPHERALS(1)', 7, 'modelsearch_candidate3'),
-        ('LAGTIME()\nTRANSITS(1)', 2, 'mox2'),
-        ('ABSORPTION(ZO)\nTRANSITS(3, *)', 3, 'mox2'),
+        ('ABSORPTION(ZO)\nPERIPHERALS(1)', 4, 'modelsearch_candidate2', 'modelsearch_candidate2'),
+        ('ABSORPTION(ZO)\nELIMINATION(ZO)', 4, 'mox2', 'modelsearch_candidate2'),
+        ('ABSORPTION(ZO)\nTRANSITS(1)', 2, 'mox2', 'mox2'),
+        (
+            'ABSORPTION([ZO,SEQ-ZO-FO])\nPERIPHERALS(1)',
+            7,
+            'modelsearch_candidate3',
+            'modelsearch_candidate3',
+        ),
+        ('LAGTIME()\nTRANSITS(1)', 2, 'mox2', 'mox2'),
+        ('ABSORPTION(ZO)\nTRANSITS(3, *)', 3, 'mox2', 'mox2'),
     ],
 )
-def test_exhaustive_stepwise_basic(tmp_path, testdata, mfl, no_of_models, best_model_name):
+def test_exhaustive_stepwise_basic(
+    tmp_path, testdata, mfl, no_of_models, best_model_name, last_model_parent_name
+):
     with TemporaryDirectoryChanger(tmp_path):
         shutil.copy2(testdata / 'nonmem' / 'models' / 'mox2.mod', tmp_path)
         shutil.copy2(testdata / 'nonmem' / 'models' / 'mx19B.csv', tmp_path)
@@ -54,6 +61,8 @@ def test_exhaustive_stepwise_basic(tmp_path, testdata, mfl, no_of_models, best_m
         assert len(res.summary) == no_of_models
         assert len(res.models) == no_of_models
         assert res.best_model.name == best_model_name
+        assert res.models[0].parent_model == 'mox2'
+        assert res.models[-1].parent_model == last_model_parent_name
         rundir = tmp_path / 'modelsearch_dir1'
         assert rundir.is_dir()
         assert len(list((rundir / 'models').iterdir())) == no_of_models + 1

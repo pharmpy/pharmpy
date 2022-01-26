@@ -86,7 +86,7 @@ class ModelSearchResults(pharmpy.results.Results):
 def create_summary(models, start_model, rankfunc, cutoff, model_features):
     rankfunc = getattr(rankfuncs, rankfunc)
 
-    res_data = {'dofv': [], 'features': [], 'rank': []}
+    res_data = {'parent_model': [], 'dofv': [], 'features': [], 'rank': []}
     model_names = []
 
     if cutoff is not None:
@@ -96,6 +96,7 @@ def create_summary(models, start_model, rankfunc, cutoff, model_features):
 
     for model in models:
         model_names.append(model.name)
+        res_data['parent_model'].append(model.parent_model)
         try:
             res_data['dofv'].append(start_model.modelfit_results.ofv - model.modelfit_results.ofv)
         except AttributeError:

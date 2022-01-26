@@ -9,10 +9,12 @@ from pharmpy.plugins.nonmem import conf, convert_model
 
 def execute_model(model):
     database = model.database
+    parent_model = model.parent_model
     model = convert_model(model)
     path = Path.cwd() / f'NONMEM_run_{model.name}-{uuid.uuid1()}'
     path.mkdir(parents=True, exist_ok=True)
     model = model.copy()
+    model.parent_model = parent_model
     model._dataset_updated = True  # Hack to get update_source to update IGNORE
     model.update_source(path=path / model.name)
     write_model(model, path=path, force=True)
