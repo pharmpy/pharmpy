@@ -19,7 +19,7 @@ from pharmpy.tools.modelsearch.mfl import ModelFeatures
             'exhaustive_stepwise',
             'ABSORPTION([ZO,SEQ-ZO-FO])\nPERIPHERALS(1)',
             7,
-            ('PERIPHERALS(1)', 'ABSORPTION(SEQ-ZO-FO)'),
+            ('PERIPHERALS(1)', 'ABSORPTION(ZO)'),
         ),
         (
             'exhaustive_stepwise',

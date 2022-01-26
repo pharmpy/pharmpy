@@ -13,6 +13,7 @@
 
 import functools
 import itertools
+from collections import OrderedDict
 
 from lark import Lark
 from lark.visitors import Interpreter
@@ -207,7 +208,9 @@ class ModelFeatures:
     def all_funcs(self):
         funcs = dict()
         for feat in self._all_features:
-            funcs.update(feat._funcs)
+            # For absorption the order seems to be random
+            feat_funcs = OrderedDict(sorted(feat._funcs.items(), key=lambda t: t[0]))
+            funcs.update(feat_funcs)
         return funcs
 
     def next_funcs(self, have):
