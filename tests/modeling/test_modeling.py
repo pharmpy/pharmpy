@@ -152,6 +152,34 @@ $ESTIMATION METHOD=1 INTERACTION
     set_michaelis_menten_elimination(model)
     assert model.model_code == correct
 
+    set_zero_order_elimination(model)
+    correct = """$PROBLEM PHENOBARB SIMPLE MODEL
+$DATA pheno.dta IGNORE=@
+$INPUT ID TIME AMT WGT APGR DV
+$SUBROUTINE ADVAN6 TOL=3
+
+$MODEL COMPARTMENT=(CENTRAL DEFDOSE)
+$PK
+CLMM = THETA(3)
+KM = THETA(2)
+V = THETA(1)*EXP(ETA(1))
+S1=V
+
+$DES
+DADT(1) = -A(1)*CLMM*KM/(V*(A(1)/V + KM))
+$ERROR
+Y=F+F*EPS(1)
+
+$THETA (0,1.00916) ; TVV
+$THETA  (0,135.8) FIX ; POP_KM
+$THETA  (0,0.00469307) ; POP_CLMM
+$OMEGA 0.031128  ; IVV
+$SIGMA 0.013241
+
+$ESTIMATION METHOD=1 INTERACTION
+"""
+    assert model.model_code == correct
+
 
 def test_set_michaelis_menten_elimination_from_k(testdata):
     code = """$PROBLEM PHENOBARB SIMPLE MODEL

@@ -133,12 +133,15 @@ def set_zero_order_elimination(model):
 
     """
     if has_zero_order_elimination(model):
-        return model
-    _do_michaelis_menten_elimination(model)
-    obs = get_observations(model)
-    init = obs.min() / 100  # 1% of smallest observation
-    model.parameters['POP_KM'].init = init
-    model.parameters['POP_KM'].fix = True
+        pass
+    elif has_michaelis_menten_elimination(model):
+        model.parameters['POP_KM'].fix = True
+    else:
+        _do_michaelis_menten_elimination(model)
+        obs = get_observations(model)
+        init = obs.min() / 100  # 1% of smallest observation
+        model.parameters['POP_KM'].init = init
+        model.parameters['POP_KM'].fix = True
     return model
 
 
