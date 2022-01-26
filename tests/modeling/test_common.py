@@ -271,6 +271,7 @@ def test_copy_model():
     assert id(model.parameters) != id(run1.parameters)
     run2 = copy_model(run1, "run2")
     assert run2.name == "run2"
+    assert run2.parent_model == "pheno"
 
 
 def test_convert_model():
