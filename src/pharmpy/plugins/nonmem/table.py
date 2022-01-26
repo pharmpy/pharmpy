@@ -16,6 +16,8 @@ class NONMEMTableFile:
             path = Path(path)
             suffix = path.suffix
             self.tables = []
+            if path.stat().st_size == 0:
+                raise OSError("Empty table file")
             with open(str(path), 'r') as tablefile:
                 if notitle:
                     self._add_table(tablefile.read().splitlines(), notitle=notitle, nolabel=nolabel)
