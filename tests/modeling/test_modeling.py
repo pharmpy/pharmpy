@@ -16,6 +16,7 @@ from pharmpy.modeling import (
     add_lag_time,
     create_joint_distribution,
     has_michaelis_menten_elimination,
+    has_zero_order_elimination,
     load_example_model,
     remove_iiv,
     remove_iov,
@@ -40,7 +41,10 @@ from pharmpy.modeling import (
 
 def test_set_zero_order_elimination(testdata):
     model = Model.create_model(testdata / 'nonmem' / 'pheno.mod')
+    assert not has_zero_order_elimination(model)
     set_zero_order_elimination(model)
+    assert has_zero_order_elimination(model)
+    assert not has_michaelis_menten_elimination(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV
@@ -67,6 +71,8 @@ $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION
 """
     assert model.model_code == correct
+    set_zero_order_elimination(model)
+    assert model.model_code == correct
 
 
 def test_set_michaelis_menten_elimination(testdata):
@@ -74,6 +80,7 @@ def test_set_michaelis_menten_elimination(testdata):
     assert not has_michaelis_menten_elimination(model)
     set_michaelis_menten_elimination(model)
     assert has_michaelis_menten_elimination(model)
+    assert not has_zero_order_elimination(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV
