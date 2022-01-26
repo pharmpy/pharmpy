@@ -223,7 +223,7 @@ def _time_after_dose(model):
 def _create_best_model(model, res, groups=4):
     model = model.copy()
     _time_after_dose(model)
-    if any(res.models['dofv'] > 3.84):
+    if any(res.models['dofv'] > 6.64):
         idx = res.models['dofv'].idxmax()
         name = idx[0]
         if name == 'power':
