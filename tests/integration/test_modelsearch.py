@@ -36,6 +36,7 @@ def test_exhaustive(tmp_path, testdata):
     'mfl, no_of_models, best_model_name',
     [
         ('ABSORPTION(ZO)\nPERIPHERALS(1)', 4, 'modelsearch_candidate2'),
+        ('ABSORPTION(ZO)\nELIMINATION(ZO)', 4, 'mox2'),
         ('ABSORPTION(ZO)\nTRANSITS(1)', 2, 'mox2'),
         ('ABSORPTION([ZO,SEQ-ZO-FO])\nPERIPHERALS(1)', 7, 'modelsearch_candidate3'),
         ('LAGTIME()\nTRANSITS(1)', 2, 'mox2'),
@@ -52,10 +53,6 @@ def test_exhaustive_stepwise_basic(tmp_path, testdata, mfl, no_of_models, best_m
 
         assert len(res.summary) == no_of_models
         assert len(res.models) == no_of_models
-        assert all(
-            model.modelfit_results and not np.isnan(model.modelfit_results.ofv)
-            for model in res.models
-        )
         assert res.best_model.name == best_model_name
         rundir = tmp_path / 'modelsearch_dir1'
         assert rundir.is_dir()
@@ -68,6 +65,8 @@ def test_exhaustive_stepwise_basic(tmp_path, testdata, mfl, no_of_models, best_m
     'mfl, as_fullblock, no_of_models, best_model_name, no_of_added_etas',
     [
         ('ABSORPTION(ZO)\nPERIPHERALS(1)', False, 4, 'modelsearch_candidate2', 2),
+        ('ABSORPTION(ZO)\nELIMINATION(ZO)', False, 4, 'mox2', 1),
+        ('ABSORPTION(ZO)\nELIMINATION(MIX-FO-MM)', False, 4, 'modelsearch_candidate2', 2),
         ('ABSORPTION(ZO)\nPERIPHERALS([1, 2])', False, 8, 'modelsearch_candidate2', 4),
         ('LAGTIME()\nTRANSITS(1)', False, 2, 'mox2', 1),
         ('ABSORPTION(ZO)\nPERIPHERALS(1)', True, 4, 'modelsearch_candidate2', 2),

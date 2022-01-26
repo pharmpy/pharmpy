@@ -195,6 +195,9 @@ def add_etas_to_func(feat, etas_as_fullblock, model):
     eta_dict = {
         'ABSORPTION(ZO)': ['MAT'],
         'ABSORPTION(SEQ-ZO-FO)': ['MAT', 'MDT'],
+        'ELIMINATION(ZO)': ['CLMM', 'KM'],
+        'ELIMINATION(MM)': ['CLMM', 'KM'],
+        'ELIMINATION(MIX-FO-MM)': ['CLMM', 'KM'],
         'LAGTIME()': ['MDT'],
     }
     parameters = []
