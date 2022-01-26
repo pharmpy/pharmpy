@@ -218,6 +218,44 @@ def has_zero_order_elimination(model):
     return is_nonlinear and is_zero_order and not could_be_mixed
 
 
+def has_mixed_mm_fo_elimination(model):
+    """Check if the model describes mixed Michaelis-Menten and first order elimination
+
+    This function relies on heuristics and will not be able to detect all
+    possible ways of coding the mixed Michalis-Menten and first order elimination.
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+
+    Return
+    ------
+    bool
+        True if model has describes Michaelis-Menten elimination
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> has_mixed_mm_fo_elimination(model)
+    False
+    >>> set_mixed_mm_fo_elimination(model)   # doctest: +ELLIPSIS
+    <...>
+    >>> has_mixed_mm_fo_elimination(model)
+    True
+    """
+    model.statements.to_compartmental_system()
+    odes = model.statements.ode_system
+    output = odes.output_compartment
+    central = odes.central_compartment
+    rate = odes.get_flow(central, output)
+    is_nonlinear = odes.t in rate.free_symbols
+    is_zero_order = 'POP_KM' in model.parameters and model.parameters['POP_KM'].fix
+    could_be_mixed = sympy.Symbol('CL') in rate.free_symbols
+    return is_nonlinear and not is_zero_order and could_be_mixed
+
+
 def has_first_order_elimination(model):
     """Check if the model describes first order elimination
 
@@ -324,6 +362,8 @@ def set_mixed_mm_fo_elimination(model):
     set_michaelis_menten_elimination
 
     """
+    if has_mixed_mm_fo_elimination(model):
+        return model
     _do_michaelis_menten_elimination(model, combined=True)
     return model
 

@@ -6,6 +6,7 @@ next version
 * Add modeling.has_michaelis_menten_elimination
 * Add modeling.has_zero_order_elimination
 * Add modeling.has_first_order_elimination
+* Add modeling.has_mixed_mm_fo_elimination
 
 0.45.0 (2022-01-21)
 -------------------

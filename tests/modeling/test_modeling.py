@@ -10,6 +10,7 @@ from pyfakefs.fake_filesystem_unittest import Patcher
 
 from pharmpy import Model
 from pharmpy.modeling import (
+        has_mixed_mm_fo_elimination,
     add_covariate_effect,
     add_iiv,
     add_iov,
@@ -56,6 +57,7 @@ def test_set_zero_order_elimination(testdata):
     assert has_zero_order_elimination(model)
     assert not has_michaelis_menten_elimination(model)
     assert not has_first_order_elimination(model)
+    assert not has_mixed_mm_fo_elimination(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV
@@ -93,6 +95,7 @@ def test_set_michaelis_menten_elimination(testdata):
     assert has_michaelis_menten_elimination(model)
     assert not has_zero_order_elimination(model)
     assert not has_first_order_elimination(model)
+    assert not has_mixed_mm_fo_elimination(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV
@@ -182,7 +185,9 @@ $ESTIMATION METHOD=1 INTERACTION
 """
     model = Model.create_model(StringIO(code))
     model.dataset = load_example_model("pheno").dataset
+    assert not has_mixed_mm_fo_elimination(model)
     set_mixed_mm_fo_elimination(model)
+    assert has_mixed_mm_fo_elimination(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
@@ -207,6 +212,8 @@ $OMEGA 0.031128  ; IVV
 $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION
 """
+    assert model.model_code == correct
+    set_mixed_mm_fo_elimination(model)
     assert model.model_code == correct
 
 
