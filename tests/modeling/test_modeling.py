@@ -319,6 +319,29 @@ $ESTIMATION METHOD=1 INTERACTION
     assert model.model_code == correct
     set_mixed_mm_fo_elimination(model)
     assert model.model_code == correct
+    set_michaelis_menten_elimination(model)
+    correct = """$PROBLEM PHENOBARB SIMPLE MODEL
+$DATA pheno.dta IGNORE=@
+$INPUT ID TIME AMT WGT APGR DV FA1 FA2
+$SUBROUTINE ADVAN6 TOL=3
+$MODEL COMPARTMENT=(CENTRAL DEFDOSE)
+$PK
+CLMM = THETA(3)
+KM = THETA(2)
+V = THETA(1)*EXP(ETA(1))
+S1=V
+$DES
+DADT(1) = -A(1)*CLMM*KM/(V*(A(1)/V + KM))
+$ERROR
+Y=F+F*EPS(1)
+$THETA (0,1.00916) ; TVV
+$THETA  (0,135.8) ; POP_KM
+$THETA  (0,0.002346535) ; POP_CLMM
+$OMEGA 0.031128  ; IVV
+$SIGMA 0.013241
+$ESTIMATION METHOD=1 INTERACTION
+"""
+    assert model.model_code == correct
 
 
 def test_combined_mm_fo_elimination_from_k(testdata):
