@@ -1,5 +1,7 @@
 import re
+import shutil
 import sys
+import zipfile
 from pathlib import Path
 
 
@@ -144,7 +146,17 @@ def pharmpy_wrapper():
 
 
 def create_results(path, **kwargs):
+    path = Path(path)
     name = tool_name(path)
+    m1zip = path / "m1.zip"
+    m1 = path / "m1"
+    if m1zip.is_file() and not m1.is_dir():
+        unzipped = True
+        with zipfile.ZipFile(m1zip, 'r') as zip_ref:
+            zip_ref.extractall(path)
+    else:
+        unzipped = False
+
     # FIXME: Do something automatic here
     if name == 'qa':
         from pharmpy.tools.qa.results import psn_qa_results
@@ -185,4 +197,8 @@ def create_results(path, **kwargs):
         res = psn_crossval_results(path, **kwargs)
     else:
         raise ValueError("Not a valid run directory")
+
+    if unzipped:
+        shutil.rmtree(path / 'm1')
+
     return res
