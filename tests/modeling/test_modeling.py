@@ -10,7 +10,6 @@ from pyfakefs.fake_filesystem_unittest import Patcher
 
 from pharmpy import Model
 from pharmpy.modeling import (
-        has_mixed_mm_fo_elimination,
     add_covariate_effect,
     add_iiv,
     add_iov,
@@ -18,6 +17,7 @@ from pharmpy.modeling import (
     create_joint_distribution,
     has_first_order_elimination,
     has_michaelis_menten_elimination,
+    has_mixed_mm_fo_elimination,
     has_zero_order_elimination,
     load_example_model,
     remove_iiv,
@@ -85,6 +85,33 @@ $ESTIMATION METHOD=1 INTERACTION
 """
     assert model.model_code == correct
     set_zero_order_elimination(model)
+    assert model.model_code == correct
+    set_michaelis_menten_elimination(model)
+    correct = """$PROBLEM PHENOBARB SIMPLE MODEL
+$DATA pheno.dta IGNORE=@
+$INPUT ID TIME AMT WGT APGR DV
+$SUBROUTINE ADVAN6 TOL=3
+
+$MODEL COMPARTMENT=(CENTRAL DEFDOSE)
+$PK
+CLMM = THETA(3)
+KM = THETA(2)
+V = THETA(1)*EXP(ETA(1))
+S1=V
+
+$DES
+DADT(1) = -A(1)*CLMM*KM/(V*(A(1)/V + KM))
+$ERROR
+Y=F+F*EPS(1)
+
+$THETA (0,1.00916) ; TVV
+$THETA  (0,0.067) ; POP_KM
+$THETA  (0,0.00469307) ; POP_CLMM
+$OMEGA 0.031128  ; IVV
+$SIGMA 0.013241
+
+$ESTIMATION METHOD=1 INTERACTION
+"""
     assert model.model_code == correct
 
 

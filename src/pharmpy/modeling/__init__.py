@@ -69,12 +69,12 @@ from pharmpy.modeling.ml import (
     predict_outliers,
 )
 from pharmpy.modeling.odes import (
-    has_mixed_mm_fo_elimination,
     add_individual_parameter,
     add_lag_time,
     add_peripheral_compartment,
     has_first_order_elimination,
     has_michaelis_menten_elimination,
+    has_mixed_mm_fo_elimination,
     has_zero_order_absorption,
     has_zero_order_elimination,
     remove_lag_time,

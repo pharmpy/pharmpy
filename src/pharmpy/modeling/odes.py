@@ -323,8 +323,11 @@ def set_michaelis_menten_elimination(model):
 
     """
     if has_michaelis_menten_elimination(model):
-        return model
-    _do_michaelis_menten_elimination(model)
+        pass
+    elif has_zero_order_elimination(model):
+        model.parameters['POP_KM'].fix = False
+    else:
+        _do_michaelis_menten_elimination(model)
     return model
 
 
