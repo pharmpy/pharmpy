@@ -898,6 +898,8 @@ def update_estimation(model):
     old_records = model.control_stream.get_records('ESTIMATION')
     i = 0
     new_records = []
+
+    prev = (None, None)
     for op, est in delta:
         if op == '+':
             est_code = '$ESTIMATION'
@@ -923,9 +925,19 @@ def update_estimation(model):
                     est_code += ' EONLY=1'
                     protected_attributes += ['EONLY']
             if est.maximum_evaluations is not None:
-                est_code += f' MAXEVAL={est.maximum_evaluations}'
-                if set(protected_attributes).intersection({'MAXEVALS', 'MAXEVAL'}):
-                    raise ValueError('MAXEVAL already set by evaluation=True')
+                op_prev, est_prev = prev
+                if (
+                    est.method.startswith('FO')
+                    and op_prev == '-'
+                    and est.evaluation
+                    and not est_prev.evaluation
+                    and est_prev.maximum_evaluations == est.maximum_evaluations
+                ):
+                    pass
+                else:
+                    if set(protected_attributes).intersection({'MAXEVALS', 'MAXEVAL'}):
+                        raise ValueError('MAXEVAL already set by evaluation=True')
+                    est_code += f' MAXEVAL={est.maximum_evaluations}'
                 protected_attributes += ['MAXEVALS', 'MAXEVAL']
             if est.isample is not None:
                 est_code += f' ISAMPLE={est.isample}'
@@ -959,6 +971,7 @@ def update_estimation(model):
         else:
             new_records.append(old_records[i])
             i += 1
+        prev = (op, est)
     if old_records:
         model.control_stream.replace_records(old_records, new_records)
     else:

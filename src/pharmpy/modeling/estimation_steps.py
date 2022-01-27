@@ -41,6 +41,7 @@ def set_estimation_step(model, method, idx=0, **kwargs):
     append_estimation_step_options
     add_covariance_step
     remove_covariance_step
+    set_evaluation_step
 
     """
     try:
@@ -96,6 +97,7 @@ def add_estimation_step(model, method, idx=None, **kwargs):
     append_estimation_step_options
     add_covariance_step
     remove_covariance_step
+    set_evaluation_step
 
     """
     meth = EstimationStep(method, **kwargs)
@@ -144,6 +146,7 @@ def remove_estimation_step(model, idx):
     append_estimation_step_options
     add_covariance_step
     remove_covariance_step
+    set_evaluation_step
 
     """
     try:
@@ -192,6 +195,7 @@ def append_estimation_step_options(model, tool_options, idx):
     remove_estimation_step
     add_covariance_step
     remove_covariance_step
+    set_evaluation_step
 
     """
     try:
@@ -235,6 +239,7 @@ def add_covariance_step(model):
     remove_estimation_step
     append_estimation_step_options
     remove_covariance_step
+    set_evaluation_step
 
     """
     model.estimation_steps[-1].cov = True
@@ -271,7 +276,54 @@ def remove_covariance_step(model):
     remove_estimation_step
     append_estimation_step_options
     add_covariance_step
+    set_evaluation_step
 
     """
     model.estimation_steps[-1].cov = False
+    return model
+
+
+def set_evaluation_step(model, idx=-1):
+    """Set estimation step
+
+    Sets estimation step for a model. Methods currently supported are:
+        FO, FOCE, ITS, LAPLACE, IMPMAP, IMP, SAEM, BAYES
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+    idx : int
+        index of estimation step, default is -1 (last estimation step)
+
+    Returns
+    -------
+    Model
+        Reference to the same model object
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> set_evaluation_step(model)   # doctest: +ELLIPSIS
+    <...>
+    >>> model.estimation_steps[0]   # doctest: +ELLIPSIS
+    EstimationStep("FOCE", interaction=True, cov=True, evaluation=True, ...
+
+    See also
+    --------
+    set_estimation_step
+    add_estimation_step
+    remove_estimation_step
+    append_estimation_step_options
+    add_covariance_step
+    remove_covariance_step
+
+    """
+    try:
+        idx = _as_integer(idx)
+    except TypeError:
+        raise TypeError(f'Index must be integer: {idx}')
+
+    model.estimation_steps[idx].evaluation = True
     return model

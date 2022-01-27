@@ -1,3 +1,5 @@
+from io import StringIO
+
 import pytest
 
 from pharmpy import Model
@@ -9,6 +11,7 @@ from pharmpy.modeling import (
     remove_covariance_step,
     remove_estimation_step,
     set_estimation_step,
+    set_evaluation_step,
 )
 
 
@@ -105,3 +108,24 @@ def test_append_estimation_step_options(testdata):
         model.model_code.split('\n')[-2]
         == '$ESTIMATION METHOD=COND INTER MAXEVAL=9990 PRINT=2 POSTHOC SADDLE_RESET=1'
     )
+
+
+def test_set_evaluation_step(testdata):
+    model = Model.create_model(
+        StringIO(
+            '''$PROBLEM base model
+$INPUT ID DV TIME
+$DATA file.csv IGNORE=@
+
+$PRED
+Y = THETA(1) + ETA(1) + ERR(1)
+
+$THETA 0.1
+$OMEGA 0.01
+$SIGMA 1
+$ESTIMATION METHOD=COND INTERACTION MAXEVAL=999999
+'''
+        )
+    )
+    set_evaluation_step(model)
+    assert model.model_code.split('\n')[-2] == '$ESTIMATION METHOD=COND INTER MAXEVAL=0'

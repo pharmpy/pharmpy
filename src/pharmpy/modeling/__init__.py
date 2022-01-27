@@ -59,6 +59,7 @@ from pharmpy.modeling.estimation_steps import (
     remove_covariance_step,
     remove_estimation_step,
     set_estimation_step,
+    set_evaluation_step,
 )
 from pharmpy.modeling.eta_additions import add_iiv, add_iov
 from pharmpy.modeling.eta_transformations import (
@@ -239,6 +240,7 @@ __all__ = [
     'set_combined_error_model',
     'set_dtbs_error_model',
     'set_estimation_step',
+    'set_evaluation_step',
     'set_first_order_absorption',
     'set_first_order_elimination',
     'set_iiv_on_ruv',
