@@ -1,5 +1,5 @@
-next version
-------------
+0.46.0 (2022-01-27)
+-------------------
 
 * Add modeling.calculate_aic
 * Add modeling.print_model_code
@@ -7,6 +7,11 @@ next version
 * Add modeling.has_zero_order_elimination
 * Add modeling.has_first_order_elimination
 * Add modeling.has_mixed_mm_fo_elimination
+* Add parent_model attribute to Model object
+* Support non-linear elimination in search space in modelsearch tool
+* Rename summary -> summary_tool in IIV and modelsearch tool, add summary_models
+* Update modelsearch algorithm to only run 2C if previous model is 1C
+* Fix bug in transformation order in features column of summary in modelsearch tool
 
 0.45.0 (2022-01-21)
 -------------------
