@@ -339,7 +339,12 @@ def read_nonmem_dataset(
 
     # Make ID int if possible
     if 'ID' in df.columns:
-        df['ID'] = df['ID'].convert_dtypes()
+        idcol = 'ID'
     elif 'L1' in df.columns:
-        df['L1'] = df['L1'].convert_dtypes()
+        idcol = 'L1'
+    else:
+        idcol = None
+    if idcol:
+        if all(df[idcol].astype('int32') == df[idcol]):
+            df[idcol] = df[idcol].astype('int32')
     return df
