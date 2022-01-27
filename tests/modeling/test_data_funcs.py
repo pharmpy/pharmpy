@@ -167,8 +167,8 @@ def test_drop_columns():
 def test_drop_dropped_columns():
     m = model.copy()
     drop_dropped_columns(m)
-    correct = ['ID', 'TIME', 'AMT', 'WGT', 'DV']
+    correct = ['ID', 'TIME', 'AMT', 'WGT', 'APGR', 'DV']
     assert list(m.dataset.columns) == correct
     drop_columns(m, ['ID', 'TIME', 'AMT'], mark=True)
     drop_dropped_columns(m)
-    assert list(m.dataset.columns) == ['WGT', 'DV']
+    assert list(m.dataset.columns) == ['WGT', 'APGR', 'DV']
