@@ -1,8 +1,5 @@
 from pharmpy.modeling.block_rvs import create_joint_distribution, split_joint_distribution
 from pharmpy.modeling.common import (
-    add_covariance_step,
-    add_estimation_step,
-    append_estimation_step_options,
     bump_model_number,
     convert_model,
     copy_model,
@@ -17,10 +14,7 @@ from pharmpy.modeling.common import (
     read_model,
     read_model_from_database,
     read_model_from_string,
-    remove_covariance_step,
-    remove_estimation_step,
     remove_unused_parameters_and_rvs,
-    set_estimation_step,
     set_initial_estimates,
     set_name,
     unfix_parameters,
@@ -57,6 +51,14 @@ from pharmpy.modeling.error import (
     set_time_varying_error_model,
     set_weighted_error_model,
     use_thetas_for_error_stdev,
+)
+from pharmpy.modeling.estimation_steps import (
+    add_covariance_step,
+    add_estimation_step,
+    append_estimation_step_options,
+    remove_covariance_step,
+    remove_estimation_step,
+    set_estimation_step,
 )
 from pharmpy.modeling.eta_additions import add_iiv, add_iov
 from pharmpy.modeling.eta_transformations import (
