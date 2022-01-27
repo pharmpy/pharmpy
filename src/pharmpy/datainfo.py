@@ -518,6 +518,7 @@ class DataInfo(MutableSequence):
                 continuous=col.get('continuous', True),
                 unit=col.get('unit', sympy.Integer(1)),
                 categories=col.get('categories', None),
+                datatype=col.get('datatype', 'float64'),
             )
             columns.append(ci)
         return DataInfo(columns)
