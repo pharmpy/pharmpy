@@ -1,6 +1,7 @@
 import pharmpy.results
 import pharmpy.tools.iiv.algorithms as algorithms
 import pharmpy.tools.modelsearch.tool
+from pharmpy.modeling import summarize_modelfit_results
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.workflows import Task, Workflow
 
@@ -53,24 +54,35 @@ def post_process_results(rankfunc, cutoff, model_features, *models):
     else:
         res_models = [res_models]
 
-    df = pharmpy.tools.modelsearch.tool.create_summary(
+    summary_tool = pharmpy.tools.modelsearch.tool.create_summary(
         res_models, start_model, rankfunc, cutoff, model_features
     )
 
-    best_model_name = df['rank'].idxmin()
+    best_model_name = summary_tool['rank'].idxmin()
     try:
         best_model = [model for model in res_models if model.name == best_model_name][0]
     except IndexError:
         best_model = start_model
 
-    res = IIVResults(summary=df, best_model=best_model, start_model=start_model, models=res_models)
+    summary_models = summarize_modelfit_results([start_model] + res_models)
+
+    res = IIVResults(
+        summary_tool=summary_tool,
+        summary_models=summary_models,
+        best_model=best_model,
+        start_model=start_model,
+        models=res_models,
+    )
 
     return res
 
 
 class IIVResults(pharmpy.results.Results):
-    def __init__(self, summary=None, best_model=None, start_model=None, models=None):
-        self.summary = summary
+    def __init__(
+        self, summary_tool=None, summary_models=None, best_model=None, start_model=None, models=None
+    ):
+        self.summary_tool = summary_tool
+        self.summary_models = summary_models
         self.best_model = best_model
         self.start_model = start_model
         self.models = models

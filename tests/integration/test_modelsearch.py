@@ -18,7 +18,8 @@ def test_exhaustive(tmp_path, testdata):
             'modelsearch', 'exhaustive', 'ABSORPTION(ZO)\nPERIPHERALS(1)', model=model_start
         )
 
-        assert len(res.summary) == 3
+        assert len(res.summary_tool) == 3
+        assert len(res.summary_models) == 4
         assert len(res.models) == 3
         assert all(
             model.modelfit_results and not np.isnan(model.modelfit_results.ofv)
@@ -58,15 +59,16 @@ def test_exhaustive_stepwise_basic(
         model_start.datainfo.path = tmp_path / 'mx19B.csv'
         res = run_tool('modelsearch', 'exhaustive_stepwise', mfl, model=model_start)
 
-        assert len(res.summary) == no_of_models
+        assert len(res.summary_tool) == no_of_models
+        assert len(res.summary_models) == no_of_models + 1
         assert len(res.models) == no_of_models
         assert res.best_model.name == best_model_name
 
         assert res.models[0].parent_model == 'mox2'
         assert res.models[-1].parent_model == last_model_parent_name
         if last_model_parent_name != 'mox2':
-            last_model_features = res.summary.loc[res.models[-1].name]['features']
-            parent_model_features = res.summary.loc[last_model_parent_name]['features']
+            last_model_features = res.summary_tool.loc[res.models[-1].name]['features']
+            parent_model_features = res.summary_tool.loc[last_model_parent_name]['features']
             assert last_model_features[: len(parent_model_features)] == parent_model_features
 
         rundir = tmp_path / 'modelsearch_dir1'
@@ -97,7 +99,8 @@ def test_exhaustive_stepwise_add_etas(
         model_start.datainfo.path = tmp_path / 'mx19B.csv'
         res = run_tool('modelsearch', 'exhaustive_stepwise', mfl, add_etas=True, model=model_start)
 
-        assert len(res.summary) == no_of_models
+        assert len(res.summary_tool) == no_of_models
+        assert len(res.summary_models) == no_of_models + 1
         assert len(res.models) == no_of_models
         assert res.best_model.name == best_model_name
         model_last = res.models[no_of_models - 1]
@@ -124,7 +127,8 @@ def test_exhaustive_stepwise_already_fit(tmp_path, testdata):
         mfl = 'ABSORPTION(ZO)\nPERIPHERALS(1)'
         res = run_tool('modelsearch', 'exhaustive_stepwise', mfl, model=model_start)
 
-        assert len(res.summary) == 4
+        assert len(res.summary_tool) == 4
+        assert len(res.summary_models) == 5
         assert len(res.models) == 4
         assert all(
             model.modelfit_results and not np.isnan(model.modelfit_results.ofv)
@@ -149,8 +153,9 @@ def test_exhaustive_stepwise_start_model_fail(tmp_path, testdata):
         mfl = 'ABSORPTION(ZO)\nPERIPHERALS(1)'
         res = run_tool('modelsearch', 'exhaustive_stepwise', mfl, model=model_start)
 
-        assert len(res.summary) == 4
-        assert res.summary['dofv'].isnull().values.all()
+        assert len(res.summary_tool) == 4
+        assert len(res.summary_models) == 5
+        assert res.summary_tool['dofv'].isnull().values.all()
         assert len(res.models) == 4
         assert all(model.modelfit_results is None for model in res.models)
         rundir = tmp_path / 'modelsearch_dir1'

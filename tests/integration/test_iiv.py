@@ -23,7 +23,8 @@ def test_iiv_block_structure(tmp_path, testdata, list_of_parameters, no_of_model
 
         res = run_tool('iiv', 'brute_force_block_structure', model=model_start)
 
-        assert len(res.summary) == no_of_models
+        assert len(res.summary_tool) == no_of_models
+        assert len(res.summary_models) == no_of_models + 1
         assert len(res.models) == no_of_models
         assert all(int(model.modelfit_results.ofv) in range(-2200, -2000) for model in res.models)
         rundir = tmp_path / 'iiv_dir1'
@@ -40,7 +41,8 @@ def test_iiv_no_of_etas(tmp_path, testdata):
 
         res = run_tool('iiv', 'brute_force_no_of_etas', model=model_start)
 
-        assert len(res.summary) == 7
+        assert len(res.summary_tool) == 7
+        assert len(res.summary_models) == 8
         assert len(res.models) == 7
         assert all(int(model.modelfit_results.ofv) in range(-1900, -1400) for model in res.models)
         rundir = tmp_path / 'iiv_dir1'
