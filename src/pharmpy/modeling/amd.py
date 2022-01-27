@@ -99,11 +99,13 @@ def run_iiv(model):
     res_block_structure = run_tool('iiv', 'brute_force_block_structure', model=best_model)
 
     best_model = res_block_structure.best_model
-    summary = pd.concat([res_no_of_etas.summary, res_block_structure.summary])
+    summary_tool = pd.concat([res_no_of_etas.summary_tool, res_block_structure.summary_tool])
+    summary_models = pd.concat([res_no_of_etas.summary_models, res_block_structure.summary_models])
     from pharmpy.tools.iiv.tool import IIVResults
 
     res = IIVResults(
-        summary=summary,
+        summary_tool=summary_tool,
+        summary_models=summary_models,
         best_model=best_model,
         models=res_no_of_etas.models + res_block_structure.models,
         start_model=model,
