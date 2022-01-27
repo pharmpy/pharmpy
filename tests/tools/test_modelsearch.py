@@ -27,6 +27,12 @@ from pharmpy.tools.modelsearch.mfl import ModelFeatures
             8,
             ('PERIPHERALS(1)', 'PERIPHERALS(2)', 'ABSORPTION(ZO)'),
         ),
+        (
+            'exhaustive_stepwise',
+            'ABSORPTION(SEQ-ZO-FO)\nLAGTIME()',
+            2,
+            ('LAGTIME()',),
+        ),
     ],
 )
 def test_algorithms(algorithm, mfl, no_of_models, last_model_features):
