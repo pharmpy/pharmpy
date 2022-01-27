@@ -62,7 +62,8 @@ scale       nominal
 continuous    False
 categories     None
 unit              1
-drop          False"""
+drop          False
+datatype    float64"""
     assert repr(col) == correct
 
 

@@ -30,10 +30,28 @@ class ColumnInfo:
         List of all possible categories
     drop : bool
         Should column be dropped (i.e. barred from being used)
+    datatype : str
+        Pandas datatype or special Pharmpy datatype (see the "dtype" attribute)
     """
 
-    _all_types = ['id', 'dv', 'idv', 'unknown', 'dose', 'event', 'covariate', 'mdv']
+    _all_types = ['id', 'dv', 'idv', 'unknown', 'dose', 'event', 'covariate', 'mdv', 'nmtran_date']
     _all_scales = ['nominal', 'ordinal', 'interval', 'ratio']
+    _all_dtypes = [
+        'int8',
+        'int16',
+        'int32',
+        'int64',
+        'uint8',
+        'uint16',
+        'uint32',
+        'uint64',
+        'float16',
+        'float32',
+        'float64',
+        'float128',
+        'nmtran-time',
+        'nmtran-date',
+    ]
 
     def __init__(
         self,
@@ -44,6 +62,7 @@ class ColumnInfo:
         continuous=True,
         categories=None,
         drop=False,
+        datatype="float64",
     ):
         if scale in ['nominal', 'ordinal']:
             continuous = False
@@ -55,6 +74,7 @@ class ColumnInfo:
         self.continuous = continuous
         self.categories = categories  # dict from value to descriptive string
         self.drop = drop
+        self.datatype = datatype
 
     def __eq__(self, other):
         return (
@@ -65,6 +85,7 @@ class ColumnInfo:
             and self.continuous == other.continuous
             and self.categories == other.categories
             and self.drop == other.drop
+            and self.datatype == other.datatype
         )
 
     @property
@@ -171,6 +192,42 @@ class ColumnInfo:
     @drop.setter
     def drop(self, value):
         self._drop = bool(value)
+
+    @property
+    def datatype(self):
+        """Column datatype
+
+        ============  ===========      ======== ================================= ===========
+        datatype      Description      Size     Range                             NA allowed?
+        ============  ===========      ======== ================================= ===========
+        int8          Signed integer   8 bits   -128 to +127.                     No
+        int16         Signed integer   16 bits  -32,768 to +32,767.               No
+        int32         Signed integer   32 bits  -2,147,483,648 to +2,147,483,647. No
+        int64         Signed integer   64 bits  -9,223,372,036,854,775,808 to     No
+                                                9,223,372,036,854,775,807.
+        uint8         Unsigned integer 8 bits   0 to 256.                         No
+        uint16        Unsigned integer 16 bit   0 to 65,535.                      No
+        uint32        Unsigned integer 32 bit   0 to 4,294,967,295.               No
+        uint64        Unsigned integer 64 bit   0 to 18,446,744,073,709,551,615   No
+        float16       Binary float     16 bits  ≈ ±6.55×10⁴                       Yes
+        float32       Binary float     32 bits  ≈ ±3.4×10³⁸                       Yes
+        float64       Binary float     64 bits  ≈ ±1.8×10³⁰⁸                      Yes
+        float128      Binary float     128 bits ≈ ±1.2×10⁴⁹³²                     Yes
+        nmtran-time   NM-TRAN time     n                                          No
+        nmtran-date   NM-TRAN date     n                                          No
+        ============  =============    ========================================== ===========
+
+        The default, and most common datatype, is float64.
+        """
+        return self._datatype
+
+    @datatype.setter
+    def datatype(self, value):
+        if value not in ColumnInfo._all_dtypes:
+            raise ValueError(
+                f"{value} is not a valid datatype. Valid datatypes are {ColumnInfo._all_dtypes}"
+            )
+        self._datatype = value
 
     def is_categorical(self):
         """Check if the column data is categorical
@@ -501,6 +558,7 @@ class DataInfo(MutableSequence):
         cats = [col.categories for col in self._columns]
         units = [col.unit for col in self._columns]
         drop = [col.drop for col in self._columns]
+        datatype = [col.datatype for col in self._columns]
         df = pd.DataFrame(columns=labels)
         df.loc['type'] = types
         df.loc['scale'] = scales
@@ -508,6 +566,7 @@ class DataInfo(MutableSequence):
         df.loc['categories'] = cats
         df.loc['unit'] = units
         df.loc['drop'] = drop
+        df.loc['datatype'] = datatype
         return df.to_string()
 
 

@@ -994,11 +994,16 @@ class Model(pharmpy.model.Model):
             if colname == 'ID' or colname == 'L1':
                 info.type = 'id'
                 info.scale = 'nominal'
+                info.datatype = 'int64'
             elif colname == 'DV' or colname == replacements.get('DV', None):
                 info.type = 'dv'
             elif colname == 'TIME' or colname == replacements.get('TIME', None):
                 info.type = 'idv'
                 info.scale = 'ratio'
+                info.datatype = 'nmtran-time'
+            elif colname in ['DATE', 'DAT1', 'DAT2', 'DAT3']:
+                info.scale = 'interval'
+                info.datatype = 'nmtran-date'
             elif colname == 'EVID' and self._get_pk_record():
                 info.type = 'event'
                 info.scale = 'nominal'
