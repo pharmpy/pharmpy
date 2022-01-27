@@ -1,5 +1,7 @@
 from pharmpy.modeling import (
     add_time_after_dose,
+    drop_columns,
+    drop_dropped_columns,
     get_concentration_parameters_from_data,
     get_covariate_baselines,
     get_doseid,
@@ -146,3 +148,27 @@ def test_add_time_after_dose():
 def test_get_concentration_parameters_from_data():
     df = get_concentration_parameters_from_data(model)
     assert df['Cmax'].loc[1, 1] == 17.3
+
+
+def test_drop_columns():
+    m = model.copy()
+    drop_columns(m, "APGR")
+    correct = ['ID', 'TIME', 'AMT', 'WGT', 'DV']
+    assert m.datainfo.names == correct
+    assert list(m.dataset.columns) == correct + ['FA1', 'FA2']
+    drop_columns(m, ['DV', 'ID'])
+    assert m.datainfo.names == ['TIME', 'AMT', 'WGT']
+    assert list(m.dataset.columns) == ['TIME', 'AMT', 'WGT', 'FA1', 'FA2']
+    drop_columns(m, ['TIME'], mark=True)
+    assert m.datainfo['TIME'].drop
+    assert list(m.dataset.columns) == ['TIME', 'AMT', 'WGT', 'FA1', 'FA2']
+
+
+def test_drop_dropped_columns():
+    m = model.copy()
+    drop_dropped_columns(m)
+    correct = ['ID', 'TIME', 'AMT', 'WGT', 'DV']
+    assert list(m.dataset.columns) == correct
+    drop_columns(m, ['ID', 'TIME', 'AMT'], mark=True)
+    drop_dropped_columns(m)
+    assert list(m.dataset.columns) == ['WGT', 'DV']

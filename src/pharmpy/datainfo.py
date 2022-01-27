@@ -197,25 +197,25 @@ class ColumnInfo:
     def datatype(self):
         """Column datatype
 
-        ============  ===========      ======== ================================= ===========
-        datatype      Description      Size     Range                             NA allowed?
-        ============  ===========      ======== ================================= ===========
-        int8          Signed integer   8 bits   -128 to +127.                     No
-        int16         Signed integer   16 bits  -32,768 to +32,767.               No
-        int32         Signed integer   32 bits  -2,147,483,648 to +2,147,483,647. No
-        int64         Signed integer   64 bits  -9,223,372,036,854,775,808 to     No
-                                                9,223,372,036,854,775,807.
-        uint8         Unsigned integer 8 bits   0 to 256.                         No
-        uint16        Unsigned integer 16 bit   0 to 65,535.                      No
-        uint32        Unsigned integer 32 bit   0 to 4,294,967,295.               No
-        uint64        Unsigned integer 64 bit   0 to 18,446,744,073,709,551,615   No
-        float16       Binary float     16 bits  ≈ ±6.55×10⁴                       Yes
-        float32       Binary float     32 bits  ≈ ±3.4×10³⁸                       Yes
-        float64       Binary float     64 bits  ≈ ±1.8×10³⁰⁸                      Yes
-        float128      Binary float     128 bits ≈ ±1.2×10⁴⁹³²                     Yes
-        nmtran-time   NM-TRAN time     n                                          No
-        nmtran-date   NM-TRAN date     n                                          No
-        ============  =============    ========================================== ===========
+        ============ ================ ======== ================================= ===========
+        datatype     Description      Size     Range                             NA allowed?
+        ============ ================ ======== ================================= ===========
+        int8         Signed integer   8 bits   -128 to +127.                     No
+        int16        Signed integer   16 bits  -32,768 to +32,767.               No
+        int32        Signed integer   32 bits  -2,147,483,648 to +2,147,483,647. No
+        int64        Signed integer   64 bits  -9,223,372,036,854,775,808 to     No
+                                               9,223,372,036,854,775,807.
+        uint8        Unsigned integer 8 bits   0 to 256.                         No
+        uint16       Unsigned integer 16 bit   0 to 65,535.                      No
+        uint32       Unsigned integer 32 bit   0 to 4,294,967,295.               No
+        uint64       Unsigned integer 64 bit   0 to 18,446,744,073,709,551,615   No
+        float16      Binary float     16 bits  ≈ ±6.55×10⁴                       Yes
+        float32      Binary float     32 bits  ≈ ±3.4×10³⁸                       Yes
+        float64      Binary float     64 bits  ≈ ±1.8×10³⁰⁸                      Yes
+        float128     Binary float     128 bits ≈ ±1.2×10⁴⁹³²                     Yes
+        nmtran-time  NM-TRAN time     n                                          No
+        nmtran-date  NM-TRAN date     n                                          No
+        ============ ================ ========================================== ===========
 
         The default, and most common datatype, is float64.
         """

@@ -30,6 +30,8 @@ from pharmpy.modeling.common import (
 from pharmpy.modeling.covariate_effect import add_covariate_effect
 from pharmpy.modeling.data import (
     add_time_after_dose,
+    drop_columns,
+    drop_dropped_columns,
     get_baselines,
     get_concentration_parameters_from_data,
     get_covariate_baselines,
@@ -163,6 +165,8 @@ __all__ = [
     'create_results',
     'create_rng',
     'create_symbol',
+    'drop_columns',
+    'drop_dropped_columns',
     'evaluate_epsilon_gradient',
     'evaluate_eta_gradient',
     'evaluate_expression',

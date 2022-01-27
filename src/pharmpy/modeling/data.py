@@ -709,3 +709,90 @@ def get_concentration_parameters_from_data(model):
     params2.rename(columns={dv: 'Cmin', 'TAD': 'Tmin'}, inplace=True)
     res = params.join(params2)
     return res
+
+
+def drop_dropped_columns(model):
+    """Drop columns marked as dropped from the dataset
+
+    NM-TRAN date columns will not be dropped by this function
+    even if marked as dropped.
+    Columns not specified in the datainfo ($INPUT for NONMEM)
+    will also be dropped from the dataset.
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model object
+
+    Returns
+    -------
+    Model
+        Reference to same model object
+
+    Example
+    -------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> drop_dropped_columns(model)    # doctest: +ELLIPSIS
+    <...>
+    >>> list(model.dataset.columns)
+    ['ID', 'TIME', 'AMT', 'WGT', 'APGR', 'DV']
+
+    See also
+    --------
+    drop_columns : Drop specific columns or mark them as drop
+    """
+    datainfo = model.datainfo
+    todrop = [
+        colname
+        for colname in datainfo.names
+        if datainfo[colname].drop and datainfo[colname].datatype != 'nmtran-date'
+    ]
+    todrop += list(set(model.dataset.columns) - set(datainfo.names))
+    drop_columns(model, todrop)
+    return model
+
+
+def drop_columns(model, column_names, mark=False):
+    """Drop columns from the dataset or mark as dropped
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model object
+    column_names : list or str
+        List of column names or one column name to drop or mark as dropped
+    mark : bool
+        Default is to remove column from dataset set this to True to only mark as dropped
+
+    Returns
+    -------
+    Model
+        Reference to same model object
+
+    Example
+    -------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> drop_columns(model, ['WGT', 'APGR'])    # doctest: +ELLIPSIS
+    <...>
+    >>> list(model.dataset.columns)
+    ['ID', 'TIME', 'AMT', 'DV', 'FA1', 'FA2']
+
+    See also
+    --------
+    drop_dropped_columns : Drop all columns marked as drop
+    """
+    if isinstance(column_names, str):
+        column_names = [column_names]
+    datainfo = model.datainfo
+    for colname in column_names:
+        if mark:
+            datainfo[colname].drop = True
+        else:
+            try:
+                del datainfo[colname]
+            except IndexError:
+                pass
+            model.dataset.drop(colname, axis=1, inplace=True)
+    return model
