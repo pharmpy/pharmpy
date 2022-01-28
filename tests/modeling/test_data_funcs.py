@@ -14,6 +14,7 @@ from pharmpy.modeling import (
     get_observations,
     list_time_varying_covariates,
     load_example_model,
+    undrop_columns,
 )
 
 model = load_example_model("pheno")
@@ -172,3 +173,11 @@ def test_drop_dropped_columns():
     drop_columns(m, ['ID', 'TIME', 'AMT'], mark=True)
     drop_dropped_columns(m)
     assert list(m.dataset.columns) == ['WGT', 'APGR', 'DV']
+
+
+def test_undrop_columns():
+    m = model.copy()
+    drop_columns(m, ["APGR", "WGT"], mark=True)
+    undrop_columns(m, "WGT")
+    assert not m.datainfo["WGT"].drop
+    assert m.datainfo["APGR"].drop

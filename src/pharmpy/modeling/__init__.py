@@ -38,6 +38,7 @@ from pharmpy.modeling.data import (
     get_number_of_observations_per_individual,
     get_observations,
     list_time_varying_covariates,
+    undrop_columns,
 )
 from pharmpy.modeling.error import (
     has_additive_error_model,
@@ -270,4 +271,5 @@ __all__ = [
     'use_thetas_for_error_stdev',
     'write_csv',
     'write_model',
+    'undrop_columns',
 ]

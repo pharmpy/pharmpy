@@ -3,6 +3,7 @@ next version
 
 * Add modeling.drop_columns
 * Add modeling.drop_dropped_columns
+* Add modeling.undrop_columns
 
 0.46.0 (2022-01-27)
 -------------------

@@ -782,6 +782,7 @@ def drop_columns(model, column_names, mark=False):
     See also
     --------
     drop_dropped_columns : Drop all columns marked as drop
+    undrop_columns : Undrop columns of model
     """
     if isinstance(column_names, str):
         column_names = [column_names]
@@ -795,4 +796,40 @@ def drop_columns(model, column_names, mark=False):
             except IndexError:
                 pass
             model.dataset.drop(colname, axis=1, inplace=True)
+    return model
+
+
+def undrop_columns(model, column_names):
+    """Undrop columns of model
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model object
+    column_names : list or str
+        List of column names or one column name to undrop
+
+    Returns
+    -------
+    Model
+        Reference to same model object
+
+    Example
+    -------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> drop_columns(model, ['WGT', 'APGR'], mark=True)    # doctest: +ELLIPSIS
+    <...>
+    >>> undrop_columns(model, 'WGT')
+    <...>
+
+    See also
+    --------
+    drop_dropped_columns : Drop all columns marked as drop
+    drop_columns : Drop or mark columns as dropped
+    """
+    if isinstance(column_names, str):
+        column_names = [column_names]
+    for colname in column_names:
+        model.datainfo[colname].drop = False
     return model
