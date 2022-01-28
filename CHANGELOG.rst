@@ -1,5 +1,5 @@
-next version
-------------
+0.47.0 (2022-01-28)
+-------------------
 
 * Add modeling.drop_columns
 * Add modeling.drop_dropped_columns
