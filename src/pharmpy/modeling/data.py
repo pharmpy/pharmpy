@@ -945,7 +945,7 @@ def translate_nmtran_time(model):
 
     Warnings
     --------
-    Use this function with caution. Currently reset events are not taken into account.
+    Use this function with caution. For example reset events are currently not taken into account.
 
     Parameters
     ----------
