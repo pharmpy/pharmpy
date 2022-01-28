@@ -820,7 +820,7 @@ def undrop_columns(model, column_names):
     >>> model = load_example_model("pheno")
     >>> drop_columns(model, ['WGT', 'APGR'], mark=True)    # doctest: +ELLIPSIS
     <...>
-    >>> undrop_columns(model, 'WGT')
+    >>> undrop_columns(model, 'WGT')    # doctest: +ELLIPSIS
     <...>
 
     See also
