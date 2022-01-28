@@ -992,7 +992,9 @@ def update_estimation(model):
         new_cov |= est.cov
     if not old_cov and new_cov:
         # Add $COV
-        model.control_stream.insert_record('$COVARIANCE\n')
+        last_est_rec = model.control_stream.get_records('ESTIMATION')[-1]
+        idx_cov = model.control_stream.records.index(last_est_rec)
+        model.control_stream.insert_record('$COVARIANCE\n', at_index=idx_cov + 1)
     elif old_cov and not new_cov:
         # Remove $COV
         covrecs = model.control_stream.get_records('COVARIANCE')

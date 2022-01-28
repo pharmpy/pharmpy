@@ -51,6 +51,27 @@ def test_set_estimation_step(testdata, method, kwargs, code_ref):
     assert generate_model_code(model).split('\n')[-2] == code_ref
 
 
+def test_set_estimation_step_est_middle(testdata):
+    model = Model.create_model(
+        StringIO(
+            '''$PROBLEM base model
+$INPUT ID DV TIME
+$DATA file.csv IGNORE=@
+
+$PRED
+Y = THETA(1) + ETA(1) + ERR(1)
+
+$ESTIMATION METHOD=COND INTERACTION MAXEVAL=999999
+$THETA 0.1
+$OMEGA 0.01
+$SIGMA 1
+'''
+        )
+    )
+    set_estimation_step(model, 'FOCE', interaction=True, cov=True, idx=0)
+    assert '$ESTIMATION METHOD=COND INTER MAXEVAL=999999\n$COVARIANCE' in model.model_code
+
+
 def test_add_estimation_step(testdata):
     model = Model.create_model(testdata / 'nonmem' / 'minimal.mod')
     assert len(model.estimation_steps) == 1
