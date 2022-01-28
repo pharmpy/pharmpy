@@ -166,7 +166,7 @@ class Model(pharmpy.model.Model):
             update_statements(self, self._old_statements, self._statements, trans)
             self._old_statements = self._statements.copy()
 
-        if self._dataset_updated:
+        if self._dataset_updated or self.datainfo != self._old_datainfo:
             # FIXME: If no name set use the model name. Set that when setting dataset to input!
             if not nofiles:
                 if path is not None:
@@ -180,13 +180,14 @@ class Model(pharmpy.model.Model):
 
             label = self.datainfo.names[0]
             data_record.ignore_character_from_header(label)
-            self._update_input(self.datainfo.names)
+            self._update_input()
 
             # Remove IGNORE/ACCEPT. Could do diff between old dataset and find simple
             # IGNOREs to add i.e. for filter out certain ID.
             del data_record.ignore
             del data_record.accept
             self._dataset_updated = False
+            self._old_datainfo = self.datainfo
 
             path = self.datainfo.path
             if path is not None:
@@ -943,12 +944,14 @@ class Model(pharmpy.model.Model):
                         reserved_name = key
         return colnames, drop, synonym_replacement
 
-    def _update_input(self, new_names):
-        """Update $INPUT with new column names
+    def _update_input(self):
+        """Update $INPUT
 
         currently supporting append columns at end and removing columns
+        And add/remove DROP
         """
-        colnames, _, _ = self._column_info()
+        new_names = self.datainfo.names
+        colnames, drop, _ = self._column_info()
         removed_columns = set(colnames) - set(new_names)
         input_records = self.control_stream.get_records("INPUT")
         for col in removed_columns:
@@ -957,6 +960,21 @@ class Model(pharmpy.model.Model):
         last_input_record = input_records[-1]
         for colname in appended_names:
             last_input_record.append_option(colname)
+        # Update DROP
+        colnames, drop, _ = self._column_info()
+        keep = []
+        i = 0
+        for child in input_records[0].root.children:
+            if child.rule == 'option':
+                if drop[i] != self.datainfo[colnames[i]].drop:
+                    new = input_records[0]._create_option(colnames[i], 'DROP')
+                    keep.append(new)
+                else:
+                    keep.append(child)
+                i += 1
+            else:
+                keep.append(child)
+        input_records[0].root.children = keep
 
     def _replace_synonym_in_filters(filters, replacements):
         result = []
@@ -986,6 +1004,7 @@ class Model(pharmpy.model.Model):
                 di = DataInfo.read_json(path)
                 di.path = dataset_path
                 self.datainfo = di
+                self._old_datainfo = di.copy()
                 return
         (colnames, drop, replacements) = self._column_info()
         column_info = []
@@ -1023,6 +1042,7 @@ class Model(pharmpy.model.Model):
         di = DataInfo(column_info)
         di.path = dataset_path
         self.datainfo = di
+        self._old_datainfo = di.copy()
 
     def _read_dataset(self, raw=False, parse_columns=tuple()):
         data_records = self.control_stream.get_records('DATA')
