@@ -38,6 +38,7 @@ from pharmpy.modeling.data import (
     get_number_of_observations_per_individual,
     get_observations,
     list_time_varying_covariates,
+    translate_nmtran_time,
     undrop_columns,
 )
 from pharmpy.modeling.error import (
@@ -265,6 +266,7 @@ __all__ = [
     'transform_etas_boxcox',
     'transform_etas_john_draper',
     'transform_etas_tdist',
+    'translate_nmtran_time',
     'unfix_parameters',
     'unfix_parameters_to',
     'update_inits',

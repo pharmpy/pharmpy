@@ -1,4 +1,5 @@
-# Functional interface to extract dataset information
+import re
+
 import numpy as np
 import pandas as pd
 
@@ -832,4 +833,141 @@ def undrop_columns(model, column_names):
         column_names = [column_names]
     for colname in column_names:
         model.datainfo[colname].drop = False
+    return model
+
+
+def _translate_nonmem_time_value(time):
+    if ':' in time:
+        components = time.split(':')
+        if len(components) != 2:
+            raise DatasetError(f'Bad TIME format: {time}')
+        hours = float(components[0]) + float(components[1]) / 60
+        return hours
+    else:
+        return float(time)
+
+
+def _translate_time_column(df, timecol, idcol):
+    df[timecol] = df[timecol].apply(_translate_nonmem_time_value)
+    df[timecol] = df[timecol] - df.groupby(idcol)[timecol].transform('first')
+    return df
+
+
+def _translate_nonmem_time_and_date_value(ser, timecol, datecol):
+    timeval = _translate_nonmem_time_value(ser[timecol])
+    date = ser[datecol]
+    a = re.split(r'[^0-9]', date)
+    if date.startswith('-') or len(a) == 1:
+        return timeval + float(date) * 24
+    elif len(a) == 2:
+        year = 2001  # Non leap year
+        month = a[1]
+        day = a[0]
+    elif len(a) == 3:
+        if datecol.endswith('E'):
+            month = a[0]
+            day = a[1]
+            year = a[2]
+        elif datecol.endswith('1'):
+            day = a[0]
+            month = a[1]
+            year = a[2]
+        elif datecol.endswith('3'):
+            year = a[0]
+            day = a[1]
+            month = a[2]
+        else:  # Let DAT2 be default if other name
+            year = a[0]
+            month = a[1]
+            day = a[2]
+        year = int(year)
+        month = int(month)
+        day = int(day)
+        hour = int(timeval)
+        timeval = (timeval - hour) * 60
+        minute = int(timeval)
+        timeval = (timeval - minute) * 60
+        second = int(timeval)
+        timeval = (timeval - second) * 1000000
+        microsecond = int(timeval)
+        timeval = (timeval - microsecond) * 1000
+        nanosecond = int(timeval)
+        ts = pd.Timestamp(
+            year=year,
+            month=month,
+            day=day,
+            hour=hour,
+            minute=minute,
+            second=second,
+            microsecond=microsecond,
+            nanosecond=nanosecond,
+        )
+        return ts
+    else:
+        raise DatasetError(f'Bad DATE value: {date}')
+
+
+def _translate_time_and_date_columns(df, timecol, datecol, idcol):
+    df[timecol] = df.apply(
+        _translate_nonmem_time_and_date_value, axis=1, timecol=timecol, datecol=datecol
+    )
+    timediff = df[timecol] - df.groupby(idcol)[timecol].transform('first')
+    df[timecol] = timediff.dt.total_seconds() / 3600
+    return df
+
+
+def _find_time_and_date_columns(model):
+    # Both time and date can be None. If date is None time must be not None
+    time = None
+    date = None
+    di = model.datainfo
+    for col in di:
+        if col.datatype == 'nmtran-time':
+            if time is None:
+                time = col.name
+            else:
+                raise ValueError(f"Multiple time columns found {time} and {col.name}")
+        elif col.datatype == 'nmtran-date':
+            if date is None:
+                date = col.name
+            else:
+                raise ValueError(f"Multiple date columns found {date} and {col.name}")
+    if time is None and date is not None:
+        raise ValueError(f"Found date column {date}, but no time column")
+    return time, date
+
+
+def translate_nmtran_time(model):
+    """Translate NM-TRAN TIME and DATE column into one TIME column
+
+    If dataset of model have special NM-TRAN TIME and DATE columns these
+    will be translated into one single time column with time in hours.
+
+    Warnings
+    --------
+    Use this function with caution. Currently reset events are not taken into account.
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model object
+
+    Returns
+    -------
+    Model
+        Reference to the same model object
+    """
+    timecol, datecol = _find_time_and_date_columns(model)
+    df = model.dataset
+    idcol = model.datainfo.id_column.name
+    if datecol is None:
+        if timecol is not None:
+            df = _translate_time_column(df, timecol, idcol)
+        else:
+            return model
+    else:
+        df = _translate_time_and_date_columns(df, timecol, datecol, idcol)
+        drop_columns(model, datecol)
+        model.datainfo[timecol].unit = 'h'
+    model.dataset = df
     return model

@@ -4,6 +4,7 @@ next version
 * Add modeling.drop_columns
 * Add modeling.drop_dropped_columns
 * Add modeling.undrop_columns
+* Add modeling.translate_nmtran_time
 
 0.46.0 (2022-01-27)
 -------------------
