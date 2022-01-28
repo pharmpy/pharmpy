@@ -187,7 +187,7 @@ class Model(pharmpy.model.Model):
             del data_record.ignore
             del data_record.accept
             self._dataset_updated = False
-            self._old_datainfo = self.datainfo
+            self._old_datainfo = self.datainfo.copy()
 
             path = self.datainfo.path
             if path is not None:
