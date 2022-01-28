@@ -2082,7 +2082,7 @@ def test_create_joint_distribution(testdata, etas, pk_ref, omega_ref):
 
     create_joint_distribution(model, etas)
     model.update_source()
-
+    print(model.model_code)
     assert str(model.get_pred_pk_record()) == pk_ref
 
     rec_omega = ''.join(str(rec) for rec in model.control_stream.get_records('OMEGA'))
@@ -2498,6 +2498,45 @@ def test_remove_iov(testdata):
 
     with pytest.warns(UserWarning):
         remove_iov(model)
+
+
+def test_remove_iov_diagonal():
+    model = Model.create_model(
+        StringIO(
+            '''$PROBLEM PHENOBARB SIMPLE MODEL
+$DATA pheno.dta IGNORE=@
+$INPUT ID TIME AMT WGT APGR DV FA1 FA2
+$SUBROUTINE ADVAN1 TRANS1
+$PK
+K=THETA(1)*EXP(ETA(1))+ETA(2)+ETA(3)+ETA(4)+ETA(5)+ETA(6)+ETA(7)
+$ERROR
+Y=F+F*EPS(1)
+$THETA 0.1
+$OMEGA DIAGONAL(2)
+0.015
+0.02
+$OMEGA BLOCK(1)
+0.6
+$OMEGA BLOCK(1) SAME
+$OMEGA 0.1
+$OMEGA BLOCK(1)
+0.01
+$OMEGA BLOCK(1) SAME
+$SIGMA 0.013241
+$ESTIMATION METHOD=1 INTERACTION
+'''
+        )
+    )
+
+    remove_iov(model)
+
+    assert (
+        '''$OMEGA DIAGONAL(2)
+0.015
+0.02
+$OMEGA  0.1'''
+        in model.model_code
+    )
 
 
 @pytest.mark.parametrize(

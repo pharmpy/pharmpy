@@ -136,8 +136,14 @@ def update_random_variable_records(model, rvs_diff, rec_dict, comment_dict):
         else:
             diag_rvs = get_diagonal(rvs[0], rec_dict)
             # Account for etas in diagonal
-            if len(rvs) == 1 and diag_rvs and any(rv in rvs_removed for rv in diag_rvs):
-                create_omega_single(model, rvs[0], eta_number, number_of_records, comment_dict)
+            if diag_rvs:
+                # Create new diagonal record if any in record has been removed
+                if any(rv in rvs_removed for rv in diag_rvs):
+                    create_omega_single(model, rvs[0], eta_number, number_of_records, comment_dict)
+                # If none has been removed and this rv is not the first one,
+                #   the record index should not increase
+                elif len(diag_rvs) > 1 and rvs[0] != model.random_variables[diag_rvs[0]]:
+                    continue
             eta_number += len(rvs)
             number_of_records += 1
 
