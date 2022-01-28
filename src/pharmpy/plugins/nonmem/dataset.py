@@ -322,14 +322,8 @@ def read_nonmem_dataset(
     #    except KeyError:
     #        df.apply(_translate_nonmem_time_and_date)
 
-    # FIXME: Do not remove dropped columns for now.
-    # if drop:
-    #    indices_to_drop = [i for i, x in enumerate(drop) if not x]
-    #    df = df.iloc[:, indices_to_drop].copy()
-
     if not raw:
         parse_columns = [col for col, dropped in zip(df.columns, drop) if not dropped]
-        # FIXME: This is instead of proper handling of these columns
         parse_columns = [
             x for x in parse_columns if x not in ['TIME', 'DATE', 'DAT1', 'DAT2', 'DAT3']
         ]
@@ -337,14 +331,24 @@ def read_nonmem_dataset(
         df[column] = df[column].apply(_convert_data_item, args=(str(null_value),))
     df = _make_ids_unique(df, parse_columns)
 
-    # Make ID int if possible
-    if 'ID' in df.columns:
-        idcol = 'ID'
-    elif 'L1' in df.columns:
-        idcol = 'L1'
-    else:
-        idcol = None
-    if idcol:
-        if all(df[idcol].astype('int32') == df[idcol]):
-            df[idcol] = df[idcol].astype('int32')
+    if not raw:
+        # Make ID int if possible
+        if 'ID' in df.columns:
+            idcol = 'ID'
+        elif 'L1' in df.columns:
+            idcol = 'L1'
+        else:
+            idcol = None
+        if idcol:
+            if all(df[idcol].astype('int32') == df[idcol]):
+                df[idcol] = df[idcol].astype('int32')
+
+        # Parse TIME if possible
+        if 'TIME' in df.columns and not any(
+            item in df.columns for item in ['DATE', 'DAT1', 'DAT2', 'DAT3']
+        ):
+            try:
+                df['TIME'] = df['TIME'].apply(_convert_data_item, args=(str(null_value),))
+            except DatasetError:
+                pass
     return df

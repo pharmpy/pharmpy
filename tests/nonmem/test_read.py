@@ -13,7 +13,7 @@ def test_read_nonmem_dataset(testdata):
     df = read_nonmem_dataset(path, colnames=colnames, ignore_character='@')
     assert list(df.columns) == colnames
     assert df['ID'][0] == 1
-    assert df['TIME'][2] == '12.5'  # FIXME! Should be number
+    assert df['TIME'][2] == 12.5
 
     raw = read_nonmem_dataset(path, colnames=colnames, ignore_character='@', raw=True)
     assert raw['ID'][0] == '1'
@@ -30,8 +30,6 @@ def test_read_nonmem_dataset(testdata):
         ignore_character='@',
         drop=[False, False, True, False, False, False, True, False],
     )
-    # FIXME: DROP not decided yet.
-    # assert list(df_drop.columns) == ['ID', 'TIME', 'WGT', 'APGR', 'DV', 'FA2']
     pd.testing.assert_series_equal(df_drop['ID'], df['ID'])
     pd.testing.assert_series_equal(df_drop['FA2'], df['FA2'])
 
