@@ -93,26 +93,30 @@ class NONMEMResultsFile:
         return v
 
     @staticmethod
-    def parse_covariance(rows):
+    def parse_tere(rows):
         result = NONMEMResultsFile.unknown_covariance()
         result['covariance_step_ok'] = False
+        result['runtime_estimation'] = nan
         if len(rows) < 1:
             return result
 
-        not_ok = re.compile(r' INTERPRET VARIANCE-COVARIANCE OF ESTIMATES WITH CARE')
-        not_ok_either = re.compile(r'(R|S) MATRIX ALGORITHMICALLY SINGULAR')
-        ok = re.compile(r' Elapsed covariance\s+time in seconds: ')  # need variable whitespace
+        cov_not_ok = re.compile(
+            r'( INTERPRET VARIANCE-COVARIANCE OF ESTIMATES WITH CARE)|'
+            r'(R|S) MATRIX ALGORITHMICALLY SINGULAR'
+        )
+        cov_ok = re.compile(r' Elapsed covariance\s+time in seconds: ')  # need variable whitespace
+        est_time = re.compile(r' Elapsed estimation\s+time in seconds:\s+(\d+\.*\d+)')
 
         for row in rows:
-            if not_ok.match(row):
+            if cov_not_ok.match(row):
                 result['covariance_step_ok'] = False
                 break
-            if not_ok_either.search(row):
-                result['covariance_step_ok'] = False
-                break
-            if ok.match(row):
+            if cov_ok.match(row):
                 result['covariance_step_ok'] = True
                 break
+            m = est_time.match(row)
+            if m:
+                result['runtime_estimation'] = float(m.group(1))
         return result
 
     @staticmethod
@@ -364,7 +368,7 @@ class NONMEMResultsFile:
                         yield (m.group(1), v.strip())
                 elif found_TERE:
                     if end_TERE.match(row):
-                        yield ('TERE', NONMEMResultsFile.parse_covariance(TERE))
+                        yield ('TERE', NONMEMResultsFile.parse_tere(TERE))
                         found_TERE = False
                         TERE = list()
                     else:

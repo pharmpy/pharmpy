@@ -298,6 +298,11 @@ class ModelfitResults(Results):
         """Was the minimization successful"""
         return self._minimization_successful
 
+    @property
+    def runtime_estimation(self):
+        """Runtime for estimation step"""
+        return self._runtime_estimation
+
     def _cov_from_inf(self):
         Im = self.information_matrix
         cov = pd.DataFrame(np.linalg.inv(Im.values), index=Im.index, columns=Im.columns)
