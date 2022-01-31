@@ -354,7 +354,7 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
             try:
                 result_obj._runtime_estimation = rfile.table[table_no]['runtime_estimation']
             except KeyError:
-                pass
+                result_obj._runtime_estimation = np.nan
             result_obj.runtime_total = rfile.runtime_total
 
     @property
