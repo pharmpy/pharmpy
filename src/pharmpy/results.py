@@ -420,16 +420,20 @@ class ChainedModelfitResults(MutableSequence, ModelfitResults):
 
     @property
     def minimization_successful(self):
-        # If last step was estimation
+        return self._get_last_est('minimization_successful')
+
+    @property
+    def runtime_estimation(self):
+        return self._get_last_est('runtime_estimation')
+
+    def _get_last_est(self, attr):
         est_steps = self.model.estimation_steps
-        if not est_steps[-1].evaluation and self[-1].minimization_successful:
-            return self[-1].minimization_successful
-        # If last was evaluation, find latest estimation
+        # Find last estimation
         for i in reversed(range(len(self))):
-            if not est_steps[i].evaluation:
-                return self[i].minimization_successful
+            if not est_steps[i].evaluation and getattr(self[i], attr) is not None:
+                return getattr(self[i], attr)
         # If all steps were evaluation the last evaluation step is relevant
-        return self[-1].minimization_successful
+        return getattr(self[-1], attr)
 
     @property
     def parameter_estimates(self):
@@ -528,6 +532,7 @@ class ChainedModelfitResults(MutableSequence, ModelfitResults):
 
         summary_dict['ofv'] = step.ofv
         summary_dict['runtime_total'] = step.runtime_total
+        summary_dict['runtime_estimation'] = step.runtime_estimation
 
         pe = step.parameter_estimates
         ses = step.standard_errors

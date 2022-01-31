@@ -377,6 +377,7 @@ def test_runtime_estimation_steps(pheno_path, testdata):
     assert res[0].runtime_estimation == 0.33
     assert res[1].runtime_estimation == 2.75
     assert res.runtime_total == 7
+    assert res.runtime_estimation == 0.33
 
 
 def test_result_summary(pheno_path, testdata):
