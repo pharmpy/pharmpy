@@ -333,7 +333,7 @@ class ExpressionInterpreter(lark.visitors.Interpreter):
 
     def power(self, node):
         b, e = self.visit_children(node)
-        return b ** e
+        return b**e
 
     @staticmethod
     def operator(node):

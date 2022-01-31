@@ -315,7 +315,7 @@ def test_subs():
     assert rv1.sympy_rv.pspace.distribution.sigma == sympy.Matrix(
         [[symbol('x'), symbol('OMEGA(2,1)')], [symbol('OMEGA(2,1)'), symbol('OMEGA(2,2)')]]
     )
-    assert rv3.sympy_rv.pspace.distribution.std ** 2 == symbol('y')
+    assert rv3.sympy_rv.pspace.distribution.std**2 == symbol('y')
     assert rvs.names == ['ETA(1)', 'w', 'ETA(3)']
 
 

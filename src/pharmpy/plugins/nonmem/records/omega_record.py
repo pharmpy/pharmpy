@@ -58,7 +58,7 @@ class OmegaRecord(Record):
                         f' must be set to FIX'
                     )
                 if sd:
-                    init = init ** 2
+                    init = init**2
                 for _ in range(n):
                     name = self._find_label(node, seen_labels)
                     comment = self._get_name(node)

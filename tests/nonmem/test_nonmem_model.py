@@ -311,7 +311,7 @@ def test_add_random_variables(pheno_path, rv_new, buf_new):
     rv = model.random_variables['eta_new']
 
     assert rv.sympy_rv.pspace.distribution.mean == 0
-    assert (rv.sympy_rv.pspace.distribution.std ** 2).name == 'omega'
+    assert (rv.sympy_rv.pspace.distribution.std**2).name == 'omega'
 
 
 def test_add_random_variables_and_statements(pheno_path):

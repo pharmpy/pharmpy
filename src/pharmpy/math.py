@@ -140,7 +140,7 @@ def nearest_posdef(A):
     k = 1
     while not is_posdef(A3):
         mineig = np.min(np.real(np.linalg.eigvals(A3)))
-        A3 += Id * (-mineig * k ** 2 + spacing)
+        A3 += Id * (-mineig * k**2 + spacing)
         k += 1
 
     return A3

@@ -91,7 +91,7 @@ def create_ini(cg, model):
 
     for rvs, dist in model.random_variables.etas.distributions():
         if len(rvs) == 1:
-            omega = dist.std ** 2
+            omega = dist.std**2
             init = model.parameters[omega.name].init
             cg.add(f'{name_mangle(rvs[0].name)} ~ {init}')
         else:
@@ -103,7 +103,7 @@ def create_ini(cg, model):
             cg.add(f'{" + ".join([name_mangle(rv.name) for rv in rvs])} ~ c({", ".join(inits)})')
 
     for rvs, dist in model.random_variables.epsilons.distributions():
-        sigma = dist.std ** 2
+        sigma = dist.std**2
         cg.add(f'{name_mangle(sigma.name)} <- {model.parameters[sigma.name].init}')
 
     cg.dedent()
@@ -122,7 +122,7 @@ def create_model(cg, model):
             if s.symbol == model.dependent_variable:
 
                 for rvs, dist in model.random_variables.epsilons.distributions():
-                    sigma = dist.std ** 2
+                    sigma = dist.std**2
                 # FIXME: Needs to be generalized
                 cg.add('Y <- F')
                 cg.add(f'{s.symbol.name} ~ prop({name_mangle(sigma.name)})')

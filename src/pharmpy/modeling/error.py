@@ -492,7 +492,7 @@ def use_thetas_for_error_stdev(model):
         sigma = sigmas[0]
         param = model.parameters[sigma]
         param.fix = True
-        theta_init = param.init ** 0.5
+        theta_init = param.init**0.5
         param.init = 1
         theta = Parameter(f'SD_{eps.name}', theta_init, lower=0)
         model.parameters.append(theta)
@@ -535,7 +535,7 @@ def set_weighted_error_model(model):
         if len(eps) > 0:
             eps = eps[0]
             remaining = term / eps
-            ssum += remaining ** 2
+            ssum += remaining**2
             for symb in remaining.free_symbols:
                 q &= sympy.Q.positive(symb)
     w = sympy.sqrt(ssum)
@@ -593,9 +593,9 @@ def set_dtbs_error_model(model, fix_to_log=False):
         if isinstance(s, Assignment) and s.symbol == sympy.Symbol('W'):
             break
 
-    stats.insert(i + 1, Assignment('W', (f ** zeta) * sympy.Symbol('W')))
+    stats.insert(i + 1, Assignment('W', (f**zeta) * sympy.Symbol('W')))
     ipred = sympy.Piecewise(
-        ((f ** lam - 1) / lam, sympy.And(sympy.Ne(lam, 0), sympy.Ne(f, 0))),
+        ((f**lam - 1) / lam, sympy.And(sympy.Ne(lam, 0), sympy.Ne(f, 0))),
         (sympy.log(f), sympy.And(sympy.Eq(lam, 0), sympy.Ne(f, 0))),
         (-1 / lam, sympy.And(sympy.Eq(lam, 0), sympy.Eq(f, 0))),
         (-1000000000, True),
@@ -605,7 +605,7 @@ def set_dtbs_error_model(model, fix_to_log=False):
     yexpr.subs({f: sympy.Symbol('IPRED')})
 
     obs = sympy.Piecewise(
-        (sympy.log(y), sympy.Eq(lam, 0)), ((y ** lam - 1) / lam, sympy.Ne(lam, 0))
+        (sympy.log(y), sympy.Eq(lam, 0)), ((y**lam - 1) / lam, sympy.Ne(lam, 0))
     )
     model.observation_transformation = obs
 

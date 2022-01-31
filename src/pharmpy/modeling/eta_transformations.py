@@ -226,14 +226,14 @@ class EtaTransformation:
             eta = S(f'eta{i}')
             theta = S(f'theta{i}')
 
-            num_1 = eta ** 2 + 1
+            num_1 = eta**2 + 1
             denom_1 = 4 * theta
 
-            num_2 = (5 * eta ** 4) + (16 * eta ** 2 + 3)
-            denom_2 = 96 * theta ** 2
+            num_2 = (5 * eta**4) + (16 * eta**2 + 3)
+            denom_2 = 96 * theta**2
 
-            num_3 = (3 * eta ** 6) + (19 * eta ** 4) + (17 * eta ** 2) - 15
-            denom_3 = 384 * theta ** 3
+            num_3 = (3 * eta**6) + (19 * eta**4) + (17 * eta**2) - 15
+            denom_3 = 384 * theta**3
 
             expression = eta * (1 + (num_1 / denom_1) + (num_2 / denom_2) + (num_3 / denom_3))
 

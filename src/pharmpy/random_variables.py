@@ -62,7 +62,7 @@ class RandomVariable:
         if sympy_rv is not None:
             if isinstance(sympy_rv.pspace.distribution, NormalDistribution):
                 self._mean = sympy.Matrix([sympy_rv.pspace.distribution.mean])
-                self._variance = sympy.Matrix([sympy_rv.pspace.distribution.std ** 2])
+                self._variance = sympy.Matrix([sympy_rv.pspace.distribution.std**2])
             elif isinstance(sympy_rv.pspace.distribution, MultivariateNormalDistribution):
                 raise ValueError(
                     "Cannot create multivariate random variables using constructor. "
@@ -859,9 +859,9 @@ class RandomVariables(MutableSequence):
         parameters = []
         for rvs, dist in self.distributions():
             if len(rvs) == 1:
-                p = dist.std ** 2
+                p = dist.std**2
                 if p not in parameters:
-                    parameters.append(dist.std ** 2)
+                    parameters.append(dist.std**2)
             else:
                 for p in dist.sigma.diagonal():
                     if p not in parameters:
@@ -1187,7 +1187,7 @@ class RandomVariables(MutableSequence):
             names.extend([rv.name for rv in rvs])
             if isinstance(dist, stats.crv_types.NormalDistribution):
                 means.append(dist.mean)
-                blocks.append(sympy.Matrix([dist.std ** 2]))
+                blocks.append(sympy.Matrix([dist.std**2]))
             elif isinstance(dist, stats.joint_rv_types.MultivariateNormalDistribution):
                 means.extend(dist.mu)
                 blocks.append(dist.sigma)
@@ -1248,7 +1248,7 @@ class RandomVariables(MutableSequence):
                         else:
                             newdict[name] = np.sqrt(sigma[i, j])
             else:
-                name = (dist.std ** 2).name
+                name = (dist.std**2).name
                 if name in newdict:
                     newdict[name] = dist.std.subs(values)
         return newdict
