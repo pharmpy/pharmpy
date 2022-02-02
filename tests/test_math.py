@@ -1,8 +1,9 @@
+import warnings
+
 import numpy as np
 import pandas as pd
 import pytest
 import sympy
-import warnings
 
 with warnings.catch_warnings():
     warnings.filterwarnings("ignore", category=DeprecationWarning)
