@@ -1,4 +1,5 @@
 import itertools
+import warnings
 from pathlib import Path
 
 import altair as alt
@@ -735,10 +736,13 @@ def calculate_results_from_samples(frem_model, continuous, categorical, parvecs,
     mu_id_bars = np.exp(mu_id_bars)
     original_id_bar = np.exp(original_id_bar)
 
-    with np.testing.suppress_warnings() as sup:  # Would warn in case of missing covariates
-        sup.filter(RuntimeWarning, "All-NaN slice encountered")
-        id_5th = np.nanquantile(mu_id_bars, 0.05, axis=0)
-        id_95th = np.nanquantile(mu_id_bars, 0.95, axis=0)
+    with warnings.catch_warnings():
+        # Needed because warnings emitted on Python 3.10
+        warnings.filterwarnings("ignore", category=DeprecationWarning)
+        with np.testing.suppress_warnings() as sup:  # Would warn in case of missing covariates
+            sup.filter(RuntimeWarning, "All-NaN slice encountered")
+            id_5th = np.nanquantile(mu_id_bars, 0.05, axis=0)
+            id_95th = np.nanquantile(mu_id_bars, 0.95, axis=0)
 
     param_col = []
     obs_col = []

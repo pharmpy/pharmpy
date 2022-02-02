@@ -3,7 +3,11 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-import scipy.stats
+
+with warnings.catch_warnings():
+    # Warning in Python 3.10
+    warnings.filterwarnings("ignore", category=DeprecationWarning)
+    import scipy.stats
 
 import pharmpy.visualization
 from pharmpy import Model

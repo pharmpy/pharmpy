@@ -2,7 +2,12 @@ import numpy as np
 import pandas as pd
 import pytest
 import sympy
-from numpy.testing import assert_allclose, assert_array_equal
+import warnings
+
+with warnings.catch_warnings():
+    warnings.filterwarnings("ignore", category=DeprecationWarning)
+    from numpy.testing import assert_allclose, assert_array_equal
+
 from pandas.testing import assert_series_equal
 
 import pharmpy.math
