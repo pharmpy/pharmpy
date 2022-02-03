@@ -1,3 +1,4 @@
+import pandas
 import pandas as pd
 
 from pharmpy.modeling import copy_model, remove_iiv
@@ -88,19 +89,27 @@ def run_iiv(model):
     """
     res_no_of_etas = run_tool('iiv', 'brute_force_no_of_etas', model=model)
 
-    if res_no_of_etas.best_model != model:
-        best_model = res_no_of_etas.best_model
-        best_model_eta_removed = copy_model(res_no_of_etas.best_model, 'iiv_no_of_etas_best_model')
-        features = res_no_of_etas.summary.loc[best_model.name]['features']
+    best_model = res_no_of_etas.best_model
+
+    if best_model != model:
+        best_model_eta_removed = copy_model(best_model, 'iiv_no_of_etas_best_model')
+        features = res_no_of_etas.summary_tool.loc[best_model.name]['features']
         remove_iiv(best_model_eta_removed, features)
-    else:
-        best_model = model
+        best_model = best_model_eta_removed
 
     res_block_structure = run_tool('iiv', 'brute_force_block_structure', model=best_model)
 
     best_model = res_block_structure.best_model
+
     summary_tool = pd.concat([res_no_of_etas.summary_tool, res_block_structure.summary_tool])
-    summary_models = pd.concat([res_no_of_etas.summary_models, res_block_structure.summary_models])
+
+    summary_start_model = res_no_of_etas.summary_models.loc[model.name].to_frame().T
+    summary_models_no_of_etas = res_no_of_etas.summary_models.drop([model.name])
+    summary_models_block_structure = res_block_structure.summary_models.drop([model.name])
+    summary_models = pd.concat(
+        [summary_start_model, summary_models_no_of_etas, summary_models_block_structure]
+    )
+
     from pharmpy.tools.iiv.tool import IIVResults
 
     res = IIVResults(
