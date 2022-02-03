@@ -297,6 +297,22 @@ class Model(pharmpy.model.Model):
             self.statements
             # reading statements might change parameters. Resetting _old_parameters
             self._old_parameters = self._parameters.copy()
+
+        nearest = self.random_variables.nearest_valid_parameters(self._parameters.inits)
+        if nearest != self._parameters.inits:
+            before = dict()
+            after = dict()
+            for key, value in self._parameters.inits.items():
+                if nearest[key] != value:
+                    before[key] = value
+                    after[key] = nearest[key]
+            warnings.warn(
+                f"Adjusting initial estimates to create positive semidefinite "
+                f"omega/sigma matrices.\nBefore adjusting:  {before}.\n"
+                f"After adjusting: {after}"
+            )
+            self._parameters.inits = nearest
+            self._old_parameters = self._parameters.copy()
         return self._parameters
 
     def _read_parameters(self):

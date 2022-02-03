@@ -961,8 +961,10 @@ def psn_frem_results(path, force_posdef_covmatrix=False, force_posdef_samples=50
     if not model_4_path.is_file():
         raise IOError(f'Could not find FREM model 4: {str(model_4_path)}')
     model_4 = Model.create_model(model_4_path)
-    if model_4.modelfit_results is None:
-        raise ValueError('Model 4 has no results')
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", message="Adjusting initial estimates")
+        if model_4.modelfit_results is None:
+            raise ValueError('Model 4 has no results')
     cov_model = None
     if method == 'cov_sampling':
         try:
