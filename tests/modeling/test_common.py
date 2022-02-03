@@ -8,6 +8,7 @@ from pharmpy import Model
 from pharmpy.modeling import (
     convert_model,
     copy_model,
+    create_joint_distribution,
     fix_parameters,
     fix_parameters_to,
     generate_model_code,
@@ -182,3 +183,9 @@ def test_convert_model():
 def test_remove_unused_parameters_and_rvs(testdata):
     model = Model.create_model(testdata / 'nonmem' / 'pheno_real.mod')
     remove_unused_parameters_and_rvs(model)
+    create_joint_distribution(model)
+    statements = model.statements
+    i = statements.index(statements.find_assignment('CL'))
+    del model.statements[i]
+    remove_unused_parameters_and_rvs(model)
+    assert not model.random_variables['ETA(2)'].joint_names

@@ -9,6 +9,7 @@ from pathlib import Path
 import sympy
 
 from pharmpy import Model, Parameters, RandomVariables, config
+from pharmpy.modeling import split_joint_distribution
 from pharmpy.statements import Assignment, CompartmentalSystem
 from pharmpy.workflows import default_model_database
 
@@ -830,6 +831,8 @@ def remove_unused_parameters_and_rvs(model):
 
     new_rvs = RandomVariables()
     for rv in model.random_variables:
+        if rv.symbol not in symbols and len(rv.joint_names) > 0:
+            split_joint_distribution(model, rv.name)
         if rv.symbol in symbols or not symbols.isdisjoint(rv.sympy_rv.pspace.free_symbols):
             new_rvs.append(rv)
     model.random_variables = new_rvs
