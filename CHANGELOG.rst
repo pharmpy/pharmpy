@@ -1,3 +1,22 @@
+0.48.0 (2022-02-04)
+-------------------
+
+New features
+~~~~~~~~~~~~
+
+* Parse estimation step runtime from NONMEM results file
+
+Changes
+~~~~~~~
+
+* Force initial estimates when reading model file to be positive definite
+
+Bugfix
+~~~~~~
+
+* Add $COV correctly in NM-TRAN models (#457)
+
+
 0.47.0 (2022-01-28)
 -------------------
 
@@ -5,6 +24,7 @@
 * Add modeling.drop_dropped_columns
 * Add modeling.undrop_columns
 * Add modeling.translate_nmtran_time
+
 
 0.46.0 (2022-01-27)
 -------------------
