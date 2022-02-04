@@ -14,6 +14,7 @@ Changes
 Bugfix
 ~~~~~~
 
+* Random block was not split properly in some cases when random variable was removed
 * Add $COV correctly in NM-TRAN models (#457)
 
 
