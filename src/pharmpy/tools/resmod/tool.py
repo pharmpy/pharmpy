@@ -23,7 +23,7 @@ from ...modeling.error import remove_error_model, set_time_varying_error_model
 from .results import calculate_results
 
 
-def create_workflow(model=None, groups=4):
+def create_workflow(model=None, groups=4, cutoff=3.84):
     wf = Workflow()
     wf.name = "resmod"  # FIXME: Could have as input to Workflow
 
@@ -53,8 +53,8 @@ def create_workflow(model=None, groups=4):
     wf.insert_workflow(
         fit_wf, predecessors=[task_base_model, task_iiv, task_power, task_combined] + tasks
     )
-
-    task_post_process = Task('post_process', post_process)
+    post_pro = partial(post_process, cutoff=cutoff)
+    task_post_process = Task('post_process', post_pro)
     wf.add_task(task_post_process, predecessors=[start_task] + fit_wf.output_tasks)
 
     task_unpack = Task('unpack', _unpack)
@@ -73,7 +73,7 @@ def start(model):
     return model
 
 
-def post_process(start_model, *models):
+def post_process(start_model, *models, cutoff):
     res = calculate_results(
         base_model=_find_model(models, 'base'),
         iiv_on_ruv=_find_model(models, 'iiv_on_ruv'),
@@ -81,7 +81,7 @@ def post_process(start_model, *models):
         combined=_find_model(models, 'combined'),
         tvar_models=_find_tvar_models(models),
     )
-    best_model = _create_best_model(start_model, res)
+    best_model = _create_best_model(start_model, res, cutoff=cutoff)
     res.best_model = best_model
     return res
 
@@ -220,10 +220,10 @@ def _time_after_dose(model):
     return model
 
 
-def _create_best_model(model, res, groups=4):
+def _create_best_model(model, res, groups=4, cutoff=3.84):
     model = model.copy()
     _time_after_dose(model)
-    if any(res.models['dofv'] > 6.64):
+    if any(res.models['dofv'] > cutoff):
         idx = res.models['dofv'].idxmax()
         name = idx[0]
         if name == 'power':
@@ -239,8 +239,8 @@ def _create_best_model(model, res, groups=4):
         elif name[:12] == 'time_varying':
             i = int(name[-1])
             quantile = i / groups
-            cutoff = model.dataset['TAD'].quantile(q=quantile)
-            set_time_varying_error_model(model, cutoff=cutoff, idv='TAD')
+            cutoff_tvar = model.dataset['TAD'].quantile(q=quantile)
+            set_time_varying_error_model(model, cutoff=cutoff_tvar, idv='TAD')
             model.parameters.inits = {
                 'time_varying': res.models['parameters']
                 .loc[f"time_varying{i}", 1, 1]
