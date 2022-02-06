@@ -14,5 +14,5 @@ def test_resmod(tmp_path, testdata):
 
         model = Model.create_model('pheno_real.mod')
         model.datainfo.path = tmp_path / 'pheno.dta'
-        res = run_tool('resmod', model, groups=4, cutoff=3.84)
+        res = run_tool('resmod', model, groups=4, cutoff=3.84, skip=[])
         assert res
