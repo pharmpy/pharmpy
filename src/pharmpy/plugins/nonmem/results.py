@@ -3,6 +3,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+import pharmpy.modeling as modeling
 from pharmpy.plugins.nonmem.results_file import NONMEMResultsFile
 from pharmpy.plugins.nonmem.table import NONMEMTableFile
 from pharmpy.results import ChainedModelfitResults, ModelfitResults
@@ -444,7 +445,7 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
                     obj.information_matrix = obj._inf_from_corrse()
             if obj.standard_errors is None:
                 if obj.covariance_matrix is not None:
-                    obj.standard_errors = obj._se_from_cov()
+                    obj.standard_errors = modeling.calculate_se_from_cov(obj.covariance_matrix)
                 elif obj.information_matrix is not None:
                     obj.standard_errors = obj._se_from_inf()
 

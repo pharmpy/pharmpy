@@ -347,14 +347,6 @@ class ModelfitResults(Results):
             ser.name = 'RSE'
             return ser
 
-    def _se_from_cov(self):
-        """Calculate the standard errors from the covariance matrix
-        can be used by subclasses
-        """
-        cov = self.covariance_matrix
-        se = pd.Series(np.sqrt(np.diag(cov.values)), index=cov.index)
-        return se
-
     def _se_from_inf(self):
         """Calculate the standard errors from the information matrix"""
         Im = self.information_matrix
