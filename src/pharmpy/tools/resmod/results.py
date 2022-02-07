@@ -12,15 +12,37 @@ class ResmodResults(Results):
         self.models = models
 
 
-def calculate_results(base_model, iiv_on_ruv, power, combined, tvar_models):
+def calculate_results(base_model, tvar_models, other_models):
     base_ofv = base_model.modelfit_results.ofv
-    dofv_iiv_on_ruv = base_ofv - iiv_on_ruv.modelfit_results.ofv
-    dofv_power = base_ofv - power.modelfit_results.ofv
-    dofv_combined = base_ofv - combined.modelfit_results.ofv
-    omega_iiv_on_ruv = round(iiv_on_ruv.modelfit_results.parameter_estimates["IIV_RUV1"], 6)
-    theta_power = round(power.modelfit_results.parameter_estimates["power1"], 6)
-    sigma_add = round(combined.modelfit_results.parameter_estimates["sigma_add"], 6)
-    sigma_prop = round(combined.modelfit_results.parameter_estimates["sigma_prop"], 6)
+
+    model_name = []
+    model_dofv = []
+    model_params = []
+    for model in other_models:
+        name = model.name
+        dofv = base_ofv - model.modelfit_results.ofv
+        if name == 'IIV_on_RUV':
+            param = {'omega': round(model.modelfit_results.parameter_estimates["IIV_RUV1"], 6)}
+        elif name == 'power':
+            param = {'theta': round(model.modelfit_results.parameter_estimates["power1"], 6)}
+        else:
+            param = {
+                'sigma_add': round(model.modelfit_results.parameter_estimates["sigma_add"], 6),
+                'sigma_prop': round(model.modelfit_results.parameter_estimates["sigma_prop"], 6),
+            }
+        model_name.append(name)
+        model_dofv.append(dofv)
+        model_params.append(param)
+
+    df = pd.DataFrame(
+        {
+            'model': model_name,
+            'dvid': 1,
+            'iteration': 1,
+            'dofv': model_dofv,
+            'parameters': model_params,
+        }
+    )
 
     tvar_name = []
     dofv_tvar = []
@@ -37,28 +59,6 @@ def calculate_results(base_model, iiv_on_ruv, power, combined, tvar_models):
     for i in range(1, len(tvar_models) + 1):
         param = {f"theta_tvar{i}": theta_tvar[i - 1]}
         params_tvar.append(param)
-
-    df = pd.DataFrame(
-        {
-            'model': [
-                'IIV_on_RUV',
-                'power',
-                'combined',
-            ],
-            'dvid': 1,
-            'iteration': 1,
-            'dofv': [
-                dofv_iiv_on_ruv,
-                dofv_power,
-                dofv_combined,
-            ],
-            'parameters': [
-                {'omega': omega_iiv_on_ruv},
-                {'theta': theta_power},
-                dict(sigma_add=sigma_add, sigma_prop=sigma_prop),
-            ],
-        }
-    )
 
     df_tvar = pd.DataFrame(
         {
