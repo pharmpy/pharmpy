@@ -347,12 +347,6 @@ class ModelfitResults(Results):
             ser.name = 'RSE'
             return ser
 
-    def _se_from_inf(self):
-        """Calculate the standard errors from the information matrix"""
-        Im = self.information_matrix
-        se = pd.Series(np.sqrt(np.linalg.inv(Im.values)), index=Im.index)
-        return se
-
     def near_bounds(self, zero_limit=0.001, significant_digits=2):
         return self.model.parameters.is_close_to_bound(
             values=self.parameter_estimates,

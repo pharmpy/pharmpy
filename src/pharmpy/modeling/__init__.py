@@ -70,7 +70,7 @@ from pharmpy.modeling.eta_transformations import (
     transform_etas_tdist,
 )
 from pharmpy.modeling.iiv_on_ruv import set_iiv_on_ruv
-from pharmpy.modeling.math import calculate_se_from_cov
+from pharmpy.modeling.math import calculate_se_from_cov, calculate_se_from_inf
 from pharmpy.modeling.ml import (
     predict_influential_individuals,
     predict_influential_outliers,
@@ -166,6 +166,7 @@ __all__ = [
     'calculate_individual_shrinkage',
     'calculate_pk_parameters_statistics',
     'calculate_se_from_cov',
+    'calculate_se_from_inf',
     'convert_model',
     'copy_model',
     'create_joint_distribution',

@@ -447,7 +447,7 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
                 if obj.covariance_matrix is not None:
                     obj.standard_errors = modeling.calculate_se_from_cov(obj.covariance_matrix)
                 elif obj.information_matrix is not None:
-                    obj.standard_errors = obj._se_from_inf()
+                    obj.standard_errors = modeling.calculate_se_from_inf(obj.covariance_matrix)
 
     def _read_phi_table(self):
         for result_obj in self:

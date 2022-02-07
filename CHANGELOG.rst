@@ -5,6 +5,7 @@ New features
 ~~~~~~~~~~~~
 
 * Add modeling.calculate_se_from_cov
+* Add modeling.calculate_se_from_inf
 
 0.48.0 (2022-02-04)
 -------------------
