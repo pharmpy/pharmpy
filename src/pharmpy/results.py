@@ -24,12 +24,10 @@ from collections.abc import MutableSequence
 from pathlib import Path
 
 import altair as alt
-import numpy as np
 import pandas as pd
 
 import pharmpy.config as config
 import pharmpy.model
-from pharmpy.math import cov2corr
 
 
 class ResultsConfiguration(config.Configuration):
@@ -302,42 +300,6 @@ class ModelfitResults(Results):
     def runtime_estimation(self):
         """Runtime for estimation step"""
         return self._runtime_estimation
-
-    def _cov_from_inf(self):
-        Im = self.information_matrix
-        cov = pd.DataFrame(np.linalg.inv(Im.values), index=Im.index, columns=Im.columns)
-        return cov
-
-    def _cov_from_corrse(self):
-        se = self.standard_errors
-        corr = self.correlation_matrix
-        x = se.values @ se.values.T
-        cov = x * corr.values
-        cov_df = pd.DataFrame(cov, index=corr.index, columns=corr.columns)
-        return cov_df
-
-    def _inf_from_cov(self):
-        C = self.covariance_matrix
-        Im = pd.DataFrame(np.linalg.inv(C.values), index=C.index, columns=C.columns)
-        return Im
-
-    def _inf_from_corrse(self):
-        se = self.standard_errors
-        corr = self.correlation_matrix
-        x = se.values @ se.values.T
-        cov = x * corr.values
-        Im = pd.DataFrame(np.linalg.inv(cov), index=corr.index, columns=corr.columns)
-        return Im
-
-    def _corr_from_cov(self):
-        C = self.covariance_matrix
-        corr = pd.DataFrame(cov2corr(C.values), index=C.index, columns=C.columns)
-        return corr
-
-    def _corr_from_inf(self):
-        Im = self.information_matrix
-        corr = pd.DataFrame(cov2corr(np.linalg.inv(Im.values)), index=Im.index, columns=Im.columns)
-        return corr
 
     @property
     def relative_standard_errors(self):

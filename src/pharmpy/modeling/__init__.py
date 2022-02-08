@@ -70,7 +70,16 @@ from pharmpy.modeling.eta_transformations import (
     transform_etas_tdist,
 )
 from pharmpy.modeling.iiv_on_ruv import set_iiv_on_ruv
-from pharmpy.modeling.math import calculate_se_from_cov, calculate_se_from_inf
+from pharmpy.modeling.math import (
+    calculate_corr_from_cov,
+    calculate_corr_from_inf,
+    calculate_cov_from_corrse,
+    calculate_cov_from_inf,
+    calculate_inf_from_corrse,
+    calculate_inf_from_cov,
+    calculate_se_from_cov,
+    calculate_se_from_inf,
+)
 from pharmpy.modeling.ml import (
     predict_influential_individuals,
     predict_influential_outliers,
@@ -159,11 +168,17 @@ __all__ = [
     'append_estimation_step_options',
     'bump_model_number',
     'calculate_aic',
+    'calculate_corr_from_cov',
+    'calculate_corr_from_inf',
+    'calculate_cov_from_corrse',
+    'calculate_cov_from_inf',
     'calculate_epsilon_gradient_expression',
     'calculate_eta_gradient_expression',
     'calculate_eta_shrinkage',
     'calculate_individual_parameter_statistics',
     'calculate_individual_shrinkage',
+    'calculate_inf_from_corrse',
+    'calculate_inf_from_cov',
     'calculate_pk_parameters_statistics',
     'calculate_se_from_cov',
     'calculate_se_from_inf',

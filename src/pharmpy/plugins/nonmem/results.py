@@ -430,24 +430,30 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
         for obj in self:
             if obj.covariance_matrix is None:
                 if obj.correlation_matrix is not None:
-                    obj.covariance_matrix = self._cov_from_corrse()
+                    obj.covariance_matrix = modeling.calculate_cov_from_corrse(
+                        obj.correlation_matrix, obj.standard_errors
+                    )
                 elif obj.information_matrix is not None:
-                    obj.covariance_matrix = obj._cov_from_inf()
+                    obj.covariance_matrix = modeling.calculate_cov_from_inf(obj.information_matrix)
             if obj.correlation_matrix is None:
                 if obj.covariance_matrix is not None:
-                    obj.correlation_matrix = obj._corr_from_cov()
+                    obj.correlation_matrix = modeling.calculate_corr_from_cov(obj.covariance_matrix)
                 elif obj.information_matrix is not None:
-                    obj.correlation_matrix = obj._corr_from_coi()
+                    obj.correlation_matrix = modeling.calculate_corr_from_coi(
+                        obj.information_matrix
+                    )
             if obj.information_matrix is None:
                 if obj.covariance_matrix is not None:
-                    obj.information_matrix = obj._inf_from_cov()
+                    obj.information_matrix = modeling.calculate_inf_from_cov(obj.covariance_matrix)
                 elif obj.correlation_matrix is not None:
-                    obj.information_matrix = obj._inf_from_corrse()
+                    obj.information_matrix = modeling.calculate_inf_from_corrse(
+                        obj.correlation_matrix, obj.standard_errors
+                    )
             if obj.standard_errors is None:
                 if obj.covariance_matrix is not None:
                     obj.standard_errors = modeling.calculate_se_from_cov(obj.covariance_matrix)
                 elif obj.information_matrix is not None:
-                    obj.standard_errors = modeling.calculate_se_from_inf(obj.covariance_matrix)
+                    obj.standard_errors = modeling.calculate_se_from_inf(obj.information_matrix)
 
     def _read_phi_table(self):
         for result_obj in self:

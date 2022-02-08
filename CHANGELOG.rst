@@ -6,6 +6,12 @@ New features
 
 * Add modeling.calculate_se_from_cov
 * Add modeling.calculate_se_from_inf
+* Add modeling.calculate_corr_from_cov
+* Add modeling.calculate_cov_from_inf
+* Add modeling.calculate_cov_from_corrse
+* Add modeling.calculate_inf_from_cov
+* Add modeling.calculate_inf_from_corrse
+* Add modeling.calculate_corr_from_inf
 
 0.48.0 (2022-02-04)
 -------------------
