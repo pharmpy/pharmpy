@@ -2,6 +2,7 @@ from functools import partial
 
 import pandas as pd
 import sympy
+from scipy.stats import chi2
 
 import pharmpy.model
 import pharmpy.tools
@@ -23,7 +24,9 @@ from ...modeling.error import remove_error_model, set_time_varying_error_model
 from .results import calculate_results
 
 
-def create_workflow(model=None, groups=4, cutoff=3.84, skip=[]):
+def create_workflow(model=None, groups=4, p_value=0.05, skip=None):
+    if skip is None:
+        skip = []
     wf = Workflow()
     wf.name = "resmod"  # FIXME: Could have as input to Workflow
 
@@ -58,7 +61,7 @@ def create_workflow(model=None, groups=4, cutoff=3.84, skip=[]):
 
     fit_wf = create_fit_workflow(n=1 + len(tasks))
     wf.insert_workflow(fit_wf, predecessors=[task_base_model] + tasks)
-    post_pro = partial(post_process, cutoff=cutoff)
+    post_pro = partial(post_process, p_value=p_value)
     task_post_process = Task('post_process', post_pro)
     wf.add_task(task_post_process, predecessors=[start_task] + fit_wf.output_tasks)
 
@@ -78,14 +81,14 @@ def start(model):
     return model
 
 
-def post_process(start_model, *models, cutoff):
+def post_process(start_model, *models, p_value):
 
     res = calculate_results(
         base_model=_find_models(models)[0],
         tvar_models=_find_models(models)[1],
         other_models=_find_models(models)[2],
     )
-    best_model = _create_best_model(start_model, res, cutoff=cutoff)
+    best_model = _create_best_model(start_model, res, p_value=p_value)
     res.best_model = best_model[0]
     res.selected_model_name = best_model[1]
     return res
@@ -225,10 +228,11 @@ def _time_after_dose(model):
     return model
 
 
-def _create_best_model(model, res, groups=4, cutoff=3.84):
+def _create_best_model(model, res, groups=4, p_value=0.05):
     model = model.copy()
     _time_after_dose(model)
     selected_model_name = ''
+    cutoff = float(chi2.isf(q=p_value, df=1))
     if any(res.models['dofv'] > cutoff):
         idx = res.models['dofv'].idxmax()
         name = idx[0]
