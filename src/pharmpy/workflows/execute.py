@@ -71,7 +71,9 @@ def execute_workflow(workflow, dispatcher=None, database=None, path=None):
     if isinstance(res, Results):
         database.store_results(res)
         if hasattr(res, 'rst_path'):
-            res.create_report(path=database.path)
+            from pharmpy.modeling.reporting import create_report
+
+            create_report(res, database.path)
 
     return res
 

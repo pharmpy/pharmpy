@@ -12,6 +12,7 @@ New features
 * Add modeling.calculate_inf_from_cov
 * Add modeling.calculate_inf_from_corrse
 * Add modeling.calculate_corr_from_inf
+* Add modeling.create_report
 
 0.48.0 (2022-02-04)
 -------------------

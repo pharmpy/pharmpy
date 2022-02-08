@@ -198,11 +198,6 @@ class Results:
         with open(path, 'w', newline='') as fh:
             print(s, file=fh)
 
-    def create_report(self, path):
-        import pharmpy.reporting.reporting as reporting
-
-        reporting.generate_report(self.rst_path, path)
-
     def add_plots(self):
         """Create and add all plots to results object"""
         raise NotImplementedError()

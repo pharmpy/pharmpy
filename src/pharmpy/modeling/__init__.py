@@ -143,6 +143,7 @@ from .expressions import (
 )
 from .iterators import omit_data, resample_data
 from .plots import plot_individual_predictions, plot_iofv_vs_iofv
+from .reporting import create_report
 from .results import (
     calculate_aic,
     calculate_eta_shrinkage,
@@ -185,6 +186,7 @@ __all__ = [
     'convert_model',
     'copy_model',
     'create_joint_distribution',
+    'create_report',
     'create_results',
     'create_rng',
     'create_symbol',
