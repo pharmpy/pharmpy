@@ -15,7 +15,7 @@ def test_exhaustive(tmp_path, testdata):
         model_start = Model.create_model('mox2.mod')
         model_start.datainfo.path = tmp_path / 'mx19B.csv'
         res = run_tool(
-            'modelsearch', 'exhaustive', 'ABSORPTION(ZO)\nPERIPHERALS(1)', model=model_start
+            'modelsearch', 'exhaustive', 'ABSORPTION(ZO);PERIPHERALS(1)', model=model_start
         )
 
         assert len(res.summary_tool) == 3
@@ -36,17 +36,17 @@ def test_exhaustive(tmp_path, testdata):
 @pytest.mark.parametrize(
     'mfl, no_of_models, best_model_name, last_model_parent_name',
     [
-        ('ABSORPTION(ZO)\nPERIPHERALS(1)', 4, 'modelsearch_candidate2', 'modelsearch_candidate2'),
-        ('ABSORPTION(ZO)\nELIMINATION(ZO)', 4, 'mox2', 'modelsearch_candidate2'),
-        ('ABSORPTION(ZO)\nTRANSITS(1)', 2, 'mox2', 'mox2'),
+        ('ABSORPTION(ZO);PERIPHERALS(1)', 4, 'modelsearch_candidate2', 'modelsearch_candidate2'),
+        ('ABSORPTION(ZO);ELIMINATION(ZO)', 4, 'mox2', 'modelsearch_candidate2'),
+        ('ABSORPTION(ZO);TRANSITS(1)', 2, 'mox2', 'mox2'),
         (
-            'ABSORPTION([ZO,SEQ-ZO-FO])\nPERIPHERALS(1)',
+            'ABSORPTION([ZO,SEQ-ZO-FO]);PERIPHERALS(1)',
             7,
             'modelsearch_candidate3',
             'modelsearch_candidate3',
         ),
-        ('LAGTIME()\nTRANSITS(1)', 2, 'mox2', 'mox2'),
-        ('ABSORPTION(ZO)\nTRANSITS(3, *)', 3, 'mox2', 'mox2'),
+        ('LAGTIME();TRANSITS(1)', 2, 'mox2', 'mox2'),
+        ('ABSORPTION(ZO);TRANSITS(3, *)', 3, 'mox2', 'mox2'),
     ],
 )
 def test_exhaustive_stepwise_basic(
@@ -81,12 +81,12 @@ def test_exhaustive_stepwise_basic(
 @pytest.mark.parametrize(
     'mfl, as_fullblock, no_of_models, best_model_name, no_of_added_etas',
     [
-        ('ABSORPTION(ZO)\nPERIPHERALS(1)', False, 4, 'modelsearch_candidate2', 2),
-        ('ABSORPTION(ZO)\nELIMINATION(ZO)', False, 4, 'mox2', 1),
-        ('ABSORPTION(ZO)\nELIMINATION(MIX-FO-MM)', False, 4, 'modelsearch_candidate2', 2),
-        ('ABSORPTION(ZO)\nPERIPHERALS([1, 2])', False, 8, 'modelsearch_candidate2', 4),
-        ('LAGTIME()\nTRANSITS(1)', False, 2, 'mox2', 1),
-        ('ABSORPTION(ZO)\nPERIPHERALS(1)', True, 4, 'modelsearch_candidate2', 2),
+        ('ABSORPTION(ZO);PERIPHERALS(1)', False, 4, 'modelsearch_candidate2', 2),
+        ('ABSORPTION(ZO);ELIMINATION(ZO)', False, 4, 'mox2', 1),
+        ('ABSORPTION(ZO);ELIMINATION(MIX-FO-MM)', False, 4, 'modelsearch_candidate2', 2),
+        ('ABSORPTION(ZO);PERIPHERALS([1, 2])', False, 8, 'modelsearch_candidate2', 4),
+        ('LAGTIME();TRANSITS(1)', False, 2, 'mox2', 1),
+        ('ABSORPTION(ZO);PERIPHERALS(1)', True, 4, 'modelsearch_candidate2', 2),
     ],
 )
 def test_exhaustive_stepwise_add_etas(
@@ -124,7 +124,7 @@ def test_exhaustive_stepwise_already_fit(tmp_path, testdata):
 
         fit(model_start)
 
-        mfl = 'ABSORPTION(ZO)\nPERIPHERALS(1)'
+        mfl = 'ABSORPTION(ZO);PERIPHERALS(1)'
         res = run_tool('modelsearch', 'exhaustive_stepwise', mfl, model=model_start)
 
         assert len(res.summary_tool) == 4
@@ -150,7 +150,7 @@ def test_exhaustive_stepwise_start_model_fail(tmp_path, testdata):
 
         add_iiv(model_start, 'V', 'incorrect_syntax')
 
-        mfl = 'ABSORPTION(ZO)\nPERIPHERALS(1)'
+        mfl = 'ABSORPTION(ZO);PERIPHERALS(1)'
         res = run_tool('modelsearch', 'exhaustive_stepwise', mfl, model=model_start)
 
         assert len(res.summary_tool) == 4

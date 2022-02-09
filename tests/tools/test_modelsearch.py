@@ -1,43 +1,46 @@
 import pytest
 
-import pharmpy.tools.modelsearch.algorithms as algorithms
+from pharmpy.tools.modelsearch.algorithms import exhaustive, exhaustive_stepwise
 from pharmpy.tools.modelsearch.mfl import ModelFeatures
 
 
+def test_exhaustive_algorithm():
+    mfl = 'ABSORPTION(ZO);PERIPHERALS(1)'
+    wf, _, model_features = exhaustive(mfl, False, False)
+    fit_tasks = [task.name for task in wf.tasks if task.name.startswith('run')]
+
+    assert len(fit_tasks) == 3
+    assert list(model_features.values())[-1] == ('ABSORPTION(ZO)', 'PERIPHERALS(1)')
+
+
 @pytest.mark.parametrize(
-    'algorithm, mfl, no_of_models, last_model_features',
+    'mfl, no_of_models, last_model_features',
     [
-        ('exhaustive', 'ABSORPTION(ZO)\nPERIPHERALS(1)', 3, ('ABSORPTION(ZO)', 'PERIPHERALS(1)')),
         (
-            'exhaustive_stepwise',
             'ABSORPTION(ZO)\nPERIPHERALS(1)',
             4,
             ('PERIPHERALS(1)', 'ABSORPTION(ZO)'),
         ),
-        ('exhaustive_stepwise', 'ABSORPTION(ZO)\nTRANSITS(1)', 2, ('TRANSITS(1)',)),
+        ('ABSORPTION(ZO);TRANSITS(1)', 2, ('TRANSITS(1)',)),
         (
-            'exhaustive_stepwise',
-            'ABSORPTION([ZO,SEQ-ZO-FO])\nPERIPHERALS(1)',
+            'ABSORPTION([ZO,SEQ-ZO-FO]);PERIPHERALS(1)',
             7,
             ('PERIPHERALS(1)', 'ABSORPTION(ZO)'),
         ),
         (
-            'exhaustive_stepwise',
-            'ABSORPTION(ZO)\nPERIPHERALS([1, 2])',
+            'ABSORPTION(ZO);PERIPHERALS([1, 2])',
             8,
             ('PERIPHERALS(1)', 'PERIPHERALS(2)', 'ABSORPTION(ZO)'),
         ),
         (
-            'exhaustive_stepwise',
-            'ABSORPTION(SEQ-ZO-FO)\nLAGTIME()',
+            'ABSORPTION(SEQ-ZO-FO);LAGTIME()',
             2,
             ('LAGTIME()',),
         ),
     ],
 )
-def test_algorithms(algorithm, mfl, no_of_models, last_model_features):
-    algorithm_func = getattr(algorithms, algorithm)
-    wf, _, model_features = algorithm_func(mfl, False, False)
+def test_exhaustive_stepwise_algorithm(mfl, no_of_models, last_model_features):
+    wf, _, model_features = exhaustive_stepwise(mfl, False, False)
     fit_tasks = [task.name for task in wf.tasks if task.name.startswith('run')]
 
     assert len(fit_tasks) == no_of_models
