@@ -42,17 +42,6 @@ class NONMEMModelfitResults(ModelfitResults):
             return self._covariance_status
 
     @property
-    def condition_number(self):
-        try:
-            return self._condition_number
-        except AttributeError:
-            try:
-                self._condition_number = np.linalg.cond(self.correlation_matrix)
-            except Exception:
-                self._condition_number = None
-            return self._condition_number
-
-    @property
     def runtime_estimation(self):
         try:
             return self._runtime_estimation
@@ -117,11 +106,12 @@ class NONMEMModelfitResults(ModelfitResults):
                 else:
                     result['Covariance step successful'] = 'OK'
                 try:
-                    if self.condition_number >= condition_number_limit:
+                    cond = np.linalg.cond(self.correlation_matrix.values)
+                    if cond >= condition_number_limit:
                         result['Large condition number'] = 'WARNING'
                     else:
                         result[f'Condition number < {condition_number_limit}'] = 'OK'
-                    result[str.format('Condition number: {:.1f}', self.condition_number)] = ''
+                    result[str.format('Condition number: {:.1f}', self.cond)] = ''
                 except Exception:
                     result['Condition number not available'] = ''
                 try:
@@ -300,7 +290,6 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
                 result_obj.covariance_matrix = None
                 result_obj.correlation_matrix = None
                 result_obj.information_matrix = None
-                result_obj._condition_number = None
                 result_obj._set_covariance_status(None)
             else:
                 ses = ses[~fix]
@@ -314,12 +303,6 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
                 if self.model:
                     sdcorr_ses = sdcorr_ses.rename(index=self.model.parameter_translation())
                 result_obj.standard_errors_sdcorr = sdcorr_ses
-                try:
-                    condition_number = table.condition_number
-                except Exception:
-                    pass  # PRINT=E not set in $COV, but could compute from correlation matrix
-                else:
-                    result_obj._condition_number = condition_number
             self.append(result_obj)
 
     def _fill_empty_results(self, result_obj, is_covariance_step):
@@ -365,10 +348,6 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
     @property
     def estimation_step(self):
         return self[-1].estimation_step
-
-    @property
-    def condition_number(self):
-        return self[-1].condition_number
 
     @property
     def predictions_for_observations(self):

@@ -33,22 +33,6 @@ def test_tool_files(pheno):
     ]
 
 
-def test_condition_number(testdata, pheno):
-    res = pheno.modelfit_results
-    assert res.condition_number == pytest.approx(4.39152)
-
-    maxeval3 = Model.create_model(
-        testdata / 'nonmem' / 'modelfit_results' / 'onePROB' / 'oneEST' / 'noSIM' / 'maxeval3.mod'
-    )
-
-    assert maxeval3.modelfit_results.condition_number == 4.77532e06
-
-    maxeval0 = Model.create_model(
-        testdata / 'nonmem' / 'modelfit_results' / 'onePROB' / 'oneEST' / 'noSIM' / 'maxeval0.mod'
-    )
-    assert maxeval0.modelfit_results.condition_number is None
-
-
 def test_sumo(testdata):
     onePROB = testdata / 'nonmem' / 'modelfit_results' / 'onePROB'
     pheno = Model.create_model(onePROB / 'oneEST' / 'noSIM' / 'pheno.mod')
