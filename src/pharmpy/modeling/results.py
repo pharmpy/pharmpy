@@ -488,3 +488,34 @@ def calculate_aic(model):
     parameters = model.parameters.copy()
     parameters.remove_fixed()
     return model.modelfit_results.ofv + 2 * len(parameters)
+
+
+def check_high_correlations(model, limit=0.9):
+    """Check for highly correlated parameter estimates
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model object
+    limit : float
+        Lower limit for a high correlation
+
+    Returns
+    -------
+    pd.Series
+        Correlation values indexed on pairs of parameters for (absolute) correlations above limit
+
+    Example
+    -------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> check_high_correlations(model, limit=0.3)
+    THETA(1)  OMEGA(1,1)   -0.388059
+    THETA(2)  THETA(3)     -0.356899
+              OMEGA(2,2)    0.356662
+    dtype: float64
+    """
+    df = model.modelfit_results.correlation_matrix
+    if df is not None:
+        high_and_below_diagonal = df.abs().ge(limit) & np.triu(np.ones(df.shape), k=1).astype(bool)
+    return df.where(high_and_below_diagonal).stack()

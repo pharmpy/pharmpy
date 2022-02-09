@@ -150,6 +150,7 @@ from .results import (
     calculate_individual_parameter_statistics,
     calculate_individual_shrinkage,
     calculate_pk_parameters_statistics,
+    check_high_correlations,
     summarize_modelfit_results,
 )
 from .units import get_unit_of
@@ -183,6 +184,7 @@ __all__ = [
     'calculate_pk_parameters_statistics',
     'calculate_se_from_cov',
     'calculate_se_from_inf',
+    'check_high_correlations',
     'convert_model',
     'copy_model',
     'create_joint_distribution',

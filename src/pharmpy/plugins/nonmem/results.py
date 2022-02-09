@@ -79,14 +79,6 @@ class NONMEMModelfitResults(ModelfitResults):
         self._estimation_status = estimation_status
         self.minimization_successful = estimation_status['minimization_successful']
 
-    def high_correlations(self, limit=0.9):
-        df = self.correlation_matrix
-        if df is not None:
-            high_and_below_diagonal = df.abs().ge(limit) & np.triu(np.ones(df.shape), k=1).astype(
-                bool
-            )
-            return df.where(high_and_below_diagonal).stack()
-
     def covariance_step_summary(self, condition_number_limit=1000, correlation_limit=0.9):
         result = dict()
         if self.covariance_step['requested'] is False:
@@ -111,7 +103,7 @@ class NONMEMModelfitResults(ModelfitResults):
                 except Exception:
                     result['Condition number not available'] = ''
                 try:
-                    high = self.high_correlations(correlation_limit)
+                    high = modeling.high_correlations(correlation_limit)
                     if high.empty:
                         result[f'No correlations larger than {correlation_limit}'] = 'OK'
                     else:
