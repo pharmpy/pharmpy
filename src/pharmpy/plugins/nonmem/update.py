@@ -284,9 +284,6 @@ def update_ode_system(model, old, new):
         # Stay with $DES for now
         update_des(model, old, new)
     elif type(old) == CompartmentalSystem and type(new) == CompartmentalSystem:
-        # subs = model.control_stream.get_records('SUBROUTINES')[0]
-        # old_trans = subs.get_option_startswith('TRANS')
-        # conv_advan, new_advan, new_trans = change_advan(model)
         update_lag_time(model, old, new)
         if isinstance(new.dosing_compartment.dose, Bolus) and 'RATE' in model.datainfo.names:
             df = model.dataset
