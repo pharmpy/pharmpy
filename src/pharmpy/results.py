@@ -1,20 +1,3 @@
-"""
-
-.. list-table:: Options for the results module
-   :widths: 25 25 50 150
-   :header-rows: 1
-
-   * - Option name
-     - Default value
-     - Type
-     - Description
-   * - ``native_shrinkage``
-     - ``True``
-     - bool
-     - Should shrinkage calculation of external tool be used.
-       Otherwise pharmpy will calculate shrinkage
-"""
-
 import copy
 import importlib
 import json
@@ -26,18 +9,7 @@ from pathlib import Path
 import altair as alt
 import pandas as pd
 
-import pharmpy.config as config
 import pharmpy.model
-
-
-class ResultsConfiguration(config.Configuration):
-    module = 'pharmpy.results'
-    """ FIXME: This setting should be moved to the NONMEM plugin
-    """
-    native_shrinkage = config.ConfigItem(True, 'Use shrinkage results from external tool')
-
-
-conf = ResultsConfiguration()
 
 
 class ResultsJSONEncoder(json.JSONEncoder):
