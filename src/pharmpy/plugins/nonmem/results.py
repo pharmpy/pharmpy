@@ -103,7 +103,7 @@ class NONMEMModelfitResults(ModelfitResults):
                 except Exception:
                     result['Condition number not available'] = ''
                 try:
-                    high = modeling.check_high_correlations(correlation_limit)
+                    high = modeling.check_high_correlations(self.model, correlation_limit)
                     if high.empty:
                         result[f'No correlations larger than {correlation_limit}'] = 'OK'
                     else:
