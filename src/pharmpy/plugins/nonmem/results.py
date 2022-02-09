@@ -11,7 +11,6 @@ from pharmpy.workflows.log import Log
 
 
 class NONMEMModelfitResults(ModelfitResults):
-    # objects here need to know what chain they are in to be able to do lazy reading
     def __init__(self, chain):
         self._chain = chain
 
