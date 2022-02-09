@@ -15,10 +15,6 @@ class NONMEMModelfitResults(ModelfitResults):
         self._chain = chain
 
     @property
-    def minimization_successful(self):
-        return self.estimation_step['minimization_successful']
-
-    @property
     def estimation_step(self):
         try:
             return self._estimation_status
@@ -81,6 +77,7 @@ class NONMEMModelfitResults(ModelfitResults):
         for k, v in status.items():
             estimation_status[k] = v
         self._estimation_status = estimation_status
+        self.minimization_successful = estimation_status['minimization_successful']
 
     def high_correlations(self, limit=0.9):
         df = self.correlation_matrix

@@ -236,7 +236,7 @@ class ModelfitResults(Results):
         self.covariance_matrix = covariance_matrix
         self.correlation_matrix = correlation_matrix
         self.standard_errors = standard_errors
-        self._minimization_successful = minimization_successful
+        self.minimization_successful = minimization_successful
         self.individual_estimates = individual_estimates
         self.individual_ofv = individual_ofv
         self.residuals = residuals
@@ -257,11 +257,6 @@ class ModelfitResults(Results):
         from pharmpy.modeling import get_observations
 
         return self.ofv + len(parameters) * math.log(len(get_observations(self.model)))
-
-    @property
-    def minimization_successful(self):
-        """Was the minimization successful"""
-        return self._minimization_successful
 
     @property
     def runtime_estimation(self):
