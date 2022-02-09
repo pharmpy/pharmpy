@@ -50,9 +50,7 @@ def create_workflow(methods=None, model=None):
         task_update = Task(f'create_{method.upper()}_update_inits', _create_est_model, method, True)
         wf.add_task(task_update, predecessors=task_base_model_fit)
 
-    no_of_models = 2 * len(methods) - 1
-
-    wf_fit = create_fit_workflow(n=no_of_models)
+    wf_fit = create_fit_workflow(n=len(wf.output_tasks))
     wf.insert_workflow(wf_fit, predecessors=wf.output_tasks)
 
     task_post_process = Task('post_process', post_process)
