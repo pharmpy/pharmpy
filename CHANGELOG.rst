@@ -14,6 +14,7 @@ New features
 * Add modeling.calculate_corr_from_inf
 * Add modeling.create_report
 * Add modeling.check_high_correlations
+* Add modeling.calculate_bic
 
 0.48.0 (2022-02-04)
 -------------------

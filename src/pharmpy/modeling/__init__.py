@@ -146,6 +146,7 @@ from .plots import plot_individual_predictions, plot_iofv_vs_iofv
 from .reporting import create_report
 from .results import (
     calculate_aic,
+    calculate_bic,
     calculate_eta_shrinkage,
     calculate_individual_parameter_statistics,
     calculate_individual_shrinkage,
@@ -170,6 +171,7 @@ __all__ = [
     'append_estimation_step_options',
     'bump_model_number',
     'calculate_aic',
+    'calculate_bic',
     'calculate_corr_from_cov',
     'calculate_corr_from_inf',
     'calculate_cov_from_corrse',

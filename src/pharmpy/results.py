@@ -2,7 +2,6 @@ import copy
 import importlib
 import json
 import lzma
-import math
 from collections.abc import MutableSequence
 from pathlib import Path
 
@@ -248,15 +247,6 @@ class ModelfitResults(Results):
     def to_dict(self):
         """Convert results object to a dictionary"""
         return {'parameter_estimates': self.parameter_estimates}
-
-    @property
-    def bic(self):
-        """Final BIC value assuming the OFV to be -2LL"""
-        parameters = self.model.parameters.copy()
-        parameters.remove_fixed()
-        from pharmpy.modeling import get_observations
-
-        return self.ofv + len(parameters) * math.log(len(get_observations(self.model)))
 
     @property
     def runtime_estimation(self):

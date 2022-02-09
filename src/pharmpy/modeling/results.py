@@ -1,3 +1,4 @@
+import math
 import warnings
 
 import numpy as np
@@ -5,7 +6,7 @@ import pandas as pd
 import sympy
 
 from pharmpy.model import Model
-from pharmpy.modeling import create_rng, sample_parameters_from_covariance_matrix
+from pharmpy.modeling import create_rng, get_observations, sample_parameters_from_covariance_matrix
 
 
 def calculate_eta_shrinkage(model, sd=False):
@@ -475,6 +476,8 @@ def summarize_modelfit_results(models, include_all_estimation_steps=False):
 def calculate_aic(model):
     """Calculate final AIC for model assuming the OFV to be -2LL
 
+    AIC = OFV + 2*n_estimated_parameters
+
     Parameters
     ----------
     model : Model
@@ -488,6 +491,26 @@ def calculate_aic(model):
     parameters = model.parameters.copy()
     parameters.remove_fixed()
     return model.modelfit_results.ofv + 2 * len(parameters)
+
+
+def calculate_bic(model):
+    """Calculate final BIC value assuming the OFV to be -2LL
+
+    BIC = OFV + n_estimated_parameters * log(n_observations)
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model object
+
+    Returns
+    -------
+    float
+        BIC of model fit
+    """
+    parameters = model.parameters.copy()
+    parameters.remove_fixed()
+    return model.modelfit_results.ofv + len(parameters) * math.log(len(get_observations(model)))
 
 
 def check_high_correlations(model, limit=0.9):

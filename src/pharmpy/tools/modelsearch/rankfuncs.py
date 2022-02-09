@@ -1,6 +1,6 @@
 import numpy as np
 
-from pharmpy.modeling import calculate_aic
+from pharmpy.modeling import calculate_aic, calculate_bic
 
 # All functions used for comparing a set of candidate models and
 # ranking them take the same base arguments
@@ -28,7 +28,7 @@ def aic(base, candidates, cutoff=3.84):
 
 def bic(base, candidates, cutoff=3.84):
     try:
-        base_bic = base.modelfit_results.bic
+        base_bic = calculate_bic(base)
     except AttributeError:
         base_bic = np.nan
     return rank_models('bic', base_bic, candidates, cutoff)
@@ -42,6 +42,12 @@ def rank_models(rank_type, base_value, candidates, cutoff):
             for model in candidates
             if model.modelfit_results is not None and base_value - calculate_aic(model) >= cutoff
         ]
+    elif rank_type == 'bic':
+        filtered = [
+            model
+            for model in candidates
+            if model.modelfit_results is not None and base_value - calculate_bic(model) >= cutoff
+        ]
     else:
         filtered = [
             model
@@ -53,6 +59,8 @@ def rank_models(rank_type, base_value, candidates, cutoff):
     def fn(model):
         if rank_type == 'aic':
             return calculate_aic(model)
+        elif rank_type == 'bic':
+            return calculate_bic(model)
         else:
             return getattr(model.modelfit_results, rank_type)
 

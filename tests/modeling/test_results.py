@@ -7,6 +7,7 @@ import pytest
 from pharmpy import Model
 from pharmpy.modeling import (
     calculate_aic,
+    calculate_bic,
     calculate_eta_shrinkage,
     calculate_individual_parameter_statistics,
     calculate_individual_shrinkage,
@@ -172,3 +173,8 @@ def test_summarize_modelfit_results(testdata, pheno_path):
 def test_aic(testdata):
     model = Model.create_model(testdata / 'nonmem' / 'pheno.mod')
     assert calculate_aic(model) == 740.8947268137307
+
+
+def test_bic(testdata):
+    model = Model.create_model(testdata / 'nonmem' / 'pheno.mod')
+    assert calculate_bic(model) == 756.111852398327
