@@ -1,7 +1,7 @@
 import shutil
 
 from pharmpy import Model
-from pharmpy.modeling import run_iiv, run_tool
+from pharmpy.modeling import run_amd, run_iiv
 from pharmpy.utils import TemporaryDirectoryChanger
 
 
@@ -18,7 +18,7 @@ def test_amd(tmp_path, testdata):
         # FIXME: remove after updating results
         model.modelfit_results.estimation_step
 
-        res = run_tool('amd', model)
+        res = run_amd(model)
         assert res
 
 

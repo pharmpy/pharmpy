@@ -13,7 +13,7 @@ class AMDResults(Results):
         self.final_model = final_model
 
 
-def run_amd(model):
+def run_amd(model, mfl='LAGTIME();PERIPHERALS(1)'):
     """Run Automatic Model Development (AMD) tool
 
     Runs structural modelsearch, IIV building, and resmod
@@ -22,6 +22,8 @@ def run_amd(model):
     ----------
     model : Model
         Pharmpy model
+    mfl : str
+        MFL for search space for structural model
 
     Returns
     -------
@@ -43,13 +45,19 @@ def run_amd(model):
     db = default_tool_database(toolname='amd')
     run_tool('modelfit', model, path=db.path / 'modelfit')
 
-    mfl = 'LAGTIME()\nPERIPHERALS(1)'
-    res_modelsearch = run_tool(
-        'modelsearch', 'exhaustive_stepwise', mfl=mfl, rankfunc='ofv', cutoff=3.84, model=model
-    )
+    if not mfl:
+        mfl = (
+            'ABSORPTION([ZO,SEQ-ZO-FO]);'
+            'ELIMINATION([ZO,MM,MIX-FO-MM]);'
+            'LAGTIME();'
+            'TRANSITS([1,3,10],*);'
+            'PERIPHERALS([1,2])'
+        )
+
+    res_modelsearch = run_tool('modelsearch', 'exhaustive_stepwise', mfl=mfl, model=model)
     selected_model = res_modelsearch.best_model
 
-    res_iiv = run_tool('iiv', 'brute_force', rankfunc='ofv', cutoff=3.84, model=selected_model)
+    res_iiv = run_iiv(selected_model)
     selected_iiv_model = res_iiv.best_model
 
     res_resmod = run_tool('resmod', selected_iiv_model)
