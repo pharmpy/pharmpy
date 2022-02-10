@@ -93,16 +93,16 @@ class ModelSearchResults(pharmpy.results.Results):
         self.models = models
 
 
-def create_summary(models, start_model, rankfunc, cutoff, model_features):
+def create_summary(models, start_model, rankfunc, cutoff, model_features, rank_by_not_worse=False):
     rankfunc = getattr(rankfuncs, rankfunc)
 
     res_data = {'parent_model': [], 'dofv': [], 'features': [], 'rank': []}
     model_names = []
 
     if cutoff is not None:
-        ranks = rankfunc(start_model, models, cutoff=cutoff)
+        ranks = rankfunc(start_model, models, cutoff=cutoff, rank_by_not_worse=rank_by_not_worse)
     else:
-        ranks = rankfunc(start_model, models)
+        ranks = rankfunc(start_model, models, rank_by_not_worse=rank_by_not_worse)
 
     for model in models:
         model_names.append(model.name)
