@@ -1203,6 +1203,8 @@ def add_peripheral_compartment(model):
         qp1, vp1 = from_rate.as_numer_denom()
         full_qp1 = statements.before_odes.full_expression(qp1)
         full_vp1 = statements.before_odes.full_expression(vp1)
+        if full_vp1 == 1:
+            full_qp1, full_vp1 = full_qp1.as_numer_denom()
         pop_qp1_candidates = full_qp1.free_symbols & set(model.parameters.symbols)
         pop_qp1 = pop_qp1_candidates.pop()
         pop_vp1_candidates = full_vp1.free_symbols & set(model.parameters.symbols)

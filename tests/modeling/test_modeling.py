@@ -29,6 +29,7 @@ from pharmpy.modeling import (
     set_iiv_on_ruv,
     set_michaelis_menten_elimination,
     set_mixed_mm_fo_elimination,
+    set_peripheral_compartments,
     set_power_on_ruv,
     set_seq_zo_fo_absorption,
     set_transit_compartments,
@@ -989,6 +990,15 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
        NOPRINT ONEHEADER FILE=sdtab1
 '''
     assert model.model_code == correct
+
+
+def test_nested_transit_peripherals(testdata):
+    model = Model.create_model(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    set_transit_compartments(model, 1)
+    model.model_code
+    set_peripheral_compartments(model, 1)
+    model.model_code
+    set_peripheral_compartments(model, 2)
 
 
 @pytest.mark.parametrize(
