@@ -213,6 +213,10 @@ class ModelfitResults(Results):
     standard_errors_sdcorr : pd.Series
         Standard errors of the population parameter estimates on standard deviation and correlation
         scale
+    termination_cause : str
+        The cause of premature termination. One of 'maxevals_exceeded' and 'rounding_errors'
+    function_evaluations : int
+        Number of function evaluations
     """
 
     def __init__(
@@ -230,6 +234,8 @@ class ModelfitResults(Results):
         individual_estimates_covariance=None,
         residuals=None,
         runtime_total=None,
+        termination_cause=None,
+        function_evaluations=None,
     ):
         self.ofv = ofv
         self.parameter_estimates = parameter_estimates
@@ -242,6 +248,8 @@ class ModelfitResults(Results):
         self.individual_ofv = individual_ofv
         self.residuals = residuals
         self.runtime_total = runtime_total
+        self.termination_cause = termination_cause
+        self.function_evaluations = function_evaluations
 
     def __bool__(self):
         return bool(self.ofv) and bool(self.parameter_estimates)
@@ -380,6 +388,14 @@ class ChainedModelfitResults(MutableSequence, ModelfitResults):
     @property
     def model_name(self):
         return self[-1].model_name
+
+    @property
+    def function_evaluations(self):
+        return self._get_last_est('function_evaluations')
+
+    @property
+    def termination_cause(self):
+        return self._get_last_est('termination_cause')
 
     @property
     def runtime_total(self):

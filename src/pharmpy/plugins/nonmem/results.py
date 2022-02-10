@@ -15,17 +15,6 @@ class NONMEMModelfitResults(ModelfitResults):
         self._chain = chain
 
     @property
-    def estimation_step(self):
-        try:
-            return self._estimation_status
-        except AttributeError:
-            try:
-                self._chain._read_lst_file()
-            except FileNotFoundError:
-                self._set_estimation_status(None)
-            return self._estimation_status
-
-    @property
     def covariance_step(self):
         try:
             return self._covariance_status
@@ -67,6 +56,13 @@ class NONMEMModelfitResults(ModelfitResults):
             estimation_status[k] = v
         self._estimation_status = estimation_status
         self.minimization_successful = estimation_status['minimization_successful']
+        self.function_evaluations = estimation_status['function_evaluations']
+        if estimation_status['maxevals_exceeded'] is True:
+            self.termination_cause = 'maxevals_exceeded'
+        elif estimation_status['rounding_errors'] is True:
+            self.termination_cause = 'rounding_errors'
+        else:
+            self.termination_cause = None
 
     def covariance_step_summary(self, condition_number_limit=1000, correlation_limit=0.9):
         result = dict()
@@ -106,7 +102,7 @@ class NONMEMModelfitResults(ModelfitResults):
 
     def estimation_step_summary(self):
         result = dict()
-        step = self.estimation_step
+        step = self._estimation_status
         if step['requested'] is False:
             result['Estimation step not run'] = ''
         else:
@@ -323,10 +319,6 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
     @property
     def covariance_step(self):
         return self[-1].covariance_step
-
-    @property
-    def estimation_step(self):
-        return self[-1].estimation_step
 
     @property
     def predictions_for_observations(self):
