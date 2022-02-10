@@ -55,7 +55,7 @@ def post_process_results(rankfunc, cutoff, model_features, *models):
         res_models = [res_models]
 
     summary_tool = pharmpy.tools.modelsearch.tool.create_summary(
-        res_models, start_model, rankfunc, cutoff, model_features
+        res_models, start_model, rankfunc, cutoff, model_features, rank_by_not_worse=True
     )
 
     best_model_name = summary_tool['rank'].idxmin()
