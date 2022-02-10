@@ -16,6 +16,16 @@ New features
 * Add modeling.check_high_correlations
 * Add modeling.calculate_bic
 
+Changes
+~~~~~~~
+
+* Use p-value instead of OFV cutoff in resmod
+
+Bugfix
+------
+
+* Fix issue with no conversion to $DES for some models (#528)
+  
 0.48.0 (2022-02-04)
 -------------------
 
@@ -29,8 +39,8 @@ Changes
 
 * Force initial estimates when reading model file to be positive definite
 
-Bugfix
-~~~~~~
+Bugfixes
+~~~~~~~~
 
 * Random block was not split properly in some cases when random variable was removed
 * Add $COV correctly in NM-TRAN models (#457)
