@@ -301,6 +301,13 @@ def update_ode_system(model, old, new):
     force_des(model, new)
 
 
+def is_nonlinear_odes(model):
+    """Check if ode system is nonlinear"""
+    odes = model.statements.ode_system
+    M = odes.compartmental_matrix
+    return odes.t in M.free_symbols
+
+
 def update_infusion(model, old, new):
     statements = model.statements
     if isinstance(new.dosing_compartment.dose, Infusion) and not statements.find_assignment('D1'):
@@ -659,7 +666,10 @@ def new_advan_trans(model):
     oldtrans = subs.get_option_startswith('TRANS')
     statements = model.statements
     odes = model.statements.ode_system
-    if len(odes) > 5 or odes.get_n_connected(odes.central_compartment) != len(odes) - 1:
+    nonlin = is_nonlinear_odes(model)
+    if nonlin:
+        advan = 'ADVAN13'
+    elif len(odes) > 5 or odes.get_n_connected(odes.central_compartment) != len(odes) - 1:
         advan = 'ADVAN5'
     elif len(odes) == 2:
         advan = 'ADVAN1'
@@ -674,7 +684,9 @@ def new_advan_trans(model):
     else:  # len(odes) == 5
         advan = 'ADVAN12'
 
-    if oldtrans == 'TRANS1':
+    if nonlin:
+        trans = None
+    elif oldtrans == 'TRANS1':
         trans = oldtrans
     elif oldtrans == 'TRANS2':
         if advan in ['ADVAN1', 'ADVAN2']:
@@ -714,7 +726,10 @@ def update_subroutines_record(model, advan, trans):
     if advan != oldadvan:
         subs.replace_option(oldadvan, advan)
     if trans != oldtrans:
-        subs.replace_option(oldtrans, trans)
+        if trans is None:
+            subs.remove_option_startswith('TRANS')
+        else:
+            subs.replace_option(oldtrans, trans)
 
 
 def update_model_record(model, advan):
