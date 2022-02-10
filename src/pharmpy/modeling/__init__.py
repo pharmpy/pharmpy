@@ -154,6 +154,7 @@ from .results import (
     check_high_correlations,
     check_parameters_near_bounds,
     summarize_modelfit_results,
+    write_results,
 )
 from .units import get_unit_of
 
@@ -299,5 +300,6 @@ __all__ = [
     'use_thetas_for_error_stdev',
     'write_csv',
     'write_model',
+    'write_results',
     'undrop_columns',
 ]

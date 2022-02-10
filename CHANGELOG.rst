@@ -1,3 +1,8 @@
+next version
+------------
+
+* Add modeling.write_results
+
 0.49.0 (2022-02-10)
 -------------------
 
