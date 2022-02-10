@@ -296,33 +296,35 @@ def update_ode_system(model, old, new):
         update_subroutines_record(model, advan, trans)
         update_model_record(model, advan)
 
-        statements = model.statements
-        if isinstance(new.dosing_compartment.dose, Infusion) and not statements.find_assignment(
-            'D1'
-        ):
-            # Handle direct moving of Infusion dose
-            statements.subs({'D2': 'D1'})
-
-        if isinstance(new.dosing_compartment.dose, Infusion) and isinstance(
-            old.dosing_compartment.dose, Bolus
-        ):
-            dose = new.dosing_compartment.dose
-            if dose.rate is None:
-                # FIXME: Not always D1 here!
-                ass = Assignment('D1', dose.duration)
-                dose.duration = ass.symbol
-            else:
-                raise NotImplementedError("First order infusion rate is not yet supported")
-            statements = model.statements
-            statements.insert_before_odes(ass)
-            df = model.dataset
-            rate = np.where(df['AMT'] == 0, 0, -2)
-            df['RATE'] = rate
-            # FIXME: Adding at end for now. Update $INPUT cannot yet handle adding in middle
-            # df.insert(list(df.columns).index('AMT') + 1, 'RATE', rate)
-            model.dataset = df
+        update_infusion(model, old, new)
 
     force_des(model, new)
+
+
+def update_infusion(model, old, new):
+    statements = model.statements
+    if isinstance(new.dosing_compartment.dose, Infusion) and not statements.find_assignment('D1'):
+        # Handle direct moving of Infusion dose
+        statements.subs({'D2': 'D1'})
+
+    if isinstance(new.dosing_compartment.dose, Infusion) and isinstance(
+        old.dosing_compartment.dose, Bolus
+    ):
+        dose = new.dosing_compartment.dose
+        if dose.rate is None:
+            # FIXME: Not always D1 here!
+            ass = Assignment('D1', dose.duration)
+            dose.duration = ass.symbol
+        else:
+            raise NotImplementedError("First order infusion rate is not yet supported")
+        statements = model.statements
+        statements.insert_before_odes(ass)
+        df = model.dataset
+        rate = np.where(df['AMT'] == 0, 0, -2)
+        df['RATE'] = rate
+        # FIXME: Adding at end for now. Update $INPUT cannot yet handle adding in middle
+        # df.insert(list(df.columns).index('AMT') + 1, 'RATE', rate)
+        model.dataset = df
 
 
 def update_des(model, old, new):
