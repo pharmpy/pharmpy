@@ -204,6 +204,8 @@ class ModelfitResults(Results):
         correlations
     residuals: pd.DataFrame
         Table of various residuals
+    estimation_runtime : float
+        Runtime for one estimation step
     runtime_total : float
         Total runtime of estimation
     standard_errors : pd.Series
@@ -247,11 +249,6 @@ class ModelfitResults(Results):
     def to_dict(self):
         """Convert results object to a dictionary"""
         return {'parameter_estimates': self.parameter_estimates}
-
-    @property
-    def runtime_estimation(self):
-        """Runtime for estimation step"""
-        return self._runtime_estimation
 
     @property
     def relative_standard_errors(self):
@@ -316,8 +313,8 @@ class ChainedModelfitResults(MutableSequence, ModelfitResults):
         return self._get_last_est('minimization_successful')
 
     @property
-    def runtime_estimation(self):
-        return self._get_last_est('runtime_estimation')
+    def estimation_runtime(self):
+        return self._get_last_est('estimation_runtime')
 
     def _get_last_est(self, attr):
         est_steps = self.model.estimation_steps
@@ -425,7 +422,7 @@ class ChainedModelfitResults(MutableSequence, ModelfitResults):
 
         summary_dict['ofv'] = step.ofv
         summary_dict['runtime_total'] = step.runtime_total
-        summary_dict['runtime_estimation'] = step.runtime_estimation
+        summary_dict['estimation_runtime'] = step.estimation_runtime
 
         pe = step.parameter_estimates
         ses = step.standard_errors

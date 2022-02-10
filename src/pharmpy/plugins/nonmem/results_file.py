@@ -96,7 +96,7 @@ class NONMEMResultsFile:
     def parse_tere(rows):
         result = NONMEMResultsFile.unknown_covariance()
         result['covariance_step_ok'] = False
-        result['runtime_estimation'] = nan
+        result['estimation_runtime'] = nan
         if len(rows) < 1:
             return result
 
@@ -116,7 +116,7 @@ class NONMEMResultsFile:
                 break
             m = est_time.match(row)
             if m:
-                result['runtime_estimation'] = float(m.group(1))
+                result['estimation_runtime'] = float(m.group(1))
         return result
 
     @staticmethod

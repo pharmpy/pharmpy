@@ -12,8 +12,8 @@ from pharmpy.modeling import (
     calculate_individual_parameter_statistics,
     calculate_individual_shrinkage,
     calculate_pk_parameters_statistics,
-    summarize_modelfit_results,
     check_parameters_near_bounds,
+    summarize_modelfit_results,
 )
 
 

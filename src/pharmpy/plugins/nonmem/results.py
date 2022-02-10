@@ -36,17 +36,6 @@ class NONMEMModelfitResults(ModelfitResults):
                 self._set_covariance_status(None)
             return self._covariance_status
 
-    @property
-    def runtime_estimation(self):
-        try:
-            return self._runtime_estimation
-        except AttributeError:
-            try:
-                self._chain._read_lst_file()
-            except FileNotFoundError:
-                return np.nan
-            return self._runtime_estimation
-
     def predictions_for_observations(self):
         """predictions only for observation data records"""
         df = self._chain._read_from_tables(['ID', 'TIME', 'MDV', 'PRED', 'CIPREDI', 'CPRED'], self)
@@ -326,9 +315,9 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
             if hasattr(result_obj, '_covariance_status') is False:
                 result_obj._set_covariance_status(rfile, table_with_cov=table_with_cov)
             try:
-                result_obj._runtime_estimation = rfile.table[table_no]['runtime_estimation']
-            except KeyError:
-                result_obj._runtime_estimation = np.nan
+                result_obj.estimation_runtime = rfile.table[table_no]['estimation_runtime']
+            except (KeyError, FileNotFoundError):
+                result_obj.estimation_runtime = np.nan
             result_obj.runtime_total = rfile.runtime_total
 
     @property

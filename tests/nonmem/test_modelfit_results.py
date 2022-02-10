@@ -317,11 +317,11 @@ def test_runtime_different_formats(testdata, starttime, endtime, runtime_ref):
         assert runtime == runtime_ref
 
 
-def test_runtime_estimation_steps(pheno_path, testdata):
+def test_estimation_runtime_steps(pheno_path, testdata):
     model = Model.create_model(pheno_path)
 
     res = model.modelfit_results
-    assert res[0].runtime_estimation == 0.32
+    assert res[0].estimation_runtime == 0.32
     assert res.runtime_total == 4
 
     model = Model.create_model(
@@ -334,10 +334,10 @@ def test_runtime_estimation_steps(pheno_path, testdata):
         / 'pheno_multEST.mod'
     )
     res = model.modelfit_results
-    assert res[0].runtime_estimation == 0.33
-    assert res[1].runtime_estimation == 2.75
+    assert res[0].estimation_runtime == 0.33
+    assert res[1].estimation_runtime == 2.75
     assert res.runtime_total == 7
-    assert res.runtime_estimation == 0.33
+    assert res.estimation_runtime == 0.33
 
 
 def test_result_summary(pheno_path, testdata):
