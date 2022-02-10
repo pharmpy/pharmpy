@@ -16,6 +16,7 @@ New features
 * Add modeling.check_high_correlations
 * Add modeling.calculate_bic
 * Add modeling.check_parameters_near_bounds
+* Add option to choose search space in AMD-tool
 
 Changes
 ~~~~~~~
@@ -26,7 +27,7 @@ Bugfix
 ------
 
 * Fix issue with no conversion to $DES for some models (#528)
-  
+
 0.48.0 (2022-02-04)
 -------------------
 
