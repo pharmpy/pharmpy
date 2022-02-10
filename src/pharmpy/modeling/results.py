@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 import sympy
 
+from pharmpy.math import round_to_n_sigdig
 from pharmpy.model import Model
 from pharmpy.modeling import create_rng, get_observations, sample_parameters_from_covariance_matrix
 
@@ -542,3 +543,71 @@ def check_high_correlations(model, limit=0.9):
     if df is not None:
         high_and_below_diagonal = df.abs().ge(limit) & np.triu(np.ones(df.shape), k=1).astype(bool)
     return df.where(high_and_below_diagonal).stack()
+
+
+def check_parameters_near_bounds(model, values=None, zero_limit=0.001, significant_digits=2):
+    """Check if any estimated parameter value is close to its bounds
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model object
+    values : pd.Series
+        Series of values with index a subset of parameter names.
+        Default is to use all parameter estimates
+    zero_limit : number
+        maximum distance to 0 bounds
+    significant_digits : int
+        maximum distance to non-zero bounds in number of significant digits
+
+    Returns
+    -------
+    pd.Series
+        Logical Series with same index as values
+
+    Example
+    -------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> check_parameters_near_bounds(model)
+    THETA(1)      False
+    THETA(2)      False
+    THETA(3)      False
+    OMEGA(1,1)    False
+    OMEGA(2,2)    False
+    SIGMA(1,1)    False
+    dtype: bool
+
+    """
+    if values is None:
+        values = model.modelfit_results.parameter_estimates
+    ser = pd.Series(
+        [
+            _is_close_to_bound(model.parameters[p], values.loc[p], zero_limit, significant_digits)
+            for p in values.index
+        ],
+        index=values.index,
+        dtype=bool,
+    )
+    return ser
+
+
+def _is_close_to_bound(param, value=None, zero_limit=0.01, significant_digits=2):
+    if value is None:
+        value = param.init
+    return (
+        param.lower > -sympy.oo
+        and _is_near_target(value, param.lower, zero_limit, significant_digits)
+    ) or (
+        param.upper < sympy.oo
+        and _is_near_target(value, param.upper, zero_limit, significant_digits)
+    )
+
+
+def _is_near_target(x, target, zero_limit, significant_digits):
+    if target == 0:
+        return abs(x) < abs(zero_limit)
+    else:
+        return round_to_n_sigdig(x, n=significant_digits) == round_to_n_sigdig(
+            target, n=significant_digits
+        )

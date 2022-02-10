@@ -141,7 +141,7 @@ class NONMEMModelfitResults(ModelfitResults):
                         )
                     ] = ''
                 if step['estimate_near_boundary'] is True:
-                    # message issued from NONMEM independent of ModelfitResults near_bounds method
+                    # message issued from NONMEM independent of Pharmpy near_bounds function
                     result['Parameter near boundary'] = 'WARNING'
                 if step['warning'] is True:
                     result['NONMEM estimation warnings'] = 'WARNING'
@@ -166,7 +166,9 @@ class NONMEMModelfitResults(ModelfitResults):
             ]
         )
         summary = self.parameter_summary()
-        near_bounds = self.near_bounds(zero_limit, significant_digits)
+        near_bounds = modeling.check_parameters_near_bounds(
+            self.model, zero_limit=zero_limit, significant_digits=significant_digits
+        )
         if to_string:
             summary[''] = near_bounds.transform(lambda x: 'Near boundary' if x else '')
             return str(messages) + '\n\n' + str(summary)

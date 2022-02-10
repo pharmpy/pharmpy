@@ -15,6 +15,7 @@ New features
 * Add modeling.create_report
 * Add modeling.check_high_correlations
 * Add modeling.calculate_bic
+* Add modeling.check_parameters_near_bounds
 
 Changes
 ~~~~~~~

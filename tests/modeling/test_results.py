@@ -13,6 +13,7 @@ from pharmpy.modeling import (
     calculate_individual_shrinkage,
     calculate_pk_parameters_statistics,
     summarize_modelfit_results,
+    check_parameters_near_bounds,
 )
 
 
@@ -178,3 +179,25 @@ def test_aic(testdata):
 def test_bic(testdata):
     model = Model.create_model(testdata / 'nonmem' / 'pheno.mod')
     assert calculate_bic(model) == 756.111852398327
+
+
+def test_check_parameters_near_bounds(testdata):
+    onePROB = testdata / 'nonmem' / 'modelfit_results' / 'onePROB'
+    nearbound = Model.create_model(onePROB / 'oneEST' / 'noSIM' / 'near_bounds.mod')
+    correct = pd.Series(
+        [False, True, False, False, False, False, False, False, True, True, False],
+        index=[
+            'THETA(1)',
+            'THETA(2)',
+            'THETA(3)',
+            'THETA(4)',
+            'OMEGA(1,1)',
+            'OMEGA(2,1)',
+            'OMEGA(2,2)',
+            'OMEGA(3,3)',
+            'OMEGA(4,4)',
+            'OMEGA(6,6)',
+            'SIGMA(1,1)',
+        ],
+    )
+    pd.testing.assert_series_equal(check_parameters_near_bounds(nearbound), correct)

@@ -46,16 +46,6 @@ def test_illegal_initialization(name, init, lower, upper, fix):
         Parameter(name, init, lower, upper, fix)
 
 
-def test_is_close_to_bound():
-    param = Parameter('X', 2, lower=0, upper=23.8)
-    assert param.is_close_to_bound(0.007, zero_limit=0.01, significant_digits=2) is True
-    assert param.is_close_to_bound(0.007, zero_limit=0.001, significant_digits=2) is False
-    assert param.is_close_to_bound(23.2, zero_limit=0.001, significant_digits=2) is False
-    assert param.is_close_to_bound(23.2, zero_limit=0.001, significant_digits=1) is True
-    assert param.is_close_to_bound(23.5, zero_limit=0.001, significant_digits=2) is True
-    assert not param.is_close_to_bound()
-
-
 def test_repr():
     param = Parameter('X', 2, lower=0, upper=23)
     assert repr(param) == 'Parameter("X", 2, lower=0, upper=23, fix=False)'
@@ -281,15 +271,6 @@ def test_pset_discard():
     assert len(pset1) == 2
     del pset1['Y']
     assert len(pset1) == 1
-
-
-def test_is_close_to_bound_pset():
-    p1 = Parameter('Y', 9)
-    p2 = Parameter('X', 3, lower=1, upper=24)
-    p3 = Parameter('Z', 1, lower=0, upper=2)
-    pset1 = Parameters([p1, p2, p3])
-    assert not pset1.is_close_to_bound().any()
-    assert not pset1.is_close_to_bound(pd.Series({'X': 3.5, 'Y': 19})).any()
 
 
 def test_copy_pset():

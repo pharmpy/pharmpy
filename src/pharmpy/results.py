@@ -261,13 +261,6 @@ class ModelfitResults(Results):
             ser.name = 'RSE'
             return ser
 
-    def near_bounds(self, zero_limit=0.001, significant_digits=2):
-        return self.model.parameters.is_close_to_bound(
-            values=self.parameter_estimates,
-            zero_limit=zero_limit,
-            significant_digits=significant_digits,
-        )
-
     def parameter_summary(self):
         """Summary of parameter estimates and uncertainty"""
         pe = self.parameter_estimates

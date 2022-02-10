@@ -6,7 +6,6 @@ import pandas as pd
 import sympy
 
 import pharmpy.symbols as symbols
-from pharmpy.math import is_near_target
 
 
 class Parameters(MutableSequence):
@@ -156,43 +155,6 @@ class Parameters(MutableSequence):
         return pd.DataFrame(
             {'value': values, 'lower': lower, 'upper': upper, 'fix': fix}, index=symbols
         )
-
-    def is_close_to_bound(self, values=None, zero_limit=0.01, significant_digits=2):
-        """Logical Series of whether values are close to the respective bounds
-
-        Parameters
-        ----------
-        values : pd.Series
-            Series of values with index a subset of parameter names.
-            Default is to use all parameter inits
-
-        Returns
-        -------
-        pd.Series
-            Logical Series with same index as values
-
-        Example
-        -------
-        >>> from pharmpy import Parameters, Parameter
-        >>> par1 = Parameter("CL", 1, lower=0, upper=10)
-        >>> par2 = Parameter("V", 10, lower=0, upper=100)
-        >>> pset = Parameters([par1, par2])
-        >>> pset.is_close_to_bound()
-        CL    False
-        V     False
-        dtype: bool
-        """
-        if values is None:
-            values = pd.Series(self.inits)
-        ser = pd.Series(
-            [
-                self[p].is_close_to_bound(values.loc[p], zero_limit, significant_digits)
-                for p in values.index
-            ],
-            index=values.index,
-            dtype=bool,
-        )
-        return ser
 
     @property
     def names(self):
@@ -405,47 +367,6 @@ class Parameter:
                 f'{new_init} ∉ {sympy.pretty(sympy.Interval(self.lower, self.upper))}'
                 f'\nUnconstrain the parameter before setting an initial estimate.'
             )
-
-    def is_close_to_bound(self, value=None, zero_limit=0.01, significant_digits=2):
-        """Check if parameter value is close to any bound
-
-        Parameters
-        ----------
-        value : number
-            value to check against parameter bounds. Defaults to checking against the parameter init
-        zero_limit : number
-            maximum distance to 0 bounds
-        significant_digits : int
-            maximum distance to non-zero bounds in number of significant digits
-
-        Examples
-        --------
-        >>> from pharmpy import Parameter
-        >>> par = Parameter("x", 1, lower=0, upper=10)
-        >>> par.is_close_to_bound()
-        False
-
-        >>> par.is_close_to_bound(0.005)
-        True
-
-        >>> par.is_close_to_bound(0.005, zero_limit=0.0001)
-        False
-
-        >>> par.is_close_to_bound(9.99)
-        True
-
-        >>> par.is_close_to_bound(9.99, significant_digits=3)
-        False
-        """
-        if value is None:
-            value = self.init
-        return (
-            self.lower > -sympy.oo
-            and is_near_target(value, self.lower, zero_limit, significant_digits)
-        ) or (
-            self.upper < sympy.oo
-            and is_near_target(value, self.upper, zero_limit, significant_digits)
-        )
 
     def unconstrain(self):
         """Remove all constraints from this parameter

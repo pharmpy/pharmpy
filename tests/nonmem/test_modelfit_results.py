@@ -73,25 +73,6 @@ def test_special_models(testdata):
         'warnings': True,
     }
 
-    nearbound = Model.create_model(onePROB / 'oneEST' / 'noSIM' / 'near_bounds.mod')
-    correct = pd.Series(
-        [False, True, False, False, False, False, False, False, True, True, False],
-        index=[
-            'THETA(1)',
-            'THETA(2)',
-            'THETA(3)',
-            'THETA(4)',
-            'OMEGA(1,1)',
-            'OMEGA(2,1)',
-            'OMEGA(2,2)',
-            'OMEGA(3,3)',
-            'OMEGA(4,4)',
-            'OMEGA(6,6)',
-            'SIGMA(1,1)',
-        ],
-    )
-    pd.testing.assert_series_equal(nearbound.modelfit_results.near_bounds(), correct)
-
 
 def test_covariance(pheno_path):
     with ConfigurationContext(nonmem.conf, parameter_names=['basic']):

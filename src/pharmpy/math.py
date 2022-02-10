@@ -176,12 +176,3 @@ def round_to_n_sigdig(x, n):
         return x
     else:
         return round(x, -int(math.floor(math.log10(abs(x)))) + (n - 1))
-
-
-def is_near_target(x, target, zero_limit, significant_digits):
-    if target == 0:
-        return abs(x) < abs(zero_limit)
-    else:
-        return round_to_n_sigdig(x, n=significant_digits) == round_to_n_sigdig(
-            target, n=significant_digits
-        )
