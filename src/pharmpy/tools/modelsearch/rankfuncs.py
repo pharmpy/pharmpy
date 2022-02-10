@@ -18,23 +18,25 @@ def ofv(base, candidates, cutoff=3.84, rank_by_not_worse=False):
     return rank_models('ofv', base_ofv, candidates, cutoff, rank_by_not_worse=rank_by_not_worse)
 
 
-def aic(base, candidates, cutoff=3.84):
+def aic(base, candidates, cutoff=3.84, rank_by_not_worse=False):
     try:
         base_aic = calculate_aic(base)
     except AttributeError:
         base_aic = np.nan
-    return rank_models('aic', base_aic, candidates, cutoff)
+    return rank_models('aic', base_aic, candidates, cutoff, rank_by_not_worse)
 
 
-def bic(base, candidates, cutoff=3.84):
+def bic(base, candidates, cutoff=3.84, rank_by_not_worse=False):
     try:
         base_bic = calculate_bic(base)
     except AttributeError:
         base_bic = np.nan
-    return rank_models('bic', base_bic, candidates, cutoff)
+    return rank_models('bic', base_bic, candidates, cutoff, rank_by_not_worse)
 
 
 def rank_models(rank_type, base_value, candidates, cutoff, rank_by_not_worse=False):
+    if rank_by_not_worse:
+        cutoff = -cutoff
     if rank_type == 'aic':
         # FIXME: Temporary after converting aic to function
         filtered = [
@@ -49,20 +51,12 @@ def rank_models(rank_type, base_value, candidates, cutoff, rank_by_not_worse=Fal
             if model.modelfit_results is not None and base_value - calculate_bic(model) >= cutoff
         ]
     else:
-        if rank_by_not_worse:
-            filtered = [
-                model
-                for model in candidates
-                if model.modelfit_results is not None
-                and base_value - getattr(model.modelfit_results, rank_type) >= -cutoff
-            ]
-        else:
-            filtered = [
-                model
-                for model in candidates
-                if model.modelfit_results is not None
-                and base_value - getattr(model.modelfit_results, rank_type) >= cutoff
-            ]
+        filtered = [
+            model
+            for model in candidates
+            if model.modelfit_results is not None
+            and base_value - getattr(model.modelfit_results, rank_type) >= cutoff
+        ]
 
     def fn(model):
         if rank_type == 'aic':
