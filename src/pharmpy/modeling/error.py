@@ -311,18 +311,52 @@ def set_combined_error_model(model, data_trans=None):
     if has_combined_error_model(model):
         return model
     stats, y, f = _preparations(model)
+
+    expr = stats.find_assignment(y.name).expression
+
     ruv_prop = create_symbol(model, 'epsilon_p')
     ruv_add = create_symbol(model, 'epsilon_a')
 
+    eta_ruv = symbols.symbol('ETA_RV1')
+    theta_time = symbols.symbol('time_varying')
+
     data_trans = _canonicalize_data_transformation(model, data_trans)
     if data_trans == sympy.log(model.dependent_variable):
-        expr = sympy.log(f) + ruv_prop + ruv_add / f
+        expr_combined = sympy.log(f) + ruv_prop + ruv_add / f
     elif data_trans == model.dependent_variable:
-        expr = f + f * ruv_prop + ruv_add
+        if isinstance(expr, sympy.Piecewise):
+            expr_0 = expr.args[0][0]
+            expr_1 = expr.args[1][0]
+            cond_0 = expr.args[0][1]
+            for eps in model.random_variables.epsilons:
+                expr_0 = expr_0.subs({symbols.symbol(eps.name): ruv_prop})
+                expr_1 = expr_1.subs({symbols.symbol(eps.name): ruv_prop})
+                if (
+                    eta_ruv in model.random_variables.free_symbols
+                    and theta_time in model.parameters.symbols
+                ):
+                    expr_combined = sympy.Piecewise(
+                        (expr_0 + ruv_add * theta_time * sympy.exp(eta_ruv), cond_0),
+                        (expr_1 + ruv_add * sympy.exp(eta_ruv), True),
+                    )
+                elif (
+                    eta_ruv not in model.random_variables.free_symbols
+                    and theta_time in model.parameters.symbols
+                ):
+                    expr_combined = sympy.Piecewise(
+                        (expr_0 + ruv_add * theta_time, cond_0), (expr_1 + ruv_add, True)
+                    )
+        elif (
+            eta_ruv in model.random_variables.free_symbols
+            and theta_time not in model.parameters.symbols
+        ):
+            expr_combined = f + f * ruv_prop * sympy.exp(eta_ruv) + ruv_add * sympy.exp(eta_ruv)
+        else:
+            expr_combined = f + f * ruv_prop + ruv_add
     else:
         raise ValueError(f"Not supported data transformation {data_trans}")
 
-    stats.reassign(y, expr)
+    stats.reassign(y, expr_combined)
     remove_unused_parameters_and_rvs(model)
 
     sigma_prop = create_symbol(model, 'sigma_prop')
