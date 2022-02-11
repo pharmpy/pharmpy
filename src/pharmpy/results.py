@@ -82,9 +82,24 @@ class Results:
 
     @classmethod
     def from_dict(cls, d):
+        """Create results object from dictionary"""
         return cls(**d)
 
     def to_json(self, path=None, lzma=False):
+        """Serialize results object as json
+
+        Parameters
+        ----------
+        path : Path
+            Path to save json file or None to serialize to string
+        lzma : bool
+            Set to compress file with lzma
+
+        Returns
+        -------
+        str
+            Json as string unless path was used
+        """
         json_dict = self.to_dict()
         json_dict['__class__'] = self.__class__.__name__
         s = json.dumps(json_dict, cls=ResultsJSONEncoder)
@@ -140,6 +155,11 @@ class Results:
         """Save results as a human readable csv file
 
         Index will not be printed if it is a basic range.
+
+        Parameters
+        ----------
+        path : Path
+            Path to csv-file
         """
         d = self.to_dict()
         s = ""
@@ -168,10 +188,6 @@ class Results:
             s += '\n'
         with open(path, 'w', newline='') as fh:
             print(s, file=fh)
-
-    def add_plots(self):
-        """Create and add all plots to results object"""
-        raise NotImplementedError()
 
 
 class ModelfitResults(Results):

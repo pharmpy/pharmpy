@@ -112,7 +112,7 @@ The covariate effect plots give the covariate effects in percent with uncertaint
 .. jupyter-execute::
     :hide-code:
 
-    res.plot_covariate_effects()
+    res.covariate_effects_plot
 
 
 Parameter covariate coefficients
@@ -143,7 +143,7 @@ The plot shows the individuals with the lowest and the highest percentual covari
 .. jupyter-execute::
     :hide-code:
 
-    res.plot_individual_effects()
+    res.individual_effects_plot
 
 
 Unexplained variability
@@ -169,7 +169,7 @@ The plot display the original unexplained variability with the uncertainty for a
 .. jupyter-execute::
     :hide-code:
 
-    res.plot_unexplained_variability()
+    res.unexplained_variability_plot
 
 All variability parameters given the estimated parameters conditioned on each covariate in turn can be found in `parameter_variability`.
 

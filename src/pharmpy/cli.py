@@ -641,7 +641,6 @@ def results_frem(args):
         force_posdef_covmatrix=args.force_posdef_covmatrix,
         force_posdef_samples=args.force_posdef_samples,
     )
-    res.add_plots()
     res.to_json(path=args.psn_dir / 'results.json')
     res.to_csv(path=args.psn_dir / 'results.csv')
 

@@ -32,7 +32,6 @@ RSE             Standard error divided by the mean
 
     from pharmpy.results import read_results
     res = read_results('tests/testdata/results/bootstrap_results.json')
-    res.add_plots()
     res.parameter_statistics
 
 
@@ -54,13 +53,6 @@ The `parameter_estimates_histogram` give histograms for the distributions of the
 
     res.parameter_estimates_histogram
 
-
-A graphical overview of correlation between parameter estimates is the `parameter_estimates_correlation_plot`
-
-.. jupyter-execute::
-    :hide-code:
-
-    res.parameter_estimates_correlation_plot
 
 The raw parameter data is available in `parameter_estimates`
 

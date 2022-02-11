@@ -249,8 +249,6 @@ V,all,0.14572521381314374,0.11146577839548052,0.16976758171177983
     correct.index.name = 'covariate'
     pd.testing.assert_frame_equal(res.covariate_statistics, correct)
 
-    res.add_plots()
-
 
 def test_frem_results_pheno_categorical(testdata):
     model = Model.create_model(testdata / 'nonmem' / 'frem' / 'pheno_cat' / 'model_4.mod')

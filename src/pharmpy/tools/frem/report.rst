@@ -18,7 +18,7 @@ Covariate effects
     from pharmpy.results import read_results
 
     res = read_results('results.json')
-    res.plot_covariate_effects()
+    res.covariate_effects_plot
 
 
 Individual effects
@@ -27,7 +27,7 @@ Individual effects
 .. altair-plot::
    :hide-code:
 
-   res.plot_individual_effects()
+   res.individual_effects_plot
 
 Unexplained variability
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -35,4 +35,4 @@ Unexplained variability
 .. altair-plot::
    :hide-code:
 
-   res.plot_unexplained_variability()
+   res.unexplained_variability_plot
