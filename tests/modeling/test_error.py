@@ -13,6 +13,7 @@ from pharmpy.modeling import (
     set_additive_error_model,
     set_combined_error_model,
     set_dtbs_error_model,
+    set_iiv_on_ruv,
     set_proportional_error_model,
     set_weighted_error_model,
     use_thetas_for_error_stdev,
@@ -106,6 +107,36 @@ def test_set_combined_error_model_log(testdata):
     assert model.model_code.split('\n')[11] == 'Y = LOG(F) + EPS(2)/F + EPS(1)'
     assert model.model_code.split('\n')[17] == '$SIGMA  0.09 ; sigma_prop'
     assert model.model_code.split('\n')[18] == '$SIGMA  11.2225 ; sigma_add'
+
+
+def test_set_combined_error_model_with_eta_on_ruv(testdata):
+    model = Model.create_model(testdata / 'nonmem' / 'pheno.mod')
+    set_iiv_on_ruv(model)
+    set_combined_error_model(model)
+    assert model.model_code.split('\n')[11] == 'Y = F + EPS(1)*F*EXP(ETA(3)) + EPS(2)*EXP(ETA(3))'
+
+
+def test_set_combined_error_model_with_time_varying(testdata):
+    model = Model.create_model(testdata / 'nonmem' / 'pheno.mod')
+    set_time_varying_error_model(model, cutoff=1.0)
+    set_combined_error_model(model)
+    assert model.model_code.split('\n')[11] == 'IF (TIME.LT.1.0) THEN'
+    assert model.model_code.split('\n')[12] == '    Y = EPS(1)*F*THETA(3) + EPS(2)*THETA(3) + F'
+    assert model.model_code.split('\n')[14] == '    Y = EPS(1)*F + EPS(2) + F'
+
+
+def test_set_combined_error_model_with_time_varying_and_eta_on_ruv(testdata):
+    model = Model.create_model(testdata / 'nonmem' / 'pheno.mod')
+    set_time_varying_error_model(model, cutoff=1.0)
+    set_iiv_on_ruv(model)
+    set_combined_error_model(model)
+    assert (
+        model.model_code.split('\n')[12]
+        == '    Y = EPS(1)*F*THETA(3)*EXP(ETA(3)) + EPS(2)*THETA(3)*EXP(ETA(3)) + F'
+    )
+    assert (
+        model.model_code.split('\n')[14] == '    Y = EPS(1)*F*EXP(ETA(3)) + EPS(2)*EXP(ETA(3)) + F'
+    )
 
 
 def test_remove_error_without_f(testdata):
