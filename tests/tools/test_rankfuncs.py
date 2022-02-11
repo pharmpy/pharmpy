@@ -47,9 +47,9 @@ def test_ofv():
     res = ofv(run6, [run7, run8])
     assert [] == res
 
-    run9 = DummyModel("run9", ofv=0, parameters=Parameters([]))
-    run10 = DummyModel("run10", ofv=3.83, parameters=Parameters([]))
-    run11 = DummyModel("run11", ofv=14, parameters=Parameters([]))
+    run9 = DummyModel("run9", ofv=0)
+    run10 = DummyModel("run10", ofv=3.83)
+    run11 = DummyModel("run11", ofv=14)
     res = ofv(run1, [run9, run10, run11], rank_by_not_worse=True)
     assert [run10, run9] == res
 
