@@ -106,11 +106,17 @@ def run_iiv(model):
 
     best_model = res_block_structure.best_model
 
+    from pharmpy.modeling import summarize_modelfit_results
+
+    summary_models = summarize_modelfit_results(
+        [model] + res_no_of_etas.models + res_block_structure.models
+    )
+
     from pharmpy.tools.iiv.tool import IIVResults
 
     res = IIVResults(
         summary_tool=[res_no_of_etas.summary_tool, res_block_structure.summary_tool],
-        summary_models=[res_no_of_etas.summary_models, res_block_structure.summary_models],
+        summary_models=summary_models,
         best_model=best_model,
         models=res_no_of_etas.models + res_block_structure.models,
         start_model=model,
