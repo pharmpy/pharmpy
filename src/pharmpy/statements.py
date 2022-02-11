@@ -172,27 +172,31 @@ class ODESystem(Statement):
         """Numerical solver to use when numerically solving the ode system
         Supported solvers and their NONMEM ADVAN
 
-        +------------------------+------------------+
-        | Solver                 | NONMEM ADVAN     |
-        +========================+==================+
-        | CVODES                 | ADVAN14          |
-        +------------------------+------------------+
-        | DGEAR                  | ADVAN8           |
-        +------------------------+------------------+
-        | DVERK                  | ADVAN6           |
-        +------------------------+------------------+
-        | IDA                    | ADVAN15          |
-        +------------------------+------------------+
-        | LSODA                  | ADVAN13          |
-        +------------------------+------------------+
-        | LSODI                  | ADVAN9           |
-        +------------------------+------------------+
+        +----------------------------+------------------+
+        | Solver                     | NONMEM ADVAN     |
+        +============================+==================+
+        | CVODES                     | ADVAN14          |
+        +----------------------------+------------------+
+        | DGEAR                      | ADVAN8           |
+        +----------------------------+------------------+
+        | DVERK                      | ADVAN6           |
+        +----------------------------+------------------+
+        | IDA                        | ADVAN15          |
+        +----------------------------+------------------+
+        | GL (general linear)        | ADVAN5           |
+        +----------------------------+------------------+
+        | GL_REAL (real eigenvalues) | ADVAN7           |
+        +----------------------------+------------------+
+        | LSODA                      | ADVAN13          |
+        +----------------------------+------------------+
+        | LSODI                      | ADVAN9           |
+        +----------------------------+------------------+
         """
         return self._solver
 
     @solver.setter
     def solver(self, value):
-        supported = ['CVODES', 'DGEAR', 'DVERK', 'IDA', 'LSODA', 'LSODI']
+        supported = ['CVODES', 'DGEAR', 'DVERK', 'IDA', 'LSODA', 'LSODI', 'GL', 'GL_REAL']
         if not (value is None or value.upper() in supported):
             raise ValueError(f"Unknown solver {value}. Recognized solvers are {supported}.")
         self._solver = value
