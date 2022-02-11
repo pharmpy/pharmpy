@@ -912,7 +912,8 @@ def _translate_time_and_date_columns(df, timecol, datecol, idcol):
         _translate_nonmem_time_and_date_value, axis=1, timecol=timecol, datecol=datecol
     )
     timediff = df[timecol] - df.groupby(idcol)[timecol].transform('first')
-    df[timecol] = timediff.dt.total_seconds() / 3600
+    if df[timecol].dtype != np.float64:
+        df[timecol] = timediff.dt.total_seconds() / 3600
     return df
 
 
