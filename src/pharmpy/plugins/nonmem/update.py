@@ -280,6 +280,16 @@ def update_ode_system(model, old, new):
     """
     if type(old) == CompartmentalSystem and type(new) == ExplicitODESystem:
         to_des(model, new)
+    elif new.solver:
+        if new.solver in ['GL', 'GL_REAL']:
+            if new.solver == 'GL':
+                advan = 'ADVAN5'
+            else:
+                advan = 'ADVAN7'
+            update_subroutines_record(model, advan, 'TRANS1')
+            update_model_record(model, advan)
+        else:
+            to_des(model, new)
     elif type(old) == ExplicitODESystem and type(new) == CompartmentalSystem:
         # Stay with $DES for now
         update_des(model, old, new)
@@ -397,6 +407,9 @@ def to_des(model, new):
             advan = 'ADVAN13'
         elif new.solver == 'LSODI':
             advan = 'ADVAN9'
+        solver = new.solver
+        new = new.to_explicit_system()
+        new.solver = solver
         subs.append_option(advan)
     else:
         subs.append_option('ADVAN6')

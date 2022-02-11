@@ -29,6 +29,7 @@ from pharmpy.modeling import (
     set_iiv_on_ruv,
     set_michaelis_menten_elimination,
     set_mixed_mm_fo_elimination,
+    set_ode_solver,
     set_peripheral_compartments,
     set_power_on_ruv,
     set_seq_zo_fo_absorption,
@@ -2852,3 +2853,16 @@ def test_add_iov_only_one_level(pheno_path):
 
     with pytest.raises(ValueError, match='Only one value in FA1 column.'):
         add_iov(model, 'FA1', ['ETA(1)'])
+
+
+def test_set_ode_solver(pheno_path):
+    model = Model.create_model(pheno_path)
+    assert model.statements.ode_system.solver is None
+    assert 'ADVAN1' in model.model_code
+    set_ode_solver(model, 'LSODA')
+    assert model.statements.ode_system.solver == 'LSODA'
+    assert 'ADVAN13' in model.model_code
+    set_ode_solver(model, 'GL')
+    assert model.statements.ode_system.solver == 'GL'
+    assert 'ADVAN5' in model.model_code
+    assert '$MODEL' in model.model_code
