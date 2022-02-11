@@ -1,7 +1,11 @@
 next version
 ------------
 
+New features
+~~~~~~~~~~~~
+
 * Add modeling.write_results
+* Add modeling.print_fit_summary
 
 0.49.0 (2022-02-10)
 -------------------

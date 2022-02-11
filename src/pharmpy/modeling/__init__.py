@@ -153,6 +153,7 @@ from .results import (
     calculate_pk_parameters_statistics,
     check_high_correlations,
     check_parameters_near_bounds,
+    print_fit_summary,
     summarize_modelfit_results,
     write_results,
 )
@@ -243,6 +244,7 @@ __all__ = [
     'predict_influential_individuals',
     'predict_influential_outliers',
     'predict_outliers',
+    'print_fit_summary',
     'print_model_code',
     'print_model_symbols',
     'read_model',

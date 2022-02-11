@@ -28,17 +28,6 @@ def test_tool_files(pheno):
     ]
 
 
-def test_sumo(testdata):
-    onePROB = testdata / 'nonmem' / 'modelfit_results' / 'onePROB'
-    pheno = Model.create_model(onePROB / 'oneEST' / 'noSIM' / 'pheno.mod')
-    from pharmpy.modeling import load_example_model
-
-    pheno = load_example_model("pheno")
-    d = pheno.modelfit_results.sumo(to_string=False)
-    assert 'Messages' in d.keys()
-    assert 'Parameter summary' in d.keys()
-
-
 def test_special_models(testdata):
     onePROB = testdata / 'nonmem' / 'modelfit_results' / 'onePROB'
     withBayes = Model.create_model(onePROB / 'multEST' / 'noSIM' / 'withBayes.mod')
@@ -51,27 +40,12 @@ def test_special_models(testdata):
     )
     assert withBayes.modelfit_results[0].minimization_successful is False
     assert withBayes.modelfit_results[1].minimization_successful is False
-    assert withBayes.modelfit_results[0].covariance_step == {
-        'requested': True,
-        'completed': True,
-        'warnings': False,
-    }
-    assert withBayes.modelfit_results.covariance_step == {
-        'requested': True,
-        'completed': True,
-        'warnings': False,
-    }
 
     maxeval0 = Model.create_model(onePROB / 'oneEST' / 'noSIM' / 'maxeval0.mod')
     assert maxeval0.modelfit_results.minimization_successful is None
 
     maxeval3 = Model.create_model(onePROB / 'oneEST' / 'noSIM' / 'maxeval3.mod')
     assert maxeval3.modelfit_results.minimization_successful is False
-    assert maxeval3.modelfit_results.covariance_step == {
-        'requested': True,
-        'completed': True,
-        'warnings': True,
-    }
 
 
 def test_covariance(pheno_path):

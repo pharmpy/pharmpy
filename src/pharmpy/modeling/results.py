@@ -633,3 +633,52 @@ def write_results(results, path, lzma=False, csv=False):
         results.to_csv(path)
     else:
         results.to_json(path, lzma=lzma)
+
+
+def print_fit_summary(model):
+    """Print a summary of the model fit
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model object
+    """
+
+    def bool_ok_error(x):
+        return "OK" if x else "ERROR"
+
+    res = model.modelfit_results
+    print("Parameter estimation status")
+    print("---------------------------")
+    minsucc = bool_ok_error(res.minimization_successful)
+    minsucc_text = "Minimization successful"
+    print(f"{minsucc_text:33} {minsucc}")
+    no_rounding_errors = bool_ok_error(res.termination_cause != 'rounding_errors')
+    no_rounding_text = "No rounding errors"
+    print(f"{no_rounding_text:33} {no_rounding_errors}")
+    ofv_txt = "Objective function value"
+    print(f"{ofv_txt:33} {round(res.ofv, 1)}")
+    print()
+    print("Parameter uncertainty status")
+    print("----------------------------")
+    cond_txt = "Condition number"
+    condno = round(np.linalg.cond(res.correlation_matrix), 1)
+    cond_lttxt = "Condition number < 1000"
+    cond_lt1000 = bool_ok_error(condno < 1000)
+    print(f"{cond_lttxt:33} {cond_lt1000}")
+    print(f"{cond_txt:33} {condno}")
+
+    hicorr = check_high_correlations(model)
+    nohicorr = bool_ok_error(hicorr.empty)
+    nohicorr_txt = "No correlations larger than 0.9"
+    print(f"{nohicorr_txt:33} {nohicorr}")
+    print()
+
+    print("Parameter estimates")
+    print("-------------------")
+    pe = res.parameter_estimates
+    se = res.standard_errors
+    rse = se / pe
+    rse.name = 'RSE'
+    df = pd.concat([pe, se, rse], axis=1)
+    print(df)
