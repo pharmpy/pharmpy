@@ -10,7 +10,7 @@ class AMDResults(Results):
         self.final_model = final_model
 
 
-def run_amd(model, mfl='LAGTIME();PERIPHERALS(1)'):
+def run_amd(model, mfl=None):
     """Run Automatic Model Development (AMD) tool
 
     Runs structural modelsearch, IIV building, and resmod
@@ -42,7 +42,7 @@ def run_amd(model, mfl='LAGTIME();PERIPHERALS(1)'):
     db = default_tool_database(toolname='amd')
     run_tool('modelfit', model, path=db.path / 'modelfit')
 
-    if not mfl:
+    if mfl is None:
         mfl = (
             'ABSORPTION([ZO,SEQ-ZO-FO]);'
             'ELIMINATION([ZO,MM,MIX-FO-MM]);'
