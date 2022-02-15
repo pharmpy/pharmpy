@@ -1,4 +1,4 @@
-from pharmpy.modeling import copy_model, remove_iiv
+from pharmpy.modeling import copy_model, remove_iiv, remove_loq_data
 from pharmpy.results import Results
 from pharmpy.workflows import default_tool_database
 
@@ -10,7 +10,7 @@ class AMDResults(Results):
         self.final_model = final_model
 
 
-def run_amd(model, mfl=None):
+def run_amd(model, mfl=None, lloq=None):
     """Run Automatic Model Development (AMD) tool
 
     Runs structural modelsearch, IIV building, and resmod
@@ -21,6 +21,8 @@ def run_amd(model, mfl=None):
         Pharmpy model
     mfl : str
         MFL for search space for structural model
+    lloq : float
+        Lower limit of quantification. LOQ data will be removed.
 
     Returns
     -------
@@ -39,6 +41,9 @@ def run_amd(model, mfl=None):
     run_tool
 
     """
+    if lloq is not None:
+        remove_loq_data(model, lloq=lloq)
+
     db = default_tool_database(toolname='amd')
     run_tool('modelfit', model, path=db.path / 'modelfit')
 
