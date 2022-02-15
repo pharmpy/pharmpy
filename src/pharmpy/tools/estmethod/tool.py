@@ -166,7 +166,7 @@ class EstMethodResults(pharmpy.results.Results):
         self.models = models
 
     def sorted_by_ofv(self):
-        df = self.summary[['ofv', 'runtime_total']].sort_values(by=['ofv'])
+        df = self.summary[['ofv', 'runtime_total', 'estimation_runtime']].sort_values(by=['ofv'])
         return df
 
 
