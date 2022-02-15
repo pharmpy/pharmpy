@@ -1,7 +1,8 @@
-from pharmpy.modeling import copy_model, remove_iiv, remove_loq_data
+from pharmpy.modeling import copy_model, remove_iiv
 from pharmpy.results import Results
 from pharmpy.workflows import default_tool_database
 
+from .data import remove_loq_data
 from .run import run_tool
 
 
