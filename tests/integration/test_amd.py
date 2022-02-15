@@ -15,10 +15,7 @@ def test_amd(tmp_path, testdata):
         model = Model.create_model('pheno_real.mod')
         model.datainfo.path = tmp_path / 'pheno.dta'
 
-        # FIXME: remove after updating results
-        model.modelfit_results.estimation_step
-
-        res = run_amd(model)
+        res = run_amd(model, mfl='LAGTIME();PERIPHERALS(1)')
         assert res
 
 
