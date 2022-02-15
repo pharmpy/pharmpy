@@ -6,6 +6,7 @@ New features
 
 * Add modeling.write_results
 * Add modeling.print_fit_summary
+* Add modeling.remove_loq_data
 
 0.49.0 (2022-02-10)
 -------------------
