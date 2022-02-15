@@ -100,7 +100,7 @@ class Transits(ModelFeature):
                 )
             if self.depot != 'DEPOT':
                 self._funcs[f'TRANSITS({arg}, NODEPOT)'] = functools.partial(
-                    modeling.set_transit_compartments, n=arg, keep_depot=False
+                    modeling.set_transit_compartments, n=arg + 1, keep_depot=False
                 )
 
 

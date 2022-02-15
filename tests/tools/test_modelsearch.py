@@ -1,5 +1,8 @@
+import functools
+
 import pytest
 
+from pharmpy.modeling import set_transit_compartments
 from pharmpy.tools.modelsearch.algorithms import exhaustive, exhaustive_stepwise
 from pharmpy.tools.modelsearch.mfl import ModelFeatures
 
@@ -101,6 +104,14 @@ def test_mfl_transits(code, args, depot):
     mfl = ModelFeatures(code)
     assert mfl.transits.args == args
     assert mfl.transits.depot == depot
+
+
+def test_mfl_transits_depot():
+    mfl = ModelFeatures('TRANSITS(1, *)')
+    func_depot = functools.partial(set_transit_compartments, n=1)
+    assert mfl.transits._funcs['TRANSITS(1)'].keywords == func_depot.keywords
+    func_nodepot = functools.partial(set_transit_compartments, n=2, keep_depot=False)
+    assert mfl.transits._funcs['TRANSITS(1, NODEPOT)'].keywords == func_nodepot.keywords
 
 
 @pytest.mark.parametrize(
