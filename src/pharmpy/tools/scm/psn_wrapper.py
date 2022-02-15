@@ -1,7 +1,24 @@
 import os
+import re
+import subprocess
 
 from pharmpy.modeling import read_results, write_model
 from pharmpy.workflows import default_tool_database
+
+
+def have_scm():
+    # Check if scm is available through PsN
+    out = subprocess.run(["scm", "--version"], capture_output=True)
+    m = re.match(r"PsN version: (\d+)\.(\d+)\.(\d+)", out.stdout.decode("utf-8"))
+    if m:
+        major = int(m.group(1))
+        minor = int(m.group(2))
+        patch = int(m.group(3))
+        return (
+            major > 5 or (major == 5 and minor > 2) or (major == 5 and minor == 2 and patch >= 10)
+        )
+    else:
+        return False
 
 
 def run_scm(model, relations, continuous=None, categorical=None):
@@ -22,7 +39,7 @@ def run_scm(model, relations, continuous=None, categorical=None):
     model._dataset_updated = True  # Hack to get update_source to update IGNORE
     write_model(model, path=path)
 
-    os.system(f"scm {config_path} -directory={path / 'scmdir'}")
+    os.system(f"scm {config_path} -directory={path / 'scmdir'} -auto_tv")
 
     res = read_results(path / 'scmdir' / 'results.json')
     return res
@@ -30,9 +47,8 @@ def run_scm(model, relations, continuous=None, categorical=None):
 
 def _create_config(model, path, relations, continuous, categorical):
     config = f"model={path}/{model.name}{model.filename_extension}\n"
-    config += "search_direction=both\n"
-    config += "p_forward=0.05\n"
-    config += "p_backward=0.01\n"
+    config += "search_direction=forward\n"
+    config += "p_forward=0.01\n"
     config += f"continuous_covariates={'.'.join(continuous)}\n"
     config += f"categorical_covariates={'.'.join(categorical)}\n"
     config += f"do_not_drop={','.join(continuous + categorical)}\n"
