@@ -279,7 +279,7 @@ $ESTIMATION METHOD=1 INTERACTION
     model.dataset = load_example_model("pheno").dataset
     set_michaelis_menten_elimination(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
-$DATA pheno.dta IGNORE=@
+$DATA run1.csv IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
 $SUBROUTINE ADVAN6 TOL=3
 $MODEL COMPARTMENT=(CENTRAL DEFDOSE)
@@ -324,7 +324,7 @@ $ESTIMATION METHOD=1 INTERACTION
     set_mixed_mm_fo_elimination(model)
     assert has_mixed_mm_fo_elimination(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
-$DATA pheno.dta IGNORE=@
+$DATA run1.csv IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
 $SUBROUTINE ADVAN6 TOL=3
 $MODEL COMPARTMENT=(CENTRAL DEFDOSE)
@@ -352,7 +352,7 @@ $ESTIMATION METHOD=1 INTERACTION
     assert model.model_code == correct
     set_michaelis_menten_elimination(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
-$DATA pheno.dta IGNORE=@
+$DATA run1.csv IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
 $SUBROUTINE ADVAN6 TOL=3
 $MODEL COMPARTMENT=(CENTRAL DEFDOSE)
@@ -393,7 +393,7 @@ $ESTIMATION METHOD=1 INTERACTION
     model.dataset = load_example_model("pheno").dataset
     set_mixed_mm_fo_elimination(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
-$DATA pheno.dta IGNORE=@
+$DATA run1.csv IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
 $SUBROUTINE ADVAN6 TOL=3
 $MODEL COMPARTMENT=(CENTRAL DEFDOSE)
@@ -420,7 +420,7 @@ $ESTIMATION METHOD=1 INTERACTION
     set_zero_order_elimination(model)
     set_mixed_mm_fo_elimination(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
-$DATA pheno.dta IGNORE=@
+$DATA run1.csv IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
 $SUBROUTINE ADVAN6 TOL=3
 $MODEL COMPARTMENT=(CENTRAL DEFDOSE)
@@ -950,7 +950,7 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
 
     set_zero_order_absorption(model)
     correct = '''$PROBLEM PHENOBARB SIMPLE MODEL
-$DATA ../pheno.dta IGNORE=@
+$DATA pheno_advan1.csv IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2 RATE
 $SUBROUTINE ADVAN1 TRANS2
 
@@ -1206,7 +1206,7 @@ $ESTIMATION METHOD=1 INTERACTION
     model.dataset = load_example_model("pheno").dataset
     set_first_order_absorption(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
-$DATA pheno.dta IGNORE=@
+$DATA run1.csv IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
 $SUBROUTINE ADVAN2 TRANS2
 
@@ -1394,7 +1394,7 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
     set_first_order_absorption(model)
     model.update_source(nofiles=True)
     correct = '''$PROBLEM PHENOBARB SIMPLE MODEL
-$DATA pheno_zero_order.csv IGNORE=@
+$DATA pheno_advan1_zero_order.csv IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
 $SUBROUTINE ADVAN2 TRANS2
 
@@ -1448,7 +1448,6 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
         fs.add_real_file(datadir.parent / 'pheno.dta', target_path='pheno.dta')
         model = Model.create_model('dir/pheno_advan1.mod')
         set_zero_order_absorption(model)
-        model.update_source()
         correct = '''$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno_advan1.csv IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2 RATE
@@ -1487,7 +1486,9 @@ $COVARIANCE UNCONDITIONAL
 $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
        NOPRINT ONEHEADER FILE=sdtab1
 '''
+        print("START")
         assert model.model_code == correct
+        print("END")
 
         correct = '''$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno_advan2.csv IGNORE=@
@@ -1540,7 +1541,7 @@ def test_seq_to_FO(testdata):
     set_first_order_absorption(model)
     model.update_source(nofiles=True)
     correct = '''$PROBLEM PHENOBARB SIMPLE MODEL
-$DATA pheno_zero_order.csv IGNORE=@
+$DATA pheno_advan2_seq.csv IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
 $SUBROUTINE ADVAN2 TRANS2
 
@@ -1628,7 +1629,7 @@ def test_bolus_to_seq(testdata):
     set_seq_zo_fo_absorption(model)
     model.update_source(nofiles=True)
     correct = '''$PROBLEM PHENOBARB SIMPLE MODEL
-$DATA ../pheno.dta IGNORE=@
+$DATA pheno_advan1.csv IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2 RATE
 $SUBROUTINE ADVAN2 TRANS2
 
@@ -1723,7 +1724,7 @@ def test_FO_to_seq(testdata):
     set_seq_zo_fo_absorption(model)
     model.update_source(nofiles=True)
     correct = '''$PROBLEM PHENOBARB SIMPLE MODEL
-$DATA ../pheno.dta IGNORE=@
+$DATA pheno_advan2.csv IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2 RATE
 $SUBROUTINE ADVAN2 TRANS2
 

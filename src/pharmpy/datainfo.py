@@ -325,7 +325,7 @@ class DataInfo(MutableSequence):
         for col1, col2 in zip(self, other):
             if col1 != col2:
                 return False
-        return True
+        return self.path == other.path
 
     def __len__(self):
         return len(self._columns)

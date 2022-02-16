@@ -168,14 +168,16 @@ class Model(pharmpy.model.Model):
 
         if self._dataset_updated or self.datainfo != self._old_datainfo:
             # FIXME: If no name set use the model name. Set that when setting dataset to input!
-            if not nofiles:
+            if self.datainfo.path is None:  # or self.datainfo.path == self._old_datainfo.path:
                 if path is not None:
                     dir_path = path.parent
                 else:
                     dir_path = self.name + ".csv"
-                datapath = write_csv(self, path=dir_path, force=force)
-                self.datainfo.path = datapath.name
-
+                if not nofiles:
+                    datapath = write_csv(self, path=dir_path, force=force)
+                    self.datainfo.path = datapath.name
+                else:
+                    self.datainfo.path = Path(dir_path)
             data_record = self.control_stream.get_records('DATA')[0]
 
             label = self.datainfo.names[0]
@@ -194,8 +196,8 @@ class Model(pharmpy.model.Model):
                 assert (
                     not path.exists() or path.is_file()
                 ), f'input path change, but no file exists at target {str(path)}'
-                record = self.control_stream.get_records('DATA')[0]
-                record.filename = str(path)
+                data_record = self.control_stream.get_records('DATA')[0]
+                data_record.filename = str(path)
 
         self._update_sizes()
         update_estimation(self)

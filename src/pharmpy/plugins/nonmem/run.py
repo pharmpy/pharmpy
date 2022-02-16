@@ -3,7 +3,7 @@ import subprocess
 import uuid
 from pathlib import Path
 
-from pharmpy.modeling import write_model
+from pharmpy.modeling import write_csv, write_model
 from pharmpy.plugins.nonmem import conf, convert_model
 
 
@@ -16,7 +16,8 @@ def execute_model(model):
     model = model.copy()
     model.parent_model = parent_model
     model._dataset_updated = True  # Hack to get update_source to update IGNORE
-    model.update_source(path=path / model.name)
+    model.update_source(path=path / model.name)  # FIXME: Seems to be saving dataset twice
+    write_csv(model, path=path, force=True)
     write_model(model, path=path, force=True)
     basepath = Path(model.name)
     args = [

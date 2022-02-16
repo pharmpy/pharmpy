@@ -201,7 +201,7 @@ $ESTIMATION METHOD=1 INTERACTION
     model.dataset = load_example_model("pheno").dataset
     set_additive_error_model(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
-$DATA pheno.dta IGNORE=@
+$DATA run1.csv IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
 $SUBROUTINE ADVAN1 TRANS2
 $PK
