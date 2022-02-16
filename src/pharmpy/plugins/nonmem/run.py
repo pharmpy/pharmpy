@@ -15,9 +15,11 @@ def execute_model(model):
     path.mkdir(parents=True, exist_ok=True)
     model = model.copy()
     model.parent_model = parent_model
+    write_csv(model, path=path, force=True)
+    # Set local path
+    model.datainfo.path = model.datainfo.path.relative_to(model.datainfo.path.parent)
     model._dataset_updated = True  # Hack to get update_source to update IGNORE
     model.update_source(path=path / model.name)  # FIXME: Seems to be saving dataset twice
-    write_csv(model, path=path, force=True)
     write_model(model, path=path, force=True)
     basepath = Path(model.name)
     args = [
