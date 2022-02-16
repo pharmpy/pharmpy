@@ -19,7 +19,6 @@ def execute_model(model):
     # Set local path
     model.datainfo.path = model.datainfo.path.relative_to(model.datainfo.path.parent)
     model._dataset_updated = True  # Hack to get update_source to update IGNORE
-    model.update_source(path=path / model.name)  # FIXME: Seems to be saving dataset twice
     write_model(model, path=path, force=True)
     basepath = Path(model.name)
     args = [
