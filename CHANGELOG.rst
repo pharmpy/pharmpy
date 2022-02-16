@@ -1,5 +1,5 @@
-next version
-------------
+0.50.0 (2022-02-16)
+-------------------
 
 New features
 ~~~~~~~~~~~~
@@ -7,6 +7,11 @@ New features
 * Add modeling.write_results
 * Add modeling.print_fit_summary
 * Add modeling.remove_loq_data
+
+Changes
+~~~~~~~
+
+* Change in mfl in modelsearch such that transits that don't keep depot will have additional transit
 
 0.49.0 (2022-02-10)
 -------------------
