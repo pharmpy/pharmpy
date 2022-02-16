@@ -7,11 +7,13 @@ New features
 * Add modeling.write_results
 * Add modeling.print_fit_summary
 * Add modeling.remove_loq_data
+* Add first version of WIP scm wrapper
 
 Changes
 ~~~~~~~
 
 * Change in mfl in modelsearch such that transits that don't keep depot will have additional transit
+* Make it possible to set $DATA directly for NONMEM models (via datainfo.path) (#130)
 
 0.49.0 (2022-02-10)
 -------------------
