@@ -1,6 +1,7 @@
 import math
 
-mathematical_script_capital_n = '𝒩 '
+mathematical_script_capital_n = 'N'  # 𝒩  would be better, but due to bug in
+# Qt rendering (i.e. spyder, rstudio) gets misaligned
 
 
 class Grid:
