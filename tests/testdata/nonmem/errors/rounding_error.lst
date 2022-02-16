@@ -1,0 +1,288 @@
+tor 11 nov 2021 15:24:39 CET
+;; 1. Based on: 5
+$PROBLEM    PHENOBARB SIMPLE MODEL
+$DATA      pheno.csv IGNORE=@
+$INPUT      ID TIME AMT WGT APGR DV FA1 FA2
+$SUBROUTINE ADVAN1 TRANS2
+$PK
+
+IF(AMT.GT.0) BTIME=TIME
+TAD=TIME-BTIME
+      TVCL=THETA(1)*WGT
+      TVV=THETA(2)*WGT
+IF(APGR.LT.5) TVV=TVV*(1+THETA(3))
+      CL=TVCL*EXP(ETA(1))
+      V=TVV*EXP(ETA(2))
+      S1=V
+
+$ERROR
+
+      W=F
+      Y=F+W*EPS(1)
+
+      IPRED=F         ;  individual-specific prediction
+      IRES=DV-IPRED   ;  individual-specific residual
+      IWRES=IRES/W    ;  individual-specific weighted residual
+
+$THETA (0,0.00469307) ; pCL
+$THETA  (0,1.00916) ; pV
+$THETA  (-.99,.1)
+$OMEGA  DIAGONAL(2)
+ 0.0309626  ;       IVCL
+ 0.031128  ;        IVV
+
+$SIGMA  1e-7
+;$SIGMA  0.0130865
+$ESTIMATION METHOD=1 INTERACTION PRINT=1
+$COVARIANCE UNCONDITIONAL
+$TABLE      ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
+            NOPRINT ONEHEADER FILE=sdtab1
+
+
+ PROBLEM NO.:         1
+
+0DATA CHECKOUT RUN:              NO
+ DATA SET LOCATED ON UNIT NO.:    2
+ THIS UNIT TO BE REWOUND:        NO
+ NO. OF DATA RECS IN DATA SET:     1148
+ NO. OF DATA ITEMS IN DATA SET:  21
+ ID DATA ITEM IS DATA ITEM NO.:   1
+ DEP VARIABLE IS DATA ITEM NO.:  17
+ MDV DATA ITEM IS DATA ITEM NO.: 21
+0INDICES PASSED TO SUBROUTINE PRED:
+  18  11  13   0  14  15   0   0   0   0   0
+0LABELS FOR DATA ITEMS:
+ ID VISI AGE SEX WT COMP IACE DIG DIU TAD TIME CRCL AMT SS II VID1 DV EVID SHR SHR2 MDV
+0(NONBLANK) LABELS FOR PRED-DEFINED ITEMS:
+ VC CL MAT
+0FORMAT FOR DATA:
+ (E4.0,E3.0,E4.0,E3.0,E5.0,4E3.0,2E18.0,E5.0/E5.0,E3.0,6E6.0,1F2.0)
+
+ TOT. NO. OF OBS RECS:     1006
+ TOT. NO. OF INDIVIDUALS:       73
+0LENGTH OF THETA:   4
+0DEFAULT THETA BOUNDARY TEST OMITTED:    NO
+0OMEGA HAS BLOCK FORM:
+  1
+  1  1
+  1  1  1
+  1  1  1  1
+0DEFAULT OMEGA BOUNDARY TEST OMITTED:    NO
+0SIGMA HAS SIMPLE DIAGONAL FORM WITH DIMENSION:   1
+0DEFAULT SIGMA BOUNDARY TEST OMITTED:    NO
+0INITIAL ESTIMATE OF THETA:
+ LOWER BOUND    INITIAL EST    UPPER BOUND
+  0.0000E+00     0.1087E+03     0.1000E+07
+  0.0000E+00     0.2528E+02     0.1000E+07
+  0.0000E+00     0.4015E+00     0.1000E+07
+  0.0000E+00     0.1250E+00     0.1000E+07
+0INITIAL ESTIMATE OF OMEGA:
+ BLOCK SET NO.   BLOCK                                                                    FIXED
+        1                                                                                   NO
+                  0.7567E-01
+                  0.3459E-01   0.8423E-01
+                 -0.1451E-01  -0.6758E-02   0.9599E+00
+                  0.8252E-02   0.8707E-02   0.2939E-01   0.9000E-01
+0INITIAL ESTIMATE OF SIGMA:
+ 0.9731E-01
+0TABLES STEP OMITTED:    NO
+ NO. OF TABLES:           1
+ SEED NUMBER (SEED):    11456
+ RANMETHOD:             3U
+ MC SAMPLES (ESAMPLE):    300
+ WRES SQUARE ROOT TYPE (WRESCHOL): EIGENVALUE
+0-- TABLE   1 --
+0RECORDS ONLY:    ALL
+04 COLUMNS APPENDED:    NO
+ PRINTED:                NO
+ HEADERS:               YES
+ FILE TO BE FORWARDED:   NO
+ FORMAT:                S1PE11.4
+ IDFORMAT:
+ LFORMAT:
+ RFORMAT:
+ FIXED_EFFECT_ETAS:
+0USER-CHOSEN ITEMS:
+ ID TIME CWRES CIPREDI VC CL MAT DV PRED RES WRES IPREDI IWRESI
+1DOUBLE PRECISION PREDPP VERSION 7.5.0
+
+ GENERAL LINEAR KINETICS MODEL (ADVAN5)
+0MODEL SUBROUTINE USER-SUPPLIED - ID NO. 9999
+0MAXIMUM NO. OF BASIC PK PARAMETERS:  12
+0RATE CONSTANT PARAMETERS - ASSIGNMENT OF ROWS IN GG
+            TO COMPT.
+  FROM      1    2    3    4    5    6    7    8    9   10   11   12   13
+  COMPT.
+    1       *    1    -    -    -    -    -    -    -    -    -    -    -
+    2       -    *    2    -    -    -    -    -    -    -    -    -    -
+    3       -    -    *    3    -    -    -    -    -    -    -    -    -
+    4       -    -    -    *    4    -    -    -    -    -    -    -    -
+    5       -    -    -    -    *    5    -    -    -    -    -    -    -
+    6       -    -    -    -    -    *    6    -    -    -    -    -    -
+    7       -    -    -    -    -    -    *    7    -    -    -    -    -
+    8       -    -    -    -    -    -    -    *    8    -    -    -    -
+    9       -    -    -    -    -    -    -    -    *    9    -    -    -
+   10       -    -    -    -    -    -    -    -    -    *   10    -    -
+   11       -    -    -    -    -    -    -    -    -    -    *   11    -
+   12       -    -    -    -    -    -    -    -    -    -    -    *   12
+             * LINK FROM A COMPARTMENT TO ITSELF IS NOT POSSIBLE
+             - LINK BETWEEN THESE COMPARTMENTS IS NOT DEFINED FOR THIS MODEL
+0COMPARTMENT ATTRIBUTES
+ COMPT. NO.   FUNCTION                         INITIAL    ON/OFF      DOSE      DEFAULT    DEFAULT
+                                               STATUS     ALLOWED    ALLOWED    FOR DOSE   FOR OBS.
+    1         TRANSIT1                           ON         YES        YES        YES        NO
+    2         TRANSIT2                           ON         YES        YES        NO         NO
+    3         TRANSIT3                           ON         YES        YES        NO         NO
+    4         TRANSIT4                           ON         YES        YES        NO         NO
+    5         TRANSIT5                           ON         YES        YES        NO         NO
+    6         TRANSIT6                           ON         YES        YES        NO         NO
+    7         TRANSIT7                           ON         YES        YES        NO         NO
+    8         TRANSIT8                           ON         YES        YES        NO         NO
+    9         TRANSIT9                           ON         YES        YES        NO         NO
+   10         TRANSIT10                          ON         YES        YES        NO         NO
+   11         DEPOT                              ON         YES        YES        NO         NO
+   12         CENTRAL                            ON         YES        YES        NO         YES
+   13         OUTPUT                             OFF        YES        NO         NO         NO
+1
+ ADDITIONAL PK PARAMETERS - ASSIGNMENT OF ROWS IN GG
+ COMPT. NO.                             INDICES
+              SCALE      BIOAVAIL.   ZERO-ORDER  ZERO-ORDER  ABSORB
+                         FRACTION    RATE        DURATION    LAG
+    1            *           *           *           *           *
+    2            *           *           *           *           *
+    3            *           *           *           *           *
+    4            *           *           *           *           *
+    5            *           *           *           *           *
+    6            *           *           *           *           *
+    7            *           *           *           *           *
+    8            *           *           *           *           *
+    9            *           *           *           *           *
+   10            *           *           *           *           *
+   11            *           *           *           *           *
+   12            *           *           *           *           *
+   13            *           -           -           -           -
+             - PARAMETER IS NOT ALLOWED FOR THIS MODEL
+             * PARAMETER IS NOT SUPPLIED BY PK SUBROUTINE;
+               WILL DEFAULT TO ONE IF APPLICABLE
+0DATA ITEM INDICES USED BY PRED ARE:
+   EVENT ID DATA ITEM IS DATA ITEM NO.:     18
+   TIME DATA ITEM IS DATA ITEM NO.:         11
+   DOSE AMOUNT DATA ITEM IS DATA ITEM NO.:  13
+   STEADY STATE DATA ITEM IS DATA ITEM NO.: 14
+   INTERVAL DATA ITEM IS DATA ITEM NO.:     15
+
+0PK SUBROUTINE CALLED WITH EVERY EVENT RECORD.
+ PK SUBROUTINE NOT CALLED AT NONEVENT (ADDITIONAL OR LAGGED) DOSE TIMES.
+0ERROR SUBROUTINE CALLED WITH EVERY EVENT RECORD.
+0ERROR SUBROUTINE INDICATES THAT DERIVATIVES OF COMPARTMENT AMOUNTS ARE USED.
+1
+
+
+ #TBLN:      1
+ #METH: First Order Conditional Estimation with Interaction
+
+ ESTIMATION STEP OMITTED:                 NO
+ ANALYSIS TYPE:                           POPULATION
+ NUMBER OF SADDLE POINT RESET ITERATIONS:      1
+ HESSIAN USED IN SADDLE POINT RESET: VARIABLE METRIC
+ GRADIENT METHOD USED:               NOSLOW
+ CONDITIONAL ESTIMATES USED:              YES
+ CENTERED ETA:                            NO
+ EPS-ETA INTERACTION:                     YES
+ LAPLACIAN OBJ. FUNC.:                    NO
+ NO. OF FUNCT. EVALS. ALLOWED:            9999
+ NO. OF SIG. FIGURES REQUIRED:            3
+ INTERMEDIATE PRINTOUT:                   YES
+ ESTIMATE OUTPUT TO MSF:                  NO
+ IND. OBJ. FUNC. VALUES SORTED:           NO
+ NUMERICAL DERIVATIVE
+       FILE REQUEST (NUMDER):               NONE
+ MAP (ETAHAT) ESTIMATION METHOD (OPTMAP):   0
+ ETA HESSIAN EVALUATION METHOD (ETADER):    0
+ INITIAL ETA FOR MAP ESTIMATION (MCETA):    0
+ SIGDIGITS FOR MAP ESTIMATION (SIGLO):      100
+ GRADIENT SIGDIGITS OF
+       FIXED EFFECTS PARAMETERS (SIGL):     100
+ NOPRIOR SETTING (NOPRIOR):                 0
+ NOCOV SETTING (NOCOV):                     OFF
+ DERCONT SETTING (DERCONT):                 OFF
+ FINAL ETA RE-EVALUATION (FNLETA):          1
+ EXCLUDE NON-INFLUENTIAL (NON-INFL.) ETAS
+       IN SHRINKAGE (ETASTYPE):             NO
+ NON-INFL. ETA CORRECTION (NONINFETA):      0
+ RAW OUTPUT FILE (FILE): modelsearch_candidate2.ext
+ EXCLUDE TITLE (NOTITLE):                   NO
+ EXCLUDE COLUMN LABELS (NOLABEL):           NO
+ FORMAT FOR ADDITIONAL FILES (FORMAT):      S1PE12.5
+ PARAMETER ORDER FOR OUTPUTS (ORDER):       TSOL
+ KNUTHSUMOFF:                               0
+ INCLUDE LNTWOPI:                           NO
+ INCLUDE CONSTANT TERM TO PRIOR (PRIORC):   NO
+ INCLUDE CONSTANT TERM TO OMEGA (ETA) (OLNTWOPI):NO
+ ADDITIONAL CONVERGENCE TEST (CTYPE=4)?:    NO
+ EM OR BAYESIAN METHOD USED:                 NONE
+
+
+ THE FOLLOWING LABELS ARE EQUIVALENT
+ PRED=PREDI
+ RES=RESI
+ WRES=WRESI
+ IWRS=IWRESI
+ IPRD=IPREDI
+ IRS=IRESI
+
+ MONITORING OF SEARCH:
+
+
+0ITERATION NO.:    0    OBJECTIVE VALUE:  -2244.93538729293        NO. OF FUNC. EVALS.:   7
+ CUMULATIVE NO. OF FUNC. EVALS.:        7
+ NPARAMETR:  1.0867E+02  2.5282E+01  4.0153E-01  1.2500E-01  7.5666E-02  3.4588E-02 -1.4514E-02  8.2522E-03  8.4233E-02 -6.7585E-03
+             8.7069E-03  9.5990E-01  2.9392E-02  9.0000E-02  9.7315E-02
+ PARAMETER:  1.0000E-01  1.0000E-01  1.0000E-01  1.0000E-01  1.0000E-01  1.0000E-01 -1.0000E-01  1.0000E-01  1.0000E-01 -1.0000E-01
+             1.0000E-01  1.0000E-01  1.0000E-01  1.0000E-01  1.0000E-01
+ GRADIENT:  -3.2280E-01 -1.8346E+01  2.1846E+01 -5.8681E+01  4.5364E+00 -4.2419E+00  9.2943E+00  1.3218E+00 -2.0891E+00 -3.2205E-02
+             1.3089E+00 -1.5377E+01 -2.0036E+01 -1.3671E+01  9.7098E+01
+
+0ITERATION NO.:   32    OBJECTIVE VALUE:  -2442.41475882339        NO. OF FUNC. EVALS.: 528
+ CUMULATIVE NO. OF FUNC. EVALS.:      535
+ NPARAMETR:  1.1394E+02  2.5965E+01  5.0445E-03  4.8205E-01  9.8364E-02  4.8022E-02 -1.2887E-01 -3.0384E-02  8.5130E-02 -6.3121E-02
+            -2.5885E-02  9.1752E+00  1.6648E+00  3.1397E-01  6.8647E-02
+ PARAMETER:  1.4736E-01  1.2659E-01 -4.2760E+00  1.4494E+00  2.3118E-01  1.2177E-01 -7.7875E-01 -3.2293E-01  4.8171E-02 -1.7599E-01
+            -2.3586E-01  1.2209E+00  1.7096E+00 -1.0155E+00 -7.4489E-02
+ GRADIENT:  -4.7194E+00 -1.6665E+02  2.7349E+02 -4.2961E+02  0.0000E+00  0.0000E+00  0.0000E+00  0.0000E+00  0.0000E+00  0.0000E+00
+             0.0000E+00  0.0000E+00  0.0000E+00 -2.7983E+00 -1.0484E+01
+
+0SADDLE POINT RESET
+
+0ITERATION NO.:   33    OBJECTIVE VALUE:  -1901.16050090062        NO. OF FUNC. EVALS.:  16
+ CUMULATIVE NO. OF FUNC. EVALS.:      551
+ NPARAMETR:  1.1394E+02  2.5964E+01  5.0496E-03  4.8187E-01  7.5666E-02  3.4588E-02 -1.4514E-02  8.2522E-03  8.4233E-02 -6.7585E-03
+             8.7069E-03  9.5990E-01  2.9392E-02  1.1684E-02  6.8660E-02
+ PARAMETER:  1.4736E-01  1.2659E-01 -4.2760E+00  1.4494E+00  1.0000E-01  1.0000E-01 -1.0000E-01  1.0000E-01  1.0000E-01 -1.0000E-01
+             1.0000E-01  1.0000E-01  1.0000E-01 -1.0155E+00 -7.4489E-02
+ GRADIENT:  -6.0936E+02 -4.7729E+02 -1.1996E+01  6.9634E+02  2.6668E+01  9.7012E+01  1.3766E+01 -1.2351E+02 -1.1947E+01  9.3226E+00
+             2.5174E+01 -1.0021E+00 -5.3083E+02 -4.9830E+02 -7.0395E+02
+
+0ITERATION NO.:   78    OBJECTIVE VALUE:  -2451.19061498323        NO. OF FUNC. EVALS.: 822
+ CUMULATIVE NO. OF FUNC. EVALS.:     1373
+ NPARAMETR:  1.1311E+02  2.5564E+01  8.2455E-02  4.2463E-01  7.2771E-02  3.1007E-02  6.0103E-02 -6.5047E-02  8.5300E-02  2.7490E-02
+            -4.2081E-02  1.6405E+00  6.1902E-01  3.7050E-01  6.9132E-02
+ PARAMETER:  1.4006E-01  1.1108E-01 -1.4830E+00  1.3229E+00  8.0497E-02  9.1414E-02  4.2228E-01 -8.0377E-01  1.2609E-01  1.4770E+00
+            -2.8389E-01  3.5403E-01  1.6851E+00 -5.3445E-01 -7.0964E-02
+ GRADIENT:   7.5638E+02 -9.5603E+02  7.0334E+01 -7.7588E+01  1.0587E+03  1.0497E+03  2.4855E+02 -1.3116E+02 -8.3868E+02 -1.4394E-01
+            -7.8310E-02  2.9576E+02 -6.2943E+01 -2.6740E+00 -1.0491E+03
+
+ #TERM:
+0MINIMIZATION TERMINATED
+ DUE TO ROUNDING ERRORS (ERROR=134)
+ NO. OF FUNCTION EVALUATIONS USED:     1373
+ NO. OF SIG. DIGITS UNREPORTABLE
+
+ ETABAR IS THE ARITHMETIC MEAN OF THE ETA-ESTIMATES,
+ AND THE P-VALUE IS GIVEN FOR THE NULL HYPOTHESIS THAT THE TRUE MEAN IS 0.
+
+ ETABAR:        -1.4981E-02  5.5465E-03  8.0999E-02  5.1371E-02
+ SE:             2.8364E-02  3.3058E-02  1.2147E-01  6.1347E-02
+ N:                      73          73          73          73
+
+ P VAL.:         5.9737E-01  8.6676E-01  5.0487E-01  4.0238E-01

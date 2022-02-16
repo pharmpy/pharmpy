@@ -268,10 +268,17 @@ class NONMEMResultsFile:
         warnings = []
         errors = []
 
-        warning = re.compile(r'0WARNING:((\s+.+\n)+)')
-        message = warning.search(fulltext)
-        if message:
-            warnings.append(message.group(1).strip())
+        warning_patterns = [
+            re.compile(r'0WARNING:((\s+.+\n)+)'),
+            re.compile(r'0(PARAMETER ESTIMATE IS NEAR.+\n\s*.+COVARIANCE STEP CAN BE IMPLEMENTED)'),
+            re.compile(r'0(MINIMIZATION SUCCESSFUL\n\s*HOWEVER.+\n)'),
+        ]
+
+        for pattern in warning_patterns:
+            match = pattern.search(fulltext)
+            if match:
+                message = match.group(1).strip()
+                warnings.append(message)
 
         error_patterns = [
             re.compile(
@@ -280,6 +287,8 @@ class NONMEMResultsFile:
             ),
             re.compile(r'(PRED EXIT CODE = 1\n(.*\n)+.+MAY BE TOO LARGE\.)'),
             re.compile(r'(PROGRAM TERMINATED BY OBJ\n\s*MESSAGE ISSUED FROM ESTIMATION STEP)'),
+            re.compile(r'0(MINIMIZATION TERMINATED\n\s*DUE TO ROUNDING ERRORS.+)\n'),
+            re.compile(r'0(MINIMIZATION TERMINATED\n\s*DUE TO ZERO GRADIENT)\n'),
         ]
 
         for pattern in error_patterns:
