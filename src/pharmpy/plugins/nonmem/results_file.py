@@ -262,6 +262,35 @@ class NONMEMResultsFile:
 
         return date_time
 
+    def log_items(self, lines):
+        fulltext = '\n'.join(lines)
+
+        warnings = []
+        errors = []
+
+        warning = re.compile(r'0WARNING:((\s+.+\n)+)')
+        message = warning.search(fulltext)
+        if message:
+            warnings.append(message.group(1).strip())
+
+        error_patterns = [
+            re.compile(
+                r'(AN ERROR WAS FOUND IN THE CONTROL STATEMENTS\.(.*\n)+'
+                r'.+UPPER OR LOWER BOUNDS\.)'
+            ),
+            re.compile(r'(PRED EXIT CODE = 1\n(.*\n)+.+MAY BE TOO LARGE\.)'),
+            re.compile(r'(PROGRAM TERMINATED BY OBJ\n\s*MESSAGE ISSUED FROM ESTIMATION STEP)'),
+        ]
+
+        for pattern in error_patterns:
+            match = pattern.search(fulltext)
+            if match:
+                message = match.group(1)
+                errors.append(message)
+
+        [self.log.log_warning(message) for message in warnings]
+        [self.log.log_error(message) for message in errors]
+
     def tag_items(self, path):
         nmversion = re.compile(r'1NONLINEAR MIXED EFFECTS MODEL PROGRAM \(NONMEM\) VERSION\s+(\S+)')
         tag = re.compile(r'\s*#([A-Z]{4}):\s*(.*)')
@@ -308,40 +337,7 @@ class NONMEMResultsFile:
                 yield ('nonmem_version', version_number)
                 break  # we will stay at current file position
 
-        i = 0
-        while i < len(lines):
-            line = lines[i]
-            if line.startswith('0WARNING:'):
-                message = line[10:]
-                if lines[i + 1].startswith(' '):
-                    i += 1
-                    message += lines[i]
-                self.log.log_warning(message)
-            elif line.startswith(" AN ERROR WAS FOUND IN THE CONTROL STATEMENTS."):
-                if i + 6 < len(lines):
-                    end = len(lines)
-                else:
-                    end = i + 6
-                message = '\n'.join(lines[i:end])
-                self.log.log_error(message)
-                i += 5
-            elif line.startswith('0PRED EXIT CODE = 1'):
-                message = line[1:] + '\n' + lines[i + 1][1:].rstrip() + '\n'
-                i += 1
-                while not lines[i + 1].startswith('0PROGRAM TERMINATED'):
-                    i += 1
-                    message += lines[i].rstrip() + '\n'
-                self.log.log_error(message)
-            elif line.startswith('0PROGRAM TERMINATED'):
-                message = line[1:]
-                while i < len(lines):
-                    i += 1
-                    if lines[i].startswith(' '):
-                        message += '\n' + lines[i]
-                    else:
-                        break
-                self.log.log_error(message)
-            i += 1
+        self.log_items(lines)
 
         if NONMEMResultsFile.supported_version(version_number):
             for i, row in enumerate(lines):

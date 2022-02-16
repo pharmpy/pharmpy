@@ -352,20 +352,47 @@ def test_ofv_table_gap(testdata):
 
 
 @pytest.mark.parametrize(
-    'file_name, ref, idx',
+    'file_name, ref_start, no_of_rows, idx',
     [
         (
             'control_stream_error.lst',
-            'FIX OPTION CANNOT',
+            'AN ERROR WAS FOUND IN THE CONTROL STATEMENTS.',
+            6,
             0,
         ),
         (
             'no_header_error.lst',
-            'OCCURS DURING SEARCH FOR ETA AT INITIAL VALUE',
+            'PRED EXIT CODE = 1',
+            9,
             1,
+        ),
+        (
+            'no_header_error.lst',
+            'PROGRAM TERMINATED BY OBJ',
+            2,
+            2,
         ),
     ],
 )
-def test_errors(testdata, file_name, ref, idx):
+def test_errors(testdata, file_name, ref_start, no_of_rows, idx):
     lst = rf.NONMEMResultsFile(testdata / 'nonmem' / 'errors' / file_name, log=Log())
-    assert ref in lst.log.to_dataframe()['message'].iloc[idx]
+    message = lst.log.to_dataframe()['message'].iloc[idx]
+    assert message.startswith(ref_start)
+    assert len(message.split('\n')) == no_of_rows
+
+
+@pytest.mark.parametrize(
+    'file_name, ref, idx',
+    [
+        (
+            'no_header_error.lst',
+            'THE NUMBER OF PARAMETERS TO BE ESTIMATED\n'
+            ' EXCEEDS THE NUMBER OF INDIVIDUALS WITH DATA.',
+            0,
+        ),
+    ],
+)
+def test_warnings(testdata, file_name, ref, idx):
+    lst = rf.NONMEMResultsFile(testdata / 'nonmem' / 'errors' / file_name, log=Log())
+    message = lst.log.to_dataframe()['message'].iloc[idx]
+    assert message == ref
