@@ -447,6 +447,7 @@ def _do_michaelis_menten_elimination(model, combined=False):
     km_init, clmm_init = _get_mm_inits(model, numer, combined)
 
     km = _add_parameter(model, 'KM', init=km_init)
+    model.parameters['POP_KM'].upper = 20 * get_observations(model).max()
     clmm = _add_parameter(model, 'CLMM', init=clmm_init)
 
     if denom != 1:
