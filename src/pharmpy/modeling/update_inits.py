@@ -46,8 +46,11 @@ def update_inits(model, force_individual_estimates=False):
 
     try:
         model.parameters = res.parameter_estimates
-    except ValueError:
-        raise ValueError('One or more parameter estimates are NaN')
+    except ValueError as e:
+        if str(e) == 'Initial estimate cannot be set to NaN':
+            raise ValueError('One or more parameter estimates are NaN')
+        else:
+            raise
 
     if model.initial_individual_estimates is not None or force_individual_estimates:
         model.initial_individual_estimates = res.individual_estimates
