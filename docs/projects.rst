@@ -3,7 +3,7 @@
 Project suggestions
 ===================
 
-Here are some suggestions for projects suitable for Google Summer of Code, Master Thesis Work or other types of internships. If you are a student or otherwise interested feel free to drop any of the `maintainers <https://pharmpy.github.io/latest/contributors.html>`_ and email.
+Here are some suggestions for projects suitable for Google Summer of Code, Master Thesis Work or other types of internships. If you are a student or otherwise interested feel free to drop any of the `maintainers <https://pharmpy.github.io/latest/contributors.html>`_ an email.
 
 
 * | Step wise covariate search (scm)
