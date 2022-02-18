@@ -334,7 +334,7 @@ class NONMEMResultsFile:
                 decoded_chunk = chunk.decode('latin-1', errors='ignore')
 
             lines = [line1]
-            lines += decoded_chunk.split('\n')
+            lines += decoded_chunk.replace('\r', '').split('\n')
             lines[-1] = last_line  # Replace since lst-files always end with \n
 
         version_number = None
