@@ -302,12 +302,7 @@ class Model(pharmpy.model.Model):
 
         nearest = self.random_variables.nearest_valid_parameters(self._parameters.inits)
         if nearest != self._parameters.inits:
-            before = dict()
-            after = dict()
-            for key, value in self._parameters.inits.items():
-                if nearest[key] != value:
-                    before[key] = value
-                    after[key] = nearest[key]
+            before, after = self._compare_before_after_params(self._parameters.inits, nearest)
             warnings.warn(
                 f"Adjusting initial estimates to create positive semidefinite "
                 f"omega/sigma matrices.\nBefore adjusting:  {before}.\n"
@@ -349,18 +344,8 @@ class Model(pharmpy.model.Model):
          * Parameters only supported for new initial estimates and fix
          * Only set the exact same parameters. No additions and no removing of parameters
         """
-        if isinstance(params, Parameters):
-            inits = params.inits
-        else:
-            inits = params
-        if not self.random_variables.validate_parameters(inits):
-            raise ValueError("New parameter inits are not valid")
-
         self.parameters
-        if not isinstance(params, Parameters):
-            self._parameters.inits = params
-        else:
-            self._parameters = params
+        super(Model, self.__class__).parameters.fset(self, params)
 
     @property
     def initial_individual_estimates(self):

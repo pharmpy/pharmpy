@@ -14,8 +14,10 @@ Definitions
 import copy
 import io
 import pathlib
+import warnings
 from pathlib import Path
 
+import pandas as pd
 import sympy
 
 from pharmpy.datainfo import ColumnInfo, DataInfo
@@ -109,9 +111,40 @@ class Model:
 
     @parameters.setter
     def parameters(self, value):
+        if isinstance(value, Parameters):
+            inits = value.inits
+        else:
+            inits = value
+        if isinstance(inits, pd.Series):
+            inits = inits.to_dict()
+        if inits and not self.random_variables.validate_parameters(inits):
+            nearest = self.random_variables.nearest_valid_parameters(inits)
+            if nearest != inits:
+                before, after = self._compare_before_after_params(inits, nearest)
+                warnings.warn(
+                    f"Adjusting initial estimates to create positive semidefinite "
+                    f"omega/sigma matrices.\nBefore adjusting:  {before}.\n"
+                    f"After adjusting: {after}"
+                )
+                self._parameters.inits = nearest
+                return
+            else:
+                raise ValueError("New parameter inits are not valid")
+
         if not isinstance(value, Parameters):
-            raise TypeError("model.parameters must be of Parameters type")
-        self._parameters = value
+            self._parameters.inits = value
+        else:
+            self._parameters = value
+
+    @staticmethod
+    def _compare_before_after_params(old, new):
+        before = dict()
+        after = dict()
+        for key, value in old.items():
+            if new[key] != value:
+                before[key] = value
+                after[key] = new[key]
+        return before, after
 
     @property
     def random_variables(self):
