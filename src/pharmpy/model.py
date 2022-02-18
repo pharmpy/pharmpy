@@ -126,8 +126,10 @@ class Model:
                     f"omega/sigma matrices.\nBefore adjusting:  {before}.\n"
                     f"After adjusting: {after}"
                 )
-                self._parameters.inits = nearest
-                return
+                if isinstance(value, Parameters):
+                    value.inits = nearest
+                else:
+                    value = nearest
             else:
                 raise ValueError("New parameter inits are not valid")
 
