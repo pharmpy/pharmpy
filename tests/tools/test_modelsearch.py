@@ -9,7 +9,7 @@ from pharmpy.tools.modelsearch.mfl import ModelFeatures
 
 def test_exhaustive_algorithm():
     mfl = 'ABSORPTION(ZO);PERIPHERALS(1)'
-    wf, _, model_features = exhaustive(mfl, False, False)
+    wf, _, model_features = exhaustive(mfl, False, False, False)
     fit_tasks = [task.name for task in wf.tasks if task.name.startswith('run')]
 
     assert len(fit_tasks) == 3
@@ -43,7 +43,7 @@ def test_exhaustive_algorithm():
     ],
 )
 def test_exhaustive_stepwise_algorithm(mfl, no_of_models, last_model_features):
-    wf, _, model_features = exhaustive_stepwise(mfl, False, False)
+    wf, _, model_features = exhaustive_stepwise(mfl, False, False, False)
     fit_tasks = [task.name for task in wf.tasks if task.name.startswith('run')]
 
     assert len(fit_tasks) == no_of_models

@@ -7,7 +7,7 @@ from pharmpy.workflows import Task, Workflow
 from .mfl import ModelFeatures
 
 
-def exhaustive(mfl, add_etas, etas_as_fullblock):
+def exhaustive(mfl, add_etas, etas_as_fullblock, add_mdt_eta):
     features = ModelFeatures(mfl)
     wf_search = Workflow()
 
@@ -29,7 +29,9 @@ def exhaustive(mfl, add_etas, etas_as_fullblock):
             task_function = Task(feat, func)
             wf_search.add_task(task_function, predecessors=task_previous)
             if add_etas:
-                task_add_etas = Task('add_etas', add_etas_to_func, feat, etas_as_fullblock)
+                task_add_etas = Task(
+                    'add_etas', add_etas_to_func, feat, etas_as_fullblock, add_mdt_eta
+                )
                 wf_search.add_task(task_add_etas, predecessors=task_function)
                 task_previous = task_add_etas
             else:
@@ -45,7 +47,7 @@ def exhaustive(mfl, add_etas, etas_as_fullblock):
     return wf_search, model_tasks, model_features
 
 
-def exhaustive_stepwise(mfl, add_etas, etas_as_fullblock):
+def exhaustive_stepwise(mfl, add_etas, etas_as_fullblock, add_mdt_eta):
     features = ModelFeatures(mfl)
     wf_search = Workflow()
 
@@ -84,7 +86,9 @@ def exhaustive_stepwise(mfl, add_etas, etas_as_fullblock):
                 wf_search.add_task(task_function, predecessors=task_update_inits)
 
                 if add_etas:
-                    task_add_etas = Task('add_etas', add_etas_to_func, feat, etas_as_fullblock)
+                    task_add_etas = Task(
+                        'add_etas', add_etas_to_func, feat, etas_as_fullblock, add_mdt_eta
+                    )
                     wf_search.add_task(task_add_etas, predecessors=task_function)
                     task_transformed = task_add_etas
                 else:
@@ -192,7 +196,7 @@ def update_initial_estimates(model):
     return model
 
 
-def add_etas_to_func(feat, etas_as_fullblock, model):
+def add_etas_to_func(feat, etas_as_fullblock, add_mdt_eta, model):
     eta_dict = {
         'ABSORPTION(ZO)': ['MAT'],
         'ABSORPTION(SEQ-ZO-FO)': ['MAT', 'MDT'],
@@ -202,10 +206,12 @@ def add_etas_to_func(feat, etas_as_fullblock, model):
         'LAGTIME()': ['MDT'],
     }
     parameters = []
-    try:
-        parameters = eta_dict[feat]
-    except KeyError:
-        if feat.startswith('TRANSITS'):
+    if add_mdt_eta and (feat == 'LAGTIME()' or feat.startswith('TRANSITS')):
+        parameters = ['MDT']
+    else:
+        if feat in eta_dict.keys():
+            parameters = eta_dict[feat]
+        elif feat.startswith('TRANSITS'):
             parameters = ['MDT']
         elif feat.startswith('PERIPHERALS'):
             no_of_peripherals = re.search(r'PERIPHERALS\((\d+)\)', feat).group(1)
