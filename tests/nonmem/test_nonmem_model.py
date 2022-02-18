@@ -7,7 +7,12 @@ from pharmpy import Model
 from pharmpy.config import ConfigurationContext
 from pharmpy.estimation import EstimationStep, EstimationSteps
 from pharmpy.model import ModelSyntaxError
-from pharmpy.modeling import add_iiv, set_zero_order_absorption, set_zero_order_elimination
+from pharmpy.modeling import (
+    add_iiv,
+    create_joint_distribution,
+    set_zero_order_absorption,
+    set_zero_order_elimination,
+)
 from pharmpy.parameter import Parameter
 from pharmpy.plugins.nonmem import conf, convert_model
 from pharmpy.plugins.nonmem.nmtran_parser import NMTranParser
@@ -113,6 +118,13 @@ def test_set_parameters(pheno_path):
     model.parameters = params
     assert model.parameters['THETA(1)'] == Parameter('THETA(1)', 18, lower=0, upper=1000000)
     assert model.parameters['THETA(2)'] == Parameter('THETA(2)', 1.00916, lower=0, upper=1000000)
+
+    model = Model.create_model(pheno_path)
+    create_joint_distribution(model)
+    params = model.parameters
+    params['OMEGA(2,2)'].init = 0.000001
+    with pytest.raises(UserWarning, match='Adjusting initial'):
+        model.parameters = params
 
 
 def test_adjust_iovs(testdata):
