@@ -23,7 +23,7 @@ jsonschema==4.4.0
 jupyter_sphinx==0.3.2
 lark-parser==0.12.0
 locket==0.2.1
-lxml==4.7.1
+lxml==4.8.0
 MarkupSafe==2.1.0
 mpmath==1.2.1
 msgpack==1.0.3
