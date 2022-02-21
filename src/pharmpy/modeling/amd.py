@@ -102,6 +102,10 @@ def _run_iiv(model):
 def _run_resmod(model):
     res_resmod = run_tool('resmod', model)
     selected_model = res_resmod.best_model
+    res_resmod = run_tool('resmod', selected_model)
+    selected_model = res_resmod.best_model
+    res_resmod = run_tool('resmod', selected_model)
+    selected_model = res_resmod.best_model
     return selected_model
 
 
