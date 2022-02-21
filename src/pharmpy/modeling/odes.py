@@ -1391,5 +1391,5 @@ def set_ode_solver(model, solver):
 
     """
     odes = model.statements.ode_system
-    odes.solver = solver
+    odes.solver = solver.upper()
     return model
