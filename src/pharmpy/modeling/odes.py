@@ -481,6 +481,7 @@ def _rename_parameter(model, old_name, new_name):
             old_par = s
             model.parameters[s].name = f'POP_{new_name}'
             new_par = sympy.Symbol(f'POP_{new_name}')
+            model.statements.subs({old_par: new_par})
             break
     for s in a.rhs_symbols:
         if s in model.random_variables.iiv:
@@ -498,7 +499,7 @@ def _rename_parameter(model, old_name, new_name):
             for key, val in d.items():
                 model.parameters[key].name = val
             break
-    model.statements.subs({old_name: new_name, old_par: new_par})
+    model.statements.subs({old_name: new_name})
 
 
 def _get_mm_inits(model, rate_numer, combined):
