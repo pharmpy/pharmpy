@@ -3,7 +3,12 @@ import shutil
 import pytest
 
 from pharmpy import Model
-from pharmpy.modeling import add_iiv, add_peripheral_compartment, run_tool
+from pharmpy.modeling import (
+    add_iiv,
+    add_peripheral_compartment,
+    create_joint_distribution,
+    run_tool,
+)
 from pharmpy.utils import TemporaryDirectoryChanger
 
 
@@ -44,7 +49,24 @@ def test_iiv_no_of_etas(tmp_path, testdata):
         assert len(res.summary_tool) == 7
         assert len(res.summary_models) == 8
         assert len(res.models) == 7
-        assert all(int(model.modelfit_results.ofv) in range(-1900, -1400) for model in res.models)
+        rundir = tmp_path / 'iiv_dir1'
+        assert rundir.is_dir()
+        assert len(list((rundir / 'models').iterdir())) == 8
+
+
+def test_iiv_no_of_etas_fullblock(tmp_path, testdata):
+    with TemporaryDirectoryChanger(tmp_path):
+        shutil.copy2(testdata / 'nonmem' / 'models' / 'mox2.mod', tmp_path)
+        shutil.copy2(testdata / 'nonmem' / 'models' / 'mx19B.csv', tmp_path)
+        model_start = Model.create_model('mox2.mod')
+        model_start.datainfo.path = tmp_path / 'mx19B.csv'
+
+        create_joint_distribution(model_start)
+        res = run_tool('iiv', 'brute_force_no_of_etas', model=model_start)
+
+        assert len(res.summary_tool) == 7
+        assert len(res.summary_models) == 8
+        assert len(res.models) == 7
         rundir = tmp_path / 'iiv_dir1'
         assert rundir.is_dir()
         assert len(list((rundir / 'models').iterdir())) == 8

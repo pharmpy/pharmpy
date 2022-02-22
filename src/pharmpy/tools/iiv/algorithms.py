@@ -1,7 +1,7 @@
 from itertools import combinations
 
 import pharmpy.tools.modelfit as modelfit
-from pharmpy.modeling import copy_model, fix_parameters_to
+from pharmpy.modeling import copy_model, remove_iiv
 from pharmpy.modeling.block_rvs import create_joint_distribution
 from pharmpy.workflows import Task, Workflow
 
@@ -10,16 +10,16 @@ def brute_force_no_of_etas(model):
     wf = Workflow()
     model_features = dict()
 
-    param_names = [eta.parameter_names[0] for eta in model.random_variables.iiv]
-    param_combos = _get_combinations(param_names, include_single=True)
+    eta_names = [eta.name for eta in model.random_variables.iiv]
+    eta_combos = _get_combinations(eta_names, include_single=True)
 
-    for i, combo in enumerate(param_combos, 1):
+    for i, combo in enumerate(eta_combos, 1):
         model_name = f'iiv_no_of_etas_candidate{i}'
         task_copy = Task('copy', copy, model_name)
         wf.add_task(task_copy)
 
-        task_set_eta_to_zero = Task('set_eta_to_zero', set_eta_to_zero, combo)
-        wf.add_task(task_set_eta_to_zero, predecessors=task_copy)
+        task_remove_eta = Task('remove_eta', remove_eta, combo)
+        wf.add_task(task_remove_eta, predecessors=task_copy)
 
         model_features[model_name] = combo
 
@@ -28,8 +28,8 @@ def brute_force_no_of_etas(model):
     return wf, model_features
 
 
-def set_eta_to_zero(params, model):
-    fix_parameters_to(model, params, 0)
+def remove_eta(etas, model):
+    remove_iiv(model, etas)
     return model
 
 

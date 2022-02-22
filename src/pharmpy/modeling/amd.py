@@ -1,6 +1,5 @@
 from functools import partial
 
-from pharmpy.modeling import copy_model, remove_iiv
 from pharmpy.results import Results
 from pharmpy.workflows import default_tool_database
 
@@ -137,18 +136,9 @@ def run_iiv(model):
 
     """
     res_no_of_etas = run_tool('iiv', 'brute_force_no_of_etas', model=model)
-
-    best_model = res_no_of_etas.best_model
-
-    if best_model != model:
-        best_model_eta_removed = copy_model(best_model, 'iiv_no_of_etas_best_model')
-        features = res_no_of_etas.summary_tool.loc[best_model.name]['features']
-        remove_iiv(best_model_eta_removed, features)
-        best_model = best_model_eta_removed
-
-    res_block_structure = run_tool('iiv', 'brute_force_block_structure', model=best_model)
-
-    best_model = res_block_structure.best_model
+    res_block_structure = run_tool(
+        'iiv', 'brute_force_block_structure', model=res_no_of_etas.best_model
+    )
 
     from pharmpy.modeling import summarize_modelfit_results
 
@@ -161,7 +151,7 @@ def run_iiv(model):
     res = IIVResults(
         summary_tool=[res_no_of_etas.summary_tool, res_block_structure.summary_tool],
         summary_models=summary_models,
-        best_model=best_model,
+        best_model=res_block_structure.best_model,
         models=res_no_of_etas.models + res_block_structure.models,
         start_model=model,
     )
