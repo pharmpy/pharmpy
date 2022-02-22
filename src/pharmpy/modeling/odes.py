@@ -448,18 +448,23 @@ def _do_michaelis_menten_elimination(model, combined=False):
 
     km = _add_parameter(model, 'KM', init=km_init)
     model.parameters['POP_KM'].upper = 20 * get_observations(model).max()
-    clmm = _add_parameter(model, 'CLMM', init=clmm_init)
 
     if denom != 1:
         if combined:
             cl = numer
+            clmm = _add_parameter(model, 'CLMM', init=clmm_init)
+        else:
+            _rename_parameter(model, 'CL', 'CLMM')
+            clmm = sympy.Symbol('CLMM')
+            cl = 0
         vc = denom
     else:
         if combined:
             cl = _add_parameter(model, 'CL', clmm_init)
+        else:
+            cl = 0
         vc = _add_parameter(model, 'VC')  # FIXME: decide better initial estimate
-    if not combined:
-        cl = 0
+        clmm = _add_parameter(model, 'CLMM', init=clmm_init)
 
     amount = sympy.Function(central.amount.name)(pharmpy.symbols.symbol('t'))
     rate = (clmm * km / (km + amount / vc) + cl) / vc
@@ -467,6 +472,33 @@ def _do_michaelis_menten_elimination(model, combined=False):
     model.statements.remove_symbol_definitions(numer.free_symbols, odes)
     remove_unused_parameters_and_rvs(model)
     return model
+
+
+def _rename_parameter(model, old_name, new_name):
+    a = model.statements.find_assignment(old_name)
+    for s in a.rhs_symbols:
+        if s in model.parameters:
+            old_par = s
+            model.parameters[s].name = f'POP_{new_name}'
+            new_par = sympy.Symbol(f'POP_{new_name}')
+            break
+    for s in a.rhs_symbols:
+        if s in model.random_variables.iiv:
+            rv = model.random_variables[s]
+            cov = model.random_variables.iiv.covariance_matrix
+            ind = model.random_variables.iiv.index(rv)
+            pars = [e for e in cov[ind, :] if e.is_Symbol]
+            diag = cov[ind, ind]
+            d = {diag: f'IIV_{new_name}'}
+            for p in pars:
+                if p != diag:
+                    if p.name.startswith('IIV'):
+                        d[p] = p.name.replace(f'IIV_{old_name}', f'IIV_{new_name}')
+            model.random_variables.subs(d)
+            for key, val in d.items():
+                model.parameters[key].name = val
+            break
+    model.statements.subs({old_name: new_name, old_par: new_par})
 
 
 def _get_mm_inits(model, rate_numer, combined):
