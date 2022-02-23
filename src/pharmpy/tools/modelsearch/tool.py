@@ -14,9 +14,9 @@ def create_workflow(
     mfl,
     rankfunc='ofv',
     cutoff=None,
-    add_etas=False,
-    etas_as_fullblock=False,
-    add_mdt_eta=False,
+    add_iivs=False,
+    iiv_as_fullblock=False,
+    add_mdt_iiv=False,
     model=None,
 ):
     algorithm_func = getattr(algorithms, algorithm)
@@ -39,7 +39,7 @@ def create_workflow(
         start_model_task = [start_task]
 
     wf_search, candidate_model_tasks, model_features = algorithm_func(
-        mfl, add_etas, etas_as_fullblock, add_mdt_eta
+        mfl, add_iivs, iiv_as_fullblock, add_mdt_iiv
     )
     wf.insert_workflow(wf_search, predecessors=wf.output_tasks)
 

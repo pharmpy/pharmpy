@@ -7,7 +7,7 @@ from pharmpy.workflows import Task, Workflow
 from .mfl import ModelFeatures
 
 
-def exhaustive(mfl, add_etas, etas_as_fullblock, add_mdt_eta):
+def exhaustive(mfl, add_iivs, iiv_as_fullblock, add_mdt_iiv):
     features = ModelFeatures(mfl)
     wf_search = Workflow()
 
@@ -28,12 +28,12 @@ def exhaustive(mfl, add_etas, etas_as_fullblock, add_mdt_eta):
             func = funcs[feat]
             task_function = Task(feat, func)
             wf_search.add_task(task_function, predecessors=task_previous)
-            if add_etas:
-                task_add_etas = Task(
-                    'add_etas', _add_etas_to_func, feat, etas_as_fullblock, add_mdt_eta
+            if add_iivs:
+                task_add_iiv = Task(
+                    'add_iivs', _add_iiv_to_func, feat, iiv_as_fullblock, add_mdt_iiv
                 )
-                wf_search.add_task(task_add_etas, predecessors=task_function)
-                task_previous = task_add_etas
+                wf_search.add_task(task_add_iiv, predecessors=task_function)
+                task_previous = task_add_iiv
             else:
                 task_previous = task_function
 
@@ -47,7 +47,7 @@ def exhaustive(mfl, add_etas, etas_as_fullblock, add_mdt_eta):
     return wf_search, model_tasks, model_features
 
 
-def exhaustive_stepwise(mfl, add_etas, etas_as_fullblock, add_mdt_eta):
+def exhaustive_stepwise(mfl, add_iivs, iiv_as_fullblock, add_mdt_iiv):
     features = ModelFeatures(mfl)
     wf_search = Workflow()
 
@@ -74,7 +74,7 @@ def exhaustive_stepwise(mfl, add_etas, etas_as_fullblock, add_mdt_eta):
                     wf_search.add_task(task_copy)
 
                 wf_stepwise_step, task_transformed = _create_stepwise_workflow(
-                    feat, func, add_etas, etas_as_fullblock, add_mdt_eta
+                    feat, func, add_iivs, iiv_as_fullblock, add_mdt_iiv
                 )
 
                 wf_search.insert_workflow(wf_stepwise_step, predecessors=task_copy)
@@ -99,7 +99,7 @@ def _get_possible_actions(wf, features):
     return actions
 
 
-def _create_stepwise_workflow(feat, func, add_etas, etas_as_fullblock, add_mdt_eta):
+def _create_stepwise_workflow(feat, func, add_iivs, iiv_as_fullblock, add_mdt_iiv):
     wf_stepwise_step = Workflow()
 
     task_update_inits = Task('update_inits', _update_initial_estimates)
@@ -108,10 +108,10 @@ def _create_stepwise_workflow(feat, func, add_etas, etas_as_fullblock, add_mdt_e
     task_function = Task(feat, func)
     wf_stepwise_step.add_task(task_function, predecessors=task_update_inits)
 
-    if add_etas or add_mdt_eta:
-        task_add_etas = Task('add_etas', _add_etas_to_func, feat, etas_as_fullblock, add_mdt_eta)
-        wf_stepwise_step.add_task(task_add_etas, predecessors=task_function)
-        task_transformed = task_add_etas
+    if add_iivs or add_mdt_iiv:
+        task_add_iiv = Task('add_iivs', _add_iiv_to_func, feat, iiv_as_fullblock, add_mdt_iiv)
+        wf_stepwise_step.add_task(task_add_iiv, predecessors=task_function)
+        task_transformed = task_add_iiv
     else:
         task_transformed = task_function
 
@@ -211,7 +211,7 @@ def _update_initial_estimates(model):
     return model
 
 
-def _add_etas_to_func(feat, etas_as_fullblock, add_mdt_eta, model):
+def _add_iiv_to_func(feat, iiv_as_fullblock, add_mdt_iiv, model):
     eta_dict = {
         'ABSORPTION(ZO)': ['MAT'],
         'ABSORPTION(SEQ-ZO-FO)': ['MAT', 'MDT'],
@@ -221,7 +221,7 @@ def _add_etas_to_func(feat, etas_as_fullblock, add_mdt_eta, model):
         'LAGTIME()': ['MDT'],
     }
     parameters = []
-    if add_mdt_eta and (feat == 'LAGTIME()' or feat.startswith('TRANSITS')):
+    if add_mdt_iiv and (feat == 'LAGTIME()' or feat.startswith('TRANSITS')):
         parameters = ['MDT']
     else:
         if feat in eta_dict.keys():
@@ -244,7 +244,7 @@ def _add_etas_to_func(feat, etas_as_fullblock, add_mdt_eta, model):
         except ValueError as e:
             if not str(e).startswith('Cannot insert parameter with already existing name'):
                 raise
-    if etas_as_fullblock:
+    if iiv_as_fullblock:
         create_joint_distribution(model)
 
     return model

@@ -79,7 +79,7 @@ def test_exhaustive_stepwise_basic(
 
 
 @pytest.mark.parametrize(
-    'mfl, etas_as_fullblock, add_mdt_eta, no_of_models, best_model_name, no_of_added_etas',
+    'mfl, iiv_as_fullblock, add_mdt_iiv, no_of_models, best_model_name, no_of_added_etas',
     [
         ('ABSORPTION(ZO);PERIPHERALS(1)', False, False, 4, 'modelsearch_candidate2', 2),
         ('ABSORPTION(ZO);ELIMINATION(ZO)', False, False, 4, 'mox2', 1),
@@ -90,12 +90,12 @@ def test_exhaustive_stepwise_basic(
         ('ABSORPTION(ZO);LAGTIME()', False, True, 4, 'mox2', 1),
     ],
 )
-def test_exhaustive_stepwise_add_etas(
+def test_exhaustive_stepwise_add_iivs(
     tmp_path,
     testdata,
     mfl,
-    etas_as_fullblock,
-    add_mdt_eta,
+    iiv_as_fullblock,
+    add_mdt_iiv,
     no_of_models,
     best_model_name,
     no_of_added_etas,
@@ -109,9 +109,9 @@ def test_exhaustive_stepwise_add_etas(
             'modelsearch',
             'exhaustive_stepwise',
             mfl,
-            add_etas=True,
-            etas_as_fullblock=etas_as_fullblock,
-            add_mdt_eta=add_mdt_eta,
+            add_iivs=True,
+            iiv_as_fullblock=iiv_as_fullblock,
+            add_mdt_iiv=add_mdt_iiv,
             model=model_start,
         )
 
