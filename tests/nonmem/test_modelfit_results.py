@@ -314,35 +314,6 @@ def test_estimation_runtime_steps(pheno_path, testdata):
     assert res.estimation_runtime == 0.33
 
 
-def test_result_summary(pheno_path, testdata):
-    model = Model.create_model(pheno_path)
-    res = model.modelfit_results
-
-    summary = res.result_summary()
-
-    assert summary.loc['pheno_real']['ofv'] == 586.2760562818805
-    assert summary.loc['pheno_real']['OMEGA(1,1)_estimate'] == 0.0293508
-
-    model = Model.create_model(
-        testdata
-        / 'nonmem'
-        / 'modelfit_results'
-        / 'onePROB'
-        / 'multEST'
-        / 'noSIM'
-        / 'pheno_multEST.mod'
-    )
-    res = model.modelfit_results
-    summary = res.result_summary(include_all_estimation_steps=True)
-
-    assert not summary.loc['pheno_multEST', 1]['minimization_successful']
-    assert summary.loc['pheno_multEST', 2]['minimization_successful']
-    assert summary.loc['pheno_multEST', 1]['run_type'] == 'estimation'
-    assert summary.loc['pheno_multEST', 2]['run_type'] == 'evaluation'
-
-    assert summary.loc['pheno_multEST', 1]['ofv'] != summary.loc['pheno_multEST', 2]['ofv']
-
-
 def test_evaluation(testdata):
     model = Model.create_model(
         testdata

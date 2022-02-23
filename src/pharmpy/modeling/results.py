@@ -412,6 +412,60 @@ def _split_equation(s):
     return name, expr
 
 
+def _result_summary(res, include_all_estimation_steps=False):
+    if not include_all_estimation_steps:
+        summary_dict = _summarize_step(res, -1)
+        summary_df = pd.DataFrame(summary_dict, index=[res.model_name])
+        return summary_df
+    else:
+        summary_dicts = []
+        tuples = []
+        for i in range(len(res)):
+            summary_dict = _summarize_step(res, i)
+            is_evaluation = res.model.estimation_steps[i].evaluation
+            if is_evaluation:
+                run_type = 'evaluation'
+            else:
+                run_type = 'estimation'
+            summary_dict = {**{'run_type': run_type}, **summary_dict}
+            summary_dicts.append(summary_dict)
+            tuples.append((res.model_name, i + 1))
+        index = pd.MultiIndex.from_tuples(tuples, names=['model_name', 'step'])
+        summary_df = pd.DataFrame(summary_dicts, index=index)
+        return summary_df
+
+
+def _summarize_step(res, i):
+    summary_dict = dict()
+
+    if i >= 0:
+        step = res[i]
+    else:
+        step = res
+
+    if step.minimization_successful is not None:
+        summary_dict['minimization_successful'] = step.minimization_successful
+    else:
+        summary_dict['minimization_successful'] = False
+
+    summary_dict['ofv'] = step.ofv
+    summary_dict['runtime_total'] = step.runtime_total
+    summary_dict['estimation_runtime'] = step.estimation_runtime
+
+    pe = step.parameter_estimates
+    ses = step.standard_errors
+    rses = step.relative_standard_errors
+
+    for param in pe.index:
+        summary_dict[f'{param}_estimate'] = pe[param]
+        if ses is not None:
+            summary_dict[f'{param}_SE'] = ses[param]
+        if rses is not None:
+            summary_dict[f'{param}_RSE'] = rses[param]
+
+    return summary_dict
+
+
 def summarize_modelfit_results(models, include_all_estimation_steps=False):
     """Summarize results of model runs
 
@@ -450,7 +504,7 @@ def summarize_modelfit_results(models, include_all_estimation_steps=False):
     for model in models:
         res = model.modelfit_results
         if res:
-            summaries.append(res.result_summary(include_all_estimation_steps))
+            summaries.append(_result_summary(res, include_all_estimation_steps))
         else:
             # FIXME: in read_modelfit_results, maybe some parts can be extracted (i.e.
             #   create modelfit_results object)
