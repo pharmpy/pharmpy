@@ -9,6 +9,8 @@ from pharmpy.math import round_to_n_sigdig
 from pharmpy.model import Model
 from pharmpy.modeling import create_rng, get_observations, sample_parameters_from_covariance_matrix
 
+from .data import get_ids
+
 
 def calculate_eta_shrinkage(model, sd=False):
     """Calculate eta shrinkage for each eta
@@ -494,24 +496,68 @@ def calculate_aic(model):
     return model.modelfit_results.ofv + 2 * len(parameters)
 
 
-def calculate_bic(model):
+def calculate_bic(model, type=None):
     """Calculate final BIC value assuming the OFV to be -2LL
 
-    BIC = OFV + n_estimated_parameters * log(n_observations)
+    Different variations of the BIC can be calculated:
+
+    * | mixed (default)
+      | BIC = OFV + n_random_parameters * log(n_individuals) +
+      |       n_fixed_parameters * log(n_observations)
+    * | fixed
+      | BIC = OFV + n_estimated_parameters * log(n_observations)
+    * | random
+      | BIC = OFV + n_estimated_parameters * log(n_individals)
 
     Parameters
     ----------
     model : Model
         Pharmpy model object
+    type : str
+        Type of BIC to calculate. Default is the mixed effects.
 
     Returns
     -------
     float
         BIC of model fit
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> calculate_bic(model)
+    611.7071686183284
+    >>> calculate_bic(model, type='fixed')
+    616.536606983396
+    >>> calculate_bic(model, type='random')
+    610.7412809453149
     """
     parameters = model.parameters.copy()
     parameters.remove_fixed()
-    return model.modelfit_results.ofv + len(parameters) * math.log(len(get_observations(model)))
+    if type == 'fixed':
+        penalty = len(parameters) * math.log(len(get_observations(model)))
+    elif type == 'random':
+        penalty = len(parameters) * math.log(len(get_ids(model)))
+    else:
+        succ = model.statements.direct_dependencies(model.statements.ode_system)
+        random_thetas = set()
+        for s in succ:
+            expr = model.statements.before_odes.full_expression(s.symbol)
+            for eta in model.random_variables.etas:
+                if eta.symbol in expr.free_symbols:
+                    symbols = {p.symbol for p in parameters if p.symbol in expr.free_symbols}
+                    random_thetas.update(symbols)
+                    break
+        nomegas = len(
+            [name for name in model.random_variables.etas.parameter_names if name in parameters]
+        )
+        dim_theta_r = nomegas + len(random_thetas)
+        dim_theta_f = len(parameters) - dim_theta_r
+        nsubs = len(get_ids(model))
+        nobs = len(get_observations(model))
+        penalty = dim_theta_r * math.log(nsubs) + dim_theta_f * math.log(nobs)
+    ofv = model.modelfit_results.ofv
+    return ofv + penalty
 
 
 def check_high_correlations(model, limit=0.9):

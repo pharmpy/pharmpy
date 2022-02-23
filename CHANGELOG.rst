@@ -1,3 +1,12 @@
+next version
+------------
+
+Changes
+~~~~~~~
+
+* | modeling.calculate_bic can Calculate three different versions of the BIC
+  | default has switched to be a mixed effects version
+
 0.50.1 (2022-02-16)
 -------------------
 

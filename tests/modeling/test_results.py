@@ -178,7 +178,9 @@ def test_aic(testdata):
 
 def test_bic(testdata):
     model = Model.create_model(testdata / 'nonmem' / 'pheno.mod')
-    assert calculate_bic(model) == 756.111852398327
+    assert calculate_bic(model, type='fixed') == 756.111852398327
+    assert calculate_bic(model, type='random') == 751.2824140332593
+    assert calculate_bic(model) == 752.2483017062729
 
 
 def test_check_parameters_near_bounds(testdata):
