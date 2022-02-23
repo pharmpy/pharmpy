@@ -108,7 +108,7 @@ def _run_resmod(model):
     return selected_model
 
 
-def run_iiv(model):
+def run_iiv(model, rankfunc='ofv', cutoff=None):
     """Run IIV tool
 
     Runs two IIV workflows: testing the number of etas and testing which block structure
@@ -117,6 +117,11 @@ def run_iiv(model):
     ----------
     model : Model
         Pharmpy model
+    rankfunc : str
+        Which ranking function should be used (OFV, AIC, BIC). Default is OFV
+    cutoff : float
+        Cutoff for which value of the ranking function that is considered significant. Default
+        is 3.84
 
     Returns
     -------
@@ -135,9 +140,15 @@ def run_iiv(model):
     run_tool
 
     """
-    res_no_of_etas = run_tool('iiv', 'brute_force_no_of_etas', model=model)
+    res_no_of_etas = run_tool(
+        'iiv', 'brute_force_no_of_etas', rankfunc=rankfunc, cutoff=cutoff, model=model
+    )
     res_block_structure = run_tool(
-        'iiv', 'brute_force_block_structure', model=res_no_of_etas.best_model
+        'iiv',
+        'brute_force_block_structure',
+        rankfunc=rankfunc,
+        cutoff=cutoff,
+        model=res_no_of_etas.best_model,
     )
 
     from pharmpy.modeling import summarize_modelfit_results
