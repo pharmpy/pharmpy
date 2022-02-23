@@ -23,15 +23,6 @@ The final OFV is available in `ofv`:
     model.modelfit_results.ofv
 
 
-Parameter summary
-~~~~~~~~~~~~~~~~~
-
-A summary of final parameter estimates, standard errors and relative standard errors
-
-.. jupyter-execute::
-
-    model.modelfit_results.parameter_summary()
-
 Parameter estimates
 ~~~~~~~~~~~~~~~~~~~
 
