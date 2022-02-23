@@ -1,6 +1,6 @@
 from pharmpy.modeling import load_example_model
 from pharmpy.parameter import Parameters
-from pharmpy.tools.modelsearch.rankfuncs import aic, bic, ofv
+from pharmpy.tools.modelsearch.rankfuncs import aic, ofv
 
 pheno = load_example_model("pheno")
 
@@ -59,12 +59,4 @@ def test_aic():
     run2 = DummyModel("run2", ofv=-1, parameters=Parameters([]))
     run3 = DummyModel("run3", ofv=-14, parameters=Parameters([]))
     res = aic(run1, [run2, run3])
-    assert [run3] == res
-
-
-def test_bic():
-    run1 = DummyModel("run1", ofv=0, parameters=Parameters([]))
-    run2 = DummyModel("run2", ofv=-1, parameters=Parameters([]))
-    run3 = DummyModel("run3", ofv=-14, parameters=Parameters([]))
-    res = bic(run1, [run2, run3])
     assert [run3] == res
