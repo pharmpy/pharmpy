@@ -693,38 +693,43 @@ def print_fit_summary(model):
     def bool_ok_error(x):
         return "OK" if x else "ERROR"
 
+    def bool_yes_no(x):
+        return "YES" if x else "NO"
+
+    def print_header(text, first=False):
+        if not first:
+            print()
+        print(text)
+        print("-" * len(text))
+
+    def print_fmt(text, result):
+        print(f"{text:33} {result}")
+
     res = model.modelfit_results
-    print("Parameter estimation status")
-    print("---------------------------")
-    minsucc = bool_ok_error(res.minimization_successful)
-    minsucc_text = "Minimization successful"
-    print(f"{minsucc_text:33} {minsucc}")
-    no_rounding_errors = bool_ok_error(res.termination_cause != 'rounding_errors')
-    no_rounding_text = "No rounding errors"
-    print(f"{no_rounding_text:33} {no_rounding_errors}")
-    ofv_txt = "Objective function value"
-    print(f"{ofv_txt:33} {round(res.ofv, 1)}")
-    print()
-    print("Parameter uncertainty status")
-    print("----------------------------")
-    cond_txt = "Condition number"
-    condno = round(np.linalg.cond(res.correlation_matrix), 1)
-    cond_lttxt = "Condition number < 1000"
-    cond_lt1000 = bool_ok_error(condno < 1000)
-    print(f"{cond_lttxt:33} {cond_lt1000}")
-    print(f"{cond_txt:33} {condno}")
 
-    hicorr = check_high_correlations(model)
-    nohicorr = bool_ok_error(hicorr.empty)
-    nohicorr_txt = "No correlations larger than 0.9"
-    print(f"{nohicorr_txt:33} {nohicorr}")
-    print()
+    print_header("Parameter estimation status", first=True)
+    print_fmt("Minimization successful", bool_ok_error(res.minimization_successful))
+    print_fmt("No rounding errors", bool_ok_error(res.termination_cause != 'rounding_errors'))
+    print_fmt("Objective function value", round(res.ofv, 1))
 
-    print("Parameter estimates")
-    print("-------------------")
+    print_header("Parameter uncertainty status")
+    cov_run = model.estimation_steps[-1].cov
+    print_fmt("Covariance step run", bool_yes_no(cov_run))
+
+    if cov_run:
+        condno = round(np.linalg.cond(res.correlation_matrix), 1)
+        print_fmt("Condition number", condno)
+        print_fmt("Condition number < 1000", bool_ok_error(condno < 1000))
+        hicorr = check_high_correlations(model)
+        print_fmt("No correlations arger than 0.9", bool_ok_error(hicorr.empty))
+
+    print_header("Parameter estimates")
     pe = res.parameter_estimates
-    se = res.standard_errors
-    rse = se / pe
-    rse.name = 'RSE'
-    df = pd.concat([pe, se, rse], axis=1)
+    if cov_run:
+        se = res.standard_errors
+        rse = se / pe
+        rse.name = 'RSE'
+        df = pd.concat([pe, se, rse], axis=1)
+    else:
+        df = pd.concat([pe], axis=1)
     print(df)
