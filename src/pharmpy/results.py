@@ -282,18 +282,6 @@ class ModelfitResults(Results):
             ser.name = 'RSE'
             return ser
 
-    def parameter_summary(self):
-        """Summary of parameter estimates and uncertainty"""
-        pe = self.parameter_estimates
-        ses = self.standard_errors
-        rses = self.relative_standard_errors
-        df = pd.DataFrame({'estimate': pe, 'SE': ses, 'RSE': rses})
-        return df
-
-    def __repr__(self):
-        df = self.parameter_summary()
-        return df.to_string()
-
 
 class ChainedModelfitResults(MutableSequence, ModelfitResults):
     """A sequence of modelfit results given in order from first to final
