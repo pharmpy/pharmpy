@@ -20,7 +20,7 @@ def exhaustive(mfl, add_etas, etas_as_fullblock, add_mdt_eta):
     for i, combo in enumerate(combinations, 1):
         model_name = f'modelsearch_candidate{i}'
 
-        task_copy = Task('copy', copy, model_name)
+        task_copy = Task('copy', _copy, model_name)
         wf_search.add_task(task_copy)
 
         task_previous = task_copy
@@ -30,7 +30,7 @@ def exhaustive(mfl, add_etas, etas_as_fullblock, add_mdt_eta):
             wf_search.add_task(task_function, predecessors=task_previous)
             if add_etas:
                 task_add_etas = Task(
-                    'add_etas', add_etas_to_func, feat, etas_as_fullblock, add_mdt_eta
+                    'add_etas', _add_etas_to_func, feat, etas_as_fullblock, add_mdt_eta
                 )
                 wf_search.add_task(task_add_etas, predecessors=task_function)
                 task_previous = task_add_etas
@@ -59,13 +59,7 @@ def exhaustive_stepwise(mfl, add_etas, etas_as_fullblock, add_mdt_eta):
     while True:
         no_of_trans = 0
 
-        if wf_search.output_tasks:
-            actions = {
-                task: _find_possible_trans(wf_search, task, features)
-                for task in wf_search.output_tasks
-            }
-        else:
-            actions = {'': _find_possible_trans(wf_search, None, features)}
+        actions = _get_possible_actions(wf_search, features)
 
         for task, trans in actions.items():
             trans_previous, trans_possible = trans
@@ -73,38 +67,20 @@ def exhaustive_stepwise(mfl, add_etas, etas_as_fullblock, add_mdt_eta):
             for feat, func in trans_possible.items():
                 model_name = f'modelsearch_candidate{candidate_count}'
 
-                task_copy = Task('copy', copy, model_name)
+                task_copy = Task('copy', _copy, model_name)
                 if task:
                     wf_search.add_task(task_copy, predecessors=[task])
                 else:
                     wf_search.add_task(task_copy)
 
-                task_update_inits = Task('update_inits', update_initial_estimates)
-                wf_search.add_task(task_update_inits, predecessors=task_copy)
+                wf_stepwise_step, task_transformed = _create_stepwise_workflow(
+                    feat, func, add_etas, etas_as_fullblock, add_mdt_eta
+                )
 
-                task_function = Task(feat, func)
-                wf_search.add_task(task_function, predecessors=task_update_inits)
+                wf_search.insert_workflow(wf_stepwise_step, predecessors=task_copy)
+                model_tasks += wf_stepwise_step.output_tasks
 
-                if add_etas:
-                    task_add_etas = Task(
-                        'add_etas', add_etas_to_func, feat, etas_as_fullblock, add_mdt_eta
-                    )
-                    wf_search.add_task(task_add_etas, predecessors=task_function)
-                    task_transformed = task_add_etas
-                else:
-                    task_transformed = task_function
-
-                wf_fit = create_fit_workflow(n=1)
-                wf_search.insert_workflow(wf_fit, predecessors=task_transformed)
-
-                model_tasks += wf_fit.output_tasks
-
-                funcs = features.all_funcs()
-                tasks_upstream = wf_search.get_upstream_tasks(task_transformed)
-                tasks_upstream.reverse()
-                features_previous = [
-                    task.name for task in tasks_upstream if task.name in funcs.keys()
-                ]
+                features_previous = _get_previous_features(wf_search, task_transformed, features)
                 model_features[model_name] = tuple(features_previous + [feat])
 
                 candidate_count += 1
@@ -113,6 +89,45 @@ def exhaustive_stepwise(mfl, add_etas, etas_as_fullblock, add_mdt_eta):
             break
 
     return wf_search, model_tasks, model_features
+
+
+def _get_possible_actions(wf, features):
+    if wf.output_tasks:
+        actions = {task: _find_possible_trans(wf, task, features) for task in wf.output_tasks}
+    else:
+        actions = {'': _find_possible_trans(wf, None, features)}
+    return actions
+
+
+def _create_stepwise_workflow(feat, func, add_etas, etas_as_fullblock, add_mdt_eta):
+    wf_stepwise_step = Workflow()
+
+    task_update_inits = Task('update_inits', _update_initial_estimates)
+    wf_stepwise_step.add_task(task_update_inits)
+
+    task_function = Task(feat, func)
+    wf_stepwise_step.add_task(task_function, predecessors=task_update_inits)
+
+    if add_etas or add_mdt_eta:
+        task_add_etas = Task('add_etas', _add_etas_to_func, feat, etas_as_fullblock, add_mdt_eta)
+        wf_stepwise_step.add_task(task_add_etas, predecessors=task_function)
+        task_transformed = task_add_etas
+    else:
+        task_transformed = task_function
+
+    wf_fit = create_fit_workflow(n=1)
+    wf_stepwise_step.insert_workflow(wf_fit, predecessors=task_transformed)
+
+    return wf_stepwise_step, task_transformed
+
+
+def _get_previous_features(wf, task, features):
+    tasks_upstream = wf.get_upstream_tasks(task)
+    tasks_upstream.reverse()
+    features_previous = [
+        task.name for task in tasks_upstream if task.name in features.all_funcs().keys()
+    ]
+    return features_previous
 
 
 def _find_possible_trans(wf, task, features):
@@ -182,12 +197,12 @@ def _is_allowed_peripheral(func_current, trans_previous, features):
     return False
 
 
-def copy(name, model):
+def _copy(name, model):
     model_copy = copy_model(model, name)
     return model_copy
 
 
-def update_initial_estimates(model):
+def _update_initial_estimates(model):
     # FIXME: this should use dynamic workflows and not dispatch the next task
     try:
         update_inits(model)
@@ -196,7 +211,7 @@ def update_initial_estimates(model):
     return model
 
 
-def add_etas_to_func(feat, etas_as_fullblock, add_mdt_eta, model):
+def _add_etas_to_func(feat, etas_as_fullblock, add_mdt_eta, model):
     eta_dict = {
         'ABSORPTION(ZO)': ['MAT'],
         'ABSORPTION(SEQ-ZO-FO)': ['MAT', 'MDT'],
