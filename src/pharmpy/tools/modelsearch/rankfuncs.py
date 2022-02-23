@@ -11,52 +11,38 @@ from pharmpy.modeling import calculate_aic, calculate_bic
 
 
 def ofv(base, candidates, cutoff=3.84, rank_by_not_worse=False):
-    try:
-        base_ofv = base.modelfit_results.ofv
-    except AttributeError:
-        base_ofv = np.nan
-    return rank_models('ofv', base_ofv, candidates, cutoff, rank_by_not_worse=rank_by_not_worse)
+    return rank_models('ofv', base, candidates, cutoff, rank_by_not_worse=rank_by_not_worse)
 
 
 def aic(base, candidates, cutoff=3.84, rank_by_not_worse=False):
-    try:
-        base_aic = calculate_aic(base)
-    except AttributeError:
-        base_aic = np.nan
-    return rank_models('aic', base_aic, candidates, cutoff, rank_by_not_worse)
+    return rank_models('aic', base, candidates, cutoff, rank_by_not_worse)
 
 
 def bic(base, candidates, cutoff=3.84, rank_by_not_worse=False):
-    try:
-        base_bic = calculate_bic(base)
-    except AttributeError:
-        base_bic = np.nan
-    return rank_models('bic', base_bic, candidates, cutoff, rank_by_not_worse)
+    return rank_models('bic', base, candidates, cutoff, rank_by_not_worse)
 
 
-def rank_models(rank_type, base_value, candidates, cutoff, rank_by_not_worse=False):
+def create_diff_dict(rank_type, base, candidates):
+    delta_dict = dict()
+    for model in candidates:
+        if base.modelfit_results is not None and model.modelfit_results is not None:
+            if rank_type == 'aic':
+                delta = calculate_aic(base) - calculate_aic(model)
+            elif rank_type == 'bic':
+                delta = calculate_bic(base) - calculate_bic(model)
+            else:
+                delta = base.modelfit_results.ofv - model.modelfit_results.ofv
+        else:
+            delta = np.nan
+        delta_dict[model.name] = delta
+    return delta_dict
+
+
+def rank_models(rank_type, base, candidates, cutoff, rank_by_not_worse=False):
+    delta_dict = create_diff_dict(rank_type, base, candidates)
     if rank_by_not_worse:
         cutoff = -cutoff
-    if rank_type == 'aic':
-        # FIXME: Temporary after converting aic to function
-        filtered = [
-            model
-            for model in candidates
-            if model.modelfit_results is not None and base_value - calculate_aic(model) >= cutoff
-        ]
-    elif rank_type == 'bic':
-        filtered = [
-            model
-            for model in candidates
-            if model.modelfit_results is not None and base_value - calculate_bic(model) >= cutoff
-        ]
-    else:
-        filtered = [
-            model
-            for model in candidates
-            if model.modelfit_results is not None
-            and base_value - getattr(model.modelfit_results, rank_type) >= cutoff
-        ]
+    filtered = [model for model in candidates if delta_dict[model.name] >= cutoff]
 
     def fn(model):
         if rank_type == 'aic':
