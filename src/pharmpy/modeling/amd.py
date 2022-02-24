@@ -108,7 +108,7 @@ def _run_resmod(model):
     return selected_model
 
 
-def run_iiv(model, rankfunc='ofv', cutoff=None):
+def run_iiv(model, add_iivs=False, iiv_as_fullblock=False, rankfunc='ofv', cutoff=None):
     """Run IIV tool
 
     Runs two IIV workflows: testing the number of etas and testing which block structure
@@ -117,6 +117,10 @@ def run_iiv(model, rankfunc='ofv', cutoff=None):
     ----------
     model : Model
         Pharmpy model
+    add_iivs : bool
+        Whether to add IIV on structural parameters. Default is False
+    iiv_as_fullblock : bool
+        Whether added etas should be as a fullblock. Default is False
     rankfunc : str
         Which ranking function should be used (OFV, AIC, BIC). Default is OFV
     cutoff : float
@@ -141,7 +145,13 @@ def run_iiv(model, rankfunc='ofv', cutoff=None):
 
     """
     res_no_of_etas = run_tool(
-        'iiv', 'brute_force_no_of_etas', rankfunc=rankfunc, cutoff=cutoff, model=model
+        'iiv',
+        'brute_force_no_of_etas',
+        add_iivs=add_iivs,
+        iiv_as_fullblock=iiv_as_fullblock,
+        rankfunc=rankfunc,
+        cutoff=cutoff,
+        model=model,
     )
     res_block_structure = run_tool(
         'iiv',

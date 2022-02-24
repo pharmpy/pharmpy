@@ -1,30 +1,47 @@
 import pharmpy.results
 import pharmpy.tools.iiv.algorithms as algorithms
 import pharmpy.tools.modelsearch.tool
-from pharmpy.modeling import summarize_modelfit_results
+from pharmpy.modeling import (
+    add_iiv,
+    copy_model,
+    create_joint_distribution,
+    summarize_modelfit_results,
+    update_inits,
+)
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.workflows import Task, Workflow
 
 
-def create_workflow(algorithm, rankfunc='ofv', cutoff=None, model=None):
+def create_workflow(
+    algorithm,
+    add_iivs=False,
+    iiv_as_fullblock=False,
+    rankfunc='ofv',
+    cutoff=None,
+    model=None,
+):
     algorithm_func = getattr(algorithms, algorithm)
 
     wf = Workflow()
     wf.name = "iiv"
 
-    if model is not None:
-        start_task = Task('start_iiv', start, model)
-    else:
-        start_task = Task('start_iiv', start)
+    if add_iivs:
+        model = copy_model(model, f'{model.name}_add_iiv')
+        _add_iiv(iiv_as_fullblock, model)
 
+    # FIXME: must currently be a model, cannot be a task
+    start_task = Task('start_iiv', start, model)
     wf.add_task(start_task)
 
-    if model and not model.modelfit_results:
+    if not model.modelfit_results:
         wf_fit = create_fit_workflow(n=1)
-        wf.insert_workflow(wf_fit, predecessors=start_task)
+        wf.insert_workflow(wf_fit)
         start_model_task = wf_fit.output_tasks
     else:
         start_model_task = [start_task]
+
+    task_update_inits = Task('update_inits', update_inits)
+    wf.add_task(task_update_inits, predecessors=wf.output_tasks)
 
     wf_method, model_features = algorithm_func(model)
     wf.insert_workflow(wf_method)
@@ -43,6 +60,23 @@ def create_workflow(algorithm, rankfunc='ofv', cutoff=None, model=None):
 
 
 def start(model):
+    return model
+
+
+def _add_iiv(iiv_as_fullblock, model):
+    sset, rvs = model.statements, model.random_variables
+    odes = sset.ode_system
+
+    for param in odes.free_symbols:
+        assignment = sset.find_assignment(param)
+        if assignment:
+            full_expression = sset.before_odes.full_expression(assignment.symbol)
+            symb_names = {symb.name for symb in full_expression.free_symbols}
+            if not symb_names.intersection(rvs.iiv.names):
+                add_iiv(model, param.name, 'exp')
+
+    if iiv_as_fullblock:
+        create_joint_distribution(model)
     return model
 
 
