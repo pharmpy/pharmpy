@@ -1,5 +1,6 @@
 from functools import partial
 
+import pharmpy.tools.scm as scm
 from pharmpy.results import Results
 from pharmpy.workflows import default_tool_database
 
@@ -12,7 +13,7 @@ class AMDResults(Results):
         self.final_model = final_model
 
 
-def run_amd(model, mfl=None, lloq=None, order=None):
+def run_amd(model, mfl=None, lloq=None, order=None, categorical=None, continuous=None):
     """Run Automatic Model Development (AMD) tool
 
     Runs structural modelsearch, IIV building, and resmod
@@ -48,7 +49,7 @@ def run_amd(model, mfl=None, lloq=None, order=None):
     if lloq is not None:
         remove_loq_data(model, lloq=lloq)
 
-    default_order = ['structural', 'iiv', 'residual']
+    default_order = ['structural', 'iiv', 'residual', 'covariates']
     if order is None:
         order = default_order
 
@@ -61,54 +62,84 @@ def run_amd(model, mfl=None, lloq=None, order=None):
             'PERIPHERALS([1,2])'
         )
 
+    db = default_tool_database(toolname='amd')
+
     run_funcs = []
     for section in order:
         if section == 'structural':
-            func = partial(_run_modelsearch, mfl=mfl)
+            func = partial(_run_modelsearch, mfl=mfl, path=db.path)
+            run_funcs.append(func)
         elif section == 'iiv':
-            func = _run_iiv
+            func = partial(_run_iiv, path=db.path)
+            run_funcs.append(func)
         elif section == 'residual':
-            func = _run_resmod
+            func = partial(_run_resmod, path=db.path)
+            run_funcs.append(func)
+        elif section == 'covariates':
+            if scm.have_scm() and (continuous is not None or categorical is not None):
+                func = partial(
+                    _run_covariates, continuous=continuous, categorical=categorical, path=db.path
+                )
+                run_funcs.append(func)
         else:
             raise ValueError(
                 f"Unrecognized section {section} in order. Must be one of {default_order}"
             )
-        run_funcs.append(func)
 
-    db = default_tool_database(toolname='amd')
     run_tool('modelfit', model, path=db.path / 'modelfit')
 
     next_model = model
     for func in run_funcs:
+        import os
+
+        os.system(f"ls -l {db.path}")
         next_model = func(next_model)
 
     res = AMDResults(final_model=next_model)
     return res
 
 
-def _run_modelsearch(model, mfl):
-    res_modelsearch = run_tool('modelsearch', 'exhaustive_stepwise', mfl=mfl, model=model)
+def _run_modelsearch(model, mfl, path):
+    res_modelsearch = run_tool(
+        'modelsearch', 'exhaustive_stepwise', mfl=mfl, model=model, path=path / 'modelsearch'
+    )
     selected_model = res_modelsearch.best_model
     return selected_model
 
 
-def _run_iiv(model):
-    res_iiv = run_iiv(model)
+def _run_iiv(model, path):
+    res_iiv = run_iiv(model, path)
     selected_iiv_model = res_iiv.best_model
     return selected_iiv_model
 
 
-def _run_resmod(model):
-    res_resmod = run_tool('resmod', model)
+def _run_resmod(model, path):
+    res_resmod = run_tool('resmod', model, path=path / 'resmod1')
     selected_model = res_resmod.best_model
-    res_resmod = run_tool('resmod', selected_model)
+    res_resmod = run_tool('resmod', selected_model, path=path / 'resmod2')
     selected_model = res_resmod.best_model
-    res_resmod = run_tool('resmod', selected_model)
+    res_resmod = run_tool('resmod', selected_model, path=path / 'resmod3')
     selected_model = res_resmod.best_model
     return selected_model
 
 
-def run_iiv(model, add_iivs=False, iiv_as_fullblock=False, rankfunc='ofv', cutoff=None):
+def _run_covariates(model, continuous, categorical, path):
+    parameters = ['CL', 'VC', 'KMM', 'CLMM', 'MDT', 'MAT', 'QP1', 'QP2', 'VP1', 'VP2']
+    relations = dict()
+    if continuous is None:
+        covariates = categorical
+    elif categorical is None:
+        covariates = continuous
+    else:
+        covariates = continuous + categorical
+    for p in parameters:
+        if model.statements.find_assignment(p):
+            relations[p] = covariates
+    res = scm.run_scm(model, relations, continuous=continuous, categorical=categorical, path=path)
+    return res.final_model
+
+
+def run_iiv(model, add_iivs=False, iiv_as_fullblock=False, rankfunc='ofv', cutoff=None, path=None):
     """Run IIV tool
 
     Runs two IIV workflows: testing the number of etas and testing which block structure
@@ -144,6 +175,13 @@ def run_iiv(model, add_iivs=False, iiv_as_fullblock=False, rankfunc='ofv', cutof
     run_tool
 
     """
+    if path:
+        path1 = path / 'iiv1'
+        path2 = path / 'iiv2'
+    else:
+        path1 = path
+        path2 = path
+
     res_no_of_etas = run_tool(
         'iiv',
         'brute_force_no_of_etas',
@@ -152,6 +190,7 @@ def run_iiv(model, add_iivs=False, iiv_as_fullblock=False, rankfunc='ofv', cutof
         rankfunc=rankfunc,
         cutoff=cutoff,
         model=model,
+        path=path1,
     )
     res_block_structure = run_tool(
         'iiv',
@@ -159,6 +198,7 @@ def run_iiv(model, add_iivs=False, iiv_as_fullblock=False, rankfunc='ofv', cutof
         rankfunc=rankfunc,
         cutoff=cutoff,
         model=res_no_of_etas.best_model,
+        path=path2,
     )
 
     from pharmpy.modeling import summarize_modelfit_results
