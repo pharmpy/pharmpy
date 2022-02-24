@@ -1,7 +1,7 @@
 """
 :meta private:
 """
-
+from pharmpy.modeling import remove_unused_parameters_and_rvs
 from pharmpy.modeling.help_functions import _format_input_list, _get_etas
 
 
@@ -56,5 +56,6 @@ def remove_iiv(model, to_remove=None):
     model.statements = sset
 
     model.modelfit_results = None
-
+    remove_unused_parameters_and_rvs(model)
+    model.update_source()
     return model
