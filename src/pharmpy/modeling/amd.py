@@ -28,6 +28,10 @@ def run_amd(model, mfl=None, lloq=None, order=None, categorical=None, continuous
         Lower limit of quantification. LOQ data will be removed.
     order : list
         Runorder of components
+    categorical : list
+        List of categorical covariates
+    continuous : list
+        List of continuouts covariates
 
     Returns
     -------
@@ -157,6 +161,8 @@ def run_iiv(model, add_iivs=False, iiv_as_fullblock=False, rankfunc='ofv', cutof
     cutoff : float
         Cutoff for which value of the ranking function that is considered significant. Default
         is 3.84
+    path : Path
+        Path of rundirectory
 
     Returns
     -------
