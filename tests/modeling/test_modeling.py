@@ -2009,6 +2009,12 @@ def test_add_iiv(pheno_path, parameter, expression, operation, eta_name, buf_new
     assert '$OMEGA  0.09 ; IIV_' in str(omega_rec[-1])
 
 
+def test_add_iiv_missing_param(pheno_path):
+    model = Model.create_model(pheno_path)
+    with pytest.raises(ValueError):
+        add_iiv(model, 'non_existing_param', 'add')
+
+
 @pytest.mark.parametrize(
     'etas, pk_ref, omega_ref',
     [
