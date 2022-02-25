@@ -8,7 +8,11 @@ from pharmpy.workflows import default_tool_database
 
 def have_scm():
     # Check if scm is available through PsN
-    out = subprocess.run(["scm", "--version"], capture_output=True)
+    try:
+        out = subprocess.run(["scm", "--version"], capture_output=True)
+    except FileNotFoundError:
+        return False
+
     m = re.match(r"PsN version: (\d+)\.(\d+)\.(\d+)", out.stdout.decode("utf-8"))
     if m:
         major = int(m.group(1))
