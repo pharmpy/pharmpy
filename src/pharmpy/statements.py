@@ -384,6 +384,7 @@ class ExplicitODESystem(ODESystem):
 
     def __deepcopy__(self, memo):
         newone = type(self)(copy.copy(self.odes), copy.copy(self.ics))
+        newone.solver = self.solver
         return newone
 
     def __eq__(self, other):
@@ -580,6 +581,7 @@ class CompartmentalSystem(ODESystem):
     def __deepcopy__(self, memo):
         newone = type(self)()
         newone._g = copy.deepcopy(self._g, memo)
+        newone.solver = self.solver
         return newone
 
     def add_compartment(self, name):
