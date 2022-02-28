@@ -167,7 +167,7 @@ def _create_est_model(method, solver, update, model):
     add_estimation_step(est_model, **est_settings)
     add_estimation_step(est_model, **eval_settings)
     if solver:
-        set_ode_solver(model, solver)
+        set_ode_solver(est_model, solver)
     return est_model
 
 
