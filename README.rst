@@ -7,7 +7,7 @@
 .. image:: https://github.com/pharmpy/pharmpy/workflows/CI/badge.svg
     :target: https://github.com/pharmpy/pharmpy/actions
 
-.. image:: https://img.shields.io/badge/python-3.8%20|%203.9-blue
+.. image:: https://img.shields.io/badge/python-3.8%20|%203.9-blue|%203.10-blue|
    :target: https://www.python.org/downloads/
 
 .. image:: https://img.shields.io/badge/code%20style-black-000000.svg
