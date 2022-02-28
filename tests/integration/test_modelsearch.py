@@ -79,25 +79,41 @@ def test_exhaustive_stepwise_basic(
 
 
 @pytest.mark.parametrize(
-    'mfl, as_fullblock, no_of_models, best_model_name, no_of_added_etas',
+    'mfl, iiv_as_fullblock, add_mdt_iiv, no_of_models, best_model_name, no_of_added_etas',
     [
-        ('ABSORPTION(ZO);PERIPHERALS(1)', False, 4, 'modelsearch_candidate2', 2),
-        ('ABSORPTION(ZO);ELIMINATION(ZO)', False, 4, 'mox2', 1),
-        ('ABSORPTION(ZO);ELIMINATION(MIX-FO-MM)', False, 4, 'modelsearch_candidate2', 2),
-        ('ABSORPTION(ZO);PERIPHERALS([1, 2])', False, 8, 'modelsearch_candidate2', 4),
-        ('LAGTIME();TRANSITS(1)', False, 2, 'mox2', 1),
-        ('ABSORPTION(ZO);PERIPHERALS(1)', True, 4, 'modelsearch_candidate2', 2),
+        ('ABSORPTION(ZO);PERIPHERALS(1)', False, False, 4, 'modelsearch_candidate2', 2),
+        ('ABSORPTION(ZO);ELIMINATION(ZO)', False, False, 4, 'mox2', 1),
+        ('ABSORPTION(ZO);ELIMINATION(MIX-FO-MM)', False, False, 4, 'modelsearch_candidate2', 2),
+        ('ABSORPTION(ZO);PERIPHERALS([1, 2])', False, False, 8, 'modelsearch_candidate2', 4),
+        ('LAGTIME();TRANSITS(1)', False, False, 2, 'mox2', 1),
+        ('ABSORPTION(ZO);PERIPHERALS(1)', True, False, 4, 'modelsearch_candidate2', 2),
+        ('ABSORPTION(ZO);LAGTIME()', False, True, 4, 'mox2', 1),
     ],
 )
-def test_exhaustive_stepwise_add_etas(
-    tmp_path, testdata, mfl, as_fullblock, no_of_models, best_model_name, no_of_added_etas
+def test_exhaustive_stepwise_add_iivs(
+    tmp_path,
+    testdata,
+    mfl,
+    iiv_as_fullblock,
+    add_mdt_iiv,
+    no_of_models,
+    best_model_name,
+    no_of_added_etas,
 ):
     with TemporaryDirectoryChanger(tmp_path):
         shutil.copy2(testdata / 'nonmem' / 'models' / 'mox2.mod', tmp_path)
         shutil.copy2(testdata / 'nonmem' / 'models' / 'mx19B.csv', tmp_path)
         model_start = Model.create_model('mox2.mod')
         model_start.datainfo.path = tmp_path / 'mx19B.csv'
-        res = run_tool('modelsearch', 'exhaustive_stepwise', mfl, add_etas=True, model=model_start)
+        res = run_tool(
+            'modelsearch',
+            'exhaustive_stepwise',
+            mfl,
+            add_iivs=True,
+            iiv_as_fullblock=iiv_as_fullblock,
+            add_mdt_iiv=add_mdt_iiv,
+            model=model_start,
+        )
 
         assert len(res.summary_tool) == no_of_models
         assert len(res.summary_models) == no_of_models + 1

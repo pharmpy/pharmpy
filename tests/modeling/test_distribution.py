@@ -38,7 +38,7 @@ $ESTIMATION METHOD=1 INTERACTION
     model = create_model(code, testdata)
     add_peripheral_compartment(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
-$DATA pheno.dta IGNORE=@
+$DATA run1.csv IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
 $SUBROUTINE ADVAN3 TRANS4
 $PK
@@ -92,7 +92,7 @@ $ESTIMATION METHOD=1 INTERACTION
     model = create_model(code, testdata)
     add_peripheral_compartment(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
-$DATA pheno.dta IGNORE=@
+$DATA run1.csv IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
 $SUBROUTINE ADVAN4 TRANS4
 $PK
@@ -144,7 +144,7 @@ $ESTIMATION METHOD=1 INTERACTION
     model = create_model(code, testdata)
     add_peripheral_compartment(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
-$DATA pheno.dta IGNORE=@
+$DATA run1.csv IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
 $SUBROUTINE ADVAN4 TRANS1
 $PK
@@ -199,7 +199,7 @@ $ESTIMATION METHOD=1 INTERACTION
     model = create_model(code, testdata)
     add_peripheral_compartment(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
-$DATA pheno.dta IGNORE=@
+$DATA run1.csv IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
 $SUBROUTINE ADVAN11 TRANS4
 $PK
@@ -260,7 +260,7 @@ $ESTIMATION METHOD=1 INTERACTION
     model = create_model(code, testdata)
     add_peripheral_compartment(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
-$DATA pheno.dta IGNORE=@
+$DATA run1.csv IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
 $SUBROUTINE ADVAN12 TRANS4
 $PK
@@ -316,7 +316,7 @@ $ESTIMATION METHOD=1 INTERACTION
     add_peripheral_compartment(model)
     add_peripheral_compartment(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
-$DATA pheno.dta IGNORE=@
+$DATA run1.csv IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
 $SUBROUTINE ADVAN11 TRANS4
 $PK
@@ -349,7 +349,7 @@ $ESTIMATION METHOD=1 INTERACTION
 
 def test_advan1_remove(testdata):
     code = """$PROBLEM PHENOBARB SIMPLE MODEL
-$DATA pheno.dta IGNORE=@
+$DATA run1.csv IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
 $SUBROUTINE ADVAN1 TRANS2
 $PK
@@ -397,7 +397,7 @@ $ESTIMATION METHOD=1 INTERACTION
     model = create_model(code, testdata)
     remove_peripheral_compartment(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
-$DATA pheno.dta IGNORE=@
+$DATA run1.csv IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
 $SUBROUTINE ADVAN1 TRANS2
 $PK
@@ -447,7 +447,7 @@ $ESTIMATION METHOD=1 INTERACTION
     model = create_model(code, testdata)
     remove_peripheral_compartment(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
-$DATA pheno.dta IGNORE=@
+$DATA run1.csv IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
 $SUBROUTINE ADVAN2 TRANS2
 $PK
@@ -503,7 +503,7 @@ $ESTIMATION METHOD=1 INTERACTION
     model = create_model(code, testdata)
     remove_peripheral_compartment(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
-$DATA pheno.dta IGNORE=@
+$DATA run1.csv IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
 $SUBROUTINE ADVAN3 TRANS4
 $PK
@@ -564,7 +564,7 @@ $ESTIMATION METHOD=1 INTERACTION
     model = create_model(code, testdata)
     remove_peripheral_compartment(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
-$DATA pheno.dta IGNORE=@
+$DATA run1.csv IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
 $SUBROUTINE ADVAN4 TRANS4
 $PK
@@ -626,7 +626,7 @@ $ESTIMATION METHOD=1 INTERACTION
     remove_peripheral_compartment(model)
     remove_peripheral_compartment(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
-$DATA pheno.dta IGNORE=@
+$DATA run1.csv IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
 $SUBROUTINE ADVAN1 TRANS2
 $PK
@@ -677,7 +677,7 @@ $ESTIMATION METHOD=1 INTERACTION
     add_peripheral_compartment(model)
     remove_peripheral_compartment(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
-$DATA pheno.dta IGNORE=@
+$DATA run1.csv IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
 $SUBROUTINE ADVAN4 TRANS4
 $PK
@@ -739,7 +739,7 @@ $ESTIMATION METHOD=1 INTERACTION
     model = create_model(code, testdata)
     set_peripheral_compartments(model, 0)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
-$DATA pheno.dta IGNORE=@
+$DATA run1.csv IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
 $SUBROUTINE ADVAN1 TRANS2
 $PK

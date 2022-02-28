@@ -28,17 +28,6 @@ def test_tool_files(pheno):
     ]
 
 
-def test_sumo(testdata):
-    onePROB = testdata / 'nonmem' / 'modelfit_results' / 'onePROB'
-    pheno = Model.create_model(onePROB / 'oneEST' / 'noSIM' / 'pheno.mod')
-    from pharmpy.modeling import load_example_model
-
-    pheno = load_example_model("pheno")
-    d = pheno.modelfit_results.sumo(to_string=False)
-    assert 'Messages' in d.keys()
-    assert 'Parameter summary' in d.keys()
-
-
 def test_special_models(testdata):
     onePROB = testdata / 'nonmem' / 'modelfit_results' / 'onePROB'
     withBayes = Model.create_model(onePROB / 'multEST' / 'noSIM' / 'withBayes.mod')
@@ -51,27 +40,12 @@ def test_special_models(testdata):
     )
     assert withBayes.modelfit_results[0].minimization_successful is False
     assert withBayes.modelfit_results[1].minimization_successful is False
-    assert withBayes.modelfit_results[0].covariance_step == {
-        'requested': True,
-        'completed': True,
-        'warnings': False,
-    }
-    assert withBayes.modelfit_results.covariance_step == {
-        'requested': True,
-        'completed': True,
-        'warnings': False,
-    }
 
     maxeval0 = Model.create_model(onePROB / 'oneEST' / 'noSIM' / 'maxeval0.mod')
     assert maxeval0.modelfit_results.minimization_successful is None
 
     maxeval3 = Model.create_model(onePROB / 'oneEST' / 'noSIM' / 'maxeval3.mod')
     assert maxeval3.modelfit_results.minimization_successful is False
-    assert maxeval3.modelfit_results.covariance_step == {
-        'requested': True,
-        'completed': True,
-        'warnings': True,
-    }
 
 
 def test_covariance(pheno_path):
@@ -338,35 +312,6 @@ def test_estimation_runtime_steps(pheno_path, testdata):
     assert res[1].estimation_runtime == 2.75
     assert res.runtime_total == 7
     assert res.estimation_runtime == 0.33
-
-
-def test_result_summary(pheno_path, testdata):
-    model = Model.create_model(pheno_path)
-    res = model.modelfit_results
-
-    summary = res.result_summary()
-
-    assert summary.loc['pheno_real']['ofv'] == 586.2760562818805
-    assert summary.loc['pheno_real']['OMEGA(1,1)_estimate'] == 0.0293508
-
-    model = Model.create_model(
-        testdata
-        / 'nonmem'
-        / 'modelfit_results'
-        / 'onePROB'
-        / 'multEST'
-        / 'noSIM'
-        / 'pheno_multEST.mod'
-    )
-    res = model.modelfit_results
-    summary = res.result_summary(include_all_estimation_steps=True)
-
-    assert not summary.loc['pheno_multEST', 1]['minimization_successful']
-    assert summary.loc['pheno_multEST', 2]['minimization_successful']
-    assert summary.loc['pheno_multEST', 1]['run_type'] == 'estimation'
-    assert summary.loc['pheno_multEST', 2]['run_type'] == 'evaluation'
-
-    assert summary.loc['pheno_multEST', 1]['ofv'] != summary.loc['pheno_multEST', 2]['ofv']
 
 
 def test_evaluation(testdata):

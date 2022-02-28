@@ -198,6 +198,7 @@ def _create_combined_model(input_model):
 
 
 def _create_dataset(input_model):
+    input_model = input_model.copy()
     residuals = input_model.modelfit_results.residuals
     cwres = residuals['CWRES'].reset_index(drop=True)
     predictions = input_model.modelfit_results.predictions
@@ -230,7 +231,6 @@ def _time_after_dose(model):
 
 def _create_best_model(model, res, groups=4, p_value=0.05):
     model = model.copy()
-    _time_after_dose(model)
     selected_model_name = ''
     cutoff = float(chi2.isf(q=p_value, df=1))
     if any(res.models['dofv'] > cutoff):
@@ -248,6 +248,7 @@ def _create_best_model(model, res, groups=4, p_value=0.05):
                 'IIV_RUV1': res.models['parameters'].loc['IIV_on_RUV', 1, 1].get('omega')
             }
         elif name[:12] == 'time_varying':
+            _time_after_dose(model)
             i = int(name[-1])
             quantile = i / groups
             cutoff_tvar = model.dataset['TAD'].quantile(q=quantile)

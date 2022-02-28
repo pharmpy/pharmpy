@@ -1,7 +1,24 @@
 import pytest
 
 from pharmpy import Model
-from pharmpy.tools.estmethod.tool import _clear_estimation_steps, _create_est_model
+from pharmpy.tools.estmethod.tool import _clear_estimation_steps, _create_est_model, create_workflow
+
+
+@pytest.mark.parametrize(
+    'methods, solvers, no_of_models',
+    [
+        ('foce', None, 2),
+        (['foce', 'laplace'], None, 4),
+        (['laplace'], None, 4),
+        ('foce', ['lsoda'], 4),
+        ('foce', 'all', 14),
+    ],
+)
+def test_algorithm(methods, solvers, no_of_models):
+    wf = create_workflow(methods=methods, solvers=solvers)
+    fit_tasks = [task.name for task in wf.tasks if task.name.startswith('run')]
+
+    assert len(fit_tasks) == no_of_models
 
 
 @pytest.mark.parametrize(
@@ -23,7 +40,7 @@ from pharmpy.tools.estmethod.tool import _clear_estimation_steps, _create_est_mo
 def test_create_est_model(pheno_path, method, est_rec, eval_rec):
     model = Model.create_model(pheno_path)
     assert len(model.estimation_steps) == 1
-    est_model = _create_est_model(method, update=False, model=model)
+    est_model = _create_est_model(method, None, update=False, model=model)
     assert len(est_model.estimation_steps) == 2
     assert est_model.name == f'estmethod_{method.upper()}_raw_inits'
     assert est_model.model_code.split('\n')[-5] == est_rec

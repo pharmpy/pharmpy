@@ -8,10 +8,14 @@ from pharmpy.utils import TemporaryDirectoryChanger
 
 
 @pytest.mark.parametrize(
-    'method',
-    ['fo', 'laplace'],
+    'methods, solvers, no_of_models, advan_ref',
+    [
+        ('foce', None, 2, 'ADVAN1'),
+        (['laplace'], None, 4, 'ADVAN1'),
+        ('foce', ['lsoda'], 4, 'ADVAN13'),
+    ],
 )
-def test_estmethod(tmp_path, testdata, method):
+def test_estmethod(tmp_path, testdata, methods, solvers, no_of_models, advan_ref):
     with TemporaryDirectoryChanger(tmp_path):
         for path in (testdata / 'nonmem').glob('pheno_real.*'):
             shutil.copy2(path, tmp_path)
@@ -19,11 +23,11 @@ def test_estmethod(tmp_path, testdata, method):
         model_start = Model.create_model('pheno_real.mod')
         model_start.datainfo.path = tmp_path / 'pheno.dta'
 
-        res = run_tool('estmethod', methods=method, model=model_start)
+        res = run_tool('estmethod', methods=methods, solvers=solvers, model=model_start)
 
-        no_of_models = 4
         assert len(res.summary) == no_of_models
         assert len(res.models) == no_of_models
+        assert advan_ref in res.models[-1].model_code
         rundir = tmp_path / 'estmethod_dir1'
         assert rundir.is_dir()
         assert len(list((rundir / 'models').iterdir())) == no_of_models

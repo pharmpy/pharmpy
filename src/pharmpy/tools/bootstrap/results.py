@@ -47,63 +47,61 @@ class BootstrapResults(Results):
         self.dofv_quantiles_plot = dofv_quantiles_plot
         self.parameter_estimates_histogram = parameter_estimates_histogram
 
-    def add_plots(self):
-        self.ofv_plot = self.plot_ofv()
-        self.parameter_estimates_correlation_plot = self.plot_parameter_estimates_correlation()
-        self.dofv_quantiles_plot = self.plot_dofv_quantiles()
-        self.parameter_estimates_histogram = self.plot_parameter_estimates_histogram()
 
-    def plot_ofv(self):
-        plot = pharmpy.visualization.histogram(
-            self.ofvs['bootstrap_bootdata_ofv'], title='Bootstrap OFV'
-        )
-        return plot
+def plot_ofv(res):
+    plot = pharmpy.visualization.histogram(
+        res.ofvs['bootstrap_bootdata_ofv'], title='Bootstrap OFV'
+    )
+    return plot
 
-    def plot_dofv_quantiles(self):
-        ofvs = self.ofvs
-        dofvs = ofvs['delta_bootdata'].sort_values().reset_index(drop=True)
-        dofvs_boot_base = ofvs['delta_origdata'].sort_values().reset_index(drop=True)
-        quantiles = np.linspace(0.0, 1.0, num=len(dofvs))
-        degrees = len(self.parameter_distribution)
-        chi2_dist = scipy.stats.chi2(df=degrees)
-        chi2 = chi2_dist.ppf(quantiles)
-        degrees_dofvs = self.ofv_statistics['mean']['delta_bootdata']
-        degrees_boot_base = self.ofv_statistics['mean']['delta_origdata']
-        df_dict = {'quantiles': quantiles, f'Reference χ²({degrees})': chi2}
-        if not np.isnan(degrees_dofvs):
-            df_dict[
-                (
-                    'Original model OFV - Bootstrap model OFV (both using bootstrap datasets)',
-                    f'Estimated df = {degrees_dofvs:.2f}',
-                )
-            ] = dofvs
-        if not np.isnan(degrees_boot_base):
-            df_dict[
-                (
-                    'Bootstrap model OFV - Original model OFV (both using original dataset)',
-                    f'Estimated df = {degrees_boot_base:.2f}',
-                )
-            ] = dofvs_boot_base
-        df = pd.DataFrame(df_dict)
-        plot = pharmpy.visualization.line_plot(
-            df,
-            'quantiles',
-            xlabel='Distribution quantiles',
-            ylabel='dOFV',
-            legend_title='Distribution',
-            title='dOFV quantiles',
-        )
-        return plot
 
-    def plot_parameter_estimates_correlation(self):
-        pe = self.parameter_estimates
-        plot = pharmpy.visualization.scatter_matrix(pe)
-        return plot
+def plot_dofv_quantiles(res):
+    ofvs = res.ofvs
+    dofvs = ofvs['delta_bootdata'].sort_values().reset_index(drop=True)
+    dofvs_boot_base = ofvs['delta_origdata'].sort_values().reset_index(drop=True)
+    quantiles = np.linspace(0.0, 1.0, num=len(dofvs))
+    degrees = len(res.parameter_distribution)
+    chi2_dist = scipy.stats.chi2(df=degrees)
+    chi2 = chi2_dist.ppf(quantiles)
+    degrees_dofvs = res.ofv_statistics['mean']['delta_bootdata']
+    degrees_boot_base = res.ofv_statistics['mean']['delta_origdata']
+    df_dict = {'quantiles': quantiles, f'Reference χ²({degrees})': chi2}
+    if not np.isnan(degrees_dofvs):
+        df_dict[
+            (
+                'Original model OFV - Bootstrap model OFV (both using bootstrap datasets)',
+                f'Estimated df = {degrees_dofvs:.2f}',
+            )
+        ] = dofvs
+    if not np.isnan(degrees_boot_base):
+        df_dict[
+            (
+                'Bootstrap model OFV - Original model OFV (both using original dataset)',
+                f'Estimated df = {degrees_boot_base:.2f}',
+            )
+        ] = dofvs_boot_base
+    df = pd.DataFrame(df_dict)
+    plot = pharmpy.visualization.line_plot(
+        df,
+        'quantiles',
+        xlabel='Distribution quantiles',
+        ylabel='dOFV',
+        legend_title='Distribution',
+        title='dOFV quantiles',
+    )
+    return plot
 
-    def plot_parameter_estimates_histogram(self):
-        pe = self.parameter_estimates
-        plot = pharmpy.visualization.facetted_histogram(pe)
-        return plot
+
+def plot_parameter_estimates_correlation(res):
+    pe = res.parameter_estimates
+    plot = pharmpy.visualization.scatter_matrix(pe)
+    return plot
+
+
+def plot_parameter_estimates_histogram(res):
+    pe = res.parameter_estimates
+    plot = pharmpy.visualization.facetted_histogram(pe)
+    return plot
 
 
 def calculate_results(
@@ -192,6 +190,12 @@ def calculate_results(
         ofvs=ofvs,
         parameter_estimates=parameter_estimates,
     )
+
+    res.ofv_plot = plot_ofv(res)
+    # FIXME: plot broken
+    # res.parameter_estimates_correlation_plot = plot_parameter_estimates_correlation(res)
+    res.dofv_quantiles_plot = plot_dofv_quantiles(res)
+    res.parameter_estimates_histogram = plot_parameter_estimates_histogram(res)
 
     return res
 

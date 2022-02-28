@@ -248,6 +248,14 @@ def test_repr_html():
     assert 'X + Y' in html
 
 
+def test_direct_dependencies(pheno_path):
+    model = Model.create_model(pheno_path)
+    odes = model.statements.ode_system
+    deps = model.statements.direct_dependencies(odes)
+    assert deps[0].symbol.name == "CL"
+    assert deps[1].symbol.name == "V"
+
+
 def test_dependencies(pheno_path):
     model = Model.create_model(pheno_path)
     depsy = model.statements.dependencies(S('Y'))
@@ -265,6 +273,19 @@ def test_dependencies(pheno_path):
     }
     depscl = model.statements.dependencies(S('CL'))
     assert depscl == {S('THETA(1)'), S('WGT'), S('ETA(1)')}
+    odes = model.statements.ode_system
+    deps_odes = model.statements.dependencies(odes)
+    assert deps_odes == {
+        S('AMT'),
+        S('APGR'),
+        S('ETA(1)'),
+        S('ETA(2)'),
+        S('THETA(1)'),
+        S('THETA(2)'),
+        S('THETA(3)'),
+        S('WGT'),
+        S('t'),
+    }
 
 
 def test_insert_before():

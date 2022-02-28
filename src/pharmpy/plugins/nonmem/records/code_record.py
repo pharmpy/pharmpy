@@ -586,7 +586,7 @@ class CodeRecord(Record):
         return statements
 
     def from_odes(self, ode_system):
-        """Set statements of record given an eplicit ode system"""
+        """Set statements of record given an explicit ode system"""
         odes = ode_system.odes[:-1]  # Skip last ode as it is for the output compartment
         functions = [ode.lhs.args[0] for ode in odes]
         function_map = {f: symbols.symbol(f'A({i + 1})') for i, f in enumerate(functions)}

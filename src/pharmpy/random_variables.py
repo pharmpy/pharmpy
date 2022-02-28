@@ -47,7 +47,7 @@ class RandomVariable:
     >>> sd = sympy.sqrt(sympy.Symbol('OMEGA(1,1)'))
     >>> rv = RandomVariable(name, "IIV", sympy.stats.Normal(name, 0, sd))
     >>> rv
-    ETA(1) ~ 𝒩 (0, OMEGA(1,1))
+    ETA(1) ~ N(0, OMEGA(1,1))
 
     See Also
     --------
@@ -124,7 +124,7 @@ class RandomVariable:
         >>> omega = Parameter('OMEGA_CL', 0.1)
         >>> rv = RandomVariable.normal("IIV_CL", "IIV", 0, omega.symbol)
         >>> rv
-        IIV_CL ~ 𝒩 (0, OMEGA_CL)
+        IIV_CL ~ N(0, OMEGA_CL)
 
         """
         rv = cls(name, level)
@@ -159,9 +159,9 @@ class RandomVariable:
         >>> rv1, rv2 = RandomVariable.joint_normal(["IIV_CL", "IIV_V"], 'IIV', [0, 0],
         ...     [[omega_cl.symbol, corr_cl_v.symbol], [corr_cl_v.symbol, omega_v.symbol]])
         >>> rv1
-        ⎡IIV_CL⎤     ⎧⎡0⎤  ⎡ OMEGA_CL   OMEGA_CL_V⎤⎫
-        ⎢      ⎥ ~ 𝒩 ⎪⎢ ⎥, ⎢                      ⎥⎪
-        ⎣IIV_V ⎦     ⎩⎣0⎦  ⎣OMEGA_CL_V   OMEGA_V  ⎦⎭
+        ⎡IIV_CL⎤    ⎧⎡0⎤  ⎡ OMEGA_CL   OMEGA_CL_V⎤⎫
+        ⎢      ⎥ ~ N⎪⎢ ⎥, ⎢                      ⎥⎪
+        ⎣IIV_V ⎦    ⎩⎣0⎦  ⎣OMEGA_CL_V   OMEGA_V  ⎦⎭
 
         """
 
@@ -244,7 +244,7 @@ class RandomVariable:
         >>> rv = RandomVariable.normal("IIV_CL", "IIV", 0, omega.symbol)
         >>> rv.subs({omega.symbol: sympy.Symbol("OMEGA_NEW")})
         >>> rv
-        IIV_CL ~ 𝒩 (0, OMEGA_NEW)
+        IIV_CL ~ N(0, OMEGA_NEW)
 
         """
         if self._mean is not None:
@@ -344,7 +344,7 @@ class RandomVariable:
                             + rpar
                         )
                     else:
-                        res.append(name_line + '     ' + lpar + mu_line + '  ' + sigma_line + rpar)
+                        res.append(name_line + '    ' + lpar + mu_line + '  ' + sigma_line + rpar)
                 return '\n'.join(res)
             else:
                 return (
@@ -913,7 +913,7 @@ class RandomVariables(MutableSequence):
         >>> rvs = RandomVariables([rv])
         >>> rvs.subs({omega.symbol: sympy.Symbol("OMEGA_NEW")})
         >>> rvs
-        IIV_CL ~ 𝒩 (0, OMEGA_NEW)
+        IIV_CL ~ N(0, OMEGA_NEW)
 
         """
         s = dict()
@@ -946,8 +946,8 @@ class RandomVariables(MutableSequence):
         >>> rvs = RandomVariables([rv1, rv2])
         >>> rvs.unjoin('IIV_CL')
         >>> rvs
-        IIV_CL ~ 𝒩 (0, OMEGA_CL)
-        IIV_V ~ 𝒩 (0, OMEGA_V)
+        IIV_CL ~ N(0, OMEGA_CL)
+        IIV_V ~ N(0, OMEGA_V)
 
         See Also
         --------
@@ -1004,9 +1004,9 @@ class RandomVariables(MutableSequence):
         >>> rvs.join(['IIV_CL', 'IIV_V'])
         {}
         >>> rvs
-        ⎡IIV_CL⎤     ⎧⎡0⎤  ⎡OMEGA_CL     0   ⎤⎫
-        ⎢      ⎥ ~ 𝒩 ⎪⎢ ⎥, ⎢                 ⎥⎪
-        ⎣IIV_V ⎦     ⎩⎣0⎦  ⎣   0      OMEGA_V⎦⎭
+        ⎡IIV_CL⎤    ⎧⎡0⎤  ⎡OMEGA_CL     0   ⎤⎫
+        ⎢      ⎥ ~ N⎪⎢ ⎥, ⎢                 ⎥⎪
+        ⎣IIV_V ⎦    ⎩⎣0⎦  ⎣   0      OMEGA_V⎦⎭
 
         See Also
         --------

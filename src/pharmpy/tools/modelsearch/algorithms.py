@@ -7,7 +7,7 @@ from pharmpy.workflows import Task, Workflow
 from .mfl import ModelFeatures
 
 
-def exhaustive(mfl, add_etas, etas_as_fullblock):
+def exhaustive(mfl, add_iivs, iiv_as_fullblock, add_mdt_iiv):
     features = ModelFeatures(mfl)
     wf_search = Workflow()
 
@@ -20,7 +20,7 @@ def exhaustive(mfl, add_etas, etas_as_fullblock):
     for i, combo in enumerate(combinations, 1):
         model_name = f'modelsearch_candidate{i}'
 
-        task_copy = Task('copy', copy, model_name)
+        task_copy = Task('copy', _copy, model_name)
         wf_search.add_task(task_copy)
 
         task_previous = task_copy
@@ -28,10 +28,12 @@ def exhaustive(mfl, add_etas, etas_as_fullblock):
             func = funcs[feat]
             task_function = Task(feat, func)
             wf_search.add_task(task_function, predecessors=task_previous)
-            if add_etas:
-                task_add_etas = Task('add_etas', add_etas_to_func, feat, etas_as_fullblock)
-                wf_search.add_task(task_add_etas, predecessors=task_function)
-                task_previous = task_add_etas
+            if add_iivs:
+                task_add_iiv = Task(
+                    'add_iivs', _add_iiv_to_func, feat, iiv_as_fullblock, add_mdt_iiv
+                )
+                wf_search.add_task(task_add_iiv, predecessors=task_function)
+                task_previous = task_add_iiv
             else:
                 task_previous = task_function
 
@@ -45,7 +47,7 @@ def exhaustive(mfl, add_etas, etas_as_fullblock):
     return wf_search, model_tasks, model_features
 
 
-def exhaustive_stepwise(mfl, add_etas, etas_as_fullblock):
+def exhaustive_stepwise(mfl, add_iivs, iiv_as_fullblock, add_mdt_iiv):
     features = ModelFeatures(mfl)
     wf_search = Workflow()
 
@@ -57,13 +59,7 @@ def exhaustive_stepwise(mfl, add_etas, etas_as_fullblock):
     while True:
         no_of_trans = 0
 
-        if wf_search.output_tasks:
-            actions = {
-                task: _find_possible_trans(wf_search, task, features)
-                for task in wf_search.output_tasks
-            }
-        else:
-            actions = {'': _find_possible_trans(wf_search, None, features)}
+        actions = _get_possible_actions(wf_search, features)
 
         for task, trans in actions.items():
             trans_previous, trans_possible = trans
@@ -71,36 +67,20 @@ def exhaustive_stepwise(mfl, add_etas, etas_as_fullblock):
             for feat, func in trans_possible.items():
                 model_name = f'modelsearch_candidate{candidate_count}'
 
-                task_copy = Task('copy', copy, model_name)
+                task_copy = Task('copy', _copy, model_name)
                 if task:
                     wf_search.add_task(task_copy, predecessors=[task])
                 else:
                     wf_search.add_task(task_copy)
 
-                task_update_inits = Task('update_inits', update_initial_estimates)
-                wf_search.add_task(task_update_inits, predecessors=task_copy)
+                wf_stepwise_step, task_transformed = _create_stepwise_workflow(
+                    feat, func, add_iivs, iiv_as_fullblock, add_mdt_iiv
+                )
 
-                task_function = Task(feat, func)
-                wf_search.add_task(task_function, predecessors=task_update_inits)
+                wf_search.insert_workflow(wf_stepwise_step, predecessors=task_copy)
+                model_tasks += wf_stepwise_step.output_tasks
 
-                if add_etas:
-                    task_add_etas = Task('add_etas', add_etas_to_func, feat, etas_as_fullblock)
-                    wf_search.add_task(task_add_etas, predecessors=task_function)
-                    task_transformed = task_add_etas
-                else:
-                    task_transformed = task_function
-
-                wf_fit = create_fit_workflow(n=1)
-                wf_search.insert_workflow(wf_fit, predecessors=task_transformed)
-
-                model_tasks += wf_fit.output_tasks
-
-                funcs = features.all_funcs()
-                tasks_upstream = wf_search.get_upstream_tasks(task_transformed)
-                tasks_upstream.reverse()
-                features_previous = [
-                    task.name for task in tasks_upstream if task.name in funcs.keys()
-                ]
+                features_previous = _get_previous_features(wf_search, task_transformed, features)
                 model_features[model_name] = tuple(features_previous + [feat])
 
                 candidate_count += 1
@@ -109,6 +89,45 @@ def exhaustive_stepwise(mfl, add_etas, etas_as_fullblock):
             break
 
     return wf_search, model_tasks, model_features
+
+
+def _get_possible_actions(wf, features):
+    if wf.output_tasks:
+        actions = {task: _find_possible_trans(wf, task, features) for task in wf.output_tasks}
+    else:
+        actions = {'': _find_possible_trans(wf, None, features)}
+    return actions
+
+
+def _create_stepwise_workflow(feat, func, add_iivs, iiv_as_fullblock, add_mdt_iiv):
+    wf_stepwise_step = Workflow()
+
+    task_update_inits = Task('update_inits', _update_initial_estimates)
+    wf_stepwise_step.add_task(task_update_inits)
+
+    task_function = Task(feat, func)
+    wf_stepwise_step.add_task(task_function, predecessors=task_update_inits)
+
+    if add_iivs or add_mdt_iiv:
+        task_add_iiv = Task('add_iivs', _add_iiv_to_func, feat, iiv_as_fullblock, add_mdt_iiv)
+        wf_stepwise_step.add_task(task_add_iiv, predecessors=task_function)
+        task_transformed = task_add_iiv
+    else:
+        task_transformed = task_function
+
+    wf_fit = create_fit_workflow(n=1)
+    wf_stepwise_step.insert_workflow(wf_fit, predecessors=task_transformed)
+
+    return wf_stepwise_step, task_transformed
+
+
+def _get_previous_features(wf, task, features):
+    tasks_upstream = wf.get_upstream_tasks(task)
+    tasks_upstream.reverse()
+    features_previous = [
+        task.name for task in tasks_upstream if task.name in features.all_funcs().keys()
+    ]
+    return features_previous
 
 
 def _find_possible_trans(wf, task, features):
@@ -178,12 +197,12 @@ def _is_allowed_peripheral(func_current, trans_previous, features):
     return False
 
 
-def copy(name, model):
+def _copy(name, model):
     model_copy = copy_model(model, name)
     return model_copy
 
 
-def update_initial_estimates(model):
+def _update_initial_estimates(model):
     # FIXME: this should use dynamic workflows and not dispatch the next task
     try:
         update_inits(model)
@@ -192,7 +211,7 @@ def update_initial_estimates(model):
     return model
 
 
-def add_etas_to_func(feat, etas_as_fullblock, model):
+def _add_iiv_to_func(feat, iiv_as_fullblock, add_mdt_iiv, model):
     eta_dict = {
         'ABSORPTION(ZO)': ['MAT'],
         'ABSORPTION(SEQ-ZO-FO)': ['MAT', 'MDT'],
@@ -202,10 +221,12 @@ def add_etas_to_func(feat, etas_as_fullblock, model):
         'LAGTIME()': ['MDT'],
     }
     parameters = []
-    try:
-        parameters = eta_dict[feat]
-    except KeyError:
-        if feat.startswith('TRANSITS'):
+    if add_mdt_iiv and (feat == 'LAGTIME()' or feat.startswith('TRANSITS')):
+        parameters = ['MDT']
+    else:
+        if feat in eta_dict.keys():
+            parameters = eta_dict[feat]
+        elif feat.startswith('TRANSITS'):
             parameters = ['MDT']
         elif feat.startswith('PERIPHERALS'):
             no_of_peripherals = re.search(r'PERIPHERALS\((\d+)\)', feat).group(1)
@@ -223,7 +244,7 @@ def add_etas_to_func(feat, etas_as_fullblock, model):
         except ValueError as e:
             if not str(e).startswith('Cannot insert parameter with already existing name'):
                 raise
-    if etas_as_fullblock:
+    if iiv_as_fullblock:
         create_joint_distribution(model)
 
     return model

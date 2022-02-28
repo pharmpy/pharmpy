@@ -17,7 +17,7 @@ Distribution of parameter estimates
     from pharmpy.results import read_results
 
     res = read_results('results.json')
-    res.plot_parameter_estimates_histogram()
+    res.parameter_estimates_histogram
 
 OFV distribution
 ~~~~~~~~~~~~~~~~
@@ -25,15 +25,7 @@ OFV distribution
 .. altair-plot::
     :hide-code:
 
-    res.plot_ofv()
-
-Parameter estimates correlation
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. altair-plot::
-   :hide-code:
-
-   res.plot_parameter_estimates_correlation()
+    res.ofv_plot
 
 Estimated degrees of freedom
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -41,4 +33,4 @@ Estimated degrees of freedom
 .. altair-plot::
    :hide-code:
 
-   res.plot_dofv_quantiles()
+   res.dofv_quantiles_plot

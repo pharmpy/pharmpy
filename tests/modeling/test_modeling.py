@@ -30,6 +30,7 @@ from pharmpy.modeling import (
     set_iiv_on_ruv,
     set_michaelis_menten_elimination,
     set_mixed_mm_fo_elimination,
+    set_ode_solver,
     set_peripheral_compartments,
     set_power_on_ruv,
     set_seq_zo_fo_absorption,
@@ -59,15 +60,16 @@ $INPUT ID TIME AMT WGT APGR DV
 $SUBROUTINE ADVAN1 TRANS2
 
 $PK
-CL = THETA(2)
-V = THETA(1)*EXP(ETA(1))
+CL = THETA(2)*EXP(ETA(1))
+V = THETA(1)*EXP(ETA(2))
 S1=V
 
 $ERROR
 Y=F+F*EPS(1)
 
 $THETA (0,1.00916) ; TVV
-$THETA  (0,0.00469307) ; POP_CL
+$THETA  (0.0,0.00469307) ; POP_CL
+$OMEGA  0.0309626 ; IIV_CLMM
 $OMEGA 0.031128  ; IVV
 $SIGMA 0.013241
 
@@ -85,15 +87,16 @@ $INPUT ID TIME AMT WGT APGR DV
 $SUBROUTINE ADVAN1 TRANS2
 
 $PK
-CL = THETA(2)
-V = THETA(1)*EXP(ETA(1))
+CL = THETA(2)*EXP(ETA(1))
+V = THETA(1)*EXP(ETA(2))
 S1=V
 
 $ERROR
 Y=F+F*EPS(1)
 
 $THETA (0,1.00916) ; TVV
-$THETA  (0,0.00469307) ; POP_CL
+$THETA  (0.0,0.00469307) ; POP_CL
+$OMEGA  0.0309626 ; IIV_CLMM
 $OMEGA 0.031128  ; IVV
 $SIGMA 0.013241
 
@@ -117,9 +120,9 @@ $SUBROUTINE ADVAN6 TOL=3
 
 $MODEL COMPARTMENT=(CENTRAL DEFDOSE)
 $PK
-CLMM = THETA(3)
-KM = THETA(2)
-V = THETA(1)*EXP(ETA(1))
+KM = THETA(3)
+CLMM = THETA(2)*EXP(ETA(1))
+V = THETA(1)*EXP(ETA(2))
 S1=V
 
 $DES
@@ -128,8 +131,9 @@ $ERROR
 Y=F+F*EPS(1)
 
 $THETA (0,1.00916) ; TVV
-$THETA  (0,0.067) FIX ; POP_KM
-$THETA  (0,0.00469307) ; POP_CLMM
+$THETA  (0.0,0.00469307) ; POP_CLMM
+$THETA  (0,0.067,1358.0) FIX ; POP_KM
+$OMEGA  0.0309626 ; IIV_CLMM
 $OMEGA 0.031128  ; IVV
 $SIGMA 0.013241
 
@@ -146,9 +150,9 @@ $SUBROUTINE ADVAN6 TOL=3
 
 $MODEL COMPARTMENT=(CENTRAL DEFDOSE)
 $PK
-CLMM = THETA(3)
-KM = THETA(2)
-V = THETA(1)*EXP(ETA(1))
+KM = THETA(3)
+CLMM = THETA(2)*EXP(ETA(1))
+V = THETA(1)*EXP(ETA(2))
 S1=V
 
 $DES
@@ -157,8 +161,9 @@ $ERROR
 Y=F+F*EPS(1)
 
 $THETA (0,1.00916) ; TVV
-$THETA  (0,0.067) ; POP_KM
-$THETA  (0,0.00469307) ; POP_CLMM
+$THETA  (0.0,0.00469307) ; POP_CLMM
+$THETA  (0,0.067,1358.0) ; POP_KM
+$OMEGA  0.0309626 ; IIV_CLMM
 $OMEGA 0.031128  ; IVV
 $SIGMA 0.013241
 
@@ -186,7 +191,7 @@ $ERROR
 Y=F+F*EPS(1)
 
 $THETA (0,1.00916) ; TVV
-$THETA  (0,135.8) FIX ; POP_KM
+$THETA  (0,135.8,1358.0) FIX ; POP_KM
 $THETA  (0,0.002346535) ; POP_CLMM
 $OMEGA 0.031128  ; IVV
 $SIGMA 0.013241
@@ -211,9 +216,9 @@ $SUBROUTINE ADVAN6 TOL=3
 
 $MODEL COMPARTMENT=(CENTRAL DEFDOSE)
 $PK
-CLMM = THETA(3)
-KM = THETA(2)
-V = THETA(1)*EXP(ETA(1))
+KM = THETA(3)
+CLMM = THETA(2)*EXP(ETA(1))
+V = THETA(1)*EXP(ETA(2))
 S1=V
 
 $DES
@@ -222,8 +227,9 @@ $ERROR
 Y=F+F*EPS(1)
 
 $THETA (0,1.00916) ; TVV
-$THETA  (0,135.8) ; POP_KM
-$THETA  (0,0.00469307) ; POP_CLMM
+$THETA  (0.0,0.00469307) ; POP_CLMM
+$THETA  (0,135.8,1358.0) ; POP_KM
+$OMEGA  0.0309626 ; IIV_CLMM
 $OMEGA 0.031128  ; IVV
 $SIGMA 0.013241
 
@@ -241,9 +247,9 @@ $SUBROUTINE ADVAN6 TOL=3
 
 $MODEL COMPARTMENT=(CENTRAL DEFDOSE)
 $PK
-CLMM = THETA(3)
-KM = THETA(2)
-V = THETA(1)*EXP(ETA(1))
+KM = THETA(3)
+CLMM = THETA(2)*EXP(ETA(1))
+V = THETA(1)*EXP(ETA(2))
 S1=V
 
 $DES
@@ -252,11 +258,58 @@ $ERROR
 Y=F+F*EPS(1)
 
 $THETA (0,1.00916) ; TVV
-$THETA  (0,135.8) FIX ; POP_KM
-$THETA  (0,0.00469307) ; POP_CLMM
+$THETA  (0.0,0.00469307) ; POP_CLMM
+$THETA  (0,135.8,1358.0) FIX ; POP_KM
+$OMEGA  0.0309626 ; IIV_CLMM
 $OMEGA 0.031128  ; IVV
 $SIGMA 0.013241
 
+$ESTIMATION METHOD=1 INTERACTION
+"""
+    assert model.model_code == correct
+
+
+def test_fo_mm_eta(testdata):
+    code = """$PROBLEM PHENOBARB SIMPLE MODEL
+$DATA pheno.dta IGNORE=@
+$INPUT ID TIME AMT WGT APGR DV FA1 FA2
+$SUBROUTINE ADVAN1 TRANS2
+$PK
+CL = THETA(1)*EXP(ETA(1))
+V = THETA(2)*EXP(ETA(2))
+S1=V
+$ERROR
+Y=F+F*EPS(1)
+$THETA  (0,0.00469307) ; POP_CL
+$THETA (0,1.00916) ; POP_V
+$OMEGA 0.25  ; IIV_CL
+$OMEGA 0.5  ; IIV_V
+$SIGMA 0.013241
+$ESTIMATION METHOD=1 INTERACTION
+"""
+    model = Model.create_model(StringIO(code))
+    model.dataset = load_example_model("pheno").dataset
+    set_michaelis_menten_elimination(model)
+    correct = """$PROBLEM PHENOBARB SIMPLE MODEL
+$DATA run1.csv IGNORE=@
+$INPUT ID TIME AMT WGT APGR DV FA1 FA2
+$SUBROUTINE ADVAN6 TOL=3
+$MODEL COMPARTMENT=(CENTRAL DEFDOSE)
+$PK
+KM = THETA(3)
+CLMM = THETA(2)*EXP(ETA(1))
+V = THETA(1)*EXP(ETA(2))
+S1=V
+$DES
+DADT(1) = -A(1)*CLMM*KM/(V*(A(1)/V + KM))
+$ERROR
+Y=F+F*EPS(1)
+$THETA (0,1.00916) ; POP_V
+$THETA  (0.0,0.00469307) ; POP_CLMM
+$THETA  (0,135.8,1358.0) ; POP_KM
+$OMEGA  0.25 ; IIV_CLMM
+$OMEGA 0.5  ; IIV_V
+$SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION
 """
     assert model.model_code == correct
@@ -280,21 +333,21 @@ $ESTIMATION METHOD=1 INTERACTION
     model.dataset = load_example_model("pheno").dataset
     set_michaelis_menten_elimination(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
-$DATA pheno.dta IGNORE=@
+$DATA run1.csv IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
 $SUBROUTINE ADVAN6 TOL=3
 $MODEL COMPARTMENT=(CENTRAL DEFDOSE)
 $PK
-VC = THETA(3)
-CLMM = THETA(2)
+CLMM = THETA(3)
+VC = THETA(2)
 KM = THETA(1)
 $DES
 DADT(1) = -A(1)*CLMM*KM/(VC*(A(1)/VC + KM))
 $ERROR
 Y=F+F*EPS(1)
-$THETA  (0,135.8) ; POP_KM
-$THETA  (0,0.00469307) ; POP_CLMM
+$THETA  (0,135.8,1358.0) ; POP_KM
 $THETA  (0,0.1) ; POP_VC
+$THETA  (0,0.00469307) ; POP_CLMM
 $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION
 """
@@ -325,7 +378,7 @@ $ESTIMATION METHOD=1 INTERACTION
     set_mixed_mm_fo_elimination(model)
     assert has_mixed_mm_fo_elimination(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
-$DATA pheno.dta IGNORE=@
+$DATA run1.csv IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
 $SUBROUTINE ADVAN6 TOL=3
 $MODEL COMPARTMENT=(CENTRAL DEFDOSE)
@@ -341,7 +394,7 @@ $ERROR
 Y=F+F*EPS(1)
 $THETA (0,0.00469307) ; TVCL
 $THETA (0,1.00916) ; TVV
-$THETA  (0,135.8) ; POP_KM
+$THETA  (0,135.8,1358.0) ; POP_KM
 $THETA  (0,0.002346535) ; POP_CLMM
 $OMEGA 0.0309626  ; IVCL
 $OMEGA 0.031128  ; IVV
@@ -353,7 +406,7 @@ $ESTIMATION METHOD=1 INTERACTION
     assert model.model_code == correct
     set_michaelis_menten_elimination(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
-$DATA pheno.dta IGNORE=@
+$DATA run1.csv IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
 $SUBROUTINE ADVAN6 TOL=3
 $MODEL COMPARTMENT=(CENTRAL DEFDOSE)
@@ -367,7 +420,7 @@ DADT(1) = -A(1)*CLMM*KM/(V*(A(1)/V + KM))
 $ERROR
 Y=F+F*EPS(1)
 $THETA (0,1.00916) ; TVV
-$THETA  (0,135.8) ; POP_KM
+$THETA  (0,135.8,1358.0) ; POP_KM
 $THETA  (0,0.002346535) ; POP_CLMM
 $OMEGA 0.031128  ; IVV
 $SIGMA 0.013241
@@ -394,23 +447,23 @@ $ESTIMATION METHOD=1 INTERACTION
     model.dataset = load_example_model("pheno").dataset
     set_mixed_mm_fo_elimination(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
-$DATA pheno.dta IGNORE=@
+$DATA run1.csv IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
 $SUBROUTINE ADVAN6 TOL=3
 $MODEL COMPARTMENT=(CENTRAL DEFDOSE)
 $PK
-VC = THETA(4)
-CL = THETA(3)
-CLMM = THETA(2)
+CLMM = THETA(4)
+VC = THETA(3)
+CL = THETA(2)
 KM = THETA(1)
 $DES
 DADT(1) = -A(1)*(CL + CLMM*KM/(A(1)/VC + KM))/VC
 $ERROR
 Y=F+F*EPS(1)
-$THETA  (0,135.8) ; POP_KM
-$THETA  (0,0.002346535) ; POP_CLMM
+$THETA  (0,135.8,1358.0) ; POP_KM
 $THETA  (0,0.002346535) ; POP_CL
 $THETA  (0,0.1) ; POP_VC
+$THETA  (0,0.002346535) ; POP_CLMM
 $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION
 """
@@ -421,22 +474,22 @@ $ESTIMATION METHOD=1 INTERACTION
     set_zero_order_elimination(model)
     set_mixed_mm_fo_elimination(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
-$DATA pheno.dta IGNORE=@
+$DATA run1.csv IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
 $SUBROUTINE ADVAN6 TOL=3
 $MODEL COMPARTMENT=(CENTRAL DEFDOSE)
 $PK
 CL = THETA(4)
-VC = THETA(3)
-CLMM = THETA(2)
+CLMM = THETA(3)
+VC = THETA(2)
 KM = THETA(1)
 $DES
 DADT(1) = A(1)*(-CL/VC - CLMM*KM/(VC*(A(1)/VC + KM)))
 $ERROR
 Y=F+F*EPS(1)
-$THETA  (0,0.067) ; POP_KM
-$THETA  (0,0.00469307) ; POP_CLMM
+$THETA  (0,0.067,1358.0) ; POP_KM
 $THETA  (0,0.1) ; POP_VC
+$THETA  (0,0.00469307) ; POP_CLMM
 $THETA  (0,0.1) ; POP_CL
 $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION
@@ -951,7 +1004,7 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
 
     set_zero_order_absorption(model)
     correct = '''$PROBLEM PHENOBARB SIMPLE MODEL
-$DATA ../pheno.dta IGNORE=@
+$DATA pheno_advan1.csv IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2 RATE
 $SUBROUTINE ADVAN1 TRANS2
 
@@ -1207,7 +1260,7 @@ $ESTIMATION METHOD=1 INTERACTION
     model.dataset = load_example_model("pheno").dataset
     set_first_order_absorption(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
-$DATA pheno.dta IGNORE=@
+$DATA run1.csv IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
 $SUBROUTINE ADVAN2 TRANS2
 
@@ -1395,7 +1448,7 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
     set_first_order_absorption(model)
     model.update_source(nofiles=True)
     correct = '''$PROBLEM PHENOBARB SIMPLE MODEL
-$DATA pheno_zero_order.csv IGNORE=@
+$DATA pheno_advan1_zero_order.csv IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
 $SUBROUTINE ADVAN2 TRANS2
 
@@ -1449,7 +1502,6 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
         fs.add_real_file(datadir.parent / 'pheno.dta', target_path='pheno.dta')
         model = Model.create_model('dir/pheno_advan1.mod')
         set_zero_order_absorption(model)
-        model.update_source()
         correct = '''$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno_advan1.csv IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2 RATE
@@ -1488,7 +1540,9 @@ $COVARIANCE UNCONDITIONAL
 $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
        NOPRINT ONEHEADER FILE=sdtab1
 '''
+        print("START")
         assert model.model_code == correct
+        print("END")
 
         correct = '''$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno_advan2.csv IGNORE=@
@@ -1541,7 +1595,7 @@ def test_seq_to_FO(testdata):
     set_first_order_absorption(model)
     model.update_source(nofiles=True)
     correct = '''$PROBLEM PHENOBARB SIMPLE MODEL
-$DATA pheno_zero_order.csv IGNORE=@
+$DATA pheno_advan2_seq.csv IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
 $SUBROUTINE ADVAN2 TRANS2
 
@@ -1629,7 +1683,7 @@ def test_bolus_to_seq(testdata):
     set_seq_zo_fo_absorption(model)
     model.update_source(nofiles=True)
     correct = '''$PROBLEM PHENOBARB SIMPLE MODEL
-$DATA ../pheno.dta IGNORE=@
+$DATA pheno_advan1.csv IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2 RATE
 $SUBROUTINE ADVAN2 TRANS2
 
@@ -1724,7 +1778,7 @@ def test_FO_to_seq(testdata):
     set_seq_zo_fo_absorption(model)
     model.update_source(nofiles=True)
     correct = '''$PROBLEM PHENOBARB SIMPLE MODEL
-$DATA ../pheno.dta IGNORE=@
+$DATA pheno_advan2.csv IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2 RATE
 $SUBROUTINE ADVAN2 TRANS2
 
@@ -1955,6 +2009,12 @@ def test_add_iiv(pheno_path, parameter, expression, operation, eta_name, buf_new
 
     assert len(omega_rec) == no_of_omega_recs
     assert '$OMEGA  0.09 ; IIV_' in str(omega_rec[-1])
+
+
+def test_add_iiv_missing_param(pheno_path):
+    model = Model.create_model(pheno_path)
+    with pytest.raises(ValueError):
+        add_iiv(model, 'non_existing_param', 'add')
 
 
 @pytest.mark.parametrize(
@@ -2924,3 +2984,16 @@ def test_add_iov_only_one_level(pheno_path):
 
     with pytest.raises(ValueError, match='Only one value in FA1 column.'):
         add_iov(model, 'FA1', ['ETA(1)'])
+
+
+def test_set_ode_solver(pheno_path):
+    model = Model.create_model(pheno_path)
+    assert model.statements.ode_system.solver is None
+    assert 'ADVAN1' in model.model_code
+    set_ode_solver(model, 'LSODA')
+    assert model.statements.ode_system.solver == 'LSODA'
+    assert 'ADVAN13' in model.model_code
+    set_ode_solver(model, 'GL')
+    assert model.statements.ode_system.solver == 'GL'
+    assert 'ADVAN5' in model.model_code
+    assert '$MODEL' in model.model_code

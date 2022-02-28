@@ -9,6 +9,8 @@ from pharmpy.math import round_to_n_sigdig
 from pharmpy.model import Model
 from pharmpy.modeling import create_rng, get_observations, sample_parameters_from_covariance_matrix
 
+from .data import get_ids
+
 
 def calculate_eta_shrinkage(model, sd=False):
     """Calculate eta shrinkage for each eta
@@ -410,6 +412,60 @@ def _split_equation(s):
     return name, expr
 
 
+def _result_summary(res, include_all_estimation_steps=False):
+    if not include_all_estimation_steps:
+        summary_dict = _summarize_step(res, -1)
+        summary_df = pd.DataFrame(summary_dict, index=[res.model_name])
+        return summary_df
+    else:
+        summary_dicts = []
+        tuples = []
+        for i in range(len(res)):
+            summary_dict = _summarize_step(res, i)
+            is_evaluation = res.model.estimation_steps[i].evaluation
+            if is_evaluation:
+                run_type = 'evaluation'
+            else:
+                run_type = 'estimation'
+            summary_dict = {**{'run_type': run_type}, **summary_dict}
+            summary_dicts.append(summary_dict)
+            tuples.append((res.model_name, i + 1))
+        index = pd.MultiIndex.from_tuples(tuples, names=['model_name', 'step'])
+        summary_df = pd.DataFrame(summary_dicts, index=index)
+        return summary_df
+
+
+def _summarize_step(res, i):
+    summary_dict = dict()
+
+    if i >= 0:
+        step = res[i]
+    else:
+        step = res
+
+    if step.minimization_successful is not None:
+        summary_dict['minimization_successful'] = step.minimization_successful
+    else:
+        summary_dict['minimization_successful'] = False
+
+    summary_dict['ofv'] = step.ofv
+    summary_dict['runtime_total'] = step.runtime_total
+    summary_dict['estimation_runtime'] = step.estimation_runtime
+
+    pe = step.parameter_estimates
+    ses = step.standard_errors
+    rses = step.relative_standard_errors
+
+    for param in pe.index:
+        summary_dict[f'{param}_estimate'] = pe[param]
+        if ses is not None:
+            summary_dict[f'{param}_SE'] = ses[param]
+        if rses is not None:
+            summary_dict[f'{param}_RSE'] = rses[param]
+
+    return summary_dict
+
+
 def summarize_modelfit_results(models, include_all_estimation_steps=False):
     """Summarize results of model runs
 
@@ -448,7 +504,7 @@ def summarize_modelfit_results(models, include_all_estimation_steps=False):
     for model in models:
         res = model.modelfit_results
         if res:
-            summaries.append(res.result_summary(include_all_estimation_steps))
+            summaries.append(_result_summary(res, include_all_estimation_steps))
         else:
             # FIXME: in read_modelfit_results, maybe some parts can be extracted (i.e.
             #   create modelfit_results object)
@@ -494,24 +550,68 @@ def calculate_aic(model):
     return model.modelfit_results.ofv + 2 * len(parameters)
 
 
-def calculate_bic(model):
+def calculate_bic(model, type=None):
     """Calculate final BIC value assuming the OFV to be -2LL
 
-    BIC = OFV + n_estimated_parameters * log(n_observations)
+    Different variations of the BIC can be calculated:
+
+    * | mixed (default)
+      | BIC = OFV + n_random_parameters * log(n_individuals) +
+      |       n_fixed_parameters * log(n_observations)
+    * | fixed
+      | BIC = OFV + n_estimated_parameters * log(n_observations)
+    * | random
+      | BIC = OFV + n_estimated_parameters * log(n_individals)
 
     Parameters
     ----------
     model : Model
         Pharmpy model object
+    type : str
+        Type of BIC to calculate. Default is the mixed effects.
 
     Returns
     -------
     float
         BIC of model fit
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> calculate_bic(model)
+    611.7071686183284
+    >>> calculate_bic(model, type='fixed')
+    616.536606983396
+    >>> calculate_bic(model, type='random')
+    610.7412809453149
     """
     parameters = model.parameters.copy()
     parameters.remove_fixed()
-    return model.modelfit_results.ofv + len(parameters) * math.log(len(get_observations(model)))
+    if type == 'fixed':
+        penalty = len(parameters) * math.log(len(get_observations(model)))
+    elif type == 'random':
+        penalty = len(parameters) * math.log(len(get_ids(model)))
+    else:
+        succ = model.statements.direct_dependencies(model.statements.ode_system)
+        random_thetas = set()
+        for s in succ:
+            expr = model.statements.before_odes.full_expression(s.symbol)
+            for eta in model.random_variables.etas:
+                if eta.symbol in expr.free_symbols:
+                    symbols = {p.symbol for p in parameters if p.symbol in expr.free_symbols}
+                    random_thetas.update(symbols)
+                    break
+        nomegas = len(
+            [name for name in model.random_variables.etas.parameter_names if name in parameters]
+        )
+        dim_theta_r = nomegas + len(random_thetas)
+        dim_theta_f = len(parameters) - dim_theta_r
+        nsubs = len(get_ids(model))
+        nobs = len(get_observations(model))
+        penalty = dim_theta_r * math.log(nsubs) + dim_theta_f * math.log(nobs)
+    ofv = model.modelfit_results.ofv
+    return ofv + penalty
 
 
 def check_high_correlations(model, limit=0.9):
@@ -633,3 +733,57 @@ def write_results(results, path, lzma=False, csv=False):
         results.to_csv(path)
     else:
         results.to_json(path, lzma=lzma)
+
+
+def print_fit_summary(model):
+    """Print a summary of the model fit
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model object
+    """
+
+    def bool_ok_error(x):
+        return "OK" if x else "ERROR"
+
+    def bool_yes_no(x):
+        return "YES" if x else "NO"
+
+    def print_header(text, first=False):
+        if not first:
+            print()
+        print(text)
+        print("-" * len(text))
+
+    def print_fmt(text, result):
+        print(f"{text:33} {result}")
+
+    res = model.modelfit_results
+
+    print_header("Parameter estimation status", first=True)
+    print_fmt("Minimization successful", bool_ok_error(res.minimization_successful))
+    print_fmt("No rounding errors", bool_ok_error(res.termination_cause != 'rounding_errors'))
+    print_fmt("Objective function value", round(res.ofv, 1))
+
+    print_header("Parameter uncertainty status")
+    cov_run = model.estimation_steps[-1].cov
+    print_fmt("Covariance step run", bool_yes_no(cov_run))
+
+    if cov_run:
+        condno = round(np.linalg.cond(res.correlation_matrix), 1)
+        print_fmt("Condition number", condno)
+        print_fmt("Condition number < 1000", bool_ok_error(condno < 1000))
+        hicorr = check_high_correlations(model)
+        print_fmt("No correlations arger than 0.9", bool_ok_error(hicorr.empty))
+
+    print_header("Parameter estimates")
+    pe = res.parameter_estimates
+    if cov_run:
+        se = res.standard_errors
+        rse = se / pe
+        rse.name = 'RSE'
+        df = pd.concat([pe, se, rse], axis=1)
+    else:
+        df = pd.concat([pe], axis=1)
+    print(df)

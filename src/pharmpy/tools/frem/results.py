@@ -195,215 +195,213 @@ class FREMResults(Results):
         self.ofv = ofv
         self.estimated_covariates = estimated_covariates
 
-    def add_plots(self):
-        self.covariate_effects_plot = self.plot_covariate_effects()
-        self.individual_effects_plot = self.plot_individual_effects()
-        self.unexplained_variability_plot = self.plot_unexplained_variability()
 
-    def plot_covariate_effects(self):
-        """Plot covariate effects"""
-        ce = (self.covariate_effects - 1) * 100
-        cov_stats = pd.melt(
-            self.covariate_statistics.reset_index(),
-            var_name='condition',
-            id_vars=['covariate'],
-            value_vars=['p5', 'p95', 'other'],
+def plot_covariate_effects(res):
+    """Plot covariate effects"""
+    ce = (res.covariate_effects - 1) * 100
+    cov_stats = pd.melt(
+        res.covariate_statistics.reset_index(),
+        var_name='condition',
+        id_vars=['covariate'],
+        value_vars=['p5', 'p95', 'other'],
+    )
+
+    cov_stats = cov_stats.replace({'p5': '5th', 'p95': '95th'}).set_index(
+        ['covariate', 'condition']
+    )
+
+    ce = ce.join(cov_stats, how='inner')
+
+    # The left join reorders the index, pandas bug #34133
+    ce = ce.reorder_levels(['parameter', 'covariate', 'condition'])
+
+    param_names = list(ce.index.get_level_values('parameter').unique())
+    plots = []
+
+    for parameter in param_names:
+        df = ce.xs(parameter, level=0)
+        df = df.reset_index()
+
+        error_bars = (
+            alt.Chart(df)
+            .mark_errorbar(ticks=True)
+            .encode(
+                x=alt.X('p5:Q', title='Effect size in percent', scale=alt.Scale(zero=False)),
+                x2=alt.X2('p95:Q'),
+                y=alt.Y('condition:N', title=None),
+            )
         )
 
-        cov_stats = cov_stats.replace({'p5': '5th', 'p95': '95th'}).set_index(
-            ['covariate', 'condition']
+        rule = (
+            alt.Chart(df)
+            .mark_rule(strokeDash=[10, 4], color='gray')
+            .encode(x=alt.X('xzero:Q'))
+            .transform_calculate(xzero="0")
         )
 
-        ce = ce.join(cov_stats, how='inner')
-
-        # The left join reorders the index, pandas bug #34133
-        ce = ce.reorder_levels(['parameter', 'covariate', 'condition'])
-
-        param_names = list(ce.index.get_level_values('parameter').unique())
-        plots = []
-
-        for parameter in param_names:
-            df = ce.xs(parameter, level=0)
-            df = df.reset_index()
-
-            error_bars = (
-                alt.Chart(df)
-                .mark_errorbar(ticks=True)
-                .encode(
-                    x=alt.X('p5:Q', title='Effect size in percent', scale=alt.Scale(zero=False)),
-                    x2=alt.X2('p95:Q'),
-                    y=alt.Y('condition:N', title=None),
-                )
+        points = (
+            alt.Chart(df)
+            .mark_point(filled=True, color='black')
+            .encode(
+                x=alt.X('mean:Q'),
+                y=alt.Y('condition:N'),
             )
+        )
 
-            rule = (
-                alt.Chart(df)
-                .mark_rule(strokeDash=[10, 4], color='gray')
-                .encode(x=alt.X('xzero:Q'))
-                .transform_calculate(xzero="0")
+        text = (
+            alt.Chart(df)
+            .mark_text(dy=-15, color="red")
+            .encode(x=alt.X("mean:Q"), y=alt.Y("condition:N"), text=alt.Text("value:Q"))
+        )
+
+        plot = (
+            alt.layer(error_bars, rule, points, text, data=df, width=700, height=100)
+            .facet(columns=1.0, row=alt.Facet('covariate:N', title=None), title=f'{parameter}')
+            .resolve_scale(y='independent')
+        )
+
+        plots.append(plot)
+
+    v = alt.vconcat(*plots).resolve_scale(x='shared')
+    return v
+
+
+def plot_individual_effects(res):
+    """Plot individual effects"""
+    covs = res.covariate_baselines
+    ie = res.individual_effects.join(covs)
+    param_names = list(ie.index.get_level_values('parameter').unique())
+    ie = (ie - 1) * 100
+    ie = ie.sort_values(by=['observed'])
+
+    plots = []
+
+    for parameter in param_names:
+        df = ie.xs(parameter, level=1)
+
+        id_order = list(df.index)
+        id_order = [str(int(x)) for x in id_order]
+
+        if len(df) > 20:
+            id_order[10] = '...'
+
+        df = df.reset_index()
+        df['ID'] = df['ID'].astype(int).astype(str)
+
+        error_bars = (
+            alt.Chart(df)
+            .mark_errorbar(ticks=True)
+            .encode(
+                x=alt.X('p5:Q', title='Effect size in percent', scale=alt.Scale(zero=False)),
+                x2=alt.X2('p95:Q'),
+                y=alt.Y('ID:N', title='ID', sort=id_order),
+                tooltip=['ID', 'p5', 'observed', 'p95'] + list(covs.columns),
             )
+        )
 
-            points = (
-                alt.Chart(df)
-                .mark_point(filled=True, color='black')
-                .encode(
-                    x=alt.X('mean:Q'),
-                    y=alt.Y('condition:N'),
-                )
+        rule = (
+            alt.Chart(df)
+            .mark_rule(strokeDash=[10, 2], color='gray')
+            .encode(x=alt.X('xzero:Q'))
+            .transform_calculate(xzero="0")
+        )
+
+        points = (
+            alt.Chart(df)
+            .mark_point(size=40, filled=True, color='black')
+            .encode(
+                x=alt.X('observed:Q'),
+                y=alt.Y('ID:N', sort=id_order),
             )
+        )
 
-            text = (
-                alt.Chart(df)
-                .mark_text(dy=-15, color="red")
-                .encode(x=alt.X("mean:Q"), y=alt.Y("condition:N"), text=alt.Text("value:Q"))
-            )
-
+        plot = alt.layer(
+            points,
+            error_bars,
+            rule,
+            data=df,
+            width=700,
+            title=f'Individuals for parameter {parameter}',
+        )
+        if len(df) > 20:
             plot = (
-                alt.layer(error_bars, rule, points, text, data=df, width=700, height=100)
-                .facet(columns=1.0, row=alt.Facet('covariate:N', title=None), title=f'{parameter}')
-                .resolve_scale(y='independent')
-            )
-
-            plots.append(plot)
-
-        v = alt.vconcat(*plots).resolve_scale(x='shared')
-        return v
-
-    def plot_individual_effects(self):
-        """Plot individual effects"""
-        covs = self.covariate_baselines
-        ie = self.individual_effects.join(covs)
-        param_names = list(ie.index.get_level_values('parameter').unique())
-        ie = (ie - 1) * 100
-        ie = ie.sort_values(by=['observed'])
-
-        plots = []
-
-        for parameter in param_names:
-            df = ie.xs(parameter, level=1)
-
-            id_order = list(df.index)
-            id_order = [str(int(x)) for x in id_order]
-
-            if len(df) > 20:
-                id_order[10] = '...'
-
-            df = df.reset_index()
-            df['ID'] = df['ID'].astype(int).astype(str)
-
-            error_bars = (
-                alt.Chart(df)
-                .mark_errorbar(ticks=True)
-                .encode(
-                    x=alt.X('p5:Q', title='Effect size in percent', scale=alt.Scale(zero=False)),
-                    x2=alt.X2('p95:Q'),
-                    y=alt.Y('ID:N', title='ID', sort=id_order),
-                    tooltip=['ID', 'p5', 'observed', 'p95'] + list(covs.columns),
+                plot.transform_window(
+                    sort=[alt.SortField('observed', order='ascending')],
+                    rank='row_number(observed)',
+                )
+                .transform_window(
+                    sort=[alt.SortField('observed', order='descending')],
+                    nrank='row_number(observed)',
+                )
+                .transform_filter('datum.rank <= 10 | datum.nrank <= 11')
+                .transform_calculate(
+                    ID="datum.nrank == 11 ? '...' : datum.ID",
+                    p5="datum.nrank == 11 ? '...' : datum.p5",
+                    p95="datum.nrank == 11 ? '...' : datum.p95",
+                    observed="datum.nrank == 11 ? '...' : datum.observed",
                 )
             )
+        plots.append(plot)
 
-            rule = (
-                alt.Chart(df)
-                .mark_rule(strokeDash=[10, 2], color='gray')
-                .encode(x=alt.X('xzero:Q'))
-                .transform_calculate(xzero="0")
+    v = alt.vconcat(*plots).resolve_scale(x='shared')
+    return v
+
+
+def plot_unexplained_variability(res):
+    """Plot unexplained variability"""
+    uv = res.unexplained_variability
+    param_names = list(uv.index.get_level_values('parameter').unique())
+    cov_order = list(uv.index.get_level_values('covariate').unique())
+    plots = []
+
+    for parameter in param_names:
+        df = uv.xs(parameter, level=0)
+        df = df.reset_index()
+
+        error_bars = (
+            alt.Chart(df)
+            .mark_errorbar(ticks=True)
+            .encode(
+                x=alt.X(
+                    'sd_5th:Q',
+                    title='SD of unexplained variability',
+                    scale=alt.Scale(zero=False),
+                ),
+                x2=alt.X2('sd_95th:Q'),
+                y=alt.Y('covariate:N', title='covariate', sort=cov_order),
+                tooltip=['sd_5th', 'sd_observed', 'sd_95th', 'covariate'],
             )
+        )
 
-            points = (
-                alt.Chart(df)
-                .mark_point(size=40, filled=True, color='black')
-                .encode(
-                    x=alt.X('observed:Q'),
-                    y=alt.Y('ID:N', sort=id_order),
-                )
+        rule = (
+            alt.Chart(df)
+            .mark_rule(strokeDash=[10, 2], color='gray')
+            .encode(x=alt.X('xzero:Q'))
+            .transform_calculate(xzero="0")
+        )
+
+        points = (
+            alt.Chart(df)
+            .mark_point(size=40, filled=True, color='black')
+            .encode(
+                x=alt.X('sd_observed:Q'),
+                y=alt.Y('covariate:N', sort=cov_order),
             )
+        )
 
-            plot = alt.layer(
-                points,
-                error_bars,
-                rule,
-                data=df,
-                width=700,
-                title=f'Individuals for parameter {parameter}',
-            )
-            if len(df) > 20:
-                plot = (
-                    plot.transform_window(
-                        sort=[alt.SortField('observed', order='ascending')],
-                        rank='row_number(observed)',
-                    )
-                    .transform_window(
-                        sort=[alt.SortField('observed', order='descending')],
-                        nrank='row_number(observed)',
-                    )
-                    .transform_filter('datum.rank <= 10 | datum.nrank <= 11')
-                    .transform_calculate(
-                        ID="datum.nrank == 11 ? '...' : datum.ID",
-                        p5="datum.nrank == 11 ? '...' : datum.p5",
-                        p95="datum.nrank == 11 ? '...' : datum.p95",
-                        observed="datum.nrank == 11 ? '...' : datum.observed",
-                    )
-                )
-            plots.append(plot)
+        plot = alt.layer(
+            points,
+            error_bars,
+            rule,
+            data=df,
+            width=700,
+            title=f'Unexplained variability on {parameter}',
+        )
 
-        v = alt.vconcat(*plots).resolve_scale(x='shared')
-        return v
+        plots.append(plot)
 
-    def plot_unexplained_variability(self):
-        """Plot unexplained variability"""
-        uv = self.unexplained_variability
-        param_names = list(uv.index.get_level_values('parameter').unique())
-        cov_order = list(uv.index.get_level_values('covariate').unique())
-        plots = []
-
-        for parameter in param_names:
-            df = uv.xs(parameter, level=0)
-            df = df.reset_index()
-
-            error_bars = (
-                alt.Chart(df)
-                .mark_errorbar(ticks=True)
-                .encode(
-                    x=alt.X(
-                        'sd_5th:Q',
-                        title='SD of unexplained variability',
-                        scale=alt.Scale(zero=False),
-                    ),
-                    x2=alt.X2('sd_95th:Q'),
-                    y=alt.Y('covariate:N', title='covariate', sort=cov_order),
-                    tooltip=['sd_5th', 'sd_observed', 'sd_95th', 'covariate'],
-                )
-            )
-
-            rule = (
-                alt.Chart(df)
-                .mark_rule(strokeDash=[10, 2], color='gray')
-                .encode(x=alt.X('xzero:Q'))
-                .transform_calculate(xzero="0")
-            )
-
-            points = (
-                alt.Chart(df)
-                .mark_point(size=40, filled=True, color='black')
-                .encode(
-                    x=alt.X('sd_observed:Q'),
-                    y=alt.Y('covariate:N', sort=cov_order),
-                )
-            )
-
-            plot = alt.layer(
-                points,
-                error_bars,
-                rule,
-                data=df,
-                width=700,
-                title=f'Unexplained variability on {parameter}',
-            )
-
-            plots.append(plot)
-
-        v = alt.vconcat(*plots).resolve_scale(x='shared')
-        return v
+    v = alt.vconcat(*plots).resolve_scale(x='shared')
+    return v
 
 
 def calculate_results(
@@ -450,6 +448,11 @@ def calculate_results(
     stdev = estimated_covbase.std()
     estcovs = pd.DataFrame({'mean': mean, 'stdev': stdev})
     res.estimated_covariates = estcovs
+
+    res.covariate_effects_plot = plot_covariate_effects(res)
+    res.individual_effects_plot = plot_individual_effects(res)
+    res.unexplained_variability_plot = plot_unexplained_variability(res)
+
     return res
 
 

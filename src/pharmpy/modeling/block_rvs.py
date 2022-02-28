@@ -38,14 +38,14 @@ def create_joint_distribution(model, rvs=None):
     >>> from pharmpy.modeling import load_example_model, create_joint_distribution
     >>> model = load_example_model("pheno")
     >>> model.random_variables.etas
-    ETA(1) ~ 𝒩 (0, OMEGA(1,1))
-    ETA(2) ~ 𝒩 (0, OMEGA(2,2))
+    ETA(1) ~ N(0, OMEGA(1,1))
+    ETA(2) ~ N(0, OMEGA(2,2))
     >>> create_joint_distribution(model, ['ETA(1)', 'ETA(2)'])      # doctest: +ELLIPSIS
     <...>
     >>> model.random_variables.etas
-    ⎡ETA(1)⎤     ⎧⎡0⎤  ⎡ OMEGA(1,1)   IIV_CL_IIV_V⎤⎫
-    ⎢      ⎥ ~ 𝒩 ⎪⎢ ⎥, ⎢                          ⎥⎪
-    ⎣ETA(2)⎦     ⎩⎣0⎦  ⎣IIV_CL_IIV_V   OMEGA(2,2) ⎦⎭
+    ⎡ETA(1)⎤    ⎧⎡0⎤  ⎡ OMEGA(1,1)   IIV_CL_IIV_V⎤⎫
+    ⎢      ⎥ ~ N⎪⎢ ⎥, ⎢                          ⎥⎪
+    ⎣ETA(2)⎦    ⎩⎣0⎦  ⎣IIV_CL_IIV_V   OMEGA(2,2) ⎦⎭
 
     See also
     --------
@@ -115,14 +115,14 @@ def split_joint_distribution(model, rvs=None):
     >>> create_joint_distribution(model, ['ETA(1)', 'ETA(2)'])      # doctest: +ELLIPSIS
     <...>
     >>> model.random_variables.etas
-    ⎡ETA(1)⎤     ⎧⎡0⎤  ⎡ OMEGA(1,1)   IIV_CL_IIV_V⎤⎫
-    ⎢      ⎥ ~ 𝒩 ⎪⎢ ⎥, ⎢                          ⎥⎪
-    ⎣ETA(2)⎦     ⎩⎣0⎦  ⎣IIV_CL_IIV_V   OMEGA(2,2) ⎦⎭
+    ⎡ETA(1)⎤    ⎧⎡0⎤  ⎡ OMEGA(1,1)   IIV_CL_IIV_V⎤⎫
+    ⎢      ⎥ ~ N⎪⎢ ⎥, ⎢                          ⎥⎪
+    ⎣ETA(2)⎦    ⎩⎣0⎦  ⎣IIV_CL_IIV_V   OMEGA(2,2) ⎦⎭
     >>> split_joint_distribution(model, ['ETA(1)', 'ETA(2)'])       # doctest: +ELLIPSIS
     <...>
     >>> model.random_variables.etas
-    ETA(1) ~ 𝒩 (0, OMEGA(1,1))
-    ETA(2) ~ 𝒩 (0, OMEGA(2,2))
+    ETA(1) ~ N(0, OMEGA(1,1))
+    ETA(2) ~ N(0, OMEGA(2,2))
 
     See also
     --------

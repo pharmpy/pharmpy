@@ -1,12 +1,15 @@
+import functools
+
 import pytest
 
+from pharmpy.modeling import set_transit_compartments
 from pharmpy.tools.modelsearch.algorithms import exhaustive, exhaustive_stepwise
 from pharmpy.tools.modelsearch.mfl import ModelFeatures
 
 
 def test_exhaustive_algorithm():
     mfl = 'ABSORPTION(ZO);PERIPHERALS(1)'
-    wf, _, model_features = exhaustive(mfl, False, False)
+    wf, _, model_features = exhaustive(mfl, False, False, False)
     fit_tasks = [task.name for task in wf.tasks if task.name.startswith('run')]
 
     assert len(fit_tasks) == 3
@@ -40,7 +43,7 @@ def test_exhaustive_algorithm():
     ],
 )
 def test_exhaustive_stepwise_algorithm(mfl, no_of_models, last_model_features):
-    wf, _, model_features = exhaustive_stepwise(mfl, False, False)
+    wf, _, model_features = exhaustive_stepwise(mfl, False, False, False)
     fit_tasks = [task.name for task in wf.tasks if task.name.startswith('run')]
 
     assert len(fit_tasks) == no_of_models
@@ -101,6 +104,14 @@ def test_mfl_transits(code, args, depot):
     mfl = ModelFeatures(code)
     assert mfl.transits.args == args
     assert mfl.transits.depot == depot
+
+
+def test_mfl_transits_depot():
+    mfl = ModelFeatures('TRANSITS(1, *)')
+    func_depot = functools.partial(set_transit_compartments, n=1)
+    assert mfl.transits._funcs['TRANSITS(1)'].keywords == func_depot.keywords
+    func_nodepot = functools.partial(set_transit_compartments, n=2, keep_depot=False)
+    assert mfl.transits._funcs['TRANSITS(1, NODEPOT)'].keywords == func_nodepot.keywords
 
 
 @pytest.mark.parametrize(

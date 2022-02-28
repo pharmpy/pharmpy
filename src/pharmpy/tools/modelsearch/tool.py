@@ -10,7 +10,14 @@ from pharmpy.workflows import Task, Workflow
 
 
 def create_workflow(
-    algorithm, mfl, rankfunc='ofv', cutoff=None, add_etas=False, etas_as_fullblock=False, model=None
+    algorithm,
+    mfl,
+    rankfunc='ofv',
+    cutoff=None,
+    add_iivs=False,
+    iiv_as_fullblock=False,
+    add_mdt_iiv=False,
+    model=None,
 ):
     algorithm_func = getattr(algorithms, algorithm)
 
@@ -32,7 +39,7 @@ def create_workflow(
         start_model_task = [start_task]
 
     wf_search, candidate_model_tasks, model_features = algorithm_func(
-        mfl, add_etas, etas_as_fullblock
+        mfl, add_iivs, iiv_as_fullblock, add_mdt_iiv
     )
     wf.insert_workflow(wf_search, predecessors=wf.output_tasks)
 
@@ -93,24 +100,22 @@ class ModelSearchResults(pharmpy.results.Results):
         self.models = models
 
 
-def create_summary(models, start_model, rankfunc, cutoff, model_features, rank_by_not_worse=False):
-    rankfunc = getattr(rankfuncs, rankfunc)
-
-    res_data = {'parent_model': [], 'dofv': [], 'features': [], 'rank': []}
+def create_summary(
+    models, start_model, rankfunc_name, cutoff, model_features, rank_by_not_worse=False
+):
+    res_data = {'parent_model': [], f'd{rankfunc_name}': [], 'features': [], 'rank': []}
     model_names = []
 
+    rankfunc = getattr(rankfuncs, rankfunc_name)
     if cutoff is not None:
         ranks = rankfunc(start_model, models, cutoff=cutoff, rank_by_not_worse=rank_by_not_worse)
     else:
         ranks = rankfunc(start_model, models, rank_by_not_worse=rank_by_not_worse)
-
+    delta_diff = rankfuncs.create_diff_dict(rankfunc_name, start_model, models)
     for model in models:
         model_names.append(model.name)
         res_data['parent_model'].append(model.parent_model)
-        try:
-            res_data['dofv'].append(start_model.modelfit_results.ofv - model.modelfit_results.ofv)
-        except AttributeError:
-            res_data['dofv'].append(np.nan)
+        res_data[f'd{rankfunc_name}'].append(delta_diff[model.name])
         res_data['features'].append(model_features[model.name])
         if model in ranks:
             res_data['rank'].append(ranks.index(model) + 1)

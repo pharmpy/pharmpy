@@ -15,10 +15,7 @@ def test_amd(tmp_path, testdata):
         model = Model.create_model('pheno_real.mod')
         model.datainfo.path = tmp_path / 'pheno.dta'
 
-        # FIXME: remove after updating results
-        model.modelfit_results.estimation_step
-
-        res = run_amd(model)
+        res = run_amd(model, mfl='LAGTIME();PERIPHERALS(1)')
         assert res
 
 
@@ -34,9 +31,7 @@ def test_iiv(tmp_path, testdata):
         assert len(res.summary_tool) == 2
         assert len(res.summary_tool[0]) == 7
         assert len(res.summary_tool[1]) == 4
-        assert len(res.summary_models) == 2
-        assert len(res.summary_models[0]) == 8
-        assert len(res.summary_models[1]) == 5
+        assert len(res.summary_models) == 12
         assert len(res.models) == 11
         rundir1 = tmp_path / 'iiv_dir1'
         assert rundir1.is_dir()

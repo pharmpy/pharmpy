@@ -63,7 +63,11 @@ def add_iiv(model, list_of_parameters, expression, operation='*', eta_names=None
     remove_iov
 
     """
-    rvs, pset, sset = model.random_variables, model.parameters, model.statements
+    rvs, pset, sset = (
+        model.random_variables.copy(),
+        model.parameters.copy(),
+        model.statements.copy(),
+    )
 
     list_of_parameters = _format_input_list(list_of_parameters)
     list_of_options = _format_options([expression, operation, eta_names], len(list_of_parameters))
@@ -91,6 +95,9 @@ def add_iiv(model, list_of_parameters, expression, operation='*', eta_names=None
         pset.append(Parameter(str(omega), init=0.09))
 
         statement = sset.find_assignment(list_of_parameters[i])
+
+        if statement is None:
+            raise ValueError(f'Could not find parameter: {list_of_parameters[i]}')
 
         eta_addition = _create_template(expression[i], operation[i])
         eta_addition.apply(statement.expression, eta.name)
@@ -143,7 +150,11 @@ def add_iov(model, occ, list_of_parameters=None, eta_names=None):
     remove_iov
 
     """
-    rvs, pset, sset = model.random_variables, model.parameters, model.statements
+    rvs, pset, sset = (
+        model.random_variables.copy(),
+        model.parameters.copy(),
+        model.statements.copy(),
+    )
 
     list_of_parameters = _format_input_list(list_of_parameters)
     etas = _get_etas(model, list_of_parameters, include_symbols=True)

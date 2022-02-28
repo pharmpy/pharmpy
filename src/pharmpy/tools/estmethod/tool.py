@@ -7,6 +7,7 @@ from pharmpy.modeling import (
     add_estimation_step,
     copy_model,
     remove_estimation_step,
+    set_ode_solver,
     summarize_modelfit_results,
     update_inits,
 )
@@ -14,7 +15,7 @@ from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.workflows import Task, Workflow
 
 
-def create_workflow(methods=None, model=None):
+def create_workflow(methods=None, solvers=None, model=None):
     wf = Workflow()
     wf.name = "estmethod"
 
@@ -40,15 +41,29 @@ def create_workflow(methods=None, model=None):
     if 'foce' not in methods:
         methods.insert(0, 'foce')
 
-    for method in methods:
-        if method != 'foce':
-            task_no_update = Task(
-                f'create_{method.upper()}_raw_inits', _create_est_model, method, False
-            )
-            wf.add_task(task_no_update, predecessors=task_base_model_fit)
+    if solvers == 'all':
+        solvers = [None, 'cvodes', 'dgear', 'dverk', 'ida', 'lsoda', 'lsodi']
+    elif isinstance(solvers, str) or not solvers:
+        solvers = [solvers]
+    elif isinstance(solvers, list):
+        solvers = [solver.lower() for solver in solvers]
+    if None not in solvers:
+        solvers.insert(0, None)
 
-        task_update = Task(f'create_{method.upper()}_update_inits', _create_est_model, method, True)
-        wf.add_task(task_update, predecessors=task_base_model_fit)
+    for method in methods:
+        for solver in solvers:
+            if solver:
+                task_name = f'create_{method.upper()}_{solver.upper()}'
+            else:
+                task_name = f'create_{method.upper()}'
+            if method != 'foce' or solver is not None:
+                task_no_update = Task(
+                    f'{task_name}_raw_inits', _create_est_model, method, solver, False
+                )
+                wf.add_task(task_no_update, predecessors=task_base_model_fit)
+
+            task_update = Task(f'{task_name}_update_inits', _create_est_model, method, solver, True)
+            wf.add_task(task_update, predecessors=task_base_model_fit)
 
     wf_fit = create_fit_workflow(n=len(wf.output_tasks))
     wf.insert_workflow(wf_fit, predecessors=wf.output_tasks)
@@ -130,11 +145,15 @@ def _create_est_settings(method):
     return est_settings
 
 
-def _create_est_model(method, update, model):
-    if update:
-        model_name = f'estmethod_{method.upper()}_update_inits'
+def _create_est_model(method, solver, update, model):
+    if solver:
+        model_name = f'estmethod_{method.upper()}_{solver.upper()}'
     else:
-        model_name = f'estmethod_{method.upper()}_raw_inits'
+        model_name = f'estmethod_{method.upper()}'
+    if update:
+        model_name += '_update_inits'
+    else:
+        model_name += '_raw_inits'
     est_model = copy_model(model, model_name)
     _clear_estimation_steps(est_model)
     if update:
@@ -147,6 +166,8 @@ def _create_est_model(method, update, model):
     eval_settings = _create_eval_settings(laplace)
     add_estimation_step(est_model, **est_settings)
     add_estimation_step(est_model, **eval_settings)
+    if solver:
+        set_ode_solver(est_model, solver)
     return est_model
 
 
@@ -166,7 +187,7 @@ class EstMethodResults(pharmpy.results.Results):
         self.models = models
 
     def sorted_by_ofv(self):
-        df = self.summary[['ofv', 'runtime_total']].sort_values(by=['ofv'])
+        df = self.summary[['ofv', 'runtime_total', 'estimation_runtime']].sort_values(by=['ofv'])
         return df
 
 

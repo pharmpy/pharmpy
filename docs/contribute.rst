@@ -3,7 +3,7 @@ Contribute
 ==========
 
 We encourage your contribution to the Pharmpy project! Anything from plugins for new model types to reporting bugs as
-GitHub issues, any contribution is appreciated.
+GitHub issues, any contribution is appreciated. See also :ref:`projects` for project suggestions for studens or interns.
 
 Set up of development environment
 #################################

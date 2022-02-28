@@ -1,7 +1,55 @@
-next version
-------------
+0.52.0 (2022-02-25)
+-------------------
+
+New features
+~~~~~~~~~~~~
+
+* Add covariate search to amd tool
+
+0.51.0 (2022-02-24)
+-------------------
+
+New features
+~~~~~~~~~~~~
+
+* Add option to add IIV to start model in iiv-tool
+* Add solver option in estmethod-tool
+* Add option to add IIV only on MDT in modelsearch-tool
+
+
+Changes
+~~~~~~~
+
+* | modeling.calculate_bic can Calculate three different versions of the BIC
+  | default has switched to be a mixed effects version
+* Remove etas instead of setting to 0 fix in iiv-tool
+* Parse more errors and warnings in .lst-file
+* Rename add_eta -> add_iivs, etas_as_fullblock -> iiv_as_fullblock, add_mdt_eta -> add_mdt_iiv in modelsearch
+
+0.50.1 (2022-02-16)
+-------------------
+
+Bugfix
+~~~~~~
+
+* Handle long paths when fitting NONMEM model
+
+0.50.0 (2022-02-16)
+-------------------
+
+New features
+~~~~~~~~~~~~
 
 * Add modeling.write_results
+* Add modeling.print_fit_summary
+* Add modeling.remove_loq_data
+* Add first version of WIP scm wrapper
+
+Changes
+~~~~~~~
+
+* Change in mfl in modelsearch such that transits that don't keep depot will have additional transit
+* Make it possible to set $DATA directly for NONMEM models (via datainfo.path) (#130)
 
 0.49.0 (2022-02-10)
 -------------------

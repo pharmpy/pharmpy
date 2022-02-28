@@ -14,17 +14,6 @@ class NONMEMModelfitResults(ModelfitResults):
     def __init__(self, chain):
         self._chain = chain
 
-    @property
-    def covariance_step(self):
-        try:
-            return self._covariance_status
-        except AttributeError:
-            try:
-                self._chain._read_lst_file()
-            except FileNotFoundError:
-                self._set_covariance_status(None)
-            return self._covariance_status
-
     def predictions_for_observations(self):
         """predictions only for observation data records"""
         df = self._chain._read_from_tables(['ID', 'TIME', 'MDV', 'PRED', 'CIPREDI', 'CPRED'], self)
@@ -63,103 +52,6 @@ class NONMEMModelfitResults(ModelfitResults):
             self.termination_cause = 'rounding_errors'
         else:
             self.termination_cause = None
-
-    def covariance_step_summary(self, condition_number_limit=1000, correlation_limit=0.9):
-        result = dict()
-        if self.covariance_step['requested'] is False:
-            result['Covariance step not run'] = ''
-        else:
-            if self.covariance_step['completed'] is False:
-                result['Covariance step not completed'] = 'ERROR'
-            else:
-                if self.covariance_step['warnings'] is None:
-                    result['Covariance step completed'] = ''
-                elif self.covariance_step['warnings'] is True:
-                    result['Covariance step completed with warnings'] = 'WARNING'
-                else:
-                    result['Covariance step successful'] = 'OK'
-                try:
-                    cond = np.linalg.cond(self.correlation_matrix.values)
-                    if cond >= condition_number_limit:
-                        result['Large condition number'] = 'WARNING'
-                    else:
-                        result[f'Condition number < {condition_number_limit}'] = 'OK'
-                    result[str.format('Condition number: {:.1f}', self.cond)] = ''
-                except Exception:
-                    result['Condition number not available'] = ''
-                try:
-                    high = modeling.check_high_correlations(self.model, correlation_limit)
-                    if high.empty:
-                        result[f'No correlations larger than {correlation_limit}'] = 'OK'
-                    else:
-                        result['Large correlations found'] = 'WARNING'
-                        for line in high.to_string().split('\n'):
-                            result[line] = ''
-                except FileNotFoundError:
-                    result['Correlation matrix not available'] = ''
-
-        return pd.DataFrame.from_dict(result, orient='index', columns=[''])
-
-    def estimation_step_summary(self):
-        result = dict()
-        step = self._estimation_status
-        if step['requested'] is False:
-            result['Estimation step not run'] = ''
-        else:
-            if step['minimization_successful'] is None:
-                result['Termination status not available'] = ''
-            else:
-                if step['minimization_successful'] is True:
-                    result['Minimization successful'] = 'OK'
-                else:
-                    result['Termination problems'] = 'ERROR'
-                if step['rounding_errors'] is False:
-                    result['No rounding errors'] = 'OK'
-                else:
-                    result['Rounding errors'] = 'ERROR'
-                if step['maxevals_exceeded'] is True:
-                    result['Max number of evaluations exceeded'] = 'ERROR'
-                if np.isnan(step['function_evaluations']) is False:
-                    result[
-                        str.format(
-                            'Number of function evaluations: {:d}', step['function_evaluations']
-                        )
-                    ] = ''
-                if step['estimate_near_boundary'] is True:
-                    # message issued from NONMEM independent of Pharmpy near_bounds function
-                    result['Parameter near boundary'] = 'WARNING'
-                if step['warning'] is True:
-                    result['NONMEM estimation warnings'] = 'WARNING'
-            result[str.format('Objective function value: {:.1f}', self.ofv)] = ''
-            if np.isnan(step['significant_digits']) is False:
-                result[str.format('Significant digits: {:.1f}', result['significant_digits'])] = ''
-        return pd.DataFrame.from_dict(result, orient='index', columns=[''])
-
-    def sumo(
-        self,
-        condition_number_limit=1000,
-        correlation_limit=0.9,
-        zero_limit=0.001,
-        significant_digits=2,
-        to_string=True,
-    ):
-        messages = pd.concat(
-            [
-                self.estimation_step_summary(),
-                pd.DataFrame.from_dict({'': ''}, orient='index', columns=['']),
-                self.covariance_step_summary(condition_number_limit, correlation_limit),
-            ]
-        )
-        summary = self.parameter_summary()
-        near_bounds = modeling.check_parameters_near_bounds(
-            self.model, zero_limit=zero_limit, significant_digits=significant_digits
-        )
-        if to_string:
-            summary[''] = near_bounds.transform(lambda x: 'Near boundary' if x else '')
-            return str(messages) + '\n\n' + str(summary)
-        else:
-            summary['Near boundary'] = near_bounds
-            return {'Messages': messages, 'Parameter summary': summary}
 
 
 class NONMEMChainedModelfitResults(ChainedModelfitResults):
@@ -317,15 +209,8 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
             result_obj.runtime_total = rfile.runtime_total
 
     @property
-    def covariance_step(self):
-        return self[-1].covariance_step
-
-    @property
     def predictions_for_observations(self):
         return self[-1].predictions_for_observations
-
-    def sumo(self, **kwargs):
-        return self[-1].sumo(**kwargs)
 
     def _read_cov_table(self):
         try:

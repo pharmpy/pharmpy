@@ -294,7 +294,7 @@ def test_estimation_status_empty():
 
 def test_estimation_status_withsim(testdata):
     p = Path(testdata / 'nonmem' / 'modelfit_results' / 'onePROB' / 'oneEST' / 'withSIM')
-    rfile = rf.NONMEMResultsFile(p / 'control3boot.res')
+    rfile = rf.NONMEMResultsFile(p / 'control3boot.res', log=Log())
 
     assert rfile.estimation_status(45) == {
         'minimization_successful': True,
@@ -352,20 +352,77 @@ def test_ofv_table_gap(testdata):
 
 
 @pytest.mark.parametrize(
-    'file_name, ref, idx',
+    'file_name, ref_start, no_of_rows, idx, no_of_errors',
     [
         (
             'control_stream_error.lst',
-            'FIX OPTION CANNOT',
+            'AN ERROR WAS FOUND IN THE CONTROL STATEMENTS.',
+            6,
             0,
+            1,
         ),
         (
             'no_header_error.lst',
-            'OCCURS DURING SEARCH FOR ETA AT INITIAL VALUE',
+            'PRED EXIT CODE = 1',
+            9,
+            1,
+            2,
+        ),
+        (
+            'no_header_error.lst',
+            'PROGRAM TERMINATED BY OBJ',
+            2,
+            2,
+            2,
+        ),
+        (
+            'rounding_error.lst',
+            'MINIMIZATION TERMINATED\n DUE TO ROUNDING',
+            2,
+            0,
+            1,
+        ),
+        (
+            'zero_gradient_error.lst',
+            'MINIMIZATION TERMINATED\n DUE TO ZERO',
+            2,
+            0,
             1,
         ),
     ],
 )
-def test_errors(testdata, file_name, ref, idx):
+def test_errors(testdata, file_name, ref_start, no_of_rows, idx, no_of_errors):
     lst = rf.NONMEMResultsFile(testdata / 'nonmem' / 'errors' / file_name, log=Log())
-    assert ref in lst.log.to_dataframe()['message'].iloc[idx]
+    log_df = lst.log.to_dataframe()
+    message = log_df['message'].iloc[idx]
+    assert message.startswith(ref_start)
+    assert len(message.split('\n')) == no_of_rows
+    assert log_df['category'].value_counts()['ERROR'] == no_of_errors
+
+
+@pytest.mark.parametrize(
+    'file_name, ref, idx',
+    [
+        (
+            'no_header_error.lst',
+            'THE NUMBER OF PARAMETERS TO BE ESTIMATED\n'
+            ' EXCEEDS THE NUMBER OF INDIVIDUALS WITH DATA.',
+            0,
+        ),
+        (
+            'estimate_near_boundary_warning.lst',
+            'PARAMETER ESTIMATE IS NEAR ITS BOUNDARY\n'
+            ' THIS MUST BE ADDRESSED BEFORE THE COVARIANCE STEP CAN BE IMPLEMENTED',
+            0,
+        ),
+        (
+            'est_step_warning.lst',
+            'MINIMIZATION SUCCESSFUL\n' ' HOWEVER, PROBLEMS OCCURRED WITH THE MINIMIZATION.',
+            0,
+        ),
+    ],
+)
+def test_warnings(testdata, file_name, ref, idx):
+    lst = rf.NONMEMResultsFile(testdata / 'nonmem' / 'errors' / file_name, log=Log())
+    message = lst.log.to_dataframe()['message'].iloc[idx]
+    assert message == ref

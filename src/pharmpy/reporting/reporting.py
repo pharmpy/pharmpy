@@ -34,6 +34,13 @@ def generate_report(rst_path, results_path):
                     warnings.filterwarnings("ignore", message="The app.add_javascript")
                     # Deprecation warning in jupyter_sphinx
                     warnings.filterwarnings("ignore", message="Passing a schema to Validator")
+                    # Deprecation warning in python 3.10
+                    warnings.filterwarnings(
+                        "ignore",
+                        message="The distutils package is deprecated and slated for removal in "
+                        "Python 3.12. Use setuptools or check PEP 632 for potential alternatives",
+                    )
+                    warnings.filterwarnings("ignore", "There is no current event loop")
 
                     app = Sphinx(
                         str(source_path),

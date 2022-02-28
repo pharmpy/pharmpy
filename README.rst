@@ -7,7 +7,7 @@
 .. image:: https://github.com/pharmpy/pharmpy/workflows/CI/badge.svg
     :target: https://github.com/pharmpy/pharmpy/actions
 
-.. image:: https://img.shields.io/badge/python-3.8%20|%203.9-blue
+.. image:: https://img.shields.io/pypi/pyversions/pharmpy-core
    :target: https://www.python.org/downloads/
 
 .. image:: https://img.shields.io/badge/code%20style-black-000000.svg
@@ -34,17 +34,18 @@ https://pharmpy.github.io
 
 .. start-longdesc
 
-Pharmpy is a library for pharmacometrics. It can be used as a regular python package, in R
+Pharmpy is a library and toolkit for pharmacometrics. It can be used as a regular python package, in R
 via the `Pharmr <https://github.com/pharmpy/pharmr>`_ package or via its built in command
 line interface.
 
 Current features:
 
-* Parsing of many parts of a NONMEM model file
-* Parsing of NONMEM result files
-* CLI supporting dataset filtering, resampling, anonymization and viewing
+* A model abstraction as a foundation for higher level operations on models
+* Functions for manipulation of models, e.g. changing model components like elimination or absorption
+* Reading NONMEM models and results
+* Running models and complex workflows (with NONMEM or to some extent nlmixr)
 
-Pharmpy is developed by the Uppsala University Pharmacometrics group.
+This is the `team behind Pharmpy <https://pharmpy.github.io/latest/contributors.html>`_
 
 .. end-longdesc
 
@@ -62,7 +63,6 @@ be installed using::
 
 Python Example
 ==============
-
 
 >>> from pharmpy.modeling import read_model
 >>> model = read_model("run1.mod")

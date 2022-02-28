@@ -172,27 +172,31 @@ class ODESystem(Statement):
         """Numerical solver to use when numerically solving the ode system
         Supported solvers and their NONMEM ADVAN
 
-        +------------------------+------------------+
-        | Solver                 | NONMEM ADVAN     |
-        +========================+==================+
-        | CVODES                 | ADVAN14          |
-        +------------------------+------------------+
-        | DGEAR                  | ADVAN8           |
-        +------------------------+------------------+
-        | DVERK                  | ADVAN6           |
-        +------------------------+------------------+
-        | IDA                    | ADVAN15          |
-        +------------------------+------------------+
-        | LSODA                  | ADVAN13          |
-        +------------------------+------------------+
-        | LSODI                  | ADVAN9           |
-        +------------------------+------------------+
+        +----------------------------+------------------+
+        | Solver                     | NONMEM ADVAN     |
+        +============================+==================+
+        | CVODES                     | ADVAN14          |
+        +----------------------------+------------------+
+        | DGEAR                      | ADVAN8           |
+        +----------------------------+------------------+
+        | DVERK                      | ADVAN6           |
+        +----------------------------+------------------+
+        | IDA                        | ADVAN15          |
+        +----------------------------+------------------+
+        | GL (general linear)        | ADVAN5           |
+        +----------------------------+------------------+
+        | GL_REAL (real eigenvalues) | ADVAN7           |
+        +----------------------------+------------------+
+        | LSODA                      | ADVAN13          |
+        +----------------------------+------------------+
+        | LSODI                      | ADVAN9           |
+        +----------------------------+------------------+
         """
         return self._solver
 
     @solver.setter
     def solver(self, value):
-        supported = ['CVODES', 'DGEAR', 'DVERK', 'IDA', 'LSODA', 'LSODI']
+        supported = ['CVODES', 'DGEAR', 'DVERK', 'IDA', 'LSODA', 'LSODI', 'GL', 'GL_REAL']
         if not (value is None or value.upper() in supported):
             raise ValueError(f"Unknown solver {value}. Recognized solvers are {supported}.")
         self._solver = value
@@ -380,6 +384,7 @@ class ExplicitODESystem(ODESystem):
 
     def __deepcopy__(self, memo):
         newone = type(self)(copy.copy(self.odes), copy.copy(self.ics))
+        newone.solver = self.solver
         return newone
 
     def __eq__(self, other):
@@ -576,6 +581,7 @@ class CompartmentalSystem(ODESystem):
     def __deepcopy__(self, memo):
         newone = type(self)()
         newone._g = copy.deepcopy(self._g, memo)
+        newone.solver = self.solver
         return newone
 
     def add_compartment(self, name):
@@ -1817,13 +1823,44 @@ class ModelStatements(MutableSequence):
                         graph.add_edge(i, j)
         return graph
 
-    def dependencies(self, symbol):
-        """Find all dependencies of a symbol
+    def direct_dependencies(self, statement):
+        """Find all direct dependencies of a statement
 
         Parameters
         ----------
-        symbol : Symbol or str
-            Input symbol
+        statement : Statement
+            Input statement
+
+        Returns
+        -------
+        ModelStatements
+            Direct dependency statements
+
+        Examples
+        --------
+        >>> from pharmpy.modeling import load_example_model
+        >>> model = load_example_model("pheno")
+        >>> odes = model.statements.ode_system
+        >>> model.statements.direct_dependencies(odes)
+                    ETA(1)
+        CL := TVCL⋅ℯ
+                  ETA(2)
+        V := TVV⋅ℯ
+        """
+        g = self._create_dependency_graph()
+        index = self.index(statement)
+        succ = sorted(list(g.successors(index)))
+        stats = ModelStatements()
+        stats._statements = [self[i] for i in succ]
+        return stats
+
+    def dependencies(self, symbol):
+        """Find all dependencies of a symbol or statement
+
+        Parameters
+        ----------
+        symbol : Symbol, str or Statement
+            Input symbol or statement
 
         Returns
         -------
@@ -1837,17 +1874,20 @@ class ModelStatements(MutableSequence):
         >>> model.statements.dependencies("CL")   # doctest: +SKIP
         {ETA(1), THETA(1), WGT}
         """
-        symbol = sympy.sympify(symbol)
-        for i in range(len(self) - 1, -1, -1):
-            if (
-                isinstance(self[i], Assignment)
-                and self[i].symbol == symbol
-                or isinstance(self[i], ODESystem)
-                and symbol in self[i].amounts
-            ):
-                break
+        if isinstance(symbol, Statement):
+            i = self.index(symbol)
         else:
-            raise KeyError(f"Could not find symbol {symbol}")
+            symbol = sympy.sympify(symbol)
+            for i in range(len(self) - 1, -1, -1):
+                if (
+                    isinstance(self[i], Assignment)
+                    and self[i].symbol == symbol
+                    or isinstance(self[i], ODESystem)
+                    and symbol in self[i].amounts
+                ):
+                    break
+            else:
+                raise KeyError(f"Could not find symbol {symbol}")
         g = self._create_dependency_graph()
         symbs = self[i].rhs_symbols
         if i == 0:

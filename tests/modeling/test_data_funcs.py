@@ -14,6 +14,7 @@ from pharmpy.modeling import (
     get_observations,
     list_time_varying_covariates,
     load_example_model,
+    remove_loq_data,
     undrop_columns,
 )
 
@@ -181,3 +182,9 @@ def test_undrop_columns():
     undrop_columns(m, "WGT")
     assert not m.datainfo["WGT"].drop
     assert m.datainfo["APGR"].drop
+
+
+def test_remove_loq_data():
+    m = model.copy()
+    remove_loq_data(m, lloq=10, uloq=40)
+    assert len(m.dataset) == 736

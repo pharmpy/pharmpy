@@ -82,9 +82,24 @@ class Results:
 
     @classmethod
     def from_dict(cls, d):
+        """Create results object from dictionary"""
         return cls(**d)
 
     def to_json(self, path=None, lzma=False):
+        """Serialize results object as json
+
+        Parameters
+        ----------
+        path : Path
+            Path to save json file or None to serialize to string
+        lzma : bool
+            Set to compress file with lzma
+
+        Returns
+        -------
+        str
+            Json as string unless path was used
+        """
         json_dict = self.to_dict()
         json_dict['__class__'] = self.__class__.__name__
         s = json.dumps(json_dict, cls=ResultsJSONEncoder)
@@ -140,6 +155,11 @@ class Results:
         """Save results as a human readable csv file
 
         Index will not be printed if it is a basic range.
+
+        Parameters
+        ----------
+        path : Path
+            Path to csv-file
         """
         d = self.to_dict()
         s = ""
@@ -168,10 +188,6 @@ class Results:
             s += '\n'
         with open(path, 'w', newline='') as fh:
             print(s, file=fh)
-
-    def add_plots(self):
-        """Create and add all plots to results object"""
-        raise NotImplementedError()
 
 
 class ModelfitResults(Results):
@@ -265,18 +281,6 @@ class ModelfitResults(Results):
             ser = self.standard_errors / self.parameter_estimates
             ser.name = 'RSE'
             return ser
-
-    def parameter_summary(self):
-        """Summary of parameter estimates and uncertainty"""
-        pe = self.parameter_estimates
-        ses = self.standard_errors
-        rses = self.relative_standard_errors
-        df = pd.DataFrame({'estimate': pe, 'SE': ses, 'RSE': rses})
-        return df
-
-    def __repr__(self):
-        df = self.parameter_summary()
-        return df.to_string()
 
 
 class ChainedModelfitResults(MutableSequence, ModelfitResults):
@@ -401,59 +405,5 @@ class ChainedModelfitResults(MutableSequence, ModelfitResults):
     def runtime_total(self):
         return self[-1].runtime_total
 
-    def result_summary(self, include_all_estimation_steps=False):
-        if not include_all_estimation_steps:
-            summary_dict = self._summarize_step(-1)
-            summary_df = pd.DataFrame(summary_dict, index=[self.model_name])
-            return summary_df
-        else:
-            summary_dicts = []
-            tuples = []
-            for i in range(len(self)):
-                summary_dict = self._summarize_step(i)
-                is_evaluation = self.model.estimation_steps[i].evaluation
-                if is_evaluation:
-                    run_type = 'evaluation'
-                else:
-                    run_type = 'estimation'
-                summary_dict = {**{'run_type': run_type}, **summary_dict}
-                summary_dicts.append(summary_dict)
-                tuples.append((self.model_name, i + 1))
-            index = pd.MultiIndex.from_tuples(tuples, names=['model_name', 'step'])
-            summary_df = pd.DataFrame(summary_dicts, index=index)
-            return summary_df
-
-    def _summarize_step(self, i):
-        summary_dict = dict()
-
-        if i >= 0:
-            step = self[i]
-        else:
-            step = self
-
-        if step.minimization_successful is not None:
-            summary_dict['minimization_successful'] = step.minimization_successful
-        else:
-            summary_dict['minimization_successful'] = False
-
-        summary_dict['ofv'] = step.ofv
-        summary_dict['runtime_total'] = step.runtime_total
-        summary_dict['estimation_runtime'] = step.estimation_runtime
-
-        pe = step.parameter_estimates
-        ses = step.standard_errors
-        rses = step.relative_standard_errors
-
-        for param in pe.index:
-            summary_dict[f'{param}_estimate'] = pe[param]
-            if ses is not None:
-                summary_dict[f'{param}_SE'] = ses[param]
-            if rses is not None:
-                summary_dict[f'{param}_RSE'] = rses[param]
-
-        return summary_dict
-
     def __repr__(self):
         return repr(self._results[-1])
-
-    # FIXME: To not have to manually intercept everything here. Could do it in a general way.

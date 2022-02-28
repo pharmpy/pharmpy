@@ -641,7 +641,6 @@ def results_frem(args):
         force_posdef_covmatrix=args.force_posdef_covmatrix,
         force_posdef_samples=args.force_posdef_samples,
     )
-    res.add_plots()
     res.to_json(path=args.psn_dir / 'results.json')
     res.to_csv(path=args.psn_dir / 'results.csv')
 
@@ -1663,7 +1662,7 @@ parser = argparse.ArgumentParser(
     formatter_class=formatter,
     allow_abbrev=True,
 )
-parser.add_argument('--version', action='version', version='0.49.0')
+parser.add_argument('--version', action='version', version='0.52.1')
 
 # subcommand parsers
 subparsers = parser.add_subparsers(title='Pharmpy commands', metavar='COMMAND')

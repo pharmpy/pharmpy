@@ -27,7 +27,7 @@ def longdesc(text_str):
 
 setup(
     name='pharmpy-core',
-    version='0.49.0',
+    version='0.52.1',
     license='GNU Lesser General Public License v3 (LGPLv3)',
     description='Pharmacometric modelling',
     long_description='%s\n\n%s'
@@ -58,6 +58,7 @@ setup(
         'Programming Language :: Python :: 3 :: Only',
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3.10',
         'Programming Language :: Python :: Implementation :: CPython',
         'Topic :: Scientific/Engineering',
     ],

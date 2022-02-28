@@ -22,25 +22,6 @@ from pharmpy.modeling.common import (
     write_model,
 )
 from pharmpy.modeling.covariate_effect import add_covariate_effect
-from pharmpy.modeling.data import (
-    add_time_after_dose,
-    drop_columns,
-    drop_dropped_columns,
-    get_baselines,
-    get_concentration_parameters_from_data,
-    get_covariate_baselines,
-    get_doseid,
-    get_doses,
-    get_ids,
-    get_mdv,
-    get_number_of_individuals,
-    get_number_of_observations,
-    get_number_of_observations_per_individual,
-    get_observations,
-    list_time_varying_covariates,
-    translate_nmtran_time,
-    undrop_columns,
-)
 from pharmpy.modeling.error import (
     has_additive_error_model,
     has_combined_error_model,
@@ -123,6 +104,26 @@ from pharmpy.modeling.write_csv import write_csv
 
 from .allometry import add_allometry
 from .amd import run_amd, run_iiv
+from .data import (
+    add_time_after_dose,
+    drop_columns,
+    drop_dropped_columns,
+    get_baselines,
+    get_concentration_parameters_from_data,
+    get_covariate_baselines,
+    get_doseid,
+    get_doses,
+    get_ids,
+    get_mdv,
+    get_number_of_individuals,
+    get_number_of_observations,
+    get_number_of_observations_per_individual,
+    get_observations,
+    list_time_varying_covariates,
+    remove_loq_data,
+    translate_nmtran_time,
+    undrop_columns,
+)
 from .evaluation import (
     evaluate_epsilon_gradient,
     evaluate_eta_gradient,
@@ -153,6 +154,7 @@ from .results import (
     calculate_pk_parameters_statistics,
     check_high_correlations,
     check_parameters_near_bounds,
+    print_fit_summary,
     summarize_modelfit_results,
     write_results,
 )
@@ -243,6 +245,7 @@ __all__ = [
     'predict_influential_individuals',
     'predict_influential_outliers',
     'predict_outliers',
+    'print_fit_summary',
     'print_model_code',
     'print_model_symbols',
     'read_model',
@@ -255,6 +258,7 @@ __all__ = [
     'remove_iiv',
     'remove_iov',
     'remove_lag_time',
+    'remove_loq_data',
     'remove_peripheral_compartment',
     'remove_unused_parameters_and_rvs',
     'resample_data',

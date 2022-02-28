@@ -912,7 +912,8 @@ def _translate_time_and_date_columns(df, timecol, datecol, idcol):
         _translate_nonmem_time_and_date_value, axis=1, timecol=timecol, datecol=datecol
     )
     timediff = df[timecol] - df.groupby(idcol)[timecol].transform('first')
-    df[timecol] = timediff.dt.total_seconds() / 3600
+    if df[timecol].dtype != np.float64:
+        df[timecol] = timediff.dt.total_seconds() / 3600
     return df
 
 
@@ -970,4 +971,44 @@ def translate_nmtran_time(model):
         drop_columns(model, datecol)
         model.datainfo[timecol].unit = 'h'
     model.dataset = df
+    return model
+
+
+def remove_loq_data(model, lloq=None, uloq=None):
+    """Remove loq data records from the dataset
+
+    Does nothing if none of the limits is specified.
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model object
+    lloq : float
+        Lower limit of quantification. Default not specified.
+    uloq : float
+        Upper limit of quantification. Default not specified.
+
+    Results
+    -------
+    Model
+        Reference to the same model object
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> remove_loq_data(model, lloq=10, uloq=40)        # doctest: +ELLIPSIS
+    <...>
+    >>> len(model.dataset)
+    736
+    """
+    df = model.dataset
+    dv = model.datainfo.dv_column.name
+    mdv = get_mdv(model)
+    keep = pd.Series(True, index=df.index)
+    if lloq:
+        keep &= (df[dv] >= lloq) | mdv
+    if uloq:
+        keep &= (df[dv] <= uloq) | mdv
+    model.dataset = df[keep]
     return model

@@ -39,6 +39,5 @@ def test_bootstrap():
     pd.testing.assert_frame_equal(obj.parameter_statistics, correct_statistics)
 
 
-def test_add_plots(testdata):
-    res = read_results(testdata / 'results/bootstrap_results.json')
-    res.add_plots()
+def test_read_results(testdata):
+    read_results(testdata / 'results/bootstrap_results.json')

@@ -1,7 +1,9 @@
 from io import StringIO
 
 from pharmpy import Model
+from pharmpy.modeling import add_peripheral_compartment, set_zero_order_elimination
 from pharmpy.tools.iiv.algorithms import _get_possible_iiv_blocks
+from pharmpy.tools.iiv.tool import _add_iiv
 
 
 def test_get_iiv_combinations_4_etas(testdata, pheno_path):
@@ -137,3 +139,24 @@ $ESTIMATION METHOD=1 INTERACTION
         [['ETA(3)', 'ETA(5)'], ['ETA(1)', 'ETA(2)', 'ETA(4)']],
         [['ETA(4)', 'ETA(5)'], ['ETA(1)', 'ETA(2)', 'ETA(3)']],
     ]
+
+
+def test_add_iiv(pheno_path):
+    model = Model.create_model(pheno_path)
+    set_zero_order_elimination(model)
+    _add_iiv(iiv_as_fullblock=False, model=model)
+    iivs = set(model.random_variables.iiv.names)
+    assert iivs == {'ETA(1)', 'ETA(2)', 'ETA_KM'}
+    add_peripheral_compartment(model)
+    _add_iiv(iiv_as_fullblock=False, model=model)
+    iivs = set(model.random_variables.iiv.names)
+    assert iivs == {'ETA(1)', 'ETA(2)', 'ETA_KM', 'ETA_VP1', 'ETA_QP1'}
+
+    model = Model.create_model(pheno_path)
+    set_zero_order_elimination(model)
+    add_peripheral_compartment(model)
+    _add_iiv(iiv_as_fullblock=True, model=model)
+    iivs = set(model.random_variables.iiv.names)
+    assert iivs == {'ETA(1)', 'ETA(2)', 'ETA_KM', 'ETA_VP1', 'ETA_QP1'}
+    eta1_joint_names = model.random_variables['ETA(1)'].joint_names
+    assert set(eta1_joint_names) == {'ETA(1)', 'ETA(2)', 'ETA_KM', 'ETA_VP1', 'ETA_QP1'}

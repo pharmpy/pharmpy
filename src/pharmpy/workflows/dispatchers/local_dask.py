@@ -1,3 +1,5 @@
+import warnings
+
 import pharmpy.workflows.dispatchers
 from pharmpy.utils import TemporaryDirectory, TemporaryDirectoryChanger
 
@@ -24,8 +26,13 @@ def run(workflow):
                 from dask.distributed import Client, LocalCluster
 
                 dask.config.set({'temporary_directory': tempfile.gettempdir()})
-                with LocalCluster(processes=False) as cluster:
-                    with Client(cluster) as client:
-                        print(client)
-                        res = client.get(workflow, 'results')
+
+                with warnings.catch_warnings():
+                    # Catch deprecation warning from python 3.10 via tornado.
+                    # Should be fixed with tornado 6.2
+                    warnings.filterwarnings("ignore", message="There is no current event loop")
+                    with LocalCluster(processes=False) as cluster:
+                        with Client(cluster) as client:
+                            print(client)
+                            res = client.get(workflow, 'results')
     return res
