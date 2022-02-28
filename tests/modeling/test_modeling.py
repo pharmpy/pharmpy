@@ -1,5 +1,6 @@
 import os
 import re
+import shutil
 from io import StringIO
 
 import numpy as np
@@ -42,6 +43,7 @@ from pharmpy.modeling import (
     transform_etas_tdist,
     update_inits,
 )
+from pharmpy.utils import TemporaryDirectoryChanger
 
 
 def test_set_first_order_elimination(testdata):
@@ -2607,6 +2609,76 @@ $ESTIMATION METHOD=1 INTERACTION
 $OMEGA  0.1'''
         in model.model_code
     )
+
+
+def test_remove_iov_with_options(tmp_path, testdata):
+    with TemporaryDirectoryChanger(tmp_path):
+        shutil.copy2(testdata / 'nonmem' / 'models' / 'mox2.mod', tmp_path)
+        shutil.copy2(testdata / 'nonmem' / 'models' / 'mx19B.csv', tmp_path)
+        model = Model.create_model('mox2.mod')
+        model.datainfo.path = tmp_path / 'mx19B.csv'
+
+        start_model = add_iov(model, occ='VISI')
+        model_remove_all = start_model.copy()
+        model_remove_one = start_model.copy()
+        model_remove_two = start_model.copy()
+        model_remove_three = start_model.copy()
+
+        remove_iov(model_remove_all)
+        assert (
+            '''IOV_1 = 0
+IF (VISI.EQ.3.OR.VISI.EQ.8) IOV_1 = 0
+IOV_2 = 0
+IF (VISI.EQ.3.OR.VISI.EQ.8) IOV_2 = 0
+IOV_3 = 0
+IF (VISI.EQ.3.OR.VISI.EQ.8) IOV_3 = 0'''
+            in model_remove_all.model_code
+        )
+        assert model_remove_all.random_variables.iov == []
+
+        remove_iov(model_remove_one, 'ETA_IOV_11')
+        assert len(model_remove_one.random_variables.iov) == 4
+        assert (
+            '''IOV_1 = 0
+IF (VISI.EQ.3.OR.VISI.EQ.8) IOV_1 = 0
+IOV_2 = 0
+IF (VISI.EQ.3) IOV_2 = ETA(4)
+IF (VISI.EQ.8) IOV_2 = ETA(5)
+IOV_3 = 0
+IF (VISI.EQ.3) IOV_3 = ETA(6)
+IF (VISI.EQ.8) IOV_3 = ETA(7)
+'''
+            in model_remove_one.model_code
+        )
+
+        remove_iov(model_remove_two, ['ETA_IOV_11', 'ETA_IOV_12'])
+        assert len(model_remove_two.random_variables.iov) == 4
+        assert (
+            '''IOV_1 = 0
+IF (VISI.EQ.3.OR.VISI.EQ.8) IOV_1 = 0
+IOV_2 = 0
+IF (VISI.EQ.3) IOV_2 = ETA(4)
+IF (VISI.EQ.8) IOV_2 = ETA(5)
+IOV_3 = 0
+IF (VISI.EQ.3) IOV_3 = ETA(6)
+IF (VISI.EQ.8) IOV_3 = ETA(7)
+'''
+            in model_remove_two.model_code
+        )
+
+        remove_iov(model_remove_three, ['ETA_IOV_11', 'ETA_IOV_12', 'ETA_IOV_21'])
+        assert len(model_remove_three.random_variables.iov) == 2
+        assert (
+            '''IOV_1 = 0
+IF (VISI.EQ.3.OR.VISI.EQ.8) IOV_1 = 0
+IOV_2 = 0
+IF (VISI.EQ.3.OR.VISI.EQ.8) IOV_2 = 0
+IOV_3 = 0
+IF (VISI.EQ.3) IOV_3 = ETA(4)
+IF (VISI.EQ.8) IOV_3 = ETA(5)
+'''
+            in model_remove_three.model_code
+        )
 
 
 @pytest.mark.parametrize(
