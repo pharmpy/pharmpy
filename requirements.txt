@@ -60,7 +60,7 @@ tblib==1.7.0
 toolz==0.11.2
 tornado==6.1
 urllib3==1.26.8
-zict==2.0.0
+zict==2.1.0
 zipp==3.7.0
 tflite-runtime==2.7.0; sys_platform == 'linux' and python_version == '3.8'
 tflite-runtime==2.7.0; sys_platform == 'linux' and python_version == '3.9'
