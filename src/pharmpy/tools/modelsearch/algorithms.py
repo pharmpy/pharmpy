@@ -8,6 +8,7 @@ from .mfl import ModelFeatures
 
 
 def exhaustive(mfl, add_iivs, iiv_as_fullblock, add_mdt_iiv):
+    # TODO: rewrite using _create_model_workflow
     features = ModelFeatures(mfl)
     wf_search = Workflow()
 
@@ -60,21 +61,19 @@ def exhaustive_stepwise(mfl, add_iivs, iiv_as_fullblock, add_mdt_iiv):
         actions = _get_possible_actions(wf_search, mfl_features)
         for task_parent, feat_new in actions.items():
             for feat in feat_new:
-                model_name = f'modelsearch_candidate{len(model_tasks) + 1}'
+                model_no = len(model_tasks) + 1
+                model_name = f'modelsearch_candidate{model_no}'
 
-                task_copy = Task('copy', _copy, model_name)
-                if task_parent:
-                    wf_search.add_task(task_copy, predecessors=[task_parent])
-                else:
-                    wf_search.add_task(task_copy)
-
-                wf_stepwise_step, task_transformed = _create_stepwise_workflow(
-                    feat, mfl_funcs[feat], add_iivs, iiv_as_fullblock, add_mdt_iiv
+                wf_create_model, task_transformed = _create_model_workflow(
+                    model_name, feat, mfl_funcs[feat], add_iivs, iiv_as_fullblock, add_mdt_iiv
                 )
 
-                wf_search.insert_workflow(wf_stepwise_step, predecessors=task_copy)
-                model_tasks += wf_stepwise_step.output_tasks
+                if task_parent:
+                    wf_search.insert_workflow(wf_create_model, predecessors=[task_parent])
+                else:
+                    wf_search += wf_create_model
 
+                model_tasks += wf_create_model.output_tasks
                 features_previous = _get_previous_features(wf_search, task_transformed, mfl_funcs)
                 model_features[model_name] = tuple(list(features_previous) + [feat])
 
@@ -115,11 +114,14 @@ def _get_previous_features(wf, task, mfl_funcs):
     return features_previous
 
 
-def _create_stepwise_workflow(feat, func, add_iivs, iiv_as_fullblock, add_mdt_iiv):
+def _create_model_workflow(model_name, feat, func, add_iivs, iiv_as_fullblock, add_mdt_iiv):
     wf_stepwise_step = Workflow()
 
+    task_copy = Task('copy', _copy, model_name)
+    wf_stepwise_step.add_task(task_copy)
+
     task_update_inits = Task('update_inits', _update_initial_estimates)
-    wf_stepwise_step.add_task(task_update_inits)
+    wf_stepwise_step.add_task(task_update_inits, predecessors=task_copy)
 
     task_function = Task(feat, func)
     wf_stepwise_step.add_task(task_function, predecessors=task_update_inits)
