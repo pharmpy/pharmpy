@@ -24,6 +24,15 @@ def test_columninfo_type():
     assert col2.continuous
 
 
+def test_columninfo_descriptor():
+    col = ColumnInfo("DUMMY", descriptor="body weight")
+    assert col.descriptor == "body weight"
+    col2 = ColumnInfo("DUMMY2")
+    assert col2.descriptor is None
+    with pytest.raises(TypeError):
+        col2.descriptor = "notaknowndescriptor"
+
+
 def test_columninfo_scale():
     col = ColumnInfo("DUMMY")
     with pytest.raises(TypeError):
@@ -63,7 +72,8 @@ continuous    False
 categories     None
 unit              1
 drop          False
-datatype    float64"""
+datatype    float64
+descriptor     None"""
     assert repr(col) == correct
 
 
