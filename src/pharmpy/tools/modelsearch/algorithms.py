@@ -48,42 +48,36 @@ def exhaustive(mfl, add_iivs, iiv_as_fullblock, add_mdt_iiv):
 
 
 def exhaustive_stepwise(mfl, add_iivs, iiv_as_fullblock, add_mdt_iiv):
-    features = ModelFeatures(mfl)
-    wf_search = Workflow()
+    mfl_features = ModelFeatures(mfl)
+    mfl_funcs = mfl_features.all_funcs()
 
+    wf_search = Workflow()
     model_tasks = []
     model_features = dict()
 
-    candidate_count = 1
-
     while True:
         no_of_trans = 0
-
-        actions = _get_possible_actions(wf_search, features)
-
-        for task, trans in actions.items():
-            trans_previous, trans_possible = trans
-
-            for feat, func in trans_possible.items():
-                model_name = f'modelsearch_candidate{candidate_count}'
+        actions = _get_possible_actions(wf_search, mfl_features)
+        for task_parent, feat_new in actions.items():
+            for feat in feat_new:
+                model_name = f'modelsearch_candidate{len(model_tasks) + 1}'
 
                 task_copy = Task('copy', _copy, model_name)
-                if task:
-                    wf_search.add_task(task_copy, predecessors=[task])
+                if task_parent:
+                    wf_search.add_task(task_copy, predecessors=[task_parent])
                 else:
                     wf_search.add_task(task_copy)
 
                 wf_stepwise_step, task_transformed = _create_stepwise_workflow(
-                    feat, func, add_iivs, iiv_as_fullblock, add_mdt_iiv
+                    feat, mfl_funcs[feat], add_iivs, iiv_as_fullblock, add_mdt_iiv
                 )
 
                 wf_search.insert_workflow(wf_stepwise_step, predecessors=task_copy)
                 model_tasks += wf_stepwise_step.output_tasks
 
-                features_previous = _get_previous_features(wf_search, task_transformed, features)
-                model_features[model_name] = tuple(features_previous + [feat])
+                features_previous = _get_previous_features(wf_search, task_transformed, mfl_funcs)
+                model_features[model_name] = tuple(list(features_previous) + [feat])
 
-                candidate_count += 1
                 no_of_trans += 1
         if no_of_trans == 0:
             break
@@ -91,12 +85,34 @@ def exhaustive_stepwise(mfl, add_iivs, iiv_as_fullblock, add_mdt_iiv):
     return wf_search, model_tasks, model_features
 
 
-def _get_possible_actions(wf, features):
+def _get_possible_actions(wf, mfl_features):
+    actions = dict()
     if wf.output_tasks:
-        actions = {task: _find_possible_trans(wf, task, features) for task in wf.output_tasks}
+        tasks = wf.output_tasks
     else:
-        actions = {'': _find_possible_trans(wf, None, features)}
+        tasks = ['']
+    for task in tasks:
+        mfl_funcs = mfl_features.all_funcs()
+        if task:
+            feat_previous = _get_previous_features(wf, task, mfl_funcs)
+        else:
+            feat_previous = dict()
+
+        trans_possible = [
+            feat
+            for feat, func in mfl_funcs.items()
+            if _is_allowed(feat, func, feat_previous, mfl_features)
+        ]
+
+        actions[task] = trans_possible
     return actions
+
+
+def _get_previous_features(wf, task, mfl_funcs):
+    tasks_upstream = wf.get_upstream_tasks(task)
+    tasks_upstream.reverse()
+    features_previous = [task.name for task in tasks_upstream if task.name in mfl_funcs.keys()]
+    return features_previous
 
 
 def _create_stepwise_workflow(feat, func, add_iivs, iiv_as_fullblock, add_mdt_iiv):
@@ -121,69 +137,46 @@ def _create_stepwise_workflow(feat, func, add_iivs, iiv_as_fullblock, add_mdt_ii
     return wf_stepwise_step, task_transformed
 
 
-def _get_previous_features(wf, task, features):
-    tasks_upstream = wf.get_upstream_tasks(task)
-    tasks_upstream.reverse()
-    features_previous = [
-        task.name for task in tasks_upstream if task.name in features.all_funcs().keys()
-    ]
-    return features_previous
-
-
-def _find_possible_trans(wf, task, features):
-    funcs = features.all_funcs()
-    if task:
-        trans_previous = {
-            task.name: task.function
-            for task in wf.get_upstream_tasks(task)
-            if task.function in funcs.values()
-        }
-    else:
-        trans_previous = dict()
-
-    trans_possible = {
-        feat: func
-        for feat, func in funcs.items()
-        if _is_allowed(feat, func, trans_previous, features)
-    }
-
-    return trans_previous, trans_possible
-
-
-def _is_allowed(feat_current, func_current, trans_previous, features):
-    if trans_previous and func_current in trans_previous.values():
+def _is_allowed(feat_current, func_current, feat_previous, mfl_features):
+    mfl_funcs = mfl_features.all_funcs()
+    func_type = mfl_features.get_funcs_same_type(feat_current)
+    # Check if current function is in previous transformations
+    if feat_current in feat_previous:
         return False
+    # Check if peripheral transformation is allowed
     if feat_current.startswith('PERIPHERALS'):
-        return _is_allowed_peripheral(func_current, trans_previous, features)
-    if not trans_previous:
-        return True
-    if any(func in features.get_funcs_same_type(feat_current) for func in trans_previous.values()):
+        peripheral_previous = [
+            mfl_funcs[feat] for feat in feat_previous if feat.startswith('PERIPHERALS')
+        ]
+        return _is_allowed_peripheral(func_current, peripheral_previous, mfl_features)
+    # Check if any functions of the same type has been used
+    if any(mfl_funcs[feat] in func_type for feat in feat_previous):
         return False
+    # No transformations have been made
+    if not feat_previous:
+        return True
+    # Combinations to skip
     not_supported_combo = [
         ('ABSORPTION(ZO)', 'TRANSITS'),
         ('ABSORPTION(SEQ-ZO-FO)', 'TRANSITS'),
         ('ABSORPTION(SEQ-ZO-FO)', 'LAGTIME'),
         ('LAGTIME', 'TRANSITS'),
     ]
-    for key, value in not_supported_combo:
+    for feat_1, feat_2 in not_supported_combo:
         if any(
-            (feat_current.startswith(key) and feat.startswith(value))
-            or (feat_current.startswith(value) and feat.startswith(key))
-            for feat in trans_previous.keys()
+            (feat_current.startswith(feat_1) and feat.startswith(feat_2))
+            or (feat_current.startswith(feat_2) and feat.startswith(feat_1))
+            for feat in feat_previous
         ):
             return False
     return True
 
 
-def _is_allowed_peripheral(func_current, trans_previous, features):
-    n_all = list(features.peripherals.args)
+def _is_allowed_peripheral(func_current, peripheral_previous, mfl_features):
+    n_all = list(mfl_features.peripherals.args)
     n = func_current.keywords['n']
-    if trans_previous:
-        n_prev = [
-            func.keywords['n']
-            for feat, func in trans_previous.items()
-            if feat.startswith('PERIPHERALS')
-        ]
+    if peripheral_previous:
+        n_prev = [func.keywords['n'] for func in peripheral_previous]
     else:
         n_prev = []
     if not n_prev:

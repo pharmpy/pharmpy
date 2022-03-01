@@ -2,8 +2,12 @@ import functools
 
 import pytest
 
-from pharmpy.modeling import set_transit_compartments
-from pharmpy.tools.modelsearch.algorithms import exhaustive, exhaustive_stepwise
+from pharmpy.modeling import (
+    set_peripheral_compartments,
+    set_transit_compartments,
+    set_zero_order_absorption,
+)
+from pharmpy.tools.modelsearch.algorithms import _is_allowed, exhaustive, exhaustive_stepwise
 from pharmpy.tools.modelsearch.mfl import ModelFeatures
 
 
@@ -48,6 +52,52 @@ def test_exhaustive_stepwise_algorithm(mfl, no_of_models, last_model_features):
 
     assert len(fit_tasks) == no_of_models
     assert list(model_features.values())[-1] == last_model_features
+
+
+def test_is_allowed():
+    features = ModelFeatures('ABSORPTION(ZO);PERIPHERALS(1)')
+    feat_previous = []
+    feat_current, func_current = 'ABSORPTION(ZO)', set_zero_order_absorption
+    assert _is_allowed(feat_current, func_current, feat_previous, features)
+    assert _is_allowed(feat_current, func_current, feat_current, features) is False
+
+    features = ModelFeatures('ABSORPTION([ZO,SEQ-ZO-FO])')
+    feat_previous = ['ABSORPTION(SEQ-ZO-FO)']
+    feat_current, func_current = 'ABSORPTION(ZO)', set_zero_order_absorption
+    assert _is_allowed(feat_current, func_current, feat_previous, features) is False
+
+    features = ModelFeatures('PERIPHERALS([1,2])')
+    feat_previous = []
+    feat_current, func_current = 'PERIPHERALS(1)', functools.partial(
+        set_peripheral_compartments, n=1
+    )
+    assert _is_allowed(feat_current, func_current, feat_previous, features)
+    feat_previous = [feat_current]
+    feat_current, func_current = 'PERIPHERALS(2)', functools.partial(
+        set_peripheral_compartments, n=2
+    )
+    assert _is_allowed(feat_current, func_current, feat_previous, features)
+
+    features = ModelFeatures('PERIPHERALS([1,2])')
+    feat_previous = ['PERIPHERALS(1)']
+    feat_current, func_current = 'PERIPHERALS(1)', functools.partial(
+        set_peripheral_compartments, n=1
+    )
+    assert _is_allowed(feat_current, func_current, feat_previous, features) is False
+
+    features = ModelFeatures('PERIPHERALS([1,2])')
+    feat_previous = []
+    feat_current, func_current = 'PERIPHERALS(2)', functools.partial(
+        set_peripheral_compartments, n=2
+    )
+    assert _is_allowed(feat_current, func_current, feat_previous, features) is False
+
+    features = ModelFeatures('PERIPHERALS(2)')
+    feat_previous = []
+    feat_current, func_current = 'PERIPHERALS(2)', functools.partial(
+        set_peripheral_compartments, n=2
+    )
+    assert _is_allowed(feat_current, func_current, feat_previous, features)
 
 
 @pytest.mark.parametrize(
