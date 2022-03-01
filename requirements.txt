@@ -27,7 +27,7 @@ lxml==4.8.0
 MarkupSafe==2.1.0
 mpmath==1.2.1
 msgpack==1.0.3
-networkx==2.6.3
+networkx==2.7
 numexpr==2.8.1
 numpy==1.22.2
 packaging==21.3
