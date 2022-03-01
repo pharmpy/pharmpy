@@ -210,7 +210,7 @@ def _create_dataset(input_model):
         raise ValueError("Need CIPREDI or IPRED")
     ipred = predictions[ipredcol].reset_index(drop=True)
     mdv = get_mdv(input_model)
-    mdv.reset_index(drop=True)
+    mdv = mdv.reset_index(drop=True)
     label_id = input_model.datainfo.id_column.name
     input_id = input_model.dataset[label_id].astype('int64').squeeze().reset_index(drop=True)
     _time_after_dose(input_model)
