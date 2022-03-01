@@ -98,3 +98,17 @@ def test_copy(tasks):
     wf = Workflow([t1, t2, t3, t4])
     wf2 = wf.copy()
     assert len(wf) == len(wf2)
+
+
+def test_add(tasks):
+    t1, t2, t3, t4 = tasks
+    wf1 = Workflow([t1])
+    wf1.add_task(t2, predecessors=t1)
+    wf2 = Workflow([t3])
+    wf2.add_task(t4, predecessors=t3)
+
+    wf = wf1 + wf2
+
+    assert len(wf.tasks) == 4
+    assert len(wf.input_tasks) == 2
+    assert len(wf.output_tasks) == 2
