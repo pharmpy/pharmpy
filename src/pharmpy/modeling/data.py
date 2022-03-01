@@ -1012,15 +1012,3 @@ def remove_loq_data(model, lloq=None, uloq=None):
         keep &= (df[dv] <= uloq) | mdv
     model.dataset = df[keep]
     return model
-
-
-def check_dataset(model, verbose=False):
-    """Check dataset for consistency across a set of rules
-
-    Parameters
-    ----------
-    model : Model
-        Pharmpy model object
-    verbose : Bool
-        Print out all rules checked if True else print only failed rules
-    """
