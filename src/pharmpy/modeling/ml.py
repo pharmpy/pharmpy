@@ -18,6 +18,9 @@ def _create_dataset(model):
     nobs = get_number_of_observations(model)
     nobsi = get_number_of_observations_per_individual(model)
     cwres = model.modelfit_results.residuals['CWRES']
+    iofv = model.modelfit_results.individual_estimates
+    npar = len(model.parameters)
+    ofv = model.modelfit_results.ofv
 
     # Max ratio of abs(ETAi) and omegai
     variance_omegas = model.random_variables.etas.variance_parameters
@@ -41,20 +44,24 @@ def _create_dataset(model):
     cov_names = get_model_covariates(model, strings=True)
     covariates = model.dataset[cov_names + [idcol]].set_index(idcol)
     mean_covs = covariates.groupby(idcol).mean()
-    cov_ratio = (abs(mean_covs - mean_covs.mean()) / mean_covs.std()).mean(axis=1)
+    maxcov = (abs(mean_covs - mean_covs.mean()) / mean_covs.std()).max(axis=1)
 
     df = pd.DataFrame(
         {
             'nids': nids,
             'nobs': nobs,
             'nobs_subj': nobsi / (nobs / nids),
+            'nobsi': nobsi,
             'ncovs': len(cov_names),
-            'cov_ratio': cov_ratio,
+            'maxcov': maxcov,
             'max_cwres': abs(cwres).groupby(idcol).max(),
             'median_cwres': abs(cwres).groupby(idcol).median(),
             'max_ebe_ratio': max_ebe_ratio,
             'ofv_ratio': ofv_ratio,
             'etc_ratio': mean_etc_ratio,
+            'iofv': iofv,
+            'npar': npar,
+            'ofv': ofv,
         }
     )
     return df
@@ -180,7 +187,6 @@ def predict_influential_individuals(model):
 
     model_path = Path(__file__).parent.resolve() / 'ml_models' / 'infinds.tflite'
     data = _create_dataset(model)
-    data['linearized'] = 0.0
     output = _predict_with_tflite(model_path, data)
     df = pd.DataFrame({'dofv': output, 'influential': output > 3.84}, index=get_ids(model))
     return df
