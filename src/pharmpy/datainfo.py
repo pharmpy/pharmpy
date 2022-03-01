@@ -32,6 +32,8 @@ class ColumnInfo:
         Should column be dropped (i.e. barred from being used)
     datatype : str
         Pandas datatype or special Pharmpy datatype (see the "dtype" attribute)
+    descriptor : str
+        Descriptor (kind) of data
     """
 
     _all_types = ['id', 'dv', 'idv', 'unknown', 'dose', 'event', 'covariate', 'mdv', 'nmtran_date']
@@ -52,6 +54,7 @@ class ColumnInfo:
         'nmtran-time',
         'nmtran-date',
     ]
+    _all_descriptors = [None, 'age', 'body weight']
 
     def __init__(
         self,
@@ -63,6 +66,7 @@ class ColumnInfo:
         categories=None,
         drop=False,
         datatype="float64",
+        descriptor=None,
     ):
         if scale in ['nominal', 'ordinal']:
             continuous = False
@@ -75,6 +79,7 @@ class ColumnInfo:
         self.categories = categories  # dict from value to descriptive string
         self.drop = drop
         self.datatype = datatype
+        self.descriptor = descriptor
 
     def __eq__(self, other):
         return (
@@ -124,6 +129,25 @@ class ColumnInfo:
         if value not in ColumnInfo._all_types:
             raise TypeError(f"Unknown column type {value}")
         self._type = value
+
+    @property
+    def descriptor(self):
+        """Kind of data
+
+        ============ =================
+        descriptor   Description
+        ============ =================
+        age          Age (since birth)
+        body weight  Human body weight
+        ============ =================
+        """
+        return self._descriptor
+
+    @descriptor.setter
+    def descriptor(self, value):
+        if value not in ColumnInfo._all_descriptors:
+            raise TypeError(f"Unknown column descriptor {value}")
+        self._descriptor = value
 
     @property
     def unit(self):
@@ -486,6 +510,8 @@ class DataInfo(MutableSequence):
                 "categories": col.categories,
                 "unit": str(col.unit),
             }
+            if col.descriptor is not None:
+                d["descriptor"] = col.descriptor
             a.append(d)
         s = json.dumps({"columns": a})
         if path is None:
@@ -519,6 +545,7 @@ class DataInfo(MutableSequence):
                 unit=col.get('unit', sympy.Integer(1)),
                 categories=col.get('categories', None),
                 datatype=col.get('datatype', 'float64'),
+                descriptor=col.get('descriptor', None),
             )
             columns.append(ci)
         return DataInfo(columns)
@@ -560,6 +587,7 @@ class DataInfo(MutableSequence):
         units = [col.unit for col in self._columns]
         drop = [col.drop for col in self._columns]
         datatype = [col.datatype for col in self._columns]
+        descriptor = [col.descriptor for col in self._columns]
         df = pd.DataFrame(columns=labels)
         df.loc['type'] = types
         df.loc['scale'] = scales
@@ -568,6 +596,7 @@ class DataInfo(MutableSequence):
         df.loc['unit'] = units
         df.loc['drop'] = drop
         df.loc['datatype'] = datatype
+        df.loc['descriptor'] = descriptor
         return df.to_string()
 
 
