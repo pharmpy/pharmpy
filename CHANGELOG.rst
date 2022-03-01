@@ -12,6 +12,7 @@ Changes
 
 * modeling.calculate_bic: Count epsilons interacting with etas to random parameters
 * Updated tensorflow models for prediction of outliers and influential individuals
+* Only consider parameters with etas for covariate modelbuilding in amd
 
 0.52.0 (2022-02-25)
 -------------------

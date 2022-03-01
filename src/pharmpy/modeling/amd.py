@@ -129,16 +129,22 @@ def _run_resmod(model, path):
 
 def _run_covariates(model, continuous, categorical, path):
     parameters = ['CL', 'VC', 'KMM', 'CLMM', 'MDT', 'MAT', 'QP1', 'QP2', 'VP1', 'VP2']
-    relations = dict()
+
     if continuous is None:
         covariates = categorical
     elif categorical is None:
         covariates = continuous
     else:
         covariates = continuous + categorical
+
+    relations = dict()
     for p in parameters:
         if model.statements.find_assignment(p):
-            relations[p] = covariates
+            expr = model.statements.before_odes.full_expression(p)
+            for eta in model.random_variables.etas:
+                if eta.symbol in expr.free_symbols:
+                    relations[p] = covariates
+                    break
     res = scm.run_scm(model, relations, continuous=continuous, categorical=categorical, path=path)
     return res.final_model
 
