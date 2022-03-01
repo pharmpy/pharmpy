@@ -194,6 +194,11 @@ class Workflow:
     def __str__(self):
         return '\n'.join([str(task) for task in self._g])
 
+    def __add__(self, other):
+        wf_new = Workflow()
+        wf_new._g = nx.compose(self._g, other._g)
+        return wf_new
+
 
 class Task:
     """One task
