@@ -602,6 +602,16 @@ def calculate_bic(model, type=None):
                     symbols = {p.symbol for p in parameters if p.symbol in expr.free_symbols}
                     random_thetas.update(symbols)
                     break
+        yexpr = model.statements.after_odes.full_expression(model.dependent_variable)
+        for eta in model.random_variables.etas:
+            if eta.symbol in yexpr.free_symbols:
+                symbols = {p.symbol for p in parameters if p.symbol in yexpr.free_symbols}
+                random_thetas.update(symbols)
+                for eps in model.random_variables.epsilons:
+                    if eps.symbol in yexpr.free_symbols:
+                        params = {p.symbol for p in parameters if p.name in eps.parameter_names}
+                        random_thetas.update(params)
+                break
         nomegas = len(
             [name for name in model.random_variables.etas.parameter_names if name in parameters]
         )

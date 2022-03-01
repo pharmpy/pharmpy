@@ -13,6 +13,7 @@ from pharmpy.modeling import (
     calculate_individual_shrinkage,
     calculate_pk_parameters_statistics,
     check_parameters_near_bounds,
+    set_iiv_on_ruv,
     summarize_modelfit_results,
 )
 
@@ -181,6 +182,8 @@ def test_bic(testdata):
     assert calculate_bic(model, type='fixed') == 756.111852398327
     assert calculate_bic(model, type='random') == 751.2824140332593
     assert calculate_bic(model) == 752.2483017062729
+    set_iiv_on_ruv(model)
+    assert calculate_bic(model) == 755.359951477165
 
 
 def test_check_parameters_near_bounds(testdata):
