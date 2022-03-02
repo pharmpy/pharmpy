@@ -412,16 +412,17 @@ def _split_equation(s):
     return name, expr
 
 
-def _result_summary(res, include_all_estimation_steps=False):
+def _result_summary(model, include_all_estimation_steps=False):
+    res = model.modelfit_results
     if not include_all_estimation_steps:
-        summary_dict = _summarize_step(res, -1)
+        summary_dict = _summarize_step(model, -1)
         summary_df = pd.DataFrame(summary_dict, index=[res.model_name])
         return summary_df
     else:
         summary_dicts = []
         tuples = []
         for i in range(len(res)):
-            summary_dict = _summarize_step(res, i)
+            summary_dict = _summarize_step(model, i)
             is_evaluation = res.model.estimation_steps[i].evaluation
             if is_evaluation:
                 run_type = 'evaluation'
@@ -435,7 +436,8 @@ def _result_summary(res, include_all_estimation_steps=False):
         return summary_df
 
 
-def _summarize_step(res, i):
+def _summarize_step(model, i):
+    res = model.modelfit_results
     summary_dict = dict()
 
     if i >= 0:
@@ -449,6 +451,8 @@ def _summarize_step(res, i):
         summary_dict['minimization_successful'] = False
 
     summary_dict['ofv'] = step.ofv
+    summary_dict['aic'] = calculate_aic(model, step=i)
+    summary_dict['bic'] = calculate_bic(model, step=i)
     summary_dict['runtime_total'] = step.runtime_total
     summary_dict['estimation_runtime'] = step.estimation_runtime
 
@@ -502,9 +506,8 @@ def summarize_modelfit_results(models, include_all_estimation_steps=False):
     summaries = []
 
     for model in models:
-        res = model.modelfit_results
-        if res:
-            summaries.append(_result_summary(res, include_all_estimation_steps))
+        if model.modelfit_results:
+            summaries.append(_result_summary(model, include_all_estimation_steps))
         else:
             # FIXME: in read_modelfit_results, maybe some parts can be extracted (i.e.
             #   create modelfit_results object)
@@ -530,7 +533,7 @@ def summarize_modelfit_results(models, include_all_estimation_steps=False):
     return summary
 
 
-def calculate_aic(model):
+def calculate_aic(model, step=-1):
     """Calculate final AIC for model assuming the OFV to be -2LL
 
     AIC = OFV + 2*n_estimated_parameters
@@ -539,6 +542,8 @@ def calculate_aic(model):
     ----------
     model : Model
         Pharmpy model object
+    step : int
+        Estimation step to calculate AIC on (default is last)
 
     Returns
     -------
@@ -547,10 +552,10 @@ def calculate_aic(model):
     """
     parameters = model.parameters.copy()
     parameters.remove_fixed()
-    return model.modelfit_results.ofv + 2 * len(parameters)
+    return model.modelfit_results[step].ofv + 2 * len(parameters)
 
 
-def calculate_bic(model, type=None):
+def calculate_bic(model, type=None, step=-1):
     """Calculate final BIC value assuming the OFV to be -2LL
 
     Different variations of the BIC can be calculated:
@@ -569,6 +574,8 @@ def calculate_bic(model, type=None):
         Pharmpy model object
     type : str
         Type of BIC to calculate. Default is the mixed effects.
+    step : int
+        Estimation step to calculate AIC on (default is last)
 
     Returns
     -------
@@ -620,7 +627,7 @@ def calculate_bic(model, type=None):
         nsubs = len(get_ids(model))
         nobs = len(get_observations(model))
         penalty = dim_theta_r * math.log(nsubs) + dim_theta_f * math.log(nobs)
-    ofv = model.modelfit_results.ofv
+    ofv = model.modelfit_results[step].ofv
     return ofv + penalty
 
 
