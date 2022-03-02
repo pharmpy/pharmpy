@@ -600,15 +600,16 @@ def calculate_bic(model, type=None, step=-1):
     elif type == 'random':
         penalty = len(parameters) * math.log(len(get_ids(model)))
     else:
-        succ = model.statements.direct_dependencies(model.statements.ode_system)
         random_thetas = set()
-        for s in succ:
-            expr = model.statements.before_odes.full_expression(s.symbol)
-            for eta in model.random_variables.etas:
-                if eta.symbol in expr.free_symbols:
-                    symbols = {p.symbol for p in parameters if p.symbol in expr.free_symbols}
-                    random_thetas.update(symbols)
-                    break
+        for param in model.statements.ode_system.free_symbols:
+            assignment = model.statements.find_assignment(param)
+            if assignment:
+                expr = model.statements.before_odes.full_expression(assignment.symbol)
+                for eta in model.random_variables.etas:
+                    if eta.symbol in expr.free_symbols:
+                        symbols = {p.symbol for p in parameters if p.symbol in expr.free_symbols}
+                        random_thetas.update(symbols)
+                        break
         yexpr = model.statements.after_odes.full_expression(model.dependent_variable)
         for eta in model.random_variables.etas:
             if eta.symbol in yexpr.free_symbols:
