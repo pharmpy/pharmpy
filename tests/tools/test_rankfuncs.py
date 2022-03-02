@@ -7,18 +7,6 @@ pheno = load_example_model("pheno")
 
 class DummyResults:
     def __init__(self, ofv=None, parameter_estimates=None):
-        self.results = [DummyResult(ofv, parameter_estimates)]
-
-    @property
-    def ofv(self):
-        return self[-1].ofv
-
-    def __getitem__(self, ind):
-        return self.results[ind]
-
-
-class DummyResult:
-    def __init__(self, ofv=None, parameter_estimates=None):
         self.ofv = ofv
         self.parameter_estimates = parameter_estimates
 

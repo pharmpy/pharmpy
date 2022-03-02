@@ -451,8 +451,8 @@ def _summarize_step(model, i):
         summary_dict['minimization_successful'] = False
 
     summary_dict['ofv'] = step.ofv
-    summary_dict['aic'] = calculate_aic(model, step=i)
-    summary_dict['bic'] = calculate_bic(model, step=i)
+    summary_dict['aic'] = calculate_aic(model, modelfit_results=res)
+    summary_dict['bic'] = calculate_bic(model, modelfit_results=res)
     summary_dict['runtime_total'] = step.runtime_total
     summary_dict['estimation_runtime'] = step.estimation_runtime
 
@@ -533,7 +533,7 @@ def summarize_modelfit_results(models, include_all_estimation_steps=False):
     return summary
 
 
-def calculate_aic(model, step=-1):
+def calculate_aic(model, modelfit_results=None):
     """Calculate final AIC for model assuming the OFV to be -2LL
 
     AIC = OFV + 2*n_estimated_parameters
@@ -542,20 +542,23 @@ def calculate_aic(model, step=-1):
     ----------
     model : Model
         Pharmpy model object
-    step : int
-        Estimation step to calculate AIC on (default is last)
+    modelfit_results : ModelfitResults
+        Alternative results object. Default is to use the one in model
 
     Returns
     -------
     float
         AIC of model fit
     """
+    if modelfit_results is None:
+        modelfit_results = model.modelfit_results
+
     parameters = model.parameters.copy()
     parameters.remove_fixed()
-    return model.modelfit_results[step].ofv + 2 * len(parameters)
+    return modelfit_results.ofv + 2 * len(parameters)
 
 
-def calculate_bic(model, type=None, step=-1):
+def calculate_bic(model, type=None, modelfit_results=None):
     """Calculate final BIC value assuming the OFV to be -2LL
 
     Different variations of the BIC can be calculated:
@@ -574,8 +577,8 @@ def calculate_bic(model, type=None, step=-1):
         Pharmpy model object
     type : str
         Type of BIC to calculate. Default is the mixed effects.
-    step : int
-        Estimation step to calculate AIC on (default is last)
+    modelfit_results : ModelfitResults
+        Alternative results object. Default is to use the one in model
 
     Returns
     -------
@@ -593,6 +596,9 @@ def calculate_bic(model, type=None, step=-1):
     >>> calculate_bic(model, type='random')
     610.7412809453149
     """
+    if modelfit_results is None:
+        modelfit_results = model.modelfit_results
+
     parameters = model.parameters.copy()
     parameters.remove_fixed()
     if type == 'fixed':
@@ -628,7 +634,7 @@ def calculate_bic(model, type=None, step=-1):
         nsubs = len(get_ids(model))
         nobs = len(get_observations(model))
         penalty = dim_theta_r * math.log(nsubs) + dim_theta_f * math.log(nobs)
-    ofv = model.modelfit_results[step].ofv
+    ofv = modelfit_results.ofv
     return ofv + penalty
 
 
