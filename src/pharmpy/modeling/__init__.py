@@ -106,6 +106,7 @@ from .allometry import add_allometry
 from .amd import run_amd, run_iiv
 from .data import (
     add_time_after_dose,
+    check_dataset,
     drop_columns,
     drop_dropped_columns,
     get_baselines,
@@ -190,6 +191,7 @@ __all__ = [
     'calculate_pk_parameters_statistics',
     'calculate_se_from_cov',
     'calculate_se_from_inf',
+    'check_dataset',
     'check_high_correlations',
     'check_parameters_near_bounds',
     'convert_model',

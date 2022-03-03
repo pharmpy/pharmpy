@@ -83,6 +83,7 @@ setup(
         'distributed',
         'networkx',
         'appdirs',
+        'rich',
     ],
     entry_points={
         'console_scripts': [

@@ -6,6 +6,7 @@ New features
 
 * Add option to remove specific IOV random variables
 * Support Python 3.10
+* Add modeling.check_dataset
 
 Changes
 ~~~~~~~

@@ -2,9 +2,16 @@ import re
 
 import numpy as np
 import pandas as pd
+import rich.box
+import sympy
+import sympy.physics.units as units
+from rich.console import Console
+from rich.table import Table
 
 from pharmpy.data import DatasetError
 from pharmpy.datainfo import ColumnInfo
+
+SI = sympy.physics.units.si.SI
 
 
 def get_ids(model):
@@ -1012,3 +1019,197 @@ def remove_loq_data(model, lloq=None, uloq=None):
         keep &= (df[dv] <= uloq) | mdv
     model.dataset = df[keep]
     return model
+
+
+class Checker:
+    _all_checks = (
+        ('A1', 'Body weight has unit'),
+        ('A2', 'Body weight has mass unit'),
+        ('A3', 'Body weight >0 and <700kg'),
+        ('A4', 'Age has unit'),
+        ('A5', 'Age has time unit'),
+        ('A6', 'Age >=0 and <130 years'),
+    )
+
+    def __init__(self, datainfo, dataset, verbose=False):
+        self.datainfo = datainfo
+        self.dataset = dataset
+        self.verbose = verbose
+        self.check_results = dict()
+        self.violations = []
+
+    def set_result(self, code, test=False, violation=None, skip=False, warn=False):
+        if skip:
+            result = "SKIP"
+        elif test:
+            result = "OK"
+        else:
+            if warn:
+                result = "WARN"
+            else:
+                result = "FAIL"
+        if code not in self.check_results or (
+            code in self.check_results
+            and (
+                self.check_results[code] == 'SKIP'
+                or self.check_results[code] == 'OK'
+                and result in ('WARN', 'FAIL')
+                or self.check_results[code] == 'WARN'
+                and result == 'FAIL'
+            )
+        ):
+            self.check_results[code] = result
+        if result in ('WARN', 'FAIL'):
+            self.violations.append((code, result, violation))
+
+    def check_has_unit(self, code, col):
+        has_unit = col.unit is not None
+        self.set_result(code, test=has_unit, violation=col.name, warn=True)
+        return has_unit
+
+    def check_dimension(self, code, column, dim):
+        if column.unit is None:
+            self.set_result(code, skip=True)
+            return False
+        else:
+            dim2 = units.Dimension(SI.get_dimensional_expr(column.unit))
+            self.set_result(
+                code,
+                test=dim == dim2,
+                violation=f"Unit {column.unit} of {column.name} is not a {dim} unit",
+            )
+            return dim == dim2
+
+    def check_range(self, code, col, lower, upper, unit, lower_included=True, upper_included=True):
+        name = col.name
+        if lower == 0:
+            scaled_lower = lower
+        else:
+            scaled_lower = float(units.convert_to(lower * unit, col.unit) / col.unit)
+        if upper == 0:
+            scaled_upper = upper
+        else:
+            scaled_upper = float(units.convert_to(upper * unit, col.unit) / col.unit)
+        if lower_included:
+            lower_viol = self.dataset[name] < scaled_lower
+        else:
+            lower_viol = self.dataset[name] <= scaled_lower
+        if upper_included:
+            upper_viol = self.dataset[name] > scaled_upper
+        else:
+            upper_viol = self.dataset[name] >= scaled_upper
+        all_viol = lower_viol | upper_viol
+        violations = all_viol[all_viol]
+        if not violations.empty:
+            for i in violations.index:
+                self.set_result(
+                    code,
+                    test=False,
+                    violation=f"{col.name} index={i} value={self.dataset[name].loc[i]}",
+                )
+        else:
+            self.set_result(code, test=True)
+
+    def get_dataframe(self):
+        codes = []
+        checks = []
+        results = []
+        violations = []
+
+        for code, msg in Checker._all_checks:
+            if code not in self.check_results:
+                self.check_results[code] = "SKIP"
+
+            if self.check_results[code] in ['OK', 'SKIP']:
+                if self.verbose:
+                    codes.append(code)
+                    checks.append(msg)
+                    results.append(self.check_results[code])
+                    violations.append(None)
+            else:
+                for viol in self.violations:
+                    if (
+                        viol[0] == code
+                        and viol[1] == "FAIL"
+                        or (viol[1] == "WARN" and self.verbose)
+                    ):
+                        codes.append(code)
+                        checks.append(msg)
+                        results.append(viol[1])
+                        violations.append(viol[2])
+        df = pd.DataFrame(
+            {'code': codes, 'check': checks, 'result': results, 'violation': violations}
+        )
+        return df
+
+    def print(self):
+        table = Table(title="Dataset checks", box=rich.box.SQUARE)
+        table.add_column("Code")
+        table.add_column("Check")
+        table.add_column("Result")
+        table.add_column("Violation")
+
+        for code, msg in Checker._all_checks:
+            if code not in self.check_results:
+                self.check_results[code] = "SKIP"
+
+            if self.check_results[code] in ['OK', 'SKIP']:
+                if self.verbose:
+                    table.add_row(code, msg, f'[bold green]{self.check_results[code]}', "")
+            else:
+                for viol in self.violations:
+                    if (
+                        viol[0] == code
+                        and viol[1] == "FAIL"
+                        or (viol[1] == "WARN" and self.verbose)
+                    ):
+                        result = viol[1]
+                        if result == "FAIL":
+                            result = f"[bold red]{result}"
+                        else:
+                            result = f"[bold yellow]{result}"
+                        table.add_row(code, msg, result, viol[2])
+
+        if table.rows:  # Do not print an empty table
+            console = Console()
+            console.print(table)
+
+
+def check_dataset(model, dataframe=False, verbose=False):
+    """Check dataset for consistency across a set of rules
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model object
+    dataframe : Bool
+        True to return a DataFrame instead of printing to the console
+    verbose : Bool
+        Print out all rules checked if True else print only failed rules
+
+    Results
+    -------
+    pd.DataFrame
+        Only returns a DataFrame is dataframe=True
+    """
+    di = model.datainfo
+    df = model.dataset
+    checker = Checker(di, df, verbose=verbose)
+
+    for col in di:
+        if col.descriptor == "body weight":
+            checker.check_has_unit("A1", col)
+            samedim = checker.check_dimension("A2", col, units.mass)
+            if samedim:
+                checker.check_range("A3", col, 0, 700, units.kg, False, False)
+
+        if col.descriptor == "age":
+            checker.check_has_unit("A4", col)
+            samedim = checker.check_dimension("A5", col, units.time)
+            if samedim:
+                checker.check_range("A6", col, 0, 130, units.year, True, False)
+
+    if dataframe:
+        return checker.get_dataframe()
+    else:
+        checker.print()

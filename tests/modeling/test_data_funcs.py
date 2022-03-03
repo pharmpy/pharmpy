@@ -1,5 +1,6 @@
 from pharmpy.modeling import (
     add_time_after_dose,
+    check_dataset,
     drop_columns,
     drop_dropped_columns,
     get_concentration_parameters_from_data,
@@ -188,3 +189,16 @@ def test_remove_loq_data():
     m = model.copy()
     remove_loq_data(m, lloq=10, uloq=40)
     assert len(m.dataset) == 736
+
+
+def test_check_dataset():
+    m = model.copy()
+    check_dataset(m)
+
+    df = check_dataset(m, verbose=True, dataframe=True)
+    assert df[df['code'] == 'A1']['result'].iloc[0] == 'OK'
+    assert df[df['code'] == 'A4']['result'].iloc[0] == 'SKIP'
+
+    m.dataset.loc[743, 'WGT'] = -1
+    df = check_dataset(m, verbose=True, dataframe=True)
+    assert df[df['code'] == 'A3']['result'].iloc[0] == 'FAIL'
