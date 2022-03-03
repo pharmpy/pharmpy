@@ -84,6 +84,8 @@ setup(
         'networkx',
         'appdirs',
         'rich',
+        'jupyter-sphinx',
+        'pyreadr',
     ],
     entry_points={
         'console_scripts': [
