@@ -2,7 +2,7 @@ from itertools import combinations
 
 import pharmpy.tools.modelfit as modelfit
 from pharmpy.modeling import copy_model, remove_iiv
-from pharmpy.modeling.block_rvs import create_joint_distribution
+from pharmpy.modeling.block_rvs import create_joint_distribution, split_joint_distribution
 from pharmpy.workflows import Task, Workflow
 
 
@@ -38,20 +38,46 @@ def brute_force_block_structure(model):
     model_features = dict()
 
     eta_combos_single_blocks, eta_combos_multi_blocks = _get_possible_iiv_blocks(model)
-    eta_combos_all = eta_combos_single_blocks + eta_combos_multi_blocks
+    eta_combos_all = [None] + eta_combos_single_blocks + eta_combos_multi_blocks
 
-    for i, combo in enumerate(eta_combos_all, 1):
-        model_name = f'iiv_block_structure_candidate{i}'
+    model_no = 1
+    for combo in eta_combos_all:
+        # Do not run model with same block structure as start model
+        if combo:
+            if _is_current_block_structure(model, combo):
+                continue
+        else:
+            if all(len(rv.joint_names) == 0 for rv in model.random_variables):
+                continue
+
+        model_name = f'iiv_block_structure_candidate{model_no}'
         task_copy = Task('copy', copy, model_name)
         wf.add_task(task_copy)
 
-        task_joint_dist = Task('create_joint_dist', create_joint_dist, combo)
-        wf.add_task(task_joint_dist, predecessors=task_copy)
-        model_features[model_name] = combo
-
-    wf_fit = modelfit.create_workflow(n=len(eta_combos_all))
+        if combo is None:
+            task_joint_dist = Task('split_joint_dist', split_joint_dist)
+            wf.add_task(task_joint_dist, predecessors=task_copy)
+            model_features[model_name] = [[eta.name] for eta in model.random_variables.etas]
+        else:
+            task_joint_dist = Task('create_joint_dist', create_joint_dist, combo)
+            wf.add_task(task_joint_dist, predecessors=task_copy)
+            model_features[model_name] = combo
+        model_no += 1
+    wf_fit = modelfit.create_workflow(n=len(model_features))
     wf.insert_workflow(wf_fit)
     return wf, model_features
+
+
+def _is_current_block_structure(model, list_of_etas):
+    rvs = model.random_variables
+    if not isinstance(list_of_etas[0], list):
+        list_of_etas = [list_of_etas]
+
+    for eta_block in list_of_etas:
+        eta_name = eta_block[0]
+        if rvs[eta_name].joint_names != eta_block:
+            return False
+    return True
 
 
 def _get_combinations(names, include_single=False):
@@ -95,6 +121,11 @@ def create_joint_dist(list_of_etas, model):
             create_joint_distribution(model, eta_block)
     else:
         create_joint_distribution(model, list_of_etas)
+    return model
+
+
+def split_joint_dist(model):
+    split_joint_distribution(model)
     return model
 
 

@@ -33,6 +33,7 @@ def test_iiv_block_structure(tmp_path, testdata, list_of_parameters, no_of_model
         assert len(res.summary_models) == no_of_models + 1
         assert len(res.models) == no_of_models
         assert all(int(model.modelfit_results.ofv) in range(-2200, -2000) for model in res.models)
+        assert all(model.random_variables != model_start.random_variables for model in res.models)
         rundir = tmp_path / 'iiv_dir1'
         assert rundir.is_dir()
         assert len(list((rundir / 'models').iterdir())) == no_of_models + 1
