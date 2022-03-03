@@ -1029,6 +1029,12 @@ class Checker:
         ('A4', 'Age has unit'),
         ('A5', 'Age has time unit'),
         ('A6', 'Age >=0 and <130 years'),
+        ('A7', 'Lean body mass has unit'),
+        ('A8', 'Lean body mass has mass unit'),
+        ('A9', 'Lean body mass >0 and <700kg'),
+        ('A10', 'Fat free mass has unit'),
+        ('A11', 'Fat free mass has mass unit'),
+        ('A12', 'Fat free mass >0 and <700kg'),
     )
 
     def __init__(self, datainfo, dataset, verbose=False):
@@ -1208,6 +1214,18 @@ def check_dataset(model, dataframe=False, verbose=False):
             samedim = checker.check_dimension("A5", col, units.time)
             if samedim:
                 checker.check_range("A6", col, 0, 130, units.year, True, False)
+
+        if col.descriptor == "lean body mass":
+            checker.check_has_unit("A7", col)
+            samedim = checker.check_dimension("A8", col, units.mass)
+            if samedim:
+                checker.check_range("A9", col, 0, 700, units.kg, False, False)
+
+        if col.descriptor == "fat free mass":
+            checker.check_has_unit("A10", col)
+            samedim = checker.check_dimension("A11", col, units.mass)
+            if samedim:
+                checker.check_range("A12", col, 0, 700, units.kg, False, False)
 
     if dataframe:
         return checker.get_dataframe()

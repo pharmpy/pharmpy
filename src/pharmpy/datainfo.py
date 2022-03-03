@@ -54,7 +54,7 @@ class ColumnInfo:
         'nmtran-time',
         'nmtran-date',
     ]
-    _all_descriptors = [None, 'age', 'body weight']
+    _all_descriptors = [None, 'age', 'body weight', 'lean body mass', 'fat free mass']
 
     def __init__(
         self,
@@ -134,12 +134,14 @@ class ColumnInfo:
     def descriptor(self):
         """Kind of data
 
-        ============ =================
-        descriptor   Description
-        ============ =================
-        age          Age (since birth)
-        body weight  Human body weight
-        ============ =================
+        ================ =================
+        descriptor       Description
+        ================ =================
+        age              Age (since birth)
+        body weight      Human body weight
+        lean body mass   Lean body mass
+        fat free mass    Fat free mass
+        ================ =================
         """
         return self._descriptor
 
