@@ -87,7 +87,7 @@ def test_exhaustive_stepwise_basic(
         ('ABSORPTION(ZO);PERIPHERALS([1, 2])', False, False, 8, 'modelsearch_candidate2', 4),
         ('LAGTIME();TRANSITS(1)', False, False, 2, 'mox2', 1),
         ('ABSORPTION(ZO);PERIPHERALS(1)', True, False, 4, 'modelsearch_candidate2', 2),
-        ('ABSORPTION(ZO);LAGTIME()', False, True, 4, 'mox2', 1),
+        ('PERIPHERALS(1);LAGTIME()', False, True, 4, 'modelsearch_candidate1', 1),
     ],
 )
 def test_exhaustive_stepwise_add_iivs(

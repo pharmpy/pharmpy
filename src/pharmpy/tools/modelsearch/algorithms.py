@@ -216,8 +216,11 @@ def _add_iiv_to_func(feat, iiv_as_fullblock, add_mdt_iiv, model):
         'LAGTIME()': ['MDT'],
     }
     parameters = []
-    if add_mdt_iiv and (feat == 'LAGTIME()' or feat.startswith('TRANSITS')):
-        parameters = ['MDT']
+    if add_mdt_iiv:
+        if feat == 'LAGTIME()' or feat.startswith('TRANSITS'):
+            parameters = ['MDT']
+        else:
+            parameters = []
     else:
         if feat in eta_dict.keys():
             parameters = eta_dict[feat]
