@@ -12,14 +12,17 @@ activate () {
     . /tmp/updatevenv/bin/activate
 }
 activate
-pip install pharmpy-core
+python3 setup.py install
 pip freeze >/tmp/updatevenv/freeze
 python - << EOF
 with open("/tmp/updatevenv/freeze", "r") as f1, open("requirements.txt", "r") as f2, open("/tmp/newreq", "w") as dh:
     d = dict()
+    keep = []
     for line in f2:
         a = line.split('==')
         d[a[0]] = line
+        if line.startswith("tflite") or line.startswith("--extra-index-url"):
+            keep.append(line)
     for line in f1:
         a = line.split('==')
         if a[0] == 'pharmpy-core':
@@ -28,6 +31,8 @@ with open("/tmp/updatevenv/freeze", "r") as f1, open("requirements.txt", "r") as
             print(d[a[0]], file=dh, end="")
         else:
             print(line, file=dh, end="")
+    for line in keep:
+        print(line, file=dh, end="")
 EOF
 
 cp /tmp/newreq requirements.txt
