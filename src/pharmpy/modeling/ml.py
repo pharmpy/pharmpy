@@ -24,7 +24,7 @@ def _create_dataset(model):
 
     # Max ratio of abs(ETAi) and omegai
     variance_omegas = model.random_variables.etas.variance_parameters
-    omega_estimates = model.modelfit_results.parameter_estimates[variance_omegas]
+    omega_estimates = np.sqrt(model.modelfit_results.parameter_estimates[variance_omegas])
     abs_ebes = model.modelfit_results.individual_estimates.abs()
     ebe_ratio = abs_ebes / list(omega_estimates)
     max_ebe_ratio = ebe_ratio.max(axis=1)
@@ -35,7 +35,7 @@ def _create_dataset(model):
 
     # mean(ETA / OMEGA)
     cov = model.modelfit_results.individual_estimates_covariance
-    etc_diag = pd.DataFrame([np.diag(y) for y in cov], columns=cov.iloc[0].columns)
+    etc_diag = np.sqrt(pd.DataFrame([np.diag(y) for y in cov], columns=cov.iloc[0].columns))
     etc_ratio = etc_diag / list(omega_estimates)
     mean_etc_ratio = etc_ratio.mean(axis=1)
     mean_etc_ratio.index = ofv_ratio.index
@@ -89,66 +89,66 @@ def predict_outliers(model):
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
     >>> predict_outliers(model)
-        residual  outlier
-    1  -0.172678    False
-    2   0.675712    False
-    3  -0.332006    False
-    4  -0.710008    False
-    5   0.600121    False
-    6   1.155262    False
-    7  -0.566974    False
-    8  -0.643707    False
-    9   0.147274    False
-    10 -0.754759    False
-    11  2.884859    False
-    12 -0.070012    False
-    13 -0.497592    False
-    14  0.447700    False
-    15 -0.605774    False
-    16 -0.511041    False
-    17 -0.445527    False
-    18  2.485890    False
-    19 -0.163881    False
-    20 -0.706392    False
-    21 -0.518767    False
-    22 -0.485257    False
-    23  0.708911    False
-    24 -0.779624    False
-    25  3.086815     True
-    26 -0.794165    False
-    27  0.741012    False
-    28 -0.642436    False
-    29 -0.696876    False
-    30 -0.528595    False
-    31 -0.758021    False
-    32  1.979468    False
-    33 -0.343283    False
-    34 -0.513914    False
-    35  1.893582    False
-    36 -0.094610    False
-    37 -0.610348    False
-    38  0.139176    False
-    39 -0.739828    False
-    40 -0.747885    False
-    41 -0.680807    False
-    42  4.562005     True
-    43  0.268274    False
-    44 -0.603992    False
-    45 -0.810457    False
-    46 -0.735620    False
-    47 -0.341139    False
-    48  2.361898    False
-    49 -0.356758    False
-    50 -0.836002    False
-    51  1.689565    False
-    52  0.578408    False
-    53  0.379588    False
-    54  0.007405    False
-    55  0.551320    False
-    56 -0.655273    False
-    57 -0.628927    False
-    58 -0.670912    False
-    59 -0.677908    False
+       residual  outlier
+    1  -0.281443    False
+    2   1.057392    False
+    3  -0.119105    False
+    4  -0.846849    False
+    5   0.600540    False
+    6   1.014008    False
+    7  -0.750734    False
+    8   0.247175    False
+    9   0.117002    False
+    10 -0.835389    False
+    11  3.529582     True
+    12 -0.035670    False
+    13  0.292333    False
+    14  0.303278    False
+    15 -0.565949    False
+    16 -0.078192    False
+    17 -0.291295    False
+    18  2.466421    False
+    19 -0.402343    False
+    20 -0.699996    False
+    21 -0.567987    False
+    22 -0.526776    False
+    23  0.303918    False
+    24 -0.177588    False
+    25  1.272142    False
+    26 -0.390000    False
+    27  0.775876    False
+    28 -0.501528    False
+    29 -0.700951    False
+    30 -0.352599    False
+    31  0.294196    False
+    32  0.744014    False
+    33 -0.215364    False
+    34  0.208691    False
+    35  1.713130    False
+    36  0.300293    False
+    37 -0.810736    False
+    38  0.459877    False
+    39 -0.675125    False
+    40 -0.563835    False
+    41 -0.526945    False
+    42  4.449199     True
+    43  0.720714    False
+    44 -0.792248    False
+    45 -0.860923    False
+    46 -0.731858    False
+    47 -0.247131    False
+    48  1.894190    False
+    49 -0.282737    False
+    50 -0.153398    False
+    51  1.200546    False
+    52  0.902774    False
+    53  0.586427    False
+    54  0.183329    False
+    55  1.036930    False
+    56 -0.639868    False
+    57 -0.765279    False
+    58 -0.209665    False
+    59 -0.225693    False
 
     See also
     --------

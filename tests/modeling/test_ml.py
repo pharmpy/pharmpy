@@ -12,7 +12,7 @@ def test_predict_outliers():
     model = load_example_model('pheno')
     res = predict_outliers(model)
     assert len(res) == 59
-    assert res['residual'][1] == -0.1726781725883484
+    assert res['residual'][1] == -0.28144291043281555
 
 
 @pytest.mark.skipif(
@@ -21,6 +21,5 @@ def test_predict_outliers():
 def test_predict_influential_individuals():
     model = load_example_model('pheno')
     res = predict_influential_individuals(model)
-    print(res)
     assert len(res) == 59
-    assert res['dofv'][59] == 1.8192670345306396
+    assert res['dofv'][59] == 0.08806940913200378
