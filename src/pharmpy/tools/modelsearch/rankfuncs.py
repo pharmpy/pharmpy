@@ -14,12 +14,12 @@ def ofv(base, candidates, cutoff=3.84, rank_by_not_worse=False):
     return rank_models('ofv', base, candidates, cutoff, rank_by_not_worse=rank_by_not_worse)
 
 
-def aic(base, candidates, cutoff=3.84, rank_by_not_worse=False):
-    return rank_models('aic', base, candidates, cutoff, rank_by_not_worse)
+def aic(base, candidates, cutoff=None):
+    return rank_models('aic', base, candidates, cutoff)
 
 
-def bic(base, candidates, cutoff=3.84, rank_by_not_worse=False):
-    return rank_models('bic', base, candidates, cutoff, rank_by_not_worse)
+def bic(base, candidates, cutoff=None):
+    return rank_models('bic', base, candidates, cutoff)
 
 
 def create_diff_dict(rank_type, base, candidates):
@@ -38,11 +38,14 @@ def create_diff_dict(rank_type, base, candidates):
     return delta_dict
 
 
-def rank_models(rank_type, base, candidates, cutoff, rank_by_not_worse=False):
+def rank_models(rank_type, base, candidates, cutoff=None, rank_by_not_worse=False):
     delta_dict = create_diff_dict(rank_type, base, candidates)
-    if rank_by_not_worse:
-        cutoff = -cutoff
-    filtered = [model for model in candidates if delta_dict[model.name] >= cutoff]
+    if cutoff is not None:
+        if rank_by_not_worse:
+            cutoff = -cutoff
+        filtered = [model for model in candidates if delta_dict[model.name] >= cutoff]
+    else:
+        filtered = [model for model in candidates if model.modelfit_results is not None]
 
     def fn(model):
         if rank_type == 'aic':

@@ -107,10 +107,12 @@ def create_summary(
     model_names = []
 
     rankfunc = getattr(rankfuncs, rankfunc_name)
+    kwargs = dict()
     if cutoff is not None:
-        ranks = rankfunc(start_model, models, cutoff=cutoff, rank_by_not_worse=rank_by_not_worse)
-    else:
-        ranks = rankfunc(start_model, models, rank_by_not_worse=rank_by_not_worse)
+        kwargs['cutoff'] = cutoff
+    if rankfunc_name == 'ofv':
+        kwargs['rank_by_not_worse'] = rank_by_not_worse
+    ranks = rankfunc(start_model, models, **kwargs)
     delta_diff = rankfuncs.create_diff_dict(rankfunc_name, start_model, models)
     for model in models:
         model_names.append(model.name)
