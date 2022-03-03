@@ -1,6 +1,6 @@
 import sympy
 
-from pharmpy.statements import Assignment
+from pharmpy.statements import Assignment, sympify
 
 
 def get_observation_expression(model):
@@ -318,7 +318,7 @@ def simplify_expression(model, expr):
     PTVCL
     >>> conf.parameter_names = ['basic']
     """
-    expr = sympy.sympify(expr)
+    expr = sympify(expr)
     d = dict()
     for p in model.parameters:
         if p.fix:

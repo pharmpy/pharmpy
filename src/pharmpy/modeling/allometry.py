@@ -1,7 +1,5 @@
-import sympy
-
 from pharmpy.parameter import Parameter
-from pharmpy.statements import Assignment
+from pharmpy.statements import Assignment, sympify
 
 from .expressions import create_symbol
 
@@ -77,8 +75,8 @@ def add_allometry(
     S₁ := V
 
     """
-    allometric_variable = sympy.sympify(allometric_variable)
-    reference_value = sympy.sympify(reference_value)
+    allometric_variable = sympify(allometric_variable)
+    reference_value = sympify(reference_value)
 
     odes = model.statements.ode_system
     central = odes.central_compartment
@@ -119,7 +117,7 @@ def add_allometry(
         if not parameters:
             raise ValueError("No parameters provided")
 
-        parameters = [sympy.sympify(p) for p in parameters]
+        parameters = [sympify(p) for p in parameters]
         if initials is None:
             # Need to understand which parameter is CL or Q and which is V
             cls = []

@@ -13,6 +13,7 @@ from sympy.stats.joint_rv_types import MultivariateNormalDistribution
 
 import pharmpy.math
 import pharmpy.unicode as unicode
+from pharmpy.statements import sympify
 from pharmpy.symbols import symbol
 
 
@@ -128,8 +129,8 @@ class RandomVariable:
 
         """
         rv = cls(name, level)
-        rv._mean = sympy.Matrix([sympy.sympify(mean)])
-        rv._variance = sympy.Matrix([sympy.sympify(variance)])
+        rv._mean = sympy.Matrix([sympify(mean)])
+        rv._variance = sympy.Matrix([sympify(variance)])
         if rv._variance.is_positive_semidefinite is False:
             raise ValueError(f"Mean cannot be {mean} must be positive")
         rv._symengine_variance = symengine.sympify(rv._variance)
@@ -918,8 +919,8 @@ class RandomVariables(MutableSequence):
         """
         s = dict()
         for key, value in d.items():
-            key = sympy.sympify(key)
-            value = sympy.sympify(value)
+            key = sympify(key)
+            value = sympify(value)
             if key.name in self.names:
                 self._rename_rv(key.name, value.name)
             else:
@@ -1135,7 +1136,7 @@ class RandomVariables(MutableSequence):
         rng = _create_rng(rng)
         if not parameters:
             parameters = dict()
-        expr = sympy.sympify(expr).subs(parameters)
+        expr = sympify(expr).subs(parameters)
         symbols = expr.free_symbols
         expr_names = [symb.name for symb in symbols]
         i = 0

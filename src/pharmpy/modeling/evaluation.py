@@ -4,6 +4,8 @@ import scipy.linalg
 import symengine
 import sympy
 
+from pharmpy.statements import sympify
+
 from .expressions import (
     calculate_epsilon_gradient_expression,
     calculate_eta_gradient_expression,
@@ -51,7 +53,7 @@ def evaluate_expression(model, expression):
     Length: 744, dtype: float64
 
     """
-    expression = sympy.sympify(expression)
+    expression = sympify(expression)
     full_expr = model.statements.before_odes.full_expression(expression)
     pe = model.modelfit_results.parameter_estimates
     inits = model.parameters.inits

@@ -10,7 +10,7 @@ from sympy import Eq, Piecewise
 from pharmpy.modeling.help_functions import _format_input_list, _format_options, _get_etas
 from pharmpy.parameter import Parameter
 from pharmpy.random_variables import RandomVariable
-from pharmpy.statements import Assignment, ModelStatements
+from pharmpy.statements import Assignment, ModelStatements, sympify
 from pharmpy.symbols import symbol as S
 
 
@@ -191,7 +191,7 @@ def add_iov(model, occ, list_of_parameters=None, eta_names=None):
 
         expression = Piecewise(*zip(values, conditions))
 
-        iovs.append(Assignment(iov, sympy.sympify(0)))
+        iovs.append(Assignment(iov, sympify(0)))
         iovs.append(Assignment(iov, expression))
         etais.append(Assignment(S(f'ETAI{i}'), eta.symbol + iov))
 
@@ -216,7 +216,7 @@ def _create_template(expression, operation):
     elif expression == 'log':
         return EtaAddition.logit()
     else:
-        expression = sympy.sympify(f'original {operation} {expression}')
+        expression = sympify(f'original {operation} {expression}')
         return EtaAddition(expression)
 
 

@@ -7,11 +7,10 @@ import warnings
 from operator import add, mul
 
 import numpy as np
-import sympy
 from sympy import Eq, Float, Gt, Le, Piecewise, exp
 
 from pharmpy.parameter import Parameter
-from pharmpy.statements import Assignment, ModelStatements
+from pharmpy.statements import Assignment, ModelStatements, sympify
 from pharmpy.symbols import symbol as S
 
 from .data import get_baselines
@@ -360,7 +359,7 @@ def _create_template(effect, model, covariate):
         return CovariateEffect.power()
     else:
         symbol = S('symbol')
-        expression = sympy.sympify(effect)
+        expression = sympify(effect)
         return CovariateEffect(Assignment(symbol, expression))
 
 

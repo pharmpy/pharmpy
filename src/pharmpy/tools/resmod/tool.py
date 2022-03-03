@@ -177,7 +177,7 @@ def _create_combined_model(input_model):
     s = model.statements[0]
     ruv_prop = create_symbol(model, 'epsilon_p')
     ruv_add = create_symbol(model, 'epsilon_a')
-    ipred = sympy.sympify('IPRED')
+    ipred = sympy.Symbol('IPRED')
     s.expression = s.expression + ruv_prop + ruv_add / ipred
 
     sigma_prop = Parameter('sigma_prop', 1, lower=0)

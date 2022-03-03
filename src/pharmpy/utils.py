@@ -9,6 +9,8 @@ from tempfile import mkdtemp
 import sympy
 import sympy.physics.units as units
 
+from pharmpy.statements import sympify
+
 
 class TemporaryDirectoryChanger:
     def __init__(self, path):
@@ -108,4 +110,4 @@ for k, v in units.__dict__.items():
 def parse_units(s):
     if not isinstance(s, str):
         return s
-    return sympy.sympify(s).subs(unit_subs)
+    return sympify(s).subs(unit_subs)

@@ -7,7 +7,7 @@ import sympy
 import pharmpy.symbols as symbols
 from pharmpy.parameter import Parameter
 from pharmpy.random_variables import RandomVariable
-from pharmpy.statements import Assignment
+from pharmpy.statements import Assignment, sympify
 
 from .common import remove_unused_parameters_and_rvs
 from .data import get_observations
@@ -27,7 +27,7 @@ def _canonicalize_data_transformation(model, value):
     if value is None:
         value = model.dependent_variable
     else:
-        value = sympy.sympify(value)
+        value = sympify(value)
         if value.free_symbols != {model.dependent_variable}:
             raise ValueError(
                 f"Expression for data transformation must contain the dependent variable "
@@ -677,7 +677,7 @@ def set_time_varying_error_model(model, cutoff, idv='TIME'):
     """
     stats = model.statements
     y = stats.find_assignment('Y')
-    idv = sympy.sympify(idv)
+    idv = sympify(idv)
     theta = create_symbol(model, 'time_varying')
     eps = model.random_variables.epsilons
     expr = sympy.Piecewise(

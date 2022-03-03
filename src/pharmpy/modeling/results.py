@@ -4,6 +4,7 @@ import warnings
 import numpy as np
 import pandas as pd
 import sympy
+from pharmpy.statements import sympify
 
 from pharmpy.math import round_to_n_sigdig
 from pharmpy.model import Model
@@ -397,10 +398,10 @@ def _split_equation(s):
         a = s.split('=')
         if len(a) == 1:
             name = None
-            expr = sympy.sympify(s)
+            expr = sympify(s)
         else:
             name = a[0].strip()
-            expr = sympy.sympify(a[1])
+            expr = sympify(a[1])
     elif isinstance(s, sympy.Eq):
         name = s.lhs.name
         expr = s.rhs

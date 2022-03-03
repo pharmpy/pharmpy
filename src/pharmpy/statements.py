@@ -9,6 +9,11 @@ import pharmpy.symbols as symbols
 import pharmpy.unicode as unicode
 
 
+def sympify(expr):
+    ns = {'Q': sympy.Symbol('Q')}
+    return sympy.sympify(expr, locals=ns)
+
+
 class Statement(ABC):
     """Abstract base class for all types of statements"""
 
@@ -43,7 +48,7 @@ class Assignment(Statement):
 
     def __init__(self, symbol, expression):
         self.symbol = symbol
-        self.expression = sympy.sympify(expression)
+        self.expression = sympify(expression)
 
     @property
     def symbol(self):
@@ -66,7 +71,7 @@ class Assignment(Statement):
     @expression.setter
     def expression(self, value):
         if isinstance(value, str):
-            value = sympy.sympify(value)
+            value = sympify(value)
         self._expression = value
 
     def subs(self, substitutions):
@@ -647,7 +652,7 @@ class CompartmentalSystem(ODESystem):
         >>> central = odes.add_compartment("CENTRAL")
         >>> odes.add_flow(depot, central, "KA")
         """
-        self._g.add_edge(source, destination, rate=sympy.sympify(rate))
+        self._g.add_edge(source, destination, rate=sympify(rate))
 
     def remove_flow(self, source, destination):
         """Remove flow between two compartments
@@ -1330,7 +1335,7 @@ class Compartment:
 
     @lag_time.setter
     def lag_time(self, value):
-        self._lag_time = sympy.sympify(value)
+        self._lag_time = sympify(value)
 
     @property
     def free_symbols(self):
@@ -1422,7 +1427,7 @@ class Bolus(Dose):
 
     @amount.setter
     def amount(self, value):
-        self._amount = sympy.sympify(value)
+        self._amount = sympify(value)
 
     @property
     def free_symbols(self):
@@ -1503,7 +1508,7 @@ class Infusion(Dose):
 
     @amount.setter
     def amount(self, value):
-        self._amount = sympy.sympify(value)
+        self._amount = sympify(value)
 
     @property
     def rate(self):
@@ -1515,7 +1520,7 @@ class Infusion(Dose):
 
     @rate.setter
     def rate(self, value):
-        self._rate = sympy.sympify(value)
+        self._rate = sympify(value)
         if value is not None:
             self._duration = None
 
@@ -1529,7 +1534,7 @@ class Infusion(Dose):
 
     @duration.setter
     def duration(self, value):
-        self._duration = sympy.sympify(value)
+        self._duration = sympify(value)
         if value is not None:
             self._rate = None
 
@@ -1767,7 +1772,7 @@ class ModelStatements(MutableSequence):
                     ETA(1)
         CL := TVCL⋅ℯ
         """
-        symbol = sympy.sympify(symbol)
+        symbol = sympify(symbol)
         assignment = None
         for statement in self:
             if isinstance(statement, Assignment):
@@ -1794,9 +1799,9 @@ class ModelStatements(MutableSequence):
         >>> model.statements.reassign("CL", "TVCL + eta")
         """
         if isinstance(symbol, str):
-            symbol = sympy.sympify(symbol)
+            symbol = sympify(symbol)
         if isinstance(expression, str):
-            expression = sympy.sympify(expression)
+            expression = sympify(expression)
 
         last = True
         for i, stat in zip(range(len(self) - 1, -1, -1), reversed(self)):
@@ -1877,7 +1882,7 @@ class ModelStatements(MutableSequence):
         if isinstance(symbol, Statement):
             i = self.index(symbol)
         else:
-            symbol = sympy.sympify(symbol)
+            symbol = sympify(symbol)
             for i in range(len(self) - 1, -1, -1):
                 if (
                     isinstance(self[i], Assignment)
@@ -1965,7 +1970,7 @@ class ModelStatements(MutableSequence):
         THETA(1)*WGT*exp(ETA(1))
         """
         if isinstance(expression, str):
-            expression = sympy.sympify(expression)
+            expression = sympify(expression)
         for statement in reversed(self):
             if isinstance(statement, ODESystem):
                 raise ValueError(
