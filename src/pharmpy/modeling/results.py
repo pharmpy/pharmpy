@@ -4,11 +4,11 @@ import warnings
 import numpy as np
 import pandas as pd
 import sympy
-from pharmpy.statements import sympify
 
 from pharmpy.math import round_to_n_sigdig
 from pharmpy.model import Model
 from pharmpy.modeling import create_rng, get_observations, sample_parameters_from_covariance_matrix
+from pharmpy.statements import sympify
 
 from .data import get_ids
 

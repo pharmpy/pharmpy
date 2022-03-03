@@ -123,7 +123,7 @@ def _run_resmod(model, path):
     res_resmod = run_tool('resmod', model, path=path / 'resmod1')
     selected_model = res_resmod.best_model
     name = res_resmod.selected_model_name
-    if name[: 12] == 'time_varying':
+    if name[:12] == 'time_varying':
         skip.append('time_varying')
     else:
         skip.append(name)
@@ -131,7 +131,7 @@ def _run_resmod(model, path):
     res_resmod = run_tool('resmod', selected_model, skip=skip, path=path / 'resmod2')
     selected_model = res_resmod.best_model
     name = res_resmod.selected_model_name
-    if name[: 12] == 'time_varying':
+    if name[:12] == 'time_varying':
         skip.append('time_varying')
     else:
         skip.append(name)
