@@ -179,7 +179,12 @@ def run_estmethod(args):
         methods = args.methods.split(" ")
     except AttributeError:
         methods = args.methods
-    run_tool('estmethod', methods=methods, model=args.model)
+    try:
+        solvers = args.solvers.split(" ")
+    except AttributeError:
+        solvers = args.solvers
+
+    run_tool('estmethod', methods=methods, solvers=solvers, model=args.model)
 
 
 def data_write(args):
@@ -916,7 +921,18 @@ parser_definition = [
                                 'default': None,
                                 'help': 'List of methods to try, mark group of methods in single '
                                 'quote separated by spaces. Supported are: FOCE, FO, IMP, '
-                                'IMPMAP, ITS, SAEM, LAPLACE, BAYES.',
+                                'IMPMAP, ITS, SAEM, LAPLACE, BAYES. Default is all.',
+                            },
+                            {
+                                'name': '--solvers',
+                                'type': str,
+                                'default': None,
+                                'help': 'List of solvers to try, mark group of methods in single '
+                                'quote separated by spaces. Supported are: CVODES '
+                                '(ADVAN14), DGEAR (ADVAN8), DVERK (ADVAN6), IDA '
+                                '(ADVAN15), LSODA (ADVAN13), LSODI (ADVAN9), GL '
+                                '(ADVAN5), GL_REAL (ADVAN7). To test all write "all". '
+                                'Default is to use the solver of input model.',
                             },
                         ],
                     }
