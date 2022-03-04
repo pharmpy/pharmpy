@@ -1,5 +1,5 @@
-next version
-~~~~~~~~~~~~
+0.53.0 (2022-03-04)
+-------------------
 
 New features
 ~~~~~~~~~~~~
@@ -14,6 +14,14 @@ Changes
 * modeling.calculate_bic: Count epsilons interacting with etas to random parameters
 * Updated tensorflow models for prediction of outliers and influential individuals
 * Only consider parameters with etas for covariate modelbuilding in amd
+* Include AIC/BIC in modeling.summarize_modelfit_results
+
+Bugfix
+~~~~~~
+
+* Update solvers in estmethod-tool
+* Handle Q-parameters when adding IIV on structural parameters in iiv-tool
+* Only add IIV on MDT-parameter with add_mdt_iiv-option in modelsearch-tool
 
 0.52.0 (2022-02-25)
 -------------------
