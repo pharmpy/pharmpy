@@ -60,7 +60,7 @@ def calculate_eta_shrinkage(model, sd=False):
     if not sd:
         shrinkage = 1 - (ie.var() / diag_ests)
     else:
-        shrinkage = 1 - (ie.std() / (diag_ests**0.5))
+        shrinkage = 1 - (ie.std() / (diag_ests ** 0.5))
     return shrinkage
 
 
@@ -571,6 +571,8 @@ def calculate_bic(model, type=None, modelfit_results=None):
       | BIC = OFV + n_estimated_parameters * log(n_observations)
     * | random
       | BIC = OFV + n_estimated_parameters * log(n_individals)
+    * | iiv
+      | BIC = OFV + n_estimated_iiv_omega_parameters * log(n_individals)
 
     Parameters
     ----------
@@ -596,6 +598,8 @@ def calculate_bic(model, type=None, modelfit_results=None):
     616.536606983396
     >>> calculate_bic(model, type='random')
     610.7412809453149
+    >>> calculate_bic(model, type='iiv')
+    594.431131169692
     """
     if modelfit_results is None:
         modelfit_results = model.modelfit_results
@@ -606,6 +610,11 @@ def calculate_bic(model, type=None, modelfit_results=None):
         penalty = len(parameters) * math.log(len(get_observations(model)))
     elif type == 'random':
         penalty = len(parameters) * math.log(len(get_ids(model)))
+    elif type == 'iiv':
+        nomegas_iiv = len(
+            [name for name in model.random_variables.iiv.parameter_names if name in parameters]
+        )
+        penalty = nomegas_iiv * math.log(len(get_ids(model)))
     else:
         random_thetas = set()
         for param in model.statements.ode_system.free_symbols:
