@@ -11,7 +11,7 @@ from pharmpy.utils import TemporaryDirectoryChanger
     'methods, solvers, no_of_models, advan_ref',
     [
         ('foce', None, 2, 'ADVAN1'),
-        (['laplace'], None, 4, 'ADVAN1'),
+        (['laplace'], None, 3, 'ADVAN1'),
         ('foce', ['lsoda'], 4, 'ADVAN13'),
     ],
 )

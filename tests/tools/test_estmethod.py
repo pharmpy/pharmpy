@@ -9,7 +9,7 @@ from pharmpy.tools.estmethod.tool import _clear_estimation_steps, _create_est_mo
     [
         ('foce', None, 2),
         (['foce', 'laplace'], None, 4),
-        (['laplace'], None, 4),
+        (['laplace'], None, 3),
         ('foce', ['lsoda'], 4),
         ('foce', 'all', 14),
     ],

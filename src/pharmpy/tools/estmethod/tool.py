@@ -38,8 +38,6 @@ def create_workflow(methods=None, solvers=None, model=None):
         methods = [methods]
     elif isinstance(methods, list):
         methods = [method.lower() for method in methods]
-    if 'foce' not in methods:
-        methods.insert(0, 'foce')
 
     if solvers == 'all':
         solvers = [None, 'cvodes', 'dgear', 'dverk', 'ida', 'lsoda', 'lsodi']
