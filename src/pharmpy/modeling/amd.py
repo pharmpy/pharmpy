@@ -94,9 +94,6 @@ def run_amd(model, mfl=None, lloq=None, order=None, categorical=None, continuous
 
     next_model = model
     for func in run_funcs:
-        import os
-
-        os.system(f"ls -l {db.path}")
         next_model = func(next_model)
 
     res = AMDResults(final_model=next_model)
