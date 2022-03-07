@@ -606,6 +606,44 @@ def test_join():
     assert rvs['ETA(4)'].joint_names == ['ETA(1)', 'ETA(4)']
     assert rvs['ETA(5)'].joint_names == []
 
+    rv1, rv2, rv3, rv4 = RandomVariable.joint_normal(
+        ['ETA(1)', 'ETA(2)', 'ETA(3)', 'ETA(4)'],
+        'iiv',
+        [0, 0, 0, 0],
+        [
+            [
+                symbol('OMEGA(1,1)'),
+                symbol('OMEGA(2,1)'),
+                symbol('OMEGA(3,1)'),
+                symbol('OMEGA(4,1)'),
+            ],
+            [
+                symbol('OMEGA(2,1)'),
+                symbol('OMEGA(2,2)'),
+                symbol('OMEGA(3,2)'),
+                symbol('OMEGA(4,2)'),
+            ],
+            [
+                symbol('OMEGA(3,1)'),
+                symbol('OMEGA(3,2)'),
+                symbol('OMEGA(3,3)'),
+                symbol('OMEGA(4,3)'),
+            ],
+            [
+                symbol('OMEGA(4,1)'),
+                symbol('OMEGA(4,2)'),
+                symbol('OMEGA(4,3)'),
+                symbol('OMEGA(4,4)'),
+            ],
+        ],
+    )
+    rvs = RandomVariables([rv1, rv2, rv3, rv4])
+    assert rvs['ETA(2)'].joint_names == ['ETA(1)', 'ETA(2)', 'ETA(3)', 'ETA(4)']
+    assert rvs.names == ['ETA(1)', 'ETA(2)', 'ETA(3)', 'ETA(4)']
+    rvs.join((['ETA(2)', 'ETA(3)']))
+    assert rvs['ETA(2)'].joint_names == ['ETA(2)', 'ETA(3)']
+    assert rvs.names == ['ETA(1)', 'ETA(4)', 'ETA(2)', 'ETA(3)']
+
 
 def test_sub():
     rv1 = RandomVariable.normal('ETA(1)', 'iiv', 0, symbol('OMEGA(1,1)'))
