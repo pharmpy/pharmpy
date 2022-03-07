@@ -101,7 +101,13 @@ class ModelSearchResults(pharmpy.results.Results):
 
 
 def create_summary(
-    models, start_model, rankfunc_name, cutoff, model_features, rank_by_not_worse=False
+    models,
+    start_model,
+    rankfunc_name,
+    cutoff,
+    model_features,
+    rank_by_not_worse=False,
+    bic_type=None,
 ):
     res_data = {'parent_model': [], f'd{rankfunc_name}': [], 'features': [], 'rank': []}
     model_names = []
@@ -112,6 +118,8 @@ def create_summary(
         kwargs['cutoff'] = cutoff
     if rankfunc_name == 'ofv':
         kwargs['rank_by_not_worse'] = rank_by_not_worse
+    if rankfunc_name == 'bic' and bic_type:
+        kwargs['bic_type'] = bic_type
     ranks = rankfunc(start_model, models, **kwargs)
     delta_diff = rankfuncs.create_diff_dict(rankfunc_name, start_model, models)
     for model in models:

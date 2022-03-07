@@ -18,8 +18,8 @@ def aic(base, candidates, cutoff=None):
     return rank_models('aic', base, candidates, cutoff)
 
 
-def bic(base, candidates, cutoff=None):
-    return rank_models('bic', base, candidates, cutoff)
+def bic(base, candidates, cutoff=None, bic_type='mixed'):
+    return rank_models('bic', base, candidates, cutoff, bic_type=bic_type)
 
 
 def create_diff_dict(rank_type, base, candidates):
@@ -38,10 +38,12 @@ def create_diff_dict(rank_type, base, candidates):
     return delta_dict
 
 
-def rank_models(rank_type, base, candidates, cutoff=None, rank_by_not_worse=False):
+def rank_models(
+    rank_type, base, candidates, cutoff=None, rank_by_not_worse=False, bic_type='mixed'
+):
     delta_dict = create_diff_dict(rank_type, base, candidates)
     if cutoff is not None:
-        if rank_by_not_worse:
+        if rank_type == 'ofv' and rank_by_not_worse:
             cutoff = -cutoff
         filtered = [model for model in candidates if delta_dict[model.name] >= cutoff]
     else:
@@ -51,9 +53,9 @@ def rank_models(rank_type, base, candidates, cutoff=None, rank_by_not_worse=Fals
         if rank_type == 'aic':
             return calculate_aic(model)
         elif rank_type == 'bic':
-            return calculate_bic(model)
+            return calculate_bic(model, bic_type)
         else:
             return getattr(model.modelfit_results, rank_type)
 
-    srtd = sorted(filtered, key=fn, reverse=rank_by_not_worse)
+    srtd = sorted(filtered, key=fn)
     return srtd

@@ -51,7 +51,7 @@ def test_ofv():
     run10 = DummyModel("run10", ofv=3.83)
     run11 = DummyModel("run11", ofv=14)
     res = ofv(run1, [run9, run10, run11], rank_by_not_worse=True)
-    assert [run10, run9] == res
+    assert [run9, run10] == res
 
 
 def test_aic():
