@@ -1040,7 +1040,12 @@ class RandomVariables(MutableSequence):
                     new.extend(selection._rvs)
                     first = False
             else:
-                new.append(rv)
+                if rv not in new:
+                    new.append(rv)
+                    joint_etas = [
+                        self[eta_name] for eta_name in rv.joint_names if eta_name != rv.name
+                    ]
+                    new += joint_etas
 
         new_rvs = RandomVariable.joint_normal(names, 'iiv', means, M)
         for rv, new_rv in zip(selection, new_rvs):
