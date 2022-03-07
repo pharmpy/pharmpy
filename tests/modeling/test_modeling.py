@@ -1087,7 +1087,7 @@ def test_nested_transit_peripherals(testdata):
             'cat',
             'FA1',
             '*',
-            'IF (FA1.EQ.0.0) THEN\n'
+            'IF (FA1.EQ.0) THEN\n'
             '    CLFA1 = 1\n'
             'ELSE IF (FA1.EQ.1.0) THEN\n'
             '    CLFA1 = THETA(4) + 1\n'
