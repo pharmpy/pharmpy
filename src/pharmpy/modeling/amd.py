@@ -4,8 +4,9 @@ import pharmpy.tools.scm as scm
 from pharmpy.results import Results
 from pharmpy.workflows import default_tool_database
 
+from .allometry import add_allometry
 from .data import remove_loq_data
-from .run import run_tool
+from .run import fit, run_tool
 
 
 class AMDResults(Results):
@@ -53,7 +54,7 @@ def run_amd(model, mfl=None, lloq=None, order=None, categorical=None, continuous
     if lloq is not None:
         remove_loq_data(model, lloq=lloq)
 
-    default_order = ['structural', 'iiv', 'residual', 'covariates']
+    default_order = ['structural', 'iiv', 'residual', 'allometry', 'covariates']
     if order is None:
         order = default_order
 
@@ -78,6 +79,9 @@ def run_amd(model, mfl=None, lloq=None, order=None, categorical=None, continuous
             run_funcs.append(func)
         elif section == 'residual':
             func = partial(_run_resmod, path=db.path)
+            run_funcs.append(func)
+        elif section == 'allometry':
+            func = partial(_run_allometry, allometric_variable=None)
             run_funcs.append(func)
         elif section == 'covariates':
             if scm.have_scm() and (continuous is not None or categorical is not None):
@@ -158,6 +162,20 @@ def _run_covariates(model, continuous, categorical, path):
                     break
     res = scm.run_scm(model, relations, continuous=continuous, categorical=categorical, path=path)
     return res.final_model
+
+
+def _run_allometry(model, allometric_variable):
+    if allometric_variable is None:
+        for col in model.datainfo:
+            if col.descriptor == 'body weight':
+                allometric_variable = col.name
+                break
+
+    if allometric_variable is not None:
+        add_allometry(model, allometric_variable=allometric_variable)
+        model.name = "scaled_model"
+        fit(model)
+    return model
 
 
 def run_iiv(model, add_iivs=False, iiv_as_fullblock=False, rankfunc='ofv', cutoff=None, path=None):
