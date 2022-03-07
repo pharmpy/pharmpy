@@ -60,7 +60,7 @@ def calculate_eta_shrinkage(model, sd=False):
     if not sd:
         shrinkage = 1 - (ie.var() / diag_ests)
     else:
-        shrinkage = 1 - (ie.std() / (diag_ests ** 0.5))
+        shrinkage = 1 - (ie.std() / (diag_ests**0.5))
     return shrinkage
 
 
