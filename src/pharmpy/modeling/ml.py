@@ -67,7 +67,7 @@ def _create_dataset(model):
     return df
 
 
-def predict_outliers(model):
+def predict_outliers(model, cutoff=3.0):
     """Predict outliers for a model using a machine learning model.
 
     See the :ref:`simeval <Individual OFV summary>` documentation for a definition of the `residual`
@@ -76,6 +76,8 @@ def predict_outliers(model):
     ----------
     model : Model
         Pharmpy model
+    cutoff : float
+        Cutoff threshold for a residual singalling an outlier
 
     Returns
     -------
@@ -160,18 +162,20 @@ def predict_outliers(model):
     model_path = Path(__file__).parent.resolve() / 'ml_models' / 'outliers.tflite'
     data = _create_dataset(model)
     output = _predict_with_tflite(model_path, data)
-    df = pd.DataFrame({'residual': output, 'outlier': output > 3}, index=get_ids(model))
+    df = pd.DataFrame({'residual': output, 'outlier': output > cutoff}, index=get_ids(model))
     df.index.name = model.datainfo.id_column.name
     return df
 
 
-def predict_influential_individuals(model):
+def predict_influential_individuals(model, cutoff=3.84):
     """Predict influential individuals for a model using a machine learning model.
 
     Parameters
     ----------
     model : Model
         Pharmpy model
+    cutoff : float
+        Cutoff threshold for a dofv signalling an influential individual
 
     Returns
     -------
@@ -190,12 +194,12 @@ def predict_influential_individuals(model):
     model_path = Path(__file__).parent.resolve() / 'ml_models' / 'infinds.tflite'
     data = _create_dataset(model)
     output = _predict_with_tflite(model_path, data)
-    df = pd.DataFrame({'dofv': output, 'influential': output > 3.84}, index=get_ids(model))
+    df = pd.DataFrame({'dofv': output, 'influential': output > cutoff}, index=get_ids(model))
     df.index.name = model.datainfo.id_column.name
     return df
 
 
-def predict_influential_outliers(model):
+def predict_influential_outliers(model, outlier_cutoff=3, influential_cutoff=3.84):
     """Predict influential outliers for a model using a machine learning model.
 
     Parameters
@@ -208,6 +212,10 @@ def predict_influential_outliers(model):
     pd.Dataframe
         Dataframe over the individuals with a `outliers` and `dofv` columns containing the raw
         predictions and `influential`, `outlier` and `influential_outlier` boolean columns.
+    outlier_cutoff : float
+        Cutoff threshold for a residual singalling an outlier
+    influential_cutoff : float
+        Cutoff threshold for a dofv signalling an influential individual
 
     See also
     --------
@@ -216,8 +224,8 @@ def predict_influential_outliers(model):
 
     """
 
-    outliers = predict_outliers(model)
-    infinds = predict_influential_individuals(model)
+    outliers = predict_outliers(model, cutoff=outlier_cutoff)
+    infinds = predict_influential_individuals(model, cutoff=influential_cutoff)
     df = pd.concat([outliers, infinds], axis=1)
     df['influential_outlier'] = df['outlier'] & df['influential']
     return df
