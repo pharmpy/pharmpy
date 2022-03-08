@@ -206,16 +206,16 @@ def predict_influential_outliers(model, outlier_cutoff=3, influential_cutoff=3.8
     ----------
     model : Model
         Pharmpy model
+    outlier_cutoff : float
+        Cutoff threshold for a residual singalling an outlier
+    influential_cutoff : float
+        Cutoff threshold for a dofv signalling an influential individual
 
     Returns
     -------
     pd.Dataframe
         Dataframe over the individuals with a `outliers` and `dofv` columns containing the raw
         predictions and `influential`, `outlier` and `influential_outlier` boolean columns.
-    outlier_cutoff : float
-        Cutoff threshold for a residual singalling an outlier
-    influential_cutoff : float
-        Cutoff threshold for a dofv signalling an influential individual
 
     See also
     --------
