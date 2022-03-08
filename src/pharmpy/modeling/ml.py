@@ -89,7 +89,8 @@ def predict_outliers(model):
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
     >>> predict_outliers(model)
-       residual  outlier
+        residual  outlier
+    ID
     1  -0.281443    False
     2   1.057392    False
     3  -0.119105    False
@@ -160,6 +161,7 @@ def predict_outliers(model):
     data = _create_dataset(model)
     output = _predict_with_tflite(model_path, data)
     df = pd.DataFrame({'residual': output, 'outlier': output > 3}, index=get_ids(model))
+    df.index.name = model.datainfo.id_column.name
     return df
 
 
@@ -189,6 +191,7 @@ def predict_influential_individuals(model):
     data = _create_dataset(model)
     output = _predict_with_tflite(model_path, data)
     df = pd.DataFrame({'dofv': output, 'influential': output > 3.84}, index=get_ids(model))
+    df.index.name = model.datainfo.id_column.name
     return df
 
 
