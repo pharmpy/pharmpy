@@ -1,3 +1,21 @@
+0.54.0 (2022-03-08)
+-------------------
+
+New features
+~~~~~~~~~~~~
+
+* New IIV version of BIC in calculate_bic
+* Use IIV BIC in iiv tool
+* Add allometry step in amd tool
+* Reduced stepwise algorithm in modelsearch
+* Add cutoff option to predict_outliers etc
+
+Bugfix
+~~~~~~
+
+* Fix issue with failing to creating correct subblocks of fullblock of random variables
+* Set index name to id-name in predict_outliers
+
 0.53.0 (2022-03-04)
 -------------------
 
