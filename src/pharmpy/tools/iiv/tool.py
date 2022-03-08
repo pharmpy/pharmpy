@@ -16,7 +16,7 @@ def create_workflow(
     algorithm,
     add_iivs=False,
     iiv_as_fullblock=False,
-    rankfunc='ofv',
+    rankfunc='bic',
     cutoff=None,
     model=None,
 ):

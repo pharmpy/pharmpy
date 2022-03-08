@@ -27,7 +27,7 @@ def test_iiv_block_structure(tmp_path, testdata, list_of_parameters, no_of_model
         add_peripheral_compartment(model_start)
         add_iiv(model_start, list_of_parameters, 'add')
 
-        res = run_tool('iiv', 'brute_force_block_structure', rankfunc='bic', model=model_start)
+        res = run_tool('iiv', 'brute_force_block_structure', model=model_start)
 
         assert len(res.summary_tool) == no_of_models
         assert len(res.summary_models) == no_of_models + 1
@@ -46,7 +46,7 @@ def test_iiv_no_of_etas(tmp_path, testdata):
         model_start = Model.create_model('mox2.mod')
         model_start.datainfo.path = tmp_path / 'mx19B.csv'
 
-        res = run_tool('iiv', 'brute_force_no_of_etas', rankfunc='bic', model=model_start)
+        res = run_tool('iiv', 'brute_force_no_of_etas', model=model_start)
 
         assert len(res.summary_tool) == 7
         assert len(res.summary_models) == 8
@@ -94,7 +94,7 @@ def test_iiv_no_of_etas_fullblock(tmp_path, testdata):
         model_start.datainfo.path = tmp_path / 'mx19B.csv'
 
         create_joint_distribution(model_start)
-        res = run_tool('iiv', 'brute_force_no_of_etas', rankfunc='bic', model=model_start)
+        res = run_tool('iiv', 'brute_force_no_of_etas', model=model_start)
 
         assert len(res.summary_tool) == 7
         assert len(res.summary_models) == 8
