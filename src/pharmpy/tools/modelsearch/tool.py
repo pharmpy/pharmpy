@@ -46,6 +46,7 @@ def create_workflow(
     task_result = Task(
         'results',
         post_process_results,
+        algorithm,
         rankfunc,
         cutoff,
         model_features,
@@ -60,7 +61,7 @@ def start(model):
     return model
 
 
-def post_process_results(rankfunc, cutoff, model_features, *models):
+def post_process_results(algorithm, rankfunc, cutoff, model_features, *models):
     res_models = []
     for model in models:
         if not model.name.startswith('modelsearch_candidate'):
@@ -68,7 +69,9 @@ def post_process_results(rankfunc, cutoff, model_features, *models):
         else:
             res_models.append(model)
 
-    summary_tool = create_summary(res_models, start_model, rankfunc, cutoff, model_features)
+    summary_tool = create_summary(
+        res_models, start_model, rankfunc, cutoff, model_features, algorithm=algorithm
+    )
 
     best_model_name = summary_tool['rank'].idxmin()
     try:
@@ -108,6 +111,7 @@ def create_summary(
     model_features,
     rank_by_not_worse=False,
     bic_type=None,
+    algorithm=None,
 ):
     res_data = {'parent_model': [], f'd{rankfunc_name}': [], 'features': [], 'rank': []}
     model_names = []
@@ -126,7 +130,18 @@ def create_summary(
         model_names.append(model.name)
         res_data['parent_model'].append(model.parent_model)
         res_data[f'd{rankfunc_name}'].append(delta_diff[model.name])
-        res_data['features'].append(model_features[model.name])
+        # FIXME: make more general
+        if algorithm == 'reduced_stepwise':
+            feat = model_features[model.name]
+            if model.parent_model in model_names:
+                idx = model_names.index(model.parent_model)
+                feat_parent = res_data['features'][idx]
+                feat_all = feat_parent + (feat,)
+            else:
+                feat_all = (feat,)
+            res_data['features'].append(feat_all)
+        else:
+            res_data['features'].append(model_features[model.name])
         if model in ranks:
             res_data['rank'].append(ranks.index(model) + 1)
         else:

@@ -7,7 +7,12 @@ from pharmpy.modeling import (
     set_transit_compartments,
     set_zero_order_absorption,
 )
-from pharmpy.tools.modelsearch.algorithms import _is_allowed, exhaustive, exhaustive_stepwise
+from pharmpy.tools.modelsearch.algorithms import (
+    _is_allowed,
+    exhaustive,
+    exhaustive_stepwise,
+    reduced_stepwise,
+)
 from pharmpy.tools.modelsearch.mfl import ModelFeatures
 
 
@@ -44,10 +49,43 @@ def test_exhaustive_algorithm():
             2,
             ('LAGTIME()',),
         ),
+        (
+            'ABSORPTION(ZO);LAGTIME();PERIPHERALS(1)',
+            15,
+            ('LAGTIME()', 'PERIPHERALS(1)', 'ABSORPTION(ZO)'),
+        ),
+        (
+            'ABSORPTION(ZO);LAGTIME();PERIPHERALS([1,2]);ELIMINATION(ZO)',
+            170,
+            ('LAGTIME()', 'PERIPHERALS(1)', 'PERIPHERALS(2)', 'ELIMINATION(ZO)', 'ABSORPTION(ZO)'),
+        ),
     ],
 )
 def test_exhaustive_stepwise_algorithm(mfl, no_of_models, last_model_features):
     wf, _, model_features = exhaustive_stepwise(mfl, False, False, False)
+    fit_tasks = [task.name for task in wf.tasks if task.name.startswith('run')]
+
+    assert len(fit_tasks) == no_of_models
+    assert list(model_features.values())[-1] == last_model_features
+
+
+@pytest.mark.parametrize(
+    'mfl, no_of_models, last_model_features',
+    [
+        (
+            'ABSORPTION(ZO);LAGTIME();PERIPHERALS(1)',
+            12,
+            'ABSORPTION(ZO)',
+        ),
+        (
+            'ABSORPTION(ZO);LAGTIME();PERIPHERALS([1,2]);ELIMINATION(ZO)',
+            52,
+            'PERIPHERALS(2)',
+        ),
+    ],
+)
+def test_reduced_stepwise_algorithm(mfl, no_of_models, last_model_features):
+    wf, _, model_features = reduced_stepwise(mfl, False, False, False)
     fit_tasks = [task.name for task in wf.tasks if task.name.startswith('run')]
 
     assert len(fit_tasks) == no_of_models

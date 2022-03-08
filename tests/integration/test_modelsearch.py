@@ -177,3 +177,43 @@ def test_exhaustive_stepwise_start_model_fail(tmp_path, testdata):
         rundir = tmp_path / 'modelsearch_dir1'
         assert rundir.is_dir()
         assert len(list((rundir / 'models').iterdir())) == 5
+
+
+@pytest.mark.parametrize(
+    'mfl, no_of_models, best_model_name, last_model_parent_name',
+    [
+        (
+            'ABSORPTION(ZO);LAGTIME();PERIPHERALS(1)',
+            12,
+            'modelsearch_candidate2',
+            'modelsearch_candidate9',
+        ),
+    ],
+)
+def test_reduced_stepwise(
+    tmp_path, testdata, mfl, no_of_models, best_model_name, last_model_parent_name
+):
+    with TemporaryDirectoryChanger(tmp_path):
+        shutil.copy2(testdata / 'nonmem' / 'models' / 'mox2.mod', tmp_path)
+        shutil.copy2(testdata / 'nonmem' / 'models' / 'mx19B.csv', tmp_path)
+        model_start = Model.create_model('mox2.mod')
+        model_start.datainfo.path = tmp_path / 'mx19B.csv'
+        res = run_tool('modelsearch', 'reduced_stepwise', mfl, model=model_start)
+
+        assert len(res.summary_tool) == no_of_models
+        assert len(res.summary_models) == no_of_models + 1
+        assert len(res.models) == no_of_models
+        assert res.best_model.name == best_model_name
+
+        assert res.models[0].parent_model == 'mox2'
+        assert res.models[-1].parent_model == last_model_parent_name
+        if last_model_parent_name != 'mox2':
+            last_model_features = res.summary_tool.loc[res.models[-1].name]['features']
+            parent_model_features = res.summary_tool.loc[last_model_parent_name]['features']
+            assert last_model_features[: len(parent_model_features)] == parent_model_features
+
+        rundir = tmp_path / 'modelsearch_dir1'
+        assert rundir.is_dir()
+        assert len(list((rundir / 'models').iterdir())) == no_of_models + 1
+        assert (rundir / 'results.json').exists()
+        assert (rundir / 'results.csv').exists()
