@@ -45,7 +45,7 @@ def fit(models, tool=None):
     for model in models:
         try:
             db_model = read_model_from_database(model.name, database=model.database)
-        except KeyError:
+        except (KeyError, AttributeError):
             db_model = None
         if db_model and db_model.modelfit_results is not None and db_model == model:
             model.modelfit_results = db_model.modelfit_results
