@@ -331,9 +331,11 @@ class DataInfo(MutableSequence):
         List of column names
     path : Path
         Path to dataset file
+    separator : str
+        Character or regexp separator for dataset
     """
 
-    def __init__(self, columns=None, path=None):
+    def __init__(self, columns=None, path=None, separator=','):
         if columns is None:
             self._columns = []
         elif len(columns) > 0 and isinstance(columns[0], str):
@@ -344,6 +346,7 @@ class DataInfo(MutableSequence):
         else:
             self._columns = columns
         self.path = path
+        self.separator = separator
 
     def __eq__(self, other):
         if len(self) != len(other):
@@ -404,6 +407,19 @@ class DataInfo(MutableSequence):
             self._path = Path(value)
         else:
             self._path = None
+
+    @property
+    def separator(self):
+        """Separator for dataset file
+
+        Can be a single character or a regular expression
+        string.
+        """
+        return self._separator
+
+    @separator.setter
+    def separator(self, value):
+        self._separator = value
 
     @property
     def typeix(self):
