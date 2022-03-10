@@ -123,6 +123,8 @@ class EstimationStep:
         niter=None,
         auto=None,
         keep_every_nth_iter=None,
+        residuals=None,
+        predictions=None,
         tool_options=None,
     ):
         method = self._canonicalize_and_check_method(method)
@@ -136,6 +138,14 @@ class EstimationStep:
         self.niter = niter
         self.auto = auto
         self.keep_every_nth_iter = keep_every_nth_iter
+        if residuals is None:
+            self.residuals = []
+        else:
+            self.residuals = residuals
+        if predictions is None:
+            self.predictions = []
+        else:
+            self.predictions = predictions
         if tool_options is None:
             self.tool_options = dict()
         else:
@@ -245,6 +255,24 @@ class EstimationStep:
     @keep_every_nth_iter.setter
     def keep_every_nth_iter(self, value):
         self._keep_every_nth_iter = value
+
+    @property
+    def residuals(self):
+        """List of residuals to calculate"""
+        return self._residuals
+
+    @residuals.setter
+    def residuals(self, value):
+        self._residuals = value
+
+    @property
+    def predictions(self):
+        """List of predictions to estimate"""
+        return self._predictions
+
+    @predictions.setter
+    def predictions(self, value):
+        self._predictions = value
 
     @property
     def tool_options(self):
