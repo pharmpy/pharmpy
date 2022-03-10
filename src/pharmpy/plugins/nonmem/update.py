@@ -472,6 +472,13 @@ def update_statements(model, old, new, trans):
         if len(error_statements) > 0 and error_statements[0].symbol.name == 'F':
             error_statements.pop(0)  # Remove the link statement
         error.rvs, error.trans = model.random_variables, trans
+        try:
+            amounts = list(new.ode_system.amounts)
+        except AttributeError:
+            pass
+        else:
+            for i, amount in enumerate(amounts, start=1):
+                trans[amount] = sympy.Symbol(f"A({i})")
         error_statements.subs(trans)
         error.statements = error_statements
         error.is_updated = True
