@@ -47,6 +47,8 @@ class NMTranParser:
 
 default_record_order = [
     'SIZES',
+    'INPUT',
+    'DATA',
     'SUBROUTINES',
     'MODEL',
     'ABBREVIATED',

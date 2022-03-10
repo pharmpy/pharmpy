@@ -278,6 +278,9 @@ def update_ode_system(model, old, new):
 
     Handle changes from CompartmentSystem to ExplicitODESystem
     """
+    if old is None:
+        old = CompartmentalSystem()
+
     if type(old) == CompartmentalSystem and type(new) == ExplicitODESystem:
         to_des(model, new)
     elif new.solver:
@@ -463,8 +466,10 @@ def update_statements(model, old, new, trans):
     rec.statements = main_statements
 
     error = model._get_error_record()
+    if not error and len(error_statements) > 0:
+        model.control_stream.insert_record('$ERROR\n')
     if error:
-        if len(error_statements) > 0:
+        if len(error_statements) > 0 and error_statements[0].symbol.name == 'F':
             error_statements.pop(0)  # Remove the link statement
         error.rvs, error.trans = model.random_variables, trans
         error_statements.subs(trans)
@@ -477,7 +482,10 @@ def update_statements(model, old, new, trans):
 def update_lag_time(model, old, new):
     new_dosing = new.dosing_compartment
     new_lag_time = new_dosing.lag_time
-    old_lag_time = old.dosing_compartment.lag_time
+    try:
+        old_lag_time = old.dosing_compartment.lag_time
+    except ValueError:
+        old_lag_time = 0
     if new_lag_time != old_lag_time and new_lag_time != 0:
         ass = Assignment('ALAG1', new_lag_time)
         model.statements.insert_before_odes(ass)
@@ -529,7 +537,10 @@ def create_compartment_remap(oldmap, newmap):
 
 def pk_param_conversion(model, advan, trans):
     """Conversion map for pk parameters for removed or added compartment"""
-    subs = model.control_stream.get_records('SUBROUTINES')[0]
+    all_subs = model.control_stream.get_records('SUBROUTINES')
+    if not all_subs:
+        return
+    subs = all_subs[0]
     from_advan = subs.get_option_startswith('ADVAN')
     statements = model.statements
     cs = statements.ode_system
@@ -675,8 +686,12 @@ def pk_param_conversion(model, advan, trans):
 
 def new_advan_trans(model):
     """Decide which new advan and trans to be used"""
-    subs = model.control_stream.get_records('SUBROUTINES')[0]
-    oldtrans = subs.get_option_startswith('TRANS')
+    all_subs = model.control_stream.get_records('SUBROUTINES')
+    if all_subs:
+        subs = all_subs[0]
+        oldtrans = subs.get_option_startswith('TRANS')
+    else:
+        oldtrans = None
     statements = model.statements
     odes = model.statements.ode_system
     nonlin = is_nonlinear_odes(model)
@@ -724,6 +739,18 @@ def new_advan_trans(model):
             trans = 'TRANS2'
         else:
             trans = 'TRANS1'
+    elif oldtrans is None:
+        output = odes.output_compartment
+        central = odes.central_compartment
+        elimination_rate = odes.get_flow(central, output)
+        num, den = elimination_rate.as_numer_denom()
+        if num.is_Symbol and den.is_Symbol:
+            if advan in ['ADVAN1', 'ADVAN2']:
+                trans = 'TRANS2'
+            else:
+                trans = 'TRANS4'
+        else:
+            trans = 'TRANS1'
     else:
         trans = 'TRANS1'
 
@@ -732,7 +759,12 @@ def new_advan_trans(model):
 
 def update_subroutines_record(model, advan, trans):
     """Update $SUBROUTINES with new advan and trans"""
-    subs = model.control_stream.get_records('SUBROUTINES')[0]
+    all_subs = model.control_stream.get_records('SUBROUTINES')
+    if not all_subs:
+        content = f'$SUBROUTINES {advan} {trans}\n'
+        model.control_stream.insert_record(content)
+        return
+    subs = all_subs[0]
     oldadvan = subs.get_option_startswith('ADVAN')
     oldtrans = subs.get_option_startswith('TRANS')
 
@@ -747,7 +779,10 @@ def update_subroutines_record(model, advan, trans):
 
 def update_model_record(model, advan):
     """Update $MODEL"""
-    newmap = new_compartmental_map(model.statements.ode_system, model._compartment_map)
+    try:
+        newmap = new_compartmental_map(model.statements.ode_system, model._compartment_map)
+    except AttributeError:
+        return
     if advan in ['ADVAN1', 'ADVAN2', 'ADVAN3', 'ADVAN4', 'ADVAN10', 'ADVAN11', 'ADVAN12']:
         model.control_stream.remove_records(model.control_stream.get_records('MODEL'))
     else:
