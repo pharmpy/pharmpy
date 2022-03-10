@@ -794,7 +794,7 @@ def update_model_record(model, advan):
         model.control_stream.remove_records(model.control_stream.get_records('MODEL'))
     else:
         oldmap = model._compartment_map
-        if oldmap != newmap:
+        if oldmap != newmap or model.statements.ode_system.solver:
             model.control_stream.remove_records(model.control_stream.get_records('MODEL'))
             mod = model.control_stream.insert_record('$MODEL\n')
             output_name = model.statements.ode_system.output_compartment.name

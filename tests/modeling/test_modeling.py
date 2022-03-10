@@ -3009,9 +3009,11 @@ def test_set_ode_solver(pheno_path):
     model = Model.create_model(pheno_path)
     assert model.statements.ode_system.solver is None
     assert 'ADVAN1' in model.model_code
+    model = Model.create_model(pheno_path)
     set_ode_solver(model, 'LSODA')
     assert model.statements.ode_system.solver == 'LSODA'
     assert 'ADVAN13' in model.model_code
+    model = Model.create_model(pheno_path)
     set_ode_solver(model, 'GL')
     assert model.statements.ode_system.solver == 'GL'
     assert 'ADVAN5' in model.model_code

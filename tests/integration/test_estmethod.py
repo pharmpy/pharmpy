@@ -9,11 +9,7 @@ from pharmpy.utils import TemporaryDirectoryChanger
 
 @pytest.mark.parametrize(
     'methods, solvers, no_of_models, advan_ref',
-    [
-        ('foce', None, 2, 'ADVAN1'),
-        (['laplace'], None, 3, 'ADVAN1'),
-        ('foce', ['lsoda'], 4, 'ADVAN13'),
-    ],
+    [('foce', None, 2, 'ADVAN1'), ('foce', ['lsoda'], 4, 'ADVAN13'), ('foce', ['GL'], 4, '$MODEL')],
 )
 def test_estmethod(tmp_path, testdata, methods, solvers, no_of_models, advan_ref):
     with TemporaryDirectoryChanger(tmp_path):
