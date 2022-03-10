@@ -64,7 +64,7 @@ def exhaustive_stepwise(mfl, add_iivs, iiv_as_fullblock, add_mdt_iiv):
                 model_no = len(model_tasks) + 1
                 model_name = f'modelsearch_candidate{model_no}'
 
-                wf_create_model, task_transformed = _create_model_workflow(
+                wf_create_model, task_function = _create_model_workflow(
                     model_name, feat, mfl_funcs[feat], add_iivs, iiv_as_fullblock, add_mdt_iiv
                 )
 
@@ -74,7 +74,7 @@ def exhaustive_stepwise(mfl, add_iivs, iiv_as_fullblock, add_mdt_iiv):
                     wf_search += wf_create_model
 
                 model_tasks += wf_create_model.output_tasks
-                features_previous = _get_previous_features(wf_search, task_transformed, mfl_funcs)
+                features_previous = _get_previous_features(wf_search, task_function, mfl_funcs)
                 model_features[model_name] = tuple(list(features_previous) + [feat])
 
                 no_of_trans += 1
@@ -196,14 +196,14 @@ def _create_model_workflow(model_name, feat, func, add_iivs, iiv_as_fullblock, a
     if add_iivs or add_mdt_iiv:
         task_add_iiv = Task('add_iivs', _add_iiv_to_func, feat, iiv_as_fullblock, add_mdt_iiv)
         wf_stepwise_step.add_task(task_add_iiv, predecessors=task_function)
-        task_transformed = task_add_iiv
+        task_to_fit = task_add_iiv
     else:
-        task_transformed = task_function
+        task_to_fit = task_function
 
     wf_fit = create_fit_workflow(n=1)
-    wf_stepwise_step.insert_workflow(wf_fit, predecessors=task_transformed)
+    wf_stepwise_step.insert_workflow(wf_fit, predecessors=task_to_fit)
 
-    return wf_stepwise_step, task_transformed
+    return wf_stepwise_step, task_function
 
 
 def _is_allowed(feat_current, func_current, feat_previous, mfl_features):
