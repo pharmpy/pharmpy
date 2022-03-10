@@ -267,7 +267,7 @@ def _copy(name, model):
 def _update_initial_estimates(model):
     # FIXME: this should use dynamic workflows and not dispatch the next task
     try:
-        update_inits(model)
+        update_inits(model, move_est_close_to_bounds=True)
     except ValueError:
         pass
     return model

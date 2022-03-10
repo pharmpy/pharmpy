@@ -3,7 +3,7 @@
 """
 
 
-def update_inits(model, force_individual_estimates=False):
+def update_inits(model, force_individual_estimates=False, move_est_close_to_bounds=False):
     """Update initial parameter estimate for a model
 
     Updates initial estimates of population parameters for a model from
@@ -44,8 +44,13 @@ def update_inits(model, force_individual_estimates=False):
             'Cannot update initial parameter estimates since no modelfit results are available'
         )
 
+    if move_est_close_to_bounds:
+        param_est = _move_est_close_to_bounds(model)
+    else:
+        param_est = res.parameter_estimates
+
     try:
-        model.parameters = res.parameter_estimates
+        model.parameters = param_est
     except ValueError as e:
         if str(e) == 'Initial estimate cannot be set to NaN':
             raise ValueError('One or more parameter estimates are NaN')
@@ -56,3 +61,32 @@ def update_inits(model, force_individual_estimates=False):
         model.initial_individual_estimates = res.individual_estimates
 
     return model
+
+
+def _move_est_close_to_bounds(model):
+    rvs = model.random_variables
+    res = model.modelfit_results
+    est = res.parameter_estimates.to_dict()
+    sdcorr = rvs.parameters_sdcorr(est)
+    newdict = est.copy()
+    for rvs, dist in rvs.distributions():
+        if len(rvs) > 1:
+            sigma_sym = dist.sigma
+            for i in range(sigma_sym.rows):
+                for j in range(sigma_sym.cols):
+                    param_name = sigma_sym[i, j].name
+                    if i != j:
+                        if sdcorr[param_name] > 0.99:
+                            name_i, name_j = sigma_sym[i, i].name, sigma_sym[j, j].name
+                            # From correlation to covariance
+                            corr_new = 0.9
+                            sd_i, sd_j = sdcorr[name_i], sdcorr[name_j]
+                            newdict[param_name] = corr_new * sd_i * sd_j
+                    else:
+                        if est[param_name] < 0.001:
+                            newdict[param_name] = 0.01
+        else:
+            param_name = (dist.std**2).name
+            if est[param_name] < 0.001:
+                newdict[param_name] = 0.01
+    return newdict

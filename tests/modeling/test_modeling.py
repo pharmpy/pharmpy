@@ -2707,6 +2707,25 @@ def test_update_inits(testdata, etas_file, force, file_exists):
         assert (os.path.isfile('run1_input.phi')) is file_exists
 
 
+def test_update_inits_move_est(pheno_path):
+    model = Model.create_model(pheno_path)
+    res = model.modelfit_results
+
+    create_joint_distribution(model)
+    add_iiv(model, 'S1', 'add')
+
+    param_est = res.parameter_estimates
+    param_est['IIV_CL_IIV_V'] = 0.0285  # Correlation > 0.99
+    param_est['IIV_S1'] = 0.0005
+    res.parameter_estimates = param_est
+
+    update_inits(model, move_est_close_to_bounds=True)
+
+    assert model.parameters['OMEGA(1,1)'].init == res.parameter_estimates['OMEGA(1,1)']
+    assert model.parameters['IIV_S1'].init == 0.01
+    assert round(model.parameters['IIV_CL_IIV_V'].init, 6) == 0.025757
+
+
 def test_update_inits_no_res(testdata):
     with Patcher(additional_skip_names=['pkgutil']) as patcher:
         set_uid(0)  # Set to root user for write permission
