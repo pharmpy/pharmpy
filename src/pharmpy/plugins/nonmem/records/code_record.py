@@ -80,7 +80,6 @@ def _translate_sympy_piecewise(statement, defined_symbols):
     )
     if has_added_else:
         expression = expression[0:-1]
-    has_else = expression[-1][1] is sympy.true
 
     expressions, _ = zip(*expression)
 
@@ -88,26 +87,10 @@ def _translate_sympy_piecewise(statement, defined_symbols):
         value = expression[0][0]
         condition = expression[0][1]
         condition_translated = _translate_condition(condition)
-
         statement_str = f'IF ({condition_translated}) {symbol} = {value}'
         return statement_str
-    elif all(len(e.args) == 0 for e in expressions) and not has_else:
-        return _translate_sympy_single(symbol, expression)
     else:
         return _translate_sympy_block(symbol, expression)
-
-
-def _translate_sympy_single(symbol, expression):
-    statement_str = ''
-    for e in expression:
-        value = e[0]
-        condition = e[1]
-
-        condition_translated = _translate_condition(condition)
-
-        statement_str += f'IF ({condition_translated}) {symbol} = {value}\n'
-
-    return statement_str
 
 
 def _translate_sympy_block(symbol, expression):

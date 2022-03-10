@@ -2638,33 +2638,26 @@ IF (VISI.EQ.3.OR.VISI.EQ.8) IOV_3 = 0'''
 
         remove_iov(model_remove_one, 'ETA_IOV_11')
         assert len(model_remove_one.random_variables.iov) == 4
-        assert (
-            '''IOV_1 = 0
+        correct = '''IOV_1 = 0
 IF (VISI.EQ.3.OR.VISI.EQ.8) IOV_1 = 0
 IOV_2 = 0
-IF (VISI.EQ.3) IOV_2 = ETA(4)
-IF (VISI.EQ.8) IOV_2 = ETA(5)
+IF (VISI.EQ.3) THEN
+    IOV_2 = ETA(4)
+ELSE IF (VISI.EQ.8) THEN
+    IOV_2 = ETA(5)
+END IF
 IOV_3 = 0
-IF (VISI.EQ.3) IOV_3 = ETA(6)
-IF (VISI.EQ.8) IOV_3 = ETA(7)
+IF (VISI.EQ.3) THEN
+    IOV_3 = ETA(6)
+ELSE IF (VISI.EQ.8) THEN
+    IOV_3 = ETA(7)
+END IF
 '''
-            in model_remove_one.model_code
-        )
+        assert model_remove_one.model_code.split('\n')[5:19] == correct.split('\n')[:-1]
 
         remove_iov(model_remove_two, ['ETA_IOV_11', 'ETA_IOV_12'])
         assert len(model_remove_two.random_variables.iov) == 4
-        assert (
-            '''IOV_1 = 0
-IF (VISI.EQ.3.OR.VISI.EQ.8) IOV_1 = 0
-IOV_2 = 0
-IF (VISI.EQ.3) IOV_2 = ETA(4)
-IF (VISI.EQ.8) IOV_2 = ETA(5)
-IOV_3 = 0
-IF (VISI.EQ.3) IOV_3 = ETA(6)
-IF (VISI.EQ.8) IOV_3 = ETA(7)
-'''
-            in model_remove_two.model_code
-        )
+        assert model_remove_two.model_code.split('\n')[5:19] == correct.split('\n')[:-1]
 
         remove_iov(model_remove_three, ['ETA_IOV_11', 'ETA_IOV_12', 'ETA_IOV_21'])
         assert len(model_remove_three.random_variables.iov) == 2
@@ -2674,8 +2667,10 @@ IF (VISI.EQ.3.OR.VISI.EQ.8) IOV_1 = 0
 IOV_2 = 0
 IF (VISI.EQ.3.OR.VISI.EQ.8) IOV_2 = 0
 IOV_3 = 0
-IF (VISI.EQ.3) IOV_3 = ETA(4)
-IF (VISI.EQ.8) IOV_3 = ETA(5)
+IF (VISI.EQ.3) THEN
+    IOV_3 = ETA(4)
+ELSE IF (VISI.EQ.8) THEN
+    IOV_3 = ETA(5)
 '''
             in model_remove_three.model_code
         )
@@ -2853,8 +2848,11 @@ def test_nested_update_source(pheno_path):
             ['ETA(1)'],
             None,
             'IOV_1 = 0\n'
-            'IF (FA1.EQ.0) IOV_1 = ETA(3)\n'
-            'IF (FA1.EQ.1) IOV_1 = ETA(4)\n'
+            'IF (FA1.EQ.0) THEN\n'
+            '    IOV_1 = ETA(3)\n'
+            'ELSE IF (FA1.EQ.1) THEN\n'
+            '    IOV_1 = ETA(4)\n'
+            'END IF\n'
             'ETAI1 = IOV_1 + ETA(1)\n',
             'CL = TVCL*EXP(ETAI1)\n' 'V=TVV*EXP(ETA(2))\n',
             '$OMEGA  BLOCK(1)\n'
@@ -2865,8 +2863,11 @@ def test_nested_update_source(pheno_path):
             'ETA(1)',
             None,
             'IOV_1 = 0\n'
-            'IF (FA1.EQ.0) IOV_1 = ETA(3)\n'
-            'IF (FA1.EQ.1) IOV_1 = ETA(4)\n'
+            'IF (FA1.EQ.0) THEN\n'
+            '    IOV_1 = ETA(3)\n'
+            'ELSE IF (FA1.EQ.1) THEN\n'
+            '    IOV_1 = ETA(4)\n'
+            'END IF\n'
             'ETAI1 = IOV_1 + ETA(1)\n',
             'CL = TVCL*EXP(ETAI1)\n' 'V=TVV*EXP(ETA(2))\n',
             '$OMEGA  BLOCK(1)\n'
@@ -2874,30 +2875,14 @@ def test_nested_update_source(pheno_path):
             '$OMEGA  BLOCK(1) SAME ; OMEGA_IOV_1\n',
         ),
         (
-            None,
-            None,
-            'IOV_1 = 0\n'
-            'IF (FA1.EQ.0) IOV_1 = ETA(3)\n'
-            'IF (FA1.EQ.1) IOV_1 = ETA(4)\n'
-            'IOV_2 = 0\n'
-            'IF (FA1.EQ.0) IOV_2 = ETA(5)\n'
-            'IF (FA1.EQ.1) IOV_2 = ETA(6)\n'
-            'ETAI1 = IOV_1 + ETA(1)\n'
-            'ETAI2 = IOV_2 + ETA(2)\n',
-            'CL = TVCL*EXP(ETAI1)\n' 'V = TVV*EXP(ETAI2)\n',
-            '$OMEGA  BLOCK(1)\n'
-            '0.00309626 ; OMEGA_IOV_1\n'
-            '$OMEGA  BLOCK(1) SAME ; OMEGA_IOV_1\n'
-            '$OMEGA  BLOCK(1)\n'
-            '0.0031128 ; OMEGA_IOV_2\n'
-            '$OMEGA  BLOCK(1) SAME ; OMEGA_IOV_2\n',
-        ),
-        (
             ['CL'],
             None,
             'IOV_1 = 0\n'
-            'IF (FA1.EQ.0) IOV_1 = ETA(3)\n'
-            'IF (FA1.EQ.1) IOV_1 = ETA(4)\n'
+            'IF (FA1.EQ.0) THEN\n'
+            '    IOV_1 = ETA(3)\n'
+            'ELSE IF (FA1.EQ.1) THEN\n'
+            '    IOV_1 = ETA(4)\n'
+            'END IF\n'
             'ETAI1 = IOV_1 + ETA(1)\n',
             'CL = TVCL*EXP(ETAI1)\n' 'V=TVV*EXP(ETA(2))\n',
             '$OMEGA  BLOCK(1)\n'
@@ -2908,8 +2893,11 @@ def test_nested_update_source(pheno_path):
             ['CL', 'ETA(1)'],
             None,
             'IOV_1 = 0\n'
-            'IF (FA1.EQ.0) IOV_1 = ETA(3)\n'
-            'IF (FA1.EQ.1) IOV_1 = ETA(4)\n'
+            'IF (FA1.EQ.0) THEN\n'
+            '    IOV_1 = ETA(3)\n'
+            'ELSE IF (FA1.EQ.1) THEN\n'
+            '    IOV_1 = ETA(4)\n'
+            'END IF\n'
             'ETAI1 = IOV_1 + ETA(1)\n',
             'CL = TVCL*EXP(ETAI1)\n' 'V=TVV*EXP(ETA(2))\n',
             '$OMEGA  BLOCK(1)\n'
@@ -2920,8 +2908,11 @@ def test_nested_update_source(pheno_path):
             ['ETA(1)', 'CL'],
             None,
             'IOV_1 = 0\n'
-            'IF (FA1.EQ.0) IOV_1 = ETA(3)\n'
-            'IF (FA1.EQ.1) IOV_1 = ETA(4)\n'
+            'IF (FA1.EQ.0) THEN\n'
+            '    IOV_1 = ETA(3)\n'
+            'ELSE IF (FA1.EQ.1) THEN\n'
+            '    IOV_1 = ETA(4)\n'
+            'END IF\n'
             'ETAI1 = IOV_1 + ETA(1)\n',
             'CL = TVCL*EXP(ETAI1)\n' 'V=TVV*EXP(ETA(2))\n',
             '$OMEGA  BLOCK(1)\n'
@@ -2929,30 +2920,14 @@ def test_nested_update_source(pheno_path):
             '$OMEGA  BLOCK(1) SAME ; OMEGA_IOV_1\n',
         ),
         (
-            ['CL', 'ETA(2)'],
-            None,
-            'IOV_1 = 0\n'
-            'IF (FA1.EQ.0) IOV_1 = ETA(3)\n'
-            'IF (FA1.EQ.1) IOV_1 = ETA(4)\n'
-            'IOV_2 = 0\n'
-            'IF (FA1.EQ.0) IOV_2 = ETA(5)\n'
-            'IF (FA1.EQ.1) IOV_2 = ETA(6)\n'
-            'ETAI1 = IOV_1 + ETA(1)\n'
-            'ETAI2 = IOV_2 + ETA(2)\n',
-            'CL = TVCL*EXP(ETAI1)\n' 'V = TVV*EXP(ETAI2)\n',
-            '$OMEGA  BLOCK(1)\n'
-            '0.00309626 ; OMEGA_IOV_1\n'
-            '$OMEGA  BLOCK(1) SAME ; OMEGA_IOV_1\n'
-            '$OMEGA  BLOCK(1)\n'
-            '0.0031128 ; OMEGA_IOV_2\n'
-            '$OMEGA  BLOCK(1) SAME ; OMEGA_IOV_2\n',
-        ),
-        (
             ['ETA(1)'],
             ['ETA(3)', 'ETA(4)'],
             'IOV_1 = 0\n'
-            'IF (FA1.EQ.0) IOV_1 = ETA(3)\n'
-            'IF (FA1.EQ.1) IOV_1 = ETA(4)\n'
+            'IF (FA1.EQ.0) THEN\n'
+            '    IOV_1 = ETA(3)\n'
+            'ELSE IF (FA1.EQ.1) THEN\n'
+            '    IOV_1 = ETA(4)\n'
+            'END IF\n'
             'ETAI1 = IOV_1 + ETA(1)\n',
             'CL = TVCL*EXP(ETAI1)\n' 'V=TVV*EXP(ETA(2))\n',
             '$OMEGA  BLOCK(1)\n'

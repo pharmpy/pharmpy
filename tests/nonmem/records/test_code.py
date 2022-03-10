@@ -611,7 +611,7 @@ def test_nested_block_if(parser):
         (
             S('CLWGT'),
             sympy.Piecewise((23, sympy.Eq(S('X'), 1)), (0, sympy.Eq(S('X'), 0))),
-            '\nIF (X.EQ.1) CLWGT = 23\nIF (X.EQ.0) CLWGT = 0\n',
+            '\nIF (X.EQ.1) THEN\n    CLWGT = 23\nELSE IF (X.EQ.0) THEN\n    CLWGT = 0\nEND IF\n',
         ),
         (
             S('X'),
