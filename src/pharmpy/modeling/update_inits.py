@@ -17,6 +17,9 @@ def update_inits(model, force_individual_estimates=False, move_est_close_to_boun
         Pharmpy model to update initial estimates
     force_individual_estimates : bool
         Update initial individual estimates even if model din't use them previously.
+    move_est_close_to_bounds : bool
+        Move estimates that are close to bounds. If correlation >0.99 the correlation will
+        be set to 0.9, if variance is <0.001 the variance will be set to 0.01.
 
     Returns
     -------
