@@ -60,6 +60,7 @@ default_record_order = [
     'OMEGA',
     'SIGMA',
     'ESTIMATION',
+    'COVARIANCE',
     'TABLE',
 ]
 
