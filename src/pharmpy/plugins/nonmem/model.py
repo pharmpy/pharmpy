@@ -65,7 +65,8 @@ def convert_model(model):
         code += '$PK\n'
     nm_model = pharmpy.model.Model.create_model(StringIO(code))
     nm_model.random_variables = model.random_variables
-    nm_model.parameters = model.parameters
+    nm_model._parameters = model.parameters
+    nm_model._old_parameters = Parameters()
     nm_model.statements = model.statements
     if hasattr(model, 'name'):
         nm_model.name = model.name
