@@ -970,6 +970,9 @@ def update_estimation(model):
         old = model._old_estimation_steps
     except AttributeError:
         old = []
+        # Add SADDLE_RESET=1 if model did not have $EST before
+        if 'SADDLE_RESET' not in new[-1].tool_options:
+            new[-1].tool_options['SADDLE_RESET'] = 1
     if old == new:
         return
 
