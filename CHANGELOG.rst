@@ -1,3 +1,23 @@
+next version
+~~~~~~~~~~~~
+
+New features
+~~~~~~~~~~~~
+
+* Option in modeling.update_inits to move estimates that are close to boundary
+
+Changes
+~~~~~~~
+
+* Set different initial estimates of clearance for peripherals (#590)
+
+
+Bugfix
+~~~~~~
+
+* Fix issue with duplicated features with IIV-options in modelsearch-tool
+* Fix issue where $MODEL was not added when setting ODE solver to GL or GL_REAL
+
 0.54.0 (2022-03-08)
 -------------------
 
