@@ -815,7 +815,11 @@ def add_needed_pk_parameters(model, advan, trans):
             if rate != ass.symbol:
                 statements.insert_before_odes(ass)
                 odes.add_flow(odes.find_depot(statements), comp, ass.symbol)
-    if advan == 'ADVAN3' and trans == 'TRANS4':
+    if advan == 'ADVAN1' and trans == 'TRANS2':
+        central = odes.central_compartment
+        output = odes.output_compartment
+        add_parameters_ratio(model, 'CL', 'V', central, output)
+    elif advan == 'ADVAN3' and trans == 'TRANS4':
         central = odes.central_compartment
         output = odes.output_compartment
         peripheral = odes.peripheral_compartments[0]
