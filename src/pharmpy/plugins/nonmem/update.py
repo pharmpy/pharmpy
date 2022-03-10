@@ -1073,6 +1073,17 @@ def update_estimation(model):
         covrecs = model.control_stream.get_records('COVARIANCE')
         model.control_stream.remove_records(covrecs)
 
+    # Update $TABLE
+    # Currently only adds if did not exist before
+    cols = set()
+    for estep in new:
+        cols.update(estep.predictions)
+        cols.update(estep.residuals)
+    tables = model.control_stream.get_records('TABLE')
+    if not tables and cols:
+        s = f'$TABLE {model.datainfo.id_column.name} {model.datainfo.dv_column.name} '
+        s += f'{" ".join(cols)} FILE=mytab NOAPPEND NOPRINT'
+        model.control_stream.insert_record(s)
     model._old_estimation_steps = copy.deepcopy(new)
 
 
