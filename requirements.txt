@@ -99,7 +99,7 @@ traitlets==5.1.1
 urllib3==1.26.8
 wcwidth==0.2.5
 webencodings==0.5.1
-widgetsnbextension==4.0.0b1
+widgetsnbextension==4.0.0rc0
 zict==2.1.0
 zipp==3.7.0
 tflite-runtime==2.7.0; sys_platform == 'linux' and python_version == '3.8'
