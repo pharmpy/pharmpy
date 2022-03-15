@@ -251,7 +251,9 @@ def _create_best_model(model, res, groups=4, p_value=0.05):
             _time_after_dose(model)
             i = int(name[-1])
             quantile = i / groups
-            cutoff_tvar = model.dataset['TAD'].quantile(q=quantile)
+            df = _create_dataset(model)
+            tad = df['TAD']
+            cutoff_tvar = tad.quantile(q=quantile)
             set_time_varying_error_model(model, cutoff=cutoff_tvar, idv='TAD')
             model.parameters.inits = {
                 'time_varying': res.models['parameters']
