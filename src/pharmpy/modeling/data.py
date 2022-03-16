@@ -546,6 +546,9 @@ def get_doses(model):
 def get_doseid(model):
     """Get a DOSEID series from the dataset with an id of each dose period starting from 1
 
+    If a a dose and observation exist at the same time point the observation will be counted
+    towards the previous dose.
+
     Parameters
     ----------
     model : Model
@@ -578,11 +581,29 @@ def get_doseid(model):
         dose = model.datainfo.typeix['dose'][0].name
     except IndexError:
         raise DatasetError('Could not identify dosing rows in dataset')
+
     df = model.dataset.copy()
     df['DOSEID'] = df[dose]
     df.loc[df['DOSEID'] > 0, 'DOSEID'] = 1
     df['DOSEID'] = df['DOSEID'].astype(int)
-    df['DOSEID'] = df.groupby(model.datainfo.id_column.name)['DOSEID'].cumsum()
+    idcol = model.datainfo.id_column.name
+    df['DOSEID'] = df.groupby(idcol)['DOSEID'].cumsum()
+
+    # Adjust for dose and observation at the same time point
+    # Observation is moved to previous dose group
+    idvcol = model.datainfo.idv_column.name
+    ser = df.groupby([idcol, idvcol]).size()
+    nonunique = ser[ser > 1]
+
+    for i, time in nonunique.index:
+        groupind = df[(df[idcol] == i) & (df[idvcol] == time)].index
+        obsind = df[(df[idcol] == i) & (df[idvcol] == time) & (df[dose] == 0)].index
+        for index in obsind:
+            if 0 in groupind:  # This is the first dose
+                continue
+            curdoseid = df.loc[index, 'DOSEID']
+            df.loc[index, 'DOSEID'] = curdoseid - 1
+
     return df['DOSEID'].copy()
 
 

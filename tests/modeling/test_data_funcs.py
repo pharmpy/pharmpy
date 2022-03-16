@@ -32,6 +32,14 @@ def test_get_doseid():
     assert doseid[0] == 1
     assert doseid[743] == 13
 
+    # Same timepoint for dose and observation
+    newmod = model.copy()
+    newmod.dataset.loc[742, 'TIME'] = newmod.dataset.loc[743, 'TIME']
+    doseid = get_doseid(newmod)
+    assert len(doseid) == 744
+    assert doseid[743] == 12
+    assert doseid[742] == 13
+
 
 def test_get_number_of_individuals():
     assert get_number_of_individuals(model) == 59
