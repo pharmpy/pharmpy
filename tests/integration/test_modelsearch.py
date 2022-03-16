@@ -84,7 +84,7 @@ def test_exhaustive_stepwise_basic(
         ('ABSORPTION(ZO);PERIPHERALS(1)', False, False, 4, 'modelsearch_candidate2', 2),
         ('ABSORPTION(ZO);ELIMINATION(ZO)', False, False, 4, 'mox2', 1),
         ('ABSORPTION(ZO);ELIMINATION(MIX-FO-MM)', False, False, 4, 'modelsearch_candidate2', 2),
-        ('ABSORPTION(ZO);PERIPHERALS([1, 2])', False, False, 8, 'modelsearch_candidate2', 4),
+        ('ABSORPTION(ZO);PERIPHERALS([1, 2])', False, False, 8, 'modelsearch_candidate5', 4),
         ('LAGTIME();TRANSITS(1)', False, False, 2, 'mox2', 1),
         ('ABSORPTION(ZO);PERIPHERALS(1)', True, False, 4, 'modelsearch_candidate2', 2),
         ('PERIPHERALS(1);LAGTIME()', False, True, 4, 'modelsearch_candidate1', 1),
