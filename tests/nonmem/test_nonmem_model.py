@@ -10,6 +10,7 @@ from pharmpy.model import ModelSyntaxError
 from pharmpy.modeling import (
     add_iiv,
     create_joint_distribution,
+    remove_iiv,
     set_zero_order_absorption,
     set_zero_order_elimination,
 )
@@ -1030,3 +1031,10 @@ def test_parse_derivatives(testdata):
     )
     assert model.estimation_steps[0].eta_derivatives == ['ETA(1)', 'ETA(2)']
     assert model.estimation_steps[0].epsilon_derivatives == ['EPS(1)']
+
+
+def test_no_etas_in_model(pheno_path):
+    model = Model.create_model(pheno_path)
+    remove_iiv(model)
+    assert 'DUMMYETA' in model.model_code
+    assert 'ETA(1)' in model.model_code

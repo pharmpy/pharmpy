@@ -15,10 +15,10 @@ from pharmpy.datainfo import ColumnInfo, DataInfo
 from pharmpy.estimation import EstimationStep, EstimationSteps
 from pharmpy.model import ModelSyntaxError
 from pharmpy.modeling.write_csv import write_csv
-from pharmpy.parameter import Parameters
+from pharmpy.parameter import Parameter, Parameters
 from pharmpy.plugins.nonmem.results import NONMEMChainedModelfitResults
 from pharmpy.plugins.nonmem.table import NONMEMTableFile, PhiTable
-from pharmpy.random_variables import RandomVariables
+from pharmpy.random_variables import RandomVariable, RandomVariables
 from pharmpy.statements import Assignment, CompartmentalSystem, ODESystem
 from pharmpy.symbols import symbol as S
 from pharmpy.workflows import NullModelDatabase, default_model_database
@@ -150,6 +150,14 @@ class Model(pharmpy.model.Model):
         """
         self._update_initial_individual_estimates(path, nofiles)
         if hasattr(self, '_random_variables'):
+            # FIXME: better solution would be to have system for handling dummy parameters etc.
+            if not self.random_variables.etas:
+                omega = Parameter('DUMMYOMEGA', init=0, fix=True)
+                eta = RandomVariable.normal('eta_dummy', 'iiv', 0, omega.symbol)
+                statement = Assignment('DUMMYETA', eta.name)
+                self.statements.insert(0, statement)
+                self.random_variables.append(eta)
+                self.parameters.append(omega)
             update_random_variables(self, self._old_random_variables, self._random_variables)
             self._old_random_variables = self._random_variables.copy()
         if hasattr(self, '_parameters'):
