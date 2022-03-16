@@ -1,5 +1,5 @@
-next version
-~~~~~~~~~~~~
+0.55.0 (2022-03-16)
+~~~~~~~~~~~~~~~~~~~
 
 New features
 ~~~~~~~~~~~~
@@ -17,6 +17,9 @@ Bugfix
 
 * Fix issue with duplicated features with IIV-options in modelsearch-tool
 * Fix issue where $MODEL was not added when setting ODE solver to GL or GL_REAL
+* Fix issue where reduced_stepwise failed for certain search spaces (#616)
+* Fix issue with reading in sampled_iofv in simeval
+* Use the same time varying cutoff for resmod models and best model
 
 0.54.0 (2022-03-08)
 -------------------
