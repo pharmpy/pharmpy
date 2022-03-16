@@ -28,7 +28,8 @@ def test_brute_force_block_structure(testdata, list_of_parameters, block_structu
     if block_structure:
         create_joint_distribution(model, block_structure)
 
-    wf, model_features = brute_force_block_structure(model)
+    iivs = model.random_variables.iiv
+    wf, model_features = brute_force_block_structure(iivs)
     fit_tasks = [task.name for task in wf.tasks if task.name.startswith('run')]
 
     assert len(fit_tasks) == no_of_models
@@ -67,7 +68,8 @@ $ESTIMATION METHOD=1 INTERACTION
     )
     model.path = testdata / 'nonmem' / 'pheno.mod'  # To be able to find dataset
 
-    iiv_single_block, iiv_multi_block = _get_possible_iiv_blocks(model)
+    iivs = model.random_variables.iiv
+    iiv_single_block, iiv_multi_block = _get_possible_iiv_blocks(iivs)
 
     assert iiv_single_block == [
         ['ETA(1)', 'ETA(2)'],
@@ -124,7 +126,8 @@ $ESTIMATION METHOD=1 INTERACTION
 
     model.path = testdata / 'nonmem' / 'pheno.mod'  # To be able to find dataset
 
-    iiv_single_block, iiv_multi_block = _get_possible_iiv_blocks(model)
+    iivs = model.random_variables.iiv
+    iiv_single_block, iiv_multi_block = _get_possible_iiv_blocks(iivs)
 
     assert iiv_single_block == [
         ['ETA(1)', 'ETA(2)'],
@@ -222,10 +225,12 @@ $ESTIMATION METHOD=1 INTERACTION
     model.path = testdata / 'nonmem' / 'pheno.mod'  # To be able to find dataset
     list_of_etas_12 = ['ETA(1)', 'ETA(2)']
     create_joint_distribution(model, list_of_etas_12)
-    assert _is_current_block_structure(model, list_of_etas_12)
+    assert _is_current_block_structure(model.random_variables.iiv, list_of_etas_12)
     list_of_etas_34 = ['ETA(3)', 'ETA(4)']
-    assert not _is_current_block_structure(model, list_of_etas_34)
+    assert not _is_current_block_structure(model.random_variables.iiv, list_of_etas_34)
     list_of_etas_23 = ['ETA(2)', 'ETA(3)']
-    assert not _is_current_block_structure(model, list_of_etas_23)
+    assert not _is_current_block_structure(model.random_variables.iiv, list_of_etas_23)
     create_joint_distribution(model)
-    assert _is_current_block_structure(model, list_of_etas_12 + list_of_etas_34)
+    assert _is_current_block_structure(
+        model.random_variables.iiv, list_of_etas_12 + list_of_etas_34
+    )

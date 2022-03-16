@@ -22,18 +22,21 @@ def create_workflow(
 ):
     algorithm_func = getattr(algorithms, algorithm)
 
-    wf = Workflow()
-    wf.name = "iiv"
-
-    if add_iivs:
-        model = copy_model(model, f'{model.name}_add_iiv')
-        _add_iiv(iiv_as_fullblock, model)
-
     # FIXME: must currently be a model, cannot be a task
-    start_task = Task('start_iiv', start, model)
+    if add_iivs:
+        model_iiv = copy_model(model, f'{model.name}_add_iiv')
+        _add_iiv(iiv_as_fullblock, model_iiv)
+        iivs = model_iiv.random_variables.iiv
+    else:
+        iivs = model.random_variables.iiv
+
+    wf = Workflow()
+    wf.name = 'iiv'
+
+    start_task = Task('start_iiv', start, add_iivs, iiv_as_fullblock, model)
     wf.add_task(start_task)
 
-    if not model.modelfit_results:
+    if not model.modelfit_results or add_iivs:
         wf_fit = create_fit_workflow(n=1)
         wf.insert_workflow(wf_fit)
         start_model_task = wf_fit.output_tasks
@@ -43,7 +46,7 @@ def create_workflow(
     task_update_inits = Task('update_inits', update_inits)
     wf.add_task(task_update_inits, predecessors=wf.output_tasks)
 
-    wf_method, model_features = algorithm_func(model)
+    wf_method, model_features = algorithm_func(iivs)
     wf.insert_workflow(wf_method)
 
     task_result = Task(
@@ -59,7 +62,10 @@ def create_workflow(
     return wf
 
 
-def start(model):
+def start(add_iivs, iiv_as_fullblock, model):
+    if add_iivs:
+        model = copy_model(model, f'{model.name}_add_iiv')
+        _add_iiv(iiv_as_fullblock, model)
     return model
 
 

@@ -6,11 +6,11 @@ from pharmpy.modeling.block_rvs import create_joint_distribution, split_joint_di
 from pharmpy.workflows import Task, Workflow
 
 
-def brute_force_no_of_etas(model):
+def brute_force_no_of_etas(iivs):
     wf = Workflow()
     model_features = dict()
 
-    eta_names = [eta.name for eta in model.random_variables.iiv]
+    eta_names = [eta.name for eta in iivs]
     eta_combos = _get_combinations(eta_names, include_single=True)
 
     for i, combo in enumerate(eta_combos, 1):
@@ -33,21 +33,21 @@ def remove_eta(etas, model):
     return model
 
 
-def brute_force_block_structure(model):
+def brute_force_block_structure(iivs):
     wf = Workflow()
     model_features = dict()
 
-    eta_combos_single_blocks, eta_combos_multi_blocks = _get_possible_iiv_blocks(model)
+    eta_combos_single_blocks, eta_combos_multi_blocks = _get_possible_iiv_blocks(iivs)
     eta_combos_all = [None] + eta_combos_single_blocks + eta_combos_multi_blocks
 
     model_no = 1
     for combo in eta_combos_all:
         # Do not run model with same block structure as start model
         if combo:
-            if _is_current_block_structure(model, combo):
+            if _is_current_block_structure(iivs, combo):
                 continue
         else:
-            if all(len(rv.joint_names) == 0 for rv in model.random_variables):
+            if all(len(rv.joint_names) == 0 for rv in iivs):
                 continue
 
         model_name = f'iiv_block_structure_candidate{model_no}'
@@ -57,7 +57,7 @@ def brute_force_block_structure(model):
         if combo is None:
             task_joint_dist = Task('split_joint_dist', split_joint_dist)
             wf.add_task(task_joint_dist, predecessors=task_copy)
-            model_features[model_name] = [[eta.name] for eta in model.random_variables.etas]
+            model_features[model_name] = [[eta.name] for eta in iivs]
         else:
             task_joint_dist = Task('create_joint_dist', create_joint_dist, combo)
             wf.add_task(task_joint_dist, predecessors=task_copy)
@@ -68,14 +68,13 @@ def brute_force_block_structure(model):
     return wf, model_features
 
 
-def _is_current_block_structure(model, list_of_etas):
-    rvs = model.random_variables
+def _is_current_block_structure(iivs, list_of_etas):
     if not isinstance(list_of_etas[0], list):
         list_of_etas = [list_of_etas]
 
     for eta_block in list_of_etas:
         eta_name = eta_block[0]
-        if rvs[eta_name].joint_names != eta_block:
+        if iivs[eta_name].joint_names != eta_block:
             return False
     return True
 
@@ -91,8 +90,8 @@ def _get_combinations(names, include_single=False):
     return combos
 
 
-def _get_possible_iiv_blocks(model):
-    eta_names = model.random_variables.iiv.names
+def _get_possible_iiv_blocks(iivs):
+    eta_names = iivs.names
     eta_combos_single_blocks = _get_combinations(eta_names)
     if len(eta_names) < 4:
         return eta_combos_single_blocks, []
@@ -104,7 +103,9 @@ def _get_possible_iiv_blocks(model):
         etas = []
         for combo in combinations(eta_combos_single_blocks, i):
             combo = list(combo)
-            if len(flatten(combo)) == len(eta_names) and len(set(flatten(combo))) == len(eta_names):
+            no_of_etas_in_combo = len(flatten(combo))
+            no_of_etas_unique = len(set(flatten(combo)))
+            if no_of_etas_in_combo == len(eta_names) and no_of_etas_unique == len(eta_names):
                 etas.append(combo)
         eta_combos_multi_blocks += etas
 
