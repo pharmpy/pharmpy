@@ -14,6 +14,9 @@ import pharmpy.model
 class ResultsJSONEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, pd.DataFrame) or isinstance(obj, pd.Series):
+            if isinstance(obj, pd.DataFrame) and str(obj.columns.dtype) == 'int64':
+                # Workaround for https://github.com/pandas-dev/pandas/issues/46392
+                obj.columns = obj.columns.map(str)
             d = json.loads(obj.to_json(orient='table'))
             if isinstance(obj, pd.DataFrame):
                 d['__class__'] = 'DataFrame'
