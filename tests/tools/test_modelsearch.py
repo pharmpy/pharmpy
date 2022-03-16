@@ -71,6 +71,19 @@ def test_exhaustive_algorithm():
             7,
             ('LAGTIME()', 'PERIPHERALS(1)'),
         ),
+        (
+            'ABSORPTION([ZO,SEQ-ZO-FO]);ELIMINATION(MM)',
+            False,
+            7,
+            ('ELIMINATION(MM)', 'ABSORPTION(ZO)'),
+        ),
+        (
+            'ABSORPTION([ZO,SEQ-ZO-FO]);LAGTIME();TRANSITS([1,3,10],*);'
+            'PERIPHERALS(1);ELIMINATION([MM,MIX-FO-MM])',
+            False,
+            246,
+            ('LAGTIME()', 'PERIPHERALS(1)', 'ELIMINATION(MM)', 'ABSORPTION(ZO)'),
+        ),
     ],
 )
 def test_exhaustive_stepwise_algorithm(mfl, add_iivs, no_of_models, last_model_features):
@@ -94,6 +107,13 @@ def test_exhaustive_stepwise_algorithm(mfl, add_iivs, no_of_models, last_model_f
             52,
             'PERIPHERALS(2)',
         ),
+        ('ABSORPTION([ZO,SEQ-ZO-FO]);ELIMINATION(MM)', 7, 'ABSORPTION(ZO)'),
+        (
+            'ABSORPTION([ZO,SEQ-ZO-FO]);LAGTIME();TRANSITS([1,3,10],*);'
+            'PERIPHERALS(1);ELIMINATION([MM,MIX-FO-MM])',
+            159,
+            'ABSORPTION(ZO)',
+        ),
     ],
 )
 def test_reduced_stepwise_algorithm(mfl, no_of_models, last_model_features):
@@ -101,6 +121,7 @@ def test_reduced_stepwise_algorithm(mfl, no_of_models, last_model_features):
     fit_tasks = [task.name for task in wf.tasks if task.name.startswith('run')]
 
     assert len(fit_tasks) == no_of_models
+    assert all(task.name == 'run0' for task in wf.output_tasks)
     assert list(model_features.values())[-1] == last_model_features
 
 

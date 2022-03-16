@@ -95,6 +95,15 @@ def reduced_stepwise(mfl, add_iivs, iiv_as_fullblock, add_mdt_iiv):
     while True:
         no_of_trans = 0
         actions = _get_possible_actions(wf_search, mfl_features)
+        if all(len(feat_new) > 0 for feat_new in actions.values()):
+            groups = _find_same_model_groups(wf_search, mfl_funcs)
+            if len(groups) > 1:
+                for group in groups:
+                    task_best_model = Task('choose_best_model', _get_best_model)
+                    wf_search.add_task(task_best_model, predecessors=group)
+                # Overwrite actions with new collector nodes
+                actions = _get_possible_actions(wf_search, mfl_features)
+
         for task_parent, feat_new in actions.items():
             for feat in feat_new:
                 model_no = len(model_tasks) + 1
@@ -111,15 +120,11 @@ def reduced_stepwise(mfl, add_iivs, iiv_as_fullblock, add_mdt_iiv):
 
                 model_tasks += wf_create_model.output_tasks
 
+                # FIXME: should this have same format as exhaustive?g
                 model_features[model_name] = feat
                 no_of_trans += 1
         if no_of_trans == 0:
             break
-        groups = _find_same_model_groups(wf_search, mfl_funcs)
-        if len(groups) > 1:
-            for group in groups:
-                task_best_model = Task('choose_best_model', _get_best_model)
-                wf_search.add_task(task_best_model, predecessors=group)
 
     return wf_search, model_tasks, model_features
 
@@ -148,7 +153,11 @@ def _find_same_model_groups(wf, mfl_funcs):
 
 
 def _get_best_model(*models):
-    return min(models, key=lambda x: x.modelfit_results.ofv)
+    models_with_res = [model for model in models if model.modelfit_results]
+    if models_with_res:
+        return min(models, key=lambda x: x.modelfit_results.ofv)
+    # FIXME: should be None, maybe dynamic workflows are needed
+    return models[0]
 
 
 def _get_possible_actions(wf, mfl_features):
