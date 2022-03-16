@@ -121,24 +121,34 @@ def _run_iiv(model, path):
 def _run_resmod(model, path):
     skip = []
 
-    res_resmod = run_tool('resmod', model, path=path / 'resmod1')
-    selected_model = res_resmod.best_model
-    name = res_resmod.selected_model_name
-    if name[:12] == 'time_varying':
+    res_resmod_first = run_tool('resmod', model, path=path / 'resmod1')
+    first_selected_model = res_resmod_first.best_model
+    name = res_resmod_first.selected_model_name
+    if name == 'base':
+        selected_model = model
+        return selected_model
+    elif name[:12] == 'time_varying':
         skip.append('time_varying')
     else:
         skip.append(name)
 
-    res_resmod = run_tool('resmod', selected_model, skip=skip, path=path / 'resmod2')
-    selected_model = res_resmod.best_model
-    name = res_resmod.selected_model_name
-    if name[:12] == 'time_varying':
+    res_resmod_second = run_tool('resmod', first_selected_model, skip=skip, path=path / 'resmod2')
+    second_selected_model = res_resmod_second.best_model
+    name = res_resmod_second.selected_model_name
+    if name == 'base':
+        selected_model = first_selected_model
+        return selected_model
+    elif name[:12] == 'time_varying':
         skip.append('time_varying')
     else:
         skip.append(name)
 
-    res_resmod = run_tool('resmod', selected_model, skip=skip, path=path / 'resmod3')
-    selected_model = res_resmod.best_model
+    res_resmod_third = run_tool('resmod', second_selected_model, skip=skip, path=path / 'resmod3')
+    name = res_resmod_third.selected_model_name
+    if name == 'base':
+        selected_model = second_selected_model
+    else:
+        selected_model = res_resmod_third.best_model
     return selected_model
 
 

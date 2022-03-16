@@ -25,6 +25,7 @@ from .results import calculate_results
 
 
 def create_workflow(model=None, groups=4, p_value=0.05, skip=None):
+    cutoff = float(chi2.isf(q=p_value, df=1))
     if skip is None:
         skip = []
     wf = Workflow()
@@ -61,7 +62,7 @@ def create_workflow(model=None, groups=4, p_value=0.05, skip=None):
 
     fit_wf = create_fit_workflow(n=1 + len(tasks))
     wf.insert_workflow(fit_wf, predecessors=[task_base_model] + tasks)
-    post_pro = partial(post_process, p_value=p_value)
+    post_pro = partial(post_process, cutoff=cutoff)
     task_post_process = Task('post_process', post_pro)
     wf.add_task(task_post_process, predecessors=[start_task] + fit_wf.output_tasks)
 
@@ -70,7 +71,7 @@ def create_workflow(model=None, groups=4, p_value=0.05, skip=None):
 
     fit_final = create_fit_workflow(n=1)
     wf.insert_workflow(fit_final, predecessors=[task_unpack])
-
+    _results = partial(_compare_full_models_results, cutoff=cutoff)
     task_results = Task('results', _results)
     wf.add_task(task_results, predecessors=[task_post_process] + fit_final.output_tasks)
 
@@ -81,26 +82,30 @@ def start(model):
     return model
 
 
-def post_process(start_model, *models, p_value):
-
+def post_process(start_model, *models, cutoff):
     res = calculate_results(
         base_model=_find_models(models)[0],
         tvar_models=_find_models(models)[1],
         other_models=_find_models(models)[2],
     )
-    best_model = _create_best_model(start_model, res, p_value=p_value)
+    best_model = _create_best_model(start_model, res, cutoff=cutoff)
     res.best_model = best_model[0]
     res.selected_model_name = best_model[1]
-    return res
 
-
-def _results(res, best_model):
-    res.best_model = best_model
     return res
 
 
 def _unpack(res):
     return res.best_model
+
+
+def _compare_full_models_results(res, start_model, cutoff):
+    delta_ofv = start_model.modelfit_results.ofv - res.best_model.modelfit_results.ofv
+
+    if delta_ofv <= cutoff:
+        res.best_model = start_model
+        res.selected_model_name = 'base'
+    return res
 
 
 def _find_models(models):
@@ -229,10 +234,9 @@ def _time_after_dose(model):
     return model
 
 
-def _create_best_model(model, res, groups=4, p_value=0.05):
+def _create_best_model(model, res, groups=4, cutoff=3.84):
     model = model.copy()
     selected_model_name = ''
-    cutoff = float(chi2.isf(q=p_value, df=1))
     if any(res.models['dofv'] > cutoff):
         idx = res.models['dofv'].idxmax()
         name = idx[0]
