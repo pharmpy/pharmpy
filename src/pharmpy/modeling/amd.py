@@ -61,7 +61,7 @@ def run_amd(model, mfl=None, lloq=None, order=None, categorical=None, continuous
     if mfl is None:
         mfl = (
             'ABSORPTION([ZO,SEQ-ZO-FO]);'
-            'ELIMINATION([ZO,MM,MIX-FO-MM]);'
+            'ELIMINATION([MM,MIX-FO-MM]);'
             'LAGTIME();'
             'TRANSITS([1,3,10],*);'
             'PERIPHERALS([1,2])'
