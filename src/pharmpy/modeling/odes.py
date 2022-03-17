@@ -805,7 +805,12 @@ def set_zero_order_absorption(model):
         to_comp.dose = dose
     else:
         to_comp = dose_comp
+    mat_assign = statements.find_assignment('MAT')
+    if mat_assign:
+        mat_idx = statements.index(mat_assign)
     statements.remove_symbol_definitions(symbols, odes)
+    if mat_assign:
+        statements.insert(mat_idx, mat_assign)
     remove_unused_parameters_and_rvs(model)
     if not has_zero_order_absorption(model):
         _add_zero_order_absorption(model, dose.amount, to_comp, 'MAT', lag_time)
@@ -859,7 +864,12 @@ def set_first_order_absorption(model):
         dose_comp.dose = Bolus(dose_comp.dose.amount)
     elif not depot:
         dose_comp.dose = None
+    mat_assign = statements.find_assignment('MAT')
+    if mat_assign:
+        mat_idx = statements.index(mat_assign)
     statements.remove_symbol_definitions(symbols, odes)
+    if mat_assign:
+        statements.insert(mat_idx, mat_assign)
     remove_unused_parameters_and_rvs(model)
     if not depot:
         _add_first_order_absorption(model, Bolus(amount), dose_comp, lag_time)
@@ -1037,12 +1047,13 @@ def _add_zero_order_absorption(model, amount, to_comp, parameter_name, lag_time=
     the previous rate if available, otherwise it is set to the time of first observation/2 is used.
     Disregards what is currently in the model.
     """
-    # if parameter_name == model.statements.find_assignment(lag_time.name).expression.name:
-    #     mat_symb = model.parameters[f'POP_{parameter_name}'].symbol
-    # else:
-    mat_symb = _add_parameter(
-        model, parameter_name, init=_get_absorption_init(model, parameter_name)
-    )
+    mat_assign = model.statements.find_assignment(parameter_name)
+    if mat_assign:
+        mat_symb = mat_assign.symbol
+    else:
+        mat_symb = _add_parameter(
+            model, parameter_name, init=_get_absorption_init(model, parameter_name)
+        )
     new_dose = Infusion(amount, duration=mat_symb * 2)
     to_comp.dose = new_dose
     if lag_time and lag_time != 0:
@@ -1056,7 +1067,11 @@ def _add_first_order_absorption(model, dose, to_comp, lag_time=None):
     odes = model.statements.ode_system
     depot = odes.add_compartment('DEPOT')
     depot.dose = dose
-    mat_symb = _add_parameter(model, 'MAT', _get_absorption_init(model, 'MAT'))
+    mat_assign = model.statements.find_assignment('MAT')
+    if mat_assign:
+        mat_symb = mat_assign.symbol
+    else:
+        mat_symb = _add_parameter(model, 'MAT', _get_absorption_init(model, 'MAT'))
     odes.add_flow(depot, to_comp, 1 / mat_symb)
     if lag_time and lag_time != 0:
         depot.lag_time = lag_time

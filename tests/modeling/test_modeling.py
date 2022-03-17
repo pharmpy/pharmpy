@@ -1826,6 +1826,40 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
     assert model.model_code == correct
 
 
+def test_absorption_keep_mat(testdata):
+    # FO to ZO (start model with MAT-eta)
+    model = Model.create_model(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    set_zero_order_absorption(model)
+    assert 'MAT = THETA(3) * EXP(ETA(3))' in model.model_code
+    assert 'KA =' not in model.model_code
+    assert 'D1 =' in model.model_code
+
+    # FO to seq-ZO-FO
+    model = Model.create_model(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    set_seq_zo_fo_absorption(model)
+    assert 'MAT = THETA(3) * EXP(ETA(3))' in model.model_code
+    assert 'KA =' in model.model_code
+    assert 'D1 =' in model.model_code
+
+    # ZO to seq-ZO-FO
+    model = Model.create_model(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    set_zero_order_absorption(model)
+    model.model_code  # FIXME: model is not recognized as having ZO absorption without update
+    set_seq_zo_fo_absorption(model)
+    assert 'MAT = THETA(3) * EXP(ETA(3))' in model.model_code
+    assert 'KA =' in model.model_code
+    assert 'D1 =' in model.model_code
+    assert 'MAT1' not in model.model_code
+
+    # ZO to FO
+    model = Model.create_model(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    set_zero_order_absorption(model)
+    set_first_order_absorption(model)
+    assert 'MAT = THETA(3) * EXP(ETA(3))' in model.model_code
+    assert 'KA =' in model.model_code
+    assert 'D1 =' not in model.model_code
+
+
 @pytest.mark.parametrize(
     'etas, etab, buf_new',
     [
