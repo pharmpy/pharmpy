@@ -36,7 +36,18 @@ class ColumnInfo:
         Descriptor (kind) of data
     """
 
-    _all_types = ['id', 'dv', 'idv', 'unknown', 'dose', 'event', 'covariate', 'mdv', 'nmtran_date']
+    _all_types = [
+        'id',
+        'dv',
+        'idv',
+        'unknown',
+        'dose',
+        'ii',
+        'event',
+        'covariate',
+        'mdv',
+        'nmtran_date',
+    ]
     _all_scales = ['nominal', 'ordinal', 'interval', 'ratio']
     _all_dtypes = [
         'int8',
@@ -116,6 +127,7 @@ class ColumnInfo:
         dv            Dependent variable
         covariate     Covariate
         dose          Dose amount
+        ii            Interdose interval
         event         0 = observation
         mdv           0 = DV is observation value, 1 = DV is missing
         unknown       Unkown type. This will be the default for columns that hasn't been
