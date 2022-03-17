@@ -663,18 +663,20 @@ def add_time_after_dose(model):
 
     """
     # FIXME: Should not rely on name here. Use coltypes for TAD
-    # FIXME: TIME is converted to float. Should be handled when reading in dataset
-    df = model.dataset
-    doseid = get_doseid(model)
+    temp = model.copy()
+    translate_nmtran_time(temp)
+    df = temp.dataset
+    doseid = get_doseid(temp)
     df['DOSEID'] = doseid
-    idv = model.datainfo.idv_column.name
-    idlab = model.datainfo.id_column.name
+    idv = temp.datainfo.idv_column.name
+    idlab = temp.datainfo.id_column.name
     # Sort in case DOSEIDs are non-increasing
     df.sort_values(by=[idlab, idv, 'DOSEID'], inplace=True, ignore_index=True)
     df[idv] = df[idv].astype(np.float64)
     df['TAD'] = df.groupby([idlab, 'DOSEID'])[idv].diff().fillna(0)
     df['TAD'] = df.groupby([idlab, 'DOSEID'])['TAD'].cumsum()
-    df.drop('DOSEID', axis=1, inplace=True)
+
+    model.dataset['TAD'] = temp.dataset['TAD']
     ci = ColumnInfo('TAD')
     model.datainfo.append(ci)
     return model
