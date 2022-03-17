@@ -1,10 +1,19 @@
 next version
 ~~~~~~~~~~~~
 
+Changes
+~~~~~~~
+
+* Remove ZO elimination from default search space in model search
+
 Bugfixes
 ~~~~~~~~
 
 * Fix bad caluclation of number of observations for datasets with both EVID and MDV
+* Properly handle observations and dose at same time for time after dose calculation
+* Handle DATE column for time after dose calculation
+* Handle NONMEM models with no ETAs
+
 
 0.55.0 (2022-03-16)
 ~~~~~~~~~~~~~~~~~~~
