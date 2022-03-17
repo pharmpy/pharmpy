@@ -1,4 +1,5 @@
 import os
+import subprocess
 import uuid
 import warnings
 from pathlib import Path
@@ -247,7 +248,12 @@ def execute_model(model):
     from pharmpy.plugins.nlmixr import conf
 
     rpath = conf.rpath / 'bin' / 'Rscript'
-    os.system(f"{rpath} {path}/{model.name}.R")
+    newenv = os.environ
+    # Reset environment variables incase started from R
+    # and calling other R version.
+    newenv['R_LIBS_USERS'] = ''
+    newenv['R_LIBS_SITE'] = ''
+    subprocess.run([rpath, path / (model.name + '.R')], env=newenv)
     rdata_path = path / f'{model.name}.RDATA'
     database.store_local_file(model, path / f'{model.name}.R')
     database.store_local_file(model, rdata_path)
