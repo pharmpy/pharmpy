@@ -1044,6 +1044,9 @@ class Model(pharmpy.model.Model):
                 else:
                     info.type = 'event'
                 info.scale = 'nominal'
+            elif colname == 'II' and self._get_pk_record():
+                info.type = 'ii'
+                info.scale = 'ratio'
             elif (
                 colname == 'AMT' or colname == replacements.get('AMT', None)
             ) and self._get_pk_record():
