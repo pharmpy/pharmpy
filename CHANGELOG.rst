@@ -1,3 +1,11 @@
+next version
+~~~~~~~~~~~~
+
+Bugfixes
+~~~~~~~~
+
+* Fix bad caluclation of number of observations for datasets with both EVID and MDV
+
 0.55.0 (2022-03-16)
 ~~~~~~~~~~~~~~~~~~~
 
@@ -12,8 +20,8 @@ Changes
 * Set different initial estimates of clearance for peripherals (#590)
 
 
-Bugfix
-~~~~~~
+Bugfixes
+~~~~~~~~
 
 * Fix issue with duplicated features with IIV-options in modelsearch-tool
 * Fix issue where $MODEL was not added when setting ODE solver to GL or GL_REAL

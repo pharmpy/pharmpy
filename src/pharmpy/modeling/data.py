@@ -244,12 +244,15 @@ def get_observations(model):
     get_number_of_observations_per_individual : get the number of observations per individual
     """
     try:
-        label = model.datainfo.typeix['event'][0].name
+        label = model.datainfo.typeix['mdv'][0].name
     except IndexError:
         try:
-            label = model.datainfo.typeix['dose'][0].name
+            label = model.datainfo.typeix['event'][0].name
         except IndexError:
-            raise DatasetError('Could not identify observation rows in dataset')
+            try:
+                label = model.datainfo.typeix['dose'][0].name
+            except IndexError:
+                raise DatasetError('Could not identify observation rows in dataset')
 
     idcol = model.datainfo.id_column.name
     idvcol = model.datainfo.idv_column.name
