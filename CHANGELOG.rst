@@ -1,15 +1,16 @@
-next version
-~~~~~~~~~~~~
+0.56.0 (2022-03-17)
+~~~~~~~~~~~~~~~~~~~
 
 Changes
 ~~~~~~~
 
-* Remove ZO elimination from default search space in model search
+* Remove ZO elimination from the default search space in model search
+* Do not apply resmod mode if no change on the full model
 
 Bugfixes
 ~~~~~~~~
 
-* Fix bad caluclation of number of observations for datasets with both EVID and MDV
+* Fix bad calculation of number of observations for datasets with both EVID and MDV
 * Properly handle observations and dose at same time for time after dose calculation
 * Handle DATE column for time after dose calculation
 * Handle NONMEM models with no ETAs
