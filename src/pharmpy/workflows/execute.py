@@ -68,7 +68,10 @@ def execute_workflow(workflow, dispatcher=None, database=None, path=None):
             model.modelfit_results = res.modelfit_results
         else:
             # Set modelfit_results for local model objects
-            model.read_modelfit_results()
+            try:
+                model.read_modelfit_results()
+            except NotImplementedError:
+                pass
 
     from pharmpy.results import Results
 
