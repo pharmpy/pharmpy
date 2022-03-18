@@ -1,3 +1,15 @@
+next version
+~~~~~~~~~~~~
+
+Bugfixes
+~~~~~~~~
+
+* Keep thetas/etas when going across absorption transformations (#588, #625)
+* Fix missing ALAG-parameter in non-linear elimination (#578)
+* Fix issue with added VC1-parameter when adding transits to non-linear elimination (#577)
+* Fix missing D1-parameter and RATE-column when adding zero order absorption to non-linear elimination (#578)
+
+
 0.56.0 (2022-03-17)
 ~~~~~~~~~~~~~~~~~~~
 
