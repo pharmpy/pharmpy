@@ -63,8 +63,12 @@ def execute_workflow(workflow, dispatcher=None, database=None, path=None):
                 model_file = model.name + model.filename_extension
                 if f.name != model_file or not (model.database.path / model_file).exists():
                     model.database.store_local_file(model, f)
-        # Set modelfit_results for local model objects
-        model.read_modelfit_results()
+        if isinstance(res, Model):
+            # Special case to handle modelfit for generic models
+            model.modelfit_results = res.modelfit_results
+        else:
+            # Set modelfit_results for local model objects
+            model.read_modelfit_results()
 
     from pharmpy.results import Results
 
