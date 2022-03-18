@@ -1901,6 +1901,15 @@ def test_lag_on_nl_elim(testdata):
     assert 'ALAG' in model.model_code
 
 
+def test_zo_abs_on_nl_elim(testdata):
+    model = Model.create_model(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    set_zero_order_elimination(model)
+    model.model_code
+    set_zero_order_absorption(model)
+    assert 'RATE' in model.model_code
+    assert 'D1 =' in model.model_code
+
+
 @pytest.mark.parametrize(
     'etas, etab, buf_new',
     [

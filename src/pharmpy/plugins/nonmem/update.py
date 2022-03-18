@@ -309,7 +309,8 @@ def update_ode_system(model, old, new):
         add_needed_pk_parameters(model, advan, trans)
         update_subroutines_record(model, advan, trans)
         update_model_record(model, advan)
-        update_infusion(model, old, new)
+
+    update_infusion(model, old, new)
 
     force_des(model, new)
 
@@ -323,6 +324,10 @@ def is_nonlinear_odes(model):
 
 def update_infusion(model, old, new):
     statements = model.statements
+    if isinstance(old, ExplicitODESystem):
+        old = old.to_compartmental_system()
+    if isinstance(new, ExplicitODESystem):
+        new = new.to_compartmental_system()
     if isinstance(new.dosing_compartment.dose, Infusion) and not statements.find_assignment('D1'):
         # Handle direct moving of Infusion dose
         statements.subs({'D2': 'D1'})
