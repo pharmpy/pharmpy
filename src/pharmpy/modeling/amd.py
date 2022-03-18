@@ -6,7 +6,7 @@ from pharmpy.tools.amd.funcs import create_start_model
 from pharmpy.workflows import default_tool_database
 
 from .allometry import add_allometry
-from .common import convert_model
+from .common import convert_model, read_model, write_model
 from .data import remove_loq_data
 from .run import fit, run_tool
 
@@ -82,7 +82,7 @@ def run_amd(
         remove_loq_data(model, lloq=lloq)
 
     # default_order = ['structural', 'iiv', 'residual', 'allometry', 'covariates']
-    default_order = ['structural']
+    default_order = ['structural', 'iiv']
     if order is None:
         order = default_order
 
@@ -99,6 +99,9 @@ def run_amd(
             mfl = 'ELIMINATION([MM,MIX-FO-MM]);' 'PERIPHERALS([1,2])'
 
     db = default_tool_database(toolname='amd')
+    # FIXME: Workaround for nonmem<->generic eta names gets lost somewhere
+    write_model(model, db.path)
+    model = read_model(db.path / (model.name + '.ctl'))
     fit(model)
 
     run_funcs = []
@@ -145,7 +148,7 @@ def _run_modelsearch(model, mfl, path):
 
 
 def _run_iiv(model, path):
-    res_iiv = run_iiv(model, path)
+    res_iiv = run_iiv(model, path=path)
     selected_iiv_model = res_iiv.best_model
     return selected_iiv_model
 
