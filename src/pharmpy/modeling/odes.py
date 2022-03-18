@@ -1050,6 +1050,10 @@ def has_zero_order_absorption(model):
             name = str(value)
             if name not in model.datainfo.names:
                 return True
+        elif isinstance(value, sympy.Expr):
+            names = {symb.name for symb in value.free_symbols}
+            if not all(name in model.datainfo.names for name in names):
+                return True
     return False
 
 

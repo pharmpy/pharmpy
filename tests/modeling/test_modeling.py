@@ -19,6 +19,7 @@ from pharmpy.modeling import (
     has_first_order_elimination,
     has_michaelis_menten_elimination,
     has_mixed_mm_fo_elimination,
+    has_zero_order_absorption,
     has_zero_order_elimination,
     load_example_model,
     remove_iiv,
@@ -1870,7 +1871,6 @@ def test_absorption_keep_mat(testdata):
     # ZO to seq-ZO-FO
     model = Model.create_model(testdata / 'nonmem' / 'models' / 'mox2.mod')
     set_zero_order_absorption(model)
-    model.model_code  # FIXME: model is not recognized as having ZO absorption without update
     set_seq_zo_fo_absorption(model)
     assert 'MAT = THETA(3) * EXP(ETA(3))' in model.model_code
     assert 'KA =' in model.model_code
@@ -1884,6 +1884,13 @@ def test_absorption_keep_mat(testdata):
     assert 'MAT = THETA(3) * EXP(ETA(3))' in model.model_code
     assert 'KA =' in model.model_code
     assert 'D1 =' not in model.model_code
+
+
+def test_has_zero_order_absorption(pheno_path):
+    model = Model.create_model(pheno_path)
+    assert not has_zero_order_absorption(model)
+    set_zero_order_absorption(model)
+    assert has_zero_order_absorption(model)
 
 
 @pytest.mark.parametrize(
