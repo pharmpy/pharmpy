@@ -281,6 +281,8 @@ def update_ode_system(model, old, new):
     if old is None:
         old = CompartmentalSystem()
 
+    update_lag_time(model, old, new)
+
     if type(old) == CompartmentalSystem and type(new) == ExplicitODESystem:
         to_des(model, new)
     elif new.solver:
@@ -297,7 +299,6 @@ def update_ode_system(model, old, new):
         # Stay with $DES for now
         update_des(model, old, new)
     elif type(old) == CompartmentalSystem and type(new) == CompartmentalSystem:
-        update_lag_time(model, old, new)
         if isinstance(new.dosing_compartment.dose, Bolus) and 'RATE' in model.datainfo.names:
             df = model.dataset
             df.drop(columns=['RATE'], inplace=True)
@@ -308,7 +309,6 @@ def update_ode_system(model, old, new):
         add_needed_pk_parameters(model, advan, trans)
         update_subroutines_record(model, advan, trans)
         update_model_record(model, advan)
-
         update_infusion(model, old, new)
 
     force_des(model, new)
@@ -487,6 +487,10 @@ def update_statements(model, old, new, trans):
 
 
 def update_lag_time(model, old, new):
+    if isinstance(old, ExplicitODESystem):
+        old = old.to_compartmental_system()
+    if isinstance(new, ExplicitODESystem):
+        new = new.to_compartmental_system()
     new_dosing = new.dosing_compartment
     new_lag_time = new_dosing.lag_time
     try:
