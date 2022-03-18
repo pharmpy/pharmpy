@@ -81,9 +81,10 @@ def convert_model(model):
         nm_model.database = model.database
     except AttributeError:
         pass
-    nm_model._compartment_map = {
-        name: i for i, name in enumerate(model.statements.ode_system.names, start=1)
-    }
+    if model.statements.ode_system:
+        nm_model._compartment_map = {
+            name: i for i, name in enumerate(model.statements.ode_system.names, start=1)
+        }
     return nm_model
 
 
