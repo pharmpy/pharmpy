@@ -2,9 +2,11 @@ from functools import partial
 
 import pharmpy.tools.scm as scm
 from pharmpy.results import Results
+from pharmpy.tools.amd.funcs import create_start_model
 from pharmpy.workflows import default_tool_database
 
 from .allometry import add_allometry
+from .common import convert_model
 from .data import remove_loq_data
 from .run import fit, run_tool
 
@@ -14,15 +16,34 @@ class AMDResults(Results):
         self.final_model = final_model
 
 
-def run_amd(model, mfl=None, lloq=None, order=None, categorical=None, continuous=None):
+def run_amd(
+    dataset_path,
+    modeltype='pk_oral',
+    cl_init=0.01,
+    vc_init=1,
+    mat_init=0.1,
+    mfl=None,
+    lloq=None,
+    order=None,
+    categorical=None,
+    continuous=None,
+):
     """Run Automatic Model Development (AMD) tool
 
     Runs structural modelsearch, IIV building, and resmod
 
     Parameters
     ----------
-    model : Model
-        Pharmpy model
+    dataset_path : Model
+        Path to a dataset
+    modeltype : str
+        Type of model to build. Either 'pk_oral' or 'pk_iv'
+    cl_init : float
+        Initial estimate for the population clearance
+    vc_init : float
+        Initial estimate for the central compartment population volume
+    mat_init : float
+        Initial estimate for the mean absorption time (not for iv models)
     mfl : str
         MFL for search space for structural model
     lloq : float
@@ -51,23 +72,34 @@ def run_amd(model, mfl=None, lloq=None, order=None, categorical=None, continuous
     run_tool
 
     """
+
+    model = create_start_model(
+        dataset_path, modeltype=modeltype, cl_init=cl_init, vc_init=vc_init, mat_init=mat_init
+    )
+    model = convert_model(model, 'nonmem')  # FIXME: Workaround for results retrieval system
+
     if lloq is not None:
         remove_loq_data(model, lloq=lloq)
 
-    default_order = ['structural', 'iiv', 'residual', 'allometry', 'covariates']
+    # default_order = ['structural', 'iiv', 'residual', 'allometry', 'covariates']
+    default_order = ['structural']
     if order is None:
         order = default_order
 
     if mfl is None:
-        mfl = (
-            'ABSORPTION([ZO,SEQ-ZO-FO]);'
-            'ELIMINATION([MM,MIX-FO-MM]);'
-            'LAGTIME();'
-            'TRANSITS([1,3,10],*);'
-            'PERIPHERALS([1,2])'
-        )
+        if modeltype == 'pk_oral':
+            mfl = (
+                'ABSORPTION([ZO,SEQ-ZO-FO]);'
+                'ELIMINATION([MM,MIX-FO-MM]);'
+                'LAGTIME();'
+                'TRANSITS([1,3,10],*);'
+                'PERIPHERALS([1,2])'
+            )
+        else:
+            mfl = 'ELIMINATION([MM,MIX-FO-MM]);' 'PERIPHERALS([1,2])'
 
     db = default_tool_database(toolname='amd')
+    fit(model)
 
     run_funcs = []
     for section in order:

@@ -1,5 +1,7 @@
 import shutil
+from pathlib import Path
 
+import pharmpy.modeling
 from pharmpy import Model
 from pharmpy.modeling import run_amd, run_iiv
 from pharmpy.utils import TemporaryDirectoryChanger
@@ -7,15 +9,11 @@ from pharmpy.utils import TemporaryDirectoryChanger
 
 def test_amd(tmp_path, testdata):
     with TemporaryDirectoryChanger(tmp_path):
-        for path in (testdata / 'nonmem').glob('pheno_real.*'):
-            shutil.copy2(path, tmp_path)
         shutil.copy2(testdata / 'nonmem' / 'pheno.dta', tmp_path)
-        shutil.copy2(testdata / 'nonmem' / 'sdtab1', tmp_path)
+        dipath = Path(pharmpy.modeling.__file__).parent / 'example_models' / 'pheno.datainfo'
+        shutil.copy2(dipath, tmp_path)
 
-        model = Model.create_model('pheno_real.mod')
-        model.datainfo.path = tmp_path / 'pheno.dta'
-
-        res = run_amd(model, mfl='LAGTIME();PERIPHERALS(1)')
+        res = run_amd(tmp_path / 'pheno.dta', mfl='LAGTIME();PERIPHERALS(1)')
         assert res
 
 

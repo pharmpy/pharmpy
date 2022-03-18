@@ -54,9 +54,15 @@ def create_start_model(dataset_path, modeltype='pk_oral', cl_init=0.01, vc_init=
 
     stats = ModelStatements([cl_ass, vc_ass, odes, ipred, y_ass])
 
-    di = DataInfo.read_json(dataset_path.with_suffix('.datainfo'))
-    di.separator = r'\s+'
-    df = pd.read_table(dataset_path, sep=di.separator)
+    datainfo_path = dataset_path.with_suffix('.datainfo')
+    separator = r'\s+'
+    if datainfo_path.is_file():
+        di = DataInfo.read_json(dataset_path.with_suffix('.datainfo'))
+        di.separator = separator
+    else:
+        # FIXME: Create a default di here?
+        di = None
+    df = pd.read_table(dataset_path, sep=separator, engine='python')
 
     est = EstimationStep(
         "FOCE",
@@ -75,7 +81,8 @@ def create_start_model(dataset_path, modeltype='pk_oral', cl_init=0.01, vc_init=
     model.dependent_variable = y_ass.symbol
     model.database = default_model_database()
     model.dataset = df
-    model.datainfo = di
+    if di:
+        model.datainfo = di
     model.estimation_steps = eststeps
     model.filename_extension = '.mod'  # Should this really be needed?
 
