@@ -913,6 +913,32 @@ $ESTIMATION METHOD=1 INTERACTION
     assert model.model_code == correct
 
 
+def test_transits_non_linear_elim_with_update(testdata):
+    model = Model.create_model(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    set_transit_compartments(model, 3)
+    model.model_code
+    set_zero_order_elimination(model)
+    assert 'VC1 =' not in model.model_code
+    assert 'CLMM = THETA(4)*EXP(ETA(1))' in model.model_code
+    assert 'CL =' not in model.model_code
+
+    model = Model.create_model(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    set_transit_compartments(model, 3)
+    model.model_code
+    set_michaelis_menten_elimination(model)
+    assert 'VC1 =' not in model.model_code
+    assert 'CLMM = THETA(4)*EXP(ETA(1))' in model.model_code
+    assert 'CL =' not in model.model_code
+
+    model = Model.create_model(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    set_transit_compartments(model, 3)
+    model.model_code
+    set_mixed_mm_fo_elimination(model)
+    assert 'VC1 =' not in model.model_code
+    assert 'CLMM = THETA(6)' in model.model_code
+    assert 'CL = THETA(1) * EXP(ETA(1))' in model.model_code
+
+
 def test_lag_time(testdata):
     model = Model.create_model(testdata / 'nonmem' / 'modeling' / 'pheno_advan1.mod')
     before = model.model_code

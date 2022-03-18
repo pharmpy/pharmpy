@@ -438,7 +438,8 @@ def set_mixed_mm_fo_elimination(model):
 
 def _do_michaelis_menten_elimination(model, combined=False):
     model.statements.to_compartmental_system()
-    odes = model.statements.ode_system
+    sset = model.statements
+    odes = sset.ode_system
     central = odes.central_compartment
     output = odes.output_compartment
     old_rate = odes.get_flow(central, output)
@@ -460,11 +461,21 @@ def _do_michaelis_menten_elimination(model, combined=False):
         vc = denom
     else:
         if combined:
-            cl = _add_parameter(model, 'CL', clmm_init)
+            if sset.find_assignment('CL'):
+                cl = sset.find_assignment('CL').symbol
+            else:
+                cl = _add_parameter(model, 'CL', clmm_init)
         else:
             cl = 0
-        vc = _add_parameter(model, 'VC')  # FIXME: decide better initial estimate
-        clmm = _add_parameter(model, 'CLMM', init=clmm_init)
+        if sset.find_assignment('VC'):
+            vc = sset.find_assignment('VC').symbol
+        else:
+            vc = _add_parameter(model, 'VC')  # FIXME: decide better initial estimate
+        if not combined and sset.find_assignment('CL'):
+            _rename_parameter(model, 'CL', 'CLMM')
+            clmm = sset.find_assignment('CLMM').symbol
+        else:
+            clmm = _add_parameter(model, 'CLMM', init=clmm_init)
 
     amount = sympy.Function(central.amount.name)(pharmpy.symbols.symbol('t'))
     rate = (clmm * km / (km + amount / vc) + cl) / vc
