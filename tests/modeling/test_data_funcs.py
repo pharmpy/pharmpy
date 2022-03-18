@@ -16,6 +16,7 @@ from pharmpy.modeling import (
     list_time_varying_covariates,
     load_example_model,
     remove_loq_data,
+    translate_nmtran_time,
     undrop_columns,
 )
 
@@ -210,3 +211,8 @@ def test_check_dataset():
     m.dataset.loc[743, 'WGT'] = -1
     df = check_dataset(m, verbose=True, dataframe=True)
     assert df[df['code'] == 'A3']['result'].iloc[0] == 'FAIL'
+
+
+def test_nmtran_time():
+    m = load_example_model("pheno_linear")
+    translate_nmtran_time(m)

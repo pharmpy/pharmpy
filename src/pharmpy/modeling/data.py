@@ -883,8 +883,9 @@ def _translate_nonmem_time_value(time):
 
 
 def _translate_time_column(df, timecol, idcol):
-    df[timecol] = df[timecol].apply(_translate_nonmem_time_value)
-    df[timecol] = df[timecol] - df.groupby(idcol)[timecol].transform('first')
+    if df[timecol].dtype != np.float64:
+        df[timecol] = df[timecol].apply(_translate_nonmem_time_value)
+        df[timecol] = df[timecol] - df.groupby(idcol)[timecol].transform('first')
     return df
 
 
@@ -1005,6 +1006,7 @@ def translate_nmtran_time(model):
         df = _translate_time_and_date_columns(df, timecol, datecol, idcol)
         drop_columns(model, datecol)
         model.datainfo[timecol].unit = 'h'
+    model.datainfo[timecol].datatype = 'float64'
     model.dataset = df
     return model
 
