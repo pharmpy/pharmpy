@@ -831,7 +831,7 @@ def add_needed_pk_parameters(model, advan, trans):
             if rate != ass.symbol:
                 statements.insert_before_odes(ass)
                 odes.add_flow(odes.find_depot(statements), comp, ass.symbol)
-    if advan == 'ADVAN1' and trans == 'TRANS2':
+    if advan in ['ADVAN1', 'ADVAN2'] and trans == 'TRANS2':
         central = odes.central_compartment
         output = odes.output_compartment
         add_parameters_ratio(model, 'CL', 'V', central, output)
@@ -1093,7 +1093,8 @@ def update_estimation(model):
         cols.update(estep.residuals)
     tables = model.control_stream.get_records('TABLE')
     if not tables and cols:
-        s = f'$TABLE {model.datainfo.id_column.name} {model.datainfo.dv_column.name} '
+        s = f'$TABLE {model.datainfo.id_column.name} {model.datainfo.idv_column.name} '
+        s += f'{model.datainfo.dv_column.name} '
         s += f'{" ".join(cols)} FILE=mytab NOAPPEND NOPRINT'
         model.control_stream.insert_record(s)
     model._old_estimation_steps = copy.deepcopy(new)
