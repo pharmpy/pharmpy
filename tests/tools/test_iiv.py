@@ -1,5 +1,6 @@
 from io import StringIO
 
+import numpy as np
 import pytest
 
 from pharmpy import Model
@@ -16,7 +17,7 @@ from pharmpy.tools.iiv.algorithms import (
     _is_current_block_structure,
     brute_force_block_structure,
 )
-from pharmpy.tools.iiv.tool import _add_iiv
+from pharmpy.tools.iiv.tool import _add_iiv, _update_inits_start_model
 
 
 @pytest.mark.parametrize(
@@ -250,3 +251,9 @@ $ESTIMATION METHOD=1 INTERACTION
     assert _is_current_block_structure(
         model.random_variables.iiv, list_of_etas_12 + list_of_etas_34
     )
+
+
+def test_update_inits_start_model(pheno_path):
+    model = Model.create_model(pheno_path)
+    model.modelfit_results.parameter_estimates['OMEGA(1,1)'] = np.nan
+    _update_inits_start_model(model)

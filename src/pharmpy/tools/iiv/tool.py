@@ -43,7 +43,7 @@ def create_workflow(
     else:
         start_model_task = [start_task]
 
-    task_update_inits = Task('update_inits', update_inits)
+    task_update_inits = Task('update_inits_start_model', _update_inits_start_model)
     wf.add_task(task_update_inits, predecessors=wf.output_tasks)
 
     wf_method, model_features = algorithm_func(iivs)
@@ -110,6 +110,14 @@ def _has_iiv(sset, rvs, assignment):
     if symb_names.intersection(rvs.iiv.names):
         return True
     return False
+
+
+def _update_inits_start_model(model):
+    try:
+        update_inits(model)
+    except ValueError:
+        pass
+    return model
 
 
 def post_process_results(rankfunc, cutoff, model_features, *models):
