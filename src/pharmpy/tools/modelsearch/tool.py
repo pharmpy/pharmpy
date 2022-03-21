@@ -63,11 +63,15 @@ def start(model):
 
 def post_process_results(algorithm, rankfunc, cutoff, model_features, *models):
     res_models = []
+    start_model = None
     for model in models:
         if not model.name.startswith('modelsearch_candidate'):
             start_model = model
         else:
             res_models.append(model)
+
+    if not start_model:
+        raise ValueError('Error in workflow: No starting model')
 
     summary_tool = create_summary(
         res_models, start_model, rankfunc, cutoff, model_features, algorithm=algorithm
