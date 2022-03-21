@@ -1,5 +1,5 @@
-next version
-~~~~~~~~~~~~
+0.57.0 (2022-03-21)
+~~~~~~~~~~~~~~~~~~~
 
 Bugfixes
 ~~~~~~~~
@@ -8,7 +8,8 @@ Bugfixes
 * Fix missing ALAG-parameter in non-linear elimination (#578)
 * Fix issue with added VC1-parameter when adding transits to non-linear elimination (#577)
 * Fix missing D1-parameter and RATE-column when adding zero order absorption to non-linear elimination (#578)
-
+* Only do update_inits if start model was successful in IIV-tool (#632)
+* Fix issue where etas where added to KA/K-parameters instead of MAT/MDT (#636)
 
 0.56.0 (2022-03-17)
 ~~~~~~~~~~~~~~~~~~~
