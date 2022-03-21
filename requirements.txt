@@ -14,7 +14,7 @@ cloudpickle==2.0.0
 colorama==0.4.4
 commonmark==0.9.1
 csscompressor==0.9.5
-dask==2022.2.1
+dask==2022.3.0
 debugpy==1.5.1
 decorator==5.1.1
 defusedxml==0.7.1
