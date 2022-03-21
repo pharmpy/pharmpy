@@ -73,17 +73,43 @@ def _add_iiv(iiv_as_fullblock, model):
     sset, rvs = model.statements, model.random_variables
     odes = sset.ode_system
 
+    params_to_add_etas = []
+
     for param in odes.free_symbols:
-        assignment = sset.find_assignment(param)
-        if assignment:
-            full_expression = sset.before_odes.full_expression(assignment.symbol)
-            symb_names = {symb.name for symb in full_expression.free_symbols}
-            if not symb_names.intersection(rvs.iiv.names):
-                add_iiv(model, param.name, 'exp')
+        assign = sset.find_assignment(param)
+        if assign:
+            if _has_iiv(sset, rvs, assign):
+                continue
+            dep_assignments = _get_dependent_assignments(sset, assign)
+            if dep_assignments:
+                for dep_assign in dep_assignments:
+                    param_name = dep_assign.symbol.name
+                    if not _has_iiv(sset, rvs, dep_assign) and param_name not in params_to_add_etas:
+                        params_to_add_etas.append(param_name)
+            else:
+                if param.name not in params_to_add_etas:
+                    params_to_add_etas.append(param.name)
+
+    if params_to_add_etas:
+        add_iiv(model, params_to_add_etas, 'exp')
 
     if iiv_as_fullblock:
         create_joint_distribution(model)
     return model
+
+
+def _get_dependent_assignments(sset, assignment):
+    # Finds dependant assignments one layer deep
+    dep_assignments = [sset.find_assignment(symb) for symb in assignment.expression.free_symbols]
+    return list(filter(None, dep_assignments))
+
+
+def _has_iiv(sset, rvs, assignment):
+    full_expression = sset.before_odes.full_expression(assignment.symbol)
+    symb_names = {symb.name for symb in full_expression.free_symbols}
+    if symb_names.intersection(rvs.iiv.names):
+        return True
+    return False
 
 
 def post_process_results(rankfunc, cutoff, model_features, *models):
