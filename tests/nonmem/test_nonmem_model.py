@@ -1038,3 +1038,20 @@ def test_no_etas_in_model(pheno_path):
     remove_iiv(model)
     assert 'DUMMYETA' in model.model_code
     assert 'ETA(1)' in model.model_code
+
+
+def test_0_fix_diag_omega():
+    code = """$PROBLEM base model
+$INPUT ID DV TIME
+$DATA file.csv IGNORE=@
+
+$PRED
+Y = THETA(1) + ETA(1) + EPS(1)
+
+$THETA 1  ; TH1
+$OMEGA 0 FIX ; OM1
+$SIGMA 3 ; SI1
+$ESTIMATION METHOD=1 INTER
+"""
+    model = Model.create_model(StringIO(code))
+    assert len(model.random_variables.etas) == 1

@@ -375,8 +375,8 @@ def test_random_variables(parser):
 
     rec = parser.parse("$OMEGA 0 FIX").records[0]
     rvs, _, _, zero_fix = rec.random_variables(1)
-    assert len(rvs) == 0
-    assert zero_fix == ['ETA(1)']
+    assert len(rvs) == 1
+    assert zero_fix == []
 
     rec = parser.parse("$OMEGA  BLOCK(2) FIX 0 0 0").records[0]
     rvs, _, _, zero_fix = rec.random_variables(1)

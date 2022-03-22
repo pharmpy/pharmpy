@@ -395,16 +395,10 @@ class OmegaRecord(Record):
             i = start_omega
             numetas = len(self.root.all('diag_item'))
             for node in self.root.all('diag_item'):
-                init = node.init.NUMERIC
-                fixed = bool(node.find('FIX'))
                 name = self._rv_name(i)
-                if not (init == 0 and fixed):  # 0 FIX are not RVs
-                    eta = RandomVariable.normal(name, 'iiv', 0, symbol(rev_map[(i, i)]))
-                    rvs.append(eta)
-                    etas.append(eta.name)
-                else:
-                    zero_fix.append(name)
-                    etas.append(name)
+                eta = RandomVariable.normal(name, 'iiv', 0, symbol(rev_map[(i, i)]))
+                rvs.append(eta)
+                etas.append(eta.name)
                 i += 1
         else:
             if bare_block:
