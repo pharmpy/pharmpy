@@ -8,6 +8,7 @@ import sympy
 from pharmpy.math import round_to_n_sigdig
 from pharmpy.model import Model
 from pharmpy.modeling import create_rng, get_observations, sample_parameters_from_covariance_matrix
+from pharmpy.random_variables import RandomVariables
 from pharmpy.statements import sympify
 
 from .data import get_ids
@@ -559,6 +560,16 @@ def calculate_aic(model, modelfit_results=None):
     return modelfit_results.ofv + 2 * len(parameters)
 
 
+def _random_etas(model):
+    var = model.random_variables.etas.variance_parameters
+    zerofix = [model.parameters[e].fix and model.parameters[e].init == 0 for e in var]
+    keep = []
+    for eta, zf in zip(model.random_variables.etas, zerofix):
+        if not zf:
+            keep.append(eta)
+    return RandomVariables(keep)
+
+
 def calculate_bic(model, type=None, modelfit_results=None):
     """Calculate final BIC value assuming the OFV to be -2LL
 
@@ -621,13 +632,13 @@ def calculate_bic(model, type=None, modelfit_results=None):
             assignment = model.statements.find_assignment(param)
             if assignment:
                 expr = model.statements.before_odes.full_expression(assignment.symbol)
-                for eta in model.random_variables.etas:
+                for eta in _random_etas(model):
                     if eta.symbol in expr.free_symbols:
                         symbols = {p.symbol for p in parameters if p.symbol in expr.free_symbols}
                         random_thetas.update(symbols)
                         break
         yexpr = model.statements.after_odes.full_expression(model.dependent_variable)
-        for eta in model.random_variables.etas:
+        for eta in _random_etas(model):
             if eta.symbol in yexpr.free_symbols:
                 symbols = {p.symbol for p in parameters if p.symbol in yexpr.free_symbols}
                 random_thetas.update(symbols)
