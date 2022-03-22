@@ -233,7 +233,8 @@ def add_pk_iiv(model):
     >>> add_pk_iiv(model)
     <...>
     >>> model.statements.find_assignment("MAT")
-    MAT := THETA(3)*exp(ETA(3))
+                    ETA_MAT
+    MAT := POP_MAT⋅ℯ
 
     See also
     --------
