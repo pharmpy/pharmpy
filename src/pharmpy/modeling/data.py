@@ -662,21 +662,23 @@ def add_time_after_dose(model):
     <...>
 
     """
-    # FIXME: Should not rely on name here. Use coltypes for TAD
     temp = model.copy()
     translate_nmtran_time(temp)
-    df = temp.dataset
-    doseid = get_doseid(temp)
-    df['DOSEID'] = doseid
+    df = model.dataset
     idv = temp.datainfo.idv_column.name
     idlab = temp.datainfo.id_column.name
-    # Sort in case DOSEIDs are non-increasing
-    df.sort_values(by=[idlab, idv, 'DOSEID'], inplace=True, ignore_index=True)
-    df[idv] = df[idv].astype(np.float64)
-    df['TAD'] = df.groupby([idlab, 'DOSEID'])[idv].diff().fillna(0)
-    df['TAD'] = df.groupby([idlab, 'DOSEID'])['TAD'].cumsum()
+    df['_NEWTIME'] = temp.dataset[idv]
+    doseid = get_doseid(temp)
+    df['_DOSEID'] = doseid
 
-    model.dataset['TAD'] = temp.dataset['TAD']
+    # Sort in case DOSEIDs are non-increasing
+    df.sort_values(by=[idlab, '_NEWTIME', '_DOSEID'], inplace=True, ignore_index=True)
+
+    df['TAD'] = df.groupby([idlab, '_DOSEID'])['_NEWTIME'].diff().fillna(0)
+    df['TAD'] = df.groupby([idlab, '_DOSEID'])['TAD'].cumsum()
+    df.drop(columns=['_NEWTIME', '_DOSEID'])
+
+    model.dataset = df
     ci = ColumnInfo('TAD')
     model.datainfo.append(ci)
     return model

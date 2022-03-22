@@ -1,3 +1,11 @@
+next version
+~~~~~~~~~~~~
+
+Bugfixes
+~~~~~~~~
+
+* Fix ordering of TAD values for dose at some time as observation
+
 0.58.0 (2022-03-22)
 ~~~~~~~~~~~~~~~~~~~
 
