@@ -36,6 +36,7 @@ def remove_iov(model, to_remove=None):
     add_iiv
     add_iov
     remove_iiv
+    add_pk_iiv
 
     """
     rvs, sset = model.random_variables, model.statements

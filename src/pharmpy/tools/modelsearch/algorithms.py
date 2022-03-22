@@ -283,6 +283,7 @@ def _update_initial_estimates(model):
 
 
 def _add_iiv_to_func(feat, iiv_as_fullblock, add_mdt_iiv, model):
+    # FIXME: Change to add_pk_iiv
     eta_dict = {
         'ABSORPTION(ZO)': ['MAT'],
         'ABSORPTION(SEQ-ZO-FO)': ['MAT', 'MDT'],

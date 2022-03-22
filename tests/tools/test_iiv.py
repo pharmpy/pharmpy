@@ -4,20 +4,13 @@ import numpy as np
 import pytest
 
 from pharmpy import Model
-from pharmpy.modeling import (
-    add_iiv,
-    add_peripheral_compartment,
-    create_joint_distribution,
-    set_first_order_absorption,
-    set_transit_compartments,
-    set_zero_order_elimination,
-)
+from pharmpy.modeling import add_iiv, add_peripheral_compartment, create_joint_distribution
 from pharmpy.tools.iiv.algorithms import (
     _get_possible_iiv_blocks,
     _is_current_block_structure,
     brute_force_block_structure,
 )
-from pharmpy.tools.iiv.tool import _add_iiv, _update_inits_start_model
+from pharmpy.tools.iiv.tool import _update_inits_start_model
 
 
 @pytest.mark.parametrize(
@@ -173,41 +166,6 @@ $ESTIMATION METHOD=1 INTERACTION
         [['ETA(3)', 'ETA(5)'], ['ETA(1)', 'ETA(2)', 'ETA(4)']],
         [['ETA(4)', 'ETA(5)'], ['ETA(1)', 'ETA(2)', 'ETA(3)']],
     ]
-
-
-def test_add_iiv(pheno_path):
-    model = Model.create_model(pheno_path)
-    set_zero_order_elimination(model)
-    _add_iiv(iiv_as_fullblock=False, model=model)
-    iivs = set(model.random_variables.iiv.names)
-    assert iivs == {'ETA(1)', 'ETA(2)', 'ETA_KM'}
-    add_peripheral_compartment(model)
-    _add_iiv(iiv_as_fullblock=False, model=model)
-    iivs = set(model.random_variables.iiv.names)
-    assert iivs == {'ETA(1)', 'ETA(2)', 'ETA_KM', 'ETA_VP1', 'ETA_QP1'}
-
-    model = Model.create_model(pheno_path)
-    set_zero_order_elimination(model)
-    add_peripheral_compartment(model)
-    _add_iiv(iiv_as_fullblock=True, model=model)
-    iivs = set(model.random_variables.iiv.names)
-    assert iivs == {'ETA(1)', 'ETA(2)', 'ETA_KM', 'ETA_VP1', 'ETA_QP1'}
-    eta1_joint_names = model.random_variables['ETA(1)'].joint_names
-    assert set(eta1_joint_names) == {'ETA(1)', 'ETA(2)', 'ETA_KM', 'ETA_VP1', 'ETA_QP1'}
-
-
-def test_add_iiv_nested_params(testdata, pheno_path):
-    model = Model.create_model(pheno_path)
-    set_transit_compartments(model, 3)
-    _add_iiv(False, model)
-    iivs = set(model.random_variables.iiv.names)
-    assert iivs == {'ETA(1)', 'ETA(2)', 'ETA_MDT'}
-
-    model = Model.create_model(pheno_path)
-    set_first_order_absorption(model)
-    _add_iiv(False, model)
-    iivs = set(model.random_variables.iiv.names)
-    assert iivs == {'ETA(1)', 'ETA(2)', 'ETA_MAT'}
 
 
 def test_is_current_block_structure(testdata):

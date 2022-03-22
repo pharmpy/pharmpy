@@ -44,7 +44,7 @@ from pharmpy.modeling.estimation_steps import (
     set_estimation_step,
     set_evaluation_step,
 )
-from pharmpy.modeling.eta_additions import add_iiv, add_iov
+from pharmpy.modeling.eta_additions import add_iiv, add_iov, add_pk_iiv
 from pharmpy.modeling.eta_transformations import (
     transform_etas_boxcox,
     transform_etas_john_draper,
@@ -172,6 +172,7 @@ __all__ = [
     'add_iov',
     'add_lag_time',
     'add_peripheral_compartment',
+    'add_pk_iiv',
     'add_time_after_dose',
     'append_estimation_step_options',
     'bump_model_number',

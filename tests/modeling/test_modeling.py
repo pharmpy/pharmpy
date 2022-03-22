@@ -15,6 +15,8 @@ from pharmpy.modeling import (
     add_iiv,
     add_iov,
     add_lag_time,
+    add_peripheral_compartment,
+    add_pk_iiv,
     create_joint_distribution,
     has_first_order_elimination,
     has_michaelis_menten_elimination,
@@ -3109,3 +3111,36 @@ def test_set_ode_solver(pheno_path):
     assert model.statements.ode_system.solver == 'GL'
     assert 'ADVAN5' in model.model_code
     assert '$MODEL' in model.model_code
+
+
+def test_add_pk_iiv(pheno_path):
+    model = Model.create_model(pheno_path)
+    set_zero_order_elimination(model)
+    add_pk_iiv(model)
+    iivs = set(model.random_variables.iiv.names)
+    assert iivs == {'ETA(1)', 'ETA(2)', 'ETA_KM'}
+    add_peripheral_compartment(model)
+    add_pk_iiv(model)
+    iivs = set(model.random_variables.iiv.names)
+    assert iivs == {'ETA(1)', 'ETA(2)', 'ETA_KM', 'ETA_VP1', 'ETA_QP1'}
+
+    model = Model.create_model(pheno_path)
+    set_zero_order_elimination(model)
+    add_peripheral_compartment(model)
+    add_pk_iiv(model)
+    iivs = set(model.random_variables.iiv.names)
+    assert iivs == {'ETA(1)', 'ETA(2)', 'ETA_KM', 'ETA_VP1', 'ETA_QP1'}
+
+
+def test_add_pk_iiv_nested_params(testdata, pheno_path):
+    model = Model.create_model(pheno_path)
+    set_transit_compartments(model, 3)
+    add_pk_iiv(model)
+    iivs = set(model.random_variables.iiv.names)
+    assert iivs == {'ETA(1)', 'ETA(2)', 'ETA_MDT'}
+
+    model = Model.create_model(pheno_path)
+    set_first_order_absorption(model)
+    add_pk_iiv(model)
+    iivs = set(model.random_variables.iiv.names)
+    assert iivs == {'ETA(1)', 'ETA(2)', 'ETA_MAT'}
