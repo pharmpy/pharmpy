@@ -226,11 +226,11 @@ def add_pk_iiv(model):
     -------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> set_first_order_absorption(model)
+    >>> set_first_order_absorption(model)  # doctest: +SKIP
     <...>
     >>> model.statements.find_assignment("MAT")
     MAT := POP_MAT
-    >>> add_pk_iiv(model)
+    >>> add_pk_iiv(model)  # doctest: +SKIP
     <...>
     >>> model.statements.find_assignment("MAT")
                     ETA_MAT
