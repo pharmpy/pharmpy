@@ -229,7 +229,7 @@ def add_pk_iiv(model):
     >>> set_first_order_absorption(model)
     <...>
     >>> model.statements.find_assignment("MAT")
-    MAT := THETA(3)
+    MAT := POP_MAT
     >>> add_pk_iiv(model)
     <...>
     >>> model.statements.find_assignment("MAT")
