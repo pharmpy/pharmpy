@@ -1,3 +1,24 @@
+0.58.0 (2022-03-22)
+~~~~~~~~~~~~~~~~~~~
+
+New features
+~~~~~~~~~~~~
+
+* Add modeling.add_pk_iiv to add iiv to all pk parameters of a model
+
+Changes
+~~~~~~~
+
+* Change cutoff for zero protection in proportional error ModelSyntaxError
+* Change to checking for positive semidefiniteness instead of only positive definiteness when validating omegas
+
+Bugfixes
+~~~~~~~~
+
+* Fix BIC-mixed calculation to not count thetas related to non-random etas (0 FIX) towards random parameters
+* Read 0 FIX diagonal etas as random variables
+
+
 0.57.0 (2022-03-21)
 ~~~~~~~~~~~~~~~~~~~
 
