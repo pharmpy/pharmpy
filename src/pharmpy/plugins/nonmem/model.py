@@ -313,8 +313,8 @@ class Model(pharmpy.model.Model):
             # reading statements might change parameters. Resetting _old_parameters
             self._old_parameters = self._parameters.copy()
 
-        nearest = self.random_variables.nearest_valid_parameters(self._parameters.inits)
-        if nearest != self._parameters.inits:
+        if not self.random_variables.validate_parameters(self._parameters.inits):
+            nearest = self.random_variables.nearest_valid_parameters(self._parameters.inits)
             before, after = self._compare_before_after_params(self._parameters.inits, nearest)
             warnings.warn(
                 f"Adjusting initial estimates to create positive semidefinite "

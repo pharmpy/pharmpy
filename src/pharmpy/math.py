@@ -94,6 +94,12 @@ def se_delta_method(expr, values, cov):
     return se
 
 
+def is_positive_semidefinite(A):
+    """Checks whether a matrix is positive semi-definite"""
+    eigvals, _ = np.linalg.eig(A)
+    return all(eigvals >= 0)
+
+
 def is_posdef(A):
     """Checks whether a matrix is positive definite"""
     try:

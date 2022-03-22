@@ -1116,7 +1116,7 @@ class RandomVariables(MutableSequence):
     def validate_parameters(self, parameter_values):
         """Validate a dict or Series of parameter values
 
-        Currently checks that all covariance matrices are posdef
+        Currently checks that all covariance matrices are positive semidefinite
         use_cache for using symengine cached matrices
         """
         for rvs, dist in self.distributions():
@@ -1128,7 +1128,7 @@ class RandomVariables(MutableSequence):
                 sigma = sigma.subs(replacement)
                 if not sigma.free_symbols:  # Cannot validate since missing params
                     a = np.array(sigma).astype(np.float64)
-                    if not pharmpy.math.is_posdef(a):
+                    if not pharmpy.math.is_positive_semidefinite(a):
                         return False
                 else:
                     raise TypeError("Cannot validate parameters since all are not numeric")
