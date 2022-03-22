@@ -205,7 +205,7 @@ def set_proportional_error_model(model, data_trans=None, zero_protection=False):
          ─────────
     F :=     S₁
     W := F
-                ⎧2.225e-307  for F = 0
+                ⎧2.225e-16  for F = 0
                 ⎨
     IPREDADJ := ⎩    F       otherwise
     Y := εₚ + log(IPREDADJ)
@@ -229,7 +229,7 @@ def set_proportional_error_model(model, data_trans=None, zero_protection=False):
     data_trans = _canonicalize_data_transformation(model, data_trans)
     if zero_protection:
         ipred = create_symbol(model, 'IPREDADJ')
-        guard_expr = sympy.Piecewise((2.225e-307, sympy.Eq(f, 0)), (f, True))
+        guard_expr = sympy.Piecewise((2.225e-16, sympy.Eq(f, 0)), (f, True))
         guard_assignment = Assignment(ipred, guard_expr)
     else:
         ipred = f
