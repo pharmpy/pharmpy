@@ -672,7 +672,9 @@ def add_time_after_dose(model):
     df['_DOSEID'] = doseid
 
     # Sort in case DOSEIDs are non-increasing
-    df.sort_values(by=[idlab, '_NEWTIME', '_DOSEID'], inplace=True, ignore_index=True)
+    df.groupby(idlab).apply(
+        lambda x: x.sort_values(by=['_DOSEID'], kind='stable', ignore_index=True)
+    )
 
     df['TAD'] = df.groupby([idlab, '_DOSEID'])['_NEWTIME'].diff().fillna(0)
     df['TAD'] = df.groupby([idlab, '_DOSEID'])['TAD'].cumsum()

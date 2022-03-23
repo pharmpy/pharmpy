@@ -5,6 +5,7 @@ Bugfixes
 ~~~~~~~~
 
 * Fix ordering of TAD values for dose at some time as observation
+* Fix TAD values for datasets with reset time event
 
 0.58.0 (2022-03-22)
 ~~~~~~~~~~~~~~~~~~~
