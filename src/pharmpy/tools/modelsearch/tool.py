@@ -119,7 +119,7 @@ def create_summary(
 ):
     res_data = {'parent_model': [], f'd{rankfunc_name}': [], 'features': [], 'rank': []}
     model_names = []
-
+    models_all = [start_model] + models
     rankfunc = getattr(rankfuncs, rankfunc_name)
     kwargs = dict()
     if cutoff is not None:
@@ -128,16 +128,18 @@ def create_summary(
         kwargs['rank_by_not_worse'] = rank_by_not_worse
     if rankfunc_name == 'bic' and bic_type:
         kwargs['bic_type'] = bic_type
-    ranks = rankfunc(start_model, models, **kwargs)
-    delta_diff = rankfuncs.create_diff_dict(rankfunc_name, start_model, models)
-    for model in models:
+    ranks = rankfunc(start_model, models_all, **kwargs)
+    delta_diff = rankfuncs.create_diff_dict(rankfunc_name, start_model, models_all)
+    for model in models_all:
         model_names.append(model.name)
         res_data['parent_model'].append(model.parent_model)
         res_data[f'd{rankfunc_name}'].append(delta_diff[model.name])
+        if model.name == start_model.name:
+            res_data['features'].append(None)
         # FIXME: make more general
-        if algorithm == 'reduced_stepwise':
+        elif algorithm == 'reduced_stepwise':
             feat = model_features[model.name]
-            if model.parent_model in model_names:
+            if model.parent_model in model_names and model.parent_model != start_model.name:
                 idx = model_names.index(model.parent_model)
                 feat_parent = res_data['features'][idx]
                 feat_all = feat_parent + (feat,)

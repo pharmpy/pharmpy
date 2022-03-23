@@ -18,7 +18,7 @@ def test_exhaustive(tmp_path, testdata):
             'modelsearch', 'exhaustive', 'ABSORPTION(ZO);PERIPHERALS(1)', model=model_start
         )
 
-        assert len(res.summary_tool) == 3
+        assert len(res.summary_tool) == 4
         assert len(res.summary_models) == 4
         assert len(res.models) == 3
         assert all(
@@ -59,7 +59,7 @@ def test_exhaustive_stepwise_basic(
         model_start.datainfo.path = tmp_path / 'mx19B.csv'
         res = run_tool('modelsearch', 'exhaustive_stepwise', mfl, model=model_start)
 
-        assert len(res.summary_tool) == no_of_models
+        assert len(res.summary_tool) == no_of_models + 1
         assert len(res.summary_models) == no_of_models + 1
         assert len(res.models) == no_of_models
         assert res.best_model.name == best_model_name
@@ -115,7 +115,11 @@ def test_exhaustive_stepwise_add_iivs(
             model=model_start,
         )
 
-        assert len(res.summary_tool) == no_of_models
+        import pandas as pd
+
+        pd.set_option('display.max_columns', None)
+        print(res.summary_tool)
+        assert len(res.summary_tool) == no_of_models + 1
         assert len(res.summary_models) == no_of_models + 1
         assert len(res.models) == no_of_models
         assert res.best_model.name == best_model_name
@@ -143,7 +147,7 @@ def test_exhaustive_stepwise_already_fit(tmp_path, testdata):
         mfl = 'ABSORPTION(ZO);PERIPHERALS(1)'
         res = run_tool('modelsearch', 'exhaustive_stepwise', mfl, model=model_start)
 
-        assert len(res.summary_tool) == 4
+        assert len(res.summary_tool) == 5
         assert len(res.summary_models) == 5
         assert len(res.models) == 4
         assert all(
@@ -169,7 +173,7 @@ def test_exhaustive_stepwise_start_model_fail(tmp_path, testdata):
         mfl = 'ABSORPTION(ZO);PERIPHERALS(1)'
         res = run_tool('modelsearch', 'exhaustive_stepwise', mfl, model=model_start)
 
-        assert len(res.summary_tool) == 4
+        assert len(res.summary_tool) == 5
         assert len(res.summary_models) == 5
         assert res.summary_tool['dofv'].isnull().values.all()
         assert len(res.models) == 4
@@ -200,7 +204,7 @@ def test_reduced_stepwise(
         model_start.datainfo.path = tmp_path / 'mx19B.csv'
         res = run_tool('modelsearch', 'reduced_stepwise', mfl, model=model_start)
 
-        assert len(res.summary_tool) == no_of_models
+        assert len(res.summary_tool) == no_of_models + 1
         assert len(res.summary_models) == no_of_models + 1
         assert len(res.models) == no_of_models
         assert res.best_model.name == best_model_name
