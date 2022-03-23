@@ -594,11 +594,19 @@ def get_doseid(model):
 
     # Adjust for dose and observation at the same time point
     # Observation is moved to previous dose group
+    try:
+        eventcol = model.datainfo.typeix['event'][0].name
+    except IndexError:
+        df['_RESETGROUP'] = 1.0
+    else:
+        df['_FLAG'] = df[eventcol] >= 3
+        df['_RESETGROUP'] = df.groupby('ID')['_FLAG'].cumsum()
+
     idvcol = model.datainfo.idv_column.name
-    ser = df.groupby([idcol, idvcol]).size()
+    ser = df.groupby([idcol, idvcol, '_RESETGROUP']).size()
     nonunique = ser[ser > 1]
 
-    for i, time in nonunique.index:
+    for i, time, _ in nonunique.index:
         groupind = df[(df[idcol] == i) & (df[idvcol] == time)].index
         obsind = df[(df[idcol] == i) & (df[idvcol] == time) & (df[dose] == 0)].index
         for index in obsind:
