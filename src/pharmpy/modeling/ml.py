@@ -42,9 +42,12 @@ def _create_dataset(model):
 
     # max((abs(indcov - mean(cov))) / sd(cov))
     cov_names = get_model_covariates(model, strings=True)
-    covariates = model.dataset[cov_names + [idcol]].set_index(idcol)
-    mean_covs = covariates.groupby(idcol).mean()
-    maxcov = (abs(mean_covs - mean_covs.mean()) / mean_covs.std()).max(axis=1)
+    if len(cov_names) > 0:
+        covariates = model.dataset[cov_names + [idcol]].set_index(idcol)
+        mean_covs = covariates.groupby(idcol).mean()
+        maxcov = (abs(mean_covs - mean_covs.mean()) / mean_covs.std()).max(axis=1)
+    else:
+        maxcov = 0.0
 
     df = pd.DataFrame(
         {

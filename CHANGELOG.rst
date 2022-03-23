@@ -1,11 +1,12 @@
-next version
-~~~~~~~~~~~~
+0.58.1 (2022-03-22)
+~~~~~~~~~~~~~~~~~~~
 
 Bugfixes
 ~~~~~~~~
 
 * Fix ordering of TAD values for dose at some time as observation
 * Fix TAD values for datasets with reset time event
+* Handle models with no covariates for predict_outliers and predict_influential_individuals
 
 0.58.0 (2022-03-22)
 ~~~~~~~~~~~~~~~~~~~
