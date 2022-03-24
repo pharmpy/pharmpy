@@ -2,16 +2,16 @@ next release
 ------------
 
 New features
-~~~~~~~~~~~~
+============
 
 * Add modeling.expand_additional_doses
 
 
 0.58.4 (2022-03-24)
-~~~~~~~~~~~~~~~~~~~
+-------------------
 
 Bugfixes
-~~~~~~~~
+========
 
 * Fix issue with start model not being selected if no candidates are better in IIV- and modelsearch-tool
 * Fix issue with ranking models by dBIC in IIV-tool
@@ -21,7 +21,7 @@ Bugfixes
 -------------------
 
 Bugfixes
-~~~~~~~~
+========
 
 * Fix ordering of TAD values for dose at some time as observation
 * Fix TAD values for datasets with reset time event
@@ -31,18 +31,18 @@ Bugfixes
 -------------------
 
 New features
-~~~~~~~~~~~~
+============
 
 * Add modeling.add_pk_iiv to add iiv to all pk parameters of a model
 
 Changes
-~~~~~~~
+=======
 
 * Change cutoff for zero protection in proportional error ModelSyntaxError
 * Change to checking for positive semidefiniteness instead of only positive definiteness when validating omegas
 
 Bugfixes
-~~~~~~~~
+========
 
 * Fix BIC-mixed calculation to not count thetas related to non-random etas (0 FIX) towards random parameters
 * Read 0 FIX diagonal etas as random variables
@@ -52,7 +52,7 @@ Bugfixes
 -------------------
 
 Bugfixes
-~~~~~~~~
+========
 
 * Keep thetas/etas when going across absorption transformations (#588, #625)
 * Fix missing ALAG-parameter in non-linear elimination (#578)
@@ -65,13 +65,13 @@ Bugfixes
 -------------------
 
 Changes
-~~~~~~~
+=======
 
 * Remove ZO elimination from the default search space in model search
 * Do not apply resmod mode if no change on the full model
 
 Bugfixes
-~~~~~~~~
+========
 
 * Fix bad calculation of number of observations for datasets with both EVID and MDV
 * Properly handle observations and dose at same time for time after dose calculation
@@ -83,18 +83,18 @@ Bugfixes
 -------------------
 
 New features
-~~~~~~~~~~~~
+============
 
 * Option in modeling.update_inits to move estimates that are close to boundary
 
 Changes
-~~~~~~~
+=======
 
 * Set different initial estimates of clearance for peripherals (#590)
 
 
 Bugfixes
-~~~~~~~~
+========
 
 * Fix issue with duplicated features with IIV-options in modelsearch-tool
 * Fix issue where $MODEL was not added when setting ODE solver to GL or GL_REAL
@@ -106,7 +106,7 @@ Bugfixes
 -------------------
 
 New features
-~~~~~~~~~~~~
+============
 
 * New IIV version of BIC in calculate_bic
 * Use IIV BIC in iiv tool
@@ -114,8 +114,8 @@ New features
 * Reduced stepwise algorithm in modelsearch
 * Add cutoff option to predict_outliers etc
 
-Bugfix
-~~~~~~
+Bugfixes
+========
 
 * Fix issue with failing to creating correct subblocks of fullblock of random variables
 * Set index name to id-name in predict_outliers
@@ -124,22 +124,22 @@ Bugfix
 -------------------
 
 New features
-~~~~~~~~~~~~
+============
 
 * Add option to remove specific IOV random variables
 * Support Python 3.10
 * Add modeling.check_dataset
 
 Changes
-~~~~~~~
+=======
 
 * modeling.calculate_bic: Count epsilons interacting with etas to random parameters
 * Updated tensorflow models for prediction of outliers and influential individuals
 * Only consider parameters with etas for covariate modelbuilding in amd
 * Include AIC/BIC in modeling.summarize_modelfit_results
 
-Bugfix
-~~~~~~
+Bugfixes
+========
 
 * Update solvers in estmethod-tool
 * Handle Q-parameters when adding IIV on structural parameters in iiv-tool
@@ -149,7 +149,7 @@ Bugfix
 -------------------
 
 New features
-~~~~~~~~~~~~
+============
 
 * Add covariate search to amd tool
 
@@ -157,7 +157,7 @@ New features
 -------------------
 
 New features
-~~~~~~~~~~~~
+============
 
 * Add option to add IIV to start model in iiv-tool
 * Add solver option in estmethod-tool
@@ -165,7 +165,7 @@ New features
 
 
 Changes
-~~~~~~~
+=======
 
 * | modeling.calculate_bic can Calculate three different versions of the BIC
   | default has switched to be a mixed effects version
@@ -176,8 +176,8 @@ Changes
 0.50.1 (2022-02-16)
 -------------------
 
-Bugfix
-~~~~~~
+Bugfixes
+========
 
 * Handle long paths when fitting NONMEM model
 
@@ -185,7 +185,7 @@ Bugfix
 -------------------
 
 New features
-~~~~~~~~~~~~
+============
 
 * Add modeling.write_results
 * Add modeling.print_fit_summary
@@ -193,7 +193,7 @@ New features
 * Add first version of WIP scm wrapper
 
 Changes
-~~~~~~~
+=======
 
 * Change in mfl in modelsearch such that transits that don't keep depot will have additional transit
 * Make it possible to set $DATA directly for NONMEM models (via datainfo.path) (#130)
@@ -202,7 +202,7 @@ Changes
 -------------------
 
 New features
-~~~~~~~~~~~~
+============
 
 * Add modeling.calculate_se_from_cov
 * Add modeling.calculate_se_from_inf
@@ -219,12 +219,12 @@ New features
 * Add option to choose search space in AMD-tool
 
 Changes
-~~~~~~~
+=======
 
 * Use p-value instead of OFV cutoff in resmod
 
-Bugfix
-------
+Bugfixes
+========
 
 * Fix issue with no conversion to $DES for some models (#528)
 
@@ -232,17 +232,17 @@ Bugfix
 -------------------
 
 New features
-~~~~~~~~~~~~
+============
 
 * Parse estimation step runtime from NONMEM results file
 
 Changes
-~~~~~~~
+=======
 
 * Force initial estimates when reading model file to be positive definite
 
 Bugfixes
-~~~~~~~~
+========
 
 * Random block was not split properly in some cases when random variable was removed
 * Add $COV correctly in NM-TRAN models (#457)
