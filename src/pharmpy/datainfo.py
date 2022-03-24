@@ -42,6 +42,7 @@ class ColumnInfo:
         'idv',
         'unknown',
         'dose',
+        'additional',
         'ii',
         'event',
         'covariate',
@@ -127,6 +128,7 @@ class ColumnInfo:
         dv            Dependent variable
         covariate     Covariate
         dose          Dose amount
+        additional    Number of additional doses
         ii            Interdose interval
         event         0 = observation
         mdv           0 = DV is observation value, 1 = DV is missing

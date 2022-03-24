@@ -1051,6 +1051,9 @@ class Model(pharmpy.model.Model):
             elif colname == 'II' and self._get_pk_record():
                 info.type = 'ii'
                 info.scale = 'ratio'
+            elif colname == 'ADDL' and self._get_pk_record():
+                info.type = 'additional'
+                info.scale = 'ordinal'
             elif (
                 colname == 'AMT' or colname == replacements.get('AMT', None)
             ) and self._get_pk_record():
