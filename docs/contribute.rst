@@ -102,5 +102,5 @@ Further reading
 .. toctree::
    :maxdepth: 2
 
-   NONMEM
    design
+   NONMEM
