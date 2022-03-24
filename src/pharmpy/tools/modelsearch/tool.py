@@ -114,7 +114,7 @@ def create_summary(
     cutoff,
     model_features,
     rank_by_not_worse=False,
-    bic_type=None,
+    bic_type='mixed',
     algorithm=None,
 ):
     res_data = {'parent_model': [], f'd{rankfunc_name}': [], 'features': [], 'rank': []}
@@ -126,10 +126,12 @@ def create_summary(
         kwargs['cutoff'] = cutoff
     if rankfunc_name == 'ofv':
         kwargs['rank_by_not_worse'] = rank_by_not_worse
-    if rankfunc_name == 'bic' and bic_type:
+    if rankfunc_name == 'bic':
         kwargs['bic_type'] = bic_type
     ranks = rankfunc(start_model, models_all, **kwargs)
-    delta_diff = rankfuncs.create_diff_dict(rankfunc_name, start_model, models_all)
+    delta_diff = rankfuncs.create_diff_dict(
+        rankfunc_name, start_model, models_all, bic_type=bic_type
+    )
     for model in models_all:
         model_names.append(model.name)
         res_data['parent_model'].append(model.parent_model)

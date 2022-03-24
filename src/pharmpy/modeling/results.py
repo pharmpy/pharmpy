@@ -502,6 +502,7 @@ def summarize_modelfit_results(models, include_all_estimation_steps=False):
           minimization_successful         ofv  ... runtime_total  ... SIGMA(1,1)_RSE
     pheno                    True  586.276056  ...           4.0  ...       0.172147
     """
+    # FIXME: add option for bic type?
     if isinstance(models, Model):
         models = [models]
 

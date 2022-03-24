@@ -22,14 +22,16 @@ def bic(base, candidates, cutoff=None, bic_type='mixed'):
     return rank_models('bic', base, candidates, cutoff, bic_type=bic_type)
 
 
-def create_diff_dict(rank_type, base, candidates):
+def create_diff_dict(rank_type, base, candidates, bic_type='mixed'):
     delta_dict = dict()
     for model in candidates:
         if base.modelfit_results is not None and model.modelfit_results is not None:
             if rank_type == 'aic':
                 delta = calculate_aic(base) - calculate_aic(model)
             elif rank_type == 'bic':
-                delta = calculate_bic(base) - calculate_bic(model)
+                if not bic_type:
+                    bic_type = 'mixed'
+                delta = calculate_bic(base, bic_type) - calculate_bic(model, bic_type)
             else:
                 delta = base.modelfit_results.ofv - model.modelfit_results.ofv
         else:
@@ -41,7 +43,7 @@ def create_diff_dict(rank_type, base, candidates):
 def rank_models(
     rank_type, base, candidates, cutoff=None, rank_by_not_worse=False, bic_type='mixed'
 ):
-    delta_dict = create_diff_dict(rank_type, base, candidates)
+    delta_dict = create_diff_dict(rank_type, base, candidates, bic_type)
     if cutoff is not None:
         if rank_type == 'ofv' and rank_by_not_worse:
             cutoff = -cutoff
@@ -53,7 +55,8 @@ def rank_models(
         if rank_type == 'aic':
             return calculate_aic(model)
         elif rank_type == 'bic':
-            return calculate_bic(model, bic_type)
+            bic = calculate_bic(model, bic_type)
+            return bic
         else:
             return getattr(model.modelfit_results, rank_type)
 
