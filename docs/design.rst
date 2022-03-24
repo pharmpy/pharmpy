@@ -116,16 +116,9 @@ a model. Thus, it has an attribute, :attr:`RunDirectory.model
 not in directory already, and changing :attr:`Model.path <pharmpy.generic.Model.path>`. That `path`
 change should then trigger a re-pathing of the intra-model (relative) paths (e.g. to data).
 
-   .. todo::
-      Changing :attr:`Model.path <pharmpy.generic.Model.path>` should trigger changes to all contained
-      relative paths.
-
 :class:`~pharmpy.execute.run_directory.RunDirectory` is a **sandbox** for execution, even if trivially
 escapable. Thus, it should also provide methods for file operations that ensure the operation is
 contained.
-
-   .. todo::
-      Develop "safe" file operation methods for :class:`~pharmpy.execute.run_directory.RunDirectory`.
 
 Class shall expose an API that can be used to copy back the resulting (output) files, just as PsN
 does, but it *must* be requested explicitly. If not used when run directory is temp directory, this

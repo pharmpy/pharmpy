@@ -14,7 +14,6 @@ extensions = [
     'sphinx.ext.inheritance_diagram',
     'sphinx.ext.mathjax',
     'sphinx.ext.napoleon',
-    'sphinx.ext.todo',
     'sphinx.ext.viewcode',
     'sphinx_automodapi.automodapi',
     'jupyter_sphinx',
@@ -56,9 +55,6 @@ html_short_title = '%s-%s' % (project, version)
 napoleon_use_ivar = True
 napoleon_use_rtype = False
 napoleon_use_param = False
-
-# if this is True, todo and todolist produce output, else they produce nothing
-todo_include_todos = True
 
 automodapi_inheritance_diagram = False
 graphviz_output_format = 'svg'

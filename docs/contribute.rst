@@ -103,5 +103,4 @@ Further reading
    :maxdepth: 2
 
    NONMEM
-   todo
    design
