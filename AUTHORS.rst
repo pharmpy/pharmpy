@@ -1,7 +1,7 @@
 .. _AUTHORS:
 
-Current and previous contributors
-=================================
+Contributors
+============
 
 Development
 ~~~~~~~~~~~
