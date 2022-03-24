@@ -3,6 +3,7 @@ from pharmpy.modeling import (
     check_dataset,
     drop_columns,
     drop_dropped_columns,
+    expand_additional_doses,
     get_concentration_parameters_from_data,
     get_covariate_baselines,
     get_doseid,
@@ -15,6 +16,7 @@ from pharmpy.modeling import (
     get_observations,
     list_time_varying_covariates,
     load_example_model,
+    read_model,
     remove_loq_data,
     translate_nmtran_time,
     undrop_columns,
@@ -216,3 +218,33 @@ def test_check_dataset():
 def test_nmtran_time():
     m = load_example_model("pheno_linear")
     translate_nmtran_time(m)
+
+
+def test_expand_additional_doses(testdata):
+    model = read_model(testdata / 'nonmem' / 'models' / 'pef.mod')
+    expand_additional_doses(model)
+    df = model.dataset
+    assert len(df) == 1494
+    assert len(df.columns) == 5
+    assert df.loc[0, 'AMT'] == 400.0
+    assert df.loc[1, 'AMT'] == 400.0
+    assert df.loc[2, 'AMT'] == 400.0
+    assert df.loc[3, 'AMT'] == 400.0
+    assert df.loc[4, 'AMT'] == 200.0
+    assert df.loc[0, 'TIME'] == 0.0
+    assert df.loc[1, 'TIME'] == 12.0
+    assert df.loc[2, 'TIME'] == 24.0
+    assert df.loc[3, 'TIME'] == 36.0
+    assert df.loc[4, 'TIME'] == 48.0
+
+    model = read_model(testdata / 'nonmem' / 'models' / 'pef.mod')
+    expand_additional_doses(model, flag=True)
+    df = model.dataset
+    assert len(df) == 1494
+    assert len(df.columns) == 6
+    print(df)
+    assert df.loc[0, 'EXPANDED']
+    assert df.loc[1, 'EXPANDED']
+    assert df.loc[2, 'EXPANDED']
+    assert df.loc[3, 'EXPANDED']
+    assert not df.loc[4, 'EXPANDED']

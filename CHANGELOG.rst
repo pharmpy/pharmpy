@@ -1,3 +1,12 @@
+next release
+------------
+
+New features
+~~~~~~~~~~~~
+
+* Add modeling.expand_additional_doses
+
+
 0.58.4 (2022-03-24)
 ~~~~~~~~~~~~~~~~~~~
 
@@ -7,8 +16,9 @@ Bugfixes
 * Fix issue with start model not being selected if no candidates are better in IIV- and modelsearch-tool
 * Fix issue with ranking models by dBIC in IIV-tool
 
+
 0.58.1 (2022-03-22)
-~~~~~~~~~~~~~~~~~~~
+-------------------
 
 Bugfixes
 ~~~~~~~~
@@ -18,7 +28,7 @@ Bugfixes
 * Handle models with no covariates for predict_outliers and predict_influential_individuals
 
 0.58.0 (2022-03-22)
-~~~~~~~~~~~~~~~~~~~
+-------------------
 
 New features
 ~~~~~~~~~~~~
@@ -39,7 +49,7 @@ Bugfixes
 
 
 0.57.0 (2022-03-21)
-~~~~~~~~~~~~~~~~~~~
+-------------------
 
 Bugfixes
 ~~~~~~~~
@@ -52,7 +62,7 @@ Bugfixes
 * Fix issue where etas where added to KA/K-parameters instead of MAT/MDT (#636)
 
 0.56.0 (2022-03-17)
-~~~~~~~~~~~~~~~~~~~
+-------------------
 
 Changes
 ~~~~~~~
@@ -70,7 +80,7 @@ Bugfixes
 
 
 0.55.0 (2022-03-16)
-~~~~~~~~~~~~~~~~~~~
+-------------------
 
 New features
 ~~~~~~~~~~~~

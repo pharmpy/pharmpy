@@ -546,6 +546,65 @@ def get_doses(model):
     return df.squeeze()
 
 
+def expand_additional_doses(model, flag=False):
+    """Expand additional doses into separate dose records
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model object
+    flag : bool
+        True to add a boolean EXPANDED column to mark added records
+
+    Returns
+    -------
+    Model
+        Reference to the same model object
+    """
+    try:
+        addl = model.datainfo.typeix['additional'][0].name
+        ii = model.datainfo.typeix['ii'][0].name
+    except IndexError:
+        return model
+    idv = model.datainfo.idv_column.name
+    idcol = model.datainfo.id_column.name
+
+    df = model.dataset.copy()
+
+    try:
+        event = model.datainfo.typeix['event'][0].name
+    except IndexError:
+        df['_RESETGROUP'] = 1.0
+    else:
+        df['_FLAG'] = df[event] >= 3
+        df['_RESETGROUP'] = df.groupby('ID')['_FLAG'].cumsum()
+        df.drop('_FLAG', axis=1, inplace=True)
+
+    def fn(a):
+        if a[addl] == 0:
+            times = [a[idv]]
+            expanded = [False]
+        else:
+            length = int(a[addl]) + 1
+            times = [a[ii] * x + a[idv] for x in range(length)]
+            expanded = [True] * length
+        a['_TIMES'] = times
+        a['_EXPANDED'] = expanded
+        return a
+
+    df = df.apply(fn, axis=1)
+    df = df.apply(lambda x: x.explode() if x.name in ['_TIMES', '_EXPANDED'] else x)
+    df = df.groupby([idcol, '_RESETGROUP']).apply(lambda x: x.sort_values(by=idv))
+    df[idv] = df['_TIMES']
+    df.drop([addl, ii, '_TIMES', '_RESETGROUP'], axis=1, inplace=True)
+    if flag:
+        df.rename(columns={'_EXPANDED': 'EXPANDED'}, inplace=True)
+    else:
+        df.drop(['_EXPANDED'], axis=1, inplace=True)
+    model.dataset = df.reset_index(drop=True)
+    return model
+
+
 def get_doseid(model):
     """Get a DOSEID series from the dataset with an id of each dose period starting from 1
 
