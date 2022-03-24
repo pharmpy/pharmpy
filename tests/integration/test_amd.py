@@ -27,8 +27,8 @@ def test_iiv(tmp_path, testdata):
         res = run_iiv(model_start)
 
         assert len(res.summary_tool) == 2
-        assert len(res.summary_tool[0]) == 7
-        assert len(res.summary_tool[1]) == 4
+        assert len(res.summary_tool[0]) == 8
+        assert len(res.summary_tool[1]) == 5
         assert len(res.summary_models) == 12
         assert len(res.models) == 11
         rundir1 = tmp_path / 'iiv_dir1'
