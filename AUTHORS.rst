@@ -25,6 +25,6 @@ Research and scientific advice
 Funding
 ~~~~~~~
 
-* F. Hoffman-La Roche Ltd.
-* Pharmetheus
-* Uppsala University
+*  F\. Hoffman-La Roche Ltd.
+*  Pharmetheus
+*  Uppsala University
