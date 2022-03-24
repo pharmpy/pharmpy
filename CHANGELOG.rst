@@ -1,3 +1,12 @@
+0.58.4 (2022-03-24)
+~~~~~~~~~~~~~~~~~~~
+
+Bugfixes
+~~~~~~~~
+
+* Fix issue with start model not being selected if no candidates are better in IIV- and modelsearch-tool
+* Fix issue with ranking models by dBIC in IIV-tool
+
 0.58.1 (2022-03-22)
 ~~~~~~~~~~~~~~~~~~~
 
