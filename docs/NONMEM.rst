@@ -141,6 +141,12 @@ Individuals with no observations will have zeroes in all columns except the SUBJ
 control stream
 --------------
 
+general
+~~~~~~~
+
+NULL bytes are allowed in the control stream and evidence points towards it being tokenized as whitespace
+
+
 options parsing
 ~~~~~~~~~~~~~~~
 

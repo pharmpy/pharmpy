@@ -77,4 +77,4 @@ n     : "x" INT
 _ws: [WS] [NEWLINE]
 comment: COMMENT
 
-%import .definitions (COMMENT, INT, NEWLINE, NUMERIC, WS, WS_ALL)
+%import .definitions (COMMENT, INT, NEWLINE, NUMERIC, WS)

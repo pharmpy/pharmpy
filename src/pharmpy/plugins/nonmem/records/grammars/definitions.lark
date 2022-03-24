@@ -1,7 +1,7 @@
-WS: (" " | /\t/)+
+WS: /[ \x00\t]+/
 WS_ALL: /\s+/
 
-NEWLINE: (/\r?\n[ \t]*/ | COMMENT)+
+NEWLINE: (/\r?\n[ \x00\t]*/ | COMMENT)+
 COMMENT: /;[^\n]*/
 
 DIGIT: "0".."9"
