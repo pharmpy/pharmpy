@@ -20,12 +20,8 @@ Current features include:
 
 Pharmpy is developed by the Uppsala University Pharmacometrics group and is an open-source project.
 
-Contents
-========
-
-
 .. toctree::
-   :maxdepth: 2
+   :hidden:
 
    About us <contributors>
    getting_started
@@ -35,11 +31,3 @@ Contents
    contribute
    References and citation <citation>
    license
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
-
