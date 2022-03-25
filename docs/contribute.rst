@@ -96,8 +96,8 @@ has a bumpversion_ config in ``.bumpversion.cfg``. Thus run:
 
 .. _bumpversion: https://pypi.org/project/bumpversion
 
-Further reading
-###############
+Information for developers
+##########################
 
 .. toctree::
    :maxdepth: 2
