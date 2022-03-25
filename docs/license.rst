@@ -20,7 +20,7 @@ Copyright
 
    Pharmpy: Pharmacometric models & workflows in Python
 
-   Copyright (C) 2018-2021  The Pharmpy developers
+   Copyright (C) 2018-2022  The Pharmpy developers
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as published by
@@ -35,7 +35,7 @@ Copyright
 BSD 2-clause License
 ====================
 
-Copyright 2018-2021 The Pharmpy developers
+Copyright 2018-2022 The Pharmpy developers
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
 
