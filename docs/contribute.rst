@@ -77,15 +77,15 @@ For alternative installations or for Windows, please see Graphviz `guide <https:
 Releasing Pharmpy and documentation
 ###################################
 
-A deployment workflow is setup on github actions to automatically release Pharmpy to PyPI and the documentation to pharmpy.github.io. This workflow will be triggered when pushing a version tag, i.e. a tag starting with 'v'.
+A deployment workflow is setup on github actions to automatically release Pharmpy to PyPI and the documentation to pharmpy.github.io. The workflow also triggers an automatic update of pharmr. This workflow will be triggered when pushing a version tag, i.e. a tag starting with 'v'.
 
-1. Check that the CHANGELOG has been updated
-2. Bump the version (see Version below)
+1. Update the CHANGELOG
+2. Bump the version (see below)
 3. `git push`
 4. `git push --tags`
 
 Version
-#######
+*******
 
 Pharmpy uses `Semantic Versioning 2.0.0 <https://semver.org/>`_, and
 has a bumpversion_ config in ``.bumpversion.cfg``. Thus, remember to run:
