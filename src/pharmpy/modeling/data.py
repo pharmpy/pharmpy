@@ -554,7 +554,9 @@ def expand_additional_doses(model, flag=False):
     model : Model
         Pharmpy model object
     flag : bool
-        True to add a boolean EXPANDED column to mark added records
+        True to add a boolean EXPANDED column to mark added records. In this case all
+        columns in the original dataset will be kept. Care needs to be taken to handle
+        the new dataset.
 
     Returns
     -------
@@ -596,11 +598,11 @@ def expand_additional_doses(model, flag=False):
     df = df.apply(lambda x: x.explode() if x.name in ['_TIMES', '_EXPANDED'] else x)
     df = df.groupby([idcol, '_RESETGROUP']).apply(lambda x: x.sort_values(by=idv))
     df[idv] = df['_TIMES']
-    df.drop([addl, ii, '_TIMES', '_RESETGROUP'], axis=1, inplace=True)
+    df.drop(['_TIMES', '_RESETGROUP'], axis=1, inplace=True)
     if flag:
         df.rename(columns={'_EXPANDED': 'EXPANDED'}, inplace=True)
     else:
-        df.drop(['_EXPANDED'], axis=1, inplace=True)
+        df.drop([addl, ii, '_EXPANDED'], axis=1, inplace=True)
     model.dataset = df.reset_index(drop=True)
     return model
 

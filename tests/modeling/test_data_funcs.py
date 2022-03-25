@@ -241,7 +241,7 @@ def test_expand_additional_doses(testdata):
     expand_additional_doses(model, flag=True)
     df = model.dataset
     assert len(df) == 1494
-    assert len(df.columns) == 6
+    assert len(df.columns) == 8
     print(df)
     assert df.loc[0, 'EXPANDED']
     assert df.loc[1, 'EXPANDED']
