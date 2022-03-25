@@ -25,6 +25,8 @@ Scientific input
 Funding
 ~~~~~~~
 
+A warm thanks to all our sponsors!
+
 *  F\. Hoffman-La Roche Ltd.
 *  Pharmetheus
 *  Uppsala University
