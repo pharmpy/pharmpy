@@ -12,8 +12,8 @@ Development
 * Gunnar Yngman, gunnar.yngman@farmaci.uu.se
 * Kajsa Harling
 
-Research and scientific advice
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Scientific input
+~~~~~~~~~~~~~~~~
 
 * Mats O. Karlsson
 * Andrew C. Hooker
