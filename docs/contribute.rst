@@ -88,11 +88,13 @@ Version
 *******
 
 Pharmpy uses `Semantic Versioning 2.0.0 <https://semver.org/>`_, and
-has a bumpversion_ config in ``.bumpversion.cfg``. Thus run:
+has a bumpversion_ config in ``.bumpversion.cfg``. Run the wrapper
 
-* ``bumpversion patch`` to increase version from `0.1.0` to `0.1.1`.
-* ``bumpversion minor`` to increase version from `0.1.0` to `0.2.0`.
-* ``bumpversion major`` to increase version from `0.1.0` to `1.0.0`.
+* ``./bumpversion.sh patch`` to increase version from `0.1.0` to `0.1.1`.
+* ``./bumpversion.sh minor`` to increase version from `0.1.0` to `0.2.0`.
+* ``./bumpversion.sh major`` to increase version from `0.1.0` to `1.0.0`.
+
+This will also update the year of copyright to the current year if necessary.
 
 .. _bumpversion: https://pypi.org/project/bumpversion
 
