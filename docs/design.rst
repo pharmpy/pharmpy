@@ -1,8 +1,8 @@
 .. _design:
 
-======
-Design
-======
+=================
+Design principles
+=================
 
 Dependencies
 ============

@@ -88,7 +88,7 @@ Version
 *******
 
 Pharmpy uses `Semantic Versioning 2.0.0 <https://semver.org/>`_, and
-has a bumpversion_ config in ``.bumpversion.cfg``. Thus, remember to run:
+has a bumpversion_ config in ``.bumpversion.cfg``. Thus run:
 
 * ``bumpversion patch`` to increase version from `0.1.0` to `0.1.1`.
 * ``bumpversion minor`` to increase version from `0.1.0` to `0.2.0`.
@@ -102,5 +102,5 @@ Further reading
 .. toctree::
    :maxdepth: 2
 
-   design
+   Design principles <design>
    NONMEM
