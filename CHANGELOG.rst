@@ -1,3 +1,11 @@
+next version
+------------
+
+Bugfixes
+========
+
+* Handle ADDL columns for add_time_after_dose
+
 0.59.0 (2022-03-25)
 -------------------
 

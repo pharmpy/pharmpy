@@ -587,16 +587,19 @@ def expand_additional_doses(model, flag=False):
             times = [a[idv]]
             expanded = [False]
         else:
-            length = int(a[addl]) + 1
-            times = [a[ii] * x + a[idv] for x in range(length)]
-            expanded = [True] * length
+            length = int(a[addl])
+            times = [a[ii] * x + a[idv] for x in range(length + 1)]
+            expanded = [False] + [True] * length
         a['_TIMES'] = times
         a['_EXPANDED'] = expanded
         return a
 
     df = df.apply(fn, axis=1)
     df = df.apply(lambda x: x.explode() if x.name in ['_TIMES', '_EXPANDED'] else x)
-    df = df.groupby([idcol, '_RESETGROUP']).apply(lambda x: x.sort_values(by=idv))
+    df = df.astype({'_EXPANDED': np.bool_})
+    df = df.groupby([idcol, '_RESETGROUP']).apply(
+        lambda x: x.sort_values(by='_TIMES', kind='stable')
+    )
     df[idv] = df['_TIMES']
     df.drop(['_TIMES', '_RESETGROUP'], axis=1, inplace=True)
     if flag:
@@ -670,8 +673,12 @@ def get_doseid(model):
     for i, time, _ in nonunique.index:
         groupind = df[(df[idcol] == i) & (df[idvcol] == time)].index
         obsind = df[(df[idcol] == i) & (df[idvcol] == time) & (df[dose] == 0)].index
+        doseind = set(groupind) - set(obsind)
+        maxind = max(doseind)
         for index in obsind:
             if 0 in groupind:  # This is the first dose
+                continue
+            if maxind > index:  # Dose record is after the observation
                 continue
             curdoseid = df.loc[index, 'DOSEID']
             df.loc[index, 'DOSEID'] = curdoseid - 1
@@ -733,12 +740,24 @@ def add_time_after_dose(model):
     """
     temp = model.copy()
     translate_nmtran_time(temp)
-    df = model.dataset
     idv = temp.datainfo.idv_column.name
     idlab = temp.datainfo.id_column.name
+    df = model.dataset
     df['_NEWTIME'] = temp.dataset[idv]
     doseid = get_doseid(temp)
     df['_DOSEID'] = doseid
+
+    try:
+        addl = temp.datainfo.typeix['additional'][0].name
+    except IndexError:
+        addl = None
+    else:
+        temp.dataset = df
+        temp.datainfo.idv_column.type = 'unknown'
+        ci = ColumnInfo('_NEWTIME', type='idv')
+        temp.datainfo.append(ci)
+        expand_additional_doses(temp, flag=True)
+        df = temp.dataset
 
     # Sort in case DOSEIDs are non-increasing
     df.groupby(idlab).apply(
@@ -747,7 +766,11 @@ def add_time_after_dose(model):
 
     df['TAD'] = df.groupby([idlab, '_DOSEID'])['_NEWTIME'].diff().fillna(0)
     df['TAD'] = df.groupby([idlab, '_DOSEID'])['TAD'].cumsum()
-    df.drop(columns=['_NEWTIME', '_DOSEID'])
+    df.drop(columns=['_NEWTIME', '_DOSEID'], inplace=True)
+
+    if addl:
+        df = df[~df['EXPANDED']].reset_index()
+        df.drop(columns=['EXPANDED'], inplace=True)
 
     model.dataset = df
     ci = ColumnInfo('TAD')

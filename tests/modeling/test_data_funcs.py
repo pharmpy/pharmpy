@@ -150,13 +150,41 @@ def test_get_mdv():
     assert result is True
 
 
-def test_add_time_after_dose():
+def test_add_time_after_dose(testdata):
+    model = load_example_model("pheno")
     m = model.copy()
     add_time_after_dose(m)
     tad = m.dataset['TAD']
     assert tad[0] == 0.0
     assert tad[1] == 2.0
     assert tad[743] == 2.0
+
+    model = read_model(testdata / 'nonmem' / 'models' / 'pef.mod')
+    add_time_after_dose(model)
+    tad = list(model.dataset['TAD'].iloc[0:21])
+    assert tad == [
+        0.0,
+        0.0,
+        0.0,
+        1.5,
+        3.0,
+        10.719999999999999,
+        0.0,
+        0.0,
+        0.0,
+        1.4500000000000028,
+        3.0,
+        10.980000000000004,
+        0.0,
+        0.0,
+        2.25,
+        3.770000000000003,
+        12.0,
+        0.0,
+        0.0,
+        1.4700000000000273,
+        2.9700000000000273,
+    ]
 
 
 def test_get_concentration_parameters_from_data():
@@ -242,8 +270,7 @@ def test_expand_additional_doses(testdata):
     df = model.dataset
     assert len(df) == 1494
     assert len(df.columns) == 8
-    print(df)
-    assert df.loc[0, 'EXPANDED']
+    assert not df.loc[0, 'EXPANDED']
     assert df.loc[1, 'EXPANDED']
     assert df.loc[2, 'EXPANDED']
     assert df.loc[3, 'EXPANDED']
