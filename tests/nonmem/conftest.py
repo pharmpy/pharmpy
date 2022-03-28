@@ -38,7 +38,12 @@ def pheno_data(datadir):
     return datadir / 'pheno.dta'
 
 
+pheno_model = None
+
+
 @pytest.fixture(scope='session')
 def pheno(pheno_path):
-    model = pharmpy.Model.create_model(pheno_path)
-    return model
+    global pheno_model
+    if pheno_model is None:
+        pheno_model = pharmpy.Model.create_model(pheno_path)
+    return pheno_model.copy()

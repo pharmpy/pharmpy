@@ -176,9 +176,8 @@ def S(x):
         ),
     ],
 )
-def test_pheno(pheno_path, advan, trans, compmat, amounts, strodes, corrics):
-    model = Model.create_model(pheno_path)
-    cm, ass = compartmental_model(model, advan, trans)
+def test_pheno(pheno, advan, trans, compmat, amounts, strodes, corrics):
+    cm, ass = compartmental_model(pheno, advan, trans)
 
     assert ass.symbol == S('F')
     assert ass.expression == S('A_CENTRAL') / S('S1')

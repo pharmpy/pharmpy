@@ -26,9 +26,8 @@ def S(x):
     return symbol(x)
 
 
-def test_source(pheno_path):
-    model = Model.create_model(pheno_path)
-    assert model.model_code.startswith('$PROBLEM PHENOBARB')
+def test_source(pheno):
+    assert pheno.model_code.startswith('$PROBLEM PHENOBARB')
 
 
 def test_update_inits(pheno_path):
@@ -59,35 +58,33 @@ def test_detection():
     Model.create_model(StringIO(" $PRO l907"))
 
 
-def test_validate(pheno_path):
-    model = Model.create_model(pheno_path)
-    model.validate()
+def test_validate(pheno):
+    pheno.validate()
 
     model = Model.create_model(StringIO("$PROBLEM this\n$SIZES LIM1=3000"))
     with pytest.raises(ModelSyntaxError):
         model.validate()
 
 
-def test_parameters(pheno_path):
-    model = Model.create_model(pheno_path)
-    params = model.parameters
+def test_parameters(pheno):
+    params = pheno.parameters
     assert len(params) == 6
-    assert model.parameters['THETA(1)'] == Parameter('THETA(1)', 0.00469307, lower=0, upper=1000000)
-    assert model.parameters['THETA(2)'] == Parameter('THETA(2)', 1.00916, lower=0, upper=1000000)
-    assert model.parameters['THETA(3)'] == Parameter('THETA(3)', 0.1, lower=-0.99, upper=1000000)
-    assert model.parameters['OMEGA(1,1)'] == Parameter(
+    assert pheno.parameters['THETA(1)'] == Parameter('THETA(1)', 0.00469307, lower=0, upper=1000000)
+    assert pheno.parameters['THETA(2)'] == Parameter('THETA(2)', 1.00916, lower=0, upper=1000000)
+    assert pheno.parameters['THETA(3)'] == Parameter('THETA(3)', 0.1, lower=-0.99, upper=1000000)
+    assert pheno.parameters['OMEGA(1,1)'] == Parameter(
         'OMEGA(1,1)', 0.0309626, lower=0, upper=sympy.oo
     )
-    assert model.parameters['OMEGA(2,2)'] == Parameter(
+    assert pheno.parameters['OMEGA(2,2)'] == Parameter(
         'OMEGA(2,2)', 0.031128, lower=0, upper=sympy.oo
     )
-    assert model.parameters['SIGMA(1,1)'] == Parameter(
+    assert pheno.parameters['SIGMA(1,1)'] == Parameter(
         'SIGMA(1,1)', 0.013241, lower=0, upper=sympy.oo
     )
 
 
-def test_set_parameters(pheno_path):
-    model = Model.create_model(pheno_path)
+def test_set_parameters(pheno):
+    model = pheno.copy()
     params = {
         'THETA(1)': 0.75,
         'THETA(2)': 0.5,
@@ -113,14 +110,14 @@ def test_set_parameters(pheno_path):
     sigmas = model.control_stream.get_records('SIGMA')
     assert str(sigmas[0]) == '$SIGMA 0.3\n'
 
-    model = Model.create_model(pheno_path)
+    model = pheno.copy()
     params = model.parameters
     params['THETA(1)'].init = 18
     model.parameters = params
     assert model.parameters['THETA(1)'] == Parameter('THETA(1)', 18, lower=0, upper=1000000)
     assert model.parameters['THETA(2)'] == Parameter('THETA(2)', 1.00916, lower=0, upper=1000000)
 
-    model = Model.create_model(pheno_path)
+    model = pheno.copy()
     create_joint_distribution(model)
     params = model.parameters
     params['OMEGA(2,2)'].init = 0.000001
@@ -159,8 +156,8 @@ def test_adjust_iovs(testdata):
         (Parameter('RUV_prop', 0.1), 0.1, '$THETA  0.1 ; RUV_prop'),
     ],
 )
-def test_add_parameters(pheno_path, param_new, init_expected, buf_new):
-    model = Model.create_model(pheno_path)
+def test_add_parameters(pheno, param_new, init_expected, buf_new):
+    model = pheno.copy()
     pset = model.parameters
 
     assert len(pset) == 6
@@ -186,8 +183,8 @@ def test_add_parameters(pheno_path, param_new, init_expected, buf_new):
     assert rec_ref == rec_mod
 
 
-def test_add_two_parameters(pheno_path):
-    model = Model.create_model(pheno_path)
+def test_add_two_parameters(pheno):
+    model = pheno
     pset = model.parameters
 
     assert len(pset) == 6
@@ -1033,11 +1030,10 @@ def test_parse_derivatives(testdata):
     assert model.estimation_steps[0].epsilon_derivatives == ['EPS(1)']
 
 
-def test_no_etas_in_model(pheno_path):
-    model = Model.create_model(pheno_path)
-    remove_iiv(model)
-    assert 'DUMMYETA' in model.model_code
-    assert 'ETA(1)' in model.model_code
+def test_no_etas_in_model(pheno):
+    remove_iiv(pheno)
+    assert 'DUMMYETA' in pheno.model_code
+    assert 'ETA(1)' in pheno.model_code
 
 
 def test_0_fix_diag_omega():
