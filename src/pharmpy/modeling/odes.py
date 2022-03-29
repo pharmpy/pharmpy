@@ -1275,8 +1275,8 @@ def add_peripheral_compartment(model):
         pop_vp1 = pop_vp1_candidates.pop()
         pop_qp1_init = model.parameters[pop_qp1].init
         pop_vp1_init = model.parameters[pop_vp1].init
-        model.parameters[pop_qp1].init = pop_qp1_init * 0.49
-        qp_init = pop_qp1_init * 0.51
+        model.parameters[pop_qp1].init = pop_qp1_init * 0.10
+        qp_init = pop_qp1_init * 0.90
         vp_init = pop_vp1_init
     else:
         qp_init = 0.1
