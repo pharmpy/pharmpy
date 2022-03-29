@@ -8,9 +8,10 @@ Development
 
 * Rikard Nordgren, rikard.nordgren@farmaci.uu.se (maintainer)
 * Stella Belin, stella.belin@farmaci.uu.se (maintainer)
-* Zhe Huang, zhe.huang@farmaci.uu.se
-* Gunnar Yngman, gunnar.yngman@farmaci.uu.se
 * Kajsa Harling
+* Zhe Huang, zhe.huang@farmaci.uu.se
+* Aurelien Ooms
+* Gunnar Yngman, gunnar.yngman@farmaci.uu.se
 
 Scientific input
 ~~~~~~~~~~~~~~~~
