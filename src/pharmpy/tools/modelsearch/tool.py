@@ -4,7 +4,7 @@ import pandas as pd
 import pharmpy.results
 import pharmpy.tools.modelsearch.algorithms as algorithms
 import pharmpy.tools.modelsearch.rankfuncs as rankfuncs
-from pharmpy.modeling import summarize_modelfit_results
+from pharmpy.modeling import summarize_individuals, summarize_modelfit_results
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.workflows import Task, Workflow
 
@@ -84,10 +84,12 @@ def post_process_results(algorithm, rankfunc, cutoff, model_features, *models):
         best_model = start_model
 
     summary_models = summarize_modelfit_results([start_model] + res_models)
+    summary_individuals = summarize_individuals([start_model] + res_models)
 
     res = ModelSearchResults(
         summary_tool=summary_tool,
         summary_models=summary_models,
+        summary_individuals=summary_individuals,
         best_model=best_model,
         start_model=start_model,
         models=res_models,
@@ -98,10 +100,17 @@ def post_process_results(algorithm, rankfunc, cutoff, model_features, *models):
 
 class ModelSearchResults(pharmpy.results.Results):
     def __init__(
-        self, summary_tool=None, summary_models=None, best_model=None, start_model=None, models=None
+        self,
+        summary_tool=None,
+        summary_models=None,
+        summary_individuals=None,
+        best_model=None,
+        start_model=None,
+        models=None,
     ):
         self.summary_tool = summary_tool
         self.summary_models = summary_models
+        self.summary_individuals = summary_individuals
         self.best_model = best_model
         self.start_model = start_model
         self.models = models

@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 
 from pharmpy import Model
-from pharmpy.modeling import add_iiv, fit, run_tool
+from pharmpy.modeling import add_iiv, fit, read_model, run_tool
 from pharmpy.utils import TemporaryDirectoryChanger
 
 
@@ -221,3 +221,36 @@ def test_reduced_stepwise(
         assert len(list((rundir / 'models').iterdir())) == no_of_models + 1
         assert (rundir / 'results.json').exists()
         assert (rundir / 'results.csv').exists()
+
+
+def test_summary_individuals(tmp_path, testdata):
+    with TemporaryDirectoryChanger(tmp_path):
+        shutil.copy2(testdata / 'nonmem' / 'pheno_real.mod', tmp_path)
+        shutil.copy2(testdata / 'nonmem' / 'pheno.dta', tmp_path)
+        m = read_model('pheno_real.mod')
+        fit(m)
+        res = run_tool(
+            'modelsearch',
+            model=m,
+            mfl='ABSORPTION(ZO);PERIPHERALS([1, 2])',
+            algorithm='reduced_stepwise',
+        )
+        summary = res.summary_individuals
+        columns = (
+            'parent_model',
+            'outliers_fda',
+            'ofv',
+            'dofv',
+            'predicted_dofv',
+            'predicted_residual',
+        )
+        assert summary is not None
+        assert tuple(summary.columns) == columns
+        for column in columns:
+            assert summary[column].notna().any()
+        assert summary['dofv'].equals(
+            summary.apply(
+                lambda row: row['ofv'] - summary.loc[(row['parent_model'], row.name[1])]['ofv'],
+                axis=1,
+            )
+        )

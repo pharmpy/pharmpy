@@ -160,6 +160,7 @@ from .results import (
     summarize_modelfit_results,
     write_results,
 )
+from .summarize_individuals import summarize_individuals
 from .units import get_unit_of
 
 # Remember to sort __all__ alphabetically for order in documentation
@@ -299,6 +300,7 @@ __all__ = [
     'simplify_expression',
     'split_joint_distribution',
     'summarize_modelfit_results',
+    'summarize_individuals',
     'transform_etas_boxcox',
     'transform_etas_john_draper',
     'transform_etas_tdist',
