@@ -68,7 +68,10 @@ def outliers_fda_func(df: pd.DataFrame) -> float:
 
 
 def outliers_fda(model: Model) -> Union[pd.Series, float]:
-    residuals = model.modelfit_results.residuals
+    res = model.modelfit_results
+    if res is None:
+        return np.nan
+    residuals = res.residuals
     if residuals is None:
         return np.nan
     else:
@@ -98,8 +101,9 @@ def predicted_dofv(model: Model) -> Union[pd.Series, float]:
     return _predicted(predict_influential_individuals, model, 'dofv')
 
 
-def ofv(model: Model) -> pd.Series:
-    return model.modelfit_results.individual_ofv
+def ofv(model: Model) -> Union[pd.Series, float]:
+    res = model.modelfit_results
+    return np.nan if res is None else res.individual_ofv
 
 
 def dofv(parent_model: Union[Model, None], candidate_model: Model) -> Union[pd.Series, float]:
@@ -107,7 +111,8 @@ def dofv(parent_model: Union[Model, None], candidate_model: Model) -> Union[pd.S
 
 
 def groupedByIDAddColumnsOneModel(modelsDict: Dict[str, Model], model: Model) -> pd.DataFrame:
-    df = pd.DataFrame.from_dict(
+    index = pd.Index(model.dataset[model.datainfo.id_column.name].unique())
+    df = pd.DataFrame(
         {
             'parent_model': parent_model_name(model),
             'outliers_fda': outliers_fda(model),
@@ -116,8 +121,8 @@ def groupedByIDAddColumnsOneModel(modelsDict: Dict[str, Model], model: Model) ->
             'predicted_dofv': predicted_dofv(model),
             'predicted_residual': predicted_residual(model),
         },
-        orient='columns',
+        index=index,
     )
-    df.reset_index(inplace=True)
-    df.set_index(['ID'], inplace=True)
+    # df.reset_index(inplace=True)
+    # df.set_index(['ID'], inplace=True)
     return df
