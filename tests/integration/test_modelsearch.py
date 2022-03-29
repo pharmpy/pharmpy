@@ -115,10 +115,6 @@ def test_exhaustive_stepwise_add_iivs(
             model=model_start,
         )
 
-        import pandas as pd
-
-        pd.set_option('display.max_columns', None)
-        print(res.summary_tool)
         assert len(res.summary_tool) == no_of_models + 1
         assert len(res.summary_models) == no_of_models + 1
         assert len(res.models) == no_of_models

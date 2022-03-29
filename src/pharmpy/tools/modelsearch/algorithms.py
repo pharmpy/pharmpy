@@ -1,6 +1,10 @@
-import re
-
-from pharmpy.modeling import add_iiv, copy_model, create_joint_distribution, update_inits
+from pharmpy.modeling import (
+    add_iiv,
+    add_pk_iiv,
+    copy_model,
+    create_joint_distribution,
+    update_inits,
+)
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.workflows import Task, Workflow
 
@@ -203,7 +207,7 @@ def _create_model_workflow(model_name, feat, func, add_iivs, iiv_as_fullblock, a
     wf_stepwise_step.add_task(task_function, predecessors=task_update_inits)
 
     if add_iivs or add_mdt_iiv:
-        task_add_iiv = Task('add_iivs', _add_iiv_to_func, feat, iiv_as_fullblock, add_mdt_iiv)
+        task_add_iiv = Task('add_iivs', _add_iiv_to_func, iiv_as_fullblock, add_mdt_iiv)
         wf_stepwise_step.add_task(task_add_iiv, predecessors=task_function)
         task_to_fit = task_add_iiv
     else:
@@ -282,43 +286,14 @@ def _update_initial_estimates(model):
     return model
 
 
-def _add_iiv_to_func(feat, iiv_as_fullblock, add_mdt_iiv, model):
-    # FIXME: Change to add_pk_iiv
-    eta_dict = {
-        'ABSORPTION(ZO)': ['MAT'],
-        'ABSORPTION(SEQ-ZO-FO)': ['MAT', 'MDT'],
-        'ELIMINATION(ZO)': ['CLMM', 'KM'],
-        'ELIMINATION(MM)': ['CLMM', 'KM'],
-        'ELIMINATION(MIX-FO-MM)': ['CLMM', 'KM'],
-        'LAGTIME()': ['MDT'],
-    }
-    parameters = []
+def _add_iiv_to_func(iiv_as_fullblock, add_mdt_iiv, model):
+    sset, rvs = model.statements, model.random_variables
     if add_mdt_iiv:
-        if feat == 'LAGTIME()' or feat.startswith('TRANSITS'):
-            parameters = ['MDT']
-        else:
-            parameters = []
+        mdt = sset.find_assignment('MDT')
+        if mdt and not mdt.expression.free_symbols.intersection(rvs.free_symbols):
+            add_iiv(model, 'MDT', 'exp')
     else:
-        if feat in eta_dict.keys():
-            parameters = eta_dict[feat]
-        elif feat.startswith('TRANSITS'):
-            parameters = ['MDT']
-        elif feat.startswith('PERIPHERALS'):
-            no_of_peripherals = re.search(r'PERIPHERALS\((\d+)\)', feat).group(1)
-            parameters = [f'VP{i}' for i in range(1, int(no_of_peripherals) + 1)] + [
-                f'QP{i}' for i in range(1, int(no_of_peripherals) + 1)
-            ]
-
-    for param in parameters:
-        assignment = model.statements.find_assignment(param)
-        etas = {eta.name for eta in assignment.rhs_symbols}
-        if etas.intersection(model.random_variables.etas.names):
-            continue
-        try:
-            add_iiv(model, param, 'exp')
-        except ValueError as e:
-            if not str(e).startswith('Cannot insert parameter with already existing name'):
-                raise
+        add_pk_iiv(model)
     if iiv_as_fullblock:
         create_joint_distribution(model)
 
