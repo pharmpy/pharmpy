@@ -246,7 +246,7 @@ def test_summary_individuals(tmp_path, testdata):
             assert summary[column].notna().any()
         assert summary['dofv'].equals(
             summary.apply(
-                lambda row: row['ofv'] - summary.loc[(row['parent_model'], row.name[1])]['ofv'],
+                lambda row: summary.loc[(row['parent_model'], row.name[1])]['ofv'] - row['ofv'],
                 axis=1,
             )
         )
