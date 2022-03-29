@@ -1,6 +1,11 @@
 next version
 ------------
 
+New features
+============
+
+* Add modeling.summarize_individuals
+
 Bugfixes
 ========
 
