@@ -30,10 +30,10 @@ def test_source(pheno):
     assert pheno.model_code.startswith('$PROBLEM PHENOBARB')
 
 
-def test_update_inits(pheno_path):
+def test_update_inits(pheno, pheno_path):
     from pharmpy.modeling import update_inits
 
-    model = Model.create_model(pheno_path)
+    model = pheno.copy()
     update_inits(model)
 
     with ConfigurationContext(conf, parameter_names=['comment', 'basic']):
@@ -184,7 +184,7 @@ def test_add_parameters(pheno, param_new, init_expected, buf_new):
 
 
 def test_add_two_parameters(pheno):
-    model = pheno
+    model = pheno.copy()
     pset = model.parameters
 
     assert len(pset) == 6
@@ -208,8 +208,8 @@ def test_add_two_parameters(pheno):
         (Assignment(S('Y'), S('THETA(4)') + S('THETA(5)')), 'Y = THETA(4) + THETA(5)'),
     ],
 )
-def test_add_statements(pheno_path, statement_new, buf_new):
-    model = Model.create_model(pheno_path)
+def test_add_statements(pheno, statement_new, buf_new):
+    model = pheno.copy()
     sset = model.statements
     assert len(sset) == 15
 
@@ -254,8 +254,8 @@ def test_add_statements(pheno_path, statement_new, buf_new):
         (Parameter('X', 0.1), Assignment(S('Y'), S('X') + S('S1')), 'Y = S1 + THETA(4)'),
     ],
 )
-def test_add_parameters_and_statements(pheno_path, param_new, statement_new, buf_new):
-    model = Model.create_model(pheno_path)
+def test_add_parameters_and_statements(pheno, param_new, statement_new, buf_new):
+    model = pheno.copy()
 
     pset = model.parameters
     pset.append(param_new)
@@ -290,8 +290,8 @@ def test_add_parameters_and_statements(pheno_path, param_new, statement_new, buf
 
 
 @pytest.mark.parametrize('rv_new, buf_new', [(Parameter('omega', 0.1), '$OMEGA  0.1')])
-def test_add_random_variables(pheno_path, rv_new, buf_new):
-    model = Model.create_model(pheno_path)
+def test_add_random_variables(pheno, rv_new, buf_new):
+    model = pheno.copy()
     rvs = model.random_variables
     pset = model.parameters
 
@@ -324,8 +324,8 @@ def test_add_random_variables(pheno_path, rv_new, buf_new):
     assert (rv.sympy_rv.pspace.distribution.std**2).name == 'omega'
 
 
-def test_add_random_variables_and_statements(pheno_path):
-    model = Model.create_model(pheno_path)
+def test_add_random_variables_and_statements(pheno):
+    model = pheno.copy()
 
     rvs = model.random_variables
     pset = model.parameters
@@ -341,20 +341,17 @@ def test_add_random_variables_and_statements(pheno_path):
     model.random_variables = rvs
     model.parameters = pset
 
-    sset = model.get_pred_pk_record().statements
+    sset = model.statements
 
     statement_new = Assignment(S('X'), 1 + S(eps.name) + S(eta.name))
-    sset.append(statement_new)
-    model.get_pred_pk_record().statements = sset
+    sset.insert_before_odes(statement_new)  # sset.append(statement_new)
 
     model.update_source()
-
     assert str(model.get_pred_pk_record()).endswith('X = 1 + ETA(3) + EPS(2)\n\n')
 
 
-def test_results(pheno_path):
-    model = Model.create_model(pheno_path)
-    assert len(model.modelfit_results) == 1  # A chain of one estimation
+def test_results(pheno):
+    assert len(pheno.modelfit_results) == 1  # A chain of one estimation
 
 
 def test_minimal(datadir):
@@ -408,8 +405,8 @@ def test_initial_individual_estimates(datadir):
         ),
     ],
 )
-def test_statements_setter(pheno_path, buf_new, len_expected):
-    model = Model.create_model(pheno_path)
+def test_statements_setter(pheno, buf_new, len_expected):
+    model = pheno.copy()
 
     parser = NMTranParser()
     statements_new = parser.parse(f'$PRED\n{buf_new}').records[0].statements
@@ -423,18 +420,16 @@ def test_statements_setter(pheno_path, buf_new, len_expected):
     assert model.statements == statements_new
 
 
-def test_deterministic_theta_comments(pheno_path):
-    model = Model.create_model(pheno_path)
-
+def test_deterministic_theta_comments(pheno):
     no_option = 0
-    for theta_record in model.control_stream.get_records('THETA'):
+    for theta_record in pheno.control_stream.get_records('THETA'):
         no_option += len(theta_record.root.all('option'))
 
     assert no_option == 0
 
 
-def test_remove_eta(pheno_path):
-    model = Model.create_model(pheno_path)
+def test_remove_eta(pheno):
+    model = pheno.copy()
     rvs = model.random_variables
     eta1 = rvs['ETA(1)']
     del rvs[eta1]
@@ -627,13 +622,12 @@ def test_abbr_read_write(pheno_path):
         )  # Different order due to renaming in read
 
 
-def test_dv_symbol(pheno_path):
-    model = Model.create_model(pheno_path)
-    assert model.dependent_variable.name == 'Y'
+def test_dv_symbol(pheno):
+    assert pheno.dependent_variable.name == 'Y'
 
 
-def test_insert_unknown_record(pheno_path):
-    model = Model.create_model(pheno_path)
+def test_insert_unknown_record(pheno):
+    model = pheno.copy()
     model.control_stream.insert_record('$TRIREME one')
     assert model.model_code.split('\n')[-1] == '$TRIREME one'
 

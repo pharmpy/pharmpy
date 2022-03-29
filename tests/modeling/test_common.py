@@ -151,27 +151,25 @@ def test_load_example_model():
         load_example_model("grekztalb23=")
 
 
-def test_get_model_covariates(testdata):
-    model = load_example_model("pheno")
-    assert set(get_model_covariates(model)) == {sympy.Symbol('WGT'), sympy.Symbol('APGR')}
+def test_get_model_covariates(pheno, testdata):
+    assert set(get_model_covariates(pheno)) == {sympy.Symbol('WGT'), sympy.Symbol('APGR')}
     minimal = Model.create_model(testdata / 'nonmem' / 'minimal.mod')
     assert set(get_model_covariates(minimal)) == set()
 
 
-def test_set_name():
-    model = load_example_model("pheno")
+def test_set_name(pheno):
+    model = pheno.copy()
     set_name(model, "run1")
     assert model.name == "run1"
 
 
-def test_copy_model():
-    model = load_example_model("pheno")
-    run1 = copy_model(model)
-    assert id(model) != id(run1)
-    assert id(model.parameters) != id(run1.parameters)
+def test_copy_model(pheno):
+    run1 = copy_model(pheno)
+    assert id(pheno) != id(run1)
+    assert id(pheno.parameters) != id(run1.parameters)
     run2 = copy_model(run1, "run2")
     assert run2.name == "run2"
-    assert run2.parent_model == "pheno"
+    assert run2.parent_model == "pheno_real"
 
 
 def test_convert_model():
@@ -180,8 +178,8 @@ def test_convert_model():
     assert model.name == run1.name
 
 
-def test_remove_unused_parameters_and_rvs(testdata):
-    model = Model.create_model(testdata / 'nonmem' / 'pheno_real.mod')
+def test_remove_unused_parameters_and_rvs(pheno):
+    model = pheno.copy()
     remove_unused_parameters_and_rvs(model)
     create_joint_distribution(model)
     statements = model.statements
