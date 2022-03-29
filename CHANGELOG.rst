@@ -6,6 +6,11 @@ New features
 
 * Add modeling.summarize_individuals
 
+Changes
+=======
+
+* Change initial estimates for QP1/QP2 ratio to 0.1/0.9
+
 Bugfixes
 ========
 
