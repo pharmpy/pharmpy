@@ -81,12 +81,13 @@ def create_joint_distribution(model, rvs=None):
 
     cov_to_params = all_rvs.join(rvs, name_template='IIV_{}_IIV_{}', param_names=paramnames)
 
-    pset = model.parameters
+    pset = model.parameters.copy()
     for cov_name, param_names in cov_to_params.items():
         parent_params = (pset[param_names[0]], pset[param_names[1]])
         covariance_init = _choose_param_init(model, all_rvs, parent_params)
         param_new = Parameter(cov_name, covariance_init)
         pset.append(param_new)
+    model.parameters = pset
 
     return model
 
@@ -136,9 +137,10 @@ def split_joint_distribution(model, rvs=None):
     parameters_after = all_rvs.parameter_names
 
     removed_parameters = set(parameters_before) - set(parameters_after)
-    pset = model.parameters
+    pset = model.parameters.copy()
     for param in removed_parameters:
         del pset[param]
+    model.parameters = pset
 
     return model
 
