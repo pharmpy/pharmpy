@@ -575,6 +575,7 @@ def set_transit_compartments(model, n, keep_depot=True):
     # Handle keep_depot option
     depot = odes.find_depot(statements)
     mdt_init = None
+    mdt_assign = None
     if not keep_depot and depot:
         central = odes.central_compartment
         rate = odes.get_flow(depot, central)
@@ -594,18 +595,26 @@ def set_transit_compartments(model, n, keep_depot=True):
             odes.add_flow(innode, central, inflow)
         else:
             central.dose = depot.dose
+        if statements.find_assignment('MAT'):
+            _rename_parameter(model, 'MAT', 'MDT')
+            mdt_assign = statements.find_assignment('MDT')
         odes.remove_compartment(depot)
         statements.remove_symbol_definitions(rate.free_symbols, odes)
+        if mdt_assign:
+            statements.insert(0, mdt_assign)
         remove_unused_parameters_and_rvs(model)
 
     if len(transits) == n:
         pass
     elif len(transits) == 0:
-        if mdt_init is not None:
-            init = mdt_init
+        if mdt_assign:
+            mdt_symb = mdt_assign.symbol
         else:
-            init = _get_absorption_init(model, 'MDT')
-        mdt_symb = _add_parameter(model, 'MDT', init=init)
+            if mdt_init is not None:
+                init = mdt_init
+            else:
+                init = _get_absorption_init(model, 'MDT')
+            mdt_symb = _add_parameter(model, 'MDT', init=init)
         rate = n / mdt_symb
         comp = odes.dosing_compartment
         dose = comp.dose

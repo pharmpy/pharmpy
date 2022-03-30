@@ -1887,6 +1887,11 @@ def test_absorption_keep_mat(testdata):
     assert 'KA =' in model.model_code
     assert 'D1 =' not in model.model_code
 
+    # Transit without keeping depot
+    model = Model.create_model(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    set_transit_compartments(model, 3, keep_depot=False)
+    assert 'MDT = THETA(3)*EXP(ETA(3))' in model.model_code
+
 
 def test_has_zero_order_absorption(pheno_path):
     model = Model.create_model(pheno_path)
