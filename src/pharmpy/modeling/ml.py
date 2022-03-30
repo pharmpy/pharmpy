@@ -17,6 +17,10 @@ def _create_dataset(model):
     res = model.modelfit_results
     if res is None:
         raise ModelfitResultsError("Need ModelfitResults for model")
+    if res.residuals is None:
+        raise ModelfitResultsError("No residuals available in ModelfitResults")
+    if 'CWRES' not in res.residuals.columns:
+        raise ModelfitResultsError("CWRES not an available residual in ModelfitResults")
     idcol = model.datainfo.id_column.name
     nids = get_number_of_individuals(model)
     nobs = get_number_of_observations(model)
