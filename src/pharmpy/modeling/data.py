@@ -658,6 +658,7 @@ def get_doseid(model):
 
     # Adjust for dose and observation at the same time point
     # Observation is moved to previous dose group
+    # Except for steady state dose where the dose group is kept
     try:
         eventcol = model.datainfo.typeix['event'][0].name
     except IndexError:
@@ -665,6 +666,11 @@ def get_doseid(model):
     else:
         df['_FLAG'] = df[eventcol] >= 3
         df['_RESETGROUP'] = df.groupby('ID')['_FLAG'].cumsum()
+
+    try:
+        ii = model.datainfo.typeix['ii'][0].name
+    except IndexError:
+        ii = None
 
     idvcol = model.datainfo.idv_column.name
     ser = df.groupby([idcol, idvcol, '_RESETGROUP']).size()
@@ -681,6 +687,8 @@ def get_doseid(model):
             if 0 in groupind:  # This is the first dose
                 continue
             if maxind > index:  # Dose record is after the observation
+                continue
+            if ii and df.loc[maxind, ii] > 0:  # No swap for SS dosing
                 continue
             curdoseid = df.loc[index, 'DOSEID']
             df.loc[index, 'DOSEID'] = curdoseid - 1
@@ -819,9 +827,9 @@ def get_concentration_parameters_from_data(model):
     [589 rows x 4 columns]
     """
     model = model.copy()
-    df = model.dataset
     add_time_after_dose(model)
     doseid = get_doseid(model)
+    df = model.dataset
     df['DOSEID'] = doseid
     idlab = model.datainfo.id_column.name
     dv = model.datainfo.dv_column.name

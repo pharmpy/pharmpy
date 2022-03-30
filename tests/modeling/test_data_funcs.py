@@ -159,9 +159,9 @@ def test_add_time_after_dose(testdata):
     assert tad[1] == 2.0
     assert tad[743] == 2.0
 
-    model = read_model(testdata / 'nonmem' / 'models' / 'pef.mod')
-    add_time_after_dose(model)
-    tad = list(model.dataset['TAD'].iloc[0:21])
+    m = read_model(testdata / 'nonmem' / 'models' / 'pef.mod')
+    add_time_after_dose(m)
+    tad = list(m.dataset['TAD'].iloc[0:21])
     assert tad == [
         0.0,
         0.0,
