@@ -637,7 +637,7 @@ class TypeIndexer:
         self._obj = obj
 
     def __getitem__(self, i):
-        cols = [col for col in self._obj if col.type == i]
+        cols = [col for col in self._obj if col.type == i and not col.drop]
         if not cols:
             raise IndexError(f"No columns of type {i} available")
         return DataInfo(cols)
