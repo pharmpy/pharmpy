@@ -674,6 +674,8 @@ def get_doseid(model):
         groupind = df[(df[idcol] == i) & (df[idvcol] == time)].index
         obsind = df[(df[idcol] == i) & (df[idvcol] == time) & (df[dose] == 0)].index
         doseind = set(groupind) - set(obsind)
+        if not doseind:
+            continue
         maxind = max(doseind)
         for index in obsind:
             if 0 in groupind:  # This is the first dose
