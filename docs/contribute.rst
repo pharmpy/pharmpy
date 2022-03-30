@@ -43,6 +43,18 @@ To run a particular test function in a particular test file::
 
     tox -e py39 :: pytest test_parameters.py -ktest_myfunc
 
+To run a particular test function in a particular integration test file::
+
+    tox -e integration :: pytest tests/integration/test_modelsearch.py -k test_summary_individuals
+
+
+Build
+*****
+
+To build a usable virtual environment without having to run all tests:
+
+    tox -e run -- pharmpy --version
+
 
 Build the documentation
 ***********************
