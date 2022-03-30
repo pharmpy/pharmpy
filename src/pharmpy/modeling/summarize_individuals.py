@@ -3,7 +3,7 @@ from typing import Callable, Dict, List, Union
 import numpy as np
 import pandas as pd
 
-from pharmpy.model import Model
+from pharmpy.model import Model, ModelfitResultsError
 from pharmpy.modeling.ml import predict_influential_individuals, predict_outliers
 
 
@@ -84,9 +84,7 @@ def _predicted(
 ) -> Union[pd.Series, float]:
     try:
         predicted = predict(model)
-    except TypeError:
-        # TODO remove this check as a TypeError should not be thrown by a
-        # predictor, but None should be returned instead
+    except ModelfitResultsError:
         return np.nan
     if predicted is None:
         return np.nan
@@ -123,6 +121,4 @@ def groupedByIDAddColumnsOneModel(modelsDict: Dict[str, Model], model: Model) ->
         },
         index=index,
     )
-    # df.reset_index(inplace=True)
-    # df.set_index(['ID'], inplace=True)
     return df

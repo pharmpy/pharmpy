@@ -3,6 +3,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from ..model import ModelfitResultsError
 from .common import get_model_covariates
 from .data import (
     get_ids,
@@ -13,28 +14,31 @@ from .data import (
 
 
 def _create_dataset(model):
+    res = model.modelfit_results
+    if res is None:
+        raise ModelfitResultsError("Need ModelfitResults for model")
     idcol = model.datainfo.id_column.name
     nids = get_number_of_individuals(model)
     nobs = get_number_of_observations(model)
     nobsi = get_number_of_observations_per_individual(model)
-    cwres = model.modelfit_results.residuals['CWRES']
-    iofv = model.modelfit_results.individual_estimates
+    cwres = res.residuals['CWRES']
+    iofv = res.individual_estimates
     npar = len(model.parameters)
-    ofv = model.modelfit_results.ofv
+    ofv = res.ofv
 
     # Max ratio of abs(ETAi) and omegai
     variance_omegas = model.random_variables.etas.variance_parameters
-    omega_estimates = np.sqrt(model.modelfit_results.parameter_estimates[variance_omegas])
-    abs_ebes = model.modelfit_results.individual_estimates.abs()
+    omega_estimates = np.sqrt(res.parameter_estimates[variance_omegas])
+    abs_ebes = res.individual_estimates.abs()
     ebe_ratio = abs_ebes / list(omega_estimates)
     max_ebe_ratio = ebe_ratio.max(axis=1)
 
     # exp(OFVi / nobsi) / exp(OFV / nobs)
-    iofv = model.modelfit_results.individual_ofv
+    iofv = res.individual_ofv
     ofv_ratio = np.exp(iofv / nobsi) / np.exp(model.modelfit_results.ofv / nobs)
 
     # mean(ETA / OMEGA)
-    cov = model.modelfit_results.individual_estimates_covariance
+    cov = res.individual_estimates_covariance
     etc_diag = np.sqrt(pd.DataFrame([np.diag(y) for y in cov], columns=cov.iloc[0].columns))
     etc_ratio = etc_diag / list(omega_estimates)
     mean_etc_ratio = etc_ratio.mean(axis=1)
