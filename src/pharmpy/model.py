@@ -41,6 +41,12 @@ class ModelSyntaxError(ModelError):
         super().__init__(msg)
 
 
+class ModelfitResultsError(ModelError):
+    """Exception for issues with ModelfitResults"""
+
+    pass
+
+
 class Model:
     """The Pharmpy model class"""
 
