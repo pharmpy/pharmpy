@@ -18,10 +18,16 @@ Scientific input
 
 * Mats O. Karlsson
 * Andrew C. Hooker
-* Sebastian Ueckert
-* Simon Carter
-* Simon Buatois
 * João A. Abrantes
+* Piyanan Assawasuwannakit
+* Simon Buatois
+* Simon Carter
+* Xiaomei Chen
+* Alzahra Hamdan
+* Osama Qutishat
+* Sebastian Ueckert
+* Shijun Wang
+* Tianwu Yang
 
 Funding
 ~~~~~~~
