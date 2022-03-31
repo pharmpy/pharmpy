@@ -1,3 +1,13 @@
+0.61.1 (2022-03-31)
+-------------------
+
+Bugfixes
+========
+
+* Fix time after dose calculation for steady state dosing
+* Fix issue where create_joint_distribution could create matrices that are not positively definite (#649)
+* Keep IIV from MAT in MDT when adding a transit (#654)
+
 0.61.0 (2022-03-29)
 -------------------
 
