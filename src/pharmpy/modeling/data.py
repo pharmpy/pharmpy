@@ -668,9 +668,9 @@ def get_doseid(model):
         df['_RESETGROUP'] = df.groupby('ID')['_FLAG'].cumsum()
 
     try:
-        ii = model.datainfo.typeix['ii'][0].name
+        ss = model.datainfo.typeix['ss'][0].name
     except IndexError:
-        ii = None
+        ss = None
 
     idvcol = model.datainfo.idv_column.name
     ser = df.groupby([idcol, idvcol, '_RESETGROUP']).size()
@@ -688,7 +688,7 @@ def get_doseid(model):
                 continue
             if maxind > index:  # Dose record is after the observation
                 continue
-            if ii and df.loc[maxind, ii] > 0:  # No swap for SS dosing
+            if ss and df.loc[maxind, ss] > 0:  # No swap for SS dosing
                 continue
             curdoseid = df.loc[index, 'DOSEID']
             df.loc[index, 'DOSEID'] = curdoseid - 1
