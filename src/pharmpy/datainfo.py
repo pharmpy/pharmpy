@@ -44,6 +44,7 @@ class ColumnInfo:
         'dose',
         'additional',
         'ii',
+        'ss',
         'event',
         'covariate',
         'mdv',
@@ -130,6 +131,7 @@ class ColumnInfo:
         dose          Dose amount
         additional    Number of additional doses
         ii            Interdose interval
+        ss            Steady state dosing
         event         0 = observation
         mdv           0 = DV is observation value, 1 = DV is missing
         unknown       Unkown type. This will be the default for columns that hasn't been
