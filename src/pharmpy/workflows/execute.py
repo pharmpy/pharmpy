@@ -20,6 +20,7 @@ def execute_workflow(workflow, dispatcher=None, database=None, path=None):
     Results
         Results object created by workflow
     """
+    # TODO: Move to run_tool
     if dispatcher is None:
         from pharmpy.workflows import default_dispatcher
 

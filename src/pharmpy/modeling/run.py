@@ -1,4 +1,7 @@
 import importlib
+import inspect
+import json
+from datetime import datetime
 
 import pharmpy.model
 import pharmpy.results
@@ -141,6 +144,42 @@ def run_tool(name, *args, **kwargs):
     """
     tool = importlib.import_module(f'pharmpy.tools.{name}')
     common_options, tool_options = split_common_options(kwargs)
+
+    tool_params = inspect.signature(tool.create_workflow).parameters
+    tool_metadata = _create_metadata(name, tool_params, args, common_options, tool_options)
+
     wf = tool.create_workflow(*args, **tool_options)
     res = execute_workflow(wf, **common_options)
+
+    tool_metadata['end_time'] = str(datetime.now())
+
     return res
+
+
+def _create_metadata(tool_name, tool_params, args, common_options, tool_options):
+    tool_metadata = {
+        'tool_name': tool_name,
+        'start_time': str(datetime.now()),
+        'common_options': common_options,
+        'tool_options': dict(),
+    }
+
+    for i, p in enumerate(tool_params.values()):
+        # Positional args
+        if p.default == p.empty:
+            name, value = p.name, args[i]
+        # Named args
+        else:
+            if p.name in tool_options.keys():
+                name, value = p.name, tool_options[p.name]
+            else:
+                name, value = p.name, p.default
+        if isinstance(value, pharmpy.Model):
+            value = str(value)
+        tool_metadata['tool_options'][name] = value
+
+    metadata_json = json.dumps(tool_metadata)
+    parsed = json.loads(metadata_json)
+    print(json.dumps(parsed, indent=4))
+
+    return tool_metadata
