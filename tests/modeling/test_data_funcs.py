@@ -186,6 +186,11 @@ def test_add_time_after_dose(testdata):
         2.9700000000000273,
     ]
 
+    m = read_model(testdata / 'nonmem' / 'models' / 'mox1.mod')
+    add_time_after_dose(m)
+    tad = list(m.dataset['TAD'].iloc[0:16])
+    assert tad == [0.0, 1.0, 1.5, 2.0, 4.0, 6.0, 8.0, 0.0, 12.0, 0.5, 1.0, 1.5, 2.0, 4.0, 6.0, 8.0]
+
 
 def test_get_concentration_parameters_from_data():
     df = get_concentration_parameters_from_data(model)

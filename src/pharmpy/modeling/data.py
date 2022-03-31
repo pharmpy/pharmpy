@@ -778,11 +778,33 @@ def add_time_after_dose(model):
 
     df['TAD'] = df.groupby([idlab, '_DOSEID'])['_NEWTIME'].diff().fillna(0)
     df['TAD'] = df.groupby([idlab, '_DOSEID'])['TAD'].cumsum()
-    df.drop(columns=['_NEWTIME', '_DOSEID'], inplace=True)
 
     if addl:
         df = df[~df['EXPANDED']].reset_index()
         df.drop(columns=['EXPANDED'], inplace=True)
+
+    # Handle case for observation at same timepoint as SS dose
+    # In this case II should be used as TAD (imaginary previous dose)
+    try:
+        ss = model.datainfo.typeix['ss'][0].name
+        ii = model.datainfo.typeix['ii'][0].name
+    except IndexError:
+        pass
+    else:
+
+        def fn(df):
+            if len(df) < 2:
+                return df
+            for i in df.index:
+                if df.loc[i, ss] > 0:
+                    ii_time = df.loc[i, ii]
+                else:
+                    df.loc[i, 'TAD'] = ii_time
+            return df
+
+        df = df.groupby([idlab, idv, '_DOSEID']).apply(fn)
+
+    df.drop(columns=['_NEWTIME', '_DOSEID'], inplace=True)
 
     model.dataset = df
     ci = ColumnInfo('TAD')
