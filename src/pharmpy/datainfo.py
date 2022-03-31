@@ -543,11 +543,12 @@ class DataInfo(MutableSequence):
                 "continuous": col.continuous,
                 "categories": col.categories,
                 "unit": str(col.unit),
+                "datatype": col.datatype,
             }
             if col.descriptor is not None:
                 d["descriptor"] = col.descriptor
             a.append(d)
-        s = json.dumps({"columns": a})
+        s = json.dumps({"columns": a, "path": str(self.path) if self.path is not None else None})
         if path is None:
             return s
         else:
@@ -582,7 +583,12 @@ class DataInfo(MutableSequence):
                 descriptor=col.get('descriptor', None),
             )
             columns.append(ci)
-        return DataInfo(columns)
+        di = DataInfo(columns)
+        path = d.get('path', None)
+        if path:
+            path = Path(path)
+        di.path = path
+        return di
 
     @staticmethod
     def read_json(path):
