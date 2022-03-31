@@ -43,16 +43,13 @@ def execute_model(model):
     subprocess.call(
         [cmd], stdin=subprocess.DEVNULL, stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL
     )
-    database.store_local_file(model, (path / basepath).with_suffix(model.filename_extension))
+    database.store_model(model)
     database.store_local_file(model, (path / basepath).with_suffix('.lst'))
     database.store_local_file(model, (path / basepath).with_suffix('.ext'))
     database.store_local_file(model, (path / basepath).with_suffix('.phi'))
     database.store_local_file(model, (path / basepath).with_suffix('.cov'))
     database.store_local_file(model, (path / basepath).with_suffix('.cor'))
     database.store_local_file(model, (path / basepath).with_suffix('.coi'))
-    if False:
-        # FIXME: Have option for saving the dataset.
-        database.store_local_file(model, model.datainfo.path)
     for rec in model.control_stream.get_records('TABLE'):
         database.store_local_file(model, path / rec.path)
     # Read in results for the server side
