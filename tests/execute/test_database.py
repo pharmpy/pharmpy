@@ -1,10 +1,14 @@
 import os
 import os.path
+from pathlib import Path
 
 import pytest
+from pyfakefs.fake_filesystem_unittest import Patcher
 
+from pharmpy.modeling import add_time_after_dose, copy_model, read_model
 from pharmpy.workflows import (
     LocalDirectoryDatabase,
+    LocalModelDirectoryDatabase,
     ModelDatabase,
     NullModelDatabase,
     NullToolDatabase,
@@ -35,3 +39,64 @@ def test_null_database():
     db.store_local_file("path")
     db = NullModelDatabase(klr=123, f="oe")
     db.store_local_file("path", 34)
+
+
+def test_store_model(testdata):
+    with Patcher(
+        additional_skip_names=[
+            'pkgutil',
+            'lark.load_grammar',
+            'pharmpy.plugins.nonmem.records.parsers',
+        ]
+    ) as patcher:
+        fs = patcher.fs
+        datadir = testdata / 'nonmem'
+        fs.add_real_file(datadir / 'pheno_real.mod', target_path='pheno_real.mod')
+        fs.add_real_file(datadir / 'pheno.dta', target_path='pheno.dta')
+        model = read_model("pheno_real.mod")
+
+        db = LocalModelDirectoryDatabase("database")
+        db.store_model(model)
+
+        with open("database/.datasets/pheno_real.csv", "r") as fh:
+            line = fh.readline()
+            assert line == "ID,TIME,AMT,WGT,APGR,DV,FA1,FA2\n"
+
+        with open("database/.datasets/pheno_real.datainfo", "r") as fh:
+            line = fh.readline()
+            assert line.startswith('{"columns": [{"name": ')
+
+        with open("database/pheno_real/pheno_real.mod", "r") as fh:
+            line = fh.readline()
+            assert line == "$PROBLEM PHENOBARB SIMPLE MODEL\n"
+            line = fh.readline()
+            assert line == '$DATA ../.datasets/pheno_real.csv IGNORE=@\n'
+
+        run1 = copy_model(model, name="run1")
+        db.store_model(run1)
+
+        assert not (Path("database") / ".datasets" / "run1.csv").is_file()
+
+        with open("database/run1/run1.mod", "r") as fh:
+            line = fh.readline()
+            assert line == "$PROBLEM PHENOBARB SIMPLE MODEL\n"
+            line = fh.readline()
+            assert line == '$DATA ../.datasets/pheno_real.csv IGNORE=@\n'
+
+        run2 = copy_model(model, name="run2")
+        add_time_after_dose(run2)
+        db.store_model(run2)
+
+        with open("database/.datasets/run2.csv", "r") as fh:
+            line = fh.readline()
+            assert line == "ID,TIME,AMT,WGT,APGR,DV,FA1,FA2,TAD\n"
+
+        with open("database/.datasets/run2.datainfo", "r") as fh:
+            line = fh.readline()
+            assert line.startswith('{"columns": [{"name": ')
+
+        with open("database/run2/run2.mod", "r") as fh:
+            line = fh.readline()
+            assert line == "$PROBLEM PHENOBARB SIMPLE MODEL\n"
+            line = fh.readline()
+            assert line == '$DATA ../.datasets/run2.csv IGNORE=@\n'

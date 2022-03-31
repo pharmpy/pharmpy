@@ -11,6 +11,9 @@ class NullModelDatabase(ModelDatabase):
     def __init__(self, **kwargs):
         pass
 
+    def store_model(self, model):
+        pass
+
     def store_local_file(self, model, path):
         pass
 

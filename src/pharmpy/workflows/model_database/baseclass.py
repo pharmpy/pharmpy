@@ -14,6 +14,17 @@ class ModelDatabase(ABC):
     """
 
     @abstractmethod
+    def store_model(self, model):
+        """Store a model object
+
+        Parameters
+        ----------
+        model : Model
+            Pharmpy model object
+        """
+        pass
+
+    @abstractmethod
     def store_local_file(self, model, path):
         """Store a file from the local machine
 
