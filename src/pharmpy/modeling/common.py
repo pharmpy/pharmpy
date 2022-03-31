@@ -151,7 +151,7 @@ def write_model(model, path='', force=True):
             filename = f'{model.name}{model.filename_extension}'
         except AttributeError:
             raise ValueError(
-                'Cannot name model file as no path argument was supplied and the'
+                'Cannot name model file as no path argument was supplied and the '
                 'model has no name.'
             )
         path = path / filename
