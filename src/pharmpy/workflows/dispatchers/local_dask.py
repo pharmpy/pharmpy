@@ -20,12 +20,12 @@ def run(workflow):
 
                 res = get(workflow, 'results')
             else:
-                import tempfile
-
                 import dask
                 from dask.distributed import Client, LocalCluster
 
-                dask.config.set({'temporary_directory': tempfile.gettempdir()})
+                # Set to let the dask-worker-space scratch directory
+                # be stored in our tempdirectory.
+                dask.config.set({'temporary_directory': tempdirname})
 
                 with warnings.catch_warnings():
                     # Catch deprecation warning from python 3.10 via tornado.
