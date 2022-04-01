@@ -43,7 +43,8 @@ def execute_model(model):
     subprocess.call(
         [cmd], stdin=subprocess.DEVNULL, stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL
     )
-    database.store_model(model)
+    # database.store_model(model)
+    database.store_local_file(model, (path / basepath).with_suffix(model.filename_extension))
     database.store_local_file(model, (path / basepath).with_suffix('.lst'))
     database.store_local_file(model, (path / basepath).with_suffix('.ext'))
     database.store_local_file(model, (path / basepath).with_suffix('.phi'))
