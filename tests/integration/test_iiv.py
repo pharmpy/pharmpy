@@ -37,7 +37,7 @@ def test_iiv_block_structure(tmp_path, testdata, list_of_parameters, no_of_model
         assert res.best_model.name == best_model_name
         rundir = tmp_path / 'iiv_dir1'
         assert rundir.is_dir()
-        assert len(list((rundir / 'models').iterdir())) == no_of_models + 1
+        assert len(list((rundir / 'models').iterdir())) == no_of_models + 2
 
 
 def test_iiv_no_of_etas(tmp_path, testdata):
@@ -55,7 +55,7 @@ def test_iiv_no_of_etas(tmp_path, testdata):
         assert res.best_model.name == 'mox2'
         rundir = tmp_path / 'iiv_dir1'
         assert rundir.is_dir()
-        assert len(list((rundir / 'models').iterdir())) == 8
+        assert len(list((rundir / 'models').iterdir())) == 9
 
 
 @pytest.mark.filterwarnings("ignore::UserWarning")
@@ -87,7 +87,7 @@ def test_iiv_no_of_etas_added_iiv(tmp_path, testdata, iiv_as_fullblock, best_mod
         assert res.best_model.name == best_model_name
         rundir = tmp_path / 'iiv_dir1'
         assert rundir.is_dir()
-        assert len(list((rundir / 'models').iterdir())) == 16
+        assert len(list((rundir / 'models').iterdir())) == 17
 
 
 def test_iiv_no_of_etas_fullblock(tmp_path, testdata):
@@ -106,4 +106,4 @@ def test_iiv_no_of_etas_fullblock(tmp_path, testdata):
         assert res.best_model.name == 'mox2'
         rundir = tmp_path / 'iiv_dir1'
         assert rundir.is_dir()
-        assert len(list((rundir / 'models').iterdir())) == 8
+        assert len(list((rundir / 'models').iterdir())) == 9

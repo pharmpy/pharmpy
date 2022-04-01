@@ -26,7 +26,7 @@ def test_estmethod(tmp_path, testdata, methods, solvers, no_of_models, advan_ref
         assert advan_ref in res.models[-1].model_code
         rundir = tmp_path / 'estmethod_dir1'
         assert rundir.is_dir()
-        assert len(list((rundir / 'models').iterdir())) == no_of_models
+        assert len(list((rundir / 'models').iterdir())) == no_of_models + 1
         assert (rundir / 'results.json').exists()
         assert (rundir / 'results.csv').exists()
         assert (rundir / 'results.html').exists()

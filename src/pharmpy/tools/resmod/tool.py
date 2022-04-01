@@ -140,6 +140,7 @@ def _create_base_model(input_model):
     base_model.statements = stats
 
     base_model.dependent_variable = y.symbol
+    base_model.observation_transformation = y.symbol
     base_model.name = 'base'
     base_model.dataset = _create_dataset(input_model)
     base_model.database = input_model.database

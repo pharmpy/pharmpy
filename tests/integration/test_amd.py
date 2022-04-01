@@ -33,7 +33,7 @@ def test_iiv(tmp_path, testdata):
         assert len(res.models) == 11
         rundir1 = tmp_path / 'iiv_dir1'
         assert rundir1.is_dir()
-        assert len(list((rundir1 / 'models').iterdir())) == 8
+        assert len(list((rundir1 / 'models').iterdir())) == 9
         rundir2 = tmp_path / 'iiv_dir2'
         assert rundir2.is_dir()
-        assert len(list((rundir2 / 'models').iterdir())) == 4
+        assert len(list((rundir2 / 'models').iterdir())) == 5

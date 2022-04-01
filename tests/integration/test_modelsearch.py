@@ -28,7 +28,7 @@ def test_exhaustive(tmp_path, testdata):
         assert res.best_model.name == 'modelsearch_candidate1'
         rundir = tmp_path / 'modelsearch_dir1'
         assert rundir.is_dir()
-        assert len(list((rundir / 'models').iterdir())) == 4
+        assert len(list((rundir / 'models').iterdir())) == 5
         assert (rundir / 'results.json').exists()
         assert (rundir / 'results.csv').exists()
 
@@ -73,7 +73,7 @@ def test_exhaustive_stepwise_basic(
 
         rundir = tmp_path / 'modelsearch_dir1'
         assert rundir.is_dir()
-        assert len(list((rundir / 'models').iterdir())) == no_of_models + 1
+        assert len(list((rundir / 'models').iterdir())) == no_of_models + 2
         assert (rundir / 'results.json').exists()
         assert (rundir / 'results.csv').exists()
 
@@ -126,7 +126,7 @@ def test_exhaustive_stepwise_add_iivs(
         )
         rundir = tmp_path / 'modelsearch_dir1'
         assert rundir.is_dir()
-        assert len(list((rundir / 'models').iterdir())) == no_of_models + 1
+        assert len(list((rundir / 'models').iterdir())) == no_of_models + 2
         assert (rundir / 'results.json').exists()
         assert (rundir / 'results.csv').exists()
 
@@ -152,7 +152,7 @@ def test_exhaustive_stepwise_already_fit(tmp_path, testdata):
         )
         rundir = tmp_path / 'modelsearch_dir1'
         assert rundir.is_dir()
-        assert len(list((rundir / 'models').iterdir())) == 4
+        assert len(list((rundir / 'models').iterdir())) == 5
         assert (rundir / 'results.json').exists()
         assert (rundir / 'results.csv').exists()
 
@@ -176,7 +176,7 @@ def test_exhaustive_stepwise_start_model_fail(tmp_path, testdata):
         assert all(model.modelfit_results is None for model in res.models)
         rundir = tmp_path / 'modelsearch_dir1'
         assert rundir.is_dir()
-        assert len(list((rundir / 'models').iterdir())) == 5
+        assert len(list((rundir / 'models').iterdir())) == 6
 
 
 @pytest.mark.parametrize(
@@ -214,7 +214,7 @@ def test_reduced_stepwise(
 
         rundir = tmp_path / 'modelsearch_dir1'
         assert rundir.is_dir()
-        assert len(list((rundir / 'models').iterdir())) == no_of_models + 1
+        assert len(list((rundir / 'models').iterdir())) == no_of_models + 2
         assert (rundir / 'results.json').exists()
         assert (rundir / 'results.csv').exists()
 

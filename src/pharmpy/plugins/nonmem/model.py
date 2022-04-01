@@ -6,6 +6,8 @@ import warnings
 from io import StringIO
 from pathlib import Path
 
+import sympy
+
 import pharmpy.data
 import pharmpy.model
 import pharmpy.plugins.nonmem
@@ -70,12 +72,14 @@ def convert_model(model):
     nm_model.statements = model.statements
     if hasattr(model, 'name'):
         nm_model.name = model.name
-    if hasattr(model, 'dependent_variable'):
-        nm_model.dependent_variable = model.dependent_variable
+    # FIXME: No handling of other DVs
+    nm_model.dependent_variable = sympy.Symbol('Y')
     nm_model._data_frame = model.dataset
     nm_model._estimation_steps = model.estimation_steps
     nm_model._datainfo = model.datainfo
-    nm_model.observation_transformation = model.observation_transformation
+    nm_model.observation_transformation = model.observation_transformation.subs(
+        model.dependent_variable, nm_model.dependent_variable
+    )
     nm_model.update_source()
     try:
         nm_model.database = model.database
