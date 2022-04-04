@@ -1,3 +1,4 @@
+import json
 import shutil
 from os import stat
 from pathlib import Path
@@ -5,6 +6,10 @@ from pathlib import Path
 from pharmpy.datainfo import DataInfo
 
 from .baseclass import ModelDatabase
+
+DIRECTORY_PHARMPY_METADATA = '.pharmpy'
+FILE_METADATA = 'metadata.json'
+FILE_MODELFIT_RESULTS = 'results.json'
 
 
 class LocalDirectoryDatabase(ModelDatabase):
@@ -30,12 +35,14 @@ class LocalDirectoryDatabase(ModelDatabase):
             path.mkdir(parents=True)
         self.path = path.resolve()
         self.file_extension = file_extension
+        self.ignored_names = frozenset(('stdout', 'stderr', 'nonmem.json', 'nlmixr.json'))
 
     def store_model(self, model):
         pass
 
     def store_local_file(self, model, path):
-        if Path(path).is_file():
+        path_object = Path(path)
+        if path_object.name not in self.ignored_names and path_object.is_file():
             shutil.copy2(path, self.path)
 
     def retrieve_local_files(self, name, destination_path):
@@ -64,6 +71,12 @@ class LocalDirectoryDatabase(ModelDatabase):
         model.database = self
         model.read_modelfit_results()
         return model
+
+    def store_metadata(self, model, metadata):
+        pass
+
+    def store_modelfit_results(self, model):
+        pass
 
     def __repr__(self):
         return f"LocalDirectoryDatabase({self.path})"
@@ -142,6 +155,20 @@ class LocalModelDirectoryDatabase(LocalDirectoryDatabase):
         model.database = self
         model.read_modelfit_results()
         return model
+
+    def store_metadata(self, model, metadata):
+        destination = self.path / model.name / DIRECTORY_PHARMPY_METADATA
+        if not destination.is_dir():
+            destination.mkdir(parents=True)
+        with open(destination / FILE_METADATA, 'w') as f:
+            json.dump(metadata, f, indent=2)
+
+    def store_modelfit_results(self, model):
+        destination = self.path / model.name / DIRECTORY_PHARMPY_METADATA
+        if not destination.is_dir():
+            destination.mkdir(parents=True)
+
+        model.modelfit_results.to_json(destination / FILE_MODELFIT_RESULTS)
 
     def __repr__(self):
         return f"LocalModelDirectoryDatabase({self.path})"

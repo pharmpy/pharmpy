@@ -25,3 +25,9 @@ class NullModelDatabase(ModelDatabase):
 
     def get_model(self, name):
         pass
+
+    def store_metadata(self, model, metadata):
+        pass
+
+    def store_modelfit_results(self, model):
+        pass

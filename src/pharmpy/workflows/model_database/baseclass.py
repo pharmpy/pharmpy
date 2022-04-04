@@ -86,3 +86,27 @@ class ModelDatabase(ABC):
             Retrieved model object
         """
         pass
+
+    @abstractmethod
+    def store_metadata(self, model, metadata):
+        """Store metadata
+
+        Parameters
+        ----------
+        model : Model
+            Pharmpy model object
+        metadata : Dict
+            A dictionary with metadata
+        """
+        pass
+
+    @abstractmethod
+    def store_modelfit_results(self, model):
+        """Store modelfit results
+
+        Parameters
+        ----------
+        model : Model
+            Pharmpy model object
+        """
+        pass

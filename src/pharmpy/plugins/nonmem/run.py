@@ -1,3 +1,4 @@
+import json
 import os
 import subprocess
 import uuid
@@ -12,7 +13,8 @@ def execute_model(model):
     parent_model = model.parent_model
     model = convert_model(model)
     path = Path.cwd() / f'NONMEM_run_{model.name}-{uuid.uuid1()}'
-    path.mkdir(parents=True, exist_ok=True)
+    meta = path / '.pharmpy'
+    meta.mkdir(parents=True, exist_ok=True)
     model = model.copy()
     model.parent_model = parent_model
     write_csv(model, path=path, force=True)
@@ -40,9 +42,28 @@ def execute_model(model):
             fp.write(f"#!/bin/sh\ncd {path}\n{' '.join(args)}\n")
         os.chmod(path / 'cdwrapper', 0o744)
         cmd = str(path / 'cdwrapper')
-    subprocess.call(
-        [cmd], stdin=subprocess.DEVNULL, stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL
-    )
+
+    stdout = path / 'stdout'
+    stderr = path / 'stderr'
+
+    with open(stdout, "wb") as out, open(stderr, "wb") as err:
+        result = subprocess.run([cmd], stdin=subprocess.DEVNULL, stderr=err, stdout=out)
+
+    metadata = {
+        'plugin': 'nonmem',
+        'path': str(path),
+    }
+
+    plugin = {
+        'commands': [
+            {
+                'args': args,
+                'returncode': result.returncode,
+                'wrapper': cmd,
+            }
+        ]
+    }
+
     database.store_model(model)
     database.store_local_file(model, (path / basepath).with_suffix('.lst'))
     database.store_local_file(model, (path / basepath).with_suffix('.ext'))
@@ -50,8 +71,22 @@ def execute_model(model):
     database.store_local_file(model, (path / basepath).with_suffix('.cov'))
     database.store_local_file(model, (path / basepath).with_suffix('.cor'))
     database.store_local_file(model, (path / basepath).with_suffix('.coi'))
+
     for rec in model.control_stream.get_records('TABLE'):
         database.store_local_file(model, path / rec.path)
+
+    database.store_local_file(model, stdout)
+    database.store_local_file(model, stderr)
+
+    plugin_path = path / 'nonmem.json'
+    with open(plugin_path, 'w') as f:
+        json.dump(plugin, f, indent=2)
+
+    database.store_local_file(model, plugin_path)
+
+    database.store_metadata(model, metadata)
+    database.store_modelfit_results(model)
+
     # Read in results for the server side
     model.read_modelfit_results()
     # FIXME: the database path is changed in write
