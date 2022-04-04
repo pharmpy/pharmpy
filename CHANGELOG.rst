@@ -1,3 +1,21 @@
+0.62.0 (2022-04-04)
+-------------------
+
+New feature
+===========
+
+* Store unique datasets in models/.datasets
+
+Changes
+=======
+
+* New name for final model in resmod
+  
+Bugfixes
+========
+
+* Use NaN in summary_individuals if tflite cannot be used
+
 0.61.1 (2022-03-31)
 -------------------
 
