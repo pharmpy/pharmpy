@@ -11,7 +11,6 @@ certifi==2021.10.8
 charset-normalizer==2.0.12
 click==8.1.2
 cloudpickle==2.0.0
-colorama==0.4.4
 commonmark==0.9.1
 csscompressor==0.9.5
 dask==2022.4.0
@@ -30,7 +29,6 @@ importlib-metadata==4.11.3
 importlib-resources==5.6.0
 ipykernel==6.11.0
 ipython==8.2.0
-ipython-genutils==0.2.0
 ipywidgets==8.0.0rc0
 jedi==0.18.1
 Jinja2==3.1.1
@@ -96,6 +94,7 @@ testpath==0.6.0
 toolz==0.11.2
 tornado==6.1
 traitlets==5.1.1
+typing-extensions==4.1.1
 urllib3==1.26.9
 wcwidth==0.2.5
 webencodings==0.5.1

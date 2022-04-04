@@ -12,6 +12,7 @@ activate () {
     . /tmp/updatevenv/bin/activate
 }
 activate
+pip install setuptools --upgrade
 python3 setup.py install
 pip freeze >/tmp/updatevenv/freeze
 python - << EOF
