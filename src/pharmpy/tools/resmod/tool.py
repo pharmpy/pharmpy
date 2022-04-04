@@ -73,7 +73,9 @@ def create_workflow(model=None, groups=4, p_value=0.05, skip=None):
     wf.insert_workflow(fit_final, predecessors=[task_unpack])
     _results = partial(_compare_full_models_results, cutoff=cutoff)
     task_results = Task('results', _results)
-    wf.add_task(task_results, predecessors=[task_post_process] + fit_final.output_tasks)
+    wf.add_task(
+        task_results, predecessors=[start_task] + fit_final.output_tasks + [task_post_process]
+    )
 
     return wf
 
@@ -91,7 +93,6 @@ def post_process(start_model, *models, cutoff):
     best_model = _create_best_model(start_model, res, cutoff=cutoff)
     res.best_model = best_model[0]
     res.selected_model_name = best_model[1]
-
     return res
 
 
@@ -99,8 +100,8 @@ def _unpack(res):
     return res.best_model
 
 
-def _compare_full_models_results(res, start_model, cutoff):
-    delta_ofv = start_model.modelfit_results.ofv - res.best_model.modelfit_results.ofv
+def _compare_full_models_results(start_model, best_resmod, res, cutoff):
+    delta_ofv = start_model.modelfit_results.ofv - best_resmod.modelfit_results.ofv
 
     if delta_ofv <= cutoff:
         res.best_model = start_model
@@ -237,7 +238,8 @@ def _time_after_dose(model):
 
 def _create_best_model(model, res, groups=4, cutoff=3.84):
     model = model.copy()
-    selected_model_name = ''
+    model.name = 'best_resmod'
+    selected_model_name = 'base'
     if any(res.models['dofv'] > cutoff):
         idx = res.models['dofv'].idxmax()
         name = idx[0]
