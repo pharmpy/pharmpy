@@ -1,3 +1,4 @@
+import warnings
 from typing import Callable, Dict, List, Union
 
 import numpy as np
@@ -85,6 +86,12 @@ def _predicted(
     try:
         predicted = predict(model)
     except ModelfitResultsError:
+        return np.nan
+    except ModuleNotFoundError:
+        warnings.warn("tflite is not installed, returning nan")
+        return np.nan
+    except ImportError:
+        warnings.warn("tflite cannot be imported, returning nan")
         return np.nan
     if predicted is None:
         return np.nan
