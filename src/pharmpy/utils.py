@@ -5,6 +5,7 @@ import warnings
 import weakref
 from pathlib import Path
 from tempfile import mkdtemp
+from typing import Union
 
 import sympy
 import sympy.physics.units as units
@@ -111,3 +112,9 @@ def parse_units(s):
     if not isinstance(s, str):
         return s
     return sympify(s).subs(unit_subs)
+
+
+def normalize_user_given_path(path: Union[str, Path]) -> Path:
+    if isinstance(path, str):
+        path = Path(path)
+    return path.expanduser()

@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from pharmpy.utils import TemporaryDirectory
+from pharmpy.utils import TemporaryDirectory, normalize_user_given_path
 
 
 def execute_workflow(workflow, dispatcher=None, database=None, path=None):
@@ -102,6 +102,8 @@ def split_common_options(d):
     other_options = dict()
     for key, value in d.items():
         if key in execute_options:
+            if key == 'path':
+                value = normalize_user_given_path(value)
             common_options[key] = value
         else:
             other_options[key] = value

@@ -11,6 +11,7 @@ import sympy
 from pharmpy import Model, Parameters, RandomVariables, config
 from pharmpy.modeling import split_joint_distribution
 from pharmpy.statements import Assignment, CompartmentalSystem
+from pharmpy.utils import normalize_user_given_path
 from pharmpy.workflows import default_model_database
 
 
@@ -38,6 +39,7 @@ def read_model(path):
     read_model_from_string : Read model from string
 
     """
+    path = normalize_user_given_path(path)
     model = Model.create_model(path)
     return model
 
@@ -114,7 +116,7 @@ def read_model_from_string(code, path=None):
     """
     model = Model.create_model(StringIO(code))
     if path is not None:
-        path = Path(path)
+        path = normalize_user_given_path(path)
         import pharmpy.workflows
 
         model.database = pharmpy.workflows.default_model_database(path)
@@ -145,7 +147,7 @@ def write_model(model, path='', force=True):
     >>> write_model(model)   # doctest: +SKIP
 
     """
-    path = Path(path)
+    path = normalize_user_given_path(path)
     if not path or path.is_dir():
         try:
             filename = f'{model.name}{model.filename_extension}'
@@ -407,7 +409,7 @@ def bump_model_number(model, path=None):
         if path is None:
             new_name = f'{stem}{n + 1}'
         else:
-            path = Path(path)
+            path = normalize_user_given_path(path)
             while True:
                 n += 1
                 new_name = f'{stem}{n}'

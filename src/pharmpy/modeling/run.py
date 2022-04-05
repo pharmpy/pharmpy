@@ -4,6 +4,7 @@ import pharmpy.model
 import pharmpy.results
 import pharmpy.tools.modelfit
 import pharmpy.tools.psn_helpers
+from pharmpy.utils import normalize_user_given_path
 from pharmpy.workflows import execute_workflow, split_common_options
 
 from .common import read_model_from_database
@@ -84,6 +85,7 @@ def create_results(path, **kwargs):
     read_results
 
     """
+    path = normalize_user_given_path(path)
     res = pharmpy.tools.psn_helpers.create_results(path, **kwargs)
     return res
 
@@ -111,6 +113,7 @@ def read_results(path):
     create_results
 
     """
+    path = normalize_user_given_path(path)
     res = pharmpy.results.read_results(path)
     return res
 
