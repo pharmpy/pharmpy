@@ -2712,9 +2712,9 @@ $OMEGA  0.1'''
 def test_remove_iov_with_options(tmp_path, testdata):
     with TemporaryDirectoryChanger(tmp_path):
         shutil.copy2(testdata / 'nonmem' / 'models' / 'mox2.mod', tmp_path)
-        shutil.copy2(testdata / 'nonmem' / 'models' / 'mx19B.csv', tmp_path)
+        shutil.copy2(testdata / 'nonmem' / 'models' / 'mox_simulated_normal.csv', tmp_path)
         model = Model.create_model('mox2.mod')
-        model.datainfo.path = tmp_path / 'mx19B.csv'
+        model.datainfo.path = tmp_path / 'mox_simulated_normal.csv'
 
         start_model = add_iov(model, occ='VISI')
         model_remove_all = start_model.copy()
