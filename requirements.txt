@@ -60,7 +60,7 @@ parso==0.8.3
 partd==1.2.0
 pexpect==4.8.0
 pickleshare==0.7.5
-prompt-toolkit==3.0.28
+prompt-toolkit==3.0.29
 psutil==5.9.0
 ptyprocess==0.7.0
 pure-eval==0.2.2
