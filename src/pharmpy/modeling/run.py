@@ -1,7 +1,7 @@
 import importlib
 import inspect
-import json
 from datetime import datetime
+from pathlib import Path
 
 import pharmpy.model
 import pharmpy.results
@@ -146,28 +146,39 @@ def run_tool(name, *args, **kwargs):
     common_options, tool_options = split_common_options(kwargs)
 
     tool_params = inspect.signature(tool.create_workflow).parameters
-    tool_metadata = _create_metadata(name, tool_params, args, common_options, tool_options)
+    tool_metadata = _create_metadata_tool(name, tool_params, tool_options, args)
 
     wf = tool.create_workflow(*args, **tool_options)
-    res = execute_workflow(wf, **common_options)
+
+    dispatcher, database = _get_run_setup(common_options, wf.name)
+    setup_metadata = _create_metadata_common(common_options, dispatcher, database, wf.name)
+    tool_metadata['common_options'] = setup_metadata
+
+    res = execute_workflow(wf, dispatcher=dispatcher, database=database)
 
     tool_metadata['end_time'] = str(datetime.now())
 
     return res
 
 
-def _create_metadata(tool_name, tool_params, args, common_options, tool_options):
+def _create_metadata_tool(tool_name, tool_params, tool_options, args):
+    # FIXME: format of start/end time
     tool_metadata = {
         'tool_name': tool_name,
         'start_time': str(datetime.now()),
-        'common_options': common_options,
         'tool_options': dict(),
     }
 
     for i, p in enumerate(tool_params.values()):
         # Positional args
         if p.default == p.empty:
-            name, value = p.name, args[i]
+            try:
+                name, value = p.name, args[i]
+            except IndexError:
+                try:
+                    name, value = p.name, tool_options[p.name]
+                except KeyError:
+                    raise ValueError(f'{tool_name}: \'{p.name}\' was not set')
         # Named args
         else:
             if p.name in tool_options.keys():
@@ -175,11 +186,49 @@ def _create_metadata(tool_name, tool_params, args, common_options, tool_options)
             else:
                 name, value = p.name, p.default
         if isinstance(value, pharmpy.Model):
-            value = str(value)
+            value = str(value)  # FIXME: better model representation
         tool_metadata['tool_options'][name] = value
 
-    metadata_json = json.dumps(tool_metadata)
-    parsed = json.loads(metadata_json)
-    print(json.dumps(parsed, indent=4))
-
     return tool_metadata
+
+
+def _create_metadata_common(common_options, dispatcher, database, toolname):
+    setup_metadata = dict()
+    setup_metadata['dispatcher'] = dispatcher.__name__
+    # FIXME: naming of workflows/tools should be consistent (db and input name of tool)
+    setup_metadata['database'] = {
+        'class': type(database).__name__,
+        'toolname': toolname,
+        'path': str(database.path),
+    }
+    for key, value in common_options.items():
+        if key not in setup_metadata.keys():
+            if isinstance(value, Path):
+                value = str(value)
+            setup_metadata[str(key)] = value
+
+    return setup_metadata
+
+
+def _get_run_setup(common_options, toolname):
+    try:
+        dispatcher = common_options['dispatcher']
+    except KeyError:
+        from pharmpy.workflows import default_dispatcher
+
+        dispatcher = default_dispatcher
+
+    try:
+        database = common_options['database']
+    except KeyError:
+        from pharmpy.workflows import default_tool_database
+
+        if 'path' in common_options.keys():
+            path = common_options['path']
+        else:
+            path = None
+        database = default_tool_database(
+            toolname=toolname, path=path
+        )  # TODO: database -> tool_database
+
+    return dispatcher, database
