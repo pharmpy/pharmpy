@@ -13,7 +13,7 @@ $INPUT      ID VISI XAT2=DROP DGRP=DROP DOSE=DROP FLAG=DROP ONO=DROP
 ;		DIU,NUMB,TAD,TIME,VIDD,CLCR,AMT,SS,II,VID,
 
 ;		CMT,CONO,DV,EVID,OVID
-$DATA      ../../../../models/mox_simulated.csv IGNORE=@
+$DATA      ../../../../models/mox_simulated_log.csv IGNORE=@
 $SUBROUTINE ADVAN2 TRANS1
 $PK
 
@@ -25,10 +25,10 @@ $PK
    IF(VISI.EQ.8) VIS8 = 1
 
 ;----------IOV--------------------
-   
+
    KPCL  = VIS3*ETA(4)+VIS8*ETA(5)
    KPKA  = VIS3*ETA(6)+VIS8*ETA(7)
-   
+
 ; --------------- Remove block structure to be able fo fix variances/covariances within a block ----------------------
 
 ; ---- IIV ---

@@ -3,9 +3,9 @@ $INPUT      ID VISI XAT2=DROP DGRP DOSE FLAG=DROP ONO=DROP XIME=DROP
             DVO=DROP NEUY SCR AGE SEX NYH=DROP WT DROP ACE DIG DIU
             NUMB=DROP TAD TIME VIDD=DROP CRCL AMT SS II DROP CMT=DROP
             CONO=DROP DV EVID=DROP OVID=DROP
-$DATA       mox_simulated.csv IGNORE=@
+$DATA       mox_simulated_log.csv IGNORE=@
 $SUBROUTINE ADVAN2 TRANS1
-$PK 
+$PK
 ;-----------OCCASIONS----------
    VIS3               = 0
    IF(VISI.EQ.3) VIS3 = 1
@@ -13,7 +13,7 @@ $PK
    IF(VISI.EQ.8) VIS8 = 1
 
 ;----------IOV--------------------
-   
+
    KPCL  = VIS3*ETA(4)+VIS8*ETA(5)
    KPKA  = VIS3*ETA(6)+VIS8*ETA(7)
 
@@ -29,7 +29,7 @@ $PK
    K     = CL/V
    S2    = V
 
-$ERROR 
+$ERROR
 
      IPRED = LOG(.025)
      WA     = 1
