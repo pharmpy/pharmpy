@@ -1,3 +1,7 @@
+import warnings
+
+import numpy as np
+
 from pharmpy.modeling import (
     add_iiv,
     add_pk_iiv,
@@ -281,7 +285,8 @@ def _update_initial_estimates(model):
     # FIXME: this should use dynamic workflows and not dispatch the next task
     try:
         update_inits(model, move_est_close_to_bounds=True)
-    except ValueError:
+    except (ValueError, np.linalg.LinAlgError):
+        warnings.warn('Could not update initial estimates, using default')
         pass
     return model
 
