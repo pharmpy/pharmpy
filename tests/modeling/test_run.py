@@ -1,6 +1,6 @@
 import importlib
 import inspect
-
+from pathlib import Path
 import pytest
 
 from pharmpy.modeling.run import _create_metadata_common, _create_metadata_tool, _get_run_setup
@@ -72,7 +72,8 @@ def test_create_metadata_common(tmp_path):
 
         assert metadata['dispatcher'] == 'pharmpy.workflows.dispatchers.local_dask'
         assert metadata['database']['class'] == 'LocalDirectoryToolDatabase'
-        assert metadata['database']['path'].endswith('modelsearch_dir1')
+        path = Path(metadata['database']['path'])
+        assert path.stem == 'modelsearch_dir1'
         assert 'path' not in metadata.keys()
 
         path = 'tool_database_path'
@@ -84,7 +85,6 @@ def test_create_metadata_common(tmp_path):
             common_options={'path': path}, dispatcher=dispatcher, database=database, toolname=name
         )
 
-        assert metadata['database']['path'].endswith('tool_database_path')
-        assert metadata['database']['path'].endswith('tool_database_path')
-
-        assert metadata['database']['path'].endswith('/tool_database_path')
+        path = Path(metadata['database']['path'])
+        assert path.stem == 'tool_database_path'
+        assert metadata['path'] == 'tool_database_path'
