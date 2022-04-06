@@ -1,4 +1,3 @@
-import os.path
 import shutil
 from os import stat
 from pathlib import Path
@@ -86,7 +85,7 @@ class LocalModelDirectoryDatabase(LocalDirectoryDatabase):
     """
 
     def store_model(self, model):
-        from pharmpy.modeling import write_csv, write_model
+        from pharmpy.modeling import read_dataset_from_datainfo, write_csv, write_model
 
         model = model.copy()
         model.update_datainfo()
@@ -97,12 +96,14 @@ class LocalModelDirectoryDatabase(LocalDirectoryDatabase):
         for dipath in path.glob('*.datainfo'):
             curdi = DataInfo.read_json(dipath)
             di.path = curdi.path  # This could be different in comparison
-            if curdi == di:  # TODO: Should compare dataset here as well
-                model.datainfo.path = curdi.path
-                break
+            if curdi == di:
+                df = read_dataset_from_datainfo(curdi)
+                if df.equals(model.dataset):
+                    model.datainfo.path = curdi.path
+                    break
         else:
             data_path = path / (model.name + '.csv')
-            di.path = os.path.relpath(data_path, self.path / model.name)
+            di.path = data_path.resolve()
             di.to_json(path / (model.name + '.datainfo'))
             write_csv(model, path=data_path)
             model.datainfo = di

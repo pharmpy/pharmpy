@@ -162,7 +162,7 @@ def test_json():
     col1 = ColumnInfo("ID", type='id', scale='nominal')
     col2 = ColumnInfo("TIME", type='idv', scale='ratio', unit="h")
     di = DataInfo([col1, col2])
-    correct = '{"columns": [{"name": "ID", "type": "id", "scale": "nominal", "continuous": false, "categories": null, "unit": "1", "datatype": "float64"}, {"name": "TIME", "type": "idv", "scale": "ratio", "continuous": true, "categories": null, "unit": "hour", "datatype": "float64"}], "path": null}'  # noqa: E501
+    correct = '{"columns": [{"name": "ID", "type": "id", "scale": "nominal", "continuous": false, "categories": null, "unit": "1", "datatype": "float64", "drop": false}, {"name": "TIME", "type": "idv", "scale": "ratio", "continuous": true, "categories": null, "unit": "hour", "datatype": "float64", "drop": false}], "path": null}'  # noqa: E501
     assert di.to_json() == correct
 
     newdi = DataInfo.from_json(correct)
