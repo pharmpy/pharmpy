@@ -1,3 +1,4 @@
+import json
 import os
 import subprocess
 import uuid
@@ -231,7 +232,8 @@ def execute_model(model):
     model = convert_model(model)
     path = Path.cwd() / f'nlmixr_run_{model.name}-{uuid.uuid1()}'
     model._path = path
-    path.mkdir(parents=True, exist_ok=True)
+    meta = path / '.pharmpy'
+    meta.mkdir(parents=True, exist_ok=True)
     write_csv(model, path=path)
 
     code = model.model_code
@@ -253,9 +255,46 @@ def execute_model(model):
     # and calling other R version.
     newenv['R_LIBS_USERS'] = ''
     newenv['R_LIBS_SITE'] = ''
-    subprocess.run([rpath, path / (model.name + '.R')], env=newenv)
+
+    stdout = path / 'stdout'
+    stderr = path / 'stderr'
+
+    args = [rpath, path / (model.name + '.R')]
+
+    with open(stdout, "wb") as out, open(stderr, "wb") as err:
+        result = subprocess.run(args, stdin=subprocess.DEVNULL, stderr=err, stdout=out, env=newenv)
+
     rdata_path = path / f'{model.name}.RDATA'
+
+    metadata = {
+        'plugin': 'nlmixr',
+        'path': str(path),
+    }
+
+    plugin = {
+        'rpath': rpath,
+        'commands': [
+            {
+                'args': args,
+                'returncode': result.returncode,
+            }
+        ],
+    }
+
     database.store_local_file(model, path / f'{model.name}.R')
     database.store_local_file(model, rdata_path)
+
+    database.store_local_file(model, stdout)
+    database.store_local_file(model, stderr)
+
+    plugin_path = path / 'nlmixr.json'
+    with open(plugin_path, 'w') as f:
+        json.dump(plugin, f, indent=2)
+
+    database.store_local_file(model, plugin_path)
+
+    database.store_metadata(model, metadata)
+    database.store_modelfit_results(model)
+
     read_modelfit_results(model, rdata_path)
     return model
