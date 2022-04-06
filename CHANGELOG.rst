@@ -1,3 +1,8 @@
+New feature
+===========
+
+* Add modeling.read_dataset_from_datainfo
+
 0.62.0 (2022-04-04)
 -------------------
 

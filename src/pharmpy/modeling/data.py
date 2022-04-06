@@ -9,7 +9,7 @@ from rich.console import Console
 from rich.table import Table
 
 from pharmpy.data import DatasetError
-from pharmpy.datainfo import ColumnInfo
+from pharmpy.datainfo import ColumnInfo, DataInfo
 
 SI = sympy.physics.units.si.SI
 
@@ -1391,3 +1391,30 @@ def check_dataset(model, dataframe=False, verbose=False):
         return checker.get_dataframe()
     else:
         checker.print()
+
+
+def read_dataset_from_datainfo(datainfo):
+    """Read a dataset given a datainfo object or path to a datainfo file
+
+    Parameters
+    ----------
+    datainfo : DataInfo | Path | str
+        A datainfo object or a path to a datainfo object
+
+    Results
+    -------
+    pd.DataFrame
+        The dataset
+    """
+    if not isinstance(datainfo, DataInfo):
+        datainfo = DataInfo.read_json(datainfo)
+
+    dtypes = {
+        col.name: col.datatype if not col.datatype.startswith('nmtran') else 'str'
+        for col in datainfo
+    }
+
+    df = pd.read_csv(
+        datainfo.path, sep=datainfo.separator, dtype=dtypes, float_precision='round_trip'
+    )
+    return df
