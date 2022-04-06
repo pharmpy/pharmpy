@@ -1,3 +1,4 @@
+import json
 import shutil
 from pathlib import Path
 
@@ -40,3 +41,14 @@ class LocalDirectoryToolDatabase(ToolDatabase):
     def store_results(self, res):
         res.to_json(path=self.path / 'results.json')
         res.to_csv(path=self.path / 'results.csv')
+
+    def store_metadata(self, metadata):
+        path = self.path / 'metadata.json'
+        with open(path, 'w') as f:
+            json.dump(metadata, f)
+
+    def read_metadata(self):
+        path = self.path / 'metadata.json'
+        with open(path, 'r') as f:
+            metadata = json.load(f)
+        return metadata

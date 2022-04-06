@@ -153,15 +153,18 @@ def run_tool(name, *args, **kwargs):
     dispatcher, database = _get_run_setup(common_options, wf.name)
     setup_metadata = _create_metadata_common(common_options, dispatcher, database, wf.name)
     tool_metadata['common_options'] = setup_metadata
+    database.store_metadata(tool_metadata)
 
     res = execute_workflow(wf, dispatcher=dispatcher, database=database)
 
     tool_metadata['end_time'] = str(datetime.now())
+    database.store_metadata(tool_metadata)
 
     return res
 
 
 def _create_metadata_tool(tool_name, tool_params, tool_options, args):
+    # FIXME: add config file dump, Pharmpy version, estimation tool etc.
     # FIXME: format of start/end time
     tool_metadata = {
         'tool_name': tool_name,
