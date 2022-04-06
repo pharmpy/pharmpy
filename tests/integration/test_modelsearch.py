@@ -167,7 +167,8 @@ def test_exhaustive_stepwise_start_model_fail(tmp_path, testdata):
         add_iiv(model_start, 'V', 'incorrect_syntax')
 
         mfl = 'ABSORPTION(ZO);PERIPHERALS(1)'
-        res = run_tool('modelsearch', 'exhaustive_stepwise', mfl, model=model_start)
+        with pytest.warns(UserWarning, match='Could not update'):
+            res = run_tool('modelsearch', 'exhaustive_stepwise', mfl, model=model_start)
 
         assert len(res.summary_tool) == 5
         assert len(res.summary_models) == 5
