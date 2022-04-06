@@ -1030,16 +1030,19 @@ class Model(pharmpy.model.Model):
         column_info = []
         for colname, coldrop in zip(colnames, drop):
             info = ColumnInfo(colname, drop=coldrop)
-            if colname == 'ID' or colname == 'L1':
+            if coldrop and colname not in ['DATE', 'DAT1', 'DAT2', 'DAT3']:
+                info.datatype = 'str'
+            elif colname == 'ID' or colname == 'L1':
                 info.type = 'id'
                 info.scale = 'nominal'
-                info.datatype = 'int64'
+                info.datatype = 'int32'
             elif colname == 'DV' or colname == replacements.get('DV', None):
                 info.type = 'dv'
             elif colname == 'TIME' or colname == replacements.get('TIME', None):
                 info.type = 'idv'
                 info.scale = 'ratio'
-                info.datatype = 'nmtran-time'
+                if not set(colnames).isdisjoint({'DATE', 'DAT1', 'DAT2', 'DAT3'}):
+                    info.datatype = 'nmtran-time'
             elif colname in ['DATE', 'DAT1', 'DAT2', 'DAT3']:
                 info.scale = 'interval'
                 info.datatype = 'nmtran-date'
