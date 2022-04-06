@@ -1,7 +1,8 @@
-New feature
-===========
+New features
+============
 
 * Add modeling.read_dataset_from_datainfo
+* Store unique datasets for tool runs
 
 0.62.0 (2022-04-04)
 -------------------
