@@ -2,17 +2,16 @@
 Datasets in Pharmpy
 ===================
 
-.. warning::
-
-    This section is being reworked.
-
-Datasets in Pharmpy are represented using the :py:class:`pharmpy.data.PharmDataFrame` class. It is a subclass of the pandas DataFrame and have some additions specific to Pharmacometrics. 
+Datasets in Pharmpy are represented using the :py:class:`pd.DataFrame` class and a separate :py:class:`DataInfo` class that provides additional information about the dataset.
+This could contain for example a description of how the columns are used in the model or the units used for the data.
 
 .. math::
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Retrieving the dataset from a model
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The dataset connected to a model can be retrieved from the `dataset` attribute. 
 
 .. jupyter-execute::
    :hide-output:
@@ -157,3 +156,34 @@ Extract pharmacokinetic concentration parameters from the dataset
 
     from pharmpy.modeling import get_concentration_parameters_from_data
     get_concentration_parameters_from_data
+
+
+~~~~~~~~
+DataInfo
+~~~~~~~~
+
+Every model has a `DataInfo` object that describes the dataset.
+
+.. jupyter-execute::
+
+    model.datainfo
+
+The columns of the dataset can here be given some additional information.
+
+type
+====
+
+Column ``type`` is the role a data column has in the model. Some basic examples of types are ``id`` for the subject identification column, ``idv`` for the independent
+variable (mostly time), ``dv`` for the dependent variable and ``dose`` for the dose amount column. Columns that not have been given any particular type
+will get the type value ``unknown``. See :attr:`pharmpy.ColumnInfo.type` for a list of all supported types.
+
+scale
+=====
+
+The ``scale`` of a column is the statistical scale of measurement of its data using "Stevens' typology" (see https://en.wikipedia.org/wiki/Level_of_measurement). The scale can be one of ``nominal`` for non-ordered categorical data, ``ordinal`` for ordered categorical data, ``interval`` for numeric data were ratios cannot be taken and ``ratio`` for general numeric data. Note that ``nominal`` and ``ordinal`` data is always discrete, but ``interval`` and ``ratio`` data can be both discrete and continuous.
+
+continuous
+==========
+
+If this is ``True`` the data is continuous and if it is ``False`` it is discrete. Note that ratio data can be seen as discrete for example
+if it has been rounded to whole numbers or similar.
