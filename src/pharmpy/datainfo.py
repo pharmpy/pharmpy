@@ -66,6 +66,7 @@ class ColumnInfo:
         'float128',
         'nmtran-time',
         'nmtran-date',
+        'str',
     ]
     _all_descriptors = [None, 'age', 'body weight', 'lean body mass', 'fat free mass']
 
@@ -257,6 +258,7 @@ class ColumnInfo:
         float128     Binary float     128 bits ≈ ±1.2×10⁴⁹³²                     Yes
         nmtran-time  NM-TRAN time     n                                          No
         nmtran-date  NM-TRAN date     n                                          No
+        str          General string   n                                          No
         ============ ================ ========================================== ===========
 
         The default, and most common datatype, is float64.
@@ -544,6 +546,7 @@ class DataInfo(MutableSequence):
                 "categories": col.categories,
                 "unit": str(col.unit),
                 "datatype": col.datatype,
+                "drop": col.drop,
             }
             if col.descriptor is not None:
                 d["descriptor"] = col.descriptor
@@ -581,6 +584,7 @@ class DataInfo(MutableSequence):
                 categories=col.get('categories', None),
                 datatype=col.get('datatype', 'float64'),
                 descriptor=col.get('descriptor', None),
+                drop=col.get('drop', False),
             )
             columns.append(ci)
         di = DataInfo(columns)
