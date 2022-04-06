@@ -11,9 +11,9 @@ from pharmpy.utils import TemporaryDirectoryChanger
 def test_exhaustive(tmp_path, testdata):
     with TemporaryDirectoryChanger(tmp_path):
         shutil.copy2(testdata / 'nonmem' / 'models' / 'mox2.mod', tmp_path)
-        shutil.copy2(testdata / 'nonmem' / 'models' / 'mx19B.csv', tmp_path)
+        shutil.copy2(testdata / 'nonmem' / 'models' / 'mox_simulated_normal.csv', tmp_path)
         model_start = Model.create_model('mox2.mod')
-        model_start.datainfo.path = tmp_path / 'mx19B.csv'
+        model_start.datainfo.path = tmp_path / 'mox_simulated_normal.csv'
         res = run_tool(
             'modelsearch', 'exhaustive', 'ABSORPTION(ZO);PERIPHERALS(1)', model=model_start
         )
@@ -21,11 +21,11 @@ def test_exhaustive(tmp_path, testdata):
         assert len(res.summary_tool) == 4
         assert len(res.summary_models) == 4
         assert len(res.models) == 3
+        assert res.best_model.name == 'modelsearch_candidate3'
         assert all(
             model.modelfit_results and not np.isnan(model.modelfit_results.ofv)
             for model in res.models
         )
-        assert res.best_model.name == 'modelsearch_candidate1'
         rundir = tmp_path / 'modelsearch_dir1'
         assert rundir.is_dir()
         assert len(list((rundir / 'models').iterdir())) == 5
@@ -37,16 +37,16 @@ def test_exhaustive(tmp_path, testdata):
     'mfl, no_of_models, best_model_name, last_model_parent_name',
     [
         ('ABSORPTION(ZO);PERIPHERALS(1)', 4, 'modelsearch_candidate2', 'modelsearch_candidate2'),
-        ('ABSORPTION(ZO);ELIMINATION(ZO)', 4, 'mox2', 'modelsearch_candidate2'),
-        ('ABSORPTION(ZO);TRANSITS(1)', 2, 'mox2', 'mox2'),
+        ('ABSORPTION(ZO);ELIMINATION(ZO)', 4, 'modelsearch_candidate1', 'modelsearch_candidate2'),
+        ('ABSORPTION(ZO);TRANSITS(1)', 2, 'modelsearch_candidate2', 'mox2'),
         (
             'ABSORPTION([ZO,SEQ-ZO-FO]);PERIPHERALS(1)',
             7,
-            'modelsearch_candidate3',
+            'modelsearch_candidate6',
             'modelsearch_candidate3',
         ),
-        ('LAGTIME();TRANSITS(1)', 2, 'mox2', 'mox2'),
-        ('ABSORPTION(ZO);TRANSITS(3, *)', 3, 'mox2', 'mox2'),
+        ('LAGTIME();TRANSITS(1)', 2, 'modelsearch_candidate2', 'mox2'),
+        ('ABSORPTION(ZO);TRANSITS(3, *)', 3, 'modelsearch_candidate2', 'mox2'),
     ],
 )
 def test_exhaustive_stepwise_basic(
@@ -54,9 +54,9 @@ def test_exhaustive_stepwise_basic(
 ):
     with TemporaryDirectoryChanger(tmp_path):
         shutil.copy2(testdata / 'nonmem' / 'models' / 'mox2.mod', tmp_path)
-        shutil.copy2(testdata / 'nonmem' / 'models' / 'mx19B.csv', tmp_path)
+        shutil.copy2(testdata / 'nonmem' / 'models' / 'mox_simulated_normal.csv', tmp_path)
         model_start = Model.create_model('mox2.mod')
-        model_start.datainfo.path = tmp_path / 'mx19B.csv'
+        model_start.datainfo.path = tmp_path / 'mox_simulated_normal.csv'
         res = run_tool('modelsearch', 'exhaustive_stepwise', mfl, model=model_start)
 
         assert len(res.summary_tool) == no_of_models + 1
@@ -81,13 +81,13 @@ def test_exhaustive_stepwise_basic(
 @pytest.mark.parametrize(
     'mfl, iiv_as_fullblock, add_mdt_iiv, no_of_models, best_model_name, no_of_added_etas',
     [
-        ('ABSORPTION(ZO);PERIPHERALS(1)', False, False, 4, 'modelsearch_candidate2', 2),
-        ('ABSORPTION(ZO);ELIMINATION(ZO)', False, False, 4, 'mox2', 1),
-        ('ABSORPTION(ZO);ELIMINATION(MIX-FO-MM)', False, False, 4, 'modelsearch_candidate2', 2),
+        ('ABSORPTION(ZO);PERIPHERALS(1)', False, False, 4, 'modelsearch_candidate4', 2),
+        ('ABSORPTION(ZO);ELIMINATION(ZO)', False, False, 4, 'modelsearch_candidate1', 1),
+        ('ABSORPTION(ZO);ELIMINATION(MIX-FO-MM)', False, False, 4, 'modelsearch_candidate1', 2),
         ('ABSORPTION(ZO);PERIPHERALS([1, 2])', False, False, 8, 'modelsearch_candidate5', 4),
-        ('LAGTIME();TRANSITS(1)', False, False, 2, 'mox2', 1),
-        ('ABSORPTION(ZO);PERIPHERALS(1)', True, False, 4, 'modelsearch_candidate2', 2),
-        ('PERIPHERALS(1);LAGTIME()', False, True, 4, 'modelsearch_candidate1', 1),
+        ('LAGTIME();TRANSITS(1)', False, False, 2, 'modelsearch_candidate2', 1),
+        ('ABSORPTION(ZO);PERIPHERALS(1)', True, False, 4, 'modelsearch_candidate4', 2),
+        ('PERIPHERALS(1);LAGTIME()', False, True, 4, 'modelsearch_candidate3', 1),
     ],
 )
 def test_exhaustive_stepwise_add_iivs(
@@ -102,9 +102,9 @@ def test_exhaustive_stepwise_add_iivs(
 ):
     with TemporaryDirectoryChanger(tmp_path):
         shutil.copy2(testdata / 'nonmem' / 'models' / 'mox2.mod', tmp_path)
-        shutil.copy2(testdata / 'nonmem' / 'models' / 'mx19B.csv', tmp_path)
+        shutil.copy2(testdata / 'nonmem' / 'models' / 'mox_simulated_normal.csv', tmp_path)
         model_start = Model.create_model('mox2.mod')
-        model_start.datainfo.path = tmp_path / 'mx19B.csv'
+        model_start.datainfo.path = tmp_path / 'mox_simulated_normal.csv'
         res = run_tool(
             'modelsearch',
             'exhaustive_stepwise',
@@ -134,9 +134,9 @@ def test_exhaustive_stepwise_add_iivs(
 def test_exhaustive_stepwise_already_fit(tmp_path, testdata):
     with TemporaryDirectoryChanger(tmp_path):
         shutil.copy2(testdata / 'nonmem' / 'models' / 'mox2.mod', tmp_path)
-        shutil.copy2(testdata / 'nonmem' / 'models' / 'mx19B.csv', tmp_path)
+        shutil.copy2(testdata / 'nonmem' / 'models' / 'mox_simulated_normal.csv', tmp_path)
         model_start = Model.create_model('mox2.mod')
-        model_start.datainfo.path = tmp_path / 'mx19B.csv'
+        model_start.datainfo.path = tmp_path / 'mox_simulated_normal.csv'
 
         fit(model_start)
 
@@ -160,9 +160,9 @@ def test_exhaustive_stepwise_already_fit(tmp_path, testdata):
 def test_exhaustive_stepwise_start_model_fail(tmp_path, testdata):
     with TemporaryDirectoryChanger(tmp_path):
         shutil.copy2(testdata / 'nonmem' / 'models' / 'mox2.mod', tmp_path)
-        shutil.copy2(testdata / 'nonmem' / 'models' / 'mx19B.csv', tmp_path)
+        shutil.copy2(testdata / 'nonmem' / 'models' / 'mox_simulated_normal.csv', tmp_path)
         model_start = Model.create_model('mox2.mod')
-        model_start.datainfo.path = tmp_path / 'mx19B.csv'
+        model_start.datainfo.path = tmp_path / 'mox_simulated_normal.csv'
 
         add_iiv(model_start, 'V', 'incorrect_syntax')
 
@@ -185,7 +185,7 @@ def test_exhaustive_stepwise_start_model_fail(tmp_path, testdata):
         (
             'ABSORPTION(ZO);LAGTIME();PERIPHERALS(1)',
             12,
-            'modelsearch_candidate2',
+            'modelsearch_candidate9',
             'modelsearch_candidate9',
         ),
     ],
@@ -195,9 +195,9 @@ def test_reduced_stepwise(
 ):
     with TemporaryDirectoryChanger(tmp_path):
         shutil.copy2(testdata / 'nonmem' / 'models' / 'mox2.mod', tmp_path)
-        shutil.copy2(testdata / 'nonmem' / 'models' / 'mx19B.csv', tmp_path)
+        shutil.copy2(testdata / 'nonmem' / 'models' / 'mox_simulated_normal.csv', tmp_path)
         model_start = Model.create_model('mox2.mod')
-        model_start.datainfo.path = tmp_path / 'mx19B.csv'
+        model_start.datainfo.path = tmp_path / 'mox_simulated_normal.csv'
         res = run_tool('modelsearch', 'reduced_stepwise', mfl, model=model_start)
 
         assert len(res.summary_tool) == no_of_models + 1

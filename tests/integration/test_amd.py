@@ -20,9 +20,9 @@ def test_amd(tmp_path, testdata):
 def test_iiv(tmp_path, testdata):
     with TemporaryDirectoryChanger(tmp_path):
         shutil.copy2(testdata / 'nonmem' / 'models' / 'mox2.mod', tmp_path)
-        shutil.copy2(testdata / 'nonmem' / 'models' / 'mx19B.csv', tmp_path)
+        shutil.copy2(testdata / 'nonmem' / 'models' / 'mox_simulated_normal.csv', tmp_path)
         model_start = Model.create_model('mox2.mod')
-        model_start.datainfo.path = tmp_path / 'mx19B.csv'
+        model_start.datainfo.path = tmp_path / 'mox_simulated_normal.csv'
 
         res = run_iiv(model_start)
 
