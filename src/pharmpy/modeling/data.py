@@ -754,8 +754,6 @@ def add_time_after_dose(model):
     idlab = temp.datainfo.id_column.name
     df = model.dataset
     df['_NEWTIME'] = temp.dataset[idv]
-    doseid = get_doseid(temp)
-    df['_DOSEID'] = doseid
 
     try:
         addl = temp.datainfo.typeix['additional'][0].name
@@ -764,10 +762,11 @@ def add_time_after_dose(model):
     else:
         temp.dataset = df
         temp.datainfo.idv_column.type = 'unknown'
-        ci = ColumnInfo('_NEWTIME', type='idv')
-        temp.datainfo.append(ci)
+        temp.datainfo['_NEWTIME'].type = 'idv'
         expand_additional_doses(temp, flag=True)
         df = temp.dataset
+
+    df['_DOSEID'] = get_doseid(temp)
 
     # Sort in case DOSEIDs are non-increasing
     df = (
@@ -780,7 +779,7 @@ def add_time_after_dose(model):
     df['TAD'] = df.groupby([idlab, '_DOSEID'])['TAD'].cumsum()
 
     if addl:
-        df = df[~df['EXPANDED']].reset_index()
+        df = df[~df['EXPANDED']].reset_index(drop=True)
         df.drop(columns=['EXPANDED'], inplace=True)
 
     # Handle case for observation at same timepoint as SS dose

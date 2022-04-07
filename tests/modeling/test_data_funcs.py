@@ -1,3 +1,5 @@
+import pytest
+
 from pharmpy.modeling import (
     add_time_after_dose,
     check_dataset,
@@ -185,6 +187,8 @@ def test_add_time_after_dose(testdata):
         1.4700000000000273,
         2.9700000000000273,
     ]
+    assert m.dataset.loc[103, 'TAD'] == 0.0
+    assert m.dataset.loc[104, 'TAD'] == pytest.approx(1.17)
 
     m = read_model(testdata / 'nonmem' / 'models' / 'mox1.mod')
     add_time_after_dose(m)

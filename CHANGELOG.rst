@@ -4,6 +4,11 @@ New features
 * Add modeling.read_dataset_from_datainfo
 * Store unique datasets for tool runs
 
+Bugfixes
+========
+
+* Fix problem with TAD calculation for datasets with ADDL
+
 0.62.0 (2022-04-04)
 -------------------
 
