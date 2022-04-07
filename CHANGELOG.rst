@@ -1,6 +1,10 @@
+0.63.0 (2022-04-07)
+-------------------
+
 New features
 ============
 
+* Support ~ as HOME in file paths input by users
 * Add modeling.read_dataset_from_datainfo
 * Store unique datasets for tool runs
 
@@ -8,6 +12,7 @@ Bugfixes
 ========
 
 * Fix problem with TAD calculation for datasets with ADDL
+* Handle LinAlgError when updating initial estimates in modelsearch (#656)
 
 0.62.0 (2022-04-04)
 -------------------
