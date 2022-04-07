@@ -62,7 +62,6 @@ class ConfigItem:
         return instance.__dict__.get(self.name, self.default)
 
     def __set__(self, instance, value):
-        # if self.cls != type(value):
         try:
             if isinstance(self.default, list) and isinstance(value, str):
                 value = [v.strip() for v in value.split(',')]
