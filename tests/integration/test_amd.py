@@ -37,3 +37,10 @@ def test_iiv(tmp_path, testdata):
         rundir2 = tmp_path / 'iiv_dir2'
         assert rundir2.is_dir()
         assert len(list((rundir2 / 'models').iterdir())) == 5
+
+        run_iiv(model_start, path=tmp_path / 'test_path')
+
+        rundir1 = tmp_path / 'test_path' / 'iiv1'
+        assert rundir1.is_dir()
+        rundir2 = tmp_path / 'test_path' / 'iiv2'
+        assert rundir2.is_dir()

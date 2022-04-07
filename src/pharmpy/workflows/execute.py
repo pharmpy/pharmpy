@@ -103,7 +103,8 @@ def split_common_options(d):
     for key, value in d.items():
         if key in execute_options:
             if key == 'path':
-                value = normalize_user_given_path(value)
+                if value is not None:
+                    value = normalize_user_given_path(value)
             common_options[key] = value
         else:
             other_options[key] = value
