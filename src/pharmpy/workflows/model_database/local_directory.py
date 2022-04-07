@@ -4,6 +4,7 @@ from os import stat
 from pathlib import Path
 
 from pharmpy.datainfo import DataInfo
+from pharmpy.utils import hash_df
 
 from .baseclass import ModelDatabase
 
@@ -82,6 +83,9 @@ class LocalDirectoryDatabase(ModelDatabase):
         return f"LocalDirectoryDatabase({self.path})"
 
 
+DIRECTORY_INDEX = '.hash'
+
+
 class LocalModelDirectoryDatabase(LocalDirectoryDatabase):
     """ModelDatabase implementation for a local directory structure
 
@@ -103,19 +107,43 @@ class LocalModelDirectoryDatabase(LocalDirectoryDatabase):
         model = model.copy()
         model.update_datainfo()
         path = self.path / '.datasets'
-        path.mkdir(parents=True, exist_ok=True)
-        for dipath in path.glob('*.datainfo'):
+
+        # NOTE Get the hash of the dataset and list filenames with contents
+        # matching this hash only
+        h = hash_df(model.dataset)
+        h_dir = path / DIRECTORY_INDEX / str(h)
+        h_dir.mkdir(parents=True, exist_ok=True)
+        for hpath in h_dir.iterdir():
+            # NOTE This variable holds a string similar to "run1.csv"
+            matching_model_filename = hpath.name
+            data_path = path / matching_model_filename
+            dipath = data_path.with_suffix('.datainfo')
+            # TODO Maybe catch FileNotFoundError and similar here (pass)
             curdi = DataInfo.read_json(dipath)
+            # NOTE paths are not compared here
             if curdi == model.datainfo:
                 df = read_dataset_from_datainfo(curdi)
                 if df.equals(model.dataset):
+                    # NOTE Update datainfo path
                     model.datainfo.path = curdi.path
                     break
         else:
-            data_path = path / (model.name + '.csv')
+            model_filename = model.name + '.csv'
+
+            # NOTE Create the index file at .datasets/.hash/<hash>/<model_filename>
+            index_path = h_dir / model_filename
+            index_path.touch()
+
+            data_path = path / model_filename
             model.datainfo.path = data_path.resolve()
-            model.datainfo.to_json(path / (model.name + '.datainfo'))
+
             write_csv(model, path=data_path)
+
+            # NOTE Write datainfo last so that we are "sure" dataset is there
+            # if datainfo is there
+            model.datainfo.to_json(path / (model.name + '.datainfo'))
+
+        # NOTE Write the model
         model_path = self.path / model.name
         model_path.mkdir(exist_ok=True)
         write_model(model, model_path / (model.name + model.filename_extension))
