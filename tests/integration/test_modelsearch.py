@@ -31,6 +31,7 @@ def test_exhaustive(tmp_path, testdata):
         assert len(list((rundir / 'models').iterdir())) == 5
         assert (rundir / 'results.json').exists()
         assert (rundir / 'results.csv').exists()
+        assert (rundir / 'metadata.json').exists()
 
 
 @pytest.mark.parametrize(
@@ -76,6 +77,7 @@ def test_exhaustive_stepwise_basic(
         assert len(list((rundir / 'models').iterdir())) == no_of_models + 2
         assert (rundir / 'results.json').exists()
         assert (rundir / 'results.csv').exists()
+        assert (rundir / 'metadata.json').exists()
 
 
 @pytest.mark.parametrize(
@@ -129,6 +131,7 @@ def test_exhaustive_stepwise_add_iivs(
         assert len(list((rundir / 'models').iterdir())) == no_of_models + 2
         assert (rundir / 'results.json').exists()
         assert (rundir / 'results.csv').exists()
+        assert (rundir / 'metadata.json').exists()
 
 
 def test_exhaustive_stepwise_already_fit(tmp_path, testdata):
@@ -155,6 +158,7 @@ def test_exhaustive_stepwise_already_fit(tmp_path, testdata):
         assert len(list((rundir / 'models').iterdir())) == 5
         assert (rundir / 'results.json').exists()
         assert (rundir / 'results.csv').exists()
+        assert (rundir / 'metadata.json').exists()
 
 
 def test_exhaustive_stepwise_start_model_fail(tmp_path, testdata):
@@ -218,6 +222,7 @@ def test_reduced_stepwise(
         assert len(list((rundir / 'models').iterdir())) == no_of_models + 2
         assert (rundir / 'results.json').exists()
         assert (rundir / 'results.csv').exists()
+        assert (rundir / 'metadata.json').exists()
 
 
 def test_summary_individuals(tmp_path, testdata):

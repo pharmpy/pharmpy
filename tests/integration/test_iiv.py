@@ -33,6 +33,7 @@ def test_iiv_block_structure(tmp_path, testdata, no_of_models, best_model_name):
         rundir = tmp_path / 'iiv_dir1'
         assert rundir.is_dir()
         assert len(list((rundir / 'models').iterdir())) == no_of_models + 2
+        assert (rundir / 'metadata.json').exists()
 
 
 def test_iiv_no_of_etas(tmp_path, testdata):
@@ -51,6 +52,7 @@ def test_iiv_no_of_etas(tmp_path, testdata):
         rundir = tmp_path / 'iiv_dir1'
         assert rundir.is_dir()
         assert len(list((rundir / 'models').iterdir())) == 9
+        assert (rundir / 'metadata.json').exists()
 
 
 @pytest.mark.filterwarnings("ignore::UserWarning")
@@ -83,6 +85,7 @@ def test_iiv_no_of_etas_added_iiv(tmp_path, testdata, iiv_as_fullblock, best_mod
         rundir = tmp_path / 'iiv_dir1'
         assert rundir.is_dir()
         assert len(list((rundir / 'models').iterdir())) == 17
+        assert (rundir / 'metadata.json').exists()
 
 
 def test_iiv_no_of_etas_fullblock(tmp_path, testdata):
@@ -102,3 +105,4 @@ def test_iiv_no_of_etas_fullblock(tmp_path, testdata):
         rundir = tmp_path / 'iiv_dir1'
         assert rundir.is_dir()
         assert len(list((rundir / 'models').iterdir())) == 9
+        assert (rundir / 'metadata.json').exists()

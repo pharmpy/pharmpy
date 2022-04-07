@@ -3,34 +3,23 @@ from pathlib import Path
 from pharmpy.utils import TemporaryDirectory, normalize_user_given_path
 
 
-def execute_workflow(workflow, dispatcher=None, database=None, path=None):
+def execute_workflow(workflow, dispatcher, database):
     """Execute workflow
 
     Parameters
     ----------
+    workflow : Workflow
+        Workflow to execute
     dispatcher : ExecutionDispatcher
-        Dispatcher to use. None for the default dispatcher
+        Dispatcher to use
     database : ToolDatabase
-        Tool database to use. None for the default Tool database.
-    path : Path
-        Path to use for database if applicable.
+        Tool database to use
 
     Returns
     -------
     Results
         Results object created by workflow
     """
-    if dispatcher is None:
-        from pharmpy.workflows import default_dispatcher
-
-        dispatcher = default_dispatcher
-    if database is None:
-        from pharmpy.workflows import default_tool_database
-
-        database = default_tool_database(
-            toolname=workflow.name, path=path
-        )  # TODO: database -> tool_database
-
     # For all input models set new database and read in results
     original_input_models = []
     input_models = []
@@ -97,6 +86,7 @@ def split_common_options(d):
     -------
     Tuple of common options and other option dictionaries
     """
+    # FIXME: add dispatcher/database
     execute_options = ['path']
     common_options = dict()
     other_options = dict()
