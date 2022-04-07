@@ -15,7 +15,7 @@ from pharmpy.workflows import Task, Workflow
 from .mfl import ModelFeatures
 
 
-def exhaustive(mfl, add_iivs, iiv_as_fullblock, add_mdt_iiv):
+def exhaustive(mfl, iiv_strategy):
     # TODO: rewrite using _create_model_workflow
     features = ModelFeatures(mfl)
     wf_search = Workflow()
@@ -37,10 +37,8 @@ def exhaustive(mfl, add_iivs, iiv_as_fullblock, add_mdt_iiv):
             func = funcs[feat]
             task_function = Task(feat, func)
             wf_search.add_task(task_function, predecessors=task_previous)
-            if add_iivs:
-                task_add_iiv = Task(
-                    'add_iivs', _add_iiv_to_func, feat, iiv_as_fullblock, add_mdt_iiv
-                )
+            if iiv_strategy != 0:
+                task_add_iiv = Task('add_iivs', _add_iiv_to_func, feat, iiv_strategy)
                 wf_search.add_task(task_add_iiv, predecessors=task_function)
                 task_previous = task_add_iiv
             else:
@@ -56,7 +54,7 @@ def exhaustive(mfl, add_iivs, iiv_as_fullblock, add_mdt_iiv):
     return wf_search, model_tasks, model_features
 
 
-def exhaustive_stepwise(mfl, add_iivs, iiv_as_fullblock, add_mdt_iiv):
+def exhaustive_stepwise(mfl, iiv_strategy):
     mfl_features = ModelFeatures(mfl)
     mfl_funcs = mfl_features.all_funcs()
 
@@ -73,7 +71,7 @@ def exhaustive_stepwise(mfl, add_iivs, iiv_as_fullblock, add_mdt_iiv):
                 model_name = f'modelsearch_candidate{model_no}'
 
                 wf_create_model, task_function = _create_model_workflow(
-                    model_name, feat, mfl_funcs[feat], add_iivs, iiv_as_fullblock, add_mdt_iiv
+                    model_name, feat, mfl_funcs[feat], iiv_strategy
                 )
 
                 if task_parent:
@@ -92,7 +90,7 @@ def exhaustive_stepwise(mfl, add_iivs, iiv_as_fullblock, add_mdt_iiv):
     return wf_search, model_tasks, model_features
 
 
-def reduced_stepwise(mfl, add_iivs, iiv_as_fullblock, add_mdt_iiv):
+def reduced_stepwise(mfl, iiv_strategy):
     mfl_features = ModelFeatures(mfl)
     mfl_funcs = mfl_features.all_funcs()
 
@@ -118,7 +116,7 @@ def reduced_stepwise(mfl, add_iivs, iiv_as_fullblock, add_mdt_iiv):
                 model_name = f'modelsearch_candidate{model_no}'
 
                 wf_create_model, task_transformed = _create_model_workflow(
-                    model_name, feat, mfl_funcs[feat], add_iivs, iiv_as_fullblock, add_mdt_iiv
+                    model_name, feat, mfl_funcs[feat], iiv_strategy
                 )
 
                 if task_parent:
@@ -198,7 +196,7 @@ def _get_previous_features(wf, task, mfl_funcs):
     return features_previous
 
 
-def _create_model_workflow(model_name, feat, func, add_iivs, iiv_as_fullblock, add_mdt_iiv):
+def _create_model_workflow(model_name, feat, func, iiv_strategy):
     wf_stepwise_step = Workflow()
 
     task_copy = Task('copy', _copy, model_name)
@@ -210,8 +208,8 @@ def _create_model_workflow(model_name, feat, func, add_iivs, iiv_as_fullblock, a
     task_function = Task(feat, func)
     wf_stepwise_step.add_task(task_function, predecessors=task_update_inits)
 
-    if add_iivs or add_mdt_iiv:
-        task_add_iiv = Task('add_iivs', _add_iiv_to_func, iiv_as_fullblock, add_mdt_iiv)
+    if iiv_strategy != 0:
+        task_add_iiv = Task('add_iivs', _add_iiv_to_func, iiv_strategy)
         wf_stepwise_step.add_task(task_add_iiv, predecessors=task_function)
         task_to_fit = task_add_iiv
     else:
@@ -291,15 +289,17 @@ def _update_initial_estimates(model):
     return model
 
 
-def _add_iiv_to_func(iiv_as_fullblock, add_mdt_iiv, model):
+def _add_iiv_to_func(iiv_strategy, model):
     sset, rvs = model.statements, model.random_variables
-    if add_mdt_iiv:
+    if iiv_strategy == 1 or iiv_strategy == 2:
+        add_pk_iiv(model)
+        if iiv_strategy == 2:
+            create_joint_distribution(model)
+    elif iiv_strategy == 3:
         mdt = sset.find_assignment('MDT')
         if mdt and not mdt.expression.free_symbols.intersection(rvs.free_symbols):
             add_iiv(model, 'MDT', 'exp')
     else:
-        add_pk_iiv(model)
-    if iiv_as_fullblock:
-        create_joint_distribution(model)
+        raise ValueError(f'Invalid IIV strategy (must be [0,1,2,3]): {iiv_strategy}')
 
     return model

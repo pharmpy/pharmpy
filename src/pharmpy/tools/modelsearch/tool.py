@@ -14,9 +14,7 @@ def create_workflow(
     algorithm,
     rankfunc='ofv',
     cutoff=None,
-    add_iivs=False,
-    iiv_as_fullblock=False,
-    add_mdt_iiv=False,
+    iiv_strategy=0,
     model=None,
 ):
     algorithm_func = getattr(algorithms, algorithm)
@@ -38,9 +36,7 @@ def create_workflow(
     else:
         start_model_task = [start_task]
 
-    wf_search, candidate_model_tasks, model_features = algorithm_func(
-        mfl, add_iivs, iiv_as_fullblock, add_mdt_iiv
-    )
+    wf_search, candidate_model_tasks, model_features = algorithm_func(mfl, iiv_strategy)
     wf.insert_workflow(wf_search, predecessors=wf.output_tasks)
 
     task_result = Task(

@@ -18,7 +18,7 @@ from pharmpy.tools.modelsearch.mfl import ModelFeatures
 
 def test_exhaustive_algorithm():
     mfl = 'ABSORPTION(ZO);PERIPHERALS(1)'
-    wf, _, model_features = exhaustive(mfl, False, False, False)
+    wf, _, model_features = exhaustive(mfl, iiv_strategy=0)
     fit_tasks = [task.name for task in wf.tasks if task.name.startswith('run')]
 
     assert len(fit_tasks) == 3
@@ -26,68 +26,68 @@ def test_exhaustive_algorithm():
 
 
 @pytest.mark.parametrize(
-    'mfl, add_iivs, no_of_models, last_model_features',
+    'mfl, iiv_strategy, no_of_models, last_model_features',
     [
         (
             'ABSORPTION(ZO)\nPERIPHERALS(1)',
-            False,
+            0,
             4,
             ('PERIPHERALS(1)', 'ABSORPTION(ZO)'),
         ),
         ('ABSORPTION(ZO);TRANSITS(1)', False, 2, ('TRANSITS(1)',)),
         (
             'ABSORPTION([ZO,SEQ-ZO-FO]);PERIPHERALS(1)',
-            False,
+            0,
             7,
             ('PERIPHERALS(1)', 'ABSORPTION(ZO)'),
         ),
         (
             'ABSORPTION(ZO);PERIPHERALS([1, 2])',
-            False,
+            0,
             8,
             ('PERIPHERALS(1)', 'PERIPHERALS(2)', 'ABSORPTION(ZO)'),
         ),
         (
             'ABSORPTION(SEQ-ZO-FO);LAGTIME()',
-            False,
+            0,
             2,
             ('LAGTIME()',),
         ),
         (
             'ABSORPTION(ZO);LAGTIME();PERIPHERALS(1)',
-            False,
+            0,
             15,
             ('LAGTIME()', 'PERIPHERALS(1)', 'ABSORPTION(ZO)'),
         ),
         (
             'ABSORPTION(ZO);LAGTIME();PERIPHERALS([1,2]);ELIMINATION(ZO)',
-            False,
+            0,
             170,
             ('LAGTIME()', 'PERIPHERALS(1)', 'PERIPHERALS(2)', 'ELIMINATION(ZO)', 'ABSORPTION(ZO)'),
         ),
         (
             'LAGTIME();TRANSITS(1);PERIPHERALS(1)',
-            True,
+            1,
             7,
             ('LAGTIME()', 'PERIPHERALS(1)'),
         ),
         (
             'ABSORPTION([ZO,SEQ-ZO-FO]);ELIMINATION(MM)',
-            False,
+            0,
             7,
             ('ELIMINATION(MM)', 'ABSORPTION(ZO)'),
         ),
         (
             'ABSORPTION([ZO,SEQ-ZO-FO]);LAGTIME();TRANSITS([1,3,10],*);'
             'PERIPHERALS(1);ELIMINATION([MM,MIX-FO-MM])',
-            False,
+            0,
             246,
             ('LAGTIME()', 'PERIPHERALS(1)', 'ELIMINATION(MM)', 'ABSORPTION(ZO)'),
         ),
     ],
 )
-def test_exhaustive_stepwise_algorithm(mfl, add_iivs, no_of_models, last_model_features):
-    wf, _, model_features = exhaustive_stepwise(mfl, add_iivs, False, False)
+def test_exhaustive_stepwise_algorithm(mfl, iiv_strategy, no_of_models, last_model_features):
+    wf, _, model_features = exhaustive_stepwise(mfl, iiv_strategy=iiv_strategy)
     fit_tasks = [task.name for task in wf.tasks if task.name.startswith('run')]
 
     assert len(fit_tasks) == no_of_models
@@ -117,7 +117,7 @@ def test_exhaustive_stepwise_algorithm(mfl, add_iivs, no_of_models, last_model_f
     ],
 )
 def test_reduced_stepwise_algorithm(mfl, no_of_models, last_model_features):
-    wf, _, model_features = reduced_stepwise(mfl, False, False, False)
+    wf, _, model_features = reduced_stepwise(mfl, iiv_strategy=0)
     fit_tasks = [task.name for task in wf.tasks if task.name.startswith('run')]
 
     assert len(fit_tasks) == no_of_models

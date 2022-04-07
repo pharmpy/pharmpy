@@ -81,23 +81,22 @@ def test_exhaustive_stepwise_basic(
 
 
 @pytest.mark.parametrize(
-    'mfl, iiv_as_fullblock, add_mdt_iiv, no_of_models, best_model_name, no_of_added_etas',
+    'mfl, iiv_strategy, no_of_models, best_model_name, no_of_added_etas',
     [
-        ('ABSORPTION(ZO);PERIPHERALS(1)', False, False, 4, 'modelsearch_candidate4', 2),
-        ('ABSORPTION(ZO);ELIMINATION(ZO)', False, False, 4, 'modelsearch_candidate1', 1),
-        ('ABSORPTION(ZO);ELIMINATION(MIX-FO-MM)', False, False, 4, 'modelsearch_candidate1', 2),
-        ('ABSORPTION(ZO);PERIPHERALS([1, 2])', False, False, 8, 'modelsearch_candidate5', 4),
-        ('LAGTIME();TRANSITS(1)', False, False, 2, 'modelsearch_candidate2', 1),
-        ('ABSORPTION(ZO);PERIPHERALS(1)', True, False, 4, 'modelsearch_candidate4', 2),
-        ('PERIPHERALS(1);LAGTIME()', False, True, 4, 'modelsearch_candidate3', 1),
+        ('ABSORPTION(ZO);PERIPHERALS(1)', 1, 4, 'modelsearch_candidate4', 2),
+        ('ABSORPTION(ZO);ELIMINATION(ZO)', 1, 4, 'modelsearch_candidate1', 1),
+        ('ABSORPTION(ZO);ELIMINATION(MIX-FO-MM)', 1, 4, 'modelsearch_candidate1', 2),
+        ('ABSORPTION(ZO);PERIPHERALS([1, 2])', 1, 8, 'modelsearch_candidate5', 4),
+        ('LAGTIME();TRANSITS(1)', 1, 2, 'modelsearch_candidate2', 1),
+        ('ABSORPTION(ZO);PERIPHERALS(1)', 2, 4, 'modelsearch_candidate4', 2),
+        ('PERIPHERALS(1);LAGTIME()', 3, 4, 'modelsearch_candidate3', 1),
     ],
 )
 def test_exhaustive_stepwise_add_iivs(
     tmp_path,
     testdata,
     mfl,
-    iiv_as_fullblock,
-    add_mdt_iiv,
+    iiv_strategy,
     no_of_models,
     best_model_name,
     no_of_added_etas,
@@ -111,9 +110,7 @@ def test_exhaustive_stepwise_add_iivs(
             'modelsearch',
             mfl,
             'exhaustive_stepwise',
-            add_iivs=True,
-            iiv_as_fullblock=iiv_as_fullblock,
-            add_mdt_iiv=add_mdt_iiv,
+            iiv_strategy=iiv_strategy,
             model=model_start,
         )
 
