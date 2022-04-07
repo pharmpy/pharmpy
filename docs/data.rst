@@ -166,9 +166,29 @@ Every model has a `DataInfo` object that describes the dataset.
 
 .. jupyter-execute::
 
-    model.datainfo
+    di = model.datainfo
+    di
 
-The columns of the dataset can here be given some additional information.
+The path to the dataset file if one exists.
+
+.. jupyter-execute::
+
+    di.path
+
+Separator character for the dataset file.
+
+.. jupyter-execute::
+
+    di.separator
+
+ColumnInfo
+----------
+
+Each column of the dataset can here be given some additional information.
+
+.. jupyter-execute::
+
+    model.datainfo['AMT']
 
 type
 ====
@@ -186,4 +206,61 @@ continuous
 ==========
 
 If this is ``True`` the data is continuous and if it is ``False`` it is discrete. Note that ratio data can be seen as discrete for example
-if it has been rounded to whole numbers or similar.
+if it has been rounded to whole numbers and cannot take on any real number.
+
+categories
+==========
+
+A ``list`` of all values that the data column could have. Not all values have to be present in the dataset. Instead ``categories`` creates a possibility to annotate all possible values. It is also possible to name the categories by using a ``dict`` from the name to its numerical encoding.
+
+unit
+====
+
+The physical unit of the column data. Units can be input as a string, e.g. "kg" or "mg/L."
+
+drop
+====
+
+A boolean that is set to `True` if the column is not going to be used by the model or `False` otherwise.
+
+datatype
+========
+
+The datatype of the column data. This describes the low level encoding of the data. See :attr:`pharmpy.ColumnInfo.datatype` for a list of all supported datatypes. 
+
+descriptor
+==========
+
+The descriptor can provide a high level understanding of the data in a machine readable way. See :attr:`pharmpy.ColumnInfo.descriptor` for a list of all supported descriptors. 
+
+datainfo file
+-------------
+
+If a dataset file has an accompanying file with the same name and the extension ``.datainfo`` this will be read in when handling the dataset in Pharmpy. This file is a representation (a serialization) of a ``DataInfo`` object and its content can be created manually, with an external tool or by Pharmpy. Here is an example of the content:
+
+.. jupyter-execute::
+
+    di.to_json()
+
+It is a json file with the following top level structure:
+
+.. csv-table::
+   :header: "Name", "Type"
+
+      ``columns``, array of columns
+      ``path``, string
+      ``separator``, string
+
+And the columns structure:
+
+.. csv-table::
+    :header: Name, Type
+
+        ``type``, string
+        ``scale``, string
+        ``continuous``, boolean
+        ``categories``, array of numbers or string-number map
+        ``unit``, string
+        ``drop``, boolean
+        ``datatype``, string
+        ``descriptor``, string
