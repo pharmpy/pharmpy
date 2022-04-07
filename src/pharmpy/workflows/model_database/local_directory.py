@@ -171,7 +171,8 @@ class LocalModelDirectoryDatabase(LocalDirectoryDatabase):
         if not destination.is_dir():
             destination.mkdir(parents=True)
 
-        model.modelfit_results.to_json(destination / FILE_MODELFIT_RESULTS)
+        if model.modelfit_results:
+            model.modelfit_results.to_json(destination / FILE_MODELFIT_RESULTS)
 
     def __repr__(self):
         return f"LocalModelDirectoryDatabase({self.path})"
