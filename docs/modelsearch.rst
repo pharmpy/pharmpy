@@ -1,48 +1,89 @@
-============
-Model Search
-============
+===========
+modelsearch
+===========
 
-The Model search tool is a general tool to search for the best model given a base model and a search space of model features.
+The modelsearch tool is a general tool to decide the best structural model given a base model and a search space of model features. The tool
+supports different algorithms and selection criteria.
 
 .. warning::
 
-    This tool is currently under development. The API can and will change rapidly.
+    This tool and its documentation is currently under development. The API may change.
 
 ~~~~~~~
 Running
 ~~~~~~~
 
-The easiest way to start a model search run is to use the `run_modelsearch` function.
+The modelsearch tool is available both in Pharmpy/pharmr and from the command line.
 
 .. code:: python
 
-    from pharmpy.tools.modelsearch import run_modelsearch
+    from pharmpy.modeling import run_tool
 
-    run_modelsearch(base_model, algorithm, mfl, rankfunc='ofv')
+    start_model = load_example_model('pheno')
+    run_tool('modelsearch',
+             'ABSORPTION(ZO);ELIMINATION(ZO)',
+             'exhaustive',
+             rankfunc='ofv',
+             cutoff=None,
+             iiv_strategy=0,
+             model=start_model)
 
-This would start a search starting with `base_model` using the `algorithm` search algorithm, search space given by the `mfl` model feature language description and ranking candidate models using `ofv`.
+This would start a search starting with an input model `model` with `mfl` as the search space using the `algorithm` search algorithm. The candidate models
+will be ranked using `ofv` with default `cutoff`. Structural IIVs will be added according to strategy 0.
+
+To run it from the command line:
+
+.. code::
+
+    pharmpy run modelsearch
+
+Arguments
+~~~~~~~~~
+For a more detailed description of each argument, see their respective chapter on this page.
+
++--------------+-------------------------------------------------------------------+
+| Argument     | Description                                                       |
++==============+===================================================================+
+| mfl          | Search space to test                                              |
++--------------+-------------------------------------------------------------------+
+| algorithm    | Algorithm to use (e.g. exhaustive)                                |
++--------------+-------------------------------------------------------------------+
+| rankfunc     | Which selection criteria to rank models on (e.g. OFV, AIC)        |
++--------------+-------------------------------------------------------------------+
+| cutoff       | Cutoff for the ranking function (exclude models that are below)   |
++--------------+-------------------------------------------------------------------+
+| iiv_strategy | If/how IIV should be added to candidate models                    |
++--------------+-------------------------------------------------------------------+
+| model        | Start model                                                       |
++--------------+-------------------------------------------------------------------+
+
 
 ~~~~~~~~~~~~~~~~
 The search space
 ~~~~~~~~~~~~~~~~
 
-The model feature search space is a set of possible combinations of model features that we would like to concider to be candidates for the search. This is input
-to the tool in the form of a `Model Feature Language` string. The `MFL` is a domain specific language designed to describe model features and sets of model features in a concise way. See the detailed description below.
+The model feature search space is a set of possible combinations of model features that will be applied and tested on the input model. Supported features cover
+absorption, elimination, distribution, and delay. The search space is given as a string with a specific grammar, which is called `Model Feature Language`
+(MFL). The `MFL` is a domain specific language designed to describe model features and sets of model features in a concise way. See the detailed description
+below.
 
 ~~~~~~~~~~
 Algorithms
 ~~~~~~~~~~
 
-The tool can conduct the searching using different search algorithms. The current built in algorithms can be seen in the table below
+The tool can conduct the searching using different search algorithms. The current built in algorithms can be seen in the table below.
 
-+------------+-------------------------------------------------------------------+
-| Algorithm  | Description                                                       |
-+============+===================================================================+
-| exhaustive | All possible combinations of the search space are tested          |
-+------------+-------------------------------------------------------------------+
-| stepwise   | Add one feature in each step.                                     |
-|            | Select the best model to use as starting point for the next step. |
-+------------+-------------------------------------------------------------------+
++---------------------+-------------------------------------------------------------------+
+| Algorithm           | Description                                                       |
++=====================+===================================================================+
+| exhaustive          | All possible combinations of the search space are tested          |
++---------------------+-------------------------------------------------------------------+
+| exhaustive_stepwise | Add one feature in each step in all possible orders               |
++---------------------+-------------------------------------------------------------------+
+| reduced_stepwise    | Add one feature in each step in all possible orders.              |
+|                     | After each feature layer, choose best model between models        |
+|                     | with same features                                                |
++---------------------+-------------------------------------------------------------------+
 
 Exhaustive search
 ~~~~~~~~~~~~~~~~~
@@ -77,29 +118,73 @@ An exhaustive search will test all possible combinations of features in one big 
         base -> s8
     }
 
+Exhaustive stepwise search
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+An exhaustive stepwise search will apply features in a stepwise manner such that only one feature is changed at a time.
+
+Some combinations of features have been excluded in this algorithm, the following combinations are never run:
+
++-----------------------+-------------------+
+| Feature A             | Feature B         |
++=======================+===================+
+| ABSORPTION(ZO)        | TRANSITS          |
++-----------------------+-------------------+
+| ABSORPTION(SEQ-ZO-FO) | TRANSITS          |
++-----------------------+-------------------+
+| ABSORPTION(SEQ-ZO-FO) | LAGTIME           |
++-----------------------+-------------------+
+| LAGTIME               | TRANSITS          |
++-----------------------+-------------------+
+
+Reduced stepwise search
+~~~~~~~~~~~~~~~~~~~~~~~
+The reduced stepwise is similar to the exhaustive stepwise search, but it will after each layer compare models with
+the same features (but from different order) and only send the best model for the next transformations.
+
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Comparing and ranking candidates
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The supplied `rankfunc` will be used to compare a set of candidate models and rank them. The ranking will be used in different ways depending on the
-selected algorithm. The following rank functions are available:
+The supplied `rankfunc` will be used to compare a set of candidate models and rank them. A cutoff may also be provided
+if the user does not want to use the default. The following rank functions are available:
 
-+------------+-------------------------------------------------------------------+
-| Rankfunc   | Description                                                       |
-+============+===================================================================+
-| ofv        | ΔOFV. Do not rank candidates with dOFV < 3.84                     |
-+------------+-------------------------------------------------------------------+
-| aic        | ΔAIC. Do not rank candidates with dOFV < 3.84                     |
-+------------+-------------------------------------------------------------------+
-| bic        | ΔBIC. Do not rank candidates with dOFV < 3.84                     |
-+------------+-------------------------------------------------------------------+
++------------+---------------------------------------------------------------------------+
+| Rankfunc   | Description                                                               |
++============+===========================================================================+
+| ofv        | ΔOFV. Default is to not rank candidates with ΔOFV < cutoff (default 3.84) |
++------------+---------------------------------------------------------------------------+
+| aic        | ΔAIC. Default is to rank all candidates if no cutoff is provided.         |
++------------+---------------------------------------------------------------------------+
+| bic        | ΔBIC (mixed). Default is to rank all candidates if no cutoff is provided. |
++------------+---------------------------------------------------------------------------+
 
+~~~~~~~~~~~~~~
+IIV strategies
+~~~~~~~~~~~~~~
+
+The `iiv_strategy` option determines whether or not IIV on the PK parameters should be added to the candidate models.
+The different strategies can be seen here:
+
++-----------+----------------------------------------------------------+
+| Strategy  | Description                                              |
++===========+==========================================================+
+| 0         | No IIVs are added during the search                      |
++-----------+----------------------------------------------------------+
+| 1         | IIV is added to all structural parameters as diagonal    |
++-----------+----------------------------------------------------------+
+| 2         | IIV is added to all structural parameters as full block  |
++-----------+----------------------------------------------------------+
+| 3         | IIV is added to MDT parameters.                          |
++-----------+----------------------------------------------------------+
 
 ~~~~~~~~~~~~~~~~~~~~~~~~
 The Model Search results
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-The results contain a `runs` table with an overview of all model runs that were performed and which models were selected.
+The results object contains the candidate models, the start model, and the selected best model (based on the input
+selection criteria). The tool will also create various summary tables which can be accessed in the results object,
+as well as files in .csv/.json format. In those you can find information about the ranking and relevant features
+(`summary_tool`), the estimated models (`summary_models`), and individuals in each model (`summary_individuals`).
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Model feature language reference
