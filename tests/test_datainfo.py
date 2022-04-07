@@ -65,15 +65,15 @@ def test_columninfo_is_numerical():
 
 def test_columninfo_repr():
     col = ColumnInfo("DUMMY", scale='nominal')
-    correct = """              DUMMY
-type        unknown
-scale       nominal
-continuous    False
-categories     None
-unit              1
-drop          False
-datatype    float64
-descriptor     None"""
+    correct = """type          unknown
+scale         nominal
+continuous      False
+categories       None
+unit                1
+drop            False
+datatype      float64
+descriptor       None
+Name: DUMMY"""
     assert repr(col) == correct
 
 

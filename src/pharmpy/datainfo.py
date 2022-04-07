@@ -334,8 +334,30 @@ class ColumnInfo:
         return copy.deepcopy(self)
 
     def __repr__(self):
-        di = DataInfo([self])
-        return repr(di)
+        ser = pd.Series(
+            [
+                self.type,
+                self.scale,
+                self.continuous,
+                self.categories,
+                self.unit,
+                self.drop,
+                self.datatype,
+                self.descriptor,
+            ],
+            index=[
+                'type',
+                'scale',
+                'continuous',
+                'categories',
+                'unit',
+                'drop',
+                'datatype',
+                'descriptor',
+            ],
+            name=self.name,
+        )
+        return ser.to_string(name=True)
 
 
 class DataInfo(MutableSequence):
@@ -632,16 +654,20 @@ class DataInfo(MutableSequence):
         drop = [col.drop for col in self._columns]
         datatype = [col.datatype for col in self._columns]
         descriptor = [col.descriptor for col in self._columns]
-        df = pd.DataFrame(columns=labels)
-        df.loc['type'] = types
-        df.loc['scale'] = scales
-        df.loc['continuous'] = cont
-        df.loc['categories'] = cats
-        df.loc['unit'] = units
-        df.loc['drop'] = drop
-        df.loc['datatype'] = datatype
-        df.loc['descriptor'] = descriptor
-        return df.to_string()
+        df = pd.DataFrame(
+            {
+                'name': labels,
+                'type': types,
+                'scale': scales,
+                'continuous': cont,
+                'categories': cats,
+                'units': units,
+                'drop': drop,
+                'datatype': datatype,
+                'descriptor': descriptor,
+            }
+        )
+        return df.to_string(index=False)
 
 
 class TypeIndexer:
