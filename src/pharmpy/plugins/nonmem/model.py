@@ -116,12 +116,6 @@ class Model(pharmpy.model.Model):
         self.observation_transformation = self.dependent_variable
         self._old_observation_transformation = self.dependent_variable
 
-    def __eq__(self, other):
-        # Compare NONMEM code to see if models are the same
-        self.update_source()
-        other.update_source()
-        return str(self) == str(other)
-
     @property
     def name(self):
         return self._name
