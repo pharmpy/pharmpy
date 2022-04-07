@@ -1,6 +1,7 @@
 import importlib
 import inspect
 from pathlib import Path
+
 import pytest
 
 from pharmpy.modeling.run import _create_metadata_common, _create_metadata_tool, _get_run_setup
