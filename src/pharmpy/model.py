@@ -96,6 +96,9 @@ class Model:
         if self.statements != other.statements: return False
         if self.dependent_variable != other.dependent_variable: return False
         if self.observation_transformation != other.observation_transformation: return False
+        if self.estimation_steps != other.estimation_steps: return False
+        if self.initial_individual_estimates != other.initial_individual_estimates: return False
+        if self.datainfo != other.datainfo: return False
 
         return True
 
