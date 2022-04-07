@@ -136,7 +136,10 @@ class LocalModelDirectoryDatabase(LocalDirectoryDatabase):
         path = self.path / name
         files = path.glob('*')
         for f in files:
-            shutil.copy2(f, destination_path)
+            if f.is_file():
+                shutil.copy2(f, destination_path)
+            else:
+                shutil.copytree(f, Path(destination_path) / f.stem)
 
     def retrieve_file(self, name, filename):
         # Return path to file

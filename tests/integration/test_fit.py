@@ -27,6 +27,7 @@ def test_fit_single(tmp_path, testdata):
         assert model.modelfit_results.ofv == pytest.approx(730.8947268137308)
         assert rundir.is_dir()
         assert len(list((rundir / 'models').iterdir())) == 2
+        assert (rundir / 'models' / 'pheno' / '.pharmpy').exists()
 
 
 def test_fit_multiple(tmp_path, testdata):
