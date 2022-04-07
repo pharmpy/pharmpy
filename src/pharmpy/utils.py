@@ -7,6 +7,7 @@ from pathlib import Path
 from tempfile import mkdtemp
 from typing import Union
 
+import pandas as pd
 import sympy
 import sympy.physics.units as units
 
@@ -118,3 +119,8 @@ def normalize_user_given_path(path: Union[str, Path]) -> Path:
     if isinstance(path, str):
         path = Path(path)
     return path.expanduser()
+
+
+def hash_df(df: pd.DataFrame) -> int:
+    values = pd.util.hash_pandas_object(df, index=True).values
+    return hash(tuple(values))
