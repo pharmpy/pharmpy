@@ -79,7 +79,13 @@ class Model:
         >>> a == a
         True
         >>> a == 0
-        False
+        Traceback (most recent call last):
+         ...
+        NotImplementedError: Cannot compare Model with <class 'int'>
+        >>> a == None
+        Traceback (most recent call last):
+         ...
+        NotImplementedError: Cannot compare Model with <class 'NoneType'>
         >>> b = Model()
         >>> b == a
         True
@@ -89,7 +95,8 @@ class Model:
         True
         """
         if self is other: return True
-        if not isinstance(other, Model): return False
+        if not isinstance(other, Model):
+            raise NotImplementedError(f'Cannot compare Model with {type(other)}')
 
         if self.parameters != other.parameters: return False
         if self.random_variables != other.random_variables: return False
