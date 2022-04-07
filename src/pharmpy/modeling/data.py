@@ -1,4 +1,6 @@
 import re
+from pathlib import Path
+from typing import Union
 
 import numpy as np
 import pandas as pd
@@ -1390,7 +1392,7 @@ def check_dataset(model, dataframe=False, verbose=False):
         checker.print()
 
 
-def read_dataset_from_datainfo(datainfo):
+def read_dataset_from_datainfo(datainfo: Union[DataInfo, Path, str]) -> pd.DataFrame:
     """Read a dataset given a datainfo object or path to a datainfo file
 
     Parameters
@@ -1410,6 +1412,9 @@ def read_dataset_from_datainfo(datainfo):
         col.name: col.datatype if not col.drop and not col.datatype.startswith('nmtran') else 'str'
         for col in datainfo
     }
+
+    if datainfo.path is None:
+        raise ValueError('datainfo.path is None')
 
     df = pd.read_csv(
         datainfo.path, sep=datainfo.separator, dtype=dtypes, float_precision='round_trip'
