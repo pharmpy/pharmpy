@@ -2,7 +2,7 @@
 FREM
 ====
 
-Pharmpy currently handles the postprocessing, plotting and creation of model_3b of the PsN FREM [Yngman]_ tool.
+Pharmpy handles the postprocessing, plotting and creation of model_3b of the PsN FREM [Yngman]_ tool.
 
 .. math::
 
@@ -10,7 +10,7 @@ Pharmpy currently handles the postprocessing, plotting and creation of model_3b 
 The FREM postprocessing and results
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The postprocessing starts after estimating the parameters :math:`P` of the FREM model together with their uncertainty covariance matrix :math:`Cov(P)`. Let us denote the random variables representing the model parameters :math:`\eta_i` for :math:`1 \leq i \leq n_{par}` and the random variables for the covariates
+The postprocessing starts after estimating the parameters :math:`P` of the FREM model together with their uncertainty covariance matrix :math:`\operatorname{Cov}(P)`. Let us denote the random variables representing the model parameters :math:`\eta_i` for :math:`1 \leq i \leq n_{par}` and the random variables for the covariates
 :math:`\eta_k` for :math:`n_{par} + 1 \leq k \leq n_{cov} + n_{par}`. Then
 
 .. math::
@@ -68,7 +68,7 @@ The latter partition being for parameters (index 1) and covariates (index 2), i.
 Covariate effects
 ~~~~~~~~~~~~~~~~~
 
-The effects of each covariate on each parameter is calculated with uncertainty and summarized in the `covariate_effects` table.
+The effects of each covariate on each parameter is calculated with uncertainty and summarized in the ``covariate_effects`` table.
 
 .. jupyter-execute::
     :hide-code:
@@ -79,7 +79,7 @@ The effects of each covariate on each parameter is calculated with uncertainty a
 
 The effects are given as fractions where 1 means no effect and are calculated conditioned on the 5th and 95th percentile of the covariate values respectively.
 
-Assume that the estimated parameter vector is joint normally distributed with mean vector :math:`P` and covariance matrix :math:`Cov(P)`. Then the marginal distribution of the :math:`\omega_{ij}` of :math:`\Omega` will also be joint normally distributed. Sample 1000 times from this marginal distribution to get :math:`\omega_{ijk}` and :math:`\Omega_k` for :math:`1\leq k \leq 1000`.
+Assume that the estimated parameter vector is joint normally distributed with mean vector :math:`P` and covariance matrix :math:`\operatorname{Cov}(P)`. Then the marginal distribution of the :math:`\omega_{ij}` of :math:`\Omega` will also be joint normal. Sample 1000 times from this marginal distribution to get :math:`\omega_{ijk}` and :math:`\Omega_k` for :math:`1\leq k \leq 1000`.
 
 If the covariate etas were scaled in the FREM model the scaling needs to be applied to all :math:`\Omega_k` by first creating the scaling matrix
 
@@ -118,8 +118,8 @@ The covariate effect plots give the covariate effects in percent with uncertaint
 Parameter covariate coefficients
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The parameter covariate coefficients for each covariate separately and for all taken together is available in `coefficients`. The definition for one coefficient is 
-`Cov(Par, Covariate) / Var(Covariate)` and generalized for all together the matrix :math:`\Sigma_{12}\Sigma_{22}^{-1}`
+The parameter covariate coefficients for each covariate separately and for all taken together are available in ``coefficients``. The definition for one coefficient is 
+`Cov(Par, Covariate) / Var(Covariate)` and generalized for all together by the matrix :math:`\Sigma_{12}\Sigma_{22}^{-1}`
 
 .. jupyter-execute::
     :hide-code:
@@ -129,7 +129,7 @@ The parameter covariate coefficients for each covariate separately and for all t
 Individual covariate effects
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The combined effects of all covariates on the parameters of each individual is calculated with uncertainty and summarized in the `individual_effects` table.
+The combined effects of all covariates on the parameters of each individual is calculated with uncertainty and summarized in the ``individual_effects`` table.
 
 .. jupyter-execute::
     :hide-code:
@@ -149,7 +149,7 @@ The plot shows the individuals with the lowest and the highest percentual covari
 Unexplained variability
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-The unexplained variability is calculated and summarized in the `unexplained_variability` table.
+The unexplained variability is calculated and summarized in the ``unexplained_variability`` table.
 
 .. jupyter-execute::
     :hide-code:
@@ -162,7 +162,7 @@ For each sample the conditional distribution is calculated given no covariates, 
 
 	\bar{\Omega} = \Omega_{11} - \Omega_{12} \Omega_{22}^{-1} \Omega_{21} =  \Omega_{11} - \Omega_{21}^T \Omega_{22}^{-1} \Omega_{21}
 
-The presented results are the 5th and 95th percetiles of the standard deviations of the parameters from :math:`\bar{\Omega}`. The observed standard deviation is the conditional 
+The presented results are the 5th and 95th percetiles of the standard deviations of the parameters from :math:`\bar{\Omega}`. The observed standard deviation is the conditional. 
 
 The plot display the original unexplained variability with the uncertainty for all parameter and covariate combinations.
 
@@ -171,7 +171,7 @@ The plot display the original unexplained variability with the uncertainty for a
 
     res.unexplained_variability_plot
 
-All variability parameters given the estimated parameters conditioned on each covariate in turn can be found in `parameter_variability`.
+All variability parameters given the estimated parameters conditioned on each covariate in turn can be found in ``parameter_variability``.
 
 .. jupyter-execute::
     :hide-code:
@@ -182,14 +182,14 @@ All variability parameters given the estimated parameters conditioned on each co
 Parameter estimates
 ~~~~~~~~~~~~~~~~~~~
 
-The parameter initial estimates and final estimates of the base model, all intermediate models and the FREM model are tabled in `parameter_inits_and_estimates`.
+The parameter initial estimates and final estimates of the base model (model_1), all intermediate models and the FREM model (model_4) are tabled in ``parameter_inits_and_estimates``.
 
 .. jupyter-execute::
     :hide-code:
 
     res.parameter_inits_and_estimates
 
-Relative difference between of the base model parameters estimates and the final model parameter estimates are calculated in `base_parameter_change`.
+Relative difference between of the base model parameters estimates and the final model parameter estimates are calculated in ``base_parameter_change``.
 
 .. jupyter-execute::
     :hide-code:
@@ -200,7 +200,7 @@ Relative difference between of the base model parameters estimates and the final
 OFV
 ~~~
 
-OFV of the base model, all intermediate models and the final FREM model are collected into `ofv`.
+OFV of the base model, all intermediate models and the final FREM model are collected into ``ofv``.
 
 .. jupyter-execute::
     :hide-code:
@@ -211,7 +211,7 @@ Estimated covariate values
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The FREM model also gives an estimate of the covariate values themselves. Ideally these values should be close to the ones in the dataset. Summary statistics for the estimated
-covariate values are put into `estimated_covariates`.
+covariate values are put into ``estimated_covariates``.
 
 .. jupyter-execute::
     :hide-code:
