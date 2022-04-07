@@ -45,7 +45,7 @@ class LocalDirectoryToolDatabase(ToolDatabase):
     def store_metadata(self, metadata):
         path = self.path / 'metadata.json'
         with open(path, 'w') as f:
-            json.dump(metadata, f)
+            json.dump(metadata, f, indent=4)
 
     def read_metadata(self):
         path = self.path / 'metadata.json'

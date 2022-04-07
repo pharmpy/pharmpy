@@ -157,7 +157,7 @@ def run_tool(name, *args, **kwargs):
 
     res = execute_workflow(wf, dispatcher=dispatcher, database=database)
 
-    tool_metadata['end_time'] = str(datetime.now())
+    tool_metadata['stats']['end_time'] = str(datetime.now())
     database.store_metadata(tool_metadata)
 
     return res
@@ -168,7 +168,7 @@ def _create_metadata_tool(tool_name, tool_params, tool_options, args):
     # FIXME: format of start/end time
     tool_metadata = {
         'tool_name': tool_name,
-        'start_time': str(datetime.now()),
+        'stats': {'start_time': str(datetime.now())},
         'tool_options': dict(),
     }
 
