@@ -140,7 +140,11 @@ def run_amd(
 
 def _run_modelsearch(model, mfl, path):
     res_modelsearch = run_tool(
-        'modelsearch', 'exhaustive_stepwise', mfl=mfl, model=model, path=path / 'modelsearch'
+        'modelsearch',
+        mfl=mfl,
+        algorithm='exhaustive_stepwise',
+        model=model,
+        path=path / 'modelsearch',
     )
     selected_model = res_modelsearch.best_model
     return selected_model

@@ -10,8 +10,8 @@ from pharmpy.workflows import Task, Workflow
 
 
 def create_workflow(
-    algorithm,
     mfl,
+    algorithm,
     rankfunc='ofv',
     cutoff=None,
     add_iivs=False,

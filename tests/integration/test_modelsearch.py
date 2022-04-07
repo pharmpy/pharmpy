@@ -15,7 +15,7 @@ def test_exhaustive(tmp_path, testdata):
         model_start = Model.create_model('mox2.mod')
         model_start.datainfo.path = tmp_path / 'mox_simulated_normal.csv'
         res = run_tool(
-            'modelsearch', 'exhaustive', 'ABSORPTION(ZO);PERIPHERALS(1)', model=model_start
+            'modelsearch', 'ABSORPTION(ZO);PERIPHERALS(1)', 'exhaustive', model=model_start
         )
 
         assert len(res.summary_tool) == 4
@@ -58,7 +58,7 @@ def test_exhaustive_stepwise_basic(
         shutil.copy2(testdata / 'nonmem' / 'models' / 'mox_simulated_normal.csv', tmp_path)
         model_start = Model.create_model('mox2.mod')
         model_start.datainfo.path = tmp_path / 'mox_simulated_normal.csv'
-        res = run_tool('modelsearch', 'exhaustive_stepwise', mfl, model=model_start)
+        res = run_tool('modelsearch', mfl, 'exhaustive_stepwise', model=model_start)
 
         assert len(res.summary_tool) == no_of_models + 1
         assert len(res.summary_models) == no_of_models + 1
@@ -109,8 +109,8 @@ def test_exhaustive_stepwise_add_iivs(
         model_start.datainfo.path = tmp_path / 'mox_simulated_normal.csv'
         res = run_tool(
             'modelsearch',
-            'exhaustive_stepwise',
             mfl,
+            'exhaustive_stepwise',
             add_iivs=True,
             iiv_as_fullblock=iiv_as_fullblock,
             add_mdt_iiv=add_mdt_iiv,
@@ -144,7 +144,7 @@ def test_exhaustive_stepwise_already_fit(tmp_path, testdata):
         fit(model_start)
 
         mfl = 'ABSORPTION(ZO);PERIPHERALS(1)'
-        res = run_tool('modelsearch', 'exhaustive_stepwise', mfl, model=model_start)
+        res = run_tool('modelsearch', mfl, 'exhaustive_stepwise', model=model_start)
 
         assert len(res.summary_tool) == 5
         assert len(res.summary_models) == 5
@@ -172,7 +172,7 @@ def test_exhaustive_stepwise_start_model_fail(tmp_path, testdata):
 
         mfl = 'ABSORPTION(ZO);PERIPHERALS(1)'
         with pytest.warns(UserWarning, match='Could not update'):
-            res = run_tool('modelsearch', 'exhaustive_stepwise', mfl, model=model_start)
+            res = run_tool('modelsearch', mfl, 'exhaustive_stepwise', model=model_start)
 
         assert len(res.summary_tool) == 5
         assert len(res.summary_models) == 5
@@ -203,7 +203,7 @@ def test_reduced_stepwise(
         shutil.copy2(testdata / 'nonmem' / 'models' / 'mox_simulated_normal.csv', tmp_path)
         model_start = Model.create_model('mox2.mod')
         model_start.datainfo.path = tmp_path / 'mox_simulated_normal.csv'
-        res = run_tool('modelsearch', 'reduced_stepwise', mfl, model=model_start)
+        res = run_tool('modelsearch', mfl, 'reduced_stepwise', model=model_start)
 
         assert len(res.summary_tool) == no_of_models + 1
         assert len(res.summary_models) == no_of_models + 1
