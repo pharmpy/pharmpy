@@ -13,18 +13,18 @@ The Bootstrap postprocessing and results
 Parameter statistics
 ~~~~~~~~~~~~~~~~~~~~
 
-The `parameter_statistics` table contains summary statistics for over the bootstrap runs for the model parameters.
+The ``parameter_statistics`` table contains summary statistics for over the bootstrap runs for the model parameters.
 
-==============  =============================================
-Column          Description
-==============  =============================================
-mean            Mean over all bootstrap runs
-median          Median over all bootstrap runs 
-bias            Difference between the mean and
-                the value in the original model
-stderr          Standard deviation over all bootstrap runs
-RSE             Standard error divided by the mean
-==============  =============================================
+==================  =============================================
+Column              Description
+==================  =============================================
+``mean``            Mean over all bootstrap runs
+``median``          Median over all bootstrap runs
+``bias``            Difference between the mean and
+                    the value in the original model
+``stderr``          Standard deviation over all bootstrap runs
+``RSE``             Standard error divided by the mean
+==================  =============================================
 
 
 .. jupyter-execute::
@@ -35,7 +35,7 @@ RSE             Standard error divided by the mean
     res.parameter_statistics
 
 
-The `parameter_distribution` table gives a numeric overview of the distributions of the bootstrap parameter estimates.
+The ``parameter_distribution`` table gives a numeric overview of the distributions of the bootstrap parameter estimates.
 For each parameter it contains the lowest and highest values, the median and values at some other selected percentiles.
 All percentiles are calculated using linear interpolation if it falls between two data points. If the two data points are :math:`x_0`
 and :math:`x_1` the percentile would be :math:`x_0 + (x_1 - x_0) f` where :math:`f` is :math:`[np]`, the fractional part of the number of observations
@@ -46,7 +46,7 @@ and :math:`x_1` the percentile would be :math:`x_0 + (x_1 - x_0) f` where :math:
 
     res.parameter_distribution
 
-The `parameter_estimates_histogram` give histograms for the distributions of the parameter estimates:
+The ``parameter_estimates_histogram`` give histograms for the distributions of the parameter estimates:
 
 .. jupyter-execute::
     :hide-code:
@@ -54,7 +54,7 @@ The `parameter_estimates_histogram` give histograms for the distributions of the
     res.parameter_estimates_histogram
 
 
-The raw parameter data is available in `parameter_estimates`
+The raw parameter data is available in ``parameter_estimates``
 
 .. jupyter-execute::
     :hide-code:
@@ -65,18 +65,18 @@ The raw parameter data is available in `parameter_estimates`
 OFV statistics
 ~~~~~~~~~~~~~~
 
-Summary statistics for the objective function values of the bootstrap runs can be found in the `ofv_statistics` table, which has the following rows:
+Summary statistics for the objective function values of the bootstrap runs can be found in the ``ofv_statistics`` table, which has the following rows:
 
-=======================  =============================================
-Row                      Description
-=======================  =============================================
-bootstrap_bootdata_ofv   OFVs from the bootstrap runs
-original_bootdata_ofv    Sum of iOFVs from original modelfit of individuals included in each bootstrap run
-bootstrap_origdata_ofv   OFVs from all `dofv` runs, i.e. evaluations on original data on boostrap models  
-original_origdata_ofv    OFV of original model
-delta_bootdata           Difference between `original_bootdata_ofv` and `bootstrap_bootdata_ofv` for each model   
-delta_origdata           Difference between `bootstrap_origdata_ofv` and the OFV of the original model 
-=======================  =============================================
+===========================  =============================================
+Row                          Description
+===========================  =============================================
+``bootstrap_bootdata_ofv``   OFVs from the bootstrap runs
+``original_bootdata_ofv``    Sum of iOFVs from original modelfit of individuals included in each bootstrap run
+``bootstrap_origdata_ofv``   OFVs from all `dofv` runs, i.e. evaluations on original data on boostrap models  
+``original_origdata_ofv``    OFV of original model
+``delta_bootdata``           Difference between `original_bootdata_ofv` and `bootstrap_bootdata_ofv` for each model   
+``delta_origdata``           Difference between `bootstrap_origdata_ofv` and the OFV of the original model 
+===========================  =============================================
 
 Note that some of these rows will not be created if the bootstrap was run without the `dofv` option.
 
@@ -85,21 +85,21 @@ Note that some of these rows will not be created if the bootstrap was run withou
 
     res.ofv_statistics
 
-The `ofv_distribution` gives a numeric overview of the OFVs similar to the `parameter_distriution` described above. 
+The ``ofv_distribution`` gives a numeric overview of the OFVs similar to the ``parameter_distriution`` described above. 
 
 .. jupyter-execute::
     :hide-code:
 
     res.ofv_distribution
 
-A histogram of the bootstrap ofv from `ofv_plot`:
+A histogram of the bootstrap ofv from ``ofv_plot``:
 
 .. jupyter-execute::
     :hide-code:
 
     res.ofv_plot
 
-The `dofv_quantiles_plot` show distribution of the delta-OFV metrics over the distribution quantiles. They are compared with
+The ``dofv_quantiles_plot`` show distribution of the delta-OFV metrics over the distribution quantiles. They are compared with
 a chi-square distribution.
 
 .. jupyter-execute::
@@ -109,7 +109,7 @@ a chi-square distribution.
 
 
 
-The raw ofv data is available in `ofvs`.
+The raw ofv data is available in ``ofvs``.
 
 .. jupyter-execute::
     :hide-code:
@@ -120,7 +120,7 @@ The raw ofv data is available in `ofvs`.
 Covariance matrix
 ~~~~~~~~~~~~~~~~~
 
-A covariance matrix for the parameters is available in `covariance_matrix`:
+A covariance matrix for the parameters is available in ``covariance_matrix``:
 
 .. jupyter-execute::
     :hide-code:
@@ -130,12 +130,10 @@ A covariance matrix for the parameters is available in `covariance_matrix`:
 Included individuals
 ~~~~~~~~~~~~~~~~~~~~
 
-The `included_individuals` is a list of lists with all individuals that were included in each bootstrap run.
+The ``included_individuals`` is a list of lists with all individuals that were included in each bootstrap run.
 
 .. jupyter-execute::
     :hide-code:
 
     import pandas as pd
     pd.DataFrame(res.included_individuals)
-
-
