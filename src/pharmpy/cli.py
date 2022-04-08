@@ -166,10 +166,17 @@ def run_execute(args):
 
 
 def run_modelsearch(args):
-    import pharmpy.tools.modelsearch as modelsearch
+    from pharmpy.modeling import run_tool
 
-    method = modelsearch.ModelSearch(args.model, args.algorithm, args.funcs, rankfunc=args.rankfunc)
-    method.run()
+    run_tool(
+        'modelsearch',
+        args.mfl,
+        args.algorithm,
+        rankfunc=args.rankfunc,
+        cutoff=args.cutoff,
+        iiv_strategy=args.iiv_strategy,
+        model=args.model,
+    )
 
 
 def run_estmethod(args):
@@ -885,26 +892,38 @@ parser_definition = [
                 },
                 {
                     'modelsearch': {
-                        'help': 'Search for best model',
+                        'help': 'Search for structural best model',
                         'func': run_modelsearch,
                         'parents': [args_model_input],
                         'args': [
                             {
-                                'name': 'algorithm',
+                                'name': 'mfl',
                                 'type': str,
-                                'help': 'Name of algorithm to use',
+                                'help': 'Search space to test',
                             },
                             {
-                                'name': 'funcs',
-                                'type': semicolon_list,
-                                'help': 'List of function calls from modeling',
+                                'name': 'algorithm',
+                                'type': str,
+                                'help': 'Algorithm to use',
                             },
                             {
                                 'name': '--rankfunc',
                                 'type': str,
                                 'help': 'Name of function to use for ranking '
-                                'candidates (default ofv).',
+                                'candidates (default is ofv).',
                                 'default': 'ofv',
+                            },
+                            {
+                                'name': '--cutoff',
+                                'type': float,
+                                'help': 'Which selection criteria to rank models on',
+                                'default': None,
+                            },
+                            {
+                                'name': '--iiv_strategy',
+                                'type': int,
+                                'help': 'If/how IIV should be added to candidate models',
+                                'default': 0,
                             },
                         ],
                     }

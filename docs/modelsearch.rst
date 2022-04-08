@@ -31,11 +31,11 @@ The modelsearch tool is available both in Pharmpy/pharmr and from the command li
 This would start a search starting with an input model `model` with `mfl` as the search space using the `algorithm` search algorithm. The candidate models
 will be ranked using `ofv` with default `cutoff`. Structural IIVs will be added according to strategy 0.
 
-To run it from the command line:
+To run modelsearch from the command line:
 
 .. code::
 
-    pharmpy run modelsearch
+    pharmpy run modelsearch path/to/model 'ABSORPTION(ZO);ELIMINATION(ZO)' 'exhaustive' --rankfunc 'aic'
 
 Arguments
 ~~~~~~~~~
