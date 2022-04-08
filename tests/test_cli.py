@@ -1,6 +1,7 @@
 import io
 import os
 import re
+import shutil
 from contextlib import redirect_stdout
 
 import pytest
@@ -97,32 +98,23 @@ def test_add_iov(datadir, fs, options):
     assert re.search(r'ETAI1', mod_cov)
 
 
-@pytest.mark.parametrize('fs', [[['pkgutil'], [cli]]], indirect=True)
-def test_results_linearize(datadir, fs):
+def test_results_linearize(datadir, tmp_path):
     path = datadir / 'linearize' / 'linearize_dir1'
-    fs.create_dir('linearize_dir1')
-    fs.add_real_file(path / 'pheno_linbase.mod', target_path='linearize_dir1/pheno_linbase.mod')
-    fs.add_real_file(path / 'pheno_linbase.ext', target_path='linearize_dir1/pheno_linbase.ext')
-    fs.add_real_file(path / 'pheno_linbase.lst', target_path='linearize_dir1/pheno_linbase.lst')
-    fs.add_real_file(path / 'pheno_linbase.phi', target_path='linearize_dir1/pheno_linbase.phi')
-    fs.create_dir('linearize_dir1/scm_dir1')
-    fs.add_real_file(
-        path / 'scm_dir1' / 'derivatives.mod', target_path='linearize_dir1/scm_dir1/derivatives.mod'
-    )
-    fs.add_real_file(
-        path / 'scm_dir1' / 'derivatives.ext', target_path='linearize_dir1/scm_dir1/derivatives.ext'
-    )
-    fs.add_real_file(
-        path / 'scm_dir1' / 'derivatives.lst', target_path='linearize_dir1/scm_dir1/derivatives.lst'
-    )
-    fs.add_real_file(
-        path / 'scm_dir1' / 'derivatives.phi', target_path='linearize_dir1/scm_dir1/derivatives.phi'
-    )
+    shutil.copy(path / 'pheno_linbase.mod', tmp_path)
+    shutil.copy(path / 'pheno_linbase.ext', tmp_path)
+    shutil.copy(path / 'pheno_linbase.lst', tmp_path)
+    shutil.copy(path / 'pheno_linbase.phi', tmp_path)
+    scmdir = tmp_path / 'scm_dir1'
+    scmdir.mkdir()
+    shutil.copy(path / 'scm_dir1' / 'derivatives.mod', scmdir)
+    shutil.copy(path / 'scm_dir1' / 'derivatives.ext', scmdir)
+    shutil.copy(path / 'scm_dir1' / 'derivatives.lst', scmdir)
+    shutil.copy(path / 'scm_dir1' / 'derivatives.phi', scmdir)
 
-    args = ['results', 'linearize', 'linearize_dir1']
+    args = ['results', 'linearize', str(tmp_path)]
     cli.main(args)
 
-    assert os.path.exists('linearize_dir1/results.json')
+    assert os.path.exists(tmp_path / 'results.json')
 
 
 @pytest.mark.parametrize('fs', [[['pkgutil'], [etas_record]]], indirect=True)

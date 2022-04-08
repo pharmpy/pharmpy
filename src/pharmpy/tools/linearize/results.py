@@ -3,13 +3,15 @@ from pathlib import Path
 import pandas as pd
 
 from pharmpy import Model
+from pharmpy.modeling import plot_iofv_vs_iofv
 from pharmpy.results import Results
 
 
 class LinearizeResults(Results):
-    def __init__(self, ofv=None, iofv=None):
+    def __init__(self, ofv=None, iofv=None, iofv_plot=None):
         self.ofv = ofv
         self.iofv = iofv
+        self.iofv_plot = iofv_plot
 
 
 def calculate_results(base_model, linear_model):
@@ -27,7 +29,8 @@ def calculate_results(base_model, linear_model):
         {'ofv': [baseres.ofv, linearres.evaluation_ofv, linearres.ofv]},
         index=['base', 'lin_evaluated', 'lin_estimated'],
     )
-    res = LinearizeResults(ofv=ofv, iofv=iofv)
+    iofv_plot = plot_iofv_vs_iofv(base_model, linear_model)
+    res = LinearizeResults(ofv=ofv, iofv=iofv, iofv_plot=iofv_plot)
     return res
 
 
