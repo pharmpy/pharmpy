@@ -11,7 +11,7 @@ The cdd results
 Case results
 ~~~~~~~~~~~~
 
-The `case_results` table contains the different results and metrics for each case.
+The ``case_results`` table contains the different results and metrics for each case.
 
 
 .. jupyter-execute::
@@ -22,7 +22,7 @@ The `case_results` table contains the different results and metrics for each cas
     res.case_results
 
 Cook score
-~~~~~~~~~~
+----------
 
 The Cook score for each case is calculated as:
 
@@ -33,7 +33,7 @@ The Cook score for each case is calculated as:
 Where :math:`P_i` is the estimated parameter vector for case :math:`i`, :math:`P_{orig}` is the estimated parameter vector for the original model and :math:`\operatorname{cov}(P_{orig})` is the covariance matrix of the estimated parameters.
 
 Jackknife cookscore
-~~~~~~~~~~~~~~~~~~~
+-------------------
 
 This is the same as the Cook score above, but instead using the Jackknife covariance matrix.
 
@@ -57,7 +57,7 @@ full jackknife covariance matrix.
 is the mean of parameter :math:`p_{i,j}` over all case deleted datasets. :math:`j` being the index in the parameter vector and :math:`i` being the case index. 
 
 Covariance ratio
-~~~~~~~~~~~~~~~~
+----------------
 
 The covariance ratio for each case is calculated as:
 
@@ -66,7 +66,7 @@ The covariance ratio for each case is calculated as:
     \sqrt{\frac{\operatorname{det}({\operatorname{cov}(P_i))}}{\operatorname{det}(\operatorname{cov}(P_{orig}))}}
 
 Delta OFV
-~~~~~~~~~
+---------
 
 For the delta OFV to be calculated the cases must correspond to individuals. Then it is calculated as
 
@@ -79,14 +79,14 @@ is the individual OFV of the k:th individual in the full run and :math:`OFV_k` i
 with the k:th individual removed. [dOFV]_
 
 Skipped individuals
-~~~~~~~~~~~~~~~~~~~
+-------------------
 
 A list of the individuals that were skipped for each case.
 
 Case column
 ~~~~~~~~~~~
 
-The Name of the case column in the dataset can be found in `case_column`.
+The Name of the case column in the dataset can be found in ``case_column``.
 
 .. jupyter-execute::
     :hide-code:
