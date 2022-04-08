@@ -11,7 +11,7 @@ The qa results
 Overview
 ~~~~~~~~
 
-The overview `dofv` table lists the most impactful modifications identified by QA.
+The overview ``dofv`` table lists the most impactful modifications identified by QA.
 More details for each result can be found in the individual sections.
 
 The table shows an overview of possible modifications to different model aspects,
@@ -31,7 +31,7 @@ Structural bias
 This section aims at diagnosing the structural component of the model. It does so by estimating
 the mean difference between model predictions and observations as a function of several independent variables.
 
-The `structural_bias` table shows the cwres and cpred given different bins of the independent variable. 
+The ``structural_bias`` table shows the ``CWRES`` and ``CPRED`` given different bins of the independent variable. 
 
 .. jupyter-execute::
     :hide-code:
@@ -43,7 +43,7 @@ Fullblock
 
 This section shows the effect of including a full block correlation struture in the base mdel.
 
-The `fullblock_parameters` shows the estimated standard deviation (sd), correlation (corr) and
+The ``fullblock_parameters`` contains the estimated standard deviation (sd), correlation (corr) and
 expected improvement in OFV after inclusion of a full block correlation structure of the random effects.
 
 .. jupyter-execute::
@@ -57,7 +57,7 @@ Boxcox
 
 This section shows the effect of applying a Box-Cox transformation to the ETA variables in the base model.
 
-The `boxcox_parameters` shows the estimated shape parameter (Lambda) and expected improvment in OFV for a
+The ``boxcox_parameters`` contains the estimated shape parameter (Lambda) and expected improvment in OFV for a
 Box-Cox transformation of the random effects.
 
 .. jupyter-execute::
@@ -70,7 +70,7 @@ Tdist
 
 This section shows the effect of applying a t-distribution transformation to the ETA variables in the base model.
 
-The `tdist_parameters` shows the estimated degrees of freedom and expected improvement in OFV for a 
+The ``tdist_parameters`` contains the estimated degrees of freedom and expected improvement in OFV for a 
 t-distribution transformation of the random effects.
 
 .. jupyter-execute::
@@ -83,7 +83,7 @@ Residual error
 
 This section shows the effect of including extended residual error models in the base model.
 
-The `residual_error` table shows the residuual error models, resulting expected improvement in OFV, 
+The ``residual_error`` table contains the residual error models, resulting expected improvement in OFV, 
 required additional model parameters as well as their estimates.
 
 .. jupyter-execute::
@@ -96,8 +96,7 @@ Covariate effects
 
 This section evaluates the impact of supplied covariates.
 
-The `covariate_effects` table shows the expected improvement when including covariates, the sum of all
-univariate improvement (univ. sum), as well as the joint improvement from all covariates through FREM.
+The ``covariate_effects`` table shows the expected improvement when including covariates.
 
 .. jupyter-execute::
     :hide-code:
