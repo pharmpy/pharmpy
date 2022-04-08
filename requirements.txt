@@ -5,7 +5,7 @@ asttokens==2.0.5
 attrs==21.4.0
 Babel==2.9.1
 backcall==0.2.0
-beautifulsoup4==4.10.0
+beautifulsoup4==4.11.0
 bleach==5.0.0
 certifi==2021.10.8
 charset-normalizer==2.0.12
