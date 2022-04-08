@@ -11,7 +11,7 @@ The simeval results
 Sampled Individual OFVs
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-The `sampled_iofv` table contains the estimated individual OFV of the evaluated individual OFVs for each sampled dataset.
+The ``sampled_iofv`` table contains the evaluated individual OFVs for each sampled dataset.
 
 .. jupyter-execute::
     :hide-code:
@@ -24,12 +24,12 @@ The `sampled_iofv` table contains the estimated individual OFV of the evaluated 
 Individual OFV summary
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-The `iofv_summary` table contain the iOFVs from the orginal model, the median and standard deviation of the sampled iOFVs, the residual and a
+The ``iofv_summary`` table contain the iOFVs from the orginal model, the median and standard deviation of the sampled iOFVs, the residual and a
 residual outlier flag. The residual for each sample and ID is the distance from the observed iOFV to the simulated iOFV expressed in standard deviations of the simulated values.
 
 .. math::
 
-    \mathrm{res} = \frac{\mathrm{obs} - \mathop{median}(\mathrm{sim})}{\mathop{sd}(\mathrm{sim})}
+    \mathrm{res} = \frac{\mathrm{obs} - \operatorname{median}(\mathrm{sim})}{\operatorname{sd}(\mathrm{sim})}
 
 An individual is defined as an outlier if the corresponding residual is 3 or higher.
 
@@ -41,7 +41,7 @@ An individual is defined as an outlier if the corresponding residual is 3 or hig
 Individual prediction plot
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The `individual_predictions_plot` show PRED, IPRED and DV vs TIME (if available) for outlying individuals.
+The ``individual_predictions_plot`` show PRED, IPRED and DV vs TIME (if available) for outlying individuals.
 
 .. jupyter-execute::
     :hide-code:
