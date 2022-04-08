@@ -77,6 +77,7 @@ def convert_model(model):
     nm_model._data_frame = model.dataset
     nm_model._estimation_steps = model.estimation_steps
     nm_model._datainfo = model.datainfo
+    nm_model._initial_individual_estimates = model.initial_individual_estimates
     nm_model.observation_transformation = model.observation_transformation.subs(
         model.dependent_variable, nm_model.dependent_variable
     )
