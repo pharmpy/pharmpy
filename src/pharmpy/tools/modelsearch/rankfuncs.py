@@ -10,8 +10,8 @@ from pharmpy.modeling import calculate_aic, calculate_bic
 # models can be removed from candidates if they don't pass some criteria
 
 
-def ofv(base, candidates, cutoff=3.84, rank_by_not_worse=False):
-    return rank_models('ofv', base, candidates, cutoff, rank_by_not_worse=rank_by_not_worse)
+def ofv(base, candidates, cutoff=3.84):
+    return rank_models('ofv', base, candidates, cutoff)
 
 
 def aic(base, candidates, cutoff=None):
@@ -22,43 +22,36 @@ def bic(base, candidates, cutoff=None, bic_type='mixed'):
     return rank_models('bic', base, candidates, cutoff, bic_type=bic_type)
 
 
-def create_diff_dict(rank_type, base, candidates, bic_type='mixed'):
-    delta_dict = dict()
-    for model in candidates:
-        if base.modelfit_results is not None and model.modelfit_results is not None:
-            if rank_type == 'aic':
-                delta = calculate_aic(base) - calculate_aic(model)
-            elif rank_type == 'bic':
-                if not bic_type:
-                    bic_type = 'mixed'
-                delta = calculate_bic(base, bic_type) - calculate_bic(model, bic_type)
-            else:
-                delta = base.modelfit_results.ofv - model.modelfit_results.ofv
-        else:
-            delta = np.nan
-        delta_dict[model.name] = delta
-    return delta_dict
-
-
-def rank_models(
-    rank_type, base, candidates, cutoff=None, rank_by_not_worse=False, bic_type='mixed'
-):
-    delta_dict = create_diff_dict(rank_type, base, candidates, bic_type)
-    if cutoff is not None:
-        if rank_type == 'ofv' and rank_by_not_worse:
-            cutoff = -cutoff
-        filtered = [model for model in candidates if delta_dict[model.name] >= cutoff]
-    else:
+def rank_models(rank_type, base, candidates, cutoff=None, bic_type='mixed'):
+    diff_dict = _create_diff_dict(rank_type, base, candidates, bic_type)
+    if cutoff is None:
         filtered = [model for model in candidates if model.modelfit_results is not None]
+    else:
+        filtered = [model for model in candidates if diff_dict[model.name] >= cutoff]
 
     def fn(model):
         if rank_type == 'aic':
             return calculate_aic(model)
         elif rank_type == 'bic':
-            bic = calculate_bic(model, bic_type)
-            return bic
+            return calculate_bic(model, bic_type)
         else:
-            return getattr(model.modelfit_results, rank_type)
+            return model.modelfit_results.ofv
 
-    srtd = sorted(filtered, key=fn)
-    return srtd
+    srtd = sorted(filtered, key=fn)  # FIXME: if same rankfunc value?
+    return srtd, diff_dict
+
+
+def _create_diff_dict(rank_type, base, candidates, bic_type):
+    diff_dict = dict()
+    for model in candidates:
+        # FIXME: way to handle if start model fails
+        if base.modelfit_results is None or model.modelfit_results is None:
+            diff = np.nan
+        elif rank_type == 'aic':
+            diff = calculate_aic(base) - calculate_aic(model)
+        elif rank_type == 'bic':
+            diff = calculate_bic(base, bic_type) - calculate_bic(model, bic_type)
+        else:
+            diff = base.modelfit_results.ofv - model.modelfit_results.ofv
+        diff_dict[model.name] = diff
+    return diff_dict

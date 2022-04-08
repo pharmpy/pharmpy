@@ -139,29 +139,24 @@ def create_summary(
     rankfunc_name,
     cutoff,
     model_features,
-    rank_by_not_worse=False,
     bic_type='mixed',
 ):
     models_all = [start_model] + models
     rankfunc = getattr(rankfuncs, rankfunc_name)
+
     kwargs = dict()
     if cutoff is not None:
         kwargs['cutoff'] = cutoff
-    if rankfunc_name == 'ofv':
-        kwargs['rank_by_not_worse'] = rank_by_not_worse
     if rankfunc_name == 'bic':
         kwargs['bic_type'] = bic_type
-    ranking = rankfunc(start_model, models_all, **kwargs)
-    delta_diff = rankfuncs.create_diff_dict(
-        rankfunc_name, start_model, models_all, bic_type=bic_type
-    )
+    ranking, diff_dict = rankfunc(start_model, models_all, **kwargs)
 
     index = []
     rows = []
     for model in models_all:
         index.append(model.name)
         parent_model = model.parent_model
-        diff = delta_diff[model.name]
+        diff = diff_dict[model.name]
         if model.name == start_model.name:
             feat = None
         else:
