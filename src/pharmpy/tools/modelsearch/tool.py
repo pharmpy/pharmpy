@@ -69,9 +69,10 @@ def post_process_results(algorithm, rankfunc, cutoff, model_features, *models):
     if not start_model:
         raise ValueError('Error in workflow: No starting model')
 
-    summary_tool = create_summary(
-        res_models, start_model, rankfunc, cutoff, model_features, algorithm=algorithm
-    )
+    if algorithm == 'reduced_stepwise':
+        model_features = _update_model_features(start_model, res_models, model_features)
+
+    summary_tool = create_summary(res_models, start_model, rankfunc, cutoff, model_features)
 
     best_model_name = summary_tool['rank'].idxmin()
     try:
@@ -92,6 +93,26 @@ def post_process_results(algorithm, rankfunc, cutoff, model_features, *models):
     )
 
     return res
+
+
+def _update_model_features(start_model, res_models, model_features_original):
+    model_features_new = dict()
+    for model in res_models:
+        if model.name == start_model.name:
+            feat_all = None
+        else:
+            feat = model_features_original[model.name]
+            if (
+                model.parent_model in model_features_new.keys()
+                and model.parent_model != start_model.name
+            ):
+                feat_parent = model_features_new[model.parent_model]
+                feat_all = feat_parent + (feat,)
+            else:
+                feat_all = (feat,)
+        model_features_new[model.name] = feat_all
+
+    return model_features_new
 
 
 class ModelSearchResults(pharmpy.results.Results):
@@ -120,7 +141,6 @@ def create_summary(
     model_features,
     rank_by_not_worse=False,
     bic_type='mixed',
-    algorithm=None,
 ):
     res_data = {'parent_model': [], f'd{rankfunc_name}': [], 'features': [], 'rank': []}
     model_names = []
@@ -143,16 +163,6 @@ def create_summary(
         res_data[f'd{rankfunc_name}'].append(delta_diff[model.name])
         if model.name == start_model.name:
             res_data['features'].append(None)
-        # FIXME: make more general
-        elif algorithm == 'reduced_stepwise':
-            feat = model_features[model.name]
-            if model.parent_model in model_names and model.parent_model != start_model.name:
-                idx = model_names.index(model.parent_model)
-                feat_parent = res_data['features'][idx]
-                feat_all = feat_parent + (feat,)
-            else:
-                feat_all = (feat,)
-            res_data['features'].append(feat_all)
         else:
             res_data['features'].append(model_features[model.name])
         if model in ranks:

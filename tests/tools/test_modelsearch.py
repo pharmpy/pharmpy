@@ -14,6 +14,7 @@ from pharmpy.tools.modelsearch.algorithms import (
     reduced_stepwise,
 )
 from pharmpy.tools.modelsearch.mfl import ModelFeatures
+from pharmpy.tools.modelsearch.tool import _update_model_features
 
 
 def test_exhaustive_algorithm():
@@ -169,6 +170,27 @@ def test_is_allowed():
         set_peripheral_compartments, n=2
     )
     assert _is_allowed(feat_current, func_current, feat_previous, features)
+
+
+class DummyModel:
+    def __init__(self, name, parent_model):
+        self.name = name
+        self.parent_model = parent_model
+
+
+def test_update_model_features():
+    start_model = DummyModel('start', None)
+    res_models = []
+    model_features = dict()
+    prev_model = start_model
+    for i in range(3):
+        res_model = DummyModel(f'candidate{i}', prev_model.name)
+        res_models.append(res_model)
+        model_features[res_model.name] = f'{i}'
+        prev_model = res_model
+
+    model_features_new = _update_model_features(start_model, res_models, model_features)
+    assert model_features_new['candidate2'] == ('0', '1', '2')
 
 
 @pytest.mark.parametrize(
