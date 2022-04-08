@@ -17,8 +17,8 @@ def test_create_metadata_tool():
     metadata = _create_metadata_tool(
         tool_name=name,
         tool_params=tool_params,
-        tool_options={'add_iivs': True},
-        args=('exhaustive', 'ABSORPTION(ZO)'),
+        tool_options={'iiv_strategy': 0},
+        args=('ABSORPTION(ZO)', 'exhaustive'),
     )
 
     assert metadata['tool_name'] == 'modelsearch'
@@ -27,19 +27,19 @@ def test_create_metadata_tool():
     metadata = _create_metadata_tool(
         tool_name=name,
         tool_params=tool_params,
-        tool_options={'mfl': 'ABSORPTION(ZO)'},
-        args=('exhaustive',),
+        tool_options={'algorithm': 'exhaustive'},
+        args=('ABSORPTION(ZO)',),
     )
 
     assert metadata['tool_name'] == 'modelsearch'
-    assert metadata['tool_options']['mfl'] == 'ABSORPTION(ZO)'
+    assert metadata['tool_options']['algorithm'] == 'exhaustive'
 
-    with pytest.raises(Exception, match='modelsearch: \'mfl\' was not set'):
+    with pytest.raises(Exception, match='modelsearch: \'algorithm\' was not set'):
         _create_metadata_tool(
             tool_name=name,
             tool_params=tool_params,
             tool_options={},
-            args=('exhaustive',),
+            args=('ABSORPTION(ZO)',),
         )
 
 
