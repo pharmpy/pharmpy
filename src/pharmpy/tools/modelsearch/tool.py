@@ -142,8 +142,6 @@ def create_summary(
     rank_by_not_worse=False,
     bic_type='mixed',
 ):
-    res_data = {'parent_model': [], f'd{rankfunc_name}': [], 'features': [], 'rank': []}
-    model_names = []
     models_all = [start_model] + models
     rankfunc = getattr(rankfuncs, rankfunc_name)
     kwargs = dict()
@@ -153,22 +151,29 @@ def create_summary(
         kwargs['rank_by_not_worse'] = rank_by_not_worse
     if rankfunc_name == 'bic':
         kwargs['bic_type'] = bic_type
-    ranks = rankfunc(start_model, models_all, **kwargs)
+    ranking = rankfunc(start_model, models_all, **kwargs)
     delta_diff = rankfuncs.create_diff_dict(
         rankfunc_name, start_model, models_all, bic_type=bic_type
     )
+
+    index = []
+    rows = []
     for model in models_all:
-        model_names.append(model.name)
-        res_data['parent_model'].append(model.parent_model)
-        res_data[f'd{rankfunc_name}'].append(delta_diff[model.name])
+        index.append(model.name)
+        parent_model = model.parent_model
+        diff = delta_diff[model.name]
         if model.name == start_model.name:
-            res_data['features'].append(None)
+            feat = None
         else:
-            res_data['features'].append(model_features[model.name])
-        if model in ranks:
-            res_data['rank'].append(ranks.index(model) + 1)
+            feat = model_features[model.name]
+        if model in ranking:
+            ranks = ranking.index(model) + 1
         else:
-            res_data['rank'].append(np.nan)
+            ranks = np.nan
+        rows.append([parent_model, diff, feat, ranks])
 
     # FIXME: in ranks, if any row has NaN the rank converts to float
-    return pd.DataFrame(res_data, index=model_names)
+    colnames = ['parent_model', f'd{rankfunc_name}', 'features', 'rank']
+    df = pd.DataFrame(rows, index=index, columns=colnames)
+
+    return df
