@@ -41,6 +41,7 @@ def test_to_generic_model(testdata):
     assert model.statements == nm_model.statements
     assert type(model) == pharmpy.model.Model
 
+
 def test_model_equality(testdata):
     pheno1 = load_example_model("pheno")
     assert pheno1 == pheno1

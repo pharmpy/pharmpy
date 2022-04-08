@@ -94,18 +94,27 @@ class Model:
         >>> a == b
         True
         """
-        if self is other: return True
+        if self is other:
+            return True
         if not isinstance(other, Model):
             raise NotImplementedError(f'Cannot compare Model with {type(other)}')
 
-        if self.parameters != other.parameters: return False
-        if self.random_variables != other.random_variables: return False
-        if self.statements != other.statements: return False
-        if self.dependent_variable != other.dependent_variable: return False
-        if self.observation_transformation != other.observation_transformation: return False
-        if self.estimation_steps != other.estimation_steps: return False
-        if self.initial_individual_estimates != other.initial_individual_estimates: return False
-        if self.datainfo != other.datainfo: return False
+        if self.parameters != other.parameters:
+            return False
+        if self.random_variables != other.random_variables:
+            return False
+        if self.statements != other.statements:
+            return False
+        if self.dependent_variable != other.dependent_variable:
+            return False
+        if self.observation_transformation != other.observation_transformation:
+            return False
+        if self.estimation_steps != other.estimation_steps:
+            return False
+        if self.initial_individual_estimates != other.initial_individual_estimates:
+            return False
+        if self.datainfo != other.datainfo:
+            return False
 
         return True
 
