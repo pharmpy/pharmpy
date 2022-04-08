@@ -19,16 +19,10 @@ class SCMResults(Results):
 
     rst_path = Path(__file__).parent / 'report.rst'
 
-    def __init__(self, steps=None):
+    def __init__(self, steps=None, ofv_summary=None, candidate_summary=None):
         self.steps = steps
-
-    def ofv_summary(self, final_included=True, iterations=True):
-        return ofv_summary_dataframe(
-            self.steps, final_included=final_included, iterations=iterations
-        )
-
-    def candidate_summary(self):
-        return candidate_summary_dataframe(self.steps)
+        self.candidate_summary = candidate_summary
+        self.ofv_summary = ofv_summary
 
 
 def candidate_summary_dataframe(steps):
@@ -679,5 +673,8 @@ def psn_scm_results(path):
         raise IOError(r'Could not find test_relations in scm config file')
 
     res = SCMResults(steps=psn_scm_parse_logfile(logfile, options, parcov_dictionary))
+    res.candidate_summary = candidate_summary_dataframe(res.steps)
+    res.ofv_summary = ofv_summary_dataframe(res.steps, final_included=True, iterations=True)
+
     add_covariate_effects(res, path)
     return res

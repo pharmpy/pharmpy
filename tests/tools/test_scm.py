@@ -47,12 +47,12 @@ def test_main(testdata):
     assert [float(res1.steps['extended_ofv'].iloc[5])] == approx([219208.47277])
     assert res1.steps['directory'].iloc[0] == 'm1'
     assert isnan(res1.steps['extended_ofv'].iloc[6])
-    assert res1.ofv_summary(final_included=False) is not None
-    assert res1.candidate_summary() is not None
+    assert res1.ofv_summary is not None
+    assert res1.candidate_summary is not None
 
     assert [float(res2.steps['ofv_drop'].iloc[2])] == approx([18.5591])
-    assert res2.ofv_summary(iterations=False) is not None
-    assert res2.candidate_summary() is not None
+    assert res2.ofv_summary is not None
+    assert res2.candidate_summary is not None
 
     parcovdict = {
         'CLCV2': ('CL', 'CV2'),
@@ -67,11 +67,11 @@ def test_main(testdata):
 
     res3 = scm.psn_scm_results(dirs['onlyf'])
     assert res3.steps is not None
-    sum1 = res3.ofv_summary()
+    sum1 = res3.ofv_summary
     assert [float(x) for x in sum1['pvalue'].values] == approx([nan, nan, 2.22e-13], nan_ok=True)
-    assert res3.ofv_summary(iterations=False) is not None
+    assert res3.ofv_summary is not None
 
-    cand1 = res3.candidate_summary()
+    cand1 = res3.candidate_summary
     all_columns = [
         'parameter',
         'covariate',
