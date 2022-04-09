@@ -178,7 +178,7 @@ class Model(pharmpy.model.Model):
             update_statements(self, self._old_statements, self._statements, trans)
             self._old_statements = self._statements.copy()
 
-        if self._dataset_updated or self.datainfo != self._old_datainfo:
+        if self._dataset_updated or self.datainfo != self._old_datainfo or self.datainfo.path != self._old_datainfo.path:
             # FIXME: If no name set use the model name. Set that when setting dataset to input!
             if self.datainfo.path is None:  # or self.datainfo.path == self._old_datainfo.path:
                 if path is not None:
