@@ -106,6 +106,8 @@ def _compare_full_models_results(start_model, best_resmod, res, cutoff):
     if delta_ofv <= cutoff:
         res.best_model = start_model
         res.selected_model_name = 'base'
+    else:
+        res.best_model = best_resmod
     return res
 
 
@@ -146,7 +148,7 @@ def _create_base_model(input_model):
     base_model.dataset = _create_dataset(input_model)
     base_model.database = input_model.database
 
-    est = EstimationStep('foce', interaction=True)
+    est = EstimationStep('foce', interaction=True, maximum_evaluations=9999)
     base_model.estimation_steps = EstimationSteps([est])
     return base_model
 
