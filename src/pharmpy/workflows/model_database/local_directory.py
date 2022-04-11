@@ -103,21 +103,26 @@ class LocalModelDirectoryDatabase(LocalDirectoryDatabase):
         model = model.copy()
         model.update_datainfo()
         path = self.path / '.datasets'
-        path.mkdir(parents=True, exist_ok=True)
+        if not path.is_dir():
+            path.mkdir(parents=True)
+        di = model.datainfo.copy()
         for dipath in path.glob('*.datainfo'):
             curdi = DataInfo.read_json(dipath)
-            if curdi == model.datainfo:
+            di.path = curdi.path  # This could be different in comparison
+            if curdi == di:
                 df = read_dataset_from_datainfo(curdi)
                 if df.equals(model.dataset):
                     model.datainfo.path = curdi.path
                     break
         else:
             data_path = path / (model.name + '.csv')
-            model.datainfo.path = data_path.resolve()
-            model.datainfo.to_json(path / (model.name + '.datainfo'))
+            di.path = data_path.resolve()
+            di.to_json(path / (model.name + '.datainfo'))
             write_csv(model, path=data_path)
+            model.datainfo = di
         model_path = self.path / model.name
-        model_path.mkdir(exist_ok=True)
+        if not model_path.is_dir():
+            model_path.mkdir()
         write_model(model, model_path / (model.name + model.filename_extension))
 
     def store_local_file(self, model, path):

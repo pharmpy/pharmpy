@@ -176,7 +176,6 @@ def test_convert_model():
     model = load_example_model("pheno")
     run1 = convert_model(model, "nlmixr")
     assert model.name == run1.name
-    assert model == run1
 
 
 def test_remove_unused_parameters_and_rvs(pheno):
