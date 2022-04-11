@@ -150,6 +150,7 @@ def create_summary(
     if rankfunc_name == 'bic':
         kwargs['bic_type'] = bic_type
     ranking, diff_dict = rankfunc(start_model, models_all, **kwargs)
+    ranking_by_name = [model.name for model in ranking]  # Using list of models is very slow
 
     index = []
     rows = []
@@ -161,8 +162,8 @@ def create_summary(
             feat = None
         else:
             feat = model_features[model.name]
-        if model in ranking:
-            ranks = ranking.index(model) + 1
+        if model.name in ranking_by_name:
+            ranks = ranking_by_name.index(model.name) + 1
         else:
             ranks = np.nan
         rows.append([parent_model, diff, feat, ranks])
