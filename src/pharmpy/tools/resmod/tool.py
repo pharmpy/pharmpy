@@ -106,6 +106,8 @@ def _compare_full_models_results(start_model, best_resmod, res, cutoff):
     if delta_ofv <= cutoff:
         res.best_model = start_model
         res.selected_model_name = 'base'
+    else:
+        res.best_model = best_resmod
     return res
 
 
