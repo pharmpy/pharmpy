@@ -414,25 +414,24 @@ def _split_equation(s):
     return name, expr
 
 
-def _result_summary(model, include_all_estimation_steps=False):
-    res = model.modelfit_results
+def _get_model_result_summary(model, include_all_estimation_steps=False):
     if not include_all_estimation_steps:
         summary_dict = _summarize_step(model, -1)
-        summary_df = pd.DataFrame(summary_dict, index=[res.model_name])
+        summary_df = pd.DataFrame(summary_dict, index=[model.name])
         return summary_df
     else:
         summary_dicts = []
         tuples = []
-        for i in range(len(res)):
+        for i in range(len(model.estimation_steps)):
             summary_dict = _summarize_step(model, i)
-            is_evaluation = res.model.estimation_steps[i].evaluation
+            is_evaluation = model.estimation_steps[i].evaluation
             if is_evaluation:
                 run_type = 'evaluation'
             else:
                 run_type = 'estimation'
             summary_dict = {**{'run_type': run_type}, **summary_dict}
             summary_dicts.append(summary_dict)
-            tuples.append((res.model_name, i + 1))
+            tuples.append((model.name, i + 1))
         index = pd.MultiIndex.from_tuples(tuples, names=['model_name', 'step'])
         summary_df = pd.DataFrame(summary_dicts, index=index)
         return summary_df
@@ -510,10 +509,8 @@ def summarize_modelfit_results(models, include_all_estimation_steps=False):
 
     for model in models:
         if model.modelfit_results:
-            summaries.append(_result_summary(model, include_all_estimation_steps))
+            summaries.append(_get_model_result_summary(model, include_all_estimation_steps))
         else:
-            # FIXME: in read_modelfit_results, maybe some parts can be extracted (i.e.
-            #   create modelfit_results object)
             if include_all_estimation_steps:
                 for i, est in enumerate(model.estimation_steps):
                     index = pd.MultiIndex.from_tuples(
@@ -523,12 +520,10 @@ def summarize_modelfit_results(models, include_all_estimation_steps=False):
                         run_type = 'evaluation'
                     else:
                         run_type = 'estimation'
-                    empty_df = pd.DataFrame(
-                        {'run_type': run_type, 'minimization_successful': False}, index=index
-                    )
+                    empty_df = pd.DataFrame({'run_type': run_type}, index=index)
                     summaries.append(empty_df)
             else:
-                empty_df = pd.DataFrame({'minimization_successful': False}, index=[model.name])
+                empty_df = pd.DataFrame(index=[model.name])
                 summaries.append(empty_df)
 
     summary = pd.concat(summaries).sort_index()

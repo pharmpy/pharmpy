@@ -169,7 +169,6 @@ def test_summarize_modelfit_results(testdata, pheno_path):
     assert np.isnan(summary_multest_full_no_res.loc['pheno_multest_no_res', 1]['ofv'])
     estimates = summary_multest_full_no_res.loc['pheno_multest_no_res', 2].iloc[2:]
     assert estimates.isnull().all()
-    assert summary_multest_full_no_res.dtypes['minimization_successful'] == bool
 
 
 def test_aic(testdata):
