@@ -58,6 +58,7 @@ class Model:
         self.observation_transformation = self.dependent_variable
         self.modelfit_results = None
         self.parent_model = None
+        self.initial_individual_estimates = None
 
     def __repr__(self):
         return f'<Pharmpy model object {self.name}>'
