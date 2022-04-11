@@ -116,6 +116,12 @@ class Model(pharmpy.model.Model):
         self.observation_transformation = self.dependent_variable
         self._old_observation_transformation = self.dependent_variable
 
+    def __eq__(self, other):
+        # Compare NONMEM code to see if models are the same
+        self.update_source()
+        other.update_source()
+        return str(self) == str(other)
+
     @property
     def name(self):
         return self._name
@@ -178,7 +184,7 @@ class Model(pharmpy.model.Model):
             update_statements(self, self._old_statements, self._statements, trans)
             self._old_statements = self._statements.copy()
 
-        if self._dataset_updated or self.datainfo != self._old_datainfo or self.datainfo.path != self._old_datainfo.path:
+        if self._dataset_updated or self.datainfo != self._old_datainfo:
             # FIXME: If no name set use the model name. Set that when setting dataset to input!
             if self.datainfo.path is None:  # or self.datainfo.path == self._old_datainfo.path:
                 if path is not None:
