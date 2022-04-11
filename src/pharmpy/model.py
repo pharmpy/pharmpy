@@ -60,6 +60,64 @@ class Model:
         self.parent_model = None
         self.initial_individual_estimates = None
 
+    def __eq__(self, other):
+        """Compare two models for equality
+
+        Tests whether a model is equal to another model. This ignores
+        implementation-specific details such as NONMEM $DATA and FILE
+        pointers, or certain $TABLE printing options.
+
+        Parameters
+        ----------
+        other : Model
+            Other model to compare this one with
+
+        Examples
+        --------
+        >>> from pharmpy import Model
+        >>> a = Model()
+        >>> a == a
+        True
+        >>> a == 0
+        Traceback (most recent call last):
+         ...
+        NotImplementedError: Cannot compare Model with <class 'int'>
+        >>> a == None
+        Traceback (most recent call last):
+         ...
+        NotImplementedError: Cannot compare Model with <class 'NoneType'>
+        >>> b = Model()
+        >>> b == a
+        True
+        >>> a.name = 'a'
+        >>> b.name = 'b'
+        >>> a == b
+        True
+        """
+        if self is other:
+            return True
+        if not isinstance(other, Model):
+            raise NotImplementedError(f'Cannot compare Model with {type(other)}')
+
+        if self.parameters != other.parameters:
+            return False
+        if self.random_variables != other.random_variables:
+            return False
+        if self.statements != other.statements:
+            return False
+        if self.dependent_variable != other.dependent_variable:
+            return False
+        if self.observation_transformation != other.observation_transformation:
+            return False
+        if self.estimation_steps != other.estimation_steps:
+            return False
+        if self.initial_individual_estimates != other.initial_individual_estimates:
+            return False
+        if self.datainfo != other.datainfo:
+            return False
+
+        return True
+
     def __repr__(self):
         return f'<Pharmpy model object {self.name}>'
 
