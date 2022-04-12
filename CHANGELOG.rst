@@ -9,6 +9,11 @@ New features
 * Add iofv plot to linearize results
 * Store tool meta data in metadata.json
 
+Changes
+=======
+
+* New options for modelsearch tool: switch order of mfl and algorithm, replace different iiv-options with `iiv_strategy`
+
 0.63.0 (2022-04-07)
 -------------------
 
@@ -37,7 +42,7 @@ Changes
 =======
 
 * New name for final model in resmod
-  
+
 Bugfixes
 ========
 
