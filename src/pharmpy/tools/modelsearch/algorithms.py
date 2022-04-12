@@ -284,7 +284,7 @@ def _update_initial_estimates(model):
     try:
         update_inits(model, move_est_close_to_bounds=True)
     except (ValueError, np.linalg.LinAlgError):
-        warnings.warn('Could not update initial estimates, using default')
+        warnings.warn(f'{model.name}: Could not update initial estimates, using default')
         pass
     return model
 
