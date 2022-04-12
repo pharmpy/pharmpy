@@ -9,6 +9,7 @@ from pharmpy import (
     Parameters,
     RandomVariable,
     RandomVariables,
+    SolvedODESystem,
 )
 from pharmpy.modeling import (
     calculate_epsilon_gradient_expression,
@@ -19,6 +20,7 @@ from pharmpy.modeling import (
     mu_reference_model,
     read_model_from_string,
     simplify_expression,
+    solve_ode_system,
 )
 
 
@@ -198,3 +200,9 @@ def test_simplify_expression():
     pset = Parameters([p1, p2])
     model.parameters = pset
     assert simplify_expression(model, x * y) == x * y
+
+
+def test_solve_ode_system(pheno):
+    model = pheno.copy()
+    solve_ode_system(model)
+    assert isinstance(model.statements.ode_system, SolvedODESystem)

@@ -144,6 +144,7 @@ from .expressions import (
     get_population_prediction_expression,
     mu_reference_model,
     simplify_expression,
+    solve_ode_system,
 )
 from .iterators import omit_data, resample_data
 from .plots import plot_individual_predictions, plot_iofv_vs_iofv
@@ -300,6 +301,7 @@ __all__ = [
     'set_zero_order_absorption',
     'set_zero_order_elimination',
     'simplify_expression',
+    'solve_ode_system',
     'split_joint_distribution',
     'summarize_modelfit_results',
     'summarize_individuals',

@@ -1,6 +1,6 @@
 import sympy
 
-from pharmpy.statements import Assignment, sympify
+from pharmpy.statements import Assignment, CompartmentalSystem, SolvedODESystem, sympify
 
 
 def get_observation_expression(model):
@@ -347,3 +347,53 @@ def simplify_expression(model, expr):
             d[new] = s
     simp = sympy.simplify(expr).subs(d)  # Subs symbols back to non-constrained
     return simp
+
+
+def solve_ode_system(model):
+    """Replace ODE system with analytical solution if possible
+
+    Warnings
+    --------
+    This function can currently only handle the most simple of ODE systems.
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model object
+
+    Returns
+    -------
+    Model
+        Reference to the same pharmpy model object
+
+    Example
+    -------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> model.statements.ode_system
+    Bolus(AMT)
+    ┌───────┐       ┌──────┐
+    │CENTRAL│──CL/V→│OUTPUT│
+    └───────┘       └──────┘
+    >>> solve_ode_system(model)		# doctest: +ELLIPSIS
+    <...>
+    >>> model.statements.ode_system
+    ⎧                    -CL⋅t
+    ⎨                    ──────
+    ⎪                      V
+    ⎩A_CENTRAL(t) = AMT⋅ℯ
+
+    """
+    odes = model.statements.ode_system
+    if odes is None or isinstance(odes, SolvedODESystem):
+        return model
+    if isinstance(odes, CompartmentalSystem):
+        odes = odes.to_explicit_system()
+    ics = dict(odes.ics)
+    ics.popitem()
+    # FIXME: Should set assumptions on symbols before solving
+    # FIXME: Need a way to handle systems with no explicit solutions
+    sol = sympy.dsolve(odes.odes[:-1], ics=ics)
+    new = SolvedODESystem(sol)
+    model.statements.ode_system = new
+    return model
