@@ -345,7 +345,7 @@ def update_infusion(model, old, new):
         statements = model.statements
         statements.insert_before_odes(ass)
         df = model.dataset
-        rate = np.where(df['AMT'] == 0, 0, -2)
+        rate = np.where(df['AMT'] == 0, 0.0, -2.0)
         df['RATE'] = rate
         # FIXME: Adding at end for now. Update $INPUT cannot yet handle adding in middle
         # df.insert(list(df.columns).index('AMT') + 1, 'RATE', rate)
