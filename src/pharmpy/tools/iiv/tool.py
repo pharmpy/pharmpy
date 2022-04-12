@@ -98,7 +98,6 @@ def post_process_results(rankfunc, cutoff, model_features, *models):
         rankfunc,
         cutoff,
         model_features,
-        rank_by_not_worse=True,
         bic_type='iiv',
     )
 
