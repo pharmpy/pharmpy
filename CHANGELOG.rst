@@ -5,6 +5,9 @@ New features
 ============
 
 * Add modeling.solve_ode_system
+* Add documentation for .datainfo file
+* Add iofv plot to linearize results
+* Store tool meta data in metadata.json
 
 0.63.0 (2022-04-07)
 -------------------
