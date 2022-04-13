@@ -3122,6 +3122,15 @@ def test_set_ode_solver(pheno_path):
     assert model.statements.ode_system.solver == 'GL'
     assert 'ADVAN5' in model.model_code
     assert '$MODEL' in model.model_code
+    assert 'K10' in model.model_code
+    model = Model.create_model(pheno_path)
+    set_ode_solver(model, 'GL')
+    set_first_order_absorption(model)
+    assert model.statements.ode_system.solver == 'GL'
+    assert 'ADVAN5' in model.model_code
+    assert '$MODEL' in model.model_code
+    assert 'K12' in model.model_code
+    assert 'K20' in model.model_code
 
 
 def test_add_pk_iiv(pheno_path):

@@ -291,6 +291,8 @@ def update_ode_system(model, old, new):
                 advan = 'ADVAN5'
             else:
                 advan = 'ADVAN7'
+            _, trans = new_advan_trans(model)
+            add_needed_pk_parameters(model, advan, trans)
             update_subroutines_record(model, advan, 'TRANS1')
             update_model_record(model, advan)
         else:
