@@ -14,7 +14,7 @@ class NullModelDatabase(NonTransactionalModelDatabase):
     def store_model(self, model):
         pass
 
-    def store_local_file(self, model, path):
+    def store_local_file(self, model, path, new_filename=None):
         pass
 
     def store_metadata(self, model, metadata):

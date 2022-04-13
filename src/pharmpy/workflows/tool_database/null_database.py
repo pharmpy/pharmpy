@@ -18,3 +18,6 @@ class NullToolDatabase(ToolDatabase):
 
     def store_results(self, res):
         pass
+
+    def store_metadata(self, metadata):
+        pass
