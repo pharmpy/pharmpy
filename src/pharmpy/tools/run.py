@@ -4,7 +4,7 @@ import importlib
 import inspect
 from datetime import datetime
 from pathlib import Path
-from typing import List, Optional, Tuple, Union
+from typing import Any, List, Mapping, Optional, Sequence, Tuple, Union, get_type_hints
 
 import pharmpy
 import pharmpy.results
@@ -187,21 +187,27 @@ def run_tool_with_name(
 ) -> Union[Model, List[Model], Tuple[Model], Results]:
     common_options, tool_options = split_common_options(kwargs)
 
-    tool_params = inspect.signature(_tool.create_workflow).parameters
+    create_workflow = _tool.create_workflow
+    tool_params = inspect.signature(create_workflow).parameters
     tool_metadata = _create_metadata_tool(name, tool_params, tool_options, args)
+    tool_param_types = get_type_hints(create_workflow)
 
     if validate_input := getattr(_tool, 'validate_input', None):
         validate_input(*args, **tool_options)
 
-    wf = _tool.create_workflow(*args, **tool_options)
+    wf = create_workflow(*args, **tool_options)
 
     dispatcher, database = _get_run_setup(common_options, wf.name)
     setup_metadata = _create_metadata_common(common_options, dispatcher, database, wf.name)
     tool_metadata['common_options'] = setup_metadata
-    database.store_metadata(tool_metadata)
 
     if name != 'modelfit':
-        _store_input_models(list(args) + list(kwargs.items()), database)
+        db = database.model_database
+        for key, value in _store_input_models(db, tool_params, tool_param_types, args, kwargs):
+            # TODO Somehow merge this in _create_metadata_tool
+            tool_metadata['tool_options'][key] = value
+
+    database.store_metadata(tool_metadata)
 
     res = execute_workflow(wf, dispatcher=dispatcher, database=database)
     assert name == 'modelfit' or isinstance(res, Results)
@@ -212,33 +218,30 @@ def run_tool_with_name(
     return res
 
 
-def _store_input_models(args, database):
-    input_models = _get_input_models(args)
-
-    if len(input_models) == 1:
-        _create_input_model(input_models[0], database)
-    else:
-        for i, model in enumerate(input_models, 1):
-            _create_input_model(model, database, number=i)
+def _store_input_models(db: ModelDatabase, params, types, args: Sequence, kwargs: Mapping[str, Any]):
+    for param_key, model in _input_models(params, types, args, kwargs):
+        input_model_name = f'input_{param_key}'
+        _store_input_model(db, model, input_model_name)
+        yield param_key, input_model_name
 
 
-def _get_input_models(args):
-    input_models = []
-    for arg in args:
-        if isinstance(arg, Model):
-            input_models.append(arg)
-        else:
-            arg_as_list = [a for a in arg if isinstance(a, Model)]
-            input_models.extend(arg_as_list)
-    return input_models
+def _input_models(params, types, args: Sequence, kwargs: Mapping[str, Any]):
+    for i, param_key in enumerate(params):
+        param = params[param_key]
+        param_type = types.get(param_key)
+        if param_type in (Model, Optional[Model]):
+            # NOTE We do not handle *model, or **model
+            assert param.kind != param.VAR_POSITIONAL
+            assert param.kind != param.VAR_KEYWORD
+            model = args[i] if i < len(args) else kwargs.get(param_key)
+            # NOTE We do not handle missing optional models
+            assert model is not None
+            yield param_key, model
 
 
-def _create_input_model(model, tool_db, number=None):
-    input_name = 'input_model'
-    if number is not None:
-        input_name += str(number)
-    model_copy = copy_model(model, input_name)
-    with tool_db.model_database.transaction(model_copy) as txn:
+def _store_input_model(db: ModelDatabase, model: Model, name: str):
+    model_copy = copy_model(model, name)
+    with db.transaction(model_copy) as txn:
         txn.store_model()
         txn.store_modelfit_results()
 
@@ -299,7 +302,7 @@ def _create_metadata_common(common_options, dispatcher, database, toolname):
     return setup_metadata
 
 
-def _get_run_setup(common_options, toolname):
+def _get_run_setup(common_options, toolname) -> Tuple[Any, ToolDatabase]:
     try:
         dispatcher = common_options['dispatcher']
     except KeyError:

@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
 from pathlib import Path
-from typing import ContextManager
+from typing import ContextManager, Union
 
 from pharmpy.model import Model, Results
 
@@ -13,7 +13,7 @@ class ModelTransaction(ABC):
         pass
 
     @abstractmethod
-    def store_local_file(self, path) -> None:
+    def store_local_file(self, path: Path, new_filename: Union[str, None] = None):
         """Store a file from the local machine for the model bound to this
         transaction
 
@@ -21,6 +21,9 @@ class ModelTransaction(ABC):
         ----------
         path : Path
             Path to file
+        new_filename: str|None
+            Filename to give to the file. Optional, defaults to original
+            filename given by path.
         """
         pass
 
@@ -124,7 +127,7 @@ class ModelDatabase(ABC):
         pass
 
     @abstractmethod
-    def store_local_file(self, model: Model, path: Path):
+    def store_local_file(self, model: Model, path: Path, new_filename: Union[str, None] = None):
         """Store a file from the local machine
 
         Parameters
@@ -133,6 +136,9 @@ class ModelDatabase(ABC):
             Pharmpy model object
         path : Path
             Path to file
+        new_filename: str|None
+            Filename to give to the file. Optional, defaults to original
+            filename given by path.
         """
         pass
 
@@ -267,8 +273,8 @@ class DummyTransaction(ModelTransaction):
     def store_model(self) -> None:
         return self.db.store_model(self.model)
 
-    def store_local_file(self, path: Path) -> None:
-        return self.db.store_local_file(self.model, path)
+    def store_local_file(self, path: Path, new_filename: Union[str, None] = None) -> None:
+        return self.db.store_local_file(self.model, path, new_filename)
 
     def store_metadata(self, metadata: dict) -> None:
         return self.db.store_metadata(self.model, metadata)
@@ -300,9 +306,11 @@ class TransactionalModelDatabase(ModelDatabase):
         with self.transaction(model) as txn:
             return txn.store_model()
 
-    def store_local_file(self, model: Model, path: Path) -> None:
+    def store_local_file(
+        self, model: Model, path: Path, new_filename: Union[str, None] = None
+    ) -> None:
         with self.transaction(model) as txn:
-            return txn.store_local_file(path)
+            return txn.store_local_file(path, new_filename)
 
     def store_metadata(self, model: Model, metadata: dict) -> None:
         with self.transaction(model) as txn:

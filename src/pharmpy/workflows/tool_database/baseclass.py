@@ -43,3 +43,14 @@ class ToolDatabase(ABC):
             Tool results object
         """
         pass
+
+    @abstractmethod
+    def store_metadata(self, metadata):
+        """Store tool metadata
+
+        Parameters
+        ----------
+        metadata : dict
+            Tool metadata dictionary
+        """
+        pass
