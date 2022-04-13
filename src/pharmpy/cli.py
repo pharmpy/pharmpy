@@ -503,7 +503,13 @@ def add_iiv(args):
     from pharmpy.modeling import add_iiv
 
     model = args.model
-    add_iiv(model, args.param, args.expression, args.operation, args.eta_name)
+    add_iiv(
+        model,
+        list_of_parameters=args.param,
+        expression=args.expression,
+        operation=args.operation,
+        eta_names=args.eta_name,
+    )
 
     write_model_or_dataset(model, model.dataset, path=args.output_file, force=False)
 

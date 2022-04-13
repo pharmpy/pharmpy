@@ -2081,7 +2081,13 @@ def test_transform_etas_john_draper(pheno_path, etas, etad, buf_new):
 def test_add_iiv(pheno_path, parameter, expression, operation, eta_name, buf_new, no_of_omega_recs):
     model = Model.create_model(pheno_path)
 
-    add_iiv(model, parameter, expression, operation, eta_name)
+    add_iiv(
+        model,
+        list_of_parameters=parameter,
+        expression=expression,
+        operation=operation,
+        eta_names=eta_name,
+    )
 
     etas = [eta.name for eta in model.random_variables.etas]
 
@@ -3149,3 +3155,8 @@ def test_add_pk_iiv_nested_params(testdata, pheno_path):
     add_pk_iiv(model)
     iivs = set(model.random_variables.iiv.names)
     assert iivs == {'ETA(1)', 'ETA(2)', 'ETA_MAT'}
+
+    model = Model.create_model(pheno_path)
+    set_transit_compartments(model, 3)
+    add_pk_iiv(model, initial_estimate=0.01)
+    assert model.parameters['IIV_MDT'].init == 0.01

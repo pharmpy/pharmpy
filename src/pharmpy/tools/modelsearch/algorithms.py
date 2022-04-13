@@ -292,7 +292,7 @@ def _update_initial_estimates(model):
 def _add_iiv_to_func(iiv_strategy, model):
     sset, rvs = model.statements, model.random_variables
     if iiv_strategy == 1 or iiv_strategy == 2:
-        add_pk_iiv(model)
+        add_pk_iiv(model, initial_estimate=0.01)
         if iiv_strategy == 2:
             create_joint_distribution(model)
     elif iiv_strategy == 3:

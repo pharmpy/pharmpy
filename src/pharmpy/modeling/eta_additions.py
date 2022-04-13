@@ -14,7 +14,9 @@ from pharmpy.statements import Assignment, ModelStatements, sympify
 from pharmpy.symbols import symbol as S
 
 
-def add_iiv(model, list_of_parameters, expression, operation='*', eta_names=None):
+def add_iiv(
+    model, list_of_parameters, expression, operation='*', initial_estimate=0.09, eta_names=None
+):
     """Adds IIVs to :class:`pharmpy.model`.
 
     Effects that currently have templates are:
@@ -37,6 +39,8 @@ def add_iiv(model, list_of_parameters, expression, operation='*', eta_names=None
         Effect/effects on eta. Either abbreviated (see above) or custom.
     operation : str, list, optional
         Whether the new IIV should be added or multiplied (default).
+    initial_estimate : float
+        Value of initial estimate of parameter. Default is 0.09
     eta_names : str, list, optional
         Custom name/names of new eta
 
@@ -93,7 +97,7 @@ def add_iiv(model, list_of_parameters, expression, operation='*', eta_names=None
         eta = RandomVariable.normal(eta_name, 'iiv', 0, omega)
 
         rvs.append(eta)
-        pset.append(Parameter(str(omega), init=0.09))
+        pset.append(Parameter(str(omega), init=initial_estimate))
 
         statement = sset.find_assignment(list_of_parameters[i])
 
@@ -207,7 +211,7 @@ def add_iov(model, occ, list_of_parameters=None, eta_names=None):
     return model
 
 
-def add_pk_iiv(model):
+def add_pk_iiv(model, initial_estimate=0.09):
     """Adds IIVs to all PK parameters in :class:`pharmpy.model`.
 
     Will add exponential IIVs to all parameters that are included in the ODE.
@@ -216,6 +220,8 @@ def add_pk_iiv(model):
     ----------
     model : Model
         Pharmpy model to add new IIVs to.
+    initial_estimate : float
+        Value of initial estimate of parameter. Default is 0.09
 
     Return
     ------
@@ -265,7 +271,7 @@ def add_pk_iiv(model):
                     params_to_add_etas.append(param.name)
 
     if params_to_add_etas:
-        add_iiv(model, params_to_add_etas, 'exp')
+        add_iiv(model, params_to_add_etas, 'exp', initial_estimate=initial_estimate)
 
     return model
 
