@@ -10,6 +10,7 @@ include .coveragerc
 include .editorconfig
 
 include AUTHORS.rst
+include CODE_OF_CONDUCT.rst
 include CHANGELOG.rst
 include LICENSE
 include LICENSE.LESSER
