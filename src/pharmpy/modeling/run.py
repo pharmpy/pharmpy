@@ -160,18 +160,21 @@ def run_tool(name, *args, **kwargs):
 
     res = execute_workflow(wf, dispatcher=dispatcher, database=database)
 
-    tool_metadata['stats']['end_time'] = str(datetime.now())
+    tool_metadata['stats']['end_time'] = _now()
     database.store_metadata(tool_metadata)
 
     return res
 
 
+def _now():
+    return datetime.now().astimezone().isoformat()
+
+
 def _create_metadata_tool(tool_name, tool_params, tool_options, args):
     # FIXME: add config file dump, Pharmpy version, estimation tool etc.
-    # FIXME: format of start/end time
     tool_metadata = {
         'tool_name': tool_name,
-        'stats': {'start_time': str(datetime.now())},
+        'stats': {'start_time': _now()},
         'tool_options': dict(),
     }
 
