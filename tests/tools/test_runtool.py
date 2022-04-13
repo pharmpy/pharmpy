@@ -22,7 +22,7 @@ def create_workflow_rename(new_name, model=None):
         m.name = new_name
         return m
 
-    wf = Workflow([Task('copy', lambda x: x.copy(), model)])
+    wf = Workflow([Task('copy', lambda x: x.copy(), model)], name='rename-workflow')
     wf.insert_workflow(Workflow([Task('rename', rename)]))
     return wf
 
@@ -34,7 +34,7 @@ def validate_input_rename(model, new_name):
 
 
 def create_workflow_generic(model=None):
-    return Workflow([Task('copy', lambda _: Results(), model)])
+    return Workflow([Task('copy', lambda _: Results(), model)], name='generic-workflow')
 
 
 @with_same_arguments_as(create_workflow_generic)

@@ -249,6 +249,87 @@ def _update_metadata(tool_metadata, res):
     return tool_metadata
 
 
+def resume_tool(path: str):
+    """Resume tool workflow from tool database path
+
+    Parameters
+    ----------
+    path : str
+        The path to the tool database
+
+    Return
+    ------
+    Results
+        Results object for tool
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import * # doctest: +SKIP
+    >>> res = resume_tool("resmod_dir1") # doctest: +SKIP
+
+    """
+
+    dispatcher, tool_database = _get_run_setup_from_metadata(path)
+
+    tool_metadata = tool_database.read_metadata()
+    tool_name = tool_metadata['tool_name']
+    tool_options = tool_metadata['tool_options']
+
+    tool = importlib.import_module(f'pharmpy.tools.{tool_name}')
+
+    create_workflow = tool.create_workflow
+
+    tool_params = inspect.signature(create_workflow).parameters
+    tool_param_types = get_type_hints(create_workflow)
+
+    for model_key in _input_model_param_keys(tool_params, tool_param_types):
+        model_name = tool_options.get(model_key)
+        if model_name is None:
+            raise ValueError(
+                f'Cannot resume run because model argument "{model_key}" cannot be restored.'
+            )
+        else:
+            db: ModelDatabase = tool_database.model_database
+            try:
+                model = db.retrieve_model(model_name)
+            except KeyError:
+                raise ValueError(
+                    f'Cannot resume run because model argument "{model_key}" ({model_name}) cannot be restored.'
+                )
+            tool_options = tool_options.copy()
+            tool_options[model_key] = model
+
+    args, kwargs = _parse_metadata_tool_options(tool_params, tool_options)
+
+    if validate_input := getattr(tool, 'validate_input', None):
+        validate_input(*args, **kwargs)
+
+    wf = create_workflow(*args, **kwargs)
+
+    res = execute_workflow(wf, dispatcher=dispatcher, database=tool_database)
+    assert tool_name == 'modelfit' or isinstance(res, Results)
+
+    tool_metadata = _update_metadata(tool_metadata, res)
+    tool_database.store_metadata(tool_metadata)
+
+    return res
+
+
+def _parse_metadata_tool_options(tool_params, tool_options):
+    args = []
+    kwargs = {}
+    for p in tool_params.values():
+        # Positional args
+        if p.default == p.empty:
+            args.append(tool_options[p.name])
+        # Named args
+        else:
+            if p.name in tool_options.keys():
+                kwargs[p.name] = tool_options[p.name]
+
+    return args, kwargs
+
+
 def _create_metadata_tool(
     database: ToolDatabase,
     tool_name: str,
@@ -324,7 +405,7 @@ def _store_input_models(
         yield param_key, input_model_name
 
 
-def _input_models(params, types, args: Sequence, kwargs: Mapping[str, Any]):
+def _input_model_params(params, types):
     for i, param_key in enumerate(params):
         param = params[param_key]
         param_type = types.get(param_key)
@@ -332,10 +413,20 @@ def _input_models(params, types, args: Sequence, kwargs: Mapping[str, Any]):
             # NOTE We do not handle *model, or **model
             assert param.kind != param.VAR_POSITIONAL
             assert param.kind != param.VAR_KEYWORD
-            model = args[i] if i < len(args) else kwargs.get(param_key)
-            # NOTE We do not handle missing optional models
-            assert model is not None
-            yield param_key, model
+            yield i, param_key
+
+
+def _input_model_param_keys(params, types):
+    for _, param_key in _input_model_params(params, types):
+        yield param_key
+
+
+def _input_models(params, types, args: Sequence, kwargs: Mapping[str, Any]):
+    for i, param_key in _input_model_params(params, types):
+        model = args[i] if i < len(args) else kwargs.get(param_key)
+        # NOTE We do not handle missing optional models
+        assert model is not None
+        yield param_key, model
 
 
 def _store_input_model(db: ModelDatabase, model: Model, name: str):
@@ -885,3 +976,22 @@ def read_modelfit_results(path: Union[str, Path]) -> ModelfitResults:
     # FIXME: Quick and dirty solution
     model = read_model(path)
     return mfr(model)
+
+
+def _get_run_setup_from_metadata(path):
+    import pharmpy.workflows as workflows
+
+    tool_database = workflows.default_tool_database(toolname=None, path=path, exist_ok=True)
+
+    tool_metadata = tool_database.read_metadata()
+    tool_name = tool_metadata['tool_name']
+    common_options = tool_metadata['common_options']
+
+    # TODO be more general
+    dispatcher = getattr(workflows, common_options['dispatcher'].split('.')[-1])
+
+    # TODO be more general
+    assert common_options['database']['class'] == 'LocalDirectoryToolDatabase'
+    assert common_options['database']['toolname'] == tool_name
+
+    return dispatcher, tool_database

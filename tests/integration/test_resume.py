@@ -6,7 +6,7 @@ from pharmpy.config import ConfigurationContext
 from pharmpy.internals.fs.cwd import chdir
 from pharmpy.model import Model
 from pharmpy.plugins.nonmem import conf
-from pharmpy.tools import fit, run_tool
+from pharmpy.tools import fit, resume_tool, run_tool
 
 
 def test_run_tool_ruvsearch_resume_flag(tmp_path, testdata):
@@ -151,3 +151,20 @@ def test_run_tool_modelsearch_resume_flag(
                     assert (rundir / 'results.json').exists()
                     assert (rundir / 'results.csv').exists()
                     assert (rundir / 'metadata.json').exists()
+
+
+def test_resume_tool(tmp_path, testdata):
+    with chdir(tmp_path):
+        for path in (testdata / 'nonmem').glob('pheno_real.*'):
+            shutil.copy2(path, tmp_path)
+        shutil.copy2(testdata / 'nonmem' / 'pheno.dta', tmp_path)
+        shutil.copy2(testdata / 'nonmem' / 'sdtab1', tmp_path)
+
+        model = Model.create_model('pheno_real.mod')
+        model.datainfo = model.datainfo.derive(path=tmp_path / 'pheno.dta')
+        path = 'x'
+        res = run_tool('resmod', model, groups=4, p_value=0.05, skip=[], path=path)
+        assert res
+
+        res = resume_tool(path)
+        assert res

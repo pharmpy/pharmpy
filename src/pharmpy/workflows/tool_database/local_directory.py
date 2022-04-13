@@ -22,10 +22,10 @@ class LocalDirectoryToolDatabase(ToolDatabase):
         Whether to allow using an existing database.
     """
 
-    def __init__(self, toolname, path=None, exist_ok=False):
-        super().__init__(toolname)
-
+    def __init__(self, toolname=None, path=None, exist_ok=False):
         if path is None:
+            if toolname is None:
+                raise ValueError('Must specify toolname when not specifying path')
             for i in count(1):
                 name = f'{toolname}_dir{i}'
                 path = Path(name)
@@ -43,6 +43,11 @@ class LocalDirectoryToolDatabase(ToolDatabase):
 
         modeldb = LocalModelDirectoryDatabase(self.path / 'models')
         self.model_database = modeldb
+
+        if toolname is None:
+            toolname = self.read_metadata()['tool_name']
+
+        super().__init__(toolname)
 
     def to_dict(self):
         return {'toolname': self.toolname, 'path': str(self.path)}
