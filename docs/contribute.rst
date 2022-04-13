@@ -3,7 +3,7 @@ Contribute
 ==========
 
 We encourage your contribution to the Pharmpy project! Anything from plugins for new model types to reporting bugs as
-GitHub issues, any contribution is appreciated. See also :ref:`projects` for project suggestions for students or interns.
+GitHub issues, any contribution is appreciated. See also :ref:`projects` for project suggestions. These can be suitable for students or interns.
 
 Set up the development environment
 ##################################
@@ -76,7 +76,7 @@ run all these things while developing so below are instructions on how to run pa
 Check code formatting
 *********************
 
-Pharmpy use the black code formatter, the flake8 linter and isort for formatting of imports. Formatting and linting can be run separately with::
+Pharmpy use the ``black`` code formatter, the ``flake8`` linter and ``isort`` for formatting of imports. Formatting and linting can be run separately with::
 
     tox -e check
 
@@ -136,8 +136,8 @@ To build a usable virtual environment without having to run all tests::
 
 This will create a plain virtual environment in the ``.tox/run`` directory that can be used for using Pharmpy.
 
-Using github and the development process
-########################################
+Standard workflow for contributing
+##################################
 
 Pharmpy is using github to centralize the development. Issues, pull requests and continuous integration tests are managed at github.
 
