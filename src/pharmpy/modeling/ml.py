@@ -101,7 +101,7 @@ def predict_outliers(model, cutoff=3.0):
     --------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> predict_outliers(model)
+    >>> predict_outliers(model)     # doctest: +SKIP
         residual  outlier
     ID
     1  -0.281443    False
