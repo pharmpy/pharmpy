@@ -13,47 +13,84 @@ import pharmpy.model
 
 class ResultsJSONEncoder(json.JSONEncoder):
     def default(self, obj):
-        if isinstance(obj, pd.DataFrame) or isinstance(obj, pd.Series):
-            if isinstance(obj, pd.DataFrame) and str(obj.columns.dtype) == 'int64':
+        # NOTE this function is called when the base JSONEncoder does not know
+        # how to encode the given object, so it will not be called on int,
+        # float, str, list, tuple, and dict. It could be called on set for
+        # instance, or any custom class.
+        if isinstance(obj, Results):
+            d = obj.to_dict()
+            d['__module__'] = obj.__class__.__module__
+            d['__class__'] = obj.__class__.__qualname__
+            return d
+        elif isinstance(obj, pd.DataFrame):
+            if str(obj.columns.dtype) == 'int64':
                 # Workaround for https://github.com/pandas-dev/pandas/issues/46392
                 obj.columns = obj.columns.map(str)
             d = json.loads(obj.to_json(orient='table'))
-            if isinstance(obj, pd.DataFrame):
-                d['__class__'] = 'DataFrame'
-            elif isinstance(obj, pd.Series):
-                d['__class__'] = 'Series'
-            else:
-                d['__class__'] = obj.__class__.__name__
+            d['__class__'] = 'DataFrame'
+            return d
+        elif isinstance(obj, pd.Series):
+            d = json.loads(obj.to_json(orient='table'))
+            d['__class__'] = 'Series'
             return d
         elif obj.__class__.__module__.startswith('altair.'):
             d = obj.to_dict()
             d['__class__'] = 'vega-lite'
             return d
         elif isinstance(obj, pharmpy.model.Model):
-            # TODO: consider using other representation, e.g. path
+            # TODO consider using other representation, e.g. path
             return None
         else:
-            return json.JSONEncoder.encode(self, obj)
+            # NOTE this will raise a proper TypeError
+            return super().default(obj)
 
 
 class ResultsJSONDecoder(json.JSONDecoder):
     def __init__(self, *args, **kwargs):
         json.JSONDecoder.__init__(self, object_hook=self.object_hook, *args, **kwargs)
-        self.cls = None
 
-    def object_hook(self, dct):
-        if '__class__' in dct:
-            cls = dct['__class__']
-            del dct['__class__']
+    def object_hook(self, obj):
+        # NOTE this hook will be called for every dict produced by the
+        # base JSONDecoder. It will not be called on int, float, str, or list.
+        module = None
+        cls = None
+
+        if '__module__' in obj:
+            module = obj['__module__']
+            del obj['__module__']
+
+        if '__class__' in obj:
+            cls = obj['__class__']
+            del obj['__class__']
+
+        # NOTE handling cls not None and module is None is kept for backwards
+        # compatibility
+
+        if cls is None and module is not None:
+            raise ValueError('Cannot specify module without specifying class')
+
+        if module is None or module.startswith('pandas.'):
             if cls == 'DataFrame' or cls == 'Series':
-                res = pd.read_json(json.dumps(dct), orient='table')
-                return res
-            elif cls == 'vega-lite':
-                res = alt.Chart.from_dict(dct)
-                return res
+                return pd.read_json(json.dumps(obj), orient='table')
+
+        if module is None or module.startswith('altair.'):
+            if cls == 'vega-lite':
+                return alt.Chart.from_dict(obj)
+
+        if cls is not None and cls.endswith('Results'):
+            if module is None:
+                # NOTE kept for backwards compatibility: we guess the module
+                # path based on the class name.
+                tool_name = cls[:-7].lower() # NOTE trim "Results" suffix
+                tool_module = importlib.import_module(f'pharmpy.tools.{tool_name}')
+                results_class = tool_module.results_class
             else:
-                self.cls = cls
-        return dct
+                tool_module = importlib.import_module(module)
+                results_class = getattr(tool_module, cls)
+
+            return results_class.from_dict(obj)
+
+        return obj
 
 
 def read_results(path_or_buf):
@@ -71,13 +108,7 @@ def read_results(path_or_buf):
         else:
             with open(path, 'r') as json_file:
                 s = json_file.read()
-    decoder = ResultsJSONDecoder()
-    d = decoder.decode(s)
-    tool_name = decoder.cls[:-7].lower()
-    tool_module = importlib.import_module(f'pharmpy.tools.{tool_name}')
-    results_class = tool_module.results_class
-    res = results_class.from_dict(d)
-    return res
+    return ResultsJSONDecoder().decode(s)
 
 
 class Results:
@@ -103,9 +134,7 @@ class Results:
         str
             Json as string unless path was used
         """
-        json_dict = self.to_dict()
-        json_dict['__class__'] = self.__class__.__name__
-        s = json.dumps(json_dict, cls=ResultsJSONEncoder)
+        s = ResultsJSONEncoder().encode(self)
         if path:
             if not lzma:
                 with open(path, 'w') as fh:
