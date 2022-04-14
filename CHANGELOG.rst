@@ -1,3 +1,22 @@
+next version
+------------
+
+New features
+============
+
+* Add option in `add_iiv` and `add_pk_iiv` to choose initial estimate
+
+Changes
+=======
+
+* Replace different iiv-options in IIV-tool with `iiv_strategy`
+* Use 0.01 as initial estimate for added IIVs in modelsearch tool
+
+Bugfixes
+========
+
+* Add K-parameters when changing to general linear (GL) solvers
+
 0.64.0 (2022-04-12)
 -------------------
 
