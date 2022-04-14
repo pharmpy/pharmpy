@@ -23,13 +23,13 @@ The modelsearch tool is available both in Pharmpy/pharmr and from the command li
     run_tool('modelsearch',
              'ABSORPTION(ZO);ELIMINATION(ZO)',
              'exhaustive',
+             iiv_strategy=0,
              rankfunc='ofv',
              cutoff=None,
-             iiv_strategy=0,
              model=start_model)
 
-This would start a search starting with an input model `model` with `mfl` as the search space using the `algorithm` search algorithm. The candidate models
-will be ranked using `ofv` with default `cutoff`. Structural IIVs will be added according to strategy 0.
+This would start a search starting with an input model `model` with `mfl` as the search space using the `algorithm` search algorithm, where
+structural IIVs will be added to candidates according to strategy 0. The candidate models will be ranked using `ofv` with default `cutoff`.
 
 To run modelsearch from the command line:
 
@@ -141,23 +141,6 @@ Reduced stepwise search
 The reduced stepwise is similar to the exhaustive stepwise search, but it will after each layer compare models with
 the same features (but from different order) and only send the best model for the next transformations.
 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Comparing and ranking candidates
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-The supplied `rankfunc` will be used to compare a set of candidate models and rank them. A cutoff may also be provided
-if the user does not want to use the default. The following rank functions are available:
-
-+------------+---------------------------------------------------------------------------+
-| Rankfunc   | Description                                                               |
-+============+===========================================================================+
-| ofv        | ΔOFV. Default is to not rank candidates with ΔOFV < cutoff (default 3.84) |
-+------------+---------------------------------------------------------------------------+
-| aic        | ΔAIC. Default is to rank all candidates if no cutoff is provided.         |
-+------------+---------------------------------------------------------------------------+
-| bic        | ΔBIC (mixed). Default is to rank all candidates if no cutoff is provided. |
-+------------+---------------------------------------------------------------------------+
-
 ~~~~~~~~~~~~~~
 IIV strategies
 ~~~~~~~~~~~~~~
@@ -176,6 +159,23 @@ The different strategies can be seen here:
 +-----------+----------------------------------------------------------+
 | 3         | IIV is added to MDT parameters.                          |
 +-----------+----------------------------------------------------------+
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Comparing and ranking candidates
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The supplied `rankfunc` will be used to compare a set of candidate models and rank them. A cutoff may also be provided
+if the user does not want to use the default. The following rank functions are available:
+
++------------+---------------------------------------------------------------------------+
+| Rankfunc   | Description                                                               |
++============+===========================================================================+
+| ofv        | ΔOFV. Default is to not rank candidates with ΔOFV < cutoff (default 3.84) |
++------------+---------------------------------------------------------------------------+
+| aic        | ΔAIC. Default is to rank all candidates if no cutoff is provided.         |
++------------+---------------------------------------------------------------------------+
+| bic        | ΔBIC (mixed). Default is to rank all candidates if no cutoff is provided. |
++------------+---------------------------------------------------------------------------+
 
 ~~~~~~~~~~~~~~~~~~~~~~~~
 The Model Search results

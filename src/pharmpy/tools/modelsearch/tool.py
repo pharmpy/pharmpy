@@ -12,9 +12,9 @@ from pharmpy.workflows import Task, Workflow
 def create_workflow(
     mfl,
     algorithm,
+    iiv_strategy=0,
     rankfunc='ofv',
     cutoff=None,
-    iiv_strategy=0,
     model=None,
 ):
     algorithm_func = getattr(algorithms, algorithm)
