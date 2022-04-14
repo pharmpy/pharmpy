@@ -1,5 +1,5 @@
-next version
-------------
+0.65.0 (2022-04-14) 
+-------------------
 
 New features
 ============
@@ -15,7 +15,7 @@ Changes
 Bugfixes
 ========
 
-* Add K-parameters when changing to general linear (GL) solvers
+* Add K-parameters in NONMEM model when changing to general linear (GL) solvers
 
 0.64.0 (2022-04-12)
 -------------------
