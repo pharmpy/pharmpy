@@ -81,7 +81,7 @@ class ResultsJSONDecoder(json.JSONDecoder):
             if module is None:
                 # NOTE kept for backwards compatibility: we guess the module
                 # path based on the class name.
-                tool_name = cls[:-7].lower() # NOTE trim "Results" suffix
+                tool_name = cls[:-7].lower()  # NOTE trim "Results" suffix
                 tool_module = importlib.import_module(f'pharmpy.tools.{tool_name}')
                 results_class = tool_module.results_class
             else:
