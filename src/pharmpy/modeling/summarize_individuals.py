@@ -116,13 +116,14 @@ def dofv(parent_model: Union[Model, None], candidate_model: Model) -> Union[pd.S
 
 
 def groupedByIDAddColumnsOneModel(modelsDict: Dict[str, Model], model: Model) -> pd.DataFrame:
-    index = pd.Index(model.dataset[model.datainfo.id_column.name].unique())
+    id_column_name = model.datainfo.id_column.name
+    index = pd.Index(data=model.dataset[id_column_name].unique(), name=id_column_name)
     df = pd.DataFrame(
         {
             'parent_model': parent_model_name(model),
             'outliers_fda': outliers_fda(model),
             'ofv': ofv(model),
-            'dofv': dofv(modelsDict.get(model.parent_model), model),
+            'dofv_vs_parent': dofv(modelsDict.get(model.parent_model), model),
             'predicted_dofv': predicted_dofv(model),
             'predicted_residual': predicted_residual(model),
         },
