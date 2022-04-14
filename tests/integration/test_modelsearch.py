@@ -83,7 +83,7 @@ def test_exhaustive_stepwise_basic(
 @pytest.mark.parametrize(
     'mfl, iiv_strategy, no_of_models, best_model_name, no_of_added_etas',
     [
-        ('ABSORPTION(ZO);PERIPHERALS(1)', 1, 4, 'modelsearch_candidate4', 2),
+        ('ABSORPTION(ZO);PERIPHERALS(1)', 1, 4, 'modelsearch_candidate2', 2),
         ('ABSORPTION(ZO);ELIMINATION(ZO)', 1, 4, 'modelsearch_candidate1', 1),
         ('ABSORPTION(ZO);ELIMINATION(MIX-FO-MM)', 1, 4, 'modelsearch_candidate1', 2),
         ('ABSORPTION(ZO);PERIPHERALS([1, 2])', 1, 8, 'modelsearch_candidate5', 4),
