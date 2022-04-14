@@ -418,7 +418,8 @@ def to_des(model, new):
         elif new.solver == 'LSODI':
             advan = 'ADVAN9'
         solver = new.solver
-        new = new.to_explicit_system()
+        if not isinstance(new, ExplicitODESystem):
+            new = new.to_explicit_system()
         new.solver = solver
         subs.append_option(advan)
     else:
