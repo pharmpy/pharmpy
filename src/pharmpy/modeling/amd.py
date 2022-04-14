@@ -220,7 +220,7 @@ def _run_allometry(model, allometric_variable):
     return model
 
 
-def run_iiv(model, add_iivs=False, iiv_as_fullblock=False, rankfunc='ofv', cutoff=None, path=None):
+def run_iiv(model, iiv_strategy=0, rankfunc='ofv', cutoff=None, path=None):
     """Run IIV tool
 
     Runs two IIV workflows: testing the number of etas and testing which block structure
@@ -229,10 +229,8 @@ def run_iiv(model, add_iivs=False, iiv_as_fullblock=False, rankfunc='ofv', cutof
     ----------
     model : Model
         Pharmpy model
-    add_iivs : bool
-        Whether to add IIV on structural parameters. Default is False
-    iiv_as_fullblock : bool
-        Whether added etas should be as a fullblock. Default is False
+    iiv_strategy : int
+        How IIVs should be added to start model. Default is 0 (no added IIVs)
     rankfunc : str
         Which ranking function should be used (OFV, AIC, BIC). Default is OFV
     cutoff : float
@@ -268,8 +266,7 @@ def run_iiv(model, add_iivs=False, iiv_as_fullblock=False, rankfunc='ofv', cutof
     res_no_of_etas = run_tool(
         'iiv',
         'brute_force_no_of_etas',
-        add_iivs=add_iivs,
-        iiv_as_fullblock=iiv_as_fullblock,
+        iiv_strategy=iiv_strategy,
         rankfunc=rankfunc,
         cutoff=cutoff,
         model=model,

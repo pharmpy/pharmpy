@@ -239,7 +239,7 @@ def test_summary_individuals(tmp_path, testdata):
             'parent_model',
             'outliers_fda',
             'ofv',
-            'dofv',
+            'dofv_vs_parent',
             'predicted_dofv',
             'predicted_residual',
         )
