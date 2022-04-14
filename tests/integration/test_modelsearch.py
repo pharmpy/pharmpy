@@ -247,7 +247,7 @@ def test_summary_individuals(tmp_path, testdata):
         assert tuple(summary.columns) == columns
         for column in columns:
             assert summary[column].notna().any()
-        assert summary['dofv'].equals(
+        assert summary['dofv_vs_parent'].equals(
             summary.apply(
                 lambda row: summary.loc[(row['parent_model'], row.name[1])]['ofv'] - row['ofv'],
                 axis=1,
