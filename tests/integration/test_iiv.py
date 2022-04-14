@@ -57,10 +57,10 @@ def test_iiv_no_of_etas(tmp_path, testdata):
 
 @pytest.mark.filterwarnings("ignore::UserWarning")
 @pytest.mark.parametrize(
-    'iiv_as_fullblock, best_model_name',
-    [(False, 'iiv_no_of_etas_candidate4'), (True, 'iiv_no_of_etas_candidate4')],
+    'iiv_strategy, best_model_name',
+    [(1, 'iiv_no_of_etas_candidate4'), (2, 'iiv_no_of_etas_candidate4')],
 )
-def test_iiv_no_of_etas_added_iiv(tmp_path, testdata, iiv_as_fullblock, best_model_name):
+def test_iiv_no_of_etas_added_iiv(tmp_path, testdata, iiv_strategy, best_model_name):
     with TemporaryDirectoryChanger(tmp_path):
         shutil.copy2(testdata / 'nonmem' / 'models' / 'mox2.mod', tmp_path)
         shutil.copy2(testdata / 'nonmem' / 'models' / 'mox_simulated_normal.csv', tmp_path)
@@ -71,13 +71,13 @@ def test_iiv_no_of_etas_added_iiv(tmp_path, testdata, iiv_as_fullblock, best_mod
         res = run_tool(
             'iiv',
             'brute_force_no_of_etas',
-            add_iivs=True,
-            iiv_as_fullblock=iiv_as_fullblock,
+            iiv_strategy=iiv_strategy,
             rankfunc='bic',
             model=model_start,
         )
 
-        assert (len(res.start_model.random_variables['ETA(1)'].joint_names) > 0) is iiv_as_fullblock
+        if iiv_strategy == 2:
+            assert len(res.start_model.random_variables['ETA(1)'].joint_names) > 0
         assert len(res.summary_tool) == 16
         assert len(res.summary_models) == 16
         assert len(res.models) == 15

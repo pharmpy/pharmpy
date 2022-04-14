@@ -14,8 +14,7 @@ from pharmpy.workflows import Task, Workflow
 
 def create_workflow(
     algorithm,
-    add_iivs=False,
-    iiv_as_fullblock=False,
+    iiv_strategy=0,
     rankfunc='bic',
     cutoff=None,
     model=None,
@@ -23,9 +22,9 @@ def create_workflow(
     algorithm_func = getattr(algorithms, algorithm)
 
     # FIXME: must currently be a model, cannot be a task
-    if add_iivs:
+    if iiv_strategy != 0:
         model_iiv = copy_model(model, f'{model.name}_add_iiv')
-        _add_iiv(iiv_as_fullblock, model_iiv)
+        _add_iiv(iiv_strategy, model_iiv)
         iivs = model_iiv.random_variables.iiv
     else:
         iivs = model.random_variables.iiv
@@ -33,10 +32,10 @@ def create_workflow(
     wf = Workflow()
     wf.name = 'iiv'
 
-    start_task = Task('start_iiv', start, add_iivs, iiv_as_fullblock, model)
+    start_task = Task('start_iiv', start, iiv_strategy, model)
     wf.add_task(start_task)
 
-    if not model.modelfit_results or add_iivs:
+    if not model.modelfit_results or iiv_strategy != 0:
         wf_fit = create_fit_workflow(n=1)
         wf.insert_workflow(wf_fit)
         start_model_task = wf_fit.output_tasks
@@ -62,16 +61,16 @@ def create_workflow(
     return wf
 
 
-def start(add_iivs, iiv_as_fullblock, model):
-    if add_iivs:
+def start(iiv_strategy, model):
+    if iiv_strategy != 0:
         model = copy_model(model, f'{model.name}_add_iiv')
-        _add_iiv(iiv_as_fullblock, model)
+        _add_iiv(iiv_strategy, model)
     return model
 
 
-def _add_iiv(iiv_as_fullblock, model):
+def _add_iiv(iiv_strategy, model):
     add_pk_iiv(model)
-    if iiv_as_fullblock:
+    if iiv_strategy == 2:
         create_joint_distribution(model)
     return model
 
