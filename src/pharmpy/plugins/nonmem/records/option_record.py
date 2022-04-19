@@ -4,6 +4,7 @@ Generic NONMEM option record class.
 Assumes 'KEY=VALUE' and does not support 'KEY VALUE'.
 """
 
+import re
 from collections import OrderedDict, namedtuple
 
 from pharmpy.parse_utils.generic import AttrTree
@@ -80,7 +81,7 @@ class OptionRecord(Record):
                     next_value = True
             if value is not None:
                 if value[0] == '(' and value[-1] == ')':
-                    yield value[1:-1].split()
+                    yield re.split(r'\s+|,', value[1:-1])
                 else:
                     yield [value]
 
