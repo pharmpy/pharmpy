@@ -234,6 +234,8 @@ def test_to_explicit_ode_system(pheno_path):
     assert len(odes) == 2
     assert len(ics) == 2
 
+    assert exodes.amounts == sympy.Matrix([sympy.Symbol('A_CENTRAL'), sympy.Symbol('A_OUTPUT')])
+
 
 def test_repr_latex():
     s1 = Assignment(S('KA'), S('X') + S('Y'))

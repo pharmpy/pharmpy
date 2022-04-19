@@ -377,6 +377,24 @@ class ExplicitODESystem(ODESystem):
         """
         return self.free_symbols
 
+    @property
+    def amounts(self):
+        """Column vector of all amount functions
+
+        Examples
+        --------
+        >>> from pharmpy.modeling import load_example_model
+        >>> import sympy
+        >>> model = load_example_model("pheno")
+        >>> model.statements.to_explicit_system()
+        >>> sympy.pprint(model.statements.ode_system.amounts)
+        ⎡A_CENTRAL⎤
+        ⎢         ⎥
+        ⎣A_OUTPUT ⎦
+        """
+        amounts = [ode.lhs.args[0].name for ode in self.odes]
+        return sympy.Matrix(amounts)
+
     def __repr__(self):
         a = []
         for ode in self.odes:
@@ -1148,7 +1166,7 @@ class CompartmentalSystem(ODESystem):
 
         Examples
         --------
-        >>> from pharmpy.modeling import load_example_model, set_first_order_absorption
+        >>> from pharmpy.modeling import load_example_model
         >>> import sympy
         >>> model = load_example_model("pheno")
         >>> sympy.pprint(model.statements.ode_system.amounts)
