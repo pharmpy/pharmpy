@@ -7,6 +7,17 @@ from .option_record import OptionRecord
 
 class SizesRecord(OptionRecord):
     @property
+    def LTH(self):
+        return int(self.option_pairs.get('LTH', 100))
+
+    @LTH.setter
+    def LTH(self, value):
+        if value < 101:
+            self.remove_option('LTH')
+        else:
+            self.set_option('LTH', value)
+
+    @property
     def PC(self):
         return int(self.option_pairs.get('PC', 30))
 

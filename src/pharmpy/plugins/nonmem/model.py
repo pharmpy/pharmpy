@@ -246,6 +246,8 @@ class Model(pharmpy.model.Model):
         if odes is not None and isinstance(odes, CompartmentalSystem):
             n_compartments = len(odes)
             sizes.PC = n_compartments
+        thetas = [p for p in self.parameters if p.symbol not in self.random_variables.free_symbols]
+        sizes.LTH = len(thetas)
 
         if len(all_sizes) == 0 and len(str(sizes)) > 7:
             self.control_stream.insert_record(str(sizes))
