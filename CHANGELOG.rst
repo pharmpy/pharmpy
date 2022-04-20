@@ -1,3 +1,11 @@
+next version
+------------
+
+Bugfixes
+========
+
+* Correct parsing of ADVAN=ADVANx in $SUBROUTINES in NONMEM models
+
 0.66.0 (2022-04-20)
 -------------------
 

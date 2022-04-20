@@ -23,6 +23,7 @@ from .problem_record import ProblemRecord
 from .raw_record import RawRecord
 from .simulation_record import SimulationRecord
 from .sizes_record import SizesRecord
+from .subroutine_record import SubroutineRecord
 from .table_record import TableRecord
 from .theta_record import ThetaRecord
 
@@ -44,7 +45,7 @@ known_records = {
     'SIGMA': (OmegaRecord, OmegaRecordParser),
     'SIMULATION': (SimulationRecord, SimulationRecordParser),
     'SIZES': (SizesRecord, OptionRecordParser),
-    'SUBROUTINES': (OptionRecord, OptionRecordParser),
+    'SUBROUTINES': (SubroutineRecord, OptionRecordParser),
     'TABLE': (TableRecord, OptionRecordParser),
     'THETA': (ThetaRecord, ThetaRecordParser),
 }

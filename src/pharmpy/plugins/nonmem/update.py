@@ -560,7 +560,7 @@ def pk_param_conversion(model, advan, trans):
     if not all_subs:
         return
     subs = all_subs[0]
-    from_advan = subs.get_option_startswith('ADVAN')
+    from_advan = subs.advan
     statements = model.statements
     cs = statements.ode_system
     oldmap = model._compartment_map
@@ -784,8 +784,8 @@ def update_subroutines_record(model, advan, trans):
         model.control_stream.insert_record(content)
         return
     subs = all_subs[0]
-    oldadvan = subs.get_option_startswith('ADVAN')
-    oldtrans = subs.get_option_startswith('TRANS')
+    oldadvan = subs.advan
+    oldtrans = subs.trans
 
     if advan != oldadvan:
         subs.replace_option(oldadvan, advan)
