@@ -13,6 +13,9 @@ from pharmpy.modeling import (
     fix_parameters_to,
     generate_model_code,
     get_model_covariates,
+    get_omegas,
+    get_sigmas,
+    get_thetas,
     load_example_model,
     read_model,
     read_model_from_string,
@@ -188,3 +191,21 @@ def test_remove_unused_parameters_and_rvs(pheno):
     del model.statements[i]
     remove_unused_parameters_and_rvs(model)
     assert not model.random_variables['ETA(2)'].joint_names
+
+
+def test_get_thetas(pheno):
+    thetas = get_thetas(pheno)
+    assert len(thetas) == 3
+    assert thetas['THETA(1)'].init == 0.00469307
+
+
+def test_get_omegas(pheno):
+    omegas = get_omegas(pheno)
+    assert len(omegas) == 2
+    assert omegas['OMEGA(1,1)'].init == 0.0309626
+
+
+def test_get_sigmas(pheno):
+    sigmas = get_sigmas(pheno)
+    assert len(sigmas) == 1
+    assert sigmas['SIGMA(1,1)'].init == 0.013241

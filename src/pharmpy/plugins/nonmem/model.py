@@ -242,9 +242,11 @@ class Model(pharmpy.model.Model):
         else:
             sizes = all_sizes[0]
         odes = self.statements.ode_system
+
         if odes is not None and isinstance(odes, CompartmentalSystem):
             n_compartments = len(odes)
             sizes.PC = n_compartments
+
         if len(all_sizes) == 0 and len(str(sizes)) > 7:
             self.control_stream.insert_record(str(sizes))
 

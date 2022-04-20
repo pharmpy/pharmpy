@@ -1,6 +1,11 @@
 next version
 ------------
 
+New features
+============
+
+* Add modeling.get_thetas, modeling.get_omegas and modeling.get_sigmas
+
 Bugfixes
 ========
 

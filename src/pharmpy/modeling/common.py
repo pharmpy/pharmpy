@@ -846,3 +846,104 @@ def remove_unused_parameters_and_rvs(model):
             new_params.append(p)
     model.parameters = new_params
     return model
+
+
+def get_thetas(model):
+    """Get all thetas (structural parameters) of a model
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model object
+
+    Returns
+    -------
+    Parameters
+        A copy of all theta parameters
+
+    Example
+    -------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> get_thetas(model)
+                 value  lower    upper    fix
+    THETA(1)  0.004693   0.00  1000000  False
+    THETA(2)  1.009160   0.00  1000000  False
+    THETA(3)  0.100000  -0.99  1000000  False
+
+    See also
+    --------
+    get_omegas : Get omega parameters
+    get_sigmas : Get sigma parameters
+    """
+    thetas = [
+        p.copy() for p in model.parameters if p.symbol not in model.random_variables.free_symbols
+    ]
+    return Parameters(thetas)
+
+
+def get_omegas(model):
+    """Get all omegas (variability parameters) of a model
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model object
+
+    Returns
+    -------
+    Parameters
+        A copy of all omega parameters
+
+    Example
+    -------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> get_omegas(model)
+                   value  lower upper    fix
+    OMEGA(1,1)  0.030963      0    oo  False
+    OMEGA(2,2)  0.031128      0    oo  False
+
+    See also
+    --------
+    get_thetas : Get theta parameters
+    get_sigmas : Get sigma parameters
+    """
+    omegas = [
+        p.copy() for p in model.parameters if p.symbol in model.random_variables.etas.free_symbols
+    ]
+    return Parameters(omegas)
+
+
+def get_sigmas(model):
+    """Get all sigmas (residual error variability parameters) of a model
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model object
+
+    Returns
+    -------
+    Parameters
+        A copy of all sigma parameters
+
+    Example
+    -------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> get_sigmas(model)
+                   value  lower upper    fix
+    SIGMA(1,1)  0.013241      0    oo  False
+
+    See also
+    --------
+    get_thetas : Get theta parameters
+    get_omegas : Get omega parameters
+    """
+    sigmas = [
+        p.copy()
+        for p in model.parameters
+        if p.symbol in model.random_variables.epsilons.free_symbols
+    ]
+    return Parameters(sigmas)
