@@ -1,4 +1,5 @@
 import shutil
+import warnings
 
 import numpy as np
 import pytest
@@ -106,13 +107,16 @@ def test_exhaustive_stepwise_add_iivs(
         shutil.copy2(testdata / 'nonmem' / 'models' / 'mox_simulated_normal.csv', tmp_path)
         model_start = Model.create_model('mox2.mod')
         model_start.datainfo.path = tmp_path / 'mox_simulated_normal.csv'
-        res = run_tool(
-            'modelsearch',
-            mfl,
-            'exhaustive_stepwise',
-            iiv_strategy=iiv_strategy,
-            model=model_start,
-        )
+
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=UserWarning)
+            res = run_tool(
+                'modelsearch',
+                mfl,
+                'exhaustive_stepwise',
+                iiv_strategy=iiv_strategy,
+                model=model_start,
+            )
 
         assert len(res.summary_tool) == no_of_models + 1
         assert len(res.summary_models) == no_of_models + 1
