@@ -1,3 +1,11 @@
+0.66.0 (2022-04-20)
+-------------------
+
+Bugfixes
+========
+
+* Fix NONMEM model parsing issue causing ADVAN not to change for models with DEFOBS in $MODEL 
+
 0.65.0 (2022-04-14) 
 -------------------
 
