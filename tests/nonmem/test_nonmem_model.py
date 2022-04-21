@@ -1103,3 +1103,33 @@ $ESTIMATION METHOD=1 INTERACTION MAXEVALS=9999
     assert step.solver == 'LSODA'
     assert step.solver_rtol == 5
     assert step.solver_atol == 1.5
+
+
+def test_if_in_des():
+    code = """
+$PROBLEM
+$DATA ../../pheno.dta IGNORE=@
+$INPUT ID TIME AMT WGT APGR DV FA1 FA2
+$SUBROUTINE ADVAN6 TOL=5
+$MODEL COMP=(CENTRAL)
+$PK
+CL=THETA(1)*EXP(ETA(1))
+V=THETA(2)*EXP(ETA(2))
+S1=V
+$DES
+IF (CL>0) THEN
+DADT(1) = -CL/V * A(1)
+ELSE
+DADT(1) = -1
+END IF
+$ERROR
+Y=F+F*EPS(1)
+$THETA (0,0.00469555)
+$THETA (0,0.984258)
+$THETA (0.15892)
+$OMEGA 0.0293508 0.027906
+$SIGMA 0.013241
+$ESTIMATION METHOD=1 INTERACTION MAXEVALS=9999
+"""
+    model = Model.create_model(StringIO(code))
+    assert type(model.statements.ode_system.odes[0].rhs) == sympy.Piecewise
