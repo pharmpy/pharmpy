@@ -44,6 +44,9 @@ class NONMEMConfiguration(config.Configuration):
         cls=normalize_user_given_path,
     )
     write_etas_in_abbr = config.ConfigItem(False, 'Whether to write etas as $ABBR records', bool)
+    licfile = config.ConfigItem(
+        None, 'Path to the NONMEM license file', cls=normalize_user_given_path
+    )
 
 
 conf = NONMEMConfiguration()
