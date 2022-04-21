@@ -973,6 +973,7 @@ class Model(pharmpy.model.Model):
                 else:
                     info.type = 'event'
                 info.scale = 'nominal'
+                info.datatype = 'int64'
             elif colname == 'II' and have_pk:
                 info.type = 'ii'
                 info.scale = 'ratio'
@@ -1015,6 +1016,11 @@ class Model(pharmpy.model.Model):
             else:
                 accept = Model._replace_synonym_in_filters(accept, replacements)
 
+        dtypes = {
+            col.name: col.datatype if not col.datatype.startswith('nmtran') else 'str'
+            for col in self.datainfo
+        }
+
         df = pharmpy.plugins.nonmem.dataset.read_nonmem_dataset(
             self.datainfo.path,
             raw,
@@ -1025,6 +1031,7 @@ class Model(pharmpy.model.Model):
             parse_columns=parse_columns,
             ignore=ignore,
             accept=accept,
+            dtype=dtypes,
         )
         # Let TIME be the idv in both $PK and $PRED models
 

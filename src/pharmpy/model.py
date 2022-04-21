@@ -356,7 +356,10 @@ class Model:
             try:
                 col = curdi[colname]
             except IndexError:
-                col = ColumnInfo(colname)
+                datatype = self.dataset.dtypes[colname].name
+                if datatype == 'object':
+                    datatype = 'str'
+                col = ColumnInfo(colname, datatype=datatype)
             newdi.append(col)
         if curdi != newdi:
             # Remove path if dataset has been updated
