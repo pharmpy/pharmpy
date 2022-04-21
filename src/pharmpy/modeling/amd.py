@@ -6,7 +6,7 @@ from pharmpy.tools.amd.funcs import create_start_model
 from pharmpy.workflows import default_tool_database
 
 from .allometry import add_allometry
-from .common import convert_model, read_model, write_model
+from .common import convert_model
 from .data import remove_loq_data
 from .run import fit, run_tool
 
@@ -99,8 +99,6 @@ def run_amd(
 
     db = default_tool_database(toolname='amd')
     # FIXME: Workaround for nonmem<->generic eta names gets lost somewhere
-    write_model(model, db.path)
-    model = read_model(db.path / (model.name + '.ctl'))
     fit(model)
 
     run_funcs = []
