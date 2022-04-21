@@ -119,17 +119,6 @@ A new parameter can be added by using the name of the new parameter.
 PK models and ODE systems
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. jupyter-execute::
-
-   model = read_model(path / "pheno.mod")
-
-The exact solver to use (corresponding to a specific ADVAN in NONMEM) can be set using the function `set_ode_solver`.
-
-.. jupyter-execute::
-
-   set_ode_solver(model, 'LSODA')
-   print_model_diff(model_ref, model)
-
 Absorption rate
 ~~~~~~~~~~~~~~~
 

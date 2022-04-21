@@ -1433,10 +1433,6 @@ def set_ode_solver(model, solver):
     +----------------------------+------------------+
     | IDA                        | ADVAN15          |
     +----------------------------+------------------+
-    | GL (general linear)        | ADVAN5           |
-    +----------------------------+------------------+
-    | GL_REAL (real eigenvalues) | ADVAN7           |
-    +----------------------------+------------------+
     | LSODA                      | ADVAN13          |
     +----------------------------+------------------+
     | LSODI                      | ADVAN9           |
@@ -1462,6 +1458,6 @@ def set_ode_solver(model, solver):
     <...>
 
     """
-    odes = model.statements.ode_system
-    odes.solver = solver.upper()
+    for step in model.estimation_steps:
+        step.solver = solver
     return model

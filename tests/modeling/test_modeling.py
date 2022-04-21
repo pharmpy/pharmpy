@@ -119,7 +119,7 @@ def test_set_zero_order_elimination(testdata):
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV
-$SUBROUTINE ADVAN6 TOL=3
+$SUBROUTINE ADVAN13 TOL=9
 
 $MODEL COMPARTMENT=(CENTRAL DEFDOSE)
 $PK
@@ -149,7 +149,7 @@ $ESTIMATION METHOD=1 INTERACTION
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV
-$SUBROUTINE ADVAN6 TOL=3
+$SUBROUTINE ADVAN13 TOL=9
 
 $MODEL COMPARTMENT=(CENTRAL DEFDOSE)
 $PK
@@ -179,7 +179,7 @@ $ESTIMATION METHOD=1 INTERACTION
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV
-$SUBROUTINE ADVAN6 TOL=3
+$SUBROUTINE ADVAN13 TOL=9
 
 $MODEL COMPARTMENT=(CENTRAL DEFDOSE)
 $PK
@@ -215,7 +215,7 @@ def test_set_michaelis_menten_elimination(testdata):
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV
-$SUBROUTINE ADVAN6 TOL=3
+$SUBROUTINE ADVAN13 TOL=9
 
 $MODEL COMPARTMENT=(CENTRAL DEFDOSE)
 $PK
@@ -246,7 +246,7 @@ $ESTIMATION METHOD=1 INTERACTION
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV
-$SUBROUTINE ADVAN6 TOL=3
+$SUBROUTINE ADVAN13 TOL=9
 
 $MODEL COMPARTMENT=(CENTRAL DEFDOSE)
 $PK
@@ -296,7 +296,7 @@ $ESTIMATION METHOD=1 INTERACTION
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA run1.csv IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
-$SUBROUTINE ADVAN6 TOL=3
+$SUBROUTINE ADVAN13 TOL=9
 $MODEL COMPARTMENT=(CENTRAL DEFDOSE)
 $PK
 KM = THETA(3)
@@ -338,7 +338,7 @@ $ESTIMATION METHOD=1 INTERACTION
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA run1.csv IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
-$SUBROUTINE ADVAN6 TOL=3
+$SUBROUTINE ADVAN13 TOL=9
 $MODEL COMPARTMENT=(CENTRAL DEFDOSE)
 $PK
 DUMMYETA = ETA(1)
@@ -385,7 +385,7 @@ $ESTIMATION METHOD=1 INTERACTION
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA run1.csv IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
-$SUBROUTINE ADVAN6 TOL=3
+$SUBROUTINE ADVAN13 TOL=9
 $MODEL COMPARTMENT=(CENTRAL DEFDOSE)
 $PK
 CLMM = THETA(4)
@@ -413,7 +413,7 @@ $ESTIMATION METHOD=1 INTERACTION
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA run1.csv IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
-$SUBROUTINE ADVAN6 TOL=3
+$SUBROUTINE ADVAN13 TOL=9
 $MODEL COMPARTMENT=(CENTRAL DEFDOSE)
 $PK
 CLMM = THETA(3)
@@ -454,7 +454,7 @@ $ESTIMATION METHOD=1 INTERACTION
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA run1.csv IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
-$SUBROUTINE ADVAN6 TOL=3
+$SUBROUTINE ADVAN13 TOL=9
 $MODEL COMPARTMENT=(CENTRAL DEFDOSE)
 $PK
 DUMMYETA = ETA(1)
@@ -483,7 +483,7 @@ $ESTIMATION METHOD=1 INTERACTION
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA run1.csv IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
-$SUBROUTINE ADVAN6 TOL=3
+$SUBROUTINE ADVAN13 TOL=9
 $MODEL COMPARTMENT=(CENTRAL DEFDOSE)
 $PK
 DUMMYETA = ETA(1)
@@ -1326,7 +1326,7 @@ def test_absrate_from_explicit():
 $PROBLEM    PHENOBARB SIMPLE MODEL
 $DATA      pheno.dta IGNORE=@
 $INPUT      ID TIME AMT WGT APGR DV FA1 FA2
-$SUBROUTINE ADVAN6 TOL=3
+$SUBROUTINE ADVAN13 TOL=9
 $MODEL COMPARTMENT=(CENTRAL DEFDOSE)
 $PK
 CL=THETA(1)*EXP(ETA(1))
@@ -1354,7 +1354,7 @@ $ESTIMATION METHOD=1 INTERACTION
 $PROBLEM    PHENOBARB SIMPLE MODEL
 $DATA      pheno.dta IGNORE=@
 $INPUT      ID TIME AMT WGT APGR DV FA1 FA2
-$SUBROUTINE ADVAN6 TOL=3
+$SUBROUTINE ADVAN13 TOL=9
 $MODEL COMPARTMENT=(DEPOT DEFDOSE) COMPARTMENT=(CENTRAL)
 $PK
 MAT = THETA(3)
@@ -3111,38 +3111,24 @@ def test_add_iov_only_one_level(pheno_path):
 
 def test_set_ode_solver(pheno_path):
     model = Model.create_model(pheno_path)
-    assert model.statements.ode_system.solver is None
+    assert model.estimation_steps[0].solver is None
     assert 'ADVAN1' in model.model_code
 
     model = Model.create_model(pheno_path)
+    set_michaelis_menten_elimination(model)
     set_ode_solver(model, 'LSODA')
-    assert model.statements.ode_system.solver == 'LSODA'
+    assert model.estimation_steps[0].solver == 'LSODA'
     assert 'ADVAN13' in model.model_code
-
-    model = Model.create_model(pheno_path)
-    set_ode_solver(model, 'GL')
-    assert model.statements.ode_system.solver == 'GL'
-    assert 'ADVAN5' in model.model_code
-    assert '$MODEL' in model.model_code
-    assert 'K10' in model.model_code
-
-    model = Model.create_model(pheno_path)
-    set_first_order_absorption(model)
-    set_ode_solver(model, 'GL')
-    assert model.statements.ode_system.solver == 'GL'
-    assert 'ADVAN5' in model.model_code
-    assert '$MODEL' in model.model_code
-    assert 'K12' in model.model_code
-    assert 'K20' in model.model_code
 
     model = Model.create_model(pheno_path)
     set_zero_order_elimination(model)
-    assert 'ADVAN6' in model.model_code
+    assert 'ADVAN13' in model.model_code
     set_ode_solver(model, 'LSODA')
-    assert model.statements.ode_system.solver == 'LSODA'
+    set_michaelis_menten_elimination(model)
+    assert model.estimation_steps[0].solver == 'LSODA'
     assert 'ADVAN13' in model.model_code
     set_ode_solver(model, 'DVERK')
-    assert model.statements.ode_system.solver == 'DVERK'
+    assert model.estimation_steps[0].solver == 'DVERK'
     assert 'ADVAN6' in model.model_code
 
 

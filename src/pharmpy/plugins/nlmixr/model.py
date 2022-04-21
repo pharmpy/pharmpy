@@ -259,7 +259,7 @@ def execute_model(model):
     stdout = path / 'stdout'
     stderr = path / 'stderr'
 
-    args = [rpath, path / (model.name + '.R')]
+    args = [str(rpath), str(path / (model.name + '.R'))]
 
     with open(stdout, "wb") as out, open(stderr, "wb") as err:
         result = subprocess.run(args, stdin=subprocess.DEVNULL, stderr=err, stdout=out, env=newenv)
@@ -272,7 +272,7 @@ def execute_model(model):
     }
 
     plugin = {
-        'rpath': rpath,
+        'rpath': str(rpath),
         'commands': [
             {
                 'args': args,

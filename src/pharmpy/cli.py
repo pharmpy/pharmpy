@@ -955,8 +955,8 @@ parser_definition = [
                                 'help': 'List of solvers to try, mark group of methods in single '
                                 'quote separated by spaces. Supported are: CVODES '
                                 '(ADVAN14), DGEAR (ADVAN8), DVERK (ADVAN6), IDA '
-                                '(ADVAN15), LSODA (ADVAN13), LSODI (ADVAN9), GL '
-                                '(ADVAN5), GL_REAL (ADVAN7). To test all write "all". '
+                                '(ADVAN15), LSODA (ADVAN13) and LSODI (ADVAN9), '
+                                '. To test all write "all". '
                                 'Default is to use the solver of input model.',
                             },
                         ],

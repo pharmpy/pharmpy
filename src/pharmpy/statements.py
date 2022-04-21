@@ -165,46 +165,9 @@ class ODESystem(Statement):
 
     t = symbols.symbol('t')
 
-    def __init__(self):
-        self._solver = None
-
     @property
     def free_symbols(self):
         return set()
-
-    @property
-    def solver(self):
-        """Numerical solver to use when numerically solving the ode system
-        Supported solvers and their NONMEM ADVAN
-
-        +----------------------------+------------------+
-        | Solver                     | NONMEM ADVAN     |
-        +============================+==================+
-        | CVODES                     | ADVAN14          |
-        +----------------------------+------------------+
-        | DGEAR                      | ADVAN8           |
-        +----------------------------+------------------+
-        | DVERK                      | ADVAN6           |
-        +----------------------------+------------------+
-        | IDA                        | ADVAN15          |
-        +----------------------------+------------------+
-        | GL (general linear)        | ADVAN5           |
-        +----------------------------+------------------+
-        | GL_REAL (real eigenvalues) | ADVAN7           |
-        +----------------------------+------------------+
-        | LSODA                      | ADVAN13          |
-        +----------------------------+------------------+
-        | LSODI                      | ADVAN9           |
-        +----------------------------+------------------+
-        """
-        return self._solver
-
-    @solver.setter
-    def solver(self, value):
-        supported = ['CVODES', 'DGEAR', 'DVERK', 'IDA', 'LSODA', 'LSODI', 'GL', 'GL_REAL']
-        if not (value is None or value.upper() in supported):
-            raise ValueError(f"Unknown solver {value}. Recognized solvers are {supported}.")
-        self._solver = value
 
     @property
     def rhs_symbols(self):
@@ -407,7 +370,6 @@ class ExplicitODESystem(ODESystem):
 
     def __deepcopy__(self, memo):
         newone = type(self)(copy.copy(self.odes), copy.copy(self.ics))
-        newone.solver = self.solver
         return newone
 
     def __eq__(self, other):
@@ -415,7 +377,6 @@ class ExplicitODESystem(ODESystem):
             isinstance(other, ExplicitODESystem)
             and self.odes == other.odes
             and self.ics == other.ics
-            and self.solver == other.solver
         )
 
     def _repr_latex_(self):
@@ -696,13 +657,11 @@ class CompartmentalSystem(ODESystem):
             isinstance(other, CompartmentalSystem)
             and nx.to_dict_of_dicts(self._g) == nx.to_dict_of_dicts(other._g)
             and self.dosing_compartment.dose == other.dosing_compartment.dose
-            and self.solver == other.solver
         )
 
     def __deepcopy__(self, memo):
         newone = type(self)()
         newone._g = copy.deepcopy(self._g, memo)
-        newone.solver = self.solver
         return newone
 
     def add_compartment(self, name):

@@ -285,18 +285,6 @@ def update_ode_system(model, old, new):
 
     if type(old) == CompartmentalSystem and type(new) == ExplicitODESystem:
         to_des(model, new)
-    elif new.solver:
-        if new.solver in ['GL', 'GL_REAL']:
-            if new.solver == 'GL':
-                advan = 'ADVAN5'
-            else:
-                advan = 'ADVAN7'
-            _, trans = new_advan_trans(model)
-            add_needed_pk_parameters(model, advan, trans)
-            update_subroutines_record(model, advan, 'TRANS1')
-            update_model_record(model, advan)
-        else:
-            to_des(model, new)
     elif type(old) == ExplicitODESystem and type(new) == CompartmentalSystem:
         # Stay with $DES for now
         update_des(model, old, new)
@@ -391,7 +379,6 @@ def explicit_odes(model):
         new = odes.to_explicit_system()
         statements[model.statements.index(odes)] = new
         model.statements = statements
-        new.solver = odes.solver
     return model
 
 
@@ -402,30 +389,17 @@ def to_des(model, new):
     subs.remove_option_startswith('TRANS')
     subs.remove_option_startswith('ADVAN')
     subs.remove_option('TOL')
-    if new.solver:
-        if new.solver == 'LSODA':
-            advan = 'ADVAN13'
-        elif new.solver == 'CVODES':
-            advan = 'ADVAN14'
-        elif new.solver == 'DGEAR':
-            advan = 'ADVAN8'
-        elif new.solver == 'DVERK':
-            advan = 'ADVAN6'
-        elif new.solver == 'IDA':
-            advan = 'ADVAN15'
-        elif new.solver == 'LSODA':
-            advan = 'ADVAN13'
-        elif new.solver == 'LSODI':
-            advan = 'ADVAN9'
-        solver = new.solver
+    step = model.estimation_steps[0]
+    solver = step.solver
+    if solver:
+        advan = solver_to_advan(solver)
         if not isinstance(new, ExplicitODESystem):
             new = new.to_explicit_system()
-        new.solver = solver
         subs.append_option(advan)
     else:
         subs.append_option('ADVAN6')
     if not subs.has_option('TOL'):
-        subs.append_option('TOL', 3)
+        subs.append_option('TOL', 9)
     des = model.control_stream.insert_record('$DES\nDUMMY=0')
     des.from_odes(new)
     model.control_stream.remove_records(model.control_stream.get_records('MODEL'))
@@ -457,6 +431,15 @@ def update_statements(model, old, new, trans):
                     'CMT-column or drop column'
                 )
             update_ode_system(model, old_odes, new_odes)
+        else:
+            # Check for only updated solver
+            if type(new_odes) == ExplicitODESystem:
+                new_solver = model.estimation_steps[0].solver
+                old_solver = model._old_estimation_steps[0].solver
+                if new_solver != old_solver:
+                    advan = solver_to_advan(new_solver)
+                    subs = model.control_stream.get_records('SUBROUTINES')[0]
+                    subs.advan = advan
 
     after_odes = False
     for s in new:
@@ -806,7 +789,7 @@ def update_model_record(model, advan):
         model.control_stream.remove_records(model.control_stream.get_records('MODEL'))
     else:
         oldmap = model._compartment_map
-        if oldmap != newmap or model.statements.ode_system.solver:
+        if oldmap != newmap or model.estimation_steps[0].solver:
             model.control_stream.remove_records(model.control_stream.get_records('MODEL'))
             mod = model.control_stream.insert_record('$MODEL\n')
             output_name = model.statements.ode_system.output_compartment.name
@@ -1101,6 +1084,24 @@ def update_estimation(model):
         s += f'{" ".join(cols)} FILE=mytab NOAPPEND NOPRINT'
         model.control_stream.insert_record(s)
     model._old_estimation_steps = copy.deepcopy(new)
+
+
+def solver_to_advan(solver):
+    if solver == 'LSODA':
+        advan = 'ADVAN13'
+    elif solver == 'CVODES':
+        advan = 'ADVAN14'
+    elif solver == 'DGEAR':
+        advan = 'ADVAN8'
+    elif solver == 'DVERK':
+        advan = 'ADVAN6'
+    elif solver == 'IDA':
+        advan = 'ADVAN15'
+    elif solver == 'LSODA':
+        advan = 'ADVAN13'
+    elif solver == 'LSODI':
+        advan = 'ADVAN9'
+    return advan
 
 
 def update_ccontra(model, path=None, force=False):

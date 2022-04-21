@@ -296,10 +296,6 @@ class EstimationStep:
         +----------------------------+------------------+
         | IDA                        | ADVAN15          |
         +----------------------------+------------------+
-        | GL (general linear)        | ADVAN5           |
-        +----------------------------+------------------+
-        | GL_REAL (real eigenvalues) | ADVAN7           |
-        +----------------------------+------------------+
         | LSODA                      | ADVAN13          |
         +----------------------------+------------------+
         | LSODI                      | ADVAN9           |
@@ -309,8 +305,10 @@ class EstimationStep:
 
     @solver.setter
     def solver(self, value):
-        supported = ['CVODES', 'DGEAR', 'DVERK', 'IDA', 'LSODA', 'LSODI', 'GL', 'GL_REAL']
-        if not (value is None or value.upper() in supported):
+        supported = ['CVODES', 'DGEAR', 'DVERK', 'IDA', 'LSODA', 'LSODI']
+        if value is not None:
+            value = value.upper()
+        if not (value is None or value in supported):
             raise ValueError(f"Unknown solver {value}. Recognized solvers are {supported}.")
         self._solver = value
 
