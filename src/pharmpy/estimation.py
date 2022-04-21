@@ -9,7 +9,7 @@ class EstimationSteps(MutableSequence):
 
     Parameters
     ----------
-    steps : EstimationStepsi, iterable or None
+    steps : EstimationSteps, iterable or None
         Used for initialization
     """
 
@@ -125,6 +125,9 @@ class EstimationStep:
         keep_every_nth_iter=None,
         residuals=None,
         predictions=None,
+        solver=None,
+        solver_rtol=None,
+        solver_atol=None,
         tool_options=None,
     ):
         method = self._canonicalize_and_check_method(method)
@@ -146,6 +149,9 @@ class EstimationStep:
             self.predictions = []
         else:
             self.predictions = predictions
+        self.solver = solver
+        self.solver_rtol = solver_rtol
+        self.solver_atol = solver_atol
         if tool_options is None:
             self.tool_options = dict()
         else:
@@ -275,6 +281,58 @@ class EstimationStep:
         self._predictions = value
 
     @property
+    def solver(self):
+        """Numerical solver to use when numerically solving the ODE system
+        Supported solvers and their corresponding NONMEM ADVAN
+
+        +----------------------------+------------------+
+        | Solver                     | NONMEM ADVAN     |
+        +============================+==================+
+        | CVODES                     | ADVAN14          |
+        +----------------------------+------------------+
+        | DGEAR                      | ADVAN8           |
+        +----------------------------+------------------+
+        | DVERK                      | ADVAN6           |
+        +----------------------------+------------------+
+        | IDA                        | ADVAN15          |
+        +----------------------------+------------------+
+        | GL (general linear)        | ADVAN5           |
+        +----------------------------+------------------+
+        | GL_REAL (real eigenvalues) | ADVAN7           |
+        +----------------------------+------------------+
+        | LSODA                      | ADVAN13          |
+        +----------------------------+------------------+
+        | LSODI                      | ADVAN9           |
+        +----------------------------+------------------+
+        """
+        return self._solver
+
+    @solver.setter
+    def solver(self, value):
+        supported = ['CVODES', 'DGEAR', 'DVERK', 'IDA', 'LSODA', 'LSODI', 'GL', 'GL_REAL']
+        if not (value is None or value.upper() in supported):
+            raise ValueError(f"Unknown solver {value}. Recognized solvers are {supported}.")
+        self._solver = value
+
+    @property
+    def solver_rtol(self):
+        """Relative tolerance for numerical ODE system solver"""
+        return self._solver_rtol
+
+    @solver_rtol.setter
+    def solver_rtol(self, value):
+        self._solver_rtol = value
+
+    @property
+    def solver_atol(self):
+        """Absolute tolerance for numerical ODE system solver"""
+        return self._solver_atol
+
+    @solver_atol.setter
+    def solver_atol(self, value):
+        self._solver_atol = value
+
+    @property
     def tool_options(self):
         """Dictionary of tool specific options"""
         return self._tool_options
@@ -295,6 +353,9 @@ class EstimationStep:
             and self.niter == other.niter
             and self.auto == other.auto
             and self.keep_every_nth_iter == other.keep_every_nth_iter
+            and self.solver == other.solver
+            and self.solver_rtol == other.solver_rtol
+            and self.solver_atol == other.solver_atol
             and self.tool_options == other.tool_options
         )
 
@@ -304,7 +365,8 @@ class EstimationStep:
             f'cov={self.cov}, evaluation={self.evaluation}, '
             f'maximum_evaluations={self.maximum_evaluations}, laplace={self.laplace}, '
             f'isample={self.isample}, niter={self.niter}, auto={self.auto}, '
-            f'keep_every_nth_iter={self.keep_every_nth_iter}, '
+            f'keep_every_nth_iter={self.keep_every_nth_iter}, solver={self.solver}, '
+            f'solver_rtol={self.solver_rtol}, solver_atol={self.solver_atol}, '
             f'tool_options={self.tool_options})'
         )
 

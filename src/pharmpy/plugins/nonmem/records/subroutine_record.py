@@ -21,3 +21,19 @@ class SubroutineRecord(OptionRecord):
         if trans is None:
             trans = 'TRANS1'
         return trans
+
+    @property
+    def tol(self):
+        tol = self.get_option('TOL')
+        if tol is not None:
+            tol = int(tol)
+        return tol
+
+    @property
+    def atol(self):
+        atol = self.get_option('ATOL')
+        if atol is None:
+            atol = 1.0e-12
+        else:
+            atol = float(atol)
+        return atol

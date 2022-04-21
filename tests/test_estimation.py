@@ -18,7 +18,8 @@ def test_estimation_method():
     assert (
         repr(a) == 'EstimationStep("FO", interaction=False, cov=True, evaluation=False, '
         'maximum_evaluations=None, laplace=False, isample=None, niter=None, auto=None, '
-        'keep_every_nth_iter=None, tool_options={})'
+        'keep_every_nth_iter=None, solver=None, solver_rtol=None, solver_atol=None, '
+        'tool_options={})'
     )
 
     with pytest.raises(ValueError):

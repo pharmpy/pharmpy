@@ -721,118 +721,7 @@ class Model(pharmpy.model.Model):
         except AttributeError:
             pass
 
-        steps = []
-        records = self.control_stream.get_records('ESTIMATION')
-        covrec = self.control_stream.get_records('COVARIANCE')
-        for record in records:
-            value = record.get_option('METHOD')
-            if value is None or value == '0' or value == 'ZERO':
-                name = 'fo'
-            elif value == '1' or value == 'CONDITIONAL' or value == 'COND':
-                name = 'foce'
-            else:
-                name = value
-            interaction = False
-            evaluation = False
-            maximum_evaluations = None
-            cov = False
-            laplace = False
-            isample = None
-            niter = None
-            auto = None
-            keep_every_nth_iter = None
-
-            if record.has_option('INTERACTION') or record.has_option('INTER'):
-                interaction = True
-            maxeval_opt = (
-                record.get_option('MAXEVAL') if not None else record.get_option('MAXEVALS')
-            )
-            if maxeval_opt is not None:
-                if (name.upper() == 'FO' or name.upper() == 'FOCE') and int(maxeval_opt) == 0:
-                    evaluation = True
-                else:
-                    maximum_evaluations = int(maxeval_opt)
-            eval_opt = record.get_option('EONLY')
-            if eval_opt is not None and int(eval_opt) == 1:
-                evaluation = True
-            if covrec:
-                cov = True
-            if record.has_option('LAPLACIAN') or record.has_option('LAPLACE'):
-                laplace = True
-            if record.has_option('ISAMPLE'):
-                isample = int(record.get_option('ISAMPLE'))
-            if record.has_option('NITER'):
-                niter = int(record.get_option('NITER'))
-            if record.has_option('AUTO'):
-                auto_opt = record.get_option('AUTO')
-                if auto_opt is not None and int(auto_opt) in [0, 1]:
-                    auto = bool(auto_opt)
-                else:
-                    raise ValueError('Currently only AUTO=0 and AUTO=1 is supported')
-            if record.has_option('PRINT'):
-                keep_every_nth_iter = int(record.get_option('PRINT'))
-
-            protected_names = [
-                name.upper(),
-                'EONLY',
-                'INTERACTION',
-                'INTER',
-                'LAPLACE',
-                'LAPLACIAN',
-                'MAXEVAL',
-                'MAXEVALS',
-                'METHOD',
-                'METH',
-                'ISAMPLE',
-                'NITER',
-                'AUTO',
-                'PRINT',
-            ]
-
-            tool_options = {
-                option.key: option.value
-                for option in record.all_options
-                if option.key not in protected_names
-            }
-            if not tool_options:
-                tool_options = None
-
-            try:
-                meth = EstimationStep(
-                    name,
-                    interaction=interaction,
-                    cov=cov,
-                    evaluation=evaluation,
-                    maximum_evaluations=maximum_evaluations,
-                    laplace=laplace,
-                    isample=isample,
-                    niter=niter,
-                    auto=auto,
-                    keep_every_nth_iter=keep_every_nth_iter,
-                    tool_options=tool_options,
-                )
-            except ValueError:
-                raise ModelSyntaxError(f'Non-recognized estimation method in: {str(record.root)}')
-            steps.append(meth)
-
-        steps = EstimationSteps(steps)
-
-        # Read eta and epsilon derivatives
-        table_records = self.control_stream.get_records('TABLE')
-        for table in table_records:
-            etaderivs = table.eta_derivatives
-            if etaderivs:
-                etas = self.random_variables.etas
-                etaderiv_names = [etas[i - 1].name for i in etaderivs]
-                for step in steps:
-                    step.eta_derivatives = etaderiv_names
-            epsderivs = table.epsilon_derivatives
-            if epsderivs:
-                epsilons = self.random_variables.epsilons
-                epsilonderivs_names = [epsilons[i - 1].name for i in epsderivs]
-                for step in steps:
-                    step.epsilon_derivatives = epsilonderivs_names
-
+        steps = parse_estimation_steps(self)
         self._estimation_steps = steps
         self._old_estimation_steps = steps.copy()
         return steps
@@ -1178,3 +1067,147 @@ class Model(pharmpy.model.Model):
         if ext_path is not None:
             self._modelfit_results = NONMEMChainedModelfitResults(ext_path, model=self)
             return self._modelfit_results
+
+
+def parse_estimation_steps(model):
+    steps = []
+    records = model.control_stream.get_records('ESTIMATION')
+    covrec = model.control_stream.get_records('COVARIANCE')
+    for record in records:
+        value = record.get_option('METHOD')
+        if value is None or value == '0' or value == 'ZERO':
+            name = 'fo'
+        elif value == '1' or value == 'CONDITIONAL' or value == 'COND':
+            name = 'foce'
+        else:
+            name = value
+        interaction = False
+        evaluation = False
+        maximum_evaluations = None
+        cov = False
+        laplace = False
+        isample = None
+        niter = None
+        auto = None
+        keep_every_nth_iter = None
+
+        if record.has_option('INTERACTION') or record.has_option('INTER'):
+            interaction = True
+        maxeval_opt = record.get_option('MAXEVAL') if not None else record.get_option('MAXEVALS')
+        if maxeval_opt is not None:
+            if (name.upper() == 'FO' or name.upper() == 'FOCE') and int(maxeval_opt) == 0:
+                evaluation = True
+            else:
+                maximum_evaluations = int(maxeval_opt)
+        eval_opt = record.get_option('EONLY')
+        if eval_opt is not None and int(eval_opt) == 1:
+            evaluation = True
+        if covrec:
+            cov = True
+        if record.has_option('LAPLACIAN') or record.has_option('LAPLACE'):
+            laplace = True
+        if record.has_option('ISAMPLE'):
+            isample = int(record.get_option('ISAMPLE'))
+        if record.has_option('NITER'):
+            niter = int(record.get_option('NITER'))
+        if record.has_option('AUTO'):
+            auto_opt = record.get_option('AUTO')
+            if auto_opt is not None and int(auto_opt) in [0, 1]:
+                auto = bool(auto_opt)
+            else:
+                raise ValueError('Currently only AUTO=0 and AUTO=1 is supported')
+        if record.has_option('PRINT'):
+            keep_every_nth_iter = int(record.get_option('PRINT'))
+
+        protected_names = [
+            name.upper(),
+            'EONLY',
+            'INTERACTION',
+            'INTER',
+            'LAPLACE',
+            'LAPLACIAN',
+            'MAXEVAL',
+            'MAXEVALS',
+            'METHOD',
+            'METH',
+            'ISAMPLE',
+            'NITER',
+            'AUTO',
+            'PRINT',
+        ]
+
+        tool_options = {
+            option.key: option.value
+            for option in record.all_options
+            if option.key not in protected_names
+        }
+        if not tool_options:
+            tool_options = None
+
+        try:
+            meth = EstimationStep(
+                name,
+                interaction=interaction,
+                cov=cov,
+                evaluation=evaluation,
+                maximum_evaluations=maximum_evaluations,
+                laplace=laplace,
+                isample=isample,
+                niter=niter,
+                auto=auto,
+                keep_every_nth_iter=keep_every_nth_iter,
+                tool_options=tool_options,
+            )
+        except ValueError:
+            raise ModelSyntaxError(f'Non-recognized estimation method in: {str(record.root)}')
+        steps.append(meth)
+
+    steps = EstimationSteps(steps)
+
+    # Read eta and epsilon derivatives
+    table_records = model.control_stream.get_records('TABLE')
+    for table in table_records:
+        etaderivs = table.eta_derivatives
+        if etaderivs:
+            etas = model.random_variables.etas
+            etaderiv_names = [etas[i - 1].name for i in etaderivs]
+            for step in steps:
+                step.eta_derivatives = etaderiv_names
+        epsderivs = table.epsilon_derivatives
+        if epsderivs:
+            epsilons = model.random_variables.epsilons
+            epsilonderivs_names = [epsilons[i - 1].name for i in epsderivs]
+            for step in steps:
+                step.epsilon_derivatives = epsilonderivs_names
+
+    solver, tol, atol = parse_solver(model)
+    for step in steps:
+        step.solver = solver
+        step.solver_rtol = tol
+        step.solver_atol = atol
+    return steps
+
+
+def parse_solver(model):
+    subs_records = model.control_stream.get_records('SUBROUTINES')
+    if not subs_records:
+        return None, None, None
+    record = subs_records[0]
+    advan = record.advan
+    # Currently only reading non-linear solvers
+    # These can then be used if the model needs to use a non-linear solver
+    if advan == 'ADVAN6':
+        solver = 'DVERK'
+    elif advan == 'ADVAN8':
+        solver = 'DGEAR'
+    elif advan == 'ADVAN9':
+        solver = 'LSODI'
+    elif advan == 'ADVAN13':
+        solver = 'LSODA'
+    elif advan == 'ADVAN14':
+        solver = 'CVODES'
+    elif advan == 'ADVAN15':
+        solver = 'IDA'
+    else:
+        solver = None
+    return solver, record.tol, record.atol
