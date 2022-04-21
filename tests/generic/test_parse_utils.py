@@ -11,7 +11,6 @@ def assert_create(expect, *args, **kwargs):
     """Help asserter for AttrTree.create tests."""
 
     obj = AttrTree.create(*args, **kwargs)
-    print(obj.treeprint())
     assert isinstance(obj, AttrTree)
     for item in obj.children:
         if 'tree' in item.rule:
