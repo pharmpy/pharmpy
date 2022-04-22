@@ -1442,13 +1442,11 @@ def read_dataset_from_datainfo(datainfo: Union[DataInfo, Path, str]) -> pd.DataF
     """
     if not isinstance(datainfo, DataInfo):
         datainfo = DataInfo.read_json(datainfo)
+
     if datainfo.path is None:
         raise ValueError('datainfo.path is None')
-    dtypes = {
-        col.name: col.datatype if not col.drop and not col.datatype.startswith('nmtran') else 'str'
-        for col in datainfo
-    }
+
     df = pd.read_csv(
-        datainfo.path, sep=datainfo.separator, dtype=dtypes, float_precision='round_trip'
+        datainfo.path, sep=datainfo.separator, dtype=datainfo.dtype(), float_precision='round_trip'
     )
     return df

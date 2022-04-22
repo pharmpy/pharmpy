@@ -583,6 +583,14 @@ class DataInfo(MutableSequence):
         for v, col in zip(value, self._columns):
             col.type = v
 
+    def dtype(self):
+        return {
+            col.name: col.datatype
+            if not col.drop and not col.datatype.startswith('nmtran')
+            else 'str'
+            for col in self
+        }
+
     def to_json(self, path=None):
         a = []
         for col in self._columns:
