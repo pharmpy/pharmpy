@@ -79,6 +79,10 @@ class ColumnInfo:
         'subject identifier',
     ]
 
+    @staticmethod
+    def datatype_from_pd_dtype(dtype):
+        return dtype if dtype in ColumnInfo._all_dtypes else 'str'
+
     def __init__(
         self,
         name,
