@@ -310,8 +310,9 @@ def read_nonmem_dataset(
             except DatasetError:
                 pass
 
-        if dtype:
-            for column in df.columns:
-                if column in dtype:
-                    df[column] = df[column].astype(dtype[column])
+    if dtype:
+        for column in df.columns:
+            if column in dtype:
+                df[column] = df[column].astype(dtype[column])
+
     return df
