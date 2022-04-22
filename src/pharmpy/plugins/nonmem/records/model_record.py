@@ -6,6 +6,17 @@ from .option_record import OptionRecord
 
 
 class ModelRecord(OptionRecord):
+    @property
+    def ncomps(self):
+        nc = self.get_option("NCOMPARTMENTS")
+        if nc is None:
+            nc = self.get_option("NCOMPS")
+            if nc is None:
+                nc = self.get_option("NCM")
+        if nc is not None:
+            nc = int(nc)
+        return nc
+
     def add_compartment(self, name, dosing=False):
         options = [name]
         if dosing:
@@ -37,6 +48,12 @@ class ModelRecord(OptionRecord):
         self.add_suboption_for_nth('COMPARTMENT', 0, 'DEFDOSE')
 
     def compartments(self):
+        ncomps = self.ncomps
+        if ncomps is not None and not self.has_option("COMPARTMENT"):
+            for i in range(1, ncomps + 1):
+                yield f'COMP{i}', []
+            return
+
         all_options = [
             'INITIALOFF',
             'NOOFF',

@@ -2,6 +2,22 @@ import pytest
 
 
 @pytest.mark.parametrize(
+    "buf,expected",
+    [
+        ('$MODEL NCOMPARTMENTS=23', 23),
+        ('$MODEL NCOMP=18', 18),
+        ('$MODEL', None),
+        ('$MODEL NCOMPS=2', 2),
+        ('$MODEL NCM=4', 4),
+    ],
+)
+def test_ncomps(parser, buf, expected):
+    recs = parser.parse(buf)
+    rec = recs.records[0]
+    assert rec.ncomps == expected
+
+
+@pytest.mark.parametrize(
     "buf,add,kwargs,expected",
     [
         ('$MODEL NCOMPARTMENTS=23', 'CENTRAL', {}, '$MODEL NCOMPARTMENTS=23 COMPARTMENT=(CENTRAL)'),

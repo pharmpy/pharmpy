@@ -171,7 +171,7 @@ def compartmental_model(model, advan, trans, des=None):
         per2.lag_time = get_alag(model, 4)
         ass = _f_link_assignment(model, central)
         comp_map = {'DEPOT': 1, 'CENTRAL': 2, 'PERIPHERAL1': 3, 'PERIPHERAL2': 4, 'OUTPUT': 5}
-    elif des and all(str(s.symbol).startswith('DADT') for s in des.statements):
+    elif des:
         rec_model = model.control_stream.get_records('MODEL')[0]
 
         subs_dict, comp_names = dict(), dict()
@@ -197,7 +197,11 @@ def compartmental_model(model, advan, trans, des=None):
         dadt_dose = sset.find_assignment(str(subs_dict['DADT(1)']))
 
         if len(comps) > 1:
-            dadt_rest = [Eq(s.symbol, s.expression) for s in sset if s != dadt_dose]
+            dadt_rest = [
+                Eq(s.symbol, s.expression)
+                for s in sset
+                if s != dadt_dose and not s.symbol.is_Symbol
+            ]
             lhs_sum = dadt_dose.expression
             for eq in dadt_rest:
                 lhs_sum += eq.rhs
