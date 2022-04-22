@@ -11,6 +11,8 @@ Bugfixes
 ========
 
 * Correct parsing of ADVAN=ADVANx in $SUBROUTINES in NONMEM models
+* Fix issue with duplicated TAD in $INPUT after add_time_after_dose
+* Fix issue with not being able to use models with assignments in $DES in estmethod tool
 
 0.66.0 (2022-04-20)
 -------------------

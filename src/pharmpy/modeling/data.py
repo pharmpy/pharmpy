@@ -9,7 +9,7 @@ from rich.console import Console
 from rich.table import Table
 
 from pharmpy.data import DatasetError
-from pharmpy.datainfo import ColumnInfo, DataInfo
+from pharmpy.datainfo import DataInfo
 
 SI = sympy.physics.units.si.SI
 
@@ -805,9 +805,7 @@ def add_time_after_dose(model):
 
     df.drop(columns=['_NEWTIME', '_DOSEID'], inplace=True)
 
-    model.dataset = df
-    ci = ColumnInfo('TAD')
-    model.datainfo.append(ci)
+    model.dataset = df  # TAD in datainfo is automatically added here
     return model
 
 
