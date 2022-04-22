@@ -55,7 +55,7 @@ def create_start_model(dataset_path, modeltype='pk_oral', cl_init=0.01, vc_init=
     stats = ModelStatements([cl_ass, vc_ass, odes, ipred, y_ass])
 
     datainfo_path = dataset_path.with_suffix('.datainfo')
-    separator = r'\s+'
+    separator = r'\s+|,'
     if datainfo_path.is_file():
         di = DataInfo.read_json(dataset_path.with_suffix('.datainfo'))
         di.separator = separator
