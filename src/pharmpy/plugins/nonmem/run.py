@@ -23,11 +23,10 @@ def execute_model(model):
     model._dataset_updated = True  # Hack to get update_source to update IGNORE
     write_model(model, path=path, force=True)
     basepath = Path(model.name)
-    args = [
-        nmfe_path(),
+    args = nmfe(
         model.name + model.filename_extension,
         str(basepath.with_suffix('.lst')),
-    ]
+    )
     # Create wrapper script that cd:s into rundirectory
     # This enables the execute_model function to be parallelized
     # using threads. chdir here does not work since all threads will
@@ -111,6 +110,18 @@ def nmfe_path():
     else:
         raise FileNotFoundError(f'Cannot find nmfe script for NONMEM ({path})')
     return str(path)
+
+
+def nmfe(*args):
+    conf_args = []
+    if conf.licfile is not None:
+        conf_args.append(f'-licfile={str(conf.licfile)}')
+
+    return [
+        nmfe_path(),
+        *args,
+        *conf_args,
+    ]
 
 
 def evaluate_design(model):
