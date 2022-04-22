@@ -147,7 +147,7 @@ def test_get_mdv():
     mdv = get_mdv(model)
     label_test = model.datainfo.typeix['dose'][0].name
     data_test = model.dataset[label_test].astype('float64').squeeze()
-    mdv_test = data_test.where(data_test == 0, other=1).astype('int64')
+    mdv_test = data_test.where(data_test == 0, other=1).astype('int32')
     result = mdv.equals(other=mdv_test)
     assert result is True
 
