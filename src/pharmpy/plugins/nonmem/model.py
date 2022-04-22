@@ -973,7 +973,7 @@ class Model(pharmpy.model.Model):
                 else:
                     info.type = 'event'
                 info.scale = 'nominal'
-                info.datatype = 'int64'
+                info.datatype = 'int32'
             elif colname == 'II' and have_pk:
                 info.type = 'ii'
                 info.scale = 'ratio'
