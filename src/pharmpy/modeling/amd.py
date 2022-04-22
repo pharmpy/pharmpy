@@ -98,7 +98,6 @@ def run_amd(
             mfl = 'ELIMINATION([MM,MIX-FO-MM]);' 'PERIPHERALS([1,2])'
 
     db = default_tool_database(toolname='amd')
-    # FIXME: Workaround for nonmem<->generic eta names gets lost somewhere
     fit(model)
 
     run_funcs = []
