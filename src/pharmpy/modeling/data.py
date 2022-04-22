@@ -1409,7 +1409,7 @@ def read_dataset_from_datainfo(datainfo):
         datainfo = DataInfo.read_json(datainfo)
 
     dtypes = {
-        col.name: col.datatype if not col.datatype.startswith('nmtran') else 'str'
+        col.name: col.datatype if not col.drop and not col.datatype.startswith('nmtran') else 'str'
         for col in datainfo
     }
 
