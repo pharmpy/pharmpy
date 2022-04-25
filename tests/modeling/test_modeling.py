@@ -1938,11 +1938,6 @@ def test_zo_abs_on_nl_elim(testdata):
             'CL = TVCL*EXP(ETAB1)\nV = TVV*EXP(ETAB2)',
         ),
         (
-            ['eta(1)'],
-            'ETAB1 = (EXP(ETA(1))**THETA(4) - 1)/THETA(4)',
-            'CL = TVCL*EXP(ETAB1)\nV=TVV*EXP(ETA(2))',
-        ),
-        (
             'ETA(1)',
             'ETAB1 = (EXP(ETA(1))**THETA(4) - 1)/THETA(4)',
             'CL = TVCL*EXP(ETAB1)\nV=TVV*EXP(ETA(2))',

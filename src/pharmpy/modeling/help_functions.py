@@ -28,7 +28,7 @@ def _get_etas(model, list_of_etas, include_symbols=False, fixed_allowed=False, i
     etas = []
     for eta_str in list_of_etas:
         try:
-            eta = rvs[eta_str.upper()]
+            eta = rvs[eta_str]  # FIXME: upper/lower case sensitive in pharmpy but not in nonmem
             if not fixed_allowed and _has_fixed_params(model, eta):
                 if not all_valid_etas:
                     raise ValueError(f'Random variable cannot be set to fixed: {eta}')
