@@ -45,7 +45,7 @@ def test_exhaustive(tmp_path, testdata):
         (
             'ABSORPTION([ZO,SEQ-ZO-FO]);PERIPHERALS(1)',
             7,
-            'modelsearch_candidate6',
+            'modelsearch_candidate4',
             'modelsearch_candidate3',
         ),
         ('LAGTIME();TRANSITS(1)', 2, 'modelsearch_candidate2', 'mox2'),
@@ -184,6 +184,17 @@ def test_exhaustive_stepwise_start_model_fail(tmp_path, testdata):
         rundir = tmp_path / 'modelsearch_dir1'
         assert rundir.is_dir()
         assert len(list((rundir / 'models').iterdir())) == 6
+
+
+def test_exhaustive_stepwise_peripheral_upper_limit(tmp_path, testdata):
+    with TemporaryDirectoryChanger(tmp_path):
+        shutil.copy2(testdata / 'nonmem' / 'models' / 'mox2.mod', tmp_path)
+        shutil.copy2(testdata / 'nonmem' / 'models' / 'mox_simulated_normal.csv', tmp_path)
+        model_start = Model.create_model('mox2.mod')
+        model_start.datainfo.path = tmp_path / 'mox_simulated_normal.csv'
+        res = run_tool('modelsearch', 'PERIPHERALS(1)', 'exhaustive_stepwise', model=model_start)
+
+        assert ',999999) ; POP_QP1' in res.models[0].model_code
 
 
 # @pytest.mark.parametrize(

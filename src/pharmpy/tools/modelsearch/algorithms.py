@@ -205,7 +205,7 @@ def _create_model_workflow(model_name, feat, func, iiv_strategy):
     task_update_inits = Task('update_inits', _update_initial_estimates)
     wf_stepwise_step.add_task(task_update_inits, predecessors=task_copy)
 
-    task_function = Task(feat, func)
+    task_function = Task(feat, _apply_transformation, feat, func)
     wf_stepwise_step.add_task(task_function, predecessors=task_update_inits)
 
     if iiv_strategy != 0:
@@ -219,6 +219,18 @@ def _create_model_workflow(model_name, feat, func, iiv_strategy):
     wf_stepwise_step.insert_workflow(wf_fit, predecessors=task_to_fit)
 
     return wf_stepwise_step, task_function
+
+
+def _apply_transformation(feat, func, model):
+    old_params = set(model.parameters)
+    func(model)
+    if feat.startswith('PERIPHERALS'):
+        new_params = set(model.parameters)
+        diff = new_params - old_params
+        q_params = [param for param in diff if param.name.startswith('POP_Q')]
+        for param in q_params:
+            param.upper = 999999
+    return model
 
 
 def _is_allowed(feat_current, func_current, feat_previous, mfl_features):
