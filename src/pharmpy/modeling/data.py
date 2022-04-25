@@ -1086,12 +1086,12 @@ def _find_time_and_date_columns(model):
     date = None
     di = model.datainfo
     for col in di:
-        if col.datatype == 'nmtran-time':
+        if col.datatype == 'nmtran-time' and not col.drop:
             if time is None:
                 time = col.name
             else:
                 raise ValueError(f"Multiple time columns found {time} and {col.name}")
-        elif col.datatype == 'nmtran-date':
+        elif col.datatype == 'nmtran-date' and not col.drop:
             if date is None:
                 date = col.name
             else:
