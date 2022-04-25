@@ -37,9 +37,9 @@ def execute_model(model):
             fp.write(f"@echo off\ncd {path}\n{' '.join(args)}\n")
         cmd = str(path / 'cdwrapper.bat')
     else:
-        with open(path / 'cdwrapper', 'w') as fp:
+        fd = os.open(path / 'cdwrapper', os.O_CREAT | os.O_WRONLY | os.O_CLOEXEC, mode=0o744)
+        with os.fdopen(fd, 'w') as fp:
             fp.write(f"#!/bin/sh\ncd {path}\n{' '.join(args)}\n")
-        os.chmod(path / 'cdwrapper', 0o744)
         cmd = str(path / 'cdwrapper')
 
     stdout = path / 'stdout'
