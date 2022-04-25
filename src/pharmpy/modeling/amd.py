@@ -92,7 +92,7 @@ def run_amd(
                 'ELIMINATION([MM,MIX-FO-MM]);'
                 'LAGTIME();'
                 'TRANSITS([1,3,10],*);'
-                'PERIPHERALS([1,2])'
+                'PERIPHERALS(1)'
             )
         else:
             mfl = 'ELIMINATION([MM,MIX-FO-MM]);' 'PERIPHERALS([1,2])'
