@@ -1,5 +1,5 @@
-next version
-------------
+0.67.0 (2022-04-25)
+-------------------
 
 New features
 ============
@@ -13,6 +13,7 @@ Bugfixes
 * Correct parsing of ADVAN=ADVANx in $SUBROUTINES in NONMEM models
 * Fix issue with duplicated TAD in $INPUT after add_time_after_dose
 * Fix issue with not being able to use models with assignments in $DES in estmethod tool
+* Set an upper limit for intercompartmental clearances in the modelsearch tool (fixes #695)
 
 0.66.0 (2022-04-20)
 -------------------
