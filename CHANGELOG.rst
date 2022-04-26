@@ -1,3 +1,11 @@
+next version
+------------
+
+Bugfixes
+========
+
+* Fix bad odes when adding peripheral compartment to model with MM elimination (fixes #710)
+
 0.67.0 (2022-04-25)
 -------------------
 

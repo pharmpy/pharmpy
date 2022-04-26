@@ -1260,6 +1260,14 @@ def add_peripheral_compartment(model):
             odes.add_flow(central, peripheral, kcp)
             odes.add_flow(peripheral, central, kpc)
         else:
+            # Heuristic to handle the MM case
+            if vc.is_Mul:
+                vc = vc.args[0]
+            # Heurstic to handle the Mixed MM-FO case
+            if cl.is_Add:
+                cl1 = cl.args[0]
+                if cl1.is_Mul:
+                    cl = cl1.args[0]
             full_cl = statements.before_odes.full_expression(cl)
             full_vc = statements.before_odes.full_expression(vc)
             pop_cl_candidates = full_cl.free_symbols & set(model.parameters.symbols)

@@ -6,6 +6,7 @@ from io import StringIO
 import numpy as np
 import pandas as pd
 import pytest
+import sympy
 from pyfakefs.fake_filesystem import set_uid
 from pyfakefs.fake_filesystem_unittest import Patcher
 
@@ -3168,3 +3169,14 @@ def test_add_pk_iiv_nested_params(testdata, pheno_path):
     set_transit_compartments(model, 3)
     add_pk_iiv(model, initial_estimate=0.01)
     assert model.parameters['IIV_MDT'].init == 0.01
+
+
+def test_mm_then_periph(pheno):
+    model = pheno.copy()
+    set_michaelis_menten_elimination(model)
+    add_peripheral_compartment(model)
+    odes = model.statements.ode_system
+    central = odes.central_compartment
+    periph = odes.peripheral_compartments[0]
+    assert odes.get_flow(central, periph) == sympy.Symbol('QP1') / sympy.Symbol('V')
+    assert odes.get_flow(periph, central) == sympy.Symbol('QP1') / sympy.Symbol('VP1')
