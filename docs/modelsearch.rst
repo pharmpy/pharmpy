@@ -279,20 +279,38 @@ is equivalent to
 Examples
 ~~~~~~~~
 
-Search through all available absorption rates
+An example of a search space for PK models with oral data:
+
+.. code::
+
+    ABSORPTION([ZO,SEQ-ZO-FO])
+    ELIMINATION([MM,MIX-FO-MM])
+    LAGTIME()
+    TRANSITS([1,3,10],*)
+    PERIPHERALS(1)
+
+An example of a search space for PK models with IV data:
+
+.. code::
+
+    ELIMINATION([MM,MIX-FO-MM])
+    PERIPHERALS([1,2])
+
+
+Search through all available absorption rates:
 
 .. code::
 
     ABSORPTION(*)
 
-Allow all combinations of absorption and elimination rates
+Allow all combinations of absorption and elimination rates:
 
 .. code::
 
     ABSORPTION(*)
     ELIMINATION(*)
 
-Consider 1, 2 and 3 peripheral compartments and none or upto 10 transit compartments:
+Consider 1, 2 and 3 peripheral compartments and 0 to 10 transit compartments:
 
 .. code::
 
