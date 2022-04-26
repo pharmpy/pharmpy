@@ -48,7 +48,6 @@ class ColumnInfo:
         'event',
         'covariate',
         'mdv',
-        'nmtran_date',
     ]
     _all_scales = ['nominal', 'ordinal', 'interval', 'ratio']
     _all_dtypes = [
