@@ -92,7 +92,7 @@ def run_amd(
                 'ELIMINATION([MM,MIX-FO-MM]);'
                 'LAGTIME();'
                 'TRANSITS([1,3,10],*);'
-                'PERIPHERALS([1,2])'
+                'PERIPHERALS(1)'
             )
         else:
             mfl = 'ELIMINATION([MM,MIX-FO-MM]);' 'PERIPHERALS([1,2])'
@@ -148,7 +148,7 @@ def _run_modelsearch(model, mfl, path):
 
 
 def _run_iiv(model, path):
-    res_iiv = run_iiv(model, path=path)
+    res_iiv = run_iiv(model, iiv_strategy=2, path=path)
     selected_iiv_model = res_iiv.best_model
     return selected_iiv_model
 
