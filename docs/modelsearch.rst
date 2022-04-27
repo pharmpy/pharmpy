@@ -176,6 +176,46 @@ Reduced stepwise search
 The reduced stepwise is similar to the exhaustive stepwise search, but it will after each layer compare models with
 the same features (but from different order) and only send the best model for the next transformations.
 
+.. graphviz::
+
+    digraph BST {
+        node [fontname="Arial"];
+        base [label="Base model"]
+        s1 [label="ABSORPTION(ZO)"]
+        s2 [label="ELIMINATION(MM)"]
+        s3 [label="PERIPHERALS(1)"]
+        s4 [label="ELIMINATION(MM)"]
+        s5 [label="PERIPHERALS(1)"]
+        s6 [label="ABSORPTION(ZO)"]
+        s7 [label="PERIPHERALS(1)"]
+        s8 [label="ABSORPTION(ZO)"]
+        s9 [label="ELIMINATION(MM)"]
+        s10 [label="Best model"]
+        s11 [label="Best model"]
+        s12 [label="Best model"]
+        s13 [label="PERIPHERALS(1)"]
+        s14 [label="ELIMINATION(MM)"]
+        s15 [label="ABSORPTION(ZO)"]
+        base -> s1
+        base -> s2
+        base -> s3
+        s1 -> s4
+        s1 -> s5
+        s2 -> s6
+        s2 -> s7
+        s3 -> s8
+        s3 -> s9
+        s4 -> s10
+        s6 -> s10
+        s5 -> s11
+        s8 -> s11
+        s7 -> s12
+        s9 -> s12
+        s10 -> s13
+        s11 -> s14
+        s12 -> s15
+    }
+
 ~~~~~~~~~~~~~~
 IIV strategies
 ~~~~~~~~~~~~~~
