@@ -4,11 +4,17 @@ import numpy as np
 import pytest
 
 from pharmpy import Model
-from pharmpy.modeling import add_iiv, add_peripheral_compartment, create_joint_distribution
+from pharmpy.modeling import (
+    add_iiv,
+    add_peripheral_compartment,
+    add_pk_iiv,
+    create_joint_distribution,
+)
 from pharmpy.tools.iiv.algorithms import (
     _get_possible_iiv_blocks,
     _is_current_block_structure,
     brute_force_block_structure,
+    create_omega_dist,
 )
 from pharmpy.tools.iiv.tool import _update_inits_start_model
 
@@ -215,3 +221,20 @@ def test_update_inits_start_model(pheno_path):
     model = Model.create_model(pheno_path)
     model.modelfit_results.parameter_estimates['OMEGA(1,1)'] = np.nan
     _update_inits_start_model(model)
+
+
+def test_create_joint_dist(testdata):
+    model = Model.create_model(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    add_peripheral_compartment(model)
+    add_pk_iiv(model)
+    list_of_etas = ['ETA(1)', 'ETA(2)']
+    create_omega_dist(list_of_etas, model)
+    assert len(model.random_variables.iiv.distributions()) == 4
+
+    model = Model.create_model(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    add_peripheral_compartment(model)
+    add_pk_iiv(model)
+    create_joint_distribution(model, ['ETA(1)', 'ETA(2)'])
+    list_of_etas = ['ETA(3)', 'ETA_VP1', 'ETA_QP1']
+    create_omega_dist(list_of_etas, model)
+    assert len(model.random_variables.iiv.distributions()) == 3

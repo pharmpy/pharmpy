@@ -59,7 +59,7 @@ def brute_force_block_structure(iivs):
             wf.add_task(task_joint_dist, predecessors=task_copy)
             model_features[model_name] = [[eta.name] for eta in iivs]
         else:
-            task_joint_dist = Task('create_joint_dist', create_joint_dist, combo)
+            task_joint_dist = Task('create_omega_dist', create_omega_dist, combo)
             wf.add_task(task_joint_dist, predecessors=task_copy)
             model_features[model_name] = combo
         model_no += 1
@@ -116,12 +116,20 @@ def flatten(list_to_flatten):
     return [item for sublist in list_to_flatten for item in sublist]
 
 
-def create_joint_dist(list_of_etas, model):
+def create_omega_dist(list_of_etas, model):
+    eta_names = []
     if isinstance(list_of_etas[0], list):
         for eta_block in list_of_etas:
             create_joint_distribution(model, eta_block)
+            eta_names += eta_block
     else:
         create_joint_distribution(model, list_of_etas)
+        eta_names = list_of_etas
+
+    etas_to_split = [eta for eta in model.random_variables.iiv.names if eta not in eta_names]
+    if etas_to_split:
+        split_joint_distribution(model, etas_to_split)
+
     return model
 
 
