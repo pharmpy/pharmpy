@@ -1206,6 +1206,10 @@ class Checker:
         ('D1', 'Time after dose has unit'),
         ('D2', 'Time after dose has time unit'),
         ('D3', 'Time after dose >=0'),
+        ('D4', 'Plasma concentration has unit'),
+        ('D5', 'Plasma concentration has mass/volume unit'),
+        ('D6', 'Plasma concentration >= 0'),
+        ('I1', 'Subject identifier is unitless'),
     )
 
     def __init__(self, datainfo, dataset, verbose=False):
@@ -1243,6 +1247,10 @@ class Checker:
         has_unit = col.unit is not None
         self.set_result(code, test=has_unit, violation=col.name, warn=True)
         return has_unit
+
+    def check_is_unitless(self, code, col):
+        is_unitless = col.unit == sympy.Integer(1)
+        self.set_result(code, test=is_unitless, violation=col.name, warn=True)
 
     def check_dimension(self, code, column, dim):
         if column.unit is None:
@@ -1403,6 +1411,15 @@ def check_dataset(model, dataframe=False, verbose=False):
             samedim = checker.check_dimension("D2", col, units.time)
             if samedim:
                 checker.check_range("D3", col, 0, float('inf'), units.second, True, False)
+
+        if col.descriptor == "plasma concentration":
+            checker.check_has_unit("D4", col)
+            samedim = checker.check_dimension("D5", col, units.mass / units.length**3)
+            if samedim:
+                checker.check_range("D6", col, 0, float('inf'), units.kg / units.L, True, False)
+
+        if col.descriptor == "subject identifier":
+            checker.check_is_unitless("I1", col)
 
     if dataframe:
         return checker.get_dataframe()

@@ -74,6 +74,8 @@ class ColumnInfo:
         'lean body mass',
         'fat free mass',
         'time after dose',
+        'plasma concentration',
+        'subject identifier',
     ]
 
     def __init__(
@@ -157,14 +159,17 @@ class ColumnInfo:
     def descriptor(self):
         """Kind of data
 
-        ================ =================
-        descriptor       Description
-        ================ =================
-        age              Age (since birth)
-        body weight      Human body weight
-        lean body mass   Lean body mass
-        fat free mass    Fat free mass
-        ================ =================
+        ==================== ==========================================
+        descriptor           Description
+        ==================== ==========================================
+        age                  Age (since birth)
+        body weight          Human body weight
+        lean body mass       Lean body mass
+        fat free mass        Fat free mass
+        time after dose      Time after dose
+        plasma concentration Concentration of substance in blood plasma
+        subject identifier   Unique integer identifier for a subject
+        ==================== ==========================================
         """
         return self._descriptor
 
