@@ -1,19 +1,31 @@
 import json
 import shutil
+from contextlib import contextmanager
 from os import stat
 from pathlib import Path
 
+from pharmpy import Model
 from pharmpy.datainfo import DataInfo
+from pharmpy.lock import path_lock
 from pharmpy.utils import hash_df
 
-from .baseclass import ModelDatabase
+from .baseclass import (
+    ModelSnapshot,
+    ModelTransaction,
+    NonTransactionalModelDatabase,
+    PendingTransactionError,
+    TransactionalModelDatabase,
+)
 
 DIRECTORY_PHARMPY_METADATA = '.pharmpy'
+DIRECTORY_INDEX = '.hash'
 FILE_METADATA = 'metadata.json'
 FILE_MODELFIT_RESULTS = 'results.json'
+FILE_PENDING = 'PENDING'
+FILE_LOCK = '.lock'
 
 
-class LocalDirectoryDatabase(ModelDatabase):
+class LocalDirectoryDatabase(NonTransactionalModelDatabase):
     """ModelDatabase implementation for single local directory
 
     All files will be stored in the same directory. It is assumed that
@@ -60,7 +72,7 @@ class LocalDirectoryDatabase(ModelDatabase):
         else:
             raise FileNotFoundError(f"Cannot retrieve {filename} for {name}")
 
-    def get_model(self, name):
+    def retrieve_model(self, name):
         filename = name + self.file_extension
         path = self.path / filename
         from pharmpy.model import Model
@@ -83,10 +95,7 @@ class LocalDirectoryDatabase(ModelDatabase):
         return f"LocalDirectoryDatabase({self.path})"
 
 
-DIRECTORY_INDEX = '.hash'
-
-
-class LocalModelDirectoryDatabase(LocalDirectoryDatabase):
+class LocalModelDirectoryDatabase(TransactionalModelDatabase):
     """ModelDatabase implementation for a local directory structure
 
     Files will be stored in separate subdirectories named after each model.
@@ -101,12 +110,73 @@ class LocalModelDirectoryDatabase(LocalDirectoryDatabase):
         File extension to use for model files.
     """
 
-    def store_model(self, model):
+    def __init__(self, path='.', file_extension='.mod'):
+        path = Path(path)
+        if not path.exists():
+            path.mkdir(parents=True)
+        self.path = path.resolve()
+        self.file_extension = file_extension
+
+    def _read_lock(self):
+        # NOTE Obtain shared (blocking) lock on the entire database
+        path = self.path / FILE_LOCK
+        path.touch(exist_ok=True)
+        return path_lock(str(path), shared=True)
+
+    def _write_lock(self):
+        # NOTE Obtain exclusive (blocking) lock on the entire database
+        path = self.path / FILE_LOCK
+        path.touch(exist_ok=True)
+        return path_lock(str(path), shared=False)
+
+    @contextmanager
+    def snapshot(self, model_name: str):
+        model_path = self.path / model_name
+        destination = model_path / DIRECTORY_PHARMPY_METADATA
+        destination.mkdir(parents=True, exist_ok=True)
+        with self._read_lock():
+            # NOTE Check that no pending transaction exists
+            path = destination / FILE_PENDING
+            if path.exists():
+                # TODO finish pending transaction from journal if possible
+                raise PendingTransactionError()
+
+            yield LocalModelDirectoryDatabaseSnapshot(self, model_name)
+
+    @contextmanager
+    def transaction(self, model: Model):
+        model_path = self.path / model.name
+        destination = model_path / DIRECTORY_PHARMPY_METADATA
+        destination.mkdir(parents=True, exist_ok=True)
+        with self._write_lock():
+            # NOTE Mark state as pending
+            path = destination / FILE_PENDING
+            try:
+                path.touch(exist_ok=False)
+            except FileExistsError:
+                # TODO finish pending transaction from journal if possible
+                raise PendingTransactionError()
+
+            yield LocalModelDirectoryDatabaseTransaction(self, model)
+
+            # NOTE Commit transaction (only if no exception was raised)
+            path.unlink()
+
+    def __repr__(self):
+        return f"LocalModelDirectoryDatabase({self.path})"
+
+
+class LocalModelDirectoryDatabaseTransaction(ModelTransaction):
+    def __init__(self, database: LocalModelDirectoryDatabase, model: Model):
+        self.db = database
+        self.model = model
+
+    def store_model(self):
         from pharmpy.modeling import read_dataset_from_datainfo, write_csv, write_model
 
-        model = model.copy()
+        model = self.model.copy()
         model.update_datainfo()
-        path = self.path / '.datasets'
+        path = self.db.path / '.datasets'
 
         # NOTE Get the hash of the dataset and list filenames with contents
         # matching this hash only
@@ -144,19 +214,40 @@ class LocalModelDirectoryDatabase(LocalDirectoryDatabase):
             model.datainfo.to_json(path / (model.name + '.datainfo'))
 
         # NOTE Write the model
-        model_path = self.path / model.name
+        model_path = self.db.path / model.name
         model_path.mkdir(exist_ok=True)
-        write_model(model, model_path / (model.name + model.filename_extension))
+        write_model(model, str(model_path / (model.name + model.filename_extension)))
 
-    def store_local_file(self, model, path):
+    def store_local_file(self, path):
         if Path(path).is_file():
-            destination = self.path / model.name
+            destination = self.db.path / self.model.name
             if not destination.is_dir():
                 destination.mkdir(parents=True)
             shutil.copy2(path, destination)
 
-    def retrieve_local_files(self, name, destination_path):
-        path = self.path / name
+    def store_metadata(self, metadata):
+        destination = self.db.path / self.model.name / DIRECTORY_PHARMPY_METADATA
+        if not destination.is_dir():
+            destination.mkdir(parents=True)
+        with open(destination / FILE_METADATA, 'w') as f:
+            json.dump(metadata, f, indent=2)
+
+    def store_modelfit_results(self):
+        destination = self.db.path / self.model.name / DIRECTORY_PHARMPY_METADATA
+        if not destination.is_dir():
+            destination.mkdir(parents=True)
+
+        if self.model.modelfit_results:
+            self.model.modelfit_results.to_json(destination / FILE_MODELFIT_RESULTS)
+
+
+class LocalModelDirectoryDatabaseSnapshot(ModelSnapshot):
+    def __init__(self, database: LocalModelDirectoryDatabase, model_name: str):
+        self.db = database
+        self.name = model_name
+
+    def retrieve_local_files(self, destination_path):
+        path = self.db.path / self.name
         files = path.glob('*')
         for f in files:
             if f.is_file():
@@ -164,38 +255,20 @@ class LocalModelDirectoryDatabase(LocalDirectoryDatabase):
             else:
                 shutil.copytree(f, Path(destination_path) / f.stem)
 
-    def retrieve_file(self, name, filename):
+    def retrieve_file(self, filename):
         # Return path to file
-        path = self.path / name / filename
+        path = self.db.path / self.name / filename
         if path.is_file() and stat(path).st_size > 0:
             return path
         else:
-            raise FileNotFoundError(f"Cannot retrieve {filename} for {name}")
+            raise FileNotFoundError(f"Cannot retrieve {filename} for {self.name}")
 
-    def get_model(self, name):
-        filename = name + self.file_extension
-        path = self.path / name / filename
+    def retrieve_model(self):
+        filename = self.name + self.db.file_extension
+        path = self.db.path / self.name / filename
         from pharmpy.model import Model
 
         model = Model.create_model(path)
-        model.database = self
+        model.database = self.db
         model.read_modelfit_results()
         return model
-
-    def store_metadata(self, model, metadata):
-        destination = self.path / model.name / DIRECTORY_PHARMPY_METADATA
-        if not destination.is_dir():
-            destination.mkdir(parents=True)
-        with open(destination / FILE_METADATA, 'w') as f:
-            json.dump(metadata, f, indent=2)
-
-    def store_modelfit_results(self, model):
-        destination = self.path / model.name / DIRECTORY_PHARMPY_METADATA
-        if not destination.is_dir():
-            destination.mkdir(parents=True)
-
-        if model.modelfit_results:
-            model.modelfit_results.to_json(destination / FILE_MODELFIT_RESULTS)
-
-    def __repr__(self):
-        return f"LocalModelDirectoryDatabase({self.path})"

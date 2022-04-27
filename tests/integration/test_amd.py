@@ -1,4 +1,5 @@
 import shutil
+from pathlib import Path
 
 from pharmpy import Model
 from pharmpy.modeling import run_iiv
