@@ -63,28 +63,30 @@ def execute_model(model):
         ]
     }
 
-    database.store_model(model)
-    database.store_local_file(model, (path / basepath).with_suffix('.lst'))
-    database.store_local_file(model, (path / basepath).with_suffix('.ext'))
-    database.store_local_file(model, (path / basepath).with_suffix('.phi'))
-    database.store_local_file(model, (path / basepath).with_suffix('.cov'))
-    database.store_local_file(model, (path / basepath).with_suffix('.cor'))
-    database.store_local_file(model, (path / basepath).with_suffix('.coi'))
+    with database.transaction(model) as txn:
 
-    for rec in model.control_stream.get_records('TABLE'):
-        database.store_local_file(model, path / rec.path)
+        txn.store_model()
+        txn.store_local_file((path / basepath).with_suffix('.lst'))
+        txn.store_local_file((path / basepath).with_suffix('.ext'))
+        txn.store_local_file((path / basepath).with_suffix('.phi'))
+        txn.store_local_file((path / basepath).with_suffix('.cov'))
+        txn.store_local_file((path / basepath).with_suffix('.cor'))
+        txn.store_local_file((path / basepath).with_suffix('.coi'))
 
-    database.store_local_file(model, stdout)
-    database.store_local_file(model, stderr)
+        for rec in model.control_stream.get_records('TABLE'):
+            txn.store_local_file(path / rec.path)
 
-    plugin_path = path / 'nonmem.json'
-    with open(plugin_path, 'w') as f:
-        json.dump(plugin, f, indent=2)
+        txn.store_local_file(stdout)
+        txn.store_local_file(stderr)
 
-    database.store_local_file(model, plugin_path)
+        plugin_path = path / 'nonmem.json'
+        with open(plugin_path, 'w') as f:
+            json.dump(plugin, f, indent=2)
 
-    database.store_metadata(model, metadata)
-    database.store_modelfit_results(model)
+        txn.store_local_file(plugin_path)
+
+        txn.store_metadata(metadata)
+        txn.store_modelfit_results()
 
     # Read in results for the server side
     model.read_modelfit_results()

@@ -281,20 +281,22 @@ def execute_model(model):
         ],
     }
 
-    database.store_local_file(model, path / f'{model.name}.R')
-    database.store_local_file(model, rdata_path)
+    with database.transaction(model) as txn:
 
-    database.store_local_file(model, stdout)
-    database.store_local_file(model, stderr)
+        txn.store_local_file(path / f'{model.name}.R')
+        txn.store_local_file(rdata_path)
 
-    plugin_path = path / 'nlmixr.json'
-    with open(plugin_path, 'w') as f:
-        json.dump(plugin, f, indent=2)
+        txn.store_local_file(stdout)
+        txn.store_local_file(stderr)
 
-    database.store_local_file(model, plugin_path)
+        plugin_path = path / 'nlmixr.json'
+        with open(plugin_path, 'w') as f:
+            json.dump(plugin, f, indent=2)
 
-    database.store_metadata(model, metadata)
-    database.store_modelfit_results(model)
+        txn.store_local_file(plugin_path)
+
+        txn.store_metadata(metadata)
+        txn.store_modelfit_results()
 
     read_modelfit_results(model, rdata_path)
     return model
