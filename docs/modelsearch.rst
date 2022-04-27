@@ -100,14 +100,13 @@ An exhaustive search will test all possible combinations of features in one big 
     digraph BST {
         node [fontname="Arial"];
         base [label="Base model"]
-        s1 [label="ABSORPTION(FO)"]
-        s2 [label="ABSORPTION(ZO)"]
-        s3 [label="ELIMINATION(FO)"]
-        s4 [label="ELIMINATION(ZO)"]
-        s5 [label="ABSORPTION(FO);ELIMINATION(FO)"]
-        s6 [label="ABSORPTION(FO);ELIMINATION(ZO)"]
-        s7 [label="ABSORPTION(ZO);ELIMINATION(FO)"]
-        s8 [label="ABSORPTION(ZO);ELIMINATION(ZO)"]
+        s1 [label="ABSORPTION(ZO)"]
+        s2 [label="ELIMINATION(MM)"]
+        s3 [label="PERIPHERALS(1)"]
+        s4 [label="ABSORPTION(ZO);ELIMINATION(MM)"]
+        s5 [label="ABSORPTION(ZO);PERIPHERALS(1)"]
+        s6 [label="ELIMINATION(MM);PERIPHERALS(1)"]
+        s7 [label="ABSORPTION(ZO);ELIMINATION(MM);PERIPHERALS(1)"]
         base -> s1
         base -> s2
         base -> s3
@@ -115,7 +114,6 @@ An exhaustive search will test all possible combinations of features in one big 
         base -> s5
         base -> s6
         base -> s7
-        base -> s8
     }
 
 Exhaustive stepwise search
@@ -135,6 +133,43 @@ Some combinations of features have been excluded in this algorithm, the followin
 +-----------------------+-------------------+
 | LAGTIME               | TRANSITS          |
 +-----------------------+-------------------+
+
+.. graphviz::
+
+    digraph BST {
+        node [fontname="Arial"];
+        base [label="Base model"]
+        s1 [label="ABSORPTION(ZO)"]
+        s2 [label="ELIMINATION(MM)"]
+        s3 [label="PERIPHERALS(1)"]
+        s4 [label="ELIMINATION(MM)"]
+        s5 [label="PERIPHERALS(1)"]
+        s6 [label="ABSORPTION(ZO)"]
+        s7 [label="PERIPHERALS(1)"]
+        s8 [label="ABSORPTION(ZO)"]
+        s9 [label="ELIMINATION(MM)"]
+        s10 [label="PERIPHERALS(1)"]
+        s11 [label="ELIMINATION(MM)"]
+        s12 [label="PERIPHERALS(1)"]
+        s13 [label="ABSORPTION(ZO)"]
+        s14 [label="ELIMINATION(MM)"]
+        s15 [label="ABSORPTION(ZO)"]
+        base -> s1
+        base -> s2
+        base -> s3
+        s1 -> s4
+        s1 -> s5
+        s2 -> s6
+        s2 -> s7
+        s3 -> s8
+        s3 -> s9
+        s4 -> s10
+        s5 -> s11
+        s6 -> s12
+        s7 -> s13
+        s8 -> s14
+        s9 -> s15
+    }
 
 Reduced stepwise search
 ~~~~~~~~~~~~~~~~~~~~~~~
