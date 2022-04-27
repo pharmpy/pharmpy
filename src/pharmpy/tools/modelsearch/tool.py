@@ -1,10 +1,7 @@
-import numpy as np
-import pandas as pd
-
 import pharmpy.results
 import pharmpy.tools.modelsearch.algorithms as algorithms
-import pharmpy.tools.modelsearch.rankfuncs as rankfuncs
 from pharmpy.modeling import summarize_individuals, summarize_modelfit_results
+from pharmpy.tools.common import summarize_tool
 from pharmpy.workflows import Task, Workflow
 
 
@@ -64,16 +61,15 @@ def post_process_results(algorithm, rankfunc, cutoff, model_features, *models):
     if algorithm == 'reduced_stepwise':
         model_features = _update_model_features(start_model, res_models, model_features)
 
-    summary_tool = create_summary(res_models, start_model, rankfunc, cutoff, model_features)
+    summary_tool = summarize_tool(res_models, start_model, rankfunc, cutoff, model_features)
+    summary_models = summarize_modelfit_results([start_model] + res_models)
+    summary_individuals = summarize_individuals([start_model] + res_models)
 
     best_model_name = summary_tool['rank'].idxmin()
     try:
         best_model = [model for model in res_models if model.name == best_model_name][0]
     except IndexError:
         best_model = start_model
-
-    summary_models = summarize_modelfit_results([start_model] + res_models)
-    summary_individuals = summarize_individuals([start_model] + res_models)
 
     res = ModelSearchResults(
         summary_tool=summary_tool,
@@ -123,45 +119,3 @@ class ModelSearchResults(pharmpy.results.Results):
         self.best_model = best_model
         self.start_model = start_model
         self.models = models
-
-
-def create_summary(
-    models,
-    start_model,
-    rankfunc_name,
-    cutoff,
-    model_features,
-    bic_type='mixed',
-):
-    models_all = [start_model] + models
-    rankfunc = getattr(rankfuncs, rankfunc_name)
-
-    kwargs = dict()
-    if cutoff is not None:
-        kwargs['cutoff'] = cutoff
-    if rankfunc_name == 'bic':
-        kwargs['bic_type'] = bic_type
-    ranking, diff_dict = rankfunc(start_model, models_all, **kwargs)
-    ranking_by_name = [model.name for model in ranking]  # Using list of models is very slow
-
-    index = []
-    rows = []
-    for model in models_all:
-        index.append(model.name)
-        parent_model = model.parent_model
-        diff = diff_dict[model.name]
-        if model.name == start_model.name:
-            feat = None
-        else:
-            feat = model_features[model.name]
-        if model.name in ranking_by_name:
-            ranks = ranking_by_name.index(model.name) + 1
-        else:
-            ranks = np.nan
-        rows.append([parent_model, diff, feat, ranks])
-
-    # FIXME: in ranks, if any row has NaN the rank converts to float
-    colnames = ['parent_model', f'd{rankfunc_name}', 'features', 'rank']
-    df = pd.DataFrame(rows, index=index, columns=colnames)
-
-    return df

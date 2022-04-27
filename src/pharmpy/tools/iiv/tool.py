@@ -1,6 +1,5 @@
 import pharmpy.results
 import pharmpy.tools.iiv.algorithms as algorithms
-import pharmpy.tools.modelsearch.tool
 from pharmpy.modeling import (
     add_pk_iiv,
     copy_model,
@@ -8,6 +7,7 @@ from pharmpy.modeling import (
     summarize_modelfit_results,
     update_inits,
 )
+from pharmpy.tools.common import summarize_tool
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.workflows import Task, Workflow
 
@@ -91,7 +91,7 @@ def post_process_results(rankfunc, cutoff, model_features, *models):
     else:
         res_models = [res_models]
 
-    summary_tool = pharmpy.tools.modelsearch.tool.create_summary(
+    summary_tool = summarize_tool(
         res_models,
         start_model,
         rankfunc,
@@ -99,14 +99,13 @@ def post_process_results(rankfunc, cutoff, model_features, *models):
         model_features,
         bic_type='iiv',
     )
+    summary_models = summarize_modelfit_results([start_model] + res_models)
 
     best_model_name = summary_tool['rank'].idxmin()
     try:
         best_model = [model for model in res_models if model.name == best_model_name][0]
     except IndexError:
         best_model = start_model
-
-    summary_models = summarize_modelfit_results([start_model] + res_models)
 
     res = IIVResults(
         summary_tool=summary_tool,

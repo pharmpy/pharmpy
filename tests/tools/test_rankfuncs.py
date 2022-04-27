@@ -1,6 +1,6 @@
 from pharmpy.modeling import load_example_model
 from pharmpy.parameter import Parameters
-from pharmpy.tools.modelsearch.rankfuncs import aic, ofv
+from pharmpy.tools.rankfuncs import aic, ofv
 
 pheno = load_example_model("pheno")
 
