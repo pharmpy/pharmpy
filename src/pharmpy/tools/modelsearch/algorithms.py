@@ -1,14 +1,5 @@
-import warnings
-
-import numpy as np
-
-from pharmpy.modeling import (
-    add_iiv,
-    add_pk_iiv,
-    copy_model,
-    create_joint_distribution,
-    update_inits,
-)
+from pharmpy.modeling import add_iiv, add_pk_iiv, copy_model, create_joint_distribution
+from pharmpy.tools.common import update_initial_estimates
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.workflows import Task, Workflow
 
@@ -202,7 +193,7 @@ def _create_model_workflow(model_name, feat, func, iiv_strategy):
     task_copy = Task('copy', _copy, model_name)
     wf_stepwise_step.add_task(task_copy)
 
-    task_update_inits = Task('update_inits', _update_initial_estimates)
+    task_update_inits = Task('update_inits', update_initial_estimates)
     wf_stepwise_step.add_task(task_update_inits, predecessors=task_copy)
 
     task_function = Task(feat, _apply_transformation, feat, func)
@@ -289,16 +280,6 @@ def _is_allowed_peripheral(func_current, peripheral_previous, mfl_features):
 def _copy(name, model):
     model_copy = copy_model(model, name)
     return model_copy
-
-
-def _update_initial_estimates(model):
-    # FIXME: this should use dynamic workflows and not dispatch the next task
-    try:
-        update_inits(model, move_est_close_to_bounds=True)
-    except (ValueError, np.linalg.LinAlgError):
-        warnings.warn(f'{model.name}: Could not update initial estimates, using default')
-        pass
-    return model
 
 
 def _add_iiv_to_func(iiv_strategy, model):

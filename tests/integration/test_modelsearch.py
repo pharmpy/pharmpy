@@ -15,6 +15,9 @@ def test_exhaustive(tmp_path, testdata):
         shutil.copy2(testdata / 'nonmem' / 'models' / 'mox_simulated_normal.csv', tmp_path)
         model_start = Model.create_model('mox2.mod')
         model_start.datainfo.path = tmp_path / 'mox_simulated_normal.csv'
+
+        fit(model_start)
+
         res = run_tool(
             'modelsearch', 'ABSORPTION(ZO);PERIPHERALS(1)', 'exhaustive', model=model_start
         )
@@ -22,14 +25,13 @@ def test_exhaustive(tmp_path, testdata):
         assert len(res.summary_tool) == 4
         assert len(res.summary_models) == 4
         assert len(res.models) == 3
-        assert res.best_model.name == 'modelsearch_candidate3'
         assert all(
             model.modelfit_results and not np.isnan(model.modelfit_results.ofv)
             for model in res.models
         )
         rundir = tmp_path / 'modelsearch_dir1'
         assert rundir.is_dir()
-        assert len(list((rundir / 'models').iterdir())) == 5
+        assert len(list((rundir / 'models').iterdir())) == 4
         assert (rundir / 'results.json').exists()
         assert (rundir / 'results.csv').exists()
         assert (rundir / 'metadata.json').exists()
@@ -60,6 +62,9 @@ def test_exhaustive_stepwise_basic(
         shutil.copy2(testdata / 'nonmem' / 'models' / 'mox_simulated_normal.csv', tmp_path)
         model_start = Model.create_model('mox2.mod')
         model_start.datainfo.path = tmp_path / 'mox_simulated_normal.csv'
+
+        fit(model_start)
+
         res = run_tool('modelsearch', mfl, 'exhaustive_stepwise', model=model_start)
 
         assert len(res.summary_tool) == no_of_models + 1
@@ -76,7 +81,7 @@ def test_exhaustive_stepwise_basic(
 
         rundir = tmp_path / 'modelsearch_dir1'
         assert rundir.is_dir()
-        assert len(list((rundir / 'models').iterdir())) == no_of_models + 2
+        assert len(list((rundir / 'models').iterdir())) == no_of_models + 1
         assert (rundir / 'results.json').exists()
         assert (rundir / 'results.csv').exists()
         assert (rundir / 'metadata.json').exists()
@@ -109,6 +114,8 @@ def test_exhaustive_stepwise_add_iivs(
         model_start = Model.create_model('mox2.mod')
         model_start.datainfo.path = tmp_path / 'mox_simulated_normal.csv'
 
+        fit(model_start)
+
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore", category=UserWarning)
             res = run_tool(
@@ -130,34 +137,7 @@ def test_exhaustive_stepwise_add_iivs(
         )
         rundir = tmp_path / 'modelsearch_dir1'
         assert rundir.is_dir()
-        assert len(list((rundir / 'models').iterdir())) == no_of_models + 2
-        assert (rundir / 'results.json').exists()
-        assert (rundir / 'results.csv').exists()
-        assert (rundir / 'metadata.json').exists()
-
-
-def test_exhaustive_stepwise_already_fit(tmp_path, testdata):
-    with TemporaryDirectoryChanger(tmp_path):
-        shutil.copy2(testdata / 'nonmem' / 'models' / 'mox2.mod', tmp_path)
-        shutil.copy2(testdata / 'nonmem' / 'models' / 'mox_simulated_normal.csv', tmp_path)
-        model_start = Model.create_model('mox2.mod')
-        model_start.datainfo.path = tmp_path / 'mox_simulated_normal.csv'
-
-        fit(model_start)
-
-        mfl = 'ABSORPTION(ZO);PERIPHERALS(1)'
-        res = run_tool('modelsearch', mfl, 'exhaustive_stepwise', model=model_start)
-
-        assert len(res.summary_tool) == 5
-        assert len(res.summary_models) == 5
-        assert len(res.models) == 4
-        assert all(
-            model.modelfit_results and not np.isnan(model.modelfit_results.ofv)
-            for model in res.models
-        )
-        rundir = tmp_path / 'modelsearch_dir1'
-        assert rundir.is_dir()
-        assert len(list((rundir / 'models').iterdir())) == 5
+        assert len(list((rundir / 'models').iterdir())) == no_of_models + 1
         assert (rundir / 'results.json').exists()
         assert (rundir / 'results.csv').exists()
         assert (rundir / 'metadata.json').exists()
@@ -183,7 +163,7 @@ def test_exhaustive_stepwise_start_model_fail(tmp_path, testdata):
         assert all(model.modelfit_results is None for model in res.models)
         rundir = tmp_path / 'modelsearch_dir1'
         assert rundir.is_dir()
-        assert len(list((rundir / 'models').iterdir())) == 6
+        assert len(list((rundir / 'models').iterdir())) == 5
 
 
 def test_exhaustive_stepwise_peripheral_upper_limit(tmp_path, testdata):
@@ -192,6 +172,9 @@ def test_exhaustive_stepwise_peripheral_upper_limit(tmp_path, testdata):
         shutil.copy2(testdata / 'nonmem' / 'models' / 'mox_simulated_normal.csv', tmp_path)
         model_start = Model.create_model('mox2.mod')
         model_start.datainfo.path = tmp_path / 'mox_simulated_normal.csv'
+
+        fit(model_start)
+
         res = run_tool('modelsearch', 'PERIPHERALS(1)', 'exhaustive_stepwise', model=model_start)
 
         assert ',999999) ; POP_QP1' in res.models[0].model_code

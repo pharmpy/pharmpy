@@ -5,7 +5,6 @@ import pharmpy.results
 import pharmpy.tools.modelsearch.algorithms as algorithms
 import pharmpy.tools.modelsearch.rankfuncs as rankfuncs
 from pharmpy.modeling import summarize_individuals, summarize_modelfit_results
-from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.workflows import Task, Workflow
 
 
@@ -29,13 +28,6 @@ def create_workflow(
 
     wf.add_task(start_task)
 
-    if model and not model.modelfit_results:
-        wf_fit = create_fit_workflow(n=1)
-        wf.insert_workflow(wf_fit, predecessors=start_task)
-        start_model_task = wf_fit.output_tasks
-    else:
-        start_model_task = [start_task]
-
     wf_search, candidate_model_tasks, model_features = algorithm_func(mfl, iiv_strategy)
     wf.insert_workflow(wf_search, predecessors=wf.output_tasks)
 
@@ -48,7 +40,7 @@ def create_workflow(
         model_features,
     )
 
-    wf.add_task(task_result, predecessors=start_model_task + candidate_model_tasks)
+    wf.add_task(task_result, predecessors=[start_task] + candidate_model_tasks)
 
     return wf
 
