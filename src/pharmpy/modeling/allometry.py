@@ -1,3 +1,4 @@
+from pharmpy import ExplicitODESystem
 from pharmpy.parameter import Parameter
 from pharmpy.statements import Assignment, sympify
 
@@ -77,8 +78,11 @@ def add_allometry(
     """
     allometric_variable = sympify(allometric_variable)
     reference_value = sympify(reference_value)
+    statements = model.statements.copy()
+    odes = statements.ode_system
+    if type(odes) is ExplicitODESystem:
+        odes = statements.ode_system.to_compartmental_system()
 
-    odes = model.statements.ode_system
     central = odes.central_compartment
     output = odes.output_compartment
 
