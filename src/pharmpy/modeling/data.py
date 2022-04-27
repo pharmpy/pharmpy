@@ -750,6 +750,13 @@ def add_time_after_dose(model):
     <...>
 
     """
+    try:
+        model.datainfo.descriptorix['time after dose']
+    except IndexError:
+        pass
+    else:
+        # Already have time after dose
+        return model
     temp = model.copy()
     translate_nmtran_time(temp)
     idv = temp.datainfo.idv_column.name
@@ -808,6 +815,8 @@ def add_time_after_dose(model):
     df.drop(columns=['_NEWTIME', '_DOSEID'], inplace=True)
 
     model.dataset = df  # TAD in datainfo is automatically added here
+    model.datainfo['TAD'].descriptor = 'time after dose'
+    model.datainfo['TAD'].unit = model.datainfo[idv].unit
     return model
 
 
@@ -1194,6 +1203,9 @@ class Checker:
         ('A10', 'Fat free mass has unit'),
         ('A11', 'Fat free mass has mass unit'),
         ('A12', 'Fat free mass >0 and <700kg'),
+        ('D1', 'Time after dose has unit'),
+        ('D2', 'Time after dose has time unit'),
+        ('D3', 'Time after dose >=0'),
     )
 
     def __init__(self, datainfo, dataset, verbose=False):
@@ -1385,6 +1397,12 @@ def check_dataset(model, dataframe=False, verbose=False):
             samedim = checker.check_dimension("A11", col, units.mass)
             if samedim:
                 checker.check_range("A12", col, 0, 700, units.kg, False, False)
+
+        if col.descriptor == "time after dose":
+            checker.check_has_unit("D1", col)
+            samedim = checker.check_dimension("D2", col, units.time)
+            if samedim:
+                checker.check_range("D3", col, 0, float('inf'), units.second, True, False)
 
     if dataframe:
         return checker.get_dataframe()

@@ -67,7 +67,14 @@ class ColumnInfo:
         'nmtran-date',
         'str',
     ]
-    _all_descriptors = [None, 'age', 'body weight', 'lean body mass', 'fat free mass']
+    _all_descriptors = [
+        None,
+        'age',
+        'body weight',
+        'lean body mass',
+        'fat free mass',
+        'time after dose',
+    ]
 
     def __init__(
         self,
@@ -474,6 +481,19 @@ class DataInfo(MutableSequence):
         return TypeIndexer(self)
 
     @property
+    def descriptorix(self):
+        """Descriptor indexer
+
+        Example
+        -------
+        >>> from pharmpy.modeling import load_example_model
+        >>> model = load_example_model("pheno")
+        >>> model.datainfo.descriptorix['body weight'].names
+        ['WGT']
+        """
+        return DescriptorIndexer(self)
+
+    @property
     def id_column(self):
         """The id column
 
@@ -677,4 +697,15 @@ class TypeIndexer:
         cols = [col for col in self._obj if col.type == i and not col.drop]
         if not cols:
             raise IndexError(f"No columns of type {i} available")
+        return DataInfo(cols)
+
+
+class DescriptorIndexer:
+    def __init__(self, obj):
+        self._obj = obj
+
+    def __getitem__(self, i):
+        cols = [col for col in self._obj if col.descriptor == i and not col.drop]
+        if not cols:
+            raise IndexError(f"No columns with descriptor {i} available")
         return DataInfo(cols)
