@@ -33,6 +33,8 @@ def calculate_results(original_model, simfit_results):
     iofv_summary['residual'] = (
         iofv_summary['original'] - iofv_summary['sampled_median']
     ) / iofv_summary['sampled_stdev']
+    iofv_summary['residual_q1'] = (iofv_summary['original'] - sampled_iofv.T.quantile(0.25)) / iofv_summary['sampled_stdev']
+    iofv_summary['residual_q3'] = (iofv_summary['original'] - sampled_iofv.T.quantile(0.75)) / iofv_summary['sampled_stdev']
     iofv_summary['residual_outlier'] = iofv_summary['residual'] >= 3
 
     ids = iofv_summary.index[iofv_summary['residual_outlier']].tolist()

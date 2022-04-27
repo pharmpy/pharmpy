@@ -1,3 +1,11 @@
+next version
+------------
+
+New features
+============
+
+* Add 1st and 3rd quantiles of residual to simeval results
+
 0.68.0 (2022-04-27)
 -------------------
 
