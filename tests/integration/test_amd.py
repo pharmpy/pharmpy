@@ -15,6 +15,15 @@ from pharmpy.utils import TemporaryDirectoryChanger
 #         assert res
 
 
+def _model_count(rundir: Path):
+    return sum(
+        map(
+            lambda path: 0 if path.name in ['.lock', '.datasets'] else 1,
+            ((rundir / 'models').iterdir()),
+        )
+    )
+
+
 def test_iiv(tmp_path, testdata):
     with TemporaryDirectoryChanger(tmp_path):
         shutil.copy2(testdata / 'nonmem' / 'models' / 'mox2.mod', tmp_path)
@@ -31,10 +40,10 @@ def test_iiv(tmp_path, testdata):
         assert len(res.models) == 11
         rundir1 = tmp_path / 'iiv_dir1'
         assert rundir1.is_dir()
-        assert len(list((rundir1 / 'models').iterdir())) == 9
+        assert _model_count(rundir1) == 8
         rundir2 = tmp_path / 'iiv_dir2'
         assert rundir2.is_dir()
-        assert len(list((rundir2 / 'models').iterdir())) == 5
+        assert _model_count(rundir2) == 4
 
         run_iiv(model_start, path=tmp_path / 'test_path')
 

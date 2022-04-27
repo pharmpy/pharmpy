@@ -1,10 +1,20 @@
 import shutil
+from pathlib import Path
 
 import pytest
 
 from pharmpy import Model
 from pharmpy.modeling import run_tool
 from pharmpy.utils import TemporaryDirectoryChanger
+
+
+def _model_count(rundir: Path):
+    return sum(
+        map(
+            lambda path: 0 if path.name in ['.lock', '.datasets'] else 1,
+            ((rundir / 'models').iterdir()),
+        )
+    )
 
 
 @pytest.mark.parametrize(
@@ -26,7 +36,7 @@ def test_estmethod(tmp_path, testdata, methods, solvers, no_of_models, advan_ref
         assert advan_ref in res.models[-1].model_code
         rundir = tmp_path / 'estmethod_dir1'
         assert rundir.is_dir()
-        assert len(list((rundir / 'models').iterdir())) == no_of_models + 1
+        assert _model_count(rundir) == no_of_models
         assert (rundir / 'results.json').exists()
         assert (rundir / 'results.csv').exists()
         assert (rundir / 'results.html').exists()
