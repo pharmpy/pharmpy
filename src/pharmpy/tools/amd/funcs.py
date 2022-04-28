@@ -1,6 +1,5 @@
 from pathlib import Path
 
-import pandas as pd
 import sympy
 
 import pharmpy
@@ -20,6 +19,7 @@ from pharmpy.modeling import (
     set_first_order_absorption,
     set_proportional_error_model,
 )
+from pharmpy.modeling.data import read_dataset_from_datainfo
 from pharmpy.workflows import default_model_database
 
 
@@ -55,14 +55,14 @@ def create_start_model(dataset_path, modeltype='pk_oral', cl_init=0.01, vc_init=
     stats = ModelStatements([cl_ass, vc_ass, odes, ipred, y_ass])
 
     datainfo_path = dataset_path.with_suffix('.datainfo')
-    separator = r'\s+|,'
+
     if datainfo_path.is_file():
         di = DataInfo.read_json(dataset_path.with_suffix('.datainfo'))
-        di.separator = separator
+        di.path = dataset_path
     else:
         # FIXME: Create a default di here?
         di = None
-    df = pd.read_table(dataset_path, sep=separator, engine='python')
+    df = read_dataset_from_datainfo(di)
 
     est = EstimationStep(
         "FOCE",
