@@ -178,7 +178,8 @@ class Model:
         if isinstance(value, str):
             if value.upper() not in allowed_strings:
                 raise ValueError(
-                    f"Cannot set value_type to {value}. Must be one of {allowed_strings} or a symbol"
+                    f"Cannot set value_type to {value}. Must be one of {allowed_strings} "
+                    f"or a symbol"
                 )
             value = value.upper()
         elif not isinstance(value, sympy.Symbol):

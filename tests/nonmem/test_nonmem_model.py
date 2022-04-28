@@ -1158,7 +1158,7 @@ $SIGMA 3 ; SI1
     assert model.value_type == likelihood
 
 
-def test_likelihood():
+def test_f_flag():
     code = """$PROBLEM base model
 $INPUT ID DV TIME
 $DATA file.csv IGNORE=@

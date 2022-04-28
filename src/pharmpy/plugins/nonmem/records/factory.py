@@ -5,6 +5,7 @@ from pharmpy.model import ModelSyntaxError
 from .abbreviated_record import AbbreviatedRecord
 from .code_record import CodeRecord
 from .data_record import DataRecord
+from .estimation_record import EstimationRecord
 from .etas_record import EtasRecord
 from .model_record import ModelRecord
 from .omega_record import OmegaRecord
@@ -26,7 +27,6 @@ from .sizes_record import SizesRecord
 from .subroutine_record import SubroutineRecord
 from .table_record import TableRecord
 from .theta_record import ThetaRecord
-from .estimation_record import EstimationRecord
 
 # Dictionary from canonical record name to record class and non_empty rules of parser
 known_records = {
