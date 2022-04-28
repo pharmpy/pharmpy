@@ -1,13 +1,9 @@
 ===========
-modelsearch
+Modelsearch
 ===========
 
-The modelsearch tool is a general tool to decide the best structural model given a base model and a search space of model features. The tool
-supports different algorithms and selection criteria.
-
-.. warning::
-
-    This tool and its documentation is currently under development. The API may change.
+The modelsearch tool is a general tool to decide the best structural model given a base model and a search space of
+model features. The tool supports different algorithms and selection criteria.
 
 ~~~~~~~
 Running
@@ -15,63 +11,68 @@ Running
 
 The modelsearch tool is available both in Pharmpy/pharmr and from the command line.
 
+To initiate a `modelsearch`-run in Python:
+
 .. code:: python
 
-    from pharmpy.modeling import run_tool
+    from pharmpy.modeling import print_model_code, run_tool
 
-    start_model = load_example_model('pheno')
+    start_model = read_model('path/to/model')
     run_tool('modelsearch',
-             'ABSORPTION(ZO);ELIMINATION(ZO)',
+             'ABSORPTION(ZO);PERIPHERALS(1)',
              'exhaustive',
              iiv_strategy=0,
-             rankfunc='ofv',
+             rankfunc='bic',
              cutoff=None,
              model=start_model)
 
-This would start a search starting with an input model `model` with `mfl` as the search space using the `algorithm` search algorithm, where
-structural IIVs will be added to candidates according to strategy 0. The candidate models will be ranked using `ofv` with default `cutoff`.
+This will take an input model `model` with `mfl` as the search space, meaning zero order absorption and adding one
+peripheral compartment will be tried. The tool will use the `exhaustive` search algorithm. Structural IIVs will be
+added to candidates according to strategy 0, where no IIVs are added. The candidate models will be ranked using `bic`
+with default `cutoff`, which for BIC is none.
 
-To run modelsearch from the command line:
+To run `modelsearch` from the command line, the example code is redefined accordingly:
 
 .. code::
 
-    pharmpy run modelsearch path/to/model 'ABSORPTION(ZO);ELIMINATION(ZO)' 'exhaustive' --rankfunc 'aic'
+    pharmpy run modelsearch path/to/model 'ABSORPTION(ZO);PERIPHERALS(1)' 'exhaustive' --iv_strategy 0 --rankfunc 'bic'
 
 Arguments
 ~~~~~~~~~
 For a more detailed description of each argument, see their respective chapter on this page.
 
-+--------------+-------------------------------------------------------------------+
-| Argument     | Description                                                       |
-+==============+===================================================================+
-| mfl          | Search space to test                                              |
-+--------------+-------------------------------------------------------------------+
-| algorithm    | Algorithm to use (e.g. exhaustive)                                |
-+--------------+-------------------------------------------------------------------+
-| rankfunc     | Which selection criteria to rank models on (e.g. OFV, AIC)        |
-+--------------+-------------------------------------------------------------------+
-| cutoff       | Cutoff for the ranking function (exclude models that are below)   |
-+--------------+-------------------------------------------------------------------+
-| iiv_strategy | If/how IIV should be added to candidate models                    |
-+--------------+-------------------------------------------------------------------+
-| model        | Start model                                                       |
-+--------------+-------------------------------------------------------------------+
++--------------+-----------------------------------------------------------------------------------------+
+| Argument     | Description                                                                             |
++==============+=========================================================================================+
+| mfl          | Search space to test                                                                    |
++--------------+-----------------------------------------------------------------------------------------+
+| algorithm    | Algorithm to use (e.g. exhaustive)                                                      |
++--------------+-----------------------------------------------------------------------------------------+
+| rankfunc     | Which selection criteria to rank models on, e.g. OFV (default is BIC)                   |
++--------------+-----------------------------------------------------------------------------------------+
+| cutoff       | Cutoff for the ranking function, exclude models that are below cutoff (default is None) |
++--------------+-----------------------------------------------------------------------------------------+
+| iiv_strategy | If/how IIV should be added to candidate models (default is 0)                           |
++--------------+-----------------------------------------------------------------------------------------+
+| model        | Start model                                                                             |
++--------------+-----------------------------------------------------------------------------------------+
 
 
 ~~~~~~~~~~~~~~~~
 The search space
 ~~~~~~~~~~~~~~~~
 
-The model feature search space is a set of possible combinations of model features that will be applied and tested on the input model. Supported features cover
-absorption, elimination, distribution, and delay. The search space is given as a string with a specific grammar, which is called `Model Feature Language`
-(MFL). The `MFL` is a domain specific language designed to describe model features and sets of model features in a concise way. See the detailed description
-below.
+The model feature search space is a set of possible combinations of model features that will be applied and tested on
+the input model. The supported features cover absorption, absorption delay, elimination, and distribution. The search
+space is given as a string with a specific grammar, according to the `Model Feature Language` (MFL) (see detailed
+description :ref:`below<Model feature language (MFL) reference>`).
 
 ~~~~~~~~~~
 Algorithms
 ~~~~~~~~~~
 
-The tool can conduct the searching using different search algorithms. The current built in algorithms can be seen in the table below.
+The tool can conduct the model search using different algorithms. The available algorithms can be seen in the table
+below.
 
 +---------------------+-------------------------------------------------------------------+
 | Algorithm           | Description                                                       |
@@ -92,8 +93,9 @@ An exhaustive search will test all possible combinations of features in one big 
 
 .. code::
 
-    ABSORPTION([FO, ZO])
-    ELIMINATION([FO, ZO])
+    ABSORPTION(ZO)
+    ELIMINATION(MM)
+    PERIPHERALS(1)
 
 .. graphviz::
 
@@ -118,21 +120,7 @@ An exhaustive search will test all possible combinations of features in one big 
 
 Exhaustive stepwise search
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
-An exhaustive stepwise search will apply features in a stepwise manner such that only one feature is changed at a time.
-
-Some combinations of features have been excluded in this algorithm, the following combinations are never run:
-
-+-----------------------+-------------------+
-| Feature A             | Feature B         |
-+=======================+===================+
-| ABSORPTION(ZO)        | TRANSITS          |
-+-----------------------+-------------------+
-| ABSORPTION(SEQ-ZO-FO) | TRANSITS          |
-+-----------------------+-------------------+
-| ABSORPTION(SEQ-ZO-FO) | LAGTIME           |
-+-----------------------+-------------------+
-| LAGTIME               | TRANSITS          |
-+-----------------------+-------------------+
+The exhaustive stepwise search applies features in a stepwise manner such that only one feature is changed at a time.
 
 .. graphviz::
 
@@ -171,10 +159,31 @@ Some combinations of features have been excluded in this algorithm, the followin
         s9 -> s15
     }
 
+Feature combination exclusions
+------------------------------
+
+Some combinations of features have been excluded in this algorithm, the following combinations are never run:
+
++-----------------------+-------------------+
+| Feature A             | Feature B         |
++=======================+===================+
+| ABSORPTION(ZO)        | TRANSITS          |
++-----------------------+-------------------+
+| ABSORPTION(SEQ-ZO-FO) | TRANSITS          |
++-----------------------+-------------------+
+| ABSORPTION(SEQ-ZO-FO) | LAGTIME           |
++-----------------------+-------------------+
+| LAGTIME               | TRANSITS          |
++-----------------------+-------------------+
+
+Additionally, peripheral compartments are always run sequentially, i.e. the algorithm will never add more than one
+compartment at a given step. This is done in order to allow for better initial estimates from previous peripherals.
+
 Reduced stepwise search
 ~~~~~~~~~~~~~~~~~~~~~~~
-The reduced stepwise is similar to the exhaustive stepwise search, but it will after each layer compare models with
-the same features (but from different order) and only send the best model for the next transformations.
+The reduced stepwise is similar to the exhaustive stepwise search, but after each layer it compares models with
+the same features, where the compared models arrived at the features in a different order. Next, the algorithm sends the
+best model from each comparison to the next layer, where the subsequent feature is added.
 
 .. graphviz::
 
@@ -216,6 +225,9 @@ the same features (but from different order) and only send the best model for th
         s12 -> s15
     }
 
+The same feature combinations as in the exhaustive stepwise algorithm will be excluded (described
+:ref:`here<Feature combination exclusions>`)
+
 ~~~~~~~~~~~~~~
 IIV strategies
 ~~~~~~~~~~~~~~
@@ -226,13 +238,13 @@ The different strategies can be seen here:
 +-----------+----------------------------------------------------------+
 | Strategy  | Description                                              |
 +===========+==========================================================+
-| 0         | No IIVs are added during the search                      |
+| 0         | No IIVs are added during the search (default)            |
 +-----------+----------------------------------------------------------+
 | 1         | IIV is added to all structural parameters as diagonal    |
 +-----------+----------------------------------------------------------+
 | 2         | IIV is added to all structural parameters as full block  |
 +-----------+----------------------------------------------------------+
-| 3         | IIV is added to MDT parameters.                          |
+| 3         | IIV is added to the absorption delay parameter           |
 +-----------+----------------------------------------------------------+
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -242,36 +254,95 @@ Comparing and ranking candidates
 The supplied `rankfunc` will be used to compare a set of candidate models and rank them. A cutoff may also be provided
 if the user does not want to use the default. The following rank functions are available:
 
-+------------+---------------------------------------------------------------------------+
-| Rankfunc   | Description                                                               |
-+============+===========================================================================+
-| ofv        | ΔOFV. Default is to not rank candidates with ΔOFV < cutoff (default 3.84) |
-+------------+---------------------------------------------------------------------------+
-| aic        | ΔAIC. Default is to rank all candidates if no cutoff is provided.         |
-+------------+---------------------------------------------------------------------------+
-| bic        | ΔBIC (mixed). Default is to rank all candidates if no cutoff is provided. |
-+------------+---------------------------------------------------------------------------+
++------------+-----------------------------------------------------------------------------------+
+| Rankfunc   | Description                                                                       |
++============+===================================================================================+
+| ofv        | ΔOFV. Default is to not rank candidates with ΔOFV < cutoff (default 3.84)         |
++------------+-----------------------------------------------------------------------------------+
+| aic        | ΔAIC. Default is to rank all candidates if no cutoff is provided.                 |
++------------+-----------------------------------------------------------------------------------+
+| bic        | ΔBIC (mixed effects). Default is to rank all candidates if no cutoff is provided. |
++------------+-----------------------------------------------------------------------------------+
 
 ~~~~~~~~~~~~~~~~~~~~~~~~
 The Model Search results
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
 The results object contains the candidate models, the start model, and the selected best model (based on the input
-selection criteria). The tool will also create various summary tables which can be accessed in the results object,
-as well as files in .csv/.json format. In those you can find information about the ranking and relevant features
-(`summary_tool`), the estimated models (`summary_models`), and individuals in each model (`summary_individuals`).
+selection criteria). The tool also creates various summary tables which can be accessed in the results object,
+as well as files in .csv/.json format.
 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Model feature language reference
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Consider a modelsearch run with the search space of zero order absorption and adding one peripheral compartment:
 
-The model feature language can be used to describe model features for one single model or an entire space of model features, i.e. descriptions for multiple models. The basic building block of MFL is the feature description. A feature description consists of the name of a feature category followed by a comma separated list of arguments within parentheses. For example:
+.. code::
+
+    res = run_tool('modelsearch',
+                   'ABSORPTION(ZO);PERIPHERALS(1)',
+                   'exhaustive',
+                   iiv_strategy=0,
+                   rankfunc='bic',
+                   cutoff=None,
+                   model=start_model)
+
+
+The `summary_tool` table contains information such as which feature each model candidate has, the difference to the
+start model (in this case comparing BIC), and final ranking:
+
+.. code::
+
+    res.summary_tool
+
+.. jupyter-execute::
+    :hide-code:
+
+    from pharmpy.results import read_results
+    res = read_results('tests/testdata/results/modelsearch_results.json')
+    res.summary_tool
+
+To see information about the actual model runs, such as minimization status, estimation time, and parameter estimates,
+you can look at the `summary_models` table. The table is generated with
+:py:func:`pharmpy.modeling.summarize_modelfit_results`.
+
+
+.. code::
+
+    res.summary_models
+
+.. jupyter-execute::
+    :hide-code:
+
+    import pandas as pd
+    pd.set_option("display.max_columns", 8)
+    res.summary_models
+
+Finally, you can see different individual statistics `summary_individuals`.
+
+.. code::
+
+    res.summary_individuals
+
+.. jupyter-execute::
+    :hide-code:
+
+    res.summary_individuals
+
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Model feature language (MFL) reference
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The `MFL` is a domain specific language designed to describe model features and sets of model features in a concise way.
+It can be used to describe model features for one single model or an entire space of model features, i.e. descriptions
+for multiple models. The basic building block of MFL is the feature description. A feature description consists of the
+name of a feature category followed by a comma separated list of arguments within parentheses. For example:
 
 .. code::
 
     ABSORPTION(FO)
 
-Each feature description describe one or multiple features in the same category of features. Features of the same category are mutually exclusive and cannot be applied to the same model. Multiple model feature desciptions can be combined by separating them with either newline or semi-colon.
+Each feature description describes one or multiple features of the same category, i.e. absorption, absorption delay,
+elimination, and distribution. Features of the same category are mutually exclusive and cannot be applied to the same
+model. Multiple model feature descriptions can be combined by separating them with either newline or a semi-colon.
 
 The following two examples are equivalent:
 
@@ -287,7 +358,7 @@ The following two examples are equivalent:
 Option types
 ~~~~~~~~~~~~
 
-MFL support the following types of options to feature descriptions
+MFL support the following types of options to feature descriptions:
 
 +---------------+------------------+-------------------------------------------------------+
 | Type          | Example          | Description                                           |
@@ -306,7 +377,7 @@ MFL support the following types of options to feature descriptions
 Model features
 ~~~~~~~~~~~~~~
 
-MFL support the following model features
+MFL support the following model features:
 
 +---------------+-------------------------------+-------------------------------------------------------+
 | Category      | Options                       | Description                                           |
@@ -317,35 +388,62 @@ MFL support the following model features
 +---------------+-------------------------------+-------------------------------------------------------+
 | PERIPHERALS   | `number`                      | Number of peripheral compartments                     |
 +---------------+-------------------------------+-------------------------------------------------------+
-| TRANSITS      | `number`                      | Number of transit compartments                        |
+| TRANSITS      | `number`, DEPOT/NODEPOT       | Number of absorption transit compartments. Whether    |
+|               |                               | convert depot compartment into a transit compartment  |
 +---------------+-------------------------------+-------------------------------------------------------+
-| LAGTIME       | None                          | Lagtime                                               |
+| LAGTIME       | None                          | Absorption lagtime                                    |
 +---------------+-------------------------------+-------------------------------------------------------+
+
+Describe intervals
+~~~~~~~~~~~~~~~~~~
+
+It is possible to use ranges and arrays to describe the search space for e.g. transit and peripheral compartments.
+
+To add 1, 2 and 3 peripheral compartments:
+
+.. code::
+
+    PERIPHERALS(1)
+    PERIPHERALS(2)
+    PERIPHERALS(3)
+
+This is equivalent to:
+
+.. code::
+
+    PERIPHERALS(1..3)
+
+As well as:
+
+.. code::
+
+    PERIPHERALS([1,2,3])
 
 Redundant descriptions
 ~~~~~~~~~~~~~~~~~~~~~~
 
-It is allowed to descripe the same feature multiple times. This will not make any difference for which features are described.
+It is allowed to describe the same feature multiple times, however, this will not make any difference for which
+features are described.
 
 .. code::
 
     ABSORPTION(FO)
     ABSORPTION([FO, ZO])
 
-is equivalent to
+This is equivalent to:
 
 .. code::
 
     ABSORPTION([FO, ZO])
 
-and
+And:
 
 .. code::
 
     PERIPHERALS(1..2)
     PERIPHERALS(1)
 
-is equivalent to
+Is equivalent to:
 
 .. code::
 
@@ -384,10 +482,3 @@ Allow all combinations of absorption and elimination rates:
 
     ABSORPTION(*)
     ELIMINATION(*)
-
-Consider 1, 2 and 3 peripheral compartments and 0 to 10 transit compartments:
-
-.. code::
-
-    PERIPHERALS(1..3)
-    TRANSITS(0..10)
