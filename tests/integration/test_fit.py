@@ -72,10 +72,6 @@ def test_fit_copy(tmp_path, testdata):
         assert len(list((rundir_2 / 'models').iterdir())) == 2
 
         assert model_1.modelfit_results.ofv != model_2.modelfit_results.ofv
-        mod_files = [
-            path for path in tmp_path.iterdir() if path.is_file() and path.suffix == '.mod'
-        ]
-        assert len(mod_files) == 2
 
 
 def test_fit_nlmixr(tmp_path, testdata):

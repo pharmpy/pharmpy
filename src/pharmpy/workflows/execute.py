@@ -1,6 +1,4 @@
-from pathlib import Path
-
-from pharmpy.utils import TemporaryDirectory, normalize_user_given_path
+from pharmpy.utils import normalize_user_given_path
 
 
 def execute_workflow(workflow, dispatcher, database):
@@ -43,25 +41,6 @@ def execute_workflow(workflow, dispatcher, database):
 
     res = dispatcher.run(workflow)
 
-    # Transfer files from tool model database to default model database
-    for model in original_input_models:
-        with TemporaryDirectory() as temppath:
-            database.model_database.retrieve_local_files(model.name, temppath)
-            for f in Path(temppath).glob('*'):
-                # Copies all result files, copy model file if model does not have a file
-                model_file = model.name + model.filename_extension
-                if f.name != model_file or not (model.database.path / model_file).exists():
-                    model.database.store_local_file(model, f)
-        if isinstance(res, Model):
-            # Special case to handle modelfit for generic models
-            model.modelfit_results = res.modelfit_results
-        else:
-            # Set modelfit_results for local model objects
-            try:
-                model.read_modelfit_results()
-            except NotImplementedError:
-                pass
-
     from pharmpy.results import Results
 
     if isinstance(res, Results):
@@ -70,6 +49,14 @@ def execute_workflow(workflow, dispatcher, database):
             from pharmpy.modeling.reporting import create_report
 
             create_report(res, database.path)
+    elif isinstance(res, Model):
+        original_input_models[0].modelfit_results = res.modelfit_results
+    elif isinstance(res, list) or isinstance(res, tuple):
+        for model in res:
+            for original_model in original_input_models:
+                if original_model.name == model.name:
+                    original_model.modelfit_results = model.modelfit_results
+                    break
 
     return res
 
