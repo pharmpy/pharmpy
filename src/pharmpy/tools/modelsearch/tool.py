@@ -13,6 +13,7 @@ def create_workflow(
     cutoff=None,
     model=None,
 ):
+    check_input(model)
     algorithm_func = getattr(algorithms, algorithm)
 
     wf = Workflow()
@@ -42,7 +43,23 @@ def create_workflow(
     return wf
 
 
+def check_input(model):
+    if model is None:
+        return
+    try:
+        cmt = model.datainfo.typeix['compartment']
+    except IndexError:
+        pass
+    else:
+        raise ValueError(
+            f"Found compartment column {cmt.name} in dataset. "
+            f"This is currently not supported by modelsearch. "
+            f"Please remove or drop this column and try again"
+        )
+
+
 def start(model):
+    check_input(model)
     return model
 
 
