@@ -1251,6 +1251,9 @@ def add_peripheral_compartment(model):
         # If K = CL / V
         s = statements.find_assignment(cl.name)
         cl, vc = s.expression.as_numer_denom()
+    # Heuristic to handle the MM case
+    if vc.is_Mul:
+        vc = vc.args[0]
 
     if n == 1:
         if vc == 1:
@@ -1260,9 +1263,6 @@ def add_peripheral_compartment(model):
             odes.add_flow(central, peripheral, kcp)
             odes.add_flow(peripheral, central, kpc)
         else:
-            # Heuristic to handle the MM case
-            if vc.is_Mul:
-                vc = vc.args[0]
             # Heurstic to handle the Mixed MM-FO case
             if cl.is_Add:
                 cl1 = cl.args[0]

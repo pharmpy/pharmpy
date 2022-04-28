@@ -3175,3 +3175,7 @@ def test_mm_then_periph(pheno):
     periph = odes.peripheral_compartments[0]
     assert odes.get_flow(central, periph) == sympy.Symbol('QP1') / sympy.Symbol('V')
     assert odes.get_flow(periph, central) == sympy.Symbol('QP1') / sympy.Symbol('VP1')
+    add_peripheral_compartment(model)
+    newperiph = odes.peripheral_compartments[1]
+    assert odes.get_flow(central, newperiph) == sympy.Symbol('QP2') / sympy.Symbol('V')
+    assert odes.get_flow(newperiph, central) == sympy.Symbol('QP2') / sympy.Symbol('VP2')

@@ -6,6 +6,11 @@ New features
 
 * Add 1st and 3rd quantiles of residual to simeval results
 
+Bugfixes
+========
+
+* Fix bad odes when adding two peripheral compartments to model with MM elimination
+
 0.68.0 (2022-04-27)
 -------------------
 
