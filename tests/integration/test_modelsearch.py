@@ -4,22 +4,14 @@ import warnings
 import numpy as np
 import pytest
 
-from pharmpy import Model
-from pharmpy.modeling import add_iiv, fit, read_model, run_tool
+from pharmpy.modeling import fit, read_model, run_tool
 from pharmpy.utils import TemporaryDirectoryChanger
 
 
-def test_exhaustive(tmp_path, testdata):
+def test_exhaustive(tmp_path, start_model):
     with TemporaryDirectoryChanger(tmp_path):
-        shutil.copy2(testdata / 'nonmem' / 'models' / 'mox2.mod', tmp_path)
-        shutil.copy2(testdata / 'nonmem' / 'models' / 'mox_simulated_normal.csv', tmp_path)
-        model_start = Model.create_model('mox2.mod')
-        model_start.datainfo.path = tmp_path / 'mox_simulated_normal.csv'
-
-        fit(model_start)
-
         res = run_tool(
-            'modelsearch', 'ABSORPTION(ZO);PERIPHERALS(1)', 'exhaustive', model=model_start
+            'modelsearch', 'ABSORPTION(ZO);PERIPHERALS(1)', 'exhaustive', model=start_model
         )
 
         assert len(res.summary_tool) == 4
@@ -55,17 +47,10 @@ def test_exhaustive(tmp_path, testdata):
     ],
 )
 def test_exhaustive_stepwise_basic(
-    tmp_path, testdata, mfl, no_of_models, best_model_name, last_model_parent_name
+    tmp_path, start_model, mfl, no_of_models, best_model_name, last_model_parent_name
 ):
     with TemporaryDirectoryChanger(tmp_path):
-        shutil.copy2(testdata / 'nonmem' / 'models' / 'mox2.mod', tmp_path)
-        shutil.copy2(testdata / 'nonmem' / 'models' / 'mox_simulated_normal.csv', tmp_path)
-        model_start = Model.create_model('mox2.mod')
-        model_start.datainfo.path = tmp_path / 'mox_simulated_normal.csv'
-
-        fit(model_start)
-
-        res = run_tool('modelsearch', mfl, 'exhaustive_stepwise', model=model_start)
+        res = run_tool('modelsearch', mfl, 'exhaustive_stepwise', model=start_model)
 
         assert len(res.summary_tool) == no_of_models + 1
         assert len(res.summary_models) == no_of_models + 1
@@ -101,7 +86,7 @@ def test_exhaustive_stepwise_basic(
 )
 def test_exhaustive_stepwise_add_iivs(
     tmp_path,
-    testdata,
+    start_model,
     mfl,
     iiv_strategy,
     no_of_models,
@@ -109,13 +94,6 @@ def test_exhaustive_stepwise_add_iivs(
     no_of_added_etas,
 ):
     with TemporaryDirectoryChanger(tmp_path):
-        shutil.copy2(testdata / 'nonmem' / 'models' / 'mox2.mod', tmp_path)
-        shutil.copy2(testdata / 'nonmem' / 'models' / 'mox_simulated_normal.csv', tmp_path)
-        model_start = Model.create_model('mox2.mod')
-        model_start.datainfo.path = tmp_path / 'mox_simulated_normal.csv'
-
-        fit(model_start)
-
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore", category=UserWarning)
             res = run_tool(
@@ -123,7 +101,7 @@ def test_exhaustive_stepwise_add_iivs(
                 mfl,
                 'exhaustive_stepwise',
                 iiv_strategy=iiv_strategy,
-                model=model_start,
+                model=start_model,
             )
 
         assert len(res.summary_tool) == no_of_models + 1
@@ -132,7 +110,7 @@ def test_exhaustive_stepwise_add_iivs(
         assert res.best_model.name == best_model_name
         model_last = res.models[no_of_models - 1]
         assert (
-            len(model_last.random_variables.etas) - len(model_start.random_variables.etas)
+            len(model_last.random_variables.etas) - len(start_model.random_variables.etas)
             == no_of_added_etas
         )
         rundir = tmp_path / 'modelsearch_dir1'
@@ -143,39 +121,28 @@ def test_exhaustive_stepwise_add_iivs(
         assert (rundir / 'metadata.json').exists()
 
 
-def test_exhaustive_stepwise_start_model_fail(tmp_path, testdata):
+def test_exhaustive_stepwise_start_model_not_fitted(tmp_path, start_model):
     with TemporaryDirectoryChanger(tmp_path):
-        shutil.copy2(testdata / 'nonmem' / 'models' / 'mox2.mod', tmp_path)
-        shutil.copy2(testdata / 'nonmem' / 'models' / 'mox_simulated_normal.csv', tmp_path)
-        model_start = Model.create_model('mox2.mod')
-        model_start.datainfo.path = tmp_path / 'mox_simulated_normal.csv'
-
-        add_iiv(model_start, 'V', 'incorrect_syntax')
+        start_model = start_model.copy()
+        start_model.name = 'start_model_copy'
+        start_model.modelfit_results = None
 
         mfl = 'ABSORPTION(ZO);PERIPHERALS(1)'
         with pytest.warns(UserWarning, match='Could not update'):
-            res = run_tool('modelsearch', mfl, 'exhaustive_stepwise', model=model_start)
+            res = run_tool('modelsearch', mfl, 'exhaustive_stepwise', model=start_model)
 
         assert len(res.summary_tool) == 5
         assert len(res.summary_models) == 5
         assert res.summary_tool['dofv'].isnull().values.all()
         assert len(res.models) == 4
-        assert all(model.modelfit_results is None for model in res.models)
         rundir = tmp_path / 'modelsearch_dir1'
         assert rundir.is_dir()
         assert len(list((rundir / 'models').iterdir())) == 5
 
 
-def test_exhaustive_stepwise_peripheral_upper_limit(tmp_path, testdata):
+def test_exhaustive_stepwise_peripheral_upper_limit(tmp_path, start_model):
     with TemporaryDirectoryChanger(tmp_path):
-        shutil.copy2(testdata / 'nonmem' / 'models' / 'mox2.mod', tmp_path)
-        shutil.copy2(testdata / 'nonmem' / 'models' / 'mox_simulated_normal.csv', tmp_path)
-        model_start = Model.create_model('mox2.mod')
-        model_start.datainfo.path = tmp_path / 'mox_simulated_normal.csv'
-
-        fit(model_start)
-
-        res = run_tool('modelsearch', 'PERIPHERALS(1)', 'exhaustive_stepwise', model=model_start)
+        res = run_tool('modelsearch', 'PERIPHERALS(1)', 'exhaustive_stepwise', model=start_model)
 
         assert ',999999) ; POP_QP1' in res.models[0].model_code
 
