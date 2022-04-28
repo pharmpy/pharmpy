@@ -30,24 +30,23 @@ def test_exhaustive(tmp_path, start_model):
 
 
 @pytest.mark.parametrize(
-    'mfl, no_of_models, best_model_name, last_model_parent_name',
+    'mfl, no_of_models, last_model_parent_name',
     [
-        ('ABSORPTION(ZO);PERIPHERALS(1)', 4, 'modelsearch_candidate2', 'modelsearch_candidate2'),
+        ('ABSORPTION(ZO);PERIPHERALS(1)', 4, 'modelsearch_candidate2'),
         # FIXME: Warning after setting TOL=9
         # ('ABSORPTION(ZO);ELIMINATION(ZO)', 4, 'modelsearch_candidate1', 'modelsearch_candidate2'),
-        ('ABSORPTION(ZO);TRANSITS(1)', 2, 'modelsearch_candidate2', 'mox2'),
+        ('ABSORPTION(ZO);TRANSITS(1)', 2, 'mox2'),
         (
             'ABSORPTION([ZO,SEQ-ZO-FO]);PERIPHERALS(1)',
             7,
-            'modelsearch_candidate4',
             'modelsearch_candidate3',
         ),
-        ('LAGTIME();TRANSITS(1)', 2, 'modelsearch_candidate2', 'mox2'),
-        ('ABSORPTION(ZO);TRANSITS(3, *)', 3, 'modelsearch_candidate2', 'mox2'),
+        ('LAGTIME();TRANSITS(1)', 2, 'mox2'),
+        ('ABSORPTION(ZO);TRANSITS(3, *)', 3, 'mox2'),
     ],
 )
 def test_exhaustive_stepwise_basic(
-    tmp_path, start_model, mfl, no_of_models, best_model_name, last_model_parent_name
+    tmp_path, start_model, mfl, no_of_models, last_model_parent_name
 ):
     with TemporaryDirectoryChanger(tmp_path):
         res = run_tool('modelsearch', mfl, 'exhaustive_stepwise', model=start_model)
@@ -55,7 +54,7 @@ def test_exhaustive_stepwise_basic(
         assert len(res.summary_tool) == no_of_models + 1
         assert len(res.summary_models) == no_of_models + 1
         assert len(res.models) == no_of_models
-        assert res.best_model.name == best_model_name
+        assert res.models[-1].modelfit_results
 
         assert res.models[0].parent_model == 'mox2'
         assert res.models[-1].parent_model == last_model_parent_name
@@ -73,15 +72,15 @@ def test_exhaustive_stepwise_basic(
 
 
 @pytest.mark.parametrize(
-    'mfl, iiv_strategy, no_of_models, best_model_name, no_of_added_etas',
+    'mfl, iiv_strategy, no_of_models, no_of_added_etas',
     [
-        ('ABSORPTION(ZO);PERIPHERALS(1)', 1, 4, 'modelsearch_candidate2', 2),
-        ('ABSORPTION(ZO);ELIMINATION(ZO)', 1, 4, 'modelsearch_candidate1', 1),
-        ('ABSORPTION(ZO);ELIMINATION(MIX-FO-MM)', 1, 4, 'modelsearch_candidate1', 2),
-        ('ABSORPTION(ZO);PERIPHERALS([1, 2])', 1, 8, 'modelsearch_candidate5', 4),
-        ('LAGTIME();TRANSITS(1)', 1, 2, 'modelsearch_candidate2', 1),
-        ('ABSORPTION(ZO);PERIPHERALS(1)', 2, 4, 'modelsearch_candidate4', 2),
-        ('PERIPHERALS(1);LAGTIME()', 3, 4, 'modelsearch_candidate3', 1),
+        ('ABSORPTION(ZO);PERIPHERALS(1)', 1, 4, 2),
+        ('ABSORPTION(ZO);ELIMINATION(ZO)', 1, 4, 1),
+        ('ABSORPTION(ZO);ELIMINATION(MIX-FO-MM)', 1, 4, 2),
+        ('ABSORPTION(ZO);PERIPHERALS([1, 2])', 1, 8, 4),
+        ('LAGTIME();TRANSITS(1)', 1, 2, 1),
+        ('ABSORPTION(ZO);PERIPHERALS(1)', 2, 4, 2),
+        ('PERIPHERALS(1);LAGTIME()', 3, 4, 1),
     ],
 )
 def test_exhaustive_stepwise_add_iivs(
@@ -90,7 +89,6 @@ def test_exhaustive_stepwise_add_iivs(
     mfl,
     iiv_strategy,
     no_of_models,
-    best_model_name,
     no_of_added_etas,
 ):
     with TemporaryDirectoryChanger(tmp_path):
@@ -107,12 +105,13 @@ def test_exhaustive_stepwise_add_iivs(
         assert len(res.summary_tool) == no_of_models + 1
         assert len(res.summary_models) == no_of_models + 1
         assert len(res.models) == no_of_models
-        assert res.best_model.name == best_model_name
         model_last = res.models[no_of_models - 1]
         assert (
             len(model_last.random_variables.etas) - len(start_model.random_variables.etas)
             == no_of_added_etas
         )
+        assert model_last.modelfit_results
+
         rundir = tmp_path / 'modelsearch_dir1'
         assert rundir.is_dir()
         assert len(list((rundir / 'models').iterdir())) == no_of_models + 1
@@ -133,7 +132,7 @@ def test_exhaustive_stepwise_start_model_not_fitted(tmp_path, start_model):
 
         assert len(res.summary_tool) == 5
         assert len(res.summary_models) == 5
-        assert res.summary_tool['dofv'].isnull().values.all()
+        assert res.summary_tool['dbic'].isnull().values.all()
         assert len(res.models) == 4
         rundir = tmp_path / 'modelsearch_dir1'
         assert rundir.is_dir()

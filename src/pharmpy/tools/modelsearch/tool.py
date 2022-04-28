@@ -9,7 +9,7 @@ def create_workflow(
     mfl,
     algorithm,
     iiv_strategy=0,
-    rankfunc='ofv',
+    rankfunc='bic',
     cutoff=None,
     model=None,
 ):

@@ -22,7 +22,7 @@ def test_create_metadata_tool():
     )
 
     assert metadata['tool_name'] == 'modelsearch'
-    assert metadata['tool_options']['rankfunc'] == 'ofv'
+    assert metadata['tool_options']['rankfunc'] == 'bic'
 
     metadata = _create_metadata_tool(
         tool_name=name,

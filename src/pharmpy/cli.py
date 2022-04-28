@@ -916,7 +916,7 @@ parser_definition = [
                                 'name': '--rankfunc',
                                 'type': str,
                                 'help': 'Name of function to use for ranking '
-                                'candidates (default is ofv).',
+                                'candidates (default is bic).',
                                 'default': 'ofv',
                             },
                             {
