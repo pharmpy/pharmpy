@@ -92,11 +92,11 @@ To run all unit tests for one python version::
 
 To run a particular unit test file::
 
-    tox -e py39 :: pytest test_parameters.py
+    tox -e py39 -- pytest test_parameters.py
 
 To run a particular test function in a particular test file::
 
-    tox -e py39 :: pytest test_parameters.py -ktest_myfunc
+    tox -e py39 -- pytest test_parameters.py -ktest_myfunc
 
 Build and test the documentation
 ********************************
@@ -126,7 +126,7 @@ To run all integration tests::
 
 To run a particular test function in a particular integration test file::
 
-    tox -e integration :: pytest tests/integration/test_modelsearch.py -k test_summary_individuals
+    tox -e integration -- pytest tests/integration/test_modelsearch.py -k test_summary_individuals
 
 Build a usable virtual environment
 **********************************
