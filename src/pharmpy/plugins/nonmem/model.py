@@ -945,6 +945,7 @@ class Model(pharmpy.model.Model):
                 return
         (colnames, drop, replacements) = self._column_info()
         column_info = []
+        have_pk = self._get_pk_record()
         for colname, coldrop in zip(colnames, drop):
             info = ColumnInfo(colname, drop=coldrop)
             if coldrop and colname not in ['DATE', 'DAT1', 'DAT2', 'DAT3']:
@@ -963,29 +964,30 @@ class Model(pharmpy.model.Model):
             elif colname in ['DATE', 'DAT1', 'DAT2', 'DAT3']:
                 info.scale = 'interval'
                 info.datatype = 'nmtran-date'
-            elif colname == 'EVID' and self._get_pk_record():
+            elif colname == 'EVID' and have_pk:
                 info.type = 'event'
                 info.scale = 'nominal'
-            elif colname == 'MDV' and self._get_pk_record():
+            elif colname == 'MDV' and have_pk:
                 if 'EVID' in colnames:
                     info.type = 'mdv'
                 else:
                     info.type = 'event'
                 info.scale = 'nominal'
-            elif colname == 'II' and self._get_pk_record():
+            elif colname == 'II' and have_pk:
                 info.type = 'ii'
                 info.scale = 'ratio'
-            elif colname == 'SS' and self._get_pk_record():
+            elif colname == 'SS' and have_pk:
                 info.type = 'ss'
                 info.scale = 'nominal'
-            elif colname == 'ADDL' and self._get_pk_record():
+            elif colname == 'ADDL' and have_pk:
                 info.type = 'additional'
                 info.scale = 'ordinal'
-            elif (
-                colname == 'AMT' or colname == replacements.get('AMT', None)
-            ) and self._get_pk_record():
+            elif (colname == 'AMT' or colname == replacements.get('AMT', None)) and have_pk:
                 info.type = 'dose'
                 info.scale = 'ratio'
+            elif colname == 'CMT' and have_pk:
+                info.type = 'compartment'
+                info.scale = 'nominal'
             column_info.append(info)
 
         di = DataInfo(column_info)
