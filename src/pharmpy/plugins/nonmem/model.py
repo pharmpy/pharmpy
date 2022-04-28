@@ -74,6 +74,7 @@ def convert_model(model):
         nm_model.name = model.name
     # FIXME: No handling of other DVs
     nm_model.dependent_variable = sympy.Symbol('Y')
+    nm_model.value_type = model.value_type
     nm_model._data_frame = model.dataset
     nm_model._estimation_steps = model.estimation_steps
     nm_model._datainfo = model.datainfo
@@ -134,6 +135,34 @@ class Model(pharmpy.model.Model):
                     new_table_name = f'{table_stem}{n}'
                     table.path = table_path.parent / new_table_name
         self._name = new_name
+
+    @property
+    def value_type(self):
+        try:
+            return self._value_type
+        except AttributeError:
+            pass
+        ests = self.control_stream.get_records('ESTIMATION')
+        # Assuming that a model cannot be fully likelihood or fully prediction
+        # at the same time
+        for est in ests:
+            if est.likelihood:
+                tp = 'LIKELIHOOD'
+                break
+            elif est.loglikelihood:
+                tp = '-2LL'
+                break
+        else:
+            tp = 'PREDICTION'
+        f_flag = sympy.Symbol('F_FLAG')
+        if f_flag in self.statements.free_symbols:
+            tp = f_flag
+        self._value_type = tp
+        return tp
+
+    @value_type.setter
+    def value_type(self, value):
+        super().value_type.fset(self, value)
 
     @property
     def modelfit_results(self):

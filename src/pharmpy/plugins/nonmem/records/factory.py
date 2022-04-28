@@ -26,6 +26,7 @@ from .sizes_record import SizesRecord
 from .subroutine_record import SubroutineRecord
 from .table_record import TableRecord
 from .theta_record import ThetaRecord
+from .estimation_record import EstimationRecord
 
 # Dictionary from canonical record name to record class and non_empty rules of parser
 known_records = {
@@ -34,7 +35,7 @@ known_records = {
     'DATA': (DataRecord, DataRecordParser),
     'DES': (CodeRecord, CodeRecordParser),
     'ERROR': (CodeRecord, CodeRecordParser),
-    'ESTIMATION': (OptionRecord, OptionRecordParser),
+    'ESTIMATION': (EstimationRecord, OptionRecordParser),
     'ETAS': (EtasRecord, OptionRecordParser),
     'INPUT': (OptionRecord, OptionRecordParser),
     'MODEL': (ModelRecord, OptionRecordParser),

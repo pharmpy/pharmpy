@@ -59,6 +59,7 @@ class Model:
         self.modelfit_results = None
         self.parent_model = None
         self.initial_individual_estimates = None
+        self.value_type = 'PREDICTION'
 
     def __eq__(self, other):
         """Compare two models for equality
@@ -115,6 +116,8 @@ class Model:
             return False
         if self.datainfo != other.datainfo:
             return False
+        if self.value_type != other.value_type:
+            return False
 
         return True
 
@@ -156,6 +159,31 @@ class Model:
     @dependent_variable.setter
     def dependent_variable(self, value):
         self._dependent_variable = value
+
+    @property
+    def value_type(self):
+        """The type of the model value (dependent variable)
+
+        By default this is set to 'PREDICTION' to mean that the model outputs a prediction.
+        It could optionally be set to 'LIKELIHOOD' or '-2LL' to let the model output the likelihood
+        or -2*log(likelihood) of the prediction. If set to a symbol this variable can be used to
+        change the type for different records. The model would then set this symbol to 0 for
+        a prediction value, 1 for likelihood and 2 for -2ll.
+        """
+        return self._value_type
+
+    @value_type.setter
+    def value_type(self, value):
+        allowed_strings = ['PREDICTION', 'LIKELIHOOD', '-2LL']
+        if isinstance(value, str):
+            if value.upper() not in allowed_strings:
+                raise ValueError(
+                    f"Cannot set value_type to {value}. Must be one of {allowed_strings} or a symbol"
+                )
+            value = value.upper()
+        elif not isinstance(value, sympy.Symbol):
+            raise ValueError("Can only set value_type to one of {allowed_strings} or a symbol")
+        self._value_type = value
 
     @property
     def observation_transformation(self):

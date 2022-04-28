@@ -1133,3 +1133,44 @@ $ESTIMATION METHOD=1 INTERACTION MAXEVALS=9999
 """
     model = Model.create_model(StringIO(code))
     assert type(model.statements.ode_system.odes[0].rhs) == sympy.Piecewise
+
+
+@pytest.mark.parametrize(
+    'estline,likelihood',
+    [
+        ('$ESTIMATION METHOD=1 LIKELIHOOD INTER', 'LIKELIHOOD'),
+        ('$ESTIMATION METHOD=1 -2LL INTER', '-2LL'),
+    ],
+)
+def test_likelihood(estline, likelihood):
+    code = """$PROBLEM base model
+$INPUT ID DV TIME
+$DATA file.csv IGNORE=@
+
+$PRED
+Y = THETA(1) + ETA(1) + EPS(1)
+
+$THETA 1  ; TH1
+$OMEGA 0 FIX ; OM1
+$SIGMA 3 ; SI1
+"""
+    model = Model.create_model(StringIO(code + estline))
+    assert model.value_type == likelihood
+
+
+def test_likelihood():
+    code = """$PROBLEM base model
+$INPUT ID DV TIME
+$DATA file.csv IGNORE=@
+
+$PRED
+F_FLAG = 1
+Y = THETA(1) + ETA(1) + EPS(1)
+
+$THETA 1  ; TH1
+$OMEGA 0 FIX ; OM1
+$SIGMA 3 ; SI1
+$ESTIMATION METHOD=1 INTER
+"""
+    model = Model.create_model(StringIO(code))
+    assert model.value_type == sympy.Symbol('F_FLAG')
