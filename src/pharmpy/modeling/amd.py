@@ -44,7 +44,7 @@ def run_amd(
         Initial estimate for the central compartment population volume
     mat_init : float
         Initial estimate for the mean absorption time (not for iv models)
-    mfl : str
+    search_space : str
         MFL for search space for structural model
     lloq : float
         Lower limit of quantification. LOQ data will be removed.
