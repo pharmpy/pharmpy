@@ -21,7 +21,7 @@ include requirements.txt
 include tox.ini
 
 exclude clean_cache.sh
-exclude update_requirements.sh
+exclude scripts/*
 exclude bumpversion.sh
 
 global-exclude *.py[cod] __pycache__
