@@ -6,10 +6,19 @@ New features
 
 * Add 1st and 3rd quantiles of residual to simeval results
 
+Changes
+=======
+
+* Rename mfl -> search_space in modelsearch and amd
+* Use BIC as default ranking function in modelsearch
+* Start model in modelsearch is not fitted
+* Update modelsearch documentation
+
 Bugfixes
 ========
 
 * Fix bad odes when adding two peripheral compartments to model with MM elimination
+* Fix bug in block splitting in IIV-tool (fixes #745)
 
 0.68.0 (2022-04-27)
 -------------------
