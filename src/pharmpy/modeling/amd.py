@@ -5,7 +5,6 @@ from pharmpy.results import Results
 from pharmpy.tools.amd.funcs import create_start_model
 from pharmpy.workflows import default_tool_database
 
-from .allometry import add_allometry
 from .common import convert_model
 from .data import remove_loq_data
 from .run import fit, run_tool
@@ -211,10 +210,8 @@ def _run_allometry(model, allometric_variable):
                 break
 
     if allometric_variable is not None:
-        add_allometry(model, allometric_variable=allometric_variable)
-        model.name = "scaled_model"
-        fit(model)
-    return model
+        res = run_tool('allometry', model, allometric_variable=allometric_variable)
+        return res
 
 
 def run_iiv(model, iiv_strategy=0, rankfunc='ofv', cutoff=None, path=None):
