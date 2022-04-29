@@ -2,7 +2,7 @@
 Modelsearch
 ===========
 
-The modelsearch tool is a general tool to decide the best structural model given a base model and a search space of
+The Modelsearch tool is a general tool to decide the best structural model given a base model and a search space of
 model features. The tool supports different algorithms and selection criteria.
 
 ~~~~~~~
@@ -11,7 +11,7 @@ Running
 
 The modelsearch tool is available both in Pharmpy/pharmr and from the command line.
 
-To initiate a `modelsearch`-run in Python:
+To initiate modelsearch in Python:
 
 .. code:: python
 
@@ -21,17 +21,17 @@ To initiate a `modelsearch`-run in Python:
     run_tool('modelsearch',
              search_space='ABSORPTION(ZO);PERIPHERALS(1)',
              algorithm='exhaustive',
+             model=start_model,
              iiv_strategy=0,
              rankfunc='bic',
-             cutoff=None,
-             model=start_model)
+             cutoff=None)
 
-This will take an input model `model` with `search_space` as the search space, meaning zero order absorption and adding one
-peripheral compartment will be tried. The tool will use the `exhaustive` search algorithm. Structural IIVs will be
-added to candidates according to strategy 0, where no IIVs are added. The candidate models will be ranked using `bic`
-with default `cutoff`, which for BIC is none.
+This will take an input model ``model`` with ``search_space`` as the search space, meaning zero order absorption and adding one
+peripheral compartment will be tried. The tool will use the ``exhaustive`` search algorithm. Structural IIVs will be
+added to candidates according to strategy 0, where no IIVs are added. The candidate models will be ranked using ``bic``
+with default ``cutoff``, which for BIC is none.
 
-To run `modelsearch` from the command line, the example code is redefined accordingly:
+To run modelsearch from the command line, the example code is redefined accordingly:
 
 .. code::
 
@@ -41,21 +41,21 @@ Arguments
 ~~~~~~~~~
 For a more detailed description of each argument, see their respective chapter on this page.
 
-+--------------+-----------------------------------------------------------------------------------------+
-| Argument     | Description                                                                             |
-+==============+=========================================================================================+
-| search_space | Search space to test                                                                    |
-+--------------+-----------------------------------------------------------------------------------------+
-| algorithm    | Algorithm to use (e.g. exhaustive)                                                      |
-+--------------+-----------------------------------------------------------------------------------------+
-| rankfunc     | Which selection criteria to rank models on, e.g. OFV (default is BIC)                   |
-+--------------+-----------------------------------------------------------------------------------------+
-| cutoff       | Cutoff for the ranking function, exclude models that are below cutoff (default is None) |
-+--------------+-----------------------------------------------------------------------------------------+
-| iiv_strategy | If/how IIV should be added to candidate models (default is 0)                           |
-+--------------+-----------------------------------------------------------------------------------------+
-| model        | Start model                                                                             |
-+--------------+-----------------------------------------------------------------------------------------+
++---------------------------------------------------+-----------------------------------------------------------------------------------------+
+| Argument                                          | Description                                                                             |
++===================================================+=========================================================================================+
+| :ref:`search_space<The search space>`             | Search space to test                                                                    |
++---------------------------------------------------+-----------------------------------------------------------------------------------------+
+| :ref:`algorithm<Algorithms>`                      | Algorithm to use (e.g. exhaustive)                                                      |
++---------------------------------------------------+-----------------------------------------------------------------------------------------+
+| :ref:`rankfunc<Comparing and ranking candidates>` | Which selection criteria to rank models on, e.g. OFV (default is BIC)                   |
++---------------------------------------------------+-----------------------------------------------------------------------------------------+
+| :ref:`cutoff<Comparing and ranking candidates>`   | Cutoff for the ranking function, exclude models that are below cutoff (default is None) |
++---------------------------------------------------+-----------------------------------------------------------------------------------------+
+| :ref:`iiv_strategy<IIV strategies>`               | If/how IIV should be added to candidate models (default is 0)                           |
++---------------------------------------------------+-----------------------------------------------------------------------------------------+
+| ``model``                                         | Start model                                                                             |
++---------------------------------------------------+-----------------------------------------------------------------------------------------+
 
 
 ~~~~~~~~~~~~~~~~
@@ -74,17 +74,17 @@ Algorithms
 The tool can conduct the model search using different algorithms. The available algorithms can be seen in the table
 below.
 
-+---------------------+-------------------------------------------------------------------+
-| Algorithm           | Description                                                       |
-+=====================+===================================================================+
-| exhaustive          | All possible combinations of the search space are tested          |
-+---------------------+-------------------------------------------------------------------+
-| exhaustive_stepwise | Add one feature in each step in all possible orders               |
-+---------------------+-------------------------------------------------------------------+
-| reduced_stepwise    | Add one feature in each step in all possible orders.              |
-|                     | After each feature layer, choose best model between models        |
-|                     | with same features                                                |
-+---------------------+-------------------------------------------------------------------+
++---------------------------+-------------------------------------------------------------------+
+| Algorithm                 | Description                                                       |
++===========================+===================================================================+
+| ``'exhaustive'``          | All possible combinations of the search space are tested          |
++---------------------------+-------------------------------------------------------------------+
+| ``'exhaustive_stepwise'`` | Add one feature in each step in all possible orders               |
++---------------------------+-------------------------------------------------------------------+
+| ``'reduced_stepwise'``    | Add one feature in each step in all possible orders.              |
+|                           | After each feature layer, choose best model between models        |
+|                           | with same features                                                |
++---------------------------+-------------------------------------------------------------------+
 
 Exhaustive search
 ~~~~~~~~~~~~~~~~~
@@ -232,36 +232,36 @@ The same feature combinations as in the exhaustive stepwise algorithm will be ex
 IIV strategies
 ~~~~~~~~~~~~~~
 
-The `iiv_strategy` option determines whether or not IIV on the PK parameters should be added to the candidate models.
+The ``iiv_strategy`` option determines whether or not IIV on the PK parameters should be added to the candidate models.
 The different strategies can be seen here:
 
 +-----------+----------------------------------------------------------+
 | Strategy  | Description                                              |
 +===========+==========================================================+
-| 0         | No IIVs are added during the search (default)            |
+| ``0``     | No IIVs are added during the search (default)            |
 +-----------+----------------------------------------------------------+
-| 1         | IIV is added to all structural parameters as diagonal    |
+| ``1``     | IIV is added to all structural parameters as diagonal    |
 +-----------+----------------------------------------------------------+
-| 2         | IIV is added to all structural parameters as full block  |
+| ``2``     | IIV is added to all structural parameters as full block  |
 +-----------+----------------------------------------------------------+
-| 3         | IIV is added to the absorption delay parameter           |
+| ``3``     | IIV is added to the absorption delay parameter           |
 +-----------+----------------------------------------------------------+
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Comparing and ranking candidates
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The supplied `rankfunc` will be used to compare a set of candidate models and rank them. A cutoff may also be provided
+The supplied ``rankfunc`` will be used to compare a set of candidate models and rank them. A cutoff may also be provided
 if the user does not want to use the default. The following rank functions are available:
 
 +------------+-----------------------------------------------------------------------------------+
 | Rankfunc   | Description                                                                       |
 +============+===================================================================================+
-| ofv        | ΔOFV. Default is to not rank candidates with ΔOFV < cutoff (default 3.84)         |
+| ``'ofv'``  | ΔOFV. Default is to not rank candidates with ΔOFV < cutoff (default 3.84)         |
 +------------+-----------------------------------------------------------------------------------+
-| aic        | ΔAIC. Default is to rank all candidates if no cutoff is provided.                 |
+| ``'aic'``  | ΔAIC. Default is to rank all candidates if no cutoff is provided.                 |
 +------------+-----------------------------------------------------------------------------------+
-| bic        | ΔBIC (mixed effects). Default is to rank all candidates if no cutoff is provided. |
+| ``'bic'``  | ΔBIC (mixed effects). Default is to rank all candidates if no cutoff is provided. |
 +------------+-----------------------------------------------------------------------------------+
 
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -279,18 +279,14 @@ Consider a modelsearch run with the search space of zero order absorption and ad
     res = run_tool('modelsearch',
                    'ABSORPTION(ZO);PERIPHERALS(1)',
                    'exhaustive',
+                   model=start_model,
                    iiv_strategy=0,
                    rankfunc='bic',
-                   cutoff=None,
-                   model=start_model)
+                   cutoff=None)
 
 
-The `summary_tool` table contains information such as which feature each model candidate has, the difference to the
+The ``summary_tool`` table contains information such as which feature each model candidate has, the difference to the
 start model (in this case comparing BIC), and final ranking:
-
-.. code::
-
-    res.summary_tool
 
 .. jupyter-execute::
     :hide-code:
@@ -300,26 +296,18 @@ start model (in this case comparing BIC), and final ranking:
     res.summary_tool
 
 To see information about the actual model runs, such as minimization status, estimation time, and parameter estimates,
-you can look at the `summary_models` table. The table is generated with
+you can look at the ``summary_models`` table. The table is generated with
 :py:func:`pharmpy.modeling.summarize_modelfit_results`.
 
-
-.. code::
-
-    res.summary_models
 
 .. jupyter-execute::
     :hide-code:
 
     import pandas as pd
-    pd.set_option("display.max_columns", 8)
+    pd.set_option("display.max_columns", 10)
     res.summary_models
 
-Finally, you can see different individual statistics `summary_individuals`.
-
-.. code::
-
-    res.summary_individuals
+Finally, you can see different individual statistics ``summary_individuals``.
 
 .. jupyter-execute::
     :hide-code:
