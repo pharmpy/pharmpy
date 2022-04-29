@@ -1,5 +1,9 @@
 /** custom.css **/
 
+.jupyter_cell.docutils.container {
+    overflow-x: scroll;
+}
+
 table.dataframe {
     border-collapse: collapse;
     border: none;
