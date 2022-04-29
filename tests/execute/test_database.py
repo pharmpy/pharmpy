@@ -1,11 +1,12 @@
 import os
 import os.path
+import shutil
 from pathlib import Path
 
 import pytest
-from pyfakefs.fake_filesystem_unittest import Patcher
 
 from pharmpy.modeling import add_time_after_dose, copy_model, read_model
+from pharmpy.utils import TemporaryDirectoryChanger
 from pharmpy.workflows import (
     LocalDirectoryDatabase,
     LocalModelDirectoryDatabase,
@@ -41,19 +42,12 @@ def test_null_database():
     db.store_local_file("path", 34)
 
 
-def test_store_model(testdata):
+def test_store_model(tmp_path, testdata):
     sep = os.path.sep
-    with Patcher(
-        additional_skip_names=[
-            'pkgutil',
-            'lark.load_grammar',
-            'pharmpy.plugins.nonmem.records.parsers',
-        ]
-    ) as patcher:
-        fs = patcher.fs
+    with TemporaryDirectoryChanger(tmp_path):
         datadir = testdata / 'nonmem'
-        fs.add_real_file(datadir / 'pheno_real.mod', target_path='pheno_real.mod')
-        fs.add_real_file(datadir / 'pheno.dta', target_path='pheno.dta')
+        shutil.copy(datadir / 'pheno_real.mod', 'pheno_real.mod')
+        shutil.copy(datadir / 'pheno.dta', 'pheno.dta')
         model = read_model("pheno_real.mod")
 
         db = LocalModelDirectoryDatabase("database")

@@ -74,7 +74,7 @@ def read_model_from_database(name, database=None):
         import pharmpy.workflows
 
         database = pharmpy.workflows.default_model_database()
-    model = database.get_model(name)
+    model = database.retrieve_model(name)
     return model
 
 

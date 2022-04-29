@@ -1,4 +1,5 @@
 import shutil
+from pathlib import Path
 
 import numpy as np
 import pytest
@@ -6,6 +7,15 @@ import pytest
 from pharmpy import Model
 from pharmpy.modeling import create_joint_distribution, run_tool, set_seq_zo_fo_absorption
 from pharmpy.utils import TemporaryDirectoryChanger
+
+
+def _model_count(rundir: Path):
+    return sum(
+        map(
+            lambda path: 0 if path.name in ['.lock', '.datasets'] else 1,
+            ((rundir / 'models').iterdir()),
+        )
+    )
 
 
 @pytest.mark.parametrize(
@@ -32,7 +42,7 @@ def test_iiv_block_structure(tmp_path, testdata, no_of_models, best_model_name):
         assert res.best_model.name == best_model_name
         rundir = tmp_path / 'iiv_dir1'
         assert rundir.is_dir()
-        assert len(list((rundir / 'models').iterdir())) == no_of_models + 2
+        assert _model_count(rundir) == no_of_models + 1
         assert (rundir / 'metadata.json').exists()
 
 
@@ -51,7 +61,7 @@ def test_iiv_no_of_etas(tmp_path, testdata):
         assert res.best_model.name == 'iiv_no_of_etas_candidate3'
         rundir = tmp_path / 'iiv_dir1'
         assert rundir.is_dir()
-        assert len(list((rundir / 'models').iterdir())) == 9
+        assert _model_count(rundir) == 8
         assert (rundir / 'metadata.json').exists()
 
 
@@ -84,7 +94,7 @@ def test_iiv_no_of_etas_added_iiv(tmp_path, testdata, iiv_strategy, best_model_n
         assert res.best_model.name == best_model_name
         rundir = tmp_path / 'iiv_dir1'
         assert rundir.is_dir()
-        assert len(list((rundir / 'models').iterdir())) == 17
+        assert _model_count(rundir) == 16
         assert (rundir / 'metadata.json').exists()
 
 
@@ -104,5 +114,5 @@ def test_iiv_no_of_etas_fullblock(tmp_path, testdata):
         assert res.best_model.name == 'iiv_no_of_etas_candidate3'
         rundir = tmp_path / 'iiv_dir1'
         assert rundir.is_dir()
-        assert len(list((rundir / 'models').iterdir())) == 9
+        assert _model_count(rundir) == 8
         assert (rundir / 'metadata.json').exists()
