@@ -19,6 +19,7 @@ from pharmpy.modeling import (
     add_peripheral_compartment,
     add_pk_iiv,
     create_joint_distribution,
+    fix_parameters_to,
     has_first_order_elimination,
     has_michaelis_menten_elimination,
     has_mixed_mm_fo_elimination,
@@ -2824,6 +2825,26 @@ def test_update_inits_move_est(pheno_path):
     assert model.parameters['OMEGA(1,1)'].init == res.parameter_estimates['OMEGA(1,1)']
     assert model.parameters['IIV_S1'].init == 0.01
     assert round(model.parameters['IIV_CL_IIV_V'].init, 6) == 0.025757
+
+
+def test_update_inits_zero_fix(pheno_path):
+    model = Model.create_model(pheno_path)
+    fix_parameters_to(model, model.random_variables.iiv.parameter_names, 0)
+    res = model.modelfit_results
+    param_est = res.parameter_estimates
+    del param_est['OMEGA(1,1)']
+    update_inits(model)
+    assert model.parameters['OMEGA(1,1)'].init == 0
+    assert model.parameters['OMEGA(1,1)'].fix
+
+    model = Model.create_model(pheno_path)
+    fix_parameters_to(model, model.random_variables.iiv.parameter_names, 0)
+    res = model.modelfit_results
+    param_est = res.parameter_estimates
+    del param_est['OMEGA(1,1)']
+    update_inits(model, move_est_close_to_bounds=True)
+    assert model.parameters['OMEGA(1,1)'].init == 0
+    assert model.parameters['OMEGA(1,1)'].fix
 
 
 def test_update_inits_no_res(testdata):

@@ -67,7 +67,7 @@ def update_inits(model, force_individual_estimates=False, move_est_close_to_boun
 
 
 def _move_est_close_to_bounds(model):
-    rvs = model.random_variables
+    rvs, pset = model.random_variables, model.parameters
     res = model.modelfit_results
     est = res.parameter_estimates.to_dict()
     sdcorr = rvs.parameters_sdcorr(est)
@@ -86,10 +86,14 @@ def _move_est_close_to_bounds(model):
                             sd_i, sd_j = sdcorr[name_i], sdcorr[name_j]
                             newdict[param_name] = corr_new * sd_i * sd_j
                     else:
-                        if est[param_name] < 0.001:
+                        if not _is_zero_fix(pset[param_name]) and est[param_name] < 0.001:
                             newdict[param_name] = 0.01
         else:
             param_name = (dist.std**2).name
-            if est[param_name] < 0.001:
+            if not _is_zero_fix(pset[param_name]) and est[param_name] < 0.001:
                 newdict[param_name] = 0.01
     return newdict
+
+
+def _is_zero_fix(param):
+    return param.init == 0 and param.fix
