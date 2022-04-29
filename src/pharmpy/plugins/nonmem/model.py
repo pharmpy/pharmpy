@@ -162,7 +162,7 @@ class Model(pharmpy.model.Model):
 
     @value_type.setter
     def value_type(self, value):
-        super().value_type.fset(self, value)
+        super(Model, self.__class__).value_type.fset(self, value)
 
     @property
     def modelfit_results(self):
