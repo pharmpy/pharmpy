@@ -6,9 +6,9 @@ from pharmpy.workflows import Task, Workflow
 from .mfl import ModelFeatures
 
 
-def exhaustive(mfl, iiv_strategy):
+def exhaustive(search_space, iiv_strategy):
     # TODO: rewrite using _create_model_workflow
-    features = ModelFeatures(mfl)
+    features = ModelFeatures(search_space)
     wf_search = Workflow()
 
     model_tasks = []
@@ -45,8 +45,8 @@ def exhaustive(mfl, iiv_strategy):
     return wf_search, model_tasks, model_features
 
 
-def exhaustive_stepwise(mfl, iiv_strategy):
-    mfl_features = ModelFeatures(mfl)
+def exhaustive_stepwise(search_space, iiv_strategy):
+    mfl_features = ModelFeatures(search_space)
     mfl_funcs = mfl_features.all_funcs()
 
     wf_search = Workflow()

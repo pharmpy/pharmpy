@@ -22,7 +22,7 @@ def run_amd(
     cl_init=0.01,
     vc_init=1,
     mat_init=0.1,
-    mfl=None,
+    search_space=None,
     lloq=None,
     order=None,
     categorical=None,
@@ -85,9 +85,9 @@ def run_amd(
     if order is None:
         order = default_order
 
-    if mfl is None:
+    if search_space is None:
         if modeltype == 'pk_oral':
-            mfl = (
+            search_space = (
                 'ABSORPTION([ZO,SEQ-ZO-FO]);'
                 'ELIMINATION([MM,MIX-FO-MM]);'
                 'LAGTIME();'
@@ -95,7 +95,7 @@ def run_amd(
                 'PERIPHERALS(1)'
             )
         else:
-            mfl = 'ELIMINATION([MM,MIX-FO-MM]);' 'PERIPHERALS([1,2])'
+            search_space = 'ELIMINATION([MM,MIX-FO-MM]);' 'PERIPHERALS([1,2])'
 
     db = default_tool_database(toolname='amd')
     fit(model)
@@ -103,7 +103,7 @@ def run_amd(
     run_funcs = []
     for section in order:
         if section == 'structural':
-            func = partial(_run_modelsearch, mfl=mfl, path=db.path)
+            func = partial(_run_modelsearch, search_space=search_space, path=db.path)
             run_funcs.append(func)
         elif section == 'iiv':
             func = partial(_run_iiv, path=db.path)
@@ -135,10 +135,10 @@ def run_amd(
     return res
 
 
-def _run_modelsearch(model, mfl, path):
+def _run_modelsearch(model, search_space, path):
     res_modelsearch = run_tool(
         'modelsearch',
-        mfl=mfl,
+        search_space=search_space,
         algorithm='exhaustive_stepwise',
         model=model,
         path=path / 'modelsearch',

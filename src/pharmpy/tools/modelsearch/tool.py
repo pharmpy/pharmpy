@@ -6,7 +6,7 @@ from pharmpy.workflows import Task, Workflow
 
 
 def create_workflow(
-    mfl,
+    search_space,
     algorithm,
     iiv_strategy=0,
     rankfunc='bic',
@@ -26,7 +26,7 @@ def create_workflow(
 
     wf.add_task(start_task)
 
-    wf_search, candidate_model_tasks, model_features = algorithm_func(mfl, iiv_strategy)
+    wf_search, candidate_model_tasks, model_features = algorithm_func(search_space, iiv_strategy)
     wf.insert_workflow(wf_search, predecessors=wf.output_tasks)
 
     task_result = Task(

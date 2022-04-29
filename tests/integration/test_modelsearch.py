@@ -30,7 +30,7 @@ def test_exhaustive(tmp_path, start_model):
 
 
 @pytest.mark.parametrize(
-    'mfl, no_of_models, last_model_parent_name',
+    'search_space, no_of_models, last_model_parent_name',
     [
         ('ABSORPTION(ZO);PERIPHERALS(1)', 4, 'modelsearch_candidate2'),
         # FIXME: Warning after setting TOL=9
@@ -46,10 +46,10 @@ def test_exhaustive(tmp_path, start_model):
     ],
 )
 def test_exhaustive_stepwise_basic(
-    tmp_path, start_model, mfl, no_of_models, last_model_parent_name
+    tmp_path, start_model, search_space, no_of_models, last_model_parent_name
 ):
     with TemporaryDirectoryChanger(tmp_path):
-        res = run_tool('modelsearch', mfl, 'exhaustive_stepwise', model=start_model)
+        res = run_tool('modelsearch', search_space, 'exhaustive_stepwise', model=start_model)
 
         assert len(res.summary_tool) == no_of_models + 1
         assert len(res.summary_models) == no_of_models + 1
@@ -72,7 +72,7 @@ def test_exhaustive_stepwise_basic(
 
 
 @pytest.mark.parametrize(
-    'mfl, iiv_strategy, no_of_models, no_of_added_etas',
+    'search_space, iiv_strategy, no_of_models, no_of_added_etas',
     [
         ('ABSORPTION(ZO);PERIPHERALS(1)', 1, 4, 2),
         ('ABSORPTION(ZO);ELIMINATION(ZO)', 1, 4, 1),
@@ -86,7 +86,7 @@ def test_exhaustive_stepwise_basic(
 def test_exhaustive_stepwise_add_iivs(
     tmp_path,
     start_model,
-    mfl,
+    search_space,
     iiv_strategy,
     no_of_models,
     no_of_added_etas,
@@ -96,7 +96,7 @@ def test_exhaustive_stepwise_add_iivs(
             warnings.filterwarnings("ignore", category=UserWarning)
             res = run_tool(
                 'modelsearch',
-                mfl,
+                search_space,
                 'exhaustive_stepwise',
                 iiv_strategy=iiv_strategy,
                 model=start_model,
@@ -126,9 +126,9 @@ def test_exhaustive_stepwise_start_model_not_fitted(tmp_path, start_model):
         start_model.name = 'start_model_copy'
         start_model.modelfit_results = None
 
-        mfl = 'ABSORPTION(ZO);PERIPHERALS(1)'
+        search_space = 'ABSORPTION(ZO);PERIPHERALS(1)'
         with pytest.warns(UserWarning, match='Could not update'):
-            res = run_tool('modelsearch', mfl, 'exhaustive_stepwise', model=start_model)
+            res = run_tool('modelsearch', search_space, 'exhaustive_stepwise', model=start_model)
 
         assert len(res.summary_tool) == 5
         assert len(res.summary_models) == 5
@@ -197,7 +197,7 @@ def test_summary_individuals(tmp_path, testdata):
         res = run_tool(
             'modelsearch',
             model=m,
-            mfl='ABSORPTION(ZO);PERIPHERALS([1, 2])',
+            search_space='ABSORPTION(ZO);PERIPHERALS([1, 2])',
             algorithm='reduced_stepwise',
         )
         summary = res.summary_individuals

@@ -15,18 +15,18 @@ To initiate a `modelsearch`-run in Python:
 
 .. code:: python
 
-    from pharmpy.modeling import print_model_code, run_tool
+    from pharmpy.modeling import run_tool
 
     start_model = read_model('path/to/model')
     run_tool('modelsearch',
-             'ABSORPTION(ZO);PERIPHERALS(1)',
-             'exhaustive',
+             search_space='ABSORPTION(ZO);PERIPHERALS(1)',
+             algorithm='exhaustive',
              iiv_strategy=0,
              rankfunc='bic',
              cutoff=None,
              model=start_model)
 
-This will take an input model `model` with `mfl` as the search space, meaning zero order absorption and adding one
+This will take an input model `model` with `search_space` as the search space, meaning zero order absorption and adding one
 peripheral compartment will be tried. The tool will use the `exhaustive` search algorithm. Structural IIVs will be
 added to candidates according to strategy 0, where no IIVs are added. The candidate models will be ranked using `bic`
 with default `cutoff`, which for BIC is none.
@@ -44,7 +44,7 @@ For a more detailed description of each argument, see their respective chapter o
 +--------------+-----------------------------------------------------------------------------------------+
 | Argument     | Description                                                                             |
 +==============+=========================================================================================+
-| mfl          | Search space to test                                                                    |
+| search_space | Search space to test                                                                    |
 +--------------+-----------------------------------------------------------------------------------------+
 | algorithm    | Algorithm to use (e.g. exhaustive)                                                      |
 +--------------+-----------------------------------------------------------------------------------------+
