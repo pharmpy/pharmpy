@@ -83,19 +83,28 @@ def create_workflow(model=None, groups=4, p_value=0.05, skip=None, current_itera
 
     fit_final = create_fit_workflow(n=1)
     wf.insert_workflow(fit_final, predecessors=[task_unpack])
-    _results = partial(
+
+    compare_full_models = partial(
         _compare_full_models_results, cutoff=cutoff, current_iteration=current_iteration
     )
-    task_results = Task('results', _results)
+    task_compare_full_models = Task('compare_full_models', compare_full_models)
     wf.add_task(
-        task_results, predecessors=[start_task] + fit_final.output_tasks + [task_post_process]
+        task_compare_full_models,
+        predecessors=[start_task] + fit_final.output_tasks + [task_post_process],
     )
+
+    task_results = Task('results', _results)
+    wf.add_task(task_results, predecessors=[task_compare_full_models])
 
     return wf
 
 
 def start(model):
     return model
+
+
+def _results(res):
+    return res
 
 
 def post_process(start_model, *models, cutoff, current_iteration):
