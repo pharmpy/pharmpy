@@ -3,6 +3,7 @@ from itertools import combinations
 import pharmpy.tools.modelfit as modelfit
 from pharmpy.modeling import copy_model, remove_iiv
 from pharmpy.modeling.block_rvs import create_joint_distribution, split_joint_distribution
+from pharmpy.tools.common import update_initial_estimates
 from pharmpy.workflows import Task, Workflow
 
 
@@ -18,8 +19,11 @@ def brute_force_no_of_etas(iivs):
         task_copy = Task('copy', copy, model_name)
         wf.add_task(task_copy)
 
+        task_update_inits = Task('update_inits', update_initial_estimates)
+        wf.add_task(task_update_inits, predecessors=task_copy)
+
         task_remove_eta = Task('remove_eta', remove_eta, combo)
-        wf.add_task(task_remove_eta, predecessors=task_copy)
+        wf.add_task(task_remove_eta, predecessors=task_update_inits)
 
         model_features[model_name] = combo
 
@@ -54,13 +58,16 @@ def brute_force_block_structure(iivs):
         task_copy = Task('copy', copy, model_name)
         wf.add_task(task_copy)
 
+        task_update_inits = Task('update_inits', update_initial_estimates)
+        wf.add_task(task_update_inits, predecessors=task_copy)
+
         if combo is None:
             task_joint_dist = Task('split_joint_dist', split_joint_dist)
-            wf.add_task(task_joint_dist, predecessors=task_copy)
+            wf.add_task(task_joint_dist, predecessors=task_update_inits)
             model_features[model_name] = [[eta.name] for eta in iivs]
         else:
             task_joint_dist = Task('create_omega_dist', create_omega_dist, combo)
-            wf.add_task(task_joint_dist, predecessors=task_copy)
+            wf.add_task(task_joint_dist, predecessors=task_update_inits)
             model_features[model_name] = combo
         model_no += 1
     wf_fit = modelfit.create_workflow(n=len(model_features))

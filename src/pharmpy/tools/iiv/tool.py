@@ -5,7 +5,6 @@ from pharmpy.modeling import (
     copy_model,
     create_joint_distribution,
     summarize_modelfit_results,
-    update_inits,
 )
 from pharmpy.tools.common import summarize_tool
 from pharmpy.tools.modelfit import create_fit_workflow
@@ -35,15 +34,12 @@ def create_workflow(
     start_task = Task('start_iiv', start, iiv_strategy, model)
     wf.add_task(start_task)
 
-    if not model.modelfit_results or iiv_strategy != 0:
+    if iiv_strategy != 0:
         wf_fit = create_fit_workflow(n=1)
         wf.insert_workflow(wf_fit)
         start_model_task = wf_fit.output_tasks
     else:
         start_model_task = [start_task]
-
-    task_update_inits = Task('update_inits_start_model', _update_inits_start_model)
-    wf.add_task(task_update_inits, predecessors=wf.output_tasks)
 
     wf_method, model_features = algorithm_func(iivs)
     wf.insert_workflow(wf_method)
@@ -72,14 +68,6 @@ def _add_iiv(iiv_strategy, model):
     add_pk_iiv(model)
     if iiv_strategy == 2:
         create_joint_distribution(model)
-    return model
-
-
-def _update_inits_start_model(model):
-    try:
-        update_inits(model)
-    except ValueError:
-        pass
     return model
 
 
