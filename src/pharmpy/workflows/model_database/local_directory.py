@@ -85,6 +85,9 @@ class LocalDirectoryDatabase(NonTransactionalModelDatabase):
         model.read_modelfit_results()
         return model
 
+    def retrieve_modelfit_results(self, name):
+        return self.retrieve_model(name).modelfit_results
+
     def store_metadata(self, model, metadata):
         pass
 
@@ -272,3 +275,10 @@ class LocalModelDirectoryDatabaseSnapshot(ModelSnapshot):
         model.database = self.db
         model.read_modelfit_results()
         return model
+
+    def retrieve_modelfit_results(self):
+        # FIXME The following does not work because deserialization of modelfit
+        # results is not generic enough.
+        # path = self.path / name / DIRECTORY_PHARMPY_METADATA / FILE_MODELFIT_RESULTS
+        # return read_results(path)
+        return self.retrieve_model().modelfit_results
