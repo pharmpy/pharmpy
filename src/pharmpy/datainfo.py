@@ -640,6 +640,9 @@ class DataInfo(MutableSequence):
         if path:
             path = Path(path)
         di.path = path
+        separator = d.get('separator', None)
+        if separator:
+            di.separator = separator
         return di
 
     @staticmethod
