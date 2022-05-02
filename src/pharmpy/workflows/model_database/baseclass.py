@@ -288,7 +288,7 @@ class DummySnapshot(ModelSnapshot):
     def retrieve_file(self, filename: str) -> Path:
         return self.db.retrieve_file(self.name, filename)
 
-    def retrieve_model(self):
+    def retrieve_model(self) -> Model:
         return self.db.retrieve_model(self.name)
 
     def retrieve_modelfit_results(self) -> Results:
