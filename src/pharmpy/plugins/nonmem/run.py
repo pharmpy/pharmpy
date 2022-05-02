@@ -37,6 +37,7 @@ def execute_model(model):
             fp.write(f"@echo off\ncd {path}\n{' '.join(args)}\n")
         cmd = str(path / 'cdwrapper.bat')
     else:
+        # Workaround for ETXTBSY error on Linux
         fd = os.open(path / 'cdwrapper-tmp', os.O_CREAT | os.O_WRONLY | os.O_CLOEXEC, mode=0o744)
         with os.fdopen(fd, 'w') as fp:
             fp.write(f"#!/bin/sh\ncd {path}\n{' '.join(args)}\n")
