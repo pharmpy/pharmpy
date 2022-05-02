@@ -19,6 +19,7 @@ from .estimation import EstimationStep, EstimationSteps
 from .model import Model, ModelError, ModelfitResultsError, ModelSyntaxError
 from .parameter import Parameter, Parameters
 from .random_variables import RandomVariable, RandomVariables, VariabilityHierarchy
+from .results import Results
 from .statements import (
     Assignment,
     Bolus,
@@ -59,6 +60,7 @@ __all__ = [
     'Parameters',
     'RandomVariable',
     'RandomVariables',
+    'Results',
     'SolvedODESystem',
     'VariabilityHierarchy',
     'symbol',
