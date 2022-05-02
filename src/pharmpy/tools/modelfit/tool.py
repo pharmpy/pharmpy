@@ -17,17 +17,7 @@ def create_workflow(models=None, n=None, tool=None):
 
 
 def create_fit_workflow(models=None, n=None, tool=None):
-    from pharmpy.tools.modelfit import conf
-
-    if tool is None:
-        tool = conf.default_tool
-
-    if tool == 'nonmem':
-        from pharmpy.plugins.nonmem.run import execute_model
-    elif tool == 'nlmixr':
-        from pharmpy.plugins.nlmixr.run import execute_model
-    else:
-        raise ValueError(f"Unknown estimation tool {tool}")
+    execute_model = retrieve_from_database_or_execute_model_with_tool(tool)
 
     wf = Workflow()
     if models is None:
@@ -53,3 +43,50 @@ def post_process_results(*models):
         return models
     else:
         return models[0]
+
+
+def retrieve_from_database_or_execute_model_with_tool(tool):
+    def task(model):
+        try:
+            db_results = model.database.retrieve_modelfit_results(model.name)
+        except (KeyError, AttributeError, FileNotFoundError):
+            db_results = None
+
+        if db_results is not None:
+            # NOTE We have the results
+            try:
+                db_model = model.database.retrieve_model(model.name)
+            except (KeyError, AttributeError, FileNotFoundError):
+                db_model = None
+
+            # NOTE Here we could invalidate cached results if certain errors
+            # happened such as a missing or outdated license. We do not do that
+            # at the moment.
+
+            # if db_model == model and model.has_same_dataset_as(db_model):
+            if db_model and model.has_same_dataset_as(db_model):
+                # NOTE Inputs are identical so we can reuse the results
+                model.modelfit_results = db_results
+                return model
+
+        # NOTE Fallback to executing the model
+        execute_model = get_execute_model(tool)
+        return execute_model(model)
+
+    return task
+
+
+def get_execute_model(tool):
+    from pharmpy.tools.modelfit import conf
+
+    if tool is None:
+        tool = conf.default_tool
+
+    if tool == 'nonmem':
+        from pharmpy.plugins.nonmem.run import execute_model
+    elif tool == 'nlmixr':
+        from pharmpy.plugins.nlmixr.run import execute_model
+    else:
+        raise ValueError(f"Unknown estimation tool {tool}")
+
+    return execute_model
