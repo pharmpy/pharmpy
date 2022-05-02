@@ -43,7 +43,7 @@ def test_iiv_no_of_etas(tmp_path, start_model):
         assert len(res.summary_tool) == no_of_candidate_models + 1
         assert len(res.summary_models) == no_of_candidate_models + 1
         assert len(res.models) == no_of_candidate_models
-        assert res.best_model.name == 'iiv_no_of_etas_candidate3'
+        assert res.models[-1].modelfit_results
         rundir = tmp_path / 'iiv_dir1'
         assert rundir.is_dir()
         assert _model_count(rundir) == no_of_candidate_models
@@ -52,10 +52,10 @@ def test_iiv_no_of_etas(tmp_path, start_model):
 
 @pytest.mark.filterwarnings("ignore::UserWarning")
 @pytest.mark.parametrize(
-    'iiv_strategy, best_model_name',
-    [(1, 'iiv_no_of_etas_candidate4'), (2, 'iiv_no_of_etas_candidate4')],
+    'iiv_strategy',
+    [1, 2],
 )
-def test_iiv_no_of_etas_added_iiv(tmp_path, start_model, iiv_strategy, best_model_name):
+def test_iiv_no_of_etas_added_iiv(tmp_path, start_model, iiv_strategy):
     with TemporaryDirectoryChanger(tmp_path):
         start_model = start_model.copy()
         start_model.name = 'start_model_copy'
@@ -79,7 +79,7 @@ def test_iiv_no_of_etas_added_iiv(tmp_path, start_model, iiv_strategy, best_mode
         assert len(res.summary_tool) == no_of_candidate_models + 1
         assert len(res.summary_models) == no_of_candidate_models + 1
         assert len(res.models) == no_of_candidate_models
-        assert res.best_model.name == best_model_name
+        assert res.models[-1].modelfit_results
         rundir = tmp_path / 'iiv_dir1'
         assert rundir.is_dir()
         assert _model_count(rundir) == no_of_candidate_models + 1
@@ -101,7 +101,7 @@ def test_iiv_no_of_etas_fullblock(tmp_path, start_model):
         assert len(res.summary_tool) == no_of_candidate_models + 1
         assert len(res.summary_models) == no_of_candidate_models + 1
         assert len(res.models) == no_of_candidate_models
-        assert res.best_model.name == 'iiv_no_of_etas_candidate3'
+        assert res.models[-1].modelfit_results
         rundir = tmp_path / 'iiv_dir1'
         assert rundir.is_dir()
         assert _model_count(rundir) == no_of_candidate_models
