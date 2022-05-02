@@ -210,7 +210,7 @@ class LocalModelDirectoryDatabaseTransaction(ModelTransaction):
             data_path = path / model_filename
             model.datainfo.path = data_path.resolve()
 
-            write_csv(model, path=data_path)
+            write_csv(model, path=data_path, force=True)
 
             # NOTE Write datainfo last so that we are "sure" dataset is there
             # if datainfo is there
@@ -219,7 +219,7 @@ class LocalModelDirectoryDatabaseTransaction(ModelTransaction):
         # NOTE Write the model
         model_path = self.db.path / model.name
         model_path.mkdir(exist_ok=True)
-        write_model(model, str(model_path / (model.name + model.filename_extension)))
+        write_model(model, str(model_path / (model.name + model.filename_extension)), force=True)
 
     def store_local_file(self, path):
         if Path(path).is_file():
