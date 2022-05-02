@@ -242,7 +242,7 @@ def _get_run_setup(common_options, toolname):
         else:
             path = None
         database = default_tool_database(
-            toolname=toolname, path=path
+            toolname=toolname, path=path, exist_ok=common_options.get('resume', False)
         )  # TODO: database -> tool_database
 
     return dispatcher, database

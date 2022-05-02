@@ -1,7 +1,7 @@
 from pharmpy.utils import normalize_user_given_path
 
 
-def execute_workflow(workflow, dispatcher, database):
+def execute_workflow(workflow, dispatcher=None, database=None, path=None, resume=False):
     """Execute workflow
 
     Parameters
@@ -11,13 +11,28 @@ def execute_workflow(workflow, dispatcher, database):
     dispatcher : ExecutionDispatcher
         Dispatcher to use
     database : ToolDatabase
-        Tool database to use
+        Tool database to use. None for the default Tool database.
+    path : Path
+        Path to use for database if applicable.
+    resume : bool
+        Whether to allow resuming previous workflow execution.
 
     Returns
     -------
     Results
         Results object created by workflow
     """
+    if dispatcher is None:
+        from pharmpy.workflows import default_dispatcher
+
+        dispatcher = default_dispatcher
+    if database is None:
+        from pharmpy.workflows import default_tool_database
+
+        database = default_tool_database(
+            toolname=workflow.name, path=path, exist_ok=resume
+        )  # TODO: database -> tool_database
+
     # For all input models set new database and read in results
     original_input_models = []
     input_models = []
@@ -73,8 +88,7 @@ def split_common_options(d):
     -------
     Tuple of common options and other option dictionaries
     """
-    # FIXME: add dispatcher/database
-    execute_options = ['path']
+    execute_options = ['path', 'resume']
     common_options = dict()
     other_options = dict()
     for key, value in d.items():
