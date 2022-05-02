@@ -51,7 +51,12 @@ def fit(models, tool=None):
             db_model = read_model_from_database(model.name, database=model.database)
         except (KeyError, AttributeError):
             db_model = None
-        if db_model and db_model.modelfit_results is not None and db_model == model:
+        if (
+            db_model
+            and db_model.modelfit_results is not None
+            and db_model == model
+            and model.has_same_dataset_as(db_model)
+        ):
             model.modelfit_results = db_model.modelfit_results
         else:
             kept.append(model)
