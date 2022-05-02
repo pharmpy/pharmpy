@@ -267,11 +267,23 @@ class LocalModelDirectoryDatabaseSnapshot(ModelSnapshot):
             raise FileNotFoundError(f"Cannot retrieve {filename} for {self.name}")
 
     def retrieve_model(self):
-        filename = self.name + self.db.file_extension
-        path = self.db.path / self.name / filename
+        extensions = ['.ctl', '.mod']
         from pharmpy.model import Model
 
-        model = Model.create_model(path)
+        errors = []
+        for extension in extensions:
+            filename = self.name + extension
+            path = self.db.path / self.name / filename
+            try:
+                # NOTE this will guess the model type
+                model = Model.create_model(path)
+                break
+            except FileNotFoundError as e:
+                errors.append(e)
+                pass
+        else:
+            raise FileNotFoundError(errors)
+
         model.database = self.db
         model.read_modelfit_results()
         return model
