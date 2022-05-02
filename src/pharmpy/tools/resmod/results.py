@@ -21,9 +21,9 @@ def calculate_results(base_model, tvar_models, other_models):
     for model in other_models:
         name = model.name
         dofv = base_ofv - model.modelfit_results.ofv
-        if name == 'IIV_on_RUV':
+        if name.startswith('IIV_on_RUV'):
             param = {'omega': round(model.modelfit_results.parameter_estimates["IIV_RUV1"], 6)}
-        elif name == 'power':
+        elif name.startswith('power'):
             param = {'theta': round(model.modelfit_results.parameter_estimates["power1"], 6)}
         else:
             param = {

@@ -24,7 +24,7 @@ from ...modeling.error import remove_error_model, set_time_varying_error_model
 from .results import calculate_results
 
 
-def create_workflow(model=None, groups=4, p_value=0.05, skip=None):
+def create_workflow(model=None, groups=4, p_value=0.05, skip=None, current_iteration=1):
     cutoff = float(chi2.isf(q=p_value, df=1))
     if skip is None:
         skip = []
@@ -36,33 +36,45 @@ def create_workflow(model=None, groups=4, p_value=0.05, skip=None):
     else:
         start_task = Task('start_resmod', start)
 
-    task_base_model = Task('create_base_model', _create_base_model)
+    task_base_model = Task(
+        'create_base_model', partial(_create_base_model, current_iteration=current_iteration)
+    )
     wf.add_task(task_base_model, predecessors=start_task)
 
     tasks = []
     if 'IIV_on_RUV' not in skip:
-        task_iiv = Task('create_iiv_on_ruv_model', _create_iiv_on_ruv_model)
+        task_iiv = Task(
+            'create_iiv_on_ruv_model',
+            partial(_create_iiv_on_ruv_model, current_iteration=current_iteration),
+        )
         tasks.append(task_iiv)
         wf.add_task(task_iiv, predecessors=task_base_model)
 
     if 'power' not in skip and 'combined' not in skip:
-        task_power = Task('create_power_model', _create_power_model)
+        task_power = Task(
+            'create_power_model', partial(_create_power_model, current_iteration=current_iteration)
+        )
         wf.add_task(task_power, predecessors=task_base_model)
         tasks.append(task_power)
-        task_combined = Task('create_combined_error_model', _create_combined_model)
+        task_combined = Task(
+            'create_combined_error_model',
+            partial(_create_combined_model, current_iteration=current_iteration),
+        )
         wf.add_task(task_combined, predecessors=task_base_model)
         tasks.append(task_combined)
 
     if 'time_varying' not in skip:
         for i in range(1, groups):
-            tvar = partial(_create_time_varying_model, groups=groups, i=i)
+            tvar = partial(
+                _create_time_varying_model, groups=groups, i=i, current_iteration=current_iteration
+            )
             task = Task(f"create_time_varying_model{i}", tvar)
             tasks.append(task)
             wf.add_task(task, predecessors=task_base_model)
 
     fit_wf = create_fit_workflow(n=1 + len(tasks))
     wf.insert_workflow(fit_wf, predecessors=[task_base_model] + tasks)
-    post_pro = partial(post_process, cutoff=cutoff)
+    post_pro = partial(post_process, cutoff=cutoff, current_iteration=current_iteration)
     task_post_process = Task('post_process', post_pro)
     wf.add_task(task_post_process, predecessors=[start_task] + fit_wf.output_tasks)
 
@@ -71,7 +83,9 @@ def create_workflow(model=None, groups=4, p_value=0.05, skip=None):
 
     fit_final = create_fit_workflow(n=1)
     wf.insert_workflow(fit_final, predecessors=[task_unpack])
-    _results = partial(_compare_full_models_results, cutoff=cutoff)
+    _results = partial(
+        _compare_full_models_results, cutoff=cutoff, current_iteration=current_iteration
+    )
     task_results = Task('results', _results)
     wf.add_task(
         task_results, predecessors=[start_task] + fit_final.output_tasks + [task_post_process]
@@ -84,13 +98,13 @@ def start(model):
     return model
 
 
-def post_process(start_model, *models, cutoff):
+def post_process(start_model, *models, cutoff, current_iteration):
     res = calculate_results(
-        base_model=_find_models(models)[0],
-        tvar_models=_find_models(models)[1],
-        other_models=_find_models(models)[2],
+        base_model=_find_models(models, current_iteration)[0],
+        tvar_models=_find_models(models, current_iteration)[1],
+        other_models=_find_models(models, current_iteration)[2],
     )
-    best_model = _create_best_model(start_model, res, cutoff=cutoff)
+    best_model = _create_best_model(start_model, res, current_iteration, cutoff=cutoff)
     res.best_model = best_model[0]
     res.selected_model_name = best_model[1]
     return res
@@ -100,32 +114,32 @@ def _unpack(res):
     return res.best_model
 
 
-def _compare_full_models_results(start_model, best_resmod, res, cutoff):
+def _compare_full_models_results(start_model, best_resmod, res, cutoff, current_iteration):
     delta_ofv = start_model.modelfit_results.ofv - best_resmod.modelfit_results.ofv
 
     if delta_ofv <= cutoff:
         res.best_model = start_model
-        res.selected_model_name = 'base'
+        res.selected_model_name = f'base_{current_iteration}'
     else:
         res.best_model = best_resmod
     return res
 
 
-def _find_models(models):
+def _find_models(models, current_iteration):
     base_model = None
     tvar_models = []
     other_models = []
     for model in models:
-        if model.name == 'base':
+        if model.name == f'base_{current_iteration}':
             base_model = model
-        elif model.name[:12] == 'time_varying':
+        elif model.name.startswith('time_varying') and model.name.endswith(f'_{current_iteration}'):
             tvar_models.append(model)
         else:
             other_models.append(model)
     return base_model, tvar_models, other_models
 
 
-def _create_base_model(input_model):
+def _create_base_model(input_model, current_iteration):
     base_model = pharmpy.model.Model()
     theta = Parameter('theta', 0.1)
     omega = Parameter('omega', 0.01, lower=0)
@@ -144,7 +158,7 @@ def _create_base_model(input_model):
 
     base_model.dependent_variable = y.symbol
     base_model.observation_transformation = y.symbol
-    base_model.name = 'base'
+    base_model.name = f'base_{current_iteration}'
     base_model.dataset = _create_dataset(input_model)
     base_model.database = input_model.database
 
@@ -153,33 +167,33 @@ def _create_base_model(input_model):
     return base_model
 
 
-def _create_iiv_on_ruv_model(input_model):
+def _create_iiv_on_ruv_model(input_model, current_iteration):
     base_model = input_model
     model = base_model.copy()
     set_iiv_on_ruv(model)
-    model.name = 'IIV_on_RUV'
+    model.name = f'IIV_on_RUV_{current_iteration}'
     return model
 
 
-def _create_power_model(input_model):
+def _create_power_model(input_model, current_iteration):
     base_model = input_model
     model = base_model.copy()
     set_power_on_ruv(model, ipred='IPRED', lower_limit=None, zero_protection=True)
-    model.name = 'power'
+    model.name = f'power_{current_iteration}'
     return model
 
 
-def _create_time_varying_model(input_model, groups, i):
+def _create_time_varying_model(input_model, groups, i, current_iteration):
     base_model = input_model
     model = base_model.copy()
     quantile = i / groups
     cutoff = model.dataset['TAD'].quantile(q=quantile)
     set_time_varying_error_model(model, cutoff=cutoff, idv='TAD')
-    model.name = f"time_varying{i}"
+    model.name = f"time_varying{i}_{current_iteration}"
     return model
 
 
-def _create_combined_model(input_model):
+def _create_combined_model(input_model, current_iteration):
     base_model = input_model
     model = base_model.copy()
     remove_error_model(model)
@@ -202,7 +216,7 @@ def _create_combined_model(input_model):
     eps_add = RandomVariable.normal(ruv_add.name, 'ruv', 0, sigma_add.symbol)
     model.random_variables.append(eps_add)
 
-    model.name = 'combined'
+    model.name = f'combined_{current_iteration}'
     return model
 
 
@@ -239,25 +253,25 @@ def _time_after_dose(model):
     return model
 
 
-def _create_best_model(model, res, groups=4, cutoff=3.84):
+def _create_best_model(model, res, current_iteration, groups=4, cutoff=3.84):
     model = model.copy()
-    model.name = 'best_resmod'
-    selected_model_name = 'base'
+    model.name = f'best_resmod_{current_iteration}'
+    selected_model_name = f'base_{current_iteration}'
     if any(res.models['dofv'] > cutoff):
         idx = res.models['dofv'].idxmax()
         name = idx[0]
 
-        if name == 'power':
+        if name.startswith('power'):
             set_power_on_ruv(model)
             model.parameters.inits = {
                 'power1': res.models['parameters'].loc['power', 1, 1].get('theta') + 1
             }
-        elif name == 'IIV_on_RUV':
+        elif name.startswith('IIV_on_RUV'):
             set_iiv_on_ruv(model)
             model.parameters.inits = {
                 'IIV_RUV1': res.models['parameters'].loc['IIV_on_RUV', 1, 1].get('omega')
             }
-        elif name[:12] == 'time_varying':
+        elif name.startswith('time_varying'):
             _time_after_dose(model)
             i = int(name[-1])
             quantile = i / groups
