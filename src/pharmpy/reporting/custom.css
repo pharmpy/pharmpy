@@ -10,6 +10,7 @@ div.jupyter_cell.docutils.container {
 }
 
 table.dataframe {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
     border-collapse: collapse;
     border: none;
     margin-bottom: 20px;
