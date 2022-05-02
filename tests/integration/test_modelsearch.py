@@ -1,5 +1,4 @@
 import shutil
-import warnings
 from pathlib import Path
 
 import numpy as np
@@ -81,6 +80,7 @@ def test_exhaustive_stepwise_basic(
         assert (rundir / 'metadata.json').exists()
 
 
+@pytest.mark.filterwarnings("ignore::UserWarning")
 @pytest.mark.parametrize(
     'search_space, iiv_strategy, no_of_models, no_of_added_etas',
     [
@@ -102,15 +102,13 @@ def test_exhaustive_stepwise_add_iivs(
     no_of_added_etas,
 ):
     with TemporaryDirectoryChanger(tmp_path):
-        with warnings.catch_warnings():
-            warnings.filterwarnings("ignore", category=UserWarning)
-            res = run_tool(
-                'modelsearch',
-                search_space,
-                'exhaustive_stepwise',
-                iiv_strategy=iiv_strategy,
-                model=start_model,
-            )
+        res = run_tool(
+            'modelsearch',
+            search_space,
+            'exhaustive_stepwise',
+            iiv_strategy=iiv_strategy,
+            model=start_model,
+        )
 
         assert len(res.summary_tool) == no_of_models + 1
         assert len(res.summary_models) == no_of_models + 1
