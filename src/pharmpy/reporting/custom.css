@@ -1,5 +1,14 @@
 /** custom_style.css **/
 
+div.document {
+    width: auto;
+    margin: 30px;
+}
+
+div.jupyter_cell.docutils.container {
+    overflow-x: scroll;
+}
+
 table.dataframe {
     border-collapse: collapse;
     border: none;
