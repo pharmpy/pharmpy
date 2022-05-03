@@ -86,3 +86,31 @@ def split_common_options(d):
         else:
             other_options[key] = value
     return common_options, other_options
+
+
+def call_workflow(wf, unique_name):
+    """Dynamically call a workflow from another workflow.
+
+    Currently only supports dask distributed
+
+    Parameters
+    ----------
+    wf : Workflow
+        A workflow object
+    unique_name : str
+        A name of the results node that is unique between parent and dynamically created workflows
+
+    Returns
+    -------
+    Any
+        Whatever the dynamic workflow returns
+    """
+    from dask.distributed import get_client, rejoin, secede
+
+    client = get_client()
+    secede()
+    d = wf.as_dask_dict()
+    d[unique_name] = d.pop('results')
+    res = client.get(d, unique_name)
+    rejoin()
+    return res

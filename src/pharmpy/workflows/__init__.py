@@ -27,7 +27,7 @@ import importlib
 import pharmpy.config as config
 
 from .dispatchers import local_dask
-from .execute import execute_workflow, split_common_options
+from .execute import call_workflow, execute_workflow, split_common_options
 from .log import Log
 from .model_database import (
     LocalDirectoryDatabase,
@@ -71,6 +71,7 @@ default_tool_database = _importclass(conf.default_tool_database)
 
 
 __all__ = [
+    'call_workflow',
     'default_dispatcher',
     'default_model_database',
     'default_tool_database',

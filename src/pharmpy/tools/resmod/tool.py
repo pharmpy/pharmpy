@@ -18,23 +18,27 @@ from pharmpy.modeling import (
 )
 from pharmpy.statements import Assignment, ModelStatements
 from pharmpy.tools.modelfit import create_fit_workflow
-from pharmpy.workflows import Task, Workflow
+from pharmpy.workflows import Task, Workflow, call_workflow
 
 from ...modeling.error import remove_error_model, set_time_varying_error_model
 from .results import calculate_results
 
 
-def create_workflow(model=None, groups=4, p_value=0.05, skip=None, current_iteration=1):
-    cutoff = float(chi2.isf(q=p_value, df=1))
-    if skip is None:
-        skip = []
+def create_workflow(model=None, groups=4, p_value=0.05, skip=None):
     wf = Workflow()
-    wf.name = "resmod"  # FIXME: Could have as input to Workflow
+    wf.name = "resmod"
+    start_task = Task('start_resmod', start, model, groups, p_value, skip)
+    wf.add_task(start_task)
+    task_results = Task('results', _results)
+    wf.add_task(task_results, predecessors=[start_task])
+    return wf
 
-    if model is not None:
-        start_task = Task('start_resmod', start, model)
-    else:
-        start_task = Task('start_resmod', start)
+
+def create_iteration_workflow(model, groups, cutoff, skip, current_iteration):
+    wf = Workflow()
+
+    start_task = Task('start_iteration', _start_iteration, model)
+    wf.add_task(start_task)
 
     task_base_model = Task(
         'create_base_model', partial(_create_base_model, current_iteration=current_iteration)
@@ -93,13 +97,20 @@ def create_workflow(model=None, groups=4, p_value=0.05, skip=None, current_itera
         predecessors=[start_task] + fit_final.output_tasks + [task_post_process],
     )
 
-    task_results = Task('results', _results)
-    wf.add_task(task_results, predecessors=[task_compare_full_models])
-
     return wf
 
 
-def start(model):
+def start(model, groups, p_value, skip):
+    cutoff = float(chi2.isf(q=p_value, df=1))
+    if skip is None:
+        skip = []
+    current_iteration = 1
+    wf = create_iteration_workflow(model, groups, cutoff, skip, current_iteration)
+    res = call_workflow(wf, 'results1')
+    return res
+
+
+def _start_iteration(model):
     return model
 
 
