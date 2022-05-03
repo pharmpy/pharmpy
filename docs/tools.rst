@@ -2,7 +2,22 @@
 Tools
 =====
 
-A tool in Pharmpy is an implementation of a pharmacometric method. A tool performs some kind of preprocessing, running of models, postprocessing and creation of results in the form of a workflow. Currently no complete tools are implemented in Pharmpy, but only parts of some PsN tools. These are documented here.
+A tool in Pharmpy is an implementation of a pharmacometric method. A tool performs some kind of preprocessing, running
+of models, postprocessing and creation of results in the form of a workflow.
+
+~~~~~~~~~~~~~~~~
+Tools in Pharmpy
+~~~~~~~~~~~~~~~~
+
+.. toctree::
+   :maxdepth: 1
+
+   modelsearch
+   iiv
+
+~~~~~~~~~~~~~~~~~~~~~~
+Tools connected to PsN
+~~~~~~~~~~~~~~~~~~~~~~
 
 .. toctree::
    :maxdepth: 1
@@ -12,8 +27,8 @@ A tool in Pharmpy is an implementation of a pharmacometric method. A tool perfor
    crossval
    frem
    linearize
-   modelsearch
    qa
    resmod
    scm
    simeval
+

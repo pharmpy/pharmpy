@@ -228,6 +228,9 @@ best model from each comparison to the next layer, where the subsequent feature 
 The same feature combinations as in the exhaustive stepwise algorithm will be excluded (described
 :ref:`here<Feature combination exclusions>`)
 
+
+.. _iiv_strategies:
+
 ~~~~~~~~~~~~~~
 IIV strategies
 ~~~~~~~~~~~~~~
@@ -246,6 +249,8 @@ The different strategies can be seen here:
 +-----------+----------------------------------------------------------+
 | ``3``     | IIV is added to the absorption delay parameter           |
 +-----------+----------------------------------------------------------+
+
+.. _ranking:
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Comparing and ranking candidates
