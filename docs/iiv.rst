@@ -115,8 +115,31 @@ covariance between all IIVs (full block).
             s1 [label="ETA(1)+ETA(2)"]
             s2 [label="ETA(1)+ETA(3)"]
             s3 [label="ETA(2)+ETA(3)"]
-            s4 [label="ETA(1)+ETA(2)+ETA(3)"]
-            s5 [label="Fullblock"]
+            s4 [label="Fullblock"]
+
+            base -> s0
+            base -> s1
+            base -> s2
+            base -> s3
+            base -> s4
+        }
+
+Full search
+~~~~~~~~~~~
+
+.. graphviz::
+
+    digraph BST {
+            node [fontname="Arial"];
+            base [label="Base model"]
+            s0 [label="None"]
+            s1 [label="ETA(1)"]
+            s2 [label="ETA(2)"]
+            s3 [label="ETA(3)"]
+            s4 [label="ETA(1);ETA(2)"]
+            s5 [label="ETA(1);ETA(3)"]
+            s6 [label="ETA(2);ETA(3)"]
+            s7 [label="ETA(1);ETA(2);ETA(3)"]
 
             base -> s0
             base -> s1
@@ -124,7 +147,23 @@ covariance between all IIVs (full block).
             base -> s3
             base -> s4
             base -> s5
+            base -> s6
+            base -> s7
+
+            s8 [label="Diagonal"]
+            s9 [label="ETA(1)+ETA(2)"]
+            s10 [label="ETA(1)+ETA(3)"]
+            s11 [label="ETA(2)+ETA(3)"]
+            s12 [label="Fullblock"]
+
+            s7 -> s8
+            s7 -> s9
+            s7 -> s10
+            s7 -> s11
+            s7 -> s12
+
         }
+
 
 ~~~~~~~~~~~~~~
 IIV strategies
