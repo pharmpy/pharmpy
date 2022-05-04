@@ -1,6 +1,16 @@
 /** custom_style.css **/
 
+div.document {
+    width: auto;
+    margin: 30px;
+}
+
+div.jupyter_cell.docutils.container {
+    overflow-x: scroll;
+}
+
 table.dataframe {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
     border-collapse: collapse;
     border: none;
     margin-bottom: 20px;
