@@ -1,5 +1,3 @@
-from io import StringIO
-
 import pytest
 
 from pharmpy import Model
@@ -10,10 +8,10 @@ from pharmpy.modeling import (
     create_joint_distribution,
 )
 from pharmpy.tools.iiv.algorithms import (
-    _get_possible_iiv_blocks,
+    _get_eta_combinations,
     _is_current_block_structure,
     brute_force_block_structure,
-    create_omega_dist,
+    create_eta_blocks,
 )
 
 
@@ -36,197 +34,83 @@ def test_brute_force_block_structure(testdata, list_of_parameters, block_structu
     assert block_structure not in model_features.items()
 
 
-def test_get_iiv_combinations_4_etas(testdata, pheno_path):
-    model = Model.create_model(
-        StringIO(
-            '''
-$PROBLEM PHENOBARB SIMPLE MODEL
-$DATA pheno.dta IGNORE=@
-$INPUT ID TIME AMT WGT APGR DV
-$SUBROUTINE ADVAN1 TRANS2
+def test_get_eta_combinations_4_etas(pheno_path):
+    model = Model.create_model(pheno_path)
+    add_iiv(model, ['TVCL', 'TVV'], 'exp')
 
-$PK
-CL=THETA(1)*EXP(ETA(1))
-V=THETA(2)*EXP(ETA(2))
-S1=V*EXP(ETA(3))*EXP(ETA(4))
+    eta_combos = _get_eta_combinations(model.random_variables.iiv)
+    assert len(eta_combos) == 15
 
-$ERROR
-Y=F+F*EPS(1)
+    block_combos = _get_eta_combinations(model.random_variables.iiv, as_blocks=True)
 
-$THETA (0,0.00469307) ; TVCL
-$THETA (0,1.00916) ; TVV
-$OMEGA DIAGONAL(4)
- 0.0309626  ;       IVCL
- 0.031128  ;        IVV
- 0.031128
- 0.031128
-$SIGMA 0.013241
+    assert len(block_combos) == 15
 
-$ESTIMATION METHOD=1 INTERACTION
-'''
-        )
-    )
-    model.path = testdata / 'nonmem' / 'pheno.mod'  # To be able to find dataset
+    combos_unique = [(tuple(i) for i in combo) for combo in block_combos]
+    assert len(combos_unique) == 15
 
-    iivs = model.random_variables.iiv
-    iiv_single_block, iiv_multi_block = _get_possible_iiv_blocks(iivs)
-
-    assert iiv_single_block == [
-        ['ETA(1)', 'ETA(2)'],
-        ['ETA(1)', 'ETA(3)'],
-        ['ETA(1)', 'ETA(4)'],
-        ['ETA(2)', 'ETA(3)'],
-        ['ETA(2)', 'ETA(4)'],
-        ['ETA(3)', 'ETA(4)'],
-        ['ETA(1)', 'ETA(2)', 'ETA(3)'],
-        ['ETA(1)', 'ETA(2)', 'ETA(4)'],
-        ['ETA(1)', 'ETA(3)', 'ETA(4)'],
-        ['ETA(2)', 'ETA(3)', 'ETA(4)'],
-        ['ETA(1)', 'ETA(2)', 'ETA(3)', 'ETA(4)'],
-    ]
-
-    assert iiv_multi_block == [
-        [['ETA(1)', 'ETA(2)'], ['ETA(3)', 'ETA(4)']],
-        [['ETA(1)', 'ETA(3)'], ['ETA(2)', 'ETA(4)']],
-        [['ETA(1)', 'ETA(4)'], ['ETA(2)', 'ETA(3)']],
-    ]
+    len_of_combos = [list(map(lambda i: len(i), combo)) for combo in block_combos]
+    assert len_of_combos.count([4]) == 1
+    assert len_of_combos.count([1, 3]) == 4
+    assert len_of_combos.count([2, 2]) == 3
+    assert len_of_combos.count([1, 1, 2]) == 6
+    assert len_of_combos.count([1, 1, 1, 1]) == 1
 
 
-def test_get_iiv_combinations_5_etas(testdata, pheno_path):
-    model = Model.create_model(
-        StringIO(
-            '''
-$PROBLEM PHENOBARB SIMPLE MODEL
-$DATA pheno.dta IGNORE=@
-$INPUT ID TIME AMT WGT APGR DV
-$SUBROUTINE ADVAN1 TRANS2
+def test_get_eta_combinations_5_etas(pheno_path):
+    model = Model.create_model(pheno_path)
+    add_iiv(model, ['TVCL', 'TVV', 'TAD'], 'exp')
 
-$PK
-CL=THETA(1)*EXP(ETA(1))
-V=THETA(2)*EXP(ETA(2))
-S1=V*EXP(ETA(3))*EXP(ETA(4))*EXP(ETA(5))
+    eta_combos = _get_eta_combinations(model.random_variables.iiv)
+    assert len(eta_combos) == 31
 
-$ERROR
-Y=F+F*EPS(1)
+    block_combos = _get_eta_combinations(model.random_variables.iiv, as_blocks=True)
+    assert len(block_combos) == 52
 
-$THETA (0,0.00469307) ; TVCL
-$THETA (0,1.00916) ; TVV
-$OMEGA DIAGONAL(5)
- 0.0309626  ;       IVCL
- 0.031128  ;        IVV
- 0.031128
- 0.031128
- 0.031128
-$SIGMA 0.013241
+    combos_unique = [(tuple(i) for i in combo) for combo in block_combos]
+    assert len(combos_unique) == 52
 
-$ESTIMATION METHOD=1 INTERACTION
-'''
-        )
-    )
-
-    model.path = testdata / 'nonmem' / 'pheno.mod'  # To be able to find dataset
-
-    iivs = model.random_variables.iiv
-    iiv_single_block, iiv_multi_block = _get_possible_iiv_blocks(iivs)
-
-    assert iiv_single_block == [
-        ['ETA(1)', 'ETA(2)'],
-        ['ETA(1)', 'ETA(3)'],
-        ['ETA(1)', 'ETA(4)'],
-        ['ETA(1)', 'ETA(5)'],
-        ['ETA(2)', 'ETA(3)'],
-        ['ETA(2)', 'ETA(4)'],
-        ['ETA(2)', 'ETA(5)'],
-        ['ETA(3)', 'ETA(4)'],
-        ['ETA(3)', 'ETA(5)'],
-        ['ETA(4)', 'ETA(5)'],
-        ['ETA(1)', 'ETA(2)', 'ETA(3)'],
-        ['ETA(1)', 'ETA(2)', 'ETA(4)'],
-        ['ETA(1)', 'ETA(2)', 'ETA(5)'],
-        ['ETA(1)', 'ETA(3)', 'ETA(4)'],
-        ['ETA(1)', 'ETA(3)', 'ETA(5)'],
-        ['ETA(1)', 'ETA(4)', 'ETA(5)'],
-        ['ETA(2)', 'ETA(3)', 'ETA(4)'],
-        ['ETA(2)', 'ETA(3)', 'ETA(5)'],
-        ['ETA(2)', 'ETA(4)', 'ETA(5)'],
-        ['ETA(3)', 'ETA(4)', 'ETA(5)'],
-        ['ETA(1)', 'ETA(2)', 'ETA(3)', 'ETA(4)'],
-        ['ETA(1)', 'ETA(2)', 'ETA(3)', 'ETA(5)'],
-        ['ETA(1)', 'ETA(2)', 'ETA(4)', 'ETA(5)'],
-        ['ETA(1)', 'ETA(3)', 'ETA(4)', 'ETA(5)'],
-        ['ETA(2)', 'ETA(3)', 'ETA(4)', 'ETA(5)'],
-        ['ETA(1)', 'ETA(2)', 'ETA(3)', 'ETA(4)', 'ETA(5)'],
-    ]
-
-    assert iiv_multi_block == [
-        [['ETA(1)', 'ETA(2)'], ['ETA(3)', 'ETA(4)', 'ETA(5)']],
-        [['ETA(1)', 'ETA(3)'], ['ETA(2)', 'ETA(4)', 'ETA(5)']],
-        [['ETA(1)', 'ETA(4)'], ['ETA(2)', 'ETA(3)', 'ETA(5)']],
-        [['ETA(1)', 'ETA(5)'], ['ETA(2)', 'ETA(3)', 'ETA(4)']],
-        [['ETA(2)', 'ETA(3)'], ['ETA(1)', 'ETA(4)', 'ETA(5)']],
-        [['ETA(2)', 'ETA(4)'], ['ETA(1)', 'ETA(3)', 'ETA(5)']],
-        [['ETA(2)', 'ETA(5)'], ['ETA(1)', 'ETA(3)', 'ETA(4)']],
-        [['ETA(3)', 'ETA(4)'], ['ETA(1)', 'ETA(2)', 'ETA(5)']],
-        [['ETA(3)', 'ETA(5)'], ['ETA(1)', 'ETA(2)', 'ETA(4)']],
-        [['ETA(4)', 'ETA(5)'], ['ETA(1)', 'ETA(2)', 'ETA(3)']],
-    ]
+    len_of_combos = [list(map(lambda i: len(i), combo)) for combo in block_combos]
+    assert len_of_combos.count([5]) == 1
+    assert len_of_combos.count([1, 4]) == 5
+    assert len_of_combos.count([2, 3]) == 10
+    assert len_of_combos.count([1, 1, 3]) == 10
+    assert len_of_combos.count([1, 2, 2]) == 15
+    assert len_of_combos.count([1, 1, 1, 2]) == 10
+    assert len_of_combos.count([1, 1, 1, 1, 1]) == 1
 
 
-def test_is_current_block_structure(testdata):
-    model_code = StringIO(
-        '''
-$PROBLEM PHENOBARB SIMPLE MODEL
-$DATA pheno.dta IGNORE=@
-$INPUT ID TIME AMT WGT APGR DV
-$SUBROUTINE ADVAN1 TRANS2
+def test_is_current_block_structure(pheno_path):
+    model = Model.create_model(pheno_path)
+    add_iiv(model, ['TVCL', 'TVV'], 'exp')
+    etas = model.random_variables.iiv
 
-$PK
-CL=THETA(1)*EXP(ETA(1))
-V=THETA(2)*EXP(ETA(2))
-S1=V*EXP(ETA(3))*EXP(ETA(4))
+    eta_combos = [['ETA(1)', 'ETA(2)'], ['ETA_TVCL'], ['ETA_TVV']]
+    create_joint_distribution(model, eta_combos[0])
+    assert _is_current_block_structure(etas, eta_combos)
 
-$ERROR
-Y=F+F*EPS(1)
+    eta_combos = [['ETA(1)'], ['ETA(2)'], ['ETA_TVCL', 'ETA_TVV']]
+    assert not _is_current_block_structure(etas, eta_combos)
 
-$THETA (0,0.00469307) ; TVCL
-$THETA (0,1.00916) ; TVV
-$OMEGA DIAGONAL(4)
- 0.0309626  ;       IVCL
- 0.031128  ;        IVV
- 0.031128
- 0.031128
-$SIGMA 0.013241
+    eta_combos = [['ETA(1)'], ['ETA(2)', 'ETA_TVCL'], ['ETA_TVV']]
+    assert not _is_current_block_structure(etas, eta_combos)
 
-$ESTIMATION METHOD=1 INTERACTION
-'''
-    )
-    model = Model.create_model(model_code)
-    model.path = testdata / 'nonmem' / 'pheno.mod'  # To be able to find dataset
-    list_of_etas_12 = ['ETA(1)', 'ETA(2)']
-    create_joint_distribution(model, list_of_etas_12)
-    assert _is_current_block_structure(model.random_variables.iiv, list_of_etas_12)
-    list_of_etas_34 = ['ETA(3)', 'ETA(4)']
-    assert not _is_current_block_structure(model.random_variables.iiv, list_of_etas_34)
-    list_of_etas_23 = ['ETA(2)', 'ETA(3)']
-    assert not _is_current_block_structure(model.random_variables.iiv, list_of_etas_23)
     create_joint_distribution(model)
-    assert _is_current_block_structure(
-        model.random_variables.iiv, list_of_etas_12 + list_of_etas_34
-    )
+    eta_combos = [['ETA(1)', 'ETA(2)', 'ETA_TVCL', 'ETA_TVV']]
+    assert _is_current_block_structure(etas, eta_combos)
 
 
 def test_create_joint_dist(testdata):
     model = Model.create_model(testdata / 'nonmem' / 'models' / 'mox2.mod')
     add_peripheral_compartment(model)
     add_pk_iiv(model)
-    list_of_etas = ['ETA(1)', 'ETA(2)']
-    create_omega_dist(list_of_etas, model)
+    eta_combos = [['ETA(1)', 'ETA(2)'], ['ETA_QP1'], ['ETA_VP1']]
+    create_eta_blocks(eta_combos, model)
     assert len(model.random_variables.iiv.distributions()) == 4
 
     model = Model.create_model(testdata / 'nonmem' / 'models' / 'mox2.mod')
     add_peripheral_compartment(model)
     add_pk_iiv(model)
     create_joint_distribution(model, ['ETA(1)', 'ETA(2)'])
-    list_of_etas = ['ETA(3)', 'ETA_VP1', 'ETA_QP1']
-    create_omega_dist(list_of_etas, model)
+    eta_combos = [['ETA(1)'], ['ETA(2)'], ['ETA(3)', 'ETA_VP1', 'ETA_QP1']]
+    create_eta_blocks(eta_combos, model)
     assert len(model.random_variables.iiv.distributions()) == 3

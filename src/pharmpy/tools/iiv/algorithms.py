@@ -11,8 +11,7 @@ def brute_force_no_of_etas(iivs):
     wf = Workflow()
     model_features = dict()
 
-    eta_names = [eta.name for eta in iivs]
-    eta_combos = _get_combinations(eta_names, include_single=True)
+    eta_combos = _get_eta_combinations(iivs)
 
     for i, combo in enumerate(eta_combos, 1):
         model_name = f'iiv_no_of_etas_candidate{i}'
@@ -32,27 +31,16 @@ def brute_force_no_of_etas(iivs):
     return wf, model_features
 
 
-def remove_eta(etas, model):
-    remove_iiv(model, etas)
-    return model
-
-
 def brute_force_block_structure(iivs):
     wf = Workflow()
     model_features = dict()
 
-    eta_combos_single_blocks, eta_combos_multi_blocks = _get_possible_iiv_blocks(iivs)
-    eta_combos_all = [None] + eta_combos_single_blocks + eta_combos_multi_blocks
+    eta_combos = _get_eta_combinations(iivs, as_blocks=True)
 
     model_no = 1
-    for combo in eta_combos_all:
-        # Do not run model with same block structure as start model
-        if combo:
-            if _is_current_block_structure(iivs, combo):
-                continue
-        else:
-            if all(len(rv.joint_names) == 0 for rv in iivs):
-                continue
+    for combo in eta_combos:
+        if _is_current_block_structure(iivs, combo):
+            continue
 
         model_name = f'iiv_block_structure_candidate{model_no}'
         task_copy = Task('copy', copy, model_name)
@@ -61,87 +49,60 @@ def brute_force_block_structure(iivs):
         task_update_inits = Task('update_inits', update_initial_estimates)
         wf.add_task(task_update_inits, predecessors=task_copy)
 
-        if combo is None:
-            task_joint_dist = Task('split_joint_dist', split_joint_dist)
-            wf.add_task(task_joint_dist, predecessors=task_update_inits)
-            model_features[model_name] = [[eta.name] for eta in iivs]
-        else:
-            task_joint_dist = Task('create_omega_dist', create_omega_dist, combo)
-            wf.add_task(task_joint_dist, predecessors=task_update_inits)
-            model_features[model_name] = combo
+        task_joint_dist = Task('create_eta_blocks', create_eta_blocks, combo)
+        wf.add_task(task_joint_dist, predecessors=task_update_inits)
+
+        model_features[model_name] = combo
         model_no += 1
+
     wf_fit = modelfit.create_workflow(n=len(model_features))
     wf.insert_workflow(wf_fit)
     return wf, model_features
 
 
-def _is_current_block_structure(iivs, list_of_etas):
-    if not isinstance(list_of_etas[0], list):
-        list_of_etas = [list_of_etas]
+def _get_eta_combinations(etas, as_blocks=False):
+    # All possible combinations of etas
+    eta_combos = []
+    for i in range(1, len(etas.names) + 1):
+        eta_combos += [list(combo) for combo in combinations(etas.names, i)]
+    if not as_blocks:
+        return eta_combos
 
-    for eta_block in list_of_etas:
-        eta_name = eta_block[0]
-        if iivs[eta_name].joint_names != eta_block:
+    # All possible combinations of blocks
+    block_combos = []
+    for i in range(1, len(etas.names) + 1):
+        for combo in combinations(eta_combos, i):
+            combo = list(combo)
+            etas_in_combo = _flatten(combo)
+            etas_unique = set(etas_in_combo)
+            if len(etas_in_combo) == len(etas.names) and len(etas_unique) == len(etas.names):
+                block_combos.append(combo)
+    return block_combos
+
+
+def _flatten(list_to_flatten):
+    return [item for sublist in list_to_flatten for item in sublist]
+
+
+def _is_current_block_structure(etas, combos):
+    for rvs, dist in etas.distributions():
+        names = [rv.name for rv in rvs]
+        if names not in combos:
             return False
     return True
 
 
-def _get_combinations(names, include_single=False):
-    combos = []
-    if include_single:
-        start = 1
-    else:
-        start = 2
-    for i in range(start, len(names) + 1):
-        combos += [list(combo) for combo in combinations(names, i)]
-    return combos
-
-
-def _get_possible_iiv_blocks(iivs):
-    eta_names = iivs.names
-    eta_combos_single_blocks = _get_combinations(eta_names)
-    if len(eta_names) < 4:
-        return eta_combos_single_blocks, []
-
-    no_of_blocks_max = int(len(eta_names) / 2)
-    eta_combos_multi_blocks = []
-
-    for i in range(2, no_of_blocks_max + 1):
-        etas = []
-        for combo in combinations(eta_combos_single_blocks, i):
-            combo = list(combo)
-            no_of_etas_in_combo = len(flatten(combo))
-            no_of_etas_unique = len(set(flatten(combo)))
-            if no_of_etas_in_combo == len(eta_names) and no_of_etas_unique == len(eta_names):
-                etas.append(combo)
-        eta_combos_multi_blocks += etas
-
-    return eta_combos_single_blocks, eta_combos_multi_blocks
-
-
-def flatten(list_to_flatten):
-    return [item for sublist in list_to_flatten for item in sublist]
-
-
-def create_omega_dist(list_of_etas, model):
-    eta_names = []
-    if isinstance(list_of_etas[0], list):
-        for eta_block in list_of_etas:
-            create_joint_distribution(model, eta_block)
-            eta_names += eta_block
-    else:
-        create_joint_distribution(model, list_of_etas)
-        eta_names = list_of_etas
-
-    etas_to_split = [eta for eta in model.random_variables.iiv.names if eta not in eta_names]
-    if etas_to_split:
-        split_joint_distribution(model, etas_to_split)
-
+def remove_eta(etas, model):
+    remove_iiv(model, etas)
     return model
 
 
-def split_joint_dist(model):
-    split_joint_distribution(model)
+def create_eta_blocks(combos, model):
+    for combo in combos:
+        if len(combo) == 1:
+            split_joint_distribution(model, combo)
+        else:
+            create_joint_distribution(model, combo)
     return model
 
 
