@@ -12,66 +12,65 @@ class ResmodResults(Results):
         self.models = models
 
 
-def calculate_results(base_model, tvar_models, other_models):
-    base_ofv = base_model.modelfit_results.ofv
+def calculate_results(models):
+    names = [model.name for model in models]
+    iterations = [int(name.split('_')[-1]) for name in names]
+    iter_dfs = []
+    for iteration in range(min(iterations), max(iterations) + 1):
+        base_index = names.index(f'base_{iteration}')
+        base_model = models[base_index]
+        base_ofv = base_model.modelfit_results.ofv
 
-    model_name = []
-    model_dofv = []
-    model_params = []
-    for model in other_models:
-        name = model.name
-        dofv = base_ofv - model.modelfit_results.ofv
-        if name.startswith('IIV_on_RUV'):
-            param = {'omega': round(model.modelfit_results.parameter_estimates["IIV_RUV1"], 6)}
-        elif name.startswith('power'):
-            param = {'theta': round(model.modelfit_results.parameter_estimates["power1"], 6)}
-        else:
-            param = {
-                'sigma_add': round(model.modelfit_results.parameter_estimates["sigma_add"], 6),
-                'sigma_prop': round(model.modelfit_results.parameter_estimates["sigma_prop"], 6),
+        iteration_models = [
+            model
+            for model in models
+            if model.name.endswith(f'_{iteration}')
+            and not model.name.startswith('best_resmod')
+            and not model.name.startswith('base')
+        ]
+
+        model_name = []
+        model_dofv = []
+        model_params = []
+        for model in iteration_models:
+            name = model.name
+            dofv = base_ofv - model.modelfit_results.ofv
+            if name.startswith('IIV_on_RUV'):
+                param = {'omega': round(model.modelfit_results.parameter_estimates["IIV_RUV1"], 6)}
+            elif name.startswith('power'):
+                param = {'theta': round(model.modelfit_results.parameter_estimates["power1"], 6)}
+            elif name.startswith('time_varying'):
+                param = {
+                    'theta': round(model.modelfit_results.parameter_estimates["time_varying"], 6)
+                }
+            else:
+                param = {
+                    'sigma_add': round(model.modelfit_results.parameter_estimates["sigma_add"], 6),
+                    'sigma_prop': round(
+                        model.modelfit_results.parameter_estimates["sigma_prop"], 6
+                    ),
+                }
+            a = name.split('_')
+            name = '_'.join(a[0:-1])
+
+            model_name.append(name)
+            model_dofv.append(dofv)
+            model_params.append(param)
+
+        df = pd.DataFrame(
+            {
+                'model': model_name,
+                'dvid': 1,
+                'iteration': iteration,
+                'dofv': model_dofv,
+                'parameters': model_params,
             }
-        model_name.append(name)
-        model_dofv.append(dofv)
-        model_params.append(param)
+        )
+        iter_dfs.append(df)
 
-    df = pd.DataFrame(
-        {
-            'model': model_name,
-            'dvid': 1,
-            'iteration': 1,
-            'dofv': model_dofv,
-            'parameters': model_params,
-        }
-    )
-
-    tvar_name = []
-    dofv_tvar = []
-    theta_tvar = []
-    for model in tvar_models:
-        name = model.name
-        dofv = base_ofv - model.modelfit_results.ofv
-        theta = round(model.modelfit_results.parameter_estimates["time_varying"], 6)
-        tvar_name.append(name)
-        dofv_tvar.append(dofv)
-        theta_tvar.append(theta)
-
-    params_tvar = []
-    for i in range(1, len(tvar_models) + 1):
-        param = {f"theta_tvar{i}": theta_tvar[i - 1]}
-        params_tvar.append(param)
-
-    df_tvar = pd.DataFrame(
-        {
-            'model': tvar_name,
-            'dvid': 1,
-            'iteration': 1,
-            'dofv': dofv_tvar,
-            'parameters': params_tvar,
-        }
-    )
-
-    df_final = pd.concat([df, df_tvar])
+    df_final = pd.concat(iter_dfs)
     df_final.set_index(['model', 'dvid', 'iteration'], inplace=True)
+    df_final.sort_index(inplace=True)
 
     res = ResmodResults(models=df_final)
     return res
