@@ -17,7 +17,7 @@ More details for each result can be found in the individual sections.
 The table shows an overview of possible modifications to different model aspects,
 expected improements in OFV as well as number of additional parameters used.
 
-.. jupyter-execute::
+.. pharmpy-execute::
     :hide-code:
 
     import pathlib
@@ -33,7 +33,7 @@ the mean difference between model predictions and observations as a function of 
 
 The ``structural_bias`` table shows the ``CWRES`` and ``CPRED`` given different bins of the independent variable. 
 
-.. jupyter-execute::
+.. pharmpy-execute::
     :hide-code:
 
     res.structural_bias
@@ -46,7 +46,7 @@ This section shows the effect of including a full block correlation struture in 
 The ``fullblock_parameters`` contains the estimated standard deviation (sd), correlation (corr) and
 expected improvement in OFV after inclusion of a full block correlation structure of the random effects.
 
-.. jupyter-execute::
+.. pharmpy-execute::
     :hide-code:
 
     res.fullblock_parameters
@@ -60,7 +60,7 @@ This section shows the effect of applying a Box-Cox transformation to the ETA va
 The ``boxcox_parameters`` contains the estimated shape parameter (Lambda) and expected improvment in OFV for a
 Box-Cox transformation of the random effects.
 
-.. jupyter-execute::
+.. pharmpy-execute::
     :hide-code:
 
     res.boxcox_parameters
@@ -73,7 +73,7 @@ This section shows the effect of applying a t-distribution transformation to the
 The ``tdist_parameters`` contains the estimated degrees of freedom and expected improvement in OFV for a 
 t-distribution transformation of the random effects.
 
-.. jupyter-execute::
+.. pharmpy-execute::
     :hide-code:
 
     res.tdist_parameters
@@ -86,7 +86,7 @@ This section shows the effect of including extended residual error models in the
 The ``residual_error`` table contains the residual error models, resulting expected improvement in OFV, 
 required additional model parameters as well as their estimates.
 
-.. jupyter-execute::
+.. pharmpy-execute::
     :hide-code:
 
     res.residual_error
@@ -98,7 +98,7 @@ This section evaluates the impact of supplied covariates.
 
 The ``covariate_effects`` table shows the expected improvement when including covariates.
 
-.. jupyter-execute::
+.. pharmpy-execute::
     :hide-code:
 
     res.covariate_effects

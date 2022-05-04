@@ -15,7 +15,7 @@ The iiv tool is available both in Pharmpy/pharmr and from the command line.
 
 To initiate iiv in Python:
 
-.. code:: python
+.. pharmpy-code::
 
     from pharmpy.modeling import run_tool
 

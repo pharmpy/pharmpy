@@ -66,7 +66,7 @@ When performing different transformations or manipulations of the model, the nam
 variables do not have to follow the previously mentioned name schemes. Let’s say we have a model with no etas, and
 the model is transformed accordingly:
 
-.. code-block::
+.. pharmpy-code::
 
    add_iiv(model, 'CL', 'exp')
    model.update_source()
@@ -75,7 +75,7 @@ If you add an eta to the parameter clearance (`CL`), the new eta name will defau
 `IIV_CL`. When performing subsequent transformations, `ETA_CL` and `IIV_CL` are the names you will refer to even if
 the NONMEM name for them would be `ETA(1)` and `OMEGA(1,1)` respectively. Now we want to remove that eta:
 
-.. code-block::
+.. pharmpy-code::
 
    remove_iiv(model, ['ETA_CL'])
 

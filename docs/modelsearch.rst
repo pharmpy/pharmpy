@@ -15,7 +15,7 @@ The modelsearch tool is available both in Pharmpy/pharmr and from the command li
 
 To initiate modelsearch in Python:
 
-.. code:: python
+.. pharmpy-code::
 
     from pharmpy.modeling import run_tool
 
@@ -283,7 +283,7 @@ as well as files in .csv/.json format.
 
 Consider a modelsearch run with the search space of zero order absorption and adding one peripheral compartment:
 
-.. code::
+.. pharmpy-code::
 
     res = run_tool('modelsearch',
                    'ABSORPTION(ZO);PERIPHERALS(1)',
@@ -297,7 +297,7 @@ Consider a modelsearch run with the search space of zero order absorption and ad
 The ``summary_tool`` table contains information such as which feature each model candidate has, the difference to the
 start model (in this case comparing BIC), and final ranking:
 
-.. jupyter-execute::
+.. pharmpy-execute::
     :hide-code:
 
     from pharmpy.results import read_results
@@ -309,7 +309,7 @@ you can look at the ``summary_models`` table. The table is generated with
 :py:func:`pharmpy.modeling.summarize_modelfit_results`.
 
 
-.. jupyter-execute::
+.. pharmpy-execute::
     :hide-code:
 
     import pandas as pd
@@ -318,7 +318,7 @@ you can look at the ``summary_models`` table. The table is generated with
 
 Finally, you can see different individual statistics ``summary_individuals``.
 
-.. jupyter-execute::
+.. pharmpy-execute::
     :hide-code:
 
     res.summary_individuals

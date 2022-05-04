@@ -13,7 +13,7 @@ Crossvalidation OFVs
 
 The ``runs`` table contains the OFVs of the estimation and prediction runs of crossval.
 
-.. jupyter-execute::
+.. pharmpy-execute::
     :hide-code:
 
     import pathlib
@@ -23,7 +23,7 @@ The ``runs`` table contains the OFVs of the estimation and prediction runs of cr
 
 The sum of all prediction OFVs can be found in ``prediction_ofv_sum``
 
-.. jupyter-execute::
+.. pharmpy-execute::
     :hide-code:
 
     res.prediction_ofv_sum

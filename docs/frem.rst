@@ -70,7 +70,7 @@ Covariate effects
 
 The effects of each covariate on each parameter is calculated with uncertainty and summarized in the ``covariate_effects`` table.
 
-.. jupyter-execute::
+.. pharmpy-execute::
     :hide-code:
 
     from pharmpy.results import read_results
@@ -109,7 +109,7 @@ For each parameter and covariate calculate the mean, 5:th and 95:th percentile o
 
 The covariate effect plots give the covariate effects in percent with uncertainty for each parameter and covariate in turn. The red figures are the 5th and 95th percentile covariate values.
 
-.. jupyter-execute::
+.. pharmpy-execute::
     :hide-code:
 
     res.covariate_effects_plot
@@ -121,7 +121,7 @@ Parameter covariate coefficients
 The parameter covariate coefficients for each covariate separately and for all taken together are available in ``coefficients``. The definition for one coefficient is 
 `Cov(Par, Covariate) / Var(Covariate)` and generalized for all together by the matrix :math:`\Sigma_{12}\Sigma_{22}^{-1}`
 
-.. jupyter-execute::
+.. pharmpy-execute::
     :hide-code:
 
     res.coefficients
@@ -131,7 +131,7 @@ Individual covariate effects
 
 The combined effects of all covariates on the parameters of each individual is calculated with uncertainty and summarized in the ``individual_effects`` table.
 
-.. jupyter-execute::
+.. pharmpy-execute::
     :hide-code:
 
     res.individual_effects
@@ -140,7 +140,7 @@ The conditional distribution as above is calculated for the estimated parameters
 
 The plot shows the individuals with the lowest and the highest percentual covariate effect and the uncertainty.
 
-.. jupyter-execute::
+.. pharmpy-execute::
     :hide-code:
 
     res.individual_effects_plot
@@ -151,7 +151,7 @@ Unexplained variability
 
 The unexplained variability is calculated and summarized in the ``unexplained_variability`` table.
 
-.. jupyter-execute::
+.. pharmpy-execute::
     :hide-code:
 
     res.unexplained_variability
@@ -166,14 +166,14 @@ The presented results are the 5th and 95th percetiles of the standard deviations
 
 The plot display the original unexplained variability with the uncertainty for all parameter and covariate combinations.
 
-.. jupyter-execute::
+.. pharmpy-execute::
     :hide-code:
 
     res.unexplained_variability_plot
 
 All variability parameters given the estimated parameters conditioned on each covariate in turn can be found in ``parameter_variability``.
 
-.. jupyter-execute::
+.. pharmpy-execute::
     :hide-code:
 
     res.parameter_variability
@@ -184,14 +184,14 @@ Parameter estimates
 
 The parameter initial estimates and final estimates of the base model (model_1), all intermediate models and the FREM model (model_4) are tabled in ``parameter_inits_and_estimates``.
 
-.. jupyter-execute::
+.. pharmpy-execute::
     :hide-code:
 
     res.parameter_inits_and_estimates
 
 Relative difference between of the base model parameters estimates and the final model parameter estimates are calculated in ``base_parameter_change``.
 
-.. jupyter-execute::
+.. pharmpy-execute::
     :hide-code:
 
     res.base_parameter_change
@@ -202,7 +202,7 @@ OFV
 
 OFV of the base model, all intermediate models and the final FREM model are collected into ``ofv``.
 
-.. jupyter-execute::
+.. pharmpy-execute::
     :hide-code:
 
     res.ofv
@@ -213,7 +213,7 @@ Estimated covariate values
 The FREM model also gives an estimate of the covariate values themselves. Ideally these values should be close to the ones in the dataset. Summary statistics for the estimated
 covariate values are put into ``estimated_covariates``.
 
-.. jupyter-execute::
+.. pharmpy-execute::
     :hide-code:
 
     res.estimated_covariates
