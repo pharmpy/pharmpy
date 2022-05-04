@@ -111,7 +111,7 @@ def run_amd(
             func = partial(_run_resmod, path=db.path)
             run_funcs.append(func)
         elif section == 'allometry':
-            func = partial(_run_allometry, allometric_variable=None)
+            func = partial(_run_allometry, allometric_variable=None, path=db.path)
             run_funcs.append(func)
         elif section == 'covariates':
             if scm.have_scm() and (continuous is not None or categorical is not None):
@@ -202,7 +202,7 @@ def _run_covariates(model, continuous, categorical, path):
     return res.final_model
 
 
-def _run_allometry(model, allometric_variable):
+def _run_allometry(model, allometric_variable, path):
     if allometric_variable is None:
         for col in model.datainfo:
             if col.descriptor == 'body weight':
@@ -210,7 +210,9 @@ def _run_allometry(model, allometric_variable):
                 break
 
     if allometric_variable is not None:
-        res = run_tool('allometry', model, allometric_variable=allometric_variable)
+        res = run_tool(
+            'allometry', model, allometric_variable=allometric_variable, path=path / 'allometry'
+        )
         return res
 
 
