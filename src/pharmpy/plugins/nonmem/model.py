@@ -903,7 +903,10 @@ class Model(pharmpy.model.Model):
         i = 0
         for child in input_records[0].root.children:
             if child.rule == 'option':
-                if drop[i] != self.datainfo[colnames[i]].drop:
+                if (
+                    drop[i] != self.datainfo[colnames[i]].drop
+                    or self.datainfo[colnames[i]].datatype == 'nmtran-date'
+                ):
                     new = input_records[0]._create_option(colnames[i], 'DROP')
                     keep.append(new)
                 else:
@@ -964,6 +967,7 @@ class Model(pharmpy.model.Model):
             elif colname in ['DATE', 'DAT1', 'DAT2', 'DAT3']:
                 info.scale = 'interval'
                 info.datatype = 'nmtran-date'
+                info.drop = False  # Always DROP in mod-file, but actually always used
             elif colname == 'EVID' and have_pk:
                 info.type = 'event'
                 info.scale = 'nominal'
