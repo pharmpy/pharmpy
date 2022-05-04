@@ -60,6 +60,7 @@ class Model:
         self.parent_model = None
         self.initial_individual_estimates = None
         self.value_type = 'PREDICTION'
+        self.description = None
 
     def __eq__(self, other):
         """Compare two models for equality

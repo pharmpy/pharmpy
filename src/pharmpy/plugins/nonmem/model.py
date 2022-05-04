@@ -117,6 +117,7 @@ class Model(pharmpy.model.Model):
         self.dependent_variable = S('Y')
         self.observation_transformation = self.dependent_variable
         self._old_observation_transformation = self.dependent_variable
+        self.description = None
 
     @property
     def name(self):
