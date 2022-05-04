@@ -82,6 +82,7 @@ def convert_model(model):
     nm_model.observation_transformation = model.observation_transformation.subs(
         model.dependent_variable, nm_model.dependent_variable
     )
+    nm_model.description = model.description
     nm_model.update_source()
     try:
         nm_model.database = model.database

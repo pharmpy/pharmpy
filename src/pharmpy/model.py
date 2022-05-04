@@ -340,6 +340,15 @@ class Model:
     def parent_model(self, value):
         self._parent_model = value
 
+    @property
+    def description(self):
+        """A free text discription of the model"""
+        return self._description
+
+    @description.setter
+    def description(self, value):
+        self._description = value
+
     def read_modelfit_results(self):
         """Read in modelfit results"""
         raise NotImplementedError("Read modelfit results not implemented for generic models")
