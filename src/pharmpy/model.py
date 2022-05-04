@@ -356,7 +356,8 @@ class Model:
             try:
                 col = curdi[colname]
             except IndexError:
-                col = ColumnInfo(colname)
+                datatype = ColumnInfo.datatype_from_pd_dtype(self.dataset.dtypes[colname].name)
+                col = ColumnInfo(colname, datatype=datatype)
             newdi.append(col)
         if curdi != newdi:
             # Remove path if dataset has been updated

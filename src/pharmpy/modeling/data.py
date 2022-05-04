@@ -711,22 +711,22 @@ def get_mdv(model):
     pd.Series
         MDVs
     """
-    try:
-        label = model.datainfo.typeix['mdv'][0].name
-    except IndexError:
+    found = False
+    for key in ['mdv', 'event', 'dose']:
         try:
-            label = model.datainfo.typeix['event'][0].name
+            label = model.datainfo.typeix[key][0].name
+            found = True
+            break
         except IndexError:
-            try:
-                label = model.datainfo.typeix['dose'][0].name
-            except IndexError:
-                label = model.datainfo.dv_column.name
-                data = model.dataset[label].astype('float64').squeeze()
-                mdv = pd.Series(np.zeros(len(data))).astype('int64').rename('MDV')
-                return mdv
+            pass
+    else:
+        label = model.datainfo.dv_column.name
+
     data = model.dataset[label].astype('float64').squeeze()
-    mdv = data.where(data == 0, other=1).astype('int64').rename('MDV')
-    return mdv
+
+    series = data.where(data == 0, other=1) if found else pd.Series(np.zeros(len(data)))
+
+    return series.astype('int32').rename('MDV')
 
 
 def add_time_after_dose(model):
@@ -1442,13 +1442,11 @@ def read_dataset_from_datainfo(datainfo: Union[DataInfo, Path, str]) -> pd.DataF
     """
     if not isinstance(datainfo, DataInfo):
         datainfo = DataInfo.read_json(datainfo)
+
     if datainfo.path is None:
         raise ValueError('datainfo.path is None')
-    dtypes = {
-        col.name: col.datatype if not col.drop and not col.datatype.startswith('nmtran') else 'str'
-        for col in datainfo
-    }
+
     df = pd.read_csv(
-        datainfo.path, sep=datainfo.separator, dtype=dtypes, float_precision='round_trip'
+        datainfo.path, sep=datainfo.separator, dtype=datainfo.dtype(), float_precision='round_trip'
     )
     return df

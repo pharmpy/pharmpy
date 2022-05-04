@@ -79,6 +79,10 @@ class ColumnInfo:
         'subject identifier',
     ]
 
+    @staticmethod
+    def datatype_from_pd_dtype(dtype):
+        return dtype if dtype in ColumnInfo._all_dtypes else 'str'
+
     def __init__(
         self,
         name,
@@ -582,6 +586,14 @@ class DataInfo(MutableSequence):
             )
         for v, col in zip(value, self._columns):
             col.type = v
+
+    def dtype(self):
+        return {
+            col.name: col.datatype
+            if not col.drop and not col.datatype.startswith('nmtran')
+            else 'str'
+            for col in self
+        }
 
     def to_json(self, path=None):
         a = []

@@ -973,6 +973,7 @@ class Model(pharmpy.model.Model):
                 else:
                     info.type = 'event'
                 info.scale = 'nominal'
+                info.datatype = 'int32'
             elif colname == 'II' and have_pk:
                 info.type = 'ii'
                 info.scale = 'ratio'
@@ -1025,6 +1026,7 @@ class Model(pharmpy.model.Model):
             parse_columns=parse_columns,
             ignore=ignore,
             accept=accept,
+            dtype=None if raw else self.datainfo.dtype(),
         )
         # Let TIME be the idv in both $PK and $PRED models
 

@@ -221,6 +221,7 @@ def read_nonmem_dataset(
     parse_columns=tuple(),
     ignore=None,
     accept=None,
+    dtype=None,
 ):
     """Read a nonmem dataset from file
      column types will be inferred from the column names
@@ -308,4 +309,10 @@ def read_nonmem_dataset(
                 df['TIME'] = df['TIME'].apply(_convert_data_item, args=(str(null_value),))
             except DatasetError:
                 pass
+
+    if dtype:
+        for column in df.columns:
+            if column in dtype:
+                df[column] = df[column].astype(dtype[column])
+
     return df
