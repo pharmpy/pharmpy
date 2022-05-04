@@ -19,7 +19,7 @@ def fit(models, tool=None):
     Parameters
     ----------
     models : list
-        List of models or_ one single model
+        List of models or one single model
     tool : str
         Estimation tool to use. None to use default
 
