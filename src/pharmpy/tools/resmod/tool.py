@@ -105,8 +105,17 @@ def start(model, groups, p_value, skip):
     if skip is None:
         skip = []
     current_iteration = 1
-    wf = create_iteration_workflow(model, groups, cutoff, skip, current_iteration)
-    res = call_workflow(wf, 'results1')
+    for current_iteration in range(1, 4):
+        wf = create_iteration_workflow(model, groups, cutoff, skip, current_iteration)
+        res = call_workflow(wf, f'results{current_iteration}')
+        selected_model = res.best_model
+        name = res.selected_model_name
+        if name == 'base':
+            return selected_model
+        elif name[:12] == 'time_varying':
+            skip.append('time_varying')
+        else:
+            skip.append(name)
     return res
 
 
