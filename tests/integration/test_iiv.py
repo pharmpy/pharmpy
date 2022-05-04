@@ -3,7 +3,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from pharmpy.modeling import create_joint_distribution, fit, run_tool, set_seq_zo_fo_absorption
+from pharmpy.modeling import fit, run_tool, set_seq_zo_fo_absorption
 from pharmpy.utils import TemporaryDirectoryChanger
 
 
@@ -97,26 +97,4 @@ def test_iiv_no_of_etas_added_iiv(tmp_path, start_model, iiv_strategy):
         rundir = tmp_path / 'iiv_dir1'
         assert rundir.is_dir()
         assert _model_count(rundir) == no_of_candidate_models + 1
-        assert (rundir / 'metadata.json').exists()
-
-
-def test_iiv_no_of_etas_fullblock(tmp_path, start_model):
-    with TemporaryDirectoryChanger(tmp_path):
-        start_model = start_model.copy()
-        start_model.name = 'start_model_copy'
-        start_model.modelfit_results = None
-
-        create_joint_distribution(start_model)
-        fit(start_model)
-
-        res = run_tool('iiv', 'brute_force_no_of_etas', model=start_model)
-
-        no_of_candidate_models = 7
-        assert len(res.summary_tool) == no_of_candidate_models + 1
-        assert len(res.summary_models) == no_of_candidate_models + 1
-        assert len(res.models) == no_of_candidate_models
-        assert res.models[-1].modelfit_results
-        rundir = tmp_path / 'iiv_dir1'
-        assert rundir.is_dir()
-        assert _model_count(rundir) == no_of_candidate_models
         assert (rundir / 'metadata.json').exists()
