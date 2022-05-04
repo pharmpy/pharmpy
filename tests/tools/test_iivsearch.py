@@ -9,7 +9,7 @@ from pharmpy.modeling import (
     add_pk_iiv,
     create_joint_distribution,
 )
-from pharmpy.tools.iiv.algorithms import (
+from pharmpy.tools.iivsearch.algorithms import (
     _get_eta_combinations,
     _get_param_names,
     _is_current_block_structure,

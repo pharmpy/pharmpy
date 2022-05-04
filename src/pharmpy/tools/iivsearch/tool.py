@@ -1,5 +1,5 @@
 import pharmpy.results
-import pharmpy.tools.iiv.algorithms as algorithms
+import pharmpy.tools.iivsearch.algorithms as algorithms
 from pharmpy.modeling import (
     add_pk_iiv,
     copy_model,
@@ -29,7 +29,7 @@ def create_workflow(
         base_model = model
 
     wf = Workflow()
-    wf.name = 'iiv'
+    wf.name = 'iivsearch'
 
     start_task = Task('start_iiv', start, iiv_strategy, model)
     wf.add_task(start_task)

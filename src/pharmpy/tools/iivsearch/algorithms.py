@@ -16,7 +16,7 @@ def brute_force_no_of_etas(base_model):
     model_features = {base_model.name: _create_feature_str(param_dict, iivs.names)}
 
     for i, combo in enumerate(eta_combos, 1):
-        model_name = f'iiv_no_of_etas_candidate{i}'
+        model_name = f'iivsearch_no_of_etas_candidate{i}'
         task_copy = Task('copy', copy, model_name)
         wf.add_task(task_copy)
 
@@ -51,7 +51,7 @@ def brute_force_block_structure(base_model):
             model_features[base_model.name] = feature_str
             continue
 
-        model_name = f'iiv_block_structure_candidate{model_no}'
+        model_name = f'iivsearch_block_structure_candidate{model_no}'
         task_copy = Task('copy', copy, model_name)
         wf.add_task(task_copy)
 
