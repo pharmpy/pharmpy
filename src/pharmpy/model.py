@@ -356,7 +356,9 @@ class Model:
             try:
                 col = curdi[colname]
             except IndexError:
-                datatype = ColumnInfo.datatype_from_pd_dtype(self.dataset.dtypes[colname].name)
+                datatype = ColumnInfo.convert_pd_dtype_to_datatype(
+                    self.dataset.dtypes[colname].name
+                )
                 col = ColumnInfo(colname, datatype=datatype)
             newdi.append(col)
         if curdi != newdi:

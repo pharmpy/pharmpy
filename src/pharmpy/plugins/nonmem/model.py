@@ -1026,7 +1026,7 @@ class Model(pharmpy.model.Model):
             parse_columns=parse_columns,
             ignore=ignore,
             accept=accept,
-            dtype=None if raw else self.datainfo.dtype(),
+            dtype=None if raw else self.datainfo.get_dtype_dict(),
         )
         # Let TIME be the idv in both $PK and $PRED models
 

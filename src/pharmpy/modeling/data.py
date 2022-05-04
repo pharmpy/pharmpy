@@ -1447,6 +1447,9 @@ def read_dataset_from_datainfo(datainfo: Union[DataInfo, Path, str]) -> pd.DataF
         raise ValueError('datainfo.path is None')
 
     df = pd.read_csv(
-        datainfo.path, sep=datainfo.separator, dtype=datainfo.dtype(), float_precision='round_trip'
+        datainfo.path,
+        sep=datainfo.separator,
+        dtype=datainfo.get_dtype_dict(),
+        float_precision='round_trip',
     )
     return df

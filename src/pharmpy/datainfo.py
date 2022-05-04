@@ -80,8 +80,53 @@ class ColumnInfo:
     ]
 
     @staticmethod
-    def datatype_from_pd_dtype(dtype):
+    def convert_pd_dtype_to_datatype(dtype):
+        """Convert pandas dtype to Pharmpy datatype
+
+        Parameters
+        ----------
+        dtype : str
+            String representing a pandas dtype
+
+        Returns
+        -------
+        str
+            String representing a Pharmpy datatype
+
+        Examples
+        --------
+        >>> from pharmpy import ColumnInfo
+        >>> ColumnInfo.convert_pd_dtype_to_datatype("float64")
+        'float64'
+        """
         return dtype if dtype in ColumnInfo._all_dtypes else 'str'
+
+    @staticmethod
+    def convert_datatype_to_pd_dtype(datatype):
+        """Convert Pharmpy datatype to pandas dtype
+
+        Parameters
+        ----------
+        datatype : str
+            String representing a Pharmpy datatype
+
+        Returns
+        -------
+        str
+            String representing a pandas dtype
+
+        Examples
+        --------
+        >>> from pharmpy import ColumnInfo
+        >>> ColumnInfo.convert_datatype_to_pd_dtype("float64")
+        'float64'
+        >>> ColumnInfo.convert_datatype_to_pd_dtype("nmtran-date")
+        'str'
+        """
+        if datatype.startswith('nmtran'):
+            return 'str'
+        else:
+            return datatype
 
     def __init__(
         self,
@@ -587,7 +632,29 @@ class DataInfo(MutableSequence):
         for v, col in zip(value, self._columns):
             col.type = v
 
-    def dtype(self):
+    def get_dtype_dict(self):
+        """Create a dictionary from column names to pandas dtypes
+
+        This can be used as input to some pandas functions to convert
+        column to the correct pandas dtype.
+
+        Results
+        -------
+        dict
+            Column name to pandas dtype
+
+        Examples
+        --------
+        >>> from pharmpy.modeling import *
+        >>> model = load_example_model("pheno")
+        >>> model.datainfo.get_dtype_dict()
+        {'ID': 'int32',
+         'TIME': 'float64',
+         'AMT': 'float64',
+         'WGT': 'float64',
+         'APGR': 'float64',
+         'DV': 'float64'}
+        """
         return {
             col.name: col.datatype
             if not col.drop and not col.datatype.startswith('nmtran')
