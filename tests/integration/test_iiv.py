@@ -24,11 +24,18 @@ def test_iiv_block_structure(tmp_path, start_model):
         assert len(res.summary_tool) == no_of_candidate_models + 1
         assert len(res.summary_models) == no_of_candidate_models + 1
         assert len(res.models) == no_of_candidate_models
+
         assert all(
             model.modelfit_results and not np.isnan(model.modelfit_results.ofv)
             for model in res.models
         )
         assert all(model.random_variables != start_model.random_variables for model in res.models)
+
+        assert res.summary_tool.loc['mox2']['features'] == '[CL]+[VC]+[MAT]'
+        assert not res.start_model.random_variables['ETA(1)'].joint_names
+        assert res.summary_tool.loc['iiv_block_structure_candidate1']['features'] == '[CL,VC,MAT]'
+        assert len(res.models[0].random_variables['ETA(1)'].joint_names) == 3
+
         rundir = tmp_path / 'iiv_dir1'
         assert rundir.is_dir()
         assert _model_count(rundir) == no_of_candidate_models
@@ -43,7 +50,14 @@ def test_iiv_no_of_etas(tmp_path, start_model):
         assert len(res.summary_tool) == no_of_candidate_models + 1
         assert len(res.summary_models) == no_of_candidate_models + 1
         assert len(res.models) == no_of_candidate_models
+
         assert res.models[-1].modelfit_results
+
+        assert res.summary_tool.loc['mox2']['features'] == '[CL,VC,MAT]'
+        assert res.start_model.random_variables.iiv.names == ['ETA(1)', 'ETA(2)', 'ETA(3)']
+        assert res.summary_tool.iloc[-1]['features'] == '[]'
+        assert res.models[0].random_variables.iiv.names == ['ETA(2)', 'ETA(3)']
+
         rundir = tmp_path / 'iiv_dir1'
         assert rundir.is_dir()
         assert _model_count(rundir) == no_of_candidate_models

@@ -41,7 +41,7 @@ def summarize_tool(
         index.append(model.name)
         parent_model = model.parent_model
         diff = diff_dict[model.name]
-        if model.name == start_model.name:
+        if model.name == start_model.name and start_model.name not in model_features.keys():
             feat = None
         else:
             feat = model_features[model.name]

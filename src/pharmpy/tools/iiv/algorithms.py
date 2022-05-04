@@ -7,11 +7,13 @@ from pharmpy.tools.common import update_initial_estimates
 from pharmpy.workflows import Task, Workflow
 
 
-def brute_force_no_of_etas(iivs):
+def brute_force_no_of_etas(base_model):
     wf = Workflow()
-    model_features = dict()
 
+    iivs = base_model.random_variables.iiv
     eta_combos = _get_eta_combinations(iivs)
+    param_dict = _get_param_names(base_model)
+    model_features = {base_model.name: _create_feature_str(param_dict, iivs.names)}
 
     for i, combo in enumerate(eta_combos, 1):
         model_name = f'iiv_no_of_etas_candidate{i}'
@@ -24,22 +26,29 @@ def brute_force_no_of_etas(iivs):
         task_remove_eta = Task('remove_eta', remove_eta, combo)
         wf.add_task(task_remove_eta, predecessors=task_update_inits)
 
-        model_features[model_name] = combo
+        etas_remaining = set(iivs.names).difference(combo)
+        feature_str = _create_feature_str(param_dict, etas_remaining)
 
-    wf_fit = modelfit.create_workflow(n=i)
+        model_features[model_name] = feature_str
+
+    wf_fit = modelfit.create_workflow(n=len(wf.output_tasks))
     wf.insert_workflow(wf_fit)
     return wf, model_features
 
 
-def brute_force_block_structure(iivs):
+def brute_force_block_structure(base_model):
     wf = Workflow()
-    model_features = dict()
 
+    iivs = base_model.random_variables.iiv
     eta_combos = _get_eta_combinations(iivs, as_blocks=True)
-
+    param_dict = _get_param_names(base_model)
+    model_features = dict()
     model_no = 1
+
     for combo in eta_combos:
+        feature_str = _create_feature_str(param_dict, combo, as_blocks=True)
         if _is_current_block_structure(iivs, combo):
+            model_features[base_model.name] = feature_str
             continue
 
         model_name = f'iiv_block_structure_candidate{model_no}'
@@ -52,10 +61,10 @@ def brute_force_block_structure(iivs):
         task_joint_dist = Task('create_eta_blocks', create_eta_blocks, combo)
         wf.add_task(task_joint_dist, predecessors=task_update_inits)
 
-        model_features[model_name] = combo
+        model_features[model_name] = feature_str
         model_no += 1
 
-    wf_fit = modelfit.create_workflow(n=len(model_features))
+    wf_fit = modelfit.create_workflow(n=len(wf.output_tasks))
     wf.insert_workflow(wf_fit)
     return wf, model_features
 
@@ -90,6 +99,39 @@ def _is_current_block_structure(etas, combos):
         if names not in combos:
             return False
     return True
+
+
+def _get_param_names(model):
+    sset = model.statements
+
+    param_dict = dict()
+    for eta in model.random_variables.iiv:
+        s = _find_assignment(sset, eta)
+        if len(s.expression.free_symbols) > 1:
+            param_dict[eta.name] = s.symbol.name
+        else:
+            s = _find_assignment(sset, s.symbol)
+            param_dict[eta.name] = s.symbol.name
+    return param_dict
+
+
+def _find_assignment(sset, symb_target):
+    for s in sset.before_odes:
+        expr_symbs = [symb.name for symb in s.expression.free_symbols]
+        if symb_target.name in expr_symbs:
+            return s
+
+
+def _create_feature_str(param_dict, combo, as_blocks=False):
+    if as_blocks:
+        blocks = []
+        for block in combo:
+            features = ','.join([param_dict[eta] for eta in block])
+            blocks.append(f'[{features}]')
+        return '+'.join(blocks)
+    else:
+        features = ','.join([param_dict[eta] for eta in combo])
+        return f'[{features}]'
 
 
 def remove_eta(etas, model):

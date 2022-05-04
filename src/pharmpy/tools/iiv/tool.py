@@ -24,9 +24,9 @@ def create_workflow(
     if iiv_strategy != 0:
         model_iiv = copy_model(model, f'{model.name}_add_iiv')
         _add_iiv(iiv_strategy, model_iiv)
-        iivs = model_iiv.random_variables.iiv
+        base_model = model_iiv
     else:
-        iivs = model.random_variables.iiv
+        base_model = model
 
     wf = Workflow()
     wf.name = 'iiv'
@@ -41,7 +41,7 @@ def create_workflow(
     else:
         start_model_task = [start_task]
 
-    wf_method, model_features = algorithm_func(iivs)
+    wf_method, model_features = algorithm_func(base_model)
     wf.insert_workflow(wf_method)
 
     task_result = Task(

@@ -1,3 +1,5 @@
+from io import StringIO
+
 import pytest
 
 from pharmpy import Model
@@ -9,6 +11,7 @@ from pharmpy.modeling import (
 )
 from pharmpy.tools.iiv.algorithms import (
     _get_eta_combinations,
+    _get_param_names,
     _is_current_block_structure,
     brute_force_block_structure,
     create_eta_blocks,
@@ -26,8 +29,7 @@ def test_brute_force_block_structure(testdata, list_of_parameters, block_structu
     if block_structure:
         create_joint_distribution(model, block_structure)
 
-    iivs = model.random_variables.iiv
-    wf, model_features = brute_force_block_structure(iivs)
+    wf, model_features = brute_force_block_structure(model)
     fit_tasks = [task.name for task in wf.tasks if task.name.startswith('run')]
 
     assert len(fit_tasks) == no_of_models
@@ -114,3 +116,21 @@ def test_create_joint_dist(testdata):
     eta_combos = [['ETA(1)'], ['ETA(2)'], ['ETA(3)', 'ETA_VP1', 'ETA_QP1']]
     create_eta_blocks(eta_combos, model)
     assert len(model.random_variables.iiv.distributions()) == 3
+
+
+def test_get_param_names(testdata):
+    model = Model.create_model(testdata / 'nonmem' / 'models' / 'mox2.mod')
+
+    param_dict = _get_param_names(model)
+    param_dict_ref = {'ETA(1)': 'CL', 'ETA(2)': 'VC', 'ETA(3)': 'MAT'}
+
+    assert param_dict == param_dict_ref
+
+    model_code = model.model_code.replace(
+        'CL = THETA(1) * EXP(ETA(1))', 'ETA_1 = ETA(1)\nCL = THETA(1) * EXP(ETA_1)'
+    )
+    model = Model.create_model(StringIO(model_code))
+
+    param_dict = _get_param_names(model)
+
+    assert param_dict == param_dict_ref
