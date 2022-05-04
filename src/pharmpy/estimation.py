@@ -53,7 +53,7 @@ class EstimationSteps(MutableSequence):
 
         Use this to create an overview of all estimation steps
 
-        Results
+        Returns
         -------
         pd.DataFrame
             DataFrame overview

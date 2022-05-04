@@ -638,7 +638,7 @@ class DataInfo(MutableSequence):
         This can be used as input to some pandas functions to convert
         column to the correct pandas dtype.
 
-        Results
+        Returns
         -------
         dict
             Column name to pandas dtype

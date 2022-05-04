@@ -393,7 +393,7 @@ class ExplicitODESystem(ODESystem):
     def to_compartmental_system(self):
         """Get the explicit system as a compartmental ODE system
 
-        Results
+        Returns
         -------
         CompartmentalSystem
             The same ODE system in compartmental representation
