@@ -1,3 +1,5 @@
-root: raw_title
-raw_title: ANYTHING
-ANYTHING: /(.|\n)+/
+root: raw_title NEWLINE*
+raw_title: [ANYTHING]
+ANYTHING: /[^\n]+/
+
+%import .definitions (NEWLINE)
