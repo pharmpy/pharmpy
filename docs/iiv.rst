@@ -55,6 +55,8 @@ Arguments
 | ``model``                                         | Start model                                                                             |
 +---------------------------------------------------+-----------------------------------------------------------------------------------------+
 
+.. _algorithms:
+
 ~~~~~~~~~~
 Algorithms
 ~~~~~~~~~~
@@ -165,12 +167,16 @@ Full search
         }
 
 
+.. _iiv strategies:
+
 ~~~~~~~~~~~~~~
 IIV strategies
 ~~~~~~~~~~~~~~
 
 The IIV strategy refers to if/how IIV should be added to the PK parameters of the input model. The different strategies
 can be seen the corresponding chapter in :ref:`modelsearch<iiv_strategies>`.
+
+.. _comparing and ranking candidates:
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Comparing and ranking candidates

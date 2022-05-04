@@ -21,6 +21,8 @@ The ``sampled_iofv`` table contains the evaluated individual OFVs for each sampl
     res = psn_simeval_results(pathlib.Path('tests/testdata/psn/simeval_dir1'))
     res.sampled_iofv
 
+.. _individual ofv summary:
+
 Individual OFV summary
 ~~~~~~~~~~~~~~~~~~~~~~~~
 

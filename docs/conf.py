@@ -3,7 +3,6 @@ import os
 
 extensions = [
     'sphinx.ext.autodoc',
-    'sphinx.ext.autosectionlabel',
     'sphinx.ext.autosummary',
     'sphinx.ext.coverage',
     'sphinx.ext.doctest',

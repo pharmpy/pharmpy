@@ -48,15 +48,16 @@ For a more detailed description of each argument, see their respective chapter o
 +---------------------------------------------------+-----------------------------------------------------------------------------------------+
 | :ref:`algorithm<Algorithms>`                      | Algorithm to use (e.g. exhaustive)                                                      |
 +---------------------------------------------------+-----------------------------------------------------------------------------------------+
-| :ref:`rankfunc<Comparing and ranking candidates>` | Which selection criteria to rank models on, e.g. OFV (default is BIC)                   |
+| :ref:`rankfunc<ranking>`                          | Which selection criteria to rank models on, e.g. OFV (default is BIC)                   |
 +---------------------------------------------------+-----------------------------------------------------------------------------------------+
-| :ref:`cutoff<Comparing and ranking candidates>`   | Cutoff for the ranking function, exclude models that are below cutoff (default is None) |
+| :ref:`cutoff<ranking>`                            | Cutoff for the ranking function, exclude models that are below cutoff (default is None) |
 +---------------------------------------------------+-----------------------------------------------------------------------------------------+
 | :ref:`iiv_strategy<IIV strategies>`               | If/how IIV should be added to candidate models (default is 0)                           |
 +---------------------------------------------------+-----------------------------------------------------------------------------------------+
 | ``model``                                         | Start model                                                                             |
 +---------------------------------------------------+-----------------------------------------------------------------------------------------+
 
+.. _the search space:
 
 ~~~~~~~~~~~~~~~~
 The search space
@@ -65,7 +66,7 @@ The search space
 The model feature search space is a set of possible combinations of model features that will be applied and tested on
 the input model. The supported features cover absorption, absorption delay, elimination, and distribution. The search
 space is given as a string with a specific grammar, according to the `Model Feature Language` (MFL) (see detailed
-description :ref:`below<Model feature language (MFL) reference>`).
+description :ref:`below<mfl>`).
 
 ~~~~~~~~~~
 Algorithms
@@ -158,6 +159,8 @@ The exhaustive stepwise search applies features in a stepwise manner such that o
         s8 -> s14
         s9 -> s15
     }
+
+.. _feature combination exclusions:
 
 Feature combination exclusions
 ------------------------------
@@ -319,6 +322,7 @@ Finally, you can see different individual statistics ``summary_individuals``.
 
     res.summary_individuals
 
+.. _mfl:
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Model feature language (MFL) reference
