@@ -3,7 +3,7 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import ContextManager
 
-from pharmpy import Model
+from pharmpy import Model, Results
 
 
 class ModelTransaction(ABC):
@@ -80,6 +80,22 @@ class ModelSnapshot(ABC):
         -------
         Model
             Retrieved model object
+        """
+        pass
+
+    @abstractmethod
+    def retrieve_modelfit_results(self) -> Results:
+        """Read modelfit results from the database
+
+        Parameters
+        ----------
+        name : str
+            Name of the model
+
+        Returns
+        -------
+        Results
+            Retrieved model results object
         """
         pass
 
@@ -195,6 +211,22 @@ class ModelDatabase(ABC):
         pass
 
     @abstractmethod
+    def retrieve_modelfit_results(self, model_name: str) -> Results:
+        """Read modelfit results from the database
+
+        Parameters
+        ----------
+        model_name : str
+            Name of the model
+
+        Returns
+        -------
+        Results
+            Retrieved model results object
+        """
+        pass
+
+    @abstractmethod
     def snapshot(self, model_name: str) -> ContextManager[ModelSnapshot]:
         """Creates a readable snapshot context for a given model.
 
@@ -256,8 +288,11 @@ class DummySnapshot(ModelSnapshot):
     def retrieve_file(self, filename: str) -> Path:
         return self.db.retrieve_file(self.name, filename)
 
-    def retrieve_model(self):
+    def retrieve_model(self) -> Model:
         return self.db.retrieve_model(self.name)
+
+    def retrieve_modelfit_results(self) -> Results:
+        return self.db.retrieve_modelfit_results(self.name)
 
 
 class TransactionalModelDatabase(ModelDatabase):
@@ -288,6 +323,10 @@ class TransactionalModelDatabase(ModelDatabase):
     def retrieve_model(self, model_name: str) -> Model:
         with self.snapshot(model_name) as sn:
             return sn.retrieve_model()
+
+    def retrieve_modelfit_results(self, model_name: str) -> Results:
+        with self.snapshot(model_name) as sn:
+            return sn.retrieve_modelfit_results()
 
 
 class PendingTransactionError(Exception):

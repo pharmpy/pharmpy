@@ -85,6 +85,9 @@ class LocalDirectoryDatabase(NonTransactionalModelDatabase):
         model.read_modelfit_results()
         return model
 
+    def retrieve_modelfit_results(self, name):
+        return self.retrieve_model(name).modelfit_results
+
     def store_metadata(self, model, metadata):
         pass
 
@@ -207,7 +210,7 @@ class LocalModelDirectoryDatabaseTransaction(ModelTransaction):
             data_path = path / model_filename
             model.datainfo.path = data_path.resolve()
 
-            write_csv(model, path=data_path)
+            write_csv(model, path=data_path, force=True)
 
             # NOTE Write datainfo last so that we are "sure" dataset is there
             # if datainfo is there
@@ -216,7 +219,7 @@ class LocalModelDirectoryDatabaseTransaction(ModelTransaction):
         # NOTE Write the model
         model_path = self.db.path / model.name
         model_path.mkdir(exist_ok=True)
-        write_model(model, str(model_path / (model.name + model.filename_extension)))
+        write_model(model, str(model_path / (model.name + model.filename_extension)), force=True)
 
     def store_local_file(self, path):
         if Path(path).is_file():
@@ -264,11 +267,30 @@ class LocalModelDirectoryDatabaseSnapshot(ModelSnapshot):
             raise FileNotFoundError(f"Cannot retrieve {filename} for {self.name}")
 
     def retrieve_model(self):
-        filename = self.name + self.db.file_extension
-        path = self.db.path / self.name / filename
+        extensions = ['.ctl', '.mod']
         from pharmpy.model import Model
 
-        model = Model.create_model(path)
+        errors = []
+        for extension in extensions:
+            filename = self.name + extension
+            path = self.db.path / self.name / filename
+            try:
+                # NOTE this will guess the model type
+                model = Model.create_model(path)
+                break
+            except FileNotFoundError as e:
+                errors.append(e)
+                pass
+        else:
+            raise FileNotFoundError(errors)
+
         model.database = self.db
         model.read_modelfit_results()
         return model
+
+    def retrieve_modelfit_results(self):
+        # FIXME The following does not work because deserialization of modelfit
+        # results is not generic enough.
+        # path = self.path / name / DIRECTORY_PHARMPY_METADATA / FILE_MODELFIT_RESULTS
+        # return read_results(path)
+        return self.retrieve_model().modelfit_results

@@ -31,3 +31,6 @@ class NullModelDatabase(NonTransactionalModelDatabase):
 
     def retrieve_model(self, name):
         pass
+
+    def retrieve_modelfit_results(self, name):
+        pass

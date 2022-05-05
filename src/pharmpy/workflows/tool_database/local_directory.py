@@ -1,5 +1,6 @@
 import json
 import shutil
+from itertools import count
 from pathlib import Path
 
 from ..model_database import LocalModelDirectoryDatabase
@@ -15,23 +16,29 @@ class LocalDirectoryToolDatabase(ToolDatabase):
         Name of the tool
     path : str or Path
         Path to directory. Will be created if it does not exist.
+    exist_ok : bool
+        Whether to allow using an existing database.
     """
 
-    def __init__(self, toolname, path=None):
+    def __init__(self, toolname, path=None, exist_ok=False):
         if path is None:
-            i = 1
-            while True:
+            for i in count(1):
                 name = f'{toolname}_dir{i}'
                 path = Path(name)
-                if not path.exists():
+                try:
+                    path.mkdir(parents=True)
                     break
-                i += 1
-        path = Path(path)
-        path.mkdir(parents=True)
+                except FileExistsError:
+                    pass
+        else:
+            path = Path(path)
+            path.mkdir(parents=True, exist_ok=exist_ok)
+
         self.path = path.resolve()
 
         modeldb = LocalModelDirectoryDatabase(self.path / 'models')
         self.model_database = modeldb
+
         super().__init__(toolname)
 
     def store_local_file(self, source_path):

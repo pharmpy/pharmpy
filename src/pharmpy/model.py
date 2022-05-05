@@ -341,6 +341,19 @@ class Model:
     def parent_model(self, value):
         self._parent_model = value
 
+    def has_same_dataset_as(self, other):
+        if self.dataset is None:
+            if other.dataset is None:
+                return True
+            else:
+                return False
+
+        if other.dataset is None:
+            return False
+
+        # NOTE rely on duck-typing here (?)
+        return self.dataset.equals(other.dataset)
+
     @property
     def description(self):
         """A free text discription of the model"""
