@@ -41,7 +41,7 @@ def create_workflow(
     else:
         start_model_task = [start_task]
 
-    wf_method, model_features = algorithm_func(base_model)
+    wf_method = algorithm_func(base_model)
     wf.insert_workflow(wf_method)
 
     task_result = Task(
@@ -49,7 +49,6 @@ def create_workflow(
         post_process_results,
         rankfunc,
         cutoff,
-        model_features,
     )
 
     wf.add_task(task_result, predecessors=start_model_task + wf.output_tasks)
@@ -71,7 +70,7 @@ def _add_iiv(iiv_strategy, model):
     return model
 
 
-def post_process_results(rankfunc, cutoff, model_features, *models):
+def post_process_results(rankfunc, cutoff, *models):
     start_model, res_models = models
 
     if isinstance(res_models, tuple):
@@ -84,7 +83,6 @@ def post_process_results(rankfunc, cutoff, model_features, *models):
         start_model,
         rankfunc,
         cutoff,
-        model_features,
         bic_type='iiv',
     )
     summary_models = summarize_modelfit_results([start_model] + res_models)

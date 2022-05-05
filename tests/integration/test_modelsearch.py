@@ -68,8 +68,8 @@ def test_exhaustive_stepwise_basic(
         assert res.models[0].parent_model == 'mox2'
         assert res.models[-1].parent_model == last_model_parent_name
         if last_model_parent_name != 'mox2':
-            last_model_features = res.summary_tool.loc[res.models[-1].name]['features']
-            parent_model_features = res.summary_tool.loc[last_model_parent_name]['features']
+            last_model_features = res.summary_tool.loc[res.models[-1].name]['description']
+            parent_model_features = res.summary_tool.loc[last_model_parent_name]['description']
             assert last_model_features[: len(parent_model_features)] == parent_model_features
 
         rundir = tmp_path / 'modelsearch_dir1'

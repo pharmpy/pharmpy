@@ -29,11 +29,10 @@ def test_brute_force_block_structure(testdata, list_of_parameters, block_structu
     if block_structure:
         create_joint_distribution(model, block_structure)
 
-    wf, model_features = brute_force_block_structure(model)
+    wf = brute_force_block_structure(model)
     fit_tasks = [task.name for task in wf.tasks if task.name.startswith('run')]
 
     assert len(fit_tasks) == no_of_models
-    assert block_structure not in model_features.items()
 
 
 def test_get_eta_combinations_4_etas(pheno_path):

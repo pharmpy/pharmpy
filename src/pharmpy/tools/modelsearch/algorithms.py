@@ -12,7 +12,6 @@ def exhaustive(search_space, iiv_strategy):
     wf_search = Workflow()
 
     model_tasks = []
-    model_features = dict()
 
     combinations = list(features.all_combinations())
     funcs = features.all_funcs()
@@ -20,7 +19,8 @@ def exhaustive(search_space, iiv_strategy):
     for i, combo in enumerate(combinations, 1):
         model_name = f'modelsearch_candidate{i}'
 
-        task_copy = Task('copy', _copy, model_name)
+        features = ';'.join(combo)
+        task_copy = Task('copy', _copy, model_name, features)
         wf_search.add_task(task_copy)
 
         task_previous = task_copy
@@ -38,11 +38,9 @@ def exhaustive(search_space, iiv_strategy):
         wf_fit = create_fit_workflow(n=1)
         wf_search.insert_workflow(wf_fit, predecessors=task_previous)
 
-        model_features[model_name] = tuple(combo)
-
         model_tasks += wf_fit.output_tasks
 
-    return wf_search, model_tasks, model_features
+    return wf_search, model_tasks
 
 
 def exhaustive_stepwise(search_space, iiv_strategy):
@@ -51,7 +49,6 @@ def exhaustive_stepwise(search_space, iiv_strategy):
 
     wf_search = Workflow()
     model_tasks = []
-    model_features = dict()
 
     while True:
         no_of_trans = 0
@@ -71,14 +68,12 @@ def exhaustive_stepwise(search_space, iiv_strategy):
                     wf_search += wf_create_model
 
                 model_tasks += wf_create_model.output_tasks
-                features_previous = _get_previous_features(wf_search, task_function, mfl_funcs)
-                model_features[model_name] = tuple(list(features_previous) + [feat])
 
                 no_of_trans += 1
         if no_of_trans == 0:
             break
 
-    return wf_search, model_tasks, model_features
+    return wf_search, model_tasks
 
 
 def reduced_stepwise(mfl, iiv_strategy):
@@ -87,7 +82,6 @@ def reduced_stepwise(mfl, iiv_strategy):
 
     wf_search = Workflow()
     model_tasks = []
-    model_features = dict()
 
     while True:
         no_of_trans = 0
@@ -117,13 +111,11 @@ def reduced_stepwise(mfl, iiv_strategy):
 
                 model_tasks += wf_create_model.output_tasks
 
-                # FIXME: should this have same format as exhaustive?g
-                model_features[model_name] = feat
                 no_of_trans += 1
         if no_of_trans == 0:
             break
 
-    return wf_search, model_tasks, model_features
+    return wf_search, model_tasks
 
 
 def _find_same_model_groups(wf, mfl_funcs):
@@ -190,7 +182,7 @@ def _get_previous_features(wf, task, mfl_funcs):
 def _create_model_workflow(model_name, feat, func, iiv_strategy):
     wf_stepwise_step = Workflow()
 
-    task_copy = Task('copy', _copy, model_name)
+    task_copy = Task('copy', _copy, model_name, feat)
     wf_stepwise_step.add_task(task_copy)
 
     task_update_inits = Task('update_inits', update_initial_estimates)
@@ -277,8 +269,12 @@ def _is_allowed_peripheral(func_current, peripheral_previous, mfl_features):
     return False
 
 
-def _copy(name, model):
+def _copy(name, features, model):
     model_copy = copy_model(model, name)
+    if not model.description:
+        model_copy.description = features
+    else:
+        model_copy.description = f'{model.description};{features}'
     return model_copy
 
 

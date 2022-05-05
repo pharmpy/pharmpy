@@ -13,11 +13,14 @@ def brute_force_no_of_etas(base_model):
     iivs = base_model.random_variables.iiv
     eta_combos = _get_eta_combinations(iivs)
     param_dict = _get_param_names(base_model)
-    model_features = {base_model.name: _create_feature_str(param_dict, iivs.names)}
+
+    base_model.description = _create_feature_str(param_dict, iivs.names)
 
     for i, combo in enumerate(eta_combos, 1):
+        etas_remaining = set(iivs.names).difference(combo)
         model_name = f'iivsearch_no_of_etas_candidate{i}'
-        task_copy = Task('copy', copy, model_name)
+        model_description = _create_feature_str(param_dict, etas_remaining)
+        task_copy = Task('copy', copy, model_name, model_description)
         wf.add_task(task_copy)
 
         task_update_inits = Task('update_inits', update_initial_estimates)
@@ -26,14 +29,9 @@ def brute_force_no_of_etas(base_model):
         task_remove_eta = Task('remove_eta', remove_eta, combo)
         wf.add_task(task_remove_eta, predecessors=task_update_inits)
 
-        etas_remaining = set(iivs.names).difference(combo)
-        feature_str = _create_feature_str(param_dict, etas_remaining)
-
-        model_features[model_name] = feature_str
-
     wf_fit = modelfit.create_workflow(n=len(wf.output_tasks))
     wf.insert_workflow(wf_fit)
-    return wf, model_features
+    return wf
 
 
 def brute_force_block_structure(base_model):
@@ -42,17 +40,16 @@ def brute_force_block_structure(base_model):
     iivs = base_model.random_variables.iiv
     eta_combos = _get_eta_combinations(iivs, as_blocks=True)
     param_dict = _get_param_names(base_model)
-    model_features = dict()
     model_no = 1
 
     for combo in eta_combos:
-        feature_str = _create_feature_str(param_dict, combo, as_blocks=True)
+        model_description = _create_feature_str(param_dict, combo, as_blocks=True)
         if _is_current_block_structure(iivs, combo):
-            model_features[base_model.name] = feature_str
+            base_model.description = model_description
             continue
 
         model_name = f'iivsearch_block_structure_candidate{model_no}'
-        task_copy = Task('copy', copy, model_name)
+        task_copy = Task('copy', copy, model_name, model_description)
         wf.add_task(task_copy)
 
         task_update_inits = Task('update_inits', update_initial_estimates)
@@ -61,12 +58,11 @@ def brute_force_block_structure(base_model):
         task_joint_dist = Task('create_eta_blocks', create_eta_blocks, combo)
         wf.add_task(task_joint_dist, predecessors=task_update_inits)
 
-        model_features[model_name] = feature_str
         model_no += 1
 
     wf_fit = modelfit.create_workflow(n=len(wf.output_tasks))
     wf.insert_workflow(wf_fit)
-    return wf, model_features
+    return wf
 
 
 def _get_eta_combinations(etas, as_blocks=False):
@@ -148,6 +144,7 @@ def create_eta_blocks(combos, model):
     return model
 
 
-def copy(name, model):
+def copy(name, description, model):
     model_copy = copy_model(model, name)
+    model_copy.description = description
     return model_copy

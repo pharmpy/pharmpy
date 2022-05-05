@@ -26,16 +26,14 @@ def create_workflow(
 
     wf.add_task(start_task)
 
-    wf_search, candidate_model_tasks, model_features = algorithm_func(search_space, iiv_strategy)
+    wf_search, candidate_model_tasks = algorithm_func(search_space, iiv_strategy)
     wf.insert_workflow(wf_search, predecessors=wf.output_tasks)
 
     task_result = Task(
         'results',
         post_process_results,
-        algorithm,
         rankfunc,
         cutoff,
-        model_features,
     )
 
     wf.add_task(task_result, predecessors=[start_task] + candidate_model_tasks)
@@ -63,7 +61,7 @@ def start(model):
     return model
 
 
-def post_process_results(algorithm, rankfunc, cutoff, model_features, *models):
+def post_process_results(rankfunc, cutoff, *models):
     res_models = []
     start_model = None
     for model in models:
@@ -75,10 +73,7 @@ def post_process_results(algorithm, rankfunc, cutoff, model_features, *models):
     if not start_model:
         raise ValueError('Error in workflow: No starting model')
 
-    if algorithm == 'reduced_stepwise':
-        model_features = _update_model_features(start_model, res_models, model_features)
-
-    summary_tool = summarize_tool(res_models, start_model, rankfunc, cutoff, model_features)
+    summary_tool = summarize_tool(res_models, start_model, rankfunc, cutoff)
     summary_models = summarize_modelfit_results([start_model] + res_models)
     summary_individuals = summarize_individuals([start_model] + res_models)
 
@@ -98,26 +93,6 @@ def post_process_results(algorithm, rankfunc, cutoff, model_features, *models):
     )
 
     return res
-
-
-def _update_model_features(start_model, res_models, model_features_original):
-    model_features_new = dict()
-    for model in res_models:
-        if model.name == start_model.name:
-            feat_all = None
-        else:
-            feat = model_features_original[model.name]
-            if (
-                model.parent_model in model_features_new.keys()
-                and model.parent_model != start_model.name
-            ):
-                feat_parent = model_features_new[model.parent_model]
-                feat_all = feat_parent + (feat,)
-            else:
-                feat_all = (feat,)
-        model_features_new[model.name] = feat_all
-
-    return model_features_new
 
 
 class ModelSearchResults(pharmpy.results.Results):

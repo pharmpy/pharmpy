@@ -21,7 +21,6 @@ def summarize_tool(
     start_model,
     rankfunc_name,
     cutoff,
-    model_features,
     bic_type='mixed',
 ):
     models_all = [start_model] + models
@@ -41,18 +40,15 @@ def summarize_tool(
         index.append(model.name)
         parent_model = model.parent_model
         diff = diff_dict[model.name]
-        if model.name == start_model.name and start_model.name not in model_features.keys():
-            feat = None
-        else:
-            feat = model_features[model.name]
+        desc = model.description
         if model.name in ranking_by_name:
             ranks = ranking_by_name.index(model.name) + 1
         else:
             ranks = np.nan
-        rows.append([parent_model, diff, feat, ranks])
+        rows.append([parent_model, diff, desc, ranks])
 
     # FIXME: in ranks, if any row has NaN the rank converts to float
-    colnames = ['parent_model', f'd{rankfunc_name}', 'features', 'rank']
+    colnames = ['parent_model', f'd{rankfunc_name}', 'description', 'rank']
     df = pd.DataFrame(rows, index=index, columns=colnames)
 
     return df

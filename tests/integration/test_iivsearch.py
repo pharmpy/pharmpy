@@ -31,10 +31,10 @@ def test_block_structure(tmp_path, start_model):
         )
         assert all(model.random_variables != start_model.random_variables for model in res.models)
 
-        assert res.summary_tool.loc['mox2']['features'] == '[CL]+[VC]+[MAT]'
+        assert res.summary_tool.loc['mox2']['description'] == '[CL]+[VC]+[MAT]'
         assert not res.start_model.random_variables['ETA(1)'].joint_names
         assert (
-            res.summary_tool.loc['iivsearch_block_structure_candidate1']['features']
+            res.summary_tool.loc['iivsearch_block_structure_candidate1']['description']
             == '[CL,VC,MAT]'
         )
         assert len(res.models[0].random_variables['ETA(1)'].joint_names) == 3
@@ -56,9 +56,9 @@ def test_no_of_etas(tmp_path, start_model):
 
         assert res.models[-1].modelfit_results
 
-        assert res.summary_tool.loc['mox2']['features'] == '[CL,VC,MAT]'
+        assert res.summary_tool.loc['mox2']['description'] == '[CL,VC,MAT]'
         assert res.start_model.random_variables.iiv.names == ['ETA(1)', 'ETA(2)', 'ETA(3)']
-        assert res.summary_tool.iloc[-1]['features'] == '[]'
+        assert res.summary_tool.iloc[-1]['description'] == '[]'
         assert res.models[0].random_variables.iiv.names == ['ETA(2)', 'ETA(3)']
 
         rundir = tmp_path / 'iivsearch_dir1'
