@@ -342,6 +342,18 @@ class Model:
         self._parent_model = value
 
     def has_same_dataset_as(self, other):
+        """Check if this model has the same dataset as another model
+
+        Parameters
+        ----------
+        other : Model
+            Another model
+
+        Returns
+        -------
+        bool
+            True if both models have the same dataset
+        """
         if self.dataset is None:
             if other.dataset is None:
                 return True
