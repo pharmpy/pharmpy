@@ -322,6 +322,9 @@ Finally, you can see different individual statistics ``summary_individuals``.
 
     res.summary_individuals
 
+See :py:func:`pharmpy.modeling.summarize_individuals` for information on the content of this table.
+
+
 .. _mfl:
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

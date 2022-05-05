@@ -12,6 +12,22 @@ def summarize_individuals(models: List[Model]) -> Union[pd.DataFrame, None]:
     """Creates a summary dataframe keyed by model-individual pairs for an input
     list of models.
 
+    Content of the various columns:
+
+    +-------------------------+----------------------------------------------------------------------+
+    | Column                  | Description                                                          |
+    +=========================+======================================================================+
+    | ``outlier_count``       | Number of observations with CWRES > 5                                |
+    +-------------------------+----------------------------------------------------------------------+
+    | ``ofv``                 | Individual OFV                                                       |
+    +-------------------------+----------------------------------------------------------------------+
+    | ``dofv_vs_parent``      | Difference in individual OFV between this model and its parent model |
+    +-------------------------+----------------------------------------------------------------------+
+    | ``predicted_dofv``      | Predicted dOFV if this individual was excluded                       |
+    +-------------------------+----------------------------------------------------------------------+
+    | ``predicted_residual``  | Predicted residual                                                   |
+    +-------------------------+----------------------------------------------------------------------+
+
     Parameters
     ----------
     models : List[Model]
@@ -36,7 +52,7 @@ def summarize_individuals(models: List[Model]) -> Union[pd.DataFrame, None]:
     ... ) # doctest: +SKIP
     >>> summarize_individuals([results.start_model, *results.models]) # doctest: +SKIP
 
-    """
+    """  # noqa: E501
 
     modelsDict = {model.name: model for model in models}
 
