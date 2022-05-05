@@ -287,7 +287,7 @@ def _add_iiv_to_func(iiv_strategy, model):
     elif iiv_strategy == 3:
         mdt = sset.find_assignment('MDT')
         if mdt and not mdt.expression.free_symbols.intersection(rvs.free_symbols):
-            add_iiv(model, 'MDT', 'exp')
+            add_iiv(model, 'MDT', 'exp', initial_estimate=0.01)
     else:
         raise ValueError(f'Invalid IIV strategy (must be [0,1,2,3]): {iiv_strategy}')
 
