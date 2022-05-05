@@ -458,7 +458,7 @@ class CodeRecord(Record):
             while (
                 node_index < len(self.root.children)
                 and old_index < len(self.nodes)
-                and self.root.children[node_index] is not self.nodes[old_index]
+                and self.root.children[node_index] is not self.nodes[old_index][0]
             ):
                 node = self.root.children[node_index]
                 kept.append(node)
@@ -466,6 +466,7 @@ class CodeRecord(Record):
             if op == '+':
                 statement_str = nmtran_assignment_string(s, defined_symbols, self.rvs, self.trans)
                 node_tree = CodeRecordParser(statement_str).root
+                statement_nodes = []
                 for node in node_tree.all('statement'):
                     if node_index == 0:
                         node.children.insert(0, AttrToken('LF', '\n'))
@@ -476,16 +477,17 @@ class CodeRecord(Record):
                         and self.root.children[0].rule != 'empty_line'
                     ):
                         node.children.append(AttrToken('LF', '\n'))
-                    new_nodes.append(node)
-                    kept.append(node)
+                    statement_nodes.append(node)
+                new_nodes.append(tuple(statement_nodes))
+                kept.extend(statement_nodes)
                 defined_symbols.add(s.symbol)
             elif op == '-':
-                node_index += 1
+                node_index += len(self.nodes[old_index])
                 old_index += 1
             else:
-                kept.append(self.root.children[node_index])
-                new_nodes.append(self.root.children[node_index])
-                node_index += 1
+                kept.extend(self.nodes[old_index])
+                new_nodes.append(self.nodes[old_index])
+                node_index += len(self.nodes[old_index])
                 old_index += 1
                 defined_symbols.add(s.symbol)
         if node_index < len(self.root.children):  # Remaining non-statements
@@ -504,7 +506,7 @@ class CodeRecord(Record):
                     expr = ExpressionInterpreter().visit(node.expression)
                     ass = Assignment(name, expr)
                     s.append(ass)
-                    self.nodes.append(statement)
+                    self.nodes.append((statement,))
                 elif node.rule == 'logical_if':
                     logic_expr = ExpressionInterpreter().visit(node.logical_expression)
                     try:
@@ -523,7 +525,7 @@ class CodeRecord(Record):
                         pw = sympy.Piecewise((expr, logic_expr), (else_val, True))
                         ass = Assignment(name, pw)
                         s.append(ass)
-                    self.nodes.append(statement)
+                    self.nodes.append((statement,))
                 elif node.rule == 'block_if':
                     interpreter = ExpressionInterpreter()
                     blocks = []  # [(logic, [(symb1, expr1), ...]), ...]
@@ -580,7 +582,7 @@ class CodeRecord(Record):
                         pw = sympy.Piecewise(*pairs)
                         ass = Assignment(symbol, pw)
                         s.append(ass)
-                    self.nodes.append(statement)
+                    self.nodes.append((statement,))
 
         statements = ModelStatements(s)
         return statements
