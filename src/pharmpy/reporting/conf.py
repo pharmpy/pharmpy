@@ -8,6 +8,6 @@ html_static_path = ['.']
 html_css_files = [
     'custom.css',
 ]
-html_theme_options = {'page_width': '1750px'}
+html_theme_options = {'body_max_width': 'none'}
 html_title = 'Results'
 master_doc = 'results'

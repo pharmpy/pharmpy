@@ -8,6 +8,8 @@ import pytest
         ('$SIZES LIM1=5', 'PC', 30, 23, '$SIZES LIM1=5'),
         ('$SIZES LIM1=5', 'PC', 30, 31, '$SIZES LIM1=5 PC=31'),
         ('$SIZES LIM1=5 PC=23', 'PC', 23, 29, '$SIZES LIM1=5'),
+        ('$SIZES LTH=120', 'LTH', 120, 121, '$SIZES LTH=121'),
+        ('$SIZES LIM1=5', 'LTH', 100, 120, '$SIZES LIM1=5 LTH=120'),
     ],
 )
 def test_set_option(parser, buf, option, old_value, value, expected):

@@ -82,6 +82,7 @@ def convert_model(model):
     nm_model.observation_transformation = model.observation_transformation.subs(
         model.dependent_variable, nm_model.dependent_variable
     )
+    nm_model.description = model.description
     nm_model.update_source()
     try:
         nm_model.database = model.database
@@ -135,6 +136,16 @@ class Model(pharmpy.model.Model):
                     new_table_name = f'{table_stem}{n}'
                     table.path = table_path.parent / new_table_name
         self._name = new_name
+
+    @property
+    def description(self):
+        rec = self.control_stream.get_records('PROBLEM')[0]
+        return rec.title
+
+    @description.setter
+    def description(self, value):
+        rec = self.control_stream.get_records('PROBLEM')[0]
+        rec.title = value
 
     @property
     def value_type(self):

@@ -80,7 +80,7 @@ def run_amd(
     if lloq is not None:
         remove_loq_data(model, lloq=lloq)
 
-    default_order = ['structural', 'iiv', 'residual', 'allometry', 'covariates']
+    default_order = ['structural', 'iivsearch', 'residual', 'allometry', 'covariates']
     if order is None:
         order = default_order
 
@@ -104,7 +104,7 @@ def run_amd(
         if section == 'structural':
             func = partial(_run_modelsearch, search_space=search_space, path=db.path)
             run_funcs.append(func)
-        elif section == 'iiv':
+        elif section == 'iivsearch':
             func = partial(_run_iiv, path=db.path)
             run_funcs.append(func)
         elif section == 'residual':
@@ -260,7 +260,7 @@ def run_iiv(model, iiv_strategy=0, rankfunc='ofv', cutoff=None, path=None):
         path2 = path
 
     res_no_of_etas = run_tool(
-        'iiv',
+        'iivsearch',
         'brute_force_no_of_etas',
         iiv_strategy=iiv_strategy,
         rankfunc=rankfunc,
@@ -269,7 +269,7 @@ def run_iiv(model, iiv_strategy=0, rankfunc='ofv', cutoff=None, path=None):
         path=path1,
     )
     res_block_structure = run_tool(
-        'iiv',
+        'iivsearch',
         'brute_force_block_structure',
         rankfunc=rankfunc,
         cutoff=cutoff,
@@ -283,7 +283,7 @@ def run_iiv(model, iiv_strategy=0, rankfunc='ofv', cutoff=None, path=None):
         [model] + res_no_of_etas.models + res_block_structure.models
     )
 
-    from pharmpy.tools.iiv.tool import IIVResults
+    from pharmpy.tools.iivsearch.tool import IIVResults
 
     res = IIVResults(
         summary_tool=[res_no_of_etas.summary_tool, res_block_structure.summary_tool],

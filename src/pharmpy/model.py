@@ -60,6 +60,7 @@ class Model:
         self.parent_model = None
         self.initial_individual_estimates = None
         self.value_type = 'PREDICTION'
+        self.description = ''
 
     def __eq__(self, other):
         """Compare two models for equality
@@ -352,6 +353,15 @@ class Model:
 
         # NOTE rely on duck-typing here (?)
         return self.dataset.equals(other.dataset)
+
+    @property
+    def description(self):
+        """A free text discription of the model"""
+        return self._description
+
+    @description.setter
+    def description(self, value):
+        self._description = value
 
     def read_modelfit_results(self):
         """Read in modelfit results"""

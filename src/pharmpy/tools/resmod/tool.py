@@ -107,12 +107,17 @@ def start(model, groups, p_value, skip):
     current_iteration = 1
     for current_iteration in range(1, 4):
         wf = create_iteration_workflow(model, groups, cutoff, skip, current_iteration)
-        res = call_workflow(wf, f'results{current_iteration}')
-        selected_model = res.best_model
+        next_res = call_workflow(wf, f'results{current_iteration}')
+        if current_iteration == 1:
+            res = next_res
+        else:
+            res.models = pd.concat([res.models, next_res.models])
+            res.selected_model = next_res.selected_model
+            res.selected_model_name = next_res.selected_model_name
         name = res.selected_model_name
-        if name == 'base':
-            return selected_model
-        elif name[:12] == 'time_varying':
+        if name.startswith('base'):
+            return res
+        elif name.startswith('time_varying'):
             skip.append('time_varying')
         else:
             skip.append(name)
@@ -128,11 +133,7 @@ def _results(res):
 
 
 def post_process(start_model, *models, cutoff, current_iteration):
-    res = calculate_results(
-        base_model=_find_models(models, current_iteration)[0],
-        tvar_models=_find_models(models, current_iteration)[1],
-        other_models=_find_models(models, current_iteration)[2],
-    )
+    res = calculate_results(models)
     best_model = _create_best_model(start_model, res, current_iteration, cutoff=cutoff)
     res.best_model = best_model[0]
     res.selected_model_name = best_model[1]
