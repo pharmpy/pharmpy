@@ -211,7 +211,7 @@ def test_summary_individuals(tmp_path, testdata):
         summary = res.summary_individuals
         columns = (
             'parent_model',
-            'outliers_fda',
+            'outlier_count',
             'ofv',
             'dofv_vs_parent',
             'predicted_dofv',

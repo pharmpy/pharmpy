@@ -62,13 +62,13 @@ def model_name(model: Model) -> str:
     return model.name
 
 
-def outliers_fda_func(df: pd.DataFrame) -> float:
+def outlier_count_func(df: pd.DataFrame) -> float:
     # NOTE this returns a float because we will potentially concat this
     # with NaNs
     return float((abs(df) > 5).sum())
 
 
-def outliers_fda(model: Model) -> Union[pd.Series, float]:
+def outlier_count(model: Model) -> Union[pd.Series, float]:
     res = model.modelfit_results
     if res is None:
         return np.nan
@@ -77,7 +77,7 @@ def outliers_fda(model: Model) -> Union[pd.Series, float]:
         return np.nan
     else:
         groupedByID = residuals.groupby('ID')
-        return groupedByID['CWRES'].agg(outliers_fda_func)
+        return groupedByID['CWRES'].agg(outlier_count_func)
 
 
 def _predicted(
@@ -121,7 +121,7 @@ def groupedByIDAddColumnsOneModel(modelsDict: Dict[str, Model], model: Model) ->
     df = pd.DataFrame(
         {
             'parent_model': parent_model_name(model),
-            'outliers_fda': outliers_fda(model),
+            'outlier_count': outlier_count(model),
             'ofv': ofv(model),
             'dofv_vs_parent': dofv(modelsDict.get(model.parent_model), model),
             'predicted_dofv': predicted_dofv(model),
