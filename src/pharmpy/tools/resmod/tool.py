@@ -104,7 +104,6 @@ def start(model, groups, p_value, skip):
     cutoff = float(chi2.isf(q=p_value, df=1))
     if skip is None:
         skip = []
-    current_iteration = 1
     for current_iteration in range(1, 4):
         wf = create_iteration_workflow(model, groups, cutoff, skip, current_iteration)
         next_res = call_workflow(wf, f'results{current_iteration}')
@@ -112,7 +111,7 @@ def start(model, groups, p_value, skip):
             res = next_res
         else:
             res.models = pd.concat([res.models, next_res.models])
-            res.selected_model = next_res.selected_model
+            res.best_model = next_res.best_model
             res.selected_model_name = next_res.selected_model_name
         name = res.selected_model_name
         if name.startswith('base'):
@@ -121,6 +120,7 @@ def start(model, groups, p_value, skip):
             skip.append('time_varying')
         else:
             skip.append(name)
+        model = res.best_model
     return res
 
 
@@ -295,14 +295,14 @@ def _create_best_model(model, res, current_iteration, groups=4, cutoff=3.84):
             set_power_on_ruv(model)
             model.parameters.inits = {
                 'power1': res.models['parameters'].loc['power', 1, current_iteration].get('theta')
-                + 1
+                          + 1
             }
         elif name.startswith('IIV_on_RUV'):
             set_iiv_on_ruv(model)
             model.parameters.inits = {
                 'IIV_RUV1': res.models['parameters']
-                .loc['IIV_on_RUV', 1, current_iteration]
-                .get('omega')
+                    .loc['IIV_on_RUV', 1, current_iteration]
+                    .get('omega')
             }
         elif name.startswith('time_varying'):
             _time_after_dose(model)
@@ -314,18 +314,18 @@ def _create_best_model(model, res, current_iteration, groups=4, cutoff=3.84):
             set_time_varying_error_model(model, cutoff=cutoff_tvar, idv='TAD')
             model.parameters.inits = {
                 'time_varying': res.models['parameters']
-                .loc[f"time_varying{i}", 1, current_iteration]
-                .get('theta')
+                    .loc[f"time_varying{i}", 1, current_iteration]
+                    .get('theta')
             }
         else:
             set_combined_error_model(model)
             model.parameters.inits = {
                 'sigma_prop': res.models['parameters']
-                .loc['combined', 1, current_iteration]
-                .get('sigma_prop'),
+                    .loc['combined', 1, current_iteration]
+                    .get('sigma_prop'),
                 'sigma_add': res.models['parameters']
-                .loc['combined', 1, current_iteration]
-                .get('sigma_add'),
+                    .loc['combined', 1, current_iteration]
+                    .get('sigma_add'),
             }
         selected_model_name = name
         model.update_source()
