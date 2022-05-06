@@ -147,7 +147,7 @@ def _run_modelsearch(model, search_space, path):
 
 
 def _run_iiv(model, path):
-    res_iiv = run_iiv(model, iiv_strategy=2, path=path)
+    res_iiv = run_tool('iivsearch', 'brute_force', iiv_strategy=2, model=model, path=path)
     selected_iiv_model = res_iiv.best_model
     return selected_iiv_model
 
@@ -192,83 +192,3 @@ def _run_allometry(model, allometric_variable, path):
             'allometry', model, allometric_variable=allometric_variable, path=path / 'allometry'
         )
         return res
-
-
-def run_iiv(model, iiv_strategy=0, rankfunc='ofv', cutoff=None, path=None):
-    """Run IIV tool
-
-    Runs two IIV workflows: testing the number of etas and testing which block structure
-
-    Parameters
-    ----------
-    model : Model
-        Pharmpy model
-    iiv_strategy : int
-        How IIVs should be added to start model. Default is 0 (no added IIVs)
-    rankfunc : str
-        Which ranking function should be used (OFV, AIC, BIC). Default is OFV
-    cutoff : float
-        Cutoff for which value of the ranking function that is considered significant. Default
-        is 3.84
-    path : Path
-        Path of rundirectory
-
-    Returns
-    -------
-    Model
-        Reference to the same model object
-
-    Examples
-    --------
-    >>> from pharmpy.modeling import *
-    >>> model = load_example_model("pheno")
-    >>> run_iiv(model)      # doctest: +SKIP
-
-    See also
-    --------
-    run_amd
-    run_tool
-
-    """
-    if path:
-        path1 = path / 'iiv1'
-        path2 = path / 'iiv2'
-    else:
-        path1 = path
-        path2 = path
-
-    res_no_of_etas = run_tool(
-        'iivsearch',
-        'brute_force_no_of_etas',
-        iiv_strategy=iiv_strategy,
-        rankfunc=rankfunc,
-        cutoff=cutoff,
-        model=model,
-        path=path1,
-    )
-    res_block_structure = run_tool(
-        'iivsearch',
-        'brute_force_block_structure',
-        rankfunc=rankfunc,
-        cutoff=cutoff,
-        model=res_no_of_etas.best_model,
-        path=path2,
-    )
-
-    from pharmpy.modeling import summarize_modelfit_results
-
-    summary_models = summarize_modelfit_results(
-        [model] + res_no_of_etas.models + res_block_structure.models
-    )
-
-    from pharmpy.tools.iivsearch.tool import IIVResults
-
-    res = IIVResults(
-        summary_tool=[res_no_of_etas.summary_tool, res_block_structure.summary_tool],
-        summary_models=summary_models,
-        best_model=res_block_structure.best_model,
-        models=res_no_of_etas.models + res_block_structure.models,
-        start_model=model,
-    )
-
-    return res

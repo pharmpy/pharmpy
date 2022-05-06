@@ -67,6 +67,27 @@ def test_no_of_etas(tmp_path, start_model):
         assert (rundir / 'metadata.json').exists()
 
 
+def test_brute_force(tmp_path, start_model):
+    with TemporaryDirectoryChanger(tmp_path):
+        res = run_tool('iivsearch', 'brute_force', model=start_model)
+
+        no_of_candidate_models = 8
+        assert len(res.summary_tool) == no_of_candidate_models + 2
+        assert len(res.summary_models) == no_of_candidate_models + 2
+        assert len(res.models) == no_of_candidate_models
+
+        assert all(
+            model.modelfit_results and not np.isnan(model.modelfit_results.ofv)
+            for model in res.models
+        )
+        assert all(model.random_variables != start_model.random_variables for model in res.models)
+
+        rundir = tmp_path / 'iivsearch_dir1'
+        assert rundir.is_dir()
+        assert _model_count(rundir) == no_of_candidate_models
+        assert (rundir / 'metadata.json').exists()
+
+
 @pytest.mark.filterwarnings("ignore::UserWarning")
 @pytest.mark.parametrize(
     'iiv_strategy',

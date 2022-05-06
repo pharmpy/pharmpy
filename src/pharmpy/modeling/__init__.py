@@ -106,7 +106,7 @@ from pharmpy.modeling.update_inits import update_inits
 from pharmpy.modeling.write_csv import write_csv
 
 from .allometry import add_allometry
-from .amd import run_amd, run_iiv
+from .amd import run_amd
 from .data import (
     add_time_after_dose,
     check_dataset,
@@ -278,7 +278,6 @@ __all__ = [
     'remove_unused_parameters_and_rvs',
     'resample_data',
     'run_amd',
-    'run_iiv',
     'run_tool',
     'sample_parameters_from_covariance_matrix',
     'sample_individual_estimates',

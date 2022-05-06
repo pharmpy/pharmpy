@@ -1,3 +1,5 @@
+import pandas as pd
+
 import pharmpy.results
 import pharmpy.tools.iivsearch.algorithms as algorithms
 from pharmpy.modeling import (
@@ -8,7 +10,7 @@ from pharmpy.modeling import (
 )
 from pharmpy.tools.common import summarize_tool
 from pharmpy.tools.modelfit import create_fit_workflow
-from pharmpy.workflows import Task, Workflow
+from pharmpy.workflows import Task, Workflow, call_workflow
 
 
 def create_workflow(
@@ -18,20 +20,47 @@ def create_workflow(
     cutoff=None,
     model=None,
 ):
-    algorithm_func = getattr(algorithms, algorithm)
+    """Run IIVSearch tool.
 
-    # FIXME: must currently be a model, cannot be a task
-    if iiv_strategy != 0:
-        model_iiv = copy_model(model, f'{model.name}_add_iiv')
-        _add_iiv(iiv_strategy, model_iiv)
-        base_model = model_iiv
-    else:
-        base_model = model
+    Parameters
+    ----------
+    algorithm : str
+        Which algorithm to run (brute_force, brute_force_no_of_etas, brute_force_block_structure)
+    iiv_strategy : int
+        How IIVs should be added to start model. Default is 0 (no added IIVs)
+    rankfunc : str
+        Which ranking function should be used (OFV, AIC, BIC). Default is OFV
+    cutoff : float
+        Cutoff for which value of the ranking function that is considered significant. Default
+        is 3.84
+    model : Model
+        Pharmpy model
 
+    Returns
+    -------
+    IIVResults
+        IIVSearch tool result object
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> run_tool('brute_force', model=model)      # doctest: +SKIP
+
+    """
     wf = Workflow()
     wf.name = 'iivsearch'
+    start_task = Task('start_iiv', start, model, algorithm, iiv_strategy, rankfunc, cutoff)
+    wf.add_task(start_task)
+    task_results = Task('results', _results)
+    wf.add_task(task_results, predecessors=[start_task])
+    return wf
 
-    start_task = Task('start_iiv', start, iiv_strategy, model)
+
+def create_algorithm_workflow(base_model, algorithm, iiv_strategy, rankfunc, cutoff):
+    wf = Workflow()
+
+    start_task = Task(f'start_{algorithm}', _start_algorithm, base_model)
     wf.add_task(start_task)
 
     if iiv_strategy != 0:
@@ -41,6 +70,7 @@ def create_workflow(
     else:
         start_model_task = [start_task]
 
+    algorithm_func = getattr(algorithms, algorithm)
     wf_method = algorithm_func(base_model)
     wf.insert_workflow(wf_method)
 
@@ -56,10 +86,40 @@ def create_workflow(
     return wf
 
 
-def start(iiv_strategy, model):
+def start(model, algorithm, iiv_strategy, rankfunc, cutoff):
     if iiv_strategy != 0:
-        model = copy_model(model, f'{model.name}_add_iiv')
-        _add_iiv(iiv_strategy, model)
+        model_iiv = copy_model(model, f'{model.name}_add_iiv')
+        _add_iiv(iiv_strategy, model_iiv)
+        base_model = model_iiv
+    else:
+        base_model = model
+
+    if algorithm == 'brute_force':
+        list_of_algorithms = ['brute_force_no_of_etas', 'brute_force_block_structure']
+    else:
+        list_of_algorithms = [algorithm]
+
+    for i, algorithm_cur in enumerate(list_of_algorithms):
+        wf = create_algorithm_workflow(base_model, algorithm_cur, iiv_strategy, rankfunc, cutoff)
+        next_res = call_workflow(wf, f'results{algorithm}')
+        if i == 0:
+            res = next_res
+        else:
+            res.models = res.models + next_res.models
+            res.best_model = next_res.best_model
+            res.summary_tool = pd.concat([res.summary_tool, next_res.summary_tool])
+            res.summary_models = pd.concat([res.summary_models, next_res.summary_models])
+        base_model = res.best_model
+        iiv_strategy = 0
+
+    return res
+
+
+def _results(res):
+    return res
+
+
+def _start_algorithm(model):
     return model
 
 
