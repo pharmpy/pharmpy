@@ -376,30 +376,30 @@ def lcsdiff(c, x, y, i, j):
         return
     elif i < 0:
         yield from lcsdiff(c, x, y, i, j - 1)
-        yield '+', y[j]
+        yield 1, y[j]
     elif j < 0:
         yield from lcsdiff(c, x, y, i - 1, j)
-        yield '-', x[i]
+        yield -1, x[i]
     elif x[i] == y[j]:
         yield from lcsdiff(c, x, y, i - 1, j - 1)
-        yield None, x[i]
+        yield 0, x[i]
     elif c[i][j - 1] >= c[i - 1][j]:
         yield from lcsdiff(c, x, y, i, j - 1)
-        yield '+', y[j]
+        yield 1, y[j]
     else:
         yield from lcsdiff(c, x, y, i - 1, j)
-        yield '-', x[i]
+        yield -1, x[i]
 
 
 def diff(old, new):
     """Get diff between a and b in order for all elements
 
     Optimizes by first handling equal elements from the head and tail
-    Each entry is a pair of operation (+, - or None) and the element
+    Each entry is a pair of operation (+1, -1 or 0) and the element
     """
     for i, (a, b) in enumerate(zip(old, new)):
         if a == b:
-            yield (None, b)
+            yield (0, b)
         else:
             break
     else:
@@ -414,7 +414,7 @@ def diff(old, new):
     saved = []
     for a, b in zip(reversed(rold), reversed(rnew)):
         if a == b:
-            saved.append((None, b))
+            saved.append((0, b))
         else:
             break
 
@@ -461,16 +461,17 @@ class CodeRecord(Record):
                 child_index = self._nodes_index[index_index][0]
                 new_children.extend(self.root.children[prev_child_index:child_index])
             else:
-                assert op == '+'
-            if op == '+':
+                assert op == 1
+            if op == 1:
                 statement_nodes = self._statement_to_nodes(defined_symbols, child_index, s)
                 new_index.append((len(new_children), len(new_children) + len(statement_nodes)))
                 new_children.extend(statement_nodes)
                 defined_symbols.add(s.symbol)
-            elif op == '-':
+            elif op == -1:
                 child_index += self._nodes_index_len(index_index)
                 index_index += 1
             else:
+                assert op == 0
                 new_index.append((len(new_children), len(new_children) + self._nodes_index_len(index_index)))
                 new_children.extend(self.root.children[child_index:self._nodes_index[index_index][1]])
                 child_index += self._nodes_index_len(index_index)
