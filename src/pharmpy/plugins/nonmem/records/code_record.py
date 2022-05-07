@@ -451,41 +451,46 @@ class CodeRecord(Record):
         if new == old:
             return
         index_index = 0
-        child_index = 0
-        new_children = []
+        child_index = self._nodes_index[0][0] if self._nodes_index else 0
+        # We copy all nodes until the first existing statement node
+        new_children = self.root.children[0:child_index]
         new_index = []
         defined_symbols = set()  # Set of all defined symbols updated so far
         for op, s in diff(old, new):
-            if index_index < len(self._nodes_index):
-                prev_child_index = child_index
-                child_index = self._nodes_index[index_index][0]
-                new_children.extend(self.root.children[prev_child_index:child_index])
-            else:
-                assert op == 1
             if op == 1:
                 statement_nodes = self._statement_to_nodes(defined_symbols, child_index, s)
-                new_index.append((len(new_children), len(new_children) + len(statement_nodes)))
+                # We insert the generated nodes just before the next existing
+                # statement node
+                insert_pos = len(new_children)
+                new_index.append((insert_pos, insert_pos + len(statement_nodes)))
                 new_children.extend(statement_nodes)
                 defined_symbols.add(s.symbol)
-            elif op == -1:
-                child_index += self._nodes_index_len(index_index)
-                index_index += 1
             else:
-                assert op == 0
-                new_index.append((len(new_children), len(new_children) + self._nodes_index_len(index_index)))
-                new_children.extend(self.root.children[child_index:self._nodes_index[index_index][1]])
-                child_index += self._nodes_index_len(index_index)
+                assert index_index < len(self._nodes_index)
+                non_statement_index = self._nodes_index[index_index][1]
+                if op == 0:
+                    # We keep the nodes but insert them at an updated position
+                    insert_pos = len(new_children)
+                    insert_len = non_statement_index - child_index
+                    new_index.append((insert_pos, insert_pos + insert_len))
+                    new_children.extend(self.root.children[child_index:non_statement_index])
+                    defined_symbols.add(s.symbol)
                 index_index += 1
-                defined_symbols.add(s.symbol)
-        if child_index < len(self.root.children):  # Remaining non-statements
-            new_children.extend(self.root.children[child_index:])
+                if index_index < len(self._nodes_index):
+                    # If there are more statement nodes we move the child_index
+                    # cursor just before the next existing statement node,
+                    # copying all non-statement nodes along the way.
+                    child_index = self._nodes_index[index_index][0]
+                    new_children.extend(self.root.children[non_statement_index:child_index])
+                else:
+                    # Otherwise we set child_index to be the position
+                    # just before all tailing non statement nodes.
+                    child_index = non_statement_index
+        # We copy any non-statement nodes that are remaining
+        new_children.extend(self.root.children[child_index:])
         self.root.children = new_children
         self._nodes_index = new_index
         self._statements = new.copy()
-
-    def _nodes_index_len(self, index):
-        left, right = self._nodes_index[index]
-        return right - left
 
     def _statement_to_nodes(self, defined_symbols, node_index, s):
         statement_str = nmtran_assignment_string(s, defined_symbols, self.rvs, self.trans)
