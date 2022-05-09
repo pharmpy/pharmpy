@@ -98,6 +98,10 @@ def process_level_lock(fd: int, shared: bool = False, blocking: bool = True):
         _process_level_unlock(fd)
 
 
+class AcquiringTheadLevelLockWouldBlockError(Exception):
+    """Raised when acquiring a thread-level lock would block and blocking is False"""
+
+
 class ShareableThreadLock:
     def __init__(self):
         self._condition = Condition(Lock())
@@ -113,18 +117,20 @@ class ShareableThreadLock:
 
     @contextmanager
     def _lock_sh(self, blocking: bool = True):
-        self._condition.acquire(blocking=blocking)
-        try:
-            self._shared_count += 1
-        finally:
-            self._condition.release()
+        if self._condition.acquire(blocking=blocking):
+            try:
+                self._shared_count += 1
+            finally:
+                self._condition.release()
+        else:
+            raise AcquiringTheadLevelLockWouldBlockError()
 
         try:
             yield
 
         finally:
 
-            self._condition.acquire()
+            self._condition.acquire(blocking=True)
             try:
                 self._shared_count -= 1
                 if self._shared_count == 0:
@@ -146,15 +152,17 @@ class ShareableThreadLock:
 
     @contextmanager
     def _lock_ex_nb(self):
-        self._condition.acquire(blocking=False)
-        try:
-            if self._shared_count != 0:
-                raise Exception('Could not acquire lock')
+        if self._condition.acquire(blocking=False):
+            try:
+                if self._shared_count != 0:
+                    raise AcquiringTheadLevelLockWouldBlockError()
 
-            yield
+                yield
 
-        finally:
-            self._condition.release()
+            finally:
+                self._condition.release()
+        else:
+            raise AcquiringTheadLevelLockWouldBlockError()
 
 
 class ThreadSafeKeyedRefPool:
