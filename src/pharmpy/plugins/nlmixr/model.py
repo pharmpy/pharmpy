@@ -184,15 +184,14 @@ class Model(pharmpy.model.Model):
         self.update_source(path=self._path)
         return self._src
 
-    def read_modelfit_results(self):
+    def read_modelfit_results(self, path: Path):
         try:
-            rdata_path = self.database.retrieve_file(self.name, self.name + '.RDATA')
+            rdata_path = path / (self.name + '.RDATA')
+            read_modelfit_results(self, rdata_path)
+            return self.modelfit_results
         except FileNotFoundError:
             self.modelfit_results = None
             return None
-        if rdata_path is not None:
-            read_modelfit_results(self, rdata_path)
-            return self.modelfit_results
 
 
 def read_modelfit_results(model, rdata_path):

@@ -375,7 +375,7 @@ class Model:
     def description(self, value):
         self._description = value
 
-    def read_modelfit_results(self):
+    def read_modelfit_results(self, path: Path):
         """Read in modelfit results"""
         raise NotImplementedError("Read modelfit results not implemented for generic models")
 

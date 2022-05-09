@@ -114,11 +114,14 @@ class Model(pharmpy.model.Model):
         self._initial_individual_estimates_updated = False
         self._updated_etas_file = None
         self._dataset_updated = False
-        self._modelfit_results = None
         self._parent_model = None
         self.dependent_variable = S('Y')
         self.observation_transformation = self.dependent_variable
         self._old_observation_transformation = self.dependent_variable
+        if path is None:
+            self._modelfit_results = None
+        else:
+            self.read_modelfit_results(path.parent)
 
     @property
     def name(self):
@@ -179,8 +182,6 @@ class Model(pharmpy.model.Model):
 
     @property
     def modelfit_results(self):
-        if self._modelfit_results is None:
-            self.read_modelfit_results()
         return self._modelfit_results
 
     @modelfit_results.setter
@@ -779,10 +780,8 @@ class Model(pharmpy.model.Model):
         return str(self.control_stream)
 
     def _read_dataset_path(self):
-        datas = self.control_stream.get_records('DATA')
-        if datas:
-            record = datas[0]
-        else:
+        record = next(iter(self.control_stream.get_records('DATA')), None)
+        if record is None:
             return None
         path = Path(record.filename)
         if not path.is_absolute():
@@ -1108,15 +1107,14 @@ class Model(pharmpy.model.Model):
             d = {S(key): S(val) for key, val in d.items()}
         return d
 
-    def read_modelfit_results(self):
+    def read_modelfit_results(self, path: Path):
         try:
-            ext_path = self.database.retrieve_file(self.name, self.name + '.ext')
+            ext_path = path / (self.name + '.ext')
+            self._modelfit_results = NONMEMChainedModelfitResults(ext_path, model=self)
+            return self._modelfit_results
         except FileNotFoundError:
             self._modelfit_results = None
             return None
-        if ext_path is not None:
-            self._modelfit_results = NONMEMChainedModelfitResults(ext_path, model=self)
-            return self._modelfit_results
 
 
 def parse_estimation_steps(model):
