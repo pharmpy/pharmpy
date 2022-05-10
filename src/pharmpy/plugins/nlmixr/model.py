@@ -189,7 +189,7 @@ class Model(pharmpy.model.Model):
             rdata_path = path / (self.name + '.RDATA')
             read_modelfit_results(self, rdata_path)
             return self.modelfit_results
-        except FileNotFoundError:
+        except (FileNotFoundError, OSError):
             self.modelfit_results = None
             return None
 

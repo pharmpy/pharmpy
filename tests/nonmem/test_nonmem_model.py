@@ -579,9 +579,8 @@ $ESTIMATION METHOD=1 INTER MAXEVALS=9990 PRINT=2 POSTHOC
 
 def test_missing_parameter_names_settings(pheno_path):
     with ConfigurationContext(conf, parameter_names=['comment']):
-        model = Model.create_model(pheno_path)
         with pytest.raises(ValueError):
-            model.statements
+            Model.create_model(pheno_path)
 
 
 def test_abbr_write(pheno_path):

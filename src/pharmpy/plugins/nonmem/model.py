@@ -1112,7 +1112,7 @@ class Model(pharmpy.model.Model):
             ext_path = path / (self.name + '.ext')
             self._modelfit_results = NONMEMChainedModelfitResults(ext_path, model=self)
             return self._modelfit_results
-        except FileNotFoundError:
+        except (FileNotFoundError, OSError):
             self._modelfit_results = None
             return None
 
