@@ -376,30 +376,30 @@ def lcsdiff(c, x, y, i, j):
         return
     elif i < 0:
         yield from lcsdiff(c, x, y, i, j - 1)
-        yield '+', y[j]
+        yield 1, y[j]
     elif j < 0:
         yield from lcsdiff(c, x, y, i - 1, j)
-        yield '-', x[i]
+        yield -1, x[i]
     elif x[i] == y[j]:
         yield from lcsdiff(c, x, y, i - 1, j - 1)
-        yield None, x[i]
+        yield 0, x[i]
     elif c[i][j - 1] >= c[i - 1][j]:
         yield from lcsdiff(c, x, y, i, j - 1)
-        yield '+', y[j]
+        yield 1, y[j]
     else:
         yield from lcsdiff(c, x, y, i - 1, j)
-        yield '-', x[i]
+        yield -1, x[i]
 
 
 def diff(old, new):
     """Get diff between a and b in order for all elements
 
     Optimizes by first handling equal elements from the head and tail
-    Each entry is a pair of operation (+, - or None) and the element
+    Each entry is a pair of operation (+1, -1 or 0) and the element
     """
     for i, (a, b) in enumerate(zip(old, new)):
         if a == b:
-            yield (None, b)
+            yield (0, b)
         else:
             break
     else:
@@ -414,7 +414,7 @@ def diff(old, new):
     saved = []
     for a, b in zip(reversed(rold), reversed(rnew)):
         if a == b:
-            saved.append((None, b))
+            saved.append((0, b))
         else:
             break
 
@@ -433,6 +433,7 @@ class CodeRecord(Record):
     def __init__(self, content, parser_class):
         self.is_updated = False
         self.rvs, self.trans = None, None
+        self._nodes_index = []
         super().__init__(content, parser_class)
 
     @property
@@ -449,64 +450,81 @@ class CodeRecord(Record):
             old = self.statements
         if new == old:
             return
-        old_index = 0
-        node_index = 0
-        kept = []
-        new_nodes = []
+        index_index = 0
+        child_index = self._nodes_index[0][0] if self._nodes_index else 0
+        # We copy all nodes until the first existing statement node
+        new_children = self.root.children[0:child_index]
+        new_index = []
         defined_symbols = set()  # Set of all defined symbols updated so far
         for op, s in diff(old, new):
-            while (
-                node_index < len(self.root.children)
-                and old_index < len(self.nodes)
-                and self.root.children[node_index] is not self.nodes[old_index][0]
-            ):
-                node = self.root.children[node_index]
-                kept.append(node)
-                node_index += 1
-            if op == '+':
-                statement_str = nmtran_assignment_string(s, defined_symbols, self.rvs, self.trans)
-                node_tree = CodeRecordParser(statement_str).root
-                statement_nodes = []
-                for node in node_tree.all('statement'):
-                    if node_index == 0:
-                        node.children.insert(0, AttrToken('LF', '\n'))
-                    if (
-                        not node.all('LF')
-                        and node_index != 0
-                        or len(self.root.children) > 0
-                        and self.root.children[0].rule != 'empty_line'
-                    ):
-                        node.children.append(AttrToken('LF', '\n'))
-                    statement_nodes.append(node)
-                new_nodes.append(tuple(statement_nodes))
-                kept.extend(statement_nodes)
+            if op == 1:
+                statement_nodes = self._statement_to_nodes(defined_symbols, child_index, s)
+                # We insert the generated nodes just before the next existing
+                # statement node
+                insert_pos = len(new_children)
+                new_index.append((insert_pos, insert_pos + len(statement_nodes)))
+                new_children.extend(statement_nodes)
                 defined_symbols.add(s.symbol)
-            elif op == '-':
-                node_index += len(self.nodes[old_index])
-                old_index += 1
             else:
-                kept.extend(self.nodes[old_index])
-                new_nodes.append(self.nodes[old_index])
-                node_index += len(self.nodes[old_index])
-                old_index += 1
-                defined_symbols.add(s.symbol)
-        if node_index < len(self.root.children):  # Remaining non-statements
-            kept.extend(self.root.children[node_index:])
-        self.root.children = kept
-        self.nodes = new_nodes
+                assert index_index < len(self._nodes_index)
+                non_statement_index = self._nodes_index[index_index][1]
+                if op == 0:
+                    # We keep the nodes but insert them at an updated position
+                    insert_pos = len(new_children)
+                    insert_len = non_statement_index - child_index
+                    new_index.append((insert_pos, insert_pos + insert_len))
+                    new_children.extend(self.root.children[child_index:non_statement_index])
+                    defined_symbols.add(s.symbol)
+                index_index += 1
+                if index_index < len(self._nodes_index):
+                    # If there are more statement nodes we move the child_index
+                    # cursor just before the next existing statement node,
+                    # copying all non-statement nodes along the way.
+                    child_index = self._nodes_index[index_index][0]
+                    new_children.extend(self.root.children[non_statement_index:child_index])
+                else:
+                    # Otherwise we set child_index to be the position
+                    # just before all tailing non statement nodes.
+                    child_index = non_statement_index
+        # We copy any non-statement nodes that are remaining
+        new_children.extend(self.root.children[child_index:])
+        self.root.children = new_children
+        self._nodes_index = new_index
         self._statements = new.copy()
+
+    def _statement_to_nodes(self, defined_symbols, node_index, s):
+        statement_str = nmtran_assignment_string(s, defined_symbols, self.rvs, self.trans)
+        node_tree = CodeRecordParser(statement_str).root
+        statement_nodes = []
+        for node in node_tree.all('statement'):
+            if node_index == 0:
+                node.children.insert(0, AttrToken('LF', '\n'))
+            if (
+                not node.all('LF')
+                and node_index != 0
+                or len(self.root.children) > 0
+                and self.root.children[0].rule != 'empty_line'
+            ):
+                node.children.append(AttrToken('LF', '\n'))
+            statement_nodes.append(node)
+        return statement_nodes
 
     def _assign_statements(self):
         s = []
-        self.nodes = []
-        for statement in self.root.all('statement'):
-            for node in statement.children:
+        new_index = []
+        for child_index, child in enumerate(self.root.children):
+            if child.rule != 'statement':
+                continue
+            for node in child.children:
+                # NOTE why does this iterate over the children?
+                # Right now it looks like it could add the same stament
+                # multiple times because there is no break on a match.
                 if node.rule == 'assignment':
                     name = str(node.variable).upper()
                     expr = ExpressionInterpreter().visit(node.expression)
                     ass = Assignment(name, expr)
                     s.append(ass)
-                    self.nodes.append((statement,))
+                    new_index.append((child_index, child_index + 1))
                 elif node.rule == 'logical_if':
                     logic_expr = ExpressionInterpreter().visit(node.logical_expression)
                     try:
@@ -525,7 +543,7 @@ class CodeRecord(Record):
                         pw = sympy.Piecewise((expr, logic_expr), (else_val, True))
                         ass = Assignment(name, pw)
                         s.append(ass)
-                    self.nodes.append((statement,))
+                    new_index.append((child_index, child_index + 1))
                 elif node.rule == 'block_if':
                     interpreter = ExpressionInterpreter()
                     blocks = []  # [(logic, [(symb1, expr1), ...]), ...]
@@ -582,8 +600,9 @@ class CodeRecord(Record):
                         pw = sympy.Piecewise(*pairs)
                         ass = Assignment(symbol, pw)
                         s.append(ass)
-                    self.nodes.append((statement,))
+                    new_index.append((child_index, child_index + 1))
 
+        self._nodes_index = new_index
         statements = ModelStatements(s)
         return statements
 

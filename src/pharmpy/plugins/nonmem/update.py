@@ -116,18 +116,18 @@ def update_random_variable_records(model, rvs_diff, rec_dict, comment_dict):
 
     rvs_diff = list(rvs_diff)
 
-    rvs_removed = [RandomVariables(rvs).names for (op, (rvs, _)) in rvs_diff if op == '-']
+    rvs_removed = [RandomVariables(rvs).names for (op, (rvs, _)) in rvs_diff if op == -1]
     rvs_removed = [rv for sublist in rvs_removed for rv in sublist]
 
     for i, (op, (rvs, _)) in enumerate(rvs_diff):
-        if op == '+':
+        if op == 1:
             if len(rvs) == 1:
                 create_omega_single(model, rvs[0], eta_number, number_of_records, comment_dict)
             else:
                 create_omega_block(model, rvs, eta_number, number_of_records, comment_dict)
             eta_number += len(rvs)
             number_of_records += 1
-        elif op == '-':
+        elif op == -1:
             rvs_rec = list({rec_dict[rv.name] for rv in rvs})
             recs_to_remove = [rec for rec in rvs_rec if rec not in removed]
             if recs_to_remove:
@@ -978,7 +978,7 @@ def update_estimation(model):
 
     prev = (None, None)
     for op, est in delta:
-        if op == '+':
+        if op == 1:
             est_code = '$ESTIMATION'
             protected_attributes = []
             if est.method == 'FO':
@@ -1005,7 +1005,7 @@ def update_estimation(model):
                 op_prev, est_prev = prev
                 if (
                     est.method.startswith('FO')
-                    and op_prev == '-'
+                    and op_prev == -1
                     and est.evaluation
                     and not est_prev.evaluation
                     and est_prev.maximum_evaluations == est.maximum_evaluations
@@ -1043,7 +1043,7 @@ def update_estimation(model):
             est_code += '\n'
             newrec = create_record(est_code)
             new_records.append(newrec)
-        elif op == '-':
+        elif op == -1:
             i += 1
         else:
             new_records.append(old_records[i])
