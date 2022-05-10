@@ -104,7 +104,6 @@ def start(model, groups, p_value, skip):
     cutoff = float(chi2.isf(q=p_value, df=1))
     if skip is None:
         skip = []
-    current_iteration = 1
     for current_iteration in range(1, 4):
         wf = create_iteration_workflow(model, groups, cutoff, skip, current_iteration)
         next_res = call_workflow(wf, f'results{current_iteration}')
@@ -112,7 +111,7 @@ def start(model, groups, p_value, skip):
             res = next_res
         else:
             res.models = pd.concat([res.models, next_res.models])
-            res.selected_model = next_res.selected_model
+            res.best_model = next_res.best_model
             res.selected_model_name = next_res.selected_model_name
         name = res.selected_model_name
         if name.startswith('base'):
@@ -121,6 +120,7 @@ def start(model, groups, p_value, skip):
             skip.append('time_varying')
         else:
             skip.append(name)
+        model = res.best_model
     return res
 
 
