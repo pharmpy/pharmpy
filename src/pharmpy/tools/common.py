@@ -45,10 +45,10 @@ def summarize_tool(
             ranks = ranking_by_name.index(model.name) + 1
         else:
             ranks = np.nan
-        rows.append([parent_model, diff, desc, ranks])
+        rows.append([desc, diff, ranks, parent_model])
 
     # FIXME: in ranks, if any row has NaN the rank converts to float
-    colnames = ['parent_model', f'd{rankfunc_name}', 'description', 'rank']
+    colnames = ['description', f'd{rankfunc_name}', 'rank', 'parent_model']
     df = pd.DataFrame(rows, index=index, columns=colnames)
 
     return df
