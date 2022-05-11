@@ -168,7 +168,7 @@ from .results import (
     summarize_modelfit_results,
     write_results,
 )
-from .summarize_individuals import summarize_individuals
+from .summarize_individuals import summarize_individuals, summarize_individuals_count_table
 from .units import get_unit_of
 
 # Import tool wrappers
@@ -323,6 +323,7 @@ __all__ = [
     'split_joint_distribution',
     'summarize_modelfit_results',
     'summarize_individuals',
+    'summarize_individuals_count_table',
     'transform_etas_boxcox',
     'transform_etas_john_draper',
     'transform_etas_tdist',

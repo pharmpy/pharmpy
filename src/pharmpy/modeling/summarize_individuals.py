@@ -146,3 +146,84 @@ def groupedByIDAddColumnsOneModel(modelsDict: Dict[str, Model], model: Model) ->
         index=index,
     )
     return df
+
+
+def summarize_individuals_count_table(models=None, df=None):
+    """Create a count table for individual data
+
+    Content of the various columns:
+
+    +-------------------------+---------------------------------------------------------------------------------+
+    | Column                  | Description                                                                     |
+    +=========================+=================================================================================+
+    | ``inf_selection``       | Number of subjects influential on model selection.                              |
+    |                         | dOFVi + 3.84 - (OFV_parent - OFV)                                               |
+    +-------------------------+---------------------------------------------------------------------------------+
+    | ``inf_params``          | Number of subjects influential on parameters. predicted_dofv > 3.84             |
+    +-------------------------+---------------------------------------------------------------------------------+
+    | ``out_obs``             | Number of subjects having at least one outlying observation                     |
+    +-------------------------+---------------------------------------------------------------------------------+
+    | ``out_ind``             | Number of outlying subjects. predicted_residual > 3.0                           |
+    +-------------------------+---------------------------------------------------------------------------------+
+    | ``inf_outlier``         | Number of subjects both influential by any criteria and outlier by any criteria |
+    +-------------------------+---------------------------------------------------------------------------------+
+
+    Parameters
+    ----------
+    models : list of models
+        List of models to summarize.
+    df : pd.DataFrame
+        Output from a previous call to summarize_individuals.
+
+    Returns
+    -------
+    pd.DataFrame
+        Table with one row per model.
+
+    See also
+    --------
+    summarize_individuals : Get raw individual data
+
+    """  # noqa: E501
+    if models:
+        df = summarize_individuals(models)
+
+    is_out_obs = df['outlier_count'] > 0.0
+    is_out_ind = df['predicted_residual'] > 3.0
+    is_inf_params = df['predicted_dofv'] > 3.84
+
+    out_obs = is_out_obs.groupby(level='model', sort=False).sum().astype('int32')
+    out_ind = is_out_ind.groupby(level='model', sort=False).sum().astype('int32')
+    inf_params = is_inf_params.groupby(level='model', sort=False).sum().astype('int32')
+
+    ninds = len(df.index.unique(level='ID'))
+    parents = df['parent_model'].iloc[::ninds]
+    parent_ofvs = df.loc[parents]['ofv'].reset_index(drop=True)
+    parent_ofvs.index = df.index
+    dofvi = parent_ofvs - df['ofv']
+
+    for name in df.index.unique(level='model'):
+        if name == df.loc[name]['parent_model'].iloc[0]:
+            start_name = name
+            break
+    # FIXME: Doesn't have to have a start model
+
+    ofv_sums = df['ofv'].groupby('model').sum()
+    parent_sums = parent_ofvs.groupby('model').sum()
+    full_ofv_diff = 3.84 + ofv_sums - parent_sums
+    full_ofv_diff.loc[start_name] = 0
+    is_inf_selection = (dofvi + full_ofv_diff) > 0.0
+    inf_selection = is_inf_selection.groupby(level='model', sort=False).sum()
+
+    is_inf_outlier = (is_out_obs | is_out_ind) & (is_inf_params | is_inf_selection)
+    inf_outlier = is_inf_outlier.groupby(level='model', sort=False).sum().astype('int32')
+    res = pd.DataFrame(
+        {
+            'inf_selection': inf_selection,
+            'inf_params': inf_params,
+            'out_obs': out_obs,
+            'out_ind': out_ind,
+            'inf_outlier': inf_outlier,
+        }
+    )
+    return res

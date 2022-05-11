@@ -1,3 +1,11 @@
+next version
+------------
+
+New features
+============
+
+* Add modeling.summarize_individuals_count_table
+
 0.69.0 (2022-04-29)
 -------------------
 
