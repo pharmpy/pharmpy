@@ -215,10 +215,11 @@ def summarize_individuals_count_table(models=None, df=None):
     full_ofv_diff = 3.84 + ofv_sums - parent_sums
     full_ofv_diff.loc[start_name] = 0
     is_inf_selection = (dofvi + full_ofv_diff) > 0.0
-    inf_selection = is_inf_selection.groupby(level='model', sort=False).sum()
+    inf_selection = is_inf_selection.groupby(level='model', sort=False).sum().astype('int32')
 
     is_inf_outlier = (is_out_obs | is_out_ind) & (is_inf_params | is_inf_selection)
     inf_outlier = is_inf_outlier.groupby(level='model', sort=False).sum().astype('int32')
+    parents.index = inf_selection.index
     res = pd.DataFrame(
         {
             'parent_model': parents,
