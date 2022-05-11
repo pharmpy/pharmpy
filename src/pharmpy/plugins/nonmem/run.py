@@ -90,8 +90,10 @@ def execute_model(model):
         txn.store_metadata(metadata)
         txn.store_modelfit_results()
 
-    # Read in results for the server side
-    model.read_modelfit_results()
+        # Read in results for the server side
+        # FIXME: this breaks through abstraction
+        model.read_modelfit_results(database.path / model.name)
+
     # FIXME: the database path is changed in write
     model.database = database
 

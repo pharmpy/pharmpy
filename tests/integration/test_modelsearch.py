@@ -141,7 +141,7 @@ def test_exhaustive_stepwise_start_model_not_fitted(tmp_path, start_model):
         assert len(res.models) == 4
         rundir = tmp_path / 'modelsearch_dir1'
         assert rundir.is_dir()
-        assert _model_count(rundir) == 5
+        assert _model_count(rundir) == 4
 
 
 def test_exhaustive_stepwise_peripheral_upper_limit(tmp_path, start_model):

@@ -76,7 +76,8 @@ def set_iiv_on_ruv(model, list_of_eps=None, same_eta=True, eta_names=None):
     model.parameters = pset
     model.statements = sset
 
-    model.modelfit_results = None
+    # FIXME This should probably not be commented out
+    # model.modelfit_results = None
 
     return model
 

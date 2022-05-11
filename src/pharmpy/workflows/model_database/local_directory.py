@@ -82,7 +82,7 @@ class LocalDirectoryDatabase(NonTransactionalModelDatabase):
         except FileNotFoundError:
             raise KeyError('Model cannot be found in database')
         model.database = self
-        model.read_modelfit_results()
+        model.read_modelfit_results(self.path)
         return model
 
     def retrieve_modelfit_results(self, name):
@@ -271,9 +271,10 @@ class LocalModelDirectoryDatabaseSnapshot(ModelSnapshot):
         from pharmpy.model import Model
 
         errors = []
+        root = self.db.path / self.name
         for extension in extensions:
             filename = self.name + extension
-            path = self.db.path / self.name / filename
+            path = root / filename
             try:
                 # NOTE this will guess the model type
                 model = Model.create_model(path)
@@ -285,7 +286,7 @@ class LocalModelDirectoryDatabaseSnapshot(ModelSnapshot):
             raise FileNotFoundError(errors)
 
         model.database = self.db
-        model.read_modelfit_results()
+        model.read_modelfit_results(root)
         return model
 
     def retrieve_modelfit_results(self):

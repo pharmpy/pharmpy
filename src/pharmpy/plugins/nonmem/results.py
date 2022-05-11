@@ -369,10 +369,7 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
                 noheader = table_rec.has_option("NOHEADER")
                 notitle = table_rec.has_option("NOTITLE") or noheader
                 nolabel = table_rec.has_option("NOLABEL") or noheader
-                path = table_rec.path
-                if not path.is_absolute():
-                    model_path = self.model.database.retrieve_file(self.model.name, path)
-                    path = model_path.parent / path  # Relative model source file.
+                path = self._path.parent / table_rec.path
                 table_file = NONMEMTableFile(path, notitle=notitle, nolabel=nolabel)
                 table = table_file.tables[0]
                 df[columns_in_table] = table.data_frame[columns_in_table]
