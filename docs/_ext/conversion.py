@@ -1,6 +1,6 @@
-from inspect import getdoc
 import re
-
+from inspect import getdoc
+from typing import List
 
 def create_r_doc(func):
     doc = getdoc(func)
@@ -73,57 +73,75 @@ def create_r_returns(doc_list):
 
     return doc_str
 
+pattern_start = re.compile(r'>>> |^\.\.\. ')
+pattern_methods = re.compile(r'([A-Za-z_]\d*)\.([A-Za-z_]\d*)(?=(?:[^"]|"[^"]*")*$)(?=(?:[^\']|\'[^\']*\')*$)')
+pattern_list_idx = re.compile(r'\w\[(\d+)]')
+pattern_list = re.compile(r'\[([\'\"\w(),\s]+)]')
+pattern_dict = re.compile(r'{(([\'\"]*[\w\d()]+[\'\"]*: [\'\"]*[\w\d]+\'*,*\s*)+)}')
+pattern_doctest = re.compile(r'\s+# doctest:.*')
+
+def line_transpile_py_to_r(line: str) -> str:
+    line = py_to_r_str(line, example=True)
+    line = re.sub(' = ', ' <- ', line)
+
+    # Substitute any . to $, e.g. model.parameters -> model$parameters
+    line = re.sub(pattern_methods, r'\1$\2', line)
+
+    # Substitute """ or ''' to " for multiline strings
+    line = re.sub(r'"""', r'"', line)
+    line = re.sub(r"'''", r'"', line)
+
+    # Check if line has list subscript
+    if re.search(r'\w\[', line):
+        idx = re.search(pattern_list_idx, line)
+        if idx:
+            # Increase idx by 1, e.g. list[0] -> list[1]
+            line = re.sub(idx.group(1), f'{int(idx.group(1)) + 1}', line)
+    else:
+        # Substitute any [] to c(), e.g. ['THETA(1)'] -> c('THETA(1)')
+        line = re.sub(pattern_list, r'c(\1)', line)
+
+    # Check if line contains python dict
+    dict_py = re.search(pattern_dict, line)
+    if dict_py:
+        # Substitute {} to list(), e.g. {'EONLY': 1} -> list('EONLY'=1)
+        dict_r = f'list({dict_py.group(1).replace(": ", "=", )})'
+        line = line.replace('{' + f'{dict_py.group(1)}' + '}', dict_r)
+
+    # Replace len() with length()
+    line = line.replace(r'len(', 'length(')
+
+    # Remove doctest comments
+    line = re.sub(pattern_doctest, '', line)
+    return line
+
+def is_import_line(line: str):
+    return line.startswith('import ') or ' import ' in line
+
+def transpile_py_to_r(lines: List[str]):
+    # must_load_library = any(map(is_import_line, lines))
+    filtered_lines = [line for line in lines if not(is_import_line(line))]
+
+    transpiled_lines = map(
+        lambda line: line_transpile_py_to_r(re.sub(pattern_start, '', line)),
+        filtered_lines,
+    )
+
+    return transpiled_lines
+    # return ['library(pharmr)', *transpiled_lines] if must_load_library else list(transpiled_lines)
 
 def create_r_example(doc_list):
-    pattern_start = re.compile(r'>>> |^\.\.\. ')
-    pattern_methods = re.compile(r'([A-Za-z]\d*)\.([A-Za-z]\d*)')
-    pattern_list_idx = re.compile(r'\w\[(\d+)]')
-    pattern_list = re.compile(r'\[([\'\"\w(),\s]+)]')
-    pattern_dict = re.compile(r'{(([\'\"]*[\w\d()]+[\'\"]*: [\'\"]*[\w\d]+\'*,*\s*)+)}')
-    pattern_doctest = re.compile(r'\s+# doctest:.*')
-
+    # Check for rows that starts with ... or >>>
     doc_code = [row for row in doc_list if row.startswith('>>>') or re.match(r'^\.\.\.\s+[$\w\d]', row)]
-    doc_code = [row for row in doc_code if ' import ' not in row]
 
-    doc_code_r = ''
-    for row in doc_code:
-        # Check for rows that starts with ... or >>>
-        row_r = re.sub(pattern_start, '', row)
-        row_r = py_to_r_str(row_r, example=True)
-        row_r = re.sub(' = ', ' <- ', row_r)
+    doc_code_r = map(
+        lambda line: line  + '\n',
+        transpile_py_to_r([
+            re.sub(pattern_start, '', line) for line in doc_code
+        ])
+    )
 
-        # Substitute any . to $, e.g. model.parameters -> model$parameters
-        row_r = re.sub(pattern_methods, r'\1$\2', row_r)
-
-        # Substitute """ or ''' to " for multiline strings
-        row_r = re.sub(r'"""', r'"', row_r)
-        row_r = re.sub(r"'''", r'"', row_r)
-
-        # Check if row has list subscript
-        if re.search(r'\w\[', row_r):
-            idx = re.search(pattern_list_idx, row_r)
-            if idx:
-                # Increase idx by 1, e.g. list[0] -> list[1]
-                row_r = re.sub(idx.group(1), f'{int(idx.group(1)) + 1}', row_r)
-        else:
-            # Substitute any [] to c(), e.g. ['THETA(1)'] -> c('THETA(1)')
-            row_r = re.sub(pattern_list, r'c(\1)', row_r)
-
-        # Check if row contains python dict
-        dict_py = re.search(pattern_dict, row_r)
-        if dict_py:
-            # Substitute {} to list(), e.g. {'EONLY': 1} -> list('EONLY'=1)
-            dict_r = f'list({dict_py.group(1).replace(": ", "=", )})'
-            row_r = row_r.replace('{' + f'{dict_py.group(1)}' + '}', dict_r)
-
-        # Replace len() with length()
-        row_r = row_r.replace(r'len(', 'length(')
-
-        # Remove doctest comments
-        row_r = re.sub(pattern_doctest, '', row_r)
-        doc_code_r += row_r + '\n'
-
-    return '@examples\n\\dontrun{\n' + doc_code_r + '}'
+    return '@examples\n\\dontrun{\n' + ''.join(doc_code_r) + '}'
 
 
 def split_doc_to_subtypes(doc_str):

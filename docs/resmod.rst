@@ -13,7 +13,7 @@ Resmod models
 
 The `models` table contains a summary of all resmod models
 
-.. jupyter-execute::
+.. pharmpy-execute::
     :hide-code:
 
     import pathlib

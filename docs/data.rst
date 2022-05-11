@@ -13,14 +13,14 @@ Retrieving the dataset from a model
 
 The dataset connected to a model can be retrieved from the `dataset` attribute. 
 
-.. jupyter-execute::
+.. pharmpy-execute::
    :hide-output:
    :hide-code:
 
    from pathlib import Path
    path = Path('tests/testdata/nonmem/')
 
-.. jupyter-execute::
+.. pharmpy-execute::
 
    from pharmpy.modeling import read_model
 
@@ -32,14 +32,14 @@ This is the dataset after applying any model specific filtering and handling of 
 
 The raw dataset can also be accessed
 
-.. jupyter-execute::
+.. pharmpy-execute::
 
    raw = model.read_raw_dataset()
    raw
 
 Note that all values here are strings
 
-.. jupyter-execute::
+.. pharmpy-execute::
 
    raw.dtypes
 
@@ -49,12 +49,13 @@ Update the dataset of a model
 
 A new or updated dataset can be set to a model
 
-.. jupyter-execute::
+.. pharmpy-execute::
+   :hide-output:
 
    import numpy as np
 
    df['DV'] = np.log(df['DV'], where=(df['DV'] != 0))
-   model.dataset = df 
+   model.dataset = df
 
 ~~~~~~~~
 Subjects
@@ -62,7 +63,7 @@ Subjects
 
 An array of all subject IDs can be retrieved.
 
-.. jupyter-execute::
+.. pharmpy-execute::
 
     from pharmpy.modeling import get_ids
     model = read_model(path / "pheno_real.mod")
@@ -70,7 +71,7 @@ An array of all subject IDs can be retrieved.
 
 The number of subjects in the dataset could optionally be retrieved directly.
 
-.. jupyter-execute::
+.. pharmpy-execute::
 
     from pharmpy.modeling import get_number_of_individuals
     get_number_of_individuals(model)
@@ -82,14 +83,14 @@ Observations
 
 The observations of the dataset indexed on subject ID and the independent variable can be extracted.
 
-.. jupyter-execute::
+.. pharmpy-execute::
 
     from pharmpy.modeling import get_observations
     get_observations(model)
 
 The total number of observations can optionally be retrieved directly.
 
-.. jupyter-execute::
+.. pharmpy-execute::
 
     from pharmpy.modeling import get_number_of_observations
     get_number_of_observations(model)
@@ -103,7 +104,7 @@ Extract dosing information
 
 The doses of the dataset indexed on subject ID and the independent variable can be extracted.
 
-.. jupyter-execute::
+.. pharmpy-execute::
 
     from pharmpy.modeling import get_doses
     doses = get_doses(model)
@@ -111,17 +112,17 @@ The doses of the dataset indexed on subject ID and the independent variable can 
 
 All unique doses can be listed
 
-.. jupyter-execute::
+.. pharmpy-execute::
 
     doses.unique()
 
 as well as the largest and the smallest dose
 
-.. jupyter-execute::
+.. pharmpy-execute::
 
     doses.min()
 
-.. jupyter-execute::
+.. pharmpy-execute::
 
     doses.max()
 
@@ -130,7 +131,7 @@ Dose grouping
 
 It is possible to create a DOSEID that groups each dose period starting from 1.
 
-.. jupyter-execute::
+.. pharmpy-execute::
 
     from pharmpy.modeling import get_doseid
     ser = get_doseid(model)
@@ -141,7 +142,7 @@ Time after dose
 
 Add a column for time after dose (TAD)
 
-.. jupyter-execute::
+.. pharmpy-execute::
 
     from pharmpy.modeling import add_time_after_dose
     add_time_after_dose(model)
@@ -152,7 +153,7 @@ Concentration parameters
 
 Extract pharmacokinetic concentration parameters from the dataset
 
-.. jupyter-execute::
+.. pharmpy-execute::
 
     from pharmpy.modeling import get_concentration_parameters_from_data
     get_concentration_parameters_from_data
@@ -164,20 +165,21 @@ DataInfo
 
 Every model has a `DataInfo` object that describes the dataset.
 
-.. jupyter-execute::
+.. pharmpy-execute::
 
     di = model.datainfo
     di
 
 The path to the dataset file if one exists.
 
-.. jupyter-execute::
+.. pharmpy-execute::
+   :hide-output:
 
     di.path
 
 Separator character for the dataset file.
 
-.. jupyter-execute::
+.. pharmpy-execute::
 
     di.separator
 
@@ -186,7 +188,7 @@ ColumnInfo
 
 Each column of the dataset can here be given some additional information.
 
-.. jupyter-execute::
+.. pharmpy-execute::
 
     model.datainfo['AMT']
 
@@ -238,7 +240,7 @@ datainfo file
 
 If a dataset file has an accompanying file with the same name and the extension ``.datainfo`` this will be read in when handling the dataset in Pharmpy. This file is a representation (a serialization) of a ``DataInfo`` object and its content can be created manually, with an external tool or by Pharmpy. Here is an example of the content:
 
-.. jupyter-execute::
+.. pharmpy-execute::
 
     di.to_json()
 

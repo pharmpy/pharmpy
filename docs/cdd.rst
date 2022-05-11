@@ -14,7 +14,7 @@ Case results
 The ``case_results`` table contains the different results and metrics for each case.
 
 
-.. jupyter-execute::
+.. pharmpy-execute::
     :hide-code:
 
     from pharmpy.results import read_results
@@ -88,8 +88,7 @@ Case column
 
 The Name of the case column in the dataset can be found in ``case_column``.
 
-.. jupyter-execute::
-    :hide-code:
+.. pharmpy-execute::
 
     res.case_column
 

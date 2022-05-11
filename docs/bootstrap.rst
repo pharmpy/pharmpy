@@ -27,7 +27,7 @@ Column              Description
 ==================  =============================================
 
 
-.. jupyter-execute::
+.. pharmpy-execute::
     :hide-code:
 
     from pharmpy.results import read_results
@@ -41,14 +41,14 @@ All percentiles are calculated using linear interpolation if it falls between tw
 and :math:`x_1` the percentile would be :math:`x_0 + (x_1 - x_0) f` where :math:`f` is :math:`[np]`, the fractional part of the number of observations
 :math:`n` multiplied by the percentile :math:`p`.
 
-.. jupyter-execute::
+.. pharmpy-execute::
     :hide-code:
 
     res.parameter_distribution
 
 The ``parameter_estimates_histogram`` give histograms for the distributions of the parameter estimates:
 
-.. jupyter-execute::
+.. pharmpy-execute::
     :hide-code:
 
     res.parameter_estimates_histogram
@@ -56,7 +56,7 @@ The ``parameter_estimates_histogram`` give histograms for the distributions of t
 
 The raw parameter data is available in ``parameter_estimates``
 
-.. jupyter-execute::
+.. pharmpy-execute::
     :hide-code:
 
     res.parameter_estimates
@@ -80,21 +80,21 @@ Row                          Description
 
 Note that some of these rows will not be created if the bootstrap was run without the `dofv` option.
 
-.. jupyter-execute::
+.. pharmpy-execute::
     :hide-code:
 
     res.ofv_statistics
 
 The ``ofv_distribution`` gives a numeric overview of the OFVs similar to the ``parameter_distriution`` described above. 
 
-.. jupyter-execute::
+.. pharmpy-execute::
     :hide-code:
 
     res.ofv_distribution
 
 A histogram of the bootstrap ofv from ``ofv_plot``:
 
-.. jupyter-execute::
+.. pharmpy-execute::
     :hide-code:
 
     res.ofv_plot
@@ -102,7 +102,7 @@ A histogram of the bootstrap ofv from ``ofv_plot``:
 The ``dofv_quantiles_plot`` show distribution of the delta-OFV metrics over the distribution quantiles. They are compared with
 a chi-square distribution.
 
-.. jupyter-execute::
+.. pharmpy-execute::
     :hide-code:
 
     res.dofv_quantiles_plot
@@ -111,7 +111,7 @@ a chi-square distribution.
 
 The raw ofv data is available in ``ofvs``.
 
-.. jupyter-execute::
+.. pharmpy-execute::
     :hide-code:
 
     res.ofvs
@@ -122,7 +122,7 @@ Covariance matrix
 
 A covariance matrix for the parameters is available in ``covariance_matrix``:
 
-.. jupyter-execute::
+.. pharmpy-execute::
     :hide-code:
 
     res.covariance_matrix
@@ -132,7 +132,7 @@ Included individuals
 
 The ``included_individuals`` is a list of lists with all individuals that were included in each bootstrap run.
 
-.. jupyter-execute::
+.. pharmpy-execute::
     :hide-code:
 
     import pandas as pd

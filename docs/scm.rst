@@ -13,7 +13,7 @@ Steps
 
 The ``steps`` table contains information on the models run in each step.
 
-.. jupyter-execute::
+.. pharmpy-execute::
     :hide-code:
 
     import pathlib
@@ -58,7 +58,7 @@ OFV Summary
 The ``ofv_summary`` gives slightly different view of the runs. The included relations in the final model are
 listed under the direction "Final included".
 
-.. jupyter-execute::
+.. pharmpy-execute::
     :hide-code:
 
     res.ofv_summary
@@ -70,7 +70,7 @@ Candidate Summary
 The ``candidate_summary`` table give an overview of each candidate relationship. When and how often was it included, how often did it give
 errors, etc.
 
-.. jupyter-execute::
+.. pharmpy-execute::
     :hide-code:
 
     res.candidate_summary

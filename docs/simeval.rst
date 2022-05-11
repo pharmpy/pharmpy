@@ -13,7 +13,7 @@ Sampled Individual OFVs
 
 The ``sampled_iofv`` table contains the evaluated individual OFVs for each sampled dataset.
 
-.. jupyter-execute::
+.. pharmpy-execute::
     :hide-code:
 
     import pathlib
@@ -35,7 +35,7 @@ residual outlier flag. The residual for each sample and ID is the distance from 
 
 An individual is defined as an outlier if the corresponding residual is 3 or higher.
 
-.. jupyter-execute::
+.. pharmpy-execute::
     :hide-code:
 
     res.iofv_summary
@@ -45,7 +45,7 @@ Individual prediction plot
 
 The ``individual_predictions_plot`` show PRED, IPRED and DV vs TIME (if available) for outlying individuals.
 
-.. jupyter-execute::
+.. pharmpy-execute::
     :hide-code:
 
     res.individual_predictions_plot
