@@ -62,9 +62,11 @@ def convert_model(model):
     code += '$INPUT ' + ' '.join(model.datainfo.names) + '\n'
     code += '$DATA file.csv IGNORE=@\n'
     if model.statements.ode_system is None:
-        code += '$PRED\nY=X'
+        code += '$PRED\nY=X\n'
     else:
-        code += '$PK\nY=X'
+        code += '$SUBROUTINES ADVAN1 TRANS2\n'
+        code += '$PK\nY=X\n'
+        code += '$ERROR\nA=B'
     nm_model = pharmpy.model.Model.create_model(StringIO(code))
     nm_model.random_variables = model.random_variables
     nm_model._parameters = model.parameters
