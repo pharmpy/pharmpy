@@ -187,6 +187,8 @@ def summarize_individuals_count_table(models=None, df=None):
     """  # noqa: E501
     if models:
         df = summarize_individuals(models)
+    if not df:
+        return None
 
     is_out_obs = df['outlier_count'] > 0.0
     is_out_ind = df['predicted_residual'] > 3.0
