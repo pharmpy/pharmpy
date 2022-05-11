@@ -133,6 +133,7 @@ from .data import (
     translate_nmtran_time,
     undrop_columns,
 )
+from .estimation import calculate_parameters_from_ucp, calculate_ucp_scale
 from .evaluation import (
     evaluate_epsilon_gradient,
     evaluate_eta_gradient,
@@ -209,9 +210,11 @@ __all__ = [
     'calculate_individual_shrinkage',
     'calculate_inf_from_corrse',
     'calculate_inf_from_cov',
+    'calculate_parameters_from_ucp',
     'calculate_pk_parameters_statistics',
     'calculate_se_from_cov',
     'calculate_se_from_inf',
+    'calculate_ucp_scale',
     'check_dataset',
     'check_high_correlations',
     'check_parameters_near_bounds',

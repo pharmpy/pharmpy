@@ -5,6 +5,8 @@ New features
 ============
 
 * Add modeling.summarize_individuals_count_table
+* Add modeling.calculate_ucp_scale
+* Add modeling.calculate_parameters_from_ucp
 
 0.69.0 (2022-04-29)
 -------------------

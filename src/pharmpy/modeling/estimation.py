@@ -1,6 +1,7 @@
-import pandas as pd
-import numpy as np
 import math
+
+import numpy as np
+import pandas as pd
 
 
 class UCPScale:
@@ -79,7 +80,6 @@ def _scale_matrix(A):
     return m_scale.T
 
 
-
 def calculate_parameters_from_ucp(model, scale, ucps):
     """Scale parameter values from ucp to normal scale
 
@@ -115,7 +115,7 @@ def calculate_parameters_from_ucp(model, scale, ucps):
     See also
     --------
     calculate_ucp_scale : Calculate the scale for conversion from ucps
-    """
+    """  # noqa: E501
     omega_symbolic = model.random_variables.etas.covariance_matrix
     omega = omega_symbolic.subs(dict(ucps))
     omega = np.array(omega).astype(np.float64)
