@@ -13,7 +13,7 @@ def create_workflow(
     cutoff=None,
     model=None,
 ):
-    """Run Modelsearch tool. For more details, see https://pharmpy.github.io/latest/modelsearch.html.
+    """Run Modelsearch tool. For more details, see :ref:`modelsearch`.
 
     Parameters
     ----------
