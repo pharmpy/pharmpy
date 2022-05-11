@@ -97,19 +97,19 @@ def start(model):
 
 def post_process_results(rankfunc, cutoff, *models):
     res_models = []
-    start_model = None
+    input_model = None
     for model in models:
         if not model.name.startswith('modelsearch_candidate'):
-            start_model = model
+            input_model = model
         else:
             res_models.append(model)
 
-    if not start_model:
-        raise ValueError('Error in workflow: No starting model')
+    if not input_model:
+        raise ValueError('Error in workflow: No input model')
 
-    summary_tool = summarize_tool(res_models, start_model, rankfunc, cutoff)
-    summary_models = summarize_modelfit_results([start_model] + res_models)
-    summary_individuals = summarize_individuals([start_model] + res_models)
+    summary_tool = summarize_tool(res_models, input_model, rankfunc, cutoff)
+    summary_models = summarize_modelfit_results([input_model] + res_models)
+    summary_individuals = summarize_individuals([input_model] + res_models)
     suminds_count = summarize_individuals_count_table(df=summary_individuals)
     suminds_count['description'] = summary_tool['description']
     suminds_count[f'd{rankfunc}'] = summary_tool[f'd{rankfunc}']
@@ -118,7 +118,7 @@ def post_process_results(rankfunc, cutoff, *models):
     try:
         best_model = [model for model in res_models if model.name == best_model_name][0]
     except IndexError:
-        best_model = start_model
+        best_model = input_model
 
     res = ModelSearchResults(
         summary_tool=summary_tool,
@@ -126,7 +126,7 @@ def post_process_results(rankfunc, cutoff, *models):
         summary_individuals=summary_individuals,
         summary_individuals_count=suminds_count,
         best_model=best_model,
-        start_model=start_model,
+        input_model=input_model,
         models=res_models,
     )
 
@@ -141,7 +141,7 @@ class ModelSearchResults(pharmpy.results.Results):
         summary_individuals=None,
         summary_individuals_count=None,
         best_model=None,
-        start_model=None,
+        input_model=None,
         models=None,
     ):
         self.summary_tool = summary_tool
@@ -149,5 +149,5 @@ class ModelSearchResults(pharmpy.results.Results):
         self.summary_individuals = summary_individuals
         self.summary_individuals_count = summary_individuals_count
         self.best_model = best_model
-        self.start_model = start_model
+        self.input_model = input_model
         self.models = models

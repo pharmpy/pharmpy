@@ -57,7 +57,7 @@ def create_workflow(
     return wf
 
 
-def create_algorithm_workflow(base_model, algorithm, iiv_strategy, rankfunc, cutoff):
+def create_algorithm_workflow(input_model, base_model, algorithm, iiv_strategy, rankfunc, cutoff):
     wf = Workflow()
 
     start_task = Task(f'start_{algorithm}', _start_algorithm, base_model)
@@ -79,6 +79,7 @@ def create_algorithm_workflow(base_model, algorithm, iiv_strategy, rankfunc, cut
         post_process_results,
         rankfunc,
         cutoff,
+        input_model,
     )
 
     wf.add_task(task_result, predecessors=start_model_task + wf.output_tasks)
@@ -86,13 +87,13 @@ def create_algorithm_workflow(base_model, algorithm, iiv_strategy, rankfunc, cut
     return wf
 
 
-def start(model, algorithm, iiv_strategy, rankfunc, cutoff):
+def start(input_model, algorithm, iiv_strategy, rankfunc, cutoff):
     if iiv_strategy != 0:
-        model_iiv = copy_model(model, f'{model.name}_add_iiv')
+        model_iiv = copy_model(input_model, 'base_model')
         _add_iiv(iiv_strategy, model_iiv)
         base_model = model_iiv
     else:
-        base_model = model
+        base_model = input_model
 
     if algorithm == 'brute_force':
         list_of_algorithms = ['brute_force_no_of_etas', 'brute_force_block_structure']
@@ -100,13 +101,16 @@ def start(model, algorithm, iiv_strategy, rankfunc, cutoff):
         list_of_algorithms = [algorithm]
 
     for i, algorithm_cur in enumerate(list_of_algorithms):
-        wf = create_algorithm_workflow(base_model, algorithm_cur, iiv_strategy, rankfunc, cutoff)
+        wf = create_algorithm_workflow(
+            input_model, base_model, algorithm_cur, iiv_strategy, rankfunc, cutoff
+        )
         next_res = call_workflow(wf, f'results{algorithm}')
         if i == 0:
             res = next_res
         else:
             res.models = res.models + next_res.models
             res.best_model = next_res.best_model
+            res.input_model = input_model
             res.summary_tool = pd.concat([res.summary_tool, next_res.summary_tool])
             res.summary_models = pd.concat([res.summary_models, next_res.summary_models])
         base_model = res.best_model
@@ -130,8 +134,8 @@ def _add_iiv(iiv_strategy, model):
     return model
 
 
-def post_process_results(rankfunc, cutoff, *models):
-    start_model, res_models = models
+def post_process_results(rankfunc, cutoff, input_model, *models):
+    base_model, res_models = models
 
     if isinstance(res_models, tuple):
         res_models = list(res_models)
@@ -140,24 +144,27 @@ def post_process_results(rankfunc, cutoff, *models):
 
     summary_tool = summarize_tool(
         res_models,
-        start_model,
+        base_model,
         rankfunc,
         cutoff,
         bic_type='iiv',
     )
-    summary_models = summarize_modelfit_results([start_model] + res_models)
+    summary_models = summarize_modelfit_results([base_model] + res_models)
 
     best_model_name = summary_tool['rank'].idxmin()
     try:
         best_model = [model for model in res_models if model.name == best_model_name][0]
     except IndexError:
-        best_model = start_model
+        best_model = base_model
+
+    if base_model.name != input_model.name:
+        res_models.insert(0, base_model)
 
     res = IIVResults(
         summary_tool=summary_tool,
         summary_models=summary_models,
         best_model=best_model,
-        start_model=start_model,
+        input_model=input_model,
         models=res_models,
     )
 
@@ -166,10 +173,10 @@ def post_process_results(rankfunc, cutoff, *models):
 
 class IIVResults(pharmpy.results.Results):
     def __init__(
-        self, summary_tool=None, summary_models=None, best_model=None, start_model=None, models=None
+        self, summary_tool=None, summary_models=None, best_model=None, input_model=None, models=None
     ):
         self.summary_tool = summary_tool
         self.summary_models = summary_models
         self.best_model = best_model
-        self.start_model = start_model
+        self.input_model = input_model
         self.models = models
