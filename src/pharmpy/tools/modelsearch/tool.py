@@ -1,6 +1,10 @@
 import pharmpy.results
 import pharmpy.tools.modelsearch.algorithms as algorithms
-from pharmpy.modeling import summarize_individuals, summarize_individuals_count_table, summarize_modelfit_results
+from pharmpy.modeling import (
+    summarize_individuals,
+    summarize_individuals_count_table,
+    summarize_modelfit_results,
+)
 from pharmpy.tools.common import summarize_tool
 from pharmpy.workflows import Task, Workflow
 
