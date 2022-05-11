@@ -18,3 +18,10 @@ def test_import_modeling():
     assert 'algorithm' in params.keys()
     assert 'rankfunc' in params.keys()
     assert params['rankfunc'].default == 'bic'
+
+    from pharmpy.modeling import run_modelsearch
+
+    params = inspect.signature(run_modelsearch).parameters
+    assert 'search_space' in params.keys()
+    assert 'rankfunc' in params.keys()
+    assert params['rankfunc'].default == 'bic'

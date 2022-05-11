@@ -13,6 +13,36 @@ def create_workflow(
     cutoff=None,
     model=None,
 ):
+    """Run Modelsearch tool. For more details, see https://pharmpy.github.io/latest/modelsearch.html.
+
+    Parameters
+    ----------
+    search_space : str
+        Search space to test
+    algorithm : str
+        Algorithm to use (e.g. exhaustive)
+    iiv_strategy : int
+        If/how IIV should be added to candidate models. Default is 0 (no IIVs added)
+    rankfunc : str
+        Which ranking function should be used (OFV, AIC, BIC). Default is BIC
+    cutoff : float
+        Cutoff for which value of the ranking function that is considered significant. Default
+        is None (all models will be ranked)
+    model : Model
+        Pharmpy model
+
+    Returns
+    -------
+    ModelSearchResults
+        Modelsearch tool result object
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> run_modelsearch('ABSORPTION(ZO);PERIPHERALS(1)', 'exhaustive', model=model) # doctest: +SKIP
+
+    """
     check_input(model)
     algorithm_func = getattr(algorithms, algorithm)
 
