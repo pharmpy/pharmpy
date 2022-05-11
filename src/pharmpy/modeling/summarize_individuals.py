@@ -219,6 +219,7 @@ def summarize_individuals_count_table(models=None, df=None):
     inf_outlier = is_inf_outlier.groupby(level='model', sort=False).sum().astype('int32')
     res = pd.DataFrame(
         {
+            'parent_model': parents,
             'inf_selection': inf_selection,
             'inf_params': inf_params,
             'out_obs': out_obs,
