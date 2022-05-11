@@ -151,48 +151,6 @@ def test_exhaustive_stepwise_peripheral_upper_limit(tmp_path, start_model):
         assert ',999999) ; POP_QP1' in res.models[0].model_code
 
 
-# @pytest.mark.parametrize(
-#    'mfl, no_of_models, best_model_name, last_model_parent_name',
-#    [
-#        (
-#            'ABSORPTION(ZO);LAGTIME();PERIPHERALS(1)',
-#            12,
-#            'modelsearch_candidate7',
-#            'modelsearch_candidate7',
-#        ),
-#    ],
-# )
-# def test_reduced_stepwise(
-#    tmp_path, testdata, mfl, no_of_models, best_model_name, last_model_parent_name
-# ):
-#    with TemporaryDirectoryChanger(tmp_path):
-#        shutil.copy2(testdata / 'nonmem' / 'models' / 'mox2.mod', tmp_path)
-#        shutil.copy2(testdata / 'nonmem' / 'models' / 'mox_simulated_normal.csv', tmp_path)
-#        model_start = Model.create_model('mox2.mod')
-#        model_start.datainfo.path = tmp_path / 'mox_simulated_normal.csv'
-#        res = run_tool('modelsearch', mfl, 'reduced_stepwise', model=model_start)
-
-#        assert len(res.summary_tool) == no_of_models + 1
-#        assert len(res.summary_models) == no_of_models + 1
-#        assert len(res.models) == no_of_models
-# FIXME: These are super close and take turns becoming the best
-#        assert res.best_model.name in ['modelsearch_candidate7', 'modelsearch_candidate9']
-
-#        assert res.models[0].parent_model == 'mox2'
-#        assert res.models[-1].parent_model in ['modelsearch_candidate7', 'modelsearch_candidate9']
-#        if last_model_parent_name != 'mox2':
-#            last_model_features = res.summary_tool.loc[res.models[-1].name]['features']
-#            parent_model_features = res.summary_tool.loc[last_model_parent_name]['features']
-#            assert last_model_features[: len(parent_model_features)] == parent_model_features
-
-#        rundir = tmp_path / 'modelsearch_dir1'
-#        assert rundir.is_dir()
-#        assert _model_count(rundir) == no_of_models + 1
-#        assert (rundir / 'results.json').exists()
-#        assert (rundir / 'results.csv').exists()
-#        assert (rundir / 'metadata.json').exists()
-
-
 def test_summary_individuals(tmp_path, testdata):
     with TemporaryDirectoryChanger(tmp_path):
         shutil.copy2(testdata / 'nonmem' / 'pheno_real.mod', tmp_path)
