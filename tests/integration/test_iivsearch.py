@@ -3,7 +3,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from pharmpy.modeling import fit, run_tool, set_seq_zo_fo_absorption
+from pharmpy.modeling import fit, run_iivsearch, set_seq_zo_fo_absorption
 from pharmpy.utils import TemporaryDirectoryChanger
 
 
@@ -18,7 +18,7 @@ def _model_count(rundir: Path):
 
 def test_block_structure(tmp_path, start_model):
     with TemporaryDirectoryChanger(tmp_path):
-        res = run_tool('iivsearch', 'brute_force_block_structure', model=start_model)
+        res = run_iivsearch('brute_force_block_structure', model=start_model)
 
         no_of_candidate_models = 4
         assert len(res.summary_tool) == no_of_candidate_models + 1
@@ -47,7 +47,7 @@ def test_block_structure(tmp_path, start_model):
 
 def test_no_of_etas(tmp_path, start_model):
     with TemporaryDirectoryChanger(tmp_path):
-        res = run_tool('iivsearch', 'brute_force_no_of_etas', model=start_model)
+        res = run_iivsearch('brute_force_no_of_etas', model=start_model)
 
         no_of_candidate_models = 7
         assert len(res.summary_tool) == no_of_candidate_models + 1
@@ -69,7 +69,7 @@ def test_no_of_etas(tmp_path, start_model):
 
 def test_brute_force(tmp_path, start_model):
     with TemporaryDirectoryChanger(tmp_path):
-        res = run_tool('iivsearch', 'brute_force', model=start_model)
+        res = run_iivsearch('brute_force', model=start_model)
 
         no_of_candidate_models = 8
         assert len(res.summary_tool) == no_of_candidate_models + 2
@@ -102,8 +102,7 @@ def test_no_of_etas_added_iiv(tmp_path, start_model, iiv_strategy):
         set_seq_zo_fo_absorption(start_model)
         fit(start_model)
 
-        res = run_tool(
-            'iivsearch',
+        res = run_iivsearch(
             'brute_force_no_of_etas',
             iiv_strategy=iiv_strategy,
             rankfunc='bic',

@@ -1,3 +1,6 @@
+import importlib
+import sys
+
 from pharmpy.modeling.block_rvs import create_joint_distribution, split_joint_distribution
 from pharmpy.modeling.common import (
     bump_model_number,
@@ -168,7 +171,17 @@ from .results import (
 from .summarize_individuals import summarize_individuals
 from .units import get_unit_of
 
-# Remember to sort __all__ alphabetically for order in documentation
+# Import tool wrappers
+tool_wrapper_module = importlib.import_module('pharmpy.modeling.tool_wrappers')
+current_module = sys.modules[__name__]
+dynamic_funcs = []
+for attr in dir(tool_wrapper_module):
+    if attr.startswith('run'):
+        func = getattr(tool_wrapper_module, attr)
+        setattr(current_module, attr, func)
+        dynamic_funcs.append(attr)
+
+# Must be set directly, otherwise errors about unused imports
 __all__ = [
     'add_allometry',
     'add_covariance_step',
@@ -323,3 +336,8 @@ __all__ = [
     'write_results',
     'undrop_columns',
 ]
+
+__all__ += dynamic_funcs
+
+# Remember to sort __all__ alphabetically for order in documentation
+__all__.sort()

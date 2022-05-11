@@ -29,10 +29,10 @@ def create_workflow(
     iiv_strategy : int
         How IIVs should be added to start model. Default is 0 (no added IIVs)
     rankfunc : str
-        Which ranking function should be used (OFV, AIC, BIC). Default is OFV
+        Which ranking function should be used (OFV, AIC, BIC). Default is BIC
     cutoff : float
         Cutoff for which value of the ranking function that is considered significant. Default
-        is 3.84
+        is None (all models will be ranked)
     model : Model
         Pharmpy model
 
@@ -45,7 +45,7 @@ def create_workflow(
     --------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> run_tool('brute_force', model=model)      # doctest: +SKIP
+    >>> run_iivsearch('brute_force', model=model)      # doctest: +SKIP
 
     """
     wf = Workflow()
