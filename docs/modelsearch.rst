@@ -18,13 +18,12 @@ To initiate modelsearch in Python:
     from pharmpy.modeling import run_tool
 
     start_model = read_model('path/to/model')
-    run_tool('modelsearch',
-             search_space='ABSORPTION(ZO);PERIPHERALS(1)',
-             algorithm='exhaustive',
-             model=start_model,
-             iiv_strategy=0,
-             rankfunc='bic',
-             cutoff=None)
+    res = run_modelsearch(search_space='ABSORPTION(ZO);PERIPHERALS(1)',
+                          algorithm='exhaustive',
+                          model=start_model,
+                          iiv_strategy=0,
+                          rankfunc='bic',
+                          cutoff=None)
 
 This will take an input model ``model`` with ``search_space`` as the search space, meaning zero order absorption and adding one
 peripheral compartment will be tried. The tool will use the ``exhaustive`` search algorithm. Structural IIVs will be

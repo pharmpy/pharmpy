@@ -13,7 +13,7 @@ Tools in Pharmpy
    :maxdepth: 1
 
    modelsearch
-   iiv
+   iivsearch
 
 ~~~~~~~~~~~~~~~~~~~~~~
 Tools connected to PsN

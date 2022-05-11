@@ -1,6 +1,6 @@
-===
-IIV
-===
+=========
+IIVsearch
+=========
 
 The IIV tool is a general tool to decide the best IIV structure given a start model. This includes deciding which IIV
 to keep and the covariance structure based on a chosen selection criteria.
@@ -18,12 +18,11 @@ To initiate iiv in Python:
     from pharmpy.modeling import run_tool
 
     start_model = read_model('path/to/model')
-    run_tool('iiv',
-             algorithm='brute_force_no_of_etas',
-             model=start_model,
-             iiv_strategy=0,
-             rankfunc='bic',
-             cutoff=None)
+    res = run_iivsearch(algorithm='brute_force',
+                        model=start_model,
+                        iiv_strategy=0,
+                        rankfunc='bic',
+                        cutoff=None)
 
 This will take an input model ``model`` and run the brute_force_no_of_etas ``algorithm``. The tool will add structural
 IIVs to the start model according to according to ``iiv_strategy`` 0, where no IIVs are added. The candidate models
@@ -33,7 +32,7 @@ To run iiv from the command line, the example code is redefined accordingly:
 
 .. code::
 
-    pharmpy run iiv path/to/model 'brute_force_no_of_etas' --iiv_strategy 0 --rankfunc 'bic'
+    pharmpy run iivsearch path/to/model 'brute_force' --iiv_strategy 0 --rankfunc 'bic'
 
 ~~~~~~~~~
 Arguments
@@ -42,7 +41,7 @@ Arguments
 +---------------------------------------------------+-----------------------------------------------------------------------------------------+
 | Argument                                          | Description                                                                             |
 +===================================================+=========================================================================================+
-| :ref:`algorithm<Algorithms>`                      | Algorithm to use (e.g. brute_force_no_of_etas)                                          |
+| :ref:`algorithm<Algorithms>`                      | Algorithm to use (e.g. brute_force)                                                     |
 +---------------------------------------------------+-----------------------------------------------------------------------------------------+
 | :ref:`iiv_strategy<IIV strategies>`               | If/how IIV should be added to start model (default is 0)                                |
 +---------------------------------------------------+-----------------------------------------------------------------------------------------+
@@ -64,13 +63,15 @@ Algorithms
 Different aspects of the IIV structure can be explored in the tool depending on which algorithm is chosen. The
 available algorithms can be seen in the table below.
 
-+-----------------------------------+-----------------------------------------------------+
-| Algorithm                         | Description                                         |
-+===================================+=====================================================+
-| ``'brute_force_no_of_etas'``      | Removes available IIV in all possible combinations  |
-+-----------------------------------+-----------------------------------------------------+
-| ``'brute_force_block_structure'`` | Tests all combinations of covariance structures     |
-+-----------------------------------+-----------------------------------------------------+
++-----------------------------------+---------------------------------------------------------------------------------+
+| Algorithm                         | Description                                                                     |
++===================================+=================================================================================+
+| ``'brute_force_no_of_etas'``      | Removes available IIV in all possible combinations                              |
++-----------------------------------+---------------------------------------------------------------------------------+
+| ``'brute_force_block_structure'`` | Tests all combinations of covariance structures                                 |
++-----------------------------------+---------------------------------------------------------------------------------+
+| ``'brute_force'``                 | First runs ``'brute_force_no_of_etas'``, then ``'brute_force_block_structure'`` |
++-----------------------------------+---------------------------------------------------------------------------------+
 
 Brute force search for number of IIVs
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -83,14 +84,14 @@ model.
     digraph BST {
             node [fontname="Arial"];
             base [label="Base model"]
-            s0 [label="None"]
-            s1 [label="ETA(1)"]
-            s2 [label="ETA(2)"]
-            s3 [label="ETA(3)"]
-            s4 [label="ETA(1);ETA(2)"]
-            s5 [label="ETA(1);ETA(3)"]
-            s6 [label="ETA(2);ETA(3)"]
-            s7 [label="ETA(1);ETA(2);ETA(3)"]
+            s0 [label="Naive pooled"]
+            s1 [label="[CL]"]
+            s2 [label="[V]"]
+            s3 [label="[MAT]"]
+            s4 [label="[CL,V]"]
+            s5 [label="[CL,MAT]"]
+            s6 [label="[V,MAT]"]
+            s7 [label="[CL,V,MAT]"]
 
             base -> s0
             base -> s1
@@ -113,11 +114,11 @@ covariance between all IIVs (full block).
     digraph BST {
             node [fontname="Arial"];
             base [label="Base model"]
-            s0 [label="Diagonal"]
-            s1 [label="ETA(1)+ETA(2)"]
-            s2 [label="ETA(1)+ETA(3)"]
-            s3 [label="ETA(2)+ETA(3)"]
-            s4 [label="Fullblock"]
+            s0 [label="[CL]+[V]+[MAT]"]
+            s1 [label="[CL,V]+[MAT]"]
+            s2 [label="[CL,MAT]+[V]"]
+            s3 [label="[V,MAT]+[CL]"]
+            s4 [label="[CL,V,MAT]"]
 
             base -> s0
             base -> s1
@@ -126,22 +127,25 @@ covariance between all IIVs (full block).
             base -> s4
         }
 
-Full search
-~~~~~~~~~~~
+Full brute force search
+~~~~~~~~~~~~~~~~~~~~~~~
+
+The full brute force search combines the brute force algorithm for choosing number of etas with the brute force
+algorithm for the block structure, by first choosing the number of etas then the block structure.
 
 .. graphviz::
 
     digraph BST {
             node [fontname="Arial"];
             base [label="Base model"]
-            s0 [label="None"]
-            s1 [label="ETA(1)"]
-            s2 [label="ETA(2)"]
-            s3 [label="ETA(3)"]
-            s4 [label="ETA(1);ETA(2)"]
-            s5 [label="ETA(1);ETA(3)"]
-            s6 [label="ETA(2);ETA(3)"]
-            s7 [label="ETA(1);ETA(2);ETA(3)"]
+            s0 [label="Naive pooled"]
+            s1 [label="[CL]"]
+            s2 [label="[V]"]
+            s3 [label="[MAT]"]
+            s4 [label="[CL,V]"]
+            s5 [label="[CL,MAT]"]
+            s6 [label="[V,MAT]"]
+            s7 [label="[CL,V,MAT]"]
 
             base -> s0
             base -> s1
@@ -152,11 +156,11 @@ Full search
             base -> s6
             base -> s7
 
-            s8 [label="Diagonal"]
-            s9 [label="ETA(1)+ETA(2)"]
-            s10 [label="ETA(1)+ETA(3)"]
-            s11 [label="ETA(2)+ETA(3)"]
-            s12 [label="Fullblock"]
+            s8 [label="[CL]+[V]+[MAT]"]
+            s9 [label="[CL,V]+[MAT]"]
+            s10 [label="[CL,MAT]+[V]"]
+            s11 [label="[V,MAT]+[CL]"]
+            s12 [label="[CL,V,MAT]"]
 
             s7 -> s8
             s7 -> s9

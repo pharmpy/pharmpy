@@ -20,7 +20,7 @@ def create_workflow(
     cutoff=None,
     model=None,
 ):
-    """Run IIVSearch tool.
+    """Run IIVsearch tool. For more details, see https://pharmpy.github.io/latest/iivsearch.html.
 
     Parameters
     ----------
@@ -39,7 +39,7 @@ def create_workflow(
     Returns
     -------
     IIVResults
-        IIVSearch tool result object
+        IIVsearch tool result object
 
     Examples
     --------
