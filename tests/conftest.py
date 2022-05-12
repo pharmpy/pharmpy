@@ -2,8 +2,6 @@ from pathlib import Path
 
 import pytest
 
-import pharmpy
-
 
 @pytest.fixture(scope='session')
 def testdata():
@@ -23,4 +21,6 @@ def pheno_path(datadir):
 
 @pytest.fixture(scope='session')
 def pheno(pheno_path):
+    import pharmpy
+
     return pharmpy.Model.create_model(pheno_path)
