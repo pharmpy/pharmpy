@@ -498,8 +498,8 @@ def summarize_modelfit_results(models, include_all_estimation_steps=False):
     >>> from pharmpy.modeling import load_example_model, summarize_modelfit_results
     >>> model = load_example_model("pheno")
     >>> summarize_modelfit_results([model]) # doctest: +ELLIPSIS
-          minimization_successful         ofv  ... runtime_total  ... SIGMA(1,1)_RSE
-    pheno                    True  586.276056  ...           4.0  ...       0.172147
+                     description  minimization_successful         ofv  ... runtime_total  ...
+    pheno PHENOBARB SIMPLE MODEL                     True  586.276056  ...           4.0  ...
     """
     # FIXME: add option for bic type?
     if isinstance(models, Model):
@@ -509,7 +509,9 @@ def summarize_modelfit_results(models, include_all_estimation_steps=False):
 
     for model in models:
         if model.modelfit_results:
-            summaries.append(_get_model_result_summary(model, include_all_estimation_steps))
+            summary = _get_model_result_summary(model, include_all_estimation_steps)
+            summary.insert(0, 'description', model.description)
+            summaries.append(summary)
         else:
             if include_all_estimation_steps:
                 for i, est in enumerate(model.estimation_steps):
