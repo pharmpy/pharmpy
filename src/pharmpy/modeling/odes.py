@@ -3,7 +3,7 @@
 """
 
 import sympy
-
+from pharmpy import ExplicitODESystem
 import pharmpy.symbols
 from pharmpy.model import ModelError
 from pharmpy.modeling.help_functions import _as_integer
@@ -12,6 +12,7 @@ from pharmpy.statements import Assignment, Bolus, Infusion
 
 from .common import remove_unused_parameters_and_rvs
 from .data import get_observations
+from .eta_additions import _get_dependent_assignments
 from .expressions import create_symbol
 
 
@@ -1469,3 +1470,24 @@ def set_ode_solver(model, solver):
     for step in model.estimation_steps:
         step.solver = solver
     return model
+
+
+def _find_rate(sset):
+    rate_list = []
+    odes = sset.ode_system
+    if type(odes) is ExplicitODESystem:
+        odes = sset.ode_system.to_compartmental_system()
+    central = odes.central_compartment
+    output = odes.output_compartment
+    elimination_rate = odes.get_flow(central, output)
+    rate_list.append(elimination_rate)
+    for periph in odes.peripheral_compartments:
+        rate1 = odes.get_flow(central, periph)
+        rate_list.append(rate1)
+        rate2 = odes.get_flow(periph, central)
+        rate_list.append(rate2)
+    return rate_list
+
+
+
+
