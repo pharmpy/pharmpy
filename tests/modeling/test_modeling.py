@@ -1385,7 +1385,7 @@ $ESTIMATION METHOD=1 INTERACTION
     # assert model.model_code == correct
 
 
-def test_absorption_rate(testdata):
+def test_absorption_rate(testdata, tmp_path):
     model = Model.create_model(testdata / 'nonmem' / 'modeling' / 'pheno_advan1.mod')
     advan1_before = model.model_code
     set_bolus_absorption(model)
@@ -1531,15 +1531,14 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
     assert model.model_code.split('\n')[2:] == correct.split('\n')[2:]
 
     # Bolus to 0-order
-    with Patcher(additional_skip_names=['pkgutil']) as patcher:
-        fs = patcher.fs
-        datadir = testdata / 'nonmem' / 'modeling'
-        fs.add_real_file(datadir / 'pheno_advan1.mod', target_path='dir/pheno_advan1.mod')
-        fs.add_real_file(datadir / 'pheno_advan2.mod', target_path='dir/pheno_advan2.mod')
-        fs.add_real_file(datadir.parent / 'pheno.dta', target_path='pheno.dta')
-        model = Model.create_model('dir/pheno_advan1.mod')
-        set_zero_order_absorption(model)
-        correct = '''$PROBLEM PHENOBARB SIMPLE MODEL
+    datadir = testdata / 'nonmem' / 'modeling'
+    (tmp_path / 'abs').mkdir()
+    shutil.copy(datadir / 'pheno_advan1.mod', tmp_path / 'abs')
+    shutil.copy(datadir / 'pheno_advan2.mod', tmp_path / 'abs')
+    shutil.copy(datadir.parent / 'pheno.dta', tmp_path)
+    model = Model.create_model(tmp_path / 'abs' / 'pheno_advan1.mod')
+    set_zero_order_absorption(model)
+    correct = '''$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno_advan1.csv IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2 RATE
 $SUBROUTINE ADVAN1 TRANS2
@@ -1577,11 +1576,9 @@ $COVARIANCE UNCONDITIONAL
 $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
        NOPRINT ONEHEADER FILE=sdtab1
 '''
-        print("START")
-        assert model.model_code == correct
-        print("END")
+    assert model.model_code == correct
 
-        correct = '''$PROBLEM PHENOBARB SIMPLE MODEL
+    correct = '''$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno_advan2.csv IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2 RATE
 $SUBROUTINE ADVAN1 TRANS2
@@ -1620,11 +1617,11 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
        NOPRINT ONEHEADER FILE=sdtab1
 '''
 
-        # 1st to 0-order
-        model = Model.create_model('dir/pheno_advan2.mod')
-        set_zero_order_absorption(model)
-        model.update_source(force=True)
-        assert model.model_code == correct
+    # 1st to 0-order
+    model = Model.create_model(tmp_path / 'abs' / 'pheno_advan2.mod')
+    set_zero_order_absorption(model)
+    model.update_source(nofiles=True)
+    assert model.model_code == correct
 
 
 def test_seq_to_FO(testdata):
