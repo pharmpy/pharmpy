@@ -28,14 +28,6 @@ Caveats:
 
     It is currently not possible to specify a timeout for acquiring a lock. The
     only options currently are immediate failure or forever blocking.
-
-    The thread-level lock is currently hard-coded as non-reentrant, but we
-    could want the possibility of choice. It will require some work to figure
-    out how to combine reentrant thread-level locks with process-level locks.
-    For instance, Linux will happily "upgrade" an acquired exclusive lock to a
-    shared lock if the same fd is lockf-ed multiple times with different
-    arguments from the same process. This is not something that we want to
-    happen.
 """
 import os
 from collections import Counter
@@ -120,7 +112,7 @@ class ShareableProcessLock:
         self._exclusively_held_by: Counter[int] = Counter()
 
     @contextmanager
-    def lock(self, shared: bool = False, blocking: bool = True):
+    def lock(self, shared: bool = False, blocking: bool = True, reentrant: bool = False):
         """Locks the scoped FD
 
         shared : bool
@@ -135,11 +127,17 @@ class ShareableProcessLock:
             Whether lock acquisition should be blocking. If True, will raise an
             error if a lock cannot be acquired immediately. Otherwise, will block
             until the lock can be acquired.
+        reentrant : bool
+            Whether lock acquisition is reentrant. If True, allows each thread
+            to lock the file recursively. Otherwise, the same thread
+            recursively locking dead-locks.
         """
         thread_id = get_ident()
         if self._lock.acquire(blocking=blocking):
             try:
-                if self._shared_by[thread_id] or self._exclusively_held_by[thread_id]:
+                if not reentrant and (
+                    self._shared_by[thread_id] or self._exclusively_held_by[thread_id]
+                ):
                     raise RecursiveDeadlockError()
 
                 is_held_shared = bool(self._shared_by)
@@ -196,18 +194,18 @@ class ShareableThreadLock:
         self._condition = Condition(RLock())
         self._acquired_by: Counter[int] = Counter()
 
-    def lock(self, shared: bool = False, blocking: bool = True):
+    def lock(self, shared: bool = False, blocking: bool = True, reentrant: bool = False):
         if shared:
-            return self._lock_sh(blocking=blocking)
+            return self._lock_sh(blocking=blocking, reentrant=reentrant)
         else:
-            return self._lock_ex(blocking=blocking)
+            return self._lock_ex(blocking=blocking, reentrant=reentrant)
 
     @contextmanager
-    def _lock_sh(self, blocking: bool = True):
+    def _lock_sh(self, blocking: bool = True, reentrant: bool = False):
         thread_id = get_ident()
         if self._condition.acquire(blocking=blocking):
             try:
-                if self._acquired_by[thread_id]:
+                if not reentrant and self._acquired_by[thread_id]:
                     raise RecursiveDeadlockError()
                 self._acquired_by[thread_id] += 1
             finally:
@@ -231,7 +229,7 @@ class ShareableThreadLock:
                 self._condition.release()
 
     @contextmanager
-    def _lock_ex(self, blocking: bool = True):
+    def _lock_ex(self, blocking: bool = True, reentrant: bool = False):
         thread_id = get_ident()
         if self._condition.acquire(blocking=blocking):
             acquired = False
@@ -256,7 +254,8 @@ class ShareableThreadLock:
                     # in Python >= 3.10
                     assert len(self._acquired_by) == 1
                     assert self._acquired_by[thread_id] == this_thread_count[thread_id]
-                    raise RecursiveDeadlockError()
+                    if not reentrant:
+                        raise RecursiveDeadlockError()
 
                 acquired = True
                 self._acquired_by[thread_id] += 1
@@ -312,29 +311,37 @@ _process_level_lock_ref = ThreadSafeKeyedRefPool(Lock(), {}, ShareableProcessLoc
 
 
 @contextmanager
-def process_level_lock(fd: int, shared: bool = False, blocking: bool = True):
+def process_level_lock(
+    fd: int, shared: bool = False, blocking: bool = True, reentrant: bool = False
+):
     with _process_level_lock_ref(fd) as ref:
-        with ref.lock(shared, blocking):
+        with ref.lock(shared, blocking, reentrant):
             yield
 
 
 @contextmanager
-def thread_level_lock(key: str, shared: bool = False, blocking: bool = True):
+def thread_level_lock(
+    key: str, shared: bool = False, blocking: bool = True, reentrant: bool = False
+):
     with _thread_level_lock_ref(key) as ref:
-        with ref.lock(shared, blocking):
+        with ref.lock(shared, blocking, reentrant):
             yield
 
 
-def thread_level_path_lock(path: str, shared: bool = False, blocking: bool = True):
+def thread_level_path_lock(
+    path: str, shared: bool = False, blocking: bool = True, reentrant: bool = False
+):
     key = os.path.normpath(path)
-    return thread_level_lock(key, shared, blocking)
+    return thread_level_lock(key, shared, blocking, reentrant)
 
 
 @contextmanager
-def process_level_path_lock(path: str, shared: bool = False, blocking: bool = True):
+def process_level_path_lock(
+    path: str, shared: bool = False, blocking: bool = True, reentrant: bool = False
+):
     fd = os.open(path, os.O_RDONLY if shared else os.O_RDWR)
     try:
-        with process_level_lock(fd, shared, blocking):
+        with process_level_lock(fd, shared, blocking, reentrant):
             yield fd
 
     finally:
@@ -342,7 +349,7 @@ def process_level_path_lock(path: str, shared: bool = False, blocking: bool = Tr
 
 
 @contextmanager
-def path_lock(path: str, shared: bool = False, blocking: bool = True):
+def path_lock(path: str, shared: bool = False, blocking: bool = True, reentrant: bool = False):
     """Locks a path both at the thread-level and process-level.
 
     Parameters
@@ -359,7 +366,10 @@ def path_lock(path: str, shared: bool = False, blocking: bool = True):
         Whether lock acquisition should be blocking. If True, will raise an
         error if a lock cannot be acquired immediately. Otherwise, will block
         until the lock can be acquired.
+    reentrant : bool
+        Whether lock acquisition is reentrant. If True, allows to lock
+        recursively. Otherwise, recursively locking dead-locks.
     """
-    with thread_level_path_lock(path, shared, blocking):
-        with process_level_path_lock(path, shared, blocking):
+    with thread_level_path_lock(path, shared, blocking, reentrant):
+        with process_level_path_lock(path, shared, blocking, reentrant):
             yield
