@@ -7,7 +7,7 @@ from contextlib import redirect_stdout
 import pytest
 
 from pharmpy import cli
-from pharmpy.plugins.nonmem.records import etas_record
+from pharmpy.utils import TemporaryDirectoryChanger
 
 
 def test_model_print(datadir, capsys):
@@ -17,85 +17,85 @@ def test_model_print(datadir, capsys):
     assert 'ETA(1)' in captured.out
 
 
-# Skip pkgutil
-@pytest.mark.parametrize('fs', [[['pkgutil'], [etas_record]]], indirect=True)
 @pytest.mark.parametrize('operation', ['*', '+'])
-def test_add_covariate_effect(datadir, fs, operation):
-    fs.add_real_file(datadir / 'pheno_real.mod', target_path='run1.mod')
-    fs.add_real_file(datadir / 'pheno.dta', target_path='pheno.dta')
+def test_add_covariate_effect(datadir, operation, tmp_path):
+    shutil.copy(datadir / 'pheno_real.mod', tmp_path / 'run1.mod')
+    shutil.copy(datadir / 'pheno.dta', tmp_path / 'pheno.dta')
 
-    args = ['model', 'add_cov_effect', 'run1.mod', 'CL', 'WGT', 'exp', '--operation', operation]
-    cli.main(args)
+    with TemporaryDirectoryChanger(tmp_path):
+        args = ['model', 'add_cov_effect', 'run1.mod', 'CL', 'WGT', 'exp', '--operation', operation]
+        cli.main(args)
 
-    with open('run1.mod', 'r') as f_ori, open('run2.mod', 'r') as f_cov:
-        mod_ori = f_ori.read()
-        mod_cov = f_cov.read()
+        with open('run1.mod', 'r') as f_ori, open('run2.mod', 'r') as f_cov:
+            mod_ori = f_ori.read()
+            mod_cov = f_cov.read()
 
-    assert mod_ori != mod_cov
+        assert mod_ori != mod_cov
 
-    assert not re.search('CLWGT', mod_ori)
-    assert re.search('CLWGT', mod_cov)
+        assert not re.search('CLWGT', mod_ori)
+        assert re.search('CLWGT', mod_cov)
 
 
-@pytest.mark.parametrize('fs', [[['pkgutil'], [etas_record]]], indirect=True)
 @pytest.mark.parametrize(
     'transformation, eta', [('boxcox', 'ETAB1'), ('tdist', 'ETAT1'), ('john_draper', 'ETAD1')]
 )
-def test_eta_transformation(datadir, fs, transformation, eta):
-    fs.add_real_file(datadir / 'pheno_real.mod', target_path='run1.mod')
-    fs.add_real_file(datadir / 'pheno.dta', target_path='pheno.dta')
+def test_eta_transformation(datadir, transformation, eta, tmp_path):
+    shutil.copy(datadir / 'pheno_real.mod', tmp_path / 'run1.mod')
+    shutil.copy(datadir / 'pheno.dta', tmp_path / 'pheno.dta')
 
-    args = ['model', transformation, 'run1.mod', '--etas', 'ETA(1)']
-    cli.main(args)
+    with TemporaryDirectoryChanger(tmp_path):
+        args = ['model', transformation, 'run1.mod', '--etas', 'ETA(1)']
+        cli.main(args)
 
-    with open('run1.mod', 'r') as f_ori, open('run2.mod', 'r') as f_box:
-        mod_ori = f_ori.read()
-        mod_box = f_box.read()
+        with open('run1.mod', 'r') as f_ori, open('run2.mod', 'r') as f_box:
+            mod_ori = f_ori.read()
+            mod_box = f_box.read()
 
-    assert mod_ori != mod_box
+        assert mod_ori != mod_box
 
-    assert not re.search(eta, mod_ori)
-    assert re.search(eta, mod_box)
+        assert not re.search(eta, mod_ori)
+        assert re.search(eta, mod_box)
 
 
-@pytest.mark.parametrize('fs', [[['pkgutil'], [etas_record]]], indirect=True)
 @pytest.mark.parametrize(
     'options', [['--operation', '+'], ['--operation', '*'], ['--eta_name', 'ETA(3)']]
 )
-def test_add_iiv(datadir, fs, options):
-    fs.add_real_file(datadir / 'pheno_real.mod', target_path='run1.mod')
-    fs.add_real_file(datadir / 'pheno.dta', target_path='pheno.dta')
+def test_add_iiv(datadir, options, tmp_path):
+    shutil.copy(datadir / 'pheno_real.mod', tmp_path / 'run1.mod')
+    shutil.copy(datadir / 'pheno.dta', tmp_path / 'pheno.dta')
 
-    args = ['model', 'add_iiv', 'run1.mod', 'S1', 'exp'] + options
-    cli.main(args)
+    with TemporaryDirectoryChanger(tmp_path):
+        args = ['model', 'add_iiv', 'run1.mod', 'S1', 'exp'] + options
+        cli.main(args)
 
-    with open('run1.mod', 'r') as f_ori, open('run2.mod', 'r') as f_cov:
-        mod_ori = f_ori.read()
-        mod_cov = f_cov.read()
+        with open('run1.mod', 'r') as f_ori, open('run2.mod', 'r') as f_cov:
+            mod_ori = f_ori.read()
+            mod_cov = f_cov.read()
 
-    assert mod_ori != mod_cov
+        assert mod_ori != mod_cov
 
-    assert not re.search(r'EXP\(ETA\(3\)\)', mod_ori)
-    assert re.search(r'EXP\(ETA\(3\)\)', mod_cov)
+        assert not re.search(r'EXP\(ETA\(3\)\)', mod_ori)
+        assert re.search(r'EXP\(ETA\(3\)\)', mod_cov)
 
 
-@pytest.mark.parametrize('fs', [[['pkgutil'], [etas_record]]], indirect=True)
 @pytest.mark.parametrize('options', [['--eta_names', 'ETA(3) ETA(4)']])
-def test_add_iov(datadir, fs, options):
-    fs.add_real_file(datadir / 'pheno_real.mod', target_path='run1.mod')
-    fs.add_real_file(datadir / 'pheno.dta', target_path='pheno.dta')
+def test_add_iov(datadir, options, tmp_path):
+    shutil.copy(datadir / 'pheno_real.mod', tmp_path / 'run1.mod')
+    shutil.copy(datadir / 'pheno.dta', tmp_path / 'pheno.dta')
 
-    args = ['model', 'add_iov', 'run1.mod', 'FA1', '--etas', 'ETA(1)'] + options
-    cli.main(args)
+    with TemporaryDirectoryChanger(tmp_path):
 
-    with open('run1.mod', 'r') as f_ori, open('run2.mod', 'r') as f_cov:
-        mod_ori = f_ori.read()
-        mod_cov = f_cov.read()
+        args = ['model', 'add_iov', 'run1.mod', 'FA1', '--etas', 'ETA(1)'] + options
+        cli.main(args)
 
-    assert mod_ori != mod_cov
+        with open('run1.mod', 'r') as f_ori, open('run2.mod', 'r') as f_cov:
+            mod_ori = f_ori.read()
+            mod_cov = f_cov.read()
 
-    assert not re.search(r'ETAI1', mod_ori)
-    assert re.search(r'ETAI1', mod_cov)
+        assert mod_ori != mod_cov
+
+        assert not re.search(r'ETAI1', mod_ori)
+        assert re.search(r'ETAI1', mod_cov)
 
 
 def test_results_linearize(datadir, tmp_path):
@@ -117,143 +117,151 @@ def test_results_linearize(datadir, tmp_path):
     assert os.path.exists(tmp_path / 'results.json')
 
 
-@pytest.mark.parametrize('fs', [[['pkgutil'], [etas_record]]], indirect=True)
 @pytest.mark.parametrize('eta_args', [['--etas', 'ETA(1) ETA(2)'], []])
-def test_create_joint_distribution(datadir, fs, eta_args):
-    fs.add_real_file(datadir / 'pheno_real.mod', target_path='run1.mod')
-    fs.add_real_file(datadir / 'pheno.dta', target_path='pheno.dta')
+def test_create_joint_distribution(datadir, eta_args, tmp_path):
+    shutil.copy(datadir / 'pheno_real.mod', tmp_path / 'run1.mod')
+    shutil.copy(datadir / 'pheno.dta', tmp_path / 'pheno.dta')
 
-    args = ['model', 'create_joint_distribution', 'run1.mod'] + eta_args
-    cli.main(args)
+    with TemporaryDirectoryChanger(tmp_path):
 
-    with open('run1.mod', 'r') as f_ori, open('run2.mod', 'r') as f_cov:
-        mod_ori = f_ori.read()
-        mod_cov = f_cov.read()
+        args = ['model', 'create_joint_distribution', 'run1.mod'] + eta_args
+        cli.main(args)
 
-    assert mod_ori != mod_cov
+        with open('run1.mod', 'r') as f_ori, open('run2.mod', 'r') as f_cov:
+            mod_ori = f_ori.read()
+            mod_cov = f_cov.read()
 
-    assert not re.search(r'BLOCK\(2\)', mod_ori)
-    assert re.search(r'BLOCK\(2\)', mod_cov)
+        assert mod_ori != mod_cov
+
+        assert not re.search(r'BLOCK\(2\)', mod_ori)
+        assert re.search(r'BLOCK\(2\)', mod_cov)
 
 
-@pytest.mark.parametrize('fs', [[['pkgutil'], [etas_record]]], indirect=True)
 @pytest.mark.parametrize(
     'epsilons_args', [['--eps', 'EPS(1)'], [], ['--same_eta', 'False'], ['--eta_names', 'ETA(3)']]
 )
-def test_iiv_on_ruv(datadir, fs, epsilons_args):
-    fs.add_real_file(datadir / 'pheno_real.mod', target_path='run1.mod')
-    fs.add_real_file(datadir / 'pheno.dta', target_path='pheno.dta')
+def test_iiv_on_ruv(datadir, epsilons_args, tmp_path):
+    shutil.copy(datadir / 'pheno_real.mod', tmp_path / 'run1.mod')
+    shutil.copy(datadir / 'pheno.dta', tmp_path / 'pheno.dta')
 
-    args = ['model', 'iiv_on_ruv', 'run1.mod'] + epsilons_args
-    cli.main(args)
+    with TemporaryDirectoryChanger(tmp_path):
 
-    with open('run1.mod', 'r') as f_ori, open('run2.mod', 'r') as f_cov:
-        mod_ori = f_ori.read()
-        mod_cov = f_cov.read()
+        args = ['model', 'iiv_on_ruv', 'run1.mod'] + epsilons_args
+        cli.main(args)
 
-    assert mod_ori != mod_cov
+        with open('run1.mod', 'r') as f_ori, open('run2.mod', 'r') as f_cov:
+            mod_ori = f_ori.read()
+            mod_cov = f_cov.read()
 
-    assert not re.search(r'EXP\(ETA\(3\)\)', mod_ori)
-    assert re.search(r'EXP\(ETA\(3\)\)', mod_cov)
+        assert mod_ori != mod_cov
+
+        assert not re.search(r'EXP\(ETA\(3\)\)', mod_ori)
+        assert re.search(r'EXP\(ETA\(3\)\)', mod_cov)
 
 
-@pytest.mark.parametrize('fs', [[['pkgutil'], [etas_record]]], indirect=True)
 @pytest.mark.parametrize('to_remove', [['--to_remove', 'ETA(2)'], []])
-def test_remove_iiv(datadir, fs, to_remove):
-    fs.add_real_file(datadir / 'pheno.mod', target_path='run1.mod')
-    fs.add_real_file(datadir / 'pheno.dta', target_path='pheno.dta')
+def test_remove_iiv(datadir, to_remove, tmp_path):
+    shutil.copy(datadir / 'pheno_real.mod', tmp_path / 'run1.mod')
+    shutil.copy(datadir / 'pheno.dta', tmp_path / 'pheno.dta')
 
-    args = ['model', 'remove_iiv', 'run1.mod'] + to_remove
-    cli.main(args)
+    with TemporaryDirectoryChanger(tmp_path):
 
-    with open('run1.mod', 'r') as f_ori, open('run2.mod', 'r') as f_cov:
-        mod_ori = f_ori.read()
-        mod_cov = f_cov.read()
+        args = ['model', 'remove_iiv', 'run1.mod'] + to_remove
+        cli.main(args)
 
-    assert mod_ori != mod_cov
+        with open('run1.mod', 'r') as f_ori, open('run2.mod', 'r') as f_cov:
+            mod_ori = f_ori.read()
+            mod_cov = f_cov.read()
 
-    assert re.search(r'EXP\(ETA\(2\)\)', mod_ori)
-    assert not re.search(r'EXP\(ETA\(2\)\)', mod_cov)
+        assert mod_ori != mod_cov
 
-
-@pytest.mark.parametrize('fs', [[['pkgutil'], [etas_record]]], indirect=True)
-def test_remove_iov(datadir, fs):
-    fs.add_real_file(datadir / 'qa/iov.mod', target_path='run1.mod')
-    fs.add_real_file(datadir / 'pheno.dta', target_path='pheno.dta')
-
-    args = ['model', 'remove_iov', 'run1.mod']
-    cli.main(args)
-
-    with open('run1.mod', 'r') as f_ori, open('run2.mod', 'r') as f_cov:
-        mod_ori = f_ori.read()
-        mod_cov = f_cov.read()
-
-    assert mod_ori != mod_cov
-
-    assert re.search('SAME', mod_ori)
-    assert not re.search('SAME', mod_cov)
-
-    assert re.search(r'ETA\(3\)', mod_ori)
-    assert not re.search(r'ETA\(3\)', mod_cov)
+        assert re.search(r'EXP\(ETA\(2\)\)', mod_ori)
+        assert not re.search(r'EXP\(ETA\(2\)\)', mod_cov)
 
 
-@pytest.mark.parametrize('fs', [[['pkgutil'], [etas_record]]], indirect=True)
+def test_remove_iov(datadir, tmp_path):
+    shutil.copy(datadir / 'qa/iov.mod', tmp_path / 'run1.mod')
+    shutil.copy(datadir / 'pheno.dta', tmp_path / 'pheno.dta')
+
+    with TemporaryDirectoryChanger(tmp_path):
+
+        args = ['model', 'remove_iov', 'run1.mod']
+        cli.main(args)
+
+        with open('run1.mod', 'r') as f_ori, open('run2.mod', 'r') as f_cov:
+            mod_ori = f_ori.read()
+            mod_cov = f_cov.read()
+
+        assert mod_ori != mod_cov
+
+        assert re.search('SAME', mod_ori)
+        assert not re.search('SAME', mod_cov)
+
+        assert re.search(r'ETA\(3\)', mod_ori)
+        assert not re.search(r'ETA\(3\)', mod_cov)
+
+
 @pytest.mark.parametrize('epsilons_args', [['--eps', 'EPS(1)'], []])
-def test_power_on_ruv(datadir, fs, epsilons_args):
-    fs.add_real_file(datadir / 'pheno_real.mod', target_path='run1.mod')
-    fs.add_real_file(datadir / 'pheno.dta', target_path='pheno.dta')
+def test_power_on_ruv(datadir, epsilons_args, tmp_path):
+    shutil.copy(datadir / 'pheno_real.mod', tmp_path / 'run1.mod')
+    shutil.copy(datadir / 'pheno.dta', tmp_path / 'pheno.dta')
 
-    args = ['model', 'power_on_ruv', 'run1.mod'] + epsilons_args
-    cli.main(args)
+    with TemporaryDirectoryChanger(tmp_path):
 
-    with open('run1.mod', 'r') as f_ori, open('run2.mod', 'r') as f_cov:
-        mod_ori = f_ori.read()
-        mod_cov = f_cov.read()
+        args = ['model', 'power_on_ruv', 'run1.mod'] + epsilons_args
+        cli.main(args)
 
-    assert mod_ori != mod_cov
+        with open('run1.mod', 'r') as f_ori, open('run2.mod', 'r') as f_cov:
+            mod_ori = f_ori.read()
+            mod_cov = f_cov.read()
 
-    assert not re.search(r'\*\*', mod_ori)
-    assert re.search(r'\*\*', mod_cov)
+        assert mod_ori != mod_cov
+
+        assert not re.search(r'\*\*', mod_ori)
+        assert re.search(r'\*\*', mod_cov)
 
 
-@pytest.mark.parametrize('fs', [[['pkgutil'], [etas_record]]], indirect=True)
 @pytest.mark.parametrize(
     'force_args, file_exists', [(['--force_update', 'True'], True), ([], False)]
 )
-def test_update_inits(datadir, fs, force_args, file_exists):
-    fs.add_real_file(datadir / 'pheno_real.mod', target_path='run1.mod')
-    fs.add_real_file(datadir / 'pheno_real.ext', target_path='run1.ext')
-    fs.add_real_file(datadir / 'pheno_real.phi', target_path='run1.phi')
-    fs.add_real_file(datadir / 'pheno.dta', target_path='pheno.dta')
+def test_update_inits(datadir, force_args, file_exists, tmp_path):
+    shutil.copy(datadir / 'pheno_real.mod', tmp_path / 'run1.mod')
+    shutil.copy(datadir / 'pheno_real.ext', tmp_path / 'run1.ext')
+    shutil.copy(datadir / 'pheno_real.phi', tmp_path / 'run1.phi')
+    shutil.copy(datadir / 'pheno.dta', tmp_path / 'pheno.dta')
 
-    args = ['model', 'update_inits', 'run1.mod'] + force_args
-    cli.main(args)
+    with TemporaryDirectoryChanger(tmp_path):
 
-    with open('run1.mod', 'r') as f_ori, open('run2.mod', 'r') as f_cov:
-        mod_ori = f_ori.read()
-        mod_cov = f_cov.read()
+        args = ['model', 'update_inits', 'run1.mod'] + force_args
+        cli.main(args)
 
-    assert mod_ori != mod_cov
+        with open('run1.mod', 'r') as f_ori, open('run2.mod', 'r') as f_cov:
+            mod_ori = f_ori.read()
+            mod_cov = f_cov.read()
 
-    assert not re.search(r'\$ETAS FILE=run2_input.phi', mod_ori)
-    assert bool(re.search(r'\$ETAS FILE=run2_input.phi', mod_cov)) is file_exists
-    assert (os.path.isfile('run2_input.phi')) is file_exists
+        assert mod_ori != mod_cov
+
+        assert not re.search(r'\$ETAS FILE=run2_input.phi', mod_ori)
+        assert bool(re.search(r'\$ETAS FILE=run2_input.phi', mod_cov)) is file_exists
+        assert (os.path.isfile('run2_input.phi')) is file_exists
 
 
-@pytest.mark.parametrize('fs', [[['pkgutil'], [etas_record]]], indirect=True)
-def test_model_sample(datadir, fs):
-    fs.add_real_file(datadir / 'pheno_real.mod', target_path='run1.mod')
-    fs.add_real_file(datadir / 'pheno_real.ext', target_path='run1.ext')
-    fs.add_real_file(datadir / 'pheno_real.lst', target_path='run1.lst')
-    fs.add_real_file(datadir / 'pheno_real.cov', target_path='run1.cov')
-    fs.add_real_file(datadir / 'pheno.dta', target_path='pheno.dta')
+def test_model_sample(datadir, tmp_path):
+    shutil.copy(datadir / 'pheno_real.mod', tmp_path / 'run1.mod')
+    shutil.copy(datadir / 'pheno_real.ext', tmp_path / 'run1.ext')
+    shutil.copy(datadir / 'pheno_real.lst', tmp_path / 'run1.lst')
+    shutil.copy(datadir / 'pheno_real.phi', tmp_path / 'run1.phi')
+    shutil.copy(datadir / 'pheno_real.cov', tmp_path / 'run1.cov')
+    shutil.copy(datadir / 'pheno.dta', tmp_path / 'pheno.dta')
 
-    args = ['model', 'sample', 'run1.mod', '--seed=24']
-    cli.main(args)
+    with TemporaryDirectoryChanger(tmp_path):
 
-    with open('run1.mod', 'r') as f_ori, open('sample_1.mod', 'r') as f_cov:
-        mod_ori = f_ori.read()
-        mod_cov = f_cov.read()
+        args = ['model', 'sample', 'run1.mod', '--seed=24']
+        cli.main(args)
+
+        with open('run1.mod', 'r') as f_ori, open('sample_1.mod', 'r') as f_cov:
+            mod_ori = f_ori.read()
+            mod_cov = f_cov.read()
 
     assert mod_ori != mod_cov
 

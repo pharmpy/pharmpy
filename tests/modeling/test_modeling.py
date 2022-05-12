@@ -7,8 +7,6 @@ import numpy as np
 import pandas as pd
 import pytest
 import sympy
-from pyfakefs.fake_filesystem import set_uid
-from pyfakefs.fake_filesystem_unittest import Patcher
 
 from pharmpy import Model
 from pharmpy.modeling import (
@@ -2783,17 +2781,13 @@ IF (VISI.EQ.8) IOV_3 = ETA(5)
     'etas_file, force, file_exists',
     [('', False, False), ('', True, True), ('$ETAS FILE=run1.phi', False, True)],
 )
-def test_update_inits(testdata, etas_file, force, file_exists):
-    with Patcher(additional_skip_names=['pkgutil']) as patcher:
-        set_uid(0)  # Set to root user for write permission
+def test_update_inits(testdata, etas_file, force, file_exists, tmp_path):
+    shutil.copy(testdata / 'nonmem/pheno.mod', tmp_path / 'run1.mod')
+    shutil.copy(testdata / 'nonmem/pheno.phi', tmp_path / 'run1.phi')
+    shutil.copy(testdata / 'nonmem/pheno.ext', tmp_path / 'run1.ext')
+    shutil.copy(testdata / 'nonmem/pheno.dta', tmp_path / 'pheno.dta')
 
-        fs = patcher.fs
-
-        fs.add_real_file(testdata / 'nonmem/pheno.mod', target_path='run1.mod')
-        fs.add_real_file(testdata / 'nonmem/pheno.phi', target_path='run1.phi')
-        fs.add_real_file(testdata / 'nonmem/pheno.ext', target_path='run1.ext')
-        fs.add_real_file(testdata / 'nonmem/pheno.dta', target_path='pheno.dta')
-
+    with TemporaryDirectoryChanger(tmp_path):
         with open('run1.mod', 'a') as f:
             f.write(etas_file)
 
@@ -2844,21 +2838,17 @@ def test_update_inits_zero_fix(pheno_path):
     assert model.parameters['OMEGA(1,1)'].fix
 
 
-def test_update_inits_no_res(testdata):
-    with Patcher(additional_skip_names=['pkgutil']) as patcher:
-        set_uid(0)  # Set to root user for write permission
+def test_update_inits_no_res(testdata, tmp_path):
+    shutil.copy(testdata / 'nonmem/pheno.mod', tmp_path / 'run1.mod')
+    shutil.copy(testdata / 'nonmem/pheno.dta', tmp_path / 'pheno.dta')
 
-        fs = patcher.fs
-
-        fs.add_real_file(testdata / 'nonmem/pheno.mod', target_path='run1.mod')
-        fs.add_real_file(testdata / 'nonmem/pheno.dta', target_path='pheno.dta')
-
+    with TemporaryDirectoryChanger(tmp_path):
         model = Model.create_model('run1.mod')
         with pytest.raises(ValueError):
             update_inits(model)
 
-        fs.add_real_file(testdata / 'nonmem/pheno.ext', target_path='run1.ext')
-        fs.add_real_file(testdata / 'nonmem/pheno.lst', target_path='run1.lst')
+        shutil.copy(testdata / 'nonmem/pheno.ext', tmp_path / 'run1.ext')
+        shutil.copy(testdata / 'nonmem/pheno.lst', tmp_path / 'run1.lst')
 
         model = Model.create_model('run1.mod')
 
@@ -2907,21 +2897,13 @@ def test_update_inits_no_res(testdata):
         ),
     ],
 )
-def test_set_power_on_ruv(testdata, epsilons, err_ref, theta_ref):
-    with Patcher(
-        additional_skip_names=[
-            'pkgutil',
-            'pharmpy.plugins.nonmem.records.parsers',
-            'lark.load_grammar',
-        ]
-    ) as patcher:
-        fs = patcher.fs
+def test_set_power_on_ruv(testdata, epsilons, err_ref, theta_ref, tmp_path):
+    shutil.copy(testdata / 'nonmem/pheno_real.mod', tmp_path / 'run1.mod')
+    shutil.copy(testdata / 'nonmem/pheno_real.phi', tmp_path / 'run1.phi')
+    shutil.copy(testdata / 'nonmem/pheno_real.ext', tmp_path / 'run1.ext')
+    shutil.copy(testdata / 'nonmem/pheno.dta', tmp_path / 'pheno.dta')
 
-        fs.add_real_file(testdata / 'nonmem/pheno_real.mod', target_path='run1.mod')
-        fs.add_real_file(testdata / 'nonmem/pheno_real.phi', target_path='run1.phi')
-        fs.add_real_file(testdata / 'nonmem/pheno_real.ext', target_path='run1.ext')
-        fs.add_real_file(testdata / 'nonmem/pheno.dta', target_path='pheno.dta')
-
+    with TemporaryDirectoryChanger(tmp_path):
         model_pheno = Model.create_model('run1.mod')
         model_more_eps = re.sub(
             r'( 0.031128  ;        IVV\n)',

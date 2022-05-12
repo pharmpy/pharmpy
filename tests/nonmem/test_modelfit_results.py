@@ -1,13 +1,14 @@
 import re
+import shutil
 
 import pandas as pd
 import pytest
-from pyfakefs.fake_filesystem_unittest import Patcher
 
 import pharmpy.plugins.nonmem as nonmem
 from pharmpy import Model
 from pharmpy.config import ConfigurationContext
 from pharmpy.plugins.nonmem.results import NONMEMChainedModelfitResults, simfit_results
+from pharmpy.utils import TemporaryDirectoryChanger
 
 
 def test_ofv(pheno):
@@ -256,7 +257,7 @@ def test_runtime_total(testdata):
         ),
     ],
 )
-def test_runtime_different_formats(testdata, starttime, endtime, runtime_ref):
+def test_runtime_different_formats(testdata, starttime, endtime, runtime_ref, tmp_path):
     with open(testdata / 'nonmem' / 'pheno_real.lst', encoding='utf-8') as lst_file:
         lst_file_str = lst_file.read()
 
@@ -278,10 +279,10 @@ def test_runtime_different_formats(testdata, starttime, endtime, runtime_ref):
         assert repl_dict['start'][0] not in lst_file_repl
         assert repl_dict['end'][0] not in lst_file_repl
 
-    with Patcher(additional_skip_names=['pkgutil']) as patcher:
-        fs = patcher.fs
-        fs.add_real_file(testdata / 'nonmem' / 'pheno_real.mod', target_path='pheno_real.mod')
-        fs.add_real_file(testdata / 'nonmem' / 'pheno_real.ext', target_path='pheno_real.ext')
+    shutil.copy(testdata / 'nonmem' / 'pheno_real.mod', tmp_path / 'pheno_real.mod')
+    shutil.copy(testdata / 'nonmem' / 'pheno_real.ext', tmp_path / 'pheno_real.ext')
+
+    with TemporaryDirectoryChanger(tmp_path):
 
         with open('pheno_real.lst', 'a') as f:
             f.write(lst_file_repl)

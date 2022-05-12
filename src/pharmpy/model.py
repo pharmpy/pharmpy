@@ -426,7 +426,7 @@ class Model:
         """
         if isinstance(obj, str):
             path = Path(obj)
-        elif isinstance(obj, pathlib.Path):  # DO NOT change to Path! Will fail fakefs tests
+        elif isinstance(obj, pathlib.Path):
             path = obj
         elif isinstance(obj, io.IOBase):
             path = None

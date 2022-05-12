@@ -1,7 +1,5 @@
 from io import StringIO
 
-from pyfakefs.fake_filesystem_unittest import Patcher
-
 from pharmpy import Model
 from pharmpy.modeling import (
     has_additive_error_model,
@@ -20,6 +18,7 @@ from pharmpy.modeling import (
 )
 from pharmpy.modeling.error import _get_prop_init, set_time_varying_error_model
 from pharmpy.statements import Assignment
+from pharmpy.utils import TemporaryDirectoryChanger
 
 
 def test_remove_error_model(testdata):
@@ -403,7 +402,7 @@ $ESTIMATION METHOD=1 INTER MAXEVALS=9990 PRINT=2 POSTHOC
     assert model.model_code == correct
 
 
-def test_set_weighted_error_model():
+def test_set_weighted_error_model(tmp_path):
     code = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV
@@ -491,7 +490,7 @@ $ESTIMATION METHOD=1 INTERACTION
     assert model.model_code == correct
 
 
-def test_set_dtbs_error_model():
+def test_set_dtbs_error_model(tmp_path):
     code = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV
@@ -514,7 +513,7 @@ $ESTIMATION METHOD=1 INTERACTION
     model.name = 'run1'
     set_dtbs_error_model(model)
 
-    with Patcher(additional_skip_names=['pkgutil']):
+    with TemporaryDirectoryChanger(tmp_path):
         model.update_source()
         with open('run1_contr.f90') as fh:
             assert fh.readline().startswith('      subroutine contr')

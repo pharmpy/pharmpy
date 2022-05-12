@@ -2,7 +2,6 @@ from pathlib import Path
 
 import pytest
 import sympy
-from pyfakefs.fake_filesystem_unittest import Patcher
 
 from pharmpy import Model
 from pharmpy.modeling import (
@@ -52,11 +51,10 @@ $ESTIMATION METHOD=1 INTER MAXEVALS=9990 PRINT=2 POSTHOC
     assert model.parameters['THETA(1)'].init == 0.1
 
 
-def test_write_model(testdata):
+def test_write_model(testdata, tmp_path):
     model = read_model(testdata / 'nonmem' / 'minimal.mod')
-    with Patcher(additional_skip_names=['pkgutil']):
-        write_model(model, 'run1.mod')
-        assert Path('run1.mod').is_file()
+    write_model(model, tmp_path / 'run1.mod')
+    assert Path(tmp_path / 'run1.mod').is_file()
 
 
 def test_fix_parameters(testdata):

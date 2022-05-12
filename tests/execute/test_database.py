@@ -21,18 +21,19 @@ def test_base_class():
         ModelDatabase()
 
 
-def test_local_directory(fs):
-    os.mkdir("database")
-    db = LocalDirectoryDatabase("database")
-    with open("file.txt", "w") as fh:
-        print("Hello!", file=fh)
-    db.store_local_file(None, "file.txt")
-    with open("database/file.txt", "r") as fh:
-        assert fh.read() == "Hello!\n"
+def test_local_directory(tmp_path):
+    with TemporaryDirectoryChanger(tmp_path):
+        os.mkdir("database")
+        db = LocalDirectoryDatabase("database")
+        with open("file.txt", "w") as fh:
+            print("Hello!", file=fh)
+        db.store_local_file(None, "file.txt")
+        with open("database/file.txt", "r") as fh:
+            assert fh.read() == "Hello!\n"
 
-    dirname = "doesnotexist"
-    db = LocalDirectoryDatabase(dirname)
-    assert os.path.isdir(dirname)
+        dirname = "doesnotexist"
+        db = LocalDirectoryDatabase(dirname)
+        assert os.path.isdir(dirname)
 
 
 def test_null_database():

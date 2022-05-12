@@ -27,6 +27,6 @@ def test_read_config():
     assert len(conf.parameter_names) <= 3
 
 
-def test_str(pheno_path, datadir, fs):
+def test_str(pheno_path, datadir):
     with ConfigurationContext(conf, parameter_names=['abbr', 'basic']):
         assert str(conf) == "parameter_names:\t['abbr', 'basic']\n"
