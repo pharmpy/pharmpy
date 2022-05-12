@@ -11,6 +11,7 @@ import pytest
 from pharmpy.lock import (
     AcquiringProcessLevelLockWouldBlockError,
     AcquiringThreadLevelLockWouldBlockError,
+    RecursiveDeadlockError,
     path_lock,
 )
 from pharmpy.utils import TemporaryDirectoryChanger
@@ -169,3 +170,11 @@ def test_many_shared_one_exclusive_processes_blocking(tmp_path):
 
                 assert sorted(results) == sorted(range(n))
                 assert results[-1] == 0
+
+
+def test_non_reentrant_dead_lock(tmp_path):
+    with lock(tmp_path) as path:
+        with path_lock(path):
+            with pytest.raises(RecursiveDeadlockError):
+                with path_lock(path):
+                    pass
