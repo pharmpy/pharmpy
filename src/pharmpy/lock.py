@@ -30,6 +30,7 @@ Caveats:
     only options currently are immediate failure or forever blocking.
 """
 import os
+import sys
 from collections import Counter
 from contextlib import contextmanager
 from threading import Condition, Lock, RLock, get_ident
@@ -55,6 +56,7 @@ class RecursiveDeadlockError(Exception):
 
 
 is_windows = os.name == 'nt'
+is_mac_os = sys.platform == 'darwin'
 
 if is_windows:
     # Windows file locking
@@ -72,8 +74,20 @@ if is_windows:
         """
         return error.errno == 36 and error.strerror == 'Resource deadlock avoided'
 
+    def _is_process_level_lock_blocking_error(error: OSError) -> bool:
+        """Check that an OSError corresponds to an error raised because
+        a process-level lock cannot be acquired immediately
+        """
+        return (
+            isinstance(error, PermissionError)
+            and error.errno == 13
+            and error.strerror == 'Permission denied'
+        )
+
     def _process_level_lock(fd: int, shared: bool = False, blocking: bool = True):
-        # NOTE Simulates shared lock using an exclusive lock
+        # NOTE Simulates shared lock using an exclusive lock. This
+        # implementation does not allow to lock the same fd multiple times.
+        # This does not matter a we make sure we do not do that.
         if blocking:
             while True:
                 try:
@@ -83,22 +97,54 @@ if is_windows:
                     if not _is_process_level_lock_timeout_error(error):
                         raise error
         else:
-            msvcrt.locking(fd, msvcrt.LK_NBLCK, _lock_length)
+            try:
+                msvcrt.locking(fd, msvcrt.LK_NBLCK, _lock_length)
+            except PermissionError as error:
+                if _is_process_level_lock_blocking_error(error):
+                    raise AcquiringProcessLevelLockWouldBlockError()
+                else:
+                    raise error
 
     def _process_level_unlock(fd: int):
+        # NOTE This implementation (Windows) will raise an error if attempting
+        # to unlock an already unlocked fd. This does not matter as we make
+        # sure we do not do that.
         msvcrt.locking(fd, msvcrt.LK_UNLCK, _lock_length)
 
 else:
     # UNIX based file locking
     import fcntl
 
+    def _is_process_level_lock_blocking_error(error: OSError) -> bool:
+        """Check that an OSError corresponds to an error raised because
+        a process-level lock cannot be acquired immediately
+        """
+        return (
+            isinstance(error, BlockingIOError)
+            and (
+                (is_mac_os and error.errno == 35)  # MacOS
+                or (not (is_mac_os) and error.errno == 11)  # Linux
+            )
+            and error.strerror == 'Resource temporarily unavailable'
+        )
+
     def _process_level_lock(fd: int, shared: bool = False, blocking: bool = True):
         operation = fcntl.LOCK_SH if shared else fcntl.LOCK_EX
-        if not blocking:
-            operation |= fcntl.LOCK_NB
-        fcntl.lockf(fd, operation)
+        if blocking:
+            fcntl.lockf(fd, operation)
+        else:
+            try:
+                fcntl.lockf(fd, operation | fcntl.LOCK_NB)
+            except BlockingIOError as error:
+                if _is_process_level_lock_blocking_error(error):
+                    raise AcquiringProcessLevelLockWouldBlockError()
+                else:
+                    raise error
 
     def _process_level_unlock(fd: int):
+        # NOTE This implementation (UNIX) will NOT raise an error if attempting
+        # to unlock an already unlocked fd. This does not matter as we make
+        # sure we do not do that.
         fcntl.lockf(fd, fcntl.LOCK_UN)
 
 
@@ -147,8 +193,8 @@ class ShareableProcessLock:
                 if not is_held or (is_held_shared and not shared and not is_windows):
                     # NOTE We only lock when the first locking attempt is made, or
                     # if we want to upgrade the lock to an exclusive lock, but only on
-                    # Linux since current implementation always uses exclusive locks on
-                    # Windows
+                    # UNIX since current implementation always uses exclusive locks on
+                    # Windows.
                     _process_level_lock(self._fd, shared, blocking)
 
                 if shared:
