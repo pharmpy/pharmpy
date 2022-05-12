@@ -17,4 +17,7 @@ cp tests/testdata/nonmem/models/mox_simulated_normal.csv /tmp/tool_results/
 tox -e run -- pharmpy run modelsearch /tmp/tool_results/mox2.mod 'ABSORPTION(ZO);PERIPHERALS(1)' 'exhaustive_stepwise' --path /tmp/tool_results/modelsearch/
 cp /tmp/tool_results/modelsearch/results.json tests/testdata/results/modelsearch_results.json
 
+tox -e run -- pharmpy run iivsearch /tmp/tool_results/mox2.mod 'brute_force' --path /tmp/tool_results/iivsearch/
+cp /tmp/tool_results/iivsearch/results.json tests/testdata/results/iivsearch_results.json
+
 exit

@@ -273,9 +273,9 @@ if the user does not want to use the default. The following rank functions are a
 | ``'bic'``  | ΔBIC (mixed effects). Default is to rank all candidates if no cutoff is provided. |
 +------------+-----------------------------------------------------------------------------------+
 
-~~~~~~~~~~~~~~~~~~~~~~~~
-The Model Search results
-~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~
+The Modelsearch results
+~~~~~~~~~~~~~~~~~~~~~~~
 
 The results object contains the candidate models, the start model, and the selected best model (based on the input
 selection criteria). The tool also creates various summary tables which can be accessed in the results object,

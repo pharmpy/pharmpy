@@ -189,3 +189,44 @@ Comparing and ranking candidates
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This system is the same as for modelsearch, see :ref:`here<ranking>`.
+
+~~~~~~~~~~~~~~~~~~~~~
+The IIVsearch results
+~~~~~~~~~~~~~~~~~~~~~
+
+The results object contains the candidate models, the start model, and the selected best model (based on the input
+selection criteria). The tool also creates various summary tables which can be accessed in the results object,
+as well as files in .csv/.json format.
+
+Consider a iivsearch run with the search space of zero order absorption and adding one peripheral compartment:
+
+.. pharmpy-code::
+
+    res = run_iivsearch(algorithm='brute_force',
+                        model=start_model,
+                        iiv_strategy=0,
+                        rankfunc='bic',
+                        cutoff=None)
+
+
+The ``summary_tool`` table contains information such as which feature each model candidate has, the difference to the
+start model (in this case comparing BIC), and final ranking:
+
+.. pharmpy-execute::
+    :hide-code:
+
+    from pharmpy.results import read_results
+    res = read_results('tests/testdata/results/iivsearch_results.json')
+    res.summary_tool
+
+To see information about the actual model runs, such as minimization status, estimation time, and parameter estimates,
+you can look at the ``summary_models`` table. The table is generated with
+:py:func:`pharmpy.modeling.summarize_modelfit_results`.
+
+
+.. pharmpy-execute::
+    :hide-code:
+
+    import pandas as pd
+    pd.set_option("display.max_columns", 10)
+    res.summary_models

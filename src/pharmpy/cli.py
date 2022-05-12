@@ -167,27 +167,30 @@ def run_execute(args):
 def run_modelsearch(args):
     from pharmpy.modeling import run_tool
 
-    if args.path:
-        run_tool(
-            'modelsearch',
-            args.mfl,
-            args.algorithm,
-            rankfunc=args.rankfunc,
-            cutoff=args.cutoff,
-            iiv_strategy=args.iiv_strategy,
-            model=args.model,
-            path=args.path,
-        )
-    else:
-        run_tool(
-            'modelsearch',
-            args.mfl,
-            args.algorithm,
-            rankfunc=args.rankfunc,
-            cutoff=args.cutoff,
-            iiv_strategy=args.iiv_strategy,
-            model=args.model,
-        )
+    run_tool(
+        'modelsearch',
+        args.mfl,
+        args.algorithm,
+        rankfunc=args.rankfunc,
+        cutoff=args.cutoff,
+        iiv_strategy=args.iiv_strategy,
+        model=args.model,
+        path=args.path,
+    )
+
+
+def run_iivsearch(args):
+    from pharmpy.modeling import run_tool
+
+    run_tool(
+        'iivsearch',
+        args.algorithm,
+        iiv_strategy=args.iiv_strategy,
+        rankfunc=args.rankfunc,
+        cutoff=args.cutoff,
+        model=args.model,
+        path=args.path,
+    )
 
 
 def run_estmethod(args):
@@ -928,7 +931,7 @@ parser_definition = [
                                 'type': str,
                                 'help': 'Name of function to use for ranking '
                                 'candidates (default is bic).',
-                                'default': 'ofv',
+                                'default': 'bic',
                             },
                             {
                                 'name': '--cutoff',
@@ -941,6 +944,44 @@ parser_definition = [
                                 'type': int,
                                 'help': 'If/how IIV should be added to candidate models',
                                 'default': 0,
+                            },
+                            {
+                                'name': '--path',
+                                'type': pathlib.Path,
+                                'help': 'Path to output directory',
+                            },
+                        ],
+                    }
+                },
+                {
+                    'iivsearch': {
+                        'help': 'Search for best model IIV model',
+                        'func': run_iivsearch,
+                        'parents': [args_model_input],
+                        'args': [
+                            {
+                                'name': 'algorithm',
+                                'type': str,
+                                'help': 'Algorithm to use',
+                            },
+                            {
+                                'name': '--iiv_strategy',
+                                'type': int,
+                                'help': 'If/how IIV should be added to start model',
+                                'default': 0,
+                            },
+                            {
+                                'name': '--rankfunc',
+                                'type': str,
+                                'help': 'Name of function to use for ranking '
+                                'candidates (default is bic).',
+                                'default': 'bic',
+                            },
+                            {
+                                'name': '--cutoff',
+                                'type': float,
+                                'help': 'Which selection criteria to rank models on',
+                                'default': None,
                             },
                             {
                                 'name': '--path',
