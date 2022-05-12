@@ -161,22 +161,33 @@ def run_bootstrap(args):
 def run_execute(args):
     import pharmpy.modeling.run as run
 
-    method = run.fit(args.models)
-    method.run()
+    run.fit(args.models)
 
 
 def run_modelsearch(args):
     from pharmpy.modeling import run_tool
 
-    run_tool(
-        'modelsearch',
-        args.mfl,
-        args.algorithm,
-        rankfunc=args.rankfunc,
-        cutoff=args.cutoff,
-        iiv_strategy=args.iiv_strategy,
-        model=args.model,
-    )
+    if args.path:
+        run_tool(
+            'modelsearch',
+            args.mfl,
+            args.algorithm,
+            rankfunc=args.rankfunc,
+            cutoff=args.cutoff,
+            iiv_strategy=args.iiv_strategy,
+            model=args.model,
+            path=args.path,
+        )
+    else:
+        run_tool(
+            'modelsearch',
+            args.mfl,
+            args.algorithm,
+            rankfunc=args.rankfunc,
+            cutoff=args.cutoff,
+            iiv_strategy=args.iiv_strategy,
+            model=args.model,
+        )
 
 
 def run_estmethod(args):
@@ -930,6 +941,11 @@ parser_definition = [
                                 'type': int,
                                 'help': 'If/how IIV should be added to candidate models',
                                 'default': 0,
+                            },
+                            {
+                                'name': '--path',
+                                'type': pathlib.Path,
+                                'help': 'Path to output directory',
                             },
                         ],
                     }
