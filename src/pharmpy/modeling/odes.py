@@ -1489,5 +1489,12 @@ def _find_rate(sset):
     return rate_list
 
 
+def _find_real_symbol(sset, symbol):
+    assign = sset.find_assignment(symbol)
+    if len(assign.rhs_symbols) == 1:
+        dep_assigns = _get_dependent_assignments(sset, assign)
+        for dep_assign in dep_assigns:
+            symbol = dep_assign.symbol
+    return symbol
 
 
