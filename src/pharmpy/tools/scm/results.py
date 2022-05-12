@@ -89,6 +89,8 @@ def ofv_summary_dataframe(steps, final_included=True, iterations=True):
         columns = ['direction', 'reduced_ofv', 'extended_ofv', 'ofv_drop']
         if 'pvalue' in steps.columns:
             columns.extend(['delta_df', 'pvalue', 'goal_pvalue'])
+        if df.empty:
+            return df
         return df[columns]
 
 
