@@ -270,7 +270,7 @@ class ShareableThreadLock:
                 if not self._acquired_by[thread_id]:
                     del self._acquired_by[thread_id]  # NOTE GC
                     if not self._acquired_by:
-                        self._condition.notifyAll()
+                        self._condition.notify_all()
             finally:
                 self._condition.release()
 
