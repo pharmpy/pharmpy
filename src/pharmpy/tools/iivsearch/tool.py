@@ -132,6 +132,7 @@ def _results(res):
 
 
 def _start_algorithm(model):
+    model.parent_model = model.name
     return model
 
 

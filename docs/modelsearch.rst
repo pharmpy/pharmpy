@@ -308,13 +308,19 @@ To see information about the actual model runs, such as minimization status, est
 you can look at the ``summary_models`` table. The table is generated with
 :py:func:`pharmpy.modeling.summarize_modelfit_results`.
 
-
 .. pharmpy-execute::
     :hide-code:
 
     import pandas as pd
     pd.set_option("display.max_columns", 10)
     res.summary_models
+
+A summary table of predicted influential individuals and outliers can be seen in ``summary_individuals_count``.
+
+.. pharmpy-execute::
+    :hide-code:
+
+    res.summary_individuals_count
 
 Finally, you can see different individual statistics ``summary_individuals``.
 
