@@ -6,6 +6,8 @@ from pharmpy.modeling import (
     add_pk_iiv,
     copy_model,
     create_joint_distribution,
+    summarize_individuals,
+    summarize_individuals_count_table,
     summarize_modelfit_results,
 )
 from pharmpy.tools.common import summarize_tool
@@ -104,15 +106,23 @@ def start(input_model, algorithm, iiv_strategy, rankfunc, cutoff):
         wf = create_algorithm_workflow(
             input_model, base_model, algorithm_cur, iiv_strategy, rankfunc, cutoff
         )
-        next_res = call_workflow(wf, f'results{algorithm}')
+        next_res = call_workflow(wf, f'results_{algorithm}')
         if i == 0:
             res = next_res
         else:
-            res.models = res.models + next_res.models
+            prev_models = [model.name for model in res.models]
+            new_models = [model for model in next_res.models if model.name not in prev_models]
+            res.models = res.models + new_models
             res.best_model = next_res.best_model
             res.input_model = input_model
             res.summary_tool = pd.concat([res.summary_tool, next_res.summary_tool])
             res.summary_models = pd.concat([res.summary_models, next_res.summary_models])
+            res.summary_individuals = pd.concat(
+                [res.summary_individuals, next_res.summary_individuals]
+            )
+            res.summary_individuals_count = pd.concat(
+                [res.summary_individuals_count, next_res.summary_individuals_count]
+            )
         base_model = res.best_model
         iiv_strategy = 0
 
@@ -149,7 +159,15 @@ def post_process_results(rankfunc, cutoff, input_model, *models):
         cutoff,
         bic_type='iiv',
     )
+    print(base_model.name)
+    print(base_model.parent_model)
+    base_model.parent_model = base_model.name
     summary_models = summarize_modelfit_results([base_model] + res_models)
+    summary_individuals = summarize_individuals([base_model] + res_models)
+    summary_individuals['description'] = summary_tool['description']
+    suminds_count = summarize_individuals_count_table(df=summary_individuals)
+    suminds_count['description'] = summary_tool['description']
+    suminds_count[f'd{rankfunc}'] = summary_tool[f'd{rankfunc}']
 
     best_model_name = summary_tool['rank'].idxmin()
     try:
@@ -163,6 +181,8 @@ def post_process_results(rankfunc, cutoff, input_model, *models):
     res = IIVResults(
         summary_tool=summary_tool,
         summary_models=summary_models,
+        summary_individuals=summary_individuals,
+        summary_individuals_count=suminds_count,
         best_model=best_model,
         input_model=input_model,
         models=res_models,
@@ -173,10 +193,19 @@ def post_process_results(rankfunc, cutoff, input_model, *models):
 
 class IIVResults(pharmpy.results.Results):
     def __init__(
-        self, summary_tool=None, summary_models=None, best_model=None, input_model=None, models=None
+        self,
+        summary_tool=None,
+        summary_models=None,
+        summary_individuals=None,
+        summary_individuals_count=None,
+        best_model=None,
+        input_model=None,
+        models=None,
     ):
         self.summary_tool = summary_tool
         self.summary_models = summary_models
+        self.summary_individuals = summary_individuals
+        self.summary_individuals_count = summary_individuals_count
         self.best_model = best_model
         self.input_model = input_model
         self.models = models

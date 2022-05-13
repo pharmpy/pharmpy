@@ -110,6 +110,7 @@ def post_process_results(rankfunc, cutoff, *models):
     summary_tool = summarize_tool(res_models, input_model, rankfunc, cutoff)
     summary_models = summarize_modelfit_results([input_model] + res_models)
     summary_individuals = summarize_individuals([input_model] + res_models)
+    summary_individuals['description'] = summary_tool['description']
     suminds_count = summarize_individuals_count_table(df=summary_individuals)
     suminds_count['description'] = summary_tool['description']
     suminds_count[f'd{rankfunc}'] = summary_tool[f'd{rankfunc}']

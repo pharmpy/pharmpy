@@ -46,6 +46,7 @@ def execute_workflow(workflow, dispatcher=None, database=None, path=None, resume
                     original_input_models.append(inp)
                     inp.modelfit_results  # To read in the results
                     new_model = inp.copy()
+                    new_model.parent_model = new_model.name
                     new_model.dataset
                     new_model.database = database.model_database
                     new_inp.append(new_model)
