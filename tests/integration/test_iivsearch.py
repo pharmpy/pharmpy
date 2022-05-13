@@ -111,7 +111,7 @@ def test_no_of_etas_iiv_strategies(tmp_path, start_model, iiv_strategy):
 
         if iiv_strategy == 2:
             base_model = [model for model in res.models if model.name == 'base_model'].pop()
-            base_rvs = base_model.random_variables
+            base_rvs = base_model.random_variables.iiv
             assert len(base_rvs['ETA(1)'].joint_names) == len(base_rvs)
 
         no_of_candidate_models = 15
