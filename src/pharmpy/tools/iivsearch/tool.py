@@ -100,6 +100,7 @@ def start(input_model, algorithm, iiv_strategy, rankfunc, cutoff):
     else:
         list_of_algorithms = [algorithm]
 
+    sum_tools, sum_models, sum_inds, sum_inds_count = [], [], [], []
     for i, algorithm_cur in enumerate(list_of_algorithms):
         wf = create_algorithm_workflow(
             input_model, base_model, algorithm_cur, iiv_strategy, rankfunc, cutoff
@@ -113,18 +114,31 @@ def start(input_model, algorithm, iiv_strategy, rankfunc, cutoff):
             res.models = res.models + new_models
             res.best_model = next_res.best_model
             res.input_model = input_model
-            res.summary_tool = pd.concat([res.summary_tool, next_res.summary_tool])
-            res.summary_models = pd.concat([res.summary_models, next_res.summary_models])
-            res.summary_individuals = pd.concat(
-                [res.summary_individuals, next_res.summary_individuals]
-            )
-            res.summary_individuals_count = pd.concat(
-                [res.summary_individuals_count, next_res.summary_individuals_count]
-            )
+        sum_tools.append(next_res.summary_tool)
+        sum_models.append(next_res.summary_models)
+        sum_inds.append(next_res.summary_individuals)
+        sum_inds_count.append(next_res.summary_individuals_count)
         base_model = res.best_model
         iiv_strategy = 0
 
+    if len(list_of_algorithms) > 1:
+        keys = list(range(1, len(list_of_algorithms) + 1))
+    else:
+        keys = None
+
+    res.summary_tool = _concat_summaries(sum_tools, keys)
+    res.summary_models = _concat_summaries(sum_models, keys)
+    res.summary_individuals = _concat_summaries(sum_inds, keys)
+    res.summary_individuals_count = _concat_summaries(sum_inds_count, keys)
+
     return res
+
+
+def _concat_summaries(summaries, keys):
+    if keys:
+        return pd.concat(summaries, keys=keys)
+    else:
+        return pd.concat(summaries)
 
 
 def _results(res):
