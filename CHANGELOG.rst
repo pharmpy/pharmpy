@@ -1,12 +1,29 @@
-next version
-------------
+0.70.0 (2022-05-13)
+-------------------
 
 New features
 ============
 
+* New tool allometry added
 * Add modeling.summarize_individuals_count_table
 * Add modeling.calculate_ucp_scale
 * Add modeling.calculate_parameters_from_ucp
+* Add description attribute to model objects
+
+Changes
+=======
+
+* resmod can now iterate and add multiple residual error models
+* Automatically generate R examples in a seprate tab in documentation
+* merge iiv functions into one iivsearch tool
+
+Bugfixes
+========
+
+* Make sure dropping of DATE columns in NONMEM models are handled correctly
+* Solve issue with sporadic crashes because of a database race condition
+* Solve issue with sporadic crashes caused by race in lazy parsing of NONMEM records
+* Fix issues with converting some piecewise functions to NONMEM code correctly
 
 0.69.0 (2022-04-29)
 -------------------
