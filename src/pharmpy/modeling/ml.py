@@ -13,6 +13,14 @@ from .data import (
 )
 
 
+def _all_parameters(model):
+    # All parameter estimates including fixed
+    # This might warrant a function in modeling
+    d = {p.name: p.init for p in model.parameters}
+    d.update(dict(model.modelfit_results.parameter_estimates))
+    return pd.Series(d)
+
+
 def _create_dataset(model):
     res = model.modelfit_results
     if res is None:
@@ -32,10 +40,12 @@ def _create_dataset(model):
 
     # Max ratio of abs(ETAi) and omegai
     variance_omegas = model.random_variables.etas.variance_parameters
-    omega_estimates = np.sqrt(res.parameter_estimates[variance_omegas])
+    all_paramvals = _all_parameters(model)
+    omega_estimates = np.sqrt(all_paramvals[variance_omegas])
     abs_ebes = res.individual_estimates.abs()
     ebe_ratio = abs_ebes / list(omega_estimates)
-    max_ebe_ratio = ebe_ratio.max(axis=1)
+    max_ebe_ratio = ebe_ratio.max(axis=1).fillna(1.0)
+    # Set to 1 if division by zero, e.g. from omega fix to 0
 
     # exp(OFVi / nobsi) / exp(OFV / nobs)
     iofv = res.individual_ofv
@@ -45,7 +55,7 @@ def _create_dataset(model):
     cov = res.individual_estimates_covariance
     etc_diag = np.sqrt(pd.DataFrame([np.diag(y) for y in cov], columns=cov.iloc[0].columns))
     etc_ratio = etc_diag / list(omega_estimates)
-    mean_etc_ratio = etc_ratio.mean(axis=1)
+    mean_etc_ratio = etc_ratio.mean(axis=1).fillna(1.0)
     mean_etc_ratio.index = ofv_ratio.index
 
     # max((abs(indcov - mean(cov))) / sd(cov))
