@@ -48,6 +48,7 @@ from pharmpy.modeling import (
     transform_etas_tdist,
     update_inits,
 )
+from pharmpy.modeling.odes import find_clearance_parameters
 from pharmpy.utils import TemporaryDirectoryChanger
 
 
@@ -3200,3 +3201,17 @@ def test_mm_then_periph(pheno):
     newperiph = odes.peripheral_compartments[1]
     assert odes.get_flow(central, newperiph) == sympy.Symbol('QP2') / sympy.Symbol('V')
     assert odes.get_flow(newperiph, central) == sympy.Symbol('QP2') / sympy.Symbol('VP2')
+
+
+def test_find_clearance_parameters(pheno):
+    model = pheno.copy()
+    cl_origin = find_clearance_parameters(model)
+    assert cl_origin == [sympy.Symbol('CL')]
+    add_peripheral_compartment(model)
+    cl_p1 = find_clearance_parameters(model)
+    model.update_source()
+    assert cl_p1 == [sympy.Symbol('CL'), sympy.Symbol('QP1')]
+    add_peripheral_compartment(model)
+    cl_p2 = find_clearance_parameters(model)
+    model.update_source()
+    assert cl_p2 == [sympy.Symbol('CL'), sympy.Symbol('QP1'), sympy.Symbol('QP2')]

@@ -3,8 +3,9 @@
 """
 
 import sympy
-from pharmpy import ExplicitODESystem
+
 import pharmpy.symbols
+from pharmpy import ExplicitODESystem
 from pharmpy.model import ModelError
 from pharmpy.modeling.help_functions import _as_integer
 from pharmpy.parameter import Parameter
@@ -1472,6 +1473,38 @@ def set_ode_solver(model, solver):
     return model
 
 
+def find_clearance_parameters(model):
+    """Find clearance parameters in model
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+
+    Return
+    ------
+    list
+        A list of clearance parameters
+
+    Examples
+    --------
+     >>> from pharmpy.modeling import *
+     >>> model = load_example_model("pheno")
+     >>> find_clearance_parameters(model)
+
+    """
+    cls = []
+    sset = model.statements
+    rate_list = _find_rate(sset)
+    for rate in rate_list:
+        clearance = rate.as_numer_denom()[0]
+        if clearance.is_Symbol:
+            clearance = _find_real_symbol(sset, clearance)
+            if clearance not in cls:
+                cls.append(clearance)
+    return cls
+
+
 def _find_rate(sset):
     rate_list = []
     odes = sset.ode_system
@@ -1496,5 +1529,3 @@ def _find_real_symbol(sset, symbol):
         for dep_assign in dep_assigns:
             symbol = dep_assign.symbol
     return symbol
-
-
