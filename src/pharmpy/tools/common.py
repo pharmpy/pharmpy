@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 
 import pharmpy.tools.rankfuncs as rankfuncs
-from pharmpy.modeling import update_inits
+from pharmpy.modeling import summarize_individuals, summarize_individuals_count_table, update_inits
 
 
 def update_initial_estimates(model):
@@ -34,10 +34,10 @@ def summarize_tool(
     ranking, diff_dict = rankfunc(start_model, models_all, **kwargs)
     ranking_by_name = [model.name for model in ranking]  # Using list of models is very slow
 
-    index = []
+    model_names = []
     rows = []
     for model in models_all:
-        index.append(model.name)
+        model_names.append(model.name)
         parent_model = model.parent_model
         diff = diff_dict[model.name]
         desc = model.description
@@ -49,6 +49,20 @@ def summarize_tool(
 
     # FIXME: in ranks, if any row has NaN the rank converts to float
     colnames = ['description', f'd{rankfunc_name}', 'rank', 'parent_model']
+    index = pd.Index(model_names, name='model')
     df = pd.DataFrame(rows, index=index, columns=colnames)
 
     return df
+
+
+def summarize_tool_individuals(models, description_col, rankfunc_col):
+    summary_individuals = summarize_individuals(models)
+    summary_individuals = summary_individuals.join(description_col, how='inner')
+    col_to_move = summary_individuals.pop('description')
+    summary_individuals.insert(0, 'description', col_to_move)
+
+    suminds_count = summarize_individuals_count_table(df=summary_individuals)
+    suminds_count.insert(0, description_col.name, description_col)
+    suminds_count.insert(1, rankfunc_col.name, rankfunc_col)
+
+    return summary_individuals, suminds_count

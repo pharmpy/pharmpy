@@ -1,11 +1,7 @@
 import pharmpy.results
 import pharmpy.tools.modelsearch.algorithms as algorithms
-from pharmpy.modeling import (
-    summarize_individuals,
-    summarize_individuals_count_table,
-    summarize_modelfit_results,
-)
-from pharmpy.tools.common import summarize_tool
+from pharmpy.modeling import summarize_modelfit_results
+from pharmpy.tools.common import summarize_tool, summarize_tool_individuals
 from pharmpy.workflows import Task, Workflow
 
 
@@ -109,11 +105,9 @@ def post_process_results(rankfunc, cutoff, *models):
 
     summary_tool = summarize_tool(res_models, input_model, rankfunc, cutoff)
     summary_models = summarize_modelfit_results([input_model] + res_models)
-    summary_individuals = summarize_individuals([input_model] + res_models)
-    summary_individuals['description'] = summary_tool['description']
-    suminds_count = summarize_individuals_count_table(df=summary_individuals)
-    suminds_count['description'] = summary_tool['description']
-    suminds_count[f'd{rankfunc}'] = summary_tool[f'd{rankfunc}']
+    summary_individuals, summary_individuals_count = summarize_tool_individuals(
+        [input_model] + res_models, summary_tool['description'], summary_tool[f'd{rankfunc}']
+    )
 
     best_model_name = summary_tool['rank'].idxmin()
     try:
@@ -125,7 +119,7 @@ def post_process_results(rankfunc, cutoff, *models):
         summary_tool=summary_tool,
         summary_models=summary_models,
         summary_individuals=summary_individuals,
-        summary_individuals_count=suminds_count,
+        summary_individuals_count=summary_individuals_count,
         best_model=best_model,
         input_model=input_model,
         models=res_models,

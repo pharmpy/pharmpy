@@ -48,11 +48,6 @@ def test_block_structure(tmp_path, start_model):
 def test_no_of_etas(tmp_path, start_model):
     with TemporaryDirectoryChanger(tmp_path):
         res = run_iivsearch('brute_force_no_of_etas', model=start_model)
-        import pandas as pd
-
-        pd.set_option('display.max_columns', None)
-
-        print(res.summary_tool)
 
         no_of_candidate_models = 7
         assert len(res.summary_tool) == no_of_candidate_models + 1

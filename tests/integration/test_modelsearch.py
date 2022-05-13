@@ -164,6 +164,7 @@ def test_summary_individuals(tmp_path, testdata):
         )
         summary = res.summary_individuals
         columns = (
+            'description',
             'parent_model',
             'outlier_count',
             'ofv',
