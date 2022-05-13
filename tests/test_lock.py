@@ -1,7 +1,9 @@
+import json
 import os
 import time
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
+from itertools import chain, groupby
 from multiprocessing import Manager, Pipe, Pool, Process
 from pathlib import Path
 from queue import Queue
@@ -194,3 +196,51 @@ def test_reentrant(tmp_path):
             with path_lock(path, reentrant=True):
                 with path_lock(path, reentrant=True):
                     pass
+
+
+def many_exclusive_threads_and_processes_rw_process(path, indices):
+    def thread_write(i):
+        with path_lock(path, shared=False) as fd:
+            try:
+                with open(fd, closefd=False) as fp:
+                    fp.seek(0)
+                    done = json.load(fp)
+            except json.decoder.JSONDecodeError:
+                done = []
+
+            done.append(i)
+            with open(fd, 'w', closefd=False) as fp:
+                fp.seek(0)
+                fp.truncate(0)
+                json.dump(done, fp)
+
+    with ThreadPoolExecutor(max_workers=len(indices)) as executor:
+        executor.map(thread_write, indices)
+
+
+def test_many_exclusive_threads_and_processes_rw(tmp_path):
+    with lock(tmp_path) as path:
+
+        m = 10
+        n = m**2
+        items = list(range(n))
+        partition = list(
+            map(
+                lambda g: list(map(lambda t: t[1], g[1])),
+                groupby(enumerate(items), lambda t: t[0] // m),
+            )
+        )
+
+        assert len(partition) == m
+        assert sorted(chain(*partition)) == items
+
+        with Pool(processes=len(partition)) as pool:
+            pool.starmap(
+                many_exclusive_threads_and_processes_rw_process,
+                map(lambda part: (path, part), partition),
+            )
+
+        with open(path) as fp:
+            results = json.load(fp)
+
+        assert sorted(results) == sorted(range(n))

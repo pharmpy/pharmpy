@@ -1,5 +1,6 @@
 """The lock module exposes a path_lock context manager function
 
+Exception classes are part of the public API.
 Other exported functions are implementation details subject to change.
 
 Caveats:
@@ -7,6 +8,25 @@ Caveats:
     subset of paths that could be locked simultaneously by the same thread and call
     path_lock multiple times respecting this total order. For instance via
     resolved absolute path lexicographical order.
+
+    The Linux implementation relies on fcntl/lockf which is infamous for being
+    hard to work with: if you close any file descriptor for a given file in a
+    given process, it will release the lock held by that process, even if the
+    lock was acquired through a different file descriptor. So you cannot easily
+    open a lock file for reading or writing without breaking the locking
+    mechanism. We implement locks in a way that uses a single fd while a lock
+    exists for a given (normalized) path. That fd is opened with O_RDWR and is
+    yielded by path_lock for convenience, but the user should take extra care
+    not to close this fd, as it would release the lock. For instance, `open`
+    must be used with the `closefd` flag as in `open(fd, closefd=False)`. This
+    makes writing to the lock file, or reading several times from the lock
+    file, a bit challenging but not impossible (using `fp.seek` and
+    `fp.truncate`).
+
+    Another solution would be to use flock but since that can sometimes
+    fallback to the fcntl/lockf implementation, we prefer to use the latter
+    implementation directly, and workaround the limitations. See
+    http://0pointer.de/blog/projects/locking.html.
 
     Currently, on Windows, at the process level, shared locks are "simulated" by
     exclusive locks. Implementing true shared locks on this platform would require
@@ -319,10 +339,11 @@ class ShareableThreadLock:
 
 
 class ThreadSafeKeyedRefPool(Generic[T]):
-    def __init__(self, lock, refs: dict, factory):
+    def __init__(self, lock, refs: dict, factory, destructor=None):
         self._lock = lock
         self._refs = refs
         self._factory = factory
+        self._destructor = destructor
 
     @contextmanager
     def __call__(self, key: T):
@@ -347,6 +368,8 @@ class ThreadSafeKeyedRefPool(Generic[T]):
                     # NOTE We remove the object from the pool since nobody
                     # else holds a reference to it.
                     del self._refs[key]
+                    if self._destructor is not None:
+                        self._destructor(obj)
                 else:
                     # NOTE Otherwise we count one ref less
                     self._refs[key] = (obj, refcount - 1)
@@ -354,6 +377,9 @@ class ThreadSafeKeyedRefPool(Generic[T]):
 
 _thread_level_lock_ref = ThreadSafeKeyedRefPool(Lock(), {}, lambda _key: ShareableThreadLock())
 _process_level_lock_ref = ThreadSafeKeyedRefPool(Lock(), {}, ShareableProcessLock)
+_fd_ref = ThreadSafeKeyedRefPool(
+    Lock(), {}, lambda normalized_path: os.open(normalized_path, os.O_RDWR), lambda fd: os.close(fd)
+)
 
 
 @contextmanager
@@ -374,24 +400,13 @@ def thread_level_lock(
             yield
 
 
-def thread_level_path_lock(
-    path: str, shared: bool = False, blocking: bool = True, reentrant: bool = False
-):
-    key = os.path.normpath(path)
-    return thread_level_lock(key, shared, blocking, reentrant)
-
-
 @contextmanager
 def process_level_path_lock(
-    path: str, shared: bool = False, blocking: bool = True, reentrant: bool = False
+    normalized_path: str, shared: bool = False, blocking: bool = True, reentrant: bool = False
 ):
-    fd = os.open(path, os.O_RDONLY if shared else os.O_RDWR)
-    try:
+    with _fd_ref(normalized_path) as fd:
         with process_level_lock(fd, shared, blocking, reentrant):
             yield fd
-
-    finally:
-        os.close(fd)
 
 
 @contextmanager
@@ -416,6 +431,7 @@ def path_lock(path: str, shared: bool = False, blocking: bool = True, reentrant:
         Whether lock acquisition is reentrant. If True, allows to lock
         recursively. Otherwise, recursively locking dead-locks.
     """
-    with thread_level_path_lock(path, shared, blocking, reentrant):
-        with process_level_path_lock(path, shared, blocking, reentrant):
-            yield
+    key = os.path.normpath(path)
+    with thread_level_lock(key, shared, blocking, reentrant):
+        with process_level_path_lock(key, shared, blocking, reentrant) as fd:
+            yield fd
