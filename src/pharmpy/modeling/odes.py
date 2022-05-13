@@ -1491,7 +1491,7 @@ def find_clearance_parameters(model):
      >>> from pharmpy.modeling import *
      >>> model = load_example_model("pheno")
      >>> find_clearance_parameters(model)
-
+     [CL]
     """
     cls = []
     sset = model.statements
@@ -1503,6 +1503,38 @@ def find_clearance_parameters(model):
             if clearance not in cls:
                 cls.append(clearance)
     return cls
+
+
+def find_volume_parameters(model):
+    """Find volume parameters in model
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+
+    Return
+    ------
+    list
+        A list of volume parameters
+
+    Examples
+    --------
+     >>> from pharmpy.modeling import *
+     >>> model = load_example_model("pheno")
+     >>> find_volume_parameters(model)
+     [V]
+    """
+    vcs = []
+    sset = model.statements
+    rate_list = _find_rate(sset)
+    for rate in rate_list:
+        volume = rate.as_numer_denom()[1]
+        if volume.is_Symbol:
+            volume = _find_real_symbol(sset, volume)
+            if volume not in vcs:
+                vcs.append(volume)
+    return vcs
 
 
 def _find_rate(sset):

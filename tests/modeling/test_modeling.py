@@ -48,7 +48,7 @@ from pharmpy.modeling import (
     transform_etas_tdist,
     update_inits,
 )
-from pharmpy.modeling.odes import find_clearance_parameters
+from pharmpy.modeling.odes import find_clearance_parameters, find_volume_parameters
 from pharmpy.utils import TemporaryDirectoryChanger
 
 
@@ -3215,3 +3215,17 @@ def test_find_clearance_parameters(pheno):
     cl_p2 = find_clearance_parameters(model)
     model.update_source()
     assert cl_p2 == [sympy.Symbol('CL'), sympy.Symbol('QP1'), sympy.Symbol('QP2')]
+
+
+def test_find_volume_parameters(pheno):
+    model = pheno.copy()
+    v_origin = find_volume_parameters(model)
+    assert v_origin == [sympy.Symbol('V')]
+    add_peripheral_compartment(model)
+    model.update_source()
+    v_p1 = find_volume_parameters(model)
+    assert v_p1 == [sympy.Symbol('V1'), sympy.Symbol('VP1')]
+    add_peripheral_compartment(model)
+    model.update_source()
+    v_p2 = find_volume_parameters(model)
+    assert v_p2 == [sympy.Symbol('V1'), sympy.Symbol('VP1'), sympy.Symbol('VP2')]
