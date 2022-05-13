@@ -178,3 +178,19 @@ def test_non_reentrant_dead_lock(tmp_path):
             with pytest.raises(RecursiveDeadlockError):
                 with path_lock(path):
                     pass
+
+
+def test_reentrant(tmp_path):
+    with lock(tmp_path) as path:
+        with path_lock(path):
+            with path_lock(path, reentrant=True):
+                pass
+
+        with path_lock(path, reentrant=True):
+            with path_lock(path, reentrant=True):
+                pass
+
+        with path_lock(path):
+            with path_lock(path, reentrant=True):
+                with path_lock(path, reentrant=True):
+                    pass
