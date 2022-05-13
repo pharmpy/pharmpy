@@ -51,8 +51,9 @@ def summarize_tool(
     colnames = ['description', f'd{rankfunc_name}', 'rank', 'parent_model']
     index = pd.Index(model_names, name='model')
     df = pd.DataFrame(rows, index=index, columns=colnames)
+    df_sorted = df.sort_values(by=[f'd{rankfunc_name}'], ascending=False)
 
-    return df
+    return df_sorted
 
 
 def summarize_tool_individuals(models, description_col, rankfunc_col):
@@ -64,5 +65,5 @@ def summarize_tool_individuals(models, description_col, rankfunc_col):
     suminds_count = summarize_individuals_count_table(df=summary_individuals)
     suminds_count.insert(0, description_col.name, description_col)
     suminds_count.insert(1, rankfunc_col.name, rankfunc_col)
-
-    return summary_individuals, suminds_count
+    summary_individuals_count = suminds_count.sort_values(by=[rankfunc_col.name], ascending=False)
+    return summary_individuals, summary_individuals_count

@@ -104,10 +104,15 @@ def post_process_results(rankfunc, cutoff, *models):
         raise ValueError('Error in workflow: No input model')
 
     summary_tool = summarize_tool(res_models, input_model, rankfunc, cutoff)
-    summary_models = summarize_modelfit_results([input_model] + res_models)
+    summary_models = summarize_modelfit_results([input_model] + res_models).sort_values(
+        by=[rankfunc]
+    )
     summary_individuals, summary_individuals_count = summarize_tool_individuals(
         [input_model] + res_models, summary_tool['description'], summary_tool[f'd{rankfunc}']
     )
+
+    summary_models.sort_values(by=[f'{rankfunc}'])
+    summary_individuals_count.sort_values(by=[f'd{rankfunc}'])
 
     best_model_name = summary_tool['rank'].idxmin()
     try:

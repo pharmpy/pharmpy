@@ -157,7 +157,9 @@ def post_process_results(rankfunc, cutoff, input_model, *models):
         cutoff,
         bic_type='iiv',
     )
-    summary_models = summarize_modelfit_results([base_model] + res_models)
+    summary_models = summarize_modelfit_results([base_model] + res_models).sort_values(
+        by=[rankfunc]
+    )
     summary_individuals, summary_individuals_count = summarize_tool_individuals(
         [base_model] + res_models, summary_tool['description'], summary_tool[f'd{rankfunc}']
     )
