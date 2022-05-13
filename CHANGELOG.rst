@@ -9,13 +9,16 @@ New features
 * Add modeling.calculate_ucp_scale
 * Add modeling.calculate_parameters_from_ucp
 * Add description attribute to model objects
+* Add wrappers for iivsearch and modelsearch tools (run_iivsearch and run_modelsearch)
+* Add documentation for iivsearch tool
 
 Changes
 =======
 
 * resmod can now iterate and add multiple residual error models
 * Automatically generate R examples in a seprate tab in documentation
-* merge iiv functions into one iivsearch tool
+* Merge iiv functions into one iivsearch algorithm ('brute_force')
+* Use parameter names instead of eta names in iivsearch tool features
 
 Bugfixes
 ========
@@ -24,6 +27,8 @@ Bugfixes
 * Solve issue with sporadic crashes because of a database race condition
 * Solve issue with sporadic crashes caused by race in lazy parsing of NONMEM records
 * Fix issues with converting some piecewise functions to NONMEM code correctly
+* Fix issue with generating candidate models for iivsearch tool
+* Fix issue with duplicate candidate models in iivsearch tool (#745)
 
 0.69.0 (2022-04-29)
 -------------------
