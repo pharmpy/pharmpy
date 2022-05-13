@@ -101,9 +101,8 @@ def test_ignore_character(parser):
     assert str(record) == '$DATA pheno.dta IGNORE="'
     record.validate()
 
-    record = parser.parse('$DATA pheno.dta IGNORE=""').records[0]
     with pytest.raises(UnexpectedCharacters):
-        record.root
+        record = parser.parse('$DATA pheno.dta IGNORE=""').records[0]
 
     record = parser.parse('$DATA pheno.dta IGNORE=c IGNORE=@').records[0]
     with pytest.raises(ModelSyntaxError):
