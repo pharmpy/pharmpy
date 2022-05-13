@@ -157,7 +157,7 @@ def summarize_individuals_count_table(models=None, df=None):
     | Column                  | Description                                                                     |
     +=========================+=================================================================================+
     | ``inf_selection``       | Number of subjects influential on model selection.                              |
-    |                         | ||dOFVi|  - |OFV_parent - OFV|| > 3.84                                          |
+    |                         | :math:`||dOFV_i|  - |OFV_{parent} - OFV|| > 3.84`                               |
     +-------------------------+---------------------------------------------------------------------------------+
     | ``inf_params``          | Number of subjects influential on parameters. predicted_dofv > 3.84             |
     +-------------------------+---------------------------------------------------------------------------------+
