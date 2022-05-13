@@ -528,9 +528,9 @@ def summarize_modelfit_results(models, include_all_estimation_steps=False):
                 empty_df = pd.DataFrame(index=[model.name])
                 summaries.append(empty_df)
 
-    summary = pd.concat(summaries).sort_index()
+    df = pd.concat(summaries)
 
-    return summary
+    return df
 
 
 def calculate_aic(model, modelfit_results=None):

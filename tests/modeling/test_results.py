@@ -120,7 +120,7 @@ def test_summarize_modelfit_results(testdata, pheno_path):
     assert summary_multiple['OMEGA(2,1)_estimate'].mean() == 0.395647  # One is NaN
 
     assert len(summary_multiple.index) == 2
-    assert list(summary_multiple.index) == ['mox1', 'pheno_real']
+    assert list(summary_multiple.index) == ['pheno_real', 'mox1']
 
     pheno_no_res = Model.create_model(StringIO(pheno.model_code))
     pheno_no_res.name = 'pheno_no_res'
