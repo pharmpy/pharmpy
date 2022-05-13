@@ -157,7 +157,7 @@ def summarize_individuals_count_table(models=None, df=None):
     | Column                  | Description                                                                     |
     +=========================+=================================================================================+
     | ``inf_selection``       | Number of subjects influential on model selection.                              |
-    |                         | dOFVi + 3.84 - (OFV_parent - OFV)                                               |
+    |                         | ||dOFVi|  - |OFV_parent - OFV|| > 3.84                                          |
     +-------------------------+---------------------------------------------------------------------------------+
     | ``inf_params``          | Number of subjects influential on parameters. predicted_dofv > 3.84             |
     +-------------------------+---------------------------------------------------------------------------------+
@@ -212,9 +212,9 @@ def summarize_individuals_count_table(models=None, df=None):
 
     ofv_sums = df['ofv'].groupby('model').sum()
     parent_sums = parent_ofvs.groupby('model').sum()
-    full_ofv_diff = 3.84 + ofv_sums - parent_sums
+    full_ofv_diff = (parent_sums - ofv_sums) / len(df.index.unique(level='ID'))
     full_ofv_diff.loc[start_name] = 0
-    is_inf_selection = (dofvi + full_ofv_diff) > 0.0
+    is_inf_selection = abs(abs(dofvi) - abs(full_ofv_diff)) > 3.84
     inf_selection = is_inf_selection.groupby(level='model', sort=False).sum().astype('int32')
 
     is_inf_outlier = (is_out_obs | is_out_ind) & (is_inf_params | is_inf_selection)
