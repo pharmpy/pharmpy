@@ -4,7 +4,7 @@ import time
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 from contextlib import contextmanager
 from itertools import chain, groupby
-from multiprocessing import Manager, Pool, Process
+from multiprocessing import Manager, Pool
 from pathlib import Path
 from queue import Queue
 from random import random
@@ -53,123 +53,66 @@ def lock(directory):
         yield path
 
 
-def test_exclusive_threads_non_blocking(tmp_path):
-    with lock(tmp_path) as path:
-
-        is_done = Barrier(2)
-        is_locked = Barrier(2)
-
-        def thread_lock_first():
-            with path_lock(path, shared=False, blocking=False):
-                is_locked.wait()
-                is_done.wait()
-
-        def thread_lock_last():
-            is_locked.wait()
-            with path_lock(path, shared=False, blocking=False):
-                pass
-
-        with ThreadPoolExecutor(max_workers=2) as executor:
-            executor.submit(thread_lock_first)
-            last = executor.submit(thread_lock_last)
-
-            with pytest.raises(AcquiringThreadLevelLockWouldBlockError):
-                last.result()
-
-            is_done.wait()
-
-
-def process_lock_first(is_locked, is_done, path):
+def lock_first(is_locked, is_done, path):
     with path_lock(path, shared=False, blocking=False):
         is_locked.wait()
         is_done.wait()
 
 
-def process_lock_last(is_locked, q, path):
+def lock_last(is_locked, path):
     is_locked.wait()
-    try:
-        with path_lock(path, shared=False, blocking=False):
-            pass
-        q.put(None)
-    except Exception as e:
-        q.put(e)
+    with path_lock(path, shared=False, blocking=False):
+        pass
 
 
-def test_exclusive_processes_non_blocking(tmp_path):
+@pytest.mark.parametrize(
+    'parallelization, exception',
+    (
+        (threads, AcquiringThreadLevelLockWouldBlockError),
+        (processes, AcquiringProcessLevelLockWouldBlockError),
+    ),
+)
+def test_exclusive_non_blocking(tmp_path, parallelization, exception):
     with lock(tmp_path) as path:
 
-        m = Manager()
-        is_done = m.Barrier(2)
-        is_locked = m.Barrier(2)
-        q = m.Queue()
-        Process(target=process_lock_first, args=(is_locked, is_done, path)).start()
-        last = Process(target=process_lock_last, args=(is_locked, q, path))
-        last.start()
+        with parallelization(2) as [executor, m]:
+            is_locked = m.Barrier(2)
+            is_done = m.Barrier(2)
 
-        e = q.get()
+            executor.submit(lock_first, is_locked, is_done, path)
+            last = executor.submit(lock_last, is_locked, path)
 
-        assert isinstance(e, AcquiringProcessLevelLockWouldBlockError)
-
-        is_done.wait()
-
-
-def test_many_shared_one_exclusive_threads_blocking(tmp_path):
-    with lock(tmp_path) as path:
-
-        n = 10
-
-        are_locked = Barrier(n)
-
-        def thread_lock_shared(results, i):
-            with path_lock(path, shared=True):
-                are_locked.wait()
-                time.sleep(1)
-                results.append(i)
-
-        def thread_lock_exclusive(results, i):
-            are_locked.wait()
-            with path_lock(path, shared=False):
-                results.append(i)
-
-        with ThreadPoolExecutor(max_workers=n) as executor:
-            # NOTE We run the test twice to reuse workers to catch errors where
-            # some workers are left in a locked state.
-            for _ in range(2):
-                are_locked.reset()
-                results = []
-
-                for i in range(1, n):
-                    executor.submit(thread_lock_shared, results, i)
-                last = executor.submit(thread_lock_exclusive, results, 0)
-
+            with pytest.raises(exception):
                 last.result()
 
-                assert sorted(results) == sorted(range(n))
-                assert results[-1] == 0
+            is_done.wait()
 
 
-def process_lock_shared(are_locked, q, path, i):
+def lock_shared(are_locked, q, path, i):
     with path_lock(path, shared=True):
         are_locked.wait()
         time.sleep(1)
         q.put(i)
 
 
-def process_lock_exclusive(are_locked, q, path, i):
+def lock_exclusive(are_locked, q, path, i):
     are_locked.wait()
     with path_lock(path, shared=False):
         q.put(i)
 
 
-@pytest.mark.skipif(os.name == 'nt', reason="Windows shared process locks are not implemented.")
-def test_many_shared_one_exclusive_processes_blocking(tmp_path):
+@pytest.mark.parametrize('parallelization', (threads, processes))
+def test_many_shared_one_exclusive_blocking(tmp_path, parallelization):
+
+    if os.name == 'nt' and 'processes' in repr(parallelization):
+        pytest.skip("Windows shared process locks are not implemented.")
+
     with lock(tmp_path) as path:
 
         n = 10
 
-        with Pool(processes=n) as pool:
+        with parallelization(n) as [executor, m]:
 
-            m = Manager()
             results_queue = m.Queue()
 
             # NOTE We run the test twice to reuse workers to catch errors where
@@ -179,12 +122,10 @@ def test_many_shared_one_exclusive_processes_blocking(tmp_path):
                 are_locked = m.Barrier(n)
 
                 for i in range(1, n):
-                    pool.apply_async(process_lock_shared, [are_locked, results_queue, path, i])
-                last = pool.apply_async(
-                    process_lock_exclusive, [are_locked, results_queue, path, 0]
-                )
+                    executor.submit(lock_shared, are_locked, results_queue, path, i)
+                last = executor.submit(lock_exclusive, are_locked, results_queue, path, 0)
 
-                last.wait()
+                last.result()
 
                 results = []
                 for i in range(n):
@@ -266,7 +207,7 @@ def test_many_exclusive_threads_and_processes_rw(tmp_path):
         assert sorted(results) == sorted(range(n))
 
 
-def process_lock_shared_chained(path, first_is_locked, recvp, send, recvn, results, n, i):
+def lock_shared_chained(path, first_is_locked, recvp, send, recvn, results, n, i):
     if i > 0:
         j = recvp.get()  # Wait for previous thread to be locked
         assert j == i - 1
@@ -304,7 +245,7 @@ def test_chained_shared_one_exclusive_blocking(tmp_path, parallelization):
 
                 for i in range(n - 1):
                     executor.submit(
-                        process_lock_shared_chained,
+                        lock_shared_chained,
                         path,
                         first_is_locked,
                         queues[i],
@@ -314,9 +255,7 @@ def test_chained_shared_one_exclusive_blocking(tmp_path, parallelization):
                         n,
                         i,
                     )
-                last = executor.submit(
-                    process_lock_exclusive, first_is_locked, results_queue, path, n - 1
-                )
+                last = executor.submit(lock_exclusive, first_is_locked, results_queue, path, n - 1)
 
                 last.result()
 
