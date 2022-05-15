@@ -7,6 +7,7 @@ from itertools import chain, groupby
 from multiprocessing import Manager, Pipe, Pool, Process
 from pathlib import Path
 from queue import Queue
+from random import random
 from threading import Barrier
 
 import pytest
@@ -346,3 +347,97 @@ def test_chained_shared_one_exclusive_processes_blocking(tmp_path):
                     results.append(results_queue.get())
 
                 assert results == sorted(range(n))
+
+
+def test_synchronized_reads_threads_blocking(tmp_path):
+
+    with lock(tmp_path) as path:
+
+        filename = 'rw'
+
+        with open(filename, 'w') as fp:
+            json.dump({'id': -1, 'counter': 0, 'copy': 0}, fp)
+
+        n = 1000
+        k = 7
+        p = 10
+        max_write = p - k
+
+        def sync_read(before, after, q, i):
+            before.wait()
+            time.sleep(0.01 * random())
+            with path_lock(path, shared=True):
+                after.wait()
+                with open(filename) as fp:
+                    contents = json.load(fp)
+            q.put({'type': 'read', 'id': i, 'contents': contents})
+
+        def write(q, i):
+            with path_lock(path, shared=False):
+                with open(filename) as fp:
+                    contents = json.load(fp)
+
+                contents['id'] = i
+                contents['counter'] += 1
+
+                with open(filename, 'w') as fp:
+                    json.dump(contents, fp)
+
+                with open(filename) as fp:
+                    contents = json.load(fp)
+
+                contents['copy'] += 1
+
+                with open(filename, 'w') as fp:
+                    json.dump(contents, fp)
+
+            q.put({'type': 'write', 'id': i, 'contents': contents})
+
+        with ThreadPoolExecutor(max_workers=p) as executor:
+            q = Queue()
+            i = 0
+            g = 0
+            w = 0
+            messages = []
+            group = {}
+            while i < n:
+                c = min(n - i, k)
+                if w >= max_write or random() < 1 / (c + 1):
+                    before = Barrier(c)
+                    after = Barrier(c)
+                    for _ in range(c):
+                        executor.submit(sync_read, before, after, q, i)
+                        group[i] = g
+                        i += 1
+                    g += 1
+                else:
+                    executor.submit(write, q, i)
+                    i += 1
+                    w += 1
+
+                while (
+                    not q.empty() or len(messages) < i - k
+                ):  # NOTE We empty the queue as much as possible
+                    messages.append(q.get())
+                    if messages[-1]['type'] == 'write':
+                        w -= 1
+
+            while len(messages) < n:
+                messages.append(q.get())
+
+        values = {}
+        for message in messages:
+            t = message['type']
+            if t == 'read':
+                i = message['id']
+                g = group[i]
+                counter = message['contents']['counter']
+                # NOTE counter is the same for the whole group
+                assert values.setdefault(g, counter) == counter
+                # NOTE copy is identical to counter
+                assert message['contents']['copy'] == counter
+            else:
+                assert t == 'write'
+                # NOTE check nobody else wrote to file while we held the lock
+                assert message['id'] == message['contents']['id']
+                assert message['contents']['copy'] == message['contents']['counter']
