@@ -6,7 +6,7 @@ from contextlib import contextmanager
 from itertools import chain, groupby
 from multiprocessing import Manager, Pipe, Pool, Process
 from pathlib import Path
-from queue import Queue
+from threading import Barrier
 
 import pytest
 
@@ -31,17 +31,16 @@ def lock(directory):
 def test_exclusive_threads_non_blocking(tmp_path):
     with lock(tmp_path) as path:
 
-        first_is_locked = Queue()
-        is_done = Queue()
-        last_attempt_locking = Queue()
+        is_done = Barrier(2)
+        is_locked = Barrier(2)
 
         def thread_lock_first():
             with path_lock(path, shared=False, blocking=False):
-                first_is_locked.put(0)
-                is_done.get()
+                is_locked.wait()
+                is_done.wait()
 
         def thread_lock_last():
-            last_attempt_locking.get()
+            is_locked.wait()
             with path_lock(path, shared=False, blocking=False):
                 pass
 
@@ -49,23 +48,20 @@ def test_exclusive_threads_non_blocking(tmp_path):
             executor.submit(thread_lock_first)
             last = executor.submit(thread_lock_last)
 
-            first_is_locked.get()
-            last_attempt_locking.put(0)
-
             with pytest.raises(AcquiringThreadLevelLockWouldBlockError):
                 last.result()
 
-            is_done.put(0)
+            is_done.wait()
 
 
-def process_lock_first(conn, path):
+def process_lock_first(is_locked, is_done, path):
     with path_lock(path, shared=False, blocking=False):
-        conn.send('')
-        conn.recv()
+        is_locked.wait()
+        is_done.wait()
 
 
-def process_lock_last(conn, path):
-    conn.recv()
+def process_lock_last(is_locked, conn, path):
+    is_locked.wait()
     try:
         with path_lock(path, shared=False, blocking=False):
             pass
@@ -77,19 +73,19 @@ def process_lock_last(conn, path):
 def test_exclusive_processes_non_blocking(tmp_path):
     with lock(tmp_path) as path:
 
-        parent_first_conn, first_conn = Pipe()
+        m = Manager()
+        is_done = m.Barrier(2)
+        is_locked = m.Barrier(2)
         parent_last_conn, last_conn = Pipe()
-        Process(target=process_lock_first, args=(first_conn, path)).start()
-        last = Process(target=process_lock_last, args=(last_conn, path))
+        Process(target=process_lock_first, args=(is_locked, is_done, path)).start()
+        last = Process(target=process_lock_last, args=(is_locked, last_conn, path))
         last.start()
 
-        parent_first_conn.recv()
-        parent_last_conn.send('')
         e = parent_last_conn.recv()
 
         assert isinstance(e, AcquiringProcessLevelLockWouldBlockError)
 
-        parent_first_conn.send('')
+        is_done.wait()
 
 
 def test_many_shared_one_exclusive_threads_blocking(tmp_path):
@@ -97,22 +93,24 @@ def test_many_shared_one_exclusive_threads_blocking(tmp_path):
 
         n = 10
 
-        q = Queue()
+        are_locked = Barrier(n)
 
         def thread_lock_shared(results, i):
             with path_lock(path, shared=True):
-                q.put(0)
+                are_locked.wait()
                 time.sleep(1)
                 results.append(i)
 
         def thread_lock_exclusive(results, i):
-            for j in range(n - 1):
-                q.get()
+            are_locked.wait()
             with path_lock(path, shared=False):
                 results.append(i)
 
         with ThreadPoolExecutor(max_workers=n) as executor:
+            # NOTE We run the test twice to reuse workers to catch errors where
+            # some workers are left in a locked state.
             for j in range(2):
+                are_locked.reset()
                 results = []
 
                 for i in range(1, n):
@@ -125,15 +123,15 @@ def test_many_shared_one_exclusive_threads_blocking(tmp_path):
                 assert results[-1] == 0
 
 
-def process_lock_shared(conn, q, path, i):
+def process_lock_shared(are_locked, q, path, i):
     with path_lock(path, shared=True):
-        conn.put(0)
-        time.sleep(2)
+        are_locked.wait()
+        time.sleep(1)
         q.put(i)
 
 
-def process_lock_exclusive(conn, q, path, i):
-    conn.recv()
+def process_lock_exclusive(are_locked, q, path, i):
+    are_locked.wait()
     with path_lock(path, shared=False):
         q.put(i)
 
@@ -149,20 +147,17 @@ def test_many_shared_one_exclusive_processes_blocking(tmp_path):
             m = Manager()
             results_queue = m.Queue()
 
+            # NOTE We run the test twice to reuse workers to catch errors where
+            # some workers are left in a locked state.
             for j in range(2):
 
-                locked_queue = m.Queue()
-                parent_last_conn, last_conn = Pipe()
+                are_locked = m.Barrier(n)
 
                 for i in range(1, n):
-                    pool.apply_async(process_lock_shared, [locked_queue, results_queue, path, i])
-                last = pool.apply_async(process_lock_exclusive, [last_conn, results_queue, path, 0])
-
-                # Waiting for at least one process to acquire a shared lock
-                locked_queue.get()
-
-                # Allow last process to attempt acquiring an exlusive lock
-                parent_last_conn.send('')
+                    pool.apply_async(process_lock_shared, [are_locked, results_queue, path, i])
+                last = pool.apply_async(
+                    process_lock_exclusive, [are_locked, results_queue, path, 0]
+                )
 
                 last.wait()
 
