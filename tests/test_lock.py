@@ -110,7 +110,7 @@ def test_many_shared_one_exclusive_threads_blocking(tmp_path):
         with ThreadPoolExecutor(max_workers=n) as executor:
             # NOTE We run the test twice to reuse workers to catch errors where
             # some workers are left in a locked state.
-            for j in range(2):
+            for _ in range(2):
                 are_locked.reset()
                 results = []
 
@@ -150,7 +150,7 @@ def test_many_shared_one_exclusive_processes_blocking(tmp_path):
 
             # NOTE We run the test twice to reuse workers to catch errors where
             # some workers are left in a locked state.
-            for j in range(2):
+            for _ in range(2):
 
                 are_locked = m.Barrier(n)
 
@@ -271,11 +271,11 @@ def test_chained_shared_one_exclusive_threads_blocking(tmp_path):
         with ThreadPoolExecutor(max_workers=n) as executor:
             # NOTE We run the test twice to reuse workers to catch errors where
             # some workers are left in a locked state.
-            for j in range(2):
+            for _ in range(2):
                 first_is_locked.reset()
                 results = []
 
-                queues = [Queue() for i in range(n + 1)]
+                queues = [Queue() for _ in range(n + 1)]
 
                 for i in range(n - 1):
                     executor.submit(
@@ -316,10 +316,10 @@ def test_chained_shared_one_exclusive_processes_blocking(tmp_path):
 
             # NOTE We run the test twice to reuse workers to catch errors where
             # some workers are left in a locked state.
-            for j in range(2):
+            for _ in range(2):
 
                 first_is_locked = m.Barrier(2)
-                queues = [m.Queue() for i in range(n + 1)]
+                queues = [m.Queue() for _ in range(n + 1)]
 
                 for i in range(n - 1):
                     pool.apply_async(
