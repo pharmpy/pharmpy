@@ -266,52 +266,6 @@ def test_many_exclusive_threads_and_processes_rw(tmp_path):
         assert sorted(results) == sorted(range(n))
 
 
-def test_chained_shared_one_exclusive_threads_blocking(tmp_path):
-    with lock(tmp_path) as path:
-
-        n = 10
-
-        first_is_locked = Barrier(2)
-
-        def thread_lock_shared(recvp, send, recvn, results, i):
-            if i > 0:
-                j = recvp.get()  # Wait for previous thread to be locked
-                assert j == i - 1
-            with path_lock(path, shared=True):
-                if i == 0:
-                    first_is_locked.wait()  # Allow exclusive lock attempt
-                results.append(i)
-                send.put(i)  # Notify next thread that we are locked
-                send.put(i)  # Notify previous thread that we are locked
-                if i < n - 2:
-                    j = recvn.get()  # Wait for next thread to be locked
-                    assert j == i + 1
-
-        def thread_lock_exclusive(results, i):
-            first_is_locked.wait()
-            with path_lock(path, shared=False):
-                results.append(i)
-
-        with ThreadPoolExecutor(max_workers=n) as executor:
-            # NOTE We run the test twice to reuse workers to catch errors where
-            # some workers are left in a locked state.
-            for _ in range(2):
-                first_is_locked.reset()
-                results = []
-
-                queues = [Queue() for _ in range(n + 1)]
-
-                for i in range(n - 1):
-                    executor.submit(
-                        thread_lock_shared, queues[i], queues[i + 1], queues[i + 2], results, i
-                    )
-                last = executor.submit(thread_lock_exclusive, results, n - 1)
-
-                last.result()
-
-                assert results == sorted(range(n))
-
-
 def process_lock_shared_chained(path, first_is_locked, recvp, send, recvn, results, n, i):
     if i > 0:
         j = recvp.get()  # Wait for previous thread to be locked
@@ -327,15 +281,18 @@ def process_lock_shared_chained(path, first_is_locked, recvp, send, recvn, resul
             assert j == i + 1
 
 
-@pytest.mark.skipif(os.name == 'nt', reason="Windows shared process locks are not implemented.")
-def test_chained_shared_one_exclusive_processes_blocking(tmp_path):
+@pytest.mark.parametrize('parallelization', (threads, processes))
+def test_chained_shared_one_exclusive_blocking(tmp_path, parallelization):
+
+    if os.name == 'nt' and 'processes' in repr(parallelization):
+        pytest.skip("Windows shared process locks are not implemented.")
+
     with lock(tmp_path) as path:
 
         n = 10
 
-        with Pool(processes=n) as pool:
+        with parallelization(n) as [executor, m]:
 
-            m = Manager()
             results_queue = m.Queue()
 
             # NOTE We run the test twice to reuse workers to catch errors where
@@ -346,24 +303,22 @@ def test_chained_shared_one_exclusive_processes_blocking(tmp_path):
                 queues = [m.Queue() for _ in range(n + 1)]
 
                 for i in range(n - 1):
-                    pool.apply_async(
+                    executor.submit(
                         process_lock_shared_chained,
-                        [
-                            path,
-                            first_is_locked,
-                            queues[i],
-                            queues[i + 1],
-                            queues[i + 2],
-                            results_queue,
-                            n,
-                            i,
-                        ],
+                        path,
+                        first_is_locked,
+                        queues[i],
+                        queues[i + 1],
+                        queues[i + 2],
+                        results_queue,
+                        n,
+                        i,
                     )
-                last = pool.apply_async(
-                    process_lock_exclusive, [first_is_locked, results_queue, path, n - 1]
+                last = executor.submit(
+                    process_lock_exclusive, first_is_locked, results_queue, path, n - 1
                 )
 
-                last.wait()
+                last.result()
 
                 results = []
                 for i in range(n):
