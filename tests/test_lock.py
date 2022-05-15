@@ -6,6 +6,7 @@ from contextlib import contextmanager
 from itertools import chain, groupby
 from multiprocessing import Manager, Pipe, Pool, Process
 from pathlib import Path
+from queue import Queue
 from threading import Barrier
 
 import pytest
@@ -239,3 +240,49 @@ def test_many_exclusive_threads_and_processes_rw(tmp_path):
             results = json.load(fp)
 
         assert sorted(results) == sorted(range(n))
+
+
+def test_chained_shared_one_exclusive_threads_blocking(tmp_path):
+    with lock(tmp_path) as path:
+
+        n = 10
+
+        first_is_locked = Barrier(2)
+
+        def thread_lock_shared(recvp, send, recvn, results, i):
+            if i > 0:
+                j = recvp.get()  # Wait for previous thread to be locked
+                assert j == i - 1
+            with path_lock(path, shared=True):
+                if i == 0:
+                    first_is_locked.wait()  # Allow exclusive lock attempt
+                results.append(i)
+                send.put(i)  # Notify next thread that we are locked
+                send.put(i)  # Notify previous thread that we are locked
+                if i < n - 2:
+                    j = recvn.get()  # Wait for next thread to be locked
+                    assert j == i + 1
+
+        def thread_lock_exclusive(results, i):
+            first_is_locked.wait()
+            with path_lock(path, shared=False):
+                results.append(i)
+
+        with ThreadPoolExecutor(max_workers=n) as executor:
+            # NOTE We run the test twice to reuse workers to catch errors where
+            # some workers are left in a locked state.
+            for j in range(2):
+                first_is_locked.reset()
+                results = []
+
+                queues = [Queue() for i in range(n + 1)]
+
+                for i in range(n - 1):
+                    executor.submit(
+                        thread_lock_shared, queues[i], queues[i + 1], queues[i + 2], results, i
+                    )
+                last = executor.submit(thread_lock_exclusive, results, n - 1)
+
+                last.result()
+
+                assert results == sorted(range(n))
