@@ -1,7 +1,7 @@
 import json
 import os
 import time
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 from contextlib import contextmanager
 from itertools import chain, groupby
 from multiprocessing import Manager, Pool, Process
@@ -19,6 +19,29 @@ from pharmpy.lock import (
     path_lock,
 )
 from pharmpy.utils import TemporaryDirectoryChanger
+
+
+class SimpleThreadManager:
+    @staticmethod
+    def Barrier(*args, **kwargs):
+        return Barrier(*args, **kwargs)
+
+    @staticmethod
+    def Queue(*args, **kwargs):
+        return Queue(*args, **kwargs)
+
+
+@contextmanager
+def processes(n: int):
+    with ProcessPoolExecutor(max_workers=n) as executor:
+        with Manager() as m:
+            yield executor, m
+
+
+@contextmanager
+def threads(n: int):
+    with ThreadPoolExecutor(max_workers=n) as executor:
+        yield executor, SimpleThreadManager
 
 
 @contextmanager
@@ -349,101 +372,7 @@ def test_chained_shared_one_exclusive_processes_blocking(tmp_path):
                 assert results == sorted(range(n))
 
 
-def test_synchronized_reads_threads_blocking(tmp_path):
-
-    with lock(tmp_path) as path:
-
-        filename = 'rw'
-
-        with open(filename, 'w') as fp:
-            json.dump({'id': -1, 'counter': 0, 'copy': 0}, fp)
-
-        n = 1000
-        k = 7
-        p = 10
-        max_write = p - k
-
-        def sync_read(before, after, q, i):
-            before.wait()
-            time.sleep(0.01 * random())
-            with path_lock(path, shared=True):
-                after.wait()
-                with open(filename) as fp:
-                    contents = json.load(fp)
-            q.put({'type': 'read', 'id': i, 'contents': contents})
-
-        def write(q, i):
-            with path_lock(path, shared=False):
-                with open(filename) as fp:
-                    contents = json.load(fp)
-
-                contents['id'] = i
-                contents['counter'] += 1
-
-                with open(filename, 'w') as fp:
-                    json.dump(contents, fp)
-
-                with open(filename) as fp:
-                    contents = json.load(fp)
-
-                contents['copy'] += 1
-
-                with open(filename, 'w') as fp:
-                    json.dump(contents, fp)
-
-            q.put({'type': 'write', 'id': i, 'contents': contents})
-
-        with ThreadPoolExecutor(max_workers=p) as executor:
-            q = Queue()
-            i = 0
-            g = 0
-            w = 0
-            messages = []
-            group = {}
-            while i < n:
-                c = min(n - i, k)
-                if w >= max_write or random() < 1 / (c + 1):
-                    before = Barrier(c)
-                    after = Barrier(c)
-                    for _ in range(c):
-                        executor.submit(sync_read, before, after, q, i)
-                        group[i] = g
-                        i += 1
-                    g += 1
-                else:
-                    executor.submit(write, q, i)
-                    i += 1
-                    w += 1
-
-                while (
-                    not q.empty() or len(messages) < i - k
-                ):  # NOTE We empty the queue as much as possible
-                    messages.append(q.get())
-                    if messages[-1]['type'] == 'write':
-                        w -= 1
-
-            while len(messages) < n:
-                messages.append(q.get())
-
-        values = {}
-        for message in messages:
-            t = message['type']
-            if t == 'read':
-                i = message['id']
-                g = group[i]
-                counter = message['contents']['counter']
-                # NOTE counter is the same for the whole group
-                assert values.setdefault(g, counter) == counter
-                # NOTE copy is identical to counter
-                assert message['contents']['copy'] == counter
-            else:
-                assert t == 'write'
-                # NOTE check nobody else wrote to file while we held the lock
-                assert message['id'] == message['contents']['id']
-                assert message['contents']['copy'] == message['contents']['counter']
-
-
-def process_sync_read(path, filename, before, after, q, i):
+def sync_read(path, filename, before, after, q, i):
     before.wait()
     time.sleep(0.01 * random())
     with path_lock(path, shared=True):
@@ -453,7 +382,7 @@ def process_sync_read(path, filename, before, after, q, i):
     q.put({'type': 'read', 'id': i, 'contents': contents})
 
 
-def process_write(path, filename, q, i):
+def sync_write(path, filename, q, i):
     with path_lock(path, shared=False):
         with open(filename) as fp:
             contents = json.load(fp)
@@ -475,8 +404,11 @@ def process_write(path, filename, q, i):
     q.put({'type': 'write', 'id': i, 'contents': contents})
 
 
-@pytest.mark.skipif(os.name == 'nt', reason="Windows shared process locks are not implemented.")
-def test_synchronized_reads_processes_blocking(tmp_path):
+@pytest.mark.parametrize('parallelization', (threads, processes))
+def test_synchronized_reads_blocking(tmp_path, parallelization):
+
+    if os.name == 'nt' and 'processes' in repr(parallelization):
+        pytest.skip("Windows shared process locks are not implemented.")
 
     with lock(tmp_path) as path:
 
@@ -490,8 +422,7 @@ def test_synchronized_reads_processes_blocking(tmp_path):
         p = 10
         max_write = p - k
 
-        with Pool(processes=p) as pool:
-            m = Manager()
+        with parallelization(p) as [executor, m]:
             q = m.Queue()
             i = 0
             g = 0
@@ -504,12 +435,12 @@ def test_synchronized_reads_processes_blocking(tmp_path):
                     before = m.Barrier(c)
                     after = m.Barrier(c)
                     for _ in range(c):
-                        pool.apply_async(process_sync_read, [path, filename, before, after, q, i])
+                        executor.submit(sync_read, path, filename, before, after, q, i)
                         group[i] = g
                         i += 1
                     g += 1
                 else:
-                    pool.apply_async(process_write, [path, filename, q, i])
+                    executor.submit(sync_write, path, filename, q, i)
                     i += 1
                     w += 1
 
