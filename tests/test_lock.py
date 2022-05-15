@@ -4,7 +4,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
 from itertools import chain, groupby
-from multiprocessing import Manager, Pipe, Pool, Process
+from multiprocessing import Manager, Pool, Process
 from pathlib import Path
 from queue import Queue
 from random import random
@@ -62,14 +62,14 @@ def process_lock_first(is_locked, is_done, path):
         is_done.wait()
 
 
-def process_lock_last(is_locked, conn, path):
+def process_lock_last(is_locked, q, path):
     is_locked.wait()
     try:
         with path_lock(path, shared=False, blocking=False):
             pass
-        conn.send(None)
+        q.put(None)
     except Exception as e:
-        conn.send(e)
+        q.put(e)
 
 
 def test_exclusive_processes_non_blocking(tmp_path):
@@ -78,12 +78,12 @@ def test_exclusive_processes_non_blocking(tmp_path):
         m = Manager()
         is_done = m.Barrier(2)
         is_locked = m.Barrier(2)
-        parent_last_conn, last_conn = Pipe()
+        q = m.Queue()
         Process(target=process_lock_first, args=(is_locked, is_done, path)).start()
-        last = Process(target=process_lock_last, args=(is_locked, last_conn, path))
+        last = Process(target=process_lock_last, args=(is_locked, q, path))
         last.start()
 
-        e = parent_last_conn.recv()
+        e = q.get()
 
         assert isinstance(e, AcquiringProcessLevelLockWouldBlockError)
 
