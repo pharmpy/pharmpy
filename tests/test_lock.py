@@ -286,3 +286,63 @@ def test_chained_shared_one_exclusive_threads_blocking(tmp_path):
                 last.result()
 
                 assert results == sorted(range(n))
+
+
+def process_lock_shared_chained(path, first_is_locked, recvp, send, recvn, results, n, i):
+    if i > 0:
+        j = recvp.get()  # Wait for previous thread to be locked
+        assert j == i - 1
+    with path_lock(path, shared=True):
+        if i == 0:
+            first_is_locked.wait()  # Allow exclusive lock attempt
+        results.put(i)
+        send.put(i)  # Notify next thread that we are locked
+        send.put(i)  # Notify previous thread that we are locked
+        if i < n - 2:
+            j = recvn.get()  # Wait for next thread to be locked
+            assert j == i + 1
+
+
+@pytest.mark.skipif(os.name == 'nt', reason="Windows shared process locks are not implemented.")
+def test_chained_shared_one_exclusive_processes_blocking(tmp_path):
+    with lock(tmp_path) as path:
+
+        n = 10
+
+        with Pool(processes=n) as pool:
+
+            m = Manager()
+            results_queue = m.Queue()
+
+            # NOTE We run the test twice to reuse workers to catch errors where
+            # some workers are left in a locked state.
+            for j in range(2):
+
+                first_is_locked = m.Barrier(2)
+                queues = [m.Queue() for i in range(n + 1)]
+
+                for i in range(n - 1):
+                    pool.apply_async(
+                        process_lock_shared_chained,
+                        [
+                            path,
+                            first_is_locked,
+                            queues[i],
+                            queues[i + 1],
+                            queues[i + 2],
+                            results_queue,
+                            n,
+                            i,
+                        ],
+                    )
+                last = pool.apply_async(
+                    process_lock_exclusive, [first_is_locked, results_queue, path, n - 1]
+                )
+
+                last.wait()
+
+                results = []
+                for i in range(n):
+                    results.append(results_queue.get())
+
+                assert results == sorted(range(n))
