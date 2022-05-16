@@ -202,6 +202,7 @@ def exclusive_thread_write(path, i):
             fp.seek(0)
             fp.truncate(0)
             json.dump(done, fp)
+            fp.seek(0)
 
 
 def many_exclusive_threads_and_processes_rw_process(path, indices):
@@ -231,8 +232,11 @@ def test_many_exclusive_threads_and_processes_rw(tmp_path):
                 map(lambda part: (path, part), partition),
             )
 
-        with open(path) as fp:
-            results = json.load(fp)
+        with path_lock(path, shared=False) as fd:
+            with open(fd, closefd=False) as fp:
+                fp.seek(0)
+                results = json.load(fp)
+                fp.seek(0)
 
         assert sorted(results) == sorted(range(n))
 
@@ -250,8 +254,11 @@ def test_many_exclusive(tmp_path, parallelization, n):
                 items,
             )
 
-        with open(path) as fp:
-            results = json.load(fp)
+        with path_lock(path, shared=False) as fd:
+            with open(fd, closefd=False) as fp:
+                fp.seek(0)
+                results = json.load(fp)
+                fp.seek(0)
 
         assert sorted(results) == sorted(range(n))
 
