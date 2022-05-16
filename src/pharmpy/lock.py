@@ -39,6 +39,23 @@ Caveats:
     usage mandates the correct implementation of shared locks. It is enough that
     the implementation is simple for Windows, and is correct on UNIX.
 
+    The current implementation may not even be correct on UNIX in the scenario
+    discussed above: in a multi-process, multi-thread setting, if one thread of
+    process A acquires an exlusive lock at the thread-level first, then
+    attempts to exclusively acquire the process-level lock, that process-level
+    lock may already be acquired as shared by a thread of another process B
+    that is waiting on the other threads of A to run. And vice versa, if one
+    thread of process A acquires an exclusive lock at the process-level first,
+    then attempts to exclusively acquire the thread-level lock, that
+    thread-level lock may already be acquired as shared by other threads of
+    process A, but they are waiting on a thread of process B that is in turn
+    waiting for the process-level lock to be downgraded to shared. So it seems
+    that composing two isolated implementations, one for threads, one for
+    processes, cannot work in these "share and communicate" scenarios. One
+    solution is to forbid upgrade and downgrade of a process-level lock which
+    would effectively be the same as having an all-or-nothing lock (either you
+    lock at both levels or you do not).
+
     Currently, on Windows, at the process level, we attempt to lock the entire file
     by passing the largest possible value to `mscvrt.locking` `nbytes` argument. If
     we want this implementation to be correct, we would need to `fo.seek(0)` before
