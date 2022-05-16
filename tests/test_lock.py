@@ -135,28 +135,55 @@ def test_many_shared_one_exclusive_blocking(tmp_path, parallelization):
                 assert results[-1] == 0
 
 
-def test_non_reentrant_dead_lock(tmp_path):
+@pytest.mark.parametrize('shared', (True, False))
+def test_non_reentrant_dead_lock(tmp_path, shared):
     with lock(tmp_path) as path:
-        with path_lock(path):
+        with path_lock(path, shared=shared):
             with pytest.raises(RecursiveDeadlockError):
-                with path_lock(path):
+                with path_lock(path, shared=shared):
                     pass
 
 
-def test_reentrant(tmp_path):
+@pytest.mark.parametrize('shared', (True, False))
+def test_reentrant(tmp_path, shared):
     with lock(tmp_path) as path:
-        with path_lock(path):
-            with path_lock(path, reentrant=True):
+
+        with path_lock(path, shared=shared, reentrant=False):
+            with path_lock(path, shared=shared, reentrant=True):
                 pass
 
-        with path_lock(path, reentrant=True):
-            with path_lock(path, reentrant=True):
+        with path_lock(path, shared=shared, reentrant=True):
+            with path_lock(path, shared=shared, reentrant=True):
                 pass
 
-        with path_lock(path):
-            with path_lock(path, reentrant=True):
-                with path_lock(path, reentrant=True):
+        with path_lock(path, shared=shared, reentrant=False):
+            with path_lock(path, shared=shared, reentrant=True):
+                with path_lock(path, shared=shared, reentrant=True):
                     pass
+
+
+@pytest.mark.parametrize(
+    'shared',
+    (
+        [True, False],
+        [False, True],
+        [True, False, True],
+        [False, True, False],
+        [True, True, False],
+        [False, False, True],
+    ),
+    ids=repr,
+)
+def test_reentrant_mixed(tmp_path, shared):
+    with lock(tmp_path) as path:
+
+        def rec(types):
+            if types:
+                shared, *rest = types
+                with path_lock(path, shared=shared, reentrant=True):
+                    rec(rest)
+
+        rec(shared)
 
 
 def many_exclusive_threads_and_processes_rw_process(path, indices):
