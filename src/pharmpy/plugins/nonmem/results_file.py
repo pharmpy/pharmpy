@@ -160,6 +160,7 @@ class NONMEMResultsFile:
         }
         sig_digits = re.compile(r' NO. OF SIG. DIGITS IN FINAL EST.:\s*(\S+)')  # only classical est
         feval = re.compile(r' NO. OF FUNCTION EVALUATIONS USED:\s*(\S+)')  # only classical est
+        ofv_with_constant = re.compile(r' OBJECTIVE FUNCTION VALUE WITH CONSTANT:\s*(\S+)')
 
         maybe_success = False
         for row in rows:
@@ -180,11 +181,17 @@ class NONMEMResultsFile:
                 break
             maybe_success = bool(maybe.match(row))
         for row in rows:
-            if sig_digits.match(row):
-                result['significant_digits'] = float(sig_digits.match(row).group(1))
+            m = sig_digits.match(row)
+            if m:
+                result['significant_digits'] = float(m.group(1))
                 continue
-            if feval.match(row):
-                result['function_evaluations'] = int(feval.match(row).group(1))
+            m = ofv_with_constant.match(row)
+            if m:
+                result['ofv_with_constant'] = float(m.group(1))
+                continue
+            m = feval.match(row)
+            if m:
+                result['function_evaluations'] = int(m.group(1))
                 continue
             for name, p in misc.items():
                 if p.match(row):

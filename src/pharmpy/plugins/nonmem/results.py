@@ -206,6 +206,10 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
                 result_obj.estimation_runtime = rfile.table[table_no]['estimation_runtime']
             except (KeyError, FileNotFoundError):
                 result_obj.estimation_runtime = np.nan
+            try:
+                result_obj.log_likelihood = rfile.table[table_no]['ofv_with_constant']
+            except (KeyError, FileNotFoundError):
+                result_obj.log_likelihood = np.nan
             result_obj.runtime_total = rfile.runtime_total
 
     @property

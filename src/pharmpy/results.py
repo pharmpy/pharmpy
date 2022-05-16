@@ -284,6 +284,7 @@ class ModelfitResults(Results):
         runtime_total=None,
         termination_cause=None,
         function_evaluations=None,
+        log_likelihood=None,
     ):
         self.ofv = ofv
         self.parameter_estimates = parameter_estimates
@@ -298,6 +299,7 @@ class ModelfitResults(Results):
         self.runtime_total = runtime_total
         self.termination_cause = termination_cause
         self.function_evaluations = function_evaluations
+        self.log_likelihood = log_likelihood
 
     def __bool__(self):
         return bool(self.ofv) and bool(self.parameter_estimates)
@@ -347,6 +349,10 @@ class ChainedModelfitResults(MutableSequence, ModelfitResults):
     @property
     def ofv(self):
         return self[-1].ofv
+
+    @property
+    def log_likelihood(self):
+        return self[-1].log_likelihood
 
     @property
     def evaluation_ofv(self):
