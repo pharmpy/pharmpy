@@ -28,7 +28,7 @@ Tools connected to PsN
    frem
    linearize
    qa
-   resmod
+   resmod <psn_resmod>
    scm
    simeval
 
