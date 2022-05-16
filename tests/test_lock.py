@@ -186,24 +186,25 @@ def test_reentrant_mixed(tmp_path, shared):
         rec(shared)
 
 
-def many_exclusive_threads_and_processes_rw_process(path, indices):
-    def thread_write(i):
-        with path_lock(path, shared=False) as fd:
-            try:
-                with open(fd, closefd=False) as fp:
-                    fp.seek(0)
-                    done = json.load(fp)
-            except json.decoder.JSONDecodeError:
-                done = []
-
-            done.append(i)
-            with open(fd, 'w', closefd=False) as fp:
+def exclusive_thread_write(path, i):
+    with path_lock(path, shared=False) as fd:
+        try:
+            with open(fd, closefd=False) as fp:
                 fp.seek(0)
-                fp.truncate(0)
-                json.dump(done, fp)
+                done = json.load(fp)
+        except json.decoder.JSONDecodeError:
+            done = []
 
+        done.append(i)
+        with open(fd, 'w', closefd=False) as fp:
+            fp.seek(0)
+            fp.truncate(0)
+            json.dump(done, fp)
+
+
+def many_exclusive_threads_and_processes_rw_process(path, indices):
     with ThreadPoolExecutor(max_workers=len(indices)) as executor:
-        executor.map(thread_write, indices)
+        executor.map(exclusive_thread_write, [path] * len(indices), indices)
 
 
 def test_many_exclusive_threads_and_processes_rw(tmp_path):
@@ -226,6 +227,25 @@ def test_many_exclusive_threads_and_processes_rw(tmp_path):
             pool.starmap(
                 many_exclusive_threads_and_processes_rw_process,
                 map(lambda part: (path, part), partition),
+            )
+
+        with open(path) as fp:
+            results = json.load(fp)
+
+        assert sorted(results) == sorted(range(n))
+
+
+@pytest.mark.parametrize('parallelization, n', ((threads, 200), (processes, 20)))
+def test_many_exclusive(tmp_path, parallelization, n):
+    with lock(tmp_path) as path:
+
+        items = list(range(n))
+
+        with parallelization(n) as [executor, _]:
+            executor.map(
+                exclusive_thread_write,
+                [path] * n,
+                items,
             )
 
         with open(path) as fp:
