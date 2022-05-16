@@ -55,16 +55,17 @@ def lock(directory):
         yield path
 
 
-def lock_first(is_locked, is_done, path):
-    with path_lock(path, shared=False, blocking=False):
+def lock_first(is_locked, is_done, path, shared):
+    with path_lock(path, shared=shared, blocking=False):
         is_locked.wait()
         is_done.wait()
 
 
-def lock_last(is_locked, path):
+def lock_rest(is_locked, is_done, path, shared, blocking):
     is_locked.wait()
-    with path_lock(path, shared=False, blocking=False):
-        pass
+    with path_lock(path, shared=shared, blocking=blocking):
+        if is_done is not None and shared:
+            is_done.wait()
 
 
 @pytest.mark.parametrize(
@@ -74,20 +75,56 @@ def lock_last(is_locked, path):
         (processes, AcquiringProcessLevelLockWouldBlockError),
     ),
 )
-def test_exclusive_non_blocking(tmp_path, parallelization, exception):
+@pytest.mark.parametrize(
+    'shared',
+    (
+        [False, True],
+        [False, False],
+        [False, True, False],
+        [False, True, True],
+        [False, False, True],
+        [False, False, False],
+        [True, False],
+        [True, True, False],
+        [True, False, False],
+    ),
+    ids=repr,
+)
+def test_non_blocking(tmp_path, parallelization, exception, shared):
+    assert len(shared) >= 2
+    assert not shared[0] or not shared[-1]
+
     with lock(tmp_path) as path:
 
-        with parallelization(2) as [executor, m]:
-            is_locked = m.Barrier(2)
-            is_done = m.Barrier(2)
+        n = len(shared)
+        nb = 1 + (
+            1
+            if not shared[0] or (os.name == 'nt' and 'processes' in repr(parallelization))
+            else sum(map(lambda s: 1 if s else 0, shared))
+        )
 
-            executor.submit(lock_first, is_locked, is_done, path)
-            last = executor.submit(lock_last, is_locked, path)
+        with parallelization(n) as [executor, m]:
+            is_locked = m.Barrier(n)
+            is_done = m.Barrier(nb)
+
+            tasks = []
+
+            tasks.append(executor.submit(lock_first, is_locked, is_done, path, shared[0]))
+            for s in shared[1:-1]:
+                tasks.append(
+                    executor.submit(
+                        lock_rest, is_locked, is_done if nb >= 3 else None, path, s, True
+                    )
+                )
+            tasks.append(executor.submit(lock_rest, is_locked, None, path, shared[-1], False))
 
             with pytest.raises(exception):
-                last.result()
+                tasks[-1].result()
 
             is_done.wait()
+
+            for task in tasks[:-1]:
+                task.result()
 
 
 def lock_shared(are_locked, q, path, i):
