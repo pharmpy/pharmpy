@@ -4,7 +4,7 @@ import time
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 from contextlib import contextmanager
 from itertools import chain, groupby
-from multiprocessing import Manager, Pool
+from multiprocessing import get_context
 from pathlib import Path
 from queue import Queue
 from random import random
@@ -20,6 +20,8 @@ from pharmpy.lock import (
 )
 from pharmpy.utils import TemporaryDirectoryChanger
 
+mp = get_context(method='spawn')
+
 
 class SimpleThreadManager:
     @staticmethod
@@ -33,8 +35,8 @@ class SimpleThreadManager:
 
 @contextmanager
 def processes(n: int):
-    with ProcessPoolExecutor(max_workers=n) as executor:
-        with Manager() as m:
+    with ProcessPoolExecutor(max_workers=n, mp_context=mp) as executor:
+        with mp.Manager() as m:
             yield executor, m
 
 
@@ -223,7 +225,7 @@ def test_many_exclusive_threads_and_processes_rw(tmp_path):
         assert len(partition) == m
         assert sorted(chain(*partition)) == items
 
-        with Pool(processes=len(partition)) as pool:
+        with mp.Pool(processes=len(partition)) as pool:
             pool.starmap(
                 many_exclusive_threads_and_processes_rw_process,
                 map(lambda part: (path, part), partition),
