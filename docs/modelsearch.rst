@@ -17,7 +17,7 @@ To initiate modelsearch in Python:
 
 .. pharmpy-code::
 
-    from pharmpy.modeling import run_tool
+    from pharmpy.modeling import run_modelsearch
 
     start_model = read_model('path/to/model')
     res = run_modelsearch(search_space='ABSORPTION(ZO);PERIPHERALS(1)',
@@ -285,13 +285,12 @@ Consider a modelsearch run with the search space of zero order absorption and ad
 
 .. pharmpy-code::
 
-    res = run_tool('modelsearch',
-                   'ABSORPTION(ZO);PERIPHERALS(1)',
-                   'exhaustive',
-                   model=start_model,
-                   iiv_strategy=0,
-                   rankfunc='bic',
-                   cutoff=None)
+    res = run_modelsearch('ABSORPTION(ZO);PERIPHERALS(1)',
+                          'exhaustive',
+                          model=start_model,
+                          iiv_strategy=0,
+                          rankfunc='bic',
+                          cutoff=None)
 
 
 The ``summary_tool`` table contains information such as which feature each model candidate has, the difference to the

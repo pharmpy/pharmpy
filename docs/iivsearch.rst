@@ -17,7 +17,7 @@ To initiate iiv in Python:
 
 .. pharmpy-code::
 
-    from pharmpy.modeling import run_tool
+    from pharmpy.modeling import run_iivsearch
 
     start_model = read_model('path/to/model')
     res = run_iivsearch(algorithm='brute_force',
