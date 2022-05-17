@@ -5,6 +5,7 @@
 import sympy
 
 import pharmpy.symbols
+from pharmpy import ExplicitODESystem
 from pharmpy.model import ModelError
 from pharmpy.modeling.help_functions import _as_integer
 from pharmpy.parameter import Parameter
@@ -12,6 +13,7 @@ from pharmpy.statements import Assignment, Bolus, Infusion
 
 from .common import remove_unused_parameters_and_rvs
 from .data import get_observations
+from .eta_additions import _get_dependent_assignments
 from .expressions import create_symbol
 
 
@@ -1469,3 +1471,93 @@ def set_ode_solver(model, solver):
     for step in model.estimation_steps:
         step.solver = solver
     return model
+
+
+def find_clearance_parameters(model):
+    """Find clearance parameters in model
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+
+    Return
+    ------
+    list
+        A list of clearance parameters
+
+    Examples
+    --------
+     >>> from pharmpy.modeling import *
+     >>> model = load_example_model("pheno")
+     >>> find_clearance_parameters(model)
+     [CL]
+    """
+    cls = []
+    sset = model.statements
+    rate_list = _find_rate(sset)
+    for rate in rate_list:
+        clearance = rate.as_numer_denom()[0]
+        if clearance.is_Symbol:
+            clearance = _find_real_symbol(sset, clearance)
+            if clearance not in cls:
+                cls.append(clearance)
+    return cls
+
+
+def find_volume_parameters(model):
+    """Find volume parameters in model
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+
+    Return
+    ------
+    list
+        A list of volume parameters
+
+    Examples
+    --------
+     >>> from pharmpy.modeling import *
+     >>> model = load_example_model("pheno")
+     >>> find_volume_parameters(model)
+     [V]
+    """
+    vcs = []
+    sset = model.statements
+    rate_list = _find_rate(sset)
+    for rate in rate_list:
+        volume = rate.as_numer_denom()[1]
+        if volume.is_Symbol:
+            volume = _find_real_symbol(sset, volume)
+            if volume not in vcs:
+                vcs.append(volume)
+    return vcs
+
+
+def _find_rate(sset):
+    rate_list = []
+    odes = sset.ode_system
+    if type(odes) is ExplicitODESystem:
+        odes = sset.ode_system.to_compartmental_system()
+    central = odes.central_compartment
+    output = odes.output_compartment
+    elimination_rate = odes.get_flow(central, output)
+    rate_list.append(elimination_rate)
+    for periph in odes.peripheral_compartments:
+        rate1 = odes.get_flow(central, periph)
+        rate_list.append(rate1)
+        rate2 = odes.get_flow(periph, central)
+        rate_list.append(rate2)
+    return rate_list
+
+
+def _find_real_symbol(sset, symbol):
+    assign = sset.find_assignment(symbol)
+    if len(assign.rhs_symbols) == 1:
+        dep_assigns = _get_dependent_assignments(sset, assign)
+        for dep_assign in dep_assigns:
+            symbol = dep_assign.symbol
+    return symbol
