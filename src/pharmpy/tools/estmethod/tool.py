@@ -12,6 +12,7 @@ from pharmpy.modeling import (
     update_inits,
 )
 from pharmpy.tools.modelfit import create_fit_workflow
+from pharmpy.tools.common import update_initial_estimates
 from pharmpy.workflows import Task, Workflow
 
 
@@ -48,6 +49,7 @@ def create_workflow(methods=None, solvers=None, model=None):
     if None not in solvers:
         solvers.insert(0, None)
 
+    candidate_no = 1
     for method in methods:
         for solver in solvers:
             if solver:
@@ -55,38 +57,41 @@ def create_workflow(methods=None, solvers=None, model=None):
             else:
                 task_name = f'create_{method.upper()}'
             if method != 'foce' or solver is not None:
-                task_no_update = Task(
-                    f'{task_name}_raw_inits', _create_est_model, method, solver, False
+                model_name = f'estmethod_candidate{candidate_no}'
+                task_copy = Task('copy_model', _copy_model, model_name)
+                wf.add_task(task_copy, predecessors=task_base_model_fit)
+                task_create_est_model = Task(
+                    f'{task_name}_raw_inits', _create_est_model, method, solver
                 )
-                wf.add_task(task_no_update, predecessors=task_base_model_fit)
-
-            task_update = Task(f'{task_name}_update_inits', _create_est_model, method, solver, True)
-            wf.add_task(task_update, predecessors=task_base_model_fit)
+                wf.add_task(task_create_est_model, predecessors=task_copy)
+                candidate_no += 1
+            model_name = f'estmethod_candidate{candidate_no}'
+            task_copy = Task('copy_model', _copy_model, model_name)
+            wf.add_task(task_copy, predecessors=task_base_model_fit)
+            task_update_inits = Task('update_inits', update_initial_estimates)
+            wf.add_task(task_update_inits, predecessors=task_copy)
+            task_create_est_model = Task(f'{task_name}_update_inits', _create_est_model, method, solver)
+            wf.add_task(task_create_est_model, predecessors=task_update_inits)
+            candidate_no += 1
 
     wf_fit = create_fit_workflow(n=len(wf.output_tasks))
     wf.insert_workflow(wf_fit, predecessors=wf.output_tasks)
 
-    task_post_process = Task('post_process', post_process)
+    task_post_process = Task('post_process', post_process, model)
     wf.add_task(
-        task_post_process, predecessors=[start_task] + task_base_model_fit + wf.output_tasks
+        task_post_process, predecessors=task_base_model_fit + wf.output_tasks
     )
 
     return wf
 
 
-def post_process(*models):
-    res_models = []
-    for model in models:
-        if not model.name.startswith('estmethod_'):
-            start_model = model
-        else:
-            res_models.append(model)
-
+def post_process(input_model, *models):
+    res_models = list(models)
     summary = summarize_modelfit_results(res_models)
     settings = summarize_estimation_steps(res_models)
 
     res = EstMethodResults(
-        summary=summary, settings=settings, start_model=start_model, models=res_models
+        summary=summary, settings=settings, start_model=input_model, models=res_models
     )
 
     return res
@@ -97,7 +102,7 @@ def start(model):
 
 
 def _create_base_model(model):
-    base_model = copy_model(model, 'estmethod_FOCE_raw_inits')
+    base_model = copy_model(model, 'base_model')
     _clear_estimation_steps(base_model)
     est_settings = _create_est_settings('foce')
     eval_settings = _create_eval_settings()
@@ -143,30 +148,24 @@ def _create_est_settings(method):
     return est_settings
 
 
-def _create_est_model(method, solver, update, model):
-    if solver:
-        model_name = f'estmethod_{method.upper()}_{solver.upper()}'
-    else:
-        model_name = f'estmethod_{method.upper()}'
-    if update:
-        model_name += '_update_inits'
-    else:
-        model_name += '_raw_inits'
-    est_model = copy_model(model, model_name)
-    _clear_estimation_steps(est_model)
-    if update:
-        update_inits(est_model)
+def _copy_model(name, base_model):
+    model_copy = copy_model(base_model, name)
+    return model_copy
+
+
+def _create_est_model(method, solver, model):
+    _clear_estimation_steps(model)
     est_settings = _create_est_settings(method)
     if method == 'laplace':
         laplace = True
     else:
         laplace = False
     eval_settings = _create_eval_settings(laplace)
-    add_estimation_step(est_model, **est_settings)
-    add_estimation_step(est_model, **eval_settings)
+    add_estimation_step(model, **est_settings)
+    add_estimation_step(model, **eval_settings)
     if solver:
-        set_ode_solver(est_model, solver)
-    return est_model
+        set_ode_solver(model, solver)
+    return model
 
 
 def _clear_estimation_steps(model):
