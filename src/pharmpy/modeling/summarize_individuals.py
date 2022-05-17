@@ -161,7 +161,7 @@ def summarize_individuals_count_table(models=None, df=None):
     +-------------------------+---------------------------------------------------------------------------------+
     | ``inf_params``          | Number of subjects influential on parameters. predicted_dofv > 3.84             |
     +-------------------------+---------------------------------------------------------------------------------+
-    | ``out_obs``             | Number of subjects having at least one outlying observation                     |
+    | ``out_obs``             | Number of subjects having at least one outlying observation (CWRES > 5)         |
     +-------------------------+---------------------------------------------------------------------------------+
     | ``out_ind``             | Number of outlying subjects. predicted_residual > 3.0                           |
     +-------------------------+---------------------------------------------------------------------------------+
