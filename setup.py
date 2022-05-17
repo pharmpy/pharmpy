@@ -69,7 +69,7 @@ setup(
         'lark-parser>=0.12.0',
         'sympy>=1.8',
         'symengine>=0.7.2',
-        'pandas>=1.0',
+        'pandas>=1.4',
         'numexpr',
         'altair>=4.2.0',
         'jsonschema',
