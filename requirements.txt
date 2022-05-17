@@ -94,7 +94,7 @@ tblib==1.7.0
 tinycss2==1.1.1
 toolz==0.11.2
 tornado==6.1
-traitlets==5.2.0
+traitlets==5.2.1.post0
 typing-extensions==4.2.0
 urllib3==1.26.9
 wcwidth==0.2.5
