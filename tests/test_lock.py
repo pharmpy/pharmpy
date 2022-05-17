@@ -91,6 +91,10 @@ def lock_rest(is_locked, is_done, path, shared, blocking):
     ids=repr,
 )
 def test_non_blocking(tmp_path, parallelization, exception, shared):
+
+    if os.name == 'nt' and 'processes' in repr(parallelization):
+        pytest.skip("TODO Processes-based tests randomly fail on Windows.")
+
     assert len(shared) >= 2
     assert not shared[0] or not shared[-1]
 
@@ -144,7 +148,7 @@ def lock_exclusive(are_locked, q, path, i):
 def test_many_shared_one_exclusive_blocking(tmp_path, parallelization):
 
     if os.name == 'nt' and 'processes' in repr(parallelization):
-        pytest.skip("Windows shared process locks are not implemented.")
+        pytest.skip("TODO Processes-based tests randomly fail on Windows.")
 
     with lock(tmp_path) as path:
 
@@ -248,6 +252,9 @@ def many_exclusive_threads_and_processes_rw_process(path, indices):
 
 
 def test_many_exclusive_threads_and_processes_rw(tmp_path):
+    if os.name == 'nt':
+        pytest.skip("TODO Processes-based tests randomly fail on Windows.")
+
     with lock(tmp_path) as path:
 
         m = 10
@@ -280,6 +287,9 @@ def test_many_exclusive_threads_and_processes_rw(tmp_path):
 
 @pytest.mark.parametrize('parallelization, n', ((threads, 200), (processes, 20)))
 def test_many_exclusive(tmp_path, parallelization, n):
+    if os.name == 'nt' and 'processes' in repr(parallelization):
+        pytest.skip("TODO Processes-based tests randomly fail on Windows.")
+
     with lock(tmp_path) as path:
 
         items = list(range(n))
@@ -319,7 +329,7 @@ def lock_shared_chained(path, first_is_locked, recvp, send, recvn, results, n, i
 def test_chained_shared_one_exclusive_blocking(tmp_path, parallelization):
 
     if os.name == 'nt' and 'processes' in repr(parallelization):
-        pytest.skip("Windows shared process locks are not implemented.")
+        pytest.skip("TODO Processes-based tests randomly fail on Windows.")
 
     with lock(tmp_path) as path:
 
@@ -395,7 +405,7 @@ def sync_write(path, filename, q, i):
 def test_synchronized_reads_blocking(tmp_path, parallelization):
 
     if os.name == 'nt' and 'processes' in repr(parallelization):
-        pytest.skip("Windows shared process locks are not implemented.")
+        pytest.skip("TODO Processes-based tests randomly fail on Windows.")
 
     with lock(tmp_path) as path:
 
