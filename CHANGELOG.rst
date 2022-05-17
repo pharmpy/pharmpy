@@ -1,3 +1,11 @@
+0.70.1 (2022-05-17)
+-------------------
+
+Bugfix
+======
+
+* Require pandas 1.4 or newer for multiindex joins. (Fixes #820)
+
 0.70.0 (2022-05-13)
 -------------------
 
