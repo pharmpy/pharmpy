@@ -149,24 +149,25 @@ def groupedByIDAddColumnsOneModel(modelsDict: Dict[str, Model], model: Model) ->
 
 
 def summarize_individuals_count_table(models=None, df=None):
-    """Create a count table for individual data
+    r"""Create a count table for individual data
 
     Content of the various columns:
 
-    +-------------------------+---------------------------------------------------------------------------------+
-    | Column                  | Description                                                                     |
-    +=========================+=================================================================================+
-    | ``inf_selection``       | Number of subjects influential on model selection.                              |
-    |                         | :math:`||dOFV_i|  - |OFV_{parent} - OFV|| > 3.84`                               |
-    +-------------------------+---------------------------------------------------------------------------------+
-    | ``inf_params``          | Number of subjects influential on parameters. predicted_dofv > 3.84             |
-    +-------------------------+---------------------------------------------------------------------------------+
-    | ``out_obs``             | Number of subjects having at least one outlying observation (CWRES > 5)         |
-    +-------------------------+---------------------------------------------------------------------------------+
-    | ``out_ind``             | Number of outlying subjects. predicted_residual > 3.0                           |
-    +-------------------------+---------------------------------------------------------------------------------+
-    | ``inf_outlier``         | Number of subjects both influential by any criteria and outlier by any criteria |
-    +-------------------------+---------------------------------------------------------------------------------+
+    +-------------------------+------------------------------------------------------------------------------------------------+
+    | Column                  | Description                                                                                    |
+    +=========================+================================================================================================+
+    | ``inf_selection``       | Number of subjects influential on model selection.                                             |
+    |                         | :math:`\mathrm{OFV}_{parent} - \mathrm{OFV} > 3.84 \veebar`                                    |
+    |                         | :math:`\mathrm{OFV}_{parent} - \mathrm{iOFV}_{parent} - (\mathrm{OFV} - \mathrm{iOFV}) > 3.84` |
+    +-------------------------+------------------------------------------------------------------------------------------------+
+    | ``inf_params``          | Number of subjects influential on parameters. predicted_dofv > 3.84                            |
+    +-------------------------+------------------------------------------------------------------------------------------------+
+    | ``out_obs``             | Number of subjects having at least one outlying observation (CWRES > 5)                        |
+    +-------------------------+------------------------------------------------------------------------------------------------+
+    | ``out_ind``             | Number of outlying subjects. predicted_residual > 3.0                                          |
+    +-------------------------+------------------------------------------------------------------------------------------------+
+    | ``inf_outlier``         | Number of subjects both influential by any criteria and outlier by any criteria                |
+    +-------------------------+------------------------------------------------------------------------------------------------+
 
     Parameters
     ----------
@@ -202,7 +203,6 @@ def summarize_individuals_count_table(models=None, df=None):
     parents = df['parent_model'].iloc[::ninds]
     parent_ofvs = df.loc[parents]['ofv'].reset_index(drop=True)
     parent_ofvs.index = df.index
-    dofvi = parent_ofvs - df['ofv']
 
     for name in df.index.unique(level='model'):
         if name == df.loc[name]['parent_model'].iloc[0]:
@@ -212,9 +212,11 @@ def summarize_individuals_count_table(models=None, df=None):
 
     ofv_sums = df['ofv'].groupby('model').sum()
     parent_sums = parent_ofvs.groupby('model').sum()
-    full_ofv_diff = (parent_sums - ofv_sums) / len(df.index.unique(level='ID'))
+    full_ofv_diff = parent_sums - ofv_sums  # / len(df.index.unique(level='ID'))
     full_ofv_diff.loc[start_name] = 0
-    is_inf_selection = abs(abs(dofvi) - abs(full_ofv_diff)) > 3.84
+
+    removed_diff = (parent_sums - parent_ofvs) - (ofv_sums - df['ofv'])
+    is_inf_selection = (full_ofv_diff > 3.84) ^ (removed_diff > 3.84)
     inf_selection = is_inf_selection.groupby(level='model', sort=False).sum().astype('int32')
 
     is_inf_outlier = (is_out_obs | is_out_ind) & (is_inf_params | is_inf_selection)
