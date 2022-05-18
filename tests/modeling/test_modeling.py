@@ -3086,7 +3086,8 @@ def test_add_iov(pheno_path, etas, eta_names, pk_start_ref, pk_end_ref, omega_re
     add_iov(model, 'FA1', etas, eta_names)
     model.update_source()
 
-    assert eta_names is None or eta_names[0] in [eta.name for eta in model.random_variables.etas]
+    model_etas = set(eta.name for eta in model.random_variables.etas)
+    assert eta_names is None or model_etas.issuperset(eta_names)
 
     pk_rec = str(model.get_pred_pk_record())
 
