@@ -27,7 +27,7 @@ Settings
     from pharmpy.results import read_results
 
     res = read_results('results.json')
-    res.settings
+    res.summary_settings
 
 
 Result summary
@@ -36,12 +36,4 @@ Result summary
 .. jupyter-execute::
     :hide-code:
 
-    res.summary
-
-Results sorted by OFV
-~~~~~~~~~~~~~~~~~~~~~
-
-.. jupyter-execute::
-    :hide-code:
-
-    res.sorted_by_ofv()
+    res.summary_tool

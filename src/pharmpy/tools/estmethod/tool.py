@@ -1,3 +1,4 @@
+from itertools import product
 from pathlib import Path
 
 import pandas as pd
@@ -9,10 +10,9 @@ from pharmpy.modeling import (
     remove_estimation_step,
     set_ode_solver,
     summarize_modelfit_results,
-    update_inits,
 )
+from pharmpy.tools.common import summarize_tool, update_initial_estimates
 from pharmpy.tools.modelfit import create_fit_workflow
-from pharmpy.tools.common import update_initial_estimates
 from pharmpy.workflows import Task, Workflow
 
 
@@ -33,6 +33,32 @@ def create_workflow(methods=None, solvers=None, model=None):
 
     task_base_model_fit = wf.output_tasks
 
+    methods, solvers = _format_input_options(methods, solvers)
+
+    candidate_no = 1
+    for method, solver in product(methods, solvers):
+        if method != 'foce' or solver is not None:
+            wf_estmethod_original = _create_estmethod_task(
+                candidate_no, method=method, solver=solver, update=False
+            )
+            wf.insert_workflow(wf_estmethod_original, predecessors=task_base_model_fit)
+            candidate_no += 1
+        wf_estmethod_update = _create_estmethod_task(
+            candidate_no, method=method, solver=solver, update=True
+        )
+        wf.insert_workflow(wf_estmethod_update, predecessors=task_base_model_fit)
+        candidate_no += 1
+
+    wf_fit = create_fit_workflow(n=len(wf.output_tasks))
+    wf.insert_workflow(wf_fit, predecessors=wf.output_tasks)
+
+    task_post_process = Task('post_process', post_process, model)
+    wf.add_task(task_post_process, predecessors=task_base_model_fit + wf.output_tasks)
+
+    return wf
+
+
+def _format_input_options(methods, solvers):
     if not methods:
         methods = ['foce', 'fo', 'imp', 'impmap', 'its', 'saem', 'laplace', 'bayes']
     elif isinstance(methods, str):
@@ -49,49 +75,66 @@ def create_workflow(methods=None, solvers=None, model=None):
     if None not in solvers:
         solvers.insert(0, None)
 
-    candidate_no = 1
-    for method in methods:
-        for solver in solvers:
-            if solver:
-                task_name = f'create_{method.upper()}_{solver.upper()}'
-            else:
-                task_name = f'create_{method.upper()}'
-            if method != 'foce' or solver is not None:
-                model_name = f'estmethod_candidate{candidate_no}'
-                task_copy = Task('copy_model', _copy_model, model_name)
-                wf.add_task(task_copy, predecessors=task_base_model_fit)
-                task_create_est_model = Task(
-                    f'{task_name}_raw_inits', _create_est_model, method, solver
-                )
-                wf.add_task(task_create_est_model, predecessors=task_copy)
-                candidate_no += 1
-            model_name = f'estmethod_candidate{candidate_no}'
-            task_copy = Task('copy_model', _copy_model, model_name)
-            wf.add_task(task_copy, predecessors=task_base_model_fit)
-            task_update_inits = Task('update_inits', update_initial_estimates)
-            wf.add_task(task_update_inits, predecessors=task_copy)
-            task_create_est_model = Task(f'{task_name}_update_inits', _create_est_model, method, solver)
-            wf.add_task(task_create_est_model, predecessors=task_update_inits)
-            candidate_no += 1
+    return methods, solvers
 
-    wf_fit = create_fit_workflow(n=len(wf.output_tasks))
-    wf.insert_workflow(wf_fit, predecessors=wf.output_tasks)
 
-    task_post_process = Task('post_process', post_process, model)
-    wf.add_task(
-        task_post_process, predecessors=task_base_model_fit + wf.output_tasks
-    )
+def _create_estmethod_task(candidate_no, method, solver, update):
+    model_name = f'estmethod_candidate{candidate_no}'
+    model_description = _create_description(method, solver, update)
 
+    wf = Workflow()
+    task_copy = Task('copy_model', _copy_model, model_name, model_description)
+    wf.add_task(task_copy)
+    if update:
+        task_update_inits = Task('update_inits', update_initial_estimates)
+        wf.add_task(task_update_inits, predecessors=task_copy)
+        task_prev = task_update_inits
+    else:
+        task_prev = task_copy
+    task_create_est_model = Task('create_est_model', _create_est_model, method, solver)
+    wf.add_task(task_create_est_model, predecessors=task_prev)
     return wf
 
 
+def _create_description(method, solver, update=False):
+    model_description = f'{method.upper()}'
+    if solver:
+        model_description += f'+{solver.upper()}'
+    if update:
+        model_description += ' (update inits)'
+    else:
+        model_description += ' (original inits)'
+    return model_description
+
+
 def post_process(input_model, *models):
-    res_models = list(models)
-    summary = summarize_modelfit_results(res_models)
-    settings = summarize_estimation_steps(res_models)
+    res_models = []
+    base_model = None
+    for model in models:
+        if model.name == 'base_model':
+            base_model = model
+        else:
+            res_models.append(model)
+
+    # FIXME: support other rankfuncs, allow None as cutoff
+    rankfunc = 'ofv'
+    summary_tool = summarize_tool(
+        res_models,
+        base_model,
+        rankfunc,
+        -1000,
+    )
+    summary_models = summarize_modelfit_results([base_model] + res_models).sort_values(
+        by=[rankfunc]
+    )
+    summary_settings = summarize_estimation_steps([base_model] + res_models)
 
     res = EstMethodResults(
-        summary=summary, settings=settings, start_model=input_model, models=res_models
+        summary_tool=summary_tool,
+        summary_models=summary_models,
+        summary_settings=summary_settings,
+        input_model=input_model,
+        models=[base_model] + res_models,
     )
 
     return res
@@ -148,8 +191,9 @@ def _create_est_settings(method):
     return est_settings
 
 
-def _copy_model(name, base_model):
-    model_copy = copy_model(base_model, name)
+def _copy_model(name, description, model):
+    model_copy = copy_model(model, name)
+    model_copy.description = description
     return model_copy
 
 
@@ -176,16 +220,25 @@ def _clear_estimation_steps(model):
 class EstMethodResults(pharmpy.results.Results):
     rst_path = Path(__file__).parent / 'report.rst'
 
-    def __init__(self, summary=None, settings=None, best_model=None, start_model=None, models=None):
-        self.summary = summary
-        self.settings = settings
+    def __init__(
+        self,
+        summary_tool=None,
+        summary_models=None,
+        summary_individuals=None,
+        summary_individuals_count=None,
+        summary_settings=None,
+        best_model=None,
+        input_model=None,
+        models=None,
+    ):
+        self.summary_tool = summary_tool
+        self.summary_models = summary_models
+        self.summary_individuals = summary_individuals
+        self.summary_individuals_count = summary_individuals_count
+        self.summary_settings = summary_settings
         self.best_model = best_model
-        self.start_model = start_model
+        self.input_model = input_model
         self.models = models
-
-    def sorted_by_ofv(self):
-        df = self.summary[['ofv', 'runtime_total', 'estimation_runtime']].sort_values(by=['ofv'])
-        return df
 
 
 def summarize_estimation_steps(models):

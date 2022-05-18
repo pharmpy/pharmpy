@@ -19,7 +19,7 @@ def _model_count(rundir: Path):
 
 @pytest.mark.parametrize(
     'methods, solvers, no_of_models, advan_ref',
-    [('foce', None, 2, 'ADVAN1'), ('foce', ['lsoda'], 4, 'ADVAN1')],
+    [('imp', None, 3, 'ADVAN1'), ('imp', ['lsoda'], 5, 'ADVAN1')],
 )
 def test_estmethod(tmp_path, testdata, methods, solvers, no_of_models, advan_ref):
     with TemporaryDirectoryChanger(tmp_path):
@@ -31,7 +31,15 @@ def test_estmethod(tmp_path, testdata, methods, solvers, no_of_models, advan_ref
 
         res = run_tool('estmethod', methods=methods, solvers=solvers, model=model_start)
 
-        assert len(res.summary) == no_of_models
+        import pandas as pd
+
+        pd.set_option('display.max_columns', None)
+
+        print(res.summary_tool)
+        print(res.summary_models)
+        print(res.summary_settings)
+
+        assert len(res.summary_tool) == no_of_models
         assert len(res.models) == no_of_models
         assert advan_ref in res.models[-1].model_code
         rundir = tmp_path / 'estmethod_dir1'
