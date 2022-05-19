@@ -177,27 +177,26 @@ def add_iov(model, occ, list_of_parameters=None, eta_names=None, distribution='d
     elif len(categories) == 1:
         raise ValueError(f'Only one value in {occ} column.')
 
+    # TODO: better names
+    def eta_name(i, k):
+        return eta_names[k - 1] if eta_names else f'ETA_IOV_{i}{k}'
+
+    def omega_iov_name(i, j):
+        return f'OMEGA_IOV_{i}' if i == j else f'OMEGA_IOV_{i}_{j}'
+
+    def iov_name(i):
+        return f'IOV_{i}'
+
     iovs, etais = ModelStatements(), ModelStatements()
+
     for i, eta in enumerate(etas, 1):
-        omega_name = str(next(iter(eta.sympy_rv.pspace.distribution.free_symbols)))
-        omega = S(f'OMEGA_IOV_{i}')  # TODO: better name
-        pset.append(Parameter(str(omega), init=pset[omega_name].init * 0.1))
+        # NOTE This declares IOV-ETA case assignments and replaces the existing
+        # ETA with its sum with the new IOV ETA
 
-        iov = S(f'IOV_{i}')
+        iov = S(iov_name(i))
 
-        values, conditions = [], []
-
-        for j, cat in enumerate(categories, 1):
-            if eta_names:
-                eta_name = eta_names[j - 1]
-            else:
-                eta_name = f'ETA_IOV_{i}{j}'
-
-            eta_new = RandomVariable.normal(eta_name, 'iov', 0, omega)
-            rvs.append(eta_new)
-
-            values += [S(eta_new.name)]
-            conditions += [Eq(cat, S(occ))]
+        values = [S(eta_name(i, k)) for k in range(1, len(categories) + 1)]
+        conditions = [Eq(cat, S(occ)) for cat in categories]
 
         expression = Piecewise(*zip(values, conditions))
 
@@ -206,6 +205,20 @@ def add_iov(model, occ, list_of_parameters=None, eta_names=None, distribution='d
         etais.append(Assignment(S(f'ETAI{i}'), eta.symbol + iov))
 
         sset.subs({eta.name: S(f'ETAI{i}')})
+
+    # NOTE This declares the ETAS and their corresponding OMEGAs
+    if distribution == 'disjoint':
+        for i, eta in enumerate(etas, 1):
+            omega_iiv_name = str(next(iter(eta.sympy_rv.pspace.distribution.free_symbols)))
+            omega = S(omega_iov_name(i, i))
+            init = pset[omega_iiv_name].init * 0.1 if omega_iiv_name in pset else 0.01
+            pset.append(Parameter(str(omega), init=init))
+
+        for i, eta in enumerate(etas, 1):
+            for k in range(1, len(categories) + 1):
+                omega = S(omega_iov_name(i, i))
+                eta_new = RandomVariable.normal(eta_name(i, k), 'iov', 0, omega)
+                rvs.append(eta_new)
 
     iovs.extend(etais)
     iovs.extend(sset)
