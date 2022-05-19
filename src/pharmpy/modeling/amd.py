@@ -147,7 +147,7 @@ def _run_modelsearch(model, search_space, path):
 
 
 def _run_iiv(model, path):
-    res_iiv = run_tool('iivsearch', 'brute_force', iiv_strategy=2, model=model, path=path)
+    res_iiv = run_tool('iivsearch', 'brute_force', iiv_strategy=2, model=model, path=path / 'iivsearch')
     selected_iiv_model = res_iiv.best_model
     return selected_iiv_model
 
