@@ -18,9 +18,9 @@ def create_workflow(
     wf = Workflow()
     wf.name = "allometry"
     if model is not None:
-        start_task = Task('start_resmod', start, model)
+        start_task = Task('start_allometry', start, model)
     else:
-        start_task = Task('start_resmod', start)
+        start_task = Task('start_allometry', start)
     _add_allometry = partial(
         _add_allometry_on_model,
         allometric_variable=allometric_variable,
