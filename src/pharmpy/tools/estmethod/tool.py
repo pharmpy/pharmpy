@@ -16,7 +16,7 @@ from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.workflows import Task, Workflow
 
 
-def create_workflow(methods=None, solvers=None, model=None):
+def create_workflow(methods=None, solvers=None, update=False, model=None):
     wf = Workflow()
     wf.name = "estmethod"
 
@@ -43,11 +43,12 @@ def create_workflow(methods=None, solvers=None, model=None):
             )
             wf.insert_workflow(wf_estmethod_original, predecessors=task_base_model_fit)
             candidate_no += 1
-        wf_estmethod_update = _create_estmethod_task(
-            candidate_no, method=method, solver=solver, update=True
-        )
-        wf.insert_workflow(wf_estmethod_update, predecessors=task_base_model_fit)
-        candidate_no += 1
+        if update:
+            wf_estmethod_update = _create_estmethod_task(
+                candidate_no, method=method, solver=solver, update=True
+            )
+            wf.insert_workflow(wf_estmethod_update, predecessors=task_base_model_fit)
+            candidate_no += 1
 
     wf_fit = create_fit_workflow(n=len(wf.output_tasks))
     wf.insert_workflow(wf_fit, predecessors=wf.output_tasks)
@@ -101,9 +102,7 @@ def _create_description(method, solver, update=False):
     if solver:
         model_description += f'+{solver.upper()}'
     if update:
-        model_description += ' (update inits)'
-    else:
-        model_description += ' (original inits)'
+        model_description += ' (update)'
     return model_description
 
 
@@ -146,6 +145,7 @@ def start(model):
 
 def _create_base_model(model):
     base_model = copy_model(model, 'base_model')
+    base_model.description = 'FOCE'
     _clear_estimation_steps(base_model)
     est_settings = _create_est_settings('foce')
     eval_settings = _create_eval_settings()

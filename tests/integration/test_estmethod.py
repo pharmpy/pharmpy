@@ -18,10 +18,14 @@ def _model_count(rundir: Path):
 
 
 @pytest.mark.parametrize(
-    'methods, solvers, no_of_models, advan_ref',
-    [('imp', None, 3, 'ADVAN1'), ('imp', ['lsoda'], 5, 'ADVAN1')],
+    'methods, solvers, update, no_of_models, advan_ref',
+    [
+        ('imp', None, True, 3, 'ADVAN1'),
+        ('imp', ['lsoda'], True, 5, 'ADVAN1'),
+        ('imp', None, False, 2, 'ADVAN1'),
+    ],
 )
-def test_estmethod(tmp_path, testdata, methods, solvers, no_of_models, advan_ref):
+def test_estmethod(tmp_path, testdata, methods, solvers, update, no_of_models, advan_ref):
     with TemporaryDirectoryChanger(tmp_path):
         for path in (testdata / 'nonmem').glob('pheno_real.*'):
             shutil.copy2(path, tmp_path)
@@ -29,15 +33,9 @@ def test_estmethod(tmp_path, testdata, methods, solvers, no_of_models, advan_ref
         model_start = Model.create_model('pheno_real.mod')
         model_start.datainfo.path = tmp_path / 'pheno.dta'
 
-        res = run_tool('estmethod', methods=methods, solvers=solvers, model=model_start)
-
-        import pandas as pd
-
-        pd.set_option('display.max_columns', None)
-
-        print(res.summary_tool)
-        print(res.summary_models)
-        print(res.summary_settings)
+        res = run_tool(
+            'estmethod', methods=methods, solvers=solvers, update=update, model=model_start
+        )
 
         assert len(res.summary_tool) == no_of_models
         assert len(res.models) == no_of_models

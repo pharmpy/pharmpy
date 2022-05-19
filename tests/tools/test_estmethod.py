@@ -15,7 +15,7 @@ from pharmpy.tools.estmethod.tool import _clear_estimation_steps, _create_est_mo
     ],
 )
 def test_algorithm(methods, solvers, no_of_models):
-    wf = create_workflow(methods=methods, solvers=solvers)
+    wf = create_workflow(methods=methods, solvers=solvers, update=True)
     fit_tasks = [task.name for task in wf.tasks if task.name.startswith('run')]
 
     assert len(fit_tasks) == no_of_models
