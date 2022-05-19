@@ -210,8 +210,12 @@ def _apply_transformation(feat, func, model):
     if feat.startswith('PERIPHERALS'):
         new_params = set(model.parameters)
         diff = new_params - old_params
-        q_params = [param for param in diff if param.name.startswith('POP_Q')]
-        for param in q_params:
+        peripheral_params = [
+            param
+            for param in diff
+            if param.name.startswith('POP_Q') or param.name.startswith('POP_V')
+        ]
+        for param in peripheral_params:
             param.upper = 999999
     return model
 

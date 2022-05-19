@@ -149,6 +149,7 @@ def test_exhaustive_stepwise_peripheral_upper_limit(tmp_path, start_model):
         res = run_modelsearch('PERIPHERALS(1)', 'exhaustive_stepwise', model=start_model)
 
         assert ',999999) ; POP_QP1' in res.models[0].model_code
+        assert ',999999) ; POP_VP1' in res.models[0].model_code
 
 
 def test_summary_individuals(tmp_path, testdata):
