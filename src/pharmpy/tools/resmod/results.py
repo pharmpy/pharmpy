@@ -8,8 +8,10 @@ from pharmpy.results import Results
 class ResmodResults(Results):
     """Resmod results class"""
 
-    def __init__(self, models=None):
+    def __init__(self, models=None, summary_individuals=None, summary_individuals_count=None):
         self.models = models
+        self.summary_individuals = summary_individuals
+        self.summary_individuals_count = summary_individuals_count
 
 
 def calculate_results(models):

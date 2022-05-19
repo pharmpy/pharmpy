@@ -15,6 +15,8 @@ from pharmpy.modeling import (
     set_combined_error_model,
     set_iiv_on_ruv,
     set_power_on_ruv,
+    summarize_individuals,
+    summarize_individuals_count_table,
 )
 from pharmpy.statements import Assignment, ModelStatements
 from pharmpy.tools.modelfit import create_fit_workflow
@@ -94,18 +96,29 @@ def start(model, groups, p_value, skip):
         next_res = call_workflow(wf, f'results{current_iteration}')
         selected_model_name = next_res._selected_model_name
         del next_res._selected_model_name
+        curmodels = []
         if current_iteration == 1:
             res = next_res
+            curmodels.append(model)
         else:
             res.models = pd.concat([res.models, next_res.models])
             res.best_model = next_res.best_model
+        if not selected_model_name.startswith('base'):
+            curmodels.append(res.best_model)
+        if curmodels:
+            sumind = summarize_individuals(curmodels)
+            if current_iteration != 1:
+                sumind = pd.concat([res.summary_individuals, sumind])
+            res.summary_individuals = sumind
         if selected_model_name.startswith('base'):
-            return res
+            break
         elif selected_model_name.startswith('time_varying'):
             skip.append('time_varying')
         else:
             skip.append(selected_model_name)
         model = res.best_model
+    sumcount = summarize_individuals_count_table(df=res.summary_individuals)
+    res.summary_individuals_count = sumcount
     return res
 
 
