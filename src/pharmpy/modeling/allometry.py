@@ -1,7 +1,7 @@
-from pharmpy import ExplicitODESystem
 from pharmpy.parameter import Parameter
 from pharmpy.statements import Assignment, sympify
 
+from . import find_clearance_parameters, find_volume_parameters
 from .expressions import create_symbol
 
 
@@ -78,77 +78,25 @@ def add_allometry(
     """
     allometric_variable = sympify(allometric_variable)
     reference_value = sympify(reference_value)
-    statements = model.statements.copy()
-    odes = statements.ode_system
-    if type(odes) is ExplicitODESystem:
-        odes = statements.ode_system.to_compartmental_system()
-
-    central = odes.central_compartment
-    output = odes.output_compartment
+    cls = find_clearance_parameters(model)
+    vcs = find_volume_parameters(model)
 
     if parameters is None:
-        parameters = []
-        inits = []
-        elimination_rate = odes.get_flow(central, output)
-        cl, vc = elimination_rate.as_numer_denom()
-        if cl.is_Symbol and vc.is_Symbol:
-            parameters += [cl, vc]
-            inits += [0.75, 1.0]
-        for periph in odes.peripheral_compartments:
-            rate1 = odes.get_flow(central, periph)
-            q1, v1 = rate1.as_numer_denom()
-            if q1.is_Symbol and v1.is_Symbol:
-                if q1 not in parameters:
-                    parameters.append(q1)
-                    inits.append(0.75)
-                if v1 not in parameters:
-                    parameters.append(v1)
-                    inits.append(1.0)
-            rate2 = odes.get_flow(periph, central)
-            q2, v2 = rate2.as_numer_denom()
-            if q2.is_Symbol and v2.is_Symbol:
-                if q2 not in parameters:
-                    parameters.append(q2)
-                    inits.append(0.75)
-                if v2 not in parameters:
-                    parameters.append(v2)
-                    inits.append(1.0)
-        if initials is None:
-            initials = inits
+        parameters = cls + vcs
         if not parameters:
             raise ValueError("No parameters found")
     else:
         if not parameters:
             raise ValueError("No parameters provided")
-
         parameters = [sympify(p) for p in parameters]
-        if initials is None:
-            # Need to understand which parameter is CL or Q and which is V
-            cls = []
-            vcs = []
-            elimination_rate = odes.get_flow(central, output)
-            cl, vc = elimination_rate.as_numer_denom()
-            if cl.is_Symbol and vc.is_Symbol:
-                cls.append(cl)
-                vcs.append(vc)
-            for periph in odes.peripheral_compartments:
-                rate1 = odes.get_flow(periph, central)
-                q1, v1 = rate1.as_numer_denom()
-                if q1.is_Symbol and v1.is_Symbol:
-                    cls.append(q1)
-                    vcs.append(v1)
-                rate2 = odes.get_flow(periph, central)
-                q2, v2 = rate2.as_numer_denom()
-                if q2.is_Symbol and v2.is_Symbol:
-                    cls.append(q2)
-                    vcs.append(v2)
-
-            initials = []
-            for p in parameters:
-                if p in cls:
-                    initials.append(0.75)
-                elif p in vcs:
-                    initials.append(1.0)
+    if initials is None:
+        # Need to understand which parameter is CL or Q and which is V
+        initials = []
+        for p in parameters:
+            if p in cls:
+                initials.append(0.75)
+            elif p in vcs:
+                initials.append(1.0)
 
     if lower_bounds is None:
         lower_bounds = [0] * len(parameters)

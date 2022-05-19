@@ -1497,11 +1497,12 @@ def find_clearance_parameters(model):
     sset = model.statements
     rate_list = _find_rate(sset)
     for rate in rate_list:
-        clearance = rate.as_numer_denom()[0]
-        if clearance.is_Symbol:
-            clearance = _find_real_symbol(sset, clearance)
-            if clearance not in cls:
-                cls.append(clearance)
+        if rate.as_numer_denom()[1] != 1:
+            clearance = rate.as_numer_denom()[0]
+            if clearance.is_Symbol:
+                clearance = _find_real_symbol(sset, clearance)
+                if clearance not in cls:
+                    cls.append(clearance)
     return cls
 
 
