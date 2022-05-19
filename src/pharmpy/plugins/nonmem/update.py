@@ -221,23 +221,32 @@ def create_omega_single(model, rv, eta_number, record_number, comment_dict):
 
 def create_omega_block(model, rvs, eta_number, record_number, comment_dict):
     rvs = RandomVariables(rvs)
-    param_str = f'$OMEGA BLOCK({rvs.covariance_matrix.shape[0]})\n'
+    param_str = f'$OMEGA BLOCK({rvs.covariance_matrix.shape[0]})'
 
-    for row in range(rvs.covariance_matrix.shape[0]):
-        for col in range(row + 1):
-            elem = rvs.covariance_matrix.row(row).col(col)
-            name = str(elem[0])
-            omega = model.parameters[name]
-            param_str += f'{omega.init}'.upper()
+    rv = rvs[0]
 
-            if not re.match(r'OMEGA\(\d+,\d+\)', omega.name):
-                param_str += f'\t; {omega.name}'
-            elif comment_dict and omega.name in comment_dict:
-                param_str += f'\t; {comment_dict[omega.name]}'
+    if rv.level == 'IOV' and rv != next(
+        filter(lambda iov: iov.parameter_names == rv.parameter_names, model.random_variables.iov)
+    ):
+        param_str += ' SAME\n'
 
-            param_str += '\n'
+    else:
+        param_str += '\n'
+        for row in range(rvs.covariance_matrix.shape[0]):
+            for col in range(row + 1):
+                elem = rvs.covariance_matrix.row(row).col(col)
+                name = str(elem[0])
+                omega = model.parameters[name]
+                param_str += f'{omega.init}'.upper()
 
-        param_str = f'{param_str.rstrip()}\n'
+                if not re.match(r'OMEGA\(\d+,\d+\)', omega.name):
+                    param_str += f'\t; {omega.name}'
+                elif comment_dict and omega.name in comment_dict:
+                    param_str += f'\t; {comment_dict[omega.name]}'
+
+                param_str += '\n'
+
+            param_str = f'{param_str.rstrip()}\n'
 
     eta_map, name_variance = dict(), dict()
 
