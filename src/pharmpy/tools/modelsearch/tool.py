@@ -80,7 +80,7 @@ def check_input(model):
         pass
     else:
         raise ValueError(
-            f"Found compartment column {cmt.name} in dataset. "
+            f"Found compartment column {cmt.names} in dataset. "
             f"This is currently not supported by modelsearch. "
             f"Please remove or drop this column and try again"
         )

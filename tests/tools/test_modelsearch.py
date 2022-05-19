@@ -1,7 +1,9 @@
 import functools
+from io import StringIO
 
 import pytest
 
+from pharmpy import Model
 from pharmpy.modeling import (
     set_peripheral_compartments,
     set_transit_compartments,
@@ -14,6 +16,7 @@ from pharmpy.tools.modelsearch.algorithms import (
     reduced_stepwise,
 )
 from pharmpy.tools.modelsearch.mfl import ModelFeatures
+from pharmpy.tools.modelsearch.tool import check_input
 
 
 def test_exhaustive_algorithm():
@@ -108,6 +111,35 @@ def test_reduced_stepwise_algorithm(mfl, no_of_models):
 
     assert len(fit_tasks) == no_of_models
     assert all(task.name == 'run0' for task in wf.output_tasks)
+
+
+def test_check_input(testdata):
+    model_code = '''$PROBLEM
+$INPUT ID VISI XAT2=DROP DGRP DOSE FLAG=DROP ONO=DROP
+       XIME=DROP NEUY SCR AGE SEX NYH=DROP WT DROP ACE
+       DIG DIU NUMB=DROP TAD TIME VIDD=DROP CRCL AMT SS II DROP
+       CMT CONO=DROP DV EVID=DROP OVID=DROP
+$DATA mox_simulated_normal.csv IGNORE=@
+$SUBROUTINE ADVAN1 TRANS2
+$PK
+CL=THETA(1)*EXP(ETA(1))
+V=THETA(2)*EXP(ETA(2))
+S1=V
+$ERROR
+Y=F+F*EPS(1)
+$THETA (0,0.00469307) ; TVCL
+$THETA (0,1.00916) ; TVV
+$OMEGA 0.0309626  ; IVCL
+$OMEGA 0.031128  ; IVV
+$SIGMA 0.013241
+
+$ESTIMATION METHOD=1 INTERACTION
+'''
+    model = Model.create_model(StringIO(model_code))
+    model.datainfo.path = testdata / 'nonmem' / 'models' / 'mox_simulated_normal.csv'
+
+    with pytest.raises(ValueError):
+        check_input(model)
 
 
 def test_is_allowed():
