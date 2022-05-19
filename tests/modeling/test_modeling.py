@@ -2967,7 +2967,7 @@ def test_nested_update_source(pheno_path):
 
 
 @pytest.mark.parametrize(
-    'etas, eta_names, pk_start_ref, pk_end_ref, omega_ref',
+    'etas, eta_names, pk_start_ref, pk_end_ref, omega_ref, distribution',
     [
         (
             ['ETA(1)'],
@@ -2980,6 +2980,7 @@ def test_nested_update_source(pheno_path):
             '$OMEGA  BLOCK(1)\n'
             '0.00309626 ; OMEGA_IOV_1\n'
             '$OMEGA  BLOCK(1) SAME ; OMEGA_IOV_1\n',
+            'disjoint',
         ),
         (
             'ETA(1)',
@@ -2992,6 +2993,7 @@ def test_nested_update_source(pheno_path):
             '$OMEGA  BLOCK(1)\n'
             '0.00309626 ; OMEGA_IOV_1\n'
             '$OMEGA  BLOCK(1) SAME ; OMEGA_IOV_1\n',
+            'disjoint',
         ),
         (
             None,
@@ -3011,6 +3013,7 @@ def test_nested_update_source(pheno_path):
             '$OMEGA  BLOCK(1)\n'
             '0.0031128 ; OMEGA_IOV_2\n'
             '$OMEGA  BLOCK(1) SAME ; OMEGA_IOV_2\n',
+            'disjoint',
         ),
         (
             ['CL'],
@@ -3023,6 +3026,7 @@ def test_nested_update_source(pheno_path):
             '$OMEGA  BLOCK(1)\n'
             '0.00309626 ; OMEGA_IOV_1\n'
             '$OMEGA  BLOCK(1) SAME ; OMEGA_IOV_1\n',
+            'disjoint',
         ),
         (
             ['CL', 'ETA(1)'],
@@ -3035,6 +3039,7 @@ def test_nested_update_source(pheno_path):
             '$OMEGA  BLOCK(1)\n'
             '0.00309626 ; OMEGA_IOV_1\n'
             '$OMEGA  BLOCK(1) SAME ; OMEGA_IOV_1\n',
+            'disjoint',
         ),
         (
             ['ETA(1)', 'CL'],
@@ -3047,6 +3052,7 @@ def test_nested_update_source(pheno_path):
             '$OMEGA  BLOCK(1)\n'
             '0.00309626 ; OMEGA_IOV_1\n'
             '$OMEGA  BLOCK(1) SAME ; OMEGA_IOV_1\n',
+            'disjoint',
         ),
         (
             ['CL', 'ETA(2)'],
@@ -3066,6 +3072,7 @@ def test_nested_update_source(pheno_path):
             '$OMEGA  BLOCK(1)\n'
             '0.0031128 ; OMEGA_IOV_2\n'
             '$OMEGA  BLOCK(1) SAME ; OMEGA_IOV_2\n',
+            'disjoint',
         ),
         (
             ['ETA(1)'],
@@ -3078,12 +3085,13 @@ def test_nested_update_source(pheno_path):
             '$OMEGA  BLOCK(1)\n'
             '0.00309626 ; OMEGA_IOV_1\n'
             '$OMEGA  BLOCK(1) SAME ; OMEGA_IOV_1\n',
+            'disjoint',
         ),
     ],
 )
-def test_add_iov(pheno_path, etas, eta_names, pk_start_ref, pk_end_ref, omega_ref):
+def test_add_iov(pheno_path, etas, eta_names, pk_start_ref, pk_end_ref, omega_ref, distribution):
     model = Model.create_model(pheno_path)
-    add_iov(model, 'FA1', etas, eta_names)
+    add_iov(model, 'FA1', etas, eta_names, distribution=distribution)
     model.update_source()
 
     model_etas = set(eta.name for eta in model.random_variables.etas)

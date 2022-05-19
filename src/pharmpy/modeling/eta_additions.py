@@ -116,7 +116,7 @@ def add_iiv(
     return model
 
 
-def add_iov(model, occ, list_of_parameters=None, eta_names=None):
+def add_iov(model, occ, list_of_parameters=None, eta_names=None, distribution='disjoint'):
     """Adds IOVs to :class:`pharmpy.model`.
 
     Initial estimate of new IOVs are 10% of the IIV eta it is based on.
@@ -133,6 +133,10 @@ def add_iov(model, occ, list_of_parameters=None, eta_names=None):
     eta_names : str, list
         Custom names of new etas. Must be equal to the number of input etas times the number of
         categories for occasion.
+    distribution : str
+        The distribution that should be used for the new etas. Options are
+        'disjoint' for disjoint normal distributions, 'joint' for joint normal
+        distribution, 'copy-iiv' for copying the distribution of IIV etas.
 
     Return
     ------
