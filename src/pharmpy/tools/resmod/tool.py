@@ -82,21 +82,6 @@ def create_iteration_workflow(model, groups, cutoff, skip, current_iteration):
     task_post_process = Task('post_process', post_pro)
     wf.add_task(task_post_process, predecessors=[start_task] + fit_wf.output_tasks)
 
-    task_unpack = Task('unpack', _unpack)
-    wf.add_task(task_unpack, predecessors=[task_post_process])
-
-    fit_final = create_fit_workflow(n=1)
-    wf.insert_workflow(fit_final, predecessors=[task_unpack])
-
-    compare_full_models = partial(
-        _compare_full_models_results, cutoff=cutoff, current_iteration=current_iteration
-    )
-    task_compare_full_models = Task('compare_full_models', compare_full_models)
-    wf.add_task(
-        task_compare_full_models,
-        predecessors=[start_task] + fit_final.output_tasks + [task_post_process],
-    )
-
     return wf
 
 
@@ -107,19 +92,19 @@ def start(model, groups, p_value, skip):
     for current_iteration in range(1, 4):
         wf = create_iteration_workflow(model, groups, cutoff, skip, current_iteration)
         next_res = call_workflow(wf, f'results{current_iteration}')
+        selected_model_name = next_res._selected_model_name
+        del next_res._selected_model_name
         if current_iteration == 1:
             res = next_res
         else:
             res.models = pd.concat([res.models, next_res.models])
             res.best_model = next_res.best_model
-            res.selected_model_name = next_res.selected_model_name
-        name = res.selected_model_name
-        if name.startswith('base'):
+        if selected_model_name.startswith('base'):
             return res
-        elif name.startswith('time_varying'):
+        elif selected_model_name.startswith('time_varying'):
             skip.append('time_varying')
         else:
-            skip.append(name)
+            skip.append(selected_model_name)
         model = res.best_model
     return res
 
@@ -134,24 +119,22 @@ def _results(res):
 
 def post_process(start_model, *models, cutoff, current_iteration):
     res = calculate_results(models)
-    best_model = _create_best_model(start_model, res, current_iteration, cutoff=cutoff)
-    res.best_model = best_model[0]
-    res.selected_model_name = best_model[1]
-    return res
-
-
-def _unpack(res):
-    return res.best_model
-
-
-def _compare_full_models_results(start_model, best_resmod, res, cutoff, current_iteration):
-    delta_ofv = start_model.modelfit_results.ofv - best_resmod.modelfit_results.ofv
-
-    if delta_ofv <= cutoff:
-        res.best_model = start_model
-        res.selected_model_name = f'base_{current_iteration}'
+    best_model, selected_model_name = _create_best_model(
+        start_model, res, current_iteration, cutoff=cutoff
+    )
+    if best_model is not None:
+        fit_wf = create_fit_workflow(models=[best_model])
+        est_model = call_workflow(fit_wf, f'fit{current_iteration}')
+        delta_ofv = start_model.modelfit_results.ofv - est_model.modelfit_results.ofv
+        if delta_ofv > cutoff:
+            res.best_model = est_model
+            res._selected_model_name = selected_model_name
+        else:
+            res.best_model = start_model
+            res._selected_model_name = f"base_{current_iteration}"
     else:
-        res.best_model = best_resmod
+        res.best_model = start_model
+        res._selected_model_name = f"base_{current_iteration}"
     return res
 
 
@@ -284,10 +267,10 @@ def _time_after_dose(model):
 
 
 def _create_best_model(model, res, current_iteration, groups=4, cutoff=3.84):
-    model = model.copy()
-    model.name = f'best_resmod_{current_iteration}'
-    selected_model_name = f'base_{current_iteration}'
     if any(res.models['dofv'] > cutoff):
+        model = model.copy()
+        model.name = f'best_resmod_{current_iteration}'
+        selected_model_name = f'base_{current_iteration}'
         idx = res.models['dofv'].idxmax()
         name = idx[0]
 
@@ -329,4 +312,7 @@ def _create_best_model(model, res, current_iteration, groups=4, cutoff=3.84):
             }
         selected_model_name = name
         model.update_source()
+    else:
+        model = None
+        selected_model_name = None
     return model, selected_model_name
