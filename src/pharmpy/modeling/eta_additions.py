@@ -209,45 +209,10 @@ def add_iov(model, occ, list_of_parameters=None, eta_names=None, distribution='d
 
     # NOTE This declares the ETAS and their corresponding OMEGAs
     if distribution == 'disjoint':
-        for i, eta in enumerate(etas, 1):
-            omega_iiv_name = str(next(iter(eta.sympy_rv.pspace.distribution.free_symbols)))
-            omega = S(omega_iov_name(i, i))
-            init = pset[omega_iiv_name].init * 0.1 if omega_iiv_name in pset else 0.01
-            pset.append(Parameter(str(omega), init=init))
-
-        for i, eta in enumerate(etas, 1):
-            for k in range(1, len(categories) + 1):
-                omega = S(omega_iov_name(i, i))
-                eta_new = RandomVariable.normal(eta_name(i, k), 'iov', 0, omega)
-                rvs.append(eta_new)
+        rvs.extend(_add_iov_etas_disjoint(pset, etas, categories, omega_iov_name, eta_name))
 
     elif distribution == 'joint':
-        n = len(etas)
-
-        mu = [0] * n
-
-        sigma = [
-            [S(omega_iov_name(min(i, j), max(i, j))) for i in range(1, n + 1)]
-            for j in range(1, n + 1)
-        ]
-
-        # NOTE Declare diagonal OMEGAs
-        for i, eta in enumerate(etas, 1):
-            omega_iiv_name = str(next(iter(eta.sympy_rv.pspace.distribution.free_symbols)))
-            omega = S(omega_iov_name(i, i))
-            init = pset[omega_iiv_name].init * 0.1 if omega_iiv_name in pset else 0.01
-            pset.append(Parameter(str(omega), init=init))
-
-        # NOTE Declare off-diagonal OMEGAs
-        for i, j in combinations(range(1, len(etas) + 1), r=2):
-            omega = S(omega_iov_name(i, j))
-            init = 0.001  # TODO recover existing value * 0.1 if possible
-            pset.append(Parameter(str(omega), init=init))
-
-        for k in range(1, len(categories) + 1):
-            names = list(map(lambda i: eta_name(i, k), range(1, len(etas) + 1)))
-            new_rvs = RandomVariable.joint_normal(names, 'iov', mu, sigma)
-            rvs.extend(new_rvs)
+        rvs.extend(_add_iov_etas_joint(pset, etas, categories, omega_iov_name, eta_name))
 
     iovs.extend(etais)
     iovs.extend(sset)
@@ -255,6 +220,46 @@ def add_iov(model, occ, list_of_parameters=None, eta_names=None, distribution='d
     model.random_variables, model.parameters, model.statements = rvs, pset, iovs
 
     return model
+
+
+def _add_iov_etas_disjoint(pset, etas, categories, omega_iov_name, eta_name):
+    for i, eta in enumerate(etas, 1):
+        omega_iiv_name = str(next(iter(eta.sympy_rv.pspace.distribution.free_symbols)))
+        omega = S(omega_iov_name(i, i))
+        init = pset[omega_iiv_name].init * 0.1 if omega_iiv_name in pset else 0.01
+        pset.append(Parameter(str(omega), init=init))
+
+    for i, eta in enumerate(etas, 1):
+        for k in range(1, len(categories) + 1):
+            omega = S(omega_iov_name(i, i))
+            yield RandomVariable.normal(eta_name(i, k), 'iov', 0, omega)
+
+
+def _add_iov_etas_joint(pset, etas, categories, omega_iov_name, eta_name):
+    n = len(etas)
+
+    mu = [0] * n
+
+    sigma = [
+        [S(omega_iov_name(min(i, j), max(i, j))) for i in range(1, n + 1)] for j in range(1, n + 1)
+    ]
+
+    # NOTE Declare diagonal OMEGAs
+    for i, eta in enumerate(etas, 1):
+        omega_iiv_name = str(next(iter(eta.sympy_rv.pspace.distribution.free_symbols)))
+        omega = S(omega_iov_name(i, i))
+        init = pset[omega_iiv_name].init * 0.1 if omega_iiv_name in pset else 0.01
+        pset.append(Parameter(str(omega), init=init))
+
+    # NOTE Declare off-diagonal OMEGAs
+    for i, j in combinations(range(1, len(etas) + 1), r=2):
+        omega = S(omega_iov_name(i, j))
+        init = 0.001  # TODO recover existing value * 0.1 if possible
+        pset.append(Parameter(str(omega), init=init))
+
+    for k in range(1, len(categories) + 1):
+        names = list(map(lambda i: eta_name(i, k), range(1, len(etas) + 1)))
+        yield from RandomVariable.joint_normal(names, 'iov', mu, sigma)
 
 
 def add_pk_iiv(model, initial_estimate=0.09):
