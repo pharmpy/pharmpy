@@ -106,6 +106,10 @@ def start(model, groups, p_value, skip):
             res.models = pd.concat([res.models, next_res.models])
             res.best_model = next_res.best_model
         if not selected_model_name.startswith('base'):
+            if res.best_model.description:
+                res.best_model.description += '+' + selected_model_name
+            else:
+                res.best_model.description = selected_model_name
             selected_models.append(res.best_model)
 
         if selected_model_name.startswith('base'):
