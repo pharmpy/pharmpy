@@ -17,6 +17,7 @@ from pharmpy.modeling import (
     set_power_on_ruv,
     summarize_individuals,
     summarize_individuals_count_table,
+    summarize_modelfit_results,
 )
 from pharmpy.statements import Assignment, ModelStatements
 from pharmpy.tools.modelfit import create_fit_workflow
@@ -91,25 +92,22 @@ def start(model, groups, p_value, skip):
     cutoff = float(chi2.isf(q=p_value, df=1))
     if skip is None:
         skip = []
+
+    selected_models = [model]
     for current_iteration in range(1, 4):
         wf = create_iteration_workflow(model, groups, cutoff, skip, current_iteration)
         next_res = call_workflow(wf, f'results{current_iteration}')
         selected_model_name = next_res._selected_model_name
         del next_res._selected_model_name
-        curmodels = []
+
         if current_iteration == 1:
             res = next_res
-            curmodels.append(model)
         else:
             res.models = pd.concat([res.models, next_res.models])
             res.best_model = next_res.best_model
         if not selected_model_name.startswith('base'):
-            curmodels.append(res.best_model)
-        if curmodels:
-            sumind = summarize_individuals(curmodels)
-            if current_iteration != 1:
-                sumind = pd.concat([res.summary_individuals, sumind])
-            res.summary_individuals = sumind
+            selected_models.append(res.best_model)
+
         if selected_model_name.startswith('base'):
             break
         elif selected_model_name.startswith('time_varying'):
@@ -117,8 +115,13 @@ def start(model, groups, p_value, skip):
         else:
             skip.append(selected_model_name)
         model = res.best_model
-    sumcount = summarize_individuals_count_table(df=res.summary_individuals)
+
+    sumind = summarize_individuals(selected_models)
+    sumcount = summarize_individuals_count_table(df=sumind)
+    summf = summarize_modelfit_results(selected_models)
+    res.summary_individuals = sumind
     res.summary_individuals_count = sumcount
+    res.summary_models = summf
     return res
 
 

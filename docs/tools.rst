@@ -14,6 +14,7 @@ Tools in Pharmpy
 
    modelsearch
    iivsearch
+   resmod
 
 ~~~~~~~~~~~~~~~~~~~~~~
 Tools connected to PsN
@@ -31,4 +32,3 @@ Tools connected to PsN
    resmod <psn_resmod>
    scm
    simeval
-

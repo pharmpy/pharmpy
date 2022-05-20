@@ -226,8 +226,6 @@ you can look at the ``summary_models`` table. The table is generated with
 .. pharmpy-execute::
     :hide-code:
 
-    import pandas as pd
-    pd.set_option("display.max_columns", 10)
     res.summary_models
 
 A summary table of predicted influential individuals and outliers can be seen in ``summary_individuals_count``.
