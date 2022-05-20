@@ -171,7 +171,7 @@ def _choose_param_init(model, rvs, params):
         eta_corr = ie[etas].corr()
         cov = math.corr2cov(eta_corr.to_numpy(), sd)
         cov[cov == 0] = 0.0001
-        cov = math.nearest_posdef(cov)
+        cov = math.nearest_postive_semidefinite(cov)
         return round(cov[1][0], 7)
     else:
         return init_default

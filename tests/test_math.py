@@ -107,8 +107,8 @@ def test_nearest_posdef():
     for i in range(5):
         for j in range(2, 20):
             A = np.random.randn(j, j)
-            B = pharmpy.math.nearest_posdef(A)
-            assert pharmpy.math.is_posdef(B)
+            B = pharmpy.math.nearest_postive_semidefinite(A)
+            assert pharmpy.math.is_positive_semidefinite(B)
 
 
 def test_conditional_joint_normal():

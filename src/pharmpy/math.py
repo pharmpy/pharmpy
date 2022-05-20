@@ -109,8 +109,8 @@ def is_posdef(A):
         return False
 
 
-def nearest_posdef(A):
-    """Return the nearest positive definite matrix in the Frobenius norm to a matrix
+def nearest_postive_semidefinite(A):
+    """Return the nearest positive semidefinite matrix in the Frobenius norm to a matrix
 
     A Python/Numpy port of John D'Errico's `nearestSPD` MATLAB code [1], which
     credits [2].
@@ -119,7 +119,10 @@ def nearest_posdef(A):
     matrix" (1988): https://doi.org/10.1016/0024-3795(88)90223-6
     [3] https://gist.github.com/fasiha/fdb5cec2054e6f1c6ae35476045a0bbd
     """
-    if is_posdef(A):
+    # Check positive semidefinite instead of positive definite since it seems it can happen
+    # that a matrix is deemed not positive semidefinite but positive definite, which causes
+    # issues when validating and adjusting initial estimates
+    if is_positive_semidefinite(A):
         return A
 
     B = (A + A.T) / 2
@@ -129,7 +132,7 @@ def nearest_posdef(A):
     A2 = (B + H) / 2
     A3 = (A2 + A2.T) / 2
 
-    if is_posdef(A3):
+    if is_positive_semidefinite(A3):
         return A3
 
     spacing = np.spacing(np.linalg.norm(A))
@@ -144,7 +147,7 @@ def nearest_posdef(A):
     # below suggests.
     Id = np.eye(A.shape[0])
     k = 1
-    while not is_posdef(A3):
+    while not is_positive_semidefinite(A3):
         mineig = np.min(np.real(np.linalg.eigvals(A3)))
         A3 += Id * (-mineig * k**2 + spacing)
         k += 1

@@ -25,7 +25,7 @@ def calculate_parcov_inits(model, ncovs):
 
     cov = pharmpy.math.corr2cov(eta_corr.to_numpy(), sd)
     cov[cov == 0] = 0.0001
-    cov = pharmpy.math.nearest_posdef(cov)
+    cov = pharmpy.math.nearest_postive_semidefinite(cov)
 
     parcov_inits = cov[npars:, :npars]
     parcov_symb = sigma[npars:, :npars]

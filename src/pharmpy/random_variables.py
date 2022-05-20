@@ -1106,7 +1106,7 @@ class RandomVariables(MutableSequence):
                 symb_sigma = rvs[0]._variance
                 sigma = symb_sigma.subs(dict(parameter_values))
                 A = np.array(sigma).astype(np.float64)
-                B = pharmpy.math.nearest_posdef(A)
+                B = pharmpy.math.nearest_postive_semidefinite(A)
                 if B is not A:
                     for row in range(len(A)):
                         for col in range(row + 1):

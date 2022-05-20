@@ -4,7 +4,7 @@ from functools import partial
 import numpy as np
 import pandas as pd
 
-from pharmpy.math import is_posdef, nearest_posdef
+from pharmpy.math import is_posdef, nearest_postive_semidefinite
 
 
 def create_rng(seed=None):
@@ -245,7 +245,7 @@ def sample_parameters_from_covariance_matrix(
     if not is_posdef(sigma):
         if force_posdef_covmatrix:
             old_sigma = sigma
-            sigma = nearest_posdef(sigma)
+            sigma = nearest_postive_semidefinite(sigma)
             delta_frobenius = np.linalg.norm(old_sigma) - np.linalg.norm(sigma)
             delta_max = np.abs(old_sigma).max() - np.abs(sigma).max()
             warnings.warn(
@@ -320,7 +320,7 @@ def sample_individual_estimates(model, parameters=None, samples_per_id=100, rng=
     samples = pd.DataFrame()
     for (idx, mu), sigma in zip(ests.iterrows(), covs):
         sigma = sigma[parameters].loc[parameters]
-        sigma = nearest_posdef(sigma)
+        sigma = nearest_postive_semidefinite(sigma)
         id_samples = rng.multivariate_normal(mu.values, sigma.values, size=samples_per_id)
         id_df = pd.DataFrame(id_samples, columns=ests.columns)
         id_df['ID'] = idx
