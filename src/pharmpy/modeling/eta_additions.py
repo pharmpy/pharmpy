@@ -283,6 +283,7 @@ def add_iov(model, occ, list_of_parameters=None, eta_names=None, distribution='d
         _add_iov_etas = _add_iov_etas_disjoint if len(dist) == 1 else _add_iov_etas_joint
         rvs.extend(
             _add_iov_etas(
+                rvs,
                 pset,
                 ordered_etas,
                 dist,
@@ -324,41 +325,40 @@ def _add_iov_declare_etas(sset, occ, etas, indices, categories, eta_name, iov_na
     return iovs, etais
 
 
-def _add_iov_etas_disjoint(pset, etas, indices, categories, omega_iov_name, eta_name):
+def _add_iov_etas_disjoint(rvs, pset, etas, indices, categories, omega_iov_name, eta_name):
     for i in indices:
         eta = etas[i - 1]
-        omega_iiv_name = str(next(iter(eta.sympy_rv.pspace.distribution.free_symbols)))
-        omega = S(omega_iov_name(i, i))
-        init = pset[omega_iiv_name].init * 0.1 if omega_iiv_name in pset else 0.01
-        pset.append(Parameter(str(omega), init=init))
+        omega_iiv = rvs.get_variance(eta)
+        omega_iov = S(omega_iov_name(i, i))
+        init = pset[omega_iiv].init * 0.1 if omega_iiv in pset else 0.01
+        pset.append(Parameter(str(omega_iov), init=init))
 
     for i in indices:
         eta = etas[i - 1]
         for k in range(1, len(categories) + 1):
-            omega = S(omega_iov_name(i, i))
-            yield RandomVariable.normal(eta_name(i, k), 'iov', 0, omega)
+            omega_iov = S(omega_iov_name(i, i))
+            yield RandomVariable.normal(eta_name(i, k), 'iov', 0, omega_iov)
 
 
-def _add_iov_etas_joint(pset, etas, indices, categories, omega_iov_name, eta_name):
-    n = len(indices)
-
-    mu = [0] * n
+def _add_iov_etas_joint(rvs, pset, etas, indices, categories, omega_iov_name, eta_name):
+    mu = [0] * len(indices)
 
     sigma = [[S(omega_iov_name(min(i, j), max(i, j))) for i in indices] for j in indices]
 
     # NOTE Declare diagonal OMEGAs
     for i in indices:
         eta = etas[i - 1]
-        omega_iiv_name = str(next(iter(eta.sympy_rv.pspace.distribution.free_symbols)))
-        omega = S(omega_iov_name(i, i))
-        init = pset[omega_iiv_name].init * 0.1 if omega_iiv_name in pset else 0.01
-        pset.append(Parameter(str(omega), init=init))
+        omega_iiv = rvs.get_variance(eta)
+        omega_iov = S(omega_iov_name(i, i))
+        init = pset[omega_iiv].init * 0.1 if omega_iiv in pset else 0.01
+        pset.append(Parameter(str(omega_iov), init=init))
 
     # NOTE Declare off-diagonal OMEGAs
     for i, j in combinations(indices, r=2):
-        omega = S(omega_iov_name(i, j))
-        init = 0.001  # TODO recover existing value * 0.1 if possible
-        pset.append(Parameter(str(omega), init=init))
+        omega_iov = S(omega_iov_name(i, j))
+        omega_iiv = rvs.get_covariance(etas[i - 1], etas[j - 1])
+        init = pset[omega_iiv].init * 0.1 if omega_iiv != 0 and omega_iiv in pset else 0.001
+        pset.append(Parameter(str(omega_iov), init=init))
 
     for k in range(1, len(categories) + 1):
         names = list(map(lambda i: eta_name(i, k), indices))
