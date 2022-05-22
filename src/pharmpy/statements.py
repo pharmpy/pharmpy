@@ -405,6 +405,9 @@ class ExplicitODESystem(ODESystem):
             rows.append(ics_repr)
         return r'\begin{cases} ' + r' \\ '.join(rows) + r' \end{cases}'
 
+    def to_explicit_system(self, skip_output=False):
+        return self.copy()
+
     def to_compartmental_system(self):
         """Get the explicit system as a compartmental ODE system
 
@@ -1240,6 +1243,9 @@ class CompartmentalSystem(ODESystem):
             else:
                 inputs.append(0)
         return sympy.Matrix(inputs)
+
+    def to_compartmental_system(self):
+        return self.copy()
 
     def to_explicit_system(self, skip_output=False):
         """Get the compartmental system as an explicit ODE system
