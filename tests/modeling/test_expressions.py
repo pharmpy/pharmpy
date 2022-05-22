@@ -9,7 +9,6 @@ from pharmpy import (
     Parameters,
     RandomVariable,
     RandomVariables,
-    SolvedODESystem,
 )
 from pharmpy.modeling import (
     calculate_epsilon_gradient_expression,
@@ -205,4 +204,4 @@ def test_simplify_expression():
 def test_solve_ode_system(pheno):
     model = pheno.copy()
     solve_ode_system(model)
-    assert isinstance(model.statements.ode_system, SolvedODESystem)
+    assert sympy.Symbol('t') in model.statements[8].free_symbols

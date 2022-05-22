@@ -1,6 +1,6 @@
 import sympy
 
-from pharmpy.statements import Assignment, CompartmentalSystem, SolvedODESystem, sympify
+from pharmpy.statements import Assignment, CompartmentalSystem, ModelStatements, ODESystem, sympify
 
 
 def get_observation_expression(model):
@@ -385,7 +385,7 @@ def solve_ode_system(model):
 
     """
     odes = model.statements.ode_system
-    if odes is None or isinstance(odes, SolvedODESystem):
+    if odes is None:
         return model
     if isinstance(odes, CompartmentalSystem):
         odes = odes.to_explicit_system()
@@ -394,6 +394,13 @@ def solve_ode_system(model):
     # FIXME: Should set assumptions on symbols before solving
     # FIXME: Need a way to handle systems with no explicit solutions
     sol = sympy.dsolve(odes.odes[:-1], ics=ics)
-    new = SolvedODESystem(sol)
-    model.statements.ode_system = new
+    new = []
+    for s in model.statements:
+        if isinstance(s, ODESystem):
+            for eq in sol:
+                ass = Assignment(eq.lhs, eq.rhs)
+                new.append(ass)
+        else:
+            new.append(s)
+    model.statements = ModelStatements(new)
     return model

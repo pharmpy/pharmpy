@@ -59,7 +59,7 @@ class Assignment(Statement):
     def symbol(self, value):
         if isinstance(value, str):
             value = sympy.Symbol(value)
-        if not (value.is_Symbol or value.is_Derivative):
+        if not (value.is_Symbol or value.is_Derivative or value.is_Function):
             raise TypeError("symbol of Assignment must be a Symbol or str representing a symbol")
         self._symbol = value
 
@@ -433,104 +433,6 @@ class ExplicitODESystem(ODESystem):
         dose = Bolus("AMT")  # FIXME: not true in general!
         cs.find_compartment(convert_name(funcs[0].name)).dose = dose
         return cs
-
-
-class SolvedODESystem(ODESystem):
-    """The analytical solution of an ODE System"""
-
-    def __init__(self, eqs):
-        self.eqs = eqs
-        super().__init__()
-
-    def __eq__(self, other):
-        return isinstance(other, SolvedODESystem) and self.eqs == other.eqs
-
-    @property
-    def eqs(self):
-        """List of equations"""
-        return self._eqs
-
-    @eqs.setter
-    def eqs(self, value):
-        self._eqs = value
-
-    @property
-    def free_symbols(self):
-        """Get set of all free symbols of the solved system
-
-        Returns
-        -------
-        set
-            Set of symbols
-
-        Examples
-        --------
-        >>> from pharmpy.modeling import *
-        >>> model = load_example_model("pheno")
-        >>> solve_ode_system(model)     # doctest: +ELLIPSIS
-        <...>
-        >>> model.statements.ode_system.free_symbols    # doctest: +SKIP
-        {AMT, CL, V, t}
-        """
-        free = set()
-        for eq in self.eqs:
-            free |= eq.free_symbols
-        return free
-
-    @property
-    def rhs_symbols(self):
-        """Get a set of all free symbols of the right hand side of equations
-
-        Returns
-        -------
-        set
-            Set of symbols
-
-        Examples
-        --------
-        >>> from pharmpy.modeling import *
-        >>> model = load_example_model("pheno")
-        >>> solve_ode_system(model)     # doctest: +ELLIPSIS
-        <...>
-        >>> model.statements.ode_system.rhs_symbols     # doctest: +SKIP
-        {AMT, CL, V, t}
-        """
-        free = set()
-        for eq in self.eqs:
-            free |= eq.rhs.free_symbols
-        return free
-
-    def subs(self, substitutions):
-        """Substitute expressions or symbols in equation system
-
-        Examples
-        --------
-        >>> from pharmpy.modeling import *
-        >>> model = load_example_model("pheno")
-        >>> solve_ode_system(model)     # doctest: +ELLIPSIS
-        <...>
-        >>> model.statements.ode_system.subs({'AMT': 'DOSE'})
-        >>> model.statements.ode_system
-        ⎧                     -CL⋅t
-        ⎨                     ──────
-        ⎪                       V
-        ⎩A_CENTRAL(t) = DOSE⋅ℯ
-        """
-        self.eqs = [eq.subs(substitutions) for eq in self.eqs]
-
-    def __repr__(self):
-        a = []
-        for eq in self.eqs:
-            s = sympy.pretty(eq)
-            a += s.split('\n')
-        return _bracket(a)
-
-    def _repr_latex_(self):
-        rows = []
-        for eq in self.eqs:
-            eq_repr = eq._repr_latex_()[1:-1]
-            rows.append(eq_repr)
-        return r'\begin{cases} ' + r' \\ '.join(rows) + r' \end{cases}'
 
 
 class CompartmentalSystem(ODESystem):

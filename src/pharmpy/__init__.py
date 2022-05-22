@@ -29,7 +29,6 @@ from .statements import (
     Infusion,
     ModelStatements,
     ODESystem,
-    SolvedODESystem,
     sympify,
 )
 from .symbols import symbol
@@ -61,7 +60,6 @@ __all__ = [
     'RandomVariable',
     'RandomVariables',
     'Results',
-    'SolvedODESystem',
     'VariabilityHierarchy',
     'symbol',
     'sympify',
