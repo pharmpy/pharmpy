@@ -225,22 +225,6 @@ def add_iov(model, occ, list_of_parameters=None, eta_names=None, distribution='d
     if len(categories) == 1:
         raise ValueError(f'Only one value in {occ} column.')
 
-    # TODO: better names
-    def eta_name(i, k):
-        return eta_names[(i - 1) * len(categories) + k - 1] if eta_names else f'ETA_IOV_{i}{k}'
-
-    def omega_iov_name(i, j):
-        return f'OMEGA_IOV_{i}' if i == j else f'OMEGA_IOV_{i}_{j}'
-
-    def iov_name(i):
-        return f'IOV_{i}'
-
-    rvs, pset, sset = (
-        model.random_variables.copy(),
-        model.parameters.copy(),
-        model.statements.copy(),
-    )
-
     # NOTE This declares the ETAS and their corresponding OMEGAs
     if distribution == 'same-as-iiv':
         # NOTE We filter existing IIV distributions for selected ETAs and then
@@ -248,7 +232,7 @@ def add_iov(model, occ, list_of_parameters=None, eta_names=None, distribution='d
         assert len(etas) == 1
         etas_set = set(etas[0])
         etas = []
-        for variables, dist in rvs.distributions():
+        for variables, dist in model.random_variables.distributions():
 
             intersection = list(filter(etas_set.__contains__, variables))
 
@@ -262,6 +246,28 @@ def add_iov(model, occ, list_of_parameters=None, eta_names=None, distribution='d
 
             etas.append(intersection)
 
+    # TODO: better names
+    def eta_name(i, k):
+        return eta_names[(i - 1) * len(categories) + k - 1] if eta_names else f'ETA_IOV_{i}{k}'
+
+    def omega_iov_name(i, j):
+        return f'OMEGA_IOV_{i}' if i == j else f'OMEGA_IOV_{i}_{j}'
+
+    def iov_name(i):
+        return f'IOV_{i}'
+
+    rvs, pset, iovs = _add_iov_explicit(
+        model, occ, etas, categories, iov_name, eta_name, omega_iov_name
+    )
+
+    model.random_variables, model.parameters, model.statements = rvs, pset, iovs
+
+    return model
+
+
+def _add_iov_explicit(model, occ, etas, categories, iov_name, eta_name, omega_iov_name):
+    assert all(map(bool, etas))
+
     ordered_etas = list(chain.from_iterable(etas))
 
     eta, count = next(iter(Counter(ordered_etas).most_common()))
@@ -273,6 +279,12 @@ def add_iov(model, occ, list_of_parameters=None, eta_names=None, distribution='d
         range(i, i + len(grp))
         for i, grp in zip(reduce(lambda acc, x: acc + [acc[-1] + x], map(len, etas), [1]), etas)
     ]
+
+    rvs, pset, sset = (
+        model.random_variables.copy(),
+        model.parameters.copy(),
+        model.statements.copy(),
+    )
 
     iovs, etais = _add_iov_declare_etas(
         sset, occ, ordered_etas, range(1, len(ordered_etas) + 1), categories, eta_name, iov_name
@@ -296,9 +308,7 @@ def add_iov(model, occ, list_of_parameters=None, eta_names=None, distribution='d
     iovs.extend(etais)
     iovs.extend(sset)
 
-    model.random_variables, model.parameters, model.statements = rvs, pset, iovs
-
-    return model
+    return rvs, pset, iovs
 
 
 def _add_iov_declare_etas(sset, occ, etas, indices, categories, eta_name, iov_name):
