@@ -3,7 +3,7 @@ import sympy
 
 import pharmpy.symbols
 from pharmpy import Model
-from pharmpy.statements import Assignment, CompartmentalSystem, ModelStatements, ODESystem
+from pharmpy.statements import Assignment, ModelStatements
 
 
 def S(x):
@@ -41,16 +41,6 @@ def test_subs(testdata):
     statements.subs({'V': 'V2'})
 
     assert statements.ode_system.free_symbols == {S('CL'), S('AMT'), S('t'), S('V2')}
-
-
-def test_ode_system_base_class():
-    odes = ODESystem()
-    assert odes.free_symbols == set()
-    assert odes.rhs_symbols == set()
-    odes.subs({})
-    assert odes == odes
-    assert odes != CompartmentalSystem()
-    assert str(odes) == 'ODESystem()'
 
 
 def test_ode_free_symbols(testdata):

@@ -160,33 +160,10 @@ class Assignment(Statement):
         return f'${sym} := {expr}$'
 
 
-class ODESystem(Statement):
-    """Base class and placeholder for ODE systems of different forms"""
+class ODESystem(Statement, ABC):
+    """Abstract base class for ODE systems of different forms"""
 
     t = symbols.symbol('t')
-
-    @property
-    def free_symbols(self):
-        return set()
-
-    @property
-    def rhs_symbols(self):
-        return set()
-
-    def subs(self, substitutions):
-        pass
-
-    def __eq__(self, other):
-        return isinstance(other, ODESystem)
-
-    def __repr__(self):
-        return 'ODESystem()'
-
-    def _repr_html_(self):
-        return str(self)
-
-    def _repr_latex_(self):
-        return str(self)
 
 
 def _bracket(a):
