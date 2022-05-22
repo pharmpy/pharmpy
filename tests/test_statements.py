@@ -310,3 +310,8 @@ def test_insert_after():
     new = Assignment(S('NEW'), 58)
     s.insert_after(s2, new)
     assert s == ModelStatements([s4, s3, s2, new, s1])
+
+
+def test_compartment_names(testdata):
+    model = Model.create_model(testdata / 'nonmem' / 'pheno.mod')
+    assert model.statements.ode_system.names == ['CENTRAL', 'OUTPUT']

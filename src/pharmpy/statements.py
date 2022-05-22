@@ -358,6 +358,21 @@ class ExplicitODESystem(ODESystem):
         amounts = [ode.lhs.args[0].name for ode in self.odes]
         return sympy.Matrix(amounts)
 
+    @property
+    def compartment_names(self):
+        """Names of all compartments
+
+        Examples
+        --------
+        >>> from pharmpy.modeling import load_example_model
+        >>> model = load_example_model(model)
+        >>> model.statements.to_explicit_system()
+        >>> model.statements.ode_system.names
+        ['CENTRAL', 'OUTPUT']
+        """
+        names = [ode.lhs.args[0].name[2:-1] for ode in self.odes]
+        return names
+
     def __repr__(self):
         a = []
         for ode in self.odes:
@@ -1136,6 +1151,21 @@ class CompartmentalSystem(ODESystem):
         ordered_cmts = self._order_compartments()
         amts = [cmt.amount for cmt in ordered_cmts]
         return sympy.Matrix(amts)
+
+    @property
+    def compartment_names(self):
+        """Names of all compartments
+
+        Examples
+        --------
+        >>> from pharmpy.modeling import load_example_model
+        >>> model = load_example_model(model)
+        >>> model.statements.ode_system.names
+        ['CENTRAL', 'OUTPUT']
+        """
+        ordered_cmts = self._order_compartments()
+        names = [cmt.amount.name[2:-1] for cmt in ordered_cmts]
+        return names
 
     def _order_compartments(self):
         """Return list of all compartments in canonical order"""
