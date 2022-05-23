@@ -53,7 +53,7 @@ nbformat==5.4.0
 nest-asyncio==1.5.5
 networkx==2.8.2
 numexpr==2.8.1
-numpy==1.22.3
+numpy==1.22.4
 packaging==21.3
 pandas==1.4.2
 pandocfilters==1.5.0
