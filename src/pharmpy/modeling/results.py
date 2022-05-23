@@ -347,7 +347,7 @@ def calculate_pk_parameters_statistics(model, rng=None):
     if not peripherals and odes.t not in elimination_rate.free_symbols:
         elimination_system = statements.copy().ode_system
         # keep central and output
-        for name in elimination_system.names:
+        for name in elimination_system.compartment_names:
             if name not in [central.name, output.name]:
                 elimination_system.remove_compartment(elimination_system.find_compartment(name))
                 exodes = elimination_system.to_explicit_system(skip_output=True)

@@ -518,7 +518,7 @@ def new_compartmental_map(cs, oldmap):
         i += 1
 
     diff = len(cs) - len(oldmap)
-    for name in cs.names:
+    for name in cs.compartment_names:
         if name not in compmap.keys():
             compmap[name] = oldmap[name] + diff
     return compmap

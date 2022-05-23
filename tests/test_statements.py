@@ -304,4 +304,4 @@ def test_insert_after():
 
 def test_compartment_names(testdata):
     model = Model.create_model(testdata / 'nonmem' / 'pheno.mod')
-    assert model.statements.ode_system.names == ['CENTRAL', 'OUTPUT']
+    assert model.statements.ode_system.compartment_names == ['CENTRAL', 'OUTPUT']

@@ -342,12 +342,12 @@ class ExplicitODESystem(ODESystem):
         Examples
         --------
         >>> from pharmpy.modeling import load_example_model
-        >>> model = load_example_model(model)
+        >>> model = load_example_model("pheno")
         >>> model.statements.to_explicit_system()
-        >>> model.statements.ode_system.names
+        >>> model.statements.ode_system.compartment_names
         ['CENTRAL', 'OUTPUT']
         """
-        names = [ode.lhs.args[0].name[2:-1] for ode in self.odes]
+        names = [ode.lhs.args[0].name[2:] for ode in self.odes]
         return names
 
     def __repr__(self):
@@ -1041,12 +1041,12 @@ class CompartmentalSystem(ODESystem):
         Examples
         --------
         >>> from pharmpy.modeling import load_example_model
-        >>> model = load_example_model(model)
-        >>> model.statements.ode_system.names
+        >>> model = load_example_model("pheno")
+        >>> model.statements.ode_system.compartment_names
         ['CENTRAL', 'OUTPUT']
         """
         ordered_cmts = self._order_compartments()
-        names = [cmt.amount.name[2:-1] for cmt in ordered_cmts]
+        names = [cmt.name for cmt in ordered_cmts]
         return names
 
     def _order_compartments(self):
@@ -1070,19 +1070,6 @@ class CompartmentalSystem(ODESystem):
         nodes = list(nx.bfs_tree(self._g, dosecmt, sort_neighbors=sortfunc))
         nodes.append(output)
         return nodes
-
-    @property
-    def names(self):
-        """List of the names of all compartments
-
-        Examples
-        --------
-        >>> from pharmpy.modeling import load_example_model, set_first_order_absorption
-        >>> model = load_example_model("pheno")
-        >>> model.statements.ode_system.names
-        ['CENTRAL', 'OUTPUT']
-        """
-        return [cmt.name for cmt in self._order_compartments()]
 
     @property
     def zero_order_inputs(self):

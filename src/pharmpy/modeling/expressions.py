@@ -377,11 +377,6 @@ def solve_ode_system(model):
     └───────┘       └──────┘
     >>> solve_ode_system(model)		# doctest: +ELLIPSIS
     <...>
-    >>> model.statements.ode_system
-    ⎧                    -CL⋅t
-    ⎨                    ──────
-    ⎪                      V
-    ⎩A_CENTRAL(t) = AMT⋅ℯ
 
     """
     odes = model.statements.ode_system
