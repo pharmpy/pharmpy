@@ -29,6 +29,31 @@ from .results import calculate_results
 
 
 def create_workflow(model=None, groups=4, p_value=0.05, skip=None):
+    """Run the resmod tool. For more details, see :ref:`resmod`.
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+    groups : int
+        The number of bins to use for the time varying models
+    p_value : float
+        The p-value to use for the likelihood ratio test
+    skip : list
+        A list of models to not attempt.
+
+    Returns
+    -------
+    ResmodResults
+        Resmod tool result object
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> run_resmod(model=model)      # doctest: +SKIP
+
+    """
     wf = Workflow()
     wf.name = "resmod"
     start_task = Task('start_resmod', start, model, groups, p_value, skip)
