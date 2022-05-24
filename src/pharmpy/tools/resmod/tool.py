@@ -124,7 +124,7 @@ def start(model, groups, p_value, skip):
     sumind = summarize_individuals(selected_models)
     sumcount = summarize_individuals_count_table(df=sumind)
     summf = summarize_modelfit_results(selected_models)
-    summary_tool = summarize_tool(selected_models[1:], selected_models[0], 'ofv', 3.84)
+    summary_tool = summarize_tool(selected_models[1:], selected_models[0], 'ofv', cutoff)
 
     res.summary_individuals = sumind
     res.summary_individuals_count = sumcount
