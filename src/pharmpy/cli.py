@@ -193,6 +193,19 @@ def run_iivsearch(args):
     )
 
 
+def run_resmod(args):
+    from pharmpy.modeling import run_tool
+
+    run_tool(
+        'resmod',
+        model=args.model,
+        groups=args.groups,
+        p_value=args.p_value,
+        skip=args.skip,
+        path=args.path,
+    )
+
+
 def run_estmethod(args):
     from pharmpy.modeling.run import run_tool
 
@@ -981,6 +994,38 @@ parser_definition = [
                                 'name': '--cutoff',
                                 'type': float,
                                 'help': 'Which selection criteria to rank models on',
+                                'default': None,
+                            },
+                            {
+                                'name': '--path',
+                                'type': pathlib.Path,
+                                'help': 'Path to output directory',
+                            },
+                        ],
+                    }
+                },
+                {
+                    'resmod': {
+                        'help': 'Search for best residual error model',
+                        'func': run_resmod,
+                        'parents': [args_model_input],
+                        'args': [
+                            {
+                                'name': '--groups',
+                                'type': int,
+                                'help': 'Number of groups for the time varying models',
+                                'default': 4,
+                            },
+                            {
+                                'name': '--p_value',
+                                'type': float,
+                                'help': 'p_value to use for the likelihood ratio test',
+                                'default': 0.05,
+                            },
+                            {
+                                'name': '--skip',
+                                'type': comma_list,
+                                'help': 'List of models to not test',
                                 'default': None,
                             },
                             {
