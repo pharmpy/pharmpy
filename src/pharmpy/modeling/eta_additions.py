@@ -334,16 +334,15 @@ def _add_iov_declare_etas(sset, occ, etas, indices, categories, eta_name, iov_na
 
         iov = S(iov_name(i))
 
-        values = [S(eta_name(i, k)) for k in range(1, len(categories) + 1)]
-        conditions = [Eq(cat, S(occ)) for cat in categories]
+        expression = Piecewise(
+            *((S(eta_name(i, k)), Eq(cat, S(occ))) for k, cat in enumerate(categories, 1))
+        )
 
-        expression = Piecewise(*zip(values, conditions))
-
-        etai = S(etai_name(i))
         iovs.append(Assignment(iov, sympify(0)))
         iovs.append(Assignment(iov, expression))
-        etais.append(Assignment(etai, eta.symbol + iov))
 
+        etai = S(etai_name(i))
+        etais.append(Assignment(etai, eta.symbol + iov))
         sset.subs({eta.name: etai})
 
     return iovs, etais
