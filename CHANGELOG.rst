@@ -1,8 +1,28 @@
+0.71.0 (2022-05-24)
+-------------------
+
+New features
+============
+
+* Add functions find_clearance_parameters and find_volume_parameters
+
+Changes
+=======
+
+* Rename candidate models in estmethod tool
+
+Bugfixes
+========
+
+* Add upper limit to VP parameter in modelsearch tool
+* Fix issue with matrices not being considered positive semidefinite but considered positive definite
+
+
 0.70.1 (2022-05-17)
 -------------------
 
-Bugfix
-======
+Bugfixes
+========
 
 * Require pandas 1.4 or newer for multiindex joins. (Fixes #820)
 
