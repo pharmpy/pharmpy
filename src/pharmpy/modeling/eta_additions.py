@@ -211,8 +211,6 @@ def add_iov(model, occ, list_of_parameters=None, eta_names=None, distribution='d
 
         for dist, grp in zip(etas, list_of_parameters):
             assert len(dist) <= len(grp)
-            if len(dist) != len(grp):
-                raise ValueError(f'Some ETA in {dist} was given twice.')
 
     categories = _get_occ_levels(model.dataset, occ)
 

@@ -3017,6 +3017,66 @@ def test_nested_update_source(pheno_path):
         (
             'nonmem/pheno_real.mod',
             'FA1',
+            ['CL', 'ETA(1)'],
+            None,
+            'IOV_1 = 0\n'
+            'IF (FA1.EQ.0) IOV_1 = ETA(3)\n'
+            'IF (FA1.EQ.1) IOV_1 = ETA(4)\n'
+            'ETAI1 = IOV_1 + ETA(1)\n',
+            'CL = TVCL*EXP(ETAI1)\n' 'V=TVV*EXP(ETA(2))\n' 'S1=V\n',
+            '$OMEGA  BLOCK(1)\n'
+            '0.00309626 ; OMEGA_IOV_1\n'
+            '$OMEGA  BLOCK(1) SAME ; OMEGA_IOV_1\n',
+            'joint',
+        ),
+        (
+            'nonmem/pheno_real.mod',
+            'FA1',
+            ['ETA(1)', 'CL'],
+            None,
+            'IOV_1 = 0\n'
+            'IF (FA1.EQ.0) IOV_1 = ETA(3)\n'
+            'IF (FA1.EQ.1) IOV_1 = ETA(4)\n'
+            'ETAI1 = IOV_1 + ETA(1)\n',
+            'CL = TVCL*EXP(ETAI1)\n' 'V=TVV*EXP(ETA(2))\n' 'S1=V\n',
+            '$OMEGA  BLOCK(1)\n'
+            '0.00309626 ; OMEGA_IOV_1\n'
+            '$OMEGA  BLOCK(1) SAME ; OMEGA_IOV_1\n',
+            'joint',
+        ),
+        (
+            'nonmem/pheno_real.mod',
+            'FA1',
+            [['CL', 'ETA(1)']],
+            None,
+            'IOV_1 = 0\n'
+            'IF (FA1.EQ.0) IOV_1 = ETA(3)\n'
+            'IF (FA1.EQ.1) IOV_1 = ETA(4)\n'
+            'ETAI1 = IOV_1 + ETA(1)\n',
+            'CL = TVCL*EXP(ETAI1)\n' 'V=TVV*EXP(ETA(2))\n' 'S1=V\n',
+            '$OMEGA  BLOCK(1)\n'
+            '0.00309626 ; OMEGA_IOV_1\n'
+            '$OMEGA  BLOCK(1) SAME ; OMEGA_IOV_1\n',
+            'explicit',
+        ),
+        (
+            'nonmem/pheno_real.mod',
+            'FA1',
+            [['ETA(1)', 'CL']],
+            None,
+            'IOV_1 = 0\n'
+            'IF (FA1.EQ.0) IOV_1 = ETA(3)\n'
+            'IF (FA1.EQ.1) IOV_1 = ETA(4)\n'
+            'ETAI1 = IOV_1 + ETA(1)\n',
+            'CL = TVCL*EXP(ETAI1)\n' 'V=TVV*EXP(ETA(2))\n' 'S1=V\n',
+            '$OMEGA  BLOCK(1)\n'
+            '0.00309626 ; OMEGA_IOV_1\n'
+            '$OMEGA  BLOCK(1) SAME ; OMEGA_IOV_1\n',
+            'explicit',
+        ),
+        (
+            'nonmem/pheno_real.mod',
+            'FA1',
             None,
             None,
             'IOV_1 = 0\n'
@@ -3298,38 +3358,6 @@ def test_add_iov_only_one_level(pheno_path):
             'disjoint',
             ValueError,
             'ETA(1) ~ N(0, OMEGA(1,1)) was given twice.',
-        ),
-        (
-            'FA1',
-            ['ETA(1)', 'CL'],
-            None,
-            'joint',
-            ValueError,
-            'Some ETA in [ETA(1) ~ N(0, OMEGA(1,1))] was given twice',
-        ),
-        (
-            'FA1',
-            ['CL', 'ETA(1)'],
-            None,
-            'joint',
-            ValueError,
-            'Some ETA in [ETA(1) ~ N(0, OMEGA(1,1))] was given twice',
-        ),
-        (
-            'FA1',
-            [['ETA(1)', 'CL']],
-            None,
-            'explicit',
-            ValueError,
-            'Some ETA in [ETA(1) ~ N(0, OMEGA(1,1))] was given twice',
-        ),
-        (
-            'FA1',
-            [['CL', 'ETA(1)']],
-            None,
-            'explicit',
-            ValueError,
-            'Some ETA in [ETA(1) ~ N(0, OMEGA(1,1))] was given twice',
         ),
         (
             'FA1',
