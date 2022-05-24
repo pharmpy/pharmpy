@@ -4,9 +4,13 @@
 
 import warnings
 
+from sympy.functions.elementary.piecewise import Piecewise
+
+from pharmpy.model import Model
 from pharmpy.modeling import remove_unused_parameters_and_rvs
 from pharmpy.modeling.help_functions import _format_input_list
-from pharmpy.random_variables import RandomVariables
+from pharmpy.random_variables import RandomVariable
+from pharmpy.statements import Assignment
 
 
 def remove_iov(model, to_remove=None):
@@ -40,7 +44,7 @@ def remove_iov(model, to_remove=None):
 
     """
     rvs, sset = model.random_variables, model.statements
-    etas = _get_etas(rvs, to_remove)
+    etas = _get_iov_etas(model, to_remove)
     if not etas:
         warnings.warn('No IOVs present')
         return model
@@ -58,19 +62,40 @@ def remove_iov(model, to_remove=None):
     return model
 
 
-def _get_etas(rvs, list_of_etas):
+def _get_iov_etas(model: Model, list_of_etas):
     list_of_etas = _format_input_list(list_of_etas)
-    etas_all = [eta for eta in rvs if eta.level == 'IOV']
-    etas = []
+    rvs = model.random_variables
     if list_of_etas is None:
-        etas = etas_all
-    else:
-        for eta_str in list_of_etas:
-            eta_remove = rvs[eta_str.upper()]
-            if eta_remove not in etas:
-                etas.append(eta_remove)
-                for eta in etas_all:
-                    if eta.parameter_names[0] == eta_remove.parameter_names[0] and eta not in etas:
-                        etas.append(eta)
+        return set(rvs.iov)
 
-    return RandomVariables(etas)
+    # NOTE Include all directly referenced ETAs
+    direct_etas = set()
+    for eta_str in list_of_etas:
+        eta = rvs[eta_str.upper()]
+        assert isinstance(eta, RandomVariable)
+        direct_etas.add(eta)
+
+    # NOTE Include all ETAs that assign to the same IOV variables
+    # as the one directly referenced
+    indirect_etas = set()
+    for expression_rvs in _get_iov_piecewise_assignments_rvs(model):
+        if not direct_etas.isdisjoint(expression_rvs):
+            indirect_etas.update(expression_rvs)
+
+    etas = direct_etas | indirect_etas
+
+    # NOTE Check that we got the closure
+    for expression_rvs in _get_iov_piecewise_assignments_rvs(model):
+        if not etas.isdisjoint(expression_rvs):
+            assert etas.issuperset(expression_rvs)
+
+    return etas
+
+
+def _get_iov_piecewise_assignments_rvs(model: Model):
+    iovs = set(rv.symbol for rv in model.random_variables.iov)
+    for statement in model.statements:
+        if isinstance(statement, Assignment) and isinstance(statement.expression, Piecewise):
+            expression_symbols = [p[0] for p in statement.expression.as_expr_set_pairs()]
+            if all(s in iovs for s in expression_symbols):
+                yield model.random_variables[expression_symbols]
