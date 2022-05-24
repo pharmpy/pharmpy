@@ -12,6 +12,7 @@ from sympy import Eq, Piecewise
 from sympy.stats.crv_types import NormalDistribution
 from sympy.stats.joint_rv_types import MultivariateNormalDistribution
 
+from pharmpy.modeling.expressions import create_symbol
 from pharmpy.modeling.help_functions import _format_input_list, _format_options, _get_etas
 from pharmpy.parameter import Parameter
 from pharmpy.random_variables import RandomVariable
@@ -244,18 +245,25 @@ def add_iov(model, occ, list_of_parameters=None, eta_names=None, distribution='d
 
             etas.append(intersection)
 
-    # TODO: better names
+    first_iov_name = create_symbol(model, 'IOV_', force_numbering=True).name
+    first_iov_number = int(first_iov_name.split('_')[-1])
+
     def eta_name(i, k):
-        return eta_names[(i - 1) * len(categories) + k - 1] if eta_names else f'ETA_IOV_{i}{k}'
+        return (
+            eta_names[(i - 1) * len(categories) + k - 1] if eta_names else f'ETA_{iov_name(i)}{k}'
+        )
 
     def omega_iov_name(i, j):
-        return f'OMEGA_IOV_{i}' if i == j else f'OMEGA_IOV_{i}_{j}'
+        return f'OMEGA_{iov_name(i)}' if i == j else f'OMEGA_{iov_name(i)}_{j}'
 
     def iov_name(i):
-        return f'IOV_{i}'
+        return f'IOV_{first_iov_number + i - 1}'
+
+    def etai_name(i):
+        return f'ETAI{first_iov_number + i - 1}'
 
     rvs, pset, iovs = _add_iov_explicit(
-        model, occ, etas, categories, iov_name, eta_name, omega_iov_name
+        model, occ, etas, categories, iov_name, etai_name, eta_name, omega_iov_name
     )
 
     model.random_variables, model.parameters, model.statements = rvs, pset, iovs
@@ -263,7 +271,7 @@ def add_iov(model, occ, list_of_parameters=None, eta_names=None, distribution='d
     return model
 
 
-def _add_iov_explicit(model, occ, etas, categories, iov_name, eta_name, omega_iov_name):
+def _add_iov_explicit(model, occ, etas, categories, iov_name, etai_name, eta_name, omega_iov_name):
     assert all(map(bool, etas))
 
     ordered_etas = list(chain.from_iterable(etas))
@@ -285,7 +293,14 @@ def _add_iov_explicit(model, occ, etas, categories, iov_name, eta_name, omega_io
     )
 
     iovs, etais = _add_iov_declare_etas(
-        sset, occ, ordered_etas, range(1, len(ordered_etas) + 1), categories, eta_name, iov_name
+        sset,
+        occ,
+        ordered_etas,
+        range(1, len(ordered_etas) + 1),
+        categories,
+        eta_name,
+        iov_name,
+        etai_name,
     )
 
     for dist in distributions:
@@ -309,7 +324,7 @@ def _add_iov_explicit(model, occ, etas, categories, iov_name, eta_name, omega_io
     return rvs, pset, iovs
 
 
-def _add_iov_declare_etas(sset, occ, etas, indices, categories, eta_name, iov_name):
+def _add_iov_declare_etas(sset, occ, etas, indices, categories, eta_name, iov_name, etai_name):
     iovs, etais = ModelStatements(), ModelStatements()
 
     for i in indices:
@@ -324,11 +339,12 @@ def _add_iov_declare_etas(sset, occ, etas, indices, categories, eta_name, iov_na
 
         expression = Piecewise(*zip(values, conditions))
 
+        etai = S(etai_name(i))
         iovs.append(Assignment(iov, sympify(0)))
         iovs.append(Assignment(iov, expression))
-        etais.append(Assignment(S(f'ETAI{i}'), eta.symbol + iov))
+        etais.append(Assignment(etai, eta.symbol + iov))
 
-        sset.subs({eta.name: S(f'ETAI{i}')})
+        sset.subs({eta.name: etai})
 
     return iovs, etais
 

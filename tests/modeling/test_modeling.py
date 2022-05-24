@@ -3332,6 +3332,31 @@ def test_add_iov(
     assert rec_omega[-len(omega_ref) :] == omega_ref
 
 
+def test_add_iov_compose(pheno_path):
+    model1 = Model.create_model(pheno_path)
+    add_iov(model1, 'FA1', ['ETA(1)', 'ETA(2)'])
+    model1.update_source()
+
+    model2 = Model.create_model(pheno_path)
+    add_iov(model2, 'FA1', 'ETA(1)')
+    model2.update_source()
+    add_iov(model2, 'FA1', 'ETA(2)')
+    model2.update_source()
+
+    assert set(eta.name for eta in model1.random_variables.etas) == set(
+        eta.name for eta in model2.random_variables.etas
+    )
+    # FIXME find better way to assert models are equivalent
+    assert sorted(str(model1.get_pred_pk_record()).split('\n')) == sorted(
+        str(model2.get_pred_pk_record()).split('\n')
+    )
+
+    rec_omega_1 = list(str(rec) for rec in model1.control_stream.get_records('OMEGA'))
+    rec_omega_2 = list(str(rec) for rec in model2.control_stream.get_records('OMEGA'))
+
+    assert rec_omega_1 == rec_omega_2
+
+
 def test_add_iov_only_one_level(pheno_path):
     model = Model.create_model(pheno_path)
     model.dataset['FA1'] = 1
