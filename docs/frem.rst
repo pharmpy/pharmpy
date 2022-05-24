@@ -221,4 +221,4 @@ covariate values are put into ``estimated_covariates``.
 References
 ~~~~~~~~~~
 
-.. [Yngman] Yngman G, Nyberg HB, Nyberg J, Jonsson EN, Karlsson MO. An introduction to the full random effects model. CPT Pharmacometrics Syst Pharmacol. 2021;00:1– 12. doi:10.1002/psp4.12741
+.. [Yngman] Yngman G, Nyberg HB, Nyberg J, Jonsson EN, Karlsson MO. An introduction to the full random effects model. CPT Pharmacometrics Syst Pharmacol. 2021;00:1– 12. https://doi.org/10.1002/psp4.12741
