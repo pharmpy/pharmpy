@@ -120,6 +120,16 @@ Consider a standard resmod run:
 
     res = run_resmod(model=start_model)
 
+The ``summary_tool`` table contains information such as which feature each model candidate has, the difference to the
+start model, and final ranking:
+
+.. pharmpy-execute::
+    :hide-code:
+
+    from pharmpy.results import read_results
+    res = read_results('tests/testdata/results/resmod_results.json')
+    res.summary_tool
+
 
 To see information about the actual model runs, such as minimization status, estimation time, and parameter estimates,
 you can look at the ``summary_models`` table. The table is generated with
@@ -128,8 +138,6 @@ you can look at the ``summary_models`` table. The table is generated with
 .. pharmpy-execute::
     :hide-code:
 
-    from pharmpy.results import read_results
-    res = read_results('tests/testdata/results/resmod_results.json')
     res.summary_models
 
 A summary table of predicted influential individuals and outliers can be seen in ``summary_individuals_count``.

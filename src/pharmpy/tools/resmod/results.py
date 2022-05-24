@@ -15,12 +15,14 @@ class ResmodResults(Results):
         summary_individuals_count=None,
         best_model=None,
         summary_models=None,
+        summary_tool=None,
     ):
         self.models = models
         self.summary_individuals = summary_individuals
         self.summary_individuals_count = summary_individuals_count
         self.best_model = best_model
         self.summary_models = summary_models
+        self.summary_tool = summary_tool
 
 
 def calculate_results(models):

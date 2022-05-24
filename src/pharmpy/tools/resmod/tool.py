@@ -20,6 +20,7 @@ from pharmpy.modeling import (
     summarize_modelfit_results,
 )
 from pharmpy.statements import Assignment, ModelStatements
+from pharmpy.tools.common import summarize_tool
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.workflows import Task, Workflow, call_workflow
 
@@ -123,9 +124,12 @@ def start(model, groups, p_value, skip):
     sumind = summarize_individuals(selected_models)
     sumcount = summarize_individuals_count_table(df=sumind)
     summf = summarize_modelfit_results(selected_models)
+    summary_tool = summarize_tool(selected_models[1:], selected_models[0], 'ofv', 3.84)
+
     res.summary_individuals = sumind
     res.summary_individuals_count = sumcount
     res.summary_models = summf
+    res.summary_tool = summary_tool
     return res
 
 
