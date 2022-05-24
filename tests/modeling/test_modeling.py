@@ -2733,7 +2733,7 @@ IF (VISI.EQ.3.OR.VISI.EQ.8) IOV_3 = 0'''
         )
         assert model_remove_all.random_variables.iov == []
 
-        remove_iov(model_remove_one, 'ETA_IOV_11')
+        remove_iov(model_remove_one, 'ETA_IOV_1_1')
         assert len(model_remove_one.random_variables.iov) == 4
         assert (
             '''IOV_1 = 0
@@ -2748,7 +2748,7 @@ IF (VISI.EQ.8) IOV_3 = ETA(7)
             in model_remove_one.model_code
         )
 
-        remove_iov(model_remove_two, ['ETA_IOV_11', 'ETA_IOV_12'])
+        remove_iov(model_remove_two, ['ETA_IOV_1_1', 'ETA_IOV_1_2'])
         assert len(model_remove_two.random_variables.iov) == 4
         assert (
             '''IOV_1 = 0
@@ -2763,7 +2763,7 @@ IF (VISI.EQ.8) IOV_3 = ETA(7)
             in model_remove_two.model_code
         )
 
-        remove_iov(model_remove_three, ['ETA_IOV_11', 'ETA_IOV_12', 'ETA_IOV_21'])
+        remove_iov(model_remove_three, ['ETA_IOV_1_1', 'ETA_IOV_1_2', 'ETA_IOV_2_1'])
         assert len(model_remove_three.random_variables.iov) == 2
         assert (
             '''IOV_1 = 0

@@ -250,7 +250,7 @@ def add_iov(model, occ, list_of_parameters=None, eta_names=None, distribution='d
 
     def eta_name(i, k):
         return (
-            eta_names[(i - 1) * len(categories) + k - 1] if eta_names else f'ETA_{iov_name(i)}{k}'
+            eta_names[(i - 1) * len(categories) + k - 1] if eta_names else f'ETA_{iov_name(i)}_{k}'
         )
 
     def omega_iov_name(i, j):
