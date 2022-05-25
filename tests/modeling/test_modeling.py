@@ -3175,6 +3175,25 @@ def test_nested_update_source(pheno_path):
             '$OMEGA  BLOCK(1) SAME ; OMEGA_IOV_1\n',
             'joint',
         ),
+        (
+            'nonmem/pheno_block.mod',
+            'FA1',
+            ['ETA(1)'],
+            None,
+            'IOV_1 = 0\n'
+            'IF (FA1.EQ.0) IOV_1 = ETA(6)\n'
+            'IF (FA1.EQ.1) IOV_1 = ETA(7)\n'
+            'ETAI1 = IOV_1 + ETA(1)\n',
+            'CL = THETA(1)*EXP(ETAI1)\n'
+            'V=THETA(2)*EXP(ETA(2))\n'
+            'S1=V+ETA(3)\n'
+            'MAT=THETA(3)*EXP(ETA(4))\n'
+            'Q=THETA(4)*EXP(ETA(5))\n',
+            '$OMEGA  BLOCK(1)\n'
+            '0.00309626 ; OMEGA_IOV_1\n'
+            '$OMEGA  BLOCK(1) SAME ; OMEGA_IOV_1\n',
+            'disjoint',
+        ),
     ],
 )
 def test_add_iov(
