@@ -193,4 +193,4 @@ def _run_allometry(model, allometric_variable, path):
         res = run_tool(
             'allometry', model, allometric_variable=allometric_variable, path=path / 'allometry'
         )
-        return res
+        return res.best_model

@@ -1,6 +1,7 @@
 from functools import partial
 
-from pharmpy.modeling import add_allometry
+from pharmpy.modeling import add_allometry, summarize_modelfit_results
+from pharmpy.results import Results
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.workflows import Task, Workflow
 
@@ -35,6 +36,8 @@ def create_workflow(
     wf.add_task(task_add_allometry, predecessors=start_task)
     fit_wf = create_fit_workflow(n=1)
     wf.insert_workflow(fit_wf, predecessors=task_add_allometry)
+    results_task = Task('results', results)
+    wf.add_task(results_task, predecessors=[start_task] + fit_wf.output_tasks)
     return wf
 
 
@@ -65,4 +68,17 @@ def _add_allometry_on_model(
     )
 
     model.name = "scaled_model"
+    model.description = "Allometry model"
     return model
+
+
+def results(start_model, model):
+    summods = summarize_modelfit_results([start_model, model])
+    res = AllometryResults(summary_models=summods, best_model=model)
+    return res
+
+
+class AllometryResults(Results):
+    def __init__(self, summary_models=None, best_model=None):
+        self.summary_models = summary_models
+        self.best_model = best_model
