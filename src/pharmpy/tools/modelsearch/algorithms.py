@@ -29,7 +29,7 @@ def exhaustive(search_space, iiv_strategy):
             task_function = Task(feat, func)
             wf_search.add_task(task_function, predecessors=task_previous)
             if iiv_strategy != 0:
-                task_add_iiv = Task('add_iivs', _add_iiv_to_func, feat, iiv_strategy)
+                task_add_iiv = Task('add_iivs', _add_iiv_to_func, iiv_strategy)
                 wf_search.add_task(task_add_iiv, predecessors=task_function)
                 task_previous = task_add_iiv
             else:
