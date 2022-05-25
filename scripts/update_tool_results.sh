@@ -20,4 +20,8 @@ cp /tmp/tool_results/modelsearch/results.json tests/testdata/results/modelsearch
 tox -e run -- pharmpy run iivsearch /tmp/tool_results/mox2.mod 'brute_force' --path /tmp/tool_results/iivsearch/
 cp /tmp/tool_results/iivsearch/results.json tests/testdata/results/iivsearch_results.json
 
-exit
+cp tests/testdata/nonmem/resmod/mox3.* /tmp/tool_results/
+cp tests/testdata/nonmem/resmod/moxo_simulated_resmod.csv /tmp/tool_results/
+cp tests/testdata/nonmem/resmod/mytab /tmp/tool_results/
+tox -e run -- pharmpy run resmod /tmp/tool_results/mox3.mod --path /tmp/tool_results/resmod/
+cp /tmp/tool_results/resmod/results.json tests/testdata/results/resmod_results.json
