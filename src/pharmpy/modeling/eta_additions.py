@@ -2,6 +2,8 @@
 :meta private:
 """
 
+from collections import Counter
+from functools import reduce
 from itertools import chain, combinations
 from operator import add, mul
 
@@ -185,22 +187,32 @@ def add_iov(model, occ, list_of_parameters=None, eta_names=None, distribution='d
                 'distribution != "explicit" requires parameters to be given as lists of strings'
             )
 
-    if distribution == 'disjoint':
-        list_of_parameters = list(map(lambda x: [x], list_of_parameters))
-    elif distribution == 'joint' or distribution == 'same-as-iiv':
-        list_of_parameters = [list_of_parameters]
+    if list_of_parameters is None:
+        if distribution == 'disjoint':
+            etas = list(map(lambda x: [x], _get_etas(model, None, include_symbols=True)))
+        else:
+            etas = [_get_etas(model, None, include_symbols=True)]
 
-    assert list_of_parameters is not None
+    else:
+        if distribution == 'disjoint':
+            list_of_parameters = list(map(lambda x: [x], list_of_parameters))
+        elif distribution == 'joint' or distribution == 'same-as-iiv':
+            list_of_parameters = [list_of_parameters]
 
-    if not all(
-        map(
-            lambda x: isinstance(x, list) and all(map(lambda y: isinstance(y, str), x)),
-            list_of_parameters,
-        )
-    ):
-        raise ValueError('not all parameters are strings')
+        if not all(
+            map(
+                lambda x: isinstance(x, list) and all(map(lambda y: isinstance(y, str), x)),
+                list_of_parameters,
+            )
+        ):
+            raise ValueError('not all parameters are strings')
 
-    etas = [_get_etas(model, grp, include_symbols=True) for grp in list_of_parameters]
+        etas = [_get_etas(model, grp, include_symbols=True) for grp in list_of_parameters]
+
+        for dist, grp in zip(etas, list_of_parameters):
+            assert len(dist) <= len(grp)
+            if len(dist) != len(grp):
+                raise ValueError(f'Some ETA in {dist} was given twice.')
 
     categories = _get_occ_levels(model.dataset, occ)
 
@@ -251,9 +263,16 @@ def add_iov(model, occ, list_of_parameters=None, eta_names=None, distribution='d
             etas.append(intersection)
 
     ordered_etas = list(chain.from_iterable(etas))
-    distributions = [range(i, i + len(grp)) for i, grp in zip(chain([0], map(len, etas)), etas)]
 
-    assert set(ordered_etas) == set(etas)
+    eta, count = next(iter(Counter(ordered_etas).most_common()))
+
+    if count >= 2:
+        raise ValueError(f'{eta} was given twice.')
+
+    distributions = [
+        range(i, i + len(grp))
+        for i, grp in zip(reduce(lambda acc, x: acc + [acc[-1] + x], map(len, etas), [1]), etas)
+    ]
 
     iovs, etais = _add_iov_declare_etas(
         sset, occ, ordered_etas, range(1, len(ordered_etas) + 1), categories, eta_name, iov_name
