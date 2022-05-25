@@ -139,7 +139,8 @@ def add_iov(model, occ, list_of_parameters=None, eta_names=None, distribution='d
     distribution : str
         The distribution that should be used for the new etas. Options are
         'disjoint' for disjoint normal distributions, 'joint' for joint normal
-        distribution, 'same-as-iiv' for copying the distribution of IIV etas.
+        distribution, 'explicit' for an explicit mix of joint and disjoint
+        distributions, and 'same-as-iiv' for copying the distribution of IIV etas.
 
     Return
     ------
@@ -163,24 +164,53 @@ def add_iov(model, occ, list_of_parameters=None, eta_names=None, distribution='d
     remove_iov
 
     """
-    rvs, pset, sset = (
-        model.random_variables.copy(),
-        model.parameters.copy(),
-        model.statements.copy(),
-    )
 
-    list_of_parameters = _format_input_list(list_of_parameters)
-    etas = _get_etas(model, list_of_parameters, include_symbols=True)
-    categories = _get_occ_levels(model.dataset, occ)
-
-    if distribution not in ['disjoint', 'joint', 'same-as-iiv']:
+    if distribution not in ['disjoint', 'joint', 'explicit', 'same-as-iiv']:
         raise ValueError(f'"{distribution}" is not a valid value for distribution')
 
-    if eta_names and len(eta_names) != len(etas) * len(categories):
-        raise ValueError(
-            f'Number of provided names incorrect, need {len(etas) * len(categories)} names.'
+    list_of_parameters = _format_input_list(list_of_parameters)
+
+    if distribution == 'explicit':
+        if list_of_parameters is None or not all(
+            map(lambda x: isinstance(x, list), list_of_parameters)
+        ):
+            raise ValueError(
+                'distribution == "explicit" requires parameters to be given as lists of lists'
+            )
+    else:
+        if list_of_parameters is not None and not all(
+            map(lambda x: isinstance(x, str), list_of_parameters)
+        ):
+            raise ValueError(
+                'distribution != "explicit" requires parameters to be given as lists of strings'
+            )
+
+    if distribution == 'disjoint':
+        list_of_parameters = list(map(lambda x: [x], list_of_parameters))
+    elif distribution == 'joint' or distribution == 'same-as-iiv':
+        list_of_parameters = [list_of_parameters]
+
+    assert list_of_parameters is not None
+
+    if not all(
+        map(
+            lambda x: isinstance(x, list) and all(map(lambda y: isinstance(y, str), x)),
+            list_of_parameters,
         )
-    elif len(categories) == 1:
+    ):
+        raise ValueError('not all parameters are strings')
+
+    etas = [_get_etas(model, grp, include_symbols=True) for grp in list_of_parameters]
+
+    categories = _get_occ_levels(model.dataset, occ)
+
+    if eta_names and len(eta_names) != sum(map(len, etas)) * len(categories):
+        raise ValueError(
+            'Number of given eta names is incorrect, '
+            f'need {sum(map(len,etas)) * len(categories)} names.'
+        )
+
+    if len(categories) == 1:
         raise ValueError(f'Only one value in {occ} column.')
 
     # TODO: better names
@@ -193,32 +223,20 @@ def add_iov(model, occ, list_of_parameters=None, eta_names=None, distribution='d
     def iov_name(i):
         return f'IOV_{i}'
 
-    # NOTE This declares the ETAS and their corresponding OMEGAs
-    if distribution == 'disjoint':
-        iovs, etais = _add_iov_declare_etas(
-            sset, occ, etas, range(1, len(etas) + 1), categories, eta_name, iov_name
-        )
-        rvs.extend(
-            _add_iov_etas_disjoint(
-                pset, etas, range(1, len(etas) + 1), categories, omega_iov_name, eta_name
-            )
-        )
+    rvs, pset, sset = (
+        model.random_variables.copy(),
+        model.parameters.copy(),
+        model.statements.copy(),
+    )
 
-    elif distribution == 'joint':
-        iovs, etais = _add_iov_declare_etas(
-            sset, occ, etas, range(1, len(etas) + 1), categories, eta_name, iov_name
-        )
-        rvs.extend(
-            _add_iov_etas_joint(
-                pset, etas, range(1, len(etas) + 1), categories, omega_iov_name, eta_name
-            )
-        )
-    else:
-        distributions = rvs.distributions()
-        etas_set = set(etas)
-        disjoint = []
-        joint = []
-        for variables, dist in distributions:
+    # NOTE This declares the ETAS and their corresponding OMEGAs
+    if distribution == 'same-as-iiv':
+        # NOTE We filter existing IIV distributions for selected ETAs and then
+        # let the explicit distribution logic handle the rest
+        assert len(etas) == 1
+        etas_set = set(etas[0])
+        etas = []
+        for variables, dist in rvs.distributions():
 
             intersection = list(filter(etas_set.__contains__, variables))
 
@@ -230,45 +248,30 @@ def add_iov(model, occ, list_of_parameters=None, eta_names=None, distribution='d
             else:
                 assert isinstance(dist, MultivariateNormalDistribution)
 
-            if len(intersection) == 1:
-                disjoint.append(intersection[0])
-            else:
-                joint.append(intersection)
+            etas.append(intersection)
 
-        ordered_etas = list(chain.from_iterable(chain([disjoint], joint)))
+    ordered_etas = list(chain.from_iterable(etas))
+    distributions = [range(i, i + len(grp)) for i, grp in zip(chain([0], map(len, etas)), etas)]
 
-        assert set(ordered_etas) == set(etas)
+    assert set(ordered_etas) == set(etas)
 
-        iovs, etais = _add_iov_declare_etas(
-            sset, occ, ordered_etas, range(1, len(ordered_etas) + 1), categories, eta_name, iov_name
-        )
+    iovs, etais = _add_iov_declare_etas(
+        sset, occ, ordered_etas, range(1, len(ordered_etas) + 1), categories, eta_name, iov_name
+    )
 
-        if disjoint:
-            rvs.extend(
-                _add_iov_etas_disjoint(
-                    pset,
-                    ordered_etas,
-                    range(1, len(disjoint) + 1),
-                    categories,
-                    omega_iov_name,
-                    eta_name,
-                )
+    for dist in distributions:
+        assert dist
+        _add_iov_etas = _add_iov_etas_disjoint if len(dist) == 1 else _add_iov_etas_joint
+        rvs.extend(
+            _add_iov_etas(
+                pset,
+                ordered_etas,
+                dist,
+                categories,
+                omega_iov_name,
+                eta_name,
             )
-
-        if joint:
-            i = 1 + len(disjoint)
-            for grp in joint:
-                rvs.extend(
-                    _add_iov_etas_joint(
-                        pset,
-                        ordered_etas,
-                        range(i, i + len(grp)),
-                        categories,
-                        omega_iov_name,
-                        eta_name,
-                    )
-                )
-                i += len(grp)
+        )
 
     iovs.extend(etais)
     iovs.extend(sset)
