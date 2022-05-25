@@ -199,7 +199,7 @@ def create_omega_single(model, rv, eta_number, record_number, comment_dict):
 
     if rv.level == 'IOV':
         param_str = f'${record_type}  BLOCK(1)'
-        first_iov = [iov for iov in rvs.iov if iov.parameter_names == rv.parameter_names][0]
+        first_iov = next(filter(lambda iov: iov.parameter_names == rv.parameter_names, rvs.iov))
         if rv == first_iov:
             param_str += f'\n{variance_param.init}'
         else:
