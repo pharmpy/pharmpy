@@ -215,7 +215,7 @@ def add_iov(model, occ, list_of_parameters=None, eta_names=None, distribution='d
 
     # TODO: better names
     def eta_name(i, k):
-        return eta_names[k - 1] if eta_names else f'ETA_IOV_{i}{k}'
+        return eta_names[(i - 1) * len(categories) + k - 1] if eta_names else f'ETA_IOV_{i}{k}'
 
     def omega_iov_name(i, j):
         return f'OMEGA_IOV_{i}' if i == j else f'OMEGA_IOV_{i}_{j}'
