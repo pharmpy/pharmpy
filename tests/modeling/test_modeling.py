@@ -3060,6 +3060,43 @@ def test_nested_update_source(pheno_path):
         (
             'nonmem/pheno_real.mod',
             'FA1',
+            None,
+            None,
+            'IOV_1 = 0\n'
+            'IF (FA1.EQ.0) IOV_1 = ETA(3)\n'
+            'IF (FA1.EQ.1) IOV_1 = ETA(4)\n'
+            'IOV_2 = 0\n'
+            'IF (FA1.EQ.0) IOV_2 = ETA(5)\n'
+            'IF (FA1.EQ.1) IOV_2 = ETA(6)\n'
+            'ETAI1 = IOV_1 + ETA(1)\n'
+            'ETAI2 = IOV_2 + ETA(2)\n',
+            'CL = TVCL*EXP(ETAI1)\n' 'V = TVV*EXP(ETAI2)\n' 'S1=V\n',
+            '$OMEGA  BLOCK(1)\n'
+            '0.00309626 ; OMEGA_IOV_1\n'
+            '$OMEGA  BLOCK(1) SAME ; OMEGA_IOV_1\n'
+            '$OMEGA  BLOCK(1)\n'
+            '0.0031128 ; OMEGA_IOV_2\n'
+            '$OMEGA  BLOCK(1) SAME ; OMEGA_IOV_2\n',
+            'same-as-iiv',
+        ),
+        (
+            'nonmem/pheno_real.mod',
+            'FA1',
+            ['ETA(2)'],
+            None,
+            'IOV_1 = 0\n'
+            'IF (FA1.EQ.0) IOV_1 = ETA(3)\n'
+            'IF (FA1.EQ.1) IOV_1 = ETA(4)\n'
+            'ETAI1 = IOV_1 + ETA(2)\n',
+            'CL=TVCL*EXP(ETA(1))\n' 'V = TVV*EXP(ETAI1)\n' 'S1=V\n',
+            '$OMEGA  BLOCK(1)\n'
+            '0.0031128 ; OMEGA_IOV_1\n'
+            '$OMEGA  BLOCK(1) SAME ; OMEGA_IOV_1\n',
+            'same-as-iiv',
+        ),
+        (
+            'nonmem/pheno_real.mod',
+            'FA1',
             ['CL'],
             None,
             'IOV_1 = 0\n'
@@ -3193,6 +3230,52 @@ def test_nested_update_source(pheno_path):
             '0.00309626 ; OMEGA_IOV_1\n'
             '$OMEGA  BLOCK(1) SAME ; OMEGA_IOV_1\n',
             'disjoint',
+        ),
+        (
+            'nonmem/pheno_block.mod',
+            'FA1',
+            None,
+            None,
+            'IOV_1 = 0\n'
+            'IF (FA1.EQ.0) IOV_1 = ETA(6)\n'
+            'IF (FA1.EQ.1) IOV_1 = ETA(7)\n'
+            'IOV_2 = 0\n'
+            'IF (FA1.EQ.0) IOV_2 = ETA(8)\n'
+            'IF (FA1.EQ.1) IOV_2 = ETA(9)\n'
+            'IOV_3 = 0\n'
+            'IF (FA1.EQ.0) IOV_3 = ETA(10)\n'
+            'IF (FA1.EQ.1) IOV_3 = ETA(11)\n'
+            'IOV_4 = 0\n'
+            'IF (FA1.EQ.0) IOV_4 = ETA(12)\n'
+            'IF (FA1.EQ.1) IOV_4 = ETA(14)\n'
+            'IOV_5 = 0\n'
+            'IF (FA1.EQ.0) IOV_5 = ETA(13)\n'
+            'IF (FA1.EQ.1) IOV_5 = ETA(15)\n'
+            'ETAI1 = IOV_1 + ETA(1)\n'
+            'ETAI2 = IOV_2 + ETA(2)\n'
+            'ETAI3 = IOV_3 + ETA(3)\n'
+            'ETAI4 = IOV_4 + ETA(4)\n'
+            'ETAI5 = IOV_5 + ETA(5)\n',
+            'CL = THETA(1)*EXP(ETAI1)\n'
+            'V = THETA(2)*EXP(ETAI2)\n'
+            'S1 = ETAI3 + V\n'
+            'MAT = THETA(3)*EXP(ETAI4)\n'
+            'Q = THETA(4)*EXP(ETAI5)\n',
+            '$OMEGA  BLOCK(1)\n'
+            '0.00309626 ; OMEGA_IOV_1\n'
+            '$OMEGA  BLOCK(1) SAME ; OMEGA_IOV_1\n'
+            '$OMEGA  BLOCK(1)\n'
+            '0.0031128 ; OMEGA_IOV_2\n'
+            '$OMEGA  BLOCK(1) SAME ; OMEGA_IOV_2\n'
+            '$OMEGA  BLOCK(1)\n'
+            '0.010000000000000002 ; OMEGA_IOV_3\n'
+            '$OMEGA  BLOCK(1) SAME ; OMEGA_IOV_3\n'
+            '$OMEGA BLOCK(2)\n'
+            '0.00309626\t; OMEGA_IOV_4\n'
+            '5E-05\t; OMEGA_IOV_4_5\n'
+            '0.0031128\t; OMEGA_IOV_5\n'
+            '$OMEGA BLOCK(2) SAME\n',
+            'same-as-iiv',
         ),
     ],
 )
