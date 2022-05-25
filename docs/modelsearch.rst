@@ -42,21 +42,21 @@ Arguments
 ~~~~~~~~~
 For a more detailed description of each argument, see their respective chapter on this page.
 
-+---------------------------------------------------+-----------------------------------------------------------------------------------------+
-| Argument                                          | Description                                                                             |
-+===================================================+=========================================================================================+
-| :ref:`search_space<The search space>`             | Search space to test                                                                    |
-+---------------------------------------------------+-----------------------------------------------------------------------------------------+
-| :ref:`algorithm<Algorithms>`                      | Algorithm to use (e.g. exhaustive)                                                      |
-+---------------------------------------------------+-----------------------------------------------------------------------------------------+
-| :ref:`rankfunc<ranking>`                          | Which selection criteria to rank models on, e.g. OFV (default is BIC)                   |
-+---------------------------------------------------+-----------------------------------------------------------------------------------------+
-| :ref:`cutoff<ranking>`                            | Cutoff for the ranking function, exclude models that are below cutoff (default is None) |
-+---------------------------------------------------+-----------------------------------------------------------------------------------------+
-| :ref:`iiv_strategy<IIV strategies>`               | If/how IIV should be added to candidate models (default is 0)                           |
-+---------------------------------------------------+-----------------------------------------------------------------------------------------+
-| ``model``                                         | Start model                                                                             |
-+---------------------------------------------------+-----------------------------------------------------------------------------------------+
++-------------------------------------------------+-----------------------------------------------------------------------------------------+
+| Argument                                        | Description                                                                             |
++=================================================+=========================================================================================+
+| :ref:`search_space<The search space>`           | Search space to test                                                                    |
++-------------------------------------------------+-----------------------------------------------------------------------------------------+
+| :ref:`algorithm<Algorithms>`                    | Algorithm to use (e.g. exhaustive)                                                      |
++-------------------------------------------------+-----------------------------------------------------------------------------------------+
+| :ref:`rankfunc<ranking>`                        | Which selection criteria to rank models on, e.g. OFV (default is BIC)                   |
++-------------------------------------------------+-----------------------------------------------------------------------------------------+
+| :ref:`cutoff<ranking>`                          | Cutoff for the ranking function, exclude models that are below cutoff (default is None) |
++-------------------------------------------------+-----------------------------------------------------------------------------------------+
+| :ref:`iiv_strategy<iiv_strategies_modelsearch>` | If/how IIV should be added to candidate models (default is 0)                           |
++-------------------------------------------------+-----------------------------------------------------------------------------------------+
+| ``model``                                       | Start model                                                                             |
++-------------------------------------------------+-----------------------------------------------------------------------------------------+
 
 .. _the search space:
 
@@ -233,11 +233,11 @@ The same feature combinations as in the exhaustive stepwise algorithm will be ex
 :ref:`here<Feature combination exclusions>`)
 
 
-.. _iiv_strategies:
+.. _iiv_strategies_modelsearch:
 
-~~~~~~~~~~~~~~
-IIV strategies
-~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Adding IIV to the candidate models during search
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The ``iiv_strategy`` option determines whether or not IIV on the PK parameters should be added to the candidate models.
 The different strategies can be seen here:

@@ -45,13 +45,11 @@ Arguments
 +===================================================+=========================================================================================+
 | :ref:`algorithm<Algorithms>`                      | Algorithm to use (e.g. brute_force)                                                     |
 +---------------------------------------------------+-----------------------------------------------------------------------------------------+
-| :ref:`iiv_strategy<IIV strategies>`               | If/how IIV should be added to start model (default is 0)                                |
+| :ref:`iiv_strategy<iiv_strategies_iivsearch>`     | If/how IIV should be added to start model (default is 0)                                |
 +---------------------------------------------------+-----------------------------------------------------------------------------------------+
 | :ref:`rankfunc<Comparing and ranking candidates>` | Which selection criteria to rank models on, e.g. OFV (default is BIC)                   |
 +---------------------------------------------------+-----------------------------------------------------------------------------------------+
 | :ref:`cutoff<Comparing and ranking candidates>`   | Cutoff for the ranking function, exclude models that are below cutoff (default is None) |
-+---------------------------------------------------+-----------------------------------------------------------------------------------------+
-| :ref:`iiv_strategy<IIV strategies>`               | If/how IIV should be added to candidate models (default is 0)                           |
 +---------------------------------------------------+-----------------------------------------------------------------------------------------+
 | ``model``                                         | Start model                                                                             |
 +---------------------------------------------------+-----------------------------------------------------------------------------------------+
@@ -173,14 +171,26 @@ algorithm for the block structure, by first choosing the number of etas then the
         }
 
 
-.. _iiv strategies:
+.. _iiv_strategies_iivsearch:
 
-~~~~~~~~~~~~~~
-IIV strategies
-~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Adding IIV to the start model
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The IIV strategy refers to if/how IIV should be added to the PK parameters of the input model. The different strategies
-can be seen the corresponding chapter in :ref:`modelsearch<iiv_strategies>`.
+The ``iiv_strategy`` option determines whether or not IIV on the PK parameters should be added to the input model.
+The different strategies can be seen here:
+
++-----------+----------------------------------------------------------+
+| Strategy  | Description                                              |
++===========+==========================================================+
+| ``0``     | Input model is kept as base model                        |
++-----------+----------------------------------------------------------+
+| ``1``     | IIV is added to all structural parameters as diagonal    |
++-----------+----------------------------------------------------------+
+| ``2``     | IIV is added to all structural parameters as full block  |
++-----------+----------------------------------------------------------+
+| ``3``     | IIV is added to the absorption delay parameter           |
++-----------+----------------------------------------------------------+
 
 .. _comparing and ranking candidates:
 
