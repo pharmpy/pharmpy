@@ -228,7 +228,7 @@ def create_omega_block(model, rvs, eta_number, record_number, comment_dict):
             elem = rvs.covariance_matrix.row(row).col(col)
             name = str(elem[0])
             omega = model.parameters[name]
-            param_str += f'{omega.init}'
+            param_str += f'{omega.init}'.upper()
 
             if not re.match(r'OMEGA\(\d+,\d+\)', omega.name):
                 param_str += f'\t; {omega.name}'
