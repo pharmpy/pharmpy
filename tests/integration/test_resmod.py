@@ -28,4 +28,4 @@ def test_resmod(tmp_path, testdata):
             == '    Y = A(2)*EPS(1)*EXP(ETA(4))/VC + A(2)/VC'
         )
         assert res.best_model.model_code.split('\n')[19] == '$THETA  1.15573 ; time_varying'
-        assert res.best_model.model_code.split('\n')[25] == '$OMEGA  0.027766 ; IIV_RUV1'
+        assert res.best_model.model_code.split('\n')[25] == '$OMEGA  0.0396751 ; IIV_RUV1'

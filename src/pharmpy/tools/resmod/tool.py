@@ -20,7 +20,7 @@ from pharmpy.modeling import (
     summarize_modelfit_results,
 )
 from pharmpy.statements import Assignment, ModelStatements
-from pharmpy.tools.common import summarize_tool
+from pharmpy.tools.common import summarize_tool, update_initial_estimates
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.workflows import Task, Workflow, call_workflow
 
@@ -318,6 +318,7 @@ def _time_after_dose(model):
 def _create_best_model(model, res, current_iteration, groups=4, cutoff=3.84):
     if any(res.models['dofv'] > cutoff):
         model = model.copy()
+        update_initial_estimates(model)
         model.name = f'best_resmod_{current_iteration}'
         selected_model_name = f'base_{current_iteration}'
         idx = res.models['dofv'].idxmax()
