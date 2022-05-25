@@ -3280,6 +3280,129 @@ def test_add_iov_only_one_level(pheno_path):
         add_iov(model, 'FA1', ['ETA(1)'])
 
 
+@pytest.mark.parametrize(
+    'occ, params, new_eta_names, distribution, error, message',
+    (
+        (
+            'FA1',
+            ['ETA(1)', 'CL'],
+            None,
+            'disjoint',
+            ValueError,
+            'ETA(1) ~ N(0, OMEGA(1,1)) was given twice.',
+        ),
+        (
+            'FA1',
+            ['CL', 'ETA(1)'],
+            None,
+            'disjoint',
+            ValueError,
+            'ETA(1) ~ N(0, OMEGA(1,1)) was given twice.',
+        ),
+        (
+            'FA1',
+            ['ETA(1)', 'CL'],
+            None,
+            'joint',
+            ValueError,
+            'Some ETA in [ETA(1) ~ N(0, OMEGA(1,1))] was given twice',
+        ),
+        (
+            'FA1',
+            ['CL', 'ETA(1)'],
+            None,
+            'joint',
+            ValueError,
+            'Some ETA in [ETA(1) ~ N(0, OMEGA(1,1))] was given twice',
+        ),
+        (
+            'FA1',
+            [['ETA(1)', 'CL']],
+            None,
+            'explicit',
+            ValueError,
+            'Some ETA in [ETA(1) ~ N(0, OMEGA(1,1))] was given twice',
+        ),
+        (
+            'FA1',
+            [['CL', 'ETA(1)']],
+            None,
+            'explicit',
+            ValueError,
+            'Some ETA in [ETA(1) ~ N(0, OMEGA(1,1))] was given twice',
+        ),
+        (
+            'FA1',
+            [['ETA(1)'], ['CL']],
+            None,
+            'explicit',
+            ValueError,
+            'ETA(1) ~ N(0, OMEGA(1,1)) was given twice.',
+        ),
+        (
+            'FA1',
+            [['CL'], ['ETA(1)']],
+            None,
+            'explicit',
+            ValueError,
+            'ETA(1) ~ N(0, OMEGA(1,1)) was given twice.',
+        ),
+        (
+            'FA1',
+            ['ETA(1)'],
+            None,
+            'abracadabra',
+            ValueError,
+            '"abracadabra" is not a valid value for distribution',
+        ),
+        (
+            'FA1',
+            ['ETA(1)'],
+            None,
+            'explicit',
+            ValueError,
+            'distribution == "explicit" requires parameters to be given as lists of lists',
+        ),
+        (
+            'FA1',
+            [['ETA(2)'], 'ETA(1)'],
+            None,
+            'explicit',
+            ValueError,
+            'distribution == "explicit" requires parameters to be given as lists of lists',
+        ),
+        (
+            'FA1',
+            [['ETA(1)']],
+            None,
+            'joint',
+            ValueError,
+            'distribution != "explicit" requires parameters to be given as lists of strings',
+        ),
+        (
+            'FA1',
+            [['ETA(1)'], [2, 'ETA(2)']],
+            None,
+            'explicit',
+            ValueError,
+            'not all parameters are string',
+        ),
+        (
+            'FA1',
+            [['ETA(1)', 'ETA(2)']],
+            ['A', 'B', 'C', 'D', 'E'],
+            'explicit',
+            ValueError,
+            'Number of given eta names is incorrect, need 4 names.',
+        ),
+    ),
+)
+def test_add_iov_raises(pheno_path, occ, params, new_eta_names, distribution, error, message):
+    model = Model.create_model(pheno_path)
+    with pytest.raises(error, match=re.escape(message)):
+        add_iov(model, occ, params, eta_names=new_eta_names, distribution=distribution)
+
+
 def test_set_ode_solver(pheno_path):
     model = Model.create_model(pheno_path)
     assert model.estimation_steps[0].solver is None
