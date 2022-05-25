@@ -2708,73 +2708,132 @@ $OMEGA  0.1'''
     )
 
 
-def test_remove_iov_with_options(tmp_path, testdata):
+@pytest.mark.parametrize(
+    ('distribution', 'occ', 'to_remove', 'cases', 'rest'),
+    (
+        (
+            'disjoint',
+            'VISI',
+            None,
+            'IOV_1 = 0\n'
+            'IF (VISI.EQ.3.OR.VISI.EQ.8) IOV_1 = 0\n'
+            'IOV_2 = 0\n'
+            'IF (VISI.EQ.3.OR.VISI.EQ.8) IOV_2 = 0\n'
+            'IOV_3 = 0\n'
+            'IF (VISI.EQ.3.OR.VISI.EQ.8) IOV_3 = 0\n',
+            set(),
+        ),
+        (
+            'joint',
+            'VISI',
+            None,
+            'IOV_1 = 0\n'
+            'IF (VISI.EQ.3.OR.VISI.EQ.8) IOV_1 = 0\n'
+            'IOV_2 = 0\n'
+            'IF (VISI.EQ.3.OR.VISI.EQ.8) IOV_2 = 0\n'
+            'IOV_3 = 0\n'
+            'IF (VISI.EQ.3.OR.VISI.EQ.8) IOV_3 = 0\n',
+            set(),
+        ),
+        (
+            'disjoint',
+            'VISI',
+            'ETA_IOV_1_1',
+            'IOV_1 = 0\n'
+            'IF (VISI.EQ.3.OR.VISI.EQ.8) IOV_1 = 0\n'
+            'IOV_2 = 0\n'
+            'IF (VISI.EQ.3) IOV_2 = ETA(4)\n'
+            'IF (VISI.EQ.8) IOV_2 = ETA(5)\n'
+            'IOV_3 = 0\n'
+            'IF (VISI.EQ.3) IOV_3 = ETA(6)\n'
+            'IF (VISI.EQ.8) IOV_3 = ETA(7)\n',
+            {'ETA_IOV_2_1', 'ETA_IOV_2_2', 'ETA_IOV_3_1', 'ETA_IOV_3_2'},
+        ),
+        (
+            'joint',
+            'VISI',
+            'ETA_IOV_1_1',
+            'IOV_1 = 0\n'
+            'IF (VISI.EQ.3.OR.VISI.EQ.8) IOV_1 = 0\n'
+            'IOV_2 = 0\n'
+            'IF (VISI.EQ.3) IOV_2 = ETA(4)\n'
+            'IF (VISI.EQ.8) IOV_2 = ETA(6)\n'
+            'IOV_3 = 0\n'
+            'IF (VISI.EQ.3) IOV_3 = ETA(5)\n'
+            'IF (VISI.EQ.8) IOV_3 = ETA(7)\n',
+            {'ETA_IOV_2_1', 'ETA_IOV_2_2', 'ETA_IOV_3_1', 'ETA_IOV_3_2'},
+        ),
+        (
+            'disjoint',
+            'VISI',
+            ['ETA_IOV_1_1', 'ETA_IOV_1_2'],
+            'IOV_1 = 0\n'
+            'IF (VISI.EQ.3.OR.VISI.EQ.8) IOV_1 = 0\n'
+            'IOV_2 = 0\n'
+            'IF (VISI.EQ.3) IOV_2 = ETA(4)\n'
+            'IF (VISI.EQ.8) IOV_2 = ETA(5)\n'
+            'IOV_3 = 0\n'
+            'IF (VISI.EQ.3) IOV_3 = ETA(6)\n'
+            'IF (VISI.EQ.8) IOV_3 = ETA(7)\n',
+            {'ETA_IOV_2_1', 'ETA_IOV_2_2', 'ETA_IOV_3_1', 'ETA_IOV_3_2'},
+        ),
+        (
+            'joint',
+            'VISI',
+            ['ETA_IOV_1_1', 'ETA_IOV_1_2'],
+            'IOV_1 = 0\n'
+            'IF (VISI.EQ.3.OR.VISI.EQ.8) IOV_1 = 0\n'
+            'IOV_2 = 0\n'
+            'IF (VISI.EQ.3) IOV_2 = ETA(4)\n'
+            'IF (VISI.EQ.8) IOV_2 = ETA(6)\n'
+            'IOV_3 = 0\n'
+            'IF (VISI.EQ.3) IOV_3 = ETA(5)\n'
+            'IF (VISI.EQ.8) IOV_3 = ETA(7)\n',
+            {'ETA_IOV_2_1', 'ETA_IOV_2_2', 'ETA_IOV_3_1', 'ETA_IOV_3_2'},
+        ),
+        (
+            'disjoint',
+            'VISI',
+            ['ETA_IOV_1_1', 'ETA_IOV_1_2', 'ETA_IOV_2_1'],
+            'IOV_1 = 0\n'
+            'IF (VISI.EQ.3.OR.VISI.EQ.8) IOV_1 = 0\n'
+            'IOV_2 = 0\n'
+            'IF (VISI.EQ.3.OR.VISI.EQ.8) IOV_2 = 0\n'
+            'IOV_3 = 0\n'
+            'IF (VISI.EQ.3) IOV_3 = ETA(4)\n'
+            'IF (VISI.EQ.8) IOV_3 = ETA(5)\n',
+            {'ETA_IOV_3_1', 'ETA_IOV_3_2'},
+        ),
+        (
+            'joint',
+            'VISI',
+            ['ETA_IOV_1_1', 'ETA_IOV_1_2', 'ETA_IOV_2_1'],
+            'IOV_1 = 0\n'
+            'IF (VISI.EQ.3.OR.VISI.EQ.8) IOV_1 = 0\n'
+            'IOV_2 = 0\n'
+            'IF (VISI.EQ.3.OR.VISI.EQ.8) IOV_2 = 0\n'
+            'IOV_3 = 0\n'
+            'IF (VISI.EQ.3) IOV_3 = ETA(4)\n'
+            'IF (VISI.EQ.8) IOV_3 = ETA(5)\n',
+            {'ETA_IOV_3_1', 'ETA_IOV_3_2'},
+        ),
+    ),
+    ids=repr,
+)
+def test_remove_iov_with_options(tmp_path, testdata, distribution, occ, to_remove, cases, rest):
     with TemporaryDirectoryChanger(tmp_path):
         shutil.copy2(testdata / 'nonmem' / 'models' / 'mox2.mod', tmp_path)
         shutil.copy2(testdata / 'nonmem' / 'models' / 'mox_simulated_normal.csv', tmp_path)
         model = Model.create_model('mox2.mod')
         model.datainfo.path = tmp_path / 'mox_simulated_normal.csv'
 
-        start_model = add_iov(model, occ='VISI')
-        model_remove_all = start_model.copy()
-        model_remove_one = start_model.copy()
-        model_remove_two = start_model.copy()
-        model_remove_three = start_model.copy()
+        start_model = add_iov(model, occ=occ, distribution=distribution)
+        model_with_some_iovs_removed = start_model.copy()
 
-        remove_iov(model_remove_all)
+        remove_iov(model_with_some_iovs_removed, to_remove=to_remove)
+        assert cases in model_with_some_iovs_removed.model_code
         assert (
-            '''IOV_1 = 0
-IF (VISI.EQ.3.OR.VISI.EQ.8) IOV_1 = 0
-IOV_2 = 0
-IF (VISI.EQ.3.OR.VISI.EQ.8) IOV_2 = 0
-IOV_3 = 0
-IF (VISI.EQ.3.OR.VISI.EQ.8) IOV_3 = 0'''
-            in model_remove_all.model_code
-        )
-        assert model_remove_all.random_variables.iov == []
-
-        remove_iov(model_remove_one, 'ETA_IOV_1_1')
-        assert len(model_remove_one.random_variables.iov) == 4
-        assert (
-            '''IOV_1 = 0
-IF (VISI.EQ.3.OR.VISI.EQ.8) IOV_1 = 0
-IOV_2 = 0
-IF (VISI.EQ.3) IOV_2 = ETA(4)
-IF (VISI.EQ.8) IOV_2 = ETA(5)
-IOV_3 = 0
-IF (VISI.EQ.3) IOV_3 = ETA(6)
-IF (VISI.EQ.8) IOV_3 = ETA(7)
-'''
-            in model_remove_one.model_code
-        )
-
-        remove_iov(model_remove_two, ['ETA_IOV_1_1', 'ETA_IOV_1_2'])
-        assert len(model_remove_two.random_variables.iov) == 4
-        assert (
-            '''IOV_1 = 0
-IF (VISI.EQ.3.OR.VISI.EQ.8) IOV_1 = 0
-IOV_2 = 0
-IF (VISI.EQ.3) IOV_2 = ETA(4)
-IF (VISI.EQ.8) IOV_2 = ETA(5)
-IOV_3 = 0
-IF (VISI.EQ.3) IOV_3 = ETA(6)
-IF (VISI.EQ.8) IOV_3 = ETA(7)
-'''
-            in model_remove_two.model_code
-        )
-
-        remove_iov(model_remove_three, ['ETA_IOV_1_1', 'ETA_IOV_1_2', 'ETA_IOV_2_1'])
-        assert len(model_remove_three.random_variables.iov) == 2
-        assert (
-            '''IOV_1 = 0
-IF (VISI.EQ.3.OR.VISI.EQ.8) IOV_1 = 0
-IOV_2 = 0
-IF (VISI.EQ.3.OR.VISI.EQ.8) IOV_2 = 0
-IOV_3 = 0
-IF (VISI.EQ.3) IOV_3 = ETA(4)
-IF (VISI.EQ.8) IOV_3 = ETA(5)
-'''
-            in model_remove_three.model_code
+            set(map(lambda rv: rv.name, model_with_some_iovs_removed.random_variables.iov)) == rest
         )
 
 
