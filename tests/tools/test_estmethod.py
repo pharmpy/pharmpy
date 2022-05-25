@@ -1,7 +1,8 @@
 import pytest
 
 from pharmpy import Model
-from pharmpy.tools.estmethod.tool import _clear_estimation_steps, _create_est_model, create_workflow
+from pharmpy.tools.estmethod.algorithms import _clear_estimation_steps, _create_est_model
+from pharmpy.tools.estmethod.tool import create_workflow
 
 
 @pytest.mark.parametrize(
@@ -15,7 +16,7 @@ from pharmpy.tools.estmethod.tool import _clear_estimation_steps, _create_est_mo
     ],
 )
 def test_algorithm(methods, solvers, no_of_models):
-    wf = create_workflow(methods=methods, solvers=solvers, update=True)
+    wf = create_workflow('exhaustive', methods=methods, solvers=solvers)
     fit_tasks = [task.name for task in wf.tasks if task.name.startswith('run')]
 
     assert len(fit_tasks) == no_of_models

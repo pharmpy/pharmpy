@@ -18,14 +18,14 @@ def _model_count(rundir: Path):
 
 
 @pytest.mark.parametrize(
-    'methods, solvers, update, no_of_models, advan_ref',
+    'algorithm, methods, solvers, no_of_models, advan_ref',
     [
-        ('imp', None, True, 3, 'ADVAN1'),
-        ('imp', ['lsoda'], True, 5, 'ADVAN1'),
-        ('imp', None, False, 2, 'ADVAN1'),
+        ('exhaustive', 'imp', None, 3, 'ADVAN1'),
+        ('exhaustive', 'imp', ['lsoda'], 5, 'ADVAN1'),
+        ('reduced', ['foce', 'imp'], None, 2, 'ADVAN1'),
     ],
 )
-def test_estmethod(tmp_path, testdata, methods, solvers, update, no_of_models, advan_ref):
+def test_estmethod(tmp_path, testdata, algorithm, methods, solvers, no_of_models, advan_ref):
     with TemporaryDirectoryChanger(tmp_path):
         for path in (testdata / 'nonmem').glob('pheno_real.*'):
             shutil.copy2(path, tmp_path)
@@ -33,9 +33,7 @@ def test_estmethod(tmp_path, testdata, methods, solvers, update, no_of_models, a
         model_start = Model.create_model('pheno_real.mod')
         model_start.datainfo.path = tmp_path / 'pheno.dta'
 
-        res = run_tool(
-            'estmethod', methods=methods, solvers=solvers, update=update, model=model_start
-        )
+        res = run_tool('estmethod', algorithm, methods=methods, solvers=solvers, model=model_start)
 
         assert len(res.summary_tool) == no_of_models
         assert len(res.models) == no_of_models
