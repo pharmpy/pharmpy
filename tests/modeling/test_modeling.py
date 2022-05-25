@@ -2996,6 +2996,19 @@ def test_nested_update_source(pheno_path):
             'disjoint',
         ),
         (
+            'ETA(1)',
+            None,
+            'IOV_1 = 0\n'
+            'IF (FA1.EQ.0) IOV_1 = ETA(3)\n'
+            'IF (FA1.EQ.1) IOV_1 = ETA(4)\n'
+            'ETAI1 = IOV_1 + ETA(1)\n',
+            'CL = TVCL*EXP(ETAI1)\n' 'V=TVV*EXP(ETA(2))\n',
+            '$OMEGA  BLOCK(1)\n'
+            '0.00309626 ; OMEGA_IOV_1\n'
+            '$OMEGA  BLOCK(1) SAME ; OMEGA_IOV_1\n',
+            'joint',
+        ),
+        (
             None,
             None,
             'IOV_1 = 0\n'
@@ -3014,6 +3027,25 @@ def test_nested_update_source(pheno_path):
             '0.0031128 ; OMEGA_IOV_2\n'
             '$OMEGA  BLOCK(1) SAME ; OMEGA_IOV_2\n',
             'disjoint',
+        ),
+        (
+            None,
+            None,
+            'IOV_1 = 0\n'
+            'IF (FA1.EQ.0) IOV_1 = ETA(3)\n'
+            'IF (FA1.EQ.1) IOV_1 = ETA(5)\n'
+            'IOV_2 = 0\n'
+            'IF (FA1.EQ.0) IOV_2 = ETA(4)\n'
+            'IF (FA1.EQ.1) IOV_2 = ETA(6)\n'
+            'ETAI1 = IOV_1 + ETA(1)\n'
+            'ETAI2 = IOV_2 + ETA(2)\n',
+            'CL = TVCL*EXP(ETAI1)\n' 'V = TVV*EXP(ETAI2)\n',
+            '$OMEGA BLOCK(2)\n'
+            '0.00309626\t; OMEGA_IOV_1\n'
+            '0.001\t; OMEGA_IOV_1_2\n'
+            '0.0031128\t; OMEGA_IOV_2\n'
+            '$OMEGA BLOCK(2) SAME\n',
+            'joint',
         ),
         (
             ['CL'],
@@ -3105,6 +3137,19 @@ def test_nested_update_source(pheno_path):
             '0.00309626 ; OMEGA_IOV_1\n'
             '$OMEGA  BLOCK(1) SAME ; OMEGA_IOV_1\n',
             'disjoint',
+        ),
+        (
+            ['ETA(1)'],
+            ['ETA(3)', 'ETA(4)'],
+            'IOV_1 = 0\n'
+            'IF (FA1.EQ.0) IOV_1 = ETA(3)\n'
+            'IF (FA1.EQ.1) IOV_1 = ETA(4)\n'
+            'ETAI1 = IOV_1 + ETA(1)\n',
+            'CL = TVCL*EXP(ETAI1)\n' 'V=TVV*EXP(ETA(2))\n',
+            '$OMEGA  BLOCK(1)\n'
+            '0.00309626 ; OMEGA_IOV_1\n'
+            '$OMEGA  BLOCK(1) SAME ; OMEGA_IOV_1\n',
+            'joint',
         ),
     ],
 )
