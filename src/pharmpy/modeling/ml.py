@@ -39,7 +39,9 @@ def _create_dataset(model):
     ofv = res.ofv
 
     # Max ratio of abs(ETAi) and omegai
-    variance_omegas = model.random_variables.etas.variance_parameters
+    variance_omegas = [
+        model.random_variables.get_variance(rv.name).name for rv in model.random_variables.etas
+    ]
     all_paramvals = _all_parameters(model)
     omega_estimates = np.sqrt(all_paramvals[variance_omegas])
     abs_ebes = res.individual_estimates.abs()
