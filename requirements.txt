@@ -74,7 +74,7 @@ pytz==2022.1
 PyYAML==6.0
 pyzmq==23.0.0
 requests==2.27.1
-rich==12.4.3
+rich==12.4.4
 scipy==1.8.1
 six==1.16.0
 snowballstemmer==2.2.0
