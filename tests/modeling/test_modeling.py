@@ -2967,48 +2967,56 @@ def test_nested_update_source(pheno_path):
 
 
 @pytest.mark.parametrize(
-    'etas, eta_names, pk_start_ref, pk_end_ref, omega_ref, distribution',
+    'path, occ, etas, eta_names, pk_start_ref, pk_end_ref, omega_ref, distribution',
     [
         (
+            'nonmem/pheno_real.mod',
+            'FA1',
             ['ETA(1)'],
             None,
             'IOV_1 = 0\n'
             'IF (FA1.EQ.0) IOV_1 = ETA(3)\n'
             'IF (FA1.EQ.1) IOV_1 = ETA(4)\n'
             'ETAI1 = IOV_1 + ETA(1)\n',
-            'CL = TVCL*EXP(ETAI1)\n' 'V=TVV*EXP(ETA(2))\n',
+            'CL = TVCL*EXP(ETAI1)\n' 'V=TVV*EXP(ETA(2))\n' 'S1=V\n',
             '$OMEGA  BLOCK(1)\n'
             '0.00309626 ; OMEGA_IOV_1\n'
             '$OMEGA  BLOCK(1) SAME ; OMEGA_IOV_1\n',
             'disjoint',
         ),
         (
+            'nonmem/pheno_real.mod',
+            'FA1',
             'ETA(1)',
             None,
             'IOV_1 = 0\n'
             'IF (FA1.EQ.0) IOV_1 = ETA(3)\n'
             'IF (FA1.EQ.1) IOV_1 = ETA(4)\n'
             'ETAI1 = IOV_1 + ETA(1)\n',
-            'CL = TVCL*EXP(ETAI1)\n' 'V=TVV*EXP(ETA(2))\n',
+            'CL = TVCL*EXP(ETAI1)\n' 'V=TVV*EXP(ETA(2))\n' 'S1=V\n',
             '$OMEGA  BLOCK(1)\n'
             '0.00309626 ; OMEGA_IOV_1\n'
             '$OMEGA  BLOCK(1) SAME ; OMEGA_IOV_1\n',
             'disjoint',
         ),
         (
+            'nonmem/pheno_real.mod',
+            'FA1',
             'ETA(1)',
             None,
             'IOV_1 = 0\n'
             'IF (FA1.EQ.0) IOV_1 = ETA(3)\n'
             'IF (FA1.EQ.1) IOV_1 = ETA(4)\n'
             'ETAI1 = IOV_1 + ETA(1)\n',
-            'CL = TVCL*EXP(ETAI1)\n' 'V=TVV*EXP(ETA(2))\n',
+            'CL = TVCL*EXP(ETAI1)\n' 'V=TVV*EXP(ETA(2))\n' 'S1=V\n',
             '$OMEGA  BLOCK(1)\n'
             '0.00309626 ; OMEGA_IOV_1\n'
             '$OMEGA  BLOCK(1) SAME ; OMEGA_IOV_1\n',
             'joint',
         ),
         (
+            'nonmem/pheno_real.mod',
+            'FA1',
             None,
             None,
             'IOV_1 = 0\n'
@@ -3019,7 +3027,7 @@ def test_nested_update_source(pheno_path):
             'IF (FA1.EQ.1) IOV_2 = ETA(6)\n'
             'ETAI1 = IOV_1 + ETA(1)\n'
             'ETAI2 = IOV_2 + ETA(2)\n',
-            'CL = TVCL*EXP(ETAI1)\n' 'V = TVV*EXP(ETAI2)\n',
+            'CL = TVCL*EXP(ETAI1)\n' 'V = TVV*EXP(ETAI2)\n' 'S1=V\n',
             '$OMEGA  BLOCK(1)\n'
             '0.00309626 ; OMEGA_IOV_1\n'
             '$OMEGA  BLOCK(1) SAME ; OMEGA_IOV_1\n'
@@ -3029,6 +3037,8 @@ def test_nested_update_source(pheno_path):
             'disjoint',
         ),
         (
+            'nonmem/pheno_real.mod',
+            'FA1',
             None,
             None,
             'IOV_1 = 0\n'
@@ -3039,7 +3049,7 @@ def test_nested_update_source(pheno_path):
             'IF (FA1.EQ.1) IOV_2 = ETA(6)\n'
             'ETAI1 = IOV_1 + ETA(1)\n'
             'ETAI2 = IOV_2 + ETA(2)\n',
-            'CL = TVCL*EXP(ETAI1)\n' 'V = TVV*EXP(ETAI2)\n',
+            'CL = TVCL*EXP(ETAI1)\n' 'V = TVV*EXP(ETAI2)\n' 'S1=V\n',
             '$OMEGA BLOCK(2)\n'
             '0.00309626\t; OMEGA_IOV_1\n'
             '0.001\t; OMEGA_IOV_1_2\n'
@@ -3048,45 +3058,53 @@ def test_nested_update_source(pheno_path):
             'joint',
         ),
         (
+            'nonmem/pheno_real.mod',
+            'FA1',
             ['CL'],
             None,
             'IOV_1 = 0\n'
             'IF (FA1.EQ.0) IOV_1 = ETA(3)\n'
             'IF (FA1.EQ.1) IOV_1 = ETA(4)\n'
             'ETAI1 = IOV_1 + ETA(1)\n',
-            'CL = TVCL*EXP(ETAI1)\n' 'V=TVV*EXP(ETA(2))\n',
+            'CL = TVCL*EXP(ETAI1)\n' 'V=TVV*EXP(ETA(2))\n' 'S1=V\n',
             '$OMEGA  BLOCK(1)\n'
             '0.00309626 ; OMEGA_IOV_1\n'
             '$OMEGA  BLOCK(1) SAME ; OMEGA_IOV_1\n',
             'disjoint',
         ),
         (
+            'nonmem/pheno_real.mod',
+            'FA1',
             ['CL', 'ETA(1)'],
             None,
             'IOV_1 = 0\n'
             'IF (FA1.EQ.0) IOV_1 = ETA(3)\n'
             'IF (FA1.EQ.1) IOV_1 = ETA(4)\n'
             'ETAI1 = IOV_1 + ETA(1)\n',
-            'CL = TVCL*EXP(ETAI1)\n' 'V=TVV*EXP(ETA(2))\n',
+            'CL = TVCL*EXP(ETAI1)\n' 'V=TVV*EXP(ETA(2))\n' 'S1=V\n',
             '$OMEGA  BLOCK(1)\n'
             '0.00309626 ; OMEGA_IOV_1\n'
             '$OMEGA  BLOCK(1) SAME ; OMEGA_IOV_1\n',
             'disjoint',
         ),
         (
+            'nonmem/pheno_real.mod',
+            'FA1',
             ['ETA(1)', 'CL'],
             None,
             'IOV_1 = 0\n'
             'IF (FA1.EQ.0) IOV_1 = ETA(3)\n'
             'IF (FA1.EQ.1) IOV_1 = ETA(4)\n'
             'ETAI1 = IOV_1 + ETA(1)\n',
-            'CL = TVCL*EXP(ETAI1)\n' 'V=TVV*EXP(ETA(2))\n',
+            'CL = TVCL*EXP(ETAI1)\n' 'V=TVV*EXP(ETA(2))\n' 'S1=V\n',
             '$OMEGA  BLOCK(1)\n'
             '0.00309626 ; OMEGA_IOV_1\n'
             '$OMEGA  BLOCK(1) SAME ; OMEGA_IOV_1\n',
             'disjoint',
         ),
         (
+            'nonmem/pheno_real.mod',
+            'FA1',
             ['CL', 'ETA(2)'],
             None,
             'IOV_1 = 0\n'
@@ -3097,7 +3115,7 @@ def test_nested_update_source(pheno_path):
             'IF (FA1.EQ.1) IOV_2 = ETA(6)\n'
             'ETAI1 = IOV_1 + ETA(1)\n'
             'ETAI2 = IOV_2 + ETA(2)\n',
-            'CL = TVCL*EXP(ETAI1)\n' 'V = TVV*EXP(ETAI2)\n',
+            'CL = TVCL*EXP(ETAI1)\n' 'V = TVV*EXP(ETAI2)\n' 'S1=V\n',
             '$OMEGA  BLOCK(1)\n'
             '0.00309626 ; OMEGA_IOV_1\n'
             '$OMEGA  BLOCK(1) SAME ; OMEGA_IOV_1\n'
@@ -3107,6 +3125,8 @@ def test_nested_update_source(pheno_path):
             'disjoint',
         ),
         (
+            'nonmem/pheno_real.mod',
+            'FA1',
             ['CL', 'ETA(2)'],
             None,
             'IOV_1 = 0\n'
@@ -3117,7 +3137,7 @@ def test_nested_update_source(pheno_path):
             'IF (FA1.EQ.1) IOV_2 = ETA(6)\n'
             'ETAI1 = IOV_1 + ETA(1)\n'
             'ETAI2 = IOV_2 + ETA(2)\n',
-            'CL = TVCL*EXP(ETAI1)\n' 'V = TVV*EXP(ETAI2)\n',
+            'CL = TVCL*EXP(ETAI1)\n' 'V = TVV*EXP(ETAI2)\n' 'S1=V\n',
             '$OMEGA BLOCK(2)\n'
             '0.00309626\t; OMEGA_IOV_1\n'
             '0.001\t; OMEGA_IOV_1_2\n'
@@ -3126,26 +3146,30 @@ def test_nested_update_source(pheno_path):
             'joint',
         ),
         (
+            'nonmem/pheno_real.mod',
+            'FA1',
             ['ETA(1)'],
             ['ETA(3)', 'ETA(4)'],
             'IOV_1 = 0\n'
             'IF (FA1.EQ.0) IOV_1 = ETA(3)\n'
             'IF (FA1.EQ.1) IOV_1 = ETA(4)\n'
             'ETAI1 = IOV_1 + ETA(1)\n',
-            'CL = TVCL*EXP(ETAI1)\n' 'V=TVV*EXP(ETA(2))\n',
+            'CL = TVCL*EXP(ETAI1)\n' 'V=TVV*EXP(ETA(2))\n' 'S1=V\n',
             '$OMEGA  BLOCK(1)\n'
             '0.00309626 ; OMEGA_IOV_1\n'
             '$OMEGA  BLOCK(1) SAME ; OMEGA_IOV_1\n',
             'disjoint',
         ),
         (
+            'nonmem/pheno_real.mod',
+            'FA1',
             ['ETA(1)'],
             ['ETA(3)', 'ETA(4)'],
             'IOV_1 = 0\n'
             'IF (FA1.EQ.0) IOV_1 = ETA(3)\n'
             'IF (FA1.EQ.1) IOV_1 = ETA(4)\n'
             'ETAI1 = IOV_1 + ETA(1)\n',
-            'CL = TVCL*EXP(ETAI1)\n' 'V=TVV*EXP(ETA(2))\n',
+            'CL = TVCL*EXP(ETAI1)\n' 'V=TVV*EXP(ETA(2))\n' 'S1=V\n',
             '$OMEGA  BLOCK(1)\n'
             '0.00309626 ; OMEGA_IOV_1\n'
             '$OMEGA  BLOCK(1) SAME ; OMEGA_IOV_1\n',
@@ -3153,9 +3177,11 @@ def test_nested_update_source(pheno_path):
         ),
     ],
 )
-def test_add_iov(pheno_path, etas, eta_names, pk_start_ref, pk_end_ref, omega_ref, distribution):
-    model = Model.create_model(pheno_path)
-    add_iov(model, 'FA1', etas, eta_names, distribution=distribution)
+def test_add_iov(
+    testdata, path, occ, etas, eta_names, pk_start_ref, pk_end_ref, omega_ref, distribution
+):
+    model = Model.create_model(testdata / path)
+    add_iov(model, occ, etas, eta_names, distribution=distribution)
     model.update_source()
 
     model_etas = set(eta.name for eta in model.random_variables.etas)
@@ -3163,12 +3189,15 @@ def test_add_iov(pheno_path, etas, eta_names, pk_start_ref, pk_end_ref, omega_re
 
     pk_rec = str(model.get_pred_pk_record())
 
-    assert pk_rec.startswith(f'$PK\n{pk_start_ref}')
-    assert pk_rec.endswith(f'{pk_end_ref}S1=V\n\n')
+    expected_pk_rec_start = f'$PK\n{pk_start_ref}'
+    expected_pk_rec_end = f'{pk_end_ref}\n'
+
+    assert pk_rec[: len(expected_pk_rec_start)] == expected_pk_rec_start
+    assert pk_rec[-len(expected_pk_rec_end) :] == expected_pk_rec_end
 
     rec_omega = ''.join(str(rec) for rec in model.control_stream.get_records('OMEGA'))
 
-    assert rec_omega.endswith(omega_ref)
+    assert rec_omega[-len(omega_ref) :] == omega_ref
 
 
 def test_add_iov_only_one_level(pheno_path):
