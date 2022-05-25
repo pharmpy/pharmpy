@@ -2,11 +2,13 @@
 :meta private:
 """
 
-from itertools import combinations
+from itertools import chain, combinations
 from operator import add, mul
 
 import sympy
 from sympy import Eq, Piecewise
+from sympy.stats.crv_types import NormalDistribution
+from sympy.stats.joint_rv_types import MultivariateNormalDistribution
 
 from pharmpy.modeling.help_functions import _format_input_list, _format_options, _get_etas
 from pharmpy.parameter import Parameter
@@ -137,7 +139,7 @@ def add_iov(model, occ, list_of_parameters=None, eta_names=None, distribution='d
     distribution : str
         The distribution that should be used for the new etas. Options are
         'disjoint' for disjoint normal distributions, 'joint' for joint normal
-        distribution, 'copy-iiv' for copying the distribution of IIV etas.
+        distribution, 'same-as-iiv' for copying the distribution of IIV etas.
 
     Return
     ------
@@ -171,6 +173,9 @@ def add_iov(model, occ, list_of_parameters=None, eta_names=None, distribution='d
     etas = _get_etas(model, list_of_parameters, include_symbols=True)
     categories = _get_occ_levels(model.dataset, occ)
 
+    if distribution not in ['disjoint', 'joint', 'same-as-iiv']:
+        raise ValueError(f'"{distribution}" is not a valid value for distribution')
+
     if eta_names and len(eta_names) != len(etas) * len(categories):
         raise ValueError(
             f'Number of provided names incorrect, need {len(etas) * len(categories)} names.'
@@ -188,9 +193,96 @@ def add_iov(model, occ, list_of_parameters=None, eta_names=None, distribution='d
     def iov_name(i):
         return f'IOV_{i}'
 
+    # NOTE This declares the ETAS and their corresponding OMEGAs
+    if distribution == 'disjoint':
+        iovs, etais = _add_iov_declare_etas(
+            sset, occ, etas, range(1, len(etas) + 1), categories, eta_name, iov_name
+        )
+        rvs.extend(
+            _add_iov_etas_disjoint(
+                pset, etas, range(1, len(etas) + 1), categories, omega_iov_name, eta_name
+            )
+        )
+
+    elif distribution == 'joint':
+        iovs, etais = _add_iov_declare_etas(
+            sset, occ, etas, range(1, len(etas) + 1), categories, eta_name, iov_name
+        )
+        rvs.extend(
+            _add_iov_etas_joint(
+                pset, etas, range(1, len(etas) + 1), categories, omega_iov_name, eta_name
+            )
+        )
+    else:
+        distributions = rvs.distributions()
+        etas_set = set(etas)
+        disjoint = []
+        joint = []
+        for variables, dist in distributions:
+
+            intersection = list(filter(etas_set.__contains__, variables))
+
+            if not intersection:
+                continue
+
+            if len(variables) == 1:
+                assert isinstance(dist, NormalDistribution)
+            else:
+                assert isinstance(dist, MultivariateNormalDistribution)
+
+            if len(intersection) == 1:
+                disjoint.append(intersection[0])
+            else:
+                joint.append(intersection)
+
+        ordered_etas = list(chain.from_iterable(chain([disjoint], joint)))
+
+        assert set(ordered_etas) == set(etas)
+
+        iovs, etais = _add_iov_declare_etas(
+            sset, occ, ordered_etas, range(1, len(ordered_etas) + 1), categories, eta_name, iov_name
+        )
+
+        if disjoint:
+            rvs.extend(
+                _add_iov_etas_disjoint(
+                    pset,
+                    ordered_etas,
+                    range(1, len(disjoint) + 1),
+                    categories,
+                    omega_iov_name,
+                    eta_name,
+                )
+            )
+
+        if joint:
+            i = 1 + len(disjoint)
+            for grp in joint:
+                rvs.extend(
+                    _add_iov_etas_joint(
+                        pset,
+                        ordered_etas,
+                        range(i, i + len(grp)),
+                        categories,
+                        omega_iov_name,
+                        eta_name,
+                    )
+                )
+                i += len(grp)
+
+    iovs.extend(etais)
+    iovs.extend(sset)
+
+    model.random_variables, model.parameters, model.statements = rvs, pset, iovs
+
+    return model
+
+
+def _add_iov_declare_etas(sset, occ, etas, indices, categories, eta_name, iov_name):
     iovs, etais = ModelStatements(), ModelStatements()
 
-    for i, eta in enumerate(etas, 1):
+    for i in indices:
+        eta = etas[i - 1]
         # NOTE This declares IOV-ETA case assignments and replaces the existing
         # ETA with its sum with the new IOV ETA
 
@@ -207,58 +299,47 @@ def add_iov(model, occ, list_of_parameters=None, eta_names=None, distribution='d
 
         sset.subs({eta.name: S(f'ETAI{i}')})
 
-    # NOTE This declares the ETAS and their corresponding OMEGAs
-    if distribution == 'disjoint':
-        rvs.extend(_add_iov_etas_disjoint(pset, etas, categories, omega_iov_name, eta_name))
-
-    elif distribution == 'joint':
-        rvs.extend(_add_iov_etas_joint(pset, etas, categories, omega_iov_name, eta_name))
-
-    iovs.extend(etais)
-    iovs.extend(sset)
-
-    model.random_variables, model.parameters, model.statements = rvs, pset, iovs
-
-    return model
+    return iovs, etais
 
 
-def _add_iov_etas_disjoint(pset, etas, categories, omega_iov_name, eta_name):
-    for i, eta in enumerate(etas, 1):
+def _add_iov_etas_disjoint(pset, etas, indices, categories, omega_iov_name, eta_name):
+    for i in indices:
+        eta = etas[i - 1]
         omega_iiv_name = str(next(iter(eta.sympy_rv.pspace.distribution.free_symbols)))
         omega = S(omega_iov_name(i, i))
         init = pset[omega_iiv_name].init * 0.1 if omega_iiv_name in pset else 0.01
         pset.append(Parameter(str(omega), init=init))
 
-    for i, eta in enumerate(etas, 1):
+    for i in indices:
+        eta = etas[i - 1]
         for k in range(1, len(categories) + 1):
             omega = S(omega_iov_name(i, i))
             yield RandomVariable.normal(eta_name(i, k), 'iov', 0, omega)
 
 
-def _add_iov_etas_joint(pset, etas, categories, omega_iov_name, eta_name):
-    n = len(etas)
+def _add_iov_etas_joint(pset, etas, indices, categories, omega_iov_name, eta_name):
+    n = len(indices)
 
     mu = [0] * n
 
-    sigma = [
-        [S(omega_iov_name(min(i, j), max(i, j))) for i in range(1, n + 1)] for j in range(1, n + 1)
-    ]
+    sigma = [[S(omega_iov_name(min(i, j), max(i, j))) for i in indices] for j in indices]
 
     # NOTE Declare diagonal OMEGAs
-    for i, eta in enumerate(etas, 1):
+    for i in indices:
+        eta = etas[i - 1]
         omega_iiv_name = str(next(iter(eta.sympy_rv.pspace.distribution.free_symbols)))
         omega = S(omega_iov_name(i, i))
         init = pset[omega_iiv_name].init * 0.1 if omega_iiv_name in pset else 0.01
         pset.append(Parameter(str(omega), init=init))
 
     # NOTE Declare off-diagonal OMEGAs
-    for i, j in combinations(range(1, len(etas) + 1), r=2):
+    for i, j in combinations(indices, r=2):
         omega = S(omega_iov_name(i, j))
         init = 0.001  # TODO recover existing value * 0.1 if possible
         pset.append(Parameter(str(omega), init=init))
 
     for k in range(1, len(categories) + 1):
-        names = list(map(lambda i: eta_name(i, k), range(1, len(etas) + 1)))
+        names = list(map(lambda i: eta_name(i, k), indices))
         yield from RandomVariable.joint_normal(names, 'iov', mu, sigma)
 
 
