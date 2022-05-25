@@ -53,13 +53,13 @@ functions used to create them.
 +------------------+----------------------------------------------------------------------------------------+
 | Model name       | Function                                                                               |
 +==================+========================================================================================+
-| ``IIV_on_RUV``   | :py:func:`pharmpy.modeling.set_iiv_on_ruv<set_iiv_on_ruv>`                             |
+| ``IIV_on_RUV``   | :py:func:`set_iiv_on_ruv<pharmpy.modeling.set_iiv_on_ruv>`                             |
 +------------------+----------------------------------------------------------------------------------------+
-| ``power``        | :py:func:`pharmpy.modeling.set_power_on_ruv<set_power_on_ruv>`                         | 
+| ``power``        | :py:func:`set_power_on_ruv<pharmpy.modeling.set_power_on_ruv>`                         | 
 +------------------+----------------------------------------------------------------------------------------+
-| ``combined``     | :py:func:`pharmpy.modeling.set_combined_error_model<set_combined_error_model>`         |
+| ``combined``     | :py:func:`set_combined_error_model<pharmpy.modeling.set_combined_error_model>`         |
 +------------------+----------------------------------------------------------------------------------------+
-| ``time_varying`` | :py:func:`pharmpy.modeling.set_time_varying_error_model<set_time_varying_error_model>` |
+| ``time_varying`` | :py:func:`set_time_varying_error_model<pharmpy.modeling.set_time_varying_error_model>` |
 +------------------+----------------------------------------------------------------------------------------+
 
 
