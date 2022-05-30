@@ -418,7 +418,6 @@ def _get_model_result_summary(model, include_all_estimation_steps=False):
     if not include_all_estimation_steps:
         summary_dict = _summarize_step(model, -1)
         summary_df = pd.DataFrame(summary_dict, index=[model.name])
-        return summary_df
     else:
         summary_dicts = []
         tuples = []
@@ -434,7 +433,17 @@ def _get_model_result_summary(model, include_all_estimation_steps=False):
             tuples.append((model.name, i + 1))
         index = pd.MultiIndex.from_tuples(tuples, names=['model_name', 'step'])
         summary_df = pd.DataFrame(summary_dicts, index=index)
-        return summary_df
+
+    log_df = model.modelfit_results.log.to_dataframe()
+
+    no_of_errors = len(log_df[log_df['category'] == 'ERROR'])
+    no_of_warnings = len(log_df[log_df['category'] == 'WARNING'])
+
+    minimization_idx = summary_df.columns.get_loc('minimization_successful')
+    summary_df.insert(loc=minimization_idx + 1, column='no_of_errors', value=no_of_errors)
+    summary_df.insert(loc=minimization_idx + 2, column='no_of_warnings', value=no_of_warnings)
+
+    return summary_df
 
 
 def _summarize_step(model, i):

@@ -1,3 +1,4 @@
+import shutil
 from io import StringIO
 
 import numpy as np
@@ -16,6 +17,7 @@ from pharmpy.modeling import (
     set_iiv_on_ruv,
     summarize_modelfit_results,
 )
+from pharmpy.utils import TemporaryDirectoryChanger
 
 
 def test_calculate_eta_shrinkage(testdata):
@@ -169,6 +171,36 @@ def test_summarize_modelfit_results(testdata, pheno_path):
     assert np.isnan(summary_multest_full_no_res.loc['pheno_multest_no_res', 1]['ofv'])
     estimates = summary_multest_full_no_res.loc['pheno_multest_no_res', 2].iloc[2:]
     assert estimates.isnull().all()
+
+
+def test_summarize_modelfit_results_errors(testdata, tmp_path, pheno_path):
+    with TemporaryDirectoryChanger(tmp_path):
+        model = Model.create_model(pheno_path)
+        shutil.copy2(testdata / 'pheno_data.csv', tmp_path)
+
+        error_path = testdata / 'nonmem' / 'errors'
+
+        shutil.copy2(testdata / 'nonmem' / 'pheno_real.mod', tmp_path / 'pheno_no_header.mod')
+        shutil.copy2(error_path / 'no_header_error.lst', tmp_path / 'pheno_no_header.lst')
+        shutil.copy2(testdata / 'nonmem' / 'pheno_real.ext', tmp_path / 'pheno_no_header.ext')
+        model_no_header = Model.create_model('pheno_no_header.mod')
+        model_no_header.datainfo.path = tmp_path / 'pheno_data.csv'
+
+        shutil.copy2(testdata / 'nonmem' / 'pheno_real.mod', tmp_path / 'pheno_rounding_error.mod')
+        shutil.copy2(error_path / 'rounding_error.lst', tmp_path / 'pheno_rounding_error.lst')
+        shutil.copy2(testdata / 'nonmem' / 'pheno_real.ext', tmp_path / 'pheno_rounding_error.ext')
+        model_rounding_error = Model.create_model('pheno_rounding_error.mod')
+        model_rounding_error.datainfo.path = tmp_path / 'pheno_data.csv'
+
+        models = [model, model_no_header, model_rounding_error]
+        summary = summarize_modelfit_results(models)
+
+        assert summary.loc['pheno_real']['no_of_errors'] == 0
+        assert summary.loc['pheno_real']['no_of_warnings'] == 0
+        assert summary.loc['pheno_no_header']['no_of_errors'] == 2
+        assert summary.loc['pheno_no_header']['no_of_warnings'] == 1
+        assert summary.loc['pheno_rounding_error']['no_of_errors'] == 1
+        assert summary.loc['pheno_rounding_error']['no_of_warnings'] == 0
 
 
 def test_aic(testdata):
