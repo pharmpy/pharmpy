@@ -15,6 +15,7 @@ Tools in Pharmpy
    modelsearch
    iivsearch
    resmod
+   allometry
 
 ~~~~~~~~~~~~~~~~~~~~~~
 Tools connected to PsN
