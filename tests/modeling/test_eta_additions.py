@@ -24,12 +24,12 @@ def test_apply(addition, expression):
 @pytest.mark.parametrize(
     'eta_iov_1,eta_iov_2',
     [
-        ('ETA_IOV_11', 'ETA_IOV_21'),
-        ('ETA_IOV_11', 'ETA_IOV_31'),
-        ('ETA_IOV_21', 'ETA_IOV_31'),
-        ('ETA_IOV_21', 'ETA_IOV_11'),
-        ('ETA_IOV_31', 'ETA_IOV_11'),
-        ('ETA_IOV_31', 'ETA_IOV_21'),
+        ('ETA_IOV_1_1', 'ETA_IOV_2_1'),
+        ('ETA_IOV_1_1', 'ETA_IOV_3_1'),
+        ('ETA_IOV_2_1', 'ETA_IOV_3_1'),
+        ('ETA_IOV_2_1', 'ETA_IOV_1_1'),
+        ('ETA_IOV_3_1', 'ETA_IOV_1_1'),
+        ('ETA_IOV_3_1', 'ETA_IOV_2_1'),
     ],
 )
 def test_regression_code_record(testdata, eta_iov_1, eta_iov_2):

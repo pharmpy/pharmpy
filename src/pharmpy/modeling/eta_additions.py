@@ -2,11 +2,17 @@
 :meta private:
 """
 
+from collections import Counter
+from functools import reduce
+from itertools import chain, combinations
 from operator import add, mul
 
 import sympy
 from sympy import Eq, Piecewise
+from sympy.stats.crv_types import NormalDistribution
+from sympy.stats.joint_rv_types import MultivariateNormalDistribution
 
+from pharmpy.modeling.expressions import create_symbol
 from pharmpy.modeling.help_functions import _format_input_list, _format_options, _get_etas
 from pharmpy.parameter import Parameter
 from pharmpy.random_variables import RandomVariable
@@ -116,7 +122,7 @@ def add_iiv(
     return model
 
 
-def add_iov(model, occ, list_of_parameters=None, eta_names=None):
+def add_iov(model, occ, list_of_parameters=None, eta_names=None, distribution='disjoint'):
     """Adds IOVs to :class:`pharmpy.model`.
 
     Initial estimate of new IOVs are 10% of the IIV eta it is based on.
@@ -133,6 +139,11 @@ def add_iov(model, occ, list_of_parameters=None, eta_names=None):
     eta_names : str, list
         Custom names of new etas. Must be equal to the number of input etas times the number of
         categories for occasion.
+    distribution : str
+        The distribution that should be used for the new etas. Options are
+        'disjoint' for disjoint normal distributions, 'joint' for joint normal
+        distribution, 'explicit' for an explicit mix of joint and disjoint
+        distributions, and 'same-as-iiv' for copying the distribution of IIV etas.
 
     Return
     ------
@@ -156,59 +167,223 @@ def add_iov(model, occ, list_of_parameters=None, eta_names=None):
     remove_iov
 
     """
+
+    if distribution not in ['disjoint', 'joint', 'explicit', 'same-as-iiv']:
+        raise ValueError(f'"{distribution}" is not a valid value for distribution')
+
+    list_of_parameters = _format_input_list(list_of_parameters)
+
+    if distribution == 'explicit':
+        if list_of_parameters is None or not all(
+            map(lambda x: isinstance(x, list), list_of_parameters)
+        ):
+            raise ValueError(
+                'distribution == "explicit" requires parameters to be given as lists of lists'
+            )
+    else:
+        if list_of_parameters is not None and not all(
+            map(lambda x: isinstance(x, str), list_of_parameters)
+        ):
+            raise ValueError(
+                'distribution != "explicit" requires parameters to be given as lists of strings'
+            )
+
+    if list_of_parameters is None:
+        if distribution == 'disjoint':
+            etas = list(map(lambda x: [x], _get_etas(model, None, include_symbols=True)))
+        else:
+            etas = [_get_etas(model, None, include_symbols=True)]
+
+    else:
+        if distribution == 'disjoint':
+            list_of_parameters = list(map(lambda x: [x], list_of_parameters))
+        elif distribution == 'joint' or distribution == 'same-as-iiv':
+            list_of_parameters = [list_of_parameters]
+
+        if not all(
+            map(
+                lambda x: isinstance(x, list) and all(map(lambda y: isinstance(y, str), x)),
+                list_of_parameters,
+            )
+        ):
+            raise ValueError('not all parameters are strings')
+
+        etas = [_get_etas(model, grp, include_symbols=True) for grp in list_of_parameters]
+
+        for dist, grp in zip(etas, list_of_parameters):
+            assert len(dist) <= len(grp)
+
+    categories = _get_occ_levels(model.dataset, occ)
+
+    if eta_names and len(eta_names) != sum(map(len, etas)) * len(categories):
+        raise ValueError(
+            'Number of given eta names is incorrect, '
+            f'need {sum(map(len,etas)) * len(categories)} names.'
+        )
+
+    if len(categories) == 1:
+        raise ValueError(f'Only one value in {occ} column.')
+
+    # NOTE This declares the ETAS and their corresponding OMEGAs
+    if distribution == 'same-as-iiv':
+        # NOTE We filter existing IIV distributions for selected ETAs and then
+        # let the explicit distribution logic handle the rest
+        assert len(etas) == 1
+        etas_set = set(etas[0])
+        etas = []
+        for variables, dist in model.random_variables.distributions():
+
+            intersection = list(filter(etas_set.__contains__, variables))
+
+            if not intersection:
+                continue
+
+            if len(variables) == 1:
+                assert isinstance(dist, NormalDistribution)
+            else:
+                assert isinstance(dist, MultivariateNormalDistribution)
+
+            etas.append(intersection)
+
+    first_iov_name = create_symbol(model, 'IOV_', force_numbering=True).name
+    first_iov_number = int(first_iov_name.split('_')[-1])
+
+    def eta_name(i, k):
+        return (
+            eta_names[(i - 1) * len(categories) + k - 1] if eta_names else f'ETA_{iov_name(i)}_{k}'
+        )
+
+    def omega_iov_name(i, j):
+        return f'OMEGA_{iov_name(i)}' if i == j else f'OMEGA_{iov_name(i)}_{j}'
+
+    def iov_name(i):
+        return f'IOV_{first_iov_number + i - 1}'
+
+    def etai_name(i):
+        return f'ETAI{first_iov_number + i - 1}'
+
+    rvs, pset, iovs = _add_iov_explicit(
+        model, occ, etas, categories, iov_name, etai_name, eta_name, omega_iov_name
+    )
+
+    model.random_variables, model.parameters, model.statements = rvs, pset, iovs
+
+    return model
+
+
+def _add_iov_explicit(model, occ, etas, categories, iov_name, etai_name, eta_name, omega_iov_name):
+    assert all(map(bool, etas))
+
+    ordered_etas = list(chain.from_iterable(etas))
+
+    eta, count = next(iter(Counter(ordered_etas).most_common()))
+
+    if count >= 2:
+        raise ValueError(f'{eta} was given twice.')
+
+    distributions = [
+        range(i, i + len(grp))
+        for i, grp in zip(reduce(lambda acc, x: acc + [acc[-1] + x], map(len, etas), [1]), etas)
+    ]
+
     rvs, pset, sset = (
         model.random_variables.copy(),
         model.parameters.copy(),
         model.statements.copy(),
     )
 
-    list_of_parameters = _format_input_list(list_of_parameters)
-    etas = _get_etas(model, list_of_parameters, include_symbols=True)
-    categories = _get_occ_levels(model.dataset, occ)
+    iovs, etais = _add_iov_declare_etas(
+        sset,
+        occ,
+        ordered_etas,
+        range(1, len(ordered_etas) + 1),
+        categories,
+        eta_name,
+        iov_name,
+        etai_name,
+    )
 
-    if eta_names and len(eta_names) != len(etas) * len(categories):
-        raise ValueError(
-            f'Number of provided names incorrect, need {len(etas) * len(categories)} names.'
+    for dist in distributions:
+        assert dist
+        _add_iov_etas = _add_iov_etas_disjoint if len(dist) == 1 else _add_iov_etas_joint
+        rvs.extend(
+            _add_iov_etas(
+                rvs,
+                pset,
+                ordered_etas,
+                dist,
+                categories,
+                omega_iov_name,
+                eta_name,
+            )
         )
-    elif len(categories) == 1:
-        raise ValueError(f'Only one value in {occ} column.')
-
-    iovs, etais = ModelStatements(), ModelStatements()
-    for i, eta in enumerate(etas, 1):
-        omega_name = str(next(iter(eta.sympy_rv.pspace.distribution.free_symbols)))
-        omega = S(f'OMEGA_IOV_{i}')  # TODO: better name
-        pset.append(Parameter(str(omega), init=pset[omega_name].init * 0.1))
-
-        iov = S(f'IOV_{i}')
-
-        values, conditions = [], []
-
-        for j, cat in enumerate(categories, 1):
-            if eta_names:
-                eta_name = eta_names[j - 1]
-            else:
-                eta_name = f'ETA_IOV_{i}{j}'
-
-            eta_new = RandomVariable.normal(eta_name, 'iov', 0, omega)
-            rvs.append(eta_new)
-
-            values += [S(eta_new.name)]
-            conditions += [Eq(cat, S(occ))]
-
-        expression = Piecewise(*zip(values, conditions))
-
-        iovs.append(Assignment(iov, sympify(0)))
-        iovs.append(Assignment(iov, expression))
-        etais.append(Assignment(S(f'ETAI{i}'), eta.symbol + iov))
-
-        sset.subs({eta.name: S(f'ETAI{i}')})
 
     iovs.extend(etais)
     iovs.extend(sset)
 
-    model.random_variables, model.parameters, model.statements = rvs, pset, iovs
+    return rvs, pset, iovs
 
-    return model
+
+def _add_iov_declare_etas(sset, occ, etas, indices, categories, eta_name, iov_name, etai_name):
+    iovs, etais = ModelStatements(), ModelStatements()
+
+    for i in indices:
+        eta = etas[i - 1]
+        # NOTE This declares IOV-ETA case assignments and replaces the existing
+        # ETA with its sum with the new IOV ETA
+
+        iov = S(iov_name(i))
+
+        expression = Piecewise(
+            *((S(eta_name(i, k)), Eq(cat, S(occ))) for k, cat in enumerate(categories, 1))
+        )
+
+        iovs.append(Assignment(iov, sympify(0)))
+        iovs.append(Assignment(iov, expression))
+
+        etai = S(etai_name(i))
+        etais.append(Assignment(etai, eta.symbol + iov))
+        sset.subs({eta.name: etai})
+
+    return iovs, etais
+
+
+def _add_iov_etas_disjoint(rvs, pset, etas, indices, categories, omega_iov_name, eta_name):
+
+    _add_iov_declare_diagonal_omegas(rvs, pset, etas, indices, omega_iov_name)
+
+    for i in indices:
+        omega_iov = S(omega_iov_name(i, i))
+        for k in range(1, len(categories) + 1):
+            yield RandomVariable.normal(eta_name(i, k), 'iov', 0, omega_iov)
+
+
+def _add_iov_etas_joint(rvs, pset, etas, indices, categories, omega_iov_name, eta_name):
+
+    _add_iov_declare_diagonal_omegas(rvs, pset, etas, indices, omega_iov_name)
+
+    # NOTE Declare off-diagonal OMEGAs
+    for i, j in combinations(indices, r=2):
+        omega_iov = S(omega_iov_name(i, j))
+        omega_iiv = rvs.get_covariance(etas[i - 1], etas[j - 1])
+        init = pset[omega_iiv].init * 0.1 if omega_iiv != 0 and omega_iiv in pset else 0.001
+        pset.append(Parameter(str(omega_iov), init=init))
+
+    mu = [0] * len(indices)
+    sigma = [[S(omega_iov_name(min(i, j), max(i, j))) for i in indices] for j in indices]
+
+    for k in range(1, len(categories) + 1):
+        names = list(map(lambda i: eta_name(i, k), indices))
+        yield from RandomVariable.joint_normal(names, 'iov', mu, sigma)
+
+
+def _add_iov_declare_diagonal_omegas(rvs, pset, etas, indices, omega_iov_name):
+    for i in indices:
+        eta = etas[i - 1]
+        omega_iiv = rvs.get_variance(eta)
+        omega_iov = S(omega_iov_name(i, i))
+        init = pset[omega_iiv].init * 0.1 if omega_iiv in pset else 0.01
+        pset.append(Parameter(str(omega_iov), init=init))
 
 
 def add_pk_iiv(model, initial_estimate=0.09):

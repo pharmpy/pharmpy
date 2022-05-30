@@ -2708,73 +2708,132 @@ $OMEGA  0.1'''
     )
 
 
-def test_remove_iov_with_options(tmp_path, testdata):
+@pytest.mark.parametrize(
+    ('distribution', 'occ', 'to_remove', 'cases', 'rest'),
+    (
+        (
+            'disjoint',
+            'VISI',
+            None,
+            'IOV_1 = 0\n'
+            'IF (VISI.EQ.3.OR.VISI.EQ.8) IOV_1 = 0\n'
+            'IOV_2 = 0\n'
+            'IF (VISI.EQ.3.OR.VISI.EQ.8) IOV_2 = 0\n'
+            'IOV_3 = 0\n'
+            'IF (VISI.EQ.3.OR.VISI.EQ.8) IOV_3 = 0\n',
+            set(),
+        ),
+        (
+            'joint',
+            'VISI',
+            None,
+            'IOV_1 = 0\n'
+            'IF (VISI.EQ.3.OR.VISI.EQ.8) IOV_1 = 0\n'
+            'IOV_2 = 0\n'
+            'IF (VISI.EQ.3.OR.VISI.EQ.8) IOV_2 = 0\n'
+            'IOV_3 = 0\n'
+            'IF (VISI.EQ.3.OR.VISI.EQ.8) IOV_3 = 0\n',
+            set(),
+        ),
+        (
+            'disjoint',
+            'VISI',
+            'ETA_IOV_1_1',
+            'IOV_1 = 0\n'
+            'IF (VISI.EQ.3.OR.VISI.EQ.8) IOV_1 = 0\n'
+            'IOV_2 = 0\n'
+            'IF (VISI.EQ.3) IOV_2 = ETA(4)\n'
+            'IF (VISI.EQ.8) IOV_2 = ETA(5)\n'
+            'IOV_3 = 0\n'
+            'IF (VISI.EQ.3) IOV_3 = ETA(6)\n'
+            'IF (VISI.EQ.8) IOV_3 = ETA(7)\n',
+            {'ETA_IOV_2_1', 'ETA_IOV_2_2', 'ETA_IOV_3_1', 'ETA_IOV_3_2'},
+        ),
+        (
+            'joint',
+            'VISI',
+            'ETA_IOV_1_1',
+            'IOV_1 = 0\n'
+            'IF (VISI.EQ.3.OR.VISI.EQ.8) IOV_1 = 0\n'
+            'IOV_2 = 0\n'
+            'IF (VISI.EQ.3) IOV_2 = ETA(4)\n'
+            'IF (VISI.EQ.8) IOV_2 = ETA(6)\n'
+            'IOV_3 = 0\n'
+            'IF (VISI.EQ.3) IOV_3 = ETA(5)\n'
+            'IF (VISI.EQ.8) IOV_3 = ETA(7)\n',
+            {'ETA_IOV_2_1', 'ETA_IOV_2_2', 'ETA_IOV_3_1', 'ETA_IOV_3_2'},
+        ),
+        (
+            'disjoint',
+            'VISI',
+            ['ETA_IOV_1_1', 'ETA_IOV_1_2'],
+            'IOV_1 = 0\n'
+            'IF (VISI.EQ.3.OR.VISI.EQ.8) IOV_1 = 0\n'
+            'IOV_2 = 0\n'
+            'IF (VISI.EQ.3) IOV_2 = ETA(4)\n'
+            'IF (VISI.EQ.8) IOV_2 = ETA(5)\n'
+            'IOV_3 = 0\n'
+            'IF (VISI.EQ.3) IOV_3 = ETA(6)\n'
+            'IF (VISI.EQ.8) IOV_3 = ETA(7)\n',
+            {'ETA_IOV_2_1', 'ETA_IOV_2_2', 'ETA_IOV_3_1', 'ETA_IOV_3_2'},
+        ),
+        (
+            'joint',
+            'VISI',
+            ['ETA_IOV_1_1', 'ETA_IOV_1_2'],
+            'IOV_1 = 0\n'
+            'IF (VISI.EQ.3.OR.VISI.EQ.8) IOV_1 = 0\n'
+            'IOV_2 = 0\n'
+            'IF (VISI.EQ.3) IOV_2 = ETA(4)\n'
+            'IF (VISI.EQ.8) IOV_2 = ETA(6)\n'
+            'IOV_3 = 0\n'
+            'IF (VISI.EQ.3) IOV_3 = ETA(5)\n'
+            'IF (VISI.EQ.8) IOV_3 = ETA(7)\n',
+            {'ETA_IOV_2_1', 'ETA_IOV_2_2', 'ETA_IOV_3_1', 'ETA_IOV_3_2'},
+        ),
+        (
+            'disjoint',
+            'VISI',
+            ['ETA_IOV_1_1', 'ETA_IOV_1_2', 'ETA_IOV_2_1'],
+            'IOV_1 = 0\n'
+            'IF (VISI.EQ.3.OR.VISI.EQ.8) IOV_1 = 0\n'
+            'IOV_2 = 0\n'
+            'IF (VISI.EQ.3.OR.VISI.EQ.8) IOV_2 = 0\n'
+            'IOV_3 = 0\n'
+            'IF (VISI.EQ.3) IOV_3 = ETA(4)\n'
+            'IF (VISI.EQ.8) IOV_3 = ETA(5)\n',
+            {'ETA_IOV_3_1', 'ETA_IOV_3_2'},
+        ),
+        (
+            'joint',
+            'VISI',
+            ['ETA_IOV_1_1', 'ETA_IOV_1_2', 'ETA_IOV_2_1'],
+            'IOV_1 = 0\n'
+            'IF (VISI.EQ.3.OR.VISI.EQ.8) IOV_1 = 0\n'
+            'IOV_2 = 0\n'
+            'IF (VISI.EQ.3.OR.VISI.EQ.8) IOV_2 = 0\n'
+            'IOV_3 = 0\n'
+            'IF (VISI.EQ.3) IOV_3 = ETA(4)\n'
+            'IF (VISI.EQ.8) IOV_3 = ETA(5)\n',
+            {'ETA_IOV_3_1', 'ETA_IOV_3_2'},
+        ),
+    ),
+    ids=repr,
+)
+def test_remove_iov_with_options(tmp_path, testdata, distribution, occ, to_remove, cases, rest):
     with TemporaryDirectoryChanger(tmp_path):
         shutil.copy2(testdata / 'nonmem' / 'models' / 'mox2.mod', tmp_path)
         shutil.copy2(testdata / 'nonmem' / 'models' / 'mox_simulated_normal.csv', tmp_path)
         model = Model.create_model('mox2.mod')
         model.datainfo.path = tmp_path / 'mox_simulated_normal.csv'
 
-        start_model = add_iov(model, occ='VISI')
-        model_remove_all = start_model.copy()
-        model_remove_one = start_model.copy()
-        model_remove_two = start_model.copy()
-        model_remove_three = start_model.copy()
+        start_model = add_iov(model, occ=occ, distribution=distribution)
+        model_with_some_iovs_removed = start_model.copy()
 
-        remove_iov(model_remove_all)
+        remove_iov(model_with_some_iovs_removed, to_remove=to_remove)
+        assert cases in model_with_some_iovs_removed.model_code
         assert (
-            '''IOV_1 = 0
-IF (VISI.EQ.3.OR.VISI.EQ.8) IOV_1 = 0
-IOV_2 = 0
-IF (VISI.EQ.3.OR.VISI.EQ.8) IOV_2 = 0
-IOV_3 = 0
-IF (VISI.EQ.3.OR.VISI.EQ.8) IOV_3 = 0'''
-            in model_remove_all.model_code
-        )
-        assert model_remove_all.random_variables.iov == []
-
-        remove_iov(model_remove_one, 'ETA_IOV_11')
-        assert len(model_remove_one.random_variables.iov) == 4
-        assert (
-            '''IOV_1 = 0
-IF (VISI.EQ.3.OR.VISI.EQ.8) IOV_1 = 0
-IOV_2 = 0
-IF (VISI.EQ.3) IOV_2 = ETA(4)
-IF (VISI.EQ.8) IOV_2 = ETA(5)
-IOV_3 = 0
-IF (VISI.EQ.3) IOV_3 = ETA(6)
-IF (VISI.EQ.8) IOV_3 = ETA(7)
-'''
-            in model_remove_one.model_code
-        )
-
-        remove_iov(model_remove_two, ['ETA_IOV_11', 'ETA_IOV_12'])
-        assert len(model_remove_two.random_variables.iov) == 4
-        assert (
-            '''IOV_1 = 0
-IF (VISI.EQ.3.OR.VISI.EQ.8) IOV_1 = 0
-IOV_2 = 0
-IF (VISI.EQ.3) IOV_2 = ETA(4)
-IF (VISI.EQ.8) IOV_2 = ETA(5)
-IOV_3 = 0
-IF (VISI.EQ.3) IOV_3 = ETA(6)
-IF (VISI.EQ.8) IOV_3 = ETA(7)
-'''
-            in model_remove_two.model_code
-        )
-
-        remove_iov(model_remove_three, ['ETA_IOV_11', 'ETA_IOV_12', 'ETA_IOV_21'])
-        assert len(model_remove_three.random_variables.iov) == 2
-        assert (
-            '''IOV_1 = 0
-IF (VISI.EQ.3.OR.VISI.EQ.8) IOV_1 = 0
-IOV_2 = 0
-IF (VISI.EQ.3.OR.VISI.EQ.8) IOV_2 = 0
-IOV_3 = 0
-IF (VISI.EQ.3) IOV_3 = ETA(4)
-IF (VISI.EQ.8) IOV_3 = ETA(5)
-'''
-            in model_remove_three.model_code
+            set(map(lambda rv: rv.name, model_with_some_iovs_removed.random_variables.iov)) == rest
         )
 
 
@@ -2967,33 +3026,116 @@ def test_nested_update_source(pheno_path):
 
 
 @pytest.mark.parametrize(
-    'etas, eta_names, pk_start_ref, pk_end_ref, omega_ref',
+    'path, occ, etas, eta_names, pk_start_ref, pk_end_ref, omega_ref, distribution',
     [
         (
+            'nonmem/pheno_real.mod',
+            'FA1',
             ['ETA(1)'],
             None,
             'IOV_1 = 0\n'
             'IF (FA1.EQ.0) IOV_1 = ETA(3)\n'
             'IF (FA1.EQ.1) IOV_1 = ETA(4)\n'
             'ETAI1 = IOV_1 + ETA(1)\n',
-            'CL = TVCL*EXP(ETAI1)\n' 'V=TVV*EXP(ETA(2))\n',
+            'CL = TVCL*EXP(ETAI1)\n' 'V=TVV*EXP(ETA(2))\n' 'S1=V\n',
             '$OMEGA  BLOCK(1)\n'
             '0.00309626 ; OMEGA_IOV_1\n'
             '$OMEGA  BLOCK(1) SAME ; OMEGA_IOV_1\n',
+            'disjoint',
         ),
         (
+            'nonmem/pheno_real.mod',
+            'FA1',
             'ETA(1)',
             None,
             'IOV_1 = 0\n'
             'IF (FA1.EQ.0) IOV_1 = ETA(3)\n'
             'IF (FA1.EQ.1) IOV_1 = ETA(4)\n'
             'ETAI1 = IOV_1 + ETA(1)\n',
-            'CL = TVCL*EXP(ETAI1)\n' 'V=TVV*EXP(ETA(2))\n',
+            'CL = TVCL*EXP(ETAI1)\n' 'V=TVV*EXP(ETA(2))\n' 'S1=V\n',
             '$OMEGA  BLOCK(1)\n'
             '0.00309626 ; OMEGA_IOV_1\n'
             '$OMEGA  BLOCK(1) SAME ; OMEGA_IOV_1\n',
+            'disjoint',
         ),
         (
+            'nonmem/pheno_real.mod',
+            'FA1',
+            'ETA(1)',
+            None,
+            'IOV_1 = 0\n'
+            'IF (FA1.EQ.0) IOV_1 = ETA(3)\n'
+            'IF (FA1.EQ.1) IOV_1 = ETA(4)\n'
+            'ETAI1 = IOV_1 + ETA(1)\n',
+            'CL = TVCL*EXP(ETAI1)\n' 'V=TVV*EXP(ETA(2))\n' 'S1=V\n',
+            '$OMEGA  BLOCK(1)\n'
+            '0.00309626 ; OMEGA_IOV_1\n'
+            '$OMEGA  BLOCK(1) SAME ; OMEGA_IOV_1\n',
+            'joint',
+        ),
+        (
+            'nonmem/pheno_real.mod',
+            'FA1',
+            ['CL', 'ETA(1)'],
+            None,
+            'IOV_1 = 0\n'
+            'IF (FA1.EQ.0) IOV_1 = ETA(3)\n'
+            'IF (FA1.EQ.1) IOV_1 = ETA(4)\n'
+            'ETAI1 = IOV_1 + ETA(1)\n',
+            'CL = TVCL*EXP(ETAI1)\n' 'V=TVV*EXP(ETA(2))\n' 'S1=V\n',
+            '$OMEGA  BLOCK(1)\n'
+            '0.00309626 ; OMEGA_IOV_1\n'
+            '$OMEGA  BLOCK(1) SAME ; OMEGA_IOV_1\n',
+            'joint',
+        ),
+        (
+            'nonmem/pheno_real.mod',
+            'FA1',
+            ['ETA(1)', 'CL'],
+            None,
+            'IOV_1 = 0\n'
+            'IF (FA1.EQ.0) IOV_1 = ETA(3)\n'
+            'IF (FA1.EQ.1) IOV_1 = ETA(4)\n'
+            'ETAI1 = IOV_1 + ETA(1)\n',
+            'CL = TVCL*EXP(ETAI1)\n' 'V=TVV*EXP(ETA(2))\n' 'S1=V\n',
+            '$OMEGA  BLOCK(1)\n'
+            '0.00309626 ; OMEGA_IOV_1\n'
+            '$OMEGA  BLOCK(1) SAME ; OMEGA_IOV_1\n',
+            'joint',
+        ),
+        (
+            'nonmem/pheno_real.mod',
+            'FA1',
+            [['CL', 'ETA(1)']],
+            None,
+            'IOV_1 = 0\n'
+            'IF (FA1.EQ.0) IOV_1 = ETA(3)\n'
+            'IF (FA1.EQ.1) IOV_1 = ETA(4)\n'
+            'ETAI1 = IOV_1 + ETA(1)\n',
+            'CL = TVCL*EXP(ETAI1)\n' 'V=TVV*EXP(ETA(2))\n' 'S1=V\n',
+            '$OMEGA  BLOCK(1)\n'
+            '0.00309626 ; OMEGA_IOV_1\n'
+            '$OMEGA  BLOCK(1) SAME ; OMEGA_IOV_1\n',
+            'explicit',
+        ),
+        (
+            'nonmem/pheno_real.mod',
+            'FA1',
+            [['ETA(1)', 'CL']],
+            None,
+            'IOV_1 = 0\n'
+            'IF (FA1.EQ.0) IOV_1 = ETA(3)\n'
+            'IF (FA1.EQ.1) IOV_1 = ETA(4)\n'
+            'ETAI1 = IOV_1 + ETA(1)\n',
+            'CL = TVCL*EXP(ETAI1)\n' 'V=TVV*EXP(ETA(2))\n' 'S1=V\n',
+            '$OMEGA  BLOCK(1)\n'
+            '0.00309626 ; OMEGA_IOV_1\n'
+            '$OMEGA  BLOCK(1) SAME ; OMEGA_IOV_1\n',
+            'explicit',
+        ),
+        (
+            'nonmem/pheno_real.mod',
+            'FA1',
             None,
             None,
             'IOV_1 = 0\n'
@@ -3004,51 +3146,91 @@ def test_nested_update_source(pheno_path):
             'IF (FA1.EQ.1) IOV_2 = ETA(6)\n'
             'ETAI1 = IOV_1 + ETA(1)\n'
             'ETAI2 = IOV_2 + ETA(2)\n',
-            'CL = TVCL*EXP(ETAI1)\n' 'V = TVV*EXP(ETAI2)\n',
+            'CL = TVCL*EXP(ETAI1)\n' 'V = TVV*EXP(ETAI2)\n' 'S1=V\n',
             '$OMEGA  BLOCK(1)\n'
             '0.00309626 ; OMEGA_IOV_1\n'
             '$OMEGA  BLOCK(1) SAME ; OMEGA_IOV_1\n'
             '$OMEGA  BLOCK(1)\n'
             '0.0031128 ; OMEGA_IOV_2\n'
             '$OMEGA  BLOCK(1) SAME ; OMEGA_IOV_2\n',
+            'disjoint',
         ),
         (
+            'nonmem/pheno_real.mod',
+            'FA1',
+            None,
+            None,
+            'IOV_1 = 0\n'
+            'IF (FA1.EQ.0) IOV_1 = ETA(3)\n'
+            'IF (FA1.EQ.1) IOV_1 = ETA(5)\n'
+            'IOV_2 = 0\n'
+            'IF (FA1.EQ.0) IOV_2 = ETA(4)\n'
+            'IF (FA1.EQ.1) IOV_2 = ETA(6)\n'
+            'ETAI1 = IOV_1 + ETA(1)\n'
+            'ETAI2 = IOV_2 + ETA(2)\n',
+            'CL = TVCL*EXP(ETAI1)\n' 'V = TVV*EXP(ETAI2)\n' 'S1=V\n',
+            '$OMEGA BLOCK(2)\n'
+            '0.00309626\t; OMEGA_IOV_1\n'
+            '0.001\t; OMEGA_IOV_1_2\n'
+            '0.0031128\t; OMEGA_IOV_2\n'
+            '$OMEGA BLOCK(2) SAME\n',
+            'joint',
+        ),
+        (
+            'nonmem/pheno_real.mod',
+            'FA1',
+            None,
+            None,
+            'IOV_1 = 0\n'
+            'IF (FA1.EQ.0) IOV_1 = ETA(3)\n'
+            'IF (FA1.EQ.1) IOV_1 = ETA(4)\n'
+            'IOV_2 = 0\n'
+            'IF (FA1.EQ.0) IOV_2 = ETA(5)\n'
+            'IF (FA1.EQ.1) IOV_2 = ETA(6)\n'
+            'ETAI1 = IOV_1 + ETA(1)\n'
+            'ETAI2 = IOV_2 + ETA(2)\n',
+            'CL = TVCL*EXP(ETAI1)\n' 'V = TVV*EXP(ETAI2)\n' 'S1=V\n',
+            '$OMEGA  BLOCK(1)\n'
+            '0.00309626 ; OMEGA_IOV_1\n'
+            '$OMEGA  BLOCK(1) SAME ; OMEGA_IOV_1\n'
+            '$OMEGA  BLOCK(1)\n'
+            '0.0031128 ; OMEGA_IOV_2\n'
+            '$OMEGA  BLOCK(1) SAME ; OMEGA_IOV_2\n',
+            'same-as-iiv',
+        ),
+        (
+            'nonmem/pheno_real.mod',
+            'FA1',
+            ['ETA(2)'],
+            None,
+            'IOV_1 = 0\n'
+            'IF (FA1.EQ.0) IOV_1 = ETA(3)\n'
+            'IF (FA1.EQ.1) IOV_1 = ETA(4)\n'
+            'ETAI1 = IOV_1 + ETA(2)\n',
+            'CL=TVCL*EXP(ETA(1))\n' 'V = TVV*EXP(ETAI1)\n' 'S1=V\n',
+            '$OMEGA  BLOCK(1)\n'
+            '0.0031128 ; OMEGA_IOV_1\n'
+            '$OMEGA  BLOCK(1) SAME ; OMEGA_IOV_1\n',
+            'same-as-iiv',
+        ),
+        (
+            'nonmem/pheno_real.mod',
+            'FA1',
             ['CL'],
             None,
             'IOV_1 = 0\n'
             'IF (FA1.EQ.0) IOV_1 = ETA(3)\n'
             'IF (FA1.EQ.1) IOV_1 = ETA(4)\n'
             'ETAI1 = IOV_1 + ETA(1)\n',
-            'CL = TVCL*EXP(ETAI1)\n' 'V=TVV*EXP(ETA(2))\n',
+            'CL = TVCL*EXP(ETAI1)\n' 'V=TVV*EXP(ETA(2))\n' 'S1=V\n',
             '$OMEGA  BLOCK(1)\n'
             '0.00309626 ; OMEGA_IOV_1\n'
             '$OMEGA  BLOCK(1) SAME ; OMEGA_IOV_1\n',
+            'disjoint',
         ),
         (
-            ['CL', 'ETA(1)'],
-            None,
-            'IOV_1 = 0\n'
-            'IF (FA1.EQ.0) IOV_1 = ETA(3)\n'
-            'IF (FA1.EQ.1) IOV_1 = ETA(4)\n'
-            'ETAI1 = IOV_1 + ETA(1)\n',
-            'CL = TVCL*EXP(ETAI1)\n' 'V=TVV*EXP(ETA(2))\n',
-            '$OMEGA  BLOCK(1)\n'
-            '0.00309626 ; OMEGA_IOV_1\n'
-            '$OMEGA  BLOCK(1) SAME ; OMEGA_IOV_1\n',
-        ),
-        (
-            ['ETA(1)', 'CL'],
-            None,
-            'IOV_1 = 0\n'
-            'IF (FA1.EQ.0) IOV_1 = ETA(3)\n'
-            'IF (FA1.EQ.1) IOV_1 = ETA(4)\n'
-            'ETAI1 = IOV_1 + ETA(1)\n',
-            'CL = TVCL*EXP(ETAI1)\n' 'V=TVV*EXP(ETA(2))\n',
-            '$OMEGA  BLOCK(1)\n'
-            '0.00309626 ; OMEGA_IOV_1\n'
-            '$OMEGA  BLOCK(1) SAME ; OMEGA_IOV_1\n',
-        ),
-        (
+            'nonmem/pheno_real.mod',
+            'FA1',
             ['CL', 'ETA(2)'],
             None,
             'IOV_1 = 0\n'
@@ -3059,43 +3241,179 @@ def test_nested_update_source(pheno_path):
             'IF (FA1.EQ.1) IOV_2 = ETA(6)\n'
             'ETAI1 = IOV_1 + ETA(1)\n'
             'ETAI2 = IOV_2 + ETA(2)\n',
-            'CL = TVCL*EXP(ETAI1)\n' 'V = TVV*EXP(ETAI2)\n',
+            'CL = TVCL*EXP(ETAI1)\n' 'V = TVV*EXP(ETAI2)\n' 'S1=V\n',
             '$OMEGA  BLOCK(1)\n'
             '0.00309626 ; OMEGA_IOV_1\n'
             '$OMEGA  BLOCK(1) SAME ; OMEGA_IOV_1\n'
             '$OMEGA  BLOCK(1)\n'
             '0.0031128 ; OMEGA_IOV_2\n'
             '$OMEGA  BLOCK(1) SAME ; OMEGA_IOV_2\n',
+            'disjoint',
         ),
         (
+            'nonmem/pheno_real.mod',
+            'FA1',
+            ['CL', 'ETA(2)'],
+            None,
+            'IOV_1 = 0\n'
+            'IF (FA1.EQ.0) IOV_1 = ETA(3)\n'
+            'IF (FA1.EQ.1) IOV_1 = ETA(5)\n'
+            'IOV_2 = 0\n'
+            'IF (FA1.EQ.0) IOV_2 = ETA(4)\n'
+            'IF (FA1.EQ.1) IOV_2 = ETA(6)\n'
+            'ETAI1 = IOV_1 + ETA(1)\n'
+            'ETAI2 = IOV_2 + ETA(2)\n',
+            'CL = TVCL*EXP(ETAI1)\n' 'V = TVV*EXP(ETAI2)\n' 'S1=V\n',
+            '$OMEGA BLOCK(2)\n'
+            '0.00309626\t; OMEGA_IOV_1\n'
+            '0.001\t; OMEGA_IOV_1_2\n'
+            '0.0031128\t; OMEGA_IOV_2\n'
+            '$OMEGA BLOCK(2) SAME\n',
+            'joint',
+        ),
+        (
+            'nonmem/pheno_real.mod',
+            'FA1',
             ['ETA(1)'],
             ['ETA(3)', 'ETA(4)'],
             'IOV_1 = 0\n'
             'IF (FA1.EQ.0) IOV_1 = ETA(3)\n'
             'IF (FA1.EQ.1) IOV_1 = ETA(4)\n'
             'ETAI1 = IOV_1 + ETA(1)\n',
-            'CL = TVCL*EXP(ETAI1)\n' 'V=TVV*EXP(ETA(2))\n',
+            'CL = TVCL*EXP(ETAI1)\n' 'V=TVV*EXP(ETA(2))\n' 'S1=V\n',
             '$OMEGA  BLOCK(1)\n'
             '0.00309626 ; OMEGA_IOV_1\n'
             '$OMEGA  BLOCK(1) SAME ; OMEGA_IOV_1\n',
+            'disjoint',
+        ),
+        (
+            'nonmem/pheno_real.mod',
+            'FA1',
+            ['ETA(1)'],
+            ['ETA(3)', 'ETA(4)'],
+            'IOV_1 = 0\n'
+            'IF (FA1.EQ.0) IOV_1 = ETA(3)\n'
+            'IF (FA1.EQ.1) IOV_1 = ETA(4)\n'
+            'ETAI1 = IOV_1 + ETA(1)\n',
+            'CL = TVCL*EXP(ETAI1)\n' 'V=TVV*EXP(ETA(2))\n' 'S1=V\n',
+            '$OMEGA  BLOCK(1)\n'
+            '0.00309626 ; OMEGA_IOV_1\n'
+            '$OMEGA  BLOCK(1) SAME ; OMEGA_IOV_1\n',
+            'joint',
+        ),
+        (
+            'nonmem/pheno_block.mod',
+            'FA1',
+            ['ETA(1)'],
+            None,
+            'IOV_1 = 0\n'
+            'IF (FA1.EQ.0) IOV_1 = ETA(6)\n'
+            'IF (FA1.EQ.1) IOV_1 = ETA(7)\n'
+            'ETAI1 = IOV_1 + ETA(1)\n',
+            'CL = THETA(1)*EXP(ETAI1)\n'
+            'V=THETA(2)*EXP(ETA(2))\n'
+            'S1=V+ETA(3)\n'
+            'MAT=THETA(3)*EXP(ETA(4))\n'
+            'Q=THETA(4)*EXP(ETA(5))\n',
+            '$OMEGA  BLOCK(1)\n'
+            '0.00309626 ; OMEGA_IOV_1\n'
+            '$OMEGA  BLOCK(1) SAME ; OMEGA_IOV_1\n',
+            'disjoint',
+        ),
+        (
+            'nonmem/pheno_block.mod',
+            'FA1',
+            None,
+            None,
+            'IOV_1 = 0\n'
+            'IF (FA1.EQ.0) IOV_1 = ETA(6)\n'
+            'IF (FA1.EQ.1) IOV_1 = ETA(7)\n'
+            'IOV_2 = 0\n'
+            'IF (FA1.EQ.0) IOV_2 = ETA(8)\n'
+            'IF (FA1.EQ.1) IOV_2 = ETA(9)\n'
+            'IOV_3 = 0\n'
+            'IF (FA1.EQ.0) IOV_3 = ETA(10)\n'
+            'IF (FA1.EQ.1) IOV_3 = ETA(11)\n'
+            'IOV_4 = 0\n'
+            'IF (FA1.EQ.0) IOV_4 = ETA(12)\n'
+            'IF (FA1.EQ.1) IOV_4 = ETA(14)\n'
+            'IOV_5 = 0\n'
+            'IF (FA1.EQ.0) IOV_5 = ETA(13)\n'
+            'IF (FA1.EQ.1) IOV_5 = ETA(15)\n'
+            'ETAI1 = IOV_1 + ETA(1)\n'
+            'ETAI2 = IOV_2 + ETA(2)\n'
+            'ETAI3 = IOV_3 + ETA(3)\n'
+            'ETAI4 = IOV_4 + ETA(4)\n'
+            'ETAI5 = IOV_5 + ETA(5)\n',
+            'CL = THETA(1)*EXP(ETAI1)\n'
+            'V = THETA(2)*EXP(ETAI2)\n'
+            'S1 = ETAI3 + V\n'
+            'MAT = THETA(3)*EXP(ETAI4)\n'
+            'Q = THETA(4)*EXP(ETAI5)\n',
+            '$OMEGA  BLOCK(1)\n'
+            '0.00309626 ; OMEGA_IOV_1\n'
+            '$OMEGA  BLOCK(1) SAME ; OMEGA_IOV_1\n'
+            '$OMEGA  BLOCK(1)\n'
+            '0.0031128 ; OMEGA_IOV_2\n'
+            '$OMEGA  BLOCK(1) SAME ; OMEGA_IOV_2\n'
+            '$OMEGA  BLOCK(1)\n'
+            '0.010000000000000002 ; OMEGA_IOV_3\n'
+            '$OMEGA  BLOCK(1) SAME ; OMEGA_IOV_3\n'
+            '$OMEGA BLOCK(2)\n'
+            '0.00309626\t; OMEGA_IOV_4\n'
+            '5E-05\t; OMEGA_IOV_4_5\n'
+            '0.0031128\t; OMEGA_IOV_5\n'
+            '$OMEGA BLOCK(2) SAME\n',
+            'same-as-iiv',
         ),
     ],
 )
-def test_add_iov(pheno_path, etas, eta_names, pk_start_ref, pk_end_ref, omega_ref):
-    model = Model.create_model(pheno_path)
-    add_iov(model, 'FA1', etas, eta_names)
+def test_add_iov(
+    testdata, path, occ, etas, eta_names, pk_start_ref, pk_end_ref, omega_ref, distribution
+):
+    model = Model.create_model(testdata / path)
+    add_iov(model, occ, etas, eta_names, distribution=distribution)
     model.update_source()
 
-    assert eta_names is None or eta_names[0] in [eta.name for eta in model.random_variables.etas]
+    model_etas = set(eta.name for eta in model.random_variables.etas)
+    assert eta_names is None or model_etas.issuperset(eta_names)
 
     pk_rec = str(model.get_pred_pk_record())
 
-    assert pk_rec.startswith(f'$PK\n{pk_start_ref}')
-    assert pk_rec.endswith(f'{pk_end_ref}S1=V\n\n')
+    expected_pk_rec_start = f'$PK\n{pk_start_ref}'
+    expected_pk_rec_end = f'{pk_end_ref}\n'
+
+    assert pk_rec[: len(expected_pk_rec_start)] == expected_pk_rec_start
+    assert pk_rec[-len(expected_pk_rec_end) :] == expected_pk_rec_end
 
     rec_omega = ''.join(str(rec) for rec in model.control_stream.get_records('OMEGA'))
 
-    assert rec_omega.endswith(omega_ref)
+    assert rec_omega[-len(omega_ref) :] == omega_ref
+
+
+def test_add_iov_compose(pheno_path):
+    model1 = Model.create_model(pheno_path)
+    add_iov(model1, 'FA1', ['ETA(1)', 'ETA(2)'])
+    model1.update_source()
+
+    model2 = Model.create_model(pheno_path)
+    add_iov(model2, 'FA1', 'ETA(1)')
+    model2.update_source()
+    add_iov(model2, 'FA1', 'ETA(2)')
+    model2.update_source()
+
+    assert set(eta.name for eta in model1.random_variables.etas) == set(
+        eta.name for eta in model2.random_variables.etas
+    )
+    # FIXME find better way to assert models are equivalent
+    assert sorted(str(model1.get_pred_pk_record()).split('\n')) == sorted(
+        str(model2.get_pred_pk_record()).split('\n')
+    )
+
+    rec_omega_1 = list(str(rec) for rec in model1.control_stream.get_records('OMEGA'))
+    rec_omega_2 = list(str(rec) for rec in model2.control_stream.get_records('OMEGA'))
+
+    assert rec_omega_1 == rec_omega_2
 
 
 def test_add_iov_only_one_level(pheno_path):
@@ -3104,6 +3422,97 @@ def test_add_iov_only_one_level(pheno_path):
 
     with pytest.raises(ValueError, match='Only one value in FA1 column.'):
         add_iov(model, 'FA1', ['ETA(1)'])
+
+
+@pytest.mark.parametrize(
+    'occ, params, new_eta_names, distribution, error, message',
+    (
+        (
+            'FA1',
+            ['ETA(1)', 'CL'],
+            None,
+            'disjoint',
+            ValueError,
+            'ETA(1) ~ N(0, OMEGA(1,1)) was given twice.',
+        ),
+        (
+            'FA1',
+            ['CL', 'ETA(1)'],
+            None,
+            'disjoint',
+            ValueError,
+            'ETA(1) ~ N(0, OMEGA(1,1)) was given twice.',
+        ),
+        (
+            'FA1',
+            [['ETA(1)'], ['CL']],
+            None,
+            'explicit',
+            ValueError,
+            'ETA(1) ~ N(0, OMEGA(1,1)) was given twice.',
+        ),
+        (
+            'FA1',
+            [['CL'], ['ETA(1)']],
+            None,
+            'explicit',
+            ValueError,
+            'ETA(1) ~ N(0, OMEGA(1,1)) was given twice.',
+        ),
+        (
+            'FA1',
+            ['ETA(1)'],
+            None,
+            'abracadabra',
+            ValueError,
+            '"abracadabra" is not a valid value for distribution',
+        ),
+        (
+            'FA1',
+            ['ETA(1)'],
+            None,
+            'explicit',
+            ValueError,
+            'distribution == "explicit" requires parameters to be given as lists of lists',
+        ),
+        (
+            'FA1',
+            [['ETA(2)'], 'ETA(1)'],
+            None,
+            'explicit',
+            ValueError,
+            'distribution == "explicit" requires parameters to be given as lists of lists',
+        ),
+        (
+            'FA1',
+            [['ETA(1)']],
+            None,
+            'joint',
+            ValueError,
+            'distribution != "explicit" requires parameters to be given as lists of strings',
+        ),
+        (
+            'FA1',
+            [['ETA(1)'], [2, 'ETA(2)']],
+            None,
+            'explicit',
+            ValueError,
+            'not all parameters are string',
+        ),
+        (
+            'FA1',
+            [['ETA(1)', 'ETA(2)']],
+            ['A', 'B', 'C', 'D', 'E'],
+            'explicit',
+            ValueError,
+            'Number of given eta names is incorrect, need 4 names.',
+        ),
+    ),
+)
+def test_add_iov_raises(pheno_path, occ, params, new_eta_names, distribution, error, message):
+    model = Model.create_model(pheno_path)
+    with pytest.raises(error, match=re.escape(message)):
+        add_iov(model, occ, params, eta_names=new_eta_names, distribution=distribution)
 
 
 def test_set_ode_solver(pheno_path):
