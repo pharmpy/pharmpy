@@ -3,6 +3,7 @@ from itertools import combinations
 import pharmpy.tools.modelfit as modelfit
 from pharmpy.modeling import copy_model, remove_iiv
 from pharmpy.modeling.block_rvs import create_joint_distribution, split_joint_distribution
+from pharmpy.statements import ODESystem
 from pharmpy.tools.common import update_initial_estimates
 from pharmpy.workflows import Task, Workflow
 
@@ -112,7 +113,9 @@ def _get_param_names(model):
 
 
 def _find_assignment(sset, symb_target):
-    for s in sset.before_odes:
+    for s in sset:
+        if isinstance(s, ODESystem):
+            continue
         expr_symbs = [symb.name for symb in s.expression.free_symbols]
         if symb_target.name in expr_symbs:
             return s
