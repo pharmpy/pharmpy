@@ -92,7 +92,7 @@ def convert_model(model):
         pass
     if model.statements.ode_system:
         nm_model._compartment_map = {
-            name: i for i, name in enumerate(model.statements.ode_system.names, start=1)
+            name: i for i, name in enumerate(model.statements.ode_system.compartment_names, start=1)
         }
     return nm_model
 
