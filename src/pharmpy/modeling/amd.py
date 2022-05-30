@@ -1,6 +1,7 @@
 from functools import partial
 
 import pharmpy.tools.scm as scm
+from pharmpy import plugins
 from pharmpy.results import Results
 from pharmpy.tools.amd.funcs import create_start_model
 from pharmpy.workflows import default_tool_database
@@ -16,7 +17,7 @@ class AMDResults(Results):
 
 
 def run_amd(
-    dataset_path,
+    input,
     modeltype='pk_oral',
     cl_init=0.01,
     vc_init=1,
@@ -33,8 +34,8 @@ def run_amd(
 
     Parameters
     ----------
-    dataset_path : Model
-        Path to a dataset
+    input : Model
+        Read model object/Path to a dataset
     modeltype : str
         Type of model to build. Either 'pk_oral' or 'pk_iv'
     cl_init : float
@@ -71,11 +72,16 @@ def run_amd(
     run_tool
 
     """
-
-    model = create_start_model(
-        dataset_path, modeltype=modeltype, cl_init=cl_init, vc_init=vc_init, mat_init=mat_init
-    )
-    model = convert_model(model, 'nonmem')  # FIXME: Workaround for results retrieval system
+    if type(input) is str:
+        model = create_start_model(
+            input, modeltype=modeltype, cl_init=cl_init, vc_init=vc_init, mat_init=mat_init
+        )
+        model = convert_model(model, 'nonmem')  # FIXME: Workaround for results retrieval system
+    elif type(input) is plugins.nonmem.model.Model:
+        model = input
+        model.name = 'start'
+    else:
+        raise TypeError('Only model and dataset are supported currently')
 
     if lloq is not None:
         remove_loq_data(model, lloq=lloq)
