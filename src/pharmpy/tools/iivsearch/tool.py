@@ -15,7 +15,7 @@ from pharmpy.workflows import Task, Workflow, call_workflow
 
 def create_workflow(
     algorithm,
-    iiv_strategy=0,
+    iiv_strategy='no_add',
     rankfunc='bic',
     cutoff=None,
     model=None,
@@ -26,8 +26,9 @@ def create_workflow(
     ----------
     algorithm : str
         Which algorithm to run (brute_force, brute_force_no_of_etas, brute_force_block_structure)
-    iiv_strategy : int
-        How IIVs should be added to start model. Default is 0 (no added IIVs)
+    iiv_strategy : str
+        If/how IIV should be added to start model. Possible strategies are 'no_add', 'diagonal', or
+        'fullblock'. Default is 'no_add'
     rankfunc : str
         Which ranking function should be used (OFV, AIC, BIC). Default is BIC
     cutoff : float
@@ -63,7 +64,7 @@ def create_algorithm_workflow(input_model, base_model, algorithm, iiv_strategy, 
     start_task = Task(f'start_{algorithm}', _start_algorithm, base_model)
     wf.add_task(start_task)
 
-    if iiv_strategy != 0:
+    if iiv_strategy != 'no_add':
         wf_fit = create_fit_workflow(n=1)
         wf.insert_workflow(wf_fit)
         start_model_task = wf_fit.output_tasks
@@ -88,7 +89,7 @@ def create_algorithm_workflow(input_model, base_model, algorithm, iiv_strategy, 
 
 
 def start(input_model, algorithm, iiv_strategy, rankfunc, cutoff):
-    if iiv_strategy != 0:
+    if iiv_strategy != 'no_add':
         model_iiv = copy_model(input_model, 'base_model')
         _add_iiv(iiv_strategy, model_iiv)
         base_model = model_iiv
@@ -119,7 +120,7 @@ def start(input_model, algorithm, iiv_strategy, rankfunc, cutoff):
         sum_inds.append(next_res.summary_individuals)
         sum_inds_count.append(next_res.summary_individuals_count)
         base_model = res.best_model
-        iiv_strategy = 0
+        iiv_strategy = 'no_add'
 
     if len(list_of_algorithms) > 1:
         keys = list(range(1, len(list_of_algorithms) + 1))
@@ -151,8 +152,12 @@ def _start_algorithm(model):
 
 
 def _add_iiv(iiv_strategy, model):
+    if iiv_strategy not in ['diagonal', 'fullblock']:
+        ValueError(
+            f'Invalid IIV strategy (must be "no_add", "diagonal", or "fullblock"): {iiv_strategy}'
+        )
     add_pk_iiv(model)
-    if iiv_strategy == 2:
+    if iiv_strategy == 'fullblock':
         create_joint_distribution(model)
     return model
 

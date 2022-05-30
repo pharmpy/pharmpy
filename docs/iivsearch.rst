@@ -22,13 +22,13 @@ To initiate iiv in Python:
     start_model = read_model('path/to/model')
     res = run_iivsearch(algorithm='brute_force',
                         model=start_model,
-                        iiv_strategy=0,
+                        iiv_strategy='no_add',
                         rankfunc='bic',
                         cutoff=None)
 
-This will take an input model ``model`` and run the brute_force_no_of_etas ``algorithm``. The tool will add structural
-IIVs to the start model according to according to ``iiv_strategy`` 0, where no IIVs are added. The candidate models
-will be ranked using ``bic`` with default ``cutoff``, which for BIC is none.
+This will take an input model ``model`` and run the brute_force_no_of_etas ``algorithm``. Structural IIVs will not be
+added to the input model since ``iiv_strategy`` is set to be 'no_add'. The candidate models will be ranked using ``bic``
+with default ``cutoff``, which for BIC is none.
 
 To run iiv from the command line, the example code is redefined accordingly:
 
@@ -45,11 +45,11 @@ Arguments
 +===================================================+=========================================================================================+
 | :ref:`algorithm<Algorithms>`                      | Algorithm to use (e.g. brute_force)                                                     |
 +---------------------------------------------------+-----------------------------------------------------------------------------------------+
-| :ref:`iiv_strategy<iiv_strategies_iivsearch>`     | If/how IIV should be added to start model (default is 0)                                |
+| :ref:`iiv_strategy<iiv_strategies_iivsearch>`     | If/how IIV should be added to start model (default is to not add)                       |
 +---------------------------------------------------+-----------------------------------------------------------------------------------------+
 | :ref:`rankfunc<Comparing and ranking candidates>` | Which selection criteria to rank models on, e.g. OFV (default is BIC)                   |
 +---------------------------------------------------+-----------------------------------------------------------------------------------------+
-| :ref:`cutoff<Comparing and ranking candidates>`   | Cutoff for the ranking function, exclude models that are below cutoff (default is None) |
+| :ref:`cutoff<Comparing and ranking candidates>`   | Cutoff for the ranking function, exclude models that are below cutoff (default is none) |
 +---------------------------------------------------+-----------------------------------------------------------------------------------------+
 | ``model``                                         | Start model                                                                             |
 +---------------------------------------------------+-----------------------------------------------------------------------------------------+
@@ -180,17 +180,16 @@ Adding IIV to the start model
 The ``iiv_strategy`` option determines whether or not IIV on the PK parameters should be added to the input model.
 The different strategies can be seen here:
 
-+-----------+----------------------------------------------------------+
-| Strategy  | Description                                              |
-+===========+==========================================================+
-| ``0``     | Input model is kept as base model                        |
-+-----------+----------------------------------------------------------+
-| ``1``     | IIV is added to all structural parameters as diagonal    |
-+-----------+----------------------------------------------------------+
-| ``2``     | IIV is added to all structural parameters as full block  |
-+-----------+----------------------------------------------------------+
-| ``3``     | IIV is added to the absorption delay parameter           |
-+-----------+----------------------------------------------------------+
++------------------------+----------------------------------------------------------+
+| Strategy               | Description                                              |
++========================+==========================================================+
+| ``'no_add'``           | Input model is kept as base model                        |
++------------------------+----------------------------------------------------------+
+| ``'diagonal'``         | IIV is added to all structural parameters as diagonal    |
++------------------------+----------------------------------------------------------+
+| ``'fullblock'``        | IIV is added to all structural parameters as full block  |
++------------------------+----------------------------------------------------------+
+
 
 .. _comparing and ranking candidates:
 
@@ -214,7 +213,7 @@ Consider a iivsearch run with the search space of zero order absorption and addi
 
     res = run_iivsearch(algorithm='brute_force',
                         model=start_model,
-                        iiv_strategy=0,
+                        iiv_strategy='no_add',
                         rankfunc='bic',
                         cutoff=None)
 

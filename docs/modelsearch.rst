@@ -23,13 +23,13 @@ To initiate modelsearch in Python:
     res = run_modelsearch(search_space='ABSORPTION(ZO);PERIPHERALS(1)',
                           algorithm='exhaustive',
                           model=start_model,
-                          iiv_strategy=0,
+                          iiv_strategy='no_add',
                           rankfunc='bic',
                           cutoff=None)
 
 This will take an input model ``model`` with ``search_space`` as the search space, meaning zero order absorption and adding one
-peripheral compartment will be tried. The tool will use the ``exhaustive`` search algorithm. Structural IIVs will be
-added to candidates according to strategy 0, where no IIVs are added. The candidate models will be ranked using ``bic``
+peripheral compartment will be tried. The tool will use the ``exhaustive`` search algorithm. Structural IIVs will not be
+added to candidates since ``iiv_strategy`` is set to be 'no_add'. The candidate models will be ranked using ``bic``
 with default ``cutoff``, which for BIC is none.
 
 To run modelsearch from the command line, the example code is redefined accordingly:
@@ -51,9 +51,9 @@ For a more detailed description of each argument, see their respective chapter o
 +-------------------------------------------------+-----------------------------------------------------------------------------------------+
 | :ref:`rankfunc<ranking>`                        | Which selection criteria to rank models on, e.g. OFV (default is BIC)                   |
 +-------------------------------------------------+-----------------------------------------------------------------------------------------+
-| :ref:`cutoff<ranking>`                          | Cutoff for the ranking function, exclude models that are below cutoff (default is None) |
+| :ref:`cutoff<ranking>`                          | Cutoff for the ranking function, exclude models that are below cutoff (default is none) |
 +-------------------------------------------------+-----------------------------------------------------------------------------------------+
-| :ref:`iiv_strategy<iiv_strategies_modelsearch>` | If/how IIV should be added to candidate models (default is 0)                           |
+| :ref:`iiv_strategy<iiv_strategies_modelsearch>` | If/how IIV should be added to candidate models (default is to not add)                  |
 +-------------------------------------------------+-----------------------------------------------------------------------------------------+
 | ``model``                                       | Start model                                                                             |
 +-------------------------------------------------+-----------------------------------------------------------------------------------------+
@@ -242,17 +242,17 @@ Adding IIV to the candidate models during search
 The ``iiv_strategy`` option determines whether or not IIV on the PK parameters should be added to the candidate models.
 The different strategies can be seen here:
 
-+-----------+----------------------------------------------------------+
-| Strategy  | Description                                              |
-+===========+==========================================================+
-| ``0``     | No IIVs are added during the search (default)            |
-+-----------+----------------------------------------------------------+
-| ``1``     | IIV is added to all structural parameters as diagonal    |
-+-----------+----------------------------------------------------------+
-| ``2``     | IIV is added to all structural parameters as full block  |
-+-----------+----------------------------------------------------------+
-| ``3``     | IIV is added to the absorption delay parameter           |
-+-----------+----------------------------------------------------------+
++------------------------+----------------------------------------------------------+
+| Strategy               | Description                                              |
++========================+==========================================================+
+| ``'no_add'``           | No IIVs are added during the search (default)            |
++------------------------+----------------------------------------------------------+
+| ``'diagonal'``         | IIV is added to all structural parameters as diagonal    |
++------------------------+----------------------------------------------------------+
+| ``'fullblock'``        | IIV is added to all structural parameters as full block  |
++------------------------+----------------------------------------------------------+
+| ``'absorption_delay'`` | IIV is added to the absorption delay parameter           |
++------------------------+----------------------------------------------------------+
 
 .. _ranking:
 
@@ -288,7 +288,7 @@ Consider a modelsearch run with the search space of zero order absorption and ad
     res = run_modelsearch('ABSORPTION(ZO);PERIPHERALS(1)',
                           'exhaustive',
                           model=start_model,
-                          iiv_strategy=0,
+                          iiv_strategy='no_add',
                           rankfunc='bic',
                           cutoff=None)
 

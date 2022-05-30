@@ -28,7 +28,7 @@ def exhaustive(search_space, iiv_strategy):
             func = funcs[feat]
             task_function = Task(feat, func)
             wf_search.add_task(task_function, predecessors=task_previous)
-            if iiv_strategy != 0:
+            if iiv_strategy != 'no_add':
                 task_add_iiv = Task('add_iivs', _add_iiv_to_func, iiv_strategy)
                 wf_search.add_task(task_add_iiv, predecessors=task_function)
                 task_previous = task_add_iiv
@@ -191,7 +191,7 @@ def _create_model_workflow(model_name, feat, func, iiv_strategy):
     task_function = Task(feat, _apply_transformation, feat, func)
     wf_stepwise_step.add_task(task_function, predecessors=task_update_inits)
 
-    if iiv_strategy != 0:
+    if iiv_strategy != 'no_add':
         task_add_iiv = Task('add_iivs', _add_iiv_to_func, iiv_strategy)
         wf_stepwise_step.add_task(task_add_iiv, predecessors=task_function)
         task_to_fit = task_add_iiv
@@ -284,7 +284,7 @@ def _copy(name, features, model):
 
 def _add_iiv_to_func(iiv_strategy, model):
     sset, rvs = model.statements, model.random_variables
-    if iiv_strategy == 1 or iiv_strategy == 2:
+    if iiv_strategy == 'diagonal' or iiv_strategy == 'fullblock':
         try:
             add_pk_iiv(model, initial_estimate=0.01)
         except ValueError as e:
@@ -292,7 +292,7 @@ def _add_iiv_to_func(iiv_strategy, model):
                 raise ValueError(
                     f'{model.name}: {e} ' f'(add_pk_iiv, ' f'parent: {model.parent_model})'
                 )
-        if iiv_strategy == 2:
+        if iiv_strategy == 'fullblock':
             try:
                 create_joint_distribution(model)
             except ValueError as e:
@@ -302,11 +302,14 @@ def _add_iiv_to_func(iiv_strategy, model):
                         f'(create_joint_distribution, '
                         f'parent: {model.parent_model})'
                     )
-    elif iiv_strategy == 3:
+    elif iiv_strategy == 'absorption_delay':
         mdt = sset.find_assignment('MDT')
         if mdt and not mdt.expression.free_symbols.intersection(rvs.free_symbols):
             add_iiv(model, 'MDT', 'exp', initial_estimate=0.01)
     else:
-        raise ValueError(f'Invalid IIV strategy (must be [0,1,2,3]): {iiv_strategy}')
+        raise ValueError(
+            f'Invalid IIV strategy (must be "no_add", "diagonal", "fullblock", or '
+            f'"absorption_delay"): {iiv_strategy}'
+        )
 
     return model

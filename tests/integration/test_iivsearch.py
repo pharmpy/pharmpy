@@ -91,7 +91,7 @@ def test_brute_force(tmp_path, start_model):
 @pytest.mark.filterwarnings("ignore::UserWarning")
 @pytest.mark.parametrize(
     'iiv_strategy',
-    [1, 2],
+    ['diagonal', 'fullblock'],
 )
 def test_no_of_etas_iiv_strategies(tmp_path, start_model, iiv_strategy):
     with TemporaryDirectoryChanger(tmp_path):
@@ -109,7 +109,7 @@ def test_no_of_etas_iiv_strategies(tmp_path, start_model, iiv_strategy):
             model=start_model,
         )
 
-        if iiv_strategy == 2:
+        if iiv_strategy == 'fullblock':
             base_model = [model for model in res.models if model.name == 'base_model'].pop()
             base_rvs = base_model.random_variables.iiv
             assert len(base_rvs['ETA(1)'].joint_names) == len(base_rvs)

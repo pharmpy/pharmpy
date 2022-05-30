@@ -8,7 +8,7 @@ from pharmpy.workflows import Task, Workflow
 def create_workflow(
     search_space,
     algorithm,
-    iiv_strategy=0,
+    iiv_strategy='no_add',
     rankfunc='bic',
     cutoff=None,
     model=None,
@@ -21,8 +21,9 @@ def create_workflow(
         Search space to test
     algorithm : str
         Algorithm to use (e.g. exhaustive)
-    iiv_strategy : int
-        If/how IIV should be added to candidate models. Default is 0 (no IIVs added)
+    iiv_strategy : str
+        If/how IIV should be added to candidate models. Possible strategies are 'no_add',
+        'diagonal', 'fullblock', or 'absorption_delay'. Default is 'no_add'
     rankfunc : str
         Which ranking function should be used (OFV, AIC, BIC). Default is BIC
     cutoff : float
