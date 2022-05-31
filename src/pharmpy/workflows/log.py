@@ -22,6 +22,10 @@ class Log:
     def __init__(self):
         self._log = []  # list of LogEntry
 
+    @property
+    def log(self):
+        return self._log
+
     def log_error(self, message):
         """Log an error
 

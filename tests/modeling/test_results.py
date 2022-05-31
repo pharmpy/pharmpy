@@ -15,6 +15,7 @@ from pharmpy.modeling import (
     calculate_pk_parameters_statistics,
     check_parameters_near_bounds,
     set_iiv_on_ruv,
+    summarize_errors,
     summarize_modelfit_results,
 )
 from pharmpy.utils import TemporaryDirectoryChanger
@@ -201,6 +202,34 @@ def test_summarize_modelfit_results_errors(testdata, tmp_path, pheno_path):
         assert summary.loc['pheno_no_header']['no_of_warnings'] == 1
         assert summary.loc['pheno_rounding_error']['no_of_errors'] == 1
         assert summary.loc['pheno_rounding_error']['no_of_warnings'] == 0
+
+
+def test_summarize_errors(testdata, tmp_path, pheno_path):
+    with TemporaryDirectoryChanger(tmp_path):
+        model = Model.create_model(pheno_path)
+        shutil.copy2(testdata / 'pheno_data.csv', tmp_path)
+
+        error_path = testdata / 'nonmem' / 'errors'
+
+        shutil.copy2(testdata / 'nonmem' / 'pheno_real.mod', tmp_path / 'pheno_no_header.mod')
+        shutil.copy2(error_path / 'no_header_error.lst', tmp_path / 'pheno_no_header.lst')
+        shutil.copy2(testdata / 'nonmem' / 'pheno_real.ext', tmp_path / 'pheno_no_header.ext')
+        model_no_header = Model.create_model('pheno_no_header.mod')
+        model_no_header.datainfo.path = tmp_path / 'pheno_data.csv'
+
+        shutil.copy2(testdata / 'nonmem' / 'pheno_real.mod', tmp_path / 'pheno_rounding_error.mod')
+        shutil.copy2(error_path / 'rounding_error.lst', tmp_path / 'pheno_rounding_error.lst')
+        shutil.copy2(testdata / 'nonmem' / 'pheno_real.ext', tmp_path / 'pheno_rounding_error.ext')
+        model_rounding_error = Model.create_model('pheno_rounding_error.mod')
+        model_rounding_error.datainfo.path = tmp_path / 'pheno_data.csv'
+
+        models = [model, model_no_header, model_rounding_error]
+        summary = summarize_errors(models)
+
+        assert 'pheno_real' not in summary.index.get_level_values('model')
+        assert len(summary.loc[('pheno_no_header', 'WARNING')]) == 1
+        assert len(summary.loc[('pheno_no_header', 'ERROR')]) == 2
+        assert len(summary.loc[('pheno_rounding_error', 'ERROR')]) == 1
 
 
 def test_aic(testdata):

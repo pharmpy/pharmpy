@@ -542,6 +542,28 @@ def summarize_modelfit_results(models, include_all_estimation_steps=False):
     return df
 
 
+def summarize_errors(models):
+    idcs, rows = [], []
+
+    for model in models:
+        res = model.modelfit_results
+        if res and len(res.log.log) > 0:
+            for i, entry in enumerate(res.log.log):
+                idcs.append((model.name, entry.category, i))
+                rows.append([entry.time, entry.message])
+
+    index_names = ['model', 'category', 'code']
+    col_names = ['time', 'message']
+    index = pd.MultiIndex.from_tuples(idcs, names=index_names)
+
+    if rows:
+        df = pd.DataFrame(rows, columns=col_names, index=index)
+    else:
+        df = pd.DataFrame(columns=col_names, index=index)
+
+    return df.sort_index()
+
+
 def calculate_aic(model, modelfit_results=None):
     """Calculate final AIC for model assuming the OFV to be -2LL
 

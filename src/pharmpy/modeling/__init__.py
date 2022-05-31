@@ -168,6 +168,7 @@ from .results import (
     check_high_correlations,
     check_parameters_near_bounds,
     print_fit_summary,
+    summarize_errors,
     summarize_modelfit_results,
     write_results,
 )
@@ -328,6 +329,7 @@ __all__ = [
     'simplify_expression',
     'solve_ode_system',
     'split_joint_distribution',
+    'summarize_errors',
     'summarize_modelfit_results',
     'summarize_individuals',
     'summarize_individuals_count_table',
