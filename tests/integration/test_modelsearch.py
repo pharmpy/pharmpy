@@ -37,23 +37,24 @@ def test_exhaustive(tmp_path, start_model):
 
 
 @pytest.mark.parametrize(
-    'search_space, no_of_models, last_model_parent_name',
+    'search_space, no_of_models, last_model_parent_name, model_with_error',
     [
-        ('ABSORPTION(ZO);PERIPHERALS(1)', 4, 'modelsearch_candidate2'),
+        ('ABSORPTION(ZO);PERIPHERALS(1)', 4, 'modelsearch_candidate2', 'modelsearch_candidate3'),
         # FIXME: Warning after setting TOL=9
         # ('ABSORPTION(ZO);ELIMINATION(ZO)', 4, 'modelsearch_candidate1', 'modelsearch_candidate2'),
-        ('ABSORPTION(ZO);TRANSITS(1)', 2, 'mox2'),
+        ('ABSORPTION(ZO);TRANSITS(1)', 2, 'mox2', ''),
         (
             'ABSORPTION([ZO,SEQ-ZO-FO]);PERIPHERALS(1)',
             7,
             'modelsearch_candidate3',
+            'modelsearch_candidate5',
         ),
-        ('LAGTIME();TRANSITS(1)', 2, 'mox2'),
-        ('ABSORPTION(ZO);TRANSITS(3, *)', 3, 'mox2'),
+        ('LAGTIME();TRANSITS(1)', 2, 'mox2', ''),
+        ('ABSORPTION(ZO);TRANSITS(3, *)', 3, 'mox2', ''),
     ],
 )
 def test_exhaustive_stepwise_basic(
-    tmp_path, start_model, search_space, no_of_models, last_model_parent_name
+    tmp_path, start_model, search_space, no_of_models, last_model_parent_name, model_with_error
 ):
     with TemporaryDirectoryChanger(tmp_path):
         res = run_modelsearch(search_space, 'exhaustive_stepwise', model=start_model)
@@ -69,6 +70,9 @@ def test_exhaustive_stepwise_basic(
             last_model_features = res.summary_tool.loc[res.models[-1].name]['description']
             parent_model_features = res.summary_tool.loc[last_model_parent_name]['description']
             assert last_model_features[: len(parent_model_features)] == parent_model_features
+
+        if model_with_error:
+            assert model_with_error in res.summary_errors.index.get_level_values('model')
 
         rundir = tmp_path / 'modelsearch_dir1'
         assert rundir.is_dir()

@@ -296,6 +296,9 @@ class NONMEMResultsFile:
             re.compile(r'(PROGRAM TERMINATED BY OBJ\n\s*MESSAGE ISSUED FROM ESTIMATION STEP)'),
             re.compile(r'0(MINIMIZATION TERMINATED\n\s*DUE TO ROUNDING ERRORS.+)\n'),
             re.compile(r'0(MINIMIZATION TERMINATED\n\s*DUE TO ZERO GRADIENT)\n'),
+            re.compile(
+                r'0(MINIMIZATION TERMINATED\n\s*DUE TO MAX. NO. OF FUNCTION EVALUATIONS EXCEEDED)\n'
+            ),
         ]
 
         for pattern in error_patterns:

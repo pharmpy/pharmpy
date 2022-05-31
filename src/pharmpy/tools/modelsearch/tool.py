@@ -1,6 +1,6 @@
 import pharmpy.results
 import pharmpy.tools.modelsearch.algorithms as algorithms
-from pharmpy.modeling import summarize_modelfit_results
+from pharmpy.modeling import summarize_errors, summarize_modelfit_results
 from pharmpy.tools.common import summarize_tool, summarize_tool_individuals
 from pharmpy.workflows import Task, Workflow
 
@@ -111,6 +111,7 @@ def post_process_results(rankfunc, cutoff, *models):
     summary_individuals, summary_individuals_count = summarize_tool_individuals(
         [input_model] + res_models, summary_tool['description'], summary_tool[f'd{rankfunc}']
     )
+    summary_errors = summarize_errors([input_model] + res_models)
 
     summary_models.sort_values(by=[f'{rankfunc}'])
     summary_individuals_count.sort_values(by=[f'd{rankfunc}'])
@@ -126,6 +127,7 @@ def post_process_results(rankfunc, cutoff, *models):
         summary_models=summary_models,
         summary_individuals=summary_individuals,
         summary_individuals_count=summary_individuals_count,
+        summary_errors=summary_errors,
         best_model=best_model,
         input_model=input_model,
         models=res_models,
@@ -141,6 +143,7 @@ class ModelSearchResults(pharmpy.results.Results):
         summary_models=None,
         summary_individuals=None,
         summary_individuals_count=None,
+        summary_errors=None,
         best_model=None,
         input_model=None,
         models=None,
@@ -149,6 +152,7 @@ class ModelSearchResults(pharmpy.results.Results):
         self.summary_models = summary_models
         self.summary_individuals = summary_individuals
         self.summary_individuals_count = summary_individuals_count
+        self.summary_errors = summary_errors
         self.best_model = best_model
         self.input_model = input_model
         self.models = models

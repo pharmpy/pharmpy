@@ -332,7 +332,7 @@ def test_estimation_status_withsim(testdata):
 
 def test_ofv_table_gap(testdata):
     p = Path(testdata / 'nonmem' / 'modelfit_results' / 'multPROB' / 'multEST' / 'withSIM')
-    rfile = rf.NONMEMResultsFile(p / 'multprobmix_nm730.lst')
+    rfile = rf.NONMEMResultsFile(p / 'multprobmix_nm730.lst', log=Log())
 
     assert rfile.estimation_status(2) == {
         'minimization_successful': False,

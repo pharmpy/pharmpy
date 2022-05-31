@@ -6,6 +6,7 @@ from pharmpy.modeling import (
     add_pk_iiv,
     copy_model,
     create_joint_distribution,
+    summarize_errors,
     summarize_modelfit_results,
 )
 from pharmpy.tools.common import summarize_tool, summarize_tool_individuals
@@ -101,7 +102,7 @@ def start(input_model, algorithm, iiv_strategy, rankfunc, cutoff):
     else:
         list_of_algorithms = [algorithm]
 
-    sum_tools, sum_models, sum_inds, sum_inds_count = [], [], [], []
+    sum_tools, sum_models, sum_inds, sum_inds_count, sum_errs = [], [], [], [], []
     for i, algorithm_cur in enumerate(list_of_algorithms):
         wf = create_algorithm_workflow(
             input_model, base_model, algorithm_cur, iiv_strategy, rankfunc, cutoff
@@ -119,6 +120,7 @@ def start(input_model, algorithm, iiv_strategy, rankfunc, cutoff):
         sum_models.append(next_res.summary_models)
         sum_inds.append(next_res.summary_individuals)
         sum_inds_count.append(next_res.summary_individuals_count)
+        sum_errs.append(next_res.summary_errors)
         base_model = res.best_model
         iiv_strategy = 'no_add'
 
@@ -131,6 +133,7 @@ def start(input_model, algorithm, iiv_strategy, rankfunc, cutoff):
     res.summary_models = _concat_summaries(sum_models, keys)
     res.summary_individuals = _concat_summaries(sum_inds, keys)
     res.summary_individuals_count = _concat_summaries(sum_inds_count, keys)
+    res.summary_errors = _concat_summaries(sum_errs, keys)
 
     return res
 
@@ -183,6 +186,7 @@ def post_process_results(rankfunc, cutoff, input_model, *models):
     summary_individuals, summary_individuals_count = summarize_tool_individuals(
         [base_model] + res_models, summary_tool['description'], summary_tool[f'd{rankfunc}']
     )
+    summary_errors = summarize_errors([base_model] + res_models)
 
     best_model_name = summary_tool['rank'].idxmin()
     try:
@@ -198,6 +202,7 @@ def post_process_results(rankfunc, cutoff, input_model, *models):
         summary_models=summary_models,
         summary_individuals=summary_individuals,
         summary_individuals_count=summary_individuals_count,
+        summary_errors=summary_errors,
         best_model=best_model,
         input_model=input_model,
         models=res_models,
@@ -213,6 +218,7 @@ class IIVResults(pharmpy.results.Results):
         summary_models=None,
         summary_individuals=None,
         summary_individuals_count=None,
+        summary_errors=None,
         best_model=None,
         input_model=None,
         models=None,
@@ -221,6 +227,7 @@ class IIVResults(pharmpy.results.Results):
         self.summary_models = summary_models
         self.summary_individuals = summary_individuals
         self.summary_individuals_count = summary_individuals_count
+        self.summary_errors = summary_errors
         self.best_model = best_model
         self.input_model = input_model
         self.models = models

@@ -76,6 +76,10 @@ def test_brute_force(tmp_path, start_model):
         assert len(res.summary_models) == no_of_candidate_models + 2
         assert len(res.models) == no_of_candidate_models
 
+        assert 'iivsearch_no_of_etas_candidate3' in res.summary_errors.index.get_level_values(
+            'model'
+        )
+
         assert all(
             model.modelfit_results and not np.isnan(model.modelfit_results.ofv)
             for model in res.models
