@@ -954,9 +954,9 @@ parser_definition = [
                             },
                             {
                                 'name': '--iiv_strategy',
-                                'type': int,
+                                'type': str,
                                 'help': 'If/how IIV should be added to candidate models',
-                                'default': 0,
+                                'default': 'no_add',
                             },
                             {
                                 'name': '--path',
@@ -979,9 +979,9 @@ parser_definition = [
                             },
                             {
                                 'name': '--iiv_strategy',
-                                'type': int,
+                                'type': str,
                                 'help': 'If/how IIV should be added to start model',
-                                'default': 0,
+                                'default': 'no_add',
                             },
                             {
                                 'name': '--rankfunc',
