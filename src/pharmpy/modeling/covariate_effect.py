@@ -157,12 +157,15 @@ def add_covariate_effect(model, parameter, covariate, effect, operation='*'):
     covariate_effect = _create_template(effect, model, covariate)
     thetas = _create_thetas(model, parameter, effect, covariate, covariate_effect.template)
 
-    param_statement = sset.find_assignment(parameter)
-
-    index = sset.index(param_statement)
+    last_existing_parameter_assignment = sset.find_assignment(parameter)
+    insertion_index = sset.index(last_existing_parameter_assignment) + 1
 
     covariate_effect.apply(parameter, covariate, thetas, statistics)
-    effect_statement = covariate_effect.create_effect_statement(operation, param_statement)
+    # NOTE We can use any assignment to the parameter since we currently only
+    # use its symbol to create the new effect statement.
+    effect_statement = covariate_effect.create_effect_statement(
+        operation, last_existing_parameter_assignment
+    )
 
     statements = ModelStatements()
 
@@ -170,19 +173,22 @@ def add_covariate_effect(model, parameter, covariate, effect, operation='*'):
     statements.append(covariate_effect.template)
     statements.append(effect_statement)
 
-    previous_effect = sset.find_assignment(parameter)
     cov_possible = [f'{parameter}{col_name}' for col_name in model.datainfo.names]
 
-    if previous_effect.expression.args and all(
-        arg.name in cov_possible for arg in previous_effect.expression.args if str(arg) != parameter
+    # NOTE This is a heuristic that simplifies the NONMEM statements by
+    # grouping multiple effect statements in a single statement.
+    if last_existing_parameter_assignment.expression.args and all(
+        arg.name in cov_possible
+        for arg in last_existing_parameter_assignment.expression.args
+        if str(arg) != parameter
     ):
         effect_statement.expression = effect_statement.expression.subs(
-            {parameter: previous_effect.expression}
+            {parameter: last_existing_parameter_assignment.expression}
         )
-        sset.remove(previous_effect)
+        sset.remove(last_existing_parameter_assignment)
+        insertion_index -= 1
 
-    for i, statement in enumerate(statements, 1):
-        sset.insert(index + i, statement)
+    sset[insertion_index:insertion_index] = statements
 
     model.statements = sset
     return model
