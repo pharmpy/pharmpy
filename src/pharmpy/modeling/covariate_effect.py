@@ -156,11 +156,14 @@ def add_covariate_effect(model, parameter, covariate, effect, operation='*'):
 
     covariate_effect = _create_template(effect, model, covariate)
     thetas = _create_thetas(model, parameter, effect, covariate, covariate_effect.template)
+    covariate_effect.apply(parameter, covariate, thetas, statistics)
+    # NOTE We hoist the statistic statements to avoid referencing variables
+    # before declaring them. We also avoid duplicate statements.
+    sset[0:0] = [s for s in covariate_effect.statistic_statements if s not in sset]
 
     last_existing_parameter_assignment = sset.find_assignment(parameter)
     insertion_index = sset.index(last_existing_parameter_assignment) + 1
 
-    covariate_effect.apply(parameter, covariate, thetas, statistics)
     # NOTE We can use any assignment to the parameter since we currently only
     # use its symbol to create the new effect statement.
     effect_statement = covariate_effect.create_effect_statement(
@@ -169,7 +172,6 @@ def add_covariate_effect(model, parameter, covariate, effect, operation='*'):
 
     statements = ModelStatements()
 
-    statements += [s for s in covariate_effect.statistic_statements if s not in sset]
     statements.append(covariate_effect.template)
     statements.append(effect_statement)
 
