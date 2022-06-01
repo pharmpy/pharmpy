@@ -34,7 +34,7 @@ To run iiv from the command line, the example code is redefined accordingly:
 
 .. code::
 
-    pharmpy run iivsearch path/to/model 'brute_force' --iiv_strategy 0 --rankfunc 'bic'
+    pharmpy run iivsearch path/to/model 'brute_force' --iiv_strategy 'no_add' --rankfunc 'bic'
 
 ~~~~~~~~~
 Arguments
@@ -245,10 +245,20 @@ See :py:func:`pharmpy.modeling.summarize_individuals_count_table` for informatio
 
     res.summary_individuals_count
 
-Finally, you can see different individual statistics ``summary_individuals``.
+You can see different individual statistics in ``summary_individuals``.
 See :py:func:`pharmpy.modeling.summarize_individuals` for information on the content of this table.
 
 .. pharmpy-execute::
     :hide-code:
 
     res.summary_individuals
+
+Finally, you can see a summary of different errors and warnings in ``summary_errors``.
+See :py:func:`pharmpy.modeling.summarize_errors` for information on the content of this table.
+
+.. pharmpy-execute::
+    :hide-code:
+
+    import pandas as pd
+    pd.set_option('display.max_colwidth', None)
+    res.summary_errors

@@ -507,7 +507,7 @@ def summarize_modelfit_results(models, include_all_estimation_steps=False):
     --------
     >>> from pharmpy.modeling import load_example_model, summarize_modelfit_results
     >>> model = load_example_model("pheno")
-    >>> summarize_modelfit_results([model]) # doctest: +ELLIPSIS
+    >>> summarize_modelfit_results(model) # doctest: +ELLIPSIS
                      description  minimization_successful ...        ofv  ... runtime_total  ...
     pheno PHENOBARB SIMPLE MODEL                     True ... 586.276056  ...           4.0  ...
     """
@@ -544,6 +544,31 @@ def summarize_modelfit_results(models, include_all_estimation_steps=False):
 
 
 def summarize_errors(models):
+    """Summarize errors and warnings from one or multiple model runs.
+
+    Summarize the errors and warnings found after running the model/models.
+
+    Parameters
+    ----------
+    models : list, Model
+        List of models or single model
+
+    Return
+    ------
+    pd.DataFrame
+        A DataFrame of errors with model name, category (error or warning), and an int as index,
+        an empty DataFrame if there were no errors or warnings found.
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import load_example_model, summarize_modelfit_results
+    >>> model = load_example_model("pheno")
+    >>> summarize_errors(model)      # doctest: +SKIP
+    """
+    # FIXME: have example with errors
+    if isinstance(models, Model):
+        models = [models]
+
     idcs, rows = [], []
 
     for model in models:

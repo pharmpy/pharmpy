@@ -36,7 +36,7 @@ To run modelsearch from the command line, the example code is redefined accordin
 
 .. code::
 
-    pharmpy run modelsearch path/to/model 'ABSORPTION(ZO);PERIPHERALS(1)' 'exhaustive' --iv_strategy 0 --rankfunc 'bic'
+    pharmpy run modelsearch path/to/model 'ABSORPTION(ZO);PERIPHERALS(1)' 'exhaustive' --iv_strategy 'no_add' --rankfunc 'bic'
 
 Arguments
 ~~~~~~~~~
@@ -310,8 +310,6 @@ you can look at the ``summary_models`` table. The table is generated with
 .. pharmpy-execute::
     :hide-code:
 
-    import pandas as pd
-    pd.set_option("display.max_columns", 10)
     res.summary_models
 
 A summary table of predicted influential individuals and outliers can be seen in ``summary_individuals_count``.
@@ -322,7 +320,7 @@ See :py:func:`pharmpy.modeling.summarize_individuals_count_table` for informatio
 
     res.summary_individuals_count
 
-Finally, you can see different individual statistics ``summary_individuals``.
+You can see different individual statistics in ``summary_individuals``.
 See :py:func:`pharmpy.modeling.summarize_individuals` for information on the content of this table.
 
 .. pharmpy-execute::
@@ -330,6 +328,15 @@ See :py:func:`pharmpy.modeling.summarize_individuals` for information on the con
 
     res.summary_individuals
 
+Finally, you can see a summary of different errors and warnings in ``summary_errors``.
+See :py:func:`pharmpy.modeling.summarize_errors` for information on the content of this table.
+
+.. pharmpy-execute::
+    :hide-code:
+
+    import pandas as pd
+    pd.set_option('display.max_colwidth', None)
+    res.summary_errors
 
 
 .. _mfl:
