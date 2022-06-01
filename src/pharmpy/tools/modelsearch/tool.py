@@ -1,7 +1,6 @@
 import pharmpy.results
 import pharmpy.tools.modelsearch.algorithms as algorithms
-from pharmpy.modeling import summarize_errors, summarize_modelfit_results
-from pharmpy.tools.common import summarize_tool, summarize_tool_individuals
+from pharmpy.tools.common import create_results
 from pharmpy.workflows import Task, Workflow
 
 
@@ -62,7 +61,7 @@ def create_workflow(
 
     task_result = Task(
         'results',
-        post_process_results,
+        post_process,
         rankfunc,
         cutoff,
     )
@@ -92,7 +91,7 @@ def start(model):
     return model
 
 
-def post_process_results(rankfunc, cutoff, *models):
+def post_process(rankfunc, cutoff, *models):
     res_models = []
     input_model = None
     for model in models:
@@ -104,34 +103,7 @@ def post_process_results(rankfunc, cutoff, *models):
     if not input_model:
         raise ValueError('Error in workflow: No input model')
 
-    summary_tool = summarize_tool(res_models, input_model, rankfunc, cutoff)
-    summary_models = summarize_modelfit_results([input_model] + res_models).sort_values(
-        by=[rankfunc]
-    )
-    summary_individuals, summary_individuals_count = summarize_tool_individuals(
-        [input_model] + res_models, summary_tool['description'], summary_tool[f'd{rankfunc}']
-    )
-    summary_errors = summarize_errors([input_model] + res_models)
-
-    summary_models.sort_values(by=[f'{rankfunc}'])
-    summary_individuals_count.sort_values(by=[f'd{rankfunc}'])
-
-    best_model_name = summary_tool['rank'].idxmin()
-    try:
-        best_model = [model for model in res_models if model.name == best_model_name][0]
-    except IndexError:
-        best_model = input_model
-
-    res = ModelSearchResults(
-        summary_tool=summary_tool,
-        summary_models=summary_models,
-        summary_individuals=summary_individuals,
-        summary_individuals_count=summary_individuals_count,
-        summary_errors=summary_errors,
-        best_model=best_model,
-        input_model=input_model,
-        models=res_models,
-    )
+    res = create_results(ModelSearchResults, input_model, input_model, res_models, rankfunc, cutoff)
 
     return res
 

@@ -2,14 +2,8 @@ import pandas as pd
 
 import pharmpy.results
 import pharmpy.tools.iivsearch.algorithms as algorithms
-from pharmpy.modeling import (
-    add_pk_iiv,
-    copy_model,
-    create_joint_distribution,
-    summarize_errors,
-    summarize_modelfit_results,
-)
-from pharmpy.tools.common import summarize_tool, summarize_tool_individuals
+from pharmpy.modeling import add_pk_iiv, copy_model, create_joint_distribution
+from pharmpy.tools.common import create_results
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.workflows import Task, Workflow, call_workflow
 
@@ -78,7 +72,7 @@ def create_algorithm_workflow(input_model, base_model, algorithm, iiv_strategy, 
 
     task_result = Task(
         'results',
-        post_process_results,
+        post_process,
         rankfunc,
         cutoff,
         input_model,
@@ -165,7 +159,7 @@ def _add_iiv(iiv_strategy, model):
     return model
 
 
-def post_process_results(rankfunc, cutoff, input_model, *models):
+def post_process(rankfunc, cutoff, input_model, *models):
     base_model, res_models = models
 
     if isinstance(res_models, tuple):
@@ -173,39 +167,8 @@ def post_process_results(rankfunc, cutoff, input_model, *models):
     else:
         res_models = [res_models]
 
-    summary_tool = summarize_tool(
-        res_models,
-        base_model,
-        rankfunc,
-        cutoff,
-        bic_type='iiv',
-    )
-    summary_models = summarize_modelfit_results([base_model] + res_models).sort_values(
-        by=[rankfunc]
-    )
-    summary_individuals, summary_individuals_count = summarize_tool_individuals(
-        [base_model] + res_models, summary_tool['description'], summary_tool[f'd{rankfunc}']
-    )
-    summary_errors = summarize_errors([base_model] + res_models)
-
-    best_model_name = summary_tool['rank'].idxmin()
-    try:
-        best_model = [model for model in res_models if model.name == best_model_name][0]
-    except IndexError:
-        best_model = base_model
-
-    if base_model.name != input_model.name:
-        res_models.insert(0, base_model)
-
-    res = IIVResults(
-        summary_tool=summary_tool,
-        summary_models=summary_models,
-        summary_individuals=summary_individuals,
-        summary_individuals_count=summary_individuals_count,
-        summary_errors=summary_errors,
-        best_model=best_model,
-        input_model=input_model,
-        models=res_models,
+    res = create_results(
+        IIVResults, input_model, base_model, res_models, rankfunc, cutoff, bic_type='iiv'
     )
 
     return res
