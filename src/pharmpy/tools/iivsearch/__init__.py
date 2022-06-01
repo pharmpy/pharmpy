@@ -1,5 +1,5 @@
-from .tool import IIVResults, create_workflow
+from .tool import IIVSearchResults, create_workflow
 
-results_object = IIVResults
+results_object = IIVSearchResults
 
-__all__ = ['create_workflow', 'IIVResults']
+__all__ = ['create_workflow', 'IIVSearchResults']

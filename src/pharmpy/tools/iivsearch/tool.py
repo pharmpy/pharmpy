@@ -168,13 +168,13 @@ def post_process(rankfunc, cutoff, input_model, *models):
         res_models = [res_models]
 
     res = create_results(
-        IIVResults, input_model, base_model, res_models, rankfunc, cutoff, bic_type='iiv'
+        IIVSearchResults, input_model, base_model, res_models, rankfunc, cutoff, bic_type='iiv'
     )
 
     return res
 
 
-class IIVResults(pharmpy.results.Results):
+class IIVSearchResults(pharmpy.results.Results):
     def __init__(
         self,
         summary_tool=None,
