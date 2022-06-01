@@ -417,7 +417,8 @@ def _split_equation(s):
 def _get_model_result_summary(model, include_all_estimation_steps=False):
     if not include_all_estimation_steps:
         summary_dict = _summarize_step(model, -1)
-        summary_df = pd.DataFrame(summary_dict, index=[model.name])
+        index = pd.Index([model.name], name='model')
+        summary_df = pd.DataFrame(summary_dict, index=index)
     else:
         summary_dicts = []
         tuples = []
@@ -431,7 +432,7 @@ def _get_model_result_summary(model, include_all_estimation_steps=False):
             summary_dict = {**{'run_type': run_type}, **summary_dict}
             summary_dicts.append(summary_dict)
             tuples.append((model.name, i + 1))
-        index = pd.MultiIndex.from_tuples(tuples, names=['model_name', 'step'])
+        index = pd.MultiIndex.from_tuples(tuples, names=['model', 'step'])
         summary_df = pd.DataFrame(summary_dicts, index=index)
 
     log_df = model.modelfit_results.log.to_dataframe()
@@ -525,7 +526,7 @@ def summarize_modelfit_results(models, include_all_estimation_steps=False):
             if include_all_estimation_steps:
                 for i, est in enumerate(model.estimation_steps):
                     index = pd.MultiIndex.from_tuples(
-                        [(model.name, i + 1)], names=['model_name', 'step']
+                        [(model.name, i + 1)], names=['model', 'step']
                     )
                     if est.evaluation:
                         run_type = 'evaluation'

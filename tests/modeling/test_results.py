@@ -155,7 +155,7 @@ def test_summarize_modelfit_results(testdata, pheno_path):
     )
 
     assert len(summary_multest_full.index) == 3
-    assert len(set(summary_multest_full.index.get_level_values('model_name'))) == 2
+    assert len(set(summary_multest_full.index.get_level_values('model'))) == 2
     assert summary_multest_full.loc['pheno_multEST', 1]['run_type'] == 'estimation'
     assert summary_multest_full.loc['pheno_multEST', 2]['run_type'] == 'evaluation'
 

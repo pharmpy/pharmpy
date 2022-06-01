@@ -140,7 +140,7 @@ def start(input_model, algorithm, iiv_strategy, rankfunc, cutoff):
 
 def _concat_summaries(summaries, keys):
     if keys:
-        return pd.concat(summaries, keys=keys)
+        return pd.concat(summaries, keys=keys, names=['step'])
     else:
         return pd.concat(summaries)
 
