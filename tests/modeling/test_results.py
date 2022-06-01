@@ -196,12 +196,12 @@ def test_summarize_modelfit_results_errors(testdata, tmp_path, pheno_path):
         models = [model, model_no_header, model_rounding_error]
         summary = summarize_modelfit_results(models)
 
-        assert summary.loc['pheno_real']['no_of_errors'] == 0
-        assert summary.loc['pheno_real']['no_of_warnings'] == 0
-        assert summary.loc['pheno_no_header']['no_of_errors'] == 2
-        assert summary.loc['pheno_no_header']['no_of_warnings'] == 1
-        assert summary.loc['pheno_rounding_error']['no_of_errors'] == 1
-        assert summary.loc['pheno_rounding_error']['no_of_warnings'] == 0
+        assert summary.loc['pheno_real']['errors_found'] == 0
+        assert summary.loc['pheno_real']['warnings_found'] == 0
+        assert summary.loc['pheno_no_header']['errors_found'] == 2
+        assert summary.loc['pheno_no_header']['warnings_found'] == 1
+        assert summary.loc['pheno_rounding_error']['errors_found'] == 1
+        assert summary.loc['pheno_rounding_error']['warnings_found'] == 0
 
 
 def test_summarize_errors(testdata, tmp_path, pheno_path):

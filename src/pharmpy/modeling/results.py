@@ -440,8 +440,8 @@ def _get_model_result_summary(model, include_all_estimation_steps=False):
     no_of_warnings = len(log_df[log_df['category'] == 'WARNING'])
 
     minimization_idx = summary_df.columns.get_loc('minimization_successful')
-    summary_df.insert(loc=minimization_idx + 1, column='no_of_errors', value=no_of_errors)
-    summary_df.insert(loc=minimization_idx + 2, column='no_of_warnings', value=no_of_warnings)
+    summary_df.insert(loc=minimization_idx + 1, column='errors_found', value=no_of_errors)
+    summary_df.insert(loc=minimization_idx + 2, column='warnings_found', value=no_of_warnings)
 
     return summary_df
 
@@ -507,8 +507,8 @@ def summarize_modelfit_results(models, include_all_estimation_steps=False):
     >>> from pharmpy.modeling import load_example_model, summarize_modelfit_results
     >>> model = load_example_model("pheno")
     >>> summarize_modelfit_results([model]) # doctest: +ELLIPSIS
-                     description  minimization_successful         ofv  ... runtime_total  ...
-    pheno PHENOBARB SIMPLE MODEL                     True  586.276056  ...           4.0  ...
+                     description  minimization_successful ...        ofv  ... runtime_total  ...
+    pheno PHENOBARB SIMPLE MODEL                     True ... 586.276056  ...           4.0  ...
     """
     # FIXME: add option for bic type?
     if isinstance(models, Model):
