@@ -1377,6 +1377,42 @@ def test_nested_add_covariate_effect(pheno_path):
             'VCRCL = EXP(THETA(6)*(CRCL - CRCL_MEDIAN))\n'
             'V = V*VAGE*VCRCL*VWT\n',
         ),
+        (
+            ('nonmem', 'models', 'mox2.mod'),
+            [
+                ('CL', 'CRCL', 'exp', '*'),
+                ('V', 'CRCL', 'exp', '*'),
+            ],
+            '$PK\n'
+            'CRCL_MEDIAN = 65.0000\n'
+            'CL = THETA(1)*EXP(ETA(1))\n'
+            'CLCRCL = EXP(THETA(4)*(CRCL - CRCL_MEDIAN))\n'
+            'CL = CL*CLCRCL\n'
+            'VC = THETA(2) * EXP(ETA(2))\n'
+            'MAT = THETA(3) * EXP(ETA(3))\n'
+            'KA = 1/MAT\n'
+            'V = VC\n'
+            'VCRCL = EXP(THETA(5)*(CRCL - CRCL_MEDIAN))\n'
+            'V = V*VCRCL\n',
+        ),
+        (
+            ('nonmem', 'models', 'mox2.mod'),
+            [
+                ('V', 'CRCL', 'exp', '*'),
+                ('CL', 'CRCL', 'exp', '*'),
+            ],
+            '$PK\n'
+            'CRCL_MEDIAN = 65.0000\n'
+            'CL = THETA(1)*EXP(ETA(1))\n'
+            'CLCRCL = EXP(THETA(5)*(CRCL - CRCL_MEDIAN))\n'
+            'CL = CL*CLCRCL\n'
+            'VC = THETA(2) * EXP(ETA(2))\n'
+            'MAT = THETA(3) * EXP(ETA(3))\n'
+            'KA = 1/MAT\n'
+            'V = VC\n'
+            'VCRCL = EXP(THETA(4)*(CRCL - CRCL_MEDIAN))\n'
+            'V = V*VCRCL\n',
+        ),
     ],
     ids=repr,
 )
