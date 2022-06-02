@@ -2884,7 +2884,7 @@ $OMEGA  0.1'''
             'IF (VISI.EQ.3.OR.VISI.EQ.8) IOV_2 = 0\n'
             'IOV_3 = 0\n'
             'IF (VISI.EQ.3.OR.VISI.EQ.8) IOV_3 = 0\n',
-            set(),
+            (),
         ),
         (
             'joint',
@@ -2896,7 +2896,7 @@ $OMEGA  0.1'''
             'IF (VISI.EQ.3.OR.VISI.EQ.8) IOV_2 = 0\n'
             'IOV_3 = 0\n'
             'IF (VISI.EQ.3.OR.VISI.EQ.8) IOV_3 = 0\n',
-            set(),
+            (),
         ),
         (
             'disjoint',
@@ -2910,7 +2910,7 @@ $OMEGA  0.1'''
             'IOV_3 = 0\n'
             'IF (VISI.EQ.3) IOV_3 = ETA(6)\n'
             'IF (VISI.EQ.8) IOV_3 = ETA(7)\n',
-            {'ETA_IOV_2_1', 'ETA_IOV_2_2', 'ETA_IOV_3_1', 'ETA_IOV_3_2'},
+            ('ETA_IOV_2_1', 'ETA_IOV_2_2', 'ETA_IOV_3_1', 'ETA_IOV_3_2'),
         ),
         (
             'joint',
@@ -2924,7 +2924,7 @@ $OMEGA  0.1'''
             'IOV_3 = 0\n'
             'IF (VISI.EQ.3) IOV_3 = ETA(5)\n'
             'IF (VISI.EQ.8) IOV_3 = ETA(7)\n',
-            {'ETA_IOV_2_1', 'ETA_IOV_2_2', 'ETA_IOV_3_1', 'ETA_IOV_3_2'},
+            ('ETA_IOV_2_1', 'ETA_IOV_2_2', 'ETA_IOV_3_1', 'ETA_IOV_3_2'),
         ),
         (
             'disjoint',
@@ -2938,7 +2938,7 @@ $OMEGA  0.1'''
             'IOV_3 = 0\n'
             'IF (VISI.EQ.3) IOV_3 = ETA(6)\n'
             'IF (VISI.EQ.8) IOV_3 = ETA(7)\n',
-            {'ETA_IOV_2_1', 'ETA_IOV_2_2', 'ETA_IOV_3_1', 'ETA_IOV_3_2'},
+            ('ETA_IOV_2_1', 'ETA_IOV_2_2', 'ETA_IOV_3_1', 'ETA_IOV_3_2'),
         ),
         (
             'joint',
@@ -2952,7 +2952,7 @@ $OMEGA  0.1'''
             'IOV_3 = 0\n'
             'IF (VISI.EQ.3) IOV_3 = ETA(5)\n'
             'IF (VISI.EQ.8) IOV_3 = ETA(7)\n',
-            {'ETA_IOV_2_1', 'ETA_IOV_2_2', 'ETA_IOV_3_1', 'ETA_IOV_3_2'},
+            ('ETA_IOV_2_1', 'ETA_IOV_2_2', 'ETA_IOV_3_1', 'ETA_IOV_3_2'),
         ),
         (
             'disjoint',
@@ -2965,7 +2965,7 @@ $OMEGA  0.1'''
             'IOV_3 = 0\n'
             'IF (VISI.EQ.3) IOV_3 = ETA(4)\n'
             'IF (VISI.EQ.8) IOV_3 = ETA(5)\n',
-            {'ETA_IOV_3_1', 'ETA_IOV_3_2'},
+            ('ETA_IOV_3_1', 'ETA_IOV_3_2'),
         ),
         (
             'joint',
@@ -2978,7 +2978,7 @@ $OMEGA  0.1'''
             'IOV_3 = 0\n'
             'IF (VISI.EQ.3) IOV_3 = ETA(4)\n'
             'IF (VISI.EQ.8) IOV_3 = ETA(5)\n',
-            {'ETA_IOV_3_1', 'ETA_IOV_3_2'},
+            ('ETA_IOV_3_1', 'ETA_IOV_3_2'),
         ),
     ),
     ids=repr,
@@ -2995,9 +2995,9 @@ def test_remove_iov_with_options(tmp_path, testdata, distribution, occ, to_remov
 
         remove_iov(model_with_some_iovs_removed, to_remove=to_remove)
         assert cases in model_with_some_iovs_removed.model_code
-        assert (
-            set(map(lambda rv: rv.name, model_with_some_iovs_removed.random_variables.iov)) == rest
-        )
+        assert set(
+            map(lambda rv: rv.name, model_with_some_iovs_removed.random_variables.iov)
+        ) == set(rest)
 
 
 @pytest.mark.parametrize(
