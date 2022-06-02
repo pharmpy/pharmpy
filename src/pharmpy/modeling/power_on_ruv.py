@@ -45,8 +45,8 @@ def set_power_on_ruv(model, list_of_eps=None, lower_limit=0.01, ipred=None, zero
     >>> set_power_on_ruv(model)   # doctest: +ELLIPSIS
     <...>
     >>> model.statements.find_assignment("Y")
-                 power₁
-    Y := EPS(1)⋅F       + F
+                power₁
+    Y = EPS(1)⋅F       + F
 
     See also
     --------

@@ -52,28 +52,28 @@ def add_allometry(
     >>> add_allometry(model, allometric_variable='WGT')     # doctest: +ELLIPSIS
     <...>
     >>> model.statements.before_odes
-             ⎧TIME  for AMT > 0
-             ⎨
-    BTIME := ⎩ 0     otherwise
-    TAD := -BTIME + TIME
-    TVCL := THETA(1)⋅WGT
-    TVV := THETA(2)⋅WGT
-           ⎧TVV⋅(THETA(3) + 1)  for APGR < 5
-           ⎨
-    TVV := ⎩       TVV           otherwise
-                ETA(1)
-    CL := TVCL⋅ℯ
-                  ALLO_CL
-             ⎛WGT⎞
-          CL⋅⎜───⎟
-    CL :=    ⎝ 70⎠
-              ETA(2)
-    V := TVV⋅ℯ
-                ALLO_V
-           ⎛WGT⎞
-         V⋅⎜───⎟
-    V :=   ⎝ 70⎠
-    S₁ := V
+            ⎧TIME  for AMT > 0
+            ⎨
+    BTIME = ⎩ 0     otherwise
+    TAD = -BTIME + TIME
+    TVCL = THETA(1)⋅WGT
+    TVV = THETA(2)⋅WGT
+          ⎧TVV⋅(THETA(3) + 1)  for APGR < 5
+          ⎨
+    TVV = ⎩       TVV           otherwise
+               ETA(1)
+    CL = TVCL⋅ℯ
+                 ALLO_CL
+            ⎛WGT⎞
+         CL⋅⎜───⎟
+    CL =    ⎝ 70⎠
+             ETA(2)
+    V = TVV⋅ℯ
+               ALLO_V
+          ⎛WGT⎞
+        V⋅⎜───⎟
+    V =   ⎝ 70⎠
+    S₁ = V
 
     """
     allometric_variable = sympify(allometric_variable)

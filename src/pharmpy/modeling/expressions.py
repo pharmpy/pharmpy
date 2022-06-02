@@ -259,22 +259,22 @@ def mu_reference_model(model):
     >>> from pharmpy.modeling import load_example_model, mu_reference_model
     >>> model = load_example_model("pheno")
     >>> mu_reference_model(model).statements.before_odes
-             ⎧TIME  for AMT > 0
-             ⎨
-    BTIME := ⎩ 0     otherwise
-    TAD := -BTIME + TIME
-    TVCL := THETA(1)⋅WGT
-    TVV := THETA(2)⋅WGT
-           ⎧TVV⋅(THETA(3) + 1)  for APGR < 5
-           ⎨
-    TVV := ⎩       TVV           otherwise
-    μ₁ := log(TVCL)
-           ETA(1) + μ₁
-    CL := ℯ
-    μ₂ := log(TVV)
-          ETA(2) + μ₂
-    V := ℯ
-    S₁ := V
+            ⎧TIME  for AMT > 0
+            ⎨
+    BTIME = ⎩ 0     otherwise
+    TAD = -BTIME + TIME
+    TVCL = THETA(1)⋅WGT
+    TVV = THETA(2)⋅WGT
+          ⎧TVV⋅(THETA(3) + 1)  for APGR < 5
+          ⎨
+    TVV = ⎩       TVV           otherwise
+    μ₁ = log(TVCL)
+          ETA(1) + μ₁
+    CL = ℯ
+    μ₂ = log(TVV)
+         ETA(2) + μ₂
+    V = ℯ
+    S₁ = V
     """
     statements = model.statements.before_odes
     assignments = _find_eta_assignments(model)

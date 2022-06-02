@@ -29,13 +29,13 @@ def remove_iiv(model, to_remove=None):
     >>> remove_iiv(model)  # doctest: +ELLIPSIS
     <...>
     >>> model.statements.find_assignment("CL")
-    CL := TVCL
+    CL = TVCL
 
     >>> model = load_example_model("pheno")
     >>> remove_iiv(model, "V")  # doctest: +ELLIPSIS
     <...>
     >>> model.statements.find_assignment("V")
-    V := TVV
+    V = TVV
 
     See also
     --------

@@ -54,11 +54,11 @@ def remove_error_model(model):
     >>> from pharmpy.modeling import remove_error_model, load_example_model
     >>> model = load_example_model("pheno")
     >>> model.statements.find_assignment("Y")
-    Y := EPS(1)⋅W + F
+    Y = EPS(1)⋅W + F
     >>> remove_error_model(model)    # doctest: +ELLIPSIS
     <...>
     >>> model.statements.find_assignment("Y")
-    Y := F
+    Y = F
 
     Warnings
     --------
@@ -106,22 +106,22 @@ def set_additive_error_model(model, data_trans=None, series_terms=2):
     >>> from pharmpy.modeling import set_additive_error_model, load_example_model
     >>> model = load_example_model("pheno")
     >>> model.statements.find_assignment("Y")
-    Y := EPS(1)⋅W + F
+    Y = EPS(1)⋅W + F
     >>> set_additive_error_model(model)    # doctest: +ELLIPSIS
     <...>
     >>> model.statements.find_assignment("Y")
-    Y := F + εₐ
+    Y = F + εₐ
 
     >>> from pharmpy.modeling import set_additive_error_model, load_example_model
     >>> model = load_example_model("pheno")
     >>> model.statements.find_assignment("Y")
-    Y := EPS(1)⋅W + F
+    Y = EPS(1)⋅W + F
     >>> set_additive_error_model(model, data_trans="log(Y)")    # doctest: +ELLIPSIS
     <...>
     >>> model.statements.find_assignment("Y")
-                  εₐ
-         log(F) + ──
-    Y :=          F
+                 εₐ
+        log(F) + ──
+    Y =          F
 
     See Also
     --------
@@ -194,26 +194,26 @@ def set_proportional_error_model(model, data_trans=None, zero_protection=False):
     >>> set_proportional_error_model(model)    # doctest: +ELLIPSIS
     <...>
     >>> model.statements.find_assignment("Y")
-    Y := F⋅εₚ + F
+    Y = F⋅εₚ + F
 
     >>> from pharmpy.modeling import *
     >>> model = remove_error_model(load_example_model("pheno"))
     >>> set_proportional_error_model(model, data_trans="log(Y)", zero_protection=True)    # doctest: +ELLIPSIS  # noqa: E501
     <...>
     >>> model.statements.after_odes
-         A_CENTRAL
-         ─────────
-    F :=     S₁
-    W := F
-                ⎧2.225e-16  for F = 0
-                ⎨
-    IPREDADJ := ⎩    F       otherwise
-    Y := εₚ + log(IPREDADJ)
-    IPRED := F
-    IRES := DV - IPRED
-             IRES
-             ────
-    IWRES :=  W
+        A_CENTRAL
+        ─────────
+    F =     S₁
+    W = F
+               ⎧2.225e-16  for F = 0
+               ⎨
+    IPREDADJ = ⎩    F       otherwise
+    Y = εₚ + log(IPREDADJ)
+    IPRED = F
+    IRES = DV - IPRED
+            IRES
+            ────
+    IWRES =  W
 
     See Also
     --------
@@ -291,16 +291,16 @@ def set_combined_error_model(model, data_trans=None):
     >>> set_combined_error_model(model)    # doctest: +ELLIPSIS
     <...>
     >>> model.statements.find_assignment("Y")
-    Y := F⋅εₚ + F + εₐ
+    Y = F⋅εₚ + F + εₐ
 
     >>> from pharmpy.modeling import *
     >>> model = remove_error_model(load_example_model("pheno"))
     >>> set_combined_error_model(model, data_trans="log(Y)")    # doctest: +ELLIPSIS
     <...>
     >>> model.statements.find_assignment("Y")
-                      εₐ
-        εₚ + log(F) + ──
-    Y :=              F
+                     εₐ
+       εₚ + log(F) + ──
+    Y =              F
 
     See Also
     --------
@@ -512,7 +512,7 @@ def use_thetas_for_error_stdev(model):
     >>> use_thetas_for_error_stdev(model)    # doctest: +ELLIPSIS
     <...>
     >>> model.statements.find_assignment("Y")
-    Y := EPS(1)⋅SD_EPS(1)⋅W + F
+    Y = EPS(1)⋅SD_EPS(1)⋅W + F
 
     See also
     --------
@@ -670,9 +670,9 @@ def set_time_varying_error_model(model, cutoff, idv='TIME'):
     >>> set_time_varying_error_model(model, cutoff=1.0)    # doctest: +ELLIPSIS
     <...>
     >>> model.statements.find_assignment("Y")
-         ⎧EPS(1)⋅W⋅time_varying + F  for TIME < 1.0
-         ⎨
-    Y := ⎩      EPS(1)⋅W + F           otherwise
+        ⎧EPS(1)⋅W⋅time_varying + F  for TIME < 1.0
+        ⎨
+    Y = ⎩      EPS(1)⋅W + F           otherwise
 
     """
     stats = model.statements

@@ -48,7 +48,7 @@ def add_individual_parameter(model, name):
     >>> add_individual_parameter(model, "KA")   # doctest: +ELLIPSIS
     <...>
     >>> model.statements.find_assignment("KA")
-    KA := POP_KA
+    KA = POP_KA
 
     """
     _add_parameter(model, name)

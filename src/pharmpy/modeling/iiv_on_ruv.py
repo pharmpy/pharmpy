@@ -41,8 +41,8 @@ def set_iiv_on_ruv(model, list_of_eps=None, same_eta=True, eta_names=None):
     >>> set_iiv_on_ruv(model)   # doctest: +ELLIPSIS
     <...>
     >>> model.statements.find_assignment("Y")
-                   ETA_RV1
-    Y := EPS(1)⋅W⋅ℯ        + F
+                  ETA_RV1
+    Y = EPS(1)⋅W⋅ℯ        + F
 
     See also
     --------

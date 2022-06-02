@@ -64,7 +64,7 @@ def add_iiv(
     >>> add_iiv(model, "CL", "add")  # doctest: +ELLIPSIS
     <...>
     >>> model.statements.find_assignment("CL")
-    CL := ETA_CL + TVCL
+    CL = ETA_CL + TVCL
 
     See also
     --------
@@ -157,7 +157,7 @@ def add_iov(model, occ, list_of_parameters=None, eta_names=None, distribution='d
     >>> add_iov(model, "TIME", "CL")  # doctest: +SKIP
     <...>
     >>> model.statements.find_assignment("CL")  # doctest: +SKIP
-    CL := ETA_CL + TVCL
+    CL = ETA_CL + TVCL
 
     See also
     --------
@@ -410,12 +410,12 @@ def add_pk_iiv(model, initial_estimate=0.09):
     >>> set_first_order_absorption(model) # doctest: +ELLIPSIS
     <...>
     >>> model.statements.find_assignment("MAT")
-    MAT := POP_MAT
+    MAT = POP_MAT
     >>> add_pk_iiv(model) # doctest: +ELLIPSIS
     <...>
     >>> model.statements.find_assignment("MAT")
-                    ETA_MAT
-    MAT := POP_MAT⋅ℯ
+                   ETA_MAT
+    MAT = POP_MAT⋅ℯ
 
     See also
     --------

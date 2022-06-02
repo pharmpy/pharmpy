@@ -12,7 +12,7 @@ def S(x):
 
 def test_str(testdata):
     s1 = Assignment(S('KA'), S('X') + S('Y'))
-    assert str(s1) == 'KA := X + Y'
+    assert str(s1) == 'KA = X + Y'
     s2 = Assignment(S('X2'), sympy.exp('X'))
     a = str(s2).split('\n')
     assert a[0].startswith(' ')
@@ -230,7 +230,7 @@ def test_to_explicit_ode_system(pheno_path):
 def test_repr_latex():
     s1 = Assignment(S('KA'), S('X') + S('Y'))
     latex = s1._repr_latex_()
-    assert latex == r'$\displaystyle KA := \displaystyle X + Y$'
+    assert latex == r'$\displaystyle KA = \displaystyle X + Y$'
 
 
 def test_repr_html():

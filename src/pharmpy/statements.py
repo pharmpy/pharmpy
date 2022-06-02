@@ -87,10 +87,10 @@ class Assignment(Statement):
         >>> from pharmpy import Assignment
         >>> a = Assignment('CL', 'POP_CL + ETA_CL')
         >>> a
-        CL := ETA_CL + POP_CL
+        CL = ETA_CL + POP_CL
         >>> a.subs({'ETA_CL' : 'ETA_CL * WGT'})
         >>> a
-        CL := ETA_CL⋅WGT + POP_CL
+        CL = ETA_CL⋅WGT + POP_CL
 
         """
         self.symbol = self.symbol.subs(substitutions, simultaneous=True)
@@ -138,7 +138,7 @@ class Assignment(Statement):
     def __repr__(self):
         expression = sympy.pretty(self.expression)
         lines = [line.rstrip() for line in expression.split('\n')]
-        definition = f'{sympy.pretty(self.symbol)} := '
+        definition = f'{sympy.pretty(self.symbol)} = '
         s = ''
         for line in lines:
             if line == lines[-1]:
@@ -157,7 +157,7 @@ class Assignment(Statement):
     def _repr_latex_(self):
         sym = self.symbol._repr_latex_()[1:-1]
         expr = self.expression._repr_latex_()[1:-1]
-        return f'${sym} := {expr}$'
+        return f'${sym} = {expr}$'
 
 
 class ODESystem(Statement, ABC):
@@ -1664,20 +1664,20 @@ class ModelStatements(MutableSequence):
         >>> from pharmpy.modeling import load_example_model
         >>> model = load_example_model("pheno")
         >>> model.statements.before_odes
-                 ⎧TIME  for AMT > 0
-                 ⎨
-        BTIME := ⎩ 0     otherwise
-        TAD := -BTIME + TIME
-        TVCL := THETA(1)⋅WGT
-        TVV := THETA(2)⋅WGT
-               ⎧TVV⋅(THETA(3) + 1)  for APGR < 5
-               ⎨
-        TVV := ⎩       TVV           otherwise
-                    ETA(1)
-        CL := TVCL⋅ℯ
-                  ETA(2)
-        V := TVV⋅ℯ
-        S₁ := V
+                ⎧TIME  for AMT > 0
+                ⎨
+        BTIME = ⎩ 0     otherwise
+        TAD = -BTIME + TIME
+        TVCL = THETA(1)⋅WGT
+        TVV = THETA(2)⋅WGT
+              ⎧TVV⋅(THETA(3) + 1)  for APGR < 5
+              ⎨
+        TVV = ⎩       TVV           otherwise
+                   ETA(1)
+        CL = TVCL⋅ℯ
+                 ETA(2)
+        V = TVV⋅ℯ
+        S₁ = V
         """
         sset = ModelStatements()
         for s in self:
@@ -1695,16 +1695,16 @@ class ModelStatements(MutableSequence):
         >>> from pharmpy.modeling import load_example_model
         >>> model = load_example_model("pheno")
         >>> model.statements.after_odes
-             A_CENTRAL
-             ─────────
-        F :=     S₁
-        W := F
-        Y := EPS(1)⋅W + F
-        IPRED := F
-        IRES := DV - IPRED
-                  IRES
-                  ────
-        IWRES :=   W
+            A_CENTRAL
+            ─────────
+        F =     S₁
+        W = F
+        Y = EPS(1)⋅W + F
+        IPRED = F
+        IRES = DV - IPRED
+                 IRES
+                 ────
+        IWRES =   W
         """
         sset = ModelStatements()
         found = False
@@ -1753,8 +1753,8 @@ class ModelStatements(MutableSequence):
         >>> from pharmpy.modeling import load_example_model
         >>> model = load_example_model("pheno")
         >>> model.statements.find_assignment("CL")
-                    ETA(1)
-        CL := TVCL⋅ℯ
+                   ETA(1)
+        CL = TVCL⋅ℯ
         """
         symbol = sympify(symbol)
         assignment = None
@@ -1831,10 +1831,10 @@ class ModelStatements(MutableSequence):
         >>> model = load_example_model("pheno")
         >>> odes = model.statements.ode_system
         >>> model.statements.direct_dependencies(odes)
-                    ETA(1)
-        CL := TVCL⋅ℯ
-                  ETA(2)
-        V := TVV⋅ℯ
+                   ETA(1)
+        CL = TVCL⋅ℯ
+                 ETA(2)
+        V = TVV⋅ℯ
         """
         g = self._create_dependency_graph()
         index = self.index(statement)
@@ -2107,7 +2107,7 @@ class ModelStatements(MutableSequence):
                 html += s + '\\begin{align*}'
             else:
                 s = f'${statement._repr_latex_()}$'
-                s = s.replace(':=', '&:=')
+                s = s.replace('=', '&=')
                 s = s.replace('$', '')
                 s = s + r'\\'
                 html += s

@@ -667,34 +667,34 @@ def load_example_model(name):
     >>> from pharmpy.modeling import load_example_model
     >>> model = load_example_model("pheno")
     >>> model.statements
-             ⎧TIME  for AMT > 0
-             ⎨
-    BTIME := ⎩ 0     otherwise
-    TAD := -BTIME + TIME
-    TVCL := THETA(1)⋅WGT
-    TVV := THETA(2)⋅WGT
-           ⎧TVV⋅(THETA(3) + 1)  for APGR < 5
-           ⎨
-    TVV := ⎩       TVV           otherwise
-                ETA(1)
-    CL := TVCL⋅ℯ
-              ETA(2)
-    V := TVV⋅ℯ
-    S₁ := V
+            ⎧TIME  for AMT > 0
+            ⎨
+    BTIME = ⎩ 0     otherwise
+    TAD = -BTIME + TIME
+    TVCL = THETA(1)⋅WGT
+    TVV = THETA(2)⋅WGT
+          ⎧TVV⋅(THETA(3) + 1)  for APGR < 5
+          ⎨
+    TVV = ⎩       TVV           otherwise
+               ETA(1)
+    CL = TVCL⋅ℯ
+             ETA(2)
+    V = TVV⋅ℯ
+    S₁ = V
     Bolus(AMT)
     ┌───────┐       ┌──────┐
     │CENTRAL│──CL/V→│OUTPUT│
     └───────┘       └──────┘
-         A_CENTRAL
-         ─────────
-    F :=     S₁
-    W := F
-    Y := EPS(1)⋅W + F
-    IPRED := F
-    IRES := DV - IPRED
-             IRES
-             ────
-    IWRES :=  W
+        A_CENTRAL
+        ─────────
+    F =     S₁
+    W = F
+    Y = EPS(1)⋅W + F
+    IPRED = F
+    IRES = DV - IPRED
+            IRES
+            ────
+    IWRES =  W
 
     """
     available = ('pheno', 'pheno_linear')
