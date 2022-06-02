@@ -8,7 +8,7 @@ import sympy.stats
 
 import pharmpy.math
 from pharmpy.model import ModelSyntaxError
-from pharmpy.parameter import Parameter, Parameters
+from pharmpy.parameter import Parameter
 from pharmpy.parse_utils.generic import (
     AttrToken,
     AttrTree,
@@ -30,7 +30,7 @@ class OmegaRecord(Record):
         block = self.root.find('block')
         bare_block = self.root.find('bare_block')
         same = bool(self.root.find('same'))
-        parameters = Parameters()
+        parameters = []
         coords = []
 
         try:
@@ -127,7 +127,9 @@ class OmegaRecord(Record):
         try:
             self.name_map
         except AttributeError:
-            self.name_map = {name: c for i, (name, c) in enumerate(zip(parameters.names, coords))}
+            self.name_map = {
+                name: c for i, (name, c) in enumerate(zip([p.name for p in parameters], coords))
+            }
         return parameters, next_omega, size
 
     def _find_label(self, node, seen_labels):

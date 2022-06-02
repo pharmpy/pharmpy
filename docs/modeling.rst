@@ -98,10 +98,9 @@ is None, all parameters will be transformed.
 .. pharmpy-execute::
    :hide-output:
 
-   fix_parameters_to(model, ['THETA(1)', 'THETA(2)'], [0, 1])
-   fix_parameters_to(model, ['THETA(1)', 'THETA(2)'], 0)
-   unfix_parameters_to(model, 'THETA(1)', 0)
-   unfix_parameters_to(model, None, 0)
+   fix_parameters_to(model, {'THETA(1)': 0, 'THETA(2)': 1})
+   fix_parameters_to(model, {'THETA(1)': 0, 'THETA(2)': 0})
+   unfix_parameters_to(model, {'THETA(1)': 0})
 
 
 Add parameter

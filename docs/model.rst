@@ -82,18 +82,12 @@ Model parameters are scalar values that are used in the mathematical definition 
    par = Parameter('THETA(1)', 0.1, upper=2, fix=False)
    par
 
-A model parameter must have a name and an inital value and can optionally be constrained to a lower and or upper bound. A parameter can also be fixed meaning that it will be set to its initial value. The parameter attributes can be read out or changed via properties.
+A model parameter must have a name and an inital value and can optionally be constrained to a lower and or upper bound. A parameter can also be fixed meaning that it will be set to its initial value. The parameter attributes can be read out via properties.
 
 .. pharmpy-execute::
 
-   par.lower = -1
-   print(par)
+   par.lower
 
-The parameter space of a parameter can be retrieved via a property:
-
-.. pharmpy-execute::
-
-      par.parameter_space
 
 ~~~~~~~~~~~~~~
 Parameter sets
@@ -120,19 +114,6 @@ Get all initial estimates as a dictionary:
 
    parset.inits
 
-Setting initial estimates of some of the parameters:
-
-.. pharmpy-execute::
-
-   parset.inits = {'THETA(1)': 0.5, 'OMEGA(1,1)': 0.05}
-   parset
-
-Fix some parameters:
-
-.. pharmpy-execute::
-
-   parset.fix = {'THETA(2)': True, 'THETA(3)': True}
-   parset
 
 
 
@@ -159,14 +140,7 @@ If a model has been fit the results can be retrieved directly from the model obj
 Updating initial estimates
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Updating all initial estimates of a model from its own results can be done either by directly setting:
-
-.. pharmpy-execute::
-   :hide-output:
-
-   model.parameters = model.modelfit_results.parameter_estimates
-
-or using the convenient function:
+Updating all initial estimates of a model from its own results can be done by:
 
 .. pharmpy-execute::
 

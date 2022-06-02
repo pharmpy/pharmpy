@@ -32,7 +32,6 @@ def test_to_generic_model(testdata):
     nm_model = Model.create_model(path)
     model = convert_model(nm_model, 'generic')
 
-    assert id(model.parameters) != id(nm_model.parameters)
     assert model.parameters == nm_model.parameters
     assert id(model.random_variables) != id(nm_model.random_variables)
     assert model.random_variables == nm_model.random_variables

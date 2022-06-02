@@ -8,7 +8,7 @@ from pathlib import Path
 
 import sympy
 
-from pharmpy import Model, Parameters, RandomVariables, config
+from pharmpy import Model, Parameter, Parameters, RandomVariables, config
 from pharmpy.modeling import split_joint_distribution
 from pharmpy.statements import Assignment, CompartmentalSystem
 from pharmpy.utils import normalize_user_given_path
@@ -204,7 +204,7 @@ def convert_model(model, to_format):
     # FIXME: Use code that can discover plugins below
     if to_format == 'generic':
         new = Model.create_model()
-        new.parameters = model.parameters.copy()
+        new.parameters = model.parameters
         new.random_variables = model.random_variables.copy()
         new.statements = model.statements.copy()
         new.dataset = model.dataset.copy()
@@ -420,233 +420,6 @@ def bump_model_number(model, path=None):
     return model
 
 
-def set_initial_estimates(model, inits):
-    """Set initial estimates
-
-    Parameters
-    ----------
-    model : Model
-        Pharmpy model
-    inits : dict
-        A dictionary of parameter init for parameters to change
-
-    Returns
-    -------
-    Model
-        Reference to the same model object
-
-    Examples
-    --------
-    >>> from pharmpy.modeling import load_example_model, set_initial_estimates
-    >>> model = load_example_model("pheno")
-    >>> set_initial_estimates(model, {'THETA(1)': 2})   # doctest: +ELLIPSIS
-    <...>
-    >>> model.parameters['THETA(1)']
-    Parameter("THETA(1)", 2, lower=0.0, upper=1000000, fix=False)
-
-    """
-    model.parameters.inits = inits
-    return model
-
-
-def fix_parameters(model, parameter_names):
-    """Fix parameters
-
-    Fix all listed parameters
-
-    Parameters
-    ----------
-    model : Model
-        Pharmpy model
-    parameter_names : list or str
-        one parameter name or a list of parameter names
-
-    Returns
-    -------
-    Model
-        Reference to the same model object
-
-    Example
-    -------
-    >>> from pharmpy.modeling import fix_parameters, load_example_model
-    >>> model = load_example_model("pheno")
-    >>> model.parameters['THETA(1)']
-    Parameter("THETA(1)", 0.00469307, lower=0.0, upper=1000000, fix=False)
-    >>> fix_parameters(model, 'THETA(1)')       # doctest: +ELLIPSIS
-    <...>
-    >>> model.parameters['THETA(1)']
-    Parameter("THETA(1)", 0.00469307, lower=0.0, upper=1000000, fix=True)
-
-    See also
-    --------
-    fix_parameters_to : Fixing and setting parameter initial estimates in the same function
-    unfix_paramaters : Unfixing parameters
-    unfix_paramaters_to : Unfixing parameters and setting a new initial estimate in the same
-        function
-
-    """
-    if isinstance(parameter_names, str):
-        d = {parameter_names: True}
-    else:
-        d = {name: True for name in parameter_names}
-    model.parameters.fix = d
-    return model
-
-
-def unfix_parameters(model, parameter_names):
-    """Unfix parameters
-
-    Unfix all listed parameters
-
-    Parameters
-    ----------
-    model : Model
-        Pharmpy model
-    parameter_names : list or str
-        one parameter name or a list of parameter names
-
-    Returns
-    -------
-    Model
-        Reference to the same model object
-
-    Examples
-    --------
-    >>> from pharmpy.modeling import fix_parameters, unfix_parameters, load_example_model
-    >>> model = load_example_model("pheno")
-    >>> fix_parameters(model, ['THETA(1)', 'THETA(2)', 'THETA(3)'])     # doctest: +ELLIPSIS
-    <...>
-    >>> model.parameters.fix    # doctest: +ELLIPSIS
-    {'THETA(1)': True, 'THETA(2)': True, 'THETA(3)': True, ...}
-    >>> unfix_parameters(model, 'THETA(1)')       # doctest: +ELLIPSIS
-    <...>
-    >>> model.parameters.fix        # doctest: +ELLIPSIS
-    {'THETA(1)': False, 'THETA(2)': True, 'THETA(3)': True, ...}
-
-    See also
-    --------
-    unfix_paramaters_to : Unfixing parameters and setting a new initial estimate in the same
-        function
-    fix_parameters : Fix parameters
-    fix_parameters_to : Fixing and setting parameter initial estimates in the same function
-
-    """
-    if isinstance(parameter_names, str):
-        d = {parameter_names: False}
-    else:
-        d = {name: False for name in parameter_names}
-    model.parameters.fix = d
-    return model
-
-
-def fix_parameters_to(model, parameter_names, values):
-    """Fix parameters to
-
-    Fix all listed parameters to specified value/values
-
-    Parameters
-    ----------
-    model : Model
-        Pharmpy model
-    parameter_names : list or str
-        one parameter name or a list of parameter names
-    values : list or float
-        one value or a list of values (must be equal to number of parameter_names)
-
-    Returns
-    -------
-    Model
-        Reference to the same model object
-
-    Examples
-    --------
-    >>> from pharmpy.modeling import fix_parameters_to, load_example_model
-    >>> model = load_example_model("pheno")
-    >>> model.parameters['THETA(1)']
-    Parameter("THETA(1)", 0.00469307, lower=0.0, upper=1000000, fix=False)
-    >>> fix_parameters_to(model, 'THETA(1)', 0.5)       # doctest: +ELLIPSIS
-    <...>
-    >>> model.parameters['THETA(1)']
-    Parameter("THETA(1)", 0.5, lower=0.0, upper=1000000, fix=True)
-
-    See also
-    --------
-    fix_parameters : Fix parameters
-    unfix_paramaters : Unfixing parameters
-    unfix_paramaters_to : Unfixing parameters and setting a new initial estimate in the same
-        function
-
-    """
-    if not parameter_names:
-        parameter_names = [p.name for p in model.parameters]
-
-    fix_parameters(model, parameter_names)
-    d = _create_init_dict(parameter_names, values)
-    set_initial_estimates(model, d)
-
-    return model
-
-
-def unfix_parameters_to(model, parameter_names, values):
-    """Unix parameters to
-
-    Unfix all listed parameters to specified value/values
-
-    Parameters
-    ----------
-    model : Model
-        Pharmpy model
-    parameter_names : list or str
-        one parameter name or a list of parameter names
-    values : list or float
-        one value or a list of values (must be equal to number of parameter_names)
-
-    Examples
-    --------
-    >>> from pharmpy.modeling import fix_parameters, unfix_parameters_to, load_example_model
-    >>> model = load_example_model("pheno")
-    >>> fix_parameters(model, ['THETA(1)', 'THETA(2)', 'THETA(3)'])     # doctest: +ELLIPSIS
-    <...>
-    >>> model.parameters.fix    # doctest: +ELLIPSIS
-    {'THETA(1)': True, 'THETA(2)': True, 'THETA(3)': True, ...}
-    >>> unfix_parameters_to(model, 'THETA(1)', 0.5)       # doctest: +ELLIPSIS
-    <...>
-    >>> model.parameters.fix        # doctest: +ELLIPSIS
-    {'THETA(1)': False, 'THETA(2)': True, 'THETA(3)': True, ...}
-    >>> model.parameters['THETA(1)']
-    Parameter("THETA(1)", 0.5, lower=0.0, upper=1000000, fix=False)
-
-    Returns
-    -------
-    Model
-        Reference to the same model object
-    """
-    if not parameter_names:
-        parameter_names = [p.name for p in model.parameters]
-
-    unfix_parameters(model, parameter_names)
-    d = _create_init_dict(parameter_names, values)
-    set_initial_estimates(model, d)
-
-    return model
-
-
-def _create_init_dict(parameter_names, values):
-    if isinstance(parameter_names, str):
-        d = {parameter_names: values}
-    else:
-        if not isinstance(values, list):
-            values = [values] * len(parameter_names)
-        if len(parameter_names) != len(values):
-            raise ValueError(
-                'Incorrect number of values, must be equal to number of parameters '
-                '(or one if same for all)'
-            )
-        d = {name: value for name, value in zip(parameter_names, values)}
-
-    return d
-
-
 def load_example_model(name):
     """Load an example model
 
@@ -839,111 +612,45 @@ def remove_unused_parameters_and_rvs(model):
             new_rvs.append(rv)
     model.random_variables = new_rvs
 
-    new_params = Parameters()
+    new_params = []
     for p in model.parameters:
         symb = p.symbol
         if symb in symbols or symb in new_rvs.free_symbols or (p.fix and p.init == 0):
             new_params.append(p)
-    model.parameters = new_params
+    model.parameters = Parameters(new_params)
     return model
 
 
-def get_thetas(model):
-    """Get all thetas (structural parameters) of a model
+def rename_symbols(model, new_names):
+    """Rename symbols in the model
+
+    Make sure that no name clash occur.
 
     Parameters
     ----------
     model : Model
         Pharmpy model object
+    new_names : dict
+        From old name or symbol to new name or symbol
 
     Returns
     -------
-    Parameters
-        A copy of all theta parameters
-
-    Example
-    -------
-    >>> from pharmpy.modeling import *
-    >>> model = load_example_model("pheno")
-    >>> get_thetas(model)
-                 value  lower    upper    fix
-    THETA(1)  0.004693   0.00  1000000  False
-    THETA(2)  1.009160   0.00  1000000  False
-    THETA(3)  0.100000  -0.99  1000000  False
-
-    See also
-    --------
-    get_omegas : Get omega parameters
-    get_sigmas : Get sigma parameters
+    Model
+        Reference to same model object
     """
-    thetas = [
-        p.copy() for p in model.parameters if p.symbol not in model.random_variables.free_symbols
-    ]
-    return Parameters(thetas)
+    d = {sympy.Symbol(key): sympy.Symbol(val) for key, val in new_names.items()}
 
+    new = []
+    for p in model.parameters:
+        if p.symbol in d:
+            newparam = Parameter(
+                name=d[p.symbol].name, init=p.init, lower=p.lower, upper=p.upper, fix=p.fix
+            )
+        else:
+            newparam = p
+        new.append(newparam)
+    model.parameters = Parameters(new)
 
-def get_omegas(model):
-    """Get all omegas (variability parameters) of a model
-
-    Parameters
-    ----------
-    model : Model
-        Pharmpy model object
-
-    Returns
-    -------
-    Parameters
-        A copy of all omega parameters
-
-    Example
-    -------
-    >>> from pharmpy.modeling import *
-    >>> model = load_example_model("pheno")
-    >>> get_omegas(model)
-                   value  lower upper    fix
-    OMEGA(1,1)  0.030963      0    oo  False
-    OMEGA(2,2)  0.031128      0    oo  False
-
-    See also
-    --------
-    get_thetas : Get theta parameters
-    get_sigmas : Get sigma parameters
-    """
-    omegas = [
-        p.copy() for p in model.parameters if p.symbol in model.random_variables.etas.free_symbols
-    ]
-    return Parameters(omegas)
-
-
-def get_sigmas(model):
-    """Get all sigmas (residual error variability parameters) of a model
-
-    Parameters
-    ----------
-    model : Model
-        Pharmpy model object
-
-    Returns
-    -------
-    Parameters
-        A copy of all sigma parameters
-
-    Example
-    -------
-    >>> from pharmpy.modeling import *
-    >>> model = load_example_model("pheno")
-    >>> get_sigmas(model)
-                   value  lower upper    fix
-    SIGMA(1,1)  0.013241      0    oo  False
-
-    See also
-    --------
-    get_thetas : Get theta parameters
-    get_omegas : Get omega parameters
-    """
-    sigmas = [
-        p.copy()
-        for p in model.parameters
-        if p.symbol in model.random_variables.epsilons.free_symbols
-    ]
-    return Parameters(sigmas)
+    model.statements.subs(d)
+    return model
+    # FIXME: Only handles parameters and statements and no clashes and circular renaming

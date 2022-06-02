@@ -5,13 +5,13 @@
 import sympy
 
 import pharmpy.symbols as symbols
-from pharmpy.parameter import Parameter
 from pharmpy.random_variables import RandomVariable
 from pharmpy.statements import Assignment, sympify
 
 from .common import remove_unused_parameters_and_rvs
 from .data import get_observations
 from .expressions import create_symbol
+from .parameters import add_population_parameter, fix_parameters, set_initial_estimates
 
 
 def _preparations(model):
@@ -143,8 +143,7 @@ def set_additive_error_model(model, data_trans=None, series_terms=2):
     remove_unused_parameters_and_rvs(model)
 
     sigma = create_symbol(model, 'sigma')
-    sigma_par = Parameter(sigma.name, init=_get_prop_init(model))
-    model.parameters.append(sigma_par)
+    add_population_parameter(model, sigma.name, _get_prop_init(model))
 
     eps = RandomVariable.normal(ruv.name, 'RUV', 0, sigma)
     model.random_variables.append(eps)
@@ -249,8 +248,7 @@ def set_proportional_error_model(model, data_trans=None, zero_protection=False):
     remove_unused_parameters_and_rvs(model)
 
     sigma = create_symbol(model, 'sigma')
-    sigma_par = Parameter(sigma.name, init=0.09)
-    model.parameters.append(sigma_par)
+    add_population_parameter(model, sigma.name, 0.09)
 
     eps = RandomVariable.normal(ruv.name, 'RUV', 0, sigma)
     model.random_variables.append(eps)
@@ -360,11 +358,9 @@ def set_combined_error_model(model, data_trans=None):
     remove_unused_parameters_and_rvs(model)
 
     sigma_prop = create_symbol(model, 'sigma_prop')
-    sigma_par1 = Parameter(sigma_prop.name, init=0.09)
-    model.parameters.append(sigma_par1)
+    add_population_parameter(model, sigma_prop.name, 0.09)
     sigma_add = create_symbol(model, 'sigma_add')
-    sigma_par2 = Parameter(sigma_add.name, init=_get_prop_init(model))
-    model.parameters.append(sigma_par2)
+    add_population_parameter(model, sigma_add.name, _get_prop_init(model))
 
     eps_prop = RandomVariable.normal(ruv_prop.name, 'RUV', 0, sigma_prop)
     model.random_variables.append(eps_prop)
@@ -524,14 +520,16 @@ def use_thetas_for_error_stdev(model):
         if len(sigmas) > 1:
             raise ValueError('use_thetas_for_error_stdev only supports non-correlated sigmas')
         sigma = sigmas[0]
+
         param = model.parameters[sigma]
-        param.fix = True
         theta_init = param.init**0.5
-        param.init = 1
-        theta = Parameter(f'SD_{eps.name}', theta_init, lower=0)
-        model.parameters.append(theta)
+        fix_parameters(model, [sigma])
+        set_initial_estimates(model, {sigma: 1})
+
+        sdsymb = create_symbol(model, f'SD_{eps.name}')
+        add_population_parameter(model, sdsymb.name, theta_init, lower=0)
         symb = sympy.Symbol(eps.name)
-        model.statements.subs({symb: theta.symbol * symb})
+        model.statements.subs({symb: sdsymb * symb})
     return model
 
 
@@ -611,17 +609,14 @@ def set_dtbs_error_model(model, fix_to_log=False):
     use_thetas_for_error_stdev(model)
     set_weighted_error_model(model)
     stats, y, f = _preparations(model)
-    tbs_lambda = Parameter('tbs_lambda', 1)
-    tbs_zeta = Parameter('tbs_zeta', 0.001)
+    lam = create_symbol(model, 'tbs_lambda')
+    zeta = create_symbol(model, 'tbs_zeta')
     if fix_to_log:
-        tbs_lambda.fix = True
-        tbs_lambda.init = 0
-        tbs_zeta.fix = True
-        tbs_zeta.init = 0
-    model.parameters.append(tbs_lambda)
-    model.parameters.append(tbs_zeta)
-    lam = tbs_lambda.symbol
-    zeta = tbs_zeta.symbol
+        add_population_parameter(model, lam.name, 0, fix=True)
+        add_population_parameter(model, zeta.name, 0, fix=True)
+    else:
+        add_population_parameter(model, lam.name, 1)
+        add_population_parameter(model, zeta.name, 0.001)
 
     for i, s in enumerate(stats):
         if isinstance(s, Assignment) and s.symbol == sympy.Symbol('W'):
@@ -686,7 +681,6 @@ def set_time_varying_error_model(model, cutoff, idv='TIME'):
     )
     stats.reassign(y.symbol, expr)
 
-    theta_tvar = Parameter(theta.name, init=0.1)
-    model.parameters.append(theta_tvar)
+    add_population_parameter(model, theta.name, 0.1)
 
     return model

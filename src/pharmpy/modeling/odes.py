@@ -8,13 +8,21 @@ import pharmpy.symbols
 from pharmpy import ExplicitODESystem
 from pharmpy.model import ModelError
 from pharmpy.modeling.help_functions import _as_integer
-from pharmpy.parameter import Parameter
+from pharmpy.parameter import Parameter, Parameters
 from pharmpy.statements import Assignment, Bolus, Infusion
 
-from .common import remove_unused_parameters_and_rvs
+from .common import remove_unused_parameters_and_rvs, rename_symbols
 from .data import get_observations
 from .eta_additions import _get_dependent_assignments
 from .expressions import create_symbol
+from .parameters import (
+    add_population_parameter,
+    fix_parameters,
+    fix_parameters_to,
+    set_initial_estimates,
+    set_upper_bounds,
+    unfix_parameters,
+)
 
 
 def _extract_params_from_symb(statements, symbol_name, pset):
@@ -57,10 +65,9 @@ def add_individual_parameter(model, name):
 
 def _add_parameter(model, name, init=0.1):
     pops = create_symbol(model, f'POP_{name}')
-    pop_param = Parameter(pops.name, init=init, lower=0)
-    model.parameters.append(pop_param)
+    add_population_parameter(model, pops.name, init, lower=0)
     symb = create_symbol(model, name)
-    ass = Assignment(symb, pop_param.symbol)
+    ass = Assignment(symb, pops)
     model.statements.insert(0, ass)
     return symb
 
@@ -99,10 +106,9 @@ def set_first_order_elimination(model):
     if has_first_order_elimination(model):
         pass
     elif has_zero_order_elimination(model) or has_michaelis_menten_elimination(model):
-        model.parameters['POP_CLMM'].name = 'POP_CL'
+        rename_symbols(model, {'POP_CLMM': 'POP_CL'})
         ass = model.statements.find_assignment('CLMM')
         ass.symbol = 'CL'
-        ass.subs({'POP_CLMM': 'POP_CL'})
         odes = model.statements.ode_system
         central = odes.central_compartment
         output = odes.output_compartment
@@ -165,9 +171,9 @@ def set_zero_order_elimination(model):
     if has_zero_order_elimination(model):
         pass
     elif has_michaelis_menten_elimination(model):
-        model.parameters['POP_KM'].fix = True
+        fix_parameters(model, 'POP_KM')
     elif has_mixed_mm_fo_elimination(model):
-        model.parameters['POP_KM'].fix = True
+        fix_parameters(model, 'POP_KM')
         odes = model.statements.ode_system
         central = odes.central_compartment
         output = odes.output_compartment
@@ -181,8 +187,7 @@ def set_zero_order_elimination(model):
         _do_michaelis_menten_elimination(model)
         obs = get_observations(model)
         init = obs.min() / 100  # 1% of smallest observation
-        model.parameters['POP_KM'].init = init
-        model.parameters['POP_KM'].fix = True
+        fix_parameters_to(model, {'POP_KM': init})
     return model
 
 
@@ -369,7 +374,7 @@ def set_michaelis_menten_elimination(model):
     if has_michaelis_menten_elimination(model):
         pass
     elif has_zero_order_elimination(model):
-        model.parameters['POP_KM'].fix = False
+        unfix_parameters(model, 'POP_KM')  # model.parameters['POP_KM'].fix = False
     elif has_mixed_mm_fo_elimination(model):
         odes = model.statements.ode_system
         central = odes.central_compartment
@@ -422,7 +427,7 @@ def set_mixed_mm_fo_elimination(model):
     if has_mixed_mm_fo_elimination(model):
         pass
     elif has_michaelis_menten_elimination(model) or has_zero_order_elimination(model):
-        model.parameters['POP_KM'].fix = False
+        unfix_parameters(model, 'POP_KM')
         odes = model.statements.ode_system
         central = odes.central_compartment
         output = odes.output_compartment
@@ -450,7 +455,7 @@ def _do_michaelis_menten_elimination(model, combined=False):
     km_init, clmm_init = _get_mm_inits(model, numer, combined)
 
     km = _add_parameter(model, 'KM', init=km_init)
-    model.parameters['POP_KM'].upper = 20 * get_observations(model).max()
+    set_upper_bounds(model, {'POP_KM': 20 * get_observations(model).max()})
 
     if denom != 1:
         if combined:
@@ -489,10 +494,11 @@ def _do_michaelis_menten_elimination(model, combined=False):
 
 def _rename_parameter(model, old_name, new_name):
     a = model.statements.find_assignment(old_name)
+    d = dict()
     for s in a.rhs_symbols:
         if s in model.parameters:
             old_par = s
-            model.parameters[s].name = f'POP_{new_name}'
+            d[model.parameters[s].symbol] = f'POP_{new_name}'
             new_par = sympy.Symbol(f'POP_{new_name}')
             model.statements.subs({old_par: new_par})
             break
@@ -503,15 +509,23 @@ def _rename_parameter(model, old_name, new_name):
             ind = model.random_variables.iiv.index(rv)
             pars = [e for e in cov[ind, :] if e.is_Symbol]
             diag = cov[ind, ind]
-            d = {diag: f'IIV_{new_name}'}
+            d[diag] = f'IIV_{new_name}'
             for p in pars:
                 if p != diag:
                     if p.name.startswith('IIV'):
-                        d[p] = p.name.replace(f'IIV_{old_name}', f'IIV_{new_name}')
+                        d[p.symbol] = p.name.replace(f'IIV_{old_name}', f'IIV_{new_name}')
             model.random_variables.subs(d)
-            for key, val in d.items():
-                model.parameters[key].name = val
             break
+    new = []
+    for p in model.parameters:
+        if p.symbol in d:
+            newparam = Parameter(
+                name=d[p.symbol], init=p.init, upper=p.upper, lower=p.lower, fix=p.fix
+            )
+        else:
+            newparam = p
+        new.append(newparam)
+    model.parameters = Parameters(new)
     model.statements.subs({old_name: new_name})
 
 
@@ -1294,7 +1308,7 @@ def add_peripheral_compartment(model):
         pop_vp1 = pop_vp1_candidates.pop()
         pop_qp1_init = model.parameters[pop_qp1].init
         pop_vp1_init = model.parameters[pop_vp1].init
-        model.parameters[pop_qp1].init = pop_qp1_init * 0.10
+        set_initial_estimates(model, {pop_qp1.name: pop_qp1_init * 0.10})
         qp_init = pop_qp1_init * 0.90
         vp_init = pop_vp1_init
     else:
@@ -1391,7 +1405,7 @@ def remove_peripheral_compartment(model):
             pop_qp1_init = model.parameters[pop_qp1].init
             pop_vp1_init = model.parameters[pop_vp1].init
             new_vc_init = pop_vc_init + pop_qp1_init / pop_cl_init * pop_vp1_init
-            model.parameters[pop_vc].init = new_vc_init
+            set_initial_estimates(model, {pop_vc.name: new_vc_init})
         elif len(peripherals) == 2:
             first_peripheral = peripherals[0]
             from1_rate = odes.get_flow(first_peripheral, central)
@@ -1416,8 +1430,7 @@ def remove_peripheral_compartment(model):
             pop_vp1_init = model.parameters[pop_vp1].init
             new_qp1_init = (pop_qp1_init + pop_qp2_init) / 2
             new_vp1_init = pop_vp1_init + pop_vp2_init
-            model.parameters[pop_qp1].init = new_qp1_init
-            model.parameters[pop_vp1].init = new_vp1_init
+            set_initial_estimates(model, {pop_qp1.name: new_qp1_init, pop_vp1.name: new_vp1_init})
 
         symbols = odes.get_flow(central, last_peripheral).free_symbols
         symbols |= odes.get_flow(last_peripheral, central).free_symbols

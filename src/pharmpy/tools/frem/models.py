@@ -3,6 +3,7 @@ import itertools
 import numpy as np
 
 import pharmpy.math
+from pharmpy.modeling import fix_or_unfix_parameters, set_initial_estimates
 
 
 def calculate_parcov_inits(model, ncovs):
@@ -44,15 +45,14 @@ def create_model3b(model1b, model3, ncovs):
     * Set FIX pattern back from model1b
     * Use initial etas from model3
     """
-    parameters = model3.parameters.copy()
-
-    parcov_inits = calculate_parcov_inits(model3, ncovs)
-    parameters.inits = parcov_inits
-    parameters.inits = model3.random_variables.nearest_valid_parameters(parameters.inits)
-    parameters.fix = model1b.parameters.fix
-
     model3b = model3.copy()
-    model3b.parameters = parameters
     model3b.name = 'model_3b'
+    parcov_inits = calculate_parcov_inits(model3, ncovs)
+    set_initial_estimates(model3b, parcov_inits)
+    set_initial_estimates(
+        model3b, model3b.random_variables.nearest_valid_parameters(model3b.parameters.inits)
+    )
+    fix_or_unfix_parameters(model3b, model1b.parameters.fix)
+
     model3b.initial_individual_estimates = model3.modelfit_results.individual_estimates
     return model3b

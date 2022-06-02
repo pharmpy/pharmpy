@@ -9,19 +9,13 @@ from pharmpy.modeling import (
     copy_model,
     create_joint_distribution,
     fix_parameters,
-    fix_parameters_to,
     generate_model_code,
     get_model_covariates,
-    get_omegas,
-    get_sigmas,
-    get_thetas,
     load_example_model,
     read_model,
     read_model_from_string,
     remove_unused_parameters_and_rvs,
     set_name,
-    unfix_parameters,
-    unfix_parameters_to,
     write_model,
 )
 
@@ -55,86 +49,6 @@ def test_write_model(testdata, tmp_path):
     model = read_model(testdata / 'nonmem' / 'minimal.mod')
     write_model(model, tmp_path / 'run1.mod')
     assert Path(tmp_path / 'run1.mod').is_file()
-
-
-def test_fix_parameters(testdata):
-    model = Model.create_model(testdata / 'nonmem' / 'minimal.mod')
-    assert not model.parameters['THETA(1)'].fix
-    fix_parameters(model, ['THETA(1)'])
-    assert model.parameters['THETA(1)'].fix
-
-    model = Model.create_model(testdata / 'nonmem' / 'minimal.mod')
-    assert not model.parameters['THETA(1)'].fix
-    fix_parameters(model, 'THETA(1)')
-    assert model.parameters['THETA(1)'].fix
-
-
-def test_unfix_parameters(testdata):
-    model = Model.create_model(testdata / 'nonmem' / 'minimal.mod')
-    fix_parameters(model, ['THETA(1)'])
-    assert model.parameters['THETA(1)'].fix
-    unfix_parameters(model, ['THETA(1)'])
-    assert not model.parameters['THETA(1)'].fix
-
-    model = Model.create_model(testdata / 'nonmem' / 'minimal.mod')
-    fix_parameters(model, 'THETA(1)')
-    assert model.parameters['THETA(1)'].fix
-    unfix_parameters(model, 'THETA(1)')
-    assert not model.parameters['THETA(1)'].fix
-
-
-def test_fix_parameters_to(testdata):
-    model = Model.create_model(testdata / 'nonmem' / 'minimal.mod')
-    fix_parameters_to(model, 'THETA(1)', 0)
-    assert model.parameters['THETA(1)'].fix
-    assert model.parameters['THETA(1)'].init == 0
-
-    model = Model.create_model(testdata / 'nonmem' / 'minimal.mod')
-    fix_parameters_to(model, ['THETA(1)', 'OMEGA(1,1)'], 0)
-    assert model.parameters['THETA(1)'].fix
-    assert model.parameters['THETA(1)'].init == 0
-    assert model.parameters['THETA(1)'].fix
-    assert model.parameters['OMEGA(1,1)'].init == 0
-
-    model = Model.create_model(testdata / 'nonmem' / 'minimal.mod')
-    fix_parameters_to(model, ['THETA(1)', 'OMEGA(1,1)'], [0, 1])
-    assert model.parameters['THETA(1)'].init == 0
-    assert model.parameters['OMEGA(1,1)'].init == 1
-
-    model = Model.create_model(testdata / 'nonmem' / 'minimal.mod')
-    fix_parameters_to(model, None, 0)
-    assert all(p.fix for p in model.parameters)
-    assert all(p.init == 0 for p in model.parameters)
-
-    model = Model.create_model(testdata / 'nonmem' / 'minimal.mod')
-    with pytest.raises(ValueError, match='Incorrect number of values'):
-        fix_parameters_to(model, ['THETA(1)', 'OMEGA(1,1)'], [0, 0, 0])
-
-    model = Model.create_model(testdata / 'nonmem' / 'minimal.mod')
-    fix_parameters_to(model, None, float(0))
-    assert model.parameters['THETA(1)'].fix
-    assert model.parameters['THETA(1)'].init == 0
-
-
-def test_unfix_parameters_to(testdata):
-    model = Model.create_model(testdata / 'nonmem' / 'minimal.mod')
-    fix_parameters(model, ['THETA(1)'])
-    assert model.parameters['THETA(1)'].fix
-    unfix_parameters_to(model, 'THETA(1)', 0)
-    assert not model.parameters['THETA(1)'].fix
-    assert model.parameters['THETA(1)'].init == 0
-
-    model = Model.create_model(testdata / 'nonmem' / 'minimal.mod')
-    fix_parameters(model, ['THETA(1)', 'OMEGA(1,1)'])
-    assert model.parameters['THETA(1)'].fix
-    assert model.parameters['OMEGA(1,1)'].fix
-    unfix_parameters_to(model, ['THETA(1)', 'OMEGA(1,1)'], 0)
-    assert not model.parameters['THETA(1)'].fix
-    assert not model.parameters['OMEGA(1,1)'].fix
-    assert model.parameters['THETA(1)'].init == 0
-    assert model.parameters['OMEGA(1,1)'].init == 0
-
-    unfix_parameters_to(model, None, values=[1, 2, 3])
 
 
 def test_generate_model_code(testdata):
@@ -189,21 +103,3 @@ def test_remove_unused_parameters_and_rvs(pheno):
     del model.statements[i]
     remove_unused_parameters_and_rvs(model)
     assert not model.random_variables['ETA(2)'].joint_names
-
-
-def test_get_thetas(pheno):
-    thetas = get_thetas(pheno)
-    assert len(thetas) == 3
-    assert thetas['THETA(1)'].init == 0.00469307
-
-
-def test_get_omegas(pheno):
-    omegas = get_omegas(pheno)
-    assert len(omegas) == 2
-    assert omegas['OMEGA(1,1)'].init == 0.0309626
-
-
-def test_get_sigmas(pheno):
-    sigmas = get_sigmas(pheno)
-    assert len(sigmas) == 1
-    assert sigmas['SIGMA(1,1)'].init == 0.013241

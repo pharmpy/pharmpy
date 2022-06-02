@@ -420,10 +420,10 @@ def model_sample(args):
 
     samples = sample_parameters_from_covariance_matrix(model, n=args.samples)
     for row, params in samples.iterrows():
-        model.parameters = params
-        model.name = f'sample_{row + 1}'
-        from pharmpy.modeling import write_model
+        from pharmpy.modeling import set_initial_estimates, write_model
 
+        set_initial_estimates(model, params)
+        model.name = f'sample_{row + 1}'
         write_model(model)
 
 

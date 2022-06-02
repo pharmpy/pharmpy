@@ -17,6 +17,7 @@ from pharmpy import (
 from pharmpy.modeling import (
     create_joint_distribution,
     set_first_order_absorption,
+    set_initial_estimates,
     set_proportional_error_model,
 )
 from pharmpy.modeling.data import read_dataset_from_datainfo
@@ -90,6 +91,6 @@ def create_start_model(dataset_path, modeltype='pk_oral', cl_init=0.01, vc_init=
     create_joint_distribution(model, [eta_cl.name, eta_vc.name])
     if modeltype == 'pk_oral':
         set_first_order_absorption(model)
-        model.parameters['POP_MAT'].init = mat_init
+        set_initial_estimates(model, {'POP_MAT': mat_init})
 
     return model

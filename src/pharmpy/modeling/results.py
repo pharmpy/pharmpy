@@ -610,8 +610,7 @@ def calculate_aic(model, modelfit_results=None):
     if modelfit_results is None:
         modelfit_results = model.modelfit_results
 
-    parameters = model.parameters.copy()
-    parameters.remove_fixed()
+    parameters = model.parameters.nonfixed
     return modelfit_results.ofv + 2 * len(parameters)
 
 
@@ -670,8 +669,7 @@ def calculate_bic(model, type=None, modelfit_results=None):
     if modelfit_results is None:
         modelfit_results = model.modelfit_results
 
-    parameters = model.parameters.copy()
-    parameters.remove_fixed()
+    parameters = model.parameters.nonfixed
     if type == 'fixed':
         penalty = len(parameters) * math.log(len(get_observations(model)))
     elif type == 'random':

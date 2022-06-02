@@ -9,12 +9,14 @@ from pharmpy.estimation import EstimationStep, EstimationSteps
 from pharmpy.model import ModelSyntaxError
 from pharmpy.modeling import (
     add_iiv,
+    add_population_parameter,
     create_joint_distribution,
     remove_iiv,
+    set_initial_estimates,
     set_zero_order_absorption,
     set_zero_order_elimination,
 )
-from pharmpy.parameter import Parameter
+from pharmpy.parameter import Parameter, Parameters
 from pharmpy.plugins.nonmem import conf, convert_model
 from pharmpy.plugins.nonmem.nmtran_parser import NMTranParser
 from pharmpy.random_variables import RandomVariable
@@ -93,7 +95,7 @@ def test_set_parameters(pheno):
         'OMEGA(2,2)': 0.2,
         'SIGMA(1,1)': 0.3,
     }
-    model.parameters = params
+    set_initial_estimates(model, params)
     assert model.parameters['THETA(1)'] == Parameter('THETA(1)', 0.75, lower=0, upper=1000000)
     assert model.parameters['THETA(2)'] == Parameter('THETA(2)', 0.5, lower=0, upper=1000000)
     assert model.parameters['THETA(3)'] == Parameter('THETA(3)', 0.25, lower=-0.99, upper=1000000)
@@ -111,18 +113,14 @@ def test_set_parameters(pheno):
     assert str(sigmas[0]) == '$SIGMA 0.3\n'
 
     model = pheno.copy()
-    params = model.parameters
-    params['THETA(1)'].init = 18
-    model.parameters = params
+    set_initial_estimates(model, {'THETA(1)': 18})
     assert model.parameters['THETA(1)'] == Parameter('THETA(1)', 18, lower=0, upper=1000000)
     assert model.parameters['THETA(2)'] == Parameter('THETA(2)', 1.00916, lower=0, upper=1000000)
 
     model = pheno.copy()
     create_joint_distribution(model)
-    params = model.parameters
-    params['OMEGA(2,2)'].init = 0.000001
     with pytest.raises(UserWarning, match='Adjusting initial'):
-        model.parameters = params
+        set_initial_estimates(model, {'OMEGA(2,2)': 0.000001})
 
 
 def test_adjust_iovs(testdata):
@@ -158,12 +156,12 @@ def test_adjust_iovs(testdata):
 )
 def test_add_parameters(pheno, param_new, init_expected, buf_new):
     model = pheno.copy()
-    pset = model.parameters
+    pset = [p for p in model.parameters]
 
     assert len(pset) == 6
 
     pset.append(param_new)
-    model.parameters = pset
+    model.parameters = Parameters(pset)
 
     assert len(pset) == 7
     assert model.parameters[param_new.name].init == init_expected
@@ -185,20 +183,15 @@ def test_add_parameters(pheno, param_new, init_expected, buf_new):
 
 def test_add_two_parameters(pheno):
     model = pheno.copy()
-    pset = model.parameters
 
-    assert len(pset) == 6
+    assert len(model.parameters) == 6
 
-    param_1 = Parameter('COVEFF1', 0.2)
-    param_2 = Parameter('COVEFF2', 0.1)
-    pset.append(param_1)
-    pset.append(param_2)
-    model.parameters = pset
-    model.update_source()
+    add_population_parameter(model, 'COVEFF1', 0.2)
+    add_population_parameter(model, 'COVEFF2', 0.1)
 
-    assert len(pset) == 8
-    assert model.parameters[param_1.name].init == 0.2
-    assert model.parameters[param_2.name].init == 0.1
+    assert len(model.parameters) == 8
+    assert model.parameters['COVEFF1'].init == 0.2
+    assert model.parameters['COVEFF2'].init == 0.1
 
 
 @pytest.mark.parametrize(
@@ -257,9 +250,7 @@ def test_add_statements(pheno, statement_new, buf_new):
 def test_add_parameters_and_statements(pheno, param_new, statement_new, buf_new):
     model = pheno.copy()
 
-    pset = model.parameters
-    pset.append(param_new)
-    model.parameters = pset
+    add_population_parameter(model, param_new.name, param_new.init)
 
     sset = model.statements
 
@@ -293,15 +284,13 @@ def test_add_parameters_and_statements(pheno, param_new, statement_new, buf_new)
 def test_add_random_variables(pheno, rv_new, buf_new):
     model = pheno.copy()
     rvs = model.random_variables
-    pset = model.parameters
 
     eta = RandomVariable.normal('eta_new', 'iiv', 0, S(rv_new.name))
 
     rvs.append(eta)
-    pset.append(rv_new)
+    add_population_parameter(model, rv_new.name, rv_new.init)
 
     model.random_variables = rvs
-    model.parameters = pset
 
     model.update_source()
 
@@ -328,18 +317,16 @@ def test_add_random_variables_and_statements(pheno):
     model = pheno.copy()
 
     rvs = model.random_variables
-    pset = model.parameters
 
     eta = RandomVariable.normal('ETA_NEW', 'iiv', 0, S('omega'))
     rvs.append(eta)
-    pset.append(Parameter('omega', 0.1))
+    add_population_parameter(model, 'omega', 0.1)
 
     eps = RandomVariable.normal('EPS_NEW', 'ruv', 0, S('sigma'))
     rvs.append(eps)
-    pset.append(Parameter('sigma', 0.1))
+    add_population_parameter(model, 'sigma', 0.1)
 
     model.random_variables = rvs
-    model.parameters = pset
 
     sset = model.statements
 
@@ -432,8 +419,8 @@ def test_remove_eta(pheno):
     model = pheno.copy()
     rvs = model.random_variables
     eta1 = rvs['ETA(1)']
-    del rvs[eta1]
-    model.update_source()
+
+    remove_iiv(model, eta1.name)
     assert model.model_code.split('\n')[12] == 'V = TVV*EXP(ETA(1))'
 
 

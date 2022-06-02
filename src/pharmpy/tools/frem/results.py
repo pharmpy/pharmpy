@@ -474,7 +474,7 @@ def add_parameter_inits_and_estimates(res, frem_model, intermediate_models):
         df = pd.concat(
             [
                 df,
-                pd.Series(model.parameters.nonfixed_inits),
+                pd.Series(model.parameters.nonfixed.inits),
                 model.modelfit_results.parameter_estimates,
             ],
             ignore_index=True,
@@ -485,14 +485,14 @@ def add_parameter_inits_and_estimates(res, frem_model, intermediate_models):
     df = pd.concat(
         [
             df,
-            pd.Series(frem_model.parameters.nonfixed_inits),
+            pd.Series(frem_model.parameters.nonfixed.inits),
             frem_model.modelfit_results.parameter_estimates,
         ],
         ignore_index=True,
         axis=1,
     )
     df = df.T
-    df = df.reindex(columns=frem_model.parameters.nonfixed_inits.keys())
+    df = df.reindex(columns=frem_model.parameters.nonfixed.inits.keys())
     model_names.append(frem_model.name)
     index = pd.MultiIndex.from_product([model_names, ['init', 'estimate']], names=['model', 'type'])
     df.index = index
@@ -1023,7 +1023,7 @@ def psn_frem_results(path, force_posdef_covmatrix=False, force_posdef_samples=50
     model1b = Model.create_model(path / 'm1' / 'model_1b.mod')
     model1 = intmods[0]
     model1b.modelfit_results = model1.modelfit_results
-    model1b.modelfit_results.parameter_estimates = pd.Series(model1b.parameters.nonfixed_inits)
+    model1b.modelfit_results.parameter_estimates = pd.Series(model1b.parameters.nonfixed.inits)
     psn_reorder_base_model_inits(model1b, path)
 
     res = calculate_results(

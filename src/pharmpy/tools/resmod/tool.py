@@ -9,11 +9,13 @@ import pharmpy.tools
 from pharmpy import Parameter, Parameters, RandomVariable, RandomVariables
 from pharmpy.estimation import EstimationStep, EstimationSteps
 from pharmpy.modeling import (
+    add_population_parameter,
     add_time_after_dose,
     create_symbol,
     get_mdv,
     set_combined_error_model,
     set_iiv_on_ruv,
+    set_initial_estimates,
     set_power_on_ruv,
     summarize_individuals,
     summarize_individuals_count_table,
@@ -265,17 +267,17 @@ def _create_combined_model(input_model, current_iteration):
     ipred = sympy.Symbol('IPRED')
     s.expression = s.expression + ruv_prop + ruv_add / ipred
 
-    sigma_prop = Parameter('sigma_prop', 1, lower=0)
-    model.parameters.append(sigma_prop)
+    prop_name = 'sigma_prop'
+    add_population_parameter(model, prop_name, 1, lower=0)
     model.dataset['IPRED'].replace(0, 2.225e-307, inplace=True)
     ipred_min = model.dataset['IPRED'].min()
     sigma_add_init = ipred_min / 2
-    sigma_add = Parameter('sigma_add', sigma_add_init, lower=0)
-    model.parameters.append(sigma_add)
+    add_name = 'sigma_add'
+    add_population_parameter(model, add_name, sigma_add_init, lower=0)
 
-    eps_prop = RandomVariable.normal(ruv_prop.name, 'ruv', 0, sigma_prop.symbol)
+    eps_prop = RandomVariable.normal(ruv_prop.name, 'ruv', 0, sympy.Symbol(prop_name))
     model.random_variables.append(eps_prop)
-    eps_add = RandomVariable.normal(ruv_add.name, 'ruv', 0, sigma_add.symbol)
+    eps_add = RandomVariable.normal(ruv_add.name, 'ruv', 0, sympy.Symbol(add_name))
     model.random_variables.append(eps_add)
 
     model.name = f'combined_{current_iteration}'
@@ -326,17 +328,25 @@ def _create_best_model(model, res, current_iteration, groups=4, cutoff=3.84):
 
         if name.startswith('power'):
             set_power_on_ruv(model)
-            model.parameters.inits = {
-                'power1': res.models['parameters'].loc['power', 1, current_iteration].get('theta')
-                + 1
-            }
+            set_initial_estimates(
+                model,
+                {
+                    'power1': res.models['parameters']
+                    .loc['power', 1, current_iteration]
+                    .get('theta')
+                    + 1
+                },
+            )
         elif name.startswith('IIV_on_RUV'):
             set_iiv_on_ruv(model)
-            model.parameters.inits = {
-                'IIV_RUV1': res.models['parameters']
-                .loc['IIV_on_RUV', 1, current_iteration]
-                .get('omega')
-            }
+            set_initial_estimates(
+                model,
+                {
+                    'IIV_RUV1': res.models['parameters']
+                    .loc['IIV_on_RUV', 1, current_iteration]
+                    .get('omega')
+                },
+            )
         elif name.startswith('time_varying'):
             _time_after_dose(model)
             i = int(name[-1])
@@ -345,21 +355,27 @@ def _create_best_model(model, res, current_iteration, groups=4, cutoff=3.84):
             tad = df['TAD']
             cutoff_tvar = tad.quantile(q=quantile)
             set_time_varying_error_model(model, cutoff=cutoff_tvar, idv='TAD')
-            model.parameters.inits = {
-                'time_varying': res.models['parameters']
-                .loc[f"time_varying{i}", 1, current_iteration]
-                .get('theta')
-            }
+            set_initial_estimates(
+                model,
+                {
+                    'time_varying': res.models['parameters']
+                    .loc[f"time_varying{i}", 1, current_iteration]
+                    .get('theta')
+                },
+            )
         else:
             set_combined_error_model(model)
-            model.parameters.inits = {
-                'sigma_prop': res.models['parameters']
-                .loc['combined', 1, current_iteration]
-                .get('sigma_prop'),
-                'sigma_add': res.models['parameters']
-                .loc['combined', 1, current_iteration]
-                .get('sigma_add'),
-            }
+            set_initial_estimates(
+                model,
+                {
+                    'sigma_prop': res.models['parameters']
+                    .loc['combined', 1, current_iteration]
+                    .get('sigma_prop'),
+                    'sigma_add': res.models['parameters']
+                    .loc['combined', 1, current_iteration]
+                    .get('sigma_add'),
+                },
+            )
         selected_model_name = name
         model.update_source()
     else:
