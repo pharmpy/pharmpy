@@ -14,6 +14,7 @@ Tools in Pharmpy
 
    modelsearch
    iivsearch
+   iovsearch
    resmod
    allometry
 

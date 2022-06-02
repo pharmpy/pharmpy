@@ -4,16 +4,16 @@
 IIVsearch
 =========
 
-The IIV tool is a general tool to decide the best IIV structure given a start model. This includes deciding which IIV
+The IIVsearch tool is a general tool to decide the best IIV structure given a start model. This includes deciding which IIV
 to keep and the covariance structure based on a chosen selection criteria.
 
 ~~~~~~~
 Running
 ~~~~~~~
 
-The iiv tool is available both in Pharmpy/pharmr and from the command line.
+The IIVsearch tool is available both in Pharmpy/pharmr and from the command line.
 
-To initiate iiv in Python:
+To initiate IIVsearch in Python/R:
 
 .. pharmpy-code::
 
@@ -30,7 +30,7 @@ This will take an input model ``model`` and run the brute_force_no_of_etas ``alg
 added to the input model since ``iiv_strategy`` is set to be 'no_add'. The candidate models will be ranked using ``bic``
 with default ``cutoff``, which for BIC is none.
 
-To run iiv from the command line, the example code is redefined accordingly:
+To run IIVsearch from the command line, the example code is redefined accordingly:
 
 .. code::
 
@@ -40,21 +40,21 @@ To run iiv from the command line, the example code is redefined accordingly:
 Arguments
 ~~~~~~~~~
 
-+---------------------------------------------------+-----------------------------------------------------------------------------------------+
-| Argument                                          | Description                                                                             |
-+===================================================+=========================================================================================+
-| :ref:`algorithm<Algorithms>`                      | Algorithm to use (e.g. brute_force)                                                     |
-+---------------------------------------------------+-----------------------------------------------------------------------------------------+
-| :ref:`iiv_strategy<iiv_strategies_iivsearch>`     | If/how IIV should be added to start model (default is to not add)                       |
-+---------------------------------------------------+-----------------------------------------------------------------------------------------+
-| :ref:`rankfunc<Comparing and ranking candidates>` | Which selection criteria to rank models on, e.g. OFV (default is BIC)                   |
-+---------------------------------------------------+-----------------------------------------------------------------------------------------+
-| :ref:`cutoff<Comparing and ranking candidates>`   | Cutoff for the ranking function, exclude models that are below cutoff (default is none) |
-+---------------------------------------------------+-----------------------------------------------------------------------------------------+
-| ``model``                                         | Start model                                                                             |
-+---------------------------------------------------+-----------------------------------------------------------------------------------------+
++-----------------------------------------------+-----------------------------------------------------------------------------------------+
+| Argument                                      | Description                                                                             |
++===============================================+=========================================================================================+
+| :ref:`algorithm<algorithms_iivsearch>`        | Algorithm to use (e.g. brute_force)                                                     |
++-----------------------------------------------+-----------------------------------------------------------------------------------------+
+| :ref:`iiv_strategy<iiv_strategies_iivsearch>` | If/how IIV should be added to start model (default is to not add)                       |
++-----------------------------------------------+-----------------------------------------------------------------------------------------+
+| :ref:`rankfunc<ranking_iivsearch>`            | Which selection criteria to rank models on, e.g. OFV (default is BIC)                   |
++-----------------------------------------------+-----------------------------------------------------------------------------------------+
+| :ref:`cutoff<ranking_iivsearch>`              | Cutoff for the ranking function, exclude models that are below cutoff (default is none) |
++-----------------------------------------------+-----------------------------------------------------------------------------------------+
+| ``model``                                     | Start model                                                                             |
++-----------------------------------------------+-----------------------------------------------------------------------------------------+
 
-.. _algorithms:
+.. _algorithms_iivsearch:
 
 ~~~~~~~~~~
 Algorithms
@@ -191,13 +191,13 @@ The different strategies can be seen here:
 +------------------------+----------------------------------------------------------+
 
 
-.. _comparing and ranking candidates:
+.. _ranking_iivsearch:
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Comparing and ranking candidates
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-This system is the same as for modelsearch, see :ref:`here<ranking>`.
+This system is the same as for modelsearch, see :ref:`here<ranking_modelsearch>`.
 
 ~~~~~~~~~~~~~~~~~~~~~
 The IIVsearch results

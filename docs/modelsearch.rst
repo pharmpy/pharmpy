@@ -45,13 +45,13 @@ For a more detailed description of each argument, see their respective chapter o
 +-------------------------------------------------+-----------------------------------------------------------------------------------------+
 | Argument                                        | Description                                                                             |
 +=================================================+=========================================================================================+
-| :ref:`search_space<The search space>`           | Search space to test                                                                    |
+| :ref:`search_space<the search space>`           | Search space to test                                                                    |
 +-------------------------------------------------+-----------------------------------------------------------------------------------------+
-| :ref:`algorithm<Algorithms>`                    | Algorithm to use (e.g. exhaustive)                                                      |
+| :ref:`algorithm<algorithms_modelsearch>`        | Algorithm to use (e.g. exhaustive)                                                      |
 +-------------------------------------------------+-----------------------------------------------------------------------------------------+
-| :ref:`rankfunc<ranking>`                        | Which selection criteria to rank models on, e.g. OFV (default is BIC)                   |
+| :ref:`rankfunc<ranking_modelsearch>`            | Which selection criteria to rank models on, e.g. OFV (default is BIC)                   |
 +-------------------------------------------------+-----------------------------------------------------------------------------------------+
-| :ref:`cutoff<ranking>`                          | Cutoff for the ranking function, exclude models that are below cutoff (default is none) |
+| :ref:`cutoff<ranking_modelsearch>`              | Cutoff for the ranking function, exclude models that are below cutoff (default is none) |
 +-------------------------------------------------+-----------------------------------------------------------------------------------------+
 | :ref:`iiv_strategy<iiv_strategies_modelsearch>` | If/how IIV should be added to candidate models (default is to not add)                  |
 +-------------------------------------------------+-----------------------------------------------------------------------------------------+
@@ -68,6 +68,8 @@ The model feature search space is a set of possible combinations of model featur
 the input model. The supported features cover absorption, absorption delay, elimination, and distribution. The search
 space is given as a string with a specific grammar, according to the `Model Feature Language` (MFL) (see detailed
 description :ref:`below<mfl>`).
+
+.. _algorithms_modelsearch:
 
 ~~~~~~~~~~
 Algorithms
@@ -254,7 +256,7 @@ The different strategies can be seen here:
 | ``'absorption_delay'`` | IIV is added to the absorption delay parameter           |
 +------------------------+----------------------------------------------------------+
 
-.. _ranking:
+.. _ranking_modelsearch:
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Comparing and ranking candidates
