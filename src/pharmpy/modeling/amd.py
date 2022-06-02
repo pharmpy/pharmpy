@@ -1,5 +1,7 @@
 from functools import partial
 
+import pandas as pd
+
 import pharmpy.tools.scm as scm
 from pharmpy import plugins
 from pharmpy.results import Results
@@ -115,16 +117,20 @@ def run_amd(
     fit(model)
 
     run_funcs = []
+    run_subfuncs = dict()
     for section in order:
         if section == 'structural':
             func = partial(_run_modelsearch, search_space=search_space, path=db.path)
             run_funcs.append(func)
+            run_subfuncs['modelsearch'] = func
         elif section == 'iivsearch':
             func = partial(_run_iiv, path=db.path)
             run_funcs.append(func)
+            run_subfuncs['iivsearch'] = func
         elif section == 'residual':
             func = partial(_run_resmod, path=db.path)
             run_funcs.append(func)
+            run_subfuncs['resmod'] = func
         elif section == 'allometry':
             func = partial(_run_allometry, allometric_variable=None, path=db.path)
             run_funcs.append(func)
@@ -140,12 +146,32 @@ def run_amd(
             )
 
     run_tool('modelfit', model, path=db.path / 'modelfit')
-
     next_model = model
+    sum_tools, sum_models, sum_inds_counts, sum_amd = [], [], [], []
     for func in run_funcs:
-        next_model = func(next_model)
+        if func in run_subfuncs.values():
+            subresults = func(next_model)
+            next_model = subresults.best_model
+            sum_tools.append(subresults.summary_tool.reset_index()),
+            sum_models.append(subresults.summary_models.reset_index()),
+            sum_inds_counts.append(subresults.summary_individuals_count.reset_index()),
+        else:
+            next_model = func(next_model)
+    for sums in [sum_tools, sum_models, sum_inds_counts]:
+        sums = pd.concat(
+            sums, keys=list(run_subfuncs.keys()), names=['tool', 'default index']
+        ).reset_index()
+        sums['step'] = sums['step'].fillna(1).astype('int64')
+        sums.set_index(['tool', 'step', 'model'], inplace=True)
+        sums.drop('default index', axis=1, inplace=True)
+        sum_amd.append(sums)
 
-    res = AMDResults(final_model=next_model)
+    res = AMDResults(
+        final_model=next_model,
+        summary_tool=sum_amd[0],
+        summary_models=sum_amd[1],
+        summary_individuals_count=sum_amd[2],
+    )
     return res
 
 
