@@ -206,6 +206,23 @@ def run_resmod(args):
     )
 
 
+def run_allometry(args):
+    from pharmpy.modeling import run_tool
+
+    run_tool(
+        'allometry',
+        model=args.model,
+        allometric_variable=args.allometric_variable,
+        reference_value=args.reference_value,
+        parameters=args.parameters,
+        initials=args.initials,
+        lower_bounds=args.lower_bounds,
+        upper_bounds=args.upper_bounds,
+        fixed=not args.non_fixed,
+        path=args.path,
+    )
+
+
 def run_estmethod(args):
     from pharmpy.modeling.run import run_tool
 
@@ -1027,6 +1044,61 @@ parser_definition = [
                                 'type': comma_list,
                                 'help': 'List of models to not test',
                                 'default': None,
+                            },
+                            {
+                                'name': '--path',
+                                'type': pathlib.Path,
+                                'help': 'Path to output directory',
+                            },
+                        ],
+                    }
+                },
+                {
+                    'allometry': {
+                        'help': 'Add allometric scaling',
+                        'func': run_allometry,
+                        'parents': [args_model_input],
+                        'args': [
+                            {
+                                'name': '--allometric_variable',
+                                'type': str,
+                                'help': 'Name of the allometric variable',
+                                'default': 'WT',
+                            },
+                            {
+                                'name': '--reference_value',
+                                'type': float,
+                                'help': 'Reference value for the allometric variable',
+                                'default': 70.0,
+                            },
+                            {
+                                'name': '--parameters',
+                                'type': comma_list,
+                                'help': 'List of parameters to apply scaling to',
+                                'default': None,
+                            },
+                            {
+                                'name': '--initials',
+                                'type': comma_list,
+                                'help': 'Initial estimates for the exponents',
+                                'default': None,
+                            },
+                            {
+                                'name': '--lower_bounds',
+                                'type': comma_list,
+                                'help': 'Lower bounds for the exponents',
+                                'default': None,
+                            },
+                            {
+                                'name': '--upper_bounds',
+                                'type': comma_list,
+                                'help': 'Upper bounds for the exponents',
+                                'default': None,
+                            },
+                            {
+                                'name': '--non_fixed',
+                                'help': 'Should the exponents not be fixed',
+                                'action': 'store_true',
                             },
                             {
                                 'name': '--path',
