@@ -12,8 +12,17 @@ from .run import fit, run_tool
 
 
 class AMDResults(Results):
-    def __init__(self, final_model=None):
+    def __init__(
+        self,
+        final_model=None,
+        summary_tool=None,
+        summary_models=None,
+        summary_individuals_count=None,
+    ):
         self.final_model = final_model
+        self.summary_tool = summary_tool
+        self.summary_models = summary_models
+        self.summary_individuals_count = summary_individuals_count
 
 
 def run_amd(
@@ -148,22 +157,19 @@ def _run_modelsearch(model, search_space, path):
         model=model,
         path=path / 'modelsearch',
     )
-    selected_model = res_modelsearch.best_model
-    return selected_model
+    return res_modelsearch
 
 
 def _run_iiv(model, path):
     res_iiv = run_tool(
         'iivsearch', 'brute_force', iiv_strategy=2, model=model, path=path / 'iivsearch'
     )
-    selected_iiv_model = res_iiv.best_model
-    return selected_iiv_model
+    return res_iiv
 
 
 def _run_resmod(model, path):
     res_resmod = run_tool('resmod', model, path=path / 'resmod')
-    selected_model = res_resmod.best_model
-    return selected_model
+    return res_resmod
 
 
 def _run_covariates(model, continuous, categorical, path):
