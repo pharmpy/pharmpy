@@ -36,27 +36,30 @@ To run modelsearch from the command line, the example code is redefined accordin
 
 .. code::
 
-    pharmpy run modelsearch path/to/model 'ABSORPTION(ZO);PERIPHERALS(1)' 'exhaustive' --iv_strategy 'no_add' --rankfunc 'bic'
+    pharmpy run modelsearch path/to/model 'ABSORPTION(ZO);PERIPHERALS(1)' 'exhaustive' --iiv_strategy 'no_add' --rankfunc 'bic'
 
 Arguments
 ~~~~~~~~~
 For a more detailed description of each argument, see their respective chapter on this page.
 
-+-------------------------------------------------+-----------------------------------------------------------------------------------------+
-| Argument                                        | Description                                                                             |
-+=================================================+=========================================================================================+
-| :ref:`search_space<the search space>`           | Search space to test                                                                    |
-+-------------------------------------------------+-----------------------------------------------------------------------------------------+
-| :ref:`algorithm<algorithms_modelsearch>`        | Algorithm to use (e.g. exhaustive)                                                      |
-+-------------------------------------------------+-----------------------------------------------------------------------------------------+
-| :ref:`rankfunc<ranking_modelsearch>`            | Which selection criteria to rank models on, e.g. OFV (default is BIC)                   |
-+-------------------------------------------------+-----------------------------------------------------------------------------------------+
-| :ref:`cutoff<ranking_modelsearch>`              | Cutoff for the ranking function, exclude models that are below cutoff (default is none) |
-+-------------------------------------------------+-----------------------------------------------------------------------------------------+
-| :ref:`iiv_strategy<iiv_strategies_modelsearch>` | If/how IIV should be added to candidate models (default is to not add)                  |
-+-------------------------------------------------+-----------------------------------------------------------------------------------------+
-| ``model``                                       | Start model                                                                             |
-+-------------------------------------------------+-----------------------------------------------------------------------------------------+
++-------------------------------------------------+------------------------------------------------------------------+
+| Argument                                        | Description                                                      |
++=================================================+==================================================================+
+| :ref:`search_space<the search space>`           | Search space to test                                             |
++-------------------------------------------------+------------------------------------------------------------------+
+| :ref:`algorithm<algorithms_modelsearch>`        | Algorithm to use (e.g. ``'exhaustive'``)                         |
++-------------------------------------------------+------------------------------------------------------------------+
+| :ref:`rankfunc<ranking_modelsearch>`            | Which selection criteria to rank models on, e.g. OFV (default is |
+|                                                 | BIC)                                                             |
++-------------------------------------------------+------------------------------------------------------------------+
+| :ref:`cutoff<ranking_modelsearch>`              | Cutoff for the ranking function, exclude models that are below   |
+|                                                 | cutoff (default is none)                                         |
++-------------------------------------------------+------------------------------------------------------------------+
+| :ref:`iiv_strategy<iiv_strategies_modelsearch>` | If/how IIV should be added to candidate models (default is to    |
+|                                                 | not add)                                                         |
++-------------------------------------------------+------------------------------------------------------------------+
+| ``model``                                       | Start model                                                      |
++-------------------------------------------------+------------------------------------------------------------------+
 
 .. _the search space:
 
@@ -78,17 +81,16 @@ Algorithms
 The tool can conduct the model search using different algorithms. The available algorithms can be seen in the table
 below.
 
-+---------------------------+-------------------------------------------------------------------+
-| Algorithm                 | Description                                                       |
-+===========================+===================================================================+
-| ``'exhaustive'``          | All possible combinations of the search space are tested          |
-+---------------------------+-------------------------------------------------------------------+
-| ``'exhaustive_stepwise'`` | Add one feature in each step in all possible orders               |
-+---------------------------+-------------------------------------------------------------------+
-| ``'reduced_stepwise'``    | Add one feature in each step in all possible orders.              |
-|                           | After each feature layer, choose best model between models        |
-|                           | with same features                                                |
-+---------------------------+-------------------------------------------------------------------+
++---------------------------+----------------------------------------------------------------------------------------+
+| Algorithm                 | Description                                                                            |
++===========================+========================================================================================+
+| ``'exhaustive'``          | All possible combinations of the search space are tested                               |
++---------------------------+----------------------------------------------------------------------------------------+
+| ``'exhaustive_stepwise'`` | Add one feature in each step in all possible orders                                    |
++---------------------------+----------------------------------------------------------------------------------------+
+| ``'reduced_stepwise'``    | Add one feature in each step in all possible orders. After each feature layer, choose  |
+|                           | best model between models with same features                                           |
++---------------------------+----------------------------------------------------------------------------------------+
 
 Exhaustive search
 ~~~~~~~~~~~~~~~~~
@@ -188,8 +190,8 @@ compartment at a given step. This is done in order to allow for better initial e
 Reduced stepwise search
 ~~~~~~~~~~~~~~~~~~~~~~~
 The reduced stepwise is similar to the exhaustive stepwise search, but after each layer it compares models with
-the same features, where the compared models arrived at the features in a different order. Next, the algorithm sends the
-best model from each comparison to the next layer, where the subsequent feature is added.
+the same features, where the compared models arrived at the features in a different order. Next, the algorithm sends
+the best model from each comparison to the next layer, where the subsequent feature is added.
 
 .. graphviz::
 
@@ -395,20 +397,21 @@ Model features
 
 MFL support the following model features:
 
-+---------------+-------------------------------+-------------------------------------------------------+
-| Category      | Options                       | Description                                           |
-+===============+===============================+=======================================================+
-| ABSORPTION    | :code:`FO, ZO, SEQ-ZO-FO`     | Absorption rate                                       |
-+---------------+-------------------------------+-------------------------------------------------------+
-| ELIMINATION   | :code:`FO, ZO, MM, MIX-FO-MM` | Elimination rate                                      |
-+---------------+-------------------------------+-------------------------------------------------------+
-| PERIPHERALS   | `number`                      | Number of peripheral compartments                     |
-+---------------+-------------------------------+-------------------------------------------------------+
-| TRANSITS      | `number`, DEPOT/NODEPOT       | Number of absorption transit compartments. Whether    |
-|               |                               | convert depot compartment into a transit compartment  |
-+---------------+-------------------------------+-------------------------------------------------------+
-| LAGTIME       | None                          | Absorption lagtime                                    |
-+---------------+-------------------------------+-------------------------------------------------------+
++---------------+-------------------------------+--------------------------------------------------------------------+
+| Category      | Options                       | Description                                                        |
++===============+===============================+====================================================================+
+| ABSORPTION    | :code:`FO, ZO, SEQ-ZO-FO`     | Absorption rate                                                    |
++---------------+-------------------------------+--------------------------------------------------------------------+
+| ELIMINATION   | :code:`FO, ZO, MM, MIX-FO-MM` | Elimination rate                                                   |
++---------------+-------------------------------+--------------------------------------------------------------------+
+| PERIPHERALS   | `number`                      | Number of peripheral compartments                                  |
++---------------+-------------------------------+--------------------------------------------------------------------+
+| TRANSITS      | `number`, DEPOT/NODEPOT       | Number of absorption transit compartments. Whether convert depot   |
+|               |                               | compartment into a transit compartment                             |
++---------------+-------------------------------+--------------------------------------------------------------------+
+| LAGTIME       | None                          | Absorption lagtime                                                 |
++---------------+-------------------------------+--------------------------------------------------------------------+
+
 
 Describe intervals
 ~~~~~~~~~~~~~~~~~~
