@@ -399,3 +399,78 @@ def solve_ode_system(model):
             new.append(s)
     model.statements = ModelStatements(new)
     return model
+
+
+def make_declarative(model):
+    """Make the model statments declarative
+
+    Each symbol will only be declared once.
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+
+    Results
+    -------
+    Model
+        Reference to the same model
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> model.statements.before_odes
+
+    >>> make_declarative(model)
+    >>> model.statements.before_odes
+            ⎧TIME  for AMT > 0
+            ⎨
+    BTIME = ⎩ 0     otherwise
+    TAD = -BTIME + TIME
+    TVCL = PTVCL⋅WGT
+          ⎧PTVV⋅WGT⋅(THETA(3) + 1)  for APGR < 5
+          ⎨
+    TVV = ⎩       PTVV⋅WGT           otherwise
+               ETA(1)
+    CL = TVCL⋅ℯ
+             ETA(2)
+    V = TVV⋅ℯ
+    S₁ = V
+    """
+    assigned_symbols = set()
+    duplicated_symbols = dict()  # symbol to last index
+    for i, s in enumerate(model.statements):
+        if not isinstance(s, Assignment):
+            continue
+        symb = s.symbol
+        if symb in assigned_symbols:
+            if symb not in duplicated_symbols:
+                duplicated_symbols[symb] = []
+            duplicated_symbols[symb].append(i)
+        else:
+            assigned_symbols.add(symb)
+
+    current = dict()
+    newstats = []
+    for i, s in enumerate(model.statements):
+        if not isinstance(s, Assignment):
+            s.subs(current)
+            newstats.append(s)  # FIXME: No copy method
+        elif s.symbol in duplicated_symbols:
+            if i not in duplicated_symbols[s.symbol]:
+                current[s.symbol] = s.expression
+            else:
+                duplicated_symbols[s.symbol] = duplicated_symbols[s.symbol][1:]
+                if duplicated_symbols[s.symbol]:
+                    current[s.symbol] = s.expression.subs(current)
+                else:
+                    ass = Assignment(s.symbol, s.expression.subs(current))
+                    newstats.append(ass)
+                    del current[s.symbol]
+        else:
+            ass = Assignment(s.symbol, s.expression.subs(current))
+            newstats.append(ass)
+
+    model.statements = ModelStatements(newstats)
+    return model

@@ -16,6 +16,7 @@ from pharmpy.modeling import (
     get_individual_prediction_expression,
     get_observation_expression,
     get_population_prediction_expression,
+    make_declarative,
     mu_reference_model,
     read_model_from_string,
     simplify_expression,
@@ -205,3 +206,12 @@ def test_solve_ode_system(pheno):
     model = pheno.copy()
     solve_ode_system(model)
     assert sympy.Symbol('t') in model.statements[8].free_symbols
+
+
+def test_make_declarative(pheno):
+    model = pheno.copy()
+    make_declarative(model)
+    assert model.statements[3].expression == sympy.Piecewise(
+        (s('WGT') * s('THETA(2)') * (s('THETA(3)') + 1), sympy.Lt(s('APGR'), 5)),
+        (s('WGT') * s('THETA(2)'), True),
+    )
