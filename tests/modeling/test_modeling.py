@@ -1092,110 +1092,6 @@ def test_nested_transit_peripherals(testdata):
     set_peripheral_compartments(model, 2)
 
 
-@pytest.mark.parametrize(
-    'effect, covariate, operation, buf_new',
-    [
-        (
-            'exp',
-            'WGT',
-            '*',
-            'WGT_MEDIAN = 1.30000\n' 'CLWGT = EXP(THETA(4)*(WGT - WGT_MEDIAN))\n' 'CL = CL*CLWGT',
-        ),
-        (
-            'exp',
-            'WGT',
-            '+',
-            'WGT_MEDIAN = 1.30000\n' 'CLWGT = EXP(THETA(4)*(WGT - WGT_MEDIAN))\n' 'CL = CL + CLWGT',
-        ),
-        (
-            'pow',
-            'WGT',
-            '*',
-            'WGT_MEDIAN = 1.30000\n' 'CLWGT = (WGT/WGT_MEDIAN)**THETA(4)\n' 'CL = CL*CLWGT',
-        ),
-        (
-            'lin',
-            'WGT',
-            '*',
-            'WGT_MEDIAN = 1.30000\n' 'CLWGT = THETA(4)*(WGT - WGT_MEDIAN) + 1\n' 'CL = CL*CLWGT',
-        ),
-        (
-            'cat',
-            'FA1',
-            '*',
-            'IF (FA1.EQ.0) THEN\n'
-            '    CLFA1 = 1\n'
-            'ELSE IF (FA1.EQ.1.0) THEN\n'
-            '    CLFA1 = THETA(4) + 1\n'
-            'END IF\n'
-            'CL = CL*CLFA1',
-        ),
-        (
-            'piece_lin',
-            'WGT',
-            '*',
-            'WGT_MEDIAN = 1.30000\n'
-            'IF (WGT.LE.WGT_MEDIAN) THEN\n'
-            '    CLWGT = THETA(4)*(WGT - WGT_MEDIAN) + 1\n'
-            'ELSE\n'
-            '    CLWGT = THETA(5)*(WGT - WGT_MEDIAN) + 1\n'
-            'END IF\n'
-            'CL = CL*CLWGT',
-        ),
-        (
-            'theta - cov + median',
-            'WGT',
-            '*',
-            'WGT_MEDIAN = 1.30000\n' 'CLWGT = THETA(4) - WGT + WGT_MEDIAN\n' 'CL = CL*CLWGT',
-        ),
-        (
-            'theta - cov + std',
-            'WGT',
-            '*',
-            'WGT_STD = 0.704565\n' 'CLWGT = THETA(4) - WGT + WGT_STD\n' 'CL = CL*CLWGT',
-        ),
-        (
-            'theta1 * (cov/median)**theta2',
-            'WGT',
-            '*',
-            'WGT_MEDIAN = 1.30000\n'
-            'CLWGT = THETA(4)*(WGT/WGT_MEDIAN)**THETA(5)\n'
-            'CL = CL*CLWGT',
-        ),
-        (
-            '((cov/std) - median) * theta',
-            'WGT',
-            '*',
-            'WGT_MEDIAN = 1.30000\n'
-            'WGT_STD = 0.704565\n'
-            'CLWGT = THETA(4)*(WGT/WGT_STD - WGT_MEDIAN)\n'
-            'CL = CL*CLWGT',
-        ),
-    ],
-)
-def test_single_add_covariate_effect(pheno_path, effect, covariate, operation, buf_new):
-    model = Model.create_model(pheno_path)
-
-    add_covariate_effect(model, 'CL', covariate, effect, operation)
-    model.update_source()
-
-    rec_ref = (
-        f'$PK\n'
-        f'IF(AMT.GT.0) BTIME=TIME\n'
-        f'TAD=TIME-BTIME\n'
-        f'TVCL=THETA(1)*WGT\n'
-        f'TVV=THETA(2)*WGT\n'
-        f'IF(APGR.LT.5) TVV=TVV*(1+THETA(3))\n'
-        f'CL=TVCL*EXP(ETA(1))\n'
-        f'{buf_new}\n'
-        f'V=TVV*EXP(ETA(2))\n'
-        f'S1=V\n\n'
-    )
-
-    assert str(model.get_pred_pk_record()) == rec_ref
-    assert f'POP_CL{covariate}' in model.model_code
-
-
 def test_nan_add_covariate_effect(pheno_path):
     model = Model.create_model(pheno_path)
     data = model.dataset
@@ -1230,44 +1126,311 @@ def test_nested_add_covariate_effect(pheno_path):
 
 
 @pytest.mark.parametrize(
-    'effect, parameters, covariates, operation, buf_new',
+    'model_path, effects, expected',
     [
         (
-            'exp',
-            ['CL', 'V'],
-            ['WGT', 'WGT'],
-            '*',
+            ('nonmem', 'pheno_real.mod'),
+            [('CL', 'WGT', 'exp', '*')],
+            '$PK\n'
             'WGT_MEDIAN = 1.30000\n'
+            'IF(AMT.GT.0) BTIME=TIME\n'
+            'TAD=TIME-BTIME\n'
+            'TVCL=THETA(1)*WGT\n'
+            'TVV=THETA(2)*WGT\n'
+            'IF(APGR.LT.5) TVV=TVV*(1+THETA(3))\n'
+            'CL=TVCL*EXP(ETA(1))\n'
+            'CLWGT = EXP(THETA(4)*(WGT - WGT_MEDIAN))\n'
+            'CL = CL*CLWGT\n'
+            'V=TVV*EXP(ETA(2))\n'
+            'S1=V\n\n',
+        ),
+        (
+            ('nonmem', 'pheno_real.mod'),
+            [('CL', 'WGT', 'exp', '+')],
+            '$PK\n'
+            'WGT_MEDIAN = 1.30000\n'
+            'IF(AMT.GT.0) BTIME=TIME\n'
+            'TAD=TIME-BTIME\n'
+            'TVCL=THETA(1)*WGT\n'
+            'TVV=THETA(2)*WGT\n'
+            'IF(APGR.LT.5) TVV=TVV*(1+THETA(3))\n'
+            'CL=TVCL*EXP(ETA(1))\n'
             'CLWGT = EXP(THETA(4)*(WGT - WGT_MEDIAN))\n'
             'CL = CL + CLWGT\n'
-            'V = TVV*EXP(ETA(2))\n'
+            'V=TVV*EXP(ETA(2))\n'
+            'S1=V\n\n',
+        ),
+        (
+            ('nonmem', 'pheno_real.mod'),
+            [('CL', 'WGT', 'pow', '*')],
+            '$PK\n'
+            'WGT_MEDIAN = 1.30000\n'
+            'IF(AMT.GT.0) BTIME=TIME\n'
+            'TAD=TIME-BTIME\n'
+            'TVCL=THETA(1)*WGT\n'
+            'TVV=THETA(2)*WGT\n'
+            'IF(APGR.LT.5) TVV=TVV*(1+THETA(3))\n'
+            'CL=TVCL*EXP(ETA(1))\n'
+            'CLWGT = (WGT/WGT_MEDIAN)**THETA(4)\n'
+            'CL = CL*CLWGT\n'
+            'V=TVV*EXP(ETA(2))\n'
+            'S1=V\n\n',
+        ),
+        (
+            ('nonmem', 'pheno_real.mod'),
+            [('CL', 'WGT', 'lin', '*')],
+            '$PK\n'
+            'WGT_MEDIAN = 1.30000\n'
+            'IF(AMT.GT.0) BTIME=TIME\n'
+            'TAD=TIME-BTIME\n'
+            'TVCL=THETA(1)*WGT\n'
+            'TVV=THETA(2)*WGT\n'
+            'IF(APGR.LT.5) TVV=TVV*(1+THETA(3))\n'
+            'CL=TVCL*EXP(ETA(1))\n'
+            'CLWGT = THETA(4)*(WGT - WGT_MEDIAN) + 1\n'
+            'CL = CL*CLWGT\n'
+            'V=TVV*EXP(ETA(2))\n'
+            'S1=V\n\n',
+        ),
+        (
+            ('nonmem', 'pheno_real.mod'),
+            [('CL', 'FA1', 'cat', '*')],
+            '$PK\n'
+            'IF(AMT.GT.0) BTIME=TIME\n'
+            'TAD=TIME-BTIME\n'
+            'TVCL=THETA(1)*WGT\n'
+            'TVV=THETA(2)*WGT\n'
+            'IF(APGR.LT.5) TVV=TVV*(1+THETA(3))\n'
+            'CL=TVCL*EXP(ETA(1))\n'
+            'IF (FA1.EQ.0) THEN\n'
+            '    CLFA1 = 1\n'
+            'ELSE IF (FA1.EQ.1.0) THEN\n'
+            '    CLFA1 = THETA(4) + 1\n'
+            'END IF\n'
+            'CL = CL*CLFA1\n'
+            'V=TVV*EXP(ETA(2))\n'
+            'S1=V\n\n',
+        ),
+        (
+            ('nonmem', 'pheno_real.mod'),
+            [('CL', 'WGT', 'piece_lin', '*')],
+            '$PK\n'
+            'WGT_MEDIAN = 1.30000\n'
+            'IF(AMT.GT.0) BTIME=TIME\n'
+            'TAD=TIME-BTIME\n'
+            'TVCL=THETA(1)*WGT\n'
+            'TVV=THETA(2)*WGT\n'
+            'IF(APGR.LT.5) TVV=TVV*(1+THETA(3))\n'
+            'CL=TVCL*EXP(ETA(1))\n'
+            'IF (WGT.LE.WGT_MEDIAN) THEN\n'
+            '    CLWGT = THETA(4)*(WGT - WGT_MEDIAN) + 1\n'
+            'ELSE\n'
+            '    CLWGT = THETA(5)*(WGT - WGT_MEDIAN) + 1\n'
+            'END IF\n'
+            'CL = CL*CLWGT\n'
+            'V=TVV*EXP(ETA(2))\n'
+            'S1=V\n\n',
+        ),
+        (
+            ('nonmem', 'pheno_real.mod'),
+            [('CL', 'WGT', 'theta - cov + median', '*')],
+            '$PK\n'
+            'WGT_MEDIAN = 1.30000\n'
+            'IF(AMT.GT.0) BTIME=TIME\n'
+            'TAD=TIME-BTIME\n'
+            'TVCL=THETA(1)*WGT\n'
+            'TVV=THETA(2)*WGT\n'
+            'IF(APGR.LT.5) TVV=TVV*(1+THETA(3))\n'
+            'CL=TVCL*EXP(ETA(1))\n'
+            'CLWGT = THETA(4) - WGT + WGT_MEDIAN\n'
+            'CL = CL*CLWGT\n'
+            'V=TVV*EXP(ETA(2))\n'
+            'S1=V\n\n',
+        ),
+        (
+            ('nonmem', 'pheno_real.mod'),
+            [('CL', 'WGT', 'theta - cov + std', '*')],
+            '$PK\n'
+            'WGT_STD = 0.704565\n'
+            'IF(AMT.GT.0) BTIME=TIME\n'
+            'TAD=TIME-BTIME\n'
+            'TVCL=THETA(1)*WGT\n'
+            'TVV=THETA(2)*WGT\n'
+            'IF(APGR.LT.5) TVV=TVV*(1+THETA(3))\n'
+            'CL=TVCL*EXP(ETA(1))\n'
+            'CLWGT = THETA(4) - WGT + WGT_STD\n'
+            'CL = CL*CLWGT\n'
+            'V=TVV*EXP(ETA(2))\n'
+            'S1=V\n\n',
+        ),
+        (
+            ('nonmem', 'pheno_real.mod'),
+            [('CL', 'WGT', 'theta1 * (cov/median)**theta2', '*')],
+            '$PK\n'
+            'WGT_MEDIAN = 1.30000\n'
+            'IF(AMT.GT.0) BTIME=TIME\n'
+            'TAD=TIME-BTIME\n'
+            'TVCL=THETA(1)*WGT\n'
+            'TVV=THETA(2)*WGT\n'
+            'IF(APGR.LT.5) TVV=TVV*(1+THETA(3))\n'
+            'CL=TVCL*EXP(ETA(1))\n'
+            'CLWGT = THETA(4)*(WGT/WGT_MEDIAN)**THETA(5)\n'
+            'CL = CL*CLWGT\n'
+            'V=TVV*EXP(ETA(2))\n'
+            'S1=V\n\n',
+        ),
+        (
+            ('nonmem', 'pheno_real.mod'),
+            [('CL', 'WGT', '((cov/std) - median) * theta', '*')],
+            '$PK\n'
+            'WGT_MEDIAN = 1.30000\n'
+            'WGT_STD = 0.704565\n'
+            'IF(AMT.GT.0) BTIME=TIME\n'
+            'TAD=TIME-BTIME\n'
+            'TVCL=THETA(1)*WGT\n'
+            'TVV=THETA(2)*WGT\n'
+            'IF(APGR.LT.5) TVV=TVV*(1+THETA(3))\n'
+            'CL=TVCL*EXP(ETA(1))\n'
+            'CLWGT = THETA(4)*(WGT/WGT_STD - WGT_MEDIAN)\n'
+            'CL = CL*CLWGT\n'
+            'V=TVV*EXP(ETA(2))\n'
+            'S1=V\n\n',
+        ),
+        (
+            ('nonmem', 'pheno_real.mod'),
+            [
+                ('CL', 'WGT', 'exp', '+'),
+                ('V', 'WGT', 'exp', '+'),
+            ],
+            '$PK\n'
+            'WGT_MEDIAN = 1.30000\n'
+            'IF(AMT.GT.0) BTIME=TIME\n'
+            'TAD=TIME-BTIME\n'
+            'TVCL=THETA(1)*WGT\n'
+            'TVV=THETA(2)*WGT\n'
+            'IF(APGR.LT.5) TVV=TVV*(1+THETA(3))\n'
+            'CL=TVCL*EXP(ETA(1))\n'
+            'CLWGT = EXP(THETA(4)*(WGT - WGT_MEDIAN))\n'
+            'CL = CL + CLWGT\n'
+            'V=TVV*EXP(ETA(2))\n'
             'VWGT = EXP(THETA(5)*(WGT - WGT_MEDIAN))\n'
-            'V = V + VWGT',
+            'V = V + VWGT\n'
+            'S1=V\n\n',
+        ),
+        (
+            ('nonmem', 'pheno_real.mod'),
+            [
+                ('CL', 'WGT', 'exp', '*'),
+                ('V', 'WGT', 'exp', '*'),
+            ],
+            '$PK\n'
+            'WGT_MEDIAN = 1.30000\n'
+            'IF(AMT.GT.0) BTIME=TIME\n'
+            'TAD=TIME-BTIME\n'
+            'TVCL=THETA(1)*WGT\n'
+            'TVV=THETA(2)*WGT\n'
+            'IF(APGR.LT.5) TVV=TVV*(1+THETA(3))\n'
+            'CL=TVCL*EXP(ETA(1))\n'
+            'CLWGT = EXP(THETA(4)*(WGT - WGT_MEDIAN))\n'
+            'CL = CL*CLWGT\n'
+            'V=TVV*EXP(ETA(2))\n'
+            'VWGT = EXP(THETA(5)*(WGT - WGT_MEDIAN))\n'
+            'V = V*VWGT\n'
+            'S1=V\n\n',
+        ),
+        (
+            ('nonmem', 'models', 'mox2.mod'),
+            [
+                ('V', 'WT', 'exp', '*'),
+                ('V', 'AGE', 'exp', '*'),
+            ],
+            '$PK\n'
+            'AGE_MEDIAN = 66.0000\n'
+            'WT_MEDIAN = 78.0000\n'
+            'CL = THETA(1) * EXP(ETA(1))\n'
+            'VC = THETA(2) * EXP(ETA(2))\n'
+            'MAT = THETA(3) * EXP(ETA(3))\n'
+            'KA = 1/MAT\n'
+            'V = VC\n'
+            'VWT = EXP(THETA(4)*(WT - WT_MEDIAN))\n'
+            'VAGE = EXP(THETA(5)*(AGE - AGE_MEDIAN))\n'
+            'V = V*VAGE*VWT\n',
+        ),
+        (
+            ('nonmem', 'models', 'mox2.mod'),
+            [
+                ('V', 'WT', 'exp', '*'),
+                ('V', 'AGE', 'exp', '*'),
+                ('V', 'CRCL', 'exp', '*'),
+            ],
+            '$PK\n'
+            'CRCL_MEDIAN = 65.0000\n'
+            'AGE_MEDIAN = 66.0000\n'
+            'WT_MEDIAN = 78.0000\n'
+            'CL = THETA(1) * EXP(ETA(1))\n'
+            'VC = THETA(2) * EXP(ETA(2))\n'
+            'MAT = THETA(3) * EXP(ETA(3))\n'
+            'KA = 1/MAT\n'
+            'V = VC\n'
+            'VWT = EXP(THETA(4)*(WT - WT_MEDIAN))\n'
+            'VAGE = EXP(THETA(5)*(AGE - AGE_MEDIAN))\n'
+            'VCRCL = EXP(THETA(6)*(CRCL - CRCL_MEDIAN))\n'
+            'V = V*VAGE*VCRCL*VWT\n',
+        ),
+        (
+            ('nonmem', 'models', 'mox2.mod'),
+            [
+                ('CL', 'CRCL', 'exp', '*'),
+                ('V', 'CRCL', 'exp', '*'),
+            ],
+            '$PK\n'
+            'CRCL_MEDIAN = 65.0000\n'
+            'CL = THETA(1)*EXP(ETA(1))\n'
+            'CLCRCL = EXP(THETA(4)*(CRCL - CRCL_MEDIAN))\n'
+            'CL = CL*CLCRCL\n'
+            'VC = THETA(2) * EXP(ETA(2))\n'
+            'MAT = THETA(3) * EXP(ETA(3))\n'
+            'KA = 1/MAT\n'
+            'V = VC\n'
+            'VCRCL = EXP(THETA(5)*(CRCL - CRCL_MEDIAN))\n'
+            'V = V*VCRCL\n',
+        ),
+        (
+            ('nonmem', 'models', 'mox2.mod'),
+            [
+                ('V', 'CRCL', 'exp', '*'),
+                ('CL', 'CRCL', 'exp', '*'),
+            ],
+            '$PK\n'
+            'CRCL_MEDIAN = 65.0000\n'
+            'CL = THETA(1)*EXP(ETA(1))\n'
+            'CLCRCL = EXP(THETA(5)*(CRCL - CRCL_MEDIAN))\n'
+            'CL = CL*CLCRCL\n'
+            'VC = THETA(2) * EXP(ETA(2))\n'
+            'MAT = THETA(3) * EXP(ETA(3))\n'
+            'KA = 1/MAT\n'
+            'V = VC\n'
+            'VCRCL = EXP(THETA(4)*(CRCL - CRCL_MEDIAN))\n'
+            'V = V*VCRCL\n',
         ),
     ],
+    ids=repr,
 )
-def test_add_covariate_effect_multiple(
-    pheno_path, effect, parameters, covariates, operation, buf_new
-):
-    model = Model.create_model(pheno_path)
+def test_add_covariate_effect(testdata, model_path, effects, expected):
+    model = Model.create_model(testdata.joinpath(*model_path))
+    error_record_before = ''.join(map(str, model.control_stream.get_records('ERROR')))
 
-    add_covariate_effect(model, parameters[0], covariates[0], 'exp', '+')
-    add_covariate_effect(model, parameters[1], covariates[1], 'exp', '+')
+    for effect in effects:
+        add_covariate_effect(model, *effect)
+
     model.update_source()
+    error_record_after = ''.join(map(str, model.control_stream.get_records('ERROR')))
 
-    rec_ref = (
-        f'$PK\n'
-        f'IF(AMT.GT.0) BTIME=TIME\n'
-        f'TAD=TIME-BTIME\n'
-        f'TVCL=THETA(1)*WGT\n'
-        f'TVV=THETA(2)*WGT\n'
-        f'IF(APGR.LT.5) TVV=TVV*(1+THETA(3))\n'
-        f'CL=TVCL*EXP(ETA(1))\n'
-        f'{buf_new}\n'
-        f'S1=V\n\n'
-    )
+    assert str(model.get_pred_pk_record()) == expected
+    assert error_record_after == error_record_before
 
-    assert str(model.get_pred_pk_record()) == rec_ref
+    for effect in effects:
+        assert f'POP_{effect[0]}{effect[1]}' in model.model_code
 
 
 def test_add_depot(testdata):
