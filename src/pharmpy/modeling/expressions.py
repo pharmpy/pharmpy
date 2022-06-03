@@ -421,17 +421,31 @@ def make_declarative(model):
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
     >>> model.statements.before_odes
-
-    >>> make_declarative(model)
+            ⎧TIME  for AMT > 0
+            ⎨
+    BTIME = ⎩ 0     otherwise
+    TAD = -BTIME + TIME
+    TVCL = THETA(1)⋅WGT
+    TVV = THETA(2)⋅WGT
+          ⎧TVV⋅(THETA(3) + 1)  for APGR < 5
+          ⎨
+    TVV = ⎩       TVV           otherwise
+               ETA(1)
+    CL = TVCL⋅ℯ
+             ETA(2)
+    V = TVV⋅ℯ
+    S₁ = V
+    >>> make_declarative(model)     # doctest: +ELLIPSIS
+    <...>
     >>> model.statements.before_odes
             ⎧TIME  for AMT > 0
             ⎨
     BTIME = ⎩ 0     otherwise
     TAD = -BTIME + TIME
-    TVCL = PTVCL⋅WGT
-          ⎧PTVV⋅WGT⋅(THETA(3) + 1)  for APGR < 5
+    TVCL = THETA(1)⋅WGT
+          ⎧THETA(2)⋅WGT⋅(THETA(3) + 1)  for APGR < 5
           ⎨
-    TVV = ⎩       PTVV⋅WGT           otherwise
+    TVV = ⎩       THETA(2)⋅WGT           otherwise
                ETA(1)
     CL = TVCL⋅ℯ
              ETA(2)
