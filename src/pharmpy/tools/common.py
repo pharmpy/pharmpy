@@ -69,7 +69,7 @@ def summarize_tool(
     rankfunc_name,
     cutoff,
     bic_type='mixed',
-):
+) -> pd.DataFrame:
     models_all = [start_model] + models
     rankfunc = getattr(rankfuncs, rankfunc_name)
 
@@ -100,6 +100,7 @@ def summarize_tool(
     df = pd.DataFrame(rows, index=index, columns=colnames)
     df_sorted = df.sort_values(by=[f'd{rankfunc_name}'], ascending=False)
 
+    assert df_sorted is not None
     return df_sorted
 
 

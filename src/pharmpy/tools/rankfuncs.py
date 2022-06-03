@@ -1,3 +1,5 @@
+from typing import Union
+
 import numpy as np
 
 from pharmpy.modeling import calculate_aic, calculate_bic
@@ -18,11 +20,11 @@ def aic(base, candidates, cutoff=None):
     return rank_models('aic', base, candidates, cutoff)
 
 
-def bic(base, candidates, cutoff=None, bic_type='mixed'):
+def bic(base, candidates, cutoff=None, bic_type: Union[None, str] = 'mixed'):
     return rank_models('bic', base, candidates, cutoff, bic_type=bic_type)
 
 
-def rank_models(rank_type, base, candidates, cutoff=None, bic_type='mixed'):
+def rank_models(rank_type, base, candidates, cutoff=None, bic_type: Union[None, str] = 'mixed'):
     diff_dict = _create_diff_dict(rank_type, base, candidates, bic_type)
     if cutoff is None:
         filtered = [model for model in candidates if model.modelfit_results is not None]
