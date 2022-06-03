@@ -155,8 +155,8 @@ class Assignment(Statement):
         return copy.deepcopy(self)
 
     def _repr_latex_(self):
-        sym = self.symbol._repr_latex_()[1:-1]
-        expr = self.expression._repr_latex_()[1:-1]
+        sym = sympy.latex(self.symbol)
+        expr = sympy.latex(self.expression, mul_symbol='dot')
         return f'${sym} = {expr}$'
 
 
@@ -374,11 +374,11 @@ class ExplicitODESystem(ODESystem):
     def _repr_latex_(self):
         rows = []
         for ode in self.odes:
-            ode_repr = ode._repr_latex_()[1:-1]
+            ode_repr = sympy.latex(ode, mul_symbol='dot')
             rows.append(ode_repr)
         for k, v in self.ics.items():
             ics_eq = sympy.Eq(k, v)
-            ics_repr = ics_eq._repr_latex_()[1:-1]
+            ics_repr = sympy.latex(ics_eq, mul_symbol='dot')
             rows.append(ics_repr)
         return r'\begin{cases} ' + r' \\ '.join(rows) + r' \end{cases}'
 

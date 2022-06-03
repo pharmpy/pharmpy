@@ -230,7 +230,7 @@ def test_to_explicit_ode_system(pheno_path):
 def test_repr_latex():
     s1 = Assignment(S('KA'), S('X') + S('Y'))
     latex = s1._repr_latex_()
-    assert latex == r'$\displaystyle KA = \displaystyle X + Y$'
+    assert latex == r'$KA = X + Y$'
 
 
 def test_repr_html():
