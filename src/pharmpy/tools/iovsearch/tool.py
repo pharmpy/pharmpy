@@ -137,13 +137,14 @@ def task_brute_force_search(
 
     # NOTE Keep best candidate.
     best_model_so_far = best_model(
-        model_with_iov, iov_candidates, rank_type=rank_type, cutoff=cutoff, bic_type=bic_type
+        model,
+        [model_with_iov, *iov_candidates],
+        rank_type=rank_type,
+        cutoff=cutoff,
+        bic_type=bic_type,
     )
 
     # NOTE If no improvement with respect to input model, STOP.
-    best_model_so_far = best_model(
-        model, [best_model_so_far], rank_type=rank_type, cutoff=cutoff, bic_type=bic_type
-    )
     if best_model_so_far is model:
         return [model, model_with_iov, *iov_candidates]
 
