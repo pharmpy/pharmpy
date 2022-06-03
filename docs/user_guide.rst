@@ -13,6 +13,7 @@ basic use cases in Pharmpy. More detailed information can be found in the API re
    modeling
    modelfit
    tools
+   psn_tools
    plots
    nonmem_plugin
    cli
