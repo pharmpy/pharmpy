@@ -17,6 +17,7 @@ from pharmpy.modeling import (
     get_individual_prediction_expression,
     get_observation_expression,
     get_population_prediction_expression,
+    greekify_model,
     make_declarative,
     mu_reference_model,
     read_model_from_string,
@@ -220,7 +221,12 @@ def test_make_declarative(pheno):
 
 def test_cleanup_model(pheno):
     model = pheno.copy()
-    print(model.statements)
     cleanup_model(model)
-    print(model.statements)
     assert model.statements.after_odes[1].symbol != s('W')
+
+
+def test_greekify_model(pheno):
+    model = pheno.copy()
+    cleanup_model(model)
+    greekify_model(model)
+    assert s('theta_1') in model.statements[2].free_symbols

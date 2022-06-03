@@ -2,6 +2,8 @@ import sympy
 
 from pharmpy.statements import Assignment, CompartmentalSystem, ModelStatements, ODESystem, sympify
 
+from .common import get_thetas
+
 
 def get_observation_expression(model):
     """Get the full symbolic expression for the observation according to the model
@@ -586,4 +588,132 @@ def cleanup_model(model):
             newstats.append(s)
 
     model.statements = ModelStatements(newstats)
+    return model
+
+
+def greekify_model(model, named_subscripts=False):
+    """Convert to using greek letters for all population parameters
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+    named_subscripts : bool
+        Use previous parameter names as subscripts. Default is to use integer subscripts
+
+    Result
+    ------
+    Model
+        Reference to the same model
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> model.statements
+            ⎧TIME  for AMT > 0
+            ⎨
+    BTIME = ⎩ 0     otherwise
+    TAD = -BTIME + TIME
+    TVCL = THETA(1)⋅WGT
+    TVV = THETA(2)⋅WGT
+          ⎧TVV⋅(THETA(3) + 1)  for APGR < 5
+          ⎨
+    TVV = ⎩       TVV           otherwise
+               ETA(1)
+    CL = TVCL⋅ℯ
+             ETA(2)
+    V = TVV⋅ℯ
+    S₁ = V
+    Bolus(AMT)
+    ┌───────┐       ┌──────┐
+    │CENTRAL│──CL/V→│OUTPUT│
+    └───────┘       └──────┘
+        A_CENTRAL
+        ─────────
+    F =     S₁
+    W = F
+    Y = EPS(1)⋅W + F
+    IPRED = F
+    IRES = DV - IPRED
+            IRES
+            ────
+    IWRES =  W
+
+    >>> greekify_model(cleanup_model(model))    # doctest: +ELLIPSIS
+    <...>
+    >>> model.statements
+            ⎧TIME  for AMT > 0
+            ⎨
+    BTIME = ⎩ 0     otherwise
+    TAD = -BTIME + TIME
+    TVCL = WGT⋅θ₁
+          ⎧WGT⋅θ₂⋅(θ₃ + 1)  for APGR < 5
+          ⎨
+    TVV = ⎩    WGT⋅θ₂        otherwise
+               η₁
+    CL = TVCL⋅ℯ
+             η₂
+    V = TVV⋅ℯ
+    Bolus(AMT)
+    ┌───────┐       ┌──────┐
+    │CENTRAL│──CL/V→│OUTPUT│
+    └───────┘       └──────┘
+        A_CENTRAL
+        ─────────
+    F =     V
+    Y = F⋅ε₁ + F
+    IRES = DV - F
+            IRES
+            ────
+    IWRES =  F
+
+    """
+
+    def get_subscript(param, i, named_subscripts):
+        if named_subscripts:
+            subscript = param.name
+        else:
+            subscript = i
+        return subscript
+
+    def get_2d_subscript(param, row, col, named_subscripts):
+        if named_subscripts:
+            subscript = param.name
+        else:
+            subscript = f'{row}{col}'
+        return subscript
+
+    subs = dict()
+    for i, theta in enumerate(get_thetas(model), start=1):
+        subscript = get_subscript(theta, i, named_subscripts)
+        subs[theta.symbol] = sympy.Symbol(f"theta_{subscript}")
+    omega = model.random_variables.covariance_matrix
+    for row in range(omega.rows):
+        for col in range(omega.cols):
+            if col > row:
+                break
+            elt = omega[row, col]
+            if elt == 0:
+                continue
+            subscript = get_2d_subscript(elt, row + 1, col + 1, named_subscripts)
+            subs[elt] = sympy.Symbol(f"omega_{subscript}")
+    sigma = model.random_variables.covariance_matrix
+    for row in range(sigma.rows):
+        for col in range(sigma.cols):
+            if col > row:
+                break
+            elt = sigma[row, col]
+            if elt == 0:
+                continue
+            subscript = get_2d_subscript(elt, row + 1, col + 1, named_subscripts)
+            subs[elt] = sympy.Symbol(f"sigma_{subscript}")
+    for i, eta in enumerate(model.random_variables.etas, start=1):
+        subscript = get_subscript(eta, i, named_subscripts)
+        subs[eta.symbol] = sympy.Symbol(f"eta_{subscript}")
+    for i, epsilon in enumerate(model.random_variables.epsilons, start=1):
+        subscript = get_subscript(epsilon, i, named_subscripts)
+        subs[epsilon.symbol] = sympy.Symbol(f"epsilon_{subscript}")
+    for s in model.statements:
+        s.subs(subs)
     return model
