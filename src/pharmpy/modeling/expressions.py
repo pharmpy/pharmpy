@@ -488,3 +488,102 @@ def make_declarative(model):
 
     model.statements = ModelStatements(newstats)
     return model
+
+
+def cleanup_model(model):
+    """Perform various cleanups of a model
+
+    This is what is currently done
+
+    * Make model statements declarative, i.e. only one assignment per symbol
+    * Inline all assignments of one symbol, e.g. X = Y
+
+    Notes
+    -----
+    When creating NONMEM code from the cleaned model Pharmpy might need to
+    add certain assignments to make it in line with what NONMEM requires.
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+
+    Result
+    ------
+    Model
+        Reference to the same model
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> model.statements
+            ⎧TIME  for AMT > 0
+            ⎨
+    BTIME = ⎩ 0     otherwise
+    TAD = -BTIME + TIME
+    TVCL = THETA(1)⋅WGT
+    TVV = THETA(2)⋅WGT
+          ⎧TVV⋅(THETA(3) + 1)  for APGR < 5
+          ⎨
+    TVV = ⎩       TVV           otherwise
+               ETA(1)
+    CL = TVCL⋅ℯ
+             ETA(2)
+    V = TVV⋅ℯ
+    S₁ = V
+    Bolus(AMT)
+    ┌───────┐       ┌──────┐
+    │CENTRAL│──CL/V→│OUTPUT│
+    └───────┘       └──────┘
+        A_CENTRAL
+        ─────────
+    F =     S₁
+    W = F
+    Y = EPS(1)⋅W + F
+    IPRED = F
+    IRES = DV - IPRED
+            IRES
+            ────
+    IWRES =  W
+    >>> cleanup_model(model)    # doctest: +ELLIPSIS
+    <...>
+    >>> model.statements
+            ⎧TIME  for AMT > 0
+            ⎨
+    BTIME = ⎩ 0     otherwise
+    TAD = -BTIME + TIME
+    TVCL = THETA(1)⋅WGT
+          ⎧THETA(2)⋅WGT⋅(THETA(3) + 1)  for APGR < 5
+          ⎨
+    TVV = ⎩       THETA(2)⋅WGT           otherwise
+               ETA(1)
+    CL = TVCL⋅ℯ
+             ETA(2)
+    V = TVV⋅ℯ
+    Bolus(AMT)
+    ┌───────┐       ┌──────┐
+    │CENTRAL│──CL/V→│OUTPUT│
+    └───────┘       └──────┘
+        A_CENTRAL
+        ─────────
+    F =     V
+    Y = EPS(1)⋅F + F
+    IRES = DV - F
+            IRES
+            ────
+    IWRES =  F
+    """
+    make_declarative(model)
+
+    current = dict()
+    newstats = []
+    for s in model.statements:
+        if isinstance(s, Assignment) and s.expression.is_Symbol:
+            current[s.symbol] = s.expression
+        else:
+            s.subs(current)
+            newstats.append(s)
+
+    model.statements = ModelStatements(newstats)
+    return model

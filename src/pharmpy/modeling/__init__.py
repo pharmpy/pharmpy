@@ -147,6 +147,7 @@ from .evaluation import (
 from .expressions import (
     calculate_epsilon_gradient_expression,
     calculate_eta_gradient_expression,
+    cleanup_model,
     create_symbol,
     get_individual_prediction_expression,
     get_observation_expression,
@@ -222,6 +223,7 @@ __all__ = [
     'check_dataset',
     'check_high_correlations',
     'check_parameters_near_bounds',
+    'cleanup_model',
     'convert_model',
     'copy_model',
     'create_joint_distribution',

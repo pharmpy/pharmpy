@@ -13,6 +13,7 @@ from pharmpy import (
 from pharmpy.modeling import (
     calculate_epsilon_gradient_expression,
     calculate_eta_gradient_expression,
+    cleanup_model,
     get_individual_prediction_expression,
     get_observation_expression,
     get_population_prediction_expression,
@@ -215,3 +216,11 @@ def test_make_declarative(pheno):
         (s('WGT') * s('THETA(2)') * (s('THETA(3)') + 1), sympy.Lt(s('APGR'), 5)),
         (s('WGT') * s('THETA(2)'), True),
     )
+
+
+def test_cleanup_model(pheno):
+    model = pheno.copy()
+    print(model.statements)
+    cleanup_model(model)
+    print(model.statements)
+    assert model.statements.after_odes[1].symbol != s('W')
