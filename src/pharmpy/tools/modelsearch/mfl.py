@@ -14,6 +14,7 @@
 import functools
 import itertools
 from collections import OrderedDict
+from typing import Iterable, Tuple
 
 from lark import Lark
 from lark.visitors import Interpreter
@@ -49,7 +50,7 @@ class ModelFeature:
 
 class Absorption(ModelFeature):
     def __init__(self, tree):
-        self.args = OneArgInterpreter('absorption', ['FO', 'ZO', 'SEQ-ZO-FO']).interpret(tree)
+        self.args = OneArgInterpreter('absorption', ('FO', 'ZO', 'SEQ-ZO-FO')).interpret(tree)
         self._funcs = dict()
         for arg in self.args:
             name = f'ABSORPTION({arg})'
@@ -65,7 +66,7 @@ class Absorption(ModelFeature):
 
 class Elimination(ModelFeature):
     def __init__(self, tree):
-        self.args = OneArgInterpreter('elimination', ['FO', 'ZO', 'MM', 'MIX-FO-MM']).interpret(
+        self.args = OneArgInterpreter('elimination', ('FO', 'ZO', 'MM', 'MIX-FO-MM')).interpret(
             tree
         )
         self._funcs = dict()
@@ -85,7 +86,7 @@ class Elimination(ModelFeature):
 
 class Transits(ModelFeature):
     def __init__(self, tree):
-        interpreter = OneArgInterpreter('transits', [])
+        interpreter = OneArgInterpreter('transits', ())
         self.args = interpreter.interpret(tree)
         depot = getattr(interpreter, 'depot_opt_value', 'DEPOT')
         if isinstance(depot, str):
@@ -106,7 +107,7 @@ class Transits(ModelFeature):
 
 class Peripherals(ModelFeature):
     def __init__(self, tree):
-        self.args = OneArgInterpreter('peripherals', []).interpret(tree)
+        self.args = OneArgInterpreter('peripherals', ()).interpret(tree)
         self._funcs = dict()
         for arg in self.args:
             name = f'PERIPHERALS({arg})'
@@ -120,13 +121,16 @@ class Lagtime(ModelFeature):
 
 
 class OneArgInterpreter(Interpreter):
-    def __init__(self, name, a):
+    def __init__(self, name: str, a: Tuple[str, ...]):
         self.name = name
         self.all = a
 
     def visit_children(self, tree):
         a = super().visit_children(tree)
         return set().union(*a)
+
+    def interpret(self, tree):
+        return self.visit_children(tree)
 
     def feature(self, tree):
         return self.visit_children(tree)
@@ -222,12 +226,12 @@ class ModelFeatures:
                 funcs[feat] = func
         return funcs
 
-    def all_combinations(self):
+    def all_combinations(self) -> Iterable[Tuple[str, ...]]:
         feats = []
         for feat in self._all_features:
             feats.append([None] + list(feat._funcs.keys()))
         for t in itertools.product(*feats):
-            a = [elt for elt in t if elt is not None]
+            a = tuple(elt for elt in t if elt is not None)
             if a:
                 yield a
 
