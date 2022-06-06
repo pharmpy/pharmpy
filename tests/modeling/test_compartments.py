@@ -1,6 +1,11 @@
-from pharmpy.modeling import get_lag_times
+from pharmpy.modeling import get_bioavailability, get_lag_times
 
 
 def test_get_lag_times(pheno):
     lags = get_lag_times(pheno)
     assert lags == dict()
+
+
+def test_get_bioavailability(pheno):
+    fs = get_bioavailability(pheno)
+    assert fs == dict()

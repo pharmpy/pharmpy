@@ -112,7 +112,7 @@ from pharmpy.modeling.write_csv import write_csv
 
 from .allometry import add_allometry
 from .amd import run_amd
-from .compartments import get_lag_times
+from .compartments import get_bioavailability, get_lag_times
 from .data import (
     add_time_after_dose,
     check_dataset,
@@ -249,19 +249,20 @@ __all__ = [
     'fix_parameters_to',
     'generate_model_code',
     'get_baselines',
+    'get_bioavailability',
     'get_concentration_parameters_from_data',
+    'get_config_path',
     'get_covariate_baselines',
     'get_doses',
     'get_doseid',
     'get_ids',
     'get_individual_prediction_expression',
+    'get_lag_times',
+    'get_mdv',
     'get_number_of_individuals',
     'get_number_of_observations',
     'get_number_of_observations_per_individual',
     'get_omegas',
-    'get_config_path',
-    'get_lag_times',
-    'get_mdv',
     'get_model_covariates',
     'get_observations',
     'get_observation_expression',
