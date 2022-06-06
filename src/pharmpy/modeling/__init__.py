@@ -112,6 +112,7 @@ from pharmpy.modeling.write_csv import write_csv
 
 from .allometry import add_allometry
 from .amd import run_amd
+from .compartments import get_lag_times
 from .data import (
     add_time_after_dose,
     check_dataset,
@@ -161,7 +162,6 @@ from .expressions import (
 from .iterators import omit_data, resample_data
 from .plots import plot_individual_predictions, plot_iofv_vs_iofv
 from .reporting import create_report
-from .compartments import get_lag_times
 from .results import (
     calculate_aic,
     calculate_bic,
