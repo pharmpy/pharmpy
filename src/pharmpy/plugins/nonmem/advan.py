@@ -17,6 +17,7 @@ def compartmental_model(model, advan, trans, des=None):
         dose = _dosing(model, 1)
         central.dose = dose
         central.lag_time = get_alag(model, 1)
+        central.bioavailability = get_bioavailability(model, 1)
         ass = _f_link_assignment(model, central)
         comp_map = {'CENTRAL': 1, 'OUTPUT': 2}
     elif advan == 'ADVAN2':
@@ -30,6 +31,8 @@ def compartmental_model(model, advan, trans, des=None):
         depot.dose = dose
         depot.lag_time = get_alag(model, 1)
         central.lag_time = get_alag(model, 2)
+        depot.bioavailability = get_bioavailability(model, 1)
+        central.bioavailability = get_bioavailability(model, 2)
         ass = _f_link_assignment(model, central)
         comp_map = {'DEPOT': 1, 'CENTRAL': 2, 'OUTPUT': 3}
     elif advan == 'ADVAN3':
@@ -45,6 +48,8 @@ def compartmental_model(model, advan, trans, des=None):
         central.dose = dose
         central.lag_time = get_alag(model, 1)
         peripheral.lag_time = get_alag(model, 2)
+        central.bioavailability = get_bioavailability(model, 1)
+        peripheral.bioavailability = get_bioavailability(model, 2)
         ass = _f_link_assignment(model, central)
         comp_map = {'CENTRAL': 1, 'PERIPHERAL': 2, 'OUTPUT': 3}
     elif advan == 'ADVAN4':
@@ -63,6 +68,9 @@ def compartmental_model(model, advan, trans, des=None):
         depot.lag_time = get_alag(model, 1)
         central.lag_time = get_alag(model, 2)
         peripheral.lag_time = get_alag(model, 3)
+        depot.bioavailability = get_bioavailability(model, 1)
+        central.bioavailability = get_bioavailability(model, 2)
+        peripheral.bioavailability = get_bioavailability(model, 3)
         ass = _f_link_assignment(model, central)
         comp_map = {'DEPOT': 1, 'CENTRAL': 2, 'PERIPHERAL': 3, 'OUTPUT': 4}
     elif advan == 'ADVAN5' or advan == 'ADVAN7':
@@ -116,6 +124,7 @@ def compartmental_model(model, advan, trans, des=None):
             if i == len(compartments) - 1:
                 break
             comp.lag_time = get_alag(model, i)
+            comp.bioavailability = get_bioavailability(model, i)
         ass = _f_link_assignment(model, defobs)
     elif advan == 'ADVAN10':
         cm = CompartmentalSystem()
@@ -128,6 +137,7 @@ def compartmental_model(model, advan, trans, des=None):
         t = symbol('t')
         cm.add_flow(central, output, vm / (km + sympy.Function(central.amount.name)(t)))
         central.lag_time = get_alag(model, 1)
+        central.lag_time = get_bioavailability(model, 1)
         ass = _f_link_assignment(model, central)
         comp_map = {'CENTRAL': 1, 'OUTPUT': 2}
     elif advan == 'ADVAN11':
@@ -147,6 +157,9 @@ def compartmental_model(model, advan, trans, des=None):
         central.lag_time = get_alag(model, 1)
         per1.lag_time = get_alag(model, 2)
         per2.lag_time = get_alag(model, 3)
+        central.bioavailability = get_bioavailability(model, 1)
+        per1.bioavailability = get_bioavailability(model, 2)
+        per2.bioavailability = get_bioavailability(model, 3)
         ass = _f_link_assignment(model, central)
         comp_map = {'CENTRAL': 1, 'PERIPHERAL1': 2, 'PERIPHERAL2': 3, 'OUTPUT': 4}
     elif advan == 'ADVAN12':
@@ -169,6 +182,10 @@ def compartmental_model(model, advan, trans, des=None):
         central.lag_time = get_alag(model, 2)
         per1.lag_time = get_alag(model, 3)
         per2.lag_time = get_alag(model, 4)
+        depot.bioavailability = get_bioavailability(model, 1)
+        central.bioavailability = get_bioavailability(model, 2)
+        per1.bioavailability = get_bioavailability(model, 3)
+        per2.bioavailability = get_bioavailability(model, 4)
         ass = _f_link_assignment(model, central)
         comp_map = {'DEPOT': 1, 'CENTRAL': 2, 'PERIPHERAL1': 3, 'PERIPHERAL2': 4, 'OUTPUT': 5}
     elif des:
@@ -456,5 +473,15 @@ def get_alag(model, n):
     pkrec = model.control_stream.get_records('PK')[0]
     if pkrec.statements.find_assignment(alag):
         return alag
+    else:
+        return 0
+
+
+def get_bioavailability(model, n):
+    """Check if Fn is defined in model and return it else return 0"""
+    fn = f'F{n}'
+    pkrec = model.control_stream.get_records('PK')[0]
+    if pkrec.statements.find_assignment(fn):
+        return fn
     else:
         return 0
