@@ -1249,6 +1249,8 @@ class Compartment:
         Dose object for dose into this compartment. Default None for no dose.
     lag_time : Expression
         Lag time for doses entering this compartment. Default 0
+    bioavailability : Expression
+        Bioavailability fraction for doses entering this compartment. Default 0
 
     Examples
     --------
@@ -1265,10 +1267,11 @@ class Compartment:
     Compartment(DEPOT, dose=Bolus(AMT))
     """
 
-    def __init__(self, name, dose=None, lag_time=0):
+    def __init__(self, name, dose=None, lag_time=0, bioavailability=0):
         self.name = name
         self.dose = dose
         self.lag_time = lag_time
+        self.bioavailability = bioavailability
 
     @property
     def name(self):
@@ -1313,6 +1316,15 @@ class Compartment:
     @lag_time.setter
     def lag_time(self, value):
         self._lag_time = sympify(value)
+
+    @property
+    def bioavailability(self):
+        """Bioavailability fraction for doses into compartment"""
+        return self._bioavailability
+
+    @bioavailability.setter
+    def bioavailability(self, value):
+        self._bioavailability = sympify(value)
 
     @property
     def free_symbols(self):
