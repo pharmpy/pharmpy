@@ -161,6 +161,7 @@ from .expressions import (
 from .iterators import omit_data, resample_data
 from .plots import plot_individual_predictions, plot_iofv_vs_iofv
 from .reporting import create_report
+from .compartments import get_lag_times
 from .results import (
     calculate_aic,
     calculate_bic,
@@ -259,6 +260,7 @@ __all__ = [
     'get_number_of_observations_per_individual',
     'get_omegas',
     'get_config_path',
+    'get_lag_times',
     'get_mdv',
     'get_model_covariates',
     'get_observations',
