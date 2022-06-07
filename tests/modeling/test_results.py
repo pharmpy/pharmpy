@@ -14,6 +14,7 @@ from pharmpy.modeling import (
     calculate_individual_shrinkage,
     calculate_pk_parameters_statistics,
     check_parameters_near_bounds,
+    rank_models,
     set_iiv_on_ruv,
     summarize_errors,
     summarize_modelfit_results,
@@ -230,6 +231,45 @@ def test_summarize_errors(testdata, tmp_path, pheno_path):
         assert len(summary.loc[('pheno_no_header', 'WARNING')]) == 1
         assert len(summary.loc[('pheno_no_header', 'ERROR')]) == 2
         assert len(summary.loc[('pheno_rounding_error', 'ERROR')]) == 1
+
+
+class DummyModel:
+    def __init__(self, name, **kwargs):
+        self.name = name
+        self.modelfit_results = DummyResults(**kwargs)
+
+
+class DummyResults:
+    def __init__(self, ofv, minimization_successful=True):
+        self.ofv = ofv
+        self.minimization_successful = minimization_successful
+
+
+def test_rank_models():
+    base = DummyModel('base', ofv=0)
+    m1 = DummyModel('m1', ofv=-2, minimization_successful=False)
+    m2 = DummyModel('m2', ofv=-1)
+    m3 = DummyModel('m3', ofv=-1)
+    m4 = DummyModel('m4', ofv=1)
+
+    models = [m1, m2, m3, m4]
+
+    df = rank_models(base, models, strictness=[], rankfunc='ofv', cutoff=None)
+    assert len(df) == 5
+    best_model = df.loc[df['rank'] == 1].index.values
+    assert list(best_model) == ['m1']
+
+    df = rank_models(
+        base, models, strictness=['minimization_successful'], rankfunc='ofv', cutoff=None
+    )
+    best_model = df.loc[df['rank'] == 1].index.values
+    assert list(best_model) == ['m2', 'm3']
+    non_ranked_models = df.loc[df['rank'].isna()].index.values
+    assert len(non_ranked_models) == 1
+
+    df = rank_models(base, models, strictness=[], rankfunc='ofv', cutoff=1)
+    non_ranked_models = df.loc[df['rank'].isna()].index.values
+    assert len(non_ranked_models) == 2
 
 
 def test_aic(testdata):

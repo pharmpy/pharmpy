@@ -590,6 +590,83 @@ def summarize_errors(models):
     return df.sort_index()
 
 
+def rank_models(base_model, models, strictness, rankfunc, cutoff, bic_type='mixed'):
+    # TODO: add LRT
+    # TODO: add option to use parent model as base
+    models_all = [base_model] + models
+    models_with_res = [model for model in models_all if model.modelfit_results]
+    delta_dict = _create_rankfunc_dict(base_model, models_all, rankfunc, bic_type)
+
+    if 'minimization_successful' in strictness:
+        models_filtered = [
+            model.name
+            for model in models_with_res
+            if model.modelfit_results.minimization_successful
+        ]
+    else:
+        models_filtered = [model.name for model in models_with_res]
+
+    if cutoff is not None:
+        models_filtered = [
+            model_name for model_name in models_filtered if delta_dict[model_name] >= cutoff
+        ]
+
+    def fn(name):
+        return delta_dict[name]
+
+    models_sorted = sorted(models_filtered, key=fn, reverse=True)  # FIXME: if same rankfunc value?
+
+    rank_dict = dict()
+    rank, count, prev = 0, 0, None
+    for model in models_sorted:
+        count += 1
+        value = delta_dict[model]
+        if value != prev:
+            rank += count
+            prev = value
+            count = 0
+        rank_dict[model] = rank
+
+    model_names, rows = [], []
+    for model in models_all:
+        model_names.append(model.name)
+        try:
+            rank = rank_dict[model.name]
+        except KeyError:
+            rank = np.nan
+        rows.append((delta_dict[model.name], rank))
+
+    df = pd.DataFrame(rows, index=model_names, columns=[f'd{rankfunc}', 'rank'])
+    df_sorted = df.sort_values(by=[f'd{rankfunc}'], ascending=False)
+
+    return df_sorted
+
+
+def _create_rankfunc_dict(base_model, models_all, rankfunc, bic_type):
+    base_rankval = _get_rankval(base_model, rankfunc, bic_type)
+
+    delta_dict = dict()
+    for model in models_all:
+        if model.name != base_model.name:
+            model_rankval = _get_rankval(model, rankfunc, bic_type)
+        else:
+            model_rankval = base_rankval
+        delta_dict[model.name] = base_rankval - model_rankval
+
+    return delta_dict
+
+
+def _get_rankval(model, rankfunc, bic_type):
+    if rankfunc in ['ofv', 'lrt']:
+        return model.modelfit_results.ofv
+    elif rankfunc == 'aic':
+        return calculate_aic(model)
+    elif rankfunc == 'bic':
+        return calculate_bic(model, bic_type)
+    else:
+        raise ValueError('Unknown rankfunc: must be ofv, lrt, aic, or bic')
+
+
 def calculate_aic(model, modelfit_results=None):
     """Calculate final AIC for model assuming the OFV to be -2LL
 
