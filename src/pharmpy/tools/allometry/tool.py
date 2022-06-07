@@ -2,6 +2,7 @@ from functools import partial
 
 from pharmpy.modeling import (
     add_allometry,
+    summarize_errors,
     summarize_individuals,
     summarize_individuals_count_table,
     summarize_modelfit_results,
@@ -115,10 +116,12 @@ def results(start_model, model):
     summods = summarize_modelfit_results([start_model, model])
     suminds = summarize_individuals([start_model, model])
     sumcount = summarize_individuals_count_table(df=suminds)
+    sumerrs = summarize_errors([start_model, model])
     res = AllometryResults(
         summary_models=summods,
         summary_individuals=suminds,
         summary_individuals_count=sumcount,
+        summary_errors=sumerrs,
         best_model=model,
     )
     return res
@@ -130,9 +133,11 @@ class AllometryResults(Results):
         summary_models=None,
         summary_individuals=None,
         summary_individuals_count=None,
+        summary_errors=None,
         best_model=None,
     ):
         self.summary_models = summary_models
         self.summary_individuals = summary_individuals
         self.summary_individuals_count = summary_individuals_count
+        self.summary_errors = summary_errors
         self.best_model = best_model

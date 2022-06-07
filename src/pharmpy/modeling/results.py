@@ -578,7 +578,7 @@ def summarize_errors(models):
                 idcs.append((model.name, entry.category, i))
                 rows.append([entry.time, entry.message])
 
-    index_names = ['model', 'category', 'code']
+    index_names = ['model', 'category', 'error_no']
     col_names = ['time', 'message']
     index = pd.MultiIndex.from_tuples(idcs, names=index_names)
 

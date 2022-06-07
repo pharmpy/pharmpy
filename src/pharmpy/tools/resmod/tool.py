@@ -17,6 +17,7 @@ from pharmpy.modeling import (
     set_iiv_on_ruv,
     set_initial_estimates,
     set_power_on_ruv,
+    summarize_errors,
     summarize_individuals,
     summarize_individuals_count_table,
     summarize_modelfit_results,
@@ -152,11 +153,13 @@ def start(model, groups, p_value, skip):
     sumcount = summarize_individuals_count_table(df=sumind)
     summf = summarize_modelfit_results(selected_models)
     summary_tool = summarize_tool(selected_models[1:], selected_models[0], 'ofv', cutoff)
+    summary_errors = summarize_errors(selected_models)
 
     res.summary_individuals = sumind
     res.summary_individuals_count = sumcount
     res.summary_models = summf
     res.summary_tool = summary_tool
+    res.summary_errors = summary_errors
     return res
 
 

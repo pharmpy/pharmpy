@@ -16,6 +16,7 @@ class ResmodResults(Results):
         best_model=None,
         summary_models=None,
         summary_tool=None,
+        summary_errors=None,
     ):
         self.models = models
         self.summary_individuals = summary_individuals
@@ -23,6 +24,7 @@ class ResmodResults(Results):
         self.best_model = best_model
         self.summary_models = summary_models
         self.summary_tool = summary_tool
+        self.summary_errors = summary_errors
 
 
 def calculate_results(models):
