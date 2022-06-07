@@ -1,7 +1,7 @@
 from collections import Counter
 from dataclasses import dataclass
-from itertools import count, product
-from typing import Iterable, List, Tuple, Union
+from itertools import count
+from typing import List, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -20,6 +20,7 @@ from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.tools.scm.results import candidate_summary_dataframe, ofv_summary_dataframe
 from pharmpy.workflows import Task, Workflow, call_workflow
 
+from .effects import EffectLiteral, Effects, Spec, parse_spec
 from .results import CovariatesResults
 
 NAME_WF = 'covariates'
@@ -61,26 +62,8 @@ class Candidate:
     steps: Tuple[Step, ...]
 
 
-EffectLiteral = Tuple[str, str, str, str]
-EffectSpecFeature = Union[str, Tuple[str]]
-EffectSpec = Tuple[EffectSpecFeature, EffectSpecFeature, EffectSpecFeature, EffectSpecFeature]
-
-
-def _ensure_tuple(x):
-    return x if isinstance(x, tuple) else [x]
-
-
-def _parse_effects_spec(spec: List[EffectSpec]) -> Iterable[EffectLiteral]:
-    for parameters, covariates, fps, operations in spec:
-        parameters = _ensure_tuple(parameters)
-        covariates = _ensure_tuple(covariates)
-        fps = _ensure_tuple(fps)
-        operations = _ensure_tuple(operations)
-        yield from product(parameters, covariates, fps, operations)
-
-
 def create_workflow(
-    effect_spec: List[EffectSpec],
+    effects: Union[str, List[Spec]],
     p_forward: float = 0.05,
     max_steps: int = -1,
     model: Union[Model, None] = None,
@@ -89,8 +72,9 @@ def create_workflow(
 
     Parameters
     ----------
-    effects : list
-        The list of candidates to try
+    effects : str | list
+        The list of candidates to try, either in DSL str form or in
+        (optionally compact) tuple form.
     p_forward : float
         The p-value to use in the likelihood ratio test for forward steps
     max_steps : int
@@ -116,7 +100,8 @@ def create_workflow(
     ... ], model=model)      # doctest: +SKIP
 
     """
-    effects = sorted(set(_parse_effects_spec(effect_spec)))
+    effect_spec = Effects(effects).spec(model) if isinstance(effects, str) else effects
+    parsed_effects = sorted(set(parse_spec(effect_spec)))
 
     wf = Workflow()
     wf.name = NAME_WF
@@ -128,7 +113,7 @@ def create_workflow(
     search_task = Task(
         'search',
         task_greedy_forward_search,
-        effects,
+        parsed_effects,
         p_forward,
         max_steps,
     )
