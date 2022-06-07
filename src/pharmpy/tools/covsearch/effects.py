@@ -247,7 +247,14 @@ class DSLInterpreter(Interpreter):
 
 class Effects:
     def __init__(self, source: str):
-        parser = Lark(grammar, parser='lalr')
+        parser = Lark(
+            grammar,
+            parser='lalr',
+            lexer='standard',
+            propagate_positions=False,
+            maybe_placeholders=False,
+            cache=True,
+        )
         tree = parser.parse(source)
         effects = []
         absorption = []
