@@ -39,6 +39,7 @@ def run_amd(
     categorical=None,
     continuous=None,
     allometric_variable=None,
+    occasion=None,
 ):
     """Run Automatic Model Development (AMD) tool
 
@@ -68,6 +69,8 @@ def run_amd(
         List of continuouts covariates
     allometric_variable: str or Symbol
         Variable to use for allometry
+    occasion: str
+        Name of occasion column
 
     Returns
     -------
@@ -100,7 +103,7 @@ def run_amd(
     if lloq is not None:
         remove_loq_data(model, lloq=lloq)
 
-    default_order = ['structural', 'iivsearch', 'residual', 'allometry', 'covariates']
+    default_order = ['structural', 'iivsearch', 'iovsearch', 'residual', 'allometry', 'covariates']
     if order is None:
         order = default_order
 
@@ -130,6 +133,10 @@ def run_amd(
             func = partial(_run_iiv, path=db.path)
             run_funcs.append(func)
             run_subfuncs['iivsearch'] = func
+        elif section == 'iovsearch':
+            func = partial(_run_iov, occasion=occasion, path=db.path)
+            run_funcs.append(func)
+            run_subfuncs['iovsearch'] = func
         elif section == 'residual':
             func = partial(_run_resmod, path=db.path)
             run_funcs.append(func)
@@ -235,3 +242,9 @@ def _run_allometry(model, allometric_variable, path):
             'allometry', model, allometric_variable=allometric_variable, path=path / 'allometry'
         )
         return res.best_model
+
+
+def _run_iov(model, occasion, path):
+    if occasion is not None:
+        res_iov = run_tool('iovsearch', model=model, column=occasion, path=path / 'iovsearch')
+        return res_iov
