@@ -1,4 +1,10 @@
-from pharmpy.modeling import add_iiv, add_pk_iiv, copy_model, create_joint_distribution
+from pharmpy.modeling import (
+    add_iiv,
+    add_pk_iiv,
+    copy_model,
+    create_joint_distribution,
+    set_upper_bounds,
+)
 from pharmpy.tools.common import update_initial_estimates
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.workflows import Task, Workflow
@@ -210,13 +216,12 @@ def _apply_transformation(feat, func, model):
     if feat.startswith('PERIPHERALS'):
         new_params = set(model.parameters)
         diff = new_params - old_params
-        peripheral_params = [
-            param
+        peripheral_params = {
+            param.name: 999999
             for param in diff
             if param.name.startswith('POP_Q') or param.name.startswith('POP_V')
-        ]
-        for param in peripheral_params:
-            param.upper = 999999
+        }
+        set_upper_bounds(model, peripheral_params)
     return model
 
 

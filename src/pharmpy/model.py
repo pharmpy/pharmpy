@@ -17,7 +17,6 @@ import pathlib
 import warnings
 from pathlib import Path
 
-import pandas as pd
 import sympy
 
 from pharmpy.datainfo import ColumnInfo, DataInfo
@@ -206,12 +205,7 @@ class Model:
 
     @parameters.setter
     def parameters(self, value):
-        if isinstance(value, Parameters):
-            inits = value.inits
-        else:
-            inits = value
-        if isinstance(inits, pd.Series):
-            inits = inits.to_dict()
+        inits = value.inits
         if inits and not self.random_variables.validate_parameters(inits):
             nearest = self.random_variables.nearest_valid_parameters(inits)
             if nearest != inits:
@@ -221,17 +215,11 @@ class Model:
                     f"omega/sigma matrices.\nBefore adjusting:  {before}.\n"
                     f"After adjusting: {after}"
                 )
-                if isinstance(value, Parameters):
-                    value.inits = nearest
-                else:
-                    value = nearest
+                value = value.set_initial_estimates(nearest)
             else:
                 raise ValueError("New parameter inits are not valid")
 
-        if not isinstance(value, Parameters):
-            self._parameters.inits = value
-        else:
-            self._parameters = value
+        self._parameters = value
 
     @staticmethod
     def _compare_before_after_params(old, new):

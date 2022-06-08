@@ -14,7 +14,7 @@ from sympy.stats.joint_rv_types import MultivariateNormalDistribution
 
 from pharmpy.modeling.expressions import create_symbol
 from pharmpy.modeling.help_functions import _format_input_list, _format_options, _get_etas
-from pharmpy.parameter import Parameter
+from pharmpy.parameter import Parameter, Parameters
 from pharmpy.random_variables import RandomVariable
 from pharmpy.statements import Assignment, ModelStatements, sympify
 from pharmpy.symbols import symbol as S
@@ -76,7 +76,7 @@ def add_iiv(
     """
     rvs, pset, sset = (
         model.random_variables.copy(),
-        model.parameters.copy(),
+        [p for p in model.parameters],
         model.statements.copy(),
     )
 
@@ -116,7 +116,7 @@ def add_iiv(
         statement.expression = eta_addition.template
 
     model.random_variables = rvs
-    model.parameters = pset
+    model.parameters = Parameters(pset)
     model.statements = sset
 
     return model
@@ -266,7 +266,7 @@ def add_iov(model, occ, list_of_parameters=None, eta_names=None, distribution='d
         model, occ, etas, categories, iov_name, etai_name, eta_name, omega_iov_name
     )
 
-    model.random_variables, model.parameters, model.statements = rvs, pset, iovs
+    model.random_variables, model.parameters, model.statements = rvs, Parameters(pset), iovs
 
     return model
 
@@ -288,7 +288,7 @@ def _add_iov_explicit(model, occ, etas, categories, iov_name, etai_name, eta_nam
 
     rvs, pset, sset = (
         model.random_variables.copy(),
-        model.parameters.copy(),
+        [p for p in model.parameters],
         model.statements.copy(),
     )
 
@@ -366,7 +366,8 @@ def _add_iov_etas_joint(rvs, pset, etas, indices, categories, omega_iov_name, et
     for i, j in combinations(indices, r=2):
         omega_iov = S(omega_iov_name(i, j))
         omega_iiv = rvs.get_covariance(etas[i - 1], etas[j - 1])
-        init = pset[omega_iiv].init * 0.1 if omega_iiv != 0 and omega_iiv in pset else 0.001
+        paramset = Parameters(pset)  # FIXME!
+        init = paramset[omega_iiv].init * 0.1 if omega_iiv != 0 and omega_iiv in paramset else 0.001
         pset.append(Parameter(str(omega_iov), init=init))
 
     mu = [0] * len(indices)
@@ -382,7 +383,8 @@ def _add_iov_declare_diagonal_omegas(rvs, pset, etas, indices, omega_iov_name):
         eta = etas[i - 1]
         omega_iiv = rvs.get_variance(eta)
         omega_iov = S(omega_iov_name(i, i))
-        init = pset[omega_iiv].init * 0.1 if omega_iiv in pset else 0.01
+        paramset = Parameters(pset)  # FIXME!
+        init = paramset[omega_iiv].init * 0.1 if omega_iiv in paramset else 0.01
         pset.append(Parameter(str(omega_iov), init=init))
 
 

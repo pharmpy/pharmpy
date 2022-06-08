@@ -1,7 +1,7 @@
 import re
 import warnings
 
-from pharmpy.parameter import Parameter, Parameters
+from pharmpy.parameter import Parameter
 from pharmpy.parse_utils.generic import AttrToken, remove_token_and_space
 
 from .record import Record
@@ -27,7 +27,7 @@ class ThetaRecord(Record):
         """
         if seen_labels is None:
             seen_labels = set()
-        pset = Parameters()
+        pset = []
         current_theta = first_theta
         for theta in self.root.all('theta'):
             init = theta.init.tokens[0].eval
@@ -85,7 +85,7 @@ class ThetaRecord(Record):
                 pset.append(new_par)
 
         if not self.name_map:
-            self.name_map = {name: first_theta + i for i, name in enumerate(pset.names)}
+            self.name_map = {name: first_theta + i for i, name in enumerate([p.name for p in pset])}
         return pset
 
     def _multiple(self, theta):

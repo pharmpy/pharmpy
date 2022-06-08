@@ -1,4 +1,4 @@
-from pharmpy.parameter import Parameter
+from pharmpy.parameter import Parameter, Parameters
 from pharmpy.statements import Assignment, sympify
 
 from . import find_clearance_parameters, find_volume_parameters
@@ -106,13 +106,15 @@ def add_allometry(
     if not (len(parameters) == len(initials) == len(lower_bounds) == len(upper_bounds)):
         raise ValueError("The number of parameters, initials and bounds must be the same")
 
+    params = [p for p in model.parameters]
     for p, init, lower, upper in zip(parameters, initials, lower_bounds, upper_bounds):
         symb = create_symbol(model, f'ALLO_{p.name}')
         param = Parameter(symb.name, init=init, lower=lower, upper=upper, fix=fixed)
-        model.parameters.append(param)
+        params.append(param)
         expr = p * (allometric_variable / reference_value) ** param.symbol
         new_ass = Assignment(p, expr)
         p_ass = model.statements.find_assignment(p)
         model.statements.insert_after(p_ass, new_ass)
+    model.parameters = Parameters(params)
 
     return model

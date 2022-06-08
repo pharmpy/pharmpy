@@ -6,7 +6,7 @@ import sympy
 
 from pharmpy.modeling import has_proportional_error_model
 from pharmpy.modeling.help_functions import _format_input_list
-from pharmpy.parameter import Parameter
+from pharmpy.parameter import Parameter, Parameters
 from pharmpy.statements import Assignment, sympify
 from pharmpy.symbols import symbol as S
 
@@ -57,7 +57,7 @@ def set_power_on_ruv(model, list_of_eps=None, lower_limit=0.01, ipred=None, zero
     eps = model.random_variables.epsilons
     if list_of_eps is not None:
         eps = eps[list_of_eps]
-    pset, sset = model.parameters, model.statements
+    pset, sset = [p for p in model.parameters], model.statements
 
     if ipred is None:
         ipred = get_ipred(model)
@@ -97,7 +97,7 @@ def set_power_on_ruv(model, list_of_eps=None, lower_limit=0.01, ipred=None, zero
             sset.subs({e.symbol * alternative: e.symbol})
         sset.subs({e.name: ipred ** S(theta.name) * e.symbol})
 
-    model.parameters = pset
+    model.parameters = Parameters(pset)
     model.statements = sset
 
     return model

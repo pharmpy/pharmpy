@@ -38,6 +38,7 @@ def test_initialization(name, init, lower, upper, fix):
         ('OMEGA(2,1)', 0.1, 2, None, None),
         ('X', 1, 0, -1, None),
         ('X', np.nan, 0, 2, None),
+        (23, 0, None, None, None),
     ],
 )
 def test_illegal_initialization(name, init, lower, upper, fix):
@@ -50,40 +51,11 @@ def test_repr():
     assert repr(param) == 'Parameter("X", 2, lower=0, upper=23, fix=False)'
 
 
-def test_copy():
-    p1 = Parameter('X', 2, lower=0, upper=23)
-    p2 = p1.copy()
-    p1.init = 22
-    assert p2.init == 2
-
-
-def test_unconstrain():
-    param = Parameter('X', 2, lower=0, upper=23)
-    param.unconstrain()
-    assert param.lower == -sympy.oo
-    assert param.upper == sympy.oo
-
-    fixed_param = Parameter('Y', 0, fix=True)
-    fixed_param.unconstrain()
-    assert fixed_param.lower == -sympy.oo
-    assert fixed_param.upper == sympy.oo
-
-
 def test_fix():
     param = Parameter('X', 2, lower=0, upper=23)
     assert param == Parameter('X', 2, lower=0, upper=23, fix=False)
-    param.fix = True
+    param = param.set_fix(True)
     assert param == Parameter('X', 2, lower=0, upper=23, fix=True)
-
-
-def test_init():
-    param = Parameter('X', 2, lower=0, upper=23)
-    with pytest.raises(ValueError):
-        param.init = -1
-    param.init = 22
-
-    with pytest.raises(ValueError, match='Initial estimate cannot be set to NaN'):
-        param.init = np.nan
 
 
 def test_pset_init():
@@ -108,7 +80,7 @@ def test_pset_getitem():
     assert pset['Y'] is p
 
     p2 = Parameter('Z', 5)
-    pset.append(p2)
+    pset = Parameters((p, p2))
 
     assert len(pset) == 2
 
@@ -127,33 +99,17 @@ def test_pset_getitem():
 
     assert len(pset[[p]]) == 1
 
-
-def test_pset_setitem():
-    p1 = Parameter('P1', 1)
-    p2 = Parameter('P2', 2)
-    p3 = Parameter('P3', 3)
-    ps = Parameters([p1, p2, p3])
-    p4 = Parameter('P4', 4)
-    ps[p1] = p4
-    assert len(ps) == 3
-    assert ps[0].name == 'P4'
-
-    with pytest.raises(ValueError):
-        ps[0] = 23
-
-    p5 = Parameter('P4', 0)
-    with pytest.raises(ValueError):
-        ps[1] = p5
+    with pytest.raises(KeyError):
+        pset['noparamofmine']
 
 
-def test_pset_remove_fixed():
+def test_pset_nonfixed():
     p1 = Parameter('Y', 9, fix=False)
     p2 = Parameter('X', 3, fix=True)
     p3 = Parameter('Z', 1, fix=False)
     pset = Parameters([p1, p2, p3])
-    pset.remove_fixed()
-    assert len(pset) == 2
-    assert pset['Y'] == Parameter('Y', 9)
+    assert len(pset.nonfixed) == 2
+    assert pset.nonfixed['Y'] == Parameter('Y', 9)
 
 
 def test_pset_names():
@@ -173,38 +129,12 @@ def test_pset_lower_upper():
     assert pset.upper == {'X': 1, 'Y': sympy.oo}
 
 
-def test_pset_inits():
-    p1 = Parameter('Y', 9)
-    p2 = Parameter('X', 3)
-    p3 = Parameter('Z', 1)
-    pset = Parameters([p1, p2, p3])
-    pset.inits = {'X': 28}
-    assert len(pset) == 3
-    assert pset['X'] == Parameter('X', 28)
-    assert pset['Y'] == Parameter('Y', 9)
-    assert pset['Z'] == Parameter('Z', 1)
-
-    with pytest.raises(KeyError):
-        pset.inits = {'CL': 0}
-
-    pset.inits = {'X': 0, 'Y': 2, 'Z': 5}
-    assert len(pset) == 3
-    assert pset['X'] == Parameter('X', 0)
-    assert pset['Y'] == Parameter('Y', 2)
-    assert pset['Z'] == Parameter('Z', 5)
-
-    with pytest.raises(ValueError, match='Initial estimate cannot be set to NaN'):
-        pset.inits = {'X': np.nan, 'Y': 2, 'Z': 5}
-
-
 def test_pset_nonfixed_inits():
     p1 = Parameter('Y', 9)
     p2 = Parameter('X', 3)
     p3 = Parameter('Z', 1)
     pset = Parameters([p1, p2, p3])
-    assert pset.nonfixed_inits == {'Y': 9, 'X': 3, 'Z': 1}
-    pset['X'].fix = True
-    assert pset.nonfixed_inits == {'Y': 9, 'Z': 1}
+    assert pset.nonfixed.inits == {'Y': 9, 'X': 3, 'Z': 1}
 
 
 def test_pset_fix():
@@ -213,11 +143,6 @@ def test_pset_fix():
     p3 = Parameter('Z', 1, fix=False)
     pset = Parameters([p1, p2, p3])
     assert pset.fix == {'Y': False, 'X': True, 'Z': False}
-    fixedness = {'Y': True, 'X': True, 'Z': True}
-    pset.fix = fixedness
-    assert pset.fix == {'Y': True, 'X': True, 'Z': True}
-    with pytest.raises(KeyError):
-        pset.fix = {'K': True}
 
 
 def test_pset_repr():
@@ -228,13 +153,6 @@ def test_pset_repr():
     pset = Parameters()
     assert type(repr(pset)) == str
     assert type(pset._repr_html_()) == str
-
-
-def test_parameter_space():
-    p1 = Parameter('Y', 9, fix=True)
-    assert p1.parameter_space == sympy.FiniteSet(9)
-    p2 = Parameter('X', 10, lower=0, upper=15)
-    assert p2.parameter_space == sympy.Interval(0, 15)
 
 
 def test_pset_eq():
@@ -249,68 +167,54 @@ def test_pset_eq():
     assert pset1 == pset1
 
 
-def test_pset_add():
-    p1 = Parameter('Y', 9)
-    p2 = Parameter('X', 3)
-    p3 = Parameter('Z', 1)
-    pset1 = Parameters([p1, p2])
-    pset1.append(p3)
-    assert len(pset1) == 3
-
-    with pytest.raises(ValueError):
-        pset1.append(23)
-
-
-def test_pset_discard():
-    p1 = Parameter('Y', 9)
-    p2 = Parameter('X', 3)
-    p3 = Parameter('Z', 1)
-    pset1 = Parameters([p1, p2, p3])
-    del pset1[p2]
-    assert len(pset1) == 2
-    del pset1['Y']
-    assert len(pset1) == 1
-
-
-def test_copy_pset():
-    p1 = Parameter('Y', 9)
-    p2 = Parameter('X', 3, lower=1, upper=24)
-    p3 = Parameter('Z', 1, lower=0, upper=2)
-    pset1 = Parameters([p1, p2, p3])
-    pset2 = pset1.copy()
-    assert pset1 == pset2
-    assert id(pset1[0]) != id(pset2[0])
-    p4 = p1.copy()
-    assert p4 == p1
-    assert id(p4) != id(p1)
-
-
 def test_hash():
     p1 = Parameter('Y', 9)
     hash(p1)
 
 
-def test_insert():
+def test_contains():
     p1 = Parameter('Y', 9)
-    p2 = Parameter('X', 3, lower=1, upper=24)
-    p3 = Parameter('Z', 1, lower=0, upper=2)
-    pset1 = Parameters([p1, p2])
-    pset1.insert(0, p3)
-    assert pset1.names == ['Z', 'Y', 'X']
-
-    p4 = Parameter('Y', 0)
-    with pytest.raises(ValueError):
-        pset1.insert(1, p4)
+    p2 = Parameter('X', 3)
+    p3 = Parameter('Z', 1)
+    pset1 = Parameters([p1, p2, p3])
+    assert 'Y' in pset1
+    assert 'Q' not in pset1
 
 
-def test_verify_init():
-    p = Parameter('X', 2, lower=0, upper=23)
+def test_set_initial_estimates():
+    p1 = Parameter('Y', 9)
+    p2 = Parameter('X', 3)
+    p3 = Parameter('Z', 1)
+    pset1 = Parameters([p1, p2, p3])
+    pset2 = pset1.set_initial_estimates({'Y': 23, 'Z': 19})
+    assert pset2['Y'].init == 23
+    assert pset2['X'].init == 3
+    assert pset2['Z'].init == 19
+    assert pset1['Y'].init == 9
+    assert pset1['X'].init == 3
+    assert pset1['Z'].init == 1
 
-    with pytest.raises(ValueError, match='Initial estimate must be within the constraints'):
-        p.verify_init(24)
 
-    with pytest.raises(ValueError, match='Initial estimate cannot be set to NaN'):
-        p.verify_init(np.nan)
+def test_set_fix():
+    p1 = Parameter('Y', 9, fix=True)
+    p2 = Parameter('X', 3)
+    p3 = Parameter('Z', 1)
+    pset1 = Parameters([p1, p2, p3])
+    pset2 = pset1.set_fix({'Y': False, 'X': True})
+    assert not pset2['Y'].fix
+    assert pset2['X'].fix
+    assert not pset2['Z'].fix
+    assert pset1['Y'].fix
+    assert not pset1['X'].fix
+    assert not pset1['Z'].fix
 
-    with pytest.raises(ValueError, match='Initial estimate cannot be set to NaN'):
-        p.verify_init(sympy.nan)
+
+def test_fixed_nonfixed():
+    p1 = Parameter('Y', 9, fix=True)
+    p2 = Parameter('X', 3)
+    p3 = Parameter('Z', 1)
+    pset1 = Parameters([p1, p2, p3])
+    pset_fixed = Parameters([p1])
+    pset_nonfixed = Parameters([p2, p3])
+    assert pset1.fixed == pset_fixed
+    assert pset1.nonfixed == pset_nonfixed

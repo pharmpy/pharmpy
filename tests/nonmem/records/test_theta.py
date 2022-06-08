@@ -1,6 +1,7 @@
 import pytest
 
 from pharmpy.config import ConfigurationContext
+from pharmpy.parameter import Parameter, Parameters
 from pharmpy.plugins.nonmem import conf
 
 
@@ -84,7 +85,7 @@ def test_parameters(parser, buf, comment, results):
     with ConfigurationContext(conf, parameter_names=opt):
         recs = parser.parse(buf)
         rec = recs.records[0]
-        pset = rec.parameters(1)
+        pset = Parameters(rec.parameters(1))
         assert len(pset) == len(results)
         assert len(pset) == len(rec)
         for res in results:
@@ -103,46 +104,51 @@ def test_parameters(parser, buf, comment, results):
 
 def test_theta_num(parser):
     rec = parser.parse('$THETA 1').records[0]
-    pset = rec.parameters(2)
+    pset = Parameters(rec.parameters(2))
     assert len(pset) == 1
     assert pset['THETA(2)'].init == 1
 
 
 def test_update(parser):
     rec = parser.parse('$THETA 1').records[0]
-    pset = rec.parameters(1)
-    pset['THETA(1)'].init = 41
+    rec.parameters(1)
+    pset = Parameters([Parameter('THETA(1)', 41)])
     rec.update(pset, 1)
     assert str(rec) == '$THETA 41'
 
     rec = parser.parse('$THETA 1 FIX').records[0]
-    pset = rec.parameters(1)
-    pset['THETA(1)'].fix = False
+    rec.parameters(1)
+    pset = Parameters([Parameter('THETA(1)', 1, fix=False)])
     rec.update(pset, 1)
     assert str(rec) == '$THETA 1'
 
     rec = parser.parse('$THETA (2, 2, 2)  FIX').records[0]
-    pset = rec.parameters(1)
-    pset['THETA(1)'].fix = False
+    rec.parameters(1)
+    pset = Parameters([Parameter('THETA(1)', 2, lower=2, upper=2, fix=False)])
     rec.update(pset, 1)
     assert str(rec) == '$THETA (2, 2, 2)'
 
     rec = parser.parse('$THETA (2, 2, 2 FIX)').records[0]
-    pset = rec.parameters(1)
-    pset['THETA(1)'].fix = False
+    rec.parameters(1)
+    pset = Parameters([Parameter('THETA(1)', 2, lower=2, upper=2, fix=False)])
     rec.update(pset, 1)
     assert str(rec) == '$THETA (2, 2, 2)'
 
     rec = parser.parse('$THETA (2, 2, 2)').records[0]
-    pset = rec.parameters(1)
-    pset['THETA(1)'].fix = True
+    rec.parameters(1)
+    pset = Parameters([Parameter('THETA(1)', 2, lower=2, upper=2, fix=True)])
     rec.update(pset, 1)
     assert str(rec) == '$THETA (2, 2, 2) FIX'
 
     rec = parser.parse('$THETA 1 2 3 ;CMT').records[0]
-    pset = rec.parameters(1)
-    pset['THETA(1)'].fix = True
-    pset['THETA(3)'].fix = True
+    rec.parameters(1)
+    pset = Parameters(
+        [
+            Parameter('THETA(1)', 1, fix=True),
+            Parameter('THETA(2)', 2),
+            Parameter('THETA(3)', 3, fix=True),
+        ]
+    )
     rec.update(pset, 1)
     assert str(rec) == '$THETA 1 FIX 2 3 FIX ;CMT'
 

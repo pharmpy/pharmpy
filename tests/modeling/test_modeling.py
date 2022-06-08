@@ -2413,7 +2413,6 @@ def test_create_joint_distribution(testdata, etas, pk_ref, omega_ref):
 
     create_joint_distribution(model, etas)
     model.update_source()
-    print(model.model_code)
     assert str(model.get_pred_pk_record()) == pk_ref
 
     rec_omega = ''.join(str(rec) for rec in model.control_stream.get_records('OMEGA'))
@@ -2681,7 +2680,10 @@ def test_set_iiv_on_ruv(pheno_path, epsilons, same_eta, eta_names, err_ref, omeg
     )
     model = Model.create_model(StringIO(model_sigma))
 
+    print("START")
+    print(model.parameters)
     set_iiv_on_ruv(model, epsilons, same_eta, eta_names)
+    print(model.parameters)
     model.update_source()
 
     assert eta_names is None or eta_names[0] in [eta.name for eta in model.random_variables.etas]
@@ -3043,7 +3045,8 @@ def test_update_inits_move_est(pheno_path):
 
 def test_update_inits_zero_fix(pheno_path):
     model = Model.create_model(pheno_path)
-    fix_parameters_to(model, model.random_variables.iiv.parameter_names, 0)
+    d = {name: 0 for name in model.random_variables.iiv.parameter_names}
+    fix_parameters_to(model, d)
     res = model.modelfit_results
     param_est = res.parameter_estimates
     del param_est['OMEGA(1,1)']
@@ -3052,7 +3055,8 @@ def test_update_inits_zero_fix(pheno_path):
     assert model.parameters['OMEGA(1,1)'].fix
 
     model = Model.create_model(pheno_path)
-    fix_parameters_to(model, model.random_variables.iiv.parameter_names, 0)
+    d = {name: 0 for name in model.random_variables.iiv.parameter_names}
+    fix_parameters_to(model, d)
     res = model.modelfit_results
     param_est = res.parameter_estimates
     del param_est['OMEGA(1,1)']
@@ -3076,10 +3080,10 @@ def test_update_inits_no_res(testdata, tmp_path):
         model = Model.create_model('run1.mod')
 
         model.modelfit_results.parameter_estimates = pd.Series(
-            np.nan, name='estimates', index=list(model.parameters.nonfixed_inits.keys())
+            np.nan, name='estimates', index=list(model.parameters.nonfixed.inits.keys())
         )
 
-        with pytest.raises(ValueError, match='One or more parameter estimates are NaN'):
+        with pytest.raises(ValueError):
             update_inits(model)
 
 

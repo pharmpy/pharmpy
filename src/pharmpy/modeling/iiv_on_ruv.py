@@ -5,7 +5,7 @@
 import sympy
 
 from pharmpy.modeling.help_functions import _format_input_list, _get_epsilons
-from pharmpy.parameter import Parameter
+from pharmpy.parameter import Parameter, Parameters
 from pharmpy.random_variables import RandomVariable
 from pharmpy.symbols import symbol as S
 
@@ -57,7 +57,7 @@ def set_iiv_on_ruv(model, list_of_eps=None, same_eta=True, eta_names=None):
             'The number of provided eta names must be equal to the number of epsilons.'
         )
 
-    rvs, pset, sset = model.random_variables, model.parameters, model.statements
+    rvs, pset, sset = model.random_variables, [p for p in model.parameters], model.statements
 
     if same_eta:
         eta = _create_eta(pset, 1, eta_names)
@@ -73,7 +73,7 @@ def set_iiv_on_ruv(model, list_of_eps=None, same_eta=True, eta_names=None):
         sset.subs({e.symbol: e.symbol * sympy.exp(S(eta_dict[e].name))})
 
     model.random_variables = rvs
-    model.parameters = pset
+    model.parameters = Parameters(pset)
     model.statements = sset
 
     # FIXME This should probably not be commented out

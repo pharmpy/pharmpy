@@ -175,13 +175,13 @@ class NONMEMChainedModelfitResults(ChainedModelfitResults):
     def _fill_empty_results(self, result_obj, is_covariance_step):
         # Parameter estimates NaN for all parameters that should be estimated
         pe = pd.Series(
-            np.nan, name='estimates', index=list(self.model.parameters.nonfixed_inits.keys())
+            np.nan, name='estimates', index=list(self.model.parameters.nonfixed.inits.keys())
         )
         result_obj.parameter_estimates = pe
         result_obj.ofv = np.nan
         if is_covariance_step:
             se = pd.Series(
-                np.nan, name='SE', index=list(self.model.parameters.nonfixed_inits.keys())
+                np.nan, name='SE', index=list(self.model.parameters.nonfixed.inits.keys())
             )
             result_obj.standard_errors = se
         else:

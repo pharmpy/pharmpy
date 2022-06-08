@@ -2,7 +2,7 @@ import sympy
 
 from pharmpy.statements import Assignment, CompartmentalSystem, ModelStatements, ODESystem, sympify
 
-from .common import get_thetas
+from .parameters import get_thetas
 
 
 def get_observation_expression(model):

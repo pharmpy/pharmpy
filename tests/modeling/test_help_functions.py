@@ -1,6 +1,7 @@
 import pytest
 
 from pharmpy import Model
+from pharmpy.modeling import fix_parameters
 from pharmpy.modeling.help_functions import _as_integer, _get_etas
 
 
@@ -23,7 +24,7 @@ def test_get_etas(pheno_path, testdata):
     rvs = _get_etas(model, None)
     assert rvs[0].name == 'ETA(1)'
 
-    model.parameters.fix = {'OMEGA(1,1)': True}
+    fix_parameters(model, ['OMEGA(1,1)'])
     rvs = _get_etas(model, None)
     assert rvs[0].name == 'ETA(2)'
 

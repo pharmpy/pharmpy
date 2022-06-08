@@ -25,7 +25,7 @@ def start_linearize(model):
 
 def create_linearized_model(model):
     linbase = pharmpy.model.Model()
-    linbase.parameters = model.parameters.copy()
+    linbase.parameters = model.parameters
     linbase.random_variables = model.random_variables.copy()
 
     ms = ModelStatements()

@@ -9,7 +9,7 @@ from operator import add, mul
 import numpy as np
 from sympy import Eq, Float, Gt, Le, Piecewise, exp
 
-from pharmpy.parameter import Parameter
+from pharmpy.parameter import Parameter, Parameters
 from pharmpy.statements import Assignment, ModelStatements, sympify
 from pharmpy.symbols import symbol as S
 
@@ -212,14 +212,20 @@ def _create_thetas(model, parameter, effect, covariate, template):
         inits = _choose_param_inits(effect, model, covariate)
 
         theta_name = f'POP_{parameter}{covariate}'
-        pset.append(Parameter(theta_name, inits['init'], inits['lower'], inits['upper']))
+        pset = Parameters(
+            [p for p in pset]
+            + [Parameter(theta_name, inits['init'], inits['lower'], inits['upper'])]
+        )
         theta_names['theta'] = theta_name
     else:
         for i in range(1, no_of_thetas + 1):
             inits = _choose_param_inits(effect, model, covariate, i)
 
             theta_name = f'POP_{parameter}{covariate}_{i}'
-            pset.append(Parameter(theta_name, inits['init'], inits['lower'], inits['upper']))
+            pset = Parameters(
+                [p for p in pset]
+                + [Parameter(theta_name, inits['init'], inits['lower'], inits['upper'])]
+            )
             theta_names[f'theta{i}'] = theta_name
 
     model.parameters = pset

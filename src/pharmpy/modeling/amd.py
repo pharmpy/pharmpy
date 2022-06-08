@@ -5,7 +5,6 @@ import pandas as pd
 import pharmpy.tools.scm as scm
 from pharmpy import plugins
 from pharmpy.results import Results
-from pharmpy.tools.amd.funcs import create_start_model
 from pharmpy.workflows import default_tool_database
 
 from .common import convert_model
@@ -84,6 +83,8 @@ def run_amd(
 
     """
     if type(input) is str:
+        from pharmpy.tools.amd.funcs import create_start_model
+
         model = create_start_model(
             input, modeltype=modeltype, cl_init=cl_init, vc_init=vc_init, mat_init=mat_init
         )

@@ -203,12 +203,12 @@ class Model(pharmpy.model.Model):
                 statement = Assignment('DUMMYETA', eta.name)
                 self.statements.insert(0, statement)
                 self.random_variables.append(eta)
-                self.parameters.append(omega)
+                self.parameters = Parameters([p for p in self.parameters] + [omega])
             update_random_variables(self, self._old_random_variables, self._random_variables)
             self._old_random_variables = self._random_variables.copy()
         if hasattr(self, '_parameters'):
             update_parameters(self, self._old_parameters, self._parameters)
-            self._old_parameters = self._parameters.copy()
+            self._old_parameters = self._parameters
         trans = self.parameter_translation(reverse=True, remove_idempotent=True, as_symbols=True)
         rv_trans = self.rv_translation(reverse=True, remove_idempotent=True, as_symbols=True)
         trans.update(rv_trans)
@@ -361,7 +361,7 @@ class Model(pharmpy.model.Model):
         ):
             self.statements
             # reading statements might change parameters. Resetting _old_parameters
-            self._old_parameters = self._parameters.copy()
+            self._old_parameters = self._parameters
 
         if not self.random_variables.validate_parameters(self._parameters.inits):
             nearest = self.random_variables.nearest_valid_parameters(self._parameters.inits)
@@ -371,33 +371,34 @@ class Model(pharmpy.model.Model):
                 f"omega/sigma matrices.\nBefore adjusting:  {before}.\n"
                 f"After adjusting: {after}"
             )
-            self._parameters.inits = nearest
-            self._old_parameters = self._parameters.copy()
+            params = self._parameters.set_initial_estimates(nearest)
+            self._parameters = params
+            self._old_parameters = params
         return self._parameters
 
     def _read_parameters(self):
         next_theta = 1
-        params = Parameters()
+        params = []
         for theta_record in self.control_stream.get_records('THETA'):
-            thetas = theta_record.parameters(next_theta, seen_labels=set(params.names))
+            thetas = theta_record.parameters(next_theta, seen_labels={p.name for p in params})
             params.extend(thetas)
             next_theta += len(thetas)
         next_omega = 1
         previous_size = None
         for omega_record in self.control_stream.get_records('OMEGA'):
             omegas, next_omega, previous_size = omega_record.parameters(
-                next_omega, previous_size, seen_labels=set(params.names)
+                next_omega, previous_size, seen_labels={p.name for p in params}
             )
             params.extend(omegas)
         next_sigma = 1
         previous_size = None
         for sigma_record in self.control_stream.get_records('SIGMA'):
             sigmas, next_sigma, previous_size = sigma_record.parameters(
-                next_sigma, previous_size, seen_labels=set(params.names)
+                next_sigma, previous_size, seen_labels={p.name for p in params}
             )
             params.extend(sigmas)
-        self._parameters = params
-        self._old_parameters = params.copy()
+        self._parameters = Parameters(params)
+        self._old_parameters = self._parameters
 
     @parameters.setter
     def parameters(self, params):
@@ -491,17 +492,31 @@ class Model(pharmpy.model.Model):
             self._read_parameters()
 
         trans_statements, trans_params = self._create_name_trans(statements)
+        for theta in self.control_stream.get_records('THETA'):
+            theta.update_name_map(trans_params)
+        for omega in self.control_stream.get_records('OMEGA'):
+            omega.update_name_map(trans_params)
+        for sigma in self.control_stream.get_records('SIGMA'):
+            sigma.update_name_map(trans_params)
+
+        d_par = dict()
+        d_rv = dict()
         for key, value in trans_params.items():
-            try:
-                self.parameters[key].name = value
-                for theta in self.control_stream.get_records('THETA'):
-                    theta.update_name_map(trans_params)
-                for omega in self.control_stream.get_records('OMEGA'):
-                    omega.update_name_map(trans_params)
-                for sigma in self.control_stream.get_records('SIGMA'):
-                    sigma.update_name_map(trans_params)
-            except KeyError:
-                self.random_variables.subs({S(key): value})
+            if key in self.parameters:
+                d_par[key] = value
+            else:
+                d_rv[S(key)] = value
+        self.random_variables.subs(d_rv)
+        new = []
+        for p in self.parameters:
+            if p.name in d_par:
+                newparam = Parameter(
+                    name=d_par[p.name], init=p.init, lower=p.lower, upper=p.upper, fix=p.fix
+                )
+            else:
+                newparam = p
+            new.append(newparam)
+        self.parameters = Parameters(new)
 
         statements.subs(trans_statements)
 

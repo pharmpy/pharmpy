@@ -6,14 +6,9 @@ from pharmpy.modeling.common import (
     bump_model_number,
     convert_model,
     copy_model,
-    fix_parameters,
-    fix_parameters_to,
     generate_model_code,
     get_config_path,
     get_model_covariates,
-    get_omegas,
-    get_sigmas,
-    get_thetas,
     load_example_model,
     print_model_code,
     print_model_symbols,
@@ -21,10 +16,8 @@ from pharmpy.modeling.common import (
     read_model_from_database,
     read_model_from_string,
     remove_unused_parameters_and_rvs,
-    set_initial_estimates,
+    rename_symbols,
     set_name,
-    unfix_parameters,
-    unfix_parameters_to,
     write_model,
 )
 from pharmpy.modeling.covariate_effect import add_covariate_effect
@@ -160,6 +153,21 @@ from .expressions import (
     solve_ode_system,
 )
 from .iterators import omit_data, resample_data
+from .parameters import (
+    add_population_parameter,
+    fix_or_unfix_parameters,
+    fix_parameters,
+    fix_parameters_to,
+    get_omegas,
+    get_sigmas,
+    get_thetas,
+    set_initial_estimates,
+    set_lower_bounds,
+    set_upper_bounds,
+    unconstrain_parameters,
+    unfix_parameters,
+    unfix_parameters_to,
+)
 from .plots import plot_individual_predictions, plot_iofv_vs_iofv
 from .reporting import create_report
 from .results import (
@@ -201,6 +209,7 @@ __all__ = [
     'add_lag_time',
     'add_peripheral_compartment',
     'add_pk_iiv',
+    'add_population_parameter',
     'add_time_after_dose',
     'append_estimation_step_options',
     'bump_model_number',
@@ -245,6 +254,7 @@ __all__ = [
     'find_clearance_parameters',
     'find_volume_parameters',
     'fit',
+    'fix_or_unfix_parameters',
     'fix_parameters',
     'fix_parameters_to',
     'generate_model_code',
@@ -297,6 +307,7 @@ __all__ = [
     'read_model_from_database',
     'read_model_from_string',
     'read_results',
+    'rename_symbols',
     'remove_covariance_step',
     'remove_error_model',
     'remove_estimation_step',
@@ -322,6 +333,8 @@ __all__ = [
     'set_first_order_elimination',
     'set_iiv_on_ruv',
     'set_initial_estimates',
+    'set_lower_bounds',
+    'set_upper_bounds',
     'set_michaelis_menten_elimination',
     'set_mixed_mm_fo_elimination',
     'set_name',
@@ -353,6 +366,7 @@ __all__ = [
     'write_csv',
     'write_model',
     'write_results',
+    'unconstrain_parameters',
     'undrop_columns',
 ]
 

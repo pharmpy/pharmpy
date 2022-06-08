@@ -8,7 +8,7 @@ import sympy
 from sympy import exp, sign
 
 from pharmpy.modeling.help_functions import _format_input_list, _get_etas
-from pharmpy.parameter import Parameter
+from pharmpy.parameter import Parameter, Parameters
 from pharmpy.statements import Assignment, ModelStatements
 from pharmpy.symbols import symbol as S
 
@@ -169,7 +169,7 @@ def _create_new_etas(etas_original, transformation):
 
 
 def _create_new_thetas(model, transformation, no_of_thetas):
-    pset = model.parameters
+    pset = [p for p in model.parameters]
     thetas = dict()
     theta_name = str(create_symbol(model, stem=transformation, force_numbering=True))
 
@@ -189,7 +189,7 @@ def _create_new_thetas(model, transformation, no_of_thetas):
             thetas[f'theta{i}'] = theta_name
             theta_name = f'{transformation}{theta_no + i}'
 
-    model.parameters = pset
+    model.parameters = Parameters(pset)
 
     return thetas
 
