@@ -13,5 +13,4 @@ def test_create_start_model(testdata):
 
     model = create_start_model(path, modeltype='pk_oral')
     assert 'POP_CL' in model.parameters
-    print(model.parameters)
     assert 'POP_MAT' in model.parameters
