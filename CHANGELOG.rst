@@ -1,3 +1,28 @@
+0.72.0 (2022-06-08)
+-------------------
+
+New features
+============
+
+* Add iovsearch tool
+* Add function modeling.summarize_errors to get a summary dataframe of parsed errors from result files
+* Add modeling.make_declarative
+* Add modeling.cleanup_model
+* Add modeling.greekify_model
+
+Changes
+=======
+
+* Use 'no_add', 'diagonal', 'fullblock', or 'absorption_delay' instead of numbers for iiv_strategy in iivsearch and modelsearch-tool
+* Add results and documentation for allometry tool
+* Add error summaries to iivsearch, modelsearch, resmod, and allometry tools
+* Add algorithm argument in estmethod tool ('exhaustive' and 'reduced')
+
+Bugfix
+======
+
+* Handle etas after ODEs in iivsearch-tool
+
 0.71.0 (2022-05-24)
 -------------------
 
