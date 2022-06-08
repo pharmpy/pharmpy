@@ -38,7 +38,7 @@ distribution: "DISTRIBUTION"i "(" names ")"
 categorical: "CATEGORICAL"i "(" names ")"
 continuous: "CONTINUOUS"i "(" names ")"
 
-covariate: "COVARIATE"i "(" parameter_option "," covariate_option "," fp_option "," op_option ")"
+covariate: "COVARIATE"i "(" parameter_option "," covariate_option "," fp_option ["," op_option] ")"
 parameter_option: names
     | absorption_alias
     | elimination_alias
@@ -118,7 +118,7 @@ class AliasInterpreter(Interpreter):
 class CovariateInterpreter(Interpreter):
     def interpret(self, tree):
         children = self.visit_children(tree)
-        assert len(children) == 4
+        assert 3 <= len(children) <= 4
         return CovariateEffects(*children)
 
     def option(self, tree):
@@ -226,7 +226,7 @@ class CovariateEffects:
     parameter: Union[Symbol, List[str]]
     covariate: Union[Symbol, List[str]]
     fp: List[str]
-    op: Literal['*', '+']
+    op: Literal['*', '+'] = '*'
 
 
 class DSLInterpreter(Interpreter):

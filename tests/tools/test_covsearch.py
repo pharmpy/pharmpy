@@ -37,7 +37,7 @@ from pharmpy.tools.covsearch.effects import Effects, parse_spec
         ),
         (
             'CONTINUOUS(AGE); CONTINUOUS(WT); CATEGORICAL(SEX)\n'
-            'COVARIATE([CL, MAT, VC], @CONTINUOUS, [EXP], *)\n'
+            'COVARIATE([CL, MAT, VC], @CONTINUOUS, [EXP])\n'
             'COVARIATE([CL, MAT, VC], @CATEGORICAL, CAT, +)',
             [
                 ('CL', 'AGE', 'exp', '*'),
