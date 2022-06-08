@@ -48,7 +48,7 @@ covariate_option: names
     | categorical_alias
     | continuous_alias
     | covariate_wildcard
-fp_option: names
+fp_option: names | fp_wildcard
 !op_option: "+" | "*"
 absorption_alias: "@ABSORPTION"i
 elimination_alias: "@ELIMINATION"i
@@ -57,12 +57,21 @@ categorical_alias: "@CATEGORICAL"i
 continuous_alias: "@CONTINUOUS"i
 parameter_wildcard: WILDCARD
 covariate_wildcard: WILDCARD
+fp_wildcard: WILDCARD
 
 names: value | array
 value: /[a-zA-Z0-9-]+/
 array: "[" [value ("," value)*] "]"
 WILDCARD: "*"
 """
+
+default_covariate_effects = (
+    'lin',
+    'cat',
+    'piece_lin',
+    'exp',
+    'pow',
+)
 
 
 class AliasInterpreter(Interpreter):
@@ -162,6 +171,9 @@ class CovariateInterpreter(Interpreter):
     def covariate_wildcard(self, tree):
         return CovariateWildcard
 
+    def fp_wildcard(self, tree):
+        return EffectFunctionWildcard
+
     def absorption_alias(self, tree):
         return AllAbsorptionParameters
 
@@ -219,6 +231,7 @@ AllContinuousCovariates = Symbol()
 
 ParameterWildcard = Wildcard()
 CovariateWildcard = Wildcard()
+EffectFunctionWildcard = Wildcard()
 
 
 @dataclass
@@ -303,7 +316,7 @@ class Effects:
             if isinstance(effect.covariate, Symbol)
             else effect.covariate
         )
-        fp = effect.fp
+        fp = default_covariate_effects if effect.fp is EffectFunctionWildcard else effect.fp
         op = effect.op
         return (tuple(parameter), tuple(covariate), tuple(f.lower() for f in fp), op)
 
