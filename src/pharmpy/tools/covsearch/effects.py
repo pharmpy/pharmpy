@@ -6,10 +6,15 @@ from lark import Lark
 from lark.visitors import Interpreter
 
 from pharmpy.model import Model
+from pharmpy.tools.iivsearch.algorithms import _get_param_names
 
 EffectLiteral = Tuple[str, str, str, str]
 EffectSpecFeature = Union[str, Tuple[str, ...]]
 Spec = Tuple[EffectSpecFeature, EffectSpecFeature, EffectSpecFeature, EffectSpecFeature]
+
+
+def _get_iiv_param_names(model: Model) -> List[str]:
+    return list(_get_param_names(model).values())
 
 
 def _ensure_tuple(x):
@@ -40,6 +45,7 @@ continuous: "CONTINUOUS"i "(" names ")"
 
 covariate: "COVARIATE"i "(" parameter_option "," covariate_option "," fp_option ["," op_option] ")"
 parameter_option: names
+    | iiv_alias
     | absorption_alias
     | elimination_alias
     | distribution_alias
@@ -50,6 +56,7 @@ covariate_option: names
     | covariate_wildcard
 fp_option: names | fp_wildcard
 !op_option: "+" | "*"
+iiv_alias: "@IIV"i
 absorption_alias: "@ABSORPTION"i
 elimination_alias: "@ELIMINATION"i
 distribution_alias: "@DISTRIBUTION"i
@@ -174,6 +181,9 @@ class CovariateInterpreter(Interpreter):
     def fp_wildcard(self, tree):
         return EffectFunctionWildcard
 
+    def iiv_alias(self, tree):
+        return AllIIVParameters
+
     def absorption_alias(self, tree):
         return AllAbsorptionParameters
 
@@ -223,6 +233,7 @@ class Wildcard(Symbol):
     pass
 
 
+AllIIVParameters = Symbol()
 AllAbsorptionParameters = Symbol()
 AllEliminationParameters = Symbol()
 AllDistributionParameters = Symbol()
@@ -344,10 +355,12 @@ class Effects:
                 if column.type == 'covariate' and column.continuous
             ]
 
+        if symbol is AllIIVParameters:
+            return _get_iiv_param_names(model)
+
         assert isinstance(symbol, Wildcard)
 
         if symbol is ParameterWildcard:
-            # TODO Only select parameters with IIVs
             return [parameter.name for parameter in model.parameters]
 
         assert symbol is CovariateWildcard
