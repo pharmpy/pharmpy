@@ -128,6 +128,11 @@ jobs:
         run: tox -e integration
         env:
           PLATFORM: ubuntu-latest
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v2
+        with:
+          flags: integration,ubuntu-latest,python-3.9
+          files: ./.coverage.xml
 
   integration-macos:
     needs: [get-nonmem]
@@ -179,6 +184,11 @@ jobs:
         run: tox -e integration
         env:
           PLATFORM: macos-latest
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v2
+        with:
+          flags: integration,macos-latest,python-3.9
+          files: ./.coverage.xml
 
   integration-windows:
       needs: [get-nonmem]
@@ -226,3 +236,8 @@ jobs:
           run: tox -e integration
           env:
             PLATFORM: windows-latest
+        - name: Upload coverage to Codecov
+          uses: codecov/codecov-action@v2
+          with:
+            flags: integration,windows-latest,python-3.9
+            files: ./.coverage.xml
