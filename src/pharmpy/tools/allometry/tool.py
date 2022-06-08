@@ -21,6 +21,40 @@ def create_workflow(
     upper_bounds=None,
     fixed=True,
 ):
+    """Run allometry tool. For more details, see :ref:`allometry`.
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+    allomectric_variable : str
+        Name of the variable to use for allometric scaling (default is WT)
+    reference_value : float
+        Reference value for the allometric variable (default is 70)
+    parameters : list
+        Parameters to apply scaling to (default is all CL, Q and V parameters)
+    initials : list
+        Initial estimates for the exponents. (default is to use 0.75 for CL and Qs and 1 for Vs)
+    lower_bounds : list
+        Lower bounds for the exponents. (default is 0 for all parameters)
+    upper_bounds : list
+        Upper bounds for the exponents. (default is 2 for all parameters)
+    fixed : bool
+        Should the exponents be fixed or not. (default True)
+
+    Returns
+    -------
+    AllometryResults
+        Allometry tool result object
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> run_allometry(model=model, allometric_variable='WGT')      # doctest: +SKIP
+
+    """
+
     wf = Workflow()
     wf.name = "allometry"
     if model is not None:
