@@ -33,9 +33,9 @@ jobs:
       env:
         PLATFORM: ${{ matrix.platform }}
     - name: Upload coverage to Codecov
-      if: matrix.platform == 'ubuntu-latest' && matrix.python-version == '3.9'
       uses: codecov/codecov-action@v2
       with:
+        flags: unit,${{ matrix.platform }},python-${{ matrix.python-version }}
         files: ./.coverage.xml
     - name: Test docs
       if: matrix.platform == 'ubuntu-latest' && matrix.python-version == '3.9'
