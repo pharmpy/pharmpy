@@ -38,6 +38,7 @@ def run_amd(
     order=None,
     categorical=None,
     continuous=None,
+    allometric_variable=None,
 ):
     """Run Automatic Model Development (AMD) tool
 
@@ -65,6 +66,8 @@ def run_amd(
         List of categorical covariates
     continuous : list
         List of continuouts covariates
+    allometric_variable: str or Symbol
+        Variable to use for allometry
 
     Returns
     -------
@@ -132,7 +135,7 @@ def run_amd(
             run_funcs.append(func)
             run_subfuncs['resmod'] = func
         elif section == 'allometry':
-            func = partial(_run_allometry, allometric_variable=None, path=db.path)
+            func = partial(_run_allometry, allometric_variable=allometric_variable, path=db.path)
             run_funcs.append(func)
         elif section == 'covariates':
             if scm.have_scm() and (continuous is not None or categorical is not None):
