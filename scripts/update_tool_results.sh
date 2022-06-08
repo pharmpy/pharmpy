@@ -15,6 +15,9 @@ mkdir $TESTPATH
 
 cp $TESTDATA/pheno.mod $TESTPATH
 cp $TESTDATA/pheno.dta $TESTPATH
+cp $TESTDATA/pheno.lst $TESTPATH
+cp $TESTDATA/pheno.ext $TESTPATH
+cp $TESTDATA/pheno.phi $TESTPATH
 
 tox -e run -- pharmpy run allometry $TESTPATH/pheno.mod --allometric_variable=WGT --path $TESTPATH/allometry/
 cp $TESTPATH/allometry/results.json $DEST/allometry_results.json
