@@ -16,9 +16,19 @@ jobs:
 
     strategy:
       matrix:
-        suite: ['lint', 'unit', 'doctest', 'docs-build', 'docs-test', 'docs-lint']
+        suite: ['lint', 'unit', 'doctest']
         platform: [ubuntu-latest, macos-latest, windows-latest]
         python-version: ['3.8', '3.9', '3.10']
+        include:
+          - suite: 'docs-build'
+            platform: ubuntu-latest
+            python-version: '3.9'
+          - suite: 'docs-test'
+            platform: ubuntu-latest
+            python-version: '3.9'
+          - suite: 'docs-lint'
+            platform: ubuntu-latest
+            python-version: '3.9'
         exclude:
           - platform: windows-latest
             python-version: '3.10'
@@ -63,13 +73,13 @@ jobs:
           files: ./.coverage.xml
 
       - name: Build docs
-        if: matrix.suite == 'docs-build' && matrix.platform == 'ubuntu-latest' && matrix.python-version == '3.9'
+        if: matrix.suite == 'docs-build'
         run: tox -e docs
 
       - name: Test docs
-        if: matrix.suite == 'docs-test' && matrix.platform == 'ubuntu-latest' && matrix.python-version == '3.9'
+        if: matrix.suite == 'docs-test'
         run: tox -e sphinxtest
 
       - name: Lint docs
-        if: matrix.suite == 'docs-lint' && matrix.platform == 'ubuntu-latest' && matrix.python-version == '3.9'
+        if: matrix.suite == 'docs-lint'
         run: tox -e doccheck
