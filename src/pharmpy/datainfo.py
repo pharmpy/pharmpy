@@ -492,14 +492,14 @@ class DataInfo(MutableSequence):
 
     @property
     def path(self):
-        """Path of dataset file
+        r"""Path of dataset file
 
         Examples
         --------
         >>> from pharmpy.modeling import load_example_model
         >>> model = load_example_model("pheno")
-        >>> model.datainfo.path     # doctest: +ELLIPSIS
-        PosixPath('...pharmpy/modeling/example_models/pheno.dta')
+        >>> str(model.datainfo.path).replace('\\', '/')     # doctest: +ELLIPSIS
+        '.../pharmpy/modeling/example_models/pheno.dta'
         """
         return self._path
 
