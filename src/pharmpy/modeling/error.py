@@ -197,7 +197,10 @@ def set_proportional_error_model(model, data_trans=None, zero_protection=False):
 
     >>> from pharmpy.modeling import *
     >>> model = remove_error_model(load_example_model("pheno"))
-    >>> set_proportional_error_model(model, data_trans="log(Y)", zero_protection=True)    # doctest: +ELLIPSIS  # noqa: E501
+    >>> set_proportional_error_model(
+    ...     model,
+    ...     data_trans="log(Y)", zero_protection=True
+    ... )    # doctest: +ELLIPSIS
     <...>
     >>> model.statements.after_odes
         A_CENTRAL

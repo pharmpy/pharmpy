@@ -99,7 +99,6 @@ class LazyLoader(types.ModuleType):
 
 
 pharmpy = LazyLoader('pharmpy', globals(), 'pharmpy')
-np = LazyLoader('numpy', globals(), 'numpy')
 plugin_utils = LazyLoader('plugin_utils', globals(), 'pharmpy.plugins.utils')
 pd = LazyLoader('pd', globals(), 'pandas')
 
@@ -894,6 +893,8 @@ def semicolon_list(s):
 
 def random_seed(seed):
     try:
+        import numpy as np
+
         seed = int(seed)
         np.random.seed(seed)
     except ValueError as e:

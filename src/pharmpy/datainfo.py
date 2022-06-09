@@ -499,7 +499,7 @@ class DataInfo(MutableSequence):
         >>> from pharmpy.modeling import load_example_model
         >>> model = load_example_model("pheno")
         >>> model.datainfo.path     # doctest: +ELLIPSIS
-        ...pharmpy/modeling/example_models/pheno.dta')
+        PosixPath('...pharmpy/modeling/example_models/pheno.dta')
         """
         return self._path
 
