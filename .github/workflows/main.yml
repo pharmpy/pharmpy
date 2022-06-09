@@ -32,6 +32,10 @@ jobs:
         exclude:
           - platform: windows-latest
             python-version: '3.10'
+          - suite: 'lint'
+            platform: macos-latest
+          - suite: 'lint'
+            platform: windows-latest
 
     runs-on: ${{ matrix.platform }}
 
