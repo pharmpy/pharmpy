@@ -14,7 +14,8 @@ activate () {
 activate
 pip install setuptools --upgrade
 cd ..
-python3 setup.py install
+#python3 setup.py install
+pip install .
 pip freeze >/tmp/updatevenv/freeze
 python - << EOF
 with open("/tmp/updatevenv/freeze", "r") as f1, open("requirements.txt", "r") as f2, open("/tmp/newreq", "w") as dh:
