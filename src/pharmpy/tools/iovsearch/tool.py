@@ -34,7 +34,6 @@ def create_workflow(
     distribution='same-as-iiv',
     model=None,
 ):
-    """Creates an IOV search workflow"""
     wf = Workflow()
     wf.name = NAME_WF
 
