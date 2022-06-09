@@ -1,11 +1,14 @@
 import os.path
+import shutil
 from pathlib import Path
 
 import pytest
 import sympy
 
+from pharmpy.internals.fs.cwd import chdir
 from pharmpy.internals.fs.tmp import TemporaryDirectory
 from pharmpy.modeling import (
+    add_pk_iiv,
     convert_model,
     copy_model,
     create_joint_distribution,
@@ -19,6 +22,7 @@ from pharmpy.modeling import (
     read_model_from_string,
     remove_unused_parameters_and_rvs,
     set_name,
+    set_seq_zo_fo_absorption,
     write_model,
 )
 from pharmpy.workflows import LocalModelDirectoryDatabase
@@ -155,3 +159,29 @@ def test_remove_unused_parameters_and_rvs(pheno):
     model.statements = model.statements[0:i] + model.statements[i + 1 :]
     remove_unused_parameters_and_rvs(model)
     assert len(model.random_variables['ETA(2)'].names) == 1
+
+
+def test_write_model_read_model_equality(testdata, tmp_path):
+    datadir = testdata / 'nonmem' / 'models'
+    shutil.copy(datadir / 'mox2.mod', tmp_path)
+    shutil.copy(datadir / 'mox_simulated_normal.csv', tmp_path)
+    with chdir(tmp_path):
+        model_start = read_model("mox2.mod")
+        set_seq_zo_fo_absorption(model_start)
+        model_iiv = copy_model(model_start, 'mox2iiv')
+        add_pk_iiv(model_iiv)
+        create_joint_distribution(model_iiv)
+
+        assert model_start != model_iiv
+
+        write_model(model_iiv, "mox2iiv.mod", force=True)
+
+        model_iiv_read = read_model("mox2iiv.mod")
+
+        assert model_iiv_read == model_iiv
+
+        write_model(model_iiv_read, "mox2iiv-bis.mod", force=True)
+
+        model_iiv_read_bis = read_model("mox2iiv-bis.mod")
+
+        assert model_iiv_read_bis == model_iiv_read
