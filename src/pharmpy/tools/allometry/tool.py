@@ -28,7 +28,7 @@ def create_workflow(
     ----------
     model : Model
         Pharmpy model
-    allomectric_variable : str
+    allometric_variable : str
         Name of the variable to use for allometric scaling (default is WT)
     reference_value : float
         Reference value for the allometric variable (default is 70)
