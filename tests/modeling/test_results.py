@@ -234,8 +234,10 @@ def test_summarize_errors(testdata, tmp_path, pheno_path):
 
 
 class DummyModel:
-    def __init__(self, name, **kwargs):
+    def __init__(self, name, parent, parameter_names, **kwargs):
         self.name = name
+        self.parameters = parameter_names
+        self.parent_model = parent
         self.modelfit_results = DummyResults(**kwargs)
 
 
@@ -246,11 +248,13 @@ class DummyResults:
 
 
 def test_rank_models():
-    base = DummyModel('base', ofv=0)
-    m1 = DummyModel('m1', ofv=-2, minimization_successful=False)
-    m2 = DummyModel('m2', ofv=-1)
-    m3 = DummyModel('m3', ofv=-1)
-    m4 = DummyModel('m4', ofv=1)
+    base = DummyModel('base', parent='base', parameter_names=['p1'], ofv=0)
+    m1 = DummyModel(
+        'm1', parent='base', parameter_names=['p1', 'p2'], ofv=-5, minimization_successful=False
+    )
+    m2 = DummyModel('m2', parent='base', parameter_names=['p1', 'p2'], ofv=-4)
+    m3 = DummyModel('m3', parent='base', parameter_names=['p1', 'p2', 'p3'], ofv=-4)
+    m4 = DummyModel('m4', parent='base', parameter_names=['p1'], ofv=1)
 
     models = [m1, m2, m3, m4]
 
@@ -264,12 +268,18 @@ def test_rank_models():
     )
     best_model = df.loc[df['rank'] == 1].index.values
     assert list(best_model) == ['m2', 'm3']
-    non_ranked_models = df.loc[df['rank'].isna()].index.values
-    assert len(non_ranked_models) == 1
+    ranked_models = df.dropna().index.values
+    assert len(ranked_models) == 4
 
     df = rank_models(base, models, strictness=[], rankfunc='ofv', cutoff=1)
-    non_ranked_models = df.loc[df['rank'].isna()].index.values
-    assert len(non_ranked_models) == 2
+    ranked_models = df.dropna().index.values
+    assert len(ranked_models) == 3
+
+    df = rank_models(base, models, strictness=[], rankfunc='lrt', cutoff=0.05)
+    ranked_models = list(df.dropna().index.values)
+    assert len(ranked_models) == 2
+    assert 'm2' in ranked_models
+    assert 'm3' not in ranked_models
 
 
 def test_aic(testdata):

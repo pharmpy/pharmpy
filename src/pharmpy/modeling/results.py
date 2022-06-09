@@ -4,6 +4,7 @@ import warnings
 import numpy as np
 import pandas as pd
 import sympy
+from scipy.stats import chi2
 
 from pharmpy.math import round_to_n_sigdig
 from pharmpy.model import Model
@@ -591,12 +592,11 @@ def summarize_errors(models):
 
 
 def rank_models(base_model, models, strictness, rankfunc, cutoff, bic_type='mixed'):
-    # TODO: add LRT
-    # TODO: add option to use parent model as base
     models_all = [base_model] + models
     models_with_res = [model for model in models_all if model.modelfit_results]
-    delta_dict = _create_rankfunc_dict(base_model, models_all, rankfunc, bic_type)
+    delta_dict = _create_delta_dict(base_model, models_all, rankfunc, bic_type)
 
+    # TODO: validate option
     if 'minimization_successful' in strictness:
         models_filtered = [
             model.name
@@ -607,15 +607,19 @@ def rank_models(base_model, models, strictness, rankfunc, cutoff, bic_type='mixe
         models_filtered = [model.name for model in models_with_res]
 
     if cutoff is not None:
-        models_filtered = [
-            model_name for model_name in models_filtered if delta_dict[model_name] >= cutoff
-        ]
+        if rankfunc == 'lrt':
+            models_filtered = [model.name for model in test_with_lrt(models_all, cutoff)]
+        else:
+            models_filtered = [
+                model_name for model_name in models_filtered if delta_dict[model_name] >= cutoff
+            ]
 
     def fn(name):
         return delta_dict[name]
 
-    models_sorted = sorted(models_filtered, key=fn, reverse=True)  # FIXME: if same rankfunc value?
+    models_sorted = sorted(models_filtered, key=fn, reverse=True)
 
+    # Create rank for models, if two have the same value they will have the same rank
     rank_dict = dict()
     rank, count, prev = 0, 0, None
     for model in models_sorted:
@@ -636,13 +640,39 @@ def rank_models(base_model, models, strictness, rankfunc, cutoff, bic_type='mixe
             rank = np.nan
         rows.append((delta_dict[model.name], rank))
 
-    df = pd.DataFrame(rows, index=model_names, columns=[f'd{rankfunc}', 'rank'])
-    df_sorted = df.sort_values(by=[f'd{rankfunc}'], ascending=False)
+    if rankfunc == 'lrt':
+        rankfunc_name = 'ofv'
+    else:
+        rankfunc_name = rankfunc
 
-    return df_sorted
+    df = pd.DataFrame(rows, index=model_names, columns=[f'd{rankfunc_name}', 'rank'])
+
+    return df
 
 
-def _create_rankfunc_dict(base_model, models_all, rankfunc, bic_type):
+def test_with_lrt(models, p_value):
+    model_dict = {model.name: model for model in models}
+    models_filtered = [
+        model for model in models if _test_model(model_dict[model.parent_model], model, p_value)
+    ]
+    return models_filtered
+
+
+def _test_model(parent, child, p_value):
+    if parent.name == child.name:
+        return False
+    dofv = parent.modelfit_results.ofv - child.modelfit_results.ofv
+    df = len(child.parameters) - len(parent.parameters)
+    if df < 0:
+        raise NotImplementedError('LRT is currently only supported where degrees of freedom > 0')
+    elif df == 0:
+        cutoff = 0
+    else:
+        cutoff = float(chi2.isf(q=p_value, df=df))
+    return dofv >= cutoff
+
+
+def _create_delta_dict(base_model, models_all, rankfunc, bic_type):
     base_rankval = _get_rankval(base_model, rankfunc, bic_type)
 
     delta_dict = dict()
