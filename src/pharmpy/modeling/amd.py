@@ -5,7 +5,6 @@ import pandas as pd
 import pharmpy.tools.scm as scm
 from pharmpy import plugins
 from pharmpy.results import Results
-from pharmpy.tools.amd.funcs import create_start_model
 from pharmpy.workflows import default_tool_database
 
 from .common import convert_model
@@ -20,11 +19,13 @@ class AMDResults(Results):
         summary_tool=None,
         summary_models=None,
         summary_individuals_count=None,
+        summary_errors=None,
     ):
         self.final_model = final_model
         self.summary_tool = summary_tool
         self.summary_models = summary_models
         self.summary_individuals_count = summary_individuals_count
+        self.summary_errors = summary_errors
 
 
 def run_amd(
@@ -84,6 +85,8 @@ def run_amd(
 
     """
     if type(input) is str:
+        from pharmpy.tools.amd.funcs import create_start_model
+
         model = create_start_model(
             input, modeltype=modeltype, cl_init=cl_init, vc_init=vc_init, mat_init=mat_init
         )
@@ -165,12 +168,15 @@ def run_amd(
         sums.set_index(['tool', 'step', 'model'], inplace=True)
         sums.drop('default index', axis=1, inplace=True)
         sum_amd.append(sums)
+    from . import summarize_errors
 
+    summary_errors = summarize_errors(next_model)
     res = AMDResults(
         final_model=next_model,
         summary_tool=sum_amd[0],
         summary_models=sum_amd[1],
         summary_individuals_count=sum_amd[2],
+        summary_errors=summary_errors,
     )
     return res
 
