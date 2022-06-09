@@ -66,6 +66,7 @@ def create_workflow(
     effects: Union[str, List[Spec]],
     p_forward: float = 0.05,
     max_steps: int = -1,
+    algorithm: str = 'scm-forward',
     model: Union[Model, None] = None,
 ):
     """Run covariates search tool. For more details, see :ref:`covariates`.
@@ -79,6 +80,8 @@ def create_workflow(
         The p-value to use in the likelihood ratio test for forward steps
     max_steps : int
         The maximum number of search steps to make
+    algorithm : str
+        The search algorithm to use. Currently only 'scm-forward' is supported.
     model : Model
         Pharmpy model
 
@@ -100,6 +103,10 @@ def create_workflow(
     ... ], model=model)      # doctest: +SKIP
 
     """
+
+    if algorithm != 'scm-forward':
+        raise ValueError('covsearch only supports algorithm="scm-forward"')
+
     effect_spec = Effects(effects).spec(model) if isinstance(effects, str) else effects
     parsed_effects = sorted(set(parse_spec(effect_spec)))
 
