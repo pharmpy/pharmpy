@@ -258,24 +258,22 @@ def test_rank_models():
 
     models = [m1, m2, m3, m4]
 
-    df = rank_models(base, models, strictness=[], rankfunc='ofv', cutoff=None)
+    df = rank_models(base, models, rankfunc='ofv')
     assert len(df) == 5
     best_model = df.loc[df['rank'] == 1].index.values
     assert list(best_model) == ['m1']
 
-    df = rank_models(
-        base, models, strictness=['minimization_successful'], rankfunc='ofv', cutoff=None
-    )
+    df = rank_models(base, models, strictness=['minimization_successful'], rankfunc='ofv')
     best_model = df.loc[df['rank'] == 1].index.values
     assert list(best_model) == ['m2', 'm3']
     ranked_models = df.dropna().index.values
     assert len(ranked_models) == 4
 
-    df = rank_models(base, models, strictness=[], rankfunc='ofv', cutoff=1)
+    df = rank_models(base, models, rankfunc='ofv', cutoff=1)
     ranked_models = df.dropna().index.values
     assert len(ranked_models) == 3
 
-    df = rank_models(base, models, strictness=[], rankfunc='lrt', cutoff=0.05)
+    df = rank_models(base, models, rankfunc='lrt', cutoff=0.05)
     ranked_models = list(df.dropna().index.values)
     assert len(ranked_models) == 2
     assert 'm2' in ranked_models

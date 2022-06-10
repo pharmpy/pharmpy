@@ -591,74 +591,77 @@ def summarize_errors(models):
     return df.sort_index()
 
 
-def rank_models(base_model, models, strictness, rankfunc, cutoff, bic_type='mixed'):
+def rank_models(
+    base_model, models, strictness=None, rankfunc='ofv', cutoff=None, bic_type='mixed'
+) -> pd.DataFrame:
     models_all = [base_model] + models
     models_with_res = [model for model in models_all if model.modelfit_results]
     delta_dict = _create_delta_dict(base_model, models_all, rankfunc, bic_type)
 
     # TODO: validate option
-    if 'minimization_successful' in strictness:
-        models_filtered = [
-            model.name
-            for model in models_with_res
-            if model.modelfit_results.minimization_successful
-        ]
+    if not strictness:
+        models_to_rank = [model for model in models_with_res]
     else:
-        models_filtered = [model.name for model in models_with_res]
+        models_to_rank = models_with_res
+        if 'minimization_successful' in strictness:
+            models_to_rank = [
+                model for model in models_to_rank if model.modelfit_results.minimization_successful
+            ]
 
     if cutoff is not None:
         if rankfunc == 'lrt':
-            models_filtered = [model.name for model in test_with_lrt(models_all, cutoff)]
+            models_to_rank = [model for model in test_with_lrt(models_all, cutoff)]
         else:
-            models_filtered = [
-                model_name for model_name in models_filtered if delta_dict[model_name] >= cutoff
-            ]
+            models_to_rank = [model for model in models_to_rank if delta_dict[model.name] >= cutoff]
 
-    def fn(name):
-        return delta_dict[name]
+    # TODO: handle if base model have NaN
+    def _get_delta(model):
+        return delta_dict[model.name]
 
-    models_sorted = sorted(models_filtered, key=fn, reverse=True)
+    models_sorted = sorted(models_to_rank, key=_get_delta, reverse=True)
 
     # Create rank for models, if two have the same value they will have the same rank
     rank_dict = dict()
     rank, count, prev = 0, 0, None
     for model in models_sorted:
         count += 1
-        value = delta_dict[model]
+        value = delta_dict[model.name]
         if value != prev:
             rank += count
             prev = value
             count = 0
-        rank_dict[model] = rank
+        rank_dict[model.name] = rank
 
-    model_names, rows = [], []
+    rows = dict()
     for model in models_all:
-        model_names.append(model.name)
         try:
             rank = rank_dict[model.name]
         except KeyError:
             rank = np.nan
-        rows.append((delta_dict[model.name], rank))
+        rows[model.name] = (delta_dict[model.name], rank)
 
     if rankfunc == 'lrt':
         rankfunc_name = 'ofv'
     else:
         rankfunc_name = rankfunc
 
-    df = pd.DataFrame(rows, index=model_names, columns=[f'd{rankfunc_name}', 'rank'])
+    index = pd.Index(rows.keys(), name='model')
+    df = pd.DataFrame(rows.values(), index=index, columns=[f'd{rankfunc_name}', 'rank'])
 
-    return df
+    df_sorted = df.sort_values(by=[f'd{rankfunc_name}'], ascending=False)
+
+    return df_sorted
 
 
-def test_with_lrt(models, p_value):
+def test_with_lrt(models, alpha):
     model_dict = {model.name: model for model in models}
-    models_filtered = [
-        model for model in models if _test_model(model_dict[model.parent_model], model, p_value)
+    models_fulfilled_lrt = [
+        model for model in models if _test_model(model_dict[model.parent_model], model, alpha)
     ]
-    return models_filtered
+    return models_fulfilled_lrt
 
 
-def _test_model(parent, child, p_value):
+def _test_model(parent, child, alpha):
     if parent.name == child.name:
         return False
     dofv = parent.modelfit_results.ofv - child.modelfit_results.ofv
@@ -668,12 +671,15 @@ def _test_model(parent, child, p_value):
     elif df == 0:
         cutoff = 0
     else:
-        cutoff = float(chi2.isf(q=p_value, df=df))
+        cutoff = float(chi2.isf(q=alpha, df=df))
     return dofv >= cutoff
 
 
 def _create_delta_dict(base_model, models_all, rankfunc, bic_type):
-    base_rankval = _get_rankval(base_model, rankfunc, bic_type)
+    if base_model.modelfit_results:
+        base_rankval = _get_rankval(base_model, rankfunc, bic_type)
+    else:
+        base_rankval = np.nan
 
     delta_dict = dict()
     for model in models_all:
