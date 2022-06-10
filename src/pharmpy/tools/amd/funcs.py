@@ -1,10 +1,12 @@
 from pathlib import Path
 
+import pandas as pd
 import sympy
 
 import pharmpy
 from pharmpy import (
     Assignment,
+    ColumnInfo,
     DataInfo,
     EstimationStep,
     EstimationSteps,
@@ -54,15 +56,7 @@ def create_start_model(dataset_path, modeltype='pk_oral', cl_init=0.01, vc_init=
     y_ass = Assignment('Y', ipred.symbol)
 
     stats = ModelStatements([cl_ass, vc_ass, odes, ipred, y_ass])
-
-    datainfo_path = dataset_path.with_suffix('.datainfo')
-
-    if datainfo_path.is_file():
-        di = DataInfo.read_json(dataset_path.with_suffix('.datainfo'))
-        di.path = dataset_path
-    else:
-        # FIXME: Create a default di here?
-        di = None
+    di = _create_default_datainfo(dataset_path)
     df = read_dataset_from_datainfo(di)
 
     est = EstimationStep(
@@ -94,3 +88,42 @@ def create_start_model(dataset_path, modeltype='pk_oral', cl_init=0.01, vc_init=
         set_initial_estimates(model, {'POP_MAT': mat_init})
 
     return model
+
+
+def _create_default_datainfo(path):
+    datainfo_path = path.with_suffix('.datainfo')
+    if datainfo_path.is_file():
+        di = DataInfo.read_json(path.with_suffix('.datainfo'))
+    else:
+        colnames = list(pd.read_csv(path, nrows=0))
+        column_info = []
+        for colname in colnames:
+            info = ColumnInfo(colname)
+            if colname == 'ID' or colname == 'L1':
+                info.type = 'id'
+                info.scale = 'nominal'
+                info.datatype = 'int32'
+            elif colname == 'DV':
+                info.type = 'dv'
+            elif colname == 'TIME':
+                info.type = 'idv'
+                info.scale = 'ratio'
+                if not set(colnames).isdisjoint({'DATE', 'DAT1', 'DAT2', 'DAT3'}):
+                    info.datatype = 'nmtran-time'
+            elif colname == 'EVID':
+                info.type = 'event'
+                info.scale = 'nominal'
+            elif colname == 'MDV':
+                if 'EVID' in colnames:
+                    info.type = 'mdv'
+                else:
+                    info.type = 'event'
+                    info.scale = 'nominal'
+                    info.datatype = 'int32'
+            elif colname == 'AMT':
+                info.type = 'dose'
+                info.scale = 'ratio'
+            column_info.append(info)
+        di = DataInfo(column_info)
+    di.path = path
+    return di
