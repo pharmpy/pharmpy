@@ -11,17 +11,14 @@ from pharmpy.workflows import Task, Workflow
 def brute_force_no_of_etas(base_model):
     wf = Workflow()
 
+    base_model.description = _create_description(base_model)
+
     iivs = base_model.random_variables.iiv
     eta_combos = _get_eta_combinations(iivs)
-    param_dict = _get_param_names(base_model)
-
-    base_model.description = _create_feature_str(param_dict, iivs.names)
 
     for i, combo in enumerate(eta_combos, 1):
-        etas_remaining = set(iivs.names).difference(combo)
         model_name = f'iivsearch_no_of_etas_candidate{i}'
-        model_description = _create_feature_str(param_dict, etas_remaining)
-        task_copy = Task('copy', copy, model_name, model_description)
+        task_copy = Task('copy', copy, model_name)
         wf.add_task(task_copy)
 
         task_update_inits = Task('update_inits', update_initial_estimates)
@@ -29,6 +26,9 @@ def brute_force_no_of_etas(base_model):
 
         task_remove_eta = Task('remove_eta', remove_eta, combo)
         wf.add_task(task_remove_eta, predecessors=task_update_inits)
+
+        task_update_description = Task('update_description', update_description)
+        wf.add_task(task_update_description, predecessors=task_remove_eta)
 
     wf_fit = modelfit.create_workflow(n=len(wf.output_tasks))
     wf.insert_workflow(wf_fit)
@@ -38,19 +38,18 @@ def brute_force_no_of_etas(base_model):
 def brute_force_block_structure(base_model):
     wf = Workflow()
 
+    base_model.description = _create_description(base_model)
+
     iivs = base_model.random_variables.iiv
     eta_combos = _get_eta_combinations(iivs, as_blocks=True)
-    param_dict = _get_param_names(base_model)
     model_no = 1
 
     for combo in eta_combos:
-        model_description = _create_feature_str(param_dict, combo, as_blocks=True)
         if _is_current_block_structure(iivs, combo):
-            base_model.description = model_description
             continue
 
         model_name = f'iivsearch_block_structure_candidate{model_no}'
-        task_copy = Task('copy', copy, model_name, model_description)
+        task_copy = Task('copy', copy, model_name)
         wf.add_task(task_copy)
 
         task_update_inits = Task('update_inits', update_initial_estimates)
@@ -58,6 +57,9 @@ def brute_force_block_structure(base_model):
 
         task_joint_dist = Task('create_eta_blocks', create_eta_blocks, combo)
         wf.add_task(task_joint_dist, predecessors=task_update_inits)
+
+        task_update_description = Task('update_description', update_description)
+        wf.add_task(task_update_description, predecessors=task_joint_dist)
 
         model_no += 1
 
@@ -108,6 +110,8 @@ def _get_param_names(model):
             param_dict[eta.name] = s.symbol.name
         else:
             s = _find_assignment(sset, s.symbol)
+            if 'dummy' in eta.name:
+                continue
             param_dict[eta.name] = s.symbol.name
     return param_dict
 
@@ -121,16 +125,19 @@ def _find_assignment(sset, symb_target):
             return s
 
 
-def _create_feature_str(param_dict, combo, as_blocks=False):
-    if as_blocks:
-        blocks = []
-        for block in combo:
-            features = ','.join([param_dict[eta] for eta in block])
-            blocks.append(f'[{features}]')
-        return '+'.join(blocks)
-    else:
-        features = ','.join([param_dict[eta] for eta in combo])
-        return f'[{features}]'
+def _create_description(model):
+    param_dict = _get_param_names(model)
+
+    blocks = []
+    for rvs, _ in model.random_variables.iiv.distributions():
+        if len(param_dict) == 0:
+            blocks = ['[]']
+            break
+        rvs_names = [rv.name for rv in rvs]
+        param_names = [param_dict[name] for name in rvs_names]
+        blocks.append(f'[{",".join(param_names)}]')
+
+    return '+'.join(blocks)
 
 
 def remove_eta(etas, model):
@@ -147,7 +154,12 @@ def create_eta_blocks(combos, model):
     return model
 
 
-def copy(name, description, model):
+def copy(name, model):
     model_copy = copy_model(model, name)
-    model_copy.description = description
     return model_copy
+
+
+def update_description(model):
+    description = _create_description(model)
+    model.description = description
+    return model

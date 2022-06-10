@@ -56,7 +56,7 @@ def test_no_of_etas(tmp_path, start_model):
 
         assert res.models[-1].modelfit_results
 
-        assert res.summary_tool.loc['mox2']['description'] == '[CL,VC,MAT]'
+        assert res.summary_tool.loc['mox2']['description'] == '[CL]+[VC]+[MAT]'
         assert res.input_model.random_variables.iiv.names == ['ETA(1)', 'ETA(2)', 'ETA(3)']
         assert res.summary_tool.iloc[-1]['description'] == '[]'
         assert res.models[0].random_variables.iiv.names == ['ETA(2)', 'ETA(3)']
