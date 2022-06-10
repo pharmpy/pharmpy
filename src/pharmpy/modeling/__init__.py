@@ -1,6 +1,3 @@
-import importlib
-import sys
-
 from pharmpy.modeling.block_rvs import create_joint_distribution, split_joint_distribution
 from pharmpy.modeling.common import (
     bump_model_number,
@@ -99,12 +96,10 @@ from pharmpy.modeling.parameter_sampling import (
 from pharmpy.modeling.power_on_ruv import set_power_on_ruv
 from pharmpy.modeling.remove_iiv import remove_iiv
 from pharmpy.modeling.remove_iov import remove_iov
-from pharmpy.modeling.run import create_results, fit, read_results, run_tool
 from pharmpy.modeling.update_inits import update_inits
 from pharmpy.modeling.write_csv import write_csv
 
 from .allometry import add_allometry
-from .amd import run_amd
 from .compartments import get_bioavailability, get_lag_times
 from .data import (
     add_time_after_dose,
@@ -187,16 +182,6 @@ from .results import (
 from .summarize_individuals import summarize_individuals, summarize_individuals_count_table
 from .units import get_unit_of
 
-# Import tool wrappers
-tool_wrapper_module = importlib.import_module('pharmpy.modeling.tool_wrappers')
-current_module = sys.modules[__name__]
-dynamic_funcs = []
-for attr in dir(tool_wrapper_module):
-    if attr.startswith('run'):
-        func = getattr(tool_wrapper_module, attr)
-        setattr(current_module, attr, func)
-        dynamic_funcs.append(attr)
-
 # Must be set directly, otherwise errors about unused imports
 __all__ = [
     'add_allometry',
@@ -239,7 +224,6 @@ __all__ = [
     'copy_model',
     'create_joint_distribution',
     'create_report',
-    'create_results',
     'create_rng',
     'create_symbol',
     'drop_columns',
@@ -253,7 +237,6 @@ __all__ = [
     'expand_additional_doses',
     'find_clearance_parameters',
     'find_volume_parameters',
-    'fit',
     'fix_or_unfix_parameters',
     'fix_parameters',
     'fix_parameters_to',
@@ -306,7 +289,6 @@ __all__ = [
     'read_model',
     'read_model_from_database',
     'read_model_from_string',
-    'read_results',
     'rename_symbols',
     'remove_covariance_step',
     'remove_error_model',
@@ -318,8 +300,6 @@ __all__ = [
     'remove_peripheral_compartment',
     'remove_unused_parameters_and_rvs',
     'resample_data',
-    'run_amd',
-    'run_tool',
     'sample_parameters_from_covariance_matrix',
     'sample_individual_estimates',
     'sample_parameters_uniformly',
@@ -369,8 +349,3 @@ __all__ = [
     'unconstrain_parameters',
     'undrop_columns',
 ]
-
-__all__ += dynamic_funcs
-
-# Remember to sort __all__ alphabetically for order in documentation
-__all__.sort()

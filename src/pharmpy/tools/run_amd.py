@@ -2,14 +2,15 @@ from functools import partial
 
 import pandas as pd
 
-import pharmpy.tools.scm as scm
-from pharmpy import plugins
+import pharmpy.plugins as plugins
+from pharmpy.modeling.common import convert_model
+from pharmpy.modeling.data import remove_loq_data
+from pharmpy.modeling.results import summarize_errors
 from pharmpy.results import Results
 from pharmpy.workflows import default_tool_database
 
-from .common import convert_model
-from .data import remove_loq_data
 from .run import fit, run_tool
+from .scm import have_scm, run_scm
 
 
 class AMDResults(Results):
@@ -82,6 +83,7 @@ def run_amd(
     --------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
+    >>> from pharmpy.tools import run_amd # doctest: +SKIP
     >>> run_amd(model)      # doctest: +SKIP
 
     See also
@@ -148,7 +150,7 @@ def run_amd(
             func = partial(_run_allometry, allometric_variable=allometric_variable, path=db.path)
             run_funcs.append(func)
         elif section == 'covariates':
-            if scm.have_scm() and (continuous is not None or categorical is not None):
+            if have_scm() and (continuous is not None or categorical is not None):
                 func = partial(
                     _run_covariates, continuous=continuous, categorical=categorical, path=db.path
                 )
@@ -178,7 +180,6 @@ def run_amd(
         sums.set_index(['tool', 'step', 'model'], inplace=True)
         sums.drop('default index', axis=1, inplace=True)
         sum_amd.append(sums)
-    from . import summarize_errors
 
     summary_errors = summarize_errors(next_model)
     res = AMDResults(
@@ -232,7 +233,7 @@ def _run_covariates(model, continuous, categorical, path):
                 if eta.symbol in expr.free_symbols:
                     relations[p] = covariates
                     break
-    res = scm.run_scm(model, relations, continuous=continuous, categorical=categorical, path=path)
+    res = run_scm(model, relations, continuous=continuous, categorical=categorical, path=path)
     return res.final_model
 
 

@@ -21,7 +21,7 @@ expected improements in OFV as well as number of additional parameters used.
     :hide-code:
 
     import pathlib
-    from pharmpy.modeling import read_results
+    from pharmpy.tools import read_results
     res = read_results(pathlib.Path('tests/testdata/results/qa_results.json'))
     res.dofv
 

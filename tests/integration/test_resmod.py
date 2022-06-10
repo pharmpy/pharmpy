@@ -1,7 +1,8 @@
 import shutil
 
 from pharmpy import Model
-from pharmpy.modeling import remove_covariance_step, run_tool
+from pharmpy.modeling import remove_covariance_step
+from pharmpy.tools import run_tool
 from pharmpy.utils import TemporaryDirectoryChanger
 
 

@@ -3,14 +3,13 @@ import inspect
 from datetime import datetime
 from pathlib import Path
 
-import pharmpy.model
 import pharmpy.results
 import pharmpy.tools.modelfit
-import pharmpy.tools.psn_helpers
+from pharmpy.model import Model
+from pharmpy.modeling.common import read_model_from_database
+from pharmpy.tools.psn_helpers import create_results as psn_create_results
 from pharmpy.utils import normalize_user_given_path
 from pharmpy.workflows import execute_workflow, split_common_options
-
-from .common import read_model_from_database
 
 
 def fit(models, tool=None):
@@ -39,7 +38,7 @@ def fit(models, tool=None):
     run_tool
 
     """
-    if isinstance(models, pharmpy.model.Model):
+    if isinstance(models, Model):
         models = [models]
         single = True
     else:
@@ -85,7 +84,7 @@ def create_results(path, **kwargs):
 
     Examples
     --------
-    >>> from pharmpy.modeling import *
+    >>> from pharmpy.tools import create_results
     >>> res = create_results("frem_dir1")   # doctest: +SKIP
 
     See also
@@ -94,7 +93,7 @@ def create_results(path, **kwargs):
 
     """
     path = normalize_user_given_path(path)
-    res = pharmpy.tools.psn_helpers.create_results(path, **kwargs)
+    res = psn_create_results(path, **kwargs)
     return res
 
 
@@ -113,7 +112,7 @@ def read_results(path):
 
     Examples
     --------
-    >>> from pharmpy.modeling import *
+    >>> from pharmpy.tools import read_results
     >>> res = read_resuts("results.json")     # doctest: +SKIP
 
     See also
@@ -147,6 +146,7 @@ def run_tool(name, *args, **kwargs):
     --------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
+    >>> from pharmpy.tools import run_tool # doctest: +SKIP
     >>> res = run_tool("resmod", model)   # doctest: +SKIP
 
     """
@@ -199,7 +199,7 @@ def _create_metadata_tool(tool_name, tool_params, tool_options, args):
                 name, value = p.name, tool_options[p.name]
             else:
                 name, value = p.name, p.default
-        if isinstance(value, pharmpy.Model):
+        if isinstance(value, Model):
             value = str(value)  # FIXME: better model representation
         tool_metadata['tool_options'][name] = value
 

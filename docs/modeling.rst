@@ -1003,7 +1003,7 @@ Pharmpy is designed to be able to do fitting of models to data using different e
 
 .. pharmpy-code::
 
-    from pharmpy.modeling import fit
+    from pharmpy.tools import fit
     fit(model)
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1015,7 +1015,7 @@ results from the tool and can be saved as either json or csv.
 
 .. pharmpy-code::
 
-    from pharmpy.modeling import create_results
+    from pharmpy.tools import create_results
     res = create_results("bootstrap_dir1")
     res.to_json("bootstrap_dir1/results.json")
     res.to_csv("bootstrap_dir1/results.csv")

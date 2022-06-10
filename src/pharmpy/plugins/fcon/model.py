@@ -7,7 +7,7 @@ import re
 
 import pandas as pd
 
-import pharmpy.model
+from pharmpy.model import Model as BaseModel
 from pharmpy.model import ModelSyntaxError
 
 
@@ -19,7 +19,7 @@ def detect_model(src, *args, **kwargs):
         return None
 
 
-class Model(pharmpy.model.Model):
+class Model(BaseModel):
     def __init__(self, src, path, **kwargs):
         super().__init__()
         self.code = src

@@ -8,7 +8,8 @@ import pytest
 from pytest import approx
 
 import pharmpy.modeling as modeling
-from pharmpy import Model
+import pharmpy.tools as tools
+from pharmpy.model import Model
 from pharmpy.tools.frem.models import calculate_parcov_inits, create_model3b
 from pharmpy.tools.frem.results import (
     calculate_results,
@@ -531,13 +532,13 @@ def test_create_results(testdata):
 
 def test_modeling_create_results(testdata):
     with pytest.warns(UserWarning):
-        res = modeling.create_results(testdata / 'psn' / 'frem_dir1', method='bipp')
+        res = tools.create_results(testdata / 'psn' / 'frem_dir1', method='bipp')
     ofv = res.ofv['ofv']
     assert len(ofv) == 5
 
 
 def test_create_report(testdata, tmp_path):
-    res = modeling.read_results(testdata / 'frem' / 'results.json')
+    res = tools.read_results(testdata / 'frem' / 'results.json')
     shutil.copy(testdata / 'frem' / 'results.json', tmp_path)
     modeling.create_report(res, tmp_path)
     html = tmp_path / 'results.html'

@@ -42,8 +42,10 @@ def summarize_individuals(models: List[Model]) -> Union[pd.DataFrame, None]:
     --------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
+    >>> from pharmpy.tools import fit
     >>> fit(model)
     <Pharmpy model object pheno>
+    >>> from pharmpy.tools import run_tool # doctest: +SKIP
     >>> results = run_tool(
     ...     'modelsearch',
     ...     model=model,

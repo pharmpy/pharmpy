@@ -41,7 +41,8 @@ def create_workflow(
     --------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> run_iivsearch('brute_force', model=model)      # doctest: +SKIP
+    >>> from pharmpy.tools import run_iivsearch     # doctest: +SKIP
+    >>> run_iivsearch('brute_force', model=model)   # doctest: +SKIP
 
     """
     wf = Workflow()

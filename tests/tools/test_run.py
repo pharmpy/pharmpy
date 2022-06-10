@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from pharmpy.modeling.run import _create_metadata_common, _create_metadata_tool, _get_run_setup
+from pharmpy.tools.run import _create_metadata_common, _create_metadata_tool, _get_run_setup
 from pharmpy.utils import TemporaryDirectoryChanger
 from pharmpy.workflows import LocalDirectoryToolDatabase, local_dask
 

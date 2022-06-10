@@ -17,7 +17,7 @@ To initiate IOVsearch in Python/R:
 
 .. pharmpy-code::
 
-    from pharmpy.modeling import run_iovsearch
+    from pharmpy.tools import run_iovsearch
 
     start_model = read_model('path/to/model')
     res = run_iovsearch(model=start_model,

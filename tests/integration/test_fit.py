@@ -7,6 +7,7 @@ import pharmpy.modeling as modeling
 from pharmpy import Model
 from pharmpy.config import site_config_dir, user_config_dir
 from pharmpy.plugins.nonmem import conf
+from pharmpy.tools import fit
 from pharmpy.utils import TemporaryDirectoryChanger
 
 
@@ -32,7 +33,7 @@ def test_fit_single(tmp_path, testdata):
         shutil.copy2(testdata / 'nonmem' / 'pheno.dta', tmp_path)
         model = Model.create_model('pheno.mod')
         model.datainfo.path = tmp_path / 'pheno.dta'
-        modeling.fit(model)
+        fit(model)
         rundir = tmp_path / 'modelfit_dir1'
         assert model.modelfit_results.ofv == pytest.approx(730.8947268137308)
         assert rundir.is_dir()
@@ -52,7 +53,7 @@ def test_fit_multiple(tmp_path, testdata):
         model_2 = Model.create_model('pheno_2.mod')
         model_2.datainfo.path = tmp_path / 'pheno_2.dta'
         model_2.update_source()
-        modeling.fit([model_1, model_2])
+        fit([model_1, model_2])
         rundir = tmp_path / 'modelfit_dir1'
         assert model_1.modelfit_results.ofv == pytest.approx(730.8947268137308)
         assert model_2.modelfit_results.ofv == pytest.approx(730.8947268137308)
@@ -67,7 +68,7 @@ def test_fit_copy(tmp_path, testdata):
 
         model_1 = Model.create_model('pheno.mod')
         model_1.datainfo.path = tmp_path / 'pheno.dta'
-        modeling.fit(model_1)
+        fit(model_1)
 
         rundir_1 = tmp_path / 'modelfit_dir1'
         assert rundir_1.is_dir()
@@ -75,7 +76,7 @@ def test_fit_copy(tmp_path, testdata):
 
         model_2 = modeling.copy_model(model_1, 'pheno_copy')
         modeling.update_inits(model_2)
-        modeling.fit(model_2)
+        fit(model_2)
 
         rundir_2 = tmp_path / 'modelfit_dir1'
         assert rundir_2.is_dir()
@@ -95,6 +96,6 @@ def test_fit_nlmixr(tmp_path, testdata):
         model = Model.create_model('pheno.mod')
         model.datainfo.path = tmp_path / 'pheno.dta'
         model = modeling.convert_model(model, 'nlmixr')
-        modeling.fit(model, tool='nlmixr')
+        fit(model, tool='nlmixr')
         assert model.modelfit_results.ofv == pytest.approx(732.58737)
         assert model.modelfit_results.parameter_estimates['TVCL'] == pytest.approx(0.0058606648)
