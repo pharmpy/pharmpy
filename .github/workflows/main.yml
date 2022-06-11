@@ -62,6 +62,7 @@ jobs:
 
       - name: Run tests with tox
         if: matrix.suite == 'unit' || matrix.suite == 'doctest'
+        shell: bash
         run: |
             tox
             echo "coverage=${{ matrix.suite }}" >> $GITHUB_ENV
