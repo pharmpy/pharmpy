@@ -193,6 +193,21 @@ def run_iivsearch(args):
     )
 
 
+def run_iovsearch(args):
+    from pharmpy.modeling import run_tool
+
+    run_tool(
+        'iovsearch',
+        column=args.column,
+        list_of_parameters=args.list_of_parameters,
+        rank_type=args.rank_type,
+        cutoff=args.cutoff,
+        distribution=args.distribution,
+        model=args.model,
+        path=args.path,
+    )
+
+
 def run_resmod(args):
     from pharmpy.tools import run_tool
 
@@ -1012,6 +1027,53 @@ parser_definition = [
                                 'type': float,
                                 'help': 'Which selection criteria to rank models on',
                                 'default': None,
+                            },
+                            {
+                                'name': '--path',
+                                'type': pathlib.Path,
+                                'help': 'Path to output directory',
+                            },
+                        ],
+                    }
+                },
+                {
+                    'iovsearch': {
+                        'help': 'Search for best model IOV model',
+                        'func': run_iovsearch,
+                        'parents': [args_model_input],
+                        'args': [
+                            {
+                                'name': '--column',
+                                'type': str,
+                                'help': 'Name of column in dataset to use as '
+                                'occasion column (default is "OCC")',
+                                'default': 'OCC',
+                            },
+                            {
+                                'name': '--list_of_parameters',
+                                'type': comma_list,
+                                'help': 'List of parameters to test IOV on',
+                                'default': None,
+                            },
+                            {
+                                'name': '--rank_type',
+                                'type': str,
+                                'help': 'Name of function to use for ranking '
+                                'candidates (default is bic).',
+                                'default': 'bic',
+                            },
+                            {
+                                'name': '--cutoff',
+                                'type': float,
+                                'help': 'Which selection criteria to rank models on',
+                                'default': None,
+                            },
+                            {
+                                'name': '--distribution',
+                                'type': str,
+                                'help': 'Which distribution added IOVs should have '
+                                '(default is same-as-iiv)',
+                                'default': 'same-as-iiv',
                             },
                             {
                                 'name': '--path',

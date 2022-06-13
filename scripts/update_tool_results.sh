@@ -34,6 +34,9 @@ cp $TESTPATH/modelsearch/results.json $DEST/modelsearch_results.json
 tox -e run -- pharmpy run iivsearch $TESTPATH/mox2.mod 'brute_force' --path $TESTPATH/iivsearch/
 cp $TESTPATH/iivsearch/results.json $DEST/iivsearch_results.json
 
+tox -e run -- pharmpy run iovsearch $TESTPATH/mox2.mod --column 'VISI' --path $TESTPATH/iovsearch/
+cp $TESTPATH/iovsearch/results.json $DEST/iovsearch_results.json
+
 cp $TESTDATA/resmod/mox3.* $TESTPATH
 cp $TESTDATA/resmod/moxo_simulated_resmod.csv $TESTPATH
 cp $TESTDATA/resmod/mytab $TESTPATH

@@ -168,3 +168,54 @@ This system is the same as for modelsearch, see :ref:`here<ranking_modelsearch>`
 ~~~~~~~
 Results
 ~~~~~~~
+
+The tool creates various summary tables which can be accessed in the results object,
+as well as files in .csv/.json format.
+
+Consider a iovsearch run:
+
+.. pharmpy-code::
+
+    res = run_iovsearch(column='VISI',
+                        model=start_model,
+                        list_of_parameters=None,
+                        rank_type='bic',
+                        cutoff=None,
+                        distribution='same-as-iiv')
+
+
+The ``summary_tool`` table contains information such as which feature each model candidate has, the difference to the
+start model (in this case comparing BIC), and final ranking:
+
+.. pharmpy-execute::
+    :hide-code:
+
+    from pharmpy.results import read_results
+    res = read_results('tests/testdata/results/iovsearch_results.json')
+    res.summary_tool
+
+To see information about the actual model runs, such as minimization status, estimation time, and parameter estimates,
+you can look at the ``summary_models`` table. The table is generated with
+:py:func:`pharmpy.modeling.summarize_modelfit_results`.
+
+.. pharmpy-execute::
+    :hide-code:
+
+    res.summary_models
+
+A summary table of predicted influential individuals and outliers can be seen in ``summary_individuals_count``.
+See :py:func:`pharmpy.modeling.summarize_individuals_count_table` for information on the content of this table.
+
+.. pharmpy-execute::
+    :hide-code:
+
+    res.summary_individuals_count
+
+You can see different individual statistics in ``summary_individuals``.
+See :py:func:`pharmpy.modeling.summarize_individuals` for information on the content of this table.
+
+.. pharmpy-execute::
+    :hide-code:
+
+    res.summary_individuals
+

@@ -210,7 +210,7 @@ The results object contains the candidate models, the start model, and the selec
 selection criteria). The tool also creates various summary tables which can be accessed in the results object,
 as well as files in .csv/.json format.
 
-Consider a iivsearch run with the search space of zero order absorption and adding one peripheral compartment:
+Consider a iivsearch run:
 
 .. pharmpy-code::
 
