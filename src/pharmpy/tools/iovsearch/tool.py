@@ -134,7 +134,7 @@ def task_brute_force_search(
         return [model]
 
     # NOTE Add IOVs on given parameters or all parameters with IIVs.
-    model_with_iov = copy_model(model, name=f'{model.name}-with-matching-IOVs')
+    model_with_iov = copy_model(model, name='iovsearch_candidate1')
     model_with_iov.parent_model = model.name
     model_with_iov.description = (
         f'add_iov(<{model.description or model.name}>, '
@@ -157,7 +157,10 @@ def task_brute_force_search(
     all_iov_parameters = list(
         filter(lambda name: name.endswith('_1'), map(lambda rv: rv.name, iov))
     )
-    wf = wf_etas_removal(remove_iov, model_with_iov, non_empty_proper_subsets(all_iov_parameters))
+    no_of_models = 1
+    wf = wf_etas_removal(
+        remove_iov, model_with_iov, non_empty_proper_subsets(all_iov_parameters), no_of_models + 1
+    )
     iov_candidates = call_workflow(wf, f'{NAME_WF}-fit-with-removed-IOVs')
 
     # NOTE Keep best candidate.
@@ -181,8 +184,12 @@ def task_brute_force_search(
         )
     )
     # TODO should we exclude already present IOVs?
+    no_of_models = len(iov_candidates) + 1
     wf = wf_etas_removal(
-        remove_iiv, best_model_so_far, non_empty_subsets(iiv_parameters_with_associated_iov)
+        remove_iiv,
+        best_model_so_far,
+        non_empty_subsets(iiv_parameters_with_associated_iov),
+        no_of_models + 1,
     )
     iiv_candidates = call_workflow(wf, f'{NAME_WF}-fit-with-removed-IIVs')
 
@@ -192,7 +199,7 @@ def task_brute_force_search(
 def task_remove_etas_subset(
     remove: Callable[[Model, List[str]], None], model: Model, subset: List[str], n: int
 ):
-    model_with_some_etas_removed = copy_model(model, name=f'{model.name}-{remove.__name__}-{n}')
+    model_with_some_etas_removed = copy_model(model, name=f'iovsearch_candidate{n}')
     model_with_some_etas_removed.parent_model = model.name
     model_with_some_etas_removed.description = (
         f'{remove.__name__}(<{model.description or model.name}>, {repr(subset)})'
@@ -203,12 +210,13 @@ def task_remove_etas_subset(
 
 
 def wf_etas_removal(
-    remove: Callable[[Model, List[str]], None], model: Model, etas_subsets: Iterable[Tuple[str]]
+    remove: Callable[[Model, List[str]], None],
+    model: Model,
+    etas_subsets: Iterable[Tuple[str]],
+    n: float,
 ):
     wf = Workflow()
-    n = 0
-    for subset_of_iiv_parameters in etas_subsets:
-        n += 1
+    for i, subset_of_iiv_parameters in enumerate(etas_subsets):
         task = Task(
             repr(subset_of_iiv_parameters),
             task_remove_etas_subset,
@@ -218,8 +226,9 @@ def wf_etas_removal(
             n,
         )
         wf.add_task(task)
+        n += 1
 
-    wf_fit = create_fit_workflow(n=n)
+    wf_fit = create_fit_workflow(n=i + 1)
     wf.insert_workflow(wf_fit)
 
     task_gather = Task('gather', lambda *models: models)

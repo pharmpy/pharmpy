@@ -21,7 +21,7 @@ def test_default_mox2(tmp_path, start_model):
         rundir = tmp_path / 'iovsearch_dir1'
         assert _model_count(rundir) == 8
 
-        assert res.best_model.name == 'mox2-with-matching-IOVs-remove_iov-6'
+        assert res.best_model.name == 'iovsearch_candidate7'
 
 
 def test_rank_type_ofv_mox2(tmp_path, start_model):
@@ -30,7 +30,7 @@ def test_rank_type_ofv_mox2(tmp_path, start_model):
         rundir = tmp_path / 'iovsearch_dir1'
         assert _model_count(rundir) == 8
 
-        assert res.best_model.name == 'mox2-with-matching-IOVs-remove_iov-6'
+        assert res.best_model.name == 'iovsearch_candidate7'
 
 
 def test_default_mox1(tmp_path, testdata):
