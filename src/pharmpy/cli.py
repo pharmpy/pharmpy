@@ -159,13 +159,13 @@ def run_bootstrap(args):
 
 
 def run_execute(args):
-    import pharmpy.modeling.run as run
+    from pharmpy.tools import fit
 
-    run.fit(args.models)
+    fit(args.models)
 
 
 def run_modelsearch(args):
-    from pharmpy.modeling import run_tool
+    from pharmpy.tools import run_tool
 
     run_tool(
         'modelsearch',
@@ -180,7 +180,7 @@ def run_modelsearch(args):
 
 
 def run_iivsearch(args):
-    from pharmpy.modeling import run_tool
+    from pharmpy.tools import run_tool
 
     run_tool(
         'iivsearch',
@@ -194,7 +194,7 @@ def run_iivsearch(args):
 
 
 def run_resmod(args):
-    from pharmpy.modeling import run_tool
+    from pharmpy.tools import run_tool
 
     run_tool(
         'resmod',
@@ -207,7 +207,7 @@ def run_resmod(args):
 
 
 def run_allometry(args):
-    from pharmpy.modeling import run_tool
+    from pharmpy.tools import run_tool
 
     run_tool(
         'allometry',
@@ -224,7 +224,7 @@ def run_allometry(args):
 
 
 def run_estmethod(args):
-    from pharmpy.modeling.run import run_tool
+    from pharmpy.tools import run_tool
 
     try:
         methods = args.methods.split(" ")

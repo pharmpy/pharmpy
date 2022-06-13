@@ -52,6 +52,7 @@ def create_workflow(
     --------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
+    >>> from pharmpy.tools import run_allometry # doctest: +SKIP
     >>> run_allometry(model=model, allometric_variable='WGT')      # doctest: +SKIP
 
     """

@@ -2,7 +2,8 @@ import os
 import re
 import subprocess
 
-from pharmpy.modeling import read_model, read_results, write_csv, write_model
+from pharmpy.modeling import read_model, write_csv, write_model
+from pharmpy.tools import read_results
 from pharmpy.workflows import default_tool_database
 
 

@@ -11,4 +11,5 @@ different transformations and manipulations, and the workflows-module is how dif
 
    api_pharmpy
    api_modeling
+   api_tools
    api_workflows

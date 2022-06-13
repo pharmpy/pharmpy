@@ -4,7 +4,8 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from pharmpy.modeling import fit, read_model, run_modelsearch
+from pharmpy.modeling import read_model
+from pharmpy.tools import fit, run_modelsearch
 from pharmpy.utils import TemporaryDirectoryChanger
 
 

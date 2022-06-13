@@ -1,7 +1,7 @@
 import shutil
 
 from pharmpy import Model
-from pharmpy.modeling import run_tool
+from pharmpy.tools import run_tool
 from pharmpy.utils import TemporaryDirectoryChanger
 
 

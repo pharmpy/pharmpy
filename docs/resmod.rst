@@ -16,7 +16,7 @@ To initiate resmod in Python/R:
 
 .. pharmpy-code::
 
-    from pharmpy.modeling import run_resmod
+    from pharmpy.tools import run_resmod
 
     start_model = read_model('path/to/model')
     res = run_resmod(model=start_model)

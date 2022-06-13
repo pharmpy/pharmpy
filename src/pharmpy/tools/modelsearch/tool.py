@@ -40,6 +40,7 @@ def create_workflow(
     --------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
+    >>> from pharmpy.tools import run_modelsearch # doctest: +SKIP
     >>> run_modelsearch('ABSORPTION(ZO);PERIPHERALS(1)', 'exhaustive', model=model) # doctest: +SKIP
 
     """

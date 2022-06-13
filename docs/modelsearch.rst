@@ -17,7 +17,7 @@ To initiate modelsearch in Python:
 
 .. pharmpy-code::
 
-    from pharmpy.modeling import run_modelsearch
+    from pharmpy.tools import run_modelsearch
 
     start_model = read_model('path/to/model')
     res = run_modelsearch(search_space='ABSORPTION(ZO);PERIPHERALS(1)',

@@ -54,6 +54,7 @@ def create_workflow(model=None, groups=4, p_value=0.05, skip=None):
     --------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
+    >>> from pharmpy.tools import run_resmod # doctest: +SKIP
     >>> run_resmod(model=model)      # doctest: +SKIP
 
     """

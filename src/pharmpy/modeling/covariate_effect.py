@@ -352,6 +352,9 @@ def _choose_bounds(effect, cov_median, cov_min, cov_max, index=None):
     elif effect == 'pow':
         lower = -100
         upper = 100000
+    elif effect == 'cat':
+        lower = -1
+        upper = 5
     else:
         lower = -100000
         upper = 100000

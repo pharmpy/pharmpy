@@ -3,7 +3,8 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from pharmpy.modeling import fit, run_iivsearch, set_seq_zo_fo_absorption
+from pharmpy.modeling import set_seq_zo_fo_absorption
+from pharmpy.tools import fit, run_iivsearch
 from pharmpy.utils import TemporaryDirectoryChanger
 
 

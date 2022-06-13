@@ -16,7 +16,7 @@ To initiate allometry in Python:
 
 .. pharmpy-code::
 
-    from pharmpy.modeling import run_allometry
+    from pharmpy.tools import run_allometry
 
     start_model = read_model('path/to/model')
     res = run_allometry(model=start_model)
