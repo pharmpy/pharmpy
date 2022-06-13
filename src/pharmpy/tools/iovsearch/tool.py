@@ -29,11 +29,38 @@ def create_workflow(
     list_of_parameters=None,
     rank_type='bic',
     cutoff=None,
-    bic_type='random',
-    tool=None,
     distribution='same-as-iiv',
     model=None,
 ):
+    """Run IIVsearch tool. For more details, see :ref:`iovsearch`.
+
+    Parameters
+    ----------
+    column : str
+        Name of column in dataset to use as occasion column (default is 'OCC')
+    list_of_parameters : list
+        List of parameters to test IOV on, if none all parameters with IIV will be tested (default)
+    rank_type : str
+        Which ranking type should be used (OFV, AIC, BIC). Default is BIC
+    cutoff : None or float
+        Cutoff for which value of the ranking type that is considered significant. Default
+        is None (all models will be ranked)
+    distribution : str
+        Which distribution added IOVs should have (default is same-as-iiv)
+    model : Model
+        Pharmpy model
+
+    Returns
+    -------
+    IOVSearchResults
+        IOVSearch tool result object
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> run_iovsearch('OCC', model=model)      # doctest: +SKIP
+    """
     wf = Workflow()
     wf.name = NAME_WF
 
@@ -41,6 +68,7 @@ def create_workflow(
     wf.add_task(init_task(model))
     init_output = ensure_model_is_fitted(wf, model)
 
+    bic_type = 'random'
     search_task = Task(
         'search',
         task_brute_force_search,
@@ -49,7 +77,6 @@ def create_workflow(
         rank_type,
         cutoff,
         bic_type,
-        tool,
         distribution,
     )
 
@@ -92,7 +119,6 @@ def task_brute_force_search(
     rank_type: str,
     cutoff: Union[None, float],
     bic_type: Union[None, str],
-    tool: Union[None, str],
     distribution: str,
     model: Model,
 ):
@@ -120,7 +146,7 @@ def task_brute_force_search(
     add_iov(model_with_iov, occ, list_of_parameters, distribution=distribution)
 
     # NOTE Fit the new model.
-    wf = create_fit_workflow(models=[model_with_iov], tool=tool)
+    wf = create_fit_workflow(models=[model_with_iov])
     model_with_iov = call_workflow(wf, f'{NAME_WF}-fit-with-matching-IOVs')
 
     # NOTE Remove IOVs. Test all subsets (~2^n).

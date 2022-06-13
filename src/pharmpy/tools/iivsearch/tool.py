@@ -34,7 +34,7 @@ def create_workflow(
 
     Returns
     -------
-    IIVResults
+    IIVSearchResults
         IIVsearch tool result object
 
     Examples
@@ -43,7 +43,6 @@ def create_workflow(
     >>> model = load_example_model("pheno")
     >>> from pharmpy.tools import run_iivsearch     # doctest: +SKIP
     >>> run_iivsearch('brute_force', model=model)   # doctest: +SKIP
-
     """
     wf = Workflow()
     wf.name = 'iivsearch'
