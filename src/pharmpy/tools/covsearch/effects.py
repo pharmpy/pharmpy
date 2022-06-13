@@ -72,9 +72,8 @@ array: "[" [value ("," value)*] "]"
 WILDCARD: "*"
 """
 
-default_covariate_effects = (
+all_continuous_covariate_effects = (
     'lin',
-    'cat',
     'piece_lin',
     'exp',
     'pow',
@@ -327,7 +326,7 @@ class Effects:
             if isinstance(effect.covariate, Symbol)
             else effect.covariate
         )
-        fp = default_covariate_effects if effect.fp is EffectFunctionWildcard else effect.fp
+        fp = all_continuous_covariate_effects if effect.fp is EffectFunctionWildcard else effect.fp
         op = effect.op
         return (tuple(parameter), tuple(covariate), tuple(f.lower() for f in fp), op)
 
