@@ -2,6 +2,7 @@ import shutil
 from pathlib import Path
 
 import numpy as np
+import pandas as pd
 import pytest
 
 from pharmpy.modeling import read_model
@@ -74,6 +75,12 @@ def test_exhaustive_stepwise_basic(
 
         if model_with_error:
             assert model_with_error in res.summary_errors.index.get_level_values('model')
+
+        summary_tool_sorted_by_dbic = res.summary_tool.sort_values(by=['dbic'], ascending=False)
+        summary_tool_sorted_by_bic = res.summary_tool.sort_values(by=['bic'])
+        summary_tool_sorted_by_rank = res.summary_tool.sort_values(by=['rank'])
+        pd.testing.assert_frame_equal(summary_tool_sorted_by_dbic, summary_tool_sorted_by_rank)
+        pd.testing.assert_frame_equal(summary_tool_sorted_by_dbic, summary_tool_sorted_by_bic)
 
         rundir = tmp_path / 'modelsearch_dir1'
         assert rundir.is_dir()
