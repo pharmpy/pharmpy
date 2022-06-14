@@ -194,7 +194,7 @@ def run_iivsearch(args):
 
 
 def run_iovsearch(args):
-    from pharmpy.modeling import run_tool
+    from pharmpy.tools import run_tool
 
     run_tool(
         'iovsearch',
