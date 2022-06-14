@@ -136,15 +136,11 @@ def task_brute_force_search(
     # NOTE Add IOVs on given parameters or all parameters with IIVs.
     model_with_iov = copy_model(model, name='iovsearch_candidate1')
     model_with_iov.parent_model = model.name
-    model_with_iov.description = (
-        f'add_iov(<{model.description or model.name}>, '
-        + f'{repr(occ)}, {repr(list_of_parameters)}, '
-        + f'distribution={repr(distribution)})'
-    )
+    names = [name for name in list_of_parameters]
+    model_with_iov.description = f'add_iov({",".join(names)})'
     update_initial_estimates(model_with_iov)
     # TODO should we exclude already present IOVs?
     add_iov(model_with_iov, occ, list_of_parameters, distribution=distribution)
-
     # NOTE Fit the new model.
     wf = create_fit_workflow(models=[model_with_iov])
     model_with_iov = call_workflow(wf, f'{NAME_WF}-fit-with-matching-IOVs')
@@ -201,9 +197,8 @@ def task_remove_etas_subset(
 ):
     model_with_some_etas_removed = copy_model(model, name=f'iovsearch_candidate{n}')
     model_with_some_etas_removed.parent_model = model.name
-    model_with_some_etas_removed.description = (
-        f'{remove.__name__}(<{model.description or model.name}>, {repr(subset)})'
-    )
+    names = [name for name in subset]
+    model_with_some_etas_removed.description = f'{remove.__name__}({",".join(names)})'
     update_initial_estimates(model_with_some_etas_removed)
     remove(model_with_some_etas_removed, subset)
     return model_with_some_etas_removed
@@ -327,8 +322,8 @@ class IOVSearchResults(pharmpy.results.Results):
     ):
         self.summary_tool = summary_tool
         self.summary_models = summary_models
-        self.summary_individuals = (summary_individuals,)
-        self.summary_individuals_count = (summary_individuals_count,)
+        self.summary_individuals = summary_individuals
+        self.summary_individuals_count = summary_individuals_count
         self.best_model = best_model
         self.input_model = input_model
         self.models = models
