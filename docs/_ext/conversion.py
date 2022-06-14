@@ -76,7 +76,7 @@ def create_r_returns(doc_list):
 pattern_start = re.compile(r'>>> |^\.\.\. ')
 pattern_methods = re.compile(r'([A-Za-z_]\d*)\.([A-Za-z_]\d*)(?=(?:[^"]|"[^"]*")*$)(?=(?:[^\']|\'[^\']*\')*$)')
 pattern_list_idx = re.compile(r'\w\[(\d+)]')
-pattern_list = re.compile(r'\[([\'\"\w(),\s]+)]')
+pattern_list = re.compile(r'\[([\'\"\w(),\s]+)](?=(?:[^"]|"[^"]*")*$)(?=(?:[^\']|\'[^\']*\')*$)')
 pattern_dict = re.compile(r'{(([\'\"]*[\w\d()]+[\'\"]*: [\'\"]*[\w\d]+\'*,*\s*)+)}')
 pattern_doctest = re.compile(r'\s+# doctest:.*')
 
