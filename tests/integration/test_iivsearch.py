@@ -42,9 +42,10 @@ def test_block_structure(tmp_path, start_model):
         assert len(res.models[0].random_variables['ETA(1)'].joint_names) == 3
 
         summary_tool_sorted_by_dbic = res.summary_tool.sort_values(by=['dbic'], ascending=False)
+        summary_tool_sorted_by_bic = res.summary_tool.sort_values(by=['bic'])
         summary_tool_sorted_by_rank = res.summary_tool.sort_values(by=['rank'])
-
         pd.testing.assert_frame_equal(summary_tool_sorted_by_dbic, summary_tool_sorted_by_rank)
+        pd.testing.assert_frame_equal(summary_tool_sorted_by_dbic, summary_tool_sorted_by_bic)
 
         rundir = tmp_path / 'iivsearch_dir1'
         assert rundir.is_dir()
@@ -69,9 +70,10 @@ def test_no_of_etas(tmp_path, start_model):
         assert res.models[0].random_variables.iiv.names == ['ETA(2)', 'ETA(3)']
 
         summary_tool_sorted_by_dbic = res.summary_tool.sort_values(by=['dbic'], ascending=False)
+        summary_tool_sorted_by_bic = res.summary_tool.sort_values(by=['bic'])
         summary_tool_sorted_by_rank = res.summary_tool.sort_values(by=['rank'])
-
         pd.testing.assert_frame_equal(summary_tool_sorted_by_dbic, summary_tool_sorted_by_rank)
+        pd.testing.assert_frame_equal(summary_tool_sorted_by_dbic, summary_tool_sorted_by_bic)
 
         rundir = tmp_path / 'iivsearch_dir1'
         assert rundir.is_dir()
@@ -98,13 +100,29 @@ def test_brute_force(tmp_path, start_model):
         )
         assert all(model.random_variables != start_model.random_variables for model in res.models)
 
-        summary_tool_sorted_by_dbic_step1 = res.summary_tool.loc[1].sort_values(by=['dbic'], ascending=False)
+        summary_tool_sorted_by_dbic_step1 = res.summary_tool.loc[1].sort_values(
+            by=['dbic'], ascending=False
+        )
+        summary_tool_sorted_by_bic_step1 = res.summary_tool.loc[1].sort_values(by=['bic'])
         summary_tool_sorted_by_rank_step1 = res.summary_tool.loc[1].sort_values(by=['rank'])
-        pd.testing.assert_frame_equal(summary_tool_sorted_by_dbic_step1, summary_tool_sorted_by_rank_step1)
+        pd.testing.assert_frame_equal(
+            summary_tool_sorted_by_dbic_step1, summary_tool_sorted_by_rank_step1
+        )
+        pd.testing.assert_frame_equal(
+            summary_tool_sorted_by_dbic_step1, summary_tool_sorted_by_bic_step1
+        )
 
-        summary_tool_sorted_by_dbic_step2 = res.summary_tool.loc[2].sort_values(by=['dbic'], ascending=False)
+        summary_tool_sorted_by_dbic_step2 = res.summary_tool.loc[2].sort_values(
+            by=['dbic'], ascending=False
+        )
+        summary_tool_sorted_by_bic_step2 = res.summary_tool.loc[2].sort_values(by=['bic'])
         summary_tool_sorted_by_rank_step2 = res.summary_tool.loc[2].sort_values(by=['rank'])
-        pd.testing.assert_frame_equal(summary_tool_sorted_by_dbic_step2, summary_tool_sorted_by_rank_step2)
+        pd.testing.assert_frame_equal(
+            summary_tool_sorted_by_dbic_step2, summary_tool_sorted_by_rank_step2
+        )
+        pd.testing.assert_frame_equal(
+            summary_tool_sorted_by_dbic_step2, summary_tool_sorted_by_bic_step2
+        )
 
         rundir = tmp_path / 'iivsearch_dir1'
         assert rundir.is_dir()
@@ -145,9 +163,10 @@ def test_no_of_etas_iiv_strategies(tmp_path, start_model, iiv_strategy):
         assert res.models[-1].modelfit_results
 
         summary_tool_sorted_by_dbic = res.summary_tool.sort_values(by=['dbic'], ascending=False)
+        summary_tool_sorted_by_bic = res.summary_tool.sort_values(by=['bic'])
         summary_tool_sorted_by_rank = res.summary_tool.sort_values(by=['rank'])
-
         pd.testing.assert_frame_equal(summary_tool_sorted_by_dbic, summary_tool_sorted_by_rank)
+        pd.testing.assert_frame_equal(summary_tool_sorted_by_dbic, summary_tool_sorted_by_bic)
 
         rundir = tmp_path / 'iivsearch_dir1'
         assert rundir.is_dir()

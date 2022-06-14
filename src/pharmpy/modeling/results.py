@@ -596,7 +596,10 @@ def rank_models(
 ) -> pd.DataFrame:
     models_all = [base_model] + models
     models_with_res = [model for model in models_all if model.modelfit_results]
-    delta_dict = _create_delta_dict(base_model, models_all, rankfunc, bic_type)
+    rankval_dict = {model.name: _get_rankval(model, rankfunc, bic_type) for model in models_all}
+    delta_dict = {
+        model.name: rankval_dict[base_model.name] - rankval_dict[model.name] for model in models_all
+    }
 
     # TODO: validate option
     if not strictness:
@@ -638,7 +641,7 @@ def rank_models(
             rank = rank_dict[model.name]
         except KeyError:
             rank = np.nan
-        rows[model.name] = (delta_dict[model.name], rank)
+        rows[model.name] = (delta_dict[model.name], rankval_dict[model.name], rank)
 
     if rankfunc == 'lrt':
         rankfunc_name = 'ofv'
@@ -646,7 +649,9 @@ def rank_models(
         rankfunc_name = rankfunc
 
     index = pd.Index(rows.keys(), name='model')
-    df = pd.DataFrame(rows.values(), index=index, columns=[f'd{rankfunc_name}', 'rank'])
+    df = pd.DataFrame(
+        rows.values(), index=index, columns=[f'd{rankfunc_name}', f'{rankfunc_name}', 'rank']
+    )
 
     df_sorted = df.sort_values(by=[f'd{rankfunc_name}'], ascending=False)
 
@@ -667,7 +672,7 @@ def _test_model(parent, child, alpha):
     dofv = parent.modelfit_results.ofv - child.modelfit_results.ofv
     df = len(child.parameters) - len(parent.parameters)
     if df < 0:
-        raise NotImplementedError('LRT is currently only supported where degrees of freedom > 0')
+        raise NotImplementedError('LRT is currently only supported where degrees of freedom => 0')
     elif df == 0:
         cutoff = 0
     else:
@@ -675,24 +680,9 @@ def _test_model(parent, child, alpha):
     return dofv >= cutoff
 
 
-def _create_delta_dict(base_model, models_all, rankfunc, bic_type):
-    if base_model.modelfit_results:
-        base_rankval = _get_rankval(base_model, rankfunc, bic_type)
-    else:
-        base_rankval = np.nan
-
-    delta_dict = dict()
-    for model in models_all:
-        if model.name != base_model.name:
-            model_rankval = _get_rankval(model, rankfunc, bic_type)
-        else:
-            model_rankval = base_rankval
-        delta_dict[model.name] = base_rankval - model_rankval
-
-    return delta_dict
-
-
 def _get_rankval(model, rankfunc, bic_type):
+    if not model.modelfit_results:
+        return np.nan
     if rankfunc in ['ofv', 'lrt']:
         return model.modelfit_results.ofv
     elif rankfunc == 'aic':

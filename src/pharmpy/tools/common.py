@@ -26,16 +26,13 @@ def create_results(
     res_class, input_model, base_model, res_models, rankfunc, cutoff, bic_type='mixed'
 ):
     summary_tool = summarize_tool(res_models, base_model, rankfunc, cutoff, bic_type)
-    summary_models = summarize_modelfit_results([base_model] + res_models).sort_values(
-        by=[rankfunc]
+    summary_models = summarize_modelfit_results([base_model] + res_models).reindex(
+        summary_tool.index
     )
     summary_individuals, summary_individuals_count = summarize_tool_individuals(
         [base_model] + res_models, summary_tool['description'], summary_tool[f'd{rankfunc}']
     )
     summary_errors = summarize_errors([base_model] + res_models)
-
-    summary_models.sort_values(by=[f'{rankfunc}'])
-    summary_individuals_count.sort_values(by=[f'd{rankfunc}'])
 
     best_model_name = summary_tool['rank'].idxmin()
     try:
