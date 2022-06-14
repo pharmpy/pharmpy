@@ -56,7 +56,6 @@ from pharmpy.tools.covsearch.effects import Effects, parse_spec
             'COVARIATE([CL], @CONTINUOUS, *)\n'
             'COVARIATE([VC], @CATEGORICAL, CAT, +)',
             [
-                ('CL', 'AGE', 'cat', '*'),
                 ('CL', 'AGE', 'exp', '*'),
                 ('CL', 'AGE', 'lin', '*'),
                 ('CL', 'AGE', 'piece_lin', '*'),
@@ -67,7 +66,6 @@ from pharmpy.tools.covsearch.effects import Effects, parse_spec
         (
             'COVARIATE(@IIV, @CONTINUOUS, *);' 'COVARIATE(*, @CATEGORICAL, CAT, *)',
             [
-                ('CL', 'WGT', 'cat', '*'),
                 ('CL', 'WGT', 'exp', '*'),
                 ('CL', 'WGT', 'lin', '*'),
                 ('CL', 'WGT', 'piece_lin', '*'),
@@ -78,7 +76,6 @@ from pharmpy.tools.covsearch.effects import Effects, parse_spec
                 ('THETA(1)', 'APGR', 'cat', '*'),
                 ('THETA(2)', 'APGR', 'cat', '*'),
                 ('THETA(3)', 'APGR', 'cat', '*'),
-                ('V', 'WGT', 'cat', '*'),
                 ('V', 'WGT', 'exp', '*'),
                 ('V', 'WGT', 'lin', '*'),
                 ('V', 'WGT', 'piece_lin', '*'),
