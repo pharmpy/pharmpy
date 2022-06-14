@@ -1,6 +1,7 @@
 from functools import partial
 
 import pandas as pd
+from sympy import Symbol
 
 import pharmpy.plugins as plugins
 from pharmpy.modeling.common import convert_model
@@ -9,8 +10,8 @@ from pharmpy.modeling.results import summarize_errors
 from pharmpy.results import Results
 from pharmpy.workflows import default_tool_database
 
+from .iivsearch.algorithms import _get_param_names
 from .run import fit, run_tool
-from .scm import have_scm, run_scm
 
 
 class AMDResults(Results):
@@ -126,35 +127,28 @@ def run_amd(
 
     db = default_tool_database(toolname='amd')
     fit(model)
-
-    run_funcs = []
     run_subfuncs = dict()
     for section in order:
         if section == 'structural':
             func = partial(_run_modelsearch, search_space=search_space, path=db.path)
-            run_funcs.append(func)
             run_subfuncs['modelsearch'] = func
         elif section == 'iivsearch':
             func = partial(_run_iiv, path=db.path)
-            run_funcs.append(func)
             run_subfuncs['iivsearch'] = func
         elif section == 'iovsearch':
             func = partial(_run_iov, occasion=occasion, path=db.path)
-            run_funcs.append(func)
             run_subfuncs['iovsearch'] = func
         elif section == 'residual':
             func = partial(_run_resmod, path=db.path)
-            run_funcs.append(func)
             run_subfuncs['resmod'] = func
         elif section == 'allometry':
             func = partial(_run_allometry, allometric_variable=allometric_variable, path=db.path)
-            run_funcs.append(func)
+            run_subfuncs['allometry'] = func
         elif section == 'covariates':
-            if have_scm() and (continuous is not None or categorical is not None):
-                func = partial(
-                    _run_covariates, continuous=continuous, categorical=categorical, path=db.path
-                )
-                run_funcs.append(func)
+            func = partial(
+                _run_covariates, continuous=continuous, categorical=categorical, path=db.path
+            )
+            run_subfuncs['covsearch'] = func
         else:
             raise ValueError(
                 f"Unrecognized section {section} in order. Must be one of {default_order}"
@@ -163,15 +157,14 @@ def run_amd(
     run_tool('modelfit', model, path=db.path / 'modelfit')
     next_model = model
     sum_tools, sum_models, sum_inds_counts, sum_amd = [], [], [], []
-    for func in run_funcs:
-        if func in run_subfuncs.values():
-            subresults = func(next_model)
-            next_model = subresults.best_model
+    for func in run_subfuncs.values():
+        subresults = func(next_model)
+        next_model = subresults.best_model
+        if hasattr(subresults, 'summary_tool'):
             sum_tools.append(subresults.summary_tool.reset_index()),
-            sum_models.append(subresults.summary_models.reset_index()),
-            sum_inds_counts.append(subresults.summary_individuals_count.reset_index()),
-        else:
-            next_model = func(next_model)
+        sum_models.append(subresults.summary_models.reset_index()),
+        sum_inds_counts.append(subresults.summary_individuals_count.reset_index()),
+
     for sums in [sum_tools, sum_models, sum_inds_counts]:
         sums = pd.concat(
             sums, keys=list(run_subfuncs.keys()), names=['tool', 'default index']
@@ -216,25 +209,32 @@ def _run_resmod(model, path):
 
 
 def _run_covariates(model, continuous, categorical, path):
-    parameters = ['CL', 'VC', 'KMM', 'CLMM', 'MDT', 'MAT', 'QP1', 'QP2', 'VP1', 'VP2']
+    parameters = [Symbol(param) for param in list(_get_param_names(model).values())]
 
     if continuous is None:
-        covariates = categorical
-    elif categorical is None:
-        covariates = continuous
-    else:
-        covariates = continuous + categorical
+        continuous = []
+        for col in model.datainfo:
+            if col.type == 'covariate' and col.continuous is True:
+                continuous.append(col.name)
+    con_covariates = [Symbol(item) for item in continuous]
 
-    relations = dict()
-    for p in parameters:
-        if model.statements.find_assignment(p):
-            expr = model.statements.before_odes.full_expression(p)
-            for eta in model.random_variables.etas:
-                if eta.symbol in expr.free_symbols:
-                    relations[p] = covariates
-                    break
-    res = run_scm(model, relations, continuous=continuous, categorical=categorical, path=path)
-    return res.final_model
+    if categorical is None:
+        categorical = []
+        for col in model.datainfo:
+            if col.type == 'covariate' and col.continuous is False:
+                categorical.append(col.name)
+    cat_covariates = [Symbol(item) for item in categorical]
+
+    if continuous is not None or categorical is not None:
+        covariates_search_space = (
+            f'CONTINUOUS({con_covariates}); CATEGORICAL({cat_covariates})\n'
+            f'COVARIATE({parameters}, @CONTINUOUS, exp, *)\n'
+            f'COVARIATE({parameters}, @CATEGORICAL, cat, *)'
+        )
+        res_cov = run_tool(
+            'covsearch', covariates_search_space, model=model, path=path / 'covsearch'
+        )
+        return res_cov
 
 
 def _run_allometry(model, allometric_variable, path):
@@ -245,10 +245,10 @@ def _run_allometry(model, allometric_variable, path):
                 break
 
     if allometric_variable is not None:
-        res = run_tool(
+        res_allometry = run_tool(
             'allometry', model, allometric_variable=allometric_variable, path=path / 'allometry'
         )
-        return res.best_model
+        return res_allometry
 
 
 def _run_iov(model, occasion, path):
