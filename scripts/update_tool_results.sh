@@ -37,6 +37,11 @@ cp $TESTPATH/iivsearch/results.json $DEST/iivsearch_results.json
 tox -e run -- pharmpy run iovsearch $TESTPATH/mox2.mod --column 'VISI' --path $TESTPATH/iovsearch/
 cp $TESTPATH/iovsearch/results.json $DEST/iovsearch_results.json
 
+tox -e run -- pharmpy run covsearch $TESTPATH/mox2.mod \
+    --effects 'COVARIATE([CL, MAT, VC], [AGE, WT], EXP);COVARIATE([CL, MAT, VC], [SEX], CAT)' \
+    --path $TESTPATH/covsearch/
+cp $TESTPATH/covsearch/results.json $DEST/covsearch_results.json
+
 cp $TESTDATA/resmod/mox3.* $TESTPATH
 cp $TESTDATA/resmod/moxo_simulated_resmod.csv $TESTPATH
 cp $TESTDATA/resmod/mytab $TESTPATH
