@@ -4,6 +4,7 @@ from pathlib import Path
 
 import pytest
 
+import pharmpy
 from pharmpy.tools.run import _create_metadata_common, _create_metadata_tool, _get_run_setup
 from pharmpy.utils import TemporaryDirectoryChanger
 from pharmpy.workflows import LocalDirectoryToolDatabase, local_dask
@@ -21,6 +22,7 @@ def test_create_metadata_tool():
         args=('ABSORPTION(ZO)', 'exhaustive'),
     )
 
+    assert metadata['pharmpy_version'] == pharmpy.__version__
     assert metadata['tool_name'] == 'modelsearch'
     assert metadata['tool_options']['rankfunc'] == 'bic'
 

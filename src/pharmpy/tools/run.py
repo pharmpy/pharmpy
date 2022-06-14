@@ -176,8 +176,9 @@ def _now():
 
 
 def _create_metadata_tool(tool_name, tool_params, tool_options, args):
-    # FIXME: add config file dump, Pharmpy version, estimation tool etc.
+    # FIXME: add config file dump, estimation tool etc.
     tool_metadata = {
+        'pharmpy_version': pharmpy.__version__,
         'tool_name': tool_name,
         'stats': {'start_time': _now()},
         'tool_options': dict(),
