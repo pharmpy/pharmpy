@@ -1,4 +1,4 @@
-from .run import create_results, fit, read_results, run_tool
+from .run import create_results, fit, read_results, retrieve_models, run_tool
 from .run_amd import run_amd
 from .wrap import wrap
 
@@ -11,6 +11,7 @@ __all__ = [
     'create_results',
     'fit',
     'read_results',
+    'retrieve_models',
     'run_allometry',
     'run_amd',
     'run_iivsearch',

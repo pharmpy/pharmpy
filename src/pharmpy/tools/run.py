@@ -247,3 +247,34 @@ def _get_run_setup(common_options, toolname):
         )  # TODO: database -> tool_database
 
     return dispatcher, database
+
+
+def retrieve_models(path, names=None):
+    """Retrieve models after a tool runs
+
+    Any models created and run by the tool can be
+    retrieved.
+
+    Parameters
+    ----------
+    path : str or Path
+        A path to the tool directory
+    names : list
+        List of names of the models to retrieve or None for all
+
+    Return
+    ------
+    list
+        List of retrieved model objects
+    """
+    path = Path(path)
+    # FIXME: Should be using metadata to know how to init databases
+    from pharmpy.workflows import LocalModelDirectoryDatabase
+
+    db = LocalModelDirectoryDatabase(path / 'models')
+    # FIXME: This is a hack. Add way of getting all model names from model database
+    if names is None:
+        names = [p.name for p in (path / 'models').glob('*') if not p.name.startswith('.')]
+
+    models = [db.retrieve_model(name) for name in names]
+    return models
