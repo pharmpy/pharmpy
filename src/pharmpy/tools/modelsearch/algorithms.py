@@ -289,7 +289,7 @@ def _copy(name, features, model):
 
 def _add_iiv_to_func(iiv_strategy, model):
     sset, rvs = model.statements, model.random_variables
-    if iiv_strategy == 'diagonal' or iiv_strategy == 'fullblock':
+    if iiv_strategy == 'add_diagonal' or iiv_strategy == 'fullblock':
         try:
             add_pk_iiv(model, initial_estimate=0.01)
         except ValueError as e:
@@ -313,7 +313,7 @@ def _add_iiv_to_func(iiv_strategy, model):
             add_iiv(model, 'MDT', 'exp', initial_estimate=0.01)
     else:
         raise ValueError(
-            f'Invalid IIV strategy (must be "no_add", "diagonal", "fullblock", or '
+            f'Invalid IIV strategy (must be "no_add", "add_diagonal", "fullblock", or '
             f'"absorption_delay"): {iiv_strategy}'
         )
 

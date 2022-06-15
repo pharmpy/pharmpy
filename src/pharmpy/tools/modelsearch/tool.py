@@ -22,7 +22,7 @@ def create_workflow(
         Algorithm to use (e.g. exhaustive)
     iiv_strategy : str
         If/how IIV should be added to candidate models. Possible strategies are 'no_add',
-        'diagonal', 'fullblock', or 'absorption_delay'. Default is 'no_add'
+        'add_diagonal', 'fullblock', or 'absorption_delay'. Default is 'no_add'
     rankfunc : str
         Which ranking function should be used (OFV, AIC, BIC). Default is BIC
     cutoff : float

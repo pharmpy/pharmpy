@@ -246,17 +246,17 @@ Adding IIV to the candidate models during search
 The ``iiv_strategy`` option determines whether or not IIV on the PK parameters should be added to the candidate models.
 The different strategies can be seen here:
 
-+------------------------+----------------------------------------------------------+
-| Strategy               | Description                                              |
-+========================+==========================================================+
-| ``'no_add'``           | No IIVs are added during the search (default)            |
-+------------------------+----------------------------------------------------------+
-| ``'diagonal'``         | IIV is added to all structural parameters as diagonal    |
-+------------------------+----------------------------------------------------------+
-| ``'fullblock'``        | IIV is added to all structural parameters as full block  |
-+------------------------+----------------------------------------------------------+
-| ``'absorption_delay'`` | IIV is added to the absorption delay parameter           |
-+------------------------+----------------------------------------------------------+
++------------------------+----------------------------------------------------------------------------------+
+| Strategy               | Description                                                                      |
++========================+==================================================================================+
+| ``'no_add'``           | No IIVs are added during the search (default)                                    |
++------------------------+----------------------------------------------------------------------------------+
+| ``'add_diagonal'``     | IIV is added to all structural parameters as diagonal                            |
++------------------------+----------------------------------------------------------------------------------+
+| ``'fullblock'``        | IIV is added to all structural parameters, and all IIVs will be in a full block  |
++------------------------+----------------------------------------------------------------------------------+
+| ``'absorption_delay'`` | IIV is added to the absorption delay parameter                                   |
++------------------------+----------------------------------------------------------------------------------+
 
 .. _ranking_modelsearch:
 

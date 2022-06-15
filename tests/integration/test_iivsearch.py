@@ -133,7 +133,7 @@ def test_brute_force(tmp_path, start_model):
 @pytest.mark.filterwarnings("ignore::UserWarning")
 @pytest.mark.parametrize(
     'iiv_strategy',
-    ['diagonal', 'fullblock'],
+    ['add_diagonal', 'fullblock'],
 )
 def test_no_of_etas_iiv_strategies(tmp_path, start_model, iiv_strategy):
     with TemporaryDirectoryChanger(tmp_path):

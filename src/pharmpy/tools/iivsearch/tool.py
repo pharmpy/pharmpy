@@ -22,8 +22,8 @@ def create_workflow(
     algorithm : str
         Which algorithm to run (brute_force, brute_force_no_of_etas, brute_force_block_structure)
     iiv_strategy : str
-        If/how IIV should be added to start model. Possible strategies are 'no_add', 'diagonal', or
-        'fullblock'. Default is 'no_add'
+        If/how IIV should be added to start model. Possible strategies are 'no_add', 'add_diagonal',
+        or 'fullblock'. Default is 'no_add'
     rankfunc : str
         Which ranking function should be used (OFV, AIC, BIC). Default is BIC
     cutoff : float
@@ -149,9 +149,10 @@ def _start_algorithm(model):
 
 
 def _add_iiv(iiv_strategy, model):
-    if iiv_strategy not in ['diagonal', 'fullblock']:
+    if iiv_strategy not in ['add_diagonal', 'fullblock']:
         ValueError(
-            f'Invalid IIV strategy (must be "no_add", "diagonal", or "fullblock"): {iiv_strategy}'
+            f'Invalid IIV strategy (must be "no_add", "add_diagonal", or "fullblock"): '
+            f'{iiv_strategy}'
         )
     add_pk_iiv(model)
     if iiv_strategy == 'fullblock':

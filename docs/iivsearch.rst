@@ -183,15 +183,15 @@ Adding IIV to the start model
 The ``iiv_strategy`` option determines whether or not IIV on the PK parameters should be added to the input model.
 The different strategies can be seen here:
 
-+------------------------+----------------------------------------------------------+
-| Strategy               | Description                                              |
-+========================+==========================================================+
-| ``'no_add'``           | Input model is kept as base model                        |
-+------------------------+----------------------------------------------------------+
-| ``'diagonal'``         | IIV is added to all structural parameters as diagonal    |
-+------------------------+----------------------------------------------------------+
-| ``'fullblock'``        | IIV is added to all structural parameters as full block  |
-+------------------------+----------------------------------------------------------+
++------------------------+----------------------------------------------------------------------------------+
+| Strategy               | Description                                                                      |
++========================+==================================================================================+
+| ``'no_add'``           | Input model is kept as base model                                                |
++------------------------+----------------------------------------------------------------------------------+
+| ``'add_diagonal'``     | Diagonal IIV is added to all structural parameters                               |
++------------------------+----------------------------------------------------------------------------------+
+| ``'fullblock'``        | IIV is added to all structural parameters, and all IIVs will be in a full block  |
++------------------------+----------------------------------------------------------------------------------+
 
 
 .. _ranking_iivsearch:

@@ -94,11 +94,11 @@ def test_exhaustive_stepwise_basic(
 @pytest.mark.parametrize(
     'search_space, iiv_strategy, no_of_models, no_of_added_etas',
     [
-        ('ABSORPTION(ZO);PERIPHERALS(1)', 'diagonal', 4, 2),
-        ('ABSORPTION(ZO);ELIMINATION(ZO)', 'diagonal', 4, 1),
-        ('ABSORPTION(ZO);ELIMINATION(MIX-FO-MM)', 'diagonal', 4, 2),
-        ('ABSORPTION(ZO);PERIPHERALS([1, 2])', 'diagonal', 8, 4),
-        ('LAGTIME();TRANSITS(1)', 'diagonal', 2, 1),
+        ('ABSORPTION(ZO);PERIPHERALS(1)', 'add_diagonal', 4, 2),
+        ('ABSORPTION(ZO);ELIMINATION(ZO)', 'add_diagonal', 4, 1),
+        ('ABSORPTION(ZO);ELIMINATION(MIX-FO-MM)', 'add_diagonal', 4, 2),
+        ('ABSORPTION(ZO);PERIPHERALS([1, 2])', 'add_diagonal', 8, 4),
+        ('LAGTIME();TRANSITS(1)', 'add_diagonal', 2, 1),
         ('ABSORPTION(ZO);PERIPHERALS(1)', 'fullblock', 4, 2),
         ('PERIPHERALS(1);LAGTIME()', 'absorption_delay', 4, 1),
     ],
