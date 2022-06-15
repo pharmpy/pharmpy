@@ -28,7 +28,7 @@
 ======
 
 .. |logo| image:: docs/Pharmpy_logo.svg
-   :width: 100
+   :width: 250
 
 https://pharmpy.github.io
 
