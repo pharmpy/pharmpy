@@ -1,9 +1,11 @@
-=========================
-Welcome to Pharmpy |logo|
-=========================
+.. figure:: Pharmpy_logo.svg
+   :width: 400
+   :align: center
 
-.. |logo| image:: Pharmpy_logo.svg
-   :width: 100
+==================
+Welcome to Pharmpy
+==================
+
 
 Pharmpy is a library for pharmacometrics. It can be used as a regular Python package, in R via
 reticulate or via its built-in command line interface. The API of Pharmpy is model agnostic and

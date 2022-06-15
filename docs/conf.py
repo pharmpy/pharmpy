@@ -54,6 +54,7 @@ html_sidebars = {
    '**': ['searchbox.html', 'globaltoc.html', 'sourcelink.html'],
 }
 html_short_title = '%s-%s' % (project, version)
+html_logo = 'Pharmpy_logo.svg'
 
 napoleon_use_ivar = True
 napoleon_use_rtype = False

@@ -23,9 +23,9 @@
 
 .. highlight:: console
 
-==============
-Pharmpy |logo|
-==============
+======
+|logo|
+======
 
 .. |logo| image:: docs/Pharmpy_logo.svg
    :width: 100
