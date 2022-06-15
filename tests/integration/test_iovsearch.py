@@ -2,7 +2,7 @@ import shutil
 from pathlib import Path
 
 from pharmpy import Model
-from pharmpy.tools import run_tool
+from pharmpy.tools import fit, run_tool
 from pharmpy.utils import TemporaryDirectoryChanger
 
 
@@ -38,8 +38,9 @@ def test_default_mox1(tmp_path, testdata):
     shutil.copy2(testdata / 'nonmem' / 'models' / 'mox_simulated_log.csv', tmp_path)
     with TemporaryDirectoryChanger(tmp_path):
         start_model = Model.create_model('mox1.mod')
+        fit(start_model)
         res = run_tool('iovsearch', 'VISI', model=start_model)
         rundir = tmp_path / 'iovsearch_dir1'
-        assert _model_count(rundir) == 8
+        assert _model_count(rundir) == 7
 
         assert res.best_model == res.input_model
