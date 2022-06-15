@@ -110,6 +110,7 @@ class Model(pharmpy.model.Model):
             self.database = default_model_database(path=path.parent)
             self.filename_extension = path.suffix
         self.control_stream = parser.parse(code)
+        self._has_real_datainfo = False
         self._create_datainfo()
         self._initial_individual_estimates_updated = False
         self._updated_etas_file = None
@@ -972,6 +973,7 @@ class Model(pharmpy.model.Model):
                 di.path = dataset_path
                 self.datainfo = di
                 self._old_datainfo = di.copy()
+                self._has_real_datainfo = True
                 return
         (colnames, drop, replacements) = self._column_info()
         column_info = []
@@ -1032,6 +1034,9 @@ class Model(pharmpy.model.Model):
         ignore_character = data_records[0].ignore_character
         null_value = data_records[0].null_value
         (colnames, drop, replacements) = self._column_info()
+
+        if self._has_real_datainfo:
+            drop = [column.drop for column in self.datainfo]
 
         if raw:
             ignore = None

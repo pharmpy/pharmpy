@@ -4,5 +4,6 @@
 	{ "name": "AMT", "type": "dose", "scale": "ratio", "unit": "mg" },
 	{ "name": "WGT", "type": "covariate", "scale": "ratio", "unit": "kg", "descriptor": "body weight" },
 	{ "name": "APGR", "type": "covariate", "scale": "ordinal", "categories": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10] },
+	{ "name": "FA1", "type": "covariate", "scale": "nominal", "categories": [0, 1] },
 	{ "name": "DV", "type": "dv", "scale": "ratio", "unit": "mg/l", "descriptor": "plasma concentration" }
 	], "separator":"\\s+"}
