@@ -5,16 +5,11 @@ from sympy.core.add import Add
 from sympy.core.symbol import Symbol
 from sympy.functions.elementary.piecewise import Piecewise
 
-import pharmpy.results
 import pharmpy.tools.modelsearch.tool
 from pharmpy import Model
-from pharmpy.modeling import add_iov, copy_model, remove_iiv, remove_iov, summarize_modelfit_results
+from pharmpy.modeling import add_iov, copy_model, remove_iiv, remove_iov
 from pharmpy.statements import Assignment
-from pharmpy.tools.common import (
-    summarize_tool,
-    summarize_tool_individuals,
-    update_initial_estimates,
-)
+from pharmpy.tools.common import create_results, update_initial_estimates
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.tools.rankfuncs import rank_models
 from pharmpy.workflows import Task, Workflow, call_workflow
@@ -279,31 +274,8 @@ def non_empty_subsets(iterable: Iterable[T]) -> Iterable[Tuple[T]]:
 def task_results(rank_type, cutoff, bic_type, models):
     base_model, *res_models = models
 
-    summary_tool = summarize_tool(
-        res_models,
-        base_model,
-        rank_type,
-        cutoff,
-        bic_type=bic_type,
-    )
-    summary_models = summarize_modelfit_results([base_model] + res_models).sort_values(
-        by=[rank_type]
-    )
-    summary_individuals, summary_individuals_count = summarize_tool_individuals(
-        [base_model] + res_models, summary_tool['description'], summary_tool[f'd{rank_type}']
-    )
-
-    best_model_name = summary_tool['rank'].idxmin()
-    best_model = next(filter(lambda model: model.name == best_model_name, res_models), base_model)
-
-    res = IOVSearchResults(
-        summary_tool=summary_tool,
-        summary_models=summary_models,
-        summary_individuals=summary_individuals,
-        summary_individuals_count=summary_individuals_count,
-        best_model=best_model,
-        input_model=base_model,
-        models=res_models,
+    res = create_results(
+        IOVSearchResults, base_model, base_model, res_models, rank_type, cutoff, bic_type=bic_type
     )
 
     return res
@@ -316,6 +288,7 @@ class IOVSearchResults(pharmpy.results.Results):
         summary_models=None,
         summary_individuals=None,
         summary_individuals_count=None,
+        summary_errors=None,
         best_model=None,
         input_model=None,
         models=None,
@@ -324,6 +297,7 @@ class IOVSearchResults(pharmpy.results.Results):
         self.summary_models = summary_models
         self.summary_individuals = summary_individuals
         self.summary_individuals_count = summary_individuals_count
+        self.summary_errors = summary_errors
         self.best_model = best_model
         self.input_model = input_model
         self.models = models

@@ -219,3 +219,13 @@ See :py:func:`pharmpy.modeling.summarize_individuals` for information on the con
 
     res.summary_individuals
 
+Finally, you can see a summary of different errors and warnings in ``summary_errors``.
+See :py:func:`pharmpy.modeling.summarize_errors` for information on the content of this table.
+
+.. pharmpy-execute::
+    :hide-code:
+
+    import pandas as pd
+    pd.set_option('display.max_colwidth', None)
+    res.summary_errors
+
