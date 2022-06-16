@@ -258,26 +258,36 @@ def test_rank_models():
 
     models = [m1, m2, m3, m4]
 
-    df = rank_models(base, models, rankfunc='ofv')
+    df, models_sorted = rank_models(base, models, rankfunc='ofv')
     assert len(df) == 5
     best_model = df.loc[df['rank'] == 1].index.values
     assert list(best_model) == ['m1']
+    assert len(models_sorted) == 5
+    assert models_sorted[0].name == 'm1'
 
-    df = rank_models(base, models, strictness=['minimization_successful'], rankfunc='ofv')
+    df, models_sorted = rank_models(
+        base, models, strictness=['minimization_successful'], rankfunc='ofv'
+    )
     best_model = df.loc[df['rank'] == 1].index.values
     assert list(best_model) == ['m2', 'm3']
     ranked_models = df.dropna().index.values
     assert len(ranked_models) == 4
+    assert len(models_sorted) == 4
+    assert models_sorted[0].name == 'm2'
 
-    df = rank_models(base, models, rankfunc='ofv', cutoff=1)
+    df, models_sorted = rank_models(base, models, rankfunc='ofv', cutoff=1)
     ranked_models = df.dropna().index.values
     assert len(ranked_models) == 3
+    assert len(models_sorted) == 3
+    assert models_sorted[0].name == 'm1'
 
-    df = rank_models(base, models, rankfunc='lrt', cutoff=0.05)
+    df, models_sorted = rank_models(base, models, rankfunc='lrt', cutoff=0.05)
     ranked_models = list(df.dropna().index.values)
     assert len(ranked_models) == 2
     assert 'm2' in ranked_models
     assert 'm3' not in ranked_models
+    assert len(models_sorted) == 2
+    assert models_sorted[0].name == 'm1'
 
 
 def test_aic(testdata):
