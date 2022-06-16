@@ -84,27 +84,6 @@ Name: 2, dtype: float64
  SIGMA(1,1)  0.013086   0.00       oo  False
 >>>
 
-R Example
-=========
-
-.. code-block:: r
-   :skipif: False
-
->>> library(pharmr)
->>> model <- read_model("run1.mod")
->>> model$modelfit_results$parameter_estimates
-  THETA(1)   THETA(2)   THETA(3) OMEGA(1,1) OMEGA(2,2) SIGMA(1,1)
-0.00469555 0.98425800 0.15892000 0.02935080 0.02790600 0.01324100
->>> model$parameters
-       name     value  lower    upper    fix
-   THETA(1)  0.004693   0.00  1000000  False
-   THETA(2)  1.009160   0.00  1000000  False
-   THETA(3)  0.100000  -0.99  1000000  False
- OMEGA(1,1)  0.030963   0.00       oo  False
- OMEGA(2,2)  0.031128   0.00       oo  False
- SIGMA(1,1)  0.013086   0.00       oo  False
->>>
-
 CLI Example
 ===========
 
