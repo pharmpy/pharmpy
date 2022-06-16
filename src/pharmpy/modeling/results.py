@@ -626,8 +626,8 @@ def rank_models(
     >>> model_1 = load_example_model("pheno")
     >>> model_2 = load_example_model("pheno_linear")
     >>> rank_models(model_1, [model_2],
-    >>>             strictness=['minimization_successful'],
-    >>>             rank_type='lrt') # doctest: +SKIP
+    ...             strictness=['minimization_successful'],
+    ...             rank_type='lrt') # doctest: +SKIP
     """
     models_all = [base_model] + models
     models_with_res = [model for model in models_all if model.modelfit_results]
