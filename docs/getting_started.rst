@@ -5,9 +5,9 @@ Getting started
 Pharmpy can be used in a Python program as a library or via its command line interface. It can also
 be used via its R wrapper package: `pharmr <https://github.com/pharmpy/pharmr>`_.
 
---------------------------
-Getting started in Pharmpy
---------------------------
+----------------------------
+Getting started with Pharmpy
+----------------------------
 
 Installation
 ~~~~~~~~~~~~
@@ -49,9 +49,9 @@ The model file format is automatically detected:
 For examples of how the Pharmpy model works and how you can transform it, see :ref:`here <model>` and
 :ref:`here <modeling>`.
 
--------------------------
-Getting started in pharmr
--------------------------
+---------------------------
+Getting started with pharmr
+---------------------------
 
 Installation
 ~~~~~~~~~~~~
