@@ -200,7 +200,20 @@ The different strategies can be seen here:
 Comparing and ranking candidates
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-This system is the same as for modelsearch, see :ref:`here<ranking_modelsearch>`.
+The supplied ``rankfunc`` will be used to compare a set of candidate models and rank them. A cutoff may also be provided
+if the user does not want to use the default. The following rank functions are available:
+
++------------+-----------------------------------------------------------------------------------+
+| Rankfunc   | Description                                                                       |
++============+===================================================================================+
+| ``'ofv'``  | ΔOFV. Default is to not rank candidates with ΔOFV < cutoff (default 3.84)         |
++------------+-----------------------------------------------------------------------------------+
+| ``'aic'``  | ΔAIC. Default is to rank all candidates if no cutoff is provided.                 |
++------------+-----------------------------------------------------------------------------------+
+| ``'bic'``  | ΔBIC (iiv). Default is to rank all candidates if no cutoff is provided.           |
++------------+-----------------------------------------------------------------------------------+
+
+Information about how BIC is calculated can be found in :py:func:`pharmpy.modeling.calculate_bic`.
 
 ~~~~~~~~~~~~~~~~~~~~~
 The IIVsearch results

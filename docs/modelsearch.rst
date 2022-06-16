@@ -274,8 +274,10 @@ if the user does not want to use the default. The following rank functions are a
 +------------+-----------------------------------------------------------------------------------+
 | ``'aic'``  | ΔAIC. Default is to rank all candidates if no cutoff is provided.                 |
 +------------+-----------------------------------------------------------------------------------+
-| ``'bic'``  | ΔBIC (mixed effects). Default is to rank all candidates if no cutoff is provided. |
+| ``'bic'``  | ΔBIC (mixed). Default is to rank all candidates if no cutoff is provided.         |
 +------------+-----------------------------------------------------------------------------------+
+
+Information about how BIC is calculated can be found in :py:func:`pharmpy.modeling.calculate_bic`.
 
 ~~~~~~~~~~~~~~~~~~~~~~~
 The Modelsearch results

@@ -27,9 +27,10 @@ To initiate IOVsearch in Python/R:
                         rankfunc='bic',
                         cutoff=None)
 
-This will take an input model ``model`` and use the ``column`` ``OCC`` as the occasion column. IOV will be tested on
-all parameters with IIV according to ``list_of_parameters`` with the same ``distribution`` as the IIVs. The candidate
-models will be ranked using ``bic`` with default ``cutoff``, which for BIC is none.
+This will take an input model ``model`` and use the ``column`` ``'OCC'`` as the occasion column. IOV will be tested on
+parameters in ``list_of_parameters``, which when none will be all parameters with IIV. The IOVs will have the same
+``distribution`` as the IIVs. The candidate models will be ranked using ``bic`` with default ``cutoff``, which for BIC
+is none.
 
 To run IOVsearch from the command line, the example code is redefined accordingly:
 
@@ -163,7 +164,20 @@ below.
 Comparing and ranking candidates
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-This system is the same as for modelsearch, see :ref:`here<ranking_modelsearch>`.
+The supplied ``rankfunc`` will be used to compare a set of candidate models and rank them. A cutoff may also be provided
+if the user does not want to use the default. The following rank functions are available:
+
++------------+-----------------------------------------------------------------------------------+
+| Rankfunc   | Description                                                                       |
++============+===================================================================================+
+| ``'ofv'``  | ΔOFV. Default is to not rank candidates with ΔOFV < cutoff (default 3.84)         |
++------------+-----------------------------------------------------------------------------------+
+| ``'aic'``  | ΔAIC. Default is to rank all candidates if no cutoff is provided.                 |
++------------+-----------------------------------------------------------------------------------+
+| ``'bic'``  | ΔBIC (random). Default is to rank all candidates if no cutoff is provided.        |
++------------+-----------------------------------------------------------------------------------+
+
+Information about how BIC is calculated can be found in :py:func:`pharmpy.modeling.calculate_bic`.
 
 ~~~~~~~
 Results
