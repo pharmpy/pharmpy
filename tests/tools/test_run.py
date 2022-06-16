@@ -24,7 +24,7 @@ def test_create_metadata_tool():
 
     assert metadata['pharmpy_version'] == pharmpy.__version__
     assert metadata['tool_name'] == 'modelsearch'
-    assert metadata['tool_options']['rankfunc'] == 'bic'
+    assert metadata['tool_options']['rank_type'] == 'bic'
 
     metadata = _create_metadata_tool(
         tool_name=name,

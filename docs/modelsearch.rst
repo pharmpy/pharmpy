@@ -24,7 +24,7 @@ To initiate modelsearch in Python:
                           algorithm='exhaustive',
                           model=start_model,
                           iiv_strategy='no_add',
-                          rankfunc='bic',
+                          rank_type='bic',
                           cutoff=None)
 
 This will take an input model ``model`` with ``search_space`` as the search space, meaning zero order absorption and adding one
@@ -36,7 +36,7 @@ To run modelsearch from the command line, the example code is redefined accordin
 
 .. code::
 
-    pharmpy run modelsearch path/to/model 'ABSORPTION(ZO);PERIPHERALS(1)' 'exhaustive' --iiv_strategy 'no_add' --rankfunc 'bic'
+    pharmpy run modelsearch path/to/model 'ABSORPTION(ZO);PERIPHERALS(1)' 'exhaustive' --iiv_strategy 'no_add' --rank_type 'bic'
 
 Arguments
 ~~~~~~~~~
@@ -49,7 +49,7 @@ For a more detailed description of each argument, see their respective chapter o
 +-------------------------------------------------+------------------------------------------------------------------+
 | :ref:`algorithm<algorithms_modelsearch>`        | Algorithm to use (e.g. ``'exhaustive'``)                         |
 +-------------------------------------------------+------------------------------------------------------------------+
-| :ref:`rankfunc<ranking_modelsearch>`            | Which selection criteria to rank models on, e.g. OFV (default is |
+| :ref:`rank_type<ranking_modelsearch>`           | Which selection criteria to rank models on, e.g. OFV (default is |
 |                                                 | BIC)                                                             |
 +-------------------------------------------------+------------------------------------------------------------------+
 | :ref:`cutoff<ranking_modelsearch>`              | Cutoff for the ranking function, exclude models that are below   |
@@ -264,11 +264,11 @@ The different strategies can be seen here:
 Comparing and ranking candidates
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The supplied ``rankfunc`` will be used to compare a set of candidate models and rank them. A cutoff may also be provided
+The supplied ``rank_type`` will be used to compare a set of candidate models and rank them. A cutoff may also be provided
 if the user does not want to use the default. The following rank functions are available:
 
 +------------+-----------------------------------------------------------------------------------+
-| Rankfunc   | Description                                                                       |
+| Rank type  | Description                                                                       |
 +============+===================================================================================+
 | ``'ofv'``  | ΔOFV. Default is to not rank candidates with ΔOFV < cutoff (default 3.84)         |
 +------------+-----------------------------------------------------------------------------------+
@@ -295,7 +295,7 @@ Consider a modelsearch run with the search space of zero order absorption and ad
                           'exhaustive',
                           model=start_model,
                           iiv_strategy='no_add',
-                          rankfunc='bic',
+                          rank_type='bic',
                           cutoff=None)
 
 

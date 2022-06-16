@@ -24,7 +24,7 @@ To initiate IOVsearch in Python/R:
                         column='OCC',
                         list_of_parameters=None,
                         distribution='same-as-iiv',
-                        rankfunc='bic',
+                        rank_type='bic',
                         cutoff=None)
 
 This will take an input model ``model`` and use the ``column`` ``'OCC'`` as the occasion column. IOV will be tested on
@@ -36,7 +36,7 @@ To run IOVsearch from the command line, the example code is redefined accordingl
 
 .. code::
 
-    pharmpy run iovsearch path/to/model --column 'OCC' --distribution 'same-as-iiv' --rankfunc 'bic'
+    pharmpy run iovsearch path/to/model --column 'OCC' --distribution 'same-as-iiv' --rank_type 'bic'
 
 ~~~~~~~~~
 Arguments
@@ -53,7 +53,7 @@ Arguments
 +---------------------------------------------+----------------------------------------------------------------------+
 | :ref:`distribution<distribution_iovsearch>` | Which distribution added IOVs should have (default is same as IIVs)  |
 +---------------------------------------------+----------------------------------------------------------------------+
-| :ref:`rankfunc<ranking_iovsearch>`          | Which selection criteria to rank models on, e.g. OFV (default is     |
+| :ref:`rank_type<ranking_iovsearch>`         | Which selection criteria to rank models on, e.g. OFV (default is     |
 |                                             | BIC)                                                                 |
 +---------------------------------------------+----------------------------------------------------------------------+
 | :ref:`cutoff<ranking_iovsearch>`            | Cutoff for the ranking function, exclude models that are below       |
@@ -164,11 +164,11 @@ below.
 Comparing and ranking candidates
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The supplied ``rankfunc`` will be used to compare a set of candidate models and rank them. A cutoff may also be provided
+The supplied ``rank_type`` will be used to compare a set of candidate models and rank them. A cutoff may also be provided
 if the user does not want to use the default. The following rank functions are available:
 
 +------------+-----------------------------------------------------------------------------------+
-| Rankfunc   | Description                                                                       |
+| Rank type  | Description                                                                       |
 +============+===================================================================================+
 | ``'ofv'``  | ΔOFV. Default is to not rank candidates with ΔOFV < cutoff (default 3.84)         |
 +------------+-----------------------------------------------------------------------------------+

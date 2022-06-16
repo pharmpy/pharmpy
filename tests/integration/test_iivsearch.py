@@ -147,7 +147,6 @@ def test_no_of_etas_iiv_strategies(tmp_path, start_model, iiv_strategy):
         res = run_iivsearch(
             'brute_force_no_of_etas',
             iiv_strategy=iiv_strategy,
-            rankfunc='bic',
             model=start_model,
         )
 

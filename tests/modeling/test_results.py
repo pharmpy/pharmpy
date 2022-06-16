@@ -258,7 +258,7 @@ def test_rank_models():
 
     models = [m1, m2, m3, m4]
 
-    df, models_sorted = rank_models(base, models, rankfunc='ofv')
+    df, models_sorted = rank_models(base, models, rank_type='ofv')
     assert len(df) == 5
     best_model = df.loc[df['rank'] == 1].index.values
     assert list(best_model) == ['m1']
@@ -266,7 +266,7 @@ def test_rank_models():
     assert models_sorted[0].name == 'm1'
 
     df, models_sorted = rank_models(
-        base, models, strictness=['minimization_successful'], rankfunc='ofv'
+        base, models, strictness=['minimization_successful'], rank_type='ofv'
     )
     best_model = df.loc[df['rank'] == 1].index.values
     assert list(best_model) == ['m2', 'm3']
@@ -275,13 +275,13 @@ def test_rank_models():
     assert len(models_sorted) == 4
     assert models_sorted[0].name == 'm2'
 
-    df, models_sorted = rank_models(base, models, rankfunc='ofv', cutoff=1)
+    df, models_sorted = rank_models(base, models, rank_type='ofv', cutoff=1)
     ranked_models = df.dropna().index.values
     assert len(ranked_models) == 3
     assert len(models_sorted) == 3
     assert models_sorted[0].name == 'm1'
 
-    df, models_sorted = rank_models(base, models, rankfunc='lrt', cutoff=0.05)
+    df, models_sorted = rank_models(base, models, rank_type='lrt', cutoff=0.05)
     ranked_models = list(df.dropna().index.values)
     assert len(ranked_models) == 2
     assert 'm2' in ranked_models

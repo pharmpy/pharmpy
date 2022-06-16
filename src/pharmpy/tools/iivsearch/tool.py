@@ -11,7 +11,7 @@ from pharmpy.workflows import Task, Workflow, call_workflow
 def create_workflow(
     algorithm,
     iiv_strategy='no_add',
-    rankfunc='bic',
+    rank_type='bic',
     cutoff=None,
     model=None,
 ):
@@ -24,8 +24,8 @@ def create_workflow(
     iiv_strategy : str
         If/how IIV should be added to start model. Possible strategies are 'no_add', 'add_diagonal',
         or 'fullblock'. Default is 'no_add'
-    rankfunc : str
-        Which ranking function should be used (OFV, AIC, BIC). Default is BIC
+    rank_type : str
+        Which ranking type should be used (OFV, AIC, BIC). Default is BIC
     cutoff : float
         Cutoff for which value of the ranking function that is considered significant. Default
         is None (all models will be ranked)
@@ -46,14 +46,14 @@ def create_workflow(
     """
     wf = Workflow()
     wf.name = 'iivsearch'
-    start_task = Task('start_iiv', start, model, algorithm, iiv_strategy, rankfunc, cutoff)
+    start_task = Task('start_iiv', start, model, algorithm, iiv_strategy, rank_type, cutoff)
     wf.add_task(start_task)
     task_results = Task('results', _results)
     wf.add_task(task_results, predecessors=[start_task])
     return wf
 
 
-def create_algorithm_workflow(input_model, base_model, algorithm, iiv_strategy, rankfunc, cutoff):
+def create_algorithm_workflow(input_model, base_model, algorithm, iiv_strategy, rank_type, cutoff):
     wf = Workflow()
 
     start_task = Task(f'start_{algorithm}', _start_algorithm, base_model)
@@ -73,7 +73,7 @@ def create_algorithm_workflow(input_model, base_model, algorithm, iiv_strategy, 
     task_result = Task(
         'results',
         post_process,
-        rankfunc,
+        rank_type,
         cutoff,
         input_model,
     )
@@ -83,7 +83,7 @@ def create_algorithm_workflow(input_model, base_model, algorithm, iiv_strategy, 
     return wf
 
 
-def start(input_model, algorithm, iiv_strategy, rankfunc, cutoff):
+def start(input_model, algorithm, iiv_strategy, rank_type, cutoff):
     if iiv_strategy != 'no_add':
         model_iiv = copy_model(input_model, 'base_model')
         _add_iiv(iiv_strategy, model_iiv)
@@ -99,7 +99,7 @@ def start(input_model, algorithm, iiv_strategy, rankfunc, cutoff):
     sum_tools, sum_models, sum_inds, sum_inds_count, sum_errs = [], [], [], [], []
     for i, algorithm_cur in enumerate(list_of_algorithms):
         wf = create_algorithm_workflow(
-            input_model, base_model, algorithm_cur, iiv_strategy, rankfunc, cutoff
+            input_model, base_model, algorithm_cur, iiv_strategy, rank_type, cutoff
         )
         next_res = call_workflow(wf, f'results_{algorithm}')
         if i == 0:
@@ -160,7 +160,7 @@ def _add_iiv(iiv_strategy, model):
     return model
 
 
-def post_process(rankfunc, cutoff, input_model, *models):
+def post_process(rank_type, cutoff, input_model, *models):
     base_model, res_models = models
 
     if isinstance(res_models, tuple):
@@ -169,7 +169,7 @@ def post_process(rankfunc, cutoff, input_model, *models):
         res_models = [res_models]
 
     res = create_results(
-        IIVSearchResults, input_model, base_model, res_models, rankfunc, cutoff, bic_type='iiv'
+        IIVSearchResults, input_model, base_model, res_models, rank_type, cutoff, bic_type='iiv'
     )
 
     return res

@@ -171,7 +171,7 @@ def run_modelsearch(args):
         'modelsearch',
         args.mfl,
         args.algorithm,
-        rankfunc=args.rankfunc,
+        rank_type=args.rank_type,
         cutoff=args.cutoff,
         iiv_strategy=args.iiv_strategy,
         model=args.model,
@@ -186,7 +186,7 @@ def run_iivsearch(args):
         'iivsearch',
         args.algorithm,
         iiv_strategy=args.iiv_strategy,
-        rankfunc=args.rankfunc,
+        rank_type=args.rank_type,
         cutoff=args.cutoff,
         model=args.model,
         path=args.path,
@@ -986,7 +986,7 @@ parser_definition = [
                                 'help': 'Algorithm to use',
                             },
                             {
-                                'name': '--rankfunc',
+                                'name': '--rank_type',
                                 'type': str,
                                 'help': 'Name of function to use for ranking '
                                 'candidates (default is bic).',
@@ -1030,7 +1030,7 @@ parser_definition = [
                                 'default': 'no_add',
                             },
                             {
-                                'name': '--rankfunc',
+                                'name': '--rank_type',
                                 'type': str,
                                 'help': 'Name of function to use for ranking '
                                 'candidates (default is bic).',

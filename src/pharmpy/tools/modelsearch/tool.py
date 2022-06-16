@@ -8,7 +8,7 @@ def create_workflow(
     search_space,
     algorithm,
     iiv_strategy='no_add',
-    rankfunc='bic',
+    rank_type='bic',
     cutoff=None,
     model=None,
 ):
@@ -23,8 +23,8 @@ def create_workflow(
     iiv_strategy : str
         If/how IIV should be added to candidate models. Possible strategies are 'no_add',
         'add_diagonal', 'fullblock', or 'absorption_delay'. Default is 'no_add'
-    rankfunc : str
-        Which ranking function should be used (OFV, AIC, BIC). Default is BIC
+    rank_type : str
+        Which ranking type should be used (OFV, AIC, BIC). Default is BIC
     cutoff : float
         Cutoff for which value of the ranking function that is considered significant. Default
         is None (all models will be ranked)
@@ -63,7 +63,7 @@ def create_workflow(
     task_result = Task(
         'results',
         post_process,
-        rankfunc,
+        rank_type,
         cutoff,
     )
 
@@ -92,7 +92,7 @@ def start(model):
     return model
 
 
-def post_process(rankfunc, cutoff, *models):
+def post_process(rank_type, cutoff, *models):
     res_models = []
     input_model = None
     for model in models:
@@ -104,7 +104,9 @@ def post_process(rankfunc, cutoff, *models):
     if not input_model:
         raise ValueError('Error in workflow: No input model')
 
-    res = create_results(ModelSearchResults, input_model, input_model, res_models, rankfunc, cutoff)
+    res = create_results(
+        ModelSearchResults, input_model, input_model, res_models, rank_type, cutoff
+    )
 
     return res
 

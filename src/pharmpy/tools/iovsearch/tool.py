@@ -223,7 +223,7 @@ def best_model(
     bic_type: Union[None, str],
 ):
     candidates = [base, *models]
-    _, srtd = rank_models(base, candidates, rankfunc=rank_type, cutoff=cutoff, bic_type=bic_type)
+    _, srtd = rank_models(base, candidates, rank_type=rank_type, cutoff=cutoff, bic_type=bic_type)
     if srtd:
         return srtd[0]
     else:

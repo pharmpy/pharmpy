@@ -23,7 +23,7 @@ To initiate IIVsearch in Python/R:
     res = run_iivsearch(algorithm='brute_force',
                         model=start_model,
                         iiv_strategy='no_add',
-                        rankfunc='bic',
+                        rank_type='bic',
                         cutoff=None)
 
 This will take an input model ``model`` and run the brute_force_no_of_etas ``algorithm``. Structural IIVs will not be
@@ -34,7 +34,7 @@ To run IIVsearch from the command line, the example code is redefined accordingl
 
 .. code::
 
-    pharmpy run iivsearch path/to/model 'brute_force' --iiv_strategy 'no_add' --rankfunc 'bic'
+    pharmpy run iivsearch path/to/model 'brute_force' --iiv_strategy 'no_add' --rank_type 'bic'
 
 ~~~~~~~~~
 Arguments
@@ -47,7 +47,7 @@ Arguments
 +-----------------------------------------------+--------------------------------------------------------------------+
 | :ref:`iiv_strategy<iiv_strategies_iivsearch>` | If/how IIV should be added to start model (default is to not add)  |
 +-----------------------------------------------+--------------------------------------------------------------------+
-| :ref:`rankfunc<ranking_iivsearch>`            | Which selection criteria to rank models on, e.g. OFV (default is   |
+| :ref:`rank_type<ranking_iivsearch>`           | Which selection criteria to rank models on, e.g. OFV (default is   |
 |                                               | BIC)                                                               |
 +-----------------------------------------------+--------------------------------------------------------------------+
 | :ref:`cutoff<ranking_iivsearch>`              | Cutoff for the ranking function, exclude models that are below     |
@@ -200,11 +200,11 @@ The different strategies can be seen here:
 Comparing and ranking candidates
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The supplied ``rankfunc`` will be used to compare a set of candidate models and rank them. A cutoff may also be provided
+The supplied ``rank_type`` will be used to compare a set of candidate models and rank them. A cutoff may also be provided
 if the user does not want to use the default. The following rank functions are available:
 
 +------------+-----------------------------------------------------------------------------------+
-| Rankfunc   | Description                                                                       |
+| Rank type  | Description                                                                       |
 +============+===================================================================================+
 | ``'ofv'``  | ΔOFV. Default is to not rank candidates with ΔOFV < cutoff (default 3.84)         |
 +------------+-----------------------------------------------------------------------------------+
@@ -230,7 +230,7 @@ Consider a iivsearch run:
     res = run_iivsearch(algorithm='brute_force',
                         model=start_model,
                         iiv_strategy='no_add',
-                        rankfunc='bic',
+                        rank_type='bic',
                         cutoff=None)
 
 

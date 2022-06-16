@@ -79,16 +79,16 @@ def post_process(input_model, *models):
     if not base_model:
         base_model = res_models.pop(0)
 
-    # FIXME: support other rankfuncs, allow None as cutoff
-    rankfunc = 'ofv'
+    # FIXME: support other rank_type, allow None as cutoff
+    rank_type = 'ofv'
     summary_tool = summarize_tool(
         res_models,
         base_model,
-        rankfunc,
+        rank_type,
         -1000,
     )
     summary_models = summarize_modelfit_results([base_model] + res_models).sort_values(
-        by=[rankfunc]
+        by=[rank_type]
     )
     summary_settings = summarize_estimation_steps([base_model] + res_models)
 

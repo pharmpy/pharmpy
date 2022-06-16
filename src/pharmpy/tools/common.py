@@ -23,14 +23,14 @@ def update_initial_estimates(model):
 
 
 def create_results(
-    res_class, input_model, base_model, res_models, rankfunc, cutoff, bic_type='mixed'
+    res_class, input_model, base_model, res_models, rank_type, cutoff, bic_type='mixed'
 ):
-    summary_tool = summarize_tool(res_models, base_model, rankfunc, cutoff, bic_type)
+    summary_tool = summarize_tool(res_models, base_model, rank_type, cutoff, bic_type)
     summary_models = summarize_modelfit_results([base_model] + res_models).reindex(
         summary_tool.index
     )
     summary_individuals, summary_individuals_count = summarize_tool_individuals(
-        [base_model] + res_models, summary_tool['description'], summary_tool[f'd{rankfunc}']
+        [base_model] + res_models, summary_tool['description'], summary_tool[f'd{rank_type}']
     )
     summary_errors = summarize_errors([base_model] + res_models)
 
@@ -63,14 +63,14 @@ def create_results(
 def summarize_tool(
     models,
     start_model,
-    rankfunc,
+    rank_type,
     cutoff,
     bic_type='mixed',
 ) -> pd.DataFrame:
     models_all = [start_model] + models
 
     df_rank, _ = rank_models(
-        start_model, models, strictness=[], rankfunc=rankfunc, cutoff=cutoff, bic_type=bic_type
+        start_model, models, strictness=[], rank_type=rank_type, cutoff=cutoff, bic_type=bic_type
     )
 
     rows = {model.name: [model.description, model.parent_model] for model in models_all}
@@ -81,18 +81,18 @@ def summarize_tool(
     df = pd.concat([df_descr, df_rank], axis=1)
     df['parent_model'] = df.pop('parent_model')
 
-    if rankfunc == 'lrt':
-        rankfunc_name = 'ofv'
+    if rank_type == 'lrt':
+        rank_type_name = 'ofv'
     else:
-        rankfunc_name = rankfunc
+        rank_type_name = rank_type
 
-    df_sorted = df.sort_values(by=[f'd{rankfunc_name}'], ascending=False)
+    df_sorted = df.sort_values(by=[f'd{rank_type_name}'], ascending=False)
 
     assert df_sorted is not None
     return df_sorted
 
 
-def summarize_tool_individuals(models, description_col, rankfunc_col):
+def summarize_tool_individuals(models, description_col, rank_type_col):
     summary_individuals = summarize_individuals(models)
     summary_individuals = summary_individuals.join(description_col, how='inner')
     col_to_move = summary_individuals.pop('description')
@@ -100,7 +100,7 @@ def summarize_tool_individuals(models, description_col, rankfunc_col):
 
     suminds_count = summarize_individuals_count_table(df=summary_individuals)
     suminds_count.insert(0, description_col.name, description_col)
-    suminds_count.insert(1, rankfunc_col.name, rankfunc_col)
+    suminds_count.insert(1, rank_type_col.name, rank_type_col)
     suminds_count['parent_model'] = suminds_count.pop('parent_model')
-    summary_individuals_count = suminds_count.sort_values(by=[rankfunc_col.name], ascending=False)
+    summary_individuals_count = suminds_count.sort_values(by=[rank_type_col.name], ascending=False)
     return summary_individuals, summary_individuals_count
