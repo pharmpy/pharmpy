@@ -34,8 +34,8 @@ https://pharmpy.github.io
 
 .. start-longdesc
 
-Pharmpy is a library and toolkit for pharmacometrics. It can be used as a regular python package, in R
-via the `Pharmr <https://github.com/pharmpy/pharmr>`_ package or via its built in command
+Pharmpy is a library and toolkit for pharmacometrics. It can be used as a regular Python package, in R
+via the `pharmr <https://github.com/pharmpy/pharmr>`_ package or via its built in command
 line interface.
 
 Current features:
