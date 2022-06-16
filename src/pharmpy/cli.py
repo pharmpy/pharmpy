@@ -208,6 +208,20 @@ def run_iovsearch(args):
     )
 
 
+def run_covsearch(args):
+    from pharmpy.tools import run_tool
+
+    run_tool(
+        'covsearch',
+        effects=args.effects,
+        p_forward=args.p_forward,
+        max_steps=args.max_steps,
+        algorithm=args.algorithm,
+        model=args.model,
+        path=args.path,
+    )
+
+
 def run_resmod(args):
     from pharmpy.tools import run_tool
 
@@ -1074,6 +1088,46 @@ parser_definition = [
                                 'help': 'Which distribution added IOVs should have '
                                 '(default is same-as-iiv)',
                                 'default': 'same-as-iiv',
+                            },
+                            {
+                                'name': '--path',
+                                'type': pathlib.Path,
+                                'help': 'Path to output directory',
+                            },
+                        ],
+                    }
+                },
+                {
+                    'covsearch': {
+                        'help': 'Identify covariates that explain some of the IIV',
+                        'func': run_covsearch,
+                        'parents': [args_model_input],
+                        'args': [
+                            {
+                                'name': '--effects',
+                                'type': str,
+                                'help': 'The candidate effects to search through (required)',
+                            },
+                            {
+                                'name': '--p_forward',
+                                'type': float,
+                                'help': 'The p-value threshold for forward '
+                                'steps (default is `0.05`)',
+                                'default': 0.05,
+                            },
+                            {
+                                'name': '--max_steps',
+                                'type': int,
+                                'help': 'The maximum number of search '
+                                'algorithm steps to perform, or `-1` '
+                                'for no maximum (default).',
+                                'default': -1,
+                            },
+                            {
+                                'name': '--algorithm',
+                                'type': str,
+                                'help': "The search algorithm to use (default is `'scm-forward'`)",
+                                'default': 'scm-forward',
                             },
                             {
                                 'name': '--path',
