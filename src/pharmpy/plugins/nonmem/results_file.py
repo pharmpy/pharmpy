@@ -284,20 +284,44 @@ class NONMEMResultsFile:
         for pattern in warning_patterns:
             match = pattern.search(fulltext)
             if match:
-                message = match.group(1).strip()
-                warnings.append(message)
+                message = match.group(1)
+                message_split = message.split('\n')
+                message_trimmed = '\n'.join([m.strip() for m in message_split])
+                warnings.append(message_trimmed.strip())
 
         error_patterns = [
             re.compile(
                 r'(AN ERROR WAS FOUND IN THE CONTROL STATEMENTS\.(.*\n)+'
                 r'.+UPPER OR LOWER BOUNDS\.)'
             ),
-            re.compile(r'(PRED EXIT CODE = 1\n(.*\n)+.+MAY BE TOO LARGE\.)'),
-            re.compile(r'(PROGRAM TERMINATED BY OBJ\n\s*MESSAGE ISSUED FROM ESTIMATION STEP)'),
+            re.compile(
+                r'(INITIAL ESTIMATE OF OMEGA HAS A NONZERO BLOCK WHICH IS NUMERICALLY NOT '
+                r'POSITIVE DEFINITE)'
+            ),
+            re.compile(r'0(UPPER BOUNDS INAPPROPRIATE)'),
+            re.compile(r'0(PRED EXIT CODE = 1\n(.*\n)+.+MAY BE TOO LARGE\.)'),
+            re.compile(
+                r'0(PRED EXIT CODE = 1\n(.*\n)+\s*'
+                r'NUMERICAL DIFFICULTIES OBTAINING THE SOLUTION\.)\s*\n'
+            ),
+            re.compile(r'0(PRED EXIT CODE = 1\n(.*\n)+\s+.+IS TOO CLOSE TO AN EIGENVALUE\s*)\n'),
+            re.compile(r'0(PRED EXIT CODE = 1\n(.*\n)+\s+.+IS VERY LARGE\.\s*)\n'),
+            re.compile(r'0(PROGRAM TERMINATED BY OBJ\n\s*MESSAGE ISSUED FROM ESTIMATION STEP)'),
+            re.compile(
+                r'0(PROGRAM TERMINATED BY OBJ\n(.*\n)*\s*'
+                r'MESSAGE ISSUED FROM ESTIMATION STEP\n\s*'
+                r'((AT 0TH ITERATION, UPON EVALUATION OF GRADIENT.*)|'
+                r'(AT INITIAL OBJ. FUNCTION EVALUATION)))\n'
+            ),
             re.compile(r'0(MINIMIZATION TERMINATED\n\s*DUE TO ROUNDING ERRORS.+)\n'),
             re.compile(r'0(MINIMIZATION TERMINATED\n\s*DUE TO ZERO GRADIENT)\n'),
             re.compile(
                 r'0(MINIMIZATION TERMINATED\n\s*DUE TO MAX. NO. OF FUNCTION EVALUATIONS EXCEEDED)\n'
+            ),
+            re.compile(r'0(MINIMIZATION TERMINATED\n(.*\n)+\s*IS NON POSITIVE DEFINITE)\n'),
+            re.compile(
+                r'0(MINIMIZATION TERMINATED\n(.*\n)+\s*SUM OF "SQUARED" WEIGHTED INDIVIDUAL '
+                r'RESIDUALS IS INFINITE)\n'
             ),
         ]
 
@@ -305,7 +329,9 @@ class NONMEMResultsFile:
             match = pattern.search(fulltext)
             if match:
                 message = match.group(1)
-                errors.append(message)
+                message_split = message.split('\n')
+                message_trimmed = '\n'.join([m.strip() for m in message_split])
+                errors.append(message_trimmed.strip())
 
         [self.log.log_warning(message) for message in warnings]
         [self.log.log_error(message) for message in errors]

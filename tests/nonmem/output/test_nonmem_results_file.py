@@ -377,14 +377,14 @@ def test_ofv_table_gap(testdata):
         ),
         (
             'rounding_error.lst',
-            'MINIMIZATION TERMINATED\n DUE TO ROUNDING',
+            'MINIMIZATION TERMINATED\nDUE TO ROUNDING',
             2,
             0,
             1,
         ),
         (
             'zero_gradient_error.lst',
-            'MINIMIZATION TERMINATED\n DUE TO ZERO',
+            'MINIMIZATION TERMINATED\nDUE TO ZERO',
             2,
             0,
             1,
@@ -406,18 +406,18 @@ def test_errors(testdata, file_name, ref_start, no_of_rows, idx, no_of_errors):
         (
             'no_header_error.lst',
             'THE NUMBER OF PARAMETERS TO BE ESTIMATED\n'
-            ' EXCEEDS THE NUMBER OF INDIVIDUALS WITH DATA.',
+            'EXCEEDS THE NUMBER OF INDIVIDUALS WITH DATA.',
             0,
         ),
         (
             'estimate_near_boundary_warning.lst',
             'PARAMETER ESTIMATE IS NEAR ITS BOUNDARY\n'
-            ' THIS MUST BE ADDRESSED BEFORE THE COVARIANCE STEP CAN BE IMPLEMENTED',
+            'THIS MUST BE ADDRESSED BEFORE THE COVARIANCE STEP CAN BE IMPLEMENTED',
             0,
         ),
         (
             'est_step_warning.lst',
-            'MINIMIZATION SUCCESSFUL\n' ' HOWEVER, PROBLEMS OCCURRED WITH THE MINIMIZATION.',
+            'MINIMIZATION SUCCESSFUL\nHOWEVER, PROBLEMS OCCURRED WITH THE MINIMIZATION.',
             0,
         ),
     ],
