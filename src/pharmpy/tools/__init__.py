@@ -4,6 +4,7 @@ from .wrap import wrap
 
 run_allometry = wrap('allometry')
 run_iivsearch = wrap('iivsearch')
+run_iovsearch = wrap('iovsearch')
 run_modelsearch = wrap('modelsearch')
 run_resmod = wrap('resmod')
 
@@ -15,6 +16,7 @@ __all__ = [
     'run_allometry',
     'run_amd',
     'run_iivsearch',
+    'run_iovsearch',
     'run_modelsearch',
     'run_resmod',
     'run_tool',
