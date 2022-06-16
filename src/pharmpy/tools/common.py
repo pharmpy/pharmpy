@@ -4,13 +4,13 @@ import numpy as np
 import pandas as pd
 
 from pharmpy.modeling import (
+    rank_models,
     summarize_errors,
     summarize_individuals,
     summarize_individuals_count_table,
     summarize_modelfit_results,
     update_inits,
 )
-from pharmpy.modeling.results import rank_models
 
 
 def update_initial_estimates(model):

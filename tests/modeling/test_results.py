@@ -14,11 +14,11 @@ from pharmpy.modeling import (
     calculate_individual_shrinkage,
     calculate_pk_parameters_statistics,
     check_parameters_near_bounds,
+    rank_models,
     set_iiv_on_ruv,
     summarize_errors,
     summarize_modelfit_results,
 )
-from pharmpy.modeling.results import rank_models
 from pharmpy.utils import TemporaryDirectoryChanger
 
 

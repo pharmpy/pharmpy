@@ -594,6 +594,40 @@ def summarize_errors(models):
 def rank_models(
     base_model, models, strictness=None, rankfunc='ofv', cutoff=None, bic_type='mixed'
 ) -> pd.DataFrame:
+    """Ranks a list of models
+
+    Ranks a list of models with a given ranking function
+
+    Parameters
+    ----------
+    base_model : Model
+        Base model to compare to
+    models : list
+        List of models
+    strictness : list or None
+        List of strictness criteria to be fulfilled, currently only minimization successful.
+        Default is None
+    rankfunc : str
+        Name of ranking function. Available options are 'ofv', 'aic', 'bic', 'lrt' (OFV with LRT)
+    cutoff : float or None
+        Value to use as cutoff. If using LRT, cutoff denotes p-value. Default is None
+    bic_type : str
+        Type of BIC to calculate. Default is the mixed effects.
+
+    Return
+    ------
+    pd.DataFrame
+        A DataFrame of the ranked models
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import load_example_model, summarize_modelfit_results
+    >>> model_1 = load_example_model("pheno")
+    >>> model_2 = load_example_model("pheno_linear")
+    >>> rank_models(model_1, [model_2],
+    >>>             strictness=['minimization_successful'],
+    >>>             rankfunc='lrt') # doctest: +SKIP
+    """
     models_all = [base_model] + models
     models_with_res = [model for model in models_all if model.modelfit_results]
     rankval_dict = {model.name: _get_rankval(model, rankfunc, bic_type) for model in models_all}
@@ -613,7 +647,7 @@ def rank_models(
 
     if cutoff is not None:
         if rankfunc == 'lrt':
-            models_to_rank = [model for model in test_with_lrt(models_all, cutoff)]
+            models_to_rank = [model for model in _test_with_lrt(models_all, cutoff)]
         else:
             models_to_rank = [model for model in models_to_rank if delta_dict[model.name] >= cutoff]
 
@@ -658,7 +692,7 @@ def rank_models(
     return df_sorted
 
 
-def test_with_lrt(models, alpha):
+def _test_with_lrt(models, alpha):
     model_dict = {model.name: model for model in models}
     models_fulfilled_lrt = [
         model for model in models if _test_model(model_dict[model.parent_model], model, alpha)
