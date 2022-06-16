@@ -7,11 +7,10 @@ from sympy.functions.elementary.piecewise import Piecewise
 
 import pharmpy.tools.modelsearch.tool
 from pharmpy import Model
-from pharmpy.modeling import add_iov, copy_model, remove_iiv, remove_iov
+from pharmpy.modeling import add_iov, copy_model, rank_models, remove_iiv, remove_iov
 from pharmpy.statements import Assignment
 from pharmpy.tools.common import create_results, update_initial_estimates
 from pharmpy.tools.modelfit import create_fit_workflow
-from pharmpy.tools.rankfuncs import rank_models
 from pharmpy.workflows import Task, Workflow, call_workflow
 
 NAME_WF = 'iovsearch'
@@ -224,8 +223,11 @@ def best_model(
     bic_type: Union[None, str],
 ):
     candidates = [base, *models]
-    srtd, _ = rank_models(rank_type, base, candidates, cutoff=cutoff, bic_type=bic_type)
-    return srtd[0]
+    _, srtd = rank_models(base, candidates, rankfunc=rank_type, cutoff=cutoff, bic_type=bic_type)
+    if srtd:
+        return srtd[0]
+    else:
+        return base
 
 
 def subsets(iterable: Iterable[T], min_size: int = 0, max_size: int = -1) -> Iterable[Tuple[T]]:
