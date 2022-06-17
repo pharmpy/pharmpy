@@ -103,9 +103,6 @@ def create_workflow(
     if algorithm != 'scm-forward':
         raise ValueError('covsearch only supports algorithm="scm-forward"')
 
-    effect_spec = Effects(effects).spec(model) if isinstance(effects, str) else effects
-    parsed_effects = sorted(set(parse_spec(effect_spec)))
-
     wf = Workflow()
     wf.name = NAME_WF
 
@@ -116,7 +113,7 @@ def create_workflow(
     search_task = Task(
         'search',
         task_greedy_forward_search,
-        parsed_effects,
+        effects,
         p_forward,
         max_steps,
     )
@@ -153,12 +150,14 @@ def ensure_model_is_fitted(wf: Workflow, model: Union[Model, None]):
 
 
 def task_greedy_forward_search(
-    effects: List[EffectLiteral],
+    effects: Union[str, List[Spec]],
     p_forward: float,
     max_steps: int,
     model: Model,
 ):
-    candidate_effects = effects
+    effect_spec = Effects(effects).spec(model) if isinstance(effects, str) else effects
+    candidate_effects = sorted(set(parse_spec(effect_spec)))
+
     best_candidate_so_far = Candidate(model, ())
     all_candidates_so_far = [best_candidate_so_far]
 
