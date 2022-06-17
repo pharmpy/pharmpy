@@ -12,7 +12,7 @@ from sympy import Eq, Piecewise
 from sympy.stats.crv_types import NormalDistribution
 from sympy.stats.joint_rv_types import MultivariateNormalDistribution
 
-from pharmpy.modeling.expressions import create_symbol
+from pharmpy.modeling.expressions import create_symbol, get_pk_parameters, has_random_effect
 from pharmpy.modeling.help_functions import _format_input_list, _format_options, _get_etas
 from pharmpy.parameter import Parameter, Parameters
 from pharmpy.random_variables import RandomVariable
@@ -427,25 +427,9 @@ def add_pk_iiv(model, initial_estimate=0.09):
     remove_iov
 
     """
-    sset, rvs = model.statements, model.random_variables
-    odes = sset.ode_system
-
-    params_to_add_etas = []
-
-    for param in odes.free_symbols:
-        assign = sset.find_assignment(param)
-        if assign:
-            if _has_iiv(sset, rvs, assign):
-                continue
-            dep_assignments = _get_dependent_assignments(sset, assign)
-            if dep_assignments:
-                for dep_assign in dep_assignments:
-                    param_name = dep_assign.symbol.name
-                    if not _has_iiv(sset, rvs, dep_assign) and param_name not in params_to_add_etas:
-                        params_to_add_etas.append(param_name)
-            else:
-                if param.name not in params_to_add_etas:
-                    params_to_add_etas.append(param.name)
+    params_to_add_etas = [
+        param for param in get_pk_parameters(model) if not has_random_effect(model, param, 'iiv')
+    ]
 
     if params_to_add_etas:
         add_iiv(model, params_to_add_etas, 'exp', initial_estimate=initial_estimate)
@@ -490,20 +474,6 @@ def _round_categories(categories):
             categories_rounded.append(c)
     categories_rounded.sort()
     return categories_rounded
-
-
-def _get_dependent_assignments(sset, assignment):
-    # Finds dependant assignments one layer deep
-    dep_assignments = [sset.find_assignment(symb) for symb in assignment.expression.free_symbols]
-    return list(filter(None, dep_assignments))
-
-
-def _has_iiv(sset, rvs, assignment):
-    full_expression = sset.before_odes.full_expression(assignment.symbol)
-    symb_names = {symb.name for symb in full_expression.free_symbols}
-    if symb_names.intersection(rvs.iiv.names):
-        return True
-    return False
 
 
 class EtaAddition:

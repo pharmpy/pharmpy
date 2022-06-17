@@ -13,7 +13,6 @@ from pharmpy.statements import Assignment, Bolus, Infusion
 
 from .common import remove_unused_parameters_and_rvs, rename_symbols
 from .data import get_observations
-from .eta_additions import _get_dependent_assignments
 from .expressions import create_symbol
 from .parameters import (
     add_population_parameter,
@@ -1575,3 +1574,13 @@ def _find_real_symbol(sset, symbol):
         for dep_assign in dep_assigns:
             symbol = dep_assign.symbol
     return symbol
+
+
+def _get_dependent_assignments(sset, assignment):
+    """Finds dependent assignments one layer deep"""
+    return list(
+        filter(
+            None,  # NOTE filters out falsy values
+            (sset.find_assignment(symb) for symb in assignment.expression.free_symbols),
+        )
+    )

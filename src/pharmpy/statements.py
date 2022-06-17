@@ -561,6 +561,10 @@ class CompartmentalSystem(ODESystem):
         newone._g = copy.deepcopy(self._g, memo)
         return newone
 
+    def copy(self):
+        """Create a copy of the CompartmentalSystem object"""
+        return copy.deepcopy(self)
+
     def add_compartment(self, name):
         """Create and add compartment to system
 

@@ -8,14 +8,19 @@ from pharmpy.modeling import (
     add_peripheral_compartment,
     add_pk_iiv,
     create_joint_distribution,
+    get_rv_parameter,
 )
 from pharmpy.tools.iivsearch.algorithms import (
     _get_eta_combinations,
-    _get_param_names,
     _is_current_block_structure,
     brute_force_block_structure,
     create_eta_blocks,
 )
+
+
+def _get_param_names(model):
+    iiv = model.random_variables.iiv
+    return {eta.name: get_rv_parameter(model, eta) for eta in iiv if iiv.get_variance(eta) != 0}
 
 
 @pytest.mark.parametrize(

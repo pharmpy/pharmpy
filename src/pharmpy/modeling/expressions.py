@@ -1,8 +1,21 @@
+from typing import Callable, Dict, Iterable, List, Sequence, Set, Tuple, TypeVar, Union
+
 import sympy
 
-from pharmpy.statements import Assignment, CompartmentalSystem, ModelStatements, ODESystem, sympify
+from pharmpy.model import Model
+from pharmpy.random_variables import RandomVariable, RandomVariables
+from pharmpy.statements import (
+    Assignment,
+    Compartment,
+    CompartmentalSystem,
+    ModelStatements,
+    ODESystem,
+    sympify,
+)
 
 from .parameters import get_thetas
+
+T = TypeVar('T')
 
 
 def get_observation_expression(model):
@@ -717,3 +730,407 @@ def greekify_model(model, named_subscripts=False):
     for s in model.statements:
         s.subs(subs)
     return model
+
+
+def get_individual_parameters(model: Model, level: str = 'all') -> List[str]:
+    """Retrieves all parameters with IIV or IOV in :class:`pharmpy.model`.
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model to retrieve the individuals parameters from
+
+    level : str
+        The variability level to look for: 'iiv', 'iov', or 'all' (default)
+
+    Return
+    ------
+    list
+        A list of the parameters' names as strings
+
+    Example
+    -------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> sorted(get_individual_parameters(model))
+    ['CL', 'V']
+    >>> sorted(get_individual_parameters(model, 'iiv'))
+    ['CL', 'V']
+    >>> get_individual_parameters(model, 'iov')
+    []
+
+    See also
+    --------
+    get_pk_parameters
+    has_random_effect
+
+    """
+
+    rvs = _rvs(model, level)
+
+    assignments = list(
+        _remove_synthetic_assignments(
+            list(_classify_assignments(list(_assignments(model.statements.before_odes))))
+        )
+    )
+
+    free_symbols = {assignment.symbol for assignment in assignments}
+
+    dependency_graph = _dependency_graph(assignments)
+
+    return _filter_symbols(
+        dependency_graph,
+        free_symbols,
+        set().union(*(rv.free_symbols for rv in rvs if rvs.get_variance(rv) != 0)),
+    )
+
+
+def _rvs(model: Model, level: str):
+    if level == 'iiv':
+        return model.random_variables.iiv
+    if level == 'iov':
+        return model.random_variables.iov
+    if level == 'all':
+        return model.random_variables.etas
+
+    raise ValueError(f'Cannot handle level `{level}`')
+
+
+def _depends_on_any_of(model: Model, parameter: str, rvs: RandomVariables):
+    sset = model.statements
+    assignment = sset.find_assignment(parameter)
+    if not assignment:
+        raise ValueError(f'{model} has not parameter `{parameter}`')
+    full_expression = sset.before_odes.full_expression(assignment.symbol)
+    symb_names = {symb.name for symb in full_expression.free_symbols}
+    return any(map(symb_names.__contains__, rvs.names))
+
+
+def has_random_effect(model: Model, parameter: str, level: str = 'all') -> bool:
+    """Decides whether the given parameter of a :class:`pharmpy.model` has a
+    random effect.
+
+    Parameters
+    ----------
+    model : Model
+        Input Pharmpy model
+    parameter: str
+        Input parameter
+    level : str
+        The variability level to look for: 'iiv', 'iov', or 'all' (default)
+
+    Return
+    ------
+    bool
+        Whether the given parameter has a random effect
+
+    Example
+    -------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> has_random_effect(model, 'S1')
+    True
+    >>> has_random_effect(model, 'CL', 'iiv')
+    True
+    >>> has_random_effect(model, 'CL', 'iov')
+    False
+
+    See also
+    --------
+    get_individual_parameters
+
+    """
+
+    rvs = _rvs(model, level)
+    return _depends_on_any_of(model, parameter, rvs)
+
+
+def get_rv_parameter(model: Model, rv: RandomVariable) -> str:
+    # NOTE This was just copied here and is used elsewhere but should be made
+    # more general
+    sset = model.statements
+
+    s = _find_assignment(sset, rv.symbol)
+
+    if s is None:
+        raise ValueError(f'Could not find an assignment to {rv.name}')
+
+    if len(s.expression.free_symbols) > 1:
+        return s.symbol.name
+    else:
+        s = _find_assignment(sset, s.symbol)
+        assert s is not None
+        return s.symbol.name
+
+
+def _find_assignment(sset, symb_target):
+    return next(
+        filter(
+            lambda statement: isinstance(statement, Assignment)
+            and symb_target in statement.expression.free_symbols,
+            sset,
+        ),
+        None,
+    )
+
+
+def get_pk_parameters(model: Model, kind: str = 'all') -> List[str]:
+    """Retrieves PK parameters in :class:`pharmpy.model`.
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model to retrieve the PK parameters from
+
+    kind : str
+        The type of parameter to retrieve: 'absorption', 'distribution',
+        'elimination', or 'all' (default).
+
+    Return
+    ------
+    Parameters
+        The PK parameters of the given model
+
+    Example
+    -------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> sorted(get_pk_parameters(model))
+    ['CL', 'V']
+    >>> get_pk_parameters(model, 'absorption')
+    []
+    >>> get_pk_parameters(model, 'distribution')
+    ['V']
+    >>> get_pk_parameters(model, 'elimination')
+    ['CL']
+
+    See also
+    --------
+    get_individual_parameters
+
+    """
+
+    cs = model.statements.ode_system.to_compartmental_system()  # NOTE This always makes a copy
+
+    classified_assignments = list(
+        _classify_assignments(list(_assignments(model.statements.before_odes)))
+    )
+
+    for t, assignment in reversed(classified_assignments):
+        if t == 'synthetic':
+            # NOTE Substitution must be made in this order
+            cs.subs({assignment.symbol: assignment.expression})
+
+    free_symbols = _pk_free_symbols(cs, kind)
+
+    assignments = list(_remove_synthetic_assignments(classified_assignments))
+
+    dependency_graph = _dependency_graph(assignments)
+
+    return _filter_symbols(dependency_graph, free_symbols)
+
+
+def _pk_free_symbols(cs: CompartmentalSystem, kind: str):
+
+    if kind == 'all':
+        return cs.free_symbols
+
+    if kind == 'absorption':
+        return (
+            set()
+            if cs.dosing_compartment == cs.central_compartment
+            else _get_component_free_symbols(cs, cs.dosing_compartment)
+        )
+
+    if kind == 'distribution':
+        return _get_component_free_symbols(cs, cs.central_compartment)
+
+    if kind == 'elimination':
+        return _get_component_free_symbols(cs, cs.output_compartment)
+
+    raise ValueError(f'Cannot handle kind `{kind}`')
+
+
+def _get_component_free_symbols(
+    cs: CompartmentalSystem, compartment: Compartment
+) -> Set[sympy.Symbol]:
+
+    is_output = compartment == cs.output_compartment
+
+    flows = cs.get_compartment_inflows if is_output else cs.get_compartment_outflows
+
+    def keep(u: Compartment, v: Compartment):
+        if u != cs.central_compartment and v != cs.central_compartment:
+            return True
+
+        return cs.get_flow(u, v) is not None and cs.get_flow(v, u) is not None
+
+    def neighbors(u: Compartment):
+        return filter(lambda v: keep(u, v), map(lambda flow: flow[0], flows(u)))
+
+    vertices = _reachable_from(
+        {compartment},
+        neighbors,
+    )
+
+    edges = ((u, v, rate) for u in vertices for v, rate in flows(u))
+
+    free = set()
+    for (u, v, rate) in edges:
+
+        if u not in vertices or v not in vertices:
+            # NOTE This handles splitting the rate K = CL / V
+            if len(rate.free_symbols) == 2:
+                a, b = rate.free_symbols
+                if rate == a / b:
+                    free.add(a if is_output else b)
+                    continue
+                elif rate == b / a:
+                    free.add(b if is_output else a)
+                    continue
+
+        if (u in vertices and v in vertices) or compartment != cs.central_compartment:
+            # NOTE This handles all internal edges and splitting the rate KA
+            free |= rate.free_symbols
+
+    for node in vertices:
+        free |= node.free_symbols
+
+    return free
+
+
+def _assignments(sset: ModelStatements):
+    return filter(lambda statement: isinstance(statement, Assignment), sset)
+
+
+def _filter_symbols(
+    dependency_graph: Dict[sympy.Symbol, Set[sympy.Symbol]],
+    roots: Set[sympy.Symbol],
+    leaves: Union[Set[sympy.Symbol], None] = None,
+) -> List[str]:
+
+    dependents = _graph_inverse(dependency_graph)
+
+    free_symbols = _reachable_from(roots, lambda x: dependency_graph.get(x, []))
+
+    reachable = (
+        free_symbols
+        if leaves is None
+        else (
+            _reachable_from(
+                leaves,
+                lambda x: dependents.get(x, []),
+            )
+            & free_symbols
+        )
+    )
+
+    return [
+        symbol.name
+        for symbol in reachable
+        if symbol in dependency_graph
+        and (symbol not in dependents or dependents[symbol].isdisjoint(free_symbols))
+    ]
+
+
+def _classify_assignments(assignments: Sequence[Assignment]):
+
+    dependencies = _dependency_graph(assignments)
+
+    symbols = set(filter(dependencies.__getitem__, dependencies.keys()))
+
+    for assignment in assignments:
+
+        symbol = assignment.symbol
+        expression = assignment.expression
+        fs = expression.free_symbols
+
+        if symbol not in fs:  # NOTE We skip redefinitions
+            if len(fs) == 1:
+                a = next(iter(fs))
+                if a in symbols:
+                    yield 'synthetic', assignment
+                    continue
+            elif len(fs) == 2:
+                it = iter(fs)
+                a = next(it)
+                b = next(it)
+                if a in symbols and b in symbols and (expression == a / b or expression == b / a):
+                    yield 'synthetic', assignment
+                    continue
+
+        yield 'natural', assignment
+
+
+def _remove_synthetic_assignments(classified_assignments: List[Tuple[str, Assignment]]):
+
+    assignments = []
+    last_defined = {}
+
+    for t, assignment in reversed(classified_assignments):
+        if t == 'synthetic':
+            substitution_starts_at_index = last_defined.get(assignment.symbol, 0)
+            assignments = [
+                succeeding
+                if i < substitution_starts_at_index
+                else Assignment(
+                    succeeding.symbol,
+                    succeeding.expression.subs({assignment.symbol: assignment.expression}),
+                )
+                for i, succeeding in enumerate(assignments)
+            ]
+        else:
+            last_defined[assignment.symbol] = len(assignments)
+            assignments.append(assignment)
+
+    return reversed(assignments)
+
+
+def _dependency_graph(assignments: Sequence[Assignment]):
+
+    dependencies = {}
+
+    for assignment in assignments:
+
+        symbol = assignment.symbol
+        fs = assignment.expression.free_symbols
+
+        previous_def = dependencies.get(symbol)
+        dependencies[symbol] = fs
+
+        if previous_def is not None:
+            # NOTE This handles redefinition of symbols by expanding
+            # the previous definition of symbol into existing definitions
+            for key, value in dependencies.items():
+                if symbol in value:
+                    dependencies[key] = (value - {symbol}) | previous_def
+
+    return dependencies
+
+
+def _graph_inverse(g):
+
+    h = {}
+
+    for left, deps in g.items():
+        for right in deps:
+            if right in h:
+                h[right].add(left)
+            else:
+                h[right] = {left}
+
+    return h
+
+
+def _reachable_from(start_nodes: Set[T], neighbors: Callable[[T], Iterable[T]]):
+    queue = list(start_nodes)
+    closure = set(start_nodes)
+    while queue:
+        u = queue.pop()
+        n = neighbors(u)
+        for v in n:
+            if v not in closure:
+                queue.append(v)
+                closure.add(v)
+
+    return closure
