@@ -17,16 +17,16 @@ def _get_iiv_param_names(model: Model) -> List[str]:
     return list(_get_param_names(model).values())
 
 
-def _ensure_tuple(x):
-    return x if isinstance(x, tuple) else (x,)
+def _ensure_tuple_or_list(x):
+    return x if isinstance(x, (tuple, list)) else (x,)
 
 
 def parse_spec(spec: Iterable[Spec]) -> Iterable[EffectLiteral]:
     for parameters, covariates, fps, operations in spec:
-        parameters = _ensure_tuple(parameters)
-        covariates = _ensure_tuple(covariates)
-        fps = _ensure_tuple(fps)
-        operations = _ensure_tuple(operations)
+        parameters = _ensure_tuple_or_list(parameters)
+        covariates = _ensure_tuple_or_list(covariates)
+        fps = _ensure_tuple_or_list(fps)
+        operations = _ensure_tuple_or_list(operations)
         yield from product(parameters, covariates, fps, operations)
 
 
