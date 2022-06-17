@@ -59,7 +59,13 @@ def convert_model(model):
 
     model = convert_model(model, 'generic')
     code = '$PROBLEM\n'
-    code += '$INPUT ' + ' '.join(model.datainfo.names) + '\n'
+    code += (
+        '$INPUT '
+        + ' '.join(
+            f'{column.name}=DROP' if column.drop else column.name for column in model.datainfo
+        )
+        + '\n'
+    )
     code += '$DATA file.csv IGNORE=@\n'
     if model.statements.ode_system is None:
         code += '$PRED\nY=X\n'
@@ -961,6 +967,7 @@ class Model(pharmpy.model.Model):
 
     def _create_datainfo(self):
         dataset_path = self._read_dataset_path()
+        (colnames, drop, replacements) = self._column_info()
         try:
             path = dataset_path.with_suffix('.datainfo')
         except:  # noqa: E722
@@ -972,8 +979,17 @@ class Model(pharmpy.model.Model):
                 di.path = dataset_path
                 self.datainfo = di
                 self._old_datainfo = di.copy()
+                warned = False
+                for colinfo, coldrop in zip(di, drop):
+                    if coldrop != colinfo.drop and not warned:
+                        warned = True
+                        warnings.warn(
+                            "NONMEM .mod and dataset .datainfo disagree on "
+                            f"DROP for at least one column {colinfo.name}."
+                        )
+                        colinfo.drop = coldrop
                 return
-        (colnames, drop, replacements) = self._column_info()
+
         column_info = []
         have_pk = self._get_pk_record()
         for colname, coldrop in zip(colnames, drop):
