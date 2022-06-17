@@ -6,15 +6,11 @@ from lark import Lark
 from lark.visitors import Interpreter
 
 from pharmpy.model import Model
-from pharmpy.tools.iivsearch.algorithms import _get_param_names
+from pharmpy.modeling.expressions import get_individual_parameters
 
 EffectLiteral = Tuple[str, str, str, str]
 EffectSpecFeature = Union[str, Tuple[str, ...]]
 Spec = Tuple[EffectSpecFeature, EffectSpecFeature, EffectSpecFeature, EffectSpecFeature]
-
-
-def _get_iiv_param_names(model: Model) -> List[str]:
-    return list(_get_param_names(model).values())
 
 
 def _ensure_tuple_or_list(x):
@@ -355,7 +351,7 @@ class Effects:
             ]
 
         if symbol is AllIIVParameters:
-            return _get_iiv_param_names(model)
+            return get_individual_parameters(model, level='iiv')
 
         assert isinstance(symbol, Wildcard)
 

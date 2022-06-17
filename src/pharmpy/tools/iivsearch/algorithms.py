@@ -3,7 +3,7 @@ from itertools import combinations
 import pharmpy.tools.modelfit as modelfit
 from pharmpy.modeling import copy_model, remove_iiv
 from pharmpy.modeling.block_rvs import create_joint_distribution, split_joint_distribution
-from pharmpy.statements import ODESystem
+from pharmpy.modeling.expressions import get_rv_parameter
 from pharmpy.tools.common import update_initial_estimates
 from pharmpy.workflows import Task, Workflow
 
@@ -100,36 +100,14 @@ def _is_current_block_structure(etas, combos):
     return True
 
 
-def _get_param_names(model):
-    sset = model.statements
-
-    param_dict = dict()
-    for eta in model.random_variables.iiv:
-        s = _find_assignment(sset, eta)
-        if len(s.expression.free_symbols) > 1:
-            param_dict[eta.name] = s.symbol.name
-        else:
-            s = _find_assignment(sset, s.symbol)
-            if 'dummy' in eta.name:
-                continue
-            param_dict[eta.name] = s.symbol.name
-    return param_dict
-
-
-def _find_assignment(sset, symb_target):
-    for s in sset:
-        if isinstance(s, ODESystem):
-            continue
-        expr_symbs = [symb.name for symb in s.expression.free_symbols]
-        if symb_target.name in expr_symbs:
-            return s
-
-
 def _create_description(model):
-    param_dict = _get_param_names(model)
+    iiv = model.random_variables.iiv
+    param_dict = {
+        eta.name: get_rv_parameter(model, eta) for eta in iiv if iiv.get_variance(eta) != 0
+    }
 
     blocks = []
-    for rvs, _ in model.random_variables.iiv.distributions():
+    for rvs, _ in iiv.distributions():
         if len(param_dict) == 0:
             blocks = ['[]']
             break
