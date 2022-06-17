@@ -1,13 +1,14 @@
 from itertools import chain
 from typing import Iterable, List, Union
 
+import numpy as np
 from scipy.stats import chi2
 
 from pharmpy.model import Model
 
 
 def _ofv(model: Model) -> float:
-    return model.modelfit_results.ofv
+    return np.nan if model.modelfit_results is None else model.modelfit_results.ofv
 
 
 def _dofv(parent: Model, model: Model) -> float:

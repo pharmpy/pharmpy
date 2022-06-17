@@ -267,8 +267,10 @@ def _make_df_steps_row(
 ):
     model = candidate.model
     parent_model = models_dict[model.parent_model]
-    reduced_ofv = parent_model.modelfit_results.ofv
-    extended_ofv = model.modelfit_results.ofv
+    reduced_ofv = (
+        np.nan if parent_model.modelfit_results is None else parent_model.modelfit_results.ofv
+    )
+    extended_ofv = np.nan if model.modelfit_results is None else model.modelfit_results.ofv
     ofv_drop = reduced_ofv - extended_ofv
     last_step = candidate.steps[-1]
     last_effect = last_step.effect
