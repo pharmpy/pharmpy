@@ -26,7 +26,7 @@ def create_workflow(
     distribution='same-as-iiv',
     model=None,
 ):
-    """Run IIVsearch tool. For more details, see :ref:`iovsearch`.
+    """Run IOVsearch tool. For more details, see :ref:`iovsearch`.
 
     Parameters
     ----------
