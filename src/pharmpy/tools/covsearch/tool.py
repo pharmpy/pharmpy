@@ -17,9 +17,9 @@ from pharmpy.tools.scm.results import candidate_summary_dataframe, ofv_summary_d
 from pharmpy.workflows import Task, Workflow, call_workflow
 
 from .effects import EffectLiteral, Effects, Spec, parse_spec
-from .results import CovariatesResults
+from .results import COVSearchResults
 
-NAME_WF = 'covariates'
+NAME_WF = 'covsearch'
 
 
 @dataclass
@@ -65,7 +65,7 @@ def create_workflow(
     algorithm: str = 'scm-forward',
     model: Union[Model, None] = None,
 ):
-    """Run covariates search tool. For more details, see :ref:`covariates`.
+    """Run COVsearch tool. For more details, see :ref:`covsearch`.
 
     Parameters
     ----------
@@ -83,8 +83,8 @@ def create_workflow(
 
     Returns
     -------
-    CovariatesResults
-        Covariates search tool result object
+    COVSearchResults
+        COVsearch tool result object
 
     Examples
     --------
@@ -236,7 +236,7 @@ def task_results(p_forward: float, candidates: List[Candidate]):
     models = list(map(lambda candidate: candidate.model, candidates))
     base_model, *res_models = models
 
-    res = create_results(CovariatesResults, base_model, base_model, res_models, 'bic', None)
+    res = create_results(COVSearchResults, base_model, base_model, res_models, 'bic', None)
 
     best_model = lrt_best_of_subtree(base_model, res_models, p_forward)
 

@@ -5,7 +5,7 @@ import pandas as pd
 import pharmpy.results
 
 
-class CovariatesResults(pharmpy.results.Results):
+class COVSearchResults(pharmpy.results.Results):
     def __init__(
         self,
         summary_tool=None,
