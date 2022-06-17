@@ -66,20 +66,25 @@ from pharmpy.tools.covsearch.effects import Effects, parse_spec
         (
             'COVARIATE(@IIV, @CONTINUOUS, *);' 'COVARIATE(*, @CATEGORICAL, CAT, *)',
             [
+                ('CL', 'APGR', 'cat', '*'),
                 ('CL', 'WGT', 'exp', '*'),
                 ('CL', 'WGT', 'lin', '*'),
                 ('CL', 'WGT', 'piece_lin', '*'),
                 ('CL', 'WGT', 'pow', '*'),
-                ('OMEGA(1,1)', 'APGR', 'cat', '*'),
-                ('OMEGA(2,2)', 'APGR', 'cat', '*'),
-                ('SIGMA(1,1)', 'APGR', 'cat', '*'),
-                ('THETA(1)', 'APGR', 'cat', '*'),
-                ('THETA(2)', 'APGR', 'cat', '*'),
-                ('THETA(3)', 'APGR', 'cat', '*'),
+                ('V', 'APGR', 'cat', '*'),
                 ('V', 'WGT', 'exp', '*'),
                 ('V', 'WGT', 'lin', '*'),
                 ('V', 'WGT', 'piece_lin', '*'),
                 ('V', 'WGT', 'pow', '*'),
+            ],
+        ),
+        (
+            'COVARIATE(@ABSORPTION, APGR, CAT);'
+            'COVARIATE(@DISTRIBUTION, WGT, EXP);'
+            'COVARIATE(@ELIMINATION, SEX, CAT)',
+            [
+                ('CL', 'SEX', 'cat', '*'),
+                ('V', 'WGT', 'exp', '*'),
             ],
         ),
     ),

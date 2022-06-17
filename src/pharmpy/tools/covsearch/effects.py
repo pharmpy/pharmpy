@@ -6,7 +6,7 @@ from lark import Lark
 from lark.visitors import Interpreter
 
 from pharmpy.model import Model
-from pharmpy.modeling.expressions import get_individual_parameters
+from pharmpy.modeling.expressions import get_individual_parameters, get_pk_parameters
 
 EffectLiteral = Tuple[str, str, str, str]
 EffectSpecFeature = Union[str, Tuple[str, ...]]
@@ -328,13 +328,13 @@ class Effects:
 
     def _interpret_symbol(self, model: Model, symbol: Symbol) -> List[str]:
         if symbol is AllAbsorptionParameters:
-            return self._aliases['absorption']
+            return self._aliases['absorption'] or get_pk_parameters(model, kind='absorption')
 
         if symbol is AllEliminationParameters:
-            return self._aliases['elimination']
+            return self._aliases['elimination'] or get_pk_parameters(model, kind='elimination')
 
         if symbol is AllDistributionParameters:
-            return self._aliases['distribution']
+            return self._aliases['distribution'] or get_pk_parameters(model, kind='distribution')
 
         if symbol is AllCategoricalCovariates:
             return self._aliases['categorical'] or [
@@ -356,7 +356,7 @@ class Effects:
         assert isinstance(symbol, Wildcard)
 
         if symbol is ParameterWildcard:
-            return [parameter.name for parameter in model.parameters]
+            return get_pk_parameters(model)
 
         assert symbol is CovariateWildcard
 
