@@ -7,15 +7,11 @@ import numpy as np
 import pandas as pd
 
 from pharmpy.model import Model
-from pharmpy.modeling import add_covariate_effect, copy_model, summarize_modelfit_results
+from pharmpy.modeling import add_covariate_effect, copy_model
 from pharmpy.modeling.lrt import best_of_many as lrt_best_of_many
 from pharmpy.modeling.lrt import best_of_subtree as lrt_best_of_subtree
 from pharmpy.modeling.lrt import p_value as lrt_p_value
-from pharmpy.tools.common import (
-    summarize_tool,
-    summarize_tool_individuals,
-    update_initial_estimates,
-)
+from pharmpy.tools.common import create_results, update_initial_estimates
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.tools.scm.results import candidate_summary_dataframe, ofv_summary_dataframe
 from pharmpy.workflows import Task, Workflow, call_workflow
@@ -239,38 +235,14 @@ def task_add_covariate_effect(model: Model, effect: EffectLiteral, effect_index:
 def task_results(p_forward: float, candidates: List[Candidate]):
     models = list(map(lambda candidate: candidate.model, candidates))
     base_model, *res_models = models
-    rank_type = 'bic'
-    summary_tool = summarize_tool(
-        res_models,
-        base_model,
-        rank_type,
-        None,
-    )
-    summary_models = summarize_modelfit_results([base_model] + res_models).sort_values(
-        by=[rank_type]
-    )
-    summary_individuals, summary_individuals_count = summarize_tool_individuals(
-        [base_model] + res_models, summary_tool['description'], summary_tool[f'd{rank_type}']
-    )
+
+    res = create_results(CovariatesResults, base_model, base_model, res_models, 'bic', None)
 
     best_model = lrt_best_of_subtree(base_model, res_models, p_forward)
 
-    steps = _make_df_steps(best_model, candidates)
-    candidate_summary = candidate_summary_dataframe(steps)
-    ofv_summary = ofv_summary_dataframe(steps, final_included=True, iterations=True)
-
-    res = CovariatesResults(
-        summary_tool=summary_tool,
-        summary_models=summary_models,
-        summary_individuals=summary_individuals,
-        summary_individuals_count=summary_individuals_count,
-        best_model=best_model,
-        input_model=base_model,
-        models=res_models,
-        steps=steps,
-        candidate_summary=candidate_summary,
-        ofv_summary=ofv_summary,
-    )
+    res.steps = _make_df_steps(best_model, candidates)
+    res.candidate_summary = candidate_summary_dataframe(res.steps)
+    res.ofv_summary = ofv_summary_dataframe(res.steps, final_included=True, iterations=True)
 
     return res
 
