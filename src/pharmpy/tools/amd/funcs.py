@@ -76,8 +76,7 @@ def create_start_model(dataset_path, modeltype='pk_oral', cl_init=0.01, vc_init=
     model.dependent_variable = y_ass.symbol
     model.database = default_model_database()
     model.dataset = df
-    if di:
-        model.datainfo = di
+    model.datainfo = di
     model.estimation_steps = eststeps
     model.filename_extension = '.mod'  # Should this really be needed?
 
@@ -86,7 +85,6 @@ def create_start_model(dataset_path, modeltype='pk_oral', cl_init=0.01, vc_init=
     if modeltype == 'pk_oral':
         set_first_order_absorption(model)
         set_initial_estimates(model, {'POP_MAT': mat_init})
-
     return model
 
 
