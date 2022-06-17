@@ -106,9 +106,8 @@ def create_workflow(
     wf = Workflow()
     wf.name = NAME_WF
 
-    # NOTE Make sure the input model is fitted
-    wf.add_task(init_task(model))
-    init_output = ensure_model_is_fitted(wf, model)
+    init_task = init(model)
+    wf.add_task(init_task)
 
     search_task = Task(
         'search',
@@ -118,7 +117,7 @@ def create_workflow(
         max_steps,
     )
 
-    wf.add_task(search_task, predecessors=init_output)
+    wf.add_task(search_task, predecessors=init_task)
     search_output = wf.output_tasks
 
     results_task = Task(
@@ -132,21 +131,12 @@ def create_workflow(
     return wf
 
 
-def init_task(model: Union[Model, None]):
+def init(model: Union[Model, None]):
     return (
         Task('init', lambda model: model)
         if model is None
         else Task('init', lambda model: model, model)
     )
-
-
-def ensure_model_is_fitted(wf: Workflow, model: Union[Model, None]):
-    if model and not model.modelfit_results:
-        start_model_fit = create_fit_workflow(n=1)
-        wf.insert_workflow(start_model_fit)
-        return start_model_fit.output_tasks
-    else:
-        return wf.output_tasks
 
 
 def task_greedy_forward_search(
