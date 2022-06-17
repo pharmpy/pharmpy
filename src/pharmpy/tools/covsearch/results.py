@@ -5,13 +5,14 @@ import pandas as pd
 import pharmpy.results
 
 
-class CovariatesResults(pharmpy.results.Results):
+class COVSearchResults(pharmpy.results.Results):
     def __init__(
         self,
         summary_tool=None,
         summary_models=None,
         summary_individuals=None,
         summary_individuals_count=None,
+        summary_errors=None,
         best_model=None,
         input_model=None,
         models=None,
@@ -23,6 +24,7 @@ class CovariatesResults(pharmpy.results.Results):
         self.summary_models = summary_models
         self.summary_individuals = summary_individuals
         self.summary_individuals_count = summary_individuals_count
+        self.summary_errors = summary_errors
         self.best_model = best_model
         self.input_model = input_model
         self.models = models

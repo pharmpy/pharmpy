@@ -34,7 +34,7 @@ def test_default(tmp_path, start_model):
             model=start_model,
         )
 
-        rundir = tmp_path / 'covariates_dir1'
+        rundir = tmp_path / 'covsearch_dir1'
         assert _model_count(rundir) == 50
 
         assert res.best_model.name == 'mox2-2-7-10-5'
@@ -50,7 +50,7 @@ def test_default_str(tmp_path, start_model):
             model=start_model,
         )
 
-        rundir = tmp_path / 'covariates_dir1'
+        rundir = tmp_path / 'covsearch_dir1'
         assert _model_count(rundir) == 35
 
         assert res.best_model.name == 'mox2-2-7-7-6'

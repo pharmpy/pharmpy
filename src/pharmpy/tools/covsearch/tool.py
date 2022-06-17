@@ -7,23 +7,19 @@ import numpy as np
 import pandas as pd
 
 from pharmpy.model import Model
-from pharmpy.modeling import add_covariate_effect, copy_model, summarize_modelfit_results
+from pharmpy.modeling import add_covariate_effect, copy_model
 from pharmpy.modeling.lrt import best_of_many as lrt_best_of_many
 from pharmpy.modeling.lrt import best_of_subtree as lrt_best_of_subtree
 from pharmpy.modeling.lrt import p_value as lrt_p_value
-from pharmpy.tools.common import (
-    summarize_tool,
-    summarize_tool_individuals,
-    update_initial_estimates,
-)
+from pharmpy.tools.common import create_results, update_initial_estimates
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.tools.scm.results import candidate_summary_dataframe, ofv_summary_dataframe
 from pharmpy.workflows import Task, Workflow, call_workflow
 
 from .effects import EffectLiteral, Effects, Spec, parse_spec
-from .results import CovariatesResults
+from .results import COVSearchResults
 
-NAME_WF = 'covariates'
+NAME_WF = 'covsearch'
 
 
 @dataclass
@@ -69,7 +65,7 @@ def create_workflow(
     algorithm: str = 'scm-forward',
     model: Union[Model, None] = None,
 ):
-    """Run covariates search tool. For more details, see :ref:`covariates`.
+    """Run COVsearch tool. For more details, see :ref:`covsearch`.
 
     Parameters
     ----------
@@ -87,8 +83,8 @@ def create_workflow(
 
     Returns
     -------
-    CovariatesResults
-        Covariates search tool result object
+    COVSearchResults
+        COVsearch tool result object
 
     Examples
     --------
@@ -107,25 +103,21 @@ def create_workflow(
     if algorithm != 'scm-forward':
         raise ValueError('covsearch only supports algorithm="scm-forward"')
 
-    effect_spec = Effects(effects).spec(model) if isinstance(effects, str) else effects
-    parsed_effects = sorted(set(parse_spec(effect_spec)))
-
     wf = Workflow()
     wf.name = NAME_WF
 
-    # NOTE Make sure the input model is fitted
-    wf.add_task(init_task(model))
-    init_output = ensure_model_is_fitted(wf, model)
+    init_task = init(model)
+    wf.add_task(init_task)
 
     search_task = Task(
         'search',
         task_greedy_forward_search,
-        parsed_effects,
+        effects,
         p_forward,
         max_steps,
     )
 
-    wf.add_task(search_task, predecessors=init_output)
+    wf.add_task(search_task, predecessors=init_task)
     search_output = wf.output_tasks
 
     results_task = Task(
@@ -139,7 +131,7 @@ def create_workflow(
     return wf
 
 
-def init_task(model: Union[Model, None]):
+def init(model: Union[Model, None]):
     return (
         Task('init', lambda model: model)
         if model is None
@@ -147,22 +139,15 @@ def init_task(model: Union[Model, None]):
     )
 
 
-def ensure_model_is_fitted(wf: Workflow, model: Union[Model, None]):
-    if model and not model.modelfit_results:
-        start_model_fit = create_fit_workflow(n=1)
-        wf.insert_workflow(start_model_fit)
-        return start_model_fit.output_tasks
-    else:
-        return wf.output_tasks
-
-
 def task_greedy_forward_search(
-    effects: List[EffectLiteral],
+    effects: Union[str, List[Spec]],
     p_forward: float,
     max_steps: int,
     model: Model,
 ):
-    candidate_effects = effects
+    effect_spec = Effects(effects).spec(model) if isinstance(effects, str) else effects
+    candidate_effects = sorted(set(parse_spec(effect_spec)))
+
     best_candidate_so_far = Candidate(model, ())
     all_candidates_so_far = [best_candidate_so_far]
 
@@ -239,38 +224,14 @@ def task_add_covariate_effect(model: Model, effect: EffectLiteral, effect_index:
 def task_results(p_forward: float, candidates: List[Candidate]):
     models = list(map(lambda candidate: candidate.model, candidates))
     base_model, *res_models = models
-    rank_type = 'bic'
-    summary_tool = summarize_tool(
-        res_models,
-        base_model,
-        rank_type,
-        None,
-    )
-    summary_models = summarize_modelfit_results([base_model] + res_models).sort_values(
-        by=[rank_type]
-    )
-    summary_individuals, summary_individuals_count = summarize_tool_individuals(
-        [base_model] + res_models, summary_tool['description'], summary_tool[f'd{rank_type}']
-    )
+
+    res = create_results(COVSearchResults, base_model, base_model, res_models, 'bic', None)
 
     best_model = lrt_best_of_subtree(base_model, res_models, p_forward)
 
-    steps = _make_df_steps(best_model, candidates)
-    candidate_summary = candidate_summary_dataframe(steps)
-    ofv_summary = ofv_summary_dataframe(steps, final_included=True, iterations=True)
-
-    res = CovariatesResults(
-        summary_tool=summary_tool,
-        summary_models=summary_models,
-        summary_individuals=summary_individuals,
-        summary_individuals_count=summary_individuals_count,
-        best_model=best_model,
-        input_model=base_model,
-        models=res_models,
-        steps=steps,
-        candidate_summary=candidate_summary,
-        ofv_summary=ofv_summary,
-    )
+    res.steps = _make_df_steps(best_model, candidates)
+    res.candidate_summary = candidate_summary_dataframe(res.steps)
+    res.ofv_summary = ofv_summary_dataframe(res.steps, final_included=True, iterations=True)
 
     return res
 
@@ -280,7 +241,7 @@ def _make_df_steps(best_model: Model, candidates: List[Candidate]) -> pd.DataFra
     children_count = Counter(candidate.model.parent_model for candidate in candidates)
 
     data = (
-        _marke_df_steps_row(models_dict, children_count, best_model, candidate)
+        _make_df_steps_row(models_dict, children_count, best_model, candidate)
         for candidate in candidates
         if candidate.steps
     )
@@ -291,13 +252,15 @@ def _make_df_steps(best_model: Model, candidates: List[Candidate]) -> pd.DataFra
     )
 
 
-def _marke_df_steps_row(
+def _make_df_steps_row(
     models_dict: dict, children_count: Counter, best_model: Model, candidate: Candidate
 ):
     model = candidate.model
     parent_model = models_dict[model.parent_model]
-    reduced_ofv = parent_model.modelfit_results.ofv
-    extended_ofv = model.modelfit_results.ofv
+    reduced_ofv = (
+        np.nan if parent_model.modelfit_results is None else parent_model.modelfit_results.ofv
+    )
+    extended_ofv = np.nan if model.modelfit_results is None else model.modelfit_results.ofv
     ofv_drop = reduced_ofv - extended_ofv
     last_step = candidate.steps[-1]
     last_effect = last_step.effect
