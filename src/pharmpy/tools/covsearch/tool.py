@@ -252,7 +252,7 @@ def _make_df_steps(best_model: Model, candidates: List[Candidate]) -> pd.DataFra
     children_count = Counter(candidate.model.parent_model for candidate in candidates)
 
     data = (
-        _marke_df_steps_row(models_dict, children_count, best_model, candidate)
+        _make_df_steps_row(models_dict, children_count, best_model, candidate)
         for candidate in candidates
         if candidate.steps
     )
@@ -263,7 +263,7 @@ def _make_df_steps(best_model: Model, candidates: List[Candidate]) -> pd.DataFra
     )
 
 
-def _marke_df_steps_row(
+def _make_df_steps_row(
     models_dict: dict, children_count: Counter, best_model: Model, candidate: Candidate
 ):
     model = candidate.model
