@@ -30,7 +30,7 @@
       "unit": "1",
       "scale": "ratio",
       "datatype": "float64",
-      "drop": true
+      "drop": false
     },
     {
       "name": "DOSE",
@@ -38,7 +38,7 @@
       "unit": "1",
       "scale": "ratio",
       "datatype": "float64",
-      "drop": true
+      "drop": false
     },
     {
       "name": "FLAG",
@@ -70,7 +70,7 @@
       "unit": "1",
       "scale": "ratio",
       "datatype": "float64",
-      "drop": true
+      "drop": false
     },
     {
       "name": "SCR",
@@ -78,7 +78,7 @@
       "unit": "1",
       "scale": "ratio",
       "datatype": "float64",
-      "drop": true
+      "drop": false
     },
     {
       "name": "AGE",
@@ -125,7 +125,7 @@
       "unit": "1",
       "scale": "ratio",
       "datatype": "float64",
-      "drop": true
+      "drop": false
     },
     {
       "name": "DIG",
@@ -133,7 +133,7 @@
       "unit": "1",
       "scale": "ratio",
       "datatype": "float64",
-      "drop": true
+      "drop": false
     },
     {
       "name": "DIU",
@@ -141,7 +141,7 @@
       "unit": "1",
       "scale": "ratio",
       "datatype": "float64",
-      "drop": true
+      "drop": false
     },
     {
       "name": "NUMB",
@@ -179,7 +179,7 @@
       "unit": "1",
       "scale": "ratio",
       "datatype": "float64",
-      "drop": true
+      "drop": false
     },
     {
       "name": "AMT",
@@ -240,7 +240,7 @@
       "unit": "1",
       "scale": "nominal",
       "datatype": "int32",
-      "continuous": false
+      "drop": true
     },
     {
       "name": "OVID",
