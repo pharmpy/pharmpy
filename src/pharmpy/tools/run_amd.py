@@ -10,7 +10,6 @@ from pharmpy.modeling.results import summarize_errors
 from pharmpy.results import Results
 from pharmpy.workflows import default_tool_database
 
-from .iivsearch.algorithms import _get_param_names
 from .run import fit, run_tool
 
 
@@ -209,8 +208,6 @@ def _run_resmod(model, path):
 
 
 def _run_covariates(model, continuous, categorical, path):
-    parameters = [Symbol(param) for param in list(_get_param_names(model).values())]
-
     if continuous is None:
         continuous = []
         for col in model.datainfo:
@@ -228,8 +225,8 @@ def _run_covariates(model, continuous, categorical, path):
     if continuous is not None or categorical is not None:
         covariates_search_space = (
             f'CONTINUOUS({con_covariates}); CATEGORICAL({cat_covariates})\n'
-            f'COVARIATE({parameters}, @CONTINUOUS, exp, *)\n'
-            f'COVARIATE({parameters}, @CATEGORICAL, cat, *)'
+            f'COVARIATE(@IIV, @CONTINUOUS, exp, *)\n'
+            f'COVARIATE(@IIV, @CATEGORICAL, cat, *)'
         )
         res_cov = run_tool(
             'covsearch', covariates_search_space, model=model, path=path / 'covsearch'
