@@ -68,7 +68,7 @@ def run_amd(
     categorical : list
         List of categorical covariates
     continuous : list
-        List of continuouts covariates
+        List of continuous covariates
     allometric_variable: str or Symbol
         Variable to use for allometry
     occasion: str
