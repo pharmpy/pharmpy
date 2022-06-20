@@ -6,7 +6,7 @@ from sympy import Symbol
 import pharmpy.plugins as plugins
 from pharmpy.modeling.common import convert_model
 from pharmpy.modeling.data import remove_loq_data
-from pharmpy.modeling.results import summarize_errors
+from pharmpy.modeling.results import summarize_errors, write_results
 from pharmpy.results import Results
 from pharmpy.workflows import default_tool_database
 
@@ -181,6 +181,8 @@ def run_amd(
         summary_individuals_count=sum_amd[2],
         summary_errors=summary_errors,
     )
+    write_results(results=res, path=db.path / 'results.json')
+    write_results(results=res, path=db.path / 'results.csv', csv=True)
     return res
 
 
