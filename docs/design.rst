@@ -13,7 +13,7 @@ Levels of the architecture
 
 The Pharmpy architecture has four distinct layers:
 
-1. Plugins supporting various modelling languages and external estimation tools
+1. Plugins supporting various modeling languages and external estimation tools
 2. The Model class
 3. The modeling functional module
 4. The worklows and tools

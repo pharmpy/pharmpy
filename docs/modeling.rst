@@ -27,7 +27,7 @@ The following model is the start model for the examples.
    print(model_ref)
 
 ~~~~~~~~~~~~~~~
-Basic modelling
+Basic modeling
 ~~~~~~~~~~~~~~~
 
 Many basic model manipulation tasks that could also be done using methods on model objects have been included in the modeling module. This

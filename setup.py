@@ -29,7 +29,7 @@ setup(
     name='pharmpy-core',
     version='0.72.2',
     license='GNU Lesser General Public License v3 (LGPLv3)',
-    description='Pharmacometric modelling',
+    description='Pharmacometric modeling',
     long_description='%s\n\n%s'
     % (strip_refs(longdesc(read('README.rst'))), strip_refs(read('CHANGELOG.rst'))),
     author='Rikard Nordgren',
