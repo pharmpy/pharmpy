@@ -168,7 +168,11 @@ def run_amd(
         sums = pd.concat(
             sums, keys=list(run_subfuncs.keys()), names=['tool', 'default index']
         ).reset_index()
-        sums['step'] = sums['step'].fillna(1).astype('int64')
+        if 'step' in sums.columns:
+            sums['step'] = sums['step'].fillna(1).astype('int64')
+        else:
+            sums['step'] = 1
+
         sums.set_index(['tool', 'step', 'model'], inplace=True)
         sums.drop('default index', axis=1, inplace=True)
         sum_amd.append(sums)
