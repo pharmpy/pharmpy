@@ -127,7 +127,7 @@ Finally, the candidate effects can be defined through a domain-specifc language
         ...
     )
 
-This DSL also provides additional features such as pre-defined and manual
+This DSL also provides additional features such as automatic or manual
 aliases. For instance the example above can be rewritten as
 
 .. pharmpy-code::
@@ -152,7 +152,7 @@ For instance,
     )
 
 would test an exponential covariate effect on clearance and volume for each
-continuous covariates.
+continuous covariate.
 
 More aliases are available and described in the next section.
 
@@ -161,29 +161,27 @@ COVsearch DSL aliases
 
 The DSL supports the following aliases:
 
-+-----------------+-------------+----------------+--------------------------------------------------------------------+
-| Alias           | Type        | Definition     | Description                                                        |
-+=================+=============+================+====================================================================+
-| `@IIV`          | Parameter   | auto           | All PK parameters with a corresponding IIV ETA                     |
-+-----------------+-------------+----------------+--------------------------------------------------------------------+
-| `\*`            | Parameter   | auto           | All PK parameters                                                  |
-+-----------------+-------------+----------------+--------------------------------------------------------------------+
-| `@ABSORPTION`   | Parameter   | manual         | Manually defined list of absorption parameters\*                   |
-+-----------------+-------------+----------------+--------------------------------------------------------------------+
-| `@ELIMINATION`  | Parameter   | manual         | Manually defined list of elimination parameters\*                  |
-+-----------------+-------------+----------------+--------------------------------------------------------------------+
-| `@DISTRIBUTION` | Parameter   | manual         | Manually defined list of distribution parameters\*                 |
-+-----------------+-------------+----------------+--------------------------------------------------------------------+
-| `@CONTINUOUS`   | Covariate   | auto or manual | All continuous covariates                                          |
-+-----------------+-------------+----------------+--------------------------------------------------------------------+
-| `@CATEGORICAL`  | Covariate   | auto or manual | All categorical covariates                                         |
-+-----------------+-------------+----------------+--------------------------------------------------------------------+
-| `\*`            | Covariate   | auto           | All covariates                                                     |
-+-----------------+-------------+----------------+--------------------------------------------------------------------+
-| `\*`            | Effect      | auto           | All continuous effects                                             |
-+-----------------+-------------+----------------+--------------------------------------------------------------------+
-
-\*: We plan to automate the definition of such aliases in the future.
++-----------------+-------------+----------------+---------------------------------------------+
+| Alias           | Type        | Definition     | Description                                 |
++=================+=============+================+=============================================+
+| `@IIV`          | Parameter   | auto           | All parameters with a corresponding IIV ETA |
++-----------------+-------------+----------------+---------------------------------------------+
+| `\*`            | Parameter   | auto           | All PK parameters                           |
++-----------------+-------------+----------------+---------------------------------------------+
+| `@ABSORPTION`   | Parameter   | auto or manual | All PK absorption parameters                |
++-----------------+-------------+----------------+---------------------------------------------+
+| `@ELIMINATION`  | Parameter   | auto or manual | All PK elimination parameters               |
++-----------------+-------------+----------------+---------------------------------------------+
+| `@DISTRIBUTION` | Parameter   | auto or manual | All PK distribution parameters              |
++-----------------+-------------+----------------+---------------------------------------------+
+| `@CONTINUOUS`   | Covariate   | auto or manual | All continuous covariates                   |
++-----------------+-------------+----------------+---------------------------------------------+
+| `@CATEGORICAL`  | Covariate   | auto or manual | All categorical covariates                  |
++-----------------+-------------+----------------+---------------------------------------------+
+| `\*`            | Covariate   | auto           | All covariates                              |
++-----------------+-------------+----------------+---------------------------------------------+
+| `\*`            | Effect      | auto           | All continuous effects                      |
++-----------------+-------------+----------------+---------------------------------------------+
 
 Manual aliases can be defined via the syntax `ALIAS([...])`. For instance to
 declare a list of absorption parameters use `ABSORPTION(KA)`.
@@ -235,7 +233,7 @@ Results
 The tool creates various summary tables which can be accessed in the results object,
 as well as files in .csv/.json format.
 
-Consider a iovsearch run:
+Consider a `covsearch` run:
 
 .. pharmpy-code::
 
@@ -243,8 +241,9 @@ Consider a iovsearch run:
                         effects='COVARIATE([CL, MAT, VC], [AGE, WT], EXP);COVARIATE([CL, MAT, VC], [SEX], CAT)')
 
 
-The ``summary_tool`` table contains information such as which feature each model candidate has, the difference to the
-start model (in this case comparing BIC), and final ranking:
+The ``summary_tool`` table contains information such as which feature each
+model candidate has, the difference with the start model (in this case
+comparing BIC), and final ranking:
 
 .. pharmpy-execute::
     :hide-code:
@@ -257,31 +256,34 @@ start model (in this case comparing BIC), and final ranking:
 
     res.summary_tool
 
-To see information about the actual model runs, such as minimization status, estimation time, and parameter estimates,
-you can look at the ``summary_models`` table. The table is generated with
+To see information about the actual model runs, such as minimization status,
+estimation time, and parameter estimates, you can look at the
+``summary_models`` table. The table is generated with
 :py:func:`pharmpy.modeling.summarize_modelfit_results`.
 
 .. pharmpy-execute::
 
     res.summary_models
 
-A summary table of predicted influential individuals and outliers can be seen in ``summary_individuals_count``.
-See :py:func:`pharmpy.modeling.summarize_individuals_count_table` for information on the content of this table.
+A summary table of predicted influential individuals and outliers can be seen
+in ``summary_individuals_count``. See
+:py:func:`pharmpy.modeling.summarize_individuals_count_table` for information
+on the content of this table.
 
 .. pharmpy-execute::
 
     res.summary_individuals_count
 
-You can see different individual statistics in ``summary_individuals``.
-See :py:func:`pharmpy.modeling.summarize_individuals` for information on the content of this table.
+You can see different individual statistics in ``summary_individuals``.  See
+:py:func:`pharmpy.modeling.summarize_individuals` for information on the
+content of this table.
 
 .. pharmpy-execute::
-    :hide-code:
 
     res.summary_individuals
 
-Finally, the results object has the same attributes as
-:ref:`the ones provided by SCM <modeling>`
+Finally, the results object provides the same attributes as
+:ref:`provided by SCM <scm>`
 
 
 .. pharmpy-execute::
