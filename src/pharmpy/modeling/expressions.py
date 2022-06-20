@@ -1,3 +1,4 @@
+from itertools import filterfalse
 from typing import Callable, Dict, Iterable, List, Sequence, Set, Tuple, TypeVar, Union
 
 import sympy
@@ -921,7 +922,7 @@ def get_pk_parameters(model: Model, kind: str = 'all') -> List[str]:
             # NOTE Substitution must be made in this order
             cs.subs({assignment.symbol: assignment.expression})
 
-    free_symbols = _pk_free_symbols(cs, kind)
+    free_symbols = set(_pk_free_symbols(cs, kind))
 
     assignments = list(_remove_synthetic_assignments(classified_assignments))
 
@@ -930,73 +931,103 @@ def get_pk_parameters(model: Model, kind: str = 'all') -> List[str]:
     return _filter_symbols(dependency_graph, free_symbols)
 
 
-def _pk_free_symbols(cs: CompartmentalSystem, kind: str):
+def _pk_free_symbols(cs: CompartmentalSystem, kind: str) -> Iterable[sympy.Symbol]:
 
     if kind == 'all':
         return cs.free_symbols
 
     if kind == 'absorption':
         return (
-            set()
+            []
             if cs.dosing_compartment == cs.central_compartment
-            else _get_component_free_symbols(cs, cs.dosing_compartment)
+            else _pk_free_symbols_from_compartment(cs, cs.dosing_compartment)
         )
 
     if kind == 'distribution':
-        return _get_component_free_symbols(cs, cs.central_compartment)
+        return _pk_free_symbols_from_compartment(cs, cs.central_compartment)
 
     if kind == 'elimination':
-        return _get_component_free_symbols(cs, cs.output_compartment)
+        return _pk_free_symbols_from_compartment(cs, cs.output_compartment)
 
     raise ValueError(f'Cannot handle kind `{kind}`')
 
 
-def _get_component_free_symbols(
+def _pk_free_symbols_from_compartment(
     cs: CompartmentalSystem, compartment: Compartment
-) -> Set[sympy.Symbol]:
+) -> Iterable[sympy.Symbol]:
+    vertices = _get_component(cs, compartment)
+    edges = _get_component_edges(cs, vertices)
+    is_central = compartment == cs.central_compartment
+    return _get_component_free_symbols(is_central, vertices, edges)
 
-    is_output = compartment == cs.output_compartment
 
-    flows = cs.get_compartment_inflows if is_output else cs.get_compartment_outflows
+def _get_component(cs: CompartmentalSystem, compartment: Compartment) -> Set[Compartment]:
 
-    def keep(u: Compartment, v: Compartment):
-        if u != cs.central_compartment and v != cs.central_compartment:
-            return True
+    # NOTE Should perhaps switch to computing strongly connected component for
+    # central compartment to be completely generic.
+    # see https://en.wikipedia.org/wiki/Strongly_connected_component
 
-        return cs.get_flow(u, v) is not None and cs.get_flow(v, u) is not None
-
-    def neighbors(u: Compartment):
-        return filter(lambda v: keep(u, v), map(lambda flow: flow[0], flows(u)))
-
-    vertices = _reachable_from(
-        {compartment},
-        neighbors,
+    central_component_vertices = _reachable_from(
+        {cs.central_compartment},
+        lambda u: filter(
+            lambda v: cs.get_flow(v, u) is not None,
+            map(lambda flow: flow[0], cs.get_compartment_outflows(u)),
+        ),
     )
 
-    edges = ((u, v, rate) for u in vertices for v, rate in flows(u))
+    if compartment == cs.central_compartment:
+        return central_component_vertices
 
-    free = set()
+    flows = (
+        cs.get_compartment_inflows
+        if compartment == cs.output_compartment
+        else cs.get_compartment_outflows
+    )
+
+    return _reachable_from(
+        {compartment},
+        lambda u: filterfalse(
+            central_component_vertices.__contains__,
+            map(lambda flow: flow[0], flows(u)),
+        ),
+    )
+
+
+def _get_component_edges(cs: CompartmentalSystem, vertices: Set[Compartment]):
+    return (
+        ((u, v, rate) for v in vertices for u, rate in cs.get_compartment_inflows(v))
+        if cs.output_compartment in vertices
+        else ((u, v, rate) for u in vertices for v, rate in cs.get_compartment_outflows(u))
+    )
+
+
+def _get_component_free_symbols(
+    is_central: bool,
+    vertices: Set[Compartment],
+    edges: Iterable[Tuple[Compartment, Compartment, sympy.Expr]],
+) -> Iterable[sympy.Symbol]:
+
     for (u, v, rate) in edges:
+        # NOTE These must not necessarily be outgoing edges
+        assert u in vertices or v in vertices
 
         if u not in vertices or v not in vertices:
             # NOTE This handles splitting the rate K = CL / V
             if len(rate.free_symbols) == 2:
                 a, b = rate.free_symbols
                 if rate == a / b:
-                    free.add(a if is_output else b)
+                    yield a if v in vertices else b
                     continue
                 elif rate == b / a:
-                    free.add(b if is_output else a)
+                    yield b if v in vertices else a
                     continue
 
-        if (u in vertices and v in vertices) or compartment != cs.central_compartment:
-            # NOTE This handles all internal edges and splitting the rate KA
-            free |= rate.free_symbols
+        if (u in vertices and v in vertices) or not is_central:
+            # NOTE This handles all internal edges, and in/out rates (KA, CL/V)
+            yield from rate.free_symbols
 
     for node in vertices:
-        free |= node.free_symbols
-
-    return free
+        yield from node.free_symbols
 
 
 def _assignments(sset: ModelStatements):
