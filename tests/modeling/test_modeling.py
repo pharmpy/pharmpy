@@ -1361,10 +1361,10 @@ def test_nested_add_covariate_effect(pheno_path):
             [
                 ('V', 'WT', 'exp', '*'),
                 ('V', 'AGE', 'exp', '*'),
-                ('V', 'CRCL', 'exp', '*'),
+                ('V', 'CLCR', 'exp', '*'),
             ],
             '$PK\n'
-            'CRCL_MEDIAN = 65.0000\n'
+            'CLCR_MEDIAN = 65.0000\n'
             'AGE_MEDIAN = 66.0000\n'
             'WT_MEDIAN = 78.0000\n'
             'CL = THETA(1) * EXP(ETA(1))\n'
@@ -1374,44 +1374,44 @@ def test_nested_add_covariate_effect(pheno_path):
             'V = VC\n'
             'VWT = EXP(THETA(4)*(WT - WT_MEDIAN))\n'
             'VAGE = EXP(THETA(5)*(AGE - AGE_MEDIAN))\n'
-            'VCRCL = EXP(THETA(6)*(CRCL - CRCL_MEDIAN))\n'
-            'V = V*VAGE*VCRCL*VWT\n',
+            'VCLCR = EXP(THETA(6)*(CLCR - CLCR_MEDIAN))\n'
+            'V = V*VAGE*VCLCR*VWT\n',
         ),
         (
             ('nonmem', 'models', 'mox2.mod'),
             [
-                ('CL', 'CRCL', 'exp', '*'),
-                ('V', 'CRCL', 'exp', '*'),
+                ('CL', 'CLCR', 'exp', '*'),
+                ('V', 'CLCR', 'exp', '*'),
             ],
             '$PK\n'
-            'CRCL_MEDIAN = 65.0000\n'
+            'CLCR_MEDIAN = 65.0000\n'
             'CL = THETA(1)*EXP(ETA(1))\n'
-            'CLCRCL = EXP(THETA(4)*(CRCL - CRCL_MEDIAN))\n'
-            'CL = CL*CLCRCL\n'
+            'CLCLCR = EXP(THETA(4)*(CLCR - CLCR_MEDIAN))\n'
+            'CL = CL*CLCLCR\n'
             'VC = THETA(2) * EXP(ETA(2))\n'
             'MAT = THETA(3) * EXP(ETA(3))\n'
             'KA = 1/MAT\n'
             'V = VC\n'
-            'VCRCL = EXP(THETA(5)*(CRCL - CRCL_MEDIAN))\n'
-            'V = V*VCRCL\n',
+            'VCLCR = EXP(THETA(5)*(CLCR - CLCR_MEDIAN))\n'
+            'V = V*VCLCR\n',
         ),
         (
             ('nonmem', 'models', 'mox2.mod'),
             [
-                ('V', 'CRCL', 'exp', '*'),
-                ('CL', 'CRCL', 'exp', '*'),
+                ('V', 'CLCR', 'exp', '*'),
+                ('CL', 'CLCR', 'exp', '*'),
             ],
             '$PK\n'
-            'CRCL_MEDIAN = 65.0000\n'
+            'CLCR_MEDIAN = 65.0000\n'
             'CL = THETA(1)*EXP(ETA(1))\n'
-            'CLCRCL = EXP(THETA(5)*(CRCL - CRCL_MEDIAN))\n'
-            'CL = CL*CLCRCL\n'
+            'CLCLCR = EXP(THETA(5)*(CLCR - CLCR_MEDIAN))\n'
+            'CL = CL*CLCLCR\n'
             'VC = THETA(2) * EXP(ETA(2))\n'
             'MAT = THETA(3) * EXP(ETA(3))\n'
             'KA = 1/MAT\n'
             'V = VC\n'
-            'VCRCL = EXP(THETA(4)*(CRCL - CRCL_MEDIAN))\n'
-            'V = V*VCRCL\n',
+            'VCLCR = EXP(THETA(4)*(CLCR - CLCR_MEDIAN))\n'
+            'V = V*VCLCR\n',
         ),
     ],
     ids=repr,

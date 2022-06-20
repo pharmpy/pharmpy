@@ -175,14 +175,14 @@ def add_covariate_effect(model, parameter, covariate, effect, operation='*'):
     statements.append(covariate_effect.template)
     statements.append(effect_statement)
 
-    cov_possible = [f'{parameter}{col_name}' for col_name in model.datainfo.names]
+    cov_possible = {S(parameter)} | {
+        S(f'{parameter}{col_name}') for col_name in model.datainfo.names
+    }
 
     # NOTE This is a heuristic that simplifies the NONMEM statements by
     # grouping multiple effect statements in a single statement.
     if last_existing_parameter_assignment.expression.args and all(
-        arg.name in cov_possible
-        for arg in last_existing_parameter_assignment.expression.args
-        if str(arg) != parameter
+        map(cov_possible.__contains__, last_existing_parameter_assignment.expression.args)
     ):
         effect_statement.expression = effect_statement.expression.subs(
             {parameter: last_existing_parameter_assignment.expression}
