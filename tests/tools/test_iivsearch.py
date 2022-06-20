@@ -8,19 +8,14 @@ from pharmpy.modeling import (
     add_peripheral_compartment,
     add_pk_iiv,
     create_joint_distribution,
-    get_rv_parameter,
 )
 from pharmpy.tools.iivsearch.algorithms import (
     _get_eta_combinations,
+    _iiv_param_dict,
     _is_current_block_structure,
     brute_force_block_structure,
     create_eta_blocks,
 )
-
-
-def _get_param_names(model):
-    iiv = model.random_variables.iiv
-    return {eta.name: get_rv_parameter(model, eta) for eta in iiv if iiv.get_variance(eta) != 0}
 
 
 @pytest.mark.parametrize(
@@ -125,7 +120,7 @@ def test_create_joint_dist(testdata):
 def test_get_param_names(testdata):
     model = Model.create_model(testdata / 'nonmem' / 'models' / 'mox2.mod')
 
-    param_dict = _get_param_names(model)
+    param_dict = _iiv_param_dict(model)
     param_dict_ref = {'ETA(1)': 'CL', 'ETA(2)': 'VC', 'ETA(3)': 'MAT'}
 
     assert param_dict == param_dict_ref
@@ -135,6 +130,6 @@ def test_get_param_names(testdata):
     )
     model = Model.create_model(StringIO(model_code))
 
-    param_dict = _get_param_names(model)
+    param_dict = _iiv_param_dict(model)
 
     assert param_dict == param_dict_ref

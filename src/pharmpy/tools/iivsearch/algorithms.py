@@ -1,6 +1,8 @@
 from itertools import combinations
+from typing import Dict
 
 import pharmpy.tools.modelfit as modelfit
+from pharmpy.model import Model
 from pharmpy.modeling import copy_model, remove_iiv
 from pharmpy.modeling.block_rvs import create_joint_distribution, split_joint_distribution
 from pharmpy.modeling.expressions import get_rv_parameter
@@ -100,17 +102,26 @@ def _is_current_block_structure(etas, combos):
     return True
 
 
-def _create_description(model):
+def _iiv_param_dict(model: Model) -> Dict[str, str]:
     iiv = model.random_variables.iiv
-    param_dict = {
-        eta.name: get_rv_parameter(model, eta) for eta in iiv if iiv.get_variance(eta) != 0
+    return {
+        eta.name: get_rv_parameter(model, eta)
+        for eta in iiv
+        if iiv.get_variance(eta).subs(
+            {parameter.symbol: parameter.init for parameter in model.parameters if parameter.fix}
+        )
+        != 0
     }
 
+
+def _create_description(model: Model) -> str:
+    param_dict = _iiv_param_dict(model)
+
+    if len(param_dict) == 0:
+        return '[]'
+
     blocks = []
-    for rvs, _ in iiv.distributions():
-        if len(param_dict) == 0:
-            blocks = ['[]']
-            break
+    for rvs, _ in model.random_variables.iiv.distributions():
         rvs_names = [rv.name for rv in rvs]
         param_names = [param_dict[name] for name in rvs_names]
         blocks.append(f'[{",".join(param_names)}]')
