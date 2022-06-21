@@ -6,7 +6,7 @@ from sympy import Symbol
 import pharmpy.plugins as plugins
 from pharmpy.modeling.common import convert_model
 from pharmpy.modeling.data import remove_loq_data
-from pharmpy.modeling.results import summarize_errors
+from pharmpy.modeling.results import summarize_errors, write_results
 from pharmpy.results import Results
 from pharmpy.workflows import default_tool_database
 
@@ -68,7 +68,7 @@ def run_amd(
     categorical : list
         List of categorical covariates
     continuous : list
-        List of continuouts covariates
+        List of continuous covariates
     allometric_variable: str or Symbol
         Variable to use for allometry
     occasion: str
@@ -168,7 +168,11 @@ def run_amd(
         sums = pd.concat(
             sums, keys=list(run_subfuncs.keys()), names=['tool', 'default index']
         ).reset_index()
-        sums['step'] = sums['step'].fillna(1).astype('int64')
+        if 'step' in sums.columns:
+            sums['step'] = sums['step'].fillna(1).astype('int64')
+        else:
+            sums['step'] = 1
+
         sums.set_index(['tool', 'step', 'model'], inplace=True)
         sums.drop('default index', axis=1, inplace=True)
         sum_amd.append(sums)
@@ -181,6 +185,8 @@ def run_amd(
         summary_individuals_count=sum_amd[2],
         summary_errors=summary_errors,
     )
+    write_results(results=res, path=db.path / 'results.json')
+    write_results(results=res, path=db.path / 'results.csv', csv=True)
     return res
 
 
