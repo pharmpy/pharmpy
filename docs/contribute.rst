@@ -3,8 +3,10 @@ Contribute
 ==========
 
 We encourage your contribution to the Pharmpy project! Anything from plugins for new model types to reporting bugs as
-GitHub issues, any contribution is appreciated. See also :ref:`projects` for project suggestions. These can be suitable for students or interns.
-Our community aspires to treat everyone equally and to value all contributions. We have a :doc:`Code of Conduct <code_of_conduct>` to foster an open and welcoming environment.
+GitHub issues (to Pharmpy `here <https://github.com/pharmpy/pharmpy/issues>`_ and to pharmr `here <https://github.com/pharmpy/pharmr/issues>`_),
+any contribution is appreciated. See also :ref:`projects` for project suggestions. These can be suitable for students or interns.
+Our community aspires to treat everyone equally and to value all contributions. We have a :doc:`Code of Conduct <code_of_conduct>`
+to foster an open and welcoming environment.
 
 Set up the development environment
 ##################################
