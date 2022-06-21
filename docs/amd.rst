@@ -359,3 +359,49 @@ settings that the AMD tool uses for this subtool can be seen in the table below.
 +---------------+----------------------------------------------------------------------------------------------------+
 | algorithm     | ``'scm-forward'``                                                                                  |
 +---------------+----------------------------------------------------------------------------------------------------+
+
+~~~~~~~
+Results
+~~~~~~~
+
+The results object contains the final selected model and various summary tables, all of which can be accessed in the
+results object as well as files in .csv/.json format.
+
+The ``summary_tool`` table contains information such as which feature each model candidate has, the difference to the
+start model (in this case comparing BIC), and final ranking:
+
+.. pharmpy-execute::
+    :hide-code:
+
+    from pharmpy.results import read_results
+    res = read_results('tests/testdata/results/amd_results.json')
+    res.summary_tool
+
+To see information about the actual model runs, such as minimization status, estimation time, and parameter estimates,
+you can look at the ``summary_models`` table. The table is generated with
+:py:func:`pharmpy.modeling.summarize_modelfit_results`.
+
+.. pharmpy-execute::
+    :hide-code:
+
+    res.summary_models
+
+A summary table of predicted influential individuals and outliers can be seen in ``summary_individuals_count``.
+See :py:func:`pharmpy.modeling.summarize_individuals_count_table` for information on the content of this table.
+
+.. pharmpy-execute::
+    :hide-code:
+
+    res.summary_individuals_count
+
+Finally, you can see a summary of any errors and warnings of the final selected model in ``summary_errors``.
+See :py:func:`pharmpy.modeling.summarize_errors` for information on the content of this table.
+
+.. pharmpy-execute::
+    :hide-code:
+
+    import pandas as pd
+    pd.set_option('display.max_colwidth', None)
+    res.summary_errors
+
+
