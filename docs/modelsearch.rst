@@ -47,7 +47,7 @@ For a more detailed description of each argument, see their respective chapter o
 +=================================================+==================================================================+
 | :ref:`search_space<the search space>`           | Search space to test                                             |
 +-------------------------------------------------+------------------------------------------------------------------+
-| :ref:`algorithm<algorithms_modelsearch>`        | Algorithm to use (e.g. ``'exhaustive'``)                         |
+| :ref:`algorithm<algorithms_modelsearch>`        | Algorithm to use (e.g. ``'reduced_stepwise'``)                   |
 +-------------------------------------------------+------------------------------------------------------------------+
 | :ref:`rank_type<ranking_modelsearch>`           | Which selection criteria to rank models on, e.g. OFV (default is |
 |                                                 | BIC)                                                             |
@@ -56,7 +56,7 @@ For a more detailed description of each argument, see their respective chapter o
 |                                                 | cutoff (default is none)                                         |
 +-------------------------------------------------+------------------------------------------------------------------+
 | :ref:`iiv_strategy<iiv_strategies_modelsearch>` | If/how IIV should be added to candidate models (default is to    |
-|                                                 | not add)                                                         |
+|                                                 | add to absorption delay parameters)                              |
 +-------------------------------------------------+------------------------------------------------------------------+
 | ``model``                                       | Start model                                                      |
 +-------------------------------------------------+------------------------------------------------------------------+
@@ -249,13 +249,13 @@ The different strategies can be seen here:
 +------------------------+----------------------------------------------------------------------------------+
 | Strategy               | Description                                                                      |
 +========================+==================================================================================+
-| ``'no_add'``           | No IIVs are added during the search (default)                                    |
+| ``'no_add'``           | No IIVs are added during the search                                              |
 +------------------------+----------------------------------------------------------------------------------+
 | ``'add_diagonal'``     | IIV is added to all structural parameters as diagonal                            |
 +------------------------+----------------------------------------------------------------------------------+
 | ``'fullblock'``        | IIV is added to all structural parameters, and all IIVs will be in a full block  |
 +------------------------+----------------------------------------------------------------------------------+
-| ``'absorption_delay'`` | IIV is added to the absorption delay parameter                                   |
+| ``'absorption_delay'`` | IIV is added to the absorption delay parameter (default)                         |
 +------------------------+----------------------------------------------------------------------------------+
 
 .. _ranking_modelsearch:

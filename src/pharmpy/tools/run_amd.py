@@ -115,7 +115,7 @@ def run_amd(
     if search_space is None:
         if modeltype == 'pk_oral':
             search_space = (
-                'ABSORPTION([ZO,SEQ-ZO-FO]);'
+                'ABSORPTION(SEQ-ZO-FO);'
                 'ELIMINATION([MM,MIX-FO-MM]);'
                 'LAGTIME();'
                 'TRANSITS([1,3,10],*);'
@@ -194,7 +194,7 @@ def _run_modelsearch(model, search_space, path):
     res_modelsearch = run_tool(
         'modelsearch',
         search_space=search_space,
-        algorithm='exhaustive_stepwise',
+        algorithm='reduced_stepwise',
         model=model,
         path=path / 'modelsearch',
     )

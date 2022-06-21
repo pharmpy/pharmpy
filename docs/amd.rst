@@ -103,7 +103,7 @@ default is:
 
 .. code-block::
 
-    ABSORPTION([ZO,SEQ-ZO-FO])
+    ABSORPTION(SEQ-ZO-FO)
     ELIMINATION([MM,MIX-FO-MM])
     LAGTIME()
     TRANSITS([1,3,10],*)
@@ -251,7 +251,7 @@ that the AMD tool uses for this subtool can be seen in the table below.
 +===============+====================================================================================================+
 | search_space  | Given in :ref:`AMD options<amd_args>` (``search_space``)                                           |
 +---------------+----------------------------------------------------------------------------------------------------+
-| algorithm     | ``'exhaustive_stepwise'``                                                                          |
+| algorithm     | ``'reduced_stepwise'``                                                                             |
 +---------------+----------------------------------------------------------------------------------------------------+
 | iiv_strategy  | ``'absorption_delay'``                                                                             |
 +---------------+----------------------------------------------------------------------------------------------------+
