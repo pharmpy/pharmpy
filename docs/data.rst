@@ -11,7 +11,7 @@ This could contain for example a description of how the columns are used in the 
 Retrieving the dataset from a model
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The dataset connected to a model can be retrieved from the `dataset` attribute. 
+The dataset connected to a model can be retrieved from the `dataset` attribute.
 
 .. pharmpy-execute::
    :hide-output:
@@ -159,6 +159,8 @@ Extract pharmacokinetic concentration parameters from the dataset
     get_concentration_parameters_from_data(model)
 
 
+.. _datainfo:
+
 ~~~~~~~~
 DataInfo
 ~~~~~~~~
@@ -182,6 +184,9 @@ Separator character for the dataset file.
 .. pharmpy-execute::
 
     di.separator
+
+.. note::
+    A datainfo file can be created for .csv-files `here <https://pharmpy.github.io/amdui/datainfo>`_.
 
 ColumnInfo
 ==========
@@ -228,12 +233,12 @@ A boolean that is set to `True` if the column is not going to be used by the mod
 datatype
 --------
 
-The datatype of the column data. This describes the low level encoding of the data. See :attr:`pharmpy.ColumnInfo.datatype` for a list of all supported datatypes. 
+The datatype of the column data. This describes the low level encoding of the data. See :attr:`pharmpy.ColumnInfo.datatype` for a list of all supported datatypes.
 
 descriptor
 ----------
 
-The descriptor can provide a high level understanding of the data in a machine readable way. See :attr:`pharmpy.ColumnInfo.descriptor` for a list of all supported descriptors. 
+The descriptor can provide a high level understanding of the data in a machine readable way. See :attr:`pharmpy.ColumnInfo.descriptor` for a list of all supported descriptors.
 
 datainfo file
 =============

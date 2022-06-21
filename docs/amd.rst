@@ -32,8 +32,8 @@ To initiate AMD in Python/R:
 
 This will take a dataset as ``input``, where the ``modeltype`` has been specified to be a PK oral drug. AMD will search
 for the best structural model, IIV structure, and residual model in the specified ``order``. We specify the column SEX
-as a ``categorical`` covariate and AGE as a ``continuous`` covariate. Finally we define our ``allometric_variable``
-column, which is WGT, and our ``occasion`` column, which is VISI.
+as a ``categorical`` covariate and AGE as a ``continuous`` covariate. Finally, we declare the WGT-column as our
+``allometric_variable``, VISI as our ``occasion`` column.
 
 ~~~~~~~~~
 Arguments
@@ -75,8 +75,8 @@ Arguments
 Input
 ~~~~~
 
-The AMD tool can use both a dataset and a model as input. If the input is a dataset, Pharmpy will create a model with
-the following attributes:
+The AMD tool can use both a dataset and a model as input. If the input is a dataset (with corresponding
+:ref:`datainfo file<datainfo>`), Pharmpy will create a model with the following attributes:
 
 * Structural: one compartment, first order absorption (if ``model_type`` is ``'pk_oral'``), first order elimination
 * IIV: CL and VC with covariance
@@ -86,8 +86,8 @@ the following attributes:
 If the input is a model, the model needs to be a PK model.
 
 .. warning::
-    The AMD tool, or more specifically the :ref:`modelsearch` tool, does not support NONMEM models with a compartment
-    column. This needs to be dropped (either via model or datainfo file) or excluded for the dataset.
+    The AMD tool, or more specifically the :ref:`modelsearch` tool, does not support NONMEM models with a CMT or RATE
+    column. This needs to be dropped (either via model or datainfo file) or excluded from the dataset.
 
 .. _search_space_amd:
 
@@ -122,7 +122,7 @@ For a PK IV model, the default is:
 Order of subtools
 ~~~~~~~~~~~~~~~~~
 
-The order of the subtools are specified in the ``order`` argument. Consider the default order:
+The order of the subtools is specified in the ``order`` argument. Consider the default order:
 
 .. pharmpy-code::
 
@@ -230,12 +230,12 @@ for each subtool, see the respective subheading.
 | iivsearch        | Search for best IIV structure, both in terms of number of IIVs to keep as well as covariance    |
 |                  | structure                                                                                       |
 +------------------+-------------------------------------------------------------------------------------------------+
-| iovsearch        | Search for best IOV structure, removes IIVs explained by IOV                                    |
+| iovsearch        | Search for best IOV structure and remove IIVs explained by IOV                                  |
 +------------------+-------------------------------------------------------------------------------------------------+
-| resmod           | Search for best residual error model, tests IIV on RUV, power on RUV, combined error model, and |
+| resmod           | Search for best residual error model, test IIV on RUV, power on RUV, combined error model, and  |
 |                  | time-varying                                                                                    |
 +------------------+-------------------------------------------------------------------------------------------------+
-| allometry        | Tests allometric scaling                                                                        |
+| allometry        | Test allometric scaling                                                                         |
 +------------------+-------------------------------------------------------------------------------------------------+
 | covsearch        | Test and identify covariate effects                                                             |
 +------------------+-------------------------------------------------------------------------------------------------+
