@@ -1,3 +1,22 @@
+0.73.0 (2022-06-21)
+-------------------
+
+New features
+============
+
+* Add covsearch tool
+* Add function tools.retrieve_models to read in models from a tool database
+* Add functions modeling.get_individual_parameters, modeling.get_pk_parameters, modeling.get_rv_parameter, and modeling.has_random_effect
+
+Changes
+=======
+
+* Include covsearch tool in AMD
+* Add results for AMD tool
+* Move fit, run_tool, run_amd, and all tool wrappers from modeling module to tool module
+* Rename 'diagonal' -> 'add_diagonal' in iiv strategy option for iivsearch and modelsearch tool
+* Include column for selection criteria in rank_models
+
 0.72.0 (2022-06-08)
 -------------------
 
@@ -18,8 +37,8 @@ Changes
 * Add error summaries to iivsearch, modelsearch, resmod, and allometry tools
 * Add algorithm argument in estmethod tool ('exhaustive' and 'reduced')
 
-Bugfix
-======
+Bugfixes
+========
 
 * Handle etas after ODEs in iivsearch-tool
 
