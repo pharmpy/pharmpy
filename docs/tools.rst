@@ -20,6 +20,7 @@ Tools in Pharmpy
 .. toctree::
    :maxdepth: 1
 
+   AMD - automatic model development <amd>
    Modelsearch - search for best structural model for a PK model <modelsearch>
    IIVsearch - search for best IIV structure (both variance and covariance) <iivsearch>
    IOVsearch - search for best IOV structure and trim IIV <iovsearch>
