@@ -96,7 +96,7 @@ To run a particular unit test file::
 
 To run a particular test function in a particular test file::
 
-    tox -e py39 -- pytest test_parameters.py -ktest_myfunc
+    tox -e py39 -- pytest test_parameters.py::test_myfunc
 
 Build and test the documentation
 ********************************

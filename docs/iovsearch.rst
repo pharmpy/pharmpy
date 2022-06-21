@@ -150,7 +150,7 @@ below.
 +===================+=================================================+
 | ``'same-as-iiv'`` | Copies the distribution of IIV etas (default)   |
 +-------------------+-------------------------------------------------+
-| ``'disjoint'``    | Disjoint normal distribution                    |
+| ``'disjoint'``    | Disjoint normal distributions                   |
 +-------------------+-------------------------------------------------+
 | ``'joint'``       | Joint normal distribution                       |
 +-------------------+-------------------------------------------------+
@@ -186,7 +186,7 @@ Results
 The tool creates various summary tables which can be accessed in the results object,
 as well as files in .csv/.json format.
 
-Consider a iovsearch run:
+Consider a IOVsearch run:
 
 .. pharmpy-code::
 

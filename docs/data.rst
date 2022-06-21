@@ -156,7 +156,7 @@ Extract pharmacokinetic concentration parameters from the dataset
 .. pharmpy-execute::
 
     from pharmpy.modeling import get_concentration_parameters_from_data
-    get_concentration_parameters_from_data
+    get_concentration_parameters_from_data(model)
 
 
 ~~~~~~~~
