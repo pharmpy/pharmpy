@@ -1,4 +1,3 @@
-import copy
 from collections.abc import Sequence
 
 import numpy as np
@@ -70,7 +69,7 @@ class Parameters(Sequence):
         return ind, self._params[ind]
 
     def __getitem__(self, ind):
-        if isinstance(ind, list):
+        if isinstance(ind, Sequence):
             params = []
             for i in ind:
                 index, param = self._lookup_param(i)
@@ -208,6 +207,16 @@ class Parameters(Sequence):
         nonfixed = [p for p in self._params if not p.fix]
         return Parameters(nonfixed)
 
+    def __add__(self, other):
+        if isinstance(other, Parameter):
+            add = [other]
+        elif isinstance(other, Parameters):
+            add = other._params
+        elif isinstance(other, Sequence):
+            add = list(other)
+        new = Parameters(self._params + add)
+        return new
+
     def __eq__(self, other):
         if len(self) != len(other):
             return False
@@ -289,9 +298,17 @@ class Parameter:
         """Should parameter be fixed or not"""
         return self._fix
 
-    def set_fix(self, value):
-        new = copy.copy(self)
-        new._fix = value
+    def derive(self, init=None, lower=None, upper=None, fix=None):
+        """Derive a new parameter with new properties"""
+        if init is None:
+            init = self.init
+        if lower is None:
+            lower = self.lower
+        if upper is None:
+            upper = self.upper
+        if fix is None:
+            fix = self.fix
+        new = Parameter(self.name, init, lower=lower, upper=upper, fix=fix)
         return new
 
     @property

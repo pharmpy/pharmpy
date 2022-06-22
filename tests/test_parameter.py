@@ -54,8 +54,26 @@ def test_repr():
 def test_fix():
     param = Parameter('X', 2, lower=0, upper=23)
     assert param == Parameter('X', 2, lower=0, upper=23, fix=False)
-    param = param.set_fix(True)
+    param = param.derive(fix=True)
     assert param == Parameter('X', 2, lower=0, upper=23, fix=True)
+
+
+def test_add():
+    p1 = Parameter('x', 2)
+    p2 = Parameter('y', 3)
+    p3 = Parameter('z', 4)
+    pset = Parameters([p1, p2])
+    pset2 = pset + p3
+    assert len(pset2) == 3
+    assert pset2['z'].init == 4
+    pset3 = Parameters([p1])
+    pset4 = pset3 + Parameters([p2, p3])
+    assert len(pset4) == 3
+    assert pset4['z'].init == 4
+    pset5 = Parameters([p1])
+    pset6 = pset5 + (p2, p3)
+    assert len(pset6) == 3
+    assert pset6['z'].init == 4
 
 
 def test_pset_init():
