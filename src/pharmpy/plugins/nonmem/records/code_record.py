@@ -4,7 +4,7 @@ Generic NONMEM code record class.
 """
 
 import re
-from typing import Any, Iterable, Sequence, Tuple
+from typing import Any, Iterable, Iterator, Sequence, Tuple
 
 import lark
 import sympy
@@ -17,7 +17,7 @@ import pharmpy.symbols as symbols
 from pharmpy.data_structures import OrderedSet
 from pharmpy.parse_utils.generic import AttrToken, NoSuchRuleException
 from pharmpy.plugins.nonmem.records.parsers import CodeRecordParser
-from pharmpy.statements import Assignment, ModelStatements
+from pharmpy.statements import Assignment, ModelStatements, Statement
 
 from .record import Record
 
@@ -432,11 +432,71 @@ def diff(old: Sequence, new: Sequence):
         yield pair
 
 
+def _index_statements_diff(
+    index: Sequence[Tuple[int, int, int, int]], it: Iterator[Tuple[int, Statement]]
+):
+    """This function reorders and groups a diff of statements according to the
+    given index mapping"""
+
+    index_index = 0
+    last_node_index = index[0][0] if index else 0
+
+    while True:
+
+        try:
+            op, s = next(it)
+        except StopIteration:
+            break
+
+        # NOTE We forward standalone insertions
+        if op == 1:
+            yield op, [s], last_node_index, last_node_index
+            continue
+
+        # NOTE We fetch the index entry for this group of statements
+        assert index_index < len(index)
+        ni, nj, si, sj = index[index_index]
+        index_index += 1
+
+        operations = [op]
+        statements = [s]
+        expected = sj - si - 1
+
+        # NOTE We retrieve all statements for this index entry, as well as
+        # interleaved insertion statements
+        while expected > 0:
+
+            op, s = next(it)  # NOTE We do not expect this to raise
+
+            operations.append(op)
+            statements.append(s)
+            if op != 1:
+                expected -= 1
+
+        if all(op == 0 for op in operations):
+            # NOTE If this group of statements contains no changes, we can keep
+            # the associated nodes.
+            yield 0, statements, ni, nj
+        else:
+            # NOTE Otherwise we remove all associated nodes
+            yield -1, [s for s, op in zip(statements, operations) if op != 1], ni, nj
+            # NOTE And generate new nodes for kept statements
+            new_statements = [s for s, op in zip(statements, operations) if op != -1]
+            if new_statements:
+                yield 1, new_statements, nj, nj
+
+        last_node_index = nj
+
+
 class CodeRecord(Record):
     def __init__(self, content, parser_class):
         self.is_updated = False
         self.rvs, self.trans = None, None
-        self._nodes_index = []
+        # NOTE self._index establishes a correspondance between self.root
+        # nodes and self.statements statements. self._index consists of
+        # (ni, nj, si, sj) tuples which maps the nodes
+        # self.root.children[ni:nj] to the statements self.statements[si:sj]
+        self._index = []
         super().__init__(content, parser_class)
 
     @property
@@ -453,46 +513,37 @@ class CodeRecord(Record):
             old = self.statements
         if new == old:
             return
-        index_index = 0
-        child_index = self._nodes_index[0][0] if self._nodes_index else 0
-        # We copy all nodes until the first existing statement node
-        new_children = self.root.children[0:child_index]
+        new_children = []
+        last_node_index = 0
         new_index = []
-        defined_symbols = set()  # Set of all defined symbols updated so far
-        for op, s in diff(old, new):
+        defined_symbols = set()  # NOTE Set of all defined symbols so far
+        si = 0  # NOTE We keep track of progress in the "new" statements sequence
+        for op, statements, ni, nj in _index_statements_diff(self._index, diff(old, new)):
+            # NOTE We copy interleaved non-statement nodes
+            new_children.extend(self.root.children[last_node_index:ni])
             if op == 1:
-                statement_nodes = self._statement_to_nodes(defined_symbols, child_index, s)
-                # We insert the generated nodes just before the next existing
-                # statement node
-                insert_pos = len(new_children)
-                new_index.append((insert_pos, insert_pos + len(statement_nodes)))
-                new_children.extend(statement_nodes)
-                defined_symbols.add(s.symbol)
-            else:
-                assert index_index < len(self._nodes_index)
-                non_statement_index = self._nodes_index[index_index][1]
-                if op == 0:
-                    # We keep the nodes but insert them at an updated position
+                for s in statements:
+                    statement_nodes = self._statement_to_nodes(defined_symbols, ni, s)
+                    # NOTE We insert the generated nodes just before the next
+                    # existing statement node
                     insert_pos = len(new_children)
-                    insert_len = non_statement_index - child_index
-                    new_index.append((insert_pos, insert_pos + insert_len))
-                    new_children.extend(self.root.children[child_index:non_statement_index])
+                    new_index.append((insert_pos, insert_pos + len(statement_nodes), si, si + 1))
+                    si += 1
+                    new_children.extend(statement_nodes)
                     defined_symbols.add(s.symbol)
-                index_index += 1
-                if index_index < len(self._nodes_index):
-                    # If there are more statement nodes we move the child_index
-                    # cursor just before the next existing statement node,
-                    # copying all non-statement nodes along the way.
-                    child_index = self._nodes_index[index_index][0]
-                    new_children.extend(self.root.children[non_statement_index:child_index])
-                else:
-                    # Otherwise we set child_index to be the position
-                    # just before all tailing non statement nodes.
-                    child_index = non_statement_index
-        # We copy any non-statement nodes that are remaining
-        new_children.extend(self.root.children[child_index:])
+            elif op == 0:
+                # NOTE We keep the nodes but insert them at an updated position
+                insert_pos = len(new_children)
+                insert_len = nj - ni
+                new_index.append((insert_pos, insert_pos + insert_len, si, si + len(statements)))
+                si += len(statements)
+                new_children.extend(self.root.children[ni:nj])
+                defined_symbols.update(s.symbol for s in statements)
+            last_node_index = nj
+        # NOTE We copy any non-statement nodes that are remaining
+        new_children.extend(self.root.children[last_node_index:])
         self.root.children = new_children
-        self._nodes_index = new_index
+        self._index = new_index
         self._statements = new.copy()
 
     def _statement_to_nodes(self, defined_symbols, node_index, s):
@@ -520,14 +571,14 @@ class CodeRecord(Record):
                 continue
             for node in child.children:
                 # NOTE why does this iterate over the children?
-                # Right now it looks like it could add the same stament
+                # Right now it looks like it could add the same statement
                 # multiple times because there is no break on a match.
                 if node.rule == 'assignment':
                     name = str(node.variable).upper()
                     expr = ExpressionInterpreter().visit(node.expression)
                     ass = Assignment(name, expr)
                     s.append(ass)
-                    new_index.append((child_index, child_index + 1))
+                    new_index.append((child_index, child_index + 1, len(s) - 1, len(s)))
                 elif node.rule == 'logical_if':
                     logic_expr = ExpressionInterpreter().visit(node.logical_expression)
                     try:
@@ -546,7 +597,7 @@ class CodeRecord(Record):
                         pw = sympy.Piecewise((expr, logic_expr), (else_val, True))
                         ass = Assignment(name, pw)
                         s.append(ass)
-                    new_index.append((child_index, child_index + 1))
+                        new_index.append((child_index, child_index + 1, len(s) - 1, len(s)))
                 elif node.rule == 'block_if':
                     interpreter = ExpressionInterpreter()
                     blocks = []  # [(logic, [(symb1, expr1), ...]), ...]
@@ -603,9 +654,9 @@ class CodeRecord(Record):
                         pw = sympy.Piecewise(*pairs)
                         ass = Assignment(symbol, pw)
                         s.append(ass)
-                    new_index.append((child_index, child_index + 1))
+                    new_index.append((child_index, child_index + 1, len(s) - len(symbols), len(s)))
 
-        self._nodes_index = new_index
+        self._index = new_index
         statements = ModelStatements(s)
         return statements
 
