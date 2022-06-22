@@ -230,9 +230,7 @@ class OmegaRecord(Record):
 
     def _get_param_name(self, row, col):
         """Get the name of the current OMEGA/SIGMA at (row, col)"""
-        invmap = {value: key for key, value in self.name_map.items()}
-        name = invmap[(row, col)]
-        return name
+        return next(key for key, value in self.name_map.items() if value == (row, col))
 
     def update(self, parameters, first_omega, previous_size):
         """From a Parameters update the OMEGAs in this record
