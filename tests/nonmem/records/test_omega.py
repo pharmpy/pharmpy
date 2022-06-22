@@ -3,7 +3,7 @@ import sympy
 
 from pharmpy.config import ConfigurationContext
 from pharmpy.model import ModelSyntaxError
-from pharmpy.parameter import Parameters
+from pharmpy.parameters import Parameters
 from pharmpy.plugins.nonmem import conf
 from pharmpy.symbols import symbol
 

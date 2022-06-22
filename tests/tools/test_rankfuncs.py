@@ -1,5 +1,5 @@
 from pharmpy.modeling import load_example_model
-from pharmpy.parameter import Parameters
+from pharmpy.parameters import Parameters
 from pharmpy.tools.rankfuncs import aic, ofv
 
 pheno = load_example_model("pheno")

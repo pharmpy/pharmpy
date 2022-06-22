@@ -16,7 +16,7 @@ from pharmpy.modeling import (
     set_zero_order_absorption,
     set_zero_order_elimination,
 )
-from pharmpy.parameter import Parameter, Parameters
+from pharmpy.parameters import Parameter, Parameters
 from pharmpy.plugins.nonmem import conf, convert_model
 from pharmpy.plugins.nonmem.nmtran_parser import NMTranParser
 from pharmpy.random_variables import RandomVariable

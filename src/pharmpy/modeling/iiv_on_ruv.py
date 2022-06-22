@@ -5,7 +5,7 @@
 import sympy
 
 from pharmpy.modeling.help_functions import _format_input_list, _get_epsilons
-from pharmpy.parameter import Parameter, Parameters
+from pharmpy.parameters import Parameter, Parameters
 from pharmpy.random_variables import RandomVariable
 from pharmpy.symbols import symbol as S
 

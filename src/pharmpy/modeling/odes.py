@@ -8,7 +8,7 @@ import pharmpy.symbols
 from pharmpy import ExplicitODESystem
 from pharmpy.model import ModelError
 from pharmpy.modeling.help_functions import _as_integer
-from pharmpy.parameter import Parameter, Parameters
+from pharmpy.parameters import Parameter, Parameters
 from pharmpy.statements import Assignment, Bolus, Infusion
 
 from .common import remove_unused_parameters_and_rvs, rename_symbols

@@ -14,7 +14,7 @@ from sympy.stats.joint_rv_types import MultivariateNormalDistribution
 
 from pharmpy.modeling.expressions import create_symbol, get_pk_parameters, has_random_effect
 from pharmpy.modeling.help_functions import _format_input_list, _format_options, _get_etas
-from pharmpy.parameter import Parameter, Parameters
+from pharmpy.parameters import Parameter, Parameters
 from pharmpy.random_variables import RandomVariable
 from pharmpy.statements import Assignment, ModelStatements, sympify
 from pharmpy.symbols import symbol as S

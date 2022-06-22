@@ -21,7 +21,7 @@ import sympy
 
 from pharmpy.datainfo import ColumnInfo, DataInfo
 from pharmpy.estimation import EstimationSteps
-from pharmpy.parameter import Parameters
+from pharmpy.parameters import Parameters
 from pharmpy.plugins.utils import detect_model
 from pharmpy.random_variables import RandomVariables
 from pharmpy.statements import ModelStatements

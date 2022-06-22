@@ -17,7 +17,7 @@ from pharmpy.datainfo import ColumnInfo, DataInfo
 from pharmpy.estimation import EstimationStep, EstimationSteps
 from pharmpy.model import ModelSyntaxError
 from pharmpy.modeling.write_csv import write_csv
-from pharmpy.parameter import Parameter, Parameters
+from pharmpy.parameters import Parameter, Parameters
 from pharmpy.plugins.nonmem.results import NONMEMChainedModelfitResults
 from pharmpy.plugins.nonmem.table import NONMEMTableFile, PhiTable
 from pharmpy.random_variables import RandomVariable, RandomVariables

@@ -69,7 +69,7 @@ class Parameters(Sequence):
         return ind, self._params[ind]
 
     def __getitem__(self, ind):
-        if isinstance(ind, Sequence):
+        if not isinstance(ind, str) and isinstance(ind, Sequence):
             params = []
             for i in ind:
                 index, param = self._lookup_param(i)

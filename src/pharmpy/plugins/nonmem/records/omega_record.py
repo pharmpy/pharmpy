@@ -8,7 +8,7 @@ import sympy.stats
 
 import pharmpy.math
 from pharmpy.model import ModelSyntaxError
-from pharmpy.parameter import Parameter
+from pharmpy.parameters import Parameter
 from pharmpy.parse_utils.generic import (
     AttrToken,
     AttrTree,

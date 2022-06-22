@@ -7,7 +7,7 @@ import sympy
 
 from pharmpy import math
 from pharmpy.modeling.help_functions import _get_etas
-from pharmpy.parameter import Parameter, Parameters
+from pharmpy.parameters import Parameter, Parameters
 from pharmpy.random_variables import RandomVariables
 
 

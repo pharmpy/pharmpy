@@ -17,7 +17,7 @@ from .data import DatasetError, DatasetWarning
 from .datainfo import ColumnInfo, DataInfo
 from .estimation import EstimationStep, EstimationSteps
 from .model import Model, ModelError, ModelfitResultsError, ModelSyntaxError
-from .parameter import Parameter, Parameters
+from .parameters import Parameter, Parameters
 from .random_variables import RandomVariable, RandomVariables, VariabilityHierarchy
 from .results import Results
 from .statements import (

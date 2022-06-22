@@ -1,4 +1,4 @@
-from pharmpy.parameter import Parameter, Parameters
+from pharmpy.parameters import Parameter, Parameters
 from pharmpy.statements import Assignment, sympify
 
 from . import find_clearance_parameters, find_volume_parameters

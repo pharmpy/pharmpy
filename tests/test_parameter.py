@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 import sympy
 
-from pharmpy.parameter import Parameter, Parameters
+from pharmpy.parameters import Parameter, Parameters
 from pharmpy.symbols import symbol
 
 

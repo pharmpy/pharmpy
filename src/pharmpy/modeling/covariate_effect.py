@@ -9,7 +9,7 @@ from operator import add, mul
 import numpy as np
 from sympy import Eq, Float, Gt, Le, Piecewise, exp
 
-from pharmpy.parameter import Parameter, Parameters
+from pharmpy.parameters import Parameter, Parameters
 from pharmpy.statements import Assignment, ModelStatements, sympify
 from pharmpy.symbols import symbol as S
 
