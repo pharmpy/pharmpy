@@ -1,0 +1,25 @@
+{
+    "pharmpy_version": "0.73.1",
+    "tool_name": "modelsearch",
+    "stats": {
+        "start_time": "2022-06-22T09:45:50.552644+02:00",
+        "end_time": "2022-06-22T09:46:09.625482+02:00"
+    },
+    "tool_options": {
+        "search_space": "ABSORPTION(ZO);PERIPHERALS(1)",
+        "algorithm": "exhaustive_stepwise",
+        "iiv_strategy": "no_add",
+        "rank_type": "bic",
+        "cutoff": null,
+        "model": "<Pharmpy model object mox2>"
+    },
+    "common_options": {
+        "dispatcher": "pharmpy.workflows.dispatchers.local_dask",
+        "database": {
+            "class": "LocalDirectoryToolDatabase",
+            "toolname": "modelsearch",
+            "path": "/tmp/tool_results/modelsearch"
+        },
+        "path": "/tmp/tool_results/modelsearch"
+    }
+}

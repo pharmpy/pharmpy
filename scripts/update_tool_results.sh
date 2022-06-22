@@ -30,6 +30,7 @@ cp $TESTDATA/models/mox_simulated_normal.csv $TESTPATH
 
 tox -e run -- pharmpy run modelsearch $TESTPATH/mox2.mod 'ABSORPTION(ZO);PERIPHERALS(1)' 'exhaustive_stepwise' --path $TESTPATH/modelsearch/
 cp $TESTPATH/modelsearch/results.json $DEST/modelsearch_results.json
+cp $TESTPATH/modelsearch/metadata.json $DEST/metadata.json
 
 tox -e run -- pharmpy run iivsearch $TESTPATH/mox2.mod 'brute_force' --path $TESTPATH/iivsearch/
 cp $TESTPATH/iivsearch/results.json $DEST/iivsearch_results.json
