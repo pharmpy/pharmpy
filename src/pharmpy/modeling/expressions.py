@@ -523,8 +523,8 @@ def cleanup_model(model):
     model : Model
         Pharmpy model
 
-    Result
-    ------
+    Returns
+    -------
     Model
         Reference to the same model
 
@@ -614,8 +614,8 @@ def greekify_model(model, named_subscripts=False):
     named_subscripts : bool
         Use previous parameter names as subscripts. Default is to use integer subscripts
 
-    Result
-    ------
+    Returns
+    -------
     Model
         Reference to the same model
 
