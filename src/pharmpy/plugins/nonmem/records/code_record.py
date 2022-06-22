@@ -4,6 +4,7 @@ Generic NONMEM code record class.
 """
 
 import re
+from typing import Any, Iterable, Sequence, Tuple
 
 import lark
 import sympy
@@ -358,7 +359,7 @@ class ExpressionInterpreter(lark.visitors.Interpreter):
         return symb
 
 
-def lcslen(a, b):
+def lcslen(a: Sequence, b: Sequence) -> Sequence[Sequence[int]]:
     # generate matrix of length of longest common subsequence for sublists of both lists
     lengths = [[0] * (len(b) + 1) for _ in range(len(a) + 1)]
     for i, x in enumerate(a):
@@ -370,7 +371,9 @@ def lcslen(a, b):
     return lengths
 
 
-def lcsdiff(c, x, y, i, j):
+def lcsdiff(
+    c: Sequence[Sequence[int]], x: Sequence, y: Sequence, i: int, j: int
+) -> Iterable[Tuple[int, Any]]:
     """Print the diff using LCS length matrix using backtracking"""
     if i < 0 and j < 0:
         return
@@ -391,7 +394,7 @@ def lcsdiff(c, x, y, i, j):
         yield -1, x[i]
 
 
-def diff(old, new):
+def diff(old: Sequence, new: Sequence):
     """Get diff between a and b in order for all elements
 
     Optimizes by first handling equal elements from the head and tail
