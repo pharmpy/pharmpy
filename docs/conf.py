@@ -54,6 +54,9 @@ html_theme_options = {
         "image_dark": "Pharmpy_logo_dark.svg",
     }
 }
+html_context = {
+   "default_mode": "light"
+}
 html_sidebars = {
    '**': ['searchbox.html', 'globaltoc.html', 'sourcelink.html'],
 }
