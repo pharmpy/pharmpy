@@ -38,7 +38,7 @@ In addition to the tool specific options, there are some options that all tools 
 +------------+---------------------------------------------+
 | Argument   | Description                                 |
 +============+=============================================+
-| ``path``   | Path to create (or resume tool database)    |
+| ``path``   | Path to create (or resume in) tool database |
 +------------+---------------------------------------------+
 | ``resume`` | Flag whether to resume an existing tool run |
 +------------+---------------------------------------------+
@@ -50,6 +50,8 @@ Common features
 .. note::
     The AMD tool is a collection of tools, meaning that some aspects of this section may not be applicable. For example
     datasets will be in the database for each subtool
+
+.. _tool_database:
 
 Tool database
 ~~~~~~~~~~~~~
@@ -110,7 +112,8 @@ that have finished running first. See :ref:`tool_datasets` for more information.
 Results
 ~~~~~~~
 
-In general, the results will consist of a collection of summary tables. These can be accessed directly in your script:
+In general, the result objects will consist of a collection of summary tables. These can be accessed directly in your
+script:
 
 .. pharmpy-code::
 
@@ -134,7 +137,8 @@ results.
     res = read_results('path/to/results.json')
     res.summary_models
 
-It is also possible to read in models from the tool database via the :py:func:`pharmpy.tools.retrieve_models` function.
+It is also possible to read in models from the :ref:`tool_database` via the :py:func:`pharmpy.tools.retrieve_models`
+function.
 
 Metadata
 ~~~~~~~~
