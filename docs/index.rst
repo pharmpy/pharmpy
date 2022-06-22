@@ -1,4 +1,10 @@
 .. figure:: Pharmpy_logo.svg
+   :class: only-light
+   :width: 400
+   :align: center
+
+.. figure:: Pharmpy_logo_dark.svg
+   :class: only-dark
    :width: 400
    :align: center
 
