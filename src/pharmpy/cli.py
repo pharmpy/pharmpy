@@ -1002,7 +1002,7 @@ parser_definition = [
                                 'name': '--iiv_strategy',
                                 'type': str,
                                 'help': 'If/how IIV should be added to candidate models',
-                                'default': 'no_add',
+                                'default': 'absorption_delay',
                             },
                             {
                                 'name': '--path',

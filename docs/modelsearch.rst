@@ -20,23 +20,23 @@ To initiate modelsearch in Python:
     from pharmpy.tools import run_modelsearch
 
     start_model = read_model('path/to/model')
-    res = run_modelsearch(search_space='ABSORPTION(ZO);PERIPHERALS(1)',
-                          algorithm='exhaustive',
+    res = run_modelsearch(search_space='PERIPHERALS(1);LAGTIME()',
+                          algorithm='reduced_stepwise',
                           model=start_model,
-                          iiv_strategy='no_add',
+                          iiv_strategy='absorption_delay',
                           rank_type='bic',
                           cutoff=None)
 
-This will take an input model ``model`` with ``search_space`` as the search space, meaning zero order absorption and adding one
-peripheral compartment will be tried. The tool will use the ``exhaustive`` search algorithm. Structural IIVs will not be
-added to candidates since ``iiv_strategy`` is set to be 'no_add'. The candidate models will be ranked using ``bic``
-with default ``cutoff``, which for BIC is none.
+This will take an input model ``model`` with ``search_space`` as the search space, meaning adding one peripheral
+compartment and lagtime will be tried. The tool will use the 'reduced_stepwise' search ``algorithm``. Structural IIVs
+will not be added to candidates since ``iiv_strategy`` is set to be 'absorption_delay'. The candidate models will have
+BIC as the ``rank_type`` with default ``cutoff``, which for BIC is none.
 
 To run modelsearch from the command line, the example code is redefined accordingly:
 
 .. code::
 
-    pharmpy run modelsearch path/to/model 'ABSORPTION(ZO);PERIPHERALS(1)' 'exhaustive' --iiv_strategy 'no_add' --rank_type 'bic'
+    pharmpy run modelsearch path/to/model 'PERIPHERALS(1);LAGTIME()' 'reduced_stepwise' --iiv_strategy 'absorption_delay' --rank_type 'bic'
 
 Arguments
 ~~~~~~~~~
@@ -291,13 +291,12 @@ Consider a modelsearch run with the search space of zero order absorption and ad
 
 .. pharmpy-code::
 
-    res = run_modelsearch('ABSORPTION(ZO);PERIPHERALS(1)',
-                          'exhaustive',
+    res = run_modelsearch(search_space='PERIPHERALS(1);LAGTIME()',
+                          algorithm='reduced_stepwise',
                           model=start_model,
-                          iiv_strategy='no_add',
+                          iiv_strategy='absorption_delay',
                           rank_type='bic',
                           cutoff=None)
-
 
 The ``summary_tool`` table contains information such as which feature each model candidate has, the difference to the
 start model (in this case comparing BIC), and final ranking:
