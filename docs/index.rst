@@ -27,6 +27,12 @@ Current features include:
 * Complex tools to for example optimize the iiv structure or residual error of a model
 * CLI supporting operations on datasets and models and running tools
 
+We encourage your contribution to the Pharmpy project! You can report issues and post suggestions of features via
+GitHub issues (to `Pharmpy <https://github.com/pharmpy/pharmpy/issues>`_ or to
+`pharmr <https://github.com/pharmpy/pharmr/issues>`_). If you want to contribute with code you can find more information
+under :ref:`contribute`.
+
+
 Pharmpy is maintained by the Uppsala University Pharmacometrics group and is an open-source project.
 
 .. toctree::
