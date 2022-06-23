@@ -1,3 +1,5 @@
+.. _pharmpy_tools:
+
 =====
 Tools
 =====

@@ -49,7 +49,7 @@ the following to check the Python version in your reticulate environment:
     library(reticulate)
     reticulate::py_discover_config()
 
-Make sure the Pyrhon version is >= 3.8. If it is not, you can run the following in R:
+Make sure the Python version is >= 3.8. If it is not, you can run the following in R:
 
 .. code-block:: r
 
@@ -86,14 +86,7 @@ The model file format is automatically detected:
 
     type(model)
 
-For examples of how the Pharmpy model works and how you can transform it, see :ref:`here <model>` and
-:ref:`here <modeling>`.
+You can read more about how to read in an examine your model in :ref:`model`, and how to transform your model via
+:ref:`modeling`. We also have several :ref:`pharmpy_tools` to run more complex workflows.
 
-
-.. pharmpy-code::
-
-    from pharmpy.modeling import read_model
-
-    path = 'path/to/model'
-    pheno = read_model(path)
 
