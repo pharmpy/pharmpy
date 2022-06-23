@@ -963,16 +963,10 @@ def _pk_free_symbols_from_compartment(
 
 def _get_component(cs: CompartmentalSystem, compartment: Compartment) -> Set[Compartment]:
 
-    # NOTE Should perhaps switch to computing strongly connected component for
-    # central compartment to be completely generic.
-    # see https://en.wikipedia.org/wiki/Strongly_connected_component
-
-    central_component_vertices = _reachable_from(
-        {cs.central_compartment},
-        lambda u: filter(
-            lambda v: cs.get_flow(v, u) is not None,
-            map(lambda flow: flow[0], cs.get_compartment_outflows(u)),
-        ),
+    central_component_vertices = _strongly_connected_component_of(
+        cs.central_compartment,
+        lambda u: map(lambda flow: flow[0], cs.get_compartment_outflows(u)),
+        lambda u: map(lambda flow: flow[0], cs.get_compartment_inflows(u)),
     )
 
     if compartment == cs.central_compartment:
@@ -1165,3 +1159,13 @@ def _reachable_from(start_nodes: Set[T], neighbors: Callable[[T], Iterable[T]]):
                 closure.add(v)
 
     return closure
+
+
+def _strongly_connected_component_of(
+    vertex: T, successors: Callable[[T], Iterable[T]], predecessors: Callable[[T], Iterable[T]]
+):
+
+    forward_reachable = _reachable_from({vertex}, successors)
+    backward_reachable = _reachable_from({vertex}, predecessors)
+
+    return forward_reachable & backward_reachable
