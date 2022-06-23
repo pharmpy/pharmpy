@@ -1,6 +1,6 @@
-========
-Modelfit
-========
+========================
+Reading modelfit results
+========================
 
 Pharmpy can retrieve results from a NONMEM run.
 
@@ -36,7 +36,7 @@ It is also possible to get the parameters with all variability parameters as sta
 
 .. pharmpy-execute::
 
-   model.modelfit_results.parameter_estimates_sdcorr 
+   model.modelfit_results.parameter_estimates_sdcorr
 
 Standard errors of parameter estimates
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -115,7 +115,7 @@ Different predictions can be found in `predictions`
 Residuals
 ~~~~~~~~~
 
-Different residual metrics can be found in `residuals` 
+Different residual metrics can be found in `residuals`
 
 .. pharmpy-execute::
 
