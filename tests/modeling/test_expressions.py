@@ -307,6 +307,18 @@ def test_greekify_model(pheno):
         ('nonmem/modeling/pheno_advan5_depot.mod', 'absorption', ['K12']),
         ('nonmem/modeling/pheno_advan5_depot.mod', 'distribution', ['V', 'K23', 'K32']),
         ('nonmem/modeling/pheno_advan5_depot.mod', 'elimination', ['CL']),
+        (
+            'nonmem/modeling/transit_indirect_reabsorption.mod',
+            'all',
+            ['CL', 'V', 'K12', 'K23', 'KA', 'K45', 'K56', 'K64'],
+        ),
+        ('nonmem/modeling/transit_indirect_reabsorption.mod', 'absorption', ['K12', 'K23', 'KA']),
+        (
+            'nonmem/modeling/transit_indirect_reabsorption.mod',
+            'distribution',
+            ['V', 'K45', 'K56', 'K64'],
+        ),
+        ('nonmem/modeling/transit_indirect_reabsorption.mod', 'elimination', ['CL']),
     ),
     ids=repr,
 )
