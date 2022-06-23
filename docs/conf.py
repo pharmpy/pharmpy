@@ -53,13 +53,18 @@ html_theme_options = {
         "image_light": "Pharmpy_logo.svg",
         "image_dark": "Pharmpy_logo_dark.svg",
     },
+    'github_url': 'https://github.com/pharmpy/pharmpy',
+    "icon_links": [
+        {
+            "name": "Report issues",
+            "url": "https://github.com/pharmpy/pharmpy/issues",
+            "icon": "fa fa-comments",
+        }
+    ]
 }
 html_favicon = 'images/Pharmpy_symbol.svg'
 html_context = {
    "default_mode": "light"
-}
-html_sidebars = {
-   '**': ['searchbox.html', 'globaltoc.html', 'sourcelink.html'],
 }
 html_short_title = '%s-%s' % (project, version)
 
