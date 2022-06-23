@@ -20,43 +20,50 @@ To initiate COVsearch in Python/R:
     from pharmpy.tools import run_covsearch
 
     start_model = read_model('path/to/model')
-    res = run_covsearch(algorithm='scm-forward',
+    res = run_covsearch(algorithm='scm-forward-then-backward',
                         model=start_model,
                         effects='COVARIATE(@IIV, @CONTINUOUS, *); COVARIATE(@IIV, @CATEGORICAL, CAT)',
                         p_forward=0.05,
+                        p_backward=0.01,
                         max_steps=5)
 
-In this example, we will attempt up to five forward steps of the Stepwise
+In this example, we attempt up to five forward steps of the Stepwise
 Covariate Modeling (SCM) algorithm on the model ``start_model``. The p-value
 threshold for these steps is 5% and the candidate effects consists of all (\*)
 supported effects (multiplicative) of continuous covariates on parameters with IIV,
 and a (multiplicative) categorical effect of categorical covariates on parameters
-with IIV.
+with IIV. Once we have identified the best model with this method, we attempt
+up to ``k-1`` backward steps of the SCM algorithm on this model, where ``k`` is
+the number of successful forward steps. The p-value threshold for the backward
+steps is 1% and the effects that are candidate for removal are only the ones
+that have been added by the forward steps.
 
 To run COVsearch from the command line, the example code is redefined accordingly:
 
 .. code::
 
-    pharmpy run covsearch path/to/model --algorithm scm-forward --effects 'COVARIATE(@IIV, @CONTINUOUS, *); COVARIATE(@IIV, @CATEGORICAL, CAT)' --p_forward 0.05 --max_steps 5
+    pharmpy run covsearch path/to/model --algorithm scm-forward-then-backward --effects 'COVARIATE(@IIV, @CONTINUOUS, *); COVARIATE(@IIV, @CATEGORICAL, CAT)' --p_forward 0.05 --p_backward 0.01 --max_steps 5
 
 ~~~~~~~~~
 Arguments
 ~~~~~~~~~
 
-+---------------------------------------------+----------------------------------------------------------------------+
-| Argument                                    | Description                                                          |
-+=============================================+======================================================================+
-| :ref:`effects<effects_covsearch>`           | The candidate parameter-covariate effects to search through (required)                   |
-+---------------------------------------------+----------------------------------------------------------------------+
-| ``p_forward``                               | The p-value threshold for forward steps (default is `0.05`)          |
-+---------------------------------------------+----------------------------------------------------------------------+
-| ``max_steps``                               | The maximum number of search algorithm steps to perform, or `-1`     |
-|                                             | for no maximum (default).                                            |
-+---------------------------------------------+----------------------------------------------------------------------+
-| :ref:`algorithm<algorithm_covsearch>`       | The search algorithm to use (default is `'scm-forward'`)             |
-+---------------------------------------------+----------------------------------------------------------------------+
-| ``model``                                   | Start model                                                          |
-+---------------------------------------------+----------------------------------------------------------------------+
++---------------------------------------------+-----------------------------------------------------------------------+
+| Argument                                    | Description                                                           |
++=============================================+=======================================================================+
+| :ref:`effects<effects_covsearch>`           | The candidate parameter-covariate effects to search through (required)|
++---------------------------------------------+-----------------------------------------------------------------------+
+| ``p_forward``                               | The p-value threshold for forward steps (default is `0.05`)           |
++---------------------------------------------+-----------------------------------------------------------------------+
+| ``p_backward``                              | The p-value threshold for forward steps (default is `0.01`)           |
++---------------------------------------------+-----------------------------------------------------------------------+
+| ``max_steps``                               | The maximum number of search algorithm steps to perform, or `-1`      |
+|                                             | for no maximum (default).                                             |
++---------------------------------------------+-----------------------------------------------------------------------+
+| :ref:`algorithm<algorithm_covsearch>`       | The search algorithm to use (default is `'scm-forward-then-backward'`)|
++---------------------------------------------+-----------------------------------------------------------------------+
+| ``model``                                   | Start model                                                           |
++---------------------------------------------+-----------------------------------------------------------------------+
 
 .. _effects_covsearch:
 
@@ -180,8 +187,40 @@ continuous covariate effects of all covariates on all PK parameters".
 Algorithm
 ~~~~~~~~~
 
-The current default (and only) search algorithm `'scm-forward'` consists in
-forward steps of the Stepwise Covariate Modeling method.
+The current default search algorithm `'scm-forward-then-backward'` consists in
+the SCM method with forward steps followed by backward steps.
+
+.. graphviz::
+
+    digraph BST {
+            node [fontname="Arial"];
+            base [label="Base model"]
+            s0 [label="AddEffect(CL, SEX, CAT)"]
+            s1 [label="AddEffect(CL, WT, EXP)"]
+            s2 [label="AddEffect(V, SEX, CAT)"]
+            s3 [label="AddEffect(V, WT, EXP)"]
+            s4 [label="AddEffect(CL, SEX, CAT)"]
+            s5 [label="AddEffect(CL, WT, EXP)"]
+            s6 [label="AddEffect(V, SEX, CAT)"]
+            s7 [label="AddEffect(CL, WT, EXP)"]
+            s8 [label="AddEffect(V, SEX, CAT)"]
+            s9 [label="RemoveEffect(V, WT, EXP)"]
+            s10 [label="RemoveEffect(CL, SEX, CAT)"]
+
+            base -> s0
+            base -> s1
+            base -> s2
+            base -> s3
+            s3 -> s4
+            s3 -> s5
+            s3 -> s6
+            s4 -> s7
+            s4 -> s8
+            s4 -> s9
+            s4 -> s10
+        }
+
+To skip the backward steps use search algorithm `'scm-forward'`.
 
 .. graphviz::
 

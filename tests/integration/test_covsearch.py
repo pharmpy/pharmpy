@@ -35,9 +35,9 @@ def test_default(tmp_path, start_model):
         )
 
         rundir = tmp_path / 'covsearch_dir1'
-        assert _model_count(rundir) == 50
+        assert _model_count(rundir) == 54
 
-        assert res.best_model.name == 'mox2-2-7-10-5'
+        assert res.best_model.name == 'mox2+2+7+10+5'
 
 
 def test_default_str(tmp_path, start_model):
@@ -51,6 +51,6 @@ def test_default_str(tmp_path, start_model):
         )
 
         rundir = tmp_path / 'covsearch_dir1'
-        assert _model_count(rundir) == 35
+        assert _model_count(rundir) == 39
 
-        assert res.best_model.name == 'mox2-2-7-7-6'
+        assert res.best_model.name == 'mox2+2+7+7+6'

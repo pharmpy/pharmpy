@@ -1117,6 +1117,13 @@ parser_definition = [
                                 'default': 0.05,
                             },
                             {
+                                'name': '--p_backward',
+                                'type': float,
+                                'help': 'The p-value threshold for backward '
+                                'steps (default is `0.01`)',
+                                'default': 0.01,
+                            },
+                            {
                                 'name': '--max_steps',
                                 'type': int,
                                 'help': 'The maximum number of search '
@@ -1127,8 +1134,9 @@ parser_definition = [
                             {
                                 'name': '--algorithm',
                                 'type': str,
-                                'help': "The search algorithm to use (default is `'scm-forward'`)",
-                                'default': 'scm-forward',
+                                'help': "The search algorithm to use (default "
+                                "is `'scm-forward-then-backward'`)",
+                                'default': 'scm-forward-then-backward',
                             },
                             {
                                 'name': '--path',
