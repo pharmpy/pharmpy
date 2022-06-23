@@ -1166,6 +1166,13 @@ def _strongly_connected_component_of(
 ):
 
     forward_reachable = _reachable_from({vertex}, successors)
-    backward_reachable = _reachable_from({vertex}, predecessors)
 
-    return forward_reachable & backward_reachable
+    # NOTE This searches for backward reachable vertices on the graph induced
+    # by the forward reachable vertices and is equivalent to (but less wasteful
+    # than) first computing the backward reachable vertices on the original
+    # graph and then computing the intersection with the forward reachable
+    # vertices.
+    return _reachable_from(
+        {vertex},
+        lambda u: filter(forward_reachable.__contains__, predecessors(u)),
+    )
