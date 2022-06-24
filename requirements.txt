@@ -60,7 +60,7 @@ notebook==6.4.12
 numexpr==2.8.1
 numpy==1.23.0
 packaging==21.3
-pandas==1.4.2
+pandas==1.4.3
 pandocfilters==1.5.0
 parso==0.8.3
 partd==1.2.0
