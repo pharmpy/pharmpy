@@ -27,28 +27,14 @@ def execute_model(model):
         model.name + model.filename_extension,
         str(basepath.with_suffix('.lst')),
     )
-    # Create wrapper script that cd:s into rundirectory
-    # This enables the execute_model function to be parallelized
-    # using threads. chdir here does not work since all threads will
-    # share cwd. Using processes on Windows from R currently hangs.
-    # Also the -rundir option to nmfe does not work entirely
-    if os.name == 'nt':
-        with open(path / 'cdwrapper.bat', 'w') as fp:
-            fp.write(f"@echo off\ncd {path}\n{' '.join(args)}\n")
-        cmd = str(path / 'cdwrapper.bat')
-    else:
-        # Workaround for ETXTBSY error on Linux
-        fd = os.open(path / 'cdwrapper-tmp', os.O_CREAT | os.O_WRONLY | os.O_CLOEXEC, mode=0o744)
-        with os.fdopen(fd, 'w') as fp:
-            fp.write(f"#!/bin/sh\ncd {path}\n{' '.join(args)}\n")
-        os.replace(path / 'cdwrapper-tmp', path / 'cdwrapper')
-        cmd = str(path / 'cdwrapper')
 
     stdout = path / 'stdout'
     stderr = path / 'stderr'
 
     with open(stdout, "wb") as out, open(stderr, "wb") as err:
-        result = subprocess.run([cmd], stdin=subprocess.DEVNULL, stderr=err, stdout=out)
+        result = subprocess.run(
+            args, stdin=subprocess.DEVNULL, stderr=err, stdout=out, cwd=str(path)
+        )
 
     metadata = {
         'plugin': 'nonmem',
@@ -60,7 +46,6 @@ def execute_model(model):
             {
                 'args': args,
                 'returncode': result.returncode,
-                'wrapper': cmd,
             }
         ]
     }
