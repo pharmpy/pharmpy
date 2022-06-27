@@ -214,6 +214,8 @@ class Parameters(Sequence):
             add = other._params
         elif isinstance(other, Sequence):
             add = list(other)
+        else:
+            raise ValueError(f"Cannot add {other} to Parameters")
         new = Parameters(self._params + add)
         return new
 

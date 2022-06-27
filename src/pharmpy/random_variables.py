@@ -1,7 +1,7 @@
 import copy
 import itertools
 import warnings
-from collections.abc import MutableSequence
+from collections.abc import MutableSequence, Sequence
 
 import numpy as np
 import pandas as pd
@@ -401,220 +401,114 @@ class VariabilityLevel:
     ----------
     name : str
         A unique identifying name
-    level : int
-        Numeric level. 0 is the base level. Lower levels consists of groups of higher levels.
-        If for example 0 is IIV then IOV could be 1 and COUNTRY could be -1
+    reference : bool
+        Is this the reference level. Normally IIV would be the reference level
     group : str
         Name of data column to group this level. None for no grouping (default)
     """
 
-    def __init__(self, name, level, group=None):
-        self.name = name
-        self.level = level
-        self.group = group
+    def __init__(self, name, reference=False, group=None):
+        self._name = name
+        self._reference = reference
+        self._group = group
+
+    def __add__(self, other):
+        if isinstance(other, VariabilityHierarchy):
+            return VariabilityHierarchy([self] + other._levels)
+
+    @property
+    def name(self):
+        """Name of the variability level"""
+        return self._name
+
+    @property
+    def reference(self):
+        """Is this the reference level"""
+        return self._reference
+
+    @property
+    def group(self):
+        """Group variable for variability level"""
+        return self._group
 
 
 class VariabilityHierarchy:
     """Description of a variability hierarchy"""
 
-    def __init__(self):
-        self._levels = []
+    def __init__(self, levels=None):
+        if levels is None:
+            self._levels = []
+        elif isinstance(levels, VariabilityHierarchy):
+            self._levels = levels._levels
+        else:
+            found_ref = False
+            for level in levels:
+                if not isinstance(level, VariabilityLevel):
+                    raise ValueError("Can only add VariabilityLevel to VariabilityHierarchy")
+                if level.reference:
+                    if found_ref:
+                        raise ValueError("A VariabilityHierarchy can only have one reference level")
+                    else:
+                        found_ref = True
+            if not found_ref:
+                raise ValueError("A VariabilityHierarchy must have a reference level")
+            self._levels = list(levels)
+
+    def _lookup(self, ind):
+        # Lookup one index
+        if isinstance(ind, int):
+            # Index on numeric level for ints
+            i = self._find_reference()
+            return self._levels[ind - i]
+        elif isinstance(ind, str):
+            for varlev in self._levels:
+                if varlev.name == ind:
+                    return varlev
+        elif isinstance(ind, VariabilityLevel):
+            for varlev in self._levels:
+                if varlev.name == ind.name:
+                    return varlev
+        raise KeyError(f'Could not find level {ind} in VariabilityHierarchy')
+
+    def __getitem__(self, ind):
+        if isinstance(ind, VariabilityHierarchy):
+            levels = [level.name for level in ind._levels]
+        elif not isinstance(ind, str) and isinstance(ind, Sequence):
+            levels = ind
+        else:
+            return self._lookup(ind)
+        new = [self._lookup(level) for level in levels]
+        return VariabilityHierarchy(new)
+
+    def __add__(self, other):
+        if isinstance(other, VariabilityLevel):
+            levels = [other]
+        else:
+            raise ValueError(f"Cannot add {other} to VariabilityLevel")
+        new = VariabilityHierarchy(self._levels + levels)
+        return new
 
     @property
     def names(self):
         """Names of all variability levels"""
         return [varlev.name for varlev in self._levels]
 
+    def _find_reference(self):
+        # Find numerical level of first level
+        # No error checking since having a reference level is an invariant
+        for i, level in enumerate(self._levels):
+            if level.reference:
+                return -i
+
     @property
     def levels(self):
-        """All numerical levels"""
-        return [varlev.level for varlev in self._levels]
-
-    def get_name(self, i):
-        """Retrieve name of variability level
-
-        Parameters
-        ----------
-        i - int
-            Numeric variability level
-
-        Examples
-        --------
-        >>> from pharmpy import VariabilityHierarchy
-        >>> hierarchy = VariabilityHierarchy()
-        >>> hierarchy.add_variability_level("IIV", 0, "ID")
-        >>> hierarchy.add_variability_level("IOV", 1, "OCC")
-        >>> hierarchy.get_name(1)
-        'IOV'
-        >>> hierarchy.get_name(0)
-        'IIV'
-
-        """
-        for varlev in self._levels:
-            if varlev.level == i:
-                return varlev.name
-        raise KeyError(f'No variability level {i}')
-
-    def add_variability_level(self, name, level, group):
-        """Add variability level to hierarchy
-
-        Parameters
-        ----------
-        name : str
-            A unique identifying name
-        level : int
-            Numeric level. 0 is the base level. Lower levels consists of groups of higher levels.
-            If for example 0 is IIV then IOV could be 1 and COUNTRY could be -1
-        group : str
-            Name of data column to group this level. None for no grouping (default)
-
-        Examples
-        --------
-        >>> from pharmpy import VariabilityHierarchy
-        >>> hierarchy = VariabilityHierarchy()
-        >>> hierarchy.add_variability_level("IIV", 0, "ID")
-        >>> hierarchy.add_variability_level("IOV", 1, "OCC")
-
-        """
-        nums = self.levels
-        new = VariabilityLevel(name, level, group)
-        if nums:
-            if not (level == min(nums) - 1 or level == max(nums) + 1):
-                raise ValueError(
-                    f'Cannot set variability level {level}. '
-                    'New variability level must be one level higher or one level lower '
-                    'than any current level'
-                )
-            if level == min(nums) - 1:
-                self._levels.insert(0, new)
-            else:
-                self._levels.append(new)
-        else:
-            self._levels.append(new)
-
-    def add_higher_level(self, name, group):
-        """Add a higher variability level to hierarchy
-
-        Parameters
-        ----------
-        name : str
-            Name of new variability level
-        group : str
-            Name of data column to group this level. None for no grouping (default)
-
-        Examples
-        --------
-        >>> from pharmpy import VariabilityHierarchy
-        >>> hierarchy = VariabilityHierarchy()
-        >>> hierarchy.add_variability_level("IIV", 0, "ID")
-        >>> hierarchy.add_higher_level("IOV", "OCC")
-
-        See Also
-        --------
-        add_variability_level, add_lower_level
-        """
-        nums = self.levels
-        level = max(nums) + 1
-        self.add_variability_level(name, level, group)
-
-    def add_lower_level(self, name, group):
-        """Add a lower variability level to hierarchy
-
-        Parameters
-        ----------
-        name : str
-            Name of new variability level
-        group : str
-            Name of data column to group this level. None for no grouping (default)
-
-        Examples
-        --------
-        >>> hierarchy = VariabilityHierarchy()
-        >>> hierarchy.add_variability_level("IIV", 0, "ID")
-        >>> hierarchy.add_lower_level("ICV", "COUNTRY")
-
-        See Also
-        --------
-        add_variability_level, add_higher_level
-        """
-
-        nums = [varlev.level for varlev in self._levels]
-        level = min(nums) - 1
-        self.add_variability_level(name, level, group)
-
-    def set_variability_level(self, level, name, group):
-        """Change the name and group of variability level
-
-        Parameters
-        ----------
-        level : int
-            Numeric level to change
-        name : str
-            Name of new variability level
-        group : str
-            Name of data column to group this level. None for no grouping (default)
-
-        Examples
-        --------
-        >>> from pharmpy import VariabilityHierarchy
-        >>> hierarchy = VariabilityHierarchy()
-        >>> hierarchy.add_variability_level("IIV", 0, "ID")
-        >>> hierarchy.add_lower_level("ICV", "COUNTRY")
-        >>> hierarchy.set_variability_level(-1, "ICV", "CENTER")
-
-        See Also
-        --------
-        remove_variability_level
-        """
-        for varlev in self._levels:
-            if varlev.level == level:
-                varlev.name = name
-                varlev.group = group
-                break
-        else:
-            raise KeyError(f'No variability level {level}')
-
-    def remove_variability_level(self, ind):
-        """Remove a variability level
-
-        Parameters
-        ----------
-        ind : str or int
-            name or number of variability level
-
-        Examples
-        --------
-        >>> from pharmpy import VariabilityHierarchy
-        >>> hierarchy = VariabilityHierarchy()
-        >>> hierarchy.add_variability_level("IIV", 0, "ID")
-        >>> hierarchy.add_lower_level("ICV", "COUNTRY")
-        >>> hierarchy.remove_variability_level(-1)
-
-        See Also
-        --------
-        set_variability_level
-
-        """
-        for i, varlev in enumerate(self._levels):
-            if (
-                isinstance(ind, str)
-                and varlev.name == ind
-                or isinstance(ind, int)
-                and varlev.level == ind
-            ):
-                index = i
-                break
-        else:
-            raise KeyError(f'No variability level {ind}')
-        n = self._levels[index].level
-        if n == 0:
-            raise ValueError('Cannot remove the base variability level (0)')
-        del self._levels[index]
-        for varlev in self._levels:
-            if n < 0 and varlev.level < n:
-                varlev.level += 1
-            elif n > 0 and varlev.level > n:
-                varlev.level -= 1
+        """Dictionary of variability level name to numerical level"""
+        ind = self._find_reference()
+        d = dict()
+        for level in self._levels:
+            d[level.name] = ind
+            ind += 1
+        return d
 
     def __len__(self):
         return len(self._levels)
@@ -663,11 +557,11 @@ class RandomVariables(MutableSequence):
                     )
                 names.add(rv.name)
 
-        eta_levels = VariabilityHierarchy()
-        eta_levels.add_variability_level('IIV', 0, 'ID')
-        eta_levels.add_higher_level('IOV', 'OCC')
-        epsilon_levels = VariabilityHierarchy()
-        epsilon_levels.add_variability_level('RUV', 0, None)
+        iiv_level = VariabilityLevel('IIV', reference=True, group='ID')
+        iov_level = VariabilityLevel('IOV', reference=False, group='OCC')
+        eta_levels = VariabilityHierarchy([iiv_level, iov_level])
+        ruv_level = VariabilityLevel('RUV', reference=True)
+        epsilon_levels = VariabilityHierarchy([ruv_level])
         self._eta_levels = eta_levels
         self._epsilon_levels = epsilon_levels
 
@@ -824,12 +718,12 @@ class RandomVariables(MutableSequence):
     @property
     def iiv(self):
         """Get only the iiv etas, i.e. etas with variability level 0"""
-        return RandomVariables([rv for rv in self._rvs if rv.level == self._eta_levels.get_name(0)])
+        return RandomVariables([rv for rv in self._rvs if rv.level == self._eta_levels[0].name])
 
     @property
     def iov(self):
         """Get only the iov etas, i.e. etas with variability level 1"""
-        return RandomVariables([rv for rv in self._rvs if rv.level == self._eta_levels.get_name(1)])
+        return RandomVariables([rv for rv in self._rvs if rv.level == self._eta_levels[1].name])
 
     @property
     def free_symbols(self):

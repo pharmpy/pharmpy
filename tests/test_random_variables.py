@@ -5,7 +5,12 @@ import pytest
 import sympy
 import sympy.stats as stats
 
-from pharmpy.random_variables import RandomVariable, RandomVariables, VariabilityHierarchy
+from pharmpy.random_variables import (
+    RandomVariable,
+    RandomVariables,
+    VariabilityHierarchy,
+    VariabilityLevel,
+)
 from pharmpy.symbols import symbol
 
 
@@ -676,37 +681,22 @@ def test_parameters_sdcorr():
 
 
 def test_variability_hierarchy():
-    lev = VariabilityHierarchy()
-    lev.add_variability_level('IIV', 0, 'ID')
-    assert lev.get_name(0) == 'IIV'
-    with pytest.raises(KeyError):
-        lev.get_name(1)
-    with pytest.raises(ValueError):
-        lev.add_variability_level('IOV', 2, 'OCC')
-    lev.add_variability_level('CENTER', -1, 'CENTER')
-    assert len(lev) == 2
-    lev.add_lower_level('PLANET', 'PLANET')
-    assert len(lev) == 3
-    lev.set_variability_level(-1, 'COHORT', 'X2')
-    assert lev.get_name(-1) == 'COHORT'
-    with pytest.raises(KeyError):
-        lev.set_variability_level(2, 'X', 'Y')
-    lev.remove_variability_level(-2)
-    assert len(lev) == 2
-    with pytest.raises(KeyError):
-        lev.remove_variability_level(2)
-    with pytest.raises(ValueError):
-        lev.remove_variability_level('IIV')
-    lev = VariabilityHierarchy()
-    lev.add_variability_level('IIV', 0, 'ID')
-    lev.add_higher_level('IOV', 'OCC')
-    lev.add_higher_level('IOVIOV', 'SUBOCC')
-    lev.add_lower_level('PLANET', 'PLANET')
-    lev.add_lower_level('GALAXY', 'GALAXY')
-    lev.remove_variability_level('IOV')
-    assert len(lev) == 4
-    lev.remove_variability_level('PLANET')
-    assert len(lev) == 3
+    lev1 = VariabilityLevel('IIV', reference=True, group='ID')
+    levs = VariabilityHierarchy([lev1])
+    assert levs[0].name == 'IIV'
+    with pytest.raises(IndexError):
+        levs[1].name
+    lev2 = VariabilityLevel('CENTER', reference=False, group='CENTER')
+    levs2 = VariabilityHierarchy([lev2, lev1])
+    assert len(levs2) == 2
+    lev3 = VariabilityLevel('PLANET', reference=False, group='PLANET')
+    levs3 = VariabilityHierarchy([lev3, lev2, lev1])
+    assert len(levs3) == 3
+
+    levs4 = levs + lev2
+    assert len(levs4) == 2
+    levs5 = lev2 + levs
+    assert len(levs5) == 2
 
 
 def test_covariance_matrix():
