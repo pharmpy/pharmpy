@@ -44,7 +44,7 @@ def test_default_str(tmp_path, start_model):
     with TemporaryDirectoryChanger(tmp_path):
         res = run_tool(
             'covsearch',
-            'CONTINUOUS([AGE, WT]); CATEGORICAL(SEX)\n'
+            'LET(CONTINUOUS, [AGE, WT]); LET(CATEGORICAL, SEX)\n'
             'COVARIATE([CL, MAT, VC], @CONTINUOUS, exp, *)\n'
             'COVARIATE([CL, MAT, VC], @CATEGORICAL, cat, *)',
             model=start_model,

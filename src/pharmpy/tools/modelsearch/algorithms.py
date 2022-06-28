@@ -1,3 +1,6 @@
+from typing import Any, List
+
+from pharmpy.model import Model
 from pharmpy.modeling import (
     add_iiv,
     add_pk_iiv,
@@ -9,30 +12,30 @@ from pharmpy.tools.common import update_initial_estimates
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.workflows import Task, Workflow
 
-from .mfl import ModelFeatures
+from ..mfl.helpers import all_combinations, all_funcs, get_funcs_same_type, key_to_str
+from ..mfl.parse import parse
 
 
 def exhaustive(search_space, iiv_strategy):
     # TODO: rewrite using _create_model_workflow
-    features = ModelFeatures(search_space)
+    mfl_statements = parse(search_space)
     wf_search = Workflow()
 
     model_tasks = []
 
-    combinations = list(features.all_combinations())
-    funcs = features.all_funcs()
+    combinations = list(all_combinations(Model(), mfl_statements))
+    funcs = all_funcs(Model(), mfl_statements)
 
     for i, combo in enumerate(combinations, 1):
         model_name = f'modelsearch_candidate{i}'
 
-        features = ';'.join(combo)
-        task_copy = Task('copy', _copy, model_name, features)
+        task_copy = Task('copy', _copy, model_name, combo)
         wf_search.add_task(task_copy)
 
         task_previous = task_copy
         for feat in combo:
             func = funcs[feat]
-            task_function = Task(feat, func)
+            task_function = Task(key_to_str(feat), func)
             wf_search.add_task(task_function, predecessors=task_previous)
             if iiv_strategy != 'no_add':
                 task_add_iiv = Task('add_iivs', _add_iiv_to_func, iiv_strategy)
@@ -50,15 +53,15 @@ def exhaustive(search_space, iiv_strategy):
 
 
 def exhaustive_stepwise(search_space, iiv_strategy):
-    mfl_features = ModelFeatures(search_space)
-    mfl_funcs = mfl_features.all_funcs()
+    mfl_statements = parse(search_space)
+    mfl_funcs = all_funcs(Model(), mfl_statements)
 
     wf_search = Workflow()
     model_tasks = []
 
     while True:
         no_of_trans = 0
-        actions = _get_possible_actions(wf_search, mfl_features)
+        actions = _get_possible_actions(wf_search, mfl_statements)
         for task_parent, feat_new in actions.items():
             for feat in feat_new:
                 model_no = len(model_tasks) + 1
@@ -83,15 +86,15 @@ def exhaustive_stepwise(search_space, iiv_strategy):
 
 
 def reduced_stepwise(mfl, iiv_strategy):
-    mfl_features = ModelFeatures(mfl)
-    mfl_funcs = mfl_features.all_funcs()
+    mfl_statements = parse(mfl)
+    mfl_funcs = all_funcs(Model(), mfl_statements)
 
     wf_search = Workflow()
     model_tasks = []
 
     while True:
         no_of_trans = 0
-        actions = _get_possible_actions(wf_search, mfl_features)
+        actions = _get_possible_actions(wf_search, mfl_statements)
         if all(len(feat_new) > 0 for feat_new in actions.values()):
             groups = _find_same_model_groups(wf_search, mfl_funcs)
             if len(groups) > 1:
@@ -99,7 +102,7 @@ def reduced_stepwise(mfl, iiv_strategy):
                     task_best_model = Task('choose_best_model', _get_best_model)
                     wf_search.add_task(task_best_model, predecessors=group)
                 # Overwrite actions with new collector nodes
-                actions = _get_possible_actions(wf_search, mfl_features)
+                actions = _get_possible_actions(wf_search, mfl_statements)
 
         for task_parent, feat_new in actions.items():
             for feat in feat_new:
@@ -155,23 +158,23 @@ def _get_best_model(*models):
     return models[0]
 
 
-def _get_possible_actions(wf, mfl_features):
+def _get_possible_actions(wf, mfl_statements):
     actions = dict()
     if wf.output_tasks:
         tasks = wf.output_tasks
     else:
         tasks = ['']
     for task in tasks:
-        mfl_funcs = mfl_features.all_funcs()
+        mfl_funcs = all_funcs(Model(), mfl_statements)
         if task:
             feat_previous = _get_previous_features(wf, task, mfl_funcs)
         else:
-            feat_previous = dict()
+            feat_previous = list()
 
         trans_possible = [
             feat
             for feat, func in mfl_funcs.items()
-            if _is_allowed(feat, func, feat_previous, mfl_features)
+            if _is_allowed(feat, func, feat_previous, mfl_statements)
         ]
 
         actions[task] = trans_possible
@@ -181,20 +184,23 @@ def _get_possible_actions(wf, mfl_features):
 def _get_previous_features(wf, task, mfl_funcs):
     tasks_upstream = wf.get_upstream_tasks(task)
     tasks_upstream.reverse()
-    features_previous = [task.name for task in tasks_upstream if task.name in mfl_funcs.keys()]
+    tasks_dict = {key_to_str(key): key for key in mfl_funcs.keys()}
+    features_previous = [
+        tasks_dict[task.name] for task in tasks_upstream if task.name in tasks_dict
+    ]
     return features_previous
 
 
 def _create_model_workflow(model_name, feat, func, iiv_strategy):
     wf_stepwise_step = Workflow()
 
-    task_copy = Task('copy', _copy, model_name, feat)
+    task_copy = Task('copy', _copy, model_name, (feat,))
     wf_stepwise_step.add_task(task_copy)
 
     task_update_inits = Task('update_inits', update_initial_estimates)
     wf_stepwise_step.add_task(task_update_inits, predecessors=task_copy)
 
-    task_function = Task(feat, _apply_transformation, feat, func)
+    task_function = Task(key_to_str(feat), _apply_transformation, feat, func)
     wf_stepwise_step.add_task(task_function, predecessors=task_update_inits)
 
     if iiv_strategy != 'no_add':
@@ -213,7 +219,7 @@ def _create_model_workflow(model_name, feat, func, iiv_strategy):
 def _apply_transformation(feat, func, model):
     old_params = set(model.parameters)
     func(model)
-    if feat.startswith('PERIPHERALS'):
+    if feat[0] == 'PERIPHERALS':
         new_params = set(model.parameters)
         diff = new_params - old_params
         peripheral_params = {
@@ -225,18 +231,18 @@ def _apply_transformation(feat, func, model):
     return model
 
 
-def _is_allowed(feat_current, func_current, feat_previous, mfl_features):
-    mfl_funcs = mfl_features.all_funcs()
-    func_type = mfl_features.get_funcs_same_type(feat_current)
+def _is_allowed(feat_current, func_current, feat_previous, mfl_statements):
+    mfl_funcs = all_funcs(Model(), mfl_statements)
+    func_type = get_funcs_same_type(mfl_funcs, feat_current)
     # Check if current function is in previous transformations
     if feat_current in feat_previous:
         return False
     # Check if peripheral transformation is allowed
-    if feat_current.startswith('PERIPHERALS'):
+    if feat_current[0] == 'PERIPHERALS':
         peripheral_previous = [
-            mfl_funcs[feat] for feat in feat_previous if feat.startswith('PERIPHERALS')
+            mfl_funcs[feat] for feat in feat_previous if feat[0] == 'PERIPHERALS'
         ]
-        return _is_allowed_peripheral(func_current, peripheral_previous, mfl_features)
+        return _is_allowed_peripheral(func_current, peripheral_previous, mfl_statements)
     # Check if any functions of the same type has been used
     if any(mfl_funcs[feat] in func_type for feat in feat_previous):
         return False
@@ -245,23 +251,25 @@ def _is_allowed(feat_current, func_current, feat_previous, mfl_features):
         return True
     # Combinations to skip
     not_supported_combo = [
-        ('ABSORPTION(ZO)', 'TRANSITS'),
-        ('ABSORPTION(SEQ-ZO-FO)', 'TRANSITS'),
-        ('ABSORPTION(SEQ-ZO-FO)', 'LAGTIME'),
-        ('LAGTIME', 'TRANSITS'),
+        (('ABSORPTION', 'ZO'), ('TRANSITS',)),
+        (('ABSORPTION', 'SEQ-ZO-FO'), ('TRANSITS',)),
+        (('ABSORPTION', 'SEQ-ZO-FO'), ('LAGTIME',)),
+        (('LAGTIME',), ('TRANSITS',)),
     ]
     for feat_1, feat_2 in not_supported_combo:
         if any(
-            (feat_current.startswith(feat_1) and feat.startswith(feat_2))
-            or (feat_current.startswith(feat_2) and feat.startswith(feat_1))
+            (feat_current[: len(feat_1)] == feat_1 and feat[: len(feat_2)] == feat_2)
+            or (feat_current[: len(feat_2)] == feat_2 and feat[: len(feat_1)] == feat_1)
             for feat in feat_previous
         ):
             return False
     return True
 
 
-def _is_allowed_peripheral(func_current, peripheral_previous, mfl_features):
-    n_all = list(mfl_features.peripherals.args)
+def _is_allowed_peripheral(func_current, peripheral_previous, mfl_statements):
+    n_all: List[Any] = list(
+        t[1] for t in all_funcs(Model(), mfl_statements) if t[0] == 'PERIPHERALS'
+    )
     n = func_current.keywords['n']
     if peripheral_previous:
         n_prev = [func.keywords['n'] for func in peripheral_previous]
@@ -280,10 +288,11 @@ def _is_allowed_peripheral(func_current, peripheral_previous, mfl_features):
 
 def _copy(name, features, model):
     model_copy = copy_model(model, name)
+    features_str = ';'.join(map(key_to_str, features))
     if not model.description:
-        model_copy.description = features
+        model_copy.description = features_str
     else:
-        model_copy.description = f'{model.description};{features}'
+        model_copy.description = f'{model.description};{features_str}'
     return model_copy
 
 
