@@ -22,6 +22,7 @@ def start_linearize(model):
 
 
 def create_linearized_model(model):
+    # TODO We should generalize this to work with covariate effects.
     linbase = pharmpy.model.Model()
     linbase.parameters = model.parameters
     linbase.random_variables = model.random_variables.copy()
