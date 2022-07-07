@@ -2834,6 +2834,33 @@ def test_remove_iov(testdata):
         remove_iov(model)
 
 
+def test_remove_iov_github_issues_538_and_561_1(testdata):
+
+    m = Model.create_model(testdata / 'nonmem' / 'models' / 'fviii6.mod')
+
+    remove_iov(m)
+
+    assert not m.random_variables.iov
+
+
+def test_remove_iov_github_issues_538_and_561_2(testdata):
+
+    m = Model.create_model(testdata / 'nonmem' / 'models' / 'fviii6.mod')
+
+    remove_iov(m, 'ETA(4)')
+
+    assert set(m.random_variables.iov.names) == {
+        'ETA(12)',
+        'ETA(13)',
+        'ETA(14)',
+        'ETA(15)',
+        'ETA(16)',
+        'ETA(17)',
+        'ETA(18)',
+        'ETA(19)',
+    }
+
+
 def test_remove_iov_diagonal():
     model = Model.create_model(
         StringIO(

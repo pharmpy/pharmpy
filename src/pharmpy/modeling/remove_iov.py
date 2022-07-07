@@ -4,13 +4,10 @@
 
 import warnings
 
-from sympy.functions.elementary.piecewise import Piecewise
-
 from pharmpy.model import Model
 from pharmpy.modeling import remove_unused_parameters_and_rvs
 from pharmpy.modeling.help_functions import _format_input_list
 from pharmpy.random_variables import RandomVariable
-from pharmpy.statements import Assignment
 
 
 def remove_iov(model, to_remove=None):
@@ -75,27 +72,25 @@ def _get_iov_etas(model: Model, list_of_etas):
         assert isinstance(eta, RandomVariable)
         direct_etas.add(eta)
 
-    # NOTE Include all ETAs that assign to the same IOV variables
-    # as the one directly referenced
+    # NOTE Include all IOV ETAs that are identically distributed to the ones
+    # directly referenced
     indirect_etas = set()
-    for expression_rvs in _get_iov_piecewise_assignments_rvs(model):
-        if not direct_etas.isdisjoint(expression_rvs):
-            indirect_etas.update(expression_rvs)
+    for group in _get_iov_groups(model):
+        if not direct_etas.isdisjoint(group):
+            indirect_etas.update(group)
 
-    etas = direct_etas | indirect_etas
-
-    # NOTE Check that we got the closure
-    for expression_rvs in _get_iov_piecewise_assignments_rvs(model):
-        if not etas.isdisjoint(expression_rvs):
-            assert etas.issuperset(expression_rvs)
-
-    return etas
+    return direct_etas | indirect_etas
 
 
-def _get_iov_piecewise_assignments_rvs(model: Model):
-    iovs = set(rv.symbol for rv in model.random_variables.iov)
-    for statement in model.statements:
-        if isinstance(statement, Assignment) and isinstance(statement.expression, Piecewise):
-            expression_symbols = [p[0] for p in statement.expression.as_expr_set_pairs()]
-            if all(s in iovs for s in expression_symbols):
-                yield model.random_variables[expression_symbols]
+def _get_iov_groups(model: Model):
+    iovs = model.random_variables.iov
+    same = {}
+    for rvs, dist in iovs.distributions():
+        for i, rv in enumerate(rvs):
+            key = (dist, i)
+            if key in same:
+                same[key].add(rv)
+            else:
+                same[key] = {rv}
+
+    return same.values()
