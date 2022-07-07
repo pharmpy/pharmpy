@@ -573,7 +573,7 @@ def print_model_symbols(model):
 
 
 def get_config_path():
-    """Returns path to the user config path
+    r"""Returns path to the user config path
 
     Returns
     -------
@@ -583,7 +583,7 @@ def get_config_path():
     Example
     -------
     >>> from pharmpy.modeling import get_config_path
-    >>> get_config_path()    # doctest: +ELLIPSIS
+    >>> get_config_path().replace('\\', '/')    # doctest: +ELLIPSIS
     '.../pharmpy.conf'
     """
     return str(config.user_config_dir())

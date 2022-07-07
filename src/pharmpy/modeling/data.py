@@ -632,7 +632,7 @@ def get_doseid(model):
     --------
     >>> from pharmpy.modeling import load_example_model, get_doseid
     >>> model = load_example_model("pheno")
-    >>> get_doseid(model)
+    >>> get_doseid(model)  # doctest: +ELLIPSIS
     0       1
     1       1
     2       2
@@ -644,7 +644,7 @@ def get_doseid(model):
     741    12
     742    13
     743    13
-    Name: DOSEID, Length: 744, dtype: int64
+    Name: DOSEID, Length: 744, dtype: int...
     """
     try:
         dose = model.datainfo.typeix['dose'][0].name

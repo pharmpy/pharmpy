@@ -6,37 +6,85 @@ on:
       - master
   pull_request:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
 jobs:
   ci:
     name: build-ci
-    runs-on: ${{ matrix.platform }}
+
     strategy:
       matrix:
+        suite: ['lint', 'unit', 'doctest']
         platform: [ubuntu-latest, macos-latest, windows-latest]
         python-version: ['3.8', '3.9', '3.10']
+        include:
+          - suite: 'docs-build'
+            platform: ubuntu-latest
+            python-version: '3.9'
+          - suite: 'docs-test'
+            platform: ubuntu-latest
+            python-version: '3.9'
+          - suite: 'docs-lint'
+            platform: ubuntu-latest
+            python-version: '3.9'
         exclude:
-        - platform: windows-latest
-          python-version: '3.10'
+          - platform: windows-latest
+            python-version: '3.10'
+          - suite: 'lint'
+            platform: macos-latest
+          - suite: 'lint'
+            platform: windows-latest
+
+    runs-on: ${{ matrix.platform }}
 
     steps:
-    - uses: actions/checkout@v1
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v2
-      with:
-        python-version: ${{ matrix.python-version }}
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install tox tox-gh-actions
-    - name: Test with tox
-      run: tox
-      env:
-        PLATFORM: ${{ matrix.platform }}
-    - name: Upload coverage to Codecov
-      if: matrix.platform == 'ubuntu-latest' && matrix.python-version == '3.9'
-      uses: codecov/codecov-action@v2
-      with:
-        files: ./.coverage.xml
-    - name: Test docs
-      if: matrix.platform == 'ubuntu-latest' && matrix.python-version == '3.9'
-      run: tox -e docs,doctest,doccheck
+
+      - uses: actions/checkout@v3
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install tox tox-gh-actions
+
+      - name: Lint MANIFEST and Python files
+        if: matrix.suite == 'lint'
+        run: tox
+        env:
+          PLATFORM: ${{ matrix.platform }}
+          TOX_FACTOR: ${{ matrix.suite }}
+
+      - name: Run tests with tox
+        if: matrix.suite == 'unit' || matrix.suite == 'doctest'
+        shell: bash
+        run: |
+            tox
+            echo "coverage=${{ matrix.suite }}" >> $GITHUB_ENV
+        env:
+          PLATFORM: ${{ matrix.platform }}
+          TOX_FACTOR: ${{ matrix.suite }}
+
+      - name: Upload coverage to Codecov
+        if: env.coverage != ''
+        uses: codecov/codecov-action@v3
+        with:
+          flags: ${{ env.coverage }},${{ matrix.platform }},python-${{ matrix.python-version }}
+          files: ./.coverage.xml
+
+      - name: Build docs
+        if: matrix.suite == 'docs-build'
+        run: tox -e docs
+
+      - name: Test docs
+        if: matrix.suite == 'docs-test'
+        run: tox -e sphinxtest
+
+      - name: Lint docs
+        if: matrix.suite == 'docs-lint'
+        run: tox -e doccheck

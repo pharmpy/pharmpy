@@ -22,12 +22,12 @@ from pharmpy.modeling import (
     summarize_individuals_count_table,
     summarize_modelfit_results,
 )
+from pharmpy.modeling.error import remove_error_model, set_time_varying_error_model
 from pharmpy.statements import Assignment, ModelStatements
 from pharmpy.tools.common import summarize_tool, update_initial_estimates
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.workflows import Task, Workflow, call_workflow
 
-from ...modeling.error import remove_error_model, set_time_varying_error_model
 from .results import calculate_results
 
 

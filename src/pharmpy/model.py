@@ -76,7 +76,8 @@ class Model:
         Examples
         --------
         >>> from pharmpy import Model
-        >>> a = Model()
+        >>> from pharmpy.modeling import load_example_model
+        >>> a = load_example_model("pheno")
         >>> a == a
         True
         >>> a == 0
@@ -87,7 +88,7 @@ class Model:
         Traceback (most recent call last):
          ...
         NotImplementedError: Cannot compare Model with <class 'NoneType'>
-        >>> b = Model()
+        >>> b = load_example_model("pheno")
         >>> b == a
         True
         >>> a.name = 'a'
