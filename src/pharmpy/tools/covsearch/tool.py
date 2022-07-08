@@ -12,11 +12,12 @@ from pharmpy.modeling.lrt import best_of_many as lrt_best_of_many
 from pharmpy.modeling.lrt import best_of_subtree as lrt_best_of_subtree
 from pharmpy.modeling.lrt import p_value as lrt_p_value
 from pharmpy.tools.common import create_results, update_initial_estimates
+from pharmpy.tools.mfl.feature.covariate import EffectLiteral, Spec, parse_spec, spec
+from pharmpy.tools.mfl.parse import parse
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.tools.scm.results import candidate_summary_dataframe, ofv_summary_dataframe
 from pharmpy.workflows import Task, Workflow, call_workflow
 
-from .effects import EffectLiteral, Effects, Spec, parse_spec
 from .results import COVSearchResults
 
 NAME_WF = 'covsearch'
@@ -145,7 +146,7 @@ def task_greedy_forward_search(
     max_steps: int,
     model: Model,
 ):
-    effect_spec = Effects(effects).spec(model) if isinstance(effects, str) else effects
+    effect_spec = spec(model, parse(effects)) if isinstance(effects, str) else effects
     candidate_effects = sorted(set(parse_spec(effect_spec)))
 
     best_candidate_so_far = Candidate(model, ())
