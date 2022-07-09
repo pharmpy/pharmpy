@@ -979,15 +979,17 @@ class Model(pharmpy.model.Model):
                 di.path = dataset_path
                 self.datainfo = di
                 self._old_datainfo = di.copy()
-                warned = False
+                different_drop = []
                 for colinfo, coldrop in zip(di, drop):
-                    if coldrop != colinfo.drop and not warned:
-                        warned = True
-                        warnings.warn(
-                            "NONMEM .mod and dataset .datainfo disagree on "
-                            f"DROP for at least one column {colinfo.name}."
-                        )
+                    if colinfo.drop != coldrop:
                         colinfo.drop = coldrop
+                        different_drop.append(colinfo.name)
+
+                if different_drop:
+                    warnings.warn(
+                        "NONMEM .mod and dataset .datainfo disagree on "
+                        f"DROP for columns {', '.join(different_drop)}."
+                    )
                 return
 
         column_info = []
