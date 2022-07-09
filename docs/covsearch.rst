@@ -134,7 +134,7 @@ aliases. For instance the example above can be rewritten as
 
     run_covsearch(
         ...
-        effects='CONTINUOUS([AGE,WT]);COVARIATE([CL, V], @CONTINUOUS, EXP)'
+        effects='LET(CONTINUOUS, [AGE,WT]);COVARIATE([CL, V], @CONTINUOUS, EXP)'
         ...
     )
 
@@ -183,8 +183,8 @@ The DSL supports the following aliases:
 | `\*`            | Effect      | auto           | All continuous effects                      |
 +-----------------+-------------+----------------+---------------------------------------------+
 
-Manual aliases can be defined via the syntax `ALIAS([...])`. For instance to
-declare a list of absorption parameters use `ABSORPTION(KA)`.
+Manual aliases can be defined via the syntax `LET(ALIAS, [...])`. For instance to
+declare a list of absorption parameters use `LET(ABSORPTION, KA)`.
 
 For aliases that are both automatic and manual, the automatic definition of an
 alias gets overriden as soon as a manual definition is used for the alias.

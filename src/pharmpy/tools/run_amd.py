@@ -230,7 +230,7 @@ def _run_covariates(model, continuous, categorical, path):
 
     if continuous is not None or categorical is not None:
         covariates_search_space = (
-            f'CONTINUOUS({con_covariates}); CATEGORICAL({cat_covariates})\n'
+            f'LET(CONTINUOUS, {con_covariates}); LET(CATEGORICAL, {cat_covariates})\n'
             f'COVARIATE(@IIV, @CONTINUOUS, exp, *)\n'
             f'COVARIATE(@IIV, @CATEGORICAL, cat, *)'
         )
