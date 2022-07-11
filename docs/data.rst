@@ -167,6 +167,9 @@ DataInfo
 
 Every model has a `DataInfo` object that describes the dataset.
 
+.. note::
+    A datainfo file can be created for .csv-files `here <https://pharmpy.github.io/amdui/datainfo>`_.
+
 .. pharmpy-execute::
 
     di = model.datainfo
@@ -184,9 +187,6 @@ Separator character for the dataset file.
 .. pharmpy-execute::
 
     di.separator
-
-.. note::
-    A datainfo file can be created for .csv-files `here <https://pharmpy.github.io/amdui/datainfo>`_.
 
 ColumnInfo
 ==========

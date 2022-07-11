@@ -79,7 +79,7 @@ The AMD tool can use both a dataset and a model as input. If the input is a data
 :ref:`datainfo file<datainfo>`), Pharmpy will create a model with the following attributes:
 
 * Structural: one compartment, first order absorption (if ``model_type`` is ``'pk_oral'``), first order elimination
-* IIV: CL and VC with covariance
+* IIV: CL and VC with covariance (``'pk_iv'``) or CL and VC with covariance and MAT (``'pk_oral'``)
 * Residual: proportional error model
 * Estimation steps: FOCE with interaction
 
