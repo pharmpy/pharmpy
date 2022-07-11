@@ -95,6 +95,7 @@ $OMEGA DIAGONAL(2)
 0.0309626 ; IVCL
 0.031128 ; IVV
 $SIGMA 0.013241 ;sigma
+$ESTIMATION METHOD=1 INTERACTION
 """
     model = read_model_from_string(code)
     mu_reference_model(model)
@@ -118,6 +119,7 @@ $OMEGA DIAGONAL(2)
 0.0309626 ; IVCL
 0.031128 ; IVV
 $SIGMA 0.013241 ;sigma
+$ESTIMATION METHOD=1 INTERACTION
 """
     assert model.model_code == correct
 

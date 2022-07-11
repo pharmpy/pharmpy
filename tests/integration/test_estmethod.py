@@ -21,7 +21,7 @@ def _model_count(rundir: Path):
     'algorithm, methods, solvers, no_of_models, advan_ref',
     [
         ('exhaustive', 'imp', None, 3, 'ADVAN1'),
-        ('exhaustive', 'imp', ['lsoda'], 5, 'ADVAN1'),
+        ('exhaustive', 'imp', ['lsoda'], 5, 'ADVAN13'),
         ('reduced', ['foce', 'imp'], None, 2, 'ADVAN1'),
     ],
 )
