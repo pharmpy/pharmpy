@@ -115,7 +115,7 @@ def run_amd(
     if search_space is None:
         if modeltype == 'pk_oral':
             search_space = (
-                'ABSORPTION(SEQ-ZO-FO);'
+                'ABSORPTION([ZO,SEQ-ZO-FO]);'
                 'ELIMINATION([MM,MIX-FO-MM]);'
                 'LAGTIME();'
                 'TRANSITS([1,3,10],*);'

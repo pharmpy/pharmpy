@@ -103,7 +103,7 @@ default is:
 
 .. code-block::
 
-    ABSORPTION(SEQ-ZO-FO)
+    ABSORPTION([ZO,SEQ-ZO-FO])
     ELIMINATION([MM,MIX-FO-MM])
     LAGTIME()
     TRANSITS([1,3,10],*)
