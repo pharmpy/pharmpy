@@ -193,7 +193,7 @@ jobs:
 
   integration-windows:
       needs: [get-nonmem]
-      runs-on: windows-latest
+      runs-on: windows-2019
       steps:
         - name: Checkout Pharmpy
           uses: actions/checkout@v1
@@ -236,9 +236,9 @@ jobs:
         - name: Run integration tests
           run: tox -e integration
           env:
-            PLATFORM: windows-latest
+            PLATFORM: windows-2019
         - name: Upload coverage to Codecov
           uses: codecov/codecov-action@v2
           with:
-            flags: integration,windows-latest,python-3.9
+            flags: integration,windows-2019,python-3.9
             files: ./.coverage.xml
