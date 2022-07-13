@@ -441,8 +441,9 @@ def update_statements(model, old, new, trans):
                 )
             update_ode_system(model, old_odes, new_odes)
         else:
-            # Check for only updated solver
-            new_solver = model.estimation_steps[0].solver
+            new_solver = None
+            if len(model.estimation_steps) > 0:
+                new_solver = model.estimation_steps[0].solver
             if type(new_odes) == ExplicitODESystem or new_solver:
                 old_solver = model._old_estimation_steps[0].solver
                 if new_solver != old_solver:
