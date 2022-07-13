@@ -512,7 +512,13 @@ def _rename_parameter(model, old_name, new_name):
             for p in pars:
                 if p != diag:
                     if p.name.startswith('IIV'):
-                        d[p.symbol] = p.name.replace(f'IIV_{old_name}', f'IIV_{new_name}')
+                        # FIXME: in some cases, parameters are read as symbols, this is
+                        #  a workaround
+                        try:
+                            symb = p.symbol
+                        except AttributeError:
+                            symb = p
+                        d[symb] = p.name.replace(f'IIV_{old_name}', f'IIV_{new_name}')
             model.random_variables.subs(d)
             break
     new = []
