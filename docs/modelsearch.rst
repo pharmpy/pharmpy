@@ -392,6 +392,8 @@ MFL support the following types of options to feature descriptions:
 +---------------+------------------+-------------------------------------------------------+
 | array         | :code:`[FO, ZO]` | Multiple tokens or numbers                            |
 +---------------+------------------+-------------------------------------------------------+
+| symbol        | :code:`@IIV`     | A symbol with manual or automatic definition          |
++---------------+------------------+-------------------------------------------------------+
 
 Model features
 ~~~~~~~~~~~~~~
@@ -412,6 +414,41 @@ MFL support the following model features:
 +---------------+-------------------------------+--------------------------------------------------------------------+
 | LAGTIME       | None                          | Absorption lagtime                                                 |
 +---------------+-------------------------------+--------------------------------------------------------------------+
+| COVARIATE     | `parameter`, `covariate`,     | Covariate effects                                                  |
+|               | `effect`                      |                                                                    |
++---------------+-------------------------------+--------------------------------------------------------------------+
+
+
+.. _mfl_symbols:
+
+Symbols
+~~~~~~~
+
+The MFL supports defining symbols via the syntax `LET(SYMBOL, [...])`.  For
+instance, to declare a list of absorption parameters use `LET(ABSORPTION, KA)`.
+Those symbols can then be referred to when declaring covariate effects via the
+syntax `COVARIATE(@SYMBOL, ...)`. Certain symbols have an automatic definition
+when not manually defined:
+
++-----------------+-------------+----------------+---------------------------------------------+
+| Alias           | Type        | Definition     | Description of automatic definition         |
++=================+=============+================+=============================================+
+| `@IIV`          | Parameter   | auto or manual | All parameters with a corresponding IIV ETA |
++-----------------+-------------+----------------+---------------------------------------------+
+| `@ABSORPTION`   | Parameter   | auto or manual | All PK absorption parameters                |
++-----------------+-------------+----------------+---------------------------------------------+
+| `@ELIMINATION`  | Parameter   | auto or manual | All PK elimination parameters               |
++-----------------+-------------+----------------+---------------------------------------------+
+| `@DISTRIBUTION` | Parameter   | auto or manual | All PK distribution parameters              |
++-----------------+-------------+----------------+---------------------------------------------+
+| `@CONTINUOUS`   | Covariate   | auto or manual | All continuous covariates                   |
++-----------------+-------------+----------------+---------------------------------------------+
+| `@CATEGORICAL`  | Covariate   | auto or manual | All categorical covariates                  |
++-----------------+-------------+----------------+---------------------------------------------+
+
+
+For aliases that are both automatic and manual, the automatic definition of an
+alias gets overriden as soon as a manual definition is used for the alias.
 
 
 Describe intervals
@@ -502,3 +539,10 @@ Allow all combinations of absorption and elimination rates:
 
     ABSORPTION(*)
     ELIMINATION(*)
+
+All covariate effects on parameters with IIV:
+
+.. code::
+
+    COVARIATE(@IIV, @CONTINUOUS, *)
+    COVARIATE(@IIV, @CATEGORICAL, CAT)

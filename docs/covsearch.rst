@@ -116,8 +116,8 @@ can be simplified to
     )
 
 
-Finally, the candidate effects can be defined through a domain-specifc language
-(DSL) sentence. For instance, the example above can be given as
+Finally, the candidate effects can be defined through a model feature language
+(:ref:`MFL<mfl>`) sentence. For instance, the example above can be given as
 
 .. pharmpy-code::
 
@@ -127,8 +127,8 @@ Finally, the candidate effects can be defined through a domain-specifc language
         ...
     )
 
-This DSL also provides additional features such as automatic or manual
-aliases. For instance the example above can be rewritten as
+The `MFL` also provides additional features such as automatic or manual
+symbols. For instance the example above can be rewritten as
 
 .. pharmpy-code::
 
@@ -154,41 +154,25 @@ For instance,
 would test an exponential covariate effect on clearance and volume for each
 continuous covariate.
 
-More aliases are available and described in the next section.
+More automatic symbols are available. They are described in the :ref:`MFL
+symbols section<mfl_symbols>`.
 
-COVsearch DSL aliases
-~~~~~~~~~~~~~~~~~~~~~
+Wildcards
+~~~~~~~~~
 
-The DSL supports the following aliases:
+In addition to symbols, using a wildcard `\*` can help refer to computed list
+of values. For instance the MFL sentence `COVARIATE(*, *, *)` represents "All
+continuous covariate effects of all covariates on all PK parameters".
 
-+-----------------+-------------+----------------+---------------------------------------------+
-| Alias           | Type        | Definition     | Description                                 |
-+=================+=============+================+=============================================+
-| `@IIV`          | Parameter   | auto           | All parameters with a corresponding IIV ETA |
-+-----------------+-------------+----------------+---------------------------------------------+
-| `\*`            | Parameter   | auto           | All PK parameters                           |
-+-----------------+-------------+----------------+---------------------------------------------+
-| `@ABSORPTION`   | Parameter   | auto or manual | All PK absorption parameters                |
-+-----------------+-------------+----------------+---------------------------------------------+
-| `@ELIMINATION`  | Parameter   | auto or manual | All PK elimination parameters               |
-+-----------------+-------------+----------------+---------------------------------------------+
-| `@DISTRIBUTION` | Parameter   | auto or manual | All PK distribution parameters              |
-+-----------------+-------------+----------------+---------------------------------------------+
-| `@CONTINUOUS`   | Covariate   | auto or manual | All continuous covariates                   |
-+-----------------+-------------+----------------+---------------------------------------------+
-| `@CATEGORICAL`  | Covariate   | auto or manual | All categorical covariates                  |
-+-----------------+-------------+----------------+---------------------------------------------+
-| `\*`            | Covariate   | auto           | All covariates                              |
-+-----------------+-------------+----------------+---------------------------------------------+
-| `\*`            | Effect      | auto           | All continuous effects                      |
-+-----------------+-------------+----------------+---------------------------------------------+
-
-Manual aliases can be defined via the syntax `LET(ALIAS, [...])`. For instance to
-declare a list of absorption parameters use `LET(ABSORPTION, KA)`.
-
-For aliases that are both automatic and manual, the automatic definition of an
-alias gets overriden as soon as a manual definition is used for the alias.
-
++-------------+---------------------------------------------+
+| Type        | Description of wildcard definition          |
++=============+=============================================+
+| Covariate   | All covariates                              |
++-------------+---------------------------------------------+
+| Effect      | All continuous effects                      |
++-------------+---------------------------------------------+
+| Parameter   | All PK parameters                           |
++-------------+---------------------------------------------+
 
 .. _algorithm_covsearch:
 
