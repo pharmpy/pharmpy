@@ -1427,13 +1427,15 @@ def check_dataset(model, dataframe=False, verbose=False):
         checker.print()
 
 
-def read_dataset_from_datainfo(datainfo: Union[DataInfo, Path, str]) -> pd.DataFrame:
+def read_dataset_from_datainfo(datainfo: Union[DataInfo, Path, str], datatype=None) -> pd.DataFrame:
     """Read a dataset given a datainfo object or path to a datainfo file
 
     Parameters
     ----------
     datainfo : DataInfo | Path | str
         A datainfo object or a path to a datainfo object
+    datatype : str
+        A string to specify dataset type
 
     Results
     -------
@@ -1445,11 +1447,23 @@ def read_dataset_from_datainfo(datainfo: Union[DataInfo, Path, str]) -> pd.DataF
 
     if datainfo.path is None:
         raise ValueError('datainfo.path is None')
+    from pharmpy.plugins.nonmem.dataset import read_nonmem_dataset
 
-    df = pd.read_csv(
-        datainfo.path,
-        sep=datainfo.separator,
-        dtype=datainfo.get_dtype_dict(),
-        float_precision='round_trip',
-    )
+    if datatype == 'nonmem':
+        drop = [col.drop for col in datainfo]
+        df = read_nonmem_dataset(
+            datainfo.path,
+            ignore_character='@',
+            drop=drop,
+            colnames=datainfo.names,
+            dtype=datainfo.get_dtype_dict(),
+        )
+    else:
+        df = pd.read_csv(
+            datainfo.path,
+            sep=datainfo.separator,
+            dtype=datainfo.get_dtype_dict(),
+            float_precision='round_trip',
+        )
+
     return df
