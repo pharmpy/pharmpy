@@ -367,3 +367,18 @@ All covariate effects on parameters with IIV:
 
     COVARIATE(@IIV, @CONTINUOUS, *)
     COVARIATE(@IIV, @CATEGORICAL, CAT)
+
+With fixed lists of covariates for which to add effects:
+
+.. code::
+
+    LET(CONTINUOUS, [AGE, WGT])
+    LET(CATEGORICAL, SEX)
+    COVARIATE(@IIV, @CONTINUOUS, *)
+    COVARIATE(@IIV, @CATEGORICAL, CAT)
+
+All continuous covariate effects of WGT on distribution parameters:
+
+.. code::
+
+   COVARIATE(@DISTRIBUTION, WGT, *)
