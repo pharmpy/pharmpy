@@ -245,11 +245,9 @@ MFL support the following model features:
 Symbols
 =======
 
-The MFL supports defining symbols via the syntax `LET(SYMBOL, [...])`.  For
-instance, to declare a list of absorption parameters use `LET(ABSORPTION, KA)`.
-Those symbols can then be referred to when declaring covariate effects via the
-syntax `COVARIATE(@SYMBOL, ...)`. Certain symbols have an automatic definition
-when not manually defined:
+The MFL supports certain automatically defined symbols that help with
+automating feature declaration. Currently, the only use of such symbols lies in
+declaring covariate effects via the syntax `COVARIATE(@SYMBOL, ...)`.
 
 +-----------------+-------------+---------------------------------------------+
 | Symbol          | Type        | Description of automatic definition         |
@@ -268,8 +266,10 @@ when not manually defined:
 +-----------------+-------------+---------------------------------------------+
 
 
-The automatic definition of a symbol gets overriden as soon as a manual
-definition is used for that symbol.
+New symbols can be manually defined via the syntax `LET(SYMBOL, [...])`. The
+same syntax can be used to override the automatic definition of a symbol. For
+instance, to declare an explicit list of distribution parameters use
+`LET(DISTRIBUTION, [V, K12, K21])`.
 
 
 Describe intervals
