@@ -57,7 +57,7 @@ def create_start_model(dataset_path, modeltype='pk_oral', cl_init=0.01, vc_init=
 
     stats = ModelStatements([cl_ass, vc_ass, odes, ipred, y_ass])
     di = _create_default_datainfo(dataset_path)
-    df = read_dataset_from_datainfo(di)
+    df = read_dataset_from_datainfo(di, datatype='nonmem')
 
     est = EstimationStep(
         "FOCE",
