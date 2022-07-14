@@ -165,3 +165,205 @@ of this is when running Modelsearch and having zero order absorption in the sear
 created. If any of the stepwise algorithms are used, the subsequent models will have the "same" dataset, and thus only
 one copy of that dataset will be located in ``.datasets/``.
 
+
+.. _mfl:
+
+Model feature language (MFL)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The `MFL` is a domain specific language designed to describe model features and sets of model features in a concise way.
+It can be used to describe model features for one single model or an entire space of model features, i.e. descriptions
+for multiple models. The basic building block of MFL is the feature description. A feature description consists of the
+name of a feature category followed by a comma separated list of arguments within parentheses. For example:
+
+.. code::
+
+    ABSORPTION(FO)
+
+Each feature description describes one or multiple features of the same category, i.e. absorption, absorption delay,
+elimination, and distribution. Features of the same category are mutually exclusive and cannot be applied to the same
+model. Multiple model feature descriptions can be combined by separating them with either newline or a semi-colon.
+
+The following two examples are equivalent:
+
+.. code::
+
+    ABSORPTION(FO);ELIMINATION(ZO)
+
+.. code::
+
+    ABSORPTION(FO)
+    ELIMINATION(ZO)
+
+Option types
+============
+
+MFL support the following types of options to feature descriptions:
+
++---------------+------------------+-------------------------------------------------------+
+| Type          | Example          | Description                                           |
++===============+==================+=======================================================+
+| token or name | :code:`FO`       | The name of a feature within a category               |
++---------------+------------------+-------------------------------------------------------+
+| number        | :code:`1`        | A non-negative integer                                |
++---------------+------------------+-------------------------------------------------------+
+| range         | :code:`0..2`     | A range of numbers (endpoints are included)           |
++---------------+------------------+-------------------------------------------------------+
+| wildcard      | :code:`*`        | All features of a category                            |
++---------------+------------------+-------------------------------------------------------+
+| array         | :code:`[FO, ZO]` | Multiple tokens or numbers                            |
++---------------+------------------+-------------------------------------------------------+
+| symbol        | :code:`@IIV`     | A symbol with manual or automatic definition          |
++---------------+------------------+-------------------------------------------------------+
+
+Model features
+==============
+
+MFL support the following model features:
+
++---------------+-------------------------------+--------------------------------------------------------------------+
+| Category      | Options                       | Description                                                        |
++===============+===============================+====================================================================+
+| ABSORPTION    | :code:`FO, ZO, SEQ-ZO-FO`     | Absorption rate                                                    |
++---------------+-------------------------------+--------------------------------------------------------------------+
+| ELIMINATION   | :code:`FO, ZO, MM, MIX-FO-MM` | Elimination rate                                                   |
++---------------+-------------------------------+--------------------------------------------------------------------+
+| PERIPHERALS   | `number`                      | Number of peripheral compartments                                  |
++---------------+-------------------------------+--------------------------------------------------------------------+
+| TRANSITS      | `number`, DEPOT/NODEPOT       | Number of absorption transit compartments. Whether convert depot   |
+|               |                               | compartment into a transit compartment                             |
++---------------+-------------------------------+--------------------------------------------------------------------+
+| LAGTIME       | None                          | Absorption lagtime                                                 |
++---------------+-------------------------------+--------------------------------------------------------------------+
+| COVARIATE     | `parameter`, `covariate`,     | Covariate effects                                                  |
+|               | `effect`                      |                                                                    |
++---------------+-------------------------------+--------------------------------------------------------------------+
+
+
+.. _mfl_symbols:
+
+Symbols
+=======
+
+The MFL supports defining symbols via the syntax `LET(SYMBOL, [...])`.  For
+instance, to declare a list of absorption parameters use `LET(ABSORPTION, KA)`.
+Those symbols can then be referred to when declaring covariate effects via the
+syntax `COVARIATE(@SYMBOL, ...)`. Certain symbols have an automatic definition
+when not manually defined:
+
++-----------------+-------------+----------------+---------------------------------------------+
+| Alias           | Type        | Definition     | Description of automatic definition         |
++=================+=============+================+=============================================+
+| `@IIV`          | Parameter   | auto or manual | All parameters with a corresponding IIV ETA |
++-----------------+-------------+----------------+---------------------------------------------+
+| `@ABSORPTION`   | Parameter   | auto or manual | All PK absorption parameters                |
++-----------------+-------------+----------------+---------------------------------------------+
+| `@ELIMINATION`  | Parameter   | auto or manual | All PK elimination parameters               |
++-----------------+-------------+----------------+---------------------------------------------+
+| `@DISTRIBUTION` | Parameter   | auto or manual | All PK distribution parameters              |
++-----------------+-------------+----------------+---------------------------------------------+
+| `@CONTINUOUS`   | Covariate   | auto or manual | All continuous covariates                   |
++-----------------+-------------+----------------+---------------------------------------------+
+| `@CATEGORICAL`  | Covariate   | auto or manual | All categorical covariates                  |
++-----------------+-------------+----------------+---------------------------------------------+
+
+
+For aliases that are both automatic and manual, the automatic definition of an
+alias gets overriden as soon as a manual definition is used for the alias.
+
+
+Describe intervals
+==================
+
+It is possible to use ranges and arrays to describe the search space for e.g. transit and peripheral compartments.
+
+To add 1, 2 and 3 peripheral compartments:
+
+.. code::
+
+    PERIPHERALS(1)
+    PERIPHERALS(2)
+    PERIPHERALS(3)
+
+This is equivalent to:
+
+.. code::
+
+    PERIPHERALS(1..3)
+
+As well as:
+
+.. code::
+
+    PERIPHERALS([1,2,3])
+
+Redundant descriptions
+======================
+
+It is allowed to describe the same feature multiple times, however, this will not make any difference for which
+features are described.
+
+.. code::
+
+    ABSORPTION(FO)
+    ABSORPTION([FO, ZO])
+
+This is equivalent to:
+
+.. code::
+
+    ABSORPTION([FO, ZO])
+
+And:
+
+.. code::
+
+    PERIPHERALS(1..2)
+    PERIPHERALS(1)
+
+Is equivalent to:
+
+.. code::
+
+    PERIPHERALS(1..2)
+
+Examples
+========
+
+An example of a search space for PK models with oral data:
+
+.. code::
+
+    ABSORPTION([ZO,SEQ-ZO-FO])
+    ELIMINATION([MM,MIX-FO-MM])
+    LAGTIME()
+    TRANSITS([1,3,10],*)
+    PERIPHERALS(1)
+
+An example of a search space for PK models with IV data:
+
+.. code::
+
+    ELIMINATION([MM,MIX-FO-MM])
+    PERIPHERALS([1,2])
+
+
+Search through all available absorption rates:
+
+.. code::
+
+    ABSORPTION(*)
+
+Allow all combinations of absorption and elimination rates:
+
+.. code::
+
+    ABSORPTION(*)
+    ELIMINATION(*)
+
+All covariate effects on parameters with IIV:
+
+.. code::
+
+    COVARIATE(@IIV, @CONTINUOUS, *)
+    COVARIATE(@IIV, @CATEGORICAL, CAT)
