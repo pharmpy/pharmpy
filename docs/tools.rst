@@ -251,25 +251,25 @@ Those symbols can then be referred to when declaring covariate effects via the
 syntax `COVARIATE(@SYMBOL, ...)`. Certain symbols have an automatic definition
 when not manually defined:
 
-+-----------------+-------------+----------------+---------------------------------------------+
-| Alias           | Type        | Definition     | Description of automatic definition         |
-+=================+=============+================+=============================================+
-| `@IIV`          | Parameter   | auto or manual | All parameters with a corresponding IIV ETA |
-+-----------------+-------------+----------------+---------------------------------------------+
-| `@ABSORPTION`   | Parameter   | auto or manual | All PK absorption parameters                |
-+-----------------+-------------+----------------+---------------------------------------------+
-| `@ELIMINATION`  | Parameter   | auto or manual | All PK elimination parameters               |
-+-----------------+-------------+----------------+---------------------------------------------+
-| `@DISTRIBUTION` | Parameter   | auto or manual | All PK distribution parameters              |
-+-----------------+-------------+----------------+---------------------------------------------+
-| `@CONTINUOUS`   | Covariate   | auto or manual | All continuous covariates                   |
-+-----------------+-------------+----------------+---------------------------------------------+
-| `@CATEGORICAL`  | Covariate   | auto or manual | All categorical covariates                  |
-+-----------------+-------------+----------------+---------------------------------------------+
++-----------------+-------------+---------------------------------------------+
+| Symbol          | Type        | Description of automatic definition         |
++=================+=============+=============================================+
+| `@IIV`          | Parameter   | All parameters with a corresponding IIV ETA |
++-----------------+-------------+---------------------------------------------+
+| `@ABSORPTION`   | Parameter   | All PK absorption parameters                |
++-----------------+-------------+---------------------------------------------+
+| `@ELIMINATION`  | Parameter   | All PK elimination parameters               |
++-----------------+-------------+---------------------------------------------+
+| `@DISTRIBUTION` | Parameter   | All PK distribution parameters              |
++-----------------+-------------+---------------------------------------------+
+| `@CONTINUOUS`   | Covariate   | All continuous covariates                   |
++-----------------+-------------+---------------------------------------------+
+| `@CATEGORICAL`  | Covariate   | All categorical covariates                  |
++-----------------+-------------+---------------------------------------------+
 
 
-For aliases that are both automatic and manual, the automatic definition of an
-alias gets overriden as soon as a manual definition is used for the alias.
+The automatic definition of a symbol gets overriden as soon as a manual
+definition is used for that symbol.
 
 
 Describe intervals
