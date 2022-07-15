@@ -3,6 +3,4 @@ flag_management:
     carryforward: false
   individual_flags:
     - name: integration
-      paths:
-        - .*
       carryforward: true
