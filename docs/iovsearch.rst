@@ -32,6 +32,14 @@ parameters in ``list_of_parameters``, which when none will be all parameters wit
 ``distribution`` as the IIVs. The candidate models will be ranked using ``bic`` with default ``cutoff``, which for BIC
 is none.
 
+You can limit the search to only certain parameters by giving a list:
+
+.. pharmpy-code::
+
+    res = run_iovsearch(model=start_model,
+                        column='OCC',
+                        list_of_parameters=['CL', 'V'])
+
 To run IOVsearch from the command line, the example code is redefined accordingly:
 
 .. code::
@@ -46,7 +54,7 @@ Arguments
 | Argument                                    | Description                                                          |
 +=============================================+======================================================================+
 | ``column``                                  | Name of column in dataset to use as occasion column (default is      |
-|                                             | `'OCC'`)                                                             |
+|                                             | `'OCC'`). Note that this only makes sense for discrete occasion data.|
 +---------------------------------------------+----------------------------------------------------------------------+
 | ``list_of_parameters``                      | List of parameters to test IOV on, if none all parameters with IIV   |
 |                                             | will be tested (default)                                             |
@@ -156,6 +164,24 @@ below.
 +-------------------+-------------------------------------------------+
 | ``'explicit'``    | Explicit mix of joint and disjoint distribution |
 +-------------------+-------------------------------------------------+
+
+By default, or when specifying ``'same-as-iiv'``, you get the same covariance
+structure for added IOVs as the one that already exists for IIVs. If you want a
+different structure, you can specify ``'disjoint'`` to force zero covariance
+between added IOVs, or ``'joint'`` to force nonzero covariance. To get full
+control over the covariance you can specify ``'explicit'`` and give the
+structure explicitly as in the following example:
+
+.. pharmpy-code::
+
+    res = run_iovsearch(model=start_model,
+                        column='OCC',
+                        list_of_parameters=[['CL', 'V'], ['KA']],
+                        distribution='explicit')
+
+In this example, the newly added clearance (CL) and volume (V) IOVs will have
+nonzero mutual covariance, but will have zero covariance with the absorption
+constant (KA) IOV.
 
 
 .. _ranking_iovsearch:

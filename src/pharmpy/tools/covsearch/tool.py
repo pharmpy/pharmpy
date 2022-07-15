@@ -71,8 +71,8 @@ def create_workflow(
     Parameters
     ----------
     effects : str | list
-        The list of candidates to try, either in DSL str form or in
-        (optionally compact) tuple form.
+        The list of candidate parameter-covariate effects to try, either as a
+        MFL sentence or in (optionally compact) tuple form.
     p_forward : float
         The p-value to use in the likelihood ratio test for forward steps
     max_steps : int

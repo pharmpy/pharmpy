@@ -22,22 +22,22 @@ To initiate COVsearch in Python/R:
     start_model = read_model('path/to/model')
     res = run_covsearch(algorithm='scm-forward',
                         model=start_model,
-                        effects='COVARIATE(@IIV, @CONTINUOUS, *); COVARIATE(@IIV, @CATEGORICAL, CAT, *)',
+                        effects='COVARIATE(@IIV, @CONTINUOUS, *); COVARIATE(@IIV, @CATEGORICAL, CAT)',
                         p_forward=0.05,
                         max_steps=5)
 
 In this example, we will attempt up to five forward steps of the Stepwise
 Covariate Modeling (SCM) algorithm on the model ``start_model``. The p-value
-threshold for theses steps if 5% and the candidate effects consists of all
+threshold for these steps is 5% and the candidate effects consists of all (\*)
 supported effects (multiplicative) of continuous covariates on parameters with IIV,
-and a multiplicative categorical effect of categorical covariates on parameters
+and a (multiplicative) categorical effect of categorical covariates on parameters
 with IIV.
 
 To run COVsearch from the command line, the example code is redefined accordingly:
 
 .. code::
 
-    pharmpy run covsearch path/to/model --algorithm scm-forward --effects 'COVARIATE(@IIV, @CONTINUOUS, *); COVARIATE(@IIV, @CATEGORICAL, CAT, *)' --p_forward 0.05 --max_steps 5
+    pharmpy run covsearch path/to/model --algorithm scm-forward --effects 'COVARIATE(@IIV, @CONTINUOUS, *); COVARIATE(@IIV, @CATEGORICAL, CAT)' --p_forward 0.05 --max_steps 5
 
 ~~~~~~~~~
 Arguments
@@ -46,7 +46,7 @@ Arguments
 +---------------------------------------------+----------------------------------------------------------------------+
 | Argument                                    | Description                                                          |
 +=============================================+======================================================================+
-| :ref:`effects<effects_covsearch>`           | The candidate effects to search through (required)                   |
+| :ref:`effects<effects_covsearch>`           | The candidate parameter-covariate effects to search through (required)                   |
 +---------------------------------------------+----------------------------------------------------------------------+
 | ``p_forward``                               | The p-value threshold for forward steps (default is `0.05`)          |
 +---------------------------------------------+----------------------------------------------------------------------+
@@ -127,8 +127,8 @@ Finally, the candidate effects can be defined through a model feature language
         ...
     )
 
-The `MFL` also provides additional features such as automatic or manual
-symbols. For instance the example above can be rewritten as
+The `MFL` also provides additional features such as automatically- or
+manually-defined symbols. For instance the example above can be rewritten as
 
 .. pharmpy-code::
 
