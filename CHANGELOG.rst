@@ -1,3 +1,25 @@
+0.74.0 (2022-07-18)
+-------------------
+
+Changes
+=======
+
+* Rename `pharmpy.parameter` to `pharmpy.parameters` (71f4cf23)
+* Merge COVsearch DSL into MFL (#932, #973)
+* Add ZO absorption to default search space in AMD (cfc09bad)
+
+Bugfixes
+========
+
+* Make `run_amd` work in more cases (#975)
+* Make `run_iovsearch` work in more cases (#917, #977)
+* Make `remove_iov` work in more cases (#917)
+* Make `get_pk_parameters`/`run_covsearch` work in more cases (#908)
+* Make NONMEM `.mod` parsing work in more cases (#917, #975, #977)
+* Make NONMEM `.mod` updating work in more cases (fd564168)
+* Make NONMEM dataset column dropping work in more cases (088a046a)
+* Make ODES updates work in more cases (c76fa476, 430f1d2e)
+
 0.73.0 (2022-06-21)
 -------------------
 
