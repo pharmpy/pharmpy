@@ -108,7 +108,7 @@ def run_amd(
     if lloq is not None:
         remove_loq_data(model, lloq=lloq)
 
-    default_order = ['structural', 'iivsearch', 'iovsearch', 'residual', 'allometry', 'covariates']
+    default_order = ['structural', 'iivsearch', 'residual', 'iovsearch', 'allometry', 'covariates']
     if order is None:
         order = default_order
 
