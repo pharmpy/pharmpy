@@ -31,8 +31,8 @@ def create_start_model(dataset_path, modeltype='pk_oral', cl_init=0.01, vc_init=
 
     pop_cl = Parameter('POP_CL', cl_init, lower=0)
     pop_vc = Parameter('POP_VC', vc_init, lower=0)
-    iiv_cl = Parameter('IIV_CL', 0.01)
-    iiv_vc = Parameter('IIV_VC', 0.01)
+    iiv_cl = Parameter('IIV_CL', 0.1)
+    iiv_vc = Parameter('IIV_VC', 0.1)
 
     params = Parameters([pop_cl, pop_vc, iiv_cl, iiv_vc])
 
