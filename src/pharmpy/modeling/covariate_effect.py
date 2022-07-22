@@ -12,9 +12,10 @@ from pharmpy.expressions import subs, sympify
 from pharmpy.model import Assignment, Parameter, Parameters
 
 from .data import get_baselines
+from .expressions import depends_on
 
 
-def add_covariate_effect(model, parameter, covariate, effect, operation='*'):
+def add_covariate_effect(model, parameter, covariate, effect, operation='*', allow_nested=False):
     """Adds covariate effect to :class:`pharmpy.model`.
 
     The following effects have templates:
@@ -125,6 +126,9 @@ def add_covariate_effect(model, parameter, covariate, effect, operation='*'):
         Type of covariate effect. May be abbreviated covariate effect (see above) or custom.
     operation : str, optional
         Whether the covariate effect should be added or multiplied (default).
+    allow_nested: bool, optional
+        Whether to allow adding a covariate effect when one already exists for
+        the input parameter-covariate pair.
 
     Return
     ------
@@ -143,8 +147,8 @@ def add_covariate_effect(model, parameter, covariate, effect, operation='*'):
     """
     sset = model.statements
 
-    if sympy.Symbol(f'{parameter}{covariate}') in sset.free_symbols:
-        warnings.warn('Covariate effect already exists')
+    if not allow_nested and depends_on(model, parameter, covariate):
+        warnings.warn(f'Covariate effect of {covariate} on {parameter} already exists')
         return model
 
     statistics = dict()

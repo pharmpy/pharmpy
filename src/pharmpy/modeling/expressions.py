@@ -815,6 +815,12 @@ def _rvs(model: Model, level: str):
     raise ValueError(f'Cannot handle level `{level}`')
 
 
+def depends_on(model: Model, symbol: str, other: str):
+    return _depends_on_any_of(
+        model.statements.before_odes, sympy.Symbol(symbol), [sympy.Symbol(other)]
+    )
+
+
 def _depends_on_any_of(
     assignments: Statements, symbol: sympy.Symbol, symbols: Iterable[sympy.Symbol]
 ):

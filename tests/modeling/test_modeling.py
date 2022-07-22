@@ -1103,15 +1103,16 @@ def test_nan_add_covariate_effect(load_model_for_test, pheno_path):
     assert re.search(r'NEW_COL\.EQ\.-99', model.model_code)
 
 
-def test_nested_add_covariate_effect(load_model_for_test, pheno_path):
-    model = load_model_for_test(pheno_path)
+def test_nested_add_covariate_effect(load_model_for_test, testdata):
+    model_path = testdata / 'nonmem' / 'pheno.mod'
+    model = load_model_for_test(model_path)
 
     add_covariate_effect(model, 'CL', 'WGT', 'exp')
 
-    with pytest.warns(UserWarning):
+    with pytest.warns(UserWarning, match='Covariate effect of WGT on CL already exists'):
         add_covariate_effect(model, 'CL', 'WGT', 'exp')
 
-    model = load_model_for_test(pheno_path)
+    model = load_model_for_test(model_path)
 
     add_covariate_effect(model, 'CL', 'WGT', 'exp')
     add_covariate_effect(model, 'CL', 'APGR', 'exp')
@@ -1121,8 +1122,32 @@ def test_nested_add_covariate_effect(load_model_for_test, pheno_path):
 
 
 @pytest.mark.parametrize(
-    'model_path, effects, expected',
+    ('model_path', 'effects', 'expected', 'allow_nested'),
     [
+        (
+            ('nonmem', 'pheno.mod'),
+            [('CL', 'WGT', 'exp', '*')],
+            '$PK\n'
+            'WGT_MEDIAN = 1.30000\n'
+            'CL=THETA(1)*EXP(ETA(1))\n'
+            'CLWGT = EXP(THETA(3)*(WGT - WGT_MEDIAN))\n'
+            'CL = CL*CLWGT\n'
+            'V=THETA(2)*EXP(ETA(2))\n'
+            'S1=V\n\n',
+            False,
+        ),
+        (
+            ('nonmem', 'pheno.mod'),
+            [('CL', 'WGT', 'exp', '+')],
+            '$PK\n'
+            'WGT_MEDIAN = 1.30000\n'
+            'CL=THETA(1)*EXP(ETA(1))\n'
+            'CLWGT = EXP(THETA(3)*(WGT - WGT_MEDIAN))\n'
+            'CL = CL + CLWGT\n'
+            'V=THETA(2)*EXP(ETA(2))\n'
+            'S1=V\n\n',
+            False,
+        ),
         (
             ('nonmem', 'pheno_real.mod'),
             [('CL', 'WGT', 'exp', '*')],
@@ -1138,6 +1163,7 @@ def test_nested_add_covariate_effect(load_model_for_test, pheno_path):
             'CL = CL*CLWGT\n'
             'V=TVV*EXP(ETA(2))\n'
             'S1=V\n\n',
+            True,
         ),
         (
             ('nonmem', 'pheno_real.mod'),
@@ -1154,6 +1180,7 @@ def test_nested_add_covariate_effect(load_model_for_test, pheno_path):
             'CL = CL + CLWGT\n'
             'V=TVV*EXP(ETA(2))\n'
             'S1=V\n\n',
+            True,
         ),
         (
             ('nonmem', 'pheno_real.mod'),
@@ -1170,6 +1197,7 @@ def test_nested_add_covariate_effect(load_model_for_test, pheno_path):
             'CL = CL*CLWGT\n'
             'V=TVV*EXP(ETA(2))\n'
             'S1=V\n\n',
+            True,
         ),
         (
             ('nonmem', 'pheno_real.mod'),
@@ -1186,6 +1214,7 @@ def test_nested_add_covariate_effect(load_model_for_test, pheno_path):
             'CL = CL*CLWGT\n'
             'V=TVV*EXP(ETA(2))\n'
             'S1=V\n\n',
+            True,
         ),
         (
             ('nonmem', 'pheno_real.mod'),
@@ -1205,6 +1234,7 @@ def test_nested_add_covariate_effect(load_model_for_test, pheno_path):
             'CL = CL*CLFA1\n'
             'V=TVV*EXP(ETA(2))\n'
             'S1=V\n\n',
+            True,
         ),
         (
             ('nonmem', 'pheno_real.mod'),
@@ -1225,6 +1255,7 @@ def test_nested_add_covariate_effect(load_model_for_test, pheno_path):
             'CL = CL*CLWGT\n'
             'V=TVV*EXP(ETA(2))\n'
             'S1=V\n\n',
+            True,
         ),
         (
             ('nonmem', 'pheno_real.mod'),
@@ -1241,6 +1272,7 @@ def test_nested_add_covariate_effect(load_model_for_test, pheno_path):
             'CL = CL*CLWGT\n'
             'V=TVV*EXP(ETA(2))\n'
             'S1=V\n\n',
+            True,
         ),
         (
             ('nonmem', 'pheno_real.mod'),
@@ -1257,6 +1289,7 @@ def test_nested_add_covariate_effect(load_model_for_test, pheno_path):
             'CL = CL*CLWGT\n'
             'V=TVV*EXP(ETA(2))\n'
             'S1=V\n\n',
+            True,
         ),
         (
             ('nonmem', 'pheno_real.mod'),
@@ -1273,6 +1306,7 @@ def test_nested_add_covariate_effect(load_model_for_test, pheno_path):
             'CL = CL*CLWGT\n'
             'V=TVV*EXP(ETA(2))\n'
             'S1=V\n\n',
+            True,
         ),
         (
             ('nonmem', 'pheno_real.mod'),
@@ -1290,6 +1324,7 @@ def test_nested_add_covariate_effect(load_model_for_test, pheno_path):
             'CL = CL*CLWGT\n'
             'V=TVV*EXP(ETA(2))\n'
             'S1=V\n\n',
+            True,
         ),
         (
             ('nonmem', 'pheno_real.mod'),
@@ -1311,6 +1346,7 @@ def test_nested_add_covariate_effect(load_model_for_test, pheno_path):
             'VWGT = EXP(THETA(5)*(WGT - WGT_MEDIAN))\n'
             'V = V + VWGT\n'
             'S1=V\n\n',
+            True,
         ),
         (
             ('nonmem', 'pheno_real.mod'),
@@ -1332,6 +1368,7 @@ def test_nested_add_covariate_effect(load_model_for_test, pheno_path):
             'VWGT = EXP(THETA(5)*(WGT - WGT_MEDIAN))\n'
             'V = V*VWGT\n'
             'S1=V\n\n',
+            True,
         ),
         (
             ('nonmem', 'models', 'mox2.mod'),
@@ -1350,6 +1387,7 @@ def test_nested_add_covariate_effect(load_model_for_test, pheno_path):
             'VWT = EXP(THETA(4)*(WT - WT_MEDIAN))\n'
             'VAGE = EXP(THETA(5)*(AGE - AGE_MEDIAN))\n'
             'V = V*VAGE*VWT\n',
+            True,
         ),
         (
             ('nonmem', 'models', 'mox2.mod'),
@@ -1371,6 +1409,7 @@ def test_nested_add_covariate_effect(load_model_for_test, pheno_path):
             'VAGE = EXP(THETA(5)*(AGE - AGE_MEDIAN))\n'
             'VCLCR = EXP(THETA(6)*(CLCR - CLCR_MEDIAN))\n'
             'V = V*VAGE*VCLCR*VWT\n',
+            True,
         ),
         (
             ('nonmem', 'models', 'mox2.mod'),
@@ -1389,6 +1428,7 @@ def test_nested_add_covariate_effect(load_model_for_test, pheno_path):
             'V = VC\n'
             'VCLCR = EXP(THETA(5)*(CLCR - CLCR_MEDIAN))\n'
             'V = V*VCLCR\n',
+            True,
         ),
         (
             ('nonmem', 'models', 'mox2.mod'),
@@ -1407,16 +1447,19 @@ def test_nested_add_covariate_effect(load_model_for_test, pheno_path):
             'V = VC\n'
             'VCLCR = EXP(THETA(4)*(CLCR - CLCR_MEDIAN))\n'
             'V = V*VCLCR\n',
+            True,
         ),
     ],
     ids=repr,
 )
-def test_add_covariate_effect(load_model_for_test, testdata, model_path, effects, expected):
+def test_add_covariate_effect(
+    load_model_for_test, testdata, model_path, effects, expected, allow_nested
+):
     model = load_model_for_test(testdata.joinpath(*model_path))
     error_record_before = ''.join(map(str, model.internals.control_stream.get_records('ERROR')))
 
     for effect in effects:
-        add_covariate_effect(model, *effect)
+        add_covariate_effect(model, *effect, allow_nested=allow_nested)
 
     model.update_source()
     error_record_after = ''.join(map(str, model.internals.control_stream.get_records('ERROR')))
