@@ -15,6 +15,7 @@ def start_model(testdata):
     with chdir(tempdir):
         shutil.copy2(testdata / 'nonmem' / 'models' / 'mox2.mod', tempdir)
         shutil.copy2(testdata / 'nonmem' / 'models' / 'mox_simulated_normal.csv', tempdir)
+        shutil.copy2(testdata / 'nonmem' / 'models' / 'mox_simulated_normal.datainfo', tempdir)
         model_start = Model.create_model('mox2.mod')
         model_start.datainfo = model_start.datainfo.derive(
             path=tempdir / 'mox_simulated_normal.csv'
