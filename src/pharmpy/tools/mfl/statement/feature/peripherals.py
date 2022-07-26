@@ -1,17 +1,17 @@
 from dataclasses import dataclass
-from typing import List
+from typing import Tuple
 
 from .count_interpreter import CountInterpreter
-from .feature import ModelFeature
+from .feature import ModelFeature, feature
 
 
-@dataclass
+@dataclass(frozen=True)
 class Peripherals(ModelFeature):
-    counts: List[int]
+    counts: Tuple[int]
 
 
 class PeripheralsInterpreter(CountInterpreter):
     def interpret(self, tree):
         children = self.visit_children(tree)
         assert len(children) == 1
-        return Peripherals(children[0])
+        return feature(Peripherals, children)

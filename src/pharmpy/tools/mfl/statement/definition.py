@@ -1,20 +1,20 @@
 from dataclasses import dataclass
-from typing import List
+from typing import Tuple
 
 from lark.visitors import Interpreter
 
 
-@dataclass
+@dataclass(frozen=True)
 class Definition:
     name: str
-    value: List[str]
+    value: Tuple[str]
 
 
 class DefinitionInterpreter(Interpreter):
     def interpret(self, tree):
         children = self.visit_children(tree)
         assert len(children) == 2
-        return Definition(*children)
+        return Definition(children[0], tuple(children[1]))
 
     def value(self, tree):
         children = self.visit_children(tree)

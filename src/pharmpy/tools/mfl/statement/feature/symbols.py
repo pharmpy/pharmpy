@@ -8,7 +8,7 @@ class Symbol:
     pass
 
 
-@dataclass
+@dataclass(frozen=True)
 class Name(Symbol, Generic[T]):
     name: T
 
