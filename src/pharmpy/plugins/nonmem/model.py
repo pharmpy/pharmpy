@@ -884,35 +884,37 @@ class Model(pharmpy.model.Model):
         colnames = []
         drop = []
         synonym_replacement = {}
+        given_names = []
         next_anonymous = 1
         for record in input_records:
             for key, value in record.all_options:
                 if value:
                     if key == 'DROP' or key == 'SKIP':
-                        drop.append(True)
                         colnames.append(value)
-                        reserved_name = value
+                        given_names.append(value)
+                        drop.append(True)
                     elif value == 'DROP' or value == 'SKIP':
                         colnames.append(key)
+                        given_names.append(key)
                         drop.append(True)
-                        reserved_name = key
                     else:
-                        drop.append(False)
                         (reserved_name, synonym) = Model._synonym(key, value)
                         synonym_replacement[reserved_name] = synonym
+                        given_names.append(synonym)
                         colnames.append(synonym)
+                        drop.append(False)
                 else:
                     if key == 'DROP' or key == 'SKIP':
-                        drop.append(True)
                         name = f'_DROP{next_anonymous}'
-                        colnames.append(name)
-                        reserved_name = name
                         next_anonymous += 1
+                        colnames.append(name)
+                        given_names.append(None)
+                        drop.append(True)
                     else:
-                        drop.append(False)
                         colnames.append(key)
-                        reserved_name = key
-        return colnames, drop, synonym_replacement
+                        given_names.append(key)
+                        drop.append(False)
+        return colnames, drop, synonym_replacement, given_names
 
     def _update_input(self):
         """Update $INPUT
@@ -920,34 +922,41 @@ class Model(pharmpy.model.Model):
         currently supporting append columns at end and removing columns
         And add/remove DROP
         """
-        new_names = self.datainfo.names
-        colnames, drop, _ = self._column_info()
-        removed_columns = set(colnames) - set(new_names)
         input_records = self.control_stream.get_records("INPUT")
-        for col in removed_columns:
-            input_records[0].remove_option(col)
-        appended_names = new_names[len(colnames) :]
-        last_input_record = input_records[-1]
-        for colname in appended_names:
-            last_input_record.append_option(colname)
-        # Update DROP
-        colnames, drop, _ = self._column_info()
+        _, drop, _, colnames = self._column_info()
         keep = []
         i = 0
         for child in input_records[0].root.children:
-            if child.rule == 'option':
-                if (
-                    drop[i] != self.datainfo[colnames[i]].drop
-                    or self.datainfo[colnames[i]].datatype == 'nmtran-date'
-                ):
-                    new = input_records[0]._create_option(colnames[i], 'DROP')
-                    keep.append(new)
-                else:
-                    keep.append(child)
-                i += 1
+            if child.rule != 'option':
+                keep.append(child)
+                continue
+
+            if (colnames[i] is not None and (colnames[i] != self.datainfo[i].name)) or (
+                not drop[i]
+                and (self.datainfo[i].drop or self.datainfo[i].datatype == 'nmtran-date')
+            ):
+                dropped = self.datainfo[i].drop or self.datainfo[i].datatype == 'nmtran-date'
+                anonymous = colnames[i] is None
+                key = 'DROP' if anonymous and dropped else self.datainfo[i].name
+                value = 'DROP' if not anonymous and dropped else None
+                new = input_records[0]._create_option(key, value)
+                keep.append(new)
             else:
                 keep.append(child)
+
+            i += 1
+
+            if i >= len(self.datainfo):
+                last_child = input_records[0].root.children[-1]
+                if last_child.rule == 'ws' and '\n' in str(last_child):
+                    keep.append(last_child)
+                break
+
         input_records[0].root.children = keep
+
+        last_input_record = input_records[-1]
+        for ci in self.datainfo[len(colnames) :]:
+            last_input_record.append_option(ci.name, 'DROP' if ci.drop else None)
 
     def _replace_synonym_in_filters(filters, replacements):
         result = []
@@ -967,7 +976,7 @@ class Model(pharmpy.model.Model):
 
     def _create_datainfo(self):
         dataset_path = self._read_dataset_path()
-        (colnames, drop, replacements) = self._column_info()
+        (colnames, drop, replacements, _) = self._column_info()
         try:
             path = dataset_path.with_suffix('.datainfo')
         except:  # noqa: E722
@@ -1049,7 +1058,7 @@ class Model(pharmpy.model.Model):
         data_records = self.control_stream.get_records('DATA')
         ignore_character = data_records[0].ignore_character
         null_value = data_records[0].null_value
-        (colnames, drop, replacements) = self._column_info()
+        (colnames, drop, replacements, _) = self._column_info()
 
         if raw:
             ignore = None
