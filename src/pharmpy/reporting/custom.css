@@ -6,7 +6,7 @@ div.document {
 }
 
 div.jupyter_cell.docutils.container {
-    overflow-x: scroll;
+    overflow-x: auto;
 }
 
 table.dataframe {

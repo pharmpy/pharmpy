@@ -1,7 +1,7 @@
 /** custom.css **/
 
 .jupyter_cell.docutils.container {
-    overflow-x: scroll;
+    overflow-x: auto;
 }
 
 .pharmpy-snippet {
@@ -35,7 +35,7 @@
 }
 
 .pharmpy-snippet.with-output > .jupyter_cell > .cell_output > .output > div {
-    overflow-x: scroll;
+    overflow-x: auto;
 }
 
 table.dataframe {
