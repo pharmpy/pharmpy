@@ -1,21 +1,21 @@
 from dataclasses import dataclass
-from typing import List, Literal, Union
+from typing import Literal, Tuple, Union
 
 from lark.visitors import Interpreter
 
-from .feature import ModelFeature
+from .feature import ModelFeature, feature
 from .symbols import Symbol, Wildcard
 
 
-@dataclass
+@dataclass(frozen=True)
 class CovariateEffects(ModelFeature):
-    parameter: Union[Symbol, List[str]]
-    covariate: Union[Symbol, List[str]]
-    fp: List[str]
+    parameter: Union[Symbol, Tuple[str]]
+    covariate: Union[Symbol, Tuple[str]]
+    fp: Tuple[str]
     op: Literal['*', '+'] = '*'
 
 
-@dataclass
+@dataclass(frozen=True)
 class Ref(Symbol):
     name: str
 
@@ -29,7 +29,7 @@ class CovariateInterpreter(Interpreter):
     def interpret(self, tree):
         children = self.visit_children(tree)
         assert 3 <= len(children) <= 4
-        return CovariateEffects(*children)
+        return feature(CovariateEffects, children)
 
     def option(self, tree):
         children = self.visit_children(tree)

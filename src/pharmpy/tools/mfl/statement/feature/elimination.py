@@ -1,22 +1,22 @@
 from dataclasses import dataclass
-from typing import List, Literal, Union
+from typing import Literal, Tuple, Union
 
 from lark.visitors import Interpreter
 
-from .feature import ModelFeature
+from .feature import ModelFeature, feature
 from .symbols import Name, Wildcard
 
 
-@dataclass
+@dataclass(frozen=True)
 class Elimination(ModelFeature):
-    modes: Union[List[Name[Literal['FO', 'ZO', 'MM', 'MIX-FO-MM']]], Wildcard]
+    modes: Union[Tuple[Name[Literal['FO', 'ZO', 'MM', 'MIX-FO-MM']]], Wildcard]
 
 
 class EliminationInterpreter(Interpreter):
     def interpret(self, tree):
         children = self.visit_children(tree)
         assert len(children) == 1
-        return Elimination(*children)
+        return feature(Elimination, children)
 
     def elimination_modes(self, tree):
         children = self.visit_children(tree)
