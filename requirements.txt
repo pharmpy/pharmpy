@@ -23,7 +23,7 @@ defusedxml==0.7.1
 distributed==2022.7.1
 docutils==0.17.1
 entrypoints==0.4
-executing==0.9.0
+executing==0.9.1
 fastjsonschema==2.16.1
 fsspec==2022.5.0
 HeapDict==1.0.1
