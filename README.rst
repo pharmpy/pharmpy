@@ -2,7 +2,7 @@
    :target: https://pypi.org/project/pharmpy-core
 
 .. image:: https://img.shields.io/pypi/l/pharmpy-core.svg
-   :target: https://github.com/pharmpy/pharmpy/blob/master/LICENSE.LESSER
+   :target: https://github.com/pharmpy/pharmpy/blob/main/LICENSE.LESSER
 
 .. image:: https://github.com/pharmpy/pharmpy/workflows/CI/badge.svg
     :target: https://github.com/pharmpy/pharmpy/actions
@@ -13,7 +13,7 @@
 .. image:: https://img.shields.io/badge/code%20style-black-000000.svg
    :target: https://github.com/psf/black
 
-.. image:: https://codecov.io/gh/pharmpy/pharmpy/branch/master/graph/badge.svg?token=JZTHXXQPII
+.. image:: https://codecov.io/gh/pharmpy/pharmpy/branch/main/graph/badge.svg?token=JZTHXXQPII
     :target: https://codecov.io/gh/pharmpy/pharmpy
 
 .. image:: https://pepy.tech/badge/pharmpy-core/month
