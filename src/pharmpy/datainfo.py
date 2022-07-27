@@ -479,6 +479,8 @@ class DataInfo(MutableSequence):
                 index = self._getindex(ind)
                 cols.append(self._columns[index])
             return DataInfo(columns=cols)
+        if isinstance(i, slice):
+            return self._columns[i]
         return self._columns[self._getindex(i)]
 
     def __setitem__(self, i, value):
