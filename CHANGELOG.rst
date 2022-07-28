@@ -1,3 +1,16 @@
+Next version
+------------
+
+New features
+============
+
+* SCM forward search followed by backward search in covsearch (#988)
+
+Bugfixes
+========
+
+* Make NONMEM column renaming work in more cases (#1001)
+
 0.74.0 (2022-07-18)
 -------------------
 
