@@ -5,17 +5,28 @@
 import math
 import warnings
 from operator import add, mul
+from typing import Literal, Union
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import sympy
 from pharmpy.expressions import subs, sympify
-from pharmpy.model import Assignment, Parameter, Parameters
+from pharmpy.model import Assignment, Model, Parameter, Parameters
 
 from .data import get_baselines
 from .expressions import depends_on
 
+EffectType = Union[Literal['lin', 'cat', 'piece_lin', 'exp', 'pow'], str]
+OperationType = Literal['*', '+']
 
-def add_covariate_effect(model, parameter, covariate, effect, operation='*', allow_nested=False):
+
+def add_covariate_effect(
+    model: Model,
+    parameter: str,
+    covariate: str,
+    effect: EffectType,
+    operation: OperationType = '*',
+    allow_nested: bool = False,
+):
     """Adds covariate effect to :class:`pharmpy.model`.
 
     The following effects have templates:
