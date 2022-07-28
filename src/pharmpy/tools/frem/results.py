@@ -9,8 +9,8 @@ import symengine
 import sympy
 
 import pharmpy.visualization  # noqa
-from pharmpy import Model
 from pharmpy.math import conditional_joint_normal, is_posdef
+from pharmpy.model import Model
 from pharmpy.modeling import (
     calculate_individual_shrinkage,
     create_rng,

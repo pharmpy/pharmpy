@@ -1,7 +1,7 @@
 import shutil
 from pathlib import Path
 
-from pharmpy import Model
+from pharmpy.model import Model
 from pharmpy.tools import fit, run_iovsearch
 from pharmpy.utils import TemporaryDirectoryChanger
 

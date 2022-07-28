@@ -1,4 +1,4 @@
-from pharmpy import Bolus, Infusion
+from pharmpy.objects import Bolus, Infusion
 from pharmpy.tools.amd.funcs import create_start_model
 
 

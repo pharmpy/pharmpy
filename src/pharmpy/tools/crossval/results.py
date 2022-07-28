@@ -2,7 +2,7 @@ import re
 
 import pandas as pd
 
-from pharmpy import Model
+from pharmpy.model import Model
 from pharmpy.results import Results
 
 

@@ -4,9 +4,8 @@ import json
 from collections.abc import Sequence
 from pathlib import Path
 
-import pandas as pd
-import sympy
-
+from pharmpy.deps import pandas as pd
+from pharmpy.deps import sympy
 from pharmpy.utils import parse_units
 
 
@@ -95,7 +94,7 @@ class ColumnInfo:
 
         Examples
         --------
-        >>> from pharmpy import ColumnInfo
+        >>> from pharmpy.objects import ColumnInfo
         >>> ColumnInfo.convert_pd_dtype_to_datatype("float64")
         'float64'
         """
@@ -117,7 +116,7 @@ class ColumnInfo:
 
         Examples
         --------
-        >>> from pharmpy import ColumnInfo
+        >>> from pharmpy.objects import ColumnInfo
         >>> ColumnInfo.convert_datatype_to_pd_dtype("float64")
         'float64'
         >>> ColumnInfo.convert_datatype_to_pd_dtype("nmtran-date")
@@ -132,7 +131,7 @@ class ColumnInfo:
         self,
         name,
         type='unknown',
-        unit=sympy.Integer(1),
+        unit=None,
         scale='ratio',
         continuous=None,
         categories=None,
@@ -158,7 +157,7 @@ class ColumnInfo:
             raise TypeError(
                 f"Unknown scale of measurement {scale}. Only {ColumnInfo._all_scales} are possible."
             )
-        self._unit = parse_units(unit)
+        self._unit = sympy.Integer(1) if unit is None else parse_units(unit)
         self._scale = scale
         self._continuous = continuous
         self._categories = categories  # dict from value to descriptive string

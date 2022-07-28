@@ -2,8 +2,8 @@ import shutil
 
 import pytest
 
-from pharmpy import Model
 from pharmpy.config import ConfigurationContext
+from pharmpy.model import Model
 from pharmpy.plugins.nonmem import conf
 from pharmpy.tools import fit, run_tool
 from pharmpy.utils import TemporaryDirectoryChanger

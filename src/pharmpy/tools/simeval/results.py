@@ -1,6 +1,6 @@
 import pandas as pd
 
-from pharmpy import Model
+from pharmpy.model import Model
 from pharmpy.modeling import plot_individual_predictions
 from pharmpy.results import Results
 from pharmpy.tools.simfit.results import psn_simfit_results

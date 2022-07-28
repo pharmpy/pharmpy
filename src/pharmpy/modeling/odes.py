@@ -4,10 +4,10 @@
 
 import sympy
 
-from pharmpy import ExplicitODESystem
 from pharmpy.estimation import EstimationSteps
 from pharmpy.model import ModelError
 from pharmpy.modeling.help_functions import _as_integer
+from pharmpy.objects import ExplicitODESystem
 from pharmpy.parameters import Parameter, Parameters
 from pharmpy.statements import (
     Assignment,

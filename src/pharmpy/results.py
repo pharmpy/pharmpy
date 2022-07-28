@@ -5,10 +5,9 @@ import lzma
 from collections.abc import MutableSequence
 from pathlib import Path
 
-import altair as alt
-import pandas as pd
-
-import pharmpy.model
+from pharmpy.deps import altair as alt
+from pharmpy.deps import pandas as pd
+from pharmpy.model import Model
 
 
 class ResultsJSONEncoder(json.JSONEncoder):
@@ -40,7 +39,7 @@ class ResultsJSONEncoder(json.JSONEncoder):
             d = obj.to_dict()
             d['__class__'] = 'vega-lite'
             return d
-        elif isinstance(obj, pharmpy.model.Model):
+        elif isinstance(obj, Model):
             # TODO consider using other representation, e.g. path
             return None
         elif isinstance(obj, Log):
@@ -224,9 +223,9 @@ class Results:
         for key, value in d.items():
             if value.__class__.__module__.startswith('altair.'):
                 continue
-            elif isinstance(value, pharmpy.model.Model):
+            elif isinstance(value, Model):
                 continue
-            elif isinstance(value, list) and isinstance(value[0], pharmpy.model.Model):
+            elif isinstance(value, list) and isinstance(value[0], Model):
                 continue
             s += f'{key}\n'
             if isinstance(value, pd.DataFrame):

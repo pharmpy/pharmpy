@@ -17,9 +17,8 @@ import pathlib
 import warnings
 from pathlib import Path
 
-import sympy
-
 from pharmpy.datainfo import ColumnInfo, DataInfo
+from pharmpy.deps import sympy
 from pharmpy.estimation import EstimationSteps
 from pharmpy.parameters import Parameters
 from pharmpy.plugins.utils import detect_model
@@ -75,7 +74,7 @@ class Model:
 
         Examples
         --------
-        >>> from pharmpy import Model
+        >>> from pharmpy.model import Model
         >>> from pharmpy.modeling import load_example_model
         >>> a = load_example_model("pheno")
         >>> a == a

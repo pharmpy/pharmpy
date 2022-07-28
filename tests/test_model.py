@@ -2,8 +2,7 @@ from pathlib import Path
 
 import pytest
 
-import pharmpy.data
-import pharmpy.model
+from pharmpy.model import Model
 from pharmpy.modeling import convert_model, create_symbol, load_example_model
 from pharmpy.plugins.nonmem.dataset import read_nonmem_dataset
 
@@ -35,7 +34,7 @@ def test_to_generic_model(load_model_for_test, testdata):
     assert model.random_variables == nm_model.random_variables
     assert model.name == nm_model.name
     assert model.statements == nm_model.statements
-    assert type(model) == pharmpy.model.Model
+    assert type(model) == Model
 
 
 def test_model_equality():

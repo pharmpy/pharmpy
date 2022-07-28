@@ -6,7 +6,7 @@ from sympy.core.symbol import Symbol
 from sympy.functions.elementary.piecewise import Piecewise
 
 import pharmpy.tools.modelsearch.tool
-from pharmpy import Model
+from pharmpy.model import Model
 from pharmpy.modeling import add_iov, copy_model, rank_models, remove_iiv, remove_iov
 from pharmpy.statements import Assignment
 from pharmpy.tools.common import create_results, update_initial_estimates

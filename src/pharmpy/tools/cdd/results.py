@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 from scipy.linalg import cho_factor, solve_triangular
 
-from pharmpy import Model
+from pharmpy.model import Model
 from pharmpy.modeling import plot_individual_predictions
 from pharmpy.results import Results
 from pharmpy.tools.psn_helpers import model_paths, options_from_command

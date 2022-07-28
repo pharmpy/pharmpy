@@ -10,7 +10,7 @@ with warnings.catch_warnings():
     import scipy.stats
 
 import pharmpy.visualization
-from pharmpy import Model
+from pharmpy.model import Model
 from pharmpy.results import ModelfitResults, Results
 from pharmpy.tools.psn_helpers import cmd_line_model_path, model_paths
 

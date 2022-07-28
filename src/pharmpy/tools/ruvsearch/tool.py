@@ -6,7 +6,6 @@ from scipy.stats import chi2
 
 import pharmpy.model
 import pharmpy.tools
-from pharmpy import Parameter, Parameters, RandomVariable, RandomVariables
 from pharmpy.estimation import EstimationStep, EstimationSteps
 from pharmpy.modeling import (
     add_population_parameter,
@@ -23,6 +22,7 @@ from pharmpy.modeling import (
     summarize_modelfit_results,
 )
 from pharmpy.modeling.error import remove_error_model, set_time_varying_error_model
+from pharmpy.objects import Parameter, Parameters, RandomVariable, RandomVariables
 from pharmpy.statements import Assignment, Statements
 from pharmpy.tools.common import summarize_tool, update_initial_estimates
 from pharmpy.tools.modelfit import create_fit_workflow

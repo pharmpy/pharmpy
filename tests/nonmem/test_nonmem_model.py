@@ -4,10 +4,9 @@ import pytest
 import sympy
 from sympy import Symbol as symbol
 
-from pharmpy import Model
 from pharmpy.config import ConfigurationContext
 from pharmpy.estimation import EstimationStep, EstimationSteps
-from pharmpy.model import ModelSyntaxError
+from pharmpy.model import Model, ModelSyntaxError
 from pharmpy.modeling import (
     add_iiv,
     add_population_parameter,

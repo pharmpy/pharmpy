@@ -1,7 +1,7 @@
 import math
 
-import numpy as np
-import sympy
+from pharmpy.deps import numpy as np
+from pharmpy.deps import sympy
 
 # This module could probably be made private.
 

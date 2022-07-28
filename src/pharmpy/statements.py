@@ -1,11 +1,10 @@
 import copy
-from abc import ABC, abstractmethod
+from abc import ABC, ABCMeta, abstractmethod
 from collections.abc import Sequence
 
-import networkx as nx
-import sympy
-
 import pharmpy.unicode as unicode
+from pharmpy.deps import networkx as nx
+from pharmpy.deps import sympy
 
 from .expressions import (
     assume_all,
@@ -101,7 +100,7 @@ class Assignment(Statement):
 
         Examples
         --------
-        >>> from pharmpy import Assignment
+        >>> from pharmpy.objects import Assignment
         >>> a = Assignment.create('CL', 'POP_CL + ETA_CL')
         >>> a
         CL = ETA_CL + POP_CL
@@ -122,7 +121,7 @@ class Assignment(Statement):
 
         Examples
         --------
-        >>> from pharmpy import Assignment
+        >>> from pharmpy.objects import Assignment
         >>> a = Assignment.create('CL', 'POP_CL + ETA_CL')
         >>> a.free_symbols      # doctest: +SKIP
         {CL, ETA_CL, POP_CL}
@@ -138,7 +137,7 @@ class Assignment(Statement):
 
         Examples
         --------
-        >>> from pharmpy import Assignment
+        >>> from pharmpy.objects import Assignment
         >>> a = Assignment.create('CL', 'POP_CL + ETA_CL')
         >>> a.rhs_symbols      # doctest: +SKIP
         {ETA_CL, POP_CL}
@@ -171,10 +170,21 @@ class Assignment(Statement):
         return f'${sym} = {expr}$'
 
 
-class ODESystem(Statement, ABC):
+class ODESystemMetaclass(ABCMeta):
+    def __getattr__(cls, key):
+        # NOTE see https://stackoverflow.com/a/3155493
+        if key == 't':
+            return sympy.Symbol('t')
+        raise AttributeError(key)
+
+
+class ODESystem(Statement, ABC, metaclass=ODESystemMetaclass):
     """Abstract base class for ODE systems of different forms"""
 
-    t = sympy.Symbol('t')
+    def __getattr__(self, key):
+        if key == 't':
+            return ODESystem.t
+        raise AttributeError(key)
 
 
 def _bracket(a):
@@ -209,7 +219,7 @@ class ExplicitODESystem(ODESystem):
 
     Examples
     --------
-    >>> from pharmpy import ExplicitODESystem
+    >>> from pharmpy.objects import ExplicitODESystem
     >>> import sympy
     >>> A_DEPOT = sympy.Function('A_DEPOT')
     >>> A_CENTRAL = sympy.Function('A_CENTRAL')
@@ -455,7 +465,7 @@ class CompartmentalSystemBuilder:
 
         Examples
         --------
-        >>> from pharmpy import CompartmentalSystemBuilder
+        >>> from pharmpy.objects import CompartmentalSystemBuilder
         >>> cb = CompartmentalSystemBuilder()
         >>> central = cb.add_compartment("CENTRAL")
         """
@@ -471,7 +481,7 @@ class CompartmentalSystemBuilder:
 
         Examples
         --------
-        >>> from pharmpy import CompartmentalSystemBuilder
+        >>> from pharmpy.objects import CompartmentalSystemBuilder
         >>> cb = CompartmentalSystemBuilder()
         >>> central = Compartment("CENTRAL")
         >>> cb.add_compartment(central)
@@ -493,7 +503,7 @@ class CompartmentalSystemBuilder:
 
         Examples
         --------
-        >>> from pharmpy import CompartmentalSystemBuilder
+        >>> from pharmpy.objects import CompartmentalSystemBuilder
         >>> cb = CompartmentalSystemBuilder()
         >>> depot = Compartment("DEPOT")
         >>> cb.add_compartment(depot)
@@ -515,7 +525,7 @@ class CompartmentalSystemBuilder:
 
         Examples
         --------
-        >>> from pharmpy import CompartmentalSystemBuilder
+        >>> from pharmpy.objects import CompartmentalSystemBuilder
         >>> cb = CompartmentalSystemBuilder()
         >>> depot = Compartment("DEPOT")
         >>> cb.add_compartment(depot)
@@ -600,7 +610,7 @@ class CompartmentalSystem(ODESystem):
 
     Examples
     --------
-    >>> from pharmpy import Bolus, CompartmentalSystem
+    >>> from pharmpy.objects import Bolus, CompartmentalSystem
     >>> cb = CompartmentalSystemBuilder()
     >>> dose = Bolus.create("AMT")
     >>> central = Compartment("CENTRAL", dose)
@@ -735,7 +745,7 @@ class CompartmentalSystem(ODESystem):
 
         Examples
         --------
-        >>> from pharmpy import CompartmentalSystem, Compartment
+        >>> from pharmpy.objects import CompartmentalSystem, Compartment
         >>> cb = CompartmentalSystemBuilder()
         >>> depot = Compartment("DEPOT")
         >>> cb.add_compartment(depot)
@@ -1331,7 +1341,7 @@ class Compartment:
 
     Examples
     --------
-    >>> from pharmpy import Bolus, Compartment
+    >>> from pharmpy.objects import Bolus, Compartment
     >>> comp = Compartment("CENTRAL")
     >>> comp
     Compartment(CENTRAL)
@@ -1393,7 +1403,7 @@ class Compartment:
 
         Examples
         --------
-        >>> from pharmpy import Compartment
+        >>> from pharmpy.objects import Compartment
         >>> comp = Compartment("CENTRAL")
         >>> comp.amount
         A_CENTRAL
@@ -1406,7 +1416,7 @@ class Compartment:
 
         Examples
         --------
-        >>> from pharmpy import Bolus, Compartment
+        >>> from pharmpy.objects import Bolus, Compartment
         >>> dose = Bolus.create("AMT")
         >>> comp = Compartment("CENTRAL", dose=dose, lag_time="ALAG")
         >>> comp.free_symbols  # doctest: +SKIP
@@ -1423,7 +1433,7 @@ class Compartment:
 
         Examples
         --------
-        >>> from pharmpy import Bolus, Compartment
+        >>> from pharmpy.objects import Bolus, Compartment
         >>> dose = Bolus.create("AMT")
         >>> comp = Compartment("CENTRAL", dose=dose)
         >>> comp.subs({"AMT": "DOSE"})
@@ -1480,7 +1490,7 @@ class Bolus(Dose):
 
     Examples
     --------
-    >>> from pharmpy import Bolus
+    >>> from pharmpy.objects import Bolus
     >>> dose = Bolus.create("AMT")
     >>> dose
     Bolus(AMT)
@@ -1504,7 +1514,7 @@ class Bolus(Dose):
 
         Examples
         --------
-        >>> from pharmpy import Bolus
+        >>> from pharmpy.objects import Bolus
         >>> dose = Bolus.create("AMT")
         >>> dose.free_symbols
         {AMT}
@@ -1521,7 +1531,7 @@ class Bolus(Dose):
 
         Examples
         --------
-        >>> from pharmpy import Bolus
+        >>> from pharmpy.objects import Bolus
         >>> dose = Bolus.create("AMT")
         >>> dose.subs({'AMT': 'DOSE'})
         Bolus(DOSE)
@@ -1549,7 +1559,7 @@ class Infusion(Dose):
 
     Examples
     --------
-    >>> from pharmpy import Infusion
+    >>> from pharmpy.objects import Infusion
     >>> dose = Infusion("AMT", duration="D1")
     >>> dose
     Infusion(AMT, duration=D1)
@@ -1602,7 +1612,7 @@ class Infusion(Dose):
 
         Examples
         --------
-        >>> from pharmpy import Infusion
+        >>> from pharmpy.objects import Infusion
         >>> dose = Infusion.create("AMT", rate="RATE")
         >>> dose.free_symbols   # doctest: +SKIP
         {AMT, RATE}
@@ -1623,7 +1633,7 @@ class Infusion(Dose):
 
         Examples
         --------
-        >>> from pharmpy import Infusion
+        >>> from pharmpy.objects import Infusion
         >>> dose = Infusion.create("AMT", duration="DUR")
         >>> dose.subs({'DUR': 'D1'})
         Infusion(AMT, duration=D1)

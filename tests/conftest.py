@@ -28,7 +28,7 @@ def pheno(load_model_for_test, pheno_path):
 @pytest.fixture(scope='session')
 def load_model_for_test(tmp_path_factory):
 
-    from pharmpy import Model
+    from pharmpy.model import Model
 
     _cache: Dict[Hashable, Model] = {}
 
@@ -67,7 +67,7 @@ def load_model_for_test(tmp_path_factory):
 @pytest.fixture(scope='session')
 def load_example_model_for_test():
 
-    from pharmpy import Model
+    from pharmpy.model import Model
     from pharmpy.modeling import load_example_model
 
     _cache: Dict[Hashable, Model] = {}
@@ -93,7 +93,7 @@ def create_model_for_test(load_example_model_for_test):
 
     from io import StringIO
 
-    from pharmpy import Model
+    from pharmpy.model import Model
 
     def _create(code: str, dataset: Optional[str] = None) -> Model:
         model = Model.create_model(StringIO(code))

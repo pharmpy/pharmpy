@@ -4,9 +4,9 @@ from contextlib import contextmanager
 from os import stat
 from pathlib import Path
 
-from pharmpy import Model
 from pharmpy.datainfo import DataInfo
 from pharmpy.lock import path_lock
+from pharmpy.model import Model
 from pharmpy.utils import hash_df
 
 from .baseclass import (

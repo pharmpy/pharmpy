@@ -1,8 +1,8 @@
 from collections.abc import Sequence
 
-import numpy as np
-import pandas as pd
-import sympy
+from pharmpy.deps import numpy as np
+from pharmpy.deps import pandas as pd
+from pharmpy.deps import sympy
 
 
 class Parameter:
@@ -11,7 +11,7 @@ class Parameter:
     Example
     -------
 
-    >>> from pharmpy import Parameter
+    >>> from pharmpy.objects import Parameter
     >>> param = Parameter("TVCL", 0.005, lower=0)
     >>> param.init
     0.005
@@ -133,7 +133,7 @@ class Parameters(Sequence):
     Example
     -------
 
-    >>> from pharmpy import Parameters, Parameter
+    >>> from pharmpy.objects import Parameters, Parameter
     >>> par1 = Parameter("x", 0)
     >>> par2 = Parameter("y", 1)
     >>> pset = Parameters([par1, par2])
@@ -214,7 +214,7 @@ class Parameters(Sequence):
 
         Example
         -------
-        >>> from pharmpy import Parameters, Parameter
+        >>> from pharmpy.objects import Parameters, Parameter
         >>> par1 = Parameter("CL", 1, lower=0, upper=10)
         >>> par2 = Parameter("V", 10, lower=0, upper=100)
         >>> pset = Parameters([par1, par2])

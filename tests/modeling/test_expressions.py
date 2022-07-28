@@ -1,15 +1,6 @@
 import pytest
 import sympy
 
-from pharmpy import (
-    Assignment,
-    Model,
-    Parameter,
-    Parameters,
-    RandomVariable,
-    RandomVariables,
-    Statements,
-)
 from pharmpy.modeling import (
     calculate_epsilon_gradient_expression,
     calculate_eta_gradient_expression,
@@ -26,6 +17,15 @@ from pharmpy.modeling import (
     read_model_from_string,
     simplify_expression,
     solve_ode_system,
+)
+from pharmpy.objects import (
+    Assignment,
+    Model,
+    Parameter,
+    Parameters,
+    RandomVariable,
+    RandomVariables,
+    Statements,
 )
 
 

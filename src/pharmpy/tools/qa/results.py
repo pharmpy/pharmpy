@@ -6,7 +6,7 @@ import sympy
 import yaml
 
 import pharmpy.tools.psn_helpers as psn_helpers
-from pharmpy import Model
+from pharmpy.model import Model
 from pharmpy.results import Results, read_results
 
 

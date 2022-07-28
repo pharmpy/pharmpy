@@ -1,4 +1,4 @@
-from pharmpy import Model
+from pharmpy.model import Model
 from pharmpy.plugins.nonmem.results import simfit_results
 from pharmpy.results import Results
 
