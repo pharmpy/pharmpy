@@ -3,7 +3,7 @@ import re
 import numpy as np
 import pytest
 
-from pharmpy.modeling import add_covariate_effect
+from pharmpy.modeling import add_covariate_effect, has_covariate_effect
 
 from ..lib import diff
 
@@ -29,14 +29,21 @@ def test_nested_add_covariate_effect(load_model_for_test, testdata):
     model = load_model_for_test(model_path)
 
     add_covariate_effect(model, 'CL', 'WGT', 'exp')
+    assert has_covariate_effect(model, 'CL', 'WGT')
 
     with pytest.warns(UserWarning, match='Covariate effect of WGT on CL already exists'):
         add_covariate_effect(model, 'CL', 'WGT', 'exp')
 
+    assert has_covariate_effect(model, 'CL', 'WGT')
+
     model = load_model_for_test(model_path)
 
     add_covariate_effect(model, 'CL', 'WGT', 'exp')
+    assert has_covariate_effect(model, 'CL', 'WGT')
+    assert not has_covariate_effect(model, 'CL', 'APGR')
     add_covariate_effect(model, 'CL', 'APGR', 'exp')
+    assert has_covariate_effect(model, 'CL', 'WGT')
+    assert has_covariate_effect(model, 'CL', 'APGR')
 
     assert 'CL = CL*CLAPGR*CLWGT' in model.model_code
     assert 'CL = CL*CLWGT' not in model.model_code
@@ -131,18 +138,6 @@ def test_nested_add_covariate_effect(load_model_for_test, testdata):
             '@@ -7,0 +9,2 @@\n'
             '+CLWGT = THETA(4)*(WGT - WGT_MEDIAN) + 1\n'
             '+CL = CL*CLWGT\n',
-            True,
-        ),
-        (
-            ('nonmem', 'pheno_real.mod'),
-            [('CL', 'FA1', 'cat', '*')],
-            '@@ -7,0 +8,6 @@\n'
-            '+IF (FA1.EQ.0) THEN\n'
-            '+    CLFA1 = 1\n'
-            '+ELSE IF (FA1.EQ.1.0) THEN\n'
-            '+    CLFA1 = THETA(4) + 1\n'
-            '+END IF\n'
-            '+CL = CL*CLFA1\n',
             True,
         ),
         (
@@ -391,8 +386,15 @@ def test_add_covariate_effect(
     model = load_model_for_test(testdata.joinpath(*model_path))
     error_record_before = ''.join(map(str, model.internals.control_stream.get_records('ERROR')))
 
+    if not allow_nested:
+        for effect in effects:
+            assert not has_covariate_effect(model, effect[0], effect[1])
+
     for effect in effects:
         add_covariate_effect(model, *effect, allow_nested=allow_nested)
+
+    for effect in effects:
+        assert has_covariate_effect(model, effect[0], effect[1])
 
     model.update_source()
     error_record_after = ''.join(map(str, model.internals.control_stream.get_records('ERROR')))

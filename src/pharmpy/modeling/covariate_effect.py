@@ -20,6 +20,36 @@ EffectType = Union[Literal['lin', 'cat', 'piece_lin', 'exp', 'pow'], str]
 OperationType = Literal['*', '+']
 
 
+def has_covariate_effect(model: Model, parameter: str, covariate: str):
+    """Tests if an instance of :class:`pharmpy.model` has a given covariate
+    effect.
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model to check for covariate effect.
+    parameter : str
+        Name of parameter.
+    covariate : str
+        Name of covariate.
+
+    Return
+    ------
+    bool
+        Whether input model has a covariate effect of the input covariate on
+        the input parameter.
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> has_covariate_effect(model, "CL", "APGR")
+    False
+
+    """
+    return depends_on(model, parameter, covariate)
+
+
 def add_covariate_effect(
     model: Model,
     parameter: str,

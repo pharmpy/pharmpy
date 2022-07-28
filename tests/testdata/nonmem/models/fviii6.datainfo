@@ -1,0 +1,21 @@
+{"columns":
+  [
+    { "name": "ID", "type": "id", "scale": "nominal", "datatype": "int32", "descriptor": "subject identifier" },
+    { "name": "DAT2", "type": "unknown", "scale": "ratio", "unit": "h", "drop": true },
+    { "name": "OTIM", "type": "unknown", "scale": "ratio", "unit": "h", "drop": true },
+    { "name": "TIME", "type": "idv", "scale": "ratio", "unit": "h" },
+    { "name": "DV", "type": "dv", "scale": "ratio", "unit": "mg/l", "descriptor": "plasma concentration" },
+    { "name": "AMT", "type": "dose", "scale": "ratio", "unit": "mg" },
+    { "name": "RATE", "type": "unknown", "scale": "ratio", "unit": "mg" },
+    { "name": "AGE", "type": "covariate", "scale": "ratio", "unit": "1", "datatype": "float64" },
+    { "name": "WT", "type": "covariate", "scale": "ratio", "unit": "kg", "datatype": "float64", "descriptor": "body weight" },
+    { "name": "BLGR", "type": "covariate", "scale": "ordinal", "categories": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10] },
+    { "name": "PREP", "type": "covariate", "scale": "nominal", "categories": [1, 2, 3, 4, 5, 6, 7, 8, 9] },
+    { "name": "EVID", "type": "unknown", "scale": "nominal", "categories": [0, 1] },
+    { "name": "OCC", "type": "unknown", "scale": "nominal", "categories": [1, 2, 3, 4, 5, 6, 7, 8] },
+    { "name": "YBIN", "type": "unknown", "scale": "nominal", "categories": [0, 1] },
+    { "name": "OCC2", "type": "unknown", "scale": "nominal", "categories": [0, 1] },
+    { "name": "STUD", "type": "unknown", "scale": "nominal", "categories": [0, 1] }
+  ],
+  "separator":"\\s+"
+}
