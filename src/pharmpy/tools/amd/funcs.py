@@ -1,8 +1,7 @@
 from pathlib import Path
 
-import pandas as pd
-import sympy
-
+from pharmpy.deps import pandas as pd
+from pharmpy.deps import sympy
 from pharmpy.modeling import (
     add_iiv,
     create_joint_distribution,

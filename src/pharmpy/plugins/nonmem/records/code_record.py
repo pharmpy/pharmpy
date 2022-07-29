@@ -10,7 +10,6 @@ import lark
 import sympy
 import sympy.printing.codeprinter
 import sympy.printing.fortran
-from sympy import Piecewise
 from sympy.printing.str import StrPrinter
 
 from pharmpy.data_structures import OrderedSet
@@ -62,7 +61,7 @@ class NMTranPrinter(sympy.printing.fortran.FCodePrinter):
 
 
 def nmtran_assignment_string(assignment, defined_symbols, rvs, trans):
-    if isinstance(assignment.expression, Piecewise):
+    if isinstance(assignment.expression, sympy.Piecewise):
         statement_str = _translate_sympy_piecewise(assignment, defined_symbols)
     elif re.search('sign', str(assignment.expression)):  # FIXME: Don't use re here
         statement_str = _translate_sympy_sign(assignment)

@@ -1,11 +1,10 @@
 import math
 import warnings
 
-import numpy as np
-import pandas as pd
-import sympy
-from scipy.stats import chi2
-
+from pharmpy.deps import numpy as np
+from pharmpy.deps import pandas as pd
+from pharmpy.deps import sympy
+from pharmpy.deps.scipy import stats
 from pharmpy.expressions import sympify
 from pharmpy.math import round_to_n_sigdig
 from pharmpy.model import Model
@@ -725,7 +724,7 @@ def _fulfills_lrt(parent, child, alpha):
     elif df == 0:
         cutoff = 0
     else:
-        cutoff = float(chi2.isf(q=alpha, df=df))
+        cutoff = float(stats.chi2.isf(q=alpha, df=df))
     return dofv >= cutoff
 
 

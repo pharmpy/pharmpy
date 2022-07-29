@@ -2,13 +2,10 @@ import itertools
 import warnings
 from pathlib import Path
 
-import altair as alt
-import numpy as np
-import pandas as pd
-import symengine
-import sympy
-
-import pharmpy.visualization  # noqa
+from pharmpy.deps import altair as alt
+from pharmpy.deps import numpy as np
+from pharmpy.deps import pandas as pd
+from pharmpy.deps import symengine, sympy
 from pharmpy.math import conditional_joint_normal, is_posdef
 from pharmpy.model import Model
 from pharmpy.modeling import (

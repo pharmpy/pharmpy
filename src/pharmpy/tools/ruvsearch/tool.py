@@ -1,11 +1,10 @@
 from functools import partial
 
-import pandas as pd
-import sympy
-from scipy.stats import chi2
-
 import pharmpy.model
 import pharmpy.tools
+from pharmpy.deps import pandas as pd
+from pharmpy.deps import sympy
+from pharmpy.deps.scipy import stats
 from pharmpy.estimation import EstimationStep, EstimationSteps
 from pharmpy.modeling import (
     add_population_parameter,
@@ -119,7 +118,7 @@ def create_iteration_workflow(model, groups, cutoff, skip, current_iteration):
 
 
 def start(model, groups, p_value, skip):
-    cutoff = float(chi2.isf(q=p_value, df=1))
+    cutoff = float(stats.chi2.isf(q=p_value, df=1))
     if skip is None:
         skip = []
 
@@ -221,8 +220,8 @@ def _create_base_model(input_model, current_iteration):
     base_model.random_variables = rvs
 
     y = Assignment(sympy.Symbol('Y'), theta.symbol + eta.symbol + sigma.symbol)
-    stats = Statements([y])
-    base_model.statements = stats
+    statements = Statements([y])
+    base_model.statements = statements
 
     base_model.dependent_variable = y.symbol
     base_model.observation_transformation = y.symbol

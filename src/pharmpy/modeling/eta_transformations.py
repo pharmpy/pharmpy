@@ -4,10 +4,7 @@
 
 import re
 
-import sympy
-from sympy import Symbol as S
-from sympy import exp, sign
-
+from pharmpy.deps import sympy
 from pharmpy.modeling.help_functions import _format_input_list, _get_etas
 from pharmpy.parameters import Parameter, Parameters
 from pharmpy.statements import Assignment
@@ -206,8 +203,10 @@ class EtaTransformation:
     def boxcox(cls, no_of_etas):
         assignments = []
         for i in range(1, no_of_etas + 1):
-            symbol = S(f'etab{i}')
-            expression = (exp(S(f'eta{i}')) ** S(f'theta{i}') - 1) / (S(f'theta{i}'))
+            symbol = sympy.Symbol(f'etab{i}')
+            expression = (sympy.exp(sympy.Symbol(f'eta{i}')) ** sympy.Symbol(f'theta{i}') - 1) / (
+                sympy.Symbol(f'theta{i}')
+            )
 
             assignment = Assignment(symbol, expression)
             assignments.append(assignment)
@@ -218,10 +217,10 @@ class EtaTransformation:
     def tdist(cls, no_of_etas):
         assignments = []
         for i in range(1, no_of_etas + 1):
-            symbol = S(f'etat{i}')
+            symbol = sympy.Symbol(f'etat{i}')
 
-            eta = S(f'eta{i}')
-            theta = S(f'theta{i}')
+            eta = sympy.Symbol(f'eta{i}')
+            theta = sympy.Symbol(f'theta{i}')
 
             num_1 = eta**2 + 1
             denom_1 = 4 * theta
@@ -243,12 +242,12 @@ class EtaTransformation:
     def john_draper(cls, no_of_etas):
         assignments = []
         for i in range(1, no_of_etas + 1):
-            symbol = S(f'etad{i}')
+            symbol = sympy.Symbol(f'etad{i}')
 
-            eta = S(f'eta{i}')
-            theta = S(f'theta{i}')
+            eta = sympy.Symbol(f'eta{i}')
+            theta = sympy.Symbol(f'theta{i}')
 
-            expression = sign(eta) * (((abs(eta) + 1) ** theta - 1) / theta)
+            expression = sympy.sign(eta) * (((abs(eta) + 1) ** theta - 1) / theta)
 
             assignment = Assignment(symbol, expression)
             assignments.append(assignment)

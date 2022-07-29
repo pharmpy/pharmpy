@@ -1,8 +1,7 @@
 import itertools
 
-import numpy as np
-
 import pharmpy.math
+from pharmpy.deps import numpy as np
 from pharmpy.modeling import fix_or_unfix_parameters, set_initial_estimates
 
 

@@ -1,5 +1,4 @@
 import inspect
-from operator import attrgetter
 
 import pytest
 
@@ -55,15 +54,9 @@ def test_import_tools_import_run_modelsearch():
         ('run_ruvsearch',),
     ),
 )
-@pytest.mark.parametrize(
-    ('ls',),
-    (
-        (dir,),
-        (attrgetter('__all__'),),
-    ),
-    ids=repr,
-)
-def test_import_tools_attr(ls, attr):
+def test_import_tools_attr(attr):
     import pharmpy.tools as tools
 
-    assert attr in ls(tools)
+    _all = getattr(tools, '__all__', None)
+
+    assert attr in dir() if _all is None else attr in _all

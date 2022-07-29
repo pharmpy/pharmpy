@@ -1,5 +1,4 @@
-import pandas as pd
-
+from pharmpy.deps import pandas as pd
 from pharmpy.model import Model
 from pharmpy.modeling import plot_individual_predictions
 from pharmpy.results import Results

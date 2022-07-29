@@ -2,8 +2,7 @@
 :meta private:
 """
 
-import sympy
-
+from pharmpy.deps import sympy
 from pharmpy.expressions import sympify
 from pharmpy.random_variables import RandomVariable
 from pharmpy.statements import Assignment

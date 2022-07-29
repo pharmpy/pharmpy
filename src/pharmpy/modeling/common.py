@@ -9,11 +9,12 @@ from pathlib import Path
 
 import pharmpy.config as config
 from pharmpy.deps import sympy
-from pharmpy.modeling import split_joint_distribution
 from pharmpy.objects import Model, Parameter, Parameters, RandomVariables
 from pharmpy.statements import Assignment, CompartmentalSystem
 from pharmpy.utils import normalize_user_given_path
 from pharmpy.workflows import default_model_database
+
+from .block_rvs import split_joint_distribution
 
 
 def read_model(path):

@@ -6,15 +6,13 @@ import warnings
 from io import StringIO
 from pathlib import Path
 
-import sympy
-from sympy import Symbol as S
-
 import pharmpy.data
 import pharmpy.model
 import pharmpy.plugins.nonmem
 import pharmpy.plugins.nonmem.dataset
 from pharmpy.data import DatasetError
 from pharmpy.datainfo import ColumnInfo, DataInfo
+from pharmpy.deps import sympy
 from pharmpy.estimation import EstimationStep, EstimationSteps
 from pharmpy.model import ModelSyntaxError
 from pharmpy.modeling.write_csv import write_csv
@@ -121,7 +119,7 @@ class Model(pharmpy.model.Model):
         self._updated_etas_file = None
         self._dataset_updated = False
         self._parent_model = None
-        self.dependent_variable = S('Y')
+        self.dependent_variable = sympy.Symbol('Y')
         self.observation_transformation = self.dependent_variable
         self._old_observation_transformation = self.dependent_variable
         if path is None:
@@ -276,7 +274,7 @@ class Model(pharmpy.model.Model):
         abbr_replace = self.control_stream.abbreviated.replace
         abbr_trans = update_abbr_record(self, rv_trans)
         abbr_recs = {
-            S(abbr_pharmpy[value]): S(key)
+            sympy.Symbol(abbr_pharmpy[value]): sympy.Symbol(key)
             for key, value in abbr_replace.items()
             if value in abbr_pharmpy.keys()
         }
@@ -494,7 +492,7 @@ class Model(pharmpy.model.Model):
             else:
                 statements += ODESystem()  # FIXME: Placeholder for ODE-system
                 # FIXME: Dummy link statement
-                statements += Assignment(S('F'), S('F'))
+                statements += Assignment(sympy.Symbol('F'), sympy.Symbol('F'))
             statements += error.statements
             if trans_amounts:
                 statements = statements.subs(trans_amounts)
@@ -516,7 +514,7 @@ class Model(pharmpy.model.Model):
             if key in self.parameters:
                 d_par[key] = value
             else:
-                d_rv[S(key)] = value
+                d_rv[sympy.Symbol(key)] = value
         self.random_variables.subs(d_rv)
         new = []
         for p in self.parameters:
@@ -593,7 +591,7 @@ class Model(pharmpy.model.Model):
             **{
                 p: p
                 for p in pset_current.values()
-                if p not in abbr.keys() and S(p) in statements.free_symbols
+                if p not in abbr.keys() and sympy.Symbol(p) in statements.free_symbols
             },
         }
 
@@ -610,7 +608,10 @@ class Model(pharmpy.model.Model):
             for name_current, name_new in trans_sset_setting.items():
                 name_nonmem = sset_current[name_current]
 
-                if S(name_new) in clashing_symbols or name_nonmem in names_sset_translated:
+                if (
+                    sympy.Symbol(name_new) in clashing_symbols
+                    or name_nonmem in names_sset_translated
+                ):
                     continue
 
                 name_in_sset_current = {v: k for k, v in sset_current.items()}[name_nonmem]
@@ -623,7 +624,10 @@ class Model(pharmpy.model.Model):
             for name_current, name_new in trans_pset_setting.items():
                 name_nonmem = pset_current[name_current]
 
-                if S(name_new) in clashing_symbols or name_nonmem in names_pset_translated:
+                if (
+                    sympy.Symbol(name_new) in clashing_symbols
+                    or name_nonmem in names_pset_translated
+                ):
                     continue
 
                 trans_pset[name_current] = name_new
@@ -662,12 +666,12 @@ class Model(pharmpy.model.Model):
         trans_params = {
             name_comment: name_comment
             for name_current, name_comment in params_current.items()
-            if S(name_current) not in statements.free_symbols
+            if sympy.Symbol(name_current) not in statements.free_symbols
         }
         trans_statements = {
             name_current: name_comment
             for name_current, name_comment in params_current.items()
-            if S(name_current) in statements.free_symbols
+            if sympy.Symbol(name_current) in statements.free_symbols
         }
         return trans_statements, trans_params
 
@@ -700,7 +704,7 @@ class Model(pharmpy.model.Model):
 
     @staticmethod
     def _clashing_symbols(statements, trans_statements):
-        parameter_symbols = {S(symb) for _, symb in trans_statements.items()}
+        parameter_symbols = {sympy.Symbol(symb) for _, symb in trans_statements.items()}
         clashing_symbols = parameter_symbols & statements.free_symbols
         return clashing_symbols
 
@@ -1123,7 +1127,7 @@ class Model(pharmpy.model.Model):
         if reverse:
             d = {val: key for key, val in d.items()}
         if as_symbols:
-            d = {S(key): S(val) for key, val in d.items()}
+            d = {sympy.Symbol(key): sympy.Symbol(val) for key, val in d.items()}
         return d
 
     def parameter_translation(self, reverse=False, remove_idempotent=False, as_symbols=False):
@@ -1149,7 +1153,7 @@ class Model(pharmpy.model.Model):
         if reverse:
             d = {val: key for key, val in d.items()}
         if as_symbols:
-            d = {S(key): S(val) for key, val in d.items()}
+            d = {sympy.Symbol(key): sympy.Symbol(val) for key, val in d.items()}
         return d
 
     def read_modelfit_results(self, path: Path):

@@ -1,7 +1,6 @@
 from pathlib import Path
 
-import pandas as pd
-
+from pharmpy.deps import pandas as pd
 from pharmpy.model import Model
 from pharmpy.modeling import plot_iofv_vs_iofv
 from pharmpy.results import Results

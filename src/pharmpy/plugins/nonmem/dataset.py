@@ -3,12 +3,12 @@ import re
 import warnings
 from io import StringIO
 
-import numpy as np
-import pandas as pd
 from lark import Lark
 
 import pharmpy.data
 from pharmpy.data import DatasetError, DatasetWarning
+from pharmpy.deps import numpy as np
+from pharmpy.deps import pandas as pd
 
 
 class NMTRANDataIO(StringIO):

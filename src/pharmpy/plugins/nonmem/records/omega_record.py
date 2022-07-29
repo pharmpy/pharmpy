@@ -2,12 +2,12 @@ import math
 import re
 import warnings
 
-import numpy as np
-import sympy
 import sympy.stats
 from sympy import Symbol as symbol
 
 import pharmpy.math
+from pharmpy.deps import numpy as np
+from pharmpy.deps import sympy
 from pharmpy.model import ModelSyntaxError
 from pharmpy.parameters import Parameter
 from pharmpy.parse_utils.generic import (

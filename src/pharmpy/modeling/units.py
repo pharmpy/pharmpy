@@ -1,5 +1,4 @@
-import sympy
-
+from pharmpy.deps import sympy
 from pharmpy.statements import Assignment, ODESystem
 
 

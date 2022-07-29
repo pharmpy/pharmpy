@@ -2,18 +2,14 @@ import re
 from pathlib import Path
 from typing import Union
 
-import numpy as np
-import pandas as pd
-import rich.box
-import sympy
-import sympy.physics.units as units
-from rich.console import Console
-from rich.table import Table
-
 from pharmpy.data import DatasetError
 from pharmpy.datainfo import DataInfo
-
-SI = sympy.physics.units.si.SI
+from pharmpy.deps import numpy as np
+from pharmpy.deps import pandas as pd
+from pharmpy.deps import sympy
+from pharmpy.deps.rich import box as rich_box
+from pharmpy.deps.rich import console as rich_console
+from pharmpy.deps.rich import table as rich_table
 
 
 def get_ids(model):
@@ -1352,7 +1348,9 @@ class Checker:
             self.set_result(code, skip=True)
             return False
         else:
-            dim2 = units.Dimension(SI.get_dimensional_expr(column.unit))
+            dim2 = sympy.physics.units.Dimension(
+                sympy.physics.units.si.SI.get_dimensional_expr(column.unit)
+            )
             self.set_result(
                 code,
                 test=dim == dim2,
@@ -1365,11 +1363,11 @@ class Checker:
         if lower == 0:
             scaled_lower = lower
         else:
-            scaled_lower = float(units.convert_to(lower * unit, col.unit) / col.unit)
+            scaled_lower = float(sympy.physics.units.convert_to(lower * unit, col.unit) / col.unit)
         if upper == 0:
             scaled_upper = upper
         else:
-            scaled_upper = float(units.convert_to(upper * unit, col.unit) / col.unit)
+            scaled_upper = float(sympy.physics.units.convert_to(upper * unit, col.unit) / col.unit)
         if lower_included:
             lower_viol = self.dataset[name] < scaled_lower
         else:
@@ -1423,7 +1421,7 @@ class Checker:
         return df
 
     def print(self):
-        table = Table(title="Dataset checks", box=rich.box.SQUARE)
+        table = rich_table.Table(title="Dataset checks", box=rich_box.SQUARE)
         table.add_column("Code")
         table.add_column("Check")
         table.add_column("Result")
@@ -1451,7 +1449,7 @@ class Checker:
                         table.add_row(code, msg, result, viol[2])
 
         if table.rows:  # Do not print an empty table
-            console = Console()
+            console = rich_console.Console()
             console.print(table)
 
 
@@ -1479,39 +1477,51 @@ def check_dataset(model, dataframe=False, verbose=False):
     for col in di:
         if col.descriptor == "body weight":
             checker.check_has_unit("A1", col)
-            samedim = checker.check_dimension("A2", col, units.mass)
+            samedim = checker.check_dimension("A2", col, sympy.physics.units.mass)
             if samedim:
-                checker.check_range("A3", col, 0, 700, units.kg, False, False)
+                checker.check_range("A3", col, 0, 700, sympy.physics.units.kg, False, False)
 
         if col.descriptor == "age":
             checker.check_has_unit("A4", col)
-            samedim = checker.check_dimension("A5", col, units.time)
+            samedim = checker.check_dimension("A5", col, sympy.physics.units.time)
             if samedim:
-                checker.check_range("A6", col, 0, 130, units.year, True, False)
+                checker.check_range("A6", col, 0, 130, sympy.physics.units.year, True, False)
 
         if col.descriptor == "lean body mass":
             checker.check_has_unit("A7", col)
-            samedim = checker.check_dimension("A8", col, units.mass)
+            samedim = checker.check_dimension("A8", col, sympy.physics.units.mass)
             if samedim:
-                checker.check_range("A9", col, 0, 700, units.kg, False, False)
+                checker.check_range("A9", col, 0, 700, sympy.physics.units.kg, False, False)
 
         if col.descriptor == "fat free mass":
             checker.check_has_unit("A10", col)
-            samedim = checker.check_dimension("A11", col, units.mass)
+            samedim = checker.check_dimension("A11", col, sympy.physics.units.mass)
             if samedim:
-                checker.check_range("A12", col, 0, 700, units.kg, False, False)
+                checker.check_range("A12", col, 0, 700, sympy.physics.units.kg, False, False)
 
         if col.descriptor == "time after dose":
             checker.check_has_unit("D1", col)
-            samedim = checker.check_dimension("D2", col, units.time)
+            samedim = checker.check_dimension("D2", col, sympy.physics.units.time)
             if samedim:
-                checker.check_range("D3", col, 0, float('inf'), units.second, True, False)
+                checker.check_range(
+                    "D3", col, 0, float('inf'), sympy.physics.units.second, True, False
+                )
 
         if col.descriptor == "plasma concentration":
             checker.check_has_unit("D4", col)
-            samedim = checker.check_dimension("D5", col, units.mass / units.length**3)
+            samedim = checker.check_dimension(
+                "D5", col, sympy.physics.units.mass / sympy.physics.units.length**3
+            )
             if samedim:
-                checker.check_range("D6", col, 0, float('inf'), units.kg / units.L, True, False)
+                checker.check_range(
+                    "D6",
+                    col,
+                    0,
+                    float('inf'),
+                    sympy.physics.units.kg / sympy.physics.units.L,
+                    True,
+                    False,
+                )
 
         if col.descriptor == "subject identifier":
             checker.check_is_unitless("I1", col)
@@ -1522,7 +1532,7 @@ def check_dataset(model, dataframe=False, verbose=False):
         checker.print()
 
 
-def read_dataset_from_datainfo(datainfo: Union[DataInfo, Path, str], datatype=None) -> pd.DataFrame:
+def read_dataset_from_datainfo(datainfo: Union[DataInfo, Path, str], datatype=None):
     """Read a dataset given a datainfo object or path to a datainfo file
 
     Parameters

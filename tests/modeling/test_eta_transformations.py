@@ -1,8 +1,11 @@
 import pytest
-from sympy import Symbol as S
-from sympy import exp
 
+from pharmpy.deps import sympy
 from pharmpy.modeling.eta_transformations import EtaTransformation
+
+
+def S(x: str):
+    return sympy.Symbol(x)
 
 
 @pytest.mark.parametrize(
@@ -11,7 +14,7 @@ from pharmpy.modeling.eta_transformations import EtaTransformation
         (
             EtaTransformation.boxcox(2),
             S('ETAB(2)'),
-            ((exp(S('ETA(2)')) ** S('BOXCOX2') - 1) / S('BOXCOX2')),
+            ((sympy.exp(S('ETA(2)')) ** S('BOXCOX2') - 1) / S('BOXCOX2')),
         ),
     ],
 )

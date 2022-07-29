@@ -1,5 +1,4 @@
-import pandas as pd
-
+from pharmpy.deps import pandas as pd
 from pharmpy.results import Results
 
 

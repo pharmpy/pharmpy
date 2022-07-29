@@ -12,10 +12,9 @@ Currenly contains:
 import collections
 import warnings
 
-import numpy as np
-import pandas as pd
-
 import pharmpy.math
+from pharmpy.deps import numpy as np
+from pharmpy.deps import pandas as pd
 
 
 class DatasetIterator:

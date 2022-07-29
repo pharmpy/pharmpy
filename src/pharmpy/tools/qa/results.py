@@ -1,11 +1,11 @@
 from pathlib import Path
 
-import numpy as np
-import pandas as pd
-import sympy
 import yaml
 
 import pharmpy.tools.psn_helpers as psn_helpers
+from pharmpy.deps import numpy as np
+from pharmpy.deps import pandas as pd
+from pharmpy.deps import sympy
 from pharmpy.model import Model
 from pharmpy.results import Results, read_results
 

@@ -1,7 +1,7 @@
 import math
 
-import numpy as np
-import pandas as pd
+from pharmpy.deps import numpy as np
+from pharmpy.deps import pandas as pd
 
 
 class UCPScale:

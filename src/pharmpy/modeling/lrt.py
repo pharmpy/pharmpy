@@ -1,9 +1,8 @@
 from itertools import chain
 from typing import Iterable, List, Union
 
-import numpy as np
-from scipy.stats import chi2
-
+from pharmpy.deps import numpy as np
+from pharmpy.deps.scipy import stats
 from pharmpy.model import Model
 
 
@@ -28,13 +27,13 @@ def _df(parent: Model, child: Model) -> int:
 
 def cutoff(parent: Model, child: Model, alpha: float) -> float:
     df = _df(parent, child)
-    return float(chi2.isf(q=alpha, df=df))
+    return float(stats.chi2.isf(q=alpha, df=df))
 
 
 def p_value(parent: Model, child: Model) -> float:
     x = _dofv(parent, child)
     df = _df(parent, child)
-    return float(chi2.sf(x=x, df=df))
+    return float(stats.chi2.sf(x=x, df=df))
 
 
 def test(parent: Model, child: Model, alpha: float) -> bool:

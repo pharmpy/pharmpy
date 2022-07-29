@@ -2,9 +2,8 @@ import re
 from io import StringIO
 from pathlib import Path
 
-import numpy as np
-import pandas as pd
-
+from pharmpy.deps import numpy as np
+from pharmpy.deps import pandas as pd
 from pharmpy.model import Model
 from pharmpy.results import Results
 from pharmpy.tools.psn_helpers import (

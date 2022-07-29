@@ -3,9 +3,8 @@
 """
 import warnings
 
-import numpy as np
-import sympy
-
+from pharmpy.deps import numpy as np
+from pharmpy.deps import sympy
 from pharmpy.math import corr2cov, nearest_postive_semidefinite
 from pharmpy.modeling.help_functions import _get_etas
 from pharmpy.parameters import Parameter, Parameters

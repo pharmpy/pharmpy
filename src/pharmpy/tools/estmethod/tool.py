@@ -1,9 +1,8 @@
 from pathlib import Path
 
-import pandas as pd
-
 import pharmpy.results
 import pharmpy.tools.estmethod.algorithms as algorithms
+from pharmpy.deps import pandas as pd
 from pharmpy.modeling import summarize_modelfit_results
 from pharmpy.tools.common import summarize_tool
 from pharmpy.tools.modelfit import create_fit_workflow

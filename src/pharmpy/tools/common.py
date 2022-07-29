@@ -1,8 +1,8 @@
 import warnings
+from typing import Any
 
-import numpy as np
-import pandas as pd
-
+from pharmpy.deps import numpy as np
+from pharmpy.deps import pandas as pd
 from pharmpy.modeling import (
     rank_models,
     summarize_errors,
@@ -11,6 +11,8 @@ from pharmpy.modeling import (
     summarize_modelfit_results,
     update_inits,
 )
+
+DataFrame = Any  # NOTE should be pd.DataFrame but we want lazy loading
 
 
 def update_initial_estimates(model):
@@ -66,7 +68,7 @@ def summarize_tool(
     rank_type,
     cutoff,
     bic_type='mixed',
-) -> pd.DataFrame:
+) -> DataFrame:
     models_all = [start_model] + models
 
     df_rank = rank_models(

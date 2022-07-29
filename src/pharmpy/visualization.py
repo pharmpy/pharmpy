@@ -18,31 +18,11 @@
 # Will provide base functions for creating different types of plots
 # or other types of visualizations
 
-import altair as alt
-import pandas as pd
+from pharmpy.deps import altair as alt
+from pharmpy.deps import pandas as pd
 
 _chart_width = 500
 _chart_height = 500
-
-
-def pharmpy_theme():
-    return {
-        'config': {
-            'axis': {
-                'labelFontSize': 11,
-                'titleFontSize': 13,
-            },
-            'legend': {
-                'labelFontSize': 12,
-                'titleFontSize': 13,
-            },
-        }
-    }
-
-
-alt.themes.register('pharmpy', pharmpy_theme)
-alt.themes.enable('pharmpy')
-alt.data_transformers.disable_max_rows()
 
 
 def scatter_plot_correlation(df, x, y, tooltip_columns=None, title=""):
