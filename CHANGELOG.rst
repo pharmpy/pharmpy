@@ -6,10 +6,17 @@ New features
 
 * SCM forward search followed by backward search in covsearch (#988)
 
+Changes
+=======
+
+* Change initial estimates of IIV parameters of start model in AMD tool (1c65359)
+* Change default order of subtools in AMD tool (42fe72f)
+
 Bugfixes
 ========
 
 * Make NONMEM column renaming work in more cases (#1001)
+* Fix issue when search spaces which lead to uneven branch length in reduced stepwise algorithm (#694)
 
 0.74.0 (2022-07-18)
 -------------------
