@@ -1,11 +1,20 @@
 from __future__ import annotations
 
+import re
 from itertools import filterfalse
 from typing import Callable, Dict, Iterable, List, Sequence, Set, Tuple, TypeVar, Union
 
 from pharmpy.deps import sympy
 from pharmpy.expressions import subs, sympify
-from pharmpy.model import Assignment, Compartment, CompartmentalSystem, Model, ODESystem, Statements
+from pharmpy.model import (
+    Assignment,
+    Compartment,
+    CompartmentalSystem,
+    Model,
+    ODESystem,
+    Statement,
+    Statements,
+)
 
 from .parameters import get_thetas
 
@@ -910,6 +919,93 @@ def get_rv_parameters(model: Model, rv: str) -> List[str]:
     free_symbols = model.statements.free_symbols
     dependency_graph = _dependency_graph(natural_assignments)
     return sorted(map(str, _filter_symbols(dependency_graph, free_symbols, {sympy.Symbol(rv)})))
+
+
+def remove_covariate_effect_from_statements(
+    before_odes: Statements, parameter: str, covariate: str
+) -> Iterable[Statement]:
+
+    assignments = list(_assignments(before_odes))
+
+    dependency_graph = _dependency_graph(assignments)
+
+    dependencies = _reachable_from({sympy.Symbol(parameter)}, lambda x: dependency_graph.get(x, []))
+
+    for statement in before_odes:
+        if not isinstance(statement, Assignment) or statement.symbol not in dependencies:
+            yield statement
+            continue
+
+        changed, new_expression = remove_covariate_effect_from_expression(
+            statement.expression, sympy.Symbol(covariate)
+        )
+        if changed:
+            yield Assignment(statement.symbol, new_expression)
+        else:
+            yield statement
+
+
+RE_THETA = re.compile(r'^THETA\(\d+\)$')
+
+
+def _neutral(expr: sympy.Expr) -> sympy.Integer:
+    if isinstance(expr, sympy.Add):
+        return sympy.Integer(0)
+    if isinstance(expr, sympy.Mul):
+        return sympy.Integer(1)
+
+    raise ValueError(repr(expr))
+
+
+def _is_theta(symbol: sympy.Symbol) -> bool:
+    return bool(re.search(RE_THETA, str(symbol)))
+
+
+def _is_constant(expr: sympy.Expr) -> bool:
+    # TODO handle constant symbols such as WGT_MEDIAN
+    return all(map(_is_theta, expr.free_symbols))
+
+
+def remove_covariate_effect_from_expression(
+    expression: sympy.Expr, covariate: sympy.Symbol, parent=None
+) -> Tuple[bool, sympy.Expr]:
+    if not expression.args:
+        if expression != covariate:
+            # NOTE other atom
+            return False, expression
+
+        return True, _neutral(parent)
+
+    children = list(
+        map(
+            lambda expr: remove_covariate_effect_from_expression(expr, covariate, expression),
+            expression.args,
+        )
+    )
+
+    # TODO Handle cases where the THETA we look for is in the parent chain or
+    # in children symbol
+    # TODO Take THETA limits into account. Currently we assume any
+    # offset/factor can be compensated but this is not true in general.
+    can_be_compensated = any(
+        map(lambda t: isinstance(t[1], sympy.Symbol) and _is_theta(t[1]), children)
+    )
+    changed = any(map(lambda t: t[0], children))
+
+    if not changed:
+        return False, expression
+
+    if not can_be_compensated:
+        return True, expression.func(*map(lambda t: t[1], children))
+
+    return True, expression.func(
+        *map(
+            lambda t: _neutral(expression)
+            if can_be_compensated and t[0] and _is_constant(t[1])
+            else t[1],
+            children,
+        )
+    )
 
 
 def get_pk_parameters(model: Model, kind: str = 'all') -> List[str]:

@@ -6,15 +6,15 @@ import math
 import re
 import warnings
 from operator import add, mul
-from typing import Literal, Union
+from typing import List, Literal, Union
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import sympy
 from pharmpy.expressions import subs, sympify
-from pharmpy.model import Assignment, Model, Parameter, Parameters
+from pharmpy.model import Assignment, Model, Parameter, Parameters, Statement, Statements
 
 from .data import get_baselines
-from .expressions import depends_on
+from .expressions import depends_on, remove_covariate_effect_from_statements
 
 EffectType = Union[Literal['lin', 'cat', 'piece_lin', 'exp', 'pow'], str]
 OperationType = Literal['*', '+']
@@ -48,6 +48,40 @@ def has_covariate_effect(model: Model, parameter: str, covariate: str):
 
     """
     return depends_on(model, parameter, covariate)
+
+
+def remove_covariate_effect(model: Model, parameter: str, covariate: str):
+    """Remove a covariate effect from an instance of :class:`pharmpy.model`.
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model from which to remove the covariate effect.
+    parameter : str
+        Name of parameter.
+    covariate : str
+        Name of covariate.
+
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> has_covariate_effect(model, "CL", "WGT")
+    True
+    >>> remove_covariate_effect(model, "CL", "WGT")
+    >>> has_covariate_effect(model, "CL", "WGT")
+    False
+
+    """
+    before_odes = list(
+        remove_covariate_effect_from_statements(model.statements.before_odes, parameter, covariate)
+    )
+    ode_system: List[Statement] = (
+        [] if model.statements.ode_system is None else [model.statements.ode_system]
+    )
+    after_odes = list(model.statements.after_odes)
+    model.statements = Statements(before_odes + ode_system + after_odes)
 
 
 def add_covariate_effect(
