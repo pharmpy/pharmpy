@@ -29,7 +29,8 @@ def fit(models, tool=None):
 
     Examples
     --------
-    >>> from pharmpy.modeling import *
+    >>> from pharmpy.modeling import load_example_model
+    >>> from pharmpy.tools import fit
     >>> model = load_example_model("pheno")
     >>> fit(model)      # doctest: +SKIP
 

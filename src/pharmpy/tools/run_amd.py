@@ -108,7 +108,7 @@ def run_amd(
     if lloq is not None:
         remove_loq_data(model, lloq=lloq)
 
-    default_order = ['structural', 'iivsearch', 'iovsearch', 'residual', 'allometry', 'covariates']
+    default_order = ['structural', 'iivsearch', 'residual', 'iovsearch', 'allometry', 'covariates']
     if order is None:
         order = default_order
 
@@ -161,12 +161,16 @@ def run_amd(
         next_model = subresults.best_model
         if hasattr(subresults, 'summary_tool'):
             sum_tools.append(subresults.summary_tool.reset_index()),
+        else:
+            sum_tools.append(None)
         sum_models.append(subresults.summary_models.reset_index()),
         sum_inds_counts.append(subresults.summary_individuals_count.reset_index()),
 
     for sums in [sum_tools, sum_models, sum_inds_counts]:
+        filtered_results = list(zip(*filter(lambda t: t[1] is not None, zip(list(run_subfuncs.keys()), sums))))
+
         sums = pd.concat(
-            sums, keys=list(run_subfuncs.keys()), names=['tool', 'default index']
+            filtered_results[1], keys=list(filtered_results[0]), names=['tool', 'default index']
         ).reset_index()
         if 'step' in sums.columns:
             sums['step'] = sums['step'].fillna(1).astype('int64')

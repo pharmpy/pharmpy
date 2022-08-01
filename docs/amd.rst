@@ -21,7 +21,7 @@ To initiate AMD in Python/R:
     from pharmpy.tools import run_amd
 
     dataset_path = 'path/to/dataset'
-    order = ['structural', 'iivsearch', 'iovsearch', 'residual', 'allometry', 'covariates']
+    order = ['structural', 'iivsearch', 'residual', 'iovsearch', 'allometry', 'covariates']
     res = run_amd(input=dataset_path,
                   modeltype='pk_oral',
                   order=order,
@@ -58,7 +58,7 @@ Arguments
 +---------------------------------------------------+-----------------------------------------------------------------------------------------------------------------+
 | ``lloq``                                          | Lower limit of quantification. LOQ data will be removed.                                                        |
 +---------------------------------------------------+-----------------------------------------------------------------------------------------------------------------+
-| :ref:`order<order_amd>`                           | Run order of tools (default is ['structural', 'iivsearch', 'iovsearch', 'residual', 'allometry', 'covariates']) |
+| :ref:`order<order_amd>`                           | Run order of tools (default is ['structural', 'iivsearch', 'residual', 'iovsearch', 'allometry', 'covariates']) |
 +---------------------------------------------------+-----------------------------------------------------------------------------------------------------------------+
 | ``categorical``                                   | List of categorical covariates (default is a list of all categorical covariates found in datainfo)              |
 +---------------------------------------------------+-----------------------------------------------------------------------------------------------------------------+
@@ -141,8 +141,8 @@ This yields the following workflow:
             base [label="Input", shape="oval"]
             s0 [label="structural"]
             s1 [label="iivsearch"]
-            s2 [label="iovsearch"]
-            s3 [label="residual"]
+            s2 [label="residual"]
+            s3 [label="iovsearch"]
             s4 [label="allometry"]
             s5 [label="covariates"]
             s6 [label="results", shape="oval"]
