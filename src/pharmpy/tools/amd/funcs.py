@@ -23,11 +23,14 @@ from pharmpy.modeling import (
     set_proportional_error_model,
 )
 from pharmpy.modeling.data import read_dataset_from_datainfo
+from pharmpy.plugins.nonmem.advan import dosing
 from pharmpy.workflows import default_model_database
 
 
 def create_start_model(dataset_path, modeltype='pk_oral', cl_init=0.01, vc_init=1.0, mat_init=0.1):
     dataset_path = Path(dataset_path)
+    di = _create_default_datainfo(dataset_path)
+    df = read_dataset_from_datainfo(di, datatype='nonmem')
 
     pop_cl = Parameter('POP_CL', cl_init, lower=0)
     pop_vc = Parameter('POP_VC', vc_init, lower=0)
@@ -45,19 +48,16 @@ def create_start_model(dataset_path, modeltype='pk_oral', cl_init=0.01, vc_init=
     cl_ass = Assignment(CL, pop_cl.symbol * sympy.exp(eta_cl.symbol))
     vc_ass = Assignment(VC, pop_vc.symbol * sympy.exp(eta_vc.symbol))
 
-    dose = sympy.Symbol('AMT')
     odes = pharmpy.CompartmentalSystem()
     central = odes.add_compartment('CENTRAL')
     output = odes.add_compartment('OUTPUT')
     odes.add_flow(central, output, CL / VC)
-    central.dose = pharmpy.Bolus(dose)
+    central.dose = dosing(di, lambda: df, 1)
 
     ipred = Assignment('IPRED', central.amount / VC)
     y_ass = Assignment('Y', ipred.symbol)
 
     stats = ModelStatements([cl_ass, vc_ass, odes, ipred, y_ass])
-    di = _create_default_datainfo(dataset_path)
-    df = read_dataset_from_datainfo(di, datatype='nonmem')
 
     est = EstimationStep(
         "FOCE",
