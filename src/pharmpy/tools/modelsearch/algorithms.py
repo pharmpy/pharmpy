@@ -95,14 +95,15 @@ def reduced_stepwise(mfl, iiv_strategy):
     while True:
         no_of_trans = 0
         actions = _get_possible_actions(wf_search, mfl_statements)
-        if all(len(feat_new) > 0 for feat_new in actions.values()):
-            groups = _find_same_model_groups(wf_search, mfl_funcs)
-            if len(groups) > 1:
-                for group in groups:
+        groups = _find_same_model_groups(wf_search, mfl_funcs)
+        if len(groups) > 1:
+            for group in groups:
+                # Only add collector nodes to tasks with possible actions (i.e. not to leaf nodes)
+                if all(len(actions[task]) > 0 for task in group):
                     task_best_model = Task('choose_best_model', _get_best_model)
                     wf_search.add_task(task_best_model, predecessors=group)
-                # Overwrite actions with new collector nodes
-                actions = _get_possible_actions(wf_search, mfl_statements)
+            # Overwrite actions with new collector nodes
+            actions = _get_possible_actions(wf_search, mfl_statements)
 
         for task_parent, feat_new in actions.items():
             for feat in feat_new:
