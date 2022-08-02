@@ -465,3 +465,23 @@ def test_zero_fix(parser):
     code = '$OMEGA BLOCK(2) 0 0 0 FIX'
     rec = parser.parse(code).records[0]
     rvs, _, _, _ = rec.random_variables(1)
+
+
+@pytest.mark.usefixtures('parser')
+@pytest.mark.parametrize(
+    'buf,comment_map_ref',
+    [
+        ('$OMEGA 1', {}),
+        ('$OMEGA 1 ; IIV_CL', {'OMEGA(1,1)': 'IIV_CL'}),
+        (
+            '$OMEGA BLOCK(2)\n' '0.1 ; IIV_CL\n' '0.01 ; IIV_CL_IIV_V\n' '0.1 ; IIV_V',
+            {'OMEGA(1,1)': 'IIV_CL', 'OMEGA(2,1)': 'IIV_CL_IIV_V', 'OMEGA(2,2)': 'IIV_V'},
+        ),
+    ],
+)
+def test_comment_map(parser, buf, comment_map_ref):
+    with ConfigurationContext(conf, parameter_names=['basic']):
+        recs = parser.parse(buf)
+        rec = recs.records[0]
+        rec.parameters(1, 1)
+        assert rec.comment_map == comment_map_ref

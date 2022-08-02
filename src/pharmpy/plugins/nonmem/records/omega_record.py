@@ -80,17 +80,20 @@ class OmegaRecord(Record):
             else:
                 size = self.root.block.size.INT
             fix, sd, corr, cholesky = self._block_flags()
-            labels = []
+            labels, comments = [], []
             for node in self.root.all('omega'):
                 init = node.init.NUMERIC
                 n = node.n.INT if node.find('n') else 1
                 inits += [init] * n
                 name = self._find_label(node, seen_labels)
+                comment = self._get_name(node)
                 if name is not None:
                     seen_labels.add(name)
                 labels.append(name)
+                comments.append(comment)
                 if n > 1:
                     labels.extend([None] * (n - 1))
+                    comments.extend([None] * (n - 1))
             if not same:
                 if size != pharmpy.math.triangular_root(len(inits)):
                     raise ModelSyntaxError('Wrong number of inits in BLOCK')
@@ -115,8 +118,11 @@ class OmegaRecord(Record):
                 for i in range(size):
                     for j in range(0, i + 1):
                         name = labels[label_index]
+                        comment = comments[label_index]
                         if name is None:
                             name = f'{self.name}({i + start_omega},{j + start_omega})'
+                        if comment is not None:
+                            self.comment_map[name] = comment
                         coords.append((i + start_omega, j + start_omega))
                         init = A[i, j]
                         lower = None if i != j else 0
