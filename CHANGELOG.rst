@@ -17,6 +17,7 @@ Bugfixes
 
 * Make NONMEM column renaming work in more cases (#1001)
 * Fix issue when search spaces which lead to uneven branch length in reduced stepwise algorithm (#694)
+* Fix issue with error record not numbering amounts properly with non-linear elimination (#708)
 
 0.74.0 (2022-07-18)
 -------------------
