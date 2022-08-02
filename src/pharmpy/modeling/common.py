@@ -3,6 +3,7 @@
 """
 
 import re
+import warnings
 from io import StringIO
 from pathlib import Path
 
@@ -577,8 +578,8 @@ def get_config_path():
 
     Returns
     -------
-    str
-        Path to user config
+    str or None
+        Path to user config or None if file does not exist
 
     Example
     -------
@@ -586,7 +587,12 @@ def get_config_path():
     >>> get_config_path().replace('\\', '/')    # doctest: +ELLIPSIS
     '.../pharmpy.conf'
     """
-    return str(config.user_config_dir())
+    config_path = config.user_config_dir()
+    if config_path.exists():
+        return str(config_path)
+    else:
+        warnings.warn(f'Cannot find config path {config_path}')
+        return None
 
 
 def remove_unused_parameters_and_rvs(model):
