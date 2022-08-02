@@ -74,6 +74,7 @@ def convert_model(model):
         code += '$PK\nY=X\n'
         code += '$ERROR\nA=B'
     nm_model = pharmpy.model.Model.create_model(StringIO(code))
+    nm_model._datainfo = model.datainfo
     nm_model.random_variables = model.random_variables
     nm_model._parameters = model.parameters
     nm_model._old_parameters = Parameters()
@@ -85,7 +86,6 @@ def convert_model(model):
     nm_model.value_type = model.value_type
     nm_model._data_frame = model.dataset
     nm_model._estimation_steps = model.estimation_steps
-    nm_model._datainfo = model.datainfo
     nm_model._initial_individual_estimates = model.initial_individual_estimates
     nm_model.observation_transformation = model.observation_transformation.subs(
         model.dependent_variable, nm_model.dependent_variable

@@ -451,10 +451,14 @@ def _advan12_trans(trans):
 
 
 def _dosing(model, dose_comp):
-    di = model.datainfo
+    return dosing(model.datainfo, lambda: model.dataset, dose_comp)
+
+
+def dosing(di, dataset, dose_comp):
     colnames = di.names
+
     if 'RATE' in colnames and not di['RATE'].drop:
-        df = model.dataset
+        df = dataset()
         if (df['RATE'] == 0).all():
             return Bolus('AMT')
         elif (df['RATE'] == -1).any():
