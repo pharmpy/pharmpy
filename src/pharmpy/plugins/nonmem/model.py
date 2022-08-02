@@ -485,14 +485,19 @@ class Model(pharmpy.model.Model):
         if error:
             sub = self.control_stream.get_records('SUBROUTINES')[0]
             comp = compartmental_model(self, sub.advan, sub.trans, des)
+            trans_amounts = dict()
             if comp is not None:
                 cm, link = comp
                 statements += [cm, link]
+                for i, amount in enumerate(cm.amounts, start=1):
+                    trans_amounts[sympy.Symbol(f"A({i})")] = amount
             else:
                 statements.append(ODESystem())  # FIXME: Placeholder for ODE-system
                 # FIXME: Dummy link statement
                 statements.append(Assignment('F', S('F')))
             statements += error.statements
+            if trans_amounts:
+                statements.after_odes.subs(trans_amounts)
 
         if not hasattr(self, '_parameters'):
             self._read_parameters()
