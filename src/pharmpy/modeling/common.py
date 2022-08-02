@@ -584,8 +584,7 @@ def get_config_path():
     Example
     -------
     >>> from pharmpy.modeling import get_config_path
-    >>> get_config_path().replace('\\', '/')    # doctest: +ELLIPSIS
-    '.../pharmpy.conf'
+    >>> get_config_path()  # doctest: +SKIP
     """
     config_path = config.user_config_dir()
     if config_path.exists():
