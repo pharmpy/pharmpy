@@ -167,7 +167,9 @@ def run_amd(
         sum_inds_counts.append(subresults.summary_individuals_count.reset_index()),
 
     for sums in [sum_tools, sum_models, sum_inds_counts]:
-        filtered_results = list(zip(*filter(lambda t: t[1] is not None, zip(list(run_subfuncs.keys()), sums))))
+        filtered_results = list(
+            zip(*filter(lambda t: t[1] is not None, zip(list(run_subfuncs.keys()), sums)))
+        )
 
         sums = pd.concat(
             filtered_results[1], keys=list(filtered_results[0]), names=['tool', 'default index']
