@@ -289,6 +289,12 @@ def test_rank_models():
     assert len(models_sorted) == 2
     assert models_sorted[0].name == 'm1'
 
+    m5 = DummyModel('m5', parent='base', parameter_names=['p1'], ofv=np.nan)
+    df, models_sorted = rank_models(base, models + [m5], rank_type='ofv')
+    ranked_models = list(df.dropna().index.values)
+    assert m5 not in ranked_models
+    assert np.isnan(df.loc['m5']['rank'])
+
 
 def test_aic(testdata):
     model = Model.create_model(testdata / 'nonmem' / 'pheno.mod')

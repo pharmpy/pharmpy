@@ -630,7 +630,11 @@ def rank_models(
     ...             rank_type='lrt') # doctest: +SKIP
     """
     models_all = [base_model] + models
-    models_with_res = [model for model in models_all if model.modelfit_results]
+    models_with_res = [
+        model
+        for model in models_all
+        if model.modelfit_results and not np.isnan(model.modelfit_results.ofv)
+    ]
     rankval_dict = {model.name: _get_rankval(model, rank_type, bic_type) for model in models_all}
     delta_dict = {
         model.name: rankval_dict[base_model.name] - rankval_dict[model.name] for model in models_all
