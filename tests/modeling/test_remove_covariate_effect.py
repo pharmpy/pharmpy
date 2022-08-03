@@ -88,6 +88,11 @@ from ..lib import diff
         ),
         (
             ('nonmem', 'models', 'fviii6.mod'),
+            [('V2', 'WT')],
+            '@@ -38 +38 @@\n' '-TVV2 = THETA(6)*(WT/80)**THETA(10)\n' '+TVV2 = THETA(6)\n',
+        ),
+        (
+            ('nonmem', 'models', 'fviii6.mod'),
             [('CL', 'WT'), ('V1', 'WT')],
             '@@ -29,8 +29,4 @@\n'
             '-IF (PREP2.EQ.1) THEN\n'
