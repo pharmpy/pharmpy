@@ -71,6 +71,23 @@ from ..lib import diff
         ),
         (
             ('nonmem', 'models', 'fviii6.mod'),
+            [('CL', 'WT'), ('CL', 'AGE')],
+            '@@ -29,8 +29,4 @@\n'
+            '-IF (PREP2.EQ.1) THEN\n'
+            '-TVCL = THETA(1)*((WT/80)**THETA(7))*(1+THETA(13)*(AGE-40)) ;80 = Median of body weight\n'
+            '-TVV1 = THETA(2)*((WT/80)**THETA(8)) \n'
+            '-ENDIF\n'
+            '-IF (PREP2.EQ.2) THEN\n'
+            '-TVCL = THETA(1)*((WT/80)**THETA(7))*(1+THETA(12))*(1+THETA(13)*(AGE-40))\n'
+            '-TVV1 = THETA(2)*((WT/80)**THETA(8))*(1+THETA(12))\n'
+            '-ENDIF\n'
+            '+IF (PREP2.EQ.1) TVCL = THETA(1)\n'
+            '+IF (PREP2.EQ.1) TVV1 = THETA(2)*(WT/80)**THETA(8)\n'
+            '+IF (PREP2.EQ.2) TVCL = THETA(1)*(THETA(12) + 1)\n'
+            '+IF (PREP2.EQ.2) TVV1 = THETA(2)*(WT/80)**THETA(8)*(THETA(12) + 1)\n',
+        ),
+        (
+            ('nonmem', 'models', 'fviii6.mod'),
             [('V1', 'WT')],
             '@@ -29,8 +29,4 @@\n'
             '-IF (PREP2.EQ.1) THEN\n'
@@ -93,6 +110,20 @@ from ..lib import diff
         ),
         (
             ('nonmem', 'models', 'fviii6.mod'),
+            [('Q', 'WT')],
+            '@@ -37 +37 @@\n' '-TVQ  = THETA(5)*(WT/80)**THETA(9)\n' '+TVQ = THETA(5)\n',
+        ),
+        (
+            ('nonmem', 'models', 'fviii6.mod'),
+            [('K21', 'WT')],
+            '@@ -37,2 +37,2 @@\n'
+            '-TVQ  = THETA(5)*(WT/80)**THETA(9)\n'
+            '-TVV2 = THETA(6)*(WT/80)**THETA(10)\n'
+            '+TVQ = THETA(5)\n'
+            '+TVV2 = THETA(6)\n',
+        ),
+        (
+            ('nonmem', 'models', 'fviii6.mod'),
             [('CL', 'WT'), ('V1', 'WT')],
             '@@ -29,8 +29,4 @@\n'
             '-IF (PREP2.EQ.1) THEN\n'
@@ -107,6 +138,105 @@ from ..lib import diff
             '+IF (PREP2.EQ.1) TVV1 = THETA(2)\n'
             '+IF (PREP2.EQ.2) TVCL = THETA(1)*(THETA(12) + 1)*(THETA(13)*(AGE - 40) + 1)\n'
             '+IF (PREP2.EQ.2) TVV1 = THETA(2)*(THETA(12) + 1)\n',
+        ),
+        (
+            ('nonmem', 'models', 'fviii6.mod'),
+            [('V1', 'WT'), ('CL', 'AGE')],
+            '@@ -29,8 +29,4 @@\n'
+            '-IF (PREP2.EQ.1) THEN\n'
+            '-TVCL = THETA(1)*((WT/80)**THETA(7))*(1+THETA(13)*(AGE-40)) ;80 = Median of body weight\n'
+            '-TVV1 = THETA(2)*((WT/80)**THETA(8)) \n'
+            '-ENDIF\n'
+            '-IF (PREP2.EQ.2) THEN\n'
+            '-TVCL = THETA(1)*((WT/80)**THETA(7))*(1+THETA(12))*(1+THETA(13)*(AGE-40))\n'
+            '-TVV1 = THETA(2)*((WT/80)**THETA(8))*(1+THETA(12))\n'
+            '-ENDIF\n'
+            '+IF (PREP2.EQ.1) TVCL = THETA(1)*(WT/80)**THETA(7)\n'
+            '+IF (PREP2.EQ.1) TVV1 = THETA(2)\n'
+            '+IF (PREP2.EQ.2) TVCL = THETA(1)*(WT/80)**THETA(7)*(THETA(12) + 1)\n'
+            '+IF (PREP2.EQ.2) TVV1 = THETA(2)*(THETA(12) + 1)\n',
+        ),
+        (
+            ('nonmem', 'models', 'fviii6.mod'),
+            [('CL', 'WT'), ('V1', 'WT'), ('V2', 'WT')],
+            '@@ -29,8 +29,4 @@\n'
+            '-IF (PREP2.EQ.1) THEN\n'
+            '-TVCL = THETA(1)*((WT/80)**THETA(7))*(1+THETA(13)*(AGE-40)) ;80 = Median of body weight\n'
+            '-TVV1 = THETA(2)*((WT/80)**THETA(8)) \n'
+            '-ENDIF\n'
+            '-IF (PREP2.EQ.2) THEN\n'
+            '-TVCL = THETA(1)*((WT/80)**THETA(7))*(1+THETA(12))*(1+THETA(13)*(AGE-40))\n'
+            '-TVV1 = THETA(2)*((WT/80)**THETA(8))*(1+THETA(12))\n'
+            '-ENDIF\n'
+            '+IF (PREP2.EQ.1) TVCL = THETA(1)*(THETA(13)*(AGE - 40) + 1)\n'
+            '+IF (PREP2.EQ.1) TVV1 = THETA(2)\n'
+            '+IF (PREP2.EQ.2) TVCL = THETA(1)*(THETA(12) + 1)*(THETA(13)*(AGE - 40) + 1)\n'
+            '+IF (PREP2.EQ.2) TVV1 = THETA(2)*(THETA(12) + 1)\n'
+            '@@ -38 +34 @@\n'
+            '-TVV2 = THETA(6)*(WT/80)**THETA(10)\n'
+            '+TVV2 = THETA(6)\n',
+        ),
+        (
+            ('nonmem', 'models', 'fviii6.mod'),
+            [('CL', 'WT'), ('V1', 'WT'), ('Q', 'WT'), ('V2', 'WT')],
+            '@@ -29,10 +29,6 @@\n'
+            '-IF (PREP2.EQ.1) THEN\n'
+            '-TVCL = THETA(1)*((WT/80)**THETA(7))*(1+THETA(13)*(AGE-40)) ;80 = Median of body weight\n'
+            '-TVV1 = THETA(2)*((WT/80)**THETA(8)) \n'
+            '-ENDIF\n'
+            '-IF (PREP2.EQ.2) THEN\n'
+            '-TVCL = THETA(1)*((WT/80)**THETA(7))*(1+THETA(12))*(1+THETA(13)*(AGE-40))\n'
+            '-TVV1 = THETA(2)*((WT/80)**THETA(8))*(1+THETA(12))\n'
+            '-ENDIF\n'
+            '-TVQ  = THETA(5)*(WT/80)**THETA(9)\n'
+            '-TVV2 = THETA(6)*(WT/80)**THETA(10)\n'
+            '+IF (PREP2.EQ.1) TVCL = THETA(1)*(THETA(13)*(AGE - 40) + 1)\n'
+            '+IF (PREP2.EQ.1) TVV1 = THETA(2)\n'
+            '+IF (PREP2.EQ.2) TVCL = THETA(1)*(THETA(12) + 1)*(THETA(13)*(AGE - 40) + 1)\n'
+            '+IF (PREP2.EQ.2) TVV1 = THETA(2)*(THETA(12) + 1)\n'
+            '+TVQ = THETA(5)\n'
+            '+TVV2 = THETA(6)\n',
+        ),
+        (
+            ('nonmem', 'models', 'fviii6.mod'),
+            [('CL', 'WT'), ('V1', 'WT'), ('V2', 'WT'), ('CL', 'AGE')],
+            '@@ -29,8 +29,4 @@\n'
+            '-IF (PREP2.EQ.1) THEN\n'
+            '-TVCL = THETA(1)*((WT/80)**THETA(7))*(1+THETA(13)*(AGE-40)) ;80 = Median of body weight\n'
+            '-TVV1 = THETA(2)*((WT/80)**THETA(8)) \n'
+            '-ENDIF\n'
+            '-IF (PREP2.EQ.2) THEN\n'
+            '-TVCL = THETA(1)*((WT/80)**THETA(7))*(1+THETA(12))*(1+THETA(13)*(AGE-40))\n'
+            '-TVV1 = THETA(2)*((WT/80)**THETA(8))*(1+THETA(12))\n'
+            '-ENDIF\n'
+            '+IF (PREP2.EQ.1) TVCL = THETA(1)\n'
+            '+IF (PREP2.EQ.1) TVV1 = THETA(2)\n'
+            '+IF (PREP2.EQ.2) TVCL = THETA(1)*(THETA(12) + 1)\n'
+            '+IF (PREP2.EQ.2) TVV1 = THETA(2)*(THETA(12) + 1)\n'
+            '@@ -38 +34 @@\n'
+            '-TVV2 = THETA(6)*(WT/80)**THETA(10)\n'
+            '+TVV2 = THETA(6)\n',
+        ),
+        (
+            ('nonmem', 'models', 'fviii6.mod'),
+            [('CL', 'WT'), ('V1', 'WT'), ('V2', 'WT'), ('CL', 'AGE'), ('Q', 'WT')],
+            '@@ -29,10 +29,6 @@\n'
+            '-IF (PREP2.EQ.1) THEN\n'
+            '-TVCL = THETA(1)*((WT/80)**THETA(7))*(1+THETA(13)*(AGE-40)) ;80 = Median of body weight\n'
+            '-TVV1 = THETA(2)*((WT/80)**THETA(8)) \n'
+            '-ENDIF\n'
+            '-IF (PREP2.EQ.2) THEN\n'
+            '-TVCL = THETA(1)*((WT/80)**THETA(7))*(1+THETA(12))*(1+THETA(13)*(AGE-40))\n'
+            '-TVV1 = THETA(2)*((WT/80)**THETA(8))*(1+THETA(12))\n'
+            '-ENDIF\n'
+            '-TVQ  = THETA(5)*(WT/80)**THETA(9)\n'
+            '-TVV2 = THETA(6)*(WT/80)**THETA(10)\n'
+            '+IF (PREP2.EQ.1) TVCL = THETA(1)\n'
+            '+IF (PREP2.EQ.1) TVV1 = THETA(2)\n'
+            '+IF (PREP2.EQ.2) TVCL = THETA(1)*(THETA(12) + 1)\n'
+            '+IF (PREP2.EQ.2) TVV1 = THETA(2)*(THETA(12) + 1)\n'
+            '+TVQ = THETA(5)\n'
+            '+TVV2 = THETA(6)\n',
         ),
     ],
     ids=repr,
