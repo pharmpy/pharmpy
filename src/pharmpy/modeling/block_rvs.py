@@ -151,8 +151,9 @@ def _choose_param_init(model, rvs, params):
     rvs_names = [rv.name for rv in rvs]
 
     etas = []
+    cm = rvs.covariance_matrix
     for i in range(len(rvs)):
-        elem = rvs.covariance_matrix.row(i).col(i)[0]
+        elem = cm.row(i).col(i)[0]
         if str(elem) in [p.name for p in params]:
             etas.append(rvs_names[i])
 

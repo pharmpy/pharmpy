@@ -221,7 +221,8 @@ def create_omega_single(model, rv, eta_number, record_number, comment_dict):
 
 def create_omega_block(model, rvs, eta_number, record_number, comment_dict):
     rvs = RandomVariables(rvs)
-    param_str = f'$OMEGA BLOCK({rvs.covariance_matrix.shape[0]})'
+    cm = rvs.covariance_matrix
+    param_str = f'$OMEGA BLOCK({cm.shape[0]})'
 
     rv = rvs[0]
 
@@ -232,9 +233,9 @@ def create_omega_block(model, rvs, eta_number, record_number, comment_dict):
 
     else:
         param_str += '\n'
-        for row in range(rvs.covariance_matrix.shape[0]):
+        for row in range(cm.shape[0]):
             for col in range(row + 1):
-                elem = rvs.covariance_matrix.row(row).col(col)
+                elem = cm.row(row).col(col)
                 name = str(elem[0])
                 omega = model.parameters[name]
                 param_str += f'{omega.init}'.upper()
