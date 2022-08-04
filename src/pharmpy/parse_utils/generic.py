@@ -1,5 +1,5 @@
 """
-Generic parser using lark-parser.
+Generic parser using lark.
 
 Subclass :class:`GenericParser` (remember to set :attr:`GenericParser.grammar`
 to point to your grammar file) to define a powerful parser.
@@ -430,7 +430,7 @@ class AttrTree(Tree):
 
 class GenericParser:
     """
-    Generic parser using lark-parser.
+    Generic parser using lark.
 
     Inherit to define a parser, say ThetaRecordParser for NONMEM, with the workflow:
 
@@ -460,6 +460,7 @@ class GenericParser:
         ambiguity='resolve',
         debug=False,
         keep_all_tokens=True,
+        maybe_placeholders=False,
         lexer='dynamic',
         parser='earley',
         start='root',

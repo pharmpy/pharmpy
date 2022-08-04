@@ -66,7 +66,7 @@ setup(
         'pharmacometrics',
     ],
     install_requires=[
-        'lark-parser>=0.12.0',
+        'lark>=1.1.2',
         'sympy>=1.8',
         'symengine>=0.7.2',
         'pandas>=1.4',
