@@ -123,9 +123,10 @@ def call_workflow(wf, unique_name):
     from dask.distributed import get_client, rejoin, secede
 
     client = get_client()
-    secede()
     d = wf.as_dask_dict()
     d[unique_name] = d.pop('results')
-    res = client.get(d, unique_name)
+    futures = client.get(d, unique_name, sync=False)
+    secede()
+    res = client.gather(futures)
     rejoin()
     return res
