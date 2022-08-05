@@ -8,7 +8,7 @@ def run(workflow):
 
     with TemporaryDirectory() as tempdirname:
         with TemporaryDirectoryChanger(tempdirname):
-            workflow = workflow.as_dask_dict()
+            dsk = workflow.as_dask_dict()
 
             if pharmpy.workflows.dispatchers.conf.dask_dispatcher:
                 dask_dispatcher = pharmpy.workflows.dispatchers.conf.dask_dispatcher
@@ -18,10 +18,12 @@ def run(workflow):
             if dask_dispatcher == 'threaded':
                 from dask.threaded import get
 
-                res = get(workflow, 'results')
+                res = get(dsk, 'results')
             else:
                 import dask
                 from dask.distributed import Client, LocalCluster
+
+                from ..optimize import optimize_task_graph_for_dask_distributed
 
                 # Set to let the dask-worker-space scratch directory
                 # be stored in our tempdirectory.
@@ -34,5 +36,6 @@ def run(workflow):
                     with LocalCluster(processes=False) as cluster:
                         with Client(cluster) as client:
                             print(client)
-                            res = client.get(workflow, 'results')
+                            dsk_optimized = optimize_task_graph_for_dask_distributed(client, dsk)
+                            res = client.get(dsk_optimized, 'results')
     return res
