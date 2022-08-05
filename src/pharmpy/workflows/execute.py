@@ -122,10 +122,13 @@ def call_workflow(wf, unique_name):
     """
     from dask.distributed import get_client, rejoin, secede
 
+    from .optimize import optimize_task_graph_for_dask_distributed
+
     client = get_client()
-    d = wf.as_dask_dict()
-    d[unique_name] = d.pop('results')
-    futures = client.get(d, unique_name, sync=False)
+    dsk = wf.as_dask_dict()
+    dsk[unique_name] = dsk.pop('results')
+    dsk_optimized = optimize_task_graph_for_dask_distributed(client, dsk)
+    futures = client.get(dsk_optimized, unique_name, sync=False)
     secede()
     res = client.gather(futures)
     rejoin()
