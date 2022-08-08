@@ -5,7 +5,6 @@ from collections.abc import Sequence
 import pharmpy.math
 import pharmpy.unicode as unicode
 from pharmpy.deps import numpy as np
-from pharmpy.deps import pandas as pd
 from pharmpy.deps import symengine, sympy, sympy_stats
 from pharmpy.expressions import subs, sympify
 
@@ -1130,30 +1129,37 @@ def _sample_from_distributions(distributions, expr, parameters, samples, rng):
 
     sampling_rvs = list(_generate_sampling_rvs(distributions, expr.free_symbols, parameters))
 
-    return _sample_from_rvs(sampling_rvs, expr, samples, rng)
+    return _sample_expr_from_rvs(sampling_rvs, expr, samples, rng)
 
 
 def _generate_sampling_rvs(distributions, symbols, parameters):
     i = 0
 
     for rvs, dist in distributions:
-        if any(map(symbols.__contains__, (sympy.Symbol(rv) for rv in rvs))):
+        rvs_symbols = list(map(sympy.Symbol, rvs))
+        if any(map(symbols.__contains__, rvs_symbols)):
             i += 1
             new_name = f'__J{i}'
             mu = dist.mean.subs(parameters)
             sigma = dist.variance.subs(parameters)
 
             new_rv = sympy_stats.Normal(new_name, mu, sigma if len(rvs) >= 2 else sigma ** (1 / 2))
-            yield (rvs, new_rv)
+            yield (rvs_symbols, new_rv)
 
 
-def _sample_from_rvs(sampling_rvs, expr, samples, rng):
+def _sample_expr_from_rvs(sampling_rvs, expr, samples, rng):
     if not sampling_rvs:
         return np.full(samples, float(expr.evalf()))
 
-    # FIXME: Unnecessary to go via DataFrame
-    df = pd.DataFrame(index=range(samples))
-    for names, new_rv in sampling_rvs:
+    ordered_symbols, fn = _lambdify_canonical(expr)
+    data = _sample_rvs_subset(sampling_rvs, ordered_symbols, samples, rng)
+    return fn(*data)
+
+
+def _sample_rvs_subset(sampling_rvs, ordered_symbols, samples, rng):
+    data = [None] * len(ordered_symbols)
+    index = {symbol: i for i, symbol in enumerate(ordered_symbols)}
+    for symbols, new_rv in sampling_rvs:
         with warnings.catch_warnings():
             warnings.filterwarnings('ignore')
             if sympy.__version__ == '1.8':
@@ -1163,12 +1169,18 @@ def _sample_from_rvs(sampling_rvs, expr, samples, rng):
             else:
                 cursample = sympy_stats.sample(new_rv, library='numpy', size=samples, seed=rng)
 
-            if len(names) > 1:
-                df[names] = cursample
+            if len(symbols) > 1:
+                for j, s in enumerate(symbols):
+                    i = index.get(s, -1)
+                    if i != -1:
+                        data[i] = cursample[:, j]
             else:
-                df[names[0]] = cursample
+                data[index[symbols[0]]] = cursample
 
-    ordered_symbols = list(expr.free_symbols)
-    input_list = [df[symb.name].values for symb in ordered_symbols]
+    return data
+
+
+def _lambdify_canonical(expr):
+    ordered_symbols = sorted(expr.free_symbols, key=str)
     fn = sympy.lambdify(ordered_symbols, expr, 'numpy')
-    return fn(*input_list)
+    return ordered_symbols, fn

@@ -9,7 +9,7 @@ from pharmpy.deps import sympy
 from pharmpy.expressions import subs, sympify
 from pharmpy.math import round_to_n_sigdig
 from pharmpy.model import CompartmentalSystem, CompartmentalSystemBuilder, Model
-from pharmpy.model.random_variables import _generate_sampling_rvs, _sample_from_rvs
+from pharmpy.model.random_variables import _generate_sampling_rvs, _sample_expr_from_rvs
 
 from .data import get_ids, get_observations
 from .lrt import test as lrt_test
@@ -270,14 +270,12 @@ def calculate_individual_parameter_statistics(model, exprs, rng=None):
             filtered_expr = cov_expr.subs(parameter_estimates)
             filtered_sampling_rvs = list(
                 filter(
-                    lambda r: any(
-                        map(filtered_expr.free_symbols.__contains__, map(sympy.Symbol, r[0]))
-                    ),
+                    lambda r: any(map(filtered_expr.free_symbols.__contains__, r[0])),
                     sampling_rvs,
                 )
             )
 
-            samples = _sample_from_rvs(
+            samples = _sample_expr_from_rvs(
                 filtered_sampling_rvs,
                 filtered_expr,
                 1000000,
