@@ -9,6 +9,7 @@ from pharmpy.deps import sympy
 from pharmpy.expressions import subs, sympify
 from pharmpy.math import round_to_n_sigdig
 from pharmpy.model import CompartmentalSystem, CompartmentalSystemBuilder, Model
+from pharmpy.model.random_variables import _generate_sampling_rvs, _sample_from_rvs
 
 from .data import get_ids, get_observations
 from .lrt import test as lrt_test
@@ -220,15 +221,39 @@ def calculate_individual_parameter_statistics(model, exprs, rng=None):
     """
     rng = create_rng(rng)
 
-    if isinstance(exprs, str) or isinstance(exprs, sympy.Basic):
-        exprs = [_split_equation(exprs)]
-    else:
-        exprs = [_split_equation(expr) for expr in exprs]
+    split_exprs = (
+        [_split_equation(exprs)]
+        if isinstance(exprs, str) or isinstance(exprs, sympy.Basic)
+        else map(_split_equation, exprs)
+    )
+
+    full_exprs = list(
+        map(
+            lambda e: (e[0], model.statements.before_odes.full_expression(e[1])),
+            split_exprs,
+        )
+    )
+
     cols = set(model.datainfo.names)
+    parameter_estimates = dict(model.modelfit_results.parameter_estimates)
+
+    all_free_symbols = (
+        set()
+        .union(*map(lambda e: e[1].free_symbols, full_exprs))
+        .difference(map(sympy.Symbol, parameter_estimates.keys()), map(sympy.Symbol, cols))
+    )
+
+    sampling_rvs = list(
+        _generate_sampling_rvs(
+            ((dist.names, dist) for dist in model.random_variables),
+            all_free_symbols,
+            parameter_estimates,
+        )
+    )
+
     i = 0
     table = pd.DataFrame(columns=['parameter', 'covariates', 'mean', 'variance', 'stderr'])
-    for name, expr in exprs:
-        full_expr = model.statements.before_odes.full_expression(expr)
+    for name, full_expr in full_exprs:
         covariates = {symb.name for symb in full_expr.free_symbols if symb.name in cols}
         if not covariates:
             cases = {'median': dict()}
@@ -241,10 +266,23 @@ def calculate_individual_parameter_statistics(model, exprs, rng=None):
 
         df = pd.DataFrame(index=list(cases.keys()), columns=['mean', 'variance', 'stderr'])
         for case, cov_values in cases.items():
-            pe = dict(model.modelfit_results.parameter_estimates)
             cov_expr = full_expr.subs(cov_values)
-            expr = cov_expr.subs(pe)
-            samples = model.random_variables.sample(expr, parameters=pe, samples=1000000, rng=rng)
+            filtered_expr = cov_expr.subs(parameter_estimates)
+            filtered_sampling_rvs = list(
+                filter(
+                    lambda r: any(
+                        map(filtered_expr.free_symbols.__contains__, map(sympy.Symbol, r[0]))
+                    ),
+                    sampling_rvs,
+                )
+            )
+
+            samples = _sample_from_rvs(
+                filtered_sampling_rvs,
+                filtered_expr,
+                1000000,
+                rng,
+            )
 
             mean = np.mean(samples)
             variance = np.var(samples)
