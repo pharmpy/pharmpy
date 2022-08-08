@@ -1044,52 +1044,14 @@ class RandomVariables(Sequence):
     def sample(self, expr, parameters=None, samples=1, rng=None):
         """Sample from the distribution of expr
 
-        parameters in the distriutions will first be replaced"""
-        rng = _create_rng(rng)
-        if not parameters:
-            parameters = dict()
-        expr = sympify(expr).subs(parameters)
-        symbols = expr.free_symbols
-        expr_names = [symb.name for symb in symbols]
-        i = 0
-        sampling_rvs = []
-        for dist in self:
-            names = dist.names
-            if set(names) & set(expr_names):
-                new_name = f'__J{i}'
-                if len(names) > 1:
-                    mu = dist.mean.subs(parameters)
-                    sigma = dist.variance.subs(parameters)
-                else:
-                    mu = dist.mean.subs(parameters)
-                    sigma = sympy.sqrt(dist.variance.subs(parameters))
-                new_rv = sympy_stats.Normal(new_name, mu, sigma)
-                sampling_rvs.append((names, new_rv))
-        if sampling_rvs:
-            # FIXME: Unnecessary to go via DataFrame
-            df = pd.DataFrame(index=range(samples))
-            for names, new_rv in sampling_rvs:
-                with warnings.catch_warnings():
-                    warnings.filterwarnings('ignore')
-                    if sympy.__version__ == '1.8':
-                        cursample = next(
-                            sympy_stats.sample(new_rv, library='numpy', size=samples, seed=rng)
-                        )
-                    else:
-                        cursample = sympy_stats.sample(
-                            new_rv, library='numpy', size=samples, seed=rng
-                        )
-                    if len(names) > 1:
-                        df[list(names)] = cursample
-                    else:
-                        df[names[0]] = cursample
-            ordered_symbols = list(symbols)
-            input_list = [df[symb.name].values for symb in ordered_symbols]
-            fn = sympy.lambdify(ordered_symbols, expr, 'numpy')
-            a = fn(*input_list)
-        else:
-            a = np.full(samples, float(expr.evalf()))
-        return a
+        parameters in the distributions will first be replaced"""
+        return _sample_from_distributions(
+            [(dist.names, dist) for dist in self],
+            expr,
+            parameters or dict(),
+            samples,
+            _create_rng(rng),
+        )
 
     def _calc_covariance_matrix(self):
         non_altered = []
@@ -1161,3 +1123,52 @@ class RandomVariables(Sequence):
                         np.array(subs(dist.variance, values)).astype(np.float64)
                     )
         return newdict
+
+
+def _sample_from_distributions(distributions, expr, parameters, samples, rng):
+    expr = sympify(expr).subs(parameters)
+
+    sampling_rvs = list(_generate_sampling_rvs(distributions, expr.free_symbols, parameters))
+
+    return _sample_from_rvs(sampling_rvs, expr, samples, rng)
+
+
+def _generate_sampling_rvs(distributions, symbols, parameters):
+    i = 0
+
+    for rvs, dist in distributions:
+        if any(map(symbols.__contains__, (sympy.Symbol(rv) for rv in rvs))):
+            i += 1
+            new_name = f'__J{i}'
+            mu = dist.mean.subs(parameters)
+            sigma = dist.variance.subs(parameters)
+
+            new_rv = sympy_stats.Normal(new_name, mu, sigma if len(rvs) >= 2 else sigma ** (1 / 2))
+            yield (rvs, new_rv)
+
+
+def _sample_from_rvs(sampling_rvs, expr, samples, rng):
+    if not sampling_rvs:
+        return np.full(samples, float(expr.evalf()))
+
+    # FIXME: Unnecessary to go via DataFrame
+    df = pd.DataFrame(index=range(samples))
+    for names, new_rv in sampling_rvs:
+        with warnings.catch_warnings():
+            warnings.filterwarnings('ignore')
+            if sympy.__version__ == '1.8':
+                cursample = next(
+                    sympy_stats.sample(new_rv, library='numpy', size=samples, seed=rng)
+                )
+            else:
+                cursample = sympy_stats.sample(new_rv, library='numpy', size=samples, seed=rng)
+
+            if len(names) > 1:
+                df[names] = cursample
+            else:
+                df[names[0]] = cursample
+
+    ordered_symbols = list(expr.free_symbols)
+    input_list = [df[symb.name].values for symb in ordered_symbols]
+    fn = sympy.lambdify(ordered_symbols, expr, 'numpy')
+    return fn(*input_list)
