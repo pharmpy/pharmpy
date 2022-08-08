@@ -299,7 +299,7 @@ def calculate_individual_parameter_statistics(model, exprs, rng=None):
                     warnings.filterwarnings('ignore')
                     for _, row in parameters.iterrows():
                         batch = model.random_variables.sample(
-                            cov_expr.subs(dict(row)),
+                            cov_expr,
                             parameters=dict(row),
                             samples=10,
                             rng=rng,
