@@ -753,9 +753,9 @@ def get_individual_parameters(model: Model, level: str = 'all') -> List[str]:
     -------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> sorted(get_individual_parameters(model))
+    >>> get_individual_parameters(model)
     ['CL', 'V']
-    >>> sorted(get_individual_parameters(model, 'iiv'))
+    >>> get_individual_parameters(model, 'iiv')
     ['CL', 'V']
     >>> get_individual_parameters(model, 'iov')
     []
@@ -779,10 +779,12 @@ def get_individual_parameters(model: Model, level: str = 'all') -> List[str]:
 
     dependency_graph = _dependency_graph(assignments)
 
-    return _filter_symbols(
-        dependency_graph,
-        free_symbols,
-        set().union(*(rv.free_symbols for rv in rvs if rvs.get_variance(rv) != 0)),
+    return sorted(
+        _filter_symbols(
+            dependency_graph,
+            free_symbols,
+            set().union(*(rv.free_symbols for rv in rvs if rvs.get_variance(rv) != 0)),
+        )
     )
 
 
@@ -896,7 +898,7 @@ def get_pk_parameters(model: Model, kind: str = 'all') -> List[str]:
     -------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> sorted(get_pk_parameters(model))
+    >>> get_pk_parameters(model)
     ['CL', 'V']
     >>> get_pk_parameters(model, 'absorption')
     []
@@ -928,7 +930,7 @@ def get_pk_parameters(model: Model, kind: str = 'all') -> List[str]:
 
     dependency_graph = _dependency_graph(assignments)
 
-    return _filter_symbols(dependency_graph, free_symbols)
+    return sorted(_filter_symbols(dependency_graph, free_symbols))
 
 
 def _pk_free_symbols(cs: CompartmentalSystem, kind: str) -> Iterable[sympy.Symbol]:
@@ -1032,7 +1034,7 @@ def _filter_symbols(
     dependency_graph: Dict[sympy.Symbol, Set[sympy.Symbol]],
     roots: Set[sympy.Symbol],
     leaves: Union[Set[sympy.Symbol], None] = None,
-) -> List[str]:
+) -> Iterable[str]:
 
     dependents = _graph_inverse(dependency_graph)
 
@@ -1050,12 +1052,12 @@ def _filter_symbols(
         )
     )
 
-    return [
+    return (
         symbol.name
         for symbol in reachable
         if symbol in dependency_graph
         and (symbol not in dependents or dependents[symbol].isdisjoint(free_symbols))
-    ]
+    )
 
 
 def _classify_assignments(assignments: Sequence[Assignment]):
