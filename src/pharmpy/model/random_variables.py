@@ -1045,11 +1045,12 @@ class RandomVariables(Sequence):
 
         parameters in the distributions will first be replaced"""
 
+        sympified_expr = sympify(expr)
         xreplace_parameters = dict() if parameters is None else xreplace_dict(parameters)
 
         return _sample_from_distributions(
             [(dist.names, dist) for dist in self],
-            expr,
+            sympified_expr,
             xreplace_parameters,
             samples,
             _create_rng(rng),
@@ -1128,19 +1129,22 @@ class RandomVariables(Sequence):
 
 
 def _sample_from_distributions(distributions, expr, parameters, samples, rng):
-    expr = sympify(expr).xreplace(parameters)
+    random_variable_symbols = expr.free_symbols.difference(parameters.keys())
 
-    sampling_rvs = list(_generate_sampling_rvs(distributions, expr.free_symbols, parameters))
+    sampling_rvs = list(_generate_sampling_rvs(distributions, random_variable_symbols, parameters))
 
-    return _sample_expr_from_rvs(sampling_rvs, expr, samples, rng)
+    return _sample_expr_from_rvs(sampling_rvs, expr, parameters, samples, rng)
 
 
 def _generate_sampling_rvs(distributions, symbols, parameters):
     i = 0
 
+    covered_symbols = set()
+
     for rvs, dist in distributions:
         rvs_symbols = list(map(sympy.Symbol, rvs))
-        if any(map(symbols.__contains__, rvs_symbols)):
+        symbols_covered_by_dist = symbols.intersection(rvs_symbols)
+        if symbols_covered_by_dist:
             i += 1
             new_name = f'__J{i}'
             mu = dist.mean.xreplace(parameters)
@@ -1148,12 +1152,17 @@ def _generate_sampling_rvs(distributions, symbols, parameters):
 
             new_rv = sympy_stats.Normal(new_name, mu, sigma if len(rvs) >= 2 else sigma ** (1 / 2))
             yield (rvs_symbols, new_rv)
+            covered_symbols |= symbols_covered_by_dist
+
+    if covered_symbols != symbols:
+        raise ValueError('Could not cover all requested symbols with given distributions')
 
 
-def _sample_expr_from_rvs(sampling_rvs, expr, samples, rng):
+def _sample_expr_from_rvs(sampling_rvs, expr, parameters, samples, rng):
     if not sampling_rvs:
         return np.full(samples, float(expr.evalf()))
 
+    expr = expr.xreplace(parameters)
     ordered_symbols, fn = _lambdify_canonical(expr)
     data = _sample_rvs_subset(sampling_rvs, ordered_symbols, samples, rng)
     return fn(*data)

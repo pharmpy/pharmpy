@@ -271,17 +271,20 @@ def calculate_individual_parameter_statistics(model, exprs, rng=None):
         df = pd.DataFrame(index=list(cases.keys()), columns=['mean', 'variance', 'stderr'])
         for case, cov_values in cases.items():
             cov_expr = full_expr.xreplace(cov_values)
-            filtered_expr = cov_expr.xreplace(parameter_estimates)
+            is_filtered_expr_symbol = cov_expr.free_symbols.difference(
+                parameter_estimates
+            ).__contains__
             filtered_sampling_rvs = list(
                 filter(
-                    lambda r: any(map(filtered_expr.free_symbols.__contains__, r[0])),
+                    lambda r: any(map(is_filtered_expr_symbol, r[0])),
                     sampling_rvs,
                 )
             )
 
             samples = _sample_expr_from_rvs(
                 filtered_sampling_rvs,
-                filtered_expr,
+                cov_expr,
+                parameter_estimates,
                 1000000,
                 rng,
             )
