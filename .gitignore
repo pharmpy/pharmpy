@@ -23,7 +23,7 @@ wheelhouse
 # Installer logs
 pip-log.txt
 
-# Unit test / coverage reports
+# Unit test / coverage reports / profile
 .coverage
 .coverage.*
 coverage.xml
@@ -32,6 +32,7 @@ nosetests.xml
 .pytest
 .pytest_cache/
 .tox
+/prof
 
 # Translations
 *.mo
