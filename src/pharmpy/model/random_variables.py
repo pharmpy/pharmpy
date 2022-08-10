@@ -1191,10 +1191,9 @@ def _sample_rv(rng, expr, nsamples: int):
     if not isinstance(expr, sympy_stats.rv.RandomSymbol):
         raise ValueError(type(expr))
 
-    ps = sympy_stats.pspace(expr)
-    size = (1,) + (nsamples,)
-    d = ps.sample(size=size, library='numpy', seed=rng)
-    return next(iter(d.values()))[0]
+    # NOTE We could easily take more sample batches
+    sample_dict = expr.pspace.sample(size=(1, nsamples), library='numpy', seed=rng)
+    return next(iter(sample_dict.values()))[0]
 
 
 @lru_cache(maxsize=256)
