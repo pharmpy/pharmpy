@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import math
-import warnings
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
@@ -300,25 +299,19 @@ def calculate_individual_parameter_statistics(model, exprs, rng=None):
                     rng=rng,
                 )
                 samples = []
-                with warnings.catch_warnings():
-                    warnings.filterwarnings('ignore')
-                    for _, row in parameters.iterrows():
-                        parameters = xreplace_dict(row)
-                        distributions = ((dist.names, dist) for dist in model.random_variables)
-                        random_variable_symbols = cov_expr_free_symbols.difference(
-                            parameters.keys()
-                        )
-                        local_sampling_rvs = list(
-                            _generate_sampling_rvs(
-                                distributions, random_variable_symbols, parameters
-                            )
-                        ) + [
-                            ([key], sympify(value))
-                            for key, value in parameters.items()
-                            if key in cov_expr_free_symbols
-                        ]
-                        batch = _sample_expr_from_rvs(local_sampling_rvs, cov_expr, dict(), 10, rng)
-                        samples.extend(list(batch))
+                for _, row in parameters.iterrows():
+                    parameters = xreplace_dict(row)
+                    distributions = ((dist.names, dist) for dist in model.random_variables)
+                    random_variable_symbols = cov_expr_free_symbols.difference(parameters.keys())
+                    local_sampling_rvs = list(
+                        _generate_sampling_rvs(distributions, random_variable_symbols, parameters)
+                    ) + [
+                        ([key], sympify(value))
+                        for key, value in parameters.items()
+                        if key in cov_expr_free_symbols
+                    ]
+                    batch = _sample_expr_from_rvs(local_sampling_rvs, cov_expr, dict(), 10, rng)
+                    samples.extend(list(batch))
                 stderr = pd.Series(samples).std()
             else:
                 stderr = np.nan
