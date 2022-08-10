@@ -271,9 +271,9 @@ def calculate_individual_parameter_statistics(model, exprs, rng=None):
         df = pd.DataFrame(index=list(cases.keys()), columns=['mean', 'variance', 'stderr'])
         for case, cov_values in cases.items():
             cov_expr = full_expr.xreplace(cov_values)
-            is_filtered_expr_symbol = cov_expr.free_symbols.difference(
-                parameter_estimates
-            ).__contains__
+            cov_expr_free_symbols = cov_expr.free_symbols
+            filtered_expr_symbol = cov_expr_free_symbols.difference(parameter_estimates.keys())
+            is_filtered_expr_symbol = filtered_expr_symbol.__contains__
             filtered_sampling_rvs = list(
                 filter(
                     lambda r: any(map(is_filtered_expr_symbol, r[0])),
@@ -303,12 +303,21 @@ def calculate_individual_parameter_statistics(model, exprs, rng=None):
                 with warnings.catch_warnings():
                     warnings.filterwarnings('ignore')
                     for _, row in parameters.iterrows():
-                        batch = model.random_variables.sample(
-                            cov_expr,
-                            parameters=xreplace_dict(row),
-                            samples=10,
-                            rng=rng,
+                        parameters = xreplace_dict(row)
+                        distributions = ((dist.names, dist) for dist in model.random_variables)
+                        random_variable_symbols = cov_expr_free_symbols.difference(
+                            parameters.keys()
                         )
+                        local_sampling_rvs = list(
+                            _generate_sampling_rvs(
+                                distributions, random_variable_symbols, parameters
+                            )
+                        ) + [
+                            ([key], sympify(value))
+                            for key, value in parameters.items()
+                            if key in cov_expr_free_symbols
+                        ]
+                        batch = _sample_expr_from_rvs(local_sampling_rvs, cov_expr, dict(), 10, rng)
                         samples.extend(list(batch))
                 stderr = pd.Series(samples).std()
             else:
