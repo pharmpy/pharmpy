@@ -1172,7 +1172,7 @@ def _sample_rvs_subset(sampling_rvs, ordered_symbols, samples, rng):
     data = [None] * len(ordered_symbols)
     index = {symbol: i for i, symbol in enumerate(ordered_symbols)}
     for symbols, new_rv in sampling_rvs:
-        cursample = _sample_expr(rng, new_rv, samples)
+        cursample = _sample_rv(rng, new_rv, samples)
         if len(symbols) > 1:
             for j, s in enumerate(symbols):
                 i = index.get(s, -1)
@@ -1184,14 +1184,17 @@ def _sample_rvs_subset(sampling_rvs, ordered_symbols, samples, rng):
     return data
 
 
-def _sample_expr(rng, expr, nsamples: int):
+def _sample_rv(rng, expr, nsamples: int):
     if not expr.free_symbols:
         return np.full(nsamples, float(expr.evalf()))
 
-    if sympy.__version__ == '1.8':
-        return next(sympy_stats.sample(expr, library='numpy', size=nsamples, seed=rng))
-    else:
-        return sympy_stats.sample(expr, library='numpy', size=nsamples, seed=rng)
+    if not isinstance(expr, sympy_stats.rv.RandomSymbol):
+        raise ValueError(type(expr))
+
+    ps = sympy_stats.pspace(expr)
+    size = (1,) + (nsamples,)
+    d = ps.sample(size=size, library='numpy', seed=rng)
+    return d[list(ps.values)[0]][0]
 
 
 @lru_cache(maxsize=256)
