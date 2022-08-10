@@ -1194,7 +1194,7 @@ def _sample_rv(rng, expr, nsamples: int):
     ps = sympy_stats.pspace(expr)
     size = (1,) + (nsamples,)
     d = ps.sample(size=size, library='numpy', seed=rng)
-    return d[list(ps.values)[0]][0]
+    return next(iter(d.values()))[0]
 
 
 @lru_cache(maxsize=256)
