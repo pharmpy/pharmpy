@@ -81,6 +81,7 @@ jobs:
         with:
           name: cache-workaround
           path: 744.zip
+          retention-days: 1
 
   integration-ubuntu:
     needs: [get-nonmem]
