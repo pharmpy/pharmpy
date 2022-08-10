@@ -291,7 +291,10 @@ def calculate_individual_parameter_statistics(model, exprs, rng=None):
             mean = np.mean(samples)
             variance = np.var(samples)
 
-            if model.modelfit_results.covariance_matrix is not None:
+            if model.modelfit_results.covariance_matrix is None:
+                stderr = np.nan
+
+            else:
                 parameters = sample_parameters_from_covariance_matrix(
                     model,
                     n=100,
@@ -313,8 +316,7 @@ def calculate_individual_parameter_statistics(model, exprs, rng=None):
                     batch = _sample_expr_from_rvs(local_sampling_rvs, cov_expr, dict(), 10, rng)
                     samples.extend(list(batch))
                 stderr = pd.Series(samples).std()
-            else:
-                stderr = np.nan
+
             df.loc[case] = [mean, variance, stderr]
             df.index.name = 'covariates'
 
