@@ -5,7 +5,7 @@ from functools import lru_cache
 import pharmpy.math
 import pharmpy.unicode as unicode
 from pharmpy.deps import numpy as np
-from pharmpy.deps import symengine, sympy, sympy_stats
+from pharmpy.deps import symengine, sympy
 from pharmpy.expressions import subs, sympify, xreplace_dict
 
 
@@ -1137,21 +1137,24 @@ def _sample_from_distributions(distributions, expr, parameters, samples, rng):
 
 
 def _generate_sampling_rvs(distributions, symbols, parameters):
-    i = 0
-
     covered_symbols = set()
 
     for rvs, dist in distributions:
         rvs_symbols = list(map(sympy.Symbol, rvs))
         symbols_covered_by_dist = symbols.intersection(rvs_symbols)
         if symbols_covered_by_dist:
-            i += 1
-            new_name = f'__J{i}'
-            mu = dist.mean.xreplace(parameters)
-            sigma = dist.variance.xreplace(parameters)
+            if len(rvs) > 1:
+                mu = sympy.matrices.dense.matrix2numpy(dist.mean.xreplace(parameters), dtype=float)[
+                    :, 0
+                ]
+                sigma = sympy.matrices.dense.matrix2numpy(
+                    dist.variance.xreplace(parameters), dtype=float
+                )
+            else:
+                mu = float(dist.mean.xreplace(parameters))
+                sigma = float(dist.variance.xreplace(parameters) ** (1 / 2))
 
-            new_rv = sympy_stats.Normal(new_name, mu, sigma if len(rvs) >= 2 else sigma ** (1 / 2))
-            yield (rvs_symbols, new_rv)
+            yield (rvs_symbols, (mu, sigma))
             covered_symbols |= symbols_covered_by_dist
 
     if covered_symbols != symbols:
@@ -1184,16 +1187,20 @@ def _sample_rvs_subset(sampling_rvs, ordered_symbols, samples, rng):
     return data
 
 
-def _sample_rv(rng, expr, nsamples: int):
-    if not expr.free_symbols:
-        return np.full(nsamples, float(expr.evalf()))
+def _sample_rv(rng, rv, nsamples: int):
+    if isinstance(rv, (int, float, sympy.Float)):
+        return np.full(nsamples, float(rv))
 
-    if not isinstance(expr, sympy_stats.rv.RandomSymbol):
-        raise ValueError(type(expr))
+    if not isinstance(rv, tuple):
+        raise ValueError(type(rv))
 
-    # NOTE We could easily take more sample batches
-    sample_dict = expr.pspace.sample(size=(1, nsamples), library='numpy', seed=rng)
-    return next(iter(sample_dict.values()))[0]
+    mu, sigma = rv
+
+    if isinstance(mu, (float, int)):
+        assert isinstance(sigma, (float, int))
+        return rng.normal(mu, sigma, size=nsamples)
+
+    return rng.multivariate_normal(mu, sigma, size=nsamples)
 
 
 @lru_cache(maxsize=256)

@@ -309,7 +309,7 @@ def calculate_individual_parameter_statistics(model, exprs, rng=None):
                     local_sampling_rvs = list(
                         _generate_sampling_rvs(distributions, random_variable_symbols, parameters)
                     ) + [
-                        ([key], sympify(value))
+                        ([key], value)
                         for key, value in parameters.items()
                         if key in cov_expr_free_symbols
                     ]
