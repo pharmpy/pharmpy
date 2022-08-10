@@ -1200,5 +1200,11 @@ def _sample_rv(rng, expr, nsamples: int):
 @lru_cache(maxsize=256)
 def _lambdify_canonical(expr):
     ordered_symbols = sorted(expr.free_symbols, key=str)
-    fn = sympy.lambdify(ordered_symbols, expr, 'numpy')
+    # NOTE Substitution allows to use cse. Otherwise weird things happen with
+    # symbols that look like function eval (e.g. ETA(1), THETA(3), OMEGA(1,1)).
+    ordered_substitutes = [sympy.Symbol(f'__tmp{i}') for i in range(len(ordered_symbols))]
+    substituted_expr = expr.xreplace(
+        {key: value for key, value in zip(ordered_symbols, ordered_substitutes)}
+    )
+    fn = sympy.lambdify(ordered_substitutes, substituted_expr, modules='numpy', cse=True)
     return ordered_symbols, fn
