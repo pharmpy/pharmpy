@@ -1,5 +1,4 @@
 import itertools
-import warnings
 from collections.abc import Sequence
 
 import pharmpy.math
@@ -1172,24 +1171,26 @@ def _sample_rvs_subset(sampling_rvs, ordered_symbols, samples, rng):
     data = [None] * len(ordered_symbols)
     index = {symbol: i for i, symbol in enumerate(ordered_symbols)}
     for symbols, new_rv in sampling_rvs:
-        with warnings.catch_warnings():
-            warnings.filterwarnings('ignore')
-            if sympy.__version__ == '1.8':
-                cursample = next(
-                    sympy_stats.sample(new_rv, library='numpy', size=samples, seed=rng)
-                )
-            else:
-                cursample = sympy_stats.sample(new_rv, library='numpy', size=samples, seed=rng)
-
-            if len(symbols) > 1:
-                for j, s in enumerate(symbols):
-                    i = index.get(s, -1)
-                    if i != -1:
-                        data[i] = cursample[:, j]
-            else:
-                data[index[symbols[0]]] = cursample
+        cursample = _sample_expr(rng, new_rv, samples)
+        if len(symbols) > 1:
+            for j, s in enumerate(symbols):
+                i = index.get(s, -1)
+                if i != -1:
+                    data[i] = cursample[:, j]
+        else:
+            data[index[symbols[0]]] = cursample
 
     return data
+
+
+def _sample_expr(rng, expr, nsamples: int):
+    if not expr.free_symbols:
+        return np.full(nsamples, float(expr.evalf()))
+
+    if sympy.__version__ == '1.8':
+        return next(sympy_stats.sample(expr, library='numpy', size=nsamples, seed=rng))
+    else:
+        return sympy_stats.sample(expr, library='numpy', size=nsamples, seed=rng)
 
 
 def _lambdify_canonical(expr):
