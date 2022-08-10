@@ -1,5 +1,6 @@
 import itertools
 from collections.abc import Sequence
+from functools import lru_cache
 
 import pharmpy.math
 import pharmpy.unicode as unicode
@@ -1193,6 +1194,7 @@ def _sample_expr(rng, expr, nsamples: int):
         return sympy_stats.sample(expr, library='numpy', size=nsamples, seed=rng)
 
 
+@lru_cache(maxsize=256)
 def _lambdify_canonical(expr):
     ordered_symbols = sorted(expr.free_symbols, key=str)
     fn = sympy.lambdify(ordered_symbols, expr, 'numpy')
