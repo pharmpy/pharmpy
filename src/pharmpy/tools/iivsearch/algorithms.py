@@ -32,7 +32,7 @@ def brute_force_no_of_etas(base_model):
         task_update_description = Task('update_description', update_description)
         wf.add_task(task_update_description, predecessors=task_remove_eta)
 
-    wf_fit = modelfit.create_workflow(n=len(wf.output_tasks))
+    wf_fit = modelfit.create_fit_workflow(n=len(wf.output_tasks))
     wf.insert_workflow(wf_fit)
     return wf
 
@@ -65,7 +65,7 @@ def brute_force_block_structure(base_model):
 
         model_no += 1
 
-    wf_fit = modelfit.create_workflow(n=len(wf.output_tasks))
+    wf_fit = modelfit.create_fit_workflow(n=len(wf.output_tasks))
     wf.insert_workflow(wf_fit)
     return wf
 

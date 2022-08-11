@@ -62,23 +62,18 @@ def create_algorithm_workflow(input_model, base_model, algorithm, iiv_strategy, 
     if iiv_strategy != 'no_add':
         wf_fit = create_fit_workflow(n=1)
         wf.insert_workflow(wf_fit)
-        start_model_task = wf_fit.output_tasks
+        base_model_task = wf_fit.output_tasks[0]
     else:
-        start_model_task = [start_task]
+        base_model_task = start_task
 
     algorithm_func = getattr(algorithms, algorithm)
     wf_method = algorithm_func(base_model)
     wf.insert_workflow(wf_method)
 
-    task_result = Task(
-        'results',
-        post_process,
-        rank_type,
-        cutoff,
-        input_model,
-    )
+    task_result = Task('results', post_process, rank_type, cutoff, input_model, base_model.name)
 
-    wf.add_task(task_result, predecessors=start_model_task + wf.output_tasks)
+    post_process_tasks = [base_model_task] + wf.output_tasks
+    wf.add_task(task_result, predecessors=post_process_tasks)
 
     return wf
 
@@ -160,13 +155,17 @@ def _add_iiv(iiv_strategy, model):
     return model
 
 
-def post_process(rank_type, cutoff, input_model, *models):
-    base_model, res_models = models
+def post_process(rank_type, cutoff, input_model, base_model_name, *models):
+    res_models = []
+    base_model = None
+    for model in models:
+        if model.name == base_model_name:
+            base_model = model
+        else:
+            res_models.append(model)
 
-    if isinstance(res_models, tuple):
-        res_models = list(res_models)
-    else:
-        res_models = [res_models]
+    if not base_model:
+        raise ValueError('Error in workflow: No base model')
 
     res = create_results(
         IIVSearchResults, input_model, base_model, res_models, rank_type, cutoff, bic_type='iiv'
