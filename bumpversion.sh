@@ -14,12 +14,13 @@ if [ -n "$(git status --porcelain=v1 2>/dev/null)" ] ; then
     exit 1
 fi
 
+
+UPDATED_FILES=(docs/{conf.py,license.rst})
 year=`date +"%Y"`
 prevyear=$(($year-1))
-sed -i "s/2018-$prevyear/2018-$year/" docs/conf.py
-sed -i "s/2018-$prevyear/2018-$year/" docs/license.rst
+sed -i "s/2018-$prevyear/2018-$year/" "$UPDATED_FILES"
 if [ -n "$(git status --porcelain=v1 2>/dev/null)" ] ; then
-    git add docs/conf.py docs/license.rst
+    git add "${UPDATED_FILES[@]}"
     git commit -m "Updating copyright years"
 fi
 
