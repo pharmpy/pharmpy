@@ -18,13 +18,13 @@ fi
 UPDATED_FILES=(docs/{conf.py,license.rst})
 >&2 printf 'Checking the following files for copyright years update\n'
 >&2 printf '  - %s\n' "${UPDATED_FILES[@]}"
-year=`date +"%Y"`
-prevyear=$(($year-1))
-sed -i "s/2018-$prevyear/2018-$year/" "${UPDATED_FILES[@]}"
+year="$(date +"%Y")"
+prevyear=$((year-1))
+sed -i "s/2018-${prevyear}/2018-${year}/" "${UPDATED_FILES[@]}"
 if [ -n "$(git status --porcelain=v1 2>/dev/null)" ] ; then
     git add "${UPDATED_FILES[@]}"
     git commit -m "Updating copyright years"
 fi
 
 >&2 printf 'Bumping version with bumpversion'
-bumpversion $1
+bumpversion "$@"
