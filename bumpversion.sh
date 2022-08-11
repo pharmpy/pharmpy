@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 if [ ! -e '.git' ] ; then
     >&2 printf 'Not at the root of the git repository!\n'
