@@ -394,7 +394,11 @@ class Model:
     def copy(self):
         """Create a deepcopy of the model object"""
         model_copy = copy.deepcopy(self)
-        model_copy.parent_model = self.name
+        try:
+            model_copy.parent_model = self.name
+        except AttributeError:
+            # NOTE Name could be absent.
+            pass
         return model_copy
 
     @staticmethod
