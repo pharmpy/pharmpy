@@ -1,7 +1,6 @@
 import pytest
 import sympy
 
-from pharmpy import Model
 from pharmpy.statements import (
     Assignment,
     Bolus,
@@ -18,7 +17,7 @@ def S(x):
     return sympy.Symbol(x)
 
 
-def test_str(testdata):
+def test_str(load_model_for_test, testdata):
     s1 = Assignment(S('KA'), S('X') + S('Y'))
     assert str(s1) == 'KA = X + Y'
     s2 = Assignment(S('X2'), sympy.exp('X'))
@@ -26,13 +25,13 @@ def test_str(testdata):
     assert a[0].startswith(' ')
     assert len(a) == 2
 
-    model = Model.create_model(testdata / 'nonmem' / 'pheno.mod')
+    model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
     assert 'THETA(2)' in str(model.statements)
     assert 'THETA(2)' in repr(model.statements)
 
 
-def test_subs(testdata):
-    model = Model.create_model(testdata / 'nonmem' / 'pheno_real.mod')
+def test_subs(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
     statements = model.statements
 
     s2 = statements.subs({'ETA(1)': 'ETAT1'})
@@ -51,14 +50,14 @@ def test_subs(testdata):
     assert s4.ode_system.free_symbols == {S('CL'), S('AMT'), S('t'), S('V2')}
 
 
-def test_ode_free_symbols(testdata):
-    model = Model.create_model(testdata / 'nonmem' / 'pheno_real.mod')
+def test_ode_free_symbols(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
 
     assert model.statements.ode_system.free_symbols == {S('V'), S('CL'), S('AMT'), S('t')}
 
 
-def test_find_assignment(testdata):
-    model = Model.create_model(testdata / 'nonmem' / 'pheno_real.mod')
+def test_find_assignment(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
     statements = model.statements
 
     assert str(statements.find_assignment('CL').expression) == 'TVCL*exp(ETA(1))'
@@ -69,8 +68,8 @@ def test_find_assignment(testdata):
     assert str(statements.find_assignment('CL').expression) == 'TVCL + V'
 
 
-def test_eq_assignment(testdata):
-    model = Model.create_model(testdata / 'nonmem' / 'pheno_real.mod')
+def test_eq_assignment(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
     statements = model.statements
     statement_btime = statements[0]
     statement_tad = statements[1]
@@ -79,9 +78,9 @@ def test_eq_assignment(testdata):
     assert statement_btime != statement_tad
 
 
-def test_eq_modelstatements(testdata):
-    model_min = Model.create_model(testdata / 'nonmem' / 'minimal.mod')
-    model_pheno = Model.create_model(testdata / 'nonmem' / 'pheno_real.mod')
+def test_eq_modelstatements(load_model_for_test, testdata):
+    model_min = load_model_for_test(testdata / 'nonmem' / 'minimal.mod')
+    model_pheno = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
 
     assert model_min.statements == model_min.statements
     assert model_pheno.statements == model_pheno.statements
@@ -166,16 +165,16 @@ def test_reassign():
     assert snew == Statements([s1, s2, s3, Assignment(S('KA'), S('F'))])
 
 
-def test_find_compartment(testdata):
-    model = Model.create_model(testdata / 'nonmem' / 'modeling' / 'pheno_advan2.mod')
+def test_find_compartment(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_advan2.mod')
     comp = model.statements.ode_system.find_compartment('CENTRAL')
     assert comp.name == 'CENTRAL'
     comp = model.statements.ode_system.find_compartment('NOTINMODEL')
     assert comp is None
 
 
-def test_output_compartment(testdata):
-    model = Model.create_model(testdata / 'nonmem' / 'pheno.mod')
+def test_output_compartment(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
     cb = CompartmentalSystemBuilder(model.statements.ode_system)
     cb.add_compartment("NEW")
     cm = CompartmentalSystem(cb)
@@ -183,58 +182,58 @@ def test_output_compartment(testdata):
         cm.output_compartment
 
 
-def test_dosing_compartment(testdata):
-    model = Model.create_model(testdata / 'nonmem' / 'pheno.mod')
+def test_dosing_compartment(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
     assert model.statements.ode_system.dosing_compartment.name == 'CENTRAL'
 
 
-def test_central_compartment(testdata):
-    model = Model.create_model(testdata / 'nonmem' / 'modeling' / 'pheno_advan2.mod')
+def test_central_compartment(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_advan2.mod')
     assert model.statements.ode_system.central_compartment.name == 'CENTRAL'
-    model = Model.create_model(testdata / 'nonmem' / 'modeling' / 'pheno_advan5_nodepot.mod')
+    model = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_advan5_nodepot.mod')
     assert model.statements.ode_system.central_compartment.name == 'CENTRAL'
 
 
-def test_find_depot(testdata):
-    model = Model.create_model(testdata / 'nonmem' / 'modeling' / 'pheno_advan2.mod')
+def test_find_depot(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_advan2.mod')
     assert model.statements.ode_system.find_depot(model.statements).name == 'DEPOT'
-    model = Model.create_model(testdata / 'nonmem' / 'modeling' / 'pheno_advan1.mod')
+    model = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_advan1.mod')
     assert model.statements.ode_system.find_depot(model.statements) is None
-    model = Model.create_model(testdata / 'nonmem' / 'modeling' / 'pheno_advan5_depot.mod')
+    model = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_advan5_depot.mod')
     assert model.statements.ode_system.find_depot(model.statements).name == 'DEPOT'
-    model = Model.create_model(testdata / 'nonmem' / 'modeling' / 'pheno_advan5_nodepot.mod')
+    model = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_advan5_nodepot.mod')
     assert model.statements.ode_system.find_depot(model.statements) is None
 
 
-def test_peripheral_compartments(testdata):
-    model = Model.create_model(testdata / 'nonmem' / 'modeling' / 'pheno_advan2.mod')
+def test_peripheral_compartments(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_advan2.mod')
     assert model.statements.ode_system.peripheral_compartments == []
 
 
-def test_find_transit_compartments(testdata):
-    model = Model.create_model(testdata / 'nonmem' / 'modeling' / 'pheno_advan1.mod')
+def test_find_transit_compartments(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_advan1.mod')
     assert model.statements.ode_system.find_transit_compartments(model.statements) == []
-    model = Model.create_model(testdata / 'nonmem' / 'modeling' / 'pheno_advan2.mod')
+    model = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_advan2.mod')
     assert model.statements.ode_system.find_transit_compartments(model.statements) == []
-    model = Model.create_model(testdata / 'nonmem' / 'modeling' / 'pheno_1transit.mod')
+    model = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_1transit.mod')
     transits = model.statements.ode_system.find_transit_compartments(model.statements)
     assert len(transits) == 1
     assert transits[0].name == 'TRANS1'
-    model = Model.create_model(testdata / 'nonmem' / 'modeling' / 'pheno_2transits.mod')
+    model = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_2transits.mod')
     transits = model.statements.ode_system.find_transit_compartments(model.statements)
     assert len(transits) == 2
     assert transits[0].name == 'TRANS1'
     assert transits[1].name == 'TRANS2'
 
 
-def test_before_odes(pheno_path):
-    model = Model.create_model(pheno_path)
+def test_before_odes(load_model_for_test, pheno_path):
+    model = load_model_for_test(pheno_path)
     before_ode = model.statements.before_odes
     assert before_ode[-1].symbol.name == 'S1'
 
 
-def test_full_expression(pheno_path):
-    model = Model.create_model(pheno_path)
+def test_full_expression(load_model_for_test, pheno_path):
+    model = load_model_for_test(pheno_path)
     expr = model.statements.before_odes.full_expression("CL")
     assert expr == sympy.Symbol("THETA(1)") * sympy.Symbol("WGT") * sympy.exp(
         sympy.Symbol("ETA(1)")
@@ -243,8 +242,8 @@ def test_full_expression(pheno_path):
         model.statements.full_expression("Y")
 
 
-def test_to_explicit_ode_system(pheno_path):
-    model = Model.create_model(pheno_path)
+def test_to_explicit_ode_system(load_model_for_test, pheno_path):
+    model = load_model_for_test(pheno_path)
     exodes = model.statements.ode_system.to_explicit_system(skip_output=True)
     odes, ics = exodes.odes, exodes.ics
     assert len(odes) == 1
@@ -289,16 +288,16 @@ def test_repr_html():
     assert type(stats._repr_html_()) == str
 
 
-def test_direct_dependencies(pheno_path):
-    model = Model.create_model(pheno_path)
+def test_direct_dependencies(load_model_for_test, pheno_path):
+    model = load_model_for_test(pheno_path)
     odes = model.statements.ode_system
     deps = model.statements.direct_dependencies(odes)
     assert deps[0].symbol.name == "CL"
     assert deps[1].symbol.name == "V"
 
 
-def test_dependencies(pheno_path):
-    model = Model.create_model(pheno_path)
+def test_dependencies(load_model_for_test, pheno_path):
+    model = load_model_for_test(pheno_path)
     depsy = model.statements.dependencies(S('Y'))
     assert depsy == {
         S('EPS(1)'),
@@ -329,11 +328,6 @@ def test_dependencies(pheno_path):
     }
     with pytest.raises(KeyError):
         model.statements.dependencies("NONEXISTING")
-
-
-def test_compartment_names(testdata):
-    model = Model.create_model(testdata / 'nonmem' / 'pheno.mod')
-    assert model.statements.ode_system.compartment_names == ['CENTRAL', 'OUTPUT']
 
 
 def test_builder():
@@ -377,3 +371,8 @@ def test_infusion_create():
 def test_compartment_repr():
     comp = Compartment("CENTRAL", lag_time='LT')
     assert repr(comp) == "Compartment(CENTRAL, lag_time=LT)"
+
+
+def test_compartment_names(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
+    assert model.statements.ode_system.compartment_names == ['CENTRAL', 'OUTPUT']

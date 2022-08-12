@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from pharmpy.modeling import add_time_after_dose, copy_model, read_model
+from pharmpy.modeling import add_time_after_dose, copy_model
 from pharmpy.utils import TemporaryDirectoryChanger
 from pharmpy.workflows import (
     LocalDirectoryDatabase,
@@ -43,13 +43,13 @@ def test_null_database():
     db.store_local_file("path", 34)
 
 
-def test_store_model(tmp_path, testdata):
+def test_store_model(tmp_path, load_model_for_test, testdata):
     sep = os.path.sep
     with TemporaryDirectoryChanger(tmp_path):
         datadir = testdata / 'nonmem'
         shutil.copy(datadir / 'pheno_real.mod', 'pheno_real.mod')
         shutil.copy(datadir / 'pheno.dta', 'pheno.dta')
-        model = read_model("pheno_real.mod")
+        model = load_model_for_test("pheno_real.mod")
 
         db = LocalModelDirectoryDatabase("database")
         db.store_model(model)

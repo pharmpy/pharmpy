@@ -21,8 +21,8 @@ from pharmpy.tools.frem.tool import check_covariates
 from pharmpy.tools.psn_helpers import create_results
 
 
-def test_check_covariates(testdata):
-    model = Model.create_model(testdata / 'nonmem' / 'pheno_real.mod')
+def test_check_covariates(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
     newcov = check_covariates(model, ['WGT', 'APGR'])
     assert newcov == ['WGT', 'APGR']
     newcov = check_covariates(model, ['APGR', 'WGT'])
@@ -39,16 +39,16 @@ def test_check_covariates(testdata):
 
 
 @pytest.mark.filterwarnings("ignore::UserWarning")
-def test_check_covariates_mult_warns(testdata):
+def test_check_covariates_mult_warns(load_model_for_test, testdata):
     # These are separated because capturing the warnings did not work.
     # Possibly because more than one warning is issued
-    model = Model.create_model(testdata / 'nonmem' / 'pheno_real.mod')
+    model = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
     newcov = check_covariates(model, ['FA1', 'FA2'])
     assert newcov == []
 
 
-def test_parcov_inits(testdata):
-    model = Model.create_model(testdata / 'nonmem' / 'frem' / 'pheno' / 'model_3.mod')
+def test_parcov_inits(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'frem' / 'pheno' / 'model_3.mod')
     params = calculate_parcov_inits(model, 2)
     assert params == approx(
         {
@@ -60,9 +60,9 @@ def test_parcov_inits(testdata):
     )
 
 
-def test_create_model3b(testdata):
-    model3 = Model.create_model(testdata / 'nonmem' / 'frem' / 'pheno' / 'model_3.mod')
-    model1b = Model.create_model(testdata / 'nonmem' / 'pheno_real.mod')
+def test_create_model3b(load_model_for_test, testdata):
+    model3 = load_model_for_test(testdata / 'nonmem' / 'frem' / 'pheno' / 'model_3.mod')
+    model1b = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
     model3b = create_model3b(model1b, model3, 2)
     pset = model3b.parameters
     assert pset['OMEGA(3,1)'].init == approx(0.02560327)
@@ -70,15 +70,15 @@ def test_create_model3b(testdata):
     assert model3b.name == 'model_3b'
 
 
-def test_bipp_covariance(testdata):
-    model = Model.create_model(testdata / 'nonmem' / 'frem' / 'pheno' / 'model_4.mod')
+def test_bipp_covariance(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'frem' / 'pheno' / 'model_4.mod')
     np.random.seed(9532)
     res = calculate_results_using_bipp(model, continuous=['APGR', 'WGT'], categorical=[])
     assert res
 
 
-def test_frem_results_pheno(testdata):
-    model = Model.create_model(testdata / 'nonmem' / 'frem' / 'pheno' / 'model_4.mod')
+def test_frem_results_pheno(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'frem' / 'pheno' / 'model_4.mod')
     rng = np.random.default_rng(39)
     res = calculate_results(model, continuous=['APGR', 'WGT'], categorical=[], samples=10, rng=rng)
 
@@ -251,8 +251,8 @@ V,all,0.14572521381314374,0.11146577839548052,0.16976758171177983
     pd.testing.assert_frame_equal(res.covariate_statistics, correct)
 
 
-def test_frem_results_pheno_categorical(testdata):
-    model = Model.create_model(testdata / 'nonmem' / 'frem' / 'pheno_cat' / 'model_4.mod')
+def test_frem_results_pheno_categorical(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'frem' / 'pheno_cat' / 'model_4.mod')
     rng = np.random.default_rng(8978)
     res = calculate_results(model, continuous=['WGT'], categorical=['APGRX'], samples=10, rng=rng)
 
@@ -424,8 +424,8 @@ V,all,0.1441532460182698,0.1294082747127788,0.16527164471815176
     pd.testing.assert_frame_equal(res.covariate_statistics, correct)
 
 
-def test_get_params(testdata):
-    model_frem = Model.create_model(testdata / 'nonmem' / 'frem' / 'pheno' / 'model_4.mod')
+def test_get_params(load_model_for_test, testdata):
+    model_frem = load_model_for_test(testdata / 'nonmem' / 'frem' / 'pheno' / 'model_4.mod')
     rvs, _ = model_frem.random_variables.etas.distributions()[-1]
     npars = 2
 

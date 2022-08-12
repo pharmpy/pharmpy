@@ -18,8 +18,8 @@ from pharmpy.results import ModelfitResults
         (['ETA(1)'], 'At least two random variables are needed'),
     ],
 )
-def test_incorrect_params(testdata, rvs, exception_msg):
-    model = Model.create_model(
+def test_incorrect_params(load_model_for_test, testdata, rvs, exception_msg):
+    model = load_model_for_test(
         testdata / 'nonmem' / 'modelfit_results' / 'onePROB' / 'multEST' / 'noSIM' / 'withBayes.mod'
     )
 
@@ -27,19 +27,19 @@ def test_incorrect_params(testdata, rvs, exception_msg):
         create_joint_distribution(model, rvs)
 
 
-def test_choose_param_init(pheno_path, testdata):
-    model = Model.create_model(pheno_path)
+def test_choose_param_init(load_model_for_test, pheno_path):
+    model = load_model_for_test(pheno_path)
     params = (model.parameters['OMEGA(1,1)'], model.parameters['OMEGA(2,2)'])
     rvs = RandomVariables(model.random_variables.etas)
     init = _choose_param_init(model, rvs, *params)
     assert init == 0.0118179
 
-    model = Model.create_model(pheno_path)
+    model = load_model_for_test(pheno_path)
     model.modelfit_results = None
     init = _choose_param_init(model, rvs, *params)
     assert init == 0.0031045
 
-    model = Model.create_model(pheno_path)
+    model = load_model_for_test(pheno_path)
     rv_new = RandomVariable.normal('ETA(3)', 'IIV', 0, S('OMEGA(3,3)'))
     rvs.append(rv_new)
     res = model.modelfit_results
@@ -52,7 +52,7 @@ def test_choose_param_init(pheno_path, testdata):
     assert init == 0.0118179
 
     # If one eta doesn't have individual estimates
-    model = Model.create_model(pheno_path)
+    model = load_model_for_test(pheno_path)
     add_iiv(model, 'S1', 'add')
     params = (model.parameters['OMEGA(1,1)'], model.parameters['IIV_S1'])
     rvs = RandomVariables([model.random_variables['ETA(1)'], model.random_variables['ETA_S1']])
@@ -60,7 +60,7 @@ def test_choose_param_init(pheno_path, testdata):
     assert init == 0.0052789
 
     # If the standard deviation in individual estimates of one eta is 0
-    model = Model.create_model(pheno_path)
+    model = load_model_for_test(pheno_path)
     res = model.modelfit_results
     ie = res.individual_estimates
     ie['ETA(1)'] = 0
@@ -107,7 +107,7 @@ $ESTIMATION METHOD=0
     assert init == 0.01
 
 
-def test_names(testdata):
+def test_names():
     model = Model.create_model(
         StringIO(
             '''$PROBLEM PHENOBARB SIMPLE MODEL

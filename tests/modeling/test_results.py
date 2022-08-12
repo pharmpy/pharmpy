@@ -22,8 +22,8 @@ from pharmpy.modeling import (
 from pharmpy.utils import TemporaryDirectoryChanger
 
 
-def test_calculate_eta_shrinkage(testdata):
-    pheno = Model.create_model(testdata / 'nonmem' / 'pheno_real.mod')
+def test_calculate_eta_shrinkage(load_model_for_test, testdata):
+    pheno = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
     shrinkage = calculate_eta_shrinkage(pheno)
     assert len(shrinkage) == 2
     assert pytest.approx(shrinkage['ETA(1)'], 0.0001) == 7.2048e01 / 100
@@ -34,15 +34,15 @@ def test_calculate_eta_shrinkage(testdata):
     assert pytest.approx(shrinkage['ETA(2)'], 0.0001) == 1.2839e01 / 100
 
 
-def test_calculate_individual_shrinkage(testdata):
-    pheno = Model.create_model(testdata / 'nonmem' / 'pheno_real.mod')
+def test_calculate_individual_shrinkage(load_model_for_test, testdata):
+    pheno = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
     ishr = calculate_individual_shrinkage(pheno)
     assert len(ishr) == 59
     assert pytest.approx(ishr['ETA(1)'][1], 1e-15) == 0.84778949807160287
 
 
-def test_calculate_individual_parameter_statistics(testdata):
-    model = Model.create_model(testdata / 'nonmem' / 'secondary_parameters' / 'pheno.mod')
+def test_calculate_individual_parameter_statistics(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'secondary_parameters' / 'pheno.mod')
     rng = np.random.default_rng(103)
     stats = calculate_individual_parameter_statistics(model, 'CL/V', rng=rng)
 
@@ -50,14 +50,14 @@ def test_calculate_individual_parameter_statistics(testdata):
     assert stats['variance'][0] == pytest.approx(8.086653508585209e-06)
     assert stats['stderr'][0] == pytest.approx(0.0035089729730046304, abs=1e-6)
 
-    model = Model.create_model(testdata / 'nonmem' / 'secondary_parameters' / 'run1.mod')
+    model = load_model_for_test(testdata / 'nonmem' / 'secondary_parameters' / 'run1.mod')
     rng = np.random.default_rng(5678)
     stats = calculate_individual_parameter_statistics(model, 'CL/V', rng=rng)
     assert stats['mean'][0] == pytest.approx(0.0049100899539843)
     assert stats['variance'][0] == pytest.approx(7.391076132098555e-07)
     assert stats['stderr'][0] == pytest.approx(0.0009425952783595735, abs=1e-6)
 
-    covmodel = Model.create_model(testdata / 'nonmem' / 'secondary_parameters' / 'run2.mod')
+    covmodel = load_model_for_test(testdata / 'nonmem' / 'secondary_parameters' / 'run2.mod')
     rng = np.random.default_rng(8976)
     stats = calculate_individual_parameter_statistics(covmodel, 'K = CL/V', rng=rng)
     assert stats['mean']['K', 'median'] == pytest.approx(0.004525842355027405)
@@ -71,8 +71,8 @@ def test_calculate_individual_parameter_statistics(testdata):
     assert stats['stderr']['K', 'p95'] == pytest.approx(0.0069971678916412716, abs=1e-6)
 
 
-def test_calculate_pk_parameters_statistics(testdata):
-    model = Model.create_model(testdata / 'nonmem' / 'models' / 'mox1.mod')
+def test_calculate_pk_parameters_statistics(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox1.mod')
     rng = np.random.default_rng(103)
     df = calculate_pk_parameters_statistics(model, rng=rng)
     assert df['mean'].loc['t_max', 'median'] == pytest.approx(1.5999856886869577)
@@ -83,10 +83,10 @@ def test_calculate_pk_parameters_statistics(testdata):
     assert df['stderr'].loc['C_max_dose', 'median'] == pytest.approx(0.11328030491204867)
 
 
-def test_calc_pk_two_comp_bolus(testdata):
+def test_calc_pk_two_comp_bolus(load_model_for_test, testdata):
     # Warning: These results are based on a manually modified cov-matrix
     # Results are not verified
-    model = Model.create_model(testdata / 'nonmem' / 'models' / 'mox_2comp.mod')
+    model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox_2comp.mod')
     rng = np.random.default_rng(103)
     df = calculate_pk_parameters_statistics(model, rng=rng)
     # FIXME: Why doesn't random state handle this difference in stderr?
@@ -105,8 +105,8 @@ k_e,median,13.319584,2.67527,2.633615
     # pd.testing.assert_frame_equal(df, correct, atol=1e-4)
 
 
-def test_summarize_modelfit_results(testdata, pheno_path):
-    pheno = Model.create_model(pheno_path)
+def test_summarize_modelfit_results(load_model_for_test, testdata, pheno_path):
+    pheno = load_model_for_test(pheno_path)
 
     summary_single = summarize_modelfit_results(pheno)
 
@@ -115,7 +115,7 @@ def test_summarize_modelfit_results(testdata, pheno_path):
 
     assert len(summary_single.index) == 1
 
-    mox = Model.create_model(testdata / 'nonmem' / 'models' / 'mox1.mod')
+    mox = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox1.mod')
 
     summary_multiple = summarize_modelfit_results([pheno, mox])
 
@@ -135,7 +135,7 @@ def test_summarize_modelfit_results(testdata, pheno_path):
     assert np.isnan(summary_no_res.loc['pheno_no_res']['ofv'])
     assert np.all(np.isnan(summary_no_res.filter(regex='estimate$').loc['pheno_no_res']))
 
-    pheno_multest = Model.create_model(
+    pheno_multest = load_model_for_test(
         testdata
         / 'nonmem'
         / 'modelfit_results'
@@ -175,9 +175,9 @@ def test_summarize_modelfit_results(testdata, pheno_path):
     assert estimates.isnull().all()
 
 
-def test_summarize_modelfit_results_errors(testdata, tmp_path, pheno_path):
+def test_summarize_modelfit_results_errors(load_model_for_test, testdata, tmp_path, pheno_path):
     with TemporaryDirectoryChanger(tmp_path):
-        model = Model.create_model(pheno_path)
+        model = load_model_for_test(pheno_path)
         shutil.copy2(testdata / 'pheno_data.csv', tmp_path)
 
         error_path = testdata / 'nonmem' / 'errors'
@@ -185,13 +185,13 @@ def test_summarize_modelfit_results_errors(testdata, tmp_path, pheno_path):
         shutil.copy2(testdata / 'nonmem' / 'pheno_real.mod', tmp_path / 'pheno_no_header.mod')
         shutil.copy2(error_path / 'no_header_error.lst', tmp_path / 'pheno_no_header.lst')
         shutil.copy2(testdata / 'nonmem' / 'pheno_real.ext', tmp_path / 'pheno_no_header.ext')
-        model_no_header = Model.create_model('pheno_no_header.mod')
+        model_no_header = load_model_for_test('pheno_no_header.mod')
         model_no_header.datainfo = model_no_header.datainfo.derive(path=tmp_path / 'pheno_data.csv')
 
         shutil.copy2(testdata / 'nonmem' / 'pheno_real.mod', tmp_path / 'pheno_rounding_error.mod')
         shutil.copy2(error_path / 'rounding_error.lst', tmp_path / 'pheno_rounding_error.lst')
         shutil.copy2(testdata / 'nonmem' / 'pheno_real.ext', tmp_path / 'pheno_rounding_error.ext')
-        model_rounding_error = Model.create_model('pheno_rounding_error.mod')
+        model_rounding_error = load_model_for_test('pheno_rounding_error.mod')
         model_rounding_error.datainfo = model_rounding_error.datainfo.derive(
             path=tmp_path / 'pheno_data.csv'
         )
@@ -207,9 +207,9 @@ def test_summarize_modelfit_results_errors(testdata, tmp_path, pheno_path):
         assert summary.loc['pheno_rounding_error']['warnings_found'] == 0
 
 
-def test_summarize_errors(testdata, tmp_path, pheno_path):
+def test_summarize_errors(load_model_for_test, testdata, tmp_path, pheno_path):
     with TemporaryDirectoryChanger(tmp_path):
-        model = Model.create_model(pheno_path)
+        model = load_model_for_test(pheno_path)
         shutil.copy2(testdata / 'pheno_data.csv', tmp_path)
 
         error_path = testdata / 'nonmem' / 'errors'
@@ -217,13 +217,13 @@ def test_summarize_errors(testdata, tmp_path, pheno_path):
         shutil.copy2(testdata / 'nonmem' / 'pheno_real.mod', tmp_path / 'pheno_no_header.mod')
         shutil.copy2(error_path / 'no_header_error.lst', tmp_path / 'pheno_no_header.lst')
         shutil.copy2(testdata / 'nonmem' / 'pheno_real.ext', tmp_path / 'pheno_no_header.ext')
-        model_no_header = Model.create_model('pheno_no_header.mod')
+        model_no_header = load_model_for_test('pheno_no_header.mod')
         model_no_header.datainfo = model_no_header.datainfo.derive(path=tmp_path / 'pheno_data.csv')
 
         shutil.copy2(testdata / 'nonmem' / 'pheno_real.mod', tmp_path / 'pheno_rounding_error.mod')
         shutil.copy2(error_path / 'rounding_error.lst', tmp_path / 'pheno_rounding_error.lst')
         shutil.copy2(testdata / 'nonmem' / 'pheno_real.ext', tmp_path / 'pheno_rounding_error.ext')
-        model_rounding_error = Model.create_model('pheno_rounding_error.mod')
+        model_rounding_error = load_model_for_test('pheno_rounding_error.mod')
         model_rounding_error.datainfo = model_rounding_error.datainfo.derive(
             path=tmp_path / 'pheno_data.csv'
         )
@@ -300,13 +300,13 @@ def test_rank_models():
     assert np.isnan(df.loc['m5']['rank'])
 
 
-def test_aic(testdata):
-    model = Model.create_model(testdata / 'nonmem' / 'pheno.mod')
+def test_aic(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
     assert calculate_aic(model) == 740.8947268137307
 
 
-def test_bic(testdata):
-    model = Model.create_model(testdata / 'nonmem' / 'pheno.mod')
+def test_bic(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
     assert calculate_bic(model, type='iiv') == 739.0498017015422
     assert calculate_bic(model, type='fixed') == 756.111852398327
     assert calculate_bic(model, type='random') == 751.2824140332593
@@ -315,9 +315,9 @@ def test_bic(testdata):
     assert calculate_bic(model) == 755.359951477165
 
 
-def test_check_parameters_near_bounds(testdata):
+def test_check_parameters_near_bounds(load_model_for_test, testdata):
     onePROB = testdata / 'nonmem' / 'modelfit_results' / 'onePROB'
-    nearbound = Model.create_model(onePROB / 'oneEST' / 'noSIM' / 'near_bounds.mod')
+    nearbound = load_model_for_test(onePROB / 'oneEST' / 'noSIM' / 'near_bounds.mod')
     correct = pd.Series(
         [False, True, False, False, False, False, False, False, True, True, False],
         index=[

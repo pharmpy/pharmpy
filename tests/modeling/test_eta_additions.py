@@ -4,7 +4,7 @@ import pytest
 import sympy
 from sympy import Symbol as S
 
-from pharmpy.modeling import add_iov, read_model, remove_iov
+from pharmpy.modeling import add_iov, remove_iov
 from pharmpy.modeling.eta_additions import EtaAddition
 
 
@@ -32,13 +32,13 @@ def test_apply(addition, expression):
         ('ETA_IOV_3_1', 'ETA_IOV_2_1'),
     ],
 )
-def test_regression_code_record(testdata, eta_iov_1, eta_iov_2):
+def test_regression_code_record(load_model_for_test, testdata, eta_iov_1, eta_iov_2):
     """This is a regression test for NONMEM CodeRecord statements property round-trip
     serialization.
     See https://github.com/pharmpy/pharmpy/pull/771
     """
 
-    model_no_iov = read_model(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    model_no_iov = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
     model = model_no_iov.copy()
     add_iov(model, occ="VISI")
     model.model_code  # this triggers AST update

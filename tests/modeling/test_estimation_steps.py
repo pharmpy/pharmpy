@@ -45,13 +45,13 @@ from pharmpy.modeling import (
         ),
     ],
 )
-def test_set_estimation_step(testdata, method, kwargs, code_ref):
-    model = Model.create_model(testdata / 'nonmem' / 'minimal.mod')
+def test_set_estimation_step(testdata, load_model_for_test, method, kwargs, code_ref):
+    model = load_model_for_test(testdata / 'nonmem' / 'minimal.mod')
     set_estimation_step(model, method, **kwargs)
     assert generate_model_code(model).split('\n')[-2] == code_ref
 
 
-def test_set_estimation_step_est_middle(testdata):
+def test_set_estimation_step_est_middle():
     model = Model.create_model(
         StringIO(
             '''$PROBLEM base model
@@ -72,37 +72,37 @@ $SIGMA 1
     assert '$ESTIMATION METHOD=COND INTER MAXEVAL=999999\n$COVARIANCE' in model.model_code
 
 
-def test_add_estimation_step(testdata):
-    model = Model.create_model(testdata / 'nonmem' / 'minimal.mod')
+def test_add_estimation_step(testdata, load_model_for_test):
+    model = load_model_for_test(testdata / 'nonmem' / 'minimal.mod')
     assert len(model.estimation_steps) == 1
     add_estimation_step(model, 'fo')
     assert len(model.estimation_steps) == 2
     assert generate_model_code(model).split('\n')[-2] == '$ESTIMATION METHOD=ZERO'
 
-    model = Model.create_model(testdata / 'nonmem' / 'minimal.mod')
+    model = load_model_for_test(testdata / 'nonmem' / 'minimal.mod')
     assert len(model.estimation_steps) == 1
     add_estimation_step(model, 'fo', evaluation=True)
     assert len(model.estimation_steps) == 2
     assert generate_model_code(model).split('\n')[-2] == '$ESTIMATION METHOD=ZERO MAXEVAL=0'
 
 
-def test_add_estimation_step_non_int(testdata):
-    model = Model.create_model(testdata / 'nonmem' / 'minimal.mod')
+def test_add_estimation_step_non_int(testdata, load_model_for_test):
+    model = load_model_for_test(testdata / 'nonmem' / 'minimal.mod')
     add_estimation_step(model, 'fo', idx=1.0)
     with pytest.raises(TypeError, match='Index must be integer'):
         add_estimation_step(model, 'fo', idx=1.5)
 
 
-def test_remove_estimation_step(testdata):
-    model = Model.create_model(testdata / 'nonmem' / 'minimal.mod')
+def test_remove_estimation_step(testdata, load_model_for_test):
+    model = load_model_for_test(testdata / 'nonmem' / 'minimal.mod')
     assert len(model.estimation_steps) == 1
     remove_estimation_step(model, 0)
     assert not model.estimation_steps
     assert generate_model_code(model).split('\n')[-2] == '$SIGMA 1'
 
 
-def test_add_covariance_step(testdata):
-    model = Model.create_model(testdata / 'nonmem' / 'minimal.mod')
+def test_add_covariance_step(testdata, load_model_for_test):
+    model = load_model_for_test(testdata / 'nonmem' / 'minimal.mod')
     assert len(model.estimation_steps) == 1
     add_covariance_step(model)
     print(model.model_code)
@@ -110,8 +110,8 @@ def test_add_covariance_step(testdata):
     assert generate_model_code(model).split('\n')[-2] == '$COVARIANCE'
 
 
-def test_remove_covariance_step(testdata):
-    model = Model.create_model(testdata / 'nonmem' / 'minimal.mod')
+def test_remove_covariance_step(testdata, load_model_for_test):
+    model = load_model_for_test(testdata / 'nonmem' / 'minimal.mod')
     add_covariance_step(model)
     assert generate_model_code(model).split('\n')[-2] == '$COVARIANCE'
     remove_covariance_step(model)
@@ -121,8 +121,8 @@ def test_remove_covariance_step(testdata):
     )
 
 
-def test_append_estimation_step_options(testdata):
-    model = Model.create_model(testdata / 'nonmem' / 'minimal.mod')
+def test_append_estimation_step_options(testdata, load_model_for_test):
+    model = load_model_for_test(testdata / 'nonmem' / 'minimal.mod')
     assert len(model.estimation_steps) == 1
     append_estimation_step_options(model, {'SADDLE_RESET': 1}, 0)
     assert (
@@ -131,7 +131,7 @@ def test_append_estimation_step_options(testdata):
     )
 
 
-def test_set_evaluation_step(testdata):
+def test_set_evaluation_step():
     model = Model.create_model(
         StringIO(
             '''$PROBLEM base model

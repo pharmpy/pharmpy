@@ -189,8 +189,8 @@ def test_pheno(pheno, advan, trans, compmat, amounts, strodes, corrics):
     assert ics == corrics
 
 
-def test_advan5(testdata):
-    model = Model.create_model(testdata / 'nonmem' / 'DDMODEL00000130')
+def test_advan5(testdata, load_model_for_test):
+    model = load_model_for_test(testdata / 'nonmem' / 'DDMODEL00000130')
     cm, ass = compartmental_model(model, 'ADVAN5', 'TRANS1')
     assert ass.symbol == S('F')
     assert ass.expression == S('A_CMS1')

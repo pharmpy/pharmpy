@@ -4,16 +4,15 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from pharmpy import Model
 from pharmpy.results import read_results
 from pharmpy.tools.qa.results import calculate_results, psn_qa_results
 from pharmpy.tools.ruvsearch.results import psn_resmod_results
 
 
-def test_add_etas(testdata):
-    orig = Model.create_model(testdata / 'nonmem' / 'pheno.mod')
-    base = Model.create_model(testdata / 'nonmem' / 'qa' / 'pheno_linbase.mod')
-    add_etas = Model.create_model(testdata / 'nonmem' / 'qa' / 'add_etas_linbase.mod')
+def test_add_etas(load_model_for_test, testdata):
+    orig = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
+    base = load_model_for_test(testdata / 'nonmem' / 'qa' / 'pheno_linbase.mod')
+    add_etas = load_model_for_test(testdata / 'nonmem' / 'qa' / 'add_etas_linbase.mod')
     res = calculate_results(orig, base, add_etas_model=add_etas, etas_added_to=['CL', 'V'])
     correct = """added,new_sd,orig_sd
 ETA(1),True,0.338974,0.333246
@@ -30,10 +29,10 @@ V,False,0.010000,NaN
     assert res.dofv['df']['parameter_variability', 'add_etas', np.nan] == 2
 
 
-def test_fullblock(testdata):
-    orig = Model.create_model(testdata / 'nonmem' / 'pheno.mod')
-    base = Model.create_model(testdata / 'nonmem' / 'qa' / 'pheno_linbase.mod')
-    fb = Model.create_model(testdata / 'nonmem' / 'qa' / 'fullblock.mod')
+def test_fullblock(load_model_for_test, testdata):
+    orig = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
+    base = load_model_for_test(testdata / 'nonmem' / 'qa' / 'pheno_linbase.mod')
+    fb = load_model_for_test(testdata / 'nonmem' / 'qa' / 'fullblock.mod')
     res = calculate_results(orig, base, fullblock_model=fb)
     correct = """,new,old
 "OMEGA(1,1)",0.486600,0.333246
@@ -52,10 +51,10 @@ def test_fullblock(testdata):
     assert res.fullblock_parameters is None
 
 
-def test_boxcox(testdata):
-    orig = Model.create_model(testdata / 'nonmem' / 'pheno.mod')
-    base = Model.create_model(testdata / 'nonmem' / 'qa' / 'pheno_linbase.mod')
-    bc = Model.create_model(testdata / 'nonmem' / 'qa' / 'boxcox.mod')
+def test_boxcox(load_model_for_test, testdata):
+    orig = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
+    base = load_model_for_test(testdata / 'nonmem' / 'qa' / 'pheno_linbase.mod')
+    bc = load_model_for_test(testdata / 'nonmem' / 'qa' / 'boxcox.mod')
     res = calculate_results(orig, base, boxcox_model=bc)
     correct = """lambda,new_sd,old_sd
 ETA(1),-1.581460,0.296257,0.333246
@@ -73,10 +72,10 @@ ETA(2),0.645817,0.429369,0.448917
     assert res.boxcox_parameters is None
 
 
-def test_tdist(testdata):
-    orig = Model.create_model(testdata / 'nonmem' / 'pheno.mod')
-    base = Model.create_model(testdata / 'nonmem' / 'qa' / 'pheno_linbase.mod')
-    td = Model.create_model(testdata / 'nonmem' / 'qa' / 'tdist.mod')
+def test_tdist(load_model_for_test, testdata):
+    orig = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
+    base = load_model_for_test(testdata / 'nonmem' / 'qa' / 'pheno_linbase.mod')
+    td = load_model_for_test(testdata / 'nonmem' / 'qa' / 'tdist.mod')
     res = calculate_results(orig, base, tdist_model=td)
     correct = """df,new_sd,old_sd
 ETA(1),3.77,0.344951,0.333246
@@ -93,10 +92,10 @@ ETA(2),3.77,0.400863,0.448917
     res = calculate_results(orig, base, tdist_model=None)
 
 
-def test_iov(testdata):
-    orig = Model.create_model(testdata / 'nonmem' / 'pheno.mod')
-    base = Model.create_model(testdata / 'nonmem' / 'qa' / 'pheno_linbase.mod')
-    iov = Model.create_model(testdata / 'nonmem' / 'qa' / 'iov.mod')
+def test_iov(load_model_for_test, testdata):
+    orig = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
+    base = load_model_for_test(testdata / 'nonmem' / 'qa' / 'pheno_linbase.mod')
+    iov = load_model_for_test(testdata / 'nonmem' / 'qa' / 'iov.mod')
     res = calculate_results(orig, base, iov_model=iov)
     correct = """new_iiv_sd,orig_iiv_sd,iov_sd
 ETA(1),0.259560,0.333246,0.555607
@@ -109,9 +108,9 @@ ETA(2),0.071481,0.448917,0.400451
     assert res.dofv['df']['parameter_variability', 'iov', np.nan] == 2
 
 
-def test_scm(testdata):
-    orig = Model.create_model(testdata / 'nonmem' / 'pheno.mod')
-    base = Model.create_model(testdata / 'nonmem' / 'qa' / 'pheno_linbase.mod')
+def test_scm(load_model_for_test, testdata):
+    orig = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
+    base = load_model_for_test(testdata / 'nonmem' / 'qa' / 'pheno_linbase.mod')
     scm_res = read_results(testdata / 'nonmem' / 'qa' / 'scm_results.json')
     res = calculate_results(orig, base, scm_results=scm_res)
     correct = """,,dofv,coeff
@@ -127,9 +126,9 @@ ETA(2),WGT,0.00887,-0.003273
     assert res.dofv['df']['covariates', 'ET1APGR-2', np.nan] == 1
 
 
-def test_resmod(testdata):
-    orig = Model.create_model(testdata / 'nonmem' / 'pheno.mod')
-    base = Model.create_model(testdata / 'nonmem' / 'qa' / 'pheno_linbase.mod')
+def test_resmod(load_model_for_test, testdata):
+    orig = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
+    base = load_model_for_test(testdata / 'nonmem' / 'qa' / 'pheno_linbase.mod')
     resmod_res = read_results(testdata / 'nonmem' / 'qa' / 'resmod_results.json')
     res = calculate_results(orig, base, resmod_idv_results=resmod_res)
     assert list(res.residual_error['additional_parameters']) == [2, 2, 1, 1, 1, 1]
@@ -145,9 +144,9 @@ def test_resmod(testdata):
     assert res.dofv['dofv']['residual_error_model', 'dtbs', 1] == pytest.approx(13.91)
 
 
-def test_resmod_dvid(testdata):
-    orig = Model.create_model(testdata / 'nonmem' / 'pheno.mod')
-    base = Model.create_model(testdata / 'nonmem' / 'qa' / 'pheno_linbase.mod')
+def test_resmod_dvid(load_model_for_test, testdata):
+    orig = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
+    base = load_model_for_test(testdata / 'nonmem' / 'qa' / 'pheno_linbase.mod')
     resmod_res = psn_resmod_results(testdata / 'psn' / 'resmod_dir2')
     res = calculate_results(orig, base, resmod_idv_results=resmod_res)
     assert res.residual_error.loc[("4", "tdist"), 'dOFV'] == 2.41
@@ -192,9 +191,9 @@ PRED,1,10,36.34,54.00,-0.47,9
     pd.testing.assert_frame_equal(res.structural_bias, correct, atol=1e-6)
 
 
-def test_simeval(testdata):
-    orig = Model.create_model(testdata / 'nonmem' / 'pheno.mod')
-    base = Model.create_model(testdata / 'nonmem' / 'qa' / 'pheno_linbase.mod')
+def test_simeval(load_model_for_test, testdata):
+    orig = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
+    base = load_model_for_test(testdata / 'nonmem' / 'qa' / 'pheno_linbase.mod')
     simeval_res = read_results(testdata / 'nonmem' / 'qa' / 'simeval_results.json')
     cdd_res = read_results(testdata / 'nonmem' / 'qa' / 'cdd_results.json')
     calculate_results(orig, base, simeval_results=simeval_res, cdd_results=cdd_res)

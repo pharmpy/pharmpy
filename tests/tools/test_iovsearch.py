@@ -1,13 +1,12 @@
 from sympy import Symbol as S
 
-from pharmpy import Model
 from pharmpy.modeling import add_iov, remove_iov
 from pharmpy.tools.iovsearch.tool import _get_iiv_etas_with_corresponding_iov
 
 
-def test_iovsearch_github_issues_976(testdata):
+def test_iovsearch_github_issues_976(load_model_for_test, testdata):
 
-    m = Model.create_model(testdata / 'nonmem' / 'pheno_multivariate_piecewise.mod')
+    m = load_model_for_test(testdata / 'nonmem' / 'pheno_multivariate_piecewise.mod')
     assert not m.random_variables.iov
     assert set(_get_iiv_etas_with_corresponding_iov(m)) == set()
 

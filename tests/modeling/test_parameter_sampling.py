@@ -2,7 +2,6 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from pharmpy import Model
 from pharmpy.modeling import (
     create_rng,
     load_example_model,
@@ -27,8 +26,8 @@ def test_sample_parameters_uniformly():
     assert df['THETA(1)'][0] == 0.004877674495376137
 
 
-def test_sample_parameter_from_covariance_matrix(testdata):
-    model = Model.create_model(testdata / 'nonmem' / 'pheno_real.mod')
+def test_sample_parameter_from_covariance_matrix(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
     rng = np.random.default_rng(318)
     samples = sample_parameters_from_covariance_matrix(model, n=3, rng=rng)
     correct = pd.DataFrame(
@@ -48,8 +47,8 @@ def test_sample_parameter_from_covariance_matrix(testdata):
         sample_parameters_from_covariance_matrix(model, n=1, force_posdef_covmatrix=True)
 
 
-def test_sample_individual_estimates(testdata):
-    model = Model.create_model(testdata / 'nonmem' / 'pheno_real.mod')
+def test_sample_individual_estimates(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
     rng = np.random.default_rng(86)
     samples = sample_individual_estimates(model, rng=rng)
     assert len(samples) == 59 * 100

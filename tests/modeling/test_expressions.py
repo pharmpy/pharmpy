@@ -23,7 +23,6 @@ from pharmpy.modeling import (
     has_random_effect,
     make_declarative,
     mu_reference_model,
-    read_model,
     read_model_from_string,
     simplify_expression,
     solve_ode_system,
@@ -34,8 +33,8 @@ def s(x):
     return sympy.Symbol(x)
 
 
-def test_get_observation_expression(testdata):
-    model = Model.create_model(testdata / 'nonmem' / 'pheno_real_linbase.mod')
+def test_get_observation_expression(testdata, load_model_for_test):
+    model = load_model_for_test(testdata / 'nonmem' / 'pheno_real_linbase.mod')
     expr = get_observation_expression(model)
     assert expr == s('D_EPSETA1_2') * s('EPS(1)') * (s('ETA(2)') - s('OETA2')) + s('D_ETA1') * (
         s('ETA(1)') - s('OETA1')
@@ -46,28 +45,28 @@ def test_get_observation_expression(testdata):
     )
 
 
-def test_get_individual_prediction_expression(testdata):
-    model = Model.create_model(testdata / 'nonmem' / 'pheno_real_linbase.mod')
+def test_get_individual_prediction_expression(testdata, load_model_for_test):
+    model = load_model_for_test(testdata / 'nonmem' / 'pheno_real_linbase.mod')
     expr = get_individual_prediction_expression(model)
     assert expr == s('D_ETA1') * (s('ETA(1)') - s('OETA1')) + s('D_ETA2') * (
         s('ETA(2)') - s('OETA2')
     ) + s('OPRED')
 
 
-def test_get_population_prediction_expression(testdata):
-    model = Model.create_model(testdata / 'nonmem' / 'pheno_real_linbase.mod')
+def test_get_population_prediction_expression(testdata, load_model_for_test):
+    model = load_model_for_test(testdata / 'nonmem' / 'pheno_real_linbase.mod')
     expr = get_population_prediction_expression(model)
     assert expr == -s('D_ETA1') * s('OETA1') - s('D_ETA2') * s('OETA2') + s('OPRED')
 
 
-def test_calculate_eta_gradient_expression(testdata):
-    model = Model.create_model(testdata / 'nonmem' / 'pheno_real_linbase.mod')
+def test_calculate_eta_gradient_expression(testdata, load_model_for_test):
+    model = load_model_for_test(testdata / 'nonmem' / 'pheno_real_linbase.mod')
     expr = calculate_eta_gradient_expression(model)
     assert expr == [s('D_ETA1'), s('D_ETA2')]
 
 
-def test_calculate_epsilon_gradient_expression(testdata):
-    model = Model.create_model(testdata / 'nonmem' / 'pheno_real_linbase.mod')
+def test_calculate_epsilon_gradient_expression(testdata, load_model_for_test):
+    model = load_model_for_test(testdata / 'nonmem' / 'pheno_real_linbase.mod')
     expr = calculate_epsilon_gradient_expression(model)
     assert expr == [
         s('D_EPS1')
@@ -76,7 +75,7 @@ def test_calculate_epsilon_gradient_expression(testdata):
     ]
 
 
-def test_mu_reference_model_full(testdata):
+def test_mu_reference_model_full():
     code = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
@@ -155,7 +154,7 @@ $ESTIMATION METHOD=1 INTERACTION
         ),
     ],
 )
-def test_mu_reference_model_generic(testdata, statements, correct):
+def test_mu_reference_model_generic(statements, correct):
     model = Model()
     model.statements = Statements(statements)
     eta1 = RandomVariable.normal('ETA(1)', 'iiv', 0, s('omega1'))
@@ -327,8 +326,8 @@ def test_greekify_model(pheno):
     ),
     ids=repr,
 )
-def test_get_pk_parameters(testdata, model_path, kind, expected):
-    model = read_model(testdata / model_path)
+def test_get_pk_parameters(load_model_for_test, testdata, model_path, kind, expected):
+    model = load_model_for_test(testdata / model_path)
     assert set(get_pk_parameters(model, kind)) == set(expected)
 
 
@@ -380,8 +379,8 @@ def test_get_pk_parameters(testdata, model_path, kind, expected):
     ),
     ids=repr,
 )
-def test_get_individual_parameters(testdata, model_path, level, expected):
-    model = read_model(testdata / model_path)
+def test_get_individual_parameters(load_model_for_test, testdata, model_path, level, expected):
+    model = load_model_for_test(testdata / model_path)
     assert set(get_individual_parameters(model, level)) == set(expected)
 
 
@@ -433,8 +432,8 @@ def test_get_individual_parameters(testdata, model_path, level, expected):
     ),
     ids=repr,
 )
-def test_has_random_effect(testdata, model_path, level, expected):
-    model = read_model(testdata / model_path)
+def test_has_random_effect(load_model_for_test, testdata, model_path, level, expected):
+    model = load_model_for_test(testdata / model_path)
     params_with_random_effect = set(expected)
     for param in get_pk_parameters(model):
         if param in params_with_random_effect:
