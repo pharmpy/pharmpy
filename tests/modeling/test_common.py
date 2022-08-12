@@ -1,3 +1,4 @@
+import os.path
 from pathlib import Path
 
 import pytest
@@ -20,11 +21,28 @@ from pharmpy.modeling import (
 )
 
 
-def test_read_model(testdata):
-    model = read_model(testdata / 'nonmem' / 'minimal.mod')
+def test_read_model_path(testdata):
+    path = testdata / 'nonmem' / 'minimal.mod'
+    model = read_model(path)
     assert model.parameters['THETA(1)'].init == 0.1
-    model2 = read_model(str(testdata / 'nonmem' / 'minimal.mod'))
-    assert model2.parameters['THETA(1)'].init == 0.1
+
+
+def test_read_model_str(testdata):
+    path = str(testdata / 'nonmem' / 'minimal.mod')
+    model = read_model(path)
+    assert model.parameters['THETA(1)'].init == 0.1
+
+
+def test_read_model_expanduser(testdata):
+    model_path = testdata / "nonmem" / "minimal.mod"
+    model_path_relative_to_home = ''
+    try:
+        model_path_relative_to_home = model_path.relative_to(Path.home())
+    except ValueError:
+        pytest.skip(f'{model_path} is not a descendant of home directory ({Path.home()})')
+    path = os.path.join('~', model_path_relative_to_home)
+    model = read_model(path)
+    assert model.parameters['THETA(1)'].init == 0.1
 
 
 def test_read_model_from_string(testdata):
