@@ -21,7 +21,7 @@ from pharmpy.modeling import (
     create_joint_distribution,
     set_first_order_absorption,
     set_initial_estimates,
-    set_proportional_error_model,
+    set_proportional_error_model, add_iiv,
 )
 from pharmpy.modeling.data import read_dataset_from_datainfo
 from pharmpy.plugins.nonmem.advan import dosing
@@ -88,6 +88,7 @@ def create_start_model(dataset_path, modeltype='pk_oral', cl_init=0.01, vc_init=
     if modeltype == 'pk_oral':
         set_first_order_absorption(model)
         set_initial_estimates(model, {'POP_MAT': mat_init})
+        add_iiv(model, list_of_parameters='MAT', expression='exp', initial_estimate=0.1)
     return model
 
 

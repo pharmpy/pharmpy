@@ -18,7 +18,7 @@ def test_amd(tmp_path, testdata):
             search_space='PERIPHERALS(1)',
             occasion='VISI',
         )
-        assert len(res.summary_tool) == 58
-        assert len(res.summary_models) == 60
-        assert len(res.summary_individuals_count) == 60
-        assert res.final_model.name == 'scaled_model'
+        assert len(res.summary_tool) == 90
+        assert len(res.summary_models) == 92
+        assert len(res.summary_individuals_count) == 92
+        assert res.final_model.name == 'scaled_model+8'
