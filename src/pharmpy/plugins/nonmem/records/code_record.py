@@ -426,8 +426,8 @@ def diff(old: Sequence, new: Sequence):
     for op, val in lcsdiff(c, rold, rnew, len(rold) - 1, len(rnew) - 1):
         yield op, val
 
-    for pair in reversed(saved):
-        yield pair
+    while saved:
+        yield saved.pop()
 
 
 def _index_statements_diff(
