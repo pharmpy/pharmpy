@@ -69,7 +69,7 @@ def summarize_tool(
 ) -> pd.DataFrame:
     models_all = [start_model] + models
 
-    df_rank, _ = rank_models(
+    df_rank = rank_models(
         start_model, models, strictness=[], rank_type=rank_type, cutoff=cutoff, bic_type=bic_type
     )
 
