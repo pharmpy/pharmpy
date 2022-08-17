@@ -3,6 +3,7 @@ from __future__ import annotations
 import copy
 from abc import ABC, ABCMeta, abstractmethod
 from collections.abc import Sequence
+from typing import Set, Tuple, Union
 
 import pharmpy.unicode as unicode
 from pharmpy.deps import networkx as nx
@@ -39,7 +40,7 @@ class Statement(ABC):
 
     @property
     @abstractmethod
-    def free_symbols(self):
+    def free_symbols(self) -> Set[sympy.Symbol]:
         pass
 
     @property
@@ -1678,7 +1679,7 @@ class Statements(Sequence):
         A list of Statement or another Statements to populate this object
     """
 
-    def __init__(self, statements=None):
+    def __init__(self, statements: Union[None, Statements, Tuple[Statement, ...]] = None):
         if isinstance(statements, Statements):
             self._statements = statements._statements
         elif statements is None:
