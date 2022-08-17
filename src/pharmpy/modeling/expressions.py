@@ -1009,6 +1009,10 @@ def _is_constant(thetas: Set[sympy.Symbol], expr: sympy.Expr) -> bool:
     return all(map(lambda s: s in thetas, expr.free_symbols))
 
 
+def _is_univariate(thetas: Set[sympy.Symbol], expr: sympy.Expr, variable: sympy.Symbol) -> bool:
+    return all(map(lambda s: s in thetas, expr.free_symbols - {variable}))
+
+
 def simplify_model(
     model: Model, old_statements: Iterable[Statement], statements: Iterable[Statement]
 ):
@@ -1047,6 +1051,15 @@ class ExpressionTreeNode:
     changed: bool
     constant: bool
     contains_theta: bool
+
+
+def _full_expression(assignments: Dict[sympy.Symbol, AssignmentGraphNode], expr: sympy.Expr):
+    return expr.xreplace(
+        {
+            symbol: _full_expression(node.previous, node.expression)
+            for symbol, node in assignments.items()
+        }
+    )
 
 
 def _remove_covariate_effect_from_statements_recursive(
@@ -1091,11 +1104,18 @@ def _remove_covariate_effect_from_statements_recursive(
     if isinstance(expression, sympy.Piecewise):
         if any(map(lambda t: covariate in t[1].free_symbols, expression.args)):
             # NOTE At least on condition depends on the covariate
-            try:
+            if all(
+                map(
+                    lambda t: _is_univariate(
+                        thetas, _full_expression(assignments, t[1]), covariate
+                    ),
+                    expression.args,
+                )
+            ):
                 # NOTE If expression is piecewise univariate and condition depends on
                 # covariate, return simplest expression from cases
                 expr = min(
-                    (p[0] for p in expression.as_expr_set_pairs()),
+                    (t[0] for t in expression.args),
                     key=sympy.count_ops,
                 )
                 tree_node = _remove_covariate_effect_from_statements_recursive(
@@ -1104,10 +1124,10 @@ def _remove_covariate_effect_from_statements_recursive(
                 return ExpressionTreeNode(
                     tree_node.expression, True, tree_node.constant, tree_node.contains_theta
                 )
-            except (ValueError, NotImplementedError) as e:
-                # NOTE These exceptions are raised by multivariate Piecewise
-                # statements which we do not handle at the moment.
-                raise NotImplementedError(e)
+            else:
+                raise NotImplementedError(
+                    'Cannot handle multivariate Piecewise where condition depends on covariate.'
+                )
 
     children = list(
         map(
