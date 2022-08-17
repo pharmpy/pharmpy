@@ -251,6 +251,9 @@ def test_remove_covariate_effect(testdata, model_path, effects, expected):
     for effect in effects:
         remove_covariate_effect(model, *effect)
 
+    for effect in effects:
+        assert not has_covariate_effect(model, effect[0], effect[1])
+
     model.update_source()
     error_record_after = ''.join(map(str, model.internals.control_stream.get_records('ERROR')))
 
@@ -263,9 +266,3 @@ def test_remove_covariate_effect(testdata, model_path, effects, expected):
         == expected
     )
     assert error_record_after == error_record_before
-
-    for effect in effects:
-        assert not has_covariate_effect(model, effect[0], effect[1])
-
-    for effect in effects:
-        assert f'POP_{effect[0]}{effect[1]}' not in model.model_code

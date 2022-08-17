@@ -3,7 +3,7 @@ import re
 import numpy as np
 import pytest
 
-from pharmpy.modeling import add_covariate_effect, has_covariate_effect
+from pharmpy.modeling import add_covariate_effect, has_covariate_effect, remove_covariate_effect
 
 from ..lib import diff
 
@@ -268,7 +268,7 @@ def test_nested_add_covariate_effect(load_model_for_test, testdata):
             '+VWT = EXP(THETA(4)*(WT - WT_MEDIAN))\n'
             '+VAGE = EXP(THETA(5)*(AGE - AGE_MEDIAN))\n'
             '+V = V*VAGE*VWT\n',
-            True,
+            False,
         ),
         (
             ('nonmem', 'models', 'mox2.mod'),
@@ -286,7 +286,7 @@ def test_nested_add_covariate_effect(load_model_for_test, testdata):
             '+VAGE = EXP(THETA(5)*(AGE - AGE_MEDIAN))\n'
             '+VCLCR = EXP(THETA(6)*(CLCR - CLCR_MEDIAN))\n'
             '+V = V*VAGE*VCLCR*VWT\n',
-            True,
+            False,
         ),
         (
             ('nonmem', 'models', 'mox2.mod'),
@@ -302,7 +302,7 @@ def test_nested_add_covariate_effect(load_model_for_test, testdata):
             '@@ -6,0 +10,2 @@\n'
             '+VCLCR = EXP(THETA(5)*(CLCR - CLCR_MEDIAN))\n'
             '+V = V*VCLCR\n',
-            True,
+            False,
         ),
         (
             ('nonmem', 'models', 'mox2.mod'),
@@ -318,7 +318,7 @@ def test_nested_add_covariate_effect(load_model_for_test, testdata):
             '@@ -6,0 +10,2 @@\n'
             '+VCLCR = EXP(THETA(4)*(CLCR - CLCR_MEDIAN))\n'
             '+V = V*VCLCR\n',
-            True,
+            False,
         ),
         (
             ('nonmem', 'models', 'mox2.mod'),
@@ -411,3 +411,20 @@ def test_add_covariate_effect(
 
     for effect in effects:
         assert f'POP_{effect[0]}{effect[1]}' in model.model_code
+
+    if not allow_nested:
+
+        for effect in effects:
+            remove_covariate_effect(model, effect[0], effect[1])
+
+        for effect in effects:
+            assert not has_covariate_effect(model, effect[0], effect[1])
+
+        model.update_source()
+        assert (
+            diff(
+                original_model.internals.control_stream.get_pred_pk_record(),
+                model.internals.control_stream.get_pred_pk_record(),
+            )
+            == ''
+        )

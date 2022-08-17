@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import re
+from dataclasses import dataclass
 from itertools import filterfalse
 from typing import Callable, Dict, Iterable, List, Sequence, Set, Tuple, TypeVar, Union
 
@@ -921,32 +921,68 @@ def get_rv_parameters(model: Model, rv: str) -> List[str]:
     return sorted(map(str, _filter_symbols(dependency_graph, free_symbols, {sympy.Symbol(rv)})))
 
 
-def remove_covariate_effect_from_statements(
-    before_odes: Statements, parameter: str, covariate: str
-) -> Iterable[Statement]:
+@dataclass(frozen=True)
+class AssignmentGraphNode:
+    expression: sympy.Expr
+    index: int
+    previous: Dict[sympy.Symbol, AssignmentGraphNode]
 
-    assignments = list(_assignments(before_odes))
 
-    dependency_graph = _dependency_graph(assignments)
+def _make_assignments_graph(statements: Statements) -> Dict[sympy.Symbol, AssignmentGraphNode]:
 
-    dependencies = _reachable_from({sympy.Symbol(parameter)}, lambda x: dependency_graph.get(x, []))
+    last_assignments: Dict[sympy.Symbol, AssignmentGraphNode] = {}
 
-    for statement in before_odes:
-        if not isinstance(statement, Assignment) or statement.symbol not in dependencies:
-            yield statement
+    for i, statement in enumerate(statements):
+        if not isinstance(statement, Assignment):
             continue
 
-        changed, new_expression = remove_covariate_effect_from_expression(
-            statement.expression, sympy.Symbol(covariate)
+        node = AssignmentGraphNode(
+            statement.expression,
+            i,
+            {
+                symbol: last_assignments[symbol]
+                for symbol in statement.expression.free_symbols
+                if symbol in last_assignments
+            },
         )
-        if changed:
-            if new_expression != statement.symbol:
-                yield Assignment(statement.symbol, new_expression)
-        else:
-            yield statement
+
+        last_assignments[statement.symbol] = node
+
+    return last_assignments
 
 
-RE_THETA = re.compile(r'^THETA\(\d+\)$')
+def remove_covariate_effect_from_statements(
+    model: Model, before_odes: Statements, parameter: str, covariate: str
+) -> Iterable[Statement]:
+
+    assignments = _make_assignments_graph(before_odes)
+
+    thetas = _theta_symbols(model)
+
+    new_before_odes = list(before_odes)
+
+    symbol = sympy.Symbol(parameter)
+    graph_node = assignments[symbol]
+
+    tree_node = _remove_covariate_effect_from_statements_recursive(
+        thetas,
+        graph_node.previous,
+        new_before_odes,
+        symbol,
+        graph_node.expression,
+        sympy.Symbol(covariate),
+        None,
+    )
+
+    assert tree_node.changed
+    assert tree_node.contains_theta
+
+    if tree_node.changed:
+        new_before_odes[graph_node.index] = Assignment(
+            sympy.Symbol(parameter), tree_node.expression
+        )
+
+    return new_before_odes
 
 
 def _neutral(expr: sympy.Expr) -> sympy.Integer:
@@ -960,24 +996,65 @@ def _neutral(expr: sympy.Expr) -> sympy.Integer:
     raise ValueError(f'{type(expr)}: {repr(expr)} ({expr.free_symbols})')
 
 
-def _is_theta(symbol: sympy.Symbol) -> bool:
-    return bool(re.search(RE_THETA, str(symbol)))
+def _theta_symbols(model: Model) -> Set[sympy.Symbol]:
+    rvs_fs = model.random_variables.free_symbols
+    return {p.symbol for p in model.parameters if p.symbol not in rvs_fs}
 
 
-def _is_constant(expr: sympy.Expr) -> bool:
-    # TODO handle constant symbols such as WGT_MEDIAN
-    return all(map(_is_theta, expr.free_symbols))
+def _depends_on_any(symbols: Set[sympy.Symbol], expr: sympy.Expr) -> bool:
+    return any(map(lambda s: s in symbols, expr.free_symbols))
 
 
-def remove_covariate_effect_from_expression(
-    expression: sympy.Expr, covariate: sympy.Symbol, parent=None
-) -> Tuple[bool, sympy.Expr]:
+def _is_constant(thetas: Set[sympy.Symbol], expr: sympy.Expr) -> bool:
+    return all(map(lambda s: s in thetas, expr.free_symbols))
+
+
+@dataclass(frozen=True)
+class ExpressionTreeNode:
+    expression: sympy.Expr
+    changed: bool
+    constant: bool
+    contains_theta: bool
+
+
+def _remove_covariate_effect_from_statements_recursive(
+    thetas: Set[sympy.Symbol],
+    assignments: Dict[sympy.Symbol, AssignmentGraphNode],
+    statements: List[Assignment],
+    symbol: sympy.Symbol,
+    expression: sympy.Expr,
+    covariate: sympy.Symbol,
+    parent: Union[None, sympy.Expr],
+) -> ExpressionTreeNode:
     if not expression.args:
-        if expression != covariate:
-            # NOTE other atom
-            return False, expression
+        if expression in assignments:
+            # NOTE expression is a symbol and is defined in a previous assignment
+            graph_node = assignments[expression]
+            tree_node = _remove_covariate_effect_from_statements_recursive(
+                thetas,
+                graph_node.previous,
+                statements,
+                expression,
+                graph_node.expression,
+                covariate,
+                parent,
+            )
+            if tree_node.changed:
+                statements[graph_node.index] = Assignment(expression, tree_node.expression)
 
-        return True, _neutral(parent)
+            return ExpressionTreeNode(
+                expression, tree_node.changed, tree_node.constant, tree_node.contains_theta
+            )
+
+        if expression == covariate:
+            # NOTE expression is the covariate symbol for which we want to
+            # remove all effects
+            return ExpressionTreeNode(_neutral(parent), True, True, False)
+
+        # NOTE other atom
+        return ExpressionTreeNode(
+            expression, False, _is_constant(thetas, expression), _depends_on_any(thetas, expression)
+        )
 
     if isinstance(expression, sympy.Piecewise):
         if any(map(lambda t: covariate in t[1].free_symbols, expression.args)):
@@ -989,7 +1066,12 @@ def remove_covariate_effect_from_expression(
                     (p[0] for p in expression.as_expr_set_pairs()),
                     key=sympy.count_ops,
                 )
-                return True, remove_covariate_effect_from_expression(expr, covariate, parent)[1]
+                tree_node = _remove_covariate_effect_from_statements_recursive(
+                    thetas, assignments, statements, symbol, expr, covariate, parent
+                )
+                return ExpressionTreeNode(
+                    tree_node.expression, True, tree_node.constant, tree_node.contains_theta
+                )
             except (ValueError, NotImplementedError) as e:
                 # NOTE These exceptions are raised by multivariate Piecewise
                 # statements which we do not handle at the moment.
@@ -997,32 +1079,44 @@ def remove_covariate_effect_from_expression(
 
     children = list(
         map(
-            lambda expr: remove_covariate_effect_from_expression(expr, covariate, expression),
+            lambda expr: _remove_covariate_effect_from_statements_recursive(
+                thetas, assignments, statements, symbol, expr, covariate, expression
+            ),
             expression.args,
         )
     )
 
-    # TODO Handle cases where the THETA we look for is in the parent chain or
-    # in children symbol
     # TODO Take THETA limits into account. Currently we assume any
     # offset/factor can be compensated but this is not true in general.
-    can_be_scaled_or_offset = any(
-        map(lambda t: not t[0] and isinstance(t[1], sympy.Symbol) and _is_theta(t[1]), children)
-    )
+    can_be_scaled_or_offset = any(map(lambda n: not n.changed and n.contains_theta, children))
 
-    changed = any(map(lambda t: t[0], children))
+    changed = any(map(lambda n: n.changed, children))
+    is_constant = all(map(lambda n: n.constant, children))
+    contains_theta = any(map(lambda n: n.contains_theta, children))
 
     if not changed:
-        return False, expression
+        return ExpressionTreeNode(expression, False, is_constant, contains_theta)
 
     if not can_be_scaled_or_offset:
-        return True, expression.func(*map(lambda t: t[1], children))
-
-    return True, expression.func(
-        *map(
-            lambda t: _neutral(expression) if t[0] and _is_constant(t[1]) else t[1],
-            children,
+        return ExpressionTreeNode(
+            expression.func(*map(lambda n: n.expression, children)),
+            True,
+            is_constant,
+            contains_theta,
         )
+
+    return ExpressionTreeNode(
+        expression.func(
+            *map(
+                lambda n: _neutral(expression)
+                if n.changed and n.constant and n.expression != symbol
+                else n.expression,
+                children,
+            )
+        ),
+        True,
+        is_constant,
+        contains_theta,
     )
 
 
