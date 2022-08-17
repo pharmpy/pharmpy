@@ -1,6 +1,5 @@
 import math
 import warnings
-from typing import List, Tuple
 
 import numpy as np
 import pandas as pd
@@ -594,7 +593,7 @@ def summarize_errors(models):
 
 def rank_models(
     base_model, models, strictness=None, rank_type='ofv', cutoff=None, bic_type='mixed'
-) -> Tuple[pd.DataFrame, List]:
+) -> pd.DataFrame:
     """Ranks a list of models
 
     Ranks a list of models with a given ranking function
@@ -617,8 +616,8 @@ def rank_models(
 
     Return
     ------
-    (pd.DataFrame, list)
-        A tuple with a DataFrame of the ranked models and a list of ranked models sorted by rank
+    pd.DataFrame
+        DataFrame of the ranked models
 
     Examples
     --------
@@ -694,7 +693,7 @@ def rank_models(
 
     df_sorted = df.sort_values(by=[f'd{rank_type_name}'], ascending=False)
 
-    return df_sorted, models_sorted
+    return df_sorted
 
 
 def _test_with_lrt(models, alpha):
