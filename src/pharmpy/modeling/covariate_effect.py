@@ -6,7 +6,7 @@ import math
 import re
 import warnings
 from operator import add, mul
-from typing import Iterable, List, Literal, Union
+from typing import List, Literal, Union
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import sympy
@@ -14,7 +14,7 @@ from pharmpy.expressions import subs, sympify
 from pharmpy.model import Assignment, Model, Parameter, Parameters, Statement, Statements
 
 from .data import get_baselines
-from .expressions import depends_on, remove_covariate_effect_from_statements
+from .expressions import depends_on, remove_covariate_effect_from_statements, simplify_model
 
 EffectType = Union[Literal['lin', 'cat', 'piece_lin', 'exp', 'pow'], str]
 OperationType = Literal['*', '+']
@@ -50,35 +50,6 @@ def has_covariate_effect(model: Model, parameter: str, covariate: str):
     return depends_on(model, parameter, covariate)
 
 
-def _simplify_statements(
-    model: Model, old_statements: Iterable[Statement], statements: Iterable[Statement]
-):
-    odes = model.statements.ode_system
-    fs = odes.free_symbols.copy() if odes is not None else set()
-    old_fs = fs.copy()
-
-    kept = []
-
-    for old_statement, statement in reversed(list(zip(old_statements, statements))):
-        if not isinstance(statement, Assignment):
-            kept.append(statement)
-            continue
-
-        assert isinstance(old_statement, Assignment)
-
-        if (old_statement == statement and statement.symbol not in old_fs) or (
-            statement.symbol in fs and statement.symbol != statement.expression
-        ):
-            kept.append(statement)
-            fs.discard(statement.symbol)
-            fs.update(statement.expression.free_symbols)
-
-        old_fs.discard(old_statement.symbol)
-        old_fs.update(old_statement.expression.free_symbols)
-
-    return reversed(kept)
-
-
 def remove_covariate_effect(model: Model, parameter: str, covariate: str):
     """Remove a covariate effect from an instance of :class:`pharmpy.model`.
 
@@ -103,20 +74,22 @@ def remove_covariate_effect(model: Model, parameter: str, covariate: str):
     False
 
     """
-    before_odes = list(
-        _simplify_statements(
-            model,
-            model.statements.before_odes,
-            remove_covariate_effect_from_statements(
-                model, model.statements.before_odes, parameter, covariate
-            ),
-        )
+    kept_thetas, before_odes = simplify_model(
+        model,
+        model.statements.before_odes,
+        remove_covariate_effect_from_statements(
+            model, model.statements.before_odes, parameter, covariate
+        ),
     )
     ode_system: List[Statement] = (
         [] if model.statements.ode_system is None else [model.statements.ode_system]
     )
     after_odes = list(model.statements.after_odes)
     model.statements = Statements(before_odes + ode_system + after_odes)
+    kept_parameters = model.random_variables.free_symbols.union(
+        kept_thetas, model.statements.after_odes.free_symbols
+    )
+    model.parameters = Parameters((p for p in model.parameters if p.symbol in kept_parameters))
 
 
 def add_covariate_effect(

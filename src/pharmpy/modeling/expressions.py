@@ -1009,6 +1009,38 @@ def _is_constant(thetas: Set[sympy.Symbol], expr: sympy.Expr) -> bool:
     return all(map(lambda s: s in thetas, expr.free_symbols))
 
 
+def simplify_model(
+    model: Model, old_statements: Iterable[Statement], statements: Iterable[Statement]
+):
+    odes = model.statements.ode_system
+    fs = odes.free_symbols.copy() if odes is not None else set()
+    old_fs = fs.copy()
+
+    kept_statements_reversed = []
+
+    for old_statement, statement in reversed(list(zip(old_statements, statements))):
+        if not isinstance(statement, Assignment):
+            kept_statements_reversed.append(statement)
+            continue
+
+        assert isinstance(old_statement, Assignment)
+
+        if (old_statement == statement and statement.symbol not in old_fs) or (
+            statement.symbol in fs and statement.symbol != statement.expression
+        ):
+            kept_statements_reversed.append(statement)
+            fs.discard(statement.symbol)
+            fs.update(statement.expression.free_symbols)
+
+        old_fs.discard(old_statement.symbol)
+        old_fs.update(old_statement.expression.free_symbols)
+
+    kept_thetas = fs.intersection(_theta_symbols(model))
+    kept_statements = list(reversed(kept_statements_reversed))
+
+    return kept_thetas, kept_statements
+
+
 @dataclass(frozen=True)
 class ExpressionTreeNode:
     expression: sympy.Expr

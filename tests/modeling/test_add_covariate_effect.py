@@ -428,3 +428,6 @@ def test_add_covariate_effect(
             )
             == ''
         )
+
+        for effect in effects:
+            assert f'POP_{effect[0]}{effect[1]}' not in model.model_code
