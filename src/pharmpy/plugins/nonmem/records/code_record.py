@@ -587,11 +587,11 @@ class CodeRecord(Record):
                         name = str(assignment.variable).upper()
                         expr = ExpressionInterpreter().visit(assignment.expression)
                         # Check if symbol was previously declared
-                        else_val = sympy.Integer(0)
-                        for prevass in s:
-                            if prevass.symbol.name == name:
-                                else_val = sympy.Symbol(name)
-                                break
+                        else_val = (
+                            sympy.Symbol(name)
+                            if any(map(lambda x: x.symbol.name == name, s))
+                            else sympy.Integer(0)
+                        )
                         pw = sympy.Piecewise((expr, logic_expr), (else_val, True))
                         ass = Assignment(sympy.Symbol(name), pw)
                         s.append(ass)
@@ -642,15 +642,24 @@ class CodeRecord(Record):
                             piecewise_logic = sympy.Not(blocks[0][0])
                         blocks.append((piecewise_logic, else_symb_exprs))
 
-                    for symbol in symbols:
+                    for name in symbols:
                         pairs = []
                         for block in blocks:
                             logic = block[0]
                             for cursymb, expr in block[1]:
-                                if cursymb == symbol:
+                                if cursymb == name:
                                     pairs.append((expr, logic))
+
+                        if pairs[-1][1] is not True:
+                            else_val = (
+                                sympy.Symbol(name)
+                                if any(map(lambda x: x.symbol.name == name, s))
+                                else sympy.Integer(0)
+                            )
+                            pairs.append((else_val, True))
+
                         pw = sympy.Piecewise(*pairs)
-                        ass = Assignment(sympy.Symbol(symbol), pw)
+                        ass = Assignment(sympy.Symbol(name), pw)
                         s.append(ass)
                     new_index.append((child_index, child_index + 1, len(s) - len(symbols), len(s)))
 
