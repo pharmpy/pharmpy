@@ -269,6 +269,63 @@ def test_nested_add_covariate_effect(load_model_for_test, testdata):
             '+V = V*VCLCR\n',
             True,
         ),
+        (
+            ('nonmem', 'models', 'mox2.mod'),
+            [('CL', 'WT', '((cov/std) - median) * theta', '*')],
+            '@@ -1,0 +2,2 @@\n'
+            '+WT_MEDIAN = 78.0000\n'
+            '+WT_STD = 15.6125\n'
+            '@@ -2,0 +5,2 @@\n'
+            '+CLWT = THETA(4)*(WT/WT_STD - WT_MEDIAN)\n'
+            '+CL = CL*CLWT\n',
+            False,
+        ),
+        (
+            ('nonmem', 'models', 'mox2.mod'),
+            [('MAT', 'SEX', 'cat', '*')],
+            '@@ -4,0 +5,6 @@\n'
+            '+IF (SEX.EQ.1) THEN\n'
+            '+    MATSEX = 1\n'
+            '+ELSE IF (SEX.EQ.2) THEN\n'
+            '+    MATSEX = THETA(4) + 1\n'
+            '+END IF\n'
+            '+MAT = MAT*MATSEX\n',
+            False,
+        ),
+        (
+            ('nonmem', 'models', 'mox2.mod'),
+            [('V', 'WT', 'lin', '+')],
+            '@@ -1,0 +2 @@\n'
+            '+WT_MEDIAN = 78.0000\n'
+            '@@ -6,0 +8,2 @@\n'
+            '+VWT = THETA(4)*(WT - WT_MEDIAN) + 1\n'
+            '+V = V + VWT\n',
+            False,
+        ),
+        (
+            ('nonmem', 'models', 'mox2.mod'),
+            [('V', 'WT', 'pow', '*')],
+            '@@ -1,0 +2 @@\n'
+            '+WT_MEDIAN = 78.0000\n'
+            '@@ -6,0 +8,2 @@\n'
+            '+VWT = (WT/WT_MEDIAN)**THETA(4)\n'
+            '+V = V*VWT\n',
+            False,
+        ),
+        (
+            ('nonmem', 'models', 'mox2.mod'),
+            [('V', 'WT', 'piece_lin', '+')],
+            '@@ -1,0 +2 @@\n'
+            '+WT_MEDIAN = 78.0000\n'
+            '@@ -6,0 +8,6 @@\n'
+            '+IF (WT.LE.WT_MEDIAN) THEN\n'
+            '+    VWT = THETA(4)*(WT - WT_MEDIAN) + 1\n'
+            '+ELSE\n'
+            '+    VWT = THETA(5)*(WT - WT_MEDIAN) + 1\n'
+            '+END IF\n'
+            '+V = V + VWT\n',
+            False,
+        ),
     ],
     ids=repr,
 )
