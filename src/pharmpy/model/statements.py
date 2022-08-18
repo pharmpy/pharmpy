@@ -2120,7 +2120,7 @@ class Statements(Sequence):
                     "ODESystem not supported by full_expression. Use the properties before_odes "
                     "or after_odes."
                 )
-            expression = expression.subs({statement.symbol: statement.expression})
+            expression = expression.xreplace({statement.symbol: statement.expression})
         return expression
 
     def to_compartmental_system(self):
