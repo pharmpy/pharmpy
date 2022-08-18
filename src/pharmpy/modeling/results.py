@@ -629,35 +629,35 @@ def rank_models(
     ...             rank_type='lrt') # doctest: +SKIP
     """
     models_all = [base_model] + models
-    models_with_res = [
-        model
-        for model in models_all
-        if model.modelfit_results and not np.isnan(model.modelfit_results.ofv)
-    ]
-    rankval_dict = {model.name: _get_rankval(model, rank_type, bic_type) for model in models_all}
-    delta_dict = {
-        model.name: rankval_dict[base_model.name] - rankval_dict[model.name] for model in models_all
-    }
 
-    # TODO: validate option
-    if not strictness:
-        models_to_rank = [model for model in models_with_res]
-    else:
-        models_to_rank = models_with_res
-        if 'minimization_successful' in strictness:
-            models_to_rank = [
-                model for model in models_to_rank if model.modelfit_results.minimization_successful
-            ]
+    rank_type_dict = {}
+    models_to_rank = []
 
-    if cutoff is not None:
+    ref_value = _get_rankval(base_model, rank_type, bic_type)
+    model_dict = {model.name: model for model in models_all}
+
+    # Filter on strictness
+    for model in models_all:
+        # Exclude OFV etc if model was not successful
+        if not model.modelfit_results or np.isnan(model.modelfit_results.ofv):
+            continue
+        if not model.modelfit_results.minimization_successful:
+            if strictness and model.modelfit_results.termination_cause not in strictness:
+                continue
+        # Only include OFVs etc. of models that fulfill strictness criteria
+        rank_value = _get_rankval(model, rank_type, bic_type)
+        rank_type_dict[model.name] = rank_value
         if rank_type == 'lrt':
-            models_to_rank = [model for model in _test_with_lrt(models_all, cutoff)]
-        else:
-            models_to_rank = [model for model in models_to_rank if delta_dict[model.name] >= cutoff]
+            if not _fulfills_lrt(model_dict[model.parent_model], model, cutoff):
+                continue
+        if cutoff:
+            if ref_value - rank_value <= cutoff:
+                continue
+        models_to_rank.append(model)
 
-    # TODO: handle if base model have NaN
+    # Sort
     def _get_delta(model):
-        return delta_dict[model.name]
+        return ref_value - rank_type_dict[model.name]
 
     models_sorted = sorted(models_to_rank, key=_get_delta, reverse=True)
 
@@ -666,7 +666,7 @@ def rank_models(
     rank, count, prev = 0, 0, None
     for model in models_sorted:
         count += 1
-        value = delta_dict[model.name]
+        value = ref_value - rank_type_dict[model.name]
         if value != prev:
             rank += count
             prev = value
@@ -679,7 +679,14 @@ def rank_models(
             rank = rank_dict[model.name]
         except KeyError:
             rank = np.nan
-        rows[model.name] = (delta_dict[model.name], rankval_dict[model.name], rank)
+
+        try:
+            rank_value = rank_type_dict[model.name]
+        except KeyError:
+            rank_value = np.nan
+
+        delta = ref_value - rank_value
+        rows[model.name] = (delta, rank_value, rank)
 
     if rank_type == 'lrt':
         rank_type_name = 'ofv'
@@ -705,6 +712,20 @@ def _test_with_lrt(models, alpha):
 
 
 def _test_model(parent, child, alpha):
+    if parent.name == child.name:
+        return False
+    dofv = parent.modelfit_results.ofv - child.modelfit_results.ofv
+    df = len(child.parameters) - len(parent.parameters)
+    if df < 0:
+        raise NotImplementedError('LRT is currently only supported where degrees of freedom => 0')
+    elif df == 0:
+        cutoff = 0
+    else:
+        cutoff = float(chi2.isf(q=alpha, df=df))
+    return dofv >= cutoff
+
+
+def _fulfills_lrt(parent, child, alpha):
     if parent.name == child.name:
         return False
     dofv = parent.modelfit_results.ofv - child.modelfit_results.ofv

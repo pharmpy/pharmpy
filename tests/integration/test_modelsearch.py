@@ -39,27 +39,81 @@ def test_exhaustive(tmp_path, start_model):
 
 
 @pytest.mark.parametrize(
-    'search_space, no_of_models, last_model_parent_name, model_with_error',
+    'search_space, no_of_models, last_model_parent_name, model_with_error, ranked_order',
     [
-        ('ABSORPTION(ZO);PERIPHERALS(1)', 4, 'modelsearch_candidate2', 'modelsearch_candidate3'),
+        (
+            'ABSORPTION(ZO);PERIPHERALS(1)',
+            4,
+            'modelsearch_candidate2',
+            'modelsearch_candidate3',
+            [
+                'modelsearch_candidate1',
+                'modelsearch_candidate2',
+                'mox2',
+                'modelsearch_candidate3',
+                'modelsearch_candidate4',
+            ],
+        ),
         # FIXME: Warning after setting TOL=9
         # ('ABSORPTION(ZO);ELIMINATION(ZO)', 4, 'modelsearch_candidate1', 'modelsearch_candidate2'),
-        ('ABSORPTION(ZO);TRANSITS(1)', 2, 'mox2', ''),
+        (
+            'ABSORPTION(ZO);TRANSITS(1)',
+            2,
+            'mox2',
+            '',
+            ['modelsearch_candidate1', 'modelsearch_candidate2', 'mox2'],
+        ),
         (
             'ABSORPTION([ZO,SEQ-ZO-FO]);PERIPHERALS(1)',
             7,
             'modelsearch_candidate3',
             'modelsearch_candidate5',
+            [
+                'modelsearch_candidate7',
+                'modelsearch_candidate2',
+                'modelsearch_candidate1',
+                'modelsearch_candidate5',
+                'modelsearch_candidate3',
+                'mox2',
+                'modelsearch_candidate4',
+                'modelsearch_candidate6',
+            ],
         ),
-        ('LAGTIME();TRANSITS(1)', 2, 'mox2', ''),
-        ('ABSORPTION(ZO);TRANSITS(3, *)', 3, 'mox2', ''),
+        (
+            'LAGTIME();TRANSITS(1)',
+            2,
+            'mox2',
+            '',
+            ['modelsearch_candidate2', 'modelsearch_candidate1', 'mox2'],
+        ),
+        (
+            'ABSORPTION(ZO);TRANSITS(3, *)',
+            3,
+            'mox2',
+            '',
+            ['modelsearch_candidate3', 'modelsearch_candidate1', 'modelsearch_candidate2', 'mox2'],
+        ),
     ],
 )
 def test_exhaustive_stepwise_basic(
-    tmp_path, start_model, search_space, no_of_models, last_model_parent_name, model_with_error
+    tmp_path,
+    start_model,
+    search_space,
+    no_of_models,
+    last_model_parent_name,
+    model_with_error,
+    ranked_order,
 ):
     with TemporaryDirectoryChanger(tmp_path):
         res = run_modelsearch(search_space, 'exhaustive_stepwise', model=start_model)
+
+        pd.set_option('display.max_columns', None)
+        pd.set_option('display.max_rows', None)
+
+        print(res.summary_tool)
+
+        print(res.summary_tool.index.values)
+        assert list(res.summary_tool.index.values) == ranked_order
 
         assert len(res.summary_tool) == no_of_models + 1
         assert len(res.summary_models) == no_of_models + 1

@@ -245,6 +245,7 @@ class DummyResults:
     def __init__(self, ofv, minimization_successful=True):
         self.ofv = ofv
         self.minimization_successful = minimization_successful
+        self.termination_cause = None
 
 
 def test_rank_models():
