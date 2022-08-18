@@ -1,11 +1,7 @@
-from io import StringIO
-
-from pharmpy import Model
 from pharmpy.modeling import (
     has_additive_error_model,
     has_combined_error_model,
     has_proportional_error_model,
-    load_example_model,
     read_model_from_string,
     remove_error_model,
     set_additive_error_model,
@@ -138,7 +134,7 @@ def test_set_combined_error_model_with_time_varying_and_eta_on_ruv(testdata, loa
     )
 
 
-def test_remove_error_without_f():
+def test_remove_error_without_f(create_model_for_test):
     code = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV
@@ -156,7 +152,7 @@ $OMEGA 0.031128  ; IVV
 $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION
 """
-    model = Model.create_model(StringIO(code))
+    model = create_model_for_test(code)
     remove_error_model(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
@@ -177,7 +173,7 @@ $ESTIMATION METHOD=1 INTERACTION
     assert model.model_code == correct
 
 
-def test_additive_error_without_f():
+def test_additive_error_without_f(create_model_for_test):
     code = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
@@ -196,8 +192,7 @@ $OMEGA 0.031128  ; IVV
 $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION
 """
-    model = Model.create_model(StringIO(code))
-    model.dataset = load_example_model("pheno").dataset
+    model = create_model_for_test(code, dataset='pheno')
     set_additive_error_model(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA run1.csv IGNORE=@
@@ -231,7 +226,7 @@ def test_get_prop_init(testdata, load_model_for_test):
     assert init == 0.01
 
 
-def test_has_additive_error_model():
+def test_has_additive_error_model(create_model_for_test):
     code = """$PROBLEM base model
 $INPUT ID DV TIME
 $DATA file.csv IGNORE=@
@@ -279,11 +274,11 @@ $ESTIMATION METHOD=1 INTER MAXEVALS=9990 PRINT=2 POSTHOC
     model = read_model_from_string(code)
     assert not has_additive_error_model(model)
 
-    model = Model.create_model(StringIO(code))
+    model = create_model_for_test(code)
     assert not has_additive_error_model(model)
 
 
-def test_has_proportional_error_model():
+def test_has_proportional_error_model(create_model_for_test):
     code = """$PROBLEM base model
 $INPUT ID DV TIME
 $DATA file.csv IGNORE=@
@@ -314,11 +309,11 @@ $ESTIMATION METHOD=1 INTER MAXEVALS=9990 PRINT=2 POSTHOC
     model = read_model_from_string(code)
     assert has_proportional_error_model(model)
 
-    model = Model.create_model(StringIO(code))
+    model = create_model_for_test(code)
     assert has_proportional_error_model(model)
 
 
-def test_has_combined_error_model():
+def test_has_combined_error_model(create_model_for_test):
     code = """$PROBLEM base model
 $INPUT ID DV TIME
 $DATA file.csv IGNORE=@
@@ -349,7 +344,7 @@ $ESTIMATION METHOD=1 INTER MAXEVALS=9990 PRINT=2 POSTHOC
     model = read_model_from_string(code)
     assert not has_combined_error_model(model)
 
-    model = Model.create_model(StringIO(code))
+    model = create_model_for_test(code)
     assert not has_combined_error_model(model)
 
     code = """$PROBLEM base model

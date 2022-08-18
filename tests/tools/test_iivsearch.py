@@ -1,8 +1,5 @@
-from io import StringIO
-
 import pytest
 
-from pharmpy import Model
 from pharmpy.modeling import (
     add_iiv,
     add_peripheral_compartment,
@@ -119,7 +116,7 @@ def test_create_joint_dist(load_model_for_test, testdata):
     assert len(model.random_variables.iiv.distributions()) == 3
 
 
-def test_get_param_names(load_model_for_test, testdata):
+def test_get_param_names(create_model_for_test, load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
 
     param_dict = _iiv_param_dict(model)
@@ -130,7 +127,7 @@ def test_get_param_names(load_model_for_test, testdata):
     model_code = model.model_code.replace(
         'CL = THETA(1) * EXP(ETA(1))', 'ETA_1 = ETA(1)\nCL = THETA(1) * EXP(ETA_1)'
     )
-    model = Model.create_model(StringIO(model_code))
+    model = create_model_for_test(model_code)
 
     param_dict = _iiv_param_dict(model)
 

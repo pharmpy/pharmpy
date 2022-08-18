@@ -5,7 +5,6 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from pharmpy import Model
 from pharmpy.modeling import (
     calculate_aic,
     calculate_bic,
@@ -105,7 +104,9 @@ k_e,median,13.319584,2.67527,2.633615
     # pd.testing.assert_frame_equal(df, correct, atol=1e-4)
 
 
-def test_summarize_modelfit_results(load_model_for_test, testdata, pheno_path):
+def test_summarize_modelfit_results(
+    load_model_for_test, create_model_for_test, testdata, pheno_path
+):
     pheno = load_model_for_test(pheno_path)
 
     summary_single = summarize_modelfit_results(pheno)
@@ -126,7 +127,7 @@ def test_summarize_modelfit_results(load_model_for_test, testdata, pheno_path):
     assert len(summary_multiple.index) == 2
     assert list(summary_multiple.index) == ['pheno_real', 'mox1']
 
-    pheno_no_res = Model.create_model(StringIO(pheno.model_code))
+    pheno_no_res = create_model_for_test(pheno.model_code)
     pheno_no_res.name = 'pheno_no_res'
 
     summary_no_res = summarize_modelfit_results([pheno, pheno_no_res])
@@ -162,7 +163,7 @@ def test_summarize_modelfit_results(load_model_for_test, testdata, pheno_path):
 
     assert not summary_multest_full.loc['pheno_multEST', 1]['minimization_successful']
 
-    pheno_multest_no_res = Model.create_model(StringIO(pheno_multest.model_code))
+    pheno_multest_no_res = create_model_for_test(pheno_multest.model_code)
     pheno_multest_no_res.name = 'pheno_multest_no_res'
 
     summary_multest_full_no_res = summarize_modelfit_results(

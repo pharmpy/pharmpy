@@ -1,9 +1,4 @@
-from io import StringIO
-
-from pharmpy import Model
-
-
-def test_des(load_model_for_test, testdata):
+def test_des(load_model_for_test, create_model_for_test, testdata):
     code = """$PROBLEM
 $INPUT ID TIME DV AMT
 $DATA data.csv IGNORE=@
@@ -51,7 +46,7 @@ $OMEGA 0.1; IIV_VL
 $SIGMA 0.1; RUV_ADD
 """
     pheno = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
-    model = Model.create_model(StringIO(code))
+    model = create_model_for_test(code)
     model.dataset = pheno.dataset
     cs = model.statements.ode_system.to_compartmental_system()
     assert len(cs) == 5

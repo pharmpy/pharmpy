@@ -1,9 +1,6 @@
-from io import StringIO
-
 import pytest
 from sympy import Symbol as S
 
-from pharmpy import Model
 from pharmpy.modeling import add_iiv, create_joint_distribution
 from pharmpy.modeling.block_rvs import _choose_param_init
 from pharmpy.random_variables import RandomVariable, RandomVariables
@@ -74,10 +71,9 @@ def test_choose_param_init(load_model_for_test, pheno_path):
         assert init == 0.0031045
 
 
-def test_choose_param_init_fo():
-    model = Model.create_model(
-        StringIO(
-            '''$PROBLEM PHENOBARB SIMPLE MODEL
+def test_choose_param_init_fo(create_model_for_test):
+    model = create_model_for_test(
+        '''$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV
 $SUBROUTINE ADVAN1 TRANS2
@@ -98,7 +94,6 @@ $SIGMA 0.013241
 
 $ESTIMATION METHOD=0
 '''
-        )
     )
     params = (model.parameters['OMEGA(1,1)'], model.parameters['OMEGA(2,2)'])
     rvs = RandomVariables(model.random_variables.etas)
@@ -107,10 +102,9 @@ $ESTIMATION METHOD=0
     assert init == 0.01
 
 
-def test_names():
-    model = Model.create_model(
-        StringIO(
-            '''$PROBLEM PHENOBARB SIMPLE MODEL
+def test_names(create_model_for_test):
+    model = create_model_for_test(
+        '''$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV
 $SUBROUTINE ADVAN1 TRANS2
@@ -131,7 +125,6 @@ $SIGMA 0.013241
 
 $ESTIMATION METHOD=1 INTERACTION
 '''
-        )
     )
     create_joint_distribution(model, model.random_variables.names)
     assert 'IIV_CL_V_IIV_S1' in model.parameters.names

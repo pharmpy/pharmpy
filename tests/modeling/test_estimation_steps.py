@@ -1,8 +1,5 @@
-from io import StringIO
-
 import pytest
 
-from pharmpy import Model
 from pharmpy.modeling import (
     add_covariance_step,
     add_estimation_step,
@@ -51,10 +48,9 @@ def test_set_estimation_step(testdata, load_model_for_test, method, kwargs, code
     assert generate_model_code(model).split('\n')[-2] == code_ref
 
 
-def test_set_estimation_step_est_middle():
-    model = Model.create_model(
-        StringIO(
-            '''$PROBLEM base model
+def test_set_estimation_step_est_middle(create_model_for_test):
+    model = create_model_for_test(
+        '''$PROBLEM base model
 $INPUT ID DV TIME
 $DATA file.csv IGNORE=@
 
@@ -66,7 +62,6 @@ $THETA 0.1
 $OMEGA 0.01
 $SIGMA 1
 '''
-        )
     )
     set_estimation_step(model, 'FOCE', interaction=True, cov=True, idx=0)
     assert '$ESTIMATION METHOD=COND INTER MAXEVAL=999999\n$COVARIANCE' in model.model_code
@@ -131,10 +126,9 @@ def test_append_estimation_step_options(testdata, load_model_for_test):
     )
 
 
-def test_set_evaluation_step():
-    model = Model.create_model(
-        StringIO(
-            '''$PROBLEM base model
+def test_set_evaluation_step(create_model_for_test):
+    model = create_model_for_test(
+        '''$PROBLEM base model
 $INPUT ID DV TIME
 $DATA file.csv IGNORE=@
 
@@ -146,7 +140,6 @@ $OMEGA 0.01
 $SIGMA 1
 $ESTIMATION METHOD=COND INTERACTION MAXEVAL=999999
 '''
-        )
     )
     set_evaluation_step(model)
     assert model.model_code.split('\n')[-2] == '$ESTIMATION METHOD=COND INTER MAXEVAL=0'

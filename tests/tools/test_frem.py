@@ -9,7 +9,6 @@ from pytest import approx
 
 import pharmpy.modeling as modeling
 import pharmpy.tools as tools
-from pharmpy.model import Model
 from pharmpy.tools.frem.models import calculate_parcov_inits, create_model3b
 from pharmpy.tools.frem.results import (
     calculate_results,
@@ -424,7 +423,7 @@ V,all,0.1441532460182698,0.1294082747127788,0.16527164471815176
     pd.testing.assert_frame_equal(res.covariate_statistics, correct)
 
 
-def test_get_params(load_model_for_test, testdata):
+def test_get_params(load_model_for_test, create_model_for_test, testdata):
     model_frem = load_model_for_test(testdata / 'nonmem' / 'frem' / 'pheno' / 'model_4.mod')
     rvs, _ = model_frem.random_variables.etas.distributions()[-1]
     npars = 2
@@ -436,7 +435,7 @@ def test_get_params(load_model_for_test, testdata):
         r'(V=TVV\*EXP\(ETA\(2\)\))', r'\1*EXP(ETA(3))', model_frem.model_code
     )
 
-    model = Model.create_model(StringIO(model_multiple_etas))
+    model = create_model_for_test(model_multiple_etas)
     model.dataset = model_frem.dataset
     rvs, _ = model.random_variables.etas.distributions()[-1]
     npars = 3
@@ -450,7 +449,7 @@ def test_get_params(load_model_for_test, testdata):
         model_frem.model_code,
     )
 
-    model = Model.create_model(StringIO(model_separate_declare))
+    model = create_model_for_test(model_separate_declare)
     model.dataset = model_frem.dataset
     rvs, _ = model.random_variables.etas.distributions()[-1]
     npars = 2

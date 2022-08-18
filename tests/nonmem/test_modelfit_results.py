@@ -5,7 +5,6 @@ import pandas as pd
 import pytest
 
 import pharmpy.plugins.nonmem as nonmem
-from pharmpy import Model
 from pharmpy.config import ConfigurationContext
 from pharmpy.plugins.nonmem.results import NONMEMChainedModelfitResults, simfit_results
 from pharmpy.results import read_results
@@ -258,7 +257,9 @@ def test_runtime_total(testdata, load_model_for_test):
         ),
     ],
 )
-def test_runtime_different_formats(testdata, starttime, endtime, runtime_ref, tmp_path):
+def test_runtime_different_formats(
+    load_model_for_test, testdata, starttime, endtime, runtime_ref, tmp_path
+):
     with open(testdata / 'nonmem' / 'pheno_real.lst', encoding='utf-8') as lst_file:
         lst_file_str = lst_file.read()
 
@@ -288,7 +289,7 @@ def test_runtime_different_formats(testdata, starttime, endtime, runtime_ref, tm
         with open('pheno_real.lst', 'a') as f:
             f.write(lst_file_repl)
 
-        model = Model.create_model('pheno_real.mod')
+        model = load_model_for_test('pheno_real.mod')
         runtime = model.modelfit_results.runtime_total
         assert runtime == runtime_ref
 

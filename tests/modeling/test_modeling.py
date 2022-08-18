@@ -1,14 +1,12 @@
 import os
 import re
 import shutil
-from io import StringIO
 
 import numpy as np
 import pandas as pd
 import pytest
 import sympy
 
-from pharmpy import Model
 from pharmpy.modeling import (
     add_covariate_effect,
     add_iiv,
@@ -23,7 +21,6 @@ from pharmpy.modeling import (
     has_mixed_mm_fo_elimination,
     has_zero_order_absorption,
     has_zero_order_elimination,
-    load_example_model,
     remove_iiv,
     remove_iov,
     remove_lag_time,
@@ -273,7 +270,7 @@ $ESTIMATION METHOD=1 INTERACTION
     assert model.model_code == correct
 
 
-def test_fo_mm_eta():
+def test_fo_mm_eta(create_model_for_test):
     code = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
@@ -291,8 +288,7 @@ $OMEGA 0.5  ; IIV_V
 $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION
 """
-    model = Model.create_model(StringIO(code))
-    model.dataset = load_example_model("pheno").dataset
+    model = create_model_for_test(code, dataset='pheno')
     set_michaelis_menten_elimination(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA run1.csv IGNORE=@
@@ -319,7 +315,7 @@ $ESTIMATION METHOD=1 INTERACTION
     assert model.model_code == correct
 
 
-def test_set_michaelis_menten_elimination_from_k():
+def test_set_michaelis_menten_elimination_from_k(create_model_for_test):
     code = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
@@ -333,8 +329,7 @@ $OMEGA 0.0309626  ; IVCL
 $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION
 """
-    model = Model.create_model(StringIO(code))
-    model.dataset = load_example_model("pheno").dataset
+    model = create_model_for_test(code, dataset='pheno')
     set_michaelis_menten_elimination(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA run1.csv IGNORE=@
@@ -360,7 +355,7 @@ $ESTIMATION METHOD=1 INTERACTION
     assert model.model_code == correct
 
 
-def test_combined_mm_fo_elimination():
+def test_combined_mm_fo_elimination(create_model_for_test):
     code = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
@@ -378,8 +373,7 @@ $OMEGA 0.031128  ; IVV
 $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION
 """
-    model = Model.create_model(StringIO(code))
-    model.dataset = load_example_model("pheno").dataset
+    model = create_model_for_test(code, dataset='pheno')
     assert not has_mixed_mm_fo_elimination(model)
     set_mixed_mm_fo_elimination(model)
     assert has_mixed_mm_fo_elimination(model)
@@ -435,7 +429,7 @@ $ESTIMATION METHOD=1 INTERACTION
     assert model.model_code == correct
 
 
-def test_combined_mm_fo_elimination_from_k():
+def test_combined_mm_fo_elimination_from_k(create_model_for_test):
     code = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
@@ -449,8 +443,7 @@ $OMEGA 0.0309626  ; IVCL
 $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION
 """
-    model = Model.create_model(StringIO(code))
-    model.dataset = load_example_model("pheno").dataset
+    model = create_model_for_test(code, dataset='pheno')
     set_mixed_mm_fo_elimination(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA run1.csv IGNORE=@
@@ -477,8 +470,7 @@ $ESTIMATION METHOD=1 INTERACTION
 """
     assert model.model_code == correct
 
-    model = Model.create_model(StringIO(code))
-    model.dataset = load_example_model("pheno").dataset
+    model = create_model_for_test(code, dataset='pheno')
     set_zero_order_elimination(model)
     set_mixed_mm_fo_elimination(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
@@ -1433,7 +1425,7 @@ def test_add_covariate_effect(load_model_for_test, testdata, model_path, effects
         assert f'POP_{effect[0]}{effect[1]}' in model.model_code
 
 
-def test_add_depot():
+def test_add_depot(create_model_for_test):
     code = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
@@ -1455,8 +1447,7 @@ $SIGMA 0.013241
 
 $ESTIMATION METHOD=1 INTERACTION
 """
-    model = Model.create_model(StringIO(code))
-    model.dataset = load_example_model("pheno").dataset
+    model = create_model_for_test(code, dataset='pheno')
     set_first_order_absorption(model)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA run1.csv IGNORE=@
@@ -1485,7 +1476,7 @@ $ESTIMATION METHOD=1 INTERACTION
     assert model.model_code == correct
 
 
-def test_absrate_from_explicit():
+def test_absrate_from_explicit(create_model_for_test):
     code = """
 $PROBLEM    PHENOBARB SIMPLE MODEL
 $DATA      pheno.dta IGNORE=@
@@ -1511,8 +1502,7 @@ $OMEGA  DIAGONAL(2)
 $SIGMA  1e-7
 $ESTIMATION METHOD=1 INTERACTION
 """
-    model = Model.create_model(StringIO(code))
-    model.dataset = load_example_model("pheno").dataset
+    model = create_model_for_test(code, dataset='pheno')
     set_first_order_absorption(model)
     correct = """
 $PROBLEM    PHENOBARB SIMPLE MODEL
@@ -1698,7 +1688,7 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
     shutil.copy(datadir / 'pheno_advan1.mod', tmp_path / 'abs')
     shutil.copy(datadir / 'pheno_advan2.mod', tmp_path / 'abs')
     shutil.copy(datadir.parent / 'pheno.dta', tmp_path)
-    model = Model.create_model(tmp_path / 'abs' / 'pheno_advan1.mod')
+    model = load_model_for_test(tmp_path / 'abs' / 'pheno_advan1.mod')
     set_zero_order_absorption(model)
     correct = '''$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno_advan1.csv IGNORE=@
@@ -1780,7 +1770,7 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
 '''
 
     # 1st to 0-order
-    model = Model.create_model(tmp_path / 'abs' / 'pheno_advan2.mod')
+    model = load_model_for_test(tmp_path / 'abs' / 'pheno_advan2.mod')
     set_zero_order_absorption(model)
     model.update_source(nofiles=True)
     assert model.model_code == correct
@@ -2680,7 +2670,14 @@ def test_split_joint_distribution(load_model_for_test, testdata, etas, pk_ref, o
     ],
 )
 def test_set_iiv_on_ruv(
-    load_model_for_test, pheno_path, epsilons, same_eta, eta_names, err_ref, omega_ref
+    create_model_for_test,
+    load_model_for_test,
+    pheno_path,
+    epsilons,
+    same_eta,
+    eta_names,
+    err_ref,
+    omega_ref,
 ):
     model = load_model_for_test(pheno_path)
 
@@ -2691,7 +2688,7 @@ def test_set_iiv_on_ruv(
     model_sigma = re.sub(
         r'\$SIGMA 0.013241', '$SIGMA 0.013241\n$SIGMA 0.1\n$SIGMA 0.1', model_more_eps
     )
-    model = Model.create_model(StringIO(model_sigma))
+    model = create_model_for_test(model_sigma)
 
     print("START")
     print(model.parameters)
@@ -2815,7 +2812,7 @@ def test_remove_iiv(load_model_for_test, testdata, etas, pk_ref, omega_ref):
     assert rec_omega == omega_ref
 
 
-def test_remove_iov(load_model_for_test, testdata):
+def test_remove_iov(create_model_for_test, load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem/pheno_block.mod')
 
     model_str = model.model_code
@@ -2824,7 +2821,7 @@ def test_remove_iov(load_model_for_test, testdata):
         '$OMEGA BLOCK(1)\n0.1\n$OMEGA BLOCK(1) SAME\n',
     )
 
-    model = Model.create_model(StringIO(model_with_iov))
+    model = create_model_for_test(model_with_iov)
 
     remove_iov(model)
     model.update_source()
@@ -2874,10 +2871,9 @@ def test_remove_iov_github_issues_538_and_561_2(load_model_for_test, testdata):
     }
 
 
-def test_remove_iov_diagonal():
-    model = Model.create_model(
-        StringIO(
-            '''$PROBLEM PHENOBARB SIMPLE MODEL
+def test_remove_iov_diagonal(create_model_for_test):
+    model = create_model_for_test(
+        '''$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
 $SUBROUTINE ADVAN1 TRANS1
@@ -2899,7 +2895,6 @@ $OMEGA BLOCK(1) SAME
 $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION
 '''
-        )
     )
 
     remove_iov(model)
@@ -3107,19 +3102,19 @@ def test_update_inits_zero_fix(load_model_for_test, pheno_path):
     assert model.parameters['OMEGA(1,1)'].fix
 
 
-def test_update_inits_no_res(testdata, tmp_path):
+def test_update_inits_no_res(load_model_for_test, testdata, tmp_path):
     shutil.copy(testdata / 'nonmem/pheno.mod', tmp_path / 'run1.mod')
     shutil.copy(testdata / 'nonmem/pheno.dta', tmp_path / 'pheno.dta')
 
     with TemporaryDirectoryChanger(tmp_path):
-        model = Model.create_model('run1.mod')
+        model = load_model_for_test('run1.mod')
         with pytest.raises(ValueError):
             update_inits(model)
 
         shutil.copy(testdata / 'nonmem/pheno.ext', tmp_path / 'run1.ext')
         shutil.copy(testdata / 'nonmem/pheno.lst', tmp_path / 'run1.lst')
 
-        model = Model.create_model('run1.mod')
+        model = load_model_for_test('run1.mod')
 
         model.modelfit_results.parameter_estimates = pd.Series(
             np.nan, name='estimates', index=list(model.parameters.nonfixed.inits.keys())
@@ -3166,14 +3161,16 @@ def test_update_inits_no_res(testdata, tmp_path):
         ),
     ],
 )
-def test_set_power_on_ruv(testdata, epsilons, err_ref, theta_ref, tmp_path):
+def test_set_power_on_ruv(
+    load_model_for_test, create_model_for_test, testdata, epsilons, err_ref, theta_ref, tmp_path
+):
     shutil.copy(testdata / 'nonmem/pheno_real.mod', tmp_path / 'run1.mod')
     shutil.copy(testdata / 'nonmem/pheno_real.phi', tmp_path / 'run1.phi')
     shutil.copy(testdata / 'nonmem/pheno_real.ext', tmp_path / 'run1.ext')
     shutil.copy(testdata / 'nonmem/pheno.dta', tmp_path / 'pheno.dta')
 
     with TemporaryDirectoryChanger(tmp_path):
-        model_pheno = Model.create_model('run1.mod')
+        model_pheno = load_model_for_test('run1.mod')
         model_more_eps = re.sub(
             r'( 0.031128  ;        IVV\n)',
             '$SIGMA 0.1\n$SIGMA 0.1',
@@ -3184,7 +3181,7 @@ def test_set_power_on_ruv(testdata, epsilons, err_ref, theta_ref, tmp_path):
             r'IPRED=F+EPS(2)\nIRES=DV-IPRED+EPS(3)',
             model_more_eps,
         )
-        model = Model.create_model(StringIO(model_more_eps))
+        model = create_model_for_test(model_more_eps)
         model.dataset = model_pheno.dataset
 
         set_power_on_ruv(model, epsilons, zero_protection=True)
