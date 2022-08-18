@@ -8,6 +8,7 @@ from tempfile import mkdtemp
 from typing import Union
 
 from pharmpy.deps import pandas as pd
+from pharmpy.deps import sympy
 from pharmpy.expressions import sympify
 
 
@@ -105,14 +106,13 @@ _unit_subs = None
 
 def unit_subs():
     import sympy.physics.units as units
-    from sympy import Expr, Symbol
 
     global _unit_subs
     if _unit_subs is None:
         subs = {}
         for k, v in units.__dict__.items():
-            if isinstance(v, Expr) and v.has(units.Unit):
-                subs[Symbol(k)] = v
+            if isinstance(v, sympy.Expr) and v.has(units.Unit):
+                subs[sympy.Symbol(k)] = v
 
         _unit_subs = subs
 
@@ -120,7 +120,7 @@ def unit_subs():
 
 
 def parse_units(s):
-    return sympify(s).subs(unit_subs()) if isinstance(s, str) else s
+    return sympify(s).xreplace(unit_subs()) if isinstance(s, str) else s
 
 
 def normalize_user_given_path(path: Union[str, Path]) -> Path:
