@@ -47,7 +47,7 @@ lark==1.1.2
 locket==1.0.0
 lxml==4.9.1
 MarkupSafe==2.1.1
-matplotlib-inline==0.1.5
+matplotlib-inline==0.1.6
 mistune==0.8.4
 mpmath==1.2.1
 msgpack==1.0.4
