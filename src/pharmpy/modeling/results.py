@@ -8,6 +8,7 @@ from pharmpy.deps import sympy
 from pharmpy.expressions import subs, sympify, xreplace_dict
 from pharmpy.math import round_to_n_sigdig
 from pharmpy.model import CompartmentalSystem, CompartmentalSystemBuilder, Model
+from pharmpy.model.distributions.numeric import ConstantDistribution
 from pharmpy.model.random_variables import _generate_sampling_rvs, _sample_expr_from_rvs
 
 from .data import get_ids, get_observations
@@ -309,7 +310,7 @@ def calculate_individual_parameter_statistics(model, exprs, rng=None):
                     local_sampling_rvs = list(
                         _generate_sampling_rvs(distributions, random_variable_symbols, parameters)
                     ) + [
-                        ([key], value)
+                        ([key], ConstantDistribution(value))
                         for key, value in parameters.items()
                         if key in cov_expr_free_symbols
                     ]

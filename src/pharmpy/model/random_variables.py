@@ -1,13 +1,22 @@
+from __future__ import annotations
+
 import itertools
 from collections.abc import Sequence
 from functools import lru_cache
 from math import sqrt
+from typing import Iterable, List, Tuple
 
 import pharmpy.math
 import pharmpy.unicode as unicode
 from pharmpy.deps import numpy as np
 from pharmpy.deps import symengine, sympy
 from pharmpy.expressions import subs, sympify, xreplace_dict
+
+from .distributions.numeric import (
+    MultivariateNormalDistribution as NumericMultivariateNormalDistribution,
+)
+from .distributions.numeric import NormalDistribution as NumericNormalDistribution
+from .distributions.numeric import NumericDistribution
 
 
 def _create_rng(seed=None):
@@ -1137,7 +1146,9 @@ def _sample_from_distributions(distributions, expr, parameters, samples, rng):
     return _sample_expr_from_rvs(sampling_rvs, expr, parameters, samples, rng)
 
 
-def _generate_sampling_rvs(distributions, symbols, parameters):
+def _generate_sampling_rvs(
+    distributions, symbols, parameters
+) -> Iterable[Tuple[List[sympy.Symbol], NumericDistribution]]:
     covered_symbols = set()
 
     for rvs, dist in distributions:
@@ -1152,6 +1163,7 @@ def _generate_sampling_rvs(distributions, symbols, parameters):
                     sigma = np.array(dist._symengine_variance.xreplace(parameters)).astype(
                         np.float64
                     )
+                    distribution = NumericMultivariateNormalDistribution(mu, sigma)
                 except RuntimeError as e:
                     # NOTE This handles missing parameter substitutions
                     raise ValueError(e)
@@ -1163,11 +1175,12 @@ def _generate_sampling_rvs(distributions, symbols, parameters):
                 try:
                     mu = 0 if mean == 0 else float(parameters[mean])
                     sigma = 0 if variance == 0 else sqrt(float(parameters[variance]))
+                    distribution = NumericNormalDistribution(mu, sigma)
                 except KeyError as e:
                     # NOTE This handles missing parameter substitutions
                     raise ValueError(e)
 
-            yield (rvs_symbols, (mu, sigma))
+            yield (rvs_symbols, distribution)
             covered_symbols |= symbols_covered_by_dist
 
     if covered_symbols != symbols:
@@ -1175,20 +1188,26 @@ def _generate_sampling_rvs(distributions, symbols, parameters):
 
 
 def _sample_expr_from_rvs(sampling_rvs, expr, parameters, samples, rng):
+    expr = expr.xreplace(parameters)
+
     if not sampling_rvs:
         return np.full(samples, float(expr.evalf()))
 
-    expr = expr.xreplace(parameters)
     ordered_symbols, fn = _lambdify_canonical(expr)
     data = _sample_rvs_subset(sampling_rvs, ordered_symbols, samples, rng)
     return fn(*data)
 
 
-def _sample_rvs_subset(sampling_rvs, ordered_symbols, samples, rng):
+def _sample_rvs_subset(
+    sampling_rvs: Iterable[Tuple[List[sympy.Symbol], NumericDistribution]],
+    ordered_symbols,
+    nsamples,
+    rng,
+):
     data = [None] * len(ordered_symbols)
     index = {symbol: i for i, symbol in enumerate(ordered_symbols)}
-    for symbols, new_rv in sampling_rvs:
-        cursample = _sample_rv(rng, new_rv, samples)
+    for symbols, distribution in sampling_rvs:
+        cursample = distribution.sample(rng, nsamples)
         if len(symbols) > 1:
             for j, s in enumerate(symbols):
                 i = index.get(s, -1)
@@ -1198,22 +1217,6 @@ def _sample_rvs_subset(sampling_rvs, ordered_symbols, samples, rng):
             data[index[symbols[0]]] = cursample
 
     return data
-
-
-def _sample_rv(rng, rv, nsamples: int):
-    if isinstance(rv, (int, float, sympy.Float)):
-        return np.full(nsamples, float(rv))
-
-    if not isinstance(rv, tuple):
-        raise ValueError(type(rv))
-
-    mu, sigma = rv
-
-    if isinstance(mu, (float, int)):
-        assert isinstance(sigma, (float, int))
-        return rng.normal(mu, sigma, size=nsamples)
-
-    return rng.multivariate_normal(mu, sigma, size=nsamples)
 
 
 @lru_cache(maxsize=256)
