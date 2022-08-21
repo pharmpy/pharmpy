@@ -927,7 +927,10 @@ class CompartmentalSystem(ODESystem):
         Compartment(CENTRAL, dose=Bolus(AMT))
         """
         output = self.output_compartment
-        central = next(self._g.predecessors(output))
+        try:
+            central = next(self._g.predecessors(output))
+        except StopIteration:
+            raise ValueError('Cannot find central compartment')
         return central
 
     @property
