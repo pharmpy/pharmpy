@@ -7,6 +7,7 @@ from sympy import Symbol
 import pharmpy.plugins as plugins
 from pharmpy.modeling.common import convert_model
 from pharmpy.modeling.data import remove_loq_data
+from pharmpy.modeling.eta_additions import get_occasion_levels
 from pharmpy.modeling.results import summarize_errors, write_results
 from pharmpy.results import Results
 from pharmpy.workflows import default_tool_database
@@ -302,6 +303,14 @@ def _run_allometry(model, allometric_variable, path):
 def _run_iov(model, occasion, path):
     if occasion is None:
         warnings.warn('Skipping IOVsearch because occasion is None.')
+        return None
+
+    categories = get_occasion_levels(model.dataset, occasion)
+    if len(categories) < 2:
+        warnings.warn(
+            f'Skipping IOVsearch because there are less than two '
+            f'occasion categories in column "{occasion}": {categories}.'
+        )
         return None
 
     res_iov = run_tool('iovsearch', model=model, column=occasion, path=path / 'iovsearch')
