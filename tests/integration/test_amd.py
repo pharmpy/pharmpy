@@ -15,7 +15,10 @@ def _model_count(rundir: Path):
         )
     )
 
-@pytest.mark.filterwarnings("ignore::UserWarning")
+@pytest.mark.filterwarnings(
+    'ignore:.*Adjusting initial estimates to create '
+    'positive semidefinite omega/sigma matrices.*:UserWarning'
+)
 def test_amd(tmp_path, testdata):
     with TemporaryDirectoryChanger(tmp_path):
         shutil.copy2(testdata / 'nonmem' / 'models' / 'mox_simulated_normal.csv', '.')
