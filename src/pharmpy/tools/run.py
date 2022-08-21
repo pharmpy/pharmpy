@@ -2,6 +2,7 @@ import importlib
 import inspect
 from datetime import datetime
 from pathlib import Path
+from typing import List, Optional, Union
 
 import pharmpy.results
 import pharmpy.tools.modelfit
@@ -12,26 +13,28 @@ from pharmpy.utils import normalize_user_given_path
 from pharmpy.workflows import execute_workflow, split_common_options
 
 
-def fit(models, tool=None):
+def fit(
+    model_or_models: Union[Model, List[Model]], tool: Optional[str] = None
+) -> Union[Model, List[Model]]:
     """Fit models.
 
     Parameters
     ----------
-    models : list
+    model_or_models : Model | list[Model]
         List of models or one single model
     tool : str
         Estimation tool to use. None to use default
 
     Return
     ------
-    Model
-        Reference to same model
+    Model | list[Model]
+        Input model or models with model fit results
 
     Examples
     --------
     >>> from pharmpy.modeling import load_example_model
     >>> from pharmpy.tools import fit
-    >>> model = load_example_model("pheno")
+    >>> model = load_example_model("pheno")      # doctest: +SKIP
     >>> fit(model)      # doctest: +SKIP
 
     See also
@@ -39,11 +42,12 @@ def fit(models, tool=None):
     run_tool
 
     """
-    if isinstance(models, Model):
-        models = [models]
-        single = True
-    else:
-        single = False
+    single, models = (
+        (True, [model_or_models])
+        if isinstance(model_or_models, Model)
+        else (False, model_or_models)
+    )
+
     kept = []
     # Do not fit model if already fit
     for model in models:
@@ -60,12 +64,11 @@ def fit(models, tool=None):
             model.modelfit_results = db_model.modelfit_results
         else:
             kept.append(model)
+
     if kept:
         run_tool('modelfit', kept, tool=tool)
-    if single:
-        return models[0]
-    else:
-        return models
+
+    return models[0] if single else models
 
 
 def create_results(path, **kwargs):
