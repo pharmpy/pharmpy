@@ -1666,7 +1666,7 @@ def find_volume_parameters(model):
 def _find_rate(sset):
     rate_list = []
     odes = sset.ode_system
-    if type(odes) is ExplicitODESystem:
+    if isinstance(odes, ExplicitODESystem):
         odes = sset.ode_system.to_compartmental_system()
     central = odes.central_compartment
     output = odes.output_compartment
