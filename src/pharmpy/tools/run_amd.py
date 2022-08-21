@@ -305,6 +305,11 @@ def _run_iov(model, occasion, path):
         warnings.warn('Skipping IOVsearch because occasion is None.')
         return None
 
+    if occasion not in model.dataset:
+        # TODO Check this upstream and raise instead of warn
+        warnings.warn(f'Skipping IOVsearch because dataset is missing column "{occasion}".')
+        return None
+
     categories = get_occasion_levels(model.dataset, occasion)
     if len(categories) < 2:
         warnings.warn(

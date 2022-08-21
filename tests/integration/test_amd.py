@@ -125,3 +125,39 @@ def test_skip_iovsearch_one_occasion(tmp_path, testdata):
         assert res.summary_models is None
         assert res.summary_individuals_count is None
         assert res.final_model.name == 'start'
+
+
+def test_skip_iovsearch_missing_occasion(tmp_path, testdata):
+    with TemporaryDirectoryChanger(tmp_path):
+        models = testdata / 'nonmem' / 'models'
+        shutil.copy2(models / 'mox_simulated_normal.csv', '.')
+        shutil.copy2(models / 'mox2.mod', '.')
+        shutil.copy2(models / 'mox2.ext', '.')
+        shutil.copy2(models / 'mox2.lst', '.')
+        shutil.copy2(models / 'mox2.phi', '.')
+        model = Model.create_model('mox2.mod')
+        with pytest.warns(Warning) as record:
+            res = run_amd(
+                model,
+                modeltype='pk_oral',
+                order=['iovsearch'],
+                occasion='XYZ',
+            )
+
+        assert len(record) == 4
+
+        for warning, match in zip(
+            record,
+            [
+                'Skipping IOVsearch because dataset is missing column "XYZ"',
+                'AMDResults.summary_tool is None',
+                'AMDResults.summary_models is None',
+                'AMDResults.summary_individuals_count is None',
+            ],
+        ):
+            assert match in str(warning.message)
+
+        assert res.summary_tool is None
+        assert res.summary_models is None
+        assert res.summary_individuals_count is None
+        assert res.final_model.name == 'start'
