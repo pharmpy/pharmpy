@@ -78,25 +78,28 @@ def add_allometry(
     """
     allometric_variable = sympify(allometric_variable)
     reference_value = sympify(reference_value)
-    cls = find_clearance_parameters(model)
-    vcs = find_volume_parameters(model)
 
-    if parameters is None:
-        parameters = cls + vcs
-        if not parameters:
-            raise ValueError("No parameters found")
-    else:
-        if not parameters:
-            raise ValueError("No parameters provided")
+    if isinstance(parameters, list):
         parameters = [sympify(p) for p in parameters]
-    if initials is None:
-        # Need to understand which parameter is CL or Q and which is V
-        initials = []
-        for p in parameters:
-            if p in cls:
-                initials.append(0.75)
-            elif p in vcs:
-                initials.append(1.0)
+
+    if parameters is None or initials is None:
+        cls = find_clearance_parameters(model)
+        vcs = find_volume_parameters(model)
+
+        if parameters is None:
+            parameters = cls + vcs
+
+        if initials is None:
+            # Need to understand which parameter is CL or Q and which is V
+            initials = []
+            for p in parameters:
+                if p in cls:
+                    initials.append(0.75)
+                elif p in vcs:
+                    initials.append(1.0)
+
+    if not parameters:
+        raise ValueError("No parameters provided")
 
     if lower_bounds is None:
         lower_bounds = [0] * len(parameters)
