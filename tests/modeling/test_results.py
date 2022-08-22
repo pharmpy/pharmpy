@@ -242,16 +242,21 @@ class DummyModel:
 
 
 class DummyResults:
-    def __init__(self, ofv, minimization_successful=True):
+    def __init__(self, ofv, minimization_successful=True, termination_cause=None):
         self.ofv = ofv
         self.minimization_successful = minimization_successful
-        self.termination_cause = None
+        self.termination_cause = termination_cause
 
 
 def test_rank_models():
     base = DummyModel('base', parent='base', parameter_names=['p1'], ofv=0)
     m1 = DummyModel(
-        'm1', parent='base', parameter_names=['p1', 'p2'], ofv=-5, minimization_successful=False
+        'm1',
+        parent='base',
+        parameter_names=['p1', 'p2'],
+        ofv=-5,
+        minimization_successful=False,
+        termination_cause='rounding_errors',
     )
     m2 = DummyModel('m2', parent='base', parameter_names=['p1', 'p2'], ofv=-4)
     m3 = DummyModel('m3', parent='base', parameter_names=['p1', 'p2', 'p3'], ofv=-4)
@@ -262,21 +267,21 @@ def test_rank_models():
     df = rank_models(base, models, rank_type='ofv')
     assert len(df) == 5
     best_model = df.loc[df['rank'] == 1].index.values
-    assert list(best_model) == ['m1']
-
-    df = rank_models(base, models, strictness=['minimization_successful'], rank_type='ofv')
-    best_model = df.loc[df['rank'] == 1].index.values
     assert list(best_model) == ['m2', 'm3']
+
+    df = rank_models(base, models, errors_allowed=['rounding_errors'], rank_type='ofv')
+    best_model = df.loc[df['rank'] == 1].index.values
+    assert list(best_model) == ['m1']
     ranked_models = df.dropna().index.values
-    assert len(ranked_models) == 4
+    assert len(ranked_models) == 5
 
     df = rank_models(base, models, rank_type='ofv', cutoff=1)
     ranked_models = df.dropna().index.values
-    assert len(ranked_models) == 3
+    assert len(ranked_models) == 2
 
     df = rank_models(base, models, rank_type='lrt', cutoff=0.05)
     ranked_models = list(df.dropna().index.values)
-    assert len(ranked_models) == 2
+    assert len(ranked_models) == 1
     assert 'm2' in ranked_models
     assert 'm3' not in ranked_models
 
@@ -288,7 +293,7 @@ def test_rank_models():
 
     base_nan = DummyModel('base_nan', parent='base_nan', parameter_names=['p1'], ofv=np.nan)
 
-    df = rank_models(base_nan, models, rank_type='ofv')
+    df = rank_models(base_nan, models, errors_allowed=['rounding_errors'], rank_type='ofv')
     assert df.iloc[0].name == 'm1'
 
 
