@@ -107,7 +107,7 @@ def set_first_order_elimination(model):
     elif has_zero_order_elimination(model) or has_michaelis_menten_elimination(model):
         rename_symbols(model, {'POP_CLMM': 'POP_CL'})
         ind = model.statements.find_assignment_index('CLMM')
-        model.statements[ind] = Assignment('CL', model.statements[ind].expression)
+        model.statements[ind] = Assignment(sympy.Symbol('CL'), model.statements[ind].expression)
         odes = model.statements.ode_system
         central = odes.central_compartment
         output = odes.output_compartment

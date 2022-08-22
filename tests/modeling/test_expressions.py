@@ -129,26 +129,29 @@ $ESTIMATION METHOD=1 INTERACTION
     'statements,correct',
     [
         (
-            [Assignment('CL', s('THETA(1)') + s('ETA(1)'))],
-            [Assignment('mu_1', s('THETA(1)')), Assignment('CL', s('mu_1') + s('ETA(1)'))],
+            [Assignment.create('CL', s('THETA(1)') + s('ETA(1)'))],
+            [
+                Assignment.create('mu_1', s('THETA(1)')),
+                Assignment.create('CL', s('mu_1') + s('ETA(1)')),
+            ],
         ),
         (
             [
-                Assignment(
+                Assignment.create(
                     'CL', s('THETA(1)') * s('AGE') ** s('THETA(2)') * sympy.exp(s('ETA(1)'))
                 ),
-                Assignment('V', s('THETA(3)') * sympy.exp(s('ETA(2)'))),
+                Assignment.create('V', s('THETA(3)') * sympy.exp(s('ETA(2)'))),
             ],
             [
-                Assignment('mu_1', sympy.log(s('THETA(1)') * s('AGE') ** s('THETA(2)'))),
-                Assignment('CL', sympy.exp(s('mu_1') + s('ETA(1)'))),
-                Assignment('mu_2', sympy.log(s('THETA(3)'))),
-                Assignment('V', sympy.exp(s('mu_2') + s('ETA(2)'))),
+                Assignment.create('mu_1', sympy.log(s('THETA(1)') * s('AGE') ** s('THETA(2)'))),
+                Assignment.create('CL', sympy.exp(s('mu_1') + s('ETA(1)'))),
+                Assignment.create('mu_2', sympy.log(s('THETA(3)'))),
+                Assignment.create('V', sympy.exp(s('mu_2') + s('ETA(2)'))),
             ],
         ),
         (
-            [Assignment('CL', s('THETA(1)') + s('ETA(1)') + s('ETA(2)'))],
-            [Assignment('CL', s('THETA(1)') + s('ETA(1)') + s('ETA(2)'))],
+            [Assignment.create('CL', s('THETA(1)') + s('ETA(1)') + s('ETA(2)'))],
+            [Assignment.create('CL', s('THETA(1)') + s('ETA(1)') + s('ETA(2)'))],
         ),
     ],
 )

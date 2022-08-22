@@ -17,7 +17,7 @@ def test_allometry(testdata):
         upper_bounds=[2],
         fixed=True,
     )
-    assert model.statements[1] == Assignment('CL', 'CL*(WGT/70)**ALLO_CL')
+    assert model.statements[1] == Assignment.create('CL', 'CL*(WGT/70)**ALLO_CL')
     assert model.parameters['ALLO_CL'].init == 0.7
     assert model.parameters['ALLO_CL'].lower == 0
     assert model.parameters['ALLO_CL'].upper == 2
@@ -72,8 +72,8 @@ def test_allometry(testdata):
         upper_bounds=[2, 3],
         fixed=True,
     )
-    assert model.statements[1] == Assignment('CL', 'CL*(WGT/70)**ALLO_CL')
-    assert model.statements[3] == Assignment('V', 'V*(WGT/70)**ALLO_V')
+    assert model.statements[1] == Assignment.create('CL', 'CL*(WGT/70)**ALLO_CL')
+    assert model.statements[3] == Assignment.create('V', 'V*(WGT/70)**ALLO_V')
     assert model.parameters['ALLO_V'].init == 0.8
 
     model = ref_model.copy()
@@ -89,16 +89,16 @@ def test_allometry(testdata):
     model = ref_model.copy()
     add_peripheral_compartment(model)
     add_allometry(model, allometric_variable='WGT', reference_value=70)
-    assert model.statements[1] == Assignment('VP1', 'VP1*(WGT/70)**ALLO_VP1')
-    assert model.statements[3] == Assignment('QP1', 'QP1*(WGT/70)**ALLO_QP1')
-    assert model.statements[5] == Assignment('CL', 'CL*(WGT/70)**ALLO_CL')
-    assert model.statements[7] == Assignment('V', 'V*(WGT/70)**ALLO_V')
+    assert model.statements[1] == Assignment.create('VP1', 'VP1*(WGT/70)**ALLO_VP1')
+    assert model.statements[3] == Assignment.create('QP1', 'QP1*(WGT/70)**ALLO_QP1')
+    assert model.statements[5] == Assignment.create('CL', 'CL*(WGT/70)**ALLO_CL')
+    assert model.statements[7] == Assignment.create('V', 'V*(WGT/70)**ALLO_V')
     assert model.parameters['ALLO_VP1'].init == 1.0
     assert model.parameters['ALLO_QP1'].init == 0.75
     add_peripheral_compartment(model)
     add_allometry(model, allometric_variable='WGT', reference_value=70)
-    assert model.statements[1] == Assignment('VP2', 'VP2*(WGT/70)**ALLO_VP2')
-    assert model.statements[3] == Assignment('QP2', 'QP2*(WGT/70)**ALLO_QP2')
+    assert model.statements[1] == Assignment.create('VP2', 'VP2*(WGT/70)**ALLO_VP2')
+    assert model.statements[3] == Assignment.create('QP2', 'QP2*(WGT/70)**ALLO_QP2')
     assert model.parameters['ALLO_VP2'].init == 1.0
     assert model.parameters['ALLO_QP2'].init == 0.75
 

@@ -122,12 +122,12 @@ def test_reassign():
     s4 = Assignment(S('KA'), S('X') + S('Y'))
     s = ModelStatements([s1, s2, s3, s4])
     s.reassign(S('M'), S('x') + S('y'))
-    assert s == ModelStatements([s1, Assignment('M', S('x') + S('y')), s3, s4])
+    assert s == ModelStatements([s1, Assignment(S('M'), S('x') + S('y')), s3, s4])
 
-    s5 = Assignment('KA', S('KA') + S('Q') + 1)
+    s5 = Assignment(S('KA'), S('KA') + S('Q') + 1)
     s = ModelStatements([s1, s2, s3, s4, s5])
     s.reassign(S('KA'), S('F'))
-    assert s == ModelStatements([s1, s2, s3, Assignment('KA', S('F'))])
+    assert s == ModelStatements([s1, s2, s3, Assignment(S('KA'), S('F'))])
 
 
 def test_find_compartment(testdata):
@@ -194,7 +194,7 @@ def test_find_transit_compartments(testdata):
 
 def test_insert_before_odes(testdata):
     model = Model.create_model(testdata / 'nonmem' / 'minimal.mod')
-    model.statements.insert_before_odes(Assignment('CL', sympy.Integer(1)))
+    model.statements.insert_before_odes(Assignment(S('CL'), sympy.Integer(1)))
     assert model.model_code.split('\n')[6] == 'CL = 1'
 
 

@@ -47,14 +47,18 @@ class Assignment(Statement):
     """
 
     def __init__(self, symbol, expression):
+        self._symbol = symbol
+        self._expression = expression
+
+    @classmethod
+    def create(cls, symbol, expression):
         if isinstance(symbol, str):
             symbol = sympy.Symbol(symbol)
         if not (symbol.is_Symbol or symbol.is_Derivative or symbol.is_Function):
             raise TypeError("symbol of Assignment must be a Symbol or str representing a symbol")
-        self._symbol = symbol
         if isinstance(expression, str):
             expression = sympify(expression)
-        self._expression = sympify(expression)
+        return cls(symbol, expression)
 
     @property
     def symbol(self):
@@ -82,7 +86,7 @@ class Assignment(Statement):
         Examples
         --------
         >>> from pharmpy import Assignment
-        >>> a = Assignment('CL', 'POP_CL + ETA_CL')
+        >>> a = Assignment.create('CL', 'POP_CL + ETA_CL')
         >>> a
         CL = ETA_CL + POP_CL
         >>> b = a.subs({'ETA_CL' : 'ETA_CL * WGT'})
@@ -103,7 +107,7 @@ class Assignment(Statement):
         Examples
         --------
         >>> from pharmpy import Assignment
-        >>> a = Assignment('CL', 'POP_CL + ETA_CL')
+        >>> a = Assignment.create('CL', 'POP_CL + ETA_CL')
         >>> a.free_symbols      # doctest: +SKIP
         {CL, ETA_CL, POP_CL}
 
@@ -119,7 +123,7 @@ class Assignment(Statement):
         Examples
         --------
         >>> from pharmpy import Assignment
-        >>> a = Assignment('CL', 'POP_CL + ETA_CL')
+        >>> a = Assignment.create('CL', 'POP_CL + ETA_CL')
         >>> a.rhs_symbols      # doctest: +SKIP
         {ETA_CL, POP_CL}
 
@@ -2018,7 +2022,7 @@ class ModelStatements(MutableSequence):
         >>> from pharmpy import Assignment
         >>> from pharmpy.modeling import load_example_model
         >>> model = load_example_model("pheno")
-        >>> a = Assignment("WGT_G", "WGT*1000")
+        >>> a = Assignment.create("WGT_G", "WGT*1000")
         >>> b = model.statements.find_assignment("CL")
         >>> model.statements.insert_before(b, a)
 
@@ -2041,7 +2045,7 @@ class ModelStatements(MutableSequence):
         >>> from pharmpy import Assignment
         >>> from pharmpy.modeling import load_example_model
         >>> model = load_example_model("pheno")
-        >>> a = Assignment("WGT_G", "WGT*1000")
+        >>> a = Assignment.create("WGT_G", "WGT*1000")
         >>> b = model.statements.find_assignment("CL")
         >>> model.statements.insert_after(b, a)
 
@@ -2062,7 +2066,7 @@ class ModelStatements(MutableSequence):
         >>> from pharmpy import Assignment
         >>> from pharmpy.modeling import load_example_model
         >>> model = load_example_model("pheno")
-        >>> a = Assignment("WGT_G", "WGT*1000")
+        >>> a = Assignment.create("WGT_G", "WGT*1000")
         >>> model.statements.insert_before_odes(a)
         """
         for i, s in enumerate(self):

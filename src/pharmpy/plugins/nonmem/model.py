@@ -206,7 +206,7 @@ class Model(pharmpy.model.Model):
             if not self.random_variables.etas:
                 omega = Parameter('DUMMYOMEGA', init=0, fix=True)
                 eta = RandomVariable.normal('eta_dummy', 'iiv', 0, omega.symbol)
-                statement = Assignment('DUMMYETA', eta.name)
+                statement = Assignment(sympy.Symbol('DUMMYETA'), sympy.Symbol(eta.name))
                 self.statements.insert(0, statement)
                 self.random_variables.append(eta)
                 self.parameters = Parameters([p for p in self.parameters] + [omega])
@@ -494,7 +494,7 @@ class Model(pharmpy.model.Model):
             else:
                 statements.append(ODESystem())  # FIXME: Placeholder for ODE-system
                 # FIXME: Dummy link statement
-                statements.append(Assignment('F', S('F')))
+                statements.append(Assignment(S('F'), S('F')))
             statements += error.statements
             if trans_amounts:
                 statements.subs(trans_amounts)

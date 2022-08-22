@@ -220,7 +220,7 @@ def _create_base_model(input_model, current_iteration):
     rvs = RandomVariables([eta, sigma])
     base_model.random_variables = rvs
 
-    y = Assignment('Y', theta.symbol + eta.symbol + sigma.symbol)
+    y = Assignment(sympy.Symbol('Y'), theta.symbol + eta.symbol + sigma.symbol)
     stats = ModelStatements([y])
     base_model.statements = stats
 

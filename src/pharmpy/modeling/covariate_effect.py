@@ -184,7 +184,12 @@ def add_covariate_effect(model, parameter, covariate, effect, operation='*'):
     if last_existing_parameter_assignment.expression.args and all(
         map(cov_possible.__contains__, last_existing_parameter_assignment.expression.args)
     ):
-        statements[-1] = Assignment(effect_statement.symbol, effect_statement.expression.subs({parameter: last_existing_parameter_assignment.expression}))
+        statements[-1] = Assignment(
+            effect_statement.symbol,
+            effect_statement.expression.subs(
+                {parameter: last_existing_parameter_assignment.expression}
+            ),
+        )
         sset.remove(last_existing_parameter_assignment)
         insertion_index -= 1
 
@@ -399,7 +404,9 @@ class CovariateEffect:
 
     def apply(self, parameter, covariate, thetas, statistics):
         effect_name = f'{parameter}{covariate}'
-        self.template = Assignment(S(effect_name), self.template.expression.subs(thetas).subs({'cov': covariate}))
+        self.template = Assignment(
+            S(effect_name), self.template.expression.subs(thetas).subs({'cov': covariate})
+        )
 
         template_str = [str(symbol) for symbol in self.template.free_symbols]
 

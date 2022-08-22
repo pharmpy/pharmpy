@@ -650,7 +650,7 @@ def test_empty_record(parser):
 def test_set_block_if(parser):
     rec = parser.parse('$PRED\n').records[0]
     z = S('z')
-    s = Assignment('X', sympy.Piecewise((23, z < 12), (5, True)))
+    s = Assignment(sympy.Symbol('X'), sympy.Piecewise((23, z < 12), (5, True)))
     statements = rec.statements
     statements.append(s)
     rec.statements = statements

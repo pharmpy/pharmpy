@@ -338,7 +338,7 @@ def update_infusion(model, old, new):
         dose = new.dosing_compartment.dose
         if dose.rate is None:
             # FIXME: Not always D1 here!
-            ass = Assignment('D1', dose.duration)
+            ass = Assignment(sympy.Symbol('D1'), dose.duration)
             dose.duration = ass.symbol
         else:
             raise NotImplementedError("First order infusion rate is not yet supported")
@@ -500,7 +500,7 @@ def update_lag_time(model, old, new):
     except ValueError:
         old_lag_time = 0
     if new_lag_time != old_lag_time and new_lag_time != 0:
-        ass = Assignment('ALAG1', new_lag_time)
+        ass = Assignment(sympy.Symbol('ALAG1'), new_lag_time)
         model.statements.insert_before_odes(ass)
         new_dosing.lag_time = ass.symbol
 
@@ -824,7 +824,7 @@ def add_needed_pk_parameters(model, advan, trans):
     if advan == 'ADVAN2' or advan == 'ADVAN4' or advan == 'ADVAN12':
         if not statements.find_assignment('KA'):
             comp, rate = odes.get_compartment_outflows(odes.find_depot(statements))[0]
-            ass = Assignment('KA', rate)
+            ass = Assignment(sympy.Symbol('KA'), rate)
             if rate != ass.symbol:
                 statements.insert_before_odes(ass)
                 odes.add_flow(odes.find_depot(statements), comp, ass.symbol)
@@ -899,8 +899,8 @@ def add_parameters_ratio(model, numpar, denompar, source, dest):
         odes = statements.ode_system
         rate = odes.get_flow(source, dest)
         numer, denom = rate.as_numer_denom()
-        par1 = Assignment(numpar, numer)
-        par2 = Assignment(denompar, denom)
+        par1 = Assignment(sympy.Symbol(numpar), numer)
+        par2 = Assignment(sympy.Symbol(denompar), denom)
         if rate != par1.symbol / par2.symbol:
             if not statements.find_assignment(numpar):
                 statements.insert_before_odes(par1)
@@ -924,7 +924,7 @@ def define_parameter(model, name, value, synonyms=None):
             if value != ass.expression and value != symbol(name):
                 ass.expression = value
             return False
-    new_ass = Assignment(name, value)
+    new_ass = Assignment(sympy.Symbol(name), value)
     model.statements.insert_before_odes(new_ass)
     return True
 

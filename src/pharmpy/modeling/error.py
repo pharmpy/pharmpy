@@ -578,7 +578,7 @@ def set_weighted_error_model(model):
 
     for i, s in enumerate(stats):
         if isinstance(s, Assignment) and s.symbol == y:
-            stats.insert(i, Assignment('W', w))
+            stats.insert(i, Assignment(sympy.Symbol('W'), w))
             break
 
     stats.reassign(y, f + sympy.Symbol('W') * sympy.Symbol(epsilons[0].name))
@@ -625,14 +625,14 @@ def set_dtbs_error_model(model, fix_to_log=False):
         if isinstance(s, Assignment) and s.symbol == sympy.Symbol('W'):
             break
 
-    stats.insert(i + 1, Assignment('W', (f**zeta) * sympy.Symbol('W')))
+    stats.insert(i + 1, Assignment(sympy.Symbol('W'), (f**zeta) * sympy.Symbol('W')))
     ipred = sympy.Piecewise(
         ((f**lam - 1) / lam, sympy.And(sympy.Ne(lam, 0), sympy.Ne(f, 0))),
         (sympy.log(f), sympy.And(sympy.Eq(lam, 0), sympy.Ne(f, 0))),
         (-1 / lam, sympy.And(sympy.Eq(lam, 0), sympy.Eq(f, 0))),
         (-1000000000, True),
     )
-    stats.insert(i + 2, Assignment('IPRED', ipred))
+    stats.insert(i + 2, Assignment(sympy.Symbol('IPRED'), ipred))
     yexpr_ind = stats.find_assignment_index(y.name)
     stats[yexpr_ind] = stats[yexpr_ind].subs({f: sympy.Symbol('IPRED')})
 

@@ -576,7 +576,7 @@ class CodeRecord(Record):
                 if node.rule == 'assignment':
                     name = str(node.variable).upper()
                     expr = ExpressionInterpreter().visit(node.expression)
-                    ass = Assignment(name, expr)
+                    ass = Assignment(sympy.Symbol(name), expr)
                     s.append(ass)
                     new_index.append((child_index, child_index + 1, len(s) - 1, len(s)))
                 elif node.rule == 'logical_if':
@@ -595,7 +595,7 @@ class CodeRecord(Record):
                                 else_val = sympy.Symbol(name)
                                 break
                         pw = sympy.Piecewise((expr, logic_expr), (else_val, True))
-                        ass = Assignment(name, pw)
+                        ass = Assignment(sympy.Symbol(name), pw)
                         s.append(ass)
                         new_index.append((child_index, child_index + 1, len(s) - 1, len(s)))
                 elif node.rule == 'block_if':
@@ -652,7 +652,7 @@ class CodeRecord(Record):
                                 if cursymb == symbol:
                                     pairs.append((expr, logic))
                         pw = sympy.Piecewise(*pairs)
-                        ass = Assignment(symbol, pw)
+                        ass = Assignment(sympy.Symbol(symbol), pw)
                         s.append(ass)
                     new_index.append((child_index, child_index + 1, len(s) - len(symbols), len(s)))
 

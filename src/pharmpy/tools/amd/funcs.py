@@ -54,8 +54,8 @@ def create_start_model(dataset_path, modeltype='pk_oral', cl_init=0.01, vc_init=
     odes.add_flow(central, output, CL / VC)
     central.dose = dosing(di, lambda: df, 1)
 
-    ipred = Assignment('IPRED', central.amount / VC)
-    y_ass = Assignment('Y', ipred.symbol)
+    ipred = Assignment(sympy.Symbol('IPRED'), central.amount / VC)
+    y_ass = Assignment(sympy.Symbol('Y'), ipred.symbol)
 
     stats = ModelStatements([cl_ass, vc_ass, odes, ipred, y_ass])
 

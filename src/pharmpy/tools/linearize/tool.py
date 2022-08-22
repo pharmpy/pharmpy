@@ -33,32 +33,32 @@ def create_linearized_model(model):
     for i, eta in enumerate(model.random_variables.etas, start=1):
         deta = sympy.Symbol("D_ETA1")
         oeta = sympy.Symbol("OETA")
-        base = Assignment(f'BASE{i}', deta * (eta.symbol - oeta))
+        base = Assignment(sympy.Symbol(f'BASE{i}'), deta * (eta.symbol - oeta))
         ms.append(base)
         base_terms_sum += base.symbol
 
-    base_terms = Assignment('BASE_TERMS', base_terms_sum)
+    base_terms = Assignment(sympy.Symbol('BASE_TERMS'), base_terms_sum)
     ms.append(base_terms)
-    ipred = Assignment('IPRED', sympy.Symbol('OPRED') + base_terms.symbol)
+    ipred = Assignment(sympy.Symbol('IPRED'), sympy.Symbol('OPRED') + base_terms.symbol)
     ms.append(ipred)
 
     i = 1
     err_terms_sum = 0
     for epsno, eps in enumerate(model.random_variables.epsilons, start=1):
-        err = Assignment(f'ERR{epsno}', f'D_EPS{epsno}')
+        err = Assignment(sympy.Symbol(f'ERR{epsno}'), sympy.Symbol(f'D_EPS{epsno}'))
         err_terms_sum += err.symbol
         ms.append(err)
         i += 1
         for etano, eta in enumerate(model.random_variables.etas, start=1):
             inter = Assignment(
-                f'ERR{i}',
+                sympy.Symbol(f'ERR{i}'),
                 sympy.Symbol(f'D_EPSETA{epsno}_{etano}')
                 * (eta.symbol - sympy.Symbol(f'OETA{etano}')),
             )
             err_terms_sum += inter.symbol
             ms.append(inter)
             i += 1
-    error_terms = Assignment('ERROR_TERMS', err_terms_sum)
+    error_terms = Assignment(sympy.Symbol('ERROR_TERMS'), err_terms_sum)
     ms.append(error_terms)
 
     y = model.dependent_variable
