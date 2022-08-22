@@ -1,6 +1,10 @@
 import copy
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
+from functools import reduce
+from itertools import chain
+from operator import __and__
+from typing import Iterable, Set
 
 import networkx as nx
 import sympy
@@ -426,13 +430,12 @@ class ExplicitODESystem(ODESystem):
                     continue
                 terms = sympy.Add.make_args(dep)
                 for term in terms:
-                    expr = term / comp_func
-                    if term.args[0] != -1:
+                    if _is_positive(term):
                         # FIXME: unnecessary conversion
                         cs = CompartmentalSystem(cb)
                         from_comp = cs.find_compartment(convert_name(comp_func.name))
                         to_comp = cs.find_compartment(convert_name(eq.lhs.args[0].name))
-                        cb.add_flow(from_comp, to_comp, expr)
+                        cb.add_flow(from_comp, to_comp, term / comp_func)
 
         return CompartmentalSystem(cb)
 
@@ -591,6 +594,38 @@ class CompartmentalSystemBuilder:
         mapping = {compartment: new_comp}
         nx.relabel_nodes(self._g, mapping, copy=False)
         return new_comp
+
+
+def _is_positive(expr: sympy.Expr) -> bool:
+    return sympy.ask(
+        sympy.Q.positive(expr), _assume_all(sympy.Q.positive, _free_images_and_symbols(expr))
+    )
+
+
+def _free_images_and_symbols(expr: sympy.Expr) -> Set[sympy.Expr]:
+    return expr.free_symbols | _free_images(expr)
+
+
+def _free_images(expr: sympy.Expr) -> Set[sympy.Expr]:
+    return set(_free_images_iter(expr))
+
+
+def _free_images_iter(expr: sympy.Expr) -> Iterable[sympy.Expr]:
+    if isinstance(expr.func, sympy.core.function.UndefinedFunction):
+        yield expr
+        return
+
+    yield from chain.from_iterable(
+        map(
+            _free_images,
+            expr.args,
+        )
+    )
+
+
+def _assume_all(predicate: sympy.assumptions.Predicate, expressions: Iterable[sympy.Expr]):
+    tautology = sympy.Q.is_true(True)
+    return reduce(__and__, map(predicate, expressions), tautology)
 
 
 class CompartmentalSystem(ODESystem):
