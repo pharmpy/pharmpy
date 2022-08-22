@@ -592,7 +592,7 @@ def summarize_errors(models):
 
 
 def rank_models(
-    base_model, models, strictness=None, rank_type='ofv', cutoff=None, bic_type='mixed'
+    base_model, models, errors_allowed=None, rank_type='ofv', cutoff=None, bic_type='mixed'
 ) -> pd.DataFrame:
     """Ranks a list of models
 
@@ -604,9 +604,9 @@ def rank_models(
         Base model to compare to
     models : list
         List of models
-    strictness : list or None
-        List of strictness criteria to be fulfilled, currently only minimization successful.
-        Default is None
+    errors_allowed : list or None
+        List of errors that are allowed for ranking. Currently available is: rounding_errors and
+        maxevals_exceeded. Default is None
     rank_type : str
         Name of ranking type. Available options are 'ofv', 'aic', 'bic', 'lrt' (OFV with LRT)
     cutoff : float or None
@@ -625,7 +625,7 @@ def rank_models(
     >>> model_1 = load_example_model("pheno")
     >>> model_2 = load_example_model("pheno_linear")
     >>> rank_models(model_1, [model_2],
-    ...             strictness=['minimization_successful'],
+    ...             errors_allowed=['rounding_errors'],
     ...             rank_type='lrt') # doctest: +SKIP
     """
     models_all = [base_model] + models
@@ -636,15 +636,18 @@ def rank_models(
     ref_value = _get_rankval(base_model, rank_type, bic_type)
     model_dict = {model.name: model for model in models_all}
 
-    # Filter on strictness and cutoff
+    # Filter on strictness
     for model in models_all:
-        # Exclude OFV etc if model was not successful
+        # Exclude OFV etc. if model was not successful
         if not model.modelfit_results or np.isnan(model.modelfit_results.ofv):
             continue
         if not model.modelfit_results.minimization_successful:
-            if strictness and model.modelfit_results.termination_cause not in strictness:
+            if errors_allowed:
+                if model.modelfit_results.termination_cause not in errors_allowed:
+                    continue
+            else:
                 continue
-        # Only include OFVs etc. of models that fulfill strictness criteria
+
         rank_value = _get_rankval(model, rank_type, bic_type)
         if rank_type == 'lrt':
             if not _fulfills_lrt(model_dict[model.parent_model], model, cutoff):
