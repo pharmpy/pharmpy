@@ -17,10 +17,13 @@ jobs:
 
     strategy:
       matrix:
-        suite: ['lint', 'unit', 'doctest']
+        suite: ['unit', 'doctest']
         platform: [ubuntu-latest, macos-latest, windows-latest]
         python-version: ['3.8', '3.9', '3.10']
         include:
+          - suite: 'lint'
+            platform: ubuntu-latest
+            python-version: '3.8'
           - suite: 'docs-build'
             platform: ubuntu-latest
             python-version: '3.9'
@@ -33,10 +36,6 @@ jobs:
         exclude:
           - platform: windows-latest
             python-version: '3.10'
-          - suite: 'lint'
-            platform: macos-latest
-          - suite: 'lint'
-            platform: windows-latest
 
     runs-on: ${{ matrix.platform }}
 
