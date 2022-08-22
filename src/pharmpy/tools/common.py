@@ -70,7 +70,12 @@ def summarize_tool(
     models_all = [start_model] + models
 
     df_rank = rank_models(
-        start_model, models, strictness=[], rank_type=rank_type, cutoff=cutoff, bic_type=bic_type
+        start_model,
+        models,
+        errors_allowed=['rounding_errors'],
+        rank_type=rank_type,
+        cutoff=cutoff,
+        bic_type=bic_type,
     )
 
     rows = {model.name: [model.description, model.parent_model] for model in models_all}
