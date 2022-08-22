@@ -35,8 +35,8 @@ class Statement(ABC):
 class Assignment(Statement):
     """Representation of variable assignment
 
-    This class is similar to :class:`sympy.codegen.Assignment` and are
-    combined together into a ModelStatements object.
+    This class represents an assignment of an expression to a variable. Multiple assignments
+    are combined together into a ModelStatements object.
 
     Parameters
     ----------
@@ -47,32 +47,24 @@ class Assignment(Statement):
     """
 
     def __init__(self, symbol, expression):
-        self.symbol = symbol
-        self.expression = sympify(expression)
+        if isinstance(symbol, str):
+            symbol = sympy.Symbol(symbol)
+        if not (symbol.is_Symbol or symbol.is_Derivative or symbol.is_Function):
+            raise TypeError("symbol of Assignment must be a Symbol or str representing a symbol")
+        self._symbol = symbol
+        if isinstance(expression, str):
+            expression = sympify(expression)
+        self._expression = sympify(expression)
 
     @property
     def symbol(self):
         """Symbol of statement"""
         return self._symbol
 
-    @symbol.setter
-    def symbol(self, value):
-        if isinstance(value, str):
-            value = sympy.Symbol(value)
-        if not (value.is_Symbol or value.is_Derivative or value.is_Function):
-            raise TypeError("symbol of Assignment must be a Symbol or str representing a symbol")
-        self._symbol = value
-
     @property
     def expression(self):
         """Expression of assignment"""
         return self._expression
-
-    @expression.setter
-    def expression(self, value):
-        if isinstance(value, str):
-            value = sympify(value)
-        self._expression = value
 
     def subs(self, substitutions):
         """Substitute expressions or symbols in assignment
@@ -82,19 +74,25 @@ class Assignment(Statement):
         substitutions : dict
             old-new pairs
 
+        Return
+        ------
+        Assignment
+            Updated assignment object
+
         Examples
         --------
         >>> from pharmpy import Assignment
         >>> a = Assignment('CL', 'POP_CL + ETA_CL')
         >>> a
         CL = ETA_CL + POP_CL
-        >>> a.subs({'ETA_CL' : 'ETA_CL * WGT'})
-        >>> a
+        >>> b = a.subs({'ETA_CL' : 'ETA_CL * WGT'})
+        >>> b
         CL = ETA_CL⋅WGT + POP_CL
 
         """
-        self.symbol = self.symbol.subs(substitutions, simultaneous=True)
-        self.expression = self.expression.subs(substitutions, simultaneous=True)
+        symbol = self.symbol.subs(substitutions, simultaneous=True)
+        expression = self.expression.subs(substitutions, simultaneous=True)
+        return Assignment(symbol, expression)
 
     @property
     def free_symbols(self):
@@ -146,13 +144,6 @@ class Assignment(Statement):
             else:
                 s += len(definition) * ' ' + line + '\n'
         return s.rstrip()
-
-    def __deepcopy__(self, memo):
-        return type(self)(self.symbol, self.expression)
-
-    def copy(self):
-        """Create a copy of the Assignment object"""
-        return copy.deepcopy(self)
 
     def _repr_latex_(self):
         sym = sympy.latex(self.symbol)
@@ -1748,8 +1739,12 @@ class ModelStatements(MutableSequence):
         >>> model.statements.subs({'WGT': 'WT'})
 
         """
-        for statement in self:
-            statement.subs(substitutions)
+        for i, statement in enumerate(self):
+            # FIXME: Remove when all statements are made immutable
+            if isinstance(statement, Assignment):
+                self[i] = statement.subs(substitutions)
+            else:
+                statement.subs(substitutions)
 
     def find_assignment(self, symbol):
         """Returns last assignment of symbol
@@ -1780,6 +1775,34 @@ class ModelStatements(MutableSequence):
                     assignment = statement
         return assignment
 
+    def find_assignment_index(self, symbol):
+        """Returns index of last assignment of symbol
+
+        Parameters
+        ----------
+        symbol : Symbol or str
+            Symbol to look for
+
+        Returns
+        -------
+        int
+            Index of Assignment or None if no assignment to symbol exists
+
+        Examples
+        --------
+        >>> from pharmpy.modeling import load_example_model
+        >>> model = load_example_model("pheno")
+        >>> model.statements.find_assignment_index("CL")
+        2
+        """
+        symbol = sympify(symbol)
+        ind = None
+        for i, statement in enumerate(self):
+            if isinstance(statement, Assignment):
+                if statement.symbol == symbol:
+                    ind = i
+        return ind
+
     def reassign(self, symbol, expression):
         """Reassign symbol to expression
 
@@ -1807,7 +1830,7 @@ class ModelStatements(MutableSequence):
         for i, stat in zip(range(len(self) - 1, -1, -1), reversed(self)):
             if isinstance(stat, Assignment) and stat.symbol == symbol:
                 if last:
-                    stat.expression = expression
+                    self[i] = Assignment(symbol, expression)
                     last = False
                 else:
                     del self[i]

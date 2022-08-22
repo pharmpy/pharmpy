@@ -305,7 +305,8 @@ def mu_reference_model(model):
                 mu_expr = sympy.solve(expr - newdep, mu)[0]
                 mu_ass = Assignment(mu, mu_expr)
                 model.statements.insert_before(assignment, mu_ass)
-                assignment.expression = newdep
+                ind = model.statements.find_assignment_index(s.symbol)
+                model.statements[ind] = Assignment(s.symbol, newdep)
     return model
 
 
@@ -391,7 +392,7 @@ def solve_ode_system(model):
     ┌───────┐       ┌──────┐
     │CENTRAL│──CL/V→│OUTPUT│
     └───────┘       └──────┘
-    >>> solve_ode_system(model)		# doctest: +ELLIPSIS
+    >>> solve_ode_system(model)        # doctest: +ELLIPSIS
     <...>
 
     """
@@ -728,8 +729,7 @@ def greekify_model(model, named_subscripts=False):
     for i, epsilon in enumerate(model.random_variables.epsilons, start=1):
         subscript = get_subscript(epsilon, i, named_subscripts)
         subs[epsilon.symbol] = sympy.Symbol(f"epsilon_{subscript}")
-    for s in model.statements:
-        s.subs(subs)
+    model.statements.subs(subs)
     return model
 
 

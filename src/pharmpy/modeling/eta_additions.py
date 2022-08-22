@@ -105,15 +105,16 @@ def add_iiv(
         rvs.append(eta)
         pset.append(Parameter(str(omega), init=initial_estimate))
 
-        statement = sset.find_assignment(list_of_parameters[i])
+        index = sset.find_assignment_index(list_of_parameters[i])
 
-        if statement is None:
+        if index is None:
             raise ValueError(f'Could not find parameter: {list_of_parameters[i]}')
+        statement = sset[index]
 
         eta_addition = _create_template(expression[i], operation[i])
         eta_addition.apply(statement.expression, eta.name)
 
-        statement.expression = eta_addition.template
+        sset[index] = Assignment(statement.symbol, eta_addition.template)
 
     model.random_variables = rvs
     model.parameters = Parameters(pset)

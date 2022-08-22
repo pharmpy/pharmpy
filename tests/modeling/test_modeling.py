@@ -2076,8 +2076,8 @@ def test_zo_abs_on_nl_elim(testdata):
     set_zero_order_absorption(model)
     assert 'RATE' in model.model_code
     assert 'D1 =' in model.model_code
-    assert 'CONC = A(1)' in model.model_code
-    assert 'DADT(1) = -A(1)' in model.model_code
+    assert 'CONC = A(1)/VC' in model.model_code
+    assert 'DADT(1) = -A(1)*' in model.model_code
 
 
 @pytest.mark.parametrize(

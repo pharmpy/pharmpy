@@ -184,9 +184,7 @@ def add_covariate_effect(model, parameter, covariate, effect, operation='*'):
     if last_existing_parameter_assignment.expression.args and all(
         map(cov_possible.__contains__, last_existing_parameter_assignment.expression.args)
     ):
-        effect_statement.expression = effect_statement.expression.subs(
-            {parameter: last_existing_parameter_assignment.expression}
-        )
+        statements[-1] = Assignment(effect_statement.symbol, effect_statement.expression.subs({parameter: last_existing_parameter_assignment.expression}))
         sset.remove(last_existing_parameter_assignment)
         insertion_index -= 1
 
@@ -401,23 +399,20 @@ class CovariateEffect:
 
     def apply(self, parameter, covariate, thetas, statistics):
         effect_name = f'{parameter}{covariate}'
-        self.template.symbol = S(effect_name)
-
-        self.template.subs(thetas)
-        self.template.subs({'cov': covariate})
+        self.template = Assignment(S(effect_name), self.template.expression.subs(thetas).subs({'cov': covariate}))
 
         template_str = [str(symbol) for symbol in self.template.free_symbols]
 
         if 'mean' in template_str:
-            self.template.subs({'mean': f'{covariate}_MEAN'})
+            self.template = self.template.subs({'mean': f'{covariate}_MEAN'})
             s = Assignment(S(f'{covariate}_MEAN'), Float(statistics['mean'], 6))
             self.statistic_statements.append(s)
         if 'median' in template_str:
-            self.template.subs({'median': f'{covariate}_MEDIAN'})
+            self.template = self.template.subs({'median': f'{covariate}_MEDIAN'})
             s = Assignment(S(f'{covariate}_MEDIAN'), Float(statistics['median'], 6))
             self.statistic_statements.append(s)
         if 'std' in template_str:
-            self.template.subs({'std': f'{covariate}_STD'})
+            self.template = self.template.subs({'std': f'{covariate}_STD'})
             s = Assignment(S(f'{covariate}_STD'), Float(statistics['std'], 6))
             self.statistic_statements.append(s)
 

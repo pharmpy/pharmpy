@@ -201,9 +201,8 @@ class EtaTransformation:
         self.theta_type = theta_type
 
     def apply(self, etas, thetas):
-        for assignment in self.assignments:
-            assignment.subs(etas)
-            assignment.subs(thetas)
+        for i, assignment in enumerate(self.assignments):
+            self.assignments[i] = assignment.subs(etas).subs(thetas)
 
     @classmethod
     def boxcox(cls, no_of_etas):

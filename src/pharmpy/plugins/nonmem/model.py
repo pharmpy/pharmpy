@@ -497,7 +497,7 @@ class Model(pharmpy.model.Model):
                 statements.append(Assignment('F', S('F')))
             statements += error.statements
             if trans_amounts:
-                statements.after_odes.subs(trans_amounts)
+                statements.subs(trans_amounts)
 
         if not hasattr(self, '_parameters'):
             self._read_parameters()

@@ -146,7 +146,7 @@ def _translate_sympy_sign(s):
             sign_arg = arg.args[0]
             subs_dict[arg] = abs(sign_arg) / sign_arg
 
-    s.subs(subs_dict)
+    s = s.subs(subs_dict)
     fprn = NMTranPrinter(settings={'source_format': 'free'})
     fortran = fprn.doprint(s.expression)
     expr_str = f'{s.symbol} = {fortran}'

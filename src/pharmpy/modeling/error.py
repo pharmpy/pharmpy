@@ -633,8 +633,8 @@ def set_dtbs_error_model(model, fix_to_log=False):
         (-1000000000, True),
     )
     stats.insert(i + 2, Assignment('IPRED', ipred))
-    yexpr = stats.find_assignment(y.name)
-    yexpr.subs({f: sympy.Symbol('IPRED')})
+    yexpr_ind = stats.find_assignment_index(y.name)
+    stats[yexpr_ind] = stats[yexpr_ind].subs({f: sympy.Symbol('IPRED')})
 
     obs = sympy.Piecewise(
         (sympy.log(y), sympy.Eq(lam, 0)), ((y**lam - 1) / lam, sympy.Ne(lam, 0))
