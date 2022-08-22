@@ -630,13 +630,13 @@ def rank_models(
     """
     models_all = [base_model] + models
 
-    rank_type_dict = {}
+    rank_values = {}
     models_to_rank = []
 
     ref_value = _get_rankval(base_model, rank_type, bic_type)
     model_dict = {model.name: model for model in models_all}
 
-    # Filter on strictness
+    # Filter on strictness and cutoff
     for model in models_all:
         # Exclude OFV etc if model was not successful
         if not model.modelfit_results or np.isnan(model.modelfit_results.ofv):
@@ -646,52 +646,47 @@ def rank_models(
                 continue
         # Only include OFVs etc. of models that fulfill strictness criteria
         rank_value = _get_rankval(model, rank_type, bic_type)
-        rank_type_dict[model.name] = rank_value
         if rank_type == 'lrt':
             if not _fulfills_lrt(model_dict[model.parent_model], model, cutoff):
                 continue
         if cutoff:
             if ref_value - rank_value <= cutoff:
                 continue
+
+        # Add ranking value and model
+        if np.isnan(ref_value):
+            rank_values[model.name] = -rank_value
+        else:
+            rank_values[model.name] = ref_value - rank_value
         models_to_rank.append(model)
 
     # Sort
     def _get_delta(model):
-        if np.isnan(ref_value):
-            return -rank_type_dict[model.name]
-        else:
-            return ref_value - rank_type_dict[model.name]
+        return rank_values[model.name]
 
     models_sorted = sorted(models_to_rank, key=_get_delta, reverse=True)
 
     # Create rank for models, if two have the same value they will have the same rank
-    rank_dict = dict()
+    ranking = dict()
     rank, count, prev = 0, 0, None
     for model in models_sorted:
         count += 1
-        if np.isnan(ref_value):
-            value = -rank_type_dict[model.name]
-        else:
-            value = ref_value - rank_type_dict[model.name]
+        value = rank_values[model.name]
         if value != prev:
             rank += count
             prev = value
             count = 0
-        rank_dict[model.name] = rank
+        ranking[model.name] = rank
 
     rows = dict()
     for model in models_all:
-        try:
-            rank = rank_dict[model.name]
-        except KeyError:
-            rank = np.nan
+        delta, rank_value, rank = np.nan, np.nan, np.nan
+        if model.name in ranking.keys():
+            rank = ranking[model.name]
+        if model.name in rank_values.keys():
+            rank_value = _get_rankval(model, rank_type, bic_type)
+            delta = rank_values[model.name]
 
-        try:
-            rank_value = rank_type_dict[model.name]
-        except KeyError:
-            rank_value = np.nan
-
-        delta = ref_value - rank_value
         rows[model.name] = (delta, rank_value, rank)
 
     if rank_type == 'lrt':
