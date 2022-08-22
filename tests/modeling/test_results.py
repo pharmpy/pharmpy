@@ -286,6 +286,11 @@ def test_rank_models():
     assert 'm5' not in ranked_models
     assert np.isnan(df.loc['m5']['rank'])
 
+    base_nan = DummyModel('base_nan', parent='base_nan', parameter_names=['p1'], ofv=np.nan)
+
+    df = rank_models(base_nan, models, rank_type='ofv')
+    assert df.iloc[0].name == 'm1'
+
 
 def test_aic(testdata):
     model = Model.create_model(testdata / 'nonmem' / 'pheno.mod')
