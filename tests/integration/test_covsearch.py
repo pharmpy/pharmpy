@@ -33,6 +33,13 @@ def test_default(tmp_path, start_model):
             ],
             model=start_model,
         )
+        import pandas as pd
+        pd.set_option('display.max_columns', None)
+        pd.set_option('display.max_rows', None)
+        pd.set_option('display.max_colwidth', None)
+
+        print(res.summary_tool)
+        print(res.summary_errors)
 
         rundir = tmp_path / 'covsearch_dir1'
         assert _model_count(rundir) == 54
