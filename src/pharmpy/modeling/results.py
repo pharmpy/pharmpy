@@ -657,7 +657,10 @@ def rank_models(
 
     # Sort
     def _get_delta(model):
-        return ref_value - rank_type_dict[model.name]
+        if np.isnan(ref_value):
+            return -rank_type_dict[model.name]
+        else:
+            return ref_value - rank_type_dict[model.name]
 
     models_sorted = sorted(models_to_rank, key=_get_delta, reverse=True)
 
@@ -666,7 +669,10 @@ def rank_models(
     rank, count, prev = 0, 0, None
     for model in models_sorted:
         count += 1
-        value = ref_value - rank_type_dict[model.name]
+        if np.isnan(ref_value):
+            value = -rank_type_dict[model.name]
+        else:
+            value = ref_value - rank_type_dict[model.name]
         if value != prev:
             rank += count
             prev = value
@@ -698,7 +704,10 @@ def rank_models(
         rows.values(), index=index, columns=[f'd{rank_type_name}', f'{rank_type_name}', 'rank']
     )
 
-    df_sorted = df.sort_values(by=[f'd{rank_type_name}'], ascending=False)
+    if np.isnan(ref_value):
+        df_sorted = df.sort_values(by=[f'{rank_type_name}'])
+    else:
+        df_sorted = df.sort_values(by=[f'd{rank_type_name}'], ascending=False)
 
     return df_sorted
 
