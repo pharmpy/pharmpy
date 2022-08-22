@@ -109,12 +109,13 @@ def test_exhaustive_stepwise_basic(
 
         pd.set_option('display.max_columns', None)
         pd.set_option('display.max_rows', None)
+        pd.set_option('display.max_colwidth', None)
 
         print(res.summary_tool)
+        print(res.summary_errors)
 
-        print(res.summary_tool.index.values)
         assert list(res.summary_tool.index.values) == ranked_order
-
+        assert False
         assert len(res.summary_tool) == no_of_models + 1
         assert len(res.summary_models) == no_of_models + 1
         assert len(res.models) == no_of_models
