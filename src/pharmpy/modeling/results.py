@@ -703,28 +703,6 @@ def rank_models(
     return df_sorted
 
 
-def _test_with_lrt(models, alpha):
-    model_dict = {model.name: model for model in models}
-    models_fulfilled_lrt = [
-        model for model in models if _test_model(model_dict[model.parent_model], model, alpha)
-    ]
-    return models_fulfilled_lrt
-
-
-def _test_model(parent, child, alpha):
-    if parent.name == child.name:
-        return False
-    dofv = parent.modelfit_results.ofv - child.modelfit_results.ofv
-    df = len(child.parameters) - len(parent.parameters)
-    if df < 0:
-        raise NotImplementedError('LRT is currently only supported where degrees of freedom => 0')
-    elif df == 0:
-        cutoff = 0
-    else:
-        cutoff = float(chi2.isf(q=alpha, df=df))
-    return dofv >= cutoff
-
-
 def _fulfills_lrt(parent, child, alpha):
     if parent.name == child.name:
         return False
