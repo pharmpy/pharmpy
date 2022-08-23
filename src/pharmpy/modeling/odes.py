@@ -1667,7 +1667,7 @@ def _find_rate(sset):
     rate_list = []
     odes = sset.ode_system
     if isinstance(odes, ExplicitODESystem):
-        odes = sset.ode_system.to_compartmental_system()
+        odes = odes.to_compartmental_system()
     central = odes.central_compartment
     output = odes.output_compartment
     elimination_rate = odes.get_flow(central, output)
