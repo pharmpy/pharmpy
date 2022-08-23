@@ -1348,10 +1348,7 @@ class Compartment:
         Compartment(CENTRAL, dose=Bolus(DOSE))
         """
         if self.dose is not None:
-            if isinstance(self.dose, Bolus):
-                self.dose = self.dose.subs(substitutions)
-            else:
-                self.dose.subs(substitutions)
+            self.dose = self.dose.subs(substitutions)
         self.lag_time.subs(substitutions)
 
     def __eq__(self, other):
@@ -1473,20 +1470,26 @@ class Infusion(Dose):
     """
 
     def __init__(self, amount, rate=None, duration=None):
+        self._amount = amount
+        self._rate = rate
+        self._duration = duration
+
+    @classmethod
+    def create(cls, amount, rate=None, duration=None):
         if rate is None and duration is None:
             raise ValueError('Need rate or duration for Infusion')
-        self.rate = rate
-        self.duration = duration
-        self.amount = amount
+        if rate is not None and duration is not None:
+            raise ValueError('Cannot have both rate and duration for Infusion')
+        if rate is not None:
+            rate = sympify(rate)
+        else:
+            duration = sympify(duration)
+        return cls(sympify(amount), rate, duration)
 
     @property
     def amount(self):
         """Symbolic amount of dose"""
         return self._amount
-
-    @amount.setter
-    def amount(self, value):
-        self._amount = sympify(value)
 
     @property
     def rate(self):
@@ -1496,12 +1499,6 @@ class Infusion(Dose):
         """
         return self._rate
 
-    @rate.setter
-    def rate(self, value):
-        self._rate = sympify(value)
-        if value is not None:
-            self._duration = None
-
     @property
     def duration(self):
         """Symbolc duration
@@ -1510,12 +1507,6 @@ class Infusion(Dose):
         """
         return self._duration
 
-    @duration.setter
-    def duration(self, value):
-        self._duration = sympify(value)
-        if value is not None:
-            self._rate = None
-
     @property
     def free_symbols(self):
         """Get set of all free symbols in the dose
@@ -1523,7 +1514,7 @@ class Infusion(Dose):
         Examples
         --------
         >>> from pharmpy import Infusion
-        >>> dose = Infusion("AMT", rate="RATE")
+        >>> dose = Infusion.create("AMT", rate="RATE")
         >>> dose.free_symbols   # doctest: +SKIP
         {AMT, RATE}
         """
@@ -1544,20 +1535,18 @@ class Infusion(Dose):
         Examples
         --------
         >>> from pharmpy import Infusion
-        >>> dose = Infusion("AMT", duration="DUR")
+        >>> dose = Infusion.create("AMT", duration="DUR")
         >>> dose.subs({'DUR': 'D1'})
-        >>> dose
         Infusion(AMT, duration=D1)
         """
-        self.amount = self.amount.subs(substitutions, simultaneous=True)
+        amount = self.amount.subs(substitutions, simultaneous=True)
         if self.rate is not None:
-            self.rate = self.rate.subs(substitutions, simultaneous=True)
+            rate = self.rate.subs(substitutions, simultaneous=True)
+            duration = None
         else:
-            self.duration = self.duration.subs(substitutions, simultaneous=True)
-
-    def __deepcopy__(self, memo):
-        new = type(self)(self.amount, rate=self.rate, duration=self.duration)
-        return new
+            rate = None
+            duration = self.duration.subs(substitutions, simultaneous=True)
+        return Infusion(amount, rate, duration)
 
     def __eq__(self, other):
         return (

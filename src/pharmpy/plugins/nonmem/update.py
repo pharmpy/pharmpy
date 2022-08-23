@@ -339,7 +339,7 @@ def update_infusion(model, old, new):
         if dose.rate is None:
             # FIXME: Not always D1 here!
             ass = Assignment(sympy.Symbol('D1'), dose.duration)
-            dose.duration = ass.symbol
+            new.dosing_compartment.dose = Infusion(dose.amount, ass.symbol)
         else:
             raise NotImplementedError("First order infusion rate is not yet supported")
         statements = model.statements

@@ -462,11 +462,11 @@ def dosing(di, dataset, dose_comp):
         if (df['RATE'] == 0).all():
             return Bolus(sympy.Symbol('AMT'))
         elif (df['RATE'] == -1).any():
-            return Infusion('AMT', rate=f'R{dose_comp}')
+            return Infusion(sympy.Symbol('AMT'), rate=sympy.Symbol(f'R{dose_comp}'))
         elif (df['RATE'] == -2).any():
-            return Infusion('AMT', duration=f'D{dose_comp}')
+            return Infusion(sympy.Symbol('AMT'), duration=sympy.Symbol(f'D{dose_comp}'))
         else:
-            return Infusion('AMT', rate='RATE')
+            return Infusion(sympy.Symbol('AMT'), rate=sympy.Symbol('RATE'))
     else:
         return Bolus(sympy.Symbol('AMT'))
 

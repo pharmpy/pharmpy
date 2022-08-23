@@ -18,4 +18,4 @@ def test_create_start_model(testdata):
 
     path_2 = testdata / 'nonmem' / 'modeling' / 'pheno_zero_order.csv'
     model = create_start_model(path_2, modeltype='pk_iv')
-    assert model.statements.ode_system.dosing_compartment.dose == Infusion("AMT", duration="D1")
+    assert model.statements.ode_system.dosing_compartment.dose == Infusion.create("AMT", duration="D1")
