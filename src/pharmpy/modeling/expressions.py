@@ -599,8 +599,13 @@ def cleanup_model(model):
         if isinstance(s, Assignment) and s.expression.is_Symbol:
             current[s.symbol] = s.expression
         else:
-            s.subs(current)
-            newstats.append(s)
+            # FIXME: Update when other Statements have been made immutable
+            if isinstance(s, Assignment):
+                n = s.subs(current)
+                newstats.append(n)
+            else:
+                s.subs(current)
+                newstats.append(s)
 
     model.statements = ModelStatements(newstats)
     return model

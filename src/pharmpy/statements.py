@@ -1797,7 +1797,7 @@ class ModelStatements(MutableSequence):
         >>> from pharmpy.modeling import load_example_model
         >>> model = load_example_model("pheno")
         >>> model.statements.find_assignment_index("CL")
-        2
+        5
         """
         symbol = sympify(symbol)
         ind = None
