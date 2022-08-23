@@ -1618,17 +1618,20 @@ def find_clearance_parameters(model):
      >>> find_clearance_parameters(model)
      [CL]
     """
-    cls = []
+    cls = set()
     sset = model.statements
+    t = model.statements.ode_system.t
     rate_list = _find_rate(sset)
     for rate in rate_list:
-        if rate.as_numer_denom()[1] != 1:
-            clearance = rate.as_numer_denom()[0]
-            if clearance.is_Symbol:
+        if isinstance(rate, sympy.Symbol):
+            rate = sset.find_assignment(rate).expression
+        a, b = map(lambda x: x.free_symbols, rate.as_numer_denom())
+        if b:
+            clearance_symbols = a - b - {t}
+            for clearance in clearance_symbols:
                 clearance = _find_real_symbol(sset, clearance)
-                if clearance not in cls:
-                    cls.append(clearance)
-    return cls
+                cls.add(clearance)
+    return sorted(cls, key=str)
 
 
 def find_volume_parameters(model):
@@ -1651,16 +1654,20 @@ def find_volume_parameters(model):
      >>> find_volume_parameters(model)
      [V]
     """
-    vcs = []
+    vcs = set()
     sset = model.statements
+    t = model.statements.ode_system.t
     rate_list = _find_rate(sset)
     for rate in rate_list:
-        volume = rate.as_numer_denom()[1]
-        if volume.is_Symbol:
+        if isinstance(rate, sympy.Symbol):
+            rate = sset.find_assignment(rate).expression
+        rate = sympy.cancel(rate)
+        a, b = map(lambda x: x.free_symbols, rate.as_numer_denom())
+        volume_symbols = b - a - {t}
+        for volume in volume_symbols:
             volume = _find_real_symbol(sset, volume)
-            if volume not in vcs:
-                vcs.append(volume)
-    return vcs
+            vcs.add(volume)
+    return sorted(vcs, key=str)
 
 
 def _find_rate(sset):
