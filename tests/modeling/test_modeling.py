@@ -1,6 +1,7 @@
 import os
 import re
 import shutil
+from typing import Iterable
 
 import numpy as np
 import pandas as pd
@@ -3810,29 +3811,37 @@ def test_mm_then_periph(pheno):
     assert odes.get_flow(newperiph, central) == sympy.Symbol('QP2') / sympy.Symbol('VP2')
 
 
+def _symbols(names: Iterable[str]):
+    return list(map(sympy.Symbol, names))
+
+
 def test_find_clearance_parameters(pheno):
     model = pheno.copy()
     cl_origin = find_clearance_parameters(model)
-    assert cl_origin == [sympy.Symbol('CL')]
+    assert cl_origin == _symbols(['CL'])
+
     add_peripheral_compartment(model)
     cl_p1 = find_clearance_parameters(model)
     model.update_source()
-    assert cl_p1 == [sympy.Symbol('CL'), sympy.Symbol('QP1')]
+    assert cl_p1 == _symbols(['CL', 'QP1'])
+
     add_peripheral_compartment(model)
     cl_p2 = find_clearance_parameters(model)
     model.update_source()
-    assert cl_p2 == [sympy.Symbol('CL'), sympy.Symbol('QP1'), sympy.Symbol('QP2')]
+    assert cl_p2 == _symbols(['CL', 'QP1', 'QP2'])
 
 
 def test_find_volume_parameters(pheno):
     model = pheno.copy()
     v_origin = find_volume_parameters(model)
-    assert v_origin == [sympy.Symbol('V')]
+    assert v_origin == _symbols(['V'])
+
     add_peripheral_compartment(model)
     model.update_source()
     v_p1 = find_volume_parameters(model)
-    assert v_p1 == [sympy.Symbol('V1'), sympy.Symbol('VP1')]
+    assert v_p1 == _symbols(['V1', 'VP1'])
+
     add_peripheral_compartment(model)
     model.update_source()
     v_p2 = find_volume_parameters(model)
-    assert v_p2 == [sympy.Symbol('V1'), sympy.Symbol('VP1'), sympy.Symbol('VP2')]
+    assert v_p2 == _symbols(['V1', 'VP1', 'VP2'])
