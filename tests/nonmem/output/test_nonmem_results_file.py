@@ -411,8 +411,7 @@ def test_errors(testdata, file_name, ref_start, no_of_rows, idx, no_of_errors):
         ),
         (
             'estimate_near_boundary_warning.lst',
-            'PARAMETER ESTIMATE IS NEAR ITS BOUNDARY\n'
-            'THIS MUST BE ADDRESSED BEFORE THE COVARIANCE STEP CAN BE IMPLEMENTED',
+            'PARAMETER ESTIMATE IS NEAR ITS BOUNDARY',
             0,
         ),
         (

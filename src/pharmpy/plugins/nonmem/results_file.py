@@ -277,7 +277,7 @@ class NONMEMResultsFile:
 
         warning_patterns = [
             re.compile(r'0WARNING:((\s+.+\n)+)'),
-            re.compile(r'0(PARAMETER ESTIMATE IS NEAR.+\n\s*.+COVARIANCE STEP CAN BE IMPLEMENTED)'),
+            re.compile(r'0(PARAMETER ESTIMATE IS NEAR ITS BOUNDARY)'),
             re.compile(r'0(MINIMIZATION SUCCESSFUL\n\s*HOWEVER.+\n)'),
         ]
 
