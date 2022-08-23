@@ -1255,7 +1255,7 @@ class CompartmentalSystem(ODESystem):
         derivatives = sympy.Matrix([sympy.Derivative(fn, self.t) for fn in amount_funcs])
         inputs = self.zero_order_inputs
         a = self.compartmental_matrix @ amount_funcs + inputs
-        eqs = [sympy.Eq(lhs, rhs) for lhs, rhs in zip(derivatives, a)]
+        eqs = [sympy.Eq(lhs, simplify_ode_rhs(rhs)) for lhs, rhs in zip(derivatives, a)]
         ics = {}
         output = self.output_compartment
         for node in self._g.nodes:
@@ -1346,6 +1346,25 @@ class CompartmentalSystem(ODESystem):
         dose = self.dosing_compartment.dose
         s = str(dose) + '\n' + str(grid).rstrip()
         return s
+
+
+def simplify_ode_rhs(expr: sympy.Expr):
+    fi = _free_images(expr)
+    return sympy.collect(_expand_rates(expr, fi), sorted(fi, key=str))
+
+
+def _expand_rates(expr: sympy.Expr, free_images: Set[sympy.Expr]):
+    if isinstance(expr, sympy.Add):
+        return sympy.expand(
+            sympy.Add(*map(lambda x: _expand_rates(x, free_images), expr.args)), deep=False
+        )
+    if (
+        isinstance(expr, sympy.Mul)
+        and len(expr.args) == 2
+        and not free_images.isdisjoint(expr.args)
+    ):
+        return sympy.expand(expr, deep=False)
+    return expr
 
 
 class Compartment:

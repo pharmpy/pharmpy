@@ -1,3 +1,8 @@
+import sympy
+
+from pharmpy.modeling import add_peripheral_compartment, set_michaelis_menten_elimination
+
+
 def test_des(load_model_for_test, create_model_for_test, testdata):
     code = """$PROBLEM
 $INPUT ID TIME DV AMT
@@ -50,3 +55,32 @@ $SIGMA 0.1; RUV_ADD
     model.dataset = pheno.dataset
     cs = model.statements.ode_system.to_compartmental_system()
     assert len(cs) == 5
+
+
+def test_conversion_round_trip(load_example_model_for_test):
+    model = load_example_model_for_test('pheno')
+    add_peripheral_compartment(model)
+    add_peripheral_compartment(model)
+    set_michaelis_menten_elimination(model)
+    es = model.statements.ode_system.to_explicit_system()
+    cs = es.to_compartmental_system()
+    central = cs.central_compartment
+    output = cs.output_compartment
+    assert cs.get_flow(central, output) == sympy.sympify('CLMM*KM/(V*(KM + A_CENTRAL(t)/V))')
+
+
+def test_des_mm(load_example_model_for_test, create_model_for_test):
+    model = load_example_model_for_test('pheno')
+    add_peripheral_compartment(model)
+    add_peripheral_compartment(model)
+    set_michaelis_menten_elimination(model)
+    model.statements.to_explicit_system()
+    model.update_source()
+    code = model.model_code
+    dataset = model.dataset
+    model = create_model_for_test(code)
+    model.dataset = dataset
+    cs = model.statements.ode_system.to_compartmental_system()
+    central = cs.central_compartment
+    output = cs.output_compartment
+    assert cs.get_flow(central, output) == sympy.sympify('CLMM*KM/(V*(KM + A_CENTRAL(t)/V))')
