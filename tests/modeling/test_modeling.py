@@ -3831,16 +3831,24 @@ def test_find_clearance_parameters(pheno):
     assert cl_p2 == _symbols(['CL', 'QP1', 'QP2'])
 
 
-def test_find_clearance_parameters_github_issues_1053_and_1062():
-    model = load_example_model('pheno')
+def test_find_clearance_parameters_github_issues_1053_and_1062(load_example_model_for_test):
+    model = load_example_model_for_test('pheno')
     set_michaelis_menten_elimination(model)
     assert find_clearance_parameters(model) == _symbols(['CLMM'])
 
 
-def test_find_clearance_parameters_github_issues_1044_and_1053():
-    model = load_example_model('pheno')
+def test_find_clearance_parameters_github_issues_1044_and_1053(load_example_model_for_test):
+    model = load_example_model_for_test('pheno')
     set_transit_compartments(model, 10)
     assert find_clearance_parameters(model) == _symbols(['CL'])
+
+
+def test_find_clearance_parameters_github_issues_1053_and_1062_bis(load_example_model_for_test):
+    model = load_example_model_for_test('pheno')
+    add_peripheral_compartment(model)
+    add_peripheral_compartment(model)
+    set_michaelis_menten_elimination(model)
+    assert find_clearance_parameters(model) == _symbols(['CLMM', 'QP1', 'QP2'])
 
 
 def test_find_volume_parameters(pheno):
@@ -3859,13 +3867,21 @@ def test_find_volume_parameters(pheno):
     assert v_p2 == _symbols(['V1', 'VP1', 'VP2'])
 
 
-def test_find_volume_parameters_github_issues_1053_and_1062():
-    model = load_example_model('pheno')
+def test_find_volume_parameters_github_issues_1053_and_1062(load_example_model_for_test):
+    model = load_example_model_for_test('pheno')
     set_michaelis_menten_elimination(model)
     assert find_volume_parameters(model) == _symbols(['V'])
 
 
-def test_find_volume_parameters_github_issues_1044_and_1053():
-    model = load_example_model('pheno')
+def test_find_volume_parameters_github_issues_1044_and_1053(load_example_model_for_test):
+    model = load_example_model_for_test('pheno')
     set_transit_compartments(model, 10)
     assert find_volume_parameters(model) == _symbols(['V'])
+
+
+def test_find_volume_parameters_github_issues_1053_and_1062_bis(load_example_model_for_test):
+    model = load_example_model_for_test('pheno')
+    add_peripheral_compartment(model)
+    add_peripheral_compartment(model)
+    set_michaelis_menten_elimination(model)
+    assert find_volume_parameters(model) == _symbols(['V', 'VP1', 'VP2'])
