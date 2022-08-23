@@ -424,10 +424,8 @@ class ExplicitODESystem(ODESystem):
             cb.add_compartment(comp)
 
         for eq in self.odes:
-            for comp_func in funcs:
+            for comp_func in _free_images(eq.rhs):
                 dep = eq.rhs.as_independent(comp_func, as_Add=True)[1]
-                if dep == 0:
-                    continue
                 terms = sympy.Add.make_args(dep)
                 for term in terms:
                     if _is_positive(term):
