@@ -215,27 +215,18 @@ class ExplicitODESystem(ODESystem):
     """
 
     def __init__(self, odes, ics):
-        self.odes = odes
-        self.ics = ics
-        super().__init__()
+        self._odes = odes
+        self._ics = ics
 
     @property
     def odes(self):
         """List of ordinary differential equations"""
         return self._odes
 
-    @odes.setter
-    def odes(self, value):
-        self._odes = value
-
     @property
     def ics(self):
         """Initial conditions"""
         return self._ics
-
-    @ics.setter
-    def ics(self, value):
-        self._ics = value
 
     @property
     def free_symbols(self):
@@ -275,7 +266,6 @@ class ExplicitODESystem(ODESystem):
         >>> model = load_example_model("pheno")
         >>> model.statements.to_explicit_system()
         >>> model.statements.ode_system.subs({'AMT': 'DOSE'})
-        >>> model.statements.ode_system
         ⎧d                  -CL⋅A_CENTRAL(t)
         ⎪──(A_CENTRAL(t)) = ─────────────────
         ⎪dt                         V
@@ -284,14 +274,16 @@ class ExplicitODESystem(ODESystem):
         ⎪dt                       V
         ⎪A_CENTRAL(0) = DOSE
         ⎩A_OUTPUT(0) = 0
+        <BLANKLINE>
         """
         d = {
             sympy.Function(str(key))(symbols.symbol('t')): value
             for key, value in substitutions.items()
         }
         d.update(substitutions)
-        self.odes = [ode.subs(d) for ode in self.odes]
-        self.ics = {key.subs(d): value.subs(d) for key, value in self.ics.items()}
+        odes = [ode.subs(d) for ode in self.odes]
+        ics = {key.subs(d): value.subs(d) for key, value in self.ics.items()}
+        return ExplicitODESystem(odes, ics)
 
     @property
     def rhs_symbols(self):
@@ -378,7 +370,7 @@ class ExplicitODESystem(ODESystem):
         return r'\begin{cases} ' + r' \\ '.join(rows) + r' \end{cases}'
 
     def to_explicit_system(self, skip_output=False):
-        return self.copy()
+        return self
 
     def to_compartmental_system(self):
         """Get the explicit system as a compartmental ODE system
