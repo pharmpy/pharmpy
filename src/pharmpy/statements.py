@@ -417,7 +417,7 @@ class ExplicitODESystem(ODESystem):
                         to_comp = cs.find_compartment(convert_name(eq.lhs.args[0].name))
                         cs.add_flow(from_comp, to_comp, expr)
 
-        dose = Bolus("AMT")  # FIXME: not true in general!
+        dose = Bolus(sympy.Symbol("AMT"))  # FIXME: not true in general!
         cs.find_compartment(convert_name(funcs[0].name)).dose = dose
         return cs
 
@@ -429,7 +429,7 @@ class CompartmentalSystem(ODESystem):
     --------
     >>> from pharmpy import Bolus, CompartmentalSystem
     >>> cs = CompartmentalSystem()
-    >>> dose = Bolus("AMT")
+    >>> dose = Bolus.create("AMT")
     >>> central = cs.add_compartment("CENTRAL")
     >>> central.dose = dose
     >>> peripheral = cs.add_compartment("PERIPHERAL")
@@ -1252,7 +1252,7 @@ class Compartment:
     >>> comp = Compartment("DEPOT", lag_time="ALAG")
     >>> comp
     Compartment(DEPOT, lag_time=ALAG)
-    >>> dose = Bolus("AMT")
+    >>> dose = Bolus.create("AMT")
     >>> comp = Compartment("DEPOT", dose=dose)
     >>> comp
     Compartment(DEPOT, dose=Bolus(AMT))
@@ -1324,7 +1324,7 @@ class Compartment:
         Examples
         --------
         >>> from pharmpy import Bolus, Compartment
-        >>> dose = Bolus("AMT")
+        >>> dose = Bolus.create("AMT")
         >>> comp = Compartment("CENTRAL", dose=dose, lag_time="ALAG")
         >>> comp.free_symbols  # doctest: +SKIP
         {ALAG, AMT}
@@ -1341,14 +1341,17 @@ class Compartment:
         Examples
         --------
         >>> from pharmpy import Bolus, Compartment
-        >>> dose = Bolus("AMT")
+        >>> dose = Bolus.create("AMT")
         >>> comp = Compartment("CENTRAL", dose=dose)
         >>> comp.subs({"AMT": "DOSE"})
         >>> comp
         Compartment(CENTRAL, dose=Bolus(DOSE))
         """
         if self.dose is not None:
-            self.dose.subs(substitutions)
+            if isinstance(self.dose, Bolus):
+                self.dose = self.dose.subs(substitutions)
+            else:
+                self.dose.subs(substitutions)
         self.lag_time.subs(substitutions)
 
     def __eq__(self, other):
@@ -1392,22 +1395,22 @@ class Bolus(Dose):
     Examples
     --------
     >>> from pharmpy import Bolus
-    >>> dose = Bolus("AMT")
+    >>> dose = Bolus.create("AMT")
     >>> dose
     Bolus(AMT)
     """
 
     def __init__(self, amount):
-        self.amount = amount
+        self._amount = amount
+
+    @classmethod
+    def create(cls, amount):
+        return cls(sympify(amount))
 
     @property
     def amount(self):
         """Symbolic amount of dose"""
         return self._amount
-
-    @amount.setter
-    def amount(self, value):
-        self._amount = sympify(value)
 
     @property
     def free_symbols(self):
@@ -1416,7 +1419,7 @@ class Bolus(Dose):
         Examples
         --------
         >>> from pharmpy import Bolus
-        >>> dose = Bolus("AMT")
+        >>> dose = Bolus.create("AMT")
         >>> dose.free_symbols
         {AMT}
         """
@@ -1433,16 +1436,11 @@ class Bolus(Dose):
         Examples
         --------
         >>> from pharmpy import Bolus
-        >>> dose = Bolus("AMT")
+        >>> dose = Bolus.create("AMT")
         >>> dose.subs({'AMT': 'DOSE'})
-        >>> dose
         Bolus(DOSE)
         """
-        self.amount = self.amount.subs(substitutions, simultaneous=True)
-
-    def __deepcopy__(self, memo):
-        newone = type(self)(self.amount)
-        return newone
+        return Bolus(self.amount.subs(substitutions, simultaneous=True))
 
     def __eq__(self, other):
         return isinstance(other, Bolus) and self.amount == other.amount

@@ -460,7 +460,7 @@ def dosing(di, dataset, dose_comp):
     if 'RATE' in colnames and not di['RATE'].drop:
         df = dataset()
         if (df['RATE'] == 0).all():
-            return Bolus('AMT')
+            return Bolus(sympy.Symbol('AMT'))
         elif (df['RATE'] == -1).any():
             return Infusion('AMT', rate=f'R{dose_comp}')
         elif (df['RATE'] == -2).any():
@@ -468,7 +468,7 @@ def dosing(di, dataset, dose_comp):
         else:
             return Infusion('AMT', rate='RATE')
     else:
-        return Bolus('AMT')
+        return Bolus(sympy.Symbol('AMT'))
 
 
 def get_alag(model, n):

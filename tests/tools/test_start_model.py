@@ -11,7 +11,7 @@ def test_create_start_model(testdata):
     assert len(model.parameters) == 6
     assert 'POP_CL' in model.parameters
     assert 'POP_MAT' not in model.parameters
-    assert model.statements.ode_system.dosing_compartment.dose == Bolus("AMT")
+    assert model.statements.ode_system.dosing_compartment.dose == Bolus.create("AMT")
     model = create_start_model(path, modeltype='pk_oral')
     assert 'POP_CL' in model.parameters
     assert 'POP_MAT' in model.parameters
