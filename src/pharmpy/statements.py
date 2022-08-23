@@ -405,23 +405,19 @@ class ExplicitODESystem(ODESystem):
         >>> statements.to_compartmental_system()    # doctest: +SKIP
         """
 
-        def convert_name(name):
-            if name.startswith('A_'):
-                return name[2:]
-            else:
-                return name
+        def convert_name(name: str):
+            return name[2:] if name[:2] == 'A_' else name
 
-        funcs = [eq.lhs.args[0] for eq in self.odes]
         cb = CompartmentalSystemBuilder()
-        dose = Bolus(sympy.Symbol("AMT"))  # FIXME: not true in general!
-        first = True
-        for f in funcs:
-            if first:
-                comp = Compartment(convert_name(f.name), dose)
-                first = False
-            else:
-                comp = Compartment(convert_name(f.name))
+        compartments = {}
+        for i, eq in enumerate(self.odes):
+            f = eq.lhs.args[0]
+            name = convert_name(f.name)
+            # FIXME The following is not true in general!
+            dose = Bolus(sympy.Symbol("AMT")) if i == 0 else None
+            comp = Compartment(convert_name(f.name), dose)
             cb.add_compartment(comp)
+            compartments[name] = comp
 
         for eq in self.odes:
             for comp_func in _free_images(eq.rhs):
@@ -429,10 +425,8 @@ class ExplicitODESystem(ODESystem):
                 terms = sympy.Add.make_args(dep)
                 for term in terms:
                     if _is_positive(term):
-                        # FIXME: unnecessary conversion
-                        cs = CompartmentalSystem(cb)
-                        from_comp = cs.find_compartment(convert_name(comp_func.name))
-                        to_comp = cs.find_compartment(convert_name(eq.lhs.args[0].name))
+                        from_comp = compartments[convert_name(comp_func.name)]
+                        to_comp = compartments[convert_name(eq.lhs.args[0].name)]
                         cb.add_flow(from_comp, to_comp, term / comp_func)
 
         return CompartmentalSystem(cb)
