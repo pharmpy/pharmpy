@@ -58,7 +58,7 @@ jobs:
         run: tox
         env:
           PLATFORM: ${{ matrix.platform }}
-          TOX_FACTOR: ${{ matrix.suite }}
+          TOX_SUITE: ${{ matrix.suite }}
 
       - name: Run tests with tox
         if: matrix.suite == 'unit' || matrix.suite == 'doctest'
@@ -68,7 +68,8 @@ jobs:
             echo "coverage=${{ matrix.suite }}" >> $GITHUB_ENV
         env:
           PLATFORM: ${{ matrix.platform }}
-          TOX_FACTOR: ${{ matrix.suite }}
+          TOX_SUITE: ${{ matrix.suite }}
+          TOX_PYTEST_COVER: ${{ matrix.suite }}
 
       - name: Upload coverage to Codecov
         if: env.coverage != ''
@@ -79,12 +80,18 @@ jobs:
 
       - name: Build docs
         if: matrix.suite == 'docs-build'
-        run: tox -e docs
+        run: tox
+        env:
+          TOX_SUITE: ${{ matrix.suite }}
 
       - name: Test docs
         if: matrix.suite == 'docs-test'
-        run: tox -e sphinxtest
+        run: tox
+        env:
+          TOX_SUITE: ${{ matrix.suite }}
 
       - name: Lint docs
         if: matrix.suite == 'docs-lint'
-        run: tox -e doccheck
+        run: tox
+        env:
+          TOX_SUITE: ${{ matrix.suite }}
