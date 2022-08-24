@@ -42,10 +42,13 @@ jobs:
         tox
       env:
         PLATFORM: ${{ matrix.platform }}
+        TOX_SUITE: unit
     - name: Build documentation
       run: |
         cd pharmpy
-        tox -e docs
+        tox
+      env:
+        TOX_SUITE: docs-build
     - name: Build wheel
       run: |
         cd pharmpy

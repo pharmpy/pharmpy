@@ -127,9 +127,11 @@ jobs:
           python -m pip install --upgrade pip
           pip install tox
       - name: Run integration tests
-        run: tox -e integration
+        run: tox
         env:
           PLATFORM: ubuntu-latest
+          TOX_SUITE: integration
+          TOX_PYTEST_COVER: integration
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v2
         with:
@@ -183,9 +185,11 @@ jobs:
           python -m pip install --upgrade pip
           pip install tox
       - name: Run integration tests
-        run: tox -e integration
+        run: tox
         env:
           PLATFORM: macos-latest
+          TOX_SUITE: integration
+          TOX_PYTEST_COVER: integration
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v2
         with:
@@ -235,9 +239,11 @@ jobs:
             python -m pip install --upgrade pip
             pip install tox
         - name: Run integration tests
-          run: tox -e integration
+          run: tox
           env:
             PLATFORM: windows-2019
+            TOX_SUITE: integration
+            TOX_PYTEST_COVER: integration
         - name: Upload coverage to Codecov
           uses: codecov/codecov-action@v2
           with:
