@@ -33,7 +33,7 @@ def run(workflow):
                     # Catch deprecation warning from python 3.10 via tornado.
                     # Should be fixed with tornado 6.2
                     warnings.filterwarnings("ignore", message="There is no current event loop")
-                    with LocalCluster(processes=False) as cluster:
+                    with LocalCluster(processes=False, dashboard_address=':31058') as cluster:
                         with Client(cluster) as client:
                             print(client)
                             dsk_optimized = optimize_task_graph_for_dask_distributed(client, dsk)
