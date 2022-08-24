@@ -410,17 +410,19 @@ class ExplicitODESystem(ODESystem):
 
         cb = CompartmentalSystemBuilder()
         compartments = {}
+        concentrations = set()
         for i, eq in enumerate(self.odes):
-            f = eq.lhs.args[0]
-            name = convert_name(f.name)
+            A = eq.lhs.args[0]
+            concentrations.add(A)
+            name = convert_name(A.name)
             # FIXME The following is not true in general!
             dose = Bolus(sympy.Symbol("AMT")) if i == 0 else None
-            comp = Compartment(convert_name(f.name), dose)
+            comp = Compartment(convert_name(A.name), dose)
             cb.add_compartment(comp)
             compartments[name] = comp
 
         for eq in self.odes:
-            for comp_func in _free_images(eq.rhs):
+            for comp_func in concentrations.intersection(_free_images(eq.rhs)):
                 dep = eq.rhs.as_independent(comp_func, as_Add=True)[1]
                 terms = sympy.Add.make_args(dep)
                 for term in terms:
