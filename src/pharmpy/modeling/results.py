@@ -630,7 +630,7 @@ def rank_models(
     """
     models_all = [base_model] + models
 
-    rank_values = {}
+    rank_values, delta_values = {}, {}
     models_to_rank = []
 
     ref_value = _get_rankval(base_model, rank_type, bic_type)
@@ -657,15 +657,15 @@ def rank_models(
                 continue
 
         # Add ranking value and model
-        if np.isnan(ref_value):
-            rank_values[model.name] = -rank_value
-        else:
-            rank_values[model.name] = ref_value - rank_value
+        rank_values[model.name] = rank_value
+        delta_values[model.name] = ref_value - rank_value
         models_to_rank.append(model)
 
     # Sort
     def _get_delta(model):
-        return rank_values[model.name]
+        if np.isnan(ref_value):
+            return -rank_values[model.name]
+        return delta_values[model.name]
 
     models_sorted = sorted(models_to_rank, key=_get_delta, reverse=True)
 
@@ -674,7 +674,7 @@ def rank_models(
     rank, count, prev = 0, 0, None
     for model in models_sorted:
         count += 1
-        value = rank_values[model.name]
+        value = _get_delta(model)
         if value != prev:
             rank += count
             prev = value
@@ -687,8 +687,9 @@ def rank_models(
         if model.name in ranking.keys():
             rank = ranking[model.name]
         if model.name in rank_values.keys():
-            rank_value = _get_rankval(model, rank_type, bic_type)
-            delta = rank_values[model.name]
+            rank_value = rank_values[model.name]
+        if model.name in delta_values.keys():
+            delta = delta_values[model.name]
 
         rows[model.name] = (delta, rank_value, rank)
 
@@ -703,11 +704,9 @@ def rank_models(
     )
 
     if np.isnan(ref_value):
-        df_sorted = df.sort_values(by=[f'{rank_type_name}'])
+        return df.sort_values(by=[f'{rank_type_name}'])
     else:
-        df_sorted = df.sort_values(by=[f'd{rank_type_name}'], ascending=False)
-
-    return df_sorted
+        return df.sort_values(by=[f'd{rank_type_name}'], ascending=False)
 
 
 def _fulfills_lrt(parent, child, alpha):
