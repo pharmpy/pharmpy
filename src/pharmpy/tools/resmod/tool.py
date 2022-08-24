@@ -265,11 +265,14 @@ def _create_combined_model(input_model, current_iteration):
     base_model = input_model
     model = base_model.copy()
     remove_error_model(model)
-    s = model.statements[0]
+    sset = model.statements.copy()
+    s = sset[0]
     ruv_prop = create_symbol(model, 'epsilon_p')
     ruv_add = create_symbol(model, 'epsilon_a')
     ipred = sympy.Symbol('IPRED')
-    s.expression = s.expression + ruv_prop + ruv_add / ipred
+    s = Assignment(s.symbol, s.expression + ruv_prop + ruv_add / ipred)
+    sset[0] = s
+    model.statements = sset
 
     prop_name = 'sigma_prop'
     add_population_parameter(model, prop_name, 1, lower=0)
