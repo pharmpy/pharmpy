@@ -86,12 +86,7 @@ def summarize_tool(
     df = pd.concat([df_descr, df_rank], axis=1)
     df['parent_model'] = df.pop('parent_model')
 
-    if rank_type == 'lrt':
-        rank_type_name = 'ofv'
-    else:
-        rank_type_name = rank_type
-
-    df_sorted = df.sort_values(by=[f'd{rank_type_name}'], ascending=False)
+    df_sorted = df.reindex(df_rank.index)
 
     assert df_sorted is not None
     return df_sorted

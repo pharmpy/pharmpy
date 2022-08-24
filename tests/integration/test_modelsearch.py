@@ -50,8 +50,8 @@ def test_exhaustive(tmp_path, start_model):
                 'modelsearch_candidate1',
                 'modelsearch_candidate2',
                 'mox2',
-                'modelsearch_candidate3',
                 'modelsearch_candidate4',
+                'modelsearch_candidate3',
             ],
         ),
         # FIXME: Warning after setting TOL=9
@@ -75,8 +75,8 @@ def test_exhaustive(tmp_path, start_model):
                 'modelsearch_candidate5',
                 'modelsearch_candidate3',
                 'mox2',
-                'modelsearch_candidate4',
                 'modelsearch_candidate6',
+                'modelsearch_candidate4',
             ],
         ),
         (
@@ -115,7 +115,6 @@ def test_exhaustive_stepwise_basic(
         print(res.summary_errors)
 
         assert list(res.summary_tool.index.values) == ranked_order
-        assert False
         assert len(res.summary_tool) == no_of_models + 1
         assert len(res.summary_models) == no_of_models + 1
         assert len(res.models) == no_of_models
@@ -201,6 +200,13 @@ def test_exhaustive_stepwise_start_model_not_fitted(tmp_path, start_model):
         search_space = 'ABSORPTION(ZO);PERIPHERALS(1)'
         with pytest.warns(UserWarning, match='Could not update'):
             res = run_modelsearch(search_space, 'exhaustive_stepwise', model=start_model)
+
+        pd.set_option('display.max_columns', None)
+        pd.set_option('display.max_rows', None)
+        pd.set_option('display.max_colwidth', None)
+
+        print(res.summary_tool)
+        print(res.summary_errors)
 
         assert len(res.summary_tool) == 5
         assert len(res.summary_models) == 5
