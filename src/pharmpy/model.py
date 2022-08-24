@@ -17,13 +17,13 @@ import pathlib
 import warnings
 from pathlib import Path
 
-from pharmpy.datainfo import ColumnInfo, DataInfo
-from pharmpy.deps import sympy
-from pharmpy.estimation import EstimationSteps
-from pharmpy.parameters import Parameters
-from pharmpy.plugins.utils import detect_model
-from pharmpy.random_variables import RandomVariables
-from pharmpy.statements import Statements
+from .datainfo import ColumnInfo, DataInfo
+from .deps import sympy
+from .estimation import EstimationSteps
+from .parameters import Parameters
+from .plugins.utils import detect_model
+from .random_variables import RandomVariables
+from .statements import Statements
 
 
 class ModelError(Exception):
