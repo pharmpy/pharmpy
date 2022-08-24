@@ -53,10 +53,13 @@ class LocalDirectoryDatabase(NonTransactionalModelDatabase):
     def store_model(self, model):
         pass
 
-    def store_local_file(self, model, path):
+    def store_local_file(self, model, path, new_filename=None):
         path_object = Path(path)
         if path_object.name not in self.ignored_names and path_object.is_file():
-            shutil.copy2(path, self.path)
+            dest_path = self.path
+            if new_filename:
+                dest_path = self.path / new_filename
+            shutil.copy2(path, dest_path)
 
     def retrieve_local_files(self, name, destination_path):
         # Retrieve all files stored for one model
@@ -221,11 +224,13 @@ class LocalModelDirectoryDatabaseTransaction(ModelTransaction):
         model_path.mkdir(exist_ok=True)
         write_model(model, str(model_path / (model.name + model.filename_extension)), force=True)
 
-    def store_local_file(self, path):
+    def store_local_file(self, path, new_filename=None):
         if Path(path).is_file():
             destination = self.db.path / self.model.name
             if not destination.is_dir():
                 destination.mkdir(parents=True)
+            if new_filename:
+                destination = destination / new_filename
             shutil.copy2(path, destination)
 
     def store_metadata(self, metadata):
