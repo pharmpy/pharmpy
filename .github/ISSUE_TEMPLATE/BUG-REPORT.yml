@@ -1,0 +1,28 @@
+name: Bug Report
+description: File a bug report
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to fill out this bug report!
+        Please describe what you are trying to achieve and what went wrong.
+        Please include the error message (and the stack trace if available) you are
+        witnessing.
+        If not using R (`pharmr`), please specify the version of `Pharmpy` you are running:
+
+        For Python users
+        ```py
+        pharmpy.__version__
+        ```
+
+        For CLI users
+        ```sh
+        pharmpy --version
+        ```
+  - type: textarea
+    id: free-text
+    attributes:
+      label: Bug report
+    validations:
+      required: true

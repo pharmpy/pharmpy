@@ -1,0 +1,16 @@
+name: Feature Request
+description: Request a new feature
+labels: ["enhancement", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please describe the new feature you would like to see implemented in
+        Pharmpy.
+
+  - type: textarea
+    id: free-text
+    attributes:
+      label: Feature request
+    validations:
+      required: true
