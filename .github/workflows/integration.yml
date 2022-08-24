@@ -197,55 +197,55 @@ jobs:
           files: ./.coverage.xml
 
   integration-windows:
-      needs: [get-nonmem]
-      runs-on: windows-2019
-      steps:
-        - name: Checkout Pharmpy
-          uses: actions/checkout@v1
-        - name: Get NONMEM
-          uses: actions/download-artifact@v2
-          with:
-              name: cache-workaround
-        - name: Unzip NONMEM
-          run: 7z x 744.zip -p%ZIP_KEY%
-          env:
-            ZIP_KEY: ${{secrets.ZIP_KEY}}
-          shell: cmd
-        - name: NONMEM license
-          run: echo $LICENSE_KEY >nm744CD/nonmem.lic
-          env:
-            LICENSE_KEY: ${{secrets.LICENSE_KEY}}
-          shell: bash
-        - name: Install NONMEM
-          run: |
-            set INSTALLDIR=%CD%\nm744
-            cd nm744CD
-            SETUP74.bat %CD% %INSTALLDIR% gfortran y ar same rec q
-          shell: cmd
-        - name: Create pharmpy.conf
-          run: |
-            export CONFDIR=/c/Users/runneradmin/AppData/Local/Pharmpy/Pharmpy
-            mkdir -p $CONFDIR
-            echo '[pharmpy.plugins.nonmem]' > $CONFDIR/pharmpy.conf
-            echo 'parameter_names=comment,basic' >> $CONFDIR/pharmpy.conf
-            echo 'default_nonmem_path=D:\a\pharmpy\pharmpy\nm744' >> $CONFDIR/pharmpy.conf
-          shell: bash
-        - name: Set up Python 3.9
-          uses: actions/setup-python@v2
-          with:
-            python-version: 3.9
-        - name: Install dependencies
-          run: |
-            python -m pip install --upgrade pip
-            pip install tox tox-gh-actions
-        - name: Run integration tests
-          run: tox
-          env:
-            PLATFORM: windows-2019
-            TOX_SUITE: integration
-            TOX_PYTEST_COVER: integration
-        - name: Upload coverage to Codecov
-          uses: codecov/codecov-action@v2
-          with:
-            flags: integration,windows-2019,python-3.9
-            files: ./.coverage.xml
+    needs: [get-nonmem]
+    runs-on: windows-2019
+    steps:
+      - name: Checkout Pharmpy
+        uses: actions/checkout@v1
+      - name: Get NONMEM
+        uses: actions/download-artifact@v2
+        with:
+            name: cache-workaround
+      - name: Unzip NONMEM
+        run: 7z x 744.zip -p%ZIP_KEY%
+        env:
+          ZIP_KEY: ${{secrets.ZIP_KEY}}
+        shell: cmd
+      - name: NONMEM license
+        run: echo $LICENSE_KEY >nm744CD/nonmem.lic
+        env:
+          LICENSE_KEY: ${{secrets.LICENSE_KEY}}
+        shell: bash
+      - name: Install NONMEM
+        run: |
+          set INSTALLDIR=%CD%\nm744
+          cd nm744CD
+          SETUP74.bat %CD% %INSTALLDIR% gfortran y ar same rec q
+        shell: cmd
+      - name: Create pharmpy.conf
+        run: |
+          export CONFDIR=/c/Users/runneradmin/AppData/Local/Pharmpy/Pharmpy
+          mkdir -p $CONFDIR
+          echo '[pharmpy.plugins.nonmem]' > $CONFDIR/pharmpy.conf
+          echo 'parameter_names=comment,basic' >> $CONFDIR/pharmpy.conf
+          echo 'default_nonmem_path=D:\a\pharmpy\pharmpy\nm744' >> $CONFDIR/pharmpy.conf
+        shell: bash
+      - name: Set up Python 3.9
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.9
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install tox tox-gh-actions
+      - name: Run integration tests
+        run: tox
+        env:
+          PLATFORM: windows-2019
+          TOX_SUITE: integration
+          TOX_PYTEST_COVER: integration
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v2
+        with:
+          flags: integration,windows-2019,python-3.9
+          files: ./.coverage.xml
