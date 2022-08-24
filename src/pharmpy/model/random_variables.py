@@ -4,7 +4,7 @@ import itertools
 from collections.abc import Sequence
 from functools import lru_cache
 from math import sqrt
-from typing import Dict, Iterable, List, Tuple
+from typing import Dict, Iterable, Set, Tuple
 
 import pharmpy.math
 import pharmpy.unicode as unicode
@@ -1056,10 +1056,10 @@ class RandomVariables(Sequence):
         parameters in the distributions will first be replaced"""
 
         sympified_expr = sympify(expr)
-        xreplace_parameters = dict() if parameters is None else xreplace_dict(parameters)
+        xreplace_parameters = {} if parameters is None else xreplace_dict(parameters)
 
         return _sample_from_distributions(
-            [(dist.names, dist) for dist in self],
+            self,
             sympified_expr,
             xreplace_parameters,
             samples,
@@ -1138,69 +1138,90 @@ class RandomVariables(Sequence):
         return newdict
 
 
-def _sample_from_distributions(distributions, expr, parameters, samples, rng):
+def _sample_from_distributions(distributions, expr, parameters, nsamples, rng):
     random_variable_symbols = expr.free_symbols.difference(parameters.keys())
+    filtered_distributions = filter_distributions(distributions, random_variable_symbols)
+    sampling_rvs = subs_distributions(filtered_distributions, parameters)
+    return sample_expr_from_rvs(sampling_rvs, expr, parameters, nsamples, rng)
 
-    sampling_rvs = list(_generate_sampling_rvs(distributions, random_variable_symbols, parameters))
 
-    return _sample_expr_from_rvs(sampling_rvs, expr, parameters, samples, rng)
-
-
-def _generate_sampling_rvs(
-    distributions, symbols, parameters
-) -> Iterable[Tuple[List[sympy.Symbol], NumericDistribution]]:
+def filter_distributions(
+    distributions: Iterable[Distribution], symbols: Set[sympy.Symbol]
+) -> Iterable[Distribution]:
     covered_symbols = set()
 
-    for rvs, dist in distributions:
-        rvs_symbols = list(map(sympy.Symbol, rvs))
-        symbols_covered_by_dist = symbols.intersection(rvs_symbols)
+    for dist in distributions:
+        symbols_covered_by_dist = symbols.intersection(sympy.Symbol(rv) for rv in dist.names)
         if symbols_covered_by_dist:
-            if len(rvs) > 1:
-                try:
-                    mu = np.array(symengine.sympify(dist.mean).xreplace(parameters)).astype(
-                        np.float64
-                    )[:, 0]
-                    sigma = np.array(dist._symengine_variance.xreplace(parameters)).astype(
-                        np.float64
-                    )
-                    distribution = NumericMultivariateNormalDistribution(mu, sigma)
-                except RuntimeError as e:
-                    # NOTE This handles missing parameter substitutions
-                    raise ValueError(e)
-            else:
-                # mu = float(symengine.sympify(dist.mean).xreplace(parameters))
-                # sigma = float(symengine.sympify(dist.variance).xreplace(parameters))
-                mean = dist.mean
-                variance = dist.variance
-                try:
-                    mu = 0 if mean == 0 else float(parameters[mean])
-                    sigma = 0 if variance == 0 else sqrt(float(parameters[variance]))
-                    distribution = NumericNormalDistribution(mu, sigma)
-                except KeyError as e:
-                    # NOTE This handles missing parameter substitutions
-                    raise ValueError(e)
-
-            yield (rvs_symbols, distribution)
+            yield dist
             covered_symbols |= symbols_covered_by_dist
 
     if covered_symbols != symbols:
         raise ValueError('Could not cover all requested symbols with given distributions')
 
 
-def _sample_expr_from_rvs(sampling_rvs, expr, parameters, samples, rng):
+def subs_distributions(
+    distributions: Iterable[Distribution], parameters: Dict[sympy.Symbol, float]
+) -> Iterable[Tuple[Tuple[sympy.Symbol, ...], NumericDistribution]]:
+
+    for dist in distributions:
+        rvs_symbols = tuple(map(sympy.Symbol, dist.names))
+        if len(rvs_symbols) > 1:
+            try:
+                mu = np.array(symengine.sympify(dist.mean).xreplace(parameters)).astype(np.float64)[
+                    :, 0
+                ]
+                sigma = np.array(dist._symengine_variance.xreplace(parameters)).astype(np.float64)
+                distribution = NumericMultivariateNormalDistribution(mu, sigma)
+            except RuntimeError as e:
+                # NOTE This handles missing parameter substitutions
+                raise ValueError(e)
+        else:
+            # mu = float(symengine.sympify(rv._mean[0]).xreplace(parameters))
+            # sigma = float(symengine.sympify(sympy.sqrt(rv._variance[0,0])).xreplace(parameters))
+            mean = dist.mean
+            variance = dist.variance
+            try:
+                mu = 0 if mean == 0 else float(parameters[mean])
+                sigma = 0 if variance == 0 else sqrt(float(parameters[variance]))
+                distribution = NumericNormalDistribution(mu, sigma)
+            except KeyError as e:
+                # NOTE This handles missing parameter substitutions
+                raise ValueError(e)
+
+        yield (rvs_symbols, distribution)
+
+
+def sample_expr_from_rvs(
+    sampling_rvs: Iterable[Tuple[Tuple[sympy.Symbol, ...], NumericDistribution]],
+    expr: sympy.Expr,
+    parameters: Dict[sympy.Symbol, float],
+    nsamples: int,
+    rng,
+):
     expr = expr.xreplace(parameters)
 
-    if not sampling_rvs:
-        return np.full(samples, float(expr.evalf()))
+    rvs = list(sampling_rvs)
 
+    if not rvs:
+        return np.full(nsamples, float(expr.evalf()))
+
+    samples = sample_rvs(rvs, nsamples, rng)
+
+    return eval_expr(expr, samples)
+
+
+def eval_expr(
+    expr: sympy.Expr,
+    samples: Dict[sympy.Symbol, np.ndarray],
+) -> np.ndarray:
     ordered_symbols, fn = _lambdify_canonical(expr)
-    samples = sample_rvs(sampling_rvs, samples, rng)
     data = [samples[rv] for rv in ordered_symbols]
     return fn(*data)
 
 
 def sample_rvs(
-    sampling_rvs: Iterable[Tuple[List[sympy.Symbol], NumericDistribution]],
+    sampling_rvs: Iterable[Tuple[Tuple[sympy.Symbol, ...], NumericDistribution]],
     nsamples: int,
     rng,
 ) -> Dict[sympy.Symbol, np.ndarray]:
