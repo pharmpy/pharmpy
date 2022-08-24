@@ -25,7 +25,7 @@ def execute_model(model):
     basepath = Path(model.name)
     args = nmfe(
         model.name + model.filename_extension,
-        str(basepath.with_suffix('.lst')),
+        'results.lst',
     )
 
     stdout = path / 'stdout'
@@ -53,7 +53,7 @@ def execute_model(model):
     with database.transaction(model) as txn:
 
         txn.store_model()
-        txn.store_local_file((path / basepath).with_suffix('.lst'))
+        txn.store_local_file((path / 'results.lst'), new_filename=basepath.with_suffix('.lst'))
         txn.store_local_file((path / basepath).with_suffix('.ext'))
         txn.store_local_file((path / basepath).with_suffix('.phi'))
         txn.store_local_file((path / basepath).with_suffix('.cov'))
