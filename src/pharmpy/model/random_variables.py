@@ -4,7 +4,7 @@ import itertools
 from collections.abc import Sequence
 from functools import lru_cache
 from math import sqrt
-from typing import Iterable, List, Tuple
+from typing import Dict, Iterable, List, Tuple
 
 import pharmpy.math
 import pharmpy.unicode as unicode
@@ -1194,27 +1194,26 @@ def _sample_expr_from_rvs(sampling_rvs, expr, parameters, samples, rng):
         return np.full(samples, float(expr.evalf()))
 
     ordered_symbols, fn = _lambdify_canonical(expr)
-    data = _sample_rvs_subset(sampling_rvs, ordered_symbols, samples, rng)
+    samples = sample_rvs(sampling_rvs, samples, rng)
+    data = [samples[rv] for rv in ordered_symbols]
     return fn(*data)
 
 
-def _sample_rvs_subset(
+def sample_rvs(
     sampling_rvs: Iterable[Tuple[List[sympy.Symbol], NumericDistribution]],
-    ordered_symbols,
-    nsamples,
+    nsamples: int,
     rng,
-):
-    data = [None] * len(ordered_symbols)
-    index = {symbol: i for i, symbol in enumerate(ordered_symbols)}
+) -> Dict[sympy.Symbol, np.ndarray]:
+    data = {}
     for symbols, distribution in sampling_rvs:
         cursample = distribution.sample(rng, nsamples)
         if len(symbols) > 1:
+            # NOTE this makes column iteration faster
+            cursample = np.array(cursample, order='F')
             for j, s in enumerate(symbols):
-                i = index.get(s, -1)
-                if i != -1:
-                    data[i] = cursample[:, j]
+                data[s] = cursample[:, j]
         else:
-            data[index[symbols[0]]] = cursample
+            data[symbols[0]] = cursample
 
     return data
 
