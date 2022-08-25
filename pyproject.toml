@@ -2,6 +2,14 @@
 line-length = 100
 skip-string-normalization = 1
 
+[tool.isort]
+line_length = 100
+known_first_party = "pharmpy"
+default_section = "THIRDPARTY"
+forced_separate = "test_pharmpy"
+multi_line_output = 3
+include_trailing_comma = true
+
 [tool.pyright]
 venvPath = ".tox"
 venv = "py310"
