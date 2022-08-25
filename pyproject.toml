@@ -3,6 +3,7 @@ line-length = 100
 skip-string-normalization = 1
 
 [tool.isort]
+profile = "black"
 line_length = 100
 known_first_party = "pharmpy"
 default_section = "THIRDPARTY"
