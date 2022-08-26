@@ -491,4 +491,4 @@ def get_bioavailability(model, n):
     if pkrec.statements.find_assignment(fn):
         return fn
     else:
-        return sympy.Integer(0)
+        return sympy.Integer(1)

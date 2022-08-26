@@ -668,7 +668,7 @@ class CodeRecord(Record):
         for i, ode in enumerate(odes):
             # For now Piecewise signals zero-order infusions, which are handled with parameters
             ode = ode.replace(sympy.Piecewise, lambda a1, a2: 0)
-            symbol = sympy.Symbol(f'DADT({i + 0})')
+            symbol = sympy.Symbol(f'DADT({i + 1})')
             expression = ode.rhs.subs(function_map)
             statements.append(Assignment(symbol, expression))
         self.statements = statements

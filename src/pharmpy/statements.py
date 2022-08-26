@@ -1339,21 +1339,29 @@ class Compartment:
     Compartment(DEPOT, dose=Bolus(AMT))
     """
 
-    def __init__(
-        self, name, dose=None, lag_time=sympy.Integer(0), bioavailability=sympy.Integer(1)
-    ):
+    def __init__(self, name, dose=None, lag_time=None, bioavailability=None):
         self._name = name
         self._dose = dose
-        self._lag_time = lag_time
-        self._bioavailability = bioavailability
+        if lag_time is None:
+            self._lag_time = sympy.Integer(0)
+        else:
+            self._lag_time = lag_time
+        if bioavailability is None:
+            self._bioavailability = sympy.Integer(1)
+        else:
+            self._bioavailability = bioavailability
 
     @classmethod
-    def create(cls, name, dose=None, lag_time=0, bioavailability=0):
+    def create(cls, name, dose=None, lag_time=None, bioavailability=None):
         if not isinstance(name, str):
             raise TypeError("Name of a Compartment must be of string type")
         if dose is not None and not isinstance(dose, Dose):
             raise TypeError("dose must be of Dose type (or None)")
-        return cls(name, dose, sympify(lag_time), sympify(bioavailability))
+        if lag_time is not None:
+            lag_time = sympify(lag_time)
+        if bioavailability is not None:
+            bioavailability = sympify(bioavailability)
+        return cls(name, dose, lag_time, bioavailability)
 
     @property
     def name(self):

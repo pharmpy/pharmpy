@@ -37,6 +37,6 @@ def get_bioavailability(model):
     d = dict()
     for name in names:
         cmt = odes.find_compartment(name)
-        if cmt.bioavailability:
+        if cmt.bioavailability != 1:
             d[name] = cmt.bioavailability
     return d
