@@ -645,6 +645,8 @@ def rank_models(
             if errors_allowed:
                 if model.modelfit_results.termination_cause not in errors_allowed:
                     continue
+                if np.isnan(model.modelfit_results.significant_digits):
+                    continue
             else:
                 continue
 
