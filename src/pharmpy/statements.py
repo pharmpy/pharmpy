@@ -461,8 +461,8 @@ class CompartmentalSystemBuilder:
         Examples
         --------
         >>> from pharmpy import CompartmentalSystemBuilder
-        >>> odes = CompartmentalSystemBuilder()
-        >>> central = odes.add_compartment("CENTRAL")
+        >>> cb = CompartmentalSystemBuilder()
+        >>> central = cb.add_compartment("CENTRAL")
         """
         self._g.add_node(compartment)
 
@@ -550,6 +550,20 @@ class CompartmentalSystemBuilder:
         nx.relabel_nodes(self._g, mapping, copy=False)
 
     def set_dose(self, compartment, dose):
+        """Set dose of compartment
+
+        Parameters
+        ----------
+        compartment : Compartment
+            Compartment for which to change dose
+        dose : Dose
+            New dose
+
+        Returns
+        -------
+        Compartment
+            The new updated compartment
+        """
         new_comp = Compartment(
             compartment.name, dose, compartment.lag_time, compartment.bioavailability
         )
@@ -558,6 +572,20 @@ class CompartmentalSystemBuilder:
         return new_comp
 
     def set_lag_time(self, compartment, lag_time):
+        """Set lag time of compartment
+
+        Parameters
+        ----------
+        compartment : Compartment
+            Compartment for which to change lag time
+        lag_time : expr
+            New lag time
+
+        Returns
+        -------
+        Compartment
+            The new updated compartment
+        """
         new_comp = Compartment(
             compartment.name, compartment.dose, lag_time, compartment.bioavailability
         )
@@ -1295,7 +1323,7 @@ class Compartment:
     lag_time : Expression
         Lag time for doses entering this compartment. Default 0
     bioavailability : Expression
-        Bioavailability fraction for doses entering this compartment. Default 0
+        Bioavailability fraction for doses entering this compartment. Default 1
 
     Examples
     --------
@@ -1313,7 +1341,7 @@ class Compartment:
     """
 
     def __init__(
-        self, name, dose=None, lag_time=sympy.Integer(0), bioavailability=sympy.Integer(0)
+        self, name, dose=None, lag_time=sympy.Integer(0), bioavailability=sympy.Integer(1)
     ):
         self._name = name
         self._dose = dose
@@ -1759,6 +1787,25 @@ class Statements(Sequence):
 
     @property
     def error(self):
+        """All statements after the ODE system or the whole model if no ODE system
+
+        Examples
+        --------
+        >>> from pharmpy.modeling import load_example_model
+        >>> model = load_example_model("pheno")
+        >>> model.statements.error
+            A_CENTRAL
+            ─────────
+        F =     S₁
+        W = F
+        Y = EPS(1)⋅W + F
+        IPRED = F
+        IRES = DV - IPRED
+                 IRES
+                 ────
+        IWRES =   W
+        """
+
         sset = []
         found = False
         if self.ode_system is None:
