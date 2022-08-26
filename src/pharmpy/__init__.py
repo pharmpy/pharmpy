@@ -32,7 +32,6 @@ from .statements import (
     Statements,
     sympify,
 )
-from .symbols import symbol
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 
@@ -63,6 +62,5 @@ __all__ = [
     'RandomVariables',
     'Results',
     'VariabilityHierarchy',
-    'symbol',
     'sympify',
 ]
