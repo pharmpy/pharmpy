@@ -23,7 +23,7 @@ from pharmpy.modeling import (
     summarize_modelfit_results,
 )
 from pharmpy.modeling.error import remove_error_model, set_time_varying_error_model
-from pharmpy.statements import Assignment, ModelStatements
+from pharmpy.statements import Assignment, Statements
 from pharmpy.tools.common import summarize_tool, update_initial_estimates
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.workflows import Task, Workflow, call_workflow
@@ -221,7 +221,7 @@ def _create_base_model(input_model, current_iteration):
     base_model.random_variables = rvs
 
     y = Assignment(sympy.Symbol('Y'), theta.symbol + eta.symbol + sigma.symbol)
-    stats = ModelStatements([y])
+    stats = Statements([y])
     base_model.statements = stats
 
     base_model.dependent_variable = y.symbol

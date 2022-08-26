@@ -1011,7 +1011,7 @@ IF(APGR.LT.5) TVV=TVV*(1+THETA(3))
 CL=TVCL*EXP(ETA(1))
 V=TVV*EXP(ETA(2))
 S2 = V
-ALAG2 = MDT
+ALAG1 = MDT
 KA = 1/MAT
 
 $ERROR
@@ -2072,7 +2072,7 @@ def test_lag_on_nl_elim(testdata):
 def test_zo_abs_on_nl_elim(testdata):
     model = Model.create_model(testdata / 'nonmem' / 'models' / 'mox2.mod')
     set_zero_order_elimination(model)
-    model.model_code
+    # model.model_code
     set_zero_order_absorption(model)
     assert 'RATE' in model.model_code
     assert 'D1 =' in model.model_code
@@ -3782,7 +3782,9 @@ def test_mm_then_periph(pheno):
     assert odes.get_flow(central, periph) == sympy.Symbol('QP1') / sympy.Symbol('V')
     assert odes.get_flow(periph, central) == sympy.Symbol('QP1') / sympy.Symbol('VP1')
     add_peripheral_compartment(model)
+    odes = model.statements.ode_system
     newperiph = odes.peripheral_compartments[1]
+    central = odes.central_compartment
     assert odes.get_flow(central, newperiph) == sympy.Symbol('QP2') / sympy.Symbol('V')
     assert odes.get_flow(newperiph, central) == sympy.Symbol('QP2') / sympy.Symbol('VP2')
 

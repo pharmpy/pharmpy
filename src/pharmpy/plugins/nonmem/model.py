@@ -207,7 +207,7 @@ class Model(pharmpy.model.Model):
                 omega = Parameter('DUMMYOMEGA', init=0, fix=True)
                 eta = RandomVariable.normal('eta_dummy', 'iiv', 0, omega.symbol)
                 statement = Assignment(sympy.Symbol('DUMMYETA'), sympy.Symbol(eta.name))
-                self.statements.insert(0, statement)
+                self.statements = statement + self.statements
                 self.random_variables.append(eta)
                 self.parameters = Parameters([p for p in self.parameters] + [omega])
             update_random_variables(self, self._old_random_variables, self._random_variables)
@@ -225,7 +225,7 @@ class Model(pharmpy.model.Model):
             self.statements  # Read statements unless read
         if hasattr(self, '_statements'):
             update_statements(self, self._old_statements, self._statements, trans)
-            self._old_statements = self._statements.copy()
+            self._old_statements = self._statements
 
         if (
             self._dataset_updated
@@ -492,12 +492,12 @@ class Model(pharmpy.model.Model):
                 for i, amount in enumerate(cm.amounts, start=1):
                     trans_amounts[sympy.Symbol(f"A({i})")] = amount
             else:
-                statements.append(ODESystem())  # FIXME: Placeholder for ODE-system
+                statements += ODESystem()  # FIXME: Placeholder for ODE-system
                 # FIXME: Dummy link statement
-                statements.append(Assignment(S('F'), S('F')))
+                statements += Assignment(S('F'), S('F'))
             statements += error.statements
             if trans_amounts:
-                statements.subs(trans_amounts)
+                statements = statements.subs(trans_amounts)
 
         if not hasattr(self, '_parameters'):
             self._read_parameters()
@@ -529,10 +529,10 @@ class Model(pharmpy.model.Model):
             new.append(newparam)
         self.parameters = Parameters(new)
 
-        statements.subs(trans_statements)
+        statements = statements.subs(trans_statements)
 
         self._statements = statements
-        self._old_statements = statements.copy()
+        self._old_statements = statements
         return statements
 
     @statements.setter

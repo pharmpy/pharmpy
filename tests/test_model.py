@@ -36,7 +36,6 @@ def test_to_generic_model(testdata):
     assert id(model.random_variables) != id(nm_model.random_variables)
     assert model.random_variables == nm_model.random_variables
     assert model.name == nm_model.name
-    assert id(model.statements) != id(nm_model.statements)
     assert model.statements == nm_model.statements
     assert type(model) == pharmpy.model.Model
 

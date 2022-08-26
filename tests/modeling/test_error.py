@@ -46,7 +46,7 @@ def test_set_additive_error_model_logdv(testdata):
 
 def test_set_proportional_error_model_nolog(testdata):
     model = Model.create_model(testdata / 'nonmem' / 'pheno.mod')
-    model.statements[5] = Assignment.create('Y', 'F')
+    model.statements = model.statements[0:5] + Assignment.create('Y', 'F') + model.statements[6:]
     set_proportional_error_model(model, zero_protection=True)
     assert model.model_code.split('\n')[16] == 'Y = F + EPS(1)*IPREDADJ'
     assert model.model_code.split('\n')[22] == '$SIGMA  0.09 ; sigma'
@@ -59,7 +59,7 @@ def test_set_proportional_error_model_nolog(testdata):
 
 def test_set_proportional_error_model_log(testdata):
     model = Model.create_model(testdata / 'nonmem' / 'pheno.mod')
-    model.statements[5] = Assignment.create('Y', 'F')
+    model.statements = model.statements[0:5] + Assignment.create('Y', 'F') + model.statements[6:]
     set_proportional_error_model(model, data_trans='log(Y)', zero_protection=True)
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@

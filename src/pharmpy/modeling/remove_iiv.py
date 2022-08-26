@@ -50,7 +50,7 @@ def remove_iiv(model, to_remove=None):
     etas = _get_etas(model, to_remove, include_symbols=True)
 
     for eta in etas:
-        sset.subs({eta.symbol: 0})
+        sset = sset.subs({eta.symbol: 0})
         del rvs[eta]
 
     model.random_variables = rvs

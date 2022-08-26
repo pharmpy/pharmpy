@@ -9,7 +9,7 @@ from sympy import exp, sign
 
 from pharmpy.modeling.help_functions import _format_input_list, _get_etas
 from pharmpy.parameters import Parameter, Parameters
-from pharmpy.statements import Assignment, ModelStatements
+from pharmpy.statements import Assignment
 from pharmpy.symbols import symbol as S
 
 from .expressions import create_symbol
@@ -142,11 +142,9 @@ def _transform_etas(model, transformation, etas):
     transformation.apply(etas_assignment, thetas)
     statements_new = transformation.assignments
     sset = model.statements
-    sset.subs(etas_subs)
+    sset = sset.subs(etas_subs)
 
-    statements_new.extend(sset)
-
-    model.statements = statements_new
+    model.statements = statements_new + sset
 
 
 def _create_new_etas(etas_original, transformation):
@@ -206,7 +204,7 @@ class EtaTransformation:
 
     @classmethod
     def boxcox(cls, no_of_etas):
-        assignments = ModelStatements()
+        assignments = []
         for i in range(1, no_of_etas + 1):
             symbol = S(f'etab{i}')
             expression = (exp(S(f'eta{i}')) ** S(f'theta{i}') - 1) / (S(f'theta{i}'))
@@ -218,7 +216,7 @@ class EtaTransformation:
 
     @classmethod
     def tdist(cls, no_of_etas):
-        assignments = ModelStatements()
+        assignments = []
         for i in range(1, no_of_etas + 1):
             symbol = S(f'etat{i}')
 
@@ -243,7 +241,7 @@ class EtaTransformation:
 
     @classmethod
     def john_draper(cls, no_of_etas):
-        assignments = ModelStatements()
+        assignments = []
         for i in range(1, no_of_etas + 1):
             symbol = S(f'etad{i}')
 

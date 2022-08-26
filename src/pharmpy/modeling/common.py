@@ -207,7 +207,7 @@ def convert_model(model, to_format):
         new = Model.create_model()
         new.parameters = model.parameters
         new.random_variables = model.random_variables.copy()
-        new.statements = model.statements.copy()
+        new.statements = model.statements
         new.dataset = model.dataset.copy()
         new.estimation_steps = model.estimation_steps.copy()
         new.datainfo = model.datainfo.copy()
@@ -656,6 +656,6 @@ def rename_symbols(model, new_names):
         new.append(newparam)
     model.parameters = Parameters(new)
 
-    model.statements.subs(d)
+    model.statements = model.statements.subs(d)
     return model
     # FIXME: Only handles parameters and statements and no clashes and circular renaming

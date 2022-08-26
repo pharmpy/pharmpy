@@ -15,10 +15,10 @@ from pharmpy.statements import (
     Assignment,
     Bolus,
     CompartmentalSystem,
+    CompartmentalSystemBuilder,
     ExplicitODESystem,
     Infusion,
-    ModelStatements,
-    ODESystem,
+    Statements,
 )
 from pharmpy.symbols import symbol
 
@@ -339,11 +339,19 @@ def update_infusion(model, old, new):
         if dose.rate is None:
             # FIXME: Not always D1 here!
             ass = Assignment(sympy.Symbol('D1'), dose.duration)
-            new.dosing_compartment.dose = Infusion(dose.amount, ass.symbol)
+            cb = CompartmentalSystemBuilder(new)
+            cb.set_dose(new.dosing_compartment, Infusion(dose.amount, ass.symbol))
+            model.statements = (
+                model.statements.before_odes + CompartmentalSystem(cb) + model.statements.after_odes
+            )
         else:
             raise NotImplementedError("First order infusion rate is not yet supported")
-        statements = model.statements
-        statements.insert_before_odes(ass)
+        model.statements = (
+            model.statements.before_odes
+            + ass
+            + model.statements.ode_system
+            + model.statements.after_odes
+        )
         df = model.dataset
         rate = np.where(df['AMT'] == 0, 0.0, -2.0)
         df['RATE'] = rate
@@ -387,8 +395,7 @@ def explicit_odes(model):
     odes = statements.ode_system
     if isinstance(odes, CompartmentalSystem):
         new = odes.to_explicit_system()
-        statements[model.statements.index(odes)] = new
-        model.statements = statements
+        model.statements = statements.before_odes + new + statements.after_odes
     return model
 
 
@@ -425,8 +432,8 @@ def to_des(model, new):
 
 def update_statements(model, old, new, trans):
     trans['NaN'] = int(data.conf.na_rep)
-    main_statements = ModelStatements()
-    error_statements = ModelStatements()
+    main_statements = Statements()
+    error_statements = Statements()
 
     new_odes = new.ode_system
     if new_odes is not None:
@@ -452,27 +459,19 @@ def update_statements(model, old, new, trans):
                     subs = model.control_stream.get_records('SUBROUTINES')[0]
                     subs.advan = advan
 
-    after_odes = False
-    for s in new:
-        if isinstance(s, ODESystem):
-            after_odes = True
-        elif after_odes:
-            error_statements.append(copy.deepcopy(s))
-        else:
-            main_statements.append(copy.deepcopy(s))
-
-    main_statements.subs(trans)
+    main_statements = model.statements.before_odes
+    error_statements = model.statements.after_odes
 
     rec = model.get_pred_pk_record()
     rec.rvs, rec.trans = model.random_variables, trans
-    rec.statements = main_statements
+    rec.statements = main_statements.subs(trans)
 
     error = model._get_error_record()
     if not error and len(error_statements) > 0:
         model.control_stream.insert_record('$ERROR\n')
     if error:
         if len(error_statements) > 0 and error_statements[0].symbol.name == 'F':
-            error_statements.pop(0)  # Remove the link statement
+            error_statements = error_statements[1:]  # Remove the link statement
         error.rvs, error.trans = model.random_variables, trans
         try:
             amounts = list(new.ode_system.amounts)
@@ -481,8 +480,7 @@ def update_statements(model, old, new, trans):
         else:
             for i, amount in enumerate(amounts, start=1):
                 trans[amount] = sympy.Symbol(f"A({i})")
-        error_statements.subs(trans)
-        error.statements = error_statements
+        error.statements = error_statements.subs(trans)
         error.is_updated = True
 
     rec.is_updated = True
@@ -501,8 +499,14 @@ def update_lag_time(model, old, new):
         old_lag_time = 0
     if new_lag_time != old_lag_time and new_lag_time != 0:
         ass = Assignment(sympy.Symbol('ALAG1'), new_lag_time)
-        model.statements.insert_before_odes(ass)
-        new_dosing.lag_time = ass.symbol
+        cb = CompartmentalSystemBuilder(new)
+        cb.set_lag_time(new_dosing, ass.symbol)
+        model.statements = (
+            model.statements.before_odes
+            + ass
+            + CompartmentalSystem(cb)
+            + model.statements.after_odes
+        )
 
 
 def new_compartmental_map(cs, oldmap):
@@ -519,7 +523,7 @@ def new_compartmental_map(cs, oldmap):
     while True:
         compmap[comp.name] = i
         i += 1
-        if comp is central:
+        if comp == central:
             break
         comp, _ = cs.get_compartment_outflows(comp)[0]
 
@@ -564,9 +568,10 @@ def pk_param_conversion(model, advan, trans):
     for old, new in remap.items():
         d[symbol(f'S{old}')] = symbol(f'S{new}')
         d[symbol(f'F{old}')] = symbol(f'F{new}')
-        d[symbol(f'R{old}')] = symbol(f'R{new}')
-        d[symbol(f'D{old}')] = symbol(f'D{new}')
-        d[symbol(f'ALAG{old}')] = symbol(f'ALAG{new}')
+        # FIXME: R, D and ALAG should be moved with dose compartment
+        # d[symbol(f'R{old}')] = symbol(f'R{new}')
+        # d[symbol(f'D{old}')] = symbol(f'D{new}')
+        # d[symbol(f'ALAG{old}')] = symbol(f'ALAG{new}')
         d[symbol(f'A({old})')] = symbol(f'A({new})')
     if from_advan == 'ADVAN5' or from_advan == 'ADVAN7':
         reverse_map = {v: k for k, v in newmap.items()}
@@ -694,7 +699,7 @@ def pk_param_conversion(model, advan, trans):
     if advan == 'ADVAN5' or advan == 'ADVAN7' and from_advan not in ('ADVAN5', 'ADVAN7'):
         n = len(newmap)
         d[symbol('K')] = symbol(f'K{n-1}0')
-    statements.subs(d)
+    model.statements = statements.subs(d)
 
 
 def new_advan_trans(model):
@@ -826,8 +831,11 @@ def add_needed_pk_parameters(model, advan, trans):
             comp, rate = odes.get_compartment_outflows(odes.find_depot(statements))[0]
             ass = Assignment(sympy.Symbol('KA'), rate)
             if rate != ass.symbol:
-                statements.insert_before_odes(ass)
-                odes.add_flow(odes.find_depot(statements), comp, ass.symbol)
+                cb = CompartmentalSystemBuilder(odes)
+                cb.add_flow(odes.find_depot(statements), comp, ass.symbol)
+                model.statements = (
+                    statements.before_odes + ass + CompartmentalSystem(cb) + statements.after_odes
+                )
     if advan in ['ADVAN1', 'ADVAN2'] and trans == 'TRANS2':
         central = odes.central_compartment
         output = odes.output_compartment
@@ -901,14 +909,24 @@ def add_parameters_ratio(model, numpar, denompar, source, dest):
         numer, denom = rate.as_numer_denom()
         par1 = Assignment(sympy.Symbol(numpar), numer)
         par2 = Assignment(sympy.Symbol(denompar), denom)
+        new_statement1 = Statements()
+        new_statement2 = Statements()
         if rate != par1.symbol / par2.symbol:
             if not statements.find_assignment(numpar):
-                statements.insert_before_odes(par1)
-                odes.subs({numer: sympy.Symbol(numpar)})
+                odes = odes.subs({numer: sympy.Symbol(numpar)})
+                new_statement1 = par1
             if not statements.find_assignment(denompar):
-                statements.insert_before_odes(par2)
-                odes.subs({denom: sympy.Symbol(denompar)})
-        odes.add_flow(source, dest, par1.symbol / par2.symbol)
+                odes = odes.subs({denom: sympy.Symbol(denompar)})
+                new_statement2 = par2
+        cb = CompartmentalSystemBuilder(odes)
+        cb.add_flow(source, dest, par1.symbol / par2.symbol)
+        model.statements = (
+            statements.before_odes
+            + new_statement1
+            + new_statement2
+            + CompartmentalSystem(cb)
+            + statements.after_odes
+        )
 
 
 def define_parameter(model, name, value, synonyms=None):
@@ -925,14 +943,23 @@ def define_parameter(model, name, value, synonyms=None):
                 ass.expression = value
             return False
     new_ass = Assignment(sympy.Symbol(name), value)
-    model.statements.insert_before_odes(new_ass)
+    model.statements = (
+        model.statements.before_odes
+        + new_ass
+        + model.statements.ode_system
+        + model.statements.after_odes
+    )
     return True
 
 
 def add_rate_assignment_if_missing(model, name, value, source, dest, synonyms=None):
     added = define_parameter(model, name, value, synonyms=synonyms)
     if added:
-        model.statements.ode_system.add_flow(source, dest, symbol(name))
+        cb = CompartmentalSystemBuilder(model.statements.ode_system)
+        cb.add_flow(source, dest, symbol(name))
+        model.statements = (
+            model.statements.before_odes + CompartmentalSystem(cb) + model.statements.after_odes
+        )
 
 
 def update_abbr_record(model, rv_trans):

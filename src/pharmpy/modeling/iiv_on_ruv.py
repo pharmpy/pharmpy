@@ -70,7 +70,7 @@ def set_iiv_on_ruv(model, list_of_eps=None, same_eta=True, eta_names=None):
         eta_dict = {e: eta for e, eta in zip(eps, etas)}
 
     for e in eps:
-        sset.subs({e.symbol: e.symbol * sympy.exp(S(eta_dict[e].name))})
+        sset = sset.subs({e.symbol: e.symbol * sympy.exp(S(eta_dict[e].name))})
 
     model.random_variables = rvs
     model.parameters = Parameters(pset)

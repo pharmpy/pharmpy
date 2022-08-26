@@ -17,7 +17,7 @@ import pharmpy.symbols as symbols
 from pharmpy.data_structures import OrderedSet
 from pharmpy.parse_utils.generic import AttrToken, NoSuchRuleException
 from pharmpy.plugins.nonmem.records.parsers import CodeRecordParser
-from pharmpy.statements import Assignment, ModelStatements, Statement
+from pharmpy.statements import Assignment, Statement, Statements
 
 from .record import Record
 
@@ -503,7 +503,7 @@ class CodeRecord(Record):
     def statements(self):
         statements = self._assign_statements()
         self._statements = statements
-        return statements.copy()
+        return statements
 
     @statements.setter
     def statements(self, new):
@@ -544,7 +544,7 @@ class CodeRecord(Record):
         new_children.extend(self.root.children[last_node_index:])
         self.root.children = new_children
         self._index = new_index
-        self._statements = new.copy()
+        self._statements = new
 
     def _statement_to_nodes(self, defined_symbols, node_index, s):
         statement_str = nmtran_assignment_string(s, defined_symbols, self.rvs, self.trans)
@@ -657,7 +657,7 @@ class CodeRecord(Record):
                     new_index.append((child_index, child_index + 1, len(s) - len(symbols), len(s)))
 
         self._index = new_index
-        statements = ModelStatements(s)
+        statements = Statements(s)
         return statements
 
     def from_odes(self, ode_system):

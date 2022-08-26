@@ -24,7 +24,7 @@ from pharmpy.estimation import EstimationSteps
 from pharmpy.parameters import Parameters
 from pharmpy.plugins.utils import detect_model
 from pharmpy.random_variables import RandomVariables
-from pharmpy.statements import ModelStatements
+from pharmpy.statements import Statements
 
 
 class ModelError(Exception):
@@ -52,7 +52,7 @@ class Model:
     def __init__(self):
         self.parameters = Parameters([])
         self.random_variables = RandomVariables([])
-        self.statements = ModelStatements([])
+        self.statements = Statements()
         self.dependent_variable = sympy.Symbol('y')
         self.observation_transformation = self.dependent_variable
         self.modelfit_results = None
@@ -250,14 +250,14 @@ class Model:
     def statements(self):
         """Definitions of model statements
 
-        See :class:`pharmpy.ModelStatements`
+        See :class:`pharmpy.Statements`
         """
         return self._statements
 
     @statements.setter
     def statements(self, value):
-        if not isinstance(value, ModelStatements):
-            raise TypeError("model.statements must be of ModelStatements type")
+        if not isinstance(value, Statements):
+            raise TypeError("model.statements must be of Statements type")
         self._statements = value
 
     @property
@@ -278,7 +278,7 @@ class Model:
     def datainfo(self):
         """Definitions of model statements
 
-        See :class:`pharmpy.ModelStatements`
+        See :class:`pharmpy.Statements`
         """
         return self._datainfo
 

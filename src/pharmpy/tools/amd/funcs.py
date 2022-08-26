@@ -7,14 +7,15 @@ import pharmpy
 from pharmpy import (
     Assignment,
     ColumnInfo,
+    CompartmentalSystem,
     DataInfo,
     EstimationStep,
     EstimationSteps,
-    ModelStatements,
     Parameter,
     Parameters,
     RandomVariable,
     RandomVariables,
+    Statements,
 )
 from pharmpy.modeling import (
     create_joint_distribution,
@@ -24,6 +25,7 @@ from pharmpy.modeling import (
 )
 from pharmpy.modeling.data import read_dataset_from_datainfo
 from pharmpy.plugins.nonmem.advan import dosing
+from pharmpy.statements import Compartment, CompartmentalSystemBuilder
 from pharmpy.workflows import default_model_database
 
 
@@ -48,16 +50,17 @@ def create_start_model(dataset_path, modeltype='pk_oral', cl_init=0.01, vc_init=
     cl_ass = Assignment(CL, pop_cl.symbol * sympy.exp(eta_cl.symbol))
     vc_ass = Assignment(VC, pop_vc.symbol * sympy.exp(eta_vc.symbol))
 
-    odes = pharmpy.CompartmentalSystem()
-    central = odes.add_compartment('CENTRAL')
-    output = odes.add_compartment('OUTPUT')
-    odes.add_flow(central, output, CL / VC)
-    central.dose = dosing(di, lambda: df, 1)
+    cb = CompartmentalSystemBuilder()
+    central = Compartment('CENTRAL', dosing(di, lambda: df, 1))
+    cb.add_compartment(central)
+    output = Compartment('OUTPUT')
+    cb.add_compartment(output)
+    cb.add_flow(central, output, CL / VC)
 
     ipred = Assignment(sympy.Symbol('IPRED'), central.amount / VC)
     y_ass = Assignment(sympy.Symbol('Y'), ipred.symbol)
 
-    stats = ModelStatements([cl_ass, vc_ass, odes, ipred, y_ass])
+    stats = Statements([cl_ass, vc_ass, CompartmentalSystem(cb), ipred, y_ass])
 
     est = EstimationStep(
         "FOCE",

@@ -4,11 +4,11 @@ import sympy
 from pharmpy import (
     Assignment,
     Model,
-    ModelStatements,
     Parameter,
     Parameters,
     RandomVariable,
     RandomVariables,
+    Statements,
 )
 from pharmpy.modeling import (
     calculate_epsilon_gradient_expression,
@@ -157,7 +157,7 @@ $ESTIMATION METHOD=1 INTERACTION
 )
 def test_mu_reference_model_generic(testdata, statements, correct):
     model = Model()
-    model.statements = ModelStatements(statements)
+    model.statements = Statements(statements)
     eta1 = RandomVariable.normal('ETA(1)', 'iiv', 0, s('omega1'))
     eta2 = RandomVariable.normal('ETA(2)', 'iiv', 0, s('omega2'))
     rvs = RandomVariables([eta1, eta2])
@@ -168,7 +168,7 @@ def test_mu_reference_model_generic(testdata, statements, correct):
     params = Parameters([th1, th2, th3])
     model.parameters = params
     mu_reference_model(model)
-    assert model.statements == ModelStatements(correct)
+    assert model.statements == Statements(correct)
 
 
 def test_simplify_expression():

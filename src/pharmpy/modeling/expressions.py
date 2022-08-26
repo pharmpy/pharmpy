@@ -9,8 +9,8 @@ from pharmpy.statements import (
     Assignment,
     Compartment,
     CompartmentalSystem,
-    ModelStatements,
     ODESystem,
+    Statements,
     sympify,
 )
 
@@ -292,21 +292,25 @@ def mu_reference_model(model):
     V = ℯ
     S₁ = V
     """
-    statements = model.statements.before_odes
     assignments = _find_eta_assignments(model)
     for i, eta in enumerate(model.random_variables.etas, start=1):
         for s in assignments:
             if eta.symbol in s.expression.free_symbols:
-                assignment = statements.find_assignment(s.symbol)
+                assind = model.statements.find_assignment_index(s.symbol)
+                assignment = model.statements[assind]
                 expr = assignment.expression
                 indep, dep = expr.as_independent(eta.symbol)
                 mu = sympy.Symbol(f'mu_{i}')
                 newdep = dep.subs({eta.symbol: mu + eta.symbol})
                 mu_expr = sympy.solve(expr - newdep, mu)[0]
                 mu_ass = Assignment(mu, mu_expr)
-                model.statements.insert_before(assignment, mu_ass)
+                model.statements = model.statements[0:assind] + mu_ass + model.statements[assind:]
                 ind = model.statements.find_assignment_index(s.symbol)
-                model.statements[ind] = Assignment(s.symbol, newdep)
+                model.statements = (
+                    model.statements[0:ind]
+                    + Assignment(s.symbol, newdep)
+                    + model.statements[ind + 1 :]
+                )
     return model
 
 
@@ -414,7 +418,7 @@ def solve_ode_system(model):
                 new.append(ass)
         else:
             new.append(s)
-    model.statements = ModelStatements(new)
+    model.statements = Statements(new)
     return model
 
 
@@ -503,7 +507,7 @@ def make_declarative(model):
             ass = Assignment(s.symbol, s.expression.subs(current))
             newstats.append(ass)
 
-    model.statements = ModelStatements(newstats)
+    model.statements = Statements(newstats)
     return model
 
 
@@ -607,7 +611,7 @@ def cleanup_model(model):
                 s.subs(current)
                 newstats.append(s)
 
-    model.statements = ModelStatements(newstats)
+    model.statements = Statements(newstats)
     return model
 
 
@@ -734,7 +738,7 @@ def greekify_model(model, named_subscripts=False):
     for i, epsilon in enumerate(model.random_variables.epsilons, start=1):
         subscript = get_subscript(epsilon, i, named_subscripts)
         subs[epsilon.symbol] = sympy.Symbol(f"epsilon_{subscript}")
-    model.statements.subs(subs)
+    model.statements = model.statements.subs(subs)
     return model
 
 
@@ -918,7 +922,7 @@ def get_pk_parameters(model: Model, kind: str = 'all') -> List[str]:
 
     """
 
-    cs = model.statements.ode_system.to_compartmental_system()  # NOTE This always makes a copy
+    cs = model.statements.ode_system.to_compartmental_system()
 
     classified_assignments = list(
         _classify_assignments(list(_assignments(model.statements.before_odes)))
@@ -927,7 +931,7 @@ def get_pk_parameters(model: Model, kind: str = 'all') -> List[str]:
     for t, assignment in reversed(classified_assignments):
         if t == 'synthetic':
             # NOTE Substitution must be made in this order
-            cs.subs({assignment.symbol: assignment.expression})
+            cs = cs.subs({assignment.symbol: assignment.expression})
 
     free_symbols = set(_pk_free_symbols(cs, kind))
 
@@ -1031,7 +1035,7 @@ def _get_component_free_symbols(
         yield from node.free_symbols
 
 
-def _assignments(sset: ModelStatements):
+def _assignments(sset: Statements):
     return filter(lambda statement: isinstance(statement, Assignment), sset)
 
 

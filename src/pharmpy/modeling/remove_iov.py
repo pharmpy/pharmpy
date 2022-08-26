@@ -47,7 +47,7 @@ def remove_iov(model, to_remove=None):
         return model
 
     for eta in etas:
-        sset.subs({eta.symbol: 0})
+        sset = sset.subs({eta.symbol: 0})
         del rvs[eta]
 
     model.random_variables = rvs

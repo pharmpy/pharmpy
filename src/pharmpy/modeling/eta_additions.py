@@ -16,7 +16,7 @@ from pharmpy.modeling.expressions import create_symbol, get_pk_parameters, has_r
 from pharmpy.modeling.help_functions import _format_input_list, _format_options, _get_etas
 from pharmpy.parameters import Parameter, Parameters
 from pharmpy.random_variables import RandomVariable
-from pharmpy.statements import Assignment, ModelStatements, sympify
+from pharmpy.statements import Assignment, sympify
 from pharmpy.symbols import symbol as S
 
 
@@ -77,7 +77,7 @@ def add_iiv(
     rvs, pset, sset = (
         model.random_variables.copy(),
         [p for p in model.parameters],
-        model.statements.copy(),
+        model.statements,
     )
 
     list_of_parameters = _format_input_list(list_of_parameters)
@@ -114,7 +114,9 @@ def add_iiv(
         eta_addition = _create_template(expression[i], operation[i])
         eta_addition.apply(statement.expression, eta.name)
 
-        sset[index] = Assignment(statement.symbol, eta_addition.template)
+        sset = (
+            sset[0:index] + Assignment(statement.symbol, eta_addition.template) + sset[index + 1 :]
+        )
 
     model.random_variables = rvs
     model.parameters = Parameters(pset)
@@ -290,10 +292,10 @@ def _add_iov_explicit(model, occ, etas, categories, iov_name, etai_name, eta_nam
     rvs, pset, sset = (
         model.random_variables.copy(),
         [p for p in model.parameters],
-        model.statements.copy(),
+        model.statements,
     )
 
-    iovs, etais = _add_iov_declare_etas(
+    iovs, etais, sset = _add_iov_declare_etas(
         sset,
         occ,
         ordered_etas,
@@ -319,14 +321,11 @@ def _add_iov_explicit(model, occ, etas, categories, iov_name, etai_name, eta_nam
             )
         )
 
-    iovs.extend(etais)
-    iovs.extend(sset)
-
-    return rvs, pset, iovs
+    return rvs, pset, iovs + etais + sset
 
 
 def _add_iov_declare_etas(sset, occ, etas, indices, categories, eta_name, iov_name, etai_name):
-    iovs, etais = ModelStatements(), ModelStatements()
+    iovs, etais = [], []
 
     for i in indices:
         eta = etas[i - 1]
@@ -344,9 +343,9 @@ def _add_iov_declare_etas(sset, occ, etas, indices, categories, eta_name, iov_na
 
         etai = S(etai_name(i))
         etais.append(Assignment(etai, eta.symbol + iov))
-        sset.subs({eta.name: etai})
+        sset = sset.subs({eta.name: etai})
 
-    return iovs, etais
+    return iovs, etais, sset
 
 
 def _add_iov_etas_disjoint(rvs, pset, etas, indices, categories, omega_iov_name, eta_name):
