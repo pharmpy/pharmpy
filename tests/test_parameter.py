@@ -1,9 +1,9 @@
 import numpy as np
 import pytest
 import sympy
+from sympy import Symbol as symbol
 
 from pharmpy.parameters import Parameter, Parameters
-from pharmpy.symbols import symbol
 
 
 @pytest.mark.parametrize(

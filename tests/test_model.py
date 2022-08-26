@@ -4,7 +4,6 @@ import pytest
 
 import pharmpy.data
 import pharmpy.model
-import pharmpy.symbols
 from pharmpy import Model
 from pharmpy.modeling import convert_model, create_symbol, load_example_model
 from pharmpy.plugins.nonmem.dataset import read_nonmem_dataset

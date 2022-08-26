@@ -2,10 +2,10 @@ from operator import add, mul
 
 import pytest
 import sympy
+from sympy import Symbol as S
 
 from pharmpy.modeling import add_iov, read_model, remove_iov
 from pharmpy.modeling.eta_additions import EtaAddition
-from pharmpy.symbols import symbol as S
 
 
 @pytest.mark.parametrize(

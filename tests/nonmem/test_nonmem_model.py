@@ -2,6 +2,7 @@ from io import StringIO
 
 import pytest
 import sympy
+from sympy import Symbol as symbol
 
 from pharmpy import Model
 from pharmpy.config import ConfigurationContext
@@ -21,7 +22,6 @@ from pharmpy.plugins.nonmem import conf, convert_model
 from pharmpy.plugins.nonmem.nmtran_parser import NMTranParser
 from pharmpy.random_variables import RandomVariable
 from pharmpy.statements import Assignment, ODESystem, Statements
-from pharmpy.symbols import symbol
 
 
 def S(x):

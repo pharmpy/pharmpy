@@ -1,7 +1,6 @@
 import pytest
 import sympy
 
-import pharmpy.symbols
 from pharmpy import Model
 from pharmpy.statements import (
     Assignment,
@@ -14,7 +13,7 @@ from pharmpy.statements import (
 
 
 def S(x):
-    return pharmpy.symbols.symbol(x)
+    return sympy.Symbol(x)
 
 
 def test_str(testdata):

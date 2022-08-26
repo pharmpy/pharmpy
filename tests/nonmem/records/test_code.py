@@ -1,12 +1,11 @@
 import pytest
 import sympy
 
-import pharmpy.symbols
 from pharmpy.statements import Assignment
 
 
 def S(x):
-    return pharmpy.symbols.symbol(x)
+    return sympy.Symbol(x)
 
 
 @pytest.mark.usefixtures('parser')

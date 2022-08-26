@@ -1,8 +1,8 @@
 import pytest
+from sympy import Symbol as S
 from sympy import exp
 
 from pharmpy.modeling.eta_transformations import EtaTransformation
-from pharmpy.symbols import symbol as S
 
 
 @pytest.mark.parametrize(

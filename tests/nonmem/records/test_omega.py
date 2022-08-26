@@ -5,11 +5,10 @@ from pharmpy.config import ConfigurationContext
 from pharmpy.model import ModelSyntaxError
 from pharmpy.parameters import Parameters
 from pharmpy.plugins.nonmem import conf
-from pharmpy.symbols import symbol
 
 
 def S(x):
-    return symbol(x)
+    return sympy.Symbol(x)
 
 
 @pytest.mark.usefixtures('parser')
