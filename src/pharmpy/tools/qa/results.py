@@ -2,10 +2,9 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import sympy
 import yaml
 
-import pharmpy.random_variables
-import pharmpy.symbols
 import pharmpy.tools.psn_helpers as psn_helpers
 from pharmpy import Model
 from pharmpy.results import Results, read_results
@@ -284,9 +283,9 @@ def calc_add_etas(original_model, add_etas_model, etas_added_to):
     all_etas = original_etas + etas_added_to
     added = [True] * len(original_etas) + [False] * len(etas_added_to)
     params = add_etas_model.random_variables.etas.variance_parameters
-    params = [pharmpy.symbols.symbol(p) for p in params]
+    params = [sympy.Symbol(p) for p in params]
     orig_params = original_model.random_variables.etas.variance_parameters
-    orig_params = [pharmpy.symbols.symbol(p) for p in orig_params]
+    orig_params = [sympy.Symbol(p) for p in orig_params]
     add_etas_sds = [add_etas_res.parameter_estimates_sdcorr[p.name] for p in params]
     orig_sds = [origres.parameter_estimates_sdcorr[p.name] for p in orig_params]
     orig_sds += [np.nan] * len(etas_added_to)
@@ -402,7 +401,7 @@ def calc_transformed_etas(original_model, new_model, transform_name, parameter_n
     if newres is None:
         return None, dofv_tab
     params = new_model.random_variables.etas.variance_parameters
-    params = [pharmpy.symbols.symbol(p) for p in params]
+    params = [sympy.Symbol(p) for p in params]
     boxcox_sds = [newres.parameter_estimates_sdcorr[p.name] for p in params]
     orig_sds = [origres.parameter_estimates_sdcorr[p.name] for p in params]
     thetas = newres.parameter_estimates_sdcorr[0 : len(params)]

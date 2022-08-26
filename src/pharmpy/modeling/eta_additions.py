@@ -9,6 +9,7 @@ from operator import add, mul
 
 import sympy
 from sympy import Eq, Piecewise
+from sympy import Symbol as S
 from sympy.stats.crv_types import NormalDistribution
 from sympy.stats.joint_rv_types import MultivariateNormalDistribution
 
@@ -17,7 +18,6 @@ from pharmpy.modeling.help_functions import _format_input_list, _format_options,
 from pharmpy.parameters import Parameter, Parameters
 from pharmpy.random_variables import RandomVariable
 from pharmpy.statements import Assignment, sympify
-from pharmpy.symbols import symbol as S
 
 
 def add_iiv(

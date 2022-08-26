@@ -7,6 +7,7 @@ from io import StringIO
 from pathlib import Path
 
 import sympy
+from sympy import Symbol as S
 
 import pharmpy.data
 import pharmpy.model
@@ -22,7 +23,6 @@ from pharmpy.plugins.nonmem.results import NONMEMChainedModelfitResults
 from pharmpy.plugins.nonmem.table import NONMEMTableFile, PhiTable
 from pharmpy.random_variables import RandomVariable, RandomVariables
 from pharmpy.statements import Assignment, CompartmentalSystem, ODESystem
-from pharmpy.symbols import symbol as S
 from pharmpy.workflows import NullModelDatabase, default_model_database
 
 from .advan import compartmental_model

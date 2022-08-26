@@ -5,12 +5,12 @@
 import re
 
 import sympy
+from sympy import Symbol as S
 from sympy import exp, sign
 
 from pharmpy.modeling.help_functions import _format_input_list, _get_etas
 from pharmpy.parameters import Parameter, Parameters
 from pharmpy.statements import Assignment
-from pharmpy.symbols import symbol as S
 
 from .expressions import create_symbol
 

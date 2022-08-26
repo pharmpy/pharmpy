@@ -7,11 +7,12 @@ import warnings
 from operator import add, mul
 
 import numpy as np
-from sympy import Eq, Float, Gt, Le, Piecewise, exp
+from sympy import Eq, Float, Gt, Le, Piecewise
+from sympy import Symbol as S
+from sympy import exp
 
 from pharmpy.parameters import Parameter, Parameters
 from pharmpy.statements import Assignment, sympify
-from pharmpy.symbols import symbol as S
 
 from .data import get_baselines
 

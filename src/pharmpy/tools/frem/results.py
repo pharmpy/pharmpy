@@ -8,7 +8,6 @@ import pandas as pd
 import symengine
 import sympy
 
-import pharmpy.symbols as symbols
 import pharmpy.visualization  # noqa
 from pharmpy import Model
 from pharmpy.math import conditional_joint_normal, is_posdef
@@ -534,7 +533,7 @@ def calculate_results_using_cov_sampling(
     parameters = [
         s
         for s in frem_model.modelfit_results.parameter_estimates.index
-        if symbols.symbol(s) in sigma_symb.free_symbols
+        if sympy.Symbol(s) in sigma_symb.free_symbols
     ]
     parvecs = sample_parameters_from_covariance_matrix(
         frem_model,
@@ -559,7 +558,7 @@ def calculate_results_from_samples(frem_model, continuous, categorical, parvecs,
     parameters = [
         s
         for s in frem_model.modelfit_results.parameter_estimates.index
-        if symbols.symbol(s) in sigma_symb.free_symbols
+        if sympy.Symbol(s) in sigma_symb.free_symbols
     ]
     parvecs.loc['estimates'] = frem_model.modelfit_results.parameter_estimates.loc[parameters]
 
@@ -850,7 +849,7 @@ def _calculate_covariate_baselines(model, covariates):
     exprs = [
         ass.expression.args[0][0]
         for ass in model.statements
-        if symbols.symbol('FREMTYPE') in ass.free_symbols and ass.symbol.name == 'IPRED'
+        if sympy.Symbol('FREMTYPE') in ass.free_symbols and ass.symbol.name == 'IPRED'
     ]
     exprs = [
         expr.subs(dict(model.modelfit_results.parameter_estimates)).subs(model.parameters.inits)

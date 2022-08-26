@@ -4,7 +4,6 @@
 
 import sympy
 
-import pharmpy.symbols as symbols
 from pharmpy.random_variables import RandomVariable
 from pharmpy.statements import Assignment, sympify
 
@@ -19,7 +18,7 @@ def _preparations(model):
     y = model.dependent_variable
     f = model.statements.find_assignment(y.name).expression
     for eps in model.random_variables.epsilons:
-        f = f.subs({symbols.symbol(eps.name): 0})
+        f = f.subs({sympy.Symbol(eps.name): 0})
     return stats, y, f
 
 
@@ -317,8 +316,8 @@ def set_combined_error_model(model, data_trans=None):
     ruv_prop = create_symbol(model, 'epsilon_p')
     ruv_add = create_symbol(model, 'epsilon_a')
 
-    eta_ruv = symbols.symbol('ETA_RV1')
-    theta_time = symbols.symbol('time_varying')
+    eta_ruv = sympy.Symbol('ETA_RV1')
+    theta_time = sympy.Symbol('time_varying')
 
     data_trans = _canonicalize_data_transformation(model, data_trans)
     if data_trans == sympy.log(model.dependent_variable):
@@ -329,8 +328,8 @@ def set_combined_error_model(model, data_trans=None):
             expr_1 = expr.args[1][0]
             cond_0 = expr.args[0][1]
             for eps in model.random_variables.epsilons:
-                expr_0 = expr_0.subs({symbols.symbol(eps.name): ruv_prop})
-                expr_1 = expr_1.subs({symbols.symbol(eps.name): ruv_prop})
+                expr_0 = expr_0.subs({sympy.Symbol(eps.name): ruv_prop})
+                expr_1 = expr_1.subs({sympy.Symbol(eps.name): ruv_prop})
                 if (
                     eta_ruv in model.random_variables.free_symbols
                     and theta_time in model.parameters.symbols
@@ -399,9 +398,7 @@ def has_additive_error_model(model):
     y = model.dependent_variable
     expr = model.statements.error.full_expression(y)
     rvs = model.random_variables.epsilons
-    rvs_in_y = {
-        symbols.symbol(rv.name) for rv in rvs if symbols.symbol(rv.name) in expr.free_symbols
-    }
+    rvs_in_y = {sympy.Symbol(rv.name) for rv in rvs if sympy.Symbol(rv.name) in expr.free_symbols}
     if len(rvs_in_y) != 1:
         return False
     eps = rvs_in_y.pop()
@@ -436,9 +433,7 @@ def has_proportional_error_model(model):
     y = model.dependent_variable
     expr = model.statements.error.full_expression(y)
     rvs = model.random_variables.epsilons
-    rvs_in_y = {
-        symbols.symbol(rv.name) for rv in rvs if symbols.symbol(rv.name) in expr.free_symbols
-    }
+    rvs_in_y = {sympy.Symbol(rv.name) for rv in rvs if sympy.Symbol(rv.name) in expr.free_symbols}
     if len(rvs_in_y) != 1:
         return False
     eps = rvs_in_y.pop()
@@ -473,9 +468,7 @@ def has_combined_error_model(model):
     y = model.dependent_variable
     expr = model.statements.error.full_expression(y)
     rvs = model.random_variables.epsilons
-    rvs_in_y = {
-        symbols.symbol(rv.name) for rv in rvs if symbols.symbol(rv.name) in expr.free_symbols
-    }
+    rvs_in_y = {sympy.Symbol(rv.name) for rv in rvs if sympy.Symbol(rv.name) in expr.free_symbols}
     if len(rvs_in_y) != 2:
         return False
     eps1 = rvs_in_y.pop()

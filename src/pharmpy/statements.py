@@ -5,7 +5,6 @@ from collections.abc import Sequence
 import networkx as nx
 import sympy
 
-import pharmpy.symbols as symbols
 import pharmpy.unicode as unicode
 
 
@@ -172,7 +171,7 @@ class Assignment(Statement):
 class ODESystem(Statement, ABC):
     """Abstract base class for ODE systems of different forms"""
 
-    t = symbols.symbol('t')
+    t = sympy.Symbol('t')
 
 
 def _bracket(a):
@@ -291,7 +290,7 @@ class ExplicitODESystem(ODESystem):
         <BLANKLINE>
         """
         d = {
-            sympy.Function(str(key))(symbols.symbol('t')): value
+            sympy.Function(str(key))(sympy.Symbol('t')): value
             for key, value in substitutions.items()
         }
         d.update(substitutions)
@@ -643,7 +642,7 @@ class CompartmentalSystem(ODESystem):
         >>> model.statements.ode_system.free_symbols  # doctest: +SKIP
         {AMT, CL, V, t}
         """
-        free = {symbols.symbol('t')}
+        free = {sympy.Symbol('t')}
         for (_, _, rate) in self._g.edges.data('rate'):
             free |= rate.free_symbols
         for node in self._g.nodes:
@@ -1386,7 +1385,7 @@ class Compartment:
         >>> comp.amount
         A_CENTRAL
         """
-        return symbols.symbol(f'A_{self.name}')
+        return sympy.Symbol(f'A_{self.name}')
 
     @property
     def free_symbols(self):

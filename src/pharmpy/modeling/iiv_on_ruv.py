@@ -3,11 +3,11 @@
 """
 
 import sympy
+from sympy import Symbol as S
 
 from pharmpy.modeling.help_functions import _format_input_list, _get_epsilons
 from pharmpy.parameters import Parameter, Parameters
 from pharmpy.random_variables import RandomVariable
-from pharmpy.symbols import symbol as S
 
 
 def set_iiv_on_ruv(model, list_of_eps=None, same_eta=True, eta_names=None):

@@ -13,7 +13,6 @@ import sympy.printing.fortran
 from sympy import Piecewise
 from sympy.printing.str import StrPrinter
 
-import pharmpy.symbols as symbols
 from pharmpy.data_structures import OrderedSet
 from pharmpy.parse_utils.generic import AttrToken, NoSuchRuleException
 from pharmpy.plugins.nonmem.records.parsers import CodeRecordParser
@@ -355,7 +354,7 @@ class ExpressionInterpreter(lark.visitors.Interpreter):
         name = str(node).upper()
         if name.startswith('ERR('):
             name = 'EPS' + name[3:]
-        symb = symbols.symbol(name)
+        symb = sympy.Symbol(name)
         return symb
 
 
@@ -664,12 +663,12 @@ class CodeRecord(Record):
         """Set statements of record given an explicit ode system"""
         odes = ode_system.odes[:-1]  # Skip last ode as it is for the output compartment
         functions = [ode.lhs.args[0] for ode in odes]
-        function_map = {f: symbols.symbol(f'A({i + 1})') for i, f in enumerate(functions)}
+        function_map = {f: sympy.Symbol(f'A({i + 1})') for i, f in enumerate(functions)}
         statements = []
         for i, ode in enumerate(odes):
             # For now Piecewise signals zero-order infusions, which are handled with parameters
             ode = ode.replace(sympy.Piecewise, lambda a1, a2: 0)
-            symbol = symbols.symbol(f'DADT({i + 1})')
+            symbol = sympy.Symbol(f'DADT({i + 0})')
             expression = ode.rhs.subs(function_map)
             statements.append(Assignment(symbol, expression))
         self.statements = statements

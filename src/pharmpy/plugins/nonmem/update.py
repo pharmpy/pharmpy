@@ -6,6 +6,7 @@ from pathlib import Path
 
 import numpy as np
 import sympy
+from sympy import Symbol as symbol
 
 from pharmpy import data
 from pharmpy.modeling import simplify_expression
@@ -20,7 +21,6 @@ from pharmpy.statements import (
     Infusion,
     Statements,
 )
-from pharmpy.symbols import symbol
 
 from .records.factory import create_record
 

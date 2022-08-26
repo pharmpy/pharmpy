@@ -3,12 +3,12 @@
 """
 
 import sympy
+from sympy import Symbol as S
 
 from pharmpy.modeling import has_proportional_error_model
 from pharmpy.modeling.help_functions import _format_input_list
 from pharmpy.parameters import Parameter, Parameters
 from pharmpy.statements import Assignment, sympify
-from pharmpy.symbols import symbol as S
 
 from .expressions import create_symbol
 

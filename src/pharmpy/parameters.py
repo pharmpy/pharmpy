@@ -4,8 +4,6 @@ import numpy as np
 import pandas as pd
 import sympy
 
-import pharmpy.symbols as symbols
-
 
 class Parameter:
     """A single parameter
@@ -86,7 +84,7 @@ class Parameter:
     @property
     def symbol(self):
         """Symbol representing the parameter"""
-        return symbols.symbol(self._name)
+        return sympy.Symbol(self._name)
 
     @property
     def lower(self):

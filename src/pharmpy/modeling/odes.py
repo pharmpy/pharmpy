@@ -4,7 +4,6 @@
 
 import sympy
 
-import pharmpy.symbols
 from pharmpy import ExplicitODESystem
 from pharmpy.model import ModelError
 from pharmpy.modeling.help_functions import _as_integer
@@ -514,7 +513,7 @@ def _do_michaelis_menten_elimination(model, combined=False):
         else:
             clmm = _add_parameter(model, 'CLMM', init=clmm_init)
 
-    amount = sympy.Function(central.amount.name)(pharmpy.symbols.symbol('t'))
+    amount = sympy.Function(central.amount.name)(sympy.Symbol('t'))
     rate = (clmm * km / (km + amount / vc) + cl) / vc
     cb = CompartmentalSystemBuilder(odes)
     cb.add_flow(central, output, rate)

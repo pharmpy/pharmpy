@@ -2,6 +2,7 @@ import re
 
 import sympy
 from sympy import Derivative, Eq, Function, Piecewise
+from sympy import Symbol as symbol
 
 from pharmpy.model import ModelSyntaxError
 from pharmpy.statements import (
@@ -13,7 +14,6 @@ from pharmpy.statements import (
     ExplicitODESystem,
     Infusion,
 )
-from pharmpy.symbols import symbol
 
 
 def compartmental_model(model, advan, trans, des=None):
