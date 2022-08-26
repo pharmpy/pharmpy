@@ -39,20 +39,13 @@ def test_exhaustive(tmp_path, start_model):
 
 
 @pytest.mark.parametrize(
-    'search_space, no_of_models, last_model_parent_name, model_with_error, ranked_order',
+    'search_space, no_of_models, last_model_parent_name, model_with_error',
     [
         (
             'ABSORPTION(ZO);PERIPHERALS(1)',
             4,
             'modelsearch_candidate2',
             'modelsearch_candidate3',
-            [
-                'modelsearch_candidate1',
-                'modelsearch_candidate2',
-                'mox2',
-                'modelsearch_candidate4',
-                'modelsearch_candidate3',
-            ],
         ),
         # FIXME: Warning after setting TOL=9
         # ('ABSORPTION(ZO);ELIMINATION(ZO)', 4, 'modelsearch_candidate1', 'modelsearch_candidate2'),
@@ -61,37 +54,24 @@ def test_exhaustive(tmp_path, start_model):
             2,
             'mox2',
             '',
-            ['modelsearch_candidate1', 'modelsearch_candidate2', 'mox2'],
         ),
         (
             'ABSORPTION([ZO,SEQ-ZO-FO]);PERIPHERALS(1)',
             7,
             'modelsearch_candidate3',
             'modelsearch_candidate5',
-            [
-                'modelsearch_candidate7',
-                'modelsearch_candidate2',
-                'modelsearch_candidate1',
-                'modelsearch_candidate5',
-                'modelsearch_candidate3',
-                'mox2',
-                'modelsearch_candidate6',
-                'modelsearch_candidate4',
-            ],
         ),
         (
             'LAGTIME();TRANSITS(1)',
             2,
             'mox2',
             '',
-            ['modelsearch_candidate2', 'modelsearch_candidate1', 'mox2'],
         ),
         (
             'ABSORPTION(ZO);TRANSITS(3, *)',
             3,
             'mox2',
             '',
-            ['modelsearch_candidate3', 'modelsearch_candidate1', 'modelsearch_candidate2', 'mox2'],
         ),
     ],
 )
@@ -102,19 +82,10 @@ def test_exhaustive_stepwise_basic(
     no_of_models,
     last_model_parent_name,
     model_with_error,
-    ranked_order,
 ):
     with TemporaryDirectoryChanger(tmp_path):
         res = run_modelsearch(search_space, 'exhaustive_stepwise', model=start_model)
 
-        pd.set_option('display.max_columns', None)
-        pd.set_option('display.max_rows', None)
-        pd.set_option('display.max_colwidth', None)
-
-        print(res.summary_tool)
-        print(res.summary_errors)
-
-        assert list(res.summary_tool.index.values) == ranked_order
         assert len(res.summary_tool) == no_of_models + 1
         assert len(res.summary_models) == no_of_models + 1
         assert len(res.models) == no_of_models
@@ -142,86 +113,6 @@ def test_exhaustive_stepwise_basic(
         assert (rundir / 'results.json').exists()
         assert (rundir / 'results.csv').exists()
         assert (rundir / 'metadata.json').exists()
-
-
-@pytest.mark.parametrize(
-    'search_space, no_of_models, last_model_parent_name, model_with_error, ranked_order',
-    [
-        (
-            'ABSORPTION(ZO);PERIPHERALS(1)',
-            4,
-            'modelsearch_candidate2',
-            'modelsearch_candidate3',
-            [
-                'modelsearch_candidate1',
-                'modelsearch_candidate2',
-                'mox2',
-                'modelsearch_candidate4',
-                'modelsearch_candidate3',
-            ],
-        ),
-    ],
-)
-def test_exhaustive_stepwise_debug_lst(
-    tmp_path,
-    start_model,
-    search_space,
-    no_of_models,
-    last_model_parent_name,
-    model_with_error,
-    ranked_order,
-):
-    with TemporaryDirectoryChanger(tmp_path):
-
-        res = run_modelsearch(search_space, 'exhaustive_stepwise', model=start_model)
-
-        print('\n')
-        for model in res.models:
-            if model.name in ['modelsearch_candidate3', 'modelsearch_candidate4']:
-                print(model.name)
-                with open(
-                    tmp_path / 'modelsearch_dir1' / 'models' / model.name / f'{model.name}.lst'
-                ) as f:
-                    print(f.read())
-                print('---------------------------------------------------------------------------')
-
-        assert False
-        assert list(res.summary_tool.index.values) == ranked_order
-        assert len(res.summary_tool) == no_of_models + 1
-        assert len(res.summary_models) == no_of_models + 1
-        assert len(res.models) == no_of_models
-        assert res.models[-1].modelfit_results
-
-        assert res.models[0].parent_model == 'mox2'
-        assert res.models[-1].parent_model == last_model_parent_name
-        if last_model_parent_name != 'mox2':
-            last_model_features = res.summary_tool.loc[res.models[-1].name]['description']
-            parent_model_features = res.summary_tool.loc[last_model_parent_name]['description']
-            assert last_model_features[: len(parent_model_features)] == parent_model_features
-
-        if model_with_error:
-            assert model_with_error in res.summary_errors.index.get_level_values('model')
-
-        summary_tool_sorted_by_dbic = res.summary_tool.sort_values(by=['dbic'], ascending=False)
-        summary_tool_sorted_by_bic = res.summary_tool.sort_values(by=['bic'])
-        summary_tool_sorted_by_rank = res.summary_tool.sort_values(by=['rank'])
-        pd.testing.assert_frame_equal(summary_tool_sorted_by_dbic, summary_tool_sorted_by_rank)
-        pd.testing.assert_frame_equal(summary_tool_sorted_by_dbic, summary_tool_sorted_by_bic)
-
-        rundir = tmp_path / 'modelsearch_dir1'
-        assert rundir.is_dir()
-        assert _model_count(rundir) == no_of_models
-        assert (rundir / 'results.json').exists()
-        assert (rundir / 'results.csv').exists()
-        assert (rundir / 'metadata.json').exists()
-
-
-def test_debug():
-    from pharmpy.modeling import copy_model
-
-    model = read_model('modelsearch_dir1/models/modelsearch_candidate3/modelsearch_candidate3.mod')
-    model_copy = copy_model(model, 'model_copy')
-    fit(model_copy)
 
 
 @pytest.mark.filterwarnings("ignore::UserWarning")
@@ -280,13 +171,6 @@ def test_exhaustive_stepwise_start_model_not_fitted(tmp_path, start_model):
         search_space = 'ABSORPTION(ZO);PERIPHERALS(1)'
         with pytest.warns(UserWarning, match='Could not update'):
             res = run_modelsearch(search_space, 'exhaustive_stepwise', model=start_model)
-
-        pd.set_option('display.max_columns', None)
-        pd.set_option('display.max_rows', None)
-        pd.set_option('display.max_colwidth', None)
-
-        print(res.summary_tool)
-        print(res.summary_errors)
 
         assert len(res.summary_tool) == 5
         assert len(res.summary_models) == 5

@@ -33,21 +33,8 @@ def test_default(tmp_path, start_model):
             ],
             model=start_model,
         )
-        import pandas as pd
-        pd.set_option('display.max_columns', None)
-        pd.set_option('display.max_rows', None)
-        pd.set_option('display.max_colwidth', None)
-
-        print(res.summary_tool)
-        print(res.summary_errors)
 
         rundir = tmp_path / 'covsearch_dir1'
-
-        for model in res.models:
-            lst_path = rundir / 'models' / model.name / f'{model.name}.lst'
-            with open(lst_path, 'r') as f:
-                print(f.read())
-
         assert _model_count(rundir) == 54
 
         assert res.best_model.name == 'mox2+2+7+10+5'
