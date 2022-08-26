@@ -281,21 +281,21 @@ To add 1, 2 and 3 peripheral compartments:
 
 .. code::
 
-    PERIPHERALS(1)
-    PERIPHERALS(2)
-    PERIPHERALS(3)
+    TRANSITS(1)
+    TRANSITS(2)
+    TRANSITS(3)
 
 This is equivalent to:
 
 .. code::
 
-    PERIPHERALS(1..3)
+    TRANSITS(1..3)
 
 As well as:
 
 .. code::
 
-    PERIPHERALS([1,2,3])
+    TRANSITS([1,2,3])
 
 Redundant descriptions
 ======================
