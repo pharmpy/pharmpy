@@ -17,6 +17,12 @@ from pharmpy.symbols import symbol
     ],
 )
 def test_initialization(name, init, lower, upper, fix):
+    if lower is None:
+        lower = -sympy.oo
+    if upper is None:
+        upper = sympy.oo
+    if fix is None:
+        fix = False
     param = Parameter(name, init, lower, upper, fix)
     assert param.name == name
     assert param.symbol == symbol(name)
@@ -43,7 +49,7 @@ def test_initialization(name, init, lower, upper, fix):
 )
 def test_illegal_initialization(name, init, lower, upper, fix):
     with pytest.raises(ValueError):
-        Parameter(name, init, lower, upper, fix)
+        Parameter.create(name, init, lower, upper, fix)
 
 
 def test_repr():

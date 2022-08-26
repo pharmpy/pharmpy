@@ -35,28 +35,30 @@ class Parameter:
     """
 
     def __init__(self, name, init, lower=None, upper=None, fix=False):
-        if init is sympy.nan or np.isnan(init):
-            raise ValueError('Initial estimate cannot be NaN')
-        self._init = init
-
-        if not isinstance(name, str):
-            raise ValueError("Name of parameter must be of type string")
         self._name = name
-        self._fix = bool(fix)
-
+        self._init = init
         if lower is None:
             self._lower = -sympy.oo
-        elif lower > self.init:
-            raise ValueError(f'Lower bound {lower} cannot be greater than init {init}')
         else:
             self._lower = lower
-
         if upper is None:
             self._upper = sympy.oo
-        elif upper < init:
-            raise ValueError(f'Upper bound {upper} cannot be less than init {init}')
         else:
             self._upper = upper
+        self._fix = bool(fix)
+
+    @classmethod
+    def create(cls, name, init, lower=None, upper=None, fix=False):
+        """Alternative constructor for Parameter with error checking"""
+        if init is sympy.nan or np.isnan(init):
+            raise ValueError('Initial estimate cannot be NaN')
+        if not isinstance(name, str):
+            raise ValueError("Name of parameter must be of type string")
+        if lower > init:
+            raise ValueError(f'Lower bound {lower} cannot be greater than init {init}')
+        if upper < init:
+            raise ValueError(f'Upper bound {upper} cannot be less than init {init}')
+        return cls(name, init, lower, upper, bool(fix))
 
     @property
     def name(self):
@@ -149,9 +151,9 @@ class Parameters(Sequence):
         if isinstance(params, Parameters):
             self._params = params._params
         elif params is None:
-            self._params = []
+            self._params = ()
         else:
-            self._params = list(params)
+            self._params = tuple(params)
         names = set()
         for p in self._params:
             if not isinstance(p, Parameter):
@@ -272,7 +274,7 @@ class Parameters(Sequence):
         new = []
         for p in self:
             if p.name in inits:
-                newparam = Parameter(
+                newparam = Parameter.create(
                     name=p.name, init=inits[p.name], lower=p.lower, upper=p.upper, fix=p.fix
                 )
             else:
@@ -301,7 +303,7 @@ class Parameters(Sequence):
         new = []
         for p in self:
             if p.name in fix:
-                newparam = Parameter(
+                newparam = Parameter.create(
                     name=p.name, init=p.init, lower=p.lower, upper=p.upper, fix=fix[p.name]
                 )
             else:
@@ -323,15 +325,21 @@ class Parameters(Sequence):
 
     def __add__(self, other):
         if isinstance(other, Parameter):
-            add = [other]
+            return Parameters(self._params + (other,))
         elif isinstance(other, Parameters):
-            add = other._params
+            return Parameters(self._params + other._params)
         elif isinstance(other, Sequence):
-            add = list(other)
+            return Parameters(self._params + tuple(other))
         else:
             raise ValueError(f"Cannot add {other} to Parameters")
-        new = Parameters(self._params + add)
-        return new
+
+    def __radd__(self, other):
+        if isinstance(other, Parameter):
+            return Parameters((other,) + self._params)
+        elif isinstance(other, Sequence):
+            return Parameters(tuple(other) + self._params)
+        else:
+            raise ValueError(f"Cannot add {other} to Parameters")
 
     def __eq__(self, other):
         if len(self) != len(other):
