@@ -310,7 +310,7 @@ def update_ode_system(model, old, new):
         update_subroutines_record(model, advan, trans)
         update_model_record(model, advan)
 
-    update_infusion(model, old, new)
+    update_infusion(model, old)
 
     force_des(model, new)
 
@@ -322,8 +322,9 @@ def is_nonlinear_odes(model):
     return odes.t in M.free_symbols
 
 
-def update_infusion(model, old, new):
+def update_infusion(model, old):
     statements = model.statements
+    new = statements.ode_system
     if isinstance(old, ExplicitODESystem):
         old = old.to_compartmental_system()
     if isinstance(new, ExplicitODESystem):
