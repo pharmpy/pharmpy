@@ -1168,6 +1168,22 @@ def parse_estimation_steps(model):
     steps = []
     records = model.control_stream.get_records('ESTIMATION')
     covrec = model.control_stream.get_records('COVARIANCE')
+    solver, tol, atol = parse_solver(model)
+
+    # Read eta and epsilon derivatives
+    etaderiv_names = None
+    epsilonderivs_names = None
+    table_records = model.control_stream.get_records('TABLE')
+    for table in table_records:
+        etaderivs = table.eta_derivatives
+        if etaderivs:
+            etas = model.random_variables.etas
+            etaderiv_names = [etas[i - 1].name for i in etaderivs]
+        epsderivs = table.epsilon_derivatives
+        if epsderivs:
+            epsilons = model.random_variables.epsilons
+            epsilonderivs_names = [epsilons[i - 1].name for i in epsderivs]
+
     for record in records:
         value = record.get_option('METHOD')
         if value is None or value == '0' or value == 'ZERO':
@@ -1252,6 +1268,11 @@ def parse_estimation_steps(model):
                 auto=auto,
                 keep_every_nth_iter=keep_every_nth_iter,
                 tool_options=tool_options,
+                solver=solver,
+                solver_rtol=tol,
+                solver_atol=atol,
+                eta_derivatives=etaderiv_names,
+                epsilon_derivatives=epsilonderivs_names,
             )
         except ValueError:
             raise ModelSyntaxError(f'Non-recognized estimation method in: {str(record.root)}')
@@ -1259,27 +1280,6 @@ def parse_estimation_steps(model):
 
     steps = EstimationSteps(steps)
 
-    # Read eta and epsilon derivatives
-    table_records = model.control_stream.get_records('TABLE')
-    for table in table_records:
-        etaderivs = table.eta_derivatives
-        if etaderivs:
-            etas = model.random_variables.etas
-            etaderiv_names = [etas[i - 1].name for i in etaderivs]
-            for step in steps:
-                step.eta_derivatives = etaderiv_names
-        epsderivs = table.epsilon_derivatives
-        if epsderivs:
-            epsilons = model.random_variables.epsilons
-            epsilonderivs_names = [epsilons[i - 1].name for i in epsderivs]
-            for step in steps:
-                step.epsilon_derivatives = epsilonderivs_names
-
-    solver, tol, atol = parse_solver(model)
-    for step in steps:
-        step.solver = solver
-        step.solver_rtol = tol
-        step.solver_atol = atol
     return steps
 
 

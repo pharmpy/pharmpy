@@ -11,7 +11,7 @@ def test_estimation_method():
     with pytest.raises(ValueError):
         EstimationStep('sklarfs')
 
-    a.method = 'fo'
+    a = a.derive(method='fo')
     assert a.method == 'FO'
 
     assert a == EstimationStep('fo', interaction=False, cov=True)
@@ -34,10 +34,3 @@ def test_append_options():
 
     a.tool_options.update({'PRINT': 1})
     assert len(a.tool_options) == 2
-
-
-def test_copy(datadir):
-    a = EstimationStep('foce', cov=True)
-    b = a.copy()
-    assert id(a) != id(b)
-    assert b.method == 'FOCE'

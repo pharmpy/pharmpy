@@ -841,8 +841,7 @@ $SIGMA 1
 '''
     code += estcode
     model = Model.create_model(StringIO(code))
-    for key, value in kwargs.items():
-        setattr(model.estimation_steps[0], key, value)
+    model.estimation_steps[0] = model.estimation_steps[0].derive(**kwargs)
     assert model.model_code.split('\n')[-2] == rec_ref
 
 
@@ -874,8 +873,7 @@ $SIGMA 1
     code += estcode
     model = Model.create_model(StringIO(code))
 
-    for key, value in kwargs.items():
-        setattr(model.estimation_steps[0], key, value)
+    model.estimation_steps[0] = model.estimation_steps[0].derive(**kwargs)
 
     with pytest.raises(ValueError) as excinfo:
         model.update_source(nofiles=True)

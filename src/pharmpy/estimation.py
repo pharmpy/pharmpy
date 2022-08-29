@@ -4,6 +4,233 @@ from collections.abc import MutableSequence
 import pandas as pd
 
 
+class EstimationStep:
+    """Definition of one estimation operation"""
+
+    """Supported estimation methods
+    """
+    supported_methods = ['FO', 'FOCE', 'ITS', 'IMPMAP', 'IMP', 'SAEM', 'BAYES']
+
+    def __init__(
+        self,
+        method,
+        interaction=False,
+        cov=False,
+        evaluation=False,
+        maximum_evaluations=None,
+        laplace=False,
+        isample=None,
+        niter=None,
+        auto=None,
+        keep_every_nth_iter=None,
+        residuals=None,
+        predictions=None,
+        solver=None,
+        solver_rtol=None,
+        solver_atol=None,
+        tool_options=None,
+        eta_derivatives=None,
+        epsilon_derivatives=None,
+    ):
+        method = self._canonicalize_and_check_method(method)
+        self._method = method
+        self._interaction = interaction
+        self._cov = cov
+        self._evaluation = evaluation
+        if maximum_evaluations is not None and maximum_evaluations < 1:
+            raise ValueError(
+                'Number of maximum evaluations must be more than one, use '
+                'evaluation=True or tool_options for special cases (e.g. 0 and -1'
+                'in NONMEM)'
+            )
+        self._maximum_evaluations = maximum_evaluations
+        self._laplace = laplace
+        self._isample = isample
+        self._niter = niter
+        self._auto = auto
+        self._keep_every_nth_iter = keep_every_nth_iter
+        if residuals is None:
+            self._residuals = []
+        else:
+            self._residuals = residuals
+        if predictions is None:
+            self._predictions = []
+        else:
+            self._predictions = predictions
+        supported = ['CVODES', 'DGEAR', 'DVERK', 'IDA', 'LSODA', 'LSODI']
+        if solver is not None:
+            solver = solver.upper()
+        if not (solver is None or solver in supported):
+            raise ValueError(f"Unknown solver {solver}. Recognized solvers are {supported}.")
+        self._solver = solver
+        self._solver_rtol = solver_rtol
+        self._solver_atol = solver_atol
+        if tool_options is None:
+            self._tool_options = dict()
+        else:
+            self._tool_options = tool_options
+        if eta_derivatives is None:
+            eta_derivatives = []
+        self._eta_derivatives = eta_derivatives
+        if epsilon_derivatives is None:
+            epsilon_derivatives = []
+        self._epsilon_derivatives = epsilon_derivatives
+
+    def derive(self, **kwargs):
+        """Derive a new EstimationStep with new properties"""
+        new = copy.copy(self)
+        for key, value in kwargs.items():
+            if key == 'method':
+                value = value.upper()
+            new.__dict__['_' + key] = value
+        return new
+
+    def _canonicalize_and_check_method(self, method):
+        method = method.upper()
+        if method not in self.supported_methods:
+            raise ValueError(
+                f'EstimationStep: {method} not recognized. Use any of {self.supported_methods}.'
+            )
+        return method
+
+    @property
+    def method(self):
+        """Name of the estimation method"""
+        return self._method
+
+    @property
+    def maximum_evaluations(self):
+        """Maximum allowable number of evaluations of the objective function"""
+        return self._maximum_evaluations
+
+    @property
+    def interaction(self):
+        """Preserve eta-epsilon interaction in the computation of the objective function"""
+        return self._interaction
+
+    @property
+    def evaluation(self):
+        """Only perform model evaluation"""
+        return self._evaluation
+
+    @property
+    def cov(self):
+        """Should the parameter uncertainty be estimated?"""
+        return self._cov
+
+    @property
+    def laplace(self):
+        """Use the laplacian method"""
+        return self._laplace
+
+    @property
+    def isample(self):
+        """Number of samples per subject (or similar) for EM methods"""
+        return self._isample
+
+    @property
+    def niter(self):
+        """Number of iterations for EM methods"""
+        return self._niter
+
+    @property
+    def auto(self):
+        """Let estimation tool automatically add settings"""
+        return self._auto
+
+    @property
+    def keep_every_nth_iter(self):
+        """Keep results for every nth iteration"""
+        return self._keep_every_nth_iter
+
+    @property
+    def residuals(self):
+        """List of residuals to calculate"""
+        return self._residuals
+
+    @property
+    def predictions(self):
+        """List of predictions to estimate"""
+        return self._predictions
+
+    @property
+    def solver(self):
+        """Numerical solver to use when numerically solving the ODE system
+        Supported solvers and their corresponding NONMEM ADVAN
+
+        +----------------------------+------------------+
+        | Solver                     | NONMEM ADVAN     |
+        +============================+==================+
+        | CVODES                     | ADVAN14          |
+        +----------------------------+------------------+
+        | DGEAR                      | ADVAN8           |
+        +----------------------------+------------------+
+        | DVERK                      | ADVAN6           |
+        +----------------------------+------------------+
+        | IDA                        | ADVAN15          |
+        +----------------------------+------------------+
+        | LSODA                      | ADVAN13          |
+        +----------------------------+------------------+
+        | LSODI                      | ADVAN9           |
+        +----------------------------+------------------+
+        """
+        return self._solver
+
+    @property
+    def solver_rtol(self):
+        """Relative tolerance for numerical ODE system solver"""
+        return self._solver_rtol
+
+    @property
+    def solver_atol(self):
+        """Absolute tolerance for numerical ODE system solver"""
+        return self._solver_atol
+
+    @property
+    def eta_derivatives(self):
+        """List of names of etas for which to calculate derivatives"""
+        return self._eta_derivatives
+
+    @property
+    def epsilon_derivatives(self):
+        """List of names of epsilons for which to calculate derivatives"""
+        return self._epsilon_derivatives
+
+    @property
+    def tool_options(self):
+        """Dictionary of tool specific options"""
+        return self._tool_options
+
+    def __eq__(self, other):
+        return (
+            self.method == other.method
+            and self.interaction == other.interaction
+            and self.cov == other.cov
+            and self.evaluation == other.evaluation
+            and self.maximum_evaluations == other.maximum_evaluations
+            and self.laplace == other.laplace
+            and self.isample == other.isample
+            and self.niter == other.niter
+            and self.auto == other.auto
+            and self.keep_every_nth_iter == other.keep_every_nth_iter
+            and self.solver == other.solver
+            and self.solver_rtol == other.solver_rtol
+            and self.solver_atol == other.solver_atol
+            and self.tool_options == other.tool_options
+        )
+
+    def __repr__(self):
+        return (
+            f'EstimationStep("{self.method}", interaction={self.interaction}, '
+            f'cov={self.cov}, evaluation={self.evaluation}, '
+            f'maximum_evaluations={self.maximum_evaluations}, laplace={self.laplace}, '
+            f'isample={self.isample}, niter={self.niter}, auto={self.auto}, '
+            f'keep_every_nth_iter={self.keep_every_nth_iter}, solver={self.solver}, '
+            f'solver_rtol={self.solver_rtol}, solver_atol={self.solver_atol}, '
+            f'tool_options={self.tool_options})'
+        )
+
+
 class EstimationSteps(MutableSequence):
     """A sequence of estimation steps
 
@@ -102,272 +329,3 @@ class EstimationSteps(MutableSequence):
             return "EstimationSteps()"
         else:
             return self.to_dataframe().to_html()
-
-
-class EstimationStep:
-    """Definition of one estimation operation"""
-
-    """Supported estimation methods
-    """
-    supported_methods = ['FO', 'FOCE', 'ITS', 'IMPMAP', 'IMP', 'SAEM', 'BAYES']
-
-    def __init__(
-        self,
-        method,
-        interaction=False,
-        cov=False,
-        evaluation=False,
-        maximum_evaluations=None,
-        laplace=False,
-        isample=None,
-        niter=None,
-        auto=None,
-        keep_every_nth_iter=None,
-        residuals=None,
-        predictions=None,
-        solver=None,
-        solver_rtol=None,
-        solver_atol=None,
-        tool_options=None,
-    ):
-        method = self._canonicalize_and_check_method(method)
-        self.method = method
-        self.interaction = interaction
-        self.cov = cov
-        self.evaluation = evaluation
-        self.maximum_evaluations = maximum_evaluations
-        self.laplace = laplace
-        self.isample = isample
-        self.niter = niter
-        self.auto = auto
-        self.keep_every_nth_iter = keep_every_nth_iter
-        if residuals is None:
-            self.residuals = []
-        else:
-            self.residuals = residuals
-        if predictions is None:
-            self.predictions = []
-        else:
-            self.predictions = predictions
-        self.solver = solver
-        self.solver_rtol = solver_rtol
-        self.solver_atol = solver_atol
-        if tool_options is None:
-            self.tool_options = dict()
-        else:
-            self.tool_options = tool_options
-
-    def _canonicalize_and_check_method(self, method):
-        method = method.upper()
-        if method not in self.supported_methods:
-            raise ValueError(
-                f'EstimationStep: {method} not recognized. Use any of {self.supported_methods}.'
-            )
-        return method
-
-    @property
-    def method(self):
-        """Name of the estimation method"""
-        return self._method
-
-    @method.setter
-    def method(self, value):
-        method = self._canonicalize_and_check_method(value)
-        self._method = method
-
-    @property
-    def maximum_evaluations(self):
-        """Maximum allowable number of evaluations of the objective function"""
-        return self._maximum_evaluations
-
-    @maximum_evaluations.setter
-    def maximum_evaluations(self, value):
-        if value is not None and value < 1:
-            raise ValueError(
-                'Number of maximum evaluations must be more than one, use '
-                'evaluation=True or tool_options for special cases (e.g. 0 and -1'
-                'in NONMEM)'
-            )
-        self._maximum_evaluations = value
-
-    @property
-    def interaction(self):
-        """Preserve eta-epsilon interaction in the computation of the objective function"""
-        return self._interaction
-
-    @interaction.setter
-    def interaction(self, value):
-        self._interaction = bool(value)
-
-    @property
-    def evaluation(self):
-        """Only perform model evaluation"""
-        return self._evaluation
-
-    @evaluation.setter
-    def evaluation(self, value):
-        self._evaluation = bool(value)
-
-    @property
-    def cov(self):
-        """Should the parameter uncertainty be estimated?"""
-        return self._cov
-
-    @cov.setter
-    def cov(self, value):
-        self._cov = bool(value)
-
-    @property
-    def laplace(self):
-        """Use the laplacian method"""
-        return self._laplace
-
-    @laplace.setter
-    def laplace(self, value):
-        self._laplace = bool(value)
-
-    @property
-    def isample(self):
-        """Number of samples per subject (or similar) for EM methods"""
-        return self._isample
-
-    @isample.setter
-    def isample(self, value):
-        self._isample = value
-
-    @property
-    def niter(self):
-        """Number of iterations for EM methods"""
-        return self._niter
-
-    @niter.setter
-    def niter(self, value):
-        self._niter = value
-
-    @property
-    def auto(self):
-        """Let estimation tool automatically add settings"""
-        return self._auto
-
-    @auto.setter
-    def auto(self, value):
-        self._auto = value
-
-    @property
-    def keep_every_nth_iter(self):
-        """Keep results for every nth iteration"""
-        return self._keep_every_nth_iter
-
-    @keep_every_nth_iter.setter
-    def keep_every_nth_iter(self, value):
-        self._keep_every_nth_iter = value
-
-    @property
-    def residuals(self):
-        """List of residuals to calculate"""
-        return self._residuals
-
-    @residuals.setter
-    def residuals(self, value):
-        self._residuals = value
-
-    @property
-    def predictions(self):
-        """List of predictions to estimate"""
-        return self._predictions
-
-    @predictions.setter
-    def predictions(self, value):
-        self._predictions = value
-
-    @property
-    def solver(self):
-        """Numerical solver to use when numerically solving the ODE system
-        Supported solvers and their corresponding NONMEM ADVAN
-
-        +----------------------------+------------------+
-        | Solver                     | NONMEM ADVAN     |
-        +============================+==================+
-        | CVODES                     | ADVAN14          |
-        +----------------------------+------------------+
-        | DGEAR                      | ADVAN8           |
-        +----------------------------+------------------+
-        | DVERK                      | ADVAN6           |
-        +----------------------------+------------------+
-        | IDA                        | ADVAN15          |
-        +----------------------------+------------------+
-        | LSODA                      | ADVAN13          |
-        +----------------------------+------------------+
-        | LSODI                      | ADVAN9           |
-        +----------------------------+------------------+
-        """
-        return self._solver
-
-    @solver.setter
-    def solver(self, value):
-        supported = ['CVODES', 'DGEAR', 'DVERK', 'IDA', 'LSODA', 'LSODI']
-        if value is not None:
-            value = value.upper()
-        if not (value is None or value in supported):
-            raise ValueError(f"Unknown solver {value}. Recognized solvers are {supported}.")
-        self._solver = value
-
-    @property
-    def solver_rtol(self):
-        """Relative tolerance for numerical ODE system solver"""
-        return self._solver_rtol
-
-    @solver_rtol.setter
-    def solver_rtol(self, value):
-        self._solver_rtol = value
-
-    @property
-    def solver_atol(self):
-        """Absolute tolerance for numerical ODE system solver"""
-        return self._solver_atol
-
-    @solver_atol.setter
-    def solver_atol(self, value):
-        self._solver_atol = value
-
-    @property
-    def tool_options(self):
-        """Dictionary of tool specific options"""
-        return self._tool_options
-
-    @tool_options.setter
-    def tool_options(self, value):
-        self._tool_options = value
-
-    def __eq__(self, other):
-        return (
-            self.method == other.method
-            and self.interaction == other.interaction
-            and self.cov == other.cov
-            and self.evaluation == other.evaluation
-            and self.maximum_evaluations == other.maximum_evaluations
-            and self.laplace == other.laplace
-            and self.isample == other.isample
-            and self.niter == other.niter
-            and self.auto == other.auto
-            and self.keep_every_nth_iter == other.keep_every_nth_iter
-            and self.solver == other.solver
-            and self.solver_rtol == other.solver_rtol
-            and self.solver_atol == other.solver_atol
-            and self.tool_options == other.tool_options
-        )
-
-    def __repr__(self):
-        return (
-            f'EstimationStep("{self.method}", interaction={self.interaction}, '
-            f'cov={self.cov}, evaluation={self.evaluation}, '
-            f'maximum_evaluations={self.maximum_evaluations}, laplace={self.laplace}, '
-            f'isample={self.isample}, niter={self.niter}, auto={self.auto}, '
-            f'keep_every_nth_iter={self.keep_every_nth_iter}, solver={self.solver}, '
-            f'solver_rtol={self.solver_rtol}, solver_atol={self.solver_atol}, '
-            f'tool_options={self.tool_options})'
-        )
-
-    def copy(self):
-        """Create a deep copy"""
-        return copy.deepcopy(self)

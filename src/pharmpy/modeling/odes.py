@@ -5,6 +5,7 @@
 import sympy
 
 from pharmpy import ExplicitODESystem
+from pharmpy.estimation import EstimationSteps
 from pharmpy.model import ModelError
 from pharmpy.modeling.help_functions import _as_integer
 from pharmpy.parameters import Parameter, Parameters
@@ -1589,8 +1590,11 @@ def set_ode_solver(model, solver):
     <...>
 
     """
+    new_steps = []
     for step in model.estimation_steps:
-        step.solver = solver
+        new = step.derive(solver=solver)
+        new_steps.append(new)
+    model.estimation_steps = EstimationSteps(new_steps)
     return model
 
 

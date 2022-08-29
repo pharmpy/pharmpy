@@ -49,9 +49,10 @@ def set_estimation_step(model, method, idx=0, **kwargs):
     except TypeError:
         raise TypeError(f'Index must be integer: {idx}')
 
-    model.estimation_steps[idx].method = method
-    for key, value in kwargs.items():
-        setattr(model.estimation_steps[idx], key, value)
+    d = kwargs
+    d['method'] = method
+    newsetp = model.estimation_steps[idx].derive(**d)
+    model.estimation_steps[idx] = newsetp
     return model
 
 
@@ -242,7 +243,7 @@ def add_covariance_step(model):
     set_evaluation_step
 
     """
-    model.estimation_steps[-1].cov = True
+    model.estimation_steps[-1] = model.estimation_steps[-1].derive(cov=True)
     return model
 
 
@@ -279,7 +280,7 @@ def remove_covariance_step(model):
     set_evaluation_step
 
     """
-    model.estimation_steps[-1].cov = False
+    model.estimation_steps[-1] = model.estimation_steps[-1].derive(cov=False)
     return model
 
 
@@ -325,5 +326,5 @@ def set_evaluation_step(model, idx=-1):
     except TypeError:
         raise TypeError(f'Index must be integer: {idx}')
 
-    model.estimation_steps[idx].evaluation = True
+    model.estimation_steps[idx] = model.estimation_steps[idx].derive(evaluation=True)
     return model
