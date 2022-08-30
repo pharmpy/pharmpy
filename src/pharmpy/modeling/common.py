@@ -209,7 +209,7 @@ def convert_model(model, to_format):
         new.random_variables = model.random_variables.copy()
         new.statements = model.statements
         new.dataset = model.dataset.copy()
-        new.estimation_steps = model.estimation_steps.copy()
+        new.estimation_steps = model.estimation_steps
         new.datainfo = model.datainfo.copy()
         new.name = model.name
         new.dependent_variable = model.dependent_variable

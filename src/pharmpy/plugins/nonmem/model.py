@@ -792,12 +792,12 @@ class Model(pharmpy.model.Model):
 
         steps = parse_estimation_steps(self)
         self._estimation_steps = steps
-        self._old_estimation_steps = steps.copy()
+        self._old_estimation_steps = steps
         return steps
 
     @estimation_steps.setter
     def estimation_steps(self, value):
-        self._old_estimation_steps = self._estimation_steps.copy()
+        self.estimation_steps
         self._estimation_steps = value
 
     @property
