@@ -154,7 +154,7 @@ def _find_same_model_groups(wf, mfl_funcs):
 def _get_best_model(*models):
     models_with_res = [model for model in models if model.modelfit_results]
     if models_with_res:
-        return min(models, key=lambda x: x.modelfit_results.ofv)
+        return min(models_with_res, key=lambda x: x.modelfit_results.ofv)
     # FIXME: should be None, maybe dynamic workflows are needed
     return models[0]
 
