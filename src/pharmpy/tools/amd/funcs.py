@@ -18,10 +18,11 @@ from pharmpy import (
     Statements,
 )
 from pharmpy.modeling import (
+    add_iiv,
     create_joint_distribution,
     set_first_order_absorption,
     set_initial_estimates,
-    set_proportional_error_model, add_iiv,
+    set_proportional_error_model,
 )
 from pharmpy.modeling.data import read_dataset_from_datainfo
 from pharmpy.plugins.nonmem.advan import dosing
