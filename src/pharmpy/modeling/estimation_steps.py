@@ -53,7 +53,7 @@ def set_estimation_step(model, method, idx=0, **kwargs):
     d['method'] = method
     steps = model.estimation_steps
     newstep = steps[idx].derive(**d)
-    model.estimation_steps = steps[0:idx] + newstep + steps[idx+1:]
+    model.estimation_steps = steps[0:idx] + newstep + steps[idx + 1 :]
     return model
 
 
@@ -158,7 +158,7 @@ def remove_estimation_step(model, idx):
         raise TypeError(f'Index must be integer: {idx}')
 
     steps = model.estimation_steps
-    model.estimation_steps = steps[0:idx] + steps[idx + 1:]
+    model.estimation_steps = steps[0:idx] + steps[idx + 1 :]
     return model
 
 
@@ -211,7 +211,7 @@ def append_estimation_step_options(model, tool_options, idx):
     toolopts = steps[idx].tool_options.copy()
     toolopts.update(tool_options)
     newstep = steps[idx].derive(tool_options=toolopts)
-    model.estimation_steps = steps[0:idx] + newstep + steps[idx+1:]
+    model.estimation_steps = steps[0:idx] + newstep + steps[idx + 1 :]
     return model
 
 
@@ -340,7 +340,7 @@ def set_evaluation_step(model, idx=-1):
     steps = model.estimation_steps
     newstep = steps[idx].derive(evaluation=True)
     if idx != -1:
-        model.estimation_steps = steps[0:idx] + newstep + steps[idx+1:]
+        model.estimation_steps = steps[0:idx] + newstep + steps[idx + 1 :]
     else:
         model.estimation_steps = steps[0:-1] + newstep
     return model
