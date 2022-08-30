@@ -6,7 +6,7 @@ from pathlib import Path
 import pharmpy.results
 import pharmpy.tools.modelfit
 from pharmpy.model import Model
-from pharmpy.modeling.common import read_model_from_database
+from pharmpy.modeling.common import copy_model, read_model_from_database
 from pharmpy.tools.psn_helpers import create_results as psn_create_results
 from pharmpy.utils import normalize_user_given_path
 from pharmpy.workflows import execute_workflow, split_common_options
@@ -164,12 +164,46 @@ def run_tool(name, *args, **kwargs):
     tool_metadata['common_options'] = setup_metadata
     database.store_metadata(tool_metadata)
 
+    if name != 'modelfit':
+        _store_input_models(list(args) + list(kwargs.items()), database)
+
     res = execute_workflow(wf, dispatcher=dispatcher, database=database)
 
     tool_metadata['stats']['end_time'] = _now()
     database.store_metadata(tool_metadata)
 
     return res
+
+
+def _store_input_models(args, database):
+    input_models = _get_input_models(args)
+
+    if len(input_models) == 1:
+        _create_input_model(input_models[0], database)
+    else:
+        for i, model in enumerate(input_models, 1):
+            _create_input_model(model, database, number=i)
+
+
+def _get_input_models(args):
+    input_models = []
+    for arg in args:
+        if isinstance(arg, Model):
+            input_models.append(arg)
+        else:
+            arg_as_list = [a for a in arg if isinstance(a, Model)]
+            input_models.extend(arg_as_list)
+    return input_models
+
+
+def _create_input_model(model, tool_db, number=None):
+    input_name = 'input_model'
+    if number is not None:
+        input_name += str(number)
+    model_copy = copy_model(model, input_name)
+    with tool_db.model_database.transaction(model_copy) as txn:
+        txn.store_model()
+        txn.store_modelfit_results()
 
 
 def _now():

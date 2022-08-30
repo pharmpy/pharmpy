@@ -28,7 +28,7 @@ def model_count():
     def _model_count(rundir: Path):
         return sum(
             map(
-                lambda path: 0 if path.name in ['.lock', '.datasets'] else 1,
+                lambda path: 0 if path.name in ['.lock', '.datasets', 'input_model'] else 1,
                 ((rundir / 'models').iterdir()),
             )
         )
