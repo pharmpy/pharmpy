@@ -1,5 +1,3 @@
-from pathlib import Path
-
 import numpy as np
 import pandas as pd
 import pytest
@@ -9,16 +7,7 @@ from pharmpy.tools import fit, run_iivsearch
 from pharmpy.utils import TemporaryDirectoryChanger
 
 
-def _model_count(rundir: Path):
-    return sum(
-        map(
-            lambda path: 0 if path.name in ['.lock', '.datasets'] else 1,
-            ((rundir / 'models').iterdir()),
-        )
-    )
-
-
-def test_block_structure(tmp_path, start_model):
+def test_block_structure(tmp_path, model_count, start_model):
     with TemporaryDirectoryChanger(tmp_path):
         res = run_iivsearch('brute_force_block_structure', model=start_model)
 
@@ -49,11 +38,11 @@ def test_block_structure(tmp_path, start_model):
 
         rundir = tmp_path / 'iivsearch_dir1'
         assert rundir.is_dir()
-        assert _model_count(rundir) == no_of_candidate_models
+        assert model_count(rundir) == no_of_candidate_models
         assert (rundir / 'metadata.json').exists()
 
 
-def test_no_of_etas(tmp_path, start_model):
+def test_no_of_etas(tmp_path, model_count, start_model):
     with TemporaryDirectoryChanger(tmp_path):
         res = run_iivsearch('brute_force_no_of_etas', model=start_model)
 
@@ -77,11 +66,11 @@ def test_no_of_etas(tmp_path, start_model):
 
         rundir = tmp_path / 'iivsearch_dir1'
         assert rundir.is_dir()
-        assert _model_count(rundir) == no_of_candidate_models
+        assert model_count(rundir) == no_of_candidate_models
         assert (rundir / 'metadata.json').exists()
 
 
-def test_brute_force(tmp_path, start_model):
+def test_brute_force(tmp_path, model_count, start_model):
     with TemporaryDirectoryChanger(tmp_path):
         res = run_iivsearch('brute_force', model=start_model)
 
@@ -126,7 +115,7 @@ def test_brute_force(tmp_path, start_model):
 
         rundir = tmp_path / 'iivsearch_dir1'
         assert rundir.is_dir()
-        assert _model_count(rundir) == no_of_candidate_models
+        assert model_count(rundir) == no_of_candidate_models
         assert (rundir / 'metadata.json').exists()
 
 
@@ -135,7 +124,7 @@ def test_brute_force(tmp_path, start_model):
     'iiv_strategy',
     ['add_diagonal', 'fullblock'],
 )
-def test_no_of_etas_iiv_strategies(tmp_path, start_model, iiv_strategy):
+def test_no_of_etas_iiv_strategies(tmp_path, model_count, start_model, iiv_strategy):
     with TemporaryDirectoryChanger(tmp_path):
         start_model = start_model.copy()
         start_model.name = 'moxo2_copy'
@@ -169,5 +158,5 @@ def test_no_of_etas_iiv_strategies(tmp_path, start_model, iiv_strategy):
 
         rundir = tmp_path / 'iivsearch_dir1'
         assert rundir.is_dir()
-        assert _model_count(rundir) == no_of_candidate_models + 1
+        assert model_count(rundir) == no_of_candidate_models + 1
         assert (rundir / 'metadata.json').exists()

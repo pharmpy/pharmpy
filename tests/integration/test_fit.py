@@ -1,5 +1,4 @@
 import shutil
-from pathlib import Path
 
 import pytest
 
@@ -11,15 +10,6 @@ from pharmpy.tools import fit
 from pharmpy.utils import TemporaryDirectoryChanger
 
 
-def _model_count(rundir: Path):
-    return sum(
-        map(
-            lambda path: 0 if path.name in ['.lock', '.datasets'] else 1,
-            ((rundir / 'models').iterdir()),
-        )
-    )
-
-
 def test_configuration():
     print("User config dir:", user_config_dir())
     print("Site config dir:", site_config_dir())
@@ -27,7 +17,7 @@ def test_configuration():
     assert (conf.default_nonmem_path / 'license' / 'nonmem.lic').is_file()
 
 
-def test_fit_single(tmp_path, testdata):
+def test_fit_single(tmp_path, model_count, testdata):
     with TemporaryDirectoryChanger(tmp_path):
         shutil.copy2(testdata / 'nonmem' / 'pheno.mod', tmp_path)
         shutil.copy2(testdata / 'nonmem' / 'pheno.dta', tmp_path)
@@ -37,11 +27,11 @@ def test_fit_single(tmp_path, testdata):
         rundir = tmp_path / 'modelfit_dir1'
         assert model.modelfit_results.ofv == pytest.approx(730.8947268137308)
         assert rundir.is_dir()
-        assert _model_count(rundir) == 1
+        assert model_count(rundir) == 1
         assert (rundir / 'models' / 'pheno' / '.pharmpy').exists()
 
 
-def test_fit_multiple(tmp_path, testdata):
+def test_fit_multiple(tmp_path, model_count, testdata):
     with TemporaryDirectoryChanger(tmp_path):
         shutil.copy2(testdata / 'nonmem' / 'pheno.mod', tmp_path / 'pheno_1.mod')
         shutil.copy2(testdata / 'nonmem' / 'pheno.dta', tmp_path / 'pheno_1.dta')
@@ -58,10 +48,10 @@ def test_fit_multiple(tmp_path, testdata):
         assert model_1.modelfit_results.ofv == pytest.approx(730.8947268137308)
         assert model_2.modelfit_results.ofv == pytest.approx(730.8947268137308)
         assert rundir.is_dir()
-        assert _model_count(rundir) == 2
+        assert model_count(rundir) == 2
 
 
-def test_fit_copy(tmp_path, testdata):
+def test_fit_copy(tmp_path, model_count, testdata):
     with TemporaryDirectoryChanger(tmp_path):
         shutil.copy2(testdata / 'nonmem' / 'pheno.mod', tmp_path / 'pheno.mod')
         shutil.copy2(testdata / 'nonmem' / 'pheno.dta', tmp_path / 'pheno.dta')
@@ -72,7 +62,7 @@ def test_fit_copy(tmp_path, testdata):
 
         rundir_1 = tmp_path / 'modelfit_dir1'
         assert rundir_1.is_dir()
-        assert _model_count(rundir_1) == 1
+        assert model_count(rundir_1) == 1
 
         model_2 = modeling.copy_model(model_1, 'pheno_copy')
         modeling.update_inits(model_2)
@@ -80,7 +70,7 @@ def test_fit_copy(tmp_path, testdata):
 
         rundir_2 = tmp_path / 'modelfit_dir1'
         assert rundir_2.is_dir()
-        assert _model_count(rundir_2) == 1
+        assert model_count(rundir_2) == 1
 
         assert model_1.modelfit_results.ofv != model_2.modelfit_results.ofv
 
