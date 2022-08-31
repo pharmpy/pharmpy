@@ -32,7 +32,7 @@ def test_fit_single(tmp_path, testdata):
         shutil.copy2(testdata / 'nonmem' / 'pheno.mod', tmp_path)
         shutil.copy2(testdata / 'nonmem' / 'pheno.dta', tmp_path)
         model = Model.create_model('pheno.mod')
-        model.datainfo.path = tmp_path / 'pheno.dta'
+        model.datainfo = model.datainfo.derive(path=tmp_path / 'pheno.dta')
         fit(model)
         rundir = tmp_path / 'modelfit_dir1'
         assert model.modelfit_results.ofv == pytest.approx(730.8947268137308)
@@ -46,7 +46,7 @@ def test_fit_multiple(tmp_path, testdata):
         shutil.copy2(testdata / 'nonmem' / 'pheno.mod', tmp_path / 'pheno_1.mod')
         shutil.copy2(testdata / 'nonmem' / 'pheno.dta', tmp_path / 'pheno_1.dta')
         model_1 = Model.create_model('pheno_1.mod')
-        model_1.datainfo.path = tmp_path / 'pheno_1.dta'
+        model_1.datainfo = model_1.datainfo.derive(path=tmp_path / 'pheno_1.dta')
         model_1.update_source()
         shutil.copy2(testdata / 'nonmem' / 'pheno.mod', tmp_path / 'pheno_2.mod')
         shutil.copy2(testdata / 'nonmem' / 'pheno.dta', tmp_path / 'pheno_2.dta')
@@ -67,7 +67,7 @@ def test_fit_copy(tmp_path, testdata):
         shutil.copy2(testdata / 'nonmem' / 'pheno.dta', tmp_path / 'pheno.dta')
 
         model_1 = Model.create_model('pheno.mod')
-        model_1.datainfo.path = tmp_path / 'pheno.dta'
+        model_1.datainfo = model_1.datainfo.derive(path=tmp_path / 'pheno.dta')
         fit(model_1)
 
         rundir_1 = tmp_path / 'modelfit_dir1'
