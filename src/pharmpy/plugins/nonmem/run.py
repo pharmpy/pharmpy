@@ -4,9 +4,9 @@ import subprocess
 import uuid
 from pathlib import Path
 
+from pharmpy.estimation import EstimationSteps
 from pharmpy.modeling import write_csv, write_model
 from pharmpy.plugins.nonmem import conf, convert_model
-from pharmpy.estimation import EstimationSteps
 
 
 def execute_model(model):
