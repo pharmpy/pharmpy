@@ -70,6 +70,8 @@ Procedure
 RUVsearch is doing modeling on the conditional weighted residual [Ibrahim]_ of the fit of the input model to quickly assess which residual
 model to select. The input model is then updated with the new residual error model and fit to see if the selected residual error
 model was indeed better. This is done multiple times to see if additional features of the residual error model should be added.
+(Due to the similarity between the power error model and the combined error model, the combination of these two error models is not considered in the procedure.
+E.g., if the power error model is selected in the current iteration, the combined error model will be skipped in the next iteration automatically.)
 
 .. graphviz::
 
