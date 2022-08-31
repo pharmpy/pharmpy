@@ -33,7 +33,7 @@ def test_choose_param_init(pheno_path, testdata):
     rvs = RandomVariables(model.random_variables.etas)
     init = _choose_param_init(model, rvs, params)
 
-    assert init == 0.0118179
+    assert init == 0.0108944
 
     model = Model.create_model(pheno_path)
     model.modelfit_results = None
@@ -63,7 +63,7 @@ def test_choose_param_init(pheno_path, testdata):
     rvs = RandomVariables([model.random_variables['ETA(1)'], model.random_variables['ETA_S1']])
     init = _choose_param_init(model, rvs, params)
 
-    assert init == 0.0052789
+    assert init == 0.0051396
 
 
 def test_choose_param_init_fo():
