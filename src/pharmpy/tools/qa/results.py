@@ -168,7 +168,7 @@ def resmod(res):
     if res is None:
         return None, dofv_tab
 
-    df = res.models.copy()
+    df = res.cwres_models.copy()
     df = df.droplevel(0)
     df.drop('sum', level='DVID', errors='ignore', inplace=True)
     df['dOFV'] = -df['dOFV']

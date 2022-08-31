@@ -148,7 +148,7 @@ def run_tool(name, *args, **kwargs):
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
     >>> from pharmpy.tools import run_tool # doctest: +SKIP
-    >>> res = run_tool("resmod", model)   # doctest: +SKIP
+    >>> res = run_tool("ruvsearch", model)   # doctest: +SKIP
 
     """
     tool = importlib.import_module(f'pharmpy.tools.{name}')

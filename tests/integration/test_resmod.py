@@ -6,7 +6,7 @@ from pharmpy.tools import run_tool
 from pharmpy.utils import TemporaryDirectoryChanger
 
 
-def test_resmod(tmp_path, testdata):
+def test_ruvsearch(tmp_path, testdata):
     with TemporaryDirectoryChanger(tmp_path):
         for path in (testdata / 'nonmem' / 'resmod').glob('mox3.*'):
             shutil.copy2(path, tmp_path)
@@ -16,7 +16,7 @@ def test_resmod(tmp_path, testdata):
         model = Model.create_model('mox3.mod')
         remove_covariance_step(model)
         model.datainfo.path = tmp_path / 'moxo_simulated_resmod.csv'
-        res = run_tool('resmod', model, groups=4, p_value=0.05, skip=[])
+        res = run_tool('ruvsearch', model, groups=4, p_value=0.05, skip=[])
         iteration = [1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 3, 3]
         assert (res.cwres_models.index.get_level_values('iteration') == iteration).all()
         assert res.best_model.model_code.split('\n')[11] == 'IF (TAD.LT.6.08) THEN'

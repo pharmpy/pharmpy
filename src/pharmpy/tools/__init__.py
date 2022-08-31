@@ -7,7 +7,7 @@ run_covsearch = wrap('covsearch')
 run_iivsearch = wrap('iivsearch')
 run_iovsearch = wrap('iovsearch')
 run_modelsearch = wrap('modelsearch')
-run_resmod = wrap('resmod')
+run_ruvsearch = wrap('ruvsearch')
 
 __all__ = [
     'create_results',
@@ -20,6 +20,6 @@ __all__ = [
     'run_iivsearch',
     'run_iovsearch',
     'run_modelsearch',
-    'run_resmod',
+    'run_ruvsearch',
     'run_tool',
 ]

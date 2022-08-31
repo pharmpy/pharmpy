@@ -32,7 +32,7 @@ from .results import calculate_results
 
 
 def create_workflow(model=None, groups=4, p_value=0.05, skip=None):
-    """Run the resmod tool. For more details, see :ref:`resmod`.
+    """Run the ruvsearch tool. For more details, see :ref:`ruvsearch`.
 
     Parameters
     ----------
@@ -47,20 +47,20 @@ def create_workflow(model=None, groups=4, p_value=0.05, skip=None):
 
     Returns
     -------
-    ResmodResults
-        Resmod tool result object
+    RUVSearchResults
+        Ruvsearch tool result object
 
     Examples
     --------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> from pharmpy.tools import run_resmod # doctest: +SKIP
-    >>> run_resmod(model=model)      # doctest: +SKIP
+    >>> from pharmpy.tools import run_ruvsearch # doctest: +SKIP
+    >>> run_ruvsearch(model=model)      # doctest: +SKIP
 
     """
     wf = Workflow()
-    wf.name = "resmod"
-    start_task = Task('start_resmod', start, model, groups, p_value, skip)
+    wf.name = "ruvsearch"
+    start_task = Task('start_ruvsearch', start, model, groups, p_value, skip)
     wf.add_task(start_task)
     task_results = Task('results', _results)
     wf.add_task(task_results, predecessors=[start_task])
@@ -327,7 +327,7 @@ def _create_best_model(model, res, current_iteration, groups=4, cutoff=3.84):
     if any(res.cwres_models['dofv'] > cutoff):
         model = model.copy()
         update_initial_estimates(model)
-        model.name = f'best_resmod_{current_iteration}'
+        model.name = f'best_ruvsearch_{current_iteration}'
         selected_model_name = f'base_{current_iteration}'
         idx = res.cwres_models['dofv'].idxmax()
         name = idx[0]

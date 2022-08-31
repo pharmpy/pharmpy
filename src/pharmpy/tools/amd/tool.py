@@ -1,5 +1,5 @@
 import pharmpy.tools.modelsearch as modelsearch
-import pharmpy.tools.resmod as resmod
+import pharmpy.tools.ruvsearch as ruvsearch
 from pharmpy.workflows import Task, Workflow
 
 
@@ -16,10 +16,10 @@ def create_workflow(model):
     select_modelsearch_task = Task('select_modelsearch', select_modelsearch, model)
     wf.add_task(select_modelsearch_task, predecessors=wf_modelsearch.output_tasks)
 
-    wf_resmod = resmod.create_workflow()
+    wf_resmod = ruvsearch.create_workflow()
     wf.insert_workflow(wf_resmod, predecessors=wf.output_tasks)
 
-    select_task = Task('select_resmod', select_resmod)
+    select_task = Task('select_ruvsearch', select_ruvsearch())
     wf.add_task(select_task, predecessors=wf_resmod.output_tasks)
 
     post_process_task = Task('results', post_process)
@@ -39,7 +39,7 @@ def select_modelsearch(model, res):
         return model
 
 
-def select_resmod(res):
+def select_ruvsearch(res):
     return res.best_model
 
 

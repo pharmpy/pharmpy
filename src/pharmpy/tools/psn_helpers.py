@@ -179,7 +179,7 @@ def create_results(path, **kwargs):
 
         res = psn_linearize_results(path, **kwargs)
     elif name == 'resmod':
-        from pharmpy.tools.resmod.results import psn_resmod_results
+        from pharmpy.tools.ruvsearch.results import psn_resmod_results
 
         res = psn_resmod_results(path, **kwargs)
 
