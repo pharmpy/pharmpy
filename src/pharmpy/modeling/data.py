@@ -410,9 +410,9 @@ def get_covariate_baselines(model):
 
     Example
     -------
-    >>> from pharmpy.modeling import load_example_model, get_covariate_baselines
+    >>> from pharmpy.modeling import load_example_model, get_covariate_baselines, set_covariates
     >>> model = load_example_model("pheno")
-    >>> model.datainfo[["WGT", "APGR"]].types = "covariate"
+    >>> model = set_covariates(model, ["WGT", "APGR"])
     >>> get_covariate_baselines(model)
         WGT  APGR
     ID
@@ -941,7 +941,7 @@ def drop_dropped_columns(model):
     >>> drop_dropped_columns(model)    # doctest: +ELLIPSIS
     <...>
     >>> list(model.dataset.columns)
-    ['ID', 'TIME', 'AMT', 'WGT', 'APGR', 'DV']
+    ['ID', 'TIME', 'AMT', 'WGT', 'APGR', 'DV', 'FA1', 'FA2']
 
     See also
     --------

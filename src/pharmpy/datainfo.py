@@ -608,7 +608,7 @@ class DataInfo(Sequence):
         >>> from pharmpy.modeling import load_example_model
         >>> model = load_example_model("pheno")
         >>> model.datainfo.names
-        ['ID', 'TIME', 'AMT', 'WGT', 'APGR', 'DV']
+        ['ID', 'TIME', 'AMT', 'WGT', 'APGR', 'DV', 'FA1', 'FA2']
         """
         return [col.name for col in self._columns]
 
@@ -654,7 +654,9 @@ class DataInfo(Sequence):
          'AMT': 'float64',
          'WGT': 'float64',
          'APGR': 'float64',
-         'DV': 'float64'}
+         'DV': 'float64',
+         'FA1': 'float64',
+         'FA2': 'float64'}
         """
         return {
             col.name: col.datatype
