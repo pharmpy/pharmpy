@@ -80,7 +80,7 @@ class EstimationStep:
         """Derive a new EstimationStep with new properties"""
         new = copy.copy(self)
         for key, value in kwargs.items():
-            if key == 'method':
+            if key in ['method', 'solver']:
                 value = value.upper()
             new.__dict__['_' + key] = value
         return new
