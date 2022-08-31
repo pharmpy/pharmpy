@@ -224,9 +224,11 @@ MFL support the following model features:
 +---------------+-------------------------------+--------------------------------------------------------------------+
 | Category      | Options                       | Description                                                        |
 +===============+===============================+====================================================================+
-| ABSORPTION    | :code:`FO, ZO, SEQ-ZO-FO`     | Absorption rate                                                    |
+| ABSORPTION    | :code:`FO, ZO, SEQ-ZO-FO`     | Absorption rate (first order, zero order, sequential               |
+|               |                               | zero order first order)                                            |
 +---------------+-------------------------------+--------------------------------------------------------------------+
-| ELIMINATION   | :code:`FO, ZO, MM, MIX-FO-MM` | Elimination rate                                                   |
+| ELIMINATION   | :code:`FO, ZO, MM, MIX-FO-MM` | Elimination rate (first order, zero order, Michaelis-Menten,       |
+|               |                               | mixed first order Michaelis-Menten)                                |
 +---------------+-------------------------------+--------------------------------------------------------------------+
 | PERIPHERALS   | `number`                      | Number of peripheral compartments                                  |
 +---------------+-------------------------------+--------------------------------------------------------------------+
