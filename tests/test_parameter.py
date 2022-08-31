@@ -11,7 +11,7 @@ from pharmpy.parameters import Parameter, Parameters
     [
         ('THETA(1)', 23, None, None, None),
         ('X', 12, None, None, None),
-        ('_NAME', 0, None, None, None),
+        ('_NAME', 0, None, None, False),
         ('OMEGA(2,1)', 0.1, 0, None, None),
         ('TCVL', 0.23, -2, 2, None),
     ],
@@ -27,14 +27,8 @@ def test_initialization(name, init, lower, upper, fix):
     assert param.name == name
     assert param.symbol == symbol(name)
     assert param.init == init
-    if lower is not None:
-        assert param.lower == lower
-    else:
-        assert param.lower == -sympy.oo
-    if upper is not None:
-        assert param.upper == upper
-    else:
-        assert param.upper == sympy.oo
+    assert param.lower == lower
+    assert param.upper == upper
     assert param.fix == bool(fix)
 
 
@@ -80,6 +74,29 @@ def test_add():
     pset6 = pset5 + (p2, p3)
     assert len(pset6) == 3
     assert pset6['z'].init == 4
+
+    with pytest.raises(ValueError):
+        pset + 23
+
+
+def test_pset_radd():
+    p1 = Parameter('Y', 9)
+    p2 = Parameter('X', 3)
+    p3 = Parameter('Z', 1)
+    pset1 = Parameters([p1, p2, p3])
+    p4 = Parameter('W', 1)
+    cat = p4 + pset1
+    assert len(cat) == 4
+    assert cat['W'].init == 1
+    assert cat['Y'].init == 9
+
+    cat = [p4] + pset1
+    assert len(cat) == 4
+    assert cat['W'].init == 1
+    assert cat['Y'].init == 9
+
+    with pytest.raises(ValueError):
+        23 + pset1
 
 
 def test_pset_init():
@@ -242,3 +259,29 @@ def test_fixed_nonfixed():
     pset_nonfixed = Parameters([p2, p3])
     assert pset1.fixed == pset_fixed
     assert pset1.nonfixed == pset_nonfixed
+
+
+def test_slice():
+    p1 = Parameter('Y', 9)
+    p2 = Parameter('X', 3)
+    p3 = Parameter('Z', 1)
+    pset1 = Parameters([p1, p2, p3])
+    sl = pset1[1:]
+    assert len(sl) == 2
+    assert sl['X'].init == 3
+    assert 'Y' not in sl
+
+
+def test_derive():
+    p = Parameter('x', 3, fix=False)
+    p1 = p.derive(upper=1)
+    assert not p1.fix
+    assert not p.fix
+    assert p1.name == 'x'
+    assert p1.upper == 1
+
+    p2 = p.derive(lower=2)
+    assert p2.lower == 2
+
+    p3 = p.derive(init=23)
+    assert p3.init == 23
