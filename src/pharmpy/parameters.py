@@ -183,7 +183,9 @@ class Parameters(Sequence):
         return ind, self._params[ind]
 
     def __getitem__(self, ind):
-        if not isinstance(ind, str) and isinstance(ind, Sequence):
+        if isinstance(ind, slice):
+            return Parameters(self._params[ind.start : ind.stop : ind.step])
+        elif not isinstance(ind, str) and isinstance(ind, Sequence):
             params = []
             for i in ind:
                 index, param = self._lookup_param(i)

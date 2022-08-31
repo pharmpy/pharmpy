@@ -33,7 +33,7 @@ def test_choose_param_init(pheno_path, testdata):
     rvs = RandomVariables(model.random_variables.etas)
     init = _choose_param_init(model, rvs, params)
 
-    assert init == 0.0118179
+    assert init == 0.0108944
 
     model = Model.create_model(pheno_path)
     model.modelfit_results = None
@@ -47,14 +47,16 @@ def test_choose_param_init(pheno_path, testdata):
     omega1 = S('OMEGA(3,3)')
     x = RandomVariable.normal('ETA(3)', 'IIV', 0, omega1)
     rvs.append(x)
-
-    ie = model.modelfit_results.individual_estimates
+    res = model.modelfit_results
+    ie = res.individual_estimates
     ie['ETA(3)'] = ie['ETA(1)']
-    model.modelfit_results = ModelfitResults(individual_estimates=ie)
+    model.modelfit_results = ModelfitResults(
+        parameter_estimates=res.parameter_estimates, individual_estimates=ie
+    )
 
     init = _choose_param_init(model, rvs, params)
 
-    assert init == 0.0118179
+    assert init == 0.0108944
 
     # If one eta doesn't have individual estimates
     model = Model.create_model(pheno_path)
@@ -63,7 +65,21 @@ def test_choose_param_init(pheno_path, testdata):
     rvs = RandomVariables([model.random_variables['ETA(1)'], model.random_variables['ETA_S1']])
     init = _choose_param_init(model, rvs, params)
 
-    assert init == 0.0052789
+    assert init == 0.0051396
+
+    # If the standard deviation in individual estimates of one eta is 0
+    model = Model.create_model(pheno_path)
+    res = model.modelfit_results
+    ie = res.individual_estimates
+    ie['ETA(1)'] = 0
+    model.modelfit_results = ModelfitResults(
+        parameter_estimates=res.parameter_estimates, individual_estimates=ie
+    )
+    params = (model.parameters['OMEGA(1,1)'], model.parameters['OMEGA(2,2)'])
+    rvs = RandomVariables([model.random_variables['ETA(1)'], model.random_variables['ETA(2)']])
+    with pytest.warns(UserWarning, match='Correlation of individual estimates'):
+        init = _choose_param_init(model, rvs, params)
+        assert init == 0.0028619
 
 
 def test_choose_param_init_fo():

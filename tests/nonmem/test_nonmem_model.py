@@ -841,7 +841,9 @@ $SIGMA 1
 '''
     code += estcode
     model = Model.create_model(StringIO(code))
-    model.estimation_steps[0] = model.estimation_steps[0].derive(**kwargs)
+    steps = model.estimation_steps
+    newstep = steps[0].derive(**kwargs)
+    model.estimation_steps = newstep + steps[1:]
     assert model.model_code.split('\n')[-2] == rec_ref
 
 
@@ -873,7 +875,9 @@ $SIGMA 1
     code += estcode
     model = Model.create_model(StringIO(code))
 
-    model.estimation_steps[0] = model.estimation_steps[0].derive(**kwargs)
+    steps = model.estimation_steps
+    newstep = steps[0].derive(**kwargs)
+    model.estimation_steps = newstep + steps[1:]
 
     with pytest.raises(ValueError) as excinfo:
         model.update_source(nofiles=True)
@@ -893,16 +897,16 @@ $EST METH=COND INTER
 '''
     model = Model.create_model(StringIO(code))
     est_new = EstimationStep('IMP', interaction=True, tool_options={'saddle_reset': 1})
-    model.estimation_steps.append(est_new)
+    model.estimation_steps = model.estimation_steps + est_new
     assert model.model_code.split('\n')[-2] == '$ESTIMATION METHOD=IMP INTER SADDLE_RESET=1'
     est_new = EstimationStep('SAEM', interaction=True)
-    model.estimation_steps.insert(0, est_new)
+    model.estimation_steps = est_new + model.estimation_steps
     assert model.model_code.split('\n')[-4] == '$ESTIMATION METHOD=SAEM INTER'
     est_new = EstimationStep('FO', evaluation=True)
-    model.estimation_steps.append(est_new)
+    model.estimation_steps = model.estimation_steps + est_new
     assert model.model_code.split('\n')[-2] == '$ESTIMATION METHOD=ZERO MAXEVAL=0'
     est_new = EstimationStep('IMP', evaluation=True)
-    model.estimation_steps.append(est_new)
+    model.estimation_steps = model.estimation_steps + est_new
     assert model.model_code.split('\n')[-2] == '$ESTIMATION METHOD=IMP EONLY=1'
 
 
@@ -918,7 +922,7 @@ $SIGMA 1
 $EST METH=COND INTER
 '''
     model = Model.create_model(StringIO(code))
-    del model.estimation_steps[0]
+    model.estimation_steps = model.estimation_steps[1:]
     assert not model.estimation_steps
     model.update_source()
     assert model.model_code.split('\n')[-2] == '$SIGMA 1'

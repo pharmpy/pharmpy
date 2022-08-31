@@ -1,4 +1,3 @@
-import copy
 import itertools
 import re
 import warnings
@@ -450,9 +449,10 @@ def update_statements(model, old, new, trans):
                 )
             update_ode_system(model, old_odes, new_odes)
         else:
-            new_solver = None
             if len(model.estimation_steps) > 0:
                 new_solver = model.estimation_steps[0].solver
+            else:
+                new_solver = None
             if type(new_odes) == ExplicitODESystem or new_solver:
                 old_solver = model._old_estimation_steps[0].solver
                 if new_solver != old_solver:
@@ -1122,7 +1122,7 @@ def update_estimation(model):
         s += f'{model.datainfo.dv_column.name} '
         s += f'{" ".join(cols)} FILE=mytab NOAPPEND NOPRINT'
         model.control_stream.insert_record(s)
-    model._old_estimation_steps = copy.deepcopy(new)
+    model._old_estimation_steps = new
 
 
 def solver_to_advan(solver):

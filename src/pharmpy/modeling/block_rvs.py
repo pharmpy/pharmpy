@@ -1,6 +1,7 @@
 """
 :meta private:
 """
+import warnings
 
 import numpy as np
 import sympy
@@ -157,7 +158,8 @@ def _choose_param_init(model, rvs, params):
         if str(elem) in [p.name for p in params]:
             etas.append(rvs_names[i])
 
-    sd = np.array([np.sqrt(params[0].init), np.sqrt(params[1].init)])
+    var_param_1, var_param_2 = _get_variance(model, params[0]), _get_variance(model, params[1])
+    sd = np.array([np.sqrt(var_param_1), np.sqrt(var_param_2)])
     init_default = round(0.1 * sd[0] * sd[1], 7)
 
     last_estimation_step = [est for est in model.estimation_steps if not est.evaluation][-1]
@@ -170,10 +172,27 @@ def _choose_param_init(model, rvs, params):
                 return init_default
         except KeyError:
             return init_default
+        # NOTE Use pd.corr() and not pd.cov(). SD is chosen from the final estimates, if cov is used
+        # it will be calculated from the EBEs.
         eta_corr = ie[etas].corr()
+        if eta_corr.isnull().values.any():
+            warnings.warn(
+                f'Correlation of individual estimates between {params[0].name} and '
+                f'{params[1].name} is NaN, returning default initial estimate'
+            )
+            return init_default
         cov = math.corr2cov(eta_corr.to_numpy(), sd)
         cov[cov == 0] = 0.0001
         cov = math.nearest_postive_semidefinite(cov)
-        return round(cov[1][0], 7)
+        init_cov = cov[1][0]
+        return round(init_cov, 7)
     else:
         return init_default
+
+
+def _get_variance(model, parameter):
+    if model.modelfit_results is not None:
+        pes = model.modelfit_results.parameter_estimates
+        if parameter.name in pes.index:
+            return pes[parameter.name]
+    return parameter.init

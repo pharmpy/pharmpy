@@ -136,7 +136,7 @@ def _copy_model(name, description, model):
 
 
 def _create_est_model(method, solver, model):
-    _clear_estimation_steps(model)
+    model = _clear_estimation_steps(model)
     est_settings = _create_est_settings(method)
     if method == 'laplace':
         laplace = True
@@ -146,10 +146,11 @@ def _create_est_model(method, solver, model):
     add_estimation_step(model, **est_settings)
     add_estimation_step(model, **eval_settings)
     if solver:
-        set_ode_solver(model, solver)
+        model = set_ode_solver(model, solver)
     return model
 
 
 def _clear_estimation_steps(model):
     while len(model.estimation_steps) > 0:
-        remove_estimation_step(model, 0)
+        model = remove_estimation_step(model, 0)
+    return model

@@ -4,6 +4,7 @@ import subprocess
 import uuid
 from pathlib import Path
 
+from pharmpy.estimation import EstimationSteps
 from pharmpy.modeling import write_csv, write_model
 from pharmpy.plugins.nonmem import conf, convert_model
 
@@ -73,11 +74,12 @@ def execute_model(model):
         txn.store_local_file(plugin_path)
 
         txn.store_metadata(metadata)
-        txn.store_modelfit_results()
+        if len(model.estimation_steps) > 0:
+            txn.store_modelfit_results()
 
-        # Read in results for the server side
-        # FIXME: this breaks through abstraction
-        model.read_modelfit_results(database.path / model.name)
+            # Read in results for the server side
+            # FIXME: this breaks through abstraction
+            model.read_modelfit_results(database.path / model.name)
 
     # FIXME: the database path is changed in write
     model.database = database
@@ -120,6 +122,7 @@ def evaluate_design(model):
     model = model.copy()
     model.name = '_design_model'
 
+    model.estimation_steps = EstimationSteps()
     estrecs = model.control_stream.get_records('ESTIMATION')
     model.control_stream.remove_records(estrecs)
 

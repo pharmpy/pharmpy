@@ -1,5 +1,5 @@
 import copy
-from collections.abc import MutableSequence
+from collections.abc import Sequence
 
 import pandas as pd
 
@@ -80,7 +80,7 @@ class EstimationStep:
         """Derive a new EstimationStep with new properties"""
         new = copy.copy(self)
         for key, value in kwargs.items():
-            if key == 'method':
+            if key in ['method', 'solver']:
                 value = value.upper()
             new.__dict__['_' + key] = value
         return new
@@ -231,31 +231,39 @@ class EstimationStep:
         )
 
 
-class EstimationSteps(MutableSequence):
+class EstimationSteps(Sequence):
     """A sequence of estimation steps
 
     Parameters
     ----------
-    steps : EstimationSteps, iterable or None
+    steps : iterable or None
         Used for initialization
     """
 
     def __init__(self, steps=None):
-        if isinstance(steps, EstimationSteps):
-            self._steps = copy.deepcopy(steps._steps)
-        elif steps is None:
-            self._steps = []
+        if steps is None:
+            self._steps = ()
         else:
-            self._steps = list(steps)
+            self._steps = tuple(steps)
 
     def __getitem__(self, i):
+        if isinstance(i, slice):
+            return EstimationSteps(self._steps[i.start : i.stop : i.step])
         return self._steps[i]
 
-    def __setitem__(self, i, value):
-        self._steps[i] = value
+    def __add__(self, other):
+        if isinstance(other, EstimationSteps):
+            return EstimationSteps(self._steps + other._steps)
+        elif isinstance(other, EstimationStep):
+            return EstimationSteps(self._steps + (other,))
+        else:
+            return EstimationSteps(self._steps + tuple(other))
 
-    def __delitem__(self, i):
-        del self._steps[i]
+    def __radd__(self, other):
+        if isinstance(other, EstimationStep):
+            return EstimationSteps((other,) + self._steps)
+        else:
+            return EstimationSteps(tuple(other) + self._steps)
 
     def __len__(self):
         return len(self._steps)
@@ -267,13 +275,6 @@ class EstimationSteps(MutableSequence):
             if s1 != s2:
                 return False
         return True
-
-    def insert(self, i, value):
-        self._steps.insert(i, value)
-
-    def copy(self):
-        """Create a deepcopy"""
-        return copy.deepcopy(self)
 
     def to_dataframe(self):
         """Convert to DataFrame
