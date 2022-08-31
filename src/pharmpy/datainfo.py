@@ -1,8 +1,7 @@
 """DataInfo is a companion to the dataset. It contains metadata of the dataset
 """
-import copy
 import json
-from collections.abc import MutableSequence
+from collections.abc import Sequence
 from pathlib import Path
 
 import pandas as pd
@@ -134,47 +133,67 @@ class ColumnInfo:
         type='unknown',
         unit=sympy.Integer(1),
         scale='ratio',
-        continuous=True,
+        continuous=None,
         categories=None,
         drop=False,
         datatype="float64",
         descriptor=None,
     ):
         if scale in ['nominal', 'ordinal']:
-            continuous = False
+            if continuous is True:
+                raise ValueError("A nominal or ordinal column cannot be continuous")
+            else:
+                continuous = False
+        if continuous is None:
+            continuous = True
         self._continuous = continuous
-        self.name = name
-        self.type = type
-        self.unit = unit
-        self.scale = scale
-        self.continuous = continuous
-        self.categories = categories  # dict from value to descriptive string
-        self.drop = drop
-        self.datatype = datatype
-        self.descriptor = descriptor
+        if not isinstance(name, str):
+            raise TypeError("Column name must be a string")
+        self._name = name
+        if type not in ColumnInfo._all_types:
+            raise TypeError(f"Unknown column type {type}")
+        self._type = type
+        if scale not in ColumnInfo._all_scales:
+            raise TypeError(
+                f"Unknown scale of measurement {scale}. Only {ColumnInfo._all_scales} are possible."
+            )
+        self._unit = parse_units(unit)
+        self._scale = scale
+        self._continuous = continuous
+        self._categories = categories  # dict from value to descriptive string
+        self._drop = drop
+        if datatype not in ColumnInfo._all_dtypes:
+            raise ValueError(
+                f"{datatype} is not a valid datatype. Valid datatypes are {ColumnInfo._all_dtypes}"
+            )
+        self._datatype = datatype
+        if descriptor not in ColumnInfo._all_descriptors:
+            raise TypeError(f"Unknown column descriptor {descriptor}")
+        self._descriptor = descriptor
+
+    def derive(self, **kwargs):
+        """Derive a new ColumnInfo with new properties"""
+        d = {key[1:]: value for key, value in self.__dict__.items()}
+        d.update(kwargs)
+        new = ColumnInfo(**d)
+        return new
 
     def __eq__(self, other):
         return (
-            self.name == other.name
-            and self.type == other.type
-            and self.unit == other.unit
-            and self.scale == other.scale
-            and self.continuous == other.continuous
-            and self.categories == other.categories
-            and self.drop == other.drop
-            and self.datatype == other.datatype
+            self._name == other._name
+            and self._type == other._type
+            and self._unit == other._unit
+            and self._scale == other._scale
+            and self._continuous == other._continuous
+            and self._categories == other._categories
+            and self._drop == other._drop
+            and self._datatype == other._datatype
         )
 
     @property
     def name(self):
         """Column name"""
         return self._name
-
-    @name.setter
-    def name(self, value):
-        if not isinstance(value, str):
-            raise TypeError("Column name must be a string")
-        self._name = value
 
     @property
     def type(self):
@@ -200,12 +219,6 @@ class ColumnInfo:
         """
         return self._type
 
-    @type.setter
-    def type(self, value):
-        if value not in ColumnInfo._all_types:
-            raise TypeError(f"Unknown column type {value}")
-        self._type = value
-
     @property
     def descriptor(self):
         """Kind of data
@@ -224,12 +237,6 @@ class ColumnInfo:
         """
         return self._descriptor
 
-    @descriptor.setter
-    def descriptor(self, value):
-        if value not in ColumnInfo._all_descriptors:
-            raise TypeError(f"Unknown column descriptor {value}")
-        self._descriptor = value
-
     @property
     def unit(self):
         """Unit of the column data
@@ -238,11 +245,6 @@ class ColumnInfo:
         recognized. The default unit is 1, i.e. without unit.
         """
         return self._unit
-
-    @unit.setter
-    def unit(self, value):
-        a = parse_units(value)
-        self._unit = a
 
     @property
     def scale(self):
@@ -253,16 +255,6 @@ class ColumnInfo:
         """
         return self._scale
 
-    @scale.setter
-    def scale(self, value):
-        if value not in ColumnInfo._all_scales:
-            raise TypeError(
-                f"Unknown scale of measurement {value}. Only {ColumnInfo._all_scales} are possible."
-            )
-        self._scale = value
-        if self.continuous and value in ['nominal', 'ordinal']:
-            self.continuous = False
-
     @property
     def continuous(self):
         """Is the column data continuous
@@ -272,31 +264,15 @@ class ColumnInfo:
         """
         return self._continuous
 
-    @continuous.setter
-    def continuous(self, value):
-        if value and self.is_categorical():
-            raise ValueError(
-                f"Cannot set variable on {self.scale} scale of measurement to continuous"
-            )
-        self._continuous = value
-
     @property
     def categories(self):
         """List of allowed categories"""
         return self._categories
 
-    @categories.setter
-    def categories(self, value):
-        self._categories = value
-
     @property
     def drop(self):
         """Should this column be dropped"""
         return self._drop
-
-    @drop.setter
-    def drop(self, value):
-        self._drop = bool(value)
 
     @property
     def datatype(self):
@@ -326,14 +302,6 @@ class ColumnInfo:
         The default, and most common datatype, is float64.
         """
         return self._datatype
-
-    @datatype.setter
-    def datatype(self, value):
-        if value not in ColumnInfo._all_dtypes:
-            raise ValueError(
-                f"{value} is not a valid datatype. Valid datatypes are {ColumnInfo._all_dtypes}"
-            )
-        self._datatype = value
 
     def is_categorical(self):
         """Check if the column data is categorical
@@ -385,27 +353,17 @@ class ColumnInfo:
         """
         return self.scale in ['interval', 'ratio']
 
-    def copy(self):
-        """Create a deep copy of the ColumnInfo
-
-        Returns
-        -------
-        ColumnInfo
-            Copied object
-        """
-        return copy.deepcopy(self)
-
     def __repr__(self):
         ser = pd.Series(
             [
-                self.type,
-                self.scale,
-                self.continuous,
-                self.categories,
-                self.unit,
-                self.drop,
-                self.datatype,
-                self.descriptor,
+                self._type,
+                self._scale,
+                self._continuous,
+                self._categories,
+                self._unit,
+                self._drop,
+                self._datatype,
+                self._descriptor,
             ],
             index=[
                 'type',
@@ -417,12 +375,12 @@ class ColumnInfo:
                 'datatype',
                 'descriptor',
             ],
-            name=self.name,
+            name=self._name,
         )
         return ser.to_string(name=True)
 
 
-class DataInfo(MutableSequence):
+class DataInfo(Sequence):
     """Metadata for the dataset
 
     Can be indexed to get ColumnInfo for the columns.
@@ -439,16 +397,50 @@ class DataInfo(MutableSequence):
 
     def __init__(self, columns=None, path=None, separator=','):
         if columns is None:
-            self._columns = []
+            self._columns = ()
         elif len(columns) > 0 and isinstance(columns[0], str):
-            self._columns = []
+            cols = []
             for name in columns:
                 colinf = ColumnInfo(name)
-                self._columns.append(colinf)
+                cols.append(colinf)
+            self._columns = tuple(cols)
         else:
-            self._columns = columns
-        self.path = path
-        self.separator = separator
+            self._columns = tuple(columns)
+        if path is not None:
+            self._path = Path(path)
+        else:
+            self._path = path
+        self._separator = separator
+
+    def derive(self, **kwargs):
+        columns = kwargs.get('columns', self._columns)
+        path = kwargs.get('path', self._path)
+        separator = kwargs.get('separator', self._separator)
+        return DataInfo(columns=columns, path=path, separator=separator)
+
+    def __add__(self, other):
+        if isinstance(other, DataInfo):
+            return DataInfo(
+                columns=self._columns + other._columns, path=self.path, separator=self.separator
+            )
+        elif isinstance(other, ColumnInfo):
+            return DataInfo(
+                columns=self._columns + (other,), path=self.path, separator=self.separator
+            )
+        else:
+            return DataInfo(
+                columns=self._columns + tuple(other), path=self.path, separator=self.separator
+            )
+
+    def __radd__(self, other):
+        if isinstance(other, ColumnInfo):
+            return DataInfo(
+                columns=(other,) + self._columns, path=self.path, separator=self.separator
+            )
+        else:
+            return DataInfo(
+                columns=tuple(other) + self._columns, path=self.path, separator=self.separator
+            )
 
     def __eq__(self, other):
         if len(self) != len(other):
@@ -480,17 +472,11 @@ class DataInfo(MutableSequence):
                 cols.append(self._columns[index])
             return DataInfo(columns=cols)
         if isinstance(i, slice):
-            return self._columns[i]
+            return DataInfo(
+                self._columns[i.start : i.stop : i.step], path=self._path, separator=self._separator
+            )
+
         return self._columns[self._getindex(i)]
-
-    def __setitem__(self, i, value):
-        self._columns[self._getindex(i)] = value
-
-    def __delitem__(self, i):
-        del self._columns[self._getindex(i)]
-
-    def insert(self, i, value):
-        self._columns.insert(self._getindex(i), value)
 
     @property
     def path(self):
@@ -505,13 +491,6 @@ class DataInfo(MutableSequence):
         """
         return self._path
 
-    @path.setter
-    def path(self, value):
-        if value is not None:
-            self._path = Path(value)
-        else:
-            self._path = None
-
     @property
     def separator(self):
         """Separator for dataset file
@@ -520,10 +499,6 @@ class DataInfo(MutableSequence):
         string.
         """
         return self._separator
-
-    @separator.setter
-    def separator(self, value):
-        self._separator = value
 
     @property
     def typeix(self):
@@ -551,6 +526,15 @@ class DataInfo(MutableSequence):
         """
         return DescriptorIndexer(self)
 
+    def set_column(self, col):
+        newcols = []
+        for cur in self:
+            if cur.name != col.name:
+                newcols.append(cur)
+            else:
+                newcols.append(col)
+        return self.derive(columns=newcols)
+
     @property
     def id_column(self):
         """The id column
@@ -564,9 +548,24 @@ class DataInfo(MutableSequence):
         """
         return self.typeix['id'][0]
 
-    @id_column.setter
-    def id_column(self, value):
-        self[value].type = 'id'
+    def _set_column_type(self, name, type):
+        mycol = None
+        for i, col in enumerate(self):
+            if col.name == name:
+                mycol = col
+                ind = i
+            elif col.type == type:
+                raise ValueError(
+                    f"Cannot set new {type} column: column {col.name} already has type {type}"
+                )
+        if mycol is None:
+            raise IndexError(f"No column {name} in DataInfo")
+        newcol = mycol.derive(type=type)
+        cols = self._columns[0:ind] + (newcol,) + self._columns[ind + 1 :]
+        return DataInfo(cols, path=self._path, separator=self._separator)
+
+    def set_id_column(self, name):
+        return self._set_column_type(name, 'id')
 
     @property
     def dv_column(self):
@@ -581,9 +580,8 @@ class DataInfo(MutableSequence):
         """
         return self.typeix['dv'][0]
 
-    @dv_column.setter
-    def dv_column(self, value):
-        self[value].type = 'dv'
+    def set_dv_column(self, name):
+        return self._set_column_type(name, 'dv')
 
     @property
     def idv_column(self):
@@ -598,9 +596,8 @@ class DataInfo(MutableSequence):
         """
         return self.typeix['idv'][0]
 
-    @idv_column.setter
-    def idv_column(self, value):
-        self[value].type = 'idv'
+    def set_idv_column(self, name):
+        return self._set_column_type(name, 'idv')
 
     @property
     def names(self):
@@ -620,8 +617,7 @@ class DataInfo(MutableSequence):
         """All column types"""
         return [col.type for col in self._columns]
 
-    @types.setter
-    def types(self, value):
+    def set_types(self, value):
         if isinstance(value, str):
             value = [value]
         if len(value) == 1:
@@ -631,8 +627,11 @@ class DataInfo(MutableSequence):
                 "Length mismatch. "
                 "Can only set the same number of names as columns or 1 for broadcasting"
             )
+        newcols = []
         for v, col in zip(value, self._columns):
-            col.type = v
+            newcol = col.derive(type=v)
+            newcols.append(newcol)
+        return DataInfo(columns=newcols, path=self._path, separator=self._separator)
 
     def get_dtype_dict(self):
         """Create a dictionary from column names to pandas dtypes
@@ -680,7 +679,13 @@ class DataInfo(MutableSequence):
             if col.descriptor is not None:
                 d["descriptor"] = col.descriptor
             a.append(d)
-        s = json.dumps({"columns": a, "path": str(self.path) if self.path is not None else None})
+        s = json.dumps(
+            {
+                "columns": a,
+                "path": str(self.path) if self.path is not None else None,
+                "separator": self._separator,
+            }
+        )
         if path is None:
             return s
         else:
@@ -706,9 +711,9 @@ class DataInfo(MutableSequence):
         for col in d['columns']:
             ci = ColumnInfo(
                 name=col['name'],
-                type=col['type'],
+                type=col.get('type', 'unknown'),
                 scale=col['scale'],
-                continuous=col.get('continuous', True),
+                continuous=col.get('continuous', None),
                 unit=col.get('unit', sympy.Integer(1)),
                 categories=col.get('categories', None),
                 datatype=col.get('datatype', 'float64'),
@@ -716,14 +721,11 @@ class DataInfo(MutableSequence):
                 drop=col.get('drop', False),
             )
             columns.append(ci)
-        di = DataInfo(columns)
         path = d.get('path', None)
         if path:
             path = Path(path)
-        di.path = path
         separator = d.get('separator', None)
-        if separator:
-            di.separator = separator
+        di = DataInfo(columns, path=path, separator=separator)
         return di
 
     @staticmethod
@@ -743,16 +745,6 @@ class DataInfo(MutableSequence):
         with open(path, 'r') as fp:
             s = fp.read()
         return DataInfo.from_json(s)
-
-    def copy(self):
-        """Create a deep copy of the datainfo
-
-        Returns
-        -------
-        DataInfo
-            Copied object
-        """
-        return copy.deepcopy(self)
 
     def __repr__(self):
         labels = [col.name for col in self._columns]

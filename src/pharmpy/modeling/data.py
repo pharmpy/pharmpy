@@ -362,6 +362,33 @@ def get_baselines(model):
     return baselines
 
 
+def set_covariates(model, covariates):
+    """Set columns in the dataset to be covariates in the datainfo
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+    covariates : list
+        List of column names
+
+    Returns
+    -------
+    Model
+        Reference to the same Pharmpy model object
+    """
+    di = model.datainfo
+    newcols = []
+    for col in di:
+        if col.name in covariates:
+            newcol = col.derive(type='covariate')
+            newcols.append(newcol)
+        else:
+            newcols.append(col)
+    model.datainfo = di.derive(columns=newcols)
+    return model
+
+
 def get_covariate_baselines(model):
     """Return a dataframe with baselines of all covariates for each id.
 
@@ -770,8 +797,11 @@ def add_time_after_dose(model):
         addl = None
     else:
         temp.dataset = df
-        temp.datainfo.idv_column.type = 'unknown'
-        temp.datainfo['_NEWTIME'].type = 'idv'
+        di = temp.datainfo
+        new_idvcol = di.idv_column.derive(type='unknown')
+        new_timecol = di['_NEWTIME'].derive(type='idv')
+        di = di.set_column(new_idvcol).set_column(new_timecol)
+        temp.datainfo = di
         expand_additional_doses(temp, flag=True)
         df = temp.dataset
 
@@ -815,8 +845,9 @@ def add_time_after_dose(model):
     df.drop(columns=['_NEWTIME', '_DOSEID'], inplace=True)
 
     model.dataset = df  # TAD in datainfo is automatically added here
-    model.datainfo['TAD'].descriptor = 'time after dose'
-    model.datainfo['TAD'].unit = model.datainfo[idv].unit
+    di = model.datainfo
+    colinfo = di['TAD'].derive(descriptor='time after dose', unit=di[idv].unit)
+    model.datainfo = di.set_column(colinfo)
     return model
 
 
@@ -923,7 +954,7 @@ def drop_dropped_columns(model):
         if datainfo[colname].drop and datainfo[colname].datatype != 'nmtran-date'
     ]
     todrop += list(set(model.dataset.columns) - set(datainfo.names))
-    drop_columns(model, todrop)
+    model = drop_columns(model, todrop)
     return model
 
 
@@ -937,7 +968,7 @@ def drop_columns(model, column_names, mark=False):
     column_names : list or str
         List of column names or one column name to drop or mark as dropped
     mark : bool
-        Default is to remove column from dataset set this to True to only mark as dropped
+        Default is to remove column from dataset. Set this to True to only mark as dropped
 
     Returns
     -------
@@ -960,16 +991,18 @@ def drop_columns(model, column_names, mark=False):
     """
     if isinstance(column_names, str):
         column_names = [column_names]
-    datainfo = model.datainfo
-    for colname in column_names:
-        if mark:
-            datainfo[colname].drop = True
+    di = model.datainfo
+    newcols = []
+    for col in di:
+        if col.name in column_names:
+            if mark:
+                newcol = col.derive(drop=True)
+                newcols.append(newcol)
+            else:
+                model.dataset.drop(col.name, axis=1, inplace=True)
         else:
-            try:
-                del datainfo[colname]
-            except IndexError:
-                pass
-            model.dataset.drop(colname, axis=1, inplace=True)
+            newcols.append(col)
+    model.datainfo = di.derive(columns=newcols)
     return model
 
 
@@ -1004,8 +1037,15 @@ def undrop_columns(model, column_names):
     """
     if isinstance(column_names, str):
         column_names = [column_names]
-    for colname in column_names:
-        model.datainfo[colname].drop = False
+    di = model.datainfo
+    newcols = []
+    for col in di:
+        if col.name in column_names:
+            newcol = col.derive(drop=False)
+            newcols.append(newcol)
+        else:
+            newcols.append(col)
+    model.datainfo = di.derive(columns=newcols)
     return model
 
 

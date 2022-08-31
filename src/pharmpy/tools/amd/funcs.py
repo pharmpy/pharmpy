@@ -97,36 +97,31 @@ def _create_default_datainfo(path):
     datainfo_path = path.with_suffix('.datainfo')
     if datainfo_path.is_file():
         di = DataInfo.read_json(path.with_suffix('.datainfo'))
+        di = di.derive(path=path)
     else:
         colnames = list(pd.read_csv(path, nrows=0))
         column_info = []
         for colname in colnames:
             info = ColumnInfo(colname)
             if colname == 'ID' or colname == 'L1':
-                info.type = 'id'
-                info.scale = 'nominal'
-                info.datatype = 'int32'
+                info = ColumnInfo(colname, type='id', scale='nominal', datatype='int32')
             elif colname == 'DV':
-                info.type = 'dv'
+                info = ColumnInfo(colname, type='dv')
             elif colname == 'TIME':
-                info.type = 'idv'
-                info.scale = 'ratio'
                 if not set(colnames).isdisjoint({'DATE', 'DAT1', 'DAT2', 'DAT3'}):
-                    info.datatype = 'nmtran-time'
+                    datatype = 'nmtran-time'
+                else:
+                    datatype = 'float64'
+                info = ColumnInfo(colname, type='idv', scale='ratio', datatype=datatype)
             elif colname == 'EVID':
-                info.type = 'event'
-                info.scale = 'nominal'
+                info = ColumnInfo(colname, type='event', scale='nominal')
             elif colname == 'MDV':
                 if 'EVID' in colnames:
-                    info.type = 'mdv'
+                    info = ColumnInfo(colname, type='mdv')
                 else:
-                    info.type = 'event'
-                    info.scale = 'nominal'
-                    info.datatype = 'int32'
+                    info = ColumnInfo(colname, type='event', scale='nominal', datatype='int32')
             elif colname == 'AMT':
-                info.type = 'dose'
-                info.scale = 'ratio'
+                info = ColumnInfo(colname, type='dose', scale='ratio')
             column_info.append(info)
-        di = DataInfo(column_info)
-    di.path = path
+        di = DataInfo(column_info, path=path)
     return di

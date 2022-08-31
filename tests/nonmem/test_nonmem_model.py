@@ -721,7 +721,7 @@ def test_cmt_warning(testdata):
 
     model_str = model_original.model_code.replace('CMT=DROP', 'CMT')
     model = Model.create_model(StringIO(model_str))
-    model.datainfo.path = model_original.datainfo.path
+    model.datainfo = model.datainfo.derive(path=model_original.datainfo.path)
 
     set_zero_order_absorption(model)
 

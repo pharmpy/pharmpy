@@ -201,7 +201,7 @@ class LocalModelDirectoryDatabaseTransaction(ModelTransaction):
                 df = read_dataset_from_datainfo(curdi)
                 if df.equals(model.dataset):
                     # NOTE Update datainfo path
-                    model.datainfo.path = curdi.path
+                    model.datainfo = model.datainfo.derive(path=curdi.path)
                     break
         else:
             model_filename = model.name + '.csv'
@@ -211,7 +211,7 @@ class LocalModelDirectoryDatabaseTransaction(ModelTransaction):
             index_path.touch()
 
             data_path = path / model_filename
-            model.datainfo.path = data_path.resolve()
+            model.datainfo = model.datainfo.derive(path=data_path.resolve())
 
             write_csv(model, path=data_path, force=True)
 

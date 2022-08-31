@@ -210,7 +210,7 @@ def convert_model(model, to_format):
         new.statements = model.statements
         new.dataset = model.dataset.copy()
         new.estimation_steps = model.estimation_steps
-        new.datainfo = model.datainfo.copy()
+        new.datainfo = model.datainfo
         new.name = model.name
         new.dependent_variable = model.dependent_variable
         new.observation_transformation = model.observation_transformation

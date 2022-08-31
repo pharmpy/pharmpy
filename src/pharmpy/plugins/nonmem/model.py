@@ -240,9 +240,9 @@ class Model(pharmpy.model.Model):
                     dir_path = self.name + ".csv"
                 if not nofiles:
                     datapath = write_csv(self, path=dir_path, force=force)
-                    self.datainfo.path = datapath.name
+                    self.datainfo = self.datainfo.derive(path=datapath.name)
                 else:
-                    self.datainfo.path = Path(dir_path)
+                    self.datainfo = self.datainfo.derive(path=Path(dir_path))
             data_record = self.control_stream.get_records('DATA')[0]
 
             label = self.datainfo.names[0]
@@ -254,7 +254,7 @@ class Model(pharmpy.model.Model):
             del data_record.ignore
             del data_record.accept
             self._dataset_updated = False
-            self._old_datainfo = self.datainfo.copy()
+            self._old_datainfo = self.datainfo
 
             path = self.datainfo.path
             if path is not None:
@@ -835,6 +835,7 @@ class Model(pharmpy.model.Model):
     def dataset(self, df):
         self._dataset_updated = True
         self._data_frame = df
+        self.datainfo = self.datainfo.derive(path=None)
         self.update_datainfo()
 
     def read_raw_dataset(self, parse_columns=tuple()):
@@ -990,9 +991,9 @@ class Model(pharmpy.model.Model):
         else:
             if path.is_file():
                 di = DataInfo.read_json(path)
-                di.path = dataset_path
+                di = di.derive(path=dataset_path)
                 self.datainfo = di
-                self._old_datainfo = di.copy()
+                self._old_datainfo = di
                 different_drop = []
                 for colinfo, coldrop in zip(di, drop):
                     if colinfo.drop != coldrop:
@@ -1009,55 +1010,50 @@ class Model(pharmpy.model.Model):
         column_info = []
         have_pk = self._get_pk_record()
         for colname, coldrop in zip(colnames, drop):
-            info = ColumnInfo(colname, drop=coldrop)
             if coldrop and colname not in ['DATE', 'DAT1', 'DAT2', 'DAT3']:
-                info.datatype = 'str'
+                info = ColumnInfo(colname, drop=coldrop, datatype='str')
             elif colname == 'ID' or colname == 'L1':
-                info.type = 'id'
-                info.scale = 'nominal'
-                info.datatype = 'int32'
+                info = ColumnInfo(
+                    colname, drop=coldrop, datatype='int32', type='id', scale='nominal'
+                )
             elif colname == 'DV' or colname == replacements.get('DV', None):
-                info.type = 'dv'
+                info = ColumnInfo(colname, drop=coldrop, type='dv')
             elif colname == 'TIME' or colname == replacements.get('TIME', None):
-                info.type = 'idv'
-                info.scale = 'ratio'
                 if not set(colnames).isdisjoint({'DATE', 'DAT1', 'DAT2', 'DAT3'}):
-                    info.datatype = 'nmtran-time'
+                    datatype = 'nmtran-time'
+                else:
+                    datatype = 'float64'
+                info = ColumnInfo(
+                    colname, drop=coldrop, type='idv', scale='ratio', datatype=datatype
+                )
             elif colname in ['DATE', 'DAT1', 'DAT2', 'DAT3']:
-                info.scale = 'interval'
-                info.datatype = 'nmtran-date'
-                info.drop = False  # Always DROP in mod-file, but actually always used
+                # Always DROP in mod-file, but actually always used
+                info = ColumnInfo(colname, drop=False, scale='interval', datatype='nmtran-date')
             elif colname == 'EVID' and have_pk:
-                info.type = 'event'
-                info.scale = 'nominal'
+                info = ColumnInfo(colname, drop=coldrop, type='event', scale='nominal')
             elif colname == 'MDV' and have_pk:
                 if 'EVID' in colnames:
-                    info.type = 'mdv'
+                    tp = 'mdv'
                 else:
-                    info.type = 'event'
-                info.scale = 'nominal'
-                info.datatype = 'int32'
+                    tp = 'event'
+                info = ColumnInfo(colname, drop=coldrop, type=tp, scale='nominal', datatype='int32')
             elif colname == 'II' and have_pk:
-                info.type = 'ii'
-                info.scale = 'ratio'
+                info = ColumnInfo(colname, drop=coldrop, type='ii', scale='ratio')
             elif colname == 'SS' and have_pk:
-                info.type = 'ss'
-                info.scale = 'nominal'
+                info = ColumnInfo(colname, drop=coldrop, type='ss', scale='nominal')
             elif colname == 'ADDL' and have_pk:
-                info.type = 'additional'
-                info.scale = 'ordinal'
+                info = ColumnInfo(colname, drop=coldrop, type='additional', scale='ordinal')
             elif (colname == 'AMT' or colname == replacements.get('AMT', None)) and have_pk:
-                info.type = 'dose'
-                info.scale = 'ratio'
+                info = ColumnInfo(colname, drop=coldrop, type='dose', scale='ratio')
             elif colname == 'CMT' and have_pk:
-                info.type = 'compartment'
-                info.scale = 'nominal'
+                info = ColumnInfo(colname, drop=coldrop, type='compartment', scale='nominal')
+            else:
+                info = ColumnInfo(colname, drop=coldrop)
             column_info.append(info)
 
-        di = DataInfo(column_info)
-        di.path = dataset_path
+        di = DataInfo(column_info, path=dataset_path)
         self.datainfo = di
-        self._old_datainfo = di.copy()
+        self._old_datainfo = di
 
     def _read_dataset(self, raw=False, parse_columns=tuple()):
         data_records = self.control_stream.get_records('DATA')

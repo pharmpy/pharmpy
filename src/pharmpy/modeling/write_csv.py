@@ -42,5 +42,5 @@ def write_csv(model, path=None, force=False):
         raise FileExistsError(f'File at {path} already exists.')
 
     model.dataset.to_csv(path, na_rep=pharmpy.data.conf.na_rep, index=False)
-    model.datainfo.path = path
+    model.datainfo = model.datainfo.derive(path=path)
     return path

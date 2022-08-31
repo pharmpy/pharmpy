@@ -18,6 +18,7 @@ from pharmpy.modeling import (
     get_covariate_baselines,
     sample_individual_estimates,
     sample_parameters_from_covariance_matrix,
+    set_covariates,
 )
 from pharmpy.results import Results
 
@@ -564,7 +565,7 @@ def calculate_results_from_samples(frem_model, continuous, categorical, parvecs,
 
     df = frem_model.dataset
     covariates = continuous + categorical
-    frem_model.datainfo[covariates].types = 'covariate'
+    frem_model = set_covariates(frem_model, covariates)
     covariate_baselines = get_covariate_baselines(frem_model)
     covariate_baselines = covariate_baselines[covariates]
     cov_means = covariate_baselines.mean()

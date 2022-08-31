@@ -13,10 +13,9 @@ def test_columninfo_init():
 
 
 def test_columninfo_type():
-    col = ColumnInfo("DUMMY")
     with pytest.raises(TypeError):
-        col.type = "notaknowntype"
-    col.type = 'id'
+        col = ColumnInfo("DUMMY", type="notaknowntype")
+    col = ColumnInfo("DUMMY", type="id")
     assert col.type == 'id'
 
     col2 = ColumnInfo("DUMMY", type='dv')
@@ -30,30 +29,28 @@ def test_columninfo_descriptor():
     col2 = ColumnInfo("DUMMY2")
     assert col2.descriptor is None
     with pytest.raises(TypeError):
-        col2.descriptor = "notaknowndescriptor"
+        ColumnInfo("DUMMY2", descriptor="notaknowndescriptor")
 
 
 def test_columninfo_scale():
-    col = ColumnInfo("DUMMY")
     with pytest.raises(TypeError):
-        col.scale = 'notavalidscale'
-    col.scale = 'nominal'
+        col = ColumnInfo("DUMMY", scale='notavalidscale')
+    col = ColumnInfo("DUMMY", scale='nominal')
     assert col.scale == 'nominal'
     assert not col.continuous
 
 
 def test_columninfo_unit():
-    col = ColumnInfo("DUMMY")
-    col.unit = "nospecialunit"
+    col = ColumnInfo("DUMMY", unit="nospecialunit")
     assert col.unit == sympy.Symbol("nospecialunit")
-    col.unit = "kg"
+    col = ColumnInfo("DUMMY", unit="kg")
     assert col.unit == sympy.physics.units.kg
 
 
 def test_columninfo_continuous():
-    col = ColumnInfo("DUMMY", scale="nominal")
+    ColumnInfo("DUMMY", scale="nominal")
     with pytest.raises(ValueError):
-        col.continuous = True
+        ColumnInfo("DUMMY", scale="nominal", continuous=True)
 
 
 def test_columninfo_is_numerical():
@@ -96,52 +93,52 @@ def test_indexing():
     with pytest.raises(TypeError):
         di[1.0]
     col = ColumnInfo("COL3")
-    di[0] = col
+    di = col + di[1:]
     assert di["COL3"].name == "COL3"
-    del di[0]
+    di = di[1:]
     assert len(di) == 1
-    di.insert(1, col)
+    di = di[0:1] + col
     assert len(di) == 2
 
 
 def test_id_column():
     di = DataInfo(['ID', 'TIME', 'DV'])
     with pytest.raises(IndexError):
-        di.id_column = 'DUMMY'
-    di.id_column = 'ID'
+        di = di.set_id_column('DUMMY')
+    di = di.set_id_column('ID')
     assert di.id_column.name == 'ID'
 
 
 def test_dv_label():
     di = DataInfo(['ID', 'TIME', 'DV'])
     with pytest.raises(IndexError):
-        di.dv_column = 'DUMMY'
-    di.dv_column = 'DV'
+        di.set_dv_column('DUMMY')
+    di = di.set_dv_column('DV')
     assert di.dv_column.name == 'DV'
 
 
 def test_idv_label():
     di = DataInfo(['ID', 'TIME', 'DV'])
     with pytest.raises(IndexError):
-        di.idv_column = 'DUMMY'
-    di.idv_column = 'TIME'
+        di.set_idv_column('DUMMY')
+    di = di.set_idv_column('TIME')
     assert di.idv_column.name == 'TIME'
 
 
 def test_get_set_column_type():
     di = DataInfo(['ID', 'TIME', 'DV'])
-    di['ID'].type = 'id'
+    di = di.set_id_column('ID')
     with pytest.raises(IndexError):
-        di['DUMMY'].type = 'id'
+        di['DUMMY']
     with pytest.raises(TypeError):
-        di['TIME'].type = 'kzarqj'
+        di['TIME'] = di['TIME'].derive(type='kzarqj')
     assert di['ID'].type == 'id'
 
 
 def test_get_column_label():
     di = DataInfo(['ID', 'TIME', 'DV', 'WGT', 'APGR'])
-    di['ID'].type = 'id'
-    di[['WGT', 'APGR']].types = 'covariate'
+    di = di.set_id_column('ID')
+    di = di[0:3] + di[['WGT', 'APGR']].set_types('covariate')
     assert di.typeix['id'].names == ['ID']
     assert di.typeix['covariate'].names == ['WGT', 'APGR']
 
@@ -162,7 +159,7 @@ def test_json():
     col1 = ColumnInfo("ID", type='id', scale='nominal')
     col2 = ColumnInfo("TIME", type='idv', scale='ratio', unit="h")
     di = DataInfo([col1, col2])
-    correct = '{"columns": [{"name": "ID", "type": "id", "scale": "nominal", "continuous": false, "categories": null, "unit": "1", "datatype": "float64", "drop": false}, {"name": "TIME", "type": "idv", "scale": "ratio", "continuous": true, "categories": null, "unit": "hour", "datatype": "float64", "drop": false}], "path": null}'  # noqa: E501
+    correct = '{"columns": [{"name": "ID", "type": "id", "scale": "nominal", "continuous": false, "categories": null, "unit": "1", "datatype": "float64", "drop": false}, {"name": "TIME", "type": "idv", "scale": "ratio", "continuous": true, "categories": null, "unit": "hour", "datatype": "float64", "drop": false}], "path": null, "separator": ","}'  # noqa: E501
     assert di.to_json() == correct
 
     newdi = DataInfo.from_json(correct)
@@ -171,13 +168,11 @@ def test_json():
 
 def test_path():
     di = DataInfo(["C1", "C2"])
-    di.path = "file.datainfo"
+    di = di.derive(path="file.datainfo")
     assert di.path == Path("file.datainfo")
 
 
 def test_types():
     di = DataInfo(['ID', 'TIME', 'DV'])
-    di.id_column = 'ID'
-    di.dv_column = 'DV'
-    di.idv_column = 'TIME'
+    di = di.set_id_column('ID').set_dv_column('DV').set_idv_column('TIME')
     assert di.types == ['id', 'idv', 'dv']

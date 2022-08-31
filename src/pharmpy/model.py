@@ -375,7 +375,7 @@ class Model:
             curdi = self.datainfo
         except AttributeError:
             curdi = DataInfo()
-        newdi = DataInfo()
+        newdi = []
         for colname in colnames:
             try:
                 col = curdi[colname]
@@ -385,9 +385,10 @@ class Model:
                 )
                 col = ColumnInfo(colname, datatype=datatype)
             newdi.append(col)
+        newdi = curdi.derive(columns=newdi)
         if curdi != newdi:
             # Remove path if dataset has been updated
-            newdi.path = None
+            newdi = newdi.derive(path=None)
         self.datainfo = newdi
 
     def copy(self):

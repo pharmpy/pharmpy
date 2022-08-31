@@ -3019,7 +3019,7 @@ def test_remove_iov_with_options(tmp_path, testdata, distribution, occ, to_remov
         shutil.copy2(testdata / 'nonmem' / 'models' / 'mox2.mod', tmp_path)
         shutil.copy2(testdata / 'nonmem' / 'models' / 'mox_simulated_normal.csv', tmp_path)
         model = Model.create_model('mox2.mod')
-        model.datainfo.path = tmp_path / 'mox_simulated_normal.csv'
+        model.datainfo = model.datainfo.derive(path=tmp_path / 'mox_simulated_normal.csv')
 
         start_model = add_iov(model, occ=occ, distribution=distribution)
         model_with_some_iovs_removed = start_model.copy()

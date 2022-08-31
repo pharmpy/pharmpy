@@ -23,7 +23,9 @@ def test_ignore_with_synonym(pheno_data):
             f"$DATA {pheno_data} IGNORE=@ IGNORE=(CONC.EQN.0)"
         )
     )
-    model.datainfo['DV'].name = 'CONC'
+    di = model.datainfo
+    col = di['DV'].derive(name='CONC')
+    model.datainfo = di[0:5] + col + di[6:]
     df = model.dataset
     assert len(df) == 155
     model = pharmpy.Model.create_model(
@@ -32,7 +34,9 @@ def test_ignore_with_synonym(pheno_data):
             f"$DATA {pheno_data} IGNORE=@ IGNORE=(DV.EQN.0)"
         )
     )
-    model.datainfo['DV'].name = 'CONC'
+    di = model.datainfo
+    col = di['DV'].derive(name='CONC')
+    model.datainfo = di[0:5] + col + di[6:]
     df = model.dataset
     assert len(df) == 155
 
@@ -44,5 +48,7 @@ def test_idv_with_synonym(pheno_data):
             f"$DATA {pheno_data} IGNORE=@"
         )
     )
-    model.datainfo['TIME'].name = 'TAD'
+    di = model.datainfo
+    col = di['TIME'].derive(name='TAD')
+    model.datainfo = di[0:1] + col + di[2:]
     model.dataset
