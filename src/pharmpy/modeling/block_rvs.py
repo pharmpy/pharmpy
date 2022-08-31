@@ -1,6 +1,7 @@
 """
 :meta private:
 """
+import warnings
 
 import numpy as np
 import sympy
@@ -174,6 +175,12 @@ def _choose_param_init(model, rvs, params):
         # NOTE Use pd.corr() and not pd.cov(). SD is chosen from the final estimates, if cov is used
         # it will be calculated from the EBEs.
         eta_corr = ie[etas].corr()
+        if eta_corr.isnull().values.any():
+            warnings.warn(
+                f'Correlation of individual estimates between {params[0].name} and '
+                f'{params[1].name} is NaN, returning default initial estimate'
+            )
+            return init_default
         cov = math.corr2cov(eta_corr.to_numpy(), sd)
         cov[cov == 0] = 0.0001
         cov = math.nearest_postive_semidefinite(cov)
@@ -184,7 +191,7 @@ def _choose_param_init(model, rvs, params):
 
 
 def _get_variance(model, parameter):
-    if model.modelfit_results:
+    if model.modelfit_results is not None:
         pes = model.modelfit_results.parameter_estimates
         if parameter.name in pes.index:
             return pes[parameter.name]
