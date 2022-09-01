@@ -31,14 +31,14 @@ def test_choose_param_init(pheno_path, testdata):
     model = Model.create_model(pheno_path)
     params = (model.parameters['OMEGA(1,1)'], model.parameters['OMEGA(2,2)'])
     rvs = RandomVariables(model.random_variables.etas)
-    init = _choose_param_init(model, rvs, params)
+    init = _choose_param_init(model, rvs, *params)
 
     assert init == 0.0108944
 
     model = Model.create_model(pheno_path)
     model.modelfit_results = None
     model.name = 'run23'  # So that no results could be found
-    init = _choose_param_init(model, rvs, params)
+    init = _choose_param_init(model, rvs, *params)
 
     assert init == 0.0031045
 
@@ -54,7 +54,7 @@ def test_choose_param_init(pheno_path, testdata):
         parameter_estimates=res.parameter_estimates, individual_estimates=ie
     )
 
-    init = _choose_param_init(model, rvs, params)
+    init = _choose_param_init(model, rvs, *params)
 
     assert init == 0.0108944
 
@@ -63,7 +63,7 @@ def test_choose_param_init(pheno_path, testdata):
     add_iiv(model, 'S1', 'add')
     params = (model.parameters['OMEGA(1,1)'], model.parameters['IIV_S1'])
     rvs = RandomVariables([model.random_variables['ETA(1)'], model.random_variables['ETA_S1']])
-    init = _choose_param_init(model, rvs, params)
+    init = _choose_param_init(model, rvs, *params)
 
     assert init == 0.0051396
 
@@ -78,7 +78,7 @@ def test_choose_param_init(pheno_path, testdata):
     params = (model.parameters['OMEGA(1,1)'], model.parameters['OMEGA(2,2)'])
     rvs = RandomVariables([model.random_variables['ETA(1)'], model.random_variables['ETA(2)']])
     with pytest.warns(UserWarning, match='Correlation of individual estimates'):
-        init = _choose_param_init(model, rvs, params)
+        init = _choose_param_init(model, rvs, *params)
         assert init == 0.0028619
 
 

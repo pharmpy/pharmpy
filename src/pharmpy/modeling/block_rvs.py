@@ -81,19 +81,13 @@ def create_joint_distribution(model, rvs=None):
         paramnames.append(parameter_names)
 
     cov_to_params = all_rvs.join(rvs, name_template='IIV_{}_IIV_{}', param_names=paramnames)
-
-    pset = [p for p in model.parameters]
+    pset_new = model.parameters
     for cov_name, param_names in cov_to_params.items():
-        for p in pset:
-            if p.name == param_names[0]:
-                parent1 = p
-            elif p.name == param_names[1]:
-                parent2 = p
-        parent_params = (parent1, parent2)
-        covariance_init = _choose_param_init(model, all_rvs, parent_params)
+        parent1, parent2 = model.parameters[param_names[0]], model.parameters[param_names[1]]
+        covariance_init = _choose_param_init(model, all_rvs, parent1, parent2)
         param_new = Parameter(cov_name, covariance_init)
-        pset.append(param_new)
-    model.parameters = Parameters(pset)
+        pset_new += param_new
+    model.parameters = Parameters(pset_new)
 
     return model
 
@@ -147,18 +141,15 @@ def split_joint_distribution(model, rvs=None):
     return model
 
 
-def _choose_param_init(model, rvs, params):
+def _choose_param_init(model, rvs, parent1, parent2):
     res = model.modelfit_results
-    rvs_names = [rv.name for rv in rvs]
 
     etas = []
-    cm = rvs.covariance_matrix
-    for i in range(len(rvs)):
-        elem = cm.row(i).col(i)[0]
-        if str(elem) in [p.name for p in params]:
-            etas.append(rvs_names[i])
+    for rv in rvs:
+        if rvs.get_variance(rv).name in (parent1.name, parent2.name):
+            etas.append(rv.name)
 
-    var_param_1, var_param_2 = _get_variance(model, params[0]), _get_variance(model, params[1])
+    var_param_1, var_param_2 = _get_variance(model, parent1), _get_variance(model, parent2)
     sd = np.array([np.sqrt(var_param_1), np.sqrt(var_param_2)])
     init_default = round(0.1 * sd[0] * sd[1], 7)
 
@@ -177,8 +168,8 @@ def _choose_param_init(model, rvs, params):
         eta_corr = ie[etas].corr()
         if eta_corr.isnull().values.any():
             warnings.warn(
-                f'Correlation of individual estimates between {params[0].name} and '
-                f'{params[1].name} is NaN, returning default initial estimate'
+                f'Correlation of individual estimates between {parent1.name} and '
+                f'{parent2.name} is NaN, returning default initial estimate'
             )
             return init_default
         cov = math.corr2cov(eta_corr.to_numpy(), sd)
