@@ -527,6 +527,18 @@ class DataInfo(Sequence):
         return DescriptorIndexer(self)
 
     def set_column(self, col):
+        """Set ColumnInfo of an existing column of the same name
+
+        Parameters
+        ----------
+        col : ColumnInfo
+            New ColumnInfo
+
+        Returns
+        -------
+        DataInfo
+            Updated DataInfo
+        """
         newcols = []
         for cur in self:
             if cur.name != col.name:
@@ -618,6 +630,18 @@ class DataInfo(Sequence):
         return [col.type for col in self._columns]
 
     def set_types(self, value):
+        """Set types for all columns
+
+        Parameters
+        ----------
+        value : list or str
+            Types to set. If only one this will be broadcast
+
+        Return
+        ------
+        DataInfo
+            Updated datainfo
+        """
         if isinstance(value, str):
             value = [value]
         if len(value) == 1:
