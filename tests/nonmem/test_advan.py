@@ -3,13 +3,12 @@ from io import StringIO
 import pytest
 import sympy
 
-import pharmpy.symbols
 from pharmpy import Model
 from pharmpy.plugins.nonmem.advan import compartmental_model
 
 
 def S(x):
-    return pharmpy.symbols.symbol(x)
+    return sympy.Symbol(x)
 
 
 @pytest.mark.parametrize(

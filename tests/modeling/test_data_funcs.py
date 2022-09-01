@@ -123,7 +123,8 @@ def test_number_of_observations():
 
 
 def test_covariate_baselines():
-    model.datainfo[['WGT', 'APGR']].types = 'covariate'
+    covs = model.datainfo[['WGT', 'APGR']].set_types('covariate')
+    model.datainfo = model.datainfo[0:3] + covs + model.datainfo[5:]
     df = get_covariate_baselines(model)
     assert len(df) == 59
     assert list(df.columns) == ['WGT', 'APGR']
@@ -203,26 +204,26 @@ def test_get_concentration_parameters_from_data():
 
 def test_drop_columns():
     m = model.copy()
-    drop_columns(m, "APGR")
-    correct = ['ID', 'TIME', 'AMT', 'WGT', 'DV']
+    m = drop_columns(m, "APGR")
+    correct = ['ID', 'TIME', 'AMT', 'WGT', 'DV', 'FA1', 'FA2']
     assert m.datainfo.names == correct
-    assert list(m.dataset.columns) == correct + ['FA1', 'FA2']
-    drop_columns(m, ['DV', 'ID'])
-    assert m.datainfo.names == ['TIME', 'AMT', 'WGT']
+    assert list(m.dataset.columns) == correct
+    m = drop_columns(m, ['DV', 'ID'])
+    assert m.datainfo.names == ['TIME', 'AMT', 'WGT', 'FA1', 'FA2']
     assert list(m.dataset.columns) == ['TIME', 'AMT', 'WGT', 'FA1', 'FA2']
-    drop_columns(m, ['TIME'], mark=True)
+    m = drop_columns(m, ['TIME'], mark=True)
     assert m.datainfo['TIME'].drop
     assert list(m.dataset.columns) == ['TIME', 'AMT', 'WGT', 'FA1', 'FA2']
 
 
 def test_drop_dropped_columns():
     m = model.copy()
-    drop_dropped_columns(m)
-    correct = ['ID', 'TIME', 'AMT', 'WGT', 'APGR', 'DV']
+    m = drop_dropped_columns(m)
+    correct = ['ID', 'TIME', 'AMT', 'WGT', 'APGR', 'DV', 'FA1', 'FA2']
     assert list(m.dataset.columns) == correct
-    drop_columns(m, ['ID', 'TIME', 'AMT'], mark=True)
-    drop_dropped_columns(m)
-    assert list(m.dataset.columns) == ['WGT', 'APGR', 'DV']
+    m = drop_columns(m, ['ID', 'TIME', 'AMT'], mark=True)
+    m = drop_dropped_columns(m)
+    assert list(m.dataset.columns) == ['WGT', 'APGR', 'DV', 'FA1', 'FA2']
 
 
 def test_undrop_columns():

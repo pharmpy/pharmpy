@@ -100,6 +100,6 @@ def test_remove_unused_parameters_and_rvs(pheno):
     create_joint_distribution(model)
     statements = model.statements
     i = statements.index(statements.find_assignment('CL'))
-    del model.statements[i]
+    model.statements = model.statements[0:i] + model.statements[i + 1 :]
     remove_unused_parameters_and_rvs(model)
     assert not model.random_variables['ETA(2)'].joint_names

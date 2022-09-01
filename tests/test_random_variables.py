@@ -4,6 +4,7 @@ import pickle
 import pytest
 import sympy
 import sympy.stats as stats
+from sympy import Symbol as symbol
 
 from pharmpy.random_variables import (
     RandomVariable,
@@ -11,7 +12,6 @@ from pharmpy.random_variables import (
     VariabilityHierarchy,
     VariabilityLevel,
 )
-from pharmpy.symbols import symbol
 
 
 def test_general_rv():

@@ -1,12 +1,11 @@
 import pytest
 import sympy
 
-import pharmpy.symbols
 from pharmpy.statements import Assignment
 
 
 def S(x):
-    return pharmpy.symbols.symbol(x)
+    return sympy.Symbol(x)
 
 
 @pytest.mark.usefixtures('parser')
@@ -582,8 +581,8 @@ def test_update(parser, buf_original, assignment, nonmem_names, buf_expected):
     rec_original = parser.parse(buf_original).records[0]
 
     statements = rec_original.statements
-    statements += [assignment]
-    statements.subs(nonmem_names)
+    statements += assignment
+    statements = statements.subs(nonmem_names)
     rec_original.statements = statements
 
     assert str(rec_original) == buf_expected
@@ -637,7 +636,7 @@ def test_translate_sympy_piecewise(parser, symbol, expression, buf_expected):
     rec = parser.parse(buf_original).records[0]
     s = Assignment(symbol, expression)
     statements = rec.statements
-    statements.append(s)
+    statements += s
     rec.statements = statements
     assert str(rec) == buf_original.strip() + buf_expected
 
@@ -652,7 +651,7 @@ def test_set_block_if(parser):
     z = S('z')
     s = Assignment(sympy.Symbol('X'), sympy.Piecewise((23, z < 12), (5, True)))
     statements = rec.statements
-    statements.append(s)
+    statements += s
     rec.statements = statements
     correct = """$PRED
 IF (z.LT.12) THEN

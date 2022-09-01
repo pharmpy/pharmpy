@@ -121,6 +121,7 @@ from .data import (
     list_time_varying_covariates,
     read_dataset_from_datainfo,
     remove_loq_data,
+    set_covariates,
     translate_nmtran_time,
     undrop_columns,
 )
@@ -314,6 +315,7 @@ __all__ = [
     'set_additive_error_model',
     'set_bolus_absorption',
     'set_combined_error_model',
+    'set_covariates',
     'set_dtbs_error_model',
     'set_estimation_step',
     'set_evaluation_step',

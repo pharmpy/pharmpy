@@ -7,6 +7,7 @@ from io import StringIO
 from pathlib import Path
 
 import sympy
+from sympy import Symbol as S
 
 import pharmpy.data
 import pharmpy.model
@@ -22,7 +23,6 @@ from pharmpy.plugins.nonmem.results import NONMEMChainedModelfitResults
 from pharmpy.plugins.nonmem.table import NONMEMTableFile, PhiTable
 from pharmpy.random_variables import RandomVariable, RandomVariables
 from pharmpy.statements import Assignment, CompartmentalSystem, ODESystem
-from pharmpy.symbols import symbol as S
 from pharmpy.workflows import NullModelDatabase, default_model_database
 
 from .advan import compartmental_model
@@ -207,7 +207,7 @@ class Model(pharmpy.model.Model):
                 omega = Parameter('DUMMYOMEGA', init=0, fix=True)
                 eta = RandomVariable.normal('eta_dummy', 'iiv', 0, omega.symbol)
                 statement = Assignment(sympy.Symbol('DUMMYETA'), sympy.Symbol(eta.name))
-                self.statements.insert(0, statement)
+                self.statements = statement + self.statements
                 self.random_variables.append(eta)
                 self.parameters = Parameters([p for p in self.parameters] + [omega])
             update_random_variables(self, self._old_random_variables, self._random_variables)
@@ -225,7 +225,7 @@ class Model(pharmpy.model.Model):
             self.statements  # Read statements unless read
         if hasattr(self, '_statements'):
             update_statements(self, self._old_statements, self._statements, trans)
-            self._old_statements = self._statements.copy()
+            self._old_statements = self._statements
 
         if (
             self._dataset_updated
@@ -240,9 +240,9 @@ class Model(pharmpy.model.Model):
                     dir_path = self.name + ".csv"
                 if not nofiles:
                     datapath = write_csv(self, path=dir_path, force=force)
-                    self.datainfo.path = datapath.name
+                    self.datainfo = self.datainfo.derive(path=datapath.name)
                 else:
-                    self.datainfo.path = Path(dir_path)
+                    self.datainfo = self.datainfo.derive(path=Path(dir_path))
             data_record = self.control_stream.get_records('DATA')[0]
 
             label = self.datainfo.names[0]
@@ -254,7 +254,7 @@ class Model(pharmpy.model.Model):
             del data_record.ignore
             del data_record.accept
             self._dataset_updated = False
-            self._old_datainfo = self.datainfo.copy()
+            self._old_datainfo = self.datainfo
 
             path = self.datainfo.path
             if path is not None:
@@ -492,12 +492,12 @@ class Model(pharmpy.model.Model):
                 for i, amount in enumerate(cm.amounts, start=1):
                     trans_amounts[sympy.Symbol(f"A({i})")] = amount
             else:
-                statements.append(ODESystem())  # FIXME: Placeholder for ODE-system
+                statements += ODESystem()  # FIXME: Placeholder for ODE-system
                 # FIXME: Dummy link statement
-                statements.append(Assignment(S('F'), S('F')))
+                statements += Assignment(S('F'), S('F'))
             statements += error.statements
             if trans_amounts:
-                statements.subs(trans_amounts)
+                statements = statements.subs(trans_amounts)
 
         if not hasattr(self, '_parameters'):
             self._read_parameters()
@@ -529,10 +529,10 @@ class Model(pharmpy.model.Model):
             new.append(newparam)
         self.parameters = Parameters(new)
 
-        statements.subs(trans_statements)
+        statements = statements.subs(trans_statements)
 
         self._statements = statements
-        self._old_statements = statements.copy()
+        self._old_statements = statements
         return statements
 
     @statements.setter
@@ -792,12 +792,12 @@ class Model(pharmpy.model.Model):
 
         steps = parse_estimation_steps(self)
         self._estimation_steps = steps
-        self._old_estimation_steps = steps.copy()
+        self._old_estimation_steps = steps
         return steps
 
     @estimation_steps.setter
     def estimation_steps(self, value):
-        self._old_estimation_steps = self._estimation_steps.copy()
+        self.estimation_steps
         self._estimation_steps = value
 
     @property
@@ -835,6 +835,7 @@ class Model(pharmpy.model.Model):
     def dataset(self, df):
         self._dataset_updated = True
         self._data_frame = df
+        self.datainfo = self.datainfo.derive(path=None)
         self.update_datainfo()
 
     def read_raw_dataset(self, parse_columns=tuple()):
@@ -990,9 +991,9 @@ class Model(pharmpy.model.Model):
         else:
             if path.is_file():
                 di = DataInfo.read_json(path)
-                di.path = dataset_path
+                di = di.derive(path=dataset_path)
                 self.datainfo = di
-                self._old_datainfo = di.copy()
+                self._old_datainfo = di
                 different_drop = []
                 for colinfo, coldrop in zip(di, drop):
                     if colinfo.drop != coldrop:
@@ -1009,55 +1010,50 @@ class Model(pharmpy.model.Model):
         column_info = []
         have_pk = self._get_pk_record()
         for colname, coldrop in zip(colnames, drop):
-            info = ColumnInfo(colname, drop=coldrop)
             if coldrop and colname not in ['DATE', 'DAT1', 'DAT2', 'DAT3']:
-                info.datatype = 'str'
+                info = ColumnInfo(colname, drop=coldrop, datatype='str')
             elif colname == 'ID' or colname == 'L1':
-                info.type = 'id'
-                info.scale = 'nominal'
-                info.datatype = 'int32'
+                info = ColumnInfo(
+                    colname, drop=coldrop, datatype='int32', type='id', scale='nominal'
+                )
             elif colname == 'DV' or colname == replacements.get('DV', None):
-                info.type = 'dv'
+                info = ColumnInfo(colname, drop=coldrop, type='dv')
             elif colname == 'TIME' or colname == replacements.get('TIME', None):
-                info.type = 'idv'
-                info.scale = 'ratio'
                 if not set(colnames).isdisjoint({'DATE', 'DAT1', 'DAT2', 'DAT3'}):
-                    info.datatype = 'nmtran-time'
+                    datatype = 'nmtran-time'
+                else:
+                    datatype = 'float64'
+                info = ColumnInfo(
+                    colname, drop=coldrop, type='idv', scale='ratio', datatype=datatype
+                )
             elif colname in ['DATE', 'DAT1', 'DAT2', 'DAT3']:
-                info.scale = 'interval'
-                info.datatype = 'nmtran-date'
-                info.drop = False  # Always DROP in mod-file, but actually always used
+                # Always DROP in mod-file, but actually always used
+                info = ColumnInfo(colname, drop=False, scale='interval', datatype='nmtran-date')
             elif colname == 'EVID' and have_pk:
-                info.type = 'event'
-                info.scale = 'nominal'
+                info = ColumnInfo(colname, drop=coldrop, type='event', scale='nominal')
             elif colname == 'MDV' and have_pk:
                 if 'EVID' in colnames:
-                    info.type = 'mdv'
+                    tp = 'mdv'
                 else:
-                    info.type = 'event'
-                info.scale = 'nominal'
-                info.datatype = 'int32'
+                    tp = 'event'
+                info = ColumnInfo(colname, drop=coldrop, type=tp, scale='nominal', datatype='int32')
             elif colname == 'II' and have_pk:
-                info.type = 'ii'
-                info.scale = 'ratio'
+                info = ColumnInfo(colname, drop=coldrop, type='ii', scale='ratio')
             elif colname == 'SS' and have_pk:
-                info.type = 'ss'
-                info.scale = 'nominal'
+                info = ColumnInfo(colname, drop=coldrop, type='ss', scale='nominal')
             elif colname == 'ADDL' and have_pk:
-                info.type = 'additional'
-                info.scale = 'ordinal'
+                info = ColumnInfo(colname, drop=coldrop, type='additional', scale='ordinal')
             elif (colname == 'AMT' or colname == replacements.get('AMT', None)) and have_pk:
-                info.type = 'dose'
-                info.scale = 'ratio'
+                info = ColumnInfo(colname, drop=coldrop, type='dose', scale='ratio')
             elif colname == 'CMT' and have_pk:
-                info.type = 'compartment'
-                info.scale = 'nominal'
+                info = ColumnInfo(colname, drop=coldrop, type='compartment', scale='nominal')
+            else:
+                info = ColumnInfo(colname, drop=coldrop)
             column_info.append(info)
 
-        di = DataInfo(column_info)
-        di.path = dataset_path
+        di = DataInfo(column_info, path=dataset_path)
         self.datainfo = di
-        self._old_datainfo = di.copy()
+        self._old_datainfo = di
 
     def _read_dataset(self, raw=False, parse_columns=tuple()):
         data_records = self.control_stream.get_records('DATA')
@@ -1168,6 +1164,22 @@ def parse_estimation_steps(model):
     steps = []
     records = model.control_stream.get_records('ESTIMATION')
     covrec = model.control_stream.get_records('COVARIANCE')
+    solver, tol, atol = parse_solver(model)
+
+    # Read eta and epsilon derivatives
+    etaderiv_names = None
+    epsilonderivs_names = None
+    table_records = model.control_stream.get_records('TABLE')
+    for table in table_records:
+        etaderivs = table.eta_derivatives
+        if etaderivs:
+            etas = model.random_variables.etas
+            etaderiv_names = [etas[i - 1].name for i in etaderivs]
+        epsderivs = table.epsilon_derivatives
+        if epsderivs:
+            epsilons = model.random_variables.epsilons
+            epsilonderivs_names = [epsilons[i - 1].name for i in epsderivs]
+
     for record in records:
         value = record.get_option('METHOD')
         if value is None or value == '0' or value == 'ZERO':
@@ -1252,6 +1264,11 @@ def parse_estimation_steps(model):
                 auto=auto,
                 keep_every_nth_iter=keep_every_nth_iter,
                 tool_options=tool_options,
+                solver=solver,
+                solver_rtol=tol,
+                solver_atol=atol,
+                eta_derivatives=etaderiv_names,
+                epsilon_derivatives=epsilonderivs_names,
             )
         except ValueError:
             raise ModelSyntaxError(f'Non-recognized estimation method in: {str(record.root)}')
@@ -1259,27 +1276,6 @@ def parse_estimation_steps(model):
 
     steps = EstimationSteps(steps)
 
-    # Read eta and epsilon derivatives
-    table_records = model.control_stream.get_records('TABLE')
-    for table in table_records:
-        etaderivs = table.eta_derivatives
-        if etaderivs:
-            etas = model.random_variables.etas
-            etaderiv_names = [etas[i - 1].name for i in etaderivs]
-            for step in steps:
-                step.eta_derivatives = etaderiv_names
-        epsderivs = table.epsilon_derivatives
-        if epsderivs:
-            epsilons = model.random_variables.epsilons
-            epsilonderivs_names = [epsilons[i - 1].name for i in epsderivs]
-            for step in steps:
-                step.epsilon_derivatives = epsilonderivs_names
-
-    solver, tol, atol = parse_solver(model)
-    for step in steps:
-        step.solver = solver
-        step.solver_rtol = tol
-        step.solver_atol = atol
     return steps
 
 

@@ -2,6 +2,7 @@ from io import StringIO
 
 import pytest
 import sympy
+from sympy import Symbol as symbol
 
 from pharmpy import Model
 from pharmpy.config import ConfigurationContext
@@ -20,8 +21,7 @@ from pharmpy.parameters import Parameter, Parameters
 from pharmpy.plugins.nonmem import conf, convert_model
 from pharmpy.plugins.nonmem.nmtran_parser import NMTranParser
 from pharmpy.random_variables import RandomVariable
-from pharmpy.statements import Assignment, ModelStatements, ODESystem
-from pharmpy.symbols import symbol
+from pharmpy.statements import Assignment, ODESystem, Statements
 
 
 def S(x):
@@ -207,13 +207,13 @@ def test_add_statements(pheno, statement_new, buf_new):
     assert len(sset) == 15
 
     # Insert new statement before ODE system.
-    new_sset = ModelStatements()
+    new_sset = []
     for s in sset:
         if isinstance(s, ODESystem):
             new_sset.append(statement_new)
         new_sset.append(s)
 
-    model.statements = new_sset
+    model.statements = Statements(new_sset)
     model.update_source()
 
     assert len(model.statements) == 16
@@ -255,13 +255,13 @@ def test_add_parameters_and_statements(pheno, param_new, statement_new, buf_new)
     sset = model.statements
 
     # Insert new statement before ODE system.
-    new_sset = ModelStatements()
+    new_sset = []
     for s in sset:
         if isinstance(s, ODESystem):
             new_sset.append(statement_new)
         new_sset.append(s)
 
-    model.statements = new_sset
+    model.statements = Statements(new_sset)
     model.update_source()
 
     rec = (
@@ -331,7 +331,7 @@ def test_add_random_variables_and_statements(pheno):
     sset = model.statements
 
     statement_new = Assignment(S('X'), 1 + S(eps.name) + S(eta.name))
-    sset.insert_before_odes(statement_new)  # sset.append(statement_new)
+    model.statements = sset.before_odes + statement_new + sset.ode_system + sset.after_odes
 
     model.update_source()
     assert str(model.get_pred_pk_record()).endswith('X = 1 + ETA(3) + EPS(2)\n\n')
@@ -721,7 +721,7 @@ def test_cmt_warning(testdata):
 
     model_str = model_original.model_code.replace('CMT=DROP', 'CMT')
     model = Model.create_model(StringIO(model_str))
-    model.datainfo.path = model_original.datainfo.path
+    model.datainfo = model.datainfo.derive(path=model_original.datainfo.path)
 
     set_zero_order_absorption(model)
 
@@ -841,8 +841,9 @@ $SIGMA 1
 '''
     code += estcode
     model = Model.create_model(StringIO(code))
-    for key, value in kwargs.items():
-        setattr(model.estimation_steps[0], key, value)
+    steps = model.estimation_steps
+    newstep = steps[0].derive(**kwargs)
+    model.estimation_steps = newstep + steps[1:]
     assert model.model_code.split('\n')[-2] == rec_ref
 
 
@@ -874,8 +875,9 @@ $SIGMA 1
     code += estcode
     model = Model.create_model(StringIO(code))
 
-    for key, value in kwargs.items():
-        setattr(model.estimation_steps[0], key, value)
+    steps = model.estimation_steps
+    newstep = steps[0].derive(**kwargs)
+    model.estimation_steps = newstep + steps[1:]
 
     with pytest.raises(ValueError) as excinfo:
         model.update_source(nofiles=True)
@@ -895,16 +897,16 @@ $EST METH=COND INTER
 '''
     model = Model.create_model(StringIO(code))
     est_new = EstimationStep('IMP', interaction=True, tool_options={'saddle_reset': 1})
-    model.estimation_steps.append(est_new)
+    model.estimation_steps = model.estimation_steps + est_new
     assert model.model_code.split('\n')[-2] == '$ESTIMATION METHOD=IMP INTER SADDLE_RESET=1'
     est_new = EstimationStep('SAEM', interaction=True)
-    model.estimation_steps.insert(0, est_new)
+    model.estimation_steps = est_new + model.estimation_steps
     assert model.model_code.split('\n')[-4] == '$ESTIMATION METHOD=SAEM INTER'
     est_new = EstimationStep('FO', evaluation=True)
-    model.estimation_steps.append(est_new)
+    model.estimation_steps = model.estimation_steps + est_new
     assert model.model_code.split('\n')[-2] == '$ESTIMATION METHOD=ZERO MAXEVAL=0'
     est_new = EstimationStep('IMP', evaluation=True)
-    model.estimation_steps.append(est_new)
+    model.estimation_steps = model.estimation_steps + est_new
     assert model.model_code.split('\n')[-2] == '$ESTIMATION METHOD=IMP EONLY=1'
 
 
@@ -920,7 +922,7 @@ $SIGMA 1
 $EST METH=COND INTER
 '''
     model = Model.create_model(StringIO(code))
-    del model.estimation_steps[0]
+    model.estimation_steps = model.estimation_steps[1:]
     assert not model.estimation_steps
     model.update_source()
     assert model.model_code.split('\n')[-2] == '$SIGMA 1'

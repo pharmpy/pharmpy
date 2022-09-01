@@ -315,6 +315,7 @@ $ESTIMATION METHOD=1 INTERACTION
     model = create_model(code, testdata)
     add_peripheral_compartment(model)
     add_peripheral_compartment(model)
+    model.model_code
     correct = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA run1.csv IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2

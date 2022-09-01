@@ -13,11 +13,10 @@ import sympy.printing.fortran
 from sympy import Piecewise
 from sympy.printing.str import StrPrinter
 
-import pharmpy.symbols as symbols
 from pharmpy.data_structures import OrderedSet
 from pharmpy.parse_utils.generic import AttrToken, NoSuchRuleException
 from pharmpy.plugins.nonmem.records.parsers import CodeRecordParser
-from pharmpy.statements import Assignment, ModelStatements, Statement
+from pharmpy.statements import Assignment, Statement, Statements
 
 from .record import Record
 
@@ -355,7 +354,7 @@ class ExpressionInterpreter(lark.visitors.Interpreter):
         name = str(node).upper()
         if name.startswith('ERR('):
             name = 'EPS' + name[3:]
-        symb = symbols.symbol(name)
+        symb = sympy.Symbol(name)
         return symb
 
 
@@ -503,7 +502,7 @@ class CodeRecord(Record):
     def statements(self):
         statements = self._assign_statements()
         self._statements = statements
-        return statements.copy()
+        return statements
 
     @statements.setter
     def statements(self, new):
@@ -544,7 +543,7 @@ class CodeRecord(Record):
         new_children.extend(self.root.children[last_node_index:])
         self.root.children = new_children
         self._index = new_index
-        self._statements = new.copy()
+        self._statements = new
 
     def _statement_to_nodes(self, defined_symbols, node_index, s):
         statement_str = nmtran_assignment_string(s, defined_symbols, self.rvs, self.trans)
@@ -657,19 +656,19 @@ class CodeRecord(Record):
                     new_index.append((child_index, child_index + 1, len(s) - len(symbols), len(s)))
 
         self._index = new_index
-        statements = ModelStatements(s)
+        statements = Statements(s)
         return statements
 
     def from_odes(self, ode_system):
         """Set statements of record given an explicit ode system"""
         odes = ode_system.odes[:-1]  # Skip last ode as it is for the output compartment
         functions = [ode.lhs.args[0] for ode in odes]
-        function_map = {f: symbols.symbol(f'A({i + 1})') for i, f in enumerate(functions)}
+        function_map = {f: sympy.Symbol(f'A({i + 1})') for i, f in enumerate(functions)}
         statements = []
         for i, ode in enumerate(odes):
             # For now Piecewise signals zero-order infusions, which are handled with parameters
             ode = ode.replace(sympy.Piecewise, lambda a1, a2: 0)
-            symbol = symbols.symbol(f'DADT({i + 1})')
+            symbol = sympy.Symbol(f'DADT({i + 1})')
             expression = ode.rhs.subs(function_map)
             statements.append(Assignment(symbol, expression))
         self.statements = statements

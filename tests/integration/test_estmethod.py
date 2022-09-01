@@ -31,7 +31,7 @@ def test_estmethod(tmp_path, testdata, algorithm, methods, solvers, no_of_models
             shutil.copy2(path, tmp_path)
         shutil.copy2(testdata / 'nonmem' / 'pheno.dta', tmp_path)
         model_start = Model.create_model('pheno_real.mod')
-        model_start.datainfo.path = tmp_path / 'pheno.dta'
+        model_start.datainfo = model_start.datainfo.derive(path=tmp_path / 'pheno.dta')
 
         res = run_tool('estmethod', algorithm, methods=methods, solvers=solvers, model=model_start)
 

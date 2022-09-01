@@ -17,6 +17,8 @@ class ResultsJSONEncoder(json.JSONEncoder):
         # how to encode the given object, so it will not be called on int,
         # float, str, list, tuple, and dict. It could be called on set for
         # instance, or any custom class.
+        from pharmpy.workflows.log import Log
+
         if isinstance(obj, Results):
             d = obj.to_dict()
             d['__module__'] = obj.__class__.__module__
@@ -30,7 +32,8 @@ class ResultsJSONEncoder(json.JSONEncoder):
             d['__class__'] = 'DataFrame'
             return d
         elif isinstance(obj, pd.Series):
-            d = json.loads(obj.to_json(orient='table'))
+            d = json.loads(obj.to_json())
+            d['__name__'] = obj.name
             d['__class__'] = 'Series'
             return d
         elif obj.__class__.__module__.startswith('altair.'):
@@ -40,6 +43,13 @@ class ResultsJSONEncoder(json.JSONEncoder):
         elif isinstance(obj, pharmpy.model.Model):
             # TODO consider using other representation, e.g. path
             return None
+        elif isinstance(obj, Log):
+            d = obj.to_dict()
+            d['__class__'] = obj.__class__.__qualname__
+            return d
+        elif isinstance(obj, Path):
+            d = {'path': str(obj), '__class__': 'PosixPath'}
+            return d
         else:
             # NOTE this will raise a proper TypeError
             return super().default(obj)
@@ -70,8 +80,16 @@ class ResultsJSONDecoder(json.JSONDecoder):
             raise ValueError('Cannot specify module without specifying class')
 
         if module is None or module.startswith('pandas.'):
-            if cls == 'DataFrame' or cls == 'Series':
-                return pd.read_json(json.dumps(obj), orient='table')
+            if cls == 'DataFrame':
+                return pd.read_json(json.dumps(obj), orient='table', precise_float=True)
+            elif cls == 'Series':
+                name = obj['__name__']
+                del obj['__name__']
+                series = pd.read_json(
+                    json.dumps(obj), typ='series', orient='table', precise_float=True
+                )
+                series.name = name
+                return series
 
         if module is None or module.startswith('altair.'):
             if cls == 'vega-lite':
@@ -89,6 +107,14 @@ class ResultsJSONDecoder(json.JSONDecoder):
                 results_class = getattr(tool_module, cls)
 
             return results_class.from_dict(obj)
+
+        if cls == 'PosixPath':
+            return Path(obj)
+
+        if cls == 'Log':
+            from pharmpy.workflows.log import Log
+
+            return Log.from_dict(obj)
 
         return obj
 
@@ -274,18 +300,17 @@ class ModelfitResults(Results):
         parameter_estimates_sdcorr=None,
         covariance_matrix=None,
         correlation_matrix=None,
-        information_matrix=None,
         standard_errors=None,
         minimization_successful=None,
         individual_ofv=None,
         individual_estimates=None,
-        individual_estimates_covariance=None,
         residuals=None,
         runtime_total=None,
         termination_cause=None,
         function_evaluations=None,
         significant_digits=None,
         log_likelihood=None,
+        log=None,
     ):
         self.ofv = ofv
         self.parameter_estimates = parameter_estimates
@@ -302,13 +327,33 @@ class ModelfitResults(Results):
         self.function_evaluations = function_evaluations
         self.significant_digits = significant_digits
         self.log_likelihood = log_likelihood
+        self.log = log
 
     def __bool__(self):
         return bool(self.ofv) and bool(self.parameter_estimates)
 
+    @classmethod
+    def from_dict(cls, d):
+        return ModelfitResults(**d)
+
     def to_dict(self):
-        """Convert results object to a dictionary"""
-        return {'parameter_estimates': self.parameter_estimates}
+        return {
+            'ofv': self.ofv,
+            'parameter_estimates': self.parameter_estimates,
+            'parameter_estimates_sdcorr': self.parameter_estimates_sdcorr,
+            'covariance_matrix': self.covariance_matrix,
+            'correlation_matrix': self.correlation_matrix,
+            'standard_errors': self.standard_errors,
+            'minimization_successful': self.minimization_successful,
+            'individual_estimates': self.individual_estimates,
+            'individual_ofv': self.individual_ofv,
+            'residuals': self.residuals,
+            'runtime_total': self.runtime_total,
+            'termination_cause': self.termination_cause,
+            'function_evaluations': self.function_evaluations,
+            'log_likelihood': self.log_likelihood,
+            'log': self.log,
+        }
 
     @property
     def relative_standard_errors(self):

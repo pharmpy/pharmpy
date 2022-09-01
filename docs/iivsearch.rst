@@ -26,9 +26,9 @@ To initiate IIVsearch in Python/R:
                         rank_type='bic',
                         cutoff=None)
 
-This will take an input model ``model`` and run the brute_force_no_of_etas ``algorithm``. Structural IIVs will not be
-added to the input model since ``iiv_strategy`` is set to be 'no_add'. The candidate models will be ranked using ``bic``
-with default ``cutoff``, which for BIC is none.
+This will take an input model ``model`` and run the brute force ``algorithm``. IIVs on structural parameters
+(such as mean absorption time) will not be added to the input model since ``iiv_strategy`` is set to be 'no_add'.
+The candidate models will be ranked using ``bic`` with default ``cutoff``, which for BIC is none.
 
 To run IIVsearch from the command line, the example code is redefined accordingly:
 

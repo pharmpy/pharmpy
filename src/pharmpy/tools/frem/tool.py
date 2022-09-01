@@ -4,7 +4,12 @@ from pathlib import Path
 
 from pharmpy import Model
 from pharmpy.data_structures import OrderedSet
-from pharmpy.modeling import get_covariate_baselines, list_time_varying_covariates, write_model
+from pharmpy.modeling import (
+    get_covariate_baselines,
+    list_time_varying_covariates,
+    set_covariates,
+    write_model,
+)
 
 from .models import create_model3b
 
@@ -32,7 +37,7 @@ def check_covariates(input_model, covariates):
             kept.append(cov)
     covariates = kept
 
-    input_model.datainfo[covariates].types = 'covariate'
+    input_model = set_covariates(input_model, covariates)
     cov_bls = get_covariate_baselines(input_model)
 
     tvar = list_time_varying_covariates(input_model)

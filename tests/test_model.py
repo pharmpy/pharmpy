@@ -4,7 +4,6 @@ import pytest
 
 import pharmpy.data
 import pharmpy.model
-import pharmpy.symbols
 from pharmpy import Model
 from pharmpy.modeling import convert_model, create_symbol, load_example_model
 from pharmpy.plugins.nonmem.dataset import read_nonmem_dataset
@@ -36,7 +35,6 @@ def test_to_generic_model(testdata):
     assert id(model.random_variables) != id(nm_model.random_variables)
     assert model.random_variables == nm_model.random_variables
     assert model.name == nm_model.name
-    assert id(model.statements) != id(nm_model.statements)
     assert model.statements == nm_model.statements
     assert type(model) == pharmpy.model.Model
 

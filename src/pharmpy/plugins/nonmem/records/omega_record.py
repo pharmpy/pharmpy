@@ -5,6 +5,7 @@ import warnings
 import numpy as np
 import sympy
 import sympy.stats
+from sympy import Symbol as symbol
 
 import pharmpy.math
 from pharmpy.model import ModelSyntaxError
@@ -17,7 +18,6 @@ from pharmpy.parse_utils.generic import (
     remove_token_and_space,
 )
 from pharmpy.random_variables import RandomVariable, RandomVariables
-from pharmpy.symbols import symbol
 
 from .parsers import OmegaRecordParser
 from .record import Record

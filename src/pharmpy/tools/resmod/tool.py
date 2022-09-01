@@ -23,7 +23,7 @@ from pharmpy.modeling import (
     summarize_modelfit_results,
 )
 from pharmpy.modeling.error import remove_error_model, set_time_varying_error_model
-from pharmpy.statements import Assignment, ModelStatements
+from pharmpy.statements import Assignment, Statements
 from pharmpy.tools.common import summarize_tool, update_initial_estimates
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.workflows import Task, Workflow, call_workflow
@@ -221,7 +221,7 @@ def _create_base_model(input_model, current_iteration):
     base_model.random_variables = rvs
 
     y = Assignment(sympy.Symbol('Y'), theta.symbol + eta.symbol + sigma.symbol)
-    stats = ModelStatements([y])
+    stats = Statements([y])
     base_model.statements = stats
 
     base_model.dependent_variable = y.symbol
@@ -265,14 +265,13 @@ def _create_combined_model(input_model, current_iteration):
     base_model = input_model
     model = base_model.copy()
     remove_error_model(model)
-    sset = model.statements.copy()
+    sset = model.statements
     s = sset[0]
     ruv_prop = create_symbol(model, 'epsilon_p')
     ruv_add = create_symbol(model, 'epsilon_a')
     ipred = sympy.Symbol('IPRED')
     s = Assignment(s.symbol, s.expression + ruv_prop + ruv_add / ipred)
-    sset[0] = s
-    model.statements = sset
+    model.statements = s + sset[1:]
 
     prop_name = 'sigma_prop'
     add_population_parameter(model, prop_name, 1, lower=0)

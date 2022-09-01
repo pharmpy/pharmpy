@@ -1,7 +1,7 @@
 import sympy
 
 import pharmpy.model
-from pharmpy import Assignment, ModelStatements
+from pharmpy import Assignment, Statements
 from pharmpy.estimation import EstimationStep, EstimationSteps
 from pharmpy.workflows import Task, Workflow
 
@@ -28,7 +28,7 @@ def create_linearized_model(model):
     linbase.parameters = model.parameters
     linbase.random_variables = model.random_variables.copy()
 
-    ms = ModelStatements()
+    ms = []
     base_terms_sum = 0
     for i, eta in enumerate(model.random_variables.etas, start=1):
         deta = sympy.Symbol("D_ETA1")
@@ -63,7 +63,7 @@ def create_linearized_model(model):
 
     y = model.dependent_variable
     Assignment(y, ipred.symbol + error_terms.symbol)
-    linbase.statements = ms
+    linbase.statements = Statements(ms)
 
     linbase.name = 'linbase'
 

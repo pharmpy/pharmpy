@@ -224,9 +224,11 @@ MFL support the following model features:
 +---------------+-------------------------------+--------------------------------------------------------------------+
 | Category      | Options                       | Description                                                        |
 +===============+===============================+====================================================================+
-| ABSORPTION    | :code:`FO, ZO, SEQ-ZO-FO`     | Absorption rate                                                    |
+| ABSORPTION    | :code:`FO, ZO, SEQ-ZO-FO`     | Absorption rate (first order, zero order, sequential               |
+|               |                               | zero order first order)                                            |
 +---------------+-------------------------------+--------------------------------------------------------------------+
-| ELIMINATION   | :code:`FO, ZO, MM, MIX-FO-MM` | Elimination rate                                                   |
+| ELIMINATION   | :code:`FO, ZO, MM, MIX-FO-MM` | Elimination rate (first order, zero order, Michaelis-Menten,       |
+|               |                               | mixed first order Michaelis-Menten)                                |
 +---------------+-------------------------------+--------------------------------------------------------------------+
 | PERIPHERALS   | `number`                      | Number of peripheral compartments                                  |
 +---------------+-------------------------------+--------------------------------------------------------------------+
@@ -281,21 +283,21 @@ To add 1, 2 and 3 peripheral compartments:
 
 .. code::
 
-    PERIPHERALS(1)
-    PERIPHERALS(2)
-    PERIPHERALS(3)
+    TRANSITS(1)
+    TRANSITS(2)
+    TRANSITS(3)
 
 This is equivalent to:
 
 .. code::
 
-    PERIPHERALS(1..3)
+    TRANSITS(1..3)
 
 As well as:
 
 .. code::
 
-    PERIPHERALS([1,2,3])
+    TRANSITS([1,2,3])
 
 Redundant descriptions
 ======================

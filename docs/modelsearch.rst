@@ -28,15 +28,21 @@ To initiate modelsearch in Python:
                           cutoff=None)
 
 This will take an input model ``model`` with ``search_space`` as the search space, meaning adding one peripheral
-compartment and lagtime will be tried. The tool will use the 'reduced_stepwise' search ``algorithm``. Structural IIVs
-will not be added to candidates since ``iiv_strategy`` is set to be 'absorption_delay'. The candidate models will have
-BIC as the ``rank_type`` with default ``cutoff``, which for BIC is none.
+compartment and lagtime will be tried. The tool will use the 'reduced_stepwise' search ``algorithm``. IIVs on
+structural parameters (such as mean absorption time) will not be added to candidates since ``iiv_strategy`` is
+set to be 'absorption_delay'. The candidate models will have BIC as the ``rank_type`` with default ``cutoff``,
+which for BIC is None/NULL.
 
 To run modelsearch from the command line, the example code is redefined accordingly:
 
 .. code::
 
     pharmpy run modelsearch path/to/model 'PERIPHERALS(1);LAGTIME()' 'reduced_stepwise' --iiv_strategy 'absorption_delay' --rank_type 'bic'
+
+.. warning::
+
+    Currently modelsearch does not support a CMT-column, make sure it is dropped before starting the tool.
+
 
 Arguments
 ~~~~~~~~~
@@ -53,7 +59,7 @@ For a more detailed description of each argument, see their respective chapter o
 |                                                 | BIC)                                                             |
 +-------------------------------------------------+------------------------------------------------------------------+
 | :ref:`cutoff<ranking_modelsearch>`              | Cutoff for the ranking function, exclude models that are below   |
-|                                                 | cutoff (default is none)                                         |
+|                                                 | cutoff (default is None/NULL)                                    |
 +-------------------------------------------------+------------------------------------------------------------------+
 | :ref:`iiv_strategy<iiv_strategies_modelsearch>` | If/how IIV should be added to candidate models (default is to    |
 |                                                 | add to absorption delay parameters)                              |
@@ -91,10 +97,35 @@ below.
 |                           | best model between models with same features                                           |
 +---------------------------+----------------------------------------------------------------------------------------+
 
+Common behaviours between algorithms
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Feature combination exclusions
+------------------------------
+
+Some combinations of features are excluded in algorithms that are performed stepwise, the following combinations are
+never run:
+
++-----------------------+-------------------+
+| Feature A             | Feature B         |
++=======================+===================+
+| ABSORPTION(ZO)        | TRANSITS          |
++-----------------------+-------------------+
+| ABSORPTION(SEQ-ZO-FO) | TRANSITS          |
++-----------------------+-------------------+
+| ABSORPTION(SEQ-ZO-FO) | LAGTIME           |
++-----------------------+-------------------+
+| LAGTIME               | TRANSITS          |
++-----------------------+-------------------+
+
+Additionally, peripheral compartments are always run sequentially, i.e. the algorithm will never add more than one
+compartment at a given step. This is done in order to allow for better initial estimates from previous peripherals.
+
 Exhaustive search
 ~~~~~~~~~~~~~~~~~
 
-An exhaustive search will test all possible combinations of features in one big run.
+An exhaustive search will test all possible combinations of features in the search space. All candidate models will be
+created simultaneously from the input model.
 
 .. code::
 
@@ -126,6 +157,8 @@ An exhaustive search will test all possible combinations of features in one big 
 Exhaustive stepwise search
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 The exhaustive stepwise search applies features in a stepwise manner such that only one feature is changed at a time.
+Between each step, the initial estimates from the new candidate model will be updated from the final estimates from the
+previous step.
 
 .. graphviz::
 
@@ -164,33 +197,12 @@ The exhaustive stepwise search applies features in a stepwise manner such that o
         s9 -> s15
     }
 
-.. _feature combination exclusions:
-
-Feature combination exclusions
-------------------------------
-
-Some combinations of features have been excluded in this algorithm, the following combinations are never run:
-
-+-----------------------+-------------------+
-| Feature A             | Feature B         |
-+=======================+===================+
-| ABSORPTION(ZO)        | TRANSITS          |
-+-----------------------+-------------------+
-| ABSORPTION(SEQ-ZO-FO) | TRANSITS          |
-+-----------------------+-------------------+
-| ABSORPTION(SEQ-ZO-FO) | LAGTIME           |
-+-----------------------+-------------------+
-| LAGTIME               | TRANSITS          |
-+-----------------------+-------------------+
-
-Additionally, peripheral compartments are always run sequentially, i.e. the algorithm will never add more than one
-compartment at a given step. This is done in order to allow for better initial estimates from previous peripherals.
-
 Reduced stepwise search
 ~~~~~~~~~~~~~~~~~~~~~~~
-The reduced stepwise is similar to the exhaustive stepwise search, but after each layer it compares models with
-the same features, where the compared models arrived at the features in a different order. Next, the algorithm sends
-the best model from each comparison to the next layer, where the subsequent feature is added.
+The reduced stepwise search is similar to the exhaustive stepwise search, but after each layer it compares models with
+the same features, where the compared models were obtained by adding the features in a different order. Next, the
+algorithm uses the best model from each comparison as the basis for the next layer, where the subsequent feature is
+added.
 
 .. graphviz::
 
@@ -232,9 +244,6 @@ the best model from each comparison to the next layer, where the subsequent feat
         s12 -> s15
     }
 
-The same feature combinations as in the exhaustive stepwise algorithm will be excluded (described
-:ref:`here<Feature combination exclusions>`)
-
 
 .. _iiv_strategies_modelsearch:
 
@@ -263,8 +272,9 @@ The different strategies can be seen here:
 Comparing and ranking candidates
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The supplied ``rank_type`` will be used to compare a set of candidate models and rank them. A cutoff may also be provided
-if the user does not want to use the default. The following rank functions are available:
+The supplied ``rank_type`` will be used to compare a set of candidate models and rank them. Each candidate model
+will be compared to the input model. A cutoff may also be provided if the user does not want to use the default.
+The following rank functions are available:
 
 +------------+-----------------------------------------------------------------------------------+
 | Rank type  | Description                                                                       |

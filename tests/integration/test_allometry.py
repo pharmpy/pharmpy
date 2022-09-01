@@ -13,6 +13,6 @@ def test_allometry(tmp_path, testdata):
         shutil.copy2(testdata / 'nonmem' / 'sdtab1', tmp_path)
 
         model = Model.create_model('pheno_real.mod')
-        model.datainfo.path = tmp_path / 'pheno.dta'
+        model.datainfo = model.datainfo.derive(path=tmp_path / 'pheno.dta')
         res = run_tool('allometry', model, allometric_variable='WGT')
         assert len(res.summary_models) == 2

@@ -15,12 +15,33 @@ class LogEntry:
     path: Path = None
     message: str = ""
 
+    def to_dict(self):
+        log_vars = vars(self).copy()
+        log_vars['time'] = self.time.isoformat()
+        return log_vars
+
+    @classmethod
+    def from_dict(cls, d):
+        d['time'] = datetime.datetime.fromisoformat(d['time'])
+        return LogEntry(**d)
+
 
 class Log:
     """Timestamped error and warning log"""
 
     def __init__(self):
         self._log = []  # list of LogEntry
+
+    def to_dict(self):
+        return {i: entry.to_dict() for i, entry in enumerate(self._log)}
+
+    @classmethod
+    def from_dict(cls, d):
+        log = cls()
+        for entry in d.values():
+            log_entry = LogEntry.from_dict(entry)
+            log._log.append(log_entry)
+        return log
 
     @property
     def log(self):

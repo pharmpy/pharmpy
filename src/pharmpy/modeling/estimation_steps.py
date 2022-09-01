@@ -49,9 +49,11 @@ def set_estimation_step(model, method, idx=0, **kwargs):
     except TypeError:
         raise TypeError(f'Index must be integer: {idx}')
 
-    model.estimation_steps[idx].method = method
-    for key, value in kwargs.items():
-        setattr(model.estimation_steps[idx], key, value)
+    d = kwargs
+    d['method'] = method
+    steps = model.estimation_steps
+    newstep = steps[idx].derive(**d)
+    model.estimation_steps = steps[0:idx] + newstep + steps[idx + 1 :]
     return model
 
 
@@ -107,9 +109,10 @@ def add_estimation_step(model, method, idx=None, **kwargs):
             idx = _as_integer(idx)
         except TypeError:
             raise TypeError(f'Index must be integer: {idx}')
-        model.estimation_steps.insert(idx, meth)
+        steps = model.estimation_steps
+        model.estimation_steps = steps[0:idx] + meth + steps[idx:]
     else:
-        model.estimation_steps.append(meth)
+        model.estimation_steps = model.estimation_steps + meth
 
     return model
 
@@ -154,7 +157,8 @@ def remove_estimation_step(model, idx):
     except TypeError:
         raise TypeError(f'Index must be integer: {idx}')
 
-    del model.estimation_steps[idx]
+    steps = model.estimation_steps
+    model.estimation_steps = steps[0:idx] + steps[idx + 1 :]
     return model
 
 
@@ -203,7 +207,11 @@ def append_estimation_step_options(model, tool_options, idx):
     except TypeError:
         raise TypeError(f'Index must be integer: {idx}')
 
-    model.estimation_steps[idx].tool_options.update(tool_options)
+    steps = model.estimation_steps
+    toolopts = steps[idx].tool_options.copy()
+    toolopts.update(tool_options)
+    newstep = steps[idx].derive(tool_options=toolopts)
+    model.estimation_steps = steps[0:idx] + newstep + steps[idx + 1 :]
     return model
 
 
@@ -242,7 +250,9 @@ def add_covariance_step(model):
     set_evaluation_step
 
     """
-    model.estimation_steps[-1].cov = True
+    steps = model.estimation_steps
+    newstep = steps[-1].derive(cov=True)
+    model.estimation_steps = steps[0:-1] + newstep
     return model
 
 
@@ -279,7 +289,9 @@ def remove_covariance_step(model):
     set_evaluation_step
 
     """
-    model.estimation_steps[-1].cov = False
+    steps = model.estimation_steps
+    newstep = steps[-1].derive(cov=False)
+    model.estimation_steps = steps[:-1] + newstep
     return model
 
 
@@ -325,5 +337,10 @@ def set_evaluation_step(model, idx=-1):
     except TypeError:
         raise TypeError(f'Index must be integer: {idx}')
 
-    model.estimation_steps[idx].evaluation = True
+    steps = model.estimation_steps
+    newstep = steps[idx].derive(evaluation=True)
+    if idx != -1:
+        model.estimation_steps = steps[0:idx] + newstep + steps[idx + 1 :]
+    else:
+        model.estimation_steps = steps[0:-1] + newstep
     return model

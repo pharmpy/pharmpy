@@ -132,7 +132,9 @@ $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION
 '''
     model = Model.create_model(StringIO(model_code))
-    model.datainfo.path = testdata / 'nonmem' / 'models' / 'mox_simulated_normal.csv'
+    model.datainfo = model.datainfo.derive(
+        path=testdata / 'nonmem' / 'models' / 'mox_simulated_normal.csv'
+    )
 
     with pytest.raises(ValueError):
         check_input(model)

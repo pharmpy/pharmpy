@@ -1,11 +1,10 @@
 import copy
 from abc import ABC, abstractmethod
-from collections.abc import MutableSequence
+from collections.abc import Sequence
 
 import networkx as nx
 import sympy
 
-import pharmpy.symbols as symbols
 import pharmpy.unicode as unicode
 
 
@@ -16,6 +15,20 @@ def sympify(expr):
 
 class Statement(ABC):
     """Abstract base class for all types of statements"""
+
+    def __add__(self, other):
+        if isinstance(other, Statements):
+            return Statements((self,) + other._statements)
+        elif isinstance(other, Statement):
+            return Statements((self, other))
+        else:
+            return Statements((self,) + tuple(other))
+
+    def __radd__(self, other):
+        if isinstance(other, Statement):
+            return Statements((other, self))
+        else:
+            return Statements(tuple(other) + (self,))
 
     @abstractmethod
     def subs(self, substitutions):
@@ -36,7 +49,7 @@ class Assignment(Statement):
     """Representation of variable assignment
 
     This class represents an assignment of an expression to a variable. Multiple assignments
-    are combined together into a ModelStatements object.
+    are combined together into a Statements object.
 
     Parameters
     ----------
@@ -158,7 +171,7 @@ class Assignment(Statement):
 class ODESystem(Statement, ABC):
     """Abstract base class for ODE systems of different forms"""
 
-    t = symbols.symbol('t')
+    t = sympy.Symbol('t')
 
 
 def _bracket(a):
@@ -241,8 +254,8 @@ class ExplicitODESystem(ODESystem):
         --------
         >>> from pharmpy.modeling import load_example_model
         >>> model = load_example_model("pheno")
-        >>> model.statements.to_explicit_system()
-        >>> model.statements.ode_system.free_symbols  # doctest: +SKIP
+        >>> odes = model.statements.ode_system.to_explicit_system()
+        >>> odes.free_symbols  # doctest: +SKIP
         {AMT, CL, V, t}
         """
 
@@ -264,8 +277,8 @@ class ExplicitODESystem(ODESystem):
         --------
         >>> from pharmpy.modeling import load_example_model
         >>> model = load_example_model("pheno")
-        >>> model.statements.to_explicit_system()
-        >>> model.statements.ode_system.subs({'AMT': 'DOSE'})
+        >>> odes = model.statements.ode_system.to_explicit_system()
+        >>> odes.subs({'AMT': 'DOSE'})
         ⎧d                  -CL⋅A_CENTRAL(t)
         ⎪──(A_CENTRAL(t)) = ─────────────────
         ⎪dt                         V
@@ -277,7 +290,7 @@ class ExplicitODESystem(ODESystem):
         <BLANKLINE>
         """
         d = {
-            sympy.Function(str(key))(symbols.symbol('t')): value
+            sympy.Function(str(key))(sympy.Symbol('t')): value
             for key, value in substitutions.items()
         }
         d.update(substitutions)
@@ -298,8 +311,8 @@ class ExplicitODESystem(ODESystem):
         --------
         >>> from pharmpy.modeling import load_example_model
         >>> model = load_example_model("pheno")
-        >>> model.statements.to_explicit_system()
-        >>> model.statements.ode_system.rhs_symbols   # doctest: +SKIP
+        >>> odes = model.statements.ode_system.to_explicit_system()
+        >>> odes.rhs_symbols   # doctest: +SKIP
         {AMT, CL, V, t}
         """
         return self.free_symbols
@@ -313,8 +326,8 @@ class ExplicitODESystem(ODESystem):
         >>> from pharmpy.modeling import load_example_model
         >>> import sympy
         >>> model = load_example_model("pheno")
-        >>> model.statements.to_explicit_system()
-        >>> sympy.pprint(model.statements.ode_system.amounts)
+        >>> odes = model.statements.ode_system.to_explicit_system()
+        >>> sympy.pprint(odes.amounts)
         ⎡A_CENTRAL⎤
         ⎢         ⎥
         ⎣A_OUTPUT ⎦
@@ -330,8 +343,8 @@ class ExplicitODESystem(ODESystem):
         --------
         >>> from pharmpy.modeling import load_example_model
         >>> model = load_example_model("pheno")
-        >>> model.statements.to_explicit_system()
-        >>> model.statements.ode_system.compartment_names
+        >>> odes = model.statements.ode_system.to_explicit_system()
+        >>> odes.compartment_names
         ['CENTRAL', 'OUTPUT']
         """
         names = [ode.lhs.args[0].name[2:] for ode in self.odes]
@@ -384,13 +397,8 @@ class ExplicitODESystem(ODESystem):
         -------
         >>> from pharmpy.modeling import load_example_model
         >>> model = load_example_model("pheno")
-        >>> model.statements.to_explicit_system()
-        >>> odes = model.statements.ode_system.to_compartmental_system()
-        >>> odes
-        Bolus(AMT)
-        ┌───────┐       ┌──────┐
-        │CENTRAL│──CL/V→│OUTPUT│
-        └───────┘       └──────┘
+        >>> statements = model.statements.to_explicit_system()
+        >>> statements.to_compartmental_system()    # doctest: +SKIP
         """
 
         def convert_name(name):
@@ -400,9 +408,16 @@ class ExplicitODESystem(ODESystem):
                 return name
 
         funcs = [eq.lhs.args[0] for eq in self.odes]
-        cs = CompartmentalSystem()
+        cb = CompartmentalSystemBuilder()
+        dose = Bolus(sympy.Symbol("AMT"))  # FIXME: not true in general!
+        first = True
         for f in funcs:
-            cs.add_compartment(convert_name(f.name))
+            if first:
+                comp = Compartment(convert_name(f.name), dose)
+                first = False
+            else:
+                comp = Compartment(convert_name(f.name))
+            cb.add_compartment(comp)
 
         for eq in self.odes:
             for comp_func in funcs:
@@ -413,13 +428,169 @@ class ExplicitODESystem(ODESystem):
                 for term in terms:
                     expr = term / comp_func
                     if term.args[0] != -1:
+                        # FIXME: unnecessary conversion
+                        cs = CompartmentalSystem(cb)
                         from_comp = cs.find_compartment(convert_name(comp_func.name))
                         to_comp = cs.find_compartment(convert_name(eq.lhs.args[0].name))
-                        cs.add_flow(from_comp, to_comp, expr)
+                        cb.add_flow(from_comp, to_comp, expr)
 
-        dose = Bolus(sympy.Symbol("AMT"))  # FIXME: not true in general!
-        cs.find_compartment(convert_name(funcs[0].name)).dose = dose
-        return cs
+        return CompartmentalSystem(cb)
+
+
+class CompartmentalSystemBuilder:
+    """Builder for CompartmentalSystem"""
+
+    def __init__(self, cs=None):
+        if cs:
+            self._g = cs._g.copy()
+        else:
+            self._g = nx.DiGraph()
+
+    def add_compartment(self, compartment):
+        """Add compartment to system
+
+        The compartment will be added without any flows to other compartments.
+        Use the add_flow method to add flows to and from the newly added compartment.
+
+        Parameters
+        ----------
+        compartment : Compartment
+            Compartment to add
+
+        Examples
+        --------
+        >>> from pharmpy import CompartmentalSystemBuilder
+        >>> cb = CompartmentalSystemBuilder()
+        >>> central = cb.add_compartment("CENTRAL")
+        """
+        self._g.add_node(compartment)
+
+    def remove_compartment(self, compartment):
+        """Remove compartment from system
+
+        Parameters
+        ----------
+        compartment : Compartment
+            Compartment object to remove from system
+
+        Examples
+        --------
+        >>> from pharmpy import CompartmentalSystemBuilder
+        >>> cb = CompartmentalSystemBuilder()
+        >>> central = Compartment("CENTRAL")
+        >>> cb.add_compartment(central)
+        >>> cb.remove_compartment(central)
+        """
+        self._g.remove_node(compartment)
+
+    def add_flow(self, source, destination, rate):
+        """Add flow between two compartments
+
+        Parameters
+        ----------
+        source : Compartment
+            Source compartment
+        destination : Compartment
+            Destination compartment
+        rate : Expression
+            Symbolic rate of flow
+
+        Examples
+        --------
+        >>> from pharmpy import CompartmentalSystemBuilder
+        >>> cb = CompartmentalSystemBuilder()
+        >>> depot = Compartment("DEPOT")
+        >>> cb.add_compartment(depot)
+        >>> central = Compartment("CENTRAL")
+        >>> cb.add_compartment("CENTRAL")
+        >>> cb.add_flow(depot, central, "KA")
+        """
+        self._g.add_edge(source, destination, rate=sympify(rate))
+
+    def remove_flow(self, source, destination):
+        """Remove flow between two compartments
+
+        Parameters
+        ----------
+        source : Compartment
+            Source compartment
+        destination : Compartment
+            Destination compartment
+
+        Examples
+        --------
+        >>> from pharmpy import CompartmentalSystemBuilder
+        >>> cb = CompartmentalSystemBuilder()
+        >>> depot = Compartment("DEPOT")
+        >>> cb.add_compartment(depot)
+        >>> central = Compartment("CENTRAL")
+        >>> cb.add_compartment(central)
+        >>> cb.add_flow(depot, central, "KA")
+        >>> cb.remove_flow(depot, central)
+        """
+        self._g.remove_edge(source, destination)
+
+    def move_dose(self, source, destination):
+        """Move a dose input from one compartment to another
+
+        Parameters
+        ----------
+        source : Compartment
+            Source compartment
+        destination : Compartment
+            Destination compartment
+
+        """
+        new_source = Compartment(source.name, None, source.lag_time, source.bioavailability)
+        new_dest = Compartment(
+            destination.name, source.dose, destination.lag_time, destination.bioavailability
+        )
+        mapping = {source: new_source, destination: new_dest}
+        nx.relabel_nodes(self._g, mapping, copy=False)
+
+    def set_dose(self, compartment, dose):
+        """Set dose of compartment
+
+        Parameters
+        ----------
+        compartment : Compartment
+            Compartment for which to change dose
+        dose : Dose
+            New dose
+
+        Returns
+        -------
+        Compartment
+            The new updated compartment
+        """
+        new_comp = Compartment(
+            compartment.name, dose, compartment.lag_time, compartment.bioavailability
+        )
+        mapping = {compartment: new_comp}
+        nx.relabel_nodes(self._g, mapping, copy=False)
+        return new_comp
+
+    def set_lag_time(self, compartment, lag_time):
+        """Set lag time of compartment
+
+        Parameters
+        ----------
+        compartment : Compartment
+            Compartment for which to change lag time
+        lag_time : expr
+            New lag time
+
+        Returns
+        -------
+        Compartment
+            The new updated compartment
+        """
+        new_comp = Compartment(
+            compartment.name, compartment.dose, lag_time, compartment.bioavailability
+        )
+        mapping = {compartment: new_comp}
+        nx.relabel_nodes(self._g, mapping, copy=False)
+        return new_comp
 
 
 class CompartmentalSystem(ODESystem):
@@ -428,16 +599,18 @@ class CompartmentalSystem(ODESystem):
     Examples
     --------
     >>> from pharmpy import Bolus, CompartmentalSystem
-    >>> cs = CompartmentalSystem()
+    >>> cb = CompartmentalSystemBuilder()
     >>> dose = Bolus.create("AMT")
-    >>> central = cs.add_compartment("CENTRAL")
-    >>> central.dose = dose
-    >>> peripheral = cs.add_compartment("PERIPHERAL")
-    >>> output = cs.add_compartment("OUTPUT")
-    >>> cs.add_flow(central, peripheral, "K12")
-    >>> cs.add_flow(peripheral, central, "K21")
-    >>> cs.add_flow(central, output, "CL / V")
-    >>> cs        # doctest: +SKIP
+    >>> central = Compartment("CENTRAL", dose)
+    >>> cb.add_compartment(central)
+    >>> peripheral = Compartment("PERIPHERAL")
+    >>> cb.add_compartment(peripheral)
+    >>> output = Compartment("OUTPUT")
+    >>> cb.add_compartment(output)
+    >>> cb.add_flow(central, peripheral, "K12")
+    >>> cb.add_flow(peripheral, central, "K21")
+    >>> cb.add_flow(central, output, "CL / V")
+    >>> CompartmentalSystem(cb)        # doctest: +SKIP
     Bolus(AMT)
                      ┌──────────┐
                      │PERIPHERAL│
@@ -450,9 +623,8 @@ class CompartmentalSystem(ODESystem):
     └───────┘      └──────────┘      └──────────┘       └──────┘
     """
 
-    def __init__(self):
-        self._g = nx.DiGraph()
-        super().__init__()
+    def __init__(self, builder):
+        self._g = builder._g.copy()
 
     @property
     def free_symbols(self):
@@ -470,7 +642,7 @@ class CompartmentalSystem(ODESystem):
         >>> model.statements.ode_system.free_symbols  # doctest: +SKIP
         {AMT, CL, V, t}
         """
-        free = {symbols.symbol('t')}
+        free = {sympy.Symbol('t')}
         for (_, _, rate) in self._g.edges.data('rate'):
             free |= rate.free_symbols
         for node in self._g.nodes:
@@ -503,17 +675,18 @@ class CompartmentalSystem(ODESystem):
         >>> from pharmpy.modeling import load_example_model
         >>> model = load_example_model("pheno")
         >>> model.statements.ode_system.subs({'AMT': 'DOSE'})
-        >>> model.statements.ode_system
         Bolus(DOSE)
         ┌───────┐       ┌──────┐
         │CENTRAL│──CL/V→│OUTPUT│
         └───────┘       └──────┘
         """
-        for (u, v, rate) in self._g.edges.data('rate'):
+        cb = CompartmentalSystemBuilder(self)
+        for (u, v, rate) in cb._g.edges.data('rate'):
             rate_sub = rate.subs(substitutions, simultaneous=True)
-            self._g.edges[u, v]['rate'] = rate_sub
-        for comp in self._g.nodes:
-            comp.subs(substitutions)
+            cb._g.edges[u, v]['rate'] = rate_sub
+        mapping = {comp: comp.subs(substitutions) for comp in self._g.nodes}
+        nx.relabel_nodes(cb._g, mapping, copy=False)
+        return CompartmentalSystem(cb)
 
     def atoms(self, cls):
         """Get set of all symbolic atoms of some kind
@@ -543,101 +716,6 @@ class CompartmentalSystem(ODESystem):
             and self.dosing_compartment.dose == other.dosing_compartment.dose
         )
 
-    def __deepcopy__(self, memo):
-        newone = type(self)()
-        newone._g = copy.deepcopy(self._g, memo)
-        return newone
-
-    def copy(self):
-        """Create a copy of the CompartmentalSystem object"""
-        return copy.deepcopy(self)
-
-    def add_compartment(self, name):
-        """Create and add compartment to system
-
-        The compartment will be added without any flows to other compartments.
-        Use the add_flow method to add flows to and from the newly added compartment.
-
-        Parameters
-        ----------
-        name : str
-            Name for created compartment
-
-        Returns
-        -------
-        Compartment
-            Newly created compartment
-
-        Examples
-        --------
-        >>> from pharmpy import CompartmentalSystem
-        >>> odes = CompartmentalSystem()
-        >>> central = odes.add_compartment("CENTRAL")
-        """
-        comp = Compartment(name)
-        self._g.add_node(comp)
-        return comp
-
-    def remove_compartment(self, compartment):
-        """Remove compartment from system
-
-        Parameters
-        ----------
-        compartment : Compartment
-            Compartment object to remove from system
-
-        Examples
-        --------
-        >>> from pharmpy import CompartmentalSystem
-        >>> odes = CompartmentalSystem()
-        >>> central = odes.add_compartment("CENTRAL")
-        >>> odes.remove_compartment(central)
-        """
-        self._g.remove_node(compartment)
-
-    def add_flow(self, source, destination, rate):
-        """Add flow between two compartments
-
-        Parameters
-        ----------
-        source : Compartment
-            Source compartment
-        destination : Compartment
-            Destination compartment
-        rate : Expression
-            Symbolic rate of flow
-
-        Examples
-        --------
-        >>> from pharmpy import CompartmentalSystem
-        >>> odes = CompartmentalSystem()
-        >>> depot = odes.add_compartment("DEPOT")
-        >>> central = odes.add_compartment("CENTRAL")
-        >>> odes.add_flow(depot, central, "KA")
-        """
-        self._g.add_edge(source, destination, rate=sympify(rate))
-
-    def remove_flow(self, source, destination):
-        """Remove flow between two compartments
-
-        Parameters
-        ----------
-        source : Compartment
-            Source compartment
-        destination : Compartment
-            Destination compartment
-
-        Examples
-        --------
-        >>> from pharmpy import CompartmentalSystem
-        >>> odes = CompartmentalSystem()
-        >>> depot = odes.add_compartment("DEPOT")
-        >>> central = odes.add_compartment("CENTRAL")
-        >>> odes.add_flow(depot, central, "KA")
-        >>> odes.remove_flow(depot, central)
-        """
-        self._g.remove_edge(source, destination)
-
     def get_flow(self, source, destination):
         """Get the rate of flow between two compartments
 
@@ -655,11 +733,14 @@ class CompartmentalSystem(ODESystem):
 
         Examples
         --------
-        >>> from pharmpy import CompartmentalSystem
-        >>> odes = CompartmentalSystem()
-        >>> depot = odes.add_compartment("DEPOT")
-        >>> central = odes.add_compartment("CENTRAL")
-        >>> odes.add_flow(depot, central, "KA")
+        >>> from pharmpy import CompartmentalSystem, Compartment
+        >>> cb = CompartmentalSystemBuilder()
+        >>> depot = Compartment("DEPOT")
+        >>> cb.add_compartment(depot)
+        >>> central = Compartment("CENTRAL")
+        >>> cb.add_compartment(central)
+        >>> cb.add_flow(depot, central, "KA")
+        >>> odes = CompartmentalSystem(cb)
         >>> odes.get_flow(depot, central)
         KA
         >>> odes.get_flow(central, depot)
@@ -1087,7 +1168,7 @@ class CompartmentalSystem(ODESystem):
         ⎣          0          ⎦
         """
         inputs = []
-        for node in self._g.nodes:
+        for node in self._order_compartments():  # self._g.nodes:
             if node.dose is not None and isinstance(node.dose, Infusion):
                 if node.dose.rate is not None:
                     expr = node.dose.rate
@@ -1102,7 +1183,7 @@ class CompartmentalSystem(ODESystem):
         return sympy.Matrix(inputs)
 
     def to_compartmental_system(self):
-        return self.copy()
+        return self
 
     def to_explicit_system(self, skip_output=False):
         """Get the compartmental system as an explicit ODE system
@@ -1241,7 +1322,7 @@ class Compartment:
     lag_time : Expression
         Lag time for doses entering this compartment. Default 0
     bioavailability : Expression
-        Bioavailability fraction for doses entering this compartment. Default 0
+        Bioavailability fraction for doses entering this compartment. Default 1
 
     Examples
     --------
@@ -1258,33 +1339,48 @@ class Compartment:
     Compartment(DEPOT, dose=Bolus(AMT))
     """
 
-    def __init__(self, name, dose=None, lag_time=0, bioavailability=0):
-        self.name = name
-        self.dose = dose
-        self.lag_time = lag_time
-        self.bioavailability = bioavailability
+    def __init__(self, name, dose=None, lag_time=None, bioavailability=None):
+        self._name = name
+        self._dose = dose
+        if lag_time is None:
+            self._lag_time = sympy.Integer(0)
+        else:
+            self._lag_time = lag_time
+        if bioavailability is None:
+            self._bioavailability = sympy.Integer(1)
+        else:
+            self._bioavailability = bioavailability
+
+    @classmethod
+    def create(cls, name, dose=None, lag_time=None, bioavailability=None):
+        if not isinstance(name, str):
+            raise TypeError("Name of a Compartment must be of string type")
+        if dose is not None and not isinstance(dose, Dose):
+            raise TypeError("dose must be of Dose type (or None)")
+        if lag_time is not None:
+            lag_time = sympify(lag_time)
+        if bioavailability is not None:
+            bioavailability = sympify(bioavailability)
+        return cls(name, dose, lag_time, bioavailability)
 
     @property
     def name(self):
         """Compartment name"""
         return self._name
 
-    @name.setter
-    def name(self, value):
-        if not isinstance(value, str):
-            raise TypeError("Name of a Compartment must be of string type")
-        self._name = value
-
     @property
     def dose(self):
         return self._dose
 
-    @dose.setter
-    def dose(self, value):
-        """Dose into compartent"""
-        if value is not None and not isinstance(value, Dose):
-            raise TypeError("dose must be of Dose type (or None)")
-        self._dose = value
+    @property
+    def lag_time(self):
+        """Lag time for doses into compartment"""
+        return self._lag_time
+
+    @property
+    def bioavailability(self):
+        """Bioavailability fraction for doses into compartment"""
+        return self._bioavailability
 
     @property
     def amount(self):
@@ -1297,25 +1393,7 @@ class Compartment:
         >>> comp.amount
         A_CENTRAL
         """
-        return symbols.symbol(f'A_{self.name}')
-
-    @property
-    def lag_time(self):
-        """Lag time for doses into compartment"""
-        return self._lag_time
-
-    @lag_time.setter
-    def lag_time(self, value):
-        self._lag_time = sympify(value)
-
-    @property
-    def bioavailability(self):
-        """Bioavailability fraction for doses into compartment"""
-        return self._bioavailability
-
-    @bioavailability.setter
-    def bioavailability(self, value):
-        self._bioavailability = sympify(value)
+        return sympy.Symbol(f'A_{self.name}')
 
     @property
     def free_symbols(self):
@@ -1344,12 +1422,18 @@ class Compartment:
         >>> dose = Bolus.create("AMT")
         >>> comp = Compartment("CENTRAL", dose=dose)
         >>> comp.subs({"AMT": "DOSE"})
-        >>> comp
         Compartment(CENTRAL, dose=Bolus(DOSE))
         """
         if self.dose is not None:
-            self.dose = self.dose.subs(substitutions)
-        self.lag_time.subs(substitutions)
+            dose = self.dose.subs(substitutions)
+        else:
+            dose = None
+        return Compartment(
+            self.name,
+            dose,
+            self.lag_time.subs(substitutions),
+            self.bioavailability.subs(substitutions),
+        )
 
     def __eq__(self, other):
         return (
@@ -1564,42 +1648,50 @@ class Infusion(Dose):
         return f'Infusion({self.amount}, {arg})'
 
 
-class ModelStatements(MutableSequence):
+class Statements(Sequence):
     """A sequence of symbolic statements describing the model
 
     Two types of statements are supported: Assignment and ODESystem.
-    A ModelStatements object can have 0 or 1 ODESystem. The order of
+    A Statements object can have 0 or 1 ODESystem. The order of
     the statements is significant and the same symbol can be assigned
     to multiple times.
 
     Parameters
     ----------
-    statements : list or ModelStatements
-        A list of Statements or another ModelStatements to populate this object
+    statements : list or Statements
+        A list of Statement or another Statements to populate this object
     """
 
     def __init__(self, statements=None):
-        if isinstance(statements, ModelStatements):
-            self._statements = copy.deepcopy(statements._statements)
+        if isinstance(statements, Statements):
+            self._statements = statements._statements
         elif statements is None:
-            self._statements = []
+            self._statements = ()
         else:
-            self._statements = list(statements)
+            self._statements = tuple(statements)
 
     def __getitem__(self, ind):
-        return self._statements[ind]
-
-    def __setitem__(self, ind, value):
-        self._statements[ind] = value
-
-    def __delitem__(self, ind):
-        del self._statements[ind]
+        if isinstance(ind, slice):
+            return Statements(self._statements[ind.start : ind.stop : ind.step])
+        else:
+            return self._statements[ind]
 
     def __len__(self):
         return len(self._statements)
 
-    def insert(self, ind, value):
-        self._statements.insert(ind, value)
+    def __add__(self, other):
+        if isinstance(other, Statements):
+            return Statements(self._statements + other._statements)
+        elif isinstance(other, Statement):
+            return Statements(self._statements + (other,))
+        else:
+            return Statements(self._statements + tuple(other))
+
+    def __radd__(self, other):
+        if isinstance(other, Statement):
+            return Statements((other,) + self._statements)
+        else:
+            return Statements(tuple(other) + self._statements)
 
     @property
     def free_symbols(self):
@@ -1638,13 +1730,6 @@ class ModelStatements(MutableSequence):
                 return s
         return None
 
-    @ode_system.setter
-    def ode_system(self, value):
-        for i, s in enumerate(self):
-            if isinstance(s, ODESystem):
-                self[i] = value
-                break
-
     @property
     def before_odes(self):
         """All statements before the ODE system
@@ -1669,12 +1754,12 @@ class ModelStatements(MutableSequence):
         V = TVV⋅ℯ
         S₁ = V
         """
-        sset = ModelStatements()
+        sset = []
         for s in self:
             if isinstance(s, ODESystem):
                 break
             sset.append(s)
-        return sset
+        return Statements(sset)
 
     @property
     def after_odes(self):
@@ -1696,7 +1781,39 @@ class ModelStatements(MutableSequence):
                  ────
         IWRES =   W
         """
-        sset = ModelStatements()
+        sset = []
+        found = False
+        if self.ode_system is None:
+            return Statements()
+        for s in self:
+            if isinstance(s, ODESystem):
+                found = True
+            elif found:
+                sset.append(s)
+        return Statements(sset)
+
+    @property
+    def error(self):
+        """All statements after the ODE system or the whole model if no ODE system
+
+        Examples
+        --------
+        >>> from pharmpy.modeling import load_example_model
+        >>> model = load_example_model("pheno")
+        >>> model.statements.error
+            A_CENTRAL
+            ─────────
+        F =     S₁
+        W = F
+        Y = EPS(1)⋅W + F
+        IPRED = F
+        IRES = DV - IPRED
+                 IRES
+                 ────
+        IWRES =   W
+        """
+
+        sset = []
         found = False
         if self.ode_system is None:
             return self
@@ -1705,7 +1822,7 @@ class ModelStatements(MutableSequence):
                 found = True
             elif found:
                 sset.append(s)
-        return sset
+        return Statements(sset)
 
     def subs(self, substitutions):
         """Substitute symbols in all statements.
@@ -1719,15 +1836,24 @@ class ModelStatements(MutableSequence):
         --------
         >>> from pharmpy.modeling import load_example_model
         >>> model = load_example_model("pheno")
-        >>> model.statements.subs({'WGT': 'WT'})
-
+        >>> stats = model.statements.subs({'WGT': 'WT'})
+        >>> stats.before_odes
+                ⎧TIME  for AMT > 0
+                ⎨
+        BTIME = ⎩ 0     otherwise
+        TAD = -BTIME + TIME
+        TVCL = THETA(1)⋅WT
+        TVV = THETA(2)⋅WT
+              ⎧TVV⋅(THETA(3) + 1)  for APGR < 5
+              ⎨
+        TVV = ⎩       TVV           otherwise
+               ETA(1)
+        CL = TVCL⋅ℯ
+             ETA(2)
+        V = TVV⋅ℯ
+        S₁ = V
         """
-        for i, statement in enumerate(self):
-            # FIXME: Remove when all statements are made immutable
-            if isinstance(statement, Assignment):
-                self[i] = statement.subs(substitutions)
-            else:
-                statement.subs(substitutions)
+        return Statements(s.subs(substitutions) for s in self)
 
     def find_assignment(self, symbol):
         """Returns last assignment of symbol
@@ -1798,11 +1924,16 @@ class ModelStatements(MutableSequence):
         expression : Expression or str
             The new expression to assign to symbol
 
+        Return
+        ------
+        Statements
+            Updated statements
+
         Examples
         --------
         >>> from pharmpy.modeling import load_example_model
         >>> model = load_example_model("pheno")
-        >>> model.statements.reassign("CL", "TVCL + eta")
+        >>> model.statements.reassign("CL", "TVCL + eta")   # doctest: +SKIP
         """
         if isinstance(symbol, str):
             symbol = sympify(symbol)
@@ -1810,13 +1941,15 @@ class ModelStatements(MutableSequence):
             expression = sympify(expression)
 
         last = True
-        for i, stat in zip(range(len(self) - 1, -1, -1), reversed(self)):
+        new = list(self._statements)
+        for i, stat in zip(range(len(new) - 1, -1, -1), reversed(new)):
             if isinstance(stat, Assignment) and stat.symbol == symbol:
                 if last:
-                    self[i] = Assignment(symbol, expression)
+                    new[i] = Assignment(symbol, expression)
                     last = False
                 else:
-                    del self[i]
+                    del new[i]
+        return Statements(new)
 
     def _create_dependency_graph(self):
         """Create a graph of dependencies between statements"""
@@ -1844,7 +1977,7 @@ class ModelStatements(MutableSequence):
 
         Returns
         -------
-        ModelStatements
+        Statements
             Direct dependency statements
 
         Examples
@@ -1861,7 +1994,7 @@ class ModelStatements(MutableSequence):
         g = self._create_dependency_graph()
         index = self.index(statement)
         succ = sorted(list(g.successors(index)))
-        stats = ModelStatements()
+        stats = Statements()
         stats._statements = [self[i] for i in succ]
         return stats
 
@@ -1928,7 +2061,7 @@ class ModelStatements(MutableSequence):
             Statement from which the symbols were removed
         """
         graph = self._create_dependency_graph()
-        removed_ind = self.index(statement)
+        removed_ind = self._statements.index(statement)
         # Statements defining symbols and dependencies
         candidates = set()
         for s in symbols:
@@ -1952,8 +2085,7 @@ class ModelStatements(MutableSequence):
             if add in graph:
                 additional |= set(nx.dfs_preorder_nodes(graph, add))
         remove = candidates - additional
-        for i in reversed(sorted(remove)):
-            del self[i]
+        return Statements(tuple(self[i] for i in range(len(self)) if i not in remove))
 
     def full_expression(self, expression):
         """Expand an expression into its full definition
@@ -1986,94 +2118,15 @@ class ModelStatements(MutableSequence):
             expression = expression.subs({statement.symbol: statement.expression})
         return expression
 
-    def insert_before(self, statement, new_statement):
-        """Insert a statement just before another statement
-
-        Parameters
-        ----------
-        statement : Statement
-            Insert before this statement
-        new_statement : Statement
-            Statement to insert
-
-        Examples
-        --------
-        >>> from pharmpy import Assignment
-        >>> from pharmpy.modeling import load_example_model
-        >>> model = load_example_model("pheno")
-        >>> a = Assignment.create("WGT_G", "WGT*1000")
-        >>> b = model.statements.find_assignment("CL")
-        >>> model.statements.insert_before(b, a)
-
-        """
-        i = self.index(statement)
-        self.insert(i, new_statement)
-
-    def insert_after(self, statement, new_statement):
-        """Insert a statement directly after another statement
-
-        Parameters
-        ----------
-        statement : Statement
-            Insert after this statement
-        new_statement : Statement
-            Statement to insert
-
-        Examples
-        --------
-        >>> from pharmpy import Assignment
-        >>> from pharmpy.modeling import load_example_model
-        >>> model = load_example_model("pheno")
-        >>> a = Assignment.create("WGT_G", "WGT*1000")
-        >>> b = model.statements.find_assignment("CL")
-        >>> model.statements.insert_after(b, a)
-
-        """
-        i = self.index(statement)
-        self.insert(i + 1, new_statement)
-
-    def insert_before_odes(self, statement):
-        """Insert a statement just before the ODE system or at the end of the model
-
-        Parameters
-        ----------
-        statement : Statement
-            Statement to insert
-
-        Examples
-        --------
-        >>> from pharmpy import Assignment
-        >>> from pharmpy.modeling import load_example_model
-        >>> model = load_example_model("pheno")
-        >>> a = Assignment.create("WGT_G", "WGT*1000")
-        >>> model.statements.insert_before_odes(a)
-        """
-        for i, s in enumerate(self):
-            if isinstance(s, ODESystem):
-                break
-        else:
-            i += 1
-        self.insert(i, statement)
-
     def to_compartmental_system(self):
         """Convert ODE system to a compartmental system
 
         raise if not possible
         >>> from pharmpy.modeling import load_example_model
         >>> model = load_example_model("pheno")
-        >>> model.statements.to_explicit_system()
-        >>> model.statements.to_compartmental_system()
-        >>> model.statements.ode_system
-        Bolus(AMT)
-        ┌───────┐       ┌──────┐
-        │CENTRAL│──CL/V→│OUTPUT│
-        └───────┘       └──────┘
+        >>> statements = model.statements.to_compartmental_system()
         """
-        for i, s in enumerate(self):
-            if isinstance(s, ExplicitODESystem):
-                new = s.to_compartmental_system()
-                self[i] = new
-                return
+        return self.before_odes + self.ode_system.to_compartmental_system() + self.after_odes
 
     def to_explicit_system(self):
         """Convert ODE system to an explicit ODE system
@@ -2087,8 +2140,7 @@ class ModelStatements(MutableSequence):
         ┌───────┐       ┌──────┐
         │CENTRAL│──CL/V→│OUTPUT│
         └───────┘       └──────┘
-        >>> model.statements.to_explicit_system()
-        >>> model.statements.ode_system
+        >>> model.statements.ode_system.to_explicit_system()
         ⎧d                  -CL⋅A_CENTRAL(t)
         ⎪──(A_CENTRAL(t)) = ─────────────────
         ⎪dt                         V
@@ -2098,15 +2150,7 @@ class ModelStatements(MutableSequence):
         ⎪A_CENTRAL(0) = AMT
         ⎩A_OUTPUT(0) = 0
         """
-        for i, s in enumerate(self):
-            if isinstance(s, CompartmentalSystem):
-                new = s.to_explicit_system()
-                self[i] = new
-                return
-
-    def copy(self):
-        """Create a copy of the ModelStatements object"""
-        return copy.deepcopy(self)
+        return self.before_odes + self.ode_system.to_explicit_system() + self.after_odes
 
     def __eq__(self, other):
         if len(self) != len(other):

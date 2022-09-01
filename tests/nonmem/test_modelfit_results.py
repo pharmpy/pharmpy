@@ -8,6 +8,7 @@ import pharmpy.plugins.nonmem as nonmem
 from pharmpy import Model
 from pharmpy.config import ConfigurationContext
 from pharmpy.plugins.nonmem.results import NONMEMChainedModelfitResults, simfit_results
+from pharmpy.results import read_results
 from pharmpy.utils import TemporaryDirectoryChanger
 
 
@@ -330,3 +331,13 @@ def test_evaluation(testdata):
     assert round(res.ofv, 3) == 729.955
     assert res[-1].minimization_successful
     assert not res.minimization_successful
+
+
+def test_serialization(testdata):
+    model = Model.create_model(testdata / 'nonmem' / 'models' / 'mox_2comp.mod')
+    res = model.modelfit_results
+    res_json = res.to_json()
+    res_decode = read_results(res_json)
+
+    assert res.parameter_estimates.equals(res_decode.parameter_estimates)
+    assert res.log.to_dataframe().equals(res_decode.log.to_dataframe())

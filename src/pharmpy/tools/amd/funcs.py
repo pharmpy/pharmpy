@@ -7,16 +7,18 @@ import pharmpy
 from pharmpy import (
     Assignment,
     ColumnInfo,
+    CompartmentalSystem,
     DataInfo,
     EstimationStep,
     EstimationSteps,
-    ModelStatements,
     Parameter,
     Parameters,
     RandomVariable,
     RandomVariables,
+    Statements,
 )
 from pharmpy.modeling import (
+    add_iiv,
     create_joint_distribution,
     set_first_order_absorption,
     set_initial_estimates,
@@ -24,6 +26,7 @@ from pharmpy.modeling import (
 )
 from pharmpy.modeling.data import read_dataset_from_datainfo
 from pharmpy.plugins.nonmem.advan import dosing
+from pharmpy.statements import Compartment, CompartmentalSystemBuilder
 from pharmpy.workflows import default_model_database
 
 
@@ -48,16 +51,17 @@ def create_start_model(dataset_path, modeltype='pk_oral', cl_init=0.01, vc_init=
     cl_ass = Assignment(CL, pop_cl.symbol * sympy.exp(eta_cl.symbol))
     vc_ass = Assignment(VC, pop_vc.symbol * sympy.exp(eta_vc.symbol))
 
-    odes = pharmpy.CompartmentalSystem()
-    central = odes.add_compartment('CENTRAL')
-    output = odes.add_compartment('OUTPUT')
-    odes.add_flow(central, output, CL / VC)
-    central.dose = dosing(di, lambda: df, 1)
+    cb = CompartmentalSystemBuilder()
+    central = Compartment('CENTRAL', dosing(di, lambda: df, 1))
+    cb.add_compartment(central)
+    output = Compartment('OUTPUT')
+    cb.add_compartment(output)
+    cb.add_flow(central, output, CL / VC)
 
     ipred = Assignment(sympy.Symbol('IPRED'), central.amount / VC)
     y_ass = Assignment(sympy.Symbol('Y'), ipred.symbol)
 
-    stats = ModelStatements([cl_ass, vc_ass, odes, ipred, y_ass])
+    stats = Statements([cl_ass, vc_ass, CompartmentalSystem(cb), ipred, y_ass])
 
     est = EstimationStep(
         "FOCE",
@@ -85,6 +89,7 @@ def create_start_model(dataset_path, modeltype='pk_oral', cl_init=0.01, vc_init=
     if modeltype == 'pk_oral':
         set_first_order_absorption(model)
         set_initial_estimates(model, {'POP_MAT': mat_init})
+        add_iiv(model, list_of_parameters='MAT', expression='exp', initial_estimate=0.1)
     return model
 
 
@@ -92,36 +97,31 @@ def _create_default_datainfo(path):
     datainfo_path = path.with_suffix('.datainfo')
     if datainfo_path.is_file():
         di = DataInfo.read_json(path.with_suffix('.datainfo'))
+        di = di.derive(path=path)
     else:
         colnames = list(pd.read_csv(path, nrows=0))
         column_info = []
         for colname in colnames:
             info = ColumnInfo(colname)
             if colname == 'ID' or colname == 'L1':
-                info.type = 'id'
-                info.scale = 'nominal'
-                info.datatype = 'int32'
+                info = ColumnInfo(colname, type='id', scale='nominal', datatype='int32')
             elif colname == 'DV':
-                info.type = 'dv'
+                info = ColumnInfo(colname, type='dv')
             elif colname == 'TIME':
-                info.type = 'idv'
-                info.scale = 'ratio'
                 if not set(colnames).isdisjoint({'DATE', 'DAT1', 'DAT2', 'DAT3'}):
-                    info.datatype = 'nmtran-time'
+                    datatype = 'nmtran-time'
+                else:
+                    datatype = 'float64'
+                info = ColumnInfo(colname, type='idv', scale='ratio', datatype=datatype)
             elif colname == 'EVID':
-                info.type = 'event'
-                info.scale = 'nominal'
+                info = ColumnInfo(colname, type='event', scale='nominal')
             elif colname == 'MDV':
                 if 'EVID' in colnames:
-                    info.type = 'mdv'
+                    info = ColumnInfo(colname, type='mdv')
                 else:
-                    info.type = 'event'
-                    info.scale = 'nominal'
-                    info.datatype = 'int32'
+                    info = ColumnInfo(colname, type='event', scale='nominal', datatype='int32')
             elif colname == 'AMT':
-                info.type = 'dose'
-                info.scale = 'ratio'
+                info = ColumnInfo(colname, type='dose', scale='ratio')
             column_info.append(info)
-        di = DataInfo(column_info)
-    di.path = path
+        di = DataInfo(column_info, path=path, separator=',')
     return di

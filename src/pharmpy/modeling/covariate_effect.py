@@ -7,11 +7,12 @@ import warnings
 from operator import add, mul
 
 import numpy as np
-from sympy import Eq, Float, Gt, Le, Piecewise, exp
+from sympy import Eq, Float, Gt, Le, Piecewise
+from sympy import Symbol as S
+from sympy import exp
 
 from pharmpy.parameters import Parameter, Parameters
-from pharmpy.statements import Assignment, ModelStatements, sympify
-from pharmpy.symbols import symbol as S
+from pharmpy.statements import Assignment, sympify
 
 from .data import get_baselines
 
@@ -159,7 +160,7 @@ def add_covariate_effect(model, parameter, covariate, effect, operation='*'):
     covariate_effect.apply(parameter, covariate, thetas, statistics)
     # NOTE We hoist the statistic statements to avoid referencing variables
     # before declaring them. We also avoid duplicate statements.
-    sset[0:0] = [s for s in covariate_effect.statistic_statements if s not in sset]
+    sset = [s for s in covariate_effect.statistic_statements if s not in sset] + sset
 
     last_existing_parameter_assignment = sset.find_assignment(parameter)
     insertion_index = sset.index(last_existing_parameter_assignment) + 1
@@ -170,7 +171,7 @@ def add_covariate_effect(model, parameter, covariate, effect, operation='*'):
         operation, last_existing_parameter_assignment
     )
 
-    statements = ModelStatements()
+    statements = []
 
     statements.append(covariate_effect.template)
     statements.append(effect_statement)
@@ -190,12 +191,10 @@ def add_covariate_effect(model, parameter, covariate, effect, operation='*'):
                 {parameter: last_existing_parameter_assignment.expression}
             ),
         )
-        sset.remove(last_existing_parameter_assignment)
+        sset = sset[0 : insertion_index - 1] + sset[insertion_index:]
         insertion_index -= 1
 
-    sset[insertion_index:insertion_index] = statements
-
-    model.statements = sset
+    model.statements = sset[0:insertion_index] + statements + sset[insertion_index:]
     return model
 
 

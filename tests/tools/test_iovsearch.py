@@ -1,6 +1,7 @@
+from sympy import Symbol as S
+
 from pharmpy import Model
 from pharmpy.modeling import add_iov, remove_iov
-from pharmpy.symbols import symbol as S
 from pharmpy.tools.iovsearch.tool import _get_iiv_etas_with_corresponding_iov
 
 

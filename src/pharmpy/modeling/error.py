@@ -4,7 +4,6 @@
 
 import sympy
 
-import pharmpy.symbols as symbols
 from pharmpy.random_variables import RandomVariable
 from pharmpy.statements import Assignment, sympify
 
@@ -19,7 +18,7 @@ def _preparations(model):
     y = model.dependent_variable
     f = model.statements.find_assignment(y.name).expression
     for eps in model.random_variables.epsilons:
-        f = f.subs({symbols.symbol(eps.name): 0})
+        f = f.subs({sympy.Symbol(eps.name): 0})
     return stats, y, f
 
 
@@ -66,7 +65,7 @@ def remove_error_model(model):
 
     """
     stats, y, f = _preparations(model)
-    stats.reassign(y, f)
+    model.statements = stats.reassign(y, f)
     remove_unused_parameters_and_rvs(model)
     return model
 
@@ -139,7 +138,7 @@ def set_additive_error_model(model, data_trans=None, series_terms=2):
     if data_trans != model.dependent_variable:
         expr = data_trans.subs(model.dependent_variable, expr).series(ruv, n=series_terms).removeO()
 
-    stats.reassign(y, expr)
+    model.statements = stats.reassign(y, expr)
     remove_unused_parameters_and_rvs(model)
 
     sigma = create_symbol(model, 'sigma')
@@ -237,17 +236,16 @@ def set_proportional_error_model(model, data_trans=None, zero_protection=False):
         ipred = f
 
     if data_trans == sympy.log(model.dependent_variable):
-        if zero_protection:
-            stats.insert_before(stats.find_assignment(y), guard_assignment)
         expr = sympy.log(ipred) + ruv
     elif data_trans == model.dependent_variable:
-        if zero_protection:
-            stats.insert_before(stats.find_assignment(y), guard_assignment)
         expr = f + ipred * ruv
     else:
         raise ValueError(f"Not supported data transformation {data_trans}")
 
-    stats.reassign(y, expr)
+    if zero_protection:
+        ind = stats.find_assignment_index(y)
+        model.statements = model.statements[0:ind] + guard_assignment + model.statements[ind:]
+    model.statements = model.statements.reassign(y, expr)
     remove_unused_parameters_and_rvs(model)
 
     sigma = create_symbol(model, 'sigma')
@@ -318,8 +316,8 @@ def set_combined_error_model(model, data_trans=None):
     ruv_prop = create_symbol(model, 'epsilon_p')
     ruv_add = create_symbol(model, 'epsilon_a')
 
-    eta_ruv = symbols.symbol('ETA_RV1')
-    theta_time = symbols.symbol('time_varying')
+    eta_ruv = sympy.Symbol('ETA_RV1')
+    theta_time = sympy.Symbol('time_varying')
 
     data_trans = _canonicalize_data_transformation(model, data_trans)
     if data_trans == sympy.log(model.dependent_variable):
@@ -330,8 +328,8 @@ def set_combined_error_model(model, data_trans=None):
             expr_1 = expr.args[1][0]
             cond_0 = expr.args[0][1]
             for eps in model.random_variables.epsilons:
-                expr_0 = expr_0.subs({symbols.symbol(eps.name): ruv_prop})
-                expr_1 = expr_1.subs({symbols.symbol(eps.name): ruv_prop})
+                expr_0 = expr_0.subs({sympy.Symbol(eps.name): ruv_prop})
+                expr_1 = expr_1.subs({sympy.Symbol(eps.name): ruv_prop})
                 if (
                     eta_ruv in model.random_variables.free_symbols
                     and theta_time in model.parameters.symbols
@@ -357,7 +355,7 @@ def set_combined_error_model(model, data_trans=None):
     else:
         raise ValueError(f"Not supported data transformation {data_trans}")
 
-    stats.reassign(y, expr_combined)
+    model.statements = stats.reassign(y, expr_combined)
     remove_unused_parameters_and_rvs(model)
 
     sigma_prop = create_symbol(model, 'sigma_prop')
@@ -398,11 +396,9 @@ def has_additive_error_model(model):
     has_combined_error_model : Check if a model has a combined error model
     """
     y = model.dependent_variable
-    expr = model.statements.after_odes.full_expression(y)
+    expr = model.statements.error.full_expression(y)
     rvs = model.random_variables.epsilons
-    rvs_in_y = {
-        symbols.symbol(rv.name) for rv in rvs if symbols.symbol(rv.name) in expr.free_symbols
-    }
+    rvs_in_y = {sympy.Symbol(rv.name) for rv in rvs if sympy.Symbol(rv.name) in expr.free_symbols}
     if len(rvs_in_y) != 1:
         return False
     eps = rvs_in_y.pop()
@@ -435,11 +431,9 @@ def has_proportional_error_model(model):
     has_combined_error_model : Check if a model has a combined error model
     """
     y = model.dependent_variable
-    expr = model.statements.after_odes.full_expression(y)
+    expr = model.statements.error.full_expression(y)
     rvs = model.random_variables.epsilons
-    rvs_in_y = {
-        symbols.symbol(rv.name) for rv in rvs if symbols.symbol(rv.name) in expr.free_symbols
-    }
+    rvs_in_y = {sympy.Symbol(rv.name) for rv in rvs if sympy.Symbol(rv.name) in expr.free_symbols}
     if len(rvs_in_y) != 1:
         return False
     eps = rvs_in_y.pop()
@@ -472,11 +466,9 @@ def has_combined_error_model(model):
     has_proportional_error_model : Check if a model has a proportional error model
     """
     y = model.dependent_variable
-    expr = model.statements.after_odes.full_expression(y)
+    expr = model.statements.error.full_expression(y)
     rvs = model.random_variables.epsilons
-    rvs_in_y = {
-        symbols.symbol(rv.name) for rv in rvs if symbols.symbol(rv.name) in expr.free_symbols
-    }
+    rvs_in_y = {sympy.Symbol(rv.name) for rv in rvs if sympy.Symbol(rv.name) in expr.free_symbols}
     if len(rvs_in_y) != 2:
         return False
     eps1 = rvs_in_y.pop()
@@ -532,7 +524,7 @@ def use_thetas_for_error_stdev(model):
         sdsymb = create_symbol(model, f'SD_{eps.name}')
         add_population_parameter(model, sdsymb.name, theta_init, lower=0)
         symb = sympy.Symbol(eps.name)
-        model.statements.subs({symb: sdsymb * symb})
+        model.statements = model.statements.subs({symb: sdsymb * symb})
     return model
 
 
@@ -578,10 +570,12 @@ def set_weighted_error_model(model):
 
     for i, s in enumerate(stats):
         if isinstance(s, Assignment) and s.symbol == y:
-            stats.insert(i, Assignment(sympy.Symbol('W'), w))
             break
 
-    stats.reassign(y, f + sympy.Symbol('W') * sympy.Symbol(epsilons[0].name))
+    model.statements = stats[0:i] + Assignment(sympy.Symbol('W'), w) + stats[i:]
+    model.statements = model.statements.reassign(
+        y, f + sympy.Symbol('W') * sympy.Symbol(epsilons[0].name)
+    )
     remove_unused_parameters_and_rvs(model)
     return model
 
@@ -625,16 +619,25 @@ def set_dtbs_error_model(model, fix_to_log=False):
         if isinstance(s, Assignment) and s.symbol == sympy.Symbol('W'):
             break
 
-    stats.insert(i + 1, Assignment(sympy.Symbol('W'), (f**zeta) * sympy.Symbol('W')))
+    wass = Assignment(sympy.Symbol('W'), (f**zeta) * sympy.Symbol('W'))
     ipred = sympy.Piecewise(
         ((f**lam - 1) / lam, sympy.And(sympy.Ne(lam, 0), sympy.Ne(f, 0))),
         (sympy.log(f), sympy.And(sympy.Eq(lam, 0), sympy.Ne(f, 0))),
         (-1 / lam, sympy.And(sympy.Eq(lam, 0), sympy.Eq(f, 0))),
         (-1000000000, True),
     )
-    stats.insert(i + 2, Assignment(sympy.Symbol('IPRED'), ipred))
+    ipredass = Assignment(sympy.Symbol('IPRED'), ipred)
     yexpr_ind = stats.find_assignment_index(y.name)
-    stats[yexpr_ind] = stats[yexpr_ind].subs({f: sympy.Symbol('IPRED')})
+    yexpr = stats[yexpr_ind].subs({f: sympy.Symbol('IPRED')})
+
+    model.statements = (
+        stats[0 : i + 1]
+        + wass
+        + ipredass
+        + stats[i + 1 : yexpr_ind]
+        + yexpr
+        + stats[yexpr_ind + 1 :]
+    )
 
     obs = sympy.Piecewise(
         (sympy.log(y), sympy.Eq(lam, 0)), ((y**lam - 1) / lam, sympy.Ne(lam, 0))
@@ -673,8 +676,7 @@ def set_time_varying_error_model(model, cutoff, idv='TIME'):
     Y = ⎩      EPS(1)⋅W + F           otherwise
 
     """
-    stats = model.statements
-    y = stats.find_assignment('Y')
+    y = model.statements.find_assignment('Y')
     idv = sympify(idv)
     theta = create_symbol(model, 'time_varying')
     eps = model.random_variables.epsilons
@@ -682,7 +684,7 @@ def set_time_varying_error_model(model, cutoff, idv='TIME'):
         (y.expression.subs({e.symbol: e.symbol * theta for e in eps}), idv < cutoff),
         (y.expression, True),
     )
-    stats.reassign(y.symbol, expr)
+    model.statements = model.statements.reassign(y.symbol, expr)
 
     add_population_parameter(model, theta.name, 0.1)
 

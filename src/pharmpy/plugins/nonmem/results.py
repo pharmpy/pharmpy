@@ -13,6 +13,7 @@ from pharmpy.workflows.log import Log
 class NONMEMModelfitResults(ModelfitResults):
     def __init__(self, chain):
         self._chain = chain
+        super().__init__()
 
     def predictions_for_observations(self):
         """predictions only for observation data records"""

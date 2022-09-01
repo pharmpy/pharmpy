@@ -3,12 +3,12 @@
 """
 
 import sympy
+from sympy import Symbol as S
 
 from pharmpy.modeling import has_proportional_error_model
 from pharmpy.modeling.help_functions import _format_input_list
 from pharmpy.parameters import Parameter, Parameters
 from pharmpy.statements import Assignment, sympify
-from pharmpy.symbols import symbol as S
 
 from .expressions import create_symbol
 
@@ -78,7 +78,8 @@ def set_power_on_ruv(model, list_of_eps=None, lower_limit=0.01, ipred=None, zero
                     (2.225e-307, sympy.Eq(s.expression, 0)), (s.expression, True)
                 )
                 guard_assignment = Assignment(ipred, guard_expr)
-                sset.insert_before(sset.find_assignment('Y'), guard_assignment)
+                ind = sset.find_assignment_index('Y')
+                sset = sset[0:ind] + guard_assignment + sset[ind:]
                 break
             break
 
@@ -92,10 +93,11 @@ def set_power_on_ruv(model, list_of_eps=None, lower_limit=0.01, ipred=None, zero
         else:
             theta = Parameter(theta_name, theta_init, lower=lower_limit)
         pset.append(theta)
-        sset.subs({e.symbol * ipred: e.symbol})  # To avoid getting F*EPS*F**THETA
+        sset = sset.subs({e.symbol * ipred: e.symbol})  # To avoid getting F*EPS*F**THETA
         if alternative:  # To avoid getting W*EPS*F**THETA
-            sset.subs({e.symbol * alternative: e.symbol})
-        sset.subs({e.name: ipred ** S(theta.name) * e.symbol})
+            sset = sset.subs({e.symbol * alternative: e.symbol})
+        sset = sset.subs({e.name: ipred ** S(theta.name) * e.symbol})
+        model.statements = sset
 
     model.parameters = Parameters(pset)
     model.statements = sset

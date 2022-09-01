@@ -207,10 +207,10 @@ def convert_model(model, to_format):
         new = Model.create_model()
         new.parameters = model.parameters
         new.random_variables = model.random_variables.copy()
-        new.statements = model.statements.copy()
+        new.statements = model.statements
         new.dataset = model.dataset.copy()
-        new.estimation_steps = model.estimation_steps.copy()
-        new.datainfo = model.datainfo.copy()
+        new.estimation_steps = model.estimation_steps
+        new.datainfo = model.datainfo
         new.name = model.name
         new.dependent_variable = model.dependent_variable
         new.observation_transformation = model.observation_transformation
@@ -546,7 +546,7 @@ def print_model_symbols(model):
     Epsilons: EPS(1)
     Sigmas: SIGMA(1,1)
     Variables: BTIME, TAD, TVCL, TVV, TVV, CL, V, S₁, F, W, Y, IPRED, IRES, IWRES
-    Data columns: ID, TIME, AMT, WGT, APGR, DV
+    Data columns: ID, TIME, AMT, WGT, APGR, DV, FA1, FA2
 
     """
     etas = [sympy.pretty(sympy.Symbol(name)) for name in model.random_variables.etas.names]
@@ -656,6 +656,6 @@ def rename_symbols(model, new_names):
         new.append(newparam)
     model.parameters = Parameters(new)
 
-    model.statements.subs(d)
+    model.statements = model.statements.subs(d)
     return model
     # FIXME: Only handles parameters and statements and no clashes and circular renaming

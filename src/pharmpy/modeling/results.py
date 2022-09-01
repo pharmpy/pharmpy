@@ -10,7 +10,7 @@ from pharmpy.math import round_to_n_sigdig
 from pharmpy.model import Model
 from pharmpy.modeling import create_rng, get_observations, sample_parameters_from_covariance_matrix
 from pharmpy.random_variables import RandomVariables
-from pharmpy.statements import sympify
+from pharmpy.statements import CompartmentalSystem, CompartmentalSystemBuilder, sympify
 
 from .data import get_ids
 
@@ -346,11 +346,13 @@ def calculate_pk_parameters_statistics(model, rng=None):
 
     # Any abs + 1comp + FO elimination
     if not peripherals and odes.t not in elimination_rate.free_symbols:
-        elimination_system = statements.copy().ode_system
+        elimination_system = statements.ode_system
         # keep central and output
         for name in elimination_system.compartment_names:
             if name not in [central.name, output.name]:
-                elimination_system.remove_compartment(elimination_system.find_compartment(name))
+                cb = CompartmentalSystemBuilder(elimination_system)
+                cb.remove_compartment(elimination_system.find_compartment(name))
+                elimination_system = CompartmentalSystem(cb)
                 exodes = elimination_system.to_explicit_system(skip_output=True)
                 ode_list, ics = exodes.odes, exodes.ics
                 A0 = sympy.Symbol('A0')

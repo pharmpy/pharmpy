@@ -25,13 +25,13 @@ from .statements import (
     Bolus,
     Compartment,
     CompartmentalSystem,
+    CompartmentalSystemBuilder,
     ExplicitODESystem,
     Infusion,
-    ModelStatements,
     ODESystem,
+    Statements,
     sympify,
 )
-from .symbols import symbol
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 
@@ -42,6 +42,7 @@ __all__ = [
     'ColumnInfo',
     'Compartment',
     'CompartmentalSystem',
+    'CompartmentalSystemBuilder',
     'DataInfo',
     'DatasetError',
     'DatasetWarning',
@@ -52,7 +53,7 @@ __all__ = [
     'Model',
     'ModelError',
     'ModelfitResultsError',
-    'ModelStatements',
+    'Statements',
     'ModelSyntaxError',
     'ODESystem',
     'Parameter',
@@ -61,6 +62,5 @@ __all__ = [
     'RandomVariables',
     'Results',
     'VariabilityHierarchy',
-    'symbol',
     'sympify',
 ]
