@@ -221,11 +221,11 @@ def run_covsearch(args):
     )
 
 
-def run_resmod(args):
+def run_ruvsearch(args):
     from pharmpy.tools import run_tool
 
     run_tool(
-        'resmod',
+        'ruvsearch',
         model=args.model,
         groups=args.groups,
         p_value=args.p_value,
@@ -750,7 +750,7 @@ def results_linearize(args):
 
 
 def results_resmod(args):
-    from pharmpy.tools.resmod.results import psn_resmod_results
+    from pharmpy.tools.ruvsearch.results import psn_resmod_results
 
     if not args.psn_dir.is_dir():
         error(FileNotFoundError(str(args.psn_dir)))
@@ -1147,9 +1147,9 @@ parser_definition = [
                     }
                 },
                 {
-                    'resmod': {
+                    'ruvsearch': {
                         'help': 'Search for best residual error model',
-                        'func': run_resmod,
+                        'func': run_ruvsearch,
                         'parents': [args_model_input],
                         'args': [
                             {
@@ -1892,16 +1892,16 @@ parser_definition = [
                     }
                 },
                 {
-                    'resmod': {
-                        'help': 'Generate resmod results',
-                        'description': 'Generate results from a PsN resmod run',
+                    'ruvsearch': {
+                        'help': 'Generate ruvsearch results',
+                        'description': 'Generate results from a PsN ruvsearch run',
                         'func': results_resmod,
                         'args': [
                             {
                                 'name': 'psn_dir',
                                 'metavar': 'PsN directory',
                                 'type': pathlib.Path,
-                                'help': 'Path to PsN resmod run directory',
+                                'help': 'Path to PsN ruvsearch run directory',
                             }
                         ],
                     }

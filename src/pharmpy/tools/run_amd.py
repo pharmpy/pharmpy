@@ -45,7 +45,7 @@ def run_amd(
 ):
     """Run Automatic Model Development (AMD) tool
 
-    Runs structural modelsearch, IIV building, and resmod
+    Runs structural modelsearch, IIV building, and ruvsearch
 
     Parameters
     ----------
@@ -138,8 +138,8 @@ def run_amd(
             func = partial(_run_iov, occasion=occasion, path=db.path)
             run_subfuncs['iovsearch'] = func
         elif section == 'residual':
-            func = partial(_run_resmod, path=db.path)
-            run_subfuncs['resmod'] = func
+            func = partial(_run_ruvsearch, path=db.path)
+            run_subfuncs['ruvsearch'] = func
         elif section == 'allometry':
             func = partial(_run_allometry, allometric_variable=allometric_variable, path=db.path)
             run_subfuncs['allometry'] = func
@@ -214,9 +214,9 @@ def _run_iiv(model, path):
     return res_iiv
 
 
-def _run_resmod(model, path):
-    res_resmod = run_tool('resmod', model, path=path / 'resmod')
-    return res_resmod
+def _run_ruvsearch(model, path):
+    res_ruvsearch = run_tool('ruvsearch', model, path=path / 'ruvsearch')
+    return res_ruvsearch
 
 
 def _run_covariates(model, continuous, categorical, path):

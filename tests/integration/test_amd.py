@@ -27,7 +27,7 @@ def test_amd(tmp_path, testdata):
             'modelfit',
             'modelsearch',
             'iivsearch',
-            'resmod',
+            'ruvsearch',
             'iovsearch',
             'allometry',
             'covsearch',
