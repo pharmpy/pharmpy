@@ -15,7 +15,7 @@ def test_resmod(tmp_path, testdata):
 
         model = Model.create_model('mox3.mod')
         remove_covariance_step(model)
-        model.datainfo.path = tmp_path / 'moxo_simulated_resmod.csv'
+        model.datainfo = model.datainfo.derive(path=tmp_path / 'moxo_simulated_resmod.csv')
         res = run_tool('resmod', model, groups=4, p_value=0.05, skip=[])
         iteration = [1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 3, 3]
         assert (res.models.index.get_level_values('iteration') == iteration).all()
