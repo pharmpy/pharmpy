@@ -28,9 +28,10 @@ To initiate modelsearch in Python:
                           cutoff=None)
 
 This will take an input model ``model`` with ``search_space`` as the search space, meaning adding one peripheral
-compartment and lagtime will be tried. The tool will use the 'reduced_stepwise' search ``algorithm``. Structural IIVs
-will not be added to candidates since ``iiv_strategy`` is set to be 'absorption_delay'. The candidate models will have
-BIC as the ``rank_type`` with default ``cutoff``, which for BIC is None/NULL.
+compartment and lagtime will be tried. The tool will use the 'reduced_stepwise' search ``algorithm``. IIVs on
+structural parameters (such as mean absorption time) will not be added to candidates since ``iiv_strategy`` is
+set to be 'absorption_delay'. The candidate models will have BIC as the ``rank_type`` with default ``cutoff``,
+which for BIC is None/NULL.
 
 To run modelsearch from the command line, the example code is redefined accordingly:
 
@@ -271,8 +272,9 @@ The different strategies can be seen here:
 Comparing and ranking candidates
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The supplied ``rank_type`` will be used to compare a set of candidate models and rank them. A cutoff may also be provided
-if the user does not want to use the default. The following rank functions are available:
+The supplied ``rank_type`` will be used to compare a set of candidate models and rank them. Each candidate model
+will be compared to the input model. A cutoff may also be provided if the user does not want to use the default.
+The following rank functions are available:
 
 +------------+-----------------------------------------------------------------------------------+
 | Rank type  | Description                                                                       |

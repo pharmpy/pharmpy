@@ -299,8 +299,7 @@ def update_ode_system(model, old, new):
         update_des(model, old, new)
     elif type(old) == CompartmentalSystem and type(new) == CompartmentalSystem:
         if isinstance(new.dosing_compartment.dose, Bolus) and 'RATE' in model.datainfo.names:
-            df = model.dataset
-            df.drop(columns=['RATE'], inplace=True)
+            df = model.dataset.drop(columns=['RATE'])
             model.dataset = df
 
         advan, trans = new_advan_trans(model)
@@ -352,7 +351,7 @@ def update_infusion(model, old):
             + model.statements.ode_system
             + model.statements.after_odes
         )
-        df = model.dataset
+        df = model.dataset.copy()
         rate = np.where(df['AMT'] == 0, 0.0, -2.0)
         df['RATE'] = rate
         # FIXME: Adding at end for now. Update $INPUT cannot yet handle adding in middle

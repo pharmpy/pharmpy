@@ -6,11 +6,11 @@ from pharmpy.results import Results
 
 
 class RUVSearchResults(Results):
-    """Resmod results class"""
+    """RUVSearch results class"""
 
     def __init__(
         self,
-        models=None,
+        cwres_models=None,
         summary_individuals=None,
         summary_individuals_count=None,
         best_model=None,
@@ -18,7 +18,7 @@ class RUVSearchResults(Results):
         summary_tool=None,
         summary_errors=None,
     ):
-        self.models = models
+        self.cwres_models = cwres_models
         self.summary_individuals = summary_individuals
         self.summary_individuals_count = summary_individuals_count
         self.best_model = best_model
@@ -87,7 +87,7 @@ def calculate_results(models):
     df_final.set_index(['model', 'dvid', 'iteration'], inplace=True)
     df_final.sort_index(inplace=True)
 
-    res = RUVSearchResults(models=df_final)
+    res = RUVSearchResults(cwres_models=df_final)
     return res
 
 
@@ -114,5 +114,5 @@ def psn_resmod_results(path):
         parameters[rowind] = d
     parameters.index = df2.index
     df2['parameters'] = parameters
-    res.models = df2
+    res.cwres_models = df2
     return res

@@ -1457,12 +1457,12 @@ class Dose(ABC):
 
     @abstractmethod
     def subs(self, substitutions):
-        pass
+        ...
 
     @property
     @abstractmethod
     def free_symbols(self):
-        pass
+        ...
 
 
 class Bolus(Dose):
@@ -2040,7 +2040,7 @@ class Statements(Sequence):
         for j, _ in nx.bfs_predecessors(g, i, sort_neighbors=lambda x: reversed(sorted(x))):
             if isinstance(self[j], Assignment):
                 symbs -= {self[j].symbol}
-            elif isinstance(self[j], ODESystem):
+            else:  # isinstance(self[j], ODESystem):
                 symbs -= set(self[j].amounts)
             symbs |= self[j].rhs_symbols
         return symbs
