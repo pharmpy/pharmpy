@@ -275,7 +275,9 @@ def _create_combined_model(input_model, current_iteration):
 
     prop_name = 'sigma_prop'
     add_population_parameter(model, prop_name, 1, lower=0)
-    model.dataset['IPRED'].replace(0, 2.225e-307, inplace=True)
+    df = model.dataset.copy()
+    df['IPRED'].replace(0, 2.225e-307, inplace=True)
+    model.dataset = df
     ipred_min = model.dataset['IPRED'].min()
     sigma_add_init = ipred_min / 2
     add_name = 'sigma_add'
