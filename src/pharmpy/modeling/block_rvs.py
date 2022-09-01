@@ -149,8 +149,7 @@ def _choose_param_init(model, rvs, parent1, parent2):
         if rvs.get_variance(rv).name in (parent1.name, parent2.name):
             etas.append(rv.name)
 
-    var_param_1, var_param_2 = _get_variance(model, parent1), _get_variance(model, parent2)
-    sd = np.array([np.sqrt(var_param_1), np.sqrt(var_param_2)])
+    sd = np.array([np.sqrt(parent1.init), np.sqrt(parent2.init)])
     init_default = round(0.1 * sd[0] * sd[1], 7)
 
     last_estimation_step = [est for est in model.estimation_steps if not est.evaluation][-1]
@@ -179,11 +178,3 @@ def _choose_param_init(model, rvs, parent1, parent2):
         return round(init_cov, 7)
     else:
         return init_default
-
-
-def _get_variance(model, parameter):
-    if model.modelfit_results is not None:
-        pes = model.modelfit_results.parameter_estimates
-        if parameter.name in pes.index:
-            return pes[parameter.name]
-    return parameter.init
