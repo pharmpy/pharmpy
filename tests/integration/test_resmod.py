@@ -18,7 +18,7 @@ def test_resmod(tmp_path, testdata):
         model.datainfo = model.datainfo.derive(path=tmp_path / 'moxo_simulated_resmod.csv')
         res = run_tool('resmod', model, groups=4, p_value=0.05, skip=[])
         iteration = [1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 3, 3]
-        assert (res.models.index.get_level_values('iteration') == iteration).all()
+        assert (res.cwres_models.index.get_level_values('iteration') == iteration).all()
         assert res.best_model.model_code.split('\n')[11] == 'IF (TAD.LT.6.08) THEN'
         assert (
             res.best_model.model_code.split('\n')[12]

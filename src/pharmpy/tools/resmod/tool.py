@@ -133,7 +133,7 @@ def start(model, groups, p_value, skip):
         if current_iteration == 1:
             res = next_res
         else:
-            res.models = pd.concat([res.models, next_res.models])
+            res.cwres_models = pd.concat([res.cwres_models, next_res.cwres_models])
             res.best_model = next_res.best_model
         if not selected_model_name.startswith('base'):
             if res.best_model.description:
@@ -324,12 +324,12 @@ def _time_after_dose(model):
 
 
 def _create_best_model(model, res, current_iteration, groups=4, cutoff=3.84):
-    if any(res.models['dofv'] > cutoff):
+    if any(res.cwres_models['dofv'] > cutoff):
         model = model.copy()
         update_initial_estimates(model)
         model.name = f'best_resmod_{current_iteration}'
         selected_model_name = f'base_{current_iteration}'
-        idx = res.models['dofv'].idxmax()
+        idx = res.cwres_models['dofv'].idxmax()
         name = idx[0]
 
         if name.startswith('power'):
@@ -337,7 +337,7 @@ def _create_best_model(model, res, current_iteration, groups=4, cutoff=3.84):
             set_initial_estimates(
                 model,
                 {
-                    'power1': res.models['parameters']
+                    'power1': res.cwres_models['parameters']
                     .loc['power', 1, current_iteration]
                     .get('theta')
                     + 1
@@ -348,7 +348,7 @@ def _create_best_model(model, res, current_iteration, groups=4, cutoff=3.84):
             set_initial_estimates(
                 model,
                 {
-                    'IIV_RUV1': res.models['parameters']
+                    'IIV_RUV1': res.cwres_models['parameters']
                     .loc['IIV_on_RUV', 1, current_iteration]
                     .get('omega')
                 },
@@ -364,7 +364,7 @@ def _create_best_model(model, res, current_iteration, groups=4, cutoff=3.84):
             set_initial_estimates(
                 model,
                 {
-                    'time_varying': res.models['parameters']
+                    'time_varying': res.cwres_models['parameters']
                     .loc[f"time_varying{i}", 1, current_iteration]
                     .get('theta')
                 },
@@ -374,10 +374,10 @@ def _create_best_model(model, res, current_iteration, groups=4, cutoff=3.84):
             set_initial_estimates(
                 model,
                 {
-                    'sigma_prop': res.models['parameters']
+                    'sigma_prop': res.cwres_models['parameters']
                     .loc['combined', 1, current_iteration]
                     .get('sigma_prop'),
-                    'sigma_add': res.models['parameters']
+                    'sigma_add': res.cwres_models['parameters']
                     .loc['combined', 1, current_iteration]
                     .get('sigma_add'),
                 },
