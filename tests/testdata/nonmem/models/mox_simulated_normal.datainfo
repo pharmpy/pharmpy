@@ -250,5 +250,6 @@
       "datatype": "float64",
       "drop": true
     }
-  ]
+  ],
+  "separator": ","
 }

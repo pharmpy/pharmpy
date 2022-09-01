@@ -123,5 +123,5 @@ def _create_default_datainfo(path):
             elif colname == 'AMT':
                 info = ColumnInfo(colname, type='dose', scale='ratio')
             column_info.append(info)
-        di = DataInfo(column_info, path=path)
+        di = DataInfo(column_info, path=path, separator=',')
     return di
