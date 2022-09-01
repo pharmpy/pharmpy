@@ -1,3 +1,12 @@
+next version
+------------
+
+New features
+============
+
+* Add modeling.get_evid to get or create evid from a model
+* Add modeling.get_cmt to get or create a cmt column from a model
+
 0.75.0 (2022-08-10)
 -------------------
 

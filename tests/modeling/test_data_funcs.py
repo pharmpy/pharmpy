@@ -6,10 +6,12 @@ from pharmpy.modeling import (
     drop_columns,
     drop_dropped_columns,
     expand_additional_doses,
+    get_cmt,
     get_concentration_parameters_from_data,
     get_covariate_baselines,
     get_doseid,
     get_doses,
+    get_evid,
     get_ids,
     get_mdv,
     get_number_of_individuals,
@@ -151,6 +153,16 @@ def test_get_mdv():
     mdv_test = data_test.where(data_test == 0, other=1).astype('int32')
     result = mdv.equals(other=mdv_test)
     assert result is True
+
+
+def test_get_evid():
+    evid = get_evid(model)
+    assert evid.sum() == 589
+
+
+def test_get_cmt():
+    cmt = get_cmt(model)
+    assert cmt.sum() == 589
 
 
 def test_add_time_after_dose(testdata):

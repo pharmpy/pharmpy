@@ -756,6 +756,61 @@ def get_mdv(model):
     return series.astype('int32').rename('MDV')
 
 
+def get_evid(model):
+    """Get the evid from model dataset
+
+    If an event column is present this will be extracted otherwise
+    an evid column will be created.
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+
+    Returns
+    -------
+    pd.Series
+        EVID
+    """
+    di = model.datainfo
+    try:
+        eventcols = di.typeix['event']
+    except IndexError:
+        pass
+    else:
+        return eventcols[0]
+    mdv = get_mdv(model)
+    return mdv.rename('EVID')
+
+
+def get_cmt(model):
+    """Get the cmt (compartment) column from the model dataset
+
+    If a cmt column is present this will be extracted otherwise
+    a cmt column will be created.
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+
+    Returns
+    -------
+    pd.Series
+        CMT
+    """
+    di = model.datainfo
+    try:
+        cmtcols = di.typeix['compartment']
+    except IndexError:
+        pass
+    else:
+        return cmtcols[0]
+    evid = get_evid(model)
+    # FIXME: Should find the number of the dosing compartment
+    return evid.rename('CMT')
+
+
 def add_time_after_dose(model):
     """Calculate and add a TAD column to the dataset"
 
