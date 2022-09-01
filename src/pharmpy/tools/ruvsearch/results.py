@@ -5,7 +5,7 @@ import pandas as pd
 from pharmpy.results import Results
 
 
-class ResmodResults(Results):
+class RUVSearchResults(Results):
     """Resmod results class"""
 
     def __init__(
@@ -40,7 +40,7 @@ def calculate_results(models):
             model
             for model in models
             if model.name.endswith(f'_{iteration}')
-            and not model.name.startswith('best_resmod')
+            and not model.name.startswith('best_ruvsearch')
             and not model.name.startswith('base')
         ]
 
@@ -87,13 +87,13 @@ def calculate_results(models):
     df_final.set_index(['model', 'dvid', 'iteration'], inplace=True)
     df_final.sort_index(inplace=True)
 
-    res = ResmodResults(models=df_final)
+    res = RUVSearchResults(models=df_final)
     return res
 
 
 def psn_resmod_results(path):
     path = Path(path)
-    res = ResmodResults()
+    res = RUVSearchResults()
     respath = path / 'resmod_results.csv'
     if respath.is_file():
         df = pd.read_csv(respath, names=range(40), skiprows=[0], engine='python')

@@ -27,7 +27,7 @@ Tools in Pharmpy
    IIVsearch - search for best IIV structure (both variance and covariance) <iivsearch>
    IOVsearch - search for best IOV structure and trim IIV <iovsearch>
    COVsearch - identify covariates that explain some of the IIV <covsearch>
-   resmod - search for best residual error model <resmod>
+   RUVsearch - search for best residual error model <ruvsearch>
    allometry - add allometric scaling <allometry>
 
 
