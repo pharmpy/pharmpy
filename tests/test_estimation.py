@@ -3,6 +3,15 @@ import pytest
 from pharmpy.estimation import EstimationStep, EstimationSteps
 
 
+def test_init():
+    a = EstimationStep('foce', tool_options={'opt1': 23})
+    assert a.tool_options['opt1'] == 23
+    a = EstimationStep('foce', solver='lsoda')
+    assert a.solver == 'LSODA'
+    with pytest.raises(ValueError):
+        EstimationStep('foce', solver='unknownsolverz')
+
+
 def test_estimation_method():
     a = EstimationStep('foce', cov=True)
     assert a.method == 'FOCE'
@@ -81,10 +90,13 @@ def test_add():
     a = EstimationStep('foce')
     s2 = EstimationSteps([a, a])
     b = EstimationStep('fo')
+    s3 = EstimationSteps([a, b])
     conc = s2 + b
     assert len(conc) == 3
     conc = s2 + (b,)
     assert len(conc) == 3
+    conc = s2 + s3
+    assert len(conc) == 4
 
 
 def test_getitem():
@@ -112,3 +124,5 @@ def test_derive():
     a = EstimationStep('foce')
     b = a.derive(method='fo')
     assert b.method == 'FO'
+    c = a.derive(solver_atol=0.01)
+    assert c.solver_atol == 0.01
