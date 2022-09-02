@@ -80,7 +80,9 @@ jobs:
 
       - name: Build docs
         if: matrix.suite == 'docs-build'
-        run: tox
+        run: |
+            sudo apt install graphviz
+            tox
         env:
           TOX_SUITE: ${{ matrix.suite }}
 
