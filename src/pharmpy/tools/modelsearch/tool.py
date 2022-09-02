@@ -122,6 +122,7 @@ class ModelSearchResults(pharmpy.results.Results):
         best_model=None,
         input_model=None,
         models=None,
+        tool_database=None,
     ):
         self.summary_tool = summary_tool
         self.summary_models = summary_models
@@ -131,3 +132,4 @@ class ModelSearchResults(pharmpy.results.Results):
         self.best_model = best_model
         self.input_model = input_model
         self.models = models
+        self.tool_database = tool_database
