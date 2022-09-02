@@ -1047,6 +1047,8 @@ class Model(pharmpy.model.Model):
                 info = ColumnInfo(colname, drop=coldrop, type='dose', scale='ratio')
             elif colname == 'CMT' and have_pk:
                 info = ColumnInfo(colname, drop=coldrop, type='compartment', scale='nominal')
+            elif colname == 'RATE' and have_pk:
+                info = ColumnInfo(colname, drop=coldrop, type='rate')
             else:
                 info = ColumnInfo(colname, drop=coldrop)
             column_info.append(info)

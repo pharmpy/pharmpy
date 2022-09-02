@@ -41,6 +41,7 @@ class ColumnInfo:
         'idv',
         'unknown',
         'dose',
+        'rate',
         'additional',
         'ii',
         'ss',
@@ -207,6 +208,7 @@ class ColumnInfo:
         dv            Dependent variable
         covariate     Covariate
         dose          Dose amount
+        rate          Rate of infusion
         additional    Number of additional doses
         ii            Interdose interval
         ss            Steady state dosing
