@@ -1169,7 +1169,7 @@ def has_zero_order_absorption(model):
     return False
 
 
-def _add_zero_order_absorption(model, amount, to_comp, parameter_name, lag_time=sympy.Integer(0)):
+def _add_zero_order_absorption(model, amount, to_comp, parameter_name, lag_time=None):
     """Add zero order absorption to a compartment. Initial estimate for absorption rate is set
     the previous rate if available, otherwise it is set to the time of first observation/2 is used.
     Disregards what is currently in the model.
@@ -1184,20 +1184,20 @@ def _add_zero_order_absorption(model, amount, to_comp, parameter_name, lag_time=
     new_dose = Infusion(amount, duration=mat_symb * 2)
     cb = CompartmentalSystemBuilder(model.statements.ode_system)
     cb.set_dose(to_comp, new_dose)
-    if lag_time != 0:
+    if lag_time is not None and lag_time != 0:
         cb.set_lag_time(model.statements.ode_system.dosing_compartment, lag_time)
     model.statements = (
         model.statements.before_odes + CompartmentalSystem(cb) + model.statements.after_odes
     )
 
 
-def _add_first_order_absorption(model, dose, to_comp, lag_time=sympy.Integer(0)):
+def _add_first_order_absorption(model, dose, to_comp, lag_time=None):
     """Add first order absorption
     Disregards what is currently in the model.
     """
     odes = model.statements.ode_system
     cb = CompartmentalSystemBuilder(odes)
-    depot = Compartment('DEPOT', dose, lag_time)
+    depot = Compartment('DEPOT', dose, sympy.Integer(0) if lag_time is None else lag_time)
     cb.add_compartment(depot)
     to_comp = cb.set_dose(to_comp, None)
     to_comp = cb.set_lag_time(to_comp, sympy.Integer(0))
