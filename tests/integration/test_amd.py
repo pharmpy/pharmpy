@@ -7,6 +7,7 @@ from pharmpy.model import Model
 from pharmpy.tools import run_amd
 from pharmpy.utils import TemporaryDirectoryChanger
 
+
 def _model_count(rundir: Path):
     return sum(
         map(
@@ -14,6 +15,7 @@ def _model_count(rundir: Path):
             ((rundir / 'models').iterdir()),
         )
     )
+
 
 @pytest.mark.filterwarnings(
     'ignore:.*Adjusting initial estimates to create '
