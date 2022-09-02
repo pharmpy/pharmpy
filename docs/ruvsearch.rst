@@ -1,8 +1,8 @@
 .. _ruvsearch:
 
-======
+=========
 ruvsearch
-======
+=========
 
 The RUVsearch tool is a general tool to decide the best residual error model given a start model.
 
@@ -108,9 +108,9 @@ E.g., if the power error model is selected in the current iteration, the combine
 
 Selection is done using the likelihood ratio test and a default p-value of 0.05.
 
-~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~
 The RUVsearch results
-~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~
 
 The results object contains the candidate models, the start model, and the selected best model (based on the input
 selection criteria). The tool also creates various summary tables which can be accessed in the results object,
