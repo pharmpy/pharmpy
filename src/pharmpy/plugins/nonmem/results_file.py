@@ -330,7 +330,7 @@ class NONMEMResultsFile:
                 r'0(MINIMIZATION TERMINATED\n(.*\n)+\s*SUM OF "SQUARED" WEIGHTED INDIVIDUAL '
                 r'RESIDUALS IS INFINITE)\n'
             ),
-            re.compile(r'\w*(NO. OF SIG. DIGITS UNREPORTABLE)\w*\n'),
+            re.compile(r'\s*(NO. OF SIG. DIGITS UNREPORTABLE)\s*\n'),
         ]
 
         for pattern in error_patterns:
